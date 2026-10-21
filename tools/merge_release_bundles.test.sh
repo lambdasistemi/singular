@@ -104,4 +104,31 @@ devnet_required 0.100.0 || {
   exit 1
 }
 echo "merge-release-bundles-controls: the development node is required after $LAST_WITHOUT_DEVNET only"
+# the table of releases (#728) is carried by the releases after LAST_WITHOUT_CONTRACT_TABLE
+# only: 0.15.0 was published without it and is accepted without it, a later one is not
+contract_table_required "$LAST_WITHOUT_CONTRACT_TABLE" && {
+  echo "merge-release-bundles-controls: FAIL $LAST_WITHOUT_CONTRACT_TABLE requires the table of releases"
+  exit 1
+}
+contract_table_required 0.14.0 && {
+  echo "merge-release-bundles-controls: FAIL 0.14.0 requires the table of releases"
+  exit 1
+}
+contract_table_required 0.15.0 && {
+  echo "merge-release-bundles-controls: FAIL 0.15.0, published without the table, requires it"
+  exit 1
+}
+contract_table_required 0.15.1 || {
+  echo "merge-release-bundles-controls: FAIL 0.15.1 does not require the table of releases"
+  exit 1
+}
+contract_table_required 0.16.0 || {
+  echo "merge-release-bundles-controls: FAIL 0.16.0 does not require the table of releases"
+  exit 1
+}
+contract_table_required 0.100.0 || {
+  echo "merge-release-bundles-controls: FAIL 0.100.0 does not require the table of releases"
+  exit 1
+}
+echo "merge-release-bundles-controls: the table of releases is required after $LAST_WITHOUT_CONTRACT_TABLE only"
 echo "merge-release-bundles-controls: PASS"

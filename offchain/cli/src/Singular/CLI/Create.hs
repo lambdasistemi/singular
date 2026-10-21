@@ -37,7 +37,12 @@ refusal happens under the target's lock, after selection and before any
 submission. A preview never refuses for existing state: it only reads,
 submitting nothing and writing nothing.
 -}
-module Singular.CLI.Create (createApplication, runCreate, stateTokenOf) where
+module Singular.CLI.Create
+    ( announceCreated
+    , createApplication
+    , runCreate
+    , stateTokenOf
+    ) where
 
 import Control.Exception
     ( ErrorCall (..)
@@ -52,6 +57,7 @@ import Data.Aeson (Value, toJSON)
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Encode.Pretty (encodePretty)
 import Data.Aeson.Key qualified as Key
+import Data.Aeson.KeyMap qualified as KeyMap
 import Data.ByteString (ByteString)
 import Data.ByteString.Lazy qualified as BL
 import Data.ByteString.Short qualified as SBS
@@ -62,6 +68,7 @@ import Data.Text (Text)
 import Data.Text qualified as T
 import Lens.Micro ((&), (.~), (^.))
 import System.Directory (createDirectoryIfMissing, removeFile)
+import System.IO (hPutStrLn, stderr)
 
 import Cardano.Ledger.Address (Addr)
 import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx)
@@ -114,6 +121,7 @@ import Singular.CLI.Registry
     , publicationFunding
     , refuseExisting
     , registryConfigFor
+    , registryFields
     , renderIdentityError
     , seedChecks
     , seedHeld
@@ -1188,6 +1196,14 @@ previewIdentity app submitting a rel addr utxos pp mustPublish = do
                     Nothing -> []
                     Just dir -> ["--network-time", dir]
         describeLine = T.pack (unwords (map quotedForShell describeParts))
+        -- the address and the fingerprint of the registry, null while it has no identity
+        registryIdentity
+            | isFirstFailure =
+                [("registry", toJSON Aeson.Null), ("fingerprint", toJSON Aeson.Null)]
+            | otherwise =
+                registryFields
+                    (providerMagic providerFromCreate)
+                    (stateTokenOf rel seedIn)
         identity =
             [ ("application", toJSON (pinApplicationName (appPin app)))
             ,
@@ -1213,6 +1229,39 @@ previewIdentity app submitting a rel addr utxos pp mustPublish = do
             , ("wallet", toJSON (T.pack (bech32Address addr)))
             , ("walletKeyHash", toJSON (hexT (addrKeyHashBytes addr)))
             ]
+                <> registryIdentity
                 <> ([("pins", toJSON (pinsOf cfg)) | not isFirstFailure])
                 <> funding
     pure ((seedIn, cfg, pinned, seedFrom), identity)
+
+{- | A create that succeeded says on standard error where the registry is: its
+address, its state token and its fingerprint, from the receipt it printed. A
+preview creates nothing and says nothing; a network with no prefix has no
+address, and the line says so. The receipt comes back as it went in.
+-}
+announceCreated :: CreateArgs -> Value -> IO Value
+announceCreated a v = do
+    unless (createPreview a) $
+        case (field "outcome", field "stateToken", field "fingerprint") of
+            (Just "success", Just token, Just fingerprint) ->
+                hPutStrLn stderr . T.unpack $ case field "registry" of
+                    Just address ->
+                        "registry "
+                            <> address
+                            <> " (state token "
+                            <> token
+                            <> ", fingerprint "
+                            <> fingerprint
+                            <> ")"
+                    Nothing ->
+                        "registry has no address, its network has no prefix (state token "
+                            <> token
+                            <> ", fingerprint "
+                            <> fingerprint
+                            <> ")"
+            _ -> pure ()
+    pure v
+  where
+    field name = case v of
+        Aeson.Object o | Just (Aeson.String t) <- KeyMap.lookup name o -> Just t
+        _ -> Nothing

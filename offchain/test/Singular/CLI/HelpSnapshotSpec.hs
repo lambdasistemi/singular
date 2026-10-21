@@ -73,7 +73,8 @@ spec = describe "the help pages" $ do
                     && ["registry", "fold"] `elem` paths
                     && ["wallet", "sign"] `elem` paths
                     && ["submit"] `elem` paths
-                    && length paths == 13
+                    && ["registry", "address"] `elem` paths
+                    && length paths == 14
     it "are a well-formed declaration for the library" $
         lintDeclaration program `shouldBe` True
     forM_ (commandPaths program) $ \path ->

@@ -50,7 +50,7 @@ import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
 
-import Singular.CLI.Command (RegistryAccess)
+import Singular.CLI.Command (RegistryAccess (..))
 import Singular.CLI.Live
     ( SelectedTrie
     , attachLive
@@ -69,6 +69,7 @@ import Singular.CLI.Session
     ( Env (..)
     , failWith
     , failWithFields
+    , loadReleaseFor
     , readStep
     )
 import Singular.Registry.Application (Application)
@@ -207,9 +208,7 @@ precheckBooking
     -> BookingVerb
     -> IO ()
 precheckBooking app env settings blueprint access roles key verb = do
-    release <-
-        envLoadRelease env app blueprint
-            >>= either (failWith ClientRefusal) pure
+    release <- loadReleaseFor env app blueprint (accessToken access)
     envReads env settings $ \caps ->
         readStep (envTracer env) (envSource env) ["state", "key outputs"] caps $ \v -> do
             saved <- resolveSaved app "" release access roles Nothing v

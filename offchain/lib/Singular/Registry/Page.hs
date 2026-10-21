@@ -135,6 +135,10 @@ parseVersionLabel raw =
 data PageInputs = PageInputs
     { pageStateToken :: Text
     -- ^ The registry, @POLICY.NAME@
+    , pageAddress :: Maybe Text
+    -- ^ The registry's address; none on a network that has no prefix
+    , pageFingerprint :: Text
+    -- ^ The registry's CIP-14 fingerprint
     , pageStateOutput :: Text
     -- ^ The live state output holding the token
     , pageStateScript :: Text
@@ -212,6 +216,8 @@ renderPageJson (Page inputs links) =
         , "registry"
             .= object
                 [ "stateToken" .= pageStateToken inputs
+                , "address" .= pageAddress inputs
+                , "fingerprint" .= pageFingerprint inputs
                 , "stateOutput" .= pageStateOutput inputs
                 , "stateScript" .= pageStateScript inputs
                 , "applicationScript" .= pageApplicationScript inputs

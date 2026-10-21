@@ -19,6 +19,7 @@ import Singular.Application.OpenDatum.NeutralValueSpec qualified
 import Singular.Application.OpenDatum.OutlaySpec qualified
 import Singular.Application.OpenDatum.ParserCorpusSpec qualified
 import Singular.Application.OpenDatum.RecoverySpec qualified
+import Singular.Application.OpenDatum.RegistryAddressSpec qualified
 import Singular.Application.OpenDatum.RegistryStateTokenSpec qualified
 import Singular.Application.OpenDatum.SaveStateTokenSpec qualified
 import Singular.Application.OpenDatum.SourcesSpec qualified
@@ -82,6 +83,9 @@ main = hspec $ do
     describe
         (tagged "Singular.Application.OpenDatum.SaveStateToken" [Cli])
         Singular.Application.OpenDatum.SaveStateTokenSpec.spec
+    describe
+        (tagged "Singular.Application.OpenDatum.RegistryAddress" [Cli])
+        Singular.Application.OpenDatum.RegistryAddressSpec.spec
     describe
         (tagged "Singular.Application.OpenDatum.Fold" [Cli])
         Singular.Application.OpenDatum.FoldSpec.spec

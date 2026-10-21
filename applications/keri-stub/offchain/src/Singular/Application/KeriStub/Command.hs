@@ -93,6 +93,10 @@ import Singular.CLI.Key
     , readKey
     )
 import Singular.CLI.Registry (economics)
+import Singular.CLI.RegistryReading
+    ( RegistryRefusal (..)
+    , completeRegistry
+    )
 import Singular.CLI.Trace (TraceRequest (..))
 import Singular.Registry.Config.Application (RegistryEconomics (..))
 import Singular.Registry.Deployment (parseOutRef)
@@ -183,21 +187,26 @@ parseKeriStubWithGroup group environment args = do
                         >> (KeriCreate <$> createArgs flags)
                 ["keri-stub", "register"] ->
                     refuseRequest flags
-                        >> (KeriRegister <$> registerArgs environment flags)
+                        >> (KeriRegister <$> (registryFlags flags >>= registerArgs environment))
                 ["keri-stub", "convict"] ->
                     refuseRequest flags
                         >> refuseEntry flags
-                        >> (KeriConvict <$> convictArgs environment flags)
+                        >> (KeriConvict <$> (registryFlags flags >>= convictArgs environment))
                 ["keri-stub", "fold"] ->
-                    refuseEntry flags >> (KeriFold <$> foldArgs environment flags)
+                    refuseEntry flags
+                        >> (KeriFold <$> (registryFlags flags >>= foldArgs environment))
                 ["keri-stub", "status"] ->
                     refuseSpendingFlags "status" flags
                         >> refuseRequest flags
                         >> refuseFold flags
                         >> refuseEntry flags
-                        >> (KeriStatus <$> statusArgs environment flags)
+                        >> (KeriStatus <$> (registryFlags flags >>= statusArgs environment))
                 _ -> Left (UnknownCommand words')
   where
+    -- The registry named by its address gives the flags its state token and its
+    -- network, so the rest of the reading is the one it always was.
+    registryFlags flags =
+        first registryRefused (completeRegistry environment flags)
     refuseWindows words' flags =
         unless (words' == ["keri-stub", "create"]) $
             forM_ ["--process-time", "--retract-time"] $ \flag ->
@@ -365,6 +374,12 @@ parseKeriStubWithGroup group environment args = do
                 ( BadValue
                     "--state-token"
                     "is refused by keri-stub create, which makes one"
+                )
+        when (isJust (lookup "--registry" flags)) $
+            Left
+                ( BadValue
+                    "--registry"
+                    "is refused by keri-stub create, which makes the registry and prints its address"
                 )
         processing <-
             windowFrom "--process-time" (reProcessTime economics) flags
@@ -559,6 +574,12 @@ name above.
 extraValuedFlags :: [String]
 extraValuedFlags = ["--evidence"]
 
+-- | The registry a command line names, refused as the command line refuses.
+registryRefused :: RegistryRefusal -> CLIError
+registryRefused = \case
+    RegistryMissing flag -> MissingFlag flag
+    RegistryBad flag why -> BadValue flag why
+
 -- | One line naming the refusal.
 renderCLIError :: CLIError -> String
 renderCLIError = \case
@@ -622,9 +643,12 @@ keriStubUsage =
         , "      --koios-url URL --network-magic N [--receipt FILE] [--outputs-at ADDR]"
         , "      [--wallet-address ADDR]"
         , ""
-        , "Every command but create names its registry by the state token POLICY.NAME,"
-        , "the policy and the name in hex, which create prints; when the flag is absent"
-        , "it is read from SINGULAR_STATE_TOKEN. Nothing else names a registry."
+        , "Every command but create names its registry by its address, which create"
+        , "prints: --registry ADDRESS, or SINGULAR_REGISTRY when the flag is absent."
+        , "The address holds the state token and the network, so the command needs"
+        , "neither. A registry may still be named by the state token POLICY.NAME, the"
+        , "policy and the name in hex (--state-token, or SINGULAR_STATE_TOKEN), with"
+        , "--network-magic N; given both, they must agree. Nothing else names a registry."
         , "register books an insertion whose request the fold settles; --fold on"
         , "register runs that fold in the same command. convict books a termination"
         , "carrying the evidence hash, whose request the fold settles by releasing"

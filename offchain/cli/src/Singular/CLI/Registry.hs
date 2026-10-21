@@ -18,6 +18,8 @@ module Singular.CLI.Registry
       Release (..)
     , loadRelease
     , loadReleaseCodes
+    , checkRegistryContracts
+    , registryFields
     , registryConfigFor
     , economics
     , Pins (..)
@@ -72,13 +74,17 @@ import Cardano.Ledger.Credential
     ( Credential (..)
     , StakeReference (..)
     )
-import Cardano.Ledger.Mary.Value (MaryValue (..))
+import Cardano.Ledger.Mary.Value (MaryValue (..), PolicyID (..))
 import Cardano.Ledger.TxIn (TxIn)
 import Codec.Binary.Bech32 qualified as Bech32
 import Control.Monad (when)
 import PlutusCore.Data qualified as PLC
 
 import Singular.CLI.Permanent (knownScripts)
+import Singular.Registry.Address
+    ( registryFingerprint
+    , renderRegistryAddress
+    )
 import Singular.Registry.Application
     ( Application (..)
     , ApplicationPin (..)
@@ -92,6 +98,12 @@ import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Config.Application
     ( RegistryEconomics (..)
     , configForApplication
+    )
+import Singular.Registry.ContractTable
+    ( Contracts (..)
+    , contractsOf
+    , loadContractTable
+    , renderForeignRelease
     )
 import Singular.Registry.Deployment (renderOutRef)
 import Singular.Registry.Ledger (Coin (..), ConwayEra)
@@ -191,6 +203,34 @@ loadReleaseWith app recognize path = do
                 request
                 NamingCodes{ncApplication = application, ncWitness = witness}
             )
+
+{- | The fields a receipt names a registry by beside its state token: its address,
+null on a network that has no prefix, and its fingerprint.
+-}
+registryFields :: Word32 -> Asset -> [(Text, Aeson.Value)]
+registryFields magic token =
+    [
+        ( "registry"
+        , maybe Aeson.Null toJSON (renderRegistryAddress magic token)
+        )
+    , ("fingerprint", toJSON (registryFingerprint token))
+    ]
+
+{- | Refuse, before anything is read from the chain, a registry whose policy is
+not the state contract of the release the command was given: it was made by
+other contracts, which the table of releases names when it knows them. A
+registry of this release's contracts is accepted without reading the table.
+-}
+checkRegistryContracts :: Release -> Asset -> IO (Either String ())
+checkRegistryContracts release (PolicyID policy, _)
+    | scriptHashBytes policy
+        == scriptHashBytes (computeScriptHash (releaseState release)) =
+        pure (Right ())
+    | otherwise = do
+        loaded <- loadContractTable
+        pure . Left . T.unpack . renderForeignRelease $ case loaded of
+            Left why -> TableUnreadable why
+            Right table -> contractsOf table (scriptHashBytes policy)
 
 -- | The windows and tip a registry this command creates is booted with.
 economics :: RegistryEconomics

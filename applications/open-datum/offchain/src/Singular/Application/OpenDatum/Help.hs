@@ -58,9 +58,10 @@ createLeaf =
             , leafSummary = "Boot a registry, or preview its identity"
             , leafDescription =
                 [ "Boots one registry from a seed output of your wallet and prints \
-                  \its state token, which every other command names the registry \
-                  \by. The processing window and the retract window are fixed here \
-                  \for the life of the registry."
+                  \its address, which every other command names the registry by, \
+                  \with its state token and its fingerprint. The processing \
+                  \window and the retract window are fixed here for the life of \
+                  \the registry."
                 , "With --closed the registry is a closed-datum registry whose \
                   \payload is written once; every later command follows the \
                   \registry's mode with no further flag, and an update on a closed \
@@ -113,12 +114,12 @@ insertLeaf =
                 Each
                     [ Takes stateDir
                     , Needs blueprint
-                    , Needs stateToken
+                    , registryShape
                     , keyShape
                     , Needs payload
                     , Takes payloadSchema
                     , Takes deposit
-                    , nodeShape
+                    , registryNodeShape
                     , OneOf
                         [ Each
                             [ writeShape
@@ -138,8 +139,8 @@ insertLeaf =
                 [environmentLog, environmentState, environmentPassphrase]
             , leafExamples =
                 [ "open-datum insert --blueprint plutus.json \\"
-                , "    --state-token <policy>.<name> --key my-key --payload payload.json \\"
-                , "    " <> preprodExample <> " \\"
+                , "    --registry <address> --key my-key --payload payload.json \\"
+                , "    " <> preprodUrlExample <> " \\"
                 , "    --vault alice.vault"
                 ]
             , leafNotes = exitStatuses
@@ -162,11 +163,11 @@ updateLeaf =
                 Each
                     [ Takes stateDir
                     , Needs blueprint
-                    , Needs stateToken
+                    , registryShape
                     , keyShape
                     , Needs payload
                     , Takes payloadSchema
-                    , nodeShape
+                    , registryNodeShape
                     , OneOf
                         [ Each [writeShape, spendingShape]
                         , Each
@@ -182,8 +183,8 @@ updateLeaf =
                 [environmentLog, environmentState, environmentPassphrase]
             , leafExamples =
                 [ "open-datum update --blueprint plutus.json \\"
-                , "    --state-token <policy>.<name> --key my-key --payload payload.json \\"
-                , "    " <> preprodExample <> " \\"
+                , "    --registry <address> --key my-key --payload payload.json \\"
+                , "    " <> preprodUrlExample <> " \\"
                 , "    --vault alice.vault"
                 ]
             , leafNotes = exitStatuses
@@ -207,9 +208,9 @@ terminateLeaf =
                 Each
                     [ Takes stateDir
                     , Needs blueprint
-                    , Needs stateToken
+                    , registryShape
                     , keyShape
-                    , nodeShape
+                    , registryNodeShape
                     , OneOf
                         [ Each
                             [ writeShape
@@ -229,8 +230,8 @@ terminateLeaf =
                 [environmentLog, environmentState, environmentPassphrase]
             , leafExamples =
                 [ "open-datum terminate --blueprint plutus.json \\"
-                , "    --state-token <policy>.<name> --key my-key \\"
-                , "    " <> preprodExample <> " \\"
+                , "    --registry <address> --key my-key \\"
+                , "    " <> preprodUrlExample <> " \\"
                 , "    --vault alice.vault"
                 ]
             , leafNotes = exitStatuses
@@ -254,8 +255,8 @@ foldLeaf =
                 Each
                     [ Takes stateDir
                     , Needs blueprint
-                    , Needs stateToken
-                    , nodeShape
+                    , registryShape
+                    , registryNodeShape
                     , writeShape
                     , Takes foldRequest
                     , spendingShape
@@ -266,8 +267,8 @@ foldLeaf =
                 [environmentLog, environmentState, environmentPassphrase]
             , leafExamples =
                 [ "open-datum fold --blueprint plutus.json \\"
-                , "    --state-token <policy>.<name> \\"
-                , "    " <> preprodExample <> " \\"
+                , "    --registry <address> \\"
+                , "    " <> preprodUrlExample <> " \\"
                 , "    --vault alice.vault"
                 ]
             , leafNotes = exitStatuses
@@ -293,9 +294,9 @@ inspectLeaf =
                 Each
                     [ Takes stateDir
                     , Needs blueprint
-                    , Needs stateToken
+                    , registryShape
                     , keyShape
-                    , nodeShape
+                    , registryNodeShape
                     , Takes outputsAt
                     , Takes reconcileAddress
                     , Takes receipt

@@ -34,6 +34,9 @@ applications/open-datum/offchain/test/Singular/Application/OpenDatum/CommandRunS
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/CommandRunSpec.hs capabilities writeIORef 1
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/CommandRunSpec.hs countSubmitted readIORef 1
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/CommandRunSpec.hs lifecycle writeIORef 2
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/CommandRunSpec.hs registryAddressRows modifyIORef' 2
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/CommandRunSpec.hs registryAddressRows newIORef 1
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/CommandRunSpec.hs registryAddressRows readIORef 1
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/CommandRunSpec.hs runVia readIORef 1
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/CommandRunSpec.hs runVia writeIORef 1
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/CommandRunSpec.hs submittedSince readIORef 1
@@ -480,7 +483,12 @@ offchain/test/Singular/CLI/CommandRunSpec.hs confirmationLifetime tryPutMVar 1
 offchain/test/Singular/CLI/CommandRunSpec.hs confirmationLifetime waitCatch 3
 offchain/test/Singular/CLI/CommandRunSpec.hs confirmationLifetime withAsync 3
 offchain/test/Singular/CLI/CommandRunSpec.hs confirmationLifetime writeIORef 3
+offchain/test/Singular/CLI/CommandRunSpec.hs foreignContractsRows modifyIORef' 2
+offchain/test/Singular/CLI/CommandRunSpec.hs foreignContractsRows newIORef 1
+offchain/test/Singular/CLI/CommandRunSpec.hs foreignContractsRows readIORef 1
 offchain/test/Singular/CLI/CommandRunSpec.hs previewFundingRows readIORef 10
+offchain/test/Singular/CLI/CommandRunSpec.hs runAddress readIORef 1
+offchain/test/Singular/CLI/CommandRunSpec.hs runAddress writeIORef 1
 offchain/test/Singular/CLI/CommandRunSpec.hs runFoldAtBoundApp readIORef 1
 offchain/test/Singular/CLI/CommandRunSpec.hs runFoldAtBoundApp writeIORef 1
 offchain/test/Singular/CLI/CommandRunSpec.hs runViaApp readIORef 1

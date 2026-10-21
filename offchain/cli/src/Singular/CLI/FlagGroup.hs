@@ -149,6 +149,7 @@ commonFlagGroup =
     , "--payload-schema"
     , "--request"
     , "--state-token"
+    , "--registry"
     ]
 
 -- | The switches every binary reads: help, preview and fold.
@@ -175,21 +176,18 @@ tokenizeWith removed bad full = go [] []
     go ws fs (a : rest)
         | "--" `isPrefixOf` a || a == "-h" =
             let (name, inline) = break (== '=') a
-            in  if name == "--registry"
-                    then Left (bad "--registry" "was renamed to --state-dir")
+            in  if name `elem` ["--backend", "--node-socket"]
+                    then Left (removed name)
                     else
-                        if name `elem` ["--backend", "--node-socket"]
-                            then Left (removed name)
+                        if name `elem` commonSwitches
+                            then go ws ((name, Nothing) : fs) rest
                             else
-                                if name `elem` commonSwitches
-                                    then go ws ((name, Nothing) : fs) rest
-                                    else
-                                        if name `elem` full
-                                            then case (inline, rest) of
-                                                ('=' : v, _) -> go ws (keep name v fs) rest
-                                                (_, v : rest') -> go ws (keep name v fs) rest'
-                                                (_, []) -> Left (bad name "needs a value")
-                                            else Left (bad name "is not a flag singular reads")
+                                if name `elem` full
+                                    then case (inline, rest) of
+                                        ('=' : v, _) -> go ws (keep name v fs) rest
+                                        (_, v : rest') -> go ws (keep name v fs) rest'
+                                        (_, []) -> Left (bad name "needs a value")
+                                    else Left (bad name "is not a flag singular reads")
         | otherwise = go (a : ws) fs rest
     keep name v fs
         | isJust (lookup name fs) = fs

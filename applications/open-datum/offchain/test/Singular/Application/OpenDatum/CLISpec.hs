@@ -515,46 +515,35 @@ commandLine = describe "the command line" $ do
                 <> provider
             )
             `shouldBe` Left (MissingFlag "--state-token")
-    it "refuses --registry with its rename to --state-dir" $ do
-        parseOpenDatumCommand
-            ( [ "open-datum"
-              , "inspect"
-              , "--key"
-              , "key"
-              , "--blueprint"
-              , "b"
-              , "--registry"
-              , "/srv/reg"
-              ]
-                <> provider
-            )
-            `shouldBe` Left (BadValue "--registry" "was renamed to --state-dir")
-        parseOpenDatumCommand
-            ( [ "open-datum"
-              , "inspect"
-              , "--key"
-              , "key"
-              , "--blueprint"
-              , "b"
-              , "--registry=/srv/reg"
-              ]
-                <> provider
-            )
-            `shouldBe` Left (BadValue "--registry" "was renamed to --state-dir")
-        parseOpenDatumCommand
-            ( [ "open-datum"
-              , "inspect"
-              , "--key"
-              , "key"
-              , "--blueprint"
-              , "b"
-              , "--state-dir"
-              , "/srv/reg"
-              ]
-                <> provider
-                <> ["--state-token", T.unpack tokenSpelling]
-            )
-            `shouldSatisfy` either (const False) (const True)
+    it
+        "reads --registry as an address, and says of a path that --registry once named --state-dir"
+        $ do
+            forM5 [["--registry", "/srv/reg"], ["--registry=/srv/reg"]] $ \extra ->
+                case parseOpenDatumCommand
+                    ( ["open-datum", "inspect", "--key", "key", "--blueprint", "b"]
+                        <> extra
+                        <> provider
+                    ) of
+                    Left (BadValue "--registry" why) -> do
+                        why `shouldSatisfy` isInfixOf "not an address"
+                        why `shouldSatisfy` isInfixOf "--state-dir"
+                    other ->
+                        expectationFailure
+                            ("not refused as a word that is not an address: " <> show other)
+            parseOpenDatumCommand
+                ( [ "open-datum"
+                  , "inspect"
+                  , "--key"
+                  , "key"
+                  , "--blueprint"
+                  , "b"
+                  , "--state-dir"
+                  , "/srv/reg"
+                  ]
+                    <> provider
+                    <> ["--state-token", T.unpack tokenSpelling]
+                )
+                `shouldSatisfy` either (const False) (const True)
     it
         "reads sole-provider settings over the full nonempty command extent"
         $ do

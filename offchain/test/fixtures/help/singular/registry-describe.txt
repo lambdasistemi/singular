@@ -1,9 +1,9 @@
 singular VERSION (commit unknown)
 
-Usage: singular registry describe [--config FILE] --blueprint FILE
-       --state-token POLICY.NAME --koios-url URL --network-magic N
-       [--koios-token-file FILE] [--network-time DIR] [--json] [--trace LEVEL]
-       [--trace-to SINK] [--trace-format FORMAT]
+Usage: singular registry describe [--config FILE] --blueprint FILE [--registry
+       ADDRESS] [--state-token POLICY.NAME] --koios-url URL [--network-magic
+       N] [--koios-token-file FILE] [--network-time DIR] [--json] [--trace
+       LEVEL] [--trace-to SINK] [--trace-format FORMAT]
 
 Print the registry page
 
@@ -33,6 +33,14 @@ Available settings:
   env: SINGULAR_BLUEPRINT FILE
   config:
     blueprint: # or null
+      <string>
+
+  The registry to act on: its address, as create prints it. The address holds
+  the state token and the network, so a command given it needs neither.
+  option: --registry ADDRESS
+  env: SINGULAR_REGISTRY ADDRESS
+  config:
+    registry: # or null
       <string>
 
   The registry to act on: its state token, policy and name in hex, as create
@@ -122,7 +130,7 @@ Environment:
 
 Example:
   singular registry describe --blueprint plutus.json \
-      --state-token <policy>.<name> --koios-url https://preprod.koios.rest/api/v1 --network-magic 1
+      --registry <address> --koios-url https://preprod.koios.rest/api/v1
 
   With those settings in singular.json instead:
   singular registry describe

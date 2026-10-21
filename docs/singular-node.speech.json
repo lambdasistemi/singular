@@ -59,11 +59,11 @@
       "pause": 500
     },
     {
-      "text": "As a registry operator, you type the same six settings on nearly every command: the Koios address, the network magic and the pinned time directory (the chain), the blueprint (the compiled contracts), and the state directory and the state token (the registry). You can write them once. Each has three forms, and the first one that is present wins.",
+      "text": "As a registry operator, you type the same six settings on nearly every command: the Koios address, the network magic and the pinned time directory (the chain), the blueprint (the compiled contracts), and the state directory and the state token, or the registry's address, which holds the state token and the network (the registry). You can write them once. Each has three forms, and the first one that is present wins.",
       "pause": 400
     },
     {
-      "text": "The variable is SINGULAR_ followed by the flag's name in capitals with underscores, and the key is the flag's name without its dashes. The six above are --koios-url, --network-time, --network-magic, --blueprint, --state-dir and --state-token. Five more have the same three forms: --koios-token-file, the narration controls --trace, --trace-to and --trace-format, and --vault. The --help of every command lists the three forms of each of them that the command takes, and says where the config file is.",
+      "text": "The variable is SINGULAR_ followed by the flag's name in capitals with underscores, and the key is the flag's name without its dashes. The six above are --koios-url, --network-time, --network-magic, --blueprint, --state-dir and --state-token. Six more have the same three forms: --registry, --koios-token-file, the narration controls --trace, --trace-to and --trace-format, and --vault. The --help of every command lists the three forms of each of them that the command takes, and says where the config file is.",
       "pause": 400
     },
     {
@@ -333,10 +333,114 @@
       "pause": 400
     }
   ],
+  "naming-the-registry-by-its-address": [
+    {
+      "text": "Naming the registry by its address.",
+      "pause": 500
+    },
+    {
+      "text": "As Bob, I am told about a registry in one message, and I want to act on it without asking for a state token, a network or any file. Carol, who created the registry, copies the registry line of her create receipt into the message: a word that starts with singular_preprod1. I give that word to --registry, or to the variable SINGULAR_REGISTRY, or to the key registry of my settings file, and every command that takes a registry finds it from that word alone. The word says which network the registry is on and which registry it is, so I type no --state-token and no --network-magic.",
+      "pause": 400
+    },
+    {
+      "text": "The diagram follows the address from the creator to the reader. The command reads the word before it does anything else, so a word that is wrong never reaches the chain, a wallet or a file.",
+      "pause": 400
+    }
+  ],
+  "what-the-address-is": [
+    {
+      "text": "What the address is.",
+      "pause": 500
+    },
+    {
+      "text": "The address is the registry's NFT, the one asset that is the registry on chain, written as one bech32 word. The word has four parts, and its body is the state token and nothing else:",
+      "pause": 400
+    },
+    {
+      "text": "The body of the word is the 28 bytes of the policy followed by the 32 bytes of the name, which is exactly the state token that POLICY.NAME spells in hex; the address is that token with its network and a checksum. The checksum is the original bech32 one, and the word is printed in lower case. It is read in all lower case or all upper case, never in a mixture. The receipt of create prints the address as registry, the state token as stateToken, unchanged, and the CIP-14 fingerprint of the same asset as fingerprint: the short name that wallets and explorers show for it. On success one line on standard error says the three.",
+      "pause": 400
+    },
+    {
+      "text": "The prefix names the network. Four networks have one:",
+      "pause": 400
+    },
+    {
+      "text": "On any other network a create still works, prints null as registry, keeps the fingerprint and says on standard error that the network has no prefix. The address says which network to use, and nothing else about it: the Koios URL and the pinned time directory are still given, and the network the address names is the network every later step uses, exactly as --network-magic would be.",
+      "pause": 400
+    },
+    {
+      "text": "The address does not say what the registry is for. The blueprint does. singular registry describe --blueprint plutus.json --registry ADDRESS with a Koios URL prints the page, and its release section names the blueprint's title and the application script the registry pins, which is the application that decides what its keys hold. The same page and the receipt of inspect carry the address, the state token and the fingerprint of the registry they read.",
+      "pause": 400
+    }
+  ],
+  "reading-an-address": [
+    {
+      "text": "Reading an address.",
+      "pause": 500
+    },
+    {
+      "text": "A command checks the word in a fixed order and says which cause it is, with exit status 2, before it reads the chain, opens a vault or reads any file but the settings. A word that fails an earlier check is never told a later cause.",
+      "pause": 400
+    },
+    {
+      "text": "The diagram reads from the top: each question is asked only when the one before it passed. A value that is not an address is told so with one more clause: --registry once named the state directory, which is --state-dir now.",
+      "pause": 400
+    },
+    {
+      "text": "A --state-token or a --network-magic beside the address is checked against it, from wherever each came: the flag, the variable or the key of the settings file. Values that agree are accepted. A state token that names another registry, or a network magic that names another network, is refused in one sentence naming both, so a stale state-token key of the settings file next to a new registry key is refused and the sentence says what disagrees. A command given neither a registry nor a state token is refused as it always was.",
+      "pause": 400
+    }
+  ],
+  "a-registry-made-before-addresses-were-printed": [
+    {
+      "text": "A registry made before addresses were printed.",
+      "pause": 500
+    },
+    {
+      "text": "A registry made earlier has a state token and a network, and no address was printed for it. singular registry address makes one from those two. It reads no chain and needs no provider.",
+      "pause": 400
+    },
+    {
+      "text": "It prints one receipt with the address, the state token, the fingerprint and the network magic. Given an address, singular registry address --registry ADDRESS shows what the address holds. A state token that is not one, a state token with no network magic and a network magic that has no prefix are each refused in one sentence, with exit status 2.",
+      "pause": 400
+    }
+  ],
+  "a-registry-of-other-contracts": [
+    {
+      "text": "A registry of other contracts.",
+      "pause": 500
+    },
+    {
+      "text": "A command is given one blueprint, and a blueprint has one state contract. The policy of the registry is the hash of the state contract that made it, so a registry whose policy is another hash was made by other contracts, which this program cannot run against. That has always been refused as state-token-foreign-release, before any chain read. The refusal now says which contracts made the registry.",
+      "pause": 400
+    },
+    {
+      "text": "Every release ships a table from the hash of Singular's state contract to the releases that carry it, one committed file, data/contracts/state-contracts.json, packaged with the program and shipped in every release bundle. It was filled from the on-chain archive each release published, by the script tools/fill_contract_table.sh, which takes the hash from the blueprint the way the programs do and checks it against the hash the blueprint states. The file names every release it leaves out, with the reason; the first release has no on-chain archive. What the refusal says depends on the table:",
+      "pause": 400
+    },
+    {
+      "text": "A pull request that changes the contracts adds their row with no release yet, and the release that first carries them adds its tag to that row. A check of the repository fails when the table lacks the hash of the blueprint being built, so the table cannot fall behind the contracts.",
+      "pause": 400
+    }
+  ],
+  "what-i-do-with-the-address": [
+    {
+      "text": "What I do with the address.",
+      "pause": 500
+    },
+    {
+      "text": "I keep the address with the registry's name, I send it to whoever should act on it, and I give it to --registry instead of the state token and the network. --save-state-token still keeps the state token in the settings file as the key state-token, and the commands after a create find it there as before. A registry named by the state token and the network works exactly as it did.",
+      "pause": 400
+    }
+  ],
   "naming-the-registry-by-its-state-token": [
     {
       "text": "Naming the registry by its state token.",
       "pause": 500
+    },
+    {
+      "text": "A registry can also be named by its state token, with its network, as it always could; its address holds the same token, and says the network too.",
+      "pause": 400
     },
     {
       "text": "As Carol, the creator, I run create from an empty directory. Its receipt names stateToken, the registry's state token as POLICY.NAME in hex, and describeCommand, the working singular registry describe line built from the arguments the create ran with: the blueprint as given, the new state token, the provider and network settings, and the network time directory when given. It names no wallet key and no credential file. Run it as printed to read the registry page. I publish nothing else and keep no file anyone else needs: create writes no identity file, and the pending identity it records before its first submission is removed once it finishes. When I add --save-state-token, a create that succeeds also keeps the state token in my settings file, as the registry's name kept by create says.",
@@ -583,6 +687,6 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "191deb0e8ec25763bb4341b293bd19e5f649abbdf7f87336851fe8617ddf0aa5"
+    "sha256": "f95636c4470313973f18c896e54809f5bffe17efe676deec156447385399059a"
   }
 }

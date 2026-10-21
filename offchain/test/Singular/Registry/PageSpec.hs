@@ -101,6 +101,8 @@ sampleInputs :: PageInputs
 sampleInputs =
     PageInputs
         { pageStateToken = T.replicate 56 "a" <> "." <> T.replicate 64 "b"
+        , pageAddress = Just "singular_devnet1address"
+        , pageFingerprint = "asset1fingerprint"
         , pageStateOutput = T.replicate 64 "c" <> "#0"
         , pageStateScript = T.replicate 56 "d"
         , pageApplicationScript = T.replicate 56 "e"

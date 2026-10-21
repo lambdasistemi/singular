@@ -23,7 +23,7 @@ import Data.Aeson.Key qualified as Key
 import Data.Char (toUpper)
 import Data.Either (isLeft, isRight)
 import Data.List (isInfixOf, nub, sort)
-import Data.Maybe (isJust)
+import Data.Maybe (fromMaybe, isJust)
 import System.FilePath ((</>))
 import System.IO.Temp (withSystemTempDirectory)
 import Test.Hspec
@@ -53,12 +53,23 @@ import Singular.CLI.Sources
     , configPath
     , loadSourcesAt
     )
+import Singular.Registry.AddressOracle (addressOf)
 
 program :: Program
 program = singularProgram singularVersion
 
 token :: String
 token = replicate 56 'a' <> "." <> replicate 64 'b'
+
+{- | The address of the token on the development network (network magic 42), as
+the bech32 package writes it: the registry setting agrees with the state token
+and the network magic the table gives beside it.
+-}
+registryAddress :: String
+registryAddress =
+    fromMaybe
+        (error "SourcesSpec: no address for the token")
+        (addressOf 42 token)
 
 -- | The standing settings but the vault: flag, variable, key and a value each.
 settings :: [(String, String, String, String)]
@@ -74,6 +85,7 @@ settings =
     , ("--blueprint", "SINGULAR_BLUEPRINT", "blueprint", "plutus.json")
     , ("--state-dir", "SINGULAR_STATE_DIR", "state-dir", "/state")
     , ("--state-token", "SINGULAR_STATE_TOKEN", "state-token", token)
+    , ("--registry", "SINGULAR_REGISTRY", "registry", registryAddress)
     ,
         ( "--koios-token-file"
         , "SINGULAR_KOIOS_TOKEN_FILE"
@@ -412,7 +424,7 @@ spec = describe "the settings given by the environment and a config file" $ do
     describe "the declaration" $ do
         let everyFlag = nub (concatMap (shapeFlags . leafShape) (programLeaves program))
             standing = [f | f <- everyFlag, isJust (flagEnvironment f)]
-        it "gives exactly these eleven settings three forms" $
+        it "gives exactly these twelve settings three forms" $
             sort (nub (map flagName standing))
                 `shouldBe` sort ("--vault" : map flagOf settings)
         it "names each variable and key after its flag" $
@@ -461,4 +473,7 @@ spec = describe "the settings given by the environment and a config file" $ do
     words' ls = drop 1 (filter (/= "\\") (words (unwords ls)))
     adjacent ws = zip ws (drop 1 ws)
     placeholders = map placeholder
-    placeholder w = if w == "<policy>.<name>" then token else w
+    placeholder = \case
+        "<policy>.<name>" -> token
+        "<address>" -> registryAddress
+        w -> w

@@ -5827,15 +5827,15 @@
     "index": 2,
     "name": "docs-offchain-api-reference/what-this-reference-contains-02",
     "pause_ms": 400,
-    "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 73 modules in three kinds: 56 explicitly exposed modules and 4 re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger, Singular.Registry.LedgerProvider, Singular.Registry.Evidence and Singular.Registry.Signing are the re-exports: their implementations are owned by the public local-services component (offchain/local-services/) and the main library exposes their stable import paths. The generic provider interface and evidence types let a caller supply capabilities without selecting a node runtime; the Koios constructor supplies unbound, unverified HTTP facts through that interface. The runtime service modules outside this extent — the terminal composition and its transport in koios-http, and the remaining service modules of local-services — are documented with source links in Runtime service ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
-    "v": "a57b6758814b"
+    "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 74 modules in three kinds: 57 explicitly exposed modules and 4 re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger, Singular.Registry.LedgerProvider, Singular.Registry.Evidence and Singular.Registry.Signing are the re-exports: their implementations are owned by the public local-services component (offchain/local-services/) and the main library exposes their stable import paths. The generic provider interface and evidence types let a caller supply capabilities without selecting a node runtime; the Koios constructor supplies unbound, unverified HTTP facts through that interface. The runtime service modules outside this extent — the terminal composition and its transport in koios-http, and the remaining service modules of local-services — are documented with source links in Runtime service ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
+    "v": "fecf7d9930a2"
    },
    {
     "index": 3,
     "name": "docs-offchain-api-reference/what-this-reference-contains-03",
     "pause_ms": 400,
-    "text": "MkDocs environment ready! Run: mkdocs serve - Naming.Datum — source - Naming.Register — source - Naming.Request — source - Naming.Verify — source - Naming.Wire — source - Naming.Wire.Vectors — source - Singular.Provider.Koios.Client — source - Singular.Provider.Koios.Evidence — source - Singular.Provider.Koios.History — source - Singular.Provider.Koios.Provider — source - Singular.Provider.Koios.Recorded — source - Singular.Provider.Koios.Runtime — source - Singular.Provider.Koios.State — source - Singular.Provider.Koios.Wire — source - Singular.Registry.Application — source - Singular.Registry.AssetName — source - Singular.Registry.Blueprint — source - Singular.Registry.Blueprint.Load — source - Singular.Registry.Blueprint.Params — source - Singular.Registry.Blueprint.Schema — source - Singular.Registry.Candidate — source - Singular.Registry.Capabilities — source - Singular.Registry.Config — source - Singular.Registry.Config.Application — source - Singular.Registry.Confirmation — source - Singular.Registry.Deployment — source - Singular.Registry.Deployment.Attach — source - Singular.Registry.Deployment.Manifest — source - Singular.Registry.Deployment.Mirror — source - Singular.Registry.Driver — source - Singular.Registry.Evidence — source - Singular.Registry.FoldAdmission — source - Singular.Registry.FoldSelection — source - Singular.Registry.Funding — source - Singular.Registry.Ledger — source - Singular.Registry.LedgerProvider — source - Singular.Registry.Lifecycle — source - Singular.Registry.Page — source - Singular.Registry.PlainJson — source - Singular.Registry.Proof — source - Singular.Registry.Replay — source - Singular.Registry.Signing — source - Singular.Registry.StateToken — source - Singular.Registry.Trie — source - Singular.Registry.Trie.Pure — source - Singular.Registry.Trie.PureManager — source - Singular.Registry.TrieState — source - Singular.Registry.TrieState.Core — source - Singular.Registry.TrieState.Fixture — source - Singular.Registry.TrieState.Lineage — source - Singular.Registry.TrieState.Types — source - Singular.Registry.TxBuilder.Boot — source - Singular.Registry.TxBuilder.ConnectedFold — source - Singular.Registry.TxBuilder.Edges — source - Singular.Registry.TxBuilder.Internal — source - Singular.Registry.TxBuilder.Internal.Edges — source - Singular.Registry.TxBuilder.Internal.Identity — source - Singular.Registry.TxBuilder.Internal.Lookup — source - Singular.Registry.TxBuilder.Prepare — source - Singular.Registry.TxBuilder.Register — source - Singular.Registry.TxBuilder.Reject — source - Singular.Registry.TxBuilder.Request — source - Singular.Registry.TxBuilder.Retract — source - Singular.Registry.TxBuilder.Update — source - Singular.Registry.TxBuilder.Update.Build — source - Singular.Registry.TxBuilder.Update.Context — source - Singular.Registry.TxBuilder.Update.Duties — source - Singular.Registry.Types — source - Singular.Registry.Wait — source - Singular.Registry.Wire.Primitive — source - Singular.Registry.Wire.Proof — source - Singular.Registry.Wire.Redeemer — source - Singular.Registry.Wire.Request — source - Singular.Registry.Wire.State — source",
-    "v": "c8c30749dbe4"
+    "text": "MkDocs environment ready! Run: mkdocs serve - Naming.Datum — source - Naming.Register — source - Naming.Request — source - Naming.Verify — source - Naming.Wire — source - Naming.Wire.Vectors — source - Singular.Provider.Koios.Client — source - Singular.Provider.Koios.Evidence — source - Singular.Provider.Koios.History — source - Singular.Provider.Koios.Provider — source - Singular.Provider.Koios.Recorded — source - Singular.Provider.Koios.Runtime — source - Singular.Provider.Koios.State — source - Singular.Provider.Koios.Wire — source - Singular.Registry.Address — source - Singular.Registry.Application — source - Singular.Registry.AssetName — source - Singular.Registry.Blueprint — source - Singular.Registry.Blueprint.Load — source - Singular.Registry.Blueprint.Params — source - Singular.Registry.Blueprint.Schema — source - Singular.Registry.Candidate — source - Singular.Registry.Capabilities — source - Singular.Registry.Config — source - Singular.Registry.Config.Application — source - Singular.Registry.Confirmation — source - Singular.Registry.Deployment — source - Singular.Registry.Deployment.Attach — source - Singular.Registry.Deployment.Manifest — source - Singular.Registry.Deployment.Mirror — source - Singular.Registry.Driver — source - Singular.Registry.Evidence — source - Singular.Registry.FoldAdmission — source - Singular.Registry.FoldSelection — source - Singular.Registry.Funding — source - Singular.Registry.Ledger — source - Singular.Registry.LedgerProvider — source - Singular.Registry.Lifecycle — source - Singular.Registry.Page — source - Singular.Registry.PlainJson — source - Singular.Registry.Proof — source - Singular.Registry.Replay — source - Singular.Registry.Signing — source - Singular.Registry.StateToken — source - Singular.Registry.Trie — source - Singular.Registry.Trie.Pure — source - Singular.Registry.Trie.PureManager — source - Singular.Registry.TrieState — source - Singular.Registry.TrieState.Core — source - Singular.Registry.TrieState.Fixture — source - Singular.Registry.TrieState.Lineage — source - Singular.Registry.TrieState.Types — source - Singular.Registry.TxBuilder.Boot — source - Singular.Registry.TxBuilder.ConnectedFold — source - Singular.Registry.TxBuilder.Edges — source - Singular.Registry.TxBuilder.Internal — source - Singular.Registry.TxBuilder.Internal.Edges — source - Singular.Registry.TxBuilder.Internal.Identity — source - Singular.Registry.TxBuilder.Internal.Lookup — source - Singular.Registry.TxBuilder.Prepare — source - Singular.Registry.TxBuilder.Register — source - Singular.Registry.TxBuilder.Reject — source - Singular.Registry.TxBuilder.Request — source - Singular.Registry.TxBuilder.Retract — source - Singular.Registry.TxBuilder.Update — source - Singular.Registry.TxBuilder.Update.Build — source - Singular.Registry.TxBuilder.Update.Context — source - Singular.Registry.TxBuilder.Update.Duties — source - Singular.Registry.Types — source - Singular.Registry.Wait — source - Singular.Registry.Wire.Primitive — source - Singular.Registry.Wire.Proof — source - Singular.Registry.Wire.Redeemer — source - Singular.Registry.Wire.Request — source - Singular.Registry.Wire.State — source",
+    "v": "54475a95d764"
    },
    {
     "index": 4,
@@ -9285,6 +9285,59 @@
   ]
  },
  "docs/singular-node.md": {
+  "a-registry-made-before-addresses-were-printed": [
+   {
+    "index": 0,
+    "name": "docs-singular-node/a-registry-made-before-addresses-were-printed-00",
+    "pause_ms": 500,
+    "text": "A registry made before addresses were printed.",
+    "v": "fa3024d3428c"
+   },
+   {
+    "index": 1,
+    "name": "docs-singular-node/a-registry-made-before-addresses-were-printed-01",
+    "pause_ms": 400,
+    "text": "A registry made earlier has a state token and a network, and no address was printed for it. singular registry address makes one from those two. It reads no chain and needs no provider.",
+    "v": "ece5262de312"
+   },
+   {
+    "index": 2,
+    "name": "docs-singular-node/a-registry-made-before-addresses-were-printed-02",
+    "pause_ms": 400,
+    "text": "It prints one receipt with the address, the state token, the fingerprint and the network magic. Given an address, singular registry address --registry ADDRESS shows what the address holds. A state token that is not one, a state token with no network magic and a network magic that has no prefix are each refused in one sentence, with exit status 2.",
+    "v": "5a2fd21ad38c"
+   }
+  ],
+  "a-registry-of-other-contracts": [
+   {
+    "index": 0,
+    "name": "docs-singular-node/a-registry-of-other-contracts-00",
+    "pause_ms": 500,
+    "text": "A registry of other contracts.",
+    "v": "eafc5a62da3c"
+   },
+   {
+    "index": 1,
+    "name": "docs-singular-node/a-registry-of-other-contracts-01",
+    "pause_ms": 400,
+    "text": "A command is given one blueprint, and a blueprint has one state contract. The policy of the registry is the hash of the state contract that made it, so a registry whose policy is another hash was made by other contracts, which this program cannot run against. That has always been refused as state-token-foreign-release, before any chain read. The refusal now says which contracts made the registry.",
+    "v": "cdc0232beb2e"
+   },
+   {
+    "index": 2,
+    "name": "docs-singular-node/a-registry-of-other-contracts-02",
+    "pause_ms": 400,
+    "text": "Every release ships a table from the hash of Singular's state contract to the releases that carry it, one committed file, data/contracts/state-contracts.json, packaged with the program and shipped in every release bundle. It was filled from the on-chain archive each release published, by the script tools/fill_contract_table.sh, which takes the hash from the blueprint the way the programs do and checks it against the hash the blueprint states. The file names every release it leaves out, with the reason; the first release has no on-chain archive. What the refusal says depends on the table:",
+    "v": "b9f115f8a4f9"
+   },
+   {
+    "index": 3,
+    "name": "docs-singular-node/a-registry-of-other-contracts-03",
+    "pause_ms": 400,
+    "text": "A pull request that changes the contracts adds their row with no release yet, and the release that first carries them adds its tag to that row. A check of the repository fails when the table lacks the hash of the blueprint being built, so the table cannot fall behind the contracts.",
+    "v": "a7b3fc42cd4a"
+   }
+  ],
   "asking-the-program-for-help": [
    {
     "index": 0,
@@ -9582,15 +9635,15 @@
     "index": 1,
     "name": "docs-singular-node/giving-the-chain-the-contracts-and-the-registry-once-01",
     "pause_ms": 400,
-    "text": "As a registry operator, you type the same six settings on nearly every command: the Koios address, the network magic and the pinned time directory (the chain), the blueprint (the compiled contracts), and the state directory and the state token (the registry). You can write them once. Each has three forms, and the first one that is present wins.",
-    "v": "50852ceb3f2a"
+    "text": "As a registry operator, you type the same six settings on nearly every command: the Koios address, the network magic and the pinned time directory (the chain), the blueprint (the compiled contracts), and the state directory and the state token, or the registry's address, which holds the state token and the network (the registry). You can write them once. Each has three forms, and the first one that is present wins.",
+    "v": "f3da3a34003c"
    },
    {
     "index": 2,
     "name": "docs-singular-node/giving-the-chain-the-contracts-and-the-registry-once-02",
     "pause_ms": 400,
-    "text": "The variable is SINGULAR_ followed by the flag's name in capitals with underscores, and the key is the flag's name without its dashes. The six above are --koios-url, --network-time, --network-magic, --blueprint, --state-dir and --state-token. Five more have the same three forms: --koios-token-file, the narration controls --trace, --trace-to and --trace-format, and --vault. The --help of every command lists the three forms of each of them that the command takes, and says where the config file is.",
-    "v": "6500cfe0e161"
+    "text": "The variable is SINGULAR_ followed by the flag's name in capitals with underscores, and the key is the flag's name without its dashes. The six above are --koios-url, --network-time, --network-magic, --blueprint, --state-dir and --state-token. Six more have the same three forms: --registry, --koios-token-file, the narration controls --trace, --trace-to and --trace-format, and --vault. The --help of every command lists the three forms of each of them that the command takes, and says where the config file is.",
+    "v": "889f7fc6e9a6"
    },
    {
     "index": 3,
@@ -9746,6 +9799,29 @@
     "v": "702afab66b90"
    }
   ],
+  "naming-the-registry-by-its-address": [
+   {
+    "index": 0,
+    "name": "docs-singular-node/naming-the-registry-by-its-address-00",
+    "pause_ms": 500,
+    "text": "Naming the registry by its address.",
+    "v": "cdc3d89fdfc4"
+   },
+   {
+    "index": 1,
+    "name": "docs-singular-node/naming-the-registry-by-its-address-01",
+    "pause_ms": 400,
+    "text": "As Bob, I am told about a registry in one message, and I want to act on it without asking for a state token, a network or any file. Carol, who created the registry, copies the registry line of her create receipt into the message: a word that starts with singular_preprod1. I give that word to --registry, or to the variable SINGULAR_REGISTRY, or to the key registry of my settings file, and every command that takes a registry finds it from that word alone. The word says which network the registry is on and which registry it is, so I type no --state-token and no --network-magic.",
+    "v": "31bad555014b"
+   },
+   {
+    "index": 2,
+    "name": "docs-singular-node/naming-the-registry-by-its-address-02",
+    "pause_ms": 400,
+    "text": "The diagram follows the address from the creator to the reader. The command reads the word before it does anything else, so a word that is wrong never reaches the chain, a wallet or a file.",
+    "v": "0d8c1eb46263"
+   }
+  ],
   "naming-the-registry-by-its-state-token": [
    {
     "index": 0,
@@ -9758,29 +9834,36 @@
     "index": 1,
     "name": "docs-singular-node/naming-the-registry-by-its-state-token-01",
     "pause_ms": 400,
-    "text": "As Carol, the creator, I run create from an empty directory. Its receipt names stateToken, the registry's state token as POLICY.NAME in hex, and describeCommand, the working singular registry describe line built from the arguments the create ran with: the blueprint as given, the new state token, the provider and network settings, and the network time directory when given. It names no wallet key and no credential file. Run it as printed to read the registry page. I publish nothing else and keep no file anyone else needs: create writes no identity file, and the pending identity it records before its first submission is removed once it finishes. When I add --save-state-token, a create that succeeds also keeps the state token in my settings file, as the registry's name kept by create says.",
-    "v": "3600515c90fd"
+    "text": "A registry can also be named by its state token, with its network, as it always could; its address holds the same token, and says the network too.",
+    "v": "4bf0dc2381e9"
    },
    {
     "index": 2,
     "name": "docs-singular-node/naming-the-registry-by-its-state-token-02",
     "pause_ms": 400,
-    "text": "As Bob, I start from an empty directory with the release, my wallet and a Koios URL, and give every command the state token. The command derives the registry from the token and the blueprint and checks it against the chain before it builds anything, refusing by name, in this order:",
-    "v": "da4e1b3774d4"
+    "text": "As Carol, the creator, I run create from an empty directory. Its receipt names stateToken, the registry's state token as POLICY.NAME in hex, and describeCommand, the working singular registry describe line built from the arguments the create ran with: the blueprint as given, the new state token, the provider and network settings, and the network time directory when given. It names no wallet key and no credential file. Run it as printed to read the registry page. I publish nothing else and keep no file anyone else needs: create writes no identity file, and the pending identity it records before its first submission is removed once it finishes. When I add --save-state-token, a create that succeeds also keeps the state token in my settings file, as the registry's name kept by create says.",
+    "v": "9b4f5b124983"
    },
    {
     "index": 3,
     "name": "docs-singular-node/naming-the-registry-by-its-state-token-03",
     "pause_ms": 400,
-    "text": "Each command then looks up only the reference scripts its own transactions run, by hash: the provider's answer first, then your own wallet's outputs, which are read only when the provider has none for some script, taking the lowest output reference among the outputs that carry the right script. A command that runs no reference script, such as inspect, looks up none. The hash is computed from the script each output carries, never taken from the provider. When neither has one the command refuses reference-missing ROLE HASH: not found by this provider or wallet, naming singular registry publish-references as the remedy. An empty provider answer means only that this provider found none.",
-    "v": "8499aeafcb96"
+    "text": "As Bob, I start from an empty directory with the release, my wallet and a Koios URL, and give every command the state token. The command derives the registry from the token and the blueprint and checks it against the chain before it builds anything, refusing by name, in this order:",
+    "v": "45dd18cf7817"
    },
    {
     "index": 4,
     "name": "docs-singular-node/naming-the-registry-by-its-state-token-04",
     "pause_ms": 400,
+    "text": "Each command then looks up only the reference scripts its own transactions run, by hash: the provider's answer first, then your own wallet's outputs, which are read only when the provider has none for some script, taking the lowest output reference among the outputs that carry the right script. A command that runs no reference script, such as inspect, looks up none. The hash is computed from the script each output carries, never taken from the provider. When neither has one the command refuses reference-missing ROLE HASH: not found by this provider or wallet, naming singular registry publish-references as the remedy. An empty provider answer means only that this provider found none.",
+    "v": "f8eb0fcb7765"
+   },
+   {
+    "index": 5,
+    "name": "docs-singular-node/naming-the-registry-by-its-state-token-05",
+    "pause_ms": 400,
     "text": "The provider's answers are unverified, and the token is not signed by anyone: a genuine registry of the same release made by someone else passes every check. The ledger revalidates every reference input of a write, so a stale or wrong carrier can fail a submission but never run another script. A registry made by an earlier release is refused by name here and stays operable with the release that made it.",
-    "v": "ef78b1093c7b"
+    "v": "ee24ebdc59a7"
    }
   ],
   "public-environment-configuration": [
@@ -9797,6 +9880,36 @@
     "pause_ms": 400,
     "text": "As an operator, I can supply each setting of the section above as a variable, for example SINGULAR_STATE_TOKEN when I omit --state-token; an explicit command-line value takes precedence, and the config file comes after the variable. The token names the registry, and never selects a provider. SINGULAR_CONFIG names the config file. SINGULAR_LOG=PATH appends phase events to a file alongside the narration sinks selected by --trace, --trace-to and --trace-format. It does not replace those sinks or change their command-line precedence. An empty phase-log path disables that sink.",
     "v": "b3ee822709bd"
+   }
+  ],
+  "reading-an-address": [
+   {
+    "index": 0,
+    "name": "docs-singular-node/reading-an-address-00",
+    "pause_ms": 500,
+    "text": "Reading an address.",
+    "v": "85750a712ce2"
+   },
+   {
+    "index": 1,
+    "name": "docs-singular-node/reading-an-address-01",
+    "pause_ms": 400,
+    "text": "A command checks the word in a fixed order and says which cause it is, with exit status 2, before it reads the chain, opens a vault or reads any file but the settings. A word that fails an earlier check is never told a later cause.",
+    "v": "f4fc308bb92b"
+   },
+   {
+    "index": 2,
+    "name": "docs-singular-node/reading-an-address-02",
+    "pause_ms": 400,
+    "text": "The diagram reads from the top: each question is asked only when the one before it passed. A value that is not an address is told so with one more clause: --registry once named the state directory, which is --state-dir now.",
+    "v": "895bc7ee1981"
+   },
+   {
+    "index": 3,
+    "name": "docs-singular-node/reading-an-address-03",
+    "pause_ms": 400,
+    "text": "A --state-token or a --network-magic beside the address is checked against it, from wherever each came: the flag, the variable or the key of the settings file. Values that agree are accepted. A state token that names another registry, or a network magic that names another network, is refused in one sentence naming both, so a stale state-token key of the settings file next to a new registry key is refused and the sentence says what disagrees. A command given neither a registry nor a state token is refused as it always was.",
+    "v": "d7847c355b01"
    }
   ],
   "reading-through-an-index": [
@@ -10255,6 +10368,66 @@
     "pause_ms": 400,
     "text": "A bundle whose transactions carry a deadline then dies by expiry, and running the command again rebuilds it. A bundle signed elsewhere whose transactions carry none, an open-datum insert, update or terminate without --fold and a create, never expires: if it can never land, it keeps stopping the next write of that registry by that wallet at status 19. The way out today is, for a create, a create that names another output with --seed, as When a bundle waits for signatures says; for the others, --state-dir naming another state directory, which starts a fresh journal for that registry and wallet.",
     "v": "3fd5726903d3"
+   }
+  ],
+  "what-i-do-with-the-address": [
+   {
+    "index": 0,
+    "name": "docs-singular-node/what-i-do-with-the-address-00",
+    "pause_ms": 500,
+    "text": "What I do with the address.",
+    "v": "1c344b2c134a"
+   },
+   {
+    "index": 1,
+    "name": "docs-singular-node/what-i-do-with-the-address-01",
+    "pause_ms": 400,
+    "text": "I keep the address with the registry's name, I send it to whoever should act on it, and I give it to --registry instead of the state token and the network. --save-state-token still keeps the state token in the settings file as the key state-token, and the commands after a create find it there as before. A registry named by the state token and the network works exactly as it did.",
+    "v": "60b90390f21a"
+   }
+  ],
+  "what-the-address-is": [
+   {
+    "index": 0,
+    "name": "docs-singular-node/what-the-address-is-00",
+    "pause_ms": 500,
+    "text": "What the address is.",
+    "v": "cef25d78bffb"
+   },
+   {
+    "index": 1,
+    "name": "docs-singular-node/what-the-address-is-01",
+    "pause_ms": 400,
+    "text": "The address is the registry's NFT, the one asset that is the registry on chain, written as one bech32 word. The word has four parts, and its body is the state token and nothing else:",
+    "v": "8d78dbe7f904"
+   },
+   {
+    "index": 2,
+    "name": "docs-singular-node/what-the-address-is-02",
+    "pause_ms": 400,
+    "text": "The body of the word is the 28 bytes of the policy followed by the 32 bytes of the name, which is exactly the state token that POLICY.NAME spells in hex; the address is that token with its network and a checksum. The checksum is the original bech32 one, and the word is printed in lower case. It is read in all lower case or all upper case, never in a mixture. The receipt of create prints the address as registry, the state token as stateToken, unchanged, and the CIP-14 fingerprint of the same asset as fingerprint: the short name that wallets and explorers show for it. On success one line on standard error says the three.",
+    "v": "67468f75a437"
+   },
+   {
+    "index": 3,
+    "name": "docs-singular-node/what-the-address-is-03",
+    "pause_ms": 400,
+    "text": "The prefix names the network. Four networks have one:",
+    "v": "4d91ab4a14bd"
+   },
+   {
+    "index": 4,
+    "name": "docs-singular-node/what-the-address-is-04",
+    "pause_ms": 400,
+    "text": "On any other network a create still works, prints null as registry, keeps the fingerprint and says on standard error that the network has no prefix. The address says which network to use, and nothing else about it: the Koios URL and the pinned time directory are still given, and the network the address names is the network every later step uses, exactly as --network-magic would be.",
+    "v": "67a6ff0f4814"
+   },
+   {
+    "index": 5,
+    "name": "docs-singular-node/what-the-address-is-05",
+    "pause_ms": 400,
+    "text": "The address does not say what the registry is for. The blueprint does. singular registry describe --blueprint plutus.json --registry ADDRESS with a Koios URL prints the page, and its release section names the blueprint's title and the application script the registry pins, which is the application that decides what its keys hold. The same page and the receipt of inspect carry the address, the state token and the fingerprint of the registry they read.",
+    "v": "75e6ee5e4dd8"
    }
   ],
   "when-the-provider-cannot-be-used": [

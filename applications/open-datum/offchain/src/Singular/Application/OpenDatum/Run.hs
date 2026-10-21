@@ -61,11 +61,12 @@ import Singular.CLI.Command
     , RegistryAccess (..)
     , WriteSettings (..)
     )
-import Singular.CLI.Create (runCreate)
+import Singular.CLI.Create (announceCreated, runCreate)
 import Singular.CLI.Finish (finish)
 import Singular.CLI.Fold (runFold)
 import Singular.CLI.Inspect (runInspect)
 import Singular.CLI.Receipt (OutcomeClass (..))
+import Singular.CLI.Registry (checkRegistryContracts)
 import Singular.CLI.Session
     ( Env (..)
     , failWith
@@ -94,6 +95,10 @@ import Singular.Registry.WaitTypes (WaitFailure)
 -- | Why a mode was not read.
 data ModeRefusal
     = ReleaseUnreadable String
+    | {- | The registry was made by other contracts than the blueprint's: no
+      chain read is made for it, and the command refuses it by name
+      -}
+      ForeignContracts String
     | StateUnreadable String
     | UnrecognisedPolicy ByteString
     deriving stock (Eq, Show)
@@ -131,55 +136,60 @@ registryMode env settings blueprint token = do
         Right (Right rel) -> pure (Right rel)
     case openRelease of
         Left refusal -> pure (Left refusal)
-        Right openRel -> do
-            closedTried <-
-                try (envLoadRelease env (applicationIn Closed) blueprint)
-                    :: IO (Either SomeException (Either String Release))
-            closedRel <- case closedTried of
-                Left (e :: SomeException)
-                    | Just (_ :: SomeAsyncException) <- fromException e -> throwIO e
-                    | Just (_ :: WaitFailure) <- fromException e -> throwIO e
-                    | otherwise -> pure Nothing
-                Right (Left _) -> pure Nothing
-                Right (Right rel) -> pure (Just rel)
-            found <-
-                try
-                    (readOnce env settings ["state"] (\_ v -> findStateOutput token v))
-            case found of
-                Left (e :: SomeException)
-                    | Just (_ :: SomeAsyncException) <- fromException e -> throwIO e
-                    | Just (_ :: WaitFailure) <- fromException e -> throwIO e
-                    | otherwise -> pure (Left (StateUnreadable (show e)))
-                Right stated -> case stated of
-                    Left refusal ->
-                        pure
-                            (Left (StateUnreadable (T.unpack (renderIdentityRefusal refusal))))
-                    Right (_, _, datum) -> do
-                        let recorded = stateAppPolicyBytes datum
-                            (_, AssetName name) = token
-                            tokenName = SBS.fromShort name
-                            openId =
-                                scriptHashBytes (computeScriptHash (releaseState openRel))
-                                    <> tokenName
-                            (openPolicy, _) =
-                                applyPin
-                                    (PinByScript (modeTitle Open))
-                                    openId
-                                    (releaseCodes openRel)
-                            closedPolicy = case closedRel of
-                                Nothing -> Nothing
-                                Just closedR ->
-                                    let closedId =
-                                            scriptHashBytes (computeScriptHash (releaseState closedR))
-                                                <> tokenName
-                                        (pol, _) =
-                                            applyPin
-                                                (PinByScript (modeTitle Closed))
-                                                closedId
-                                                (releaseCodes closedR)
-                                    in  Just (SBS.fromShort pol)
-                            openBytes = SBS.fromShort openPolicy
-                        pure (modeOfRecordedPolicy recorded openBytes closedPolicy)
+        Right openRel ->
+            checkRegistryContracts openRel token >>= \case
+                Left why -> pure (Left (ForeignContracts why))
+                Right () -> modeOf openRel
+  where
+    modeOf openRel = do
+        closedTried <-
+            try (envLoadRelease env (applicationIn Closed) blueprint)
+                :: IO (Either SomeException (Either String Release))
+        closedRel <- case closedTried of
+            Left (e :: SomeException)
+                | Just (_ :: SomeAsyncException) <- fromException e -> throwIO e
+                | Just (_ :: WaitFailure) <- fromException e -> throwIO e
+                | otherwise -> pure Nothing
+            Right (Left _) -> pure Nothing
+            Right (Right rel) -> pure (Just rel)
+        found <-
+            try
+                (readOnce env settings ["state"] (\_ v -> findStateOutput token v))
+        case found of
+            Left (e :: SomeException)
+                | Just (_ :: SomeAsyncException) <- fromException e -> throwIO e
+                | Just (_ :: WaitFailure) <- fromException e -> throwIO e
+                | otherwise -> pure (Left (StateUnreadable (show e)))
+            Right stated -> case stated of
+                Left refusal ->
+                    pure
+                        (Left (StateUnreadable (T.unpack (renderIdentityRefusal refusal))))
+                Right (_, _, datum) -> do
+                    let recorded = stateAppPolicyBytes datum
+                        (_, AssetName name) = token
+                        tokenName = SBS.fromShort name
+                        openId =
+                            scriptHashBytes (computeScriptHash (releaseState openRel))
+                                <> tokenName
+                        (openPolicy, _) =
+                            applyPin
+                                (PinByScript (modeTitle Open))
+                                openId
+                                (releaseCodes openRel)
+                        closedPolicy = case closedRel of
+                            Nothing -> Nothing
+                            Just closedR ->
+                                let closedId =
+                                        scriptHashBytes (computeScriptHash (releaseState closedR))
+                                            <> tokenName
+                                    (pol, _) =
+                                        applyPin
+                                            (PinByScript (modeTitle Closed))
+                                            closedId
+                                            (releaseCodes closedR)
+                                in  Just (SBS.fromShort pol)
+                        openBytes = SBS.fromShort openPolicy
+                    pure (modeOfRecordedPolicy recorded openBytes closedPolicy)
 
 -- | The environment that follows a mode: open returns what it was given.
 followingMode :: Mode -> Env -> Env
@@ -207,7 +217,9 @@ runOpenDatum env = \case
             "create"
             (createReceipt a)
             ( keepStateToken "open-datum" (createSaveStateTokenTo a) $
-                openCreate a >>= runCreate (applicationIn mode) env
+                openCreate a
+                    >>= runCreate (applicationIn mode) env
+                    >>= announceCreated a
             )
     -- A write that names a vault opens it first, before the registry's mode is
     -- read from the chain: a refused opening is the command's own refusal.

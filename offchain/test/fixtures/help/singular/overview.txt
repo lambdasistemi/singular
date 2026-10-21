@@ -14,6 +14,7 @@ Available settings:
 
 All commands:
   singular registry create    Boot a registry, or preview its identity
+  singular registry address   Show or make a registry's address
   singular registry fold      Fold the pending requests into the registry
   singular registry reject    Reject all pending requests past their windows
   singular registry reclaim   Take back your own pending request

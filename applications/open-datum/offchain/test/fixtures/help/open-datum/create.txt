@@ -11,9 +11,10 @@ Usage: open-datum create [--config FILE] [--closed] [--state-dir DIR]
 
 Boot a registry, or preview its identity
 
-Boots one registry from a seed output of your wallet and prints its state
-token, which every other command names the registry by. The processing window
-and the retract window are fixed here for the life of the registry.
+Boots one registry from a seed output of your wallet and prints its address,
+which every other command names the registry by, with its state token and its
+fingerprint. The processing window and the retract window are fixed here for
+the life of the registry.
 
 With --closed the registry is a closed-datum registry whose payload is written
 once; every later command follows the registry's mode with no further flag,

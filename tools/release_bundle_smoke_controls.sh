@@ -113,6 +113,45 @@ fi
 # the listing is matched without a pipe: under pipefail, `grep -q` ending a pipe
 # early would fail `tar` and make this look like a bundle without the node
 listing="$(tar -tzf "$tarball")"
+# the table of releases (#728): a bundle that carries it is held to it, and each
+# way it can be wrong is refused for the stated reason. A bundle of an older
+# release carries none and is checked as it was published.
+if [[ "$listing" == *data/contracts/state-contracts.json* ]]; then
+  unpack
+  rm -r "$work/tree/$top/share/singular-registry/data/contracts"
+  repack
+  refused_for "a bundle without its table of releases" members bash "$smoke" "$work/changed.tar.gz" "$version" "$commit"
+  # a table that does not know the contracts of v0.4.1: the program cannot name a release
+  unpack
+  perl -pi -e 's/8ac9562f5fb6be9b9b913ae2ad2cc1d9e038f7f7039256f1ac9f7a62/ffffffffffffffffffffffffffffffffffffffffffffffffffffffff/' \
+    "$work/tree/$top/share/singular-registry/data/contracts/state-contracts.json"
+  repack
+  refused_for "a bundle whose table lacks a release it names" contracts bash "$smoke" "$work/changed.tar.gz" "$version" "$commit"
+  # the release published without the table is accepted without it, and one after it is not:
+  # the rule is read from a copy of the bundle rules with the last release moved
+  unpack
+  rm -r "$work/tree/$top/share/singular-registry/data/contracts"
+  repack
+  rules="${RELEASE_BUNDLES_CONF:-$(cd "$(dirname "$smoke")" && pwd)/release_bundles.sh}"
+  sed "s/^LAST_WITHOUT_CONTRACT_TABLE=.*/LAST_WITHOUT_CONTRACT_TABLE=\"$version\"/" "$rules" >"$work/rules-without-table.sh"
+  sed 's/^LAST_WITHOUT_CONTRACT_TABLE=.*/LAST_WITHOUT_CONTRACT_TABLE="0.0.1"/' "$rules" >"$work/rules-with-table.sh"
+  if ! grep -q "^LAST_WITHOUT_CONTRACT_TABLE=\"$version\"\$" "$work/rules-without-table.sh" \
+    || ! grep -q '^LAST_WITHOUT_CONTRACT_TABLE="0.0.1"$' "$work/rules-with-table.sh"; then
+    echo "release-bundle-controls: SETUP the table rules were not written"
+    exit 2
+  fi
+  RELEASE_BUNDLE_DEVNET=by-version RELEASE_BUNDLES_CONF="$work/rules-without-table.sh" \
+    bash "$smoke" "$work/changed.tar.gz" "$version" "$commit" >"$work/out" 2>&1 \
+    || {
+      echo "release-bundle-controls: FAIL the bundle of the last release published without the table is refused: $(grep FAIL "$work/out" | head -n 1)"
+      exit 1
+    }
+  echo "release-bundle-controls: the bundle of the last release published without the table passes without it"
+  refused_for "a bundle without the table of a release after the last published without it" members \
+    env RELEASE_BUNDLE_DEVNET=by-version RELEASE_BUNDLES_CONF="$work/rules-with-table.sh" \
+    bash "$smoke" "$work/changed.tar.gz" "$version" "$commit"
+fi
+
 if [[ "$listing" == */bin/devnet* ]]; then
   # a bundle built from source must carry it, whatever its version says
   unpack

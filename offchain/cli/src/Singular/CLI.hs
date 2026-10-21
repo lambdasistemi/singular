@@ -20,8 +20,10 @@ module Singular.CLI
 
 import System.Exit (ExitCode (..))
 
+import Data.Aeson (Value, toJSON)
 import Singular.CLI.Command
-    ( Command (..)
+    ( AddressArgs (..)
+    , Command (..)
     , CreateArgs (..)
     , EntryMode (..)
     , FoldArgs (..)
@@ -33,17 +35,25 @@ import Singular.CLI.Command
     , walletCreateCommand
     , walletSignCommand
     )
-import Singular.CLI.Create (createApplication, runCreate)
+import Singular.CLI.Create
+    ( announceCreated
+    , createApplication
+    , runCreate
+    )
 import Singular.CLI.Describe (runDescribeCommand)
 import Singular.CLI.Finish (finish)
 import Singular.CLI.Fold (runFold)
 import Singular.CLI.Inspect (runInspect)
+import Singular.CLI.Live (receipt)
+import Singular.CLI.Receipt (OutcomeClass (..))
 import Singular.CLI.Reclaim (runReclaim)
+import Singular.CLI.Registry (registryFields)
 import Singular.CLI.Reject (runReject)
 import Singular.CLI.Session (Env (..), openWriteSigner)
 import Singular.CLI.SettingsFile (keepStateToken)
 import Singular.CLI.Submit (submitBundle)
 import Singular.Registry.Application (Application)
+import Singular.Registry.StateToken (renderStateToken)
 
 -- | Run one command in the environment the entry point composed; the exit status names its outcome class.
 runCommand :: Application -> Env -> Command -> IO ExitCode
@@ -60,7 +70,8 @@ runRegistryCommand app env = \case
             (createReceipt a)
             ( keepStateToken "singular" (createSaveStateTokenTo a) $
                 openCreate a >>= \opened ->
-                    createApplication app policy >>= \effective -> runCreate effective env opened
+                    createApplication app policy >>= \effective ->
+                        runCreate effective env opened >>= announceCreated a
             )
     Fold a ->
         finish
@@ -90,6 +101,12 @@ runRegistryCommand app env = \case
             (inspectReceipt a)
             (runInspect app env a)
     Describe a -> runDescribeCommand app env a
+    RegistryAddress a ->
+        finish
+            (envTracer env)
+            "address"
+            Nothing
+            (pure (registryAddressReceipt a))
     WalletCreate a -> walletCreateCommand a
     WalletAddress a -> walletAddressCommand a
     WalletSign a -> walletSignCommand a
@@ -100,6 +117,20 @@ runRegistryCommand app env = \case
             (submitBundlePath a)
             (submitWitnessPaths a)
             (submitReceipt a)
+
+{- | The receipt of @registry address@: the registry's address (null on a
+network with no prefix), its state token, its fingerprint and its network magic.
+-}
+registryAddressReceipt :: AddressArgs -> Value
+registryAddressReceipt a =
+    receipt
+        "address"
+        Success
+        ( registryFields (addressMagic a) (addressToken a)
+            <> [ ("stateToken", toJSON (renderStateToken (addressToken a)))
+               , ("networkMagic", toJSON (addressMagic a))
+               ]
+        )
 
 {- | A create's arguments with the vault its write names opened, before
 anything else of the run; a preview names no signer to open.
