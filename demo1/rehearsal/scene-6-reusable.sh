@@ -24,7 +24,7 @@ play -p 8 $'On chain: a second registry exists. The receipt names the applicatio
 play -p 10 $'On disk: a second state directory, state-closed, holding what create wrote there: the journal\nof the bundle\'s transactions, and the bundle with its transactions, kept for recovery.' \
   'find state-closed -type f | sort | short'
 play -t -p 4 $'She registers checkpoint with her payload, booking and folding in one command, as before.\nThe name points at what her application decides: here, her own identifier.' \
-  'open-datum insert --key checkpoint --payload payload.json --state-dir state-closed $TOKEN $BLUEPRINT $NODE $VAULT --fold 3< ../vault-pass/alice > closed-insert.json'
+  'open-datum insert --key checkpoint --payload payload.json --payload-schema detailed --state-dir state-closed $TOKEN $BLUEPRINT $NODE $VAULT --fold 3< ../vault-pass/alice > closed-insert.json'
 play -p 12 $'On chain: checkpoint is active in the closed registry, settled by the fold in the same command.' \
   'jq "{outcome, keyText, settled: [.settled[] | {edge, owner}], root}" closed-insert.json | short'
 play -p 8 $'On disk, in state-closed: the journal grew by the two transactions (book, then fold), and the\nbundle and its transactions are kept in submissions/ for recovery.' \
@@ -36,7 +36,7 @@ play -p 12 $'On chain: checkpoint is active, and the payload she set at registra
 play -p 4 "A different payload she would point the name at instead." \
   'jq -n "{constructor:3, fields:[{bytes:\"626f62\"},{int:123456789012345678901234567890}]}" > payload-update.json'
 play -f -p 5 $'She asks to update the payload. The closed application refuses before anything is built:\nno bundle, nothing is signed or sent, nothing changes on chain.' \
-  'open-datum update --key checkpoint --payload payload-update.json --state-dir state-closed $TOKEN $BLUEPRINT $NODE $VAULT 3< ../vault-pass/alice > closed-update.json'
+  'open-datum update --key checkpoint --payload payload-update.json --payload-schema detailed --state-dir state-closed $TOKEN $BLUEPRINT $NODE $VAULT 3< ../vault-pass/alice > closed-update.json'
 play -p 10 "The refusal, from the receipt: this registry is closed, and a payload is written once." \
   'jq "{outcome, reason}" closed-update.json | short'
 play -p 8 $'On disk: nothing in state-closed is newer than the insert. The refusal wrote no journal line\nand kept no bundle or transaction.' \

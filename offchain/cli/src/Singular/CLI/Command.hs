@@ -164,6 +164,7 @@ import Singular.CLI.Version (releaseVersion)
 import Singular.Registry.Config.Application (RegistryEconomics (..))
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.LedgerProvider (Asset)
+import Singular.Registry.PlainJson (PayloadSchema)
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
 import Singular.Registry.StateToken
     ( ReferenceRole (..)
@@ -274,8 +275,10 @@ data EntryArgs = EntryArgs
     , entryMode :: EntryMode
     , entryKey :: Key
     , entryDocument :: Maybe FilePath
-    {- ^ @insert@ and @update@: the payload's detailed-schema JSON
-    (@--payload@); @terminate@: none
+    -- ^ @insert@ and @update@: the payload file (@--payload@); @terminate@: none
+    , entryPayloadSchema :: PayloadSchema
+    {- ^ The form the payload file is written in (@--payload-schema@): plain
+    JSON when the flag is absent. A command with no payload file ignores it.
     -}
     , entryDeposit :: Maybe Integer
     {- ^ @insert@: the protected deposit in lovelace (@--deposit@, else the
@@ -770,6 +773,7 @@ commandFrom environment (Raw ws allFlags) = do
         , "--key-hex"
         , "--deposit"
         , "--payload"
+        , "--payload-schema"
         , "--fund-input"
         , "--max-outlay"
         , "--confirm-timeout"
@@ -850,7 +854,9 @@ commandFrom environment (Raw ws allFlags) = do
         let dir = optional "--state-dir" flags
         bp <- required "--blueprint" flags
         forM_
-            (map fst keyFlags <> ["--deposit", "--payload", "--preview", "--fold"])
+            ( map fst keyFlags
+                <> ["--deposit", "--payload", "--payload-schema", "--preview", "--fold"]
+            )
             $ \flag ->
                 when (isJust (lookup flag flags)) $
                     Left
@@ -890,7 +896,7 @@ commandFrom environment (Raw ws allFlags) = do
         forM_
             ( ["--request"]
                 <> map fst keyFlags
-                <> ["--deposit", "--payload", "--preview", "--fold"]
+                <> ["--deposit", "--payload", "--payload-schema", "--preview", "--fold"]
             )
             $ \flag ->
                 when (isJust (lookup flag flags)) $
@@ -923,7 +929,9 @@ commandFrom environment (Raw ws allFlags) = do
         let dir = optional "--state-dir" flags
         bp <- required "--blueprint" flags
         forM_
-            (map fst keyFlags <> ["--deposit", "--payload", "--preview", "--fold"])
+            ( map fst keyFlags
+                <> ["--deposit", "--payload", "--payload-schema", "--preview", "--fold"]
+            )
             $ \flag ->
                 when (isJust (lookup flag flags)) $
                     Left

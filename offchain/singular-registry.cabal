@@ -213,6 +213,7 @@ library registry-cli
     Singular.CLI.Options
     Singular.CLI.Outlay
     Singular.CLI.Passphrase
+    Singular.CLI.Payload
     Singular.CLI.Permanent
     Singular.CLI.Plan
     Singular.CLI.Prepare
@@ -993,6 +994,7 @@ test-suite cage-tests
     Singular.CLI.CreateFundingSpec
     Singular.CLI.DescribeSpec
     Singular.CLI.OneOutputCreateSpec
+    Singular.CLI.PayloadSpec
     Singular.CLI.PrepareSpec
     Singular.CLI.FailureSentenceSpec
     Singular.CLI.FlagGroupSpec

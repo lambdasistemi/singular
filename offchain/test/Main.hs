@@ -15,6 +15,7 @@ import Singular.CLI.HelpSnapshotSpec qualified
 import Singular.CLI.JournalTransitionsSpec qualified
 import Singular.CLI.OneOutputCreateSpec qualified
 import Singular.CLI.ParserCorpusSpec qualified
+import Singular.CLI.PayloadSpec qualified
 import Singular.CLI.PrepareSpec qualified
 import Singular.CLI.ReclaimSpec qualified
 import Singular.CLI.RejectSpec qualified
@@ -239,6 +240,9 @@ main = hspec $ do
     describe
         (tagged "Singular.CLI.ParserCorpus" [Cli])
         Singular.CLI.ParserCorpusSpec.spec
+    describe
+        (tagged "Singular.CLI.Payload" [Cli])
+        Singular.CLI.PayloadSpec.spec
     describe
         (tagged "Singular.CLI.HelpSnapshot" [Cli])
         Singular.CLI.HelpSnapshotSpec.spec

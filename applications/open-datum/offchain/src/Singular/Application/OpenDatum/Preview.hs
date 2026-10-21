@@ -112,10 +112,7 @@ import Singular.CLI.Session
     , readsIn
     , txIdHex
     )
-import Singular.Registry.Application
-    ( Application
-    , datumFromJson
-    )
+import Singular.Registry.Application (Application)
 import Singular.Registry.Capabilities (sessionReceipt)
 import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.Ledger (ConwayEra, PParams)
@@ -159,16 +156,17 @@ runPreview app env kind a settings addrText = do
             (failWith ClientRefusal)
             pure
             (parseEnterpriseAddress magic addrText)
+    -- The payload an insert or an update carries is refused, when it cannot be
+    -- read under the payload schema, before the blueprint or the node is read.
+    entryPayload <- case kind of
+        KInsert -> Just <$> readInsertPayload a
+        KUpdate -> Just <$> readUpdatePayload a
+        KTerminate -> pure Nothing
     release <-
         envLoadRelease env app (entryBlueprint a)
             >>= either (failWith ClientRefusal) pure
     let Key key = entryKey a
         caller = addrKeyHashBytes addr
-    -- An insert's payload is refused if it is not Plutus data before the
-    -- node is read.
-    insertPayload <- case kind of
-        KInsert -> Just <$> readInsertPayload a
-        _ -> pure Nothing
     -- A preview resolves the caller's managed partition for the records it
     -- names, and creates nothing: no lock, no directory, no journal.
     previewRoot <- resolveStateRoot (entryStateDir a)
@@ -201,9 +199,9 @@ runPreview app env kind a settings addrText = do
                 KInsert -> do
                     payloadForInsert <-
                         maybe
-                            (failWith ClientRefusal "insert has no envelope")
+                            (failWith ClientRefusal "insert has no payload")
                             pure
-                            insertPayload
+                            entryPayload
                     refuseBooking context key BookInsert
                     (booked, envelopeJson) <-
                         previewInsert live saved a caller payloadForInsert
@@ -215,7 +213,11 @@ runPreview app env kind a settings addrText = do
                     (booked, _, _) <- planTerminate live caller key outs
                     previewBooking a v live addr key booked
                 KUpdate -> do
-                    payload <- document "update needs --payload" datumFromJson
+                    payload <-
+                        maybe
+                            (failWith ClientRefusal "update has no payload")
+                            pure
+                            entryPayload
                     outs <- liveOutputs app v saved
                     refuseBooking context key BookUpdate
                     (holding, _) <- planUpdate live caller key outs
@@ -260,11 +262,6 @@ runPreview app env kind a settings addrText = do
                            ]
                         <> prepared
                     )
-  where
-    document :: String -> (Aeson.Value -> Either String b) -> IO b
-    document missing parse = do
-        path <- maybe (failWith ClientRefusal missing) pure (entryDocument a)
-        readJson path >>= either (failWith ClientRefusal) pure . parse
 
 {- | Build the booking exactly as the writing command will — measured,
 collateralised, funded from the chosen or the largest ada-only output — and

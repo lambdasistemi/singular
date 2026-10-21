@@ -24,6 +24,7 @@ module Singular.Application.OpenDatum.Plan
       -- * What a booking asks
     , Booked (..)
     , readInsertPayload
+    , readUpdatePayload
     , insertionOf
     , planInsert
     , planTerminate
@@ -64,11 +65,7 @@ import Singular.Application.OpenDatum.Book
     , terminateApproval
     , terminateDestination
     )
-import Singular.Application.OpenDatum.Build
-    ( PayloadRefusal (..)
-    , minimumDeposit
-    , readPayload
-    )
+import Singular.Application.OpenDatum.Build (minimumDeposit)
 import Singular.Application.OpenDatum.Envelope
     ( Control (..)
     , Envelope (..)
@@ -83,6 +80,7 @@ import Singular.Application.OpenDatum.Update
 import Singular.Application.OpenDatum.Value (openDatumApplication)
 import Singular.CLI.Command (EntryArgs (..), Key (..))
 import Singular.CLI.Live
+import Singular.CLI.Payload (readPayloadFile)
 import Singular.CLI.Plan
     ( emptyFields
     , outlayReport
@@ -191,17 +189,23 @@ previewInsert live s a caller payload = do
 
 -- | The payload an insert carries, from the file its @--payload@ names.
 readInsertPayload :: EntryArgs -> IO PLC.Data
-readInsertPayload a = do
+readInsertPayload = readEntryPayload "insert"
+
+-- | The payload an update carries, from the file its @--payload@ names.
+readUpdatePayload :: EntryArgs -> IO PLC.Data
+readUpdatePayload = readEntryPayload "update"
+
+{- | The payload an entry command carries: the file its @--payload@ names, read
+through the one reader under the payload schema the command was given.
+-}
+readEntryPayload :: String -> EntryArgs -> IO PLC.Data
+readEntryPayload verb a = do
     path <-
         maybe
-            (failWith ClientRefusal "insert needs --payload")
+            (failWith ClientRefusal (verb <> " needs --payload"))
             pure
             (entryDocument a)
-    readJson path
-        >>= either (failWith ClientRefusal . refused path) pure . readPayload
-  where
-    refused path (PayloadNotPlutusData why) =
-        path <> ": --payload is not Plutus data: " <> why
+    readPayloadFile (entryPayloadSchema a) path
 
 {- | The envelope an insert books: the saved registry, the insert's key and
 deposit, the controller (the payment key hash of whoever signs, or of the

@@ -144,11 +144,12 @@ spec = describe "the help pages" $ do
     it "complete command and flag names" $ do
         completionsFor program ["inse"] 0 `shouldReturn` ["insert"]
         completionsFor program ["insert", "--pay"] 1
-            `shouldReturn` ["--payload"]
+            `shouldReturn` ["--payload", "--payload-schema"]
     it "complete only the flags of the command asked about" $ do
         flagsOfFold <- completionsFor program ["fold", "--"] 1
         flagsOfFold `shouldSatisfy` elem "--request"
         flagsOfFold `shouldSatisfy` notElem "--payload"
+        flagsOfFold `shouldSatisfy` notElem "--payload-schema"
   where
     leaves = concatMap (collect [])
     collect prefix = \case

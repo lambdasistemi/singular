@@ -123,12 +123,17 @@ import Singular.CLI.Trace
     )
 import Singular.Provider.Koios.FakeServer qualified as Fake
 import Singular.Provider.Koios.Recorded (loadFixtureSet)
+import Singular.Registry.Application (datumToJson)
 import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.Deployment (parseOutRef, renderOutRef)
 import Singular.Registry.Evidence (NoWitness, unverifiedVerifier)
 import Singular.Registry.Ledger (Coin (..), ConwayEra)
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.Lifecycle (protocolFeeReserve)
+import Singular.Registry.PlainJson
+    ( PayloadSchema (..)
+    , payloadFromJson
+    )
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
 import Singular.Registry.RawChainFixture
     ( ChainFacts (..)
@@ -1556,7 +1561,12 @@ updatePreparationRows =
                 [journalEvent e | e <- entries, journalTxId e == updateTx]
                     `shouldBe` ["prepared", "submitted", "confirmed", "observed"]
                 sent <- decodeJsonFile (rigDir rig </> "payload-2.json")
-                valueOfRun "payload" updated `shouldBe` Just sent
+                -- the receipt still prints the detailed schema of the stored data
+                valueOfRun "payload" updated
+                    `shouldBe` either
+                        (const Nothing)
+                        (Just . datumToJson)
+                        (payloadFromJson PlainSchema sent)
                 BL.toStrict (Aeson.encode (runReceipt updated))
                     `shouldSatisfy` (not . BS.isInfixOf "send one self-payment")
                 walletAfter <- readTestWallet rig
@@ -2277,10 +2287,10 @@ withRigIn dir funds blueprintJson compose use = do
     BL.writeFile blueprint (Aeson.encode blueprintJson)
     BL.writeFile
         (dir </> "payload.json")
-        (Aeson.encode (Aeson.object ["int" .= (7 :: Int)]))
+        (Aeson.encode (7 :: Int))
     BL.writeFile
         (dir </> "payload-2.json")
-        (Aeson.encode (Aeson.object ["int" .= (8 :: Int)]))
+        (Aeson.encode (8 :: Int))
     wallet <- loadWallet (fromIntegral magic) keyPath
     testWallet <- loadWallet (fromIntegral magic) testKeyPath
     chain <-

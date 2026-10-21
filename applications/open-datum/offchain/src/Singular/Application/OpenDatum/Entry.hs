@@ -67,7 +67,6 @@ import Singular.Application.OpenDatum.Command
 import Singular.Application.OpenDatum.Envelope
     ( Control (..)
     , Envelope (..)
-    , dataFromJson
     , dataToJson
     , envelopeFromData
     , envelopeHash
@@ -464,13 +463,7 @@ runUpdate env a = case entryMode a of
     Preview node addr -> runPreview openDatumApplication env KUpdate a node addr
     Submit ws -> do
         let Key key = entryKey a
-        path <-
-            maybe
-                (failWith ClientRefusal "update needs --payload")
-                pure
-                (entryDocument a)
-        payload <-
-            readJson path >>= either (failWith ClientRefusal) pure . dataFromJson
+        payload <- readUpdatePayload a
         precheckBooking
             openDatumApplication
             env

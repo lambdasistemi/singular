@@ -38,7 +38,7 @@ play -p 6 "The payload she will register with the name: what it points to, in he
   'jq -c . payload.json'
 play -t -p 4 $'She registers alice with her payload in one command: a bundle of two transactions, booking and
 fold, signed and sent from her vault. The booking locks her deposit; the fold issues the token.' \
-  'open-datum insert --key alice --payload payload.json --state-dir state $TOKEN $BLUEPRINT $NODE $VAULT --fold 3< ../vault-pass/alice > insert.json'
+  'open-datum insert --key alice --payload payload.json --payload-schema detailed --state-dir state $TOKEN $BLUEPRINT $NODE $VAULT --fold 3< ../vault-pass/alice > insert.json'
 play -p 16 $'On chain: alice is registered. The request was booked and settled by the fold in one command,\nand the registry has a new root.' \
   'jq "{outcome, keyText, booking, fold, root, settled: [.settled[] | {edge, owner}]}" insert.json | short'
 play -p 12 $'On disk: four new journal lines, for the two transactions: step book, then step fold, each\nwaiting-for-signatures when the bundle was built, then landed.' \

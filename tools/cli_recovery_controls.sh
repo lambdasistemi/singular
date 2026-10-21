@@ -580,7 +580,7 @@ is_txid() { [[ "$1" =~ ^[0-9a-f]{64}$ ]]; }
 
 # The payload every insert here carries; the command builds the rest of the
 # envelope from the registry, the key and the signing wallet.
-insert_of() { args=(insert --fold --key-hex "$1" --payload "$work/insert-payload.json" "${common[@]}" "${node[@]}" "${alice[@]}"); }
+insert_of() { args=(insert --fold --key-hex "$1" --payload "$work/insert-payload.json" --payload-schema detailed "${common[@]}" "${node[@]}" "${alice[@]}"); }
 
 # ------------------------------------------------------------------
 # The registry
@@ -612,7 +612,7 @@ control="absent source"
 absent_before="$(find "$reg" -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1)"
 for command in update terminate; do
   extra=()
-  [ "$command" != update ] || extra=(--payload "$work/payload.json")
+  [ "$command" != update ] || extra=(--payload "$work/payload.json" --payload-schema detailed)
   run "$command-absent" "$command" --key-hex 6d697373696e672d6b6579 \
     "${extra[@]}" "${common[@]}" "${node[@]}" "${alice[@]}"
   clause "$command of an absent key is refused before signing" exit_is "$command-absent" 10
@@ -732,7 +732,7 @@ if part accepting; then
   preview_before="$(find "$reg" -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1)"
   for command in update terminate; do
     extra=()
-    [ "$command" != update ] || extra=(--payload "$work/payload.json")
+    [ "$command" != update ] || extra=(--payload "$work/payload.json" --payload-schema detailed)
     name="$command-active-preview"
     run "$name" "$command" --preview --key-hex 6b0a \
       "${extra[@]}" "${common[@]}" "${node[@]}" --wallet-address "$(field preview .wallet)"
@@ -754,7 +754,7 @@ if part accepting; then
     "$preview_copy/$preview_rel" >"$work/preview-incomplete-journal"
   mv "$work/preview-incomplete-journal" "$preview_copy/$preview_rel"
   preview_copy_before="$(find "$preview_copy" -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1)"
-  run preview-incomplete update --preview --key-hex 6b0a --payload "$work/payload.json" \
+  run preview-incomplete update --preview --key-hex 6b0a --payload "$work/payload.json" --payload-schema detailed \
     --state-dir "$preview_copy" --blueprint "$blueprint" --state-token "$state_token" "${node[@]}" --wallet-address "$(field preview .wallet)"
   clause "preview succeeds without the local boot journal" exit_is preview-incomplete 0
   clause "preview without local boot records reads the same public root" is_equal \
@@ -839,7 +839,7 @@ if part killed; then
   killed_fold="$(fold_since s2)"
   clause "the fold's last journalled phase is confirmed" is_equal "$(last_event "$killed_fold")" confirmed
   snap s2-killed
-  run update-a update --key-hex 6b0a --payload "$work/payload.json" "${common[@]}" "${node[@]}" "${alice[@]}"
+  run update-a update --key-hex 6b0a --payload "$work/payload.json" --payload-schema detailed "${common[@]}" "${node[@]}" "${alice[@]}"
   clause "the next write, an update of another key, reconciles and succeeds" outcome_is update-a success
   clause "the killed fold is observed exactly once, by the update" \
     is_equal "$(since s2-killed | jq -r --arg t "$killed_fold" '[.[] | select(.journalTxId == $t and .journalEvent == "observed") | .journalCommand] | join(",")')" update
@@ -889,12 +889,12 @@ if part two-requests; then
   control="two requests, lost answer"
   journal="$(managed_journal "$reg" "$state_token" "$alicekey")"
   snap two-a-alice
-  run two-book-a1 insert --key-hex 6b20 --payload "$work/insert-payload.json" \
+  run two-book-a1 insert --key-hex 6b20 --payload "$work/insert-payload.json" --payload-schema detailed \
     "${common[@]}" "${node[@]}" "${alice[@]}"
   clause "alice's booking of 6b20 succeeds" outcome_is two-book-a1 success
   clause "alice's booking names her as the requester" is_equal "$(field two-book-a1 .requester)" "$alicekey"
   journal="$(managed_journal "$reg" "$state_token" "$bobkey")"
-  run two-book-a2 insert --key-hex 6b21 --payload "$work/insert-payload.json" \
+  run two-book-a2 insert --key-hex 6b21 --payload "$work/insert-payload.json" --payload-schema detailed \
     "${common[@]}" "${node[@]}" "${bob[@]}"
   clause "bob's booking of 6b21 succeeds" outcome_is two-book-a2 success
   clause "bob's booking names him as the requester" is_equal "$(field two-book-a2 .requester)" "$bobkey"
@@ -937,7 +937,7 @@ if part two-requests; then
   two_refusals_clean=0
   for i in $(seq 1 40); do
     snap "two-a-try-$i"
-    run two-recover-a insert --fold --key-hex 6b22 --payload "$work/insert-payload.json" \
+    run two-recover-a insert --fold --key-hex 6b22 --payload "$work/insert-payload.json" --payload-schema detailed \
       "${common[@]}" "${node[@]}" "${bob[@]}"
     outcome_is two-recover-a partial || break
     if ! journal_same "two-a-try-$i" || ! trie_files_absent \
@@ -971,11 +971,11 @@ if part two-requests; then
   control="two requests, killed before the observation"
   journal="$(managed_journal "$reg" "$state_token" "$alicekey")"
   snap two-b-alice
-  run two-book-b1 insert --key-hex 6b30 --payload "$work/insert-payload.json" \
+  run two-book-b1 insert --key-hex 6b30 --payload "$work/insert-payload.json" --payload-schema detailed \
     "${common[@]}" "${node[@]}" "${alice[@]}"
   clause "alice's booking of 6b30 succeeds" outcome_is two-book-b1 success
   journal="$(managed_journal "$reg" "$state_token" "$bobkey")"
-  run two-book-b2 insert --key-hex 6b31 --payload "$work/insert-payload.json" \
+  run two-book-b2 insert --key-hex 6b31 --payload "$work/insert-payload.json" --payload-schema detailed \
     "${common[@]}" "${node[@]}" "${bob[@]}"
   clause "bob's booking of 6b31 succeeds" outcome_is two-book-b2 success
   book_b1="$(field two-book-b1 .request)"
@@ -1000,7 +1000,7 @@ if part two-requests; then
     is_equal "$(prepared_of "$killed_two" | jq -r '.journalKey == .journalTransitions[0].transitionKey and .journalEdge == .journalTransitions[0].transitionEdge and .journalExpect == .journalTransitions[0].transitionExpect and .journalRootBefore == .journalTransitions[0].transitionRootBefore and .journalRootAfter == .journalTransitions[1].transitionRootAfter')" true
   clause "the killed fold's transitions carry both fresh requests" \
     is_equal "$(prepared_of "$killed_two" | jq -r --arg a "$book_b1" --arg b "$book_b2" '([.journalTransitions[].transitionRequest] | sort) == ([$a, $b] | sort)')" true
-  run two-recover-b insert --fold --key-hex 6b32 --payload "$work/insert-payload.json" \
+  run two-recover-b insert --fold --key-hex 6b32 --payload "$work/insert-payload.json" --payload-schema detailed \
     "${common[@]}" "${node[@]}" "${bob[@]}"
   clause "the next write reconciles and succeeds" outcome_is two-recover-b success
   clause "the killed fold is observed exactly once, by the insert" \
@@ -1114,7 +1114,7 @@ if [ "$cross_any" -eq 1 ]; then
     control="another wallet's fold at ${cross_case#cross-wallet:}"
     journal="$(managed_journal "$reg" "$state_token" "$alicekey")"
     snap "$cross-before"
-    run "$cross-book" insert --key-hex "$key" --payload "$work/insert-payload.json" \
+    run "$cross-book" insert --key-hex "$key" --payload "$work/insert-payload.json" --payload-schema detailed \
       "${common[@]}" "${node[@]}" "${alice[@]}"
     snap "$cross-booked"
     # Bob's folds journal to his own partition under the same root and token.
@@ -1144,7 +1144,7 @@ if [ "$cross_any" -eq 1 ]; then
     # Her ordinary write proceeds independently while another wallet's fold
     # is unresolved: her journal is clean, so nothing names that fold and
     # only her own four phases move her journal.
-    run "$cross-next" update --key-hex "$next_key" --payload "$work/payload.json" \
+    run "$cross-next" update --key-hex "$next_key" --payload "$work/payload.json" --payload-schema detailed \
       "${common[@]}" "${node[@]}" "${alice[@]}"
     outcome_is "$cross-next" success || refusals_clean=1
     cross_update="$(submission_tx "$cross-next" update)"
@@ -1325,7 +1325,7 @@ if part never-sent; then
   clause "the node reports the unsent fold's inputs unspent" \
     jq -n -e --argjson p "$unsent_live" '($p.live | length) > 0 and ($p.spent == [])'
   snap s4-excluded
-  run update-d update --key-hex 6b0d --payload "$work/payload.json" "${common[@]}" "${node[@]}" "${alice[@]}"
+  run update-d update --key-hex 6b0d --payload "$work/payload.json" --payload-schema detailed "${common[@]}" "${node[@]}" "${alice[@]}"
   excluded_line="$(jq -c --arg t "$unsent" 'select(.journalTxId == $t and .journalEvent == "excluded")' "$journal")"
   clause "the next write journals the unsent fold excluded" \
     is_equal "$(events_of "$unsent")" '["prepared","submit-unknown","excluded"]'
@@ -1351,7 +1351,7 @@ if part never-sent; then
   processing_ms="$(field create .processTime)"
   sleep $((processing_ms / 1000 + 1))
   snap s6-refused
-  run update-e update --key-hex 6b0d --payload "$work/payload.json" "${common[@]}" "${node[@]}" "${alice[@]}"
+  run update-e update --key-hex 6b0d --payload "$work/payload.json" --payload-schema detailed "${common[@]}" "${node[@]}" "${alice[@]}"
   clause "the next write stops partial (exit 15)" exit_is update-e 15
   clause "it names the unsent booking" is_equal "$(field update-e .unresolved.tx)" "$unbooked"
   clause "it names the case unknown" is_equal "$(field update-e .unresolved.case)" unknown

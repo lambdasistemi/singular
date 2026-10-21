@@ -211,7 +211,7 @@ say "carol created the open-datum registry $token with her key file"
 carol=(--state-dir "$work/carol" --blueprint "$blueprint" --state-token "$token" "${node[@]}"
   --wallet-skey "$work/carol.skey")
 alice=(--state-dir "$work/alice" --blueprint "$blueprint" --state-token "$token" "${node[@]}")
-run carol-insert-1 success "$open_datum" -- insert --key keyA --payload "$work/payload.json" "${carol[@]}"
+run carol-insert-1 success "$open_datum" -- insert --key keyA --payload "$work/payload.json" --payload-schema detailed "${carol[@]}"
 request1="$(field carol-insert-1 .request)"
 run alice-fold success "$singular" -- registry fold --request "$request1" "${alice[@]}" \
   --vault "$work/alice.vault" --passphrase-fd 3 3<"$passphrase"
@@ -236,7 +236,7 @@ say "on carol's open-datum registry: alice folded $request1 from her vault, bund
 # ------------------------------------------------------------------
 # 4. An unsent fold bundle dies past its deadline; the next fold builds
 # ------------------------------------------------------------------
-run carol-insert-2 success "$open_datum" -- insert --key keyB --payload "$work/payload.json" "${carol[@]}"
+run carol-insert-2 success "$open_datum" -- insert --key keyB --payload "$work/payload.json" --payload-schema detailed "${carol[@]}"
 request2="$(field carol-insert-2 .request)"
 deadline_ms="$(field carol-insert-2 .foldDeadline.posixMs)"
 run alice-fold-staged waiting-for-signatures "$singular" -- registry fold --request "$request2" "${alice[@]}" \
@@ -249,7 +249,7 @@ for _ in $(seq 1 60); do
   sleep 5
 done
 [ "$(date +%s%3N)" -gt "$deadline_ms" ] || setup_fail "the request's processing deadline never passed"
-run carol-insert-3 success "$open_datum" -- insert --key keyC --payload "$work/payload.json" "${carol[@]}"
+run carol-insert-3 success "$open_datum" -- insert --key keyC --payload "$work/payload.json" --payload-schema detailed "${carol[@]}"
 request3="$(field carol-insert-3 .request)"
 # The passphrase from the environment, the devnet being a development network.
 # First the same fold with a public network's magic: refused as a client

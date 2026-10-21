@@ -27,7 +27,7 @@ play -t -p 3 "She reads alice from the chain: a read; it writes nothing in her s
 play -p 24 $'On chain: alice is terminal, and no live output holds its token any more: the token was\nburned.' \
   'jq "{leaf, keyText, applicationOutput}" inspect-terminal.json'
 play -f -p 8 $'Alice tries to register alice again, booking and folding. The command reads the registry\nfirst and stops: nothing is built, signed or sent.' \
-  'open-datum insert --key alice --payload payload.json --state-dir state $TOKEN $BLUEPRINT $NODE $VAULT --fold 3< ../vault-pass/alice > reregister.json'
+  'open-datum insert --key alice --payload payload.json --payload-schema detailed --state-dir state $TOKEN $BLUEPRINT $NODE $VAULT --fold 3< ../vault-pass/alice > reregister.json'
 play -p 20 "The refusal, from the receipt: the registry has alice recorded as retired. It cannot return." \
   'jq "{outcome, reason, leafFound, leafRequired}" reregister.json'
 play -p 12 "On disk: nothing in her state directory is newer than the fold: the refusal wrote nothing." \

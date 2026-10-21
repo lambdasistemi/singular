@@ -611,7 +611,7 @@ fi
 for flag in --koios-url --koios-token-file --network-time --wallet-skey \
   --state-dir --blueprint --seed --process-time --retract-time --key \
   --key-hex --receipt --confirm-timeout --wallet-address --outputs-at \
-  --fund-input --max-outlay --deposit --payload --request --state-token \
+  --fund-input --max-outlay --deposit --payload --payload-schema --request --state-token \
   --network-magic; do
   fresh
   address=$(create_vault "$real_singular" "$scratch/run")

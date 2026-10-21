@@ -13,7 +13,7 @@ export DEMO_TOTAL=10
 J='state/net-42/*/wallets/*/journal.jsonl'
 play_cd "Alice books a second name, alice-cert, and does not fold it." alice
 play -t -p 4 $'She books alice-cert with her payload from her vault, without --fold: one transaction locks her\ndeposit at the request address. The request stays pending; the registry is unchanged.' \
-  'open-datum insert --key alice-cert --payload payload.json --state-dir state $TOKEN $BLUEPRINT $NODE $VAULT 3< ../vault-pass/alice > cert.json'
+  'open-datum insert --key alice-cert --payload payload.json --payload-schema detailed --state-dir state $TOKEN $BLUEPRINT $NODE $VAULT 3< ../vault-pass/alice > cert.json'
 play -p 8 "On chain: a request for alice-cert is pending, from Alice. Nobody has folded it." \
   'jq "{outcome, keyText, request, requester, foldDeadline}" cert.json | short'
 play -p 5 $'On disk: two new journal lines for this one transaction (step book): waiting-for-signatures when\nthe bundle was built, then landed.' \
@@ -27,7 +27,7 @@ play -t -p 3 "Bob reads the registry's page: a node, the blueprint and the state
 play -p 8 $'The registry\'s state on chain, pending requests: Alice\'s alice-cert (key 616c6963652d63657274)\nand the forged alice (616c696365) that the negative host left in scene 3.' \
   'jq ".state.pendingRequests[] | {request, owner, key, edge}" page-before.txt | short'
 play -s -p 4 $'Bob books bob, the external way: his command names his address and a bundle file, builds the\nbooking, signs nothing, sends nothing and exits 19: waiting-for-signatures, not a failure.' \
-  'open-datum insert --key bob --payload payload.json --state-dir state $TOKEN $BLUEPRINT $NODE --wallet-address "$bob_addr" --bundle insert-bob.bundle > booking.json'
+  'open-datum insert --key bob --payload payload.json --payload-schema detailed --state-dir state $TOKEN $BLUEPRINT $NODE --wallet-address "$bob_addr" --bundle insert-bob.bundle > booking.json'
 play -p 8 $'The receipt: the outcome waiting-for-signatures, the bundle holding the booking, and the request\nit expects once sent. Nothing is on the chain yet: Bob\'s request is not pending.' \
   'jq "{outcome, bundle: (.bundle | {signers, written, steps: [.transactions[].step]}), expected: (.expected | {keyText, request, requester})}" booking.json | short'
 play -p 8 $'On disk: the bundle file beside his vault, and in his state directory the journal line\nwaiting-for-signatures with a copy of the bundle and its transaction.' \

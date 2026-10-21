@@ -258,7 +258,7 @@ say "registry $state_token booted for the stub's own policy"
 key="keri-key-one"
 key_hex="$(printf '%s' "$key" | od -An -tx1 | tr -d ' \n')"
 deposit=4000000
-run register success -- register --key "$key" --deposit "$deposit" --payload "$work/payload.json" \
+run register success -- register --key "$key" --deposit "$deposit" --payload "$work/payload.json" --payload-schema detailed \
   "${common[@]}" "${registry[@]}" "${node[@]}" "${alice[@]}"
 jq -e --arg k "$key_hex" '.key == $k
   and (.booking | type == "string" and length > 0)
@@ -317,7 +317,7 @@ jq -e '[.outputsAt.outputs[]?] | length >= 1' "$receipts/status-domain.json" >/d
 # 5. the second register of the same key: refused at booking, nothing sent
 # ------------------------------------------------------------------
 before_journal="$(journal_lines)"
-run register-again client-refusal -- register --key "$key" --deposit "$deposit" --payload "$work/payload.json" \
+run register-again client-refusal -- register --key "$key" --deposit "$deposit" --payload "$work/payload.json" --payload-schema detailed \
   "${common[@]}" "${registry[@]}" "${node[@]}" "${alice[@]}"
 jq -e --arg k "$key_hex" '.key == $k
   and .verb == "insert" and .edge == "insertActive"
@@ -336,7 +336,7 @@ jq -e 'has("submissions") | not' "$receipts/register-again.json" >/dev/null \
 # ------------------------------------------------------------------
 key_two="keri-key-two"
 key_two_hex="$(printf '%s' "$key_two" | od -An -tx1 | tr -d ' \n')"
-run register-fold success -- register --key "$key_two" --deposit "$deposit" --payload "$work/payload.json" --fold \
+run register-fold success -- register --key "$key_two" --deposit "$deposit" --payload "$work/payload.json" --payload-schema detailed --fold \
   "${common[@]}" "${registry[@]}" "${node[@]}" "${alice[@]}"
 jq -e --arg k "$key_two_hex" --arg c "$controller" --arg p "$payload_hex" --argjson d "$deposit" \
   '.key == $k

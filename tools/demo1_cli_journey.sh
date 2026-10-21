@@ -1000,7 +1000,7 @@ bob_actor="$work/bob-actor"
 mkdir -p "$bob_actor"
 [ -z "$(ls -A "$bob_actor")" ] || setup_fail "bob's directory is not empty at start"
 payload "$work/payload-empty.json"
-run empty-actor-insert success -- insert --fold --key keyEmpty --payload "$work/payload-empty.json" \
+run empty-actor-insert success -- insert --fold --key keyEmpty --payload "$work/payload-empty.json" --payload-schema detailed \
   --state-dir "$bob_actor" --blueprint "$blueprint" --state-token "$state_token" "${node[@]}" "${bob[@]}"
 [ ! -e "$bob_actor/registry.json" ] || fail "a command wrote a registry.json in bob's directory"
 reader="$work/empty-reader"
@@ -1076,7 +1076,7 @@ bob_open_datum_old="$open_datum"
 open_datum="$bob_traced"
 bob_env_on
 run bob-default-insert success -- insert --key "$bob_key" \
-  --payload "$work/payload-bob-default.json" --blueprint "$blueprint" \
+  --payload "$work/payload-bob-default.json" --payload-schema detailed --blueprint "$blueprint" \
   --state-token "$state_token" "${node[@]}" --wallet-skey "$work/bob.skey"
 bob_env_off
 open_datum="$bob_open_datum_old"
@@ -1196,7 +1196,7 @@ run two-create success -- create --process-time 120000 --retract-time 30000 \
   --seed "$(field two-preview .seed)" --state-dir "$two_alice" --blueprint "$blueprint" "${node[@]}" "${alice[@]}"
 two_token="$(field two-create .stateToken)"
 two_key=keyT
-run two-insert success -- insert --key "$two_key" --payload "$work/payload-insert.json" \
+run two-insert success -- insert --key "$two_key" --payload "$work/payload-insert.json" --payload-schema detailed \
   --state-dir "$two_alice" --blueprint "$blueprint" --state-token "$two_token" "${node[@]}" "${alice[@]}"
 [ "$(field two-insert .requester)" = "$alicekey" ] || fail "the two-actor booking's requester is not alice's key"
 mkdir -p "$two_bob"
@@ -1260,11 +1260,11 @@ say "two actors: bob folded alice's insertion from the state token alone; her en
 two_both_started="$(date +%s)"
 two_key_a=keyU
 two_key_b=keyV
-run two-both-insert-alice success -- insert --key "$two_key_a" --payload "$work/payload-insert.json" \
+run two-both-insert-alice success -- insert --key "$two_key_a" --payload "$work/payload-insert.json" --payload-schema detailed \
   --state-dir "$two_alice" --blueprint "$blueprint" --state-token "$two_token" "${node[@]}" "${alice[@]}"
 [ "$(field two-both-insert-alice .requester)" = "$alicekey" ] \
   || fail "the joint booking's requester is not alice's key"
-run two-both-insert-bob success -- insert --key "$two_key_b" --payload "$work/payload-insert.json" \
+run two-both-insert-bob success -- insert --key "$two_key_b" --payload "$work/payload-insert.json" --payload-schema detailed \
   --state-dir "$two_bob" --blueprint "$blueprint" --state-token "$two_token" "${node[@]}" "${bob[@]}"
 [ "$(field two-both-insert-bob .requester)" = "$bobkey" ] \
   || fail "the joint booking's requester is not bob's key"
@@ -1554,15 +1554,15 @@ stderr_of() {
   say "$name: refused at parse"
 }
 before_inserts="$(journal_lines "$reg")"
-stderr_of insert-bad-key insert --key-hex zz --payload "$work/payload-insert.json" \
+stderr_of insert-bad-key insert --key-hex zz --payload "$work/payload-insert.json" --payload-schema detailed \
   "${common[@]}" "${node[@]}" "${alice[@]}"
 grep -q -- '--key-hex is not base16' "$receipts/insert-bad-key.err" || fail "insert-bad-key: the refusal does not name the key"
 stderr_of insert-deposit-below-minimum insert --key "$key" --deposit 1999999 \
-  --payload "$work/payload-insert.json" "${common[@]}" "${node[@]}" "${alice[@]}"
+  --payload "$work/payload-insert.json" --payload-schema detailed "${common[@]}" "${node[@]}" "${alice[@]}"
 grep -q -- 'below the minimum of 2000000 lovelace' "$receipts/insert-deposit-below-minimum.err" \
   || fail "insert-deposit-below-minimum: the refusal does not name the minimum"
 stderr_of insert-deposit-not-integer insert --key "$key" --deposit lots \
-  --payload "$work/payload-insert.json" "${common[@]}" "${node[@]}" "${alice[@]}"
+  --payload "$work/payload-insert.json" --payload-schema detailed "${common[@]}" "${node[@]}" "${alice[@]}"
 grep -q -- 'not a whole number of lovelace' "$receipts/insert-deposit-not-integer.err" \
   || fail "insert-deposit-not-integer: the refusal does not name the deposit"
 removed="--""envelope" # spelled apart: no line of the tree names the removed flag
@@ -1572,26 +1572,26 @@ grep -q -- "$removed is not a flag singular reads" "$receipts/insert-removed-fla
   || fail "insert-removed-flag: the removed flag is still read"
 for control in "--trace loud" "--trace-to stdout" "--trace-to file:" "--trace-format xml"; do
   read -r flag value <<<"$control"
-  stderr_of "insert-trace-${flag#--}-unknown" insert --key "$key" --payload "$work/payload-insert.json" \
+  stderr_of "insert-trace-${flag#--}-unknown" insert --key "$key" --payload "$work/payload-insert.json" --payload-schema detailed \
     "${common[@]}" "${node[@]}" "${alice[@]}" "$flag" "$value"
   grep -q -- "$flag is " "$receipts/insert-trace-${flag#--}-unknown.err" \
     || fail "insert $control: the refusal does not name the tracing control"
   ! grep -q -- "is not a flag singular reads" "$receipts/insert-trace-${flag#--}-unknown.err" \
     || fail "insert $control: the tracing control is not read"
 done
-stderr_of insert-without-token insert --key "$key" --payload "$work/payload-insert.json" \
+stderr_of insert-without-token insert --key "$key" --payload "$work/payload-insert.json" --payload-schema detailed \
   --state-dir "$reg" --blueprint "$blueprint" "${node[@]}" "${alice[@]}"
 grep -q -- '--state-token' "$receipts/insert-without-token.err" \
   || fail "insert-without-token: the refusal does not name the state token"
 refused insert-payload-not-data client-refusal -- insert --key "$key" \
-  --payload "$work/payload-bad.json" "${common[@]}" "${node[@]}" "${alice[@]}"
+  --payload "$work/payload-bad.json" --payload-schema detailed "${common[@]}" "${node[@]}" "${alice[@]}"
 jq -e '.reason | contains("not Plutus data")' "$receipts/insert-payload-not-data.json" >/dev/null \
   || fail "insert-payload-not-data: the refusal does not name the payload"
 # Narration cannot change a command: with standard error closed, the same
 # refusal, narrated to standard error, ends in bounded time with the same
 # receipt and exit status.
 closed_status=0
-timeout 120 "$open_datum" insert --key "$key" --payload "$work/payload-bad.json" \
+timeout 120 "$open_datum" insert --key "$key" --payload "$work/payload-bad.json" --payload-schema detailed \
   "${common[@]}" "${node[@]}" "${alice[@]}" --trace how --trace-to stderr \
   >"$receipts/insert-closed-stderr.json" 2>&- || closed_status=$?
 [ "$closed_status" -eq "$(exit_of client-refusal)" ] \
@@ -1601,7 +1601,7 @@ cmp -s <(jq -S . "$receipts/insert-payload-not-data.json") \
   || fail "insert with standard error closed: another receipt than with it open"
 unminted="$state.$(printf '%064d' 0)"
 refused insert-unknown-registry client-refusal -- insert --key "$key" \
-  --payload "$work/payload-insert.json" --state-dir "$work/no-such-registry" --blueprint "$blueprint" \
+  --payload "$work/payload-insert.json" --payload-schema detailed --state-dir "$work/no-such-registry" --blueprint "$blueprint" \
   --state-token "$unminted" "${node[@]}" "${alice[@]}"
 jq -e '.reason | startswith("state-token-not-found")' "$receipts/insert-unknown-registry.json" >/dev/null \
   || fail "insert-unknown-registry: the refusal is not state-token-not-found"
@@ -1626,20 +1626,20 @@ preview_ok() {
   ' "$receipts/$1.json" >/dev/null || fail "$1: the preview does not state measured bodies"
 }
 tree_before="$(tree_hash)"
-run insert-preview success -- insert --preview --key "$key" --payload "$work/payload-insert.json" \
+run insert-preview success -- insert --preview --key "$key" --payload "$work/payload-insert.json" --payload-schema detailed \
   "${common[@]}" "${node[@]}" --wallet-address "$alice_addr"
 preview_ok insert-preview booking
 [ "$(tree_hash)" = "$tree_before" ] || fail "a preview changed the registry directory"
 jq -e '.fold.feeBound > .booking.fee' "$receipts/insert-preview.json" >/dev/null \
   || fail "the fold bound does not exceed a booking fee"
 status=0
-"$open_datum" insert --preview --key "$key" --payload "$work/payload-insert.json" "${common[@]}" \
+"$open_datum" insert --preview --key "$key" --payload "$work/payload-insert.json" --payload-schema detailed "${common[@]}" \
   "${node[@]}" --wallet-address "$alice_addr" "${alice[@]}" >/dev/null 2>&1 || status=$?
 [ "$status" -eq 2 ] || fail "an insert preview accepted a signing key (exit $status)"
 # An allowance below the measured outlay stops the insert before it signs or
 # sends anything.
 refused insert-over-allowance client-refusal -- insert --key "$key" \
-  --payload "$work/payload-insert.json" --max-outlay 1000000 "${common[@]}" "${node[@]}" "${alice[@]}"
+  --payload "$work/payload-insert.json" --payload-schema detailed --max-outlay 1000000 "${common[@]}" "${node[@]}" "${alice[@]}"
 jq -e '.outlay.withinAllowance == false and .outlay.allowance == 1000000' \
   "$receipts/insert-over-allowance.json" >/dev/null || fail "the refusal does not state the outlay and the allowance"
 
@@ -1651,7 +1651,7 @@ before="$(journal_lines "$reg")"
 insert_journal="$(managed_journal "$reg" "$state_token" "$alicekey")"
 insert_before="$(journal_count "$insert_journal")"
 files_before="$(local_files)"
-run insert success -- insert --key "$key" --payload "$work/payload-insert.json" \
+run insert success -- insert --key "$key" --payload "$work/payload-insert.json" --payload-schema detailed \
   "${common[@]}" "${node[@]}" "${alice[@]}"
 booked insert
 booking_only insert "$insert_journal" "$insert_before" "$files_before"
@@ -1765,7 +1765,7 @@ before="$(journal_lines "$reg")"
 bob_insert_journal="$(managed_journal "$reg" "$state_token" "$bobkey")"
 bob_insert_before="$(journal_count "$bob_insert_journal")"
 files_before="$(local_files)"
-run bob-insert success -- insert --key "$bkey" --payload "$work/payload-insert.json" \
+run bob-insert success -- insert --key "$bkey" --payload "$work/payload-insert.json" --payload-schema detailed \
   "${common[@]}" "${node[@]}" "${bob[@]}"
 holds_envelope bob-insert .envelope "$bobkey" "$bkey" "$work/payload-insert.json" \
   || fail "bob's insert did not book his own key hash as controller"
@@ -1791,15 +1791,15 @@ run inspect-bob success -- inspect --key "$bkey" "${common[@]}" "${node[@]}"
 # ------------------------------------------------------------------
 jq -n '{constructor:3, fields:[{bytes:"626f62"},{int:123456789012345678901234567890}]}' >"$work/payload.json"
 refused update-not-controller client-refusal -- update --key "$key" \
-  --payload "$work/payload.json" "${common[@]}" "${node[@]}" "${bob[@]}"
+  --payload "$work/payload.json" --payload-schema detailed "${common[@]}" "${node[@]}" "${bob[@]}"
 tree_before="$(tree_hash)"
-run update-preview success -- update --preview --key "$key" --payload "$work/payload.json" \
+run update-preview success -- update --preview --key "$key" --payload "$work/payload.json" --payload-schema detailed \
   "${common[@]}" "${node[@]}" --wallet-address "$alice_addr"
 preview_ok update-preview update
 [ "$(tree_hash)" = "$tree_before" ] || fail "an update preview changed the registry directory"
 refused update-preview-not-controller client-refusal -- update --preview --key "$key" \
-  --payload "$work/payload.json" "${common[@]}" "${node[@]}" --wallet-address "$bob_addr"
-run update success -- update --key "$key" --payload "$work/payload.json" \
+  --payload "$work/payload.json" --payload-schema detailed "${common[@]}" "${node[@]}" --wallet-address "$bob_addr"
+run update success -- update --key "$key" --payload "$work/payload.json" --payload-schema detailed \
   "${common[@]}" "${node[@]}" "${alice[@]}"
 run inspect-2 success -- inspect --key "$key" "${common[@]}" "${node[@]}"
 [ "$(field inspect-2 .leaf)" = active ] || fail "inspect after update is not active"
@@ -1825,7 +1825,7 @@ rm "$reg/registry.mirror.json" "$reg/state.json"
 # script, refused by name before the provider is asked anything.
 foreign="$(printf '%s' "$state" | tr 0123456789abcdef 123456789abcdef0).$token"
 refused insert-foreign-release client-refusal -- insert --key keyC \
-  --payload "$work/payload-insert.json" --state-dir "$reg" --blueprint "$blueprint" \
+  --payload "$work/payload-insert.json" --payload-schema detailed --state-dir "$reg" --blueprint "$blueprint" \
   --state-token "$foreign" "${node[@]}" "${alice[@]}"
 jq -e '.reason | startswith("state-token-foreign-release")' "$receipts/insert-foreign-release.json" >/dev/null \
   || fail "insert-foreign-release: the refusal is not state-token-foreign-release"
@@ -1853,7 +1853,7 @@ if flock --fcntl --nonblock "$alice_lock" true; then
   setup_fail "the lock holder does not hold $alice_lock"
 fi
 refused concurrent-writer concurrent-writer -- insert --key keyC \
-  --payload "$work/payload-insert.json" "${common[@]}" "${node[@]}" "${alice[@]}"
+  --payload "$work/payload-insert.json" --payload-schema detailed "${common[@]}" "${node[@]}" "${alice[@]}"
 kill "$(cat "$work/lock.pid")" 2>/dev/null || true
 wait "$holder" 2>/dev/null || true
 holder=""
@@ -1861,7 +1861,7 @@ flock --fcntl --nonblock "$alice_lock" true || setup_fail "the lock holder did n
 # The combined form: --fold books and then folds in the one process, by the
 # routine `open-datum fold` runs, and prints both transactions.
 run insert-after-release success -- insert --fold --key keyC \
-  --payload "$work/payload-insert.json" "${common[@]}" "${node[@]}" "${alice[@]}"
+  --payload "$work/payload-insert.json" --payload-schema detailed "${common[@]}" "${node[@]}" "${alice[@]}"
 jq -e '(.booking | test("^[0-9a-f]{64}$")) and (.fold | test("^[0-9a-f]{64}$")) and .booking != .fold
     and (.settled | length == 1)
     and (.settled[0].settlement.liveOutput | test("#")) and has("root")' "$receipts/insert-after-release.json" >/dev/null \
@@ -1935,7 +1935,7 @@ fi
 # Bob's subsequent write proceeds independently on chain state that includes
 # the fold. It must neither touch alice's journal nor claim her fold.
 alice_kept="$(journal_count "$alice_journal")"
-run bob-independent-update success -- update --key "$bkey" --payload "$work/payload.json" \
+run bob-independent-update success -- update --key "$bkey" --payload "$work/payload.json" --payload-schema detailed \
   "${common[@]}" "${node[@]}" "${bob[@]}"
 [ "$(journal_count "$alice_journal")" = "$alice_kept" ] \
   || fail "bob's write touched alice's journal"
@@ -2085,7 +2085,7 @@ before="$(journal_lines "$reg")"
 late_journal="$(managed_journal "$reg" "$state_token" "$alicekey")"
 late_before="$(journal_count "$late_journal")"
 files_before="$(local_files)"
-run late-insert success -- insert --key keyD --payload "$work/payload-insert.json" \
+run late-insert success -- insert --key keyD --payload "$work/payload-insert.json" --payload-schema detailed \
   "${common[@]}" "${node[@]}" "${alice[@]}"
 booked late-insert
 booking_only late-insert "$late_journal" "$late_before" "$files_before"
@@ -2173,7 +2173,7 @@ fold_late_tamper open-at-judgment '.reason |= sub("probe bound [0-9]+ ms"; "prob
 # on a copy of the receipt altered so its property is false.
 eligible_files="$(local_files)"
 eligible_journal_before="$(journal_count "$alice_journal")"
-run eligible-insert success -- insert --key keyH --payload "$work/payload-insert.json" \
+run eligible-insert success -- insert --key keyH --payload "$work/payload-insert.json" --payload-schema detailed \
   "${common[@]}" "${node[@]}" "${alice[@]}"
 booked eligible-insert
 booking_only eligible-insert "$alice_journal" "$eligible_journal_before" "$eligible_files"
@@ -2438,7 +2438,7 @@ refused reject-nothing client-refusal -- registry reject "${common[@]}" "${node[
 jq -e '.reason | contains("nothing is pending")' "$receipts/reject-nothing.json" >/dev/null \
   || fail "a reject with nothing pending does not say so: $(field reject-nothing .reason)"
 # Cleared, the registry folds again: a new request is booked and folded.
-run insert-after-reject success -- insert --key keyE --payload "$work/payload-insert.json" \
+run insert-after-reject success -- insert --key keyE --payload "$work/payload-insert.json" --payload-schema detailed \
   "${common[@]}" "${node[@]}" "${alice[@]}"
 booked insert-after-reject
 run fold-after-insert success -- fold --request "$(field insert-after-reject .request)" \
@@ -2451,7 +2451,7 @@ say "a reject past both windows: refunded to the owner, root unmoved, and a new 
 # ------------------------------------------------------------------
 # 7d. reclaim: the owner takes a pending insertion back in its window
 # ------------------------------------------------------------------
-run insert-to-reclaim success -- insert --key keyF --payload "$work/payload-insert.json" \
+run insert-to-reclaim success -- insert --key keyF --payload "$work/payload-insert.json" --payload-schema detailed \
   "${common[@]}" "${node[@]}" "${alice[@]}"
 booked insert-to-reclaim
 run inspect-before-reclaim success -- inspect --key keyF "${common[@]}" "${node[@]}"
@@ -2527,7 +2527,7 @@ fi
 refused reclaim-not-pending client-refusal -- registry reclaim --request "$(field insert-to-reclaim .request)" \
   "${common[@]}" "${node[@]}" "${alice[@]}"
 jq -e '.reason | contains("not pending")' "$receipts/reclaim-not-pending.json" >/dev/null || fail "a consumed request was not refused as not pending"
-run insert-after-reclaim success -- insert --key keyG --payload "$work/payload-insert.json" \
+run insert-after-reclaim success -- insert --key keyG --payload "$work/payload-insert.json" --payload-schema detailed \
   "${common[@]}" "${node[@]}" "${alice[@]}"
 booked insert-after-reclaim
 run fold-after-reclaim success -- fold --request "$(field insert-after-reclaim .request)" \
@@ -2857,7 +2857,7 @@ fi
 
 say "story 3. Book an insertion of a key with its first payload; Alice's wallet is its controller."
 # 3. Alice books an insertion from her vault; the request stays pending.
-story_vault story-insert alice -- insert --key alice --payload "$story/payload.json" "${scommon[@]}" "${node[@]}"
+story_vault story-insert alice -- insert --key alice --payload "$story/payload.json" --payload-schema detailed "${scommon[@]}" "${node[@]}"
 booked story-insert
 [ "$(field story-insert .requester)" = "$s_alicekey" ] || fail "the story booking's requester is not Alice's key"
 story_envelope_ok story-insert "$s_alicekey" alice "$story/payload.json" \
@@ -2903,7 +2903,7 @@ jq -e --slurpfile i "$receipts/story-insert.json" '.applicationOutput.envelope =
 
 say "story 6. Replace the payload."
 # 6. Alice replaces the payload from her vault.
-story_vault story-update alice -- update --key alice --payload "$story/payload-update.json" "${scommon[@]}" "${node[@]}"
+story_vault story-update alice -- update --key alice --payload "$story/payload-update.json" --payload-schema detailed "${scommon[@]}" "${node[@]}"
 [ "$(field story-update .root)" = "$(field story-inspect-1 .root)" ] \
   || fail "the story update does not leave the root where it is"
 
@@ -2945,7 +2945,7 @@ say "story 11. A request nobody folded or took back stays pending past both its 
 # and blocks the registry's fold: Alice books one from her vault and nobody
 # folds it. Bob's reject is refused while a window is open (no bundle is
 # written), then he rejects it, the external way.
-story_vault story-late alice -- insert --key late --payload "$story/payload.json" "${scommon[@]}" "${node[@]}"
+story_vault story-late alice -- insert --key late --payload "$story/payload.json" --payload-schema detailed "${scommon[@]}" "${node[@]}"
 booked story-late
 s_late_deadline="$(field story-late .foldDeadline.posixMs)"
 s_late_retract_ends=$((s_late_deadline + s_window_retract))
@@ -2977,7 +2977,7 @@ jq -e --arg r "$(field story-reject .reject)" '
 say "story 12. The registry takes requests again: book a new insertion."
 # 12. The registry takes requests again: Bob books an insertion of his own, the
 # external way.
-story_stage story-bob-insert bob -- insert --key bob --payload "$story/payload.json" "${scommon[@]}" "${node[@]}"
+story_stage story-bob-insert bob -- insert --key bob --payload "$story/payload.json" --payload-schema detailed "${scommon[@]}" "${node[@]}"
 # Nothing was sent: the staged request is not on chain.
 run story-inspect-unsent success -- inspect --key bob "${scommon[@]}" "${node[@]}"
 [ "$(jq '.pendingRequests | length' "$receipts/story-inspect-unsent.json")" = 0 ] \
@@ -2988,7 +2988,7 @@ run story-inspect-unsent success -- inspect --key bob "${scommon[@]}" "${node[@]
 s_bob_journal="$(managed_journal "$s_reg" "$s_state_token" "$s_bobkey")"
 s_nonlanded() { jq -s '[.[] | select(.journalEvent != "landed")] | length' "$1"; }
 s_journal_before="$(s_nonlanded "$s_bob_journal")"
-run story-insert-while-waiting waiting-for-signatures -- insert --key bobTwo --payload "$story/payload.json" \
+run story-insert-while-waiting waiting-for-signatures -- insert --key bobTwo --payload "$story/payload.json" --payload-schema detailed \
   "${scommon[@]}" "${node[@]}" --wallet-address "$vault_bob_addr" --bundle "$story/bundles/story-insert-while-waiting.bundle"
 [ ! -e "$story/bundles/story-insert-while-waiting.bundle" ] && [ "$(s_nonlanded "$s_bob_journal")" = "$s_journal_before" ] \
   || fail "a write stopped by a waiting bundle wrote a bundle or journalled something"
@@ -3017,7 +3017,7 @@ say "story 14. Book a different insertion and keep its request reference from th
 # 14. Alice books a different insertion from her vault, keeps its request
 # reference from the receipt, lets its processing deadline pass and reclaims it
 # in the retract window, from her vault.
-story_vault story-carol alice -- insert --key carol --payload "$story/payload.json" "${scommon[@]}" "${node[@]}"
+story_vault story-carol alice -- insert --key carol --payload "$story/payload.json" --payload-schema detailed "${scommon[@]}" "${node[@]}"
 booked story-carol
 s_carol_deadline="$(field story-carol .foldDeadline.posixMs)"
 story_wait_until "$s_carol_deadline" "the carol request's processing deadline to pass"
@@ -3036,7 +3036,7 @@ run story-inspect-reclaimed success -- inspect --key carol "${scommon[@]}" "${no
 
 say "story 15. The reclaimed request no longer blocks the next insertion."
 # 15. The reclaimed request no longer blocks the next insertion.
-story_vault story-dave alice -- insert --key dave --payload "$story/payload.json" "${scommon[@]}" "${node[@]}"
+story_vault story-dave alice -- insert --key dave --payload "$story/payload.json" --payload-schema detailed "${scommon[@]}" "${node[@]}"
 booked story-dave
 
 say "story 16. Fold it with Bob's wallet."
@@ -3051,7 +3051,7 @@ run story-inspect-dave success -- inspect --key dave "${scommon[@]}" "${node[@]}
 # The combined forms. Alice inserts and folds in one command from her vault: the
 # bundle holds the booking and the fold, signed and sent together. Bob
 # terminates and folds in one command the external way: one bundle, signed once.
-story_vault story-insert-fold alice -- insert --fold --key erin --payload "$story/payload.json" "${scommon[@]}" "${node[@]}"
+story_vault story-insert-fold alice -- insert --fold --key erin --payload "$story/payload.json" --payload-schema detailed "${scommon[@]}" "${node[@]}"
 jq -e '(.bundle.transactions | map(.step) == ["book", "fold"])
     and (.booking | test("^[0-9a-f]{64}$")) and (.fold | test("^[0-9a-f]{64}$"))
     and .booking != .fold and (.settled | length == 1)' \
@@ -3087,7 +3087,7 @@ if [ "$mode" = test-harness ]; then
   update_before="$(journal_count "$alice_journal")"
   rm -f "$work/update.go" "$work/update.go.waiting"
   SINGULAR_HARNESS_HOLD_AFTER_SUBMIT="$work/update.go" SINGULAR_HARNESS_HOLD_STEP=update \
-    "$open_datum" update --key keyC --payload "$work/payload-2.json" --confirm-timeout 30 \
+    "$open_datum" update --key keyC --payload "$work/payload-2.json" --payload-schema detailed --confirm-timeout 30 \
     "${common[@]}" "${node[@]}" "${alice[@]}" >"$receipts/update-node-lost.json" 2>"$receipts/update-node-lost.err" &
   victim=$!
   for _ in $(seq 1 1200); do

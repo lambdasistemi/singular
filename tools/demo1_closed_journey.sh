@@ -282,7 +282,7 @@ payload "$work/closed-payload.json"
 insert_journal="$(managed_journal "$reg" "$state_token" "$alicekey")"
 insert_before="$(journal_count "$insert_journal")"
 files_before="$(local_files)"
-story_vault insert alice -- insert --key "$key" --payload "$work/closed-payload.json" \
+story_vault insert alice -- insert --key "$key" --payload "$work/closed-payload.json" --payload-schema detailed \
   "${common[@]}" "${node[@]}"
 # Alice's vault booking leaves, for its own transaction, one waiting-for-signatures
 # line and the landed line after it, beside the landed lines that record an
@@ -364,7 +364,7 @@ say "two chain reads: the controller's wallet and the name's output"
 # ------------------------------------------------------------------
 jq -n '{constructor:3, fields:[{bytes:"626f62"},{int:123456789012345678901234567890}]}' >"$work/payload-update.json"
 refused update-refused client-refusal -- update --key "$key" \
-  --payload "$work/payload-update.json" "${common[@]}" "${node[@]}" \
+  --payload "$work/payload-update.json" --payload-schema detailed "${common[@]}" "${node[@]}" \
   --vault "$story/alice/alice.vault" --passphrase-fd 3 3<<<"$alice_pass"
 jq -e --arg t "$state_token" '.reason | contains($t) and contains("is closed") and contains("written once")' \
   "$receipts/update-refused.json" >/dev/null \

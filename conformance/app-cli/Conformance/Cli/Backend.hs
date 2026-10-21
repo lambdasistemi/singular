@@ -1548,7 +1548,7 @@ commandArgsFor env c actor registry key r = do
                 ( commandPrefix Insert
                     <> common
                     <> keyArg
-                    <> ["--payload", path]
+                    <> ["--payload", path, "--payload-schema", "detailed"]
                     <> node
                     <> wallet
                     <> outlay
@@ -1595,7 +1595,7 @@ commandArgsFor env c actor registry key r = do
                 ( commandPrefix (Update n)
                     <> common
                     <> keyArg
-                    <> ["--payload", path]
+                    <> ["--payload", path, "--payload-schema", "detailed"]
                     <> node
                     <> wallet
                     <> outlay

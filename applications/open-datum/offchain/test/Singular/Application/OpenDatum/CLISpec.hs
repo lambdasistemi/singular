@@ -35,7 +35,7 @@ import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Lazy qualified as BL
 import Data.ByteString.Short qualified as SBS
-import Data.Either (fromLeft)
+import Data.Either (fromLeft, isRight)
 import Data.List (findIndex, isInfixOf, isPrefixOf, tails)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (isJust)
@@ -73,6 +73,7 @@ import Singular.Application.OpenDatum.Build
 import Singular.Application.OpenDatum.Command
 
 import Singular.Application.OpenDatum.Value (Mode (..))
+import Singular.Registry.PlainJson (PayloadSchema (..))
 
 import Singular.Application.OpenDatum.StateTokenFixture (token)
 import Singular.CLI.Proof
@@ -116,6 +117,7 @@ import Singular.Registry.Wallet
 spec :: Spec
 spec = describe "singular registry commands" $ do
     commandLine
+    payloadSchemaRows
     externalSignerRows
     vaultSignerRows
     creatorChecks
@@ -296,6 +298,7 @@ commandLine = describe "the command line" $ do
                         , entryMode = Submit writeSettings
                         , entryKey = Key "key"
                         , entryDocument = Just "/p.json"
+                        , entryPayloadSchema = PlainSchema
                         , entryDeposit = Just minimumDeposit
                         , entryFund = Nothing
                         , entryMaxOutlay = Nothing
@@ -1607,6 +1610,7 @@ previewRows = describe "--preview" $ do
                                 (textOf Testnet payerHash)
                         , entryKey = Key "key"
                         , entryDocument = Just "/p.json"
+                        , entryPayloadSchema = PlainSchema
                         , entryDeposit = Just minimumDeposit
                         , entryFund = Nothing
                         , entryMaxOutlay = Nothing
@@ -2006,3 +2010,81 @@ usageOf verb =
         . dropWhile (not . isPrefixOf "Usage:")
         . lines
         $ openDatumHelp [verb]
+
+-- ---------------------------------------------------------
+-- The payload schema (#719)
+-- ---------------------------------------------------------
+
+{- | @--payload-schema@ names the form a payload file is written in. Insert
+and update read it; fold refuses it by name as it refuses @--payload@; the
+value is one of two lower-case names.
+-}
+payloadSchemaRows :: Spec
+payloadSchemaRows = describe "the payload schema setting (#719)" $ do
+    let line verb extra =
+            parseOpenDatumCommand
+                ( ["open-datum", verb, "--key", "key", "--payload", "/p.json"]
+                    <> extra
+                    <> reg
+                    <> provider
+                    <> wallet
+                )
+    forM_ ["insert", "update"] $ \verb -> do
+        forM_ ["plain", "detailed"] $ \name ->
+            it ("reads --payload-schema " <> name <> " on " <> verb) $
+                line verb ["--payload-schema", name] `shouldSatisfy` isRight
+        it ("reads the =value spelling on " <> verb) $
+            line verb ["--payload-schema=detailed"] `shouldSatisfy` isRight
+        it ("reads " <> verb <> " without the setting, as before") $
+            line verb [] `shouldSatisfy` isRight
+        it
+            ( "refuses a value that is not a schema name on "
+                <> verb
+                <> ", naming the flag"
+            )
+            $ forM_
+                [ "yaml"
+                , "Plain"
+                , "DETAILED"
+                , ""
+                , "plain,detailed"
+                , "detailed "
+                , "json"
+                ]
+            $ \value ->
+                line verb ["--payload-schema", value]
+                    `shouldBe` Left
+                        ( BadValue
+                            "--payload-schema"
+                            "is not a payload schema: give plain or detailed"
+                        )
+        it ("refuses the setting with no value on " <> verb) $
+            line verb ["--payload-schema"]
+                `shouldBe` Left (BadValue "--payload-schema" "needs a value")
+    it "still needs the payload file on an insert that names the setting" $
+        parseOpenDatumCommand
+            ( [ "open-datum"
+              , "insert"
+              , "--key"
+              , "key"
+              , "--payload-schema"
+              , "detailed"
+              ]
+                <> reg
+                <> provider
+                <> wallet
+            )
+            `shouldBe` Left (MissingFlag "--payload")
+    it "refuses the setting on fold, by name, as it refuses --payload" $ do
+        let fold extra =
+                parseOpenDatumCommand
+                    (["open-datum", "fold"] <> reg <> provider <> wallet <> extra)
+            renamed = \case
+                Left (BadValue _ why) -> Left (BadValue "--payload-schema" why)
+                other -> other
+        fold ["--payload-schema", "plain"]
+            `shouldBe` renamed (fold ["--payload", "/p.json"])
+        fold ["--payload-schema", "plain"]
+            `shouldSatisfy` \case
+                Left (BadValue "--payload-schema" why) -> "open-datum fold" `isInfixOf` why
+                _ -> False

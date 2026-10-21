@@ -24,6 +24,7 @@ module Singular.CLI.Declared
     , walletAddress
     , bundle
     , walletSkey
+    , payloadSchema
     , receipt
     , confirmTimeout
     , fundInput
@@ -183,6 +184,16 @@ walletSkey =
         "--wallet-skey"
         "FILE"
         "Signer, legacy route: sign with this payment key file. Prefer the vault."
+
+payloadSchema :: Flag
+payloadSchema =
+    ( valued
+        "--payload-schema"
+        "plain|detailed"
+        "The form the payload file is written in. plain: ordinary JSON, mapped to Plutus data by the table in the documentation. detailed: the schema that writes any Plutus data exactly."
+    )
+        { flagDefault = Just "plain"
+        }
 
 receipt :: Flag
 receipt =

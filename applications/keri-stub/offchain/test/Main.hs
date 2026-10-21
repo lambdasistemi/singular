@@ -4,6 +4,7 @@ import Singular.Application.KeriStub.CLISpec qualified
 import Singular.Application.KeriStub.ConvictSpec qualified
 import Singular.Application.KeriStub.DatumSpec qualified
 import Singular.Application.KeriStub.FlagGroupExtentSpec qualified
+import Singular.Application.KeriStub.PayloadReadSpec qualified
 import Singular.Application.KeriStub.PurposesSpec qualified
 import Singular.Application.KeriStub.RegisterSpec qualified
 import Singular.Application.KeriStub.RulesSpec qualified
@@ -26,6 +27,9 @@ main = hspec $ do
     describe
         (tagged "Singular.Application.KeriStub.FlagGroupExtent" [Cli])
         Singular.Application.KeriStub.FlagGroupExtentSpec.spec
+    describe
+        (tagged "Singular.Application.KeriStub.PayloadRead" [Cli])
+        Singular.Application.KeriStub.PayloadReadSpec.spec
     describe
         (tagged "Singular.Application.KeriStub.Register" [Application])
         Singular.Application.KeriStub.RegisterSpec.spec

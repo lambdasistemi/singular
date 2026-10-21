@@ -88,6 +88,7 @@ test-suite keri-stub-tests
     Singular.Application.KeriStub.ConvictSpec
     Singular.Application.KeriStub.DatumSpec
     Singular.Application.KeriStub.FlagGroupExtentSpec
+    Singular.Application.KeriStub.PayloadReadSpec
     Singular.Application.KeriStub.RegisterSpec
     Singular.Application.KeriStub.PurposesSpec
     Singular.Application.KeriStub.RulesSpec
@@ -104,6 +105,8 @@ test-suite keri-stub-tests
     , cardano-ledger-core
     , cardano-ledger-mary
     , containers
+    , contra-tracer
+    , filepath
     , hspec
     , keri-stub
     , microlens
@@ -115,6 +118,7 @@ test-suite keri-stub-tests
     , singular-registry
     , singular-registry:local-services
     , singular-registry:registry-cli
+    , temporary
     , text
 
   ghc-options:      -threaded

@@ -23,16 +23,12 @@ module Singular.Application.OpenDatum.Build
     , readKey
     , DepositRefusal (..)
     , readDeposit
-    , PayloadRefusal (..)
-    , readPayload
 
       -- * The builder
     , buildEnvelope
     ) where
 
 import Control.Monad (when)
-import Data.Aeson (Value)
-import Data.Bifunctor (first)
 import Data.ByteString (ByteString)
 import Data.Char (digitToInt, isDigit)
 import Data.Text (Text)
@@ -44,7 +40,6 @@ import Singular.Application.OpenDatum.Envelope
     ( Control (..)
     , Envelope (..)
     , StateAsset
-    , dataFromJson
     , envelopeVersion
     )
 import Singular.CLI.Key
@@ -86,14 +81,6 @@ readDeposit = \case
         | not (T.null digits) && T.all isDigit digits =
             Just (T.foldl' (\n c -> n * 10 + toInteger (digitToInt c)) 0 digits)
         | otherwise = Nothing
-
--- | Why a payload is refused: the reason the datum reader gives.
-newtype PayloadRefusal = PayloadNotPlutusData String
-    deriving stock (Eq, Show)
-
--- | The datum a detailed-schema JSON value is.
-readPayload :: Value -> Either PayloadRefusal PLC.Data
-readPayload = first PayloadNotPlutusData . dataFromJson
 
 {- | The envelope its six sources make, under 'envelopeVersion'.
 
