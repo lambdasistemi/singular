@@ -35,6 +35,7 @@ module Singular.CLI.Session
     , reportedOf
     , failWith
     , failWithFields
+    , loadReleaseFor
     , admitSubmissions
 
       -- * The environment
@@ -169,6 +170,7 @@ import Singular.CLI.Failure
     , Reported (..)
     , failWith
     , failWithFields
+    , loadReleaseFor
     , markedLike
     , reportedOf
     )

@@ -14,6 +14,7 @@ module Singular.CLI.Declared
       stateDir
     , blueprint
     , stateToken
+    , registry
     , stateTokenVariable
     , koiosUrl
     , networkMagic
@@ -45,6 +46,8 @@ module Singular.CLI.Declared
 
       -- * Groups
     , nodeShape
+    , registryNodeShape
+    , registryShape
     , signerShape
     , tracingShape
     , keyShape
@@ -56,6 +59,7 @@ module Singular.CLI.Declared
     , previewParagraph
     , exitStatuses
     , preprodExample
+    , preprodUrlExample
     , environmentLog
     , environmentState
     , environmentPassphrase
@@ -103,6 +107,15 @@ stateToken =
             "--state-token"
             "POLICY.NAME"
             "The registry to act on: its state token, policy and name in hex, as create prints it."
+        )
+
+registry :: Flag
+registry =
+    standing
+        ( valued
+            "--registry"
+            "ADDRESS"
+            "The registry to act on: its address, as create prints it. The address holds the state token and the network, so a command given it needs neither."
         )
 
 koiosUrl :: Flag
@@ -344,6 +357,24 @@ nodeShape =
         , Takes networkTime
         ]
 
+{- | What names the registry a command acts on: its address, or its state token
+with the network. A line may give both, and they must agree.
+-}
+registryShape :: Shape
+registryShape = Each [Takes registry, Takes stateToken]
+
+{- | The Koios node a command that takes a registry names: the network may be
+left to the registry's address.
+-}
+registryNodeShape :: Shape
+registryNodeShape =
+    Each
+        [ Needs koiosUrl
+        , Takes networkMagic
+        , Takes koiosTokenFile
+        , Takes networkTime
+        ]
+
 {- | The signers of a write, the normal route first and the key file, which
 is legacy, last.
 -}
@@ -401,6 +432,10 @@ exitStatuses =
 preprodExample :: String
 preprodExample =
     "--koios-url https://preprod.koios.rest/api/v1 --network-magic 1"
+
+-- | The Koios URL the examples of a command given a registry address use: the address names the network.
+preprodUrlExample :: String
+preprodUrlExample = "--koios-url https://preprod.koios.rest/api/v1"
 
 environmentLog :: (String, String)
 environmentLog =

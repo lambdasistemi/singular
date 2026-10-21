@@ -87,6 +87,7 @@ import Singular.CLI.Session
     ( CommandFailure (..)
     , Env (..)
     , failWith
+    , loadReleaseFor
     , readOnce
     , reportedOf
     )
@@ -95,6 +96,10 @@ import Singular.CLI.Trace
     , RefusalKind (..)
     , Trace (..)
     , What (..)
+    )
+import Singular.Registry.Address
+    ( registryFingerprint
+    , renderRegistryAddress
     )
 import Singular.Registry.Application (Application)
 import Singular.Registry.Config (CageConfig (..))
@@ -166,8 +171,11 @@ runDescribe app env a = do
         readVersionLabel (describeBlueprint a)
             >>= either (failWith ClientRefusal . T.unpack . renderPageRefusal) pure
     release <-
-        envLoadRelease env app (describeBlueprint a)
-            >>= either (failWith ClientRefusal) pure
+        loadReleaseFor
+            env
+            app
+            (describeBlueprint a)
+            (accessToken (describeAccess a))
     blueprintBytes <- do
         content <-
             try (BS.readFile (describeBlueprint a))
@@ -223,6 +231,8 @@ runDescribe app env a = do
             describeRegistry
                 PageInputs
                     { pageStateToken = renderStateToken requested
+                    , pageAddress = renderRegistryAddress magic requested
+                    , pageFingerprint = registryFingerprint requested
                     , pageStateOutput = txInText (fst (liveState live))
                     , pageStateScript = hexT (scriptHashBytes (cfgScriptHash cfg))
                     , pageApplicationScript =

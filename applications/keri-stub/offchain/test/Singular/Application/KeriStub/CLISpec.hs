@@ -20,21 +20,30 @@ import Data.Either (isLeft, isRight)
 import Data.List (isInfixOf)
 import Data.Maybe (isJust)
 import Data.Text qualified as T
+import Data.Word (Word32)
 import Test.Hspec
 
 import Singular.Application.KeriStub.Command
 import Singular.CLI.Command
     ( CreateArgs (..)
     , EntryArgs (..)
+    , EntryMode (..)
+    , FoldArgs (..)
+    , InspectArgs (..)
     , Key (..)
+    , ProviderSettings (..)
+    , RegistryAccess (..)
+    , WriteSettings (..)
     )
 import Singular.CLI.FlagGroup (commonFlagGroup)
+import Singular.Registry.StateToken (renderStateToken)
 
 spec :: Spec
 spec = describe "keri-stub commands" $ do
     commandLine
     flags
     payloadSchemaRows
+    registryAddressRows
 
 provider :: [String]
 provider =
@@ -374,3 +383,126 @@ payloadSchemaRows = describe "the payload schema setting (#719)" $ do
                     `shouldSatisfy` \case
                         Left (BadValue "--payload-schema" _) -> True
                         _ -> False
+
+-- ---------------------------------------------------------
+-- A registry has an address (#728)
+-- ---------------------------------------------------------
+
+{- | The registry a command was told to act on: its state token and the
+network magic of its provider.
+-}
+reading :: KeriStubCommand -> Maybe (String, Word32)
+reading = \case
+    KeriRegister a -> entry a
+    KeriConvict c -> entry (convictEntry c)
+    KeriFold a ->
+        named (foldAccess a) (providerMagic (writeProvider (foldWrite a)))
+    KeriStatus a -> named (inspectAccess a) (providerMagic (inspectProvider a))
+    _ -> Nothing
+  where
+    entry a = named (entryAccess a) (providerMagic (entryProvider a))
+    entryProvider a = case entryMode a of
+        Submit settings -> writeProvider settings
+        Preview settings _ -> settings
+    named access magic =
+        Just (T.unpack (renderStateToken (accessToken access)), magic)
+
+{- | The addresses of one state token on two networks, made by an independent
+bech32 implementation (the reference algorithm of BIP-173) and not by the
+code under test: the same fixed values as the registry command suite.
+-}
+policyHex, nameHex, devnetAddress, preprodAddress :: String
+policyHex = "68df9c42ebd4468be130e9cd5538a7af39cc31c146cda45f274cccc5"
+nameHex = "1d5542bdf2b2c8c76728a5935edd71676d1df5f389c70863b6a4d15fe33bde26"
+devnetAddress =
+    "singular_devnet1dr0ecsht63rghcfsa8x42w984uuucvwpgmx6ghe8fnxv2824g27l9vkgcanj3fvntmwhzemdrh6l8zw8pp3mdfx3tl3nhh3x3ggs8q"
+preprodAddress =
+    "singular_preprod1dr0ecsht63rghcfsa8x42w984uuucvwpgmx6ghe8fnxv2824g27l9vkgcanj3fvntmwhzemdrh6l8zw8pp3mdfx3tl3nhh3xe8mmy4"
+
+-- | The same address with its last character changed: the checksum is wrong.
+mistypedAddress :: String
+mistypedAddress = init devnetAddress <> "9"
+
+registryAddressRows :: Spec
+registryAddressRows = describe "a registry given by its address" $ do
+    forM_ verbs $ \(verb, base) -> describe ("keri-stub " <> verb) $ do
+        it
+            "is named by --registry alone, which gives the state token and the network"
+            $ told base [] [("--registry", devnetAddress)]
+                `shouldBe` Right (policyHex <> "." <> nameHex, 42)
+        it "gives the network its address names" $
+            told base [] [("--registry", preprodAddress)]
+                `shouldBe` Right (policyHex <> "." <> nameHex, 1)
+        it "is named by the variable SINGULAR_REGISTRY alone" $
+            told base [("SINGULAR_REGISTRY", devnetAddress)] []
+                `shouldBe` Right (policyHex <> "." <> nameHex, 42)
+        it
+            "is read with a state token and a network magic that are the address's"
+            $ told
+                base
+                []
+                [ ("--registry", devnetAddress)
+                , ("--state-token", policyHex <> "." <> nameHex)
+                , ("--network-magic", "42")
+                ]
+                `shouldBe` Right (policyHex <> "." <> nameHex, 42)
+        it "is refused beside a state token of another token, naming both" $
+            told
+                base
+                []
+                [ ("--registry", devnetAddress)
+                , ("--state-token", policyHex <> "." <> replicate 64 '0')
+                ]
+                `refusedWith` [policyHex <> "." <> nameHex, replicate 64 '0']
+        it "is refused beside a network magic of another network, naming both" $
+            told
+                base
+                []
+                [("--registry", devnetAddress), ("--network-magic", "1")]
+                `refusedWith` ["singular_devnet", "--network-magic"]
+        it
+            "is refused with a word that is not an address, by what is wrong with it"
+            $ do
+                told base [] [("--registry", "not-an-address")]
+                    `refusedWith` ["not an address"]
+                told base [] [("--registry", mistypedAddress)]
+                    `refusedWith` ["checksum"]
+        it "is refused as before with neither a registry nor a state token" $
+            told base [] [("--network-magic", "42")]
+                `shouldBe` Left "missing --state-token"
+        it "is no longer refused as the renamed --state-dir" $
+            told base [] [("--registry", "/srv/reg")]
+                `refusedNot` ["was renamed to"]
+    it "is a flag of the common group" $
+        commonFlagGroup `shouldSatisfy` elem "--registry"
+  where
+    node = ["--koios-url", "http://127.0.0.1:8080/api/v1"]
+    verbs =
+        [
+            ( "register"
+            , ["keri-stub", "register", "--key", "hello", "--payload", "/p.json"]
+                <> createReg
+                <> node
+                <> wallet
+            )
+        , ("convict", convict <> createReg <> node <> wallet)
+        , ("fold", ["keri-stub", "fold"] <> createReg <> node <> wallet)
+        ,
+            ( "status"
+            , ["keri-stub", "status", "--key", "hello"] <> createReg <> node
+            )
+        ]
+    told base environment given =
+        case parseKeriStubCommandWithEnvironment
+            environment
+            (base <> concat [[flag, value] | (flag, value) <- given]) of
+            Left err -> Left (renderCLIError err)
+            Right command -> maybe (Left "not a registry command") Right (reading command)
+    refusedWith result needles = case result of
+        Left sentence -> forM_ needles $ \needle ->
+            (needle, sentence) `shouldSatisfy` uncurry isInfixOf
+        Right _ -> expectationFailure "the line was read, it should be refused"
+    refusedNot result needles = case result of
+        Left sentence -> forM_ needles $ \needle ->
+            (needle, sentence) `shouldSatisfy` (not . uncurry isInfixOf)
+        Right _ -> expectationFailure "the line was read, it should be refused"

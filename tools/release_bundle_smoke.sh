@@ -14,12 +14,19 @@
 #               carries the development node (#707), `devnet`, `cardano-node`
 #               and the genesis files, and the deployment blueprint
 #               share/plutus.json with share/version.txt naming VERSION
+#               and, for a release that carries the table of releases (#728),
+#               share/singular-registry/data/contracts/state-contracts.json
 #   identity    `singular --version`, `open-datum --version` and
 #               `devnet --version` print `<program> VERSION (commit COMMIT)`
 #               and exit 0; `cardano-node --version` names its own release
 #   help        `--help` of each exits 0 and prints something
 #   offline     `singular wallet create` in a temporary directory, then
 #               `wallet address`, name the same address
+#   contracts   for a release that carries the table of releases: the bundled
+#               `singular` refuses a registry made by other contracts and names
+#               the releases that carry them and the page of the newest, so it
+#               found its table; with the table file moved away it says the
+#               table cannot be used and names no release, so the check can fail
 #   standalone  nothing the executables load comes from the Nix store or the
 #               host: on Linux the bundled loader resolves every library
 #               inside the bundle, and a run in a sandbox that mounts the
@@ -94,7 +101,10 @@ bundle="$work/tree/$entries"
 
 # does this bundle have to carry the development node (#707)?
 case "${RELEASE_BUNDLE_DEVNET:-by-version}" in
-  required) with_devnet=true ;;
+  required)
+    with_devnet=true
+    with_table=true
+    ;;
   by-version)
     conf="${RELEASE_BUNDLES_CONF:-$(cd "$(dirname "$0")" && pwd)/release_bundles.sh}"
     [ -f "$conf" ] || {
@@ -109,6 +119,12 @@ case "${RELEASE_BUNDLE_DEVNET:-by-version}" in
       with_devnet=true
     else
       with_devnet=false
+    fi
+    # likewise the table of releases: a bundle that carries it is checked as one that does
+    if contract_table_required "$version" || [ -e "$bundle/share/singular-registry/data/contracts" ]; then
+      with_table=true
+    else
+      with_table=false
     fi
     ;;
   *)
@@ -130,6 +146,10 @@ for member in bin/singular bin/open-datum libexec/singular libexec/open-datum \
   VERSION COMMIT; do
   [ -e "$bundle/$member" ] || fail members "$tarball carries no $member"
 done
+if $with_table; then
+  [ -e "$bundle/share/singular-registry/data/contracts/state-contracts.json" ] \
+    || fail members "$tarball carries no share/singular-registry/data/contracts/state-contracts.json"
+fi
 if $with_devnet; then
   for member in bin/devnet bin/cardano-node libexec/devnet libexec/cardano-node \
     share/devnet/genesis/node-config.json share/devnet/genesis/topology.json \
@@ -208,6 +228,39 @@ esac
 [ "$created" = "$shown" ] \
   || fail offline "wallet address named [$shown], wallet create [$created]"
 pass offline "wallet create and wallet address name $created"
+
+# contracts: a bundled program finds its table of releases. A registry whose
+# policy is the hash of the contracts of an old release (the first of the table's
+# rows that shares a release with others) is refused, before any chain read,
+# with the releases that carry those contracts and the page of the newest. The
+# table is then moved away: the same command says the table cannot be used and
+# names no release, which is what shows the first answer came from the table.
+if $with_table; then
+  [ -f "$bundle/share/plutus.json" ] \
+    || fail contracts "the bundle carries no share/plutus.json to run the program against"
+  contracts_table="$bundle/share/singular-registry/data/contracts/state-contracts.json"
+  contracts_policy=8ac9562f5fb6be9b9b913ae2ad2cc1d9e038f7f7039256f1ac9f7a62
+  contracts_name="$(printf '%064d' 0)"
+  contracts_probe() {
+    "$bundle/bin/singular" registry describe --blueprint "$bundle/share/plutus.json" \
+      --state-token "$contracts_policy.$contracts_name" --koios-url http://127.0.0.1:9 \
+      --network-magic 42 2>&1 || true
+  }
+  contracts_first="$(contracts_probe)"
+  for needle in state-token-foreign-release v0.4.1 v0.6.1 \
+    https://github.com/lambdasistemi/singular/releases/tag/v0.6.1; do
+    printf '%s' "$contracts_first" | grep -qF -- "$needle" \
+      || fail contracts "the bundled singular did not say $needle of a registry of the contracts of v0.4.1: $(printf '%s' "$contracts_first" | tr '\n' ' ' | cut -c1-300)"
+  done
+  mv "$contracts_table" "$contracts_table.aside"
+  contracts_second="$(contracts_probe)"
+  mv "$contracts_table.aside" "$contracts_table"
+  printf '%s' "$contracts_second" | grep -qF -- 'cannot be used' \
+    || fail contracts "with the table moved away the bundled singular did not say the table cannot be used: $(printf '%s' "$contracts_second" | tr '\n' ' ' | cut -c1-300)"
+  ! printf '%s' "$contracts_second" | grep -qF -- 'v0.6.1' \
+    || fail contracts "with the table moved away the bundled singular still named a release"
+  pass contracts "a registry of the contracts of v0.4.1 is refused naming v0.4.1 to v0.6.1 and their newest page; without the table it says so"
+fi
 
 # standalone
 # linux_libraries DIRECTORY PROGRAM: the bundled loader of DIRECTORY resolves
@@ -289,6 +342,7 @@ esac
 # environment, so the node it runs is the bundled one and nothing is read from
 # the host. Its settings document is the first line it prints.
 checked="members, identity, help, offline and standalone"
+if $with_table; then checked="members, identity, help, offline, contracts and standalone"; fi
 if $with_devnet; then
   node_tmp="$work/node-tmp"
   mkdir -p "$node_tmp"

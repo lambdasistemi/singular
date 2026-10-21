@@ -105,6 +105,7 @@ pinnedCommonValued =
     , "--payload-schema"
     , "--request"
     , "--state-token"
+    , "--registry"
     ]
 
 -- | The accepted common switches, pinned in full.
@@ -159,9 +160,10 @@ registryTokenizer = describe "registry tokenizer" $ do
     it "refuses an unknown flag by name" $
         tokenizesRegistry ["cmd", "--frobnicate", "x"]
             `shouldBe` Left (BadValue "--frobnicate" "is not a flag singular reads")
-    it "refuses a renamed flag by name" $
-        tokenizesRegistry ["cmd", "--registry", "x"]
-            `shouldBe` Left (BadValue "--registry" "was renamed to --state-dir")
+    it
+        "takes --registry, which was once a renamed flag, as the registry's address"
+        $ tokenizesRegistry ["cmd", "--registry", "x"]
+            `shouldBe` Right (["cmd"], [("--registry", Just "x")])
     it "refuses a removed setting by name" $
         tokenizesRegistry ["cmd", "--backend", "koios"]
             `shouldBe` Left (RemovedSetting "--backend")

@@ -60,11 +60,16 @@ registryGroup =
     Group
         "registry"
         "Create a registry and act on it"
-        [ "The registry commands name a registry by its state token, which \
-          \create prints; every command but create takes it from --state-token \
-          \or from SINGULAR_STATE_TOKEN."
+        [ "The registry commands name a registry by its address, which create \
+          \prints: one word that holds the registry's state token and its network, \
+          \so a command given it needs nothing else to find the registry. Every \
+          \command but create takes it from --registry or from SINGULAR_REGISTRY. \
+          \A registry may still be named by its state token (--state-token or \
+          \SINGULAR_STATE_TOKEN) with the network (--network-magic); given both, \
+          \they must agree."
         ]
         [ createLeaf
+        , addressLeaf
         , foldLeaf
         , rejectLeaf
         , reclaimLeaf
@@ -97,9 +102,9 @@ createLeaf =
             , leafSummary = "Boot a registry, or preview its identity"
             , leafDescription =
                 [ "Boots one registry from a seed output of your wallet and prints its \
-                  \state token, which every other command names the registry by. The \
-                  \processing window and the retract window are fixed here for the life \
-                  \of the registry."
+                  \address, which every other command names the registry by, with its \
+                  \state token and its fingerprint. The processing window and the \
+                  \retract window are fixed here for the life of the registry."
                 , signerParagraph
                 , previewParagraph
                 ]
@@ -129,6 +134,43 @@ createLeaf =
             , leafNotes = exitStatuses
             }
 
+addressLeaf :: Node
+addressLeaf =
+    Runs
+        Leaf
+            { leafName = "address"
+            , leafSummary = "Show or make a registry's address"
+            , leafDescription =
+                [ "Prints one receipt about a registry: its address, its state \
+                  \token, its fingerprint and its network magic. Given the address \
+                  \(--registry) it shows what the address holds; given a state \
+                  \token and a network magic it makes the address, for a registry \
+                  \created before addresses were printed. It reads no chain and \
+                  \needs no provider."
+                , "The prefix of an address names the network: singular for \
+                  \mainnet, singular_preprod for preprod, singular_preview for \
+                  \preview and singular_devnet for the generated development \
+                  \network. A network magic that has no prefix is refused."
+                ]
+            , leafShape =
+                Each
+                    [ Takes registry
+                    , Takes stateToken
+                    , Takes networkMagic
+                    , tracingShape
+                    ]
+            , leafWord = Nothing
+            , leafEnvironment = [environmentLog]
+            , leafExamples =
+                [ "singular registry address \\"
+                , "    --state-token <policy>.<name> --network-magic 1"
+                ]
+            , leafNotes =
+                [ "Prints the receipt alone and writes no file."
+                , "Exit status 0 on success, 2 for a command line it refused."
+                ]
+            }
+
 foldLeaf :: Node
 foldLeaf =
     Runs
@@ -146,8 +188,8 @@ foldLeaf =
                 Each
                     [ Takes stateDir
                     , Needs blueprint
-                    , Needs stateToken
-                    , nodeShape
+                    , registryShape
+                    , registryNodeShape
                     , writeShape
                     , Takes foldRequest
                     , spendingShape
@@ -158,8 +200,8 @@ foldLeaf =
                 [environmentLog, environmentState, environmentPassphrase]
             , leafExamples =
                 [ "singular registry fold --blueprint plutus.json \\"
-                , "    --state-token <policy>.<name> \\"
-                , "    " <> preprodExample <> " \\"
+                , "    --registry <address> \\"
+                , "    " <> preprodUrlExample <> " \\"
                 , "    --vault alice.vault"
                 ]
             , leafNotes = exitStatuses
@@ -184,8 +226,8 @@ rejectLeaf =
                 Each
                     [ Takes stateDir
                     , Needs blueprint
-                    , Needs stateToken
-                    , nodeShape
+                    , registryShape
+                    , registryNodeShape
                     , writeShape
                     , spendingShape
                     , tracingShape
@@ -195,8 +237,8 @@ rejectLeaf =
                 [environmentLog, environmentState, environmentPassphrase]
             , leafExamples =
                 [ "singular registry reject --blueprint plutus.json \\"
-                , "    --state-token <policy>.<name> \\"
-                , "    " <> preprodExample <> " \\"
+                , "    --registry <address> \\"
+                , "    " <> preprodUrlExample <> " \\"
                 , "    --vault alice.vault"
                 ]
             , leafNotes = exitStatuses
@@ -220,9 +262,9 @@ reclaimLeaf =
                 Each
                     [ Takes stateDir
                     , Needs blueprint
-                    , Needs stateToken
+                    , registryShape
                     , Needs reclaimRequest
-                    , nodeShape
+                    , registryNodeShape
                     , writeShape
                     , spendingShape
                     , tracingShape
@@ -232,8 +274,8 @@ reclaimLeaf =
                 [environmentLog, environmentState, environmentPassphrase]
             , leafExamples =
                 [ "singular registry reclaim --blueprint plutus.json \\"
-                , "    --state-token <policy>.<name> --request <txid>#<ix> \\"
-                , "    " <> preprodExample <> " \\"
+                , "    --registry <address> --request <txid>#<ix> \\"
+                , "    " <> preprodUrlExample <> " \\"
                 , "    --vault alice.vault"
                 ]
             , leafNotes = exitStatuses
@@ -257,9 +299,9 @@ inspectLeaf =
                 Each
                     [ Takes stateDir
                     , Needs blueprint
-                    , Needs stateToken
+                    , registryShape
                     , keyShape
-                    , nodeShape
+                    , registryNodeShape
                     , Takes outputsAt
                     , Takes reconcileAddress
                     , Takes receipt
@@ -293,8 +335,8 @@ describeLeaf =
             , leafShape =
                 Each
                     [ Needs blueprint
-                    , Needs stateToken
-                    , nodeShape
+                    , registryShape
+                    , registryNodeShape
                     , Takes json
                     , tracingShape
                     ]
@@ -302,7 +344,7 @@ describeLeaf =
             , leafEnvironment = [environmentLog]
             , leafExamples =
                 [ "singular registry describe --blueprint plutus.json \\"
-                , "    --state-token <policy>.<name> " <> preprodExample
+                , "    --registry <address> " <> preprodUrlExample
                 ]
             , leafNotes =
                 "Prints the page alone, as indented JSON with or without --json, and writes no file."

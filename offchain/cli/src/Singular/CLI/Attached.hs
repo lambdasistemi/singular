@@ -85,9 +85,7 @@ attached
     -> (Attached -> IO Value)
     -> IO Value
 attached app env dir blueprint access roles ws command body = do
-    release <-
-        envLoadRelease env app blueprint
-            >>= either (failWith ClientRefusal) pure
+    release <- loadReleaseFor env app blueprint (accessToken access)
     withWrite env dir command ws $ \connected -> do
         -- The token the command named is the registry these reports sit in.
         -- Resolution still happens in the one view below: the name is what

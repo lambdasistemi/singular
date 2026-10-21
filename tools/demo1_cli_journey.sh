@@ -1015,6 +1015,88 @@ run empty-reader-inspect success -- inspect --key keyEmpty --state-token "$state
 say "bob booked and folded from an empty directory on the state token; another empty directory reads it"
 
 # ------------------------------------------------------------------
+# 1a2. the registry by its address alone (#728)
+# ------------------------------------------------------------------
+# The address is read from the receipt create printed, never typed. From fresh
+# state directories, with no state token and no network magic on any line, in
+# any variable or in any settings key, Alice books a key, Bob folds it and a
+# third empty directory reads it back, through both programs; every receipt
+# names the registry the create made.
+registry_address="$(field create .registry)"
+case "$registry_address" in
+  singular_devnet1*) ;;
+  *) fail "create printed no development network address: [$registry_address]" ;;
+esac
+[ -z "${SINGULAR_STATE_TOKEN:-}${SINGULAR_NETWORK_MAGIC:-}${SINGULAR_REGISTRY:-}${SINGULAR_CONFIG:-}" ] \
+  || setup_fail "a setting that names the registry or its network is set in this shell"
+[ ! -e "$PWD/singular.json" ] || setup_fail "a settings file is in the working directory"
+# the node and the pinned time, and no network magic: the address names it
+node_address=(--koios-url "$provider_url" --network-time "$time_directory")
+address_alice="$work/address-alice"
+address_bob="$work/address-bob"
+address_reader="$work/address-reader"
+mkdir -p "$address_alice" "$address_bob" "$address_reader"
+payload "$work/payload-address.json"
+run address-insert success -- insert --key keyAddress --payload "$work/payload-address.json" --payload-schema detailed \
+  --state-dir "$address_alice" --blueprint "$blueprint" --registry "$registry_address" "${node_address[@]}" "${alice[@]}"
+run address-fold success -- fold --request "$(field address-insert .request)" \
+  --state-dir "$address_bob" --blueprint "$blueprint" --registry "$registry_address" "${node_address[@]}" "${bob[@]}"
+run address-inspect success -- inspect --key keyAddress --registry "$registry_address" \
+  --state-dir "$address_reader" --blueprint "$blueprint" "${node_address[@]}"
+[ "$(field address-inspect .leaf)" = active ] \
+  || fail "a key booked and folded on the address alone is not active for a third empty directory"
+run address-singular-inspect success -- registry inspect --key keyAddress --registry "$registry_address" \
+  --state-dir "$address_reader" --blueprint "$blueprint" "${node_address[@]}"
+# the registry every receipt names is the one create made
+for name in address-inspect address-singular-inspect; do
+  jq -e --slurpfile c "$receipts/create.json" \
+    '.registry == $c[0].registry and .stateToken == $c[0].stateToken and .fingerprint == $c[0].fingerprint' \
+    "$receipts/$name.json" >/dev/null \
+    || fail "$name names another registry than the create made"
+done
+# the address, shown by the program that makes it, holds the state token of the create
+"$singular" registry address --registry "$registry_address" >"$receipts/address-holds.json"
+jq -e --slurpfile c "$receipts/create.json" \
+  '.stateToken == $c[0].stateToken and .fingerprint == $c[0].fingerprint and .networkMagic == 42' \
+  "$receipts/address-holds.json" >/dev/null \
+  || fail "the address of the create does not hold its state token, its fingerprint and its network"
+# the controls, each of which could fail: an unreachable provider shows that a
+# refusal came before any chain read, and the same line with the good address
+# shows that it would have reached the provider
+unreachable=(--koios-url http://127.0.0.1:1 --network-time "$time_directory")
+address_control() {
+  local label="$1" status=0
+  shift
+  "$singular" registry inspect --key keyAddress --state-dir "$work/address-control-$label" \
+    --blueprint "$blueprint" "$@" >"$receipts/address-control-$label.json" 2>"$receipts/address-control-$label.err" || status=$?
+  echo "$status"
+}
+status="$(address_control reaches --registry "$registry_address" "${unreachable[@]}")"
+[ "$status" -ne 2 ] && [ "$status" -ne 0 ] \
+  || fail "control: the good address on an unreachable provider ended $status, not at the provider"
+other_network_address="$("$singular" registry address --state-token "$state_token" --network-magic 1 | jq -r .registry)"
+case "$other_network_address" in
+  singular_preprod1*) ;;
+  *) fail "control: the address of the registry on preprod is [$other_network_address]" ;;
+esac
+status="$(address_control other-network --registry "$other_network_address" "${unreachable[@]}" --network-magic "$network_magic")"
+[ "$status" -eq 2 ] || fail "an address of another network beside this network's magic ended $status, not 2"
+grep -qF -- singular_preprod "$receipts/address-control-other-network.err" \
+  || fail "the refusal of an address of another network does not name its network"
+[ ! -s "$receipts/address-control-other-network.json" ] || fail "a refused address printed a receipt"
+last_character="${registry_address: -1}"
+if [ "$last_character" = q ]; then replacement=p; else replacement=q; fi
+mistyped="${registry_address%?}$replacement"
+status="$(address_control mistyped --registry "$mistyped" "${unreachable[@]}")"
+[ "$status" -eq 2 ] || fail "an address with one character changed ended $status, not 2"
+grep -qF -- checksum "$receipts/address-control-mistyped.err" \
+  || fail "the refusal of a mistyped address does not say the checksum is wrong"
+[ ! -s "$receipts/address-control-mistyped.json" ] || fail "a mistyped address printed a receipt"
+[ ! -e "$work/address-control-mistyped" ] && [ ! -e "$work/address-control-other-network" ] \
+  || fail "a refused address made a state directory"
+say "the registry by its address alone: booked, folded and read back on the address with no state token and no network magic; another network's address and a mistyped address are refused with status 2, before any chain read"
+
+# ------------------------------------------------------------------
 # 1b. fresh bob on the managed default path: no directory argument (485)
 # ------------------------------------------------------------------
 # Bob is new: an isolated HOME with no state, and no --state-dir anywhere

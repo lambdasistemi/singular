@@ -1,0 +1,77 @@
+{
+  "note": "From the hash of the state contract to the releases that carry it, oldest first. Made by tools/fill_contract_table.sh from the on-chain archive each release of lambdasistemi/singular published (singular-onchain-<version>.tar.gz); the hash is the one a built singular computes from that blueprint, and it was checked against the one the blueprint states. The sha256 of each archive is under archives, so a later fill can be compared with this one. A release that is left out is named under left-out with its reason.",
+  "archives": {
+    "v0.3.0": "cce0cdb8e4035d6da6284def64c7a270f8541d1a126ff4c1b582e5341e5e463b",
+    "v0.4.0": "a6fb5e1dbeed5bb1a1537795834b1c661715df4ea10731d108435a3e3a8f4f44",
+    "v0.4.1": "4cc013b5a7d3029bda36d659cb2b4289eb7034e0e1aa6fac6d1f00603f0676b9",
+    "v0.5.0": "ce46d0e9bc2f6a4ccc83e67c0506ffa2cf2cac72967012c20ae4679315f3d00b",
+    "v0.6.0": "a5ce48fd1f3f6ce5a7b3ee37296c1fba0def19b91ccdd6cebbc7aaaee1f55335",
+    "v0.6.1": "f79f601b6447482d36ed73dc14c1f5ce8018452e13da55595719897f1acc95b6",
+    "v0.7.0": "a7f65aa800ca112aaa4207e2c27df7776f8c48814a017e81697df30d10ab4245",
+    "v0.8.0": "1b0eb4ea340d1cdc07c08310f906b004690b385abf0f0e02c80fb92183aab62e",
+    "v0.9.0": "383459a39b5d540baed8145e82a85fae9531ba6f656e9f31c4cbd5cbecc1bae7",
+    "v0.10.0": "35536616f64699e1f592e5f87b672ad78b1d4242c4607acf23b4943959bc8112",
+    "v0.10.1": "81602a27468e684f31457d5ee80ba6b90f95a6f180fe45a25907067cd52b04de",
+    "v0.11.0": "323c1cfb0e461ab88b81f9ef57601579fce3a8e8b278d95ac6594041b8e62b9e",
+    "v0.12.0": "63c47122e51b291b6c2ff9ce79c0f0dc8ac86e33c4e896d895bd614492c83499",
+    "v0.13.0": "3afb0e992cfe87a5d543cef3dd6a48766e7bdb0281e42704f7ccbd6ca2843067",
+    "v0.13.1": "477f6ee702beae78f32c5023342137c34a5e484f3cf4b4b594fac4f1d9432fa9",
+    "v0.14.0": "939960fd81b4e4ef2e1978c2e6cded79121370bf880a8620c85abe74ebcfcb1c",
+    "v0.15.0": "f5b03395a233f48835747d4b9e434646faa6774492e52ddcf9d12d1e1d24680d"
+  },
+  "left-out": [
+    {
+      "release": "v0.2.0",
+      "reason": "the release has no on-chain archive (singular-onchain-0.2.0.tar.gz)"
+    }
+  ],
+  "rows": [
+    {
+      "state-contract": "64d1afbfe585b496a325ecacf2600210ff773368010bbab96e5cf1ce",
+      "releases": [
+        "v0.3.0"
+      ]
+    },
+    {
+      "state-contract": "3f62792585903776fc69059588783c7ca67ee9d24886c8722ebf8b2a",
+      "releases": [
+        "v0.4.0"
+      ]
+    },
+    {
+      "state-contract": "8ac9562f5fb6be9b9b913ae2ad2cc1d9e038f7f7039256f1ac9f7a62",
+      "releases": [
+        "v0.4.1",
+        "v0.5.0",
+        "v0.6.0",
+        "v0.6.1"
+      ]
+    },
+    {
+      "state-contract": "492c5595b83b5deba587db17ea819cf769a930f379cd3ecbde56d2a5",
+      "releases": [
+        "v0.7.0"
+      ]
+    },
+    {
+      "state-contract": "7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c",
+      "releases": [
+        "v0.8.0",
+        "v0.9.0"
+      ]
+    },
+    {
+      "state-contract": "68df9c42ebd4468be130e9cd5538a7af39cc31c146cda45f274cccc5",
+      "releases": [
+        "v0.10.0",
+        "v0.10.1",
+        "v0.11.0",
+        "v0.12.0",
+        "v0.13.0",
+        "v0.13.1",
+        "v0.14.0",
+        "v0.15.0"
+      ]
+    }
+  ]
+}

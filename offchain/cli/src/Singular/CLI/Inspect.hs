@@ -112,11 +112,13 @@ import Singular.CLI.Registry
     , parseEnterpriseAddress
     , payloadFields
     , pendingPath
+    , registryFields
     )
 import Singular.CLI.Session
     ( CommandFailure (..)
     , Env (..)
     , failWith
+    , loadReleaseFor
     , readOnce
     , withTargetLockOr
     )
@@ -137,6 +139,7 @@ import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.Ledger (ConwayEra)
 import Singular.Registry.LedgerProvider (Asset)
 import Singular.Registry.SessionIO qualified as Cage
+import Singular.Registry.StateToken (renderStateToken)
 import Singular.Registry.TxBuilder.Internal
     ( computeScriptHash
     , extractCageDatum
@@ -159,9 +162,7 @@ runInspect app env a = do
         settings = inspectProvider a
         requested = accessToken (inspectAccess a)
         magic = providerMagic settings
-    release <-
-        envLoadRelease env app (inspectBlueprint a)
-            >>= either (failWith ClientRefusal) pure
+    release <- loadReleaseFor env app (inspectBlueprint a) requested
     root <- resolveStateRoot (inspectStateDir a)
     case inspectWalletAddress a of
         -- The caller's wallet partition: the same journal a write signed
@@ -326,6 +327,7 @@ inspectSaved
     -> IO Value
 inspectSaved app env savedPath mJournal key settings release a = do
     let magic = providerMagic settings
+        requested = accessToken (inspectAccess a)
         -- The token the command named is the registry these reports sit in.
         -- Resolution still happens in the one view below.
         AssetName raw = snd (accessToken (inspectAccess a))
@@ -461,7 +463,9 @@ inspectSaved app env savedPath mJournal key settings release a = do
                             , "holdings" .= map (txInText . fst . fst) holdings
                             ]
                 labels =
-                    keyFields key
+                    [("stateToken", toJSON (renderStateToken requested))]
+                        <> registryFields magic requested
+                        <> keyFields key
                         <> [ ("sessionEvidence", scope)
                            , ("observedTip", toJSON chainPoint)
                            ,

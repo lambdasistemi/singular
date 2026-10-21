@@ -11,9 +11,10 @@ Usage: singular registry create [--config FILE] [--state-dir DIR] --blueprint
 
 Boot a registry, or preview its identity
 
-Boots one registry from a seed output of your wallet and prints its state
-token, which every other command names the registry by. The processing window
-and the retract window are fixed here for the life of the registry.
+Boots one registry from a seed output of your wallet and prints its address,
+which every other command names the registry by, with its state token and its
+fingerprint. The processing window and the retract window are fixed here for
+the life of the registry.
 
 A write is signed by exactly one signer: --vault (the normal route),
 --wallet-address with --bundle (written for an external signer, ending as

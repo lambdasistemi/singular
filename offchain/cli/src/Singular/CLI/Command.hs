@@ -32,6 +32,7 @@ socket settings are refused on every command, including --backend koios.
 module Singular.CLI.Command
     ( -- * Commands
       Command (..)
+    , AddressArgs (..)
     , CreateArgs (..)
     , DescribeArgs (..)
     , EntryArgs (..)
@@ -85,7 +86,7 @@ import Data.Char
     , generalCategory
     , isDigit
     )
-import Data.List (partition)
+import Data.List (intercalate, partition)
 import Data.Maybe (fromMaybe, isJust, isNothing)
 import Data.Set (Set)
 import Data.Set qualified as Set
@@ -138,6 +139,11 @@ import Singular.CLI.Passphrase
     , sourceFor
     )
 import Singular.CLI.Registry (economics)
+import Singular.CLI.RegistryReading
+    ( RegistryRefusal (..)
+    , completeRegistry
+    , registryGiven
+    )
 import Singular.CLI.Sign (signBundle)
 import Singular.CLI.Sources
     ( Sources (..)
@@ -161,6 +167,7 @@ import Singular.CLI.Vault
     , vaultWorkFactor
     )
 import Singular.CLI.Version (releaseVersion)
+import Singular.Registry.Address (addressPrefix, addressPrefixes)
 import Singular.Registry.Config.Application (RegistryEconomics (..))
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.LedgerProvider (Asset)
@@ -210,6 +217,17 @@ data WriteSettings = WriteSettings
 -}
 newtype RegistryAccess = RegistryAccess
     { accessToken :: Asset
+    }
+    deriving stock (Eq, Show)
+
+{- | @registry address@: the registry, named by the address it is given or by its
+state token and its network. It reads no chain.
+-}
+data AddressArgs = AddressArgs
+    { addressMagic :: Word32
+    -- ^ The network magic the registry is on
+    , addressToken :: Asset
+    -- ^ The registry's state token
     }
     deriving stock (Eq, Show)
 
@@ -434,6 +452,7 @@ data Command
       Help String
     | Create CreateArgs (Maybe ApplicationPolicy)
     | Describe DescribeArgs
+    | RegistryAddress AddressArgs
     | Fold FoldArgs
     | Reject RejectArgs
     | Reclaim ReclaimArgs
@@ -566,26 +585,32 @@ commandFrom environment (Raw ws allFlags) = do
                                     >> refuseRequest flags
                                     >> refuseFold flags
                                     >> (Create <$> createArgs flags <*> applicationPolicyFrom flags)
+                            ["registry", "address"] ->
+                                refuseAddressSettings flags
+                                    >> (RegistryAddress <$> addressArgs flags)
                             ["registry", "fold"] ->
                                 refuseApplicationPolicy flags
-                                    >> (Fold <$> foldArgs environment flags)
+                                    >> (Fold <$> (registryFlags flags >>= foldArgs environment))
                             ["registry", "reject"] ->
                                 refuseApplicationPolicy flags
-                                    >> (Reject <$> rejectArgs environment flags)
+                                    >> (Reject <$> (registryFlags flags >>= rejectArgs environment))
                             ["registry", "reclaim"] ->
                                 refuseApplicationPolicy flags
-                                    >> (Reclaim <$> reclaimArgs environment flags)
+                                    >> (Reclaim <$> (registryFlags flags >>= reclaimArgs environment))
                             ["registry", "inspect"] ->
                                 refuseApplicationPolicy flags
                                     >> refuseSpendingFlags "inspect" flags
                                     >> refuseBundle "registry inspect" flags
                                     >> refuseRequest flags
                                     >> refuseFold flags
-                                    >> (Inspect <$> inspectArgs environment flags)
+                                    >> (Inspect <$> (registryFlags flags >>= inspectArgs environment))
                             ["registry", "describe"] ->
                                 refuseApplicationPolicy flags
                                     >> refuseDescribeSettings flags
-                                    >> (Describe <$> describeArgs environment flags jsonSwitch)
+                                    >> ( Describe
+                                            <$> ( registryFlags flags >>= \completed -> describeArgs environment completed jsonSwitch
+                                                )
+                                       )
                             _ -> Left (UnknownCommand ws)
   where
     -- @--witnesses@ names what @submit@ sends; any other command refuses
@@ -789,6 +814,12 @@ commandFrom environment (Raw ws allFlags) = do
                     "--state-token"
                     "is refused by registry create, which makes one"
                 )
+        when (isJust (lookup "--registry" flags)) $
+            Left
+                ( BadValue
+                    "--registry"
+                    "is refused by registry create, which makes the registry and prints its address"
+                )
         processing <-
             windowFrom "--process-time" (reProcessTime economics) flags
         retracting <-
@@ -973,6 +1004,47 @@ commandFrom environment (Raw ws allFlags) = do
                 (BadValue "--state-token" . T.unpack)
                 (parseStateToken (T.pack tokenStr))
         pure RegistryAccess{accessToken = token}
+    -- The registry named by its address gives the flags its state token and its
+    -- network, so the rest of the reading is the one it always was.
+    registryFlags flags =
+        first registryRefused (completeRegistry environment flags)
+    -- @registry address@ reads no chain: it takes the registry, and nothing else.
+    refuseAddressSettings flags =
+        forM_ (commonFlagGroup <> extraValuedFlags) $ \flag ->
+            unless
+                (flag `elem` ["--registry", "--state-token", "--network-magic"])
+                $ when (isJust (lookup flag flags))
+                $ Left
+                    ( BadValue
+                        flag
+                        "is not accepted by registry address: it reads no chain, so it takes the registry (--registry, or --state-token with --network-magic) and nothing else"
+                    )
+    addressArgs flags =
+        first registryRefused (registryGiven environment flags) >>= \case
+            Just (magic, token) ->
+                Right AddressArgs{addressMagic = magic, addressToken = token}
+            Nothing
+                | isNothing (optional "--state-token" flags)
+                    && isNothing (lookup "SINGULAR_STATE_TOKEN" environment) ->
+                    Left
+                        (MissingFlag "--registry (or --state-token with --network-magic)")
+                | otherwise -> do
+                    access <- registryAccess environment flags
+                    magic <- case optional "--network-magic" flags of
+                        Nothing -> Left (MissingFlag "--network-magic")
+                        Just spelling -> case readMaybe spelling of
+                            Just m -> Right m
+                            Nothing -> Left (BadValue "--network-magic" "is not a number")
+                    when (isNothing (addressPrefix magic)) $
+                        Left (BadValue "--network-magic" (noPrefix magic))
+                    Right
+                        AddressArgs{addressMagic = magic, addressToken = accessToken access}
+    noPrefix magic =
+        show magic
+            <> " has no address prefix: the networks that have one are "
+            <> intercalate
+                ", "
+                [show m <> " (" <> T.unpack p <> ")" | (p, m) <- addressPrefixes]
     fundFrom flags = case optional "--fund-input" flags of
         Nothing -> Right Nothing
         Just s -> case parseOutRef (T.pack s) of
@@ -1190,6 +1262,12 @@ an application policy, and the wallet commands name an output directory.
 extraValuedFlags :: [String]
 extraValuedFlags = ["--application-policy", "--out"]
 
+-- | The registry a command line names, refused as the command line refuses.
+registryRefused :: RegistryRefusal -> CLIError
+registryRefused = \case
+    RegistryMissing flag -> MissingFlag flag
+    RegistryBad flag why -> BadValue flag why
+
 -- | One line naming the refusal.
 renderCLIError :: CLIError -> String
 renderCLIError = \case
@@ -1259,6 +1337,7 @@ neededRoles :: Command -> Set ReferenceRole
 neededRoles = \case
     Create _ _ -> Set.singleton RoleState
     Describe _ -> Set.empty
+    RegistryAddress _ -> Set.empty
     Fold _ -> everything
     Reject _ -> Set.fromList [RoleState, RoleRequest]
     Reclaim _ -> Set.empty

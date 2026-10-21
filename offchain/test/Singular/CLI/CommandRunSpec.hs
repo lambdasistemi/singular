@@ -211,6 +211,12 @@ import Data.Word (Word64)
 
 import PlutusCore.Data qualified as PLC
 import Singular.CLI (runCommand)
+import Singular.CLI.AddressOracle
+    ( addressOf
+    , bodyOfToken
+    , fingerprintOf
+    , holdsOf
+    )
 import Singular.CLI.Command
     ( CLIError (..)
     , Command (..)
@@ -422,6 +428,7 @@ spec =
         >> vaultBookkeepingRows
         >> vaultUnreadJournalRows
         >> saveStateTokenRows
+        >> registryAddressRows
 
 {- | The create receipt carries the working describe line, built from the
 arguments the create ran with. Two registries give two tokens, so a fixed
@@ -944,6 +951,7 @@ constructorOf = \case
     Help _ -> "Help"
     Create _ _ -> "Create"
     Describe _ -> "Describe"
+    RegistryAddress _ -> "RegistryAddress"
     Fold _ -> "Fold"
     Reject _ -> "Reject"
     Reclaim _ -> "Reclaim"
@@ -2903,6 +2911,8 @@ lifecycle rig = do
             "registry"
             "describe by state token"
             (["registry", "describe", "--json"] <> tokenArgs t1)
+    -- The address of the registry the create made: no node, blueprint or key.
+    address <- runAddress rig "address from the state token" t1
     -- A signed bundle of one self-payment from the wallet, sent by submit:
     -- no registry, no key file, the witness written by the signing planner.
     held <- readWallet rig
@@ -2926,8 +2936,46 @@ lifecycle rig = do
         , nothingPending
         , emptyDir
         , page
+        , address
         , submitted
         ]
+
+{- | @registry address@ over the rig: it reads no chain and takes no node,
+blueprint or key, so its line is its own and not the rig's.
+-}
+runAddress :: Rig -> String -> String -> IO Run
+runAddress rig label token = do
+    writeIORef (rigEvents rig) []
+    command <-
+        either
+            (fail . renderCLIError)
+            pure
+            ( parseCommand
+                [ "registry"
+                , "address"
+                , "--state-token"
+                , token
+                , "--network-magic"
+                , show magic
+                ]
+            )
+    (code, out, _) <-
+        captured (runCommand neutralApplication (envOf rig) command)
+    receipt <-
+        maybe
+            (fail ("no receipt for " <> label <> ": " <> show out))
+            pure
+            (Aeson.decodeStrict out)
+    events <- readIORef (rigEvents rig)
+    pure
+        Run
+            { runName = constructorOf command
+            , runLabel = label
+            , runExit = code
+            , runReceipt = receipt
+            , runEvents = events
+            , runKey = Nothing
+            }
 
 -- | The state token's name as a 'TokenId'.
 parseTokenId :: String -> IO TokenId
@@ -8094,3 +8142,387 @@ receiptDecidesRows =
                     Left (ErrorCall why) -> why `shouldBe` "the create failed"
                     Right _ -> expectationFailure "the failure was swallowed"
                 doesPathExist file `shouldReturn` False
+
+-- ---------------------------------------------------------
+-- A registry has an address (#728)
+-- ---------------------------------------------------------
+
+{- | The receipts and the refusals of a registry that has an address, run
+through the same dispatch as every command above. The address and the
+fingerprint a receipt gives are judged by 'Singular.CLI.AddressOracle', which
+reads the word with the @bech32@ package and hashes with @crypton@ directly,
+never by the code that wrote them.
+-}
+registryAddressRows :: Spec
+registryAddressRows =
+    describe "a registry has an address" $ do
+        createReceiptAddressRows
+        pageAndInspectAddressRows
+        addressGivenRows
+        foreignContractsRows
+
+{- | The address and the fingerprint a receipt gave for a state token on the
+development network, which has the prefix @singular_devnet@: the word decodes
+to that prefix and to the 60 bytes of the token, and the fingerprint is the
+CIP-14 hash of those bytes.
+-}
+shouldNameRegistry
+    :: String -> Maybe Text -> Maybe Text -> Expectation
+shouldNameRegistry token address fingerprint = do
+    body <-
+        maybe
+            (expectationFailure ("not 60 bytes of hex: " <> token) >> pure BS.empty)
+            pure
+            (bodyOfToken token)
+    fmap (holdsOf . T.unpack) address
+        `shouldBe` Just (Just ("singular_devnet", body))
+    fmap T.unpack fingerprint `shouldBe` fingerprintOf body
+
+createReceiptAddressRows :: Spec
+createReceiptAddressRows = describe "the create receipt" $ do
+    it
+        "carries the address and the fingerprint beside the state token, and says them once on standard error"
+        $ withRig
+        $ \rig -> do
+            seed <- fundSeed rig
+            (code, receipt, err) <-
+                runSaving rig (["registry", "create", "--seed", seed] <> policyArgs)
+            code `shouldBe` ExitSuccess
+            token <- receiptToken receipt
+            shouldNameRegistry
+                (T.unpack token)
+                (textAt "registry" receipt)
+                (textAt "fingerprint" receipt)
+            address <- field "registry" receipt
+            fingerprint <- field "fingerprint" receipt
+            let told = filter (isInfixOf address) (lines (BC.unpack err))
+            length told `shouldBe` 1
+            forM_ [T.unpack token, fingerprint] $ \word ->
+                told `shouldSatisfy` all (isInfixOf word)
+            -- the describe line is the one it always was, on the state token
+            fromMaybe "" (textAt "describeCommand" receipt)
+                `shouldSatisfy` T.isInfixOf ("--state-token " <> token)
+    it "carries them in the preview" $ withRig $ \rig -> do
+        seed <- fundSeed rig
+        previewed <-
+            run
+                rig
+                "preview"
+                ( [ "registry"
+                  , "create"
+                  , "--preview"
+                  , "--seed"
+                  , seed
+                  , "--network-time"
+                  , rigDir rig
+                  ]
+                    <> policyArgs
+                )
+        outcomeOf (runReceipt previewed) `shouldBe` Just "success"
+        token <- tokenOf previewed
+        shouldNameRegistry
+            token
+            (textAt "registry" (runReceipt previewed))
+            (textAt "fingerprint" (runReceipt previewed))
+    it "has a fingerprint and no address on a network without a prefix" $
+        withRig $ \rig -> do
+            seed <- fundSeed rig
+            command <-
+                either
+                    (fail . renderCLIError)
+                    pure
+                    ( parseCommand
+                        ( onNetwork
+                            "3"
+                            ( commandLine
+                                rig
+                                "registry"
+                                (["registry", "create", "--seed", seed] <> policyArgs)
+                            )
+                        )
+                    )
+            (code, receipt, err) <- saving rig command
+            code `shouldBe` ExitSuccess
+            token <- receiptToken receipt
+            valueAt "registry" receipt `shouldBe` Just Aeson.Null
+            body <-
+                maybe
+                    (fail "the state token is not hex")
+                    pure
+                    (bodyOfToken (T.unpack token))
+            fmap T.unpack (textAt "fingerprint" receipt)
+                `shouldBe` fingerprintOf body
+            BC.unpack err `shouldSatisfy` isInfixOf (T.unpack token)
+            -- and the line says why there is no address
+            BC.unpack err `shouldSatisfy` isInfixOf "prefix"
+  where
+    field key receipt =
+        maybe
+            (fail ("no " <> show key <> " in " <> show receipt))
+            (pure . T.unpack)
+            (textAt key receipt)
+
+pageAndInspectAddressRows :: Spec
+pageAndInspectAddressRows =
+    describe "the describe and the inspect receipts"
+        $ it
+            "name the address, the state token and the fingerprint of the registry, and keep what they carried"
+        $ withRig
+        $ \rig -> do
+            runs <- lifecycle rig
+            let named label = case [r | r <- runs, runLabel r == label] of
+                    r : _ -> pure r
+                    [] -> fail ("no run labelled " <> label)
+            create <- named "create"
+            inspected <-
+                named "inspect from an empty directory with the state token"
+            page <- named "describe by state token"
+            token <- tokenOf create
+            -- describe: the registry object keeps its keys, and holds the two new ones
+            let registryObject = valueAt "registry" (runReceipt page)
+            shouldNameRegistry
+                token
+                (registryObject >>= textAt "address")
+                (registryObject >>= textAt "fingerprint")
+            (registryObject >>= textAt "stateToken")
+                `shouldBe` Just (T.pack token)
+            forM_ ["stateOutput", "stateScript", "applicationScript"] $ \key ->
+                (registryObject >>= valueAt key) `shouldSatisfy` isJust
+            forM_ ["release", "rules", "state", "provenance"] $ \key ->
+                valueAt key (runReceipt page) `shouldSatisfy` isJust
+            -- inspect: the registry it read, by address, state token and fingerprint
+            outcomeOf (runReceipt inspected) `shouldBe` Just "success"
+            shouldNameRegistry
+                token
+                (textAt "registry" (runReceipt inspected))
+                (textAt "fingerprint" (runReceipt inspected))
+            textAt "stateToken" (runReceipt inspected)
+                `shouldBe` Just (T.pack token)
+
+-- | The state token a registry the rig made has, and its address on the rig's network.
+madeRegistry :: Rig -> IO (String, String)
+madeRegistry rig = do
+    seed <- fundSeed rig
+    made <-
+        run
+            rig
+            "create"
+            (["registry", "create", "--seed", seed] <> policyArgs)
+    token <- tokenOf made
+    address <-
+        maybe
+            (fail ("no address for " <> token))
+            pure
+            (addressOf (fromIntegral magic) token)
+    pure (token, address)
+
+-- | A registry's flag: the address, in place of the state token.
+registryArgs :: String -> [String]
+registryArgs address = ["--registry", address]
+
+-- | A command line without its network magic.
+withoutMagic :: [String] -> [String]
+withoutMagic = \case
+    "--network-magic" : _ : rest -> withoutMagic rest
+    word : rest -> word : withoutMagic rest
+    [] -> []
+
+addressGivenRows :: Spec
+addressGivenRows = describe "a registry given by its address" $ do
+    it
+        "is read as the registry of its state token, with no state token and no network magic on the line"
+        $ withRig
+        $ \rig -> do
+            (token, address) <- madeRegistry rig
+            byToken <-
+                runAt
+                    rig
+                    "empty-actor"
+                    "inspect by the state token"
+                    (["registry", "inspect", "--key", "alice-1"] <> tokenArgs token)
+            command <-
+                either
+                    (fail . renderCLIError)
+                    pure
+                    ( parseCommand
+                        ( withoutMagic
+                            ( commandLine
+                                rig
+                                "empty-actor"
+                                (["registry", "inspect", "--key", "alice-1"] <> registryArgs address)
+                            )
+                        )
+                    )
+            (code, byAddress, _) <- saving rig command
+            outcomeOf (runReceipt byToken) `shouldBe` Just "success"
+            code `shouldBe` runExit byToken
+            outcomeOf byAddress `shouldBe` outcomeOf (runReceipt byToken)
+            forM_ ["root", "leaf", "stateToken"] $ \key ->
+                valueAt key byAddress `shouldBe` valueAt key (runReceipt byToken)
+    it
+        "is refused, naming both, beside a network magic of another network"
+        $ withRig
+        $ \rig -> do
+            (token, address) <- madeRegistry rig
+            let line =
+                    commandLine
+                        rig
+                        "empty-actor"
+                        (["registry", "inspect", "--key", "alice-1"] <> registryArgs address)
+            -- the control: the line as it stands, whose magic is the address's, is read
+            either (const False) (const True) (parseCommand line) `shouldBe` True
+            case parseCommand (onNetwork "1" line) of
+                Left err -> do
+                    renderCLIError err `shouldSatisfy` isInfixOf "singular_devnet"
+                    renderCLIError err `shouldSatisfy` isInfixOf "--network-magic"
+                Right _ ->
+                    expectationFailure
+                        "a network magic that names another network was accepted"
+            -- and beside a state token of another registry
+            other <- maybe (fail "no other token") pure (otherToken token)
+            case parseCommand (line <> tokenArgs other) of
+                Left err -> do
+                    renderCLIError err `shouldSatisfy` isInfixOf token
+                    renderCLIError err `shouldSatisfy` isInfixOf other
+                Right _ ->
+                    expectationFailure
+                        "a state token that names another token was accepted"
+  where
+    -- the same policy, another name
+    otherToken token = case break (== '.') token of
+        (policy, '.' : name) -> Just (policy <> "." <> map flipped name)
+        _ -> Nothing
+    flipped c = if c == '0' then '1' else '0'
+
+{- | The state-contract hash of each published release's blueprint, read from
+the blueprint's own @state.state@ validator with @jq@, with the releases that
+carry it, oldest first. The archives are the ones the releases published; the
+hashes were not computed by the program.
+-}
+releasedContracts :: [(String, [String])]
+releasedContracts =
+    [
+        ( "64d1afbfe585b496a325ecacf2600210ff773368010bbab96e5cf1ce"
+        , ["v0.3.0"]
+        )
+    ,
+        ( "3f62792585903776fc69059588783c7ca67ee9d24886c8722ebf8b2a"
+        , ["v0.4.0"]
+        )
+    ,
+        ( "8ac9562f5fb6be9b9b913ae2ad2cc1d9e038f7f7039256f1ac9f7a62"
+        , ["v0.4.1", "v0.5.0", "v0.6.0", "v0.6.1"]
+        )
+    ,
+        ( "492c5595b83b5deba587db17ea819cf769a930f379cd3ecbde56d2a5"
+        , ["v0.7.0"]
+        )
+    ,
+        ( "7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c"
+        , ["v0.8.0", "v0.9.0"]
+        )
+    ,
+        ( "68df9c42ebd4468be130e9cd5538a7af39cc31c146cda45f274cccc5"
+        ,
+            [ "v0.10.0"
+            , "v0.10.1"
+            , "v0.11.0"
+            , "v0.12.0"
+            , "v0.13.0"
+            , "v0.13.1"
+            , "v0.14.0"
+            , "v0.15.0"
+            ]
+        )
+    ]
+
+-- | A state token of this policy: the name does not matter, only the policy is judged.
+tokenOfPolicy :: String -> String
+tokenOfPolicy policy = policy <> "." <> replicate 64 '1'
+
+{- | A registry made by other contracts than the blueprint the command was
+given is refused by name, before any chain read: the provider here fails every
+read, so a refusal that came after one would be that failure.
+-}
+foreignContractsRows :: Spec
+foreignContractsRows = describe "a registry made by other contracts" $ do
+    let commands =
+            [ ("inspect", ["registry", "inspect", "--key", "alice-1"])
+            , ("describe", ["registry", "describe"])
+            , ("fold", ["registry", "fold"])
+            , ("reject", ["registry", "reject"])
+            ,
+                ( "reclaim"
+                , ["registry", "reclaim", "--request", replicate 64 'a' <> "#0"]
+                )
+            ]
+        -- a provider that is read at all fails, and counts the reads: a refusal
+        -- that came after one would leave the count above zero
+        blind rig = do
+            readsMade <- newIORef (0 :: Int)
+            pure
+                ( (envOf rig)
+                    { envReads = \_ _ -> modifyIORef' readsMade (+ 1) >> fail "read"
+                    , envWrites = \_ _ -> modifyIORef' readsMade (+ 1) >> fail "read"
+                    }
+                , readsMade
+                )
+        refusedBy rig name line policy = do
+            (env, readsMade) <- blind rig
+            refused <-
+                runVia
+                    rig
+                    env
+                    "registry"
+                    ("foreign " <> name)
+                    (line <> tokenArgs (tokenOfPolicy policy))
+            readIORef readsMade `shouldReturn` 0
+            pure refused
+        -- the page names the release it was run from, beside the blueprint
+        versioned rig =
+            writeFile
+                (takeDirectory (rigBlueprint rig) </> "version.txt")
+                "0.10.1\n"
+    forM_ commands $ \(name, line) -> do
+        it
+            ( "refuses "
+                <> name
+                <> " naming the releases of the contracts and where to get the newest"
+            )
+            $ withRig
+            $ \rig -> do
+                versioned rig
+                forM_ releasedContracts $ \(policy, tags) -> do
+                    refused <- refusedBy rig name line policy
+                    let reason = T.unpack (fromMaybe "" (receiptReason refused))
+                        newest = last tags
+                        url tag = "https://github.com/lambdasistemi/singular/releases/tag/" <> tag
+                    reason `shouldSatisfy` isInfixOf "state-token-foreign-release"
+                    outcomeOf (runReceipt refused) `shouldBe` Just "client-refusal"
+                    runExit refused `shouldBe` ExitFailure 10
+                    forM_ tags $ \tag -> reason `shouldSatisfy` isInfixOf tag
+                    reason `shouldSatisfy` isInfixOf (url newest)
+                    forM_ (init tags) $ \tag ->
+                        reason `shouldNotSatisfy` isInfixOf (url tag)
+        it ("refuses " <> name <> " as made by contracts of no known release") $
+            withRig $ \rig -> do
+                versioned rig
+                refused <- refusedBy rig name line (replicate 56 '1')
+                let reason = T.unpack (fromMaybe "" (receiptReason refused))
+                reason `shouldSatisfy` isInfixOf "state-token-foreign-release"
+                reason `shouldSatisfy` isInfixOf "no known release"
+                runExit refused `shouldBe` ExitFailure 10
+    it
+        "reads a registry of the contracts it was given as before, over the same fixture"
+        $ withRig
+        $ \rig -> do
+            (token, _) <- madeRegistry rig
+            read' <-
+                runAt
+                    rig
+                    "empty-actor"
+                    "inspect of its own registry"
+                    (["registry", "inspect", "--key", "alice-1"] <> tokenArgs token)
+            outcomeOf (runReceipt read') `shouldBe` Just "success"
+            fromMaybe "" (receiptReason read')
+                `shouldNotSatisfy` T.isInfixOf "state-token-foreign-release"

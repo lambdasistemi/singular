@@ -19,6 +19,7 @@ import Singular.CLI.PayloadSpec qualified
 import Singular.CLI.PrepareSpec qualified
 import Singular.CLI.PrintedPayloadSpec qualified
 import Singular.CLI.ReclaimSpec qualified
+import Singular.CLI.RegistryAddressSpec qualified
 import Singular.CLI.RejectSpec qualified
 import Singular.CLI.SaveStateTokenSpec qualified
 import Singular.CLI.SettingsFileSpec qualified
@@ -34,10 +35,12 @@ import Singular.Provider.Koios.ProviderSpec qualified
 import Singular.Provider.Koios.RecordedSpec qualified
 import Singular.Provider.Koios.RecorderSpec qualified
 import Singular.Provider.Koios.ReferenceScriptsSpec qualified
+import Singular.Registry.AddressSpec qualified
 import Singular.Registry.BlueprintParametersSpec qualified
 import Singular.Registry.BundleSpec qualified
 import Singular.Registry.CandidateSpec qualified
 import Singular.Registry.ChainedViewSpec qualified
+import Singular.Registry.ContractTableSpec qualified
 import Singular.Registry.DeploymentSpec qualified
 import Singular.Registry.FailureMatchSpec qualified
 import Singular.Registry.FoldAdmissionSpec qualified
@@ -259,6 +262,15 @@ main = hspec $ do
     describe
         (tagged "Singular.CLI.SettingsFile" [Cli])
         Singular.CLI.SettingsFileSpec.spec
+    describe
+        (tagged "Singular.CLI.RegistryAddress" [Cli])
+        Singular.CLI.RegistryAddressSpec.spec
+    describe
+        (tagged "Singular.Registry.Address" [Cli])
+        Singular.Registry.AddressSpec.spec
+    describe
+        (tagged "Singular.Registry.ContractTable" [Cli])
+        Singular.Registry.ContractTableSpec.spec
     describe
         (tagged "Singular.CLI.Sign" [Cli, Wallet])
         Singular.CLI.SignSpec.spec

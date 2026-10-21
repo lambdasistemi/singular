@@ -314,8 +314,7 @@ data Raw = Raw
 
 -- | A token the program cannot take, named for the refusal that reports it.
 data Refusal
-    = Renamed String String
-    | Removed String
+    = Removed String
     | NeedsValue String
     | UnknownFlag String
     deriving stock (Eq, Show)
@@ -331,7 +330,6 @@ refusalAs
     -> Refusal
     -> e
 refusalAs removed bad program = \case
-    Renamed old new -> bad old ("was renamed to " <> new)
     Removed name -> removed name
     NeedsValue name -> bad name "needs a value"
     UnknownFlag name -> bad name ("is not a flag " <> program <> " reads")
@@ -445,7 +443,6 @@ classify accepted ws fs = go ws []
         c : rest | c == marker -> Just rest
         _ -> Nothing
     refuse token
-        | name == "--registry" = Left (Renamed "--registry" "--state-dir")
         | name `elem` ["--backend", "--node-socket"] = Left (Removed name)
         | name `elem` (acceptedSwitches accepted <> acceptedEarly accepted)
             && name /= "--json" =

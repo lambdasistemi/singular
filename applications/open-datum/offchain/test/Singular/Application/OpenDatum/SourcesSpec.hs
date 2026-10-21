@@ -31,6 +31,7 @@ import Singular.Application.OpenDatum.Command
     , parseOpenDatumInvocationFrom
     )
 import Singular.Application.OpenDatum.Help (openDatumProgram)
+import Singular.CLI.AddressOracle (addressOf)
 import Singular.CLI.Options
     ( Flag (..)
     , Leaf (..)
@@ -48,6 +49,16 @@ program = openDatumProgram openDatumVersion
 token :: String
 token = replicate 56 'a' <> "." <> replicate 64 'b'
 
+{- | The address of the token on the development network (network magic 42), as
+the bech32 package writes it: the registry setting agrees with the state token
+and the network magic the table gives beside it.
+-}
+registryAddress :: String
+registryAddress =
+    fromMaybe
+        (error "SourcesSpec: no address for the token")
+        (addressOf 42 token)
+
 -- | The standing settings but the vault: flag, variable, key and a value each.
 settings :: [(String, String, String, String)]
 settings =
@@ -62,6 +73,7 @@ settings =
     , ("--blueprint", "SINGULAR_BLUEPRINT", "blueprint", "plutus.json")
     , ("--state-dir", "SINGULAR_STATE_DIR", "state-dir", "/state")
     , ("--state-token", "SINGULAR_STATE_TOKEN", "state-token", token)
+    , ("--registry", "SINGULAR_REGISTRY", "registry", registryAddress)
     ,
         ( "--koios-token-file"
         , "SINGULAR_KOIOS_TOKEN_FILE"
@@ -244,7 +256,7 @@ spec = describe "the settings given by the environment and a config file" $ do
                 `shouldNotSatisfy` (environmentEntry `isInfixOf`)
     describe "the declaration" $ do
         let everyFlag = nub (concatMap (shapeFlags . leafShape) (programLeaves program))
-        it "gives the same eleven settings three forms as singular" $
+        it "gives the same twelve settings three forms as singular" $
             sort (nub [flagName f | f <- everyFlag, isJust (flagEnvironment f)])
                 `shouldBe` sort ("--vault" : map flagOf settings)
     describe "a missing setting" $

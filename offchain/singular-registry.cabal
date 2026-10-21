@@ -16,6 +16,7 @@ maintainer:    paolo.veronelli@gmail.com
 category:      Cardano
 build-type:    Simple
 data-files:
+  data/contracts/*.json
   data/network/devnet/*.cbor
   data/network/devnet/*.json
   data/network/preprod/*.cbor
@@ -99,6 +100,7 @@ library
     Singular.Provider.Koios.Runtime
     Singular.Provider.Koios.State
     Singular.Provider.Koios.Wire
+    Singular.Registry.Address
     Singular.Registry.Application
     Singular.Registry.AssetName
     Singular.Registry.Blueprint
@@ -225,6 +227,7 @@ library registry-cli
     Singular.CLI.Reconcile
     Singular.CLI.Recovery
     Singular.CLI.Registry
+    Singular.CLI.RegistryReading
     Singular.CLI.Reject
     Singular.CLI.RejectRules
     Singular.CLI.RequestWindow
@@ -292,6 +295,7 @@ library local-services
   exposed-modules:
     Singular.Registry.Bundle
     Singular.Registry.ChainedView
+    Singular.Registry.ContractTable
     Singular.Registry.Evidence
     Singular.Registry.Ledger
     Singular.Registry.LedgerProvider
@@ -989,6 +993,8 @@ test-suite cage-tests
     Naming.RegisterSpec
     Naming.RetireVerifySpec
     Paths_singular_registry
+    Singular.CLI.AddressOracle
+    Singular.CLI.AddressVectors
     Singular.CLI.BookingRefusalSpec
     Singular.CLI.CommandRunSpec
     Singular.CLI.CreateFundingSpec
@@ -997,6 +1003,8 @@ test-suite cage-tests
     Singular.CLI.PayloadSpec
     Singular.CLI.PrepareSpec
     Singular.CLI.PrintedPayloadSpec
+    Singular.CLI.RegistryAddressSpec
+    Singular.CLI.RunStreams
     Singular.CLI.FailureSentenceSpec
     Singular.CLI.FlagGroupSpec
     Singular.CLI.HelpSnapshotSpec
@@ -1022,7 +1030,9 @@ test-suite cage-tests
     Singular.Provider.Koios.RecorderSpec
     Singular.Provider.Koios.ReferenceScriptsSpec
     Singular.Provider.Koios.Scripted
+    Singular.Registry.AddressSpec
     Singular.Registry.BlueprintParametersSpec
+    Singular.Registry.ContractTableSpec
     Singular.Registry.BundleSpec
     Singular.Registry.SubmitSpec
     Singular.Registry.CandidateSpec
@@ -1074,6 +1084,7 @@ test-suite cage-tests
     , async
     , base                              >=4.14 && <5
     , base16-bytestring
+    , bech32
     , bytestring
     , cardano-crypto-class
     , cardano-ledger-allegra

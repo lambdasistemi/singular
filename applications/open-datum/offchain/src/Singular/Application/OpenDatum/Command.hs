@@ -124,6 +124,10 @@ import Singular.CLI.Options
     , resolvePath
     )
 import Singular.CLI.Registry (economics)
+import Singular.CLI.RegistryReading
+    ( RegistryRefusal (..)
+    , completeRegistry
+    )
 import Singular.CLI.Sources
     ( Sources (..)
     , applySources
@@ -296,23 +300,32 @@ commandFrom environment (Raw ws allFlags) = do
                                         >> refuseFold flags
                                         >> (OpenCreate Open <$> createArgs flags)
                                 ["open-datum", "insert"] ->
-                                    refuseRequest flags >> (OpenInsert <$> insertArgs environment flags)
+                                    refuseRequest flags
+                                        >> (OpenInsert <$> (registryFlags flags >>= insertArgs environment))
                                 ["open-datum", "update"] ->
                                     refuseRequest flags
                                         >> refuseDeposit flags
-                                        >> (OpenUpdate <$> entryArgs False (Just "--payload") environment flags)
+                                        >> ( OpenUpdate
+                                                <$> (registryFlags flags >>= entryArgs False (Just "--payload") environment)
+                                           )
                                 ["open-datum", "terminate"] ->
                                     refuseRequest flags
                                         >> refuseDeposit flags
-                                        >> (OpenTerminate <$> entryArgs True Nothing environment flags)
-                                ["open-datum", "fold"] -> OpenFold <$> foldArgs environment flags
+                                        >> ( OpenTerminate
+                                                <$> (registryFlags flags >>= entryArgs True Nothing environment)
+                                           )
+                                ["open-datum", "fold"] -> OpenFold <$> (registryFlags flags >>= foldArgs environment)
                                 ["open-datum", "inspect"] ->
                                     refuseSpendingFlags "inspect" flags
                                         >> refuseRequest flags
                                         >> refuseFold flags
-                                        >> (OpenInspect <$> inspectArgs environment flags)
+                                        >> (OpenInspect <$> (registryFlags flags >>= inspectArgs environment))
                                 _ -> Left (UnknownCommand ws)
   where
+    -- The registry named by its address gives the flags its state token and its
+    -- network, so the rest of the reading is the one it always was.
+    registryFlags flags =
+        first registryRefused (completeRegistry environment flags)
     -- @--save-state-token@ keeps the name of the registry a create makes; any
     -- other command refuses it by name rather than ignore it.
     refuseSaveStateToken words' flags =
@@ -404,6 +417,12 @@ commandFrom environment (Raw ws allFlags) = do
                 ( BadValue
                     "--state-token"
                     "is refused by open-datum create, which makes one"
+                )
+        when (isJust (lookup "--registry" flags)) $
+            Left
+                ( BadValue
+                    "--registry"
+                    "is refused by open-datum create, which makes the registry and prints its address"
                 )
         processing <-
             windowFrom "--process-time" (reProcessTime economics) flags
@@ -729,6 +748,12 @@ invocationFlags = commonFlagGroup <> extraValuedFlags <> traceFlags
 -- | The valued flags this binary owns beyond the common group: none.
 extraValuedFlags :: [String]
 extraValuedFlags = []
+
+-- | The registry a command line names, refused as the command line refuses.
+registryRefused :: RegistryRefusal -> CLIError
+registryRefused = \case
+    RegistryMissing flag -> MissingFlag flag
+    RegistryBad flag why -> BadValue flag why
 
 -- | One line naming the refusal.
 renderCLIError :: CLIError -> String

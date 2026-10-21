@@ -1,12 +1,13 @@
 singular VERSION (commit unknown)
 
 Usage: singular registry reclaim [--config FILE] [--state-dir DIR] --blueprint
-       FILE --state-token POLICY.NAME --request TXID#IX --koios-url URL
-       --network-magic N [--koios-token-file FILE] [--network-time DIR]
-       [--vault FILE [--passphrase-fd N] | --wallet-address ADDR --bundle FILE
-       | --wallet-skey FILE] [--confirm-timeout SECONDS] [--receipt FILE]
-       [--fund-input TXID#IX] [--max-outlay LOVELACE] [--trace LEVEL]
-       [--trace-to SINK] [--trace-format FORMAT]
+       FILE [--registry ADDRESS] [--state-token POLICY.NAME] --request TXID#IX
+       --koios-url URL [--network-magic N] [--koios-token-file FILE]
+       [--network-time DIR] [--vault FILE [--passphrase-fd N] |
+       --wallet-address ADDR --bundle FILE | --wallet-skey FILE]
+       [--confirm-timeout SECONDS] [--receipt FILE] [--fund-input TXID#IX]
+       [--max-outlay LOVELACE] [--trace LEVEL] [--trace-to SINK]
+       [--trace-format FORMAT]
 
 Take back your own pending request
 
@@ -43,6 +44,14 @@ Available settings:
   env: SINGULAR_BLUEPRINT FILE
   config:
     blueprint: # or null
+      <string>
+
+  The registry to act on: its address, as create prints it. The address holds
+  the state token and the network, so a command given it needs neither.
+  option: --registry ADDRESS
+  env: SINGULAR_REGISTRY ADDRESS
+  config:
+    registry: # or null
       <string>
 
   The registry to act on: its state token, policy and name in hex, as create
@@ -176,8 +185,8 @@ Environment:
 
 Example:
   singular registry reclaim --blueprint plutus.json \
-      --state-token <policy>.<name> --request <txid>#<ix> \
-      --koios-url https://preprod.koios.rest/api/v1 --network-magic 1 \
+      --registry <address> --request <txid>#<ix> \
+      --koios-url https://preprod.koios.rest/api/v1 \
       --vault alice.vault
 
   With those settings in singular.json instead:

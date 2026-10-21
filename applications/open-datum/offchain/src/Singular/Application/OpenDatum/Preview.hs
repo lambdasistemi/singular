@@ -109,6 +109,7 @@ import Singular.CLI.Registry
 import Singular.CLI.Session
     ( Env (..)
     , failWith
+    , loadReleaseFor
     , readsIn
     , txIdHex
     )
@@ -163,8 +164,11 @@ runPreview app env kind a settings addrText = do
         KUpdate -> Just <$> readUpdatePayload a
         KTerminate -> pure Nothing
     release <-
-        envLoadRelease env app (entryBlueprint a)
-            >>= either (failWith ClientRefusal) pure
+        loadReleaseFor
+            env
+            app
+            (entryBlueprint a)
+            (accessToken (entryAccess a))
     let Key key = entryKey a
         caller = addrKeyHashBytes addr
     -- A preview resolves the caller's managed partition for the records it
