@@ -65,6 +65,10 @@ let
       # #641: the test-harness tool that seals a devnet key into a vault for
       # the packaged bundle control.
       "vault-seal"
+      # #730: the test-harness tool that boots a registry whose datum pins an
+      # always-true active policy, for the forged-pins journey; no product
+      # command can make one, and no release artifact carries it.
+      "forged-registry"
     ];
     tests = [
       "record-value-tests"

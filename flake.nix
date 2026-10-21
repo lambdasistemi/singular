@@ -1691,6 +1691,96 @@
           // (
             let
               pkgs = import nixpkgs { inherit system; };
+              # #730: the forged-pins journey. One raw development node funds
+              # one wallet; the test harness (offchain's forged-registry,
+              # never a product command) boots a registry whose datum pins an
+              # always-true active policy and mints a token named after a key
+              # under it; the packaged `singular` and `open-datum` are run as
+              # separate processes against it and must refuse it with the
+              # refusal that names the active policy, show nothing of the
+              # registry and add no transaction to a chain read from the
+              # facade's own record; the same commands proceed on a registry
+              # made the same way with the honest pin; two folds are the
+              # evidence for the on-chain hardening; a fold that swaps a pin is
+              # refused by the node; each assertion is shown failing on altered
+              # input. The raw devnet reads its genesis from E2E_GENESIS_DIR
+              # explicitly, never from the working directory.
+              forgedPinsCheck = pkgs.writeShellApplication {
+                name = "forged-pins-check";
+                runtimeInputs = [
+                  pkgs.bash
+                  pkgs.coreutils
+                  pkgs.gawk
+                  pkgs.gnugrep
+                  pkgs.jq
+                  pkgs.nix
+                  # the journey stops its own node by the pids it recorded
+                  pkgs.procps
+                  # the journey reads the chain's record through the reader
+                  # view program, which is Python
+                  pkgs.python3Minimal
+                ];
+                text = ''
+                  set -euo pipefail
+                  root="''${FORGED_PINS_CHECK_ROOT:-$PWD}"
+                  [ -f "$root/applications/open-datum/offchain/flake.nix" ] || {
+                    echo "forged-pins-check: run from the repository root (or set FORGED_PINS_CHECK_ROOT)" >&2
+                    exit 3
+                  }
+                  base="''${TMPDIR:-''${XDG_CACHE_HOME:-$HOME/.cache}/singular-forged-pins}"
+                  mkdir -p "$base"
+                  work="$(mktemp -d "$base/run.XXXXXX")/journey"
+                  echo "forged-pins-check: receipts in $work"
+                  export E2E_GENESIS_DIR=${./offchain/e2e-test/genesis}
+                  open_datum_out="$(nix build --quiet --no-link --print-out-paths "$root/applications/open-datum/offchain#open-datum")" || exit 3
+                  open_datum="$open_datum_out/bin/open-datum"
+                  [ -x "$open_datum" ] || {
+                    echo "forged-pins-check: no open-datum binary in $open_datum_out" >&2
+                    exit 3
+                  }
+                  harness_out="$(nix build --quiet --no-link --print-out-paths "$root/offchain#forged-registry")" || exit 3
+                  harness="$harness_out/bin/forged-registry"
+                  [ -x "$harness" ] || {
+                    echo "forged-pins-check: no harness binary in $harness_out" >&2
+                    exit 3
+                  }
+                  vault_seal_out="$(nix build --quiet --no-link --print-out-paths "$root/offchain#vault-seal")" || exit 3
+                  vault_seal="$vault_seal_out/bin/vault-seal"
+                  [ -x "$vault_seal" ] || {
+                    echo "forged-pins-check: no vault-seal binary in $vault_seal_out" >&2
+                    exit 3
+                  }
+                  # The deployment blueprint unions the application and the
+                  # witnesses in one build: the document both programs get as
+                  # --blueprint.
+                  deployment_bp="$(nix build --quiet --no-link --print-out-paths "$root/applications/open-datum/onchain#open-datum-blueprint")" || exit 3
+                  [ -f "$deployment_bp" ] || {
+                    echo "forged-pins-check: the deployment blueprint build produced no file" >&2
+                    exit 3
+                  }
+                  bash ${./tools/forged_pins_journey.sh} \
+                    ${pkgs.lib.getExe (stampedSingular system)} \
+                    "$open_datum" \
+                    "$harness" \
+                    ${pkgs.lib.getExe offchain.packages.${system}.devnet} \
+                    "$vault_seal" \
+                    "$deployment_bp" \
+                    "$root/version.txt" \
+                    ${./tools/forged_pins_reader_view.py} \
+                    "$work"
+                '';
+              };
+            in
+            {
+              forged-pins-check = {
+                type = "app";
+                program = pkgs.lib.getExe forgedPinsCheck;
+              };
+            }
+          )
+          // (
+            let
+              pkgs = import nixpkgs { inherit system; };
               # #528 S5.1: the split-blueprint hash comparison. The open-datum
               # validators build in their own Aiken project now, so no single
               # blueprint holds the whole contract: this app rebuilds the
