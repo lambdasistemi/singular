@@ -740,7 +740,7 @@ foreign_witness="$submit_dir/$second_identity.witness"
   || setup_fail submit-witnesses "the sign run wrote no witness per transaction"
 # The bundle holds the first transaction only: the second's witness
 # verifies against nothing in it.
-jq '.transactions = [.transactions[0]]' "$submit_dir/both.json" >"$submit_dir/bundle.json" \
+jq '.transactions = [.transactions[0]] | .command = "create"' "$submit_dir/both.json" >"$submit_dir/bundle.json" \
   || setup_fail submit-jq "jq could not cut the bundle"
 
 submit_state="$submit_dir/canary.state"

@@ -23,9 +23,9 @@ applications/open-datum/offchain/test/Singular/Application/OpenDatum/ClosedModeS
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/ClosedModeSpec.hs laterCommandsFollow modifyIORef' 3
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/ClosedModeSpec.hs laterCommandsFollow newIORef 3
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/ClosedModeSpec.hs laterCommandsFollow readIORef 3
-applications/open-datum/offchain/test/Singular/Application/OpenDatum/ClosedModeSpec.hs unreadableNotGuessed modifyIORef' 7
-applications/open-datum/offchain/test/Singular/Application/OpenDatum/ClosedModeSpec.hs unreadableNotGuessed newIORef 7
-applications/open-datum/offchain/test/Singular/Application/OpenDatum/ClosedModeSpec.hs unreadableNotGuessed readIORef 5
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/ClosedModeSpec.hs unreadableNotGuessed modifyIORef' 4
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/ClosedModeSpec.hs unreadableNotGuessed newIORef 4
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/ClosedModeSpec.hs unreadableNotGuessed readIORef 4
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/ClosedModeSpec.hs updateRefusal modifyIORef' 2
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/ClosedModeSpec.hs updateRefusal newIORef 2
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/CommandRunSpec.hs <decl> IORef 3
@@ -51,6 +51,10 @@ applications/open-datum/offchain/test/Singular/Application/OpenDatum/Independent
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/IndependentActorsSpec.hs spec modifyIORef' 1
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/IndependentActorsSpec.hs spec newIORef 1
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/IndependentActorsSpec.hs spec readIORef 1
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/PinGateSpec.hs observedEnv modifyIORef' 2
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/PinGateSpec.hs observedEnv newIORef 3
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/PinGateSpec.hs observedEnv readIORef 3
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/PinGateSpec.hs refusalOver newIORef 1
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/RecoverySpec.hs countedRecordedTransport modifyIORef' 1
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/RecoverySpec.hs countedRecordedTransport newIORef 1
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/RecoverySpec.hs countedRecordedTransport readIORef 1
@@ -504,6 +508,9 @@ offchain/test/Singular/CLI/CommandRunSpec.hs withCountedSubmissions newIORef 1
 offchain/test/Singular/CLI/CommandRunSpec.hs withCountedSubmissions readIORef 1
 offchain/test/Singular/CLI/CommandRunSpec.hs withRigIn modifyIORef' 1
 offchain/test/Singular/CLI/CommandRunSpec.hs withRigIn newIORef 2
+offchain/test/Singular/CLI/PinGateSpec.hs probedEnv modifyIORef' 3
+offchain/test/Singular/CLI/PinGateSpec.hs probedEnv newIORef 3
+offchain/test/Singular/CLI/PinGateSpec.hs probedEnv readIORef 3
 offchain/test/Singular/CLI/SubmitSpec.hs <decl> IORef 5
 offchain/test/Singular/CLI/SubmitSpec.hs capabilitiesOf atomicModifyIORef' 1
 offchain/test/Singular/CLI/SubmitSpec.hs capabilitiesOf modifyIORef' 2

@@ -2875,7 +2875,7 @@ story_settle() {
     || fail "$name: $who's wallet sign failed: $(tail -n 3 "$receipts/$name.sign.err" | tr '\n' ' ')"
   [ "$(wc -l <"$receipts/$name.signed")" -eq "$n" ] && [ "$(find "$witnesses" -name '*.witness' | wc -l)" -eq "$n" ] \
     || fail "$name: the signing step did not write one witness per transaction ($n)"
-  "$singular" submit --witnesses "$witnesses" "${node[@]}" --receipt "$receipts/$name.submitted.json" "$bundle" \
+  "$singular" submit --witnesses "$witnesses" --blueprint "$blueprint" "${node[@]}" --receipt "$receipts/$name.submitted.json" "$bundle" \
     >"$receipts/$name.submit.out" 2>"$receipts/$name.submit.err" || status=$?
   [ "$status" -eq 0 ] || fail "$name: singular submit exited $status: $(tail -n 3 "$receipts/$name.submit.err" | tr '\n' ' ')"
   jq -e --slurpfile s "$receipts/$name-staged.json" '
@@ -3025,7 +3025,7 @@ jq -e --slurpfile e "$receipts/story-insert.json" --arg k "$(hexof alice)" '.set
   || fail "the story fold does not deliver Alice's envelope at her key"
 # A landed bundle sends nothing the second time: its transactions are found.
 status=0
-"$singular" submit --witnesses "$story/witnesses/story-fold" "${node[@]}" --receipt "$receipts/story-fold.again.json" \
+"$singular" submit --witnesses "$story/witnesses/story-fold" --blueprint "$blueprint" "${node[@]}" --receipt "$receipts/story-fold.again.json" \
   "$story/bundles/story-fold.bundle" >/dev/null 2>"$receipts/story-fold.again.err" || status=$?
 [ "$status" -eq 0 ] || fail "submitting the landed fold bundle again failed"
 jq -e 'all(.submissions[]; .how == "found")' "$receipts/story-fold.again.json" >/dev/null \

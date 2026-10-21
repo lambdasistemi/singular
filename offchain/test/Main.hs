@@ -16,6 +16,7 @@ import Singular.CLI.JournalTransitionsSpec qualified
 import Singular.CLI.OneOutputCreateSpec qualified
 import Singular.CLI.ParserCorpusSpec qualified
 import Singular.CLI.PayloadSpec qualified
+import Singular.CLI.PinGateSpec qualified
 import Singular.CLI.PrepareSpec qualified
 import Singular.CLI.PrintedPayloadSpec qualified
 import Singular.CLI.ReclaimSpec qualified
@@ -247,6 +248,9 @@ main = hspec $ do
     describe
         (tagged "Singular.CLI.Payload" [Cli])
         Singular.CLI.PayloadSpec.spec
+    describe
+        (tagged "Singular.CLI.PinGate" [Cli])
+        Singular.CLI.PinGateSpec.spec
     describe
         (tagged "Singular.CLI.PrintedPayload" [Cli])
         Singular.CLI.PrintedPayloadSpec.spec

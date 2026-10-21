@@ -25,7 +25,29 @@ One contradicting event is a failure, whatever other events agree.
 The commands run are the 'Command' constructors, read from the type, not
 listed here; a constructor no run exercises fails the extent row.
 -}
-module Singular.CLI.CommandRunSpec (spec) where
+module Singular.CLI.CommandRunSpec
+    ( spec
+    , Rig (..)
+    , Run (..)
+    , withRig
+    , run
+    , runAt
+    , runVia
+    , runViaApp
+    , envOf
+    , capabilities
+    , captured
+    , readWallet
+    , scriptPinned
+    , policyArgs
+    , tokenArgs
+    , externalArgs
+    , outcomeOf
+    , textAt
+    , valueAt
+    , elementsAt
+    , receiptReason
+    ) where
 
 import Control.Applicative ((<|>))
 import Control.Concurrent

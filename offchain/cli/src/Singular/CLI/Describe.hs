@@ -43,7 +43,6 @@ import Data.Aeson.KeyMap qualified as KeyMap
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Lazy.Char8 qualified as BLC
-import Data.ByteString.Short qualified as SBS
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -71,9 +70,11 @@ import Singular.CLI.Live
     , receipt
     , requireTrieSelection
     , resolveSaved
+    , savedApplicationPin
     , savedCfg
     , savedToken
     , txInText
+    , withStandingOnFailure
     , withTrie
     )
 import Singular.CLI.ManagedState (resolveStateRoot, statelessDir)
@@ -101,7 +102,10 @@ import Singular.Registry.Address
     ( registryFingerprint
     , renderRegistryAddress
     )
-import Singular.Registry.Application (Application)
+import Singular.Registry.Application
+    ( Application
+    , renderApplicationPinStanding
+    )
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Page
     ( Page
@@ -129,6 +133,10 @@ import Singular.Registry.Types
     ( CageDatum (..)
     , OnChainRoot (..)
     , OnChainTokenState (..)
+    , stateAbsentPolicyBytes
+    , stateActivePolicyBytes
+    , stateAppPolicyBytes
+    , stateTerminalPolicyBytes
     )
 import Singular.Registry.WaitTypes (WaitFailure)
 
@@ -201,65 +209,65 @@ runDescribe app env a = do
                 Set.empty
                 Nothing
                 v
-        live <- attachLive v saved
-        state <- case extractCageDatum (snd (liveState live)) of
-            Just (StateDatum found) -> pure found
-            _ ->
-                failWith Partial "the registry's state output carries no state datum"
-        selected <- requireTrieSelection saved live
-        (lineage, actives, terminals) <- withTrie selected $ \snap -> do
-            lin <-
-                maybe
-                    (failWith StaleState "the replay reported no lineage")
-                    pure
-                    (TS.trieLineage snap)
-            leaves <- mapM (readLeaf snap) (TS.lineageKeys lin)
-            pure
-                ( lin
-                , length [() | Active <- leaves]
-                , length [() | Terminal <- leaves]
-                )
-        requests <-
-            Cage.outputsAt
-                v
-                (requestAddrFromCfg (savedCfg saved) (savedToken saved) Testnet)
-        let cfg = savedCfg saved
-            -- This registry's requests, as inspect lists them; the page
-            -- renders them in one fixed order.
-            pending = map pendingJson (findRequestUtxos (savedToken saved) requests)
-        pure $
-            describeRegistry
-                PageInputs
-                    { pageStateToken = renderStateToken requested
-                    , pageAddress = renderRegistryAddress magic requested
-                    , pageFingerprint = registryFingerprint requested
-                    , pageStateOutput = txInText (fst (liveState live))
-                    , pageStateScript = hexT (scriptHashBytes (cfgScriptHash cfg))
-                    , pageApplicationScript =
-                        hexT (SBS.fromShort (cfgApplicationPolicy cfg))
-                    , pageActiveScript = hexT (SBS.fromShort (cfgActivePolicy cfg))
-                    , pageAbsentScript = hexT (SBS.fromShort (cfgAbsentPolicy cfg))
-                    , pageTerminalScript = hexT (SBS.fromShort (cfgTerminalPolicy cfg))
-                    , pageRelease =
-                        ReleaseInfo
-                            { releaseVersion = version
-                            , releaseBlueprintTitle = title
-                            , releaseBlueprintSha = blueprintSha blueprintBytes
-                            , releaseApplicationHash =
-                                hexT (SBS.fromShort (cfgApplicationPolicy cfg))
-                            }
-                    , pageProcessTime = stateProcessTime state
-                    , pageRetractTime = stateRetractTime state
-                    , pageTip = stateMaxFee state
-                    , pageMaxKeyBytes = maxKeyBytes
-                    , pageRoot = hexT (unOnChainRoot (stateRoot state))
-                    , pageActiveKeys = actives
-                    , pageTerminalKeys = terminals
-                    , pageFoldsSinceCreate = length (TS.lineageFolds lineage)
-                    , pageCreateTransaction = txHex (TS.lineageCreate lineage)
-                    , pageLastFold = txHex <$> lastMay (TS.lineageFolds lineage)
-                    , pagePendingRequests = pending
-                    }
+        withStandingOnFailure (savedApplicationPin saved) $ do
+            live <- attachLive v saved
+            state <- case extractCageDatum (snd (liveState live)) of
+                Just (StateDatum found) -> pure found
+                _ ->
+                    failWith Partial "the registry's state output carries no state datum"
+            selected <- requireTrieSelection saved live
+            (lineage, actives, terminals) <- withTrie selected $ \snap -> do
+                lin <-
+                    maybe
+                        (failWith StaleState "the replay reported no lineage")
+                        pure
+                        (TS.trieLineage snap)
+                leaves <- mapM (readLeaf snap) (TS.lineageKeys lin)
+                pure
+                    ( lin
+                    , length [() | Active <- leaves]
+                    , length [() | Terminal <- leaves]
+                    )
+            requests <-
+                Cage.outputsAt
+                    v
+                    (requestAddrFromCfg (savedCfg saved) (savedToken saved) Testnet)
+            let cfg = savedCfg saved
+                -- This registry's requests, as inspect lists them; the page
+                -- renders them in one fixed order.
+                pending = map pendingJson (findRequestUtxos (savedToken saved) requests)
+            pure $
+                describeRegistry
+                    PageInputs
+                        { pageStateToken = renderStateToken requested
+                        , pageAddress = renderRegistryAddress magic requested
+                        , pageFingerprint = registryFingerprint requested
+                        , pageStateOutput = txInText (fst (liveState live))
+                        , pageStateScript = hexT (scriptHashBytes (cfgScriptHash cfg))
+                        , pageApplicationScript = hexT (stateAppPolicyBytes state)
+                        , pageApplicationPin =
+                            renderApplicationPinStanding (savedApplicationPin saved)
+                        , pageActiveScript = hexT (stateActivePolicyBytes state)
+                        , pageAbsentScript = hexT (stateAbsentPolicyBytes state)
+                        , pageTerminalScript = hexT (stateTerminalPolicyBytes state)
+                        , pageRelease =
+                            ReleaseInfo
+                                { releaseVersion = version
+                                , releaseBlueprintTitle = title
+                                , releaseBlueprintSha = blueprintSha blueprintBytes
+                                }
+                        , pageProcessTime = stateProcessTime state
+                        , pageRetractTime = stateRetractTime state
+                        , pageTip = stateMaxFee state
+                        , pageMaxKeyBytes = maxKeyBytes
+                        , pageRoot = hexT (unOnChainRoot (stateRoot state))
+                        , pageActiveKeys = actives
+                        , pageTerminalKeys = terminals
+                        , pageFoldsSinceCreate = length (TS.lineageFolds lineage)
+                        , pageCreateTransaction = txHex (TS.lineageCreate lineage)
+                        , pageLastFold = txHex <$> lastMay (TS.lineageFolds lineage)
+                        , pagePendingRequests = pending
+                        }
 
 -- | One named key's leaf from the replayed trie, refusing what has no proof.
 readLeaf :: TS.TrieSnapshot IO -> ByteString -> IO Leaf

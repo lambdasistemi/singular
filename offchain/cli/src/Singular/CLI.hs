@@ -113,7 +113,9 @@ runRegistryCommand app env = \case
     SubmitBundle a ->
         submitBundle
             env
+            app
             (submitProvider a)
+            (submitBlueprint a)
             (submitBundlePath a)
             (submitWitnessPaths a)
             (submitReceipt a)

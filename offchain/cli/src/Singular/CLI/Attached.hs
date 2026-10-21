@@ -111,28 +111,32 @@ attached app env dir blueprint access roles ws command body = do
                         roles
                         (Just (wcCaller wc))
                         v
-                (reconciled, live) <-
-                    timedRead
+                withStandingOnFailure (savedApplicationPin saved) $ do
+                    (reconciled, live) <-
+                        timedRead
+                            (wcTracer wc)
+                            (wcSource wc)
+                            ["journal transactions", "state"]
+                            $ do
+                                r <- reconcile app command dir saved v
+                                refuseUnreconciled r
+                                (,) r <$> attachLive v saved
+                    context <- requireTrieSelection saved live
+                    observed <- either (failWith StaleState) pure (observedRoot live)
+                    report
                         (wcTracer wc)
-                        (wcSource wc)
-                        ["journal transactions", "state"]
-                        $ do
-                            r <- reconcile app command dir saved v
-                            refuseUnreconciled r
-                            (,) r <$> attachLive v saved
-                context <- requireTrieSelection saved live
-                observed <- either (failWith StaleState) pure (observedRoot live)
-                report
-                    (wcTracer wc)
-                    []
-                    (RegistrySeen (txInText (fst (liveState live))) (hexT observed) Nothing)
-                printed <-
-                    body Attached{atWrite = wc, atLive = live, atTrie = context}
-                pure $ case printed of
-                    Aeson.Object o ->
-                        Aeson.Object
-                            (KeyMap.insert "reconciled" (reconciledJson reconciled) o)
-                    other -> other
+                        []
+                        (RegistrySeen (txInText (fst (liveState live))) (hexT observed) Nothing)
+                    printed <-
+                        body Attached{atWrite = wc, atLive = live, atTrie = context}
+                    pure $ case printed of
+                        Aeson.Object o ->
+                            stampStanding
+                                (savedApplicationPin saved)
+                                ( Aeson.Object
+                                    (KeyMap.insert "reconciled" (reconciledJson reconciled) o)
+                                )
+                        other -> other
 
 -- | The payment key hash of the wallet this command signs with.
 callerKey :: Attached -> ByteString

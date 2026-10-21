@@ -94,7 +94,6 @@ sampleRelease =
         { releaseVersion = "0.10.1"
         , releaseBlueprintTitle = "singular-test"
         , releaseBlueprintSha = T.replicate 64 "0"
-        , releaseApplicationHash = T.replicate 56 "1"
         }
 
 sampleInputs :: PageInputs
@@ -106,6 +105,7 @@ sampleInputs =
         , pageStateOutput = T.replicate 64 "c" <> "#0"
         , pageStateScript = T.replicate 56 "d"
         , pageApplicationScript = T.replicate 56 "e"
+        , pageApplicationPin = "not-checked-against-any-blueprint"
         , pageActiveScript = T.replicate 56 "f"
         , pageAbsentScript = T.replicate 56 "0"
         , pageTerminalScript = T.replicate 56 "1"

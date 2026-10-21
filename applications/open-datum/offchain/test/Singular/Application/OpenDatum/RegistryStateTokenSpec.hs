@@ -657,6 +657,7 @@ refusalName = \case
     RegistryPinMismatch PinActive -> "registry-pin-mismatch active"
     RegistryPinMismatch PinAbsent -> "registry-pin-mismatch absent"
     RegistryPinMismatch PinTerminal -> "registry-pin-mismatch terminal"
+    RegistryPinMismatchEvery -> "registry-pin-mismatch application"
     NetworkMismatch _ -> "network-mismatch"
     IdentityUnreadable _ -> "unreadable"
 

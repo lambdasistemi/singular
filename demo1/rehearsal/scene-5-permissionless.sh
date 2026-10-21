@@ -39,7 +39,7 @@ play -p 5 "On disk: the witness, a file named by the transaction it signs." \
   'ls witnesses-insert-bob | short'
 # WORKAROUND: `singular submit` prints its whole receipt, between forty and ninety lines of JSON, on the terminal -> stdout goes to /dev/null on screen; the receipt is kept by --receipt and the next frame shows its facts
 play -t -p 4 $'`singular submit` sends the signed bundle: each transaction with its witness, returning once the\nchain holds it. Its receipt goes to the file named by --receipt.' \
-  'singular submit --witnesses witnesses-insert-bob $NODE --receipt insert-bob.submitted.json insert-bob.bundle > /dev/null'
+  'singular submit --witnesses witnesses-insert-bob $BLUEPRINT $NODE --receipt insert-bob.submitted.json insert-bob.bundle > /dev/null'
 play -p 8 $'On chain: Bob\'s booking landed, sent by `submit`. His request is pending beside Alice\'s;\nthe registry is unchanged.' \
   'jq "{outcome, landed: [.submissions[] | {identity, how, claims}]}" insert-bob.submitted.json | short'
 play -s -p 4 $'Bob folds, as anyone may: one transaction settles every request it can, from public data.\nThe same way: his address and a new bundle file, built and not signed, exit 19.' \
@@ -55,7 +55,7 @@ play -p 4 "On disk: the witness for the fold." \
   'ls witnesses-fold-all | short'
 # WORKAROUND: `singular submit` prints its whole receipt, between forty and ninety lines of JSON, on the terminal -> stdout goes to /dev/null on screen; the receipt is kept by --receipt and the next frame shows its facts
 play -t -p 4 $'And `submit` sends it, as before. Bob folded with his own wallet, and Alice signed nothing.' \
-  'singular submit --witnesses witnesses-fold-all $NODE --receipt fold-all.submitted.json fold-all.bundle > /dev/null'
+  'singular submit --witnesses witnesses-fold-all $BLUEPRINT $NODE --receipt fold-all.submitted.json fold-all.bundle > /dev/null'
 play -p 8 "On chain: the fold landed, sent by submit; the registry moved to a new root." \
   'jq "{outcome, landed: [.submissions[] | {identity, how, slot: .chainPoint.slot}]}" fold-all.submitted.json | short'
 play -t -p 3 "Bob reads alice-cert from the chain: a read; it writes nothing in his state directory." \

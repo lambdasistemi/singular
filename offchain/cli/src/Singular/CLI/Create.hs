@@ -52,7 +52,7 @@ import Control.Exception
     , throwIO
     , try
     )
-import Control.Monad (unless, when)
+import Control.Monad (forM_, unless, when)
 import Data.Aeson (Value, toJSON)
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Encode.Pretty (encodePretty)
@@ -97,7 +97,7 @@ import Singular.CLI.Command
     , WriteSettings (..)
     )
 import Singular.CLI.FlagGroup (Signer (..))
-import Singular.CLI.Live (receipt, txInText)
+import Singular.CLI.Live (receipt, standingFields, txInText)
 import Singular.CLI.ManagedState
     ( addressPartition
     , managedDir
@@ -137,6 +137,7 @@ import Singular.CLI.Session
     , confirmedTxId
     , expecting
     , failWith
+    , failWithFields
     , journalObserved
     , journalObservedId
     , loadSignerWallet
@@ -158,7 +159,9 @@ import Singular.CLI.Trace
 import Singular.Registry.Application
     ( Application (..)
     , ApplicationPin (..)
+    , ApplicationPinStanding (..)
     , appPin
+    , applicationPinStanding
     , hashPinnedApplication
     )
 import Singular.Registry.AssetName (deriveAssetName)
@@ -183,10 +186,13 @@ import Singular.Registry.LedgerProvider (Asset)
 import Singular.Registry.LedgerProvider qualified as LP
 import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.StateToken
-    ( ReferenceRefusal (..)
+    ( IdentityRefusal (..)
+    , ReferenceRefusal (..)
     , ReferenceRole (..)
     , expectedReferences
     , findReferences
+    , pinsDifference
+    , renderIdentityRefusal
     , renderReferenceRefusal
     , renderStateToken
     )
@@ -890,6 +896,23 @@ boot wc cfg pinned seedIn foundState isChained pendingFile = do
             state <- case extractCageDatum out of
                 Just (StateDatum found) -> pure found
                 _ -> failWith Partial "the boot's state output carries no state datum"
+            -- The datum read back must carry the pins this create built: a
+            -- boot that left others is a partial outcome naming the field,
+            -- and nothing is journalled as observed.
+            forM_ (pinsDifference cfg state [minBound .. maxBound]) $ \field ->
+                failWithFields
+                    Partial
+                    ( T.unpack
+                        (renderIdentityRefusal (RegistryPinMismatch field))
+                    )
+                    [
+                        ( "stateToken"
+                        , toJSON
+                            ( renderStateToken
+                                (cagePolicyIdFromCfg cfg, let TokenId n = tid in n)
+                            )
+                        )
+                    ]
             journalObserved
                 wc
                 "boot"
@@ -1231,6 +1254,7 @@ previewIdentity app submitting a rel addr utxos pp mustPublish = do
             ]
                 <> registryIdentity
                 <> ([("pins", toJSON (pinsOf cfg)) | not isFirstFailure])
+                <> standingFields (createStanding app)
                 <> funding
     pure ((seedIn, cfg, pinned, seedFrom), identity)
 
@@ -1265,3 +1289,13 @@ announceCreated a v = do
     field name = case v of
         Aeson.Object o | Just (Aeson.String t) <- KeyMap.lookup name o -> Just t
         _ -> Nothing
+
+{- | What a create can say of the application pin it pins: a pin the program
+derives from a blueprint is compared with the datum it reads back, a hash
+the creator gave to a program that names no application is checked against
+no blueprint.
+-}
+createStanding :: Application -> ApplicationPinStanding
+createStanding app = case appPin app of
+    PinByHash _ | isNothing (appName app) -> ApplicationPinNotChecked
+    pin -> applicationPinStanding pin

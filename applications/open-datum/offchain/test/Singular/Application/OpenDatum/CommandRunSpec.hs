@@ -238,7 +238,10 @@ import Singular.Registry.AddressOracle
     , fingerprintOf
     , holdsOf
     )
-import Singular.Registry.Application (datumFromJson)
+import Singular.Registry.Application
+    ( datumFromJson
+    , neutralApplication
+    )
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Bundle
     ( Bundle (..)
@@ -3048,7 +3051,9 @@ externalCompletionOf shape use = withRig $ \rig -> do
         captured
             ( submitBundle
                 (envOf rig)
+                neutralApplication
                 fixtureSettings
+                (Just (rigBlueprint rig))
                 (stagedBundlePath rig)
                 [witnessDir]
                 Nothing
