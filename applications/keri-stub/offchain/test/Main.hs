@@ -4,6 +4,7 @@ import Singular.Application.KeriStub.CLISpec qualified
 import Singular.Application.KeriStub.ConvictSpec qualified
 import Singular.Application.KeriStub.DatumSpec qualified
 import Singular.Application.KeriStub.FlagGroupExtentSpec qualified
+import Singular.Application.KeriStub.ProducersSpec qualified
 import Singular.Application.KeriStub.PurposesSpec qualified
 import Singular.Application.KeriStub.RegisterSpec qualified
 import Singular.Application.KeriStub.RulesSpec qualified
@@ -29,6 +30,9 @@ main = hspec $ do
     describe
         (tagged "Singular.Application.KeriStub.Register" [Application])
         Singular.Application.KeriStub.RegisterSpec.spec
+    describe
+        (tagged "Singular.Application.KeriStub.Producers" [Application])
+        Singular.Application.KeriStub.ProducersSpec.spec
     describe
         (tagged "Singular.Application.KeriStub.Purposes" [Application])
         Singular.Application.KeriStub.PurposesSpec.spec

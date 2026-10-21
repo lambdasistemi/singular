@@ -29,12 +29,20 @@ listed here; a constructor no run exercises fails the extent row.
 module Singular.Application.OpenDatum.CommandRunSpec (spec) where
 
 import Control.Applicative ((<|>))
-import Control.Exception (bracket, finally, throwIO)
-import Control.Monad (forM, unless)
+import Control.Exception
+    ( SomeException
+    , bracket
+    , finally
+    , throwIO
+    , try
+    )
+import Control.Monad (forM, unless, when)
 import Control.Tracer (Tracer (..))
 import Data.Aeson (toJSON, (.=))
 import Data.Aeson qualified as Aeson
+import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KeyMap
+import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
@@ -50,6 +58,7 @@ import Data.IORef
     , writeIORef
     )
 import Data.List (nub, partition, sort)
+import Data.List.NonEmpty qualified as NE
 import Data.Map.Strict qualified as Map
 import Data.Maybe
     ( fromMaybe
@@ -120,31 +129,45 @@ import Cardano.Crypto.Hash.Class
     , hashToBytes
     , hashWith
     )
+import Cardano.Ledger.Address (Addr (..), decodeAddr)
+import Cardano.Ledger.Allegra.Scripts (ValidityInterval (..))
 import Cardano.Ledger.Alonzo.PParams (getLanguageView)
+import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
 import Cardano.Ledger.Alonzo.Tx
     ( ScriptIntegrity (..)
     , hashScriptIntegrity
     )
+import Cardano.Ledger.Alonzo.TxBody (reqSignerHashesTxBodyL)
 import Cardano.Ledger.Alonzo.TxWits (Redeemers (..), TxDats (..))
+import Cardano.Ledger.Api.Scripts.Data (Data (..))
 import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx, witsTxL)
 import Cardano.Ledger.Api.Tx.Body
     ( collateralInputsTxBodyL
+    , feeTxBodyL
     , inputsTxBodyL
     , mintTxBodyL
     , outputsTxBodyL
     , referenceInputsTxBodyL
     , scriptIntegrityHashTxBodyL
+    , treasuryDonationTxBodyL
+    , vldtTxBodyL
     )
 import Cardano.Ledger.Api.Tx.Out
     ( TxOut
+    , addrTxOutL
     , coinTxOutL
     , datumTxOutL
+    , getMinCoinTxOut
     , mkBasicTxOut
+    , valueTxOutL
     )
 import Cardano.Ledger.Api.Tx.Wits (datsTxWitsL, rdmrsTxWitsL)
 import Cardano.Ledger.BaseTypes (StrictMaybe (..), TxIx (..))
+import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
 import Cardano.Ledger.Core (PParams)
+import Cardano.Ledger.Credential (Credential (..))
 import Cardano.Ledger.Hashes (ScriptHash (..))
+import Cardano.Ledger.Keys (KeyHash (..))
 import Cardano.Ledger.Mary.Value
     ( AssetName (..)
     , MaryValue (..)
@@ -159,16 +182,48 @@ import Cardano.Tx.Ledger (ConwayTx)
 import PlutusCore.MkPlc (mkConstant)
 import PlutusCore.Version (plcVersion110)
 import PlutusLedgerApi.V3 qualified as PLC
+import PlutusTx.Builtins.Internal (BuiltinByteString (..))
 import UntypedPlutusCore qualified as UPLC
 
 import Singular.Application.OpenDatum.Command
     ( OpenDatumCommand (..)
     , parseOpenDatumCommand
     )
+import Singular.Application.OpenDatum.Envelope
+    ( Control (..)
+    , Envelope (..)
+    , dataToJson
+    , envelopeFromData
+    , envelopeToData
+    )
+import Singular.Application.OpenDatum.LawfulBooking
+    ( TerminationFault (..)
+    , applicationAddressBytes
+    , bookInsertRedeemerOf
+    , lawfulApplicationBurn
+    , lawfulInsertBooking
+    , lawfulInsertBookingAs
+    , lawfulTerminationBookingWith
+    )
+import Singular.Application.OpenDatum.Plan (insertionOf)
 import Singular.Application.OpenDatum.Root (runPackagedOpenDatumVia)
 import Singular.Application.OpenDatum.Run (runOpenDatum)
 import Singular.Application.OpenDatum.Value (openDatumApplication)
 import Singular.CLI.Booking (BookingVerb (..), bookingEdgeName)
+import Singular.CLI.Command
+    ( EntryArgs (..)
+    , EntryMode (..)
+    , WriteSettings (..)
+    )
+import Singular.CLI.Live
+    ( Live (..)
+    , Saved (..)
+    , attachLive
+    , requireTrieSelection
+    , resolveSaved
+    , withTrie
+    )
+import Singular.CLI.Live qualified as Live
 import Singular.CLI.ManagedState (addressPartition, managedDir)
 import Singular.CLI.Passphrase (mkPassphrase)
 import Singular.CLI.Proof (Leaf (..), leafName)
@@ -184,7 +239,7 @@ import Singular.CLI.Registry
     , loadReleaseCodes
     , pendingPath
     )
-import Singular.CLI.Session (Env (..), txIdHex)
+import Singular.CLI.Session (Env (..), readsIn, txIdHex)
 import Singular.CLI.Trace
 import Singular.CLI.Vault
     ( createVaultFile
@@ -205,6 +260,7 @@ import Singular.Registry.Bundle
     , renderBundleRefusal
     )
 import Singular.Registry.Capabilities (Capabilities (..))
+import Singular.Registry.Config qualified as Config
 import Singular.Registry.Deployment (parseOutRef, renderOutRef)
 import Singular.Registry.Evidence
     ( Evidenced (..)
@@ -225,7 +281,7 @@ import Singular.Registry.RawChainFixture
 import Singular.Registry.SessionEvidence (observeProvider)
 import Singular.Registry.SessionIO qualified as SessionIO
 import Singular.Registry.Signing (signedTx)
-import Singular.Registry.StateToken (parseStateToken)
+import Singular.Registry.StateToken (ReferenceRole, parseStateToken)
 import Singular.Registry.SyntheticLedger
     ( errorProgram
     , unitProgram
@@ -237,21 +293,32 @@ import Singular.Registry.Trace
     , ReadEvent (Evaluated)
     )
 import Singular.Registry.TxBuilder.BookingFixture (preprodParams)
-import Singular.Registry.TxBuilder.Edges (adaOnlyOut)
+import Singular.Registry.TxBuilder.Edges
+    ( adaOnlyOut
+    , registryContextFor
+    )
 import Singular.Registry.TxBuilder.Internal
-    ( computeScriptHash
+    ( addrKeyHashBytes
+    , computeScriptHash
     , extractCageDatum
     , mkInlineDatum
+    , policyIdFromPin
     , scriptHashBytes
     , toPlcData
     )
 import Singular.Registry.TxBuilder.Internal.Identity (txInToRef)
+import Singular.Registry.TxBuilder.Update (updateTokenSelected)
 import Singular.Registry.Types
     ( CageDatum (..)
+    , OnChainRegistrationRequest (..)
     , OnChainRequest (..)
+    , OnChainTerminationRequest (..)
+    , applicationTagName
     , edgeInsertActive
     , edgeName
     , edgeUpdateTerminal
+    , terminationTrieReadyTagName
+    , trieReadyTagName
     )
 import Singular.Registry.Wallet
     ( Wallet (..)
@@ -270,6 +337,7 @@ spec =
         >> openDatumDescribeCommandRows
         >> externalWriteRows
         >> vaultWriteRows
+        >> chunk4Producers
 
 {- | The open datum create receipt carries the working describe line. The
 application owns no describe verb, so the line always names the registry
@@ -4518,3 +4586,1226 @@ vaultRefusalsRow =
                     fromMaybe "" (textAt "reason" (runReceipt r))
                         `shouldNotSatisfy` T.isInfixOf "blueprint"
             doesPathExist (rigDir rig </> "never-made") `shouldReturn` False
+
+-- ---------------------------------------------------------
+-- chunk4 producers
+-- ---------------------------------------------------------
+
+{- | The producers as the frozen law needs them (checkpoint four): an insert
+books the tagged registration request the application's mint certifies, a
+terminate spends the key's custody through the application's own spend arm,
+the fold finds both by the request policy, and the retained compiled programs
+accept what the producers book. Every expectation is read from the booking, the
+chain or the registry's own configuration, never typed; every setup that is not
+the producer under test is built apart from the producers
+('Singular.Application.OpenDatum.LawfulBooking') and says so.
+-}
+chunk4Producers :: Spec
+chunk4Producers = describe "chunk4 producers" $ do
+    registrationBookingRows
+    registrationPreviewRows
+    registrationDiscoveryRows
+    receiptRows
+    terminationBookingRows
+    carrierRows
+    applicationMintRows
+    terminationSpendRows
+    retainedProgramRows
+
+-- | What kind of cage datum an output carries, for a failure that names it.
+datumKind :: CageDatum -> String
+datumKind = \case
+    RequestDatum _ -> "a legacy request datum"
+    StateDatum _ -> "a state datum"
+    AbsentCustody _ -> "an absent-custody datum"
+    RegistrationDatum _ -> "a registration request datum"
+    TerminationDatum _ -> "a termination request datum"
+
+failTest :: String -> IO a
+failTest why = expectationFailure why >> fail why
+
+-- | The outputs of a body that carry a cage datum, with the datum.
+cageOutputs :: ConwayTx -> [(TxOut ConwayEra, CageDatum)]
+cageOutputs tx =
+    [ (out, datum)
+    | out <- toList (tx ^. bodyTxL . outputsTxBodyL)
+    , Just datum <- [extractCageDatum out]
+    ]
+
+-- | The transactions a command prepared on the key-file path, in order.
+preparedBodies :: Rig -> String -> Text -> IO [ConwayTx]
+preparedBodies rig t command = do
+    journal <- journalAt (stagedPartition rig "registry" t)
+    forM
+        [ e
+        | e <- journal
+        , journalEvent e == "prepared"
+        , journalCommand e == command
+        ]
+        $ \e -> do
+            (_, body) <- boundBody journal (journalTxId e)
+            either (fail . T.unpack) pure body
+
+-- | The first transaction a command prepared.
+preparedFirst :: Rig -> String -> Text -> IO ConwayTx
+preparedFirst rig t command =
+    preparedBodies rig t command >>= \case
+        body : _ -> pure body
+        [] ->
+            failTest ("the " <> T.unpack command <> " prepared no transaction")
+
+-- | The payment key hash of the rig's wallet: the controller of what it books.
+walletKeyHash :: Rig -> ByteString
+walletKeyHash = addrKeyHashBytes . walletAddr . rigWallet
+
+-- | The refund address bytes of a registration request.
+refundOf :: OnChainRegistrationRequest -> ByteString
+refundOf r = case regRefundAddress r of
+    BuiltinByteString bytes -> bytes
+
+-- | The mint of a body, policy by policy.
+mintOf :: ConwayTx -> Map.Map PolicyID (Map.Map AssetName Integer)
+mintOf tx = let MultiAsset m = tx ^. bodyTxL . mintTxBodyL in m
+
+-- | The redeemer a body gives to the minting of this policy.
+mintRedeemerOf :: ConwayTx -> PolicyID -> Maybe PLC.Data
+mintRedeemerOf tx policy =
+    listToMaybe
+        [ d
+        | (ConwayMinting (AsIx i), (Data d, _)) <- Map.toList redeemers
+        , listToMaybe (drop (fromIntegral i) policies) == Just policy
+        ]
+  where
+    Redeemers redeemers = tx ^. witsTxL . rdmrsTxWitsL
+    policies = Map.keys (mintOf tx)
+
+-- | The redeemer a body gives to the spending of this input.
+spendRedeemerOf :: ConwayTx -> TxIn -> Maybe PLC.Data
+spendRedeemerOf tx ref =
+    listToMaybe
+        [ d
+        | (ConwaySpending (AsIx i), (Data d, _)) <- Map.toList redeemers
+        , listToMaybe (drop (fromIntegral i) inputs) == Just ref
+        ]
+  where
+    Redeemers redeemers = tx ^. witsTxL . rdmrsTxWitsL
+    inputs = toList (tx ^. bodyTxL . inputsTxBodyL)
+
+-- | The policy of a script address: the request policy is the request validator.
+policyOfAddress :: TxOut ConwayEra -> Maybe PolicyID
+policyOfAddress out = case out ^. addrTxOutL of
+    Addr _ (ScriptHashObj h) _ -> Just (PolicyID h)
+    _ -> Nothing
+
+-- | The policy whose script hash the application's destination address carries.
+policyOfDestination :: ByteString -> Maybe PolicyID
+policyOfDestination bytes
+    | BS.length bytes == 29 =
+        PolicyID . ScriptHash <$> hashFromBytes (BS.drop 1 bytes)
+    | otherwise = Nothing
+
+-- | The signers a body requires, as key hash bytes.
+signersOf :: ConwayTx -> Set.Set ByteString
+signersOf tx =
+    Set.map
+        (\(KeyHash h) -> hashToBytes h)
+        (tx ^. bodyTxL . reqSignerHashesTxBodyL)
+
+-- | A booked registration, decoded from the transaction that books it.
+data Registration = Registration
+    { rgOut :: TxOut ConwayEra
+    , rgRequest :: OnChainRegistrationRequest
+    , rgEnvelope :: Envelope
+    }
+
+registrationOf :: ConwayTx -> IO Registration
+registrationOf tx = case cageOutputs tx of
+    [(out, RegistrationDatum r)] -> do
+        envelope <- case regDatum r of
+            Just d ->
+                either
+                    (failTest . ("the request's datum is no envelope: " <>))
+                    pure
+                    (envelopeFromData d)
+            Nothing -> failTest "the registration request carries no datum"
+        pure (Registration out r envelope)
+    found ->
+        failTest
+            ( "expected one registration request output in the booking, found "
+                <> show (map (datumKind . snd) found)
+            )
+
+-- | A registry, an insert of bob-1 by the key file and the booking it prepared.
+withBookedInsert
+    :: [String] -> (Rig -> String -> Run -> ConwayTx -> IO a) -> IO a
+withBookedInsert extra use = withRig $ \rig -> do
+    seed <- fundSeed rig
+    create <- run rig "create" ["open-datum", "create", "--seed", seed]
+    t <- tokenOf create
+    booked <- run rig "insert" (insertWords rig <> extra <> tokenArgs t)
+    outcomeOf (runReceipt booked) `shouldBe` Just "success"
+    body <- preparedFirst rig t "insert"
+    use rig t booked body
+
+registrationBookingRows :: Spec
+registrationBookingRows =
+    describe "an insert books a tagged registration request" $ do
+        it
+            "puts one registration request on chain, carrying the complete envelope"
+            $ withBookedInsert ["--deposit", "3000000"]
+            $ \rig _ _ body -> do
+                rg <- registrationOf body
+                let r = rgRequest rg
+                    control = envControl (rgEnvelope rg)
+                regKey r `shouldBe` ctlKey control
+                ctlKey control `shouldBe` TE.encodeUtf8 "bob-1"
+                refundOf r `shouldBe` ctlController control
+                ctlController control `shouldBe` walletKeyHash rig
+                ctlDeposit control `shouldBe` 3_000_000
+        it
+            "makes the envelope's deposit the request's carrier, with cost and tip beside it"
+            $ withBookedInsert ["--deposit", "3000000"]
+            $ \_ _ _ body -> do
+                rg <- registrationOf body
+                let r = rgRequest rg
+                regCarrierAda r `shouldBe` ctlDeposit (envControl (rgEnvelope rg))
+                rgOut rg ^. coinTxOutL
+                    `shouldBe` Coin (regRegistrationCost r + regDeclaredTip r + regCarrierAda r)
+        it "names the application's own script address as the destination" $
+            withBookedInsert [] $ \_ _ _ body -> do
+                rg <- registrationOf body
+                let destination = regDestination (rgRequest rg)
+                BS.length destination `shouldBe` 29
+                BS.take 1 destination `shouldBe` BS.pack [0x70]
+                applicationPolicy <- case policyOfDestination destination of
+                    Just p -> pure p
+                    Nothing -> failTest "the destination is no script address"
+                Map.member applicationPolicy (mintOf body) `shouldBe` True
+        it
+            "mints the request's trie-ready tag and the application tag it commits to, one each, and nothing else"
+            $ withBookedInsert []
+            $ \_ _ _ body -> do
+                rg <- registrationOf body
+                let r = rgRequest rg
+                    control = envControl (rgEnvelope rg)
+                requestPolicy <-
+                    maybe
+                        (failTest "the request output is not at a script")
+                        pure
+                        (policyOfAddress (rgOut rg))
+                applicationPolicy <-
+                    maybe
+                        (failTest "the destination is no script address")
+                        pure
+                        (policyOfDestination (regDestination r))
+                mintOf body
+                    `shouldBe` Map.fromList
+                        [
+                            ( requestPolicy
+                            , Map.singleton (AssetName (SBS.toShort (trieReadyTagName r))) 1
+                            )
+                        ,
+                            ( applicationPolicy
+                            , Map.singleton
+                                ( AssetName
+                                    ( SBS.toShort
+                                        ( applicationTagName
+                                            (ctlKey control)
+                                            (regRefundAddress r)
+                                            (regDestination r)
+                                            (regNonce r)
+                                        )
+                                    )
+                                )
+                                1
+                            )
+                        ]
+        it
+            "gives the application mint the registration redeemer and the request mint the empty one"
+            $ withBookedInsert []
+            $ \_ _ _ body -> do
+                rg <- registrationOf body
+                let r = rgRequest rg
+                    control = envControl (rgEnvelope rg)
+                requestPolicy <-
+                    maybe
+                        (failTest "the request output is not at a script")
+                        pure
+                        (policyOfAddress (rgOut rg))
+                applicationPolicy <-
+                    maybe
+                        (failTest "the destination is no script address")
+                        pure
+                        (policyOfDestination (regDestination r))
+                mintRedeemerOf body applicationPolicy
+                    `shouldBe` Just
+                        ( bookInsertRedeemerOf
+                            (ctlKey control)
+                            (ctlController control)
+                            (regDestination r)
+                            (rgEnvelope rg)
+                        )
+                mintRedeemerOf body requestPolicy `shouldBe` Just (PLC.Constr 0 [])
+        it "requires the controller's signature and no other" $
+            withBookedInsert [] $ \rig _ _ body ->
+                signersOf body `shouldBe` Set.singleton (walletKeyHash rig)
+        it "bounds the booking above, and books the start of that upper slot" $
+            withBookedInsert [] $ \rig _ _ body -> do
+                rg <- registrationOf body
+                case body ^. bodyTxL . vldtTxBodyL of
+                    ValidityInterval _ (SJust upper) -> do
+                        upperMs <-
+                            SessionIO.withLatest
+                                (rawChainProvider (rigChain rig))
+                                (`SessionIO.slotStart` upper)
+                        regSubmittedAt (rgRequest rg) `shouldBe` upperMs
+                    other ->
+                        failTest ("the booking has no upper validity bound: " <> show other)
+
+-- | A preview and a write of the same insert, each report read back.
+registrationPreviewRows :: Spec
+registrationPreviewRows =
+    describe "the preview reports the booking the write submits"
+        $ it
+            "states the same inputs, references, purposes and fee as the transaction the insert prepares"
+        $ withRig
+        $ \rig -> do
+            seed <- fundSeed rig
+            create <- run rig "create" ["open-datum", "create", "--seed", seed]
+            t <- tokenOf create
+            previewed <-
+                run
+                    rig
+                    "preview"
+                    ( insertWords rig
+                        <> [ "--preview"
+                           , "--wallet-address"
+                           , bech32Address (walletAddr (rigWallet rig))
+                           ]
+                        <> tokenArgs t
+                    )
+            outcomeOf (runReceipt previewed) `shouldBe` Just "success"
+            written <- run rig "insert" (insertWords rig <> tokenArgs t)
+            outcomeOf (runReceipt written) `shouldBe` Just "success"
+            body <- preparedFirst rig t "insert"
+            bookingReport <- case valueAt "booking" (runReceipt previewed) of
+                Just b -> pure b
+                Nothing -> failTest "the preview reports no booking"
+            let inputsOf = map txInText . toList
+                Redeemers redeemers = body ^. witsTxL . rdmrsTxWitsL
+            textsAt "inputs" bookingReport
+                `shouldBe` Just (inputsOf (body ^. bodyTxL . inputsTxBodyL))
+            textsAt "referenceInputs" bookingReport
+                `shouldBe` Just (inputsOf (body ^. bodyTxL . referenceInputsTxBodyL))
+            purposesOf bookingReport
+                `shouldBe` Just (map (show . fst) (Map.toList redeemers))
+            integerAt "fee" bookingReport
+                `shouldBe` Just (let Coin f = body ^. bodyTxL . feeTxBodyL in f)
+            -- and the preview's booking is that of a registration: two mints
+            let minting = length (filter isMinting (fromMaybe [] (purposesOf bookingReport)))
+            unless (minting == 2) $
+                failTest
+                    ( "the preview reports "
+                        <> show minting
+                        <> " minting purpose(s); a registration mints under the request policy and under the application policy"
+                    )
+  where
+    isMinting = T.isInfixOf "Minting" . T.pack
+    txInText i = T.unpack (renderOutRef i)
+    textsAt key v = case v of
+        Aeson.Object o -> case KeyMap.lookup key o of
+            Just (Aeson.Array a) -> Just [T.unpack s | Aeson.String s <- toList a]
+            _ -> Nothing
+        _ -> Nothing
+    purposesOf v = case v of
+        Aeson.Object o -> case KeyMap.lookup "purposes" o of
+            Just (Aeson.Array a) ->
+                Just
+                    [ T.unpack p
+                    | Aeson.Object e <- toList a
+                    , Just (Aeson.String p) <- [KeyMap.lookup "purpose" e]
+                    ]
+            _ -> Nothing
+        _ -> Nothing
+
+-- ---------------------------------------------------------
+-- Setup apart from every producer
+-- ---------------------------------------------------------
+
+-- | A registry resolved the way a command resolves it, for a control that books by hand.
+data Lawful = Lawful
+    { lwSaved :: Saved
+    , lwLive :: Live
+    , lwEntry :: EntryArgs
+    , lwPayer :: Addr
+    }
+
+-- | Every role a registry's references can play.
+allRoles :: Set.Set ReferenceRole
+allRoles = Set.fromList [minBound .. maxBound]
+
+withLawful
+    :: Rig
+    -> String
+    -> String
+    -> (Cage.Session NoWitness IO -> Lawful -> IO a)
+    -> IO a
+withLawful rig t key use = do
+    let line =
+            ["open-datum", "insert", "--key", key, "--payload", payloadOf rig]
+                <> tokenArgs t
+    cmd <-
+        either
+            (failTest . show)
+            pure
+            (parseOpenDatumCommand (commandLine rig "registry" line))
+    ea <- case cmd of
+        OpenInsert a -> pure a
+        _ -> failTest "the line is no insert"
+    ws <- case entryMode ea of
+        Submit w -> pure w
+        _ -> failTest "the line is no submission"
+    let env = envOf rig
+    release <-
+        envLoadRelease env openDatumApplication (entryBlueprint ea)
+            >>= either failTest pure
+    envReads env (writeProvider ws) $ \caps ->
+        SessionIO.withLatest (readsIn (envSource env) (envTracer env) caps) $ \v -> do
+            saved <-
+                resolveSaved
+                    openDatumApplication
+                    ""
+                    release
+                    (entryAccess ea)
+                    allRoles
+                    Nothing
+                    v
+            live <- attachLive v saved
+            use v (Lawful saved live ea (walletAddr (rigWallet rig)))
+
+-- | A view of the chain as it stands, with no command around it.
+freshView :: Rig -> (Cage.Session NoWitness IO -> IO a) -> IO a
+freshView rig = SessionIO.withLatest (rawChainProvider (rigChain rig))
+
+-- | A transaction the chain applies: recorded, its outputs live, its inputs spent.
+landTx :: Rig -> ConwayTx -> IO ()
+landTx rig tx = do
+    let txid = txIdTx tx
+        spent = Set.toList (tx ^. bodyTxL . inputsTxBodyL)
+        made = zip [0 ..] (toList (tx ^. bodyTxL . outputsTxBodyL))
+    recordTransaction (rigChain rig) tx
+    advanceChain (rigChain rig) $ \facts ->
+        facts
+            { csUTxO =
+                Map.union
+                    (Map.fromList [(TxIn txid (TxIx ix), out) | (ix, out) <- made])
+                    (foldr Map.delete (csUTxO facts) spent)
+            }
+
+-- | The first output of a body that holds this asset.
+outputHolding
+    :: PolicyID -> ByteString -> ConwayTx -> Maybe (TxIn, TxOut ConwayEra)
+outputHolding policy name tx =
+    listToMaybe
+        [ (TxIn (txIdTx tx) (TxIx ix), out)
+        | (ix, out) <- zip [0 ..] (toList (tx ^. bodyTxL . outputsTxBodyL))
+        , let MaryValue _ (MultiAsset m) = out ^. valueTxOutL
+        , Just assets <- [Map.lookup policy m]
+        , Map.member (AssetName (SBS.toShort name)) assets
+        ]
+
+{- | A registration of this key booked by hand, apart from every producer, and
+landed: the transaction and the request it made. The nonce is the caller's.
+-}
+plantRegistration
+    :: Rig -> String -> String -> Integer -> IO (ConwayTx, TxIn)
+plantRegistration rig t key nonce = withLawful rig t key $ \v lw -> do
+    tip <- SessionIO.tip v
+    let saved = lwSaved lw
+        payer = lwPayer lw
+        slot = Cage.observedSlot tip
+        envelope = insertionOf saved (lwEntry lw) (addrKeyHashBytes payer) (PLC.I 7)
+    tx <-
+        lawfulInsertBooking
+            (savedCfg saved)
+            v
+            (savedToken saved)
+            (fst (liveState (lwLive lw)))
+            (Live.applied saved)
+            envelope
+            (Coin 1_000_000)
+            nonce
+            (slot, slot + 10)
+            payer
+    landTx rig tx
+    jumpChainTo (rigChain rig) (slot + 40)
+    pure (tx, TxIn (txIdTx tx) (TxIx 0))
+
+{- | A key that is active, made apart from every producer: the hand-booked
+registration, landed, folded by the library's own fold and landed. The custody
+output the fold made, with its policy of singular tags.
+-}
+activeKeyApart
+    :: Rig -> String -> String -> IO (TxIn, TxOut ConwayEra)
+activeKeyApart rig t key = do
+    (_, request) <- plantRegistration rig t key 11
+    withLawful rig t key $ \_ lw -> do
+        let saved = lwSaved lw
+            cfg = savedCfg saved
+        freshView rig $ \v -> do
+            live <- attachLive v saved
+            sel <- requireTrieSelection saved live
+            ctx <- registryContextFor cfg (savedCodes saved) v (liveRefs live)
+            folded <-
+                withTrie sel $ \snapshot ->
+                    updateTokenSelected
+                        cfg
+                        v
+                        snapshot
+                        (savedToken saved)
+                        (lwPayer lw)
+                        ctx
+                        (request NE.:| [])
+            landTx rig folded
+            case outputHolding
+                (policyIdFromPin (Config.cfgActivePolicy cfg))
+                (TE.encodeUtf8 (T.pack key))
+                folded of
+                Just custody -> pure custody
+                Nothing -> failTest "the fold made no output holding the key's singular tag"
+
+-- | The leaf the inspect of a key reports.
+leafOf :: Rig -> String -> String -> IO (Maybe Aeson.Value)
+leafOf rig t key = do
+    inspected <-
+        run
+            rig
+            "inspect"
+            (["open-datum", "inspect", "--key", key] <> tokenArgs t)
+    pure (valueAt "leaf" (runReceipt inspected))
+
+-- ---------------------------------------------------------
+-- The fold finds a booked registration by the request policy
+-- ---------------------------------------------------------
+
+registrationDiscoveryRows :: Spec
+registrationDiscoveryRows =
+    describe "the fold finds a booked registration by the request policy" $ do
+        it
+            "settles a registration booked apart from every producer, selected by its request"
+            $ withRig
+            $ \rig -> do
+                seed <- fundSeed rig
+                create <- run rig "create" ["open-datum", "create", "--seed", seed]
+                t <- tokenOf create
+                (_, request) <- plantRegistration rig t "bob-1" 11
+                folded <-
+                    run
+                        rig
+                        "fold"
+                        ( ["open-datum", "fold", "--request", T.unpack (renderOutRef request)]
+                            <> tokenArgs t
+                        )
+                outcomeOf (runReceipt folded) `shouldBe` Just "success"
+                leafOf rig t "bob-1" `shouldReturn` Just (toJSON (leafName Active))
+        it "settles it with no request named, as the only pending request" $
+            withRig $ \rig -> do
+                seed <- fundSeed rig
+                create <- run rig "create" ["open-datum", "create", "--seed", seed]
+                t <- tokenOf create
+                _ <- plantRegistration rig t "bob-1" 11
+                folded <- run rig "fold" (["open-datum", "fold"] <> tokenArgs t)
+                outcomeOf (runReceipt folded) `shouldBe` Just "success"
+                leafOf rig t "bob-1" `shouldReturn` Just (toJSON (leafName Active))
+        it
+            "leaves an output with no tag of the request policy unfolded, whatever datum it carries"
+            $ withRig
+            $ \rig -> do
+                seed <- fundSeed rig
+                create <- run rig "create" ["open-datum", "create", "--seed", seed]
+                t <- tokenOf create
+                (booking, _) <- plantRegistration rig t "bob-1" 11
+                registered <- registrationOf booking
+                -- the same request address, no tag of the request policy on the output
+                let untagged =
+                        mkBasicTxOut
+                            (rgOut registered ^. addrTxOutL)
+                            (MaryValue (Coin 20_000_000) mempty)
+                squatter <- landSquatter rig untagged
+                folded <-
+                    run
+                        rig
+                        "fold the squatter"
+                        ( ["open-datum", "fold", "--request", T.unpack (renderOutRef squatter)]
+                            <> tokenArgs t
+                        )
+                outcomeOf (runReceipt folded) `shouldNotBe` Just "success"
+                leafOf rig t "bob-1" `shouldReturn` Just (toJSON (leafName Unknown))
+
+-- | An output put on the chain by a transaction nobody here built.
+landSquatter :: Rig -> TxOut ConwayEra -> IO TxIn
+landSquatter rig out = do
+    ref <-
+        either (failTest . ("squatter: " <>)) pure $
+            parseOutRef (T.pack (replicate 64 '5' <> "#0"))
+    advanceChain (rigChain rig) $ \facts ->
+        facts{csUTxO = Map.insert ref out (csUTxO facts)}
+    pure ref
+
+-- ---------------------------------------------------------
+-- A terminate spends the key's custody
+-- ---------------------------------------------------------
+
+-- | A registry holding bob-1 as an active key, made apart from every producer, and the terminate prepared over it.
+withBookedTermination
+    :: [String]
+    -> (Rig -> String -> (TxIn, TxOut ConwayEra) -> ConwayTx -> IO a)
+    -> IO a
+withBookedTermination extra use = withRig $ \rig -> do
+    seed <- fundSeed rig
+    create <- run rig "create" ["open-datum", "create", "--seed", seed]
+    t <- tokenOf create
+    custody <- activeKeyApart rig t "bob-1"
+    leafOf rig t "bob-1" `shouldReturn` Just (toJSON (leafName Active))
+    booked <-
+        run
+            rig
+            "terminate"
+            (["open-datum", "terminate", "--key", "bob-1"] <> extra <> tokenArgs t)
+    outcomeOf (runReceipt booked) `shouldBe` Just "success"
+    body <- preparedFirst rig t "terminate"
+    use rig t custody body
+
+-- | The non-ada assets of an output.
+assetsOf
+    :: TxOut ConwayEra -> Map.Map PolicyID (Map.Map AssetName Integer)
+assetsOf out = let MaryValue _ (MultiAsset m) = out ^. valueTxOutL in m
+
+lovelaceOf :: TxOut ConwayEra -> Integer
+lovelaceOf out = let Coin c = out ^. coinTxOutL in c
+
+terminationBookingRows :: Spec
+terminationBookingRows =
+    describe "a terminate books the spend of the key's custody" $ do
+        it
+            "spends the custody output through the application's own termination arm"
+            $ withBookedTermination []
+            $ \_ _ (ref, _) body -> do
+                Set.member ref (body ^. bodyTxL . inputsTxBodyL) `shouldBe` True
+                case spendRedeemerOf body ref of
+                    Just (PLC.Constr 2 [PLC.I added]) -> added `shouldSatisfy` (>= 0)
+                    other ->
+                        failTest
+                            ("the custody spend carries no termination redeemer: " <> show other)
+        it
+            "books one termination request that holds the whole custody value and what is added"
+            $ withBookedTermination []
+            $ \_ _ (ref, custody) body -> do
+                added <- case spendRedeemerOf body ref of
+                    Just (PLC.Constr 2 [PLC.I n]) -> pure n
+                    other ->
+                        failTest
+                            ("the custody spend carries no termination redeemer: " <> show other)
+                (out, request) <- case cageOutputs body of
+                    [(o, TerminationDatum r)] -> pure (o, r)
+                    found ->
+                        failTest
+                            ( "expected one termination request output in the booking, found "
+                                <> show (map (datumKind . snd) found)
+                            )
+                termKey request `shouldBe` TE.encodeUtf8 "bob-1"
+                termDestination request `shouldBe` mempty
+                lovelaceOf out `shouldBe` lovelaceOf custody + added
+                let held = assetsOf custody
+                    requested = assetsOf out
+                [ (policy, name, quantity)
+                  | (policy, names) <- Map.toList held
+                  , (name, quantity) <- Map.toList names
+                  , (Map.lookup policy requested >>= Map.lookup name) /= Just quantity
+                  ]
+                    `shouldBe` []
+        it
+            "mints the request's trie-ready tag and nothing else, with no approval under the application policy"
+            $ withBookedTermination []
+            $ \_ _ _ body -> do
+                (out, request) <- case cageOutputs body of
+                    [(o, TerminationDatum r)] -> pure (o, r)
+                    found ->
+                        failTest
+                            ( "expected one termination request output in the booking, found "
+                                <> show (map (datumKind . snd) found)
+                            )
+                requestPolicy <-
+                    maybe
+                        (failTest "the request output is not at a script")
+                        pure
+                        (policyOfAddress out)
+                mintOf body
+                    `shouldBe` Map.singleton
+                        requestPolicy
+                        ( Map.singleton
+                            (AssetName (SBS.toShort (terminationTrieReadyTagName request)))
+                            1
+                        )
+        it "pays none of the custody to the controller or to anyone else" $
+            withBookedTermination [] $ \_ _ (_, custody) body -> do
+                let tagged = Map.keysSet (assetsOf custody)
+                    outputs = toList (body ^. bodyTxL . outputsTxBodyL)
+                    holdersOfCustody =
+                        [ o
+                        | o <- outputs
+                        , not (Map.null (Map.restrictKeys (assetsOf o) tagged))
+                        ]
+                unless (length holdersOfCustody == 1) $
+                    failTest
+                        ( "the custody's tokens are held by "
+                            <> show (length holdersOfCustody)
+                            <> " output(s) of the booking; the termination request output alone must hold them"
+                        )
+        it "requires the controller's signature and no other" $
+            withBookedTermination [] $ \rig _ _ body ->
+                signersOf body `shouldBe` Set.singleton (walletKeyHash rig)
+        it "with the fold, ends with the key terminal" $
+            withRig $ \rig -> do
+                seed <- fundSeed rig
+                create <- run rig "create" ["open-datum", "create", "--seed", seed]
+                t <- tokenOf create
+                _ <- activeKeyApart rig t "bob-1"
+                done <-
+                    run
+                        rig
+                        "terminate with the fold"
+                        (["open-datum", "terminate", "--key", "bob-1", "--fold"] <> tokenArgs t)
+                outcomeOf (runReceipt done) `shouldBe` Just "success"
+                leafOf rig t "bob-1" `shouldReturn` Just (toJSON (leafName Terminal))
+        it
+            "is previewed as the booking the write prepares: one spend and one mint"
+            $ withRig
+            $ \rig -> do
+                seed <- fundSeed rig
+                create <- run rig "create" ["open-datum", "create", "--seed", seed]
+                t <- tokenOf create
+                _ <- activeKeyApart rig t "bob-1"
+                previewed <-
+                    run
+                        rig
+                        "preview"
+                        ( ["open-datum", "terminate", "--key", "bob-1"]
+                            <> [ "--preview"
+                               , "--wallet-address"
+                               , bech32Address (walletAddr (rigWallet rig))
+                               ]
+                            <> tokenArgs t
+                        )
+                outcomeOf (runReceipt previewed) `shouldBe` Just "success"
+                written <-
+                    run
+                        rig
+                        "terminate"
+                        (["open-datum", "terminate", "--key", "bob-1"] <> tokenArgs t)
+                outcomeOf (runReceipt written) `shouldBe` Just "success"
+                body <- preparedFirst rig t "terminate"
+                let Redeemers redeemers = body ^. witsTxL . rdmrsTxWitsL
+                    purposes = map (show . fst) (Map.toList redeemers)
+                    reported = case valueAt "booking" (runReceipt previewed) of
+                        Just (Aeson.Object o) -> case KeyMap.lookup "purposes" o of
+                            Just (Aeson.Array a) ->
+                                [ T.unpack p
+                                | Aeson.Object e <- toList a
+                                , Just (Aeson.String p) <- [KeyMap.lookup "purpose" e]
+                                ]
+                            _ -> []
+                        _ -> []
+                reported `shouldBe` purposes
+                let count word = length (filter (T.isInfixOf word . T.pack) reported)
+                unless (count "Spending" == 1 && count "Minting" == 1) $
+                    failTest
+                        ( "the preview reports "
+                            <> show (count "Spending")
+                            <> " spending and "
+                            <> show (count "Minting")
+                            <> " minting purpose(s); a termination is one custody spend and one mint"
+                        )
+
+-- ---------------------------------------------------------
+-- The carrier of a custody the fold will make
+-- ---------------------------------------------------------
+
+{- | The least lovelace the ledger lets the custody output of this envelope
+hold: the output the fold makes at the application's address, holding the
+key's singular tag under the envelope as its inline datum.
+-}
+custodyMinimum :: Rig -> Lawful -> Envelope -> IO Integer
+custodyMinimum rig lw envelope = do
+    let saved = lwSaved lw
+        cfg = savedCfg saved
+        control = envControl envelope
+        singular =
+            MultiAsset
+                ( Map.singleton
+                    (policyIdFromPin (Config.cfgActivePolicy cfg))
+                    (Map.singleton (AssetName (SBS.toShort (ctlKey control))) 1)
+                )
+    address <-
+        decodeAddr
+            (applicationAddressBytes (Config.network cfg) (Live.applied saved))
+    pp <- freshView rig SessionIO.parameters
+    let out =
+            mkBasicTxOut address (MaryValue (Coin (ctlDeposit control)) singular)
+                & datumTxOutL .~ mkInlineDatum (envelopeToData envelope)
+        Coin least = getMinCoinTxOut pp out
+    pure least
+
+-- | A payload of this many sixty-four byte pieces, written beside the rig's others.
+writeBigPayload :: Rig -> Int -> IO FilePath
+writeBigPayload rig pieces = do
+    let path = rigDir rig </> "payload-big.json"
+    BL.writeFile
+        path
+        ( Aeson.encode
+            ( dataToJson
+                ( PLC.List
+                    [PLC.B (BS.replicate 64 (fromIntegral n)) | n <- [1 .. pieces]]
+                )
+            )
+        )
+    pure path
+
+carrierRows :: Spec
+carrierRows =
+    describe "the carrier of a custody must meet the ledger's minimum" $ do
+        it
+            "refuses, or states the limit of, an insert whose custody output could not meet the minimum"
+            $ withRig
+            $ \rig -> do
+                seed <- fundSeed rig
+                create <- run rig "create" ["open-datum", "create", "--seed", seed]
+                t <- tokenOf create
+                big <- writeBigPayload rig 40
+                -- the fixture is only a test of the rule when the deposit named is below the minimum the ledger asks
+                least <- withLawful rig t "bob-1" $ \_ lw ->
+                    custodyMinimum
+                        rig
+                        lw
+                        ( insertionOf
+                            (lwSaved lw)
+                            (lwEntry lw)
+                            (walletKeyHash rig)
+                            ( PLC.List
+                                [PLC.B (BS.replicate 64 (fromIntegral n)) | n <- [1 .. 40 :: Int]]
+                            )
+                        )
+                least `shouldSatisfy` (> 5_000_000)
+                attempted <-
+                    run
+                        rig
+                        "insert a payload too large for the deposit named"
+                        ( [ "open-datum"
+                          , "insert"
+                          , "--key"
+                          , "bob-1"
+                          , "--payload"
+                          , big
+                          , "--deposit"
+                          , "5000000"
+                          ]
+                            <> tokenArgs t
+                        )
+                let named =
+                        T.pack (show least) `T.isInfixOf` T.pack (show (runReceipt attempted))
+                    outcome = outcomeOf (runReceipt attempted)
+                -- booked at all, the carrier is the deposit named: never topped up
+                when (outcome == Just "success") $ do
+                    body <- preparedFirst rig t "insert"
+                    rg <- registrationOf body
+                    regCarrierAda (rgRequest rg) `shouldBe` 5_000_000
+                unless named $
+                    failTest
+                        ( "the insert ended "
+                            <> show outcome
+                            <> " and its receipt does not name the "
+                            <> show least
+                            <> " lovelace the ledger asks of its custody output"
+                        )
+        it
+            "books the same payload once the deposit meets the minimum, the deposit being the carrier"
+            $ withRig
+            $ \rig -> do
+                seed <- fundSeed rig
+                create <- run rig "create" ["open-datum", "create", "--seed", seed]
+                t <- tokenOf create
+                big <- writeBigPayload rig 40
+                booked <-
+                    run
+                        rig
+                        "insert with a deposit that meets the minimum"
+                        ( [ "open-datum"
+                          , "insert"
+                          , "--key"
+                          , "bob-1"
+                          , "--payload"
+                          , big
+                          , "--deposit"
+                          , "30000000"
+                          ]
+                            <> tokenArgs t
+                        )
+                outcomeOf (runReceipt booked) `shouldBe` Just "success"
+                body <- preparedFirst rig t "insert"
+                rg <- registrationOf body
+                let r = rgRequest rg
+                    control = envControl (rgEnvelope rg)
+                ctlDeposit control `shouldBe` 30_000_000
+                regCarrierAda r `shouldBe` ctlDeposit control
+                least <- withLawful rig t "bob-1" $ \_ lw -> custodyMinimum rig lw (rgEnvelope rg)
+                ctlDeposit control `shouldSatisfy` (>= least)
+
+-- ---------------------------------------------------------
+-- The application mint, evaluated as compiled
+-- ---------------------------------------------------------
+
+-- | The registry's compiled validators as the release retains them.
+retainedBlueprint :: IO Aeson.Value
+retainedBlueprint = do
+    raw <-
+        BL.readFile
+            "test/fixtures/blueprint/open-datum-deployment-blueprint.json"
+    either fail pure (Aeson.eitherDecode raw)
+
+-- | The rig over the retained programs.
+withRetainedRig :: (Rig -> IO a) -> IO a
+withRetainedRig use = retainedBlueprint >>= \blueprint -> withRigOf blueprint pure use
+
+-- | A registry created over the retained programs.
+withRetainedRegistry :: (Rig -> String -> IO a) -> IO a
+withRetainedRegistry use = withRetainedRig $ \rig -> do
+    seed <- fundSeed rig
+    create <- run rig "create" ["open-datum", "create", "--seed", seed]
+    outcomeOf (runReceipt create) `shouldBe` Just "success"
+    t <- tokenOf create
+    use rig t
+
+-- | What building a transaction under the retained programs ended in.
+evaluatedAs :: IO ConwayTx -> IO (Either String ())
+evaluatedAs build = do
+    r <- try build
+    pure $ case r of
+        Left (e :: SomeException) -> Left (take 400 (show e))
+        Right _ -> Right ()
+
+applicationMintRows :: Spec
+applicationMintRows =
+    describe "the application mint, evaluated as compiled" $ do
+        it
+            "accepts the registration booked as the law books it (the positive control)"
+            $ withRetainedRegistry
+            $ \rig t ->
+                withLawful rig t "bob-1" $ \v lw -> do
+                    tip <- SessionIO.tip v
+                    let saved = lwSaved lw
+                        slot = Cage.observedSlot tip
+                        envelope = insertionOf saved (lwEntry lw) (walletKeyHash rig) (PLC.I 7)
+                    booked <-
+                        evaluatedAs $
+                            lawfulInsertBooking
+                                (savedCfg saved)
+                                v
+                                (savedToken saved)
+                                (fst (liveState (lwLive lw)))
+                                (Live.applied saved)
+                                envelope
+                                (Coin 1_000_000)
+                                11
+                                (slot, slot + 10)
+                                (lwPayer lw)
+                    booked `shouldBe` Right ()
+        it "refuses a mint under a redeemer that is not one of its own" $
+            withRetainedRegistry $ \rig t ->
+                withLawful rig t "bob-1" $ \v lw -> do
+                    tip <- SessionIO.tip v
+                    let saved = lwSaved lw
+                        slot = Cage.observedSlot tip
+                        envelope = insertionOf saved (lwEntry lw) (walletKeyHash rig) (PLC.I 7)
+                    refused <-
+                        evaluatedAs $
+                            lawfulInsertBookingAs
+                                (Just (PLC.Constr 0 []))
+                                (savedCfg saved)
+                                v
+                                (savedToken saved)
+                                (fst (liveState (lwLive lw)))
+                                (Live.applied saved)
+                                envelope
+                                (Coin 1_000_000)
+                                11
+                                (slot, slot + 10)
+                                (lwPayer lw)
+                    case refused of
+                        Left why | "ConwayMinting" `T.isInfixOf` T.pack why -> pure ()
+                        other ->
+                            failTest
+                                ( "expected the application mint to refuse the registration under a redeemer that is not its own, got "
+                                    <> show other
+                                )
+        it
+            "accepts a pure burn of an application tag under a redeemer of its own"
+            $ burnUnder
+                ( PLC.Constr
+                    1
+                    [ PLC.B (BS.replicate 32 1)
+                    , PLC.B (BS.replicate 28 2)
+                    , PLC.Constr 0 [PLC.B (BS.replicate 32 3), PLC.I 0]
+                    ]
+                )
+                `shouldReturn` Right ()
+        it
+            "accepts a pure burn of an application tag under the fold's fixed redeemer, whatever its bytes"
+            $ burnUnder (PLC.Constr 0 []) `shouldReturn` Right ()
+  where
+    burnUnder redeemer = withRetainedRegistry $ \rig t ->
+        withLawful rig t "bob-1" $ \_ lw -> do
+            let saved = lwSaved lw
+                cfg = savedCfg saved
+                tagName = BS.replicate 32 0x7a
+                holder =
+                    mkBasicTxOut
+                        (lwPayer lw)
+                        ( MaryValue
+                            (Coin 3_000_000)
+                            ( MultiAsset
+                                ( Map.singleton
+                                    (policyIdFromPin (Config.cfgApplicationPolicy cfg))
+                                    (Map.singleton (AssetName (SBS.toShort tagName)) 1)
+                                )
+                            )
+                        )
+            ref <-
+                either
+                    (failTest . ("holder: " <>))
+                    pure
+                    (parseOutRef (T.pack (replicate 64 '7' <> "#0")))
+            advanceChain (rigChain rig) $ \facts -> facts{csUTxO = Map.insert ref holder (csUTxO facts)}
+            freshView rig $ \v ->
+                evaluatedAs $
+                    lawfulApplicationBurn
+                        cfg
+                        v
+                        (Live.applied saved)
+                        redeemer
+                        (ref, holder)
+                        tagName
+                        (lwPayer lw)
+
+-- ---------------------------------------------------------
+-- The producers' bookings, under the retained programs
+-- ---------------------------------------------------------
+
+retainedProgramRows :: Spec
+retainedProgramRows =
+    describe
+        "the retained compiled programs accept what the producers book and the fold settles"
+        $ do
+            it
+                "settles, by the library's fold, a registration the application's mint accepted"
+                $ withRetainedRegistry
+                $ \rig t -> do
+                    (_, request) <- plantRegistration rig t "bob-1" 11
+                    withLawful rig t "bob-1" $ \_ lw -> do
+                        let saved = lwSaved lw
+                            cfg = savedCfg saved
+                        folded <-
+                            freshView rig $ \v -> do
+                                live <- attachLive v saved
+                                sel <- requireTrieSelection saved live
+                                ctx <- registryContextFor cfg (savedCodes saved) v (liveRefs live)
+                                evaluatedAs $
+                                    withTrie sel $ \snapshot ->
+                                        updateTokenSelected
+                                            cfg
+                                            v
+                                            snapshot
+                                            (savedToken saved)
+                                            (lwPayer lw)
+                                            ctx
+                                            (request NE.:| [])
+                        folded `shouldBe` Right ()
+            it
+                "books an insert and settles it in the same command, the key ending active"
+                $ withRetainedRegistry
+                $ \rig t -> do
+                    done <-
+                        run
+                            rig
+                            "insert with the fold"
+                            (insertWords rig <> ["--fold"] <> tokenArgs t)
+                    outcomeOf (runReceipt done) `shouldBe` Just "success"
+                    leafOf rig t "bob-1" `shouldReturn` Just (toJSON (leafName Active))
+
+-- ---------------------------------------------------------
+-- Receipts
+-- ---------------------------------------------------------
+
+-- | Every integer a receipt states under a key whose name holds this word, wherever it sits.
+numbersNamed :: Text -> Aeson.Value -> [Integer]
+numbersNamed word = go
+  where
+    go = \case
+        Aeson.Object o ->
+            concat
+                [ [ n
+                  | T.isInfixOf word (T.toLower (Key.toText k))
+                  , Aeson.Success n <- [Aeson.fromJSON v]
+                  ]
+                    <> go v
+                | (k, v) <- KeyMap.toList o
+                ]
+        Aeson.Array a -> concatMap go a
+        _ -> []
+
+-- | The one output of a booking that carries a cage datum, whatever the datum.
+requestOutputOf :: ConwayTx -> IO (TxOut ConwayEra)
+requestOutputOf tx = case cageOutputs tx of
+    [(out, _)] -> pure out
+    found ->
+        failTest
+            ( "expected one request output in the booking, found "
+                <> show (length found)
+            )
+
+receiptRows :: Spec
+receiptRows =
+    describe
+        "receipts report the transfer a booking makes and the donation a fold makes"
+        $ do
+            it
+                "the insert receipt states the lovelace the booking transfers into the request"
+                $ withBookedInsert []
+                $ \_ _ booked body -> do
+                    out <- requestOutputOf body
+                    let stated = numbersNamed "transfer" (runReceipt booked)
+                    unless (not (null stated) && all (== lovelaceOf out) stated) $
+                        failTest
+                            ( "the insert receipt states a transfer of "
+                                <> show stated
+                                <> ", the request output holds "
+                                <> show (lovelaceOf out)
+                            )
+            it
+                "the terminate receipt states that the booking transfers the whole custody value"
+                $ withRig
+                $ \rig -> do
+                    seed <- fundSeed rig
+                    create <- run rig "create" ["open-datum", "create", "--seed", seed]
+                    t <- tokenOf create
+                    _ <- activeKeyApart rig t "bob-1"
+                    booked <-
+                        run
+                            rig
+                            "terminate"
+                            (["open-datum", "terminate", "--key", "bob-1"] <> tokenArgs t)
+                    outcomeOf (runReceipt booked) `shouldBe` Just "success"
+                    body <- preparedFirst rig t "terminate"
+                    out <- requestOutputOf body
+                    let stated = numbersNamed "transfer" (runReceipt booked)
+                    unless (not (null stated) && all (== lovelaceOf out) stated) $
+                        failTest
+                            ( "the terminate receipt states a transfer of "
+                                <> show stated
+                                <> ", the request output holds "
+                                <> show (lovelaceOf out)
+                            )
+            it "the fold receipt states the donation the fold's body makes" $
+                withRig $ \rig -> do
+                    seed <- fundSeed rig
+                    create <- run rig "create" ["open-datum", "create", "--seed", seed]
+                    t <- tokenOf create
+                    _ <- plantRegistration rig t "bob-1" 11
+                    folded <- run rig "fold" (["open-datum", "fold"] <> tokenArgs t)
+                    outcomeOf (runReceipt folded) `shouldBe` Just "success"
+                    body <- preparedFirst rig t "fold"
+                    let Coin donated = body ^. bodyTxL . treasuryDonationTxBodyL
+                        stated = numbersNamed "donation" (runReceipt folded)
+                    unless (not (null stated) && all (== donated) stated) $
+                        failTest
+                            ( "the fold receipt states a donation of "
+                                <> show stated
+                                <> ", the fold's body donates "
+                                <> show donated
+                            )
+            it "inspect lists a booked registration among the pending requests" $
+                withRig $ \rig -> do
+                    seed <- fundSeed rig
+                    create <- run rig "create" ["open-datum", "create", "--seed", seed]
+                    t <- tokenOf create
+                    (_, request) <- plantRegistration rig t "bob-1" 11
+                    inspected <-
+                        run
+                            rig
+                            "inspect"
+                            (["open-datum", "inspect", "--key", "bob-1"] <> tokenArgs t)
+                    let listed = valueAt "pendingRequests" (runReceipt inspected)
+                    T.isInfixOf (renderOutRef request) (T.pack (show listed))
+                        `shouldBe` True
+
+-- ---------------------------------------------------------
+-- The application's termination spend, evaluated as compiled
+-- ---------------------------------------------------------
+
+terminationSpendRows :: Spec
+terminationSpendRows =
+    describe "the application's termination spend, evaluated as compiled" $ do
+        it
+            "accepts the termination booked as the law books it (the positive control)"
+            $ terminationUnder Intact `shouldReturn` Right ()
+        it "refuses it when the controller does not sign" $
+            terminationUnder WithoutSigner >>= refusedByTheSpend
+        it
+            "refuses it when the request holds less than the custody and what is added"
+            $ terminationUnder ShortRequest >>= refusedByTheSpend
+  where
+    refusedByTheSpend = \case
+        Left why | "ConwaySpending" `T.isInfixOf` T.pack why -> pure ()
+        other ->
+            failTest
+                ( "expected the application's spend to refuse the termination, got "
+                    <> show other
+                )
+    terminationUnder fault = withRetainedRegistry $ \rig t ->
+        withLawful rig t "bob-1" $ \_ lw -> do
+            let saved = lwSaved lw
+                cfg = savedCfg saved
+                envelope = insertionOf saved (lwEntry lw) (walletKeyHash rig) (PLC.I 7)
+                control = envControl envelope
+                singular =
+                    MultiAsset
+                        ( Map.singleton
+                            (policyIdFromPin (Config.cfgActivePolicy cfg))
+                            (Map.singleton (AssetName (SBS.toShort (ctlKey control))) 1)
+                        )
+            address <-
+                decodeAddr
+                    (applicationAddressBytes (Config.network cfg) (Live.applied saved))
+            let custody =
+                    mkBasicTxOut address (MaryValue (Coin 4_000_000) singular)
+                        & datumTxOutL .~ mkInlineDatum (envelopeToData envelope)
+            ref <-
+                either
+                    (failTest . ("custody: " <>))
+                    pure
+                    (parseOutRef (T.pack (replicate 64 '8' <> "#0")))
+            advanceChain (rigChain rig) $ \facts -> facts{csUTxO = Map.insert ref custody (csUTxO facts)}
+            freshView rig $ \v ->
+                evaluatedAs $
+                    lawfulTerminationBookingWith
+                        fault
+                        cfg
+                        v
+                        (savedToken saved)
+                        (fst (liveState (lwLive lw)))
+                        (Live.applied saved)
+                        (ref, custody)
+                        (ctlKey control)
+                        (ctlController control)
+                        (Coin 1_000_000)
+                        11
+                        (lwPayer lw)

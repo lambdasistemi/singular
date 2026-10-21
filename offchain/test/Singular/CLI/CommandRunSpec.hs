@@ -166,6 +166,7 @@ import Cardano.Ledger.Api.Tx.Body
     , mkBasicTxBody
     , outputsTxBodyL
     , reqSignerHashesTxBodyL
+    , treasuryDonationTxBodyL
     , vldtTxBodyL
     )
 import Cardano.Ledger.Api.Tx.Out
@@ -217,6 +218,13 @@ import Singular.CLI.Command
 import Singular.CLI.Finish (finish)
 import Singular.CLI.FlagGroup (Signer (..))
 import Singular.CLI.Fold (runFoldBounded)
+import Singular.CLI.Live
+    ( Live (..)
+    , Saved (..)
+    , attachLive
+    , resolveSaved
+    )
+import Singular.CLI.Live qualified as Live
 import Singular.CLI.ManagedState (addressPartition, managedDir)
 import Singular.CLI.Outlay
     ( Outlay (..)
@@ -258,6 +266,7 @@ import Singular.CLI.Session
     , confirmedTx
     , expecting
     , failWithFields
+    , readsIn
     , submitBuilt
     , txIdHex
     , withSession
@@ -358,6 +367,10 @@ import Singular.Registry.TxBuilder.Prepare
     , planPreparation
     , spendableOuts
     )
+import Singular.Registry.TxBuilder.RegistrationBooking
+    ( RegistrationBooking (..)
+    , bookRegistrationImpl
+    )
 import Singular.Registry.TxBuilder.Request (requestEdgeImpl)
 import Singular.Registry.TxBuilder.Update (RegistryContext (..))
 import Singular.Registry.Types
@@ -400,6 +413,7 @@ spec =
         >> vaultBookkeepingRows
         >> vaultUnreadJournalRows
         >> economicsFlagRows
+        >> chunk4Producers
 
 {- | The create receipt carries the working describe line, built from the
 arguments the create ran with. Two registries give two tokens, so a fixed
@@ -7459,3 +7473,263 @@ vaultUnreadJournalRows = describe "the vault signer's journal unread" $ do
             valueAt "journalUnread" (runReceipt signed) `shouldSatisfy` isJust
             reference <- keyFileFoldOf 3_000_000_000 True
             assertExpectationOnly signed reference
+
+-- ---------------------------------------------------------
+-- chunk4 producers
+-- ---------------------------------------------------------
+
+{- | The registry commands as the frozen law needs them (checkpoint four): the
+retired state-spending reject is refused as an attempt, and the fold takes the
+requests the request policy tags and no others. The planted request below is
+the legacy one, the shape the retired producers wrote; no legacy fallback may
+read it.
+-}
+chunk4Producers :: Spec
+chunk4Producers = describe "chunk4 producers" $ do
+    registrationFoldRows
+    describe "the retired reject is refused as an attempt"
+        $ it
+            "refuses registry reject over an expired pending request, naming it retired, and submits nothing"
+        $ withRig
+        $ \rig -> do
+            seed <- fundSeed rig
+            create <-
+                run
+                    rig
+                    "create"
+                    ( ["registry", "create", "--process-time", "1", "--retract-time", "1"]
+                        <> policyArgs
+                    )
+            runExit create `shouldBe` ExitSuccess
+            t1 <- tokenOf create
+            let shortEcon =
+                    RegistryEconomics
+                        { reProcessTime = 1
+                        , reRetractTime = 1
+                        , reTip = Coin 1_000_000
+                        , reRegistrationCost = Coin 0
+                        , reBookingWidth = 60_000
+                        }
+            (req, submitted) <-
+                plantRequest rig t1 seed shortEcon (TE.encodeUtf8 "carol-r")
+            _ <- certifyPlanted rig t1 seed shortEcon [req]
+            jumpToAfter
+                rig
+                (submitted + reProcessTime shortEcon + reRetractTime shortEcon)
+                2
+            rejected <- run rig "reject" (["registry", "reject"] <> tokenArgs t1)
+            runExit rejected `shouldNotBe` ExitSuccess
+            expectNoSubmissions "reject" rejected
+            (T.isInfixOf "retired" . T.toLower <$> receiptReason rejected)
+                `shouldBe` Just True
+    describe
+        "the fold takes the requests the request policy tags and no others"
+        $ it
+            "does not fold a request written in the retired shape, and says nothing is pending"
+        $ withRig
+        $ \rig -> do
+            seed <- fundSeed rig
+            create <- run rig "create" (["registry", "create"] <> policyArgs)
+            runExit create `shouldBe` ExitSuccess
+            t1 <- tokenOf create
+            (req, _) <-
+                plantRequest rig t1 seed economics (TE.encodeUtf8 "carol-r")
+            _ <- certifyPlanted rig t1 seed economics [req]
+            folded <- run rig "fold" (["registry", "fold"] <> tokenArgs t1)
+            runExit folded `shouldBe` ExitFailure 10
+            expectNoSubmissions "fold" folded
+            (T.isInfixOf "pending" . T.toLower <$> receiptReason folded)
+                `shouldBe` Just True
+
+-- ---------------------------------------------------------
+-- A registration booked apart from every producer
+-- ---------------------------------------------------------
+
+-- | A registry resolved the way a command resolves it, for a control that books by hand.
+data LawfulCli = LawfulCli
+    { lcSaved :: Saved
+    , lcLive :: Live
+    , lcPayer :: Addr
+    }
+
+-- | The registry a script-pinned create made, resolved through the fold's own access.
+withLawfulCli
+    :: Rig
+    -> String
+    -> (Cage.Session NoWitness IO -> LawfulCli -> IO a)
+    -> IO a
+withLawfulCli rig t use = do
+    command <-
+        either
+            (fail . show)
+            pure
+            ( parseCommand
+                (commandLine rig "registry" (["registry", "fold"] <> tokenArgs t))
+            )
+    args <- case command of
+        Fold a -> pure a
+        _ -> fail "the line is no fold"
+    let env = envOf rig
+    release <-
+        envLoadRelease env scriptPinned (foldBlueprint args)
+            >>= either fail pure
+    envReads env (writeProvider (foldWrite args)) $ \caps ->
+        SessionIO.withLatest (readsIn (envSource env) (envTracer env) caps) $ \v -> do
+            saved <-
+                resolveSaved
+                    scriptPinned
+                    ""
+                    release
+                    (foldAccess args)
+                    (Set.fromList [minBound .. maxBound])
+                    Nothing
+                    v
+            live <- attachLive v saved
+            use v (LawfulCli saved live (walletAddr (rigWallet rig)))
+
+-- | A transaction the chain applies: recorded, its outputs live, its inputs spent.
+landTransaction :: Rig -> ConwayTx -> IO ()
+landTransaction rig tx = do
+    let txid = txIdTx tx
+        spent = Set.toList (tx ^. bodyTxL . inputsTxBodyL)
+        made = zip [0 ..] (toList (tx ^. bodyTxL . outputsTxBodyL))
+    recordTransaction (rigChain rig) tx
+    advanceChain (rigChain rig) $ \facts ->
+        facts
+            { csUTxO =
+                Map.union
+                    (Map.fromList [(TxIn txid (TxIx ix), out) | (ix, out) <- made])
+                    (foldr Map.delete (csUTxO facts) spent)
+            }
+
+{- | A registration of this key booked by the registration booking builder and
+landed, the tip moved past its booked time: the request it made.
+-}
+plantTagged :: Rig -> String -> BS.ByteString -> Integer -> IO TxIn
+plantTagged rig t key nonce = withLawfulCli rig t $ \v lc -> do
+    tip <- SessionIO.tip v
+    let saved = lcSaved lc
+        slot = Cage.observedSlot tip
+    tx <-
+        bookRegistrationImpl
+            (savedCfg saved)
+            v
+            (savedToken saved)
+            (fst (liveState (lcLive lc)))
+            RegistrationBooking
+                { rbKey = key
+                , rbRefundAddress = lcPayer lc
+                , rbDestination = serialiseAddr (lcPayer lc)
+                , rbDatum = Nothing
+                , rbDeclaredTip = Coin 1_000_000
+                , rbCarrier = Coin 2_000_000
+                , rbNonce = nonce
+                , rbLower = slot
+                , rbUpper = slot + 10
+                , rbApplicationScript = Live.applied saved
+                }
+            (lcPayer lc)
+    landTransaction rig tx
+    jumpChainTo (rigChain rig) (slot + 40)
+    pure (TxIn (txIdTx tx) (TxIx 0))
+
+-- | A registry created for the script-pinned application, and its state token.
+withScriptRegistry :: (Rig -> String -> IO a) -> IO a
+withScriptRegistry use = withRig $ \rig -> do
+    seed <- fundSeed rig
+    create <-
+        runViaApp
+            rig
+            (envOf rig)
+            scriptPinned
+            "registry"
+            "create"
+            (["registry", "create", "--seed", seed] <> economicsArgs)
+    outcomeOf (runReceipt create) `shouldBe` Just "success"
+    t <- tokenOf create
+    use rig t
+
+-- | The fold command over the script-pinned application.
+foldScript :: Rig -> String -> [String] -> IO Run
+foldScript rig t extra =
+    runViaApp
+        rig
+        (envOf rig)
+        scriptPinned
+        "registry"
+        "fold"
+        (["registry", "fold"] <> extra <> tokenArgs t)
+
+-- | The fold ended in success, or the outcome and the reason it ended in.
+expectFoldSettled :: String -> Run -> Expectation
+expectFoldSettled label r = case outcomeOf (runReceipt r) of
+    Just "success" -> pure ()
+    other ->
+        expectationFailure
+            (label <> " ended " <> show other <> ": " <> show (receiptReason r))
+
+registrationFoldRows :: Spec
+registrationFoldRows =
+    describe "the fold finds a booked registration by the request policy" $ do
+        it
+            "settles a registration booked apart from every producer, with no request named"
+            $ withScriptRegistry
+            $ \rig t -> do
+                _ <- plantTagged rig t (TE.encodeUtf8 "carol-a") 11
+                folded <- foldScript rig t []
+                expectFoldSettled "the fold" folded
+        it
+            "settles it when its request is named, and the fold's body donates what the receipt states"
+            $ withScriptRegistry
+            $ \rig t -> do
+                request <- plantTagged rig t (TE.encodeUtf8 "carol-a") 11
+                folded <-
+                    foldScript rig t ["--request", T.unpack (renderOutRef request)]
+                expectFoldSettled "the fold of the named request" folded
+                bodies <- keyFilePreparedBodies rig "registry" t "fold"
+                case bodies of
+                    body : _ -> do
+                        let Coin donated = body ^. bodyTxL . treasuryDonationTxBodyL
+                            stated = numbersNamed "donation" (runReceipt folded)
+                        unless (not (null stated) && all (== donated) stated) $
+                            expectationFailure
+                                ( "the fold receipt states a donation of "
+                                    <> show stated
+                                    <> ", the fold's body donates "
+                                    <> show donated
+                                )
+                    [] -> expectationFailure "the fold prepared no transaction"
+        it
+            "lists the booked registration among the pending requests of an inspect"
+            $ withScriptRegistry
+            $ \rig t -> do
+                request <- plantTagged rig t (TE.encodeUtf8 "carol-a") 11
+                inspected <-
+                    runViaApp
+                        rig
+                        (envOf rig)
+                        scriptPinned
+                        "registry"
+                        "inspect"
+                        (["registry", "inspect", "--key", "carol-a"] <> tokenArgs t)
+                T.isInfixOf
+                    (renderOutRef request)
+                    (T.pack (show (valueAt "pendingRequests" (runReceipt inspected))))
+                    `shouldBe` True
+
+-- | Every integer a receipt states under a key whose name holds this word, wherever it sits.
+numbersNamed :: Text -> Aeson.Value -> [Integer]
+numbersNamed word = go
+  where
+    go = \case
+        Aeson.Object o ->
+            concat
+                [ [ n
+                  | T.isInfixOf word (T.toLower (Key.toText k))
+                  , Aeson.Success n <- [Aeson.fromJSON v]
+                  ]
+                    <> go v
+                | (k, v) <- KeyMap.toList o
+                ]
+        Aeson.Array a -> concatMap go a
+        _ -> []

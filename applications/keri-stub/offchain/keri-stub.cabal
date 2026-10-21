@@ -89,10 +89,16 @@ test-suite keri-stub-tests
     Singular.Application.KeriStub.DatumSpec
     Singular.Application.KeriStub.FlagGroupExtentSpec
     Singular.Application.KeriStub.RegisterSpec
+    Singular.Application.KeriStub.ProducersSpec
     Singular.Application.KeriStub.PurposesSpec
     Singular.Application.KeriStub.RulesSpec
     Singular.Application.KeriStub.ScriptRecordSpec
     Singular.Application.KeriStub.ValueSpec
+    Singular.Registry.RawChainFixture
+    Singular.Registry.StubSession
+    Singular.Registry.SyntheticLedger
+    Singular.Registry.SyntheticTime
+    Singular.Registry.TxBuilder.BookingFixture
     Test.Tags
 
   build-depends:
@@ -100,21 +106,35 @@ test-suite keri-stub-tests
     , base
     , base16-bytestring
     , bytestring
+    , cardano-ledger-alonzo
     , cardano-ledger-api
+    , cardano-ledger-binary
+    , cardano-ledger-conway
     , cardano-ledger-core
     , cardano-ledger-mary
+    , cardano-slotting
+    , cardano-tx-tools:tx-build
     , containers
+    , contra-tracer
+    , crypton
+    , filepath
     , hspec
     , keri-stub
+    , memory
     , microlens
-    , plutus-core
     , mtl
+    , ouroboros-consensus
+    , plutus-core
     , plutus-ledger-api
     , plutus-tx
     , QuickCheck
+    , serialise
     , singular-registry
     , singular-registry:local-services
     , singular-registry:registry-cli
+    , temporary
     , text
+    , time
+    , unix
 
   ghc-options:      -threaded
