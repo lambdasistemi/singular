@@ -15,11 +15,8 @@ submitting commands ("Singular.Application.OpenDatum.Entry") and the read-only p
 route ("Singular.Application.OpenDatum.Preview") decide from the same code and cannot drift.
 -}
 module Singular.Application.OpenDatum.Plan
-    ( -- * Reading what the caller names
-      readJson
-
-      -- * Who acts
-    , controllerCheck
+    ( -- * Who acts
+      controllerCheck
 
       -- * What a booking asks
     , Booked (..)
@@ -84,7 +81,6 @@ import Singular.CLI.Payload (readPayloadFile)
 import Singular.CLI.Plan
     ( emptyFields
     , outlayReport
-    , readJson
     , refuseEmptyWallet
     , refuseOver
     , refuseUnderfunded
@@ -359,7 +355,7 @@ refuseFunding addr utxos = \case
     AllowanceExceeded text fields ->
         failWithFields ClientRefusal text fields
 
--- Generic planning (readJson, refuseOver, refuseUnderfunded,
+-- Generic planning (refuseOver, refuseUnderfunded,
 -- retainedFaucetStep, refuseEmptyWallet, outlayReport) comes from
 -- Singular.CLI.Plan, the one module both binaries plan through, and is
 -- re-exported here so existing callers keep importing this module.
