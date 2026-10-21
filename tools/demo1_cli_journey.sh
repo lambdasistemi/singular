@@ -2659,6 +2659,62 @@ jq -e --slurpfile correct "$receipts/inspect-after-reclaim-fold.json" \
   '.outcome == "success" and .key == $correct[0].key and .leaf == $correct[0].leaf and .root == $correct[0].root' \
   "$receipts/trie-plain-inspect.json" >/dev/null || fail "the ordinary untraced inspect changed the actual proven read"
 
+# ------------------------------------------------------------------
+# 7g. a payload written as plain JSON (#719), beside the detailed schema
+# ------------------------------------------------------------------
+# The previous release read every payload file as the detailed schema, so a
+# plain document such as {"answer": 42} was refused as not Plutus data. Here
+# the registry stores it with no setting, the key reads back the equal JSON
+# under the schema plain, the payload is replaced by another plain document,
+# a document of the detailed schema is stored with the setting detailed and
+# reads back in the detailed schema, and the two crossed files are refused
+# with nothing stored. The expected data is the spec's own worked example: the
+# text answer is the bytes 616e73776572.
+jq -n '{answer: 42}' >"$work/payload-plain.json"
+jq -n '{answer: 43, note: "updated"}' >"$work/payload-plain-update.json"
+run plain-insert success -- insert --fold --key keyP --payload "$work/payload-plain.json" \
+  "${common[@]}" "${node[@]}" "${alice[@]}"
+run plain-inspect success -- inspect --key keyP "${common[@]}" "${node[@]}"
+[ "$(field plain-inspect .leaf)" = active ] || fail "the plain payload's key is not active"
+jq -e --slurpfile p "$work/payload-plain.json" \
+  '.applicationOutput.payload == $p[0] and .applicationOutput.payloadSchema == "plain"' \
+  "$receipts/plain-inspect.json" >/dev/null \
+  || fail "the holding does not read back the JSON that was stored, as plain JSON"
+jq -e '.applicationOutput.envelope.fields[1] == {map: [{k: {bytes: "616e73776572"}, v: {int: 42}}]}' \
+  "$receipts/plain-inspect.json" >/dev/null \
+  || fail "the plain document was not stored as the map from the bytes of the text answer to the integer 42"
+jq -e --slurpfile i "$receipts/plain-insert.json" \
+  '.applicationOutput.envelope.fields[1] == $i[0].settled[0].settlement.envelope.fields[1]' \
+  "$receipts/plain-inspect.json" >/dev/null \
+  || fail "the holding carries another payload than the insert settled"
+run plain-update success -- update --key keyP --payload "$work/payload-plain-update.json" \
+  "${common[@]}" "${node[@]}" "${alice[@]}"
+jq -e --slurpfile p "$work/payload-plain-update.json" \
+  '.payload == $p[0] and .payloadSchema == "plain"' "$receipts/plain-update.json" >/dev/null \
+  || fail "the update receipt does not carry the new plain payload and its schema"
+run plain-inspect-2 success -- inspect --key keyP "${common[@]}" "${node[@]}"
+jq -e --slurpfile p "$work/payload-plain-update.json" \
+  '.applicationOutput.payload == $p[0] and .applicationOutput.payloadSchema == "plain"' \
+  "$receipts/plain-inspect-2.json" >/dev/null \
+  || fail "the holding does not read back the replaced JSON, as plain JSON"
+run plain-detailed-insert success -- insert --fold --key keyQ \
+  --payload "$work/payload-insert.json" --payload-schema detailed "${common[@]}" "${node[@]}" "${alice[@]}"
+run plain-detailed-inspect success -- inspect --key keyQ "${common[@]}" "${node[@]}"
+jq -e --slurpfile p "$work/payload-insert.json" \
+  '.applicationOutput.payload == $p[0] and .applicationOutput.payloadSchema == "detailed"' \
+  "$receipts/plain-detailed-inspect.json" >/dev/null \
+  || fail "the detailed document does not read back in the detailed schema"
+refused plain-detailed-without-setting client-refusal -- insert --key keyR \
+  --payload "$work/payload-insert.json" "${common[@]}" "${node[@]}" "${alice[@]}"
+jq -e '.reason | contains("--payload-schema detailed")' \
+  "$receipts/plain-detailed-without-setting.json" >/dev/null \
+  || fail "the detailed file given without the setting is not refused with the instruction to say so"
+refused plain-under-detailed client-refusal -- insert --key keyR \
+  --payload "$work/payload-plain.json" --payload-schema detailed "${common[@]}" "${node[@]}" "${alice[@]}"
+jq -e '.reason | contains("is not Plutus data")' "$receipts/plain-under-detailed.json" >/dev/null \
+  || fail "the plain file given with the setting detailed is not refused as not Plutus data"
+say "a payload written as plain JSON: stored with no setting, read back as plain JSON, replaced; a detailed document stored with the setting; the crossed files refused with nothing stored"
+
 # Pre-migration sidecar callers are retired. A compiled subject mutation,
 # rather than an old mirror binary against a sidecar-free registry, supplies
 # the lineage source refusal control in the owner evidence bundle.
