@@ -41,7 +41,8 @@ import System.IO
 import Control.Tracer (Tracer)
 
 import Singular.Application.OpenDatum.Command
-    ( loadOpenDatumSources
+    ( OpenDatumCommand (..)
+    , loadOpenDatumSources
     , openDatumHint
     , openDatumRefusalHint
     , openDatumVersion
@@ -50,9 +51,11 @@ import Singular.Application.OpenDatum.Command
     )
 import Singular.Application.OpenDatum.Help (openDatumProgram)
 import Singular.Application.OpenDatum.Run (runOpenDatum)
+import Singular.CLI.Command (CreateArgs (..))
 import Singular.CLI.Options (builtinCommand)
 import Singular.CLI.Root (containFailure, standardError)
 import Singular.CLI.Session (Env, koiosEnv)
+import Singular.CLI.SettingsFile (settingsFileRefusal)
 import Singular.CLI.Trace (Trace, withTracing)
 import Singular.Registry.Application (Application)
 
@@ -87,17 +90,24 @@ runOpenDatumSingularVia provider _app errors environment args =
                                 (openDatumRefusalHint err <> openDatumHint args)
                         Nothing -> pure ()
                     pure (ExitFailure 2)
-                Right (command, request) -> do
-                    terminal <- case errors of
-                        Nothing -> pure False
-                        Just h ->
-                            fromRight False <$> attempt (hIsTerminalDevice h)
-                    withTracing
-                        errors
-                        terminal
-                        (phaseLog environment)
-                        request
-                        (\tracer -> runOpenDatum (provider tracer) command)
+                Right (command, request) ->
+                    savingRefusal command >>= \case
+                        Just sentence -> do
+                            mapM_
+                                (\h -> quietly (hPutStrLn h ("open-datum: " <> sentence)))
+                                errors
+                            pure (ExitFailure 2)
+                        Nothing -> do
+                            terminal <- case errors of
+                                Nothing -> pure False
+                                Just h ->
+                                    fromRight False <$> attempt (hIsTerminalDevice h)
+                            withTracing
+                                errors
+                                terminal
+                                (phaseLog environment)
+                                request
+                                (\tracer -> runOpenDatum (provider tracer) command)
   where
     phaseLog env = case lookup "SINGULAR_LOG" env of
         Just path | not (null path) -> Just path
@@ -145,3 +155,12 @@ runPackagedOpenDatumVia provider app getErrors args environment =
 runPackagedOpenDatum
     :: Application -> [String] -> [(String, String)] -> IO ExitCode
 runPackagedOpenDatum app = runPackagedOpenDatumWith app standardError
+
+{- | Why a command cannot run before it has begun: a create asked to keep the
+registry's name in a settings file that cannot be written is refused here, with
+exit status 2, before a wallet is opened or the chain is read.
+-}
+savingRefusal :: OpenDatumCommand -> IO (Maybe String)
+savingRefusal = \case
+    OpenCreate _ a -> settingsFileRefusal (createSaveStateTokenTo a)
+    _ -> pure Nothing

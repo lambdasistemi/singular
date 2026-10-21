@@ -41,6 +41,7 @@ import Singular.CLI.Inspect (runInspect)
 import Singular.CLI.Reclaim (runReclaim)
 import Singular.CLI.Reject (runReject)
 import Singular.CLI.Session (Env (..), openWriteSigner)
+import Singular.CLI.SettingsFile (keepStateToken)
 import Singular.CLI.Submit (submitBundle)
 import Singular.Registry.Application (Application)
 
@@ -57,8 +58,9 @@ runRegistryCommand app env = \case
             (envTracer env)
             "create"
             (createReceipt a)
-            ( openCreate a >>= \opened ->
-                createApplication app policy >>= \effective -> runCreate effective env opened
+            ( keepStateToken "singular" (createSaveStateTokenTo a) $
+                openCreate a >>= \opened ->
+                    createApplication app policy >>= \effective -> runCreate effective env opened
             )
     Fold a ->
         finish

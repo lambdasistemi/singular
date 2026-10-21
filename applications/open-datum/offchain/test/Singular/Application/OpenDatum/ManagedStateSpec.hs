@@ -662,6 +662,7 @@ noWeakening = describe "no refusal is weakened" $ do
             , createSeed = Just (T.unpack (txInText seedIn))
             , createPreview = False
             , createReceipt = Nothing
+            , createSaveStateTokenTo = Nothing
             , createProcessTime = 1000
             , createRetractTime = 1000
             }

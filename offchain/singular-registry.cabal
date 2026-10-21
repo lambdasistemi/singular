@@ -229,6 +229,7 @@ library registry-cli
     Singular.CLI.Root
     Singular.CLI.Session
     Singular.CLI.Sign
+    Singular.CLI.SettingsFile
     Singular.CLI.Sources
     Singular.CLI.Submit
     Singular.CLI.Trace
@@ -996,6 +997,8 @@ test-suite cage-tests
     Singular.CLI.FlagGroupSpec
     Singular.CLI.HelpSnapshotSpec
     Singular.CLI.ParserCorpusSpec
+    Singular.CLI.SaveStateTokenSpec
+    Singular.CLI.SettingsFileSpec
     Singular.CLI.SourcesSpec
     Singular.CLI.FoldRulesSpec
     Singular.CLI.JournalTransitionsSpec

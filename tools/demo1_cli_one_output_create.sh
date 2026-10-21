@@ -43,6 +43,9 @@ work="$5"
 : "$singular"
 rm -rf "$work"
 mkdir -p "$work"
+# Every setting the later commands use comes from the settings file or the
+# command line below, never from a variable of this shell (#717).
+unset SINGULAR_CONFIG SINGULAR_STATE_TOKEN SINGULAR_BLUEPRINT SINGULAR_KOIOS_URL SINGULAR_NETWORK_MAGIC SINGULAR_NETWORK_TIME SINGULAR_STATE_DIR
 receipts="$work/receipts"
 mkdir -p "$receipts"
 # shellcheck source=tools/managed_state.sh
@@ -204,10 +207,28 @@ jq -e '.seedFrom == "publication-change"' "$receipts/gina-public-preview.json" >
   || fail "gina's public preview does not name a chained seed"
 say "gina's key and public previews agree"
 
+# The settings file holds the node and the contracts before the create; the
+# create keeps the registry's name in it (#717).
+gina_home="$work/gina-home"
+mkdir -p "$gina_home"
+gina_settings="$gina_home/singular.json"
+jq -n --arg url "$provider_url" --arg time "$time_directory" --arg bp "$blueprint" --argjson magic "$network_magic" \
+  '{"koios-url": $url, "network-time": $time, "network-magic": $magic, "blueprint": $bp}' >"$gina_settings"
 run gina-create success -- create --process-time 120000 --retract-time 30000 \
-  --state-dir "$gina_dir" --blueprint "$blueprint" "${node[@]}" "${gina[@]}"
+  --state-dir "$gina_dir" --blueprint "$blueprint" "${node[@]}" "${gina[@]}" \
+  --save-state-token --config "$gina_settings"
 [ "$(field gina-create .stateToken)" = "$gina_token" ] \
   || fail "gina's create made another token: $(field gina-create .stateToken) vs $gina_token"
+[ "$(jq -r '.["state-token"]' "$gina_settings")" = "$gina_token" ] \
+  || fail "the settings file does not hold gina's token: $(jq -c . "$gina_settings")"
+jq -e --arg url "$provider_url" --arg time "$time_directory" --arg bp "$blueprint" \
+  '(keys == ["blueprint", "koios-url", "network-magic", "network-time", "state-token"])
+   and .["koios-url"] == $url and .["network-time"] == $time and .blueprint == $bp
+   and (.["network-magic"] | type) == "number"' "$gina_settings" >/dev/null \
+  || fail "the create did not keep the other keys with their kinds: $(jq -c . "$gina_settings")"
+grep -q "now holds the state token" "$receipts/gina-create.err" \
+  || fail "gina's create did not say which file holds the name: $(head -n 3 "$receipts/gina-create.err")"
+say "gina's create kept the token in $gina_settings and left the other keys as they were"
 [ "$(field gina-create .seed)" = "$gina_seed" ] \
   || fail "gina's create booted from another seed: $(field gina-create .seed) vs $gina_seed"
 say "gina's no-flag create made the previewed token"
@@ -234,6 +255,57 @@ run bob-gina-inspect success -- inspect --key keyEmpty --state-token "$gina_toke
 [ "$(field bob-gina-inspect .leaf)" = unknown ] \
   || fail "bob did not read gina's registry from the token alone"
 say "bob read gina's registry from the state token alone"
+# The next command names no registry, no node and no contracts on its line: it
+# reads them from the settings file the create wrote into, and from nowhere
+# else (no variable of this shell gives a setting).
+run bob-gina-inspect-file success -- inspect --key keyEmpty --state-dir "$bob_dir" \
+  --config "$gina_settings"
+[ "$(field bob-gina-inspect-file .leaf)" = unknown ] \
+  || fail "the settings file alone did not name gina's registry"
+say "a command with the settings file alone read gina's registry"
+# The control: the same file with the name taken out leaves the command with no
+# registry, so the success above came from the key and from nothing else.
+jq 'del(.["state-token"])' "$gina_settings" >"$gina_home/without-name.json"
+without_status=0
+"$open_datum" inspect --key keyEmpty --state-dir "$bob_dir" --config "$gina_home/without-name.json" \
+  >"$receipts/bob-without-name.out" 2>"$receipts/bob-without-name.err" || without_status=$?
+[ "$without_status" -eq 2 ] || fail "an inspect with no registry anywhere exited $without_status, wanted 2"
+grep -q -- "--state-token" "$receipts/bob-without-name.err" \
+  || fail "the refusal does not name the missing registry: $(head -n 3 "$receipts/bob-without-name.err")"
+say "without the key the same command is refused: the registry came from the file"
+# The control for the switch itself: a settings file that cannot be used is
+# refused with status 2 before a wallet is opened or the chain is read, and
+# nothing is written or spent.
+refused_dir="$work/gina-save-refused"
+printf '{' >"$gina_home/broken.json"
+save_status=0
+"$open_datum" create --process-time 120000 --retract-time 30000 \
+  --state-dir "$refused_dir" --blueprint "$blueprint" "${node[@]}" "${gina[@]}" \
+  --save-state-token --config "$gina_home/broken.json" \
+  >"$receipts/save-broken.out" 2>"$receipts/save-broken.err" || save_status=$?
+[ "$save_status" -eq 2 ] || fail "a create over a broken settings file exited $save_status, wanted 2"
+[ ! -s "$receipts/save-broken.out" ] || fail "a create over a broken settings file printed a receipt"
+grep -q "broken.json" "$receipts/save-broken.err" \
+  || fail "the refusal does not name the settings file: $(head -n 3 "$receipts/save-broken.err")"
+[ ! -e "$refused_dir" ] || fail "the refused create made its state directory"
+if [ "$(id -u)" -eq 0 ]; then
+  say "skipped the read-only settings control: root writes a read-only file"
+else
+  cp "$gina_settings" "$gina_home/read-only.json"
+  chmod 444 "$gina_home/read-only.json"
+  save_status=0
+  "$open_datum" create --process-time 120000 --retract-time 30000 \
+    --state-dir "$refused_dir" --blueprint "$blueprint" "${node[@]}" "${gina[@]}" \
+    --save-state-token --config "$gina_home/read-only.json" \
+    >"$receipts/save-read-only.out" 2>"$receipts/save-read-only.err" || save_status=$?
+  [ "$save_status" -eq 2 ] || fail "a create over a read-only settings file exited $save_status, wanted 2"
+  grep -q "read-only" "$receipts/save-read-only.err" \
+    || fail "the refusal does not say the file is read-only: $(head -n 3 "$receipts/save-read-only.err")"
+  [ ! -e "$refused_dir" ] || fail "the refused create made its state directory"
+  [ "$(jq -r '.["state-token"]' "$gina_home/read-only.json")" = "$gina_token" ] \
+    || fail "the refused create touched the read-only file"
+fi
+say "the switch over a settings file that cannot be used is refused before anything is touched"
 
 # ------------------------------------------------------------------
 # Pin pair on a second fresh wallet and devnet (no carrier anywhere)

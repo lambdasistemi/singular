@@ -5,8 +5,8 @@ Usage: open-datum create [--config FILE] [--closed] [--state-dir DIR]
        MS] --koios-url URL --network-magic N [--koios-token-file FILE]
        [--network-time DIR] [[--vault FILE [--passphrase-fd N] |
        --wallet-address ADDR --bundle FILE | --wallet-skey FILE]
-       [--confirm-timeout SECONDS] [--receipt FILE] | --preview
-       --wallet-address ADDR] [--trace LEVEL] [--trace-to SINK]
+       [--confirm-timeout SECONDS] [--receipt FILE] [--save-state-token] |
+       --preview --wallet-address ADDR] [--trace LEVEL] [--trace-to SINK]
        [--trace-format FORMAT]
 
 Boot a registry, or preview its identity
@@ -132,6 +132,13 @@ Available settings:
 
   Also write the JSON receipt to FILE.
   option: --receipt FILE
+
+  After a create that succeeds, keep the new registry's state token as the key
+  state-token of the settings file (--config, SINGULAR_CONFIG, else
+  singular.json in the working directory), so the commands after it need no
+  --state-token. Refused with --preview and with --wallet-address and
+  --bundle.
+  switch: --save-state-token
 
   Build and measure what would be submitted and print it; sign, submit and
   journal nothing.

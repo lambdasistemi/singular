@@ -201,6 +201,7 @@ commandLine = describe "the command line" $ do
                         , createSeed = Just seedText
                         , createPreview = False
                         , createReceipt = Nothing
+                        , createSaveStateTokenTo = Nothing
                         , createProcessTime = 600_000
                         , createRetractTime = 300_000
                         }

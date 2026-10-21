@@ -18,6 +18,8 @@ import Singular.CLI.ParserCorpusSpec qualified
 import Singular.CLI.PrepareSpec qualified
 import Singular.CLI.ReclaimSpec qualified
 import Singular.CLI.RejectSpec qualified
+import Singular.CLI.SaveStateTokenSpec qualified
+import Singular.CLI.SettingsFileSpec qualified
 import Singular.CLI.SignSpec qualified
 import Singular.CLI.SourcesSpec qualified
 import Singular.CLI.SubmitSpec qualified
@@ -239,6 +241,12 @@ main = hspec $ do
     describe
         (tagged "Singular.CLI.Sources" [Cli])
         Singular.CLI.SourcesSpec.spec
+    describe
+        (tagged "Singular.CLI.SaveStateToken" [Cli])
+        Singular.CLI.SaveStateTokenSpec.spec
+    describe
+        (tagged "Singular.CLI.SettingsFile" [Cli])
+        Singular.CLI.SettingsFileSpec.spec
     describe
         (tagged "Singular.CLI.Sign" [Cli, Wallet])
         Singular.CLI.SignSpec.spec

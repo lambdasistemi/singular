@@ -397,6 +397,7 @@ parseKeriStubWithGroup group environment args = do
                 , createSeed = seed
                 , createPreview = preview
                 , createReceipt = optional "--receipt" flags
+                , createSaveStateTokenTo = Nothing
                 , createProcessTime = processing
                 , createRetractTime = retracting
                 }

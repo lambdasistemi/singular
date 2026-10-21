@@ -67,7 +67,7 @@ import Data.Char
     , isDigit
     )
 import Data.List (partition)
-import Data.Maybe (isJust)
+import Data.Maybe (fromMaybe, isJust, isNothing)
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text qualified as T
@@ -93,6 +93,7 @@ import Singular.CLI.Command
     , RegistryAccess (..)
     , WriteSettings (..)
     )
+import Singular.CLI.Declared (saveStateToken)
 import Singular.CLI.FlagGroup
     ( Signer (..)
     , commonFlagGroup
@@ -111,7 +112,9 @@ import Singular.CLI.Key
     )
 import Singular.CLI.Options
     ( Accepted (..)
+    , Flag (..)
     , Raw (..)
+    , defaultConfigFile
     , helpText
     , hintLines
     , identityLine
@@ -123,6 +126,7 @@ import Singular.CLI.Registry (economics)
 import Singular.CLI.Sources
     ( Sources (..)
     , applySources
+    , configPath
     , loadSources
     , missingHint
     , noSources
@@ -213,7 +217,8 @@ readFlags group =
             Accepted
                 { acceptedValued = group <> ["--config"]
                 , acceptedEarly = []
-                , acceptedSwitches = commonSwitches <> [closedSwitch, "--version"]
+                , acceptedSwitches =
+                    commonSwitches <> [closedSwitch, "--version", flagName saveStateToken]
                 }
 
 {- | What a command line read flat asks for. The switches are taken out of
@@ -281,7 +286,7 @@ commandFrom environment (Raw ws allFlags) = do
                                         "is an open-datum create flag: a registry's mode is chosen at create and read from the chain by every later command"
                                     )
                         else
-                            refuseWindows words'' flags >> refuseOutputsAt words'' flags >> case words'' of
+                            refuseWindows words'' flags >> refuseOutputsAt words'' flags >> refuseSaveStateToken words'' flags >> case words'' of
                                 [] -> Right askedFor
                                 ["open-datum"] -> Right askedFor
                                 ["open-datum", "create"] ->
@@ -307,6 +312,46 @@ commandFrom environment (Raw ws allFlags) = do
                                         >> (OpenInspect <$> inspectArgs environment flags)
                                 _ -> Left (UnknownCommand ws)
   where
+    -- @--save-state-token@ keeps the name of the registry a create makes; any
+    -- other command refuses it by name rather than ignore it.
+    refuseSaveStateToken words' flags =
+        when
+            ( isJust (lookup saveSwitch flags)
+                && words' /= ["open-datum", "create"]
+            )
+            $ Left
+                ( BadValue
+                    saveSwitch
+                    "is a create flag: only create keeps the registry's name"
+                )
+    saveSwitch = flagName saveStateToken
+    -- It is judged before anything else of the create is: a preview creates
+    -- nothing and an external signer's registry does not exist until its bundle
+    -- is submitted, so neither has a name to keep. The file is the one the
+    -- settings are read from.
+    saveTarget flags
+        | isNothing (lookup saveSwitch flags) = Right Nothing
+        | isJust (lookup "--preview" flags) =
+            Left
+                ( BadValue
+                    saveSwitch
+                    "cannot be used with --preview: nothing is created, so there is no name to keep"
+                )
+        | isJust (lookup "--wallet-address" flags)
+            && isJust (lookup "--bundle" flags) =
+            Left
+                ( BadValue
+                    saveSwitch
+                    "cannot be used with --wallet-address and --bundle: the registry does not exist until the bundle is submitted, so there is no name to keep yet"
+                )
+        | otherwise =
+            Right
+                ( Just
+                    ( fromMaybe
+                        defaultConfigFile
+                        (configPath environment (Raw ws allFlags))
+                    )
+                )
     refuseWindows words' flags =
         unless (words' == ["open-datum", "create"]) $
             forM_ ["--process-time", "--retract-time"] $ \flag ->
@@ -352,6 +397,7 @@ commandFrom environment (Raw ws allFlags) = do
                     "is taken by insert and terminate only: they book, and with it also fold"
                 )
     createArgs flags = do
+        saveTo <- saveTarget flags
         when (isJust (lookup "--state-token" flags)) $
             Left
                 ( BadValue
@@ -392,6 +438,7 @@ commandFrom environment (Raw ws allFlags) = do
                 , createSeed = seed
                 , createPreview = preview
                 , createReceipt = optional "--receipt" flags
+                , createSaveStateTokenTo = saveTo
                 , createProcessTime = processing
                 , createRetractTime = retracting
                 }
