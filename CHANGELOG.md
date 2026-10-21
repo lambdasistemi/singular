@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.15.0](https://github.com/lambdasistemi/singular/compare/v0.14.0...v0.15.0) (2026-10-21)
+
+
+### Features
+
+* create keeps the registry's name in the settings file on request ([3f4e7bd](https://github.com/lambdasistemi/singular/commit/3f4e7bd16a875b927d74c1d5b7cd01c39bd32cd4))
+* create keeps the registry's name in the settings file on request ([620cfb6](https://github.com/lambdasistemi/singular/commit/620cfb6dc2dea4a0c34d9670732f9bed2b172a6a))
+* map a payload written as plain JSON to Plutus data ([#719](https://github.com/lambdasistemi/singular/issues/719)) ([ccce6dc](https://github.com/lambdasistemi/singular/commit/ccce6dc6a0789eb684e1d096107ce44113500a33))
+* print the payload as plain JSON with the name of its schema ([#719](https://github.com/lambdasistemi/singular/issues/719)) ([713399f](https://github.com/lambdasistemi/singular/commit/713399fd44541979789a5ece3e6b340ca05407cc))
+* read a payload file in the schema the command is given ([#719](https://github.com/lambdasistemi/singular/issues/719)) ([abc8315](https://github.com/lambdasistemi/singular/commit/abc8315eccd0368818bd203f373e140acf5e4ee2))
+* store a payload written as plain JSON ([#719](https://github.com/lambdasistemi/singular/issues/719)) ([17a8393](https://github.com/lambdasistemi/singular/commit/17a83936e53b4303bf300193caca2ea17ae948c8))
+
+
+### Documentation
+
+* Demo 1 links to the Killercoda scenario and the recorded run ([09ebc96](https://github.com/lambdasistemi/singular/commit/09ebc96edfb7a5c2dfc24855765728e2bfea69dd))
+* specification of the Demo 1 steps with no jq ([317d6b7](https://github.com/lambdasistemi/singular/commit/317d6b7f528bfd3d652b3f2af965e2df40ddaff7))
+* specify a payload written as plain JSON ([#719](https://github.com/lambdasistemi/singular/issues/719)) ([20f4a87](https://github.com/lambdasistemi/singular/commit/20f4a8771abc705bc0ff7cde3e40cfb73abb3052))
+* store ordinary JSON as a key's payload ([#719](https://github.com/lambdasistemi/singular/issues/719)) ([d6e814d](https://github.com/lambdasistemi/singular/commit/d6e814d73bb737cae217532d31c9fbea76e458fe))
+* the first part done in the tasks, keri-stub among the consumers ([be7d3a4](https://github.com/lambdasistemi/singular/commit/be7d3a4bf5264a75e6f9ae777517e134e67a4eea))
+* the README and the Demo 1 page link the Killercoda scenario and the recorded run ([758bc12](https://github.com/lambdasistemi/singular/commit/758bc12ceda9812734ba27fc918db4e21db72342))
+* the specification as delivered, tasks done ([#719](https://github.com/lambdasistemi/singular/issues/719)) ([4d263be](https://github.com/lambdasistemi/singular/commit/4d263be23d2fafc322c74eab48eb13489b40344b))
+* the summary commands named by program ([61f3b8b](https://github.com/lambdasistemi/singular/commit/61f3b8ba79a85c34d94166edf1309c7273de070f))
+* the switch that keeps the registry's name in the settings file ([9855c00](https://github.com/lambdasistemi/singular/commit/9855c00a094d1a26c9878da8f45ce466b454d66b))
+
 ## [0.14.0](https://github.com/lambdasistemi/singular/compare/v0.13.1...v0.14.0) (2026-10-20)
 
 
