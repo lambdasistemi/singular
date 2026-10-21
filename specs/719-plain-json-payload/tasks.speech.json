@@ -15,11 +15,11 @@
       "pause": 500
     },
     {
-      "text": "[ ] plain-mapping-red: the examples of the spec table, the refusals with their paths, the round-trip property over generated JSON, the huge-exponent number and the data without a plain reading all fail on the base because the module does not exist.",
+      "text": "[x] plain-mapping-red: the examples of the spec table, the refusals with their paths, the round-trip property over generated JSON, the huge-exponent number and the data without a plain reading all fail on the base because the module does not exist.",
       "pause": 300
     },
     {
-      "text": "[ ] plain-mapping-module: Singular.Registry.PlainJson with the mapping, the reading, the refusals, the schema type and the view.",
+      "text": "[x] plain-mapping-module: Singular.Registry.PlainJson with the mapping, the reading, the refusals, the schema type and the view.",
       "pause": 300
     }
   ],
@@ -29,19 +29,19 @@
       "pause": 500
     },
     {
-      "text": "[ ] payload-schema-red: parsing the flag, the default, a bad value, the detailed-document refusal, equal data for the same file through insert, update, previews and register, and the detailed schema unchanged all fail on the base.",
+      "text": "[x] payload-schema-red: parsing the flag, the default, a bad value, the detailed-document refusal, equal data for the same file through insert, update, previews and register, and the detailed schema unchanged all fail on the base.",
       "pause": 300
     },
     {
-      "text": "[ ] payload-schema-flag: the entry argument, the flag declaration, help, help snapshots, parser corpora, the application settings spec, the flag table.",
+      "text": "[x] payload-schema-flag: the entry argument, the flag declaration, help, help snapshots, parser corpora, the application settings spec, the flag table.",
       "pause": 300
     },
     {
-      "text": "[ ] one-payload-reader: Singular.CLI.Payload and its use in the open-datum commands, previews, keri-stub register and the negative host.",
+      "text": "[x] one-payload-reader: Singular.CLI.Payload and its use in the open-datum commands, previews, keri-stub register and the negative host.",
       "pause": 300
     },
     {
-      "text": "[ ] callers-name-the-schema: every shell, python and Haskell caller in the repository that writes a payload file in the detailed schema passes the setting.",
+      "text": "[x] callers-name-the-schema: every shell, python and Haskell caller in the repository that writes a payload file in the detailed schema passes the setting.",
       "pause": 300
     }
   ],
@@ -51,15 +51,15 @@
       "pause": 500
     },
     {
-      "text": "[ ] printed-payload-red: inspect and the update receipt print payload with payloadSchema in both forms; fails on the base.",
+      "text": "[x] printed-payload-red: inspect and the update receipt print payload with payloadSchema in both forms; fails on the base.",
       "pause": 300
     },
     {
-      "text": "[ ] printed-payload-view: the shared inspect code and the update receipt print the view; dhPayloadJson removed when unread.",
+      "text": "[x] printed-payload-view: the shared inspect code and the update receipt print the view; dhPayloadJson removed when unread.",
       "pause": 300
     },
     {
-      "text": "[ ] readers-follow-the-print: every reader of applicationOutput.payload and of the update receipt's payload in scripts, the conformance backend and controls, and tests is moved.",
+      "text": "[x] readers-follow-the-print: every reader of applicationOutput.payload and of the update receipt's payload in scripts, the conformance backend and controls, and tests is moved.",
       "pause": 300
     }
   ],
@@ -69,11 +69,11 @@
       "pause": 500
     },
     {
-      "text": "[ ] journey-stores-plain-and-detailed: the Demo 1 journey stores {\"answer\": 42} with no setting, reads it back equal with schema plain, updates it, and stores a detailed document with the setting; the same job refuses a detailed file without the setting and a plain file with the setting detailed.",
+      "text": "[x] journey-stores-plain-and-detailed: the Demo 1 journey stores {\"answer\": 42} with no setting, reads it back equal with schema plain, updates it, and stores a detailed document with the setting; the same job refuses a detailed file without the setting and a plain file with the setting detailed.",
       "pause": 300
     },
     {
-      "text": "[ ] journey-controls-fail-on-the-previous-release: the new steps are shown refusing against the 0.14.0 binary, where a plain file is not Plutus data.",
+      "text": "[x] journey-controls-fail-on-the-previous-release: the new steps are shown refusing against the 0.14.0 binary, where a plain file is not Plutus data.",
       "pause": 300
     }
   ],
@@ -83,24 +83,24 @@
       "pause": 500
     },
     {
-      "text": "[ ] payload-page: the page with the table, the worked examples, the refusals, the schema setting and what inspect prints; added to the navigation.",
+      "text": "[x] payload-page: the page with the table, the worked examples, the refusals, the schema setting and what inspect prints; added to the navigation.",
       "pause": 300
     },
     {
-      "text": "[ ] pages-show-the-setting: the flag row in docs/singular-node.md, and the pages that show a payload file.",
+      "text": "[x] pages-show-the-setting: the flag row in docs/singular-node.md, and the pages that show a payload file.",
       "pause": 300
     },
     {
-      "text": "[ ] speech-and-narration: companions stamped, narration clips regenerated.",
+      "text": "[x] speech-and-narration: companions stamped, narration clips regenerated.",
       "pause": 300
     },
     {
-      "text": "[ ] singular-demo-route: the handoff for the desk.",
+      "text": "[x] singular-demo-route: the handoff for the desk.",
       "pause": 300
     }
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "83079a638ba6168a335af46ef4f074468e92227f234fe816b175469eba4cc996"
+    "sha256": "c09948d9e0106051cb5ec94e7b7c8c5ab8d1ae80a5eae6ddd920f93460076032"
   }
 }

@@ -53,7 +53,7 @@ else. A reader can apply it by hand.
 | `true` | the constructor with index 1 and no fields | the same as the Plutus boolean |
 | `false` | the constructor with index 0 and no fields | the same as the Plutus boolean |
 | an array | the list of its items, mapped in order | the empty array is the empty list |
-| an object | the map from each key, as a byte string of its UTF-8, to its value, mapped; entries in ascending order of key bytes | the empty object is the empty map; a key repeated in the file keeps its last value, as the JSON reader does |
+| an object | the map from each key, as a byte string of its UTF-8, to its value, mapped; entries in ascending order of key bytes | the empty object is the empty map; a key repeated in the file keeps its first value, as the JSON reader does |
 | `null` | refused | no Plutus data stands for it |
 | a number with a fraction, such as `1.5` | refused | |
 
@@ -89,7 +89,7 @@ a path from the document: `$` is the whole document, `.name` an object key, `[2]
 | holds `1e5000` | the number at `$` is too large: more than 1000 digits |
 | is not JSON | the file is not JSON, with the reader's reason |
 | is in the detailed schema and the setting is plain | the file is Plutus data in the detailed schema; say so with the payload schema setting `detailed`, or nest it in an object to store it as plain JSON |
-| is not in the detailed schema and the setting is detailed | the refusal the previous release printed for a file that is not Plutus data, unchanged |
+| is not in the detailed schema and the setting is detailed | the refusal sentence `<file>: --payload is not Plutus data: <reason>` with the reason the previous release printed, unchanged; insert and register printed that sentence before, update, its preview and the negative host printed the reason alone |
 
 The detailed-schema refusal covers the whole document only. A detailed-looking object nested
 inside a larger document is plain JSON like any other. Every file the previous release accepted
@@ -140,7 +140,7 @@ Each line is an invariant with a name and fails when the behaviour is absent.
 | plain-reading-returns-the-same-json | for every JSON the plain mapping accepts, the data it produces has a plain reading equal to that JSON; a property test over generated JSON and the worked examples | any accepted value reads back as other JSON |
 | plain-mapping-is-total-over-what-it-accepts | every JSON value is either mapped or refused with a value-naming refusal; none crashes or hangs, including `1e1000000000` | an exception or a refusal that names no value |
 | plain-reading-is-a-function-of-the-data | data with a plain reading maps back to itself; data without one prints in the detailed schema with the schema named | data that prints as plain JSON which maps to other data |
-| detailed-schema-is-unchanged | a document of the detailed schema stored with the setting `detailed` gives the same data and the same transaction as the previous release | a changed datum or refusal |
+| detailed-schema-is-unchanged | a document of the detailed schema stored with the setting `detailed` gives the same data and the same transaction as the previous release, and a file that is not Plutus data is refused for the same reason | a changed datum, transaction or refusal reason |
 | detailed-document-is-never-stored-as-plain | with the setting plain, every document the detailed schema accepts is refused with the instruction | one is stored as a map |
 | every-payload-file-is-read-one-way | insert, update, previews, `keri-stub register` and the negative host give the same data for the same file and setting | two commands differ |
 | inspect-names-the-schema-it-prints | `payload` is accompanied by `payloadSchema`, `plain` or `detailed`, in inspect and in the update receipt | a payload with no schema, or a schema that does not match the form |
