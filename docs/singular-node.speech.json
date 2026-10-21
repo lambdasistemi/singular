@@ -47,6 +47,10 @@
     {
       "text": "The URL, network magic and one signer (the signing key, the vault, or on singular create, singular fold, singular reclaim, singular reject, open-datum create, open-datum insert, open-datum update, open-datum terminate and open-datum fold an address with its bundle file) travel together on a write: naming only some of them is refused as partially configured, and so is a write that names none, because singular never starts a node of its own — a registry booted on a chain that dies with the process could not be attached to again. The refusal says which part is missing and, for the signer, the three ways to name one: the vault first, then an address with its bundle file, and last the key file, which is legacy. The settings that do not change from one command to the next (the node, the contracts, the registry, the token file, the narration and the vault) can be given once, as the next section says; the key file, an external signer and everything else a command does are typed on the command. Public environment configuration lists the variables and the phase-log path.",
       "pause": 400
+    },
+    {
+      "text": "The file alice.json is the key's payload, ordinary JSON stored as plain JSON unless --payload-schema detailed says it is written in the detailed Plutus data schema; store ordinary JSON as a key's payload gives the rules.",
+      "pause": 400
     }
   ],
   "giving-the-chain-the-contracts-and-the-registry-once": [
@@ -579,6 +583,6 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "51f532ced2ec604f9a4b47676046087cead2a97a1428d59dc18ba113e4226746"
+    "sha256": "191deb0e8ec25763bb4341b293bd19e5f649abbdf7f87336851fe8617ddf0aa5"
   }
 }

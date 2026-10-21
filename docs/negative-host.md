@@ -45,6 +45,10 @@ To the negative host, the same move:
 singular-negative registry update --key alice-1 --payload new.json --wallet-skey bob.skey
 ```
 
+Both executables read `new.json` the same way: ordinary JSON is stored as plain JSON, and a
+file in the detailed schema is given with `--payload-schema detailed`, as
+[store ordinary JSON as a key's payload](payload-json.md) says.
+
 The negative host's parts keep key files as harness controls: it signs
 with whatever key file you name and opens no vault, so its command lines
 on this page name `--wallet-skey`, and only they do. Every `open-datum`

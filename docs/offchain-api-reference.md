@@ -94,6 +94,7 @@ Run: mkdocs serve
 - <a href="../offchain/local-services/Singular/Registry/LedgerProvider.hs" data-api="module">Singular.Registry.LedgerProvider</a> — <a href="../offchain/local-services/Singular/Registry/LedgerProvider.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Lifecycle.hs" data-api="module">Singular.Registry.Lifecycle</a> — <a href="../offchain/lib/Singular/Registry/Lifecycle.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Page.hs" data-api="module">Singular.Registry.Page</a> — <a href="../offchain/lib/Singular/Registry/Page.hs" data-api="source">source</a>
+- <a href="../offchain/lib/Singular/Registry/PlainJson.hs" data-api="module">Singular.Registry.PlainJson</a> — <a href="../offchain/lib/Singular/Registry/PlainJson.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Proof.hs" data-api="module">Singular.Registry.Proof</a> — <a href="../offchain/lib/Singular/Registry/Proof.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Replay.hs" data-api="module">Singular.Registry.Replay</a> — <a href="../offchain/lib/Singular/Registry/Replay.hs" data-api="source">source</a>
 - <a href="../offchain/local-services/Singular/Registry/Signing.hs" data-api="module">Singular.Registry.Signing</a> — <a href="../offchain/local-services/Singular/Registry/Signing.hs" data-api="source">source</a>
@@ -351,7 +352,7 @@ recovery and the booking call: `Singular.CLI`, `Singular.CLI.Attached`,
 `Singular.CLI.Command`, `Singular.CLI.Create`,
 `Singular.CLI.Finish`, `Singular.CLI.Fold`, `Singular.CLI.FoldRules`,
 `Singular.CLI.Inspect`, `Singular.CLI.Key`, `Singular.CLI.Live`,
-`Singular.CLI.ManagedState`, `Singular.CLI.Outlay`, `Singular.CLI.Permanent`,
+`Singular.CLI.ManagedState`, `Singular.CLI.Outlay`, `Singular.CLI.Payload`, `Singular.CLI.Permanent`,
 `Singular.CLI.Plan`, `Singular.CLI.Proof`,
 `Singular.CLI.Receipt`, `Singular.CLI.ReceiptBody`, `Singular.CLI.Reclaim`,
 `Singular.CLI.ReclaimRules`, `Singular.CLI.Reconcile`,
