@@ -51,8 +51,10 @@ import Cardano.Ledger.Api.PParams
     , emptyPParams
     , ppCoinsPerUTxOByteL
     , ppCollateralPercentageL
+    , ppMaxCollateralInputsL
     , ppMaxTxExUnitsL
     , ppMaxTxSizeL
+    , ppMaxValSizeL
     , ppPricesL
     , ppTxFeeFixedL
     , ppTxFeePerByteL
@@ -283,7 +285,9 @@ edges =
 preprod node reports (protocol parameters file sha256 @66eb0791…@, read
 2026-09-30): fee 155381 + 44 per byte, 4310 per UTxO byte, collateral 150%,
 prices 0.0577 per memory and 0.0000721 per step, 15 per reference-script
-byte, 17.5M memory and 10G steps per transaction.
+byte, 17.5M memory and 10G steps per transaction. The same file reports the
+largest value an output may hold, 5000 bytes, and at most 3 collateral inputs,
+which the final-body rules of the ledger read.
 -}
 preprodParams :: PParams ConwayEra
 preprodParams =
@@ -294,6 +298,8 @@ preprodParams =
         & ppCoinsPerUTxOByteL .~ CoinPerByte (CompactCoin 4_310)
         & ppCollateralPercentageL .~ 150
         & ppMaxTxExUnitsL .~ ExUnits 17_500_000 10_000_000_000
+        & ppMaxValSizeL .~ 5_000
+        & ppMaxCollateralInputsL .~ 3
         & ppMinFeeRefScriptCostPerByteL .~ fromJust (boundRational 15)
         & ppPricesL
             .~ Prices

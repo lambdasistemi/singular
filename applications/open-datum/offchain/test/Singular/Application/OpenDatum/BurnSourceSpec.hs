@@ -54,7 +54,11 @@ import Test.Hspec
 
 import Cardano.Ledger.Address (Addr (..), serialiseAddr)
 import Cardano.Ledger.Alonzo.TxBody (reqSignerHashesTxBodyL)
-import Cardano.Ledger.Api.PParams (PParams, emptyPParams)
+import Cardano.Ledger.Api.PParams
+    ( PParams
+    , emptyPParams
+    , ppMaxValSizeL
+    )
 import Cardano.Ledger.Api.Tx (bodyTxL, witsTxL)
 import Cardano.Ledger.Api.Tx.Body
     ( ValidityInterval (..)
@@ -1097,7 +1101,7 @@ foldProviderOver :: [(TxIn, TxOut ConwayEra)] -> Session NoWitness IO
 foldProviderOver requests =
     withPolicyOutputs (\_ -> pure requests) $
         withAddressOutputs (pure . utxosAt) $
-            withParameters (withSyntheticCosts preprodParams) $
+            withParameters (withSyntheticCosts (withRecordedLimits preprodParams)) $
                 withTime (pure syntheticTime) $
                     withResolvedOutputs
                         (resolveBuilt requests [])
@@ -1105,6 +1109,14 @@ foldProviderOver requests =
 
 foldProvider :: Session NoWitness IO
 foldProvider = foldProviderOver [defaultRegistration]
+
+{- | The limit the public preprod parameters report besides the fee ones, which
+the fold's final body is judged against: the largest value an output may hold,
+5000 bytes (the recorded protocol parameters file, sha256 @66eb0791…@). Parameters
+without it forbid every output.
+-}
+withRecordedLimits :: PParams ConwayEra -> PParams ConwayEra
+withRecordedLimits = ppMaxValSizeL .~ 5_000
 
 {- | Resolve the full raw extent, including application inputs and publications.
 Explicit extra facts replace the default application output by reference.
@@ -1144,7 +1156,10 @@ builtFoldUnder pp = do
     tm <- trieWith Nothing
     updateTokenWithDuties
         foldCfg
-        (withParameters (withSyntheticCosts pp) foldProvider)
+        ( withParameters
+            (withSyntheticCosts (withRecordedLimits pp))
+            foldProvider
+        )
         tm
         foldTokenId
         payer
@@ -1762,10 +1777,12 @@ registryReference :: (TxIn, TxOut ConwayEra)
 registryReference = referenceOf '8' (scriptFromBytes "state" program)
 
 {- | Both registry scripts must actually resolve when the fixture references
-them: the state and its token-specific applied request validator.
+them: the state and its token-specific applied request validator. Each is an
+output of its own: the wallet's funding output is another, and a transaction
+may not both spend an output and reference it.
 -}
 requestReference :: (TxIn, TxOut ConwayEra)
-requestReference = referenceOf '7' (mkRequestScript builtCfg foldTokenId)
+requestReference = referenceOf 'e' (mkRequestScript builtCfg foldTokenId)
 
 appReference :: (TxIn, TxOut ConwayEra)
 appReference = referenceOf '9' appScript

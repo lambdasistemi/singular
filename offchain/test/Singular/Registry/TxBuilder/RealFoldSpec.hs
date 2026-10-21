@@ -1,6 +1,8 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PatternSynonyms #-}
 
 {- |
 Module      : Singular.Registry.TxBuilder.RealFoldSpec
@@ -38,19 +40,21 @@ module Singular.Registry.TxBuilder.RealFoldSpec (spec) where
 
 import Control.Exception (SomeException, displayException, try)
 import Control.Monad (forM_, when)
+import Data.Bits (complement, shiftR, testBit, xor)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
+import Data.ByteString.Lazy qualified as BSL
 import Data.ByteString.Short qualified as SBS
 import Data.Foldable (toList)
 import Data.List (isInfixOf, sort)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (mapMaybe)
+import Data.Maybe (fromJust, mapMaybe)
 import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
 import Data.Text qualified as T
-import Data.Word (Word32)
-import Lens.Micro ((%~), (&), (.~), (^.))
+import Data.Word (Word32, Word8)
+import Lens.Micro ((%~), (&), (.~), (<>~), (^.))
 import PlutusCore.Data qualified as PLC
 import PlutusCore.Default (DefaultFun (..), DefaultUni)
 import PlutusCore.MkPlc (mkConstant)
@@ -60,16 +64,33 @@ import PlutusTx.Builtins.Internal (BuiltinByteString (..))
 import Test.Hspec
 import UntypedPlutusCore qualified as UPLC
 
-import Cardano.Ledger.Address (Addr (..), decodeAddrEither)
+import Cardano.Ledger.Address
+    ( Addr (..)
+    , bootstrapAddressAttrsSize
+    , decodeAddrEither
+    , serialiseAddr
+    )
+import Cardano.Ledger.Allegra.Scripts (pattern RequireTimeStart)
 import Cardano.Ledger.Alonzo.Plutus.Evaluate (evalTxExUnits)
-import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
+import Cardano.Ledger.Alonzo.Scripts
+    ( AsIx (..)
+    , fromPlutusScript
+    , mkPlutusScript
+    )
 import Cardano.Ledger.Api.PParams
     ( ppCollateralPercentageL
+    , ppCostModelsL
     , ppMaxCollateralInputsL
     , ppMaxTxExUnitsL
     , ppMaxTxSizeL
+    , ppMaxValSizeL
+    , ppProtocolVersionL
     )
-import Cardano.Ledger.Api.Scripts.Data (Data (..))
+import Cardano.Ledger.Api.Scripts.Data
+    ( Data (..)
+    , Datum (..)
+    , hashData
+    )
 import Cardano.Ledger.Api.Tx (bodyTxL, estimateMinFeeTx, witsTxL)
 import Cardano.Ledger.Api.Tx.Body
     ( collateralInputsTxBodyL
@@ -95,24 +116,48 @@ import Cardano.Ledger.Api.Tx.Out
     )
 import Cardano.Ledger.Api.Tx.Wits
     ( Redeemers (..)
+    , TxDats (..)
+    , datsTxWitsL
     , rdmrsTxWitsL
+    , scriptTxWitsL
     )
-import Cardano.Ledger.BaseTypes (Network (Testnet), StrictMaybe (..))
+import Cardano.Ledger.BaseTypes
+    ( Network (Testnet)
+    , ProtVer (..)
+    , StrictMaybe (..)
+    , mkVersion
+    , pvMajor
+    )
+import Cardano.Ledger.Binary (serialize)
 import Cardano.Ledger.Coin (Coin (..))
+import Cardano.Ledger.Conway.PParams
+    ( ConwayEraPParams (ppMaxRefScriptSizePerTxG)
+    )
 import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
-import Cardano.Ledger.Core (Script, hashScript, sizeTxF)
+import Cardano.Ledger.Core
+    ( Script
+    , fromNativeScript
+    , hashScript
+    , sizeTxF
+    )
 import Cardano.Ledger.Credential
     ( Credential (..)
     , StakeReference (..)
     )
-import Cardano.Ledger.Hashes (ScriptHash)
+import Cardano.Ledger.Hashes (ScriptHash, originalBytes)
 import Cardano.Ledger.Mary.Value
     ( AssetName (..)
     , MaryValue (..)
     , MultiAsset (..)
     , PolicyID (..)
     )
+import Cardano.Ledger.Plutus.CostModels (emptyCostModels)
 import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
+import Cardano.Ledger.Plutus.Language
+    ( Language (PlutusV2)
+    , Plutus (..)
+    , PlutusBinary (..)
+    )
 import Cardano.Ledger.State (UTxO (..))
 import Cardano.Ledger.Tools (addDummyWitsTx)
 import Cardano.Ledger.TxIn (TxIn)
@@ -273,7 +318,18 @@ data World = World
     -- ^ The lovelace the registration declares for its carrier
     , wStateCoin :: Integer
     -- ^ The lovelace the state output holds
+    , wCost :: Integer
+    -- ^ The registration cost the registry configures and the registration declares
+    , wDestination :: ByteString
+    -- ^ The address the registration asks its carrier to be delivered to, as the registrant wrote it
     }
+
+{- | The same registry configured to charge nothing to register: the state it
+declares and the registration it books both carry the cost zero, and a fold of
+the registration donates nothing. Identity, pins and programs are unchanged.
+-}
+freeOf :: World -> World
+freeOf w = w{wCfg = (wCfg w){defaultRegistrationCost = Coin 0}, wCost = 0}
 
 {- | The registry the retained blueprint boots from the fixture seed, with the
 naming pins of the toy programs. The state and request programs and every
@@ -298,6 +354,8 @@ worldWith codes r =
             AssetName n -> SBS.fromShort n
         , wCarrier = 1_500_000
         , wStateCoin = 3_000_000
+        , wCost = 2_000_000
+        , wDestination = BS.cons 0x60 (BS.replicate 28 0x77)
         }
   where
     booted = rrConfig r
@@ -337,10 +395,10 @@ registrationOf w =
         { regRegistry = OnChainTokenId (BuiltinByteString (wRegistryName w))
         , regKey = registrationKey
         , regRefundAddress = BuiltinByteString (BS.replicate 28 0xd1)
-        , regDestination = BS.cons 0x60 (BS.replicate 28 0x77)
+        , regDestination = wDestination w
         , regDatum = Just (PLC.I 7)
         , regSubmittedAt = 5_000_000
-        , regRegistrationCost = 2_000_000
+        , regRegistrationCost = wCost w
         , regDeclaredTip = 1_500_000
         , regCarrierAda = wCarrier w
         , regNonce = 5
@@ -489,10 +547,12 @@ data Build = Build
     { buildParams :: PParams ConwayEra
     , buildFunding :: TxOut ConwayEra
     , buildAdjust :: ConnectedFoldArgs -> ConnectedFoldArgs
+    , buildReferences :: [(TxIn, TxOut ConwayEra)]
+    -- ^ Outputs that publish further scripts, offered as reference inputs beside the four the fold needs
     }
 
 standardBuild :: Build
-standardBuild = Build ledgerParameters feeOut id
+standardBuild = Build ledgerParameters feeOut id []
 
 -- | The view: the tip inside the registration's window, every output resolvable.
 viewOver
@@ -528,6 +588,7 @@ viewOverWith b w root requests =
                                         : (feeRef, buildFunding b)
                                         : requests
                                             <> scriptCarriers w
+                                            <> buildReferences b
                                 , ref `Set.member` wanted
                                 ]
                         )
@@ -617,7 +678,7 @@ builtUnder b w shape = do
                     , cfaMints = shapeMints shape w
                     , cfaOutputs = []
                     , cfaSigners = []
-                    , cfaRefUtxos = scriptCarriers w
+                    , cfaRefUtxos = scriptCarriers w <> buildReferences b
                     , cfaAttachScripts = []
                     , cfaSkipEval = False
                     , cfaAdjustRoot = id
@@ -626,7 +687,7 @@ builtUnder b w shape = do
         ( tx
         , (stateRef, state)
             : (feeRef, buildFunding b)
-            : requests <> scriptCarriers w
+            : requests <> scriptCarriers w <> buildReferences b
         )
 
 {- | What the ledger's evaluator says of every script purpose of a body over its
@@ -857,6 +918,7 @@ factsUnder
 factsUnder params w inputs =
     FinalFacts
         { ffParams = params
+        , ffNetwork = Testnet
         , ffInputs =
             Map.fromList
                 [ x
@@ -908,6 +970,99 @@ withFeeSet f tx =
     withFeeMoved (f - fee) tx
   where
     Coin fee = tx ^. bodyTxL . feeTxBodyL
+
+{- | A script of exactly the given number of bytes, as the ledger measures a
+script. The fill byte tells scripts apart: the same fill and size is the same
+script, so a copy at another input.
+-}
+paddedScript :: Word8 -> Int -> Script ConwayEra
+paddedScript fill size =
+    scriptFromBytes "padded" (SBS.pack (replicate size fill))
+
+{- | The bytes of a bootstrap (Byron) address on a testnet whose derivation-path
+attribute is the given number of bytes: what a registrant may write as the
+destination of a carrier. The ledger measures such an address by that attribute
+and refuses an output over 64 bytes of it.
+-}
+byronAddress :: Int -> ByteString
+byronAddress n =
+    BS.concat
+        [BS.pack [0x82, 0xd8, 0x18], cborBytes payload, BS.pack (0x1a : crc)]
+  where
+    payload =
+        BS.concat
+            [ BS.pack [0x83]
+            , cborBytes (BS.replicate 28 0x11)
+            , BS.pack [0xa2, 0x01]
+            , cborBytes (cborBytes (BS.replicate n 0x22))
+            , BS.pack [0x02]
+            , cborBytes (BS.pack [0x01])
+            , BS.pack [0x00]
+            ]
+    checksum = crc32 payload
+    crc = [fromIntegral (checksum `shiftR` k) | k <- [24, 16, 8, 0]]
+
+-- | A CBOR byte string.
+cborBytes :: ByteString -> ByteString
+cborBytes b
+    | n < 24 = BS.cons (0x40 + fromIntegral n) b
+    | n < 256 = BS.cons 0x58 (BS.cons (fromIntegral n) b)
+    | otherwise =
+        BS.cons
+            0x59
+            (BS.cons (fromIntegral (n `shiftR` 8)) (BS.cons (fromIntegral n) b))
+  where
+    n = BS.length b
+
+-- | The CRC-32 a bootstrap address carries over its payload.
+crc32 :: ByteString -> Word32
+crc32 = complement . BS.foldl' byte 0xffff_ffff
+  where
+    byte c b =
+        foldl'
+            ( \a _ ->
+                if testBit a 0 then (a `shiftR` 1) `xor` 0xedb8_8320 else a `shiftR` 1
+            )
+            (c `xor` fromIntegral b)
+            [1 .. 8 :: Int]
+
+-- | An output that publishes a script as a reference script, as a deployment does.
+publishing
+    :: Char -> Int -> Script ConwayEra -> (TxIn, TxOut ConwayEra)
+publishing c i script =
+    ( outRef c i
+    , mkBasicTxOut payer (MaryValue (Coin 40_000_000) mempty)
+        & referenceScriptTxOutL .~ SJust script
+    )
+
+-- | The bytes of the scripts the outputs publish, each counted.
+publishedBytes :: [(TxIn, TxOut ConwayEra)] -> Integer
+publishedBytes outputs =
+    sum
+        [ toInteger (BS.length (originalBytes script))
+        | (_, o) <- outputs
+        , SJust script <- [o ^. referenceScriptTxOutL]
+        ]
+
+{- | The bytes of reference scripts a body brings in, counted one occurrence
+per input it spends or references (the sum is over inputs, not over scripts),
+and the same with every script counted once.
+-}
+referencedBytes
+    :: ConwayTx -> [(TxIn, TxOut ConwayEra)] -> (Integer, Integer)
+referencedBytes tx known =
+    ( sum (map snd carried)
+    , sum (Map.elems (Map.fromList [(hashScript s, n) | (s, n) <- carried]))
+    )
+  where
+    body = tx ^. bodyTxL
+    carried =
+        [ (script, toInteger (BS.length (originalBytes script)))
+        | i <-
+            Set.toList (body ^. inputsTxBodyL <> body ^. referenceInputsTxBodyL)
+        , Just o <- [lookup i known]
+        , SJust script <- [o ^. referenceScriptTxOutL]
+        ]
 
 spec :: Spec
 spec =
@@ -1056,6 +1211,38 @@ spec =
                                             expectationFailure
                                                 ("a carrier of " <> show short <> " lovelace built a fold")
                         it
+                            "delivers the carrier of a registration that costs nothing, donating nothing, at exactly its minimum under the real validators, and refuses one lovelace less"
+                            $ \r -> do
+                                let w0 = freeOf (worldOf r)
+                                    m = minimumFor ledgerParameters (carrierOf w0 0)
+                                    w = w0{wCarrier = m}
+                                    Coin configured = defaultRegistrationCost (wCfg w)
+                                -- the registry configures the cost the request declares, and the request holds exactly it with its tip and carrier
+                                configured `shouldBe` regRegistrationCost (registrationOf w)
+                                registrationOut w ^. coinTxOutL
+                                    `shouldBe` Coin (regRegistrationCost (registrationOf w) + 1_500_000 + m)
+                                (tx, inputs) <- built w registrationAlone
+                                tx ^. bodyTxL . treasuryDonationTxBodyL `shouldBe` Coin 0
+                                finalBodyRefusals (factsFor w inputs) tx `shouldBe` []
+                                failures (judged inputs tx) `shouldBe` []
+                                [ o ^. coinTxOutL
+                                  | o <- outputsOf tx
+                                  , o ^. addrTxOutL == carrierOf w m ^. addrTxOutL
+                                  ]
+                                    `shouldBe` [Coin m]
+                                forM_ [m - 1, 0] $ \short -> do
+                                    outcome <- refusedBuild (built w0{wCarrier = short} registrationAlone)
+                                    case outcome of
+                                        Left err -> do
+                                            err `shouldSatisfy` isInfixOf "the carrier of the registration of key"
+                                            err
+                                                `shouldSatisfy` isInfixOf ("holds " <> show short <> " lovelace, under the ")
+                                            err
+                                                `shouldSatisfy` isInfixOf "booked allocation is exact and unchanged"
+                                        Right _ ->
+                                            expectationFailure
+                                                ("a carrier of " <> show short <> " lovelace built a fold")
+                        it
                             "continues the state at exactly its minimum and refuses one lovelace less"
                             $ \r -> do
                                 let w0 = worldOf r
@@ -1193,6 +1380,310 @@ spec =
                                         err `shouldSatisfy` isInfixOf "the fee of"
                                         err `shouldSatisfy` isInfixOf "bytes of reference scripts"
                                     Right _ -> expectationFailure "an unpriced reference script built a fold"
+                    describe
+                        "the scripts the inputs reference fit the ledger's limit for one transaction"
+                        $ do
+                            let limit = toInteger (ledgerParameters ^. ppMaxRefScriptSizePerTxG)
+                                overLimit = mentions "bytes of reference scripts in one transaction"
+                            it "reads the era's limit of 200 KiB through the acquired parameters" $ \_ ->
+                                limit `shouldBe` 204_800
+                            it
+                                "builds with scripts adding up to exactly the limit, every copy at a distinct input counting, and refuses one byte more"
+                                $ \r -> do
+                                    let w = worldOf r
+                                        carried = publishedBytes (scriptCarriers w)
+                                        copy = 80_000
+                                        -- two copies of one script at two inputs, and a filler that
+                                        -- brings the total to the limit plus the given excess
+                                        published excess =
+                                            [ publishing 'c' 0 (paddedScript 1 copy)
+                                            , publishing 'c' 1 (paddedScript 1 copy)
+                                            , publishing
+                                                'c'
+                                                2
+                                                ( paddedScript
+                                                    2
+                                                    (fromInteger (limit + excess - carried - 2 * toInteger copy))
+                                                )
+                                            ]
+                                        carrying excess = standardBuild{buildReferences = published excess}
+                                    (atLimit, inputs) <- builtUnder (carrying 0) w mixed
+                                    -- measured here, on the built body and its resolved inputs
+                                    let (occurrences, distinct) = referencedBytes atLimit inputs
+                                    occurrences `shouldBe` limit
+                                    -- the two copies are one script: counting scripts instead of
+                                    -- occurrences would have fitted, and the ledger does not
+                                    distinct `shouldSatisfy` (< limit)
+                                    outcome <- refusedBuild (builtUnder (carrying 1) w mixed)
+                                    case outcome of
+                                        Left err -> do
+                                            err
+                                                `shouldSatisfy` isInfixOf
+                                                    "the fold is not built, because the ledger would refuse its final body"
+                                            err
+                                                `shouldSatisfy` isInfixOf
+                                                    ( show (limit + 1)
+                                                        <> " bytes, over the ledger's limit of "
+                                                        <> show limit
+                                                        <> " bytes of reference scripts in one transaction"
+                                                    )
+                                        Right _ ->
+                                            expectationFailure
+                                                "scripts one byte over the ledger's limit built a fold"
+                            it
+                                "counts the script a spent input carries with those the reference inputs carry"
+                                $ \r -> do
+                                    let w = worldOf r
+                                    (tx, inputs) <- built w mixed
+                                    let carried = publishedBytes (scriptCarriers w)
+                                        fundedWith n =
+                                            [ ( ref
+                                              , if ref == feeRef
+                                                    then o & referenceScriptTxOutL .~ SJust (paddedScript 3 n)
+                                                    else o
+                                              )
+                                            | (ref, o) <- inputs
+                                            ]
+                                        judgedWith n = finalBodyRefusals (factsFor w (fundedWith n)) tx
+                                        fits = fromInteger (limit - carried)
+                                    -- the references alone are within the limit, as is the whole at it
+                                    judgedWith 1_000 `shouldSatisfy` (not . overLimit)
+                                    judgedWith fits `shouldSatisfy` (not . overLimit)
+                                    judgedWith (fits + 1) `shouldSatisfy` overLimit
+                    describe
+                        "the ledger's other rules for a body of this shape, asked of the ledger's own tests"
+                        $ do
+                            it
+                                "refuses a carrier destination on another network, and a bootstrap destination, which no script can see; measures a bootstrap address's attributes at 64 bytes"
+                                $ \r -> do
+                                    let w0 = worldOf r
+                                        withDestination d =
+                                            let wd = w0{wDestination = d}
+                                            in  wd{wCarrier = minimumFor ledgerParameters (carrierOf wd 0)}
+                                        attributesOf d = case decodeAddrEither d of
+                                            Right (AddrBootstrap b) -> bootstrapAddressAttrsSize b
+                                            _ -> -1
+                                        otherNetwork = BS.cons 0x61 (BS.replicate 28 0x77)
+                                        bootstrap n =
+                                            either
+                                                (error . ("byronAddress: " <>))
+                                                id
+                                                (decodeAddrEither (byronAddress n))
+                                    -- the bootstrap addresses written here are the ones they say
+                                    map (attributesOf . byronAddress) [64, 65] `shouldBe` [64, 65]
+                                    map (fmap serialiseAddr . decodeAddrEither . byronAddress) [64, 65]
+                                        `shouldBe` map (Right . byronAddress) [64, 65]
+                                    -- another network is refused by the ledger's own test on the built body
+                                    outcomeNetwork <-
+                                        refusedBuild (built (withDestination otherNetwork) registrationAlone)
+                                    case outcomeNetwork of
+                                        Left err -> do
+                                            err `shouldSatisfy` isInfixOf "the ledger would refuse the body"
+                                            err `shouldSatisfy` isInfixOf "WrongNetwork"
+                                        Right _ -> expectationFailure "a destination on another network built a fold"
+                                    -- a bootstrap output cannot be put in the context of the scripts a fold runs,
+                                    -- so the build is refused while the scripts are evaluated, whatever its attributes
+                                    forM_ [64, 65] $ \n -> do
+                                        outcome <-
+                                            refusedBuild
+                                                (built (withDestination (byronAddress n)) registrationAlone)
+                                        case outcome of
+                                            Left err -> err `shouldSatisfy` isInfixOf "ByronTxOutInContext"
+                                            Right _ -> expectationFailure "a bootstrap destination built a fold"
+                                    -- and the ledger's own test of the attributes, on the body as built, with the change at a bootstrap address
+                                    (tx, inputs) <- built w0 registrationAlone
+                                    let facts = factsFor w0 inputs
+                                        changeAt n =
+                                            tx
+                                                & bodyTxL . outputsTxBodyL %~ \case
+                                                    rest StrictSeq.:|> change -> rest StrictSeq.:|> (change & addrTxOutL .~ bootstrap n)
+                                                    outs -> outs
+                                        tooBig = mentions "OutputBootAddrAttrsTooBig"
+                                    finalBodyRefusals facts tx `shouldBe` []
+                                    finalBodyRefusals facts (changeAt 64) `shouldSatisfy` (not . tooBig)
+                                    finalBodyRefusals facts (changeAt 65) `shouldSatisfy` tooBig
+                            it
+                                "refuses an output whose value is over the largest the protocol allows, and builds with the largest"
+                                $ \r -> do
+                                    let w = worldOf r
+                                    (tx, _) <- built w mixed
+                                    let version = pvMajor (ledgerParameters ^. ppProtocolVersionL)
+                                        valueSize o = toInteger (BSL.length (serialize version (o ^. valueTxOutL)))
+                                        outputs =
+                                            toList (tx ^. bodyTxL . outputsTxBodyL)
+                                                <> [o | SJust o <- [tx ^. bodyTxL . collateralReturnTxBodyL]]
+                                        largest = maximum (map valueSize outputs)
+                                        limited n = under (ppMaxValSizeL .~ fromInteger n)
+                                    _ <- builtUnder (limited largest) w mixed
+                                    outcome <- refusedBuild (builtUnder (limited (largest - 1)) w mixed)
+                                    case outcome of
+                                        Left err -> do
+                                            err `shouldSatisfy` isInfixOf "the ledger would refuse the body"
+                                            err `shouldSatisfy` isInfixOf "OutputTooBigUTxO"
+                                        Right _ ->
+                                            expectationFailure
+                                                "an output one byte over the largest value built a fold"
+                            it
+                                "refuses a script attached as a witness that the references already provide"
+                                $ \r -> do
+                                    let w = worldOf r
+                                    outcome <-
+                                        refusedBuild
+                                            ( builtUnder
+                                                standardBuild
+                                                    { buildAdjust = \a -> a{cfaAttachScripts = [wActiveScript w]}
+                                                    }
+                                                w
+                                                mixed
+                                            )
+                                    case outcome of
+                                        Left err -> do
+                                            err `shouldSatisfy` isInfixOf "the ledger would refuse the body"
+                                            err `shouldSatisfy` isInfixOf "ExtraneousScriptWitnessesUTXOW"
+                                        Right _ ->
+                                            expectationFailure
+                                                "a script both attached and referenced built a fold"
+                            it
+                                "tells a script the body needs that nothing provides, a native script that does not validate, and a script that is not well formed"
+                                $ \r -> do
+                                    let w = worldOf r
+                                    (tx, inputs) <- built w mixed
+                                    let facts = factsFor w inputs
+                                        nativeAt s' = fromNativeScript (RequireTimeStart (SlotNo s')) :: Script ConwayEra
+                                        mintedBy script =
+                                            tx
+                                                & bodyTxL . mintTxBodyL
+                                                    <>~ MultiAsset
+                                                        ( Map.singleton
+                                                            (PolicyID (hashScript script))
+                                                            (Map.singleton (nameOf "native") 1)
+                                                        )
+                                                & witsTxL . scriptTxWitsL %~ Map.insert (hashScript script) script
+                                        broken = scriptFromBytes "broken" (SBS.pack [0xff, 0xff, 0xff])
+                                        withWitness =
+                                            tx & witsTxL . scriptTxWitsL %~ Map.insert (hashScript broken) broken
+                                        withReference =
+                                            tx
+                                                & bodyTxL . outputsTxBodyL %~ \case
+                                                    rest StrictSeq.:|> change ->
+                                                        rest StrictSeq.:|> (change & referenceScriptTxOutL .~ SJust broken)
+                                                    outs -> outs
+                                    finalBodyRefusals facts tx `shouldBe` []
+                                    -- the first of the references provides the state's script
+                                    finalBodyRefusals facts{ffReferences = drop 1 (ffReferences facts)} tx
+                                        `shouldSatisfy` mentions "MissingScriptWitnessesUTXOW"
+                                    -- a native script is judged by the body's own interval
+                                    finalBodyRefusals facts (mintedBy (nativeAt 0))
+                                        `shouldSatisfy` (not . mentions "ScriptWitnessNotValidatingUTXOW")
+                                    finalBodyRefusals facts (mintedBy (nativeAt 4_000_000_000))
+                                        `shouldSatisfy` mentions "ScriptWitnessNotValidatingUTXOW"
+                                    finalBodyRefusals facts withWitness
+                                        `shouldSatisfy` mentions "MalformedScriptWitnesses"
+                                    finalBodyRefusals facts withReference
+                                        `shouldSatisfy` mentions "MalformedReferenceScripts"
+                            it
+                                "tells a redeemer nothing needs and one a script needs that is missing, a datum an input needs that is missing and one nothing allows"
+                                $ \r -> do
+                                    let w = worldOf r
+                                    (tx, inputs) <- built w mixed
+                                    let facts = factsFor w inputs
+                                        Redeemers declared = tx ^. witsTxL . rdmrsTxWitsL
+                                        (firstPurpose, firstRedeemer) = Map.findMin declared
+                                        withoutFirst =
+                                            tx
+                                                & witsTxL . rdmrsTxWitsL .~ Redeemers (Map.delete firstPurpose declared)
+                                        withExtra =
+                                            tx
+                                                & witsTxL . rdmrsTxWitsL
+                                                    .~ Redeemers
+                                                        (Map.insert (ConwaySpending (AsIx 99)) firstRedeemer declared)
+                                        datum = Data (PLC.I 7) :: Data ConwayEra
+                                        stateByHash =
+                                            facts
+                                                { ffInputs =
+                                                    Map.adjust
+                                                        (datumTxOutL .~ DatumHash (hashData datum))
+                                                        stateRef
+                                                        (ffInputs facts)
+                                                }
+                                        withDatum =
+                                            tx
+                                                & witsTxL . datsTxWitsL .~ TxDats (Map.singleton (hashData datum) datum)
+                                        -- an input locked by a PlutusV2 script, which still asks for a datum, and holds none
+                                        v2 =
+                                            fromPlutusScript
+                                                ( fromJust
+                                                    (mkPlutusScript (Plutus @PlutusV2 (PlutusBinary (SBS.pack [1, 2, 3]))))
+                                                )
+                                                :: Script ConwayEra
+                                        stateByV2 =
+                                            facts
+                                                { ffInputs =
+                                                    Map.adjust
+                                                        ( \o ->
+                                                            o
+                                                                & addrTxOutL
+                                                                    .~ Addr Testnet (ScriptHashObj (hashScript v2)) StakeRefNull
+                                                                & datumTxOutL .~ NoDatum
+                                                        )
+                                                        stateRef
+                                                        (ffInputs facts)
+                                                }
+                                        withV2 = tx & witsTxL . scriptTxWitsL %~ Map.insert (hashScript v2) v2
+                                    finalBodyRefusals facts tx `shouldBe` []
+                                    finalBodyRefusals facts withoutFirst
+                                        `shouldSatisfy` mentions "MissingRedeemers"
+                                    finalBodyRefusals facts withExtra
+                                        `shouldSatisfy` mentions "ExtraRedeemers"
+                                    finalBodyRefusals stateByHash tx
+                                        `shouldSatisfy` mentions "MissingRequiredDatums"
+                                    finalBodyRefusals facts withDatum
+                                        `shouldSatisfy` mentions "NotAllowedSupplementalDatums"
+                                    finalBodyRefusals stateByV2 withV2
+                                        `shouldSatisfy` mentions "UnspendableUTxONoDatumHash"
+                            it
+                                "refuses an input that is also a reference input where the protocol forbids it, and not where it does not"
+                                $ \r -> do
+                                    let w = worldOf r
+                                    (tx, inputs) <- built w mixed
+                                    let version n = ProtVer (fromJust (mkVersion (n :: Integer))) 0
+                                        factsAt n =
+                                            (factsFor w inputs)
+                                                { ffParams = ledgerParameters & ppProtocolVersionL .~ version n
+                                                }
+                                        overlapping = tx & bodyTxL . referenceInputsTxBodyL %~ Set.insert feeRef
+                                        forbids = mentions "BabbageNonDisjointRefInputs"
+                                    -- a body that keeps them apart is accepted at every version
+                                    forM_ [9, 10, 11] $ \n -> finalBodyRefusals (factsAt n) tx `shouldBe` []
+                                    forM_ [9, 10] $ \n -> finalBodyRefusals (factsAt n) overlapping `shouldSatisfy` forbids
+                                    finalBodyRefusals (factsAt 11) overlapping
+                                        `shouldSatisfy` (not . forbids)
+                            it
+                                "refuses to build a fold the scripts refuse, and builds the same fold when they accept it"
+                                $ \r -> do
+                                    let w = worldOf r
+                                        -- the registration's singular tag is not created: the state validator refuses it
+                                        unminted =
+                                            registrationAlone{shapeMints = \w' -> [applicationBurn w']}
+                                    (tx, inputs) <- built w registrationAlone
+                                    failures (judged inputs tx) `shouldBe` []
+                                    outcome <- refusedBuild (built w unminted)
+                                    case outcome of
+                                        Left err -> err `shouldSatisfy` isInfixOf "build failed: EvalFailure"
+                                        Right _ -> expectationFailure "a fold the scripts refuse was built"
+                            it
+                                "refuses a build whose parameters carry no cost model for the scripts, and builds with them"
+                                $ \r -> do
+                                    let w = worldOf r
+                                    _ <- built w mixed
+                                    outcome <-
+                                        refusedBuild
+                                            (builtUnder (under (ppCostModelsL .~ emptyCostModels)) w mixed)
+                                    case outcome of
+                                        Left err -> err `shouldSatisfy` isInfixOf "NoCostModelInLedgerState PlutusV3"
+                                        Right _ ->
+                                            expectationFailure
+                                                "a build without a cost model for its scripts succeeded"
                     describe "collateral is present, sufficient and coherent" $ do
                         it "judges its presence, its total and its sufficiency from the fee" $ \r -> do
                             let w = worldOf r
@@ -1293,6 +1784,18 @@ spec =
                                 `shouldSatisfy` mentions "assets differ"
                             finalBodyRefusals facts altered
                                 `shouldSatisfy` mentions "the script-integrity hash is not that of the redeemers"
+                describe "the inputs the body spends are the ones the build was given"
+                    $ it
+                        "refuses a body that spends an input the build did not resolve, and accepts one that spends only resolved inputs"
+                    $ \r -> do
+                        let w = worldOf r
+                        (tx, inputs) <- built w mixed
+                        let facts = factsFor w inputs
+                        finalBodyRefusals facts tx `shouldBe` []
+                        finalBodyRefusals
+                            facts{ffInputs = Map.delete feeRef (ffInputs facts)}
+                            tx
+                            `shouldSatisfy` any (isInfixOf "an input is not among the inputs the build was given")
                 describe "a purpose whose cost follows the fee" $ do
                     let feeWorld = worldWith (feeSensitiveCodes 3_000)
                     it

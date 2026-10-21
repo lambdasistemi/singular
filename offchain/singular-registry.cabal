@@ -58,10 +58,12 @@ library
     , cardano-ledger-allegra
     , cardano-ledger-alonzo
     , cardano-ledger-api
+    , cardano-ledger-babbage
     , cardano-ledger-binary
     , cardano-ledger-conway
     , cardano-ledger-core
     , cardano-ledger-mary
+    , cardano-ledger-shelley
     , cardano-slotting
     , cardano-strict-containers
     , cardano-tx-tools:tx-build
@@ -83,6 +85,7 @@ library
     , text                              >=2.0  && <2.2
     , time
     , unix
+    , validation-selective
 
   exposed-modules:
     Naming.Datum

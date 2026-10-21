@@ -294,7 +294,13 @@ registrationOutput request =
     mkBasicTxOut
         (requestAddrFromCfg cfg tokenId Testnet)
         ( MaryValue
-            (Coin 5_000_000)
+            -- the booking holds exactly its cost, its tip and its declared carrier
+            ( Coin
+                ( regRegistrationCost request
+                    + regDeclaredTip request
+                    + regCarrierAda request
+                )
+            )
             ( MultiAsset
                 ( Map.fromList
                     [
@@ -467,19 +473,38 @@ rigAt (TokenId name) point active = do
     pure (Rig root manager snapshot)
 
 stateOutAt :: Root -> TxOut ConwayEra
-stateOutAt (Root root) =
+stateOutAt = stateOutFor cfg
+
+{- | The registry's state output under a configuration: its datum holds the
+configuration's registration cost, tip and pins.
+-}
+stateOutFor :: CageConfig -> Root -> TxOut ConwayEra
+stateOutFor configuration (Root root) =
     let TokenId name = tokenId
     in  mkBasicTxOut
-            (cageAddrFromCfg cfg Testnet)
+            (cageAddrFromCfg configuration Testnet)
             ( MaryValue
                 (Coin 3_000_000)
                 ( MultiAsset
-                    (Map.singleton (cagePolicyIdFromCfg cfg) (Map.singleton name 1))
+                    ( Map.singleton
+                        (cagePolicyIdFromCfg configuration)
+                        (Map.singleton name 1)
+                    )
                 )
             )
             & datumTxOutL
                 .~ mkInlineDatum
-                    (toPlcData (StateDatum (bootStateFromCfg cfg (OnChainRoot root))))
+                    ( toPlcData
+                        (StateDatum (bootStateFromCfg configuration (OnChainRoot root)))
+                    )
+
+{- | The same registry configured to charge nothing to register: the identity,
+the pins and the programs are the registry's, only the registration cost its
+state declares is zero. A booked registration of this registry costs nothing,
+and a fold of it donates nothing.
+-}
+cfgFree :: CageConfig
+cfgFree = cfg{defaultRegistrationCost = Coin 0}
 
 -- | What the session serves: what holds the request policy, and what sits at the request address.
 data Chain = Chain
@@ -487,11 +512,13 @@ data Chain = Chain
     , atRequestAddress :: [(TxIn, TxOut ConwayEra)]
     , funding :: TxOut ConwayEra
     -- ^ The folder's one output
+    , configured :: CageConfig
+    -- ^ The configuration the registry's state output declares and the library is given
     }
 
 -- | A chain whose only outputs at the request address are the listed requests.
 chainOf :: [(TxIn, TxOut ConwayEra)] -> Chain
-chainOf requests = Chain requests requests feeOut
+chainOf requests = Chain requests requests feeOut cfg
 
 requestAddr :: Addr
 requestAddr = requestAddrFromCfg cfg tokenId Testnet
@@ -505,7 +532,7 @@ viewAt
     -> Root
     -> Chain
     -> Session NoWitness IO
-viewAt asked slot root Chain{listed, atRequestAddress, funding} =
+viewAt asked slot root Chain{listed, atRequestAddress, funding, configured} =
     recording $
         withTip (TipObservation slot (BS.replicate 32 0) 1 0) $
             withPolicyOutputs
@@ -516,8 +543,8 @@ viewAt asked slot root Chain{listed, atRequestAddress, funding} =
                             if addr == requestAddr
                                 then atRequestAddress
                                 else
-                                    if addr == cageAddrFromCfg cfg Testnet
-                                        then [(stateIn, stateOutAt root)]
+                                    if addr == cageAddrFromCfg configured Testnet
+                                        then [(stateIn, stateOutFor configured root)]
                                         else [(feeIn, funding)]
                     )
                     ( withParameters (withSyntheticCosts Fixture.preprodParams) $
@@ -527,7 +554,7 @@ viewAt asked slot root Chain{listed, atRequestAddress, funding} =
                                     pure
                                         [ (reference, output)
                                         | (reference, output) <-
-                                            (stateIn, stateOutAt root) : (feeIn, funding) : listed
+                                            (stateIn, stateOutFor configured root) : (feeIn, funding) : listed
                                         , reference `Set.member` wanted
                                         ]
                                 )
@@ -567,7 +594,14 @@ selectedOver
     -> IO (ConwayTx, [OutputQuery])
 selectedOver active chain refs =
     withRig active chain $ \rig view ->
-        updateTokenSelected cfg view (rigSnapshot rig) tokenId payer ctx0 refs
+        updateTokenSelected
+            (configured chain)
+            view
+            (rigSnapshot rig)
+            tokenId
+            payer
+            ctx0
+            refs
 
 everySettleableOver
     :: [ByteString] -> Chain -> IO (ConwayTx, [OutputQuery])
@@ -1011,7 +1045,10 @@ spec = describe "chunk3 offchain" $ do
                                 )
                             )
                         )
-                -- a booked registration that costs nothing, so the fold donates nothing
+                -- a booked registration of the registry that charges nothing to register, so
+                -- the fold donates nothing: the request declares the cost zero that the
+                -- configuration and the registry's state declare, and holds exactly its cost,
+                -- its tip and its declared carrier
                 free key carrier =
                     ( reqIn1
                     , registrationOutput
@@ -1020,20 +1057,34 @@ spec = describe "chunk3 offchain" $ do
                             , regCarrierAda = carrier
                             }
                     )
+                freeChain requests = (chainOf requests){configured = cfgFree}
+                -- the fixture is the lawful booking it stands for: cost as configured, exact contents
+                lawfulFree booking = case bookedRequestOf cfgFree tokenId booking of
+                    Just (BookedRegistration r) -> do
+                        Coin (regRegistrationCost r)
+                            `shouldBe` defaultRegistrationCost cfgFree
+                        let Coin held = booking ^. coinTxOutL
+                        held
+                            `shouldBe` regRegistrationCost r + regDeclaredTip r + regCarrierAda r
+                    _ ->
+                        expectationFailure
+                            "the free registration is not a booked request of the registry"
                 outputsOf tx = foldr (:) [] (tx ^. bodyTxL . outputsTxBodyL)
             it
                 "folds a registration that costs nothing with its carrier at exactly its minimum, and refuses one lovelace less, and none"
                 $ do
                     let m = least (carrierAt key1 0)
-                    (tx, _) <- selectedOver [] (chainOf [free key1 m]) (reqIn1 :| [])
+                    lawfulFree (snd (free key1 m))
+                    (tx, _) <- selectedOver [] (freeChain [free key1 m]) (reqIn1 :| [])
                     tx ^. bodyTxL . treasuryDonationTxBodyL `shouldBe` Coin 0
                     -- the booked allocation reaches the destination exactly
                     [o ^. coinTxOutL | o <- outputsOf tx, holdsKey key1 o]
                         `shouldBe` [Coin m]
                     forM_ [m - 1, 0] $ \short -> do
+                        lawfulFree (snd (free key1 short))
                         result <-
                             refusedWith
-                                (selectedOver [] (chainOf [free key1 short]) (reqIn1 :| []))
+                                (selectedOver [] (freeChain [free key1 short]) (reqIn1 :| []))
                         case result of
                             Left err -> do
                                 err `shouldSatisfy` isInfixOf "the carrier of the registration of key"
@@ -1047,24 +1098,25 @@ spec = describe "chunk3 offchain" $ do
                 "keeps the change of a fold that donates nothing at its minimum, and refuses it a step under"
                 $ do
                     let request = free key1 1_500_000
-                        booked = case bookedRequestOf cfg tokenId (snd request) of
+                        booked = case bookedRequestOf cfgFree tokenId (snd request) of
                             Just b -> [(fst request, b)]
                             Nothing -> error "the free registration is not a booked request"
-                        mints = either error id (taggedMints cfg ctx0 booked)
-                        -- the surplus of the booking is absorbed by an attached output of the caller,
-                        -- so the folder's change is the one thing left to size
+                        mints = either error id (taggedMints cfgFree ctx0 booked)
+                        -- the booking holds exactly what it declares; the caller pays an attached
+                        -- output from the folder's own funding, which sizes the one thing left,
+                        -- the folder's change
                         direct attached = do
                             rig <- rigWith []
                             asked <- newIORef []
                             fst
                                 <$> connectedFoldTx
                                     ConnectedFoldArgs
-                                        { cfaCfg = cfg
-                                        , cfaSession = viewOver asked (rigRoot rig) (chainOf [request])
+                                        { cfaCfg = cfgFree
+                                        , cfaSession = viewOver asked (rigRoot rig) (freeChain [request])
                                         , cfaTrie = rigManager rig
                                         , cfaToken = tokenId
                                         , cfaFeeAddr = payer
-                                        , cfaStateUtxo = (stateIn, stateOutAt (rigRoot rig))
+                                        , cfaStateUtxo = (stateIn, stateOutFor cfgFree (rigRoot rig))
                                         , cfaReqUtxos = [request]
                                         , cfaFeeUtxo = (feeIn, feeOut)
                                         , cfaSpends = []
@@ -1079,6 +1131,7 @@ spec = describe "chunk3 offchain" $ do
                         changeOf tx = case reverse (outputsOf tx) of
                             change : _ -> change
                             [] -> error "no output"
+                    lawfulFree (snd request)
                     wide <- direct 1_000_000
                     wide ^. bodyTxL . treasuryDonationTxBodyL `shouldBe` Coin 0
                     let Coin wideChange = changeOf wide ^. coinTxOutL

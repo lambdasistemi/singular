@@ -45,10 +45,15 @@ reason no script and no balancer here would catch ('finalBodyRefusals'): an
 output under its minimum lovelace (the state continuation, a carrier, an
 attached output, the change, the collateral return), declared units that add
 up beyond the transaction limit, a transaction too large once its witnesses are
-counted, a fee under the minimum (reference scripts of the inputs and of the
-reference inputs included), collateral absent, insufficient or incoherent, and
+counted, scripts referenced by the inputs and the reference inputs that add up
+beyond what the ledger lets one transaction reference, a fee under the minimum
+(reference scripts of the inputs and of the reference inputs included),
+collateral absent, insufficient or incoherent, and
 a body that does not balance or whose script-integrity hash is not that of its
-redeemers. These refuse to *build* and read the acquired session's parameters;
+redeemers, together with the ledger's own tests of the rest of its rules for a
+body of this shape (references against spent inputs, addresses against the
+network, output values, the scripts, redeemers and datums a body needs). These
+refuse to *build* and read the acquired session's parameters;
 the booked allocations are exact and never changed to make a body pass, so
 they say nothing against a booking's economic admission. With evaluation
 skipped (the adversarial mode) none of them is applied.
@@ -93,6 +98,11 @@ import Lens.Micro ((&), (.~), (^.))
 import PlutusCore.Data qualified as PLC
 
 import Cardano.Ledger.Address (Addr (..), decodeAddrEither)
+import Cardano.Ledger.Alonzo.Rules
+    ( hasExactSetOfRedeemers
+    , missingRequiredDatums
+    , validateOutputTooBigUTxO
+    )
 import Cardano.Ledger.Alonzo.TxBody (scriptIntegrityHashTxBodyL)
 import Cardano.Ledger.Api.PParams
     ( ppCollateralPercentageL
@@ -122,9 +132,22 @@ import Cardano.Ledger.Api.Tx.Out
     , mkBasicTxOut
     , valueTxOutL
     )
-import Cardano.Ledger.Api.Tx.Wits (Redeemers (..), rdmrsTxWitsL)
-import Cardano.Ledger.BaseTypes (StrictMaybe (..))
+import Cardano.Ledger.Api.Tx.Wits
+    ( Redeemers (..)
+    , rdmrsTxWitsL
+    , scriptTxWitsL
+    )
+import Cardano.Ledger.Babbage.Rules
+    ( babbageMissingScripts
+    , disjointRefInputs
+    , validateFailedBabbageScripts
+    , validateScriptsWellFormed
+    )
+import Cardano.Ledger.Babbage.UTxO (getReferenceScripts)
+import Cardano.Ledger.BaseTypes (Network, StrictMaybe (..))
 import Cardano.Ledger.Coin (Coin (..))
+import Cardano.Ledger.Conway.PParams (ConwayEraPParams (..))
+import Cardano.Ledger.Conway.UTxO (txNonDistinctRefScriptsSize)
 import Cardano.Ledger.Core (Script, sizeTxF)
 import Cardano.Ledger.Credential (Credential (..))
 import Cardano.Ledger.Keys (KeyHash, KeyRole (..))
@@ -135,13 +158,22 @@ import Cardano.Ledger.Mary.Value
     , PolicyID
     )
 import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
+import Cardano.Ledger.Rules.ValidationMode (Test)
+import Cardano.Ledger.Shelley.Rules
+    ( validateOutputBootAddrAttrsTooBig
+    , validateWrongNetwork
+    )
+import Cardano.Ledger.State
+    ( EraUTxO (getScriptsHashesNeeded, getScriptsNeeded, getScriptsProvided)
+    , UTxO (..)
+    )
 import Cardano.Ledger.Tools (addDummyWitsTx)
 import Cardano.Ledger.Val (inject, (<+>), (<->))
 import Cardano.Slotting.Slot (SlotNo)
 import PlutusTx.Builtins.Internal (BuiltinData (..))
 import PlutusTx.IsData.Class (ToData (..))
+import Validation (Validation (..))
 
-import Cardano.Tx.Balance (refScriptsSize)
 import Cardano.Tx.Build qualified as Tx
 import Cardano.Tx.Ledger (ConwayTx)
 import Cardano.Tx.Witnesses (estimatedKeyWitnessCount)
@@ -500,6 +532,7 @@ connectedFoldAt observed proofsFor args = do
                 let facts =
                         FinalFacts
                             { ffParams = pp
+                            , ffNetwork = network cfg
                             , ffInputs = known
                             , ffReferences = cfaRefUtxos args
                             , ffLabel = outputLabel members carriers programOutputs
@@ -715,6 +748,8 @@ its output, the outputs its reference inputs name, and what each output is.
 -}
 data FinalFacts = FinalFacts
     { ffParams :: PParams ConwayEra
+    , ffNetwork :: Network
+    -- ^ The network the registry lives on, which every output's address must name
     , ffInputs :: Map TxIn (TxOut ConwayEra)
     , ffReferences :: [(TxIn, TxOut ConwayEra)]
     , ffLabel :: Int -> String
@@ -733,6 +768,10 @@ judged on the body that will be signed, with the witnesses it still needs:
   in steps (each purpose fitting its own declaration is not that);
 * the serialized transaction, with the key witnesses it still needs, fits the
   transaction size limit;
+* the scripts that the inputs and the reference inputs carry, each occurrence
+  counted as the ledger counts it, add up to no more than the ledger allows
+  one transaction to reference (an era constant, read through the
+  parameters), which neither the serialized size nor the fee bounds;
 * the fee covers the minimum of that transaction, reference scripts of the
   inputs and of the reference inputs included;
 * collateral is present, key-locked, not more inputs than allowed, returns what
@@ -740,7 +779,15 @@ judged on the body that will be signed, with the witnesses it still needs:
   the fee at the protocol's percentage;
 * inputs, mint, outputs, donation and fee balance in lovelace and in every
   asset;
-* the script-integrity hash is that of the redeemers the body declares.
+* the script-integrity hash is that of the redeemers the body declares;
+* the rest of the rules of the ledger that a body of this shape can still
+  break, asked of the ledger's own tests (the functions its rules call): no
+  input also referenced where the protocol forbids it, every output's address on
+  the registry's network, no bootstrap address with attributes over the limit,
+  no output whose value is over the limit, the scripts the body needs
+  provided and none other (native scripts validating), the redeemers and
+  datums those scripts need present and no others, and every script well
+  formed.
 
 Not established here, because nothing before the signature can: the signatures
 themselves, the validity of the interval against a future slot, and inclusion.
@@ -751,10 +798,12 @@ finalBodyRefusals facts tx =
         [ minima
         , executionTotal
         , serializedSize
+        , referenceScriptCap
         , minimumFee
         , collateral
         , conservation
         , integrity
+        , ledgerRules
         ]
   where
     pp = ffParams facts
@@ -763,7 +812,6 @@ finalBodyRefusals facts tx =
     outs = toList (body ^. outputsTxBodyL)
     spent = body ^. inputsTxBodyL
     collateralIns = body ^. collateralInputsTxBodyL
-    referenced = body ^. referenceInputsTxBodyL
     resolved = ffInputs facts
     coinOf (Coin c) = c
     fee = coinOf (body ^. feeTxBodyL)
@@ -833,14 +881,65 @@ finalBodyRefusals facts tx =
             | size > limit
             ]
 
+    -- the ledger's own count of the scripts the spent and the reference inputs
+    -- carry: one occurrence per input, so copies at distinct inputs all count
+    refBytes =
+        txNonDistinctRefScriptsSize
+            (UTxO (Map.fromList (Map.toList resolved <> ffReferences facts)))
+            tx
+
+    -- The rules of the ledger that a body of this shape can still break, asked
+    -- of the ledger's own tests (the functions its rules call), over the
+    -- resolved inputs and the reference outputs: the references against the
+    -- spent inputs, each output's address, bootstrap attributes and value, the
+    -- scripts the body needs against those it provides, the redeemers and
+    -- datums those scripts need, and every script's form.
+    ledgerView = UTxO (Map.fromList (Map.toList resolved <> ffReferences facts))
+    allOutputs = outs <> [r | SJust r <- [body ^. collateralReturnTxBodyL]]
+    scriptsNeeded' = getScriptsNeeded ledgerView body
+    scriptsProvided' = getScriptsProvided ledgerView tx
+    neededHashes = getScriptsHashesNeeded scriptsNeeded'
+    referenceScripts =
+        Map.keysSet
+            ( getReferenceScripts
+                ledgerView
+                (spent <> body ^. referenceInputsTxBodyL)
+            )
+    witnessScripts = Map.keysSet (tx ^. witsTxL . scriptTxWitsL)
+    ledgerRules
+        | not (null unresolved) = []
+        | otherwise =
+            concat
+                [ ledgerTest
+                    (disjointRefInputs pp spent (body ^. referenceInputsTxBodyL))
+                , ledgerTest (validateOutputTooBigUTxO pp allOutputs)
+                , ledgerTest (validateOutputBootAddrAttrsTooBig allOutputs)
+                , ledgerTest (validateWrongNetwork (ffNetwork facts) allOutputs)
+                , ledgerTest
+                    (babbageMissingScripts pp neededHashes referenceScripts witnessScripts)
+                , ledgerTest
+                    (validateFailedBabbageScripts tx scriptsProvided' neededHashes)
+                , ledgerTest (missingRequiredDatums ledgerView tx)
+                , ledgerTest (hasExactSetOfRedeemers tx scriptsProvided' scriptsNeeded')
+                , ledgerTest (validateScriptsWellFormed pp tx)
+                ]
+
+    referenceScriptCap
+        | not (null unresolved) = []
+        | otherwise =
+            let limit = toInteger (pp ^. ppMaxRefScriptSizePerTxG)
+            in  [ "the scripts the inputs and the reference inputs carry add up to "
+                    <> show refBytes
+                    <> " bytes, over the ledger's limit of "
+                    <> show limit
+                    <> " bytes of reference scripts in one transaction"
+                | toInteger refBytes > limit
+                ]
+
     minimumFee
         | not (null unresolved) = []
         | otherwise =
-            let refBytes =
-                    refScriptsSize
-                        (spent <> referenced)
-                        (Map.toList resolved <> ffReferences facts)
-                needed = coinOf (estimateMinFeeTx pp tx keyWitnesses 0 refBytes)
+            let needed = coinOf (estimateMinFeeTx pp tx keyWitnesses 0 refBytes)
             in  [ "the fee of "
                     <> show fee
                     <> " lovelace is under the "
@@ -949,6 +1048,17 @@ finalBodyRefusals facts tx =
         | body ^. scriptIntegrityHashTxBodyL
             /= computeScriptIntegrity pp (tx ^. witsTxL . rdmrsTxWitsL)
         , not (Map.null declared)
+        ]
+
+{- | What one of the ledger's own tests refuses, each failure as the ledger
+reports it.
+-}
+ledgerTest :: (Show e) => Test e -> [String]
+ledgerTest = \case
+    Success () -> []
+    Failure failures ->
+        [ "the ledger would refuse the body: " <> take 400 (show failure)
+        | failure <- toList failures
         ]
 
 {- | What an output of the finished body is, for a refusal that names it: the
