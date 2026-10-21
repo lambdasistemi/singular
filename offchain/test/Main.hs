@@ -48,6 +48,7 @@ import Singular.Registry.NetworkTimeSpec qualified
 import Singular.Registry.OneViewSpec qualified
 import Singular.Registry.PageSpec qualified
 import Singular.Registry.PhaseLogSpec qualified
+import Singular.Registry.PlainJsonSpec qualified
 import Singular.Registry.Private.ArchiveSpec qualified
 import Singular.Registry.ProviderSpec qualified
 import Singular.Registry.SessionServicesSpec qualified
@@ -160,6 +161,9 @@ main = hspec $ do
     describe
         (tagged "Singular.Registry.PhaseLog" [Provider, History, Recovery])
         Singular.Registry.PhaseLogSpec.spec
+    describe
+        (tagged "Singular.Registry.PlainJson" [Application])
+        Singular.Registry.PlainJsonSpec.spec
     describe
         (tagged "Singular.Registry.Provider" [Provider])
         Singular.Registry.ProviderSpec.spec
