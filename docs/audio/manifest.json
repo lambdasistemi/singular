@@ -194941,17 +194941,17 @@
    ]
   },
   "docs-offchain-api-reference/what-this-reference-contains-02": {
-   "audio_sha256": "fecf7d9930a2d56f2fbfea478c70ba1b4db20fb71fdf796d91bb7214c4d3968b",
+   "audio_sha256": "ca1013cfdf528d1d83cdc7833fbe0cb82cc799632f88f58441d014b9985b7685",
    "characters": 1875,
    "cost": 0.0018562499999999998,
-   "duration": 131.7,
+   "duration": 131.525,
    "index": 2,
-   "key": "663b32f56a2228ec68b1a1a2f0b308c859a90e66020d23599967e5e7fdabed9f",
+   "key": "1fc1c9264b21b471952714240b12da3a5019c89adbfd7863758a23719f3d0eca",
    "page": "docs/offchain-api-reference.md",
    "pause_ms": 400,
    "section": "what-this-reference-contains",
-   "sent_text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 74 modules in three kinds: 57 explicitly exposed modules and 4 re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger, Singular.Registry.LedgerProvider, Singular.Registry.Evidence and Singular.Registry.Signing are the re-exports: their implementations are owned by the public local-services component (offchain/local-services/) and the main library exposes their stable import paths. The generic provider interface and evidence types let a caller supply capabilities without selecting a node runtime; the Koios constructor supplies unbound, unverified HTTP facts through that interface. The runtime service modules outside this extent — the terminal composition and its transport in koios-http, and the remaining service modules of local-services — are documented with source links in Runtime service ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
-   "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 74 modules in three kinds: 57 explicitly exposed modules and 4 re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger, Singular.Registry.LedgerProvider, Singular.Registry.Evidence and Singular.Registry.Signing are the re-exports: their implementations are owned by the public local-services component (offchain/local-services/) and the main library exposes their stable import paths. The generic provider interface and evidence types let a caller supply capabilities without selecting a node runtime; the Koios constructor supplies unbound, unverified HTTP facts through that interface. The runtime service modules outside this extent — the terminal composition and its transport in koios-http, and the remaining service modules of local-services — are documented with source links in Runtime service ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
+   "sent_text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 75 modules in three kinds: 58 explicitly exposed modules and 4 re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger, Singular.Registry.LedgerProvider, Singular.Registry.Evidence and Singular.Registry.Signing are the re-exports: their implementations are owned by the public local-services component (offchain/local-services/) and the main library exposes their stable import paths. The generic provider interface and evidence types let a caller supply capabilities without selecting a node runtime; the Koios constructor supplies unbound, unverified HTTP facts through that interface. The runtime service modules outside this extent — the terminal composition and its transport in koios-http, and the remaining service modules of local-services — are documented with source links in Runtime service ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
+   "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 75 modules in three kinds: 58 explicitly exposed modules and 4 re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger, Singular.Registry.LedgerProvider, Singular.Registry.Evidence and Singular.Registry.Signing are the re-exports: their implementations are owned by the public local-services component (offchain/local-services/) and the main library exposes their stable import paths. The generic provider interface and evidence types let a caller supply capabilities without selecting a node runtime; the Koios constructor supplies unbound, unverified HTTP facts through that interface. The runtime service modules outside this extent — the terminal composition and its transport in koios-http, and the remaining service modules of local-services — are documented with source links in Runtime service ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
    "words": [
     {
      "end": 0.325,
@@ -195134,1464 +195134,1464 @@
      "text": "is"
     },
     {
-     "end": 14.075,
+     "end": 14.15,
      "start": 13.45,
-     "text": "74"
+     "text": "75"
     },
     {
-     "end": 14.525,
-     "start": 14.075,
+     "end": 14.6,
+     "start": 14.15,
      "text": "modules"
     },
     {
-     "end": 14.675,
-     "start": 14.525,
+     "end": 14.75,
+     "start": 14.6,
      "text": "in"
     },
     {
-     "end": 14.9,
-     "start": 14.675,
+     "end": 14.975,
+     "start": 14.75,
      "text": "three"
     },
     {
-     "end": 15.85,
-     "start": 14.9,
+     "end": 15.925,
+     "start": 14.975,
      "text": "kinds"
     },
     {
-     "end": 16.05,
-     "start": 15.85,
+     "end": 16.125,
+     "start": 15.925,
      "text": ":"
     },
     {
-     "end": 16.938,
-     "start": 16.25,
-     "text": "57"
+     "end": 16.85,
+     "start": 16.325,
+     "text": "58"
     },
     {
-     "end": 17.625,
-     "start": 16.938,
+     "end": 17.525,
+     "start": 16.85,
      "text": "explicitly"
     },
     {
-     "end": 18.225,
-     "start": 17.625,
+     "end": 18.1,
+     "start": 17.525,
      "text": "exposed"
     },
     {
-     "end": 18.837,
-     "start": 18.225,
+     "end": 18.712,
+     "start": 18.1,
      "text": "modules"
     },
     {
-     "end": 19.025,
-     "start": 18.837,
+     "end": 18.9,
+     "start": 18.712,
      "text": "and"
     },
     {
-     "end": 19.388,
-     "start": 19.025,
+     "end": 19.212,
+     "start": 18.9,
      "text": "4"
     },
     {
-     "end": 20.1,
-     "start": 19.388,
+     "end": 19.925,
+     "start": 19.212,
      "text": "re-exported"
     },
     {
-     "end": 20.712,
-     "start": 20.1,
+     "end": 20.562,
+     "start": 19.925,
      "text": "modules"
     },
     {
-     "end": 20.85,
-     "start": 20.712,
+     "end": 20.7,
+     "start": 20.562,
      "text": "are"
     },
     {
-     "end": 20.987,
-     "start": 20.85,
+     "end": 20.837,
+     "start": 20.7,
      "text": "what"
     },
     {
-     "end": 21.05,
-     "start": 20.987,
+     "end": 20.9,
+     "start": 20.837,
      "text": "a"
     },
     {
-     "end": 21.425,
-     "start": 21.05,
+     "end": 21.275,
+     "start": 20.9,
      "text": "caller"
     },
     {
-     "end": 22.625,
-     "start": 21.425,
+     "end": 22.45,
+     "start": 21.275,
      "text": "imports"
     },
     {
-     "end": 22.825,
-     "start": 22.625,
+     "end": 22.65,
+     "start": 22.45,
      "text": ";"
     },
     {
-     "end": 23.138,
-     "start": 23.025,
+     "end": 22.962,
+     "start": 22.85,
      "text": "the"
     },
     {
-     "end": 23.413,
-     "start": 23.138,
+     "end": 23.237,
+     "start": 22.962,
      "text": "two"
     },
     {
-     "end": 23.675,
-     "start": 23.413,
+     "end": 23.5,
+     "start": 23.237,
      "text": "trie"
     },
     {
-     "end": 24.362,
-     "start": 23.675,
+     "end": 24.188,
+     "start": 23.5,
      "text": "capability"
     },
     {
-     "end": 24.825,
-     "start": 24.362,
+     "end": 24.65,
+     "start": 24.188,
      "text": "owners"
     },
     {
-     "end": 25.237,
-     "start": 24.825,
+     "end": 25.062,
+     "start": 24.65,
      "text": "behind"
     },
     {
-     "end": 25.337,
-     "start": 25.237,
+     "end": 25.163,
+     "start": 25.062,
      "text": "the"
     },
     {
-     "end": 25.975,
-     "start": 25.337,
+     "end": 25.8,
+     "start": 25.163,
      "text": "TrieState"
     },
     {
-     "end": 26.575,
-     "start": 25.975,
+     "end": 26.4,
+     "start": 25.8,
      "text": "facade"
     },
     {
-     "end": 26.65,
-     "start": 26.575,
+     "end": 26.475,
+     "start": 26.4,
      "text": "("
     },
     {
-     "end": 27.225,
-     "start": 26.65,
+     "end": 27.05,
+     "start": 26.475,
      "text": "Singular"
     },
     {
-     "end": 27.325,
-     "start": 27.225,
+     "end": 27.15,
+     "start": 27.05,
      "text": "."
     },
     {
-     "end": 27.925,
-     "start": 27.325,
+     "end": 27.75,
+     "start": 27.15,
      "text": "Registry"
     },
     {
-     "end": 28.0,
-     "start": 27.925,
+     "end": 27.825,
+     "start": 27.75,
      "text": "."
     },
     {
-     "end": 28.625,
-     "start": 28.0,
+     "end": 28.45,
+     "start": 27.825,
      "text": "TrieState"
     },
     {
-     "end": 28.7,
-     "start": 28.625,
+     "end": 28.525,
+     "start": 28.45,
      "text": "."
     },
     {
-     "end": 28.938,
-     "start": 28.7,
+     "end": 28.763,
+     "start": 28.525,
      "text": "Core"
     },
     {
-     "end": 29.05,
-     "start": 28.938,
+     "end": 28.875,
+     "start": 28.763,
      "text": "and"
     },
     {
-     "end": 30.1,
-     "start": 29.05,
+     "end": 29.925,
+     "start": 28.875,
      "text": ".Types"
     },
     {
-     "end": 30.275,
-     "start": 30.1,
+     "end": 30.1,
+     "start": 29.925,
      "text": ")"
     },
     {
-     "end": 30.325,
-     "start": 30.275,
+     "end": 30.15,
+     "start": 30.1,
      "text": ","
     },
     {
-     "end": 30.638,
-     "start": 30.525,
+     "end": 30.462,
+     "start": 30.35,
      "text": "the"
     },
     {
-     "end": 30.938,
-     "start": 30.638,
+     "end": 30.763,
+     "start": 30.462,
      "text": "three"
     },
     {
-     "end": 31.312,
-     "start": 30.938,
+     "end": 31.138,
+     "start": 30.763,
      "text": "fold"
     },
     {
-     "end": 31.725,
-     "start": 31.312,
+     "end": 31.55,
+     "start": 31.138,
      "text": "owners"
     },
     {
-     "end": 32.112,
-     "start": 31.725,
+     "end": 31.938,
+     "start": 31.55,
      "text": "behind"
     },
     {
-     "end": 32.225,
-     "start": 32.112,
+     "end": 32.05,
+     "start": 31.938,
      "text": "the"
     },
     {
-     "end": 32.675,
-     "start": 32.225,
+     "end": 32.5,
+     "start": 32.05,
      "text": "Update"
     },
     {
-     "end": 33.275,
-     "start": 32.675,
+     "end": 33.1,
+     "start": 32.5,
      "text": "facade"
     },
     {
-     "end": 33.362,
-     "start": 33.275,
+     "end": 33.188,
+     "start": 33.1,
      "text": "—"
     },
     {
-     "end": 33.9,
-     "start": 33.362,
+     "end": 33.725,
+     "start": 33.188,
      "text": "Singular"
     },
     {
-     "end": 34.0,
-     "start": 33.9,
+     "end": 33.825,
+     "start": 33.725,
      "text": "."
     },
     {
-     "end": 34.65,
-     "start": 34.0,
+     "end": 34.475,
+     "start": 33.825,
      "text": "Registry"
     },
     {
-     "end": 34.75,
-     "start": 34.65,
+     "end": 34.575,
+     "start": 34.475,
      "text": "."
     },
     {
-     "end": 35.5,
-     "start": 34.75,
+     "end": 35.325,
+     "start": 34.575,
      "text": "TxBuilder"
     },
     {
-     "end": 35.55,
-     "start": 35.5,
+     "end": 35.375,
+     "start": 35.325,
      "text": "."
     },
     {
-     "end": 35.925,
-     "start": 35.55,
+     "end": 35.75,
+     "start": 35.375,
      "text": "Update"
     },
     {
-     "end": 36.0,
-     "start": 35.925,
+     "end": 35.825,
+     "start": 35.75,
      "text": "."
     },
     {
-     "end": 36.95,
-     "start": 36.0,
+     "end": 36.775,
+     "start": 35.825,
      "text": "Build"
     },
     {
-     "end": 37.175,
-     "start": 36.95,
+     "end": 37.0,
+     "start": 36.775,
      "text": ","
     },
     {
-     "end": 38.075,
-     "start": 37.375,
+     "end": 37.9,
+     "start": 37.2,
      "text": ".Context"
     },
     {
-     "end": 38.225,
-     "start": 38.075,
+     "end": 38.05,
+     "start": 37.9,
      "text": "and"
     },
     {
-     "end": 38.8,
-     "start": 38.225,
+     "end": 38.625,
+     "start": 38.05,
      "text": ".Duties"
     },
     {
-     "end": 38.862,
-     "start": 38.8,
+     "end": 38.688,
+     "start": 38.625,
      "text": "—"
     },
     {
-     "end": 38.987,
-     "start": 38.862,
+     "end": 38.812,
+     "start": 38.688,
      "text": "the"
     },
     {
-     "end": 39.35,
-     "start": 38.987,
+     "end": 39.175,
+     "start": 38.812,
      "text": "five"
     },
     {
-     "end": 39.737,
-     "start": 39.35,
+     "end": 39.562,
+     "start": 39.175,
      "text": "wire"
     },
     {
-     "end": 40.125,
-     "start": 39.737,
+     "end": 39.95,
+     "start": 39.562,
      "text": "owners"
     },
     {
-     "end": 40.513,
-     "start": 40.125,
+     "end": 40.338,
+     "start": 39.95,
      "text": "behind"
     },
     {
-     "end": 40.6,
-     "start": 40.513,
+     "end": 40.425,
+     "start": 40.338,
      "text": "the"
     },
     {
-     "end": 40.95,
-     "start": 40.6,
+     "end": 40.775,
+     "start": 40.425,
      "text": "Types"
     },
     {
-     "end": 41.55,
-     "start": 40.95,
+     "end": 41.375,
+     "start": 40.775,
      "text": "facade"
     },
     {
-     "end": 41.625,
-     "start": 41.55,
+     "end": 41.45,
+     "start": 41.375,
      "text": "—"
     },
     {
-     "end": 42.1,
-     "start": 41.625,
+     "end": 41.925,
+     "start": 41.45,
      "text": "Singular"
     },
     {
-     "end": 42.175,
-     "start": 42.1,
+     "end": 42.0,
+     "start": 41.925,
      "text": "."
     },
     {
-     "end": 42.775,
-     "start": 42.175,
+     "end": 42.6,
+     "start": 42.0,
      "text": "Registry"
     },
     {
-     "end": 42.875,
-     "start": 42.775,
+     "end": 42.7,
+     "start": 42.6,
      "text": "."
     },
     {
-     "end": 43.2,
-     "start": 42.875,
+     "end": 43.025,
+     "start": 42.7,
      "text": "Wire"
     },
     {
-     "end": 43.275,
-     "start": 43.2,
+     "end": 43.1,
+     "start": 43.025,
      "text": "."
     },
     {
-     "end": 44.375,
-     "start": 43.275,
+     "end": 44.2,
+     "start": 43.1,
      "text": "Primitive"
     },
     {
-     "end": 44.6,
-     "start": 44.375,
+     "end": 44.425,
+     "start": 44.2,
      "text": ","
     },
     {
-     "end": 45.15,
-     "start": 44.775,
+     "end": 44.975,
+     "start": 44.6,
      "text": ".Request"
     },
     {
-     "end": 45.2,
-     "start": 45.15,
+     "end": 45.025,
+     "start": 44.975,
      "text": ","
     },
     {
-     "end": 45.875,
-     "start": 45.2,
+     "end": 45.7,
+     "start": 45.025,
      "text": ".State"
     },
     {
-     "end": 46.075,
-     "start": 45.875,
+     "end": 45.9,
+     "start": 45.7,
      "text": ","
     },
     {
-     "end": 46.625,
-     "start": 46.275,
+     "end": 46.45,
+     "start": 46.1,
      "text": ".Proof"
     },
     {
-     "end": 46.75,
-     "start": 46.625,
+     "end": 46.575,
+     "start": 46.45,
      "text": "and"
     },
     {
-     "end": 47.375,
-     "start": 46.75,
+     "end": 47.2,
+     "start": 46.575,
      "text": ".Redeemer"
     },
     {
-     "end": 47.463,
-     "start": 47.375,
+     "end": 47.287,
+     "start": 47.2,
      "text": "—"
     },
     {
-     "end": 47.588,
-     "start": 47.463,
+     "end": 47.412,
+     "start": 47.287,
      "text": "and"
     },
     {
-     "end": 47.713,
-     "start": 47.588,
+     "end": 47.537,
+     "start": 47.412,
      "text": "the"
     },
     {
-     "end": 47.95,
-     "start": 47.713,
+     "end": 47.775,
+     "start": 47.537,
      "text": "three"
     },
     {
-     "end": 48.537,
-     "start": 47.95,
+     "end": 48.362,
+     "start": 47.775,
      "text": "deployment"
     },
     {
-     "end": 48.975,
-     "start": 48.537,
+     "end": 48.8,
+     "start": 48.362,
      "text": "owners"
     },
     {
-     "end": 49.388,
-     "start": 48.975,
+     "end": 49.213,
+     "start": 48.8,
      "text": "behind"
     },
     {
-     "end": 49.475,
-     "start": 49.388,
+     "end": 49.3,
+     "start": 49.213,
      "text": "the"
     },
     {
-     "end": 50.075,
-     "start": 49.475,
+     "end": 49.9,
+     "start": 49.3,
      "text": "Deployment"
     },
     {
-     "end": 50.688,
-     "start": 50.075,
+     "end": 50.513,
+     "start": 49.9,
      "text": "facade"
     },
     {
-     "end": 50.787,
-     "start": 50.688,
+     "end": 50.612,
+     "start": 50.513,
      "text": "—"
     },
     {
-     "end": 51.375,
-     "start": 50.787,
+     "end": 51.2,
+     "start": 50.612,
      "text": "Singular"
     },
     {
-     "end": 51.475,
-     "start": 51.375,
+     "end": 51.3,
+     "start": 51.2,
      "text": "."
     },
     {
-     "end": 52.075,
-     "start": 51.475,
+     "end": 51.9,
+     "start": 51.3,
      "text": "Registry"
     },
     {
-     "end": 52.15,
-     "start": 52.075,
+     "end": 51.975,
+     "start": 51.9,
      "text": "."
     },
     {
-     "end": 52.75,
-     "start": 52.15,
+     "end": 52.575,
+     "start": 51.975,
      "text": "Deployment"
     },
     {
-     "end": 52.85,
-     "start": 52.75,
+     "end": 52.675,
+     "start": 52.575,
      "text": "."
     },
     {
-     "end": 54.15,
-     "start": 52.85,
+     "end": 53.975,
+     "start": 52.675,
      "text": "Manifest"
     },
     {
-     "end": 54.375,
-     "start": 54.15,
+     "end": 54.2,
+     "start": 53.975,
      "text": ","
     },
     {
-     "end": 55.15,
-     "start": 54.65,
+     "end": 54.975,
+     "start": 54.475,
      "text": ".Mirror"
     },
     {
-     "end": 55.325,
-     "start": 55.15,
+     "end": 55.15,
+     "start": 54.975,
      "text": "and"
     },
     {
-     "end": 55.4,
-     "start": 55.325,
+     "end": 55.225,
+     "start": 55.15,
      "text": "."
     },
     {
-     "end": 56.025,
-     "start": 55.4,
+     "end": 55.85,
+     "start": 55.225,
      "text": "Attach"
     },
     {
-     "end": 56.112,
-     "start": 56.025,
+     "end": 55.938,
+     "start": 55.85,
      "text": "—"
     },
     {
-     "end": 56.287,
-     "start": 56.112,
+     "end": 56.112,
+     "start": 55.938,
      "text": "are"
     },
     {
-     "end": 57.2,
-     "start": 56.287,
+     "end": 57.025,
+     "start": 56.112,
      "text": "package-internal"
     },
     {
-     "end": 58.05,
-     "start": 57.2,
+     "end": 57.875,
+     "start": 57.025,
      "text": "other-modules"
     },
     {
-     "end": 58.237,
-     "start": 58.05,
+     "end": 58.062,
+     "start": 57.875,
      "text": "with"
     },
     {
-     "end": 58.862,
-     "start": 58.237,
+     "end": 58.688,
+     "start": 58.062,
      "text": "generated"
     },
     {
-     "end": 59.325,
-     "start": 58.862,
+     "end": 59.15,
+     "start": 58.688,
      "text": "pages"
     },
     {
-     "end": 59.6,
-     "start": 59.325,
+     "end": 59.425,
+     "start": 59.15,
      "text": "here"
     },
     {
-     "end": 59.725,
-     "start": 59.6,
+     "end": 59.55,
+     "start": 59.425,
      "text": "for"
     },
     {
-     "end": 59.825,
-     "start": 59.725,
+     "end": 59.65,
+     "start": 59.55,
      "text": "the"
     },
     {
-     "end": 60.487,
-     "start": 59.825,
+     "end": 60.312,
+     "start": 59.65,
      "text": "contributor"
     },
     {
-     "end": 60.9,
-     "start": 60.487,
+     "end": 60.725,
+     "start": 60.312,
      "text": "reading"
     },
     {
-     "end": 61.0,
-     "start": 60.9,
+     "end": 60.825,
+     "start": 60.725,
      "text": "the"
     },
     {
-     "end": 61.575,
-     "start": 61.0,
+     "end": 61.4,
+     "start": 60.825,
      "text": "facades'"
     },
     {
-     "end": 63.25,
-     "start": 61.575,
+     "end": 63.075,
+     "start": 61.4,
      "text": "implementations"
     },
     {
-     "end": 63.45,
-     "start": 63.25,
+     "end": 63.275,
+     "start": 63.075,
      "text": ","
     },
     {
-     "end": 63.737,
-     "start": 63.625,
+     "end": 63.562,
+     "start": 63.45,
      "text": "but"
     },
     {
-     "end": 63.9,
-     "start": 63.737,
+     "end": 63.725,
+     "start": 63.562,
      "text": "no"
     },
     {
-     "end": 64.188,
-     "start": 63.9,
+     "end": 64.012,
+     "start": 63.725,
      "text": "caller"
     },
     {
-     "end": 64.475,
-     "start": 64.188,
+     "end": 64.3,
+     "start": 64.012,
      "text": "import"
     },
     {
-     "end": 65.225,
-     "start": 64.475,
+     "end": 65.05,
+     "start": 64.3,
      "text": "path"
     },
     {
-     "end": 65.45,
-     "start": 65.225,
+     "end": 65.275,
+     "start": 65.05,
      "text": ":"
     },
     {
-     "end": 65.725,
-     "start": 65.65,
+     "end": 65.55,
+     "start": 65.475,
      "text": "a"
     },
     {
-     "end": 66.1,
-     "start": 65.725,
+     "end": 65.925,
+     "start": 65.55,
      "text": "caller"
     },
     {
-     "end": 66.675,
-     "start": 66.1,
+     "end": 66.5,
+     "start": 65.925,
      "text": "compiles"
     },
     {
-     "end": 67.012,
-     "start": 66.675,
+     "end": 66.838,
+     "start": 66.5,
      "text": "against"
     },
     {
-     "end": 67.1,
-     "start": 67.012,
+     "end": 66.925,
+     "start": 66.838,
      "text": "the"
     },
     {
-     "end": 67.6,
-     "start": 67.1,
+     "end": 67.425,
+     "start": 66.925,
      "text": "facades'"
     },
     {
-     "end": 68.225,
-     "start": 67.6,
+     "end": 68.05,
+     "start": 67.425,
      "text": "exports"
     },
     {
-     "end": 68.3,
-     "start": 68.225,
+     "end": 68.125,
+     "start": 68.05,
      "text": ","
     },
     {
-     "end": 68.512,
-     "start": 68.3,
+     "end": 68.338,
+     "start": 68.125,
      "text": "not"
     },
     {
-     "end": 68.838,
-     "start": 68.512,
+     "end": 68.662,
+     "start": 68.338,
      "text": "against"
     },
     {
-     "end": 69.05,
-     "start": 68.838,
+     "end": 68.875,
+     "start": 68.662,
      "text": "these"
     },
     {
-     "end": 70.15,
-     "start": 69.05,
+     "end": 69.975,
+     "start": 68.875,
      "text": "modules"
     },
     {
-     "end": 70.35,
-     "start": 70.15,
+     "end": 70.175,
+     "start": 69.975,
      "text": "."
     },
     {
-     "end": 70.975,
-     "start": 70.575,
+     "end": 70.8,
+     "start": 70.4,
      "text": "Singular"
     },
     {
-     "end": 71.025,
-     "start": 70.975,
+     "end": 70.85,
+     "start": 70.8,
      "text": "."
     },
     {
-     "end": 71.475,
-     "start": 71.025,
+     "end": 71.3,
+     "start": 70.85,
      "text": "Registry"
     },
     {
-     "end": 71.55,
-     "start": 71.475,
+     "end": 71.375,
+     "start": 71.3,
      "text": "."
     },
     {
-     "end": 71.95,
-     "start": 71.55,
+     "end": 71.775,
+     "start": 71.375,
      "text": "Ledger"
     },
     {
-     "end": 72.062,
-     "start": 71.95,
+     "end": 71.887,
+     "start": 71.775,
      "text": ","
     },
     {
-     "end": 72.55,
-     "start": 72.062,
+     "end": 72.375,
+     "start": 71.887,
      "text": "Singular"
     },
     {
-     "end": 72.6,
-     "start": 72.55,
+     "end": 72.425,
+     "start": 72.375,
      "text": "."
     },
     {
-     "end": 73.075,
-     "start": 72.6,
+     "end": 72.9,
+     "start": 72.425,
      "text": "Registry"
     },
     {
-     "end": 73.15,
-     "start": 73.075,
+     "end": 72.975,
+     "start": 72.9,
      "text": "."
     },
     {
-     "end": 74.35,
-     "start": 73.15,
+     "end": 74.175,
+     "start": 72.975,
      "text": "LedgerProvider"
     },
     {
-     "end": 74.575,
-     "start": 74.35,
+     "end": 74.4,
+     "start": 74.175,
      "text": ","
     },
     {
-     "end": 75.25,
-     "start": 74.8,
+     "end": 75.075,
+     "start": 74.625,
      "text": "Singular"
     },
     {
-     "end": 75.325,
-     "start": 75.25,
+     "end": 75.15,
+     "start": 75.075,
      "text": "."
     },
     {
-     "end": 75.875,
-     "start": 75.325,
+     "end": 75.7,
+     "start": 75.15,
      "text": "Registry"
     },
     {
-     "end": 75.95,
-     "start": 75.875,
+     "end": 75.775,
+     "start": 75.7,
      "text": "."
     },
     {
-     "end": 76.45,
-     "start": 75.95,
+     "end": 76.275,
+     "start": 75.775,
      "text": "Evidence"
     },
     {
-     "end": 76.613,
-     "start": 76.45,
+     "end": 76.438,
+     "start": 76.275,
      "text": "and"
     },
     {
-     "end": 77.1,
-     "start": 76.613,
+     "end": 76.925,
+     "start": 76.438,
      "text": "Singular"
     },
     {
-     "end": 77.15,
-     "start": 77.1,
+     "end": 76.975,
+     "start": 76.925,
      "text": "."
     },
     {
-     "end": 77.75,
-     "start": 77.15,
+     "end": 77.575,
+     "start": 76.975,
      "text": "Registry"
     },
     {
-     "end": 77.875,
-     "start": 77.75,
+     "end": 77.7,
+     "start": 77.575,
      "text": "."
     },
     {
-     "end": 78.25,
-     "start": 77.875,
+     "end": 78.075,
+     "start": 77.7,
      "text": "Signing"
     },
     {
-     "end": 78.338,
-     "start": 78.25,
+     "end": 78.162,
+     "start": 78.075,
      "text": "are"
     },
     {
-     "end": 78.425,
-     "start": 78.338,
+     "end": 78.25,
+     "start": 78.162,
      "text": "the"
     },
     {
-     "end": 79.725,
-     "start": 78.425,
+     "end": 79.55,
+     "start": 78.25,
      "text": "re-exports"
     },
     {
-     "end": 79.925,
-     "start": 79.725,
+     "end": 79.75,
+     "start": 79.55,
      "text": ":"
     },
     {
-     "end": 80.287,
-     "start": 80.15,
+     "end": 80.113,
+     "start": 79.975,
      "text": "their"
     },
     {
-     "end": 81.225,
-     "start": 80.287,
+     "end": 81.05,
+     "start": 80.113,
      "text": "implementations"
     },
     {
-     "end": 81.387,
-     "start": 81.225,
+     "end": 81.213,
+     "start": 81.05,
      "text": "are"
     },
     {
-     "end": 81.775,
-     "start": 81.387,
+     "end": 81.6,
+     "start": 81.213,
      "text": "owned"
     },
     {
-     "end": 81.95,
-     "start": 81.775,
+     "end": 81.775,
+     "start": 81.6,
      "text": "by"
     },
     {
-     "end": 82.062,
-     "start": 81.95,
+     "end": 81.887,
+     "start": 81.775,
      "text": "the"
     },
     {
-     "end": 82.475,
-     "start": 82.062,
+     "end": 82.3,
+     "start": 81.887,
      "text": "public"
     },
     {
-     "end": 83.35,
-     "start": 82.475,
+     "end": 83.175,
+     "start": 82.3,
      "text": "local-services"
     },
     {
-     "end": 84.037,
-     "start": 83.35,
+     "end": 83.863,
+     "start": 83.175,
      "text": "component"
     },
     {
-     "end": 84.125,
-     "start": 84.037,
+     "end": 83.95,
+     "start": 83.863,
      "text": "("
     },
     {
-     "end": 86.675,
-     "start": 84.125,
+     "end": 86.5,
+     "start": 83.95,
      "text": "offchain/local-services/"
     },
     {
-     "end": 86.775,
-     "start": 86.675,
+     "end": 86.6,
+     "start": 86.5,
      "text": ")"
     },
     {
-     "end": 86.887,
-     "start": 86.775,
+     "end": 86.713,
+     "start": 86.6,
      "text": "and"
     },
     {
-     "end": 86.975,
-     "start": 86.887,
+     "end": 86.8,
+     "start": 86.713,
      "text": "the"
     },
     {
-     "end": 87.275,
-     "start": 86.975,
+     "end": 87.1,
+     "start": 86.8,
      "text": "main"
     },
     {
-     "end": 87.85,
-     "start": 87.275,
+     "end": 87.675,
+     "start": 87.1,
      "text": "library"
     },
     {
-     "end": 88.5,
-     "start": 87.85,
+     "end": 88.325,
+     "start": 87.675,
      "text": "exposes"
     },
     {
-     "end": 88.713,
-     "start": 88.5,
+     "end": 88.537,
+     "start": 88.325,
      "text": "their"
     },
     {
-     "end": 89.2,
-     "start": 88.713,
+     "end": 89.025,
+     "start": 88.537,
      "text": "stable"
     },
     {
-     "end": 89.675,
-     "start": 89.2,
+     "end": 89.5,
+     "start": 89.025,
      "text": "import"
     },
     {
-     "end": 90.9,
-     "start": 89.675,
+     "end": 90.725,
+     "start": 89.5,
      "text": "paths"
     },
     {
-     "end": 91.15,
-     "start": 90.9,
+     "end": 90.975,
+     "start": 90.725,
      "text": "."
     },
     {
-     "end": 91.45,
-     "start": 91.35,
+     "end": 91.275,
+     "start": 91.175,
      "text": "The"
     },
     {
-     "end": 91.95,
-     "start": 91.45,
+     "end": 91.775,
+     "start": 91.275,
      "text": "generic"
     },
     {
-     "end": 92.475,
-     "start": 91.95,
+     "end": 92.3,
+     "start": 91.775,
      "text": "provider"
     },
     {
-     "end": 93.125,
-     "start": 92.475,
+     "end": 92.95,
+     "start": 92.3,
      "text": "interface"
     },
     {
-     "end": 93.262,
-     "start": 93.125,
+     "end": 93.088,
+     "start": 92.95,
      "text": "and"
     },
     {
-     "end": 93.812,
-     "start": 93.262,
+     "end": 93.637,
+     "start": 93.088,
      "text": "evidence"
     },
     {
-     "end": 94.238,
-     "start": 93.812,
+     "end": 94.062,
+     "start": 93.637,
      "text": "types"
     },
     {
-     "end": 94.412,
-     "start": 94.238,
+     "end": 94.238,
+     "start": 94.062,
      "text": "let"
     },
     {
-     "end": 94.512,
-     "start": 94.412,
+     "end": 94.338,
+     "start": 94.238,
      "text": "a"
     },
     {
-     "end": 94.9,
-     "start": 94.512,
+     "end": 94.725,
+     "start": 94.338,
      "text": "caller"
     },
     {
-     "end": 95.275,
-     "start": 94.9,
+     "end": 95.1,
+     "start": 94.725,
      "text": "supply"
     },
     {
-     "end": 96.1,
-     "start": 95.275,
+     "end": 95.925,
+     "start": 95.1,
      "text": "capabilities"
     },
     {
-     "end": 96.45,
-     "start": 96.1,
+     "end": 96.275,
+     "start": 95.925,
      "text": "without"
     },
     {
-     "end": 97.0,
-     "start": 96.45,
+     "end": 96.825,
+     "start": 96.275,
      "text": "selecting"
     },
     {
-     "end": 97.113,
-     "start": 97.0,
+     "end": 96.938,
+     "start": 96.825,
      "text": "a"
     },
     {
-     "end": 97.475,
-     "start": 97.113,
+     "end": 97.3,
+     "start": 96.938,
      "text": "node"
     },
     {
-     "end": 98.675,
-     "start": 97.475,
+     "end": 98.5,
+     "start": 97.3,
      "text": "runtime"
     },
     {
-     "end": 98.9,
-     "start": 98.675,
+     "end": 98.725,
+     "start": 98.5,
      "text": ";"
     },
     {
-     "end": 99.15,
-     "start": 99.075,
+     "end": 98.975,
+     "start": 98.9,
      "text": "the"
     },
     {
-     "end": 99.55,
-     "start": 99.15,
+     "end": 99.375,
+     "start": 98.975,
      "text": "Koios"
     },
     {
-     "end": 100.175,
-     "start": 99.55,
+     "end": 100.0,
+     "start": 99.375,
      "text": "constructor"
     },
     {
-     "end": 100.713,
-     "start": 100.175,
+     "end": 100.537,
+     "start": 100.0,
      "text": "supplies"
     },
     {
-     "end": 101.475,
-     "start": 100.713,
+     "end": 101.3,
+     "start": 100.537,
      "text": "unbound"
     },
     {
-     "end": 101.575,
-     "start": 101.475,
+     "end": 101.4,
+     "start": 101.3,
      "text": ","
     },
     {
-     "end": 102.363,
-     "start": 101.575,
+     "end": 102.188,
+     "start": 101.4,
      "text": "unverified"
     },
     {
-     "end": 103.238,
-     "start": 102.363,
+     "end": 103.062,
+     "start": 102.188,
      "text": "HTTP"
     },
     {
-     "end": 103.7,
-     "start": 103.238,
+     "end": 103.525,
+     "start": 103.062,
      "text": "facts"
     },
     {
-     "end": 103.9,
-     "start": 103.7,
+     "end": 103.725,
+     "start": 103.525,
      "text": "through"
     },
     {
-     "end": 104.137,
-     "start": 103.9,
+     "end": 103.963,
+     "start": 103.725,
      "text": "that"
     },
     {
-     "end": 105.275,
-     "start": 104.137,
+     "end": 105.1,
+     "start": 103.963,
      "text": "interface"
     },
     {
-     "end": 105.475,
-     "start": 105.275,
+     "end": 105.3,
+     "start": 105.1,
      "text": "."
     },
     {
-     "end": 105.775,
-     "start": 105.675,
+     "end": 105.6,
+     "start": 105.5,
      "text": "The"
     },
     {
-     "end": 106.287,
-     "start": 105.775,
+     "end": 106.113,
+     "start": 105.6,
      "text": "runtime"
     },
     {
-     "end": 106.688,
-     "start": 106.287,
+     "end": 106.512,
+     "start": 106.113,
      "text": "service"
     },
     {
-     "end": 107.213,
-     "start": 106.688,
+     "end": 107.037,
+     "start": 106.512,
      "text": "modules"
     },
     {
-     "end": 107.825,
-     "start": 107.213,
+     "end": 107.65,
+     "start": 107.037,
      "text": "outside"
     },
     {
-     "end": 108.025,
-     "start": 107.825,
+     "end": 107.85,
+     "start": 107.65,
      "text": "this"
     },
     {
-     "end": 108.65,
-     "start": 108.025,
+     "end": 108.475,
+     "start": 107.85,
      "text": "extent"
     },
     {
-     "end": 108.713,
-     "start": 108.65,
+     "end": 108.537,
+     "start": 108.475,
      "text": "—"
     },
     {
-     "end": 108.812,
-     "start": 108.713,
+     "end": 108.637,
+     "start": 108.537,
      "text": "the"
     },
     {
-     "end": 109.3,
-     "start": 108.812,
+     "end": 109.125,
+     "start": 108.637,
      "text": "terminal"
     },
     {
-     "end": 110.05,
-     "start": 109.3,
+     "end": 109.875,
+     "start": 109.125,
      "text": "composition"
     },
     {
-     "end": 110.162,
-     "start": 110.05,
+     "end": 109.988,
+     "start": 109.875,
      "text": "and"
     },
     {
-     "end": 110.325,
-     "start": 110.162,
+     "end": 110.15,
+     "start": 109.988,
      "text": "its"
     },
     {
-     "end": 110.95,
-     "start": 110.325,
+     "end": 110.775,
+     "start": 110.15,
      "text": "transport"
     },
     {
-     "end": 111.137,
-     "start": 110.95,
+     "end": 110.963,
+     "start": 110.775,
      "text": "in"
     },
     {
-     "end": 113.1,
-     "start": 111.137,
+     "end": 112.925,
+     "start": 110.963,
      "text": "koios-http"
     },
     {
-     "end": 113.375,
-     "start": 113.1,
+     "end": 113.2,
+     "start": 112.925,
      "text": ","
     },
     {
-     "end": 113.713,
-     "start": 113.6,
+     "end": 113.537,
+     "start": 113.425,
      "text": "and"
     },
     {
-     "end": 113.8,
-     "start": 113.713,
+     "end": 113.625,
+     "start": 113.537,
      "text": "the"
     },
     {
-     "end": 114.312,
-     "start": 113.8,
+     "end": 114.137,
+     "start": 113.625,
      "text": "remaining"
     },
     {
-     "end": 114.725,
-     "start": 114.312,
+     "end": 114.55,
+     "start": 114.137,
      "text": "service"
     },
     {
-     "end": 115.25,
-     "start": 114.725,
+     "end": 115.075,
+     "start": 114.55,
      "text": "modules"
     },
     {
-     "end": 115.4,
-     "start": 115.25,
+     "end": 115.225,
+     "start": 115.075,
      "text": "of"
     },
     {
-     "end": 116.45,
-     "start": 115.4,
+     "end": 116.275,
+     "start": 115.225,
      "text": "local-services"
     },
     {
-     "end": 116.525,
-     "start": 116.45,
+     "end": 116.35,
+     "start": 116.275,
      "text": "—"
     },
     {
-     "end": 116.688,
-     "start": 116.525,
+     "end": 116.512,
+     "start": 116.35,
      "text": "are"
     },
     {
-     "end": 117.375,
-     "start": 116.688,
+     "end": 117.2,
+     "start": 116.512,
      "text": "documented"
     },
     {
-     "end": 117.562,
-     "start": 117.375,
+     "end": 117.387,
+     "start": 117.2,
      "text": "with"
     },
     {
-     "end": 117.95,
-     "start": 117.562,
+     "end": 117.775,
+     "start": 117.387,
      "text": "source"
     },
     {
-     "end": 118.338,
-     "start": 117.95,
+     "end": 118.162,
+     "start": 117.775,
      "text": "links"
     },
     {
-     "end": 118.512,
-     "start": 118.338,
+     "end": 118.338,
+     "start": 118.162,
      "text": "in"
     },
     {
-     "end": 119.113,
-     "start": 118.512,
+     "end": 118.938,
+     "start": 118.338,
      "text": "Runtime"
     },
     {
-     "end": 119.525,
-     "start": 119.113,
+     "end": 119.35,
+     "start": 118.938,
      "text": "service"
     },
     {
-     "end": 120.725,
-     "start": 119.525,
+     "end": 120.55,
+     "start": 119.35,
      "text": "ownership"
     },
     {
-     "end": 120.95,
-     "start": 120.725,
+     "end": 120.775,
+     "start": 120.55,
      "text": "."
     },
     {
-     "end": 121.275,
-     "start": 121.15,
+     "end": 121.1,
+     "start": 120.975,
      "text": "The"
     },
     {
-     "end": 121.675,
-     "start": 121.275,
+     "end": 121.5,
+     "start": 121.1,
      "text": "extent"
     },
     {
-     "end": 122.137,
-     "start": 121.675,
+     "end": 121.963,
+     "start": 121.5,
      "text": "below"
     },
     {
-     "end": 122.3,
-     "start": 122.137,
+     "end": 122.125,
+     "start": 121.963,
      "text": "is"
     },
     {
-     "end": 122.4,
-     "start": 122.3,
+     "end": 122.225,
+     "start": 122.125,
      "text": "the"
     },
     {
-     "end": 122.963,
-     "start": 122.4,
+     "end": 122.787,
+     "start": 122.225,
      "text": "complete"
     },
     {
-     "end": 123.625,
-     "start": 122.963,
+     "end": 123.45,
+     "start": 122.787,
      "text": "documented"
     },
     {
-     "end": 124.012,
-     "start": 123.625,
+     "end": 123.838,
+     "start": 123.45,
      "text": "module"
     },
     {
-     "end": 124.675,
-     "start": 124.012,
+     "end": 124.5,
+     "start": 123.838,
      "text": "surface"
     },
     {
-     "end": 124.75,
-     "start": 124.675,
+     "end": 124.575,
+     "start": 124.5,
      "text": "—"
     },
     {
-     "end": 125.5,
-     "start": 124.75,
+     "end": 125.325,
+     "start": 124.575,
      "text": "exposed"
     },
     {
-     "end": 125.588,
-     "start": 125.5,
+     "end": 125.412,
+     "start": 125.325,
      "text": ","
     },
     {
-     "end": 126.325,
-     "start": 125.588,
+     "end": 126.15,
+     "start": 125.412,
      "text": "re-exported"
     },
     {
-     "end": 126.45,
-     "start": 126.325,
+     "end": 126.275,
+     "start": 126.15,
      "text": "and"
     },
     {
-     "end": 127.3,
-     "start": 126.45,
+     "end": 127.125,
+     "start": 126.275,
      "text": "package-internal"
     },
     {
-     "end": 128.325,
-     "start": 127.3,
+     "end": 128.15,
+     "start": 127.125,
      "text": "alike"
     },
     {
-     "end": 128.55,
-     "start": 128.325,
+     "end": 128.375,
+     "start": 128.15,
      "text": ";"
     },
     {
-     "end": 128.8,
-     "start": 128.725,
+     "end": 128.625,
+     "start": 128.55,
      "text": "the"
     },
     {
-     "end": 129.025,
-     "start": 128.8,
+     "end": 128.85,
+     "start": 128.625,
      "text": "site"
     },
     {
-     "end": 129.275,
-     "start": 129.025,
+     "end": 129.1,
+     "start": 128.85,
      "text": "check"
     },
     {
-     "end": 129.587,
-     "start": 129.275,
+     "end": 129.413,
+     "start": 129.1,
      "text": "fails"
     },
     {
-     "end": 129.95,
-     "start": 129.587,
+     "end": 129.775,
+     "start": 129.413,
      "text": "until"
     },
     {
-     "end": 130.1,
-     "start": 129.95,
+     "end": 129.925,
+     "start": 129.775,
      "text": "it"
     },
     {
-     "end": 130.212,
-     "start": 130.1,
+     "end": 130.038,
+     "start": 129.925,
      "text": "and"
     },
     {
-     "end": 130.4,
-     "start": 130.212,
+     "end": 130.225,
+     "start": 130.038,
      "text": "this"
     },
     {
-     "end": 130.625,
-     "start": 130.4,
+     "end": 130.45,
+     "start": 130.225,
      "text": "list"
     },
     {
-     "end": 131.475,
-     "start": 130.625,
+     "end": 131.3,
+     "start": 130.45,
      "text": "agree"
     },
     {
-     "end": 131.7,
-     "start": 131.475,
+     "end": 131.525,
+     "start": 131.3,
      "text": "."
     }
    ]
   },
   "docs-offchain-api-reference/what-this-reference-contains-03": {
-   "audio_sha256": "54475a95d764797cac7e2193017235bbf3cce847049b1cd5a488f1f9d9024ceb",
-   "characters": 3174,
-   "cost": 0.00314226,
-   "duration": 151.275,
+   "audio_sha256": "9e2504d1afdd113f8071fc9606415365da51a605f072980e2473b2daee5795fa",
+   "characters": 3211,
+   "cost": 0.0031788899999999998,
+   "duration": 152.075,
    "index": 3,
-   "key": "667b94746677f9986e8fb1ba999d3b31eebda778a035a4ef48bb9f48cc6eb042",
+   "key": "b605440f140b924aa9e1bb7f04114fa6dc504a47e42952dc57f6ee760513298d",
    "page": "docs/offchain-api-reference.md",
    "pause_ms": 400,
    "section": "what-this-reference-contains",
-   "sent_text": "MkDocs environment ready! Run: mkdocs serve - Naming.Datum — source - Naming.Register — source - Naming.Request — source - Naming.Verify — source - Naming.Wire — source - Naming.Wire.Vectors — source - Singular.Provider.Koios.Client — source - Singular.Provider.Koios.Evidence — source - Singular.Provider.Koios.History — source - Singular.Provider.Koios.Provider — source - Singular.Provider.Koios.Recorded — source - Singular.Provider.Koios.Runtime — source - Singular.Provider.Koios.State — source - Singular.Provider.Koios.Wire — source - Singular.Registry.Address — source - Singular.Registry.Application — source - Singular.Registry.AssetName — source - Singular.Registry.Blueprint — source - Singular.Registry.Blueprint.Load — source - Singular.Registry.Blueprint.Params — source - Singular.Registry.Blueprint.Schema — source - Singular.Registry.Candidate — source - Singular.Registry.Capabilities — source - Singular.Registry.Config — source - Singular.Registry.Config.Application — source - Singular.Registry.Confirmation — source - Singular.Registry.Deployment — source - Singular.Registry.Deployment.Attach — source - Singular.Registry.Deployment.Manifest — source - Singular.Registry.Deployment.Mirror — source - Singular.Registry.Driver — source - Singular.Registry.Evidence — source - Singular.Registry.FoldAdmission — source - Singular.Registry.FoldSelection — source - Singular.Registry.Funding — source - Singular.Registry.Ledger — source - Singular.Registry.LedgerProvider — source - Singular.Registry.Lifecycle — source - Singular.Registry.Page — source - Singular.Registry.PlainJson — source - Singular.Registry.Proof — source - Singular.Registry.Replay — source - Singular.Registry.Signing — source - Singular.Registry.StateToken — source - Singular.Registry.Trie — source - Singular.Registry.Trie.Pure — source - Singular.Registry.Trie.PureManager — source - Singular.Registry.TrieState — source - Singular.Registry.TrieState.Core — source - Singular.Registry.TrieState.Fixture — source - Singular.Registry.TrieState.Lineage — source - Singular.Registry.TrieState.Types — source - Singular.Registry.TxBuilder.Boot — source - Singular.Registry.TxBuilder.ConnectedFold — source - Singular.Registry.TxBuilder.Edges — source - Singular.Registry.TxBuilder.Internal — source - Singular.Registry.TxBuilder.Internal.Edges — source - Singular.Registry.TxBuilder.Internal.Identity — source - Singular.Registry.TxBuilder.Internal.Lookup — source - Singular.Registry.TxBuilder.Prepare — source - Singular.Registry.TxBuilder.Register — source - Singular.Registry.TxBuilder.Reject — source - Singular.Registry.TxBuilder.Request — source - Singular.Registry.TxBuilder.Retract — source - Singular.Registry.TxBuilder.Update — source - Singular.Registry.TxBuilder.Update.Build — source - Singular.Registry.TxBuilder.Update.Context — source - Singular.Registry.TxBuilder.Update.Duties — source - Singular.Registry.Types — source - Singular.Registry.Wait — source - Singular.Registry.Wire.Primitive — source - Singular.Registry.Wire.Proof — source - Singular.Registry.Wire.Redeemer — source - Singular.Registry.Wire.Request — source - Singular.Registry.Wire.State — source",
-   "text": "MkDocs environment ready! Run: mkdocs serve - Naming.Datum — source - Naming.Register — source - Naming.Request — source - Naming.Verify — source - Naming.Wire — source - Naming.Wire.Vectors — source - Singular.Provider.Koios.Client — source - Singular.Provider.Koios.Evidence — source - Singular.Provider.Koios.History — source - Singular.Provider.Koios.Provider — source - Singular.Provider.Koios.Recorded — source - Singular.Provider.Koios.Runtime — source - Singular.Provider.Koios.State — source - Singular.Provider.Koios.Wire — source - Singular.Registry.Address — source - Singular.Registry.Application — source - Singular.Registry.AssetName — source - Singular.Registry.Blueprint — source - Singular.Registry.Blueprint.Load — source - Singular.Registry.Blueprint.Params — source - Singular.Registry.Blueprint.Schema — source - Singular.Registry.Candidate — source - Singular.Registry.Capabilities — source - Singular.Registry.Config — source - Singular.Registry.Config.Application — source - Singular.Registry.Confirmation — source - Singular.Registry.Deployment — source - Singular.Registry.Deployment.Attach — source - Singular.Registry.Deployment.Manifest — source - Singular.Registry.Deployment.Mirror — source - Singular.Registry.Driver — source - Singular.Registry.Evidence — source - Singular.Registry.FoldAdmission — source - Singular.Registry.FoldSelection — source - Singular.Registry.Funding — source - Singular.Registry.Ledger — source - Singular.Registry.LedgerProvider — source - Singular.Registry.Lifecycle — source - Singular.Registry.Page — source - Singular.Registry.PlainJson — source - Singular.Registry.Proof — source - Singular.Registry.Replay — source - Singular.Registry.Signing — source - Singular.Registry.StateToken — source - Singular.Registry.Trie — source - Singular.Registry.Trie.Pure — source - Singular.Registry.Trie.PureManager — source - Singular.Registry.TrieState — source - Singular.Registry.TrieState.Core — source - Singular.Registry.TrieState.Fixture — source - Singular.Registry.TrieState.Lineage — source - Singular.Registry.TrieState.Types — source - Singular.Registry.TxBuilder.Boot — source - Singular.Registry.TxBuilder.ConnectedFold — source - Singular.Registry.TxBuilder.Edges — source - Singular.Registry.TxBuilder.Internal — source - Singular.Registry.TxBuilder.Internal.Edges — source - Singular.Registry.TxBuilder.Internal.Identity — source - Singular.Registry.TxBuilder.Internal.Lookup — source - Singular.Registry.TxBuilder.Prepare — source - Singular.Registry.TxBuilder.Register — source - Singular.Registry.TxBuilder.Reject — source - Singular.Registry.TxBuilder.Request — source - Singular.Registry.TxBuilder.Retract — source - Singular.Registry.TxBuilder.Update — source - Singular.Registry.TxBuilder.Update.Build — source - Singular.Registry.TxBuilder.Update.Context — source - Singular.Registry.TxBuilder.Update.Duties — source - Singular.Registry.Types — source - Singular.Registry.Wait — source - Singular.Registry.Wire.Primitive — source - Singular.Registry.Wire.Proof — source - Singular.Registry.Wire.Redeemer — source - Singular.Registry.Wire.Request — source - Singular.Registry.Wire.State — source",
+   "sent_text": "MkDocs environment ready! Run: mkdocs serve - Naming.Datum — source - Naming.Register — source - Naming.Request — source - Naming.Verify — source - Naming.Wire — source - Naming.Wire.Vectors — source - Singular.Provider.Koios.Client — source - Singular.Provider.Koios.Evidence — source - Singular.Provider.Koios.History — source - Singular.Provider.Koios.Provider — source - Singular.Provider.Koios.Recorded — source - Singular.Provider.Koios.Runtime — source - Singular.Provider.Koios.State — source - Singular.Provider.Koios.Wire — source - Singular.Registry.Address — source - Singular.Registry.Application — source - Singular.Registry.AssetName — source - Singular.Registry.Blueprint — source - Singular.Registry.Blueprint.Load — source - Singular.Registry.Blueprint.Params — source - Singular.Registry.Blueprint.Schema — source - Singular.Registry.Candidate — source - Singular.Registry.Capabilities — source - Singular.Registry.Config — source - Singular.Registry.Config.Application — source - Singular.Registry.Confirmation — source - Singular.Registry.Deployment — source - Singular.Registry.Deployment.Attach — source - Singular.Registry.Deployment.Manifest — source - Singular.Registry.Deployment.Mirror — source - Singular.Registry.Driver — source - Singular.Registry.Evidence — source - Singular.Registry.FoldAdmission — source - Singular.Registry.FoldSelection — source - Singular.Registry.Funding — source - Singular.Registry.Ledger — source - Singular.Registry.LedgerProvider — source - Singular.Registry.Lifecycle — source - Singular.Registry.Page — source - Singular.Registry.PlainJson — source - Singular.Registry.Proof — source - Singular.Registry.Replay — source - Singular.Registry.Signing — source - Singular.Registry.StateToken — source - Singular.Registry.Trie — source - Singular.Registry.Trie.Pure — source - Singular.Registry.Trie.PureManager — source - Singular.Registry.TrieState — source - Singular.Registry.TrieState.Core — source - Singular.Registry.TrieState.Fixture — source - Singular.Registry.TrieState.Lineage — source - Singular.Registry.TrieState.Types — source - Singular.Registry.TxBuilder.Boot — source - Singular.Registry.TxBuilder.ConnectedFold — source - Singular.Registry.TxBuilder.Edges — source - Singular.Registry.TxBuilder.Internal — source - Singular.Registry.TxBuilder.Internal.Edges — source - Singular.Registry.TxBuilder.Internal.Identity — source - Singular.Registry.TxBuilder.Internal.Lookup — source - Singular.Registry.TxBuilder.Prepare — source - Singular.Registry.TxBuilder.Register — source - Singular.Registry.TxBuilder.Reject — source - Singular.Registry.TxBuilder.Request — source - Singular.Registry.TxBuilder.Retract — source - Singular.Registry.TxBuilder.Update — source - Singular.Registry.TxBuilder.Update.Build — source - Singular.Registry.TxBuilder.Update.Context — source - Singular.Registry.TxBuilder.Update.Duties — source - Singular.Registry.Types — source - Singular.Registry.Wait — source - Singular.Registry.Wire.Primitive — source - Singular.Registry.Wire.Proof — source - Singular.Registry.Wire.Redeemer — source - Singular.Registry.Wire.Request — source - Singular.Registry.Wire.State — source - Singular.Registry.Witness — source",
+   "text": "MkDocs environment ready! Run: mkdocs serve - Naming.Datum — source - Naming.Register — source - Naming.Request — source - Naming.Verify — source - Naming.Wire — source - Naming.Wire.Vectors — source - Singular.Provider.Koios.Client — source - Singular.Provider.Koios.Evidence — source - Singular.Provider.Koios.History — source - Singular.Provider.Koios.Provider — source - Singular.Provider.Koios.Recorded — source - Singular.Provider.Koios.Runtime — source - Singular.Provider.Koios.State — source - Singular.Provider.Koios.Wire — source - Singular.Registry.Address — source - Singular.Registry.Application — source - Singular.Registry.AssetName — source - Singular.Registry.Blueprint — source - Singular.Registry.Blueprint.Load — source - Singular.Registry.Blueprint.Params — source - Singular.Registry.Blueprint.Schema — source - Singular.Registry.Candidate — source - Singular.Registry.Capabilities — source - Singular.Registry.Config — source - Singular.Registry.Config.Application — source - Singular.Registry.Confirmation — source - Singular.Registry.Deployment — source - Singular.Registry.Deployment.Attach — source - Singular.Registry.Deployment.Manifest — source - Singular.Registry.Deployment.Mirror — source - Singular.Registry.Driver — source - Singular.Registry.Evidence — source - Singular.Registry.FoldAdmission — source - Singular.Registry.FoldSelection — source - Singular.Registry.Funding — source - Singular.Registry.Ledger — source - Singular.Registry.LedgerProvider — source - Singular.Registry.Lifecycle — source - Singular.Registry.Page — source - Singular.Registry.PlainJson — source - Singular.Registry.Proof — source - Singular.Registry.Replay — source - Singular.Registry.Signing — source - Singular.Registry.StateToken — source - Singular.Registry.Trie — source - Singular.Registry.Trie.Pure — source - Singular.Registry.Trie.PureManager — source - Singular.Registry.TrieState — source - Singular.Registry.TrieState.Core — source - Singular.Registry.TrieState.Fixture — source - Singular.Registry.TrieState.Lineage — source - Singular.Registry.TrieState.Types — source - Singular.Registry.TxBuilder.Boot — source - Singular.Registry.TxBuilder.ConnectedFold — source - Singular.Registry.TxBuilder.Edges — source - Singular.Registry.TxBuilder.Internal — source - Singular.Registry.TxBuilder.Internal.Edges — source - Singular.Registry.TxBuilder.Internal.Identity — source - Singular.Registry.TxBuilder.Internal.Lookup — source - Singular.Registry.TxBuilder.Prepare — source - Singular.Registry.TxBuilder.Register — source - Singular.Registry.TxBuilder.Reject — source - Singular.Registry.TxBuilder.Request — source - Singular.Registry.TxBuilder.Retract — source - Singular.Registry.TxBuilder.Update — source - Singular.Registry.TxBuilder.Update.Build — source - Singular.Registry.TxBuilder.Update.Context — source - Singular.Registry.TxBuilder.Update.Duties — source - Singular.Registry.Types — source - Singular.Registry.Wait — source - Singular.Registry.Wire.Primitive — source - Singular.Registry.Wire.Proof — source - Singular.Registry.Wire.Redeemer — source - Singular.Registry.Wire.Request — source - Singular.Registry.Wire.State — source - Singular.Registry.Witness — source",
    "words": [
     {
      "end": 0.837,
@@ -199534,38 +199534,38 @@
      "text": "."
     },
     {
-     "end": 132.35,
+     "end": 132.4,
      "start": 131.85,
      "text": "Update"
     },
     {
-     "end": 132.425,
-     "start": 132.35,
+     "end": 132.475,
+     "start": 132.4,
      "text": "."
     },
     {
-     "end": 132.688,
-     "start": 132.425,
+     "end": 132.712,
+     "start": 132.475,
      "text": "Build"
     },
     {
-     "end": 132.75,
-     "start": 132.688,
+     "end": 132.775,
+     "start": 132.712,
      "text": "—"
     },
     {
-     "end": 132.988,
-     "start": 132.75,
+     "end": 133.012,
+     "start": 132.775,
      "text": "source"
     },
     {
-     "end": 133.05,
-     "start": 132.988,
+     "end": 133.075,
+     "start": 133.012,
      "text": "-"
     },
     {
      "end": 133.375,
-     "start": 133.05,
+     "start": 133.075,
      "text": "Singular"
     },
     {
@@ -199584,218 +199584,218 @@
      "text": "."
     },
     {
-     "end": 134.475,
+     "end": 134.5,
      "start": 133.9,
      "text": "TxBuilder"
     },
     {
-     "end": 134.5,
-     "start": 134.475,
+     "end": 134.525,
+     "start": 134.5,
      "text": "."
     },
     {
-     "end": 134.875,
-     "start": 134.5,
+     "end": 134.975,
+     "start": 134.525,
      "text": "Update"
     },
     {
-     "end": 134.95,
-     "start": 134.875,
+     "end": 135.075,
+     "start": 134.975,
      "text": "."
     },
     {
-     "end": 135.512,
-     "start": 134.95,
+     "end": 135.587,
+     "start": 135.075,
      "text": "Context"
     },
     {
-     "end": 135.575,
-     "start": 135.512,
+     "end": 135.65,
+     "start": 135.587,
      "text": "—"
     },
     {
-     "end": 135.812,
-     "start": 135.575,
+     "end": 135.887,
+     "start": 135.65,
      "text": "source"
     },
     {
-     "end": 135.875,
-     "start": 135.812,
+     "end": 135.95,
+     "start": 135.887,
      "text": "-"
     },
     {
-     "end": 136.2,
-     "start": 135.875,
+     "end": 136.275,
+     "start": 135.95,
      "text": "Singular"
     },
     {
-     "end": 136.25,
-     "start": 136.2,
+     "end": 136.325,
+     "start": 136.275,
      "text": "."
     },
     {
-     "end": 136.7,
-     "start": 136.25,
+     "end": 136.8,
+     "start": 136.325,
      "text": "Registry"
     },
     {
-     "end": 136.75,
-     "start": 136.7,
+     "end": 136.85,
+     "start": 136.8,
      "text": "."
     },
     {
-     "end": 137.35,
-     "start": 136.75,
+     "end": 137.4,
+     "start": 136.85,
      "text": "TxBuilder"
     },
     {
-     "end": 137.375,
-     "start": 137.35,
+     "end": 137.425,
+     "start": 137.4,
      "text": "."
-    },
-    {
-     "end": 137.675,
-     "start": 137.375,
-     "text": "Update"
     },
     {
      "end": 137.725,
-     "start": 137.675,
+     "start": 137.425,
+     "text": "Update"
+    },
+    {
+     "end": 137.775,
+     "start": 137.725,
      "text": "."
     },
     {
-     "end": 138.038,
-     "start": 137.725,
+     "end": 138.087,
+     "start": 137.775,
      "text": "Duties"
     },
     {
-     "end": 138.1,
-     "start": 138.038,
+     "end": 138.15,
+     "start": 138.087,
      "text": "—"
     },
     {
-     "end": 138.363,
-     "start": 138.1,
+     "end": 138.413,
+     "start": 138.15,
      "text": "source"
     },
     {
-     "end": 138.425,
-     "start": 138.363,
+     "end": 138.475,
+     "start": 138.413,
      "text": "-"
-    },
-    {
-     "end": 138.75,
-     "start": 138.425,
-     "text": "Singular"
     },
     {
      "end": 138.8,
-     "start": 138.75,
+     "start": 138.475,
+     "text": "Singular"
+    },
+    {
+     "end": 138.85,
+     "start": 138.8,
      "text": "."
     },
     {
-     "end": 139.275,
-     "start": 138.8,
+     "end": 139.4,
+     "start": 138.85,
      "text": "Registry"
     },
     {
-     "end": 139.35,
-     "start": 139.275,
+     "end": 139.475,
+     "start": 139.4,
      "text": "."
     },
     {
-     "end": 139.663,
-     "start": 139.35,
+     "end": 139.738,
+     "start": 139.475,
      "text": "Types"
     },
     {
-     "end": 139.725,
-     "start": 139.663,
+     "end": 139.8,
+     "start": 139.738,
      "text": "—"
     },
     {
-     "end": 139.962,
-     "start": 139.725,
+     "end": 140.038,
+     "start": 139.8,
      "text": "source"
     },
     {
-     "end": 140.025,
-     "start": 139.962,
+     "end": 140.1,
+     "start": 140.038,
      "text": "-"
-    },
-    {
-     "end": 140.325,
-     "start": 140.025,
-     "text": "Singular"
     },
     {
      "end": 140.375,
-     "start": 140.325,
-     "text": "."
-    },
-    {
-     "end": 140.85,
-     "start": 140.375,
-     "text": "Registry"
-    },
-    {
-     "end": 140.925,
-     "start": 140.85,
-     "text": "."
-    },
-    {
-     "end": 141.113,
-     "start": 140.925,
-     "text": "Wait"
-    },
-    {
-     "end": 141.175,
-     "start": 141.113,
-     "text": "—"
-    },
-    {
-     "end": 141.413,
-     "start": 141.175,
-     "text": "source"
-    },
-    {
-     "end": 141.475,
-     "start": 141.413,
-     "text": "-"
-    },
-    {
-     "end": 141.75,
-     "start": 141.475,
+     "start": 140.1,
      "text": "Singular"
     },
     {
-     "end": 141.8,
-     "start": 141.75,
+     "end": 140.425,
+     "start": 140.375,
      "text": "."
     },
     {
-     "end": 142.25,
-     "start": 141.8,
+     "end": 140.9,
+     "start": 140.425,
      "text": "Registry"
     },
     {
-     "end": 142.3,
-     "start": 142.25,
+     "end": 140.95,
+     "start": 140.9,
      "text": "."
     },
     {
-     "end": 142.45,
-     "start": 142.3,
-     "text": "Wire"
+     "end": 141.137,
+     "start": 140.95,
+     "text": "Wait"
+    },
+    {
+     "end": 141.2,
+     "start": 141.137,
+     "text": "—"
+    },
+    {
+     "end": 141.438,
+     "start": 141.2,
+     "text": "source"
+    },
+    {
+     "end": 141.5,
+     "start": 141.438,
+     "text": "-"
+    },
+    {
+     "end": 141.775,
+     "start": 141.5,
+     "text": "Singular"
+    },
+    {
+     "end": 141.825,
+     "start": 141.775,
+     "text": "."
+    },
+    {
+     "end": 142.325,
+     "start": 141.825,
+     "text": "Registry"
+    },
+    {
+     "end": 142.375,
+     "start": 142.325,
+     "text": "."
     },
     {
      "end": 142.5,
-     "start": 142.45,
+     "start": 142.375,
+     "text": "Wire"
+    },
+    {
+     "end": 142.55,
+     "start": 142.5,
      "text": "."
     },
     {
      "end": 142.887,
-     "start": 142.5,
+     "start": 142.55,
      "text": "Primitive"
     },
     {
@@ -199804,208 +199804,248 @@
      "text": "—"
     },
     {
-     "end": 143.212,
+     "end": 143.188,
      "start": 142.95,
      "text": "source"
     },
     {
-     "end": 143.275,
-     "start": 143.212,
+     "end": 143.25,
+     "start": 143.188,
      "text": "-"
     },
     {
-     "end": 143.6,
-     "start": 143.275,
+     "end": 143.525,
+     "start": 143.25,
      "text": "Singular"
     },
     {
-     "end": 143.65,
-     "start": 143.6,
+     "end": 143.575,
+     "start": 143.525,
      "text": "."
     },
     {
-     "end": 144.075,
-     "start": 143.65,
+     "end": 144.0,
+     "start": 143.575,
      "text": "Registry"
     },
     {
-     "end": 144.125,
-     "start": 144.075,
+     "end": 144.05,
+     "start": 144.0,
      "text": "."
     },
     {
-     "end": 144.4,
-     "start": 144.125,
+     "end": 144.275,
+     "start": 144.05,
      "text": "Wire"
     },
     {
-     "end": 144.45,
-     "start": 144.4,
+     "end": 144.325,
+     "start": 144.275,
      "text": "."
     },
     {
-     "end": 144.712,
-     "start": 144.45,
+     "end": 144.538,
+     "start": 144.325,
      "text": "Proof"
     },
     {
-     "end": 144.775,
-     "start": 144.712,
+     "end": 144.6,
+     "start": 144.538,
      "text": "—"
     },
     {
-     "end": 145.038,
-     "start": 144.775,
+     "end": 144.837,
+     "start": 144.6,
      "text": "source"
     },
     {
-     "end": 145.1,
-     "start": 145.038,
+     "end": 144.9,
+     "start": 144.837,
      "text": "-"
     },
     {
-     "end": 145.425,
-     "start": 145.1,
+     "end": 145.175,
+     "start": 144.9,
      "text": "Singular"
     },
     {
-     "end": 145.475,
-     "start": 145.425,
+     "end": 145.225,
+     "start": 145.175,
      "text": "."
     },
     {
-     "end": 145.9,
-     "start": 145.475,
+     "end": 145.625,
+     "start": 145.225,
      "text": "Registry"
     },
     {
-     "end": 145.95,
-     "start": 145.9,
+     "end": 145.675,
+     "start": 145.625,
      "text": "."
     },
     {
-     "end": 146.15,
-     "start": 145.95,
+     "end": 145.825,
+     "start": 145.675,
      "text": "Wire"
     },
     {
-     "end": 146.2,
-     "start": 146.15,
+     "end": 145.875,
+     "start": 145.825,
      "text": "."
     },
     {
-     "end": 146.562,
-     "start": 146.2,
+     "end": 146.238,
+     "start": 145.875,
      "text": "Redeemer"
     },
     {
-     "end": 146.625,
-     "start": 146.562,
+     "end": 146.3,
+     "start": 146.238,
      "text": "—"
     },
     {
-     "end": 146.887,
-     "start": 146.625,
+     "end": 146.538,
+     "start": 146.3,
      "text": "source"
     },
     {
-     "end": 146.95,
-     "start": 146.887,
+     "end": 146.6,
+     "start": 146.538,
      "text": "-"
     },
     {
-     "end": 147.275,
-     "start": 146.95,
+     "end": 146.875,
+     "start": 146.6,
      "text": "Singular"
     },
     {
-     "end": 147.325,
-     "start": 147.275,
+     "end": 146.925,
+     "start": 146.875,
      "text": "."
     },
     {
-     "end": 147.75,
-     "start": 147.325,
+     "end": 147.3,
+     "start": 146.925,
      "text": "Registry"
     },
     {
-     "end": 147.8,
-     "start": 147.75,
+     "end": 147.35,
+     "start": 147.3,
      "text": "."
     },
     {
-     "end": 147.975,
-     "start": 147.8,
+     "end": 147.5,
+     "start": 147.35,
      "text": "Wire"
     },
     {
-     "end": 148.025,
-     "start": 147.975,
+     "end": 147.55,
+     "start": 147.5,
      "text": "."
     },
     {
-     "end": 148.488,
-     "start": 148.025,
+     "end": 147.962,
+     "start": 147.55,
      "text": "Request"
     },
     {
-     "end": 148.55,
-     "start": 148.488,
+     "end": 148.025,
+     "start": 147.962,
      "text": "—"
     },
     {
-     "end": 148.812,
-     "start": 148.55,
+     "end": 148.288,
+     "start": 148.025,
      "text": "source"
     },
     {
-     "end": 148.875,
-     "start": 148.812,
+     "end": 148.35,
+     "start": 148.288,
      "text": "-"
     },
     {
-     "end": 149.2,
-     "start": 148.875,
+     "end": 148.625,
+     "start": 148.35,
      "text": "Singular"
     },
     {
-     "end": 149.25,
-     "start": 149.2,
+     "end": 148.675,
+     "start": 148.625,
      "text": "."
     },
     {
-     "end": 149.675,
-     "start": 149.25,
+     "end": 149.075,
+     "start": 148.675,
      "text": "Registry"
     },
     {
-     "end": 149.725,
-     "start": 149.675,
+     "end": 149.125,
+     "start": 149.075,
      "text": "."
     },
     {
-     "end": 149.95,
-     "start": 149.725,
+     "end": 149.325,
+     "start": 149.125,
      "text": "Wire"
     },
     {
-     "end": 150.0,
-     "start": 149.95,
+     "end": 149.375,
+     "start": 149.325,
      "text": "."
     },
     {
-     "end": 150.312,
-     "start": 150.0,
+     "end": 149.637,
+     "start": 149.375,
      "text": "State"
     },
     {
-     "end": 150.375,
-     "start": 150.312,
+     "end": 149.7,
+     "start": 149.637,
      "text": "—"
     },
     {
-     "end": 151.275,
-     "start": 150.375,
+     "end": 149.938,
+     "start": 149.7,
+     "text": "source"
+    },
+    {
+     "end": 150.0,
+     "start": 149.938,
+     "text": "-"
+    },
+    {
+     "end": 150.3,
+     "start": 150.0,
+     "text": "Singular"
+    },
+    {
+     "end": 150.35,
+     "start": 150.3,
+     "text": "."
+    },
+    {
+     "end": 150.775,
+     "start": 150.35,
+     "text": "Registry"
+    },
+    {
+     "end": 150.85,
+     "start": 150.775,
+     "text": "."
+    },
+    {
+     "end": 151.188,
+     "start": 150.85,
+     "text": "Witness"
+    },
+    {
+     "end": 151.25,
+     "start": 151.188,
+     "text": "—"
+    },
+    {
+     "end": 152.075,
+     "start": 151.25,
      "text": "source"
     }
    ]
@@ -356796,6 +356836,2776 @@
     {
      "end": 34.65,
      "start": 34.45,
+     "text": "."
+    }
+   ]
+  },
+  "docs-singular-node/reading-one-key-from-the-address-00": {
+   "audio_sha256": "4e0629a3a356591d09b6f2c347e4adb89bf03ba2b20ac8afb8bc35315b41141f",
+   "characters": 33,
+   "cost": 3.267e-05,
+   "duration": 2.175,
+   "index": 0,
+   "key": "d5791c9210a33235663eb35010ef0552016f03adc607237433c687062f389947",
+   "page": "docs/singular-node.md",
+   "pause_ms": 500,
+   "section": "reading-one-key-from-the-address",
+   "sent_text": "Reading one key from the address.",
+   "text": "Reading one key from the address.",
+   "words": [
+    {
+     "end": 0.475,
+     "start": 0.175,
+     "text": "Reading"
+    },
+    {
+     "end": 0.7,
+     "start": 0.475,
+     "text": "one"
+    },
+    {
+     "end": 0.9,
+     "start": 0.7,
+     "text": "key"
+    },
+    {
+     "end": 1.038,
+     "start": 0.9,
+     "text": "from"
+    },
+    {
+     "end": 1.125,
+     "start": 1.038,
+     "text": "the"
+    },
+    {
+     "end": 1.975,
+     "start": 1.125,
+     "text": "address"
+    },
+    {
+     "end": 2.175,
+     "start": 1.975,
+     "text": "."
+    }
+   ]
+  },
+  "docs-singular-node/reading-one-key-from-the-address-01": {
+   "audio_sha256": "e7c9661b2fe1ec97603f312d612969626f2e8d6925f7a0891a7bf143148234ad",
+   "characters": 344,
+   "cost": 0.00034055999999999995,
+   "duration": 21.2,
+   "index": 1,
+   "key": "47db863aa327e0c150a6eee7926ecde0240f8caa02980023ad65cc8106f2d82b",
+   "page": "docs/singular-node.md",
+   "pause_ms": 400,
+   "section": "reading-one-key-from-the-address",
+   "sent_text": "As Bob, I have the address and the name of a key, and I want to know whether the key is active and which output holds it, from an empty directory, without a file from anyone. I run inspect --key KEY --registry ADDRESS and the answer comes from the chain: the command asks the provider who holds the key's witness token and prints what it found.",
+   "text": "As Bob, I have the address and the name of a key, and I want to know whether the key is active and which output holds it, from an empty directory, without a file from anyone. I run inspect --key KEY --registry ADDRESS and the answer comes from the chain: the command asks the provider who holds the key's witness token and prints what it found.",
+   "words": [
+    {
+     "end": 0.438,
+     "start": 0.225,
+     "text": "As"
+    },
+    {
+     "end": 0.8,
+     "start": 0.438,
+     "text": "Bob"
+    },
+    {
+     "end": 0.85,
+     "start": 0.8,
+     "text": ","
+    },
+    {
+     "end": 1.0,
+     "start": 0.85,
+     "text": "I"
+    },
+    {
+     "end": 1.212,
+     "start": 1.0,
+     "text": "have"
+    },
+    {
+     "end": 1.35,
+     "start": 1.212,
+     "text": "the"
+    },
+    {
+     "end": 1.938,
+     "start": 1.35,
+     "text": "address"
+    },
+    {
+     "end": 2.062,
+     "start": 1.938,
+     "text": "and"
+    },
+    {
+     "end": 2.162,
+     "start": 2.062,
+     "text": "the"
+    },
+    {
+     "end": 2.487,
+     "start": 2.162,
+     "text": "name"
+    },
+    {
+     "end": 2.562,
+     "start": 2.487,
+     "text": "of"
+    },
+    {
+     "end": 2.662,
+     "start": 2.562,
+     "text": "a"
+    },
+    {
+     "end": 3.1,
+     "start": 2.662,
+     "text": "key"
+    },
+    {
+     "end": 3.2,
+     "start": 3.1,
+     "text": ","
+    },
+    {
+     "end": 3.312,
+     "start": 3.2,
+     "text": "and"
+    },
+    {
+     "end": 3.45,
+     "start": 3.312,
+     "text": "I"
+    },
+    {
+     "end": 3.638,
+     "start": 3.45,
+     "text": "want"
+    },
+    {
+     "end": 3.725,
+     "start": 3.638,
+     "text": "to"
+    },
+    {
+     "end": 3.95,
+     "start": 3.725,
+     "text": "know"
+    },
+    {
+     "end": 4.225,
+     "start": 3.95,
+     "text": "whether"
+    },
+    {
+     "end": 4.363,
+     "start": 4.225,
+     "text": "the"
+    },
+    {
+     "end": 4.625,
+     "start": 4.363,
+     "text": "key"
+    },
+    {
+     "end": 4.8,
+     "start": 4.625,
+     "text": "is"
+    },
+    {
+     "end": 5.338,
+     "start": 4.8,
+     "text": "active"
+    },
+    {
+     "end": 5.475,
+     "start": 5.338,
+     "text": "and"
+    },
+    {
+     "end": 5.713,
+     "start": 5.475,
+     "text": "which"
+    },
+    {
+     "end": 6.2,
+     "start": 5.713,
+     "text": "output"
+    },
+    {
+     "end": 6.55,
+     "start": 6.2,
+     "text": "holds"
+    },
+    {
+     "end": 6.725,
+     "start": 6.55,
+     "text": "it"
+    },
+    {
+     "end": 6.775,
+     "start": 6.725,
+     "text": ","
+    },
+    {
+     "end": 6.938,
+     "start": 6.775,
+     "text": "from"
+    },
+    {
+     "end": 7.062,
+     "start": 6.938,
+     "text": "an"
+    },
+    {
+     "end": 7.425,
+     "start": 7.062,
+     "text": "empty"
+    },
+    {
+     "end": 8.075,
+     "start": 7.425,
+     "text": "directory"
+    },
+    {
+     "end": 8.15,
+     "start": 8.075,
+     "text": ","
+    },
+    {
+     "end": 8.462,
+     "start": 8.15,
+     "text": "without"
+    },
+    {
+     "end": 8.575,
+     "start": 8.462,
+     "text": "a"
+    },
+    {
+     "end": 8.975,
+     "start": 8.575,
+     "text": "file"
+    },
+    {
+     "end": 9.175,
+     "start": 8.975,
+     "text": "from"
+    },
+    {
+     "end": 10.375,
+     "start": 9.175,
+     "text": "anyone"
+    },
+    {
+     "end": 10.6,
+     "start": 10.375,
+     "text": "."
+    },
+    {
+     "end": 10.962,
+     "start": 10.8,
+     "text": "I"
+    },
+    {
+     "end": 11.25,
+     "start": 10.962,
+     "text": "run"
+    },
+    {
+     "end": 11.762,
+     "start": 11.25,
+     "text": "inspect"
+    },
+    {
+     "end": 12.038,
+     "start": 11.762,
+     "text": "key"
+    },
+    {
+     "end": 12.25,
+     "start": 12.038,
+     "text": "KEY"
+    },
+    {
+     "end": 12.725,
+     "start": 12.25,
+     "text": "--registry"
+    },
+    {
+     "end": 13.238,
+     "start": 12.725,
+     "text": "ADDRESS"
+    },
+    {
+     "end": 13.363,
+     "start": 13.238,
+     "text": "and"
+    },
+    {
+     "end": 13.475,
+     "start": 13.363,
+     "text": "the"
+    },
+    {
+     "end": 13.8,
+     "start": 13.475,
+     "text": "answer"
+    },
+    {
+     "end": 14.1,
+     "start": 13.8,
+     "text": "comes"
+    },
+    {
+     "end": 14.238,
+     "start": 14.1,
+     "text": "from"
+    },
+    {
+     "end": 14.337,
+     "start": 14.238,
+     "text": "the"
+    },
+    {
+     "end": 15.3,
+     "start": 14.337,
+     "text": "chain"
+    },
+    {
+     "end": 15.5,
+     "start": 15.3,
+     "text": ":"
+    },
+    {
+     "end": 15.775,
+     "start": 15.7,
+     "text": "the"
+    },
+    {
+     "end": 16.312,
+     "start": 15.775,
+     "text": "command"
+    },
+    {
+     "end": 16.7,
+     "start": 16.312,
+     "text": "asks"
+    },
+    {
+     "end": 16.8,
+     "start": 16.7,
+     "text": "the"
+    },
+    {
+     "end": 17.325,
+     "start": 16.8,
+     "text": "provider"
+    },
+    {
+     "end": 17.475,
+     "start": 17.325,
+     "text": "who"
+    },
+    {
+     "end": 17.8,
+     "start": 17.475,
+     "text": "holds"
+    },
+    {
+     "end": 17.938,
+     "start": 17.8,
+     "text": "the"
+    },
+    {
+     "end": 18.3,
+     "start": 17.938,
+     "text": "key's"
+    },
+    {
+     "end": 18.675,
+     "start": 18.3,
+     "text": "witness"
+    },
+    {
+     "end": 19.25,
+     "start": 18.675,
+     "text": "token"
+    },
+    {
+     "end": 19.4,
+     "start": 19.25,
+     "text": "and"
+    },
+    {
+     "end": 19.75,
+     "start": 19.4,
+     "text": "prints"
+    },
+    {
+     "end": 19.888,
+     "start": 19.75,
+     "text": "what"
+    },
+    {
+     "end": 20.0,
+     "start": 19.888,
+     "text": "it"
+    },
+    {
+     "end": 20.975,
+     "start": 20.0,
+     "text": "found"
+    },
+    {
+     "end": 21.2,
+     "start": 20.975,
+     "text": "."
+    }
+   ]
+  },
+  "docs-singular-node/reading-one-key-from-the-address-02": {
+   "audio_sha256": "21074bc7185c222f64663d8e54ca1cd6378a2e29728ee031d740f5ae9e06e0d5",
+   "characters": 876,
+   "cost": 0.0008672399999999999,
+   "duration": 55.975,
+   "index": 2,
+   "key": "70a97725a833202720a3d443c49829ee1ee1d5d7b20507f86c5eefc8608c7d8c",
+   "page": "docs/singular-node.md",
+   "pause_ms": 400,
+   "section": "reading-one-key-from-the-address",
+   "sent_text": "The diagram shows the proof first and the two questions to the provider after it, so a registry whose history does not chain to its root is refused before the provider is asked who holds a token. A key that is active has a witness token: an asset of the registry's active witness policy whose name is the key's bytes. A registration mints it and a termination burns it. The registry has a second policy, for terminal witnesses, and the same name under it is the terminal witness of the key. Both policies belong to this registry. The command works out the two assets to ask for from the registry the address names and from the key, and asks for them by asset, so it does not list every output at the application's address to find the key's output. One function in the library makes that asset from the registry and the key, and it is the only place that does so for this read.",
+   "text": "The diagram shows the proof first and the two questions to the provider after it, so a registry whose history does not chain to its root is refused before the provider is asked who holds a token. A key that is active has a witness token: an asset of the registry's active witness policy whose name is the key's bytes. A registration mints it and a termination burns it. The registry has a second policy, for terminal witnesses, and the same name under it is the terminal witness of the key. Both policies belong to this registry. The command works out the two assets to ask for from the registry the address names and from the key, and asks for them by asset, so it does not list every output at the application's address to find the key's output. One function in the library makes that asset from the registry and the key, and it is the only place that does so for this read.",
+   "words": [
+    {
+     "end": 0.325,
+     "start": 0.25,
+     "text": "The"
+    },
+    {
+     "end": 0.962,
+     "start": 0.325,
+     "text": "diagram"
+    },
+    {
+     "end": 1.275,
+     "start": 0.962,
+     "text": "shows"
+    },
+    {
+     "end": 1.388,
+     "start": 1.275,
+     "text": "the"
+    },
+    {
+     "end": 1.712,
+     "start": 1.388,
+     "text": "proof"
+    },
+    {
+     "end": 2.188,
+     "start": 1.712,
+     "text": "first"
+    },
+    {
+     "end": 2.312,
+     "start": 2.188,
+     "text": "and"
+    },
+    {
+     "end": 2.412,
+     "start": 2.312,
+     "text": "the"
+    },
+    {
+     "end": 2.688,
+     "start": 2.412,
+     "text": "two"
+    },
+    {
+     "end": 3.275,
+     "start": 2.688,
+     "text": "questions"
+    },
+    {
+     "end": 3.362,
+     "start": 3.275,
+     "text": "to"
+    },
+    {
+     "end": 3.45,
+     "start": 3.362,
+     "text": "the"
+    },
+    {
+     "end": 3.987,
+     "start": 3.45,
+     "text": "provider"
+    },
+    {
+     "end": 4.375,
+     "start": 3.987,
+     "text": "after"
+    },
+    {
+     "end": 4.575,
+     "start": 4.375,
+     "text": "it"
+    },
+    {
+     "end": 4.65,
+     "start": 4.575,
+     "text": ","
+    },
+    {
+     "end": 4.8,
+     "start": 4.65,
+     "text": "so"
+    },
+    {
+     "end": 4.9,
+     "start": 4.8,
+     "text": "a"
+    },
+    {
+     "end": 5.5,
+     "start": 4.9,
+     "text": "registry"
+    },
+    {
+     "end": 5.75,
+     "start": 5.5,
+     "text": "whose"
+    },
+    {
+     "end": 6.225,
+     "start": 5.75,
+     "text": "history"
+    },
+    {
+     "end": 6.425,
+     "start": 6.225,
+     "text": "does"
+    },
+    {
+     "end": 6.688,
+     "start": 6.425,
+     "text": "not"
+    },
+    {
+     "end": 7.025,
+     "start": 6.688,
+     "text": "chain"
+    },
+    {
+     "end": 7.175,
+     "start": 7.025,
+     "text": "to"
+    },
+    {
+     "end": 7.387,
+     "start": 7.175,
+     "text": "its"
+    },
+    {
+     "end": 7.738,
+     "start": 7.387,
+     "text": "root"
+    },
+    {
+     "end": 7.9,
+     "start": 7.738,
+     "text": "is"
+    },
+    {
+     "end": 8.6,
+     "start": 7.9,
+     "text": "refused"
+    },
+    {
+     "end": 8.938,
+     "start": 8.6,
+     "text": "before"
+    },
+    {
+     "end": 9.025,
+     "start": 8.938,
+     "text": "the"
+    },
+    {
+     "end": 9.55,
+     "start": 9.025,
+     "text": "provider"
+    },
+    {
+     "end": 9.725,
+     "start": 9.55,
+     "text": "is"
+    },
+    {
+     "end": 10.163,
+     "start": 9.725,
+     "text": "asked"
+    },
+    {
+     "end": 10.3,
+     "start": 10.163,
+     "text": "who"
+    },
+    {
+     "end": 10.587,
+     "start": 10.3,
+     "text": "holds"
+    },
+    {
+     "end": 10.688,
+     "start": 10.587,
+     "text": "a"
+    },
+    {
+     "end": 11.875,
+     "start": 10.688,
+     "text": "token"
+    },
+    {
+     "end": 12.125,
+     "start": 11.875,
+     "text": "."
+    },
+    {
+     "end": 12.438,
+     "start": 12.35,
+     "text": "A"
+    },
+    {
+     "end": 12.725,
+     "start": 12.438,
+     "text": "key"
+    },
+    {
+     "end": 12.875,
+     "start": 12.725,
+     "text": "that"
+    },
+    {
+     "end": 13.05,
+     "start": 12.875,
+     "text": "is"
+    },
+    {
+     "end": 13.575,
+     "start": 13.05,
+     "text": "active"
+    },
+    {
+     "end": 13.812,
+     "start": 13.575,
+     "text": "has"
+    },
+    {
+     "end": 13.9,
+     "start": 13.812,
+     "text": "a"
+    },
+    {
+     "end": 14.275,
+     "start": 13.9,
+     "text": "witness"
+    },
+    {
+     "end": 14.875,
+     "start": 14.275,
+     "text": "token"
+    },
+    {
+     "end": 14.988,
+     "start": 14.875,
+     "text": ":"
+    },
+    {
+     "end": 15.175,
+     "start": 14.988,
+     "text": "an"
+    },
+    {
+     "end": 15.613,
+     "start": 15.175,
+     "text": "asset"
+    },
+    {
+     "end": 15.688,
+     "start": 15.613,
+     "text": "of"
+    },
+    {
+     "end": 15.8,
+     "start": 15.688,
+     "text": "the"
+    },
+    {
+     "end": 16.425,
+     "start": 15.8,
+     "text": "registry's"
+    },
+    {
+     "end": 16.875,
+     "start": 16.425,
+     "text": "active"
+    },
+    {
+     "end": 17.225,
+     "start": 16.875,
+     "text": "witness"
+    },
+    {
+     "end": 17.775,
+     "start": 17.225,
+     "text": "policy"
+    },
+    {
+     "end": 18.025,
+     "start": 17.775,
+     "text": "whose"
+    },
+    {
+     "end": 18.425,
+     "start": 18.025,
+     "text": "name"
+    },
+    {
+     "end": 18.575,
+     "start": 18.425,
+     "text": "is"
+    },
+    {
+     "end": 18.712,
+     "start": 18.575,
+     "text": "the"
+    },
+    {
+     "end": 19.05,
+     "start": 18.712,
+     "text": "key's"
+    },
+    {
+     "end": 20.15,
+     "start": 19.05,
+     "text": "bytes"
+    },
+    {
+     "end": 20.35,
+     "start": 20.15,
+     "text": "."
+    },
+    {
+     "end": 20.625,
+     "start": 20.55,
+     "text": "A"
+    },
+    {
+     "end": 21.4,
+     "start": 20.625,
+     "text": "registration"
+    },
+    {
+     "end": 21.688,
+     "start": 21.4,
+     "text": "mints"
+    },
+    {
+     "end": 21.962,
+     "start": 21.688,
+     "text": "it"
+    },
+    {
+     "end": 22.087,
+     "start": 21.962,
+     "text": "and"
+    },
+    {
+     "end": 22.15,
+     "start": 22.087,
+     "text": "a"
+    },
+    {
+     "end": 22.825,
+     "start": 22.15,
+     "text": "termination"
+    },
+    {
+     "end": 23.188,
+     "start": 22.825,
+     "text": "burns"
+    },
+    {
+     "end": 23.825,
+     "start": 23.188,
+     "text": "it"
+    },
+    {
+     "end": 24.025,
+     "start": 23.825,
+     "text": "."
+    },
+    {
+     "end": 24.325,
+     "start": 24.225,
+     "text": "The"
+    },
+    {
+     "end": 24.875,
+     "start": 24.325,
+     "text": "registry"
+    },
+    {
+     "end": 25.125,
+     "start": 24.875,
+     "text": "has"
+    },
+    {
+     "end": 25.237,
+     "start": 25.125,
+     "text": "a"
+    },
+    {
+     "end": 25.6,
+     "start": 25.237,
+     "text": "second"
+    },
+    {
+     "end": 26.15,
+     "start": 25.6,
+     "text": "policy"
+    },
+    {
+     "end": 26.225,
+     "start": 26.15,
+     "text": ","
+    },
+    {
+     "end": 26.388,
+     "start": 26.225,
+     "text": "for"
+    },
+    {
+     "end": 26.875,
+     "start": 26.388,
+     "text": "terminal"
+    },
+    {
+     "end": 27.55,
+     "start": 26.875,
+     "text": "witnesses"
+    },
+    {
+     "end": 27.625,
+     "start": 27.55,
+     "text": ","
+    },
+    {
+     "end": 27.737,
+     "start": 27.625,
+     "text": "and"
+    },
+    {
+     "end": 27.85,
+     "start": 27.737,
+     "text": "the"
+    },
+    {
+     "end": 28.2,
+     "start": 27.85,
+     "text": "same"
+    },
+    {
+     "end": 28.45,
+     "start": 28.2,
+     "text": "name"
+    },
+    {
+     "end": 28.8,
+     "start": 28.45,
+     "text": "under"
+    },
+    {
+     "end": 29.013,
+     "start": 28.8,
+     "text": "it"
+    },
+    {
+     "end": 29.175,
+     "start": 29.013,
+     "text": "is"
+    },
+    {
+     "end": 29.312,
+     "start": 29.175,
+     "text": "the"
+    },
+    {
+     "end": 29.825,
+     "start": 29.312,
+     "text": "terminal"
+    },
+    {
+     "end": 30.25,
+     "start": 29.825,
+     "text": "witness"
+    },
+    {
+     "end": 30.337,
+     "start": 30.25,
+     "text": "of"
+    },
+    {
+     "end": 30.462,
+     "start": 30.337,
+     "text": "the"
+    },
+    {
+     "end": 31.45,
+     "start": 30.462,
+     "text": "key"
+    },
+    {
+     "end": 31.7,
+     "start": 31.45,
+     "text": "."
+    },
+    {
+     "end": 32.1,
+     "start": 31.875,
+     "text": "Both"
+    },
+    {
+     "end": 32.6,
+     "start": 32.1,
+     "text": "policies"
+    },
+    {
+     "end": 32.95,
+     "start": 32.6,
+     "text": "belong"
+    },
+    {
+     "end": 33.037,
+     "start": 32.95,
+     "text": "to"
+    },
+    {
+     "end": 33.225,
+     "start": 33.037,
+     "text": "this"
+    },
+    {
+     "end": 34.2,
+     "start": 33.225,
+     "text": "registry"
+    },
+    {
+     "end": 34.425,
+     "start": 34.2,
+     "text": "."
+    },
+    {
+     "end": 34.7,
+     "start": 34.625,
+     "text": "The"
+    },
+    {
+     "end": 35.225,
+     "start": 34.7,
+     "text": "command"
+    },
+    {
+     "end": 35.463,
+     "start": 35.225,
+     "text": "works"
+    },
+    {
+     "end": 35.612,
+     "start": 35.463,
+     "text": "out"
+    },
+    {
+     "end": 35.737,
+     "start": 35.612,
+     "text": "the"
+    },
+    {
+     "end": 35.963,
+     "start": 35.737,
+     "text": "two"
+    },
+    {
+     "end": 36.5,
+     "start": 35.963,
+     "text": "assets"
+    },
+    {
+     "end": 36.638,
+     "start": 36.5,
+     "text": "to"
+    },
+    {
+     "end": 36.95,
+     "start": 36.638,
+     "text": "ask"
+    },
+    {
+     "end": 37.125,
+     "start": 36.95,
+     "text": "for"
+    },
+    {
+     "end": 37.263,
+     "start": 37.125,
+     "text": "from"
+    },
+    {
+     "end": 37.35,
+     "start": 37.263,
+     "text": "the"
+    },
+    {
+     "end": 37.925,
+     "start": 37.35,
+     "text": "registry"
+    },
+    {
+     "end": 38.075,
+     "start": 37.925,
+     "text": "the"
+    },
+    {
+     "end": 38.475,
+     "start": 38.075,
+     "text": "address"
+    },
+    {
+     "end": 38.938,
+     "start": 38.475,
+     "text": "names"
+    },
+    {
+     "end": 39.075,
+     "start": 38.938,
+     "text": "and"
+    },
+    {
+     "end": 39.237,
+     "start": 39.075,
+     "text": "from"
+    },
+    {
+     "end": 39.362,
+     "start": 39.237,
+     "text": "the"
+    },
+    {
+     "end": 40.275,
+     "start": 39.362,
+     "text": "key"
+    },
+    {
+     "end": 40.55,
+     "start": 40.275,
+     "text": ","
+    },
+    {
+     "end": 40.825,
+     "start": 40.725,
+     "text": "and"
+    },
+    {
+     "end": 41.112,
+     "start": 40.825,
+     "text": "asks"
+    },
+    {
+     "end": 41.213,
+     "start": 41.112,
+     "text": "for"
+    },
+    {
+     "end": 41.362,
+     "start": 41.213,
+     "text": "them"
+    },
+    {
+     "end": 41.513,
+     "start": 41.362,
+     "text": "by"
+    },
+    {
+     "end": 42.375,
+     "start": 41.513,
+     "text": "asset"
+    },
+    {
+     "end": 42.575,
+     "start": 42.375,
+     "text": ","
+    },
+    {
+     "end": 42.95,
+     "start": 42.775,
+     "text": "so"
+    },
+    {
+     "end": 43.037,
+     "start": 42.95,
+     "text": "it"
+    },
+    {
+     "end": 43.225,
+     "start": 43.037,
+     "text": "does"
+    },
+    {
+     "end": 43.475,
+     "start": 43.225,
+     "text": "not"
+    },
+    {
+     "end": 43.787,
+     "start": 43.475,
+     "text": "list"
+    },
+    {
+     "end": 44.125,
+     "start": 43.787,
+     "text": "every"
+    },
+    {
+     "end": 44.6,
+     "start": 44.125,
+     "text": "output"
+    },
+    {
+     "end": 44.688,
+     "start": 44.6,
+     "text": "at"
+    },
+    {
+     "end": 44.8,
+     "start": 44.688,
+     "text": "the"
+    },
+    {
+     "end": 45.5,
+     "start": 44.8,
+     "text": "application's"
+    },
+    {
+     "end": 46.0,
+     "start": 45.5,
+     "text": "address"
+    },
+    {
+     "end": 46.125,
+     "start": 46.0,
+     "text": "to"
+    },
+    {
+     "end": 46.412,
+     "start": 46.125,
+     "text": "find"
+    },
+    {
+     "end": 46.513,
+     "start": 46.412,
+     "text": "the"
+    },
+    {
+     "end": 46.85,
+     "start": 46.513,
+     "text": "key's"
+    },
+    {
+     "end": 47.875,
+     "start": 46.85,
+     "text": "output"
+    },
+    {
+     "end": 48.075,
+     "start": 47.875,
+     "text": "."
+    },
+    {
+     "end": 48.513,
+     "start": 48.275,
+     "text": "One"
+    },
+    {
+     "end": 48.938,
+     "start": 48.513,
+     "text": "function"
+    },
+    {
+     "end": 49.013,
+     "start": 48.938,
+     "text": "in"
+    },
+    {
+     "end": 49.1,
+     "start": 49.013,
+     "text": "the"
+    },
+    {
+     "end": 49.763,
+     "start": 49.1,
+     "text": "library"
+    },
+    {
+     "end": 50.05,
+     "start": 49.763,
+     "text": "makes"
+    },
+    {
+     "end": 50.287,
+     "start": 50.05,
+     "text": "that"
+    },
+    {
+     "end": 50.725,
+     "start": 50.287,
+     "text": "asset"
+    },
+    {
+     "end": 50.862,
+     "start": 50.725,
+     "text": "from"
+    },
+    {
+     "end": 50.95,
+     "start": 50.862,
+     "text": "the"
+    },
+    {
+     "end": 51.525,
+     "start": 50.95,
+     "text": "registry"
+    },
+    {
+     "end": 51.638,
+     "start": 51.525,
+     "text": "and"
+    },
+    {
+     "end": 51.737,
+     "start": 51.638,
+     "text": "the"
+    },
+    {
+     "end": 52.575,
+     "start": 51.737,
+     "text": "key"
+    },
+    {
+     "end": 52.825,
+     "start": 52.575,
+     "text": ","
+    },
+    {
+     "end": 53.112,
+     "start": 53.025,
+     "text": "and"
+    },
+    {
+     "end": 53.2,
+     "start": 53.112,
+     "text": "it"
+    },
+    {
+     "end": 53.312,
+     "start": 53.2,
+     "text": "is"
+    },
+    {
+     "end": 53.425,
+     "start": 53.312,
+     "text": "the"
+    },
+    {
+     "end": 53.725,
+     "start": 53.425,
+     "text": "only"
+    },
+    {
+     "end": 54.075,
+     "start": 53.725,
+     "text": "place"
+    },
+    {
+     "end": 54.225,
+     "start": 54.075,
+     "text": "that"
+    },
+    {
+     "end": 54.5,
+     "start": 54.225,
+     "text": "does"
+    },
+    {
+     "end": 54.7,
+     "start": 54.5,
+     "text": "so"
+    },
+    {
+     "end": 54.812,
+     "start": 54.7,
+     "text": "for"
+    },
+    {
+     "end": 55.0,
+     "start": 54.812,
+     "text": "this"
+    },
+    {
+     "end": 55.775,
+     "start": 55.0,
+     "text": "read"
+    },
+    {
+     "end": 55.975,
+     "start": 55.775,
+     "text": "."
+    }
+   ]
+  },
+  "docs-singular-node/reading-one-key-from-the-address-03": {
+   "audio_sha256": "683fd23a03b50da7f581413d6d4acbfc1cf19d9cd5d1d000103ae1729780b41e",
+   "characters": 277,
+   "cost": 0.00027423,
+   "duration": 18.325,
+   "index": 3,
+   "key": "1d279a95391a7effeec77ae4038f75bb6cf26e0bd33a3fd1f7a6758795dadea9",
+   "page": "docs/singular-node.md",
+   "pause_ms": 400,
+   "section": "reading-one-key-from-the-address",
+   "sent_text": "For a key the registry has recorded, active or terminal, the receipt of inspect carries a field witness with two entries, active and terminal. Each has policy, the policy as hex; assetName, the key's bytes as hex; and holders, the references of the outputs that hold the asset.",
+   "text": "For a key the registry has recorded, active or terminal, the receipt of inspect carries a field witness with two entries, active and terminal. Each has policy, the policy as hex; assetName, the key's bytes as hex; and holders, the references of the outputs that hold the asset.",
+   "words": [
+    {
+     "end": 0.338,
+     "start": 0.225,
+     "text": "For"
+    },
+    {
+     "end": 0.438,
+     "start": 0.338,
+     "text": "a"
+    },
+    {
+     "end": 0.7,
+     "start": 0.438,
+     "text": "key"
+    },
+    {
+     "end": 0.825,
+     "start": 0.7,
+     "text": "the"
+    },
+    {
+     "end": 1.325,
+     "start": 0.825,
+     "text": "registry"
+    },
+    {
+     "end": 1.525,
+     "start": 1.325,
+     "text": "has"
+    },
+    {
+     "end": 2.125,
+     "start": 1.525,
+     "text": "recorded"
+    },
+    {
+     "end": 2.237,
+     "start": 2.125,
+     "text": ","
+    },
+    {
+     "end": 2.763,
+     "start": 2.237,
+     "text": "active"
+    },
+    {
+     "end": 2.938,
+     "start": 2.763,
+     "text": "or"
+    },
+    {
+     "end": 3.5,
+     "start": 2.938,
+     "text": "terminal"
+    },
+    {
+     "end": 3.575,
+     "start": 3.5,
+     "text": ","
+    },
+    {
+     "end": 3.7,
+     "start": 3.575,
+     "text": "the"
+    },
+    {
+     "end": 4.113,
+     "start": 3.7,
+     "text": "receipt"
+    },
+    {
+     "end": 4.2,
+     "start": 4.113,
+     "text": "of"
+    },
+    {
+     "end": 4.762,
+     "start": 4.2,
+     "text": "inspect"
+    },
+    {
+     "end": 5.175,
+     "start": 4.762,
+     "text": "carries"
+    },
+    {
+     "end": 5.3,
+     "start": 5.175,
+     "text": "a"
+    },
+    {
+     "end": 5.65,
+     "start": 5.3,
+     "text": "field"
+    },
+    {
+     "end": 6.125,
+     "start": 5.65,
+     "text": "witness"
+    },
+    {
+     "end": 6.312,
+     "start": 6.125,
+     "text": "with"
+    },
+    {
+     "end": 6.525,
+     "start": 6.312,
+     "text": "two"
+    },
+    {
+     "end": 7.15,
+     "start": 6.525,
+     "text": "entries"
+    },
+    {
+     "end": 7.262,
+     "start": 7.15,
+     "text": ","
+    },
+    {
+     "end": 7.75,
+     "start": 7.262,
+     "text": "active"
+    },
+    {
+     "end": 7.875,
+     "start": 7.75,
+     "text": "and"
+    },
+    {
+     "end": 9.1,
+     "start": 7.875,
+     "text": "terminal"
+    },
+    {
+     "end": 9.325,
+     "start": 9.1,
+     "text": "."
+    },
+    {
+     "end": 9.725,
+     "start": 9.525,
+     "text": "Each"
+    },
+    {
+     "end": 9.925,
+     "start": 9.725,
+     "text": "has"
+    },
+    {
+     "end": 10.425,
+     "start": 9.925,
+     "text": "policy"
+    },
+    {
+     "end": 10.462,
+     "start": 10.425,
+     "text": ","
+    },
+    {
+     "end": 10.55,
+     "start": 10.462,
+     "text": "the"
+    },
+    {
+     "end": 11.0,
+     "start": 10.55,
+     "text": "policy"
+    },
+    {
+     "end": 11.15,
+     "start": 11.0,
+     "text": "as"
+    },
+    {
+     "end": 11.625,
+     "start": 11.15,
+     "text": "hex"
+    },
+    {
+     "end": 11.738,
+     "start": 11.625,
+     "text": ";"
+    },
+    {
+     "end": 12.3,
+     "start": 11.738,
+     "text": "assetName"
+    },
+    {
+     "end": 12.337,
+     "start": 12.3,
+     "text": ","
+    },
+    {
+     "end": 12.425,
+     "start": 12.337,
+     "text": "the"
+    },
+    {
+     "end": 12.75,
+     "start": 12.425,
+     "text": "key's"
+    },
+    {
+     "end": 13.05,
+     "start": 12.75,
+     "text": "bytes"
+    },
+    {
+     "end": 13.2,
+     "start": 13.05,
+     "text": "as"
+    },
+    {
+     "end": 14.075,
+     "start": 13.2,
+     "text": "hex"
+    },
+    {
+     "end": 14.275,
+     "start": 14.075,
+     "text": ";"
+    },
+    {
+     "end": 14.6,
+     "start": 14.475,
+     "text": "and"
+    },
+    {
+     "end": 15.1,
+     "start": 14.6,
+     "text": "holders"
+    },
+    {
+     "end": 15.15,
+     "start": 15.1,
+     "text": ","
+    },
+    {
+     "end": 15.275,
+     "start": 15.15,
+     "text": "the"
+    },
+    {
+     "end": 15.887,
+     "start": 15.275,
+     "text": "references"
+    },
+    {
+     "end": 15.962,
+     "start": 15.887,
+     "text": "of"
+    },
+    {
+     "end": 16.112,
+     "start": 15.962,
+     "text": "the"
+    },
+    {
+     "end": 16.625,
+     "start": 16.112,
+     "text": "outputs"
+    },
+    {
+     "end": 16.775,
+     "start": 16.625,
+     "text": "that"
+    },
+    {
+     "end": 17.013,
+     "start": 16.775,
+     "text": "hold"
+    },
+    {
+     "end": 17.15,
+     "start": 17.013,
+     "text": "the"
+    },
+    {
+     "end": 18.125,
+     "start": 17.15,
+     "text": "asset"
+    },
+    {
+     "end": 18.325,
+     "start": 18.125,
+     "text": "."
+    }
+   ]
+  },
+  "docs-singular-node/reading-one-key-from-the-address-04": {
+   "audio_sha256": "28b32746a5c20f6717f9eccb271d4eea93911bb1e3543d8f0df913428d21d35d",
+   "characters": 97,
+   "cost": 9.602999999999999e-05,
+   "duration": 6.325,
+   "index": 4,
+   "key": "a732e330e24b13f044b95e628f9bbfe001d7e95f5afa07e471160dcd9b5aca4a",
+   "page": "docs/singular-node.md",
+   "pause_ms": 400,
+   "section": "reading-one-key-from-the-address",
+   "sent_text": "For a key the registry never recorded the receipt has no witness field and is what it always was.",
+   "text": "For a key the registry never recorded the receipt has no witness field and is what it always was.",
+   "words": [
+    {
+     "end": 0.312,
+     "start": 0.2,
+     "text": "For"
+    },
+    {
+     "end": 0.412,
+     "start": 0.312,
+     "text": "a"
+    },
+    {
+     "end": 0.725,
+     "start": 0.412,
+     "text": "key"
+    },
+    {
+     "end": 0.85,
+     "start": 0.725,
+     "text": "the"
+    },
+    {
+     "end": 1.388,
+     "start": 0.85,
+     "text": "registry"
+    },
+    {
+     "end": 1.7,
+     "start": 1.388,
+     "text": "never"
+    },
+    {
+     "end": 2.188,
+     "start": 1.7,
+     "text": "recorded"
+    },
+    {
+     "end": 2.275,
+     "start": 2.188,
+     "text": "the"
+    },
+    {
+     "end": 2.725,
+     "start": 2.275,
+     "text": "receipt"
+    },
+    {
+     "end": 2.938,
+     "start": 2.725,
+     "text": "has"
+    },
+    {
+     "end": 3.2,
+     "start": 2.938,
+     "text": "no"
+    },
+    {
+     "end": 3.588,
+     "start": 3.2,
+     "text": "witness"
+    },
+    {
+     "end": 4.175,
+     "start": 3.588,
+     "text": "field"
+    },
+    {
+     "end": 4.35,
+     "start": 4.175,
+     "text": "and"
+    },
+    {
+     "end": 4.5,
+     "start": 4.35,
+     "text": "is"
+    },
+    {
+     "end": 4.637,
+     "start": 4.5,
+     "text": "what"
+    },
+    {
+     "end": 4.725,
+     "start": 4.637,
+     "text": "it"
+    },
+    {
+     "end": 5.125,
+     "start": 4.725,
+     "text": "always"
+    },
+    {
+     "end": 6.125,
+     "start": 5.125,
+     "text": "was"
+    },
+    {
+     "end": 6.325,
+     "start": 6.125,
+     "text": "."
+    }
+   ]
+  },
+  "docs-singular-node/reading-one-key-from-the-address-05": {
+   "audio_sha256": "b59e7330f3099085284159891b2e35860653c28a0caf054773c2ff1a46cd4d43",
+   "characters": 521,
+   "cost": 0.00051579,
+   "duration": 33.225,
+   "index": 5,
+   "key": "f4055e9e8cd5f4e017ef5bdda9689bc5d4d533ed162d99a693eb816ac76f70ed",
+   "page": "docs/singular-node.md",
+   "pause_ms": 400,
+   "section": "reading-one-key-from-the-address",
+   "sent_text": "The witness finds the key's output; it does not say whether the key is active. That is still proved: the leaf is checked against the registry's root by replaying the registry's public history, as before, and a witness that disagrees with the proof is refused as proof-inconsistent, as a holding that disagreed with the proof was. The replay is the cost of the proof and it is not made to find the output. A directory that holds nothing reads the same as any other, because inspect without --wallet-address keeps no state.",
+   "text": "The witness finds the key's output; it does not say whether the key is active. That is still proved: the leaf is checked against the registry's root by replaying the registry's public history, as before, and a witness that disagrees with the proof is refused as proof-inconsistent, as a holding that disagreed with the proof was. The replay is the cost of the proof and it is not made to find the output. A directory that holds nothing reads the same as any other, because inspect without --wallet-address keeps no state.",
+   "words": [
+    {
+     "end": 0.25,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.575,
+     "start": 0.25,
+     "text": "witness"
+    },
+    {
+     "end": 0.863,
+     "start": 0.575,
+     "text": "finds"
+    },
+    {
+     "end": 0.95,
+     "start": 0.863,
+     "text": "the"
+    },
+    {
+     "end": 1.225,
+     "start": 0.95,
+     "text": "key's"
+    },
+    {
+     "end": 2.075,
+     "start": 1.225,
+     "text": "output"
+    },
+    {
+     "end": 2.275,
+     "start": 2.075,
+     "text": ";"
+    },
+    {
+     "end": 2.537,
+     "start": 2.475,
+     "text": "it"
+    },
+    {
+     "end": 2.7,
+     "start": 2.537,
+     "text": "does"
+    },
+    {
+     "end": 2.95,
+     "start": 2.7,
+     "text": "not"
+    },
+    {
+     "end": 3.175,
+     "start": 2.95,
+     "text": "say"
+    },
+    {
+     "end": 3.362,
+     "start": 3.175,
+     "text": "whether"
+    },
+    {
+     "end": 3.45,
+     "start": 3.362,
+     "text": "the"
+    },
+    {
+     "end": 3.675,
+     "start": 3.45,
+     "text": "key"
+    },
+    {
+     "end": 3.838,
+     "start": 3.675,
+     "text": "is"
+    },
+    {
+     "end": 4.375,
+     "start": 3.838,
+     "text": "active"
+    },
+    {
+     "end": 4.45,
+     "start": 4.375,
+     "text": "."
+    },
+    {
+     "end": 4.688,
+     "start": 4.45,
+     "text": "That"
+    },
+    {
+     "end": 4.762,
+     "start": 4.688,
+     "text": "is"
+    },
+    {
+     "end": 5.0,
+     "start": 4.762,
+     "text": "still"
+    },
+    {
+     "end": 5.925,
+     "start": 5.0,
+     "text": "proved"
+    },
+    {
+     "end": 6.125,
+     "start": 5.925,
+     "text": ":"
+    },
+    {
+     "end": 6.438,
+     "start": 6.325,
+     "text": "the"
+    },
+    {
+     "end": 6.775,
+     "start": 6.438,
+     "text": "leaf"
+    },
+    {
+     "end": 6.938,
+     "start": 6.775,
+     "text": "is"
+    },
+    {
+     "end": 7.275,
+     "start": 6.938,
+     "text": "checked"
+    },
+    {
+     "end": 7.637,
+     "start": 7.275,
+     "text": "against"
+    },
+    {
+     "end": 7.725,
+     "start": 7.637,
+     "text": "the"
+    },
+    {
+     "end": 8.337,
+     "start": 7.725,
+     "text": "registry's"
+    },
+    {
+     "end": 8.738,
+     "start": 8.337,
+     "text": "root"
+    },
+    {
+     "end": 8.95,
+     "start": 8.738,
+     "text": "by"
+    },
+    {
+     "end": 9.462,
+     "start": 8.95,
+     "text": "replaying"
+    },
+    {
+     "end": 9.55,
+     "start": 9.462,
+     "text": "the"
+    },
+    {
+     "end": 10.125,
+     "start": 9.55,
+     "text": "registry's"
+    },
+    {
+     "end": 10.5,
+     "start": 10.125,
+     "text": "public"
+    },
+    {
+     "end": 11.525,
+     "start": 10.5,
+     "text": "history"
+    },
+    {
+     "end": 11.75,
+     "start": 11.525,
+     "text": ","
+    },
+    {
+     "end": 12.075,
+     "start": 11.95,
+     "text": "as"
+    },
+    {
+     "end": 12.85,
+     "start": 12.075,
+     "text": "before"
+    },
+    {
+     "end": 13.1,
+     "start": 12.85,
+     "text": ","
+    },
+    {
+     "end": 13.387,
+     "start": 13.3,
+     "text": "and"
+    },
+    {
+     "end": 13.488,
+     "start": 13.387,
+     "text": "a"
+    },
+    {
+     "end": 13.925,
+     "start": 13.488,
+     "text": "witness"
+    },
+    {
+     "end": 14.1,
+     "start": 13.925,
+     "text": "that"
+    },
+    {
+     "end": 14.725,
+     "start": 14.1,
+     "text": "disagrees"
+    },
+    {
+     "end": 14.887,
+     "start": 14.725,
+     "text": "with"
+    },
+    {
+     "end": 14.988,
+     "start": 14.887,
+     "text": "the"
+    },
+    {
+     "end": 15.475,
+     "start": 14.988,
+     "text": "proof"
+    },
+    {
+     "end": 15.65,
+     "start": 15.475,
+     "text": "is"
+    },
+    {
+     "end": 16.337,
+     "start": 15.65,
+     "text": "refused"
+    },
+    {
+     "end": 16.513,
+     "start": 16.337,
+     "text": "as"
+    },
+    {
+     "end": 18.1,
+     "start": 16.513,
+     "text": "proof-inconsistent"
+    },
+    {
+     "end": 18.3,
+     "start": 18.1,
+     "text": ","
+    },
+    {
+     "end": 18.587,
+     "start": 18.5,
+     "text": "as"
+    },
+    {
+     "end": 18.65,
+     "start": 18.587,
+     "text": "a"
+    },
+    {
+     "end": 19.038,
+     "start": 18.65,
+     "text": "holding"
+    },
+    {
+     "end": 19.175,
+     "start": 19.038,
+     "text": "that"
+    },
+    {
+     "end": 19.712,
+     "start": 19.175,
+     "text": "disagreed"
+    },
+    {
+     "end": 19.812,
+     "start": 19.712,
+     "text": "with"
+    },
+    {
+     "end": 19.9,
+     "start": 19.812,
+     "text": "the"
+    },
+    {
+     "end": 20.2,
+     "start": 19.9,
+     "text": "proof"
+    },
+    {
+     "end": 21.0,
+     "start": 20.2,
+     "text": "was"
+    },
+    {
+     "end": 21.2,
+     "start": 21.0,
+     "text": "."
+    },
+    {
+     "end": 21.475,
+     "start": 21.375,
+     "text": "The"
+    },
+    {
+     "end": 22.0,
+     "start": 21.475,
+     "text": "replay"
+    },
+    {
+     "end": 22.15,
+     "start": 22.0,
+     "text": "is"
+    },
+    {
+     "end": 22.288,
+     "start": 22.15,
+     "text": "the"
+    },
+    {
+     "end": 22.638,
+     "start": 22.288,
+     "text": "cost"
+    },
+    {
+     "end": 22.712,
+     "start": 22.638,
+     "text": "of"
+    },
+    {
+     "end": 22.812,
+     "start": 22.712,
+     "text": "the"
+    },
+    {
+     "end": 23.337,
+     "start": 22.812,
+     "text": "proof"
+    },
+    {
+     "end": 23.462,
+     "start": 23.337,
+     "text": "and"
+    },
+    {
+     "end": 23.55,
+     "start": 23.462,
+     "text": "it"
+    },
+    {
+     "end": 23.7,
+     "start": 23.55,
+     "text": "is"
+    },
+    {
+     "end": 23.95,
+     "start": 23.7,
+     "text": "not"
+    },
+    {
+     "end": 24.163,
+     "start": 23.95,
+     "text": "made"
+    },
+    {
+     "end": 24.275,
+     "start": 24.163,
+     "text": "to"
+    },
+    {
+     "end": 24.538,
+     "start": 24.275,
+     "text": "find"
+    },
+    {
+     "end": 24.65,
+     "start": 24.538,
+     "text": "the"
+    },
+    {
+     "end": 25.65,
+     "start": 24.65,
+     "text": "output"
+    },
+    {
+     "end": 25.85,
+     "start": 25.65,
+     "text": "."
+    },
+    {
+     "end": 26.15,
+     "start": 26.075,
+     "text": "A"
+    },
+    {
+     "end": 26.775,
+     "start": 26.15,
+     "text": "directory"
+    },
+    {
+     "end": 26.925,
+     "start": 26.775,
+     "text": "that"
+    },
+    {
+     "end": 27.263,
+     "start": 26.925,
+     "text": "holds"
+    },
+    {
+     "end": 27.688,
+     "start": 27.263,
+     "text": "nothing"
+    },
+    {
+     "end": 28.075,
+     "start": 27.688,
+     "text": "reads"
+    },
+    {
+     "end": 28.212,
+     "start": 28.075,
+     "text": "the"
+    },
+    {
+     "end": 28.575,
+     "start": 28.212,
+     "text": "same"
+    },
+    {
+     "end": 28.725,
+     "start": 28.575,
+     "text": "as"
+    },
+    {
+     "end": 28.95,
+     "start": 28.725,
+     "text": "any"
+    },
+    {
+     "end": 29.35,
+     "start": 28.95,
+     "text": "other"
+    },
+    {
+     "end": 29.425,
+     "start": 29.35,
+     "text": ","
+    },
+    {
+     "end": 29.775,
+     "start": 29.425,
+     "text": "because"
+    },
+    {
+     "end": 30.35,
+     "start": 29.775,
+     "text": "inspect"
+    },
+    {
+     "end": 30.7,
+     "start": 30.35,
+     "text": "without"
+    },
+    {
+     "end": 31.438,
+     "start": 30.7,
+     "text": "--wallet-address"
+    },
+    {
+     "end": 31.75,
+     "start": 31.438,
+     "text": "keeps"
+    },
+    {
+     "end": 31.962,
+     "start": 31.75,
+     "text": "no"
+    },
+    {
+     "end": 33.0,
+     "start": 31.962,
+     "text": "state"
+    },
+    {
+     "end": 33.225,
+     "start": 33.0,
+     "text": "."
+    }
+   ]
+  },
+  "docs-singular-node/reading-one-key-from-the-address-06": {
+   "audio_sha256": "3ac17652eb1506d6e6257ce0136ae531e1ff645d10f2a17bc6e65e95c4d40099",
+   "characters": 521,
+   "cost": 0.00051579,
+   "duration": 33.575,
+   "index": 6,
+   "key": "eaffbc610850cbcec1d8c15e7ac65058a21c16cd80de0f85d4f4692e2be54c12",
+   "page": "docs/singular-node.md",
+   "pause_ms": 400,
+   "section": "reading-one-key-from-the-address",
+   "sent_text": "One reader still lists the application's outputs. singular registry inspect prints every output at the application's address in its rawDatums, because the program knows no application and shows them all, so it reads that listing and the witness. open-datum inspect prints only the key's output and reads no listing. keri-stub status reads the listing too, because its rule counts an output that carries the key's datum whether or not it holds the key's token, and an output without the token has to be seen to be counted.",
+   "text": "One reader still lists the application's outputs. singular registry inspect prints every output at the application's address in its rawDatums, because the program knows no application and shows them all, so it reads that listing and the witness. open-datum inspect prints only the key's output and reads no listing. keri-stub status reads the listing too, because its rule counts an output that carries the key's datum whether or not it holds the key's token, and an output without the token has to be seen to be counted.",
+   "words": [
+    {
+     "end": 0.425,
+     "start": 0.2,
+     "text": "One"
+    },
+    {
+     "end": 0.75,
+     "start": 0.425,
+     "text": "reader"
+    },
+    {
+     "end": 1.05,
+     "start": 0.75,
+     "text": "still"
+    },
+    {
+     "end": 1.263,
+     "start": 1.05,
+     "text": "lists"
+    },
+    {
+     "end": 1.337,
+     "start": 1.263,
+     "text": "the"
+    },
+    {
+     "end": 2.025,
+     "start": 1.337,
+     "text": "application's"
+    },
+    {
+     "end": 3.05,
+     "start": 2.025,
+     "text": "outputs"
+    },
+    {
+     "end": 3.25,
+     "start": 3.05,
+     "text": "."
+    },
+    {
+     "end": 3.975,
+     "start": 3.5,
+     "text": "singular"
+    },
+    {
+     "end": 4.662,
+     "start": 3.975,
+     "text": "registry"
+    },
+    {
+     "end": 5.238,
+     "start": 4.662,
+     "text": "inspect"
+    },
+    {
+     "end": 5.625,
+     "start": 5.238,
+     "text": "prints"
+    },
+    {
+     "end": 5.975,
+     "start": 5.625,
+     "text": "every"
+    },
+    {
+     "end": 6.45,
+     "start": 5.975,
+     "text": "output"
+    },
+    {
+     "end": 6.537,
+     "start": 6.45,
+     "text": "at"
+    },
+    {
+     "end": 6.65,
+     "start": 6.537,
+     "text": "the"
+    },
+    {
+     "end": 7.4,
+     "start": 6.65,
+     "text": "application's"
+    },
+    {
+     "end": 7.875,
+     "start": 7.4,
+     "text": "address"
+    },
+    {
+     "end": 7.963,
+     "start": 7.875,
+     "text": "in"
+    },
+    {
+     "end": 8.15,
+     "start": 7.963,
+     "text": "its"
+    },
+    {
+     "end": 9.45,
+     "start": 8.15,
+     "text": "rawDatums"
+    },
+    {
+     "end": 9.675,
+     "start": 9.45,
+     "text": ","
+    },
+    {
+     "end": 10.113,
+     "start": 9.85,
+     "text": "because"
+    },
+    {
+     "end": 10.2,
+     "start": 10.113,
+     "text": "the"
+    },
+    {
+     "end": 10.7,
+     "start": 10.2,
+     "text": "program"
+    },
+    {
+     "end": 10.988,
+     "start": 10.7,
+     "text": "knows"
+    },
+    {
+     "end": 11.2,
+     "start": 10.988,
+     "text": "no"
+    },
+    {
+     "end": 11.9,
+     "start": 11.2,
+     "text": "application"
+    },
+    {
+     "end": 12.038,
+     "start": 11.9,
+     "text": "and"
+    },
+    {
+     "end": 12.337,
+     "start": 12.038,
+     "text": "shows"
+    },
+    {
+     "end": 12.475,
+     "start": 12.337,
+     "text": "them"
+    },
+    {
+     "end": 13.2,
+     "start": 12.475,
+     "text": "all"
+    },
+    {
+     "end": 13.4,
+     "start": 13.2,
+     "text": ","
+    },
+    {
+     "end": 13.663,
+     "start": 13.575,
+     "text": "so"
+    },
+    {
+     "end": 13.75,
+     "start": 13.663,
+     "text": "it"
+    },
+    {
+     "end": 14.012,
+     "start": 13.75,
+     "text": "reads"
+    },
+    {
+     "end": 14.2,
+     "start": 14.012,
+     "text": "that"
+    },
+    {
+     "end": 14.6,
+     "start": 14.2,
+     "text": "listing"
+    },
+    {
+     "end": 14.712,
+     "start": 14.6,
+     "text": "and"
+    },
+    {
+     "end": 14.8,
+     "start": 14.712,
+     "text": "the"
+    },
+    {
+     "end": 15.7,
+     "start": 14.8,
+     "text": "witness"
+    },
+    {
+     "end": 15.9,
+     "start": 15.7,
+     "text": "."
+    },
+    {
+     "end": 16.725,
+     "start": 16.075,
+     "text": "open-datum"
+    },
+    {
+     "end": 17.2,
+     "start": 16.725,
+     "text": "inspect"
+    },
+    {
+     "end": 17.513,
+     "start": 17.2,
+     "text": "prints"
+    },
+    {
+     "end": 17.825,
+     "start": 17.513,
+     "text": "only"
+    },
+    {
+     "end": 17.95,
+     "start": 17.825,
+     "text": "the"
+    },
+    {
+     "end": 18.25,
+     "start": 17.95,
+     "text": "key's"
+    },
+    {
+     "end": 18.763,
+     "start": 18.25,
+     "text": "output"
+    },
+    {
+     "end": 18.9,
+     "start": 18.763,
+     "text": "and"
+    },
+    {
+     "end": 19.25,
+     "start": 18.9,
+     "text": "reads"
+    },
+    {
+     "end": 19.425,
+     "start": 19.25,
+     "text": "no"
+    },
+    {
+     "end": 20.375,
+     "start": 19.425,
+     "text": "listing"
+    },
+    {
+     "end": 20.575,
+     "start": 20.375,
+     "text": "."
+    },
+    {
+     "end": 21.263,
+     "start": 20.75,
+     "text": "keri-stub"
+    },
+    {
+     "end": 21.65,
+     "start": 21.263,
+     "text": "status"
+    },
+    {
+     "end": 21.913,
+     "start": 21.65,
+     "text": "reads"
+    },
+    {
+     "end": 21.987,
+     "start": 21.913,
+     "text": "the"
+    },
+    {
+     "end": 22.337,
+     "start": 21.987,
+     "text": "listing"
+    },
+    {
+     "end": 23.05,
+     "start": 22.337,
+     "text": "too"
+    },
+    {
+     "end": 23.275,
+     "start": 23.05,
+     "text": ","
+    },
+    {
+     "end": 23.8,
+     "start": 23.475,
+     "text": "because"
+    },
+    {
+     "end": 24.013,
+     "start": 23.8,
+     "text": "its"
+    },
+    {
+     "end": 24.413,
+     "start": 24.013,
+     "text": "rule"
+    },
+    {
+     "end": 24.763,
+     "start": 24.413,
+     "text": "counts"
+    },
+    {
+     "end": 24.888,
+     "start": 24.763,
+     "text": "an"
+    },
+    {
+     "end": 25.45,
+     "start": 24.888,
+     "text": "output"
+    },
+    {
+     "end": 25.625,
+     "start": 25.45,
+     "text": "that"
+    },
+    {
+     "end": 26.025,
+     "start": 25.625,
+     "text": "carries"
+    },
+    {
+     "end": 26.163,
+     "start": 26.025,
+     "text": "the"
+    },
+    {
+     "end": 26.5,
+     "start": 26.163,
+     "text": "key's"
+    },
+    {
+     "end": 27.013,
+     "start": 26.5,
+     "text": "datum"
+    },
+    {
+     "end": 27.288,
+     "start": 27.013,
+     "text": "whether"
+    },
+    {
+     "end": 27.375,
+     "start": 27.288,
+     "text": "or"
+    },
+    {
+     "end": 27.65,
+     "start": 27.375,
+     "text": "not"
+    },
+    {
+     "end": 27.75,
+     "start": 27.65,
+     "text": "it"
+    },
+    {
+     "end": 28.075,
+     "start": 27.75,
+     "text": "holds"
+    },
+    {
+     "end": 28.175,
+     "start": 28.075,
+     "text": "the"
+    },
+    {
+     "end": 28.475,
+     "start": 28.175,
+     "text": "key's"
+    },
+    {
+     "end": 29.5,
+     "start": 28.475,
+     "text": "token"
+    },
+    {
+     "end": 29.725,
+     "start": 29.5,
+     "text": ","
+    },
+    {
+     "end": 30.013,
+     "start": 29.925,
+     "text": "and"
+    },
+    {
+     "end": 30.138,
+     "start": 30.013,
+     "text": "an"
+    },
+    {
+     "end": 30.587,
+     "start": 30.138,
+     "text": "output"
+    },
+    {
+     "end": 30.888,
+     "start": 30.587,
+     "text": "without"
+    },
+    {
+     "end": 30.975,
+     "start": 30.888,
+     "text": "the"
+    },
+    {
+     "end": 31.487,
+     "start": 30.975,
+     "text": "token"
+    },
+    {
+     "end": 31.725,
+     "start": 31.487,
+     "text": "has"
+    },
+    {
+     "end": 31.812,
+     "start": 31.725,
+     "text": "to"
+    },
+    {
+     "end": 31.962,
+     "start": 31.812,
+     "text": "be"
+    },
+    {
+     "end": 32.225,
+     "start": 31.962,
+     "text": "seen"
+    },
+    {
+     "end": 32.312,
+     "start": 32.225,
+     "text": "to"
+    },
+    {
+     "end": 32.425,
+     "start": 32.312,
+     "text": "be"
+    },
+    {
+     "end": 33.35,
+     "start": 32.425,
+     "text": "counted"
+    },
+    {
+     "end": 33.575,
+     "start": 33.35,
      "text": "."
     }
    ]

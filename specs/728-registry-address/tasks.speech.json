@@ -71,28 +71,28 @@
       "pause": 500
     },
     {
-      "text": "[ ] Intake: what inspect does today with a key, stated in the pull request",
+      "text": "[x] Intake: what inspect does today with a key, stated in the pull request",
       "pause": 300
     },
     {
-      "text": "[ ] Tests: a key reached by its witness token from a fresh state directory; a key never registered answered as today",
+      "text": "[x] Tests: a key reached by its witness token from a fresh state directory; a key never registered answered as today",
       "pause": 300
     },
     {
-      "text": "[ ] inspect --key by the witness token",
+      "text": "[x] inspect --key by the witness token",
       "pause": 300
     },
     {
-      "text": "[ ] A hosted check that reaches a key from the address and a fresh state directory",
+      "text": "[x] A hosted check that reaches a key from the address and a fresh state directory",
       "pause": 300
     },
     {
-      "text": "[ ] Documentation of the key's reach, with regenerated narration",
+      "text": "[x] Documentation of the key's reach, with regenerated narration",
       "pause": 300
     }
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "5f5412f202361685b0eb97068d4329d95deeca120ebb35678102deea6d7e131b"
+    "sha256": "ca2621e95d6e54ec2da3a713122dad438283a7b152f47c85a670a1ea79a7fb98"
   }
 }
