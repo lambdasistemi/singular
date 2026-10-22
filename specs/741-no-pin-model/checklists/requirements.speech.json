@@ -1,0 +1,68 @@
+{
+  "investigation-specification-checklist": [
+    {
+      "text": "Investigation specification checklist.",
+      "pause": 500
+    },
+    {
+      "text": "As the ticket owner, I want to check that the investigation is specified without claiming its answers in advance.",
+      "pause": 400
+    },
+    {
+      "text": "[x] The actor and observable decision outcome are stated before mechanism.",
+      "pause": 300
+    },
+    {
+      "text": "[x] Identity, supply, reader and decision stories have independent checks.",
+      "pause": 300
+    },
+    {
+      "text": "[x] All nine requirements map to explicit tasks.",
+      "pause": 300
+    },
+    {
+      "text": "[x] Same-transaction multiple-policy seed use is distinguished from historical reuse.",
+      "pause": 300
+    },
+    {
+      "text": "[x] Hash premises, asset roles, application cycles and pending custody are explicit.",
+      "pause": 300
+    },
+    {
+      "text": "[x] Economic parameters and consumer conflicts remain visible.",
+      "pause": 300
+    },
+    {
+      "text": "[x] Unavailable upstream results are not counted as accepted guarantees.",
+      "pause": 300
+    },
+    {
+      "text": "[x] Proof, model, simulator, implementation and release evidence remain distinct.",
+      "pause": 300
+    },
+    {
+      "text": "[x] Statement audit precedes proofs; operator ruling precedes accepted-law amendment.",
+      "pause": 300
+    },
+    {
+      "text": "[x] Scope excludes production implementation and mutation of the active #529 lane.",
+      "pause": 300
+    },
+    {
+      "text": "[x] The named three-seat roster governs delegation; no extra author/auditor is implicit.",
+      "pause": 300
+    },
+    {
+      "text": "[x] Exact new signatures are an explicit investigation checkpoint, not an invented answer in this plan.",
+      "pause": 300
+    },
+    {
+      "text": "These marks concern specification completeness only. Every behavioral task in tasks.md remains pending.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "requirements.md",
+    "sha256": "02b4b143b576aeca28a08ae76af119a26a406f481b5bc3c7aebd60f8bd6d7081"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "records-needed-to-decide-the-proposal": [
+    {
+      "text": "Records needed to decide the proposal.",
+      "pause": 500
+    },
+    {
+      "text": "As a model reviewer, I want to see exactly what an identity or evidence record contains and which assertions are still hypothetical.",
+      "pause": 400
+    }
+  ],
+  "configuration-and-application-controls": [
+    {
+      "text": "Configuration and application controls.",
+      "pause": 500
+    },
+    {
+      "text": "The bound root Config contains the four policy pins plus root, minimum tip, processing/reclaim windows, registry identity, registration cost and booking width. The four-field proposal is not adopted by this plan. The investigation must account for each field and preserve every required economic obligation.",
+      "pause": 400
+    },
+    {
+      "text": "The bound application has a registry-parameterized App and protected Control fields. Changing that dependency requires a recorded comparison of controller update, genuine-token release and pending-custody behavior. This table specifies no replacement wire datum.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "data-model.md",
+    "sha256": "2b08099b44ba5904133c7159803fa0deaaa1cf3893d1ef94042dfc46eb2ebd13"
+  }
+}

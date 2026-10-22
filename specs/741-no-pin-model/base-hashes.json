@@ -1,0 +1,19 @@
+{
+  "base": "00771d77af996605845cf062285263909a049cf8",
+  "tree": "b65f58d56dde4de241c48ec38770a884cf50d53d",
+  "files": {
+    ".specify/memory/constitution.md": "3378034aa30903ec13c28c348e2668d41443974230d0899bf4756c21ea4922cd",
+    "AGENTS.md": "79f4993e11fa8715114c22588e5338aadd7712c5807728b941443c01ceeab450",
+    "lean-toolchain": "d55ca0039a5479db5b38919d005b2c427b89b3be4f0184a20f2f4eae931f5bdb",
+    "lakefile.toml": "d35b65fff0c49b34f314ae5a3d940ce5a0453e22407ebf8f6907795a7f8c5d2f",
+    "lean/Singular/Model/Registry.lean": "88abab50744690efea3554dcd4f3d440f8a38f3bb60ad521fb5a538e9ad6b6a3",
+    "lean/Singular/Model/Assets.lean": "ce37d142de6aac50806c440fa7136e337db2936890285ea5637c2ab50628f6b5",
+    "lean/Singular/Model/Termination.lean": "9111b875cdfb3632b52db48c65564e01ce7320e421244348665ca036fb84561b",
+    "lean/Singular/Economics/Termination.lean": "3bafd04f3b047bc3f2565f4faedc570ce9c6a30460115f346c7157992bc1760c",
+    "applications/open-datum/lean/OpenDatumApplication/Model.lean": "1538abb8b9fa2aba83b9103d5e0be502a04aee1dbda9b8378be6acf978ca485d",
+    "applications/open-datum/lean/OpenDatumApplication/Statements.lean": "be7614571f2e7d8c364f2d5f3c75283f1349b44b5c15b8c638eb1ac1b6b6c4ab",
+    "nix/model.nix": "8cc011d46b4f5a7023610c4c17b58529397e3eb13f952e7d7922a4fa4b4bddc6",
+    "justfile": "e7aa0cca1a6dffde53b72aa3939e1722f99be478860493c05938d39efffacfb2"
+  },
+  "evidence": "Source identities only; planning ran no model proof or application check."
+}

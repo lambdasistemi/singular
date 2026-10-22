@@ -1,0 +1,28 @@
+{
+  "observation-contract-for-the-investigation": [
+    {
+      "text": "Observation contract for the investigation.",
+      "pause": 500
+    },
+    {
+      "text": "As an integrator, I want to know what evidence permits a conclusion about a key before I trust that conclusion.",
+      "pause": 400
+    },
+    {
+      "text": "This is the required decision surface, not a new implemented CLI or wire format. The model investigation must bind each row to executable declarations and exact premises.",
+      "pause": 400
+    },
+    {
+      "text": "Each executable result binds candidate revision, input identities, observation extent and provenance. Preserve accepted, refused and unsupported wherever the existing driver uses those outcomes; do not overload unsupported execution as a ledger refusal.",
+      "pause": 400
+    },
+    {
+      "text": "The full candidate signature and codec are frozen only after the authority inventory. No browser-specific semantic implementation is introduced.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "model-observations.md",
+    "sha256": "e9ba85fc6204e7308a84443ff3a6f1484adba125fb8bed5ff01db55e75932d00"
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "source-intake-for-the-investigation": [
+    {
+      "text": "Source intake for the investigation.",
+      "pause": 500
+    },
+    {
+      "text": "As the ticket team, I want the verified source facts and unresolved dependencies in one place so that planning does not accidentally turn a proposal into an accepted guarantee.",
+      "pause": 400
+    }
+  ],
+  "findings": [
+    {
+      "text": "Findings.",
+      "pause": 500
+    },
+    {
+      "text": "At the bound base, lean/Singular/Model/Registry.lean defines TokenId with policy/name, but Config.stateToken uses the abstract registry identity and name zero. Its comment explicitly leaves byte correspondence separate.",
+      "pause": 300
+    },
+    {
+      "text": "The same file reads witness policies from pins and defines tokenAssetName as the key. This does not state the proposal's finite hash injectivity premise.",
+      "pause": 300
+    },
+    {
+      "text": "Config retains registrationCost and bookingWidth in addition to the proposed residual fields. The issue's four-field datum is a hypothesis to reconcile.",
+      "pause": 300
+    },
+    {
+      "text": "applications/open-datum/lean/OpenDatumApplication/Model.lean defines App.registry and protected Control.registry/activePolicy. Application unparameterization is not a consequence already established by this consumer.",
+      "pause": 300
+    },
+    {
+      "text": "The constitution's ruled economic translation moves a genuine tag to a pending termination before fold; a burn-only application release proposal must account for that path.",
+      "pause": 300
+    },
+    {
+      "text": "Ledger tickets #679/#680 are open and their ledger modules are absent from main. No current upstream acceptance or integration is presumed.",
+      "pause": 300
+    },
+    {
+      "text": "nix/model.nix supplies the actual packaged model-check. The root justfile supplies application-model and simulator checks.",
+      "pause": 300
+    },
+    {
+      "text": ".specify/ contains the constitution only. Global Spec Kit templates guide these documents; no generated script is available to run locally and no initialization overwrite is needed.",
+      "pause": 300
+    }
+  ],
+  "planning-decisions-and-alternatives": [
+    {
+      "text": "Planning decisions and alternatives.",
+      "pause": 500
+    },
+    {
+      "text": "The accepted design remains in the sources bound by authority.md. This file is source review, not execution evidence.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "research.md",
+    "sha256": "a16e67b152bd2cd2d051662027736adf4a82bf36be1634c4639203a6ea74d1d7"
+  }
+}

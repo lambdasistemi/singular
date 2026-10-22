@@ -1,0 +1,24 @@
+{
+  "responsibilities-in-the-investigation": [
+    {
+      "text": "Responsibilities in the investigation.",
+      "pause": 500
+    },
+    {
+      "text": "As an investigator, I want each proposed guarantee assigned to its proper model owner so that a missing ledger or consumer premise stays visible.",
+      "pause": 400
+    },
+    {
+      "text": "The data records are specified only in data-model.md. Callable-change ownership is specified only in functions-model.md.",
+      "pause": 400
+    },
+    {
+      "text": "Promote shared identity vocabulary to the nearest existing upstream owner only when the bound ledger and application consumers need the same concept. No new generic registry-free library is authorized by this ticket.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "modules-model.md",
+    "sha256": "2c1d7876224987d1d0adc1ff111569fff98602e040b133b6039046f19ecf2f6a"
+  }
+}

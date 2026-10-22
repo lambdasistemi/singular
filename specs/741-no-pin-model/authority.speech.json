@@ -1,0 +1,76 @@
+{
+  "authority-and-source-bindings": [
+    {
+      "text": "Authority and source bindings.",
+      "pause": 500
+    },
+    {
+      "text": "As the operator, I want every model conclusion traceable to a specific accepted source or a clearly marked proposal.",
+      "pause": 400
+    }
+  ],
+  "bound-checkout": [
+    {
+      "text": "Bound checkout.",
+      "pause": 500
+    },
+    {
+      "text": "Repository: lambdasistemi/singular. Investigation base: 00771d77af996605845cf062285263909a049cf8. Compiler: leanprover/lean4:v4.27.0. Constitution: .specify/memory/constitution.md, identical to the canonical checkout during intake. Machine-readable file hashes accompany this page in base-hashes.json.",
+      "pause": 400
+    }
+  ],
+  "operator-directions": [
+    {
+      "text": "Operator directions.",
+      "pause": 500
+    },
+    {
+      "text": "Enriched #731, dated 21 October: investigation on its own branch, touching nothing of #529; conditional main landing after protected rejection and before 1.x.",
+      "pause": 300
+    },
+    {
+      "text": "22 October: \"review for verticality (leave out the model, this comes before everything)\".",
+      "pause": 300
+    },
+    {
+      "text": "22 October: \"do the ticket speckit work, the spawn opus as t.o. , sol high as co, sonnet as auditor\".",
+      "pause": 300
+    },
+    {
+      "text": "Follow-up: \"sonnet xhigh\".",
+      "pause": 300
+    },
+    {
+      "text": "The staffing direction changes the earlier unapproved proposal. The agreed seats are Opus 5.5 high ticket owner, Codex gpt-6.1-sol high commit owner, Sonnet 5.5 xhigh auditor. No simulator or extra research seat is commissioned.",
+      "pause": 400
+    }
+  ],
+  "evidence-status": [
+    {
+      "text": "Evidence status.",
+      "pause": 500
+    }
+  ],
+  "questions-that-must-receive-an-evidence-bound-disposition": [
+    {
+      "text": "Questions that must receive an evidence-bound disposition.",
+      "pause": 500
+    },
+    {
+      "text": "Cross-policy same-seed uniqueness; role authentication under the common policy; hash assumptions and byte/abstract correspondence; acyclic application release with pending termination; complete economic configuration; reader information requirements.",
+      "pause": 400
+    },
+    {
+      "text": "The bound constitution describes abandonment of earlier contract instances, whereas #731 discusses a compatible-release path. Identify the exact releases and any later ruling before treating either phrase as authority for this new line. This investigation records the scope question; it does not amend compatibility policy.",
+      "pause": 400
+    },
+    {
+      "text": "No new semantic ruling is recorded by these planning documents.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "authority.md",
+    "sha256": "b4722ab95792e4e2ba883d4ad7215425139fb3491718083884bd7c9cc0439ef6"
+  }
+}

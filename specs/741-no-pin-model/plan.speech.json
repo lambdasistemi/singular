@@ -1,0 +1,146 @@
+{
+  "plan-for-the-no-pin-model-investigation": [
+    {
+      "text": "Plan for the no-pin model investigation.",
+      "pause": 500
+    },
+    {
+      "text": "As the ticket owner, I want a bounded sequence that produces a reviewable model decision without replacing an unresolved premise with an assumption.",
+      "pause": 400
+    }
+  ],
+  "status": [
+    {
+      "text": "Status.",
+      "pause": 500
+    },
+    {
+      "text": "Completed: specification, source intake and task decomposition. No model work or proof acceptance yet. Current: planning handoff to the operator-selected team. Blockers for dependent acceptance: identity scope, asset-role authentication, application release versus pending custody, complete economic configuration and reader meanings require the model investigation and operator ruling. Base: 00771d77af996605845cf062285263909a049cf8. Exact bindings are in authority.md.",
+      "pause": 400
+    }
+  ],
+  "technical-context": [
+    {
+      "text": "Technical context.",
+      "pause": 500
+    },
+    {
+      "text": "Lean 4.27.0, as pinned by root lean-toolchain and nixpkgs-lean; root Lake project plus the separate open-datum Lake consumer. Existing JSON corpus/theorem manifests, Python reconciliation checks and JavaScript simulator are reused. Artifact: nix run .#model-check, with application and simulator checks appropriate to the changed surfaces. No runtime-cost or ledger-throughput target is introduced. No local Spec Kit scripts/templates are installed in this checkout; use the global Spec Kit workflow and templates with the repository's issue-numbered specification convention. No bootstrap changes to AGENTS.md, the constitution or tooling are needed for planning.",
+      "pause": 400
+    }
+  ],
+  "constitution-check": [
+    {
+      "text": "Constitution check.",
+      "pause": 500
+    },
+    {
+      "text": "Preserve accepted Lean and consumer meanings until a concrete recorded ruling changes them.",
+      "pause": 300
+    },
+    {
+      "text": "Bind candidate definitions and premises; require satisfying witnesses, refusal controls and non-vacuous statements.",
+      "pause": 300
+    },
+    {
+      "text": "Distinguish executable model, proof, simulator and implementation evidence.",
+      "pause": 300
+    },
+    {
+      "text": "Keep all missing public implementation evidence uncovered.",
+      "pause": 300
+    },
+    {
+      "text": "Operate only in this ticket's isolated branch; no #529 lane writes or process changes.",
+      "pause": 300
+    },
+    {
+      "text": "New semantic findings are returned as actor/start/action/outcome/evidence questions.",
+      "pause": 300
+    },
+    {
+      "text": "Planning permits investigation, not acceptance of hypothetical model guarantees.",
+      "pause": 300
+    },
+    {
+      "text": "These conditions are met by the investigation plan. Behavioral soundness is deliberately pending and is not a passed gate.",
+      "pause": 400
+    }
+  ],
+  "architecture-and-writable-boundaries": [
+    {
+      "text": "Architecture and writable boundaries.",
+      "pause": 500
+    },
+    {
+      "text": "modules-model.md owns responsibility and dependency placement; data-model.md owns report/domain records; functions-model.md owns callable-change decisions.",
+      "pause": 400
+    },
+    {
+      "text": "Initial executable candidate additions, once the owner freezes their signatures, belong under an explicitly hypothetical lean/Singular/NoPins/ namespace. Accepted existing model declarations stay unchanged until the relevant ruling. Reuse exact accepted ledger modules if available; do not fork #679/#680's foundational work or import unaccepted code by implication.",
+      "pause": 400
+    },
+    {
+      "text": "The first authoring fence is ticket-local investigation/decision documents and the explicitly frozen candidate files. Adding model exports, consumer changes, simulator changes or constitution amendments requires the owner to version the per-stage path fence after the corresponding ruling. This is checkpoint control, not a new staffing approval.",
+      "pause": 400
+    }
+  ],
+  "ordered-stages": [
+    {
+      "text": "Ordered stages.",
+      "pause": 500
+    },
+    {
+      "text": "A constructive refutation may conclude a soundness investigation only with an explicit operator disposition. It does not close the epic as delivered.",
+      "pause": 400
+    }
+  ],
+  "verification-contract-to-freeze-before-work": [
+    {
+      "text": "Verification contract to freeze before work.",
+      "pause": 500
+    },
+    {
+      "text": "The ticket owner and commissioned auditor establish the stage's falsifiable evidence contract using the existing seats. No extra gate authors are authorized. - Establish baseline model/application checks in the isolated lane, with exact commands and actual exits before semantic changes. - Candidate checks include satisfying premise instances, relevant reachable witnesses, wrong-role/wrong-key/wrong-registry and extra-mint/burn controls. - Audit statements/inversions before proofs. Inspect the exact changed statements and standard-axiom reports after a clean build. - Run nix run .#model-check; for changed consumer surfaces run nix develop --quiet -c just application-model; run nix develop --quiet -c just simulator when generated model/corpus surfaces move. - Preserve affected theorem/coverage identities and negative-control receipts; run documentation/presentation checks for changed public artifacts. - Final hosted checks remain required at the submitted candidate. A locally green run or planning commit does not meet that gate.",
+      "pause": 400
+    }
+  ],
+  "staffing-and-sequencing": [
+    {
+      "text": "Staffing and sequencing.",
+      "pause": 500
+    },
+    {
+      "text": "Operator-selected: Opus 5.5 high ticket owner; Codex gpt-6.1-sol high commit owner; Sonnet 5.5 xhigh independent auditor. Existing epic owner remains parent. Four seats maximum including that parent. No additional writers, simulator authors or hidden research agents.",
+      "pause": 400
+    },
+    {
+      "text": "The single commit owner may regenerate the existing simulator mirror. This does not claim an independently authored Lean-clarity experiment. If a new independent simulator author is needed, the ticket owner reports that specific unmet requirement before adding a seat.",
+      "pause": 400
+    }
+  ],
+  "non-goals-and-release-boundary": [
+    {
+      "text": "Non-goals and release boundary.",
+      "pause": 500
+    },
+    {
+      "text": "No production implementation or active-lane modification. Main landing remains after accepted/landed protected rejection and before 1.x, under #747's composition. Keep this PR draft and do not merge it as an accepted new law while a ruling is unresolved.",
+      "pause": 400
+    }
+  ],
+  "planning-budget": [
+    {
+      "text": "Planning budget.",
+      "pause": 500
+    },
+    {
+      "text": "Maximum lines: spec 130, plan 150, modules/data/functions 80 each, research/authority 100 each, tasks 130, contracts 80, quickstart/checklist 70 each. Measure actual bytes/lines in the handoff. No provider token or price measurement is claimed.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "0a99a43db2e959ec2958f87decaea6dac3605fc449290c804a1cdf3a8634c058"
+  }
+}

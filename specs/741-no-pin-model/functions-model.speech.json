@@ -1,0 +1,38 @@
+{
+  "callable-boundaries-for-the-model-investigation": [
+    {
+      "text": "Callable boundaries for the model investigation.",
+      "pause": 500
+    },
+    {
+      "text": "As a reviewer, I want changes to call signatures distinguished from changes to the meaning of an accepted law.",
+      "pause": 400
+    }
+  ],
+  "planning-stage-contract": [
+    {
+      "text": "Planning-stage contract.",
+      "pause": 500
+    },
+    {
+      "text": "This is an investigation specification. No production function signature is changed by planning. New hypothetical Lean signatures are frozen in this file by the ticket owner after the authority/impact inventory and before the commit owner implements them. An unresolved semantic choice stays a question; inventing a complete replacement signature now would prejudge that investigation.",
+      "pause": 400
+    },
+    {
+      "text": "The following existing signatures identify the affected boundaries; they are not instructions to rewrite them:",
+      "pause": 400
+    },
+    {
+      "text": "The candidate's signatures must name all identity, hash-function, ledger-premise and observation inputs explicitly, with pure results. Record any serialization/driver surface changes before implementing them. Reuse the generic driver surface where its semantics suffice; do not add per-theorem expected-result projections.",
+      "pause": 400
+    },
+    {
+      "text": "This staged signature freeze is a planned output of investigation, not a claim that the production design is already specified.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "712439213e9ae44bdd041b02f7dddcd9cda0549818f67546c211d7c03b32225d"
+  }
+}
