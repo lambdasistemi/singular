@@ -190,10 +190,6 @@
     },
     {
       "receiptName": "upstream-1",
-      "command": [
-        "bash",
-        "/home/paolino/.orch-runtime/singular/epic-731/ticket-741/commit-owner-1/handoffs/upstream.sh"
-      ],
       "head": "4cab869d01a175720994b2c7d783f565b491e439",
       "tree": "559e9976e7bce1487ef7f726dd54422dd36f1a52",
       "start": "2026-10-22T17:02:48.947Z",

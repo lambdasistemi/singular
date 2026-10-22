@@ -9,7 +9,7 @@
       "pause": 400
     },
     {
-      "text": "Every task below is pending. Task names are descriptive; accepted task stamps belong to the ticket owner. Source paths denote owners, not blanket writable permission: freeze each stage's exact fence.",
+      "text": "The four tasks marked done carry the ticket owner's acceptance of the bind-and-investigate slice; every other task is pending. Task names are descriptive; accepted task stamps belong to the ticket owner. Source paths denote owners, not blanket writable permission: freeze each stage's exact fence.",
       "pause": 400
     }
   ],
@@ -19,15 +19,15 @@
       "pause": 500
     },
     {
-      "text": "[ ] Bind accepted inputs — Confirm the revisions/digests and upstream acceptance status in specs/741-no-pin-model/authority.md and base-hashes.json; obtain exact #679/#680 references without entering their working lanes. Requirement: Bound authority.",
+      "text": "[x] Bind accepted inputs — Confirm the revisions/digests and upstream acceptance status in specs/741-no-pin-model/authority.md and base-hashes.json; obtain exact #679/#680 references without entering their working lanes. Requirement: Bound authority.",
       "pause": 300
     },
     {
-      "text": "[ ] Record baseline checks — Run the scoped model/application baselines through nix/model.nix and root justfile; retain actual command/exit receipts in the ticket runtime. Requirements: Bound authority; Traceable decision and consumers.",
+      "text": "[x] Record baseline checks — Run the scoped model/application baselines through nix/model.nix and root justfile; retain actual command/exit receipts in the ticket runtime. Requirements: Bound authority; Traceable decision and consumers.",
       "pause": 300
     },
     {
-      "text": "[ ] Freeze the changed-obligation inventory — Add specs/741-no-pin-model/impact.md covering old/new definitions, theorem statements, observations, consumers and dispositions. Requirement: Traceable decision and consumers.",
+      "text": "[x] Freeze the changed-obligation inventory — Add specs/741-no-pin-model/impact.md covering old/new definitions, theorem statements, observations, consumers and dispositions. Requirement: Traceable decision and consumers.",
       "pause": 300
     }
   ],
@@ -41,7 +41,7 @@
       "pause": 400
     },
     {
-      "text": "[ ] Inventory identity premises — Read lean/Singular/Model/Registry.lean, the bound ledger/history sources and the application model; record exact hash/ledger premises with satisfying-witness obligations in impact.md. Requirements: Explicit identities; Satisfiable premises.",
+      "text": "[x] Inventory identity premises — Read lean/Singular/Model/Registry.lean, the bound ledger/history sources and the application model; record exact hash/ledger premises with satisfying-witness obligations in impact.md. Requirements: Explicit identities; Satisfiable premises.",
       "pause": 300
     },
     {
@@ -151,6 +151,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "d8fbaae9b8e4f877e5953c3f311ee49e27ba044403b4cbb3313b8df32d479412"
+    "sha256": "cadc63bcf883b82ccb8e97621567c86622bf13797f1c5bd8f93559bc0de7ff3e"
   }
 }
