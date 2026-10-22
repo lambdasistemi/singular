@@ -223,6 +223,49 @@ spec = describe "a command's outlay against an approved allowance (#300)" $ do
                 approved = Just (outlayTotal spent)
             in  leftForFold approved spent
                     === Just (outlayFoldBound spent)
+    it
+        "leaves a fold the allowance less the booking and the preparation that funded it, the preparation counted once"
+        $ do
+            -- a booking with a fee of 0.2 and a bond of 2, funded by a
+            -- preparation of 0.1, and a fold bound of 1: the wallet puts out
+            -- 0.1 + 0.2 + 2 + 1 = 3.3
+            let booked =
+                    Outlay
+                        { outlayFee = 200_000
+                        , outlayBond = 2_000_000
+                        , outlayFoldBound = 1_000_000
+                        }
+                spent = withPreparationFee 100_000 booked
+                approved = Just 3_300_000
+            outlayTotal spent `shouldBe` 3_300_000
+            leftForFold approved spent `shouldBe` Just 1_000_000
+            -- a fold costing the remainder is within it; one lovelace more is
+            -- not, where the booking alone would have left room for it
+            foldPastAllowance approved spent (bookingWith 1_000_000 3_000_000)
+                `shouldBe` Nothing
+            fmap
+                fst
+                (foldPastAllowance approved spent (bookingWith 1_000_001 3_000_000))
+                `shouldBe` Just 1_000_000
+            leftForFold approved booked `shouldBe` Just 1_100_000
+    it
+        "adds a preparation's fee to the booking's fee alone, and nothing when there was none"
+        $ property
+        $ forAll ((,,) <$> fees <*> bonds <*> fees)
+        $ \(fee, bond, preparation) ->
+            let spent = bookingOutlay preprodParams [] (bookingWith fee bond)
+                approved = Just (outlayTotal spent + 5_000_000)
+                paid = withPreparationFee preparation spent
+            in  ( withPreparationFee 0 spent
+                , outlayBond paid
+                , outlayFoldBound paid
+                , leftForFold approved paid
+                )
+                    === ( spent
+                        , outlayBond spent
+                        , outlayFoldBound spent
+                        , subtract preparation <$> leftForFold approved spent
+                        )
     it "rounds the collateral up to the protocol's percentage" $
         property $
             forAll ((,) <$> fees <*> percentages) $ \(fee, pct) ->

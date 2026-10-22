@@ -4748,6 +4748,7 @@ chunk4Producers = describe "chunk4 producers" $ do
     receiptRows
     terminationBookingRows
     combinedAllowanceRows
+    preparedBookingAllowanceRows
     carrierRows
     applicationMintRows
     terminationSpendRows
@@ -5839,6 +5840,173 @@ combinedAllowanceRows =
                             [Aeson.fromJSON held :: Aeson.Result Integer]
                       ]
                         `shouldBe` [50_000_000]
+
+{- | A combined command to start from a wallet that needs a funding
+preparation: a registry made ready, the command's words, and whether its
+booking locks a bond of the wallet's own (a registration does; a termination
+moves the custody, which the wallet does not pay).
+-}
+data PreparedStart = PreparedStart
+    { startName :: String
+    , startRegistry :: (Rig -> String -> IO ()) -> IO ()
+    -- ^ A registry ready for the command, handed over with its state token
+    , startWords :: Rig -> [String]
+    -- ^ The combined command's words, before the allowance and the token
+    , startLocksBond :: Bool
+    }
+
+preparedStarts :: [PreparedStart]
+preparedStarts =
+    [ PreparedStart
+        { startName = "insert --fold"
+        , startRegistry = \use -> withRig $ \rig -> do
+            seed <- fundSeed rig
+            create <- run rig "create" ["open-datum", "create", "--seed", seed]
+            t <- tokenOf create
+            use rig t
+        , startWords = \rig -> insertWords rig <> ["--fold"]
+        , startLocksBond = True
+        }
+    , PreparedStart
+        { startName = "terminate --fold"
+        , startRegistry = \use ->
+            withHeldCustody 50_000_000 $ \rig t _ -> use rig t
+        , startWords =
+            const ["open-datum", "terminate", "--key", "bob-1", "--fold"]
+        , startLocksBond = False
+        }
+    ]
+
+{- | How the fold that follows the booking is funded. The parameters change as
+the booking is accepted, so the fold is built later under a view that charges
+a hundred times the fee per byte: a wallet left with only what the booking
+returned needs a preparation of its own for the fold, while one that received
+a large output meanwhile funds the fold from it.
+-}
+data FoldFunding = FoldNeedsPreparation | FoldFundedFromAnOutput
+    deriving stock (Eq, Show)
+
+{- | One run of a combined command from a wallet whose every output carries a
+token, so its booking is funded by a preparation the wallet pays first.
+Returns the run and, for each transaction the wallet submitted in order, the
+fee it paid and the lovelace its first output locked.
+-}
+preparedRun
+    :: PreparedStart
+    -> FoldFunding
+    -> Maybe Integer
+    -> IO (Run, [(Integer, Integer)])
+preparedRun start funding allowance = do
+    result <- newIORef Nothing
+    startRegistry start $ \rig t -> do
+        tokenOnlyWallet rig
+        paid <- newIORef []
+        writeIORef (rigAfterSubmit rig) $ \tx -> do
+            let Coin fee = tx ^. bodyTxL . feeTxBodyL
+                locked = case toList (tx ^. bodyTxL . outputsTxBodyL) of
+                    out : _ -> lovelaceOf out
+                    [] -> 0
+            earlier <- length <$> readIORef paid
+            modifyIORef' paid (<> [(fee, locked)])
+            -- the booking is the second submission, after its preparation
+            when (earlier == 1) $
+                advanceChain (rigChain rig) $ \facts ->
+                    facts
+                        { csPParams =
+                            csPParams facts & ppTxFeePerByteL .~ CoinPerByte (CompactCoin 4_400)
+                        , csUTxO = case funding of
+                            FoldNeedsPreparation -> csUTxO facts
+                            FoldFundedFromAnOutput ->
+                                Map.insert
+                                    (fundOutput 98)
+                                    ( mkBasicTxOut
+                                        (walletAddr (rigWallet rig))
+                                        (MaryValue (Coin 100_000_000) (MultiAsset Map.empty))
+                                    )
+                                    (csUTxO facts)
+                        }
+        done <-
+            run
+                rig
+                (startName start <> " from a wallet that needs a preparation")
+                ( startWords start rig
+                    <> maybe [] (\a -> ["--max-outlay", show a]) allowance
+                    <> tokenArgs t
+                )
+        readIORef paid >>= \submitted -> writeIORef result (Just (done, submitted))
+    readIORef result
+        >>= maybe (failTest "the combined command never ran") pure
+
+preparedBookingAllowanceRows :: Spec
+preparedBookingAllowanceRows =
+    describe
+        "a combined command whose booking needed a funding preparation counts that preparation against the allowance"
+        $ forM_
+            [ (start, funding)
+            | start <- preparedStarts
+            , funding <- [FoldNeedsPreparation, FoldFundedFromAnOutput]
+            ]
+        $ \(start, funding) ->
+            it
+                ( startName start
+                    <> ", fold funded by "
+                    <> ( case funding of
+                            FoldNeedsPreparation -> "a preparation of its own"
+                            FoldFundedFromAnOutput -> "an output the wallet received"
+                       )
+                    <> ": accepts an allowance covering everything the wallet put out and refuses the fold when it is one lovelace short"
+                )
+                $ do
+                    -- unbounded: what the wallet puts out, transaction by transaction
+                    (free, submitted) <- preparedRun start funding Nothing
+                    outcomeOf (runReceipt free) `shouldBe` Just "success"
+                    (preparation, booking, afterwards) <- case submitted of
+                        p : b : rest@(_ : _) -> pure (p, b, rest)
+                        other ->
+                            failTest
+                                ( "expected the booking's preparation, the booking and the fold's transactions to be submitted, got "
+                                    <> show (length other)
+                                    <> " transactions (fee, lovelace of the first output): "
+                                    <> show other
+                                )
+                    length afterwards
+                        `shouldBe` ( case funding of
+                                        FoldNeedsPreparation -> 2
+                                        FoldFundedFromAnOutput -> 1
+                                   )
+                    let bond = if startLocksBond start then snd booking else 0
+                        beforeFold = fst preparation + fst booking + bond
+                        foldPays = sum (fst <$> afterwards)
+                        putOut = beforeFold + foldPays
+                    -- the whole is accepted, with the same transactions: exactly
+                    -- when the fold is funded from an output; a fold that needs a
+                    -- preparation is planned from a probe build priced above the
+                    -- real one, so its allowance adds a margin for that
+                    let margin = case funding of
+                            FoldNeedsPreparation -> 200_000
+                            FoldFundedFromAnOutput -> 0
+                    (exact, paidExact) <-
+                        preparedRun start funding (Just (putOut + margin))
+                    outcomeOf (runReceipt exact) `shouldBe` Just "success"
+                    paidExact `shouldBe` submitted
+                    -- one lovelace short: the fold is judged against what is left
+                    -- after the preparation and the booking, and refused before
+                    -- its transaction is signed
+                    (short, paidShort) <- preparedRun start funding (Just (putOut - 1))
+                    outcomeOf (runReceipt short) `shouldBe` Just "partial"
+                    let left = T.pack (show (foldPays - 1))
+                        reasonNames phrase =
+                            T.isInfixOf phrase
+                                <$> textAt "reason" (runReceipt short)
+                    reasonNames
+                        ( case funding of
+                            FoldNeedsPreparation ->
+                                "passes the approved allowance of " <> left
+                            FoldFundedFromAnOutput ->
+                                "past the " <> left <> " the approved outlay leaves"
+                        )
+                        `shouldBe` Just True
+                    paidShort `shouldBe` [preparation, booking]
 
 terminationBookingRows :: Spec
 terminationBookingRows =

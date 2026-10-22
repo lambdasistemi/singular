@@ -21,6 +21,7 @@ module Singular.CLI.Outlay
     , terminationOutlay
     , updateOutlay
     , foldOutlay
+    , withPreparationFee
     , leftForFold
     , foldPastAllowance
     , outlayTotal
@@ -56,7 +57,9 @@ import Singular.Registry.TxBuilder.Prepare qualified as Prepare
 -- | What one command puts out, in lovelace.
 data Outlay = Outlay
     { outlayFee :: Integer
-    -- ^ The fee of the transaction the command submits first
+    {- ^ The fee of the transaction the command submits first, and of the
+    preparation that funded it when the wallet needed one
+    -}
     , outlayBond :: Integer
     -- ^ The request's bond the booking locks; none for an update
     , outlayFoldBound :: Integer
@@ -94,6 +97,15 @@ terminationOutlay pp refs custody booking =
     let o = bookingOutlay pp refs booking
     in  o{outlayBond = max 0 (outlayBond o - custody)}
 
+{- | An outlay with the fee of the preparation that funded its transaction added.
+The preparation is a transaction of its own, paid by the wallet before the
+booking is built, and measured apart from it; what the booking put out of the
+wallet, for the fold that follows, includes it once.
+-}
+withPreparationFee :: Integer -> Outlay -> Outlay
+withPreparationFee preparation o =
+    o{outlayFee = outlayFee o + preparation}
+
 -- | An update: its fee alone.
 updateOutlay :: ConwayTx -> Outlay
 updateOutlay tx =
@@ -111,9 +123,11 @@ allowance the fold is not bounded.
 
 What the booking put out is the outlay the booking itself was measured at
 ('bookingOutlay' for a registration, 'terminationOutlay' for a termination),
-not what its request output holds: a termination's request also holds the
-custody the key already had, which moved into the request and never came out
-of the wallet, so counting the whole request would charge it a second time.
+with the fee of the preparation that funded it when there was one
+('withPreparationFee'), not what its request output holds: a
+termination's request also holds the custody the key already had, which moved
+into the request and never came out of the wallet, so counting the whole
+request would charge it a second time.
 -}
 leftForFold
     :: Maybe Integer

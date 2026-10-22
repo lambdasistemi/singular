@@ -115,6 +115,7 @@ import Singular.CLI.Outlay
     ( Outlay
     , outlayTotal
     , updateOutlay
+    , withPreparationFee
     )
 import Singular.CLI.Prepare
     ( PrepareRefusal (..)
@@ -178,6 +179,11 @@ measured, its fee and collateral balanced and its outlay judged against the
 approved allowance under that view's parameters, before anything is signed.
 An insertion's envelope travels in its request, so nothing of it is kept in
 your state directory.
+
+The outlay returned is what the booking put out of the wallet: its measured
+fee and bond, and the fee of the preparation that funded it when the wallet
+needed one. The fold that follows is judged against what is left of the
+approved allowance after that.
 -}
 book
     :: Attached
@@ -271,7 +277,16 @@ book at a key verb plan = do
                             walletUtxos
                             (outlayTotal outlay)
                             "measured outlay"
-                        pure (realTx, (decided, mPrep, outlay))
+                        -- what the booking put out for the fold that follows: the
+                        -- measured outlay and the preparation that funded it, once
+                        pure
+                            ( realTx
+                            ,
+                                ( decided
+                                , mPrep
+                                , withPreparationFee (maybe 0 prepFee mPrep) outlay
+                                )
+                            )
             )
     let request = TxIn (txIdTx (confirmedTx booking)) (TxIx 0)
     deadline <-
