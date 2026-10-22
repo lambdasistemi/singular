@@ -15,5 +15,189 @@
     "nix/model.nix": "8cc011d46b4f5a7023610c4c17b58529397e3eb13f952e7d7922a4fa4b4bddc6",
     "justfile": "e7aa0cca1a6dffde53b72aa3939e1722f99be478860493c05938d39efffacfb2"
   },
-  "evidence": "Source identities only; planning ran no model proof or application check."
+  "evidence": "Source bindings checked against git blobs at each named revision. Root and application baselines exit zero on the clean planning tree. These checks do not establish the no-pin proposal or ledger behavior.",
+  "planningHead": "4cab869d01a175720994b2c7d783f565b491e439",
+  "planningTree": "559e9976e7bce1487ef7f726dd54422dd36f1a52",
+  "additionalBindings": [
+    {
+      "revision": "00771d77af996605845cf062285263909a049cf8",
+      "path": "applications/open-datum/ledgers.json",
+      "sha256": "789ae004d882a91bf709423155713a7ea5f7d3964143313c07dee7559de904dc"
+    },
+    {
+      "revision": "00771d77af996605845cf062285263909a049cf8",
+      "path": "lean/Singular/Driver.lean",
+      "sha256": "663aa60e5946f6707fce81e4833a98af120358b61cca88665797a12df738eef9"
+    },
+    {
+      "revision": "00771d77af996605845cf062285263909a049cf8",
+      "path": "lean/Singular/Economics/Booking.lean",
+      "sha256": "ac1761460a9f719d931fb92ca9133183c076f5583f9e5e2027a074920df4ca55"
+    },
+    {
+      "revision": "00771d77af996605845cf062285263909a049cf8",
+      "path": "lean/Singular/Economics/Fold.lean",
+      "sha256": "4c8a49e19bb91c62ef6a482baa485a6053ac95002a9b0c80cb1503a42523622c"
+    },
+    {
+      "revision": "00771d77af996605845cf062285263909a049cf8",
+      "path": "lean/Singular/Economics/Rejection.lean",
+      "sha256": "0f59f3266b6906493c5a6a32451738f2b3c112eeca7641bc13be84178ff9dd7d"
+    },
+    {
+      "revision": "00771d77af996605845cf062285263909a049cf8",
+      "path": "lean/Singular/Economics/Retraction.lean",
+      "sha256": "f555302c59fba5528d023858b75dd31f7f59ee628601f745e9f4438dbc1e6914"
+    },
+    {
+      "revision": "00771d77af996605845cf062285263909a049cf8",
+      "path": "lean/Singular/Economics/World.lean",
+      "sha256": "872733d8b6926c00baae124296da7f567d2ed3fc0e4110978fa5a0fcfffbe631"
+    },
+    {
+      "revision": "00771d77af996605845cf062285263909a049cf8",
+      "path": "lean/Singular/Economics/WorldState.lean",
+      "sha256": "9c198fb28267f081d2fe606ef32ec403d1e86e7f0e757b6dacddf4715dbefb17"
+    },
+    {
+      "revision": "00771d77af996605845cf062285263909a049cf8",
+      "path": "lean/Singular/M1.lean",
+      "sha256": "d2e853de64f0730883f2c59d892e3bca0cfc2c526b0277bb5b79e93b237a4c4f"
+    },
+    {
+      "revision": "00771d77af996605845cf062285263909a049cf8",
+      "path": "lean/Singular/Model/Booking.lean",
+      "sha256": "ae67700447beaab2169241eb1d88325d74efed312393eb510cdd5da0e2979a65"
+    },
+    {
+      "revision": "00771d77af996605845cf062285263909a049cf8",
+      "path": "lean/Singular/Model/Fold.lean",
+      "sha256": "0d15087bbf92ca6f1742cedf5291562f50cb4e2471a813f599db972320a156d0"
+    },
+    {
+      "revision": "00771d77af996605845cf062285263909a049cf8",
+      "path": "lean/Singular/Model/Request.lean",
+      "sha256": "022823e289fa8c945ae5fb12fb724ab35e14e9f860d05d283cff7b4aff0738cd"
+    },
+    {
+      "revision": "00771d77af996605845cf062285263909a049cf8",
+      "path": "lean/Singular/Statements/Batch.lean",
+      "sha256": "6a7c4e79aa89127f9a152e8d80811cc766a8606f1cda5bbea4ecb1724a5c5508"
+    },
+    {
+      "revision": "00771d77af996605845cf062285263909a049cf8",
+      "path": "lean/Singular/Statements/Booking.lean",
+      "sha256": "5a9ad42d602378abb0119f233a310405e2bb5e5a60a77b933ace78ea8f2ab8ac"
+    },
+    {
+      "revision": "00771d77af996605845cf062285263909a049cf8",
+      "path": "lean/Singular/Statements/FoldAccounting.lean",
+      "sha256": "ff5bef8e6dd2ffffe391b8336f5c29b612b0934766fa7b7a8480b33bcbd1aed4"
+    },
+    {
+      "revision": "00771d77af996605845cf062285263909a049cf8",
+      "path": "lean/Singular/Statements/Inversions.lean",
+      "sha256": "290857529524ca802a0908129292731eab900e46bf0760b6e16ab10a961bd860"
+    },
+    {
+      "revision": "00771d77af996605845cf062285263909a049cf8",
+      "path": "lean/Singular/Statements/Preservation.lean",
+      "sha256": "dc19a17f6f82f9cfaabdf712ddfcf4ce6fe1ad5cbe7b5eb6337637ac1f578d1d"
+    },
+    {
+      "revision": "00771d77af996605845cf062285263909a049cf8",
+      "path": "lean/Singular/Statements/TagSupply.lean",
+      "sha256": "ac22f862bbf11e03ee2ec7f60363a6ef7158ac4ff58b7a0ed63e9242502c5e77"
+    },
+    {
+      "revision": "00771d77af996605845cf062285263909a049cf8",
+      "path": "lean/Singular/Statements/Termination.lean",
+      "sha256": "8ecb2243299057666c53aef5e3fe2f8e23e4be198187fc165042626b10704dcd"
+    },
+    {
+      "revision": "00771d77af996605845cf062285263909a049cf8",
+      "path": "lean/m1-theorem-debt.json",
+      "sha256": "5b879e091b29a1c17251ccef70b3dcf326fac54f12122fc4fedcbcca56da0bda"
+    },
+    {
+      "revision": "00771d77af996605845cf062285263909a049cf8",
+      "path": "lean/theorem-debt.json",
+      "sha256": "af78f74582b5be33eacf0281d56a4bde0d82759605e28c609264cbc547f15154"
+    }
+  ],
+  "baselineEvidence": [
+    {
+      "command": [
+        "nix",
+        "run",
+        "--quiet",
+        ".#model-check"
+      ],
+      "head": "4cab869d01a175720994b2c7d783f565b491e439",
+      "tree": "559e9976e7bce1487ef7f726dd54422dd36f1a52",
+      "start": "2026-10-22T17:02:23.087Z",
+      "end": "2026-10-22T17:04:38.161Z",
+      "exit": 0,
+      "receipt": "/home/paolino/.orch-runtime/singular/epic-731/ticket-741/commit-owner-1/handoffs/receipts/B1-1.txt",
+      "logSha256": "0adc0ce23cb7ccb4a8868d87dfee11a8eaf28bf9847d65e4cece26a9655231e7"
+    },
+    {
+      "command": [
+        "nix",
+        "develop",
+        "--quiet",
+        "-c",
+        "just",
+        "application-model"
+      ],
+      "head": "4cab869d01a175720994b2c7d783f565b491e439",
+      "tree": "559e9976e7bce1487ef7f726dd54422dd36f1a52",
+      "start": "2026-10-22T17:03:24.454Z",
+      "end": "2026-10-22T17:04:37.856Z",
+      "exit": 0,
+      "receipt": "/home/paolino/.orch-runtime/singular/epic-731/ticket-741/commit-owner-1/handoffs/receipts/B2-1.txt",
+      "logSha256": "8dccc51998d400e9b0f66e5bab4b193351e6132a416db74a0d78c63c10c4c638"
+    },
+    {
+      "command": [
+        "node",
+        "/home/paolino/.orch-runtime/singular/epic-731/ticket-741/commit-owner-1/handoffs/check-bindings.cjs"
+      ],
+      "head": "4cab869d01a175720994b2c7d783f565b491e439",
+      "tree": "559e9976e7bce1487ef7f726dd54422dd36f1a52",
+      "start": "2026-10-22T17:02:48.947Z",
+      "end": "2026-10-22T17:02:49.107Z",
+      "exit": 0,
+      "receipt": "/home/paolino/.orch-runtime/singular/epic-731/ticket-741/commit-owner-1/handoffs/receipts/A1-1.txt",
+      "logSha256": "7b35ced4a5ccc88b6a7d746b520faff709041395f350a88a43010d3fdd7d11c1"
+    },
+    {
+      "command": [
+        "node",
+        "/home/paolino/.orch-runtime/singular/epic-731/ticket-741/commit-owner-1/handoffs/check-bindings.cjs",
+        "specs/741-no-pin-model/base-hashes.json",
+        "--mutant"
+      ],
+      "head": "4cab869d01a175720994b2c7d783f565b491e439",
+      "tree": "559e9976e7bce1487ef7f726dd54422dd36f1a52",
+      "start": "2026-10-22T17:03:19.662Z",
+      "end": "2026-10-22T17:03:19.810Z",
+      "exit": 1,
+      "receipt": "/home/paolino/.orch-runtime/singular/epic-731/ticket-741/commit-owner-1/handoffs/receipts/A1-control.txt",
+      "logSha256": "726da11d9189754676f32d11a3624026606bbf69767743000514706b90b2a05e"
+    },
+    {
+      "command": [
+        "bash",
+        "/home/paolino/.orch-runtime/singular/epic-731/ticket-741/commit-owner-1/handoffs/upstream.sh"
+      ],
+      "head": "4cab869d01a175720994b2c7d783f565b491e439",
+      "tree": "559e9976e7bce1487ef7f726dd54422dd36f1a52",
+      "start": "2026-10-22T17:02:48.947Z",
+      "end": "2026-10-22T17:02:51.563Z",
+      "exit": 0,
+      "receipt": "/home/paolino/.orch-runtime/singular/epic-731/ticket-741/commit-owner-1/handoffs/receipts/upstream-1.txt",
+      "logSha256": "1da785f08d9bad917bce335008fc8865a8674ba4968bef36df38d4d2e62fcd0c"
+    }
+  ]
 }

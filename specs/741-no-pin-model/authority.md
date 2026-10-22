@@ -44,3 +44,11 @@ flowchart TD
   Investigation -->|evidence| Operator[Operator ruling]
   Operator -->|if approved| Amendment[Model amendment]
 ```
+
+## Executed baseline and upstream snapshot
+
+On 22 October, the clean planning tree ran the exact packaged root model command and the application-model recipe successfully. The root check reports 87 exact generic statement identities and ten permanent-contract identities proved; the application check reports 35 compiled statements, 35 ledger rows and zero failed application or ledger-bridge checks. These are existing-model checks, not proofs of the proposal, connected ledger execution or hosted results. Commands, exact trees, times, actual exits and raw-log hashes are in [base-hashes.json](base-hashes.json).
+
+The read-only GitHub snapshot still has [the ledger ticket](https://github.com/lambdasistemi/singular/issues/679) open and [its pull request](https://github.com/lambdasistemi/singular/pull/683) open and draft at its previously bound head. [The history ticket](https://github.com/lambdasistemi/singular/issues/680) is open; a pull-request title search for its number returned no match. No accepted upstream model surface is available on the base; the search is not proof that no unlinked work exists. The hashed receipt includes the issue and pull-request JSON.
+
+The [obligation inventory](impact.md) adds exact source/register bindings for its declarations. No accepted-law edit, generated-consumer regeneration or implementation acceptance follows from this inventory.

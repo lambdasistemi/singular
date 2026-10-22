@@ -69,8 +69,26 @@
       "pause": 400
     }
   ],
+  "executed-baseline-and-upstream-snapshot": [
+    {
+      "text": "Executed baseline and upstream snapshot.",
+      "pause": 500
+    },
+    {
+      "text": "On 22 October, the clean planning tree ran the exact packaged root model command and the application-model recipe successfully. The root check reports 87 exact generic statement identities and ten permanent-contract identities proved; the application check reports 35 compiled statements, 35 ledger rows and zero failed application or ledger-bridge checks. These are existing-model checks, not proofs of the proposal, connected ledger execution or hosted results. Commands, exact trees, times, actual exits and raw-log hashes are in base-hashes.json.",
+      "pause": 400
+    },
+    {
+      "text": "The read-only GitHub snapshot still has the ledger ticket open and its pull request open and draft at its previously bound head. The history ticket is open; a pull-request title search for its number returned no match. No accepted upstream model surface is available on the base; the search is not proof that no unlinked work exists. The hashed receipt includes the issue and pull-request JSON.",
+      "pause": 400
+    },
+    {
+      "text": "The obligation inventory adds exact source/register bindings for its declarations. No accepted-law edit, generated-consumer regeneration or implementation acceptance follows from this inventory.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "authority.md",
-    "sha256": "b4722ab95792e4e2ba883d4ad7215425139fb3491718083884bd7c9cc0439ef6"
+    "sha256": "a940d510d80c189cbd024b0a0175fb881a02280b25c2bff35b8d829cfdedec17"
   }
 }
