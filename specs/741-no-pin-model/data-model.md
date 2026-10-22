@@ -25,3 +25,23 @@ flowchart TD
   Obligation -->|evaluated as| Evidence[Proof or counterexample]
   Evidence -->|supports| Ruling[Operator decision]
 ```
+
+## Frozen candidate records
+
+These records are hypotheses under the identity, role and hash questions, constrained by the complete-identity ruling. They define no ledger laws or wire migration.
+
+| Record | Fields or constructors | Scope |
+|---|---|---|
+| `Payload` | `edge key owner destination nonce : Nat` | Existing authorization tuple and booking nonce remain explicit. |
+| `Role` | `state witness trieReady application` | Four classification cases, discovered from compiled constructors. |
+| `Binding` | `full nameOnly` | Ruled complete binding and rejected name-only contrast. |
+| `Reading` | `policyOnly authenticated` | Unresolved recognition alternatives. |
+| `Preimage` | `application release`; `statePolicy appPolicy`; `seed OutRef`; `role Role TokenId key`; `approval TokenId Payload` | Tagged structural domains with complete identities. Name-only contrast replaces the policy component by zero. |
+| `Observation` | `asset : TokenId`, `stateDatum : Bool`, `provenance : TokenId` | Provenance is explicit authenticated-origin evidence with external validity still a premise. Fabricating a datum changes no asset or provenance. |
+| `TxOutput` | `assets : List (TokenId × Nat)` | Asset counts only; no fee or script semantics. |
+| `TxView` | `spent : List OutRef`, `outputs : List TxOutput`, `mint : List (TokenId × Int)`, `invoked : List Nat` | Observation only; quantities sum per complete asset; history is a list of views. |
+| `Guard` | Full/name-only approval, policy-state, four authenticated roles, genesis seed count, history uniqueness | Selector is `none` or `flip Guard`; exactly one guard changes. |
+| Statement ledger | theorem, compiled statement digest, status, question/ruling, witness declarations, selectors, optional inversion case | Rejected readings have a separate status marker. |
+| Mutant ledger | theorem, selector, premise/positive/falsification declarations | Candidate and selector evaluate the same instance; no unrelated mutant function. |
+
+The minimal transaction view must later bind to accepted ledger/history vocabulary, as [impact.md](impact.md) records. It cannot establish ledger validity, lineage, custody, supply or real hash collision freedom. Economic configuration and the termination custody ruling belong to subsequent stages.

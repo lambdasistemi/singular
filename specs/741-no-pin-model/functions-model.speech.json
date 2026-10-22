@@ -37,12 +37,22 @@
       "pause": 500
     },
     {
-      "text": "The six boundaries above are traced individually in impact.md, together with the application registry/control dependencies. Their definitions and source hashes bind the accepted base; runtime declaration checks elaborate their current types. No candidate callable surface is frozen and no signature changes here. The registry-independent ledger script/history vocabulary remains unavailable at this base and is not replaced with a local ledger layer. Questions records the decisions needed before that freeze.",
+      "text": "The six boundaries above are traced individually in impact.md, together with the application registry/control dependencies. Their definitions and source hashes bind the accepted base; runtime declaration checks elaborate their current types. The candidate interfaces below are frozen for the hypothetical statement stage; accepted signatures remain unchanged. The registry-independent ledger script/history vocabulary remains unavailable at this base and is not replaced with a local ledger layer. Questions records the decisions needed before that freeze.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "functions-model.md",
-    "sha256": "114617bbedfc2017b9b5382dbbc49cc285f30e484e0af51506bf6b10e8019a02"
-  }
+    "sha256": "5288b2893d3d2395907abe4c73eb55a32410e20ecf0b612bf0b0a5e5354acf4f"
+  },
+  "frozen-hypothetical-identity-surface": [
+    {
+      "text": "Frozen hypothetical identity surface.",
+      "pause": 500
+    },
+    {
+      "text": "The isolated Lake project at investigations/741-no-pin/ requires the unchanged root from ../... Namespace NoPin owns Identity.lean (pure definitions), Statements.lean (hypotheses with sorry), Witnesses.lean (satisfying instances), Mutants.lean (falsifications) and Report.lean (compiled inventory). check.py reconciles the report with statement and mutant ledgers. Accepted signatures and drivers remain unchanged. Derivation order: release → application policy → state policy; independently seed → state name; then complete registry asset → role assets and approvals. No later output is an earlier input. Hash : List Nat → Nat and Codec : Preimage → List Nat are explicit parameters; tagged structural natural-number encoding makes no Cardano byte claim. | Callable | Inputs → result | Hypothetical contract | |---|---|---| | encode | Preimage → List Nat | Constructor tags and full naturals; no accepted FNV reuse. | | applicationPolicy, statePolicy | Hash → Codec → Nat → Nat | Release-derived application, then application-derived state policy. | | stateName | Hash → Codec → OutRef → Nat | Seed-derived name. | | registry | Hash → Codec → Nat → OutRef → TokenId | Complete state policy/name identity. | | roleAsset | Hash → Codec → TokenId → Role → Nat → TokenId | State is the registry asset; witness and request tags have separate preimages under its policy. No custody rule follows. | | approvalAsset | Binding → Hash → Codec → Nat → TokenId → Payload → TokenId | Application policy plus commitment; complete binding as ruled, name-only as rejected contrast. | | finiteEncoding, finiteHash | Codec → List Preimage → Prop; Hash → Codec → List Preimage → Prop | Injectivity over the explicitly finite domain only, with satisfying examples on at least two inputs. | | approve | Mutation → Binding → Hash → Codec → Nat → TokenId → Payload → TokenId → Bool | Compare supplied approval to the derived complete asset. | | recognize | Mutation → Reading → Hash → Codec → TokenId → Role → Nat → Observation → Bool | Policy-only and authenticated role/name/provenance readings, both hypothetical. Provenance is supplied evidence, never inferred from a datum. | | genesis | Mutation → TxView → OutRef → TokenId → Bool | Single seed spend, invoked policy, exact mint and one state output; no ledger acceptance. | | historyAllows | Mutation → List TxView → Bool | Explicit spent-once premise over observed inputs; no ledger transition. | Mutation.none is the candidate. Other selectors flip exactly one named atomic guard and exist only for the mutant ledger. The four Role constructors and other public predicates supply the inversion inventory; the compiled constructors determine its extent. Name-only safety is marked rejected and expected refutable, separately from stated hypotheses. No accepted serialization changes.",
+      "pause": 400
+    }
+  ]
 }

@@ -119,3 +119,9 @@ flowchart TD
   Proposal -->|exposes| Question[Open decisions]
   Question -->|requires| Decision[Operator ruling]
 ```
+
+## Candidate boundary at the interface checkpoint
+
+The isolated `NoPin` project freezes interfaces in [functions-model.md](functions-model.md) and records in [data-model.md](data-model.md). Complete registry identity follows the recorded ruling; name-only binding remains a rejected contrast. State-recognition alternatives stay hypothetical. Custody, economic configuration, reader classification and compatibility remain outside this stage.
+
+The minimal `TxView.spent` must map to accepted ledger spending-input references; `outputs.assets` to complete output values; `mint` to signed per-policy/name quantities; `invoked` to actual policy invocation. A list of views must bind to accepted history and its spent-once theorem before any history claim becomes a ledger guarantee. These are binding obligations on #679/#680, whose vocabulary remains unavailable here. This view has no validity judgement, script evaluator or UTxO update. Its genesis predicate and explicit spent-once premise do not implement those missing layers.
