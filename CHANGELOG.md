@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.16.0](https://github.com/lambdasistemi/singular/compare/v0.15.0...v0.16.0) (2026-10-22)
+
+
+### Features
+
+* a registry has an address, and a foreign one is refused naming its release ([1fa1c5d](https://github.com/lambdasistemi/singular/commit/1fa1c5da9570c90968cccc1d9dca3c2378e0f4c0))
+* gate every registry command on the pinned policies ([3d35e2f](https://github.com/lambdasistemi/singular/commit/3d35e2fcbf8693a8cab20e8685eddc476bed3d30))
+* gate every registry command on the pinned policies ([#730](https://github.com/lambdasistemi/singular/issues/730)) ([46da4b4](https://github.com/lambdasistemi/singular/commit/46da4b4b7df00b517277c94274c6f26cec51e5e5))
+* inspect reaches a key by its witness token ([fddc3a7](https://github.com/lambdasistemi/singular/commit/fddc3a7b4f5d725dc48d0acc78cb99a9d216850b))
+* inspect reaches a key by its witness token ([e52de25](https://github.com/lambdasistemi/singular/commit/e52de258b1f4e178282c68343f2cdb81cd0ef66d))
+* name a registry by its address, and say which release made a foreign one ([3762a0d](https://github.com/lambdasistemi/singular/commit/3762a0dff1c2775c9852485bade49d822ec196a7))
+
+
+### Fixes
+
+* a failed witness read ends in the refusal that carries the pin's standing ([3a611f1](https://github.com/lambdasistemi/singular/commit/3a611f18a06b454632cb78eaf6120a42196f3bcb))
+* keep the registry tree free of application names, test helpers out of the command-line namespace, and the address legs off the first registry ([1a74f47](https://github.com/lambdasistemi/singular/commit/1a74f4729453186d393f7d56a0f6f358cf5d1c72))
+
+
+### Documentation
+
+* a provider of another network is left to issue 729 ([ed20bfa](https://github.com/lambdasistemi/singular/commit/ed20bfa6fdc49c445871e3006da6707271341b70))
+* check the tasks of the pin gate ([#730](https://github.com/lambdasistemi/singular/issues/730)) ([df201b9](https://github.com/lambdasistemi/singular/commit/df201b99621598253543221fe15dd99ed085bb10))
+* name the forged-pins journey as the evidence for the trust model ([#730](https://github.com/lambdasistemi/singular/issues/730)) ([1dfddc2](https://github.com/lambdasistemi/singular/commit/1dfddc28c9bd3465136816ed7c312dc40b1ee9cb))
+* plan the forged-pins row ([#730](https://github.com/lambdasistemi/singular/issues/730)) ([00b65c2](https://github.com/lambdasistemi/singular/commit/00b65c2dffbbb4a97515d1212facf82d9e7e7151))
+* plan the pin gate on every operation ([#730](https://github.com/lambdasistemi/singular/issues/730)) ([731780e](https://github.com/lambdasistemi/singular/commit/731780e11f0436e6e59a18bd3c3482addae3f086))
+* specification of the registry's address ([4636d53](https://github.com/lambdasistemi/singular/commit/4636d53b3bb1e440f11532b78fe2ec70c0cece0c))
+* state the trust model and the pin gate on every command ([#730](https://github.com/lambdasistemi/singular/issues/730)) ([fb32b68](https://github.com/lambdasistemi/singular/commit/fb32b687d826757d2a8564cc03cd9f9e6f1568d8))
+* the key reached by its witness token ([03dfa5a](https://github.com/lambdasistemi/singular/commit/03dfa5ad751576b6e0c012e54963a1b175e12b07))
+* the registry's address, the table of releases and the settings ([7fdda61](https://github.com/lambdasistemi/singular/commit/7fdda61463eea858947c8c15ed3d6c547e443b3a))
+
 ## [0.15.0](https://github.com/lambdasistemi/singular/compare/v0.14.0...v0.15.0) (2026-10-21)
 
 
