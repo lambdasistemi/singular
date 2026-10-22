@@ -1797,6 +1797,7 @@ applicationVerdictFollowsTheValue = describe "application verdict follows the va
             , hrLiveOutputFor = \_ _ _ _ -> Left "unused"
             , hrReleaseOf = \_ _ -> Left "unused"
             , hrWithApplication = \_ _ _ _ -> Left "unused"
+            , hrRequiresToken = False
             }
 
 liveFactsReadLeafAndToken :: Spec

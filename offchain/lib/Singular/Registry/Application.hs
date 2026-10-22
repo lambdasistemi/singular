@@ -189,6 +189,13 @@ data HoldingRules = HoldingRules
         -> RegistryContext
         -> Either Text RegistryContext
     -- ^ The fold context with the application's part added
+    , hrRequiresToken :: Bool
+    {- ^ Whether the rule counts an output as a holding of a key only when the
+    output holds that key's active witness token. A reader may then ask the
+    provider who holds the token and judge those outputs alone. A rule that
+    can accept an output without the token says 'False', and the reader judges
+    every output at the application address, as it always did.
+    -}
     }
 
 instance Show HoldingRules where

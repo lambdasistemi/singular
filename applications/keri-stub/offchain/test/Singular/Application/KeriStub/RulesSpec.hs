@@ -15,6 +15,7 @@ module Singular.Application.KeriStub.RulesSpec (spec) where
 
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
+import Data.ByteString.Short qualified as SBS
 import Data.Either (isLeft, isRight)
 import Data.Map.Strict qualified as Map
 import Data.Text qualified as T
@@ -22,10 +23,21 @@ import Data.Text.Encoding qualified as TE
 import Lens.Micro ((&), (.~))
 import Test.Hspec
 
-import Cardano.Ledger.Api.Tx.Out (TxOut, datumTxOutL, mkBasicTxOut)
+import Cardano.Ledger.Api.Tx.Out
+    ( TxOut
+    , datumTxOutL
+    , mkBasicTxOut
+    , valueTxOutL
+    )
 import Cardano.Ledger.BaseTypes (Network (..))
 import Cardano.Ledger.Coin (Coin (..))
-import Cardano.Ledger.Mary.Value (MaryValue (..))
+import Cardano.Ledger.Core (hashScript)
+import Cardano.Ledger.Mary.Value
+    ( AssetName (..)
+    , MaryValue (..)
+    , MultiAsset (..)
+    , PolicyID (..)
+    )
 import PlutusCore.Data qualified as PLC
 import PlutusTx.Builtins.Internal (BuiltinByteString (..))
 
@@ -33,6 +45,7 @@ import Singular.Application.KeriStub.Datum
     ( Holding (..)
     , holdingToData
     )
+import Singular.Application.KeriStub.Script (keriStubScript)
 import Singular.Application.KeriStub.Value
     ( decodeHolding
     , keriStubApplication
@@ -101,6 +114,29 @@ txIn s = case parseOutRef (T.pack s) of
 
 finding :: Spec
 finding = describe "finding" $ do
+    it "declares that its rule does not require the key's witness token" $
+        fmap hrRequiresToken (appHolding keriStubApplication)
+            `shouldBe` Just False
+    it
+        "counts an output with the key's datum and no token as a holding, beside the one that holds the token"
+        $ let holder =
+                outputFor holdingA
+                    & valueTxOutL
+                        .~ MaryValue
+                            (Coin 3_000_000)
+                            ( MultiAsset
+                                ( Map.singleton
+                                    (PolicyID (hashScript keriStubScript))
+                                    (Map.singleton (AssetName (SBS.toShort keyA)) 1)
+                                )
+                            )
+              tokenless = outputFor holdingA
+              outs =
+                [ (txIn (replicate 64 'a' <> "#0"), holder)
+                , (txIn (replicate 64 'b' <> "#0"), tokenless)
+                ]
+          in  map (fst . fst) (hrFindHoldings rules undefined undefined keyA outs)
+                `shouldBe` map fst outs
     it "finds the one output whose datum names the key" $
         let outs = [(txIn (replicate 64 'a' <> "#0"), outputFor holdingA)]
         in  hrFindHoldings rules undefined undefined keyA outs

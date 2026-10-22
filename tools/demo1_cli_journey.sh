@@ -1057,6 +1057,79 @@ for name in address-inspect address-singular-inspect; do
     "$receipts/$name.json" >/dev/null \
     || fail "$name names another registry than the create made"
 done
+# 1a3. the key reached by its witness token (#728, second pull request). The read above,
+# from the same empty directory and the address alone, also asks the provider who holds the
+# key's witness and prints the asset it asked for and the output that holds it. Every fact is
+# compared with a receipt of the fold, never with a value typed here: the holder is the output
+# the fold delivered the key at, the asset's name is the key the fold settled, and the policy
+# is not the terminal one.
+witness_agrees() { # witness_agrees INSPECT-FILE FOLD-RECEIPT
+  jq -e --slurpfile f "$receipts/$2.json" '
+      .witness.active.assetName == $f[0].settled[0].key
+      and .witness.terminal.assetName == $f[0].settled[0].key
+      and (.witness.active.policy | test("^[0-9a-f]{56}$"))
+      and (.witness.terminal.policy | test("^[0-9a-f]{56}$"))
+      and .witness.active.policy != .witness.terminal.policy
+      and .witness.active.holders == [$f[0].settled[0].settlement.liveOutput]
+      and .witness.terminal.holders == []
+      and .applicationOutput.output == $f[0].settled[0].settlement.liveOutput' "$1" >/dev/null
+}
+witness_agrees "$receipts/address-inspect.json" address-fold \
+  || fail "the witness of a key booked and folded on the address alone is not the output the fold delivered it at"
+# the check can fail: each altered receipt, and the receipt of another registry's fold, disagree
+for altered in \
+  '.witness.active.holders = []' \
+  '.witness.active.assetName = "00"' \
+  '.witness.terminal.holders = ["00#0"]' \
+  '.witness.active.policy = .witness.terminal.policy' \
+  'del(.witness)'; do
+  jq "$altered" "$receipts/address-inspect.json" >"$work/witness-tampered.json"
+  if witness_agrees "$work/witness-tampered.json" address-fold; then
+    fail "a receipt altered by $altered still agreed with the fold"
+  fi
+done
+if witness_agrees "$receipts/address-inspect.json" bob-fold; then
+  fail "the witness of one registry's key agreed with the fold of another registry's key"
+fi
+# a key the registry never recorded is answered without a witness field
+run address-inspect-unknown success -- inspect --key keyNeverBooked --registry "$registry_address" \
+  --state-dir "$address_reader" --blueprint "$blueprint" "${node_address[@]}"
+jq -e '.leaf != "active" and .leaf != "terminal" and (has("witness") | not)' \
+  "$receipts/address-inspect-unknown.json" >/dev/null \
+  || fail "a key never booked is not answered without a witness field"
+# the termination: Alice books it and Bob folds it, each from an empty directory on the address
+# alone, and the third empty directory reads the key terminal. The active witness was held by the
+# output the fold released, and nothing holds it now, nor a terminal one.
+run address-terminate success -- terminate --key keyAddress \
+  --state-dir "$address_alice" --blueprint "$blueprint" --registry "$registry_address" "${node_address[@]}" "${alice[@]}"
+run address-terminate-fold success -- fold --request "$(field address-terminate .request)" \
+  --state-dir "$address_bob" --blueprint "$blueprint" --registry "$registry_address" "${node_address[@]}" "${bob[@]}"
+run address-inspect-terminal success -- inspect --key keyAddress --registry "$registry_address" \
+  --state-dir "$address_reader" --blueprint "$blueprint" "${node_address[@]}"
+[ "$(field address-inspect-terminal .leaf)" = terminal ] \
+  || fail "a key terminated on the address alone is not terminal for a third empty directory"
+witness_ended() { # witness_ended INSPECT-FILE BEFORE-RECEIPT TERMINATION-FOLD-RECEIPT
+  jq -e --slurpfile b "$receipts/$2.json" --slurpfile t "$receipts/$3.json" '
+      .witness.active.holders == []
+      and .witness.terminal.holders == []
+      and .witness.active.policy == $b[0].witness.active.policy
+      and .witness.active.assetName == $b[0].witness.active.assetName
+      and .applicationOutput.holdings == []
+      and $b[0].witness.active.holders == [$t[0].settled[0].settlement.released]' "$1" >/dev/null
+}
+witness_ended "$receipts/address-inspect-terminal.json" address-inspect address-terminate-fold \
+  || fail "the witness of a terminated key is not empty, or the output that held it is not the one the termination released"
+for altered in \
+  '.witness.active.holders = ["00#0"]' \
+  '.witness.terminal.holders = ["00#0"]' \
+  '.witness.active.assetName = "00"' \
+  'del(.witness)'; do
+  jq "$altered" "$receipts/address-inspect-terminal.json" >"$work/witness-tampered.json"
+  if witness_ended "$work/witness-tampered.json" address-inspect address-terminate-fold; then
+    fail "a terminal receipt altered by $altered still agreed with the termination"
+  fi
+done
+say "the key reached by its witness token: from empty directories and the address alone, the active key's witness is held by the output its fold delivered it at; a key never booked has no witness field; after its termination nothing holds the active witness, and the output that held it is the one the termination released"
 # the address, shown by the program that makes it, holds the state token of the create
 "$singular" registry address --registry "$registry_address" >"$receipts/address-holds.json"
 jq -e --slurpfile c "$receipts/create-defaults.json" \

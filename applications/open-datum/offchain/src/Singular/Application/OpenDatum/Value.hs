@@ -107,6 +107,7 @@ mkApplication title =
                         first T.pack (releaseOf applied pair)
                     , hrWithApplication = \applied reference live ctx ->
                         first T.pack (withApplication applied reference live ctx)
+                    , hrRequiresToken = True
                     }
         }
 

@@ -27,6 +27,7 @@ module Singular.CLI.Live
     , observedRoot
     , applicationAddr
     , liveOutputs
+    , liveWitness
     , liveOutputFor
     , holdingsFor
     , applicationReference
@@ -148,6 +149,11 @@ import Singular.Registry.Types
     , OnChainRoot (..)
     , OnChainTokenState (..)
     )
+import Singular.Registry.Witness
+    ( WitnessFound
+    , WitnessKind
+    , findWitness
+    )
 
 {- | A registry resolved from its state token in this release: the
 configuration and codes it runs, and the reference outputs found for the
@@ -240,6 +246,23 @@ liveOutputs
     -> Saved
     -> IO [(TxIn, TxOut ConwayEra)]
 liveOutputs _app view s = Cage.outputsAt view (applicationAddr s)
+
+{- | The key's witness of one kind, found by asking the provider who holds the
+asset ('Singular.Registry.Witness.witnessAsset' names it), never by listing
+the application's outputs. A provider that cannot answer stops the command as
+an address read that cannot be answered does.
+-}
+liveWitness
+    :: Cage.Session Cage.NoWitness IO
+    -> Saved
+    -> WitnessKind
+    -> ByteString
+    -> IO WitnessFound
+liveWitness view s kind key =
+    findWitness view (savedCfg s) kind key >>= either refused pure
+  where
+    refused (Cage.NetworkTimeRefusal failure) = throwIO failure
+    refused failure = throwIO failure
 
 {- | The outputs at the application that are this registry's holding of
 @key@, through the value. With holding rules (the open datum) this is the
