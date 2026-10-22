@@ -22,9 +22,9 @@ the boot's own narration goes to standard error.
 > forged-registry fold-altering-a-pin
 
 The shared flags are @--koios-url@, @--network-time@, @--network-magic@,
-@--wallet-skey@ and @--blueprint@ (the open-datum deployment blueprint).
+@--wallet-skey@ and @--blueprint@ (the deployment blueprint).
 
-@boot@ makes a registry for open-datum's open application, or for its closed one
+@boot@ makes a registry for this application's open mode, or for its closed one
 under @--application closed@: the application, the absent and the terminal pins
 are the honest derivation, the active pin is the always-true script's hash under
 @--mode forged@ and the honest derivation under @--mode genuine@, the control.
@@ -52,7 +52,6 @@ import Control.Exception (ErrorCall (..), try)
 import Control.Monad (unless, void, when)
 import Data.Aeson (Value, encode, object, (.=))
 import Data.ByteString (ByteString)
-import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Lazy.Char8 qualified as LBS
 import Data.ByteString.Short qualified as SBS
@@ -76,7 +75,7 @@ import System.IO
     )
 import Text.Read (readMaybe)
 
-import Cardano.Ledger.Address (Addr (..), serialiseAddr)
+import Cardano.Ledger.Address (Addr)
 import Cardano.Ledger.Api.Tx (bodyTxL, mkBasicTx, txIdTx)
 import Cardano.Ledger.Api.Tx.Body
     ( feeTxBodyL
@@ -93,10 +92,6 @@ import Cardano.Ledger.Api.Tx.Out
     )
 import Cardano.Ledger.BaseTypes (TxIx (..))
 import Cardano.Ledger.Core (Script, hashScript)
-import Cardano.Ledger.Credential
-    ( Credential (..)
-    , StakeReference (..)
-    )
 import Cardano.Ledger.Mary.Value
     ( AssetName (..)
     , MaryValue (..)
@@ -109,6 +104,15 @@ import Control.Tracer (nullTracer)
 import PlutusCore.Data qualified as PLC
 import PlutusTx.Builtins.Internal (BuiltinByteString (..))
 
+import Singular.Application.OpenDatum.Book
+    ( insertApproval
+    , insertDestination
+    )
+import Singular.Application.OpenDatum.InsertEnvelope (insertEnvelope)
+import Singular.Application.OpenDatum.Value
+    ( closedDatumApplication
+    , openDatumApplication
+    )
 import Singular.CLI.Registry
     ( economics
     , hexT
@@ -116,11 +120,7 @@ import Singular.CLI.Registry
     , pinsOf
     , registryConfigFor
     )
-import Singular.Registry.Application
-    ( Application (..)
-    , ApplicationPin (..)
-    , neutralApplication
-    )
+import Singular.Registry.Application (Application (..))
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint (NamingCodes (..))
 import Singular.Registry.Capabilities (Capabilities (..))
@@ -167,8 +167,6 @@ import Singular.Registry.TxBuilder.Edges
     )
 import Singular.Registry.TxBuilder.Internal
     ( addrKeyHashBytes
-    , approvalDestination
-    , approvalName
     , cageAddrFromCfg
     , cagePolicyIdFromCfg
     , computeScriptHash
@@ -198,21 +196,16 @@ import Singular.Registry.Wallet
     , loadWallet
     )
 
-{- | The always-true script: the Plutus V3 program that accepts a spend and a
-mint for any redeemer and any context. The same program the keri-stub
-application ships as its approval policy; here it stands for the policy a
-registry's creator pins as the active policy so that anything can be minted
-under it.
+{- | The always-true script: a Plutus V3 program that accepts any use for any
+redeemer and any context. It is the program @(lam ctx (con unit ()))@ at
+version 1.1.0, written out in the flat encoding the ledger reads: the three
+version numbers (1, 1, 0), the lambda tag, the constant tag with the type tag
+of unit, and the padding, wrapped once as a byte string. It stands for the
+policy a registry's creator pins as the active policy so that anything can be
+minted under it.
 -}
 forgedScriptBytes :: SBS.ShortByteString
-forgedScriptBytes =
-    SBS.toShort
-        . either (error "forgedScriptBytes: bad hex") id
-        . B16.decode
-        $ "587601010029800aba2aba1aab9eaab9dab9a4888896600264646530013005375"
-            <> "4003300700398038012444b30013370e9001001c4c8cc89289805800980598"
-            <> "0600098049baa0048acc004cdc3a40000071324a26eb8c028c024dd50024590"
-            <> "07200e18031803800980300098019baa0068a4d13656400401"
+forgedScriptBytes = SBS.pack [0x45, 0x01, 0x01, 0x00, 0x24, 0x99]
 
 -- | The always-true script.
 forgedScript :: Script ConwayEra
@@ -271,12 +264,11 @@ withEnv flags action = do
             pure
             (readMaybe magicText)
     wallet <- loadWallet magic keyPath
-    title <- case flagValue "--application" flags of
-        Nothing -> pure "open_datum.open_datum"
-        Just "open" -> pure "open_datum.open_datum"
-        Just "closed" -> pure "open_datum.closed_datum"
+    app <- case flagValue "--application" flags of
+        Nothing -> pure openDatumApplication
+        Just "open" -> pure openDatumApplication
+        Just "closed" -> pure closedDatumApplication
         Just other -> die ("--application is open or closed, not " <> other)
-    let app = neutralApplication{appPin = PinByScript title}
     release <- loadRelease app blueprint >>= either die pure
     let settings = ProviderSettings url magic Nothing (Just timeDir)
         env caps =
@@ -493,69 +485,33 @@ plainPlan cfg =
         , fpSkipEvaluation = False
         }
 
-{- | Book an insertion of the key on the registry the configuration names, as
-open-datum books one: the approval its application script certifies, naming
-the registry, its active policy, the key and the controller in the envelope
-the request carries. This mirrors the application's own booking
-(@Singular.Application.OpenDatum.Book@, which this package cannot import), and
-the application's mint policy judges it against the registry's actual state;
-that the policy accepts it is what makes the request one a fold takes.
-Returns the request's output.
+{- | Book an insertion of the key on the registry the configuration names, with
+the application's own booking: the envelope it builds, the approval its script
+certifies and the destination that carries the envelope. The application's mint
+policy judges the booking against the registry's actual state; that it accepts
+it is what makes the request one a fold takes. Returns the request's output.
 -}
 bookInsert
     :: Env -> CageConfig -> NamingCodes -> TokenId -> ByteString -> IO TxIn
 bookInsert env cfg pinned tid key = do
     let payer = payerOf env
         net = network cfg
-        controller = addrKeyHashBytes payer
-        TokenId (AssetName tokenName) = tid
         deposit = 2_000_000
-        control =
-            PLC.Constr
-                0
-                [ PLC.I 1
-                , PLC.Constr
-                    0
-                    [ PLC.B (scriptHashBytes (cfgScriptHash cfg))
-                    , PLC.B (SBS.fromShort tokenName)
-                    ]
-                , PLC.B (SBS.fromShort (cfgActivePolicy cfg))
-                , PLC.B key
-                , PLC.B controller
-                , PLC.I deposit
-                ]
-        envelope = PLC.Constr 0 [control, PLC.Map [(PLC.B "owner", PLC.B "harness")]]
-        application = scriptFromBytes "open-datum" (ncApplication pinned)
-        address =
-            serialiseAddr
-                (Addr net (ScriptHashObj (hashScript application)) StakeRefNull)
-        destination = (address, Just envelope)
-        approvalAsset =
-            approvalName
-                edgeInsertActive
+        applied = ncApplication pinned
+        envelope =
+            insertEnvelope
+                cfg
+                tid
                 key
-                controller
-                (approvalDestination destination)
+                (addrKeyHashBytes payer)
+                deposit
+                (PLC.Map [(PLC.B "owner", PLC.B "harness")])
     cageUtxos <- outputsOf env (cageAddrFromCfg cfg net)
     (stateIn, _) <-
         maybe
             (die "the registry's state output is not on the chain")
             pure
             (findStateUtxo (cagePolicyIdFromCfg cfg) tid cageUtxos)
-    let approval =
-            BookingApproval
-                { baAsset =
-                    MultiAsset
-                        ( Map.singleton
-                            (PolicyID (hashScript application))
-                            (Map.singleton (AssetName (SBS.toShort approvalAsset)) 1)
-                        )
-                , baRedeemer =
-                    PLC.Constr 0 [PLC.B key, PLC.B controller, PLC.B address, envelope]
-                , baScript = application
-                , baScriptReference = Nothing
-                , baReferenceInputs = Set.singleton stateIn
-                }
     booking <-
         bookEdgeWith
             cfg
@@ -565,9 +521,9 @@ bookInsert env cfg pinned tid key = do
             tid
             key
             edgeInsertActive
-            destination
+            (insertDestination net applied envelope)
             deposit
-            (Just approval)
+            (Just (insertApproval net applied stateIn envelope))
     pure (TxIn (txIdTx booking) (TxIx 0))
 
 {- | Build the fold of the booked request as the plan says, with the

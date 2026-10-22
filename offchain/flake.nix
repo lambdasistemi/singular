@@ -689,12 +689,6 @@
           # #641: a test-harness tool the packaged bundle control seals its
           # devnet keys with; never evidence of anything.
           inherit (components.exes) vault-seal;
-          # #730: the test harness of the forged-pins journey. It boots a
-          # registry whose datum pins a policy the release does not derive,
-          # which no product command can do, and submits the folds the
-          # journey records the node's answer to; never evidence of anything,
-          # and in no release bundle.
-          inherit (components.exes) forged-registry;
           singular-test-harness = harnessComponents.exes.singular;
           # #528 slice 4: the negative host moved to the application's
           # own tree with the application; this

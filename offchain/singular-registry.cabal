@@ -1410,36 +1410,3 @@ executable vault-seal
     , singular-registry:registry-cli
 
   ghc-options:      -threaded -with-rtsopts=-N
-
--- #730: a test harness for the forged-pins journey, never evidence and never
--- a product command: boots a registry whose datum pins an always-true active
--- policy through the real boot, mints a token under it, and submits the folds
--- the journey records the node's answer to.
-executable forged-registry
-  import:           warnings
-  default-language: GHC2021
-  hs-source-dirs:   test/forged-registry
-  main-is:          Main.hs
-
-  build-depends:
-    , aeson                             >=2.1  && <2.3
-    , base                              >=4.14 && <5
-    , base16-bytestring
-    , bytestring                        >=0.11 && <0.13
-    , cardano-ledger-api
-    , cardano-ledger-core
-    , cardano-ledger-mary
-    , cardano-strict-containers
-    , cardano-tx-tools:tx-build
-    , containers                        >=0.6  && <0.8
-    , contra-tracer
-    , microlens
-    , plutus-core
-    , plutus-tx
-    , singular-registry
-    , singular-registry:koios-http
-    , singular-registry:local-services
-    , singular-registry:registry-cli
-    , text                              >=2.0  && <2.2
-
-  ghc-options:      -threaded -with-rtsopts=-N

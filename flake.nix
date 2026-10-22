@@ -1692,7 +1692,7 @@
             let
               pkgs = import nixpkgs { inherit system; };
               # #730: the forged-pins journey. One raw development node funds
-              # one wallet; the test harness (offchain's forged-registry,
+              # one wallet; the test harness (the open-datum package's forged-registry,
               # never a product command) boots a registry whose datum pins an
               # always-true active policy and mints a token named after a key
               # under it; the packaged `singular` and `open-datum` are run as
@@ -1738,7 +1738,7 @@
                     echo "forged-pins-check: no open-datum binary in $open_datum_out" >&2
                     exit 3
                   }
-                  harness_out="$(nix build --quiet --no-link --print-out-paths "$root/offchain#forged-registry")" || exit 3
+                  harness_out="$(nix build --quiet --no-link --print-out-paths "$root/applications/open-datum/offchain#forged-registry")" || exit 3
                   harness="$harness_out/bin/forged-registry"
                   [ -x "$harness" ] || {
                     echo "forged-pins-check: no harness binary in $harness_out" >&2
