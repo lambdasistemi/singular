@@ -25,7 +25,7 @@ script, never typed.
 module Singular.Application.KeriStub.ProducersSpec (spec) where
 
 import Control.Exception (bracket)
-import Control.Monad (forM)
+import Control.Monad (forM, unless, when)
 import Control.Tracer (Tracer (..))
 import Data.Aeson ((.=))
 import Data.Aeson qualified as Aeson
@@ -80,6 +80,7 @@ import Cardano.Ledger.Api.Tx.Out
     ( TxOut
     , addrTxOutL
     , coinTxOutL
+    , getMinCoinTxOut
     , mkBasicTxOut
     , valueTxOutL
     )
@@ -133,6 +134,7 @@ import Singular.CLI.Receipt (JournalEntry (..), readJournal)
 import Singular.CLI.ReceiptBody (boundBody)
 import Singular.CLI.Registry (loadReleaseCodes)
 import Singular.CLI.Session (Env (..), readsIn)
+import Singular.Registry.Application (datumToJson)
 import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.Deployment (parseOutRef, renderOutRef)
 import Singular.Registry.Evidence (NoWitness, unverifiedVerifier)
@@ -158,7 +160,10 @@ import Singular.Registry.SyntheticLedger
     )
 import Singular.Registry.SyntheticTime (syntheticTime)
 import Singular.Registry.TxBuilder.BookingFixture (preprodParams)
-import Singular.Registry.TxBuilder.Edges (registryContextFor)
+import Singular.Registry.TxBuilder.Edges
+    ( edgeDeposit
+    , registryContextFor
+    )
 import Singular.Registry.TxBuilder.Internal
     ( addrKeyHashBytes
     , computeScriptHash
@@ -187,6 +192,7 @@ spec :: Spec
 spec = describe "chunk4 producers" $ do
     registerRows
     discoveryRows
+    carrierRows
     convictRows
     combinedAllowanceRows
 
@@ -857,6 +863,130 @@ registrationOf tx = case cageOutputs tx of
             ( "expected one registration request output in the booking, found "
                 <> show (map (datumKind . snd) found)
             )
+
+-- ---------------------------------------------------------
+-- the carrier of a registration must meet the ledger's minimum
+-- ---------------------------------------------------------
+
+-- | A payload of this many sixty-four byte pieces, written beside the rig's others.
+writeBigPayload :: Rig -> Int -> IO FilePath
+writeBigPayload rig pieces = do
+    let path = rigDir rig </> "payload-big.json"
+    BL.writeFile
+        path
+        ( Aeson.encode
+            ( datumToJson
+                ( PLC.List
+                    [PLC.B (BS.replicate 64 (fromIntegral n)) | n <- [1 .. pieces]]
+                )
+            )
+        )
+    pure path
+
+{- | What the ledger asks of the output the fold delivers for this payload,
+read from that very output: a registration with a deposit far above any
+minimum is folded on a rig of its own, and the minimum of the output it left at
+the stub's address is asked of the ledger's own function under the rig's
+protocol parameters.
+-}
+deliveredMinimum :: Int -> IO Integer
+deliveredMinimum pieces = withRegistry $ \rig t -> do
+    big <- writeBigPayload rig pieces
+    done <-
+        run
+            rig
+            "register with a deposit far above any minimum, folded"
+            ( [ "keri-stub"
+              , "register"
+              , "--key"
+              , "hello"
+              , "--deposit"
+              , "30000000"
+              , "--payload"
+              , big
+              , "--fold"
+              ]
+                <> tokenArgs t
+            )
+    outcomeOf done `shouldBe` Just "success"
+    (_, out) <- holdingOutput rig
+    pp <-
+        SessionIO.withLatest
+            (rawChainProvider (rigChain rig))
+            SessionIO.parameters
+    let Coin least = getMinCoinTxOut pp out
+    pure least
+
+carrierRows :: Spec
+carrierRows =
+    describe
+        "the carrier of a registration must meet the ledger's minimum"
+        $ do
+            it
+                "refuses, or states the limit of, a register whose delivered output could not meet the minimum"
+                $ withRegistry
+                $ \rig t -> do
+                    big <- writeBigPayload rig 40
+                    least <- deliveredMinimum 40
+                    -- the fixture is only a test of the rule when the deposit named is below what the ledger asks
+                    least `shouldSatisfy` (> edgeDeposit)
+                    attempted <-
+                        run
+                            rig
+                            "register a payload too large for the deposit named"
+                            ( [ "keri-stub"
+                              , "register"
+                              , "--key"
+                              , "hello"
+                              , "--deposit"
+                              , show edgeDeposit
+                              , "--payload"
+                              , big
+                              ]
+                                <> tokenArgs t
+                            )
+                    let named =
+                            T.pack (show least) `T.isInfixOf` T.pack (show attempted)
+                        outcome = outcomeOf attempted
+                    -- booked at all, the carrier is the deposit named: never topped up
+                    when (outcome == Just "success") $ do
+                        body <- preparedFirst rig t "register"
+                        (_, r) <- registrationOf body
+                        regCarrierAda r `shouldBe` edgeDeposit
+                    unless named $
+                        failTest
+                            ( "the register ended "
+                                <> show outcome
+                                <> " and its receipt does not name the "
+                                <> show least
+                                <> " lovelace the ledger asks of the output the fold delivers"
+                            )
+            it
+                "books the same payload once the deposit meets the minimum, the deposit being the carrier"
+                $ withRegistry
+                $ \rig t -> do
+                    big <- writeBigPayload rig 40
+                    booked <-
+                        run
+                            rig
+                            "register with a deposit that meets the minimum"
+                            ( [ "keri-stub"
+                              , "register"
+                              , "--key"
+                              , "hello"
+                              , "--deposit"
+                              , "30000000"
+                              , "--payload"
+                              , big
+                              ]
+                                <> tokenArgs t
+                            )
+                    outcomeOf booked `shouldBe` Just "success"
+                    body <- preparedFirst rig t "register"
+                    (_, r) <- registrationOf body
+                    regCarrierAda r `shouldBe` 30_000_000
+                    least <- deliveredMinimum 40
+                    (30_000_000 >= least) `shouldBe` True
 
 -- ---------------------------------------------------------
 -- fold

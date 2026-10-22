@@ -110,6 +110,32 @@ in
     }
   );
 
+  # The consumers of the tagged-request law that no in-process suite runs:
+  # the statement bindings, the hash-comparison report, the negative host, the
+  # journeys, the rehearsal and the published pages. Rows of kind behavioral run
+  # a command or function of the repository over real data; rows of kind
+  # inspection read source text. The tool checks its own predicates first.
+  # Scratch owned: the tool owns its scratch under mktemp with trap cleanup; no
+  # process is stopped.
+  tagged-law-consumers-check = app (
+    pkgs.writeShellApplication {
+      name = "tagged-law-consumers-check";
+      runtimeInputs = with pkgs; [
+        bash
+        coreutils
+        diffutils
+        findutils
+        gawk
+        git
+        gnugrep
+        gnused
+        jq
+        nix
+      ];
+      text = ''bash tools/tagged_law_consumers_check.sh "$PWD"'';
+    }
+  );
+
   # #562 item 3: the publication boundary control. The control script
   # runs the publisher definition from nix/release.nix with only gh
   # replaced by a recorder, through its positive path and its mutated
