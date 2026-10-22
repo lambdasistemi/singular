@@ -31,7 +31,7 @@ These conditions are met by the investigation plan. Behavioral soundness is deli
 
 [modules-model.md](modules-model.md) owns responsibility and dependency placement; [data-model.md](data-model.md) owns report/domain records; [functions-model.md](functions-model.md) owns callable-change decisions.
 
-Initial executable candidate additions, once the owner freezes their signatures, belong under an explicitly hypothetical `lean/Singular/NoPins/` namespace. Accepted existing model declarations stay unchanged until the relevant ruling. Reuse exact accepted ledger modules if available; do not fork #679/#680's foundational work or import unaccepted code by implication.
+Initial executable candidate additions, once the owner freezes their signatures, belong to an explicitly hypothetical, isolated Lake project at `investigations/741-no-pin/` that requires the unchanged root model, as the open-datum application does. The root model check admits no proof hole or unimported module under `lean/Singular/`, and importing new modules from the root would move accepted corpus digests. Accepted existing model declarations stay unchanged until the relevant ruling. Reuse exact accepted ledger modules if available; do not fork #679/#680's foundational work or import unaccepted code by implication.
 
 The first authoring fence is ticket-local investigation/decision documents and the explicitly frozen candidate files. Adding model exports, consumer changes, simulator changes or constitution amendments requires the owner to version the per-stage path fence after the corresponding ruling. This is checkpoint control, not a new staffing approval.
 

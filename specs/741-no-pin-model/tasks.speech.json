@@ -49,7 +49,7 @@
       "pause": 300
     },
     {
-      "text": "[ ] Model identity and role cases — In the frozen lean/Singular/NoPins/ files, state executable naming/application dependencies and state/witness/request-tag classification, including a genuine witness carrying a fabricated state datum. Requirements: Explicit identities; Authenticated asset roles.",
+      "text": "[ ] Model identity and role cases — In the frozen investigations/741-no-pin/ files, state executable naming/application dependencies and state/witness/request-tag classification, including a genuine witness carrying a fabricated state datum. Requirements: Explicit identities; Authenticated asset roles.",
       "pause": 300
     },
     {
@@ -79,7 +79,7 @@
       "pause": 300
     },
     {
-      "text": "[ ] State supply and release obligations — Freeze signatures, then candidate statements for unknown-key mint, permanent no-remint, exact same-key burn/transition, pending custody and excluded/mixed cases in lean/Singular/NoPins/. Requirements: Permanent key supply; Consumer and economic agreement.",
+      "text": "[ ] State supply and release obligations — Freeze signatures, then candidate statements for unknown-key mint, permanent no-remint, exact same-key burn/transition, pending custody and excluded/mixed cases in investigations/741-no-pin/. Requirements: Permanent key supply; Consumer and economic agreement.",
       "pause": 300
     },
     {
@@ -151,6 +151,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "cadc63bcf883b82ccb8e97621567c86622bf13797f1c5bd8f93559bc0de7ff3e"
+    "sha256": "ebd4676aa2cd7e4dec351054f8800533579725d6d9092a7bdf01d3b32768ccc9"
   }
 }

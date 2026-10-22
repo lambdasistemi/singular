@@ -16,7 +16,7 @@ Independent outcome: a reader can inspect exact identity premises and replay the
 
 - [x] **Inventory identity premises** — Read `lean/Singular/Model/Registry.lean`, the bound ledger/history sources and the application model; record exact hash/ledger premises with satisfying-witness obligations in `impact.md`. Requirements: Explicit identities; Satisfiable premises.
 - [ ] **Freeze candidate call surfaces** — Complete the hypothetical identity signatures in `functions-model.md` and owned records in `data-model.md` before implementing candidate files. Requirements: Explicit identities; Bound authority.
-- [ ] **Model identity and role cases** — In the frozen `lean/Singular/NoPins/` files, state executable naming/application dependencies and state/witness/request-tag classification, including a genuine witness carrying a fabricated state datum. Requirements: Explicit identities; Authenticated asset roles.
+- [ ] **Model identity and role cases** — In the frozen `investigations/741-no-pin/` files, state executable naming/application dependencies and state/witness/request-tag classification, including a genuine witness carrying a fabricated state datum. Requirements: Explicit identities; Authenticated asset roles.
 - [ ] **State same-seed history obligations** — In the same candidate namespace, distinguish multiple policies in one transaction from repeated spending across history; preserve any concrete counterexample. Requirement: Scoped history uniqueness.
 - [ ] **Audit identity statements** — Independent auditor checks exact statement hashes, reachable/satisfiable premises, completeness and finite mutation floor; ticket owner records the result in `impact.md` and runtime. Requirements: Satisfiable premises; Scoped history uniqueness; Authenticated asset roles.
 - [ ] **Prove or refute identity claims** — After statement approval, supply proofs or constructive witnesses in the frozen candidate modules; semantic findings go to `decisions.md`. Requirements: Explicit identities; Satisfiable premises; Scoped history uniqueness; Authenticated asset roles.
@@ -26,7 +26,7 @@ Independent outcome: a reader can inspect exact identity premises and replay the
 Independent outcome: the candidate explains legitimate creation, custody and retirement and exposes incompatible application requirements.
 
 - [ ] **Bind application and economic effects** — Map `OpenDatumApplication/Model.lean`, root `Model/Termination.lean` and `Economics/` obligations into `impact.md`, retaining every economic parameter and controller/release obligation. Requirement: Consumer and economic agreement.
-- [ ] **State supply and release obligations** — Freeze signatures, then candidate statements for unknown-key mint, permanent no-remint, exact same-key burn/transition, pending custody and excluded/mixed cases in `lean/Singular/NoPins/`. Requirements: Permanent key supply; Consumer and economic agreement.
+- [ ] **State supply and release obligations** — Freeze signatures, then candidate statements for unknown-key mint, permanent no-remint, exact same-key burn/transition, pending custody and excluded/mixed cases in `investigations/741-no-pin/`. Requirements: Permanent key supply; Consumer and economic agreement.
 - [ ] **Audit then prove holding claims** — Independent statement audit precedes proof or constructive refutation; retain the selected reachable and mutation witnesses, and record any release/custody conflict in `decisions.md`. Requirements: Permanent key supply; Consumer and economic agreement.
 
 ## Explain reader conclusions — priority P1

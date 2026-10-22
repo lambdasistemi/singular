@@ -77,7 +77,7 @@
       "pause": 400
     },
     {
-      "text": "Initial executable candidate additions, once the owner freezes their signatures, belong under an explicitly hypothetical lean/Singular/NoPins/ namespace. Accepted existing model declarations stay unchanged until the relevant ruling. Reuse exact accepted ledger modules if available; do not fork #679/#680's foundational work or import unaccepted code by implication.",
+      "text": "Initial executable candidate additions, once the owner freezes their signatures, belong to an explicitly hypothetical, isolated Lake project at investigations/741-no-pin/ that requires the unchanged root model, as the open-datum application does. The root model check admits no proof hole or unimported module under lean/Singular/, and importing new modules from the root would move accepted corpus digests. Accepted existing model declarations stay unchanged until the relevant ruling. Reuse exact accepted ledger modules if available; do not fork #679/#680's foundational work or import unaccepted code by implication.",
       "pause": 400
     },
     {
@@ -141,6 +141,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "0a99a43db2e959ec2958f87decaea6dac3605fc449290c804a1cdf3a8634c058"
+    "sha256": "c55432981d7e5f3fbc0279a2401661b6f6b19c58705f0e914eaa9aa28b5d6f9c"
   }
 }

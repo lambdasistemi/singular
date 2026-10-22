@@ -5,7 +5,7 @@ As an investigator, I want each proposed guarantee assigned to its proper model 
 | Component and source horizon | Responsibility | Placement decision |
 |---|---|---|
 | Ticket record, `specs/741-no-pin-model/` | Proposal status, authority, impact table, counterexample explanations and operator decisions | Owns no product law; the decisions record links exact amendments. |
-| Hypothetical candidate, `lean/Singular/NoPins/` | New identity and composition investigation under explicit premises | Separate from accepted law until a ruling; exact modules/signatures frozen by the ticket owner. |
+| Hypothetical candidate, `investigations/741-no-pin/` | New identity and composition investigation under explicit premises | Isolated Lake project requiring the unchanged root model, like `applications/open-datum/`; separate from accepted law until a ruling; exact modules/signatures frozen by the ticket owner. |
 | Root model, `lean/Singular/Model/`, `Economics/`, `Statements/` | Accepted two-edge, supply, pending custody and economic obligations | Semantic changes only after a ruling; no parallel second economic system. |
 | Ledger/history work in #679/#680 | Script invocation, policy/name and ledger-history premises | Not present on the bound main base; bind an accepted revision before reuse. Do not create a competing ledger layer. |
 | Open-datum consumer, `applications/open-datum/lean/` | Controller updates, protected holdings and release semantics | Reconcile against root; a conflict returns to the operator. |
