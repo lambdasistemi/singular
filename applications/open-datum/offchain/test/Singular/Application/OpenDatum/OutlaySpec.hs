@@ -163,9 +163,10 @@ spec = describe "a command's outlay against an approved allowance (#300)" $ do
             let booking = bookingWith 400_000 3_000_000
                 p1 = preprodParams
                 p2 = preprodParams & ppTxFeePerByteL .~ CoinPerByte (CompactCoin 10_000)
-                approved = Just (outlayTotal (bookingOutlay p1 [] booking))
-                left = leftForFold approved booking
-            left `shouldBe` Just (outlayFoldBound (bookingOutlay p1 [] booking))
+                spent = bookingOutlay p1 [] booking
+                approved = Just (outlayTotal spent)
+                left = leftForFold approved spent
+            left `shouldBe` Just (outlayFoldBound spent)
             -- The same registry's fold, built by the production builder under
             -- each view's parameters after the booking confirmed.
             underP1 <- builtFoldUnder p1
@@ -174,12 +175,54 @@ spec = describe "a command's outlay against an approved allowance (#300)" $ do
             -- is left, P2's is past it.
             Just (outlayTotal (foldOutlay underP1)) `shouldSatisfy` (<= left)
             Just (outlayTotal (foldOutlay underP2)) `shouldSatisfy` (> left)
-            foldPastAllowance approved booking underP1 `shouldBe` Nothing
-            fmap fst (foldPastAllowance approved booking underP2) `shouldBe` left
-            fmap snd (foldPastAllowance approved booking underP2)
+            foldPastAllowance approved spent underP1 `shouldBe` Nothing
+            fmap fst (foldPastAllowance approved spent underP2) `shouldBe` left
+            fmap snd (foldPastAllowance approved spent underP2)
                 `shouldBe` Just (foldOutlay underP2)
             -- With no allowance named the fold is not bounded.
-            foldPastAllowance Nothing booking underP2 `shouldBe` Nothing
+            foldPastAllowance Nothing spent underP2 `shouldBe` Nothing
+    it
+        "leaves a termination's fold the remainder the wallet's own outlay leaves, whatever custody its request took in"
+        $ do
+            -- A custody of 4 ada, an addition of 2, a booking fee of 0.2 and a
+            -- fold bound of 1: the wallet puts out 0.2 + 2 + 1 = 3.2. The
+            -- request holds 6, of which 4 was the key's already.
+            let spent =
+                    Outlay
+                        { outlayFee = 200_000
+                        , outlayBond = 2_000_000
+                        , outlayFoldBound = 1_000_000
+                        }
+                approved = Just 3_200_000
+                booking = bookingWith 200_000 6_000_000
+            outlayTotal spent `shouldBe` 3_200_000
+            -- what a termination's own measure takes of the same booking
+            let measured = terminationOutlay preprodParams [] 4_000_000 booking
+            (outlayFee measured, outlayBond measured)
+                `shouldBe` (200_000, 2_000_000)
+            leftForFold approved spent `shouldBe` Just 1_000_000
+            -- a fold costing 0.5 is within it; one costing more than the
+            -- remainder, so that the wallet's total passes the allowance, is not
+            foldPastAllowance approved spent (bookingWith 500_000 3_000_000)
+                `shouldBe` Nothing
+            fmap
+                fst
+                (foldPastAllowance approved spent (bookingWith 1_000_001 3_000_000))
+                `shouldBe` Just 1_000_000
+            -- charging the whole request instead, as the earlier accounting did,
+            -- leaves the remainder negative and refuses every fold
+            leftForFold approved spent{outlayBond = 6_000_000}
+                `shouldBe` Just (-3_000_000)
+    it
+        "leaves a registration's fold what it always left: the allowance less the booking's fee and its whole bond"
+        $ property
+        $ forAll ((,) <$> fees <*> bonds)
+        $ \(fee, bond) ->
+            let booking = bookingWith fee bond
+                spent = bookingOutlay preprodParams [] booking
+                approved = Just (outlayTotal spent)
+            in  leftForFold approved spent
+                    === Just (outlayFoldBound spent)
     it "rounds the collateral up to the protocol's percentage" $
         property $
             forAll ((,) <$> fees <*> percentages) $ \(fee, pct) ->

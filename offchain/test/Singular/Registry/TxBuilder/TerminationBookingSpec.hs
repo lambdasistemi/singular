@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE OverloadedStrings #-}
 
@@ -24,7 +25,7 @@ written, so each reaches its refusal or its missing transaction.
 -}
 module Singular.Registry.TxBuilder.TerminationBookingSpec (spec) where
 
-import Control.Exception (SomeException, displayException)
+import Control.Exception (SomeException, displayException, try)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
@@ -129,6 +130,12 @@ import Singular.Registry.TxBuilder.TerminationBooking
     ( CustodyAuthority (..)
     , TerminationBooking (..)
     , bookTerminationImpl
+    )
+import Singular.Registry.TxBuilder.WalletTermination
+    ( CustodyAbsence (..)
+    , TerminationProbe (..)
+    , expectNoCustody
+    , probeWalletTermination
     )
 import Singular.Registry.Types
     ( CageDatum (..)
@@ -391,6 +398,7 @@ spec :: Spec
 spec = describe "chunk3 offchain" $ do
     termination
     walletCustody
+    walletProbe
     retainedBytes
 
 termination :: Spec
@@ -836,6 +844,162 @@ walletCustody = describe "a custody a wallet holds" $ do
                         (walletCustodyOut & coinTxOutL .~ Coin (custodyLovelace + 1))
                     )
                     walletBooking
+
+-- ---------------------------------------------------------
+-- Probing a wallet for a key's custody: what a refusal may be
+-- ---------------------------------------------------------
+
+{- | The wallet that funds and holds: the key's token sits in an output of
+the payer's own address, beside an ordinary funding output.
+-}
+payerCustodyOut :: TxOut ConwayEra
+payerCustodyOut =
+    mkBasicTxOut
+        payer
+        (MaryValue (Coin custodyLovelace) (singular bookedKey 1))
+
+-- | The registry's state output and these wallet outputs.
+probeWorld :: [(TxIn, TxOut ConwayEra)] -> Served
+probeWorld wallet =
+    [ (payer, wallet)
+    , (cageAddrFromCfg cfg Testnet, [(stateRef, stateOutputFor cfg)])
+    ]
+
+-- | The same world with the registry's state output left out.
+probeWorldWithoutState :: [(TxIn, TxOut ConwayEra)] -> Served
+probeWorldWithoutState wallet = [(payer, wallet)]
+
+-- | A view that answers like 'viewServing' except that reading this address fails.
+viewFailingAt :: Addr -> Served -> Session NoWitness IO
+viewFailingAt bad served =
+    withAddressOutputs
+        ( \a ->
+            if a == bad
+                then ioError (userError "the provider cannot read that address")
+                else pure (concat [os | (x, os) <- served, x == a])
+        )
+        $ withParameters ledgerParameters
+        $ withTime (pure syntheticTime)
+        $ withResolvedOutputs
+            ( \wanted ->
+                pure [(r, o) | (r, o) <- concatMap snd served, r `Set.member` wanted]
+            )
+            stubSession
+
+probing :: Session NoWitness IO -> IO TerminationProbe
+probing view =
+    probeWalletTermination
+        cfg
+        view
+        tokenId
+        payer
+        (Coin 2_000_000)
+        bookedKey
+
+{- | The probe either reports the specific absence or fails: a failure of the
+provider, of the registry's state, of the wallet's outputs being unambiguous
+or of the booking is not the absence of custody and must not be returned as
+it.
+-}
+mustFail :: IO TerminationProbe -> Expectation
+mustFail probe =
+    try probe >>= \case
+        Left (_ :: SomeException) -> pure ()
+        Right (NoCustodyToBook why) ->
+            expectationFailure
+                ("an unrelated failure was reported as the absence of custody: " <> why)
+        Right (Booked _) -> expectationFailure "a booking was built"
+
+walletProbe :: Spec
+walletProbe = describe "probing a wallet for a key's custody" $ do
+    let funded = [(fundingIn, fundingOut)]
+        holding = [(fundingIn, fundingOut), (custodyRef, payerCustodyOut)]
+    it "books the termination of a key the wallet holds" $
+        probing (viewServing (probeWorld holding)) >>= \case
+            Booked tx ->
+                tx ^. bodyTxL . inputsTxBodyL
+                    `shouldBe` Set.fromList [custodyRef, fundingIn]
+            NoCustodyToBook why ->
+                expectationFailure ("the key is held, yet: " <> why)
+    it
+        "reports the specific absence when the wallet's outputs were read and none carries the key's token"
+        $ probing (viewServing (probeWorld funded)) >>= \case
+            NoCustodyToBook why -> why `shouldSatisfy` (not . null)
+            Booked _ -> expectationFailure "a termination was booked without custody"
+    it "does not report absence when the wallet's outputs cannot be read" $
+        mustFail (probing (viewFailingAt payer (probeWorld holding)))
+    it
+        "does not report absence when the registry's state outputs cannot be read"
+        $ mustFail
+            ( probing
+                (viewFailingAt (cageAddrFromCfg cfg Testnet) (probeWorld funded))
+            )
+    it
+        "does not report absence when the registry's state output is not there"
+        $ mustFail (probing (viewServing (probeWorldWithoutState funded)))
+    it "does not report absence when two wallet outputs claim the key" $
+        mustFail
+            ( probing
+                ( viewServing
+                    ( probeWorld
+                        (holding <> [(taggedFundingIn, payerCustodyOut)])
+                    )
+                )
+            )
+    it
+        "does not report absence when the booking out of the custody is refused"
+        $ mustFail
+            ( probing
+                ( viewServing
+                    ( probeWorld
+                        [ (fundingIn, fundingOut)
+                        ,
+                            ( custodyRef
+                            , payerCustodyOut
+                                & valueTxOutL
+                                    .~ MaryValue
+                                        (Coin custodyLovelace)
+                                        (singular bookedKey 2)
+                            )
+                        ]
+                    )
+                )
+            )
+    describe "through the control the story's negative legs run" $ do
+        it "returns the evidence of absence for a key no wallet output holds" $
+            expectNoCustody (probing (viewServing (probeWorld funded))) >>= \case
+                Right (CustodyAbsence why) -> why `shouldSatisfy` (not . null)
+                Left _ -> expectationFailure "a termination was booked without custody"
+        it "returns the booking, not evidence, for a key the wallet holds" $
+            expectNoCustody (probing (viewServing (probeWorld holding))) >>= \case
+                Left _ -> pure ()
+                Right _ -> expectationFailure "the held key was reported absent"
+        it "propagates a provider failure instead of returning evidence" $
+            try
+                (expectNoCustody (probing (viewFailingAt payer (probeWorld funded))))
+                >>= \case
+                    Left (_ :: SomeException) -> pure ()
+                    Right (Right (CustodyAbsence why)) ->
+                        expectationFailure
+                            ("a provider failure was published as absence: " <> why)
+                    Right (Left _) -> expectationFailure "a booking was built"
+        it "propagates an ambiguous claim instead of returning evidence" $
+            try
+                ( expectNoCustody
+                    ( probing
+                        ( viewServing
+                            ( probeWorld
+                                (holding <> [(taggedFundingIn, payerCustodyOut)])
+                            )
+                        )
+                    )
+                )
+                >>= \case
+                    Left (_ :: SomeException) -> pure ()
+                    Right (Right (CustodyAbsence why)) ->
+                        expectationFailure
+                            ("an ambiguous claim was published as absence: " <> why)
+                    Right (Left _) -> expectationFailure "a booking was built"
 
 -- ---------------------------------------------------------
 -- The retained compiled bytes

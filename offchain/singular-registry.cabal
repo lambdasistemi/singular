@@ -143,6 +143,7 @@ library
     Singular.Registry.TxBuilder.Request
     Singular.Registry.TxBuilder.Retract
     Singular.Registry.TxBuilder.TerminationBooking
+    Singular.Registry.TxBuilder.WalletTermination
     Singular.Registry.TxBuilder.Update
     Singular.Registry.Types
     Singular.Registry.Wait

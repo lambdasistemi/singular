@@ -135,12 +135,12 @@ book
     -> ByteString
     -> BookingVerb
     -> (Cage.Session Cage.NoWitness IO -> Live -> IO (Booked, r))
-    -> IO (ConwayTx, r, Maybe Deadline)
+    -> IO (ConwayTx, r, Maybe Deadline, Outlay)
 book at a key verb plan = do
     let s = savedOf at
         cfg = savedCfg s
         wc = atWrite at
-    (booking, decided) <-
+    (booking, (decided, spent)) <-
         submitBuiltIn
             wc
             "book"
@@ -160,10 +160,9 @@ book at a key verb plan = do
                         >>= either (failWith ClientRefusal) pure
                 tx <- bookedBuild b funded (wcCaller wc)
                 pp <- Cage.parameters v
-                refuseOver
-                    (entryMaxOutlay a)
-                    (bookedOutlay b pp (liveRefs live) tx)
-                pure (tx, decided)
+                let spent = bookedOutlay b pp (liveRefs live) tx
+                refuseOver (entryMaxOutlay a) spent
+                pure (tx, (decided, spent))
             )
     let request = TxIn (txIdTx (confirmedTx booking)) (TxIx 0)
     deadline <-
@@ -189,7 +188,7 @@ book at a key verb plan = do
         (wcTracer wc)
         [InRequest (txInText request)]
         (Trace.Booked (txInText request) (deadlineMs <$> deadline))
-    pure (confirmedTx booking, decided, deadline)
+    pure (confirmedTx booking, decided, deadline, spent)
 
 -- | What a booking-only command's receipt names of its pending request.
 pendingFields
@@ -202,15 +201,16 @@ pendingFields requester bookingTx deadline =
     ]
 
 {- | The fold a command runs after its own booking, by the routine
-@keri-stub fold@ runs.
+@keri-stub fold@ runs. The booking is judged against the allowance by what it
+put out of the wallet, as it was measured, not by what its request holds.
 -}
-foldAfter :: Attached -> EntryArgs -> ConwayTx -> IO Folded
-foldAfter at a booking =
+foldAfter :: Attached -> EntryArgs -> ConwayTx -> Outlay -> IO Folded
+foldAfter at a booking spent =
     foldPending
         keriStubApplication
         at
         FoldSpec
-            { fsOrigin = Combined booking
+            { fsOrigin = Combined booking spent
             , fsRequest = Nothing
             , fsFund = Nothing
             , fsAllowance = entryMaxOutlay a

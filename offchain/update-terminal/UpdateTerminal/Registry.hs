@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 {- |
 Module      : UpdateTerminal.Registry
 Description : One node session, the registries booted in it, and their folds
@@ -37,6 +39,7 @@ module UpdateTerminal.Registry
     , walletDestination
     , bookInsert
     , bookRetire
+    , probeRetire
     , foldAndMirror
     , rootNow
     , committedRoot
@@ -58,11 +61,9 @@ import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx)
 import Cardano.Ledger.Api.Tx.Body (mintTxBodyL)
 import Cardano.Ledger.Api.Tx.Out
     ( TxOut
-    , coinTxOutL
     , getMinCoinTxOut
     , mkBasicTxOut
     , referenceScriptTxOutL
-    , valueTxOutL
     )
 import Cardano.Ledger.BaseTypes
     ( Network (Testnet)
@@ -115,12 +116,11 @@ import Singular.Registry.TxBuilder.RegistrationBooking
     , bookRegistrationImpl
     , registrationWindow
     )
-import Singular.Registry.TxBuilder.TerminationBooking
-    ( CustodyAuthority (..)
-    , TerminationBooking (..)
-    , bookTerminationImpl
-    )
 import Singular.Registry.TxBuilder.Update (updateTokenWithDuties)
+import Singular.Registry.TxBuilder.WalletTermination
+    ( TerminationProbe (..)
+    , probeWalletTermination
+    )
 import Singular.Registry.Types
     ( CageDatum (..)
     , Edge
@@ -312,64 +312,43 @@ bookInsert reg key = do
   where
     deliveredLovelace = 2_000_000
 
-{- | Book one termination of this key and land it: the wallet's output that
-holds the key's one active token is the custody, its holder's signature is
-the spending condition, the whole custody value enters the request and the
-transaction mints the request's trie-ready tag alone. A key whose token no
-wallet output holds has no custody to spend, and no booking is built.
+{- | Probe the wallet for the custody of this key and, when it is found, book
+its termination and land it: the wallet's output that holds the key's one
+active token is the custody, its holder's signature is the spending
+condition, the whole custody value enters the request and the transaction
+mints the request's trie-ready tag alone. The probe is
+'probeWalletTermination': it either books or reports that the wallet holds no
+custody of the key.
 -}
-bookRetire :: Registry -> ByteString -> IO ConwayTx
-bookRetire reg key = do
+probeRetire :: Registry -> ByteString -> IO TerminationProbe
+probeRetire reg key = do
     let s = regSession reg
-        cfg = regCfg reg
         wallet = sessWallet s
-        payer = walletAddr wallet
-        active = policyIdFromPin (cfgActivePolicy cfg)
-        holdsKey (_, o) =
-            let MaryValue _ (MultiAsset ma) = o ^. valueTxOutL
-            in  maybe
-                    False
-                    (Map.member (AssetName (SBS.toShort key)))
-                    (Map.lookup active ma)
-    unsigned <- Cage.withLatest (sessProvider s) $ \v -> do
-        stateRef <- stateOutputOf reg v
-        held <- Cage.outputsAt v payer
-        custody <- case filter holdsKey held of
-            [one] -> pure one
-            other ->
-                ioError
-                    ( userError
-                        ( "the wallet holds "
-                            <> show (length other)
-                            <> " outputs carrying the active witness of key 0x"
-                            <> T.unpack (hex key)
-                            <> ", so there is no custody to spend"
-                        )
-                    )
-        observed <- Cage.tip v
-        let Coin custodyLovelace = snd custody ^. coinTxOutL
-            Coin tip = defaultTip cfg
-        bookTerminationImpl
-            cfg
-            v
-            (regTid reg)
-            stateRef
-            TerminationBooking
-                { tbKey = key
-                , tbDeclaredTip = Coin tip
-                , tbCarrier = Coin (custodyLovelace + addedLovelace - tip)
-                , tbNonce = toInteger (unSlotNo (Provider.observedSlot observed))
-                , tbCustody = custody
-                , tbOrdinaryAdded = Coin addedLovelace
-                , tbCustodyAuthority = WalletGuarded
-                , tbRequiredSigners = []
-                }
-            payer
-    submitWithWallet wallet (sessWrites s) unsigned
+    probed <-
+        Cage.withLatest (sessProvider s) $ \v ->
+            probeWalletTermination
+                (regCfg reg)
+                v
+                (regTid reg)
+                (walletAddr wallet)
+                (Coin addedLovelace)
+                key
+    case probed of
+        Booked unsigned -> Booked <$> submitWithWallet wallet (sessWrites s) unsigned
+        NoCustodyToBook why -> pure (NoCustodyToBook why)
   where
     -- What the requester pays in beside the custody so that the request
     -- output meets the ledger's minimum with its datum and its two tags.
     addedLovelace = 2_000_000
+
+{- | Book one termination of this key and land it. A key whose token no wallet
+output holds has no custody to spend, and the story fails.
+-}
+bookRetire :: Registry -> ByteString -> IO ConwayTx
+bookRetire reg key =
+    probeRetire reg key >>= \case
+        Booked tx -> pure tx
+        NoCustodyToBook why -> ioError (userError why)
 
 {- | Fold the pending booking and walk the same edge in the mirror.
 

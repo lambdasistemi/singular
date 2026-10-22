@@ -26,6 +26,9 @@ import Data.ByteString.Lazy qualified as BL
 import Data.Text qualified as T
 
 import Singular.Registry.Ledger (Root (..))
+import Singular.Registry.TxBuilder.WalletTermination
+    ( CustodyAbsence (..)
+    )
 import UpdateTerminal.Controls (UnknownLeg (..), refusalTrace)
 import UpdateTerminal.Narration (hex, say)
 import UpdateTerminal.Registry (txIdOf)
@@ -44,7 +47,7 @@ data Observed = Observed
     , obsMint :: [Value]
     -- ^ What the retirement moved under the active policy
     , obsRetirement :: Retirement
-    , obsTerminalDetail :: String
+    , obsTerminalDetail :: CustodyAbsence
     , obsUnknown :: UnknownLeg
     }
 
@@ -118,8 +121,9 @@ observation o =
                               -- trace is usually not recoverable.
                               -- `null` rather than a guess; the NAME
                               -- is asserted at the Aiken layer.
-                              "trace" .= refusalTrace "key-unknown" (unknownDetail unknown)
-                            , "detail" .= T.pack (take 2000 (unknownDetail unknown))
+                              "trace"
+                                .= refusalTrace "key-unknown" (absenceText (unknownDetail unknown))
+                            , "detail" .= T.pack (take 2000 (absenceText (unknownDetail unknown)))
                             , "controlTxid" .= unknownControlTxid unknown
                             , "distinguisher"
                                 .= ( "the control retired a key that IS \
@@ -133,8 +137,9 @@ observation o =
                         .= object
                             [ "outcome" .= ("refused" :: T.Text)
                             , "layer" .= ("booking-builder" :: T.Text)
-                            , "trace" .= refusalTrace "terminal-immutable" (obsTerminalDetail o)
-                            , "detail" .= T.pack (take 2000 (obsTerminalDetail o))
+                            , "trace"
+                                .= refusalTrace "terminal-immutable" (absenceText (obsTerminalDetail o))
+                            , "detail" .= T.pack (take 2000 (absenceText (obsTerminalDetail o)))
                             , "controlTxid" .= hex (txIdOf (retRetireTx r))
                             , "distinguisher"
                                 .= ( "the control retired a key that IS \

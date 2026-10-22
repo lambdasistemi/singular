@@ -114,7 +114,8 @@ import Singular.CLI.Harness (holdBeforeCommit, holdBeforeObserved)
 import Singular.CLI.Live
 import Singular.CLI.ManagedState (resolveSignerDir)
 import Singular.CLI.Outlay
-    ( foldOutlay
+    ( Outlay
+    , foldOutlay
     , foldPastAllowance
     , leftForFold
     , outlayTotal
@@ -250,8 +251,12 @@ slotAt v ms = do
 data FoldOrigin
     = -- | @registry fold@: nothing was booked by this command
       Standalone
-    | -- | @insert --fold@ or @terminate --fold@: the booking it just confirmed
-      Combined ConwayTx
+    | {- | @insert --fold@ or @terminate --fold@: the booking it just confirmed
+      and what that booking put out of the wallet, as it was measured: a
+      termination's request holds the custody the key already had, which
+      the wallet did not pay
+      -}
+      Combined ConwayTx Outlay
 
 -- | What one fold is asked to do.
 data FoldSpec = FoldSpec
@@ -568,7 +573,7 @@ foldPendingBounded bound app at FoldSpec{..} = do
         wc = atWrite at
         addr = wcCaller wc
         named = case fsOrigin of
-            Combined booking -> Just (TxIn (txIdTx booking) (TxIx 0))
+            Combined booking _ -> Just (TxIn (txIdTx booking) (TxIx 0))
             Standalone -> fsRequest
     rootBefore <- selectedTrieRoot (atTrie at)
     (fold, (plan, preparation)) <-
@@ -867,7 +872,7 @@ foldPendingBounded bound app at FoldSpec{..} = do
                             addr
                             fsFund
                             ( case fsOrigin of
-                                Combined booking -> leftForFold fsAllowance booking
+                                Combined _ bookingSpent -> leftForFold fsAllowance bookingSpent
                                 Standalone -> fsAllowance
                             )
                             foldOutlay
@@ -903,8 +908,8 @@ foldPendingBounded bound app at FoldSpec{..} = do
                             (renderSpendsRefusal why)
                             []
                 case fsOrigin of
-                    Combined booking ->
-                        forM_ (foldPastAllowance fsAllowance booking unsigned) $
+                    Combined _ bookingSpent ->
+                        forM_ (foldPastAllowance fsAllowance bookingSpent unsigned) $
                             \(left, outlay) ->
                                 stop'
                                     ClientRefusal
@@ -1207,7 +1212,7 @@ stop
     -> IO a
 stop origin request cls why fields =
     case (origin, request, cls) of
-        (Combined _, Just r, ClientRefusal) ->
+        (Combined _ _, Just r, ClientRefusal) ->
             failWithFields
                 Partial
                 ( "the booking is confirmed and its request "

@@ -168,8 +168,12 @@ import Cardano.Ledger.BaseTypes
     , StrictMaybe (..)
     , TxIx (..)
     )
+import Cardano.Ledger.Coin
+    ( CoinPerByte (..)
+    , CompactForm (CompactCoin)
+    )
 import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
-import Cardano.Ledger.Core (PParams)
+import Cardano.Ledger.Core (PParams, ppTxFeePerByteL)
 import Cardano.Ledger.Credential (Credential (..))
 import Cardano.Ledger.Hashes (ScriptHash (..))
 import Cardano.Ledger.Keys (KeyHash (..))
@@ -1292,6 +1296,8 @@ data Rig = Rig
     -- ^ When set, what the provider answers the next submission instead of taking it
     , rigTracer :: Tracer IO Trace
     -- ^ What the commands trace into: the collector, or a composition holding it
+    , rigAfterSubmit :: IORef (ConwayTx -> IO ())
+    -- ^ What runs after each accepted submission, with the transaction taken; nothing by default
     }
 
 -- | One command run: its constructor, a label, its exit, its receipt and its events.
@@ -1375,8 +1381,20 @@ withRigIn dir blueprintJson compose use = do
     jumpChainToHostClock chain
     events <- newIORef []
     answer <- newIORef Nothing
+    afterSubmit <- newIORef (\_ -> pure ())
     tracer <- compose (Tracer (\t -> modifyIORef' events (<> [t])))
-    use (Rig dir chain wallet keyPath blueprint events answer tracer)
+    use
+        ( Rig
+            dir
+            chain
+            wallet
+            keyPath
+            blueprint
+            events
+            answer
+            tracer
+            afterSubmit
+        )
 
 -- | A wallet output at the start of the chain.
 fundOutput :: Int -> TxIn
@@ -1495,6 +1513,7 @@ capabilities rig =
                                     (Map.fromList [(TxIn txid (TxIx ix), out) | (ix, out) <- made])
                                     (foldr Map.delete (csUTxO facts) spent)
                             }
+                    readIORef (rigAfterSubmit rig) >>= \observe -> observe tx
                     pure (Cage.SubmitAccepted txid)
         , capConfirm = \_ -> pure ()
         , capFacts = pure []
@@ -4728,6 +4747,7 @@ chunk4Producers = describe "chunk4 producers" $ do
     queryChoiceRows
     receiptRows
     terminationBookingRows
+    combinedAllowanceRows
     carrierRows
     applicationMintRows
     terminationSpendRows
@@ -5624,6 +5644,201 @@ assetsOf out = let MaryValue _ (MultiAsset m) = out ^. valueTxOutL in m
 
 lovelaceOf :: TxOut ConwayEra -> Integer
 lovelaceOf out = let Coin c = out ^. coinTxOutL in c
+
+{- | A registry whose key @bob-1@ is held by a custody of this many lovelace,
+placed by the producers (an insert and its fold), and the figures the
+termination's preview states for it: what the booking costs the wallet, what
+its request locks beyond the custody, and the bound it reserves for the fold.
+-}
+withHeldCustody
+    :: Integer
+    -> (Rig -> String -> (Integer, Integer, Integer, Integer) -> IO a)
+    -> IO a
+withHeldCustody deposit use = withRig $ \rig -> do
+    seed <- fundSeed rig
+    create <- run rig "create" ["open-datum", "create", "--seed", seed]
+    t <- tokenOf create
+    booked <-
+        run
+            rig
+            "insert with a large deposit"
+            ( insertWords rig
+                <> ["--deposit", show deposit]
+                <> tokenArgs t
+            )
+    outcomeOf (runReceipt booked) `shouldBe` Just "success"
+    folded <-
+        run
+            rig
+            "fold the insert"
+            (["open-datum", "fold"] <> requestOf booked <> tokenArgs t)
+    outcomeOf (runReceipt folded) `shouldBe` Just "success"
+    previewed <-
+        run
+            rig
+            "terminate preview"
+            ( [ "open-datum"
+              , "terminate"
+              , "--key"
+              , "bob-1"
+              , "--preview"
+              , "--wallet-address"
+              , bech32Address (walletAddr (rigWallet rig))
+              ]
+                <> tokenArgs t
+            )
+    outcomeOf (runReceipt previewed) `shouldBe` Just "success"
+    let figure k =
+            fromMaybe
+                ( error
+                    ( "the preview states no "
+                        <> T.unpack k
+                        <> ": "
+                        <> show (valueAt "outlay" (runReceipt previewed))
+                    )
+                )
+                (valueAt "outlay" (runReceipt previewed) >>= integerAt (Key.fromText k))
+    use
+        rig
+        t
+        ( figure "fee"
+        , figure "lockedBond"
+        , figure "foldFeeBound"
+        , figure "total"
+        )
+
+{- | The preview prices the booking before it carries its signatures; the
+written transaction does, and costs a few thousand lovelace more. An allowance
+that covers the preview therefore adds this to it.
+-}
+witnessMargin :: Integer
+witnessMargin = 100_000
+
+combinedAllowanceRows :: Spec
+combinedAllowanceRows =
+    describe
+        "a combined terminate judges its fold against what the wallet put out"
+        $ do
+            it
+                "folds a key held by a custody far above the fold reserve inside the allowance its own preview states"
+                $ withHeldCustody 50_000_000
+                $ \rig t (fee, bond, reserve, total) -> do
+                    -- the custody moves from the key into the request: the wallet
+                    -- puts out the fee, no bond, and the reserve for the fold
+                    bond `shouldBe` 0
+                    total `shouldBe` fee + reserve
+                    (50_000_000 > reserve) `shouldBe` True
+                    done <-
+                        run
+                            rig
+                            "terminate with the fold inside its allowance"
+                            ( [ "open-datum"
+                              , "terminate"
+                              , "--key"
+                              , "bob-1"
+                              , "--fold"
+                              , "--max-outlay"
+                              , show (total + witnessMargin)
+                              ]
+                                <> tokenArgs t
+                            )
+                    case outcomeOf (runReceipt done) of
+                        Just "success" -> pure ()
+                        other ->
+                            failTest
+                                ( "the combined terminate ended "
+                                    <> show other
+                                    <> ": "
+                                    <> show (textAt "reason" (runReceipt done))
+                                )
+                    leafOf rig t "bob-1" `shouldReturn` Just (toJSON (leafName Terminal))
+            it
+                "refuses an allowance one lovelace short of the preview's total before anything is signed, and leaves the key active"
+                $ withHeldCustody 50_000_000
+                $ \rig t (_, _, _, total) -> do
+                    refused <-
+                        run
+                            rig
+                            "terminate with the fold, one lovelace short"
+                            ( [ "open-datum"
+                              , "terminate"
+                              , "--key"
+                              , "bob-1"
+                              , "--fold"
+                              , "--max-outlay"
+                              , show (total - 1)
+                              ]
+                                <> tokenArgs t
+                            )
+                    outcomeOf (runReceipt refused) `shouldBe` Just "client-refusal"
+                    ( T.isInfixOf "passes the approved allowance"
+                            <$> textAt "reason" (runReceipt refused)
+                        )
+                        `shouldBe` Just True
+                    leafOf rig t "bob-1" `shouldReturn` Just (toJSON (leafName Active))
+            it
+                "refuses the fold, after the booking landed, when it costs more under its own parameters than the allowance left after the booking, and names what was left"
+                $ withHeldCustody 50_000_000
+                $ \rig t (_, _, _, total) -> do
+                    let allowance = total + witnessMargin
+                    fees <- newIORef []
+                    -- the parameters change as the booking is accepted: the fold
+                    -- is built later, under a view that charges a hundred times
+                    -- the fee per byte
+                    writeIORef (rigAfterSubmit rig) $ \tx -> do
+                        let Coin fee = tx ^. bodyTxL . feeTxBodyL
+                        modifyIORef' fees (<> [fee])
+                        advanceChain (rigChain rig) $ \facts ->
+                            facts
+                                { csPParams =
+                                    csPParams facts & ppTxFeePerByteL .~ CoinPerByte (CompactCoin 4_400)
+                                }
+                    done <-
+                        run
+                            rig
+                            "terminate with the fold under a later view"
+                            ( [ "open-datum"
+                              , "terminate"
+                              , "--key"
+                              , "bob-1"
+                              , "--fold"
+                              , "--max-outlay"
+                              , show allowance
+                              ]
+                                <> tokenArgs t
+                            )
+                    outcomeOf (runReceipt done) `shouldBe` Just "partial"
+                    bookingFee <-
+                        readIORef fees >>= \case
+                            fee : _ -> pure fee
+                            [] -> failTest "no transaction was accepted"
+                    -- the wallet put out the booking's fee and no custody: what
+                    -- is left for the fold is the allowance less that
+                    ( T.isInfixOf
+                            ( "past the "
+                                <> T.pack (show (allowance - bookingFee))
+                                <> " the approved outlay leaves"
+                            )
+                            <$> textAt "reason" (runReceipt done)
+                        )
+                        `shouldBe` Just True
+                    -- the booking landed and its request, which holds the whole
+                    -- custody, stays pending: the fold is the one that was refused
+                    inspected <-
+                        run
+                            rig
+                            "inspect after the refused fold"
+                            (["open-datum", "inspect", "--key", "bob-1"] <> tokenArgs t)
+                    [ lovelace
+                      | Aeson.Object o <-
+                            fromMaybe [] (elementsAt "pendingRequests" (runReceipt inspected))
+                      , KeyMap.lookup "kind" o == Just (Aeson.String "termination")
+                      , Just (Aeson.Object locked) <- [KeyMap.lookup "locked" o]
+                      , Just held <- [KeyMap.lookup "lovelace" locked]
+                      , Aeson.Success lovelace <-
+                            [Aeson.fromJSON held :: Aeson.Result Integer]
+                      ]
+                        `shouldBe` [50_000_000]
 
 terminationBookingRows :: Spec
 terminationBookingRows =

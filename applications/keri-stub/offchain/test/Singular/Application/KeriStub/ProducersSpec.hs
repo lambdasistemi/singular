@@ -37,13 +37,20 @@ import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Lazy qualified as BL
 import Data.ByteString.Short qualified as SBS
 import Data.Foldable (toList)
+import Data.IORef
+    ( IORef
+    , modifyIORef'
+    , newIORef
+    , readIORef
+    , writeIORef
+    )
 import Data.List.NonEmpty qualified as NE
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
-import Lens.Micro ((^.))
+import Lens.Micro ((&), (.~), (^.))
 import System.FilePath ((</>))
 import System.IO (hFlush, stderr, stdout)
 import System.IO.Temp (withSystemTempDirectory)
@@ -64,7 +71,8 @@ import Test.Hspec
 import Cardano.Ledger.Address (Addr (..), serialiseAddr)
 import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx)
 import Cardano.Ledger.Api.Tx.Body
-    ( inputsTxBodyL
+    ( feeTxBodyL
+    , inputsTxBodyL
     , mintTxBodyL
     , outputsTxBodyL
     )
@@ -76,7 +84,11 @@ import Cardano.Ledger.Api.Tx.Out
     , valueTxOutL
     )
 import Cardano.Ledger.BaseTypes (Network (Testnet), TxIx (..))
-import Cardano.Ledger.Core (hashScript)
+import Cardano.Ledger.Coin
+    ( CoinPerByte (..)
+    , CompactForm (CompactCoin)
+    )
+import Cardano.Ledger.Core (hashScript, ppTxFeePerByteL)
 import Cardano.Ledger.Credential
     ( Credential (..)
     , StakeReference (..)
@@ -176,6 +188,176 @@ spec = describe "chunk4 producers" $ do
     registerRows
     discoveryRows
     convictRows
+    combinedAllowanceRows
+
+-- ---------------------------------------------------------
+-- convict with the fold: what the wallet put out
+-- ---------------------------------------------------------
+
+{- | The preview prices the booking before it carries its signatures; the
+written transaction does, and costs a few thousand lovelace more. An allowance
+that covers the preview therefore adds this to it.
+-}
+witnessMargin :: Integer
+witnessMargin = 100_000
+
+{- | A registry whose key @hello@ is held by a custody of this many lovelace,
+placed by the stub's own producers (a registration with its fold), and the
+figures a refused convict states for it: the fee, the bond its request
+locks beyond the custody, the bound it reserves for the fold and the total.
+-}
+withHeldCustody
+    :: Integer
+    -> (Rig -> String -> (Integer, Integer, Integer, Integer) -> IO a)
+    -> IO a
+withHeldCustody deposit use = withRegistry $ \rig t -> do
+    registered <-
+        run
+            rig
+            "register with the fold, a large deposit"
+            ( [ "keri-stub"
+              , "register"
+              , "--key"
+              , "hello"
+              , "--deposit"
+              , show deposit
+              , "--fold"
+              ]
+                <> tokenArgs t
+            )
+    outcomeOf registered `shouldBe` Just "success"
+    -- the stub offers no booking preview: an allowance of one lovelace is
+    -- refused before anything is signed, and the refusal states the figures
+    -- it measured on the transaction it built
+    measured <-
+        run
+            rig
+            "convict measured against an allowance of one lovelace"
+            (convictWords <> ["--fold", "--max-outlay", "1"] <> tokenArgs t)
+    outcomeOf measured `shouldBe` Just "client-refusal"
+    let figure k = case valueAt "outlay" measured >>= valueAt k of
+            Just (Aeson.Number n) -> truncate n
+            other -> error ("the preview states no " <> show k <> ": " <> show other)
+    use
+        rig
+        t
+        ( figure "fee"
+        , figure "lockedBond"
+        , figure "foldFeeBound"
+        , figure "total"
+        )
+
+convictWords :: [String]
+convictWords =
+    [ "keri-stub"
+    , "convict"
+    , "--key"
+    , "hello"
+    , "--evidence"
+    , T.unpack (TE.decodeUtf8 (B16.encode (BS.replicate 32 0x0e)))
+    ]
+
+combinedAllowanceRows :: Spec
+combinedAllowanceRows =
+    describe
+        "a combined convict judges its fold against what the wallet put out"
+        $ do
+            it
+                "folds a key held by a custody far above the fold reserve inside the allowance the measured figures state"
+                $ withHeldCustody 50_000_000
+                $ \rig t (fee, bond, reserve, total) -> do
+                    bond `shouldBe` 0
+                    total `shouldBe` fee + reserve
+                    (50_000_000 > reserve) `shouldBe` True
+                    done <-
+                        run
+                            rig
+                            "convict with the fold inside its allowance"
+                            ( convictWords
+                                <> ["--fold", "--max-outlay", show (total + witnessMargin)]
+                                <> tokenArgs t
+                            )
+                    case outcomeOf done of
+                        Just "success" -> pure ()
+                        other ->
+                            failTest
+                                ( "the combined convict ended "
+                                    <> show other
+                                    <> ": "
+                                    <> show (textAt "reason" done)
+                                )
+                    leafOf rig t "hello" `shouldReturn` Just (Aeson.String "terminal")
+            it
+                "refuses an allowance one lovelace short of the measured total before anything is signed, and leaves the key active"
+                $ withHeldCustody 50_000_000
+                $ \rig t (_, _, _, total) -> do
+                    refused <-
+                        run
+                            rig
+                            "convict with the fold, one lovelace short"
+                            ( convictWords
+                                <> ["--fold", "--max-outlay", show (total - 1)]
+                                <> tokenArgs t
+                            )
+                    outcomeOf refused `shouldBe` Just "client-refusal"
+                    ( T.isInfixOf "passes the approved allowance"
+                            <$> textAt "reason" refused
+                        )
+                        `shouldBe` Just True
+                    leafOf rig t "hello" `shouldReturn` Just (Aeson.String "active")
+            it
+                "refuses the fold, after the booking landed, when it costs more under its own parameters than the allowance left after the booking, and names what was left"
+                $ withHeldCustody 50_000_000
+                $ \rig t (_, _, _, total) -> do
+                    let allowance = total + witnessMargin
+                    fees <- newIORef []
+                    writeIORef (rigAfterSubmit rig) $ \tx -> do
+                        let Coin fee = tx ^. bodyTxL . feeTxBodyL
+                        modifyIORef' fees (<> [fee])
+                        advanceChain (rigChain rig) $ \facts ->
+                            facts
+                                { csPParams =
+                                    csPParams facts & ppTxFeePerByteL .~ CoinPerByte (CompactCoin 4_400)
+                                }
+                    done <-
+                        run
+                            rig
+                            "convict with the fold under a later view"
+                            ( convictWords
+                                <> ["--fold", "--max-outlay", show allowance]
+                                <> tokenArgs t
+                            )
+                    outcomeOf done `shouldBe` Just "partial"
+                    bookingFee <-
+                        readIORef fees >>= \case
+                            fee : _ -> pure fee
+                            [] -> failTest "no transaction was accepted"
+                    ( T.isInfixOf
+                            ( "past the "
+                                <> T.pack (show (allowance - bookingFee))
+                                <> " the approved outlay leaves"
+                            )
+                            <$> textAt "reason" done
+                        )
+                        `shouldBe` Just True
+                    -- the booking landed and its request, which holds the whole
+                    -- custody, stays pending: the fold is the one that was refused
+                    status <-
+                        run
+                            rig
+                            "status after the refused fold"
+                            (["keri-stub", "status", "--key", "hello"] <> tokenArgs t)
+                    [ lovelace
+                      | Aeson.Array requests <-
+                            maybe [] pure (valueAt "pendingRequests" status)
+                      , Aeson.Object o <- toList requests
+                      , KeyMap.lookup "kind" o == Just (Aeson.String "termination")
+                      , Just (Aeson.Object locked) <- [KeyMap.lookup "locked" o]
+                      , Just held <- [KeyMap.lookup "lovelace" locked]
+                      , Aeson.Success lovelace <-
+                            [Aeson.fromJSON held :: Aeson.Result Integer]
+                      ]
+                        `shouldBe` [50_000_000]
 
 -- ---------------------------------------------------------
 -- The rig
@@ -187,6 +369,8 @@ data Rig = Rig
     , rigWallet :: Wallet
     , rigKey :: FilePath
     , rigBlueprint :: FilePath
+    , rigAfterSubmit :: IORef (ConwayTx -> IO ())
+    -- ^ What runs after each accepted submission, with the transaction taken; nothing by default
     }
 
 magic :: Integer
@@ -253,7 +437,8 @@ withRig use = withSystemTempDirectory "keri-stub-producers" $ \dir -> do
                 }
     advanceChain chain id
     jumpChainToHostClock chain
-    use (Rig dir chain wallet keyPath blueprint)
+    afterSubmit <- newIORef (\_ -> pure ())
+    use (Rig dir chain wallet keyPath blueprint afterSubmit)
 
 -- | The environment of a run over the rig: the fixture's capabilities.
 envOf :: Rig -> Env
@@ -276,6 +461,7 @@ capabilities rig =
         , capSubmit = \signed -> do
             let tx = signedTx signed
             landTx rig tx
+            readIORef (rigAfterSubmit rig) >>= \observe -> observe tx
             pure (Cage.SubmitAccepted (txIdTx tx))
         , capConfirm = \_ -> pure ()
         , capFacts = pure []

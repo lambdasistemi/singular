@@ -103,17 +103,25 @@ updateOutlay tx =
 foldOutlay :: ConwayTx -> Outlay
 foldOutlay = updateOutlay
 
-{- | What an approved allowance leaves for the fold once its booking has paid
-its fee and locked its bond: the booking was approved against the fold's
-bound under its own view's parameters, but the fold is built later, under
-its own, and is judged against what is actually left. Without an allowance
-the fold is not bounded.
+{- | What an approved allowance leaves for the fold once its booking has put
+out of the wallet its fee and its bond: the booking was approved against the
+fold's bound under its own view's parameters, but the fold is built later,
+under its own, and is judged against what is actually left. Without an
+allowance the fold is not bounded.
+
+What the booking put out is the outlay the booking itself was measured at
+('bookingOutlay' for a registration, 'terminationOutlay' for a termination),
+not what its request output holds: a termination's request also holds the
+custody the key already had, which moved into the request and never came out
+of the wallet, so counting the whole request would charge it a second time.
 -}
-leftForFold :: Maybe Integer -> ConwayTx -> Maybe Integer
-leftForFold allowance booking =
+leftForFold
+    :: Maybe Integer
+    -> Outlay
+    -- ^ What the confirmed booking put out of the wallet
+    -> Maybe Integer
+leftForFold allowance spent =
     (\a -> a - outlayFee spent - outlayBond spent) <$> allowance
-  where
-    spent = bookingSpent booking
 
 {- | The fold's own outlay, with what the allowance left for it, when the
 fold built under its own view passes what its booking left of the approved
@@ -122,12 +130,12 @@ allowance; nothing when it is within, or when no allowance was named.
 foldPastAllowance
     :: Maybe Integer
     -- ^ The approved allowance
-    -> ConwayTx
-    -- ^ The confirmed booking
+    -> Outlay
+    -- ^ What the confirmed booking put out of the wallet
     -> ConwayTx
     -- ^ The fold, built and not yet signed
     -> Maybe (Integer, Outlay)
-foldPastAllowance allowance booking fold = case leftForFold allowance booking of
+foldPastAllowance allowance spent fold = case leftForFold allowance spent of
     Just left | not (withinAllowance (Just left) outlay) -> Just (left, outlay)
     _ -> Nothing
   where

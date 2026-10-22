@@ -112,7 +112,8 @@ import Singular.CLI.FoldRules
 import Singular.CLI.Live
 import Singular.CLI.ManagedState (resolveSignerDir)
 import Singular.CLI.Outlay
-    ( outlayTotal
+    ( Outlay
+    , outlayTotal
     , updateOutlay
     )
 import Singular.CLI.Prepare
@@ -188,12 +189,12 @@ book
     -}
     -> (Cage.Session Cage.NoWitness IO -> Live -> IO (Booked, r))
     -- ^ What is booked, decided from the booking's own view
-    -> IO (ConfirmedSubmission, r, Maybe Deadline, Maybe Preparation)
+    -> IO (ConfirmedSubmission, r, Maybe Deadline, Maybe Preparation, Outlay)
 book at a key verb plan = do
     let s = savedOf at
         cfg = savedCfg s
         wc = atWrite at
-    (booking, (decided, mPrep)) <-
+    (booking, (decided, mPrep, spent)) <-
         submitBuiltIn
             wc
             "book"
@@ -270,7 +271,7 @@ book at a key verb plan = do
                             walletUtxos
                             (outlayTotal outlay)
                             "measured outlay"
-                        pure (realTx, (decided, mPrep))
+                        pure (realTx, (decided, mPrep, outlay))
             )
     let request = TxIn (txIdTx (confirmedTx booking)) (TxIx 0)
     deadline <-
@@ -296,7 +297,7 @@ book at a key verb plan = do
         wc
         [InRequest (txInText request)]
         (Trace.Booked (txInText request) (deadlineMs <$> deadline))
-    pure (booking, decided, deadline, mPrep)
+    pure (booking, decided, deadline, mPrep, spent)
 
 -- | What a booking-only command's receipt names of its pending request.
 pendingFields
@@ -342,13 +343,13 @@ toEnvelopeHolding (u, dh) = case envelopeFromData (dhDatumData dh) of
     Right e -> Right (u, e)
 
 -- | The fold a combined command runs after its own booking.
-foldAfter :: Attached -> EntryArgs -> ConwayTx -> IO Folded
-foldAfter at a booking =
+foldAfter :: Attached -> EntryArgs -> ConwayTx -> Outlay -> IO Folded
+foldAfter at a booking spent =
     foldPending
         openDatumApplication
         at
         FoldSpec
-            { fsOrigin = Combined booking
+            { fsOrigin = Combined booking spent
             , fsRequest = Nothing
             , fsFund = Nothing
             , fsAllowance = entryMaxOutlay a
@@ -400,13 +401,13 @@ runInsert env a = case entryMode a of
                     envelope = insertionOf s a (callerKey at) payload
                 -- The approval is decided in the booking's own view, from the
                 -- state it holds.
-                (booking, (), deadline, mPrepBook) <-
+                (booking, (), deadline, mPrepBook, spent) <-
                     book at a key BookInsert $ \v live -> do
                         b <- planInsert v live envelope
                         pure (b, ())
                 if entryFold a
                     then do
-                        folded <- foldAfter at a (confirmedTx booking)
+                        folded <- foldAfter at a (confirmedTx booking) spent
                         let bookingRef = TxIn (txIdTx (confirmedTx booking)) (TxIx 0)
                         entry <- case settledEntryFor folded bookingRef of
                             Just e -> pure e
@@ -625,7 +626,7 @@ runTerminate env a = case entryMode a of
                 let s = savedOf at
                 -- The live output the booking releases is resolved in the
                 -- booking's own view, with the state the approval binds.
-                (booking, ((liveIn, _), envelope), deadline, mPrepBook) <-
+                (booking, ((liveIn, _), envelope), deadline, mPrepBook, spent) <-
                     book at a key BookTerminate $ \v live -> do
                         outs <- liveOutputs openDatumApplication v s
                         (b, holding, dh) <- planTerminate live (callerKey at) key outs
@@ -638,7 +639,7 @@ runTerminate env a = case entryMode a of
                 let c = envControl envelope
                 if entryFold a
                     then do
-                        folded <- foldAfter at a (confirmedTx booking)
+                        folded <- foldAfter at a (confirmedTx booking) spent
                         let bookingRef = TxIn (txIdTx (confirmedTx booking)) (TxIx 0)
                         entry <- case settledEntryFor folded bookingRef of
                             Just e -> pure e

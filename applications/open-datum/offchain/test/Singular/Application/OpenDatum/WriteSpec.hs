@@ -143,6 +143,7 @@ import Singular.CLI.Live
     , selectedTrieRoot
     , txInText
     )
+import Singular.CLI.Outlay (Outlay (..))
 import Singular.CLI.Receipt
     ( JournalEntry (..)
     , OutcomeClass (..)
@@ -451,7 +452,8 @@ inputRows = describe "TrieState command input refusals on injected capabilities"
                                 openDatumApplication
                                 (Attached ctx live mirror)
                                 FoldSpec
-                                    { fsOrigin = if combined then Combined boot else Standalone
+                                    { fsOrigin =
+                                        if combined then Combined boot (Outlay 0 0 0) else Standalone
                                     , fsRequest = Just request
                                     , fsFund = Nothing
                                     , fsAllowance = Nothing

@@ -194,7 +194,7 @@ runConvict env c = case entryMode (convictEntry c) of
                     cfg = savedCfg s
                 -- The live holding the booking spends is resolved in the
                 -- booking's own view, with the state the booking reads.
-                (booking, (liveIn, held), _) <-
+                (booking, (liveIn, held), _, spent) <-
                     book at a key BookTerminate $ \v live -> do
                         outs <- liveOutputs keriStubApplication v s
                         decoded <-
@@ -236,7 +236,7 @@ runConvict env c = case entryMode (convictEntry c) of
                             )
                 if entryFold a
                     then do
-                        folded <- foldAfter at a booking
+                        folded <- foldAfter at a booking spent
                         settledReceipt key booking evidence held folded
                     else
                         pure $

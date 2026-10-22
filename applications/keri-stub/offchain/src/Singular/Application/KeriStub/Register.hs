@@ -350,7 +350,7 @@ runRegister env a = case entryMode a of
                             , hdDeposit = deposit
                             , hdPayload = payload
                             }
-                (booking, (), deadline) <-
+                (booking, (), deadline, spent) <-
                     book at a key BookInsert $ \v live -> do
                         booked <-
                             bookedRegister
@@ -361,7 +361,7 @@ runRegister env a = case entryMode a of
                         pure (booked, ())
                 if entryFold a
                     then do
-                        folded <- foldAfter at a booking
+                        folded <- foldAfter at a booking spent
                         settledReceipt key booking folded
                     else
                         pure $
