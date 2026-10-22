@@ -31,8 +31,18 @@
       "pause": 400
     }
   ],
+  "bound-signature-inventory": [
+    {
+      "text": "Bound signature inventory.",
+      "pause": 500
+    },
+    {
+      "text": "The six boundaries above are traced individually in impact.md, together with the application registry/control dependencies. Their definitions and source hashes bind the accepted base; runtime declaration checks elaborate their current types. No candidate callable surface is frozen and no signature changes here. The registry-independent ledger script/history vocabulary remains unavailable at this base and is not replaced with a local ledger layer. Questions records the decisions needed before that freeze.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "functions-model.md",
-    "sha256": "712439213e9ae44bdd041b02f7dddcd9cda0549818f67546c211d7c03b32225d"
+    "sha256": "114617bbedfc2017b9b5382dbbc49cc285f30e484e0af51506bf6b10e8019a02"
   }
 }

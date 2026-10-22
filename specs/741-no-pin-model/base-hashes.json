@@ -127,6 +127,7 @@
   ],
   "baselineEvidence": [
     {
+      "receiptName": "B1-1",
       "command": [
         "nix",
         "run",
@@ -138,10 +139,10 @@
       "start": "2026-10-22T17:02:23.087Z",
       "end": "2026-10-22T17:04:38.161Z",
       "exit": 0,
-      "receipt": "/home/paolino/.orch-runtime/singular/epic-731/ticket-741/commit-owner-1/handoffs/receipts/B1-1.txt",
       "logSha256": "0adc0ce23cb7ccb4a8868d87dfee11a8eaf28bf9847d65e4cece26a9655231e7"
     },
     {
+      "receiptName": "B2-1",
       "command": [
         "nix",
         "develop",
@@ -155,38 +156,40 @@
       "start": "2026-10-22T17:03:24.454Z",
       "end": "2026-10-22T17:04:37.856Z",
       "exit": 0,
-      "receipt": "/home/paolino/.orch-runtime/singular/epic-731/ticket-741/commit-owner-1/handoffs/receipts/B2-1.txt",
       "logSha256": "8dccc51998d400e9b0f66e5bab4b193351e6132a416db74a0d78c63c10c4c638"
     },
     {
-      "command": [
-        "node",
-        "/home/paolino/.orch-runtime/singular/epic-731/ticket-741/commit-owner-1/handoffs/check-bindings.cjs"
-      ],
+      "receiptName": "A1-1",
+      "command": "git show <revision>:<path> | sha256sum",
       "head": "4cab869d01a175720994b2c7d783f565b491e439",
       "tree": "559e9976e7bce1487ef7f726dd54422dd36f1a52",
       "start": "2026-10-22T17:02:48.947Z",
       "end": "2026-10-22T17:02:49.107Z",
       "exit": 0,
-      "receipt": "/home/paolino/.orch-runtime/singular/epic-731/ticket-741/commit-owner-1/handoffs/receipts/A1-1.txt",
       "logSha256": "7b35ced4a5ccc88b6a7d746b520faff709041395f350a88a43010d3fdd7d11c1"
     },
     {
-      "command": [
-        "node",
-        "/home/paolino/.orch-runtime/singular/epic-731/ticket-741/commit-owner-1/handoffs/check-bindings.cjs",
-        "specs/741-no-pin-model/base-hashes.json",
-        "--mutant"
-      ],
+      "receiptName": "A1-2",
+      "command": "git show <revision>:<path> | sha256sum",
+      "head": "4cab869d01a175720994b2c7d783f565b491e439",
+      "tree": "559e9976e7bce1487ef7f726dd54422dd36f1a52",
+      "start": "2026-10-22T17:06:31.727Z",
+      "end": "2026-10-22T17:06:32.045Z",
+      "exit": 0,
+      "logSha256": "a3f50ccff8d232f2d22c4b8c76de99b6b1ccdaa1332d143a8e34a18078a4a0eb"
+    },
+    {
+      "receiptName": "A1-control",
+      "command": "git show <revision>:<path> | sha256sum",
       "head": "4cab869d01a175720994b2c7d783f565b491e439",
       "tree": "559e9976e7bce1487ef7f726dd54422dd36f1a52",
       "start": "2026-10-22T17:03:19.662Z",
       "end": "2026-10-22T17:03:19.810Z",
       "exit": 1,
-      "receipt": "/home/paolino/.orch-runtime/singular/epic-731/ticket-741/commit-owner-1/handoffs/receipts/A1-control.txt",
       "logSha256": "726da11d9189754676f32d11a3624026606bbf69767743000514706b90b2a05e"
     },
     {
+      "receiptName": "upstream-1",
       "command": [
         "bash",
         "/home/paolino/.orch-runtime/singular/epic-731/ticket-741/commit-owner-1/handoffs/upstream.sh"
@@ -196,8 +199,216 @@
       "start": "2026-10-22T17:02:48.947Z",
       "end": "2026-10-22T17:02:51.563Z",
       "exit": 0,
-      "receipt": "/home/paolino/.orch-runtime/singular/epic-731/ticket-741/commit-owner-1/handoffs/receipts/upstream-1.txt",
       "logSha256": "1da785f08d9bad917bce335008fc8865a8674ba4968bef36df38d4d2e62fcd0c"
     }
-  ]
+  ],
+  "recomputeCommand": "git show <revision>:<path> | sha256sum",
+  "upstreamSnapshot": {
+    "at": "2026-10-22T17:02:48.947Z",
+    "receiptName": "upstream-1",
+    "logSha256": "1da785f08d9bad917bce335008fc8865a8674ba4968bef36df38d4d2e62fcd0c",
+    "records": [
+      {
+        "number": 679,
+        "state": "OPEN",
+        "title": "Ledger boundary model: a registry-free ledger layer and the mint guarantees of one transaction",
+        "updatedAt": "2026-10-16T15:18:15Z",
+        "url": "https://github.com/lambdasistemi/singular/issues/679"
+      },
+      {
+        "number": 680,
+        "state": "OPEN",
+        "title": "Registry identity over ledger histories: the state token is unique, so a fold is this registry's",
+        "updatedAt": "2026-10-16T15:14:31Z",
+        "url": "https://github.com/lambdasistemi/singular/issues/680"
+      },
+      {
+        "number": 731,
+        "state": "OPEN",
+        "title": "M1 epic: investigate and deliver a registry without pinned policies",
+        "updatedAt": "2026-10-22T09:38:04Z",
+        "url": "https://github.com/lambdasistemi/singular/issues/731"
+      },
+      {
+        "number": 741,
+        "state": "OPEN",
+        "title": "Investigate and bind the no-pin registry identities and M1 witness laws",
+        "updatedAt": "2026-10-22T09:12:46Z",
+        "url": "https://github.com/lambdasistemi/singular/issues/741"
+      },
+      {
+        "baseRefName": "main",
+        "headRefName": "feat/679-ledger-boundary",
+        "headRefOid": "57935f9da94229d7e21b35bd190b67d950129e16",
+        "isDraft": true,
+        "number": 683,
+        "state": "OPEN",
+        "title": "Ledger boundary model: a registry-free ledger layer and the mint guarantees of one transaction",
+        "updatedAt": "2026-10-16T16:40:39Z",
+        "url": "https://github.com/lambdasistemi/singular/pull/683"
+      }
+    ],
+    "historyPullRequestTitleSearch": {
+      "command": "gh pr list --repo lambdasistemi/singular --state all --search \"680 in:title\" --json number,title,state,isDraft,headRefName,headRefOid,url",
+      "matches": []
+    }
+  },
+  "investigationEvidence": [
+    {
+      "receiptName": "P1-5",
+      "head": "a1f14b594511a90ad2663206f6528cdc3d83dfaa",
+      "start": "2026-10-22T17:10:41.493Z",
+      "end": "2026-10-22T17:10:43.626Z",
+      "exit": 0,
+      "logSha256": "46791c2af8b5884878565f00c977e7e3a1729e580cf4364324c8ce91bc81c2ec"
+    },
+    {
+      "receiptName": "P1-constant-hash",
+      "head": "a1f14b594511a90ad2663206f6528cdc3d83dfaa",
+      "start": "2026-10-22T17:10:58.908Z",
+      "end": "2026-10-22T17:11:01.004Z",
+      "exit": 1,
+      "logSha256": "7d6ed833f2c9f30119fb1d7ef087cb8e6d50a1e9ef9707c41ca72220fafe76f0"
+    },
+    {
+      "receiptName": "P1-colliding-approval",
+      "head": "a1f14b594511a90ad2663206f6528cdc3d83dfaa",
+      "start": "2026-10-22T17:11:01.063Z",
+      "end": "2026-10-22T17:11:03.183Z",
+      "exit": 1,
+      "logSha256": "6f7c5fc04270bca4259e1532f58b055a72615644444a42adb97a0a04f6928aad"
+    },
+    {
+      "receiptName": "P1-colliding-root",
+      "head": "a1f14b594511a90ad2663206f6528cdc3d83dfaa",
+      "start": "2026-10-22T17:11:03.240Z",
+      "end": "2026-10-22T17:11:05.388Z",
+      "exit": 1,
+      "logSha256": "8220e4f97c6c7a5079b9f11438f05fea8dd25b231794ca4c2fc384c23f23b333"
+    },
+    {
+      "receiptName": "P1-duplicate-key",
+      "head": "a1f14b594511a90ad2663206f6528cdc3d83dfaa",
+      "start": "2026-10-22T17:11:05.449Z",
+      "end": "2026-10-22T17:11:07.561Z",
+      "exit": 1,
+      "logSha256": "13d0fa8c05834f08593069369f8e654b933e4c843757c8de2013fdbd8a63ef82"
+    },
+    {
+      "receiptName": "P1-one-element-domain",
+      "head": "a1f14b594511a90ad2663206f6528cdc3d83dfaa",
+      "start": "2026-10-22T17:11:07.617Z",
+      "end": "2026-10-22T17:11:09.752Z",
+      "exit": 1,
+      "logSha256": "f6a14ebe755333ddd3fdbcc00aa97e407137ec594794463b677fbd8fde475e44"
+    },
+    {
+      "receiptName": "P1-invalid-width",
+      "head": "a1f14b594511a90ad2663206f6528cdc3d83dfaa",
+      "start": "2026-10-22T17:11:09.810Z",
+      "end": "2026-10-22T17:11:11.926Z",
+      "exit": 1,
+      "logSha256": "e9f1be956b97194089c8078d2575376cac1265531809cd763b735019f585246d"
+    },
+    {
+      "receiptName": "P1-empty-domain",
+      "head": "a1f14b594511a90ad2663206f6528cdc3d83dfaa",
+      "start": "2026-10-22T17:11:11.987Z",
+      "end": "2026-10-22T17:11:14.124Z",
+      "exit": 1,
+      "logSha256": "92101addbe5afef643feffd74e9e804cfe7e176f1ab529f906810bc5cd329549"
+    },
+    {
+      "receiptName": "I1-1",
+      "head": "a1f14b594511a90ad2663206f6528cdc3d83dfaa",
+      "start": "2026-10-22T17:08:08.644Z",
+      "end": "2026-10-22T17:08:11.376Z",
+      "exit": 0,
+      "logSha256": "06c2efafd8e8efbcdb0de42c84bf07c4320309881fcdcea26903a37289624086"
+    },
+    {
+      "receiptName": "I1-typo",
+      "head": "a1f14b594511a90ad2663206f6528cdc3d83dfaa",
+      "start": "2026-10-22T17:11:14.706Z",
+      "end": "2026-10-22T17:11:15.918Z",
+      "exit": 1,
+      "logSha256": "67aad2a01dccddb53414070df2189a111425a4345585f8c4ace248c14c57ccc9"
+    },
+    {
+      "receiptName": "I2-1",
+      "head": "a1f14b594511a90ad2663206f6528cdc3d83dfaa",
+      "start": "2026-10-22T17:08:09.812Z",
+      "end": "2026-10-22T17:08:10.718Z",
+      "exit": 0,
+      "logSha256": "ce5b71e02fa9cd396d6e9a438bd77a7c930fdb8272cb02e6a53c218658fba2c5"
+    },
+    {
+      "receiptName": "I2-digest",
+      "head": "a1f14b594511a90ad2663206f6528cdc3d83dfaa",
+      "start": "2026-10-22T17:11:15.977Z",
+      "end": "2026-10-22T17:11:16.129Z",
+      "exit": 1,
+      "logSha256": "7e4bd37dc4c20fa6306ac4924086ad8724c617062ad576d69ac275faf6427eab"
+    },
+    {
+      "receiptName": "X1-misspelled-name",
+      "head": "a1f14b594511a90ad2663206f6528cdc3d83dfaa",
+      "start": "2026-10-22T17:11:14.182Z",
+      "end": "2026-10-22T17:11:14.260Z",
+      "exit": 1,
+      "logSha256": "708f1154d1646135ba45aadefc44a2807a2de334ade238a18cc2e933a596fcae"
+    },
+    {
+      "receiptName": "X1-blank-digest",
+      "head": "a1f14b594511a90ad2663206f6528cdc3d83dfaa",
+      "start": "2026-10-22T17:11:14.316Z",
+      "end": "2026-10-22T17:11:14.391Z",
+      "exit": 1,
+      "logSha256": "ce00d65f5ef09121e8b2d46a6ffe96d7b26f0d499eb8ac9008ded62c96f63d06"
+    },
+    {
+      "receiptName": "X1-absent-theorem-name",
+      "head": "a1f14b594511a90ad2663206f6528cdc3d83dfaa",
+      "start": "2026-10-22T17:11:14.445Z",
+      "end": "2026-10-22T17:11:14.517Z",
+      "exit": 1,
+      "logSha256": "4b6177599acf60aee8c94db5b0128407767bbeccfc2d2470feee5f47441f0bec"
+    },
+    {
+      "receiptName": "X1-dropped-row",
+      "head": "a1f14b594511a90ad2663206f6528cdc3d83dfaa",
+      "start": "2026-10-22T17:11:14.572Z",
+      "end": "2026-10-22T17:11:14.649Z",
+      "exit": 1,
+      "logSha256": "e8e34dfcf39a14318c1f8e09bf69c8260decb2fbd5ea3d23d12735aa840f283c"
+    },
+    {
+      "receiptName": "F1-control",
+      "head": "a1f14b594511a90ad2663206f6528cdc3d83dfaa",
+      "start": "2026-10-22T17:07:51.031Z",
+      "end": "2026-10-22T17:07:52.862Z",
+      "exit": 1,
+      "logSha256": "d6b92ed8c73cf4b28a516626b36f810a6bef12f1f4dcdeca1685b9bfd3718edb"
+    },
+    {
+      "receiptName": "T1-control",
+      "head": "a1f14b594511a90ad2663206f6528cdc3d83dfaa",
+      "start": "2026-10-22T17:08:32.931Z",
+      "end": "2026-10-22T17:08:33.236Z",
+      "exit": 1,
+      "logSha256": "d569c0ec582bff2a1944b15999a06ce9bfc6ba488b42d78d3884cd6a280257a4"
+    }
+  ],
+  "investigationEvidenceLimit": "Commissioned runtime instruments and logs are retained by the ticket owner; they are not shipped executables or hosted CI. A name or source-digest check establishes identity only. Finite premise instances do not accept a proposed global law.",
+  "premiseInstrument": {
+    "language": "Lean 4.27.0",
+    "sha256": "27e2fd03ee459023c85524989532b7e3210924d7a062e43c83dbfd5fda375c02",
+    "positiveReceipt": "P1-5",
+    "failedSetupAttempts": [
+      "P1-1",
+      "P1-3",
+      "P1-4"
+    ],
+    "earlierNarrowSuccess": "P1-2"
+  }
 }

@@ -53,12 +53,36 @@
       "pause": 500
     },
     {
-      "text": "The accepted design remains in the sources bound by authority.md. This file is source review, not execution evidence.",
+      "text": "The accepted design remains in the sources bound by authority.md. The initial findings above are source review. The bounded runtime checks below supply their separately stated execution evidence.",
+      "pause": 400
+    }
+  ],
+  "identity-premises-and-their-instances": [
+    {
+      "text": "Identity premises and their instances.",
+      "pause": 500
+    },
+    {
+      "text": "The runtime scratch file declares each proposition before checking its instance. It imports only the existing model and economics. These are finite examples over that model, not accepted candidate laws or proof that a cryptographic hash is injective. The runtime receipt names, exits and log hashes are listed in base-hashes.json; the unchanged source declarations and their hashes are listed in impact.md.",
+      "pause": 400
+    },
+    {
+      "text": "All six instantiated propositions compile and execute successfully in the scratch check. Their violating twins test a constant hash, actual colliding approval/root pairs, a duplicate key, an empty domain, a one-element domain and an over-wide interval against the same declared predicates. The control exits and their failure reasons are retained separately from the successful run. Earlier scratch setup/type errors are preserved as failed attempts, not counted as counterexamples or successful controls.",
+      "pause": 400
+    }
+  ],
+  "premises-that-await-a-candidate-or-upstream-law": [
+    {
+      "text": "Premises that await a candidate or upstream law.",
+      "pause": 500
+    },
+    {
+      "text": "The dependency graph and the exact unresolved choices are in questions.md. In particular, acyclic application identity is not inferred merely from removing an application parameter in prose. The application currently binds a registry in both its application and protected control records. No candidate signature, serialization or driver surface is frozen in this slice.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "research.md",
-    "sha256": "a16e67b152bd2cd2d051662027736adf4a82bf36be1634c4639203a6ea74d1d7"
+    "sha256": "01b1450a833a4d8e8eea46c60bbb151a860fea22beb8d76996ac19bb18c9f4b3"
   }
 }

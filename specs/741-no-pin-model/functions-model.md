@@ -27,3 +27,7 @@ flowchart TD
   Signature -->|author within scope| Candidate[Executable hypothetical candidate]
   Candidate -->|audit statements| Proof[Prove or refute]
 ```
+
+## Bound signature inventory
+
+The six boundaries above are traced individually in [impact.md](impact.md), together with the application registry/control dependencies. Their definitions and source hashes bind the accepted base; runtime declaration checks elaborate their current types. No candidate callable surface is frozen and no signature changes here. The registry-independent ledger script/history vocabulary remains unavailable at this base and is not replaced with a local ledger layer. [Questions](questions.md) records the decisions needed before that freeze.

@@ -1,0 +1,86 @@
+{
+  "what-must-survive-removing-policy-pins": [
+    {
+      "text": "What must survive removing policy pins.",
+      "pause": 500
+    },
+    {
+      "text": "As an integrator, I want to see each existing guarantee, the proposed replacement and the evidence still needed before trusting a registry without pins.",
+      "pause": 400
+    },
+    {
+      "text": "This inventory binds the accepted source revision in authority.md. Every candidate claim below is a hypothesis. No declaration, statement, wire format, application rule or accepted guarantee changes in this slice. Old definition digests are SHA256 of the complete source-file blob; theorem digests are the base register's statementSha256. A declaration existing or a digest matching proves identity only.",
+      "pause": 400
+    },
+    {
+      "text": "The eleven configuration fields are listed individually. The constitution's driver translation still calls config an \"eight-field\" value, although the bound structure has eleven fields. This discrepancy is recorded in questions.md; its text is not amended here. The proposed four-field datum does not authorize dropping registration cost or booking width.",
+      "pause": 400
+    }
+  ],
+  "obligation-inventory": [
+    {
+      "text": "Obligation inventory.",
+      "pause": 500
+    }
+  ],
+  "unavailable-ledger-boundaries": [
+    {
+      "text": "Unavailable ledger boundaries.",
+      "pause": 500
+    },
+    {
+      "text": "The ledger vocabulary ticket remains open; its draft is unaccepted. The history ticket remains open with no matching pull request found. Required vocabulary is unavailable at the base: script-purpose invocation, applied script identity, full ledger values, accepted history, one-shot genesis and spent-at-most-once. These are dependency roles, not invented declaration names, and are excluded from declaration checking.",
+      "pause": 400
+    },
+    {
+      "text": "One transaction may invoke two state policies using one spent seed. Across-history spent-once forbids spending it again later; it does not by itself exclude this same-transaction case. Name-only registry binding remains unresolved. No competing ledger layer is introduced.",
+      "pause": 400
+    }
+  ],
+  "reader-meanings-and-asset-roles": [
+    {
+      "text": "Reader meanings and asset roles.",
+      "pause": 500
+    },
+    {
+      "text": "The observation contract requires active application custody, pending termination, never registered, terminal and unavailable evidence. Existing held and leaf observations support logical census and leaf classification; world supply additionally counts genuine pending tokens. None supplies provider freshness/completeness or proves application/release identity from an empty lookup. A negative token lookup alone cannot select the other four classes.",
+      "pause": 400
+    },
+    {
+      "text": "State, active witness, trie-ready request tag and application tag occupy distinct abstract records or fields today. The positive trie-ready name distinguishes it from abstract state name zero; it proves no witness/request-tag separation under the proposed shared concrete policy. A genuine witness at the state address carrying a fabricated state datum still requires an authenticated full-identity/state-provenance proof. Wrong kind/key/registry, extra mint/burn and unrelated application assets remain explicit adverse cases for the later candidate.",
+      "pause": 400
+    }
+  ],
+  "consumers-and-compatibility": [
+    {
+      "text": "Consumers and compatibility.",
+      "pause": 500
+    },
+    {
+      "text": "Implementation consumers are inventoried only: genesis, registry validators, configuration and identities, applied script parameters, asset names, transaction builders, and CLI creation, resolution and folding. They are neither edited nor evaluated by this slice.",
+      "pause": 400
+    },
+    {
+      "text": "Model consumers remain byte-identical: root driver/naming/lifecycle/permanent corpora and theorem registers; application corpus and theorem ledger; simulator mirror; coverage record; public model/theorem explanation and economics paper/register. No regeneration is due from documentation-only inventory; every future semantic change reopens its mapped consumers. No implementation evidence row changes.",
+      "pause": 400
+    },
+    {
+      "text": "The permanent translation keeps the two-edge law, fixed admission, applicable exits, datum delivery and public inputs. Its exact compatibility text is: \"Registries from previous releases, including old Demo1 instances, are abandoned: no migration or compatibility recognition is authorized.\" The epic's exact architectural text is: \"Existing registries retain their contracts and explicit compatible-release paths. New application policies create new state policies for new registries.\" The named releases and scope are unresolved; neither sentence is silently superseded here.",
+      "pause": 400
+    }
+  ],
+  "identity-premises-and-next-decision": [
+    {
+      "text": "Identity premises and next decision.",
+      "pause": 500
+    },
+    {
+      "text": "Research records each proposition, its domain and a satisfying instance, separating executed premises over the existing model from written candidate examples. Questions gives the concrete starting state, competing outcomes, evidence limits and ruling needed. Unresolved means the proposed replacement is not accepted, including when the old theorem is registered as proved.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "impact.md",
+    "sha256": "f05749008d4d9eca675959b57b1e4eb054d95fe7d99d42495d01db335f92e96b"
+  }
+}
