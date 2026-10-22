@@ -22,3 +22,9 @@ Names, argument names and result types only. No bodies.
 ## Library reference
 
 - The worked example calls `resolveRegistry` with an application and a release and shows the refusal for a forged pin.
+
+## Second pull request: test harness
+
+- `bootForgedRegistry(provider, wallet, blueprint, forgedActivePolicy)`: boots a registry through the real boot with the configuration's active policy replaced by the given script's hash; returns the state token.
+- `mintUnderForgedPolicy(provider, wallet, token, key, forgedActivePolicy)`: mints a token named after the key under the forged policy; returns its output.
+- `foldAlteringAPin(provider, wallet, token, field)`: builds and submits a fold whose new state datum changes one pinned policy; returns the node's answer.

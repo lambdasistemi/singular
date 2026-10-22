@@ -24,6 +24,9 @@ let
     exes = [
       "open-datum"
       "singular-negative"
+      # #730: the test-only harness of the forged-pins journey; no release
+      # archive carries it.
+      "forged-registry"
     ];
     tests = [
       "open-datum-tests"
@@ -52,6 +55,12 @@ let
       class = "built-here";
       kind = "exe";
       name = "singular-negative";
+      detail = "";
+    }
+    {
+      class = "built-here";
+      kind = "exe";
+      name = "forged-registry";
       detail = "";
     }
     {

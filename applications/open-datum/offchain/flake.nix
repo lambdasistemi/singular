@@ -64,6 +64,7 @@
           mkdir -p $out/open-datum
           cp -r ${appSrc}/src $out/open-datum/src
           cp -r ${appSrc}/app $out/open-datum/app
+          cp -r ${appSrc}/forged-registry $out/open-datum/forged-registry
           if [ -d ${appSrc}/test ]; then cp -r ${appSrc}/test $out/open-datum/test; fi
           # The Koios fixtures live once, in the registry tree; stage them
           # beside the application's own fixtures (its command-line corpus
@@ -128,6 +129,7 @@
               # it: the cached Haskell build, for consumers that stamp their own.
               open-datum-unstamped = openDatumComponents.exes.open-datum;
               inherit (negativeComponents.exes) singular-negative;
+              inherit (openDatumComponents.exes) forged-registry;
             };
             tests = {
               inherit (openDatumComponents.tests) open-datum-tests;
@@ -214,6 +216,8 @@
           open-datum-test-harness = harnessOpenDatumComponents.exes.open-datum;
           singular-test-harness = harnessRegistryComponents.exes.singular;
           inherit (negativeComponents.exes) singular-negative;
+          # #730: the test-only harness of the forged-pins journey.
+          inherit (openDatumComponents.exes) forged-registry;
           inherit (registryComponents.exes) singular;
           fourmolu = fourmoluTool;
         };

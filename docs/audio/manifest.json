@@ -409780,6 +409780,1941 @@
     }
    ]
   },
+  "specs-protocol-spec/the-forged-registry-run-on-a-development-network-00": {
+   "audio_sha256": "a381428d9be7985da1b9db529cbff0e87225f3b068ad02893d047ebf12d3f26b",
+   "characters": 50,
+   "cost": 4.95e-05,
+   "duration": 3.45,
+   "index": 0,
+   "key": "0e3dad0a815c3397568b47523c0db8393156c7829c0d4be8db98455f9bfb00a7",
+   "page": "specs/protocol/spec.md",
+   "pause_ms": 500,
+   "section": "the-forged-registry-run-on-a-development-network",
+   "sent_text": "The forged registry, run on a development network.",
+   "text": "The forged registry, run on a development network.",
+   "words": [
+    {
+     "end": 0.287,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.65,
+     "start": 0.287,
+     "text": "forged"
+    },
+    {
+     "end": 1.275,
+     "start": 0.65,
+     "text": "registry"
+    },
+    {
+     "end": 1.388,
+     "start": 1.275,
+     "text": ","
+    },
+    {
+     "end": 1.663,
+     "start": 1.388,
+     "text": "run"
+    },
+    {
+     "end": 1.788,
+     "start": 1.663,
+     "text": "on"
+    },
+    {
+     "end": 1.837,
+     "start": 1.788,
+     "text": "a"
+    },
+    {
+     "end": 2.362,
+     "start": 1.837,
+     "text": "development"
+    },
+    {
+     "end": 3.25,
+     "start": 2.362,
+     "text": "network"
+    },
+    {
+     "end": 3.45,
+     "start": 3.25,
+     "text": "."
+    }
+   ]
+  },
+  "specs-protocol-spec/the-forged-registry-run-on-a-development-network-01": {
+   "audio_sha256": "f010cfc1ec2beb713a591e35a6ea9be6568223be6138573fd58ce71920af192f",
+   "characters": 221,
+   "cost": 0.00021878999999999998,
+   "duration": 14.2,
+   "index": 1,
+   "key": "79f02857b5ba3bd626dd001d47d4fba6540274413e371437a72a69a57801c2e5",
+   "page": "specs/protocol/spec.md",
+   "pause_ms": 400,
+   "section": "the-forged-registry-run-on-a-development-network",
+   "sent_text": "A reader can watch the refusal rather than read about it. A hosted journey builds the registry of the story on a development network and runs the packaged programs against it. It is the evidence for the trust model above.",
+   "text": "A reader can watch the refusal rather than read about it. A hosted journey builds the registry of the story on a development network and runs the packaged programs against it. It is the evidence for the trust model above.",
+   "words": [
+    {
+     "end": 0.275,
+     "start": 0.2,
+     "text": "A"
+    },
+    {
+     "end": 0.625,
+     "start": 0.275,
+     "text": "reader"
+    },
+    {
+     "end": 0.8,
+     "start": 0.625,
+     "text": "can"
+    },
+    {
+     "end": 1.1,
+     "start": 0.8,
+     "text": "watch"
+    },
+    {
+     "end": 1.2,
+     "start": 1.1,
+     "text": "the"
+    },
+    {
+     "end": 1.962,
+     "start": 1.2,
+     "text": "refusal"
+    },
+    {
+     "end": 2.287,
+     "start": 1.962,
+     "text": "rather"
+    },
+    {
+     "end": 2.45,
+     "start": 2.287,
+     "text": "than"
+    },
+    {
+     "end": 2.662,
+     "start": 2.45,
+     "text": "read"
+    },
+    {
+     "end": 2.95,
+     "start": 2.662,
+     "text": "about"
+    },
+    {
+     "end": 3.55,
+     "start": 2.95,
+     "text": "it"
+    },
+    {
+     "end": 3.75,
+     "start": 3.55,
+     "text": "."
+    },
+    {
+     "end": 4.05,
+     "start": 3.975,
+     "text": "A"
+    },
+    {
+     "end": 4.512,
+     "start": 4.05,
+     "text": "hosted"
+    },
+    {
+     "end": 4.938,
+     "start": 4.512,
+     "text": "journey"
+    },
+    {
+     "end": 5.325,
+     "start": 4.938,
+     "text": "builds"
+    },
+    {
+     "end": 5.463,
+     "start": 5.325,
+     "text": "the"
+    },
+    {
+     "end": 6.025,
+     "start": 5.463,
+     "text": "registry"
+    },
+    {
+     "end": 6.113,
+     "start": 6.025,
+     "text": "of"
+    },
+    {
+     "end": 6.213,
+     "start": 6.113,
+     "text": "the"
+    },
+    {
+     "end": 6.7,
+     "start": 6.213,
+     "text": "story"
+    },
+    {
+     "end": 6.838,
+     "start": 6.7,
+     "text": "on"
+    },
+    {
+     "end": 6.9,
+     "start": 6.838,
+     "text": "a"
+    },
+    {
+     "end": 7.475,
+     "start": 6.9,
+     "text": "development"
+    },
+    {
+     "end": 8.038,
+     "start": 7.475,
+     "text": "network"
+    },
+    {
+     "end": 8.188,
+     "start": 8.038,
+     "text": "and"
+    },
+    {
+     "end": 8.575,
+     "start": 8.188,
+     "text": "runs"
+    },
+    {
+     "end": 8.712,
+     "start": 8.575,
+     "text": "the"
+    },
+    {
+     "end": 9.25,
+     "start": 8.712,
+     "text": "packaged"
+    },
+    {
+     "end": 9.825,
+     "start": 9.25,
+     "text": "programs"
+    },
+    {
+     "end": 10.275,
+     "start": 9.825,
+     "text": "against"
+    },
+    {
+     "end": 11.05,
+     "start": 10.275,
+     "text": "it"
+    },
+    {
+     "end": 11.275,
+     "start": 11.05,
+     "text": "."
+    },
+    {
+     "end": 11.575,
+     "start": 11.45,
+     "text": "It"
+    },
+    {
+     "end": 11.688,
+     "start": 11.575,
+     "text": "is"
+    },
+    {
+     "end": 11.8,
+     "start": 11.688,
+     "text": "the"
+    },
+    {
+     "end": 12.25,
+     "start": 11.8,
+     "text": "evidence"
+    },
+    {
+     "end": 12.363,
+     "start": 12.25,
+     "text": "for"
+    },
+    {
+     "end": 12.45,
+     "start": 12.363,
+     "text": "the"
+    },
+    {
+     "end": 12.775,
+     "start": 12.45,
+     "text": "trust"
+    },
+    {
+     "end": 13.15,
+     "start": 12.775,
+     "text": "model"
+    },
+    {
+     "end": 14.0,
+     "start": 13.15,
+     "text": "above"
+    },
+    {
+     "end": 14.2,
+     "start": 14.0,
+     "text": "."
+    }
+   ]
+  },
+  "specs-protocol-spec/the-forged-registry-run-on-a-development-network-02": {
+   "audio_sha256": "da7097317e92cae9a6f0ece1c812a19a9c1fb0d149f54ac9134dd4839b7324d2",
+   "characters": 511,
+   "cost": 0.0005058899999999999,
+   "duration": 33.575,
+   "index": 2,
+   "key": "bc52cb7fa8f753225e66f014f0ead47fbe0649e4160c256ad94f0126734d95ce",
+   "page": "specs/protocol/spec.md",
+   "pause_ms": 400,
+   "section": "the-forged-registry-run-on-a-development-network",
+   "sent_text": "A test harness boots the registry. It is not a product command, because no command a user runs can pin a policy the release does not derive. The harness uses the real boot and the real contracts, and the datum it writes pins an always-true script as the active policy. It then mints a token named alice under that policy. The development network's own record of the chain shows a reader that trusts the datum exactly what the story says: a token named alice, under the policy the datum pins, held by the wallet.",
+   "text": "A test harness boots the registry. It is not a product command, because no command a user runs can pin a policy the release does not derive. The harness uses the real boot and the real contracts, and the datum it writes pins an always-true script as the active policy. It then mints a token named alice under that policy. The development network's own record of the chain shows a reader that trusts the datum exactly what the story says: a token named alice, under the policy the datum pins, held by the wallet.",
+   "words": [
+    {
+     "end": 0.275,
+     "start": 0.2,
+     "text": "A"
+    },
+    {
+     "end": 0.512,
+     "start": 0.275,
+     "text": "test"
+    },
+    {
+     "end": 0.875,
+     "start": 0.512,
+     "text": "harness"
+    },
+    {
+     "end": 1.138,
+     "start": 0.875,
+     "text": "boots"
+    },
+    {
+     "end": 1.225,
+     "start": 1.138,
+     "text": "the"
+    },
+    {
+     "end": 2.2,
+     "start": 1.225,
+     "text": "registry"
+    },
+    {
+     "end": 2.425,
+     "start": 2.2,
+     "text": "."
+    },
+    {
+     "end": 2.75,
+     "start": 2.625,
+     "text": "It"
+    },
+    {
+     "end": 2.9,
+     "start": 2.75,
+     "text": "is"
+    },
+    {
+     "end": 3.112,
+     "start": 2.9,
+     "text": "not"
+    },
+    {
+     "end": 3.175,
+     "start": 3.112,
+     "text": "a"
+    },
+    {
+     "end": 3.575,
+     "start": 3.175,
+     "text": "product"
+    },
+    {
+     "end": 4.1,
+     "start": 3.575,
+     "text": "command"
+    },
+    {
+     "end": 4.15,
+     "start": 4.1,
+     "text": ","
+    },
+    {
+     "end": 4.438,
+     "start": 4.15,
+     "text": "because"
+    },
+    {
+     "end": 4.7,
+     "start": 4.438,
+     "text": "no"
+    },
+    {
+     "end": 5.137,
+     "start": 4.7,
+     "text": "command"
+    },
+    {
+     "end": 5.238,
+     "start": 5.137,
+     "text": "a"
+    },
+    {
+     "end": 5.625,
+     "start": 5.238,
+     "text": "user"
+    },
+    {
+     "end": 6.0,
+     "start": 5.625,
+     "text": "runs"
+    },
+    {
+     "end": 6.175,
+     "start": 6.0,
+     "text": "can"
+    },
+    {
+     "end": 6.4,
+     "start": 6.175,
+     "text": "pin"
+    },
+    {
+     "end": 6.5,
+     "start": 6.4,
+     "text": "a"
+    },
+    {
+     "end": 7.188,
+     "start": 6.5,
+     "text": "policy"
+    },
+    {
+     "end": 7.325,
+     "start": 7.188,
+     "text": "the"
+    },
+    {
+     "end": 7.775,
+     "start": 7.325,
+     "text": "release"
+    },
+    {
+     "end": 8.0,
+     "start": 7.775,
+     "text": "does"
+    },
+    {
+     "end": 8.225,
+     "start": 8.0,
+     "text": "not"
+    },
+    {
+     "end": 9.375,
+     "start": 8.225,
+     "text": "derive"
+    },
+    {
+     "end": 9.6,
+     "start": 9.375,
+     "text": "."
+    },
+    {
+     "end": 9.85,
+     "start": 9.775,
+     "text": "The"
+    },
+    {
+     "end": 10.275,
+     "start": 9.85,
+     "text": "harness"
+    },
+    {
+     "end": 10.625,
+     "start": 10.275,
+     "text": "uses"
+    },
+    {
+     "end": 10.75,
+     "start": 10.625,
+     "text": "the"
+    },
+    {
+     "end": 11.025,
+     "start": 10.75,
+     "text": "real"
+    },
+    {
+     "end": 11.387,
+     "start": 11.025,
+     "text": "boot"
+    },
+    {
+     "end": 11.512,
+     "start": 11.387,
+     "text": "and"
+    },
+    {
+     "end": 11.6,
+     "start": 11.512,
+     "text": "the"
+    },
+    {
+     "end": 11.85,
+     "start": 11.6,
+     "text": "real"
+    },
+    {
+     "end": 12.975,
+     "start": 11.85,
+     "text": "contracts"
+    },
+    {
+     "end": 13.175,
+     "start": 12.975,
+     "text": ","
+    },
+    {
+     "end": 13.462,
+     "start": 13.375,
+     "text": "and"
+    },
+    {
+     "end": 13.55,
+     "start": 13.462,
+     "text": "the"
+    },
+    {
+     "end": 13.925,
+     "start": 13.55,
+     "text": "datum"
+    },
+    {
+     "end": 14.025,
+     "start": 13.925,
+     "text": "it"
+    },
+    {
+     "end": 14.312,
+     "start": 14.025,
+     "text": "writes"
+    },
+    {
+     "end": 14.7,
+     "start": 14.312,
+     "text": "pins"
+    },
+    {
+     "end": 14.837,
+     "start": 14.7,
+     "text": "an"
+    },
+    {
+     "end": 15.562,
+     "start": 14.837,
+     "text": "always-true"
+    },
+    {
+     "end": 15.975,
+     "start": 15.562,
+     "text": "script"
+    },
+    {
+     "end": 16.112,
+     "start": 15.975,
+     "text": "as"
+    },
+    {
+     "end": 16.25,
+     "start": 16.112,
+     "text": "the"
+    },
+    {
+     "end": 16.625,
+     "start": 16.25,
+     "text": "active"
+    },
+    {
+     "end": 17.7,
+     "start": 16.625,
+     "text": "policy"
+    },
+    {
+     "end": 17.9,
+     "start": 17.7,
+     "text": "."
+    },
+    {
+     "end": 18.188,
+     "start": 18.075,
+     "text": "It"
+    },
+    {
+     "end": 18.375,
+     "start": 18.188,
+     "text": "then"
+    },
+    {
+     "end": 18.587,
+     "start": 18.375,
+     "text": "mints"
+    },
+    {
+     "end": 18.663,
+     "start": 18.587,
+     "text": "a"
+    },
+    {
+     "end": 19.125,
+     "start": 18.663,
+     "text": "token"
+    },
+    {
+     "end": 19.413,
+     "start": 19.125,
+     "text": "named"
+    },
+    {
+     "end": 19.775,
+     "start": 19.413,
+     "text": "alice"
+    },
+    {
+     "end": 19.962,
+     "start": 19.775,
+     "text": "under"
+    },
+    {
+     "end": 20.2,
+     "start": 19.962,
+     "text": "that"
+    },
+    {
+     "end": 21.2,
+     "start": 20.2,
+     "text": "policy"
+    },
+    {
+     "end": 21.4,
+     "start": 21.2,
+     "text": "."
+    },
+    {
+     "end": 21.675,
+     "start": 21.6,
+     "text": "The"
+    },
+    {
+     "end": 22.25,
+     "start": 21.675,
+     "text": "development"
+    },
+    {
+     "end": 22.712,
+     "start": 22.25,
+     "text": "network's"
+    },
+    {
+     "end": 22.975,
+     "start": 22.712,
+     "text": "own"
+    },
+    {
+     "end": 23.337,
+     "start": 22.975,
+     "text": "record"
+    },
+    {
+     "end": 23.413,
+     "start": 23.337,
+     "text": "of"
+    },
+    {
+     "end": 23.538,
+     "start": 23.413,
+     "text": "the"
+    },
+    {
+     "end": 24.075,
+     "start": 23.538,
+     "text": "chain"
+    },
+    {
+     "end": 24.4,
+     "start": 24.075,
+     "text": "shows"
+    },
+    {
+     "end": 24.513,
+     "start": 24.4,
+     "text": "a"
+    },
+    {
+     "end": 24.9,
+     "start": 24.513,
+     "text": "reader"
+    },
+    {
+     "end": 25.112,
+     "start": 24.9,
+     "text": "that"
+    },
+    {
+     "end": 25.525,
+     "start": 25.112,
+     "text": "trusts"
+    },
+    {
+     "end": 25.625,
+     "start": 25.525,
+     "text": "the"
+    },
+    {
+     "end": 26.15,
+     "start": 25.625,
+     "text": "datum"
+    },
+    {
+     "end": 26.775,
+     "start": 26.15,
+     "text": "exactly"
+    },
+    {
+     "end": 26.913,
+     "start": 26.775,
+     "text": "what"
+    },
+    {
+     "end": 27.0,
+     "start": 26.913,
+     "text": "the"
+    },
+    {
+     "end": 27.388,
+     "start": 27.0,
+     "text": "story"
+    },
+    {
+     "end": 28.425,
+     "start": 27.388,
+     "text": "says"
+    },
+    {
+     "end": 28.65,
+     "start": 28.425,
+     "text": ":"
+    },
+    {
+     "end": 28.925,
+     "start": 28.85,
+     "text": "a"
+    },
+    {
+     "end": 29.35,
+     "start": 28.925,
+     "text": "token"
+    },
+    {
+     "end": 29.638,
+     "start": 29.35,
+     "text": "named"
+    },
+    {
+     "end": 30.125,
+     "start": 29.638,
+     "text": "alice"
+    },
+    {
+     "end": 30.2,
+     "start": 30.125,
+     "text": ","
+    },
+    {
+     "end": 30.413,
+     "start": 30.2,
+     "text": "under"
+    },
+    {
+     "end": 30.5,
+     "start": 30.413,
+     "text": "the"
+    },
+    {
+     "end": 31.025,
+     "start": 30.5,
+     "text": "policy"
+    },
+    {
+     "end": 31.125,
+     "start": 31.025,
+     "text": "the"
+    },
+    {
+     "end": 31.5,
+     "start": 31.125,
+     "text": "datum"
+    },
+    {
+     "end": 31.9,
+     "start": 31.5,
+     "text": "pins"
+    },
+    {
+     "end": 31.95,
+     "start": 31.9,
+     "text": ","
+    },
+    {
+     "end": 32.2,
+     "start": 31.95,
+     "text": "held"
+    },
+    {
+     "end": 32.338,
+     "start": 32.2,
+     "text": "by"
+    },
+    {
+     "end": 32.425,
+     "start": 32.338,
+     "text": "the"
+    },
+    {
+     "end": 33.35,
+     "start": 32.425,
+     "text": "wallet"
+    },
+    {
+     "end": 33.575,
+     "start": 33.35,
+     "text": "."
+    }
+   ]
+  },
+  "specs-protocol-spec/the-forged-registry-run-on-a-development-network-03": {
+   "audio_sha256": "a1161946fe63c5701913317e623dfd606633caf6701e51fe9a7d9404bb5e5f12",
+   "characters": 648,
+   "cost": 0.00064152,
+   "duration": 43.4,
+   "index": 3,
+   "key": "d995f0be7768efe3e846da6c81cd32acb4d43eaa018dc7f4f5403c026cd53744",
+   "page": "specs/protocol/spec.md",
+   "pause_ms": 400,
+   "section": "the-forged-registry-run-on-a-development-network",
+   "sent_text": "Two more observations are recorded and not asserted. The first is evidence for hardening creation. On the forged registry, a fold that mints the token its request owes under the pinned policy and, beside it, a token under the honest witness policy was accepted by the node. The honest witness policy accepts any mint while its registry's state is spent in a fold, and the state contract checks the mint only under the three pinned policies, so on a forged registry the honest witness policy is not pinned and a fold can mint under it freely. A fold that mints under the honest active policy instead of the pinned one is refused by the state script.",
+   "text": "Two more observations are recorded and not asserted. The first is evidence for hardening creation. On the forged registry, a fold that mints the token its request owes under the pinned policy and, beside it, a token under the honest witness policy was accepted by the node. The honest witness policy accepts any mint while its registry's state is spent in a fold, and the state contract checks the mint only under the three pinned policies, so on a forged registry the honest witness policy is not pinned and a fold can mint under it freely. A fold that mints under the honest active policy instead of the pinned one is refused by the state script.",
+   "words": [
+    {
+     "end": 0.375,
+     "start": 0.2,
+     "text": "Two"
+    },
+    {
+     "end": 0.55,
+     "start": 0.375,
+     "text": "more"
+    },
+    {
+     "end": 1.275,
+     "start": 0.55,
+     "text": "observations"
+    },
+    {
+     "end": 1.375,
+     "start": 1.275,
+     "text": "are"
+    },
+    {
+     "end": 2.075,
+     "start": 1.375,
+     "text": "recorded"
+    },
+    {
+     "end": 2.225,
+     "start": 2.075,
+     "text": "and"
+    },
+    {
+     "end": 2.438,
+     "start": 2.225,
+     "text": "not"
+    },
+    {
+     "end": 3.375,
+     "start": 2.438,
+     "text": "asserted"
+    },
+    {
+     "end": 3.575,
+     "start": 3.375,
+     "text": "."
+    },
+    {
+     "end": 3.85,
+     "start": 3.75,
+     "text": "The"
+    },
+    {
+     "end": 4.175,
+     "start": 3.85,
+     "text": "first"
+    },
+    {
+     "end": 4.325,
+     "start": 4.175,
+     "text": "is"
+    },
+    {
+     "end": 4.775,
+     "start": 4.325,
+     "text": "evidence"
+    },
+    {
+     "end": 4.9,
+     "start": 4.775,
+     "text": "for"
+    },
+    {
+     "end": 5.375,
+     "start": 4.9,
+     "text": "hardening"
+    },
+    {
+     "end": 6.425,
+     "start": 5.375,
+     "text": "creation"
+    },
+    {
+     "end": 6.6,
+     "start": 6.425,
+     "text": "."
+    },
+    {
+     "end": 6.887,
+     "start": 6.775,
+     "text": "On"
+    },
+    {
+     "end": 6.975,
+     "start": 6.887,
+     "text": "the"
+    },
+    {
+     "end": 7.3,
+     "start": 6.975,
+     "text": "forged"
+    },
+    {
+     "end": 8.25,
+     "start": 7.3,
+     "text": "registry"
+    },
+    {
+     "end": 8.475,
+     "start": 8.25,
+     "text": ","
+    },
+    {
+     "end": 8.762,
+     "start": 8.675,
+     "text": "a"
+    },
+    {
+     "end": 9.137,
+     "start": 8.762,
+     "text": "fold"
+    },
+    {
+     "end": 9.325,
+     "start": 9.137,
+     "text": "that"
+    },
+    {
+     "end": 9.65,
+     "start": 9.325,
+     "text": "mints"
+    },
+    {
+     "end": 9.762,
+     "start": 9.65,
+     "text": "the"
+    },
+    {
+     "end": 10.2,
+     "start": 9.762,
+     "text": "token"
+    },
+    {
+     "end": 10.4,
+     "start": 10.2,
+     "text": "its"
+    },
+    {
+     "end": 10.913,
+     "start": 10.4,
+     "text": "request"
+    },
+    {
+     "end": 11.275,
+     "start": 10.913,
+     "text": "owes"
+    },
+    {
+     "end": 11.462,
+     "start": 11.275,
+     "text": "under"
+    },
+    {
+     "end": 11.55,
+     "start": 11.462,
+     "text": "the"
+    },
+    {
+     "end": 11.825,
+     "start": 11.55,
+     "text": "pinned"
+    },
+    {
+     "end": 12.512,
+     "start": 11.825,
+     "text": "policy"
+    },
+    {
+     "end": 12.675,
+     "start": 12.512,
+     "text": "and"
+    },
+    {
+     "end": 12.712,
+     "start": 12.675,
+     "text": ","
+    },
+    {
+     "end": 13.15,
+     "start": 12.712,
+     "text": "beside"
+    },
+    {
+     "end": 13.825,
+     "start": 13.15,
+     "text": "it"
+    },
+    {
+     "end": 14.05,
+     "start": 13.825,
+     "text": ","
+    },
+    {
+     "end": 14.325,
+     "start": 14.25,
+     "text": "a"
+    },
+    {
+     "end": 14.75,
+     "start": 14.325,
+     "text": "token"
+    },
+    {
+     "end": 14.962,
+     "start": 14.75,
+     "text": "under"
+    },
+    {
+     "end": 15.113,
+     "start": 14.962,
+     "text": "the"
+    },
+    {
+     "end": 15.525,
+     "start": 15.113,
+     "text": "honest"
+    },
+    {
+     "end": 15.875,
+     "start": 15.525,
+     "text": "witness"
+    },
+    {
+     "end": 16.587,
+     "start": 15.875,
+     "text": "policy"
+    },
+    {
+     "end": 16.8,
+     "start": 16.587,
+     "text": "was"
+    },
+    {
+     "end": 17.325,
+     "start": 16.8,
+     "text": "accepted"
+    },
+    {
+     "end": 17.487,
+     "start": 17.325,
+     "text": "by"
+    },
+    {
+     "end": 17.575,
+     "start": 17.487,
+     "text": "the"
+    },
+    {
+     "end": 18.45,
+     "start": 17.575,
+     "text": "node"
+    },
+    {
+     "end": 18.65,
+     "start": 18.45,
+     "text": "."
+    },
+    {
+     "end": 18.962,
+     "start": 18.825,
+     "text": "The"
+    },
+    {
+     "end": 19.375,
+     "start": 18.962,
+     "text": "honest"
+    },
+    {
+     "end": 19.725,
+     "start": 19.375,
+     "text": "witness"
+    },
+    {
+     "end": 20.312,
+     "start": 19.725,
+     "text": "policy"
+    },
+    {
+     "end": 20.8,
+     "start": 20.312,
+     "text": "accepts"
+    },
+    {
+     "end": 21.075,
+     "start": 20.8,
+     "text": "any"
+    },
+    {
+     "end": 21.375,
+     "start": 21.075,
+     "text": "mint"
+    },
+    {
+     "end": 21.562,
+     "start": 21.375,
+     "text": "while"
+    },
+    {
+     "end": 21.7,
+     "start": 21.562,
+     "text": "its"
+    },
+    {
+     "end": 22.25,
+     "start": 21.7,
+     "text": "registry's"
+    },
+    {
+     "end": 22.625,
+     "start": 22.25,
+     "text": "state"
+    },
+    {
+     "end": 22.75,
+     "start": 22.625,
+     "text": "is"
+    },
+    {
+     "end": 23.087,
+     "start": 22.75,
+     "text": "spent"
+    },
+    {
+     "end": 23.163,
+     "start": 23.087,
+     "text": "in"
+    },
+    {
+     "end": 23.263,
+     "start": 23.163,
+     "text": "a"
+    },
+    {
+     "end": 24.275,
+     "start": 23.263,
+     "text": "fold"
+    },
+    {
+     "end": 24.5,
+     "start": 24.275,
+     "text": ","
+    },
+    {
+     "end": 24.788,
+     "start": 24.7,
+     "text": "and"
+    },
+    {
+     "end": 24.875,
+     "start": 24.788,
+     "text": "the"
+    },
+    {
+     "end": 25.2,
+     "start": 24.875,
+     "text": "state"
+    },
+    {
+     "end": 25.788,
+     "start": 25.2,
+     "text": "contract"
+    },
+    {
+     "end": 26.1,
+     "start": 25.788,
+     "text": "checks"
+    },
+    {
+     "end": 26.225,
+     "start": 26.1,
+     "text": "the"
+    },
+    {
+     "end": 26.6,
+     "start": 26.225,
+     "text": "mint"
+    },
+    {
+     "end": 26.975,
+     "start": 26.6,
+     "text": "only"
+    },
+    {
+     "end": 27.163,
+     "start": 26.975,
+     "text": "under"
+    },
+    {
+     "end": 27.288,
+     "start": 27.163,
+     "text": "the"
+    },
+    {
+     "end": 27.55,
+     "start": 27.288,
+     "text": "three"
+    },
+    {
+     "end": 27.8,
+     "start": 27.55,
+     "text": "pinned"
+    },
+    {
+     "end": 29.0,
+     "start": 27.8,
+     "text": "policies"
+    },
+    {
+     "end": 29.2,
+     "start": 29.0,
+     "text": ","
+    },
+    {
+     "end": 29.65,
+     "start": 29.425,
+     "text": "so"
+    },
+    {
+     "end": 29.788,
+     "start": 29.65,
+     "text": "on"
+    },
+    {
+     "end": 29.9,
+     "start": 29.788,
+     "text": "a"
+    },
+    {
+     "end": 30.35,
+     "start": 29.9,
+     "text": "forged"
+    },
+    {
+     "end": 30.925,
+     "start": 30.35,
+     "text": "registry"
+    },
+    {
+     "end": 31.087,
+     "start": 30.925,
+     "text": "the"
+    },
+    {
+     "end": 31.5,
+     "start": 31.087,
+     "text": "honest"
+    },
+    {
+     "end": 31.85,
+     "start": 31.5,
+     "text": "witness"
+    },
+    {
+     "end": 32.35,
+     "start": 31.85,
+     "text": "policy"
+    },
+    {
+     "end": 32.5,
+     "start": 32.35,
+     "text": "is"
+    },
+    {
+     "end": 32.787,
+     "start": 32.5,
+     "text": "not"
+    },
+    {
+     "end": 33.425,
+     "start": 32.787,
+     "text": "pinned"
+    },
+    {
+     "end": 33.562,
+     "start": 33.425,
+     "text": "and"
+    },
+    {
+     "end": 33.675,
+     "start": 33.562,
+     "text": "a"
+    },
+    {
+     "end": 34.125,
+     "start": 33.675,
+     "text": "fold"
+    },
+    {
+     "end": 34.338,
+     "start": 34.125,
+     "text": "can"
+    },
+    {
+     "end": 34.588,
+     "start": 34.338,
+     "text": "mint"
+    },
+    {
+     "end": 34.8,
+     "start": 34.588,
+     "text": "under"
+    },
+    {
+     "end": 34.963,
+     "start": 34.8,
+     "text": "it"
+    },
+    {
+     "end": 36.075,
+     "start": 34.963,
+     "text": "freely"
+    },
+    {
+     "end": 36.3,
+     "start": 36.075,
+     "text": "."
+    },
+    {
+     "end": 36.588,
+     "start": 36.5,
+     "text": "A"
+    },
+    {
+     "end": 36.975,
+     "start": 36.588,
+     "text": "fold"
+    },
+    {
+     "end": 37.188,
+     "start": 36.975,
+     "text": "that"
+    },
+    {
+     "end": 37.525,
+     "start": 37.188,
+     "text": "mints"
+    },
+    {
+     "end": 37.737,
+     "start": 37.525,
+     "text": "under"
+    },
+    {
+     "end": 37.9,
+     "start": 37.737,
+     "text": "the"
+    },
+    {
+     "end": 38.338,
+     "start": 37.9,
+     "text": "honest"
+    },
+    {
+     "end": 38.725,
+     "start": 38.338,
+     "text": "active"
+    },
+    {
+     "end": 39.362,
+     "start": 38.725,
+     "text": "policy"
+    },
+    {
+     "end": 39.763,
+     "start": 39.362,
+     "text": "instead"
+    },
+    {
+     "end": 39.838,
+     "start": 39.763,
+     "text": "of"
+    },
+    {
+     "end": 39.938,
+     "start": 39.838,
+     "text": "the"
+    },
+    {
+     "end": 40.325,
+     "start": 39.938,
+     "text": "pinned"
+    },
+    {
+     "end": 40.688,
+     "start": 40.325,
+     "text": "one"
+    },
+    {
+     "end": 40.85,
+     "start": 40.688,
+     "text": "is"
+    },
+    {
+     "end": 41.5,
+     "start": 40.85,
+     "text": "refused"
+    },
+    {
+     "end": 41.675,
+     "start": 41.5,
+     "text": "by"
+    },
+    {
+     "end": 41.775,
+     "start": 41.675,
+     "text": "the"
+    },
+    {
+     "end": 42.125,
+     "start": 41.775,
+     "text": "state"
+    },
+    {
+     "end": 43.175,
+     "start": 42.125,
+     "text": "script"
+    },
+    {
+     "end": 43.4,
+     "start": 43.175,
+     "text": "."
+    }
+   ]
+  },
+  "specs-protocol-spec/the-forged-registry-run-on-a-development-network-04": {
+   "audio_sha256": "4d982faa45462109c47e85760d9bebb7e39ccf8dfe70b690339f20ffdc0903b8",
+   "characters": 461,
+   "cost": 0.00045639,
+   "duration": 28.875,
+   "index": 4,
+   "key": "5af474b6cadb3fb80cd6accdb91dd0a0ea7c55f00e8025bb6f550abbe88ff28b",
+   "page": "specs/protocol/spec.md",
+   "pause_ms": 400,
+   "section": "the-forged-registry-run-on-a-development-network",
+   "sent_text": "The second is the check that makes one comparison per command enough. A fold that swaps the active policy in the new state datum for the always-true script is refused by the node, which names the state script as the script that failed it, and the same fold without the swap is accepted. The deployed scripts carry no trace, so the node's answer names the failing script and not the check. The contract's own tests of that alteration name the check pins-altered.",
+   "text": "The second is the check that makes one comparison per command enough. A fold that swaps the active policy in the new state datum for the always-true script is refused by the node, which names the state script as the script that failed it, and the same fold without the swap is accepted. The deployed scripts carry no trace, so the node's answer names the failing script and not the check. The contract's own tests of that alteration name the check pins-altered.",
+   "words": [
+    {
+     "end": 0.287,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.725,
+     "start": 0.287,
+     "text": "second"
+    },
+    {
+     "end": 0.875,
+     "start": 0.725,
+     "text": "is"
+    },
+    {
+     "end": 1.025,
+     "start": 0.875,
+     "text": "the"
+    },
+    {
+     "end": 1.45,
+     "start": 1.025,
+     "text": "check"
+    },
+    {
+     "end": 1.6,
+     "start": 1.45,
+     "text": "that"
+    },
+    {
+     "end": 1.888,
+     "start": 1.6,
+     "text": "makes"
+    },
+    {
+     "end": 2.15,
+     "start": 1.888,
+     "text": "one"
+    },
+    {
+     "end": 2.825,
+     "start": 2.15,
+     "text": "comparison"
+    },
+    {
+     "end": 3.0,
+     "start": 2.825,
+     "text": "per"
+    },
+    {
+     "end": 3.362,
+     "start": 3.0,
+     "text": "command"
+    },
+    {
+     "end": 4.225,
+     "start": 3.362,
+     "text": "enough"
+    },
+    {
+     "end": 4.425,
+     "start": 4.225,
+     "text": "."
+    },
+    {
+     "end": 4.713,
+     "start": 4.625,
+     "text": "A"
+    },
+    {
+     "end": 5.1,
+     "start": 4.713,
+     "text": "fold"
+    },
+    {
+     "end": 5.312,
+     "start": 5.1,
+     "text": "that"
+    },
+    {
+     "end": 5.713,
+     "start": 5.312,
+     "text": "swaps"
+    },
+    {
+     "end": 5.863,
+     "start": 5.713,
+     "text": "the"
+    },
+    {
+     "end": 6.25,
+     "start": 5.863,
+     "text": "active"
+    },
+    {
+     "end": 6.8,
+     "start": 6.25,
+     "text": "policy"
+    },
+    {
+     "end": 6.887,
+     "start": 6.8,
+     "text": "in"
+    },
+    {
+     "end": 7.012,
+     "start": 6.887,
+     "text": "the"
+    },
+    {
+     "end": 7.238,
+     "start": 7.012,
+     "text": "new"
+    },
+    {
+     "end": 7.575,
+     "start": 7.238,
+     "text": "state"
+    },
+    {
+     "end": 8.163,
+     "start": 7.575,
+     "text": "datum"
+    },
+    {
+     "end": 8.288,
+     "start": 8.163,
+     "text": "for"
+    },
+    {
+     "end": 8.438,
+     "start": 8.288,
+     "text": "the"
+    },
+    {
+     "end": 9.113,
+     "start": 8.438,
+     "text": "always-true"
+    },
+    {
+     "end": 9.562,
+     "start": 9.113,
+     "text": "script"
+    },
+    {
+     "end": 9.725,
+     "start": 9.562,
+     "text": "is"
+    },
+    {
+     "end": 10.325,
+     "start": 9.725,
+     "text": "refused"
+    },
+    {
+     "end": 10.5,
+     "start": 10.325,
+     "text": "by"
+    },
+    {
+     "end": 10.625,
+     "start": 10.5,
+     "text": "the"
+    },
+    {
+     "end": 11.625,
+     "start": 10.625,
+     "text": "node"
+    },
+    {
+     "end": 11.85,
+     "start": 11.625,
+     "text": ","
+    },
+    {
+     "end": 12.2,
+     "start": 12.025,
+     "text": "which"
+    },
+    {
+     "end": 12.488,
+     "start": 12.2,
+     "text": "names"
+    },
+    {
+     "end": 12.575,
+     "start": 12.488,
+     "text": "the"
+    },
+    {
+     "end": 12.9,
+     "start": 12.575,
+     "text": "state"
+    },
+    {
+     "end": 13.288,
+     "start": 12.9,
+     "text": "script"
+    },
+    {
+     "end": 13.438,
+     "start": 13.288,
+     "text": "as"
+    },
+    {
+     "end": 13.525,
+     "start": 13.438,
+     "text": "the"
+    },
+    {
+     "end": 13.863,
+     "start": 13.525,
+     "text": "script"
+    },
+    {
+     "end": 14.0,
+     "start": 13.863,
+     "text": "that"
+    },
+    {
+     "end": 14.325,
+     "start": 14.0,
+     "text": "failed"
+    },
+    {
+     "end": 14.9,
+     "start": 14.325,
+     "text": "it"
+    },
+    {
+     "end": 15.1,
+     "start": 14.9,
+     "text": ","
+    },
+    {
+     "end": 15.363,
+     "start": 15.275,
+     "text": "and"
+    },
+    {
+     "end": 15.45,
+     "start": 15.363,
+     "text": "the"
+    },
+    {
+     "end": 15.738,
+     "start": 15.45,
+     "text": "same"
+    },
+    {
+     "end": 16.087,
+     "start": 15.738,
+     "text": "fold"
+    },
+    {
+     "end": 16.337,
+     "start": 16.087,
+     "text": "without"
+    },
+    {
+     "end": 16.425,
+     "start": 16.337,
+     "text": "the"
+    },
+    {
+     "end": 16.712,
+     "start": 16.425,
+     "text": "swap"
+    },
+    {
+     "end": 16.825,
+     "start": 16.712,
+     "text": "is"
+    },
+    {
+     "end": 17.8,
+     "start": 16.825,
+     "text": "accepted"
+    },
+    {
+     "end": 18.0,
+     "start": 17.8,
+     "text": "."
+    },
+    {
+     "end": 18.275,
+     "start": 18.2,
+     "text": "The"
+    },
+    {
+     "end": 18.7,
+     "start": 18.275,
+     "text": "deployed"
+    },
+    {
+     "end": 19.125,
+     "start": 18.7,
+     "text": "scripts"
+    },
+    {
+     "end": 19.45,
+     "start": 19.125,
+     "text": "carry"
+    },
+    {
+     "end": 19.638,
+     "start": 19.45,
+     "text": "no"
+    },
+    {
+     "end": 20.175,
+     "start": 19.638,
+     "text": "trace"
+    },
+    {
+     "end": 20.25,
+     "start": 20.175,
+     "text": ","
+    },
+    {
+     "end": 20.425,
+     "start": 20.25,
+     "text": "so"
+    },
+    {
+     "end": 20.55,
+     "start": 20.425,
+     "text": "the"
+    },
+    {
+     "end": 20.925,
+     "start": 20.55,
+     "text": "node's"
+    },
+    {
+     "end": 21.325,
+     "start": 20.925,
+     "text": "answer"
+    },
+    {
+     "end": 21.612,
+     "start": 21.325,
+     "text": "names"
+    },
+    {
+     "end": 21.712,
+     "start": 21.612,
+     "text": "the"
+    },
+    {
+     "end": 22.15,
+     "start": 21.712,
+     "text": "failing"
+    },
+    {
+     "end": 22.6,
+     "start": 22.15,
+     "text": "script"
+    },
+    {
+     "end": 22.725,
+     "start": 22.6,
+     "text": "and"
+    },
+    {
+     "end": 22.938,
+     "start": 22.725,
+     "text": "not"
+    },
+    {
+     "end": 23.038,
+     "start": 22.938,
+     "text": "the"
+    },
+    {
+     "end": 23.95,
+     "start": 23.038,
+     "text": "check"
+    },
+    {
+     "end": 24.175,
+     "start": 23.95,
+     "text": "."
+    },
+    {
+     "end": 24.425,
+     "start": 24.35,
+     "text": "The"
+    },
+    {
+     "end": 25.0,
+     "start": 24.425,
+     "text": "contract's"
+    },
+    {
+     "end": 25.212,
+     "start": 25.0,
+     "text": "own"
+    },
+    {
+     "end": 25.587,
+     "start": 25.212,
+     "text": "tests"
+    },
+    {
+     "end": 25.675,
+     "start": 25.587,
+     "text": "of"
+    },
+    {
+     "end": 25.925,
+     "start": 25.675,
+     "text": "that"
+    },
+    {
+     "end": 26.825,
+     "start": 25.925,
+     "text": "alteration"
+    },
+    {
+     "end": 27.087,
+     "start": 26.825,
+     "text": "name"
+    },
+    {
+     "end": 27.188,
+     "start": 27.087,
+     "text": "the"
+    },
+    {
+     "end": 27.45,
+     "start": 27.188,
+     "text": "check"
+    },
+    {
+     "end": 28.675,
+     "start": 27.45,
+     "text": "pins-altered"
+    },
+    {
+     "end": 28.875,
+     "start": 28.675,
+     "text": "."
+    }
+   ]
+  },
   "specs-protocol-spec/update-and-delete-application-authorization-00": {
    "audio_sha256": "5e4b57402601b312503d16a9729ecd6601df3c74989769c4f44c4dd9b3503905",
    "characters": 44,
