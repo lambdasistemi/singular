@@ -16,6 +16,8 @@ The [authority binding](authority.md) fixes the accepted root and application re
 
 **Decision needed:** Establish a cross-policy exclusion rule, bind the application/policy into the registry name, or retain complete identity in approval binding. Recommendation: retain the complete identity until an accepted law rules out the same-transaction case. Do not infer global uniqueness from the narrower history rule.
 
+**Ruling (22 October 2026):** approvals bind the complete registry asset identity, policy ID and token name; see [decisions.md](decisions.md). The candidate must still state and establish the separation under explicit premises.
+
 ## What authenticates a state when witnesses share its policy?
 
 **Actor and goal:** As a folder, I want a genuine witness with a fabricated state datum to remain a witness rather than become a second registry state.
@@ -51,6 +53,8 @@ The [authority binding](authority.md) fixes the accepted root and application re
 **Evidence and limits:** The bound booking functions, world supply theorem, application locked-booking theorem and atomic-release theorem express these different sequences. Both baseline suites pass their own models. Neither proves their composition or a rewritten application release condition. This is a consumer-model conflict, not failing execution of either isolated suite.
 
 **Decision needed:** Rule on the allowed release path and controller/deposit obligations, or explicitly revise the pending-custody sequence and its economics. Recommendation: preserve both existing requirements pending that ruling; do not weaken either model to make the proposal pass.
+
+**Ruling (22 October 2026):** termination booking moves the genuine token from application custody into the request, where the later fold burns it; see [decisions.md](decisions.md). Reconciling the application model follows its own statement and audit stage.
 
 ## Where do the cost and booking-width requirements live?
 

@@ -37,6 +37,10 @@
     {
       "text": "Decision needed: Establish a cross-policy exclusion rule, bind the application/policy into the registry name, or retain complete identity in approval binding. Recommendation: retain the complete identity until an accepted law rules out the same-transaction case. Do not infer global uniqueness from the narrower history rule.",
       "pause": 400
+    },
+    {
+      "text": "Ruling, 22 October 2026: approvals bind the complete registry asset identity, policy ID and token name; see decisions.md. The candidate must still state and establish the separation under explicit premises.",
+      "pause": 400
     }
   ],
   "what-authenticates-a-state-when-witnesses-share-its-policy": [
@@ -114,6 +118,10 @@
     },
     {
       "text": "Decision needed: Rule on the allowed release path and controller/deposit obligations, or explicitly revise the pending-custody sequence and its economics. Recommendation: preserve both existing requirements pending that ruling; do not weaken either model to make the proposal pass.",
+      "pause": 400
+    },
+    {
+      "text": "Ruling, 22 October 2026: termination booking moves the genuine token from application custody into the request, where the later fold burns it; see decisions.md. Reconciling the application model follows its own statement and audit stage.",
       "pause": 400
     }
   ],
@@ -197,6 +205,6 @@
   ],
   "_source": {
     "file": "questions.md",
-    "sha256": "918d54cab68b0c2eaeec1669037f6c6ec281e2e005ffbac2cf63c23309fbf39a"
+    "sha256": "1a6f6da07d9f4f4c496f00c0d93a0e9d758e1bb041e140b1a09ad567fd62f025"
   }
 }
