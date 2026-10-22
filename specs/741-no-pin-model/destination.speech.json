@@ -1,0 +1,236 @@
+{
+  "authenticate-the-destination-of-a-pending-termination": [
+    {
+      "text": "Authenticate the destination of a pending termination.",
+      "pause": 500
+    },
+    {
+      "text": "As a controller, I want to move my genuine token into a termination request that will enforce this registry's permanent retirement rules. As a reader, I want that pending custody to mean more than a token sent to somebody's chosen address.",
+      "pause": 400
+    }
+  ],
+  "finding-and-evidence-boundary": [
+    {
+      "text": "Finding and evidence boundary.",
+      "pause": 500
+    },
+    {
+      "text": "Committing the request destination in the witness asset name can preserve an already authenticated destination without a script-parameter cycle. It does not authenticate the initial choice. The accepted contracts do not perform that proposed initial check, and the enriched proposal leaves the on-chain derivation of the applied request credential unavailable. A conditional construction is set out below with that precise missing premise. Application-to-request transfer remains held; this investigation adopts no release rule or encoding.",
+      "pause": 400
+    },
+    {
+      "text": "All accepted source facts below bind commit 00771d77af996605845cf062285263909a049cf8; the line-and-quote register at the end makes their extent explicit. These are source readings and dependency arguments. No new Lean statement, script evaluation, transaction submission, connected lifecycle or implementation acceptance is reported. The separate hypothetical identity model has no destination commitment yet.",
+      "pause": 400
+    },
+    {
+      "text": "The enriched epic proposal was read on 22 October 2026, at updatedAt 2026-10-22T09:38:04Z. Its retained text says that request remains applied to state policy and registry asset name, that state never computes its hash, and that the application becomes shared per release. Those statements are proposal inputs. The recorded decisions require complete registry identity and request custody at termination booking, with destination authentication still open. The proposal's burn-only application release conflicts with that custody sequence and cannot silently supply its replacement.",
+      "pause": 400
+    }
+  ],
+  "three-names-and-two-spending-credentials": [
+    {
+      "text": "Three names and two spending credentials.",
+      "pause": 500
+    },
+    {
+      "text": "Let A be the application policy and application spending hash, S the state policy and state spending hash, N the registry state token name, K the logical registry key, and R the request spending credential. The complete registry asset is (S,N). In the enriched dependency order, S is derived from A, N from a seed, and R from the request release's compiled program applied to (S,N). State and request have different spending credentials even though request authenticates that registry's state token.",
+      "pause": 400
+    },
+    {
+      "text": "W is the witness token asset name. The proposed extension is W = H(encode(witness role, S, N, K, R, address scope, release scope)). Its policy is S in the enriched proposal, whereas the accepted active witness is under a separate pinned policy and its asset name is the raw key. K retains its user meaning; W and N are separate derived names. A termination request's destination field is also distinct from the address at which the request itself is locked. The legacy application termination names no delivered destination; that says nothing about the pending request's spending credential.",
+      "pause": 400
+    },
+    {
+      "text": "A full address commitment must specify network context and any stake credential, or explicitly commit only the payment credential and separately constrain the allowed address forms. Encoding, release/version domain and this address scope are unresolved. Merely calling both addresses Singular would erase the check being investigated.",
+      "pause": 400
+    },
+    {
+      "text": "The state credential authenticates the state input; the separately derived request credential locks the pending token. The arrow from registry identity to request is parameter application and script hashing, not an operation that the accepted state script already performs.",
+      "pause": 400
+    }
+  ],
+  "which-credential-checks-what": [
+    {
+      "text": "Which credential checks what.",
+      "pause": 500
+    },
+    {
+      "text": "The source register identifies the complete handlers and the decisive lines. The following table distinguishes booking from the later fold; transferring an existing asset runs no minting policy by itself.",
+      "pause": 400
+    },
+    {
+      "text": "The accepted application Control has no request credential. Its immutability is useful only after a field's correct initial value is established. The registration check authenticates the application delivery address using the mint handler's own policy_id; it does not compute the separate request credential. bookedRequest checks an approval carrier's inline datum and quantity without checking that carrier's address. Termination's bookTerminate does not call that carrier selection at all. These narrower existing checks must not be described as authentication of the proposed pending destination.",
+      "pause": 400
+    }
+  ],
+  "the-missing-booking-predicate": [
+    {
+      "text": "The missing booking predicate.",
+      "pause": 500
+    },
+    {
+      "text": "In the model's vocabulary, take a genuine application holding h for registry configuration c and logical key K, a termination request r and its observed booking b. A future application release judgement needs all of the following together:",
+      "pause": 400
+    },
+    {
+      "text": "The spent h is the genuine holding for the complete registry asset (S,N), witness role and K, with the protected controller authorization and the ruled treatment of its deposit. Reading controller data from an arbitrary fabricated holding is not genuine-origin evidence.",
+      "pause": 300
+    },
+    {
+      "text": "The request credential R is authenticated as the hash of this release's request program applied to exactly (S,N). This must come from an executed check or authenticated prior record whose creation checked it; a caller's supplied address is insufficient.",
+      "pause": 300
+    },
+    {
+      "text": "One identified output carries exactly the spent genuine witness at quantity one, at the permitted address whose payment credential is R. No other output carries that witness, and its net mint is zero at booking. The witness name/preimage agrees on role, complete registry, K and R.",
+      "pause": 300
+    },
+    {
+      "text": "That same output carries the exact request datum r, including registry, key, request reference/nonce and declared allocations in their eventual concrete representation. Its singularTags equal [c.singularTag K], its trieReadyTags equal [r.trieReadyTag c], and applicationTags, otherAssets, refundAddress and submittedAt have the ruled empty/absent forms. Its lovelace equals declaredTip plus carrierAda and the tip meets the floor.",
+      "pause": 300
+    },
+    {
+      "text": "The bound trie-ready tag is freshly minted with this booking; custodyInputs match the one actual active holding removed from application custody. The observing layer binds these records to the very output and spent input, rather than accepting them as independent claims. All unrelated protected assets and deposit duties require their own preserved disposition.",
+      "pause": 300
+    },
+    {
+      "text": "These are requirements for a future judgement, not a Lean declaration introduced by this slice. terminationBookingRefusal already checks the abstract tuple, contents, fresh-tag list, active leaf and actual custody equality. bookTermination moves the holding to the pending pool. TerminationBooking has no general ledger transaction, concrete address or script evaluation; its source comment expressly excludes application release execution. Thus the missing predicate is the conjunction of those existing content/custody checks with authenticated R, exact same-output placement, controller/deposit composition and concrete invocation evidence. No amount of renaming r.destination supplies it.",
+      "pause": 400
+    }
+  ],
+  "a-counterfeit-destination-transaction": [
+    {
+      "text": "A counterfeit destination transaction.",
+      "pause": 500
+    },
+    {
+      "text": "Start with a reachable active key K and its one genuine witness in an application holding controlled by C. A transaction T spends that holding and ordinary fee funding, is signed by C, and puts the same one witness in an output at C's wallet or an attacker validator X. Give that output a plausible termination datum if desired. T burns nothing and need not spend state or any existing request. Ordinary value conservation permits the shape; that observation is not a ledger acceptance receipt.",
+      "pause": 400
+    },
+    {
+      "text": "Under the accepted application, Update refuses the changed address and Release refuses release-no-fold before a burn is even considered. If an actual fold is added while the witness still leaves unburned, release-burn and the state's termination mint accounting also refuse. A current positive BookTerminate approval cannot rescue T: its holding is a reference input, whereas T spends it, and its approval branch does not authorize application Release. The accepted Lean application booking also retains the holding. This investigation therefore supplies no exploit of the accepted release rule.",
+      "pause": 400
+    },
+    {
+      "text": "Under a hypothetical replacement that releases on controller signature plus seeing a genuine token or an existing approval, T passes those local conditions and can redirect custody. That is a logical counterexample to the proposed weak predicate; no rewritten validator was executed. Under the original epic burn-only replacement it still fails, because T burns nothing, but so does the desired authentic request transfer. Neither weak presence checking nor burn-only checking meets the recorded custody ruling.",
+      "pause": 400
+    },
+    {
+      "text": "In the enriched variant the attacker may try to mint a trie-ready tag under S. That invokes S's proposed mint branch. If that branch enforces the missing predicate, it rejects X; if it checks only a token and supplied address, the counterfeit remains. Its specification and execution are still owed, so neither outcome is claimed as an observed result.",
+      "pause": 400
+    }
+  ],
+  "first-construction-commit-the-destination-in-the-witness-name": [
+    {
+      "text": "First construction: commit the destination in the witness name.",
+      "pause": 500
+    },
+    {
+      "text": "This is the operator's proposal, investigated first. Keep K unchanged. Compute the request credential R after S and N, then mint witness (S,W), with W committing to role, complete registry, K and R under a release-specific unambiguous encoding. At booking the application consumes the genuine holding, obtains the preimage, recomputes W and demands the exact witness at an output with credential R and the complete request contents above. The application's spend executes because its holding is spent; its check must select the output by that exact asset and verify quantity and datum there. The original witness policy need not execute at this transfer.",
+      "pause": 400
+    },
+    {
+      "text": "This order has no parameter cycle: W is an asset name derived after the scripts, not a parameter to R or S. It does require an initial authentication premise. At registration's witness mint the shared state policy would have to check R against the real applied request program, or rely on a separately authenticated registration record. The accepted state has no such branch. The accepted application BookInsert checks its own application delivery address, active-policy pin and envelope binding, not R. The enriched issue explicitly avoids state computing the applied request hash. Consequently a supplied R hashed faithfully into W is not a solution: an attacker could mint a perfectly matching commitment to X unless the new mint/registration admission first excludes X.",
+      "pause": 400
+    },
+    {
+      "text": "A concrete conditional construction is therefore: an authenticated registration record binds (release, S, N, K, R); the witness mint verifies that record and exact witness name; application release verifies the preimage and same-output booking predicate. Its unresolved trust boundary is creation and authentication of that record and recognition of its issuer; it is not provided by the accepted registration model. Alternatively implement a concrete verifier of request-script parameter application and script hashing within the invoked mint/registration check. The off-chain applyRequestParams function shows an actual derivation path for builders, not a primitive available to either Aiken handler. Calling the derivation an abstract expectedRequestCredential oracle leaves byte/application/hash correspondence and cost unproved. No such oracle is assumed to be implemented here.",
+      "pause": 400
+    },
+    {
+      "text": "The supplied preimage must not control its own expected policy or registry. Release must tie it to the genuine input asset and authenticated registration binding; otherwise an attacker-controlled issuer can attest to itself. Commitments over finite hashes require an explicit finite occurring-domain separation premise and distinct role domains; canonical encoding must be injective on that domain independently. They are not unconditional hash injectivity claims.",
+      "pause": 400
+    },
+    {
+      "text": "A reader given state address and K additionally needs N, the identified request release and the committed address scope to derive R and W. If that release mapping and the public parameter application are authenticated, off-chain derivation can compute them in order. Otherwise the reader must obtain the registration's authenticated R/preimage; it cannot derive W from K alone or accept an arbitrary supplied destination. A negative lookup still cannot distinguish pending, terminal, never registered and unavailable evidence.",
+      "pause": 400
+    }
+  ],
+  "committing-in-the-state-name-fails-this-dependency-order": [
+    {
+      "text": "Committing in the state name fails this dependency order.",
+      "pause": 500
+    },
+    {
+      "text": "If N instead commits to R, then R still depends on N through request(S,N). This introduces a cycle before any booking check executes. A hash is not a method for solving that fixed-point equation; no such construction is supplied. Adding R as an application parameter also cycles through A, S and R under state(A).",
+      "pause": 400
+    },
+    {
+      "text": "The same state name would be both an input of request derivation and its output's commitment. This candidate fails without changing the request dependency or introducing a separately authenticated earlier identity. Such a redesign is outside the recorded proposal. Directly pinning R in the application has the analogous A to S to R to A cycle and is not adopted.",
+      "pause": 400
+    }
+  ],
+  "committing-in-the-logical-key-needs-a-different-reader-contract": [
+    {
+      "text": "Committing in the logical key needs a different reader contract.",
+      "pause": 500
+    },
+    {
+      "text": "In the present proposal R depends on S and N, not K, so deriving a new trie key Kprime = H(encode(K,R)) afterwards has no immediate parameter cycle. If request were specialized by Kprime, the edge back to request would make it circular. The accepted request signature confirms it is not currently key-parameterized.",
+      "pause": 400
+    },
+    {
+      "text": "This still needs initial R authentication. It also changes the meaning of the key used by the trie, proofs, approvals, raw-key witness names and direct external lookup. A caller's user key K must remain recoverable as the logical key with an explicit mapping and collision premise; replacing K silently would violate this commission. No key-dependent script parameter or altered external key contract is authorized. Keep the commitment in W for the conditional candidate.",
+      "pause": 400
+    }
+  ],
+  "protected-control-can-preserve-an-authenticated-destination": [
+    {
+      "text": "Protected control can preserve an authenticated destination.",
+      "pause": 500
+    },
+    {
+      "text": "Extend the protected Control with (release, complete registry, K, R, address scope) at registration, then preserve those fields under payload updates. At booking its application spend compares the exact outgoing carrier and request datum to those fields. Existing validUpdate shows how immutable control can be preserved; the accepted Control contains no R. Adding a field alone authenticates nothing about the first value written there.",
+      "pause": 400
+    },
+    {
+      "text": "This is acyclic if R remains datum content rather than an application script parameter, and if S and N are derived first as above. At initial registration the mint/registration check must validate that control's R is the authentic applied request credential using the same missing derivation or trust anchor. At booking the application spend really executes, evidenced by the spent holding, so it can enforce exact token/registry/K/datum/quantities/destination after that premise is supplied. Current update immutability protects an authenticated value over time; neither a copied envelope nor a fresh envelope chosen by the controller establishes its initial correctness. This is conditional on initial admission, with no demonstrated accepted-base implementation.",
+      "pause": 400
+    }
+  ],
+  "a-policy-validated-booking-artifact-needs-a-trusted-executing-issuer": [
+    {
+      "text": "A policy-validated booking artifact needs a trusted executing issuer.",
+      "pause": 500
+    },
+    {
+      "text": "A possible artifact policy B is derived after the authentic R and complete registry identity. It mints a fresh certificate whose payload binds the exact spent holding reference, witness asset, registry, K, nonce, full termination datum, quantities and destination output. The application spend must require a positive mint of the exact certificate under the authenticated B in this transaction, rather than a previously minted certificate or redeemer entry. B's mint handler must inspect that same output and input. If it refuses a wrong destination, transaction acceptance requires that refusal to hold; a mere presence test is insufficient.",
+      "pause": 400
+    },
+    {
+      "text": "This graph is acyclic only if the application's script does not embed the later B: it must obtain B from an authenticated earlier control record or verify a concrete derivation. An attacker-supplied B can always certify X. Existing protected data does not contain B or R, so that authentication is new debt. Committing B in W also remains acyclic if B does not depend on W's final name; requiring B to take W as a parameter and W to commit B would add a cycle. Runtime checking W against B's already-bound registry/role/K/R tuple avoids that particular cycle, but still needs issuer authenticity.",
+      "pause": 400
+    },
+    {
+      "text": "The existing economic trie-ready tag is the natural place to investigate this booking check rather than adding a second persistent tag. Fresh tag mint supplies an invocation trigger, not the missing expected R. Under the shared-policy proposal S can check the witnessed R commitment only if registration authenticated it; deriving R remains the same missing operation. Its exact tag naming must retain operation payload and nonce, not just the simplified identity-stage registry/role/key tuple. Minting an extra economic application tag at termination contradicts the accepted empty applicationTags condition and is not adopted. A one-shot certificate spent at booking would instead execute a spending validator; a reusable reference or copied tag would execute neither. Each alternative still needs authenticated issuer identity and exact output binding.",
+      "pause": 400
+    }
+  ],
+  "decision-and-next-evidence": [
+    {
+      "text": "Decision and next evidence.",
+      "pause": 500
+    },
+    {
+      "text": "The conditional witness-name construction has the cleanest dependency order while preserving user keys. Protected control can carry the same binding. A fresh booking artifact can enforce the binding when its issuer is authenticated and actually invoked. None of the available checks yet authenticates the initial expected R under the enriched shared application's real capability constraints. These are conditional constructions and identified failure cases, not an impossibility theorem or an approved design.",
+      "pause": 400
+    },
+    {
+      "text": "The next ruling must choose a concrete authenticated initial registration/issuer premise, or authorize implementation and proof of an on-chain derivation verifier, or change request identity/dependencies. Then freeze exact encoding/address scope, statement and inversion obligations, controller/deposit composition and full token accounting before accepted-law changes. Keep transfer acceptance held until that choice is modeled and independently audited. The open question remains the decision entry point.",
+      "pause": 400
+    }
+  ],
+  "revision-bound-source-register": [
+    {
+      "text": "Revision-bound source register.",
+      "pause": 500
+    },
+    {
+      "text": "Each row links the exact accepted source line and quotes that line verbatim after trimming indentation. The surrounding handler, read in this investigation, determines its meaning; matching the quote checks citation integrity only. Missing guards are findings over the named handler/record extent, never behavioral test results.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "destination.md",
+    "sha256": "af622fd26cc6916c8f3e450c961ac2a52021d32b3c031e7248cdfab1549d49b0"
+  }
+}
