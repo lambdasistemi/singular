@@ -5,8 +5,14 @@ License     : Apache-2.0
 
 Two deliberate refusals: retirement of an already terminal key in the story
 registry, and retirement of an unknown key in its own registry. Each has an
-active-key accepting control in the same registry. Absent leaves are unreachable
-from M1 genesis; synthetic absent refusals remain compiled-context controls.
+active-key accepting control in the same registry. Under the tagged law a
+termination is booked out of the custody that holds the key's witness, so a
+key that is terminal or was never inserted has no custody to book against:
+the refusal is the booking builder's, before any transaction is built, and
+the observation says so. The request policy's own refusal of a booking that
+spends no custody is established over its compiled bytes in the builder's
+rows, and its refusals of forged bookings by the negative host. Absent leaves
+are unreachable from M1 genesis.
 -}
 module UpdateTerminal.Controls
     ( unknownKey
@@ -27,9 +33,9 @@ import Singular.Registry.Wait (tryOutcome)
 import UpdateTerminal.Narration (die, hex, say)
 import UpdateTerminal.Registry
     ( Registry
-    , book
+    , bookInsert
+    , bookRetire
     , foldAndMirror
-    , foldInadmissible
     , insertOp
     , retireOp
     , txIdOf
@@ -46,15 +52,19 @@ controlKey = "update-terminal-demo-control"
 unknownKey :: ByteString
 unknownKey = "update-terminal-demo-unknown"
 
--- | The story key has already been permanently retired.
+{- | The story key has already been permanently retired: its witness is gone,
+so no wallet output holds it and the termination booking has no custody to
+spend. The refusal is the booking builder's, before any transaction exists;
+the request policy's own refusal of a booking that spends no custody is
+established over its compiled bytes, not here.
+-}
 terminalRefusal :: Registry -> IO String
 terminalRefusal story = do
-    book story storyKey retireOp
-    outcome <- tryOutcome (foldInadmissible story)
+    outcome <- tryOutcome (bookRetire story storyKey)
     detail <- case outcome of
-        Right _ -> die "the fold ACCEPTED retirement of an already terminal key"
+        Right _ -> die "a termination of an already terminal key was BOOKED"
         Left e -> pure (displayException e)
-    say "an already terminal key: REFUSED"
+    say "an already terminal key: no booking can be built"
     pure detail
 
 -- | The Unknown leg: its accepting control's txid and the refusal text.
@@ -66,11 +76,14 @@ data UnknownLeg = UnknownLeg
 -- | Retire an active control key, then require an unknown key refused.
 unknownRefusal :: Registry -> IO UnknownLeg
 unknownRefusal reg = do
-    book reg controlKey insertOp
+    _ <- bookInsert reg controlKey
     _ <- foldAndMirror reg controlKey insertOp
-    book reg controlKey retireOp
     controlOutcome <-
-        tryOutcome (foldAndMirror reg controlKey retireOp)
+        tryOutcome
+            ( do
+                _ <- bookRetire reg controlKey
+                foldAndMirror reg controlKey retireOp
+            )
     controlTxid <- case controlOutcome of
         Right tx -> pure (hex (txIdOf tx))
         Left e ->
@@ -79,15 +92,13 @@ unknownRefusal reg = do
                   \the refusal below would prove nothing about the leaf: "
                     <> displayException e
                 )
-    book reg unknownKey retireOp
-    unknownOutcome <- tryOutcome (foldInadmissible reg)
+    unknownOutcome <- tryOutcome (bookRetire reg unknownKey)
     detail <- case unknownOutcome of
         Right _ ->
             die
-                "the fold ACCEPTED updateTerminal on a key the trie does not \
-                \bind — reported, not relabelled"
+                "a termination of a key the trie does not bind was BOOKED"
         Left e -> pure (displayException e)
-    say "a key the trie does not bind: REFUSED"
+    say "a key the trie does not bind: no booking can be built"
     pure (UnknownLeg controlTxid detail)
 
 -- | The named refusal when the ledger text carries it, @null@ otherwise.

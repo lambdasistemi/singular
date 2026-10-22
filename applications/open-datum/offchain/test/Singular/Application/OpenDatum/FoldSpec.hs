@@ -46,7 +46,6 @@ import Cardano.Ledger.Mary.Value
     )
 import PlutusCore.Data qualified as PLC
 
-import PlutusTx.Builtins.Internal (BuiltinByteString (..))
 import Singular.Application.OpenDatum.Envelope
     ( Control (..)
     , Envelope (..)
@@ -81,18 +80,6 @@ import Singular.Registry.TxBuilder.Internal
     , policyIdFromPin
     , txInToRef
     )
-import Singular.Registry.Types
-    ( OnChainRequest (..)
-    , OnChainTokenId (..)
-    , edgeDeleteAbsent
-    , edgeDeleteActive
-    , edgeInsertAbsent
-    , edgeInsertActive
-    , edgeName
-    , edgeUpdateActive
-    , edgeUpdateTerminal
-    , edgeWitnessTerminal
-    )
 
 spec :: Spec
 spec = describe "registry fold" $ do
@@ -100,7 +87,6 @@ spec = describe "registry fold" $ do
     postBuild
     postBuildDecisions
     boundTimes
-    kinds
     funding
     carried
     neutralFold
@@ -293,29 +279,6 @@ postBuild = describe "the built fold's validity bound" $ do
                 `shouldBe` Nothing
 
 -- ---------------------------------------------------------
--- Which edge
--- ---------------------------------------------------------
-
-kinds :: Spec
-kinds = describe "the edges a fold takes" $ do
-    it "folds an insertion to Active and a termination" $ do
-        foldKind edgeInsertActive `shouldBe` Right FoldInsertion
-        foldKind edgeUpdateTerminal `shouldBe` Right FoldTermination
-    it "refuses every other edge, naming it"
-        $ forM_
-            [ edgeInsertAbsent
-            , edgeUpdateActive
-            , edgeDeleteAbsent
-            , edgeDeleteActive
-            , edgeWitnessTerminal
-            , 7
-            , 42
-            ]
-        $ \e -> case foldKind e of
-            Left why -> why `shouldSatisfy` isInfixOf (edgeName e)
-            Right k -> expectationFailure ("edge " <> show e <> " folded as " <> show k)
-
--- ---------------------------------------------------------
 -- The envelope a booking leaves
 -- ---------------------------------------------------------
 
@@ -338,7 +301,7 @@ genPayload :: Gen PLC.Data
 genPayload = PLC.I <$> chooseInteger (-1_000_000, 1_000_000)
 
 carried :: Spec
-carried = describe "the datum an insertion's request carries" $ do
+carried = describe "the datum a registration's request carries" $ do
     it
         "is the envelope the booking wrote into the request, for any payload (open datum)"
         $ property
@@ -347,43 +310,32 @@ carried = describe "the datum an insertion's request carries" $ do
             let e = envelopeWith p
             in  checkCarriedDatum
                     openDatumApplication
-                    (requestCarrying (Just (envelopeToData e)))
-                    === Right (envelopeToData e)
+                    (Just (envelopeToData e))
+                    === Right (Just (envelopeToData e))
     it
         "is refused, by name, when the request carries no envelope (open datum)"
-        $ checkCarriedDatum openDatumApplication (requestCarrying Nothing)
+        $ checkCarriedDatum openDatumApplication Nothing
             `shouldSatisfy` either (isInfixOf "carries no envelope") (const False)
     it
         "is refused, by name, when what the request carries is not an envelope (open datum)"
         $ checkCarriedDatum
             openDatumApplication
-            (requestCarrying (Just (PLC.B "not an envelope")))
+            (Just (PLC.B "not an envelope"))
             `shouldSatisfy` either (isInfixOf "cannot be read") (const False)
     it "is the request's own datum unchanged, decoding nothing (neutral)" $
         property $
             forAll genPayload $ \p ->
-                checkCarriedDatum neutralApplication (requestCarrying (Just p))
-                    === Right p
+                checkCarriedDatum neutralApplication (Just p)
+                    === Right (Just p)
     it
         "takes a non-envelope datum unchanged without decoding it (neutral failing control)"
         $ checkCarriedDatum
             neutralApplication
-            (requestCarrying (Just (PLC.B "not an envelope")))
-            `shouldBe` Right (PLC.B "not an envelope")
-    it "is refused, by name, when the request carries no datum (neutral)" $
-        checkCarriedDatum neutralApplication (requestCarrying Nothing)
-            `shouldSatisfy` either (isInfixOf "carries no datum") (const False)
-  where
-    requestCarrying datum =
-        OnChainRequest
-            { requestToken = OnChainTokenId (BuiltinByteString "registry")
-            , requestOwner = BuiltinByteString (BS.replicate 28 0x33)
-            , requestKey = "key"
-            , requestEdge = edgeInsertActive
-            , requestDeposit = 2_000_000
-            , requestSubmittedAt = 0
-            , requestDestination = ("address", datum)
-            }
+            (Just (PLC.B "not an envelope"))
+            `shouldBe` Right (Just (PLC.B "not an envelope"))
+    it
+        "is ready when the request carries no datum: the output the fold delivers holds none (neutral)"
+        $ checkCarriedDatum neutralApplication Nothing `shouldBe` Right Nothing
 
 -- ---------------------------------------------------------
 -- Through the value: datum hashes and the neutral refusal

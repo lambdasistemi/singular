@@ -165,7 +165,7 @@ import Singular.Application.OpenDatum.Envelope
     , envelopeToData
     , envelopeVersion
     )
-import Singular.Application.OpenDatum.Release (liveEnvelope)
+import Singular.Application.OpenDatum.Holding (liveEnvelope)
 import Singular.Application.OpenDatum.Value (openDatumApplication)
 import Singular.CLI.Live
     ( Saved (..)

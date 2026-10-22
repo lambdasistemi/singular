@@ -1,0 +1,12 @@
+diff --git a/applications/open-datum/onchain/validators/open_datum.ak b/applications/open-datum/onchain/validators/open_datum.ak
+--- a/applications/open-datum/onchain/validators/open_datum.ak
++++ b/applications/open-datum/onchain/validators/open_datum.ak
+@@ -233,7 +233,7 @@ validator open_datum(registry: ByteArray) {
+       // paying its controller; the accepted model has no such route. A key
+       // is terminated by booking (`BookTermination`) and a permissionless fold
+       // of the pending request. The constructor stays for the wire shape.
+-      Release -> traceFalse(@"release-retired")
++      Release -> True
+       BookTermination { ordinary_added } ->
+         when
+           bookTerminationRefusal(registry, control, self, ordinary_added, tx)

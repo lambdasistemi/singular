@@ -91,7 +91,6 @@ import Singular.CLI.ManagedState
     )
 import Singular.CLI.Outlay
     ( Outlay (..)
-    , bookingOutlay
     , collateralOf
     , collateralOfFee
     , outlayTotal
@@ -125,10 +124,7 @@ import Singular.Registry.Ledger (ConwayEra, PParams)
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.Lifecycle (protocolFeeReserve)
 import Singular.Registry.SessionIO qualified as Cage
-import Singular.Registry.TxBuilder.Edges
-    ( bookEdgeMeasured
-    , selectFunding
-    )
+import Singular.Registry.TxBuilder.Edges (selectFunding)
 import Singular.Registry.TxBuilder.Internal (addrKeyHashBytes)
 import Singular.Registry.TxBuilder.Prepare (spendableOuts)
 import Singular.Registry.Wallet (bech32Address)
@@ -214,14 +210,14 @@ runPreview app env kind a settings addrText = do
                             insertPayload
                     refuseBooking context key BookInsert
                     (booked, envelopeJson) <-
-                        previewInsert live saved a caller payloadForInsert
+                        previewInsert v live saved a caller payloadForInsert
                     (<> [("envelope", envelopeJson)])
-                        <$> previewBooking a v live addr key booked
+                        <$> previewBooking a v live addr booked
                 KTerminate -> do
                     outs <- liveOutputs app v saved
                     refuseBooking context key BookTerminate
                     (booked, _, _) <- planTerminate live caller key outs
-                    previewBooking a v live addr key booked
+                    previewBooking a v live addr booked
                 KUpdate -> do
                     payload <- document "update needs --payload" datumFromJson
                     outs <- liveOutputs app v saved
@@ -267,12 +263,9 @@ previewBooking
     -> Cage.Session Cage.NoWitness IO
     -> Live
     -> Addr
-    -> ByteString
     -> Booked
     -> IO [(Text, Value)]
-previewBooking a v live addr key b = do
-    let s = liveSaved live
-        cfg = savedCfg s
+previewBooking a v live addr b = do
     pp <- Cage.parameters v
     walletUtxos <- Cage.outputsAt v addr
     -- Empty wallet names the retained faucet sentence (no self-payment), before
@@ -309,20 +302,8 @@ previewBooking a v live addr key b = do
     let Coin reserve = protocolFeeReserve pp (liveRefs live)
     refuseUnderfunded addr walletUtxos reserve "fold reserve"
     let refs = liveRefs live
-        measure = bookingOutlay pp refs
-        build funded =
-            bookEdgeMeasured
-                cfg
-                funded
-                addr
-                (savedToken s)
-                key
-                (bookedEdge b)
-                (bookedDestination b)
-                (bookedDeposit b)
-                (bookedApproval b)
-                refs
-                (entryFund a)
+        measure = bookedOutlay b pp refs
+        build funded = bookedBuild b funded addr
     prepared <-
         previewFunding
             "book"
@@ -357,6 +338,7 @@ previewBooking a v live addr key b = do
         "measured outlay"
     pure
         ( [ ("booking", bodyReport pp booking)
+          , ("transfer", toJSON (transferOf booking))
           , ("fold", foldBound pp live outlay)
           , ("outlay", outlayReport (entryMaxOutlay a) outlay)
           ]

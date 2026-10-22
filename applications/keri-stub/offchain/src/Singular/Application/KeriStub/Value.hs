@@ -62,10 +62,8 @@ import Singular.Registry.TxBuilder.Internal
     , scriptHashBytes
     )
 import Singular.Registry.TxBuilder.Update
-    ( HolderRelease (..)
-    , RegistryContext (..)
+    ( RegistryContext (..)
     )
-import Singular.Registry.Types (OnChainRequest (..))
 
 -- | The keri-stub application value.
 keriStubApplication :: Application
@@ -81,10 +79,8 @@ keriStubApplication =
                     { hrCheckCarried = first T.pack . checkCarried
                     , hrFindHoldings = findHoldings
                     , hrLiveOutputFor = liveOutputFor
-                    , hrReleaseOf = \applied pair ->
-                        first T.pack (releaseOf applied pair)
-                    , hrWithApplication = \applied reference live ctx ->
-                        first T.pack (withApplication applied reference live ctx)
+                    , hrWithApplication = \applied reference ctx ->
+                        first T.pack (withApplication applied reference ctx)
                     }
         }
 
@@ -121,9 +117,9 @@ holdingOf h =
             , dhPayloadJson = datumToJson (hdPayload h)
             }
 
--- | The datum an insertion's request must carry: the holding itself.
-checkCarried :: OnChainRequest -> Either String PLC.Data
-checkCarried req = case snd (requestDestination req) of
+-- | The datum a registration's request must carry: the holding itself.
+checkCarried :: Maybe PLC.Data -> Either String PLC.Data
+checkCarried carried = case carried of
     Nothing ->
         Left
             "the insertion's request carries no holding: its delivered output would hold none"
@@ -174,44 +170,31 @@ liveOutputFor cfg tid key outs =
   where
     hex = T.pack . BC.unpack . B16.encode
 
-{- | How the fold spends one live output and what it releases: the unit
-redeemer under the stub script, the protected deposit to the
-controller.
--}
-releaseOf
-    :: SBS.ShortByteString
-    -> (TxIn, TxOut ConwayEra)
-    -> Either String (TxIn, HolderRelease)
-releaseOf _applied (txIn, out) = do
-    h <- decodeHolding out
-    Right
-        ( txIn
-        , HolderRelease
-            { hrRedeemer = PLC.Constr 0 []
-            , hrScript = scriptFromBytes "keri-stub" keriStubScriptBytes
-            , hrRecipient = dhController h
-            , hrReleased = dhDeposit h
-            }
-        )
-
-{- | The fold context with the application's part added: the live outputs
-as the burn sources a termination draws from, how each is released,
-and the output carrying the stub script as a reference script, so a
-release spend resolves its script beside the registry's own
-references. Without that output the fold attaches the script instead.
+{- | The fold context with the application's part added: the stub's script, so
+that the fold of a registration finds the script the registry pins for the
+application policy when it burns the application tag, and the output carrying
+the script as a reference script when the deployment published one. A
+termination releases nothing: the custody entered its request when it was
+booked.
 -}
 withApplication
     :: SBS.ShortByteString
     -> Maybe (TxIn, TxOut ConwayEra)
-    -> [(TxIn, TxOut ConwayEra)]
     -> RegistryContext
     -> Either String RegistryContext
-withApplication _applied reference live ctx = do
-    released <-
-        Map.fromList <$> mapM (releaseOf keriStubScriptBytes) live
-    pure
+withApplication _applied reference ctx =
+    Right
         ctx
-            { rcHolderUtxos = rcHolderUtxos ctx <> live
-            , rcHolderReleases = Map.union (rcHolderReleases ctx) released
+            { rcWitnessScripts =
+                Map.insert
+                    applicationScriptKey
+                    (scriptFromBytes "keri-stub" keriStubScriptBytes)
+                    (rcWitnessScripts ctx)
             , rcRefUtxos = rcRefUtxos ctx <> maybe [] pure reference
             }
+
+{- | Where the stub's script sits among the context's witness scripts, beside
+the registry's own, which are keyed by the edge they serve.
+-}
+applicationScriptKey :: Integer
+applicationScriptKey = 100

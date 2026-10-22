@@ -25,10 +25,11 @@ module Negative.Craft
     , selectFoldRequests
     ) where
 
-import Control.Monad (foldM, unless, void)
+import Control.Monad (foldM, void)
 import Data.Bits (xor)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
+import Data.Foldable (toList)
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
 import Data.List (sortOn)
 import Data.List.NonEmpty qualified as NE
@@ -36,15 +37,22 @@ import Data.Map.Strict qualified as Map
 import Data.Ord (Down (..))
 import Data.Set (Set)
 import Data.Set qualified as Set
+import Data.Traversable (mapAccumL)
 import Data.Void (Void)
-import Lens.Micro ((&), (.~), (^.))
+import Lens.Micro (over, (%~), (&), (.~), (^.))
 
+import Cardano.Ledger.Address (Addr)
 import Cardano.Ledger.Api.PParams
     ( ppMaxBlockExUnitsL
     , ppMaxTxExUnitsL
     )
 import Cardano.Ledger.Api.Scripts.Data (Datum (..))
-import Cardano.Ledger.Api.Tx (witsTxL)
+import Cardano.Ledger.Api.Tx (bodyTxL, witsTxL)
+import Cardano.Ledger.Api.Tx.Body
+    ( outputsTxBodyL
+    , reqSignerHashesTxBodyL
+    , treasuryDonationTxBodyL
+    )
 import Cardano.Ledger.Api.Tx.Out
     ( TxOut
     , addrTxOutL
@@ -55,26 +63,26 @@ import Cardano.Ledger.Api.Tx.Out
     , valueTxOutL
     )
 import Cardano.Ledger.Api.Tx.Wits (Redeemers (..), rdmrsTxWitsL)
-import Cardano.Ledger.BaseTypes (Network (Testnet), StrictMaybe (..))
+import Cardano.Ledger.BaseTypes (StrictMaybe (..))
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Core (hashScript)
 import Cardano.Ledger.Mary.Value (MaryValue (..))
+import Cardano.Slotting.Slot (SlotNo (..))
 import Cardano.Tx.Build qualified as Tx
 import Cardano.Tx.Ledger (ConwayTx)
 import PlutusCore.Data qualified as PLC
 
 import Singular.Application.OpenDatum.Book
-    ( insertApproval
-    , insertDestination
-    , terminateApproval
-    , terminateDestination
+    ( bookTerminationRedeemer
     )
 import Singular.Application.OpenDatum.Envelope
     ( Control (..)
     , Envelope (..)
+    , envelopeFromData
     )
+import Singular.Application.OpenDatum.Holding (withApplication)
 import Singular.Application.OpenDatum.InsertEnvelope (insertEnvelope)
-import Singular.Application.OpenDatum.Release (withApplication)
+import Singular.Application.OpenDatum.Plan (Booked (..), planInsert)
 import Singular.Application.OpenDatum.Update
     ( continuationOf
     , releaseRedeemer
@@ -94,6 +102,7 @@ import Singular.CLI.Live
     )
 import Singular.CLI.Receipt (OutcomeClass (..))
 import Singular.CLI.Session (failWith)
+import Singular.Registry.Application (DecodedHolding (..))
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger
@@ -112,42 +121,41 @@ import Singular.Registry.TrieState.Lineage (lineageTrieState)
 import Singular.Registry.TxBuilder.ConnectedFold
     ( ConnectedFoldArgs (..)
     , ConnectedMint (..)
-    , ConnectedSpend (..)
     , connectedFoldTx
     , skipEvalUnits
     )
 import Singular.Registry.TxBuilder.Edges
-    ( BookingApproval (..)
-    , adaOnlyOut
-    , bookEdgeTx
-    , edgeDeposit
+    ( adaOnlyOut
     , registryContextFor
     )
 import Singular.Registry.TxBuilder.Internal
-    ( addrFromKeyHashBytes
+    ( BookedRequest (..)
     , addrKeyHashBytes
     , addrWitnessKeyHash
+    , bookedKey
+    , bookedRequestOf
     , extractCageDatum
-    , extractOwnerBytes
     , leafAbsent
     , leafActive
     , leafTerminal
     , onChainTokenId
-    , requestAddrFromCfg
+    , pendingByTag
     , scriptFromBytes
+    )
+import Singular.Registry.TxBuilder.TerminationBooking
+    ( CustodyAuthority (..)
+    , TerminationBooking (..)
+    , bookTerminationImpl
     )
 import Singular.Registry.TxBuilder.Update
     ( RegistryContext (..)
-    , RegistryDuties (..)
-    , registryDuties
+    , taggedMints
     )
 import Singular.Registry.Types
     ( CageDatum (..)
     , OnChainRequest (..)
     , OnChainRoot (..)
     , OnChainTokenState (..)
-    , edgeInsertActive
-    , edgeUpdateTerminal
     )
 import Singular.Registry.Wallet (Wallet (..))
 
@@ -322,12 +330,21 @@ craftHoldingSpend view live holding@(hIn, hOut) envelope caller signer spend = d
                     ClientRefusal
                     "the wallet has no ada-only output to fund the transaction"
 
-{- | The unsigned booking for one shape, built unevaluated with stated
-budgets so the node judges it: the payer wallet funds it and is named
-its owner, with no controller check here. The insertion mirrors the
-ordinary insert through the same shared builders; a taken or terminated
-key still books (a request is only a request) and the registry state
-validator refuses later, at the fold.
+{- | The unsigned booking for one shape, built by the registry's shared
+registration or termination booking, as the producers build it: the payer
+wallet funds it and is named its owner and its refund, with no controller
+check here. A taken or terminated key still reaches the builder, and the
+booking is a request only: the registry's fold refuses it later, so the
+node judges the fold.
+
+The shared builders evaluate the scripts they build for, so a booking an
+application script refuses is not built at all; a booking the host means the
+node to judge has to be built for what the script accepts and then changed
+in the one fact under test. A termination is built naming the live
+controller as its required signer, which the application's spend accepts,
+and its required signer is then replaced by the wallet that signs: for the
+controller's own command nothing changes, and for a stranger's the node is
+the one that refuses the spend.
 -}
 craftBooking
     :: Session NoWitness IO
@@ -339,15 +356,6 @@ craftBooking
 craftBooking view live payer key shape = case shape of
     BookingInsert payload deposit -> do
         let s = liveSaved live
-        appRef <-
-            maybe
-                ( failWith
-                    ClientRefusal
-                    "the deployment records no published application reference"
-                )
-                (pure . fst)
-                (applicationReference openDatumApplication live)
-        let stateIn = fst (liveState live)
             owner = addrKeyHashBytes (walletAddr payer)
             envelope =
                 insertEnvelope
@@ -357,87 +365,76 @@ craftBooking view live payer key shape = case shape of
                     owner
                     deposit
                     payload
-            approval =
-                ( insertApproval
-                    Testnet
-                    (applied s)
-                    stateIn
-                    envelope
-                )
-                    { baScriptReference = Just appRef
-                    }
-        bookEdgeTx
-            (savedCfg s)
-            view
-            (walletAddr payer)
-            (savedToken s)
-            key
-            edgeInsertActive
-            (insertDestination Testnet (applied s) envelope)
-            deposit
-            (Just approval)
+        booked <- planInsert view live envelope
+        bookedBuild booked view (walletAddr payer)
     BookingTerminate -> do
         let s = liveSaved live
+            cfg = savedCfg s
+            owner = addrKeyHashBytes (walletAddr payer)
         outs <- liveOutputs openDatumApplication view s
-        ((liveIn, _), _) <-
+        (holding, held') <-
             either
                 (failWith ClientRefusal)
                 pure
                 (liveOutputFor openDatumApplication s key outs)
-        appRef <-
-            maybe
-                ( failWith
-                    ClientRefusal
-                    "the deployment records no published application reference"
-                )
-                (pure . fst)
-                (applicationReference openDatumApplication live)
-        let stateIn = fst (liveState live)
-            owner = addrKeyHashBytes (walletAddr payer)
-            approval =
-                ( terminateApproval
-                    (applied s)
-                    stateIn
-                    liveIn
-                    key
-                    owner
-                )
-                    { baScriptReference = Just appRef
+        envelope <-
+            either
+                (failWith ClientRefusal)
+                pure
+                (envelopeFromData (dhDatumData held'))
+        observed <- Cage.tip view
+        let Coin held = snd holding ^. coinTxOutL
+            Coin tip = defaultTip cfg
+            controller = ctlController (envControl envelope)
+        accepted <-
+            bookTerminationImpl
+                cfg
+                view
+                (savedToken s)
+                (fst (liveState live))
+                TerminationBooking
+                    { tbKey = key
+                    , tbDeclaredTip = Coin tip
+                    , tbCarrier = Coin (held - tip)
+                    , tbNonce = toInteger (unSlotNo (LP.observedSlot observed))
+                    , tbCustody = holding
+                    , tbOrdinaryAdded = Coin 0
+                    , tbCustodyAuthority =
+                        ScriptGuarded (applied s) (bookTerminationRedeemer 0)
+                    , tbRequiredSigners = [controller]
                     }
-        bookEdgeTx
-            (savedCfg s)
-            view
-            (walletAddr payer)
-            (savedToken s)
-            key
-            edgeUpdateTerminal
-            terminateDestination
-            edgeDeposit
-            (Just approval)
+                (walletAddr payer)
+        pure $
+            over
+                (bodyTxL . reqSignerHashesTxBodyL)
+                (const (Set.singleton (addrWitnessKeyHash owner)))
+                accepted
 
 {- | The pending requests one fold takes, in input order, with the
-requests they carry. @FoldEvery@ takes everything pending (at least
-one); @FoldKey k@ takes the one request with that key.
+bookings they are. @FoldEvery@ takes everything pending (at least one);
+@FoldKey k@ takes the one request with that key. Pending means booked: found
+by the request policy's tag through the view, and a genuine booking of this
+registry.
 -}
 selectFoldRequests
     :: Session NoWitness IO
     -> Live
     -> FoldSelection
-    -> IO [((TxIn, TxOut ConwayEra), OnChainRequest)]
+    -> IO [((TxIn, TxOut ConwayEra), BookedRequest)]
 selectFoldRequests view live selection = do
     let s = liveSaved live
         cfg = savedCfg s
         tok = savedToken s
-    pending <- Cage.outputsAt view (requestAddrFromCfg cfg tok Testnet)
+    pending <- pendingByTag cfg view tok
     let selects q = case selection of
-            FoldKey k -> requestKey q == k
+            FoldKey k -> bookedKey q == k
             FoldEvery -> True
         requests =
             sortOn
                 (fst . fst)
                 [ (u, q)
                 | u@(_, o) <- pending
-                , Just (RequestDatum q) <- [extractCageDatum o]
+                , Just q <- [bookedRequestOf cfg tok o]
                 , selects q
                 ]
     case (selection, requests) of
@@ -454,9 +451,10 @@ selectFoldRequests view live selection = do
 unevaluated with stated budgets so the node judges it: signed and
 funded by the folder wallet (a fold is permissionless; the folder may
 be a stranger), with no local evaluation and no client check beyond
-finding its inputs. @PayShort n@ lowers the largest ada-only duties
-output by @n@ lovelace. Returns the transaction with the folded
-requests' outrefs and keys.
+finding its inputs. @PayShort n@ lowers the treasury donation the fold
+makes by @n@ lovelace and leaves the lovelace with the folder's change, so
+the body still balances and the registry's validators are the ones that
+refuse. Returns the transaction with the folded requests' outrefs and keys.
 -}
 craftFold
     :: Session NoWitness IO
@@ -481,7 +479,7 @@ craftFold view live folder selection payment = do
     chosen <- selectFoldRequests view live selection
     let reqUtxos = map fst chosen
         chosenKeys =
-            [ (tin, requestKey q)
+            [ (tin, bookedKey q)
             | ((tin, _), q) <- chosen
             ]
     tm <-
@@ -489,31 +487,21 @@ craftFold view live folder selection payment = do
             >>= either
                 (failWith ClientRefusal . show)
                 pure
-    appLive <- liveOutputs openDatumApplication view s
     ctx0 <- registryContextFor cfg (savedCodes s) view (liveRefs live)
     ctx <-
         either
             (failWith ClientRefusal)
             pure
-            (withApplication (applied s) Nothing appLive ctx0)
-    pp <- Cage.parameters view
-    owedDuties <-
+            (withApplication (applied s) Nothing ctx0)
+    mints <-
         either
             (failWith ClientRefusal)
             pure
-            ( registryDuties
+            ( taggedMints
                 cfg
-                pp
-                oldState
                 ctx
-                reqUtxos
-                (map (const True) reqUtxos)
+                [(tin, q) | ((tin, _), q) <- chosen]
             )
-    unless (null (rdInputs owedDuties)) $
-        failWith
-            ClientRefusal
-            "the fold's duties need ordinary inputs; this host folds none"
-    duties <- applyPayShort cfg chosen owedDuties payment
     wallets <- Cage.outputsAt view feeAddr
     feeUtxo <- case sortOn (Down . coinOf . snd) (filter (adaOnlyOut . snd) wallets) of
         (u : _) -> pure u
@@ -526,9 +514,7 @@ craftFold view live folder selection payment = do
             | (_, o) <- rcRefUtxos ctx
             , SJust sc <- [o ^. referenceScriptTxOutL]
             ]
-        owed =
-            map csScript (rdSpends duties)
-                <> map cmScript (rdMints duties)
+        owed = map cmScript mints
     (unsigned, _) <-
         connectedFoldTx
             ConnectedFoldArgs
@@ -540,61 +526,53 @@ craftFold view live folder selection payment = do
                 , cfaStateUtxo = (stateIn, stateOut)
                 , cfaReqUtxos = reqUtxos
                 , cfaFeeUtxo = feeUtxo
-                , cfaSpends = rdSpends duties
-                , cfaMints = rdMints duties
-                , cfaOutputs = rdOutputs duties
-                , cfaSigners = rdSigners duties
+                , cfaSpends = []
+                , cfaMints = mints
+                , cfaOutputs = []
+                , cfaSigners = []
                 , cfaRefUtxos = rcRefUtxos ctx
                 , cfaAttachScripts = filter ((`notElem` carried) . hashScript) owed
                 , cfaSkipEval = True
                 , cfaAdjustRoot = id
                 }
-    pure (unsigned, chosenKeys)
+    shortened <- applyPayShort feeAddr payment unsigned
+    pure (shortened, chosenKeys)
 
-{- | Lower the controller's payment output by the named lovelace, chosen
-by recipient: the largest duties output paying one of the folded
-requests' owners (for a controller's own booking, the controller
-itself, whose refund carries the booking approval token and is not
-ada-only). Assets and datum are kept exactly; only lovelace moves. The
-honest payment leaves the duties untouched.
+{- | Lower the treasury donation the fold makes by the named lovelace and
+give the lovelace to the folder's change, the last output paying the folder:
+the body still balances, and the donation is the one fact the registry's
+validators check that is now wrong. The honest payment leaves the fold
+untouched.
 -}
-applyPayShort
-    :: CageConfig
-    -> [((TxIn, TxOut ConwayEra), OnChainRequest)]
-    -> RegistryDuties
-    -> FoldPayment
-    -> IO RegistryDuties
-applyPayShort _ _ duties PayAsOwed = pure duties
-applyPayShort cfg chosen duties (PayShort n)
+applyPayShort :: Addr -> FoldPayment -> ConwayTx -> IO ConwayTx
+applyPayShort _ PayAsOwed tx = pure tx
+applyPayShort feeAddr (PayShort n) tx
     | n <= 0 =
         failWith
             ClientRefusal
             "pay-short needs a positive number of lovelace"
-    | otherwise = case sortOn (Down . coinOf) targets of
-        (paid : _)
-            | lowered <- coinOf paid - n
-            , lowered > 0 ->
-                pure
-                    duties
-                        { rdOutputs =
-                            [ if o == paid then o & coinTxOutL .~ Coin lowered else o
-                            | o <- rdOutputs duties
-                            ]
-                        }
-        _ ->
+    | Coin donated <- tx ^. bodyTxL . treasuryDonationTxBodyL
+    , donated < n =
+        failWith
+            ClientRefusal
+            "the fold donates less than the lovelace asked to hold back"
+    | otherwise = case reverse [i | (i, o) <- indexed, o ^. addrTxOutL == feeAddr] of
+        i : _ -> pure (shortened i)
+        [] ->
             failWith
                 ClientRefusal
-                "no duties output pays the controller it could be paid short of"
+                "no output pays the folder it could be given the held-back lovelace"
   where
-    owners =
-        [ addrFromKeyHashBytes (network cfg) (extractOwnerBytes reqOut)
-        | ((_, reqOut), _) <- chosen
-        ]
-    targets =
-        [ o
-        | o <- rdOutputs duties
-        , (o ^. addrTxOutL) `elem` owners
-        ]
+    indexed = zip [0 :: Int ..] (toList (tx ^. bodyTxL . outputsTxBodyL))
+    lowered (Coin d) = Coin (d - n)
+    shortened i =
+        over
+            (bodyTxL . outputsTxBodyL)
+            (snd . mapAccumL (\j o -> (j + 1, raise i j o)) (0 :: Int))
+            (over (bodyTxL . treasuryDonationTxBodyL) lowered tx)
+    raise i j o
+        | i == j = o & coinTxOutL %~ (\(Coin c) -> Coin (c + n))
+        | otherwise = o
 
 {- | The mutable trie for one fold, rebuilt here (never from a saved
 mirror) from fresh authenticated public replay: the keys come from the

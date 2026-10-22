@@ -67,6 +67,7 @@ module Singular.Registry.TxBuilder.Internal
     , findStateUtxo
     , findRequestUtxos
     , BookedRequest (..)
+    , bookedKey
     , requestPolicyOf
     , bookedRequestOf
     , pendingByTag
@@ -160,6 +161,7 @@ import Singular.Registry.TxBuilder.Internal.Identity
     )
 import Singular.Registry.TxBuilder.Internal.Lookup
     ( BookedRequest (..)
+    , bookedKey
     , bookedRequestOf
     , computeRefund
     , computeScriptIntegrity

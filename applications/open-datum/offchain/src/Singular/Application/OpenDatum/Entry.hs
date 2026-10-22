@@ -49,14 +49,14 @@ module Singular.Application.OpenDatum.Entry
 
 import Control.Exception (throwIO)
 import Control.Monad (unless, when)
-import Data.Aeson (Value, object, toJSON, (.=))
+import Data.Aeson (Value (Null), object, toJSON, (.=))
 import Data.ByteString (ByteString)
 import Data.Text (Text)
 import Data.Text qualified as T
 
 import Cardano.Ledger.Api.Tx (txIdTx)
 import Cardano.Ledger.Api.Tx.Out (TxOut)
-import Cardano.Ledger.BaseTypes (Network (Testnet), TxIx (..))
+import Cardano.Ledger.BaseTypes (TxIx (..))
 import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Tx.Ledger (ConwayTx)
 import Singular.Registry.Ledger (Coin (..), ConwayEra)
@@ -99,8 +99,8 @@ import Singular.CLI.Fold
     , Folded (..)
     , SettledEntry (..)
     , deadlineJson
-    , deadlineOf
     , foldPending
+    , registrationDeadline
     , settledEntryFor
     )
 import Singular.CLI.FoldRules
@@ -112,8 +112,7 @@ import Singular.CLI.FoldRules
 import Singular.CLI.Live
 import Singular.CLI.ManagedState (resolveSignerDir)
 import Singular.CLI.Outlay
-    ( bookingOutlay
-    , outlayTotal
+    ( outlayTotal
     , updateOutlay
     )
 import Singular.CLI.Prepare
@@ -135,13 +134,12 @@ import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.Lifecycle (protocolFeeReserve)
 import Singular.Registry.SessionIO qualified as Cage
-import Singular.Registry.TxBuilder.Edges
-    ( bookEdgeMeasured
-    , selectFunding
-    )
+import Singular.Registry.TxBuilder.Edges (selectFunding)
 import Singular.Registry.TxBuilder.Internal
-    ( extractCageDatum
-    , requestAddrFromCfg
+    ( BookedRequest (..)
+    , bookedRequestOf
+    , extractCageDatum
+    , pendingByTag
     )
 import Singular.Registry.TxBuilder.Prepare
     ( Preparation (..)
@@ -149,28 +147,24 @@ import Singular.Registry.TxBuilder.Prepare
     )
 import Singular.Registry.Types
     ( CageDatum (..)
-    , OnChainRequest
     , OnChainTokenState
     , edgeName
     )
 import Singular.Registry.Wallet (bech32Address)
 
--- | The state a request's deadline is read under, and the request it names.
+-- | The state a registration's deadline is read under, and the booked request it names.
 requestAndState
     :: Cage.Session Cage.NoWitness IO
     -> Saved
     -> TxIn
-    -> IO (Maybe (OnChainRequest, OnChainTokenState))
+    -> IO (Maybe (BookedRequest, OnChainTokenState))
 requestAndState v s request = do
-    reqs <-
-        Cage.outputsAt
-            v
-            (requestAddrFromCfg (savedCfg s) (savedToken s) Testnet)
+    pending <- pendingByTag (savedCfg s) v (savedToken s)
     live <- attachLive v s
-    pure $ case ( lookup request reqs >>= extractCageDatum
+    pure $ case ( lookup request pending >>= bookedRequestOf (savedCfg s) (savedToken s)
                 , extractCageDatum (snd (liveState live))
                 ) of
-        (Just (RequestDatum r), Just (StateDatum st)) -> Just (r, st)
+        (Just booked, Just (StateDatum st)) -> Just (booked, st)
         _ -> Nothing
 
 {- | Book one edge through the application, then read the request back
@@ -194,7 +188,7 @@ book
     -}
     -> (Cage.Session Cage.NoWitness IO -> Live -> IO (Booked, r))
     -- ^ What is booked, decided from the booking's own view
-    -> IO (ConfirmedSubmission, r, Deadline, Maybe Preparation)
+    -> IO (ConfirmedSubmission, r, Maybe Deadline, Maybe Preparation)
 book at a key verb plan = do
     let s = savedOf at
         cfg = savedCfg s
@@ -241,20 +235,8 @@ book at a key verb plan = do
                     [InKey key, InEdge (Booking edge)]
                     (EdgeStarted (Booking edge))
                 let refs = liveRefs live
-                    measure = bookingOutlay pp refs
-                    build funded =
-                        bookEdgeMeasured
-                            cfg
-                            funded
-                            payerAddr
-                            (savedToken s)
-                            key
-                            (bookedEdge b)
-                            (bookedDestination b)
-                            (bookedDeposit b)
-                            (bookedApproval b)
-                            refs
-                            (entryFund a)
+                    measure = bookedOutlay b pp refs
+                    build funded = bookedBuild b funded payerAddr
                 prepared <-
                     prepareFunding
                         wc
@@ -281,7 +263,7 @@ book at a key verb plan = do
                     Left (AllowanceExceeded text fields) ->
                         failWithFields ClientRefusal text fields
                     Right (_, mPrep, realTx) -> do
-                        let outlay = bookingOutlay pp refs realTx
+                        let outlay = bookedOutlay b pp refs realTx
                         refuseOver (entryMaxOutlay a) outlay
                         refuseUnderfunded
                             payerAddr
@@ -293,14 +275,14 @@ book at a key verb plan = do
     let request = TxIn (txIdTx (confirmedTx booking)) (TxIx 0)
     deadline <-
         readingBack at "book" booking ["requests", "state"] $ \v -> do
-            reqs <-
-                Cage.outputsAt v (requestAddrFromCfg cfg (savedToken s) Testnet)
+            reqs <- pendingByTag cfg v (savedToken s)
             unless (any ((== request) . fst) reqs) $
                 failWith
                     Partial
                     "the booking confirmed but its request output is not live"
             requestAndState v s request >>= \case
-                Just (r, st) -> deadlineOf v r st
+                Just (BookedRegistration r, st) -> Just <$> registrationDeadline v r st
+                Just (BookedTermination _, _) -> pure Nothing
                 Nothing ->
                     failWith
                         Partial
@@ -313,12 +295,12 @@ book at a key verb plan = do
     reportSeen
         wc
         [InRequest (txInText request)]
-        (Trace.Booked (txInText request) (Just (deadlineMs deadline)))
+        (Trace.Booked (txInText request) (deadlineMs <$> deadline))
     pure (booking, decided, deadline, mPrep)
 
 -- | What a booking-only command's receipt names of its pending request.
 pendingFields
-    :: ByteString -> ConfirmedSubmission -> Deadline -> [(Text, Value)]
+    :: ByteString -> ConfirmedSubmission -> Maybe Deadline -> [(Text, Value)]
 pendingFields requester booking deadline =
     [ ("booking", toJSON (txIdHex (confirmedTx booking)))
     , ("requester", toJSON (hexT requester))
@@ -326,7 +308,8 @@ pendingFields requester booking deadline =
         ( "request"
         , toJSON (txInText (TxIn (txIdTx (confirmedTx booking)) (TxIx 0)))
         )
-    , ("foldDeadline", deadlineJson deadline)
+    , ("transfer", toJSON (transferOf (confirmedTx booking)))
+    , ("foldDeadline", maybe Null deadlineJson deadline)
     ]
 
 {- | The fold preparation of a combined command, under a distinct key so a
@@ -418,8 +401,8 @@ runInsert env a = case entryMode a of
                 -- The approval is decided in the booking's own view, from the
                 -- state it holds.
                 (booking, (), deadline, mPrepBook) <-
-                    book at a key BookInsert $ \_ live -> do
-                        b <- planInsert live envelope
+                    book at a key BookInsert $ \v live -> do
+                        b <- planInsert v live envelope
                         pure (b, ())
                 if entryFold a
                     then do
@@ -444,8 +427,10 @@ runInsert env a = case entryMode a of
                                         Success
                                         ( keyFields key
                                             <> [ ("booking", toJSON (txIdHex (confirmedTx booking)))
+                                               , ("transfer", toJSON (transferOf (confirmedTx booking)))
                                                , ("fold", toJSON (txIdHex (fdTx folded)))
                                                , ("root", toJSON (hexT (fdRoot folded)))
+                                               , ("donation", toJSON (fdDonation folded))
                                                ]
                                             <> preparationFields mPrepBook
                                             <> foldPrepFields (fdPreparation folded)
@@ -460,7 +445,7 @@ runInsert env a = case entryMode a of
                                                         , "envelope" .= dhDatumJson holding
                                                         ]
                                                     )
-                                                    (deadlineJson (seDeadline entry))
+                                                    (maybe Null deadlineJson (seDeadline entry))
                                                 ]
                                                 (fdExcluded folded)
                                                 (fdCapacityBound folded)
@@ -472,7 +457,7 @@ runInsert env a = case entryMode a of
                                     "insert"
                                     Success
                                     (preparationFields mPrepBook <> foldPrepFields (fdPreparation folded))
-                            Released{} ->
+                            Terminated{} ->
                                 receipt
                                     "insert"
                                     Success
@@ -667,14 +652,16 @@ runTerminate env a = case entryMode a of
                                     )
                                     [("pendingRequest", toJSON (txInText bookingRef))]
                         pure $ case seDelivery entry of
-                            Released released deposit ->
+                            Terminated terminatedBy ->
                                 receipt
                                     "terminate"
                                     Success
                                     ( keyFields key
                                         <> [ ("booking", toJSON (txIdHex (confirmedTx booking)))
+                                           , ("transfer", toJSON (transferOf (confirmedTx booking)))
                                            , ("fold", toJSON (txIdHex (fdTx folded)))
                                            , ("root", toJSON (hexT (fdRoot folded)))
+                                           , ("donation", toJSON (fdDonation folded))
                                            ]
                                         <> preparationFields mPrepBook
                                         <> foldPrepFields (fdPreparation folded)
@@ -685,11 +672,12 @@ runTerminate env a = case entryMode a of
                                                 (T.pack (edgeName (seEdge entry)))
                                                 (seOwner entry)
                                                 ( object
-                                                    [ "released" .= txInText released
-                                                    , "deposit" .= deposit
+                                                    [ "terminated" .= txInText terminatedBy
+                                                    , "custody" .= txInText liveIn
+                                                    , "deposit" .= ctlDeposit c
                                                     ]
                                                 )
-                                                (deadlineJson (seDeadline entry))
+                                                (maybe Null deadlineJson (seDeadline entry))
                                             ]
                                             (fdExcluded folded)
                                             (fdCapacityBound folded)
@@ -713,7 +701,7 @@ runTerminate env a = case entryMode a of
                                 ( keyFields key
                                     <> pendingFields (callerKey at) booking deadline
                                     <> preparationFields mPrepBook
-                                    <> [ ("released", toJSON (txInText liveIn))
+                                    <> [ ("custody", toJSON (txInText liveIn))
                                        , ("deposit", toJSON (ctlDeposit c))
                                        ]
                                 )

@@ -166,7 +166,6 @@ import Singular.CLI.Session
     )
 import Singular.CLI.Trace
     ( ConfirmVerdict (..)
-    , EdgeAction (..)
     , Ended (..)
     , Event (..)
     , How (..)
@@ -205,6 +204,7 @@ import Singular.Registry.RawChainFixture
     ( ChainFacts (..)
     , RawChain
     , advanceChain
+    , jumpChainToHostClock
     , newRawChain
     , rawChainProvider
     )
@@ -217,7 +217,7 @@ import Singular.Registry.Signing
 import Singular.Registry.StubSession
     ( servingSession
     , stubSession
-    , withAddressOutputs
+    , withPolicyOutputs
     )
 import Singular.Registry.Trace
     ( ErrorClass (..)
@@ -234,6 +234,7 @@ import Singular.Registry.TxBuilder.Internal
     , mkInlineDatum
     , mkRequestDatumWith
     , requestAddrFromCfg
+    , requestPolicyOf
     , toPlcData
     , txInToRef
     )
@@ -400,17 +401,24 @@ inputRows = describe "TrieState command input refusals on injected capabilities"
     forM_ [0, 2, 4, 5, 6, 7, 42] $ \edge ->
         forM_ [False, True] $ \combined ->
             it
-                ( "names pending "
+                ( "refuses a legacy request carrying "
                     <> edgeName edge
-                    <> " before speculation, combined="
+                    <> " as not pending, before speculation, combined="
                     <> show combined
                 )
                 $ withInputFixture
                 $ \fx saved live mirror boot -> do
                     let request = TxIn (txIdTx boot) (TxIx 0)
                         requestAddr = requestAddrFromCfg (savedCfg saved) (savedToken saved) Testnet
+                        requestPolicy = requestPolicyOf (savedCfg saved) (savedToken saved)
+                        legacyTag = AssetName "legacy-request"
                         requestOut =
-                            mkBasicTxOut requestAddr (MaryValue (Coin 3_000_000) mempty)
+                            mkBasicTxOut
+                                requestAddr
+                                ( MaryValue
+                                    (Coin 3_000_000)
+                                    (MultiAsset (Map.singleton requestPolicy (Map.singleton legacyTag 1)))
+                                )
                                 & datumTxOutL
                                     .~ mkInlineDatum
                                         ( mkRequestDatumWith
@@ -429,9 +437,9 @@ inputRows = describe "TrieState command input refusals on injected capabilities"
                                     (wcCapabilities (writeContext fx))
                                         { capReads =
                                             servingSession $
-                                                withAddressOutputs
-                                                    ( \addr ->
-                                                        if addr == requestAddr
+                                                withPolicyOutputs
+                                                    ( \policy ->
+                                                        if policy == requestPolicy
                                                             then pure [(request, requestOut)]
                                                             else fail "an inadmissible request reached a later provider read"
                                                     )
@@ -455,8 +463,8 @@ inputRows = describe "TrieState command input refusals on injected capabilities"
                     case result of
                         Left (CommandFailure cls why fields) -> do
                             cls `shouldBe` if combined then Partial else ClientRefusal
-                            why `shouldSatisfy` isInfixOf (edgeName edge)
-                            why `shouldSatisfy` isInfixOf "registry fold does not fold"
+                            why `shouldSatisfy` isInfixOf (T.unpack (txInText request))
+                            why `shouldSatisfy` isInfixOf "is not pending"
                             lookup "pendingRequest" fields
                                 `shouldBe` Just (Aeson.toJSON (txInText request))
                         Right _ -> expectationFailure "an unsupported pending edge folded"
@@ -699,6 +707,7 @@ withFixture k = withSystemTempDirectory "singular-write" $ \dir -> do
                 , csNetworkTime = syntheticTime
                 }
     advanceChain chain id
+    jumpChainToHostClock chain
     Fixture (dir </> "registry") chain w
         <$> newIORef []
         <*> newIORef []
@@ -1402,80 +1411,6 @@ narrationRows = describe "the narration of a write (#416)" $ do
                 when (name == "the build fails") $
                     [() | Trace _ (How (Tx (TxBuilt _ _ (FailedWith _)))) <- events]
                         `shouldBe` [()]
-    forM_ [(2, "key-two"), (5, "key-five")] $ \(edge, key) ->
-        it
-            ( "a fold names the request, its key and its edge before it refuses "
-                <> edgeName edge
-                <> ", as its receipt does"
-            )
-            $ withInputFixture
-            $ \fx saved live mirror boot -> do
-                (seen, collect) <- traceCollector
-                let request = TxIn (txIdTx boot) (TxIx 0)
-                    requestAddr = requestAddrFromCfg (savedCfg saved) (savedToken saved) Testnet
-                    requestOut =
-                        mkBasicTxOut requestAddr (MaryValue (Coin 3_000_000) mempty)
-                            & datumTxOutL
-                                .~ mkInlineDatum
-                                    ( mkRequestDatumWith
-                                        (savedToken saved)
-                                        (walletAddr (fxWallet fx))
-                                        key
-                                        edge
-                                        2_000_000
-                                        0
-                                        ("", Nothing)
-                                    )
-                    ctx =
-                        (writeContext fx)
-                            { wcCommand = "fold"
-                            , wcTracer = collect
-                            , wcCapabilities =
-                                (wcCapabilities (writeContext fx))
-                                    { capReads =
-                                        servingSession $
-                                            withAddressOutputs
-                                                ( \addr ->
-                                                    if addr == requestAddr
-                                                        then pure [(request, requestOut)]
-                                                        else fail "an inadmissible request reached a later provider read"
-                                                )
-                                                stubSession
-                                    }
-                            }
-                result <-
-                    try @CommandFailure $
-                        foldPending
-                            openDatumApplication
-                            (Attached ctx live mirror)
-                            FoldSpec
-                                { fsOrigin = Standalone
-                                , fsRequest = Just request
-                                , fsFund = Nothing
-                                , fsAllowance = Nothing
-                                }
-                events <- readIORef seen
-                fields <- case result of
-                    Left (CommandFailure _ _ fs) -> pure fs
-                    Right _ -> fail "an unsupported pending edge folded"
-                let named = lookup "pendingRequest" fields
-                    seenRequests =
-                        [ (r, e, k)
-                        | Trace _ (What (RequestSeen r e k _ _)) <- events
-                        ]
-                named `shouldBe` Just (Aeson.toJSON (txInText request))
-                seenRequests
-                    `shouldBe` [(txInText request, T.pack (edgeName edge), key)]
-                [k | Trace _ (What (Refused k _)) <- events]
-                    `shouldBe` [ClientRefused]
-                -- every event inside a request is inside this one
-                [ r
-                  | Trace scope _ <- events
-                  , InRequest r <- scope
-                  ]
-                    `shouldSatisfy` all (== txInText request)
-                [() | Trace scope _ <- events, InEdge (Folding _) <- scope]
-                    `shouldBe` []
 
 -- | A tracer collecting every event, in order.
 traceCollector :: IO (IORef [Trace], Tracer IO Trace)

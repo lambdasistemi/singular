@@ -166,13 +166,19 @@ fn mintsUnder(mint: Value, policy: PolicyId) -> Bool {
 }
 
 validator open_datum(registry: ByteArray) {
-  mint(redeemer: OpenDatumMint, policy_id: PolicyId, tx: Transaction) {
+  // The redeemer arrives as raw data. A pure burn accepts any bytes: the
+  // permissionless fold burns the application tag under one fixed redeemer
+  // that knows nothing of this application's arms, and an approval is
+  // evidence, never a consumable (approval-asset-binding): destroying your
+  // own copy costs the registry nothing. Only a mint is read as an
+  // `OpenDatumMint`, and a redeemer that does not decode as one authorizes
+  // nothing.
+  mint(raw: Data, policy_id: PolicyId, tx: Transaction) {
     let moved = tokens(tx.mint, policy_id)
     if pureBurn(moved) {
-      // An approval is evidence, never a consumable (approval-asset-binding):
-      // destroying your own copy costs the registry nothing.
       True
     } else {
+      expect redeemer: OpenDatumMint = raw
       when keys(moved) is {
         [name] ->
           if get(moved, name) != Some(1) {
@@ -490,8 +496,10 @@ fn isBurn(quantity: Option<Int>) -> Bool {
 }
 
 validator closed_datum(registry: ByteArray) {
-  mint(redeemer: OpenDatumMint, policy_id: PolicyId, tx: Transaction) {
-    open_datum.mint(registry, redeemer, policy_id, tx)
+  // Raw data, forwarded as it is: the shared handler checks the pure burn
+  // first and reads a redeemer only on a mint.
+  mint(raw: Data, policy_id: PolicyId, tx: Transaction) {
+    open_datum.mint(registry, raw, policy_id, tx)
   }
 
   spend(

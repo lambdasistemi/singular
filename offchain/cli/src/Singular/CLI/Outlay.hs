@@ -18,6 +18,7 @@ before the fold is signed.
 module Singular.CLI.Outlay
     ( Outlay (..)
     , bookingOutlay
+    , terminationOutlay
     , updateOutlay
     , foldOutlay
     , leftForFold
@@ -77,6 +78,21 @@ bookingOutlay pp refs booking =
     (bookingSpent booking)
         { outlayFoldBound = let Coin c = protocolFeeReserve pp refs in c
         }
+
+{- | A termination: its own fee, what its request holds beyond the custody it
+takes in (the requester's own addition: the custody is the key's, not the
+wallet's), and the bound on the fold that follows.
+-}
+terminationOutlay
+    :: PParams ConwayEra
+    -> [(TxIn, TxOut ConwayEra)]
+    -> Integer
+    -- ^ The lovelace of the custody the booking spends into its request
+    -> ConwayTx
+    -> Outlay
+terminationOutlay pp refs custody booking =
+    let o = bookingOutlay pp refs booking
+    in  o{outlayBond = max 0 (outlayBond o - custody)}
 
 -- | An update: its fee alone.
 updateOutlay :: ConwayTx -> Outlay

@@ -24,6 +24,7 @@ module Singular.Registry.Wire.Request
     , OnChainRegistrationRequest (..)
     , OnChainTerminationRequest (..)
     , RequestDestination
+    , registrationRefundBytes
 
       -- * Request phase
     , RequestPhase (..)
@@ -424,3 +425,8 @@ instance UnsafeFromData OnChainTerminationRequest where
                 , termNonce = nonce
                 }
         _ -> error "unsafeFromBuiltinData: OnChainTerminationRequest"
+
+-- | The payment key hash a registration's refund address names, as plain bytes.
+registrationRefundBytes :: OnChainRegistrationRequest -> ByteString
+registrationRefundBytes r = case regRefundAddress r of
+    BuiltinByteString bytes -> bytes

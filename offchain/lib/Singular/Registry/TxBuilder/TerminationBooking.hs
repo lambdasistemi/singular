@@ -12,9 +12,12 @@ policy's mint handler judges the booking; this builder only builds what that
 handler accepts, and refuses before building what it would refuse.
 
 There is no booked time and no expiry: a termination has no window. The
-custody's own spending condition is the caller's: the builder carries the
-spend witness and redeemer it is given and adds nothing of its own, so the
-universal layer puts no restriction on the custody address. The held value and
+custody's own spending condition is the custody address's: a script address
+is spent with the script and redeemer the caller gives, a wallet address by
+the holder's signature, which the body names as a required signer. The
+builder adds nothing of its own to either, and the universal layer puts no
+restriction on the custody address beyond the one genuine tag and the whole
+value. The held value and
 the declared amounts are accounted for exactly: the request holds
 @H = custody lovelace + ordinary addition@, and the declared tip @T@ and
 carrier @C@ add up to it, @T + C = H@; the fee and the change come from the
@@ -23,11 +26,13 @@ the custody.
 -}
 module Singular.Registry.TxBuilder.TerminationBooking
     ( TerminationBooking (..)
+    , CustodyAuthority (..)
     , bookTerminationImpl
     ) where
 
 import Control.Monad (unless)
 import Data.ByteString (ByteString)
+import Data.ByteString qualified as BS
 import Data.ByteString.Short (ShortByteString)
 import Data.ByteString.Short qualified as SBS
 import Data.Map.Strict qualified as Map
@@ -48,6 +53,7 @@ import Cardano.Ledger.Api.Tx.Body
     , mkBasicTxBody
     , outputsTxBodyL
     , referenceInputsTxBodyL
+    , reqSignerHashesTxBodyL
     , scriptIntegrityHashTxBodyL
     )
 import Cardano.Ledger.Api.Tx.Out
@@ -120,11 +126,30 @@ data TerminationBooking = TerminationBooking
     -- ^ The genuine custody output the booking spends, holding the singular tag
     , tbOrdinaryAdded :: !Coin
     -- ^ The ordinary addition the requester pays in beside the custody value
-    , tbApplicationScript :: !ShortByteString
-    -- ^ The script that guards the custody output, which the spend must satisfy
-    , tbRedeemer :: !PLC.Data
-    -- ^ The redeemer the custody's script is spent with
+    , tbCustodyAuthority :: !CustodyAuthority
+    -- ^ What authorizes the spend of the custody output
+    , tbRequiredSigners :: ![ByteString]
+    {- ^ The payment key hashes the custody's spend requires to sign, as the
+    transaction's required signers. The balancer prices a witness for each; no
+    signature is made here.
+    -}
     }
+
+{- | What authorizes the spend of the custody output: the spending condition
+of the address that holds it.
+-}
+data CustodyAuthority
+    = {- | A script address: the script that guards it, which the spend must
+      satisfy, and the redeemer it is spent with. The script must be the one
+      the custody address names.
+      -}
+      ScriptGuarded !ShortByteString !PLC.Data
+    | {- | A wallet address: the holder's signature is the spending condition.
+      The body names the holder's key hash as a required signer and carries
+      no spend witness and no spend redeemer.
+      -}
+      WalletGuarded
+    deriving stock (Eq, Show)
 
 refuse :: String -> IO a
 refuse = ioError . userError . ("bookTermination: " <>)
@@ -138,7 +163,8 @@ addition, a tip below the registry's minimum, a tip and carrier that do not
 add up to the held lovelace, a custody output that the ledger does not answer
 or answers differently from the caller, one that does not hold exactly one of
 the key's singular tag or holds anything beside it and lovelace, a custody
-script that is not the one the custody address names, a state output that is
+script that is not the one the custody address names or a wallet authority
+over a custody a script guards, a state output that is
 missing, does not hold the registry's state token or does not carry the
 configuration's booking pins, and a request output below the minimum ada.
 After balancing, a funding output that cannot leave its change its minimum
@@ -172,6 +198,8 @@ bookTerminationImpl cfg view tid stateRef b payer = do
     unless (added >= 0) $ refuse "the ordinary addition is negative"
     unless (tip >= minimumTip) $
         refuse "the tip is below the registry's minimum tip"
+    unless (all ((== 28) . BS.length) (tbRequiredSigners b)) $
+        refuse "a required signer is not a 28-byte key hash"
     unless (tip + carrier == held) $
         refuse "the tip and carrier must add up to the held lovelace"
     let requestScript = mkRequestScript cfg tid
@@ -200,11 +228,18 @@ bookTerminationImpl cfg view tid stateRef b payer = do
         )
         $ refuse
             "the custody output holds more than the singular tag and lovelace"
-    let custodyScript = scriptFromBytes "application" (tbApplicationScript b)
-    case custody ^. addrTxOutL of
-        Addr _ (ScriptHashObj h) _
-            | h == hashScript custodyScript -> pure ()
-        _ -> refuse "the application script is not the custody's script"
+    -- The custody's own spending condition: the script the address names,
+    -- or the key it names. The other kind of address is refused for the
+    -- authority the caller states.
+    case (tbCustodyAuthority b, custody ^. addrTxOutL) of
+        (ScriptGuarded script _, Addr _ (ScriptHashObj h) _)
+            | h == hashScript (scriptFromBytes "application" script) -> pure ()
+        (ScriptGuarded{}, _) ->
+            refuse "the application script is not the custody's script"
+        (WalletGuarded, Addr _ (KeyHashObj _) _) -> pure ()
+        (WalletGuarded, _) ->
+            refuse
+                "the custody is guarded by a script, so it must be spent with that script and a redeemer, not by a wallet signature"
     -- The state output the booking reads: it must be the registry's, with
     -- the pins this configuration derived.
     stateUtxos <- outputsAt view (cageAddrFromCfg cfg (network cfg))
@@ -256,18 +291,32 @@ bookTerminationImpl cfg view tid stateRef b payer = do
         Left why -> refuse why
         Right u -> pure u
     let inputs = Set.fromList [custodyRef, fst funding]
+        -- A script custody is spent with the caller's script and redeemer;
+        -- a wallet custody carries neither, and its holder signs.
+        (custodySpend, custodyScripts, holderSigners) =
+            case tbCustodyAuthority b of
+                ScriptGuarded script redeemer ->
+                    let s = scriptFromBytes "application" script
+                    in  (
+                            [
+                                ( ConwaySpending (AsIx (spendingIndex custodyRef inputs))
+                                , (Data redeemer, placeholderExUnits)
+                                )
+                            ]
+                        , [(hashScript s, s)]
+                        , []
+                        )
+                WalletGuarded ->
+                    ([], [], [addrKeyHashBytes (custody ^. addrTxOutL)])
         redeemers =
             Redeemers $
-                Map.fromList
-                    [
-                        ( ConwaySpending (AsIx (spendingIndex custodyRef inputs))
-                        , (Data (tbRedeemer b), placeholderExUnits)
-                        )
-                    ,
-                        ( ConwayMinting (AsIx 0)
-                        , (Data (PLC.Constr 0 []), placeholderExUnits)
-                        )
-                    ]
+                Map.fromList $
+                    custodySpend
+                        <> [
+                               ( ConwayMinting (AsIx 0)
+                               , (Data (PLC.Constr 0 []), placeholderExUnits)
+                               )
+                           ]
         body =
             mkBasicTxBody
                 & inputsTxBodyL .~ inputs
@@ -275,14 +324,15 @@ bookTerminationImpl cfg view tid stateRef b payer = do
                 & mintTxBodyL .~ minted
                 & referenceInputsTxBodyL .~ Set.singleton stateRef
                 & collateralInputsTxBodyL .~ Set.singleton (fst funding)
+                & reqSignerHashesTxBodyL
+                    .~ Set.fromList
+                        (map addrWitnessKeyHash (tbRequiredSigners b <> holderSigners))
                 & scriptIntegrityHashTxBodyL .~ computeScriptIntegrity pp redeemers
         tx =
             mkBasicTx body
                 & witsTxL . scriptTxWitsL
                     .~ Map.fromList
-                        [ (hashScript requestScript, requestScript)
-                        , (hashScript custodyScript, custodyScript)
-                        ]
+                        ((hashScript requestScript, requestScript) : custodyScripts)
                 & witsTxL . rdmrsTxWitsL .~ redeemers
     -- The state output is a reference input: when it carries a script, the
     -- ledger charges the fee for the script's bytes, so the balancer is

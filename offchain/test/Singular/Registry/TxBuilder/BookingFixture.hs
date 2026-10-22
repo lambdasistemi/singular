@@ -331,8 +331,8 @@ data RetainedRegistry = RetainedRegistry
     }
 
 {- | A byte-identical copy of the retained store output
-@hnmfy1ikl30mdm5spxacyymgrmix9qdb-open-datum-deployment-blueprint@, sha256
-@8f02ed0d7d701243011626571785c66ca4543fe60a2daae787cb5110bedade3c@.
+@da17sspiv9c8zqmsxy2ivh47mn3lcdy1-open-datum-deployment-blueprint@, sha256
+@5a906ff1ff7e0726db3982b0f40e2d207aa9943c2878d22dd0c377a55a7a7222@.
 -}
 retainedBlueprintFile :: FilePath
 retainedBlueprintFile =

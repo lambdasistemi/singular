@@ -38,7 +38,7 @@ import Singular.Application.OpenDatum.Envelope
     , Envelope (..)
     , envelopeToData
     )
-import Singular.Application.OpenDatum.Release (heldOf, liveEnvelope)
+import Singular.Application.OpenDatum.Holding (heldOf, liveEnvelope)
 import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger (ConwayEra, TxIn)
 import Singular.Registry.LedgerProvider (Session (..))

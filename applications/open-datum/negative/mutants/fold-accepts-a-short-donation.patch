@@ -1,0 +1,14 @@
+diff --git a/onchain/lib/registry/modify.ak b/onchain/lib/registry/modify.ak
+--- a/onchain/lib/registry/modify.ak
++++ b/onchain/lib/registry/modify.ak
+@@ -215,8 +215,8 @@ fn routing(
+           Some(@"fold-singular-mismatch")
+         } else if !bare(pins, policyId, mint, inputs, outputs) {
+           Some(@"fold-foreign-asset")
+-        } else if donationOf(treasury_donation) != owedDonation(members) {
+-          Some(@"fold-donation-mismatch")
++        } else if False && donationOf(treasury_donation) != owedDonation(members) {
++          None
+         } else if foldl(
+           sorted.ordinary,
+           0,

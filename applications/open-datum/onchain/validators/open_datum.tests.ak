@@ -275,7 +275,7 @@ fn bookInsertWith(
 ) -> Bool {
   open_datum.open_datum.mint(
     registry(),
-    BookInsert { key: redeemerKey, owner, address, envelope: e },
+    as_data_mint(BookInsert { key: redeemerKey, owner, address, envelope: e }),
     app,
     tx,
   )
@@ -357,7 +357,7 @@ fn terminateTx(
 fn bookTerminateAs(owner: ByteArray, tx: Transaction) -> Bool {
   open_datum.open_datum.mint(
     registry(),
-    BookTerminate { key: fx.keyA, owner, holding: holdingRef },
+    as_data_mint(BookTerminate { key: fx.keyA, owner, holding: holdingRef }),
     app,
     tx,
   )
@@ -702,6 +702,12 @@ fn as_data_modify(r: types.UpdateRedeemer) -> Data {
   d
 }
 
+/// A mint redeemer as the raw data the mint handlers take.
+fn as_data_mint(r: OpenDatumMint) -> Data {
+  let d: Data = r
+  d
+}
+
 fn as_data_spend(r: envelope.OpenDatumSpend) -> Data {
   let d: Data = r
   d
@@ -859,7 +865,7 @@ fn closedBookInsertWith(
 ) -> Bool {
   open_datum.closed_datum.mint(
     registry(),
-    BookInsert { key: redeemerKey, owner, address, envelope: e },
+    as_data_mint(BookInsert { key: redeemerKey, owner, address, envelope: e }),
     app,
     tx,
   )
@@ -872,7 +878,7 @@ fn closedBookInsert(e: Envelope, tx: Transaction) -> Bool {
 fn closedBookTerminateAs(owner: ByteArray, tx: Transaction) -> Bool {
   open_datum.closed_datum.mint(
     registry(),
-    BookTerminate { key: fx.keyA, owner, holding: holdingRef },
+    as_data_mint(BookTerminate { key: fx.keyA, owner, holding: holdingRef }),
     app,
     tx,
   )
@@ -1409,13 +1415,23 @@ fn applicationBurn() -> Transaction {
 test open_datum_accepts_the_burn_of_an_application_tag() {
   let redeemer: OpenDatumMint =
     BookTerminate { key: fx.keyA, owner: controller, holding: holdingRef }
-  open_datum.open_datum.mint(registry(), redeemer, app, applicationBurn())
+  open_datum.open_datum.mint(
+    registry(),
+    as_data_mint(redeemer),
+    app,
+    applicationBurn(),
+  )
 }
 
 test closed_datum_accepts_the_burn_of_an_application_tag() {
   let redeemer: OpenDatumMint =
     BookTerminate { key: fx.keyA, owner: controller, holding: holdingRef }
-  open_datum.closed_datum.mint(registry(), redeemer, app, applicationBurn())
+  open_datum.closed_datum.mint(
+    registry(),
+    as_data_mint(redeemer),
+    app,
+    applicationBurn(),
+  )
 }
 
 /// A mint beside the burn is not a pure burn: the fold's transaction cannot
@@ -1426,7 +1442,7 @@ test open_datum_refuses_a_mint_beside_a_burn_of_application_tags() {
     BookTerminate { key: fx.keyA, owner: controller, holding: holdingRef }
   open_datum.open_datum.mint(
     registry(),
-    redeemer,
+    as_data_mint(redeemer),
     app,
     Transaction {
       ..tx,
@@ -1580,9 +1596,14 @@ fn bookTaggedWith(
 ) -> Bool {
   let redeemer = BookInsert { key: redeemerKey, owner, address, envelope: e }
   if i.closed {
-    open_datum.closed_datum.mint(registry(), redeemer, i.policy, tx)
+    open_datum.closed_datum.mint(
+      registry(),
+      as_data_mint(redeemer),
+      i.policy,
+      tx,
+    )
   } else {
-    open_datum.open_datum.mint(registry(), redeemer, i.policy, tx)
+    open_datum.open_datum.mint(registry(), as_data_mint(redeemer), i.policy, tx)
   }
 }
 
@@ -2143,4 +2164,127 @@ test tagged_registration_another_registrys_state_alone_refuses() {
       },
     }
   refusesTagged(i, e, Transaction { ..tx, reference_inputs: [other] })
+}
+
+// ============================================================================
+// The mint handlers take raw data: the fold's fixed redeemer
+// ============================================================================
+//
+// The permissionless fold burns the application tag under one fixed redeemer
+// (constructor 0, no fields) that knows nothing of this application's arms.
+// `open_datum` and `closed_datum` take the redeemer as raw data, check the pure
+// burn first and read an `OpenDatumMint` only on a mint. A pure burn is
+// accepted under any bytes; a mint under bytes that do not decode as an
+// `OpenDatumMint` authorizes nothing. Each pair runs the real handler of the
+// instance, open and closed, on the same transaction the typed rows use.
+
+/// Redeemers that are not an `OpenDatumMint`: the fold's fixed one, another
+/// constructor with no fields, an integer, bytes and an empty list.
+fn undecodableRedeemers() -> List<Data> {
+  let integer: Data = 42
+  let bytes: Data = #"ff"
+  let empty: Data = []
+  [
+    builtin.constr_data(0, []),
+    builtin.constr_data(1, []),
+    integer,
+    bytes,
+    empty,
+  ]
+}
+
+fn burnUnder(i: Instance, raw: Data) -> Bool {
+  if i.closed {
+    open_datum.closed_datum.mint(registry(), raw, app, applicationBurn())
+  } else {
+    open_datum.open_datum.mint(registry(), raw, app, applicationBurn())
+  }
+}
+
+fn mintUnder(i: Instance, raw: Data, tx: Transaction) -> Bool {
+  if i.closed {
+    open_datum.closed_datum.mint(registry(), raw, i.policy, tx)
+  } else {
+    open_datum.open_datum.mint(registry(), raw, i.policy, tx)
+  }
+}
+
+test open_datum_accepts_a_pure_burn_under_any_redeemer_bytes() {
+  list_all(undecodableRedeemers(), fn(raw) { burnUnder(openInstance(), raw) })
+}
+
+test open_datum_closed_mode_accepts_a_pure_burn_under_any_redeemer_bytes() {
+  list_all(undecodableRedeemers(), fn(raw) { burnUnder(closedInstance(), raw) })
+}
+
+/// The positive control of the pair: the same booking under its own redeemer.
+test open_datum_mint_accepts_the_booking_under_its_own_redeemer_as_raw_data() {
+  let e = envelopeA()
+  let i = openInstance()
+  let raw =
+    as_data_mint(
+      BookInsert {
+        key: e.control.key,
+        owner: e.control.controller,
+        address: instanceAddress(i),
+        envelope: e,
+      },
+    )
+  mintUnder(i, raw, honestTagged(i, e))
+}
+
+test open_datum_closed_mode_mint_accepts_the_booking_under_its_own_redeemer_as_raw_data() {
+  let e = envelopeA()
+  let i = closedInstance()
+  let raw =
+    as_data_mint(
+      BookInsert {
+        key: e.control.key,
+        owner: e.control.controller,
+        address: instanceAddress(i),
+        envelope: e,
+      },
+    )
+  mintUnder(i, raw, honestTagged(i, e))
+}
+
+test open_datum_mint_refuses_the_fixed_redeemer_without_fields() fail {
+  let e = envelopeA()
+  let i = openInstance()
+  mintUnder(i, builtin.constr_data(0, []), honestTagged(i, e))
+}
+
+test open_datum_closed_mode_mint_refuses_the_fixed_redeemer_without_fields() fail {
+  let e = envelopeA()
+  let i = closedInstance()
+  mintUnder(i, builtin.constr_data(0, []), honestTagged(i, e))
+}
+
+test open_datum_mint_refuses_an_integer_redeemer() fail {
+  let e = envelopeA()
+  let i = openInstance()
+  let raw: Data = 42
+  mintUnder(i, raw, honestTagged(i, e))
+}
+
+test open_datum_closed_mode_mint_refuses_an_integer_redeemer() fail {
+  let e = envelopeA()
+  let i = closedInstance()
+  let raw: Data = 42
+  mintUnder(i, raw, honestTagged(i, e))
+}
+
+/// A mint beside a burn is not a pure burn: raw bytes that decode as nothing
+/// do not turn the pair into a pure burn.
+test open_datum_refuses_a_mint_beside_a_burn_under_undecodable_bytes() fail {
+  let tx = applicationBurn()
+  open_datum.open_datum.mint(
+    registry(),
+    builtin.constr_data(0, []),
+    app,
+    Transaction {
+      ..tx,
+      mint: tx.mint |> merge(from_asset(app, #"6f74686572", 1)),
+    },
+  )
 }

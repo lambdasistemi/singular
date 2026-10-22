@@ -39,7 +39,6 @@ import Control.Exception
     , displayException
     , try
     )
-import Data.Bifunctor (second)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Short qualified as SBS
@@ -99,7 +98,7 @@ import Cardano.Ledger.Mary.Value
     , MultiAsset (..)
     , PolicyID (..)
     )
-import Cardano.Ledger.Plutus.Data (getPlutusData)
+import Cardano.Ledger.Plutus.Data (Datum (..), getPlutusData)
 import Cardano.Ledger.TxIn (TxIn)
 import Cardano.Tx.Ledger (ConwayTx)
 import Data.Foldable (toList)
@@ -113,8 +112,11 @@ import Singular.Application.OpenDatum.Envelope
     , envelopeToData
     , envelopeVersion
     )
-import Singular.Application.OpenDatum.Release
-    ( releaseOf
+import Singular.Application.OpenDatum.Value (openDatumApplication)
+import Singular.Registry.Application
+    ( Application (..)
+    , DecodedHolding (..)
+    , HoldingRules (..)
     )
 import UntypedPlutusCore.DeBruijn ()
 
@@ -349,6 +351,7 @@ spec = do
     builderRefusals
     applicationRelease
     openDatumFold
+    custodyHolding
     releaseResolution
 
 -- | A token-bearing holder value for application release controls.
@@ -1672,33 +1675,169 @@ terminationIn = case parseOutRef (T.pack (replicate 64 'd' <> "#0")) of
     Right r -> r
     Left e -> error ("BurnSourceSpec fixture: " <> e)
 
+-- ---------------------------------------------------------
+-- The custody a termination books against: which live output is a holding
+-- ---------------------------------------------------------
+
+{- | The envelope of a live holding of this registry: the registry's full
+state asset (the state script's hash and the registry token's name), its
+active policy, the key `keyA` and its controller.
+-}
+registryEnvelope :: Envelope
+registryEnvelope =
+    openEnvelope
+        { envControl =
+            (envControl openEnvelope)
+                { ctlRegistry =
+                    StateAsset
+                        (scriptHashBytes (cfgScriptHash cfg))
+                        "t177-registry"
+                }
+        }
+
+-- | A live output at the application holding `quantity` of `key`'s token under `datum`.
+holdingWith
+    :: Int
+    -> ByteString
+    -> Integer
+    -> Maybe Envelope
+    -> (TxIn, TxOut ConwayEra)
+holdingWith i key quantity datum =
+    ( holderIn i
+    , mkBasicTxOut
+        applicationAddr
+        (witnessValue (cfgActivePolicy cfg) key quantity)
+        & datumTxOutL
+            .~ maybe NoDatum (mkInlineDatum . envelopeToData) datum
+    )
+
+{- | The key's custody as the producers find it: the one live output the
+application recognizes as this registry's holding of `keyA`.
+-}
+custodyOf
+    :: [(TxIn, TxOut ConwayEra)]
+    -> Either T.Text ((TxIn, TxOut ConwayEra), DecodedHolding)
+custodyOf outs = case appHolding openDatumApplication of
+    Just rules -> hrLiveOutputFor rules cfg foldTokenId keyA outs
+    Nothing -> Left "the open-datum application carries no holding rules"
+
+{- | Which live output a termination books against. The retired release read
+each live output's envelope and token count and refused a malformed one,
+naming it; the termination spends exactly the output the producers find as
+the key's holding, and an output that is not a holding of this registry for
+this key is never taken as one. These rows carry that custody property
+directly: the on-chain side of it is the application's termination spend
+(its envelope binding and its one-token custody) and the request policy's
+universal layer, established over the compiled validators in Aiken.
+-}
+custodyHolding :: Spec
+custodyHolding = describe "the custody a termination books against" $ do
+    let good = holdingWith 2 keyA 1 (Just registryEnvelope)
+        refusedAs why outs =
+            either (\e -> why `T.isInfixOf` e) (const False) (custodyOf outs)
+                `shouldBe` True
+    it
+        "is the one live output holding the key's single token under an envelope of this registry"
+        $ fmap (fst . fst) (custodyOf [good]) `shouldBe` Right (holderIn 2)
+    it "reads the controller and the key from that envelope" $
+        fmap (\(_, h) -> (dhKey h, dhController h)) (custodyOf [good])
+            `shouldBe` Right (keyA, ownerKey)
+    it "is no live output that carries no datum" $
+        refusedAs "no live output holds key" [holdingWith 2 keyA 1 Nothing]
+    it "is no live output whose datum is not an envelope" $
+        refusedAs
+            "no live output holds key"
+            [
+                ( holderIn 2
+                , snd good & datumTxOutL .~ mkInlineDatum (PLC.I 5)
+                )
+            ]
+    it "is no live output holding two of the key's token" $
+        refusedAs
+            "no live output holds key"
+            [holdingWith 2 keyA 2 (Just registryEnvelope)]
+    it "is no live output holding none of the key's token" $
+        refusedAs
+            "no live output holds key"
+            [
+                ( holderIn 2
+                , snd good & valueTxOutL .~ MaryValue (Coin 10000000) mempty
+                )
+            ]
+    it "is no live output whose envelope names another registry" $
+        refusedAs
+            "no live output holds key"
+            [ holdingWith
+                2
+                keyA
+                1
+                ( Just
+                    registryEnvelope
+                        { envControl =
+                            (envControl registryEnvelope)
+                                { ctlRegistry =
+                                    StateAsset (BS.replicate 28 0x09) "t177-registry"
+                                }
+                        }
+                )
+            ]
+    it "is no live output whose envelope names another active policy" $
+        refusedAs
+            "no live output holds key"
+            [ holdingWith
+                2
+                keyA
+                1
+                ( Just
+                    registryEnvelope
+                        { envControl =
+                            (envControl registryEnvelope)
+                                { ctlActivePolicy = BS.replicate 28 0x08
+                                }
+                        }
+                )
+            ]
+    it "is no live output whose envelope names another key" $
+        refusedAs
+            "no live output holds key"
+            [ holdingWith
+                2
+                keyA
+                1
+                ( Just
+                    registryEnvelope
+                        { envControl =
+                            (envControl registryEnvelope){ctlKey = keyB}
+                        }
+                )
+            ]
+    it "is refused when two live outputs claim the key" $
+        refusedAs
+            "more than one live output claims key"
+            [good, holdingWith 3 keyA 1 (Just registryEnvelope)]
+    it "ignores another key's holding beside it" $
+        fmap
+            (fst . fst)
+            ( custodyOf
+                [ good
+                , holdingWith
+                    3
+                    keyB
+                    1
+                    ( Just
+                        registryEnvelope
+                            { envControl = (envControl registryEnvelope){ctlKey = keyB}
+                            }
+                    )
+                ]
+            )
+            `shouldBe` Right (holderIn 2)
+
 openDatumFold :: Spec
 openDatumFold =
     describe
         "#299 (build only): the open-datum application's part of a fold"
         $ do
-            it
-                "reads the live envelope and releases its deposit to the controller"
-                $ releaseOf program liveOutput
-                    `shouldBe` Right
-                        ( holderIn 1
-                        , HolderRelease
-                            { hrRedeemer = PLC.Constr 1 []
-                            , hrScript = scriptFromBytes "open-datum" program
-                            , hrRecipient = ownerKey
-                            , hrReleased = 2000000
-                            }
-                        )
-            it "refuses a live output without an envelope, naming it" $
-                releaseOf program (holderOf 1 keyA 1) `shouldSatisfy` isLeft
-            it "refuses a live output holding two of its key's token" $
-                releaseOf
-                    program
-                    ( second
-                        (valueTxOutL .~ witnessValue (cfgActivePolicy cfg) keyA 2)
-                        liveOutput
-                    )
-                    `shouldSatisfy` isLeft
             it
                 "retires the key by consuming a booked termination that holds its singular tag and whole value"
                 $ do

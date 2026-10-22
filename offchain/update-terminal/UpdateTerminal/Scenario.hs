@@ -4,11 +4,11 @@ Description : The @update-terminal@ story, in the order it runs
 License     : Apache-2.0
 
 'updateTerminal' is the whole command below its outer failure handler.
-In one node session it boots BOTH registries before any fold — a fold
-returns its approval to the wallet, and a later boot would find no
-ada-only output left to fund and collateralise from — then walks the
-story (insert, retire), the Absent refusal in the story registry, and
-the Unknown leg in the second registry; it writes the observation and
+In one node session it boots BOTH registries before any booking — each
+booking and fold spends the wallet's largest ada-only output to fund and
+collateralise itself, and a later boot would find too little left — then
+walks the story (register, terminate), the already-terminal refusal in the
+story registry, and the unknown-key leg in the second registry; it writes the observation and
 ends with the verdict the observation already states: the witness burned
 from its holder and the committed leaf Terminal, or a named failure.
 -}

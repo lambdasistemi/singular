@@ -73,6 +73,11 @@ observation o =
                     , "key" .= hex storyKey
                     , "insertTxid" .= hex (txIdOf (retInsertTx r))
                     , "retireTxid" .= hex (txIdOf (retRetireTx r))
+                    , -- The two bookings the folds settled: the registration
+                      -- that put the request on chain and the termination that
+                      -- spent the wallet's output holding the witness.
+                      "insertBookingTxid" .= hex (txIdOf (retInsertBookingTx r))
+                    , "retireBookingTxid" .= hex (txIdOf (retRetireBookingTx r))
                     , "roots"
                         .= object
                             [ "beforeInsert" .= hex (unRoot (retRootBeforeInsert r))
@@ -88,10 +93,9 @@ observation o =
                       -- moved under the active policy, read off its
                       -- own mint field.
                       "mint" .= obsMint o
-                    , -- The input the burn consumed, read off the
-                      -- chain before it was spent. A mint of -1
-                      -- with no such input is the shape the cage
-                      -- refuses `token-missing`.
+                    , -- The input the termination booking spent, read off
+                      -- the chain before it was spent: the custody that held
+                      -- the witness the fold then burned out of the request.
                       "source" .= retSource r
                     , -- The LEAF, observed where a leaf can be
                       -- observed: `Trie.lookup` answers with the
@@ -108,6 +112,7 @@ observation o =
                     , "unknown"
                         .= object
                             [ "outcome" .= ("refused" :: T.Text)
+                            , "layer" .= ("booking-builder" :: T.Text)
                             , -- The ledger's EvalFailure carries an
                               -- EMPTY Plutus log list, so the cage's
                               -- trace is usually not recoverable.
@@ -119,20 +124,23 @@ observation o =
                             , "distinguisher"
                                 .= ( "the control retired a key that IS \
                                      \Active in this same registry; this \
-                                     \one was never inserted at all"
+                                     \one was never inserted at all, so no \
+                                     \output holds its witness to book against"
                                         :: T.Text
                                    )
                             ]
                     , "terminal"
                         .= object
                             [ "outcome" .= ("refused" :: T.Text)
+                            , "layer" .= ("booking-builder" :: T.Text)
                             , "trace" .= refusalTrace "terminal-immutable" (obsTerminalDetail o)
                             , "detail" .= T.pack (take 2000 (obsTerminalDetail o))
                             , "controlTxid" .= hex (txIdOf (retRetireTx r))
                             , "distinguisher"
                                 .= ( "the control retired a key that IS \
                                      \Active in this same registry; this \
-                                     \one is already Terminal"
+                                     \one is already Terminal, so its witness \
+                                     \is gone and no output holds it"
                                         :: T.Text
                                    )
                             ]

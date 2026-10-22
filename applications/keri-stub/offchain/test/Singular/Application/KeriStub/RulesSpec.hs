@@ -25,14 +25,15 @@ import Test.Hspec
 import Cardano.Ledger.Api.Tx.Out (TxOut, datumTxOutL, mkBasicTxOut)
 import Cardano.Ledger.BaseTypes (Network (..))
 import Cardano.Ledger.Coin (Coin (..))
+import Cardano.Ledger.Core (Script)
 import Cardano.Ledger.Mary.Value (MaryValue (..))
 import PlutusCore.Data qualified as PLC
-import PlutusTx.Builtins.Internal (BuiltinByteString (..))
 
 import Singular.Application.KeriStub.Datum
     ( Holding (..)
     , holdingToData
     )
+import Singular.Application.KeriStub.Script (keriStubScript)
 import Singular.Application.KeriStub.Value
     ( decodeHolding
     , keriStubApplication
@@ -49,14 +50,8 @@ import Singular.Registry.TxBuilder.Internal
     , mkInlineDatum
     )
 import Singular.Registry.TxBuilder.Update
-    ( HolderRelease (..)
-    , RegistryContext (..)
+    ( RegistryContext (..)
     , emptyRegistryContext
-    )
-import Singular.Registry.Types
-    ( OnChainRequest (..)
-    , OnChainTokenId (..)
-    , edgeInsertActive
     )
 
 spec :: Spec
@@ -168,54 +163,50 @@ live = describe "the live output" $ do
                 `shouldBe` Left ("more than one live output claims key 0x" <> hex)
 
 release :: Spec
-release = describe "the release" $ do
-    it "spends with a unit redeemer, the controller and the deposit" $
-        let pair = (txIn (replicate 64 'a' <> "#0"), outputFor holdingA)
-        in  case hrReleaseOf rules undefined pair of
-                Right (found, rel) -> do
-                    found `shouldBe` fst pair
-                    hrRedeemer rel `shouldBe` PLC.Constr 0 []
-                    hrRecipient rel `shouldBe` controllerA
-                    hrReleased rel `shouldBe` 2_000_000
-                Left why ->
-                    expectationFailure ("release refused: " <> T.unpack why)
+release = describe "the fold context" $ do
     it
-        "adds the live outputs and one release per output to the fold context"
-        $ let outs = [(txIn (replicate 64 'a' <> "#0"), outputFor holdingA)]
-          in  case hrWithApplication rules undefined Nothing outs emptyRegistryContext of
-                Right ctx -> do
-                    length (rcHolderUtxos ctx) `shouldBe` 1
-                    Map.size (rcHolderReleases ctx) `shouldBe` 1
+        "carries the stub's own script, so the fold finds the application policy's script"
+        $ case hrWithApplication rules undefined Nothing emptyRegistryContext of
+            Right ctx ->
+                Map.elems (rcWitnessScripts ctx)
+                    `shouldSatisfy` elem (keriStubScript :: Script ConwayEra)
+            Left why ->
+                expectationFailure ("context refused: " <> T.unpack why)
+    it "adds the published reference output when the deployment has one" $
+        let reference = (txIn (replicate 64 'a' <> "#0"), outputFor holdingA)
+        in  case hrWithApplication
+                rules
+                undefined
+                (Just reference)
+                emptyRegistryContext of
+                Right ctx -> rcRefUtxos ctx `shouldBe` [reference]
                 Left why ->
                     expectationFailure ("context refused: " <> T.unpack why)
+    it
+        "releases nothing: the custody entered its request when it was booked"
+        $ case hrWithApplication rules undefined Nothing emptyRegistryContext of
+            Right ctx -> do
+                length (rcHolderUtxos ctx) `shouldBe` 0
+                Map.size (rcHolderReleases ctx) `shouldBe` 0
+            Left why ->
+                expectationFailure ("context refused: " <> T.unpack why)
 
 carried :: Spec
 carried = describe "the carried datum" $ do
     it "is the holding the booking wrote into the request" $
         let datum = holdingToData holdingA
-        in  hrCheckCarried rules (requestCarrying (Just datum))
+        in  hrCheckCarried rules (Just datum)
                 `shouldBe` Right datum
     it "is refused, by name, when the request carries no holding" $
-        case hrCheckCarried rules (requestCarrying Nothing) of
+        case hrCheckCarried rules Nothing of
             Left why ->
                 T.isInfixOf "carries no holding" why `shouldBe` True
             Right _ ->
                 expectationFailure "a dataless request was carried"
     it
         "is refused, by name, when what the request carries is not a holding"
-        $ case hrCheckCarried rules (requestCarrying (Just (PLC.B "not a holding"))) of
+        $ case hrCheckCarried rules (Just (PLC.B "not a holding")) of
             Left why ->
                 T.isInfixOf "cannot be read" why `shouldBe` True
             Right _ ->
                 expectationFailure "a foreign datum was carried"
-  where
-    requestCarrying datum =
-        OnChainRequest
-            { requestToken = OnChainTokenId (BuiltinByteString "registry")
-            , requestOwner = BuiltinByteString (BS.replicate 28 0x33)
-            , requestKey = keyA
-            , requestEdge = edgeInsertActive
-            , requestDeposit = 2_000_000
-            , requestSubmittedAt = 0
-            , requestDestination = ("address", datum)
-            }

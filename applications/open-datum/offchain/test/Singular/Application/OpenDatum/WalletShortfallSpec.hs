@@ -125,6 +125,7 @@ import Singular.Registry.RawChainFixture
     ( ChainFacts (..)
     , RawChain
     , advanceChain
+    , jumpChainToHostClock
     , newRawChain
     , rawChainProvider
     , recordTransaction
@@ -1388,12 +1389,15 @@ spec = describe "a write asks the wallet for what it costs (#526)" $ do
                     (["open-datum", "fold"] <> requestOf inserted <> tokenArgs t)
             outcomeOf (runReceipt folded) `shouldBe` Just "success"
             -- a wallet the terminate booking itself refuses: found by
-            -- bisecting PREVIEW results (too rich completes; below the
-            -- fold reserve refuses with another text), every bound a run
-            let findShort h attempts
+            -- bisecting PREVIEW results between a wallet below the fold
+            -- reserve (refused with that text) and a rich one (completes);
+            -- between them lies the wallet that can fund the reserve but not
+            -- the preparation, every bound a run
+            let findShort lo hi attempts
                     | attempts <= 0 =
                         fail "no token-only wallet refused the terminate preview"
                     | otherwise = do
+                        let h = (lo + hi) `div` 2
                         plantTokenOutputs rig bundle h attempts
                         probed <-
                             run
@@ -1410,12 +1414,12 @@ spec = describe "a write asks the wallet for what it costs (#526)" $ do
                                     <> tokenArgs t
                                 )
                         if outcomeOf (runReceipt probed) == Just "success"
-                            then findShort (h `div` 2) (attempts - 1)
+                            then findShort lo h (attempts - 1)
                             else
                                 if "preparation-unfunded:" `isInfixOf` reasonOf probed
                                     then pure (probed, h)
-                                    else findShort (h + h `div` 2) (attempts - 1)
-            (_, hShort) <- findShort 6_000_000 8
+                                    else findShort h hi (attempts - 1)
+            (_, hShort) <- findShort 1_000_000 6_000_000 12
             plantTokenOutputs rig bundle hShort 0
             walletBefore <- readTestWallet rig
             [() | (_, o) <- walletBefore, adaOnlyOut o] `shouldBe` []
@@ -1605,6 +1609,7 @@ withRigIn dir funds blueprintJson compose use = do
                 , csNetworkTime = syntheticTime
                 }
     advanceChain chain id
+    jumpChainToHostClock chain
     events <- newIORef []
     answer <- newIORef Nothing
     tracer <- compose (Tracer (\t -> modifyIORef' events (<> [t])))

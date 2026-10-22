@@ -13,6 +13,7 @@ module Singular.Registry.RawChainFixture
     , rawChainProvider
     , advanceChain
     , jumpChainTo
+    , jumpChainToHostClock
     , loseConnection
     , recordTransaction
     ) where
@@ -50,6 +51,7 @@ import Data.Map.Strict qualified as Map
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text qualified as T
+import Data.Time.Clock.POSIX (getPOSIXTime)
 import Data.Word (Word32, Word64)
 import Lens.Micro ((^.))
 import Singular.Registry.Evidence
@@ -105,6 +107,16 @@ advanceChain chain change = atomicModifyIORef' (chainFacts chain) $ \facts ->
 jumpChainTo :: RawChain -> SlotNo -> IO ()
 jumpChainTo chain slot = atomicModifyIORef' (chainFacts chain) $ \facts ->
     (facts{csTip = Just (slot, blockHash slot)}, ())
+
+{- | Move the tip to the slot the host clock is in. The synthetic time keeps one-second
+slots from the epoch, so a booking made at the tip is booked at the time the
+host clock tells, as it is on a live chain; a chain left at its first slot books
+everything in 1970 and every fold finds the request long past its window.
+-}
+jumpChainToHostClock :: RawChain -> IO ()
+jumpChainToHostClock chain = do
+    now <- getPOSIXTime
+    jumpChainTo chain (SlotNo (floor now))
 
 loseConnection :: RawChain -> IO ()
 loseConnection chain = atomicModifyIORef' (chainConnected chain) (const (False, ()))

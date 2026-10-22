@@ -40,6 +40,7 @@ module Singular.Registry.Types
     , OnChainRegistrationRequest (..)
     , OnChainTerminationRequest (..)
     , RequestDestination
+    , registrationRefundBytes
     , OnChainTokenState (..)
     , OnChainTxOutRef (..)
 
@@ -99,6 +100,7 @@ import Singular.Registry.Wire.Request
     , edgeUpdateActive
     , edgeUpdateTerminal
     , edgeWitnessTerminal
+    , registrationRefundBytes
     , requestPhase
     )
 import Singular.Registry.Wire.State

@@ -48,6 +48,7 @@ executable singular-negative
     , cardano-ledger-api
     , cardano-ledger-core
     , cardano-ledger-mary
+    , cardano-slotting
     , cardano-tx-tools:tx-build
     , containers
     , microlens

@@ -38,6 +38,7 @@ library
   default-language: GHC2021
   hs-source-dirs:   src
   exposed-modules:
+    Singular.Application.KeriStub.Book
     Singular.Application.KeriStub.Command
     Singular.Application.KeriStub.Convict
     Singular.Application.KeriStub.Datum
@@ -55,6 +56,7 @@ library
     , cardano-ledger-api
     , cardano-ledger-core
     , cardano-ledger-mary
+    , cardano-slotting
     , cardano-tx-tools:tx-build
     , containers                         >=0.6  && <0.8
     , contra-tracer

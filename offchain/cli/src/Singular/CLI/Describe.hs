@@ -53,7 +53,6 @@ import System.Exit (ExitCode (..))
 import System.FilePath (takeDirectory, (</>))
 
 import Cardano.Crypto.Hash.Class (hashToBytes)
-import Cardano.Ledger.BaseTypes (Network (Testnet))
 import Cardano.Ledger.Hashes (extractHash)
 import Cardano.Ledger.TxIn (TxId (..))
 
@@ -110,15 +109,13 @@ import Singular.Registry.Page
     , renderPageRefusal
     , renderPageText
     )
-import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.StateToken (renderStateToken)
 import Singular.Registry.Trace (startTimer)
 import Singular.Registry.TrieState (Leaf (..))
 import Singular.Registry.TrieState qualified as TS
 import Singular.Registry.TxBuilder.Internal
     ( extractCageDatum
-    , findRequestUtxos
-    , requestAddrFromCfg
+    , pendingByTag
     , scriptHashBytes
     )
 import Singular.Registry.Types
@@ -212,14 +209,11 @@ runDescribe app env a = do
                 , length [() | Active <- leaves]
                 , length [() | Terminal <- leaves]
                 )
-        requests <-
-            Cage.outputsAt
-                v
-                (requestAddrFromCfg (savedCfg saved) (savedToken saved) Testnet)
+        requests <- pendingByTag (savedCfg saved) v (savedToken saved)
         let cfg = savedCfg saved
             -- This registry's requests, as inspect lists them; the page
             -- renders them in one fixed order.
-            pending = map pendingJson (findRequestUtxos (savedToken saved) requests)
+            pending = map pendingJson requests
         pure $
             describeRegistry
                 PageInputs

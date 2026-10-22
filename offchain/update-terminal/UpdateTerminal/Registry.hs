@@ -13,13 +13,18 @@ own, with its own accepting control folded in it before the bad one.
   BEFORE any seed is chosen and loads the witness codes;
 * 'bootRegistry' boots one registry from an ada-only output that is not
   that publication, and publishes its reference outputs;
-* 'book' submits one certified booking of an edge at a key, delivering
-  to the wallet;
+* 'bookInsert' books one registration of a key through the shared
+  registration booking: the open application's registration arm mints the
+  application tag, the request policy mints the trie-ready tag, and the
+  request carries the registry's cost, the tip and the carrier, delivering
+  to the wallet with no datum;
+* 'bookRetire' books one termination of a key through the shared
+  termination booking: the wallet's output that holds the key's active
+  token is the custody, the holder's signature is its spending condition,
+  and the whole custody value enters the request, which mints the
+  trie-ready tag alone;
 * 'foldAndMirror' folds the pending booking and walks the same edge in
-  the local trie mirror; 'foldInadmissible' folds WITHOUT mirroring and
-  lets the builder construct a fold it can see the cage will reject, so
-  a refusal leg reaches the chain and records the cage's reason rather
-  than the builder's;
+  the local trie mirror;
 * 'rootNow' is the mirror's root, 'committedRoot' the one on chain.
 -}
 module UpdateTerminal.Registry
@@ -30,9 +35,9 @@ module UpdateTerminal.Registry
     , insertOp
     , retireOp
     , walletDestination
-    , book
+    , bookInsert
+    , bookRetire
     , foldAndMirror
-    , foldInadmissible
     , rootNow
     , committedRoot
     , bootStateOf
@@ -51,19 +56,26 @@ import Cardano.Crypto.Hash.Class (hashToBytes)
 import Cardano.Ledger.Address (serialiseAddr)
 import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx)
 import Cardano.Ledger.Api.Tx.Body (mintTxBodyL)
-import Cardano.Ledger.Api.Tx.Out (TxOut, referenceScriptTxOutL)
+import Cardano.Ledger.Api.Tx.Out
+    ( TxOut
+    , coinTxOutL
+    , getMinCoinTxOut
+    , mkBasicTxOut
+    , referenceScriptTxOutL
+    , valueTxOutL
+    )
 import Cardano.Ledger.BaseTypes
     ( Network (Testnet)
     , StrictMaybe (SNothing)
     )
 import Cardano.Ledger.Hashes (extractHash)
-import Cardano.Ledger.Mary.Value (MultiAsset (..))
+import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
 import Cardano.Ledger.TxIn (TxId (..), TxIn)
 import Cardano.Tx.Ledger (ConwayTx)
 
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint
-    ( NamingCodes
+    ( NamingCodes (..)
     , loadRegistryCodesFromEnv
     )
 import Singular.Registry.Capabilities (Capabilities (..))
@@ -74,6 +86,7 @@ import Singular.Registry.Ledger
     , Coin (..)
     , ConwayEra
     , Root (..)
+    , SlotNo (..)
     , TokenId (..)
     )
 import Singular.Registry.LedgerProvider qualified as Provider
@@ -90,16 +103,24 @@ import Singular.Registry.TxBuilder.Internal
     , computeScriptHash
     , extractCageDatum
     , findStateUtxo
+    , policyIdFromPin
     , requestPolicyPin
     , scriptFromBytes
     , scriptHashBytes
     , txInToRef
     , walkEdge
     )
-import Singular.Registry.TxBuilder.Update
-    ( RegistryContext (..)
-    , updateTokenWithDuties
+import Singular.Registry.TxBuilder.RegistrationBooking
+    ( RegistrationBooking (..)
+    , bookRegistrationImpl
+    , registrationWindow
     )
+import Singular.Registry.TxBuilder.TerminationBooking
+    ( CustodyAuthority (..)
+    , TerminationBooking (..)
+    , bookTerminationImpl
+    )
+import Singular.Registry.TxBuilder.Update (updateTokenWithDuties)
 import Singular.Registry.Types
     ( CageDatum (..)
     , Edge
@@ -207,7 +228,7 @@ bootRegistry s label = do
     signedBoot <- submitWithWallet wallet submit unsignedBoot
     (tid, tidBytes) <- extractTokenId cfg signedBoot
     createTrie (sessTries s) tid
-    refs <-
+    cageRefs <-
         Edges.publishCageRefs
             cfg
             (sessCodes s)
@@ -215,26 +236,140 @@ bootRegistry s label = do
             (submitWithWallet wallet submit)
             address
             tid
+    -- The fold burns each registration's application tag, so the open
+    -- application's script is published beside the cage's, as a deployment
+    -- publishes the script its registry pins.
+    applicationRef <-
+        Edges.publishRefScript
+            prov
+            (submitWithWallet wallet submit)
+            address
+            (scriptFromBytes "application" (ncApplication (sessCodes s)))
+    let refs = cageRefs <> [applicationRef]
     say (label <> ": booted registry token 0x" <> T.unpack (hex tidBytes))
     pure (Registry s cfg tid refs signedBoot tidBytes)
 
--- | Book one certified edge at this key, delivering to the wallet.
-book :: Registry -> ByteString -> Edge -> IO ()
-book reg key op =
-    void $
-        Edges.bookEdgeTo
-            (regCfg reg)
-            (sessCodes (regSession reg))
-            (sessProvider (regSession reg))
-            ( submitWithWallet
-                (sessWallet (regSession reg))
-                (sessWrites (regSession reg))
-            )
-            (walletAddr (sessWallet (regSession reg)))
+{- | The registry's state output, which every booking references and no
+booking spends.
+-}
+stateOutputOf
+    :: Registry -> Provider.Session NoWitness IO -> IO TxIn
+stateOutputOf reg v = do
+    utxos <- Cage.outputsAt v (cageAddrFromCfg (regCfg reg) Testnet)
+    case findStateUtxo (cagePolicyIdFromCfg (regCfg reg)) (regTid reg) utxos of
+        Just (txIn, _) -> pure txIn
+        Nothing -> die "no state UTxO carrying the registry policy token"
+
+{- | Book one registration of this key and land it: the key's token is
+delivered to the wallet, with no datum, once the registration is folded. The
+request holds the registry's cost, the tip and the carrier the delivered
+output needs to meet the ledger's minimum.
+-}
+bookInsert :: Registry -> ByteString -> IO ConwayTx
+bookInsert reg key = do
+    let s = regSession reg
+        cfg = regCfg reg
+        wallet = sessWallet s
+        payer = walletAddr wallet
+    unsigned <- Cage.withLatest (sessProvider s) $ \v -> do
+        stateRef <- stateOutputOf reg v
+        pp <- Cage.parameters v
+        (lower, upper) <- registrationWindow cfg v
+        let delivered =
+                mkBasicTxOut
+                    payer
+                    ( MaryValue
+                        (Coin deliveredLovelace)
+                        ( MultiAsset
+                            ( Map.singleton
+                                (policyIdFromPin (cfgActivePolicy cfg))
+                                (Map.singleton (AssetName (SBS.toShort key)) 1)
+                            )
+                        )
+                    )
+            Coin least = getMinCoinTxOut pp delivered
+        bookRegistrationImpl
+            cfg
+            v
             (regTid reg)
-            key
-            op
-            (walletDestination reg)
+            stateRef
+            RegistrationBooking
+                { rbKey = key
+                , rbRefundAddress = payer
+                , rbDestination = serialiseAddr payer
+                , rbDatum = Nothing
+                , rbDeclaredTip = defaultTip cfg
+                , rbCarrier = Coin (max least deliveredLovelace)
+                , rbNonce = toInteger (unSlotNo upper)
+                , rbLower = lower
+                , rbUpper = upper
+                , rbApplicationScript = ncApplication (sessCodes s)
+                , rbApplicationRedeemer = Nothing
+                , rbRequiredSigners = []
+                }
+            payer
+    submitWithWallet wallet (sessWrites s) unsigned
+  where
+    deliveredLovelace = 2_000_000
+
+{- | Book one termination of this key and land it: the wallet's output that
+holds the key's one active token is the custody, its holder's signature is
+the spending condition, the whole custody value enters the request and the
+transaction mints the request's trie-ready tag alone. A key whose token no
+wallet output holds has no custody to spend, and no booking is built.
+-}
+bookRetire :: Registry -> ByteString -> IO ConwayTx
+bookRetire reg key = do
+    let s = regSession reg
+        cfg = regCfg reg
+        wallet = sessWallet s
+        payer = walletAddr wallet
+        active = policyIdFromPin (cfgActivePolicy cfg)
+        holdsKey (_, o) =
+            let MaryValue _ (MultiAsset ma) = o ^. valueTxOutL
+            in  maybe
+                    False
+                    (Map.member (AssetName (SBS.toShort key)))
+                    (Map.lookup active ma)
+    unsigned <- Cage.withLatest (sessProvider s) $ \v -> do
+        stateRef <- stateOutputOf reg v
+        held <- Cage.outputsAt v payer
+        custody <- case filter holdsKey held of
+            [one] -> pure one
+            other ->
+                ioError
+                    ( userError
+                        ( "the wallet holds "
+                            <> show (length other)
+                            <> " outputs carrying the active witness of key 0x"
+                            <> T.unpack (hex key)
+                            <> ", so there is no custody to spend"
+                        )
+                    )
+        observed <- Cage.tip v
+        let Coin custodyLovelace = snd custody ^. coinTxOutL
+            Coin tip = defaultTip cfg
+        bookTerminationImpl
+            cfg
+            v
+            (regTid reg)
+            stateRef
+            TerminationBooking
+                { tbKey = key
+                , tbDeclaredTip = Coin tip
+                , tbCarrier = Coin (custodyLovelace + addedLovelace - tip)
+                , tbNonce = toInteger (unSlotNo (Provider.observedSlot observed))
+                , tbCustody = custody
+                , tbOrdinaryAdded = Coin addedLovelace
+                , tbCustodyAuthority = WalletGuarded
+                , tbRequiredSigners = []
+                }
+            payer
+    submitWithWallet wallet (sessWrites s) unsigned
+  where
+    -- What the requester pays in beside the custody so that the request
+    -- output meets the ledger's minimum with its datum and its two tags.
+    addedLovelace = 2_000_000
 
 {- | Fold the pending booking and walk the same edge in the mirror.
 
@@ -246,35 +381,23 @@ the chain left behind.
 -}
 foldAndMirror :: Registry -> ByteString -> Edge -> IO ConwayTx
 foldAndMirror reg key op = do
-    tx <- foldWith reg False
+    tx <- foldWith reg
     -- #183: the edge names the leaf bytes the local mirror must
     -- write, exactly as it names the ones the cage walks.
     withTrie (sessTries (regSession reg)) (regTid reg) $ \t ->
         void (walkEdge t key op)
     pure tx
 
-{- | Fold the pending booking even though the builder can see the cage
-will reject it, and do not mirror it.
-
-An honest builder refuses to construct a fold it can see the cage will
-reject, which is right for the story and wrong for a row whose whole
-point is the cage's own reason: without this the observation would
-record the BUILDER's message instead.
--}
-foldInadmissible :: Registry -> IO ConwayTx
-foldInadmissible reg = foldWith reg True
-
-foldWith :: Registry -> Bool -> IO ConwayTx
-foldWith reg inadmissible = do
+foldWith :: Registry -> IO ConwayTx
+foldWith reg = do
     let s = regSession reg
     tx <- Cage.withLatest (sessProvider s) $ \v -> do
-        ctx0 <-
+        ctx <-
             Edges.registryContextFor
                 (regCfg reg)
                 (sessCodes s)
                 v
                 (regRefs reg)
-        let ctx = ctx0{rcAllowInadmissible = inadmissible}
         updateTokenWithDuties
             (regCfg reg)
             v

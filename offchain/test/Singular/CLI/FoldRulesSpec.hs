@@ -17,8 +17,6 @@ import Control.Monad (forM_)
 
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
-import Data.ByteString.Short qualified as SBS
-import Data.Either (rights)
 import Data.List (isInfixOf, nub)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Map.Strict qualified as Map
@@ -36,13 +34,11 @@ import Cardano.Ledger.Api.Tx.Out
 import Cardano.Ledger.BaseTypes (Network (Testnet))
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Mary.Value
-    ( AssetName (..)
-    , MaryValue (..)
-    , MultiAsset (..)
+    ( MaryValue (..)
     )
 import Cardano.Ledger.TxIn (TxIn)
 import Cardano.Slotting.Slot (SlotNo (..))
-import Data.Aeson (Value, object, toJSON, (.=))
+import Data.Aeson (Value (Null), object, toJSON, (.=))
 import Lens.Micro ((&), (.~))
 import PlutusCore.Data qualified as PLC
 import PlutusTx.Builtins.Internal (BuiltinByteString (..))
@@ -65,32 +61,25 @@ import Singular.CLI.FoldRules
     , PostBuildRefusal (..)
     , SettledForReceipt (..)
     , SpendsRefusal (..)
-    , appVerdictOf
-    , approvalCheckOf
     , assignKeyInts
     , assignRefPairing
     , buildLiveFacts
-    , buildPendingRequests
+    , checkCarriedDatum
     , foldReceiptLists
     , foldRequests
     , keptReceiptFields
-    , neutralAppExecutable
-    , pendingDeadlineOf
-    , pendingRequestOf
     , postBuildCheck
-    , refuseNamedEdgeEarly
     , renderFoldRequestsRefusal
     , renderSpendsRefusal
-    , requestEdgeKind
-    , requestOwnerText
     , spendsSelection
     )
 import Singular.Registry.Application
     ( Application (..)
     , HoldingRules (..)
+    , datumCbor
+    , datumHash
     , neutralApplication
     )
-import Singular.Registry.Config (CageConfig (..), defaultProcessTime)
 import Singular.Registry.Deployment (parseOutRef, renderOutRef)
 import Singular.Registry.FoldAdmission (foldAdmission)
 import Singular.Registry.FoldSelection
@@ -99,31 +88,29 @@ import Singular.Registry.FoldSelection
     , EdgeKind (..)
     , Exclusion (..)
     , Leaf (..)
+    , MemberKind (..)
     , PendingRequest (..)
     , SelectedRequest (..)
     , Selection (..)
+    , TaggedRequest (..)
+    , TaggedSelection (..)
     , exclusionName
     , exclusionSource
     , selectFold
+    , selectTaggedFold
     )
 import Singular.Registry.TxBuilder.BookingFixture qualified as Fixture
-import Singular.Registry.TxBuilder.Internal.Edges
-    ( approvalDestination
-    , approvalName
-    )
 import Singular.Registry.TxBuilder.Internal.Identity
     ( addrFromKeyHashBytes
     , extractCageDatum
     , mkInlineDatum
     , mkRequestDatumWith
-    , policyIdFromPin
     , requestAddrFromCfg
     )
 import Singular.Registry.Types
     ( CageDatum (..)
     , OnChainRequest (..)
     , edgeInsertActive
-    , edgeName
     , edgeUpdateTerminal
     )
 
@@ -349,14 +336,9 @@ spec = describe "registry fold takes the selection" $ do
     builtFoldSpendsExactlyTheSelection
     mismatchedInputsRefuseAsInconsistent
     namedWithNothingSettledStatesCause
-    earlyNamedEdgeRefusal
-    requestFieldsAreReadFromTheOutput
     sameKeySameInteger
-    approvalCheckFollowsTheModel
     applicationVerdictFollowsTheValue
     liveFactsReadLeafAndToken
-    assembledApplicationVerdictReachesTheSelection
-    assembledApprovalCheckReachesTheSelection
     oldRuleUntouched
     receiptListsSettledAndExcluded
     foldReceiptOmitsEarlierFields
@@ -1231,101 +1213,6 @@ oldRuleContrastReference = describe "the old-rule contrast refuses the same inpu
             `shouldBe` Left "nothing is pending"
 
 -- ---------------------------------------------------------
--- An early refusal for a named request keeps every other exclusion
--- ---------------------------------------------------------
-
-{- | The fixtures of the early-refusal row: one pending request whose edge the
-fold does not take (named) and one pending output that does not decode, both
-read from real request datums through the production adapters.
--}
-earlyRefusalFixtures
-    :: ( [(TxIn, Either String OnChainRequest)]
-       , [(TxIn, Int)]
-       , [PendingRequest]
-       , Selection
-       )
-earlyRefusalFixtures =
-    let addrR = addrFromKeyHashBytes Testnet (BC.pack (replicate 28 'R'))
-        keyR = BC.pack "early-refusal-inadmissible"
-        destR = (serialiseAddr addrR, Just (PLC.I 1))
-        datumR =
-            mkRequestDatumWith
-                Fixture.tokenId
-                addrR
-                keyR
-                2
-                2000000
-                1000
-                destR
-        reqAddr = requestAddrFromCfg Fixture.cfg Fixture.tokenId Testnet
-        outR =
-            mkBasicTxOut reqAddr (MaryValue (Coin 10000000) mempty)
-                & datumTxOutL .~ mkInlineDatum datumR
-        outU = mkBasicTxOut reqAddr (MaryValue (Coin 10000000) mempty)
-        decR = case extractCageDatum outR of
-            Just (RequestDatum r) -> Right r
-            _ -> Left "no request datum"
-        decU = Left "no datum" :: Either String OnChainRequest
-        rTx = txRef 101
-        uTx = txRef 102
-        (pendings, pairing) =
-            buildPendingRequests
-                [(rTx, outR, decR), (uTx, outU, decU)]
-                gPinned
-                neutralApplication
-                gProcess
-        facts = Map.fromList [(prKey p, (LeafUnknown, False)) | p <- pendings]
-        sel = selectFold 1 nowMs marginMs processMs facts pendings
-    in  ([(rTx, decR), (uTx, decU)], pairing, pendings, sel)
-
-earlyNamedEdgeRefusal :: Spec
-earlyNamedEdgeRefusal = describe "an early refusal for a named untakeable edge" $ do
-    it "refuses at once when the named request is the only one pending" $
-        refuseNamedEdgeEarly (Just t1) [t1] `shouldBe` True
-    it "does not refuse at once when another request is also pending" $
-        refuseNamedEdgeEarly (Just t1) [t1, t2] `shouldBe` False
-    it
-        "does not refuse at once a named request that is not the sole pending one"
-        $ refuseNamedEdgeEarly (Just t1) [t2, t3] `shouldBe` False
-    it "decides nothing without a named request" $
-        refuseNamedEdgeEarly Nothing [t1] `shouldBe` False
-    it
-        "a named inadmissible edge beside an undecodable request is refused by the selection, naming both"
-        $ do
-            let (_, pairing, pendings, sel) = earlyRefusalFixtures
-                (rTx, uTx) = (txRef 101, txRef 102)
-                excluded = excludedTxIns pairing sel
-                excOf tx = case [exc | (t, exc) <- excluded, t == tx] of
-                    (e : _) -> e
-                    [] -> error ("early-refusal row: no exclusion for " <> show tx)
-                excR = excOf rTx
-                excU = excOf uTx
-            map fst pairing `shouldBe` [rTx, uTx]
-            selectionSettled sel `shouldBe` []
-            map fst excluded `shouldBe` [rTx, uTx]
-            exclusionName excR `shouldBe` "edge-inadmissible"
-            exclusionSource excR `shouldBe` "model-refusal"
-            exclusionName excU `shouldBe` "undecodable"
-            exclusionSource excU `shouldBe` "selection-policy"
-            length pendings `shouldBe` 2
-            -- the decision: with another request pending, no early refusal
-            refuseNamedEdgeEarly (Just rTx) (map fst pairing) `shouldBe` False
-            -- so the selection's refusal names the named cause and every other exclusion
-            foldRequests (Just rTx) pairing sel
-                `shouldBe` Left (FoldNamedNothingSettled rTx (Just excR) [(uTx, excU)])
-            let said =
-                    renderFoldRequestsRefusal
-                        (FoldNamedNothingSettled rTx (Just excR) [(uTx, excU)])
-            T.unpack (renderOutRef rTx) `isInfixOf` said `shouldBe` True
-            T.unpack (renderOutRef uTx) `isInfixOf` said `shouldBe` True
-            T.unpack (exclusionName excR) `isInfixOf` said `shouldBe` True
-            T.unpack (exclusionName excU) `isInfixOf` said `shouldBe` True
-            T.unpack (exclusionSource excR) `isInfixOf` said `shouldBe` True
-            T.unpack (exclusionSource excU) `isInfixOf` said `shouldBe` True
-            T.unpack (excDetail excR) `isInfixOf` said `shouldBe` True
-            T.unpack (excDetail excU) `isInfixOf` said `shouldBe` True
-
--- ---------------------------------------------------------
 -- The kept fields' shared fixture components
 -- ---------------------------------------------------------
 
@@ -1343,120 +1230,8 @@ baseKeptComps =
         , keptUpperSlot = Just 42
         , keptPostBuild = object ["check" .= ("admitted" :: T.Text)]
         , keptHostClockMs = nowMs
-        , keptRemainingMs = 900000
+        , keptRemainingMs = Just 900000
         }
-
--- ---------------------------------------------------------
--- Selection inputs: output-derived fixtures (invariants 1-5)
--- ---------------------------------------------------------
-
--- | The pinned policy of the test registry, read from its config.
-gPinned :: SBS.ShortByteString
-gPinned = cfgApplicationPolicy Fixture.cfg
-
--- | The processing time of the test registry, read from its config.
-gProcess :: Integer
-gProcess = defaultProcessTime Fixture.cfg
-
-requestFieldsAreReadFromTheOutput :: Spec
-requestFieldsAreReadFromTheOutput = describe "request fields are read from the output" $ do
-    it "maps admitted edges to their kinds" $ do
-        requestEdgeKind edgeInsertActive `shouldBe` EdgeInsertActive
-        requestEdgeKind edgeUpdateTerminal `shouldBe` EdgeUpdateTerminal
-    it "maps another edge to other carrying the model name" $
-        requestEdgeKind 5 `shouldBe` EdgeOther (T.pack (edgeName 5))
-    it "hexes the owner bytes" $ do
-        let raw = BC.pack "k1-owner"
-            want = T.pack (BC.unpack (B16.encode raw))
-        requestOwnerText raw `shouldBe` want
-    it "adds submission and processing time" $ do
-        let s = 1000
-            p = 30000
-        pendingDeadlineOf s p `shouldBe` (s + p)
-    it "assembles pending requests field by field from real datums" $ do
-        let addrA = addrFromKeyHashBytes Testnet (BC.pack (replicate 28 'A'))
-            addrB = addrFromKeyHashBytes Testnet (BC.pack (replicate 28 'B'))
-            keyA = BC.pack "green-key-1"
-            keyB = BC.pack "green-key-2"
-            subA = 1000
-            subB = 2000
-            destA = (serialiseAddr addrA, Just (PLC.I 1))
-            destB = (serialiseAddr addrB, Nothing)
-            datumA =
-                mkRequestDatumWith
-                    Fixture.tokenId
-                    addrA
-                    keyA
-                    edgeInsertActive
-                    2000000
-                    subA
-                    destA
-            datumB =
-                mkRequestDatumWith
-                    Fixture.tokenId
-                    addrB
-                    keyB
-                    edgeUpdateTerminal
-                    2000000
-                    subB
-                    destB
-            reqAddr = requestAddrFromCfg Fixture.cfg Fixture.tokenId Testnet
-            outA =
-                mkBasicTxOut reqAddr (MaryValue (Coin 10000000) mempty)
-                    & datumTxOutL .~ mkInlineDatum datumA
-            outB =
-                mkBasicTxOut reqAddr (MaryValue (Coin 10000000) mempty)
-                    & datumTxOutL .~ mkInlineDatum datumB
-            decA = case extractCageDatum outA of
-                Just (RequestDatum r) -> Right r
-                _ -> Left "no request datum"
-            decB = case extractCageDatum outB of
-                Just (RequestDatum r) -> Right r
-                _ -> Left "no request datum"
-            txA = txRef 41
-            txB = txRef 42
-            app = neutralApplication
-            (pendings, pairing) =
-                buildPendingRequests
-                    [(txA, outA, decA), (txB, outB, decB)]
-                    gPinned
-                    app
-                    gProcess
-        length pendings `shouldBe` 2
-        pairing `shouldBe` [(txA, 1), (txB, 2)]
-        case (decA, decB, pendings) of
-            (Right reqA, Right reqB, [pA, pB]) -> do
-                prDecodeOk pA `shouldBe` True
-                prDecodeOk pB `shouldBe` True
-                prEdge pA `shouldBe` EdgeInsertActive
-                prEdge pB `shouldBe` EdgeUpdateTerminal
-                prDeadline pA `shouldBe` (requestSubmittedAt reqA + gProcess)
-                prDeadline pB `shouldBe` (requestSubmittedAt reqB + gProcess)
-                requestKey reqA `shouldBe` keyA
-                requestKey reqB `shouldBe` keyB
-                requestEdge reqA `shouldBe` edgeInsertActive
-                requestEdge reqB `shouldBe` edgeUpdateTerminal
-                let BuiltinByteString obsA = requestOwner reqA
-                    BuiltinByteString obsB = requestOwner reqB
-                prOwner pA `shouldBe` T.pack (BC.unpack (B16.encode obsA))
-                prOwner pB `shouldBe` T.pack (BC.unpack (B16.encode obsB))
-                prRef pA `shouldBe` 1
-                prRef pB `shouldBe` 2
-                prKey pA `shouldNotBe` prKey pB
-            _ -> expectationFailure "fixtures did not decode"
-    it "a non-decoding output yields an undecodable pending request" $ do
-        let reqAddr = requestAddrFromCfg Fixture.cfg Fixture.tokenId Testnet
-            out = mkBasicTxOut reqAddr (MaryValue (Coin 10000000) mempty)
-            got =
-                pendingRequestOf
-                    1
-                    1
-                    (Left "no datum" :: Either String OnChainRequest)
-                    out
-                    gPinned
-                    AppReady
-                    gProcess
-        prDecodeOk got `shouldBe` False
 
 sameKeySameInteger :: Spec
 sameKeySameInteger = describe "same key shares one integer" $ do
@@ -1481,67 +1256,29 @@ sameKeySameInteger = describe "same key shares one integer" $ do
             (b0 : _) -> b0 `shouldNotBe` (byPosition !! 1)
             [] -> expectationFailure "position numbering is empty"
     it
-        "the selection excludes the later same-key request under shared integers"
+        "the tagged selection excludes the later same-key request under shared integers"
         $ do
-            let addrA = addrFromKeyHashBytes Testnet (BC.pack (replicate 28 'A'))
-                addrB = addrFromKeyHashBytes Testnet (BC.pack (replicate 28 'B'))
-                key = BC.pack "shared-key"
-                reqAddr = requestAddrFromCfg Fixture.cfg Fixture.tokenId Testnet
-                mkOut addr sub =
-                    let dest = (serialiseAddr addr, Just (PLC.I 1))
-                        datum =
-                            mkRequestDatumWith
-                                Fixture.tokenId
-                                addr
-                                key
-                                edgeInsertActive
-                                2000000
-                                sub
-                                dest
-                        base =
-                            mkBasicTxOut reqAddr (MaryValue (Coin 10000000) mempty)
-                                & datumTxOutL .~ mkInlineDatum datum
-                    in  case extractCageDatum base of
-                            Just (RequestDatum r) ->
-                                let BuiltinByteString obs = requestOwner r
-                                    good =
-                                        approvalName
-                                            (requestEdge r)
-                                            (requestKey r)
-                                            obs
-                                            (approvalDestination (requestDestination r))
-                                    assets =
-                                        MultiAsset
-                                            ( Map.singleton
-                                                (policyIdFromPin gPinned)
-                                                (Map.singleton (AssetName (SBS.toShort good)) 1)
-                                            )
-                                    out =
-                                        mkBasicTxOut reqAddr (MaryValue (Coin 10000000) assets)
-                                            & datumTxOutL .~ mkInlineDatum datum
-                                in  (out, Right r)
-                            _ -> (base, Left "no datum" :: Either String OnChainRequest)
-                (outA, decA) = mkOut addrA 1000
-                (outB, decB) = mkOut addrB 2000
-                txA = txRef 51
-                txB = txRef 52
-                app = neutralApplication
-                (pendings, _) =
-                    buildPendingRequests
-                        [(txA, outA, decA), (txB, outB, decB)]
-                        gPinned
-                        app
-                        10000000
-            length pendings `shouldBe` 2
-            case pendings of
-                (p0 : _) -> do
-                    prKey p0 `shouldBe` prKey (pendings !! 1)
-                    let facts = Map.fromList [(prKey p0, (LeafUnknown, False))]
-                        sel = selectFold 9 0 0 processMs facts pendings
-                    map selRef (selectionSettled sel) `shouldBe` [prRef p0]
-                    map (exclusionName . snd) (selectionExcluded sel)
+            let keys = [BC.pack "shared-key", BC.pack "shared-key"]
+                ints = assignKeyInts keys
+                refs = map snd (assignRefPairing [txRef 51, txRef 52])
+                reqs =
+                    [ TaggedRequest
+                        { tgRef = r
+                        , tgKey = k
+                        , tgKind = MemberRegistration
+                        , tgSubmittedAt = 0
+                        , tgCarried = AppReady
+                        }
+                    | (r, k) <- zip refs ints
+                    ]
+            case (ints, refs) of
+                (i : _, r : _) -> do
+                    let facts = Map.fromList [(i, (LeafUnknown, False))]
+                        sel = selectTaggedFold 9 0 0 processMs facts reqs
+                    map tgRef (taggedSettled sel) `shouldBe` [r]
+                    map (exclusionName . snd) (taggedExcluded sel)
                         `shouldBe` ["key-in-batch"]
-                [] -> expectationFailure "pending assembly is empty"
+                _ -> expectationFailure "the assembly numbered nothing"
     it "a position-numbered control would settle both same-key requests" $ do
         let addrA = addrFromKeyHashBytes Testnet (BC.pack (replicate 28 'A'))
             addrB = addrFromKeyHashBytes Testnet (BC.pack (replicate 28 'B'))
@@ -1583,220 +1320,34 @@ sameKeySameInteger = describe "same key shares one integer" $ do
         length (selectionSettled sel) `shouldBe` 2
         selectionExcluded sel `shouldBe` []
 
-approvalCheckFollowsTheModel :: Spec
-approvalCheckFollowsTheModel = describe "approval check follows the model" $ do
-    it "no approval asset is missing" $ do
-        let pinned = SBS.toShort (BC.pack "pinned-policy")
-            good = BC.pack "good-name"
-        approvalCheckOf [] pinned good `shouldBe` ApprovalMissing
-    it "an approval under another policy is a policy mismatch" $ do
-        let pinned = SBS.toShort (BC.pack "pinned-policy")
-            other = SBS.toShort (BC.pack "other-policy")
-            good = BC.pack "good-name"
-        approvalCheckOf [(other, good)] pinned good
-            `shouldBe` ApprovalPolicyMismatch
-    it "a pinned approval with the wrong name is a tuple mismatch" $ do
-        let pinned = SBS.toShort (BC.pack "pinned-policy")
-            good = BC.pack "good-name"
-            bad = BC.pack "bad-name"
-        approvalCheckOf [(pinned, bad)] pinned good
-            `shouldBe` ApprovalTupleMismatch
-    it "a matching approval is ok" $ do
-        let pinned = SBS.toShort (BC.pack "pinned-policy")
-            good = BC.pack "good-name"
-        approvalCheckOf [(pinned, good)] pinned good `shouldBe` ApprovalOk
-    it "the matching commitment is the name the builders mint" $ do
-        let addrA = addrFromKeyHashBytes Testnet (BC.pack (replicate 28 'A'))
-            key = BC.pack "approval-key"
-            dest = (serialiseAddr addrA, Just (PLC.I 1))
-            datum =
-                mkRequestDatumWith
-                    Fixture.tokenId
-                    addrA
-                    key
-                    edgeInsertActive
-                    2000000
-                    1000
-                    dest
-            reqAddr = requestAddrFromCfg Fixture.cfg Fixture.tokenId Testnet
-            out =
-                mkBasicTxOut reqAddr (MaryValue (Coin 10000000) mempty)
-                    & datumTxOutL .~ mkInlineDatum datum
-        case extractCageDatum out of
-            Just (RequestDatum r) -> do
-                let BuiltinByteString obs = requestOwner r
-                    good =
-                        approvalName
-                            (requestEdge r)
-                            (requestKey r)
-                            obs
-                            (approvalDestination (requestDestination r))
-                approvalCheckOf [(gPinned, good)] gPinned good `shouldBe` ApprovalOk
-            _ -> expectationFailure "base datum did not decode"
-    it "altering only the edge breaks the commitment" $ do
-        checkAltered (\r -> r{requestEdge = edgeUpdateTerminal})
-    it "altering only the key breaks the commitment" $ do
-        checkAltered (\r -> r{requestKey = requestKey r <> BC.pack "x"})
-    it "altering only the owner breaks the commitment" $ do
-        checkAltered
-            ( \r ->
-                r{requestOwner = BuiltinByteString (BC.pack (replicate 28 'Z'))}
-            )
-    it "altering only the destination address breaks the commitment" $ do
-        let addrZ = addrFromKeyHashBytes Testnet (BC.pack (replicate 28 'Z'))
-        checkAltered
-            ( \r ->
-                r
-                    { requestDestination = (serialiseAddr addrZ, snd (requestDestination r))
-                    }
-            )
-    it "altering only the destination datum breaks the commitment" $ do
-        checkAltered
-            ( \r ->
-                r
-                    { requestDestination = (fst (requestDestination r), Just (PLC.I 999))
-                    }
-            )
-    it "a hand-altered name breaks the commitment" $ do
-        let addrA = addrFromKeyHashBytes Testnet (BC.pack (replicate 28 'A'))
-            key = BC.pack "approval-key"
-            dest = (serialiseAddr addrA, Just (PLC.I 1))
-            datum =
-                mkRequestDatumWith
-                    Fixture.tokenId
-                    addrA
-                    key
-                    edgeInsertActive
-                    2000000
-                    1000
-                    dest
-            reqAddr = requestAddrFromCfg Fixture.cfg Fixture.tokenId Testnet
-            out =
-                mkBasicTxOut reqAddr (MaryValue (Coin 10000000) mempty)
-                    & datumTxOutL .~ mkInlineDatum datum
-        case extractCageDatum out of
-            Just (RequestDatum r) -> do
-                let BuiltinByteString obs = requestOwner r
-                    good =
-                        approvalName
-                            (requestEdge r)
-                            (requestKey r)
-                            obs
-                            (approvalDestination (requestDestination r))
-                    bad = good <> BC.pack "extra"
-                approvalCheckOf [(gPinned, bad)] gPinned good
-                    `shouldBe` ApprovalTupleMismatch
-            _ -> expectationFailure "base datum did not decode"
-  where
-    checkAltered alter = do
-        let addrA = addrFromKeyHashBytes Testnet (BC.pack (replicate 28 'A'))
-            key = BC.pack "approval-key"
-            dest = (serialiseAddr addrA, Just (PLC.I 1))
-            datum =
-                mkRequestDatumWith
-                    Fixture.tokenId
-                    addrA
-                    key
-                    edgeInsertActive
-                    2000000
-                    1000
-                    dest
-            reqAddr = requestAddrFromCfg Fixture.cfg Fixture.tokenId Testnet
-            out =
-                mkBasicTxOut reqAddr (MaryValue (Coin 10000000) mempty)
-                    & datumTxOutL .~ mkInlineDatum datum
-        case extractCageDatum out of
-            Just (RequestDatum r) -> do
-                let BuiltinByteString obs = requestOwner r
-                    good =
-                        approvalName
-                            (requestEdge r)
-                            (requestKey r)
-                            obs
-                            (approvalDestination (requestDestination r))
-                    r2 = alter r
-                    BuiltinByteString obs2 = requestOwner r2
-                    altered =
-                        approvalName
-                            (requestEdge r2)
-                            (requestKey r2)
-                            obs2
-                            (approvalDestination (requestDestination r2))
-                altered `shouldNotBe` good
-                approvalCheckOf [(gPinned, altered)] gPinned good
-                    `shouldBe` ApprovalTupleMismatch
-            _ -> expectationFailure "base datum did not decode"
-
 applicationVerdictFollowsTheValue :: Spec
-applicationVerdictFollowsTheValue = describe "application verdict follows the value" $ do
-    it "a readable insertion is ready" $ do
-        let req = mkReq edgeInsertActive (Just (PLC.I 1))
-        appVerdictOf neutralApplication req `shouldBe` AppReady
-    it "an unreadable insertion is unreadable" $ do
-        let req = mkReq edgeInsertActive Nothing
-        appVerdictOf neutralApplication req `shouldBe` AppDatumUnreadable
+applicationVerdictFollowsTheValue = describe "the carried datum follows the value" $ do
+    it "a readable insertion is ready" $
+        checkCarriedDatum neutralApplication (Just (PLC.I 1))
+            `shouldBe` Right (Just (PLC.I 1))
+    it
+        "an insertion that carries no datum is ready: its output holds none"
+        $ checkCarriedDatum neutralApplication Nothing `shouldBe` Right Nothing
     it "an insertion follows the value holding rules" $ do
-        let req = mkReq edgeInsertActive (Just (PLC.I 1))
-            badRules = dummyRules (Left "cannot read")
+        let badRules = dummyRules (Left "cannot read")
             goodRules = dummyRules (Right (PLC.I 1))
             badApp = neutralApplication{appHolding = Just badRules}
             goodApp = neutralApplication{appHolding = Just goodRules}
-        appVerdictOf badApp req `shouldBe` AppDatumUnreadable
-        appVerdictOf goodApp req `shouldBe` AppReady
-    it "a termination without holding rules names the value executable" $ do
-        let exe = T.pack "fixture-exe-1"
-            app = neutralApplication{appExecutable = Just exe}
-            req = mkReq edgeUpdateTerminal Nothing
-        appVerdictOf app req `shouldBe` AppRequired exe
-    it
-        "a termination without holding rules or executable names the generic wording"
-        $ do
-            let req = mkReq edgeUpdateTerminal Nothing
-            appVerdictOf neutralApplication req
-                `shouldBe` AppRequired neutralAppExecutable
-    it
-        "a termination with holding rules is ready with and without an executable"
-        $ do
-            let exe = T.pack "fixture-exe-9"
-                noExe =
-                    neutralApplication
-                        { appHolding = Just (dummyRules (Right (PLC.I 0)))
-                        }
-                withExe = noExe{appExecutable = Just exe}
-                req = mkReq edgeUpdateTerminal Nothing
-            appVerdictOf noExe req `shouldBe` AppReady
-            appVerdictOf withExe req `shouldBe` AppReady
-    it "the executable in the verdict is the value's own" $ do
-        let exe = T.pack "fixture-exe-2"
-            other = T.pack "fixture-exe-other"
-            app = neutralApplication{appExecutable = Just exe}
-            req = mkReq edgeUpdateTerminal Nothing
-            owned = case appExecutable app of
-                Just e -> e
-                Nothing -> error "verdict fixture names no executable"
-        owned `shouldBe` exe
-        appVerdictOf app req `shouldBe` AppRequired owned
-        appVerdictOf app req `shouldNotBe` AppRequired other
+        checkCarriedDatum badApp (Just (PLC.I 1))
+            `shouldBe` Left "cannot read"
+        checkCarriedDatum goodApp (Just (PLC.I 1))
+            `shouldBe` Right (Just (PLC.I 1))
+    it "the rules judge the carried datum, whatever it is" $ do
+        let rules = dummyRules (Left "refused whatever it is")
+            app = neutralApplication{appHolding = Just rules}
+        checkCarriedDatum app Nothing `shouldBe` Left "refused whatever it is"
   where
-    mkReq edge destDatum =
-        let addrA = addrFromKeyHashBytes Testnet (BC.pack (replicate 28 'A'))
-            key = BC.pack "verdict-key"
-            dest = (serialiseAddr addrA, destDatum)
-            datum = mkRequestDatumWith Fixture.tokenId addrA key edge 2000000 1000 dest
-            reqAddr = requestAddrFromCfg Fixture.cfg Fixture.tokenId Testnet
-            out =
-                mkBasicTxOut reqAddr (MaryValue (Coin 10000000) mempty)
-                    & datumTxOutL .~ mkInlineDatum datum
-        in  case extractCageDatum out of
-                Just (RequestDatum r) -> r
-                _ -> error "verdict fixture did not decode"
     dummyRules check =
         HoldingRules
             { hrCheckCarried = const check
             , hrFindHoldings = \_ _ _ _ -> []
             , hrLiveOutputFor = \_ _ _ _ -> Left "unused"
-            , hrReleaseOf = \_ _ -> Left "unused"
-            , hrWithApplication = \_ _ _ _ -> Left "unused"
+            , hrWithApplication = \_ _ _ -> Left "unused"
             }
 
 liveFactsReadLeafAndToken :: Spec
@@ -1830,332 +1381,19 @@ liveFactsReadLeafAndToken = describe "live facts read leaf and token" $ do
             keys = Map.fromList [(k, 7)]
         buildLiveFacts Map.empty Map.empty keys
             `shouldBe` Map.fromList [(7, (LeafUnknown, False))]
-    it "uses the same integers as the pending assembly" $ do
-        let addrA = addrFromKeyHashBytes Testnet (BC.pack (replicate 28 'A'))
-            addrB = addrFromKeyHashBytes Testnet (BC.pack (replicate 28 'B'))
-            keyA = BC.pack "shared-facts-1"
+    it "uses the same integers as the tagged assembly" $ do
+        let keyA = BC.pack "shared-facts-1"
             keyB = BC.pack "shared-facts-2"
-            reqAddr = requestAddrFromCfg Fixture.cfg Fixture.tokenId Testnet
-            mkOut addr key sub =
-                let dest = (serialiseAddr addr, Just (PLC.I 1))
-                    datum =
-                        mkRequestDatumWith
-                            Fixture.tokenId
-                            addr
-                            key
-                            edgeInsertActive
-                            2000000
-                            sub
-                            dest
-                    out =
-                        mkBasicTxOut reqAddr (MaryValue (Coin 10000000) mempty)
-                            & datumTxOutL .~ mkInlineDatum datum
-                in  case extractCageDatum out of
-                        Just (RequestDatum r) -> (out, Right r)
-                        _ -> (out, Left "no datum" :: Either String OnChainRequest)
-            (outA, decA) = mkOut addrA keyA 1000
-            (outB, decB) = mkOut addrB keyB 2000
-            txA = txRef 61
-            txB = txRef 62
-            (pendings, _) =
-                buildPendingRequests
-                    [(txA, outA, decA), (txB, outB, decB)]
-                    gPinned
-                    neutralApplication
-                    gProcess
-        case pendings of
-            (p0 : _) -> do
-                let keyMap =
-                        Map.fromList
-                            [ (keyA, prKey p0)
-                            , (keyB, prKey (pendings !! 1))
-                            ]
-                    leaves =
-                        Map.fromList [(keyA, LeafUnknown), (keyB, LeafActive)]
-                    present = Map.fromList [(keyA, False), (keyB, True)]
-                    got = buildLiveFacts leaves present keyMap
-                Map.lookup (prKey p0) got
-                    `shouldBe` Just (LeafUnknown, False)
-                Map.lookup (prKey (pendings !! 1)) got
-                    `shouldBe` Just (LeafActive, True)
-            [] -> expectationFailure "pending assembly is empty"
-
--- ---------------------------------------------------------
--- Assembly: the application verdict reaches the selection
--- ---------------------------------------------------------
-
-assembledApplicationVerdictReachesTheSelection :: Spec
-assembledApplicationVerdictReachesTheSelection = describe "assembled application verdict reaches the selection" $ do
-    it "carries each request's application verdict into the selection" $ do
-        let exe = T.pack "fixture-exe-assembled-1"
-            app = neutralApplication{appExecutable = Just exe}
-            addrR = addrFromKeyHashBytes Testnet (BC.pack (replicate 28 'R'))
-            addrS = addrFromKeyHashBytes Testnet (BC.pack (replicate 28 'S'))
-            addrT = addrFromKeyHashBytes Testnet (BC.pack (replicate 28 'T'))
-            keyR = BC.pack "assembled-app-ready"
-            keyS = BC.pack "assembled-app-required"
-            keyT = BC.pack "assembled-app-unreadable"
-            reqAddr = requestAddrFromCfg Fixture.cfg Fixture.tokenId Testnet
-            destR = (serialiseAddr addrR, Just (PLC.I 1))
-            destS = (serialiseAddr addrS, Just (PLC.I 2))
-            destT = (serialiseAddr addrT, Nothing)
-            datumR =
-                mkRequestDatumWith
-                    Fixture.tokenId
-                    addrR
-                    keyR
-                    edgeInsertActive
-                    2000000
-                    1000
-                    destR
-            datumS =
-                mkRequestDatumWith
-                    Fixture.tokenId
-                    addrS
-                    keyS
-                    edgeUpdateTerminal
-                    2000000
-                    2000
-                    destS
-            datumT =
-                mkRequestDatumWith
-                    Fixture.tokenId
-                    addrT
-                    keyT
-                    edgeInsertActive
-                    2000000
-                    3000
-                    destT
-            mkApproved datum =
-                let base =
-                        mkBasicTxOut reqAddr (MaryValue (Coin 10000000) mempty)
-                            & datumTxOutL .~ mkInlineDatum datum
-                in  case extractCageDatum base of
-                        Just (RequestDatum r) ->
-                            let BuiltinByteString obs = requestOwner r
-                                good =
-                                    approvalName
-                                        (requestEdge r)
-                                        (requestKey r)
-                                        obs
-                                        (approvalDestination (requestDestination r))
-                                assets =
-                                    MultiAsset
-                                        ( Map.singleton
-                                            (policyIdFromPin gPinned)
-                                            (Map.singleton (AssetName (SBS.toShort good)) 1)
-                                        )
-                                out =
-                                    mkBasicTxOut reqAddr (MaryValue (Coin 10000000) assets)
-                                        & datumTxOutL .~ mkInlineDatum datum
-                            in  (out, Right r :: Either String OnChainRequest)
-                        _ -> (base, Left "no datum" :: Either String OnChainRequest)
-            (outR, decR) = mkApproved datumR
-            (outS, decS) = mkApproved datumS
-            (outT, decT) = mkApproved datumT
-            txR = txRef 71
-            txS = txRef 72
-            txT = txRef 73
-            (pendings, _) =
-                buildPendingRequests
-                    [(txR, outR, decR), (txS, outS, decS), (txT, outT, decT)]
-                    gPinned
-                    app
-                    gProcess
-            decoded = rights [decR, decS, decT]
-            expected = map (appVerdictOf app) decoded
-        length pendings `shouldBe` 3
-        length decoded `shouldBe` 3
-        (length (nub expected) >= 2) `shouldBe` True
-        map prApp pendings `shouldBe` expected
-        map prApproval pendings
-            `shouldBe` [ApprovalOk, ApprovalOk, ApprovalOk]
-        case pendings of
-            [pR, pS, pT] -> do
-                let facts =
-                        Map.fromList
-                            [ (prKey pR, (LeafUnknown, False))
-                            , (prKey pS, (LeafActive, True))
-                            , (prKey pT, (LeafUnknown, False))
-                            ]
-                    sel = selectFold 9 0 0 processMs facts pendings
-                map selRef (selectionSettled sel) `shouldBe` [prRef pR]
-                map (T.unpack . exclusionName . snd) (selectionExcluded sel)
-                    `shouldBe` ["application-required", "application-datum-unreadable"]
-                case selectionExcluded sel of
-                    [(_, excS), (_, excT)] -> do
-                        T.unpack exe `isInfixOf` T.unpack (excDetail excS)
-                            `shouldBe` True
-                        T.unpack (excDetail excT) `shouldNotBe` ""
-                    _ ->
-                        expectationFailure
-                            "the application exclusions are not the two expected"
-            _ -> expectationFailure "pending assembly is not the three expected"
-
--- ---------------------------------------------------------
--- Assembly: the approval check reaches the selection
--- ---------------------------------------------------------
-
-assembledApprovalCheckReachesTheSelection :: Spec
-assembledApprovalCheckReachesTheSelection = describe "assembled approval check reaches the selection" $ do
-    it "carries each request's approval check into the selection" $ do
-        let addrC = addrFromKeyHashBytes Testnet (BC.pack (replicate 28 'C'))
-            addrD = addrFromKeyHashBytes Testnet (BC.pack (replicate 28 'D'))
-            addrE = addrFromKeyHashBytes Testnet (BC.pack (replicate 28 'E'))
-            addrF = addrFromKeyHashBytes Testnet (BC.pack (replicate 28 'F'))
-            addrG = addrFromKeyHashBytes Testnet (BC.pack (replicate 28 'G'))
-            addrH = addrFromKeyHashBytes Testnet (BC.pack (replicate 28 'H'))
-            keyC = BC.pack "assembled-approval-ok"
-            keyD = BC.pack "assembled-approval-policy"
-            keyE = BC.pack "assembled-approval-missing"
-            keyF = BC.pack "assembled-approval-edge"
-            keyG = BC.pack "assembled-approval-key"
-            keyH = BC.pack "assembled-approval-owner"
-            reqAddr = requestAddrFromCfg Fixture.cfg Fixture.tokenId Testnet
-            otherPin = SBS.toShort (BC.pack (replicate 28 'Q'))
-            otherOwner = BC.pack (replicate 28 'Z')
-            mkDatum addr key sub =
-                mkRequestDatumWith
-                    Fixture.tokenId
-                    addr
-                    key
-                    edgeInsertActive
-                    2000000
-                    sub
-                    (serialiseAddr addr, Just (PLC.I 1))
-            datumC = mkDatum addrC keyC 1000
-            datumD = mkDatum addrD keyD 2000
-            datumE = mkDatum addrE keyE 3000
-            datumF = mkDatum addrF keyF 4000
-            datumG = mkDatum addrG keyG 5000
-            datumH = mkDatum addrH keyH 6000
-            decode datum =
-                let base =
-                        mkBasicTxOut reqAddr (MaryValue (Coin 10000000) mempty)
-                            & datumTxOutL .~ mkInlineDatum datum
-                in  case extractCageDatum base of
-                        Just (RequestDatum r) -> (base, Right r :: Either String OnChainRequest)
-                        _ -> (base, Left "no datum" :: Either String OnChainRequest)
-            (_, decC) = decode datumC
-            (_, decD) = decode datumD
-            (_, decE) = decode datumE
-            (_, decF) = decode datumF
-            (_, decG) = decode datumG
-            (_, decH) = decode datumH
-            goodOf dec = case dec of
-                Right r ->
-                    let BuiltinByteString obs = requestOwner r
-                    in  approvalName
-                            (requestEdge r)
-                            (requestKey r)
-                            obs
-                            (approvalDestination (requestDestination r))
-                Left _ -> error "approval fixture did not decode"
-            goodC = goodOf decC
-            goodD = goodOf decD
-            alteredF = case decF of
-                Right r ->
-                    let BuiltinByteString obs = requestOwner r
-                    in  approvalName
-                            edgeUpdateTerminal
-                            (requestKey r)
-                            obs
-                            (approvalDestination (requestDestination r))
-                Left _ -> error "approval fixture did not decode"
-            alteredG = case decG of
-                Right r ->
-                    let BuiltinByteString obs = requestOwner r
-                    in  approvalName
-                            (requestEdge r)
-                            (requestKey r <> BC.pack "x")
-                            obs
-                            (approvalDestination (requestDestination r))
-                Left _ -> error "approval fixture did not decode"
-            alteredH = case decH of
-                Right r ->
-                    approvalName
-                        (requestEdge r)
-                        (requestKey r)
-                        otherOwner
-                        (approvalDestination (requestDestination r))
-                Left _ -> error "approval fixture did not decode"
-            mkAssets pin name =
-                MultiAsset
-                    ( Map.singleton
-                        (policyIdFromPin pin)
-                        (Map.singleton (AssetName (SBS.toShort name)) 1)
-                    )
-            outC =
-                mkBasicTxOut
-                    reqAddr
-                    (MaryValue (Coin 10000000) (mkAssets gPinned goodC))
-                    & datumTxOutL .~ mkInlineDatum datumC
-            outD =
-                mkBasicTxOut
-                    reqAddr
-                    (MaryValue (Coin 10000000) (mkAssets otherPin goodD))
-                    & datumTxOutL .~ mkInlineDatum datumD
-            outE =
-                mkBasicTxOut reqAddr (MaryValue (Coin 10000000) mempty)
-                    & datumTxOutL .~ mkInlineDatum datumE
-            outF =
-                mkBasicTxOut
-                    reqAddr
-                    (MaryValue (Coin 10000000) (mkAssets gPinned alteredF))
-                    & datumTxOutL .~ mkInlineDatum datumF
-            outG =
-                mkBasicTxOut
-                    reqAddr
-                    (MaryValue (Coin 10000000) (mkAssets gPinned alteredG))
-                    & datumTxOutL .~ mkInlineDatum datumG
-            outH =
-                mkBasicTxOut
-                    reqAddr
-                    (MaryValue (Coin 10000000) (mkAssets gPinned alteredH))
-                    & datumTxOutL .~ mkInlineDatum datumH
-            txC = txRef 81
-            txD = txRef 82
-            txE = txRef 83
-            txF = txRef 84
-            txG = txRef 85
-            txH = txRef 86
-            app = neutralApplication
-            (pendings, _) =
-                buildPendingRequests
-                    [ (txC, outC, decC)
-                    , (txD, outD, decD)
-                    , (txE, outE, decE)
-                    , (txF, outF, decF)
-                    , (txG, outG, decG)
-                    , (txH, outH, decH)
-                    ]
-                    gPinned
-                    app
-                    gProcess
-            -- Expected checks from how each fixture was built: matching, other policy, missing, then edge, key and owner altered.
-            expected =
-                [ ApprovalOk
-                , ApprovalPolicyMismatch
-                , ApprovalMissing
-                , ApprovalTupleMismatch
-                , ApprovalTupleMismatch
-                , ApprovalTupleMismatch
-                ]
-        length pendings `shouldBe` 6
-        map prApproval pendings `shouldBe` expected
-        let facts = Map.fromList [(prKey p, (LeafUnknown, False)) | p <- pendings]
-            sel = selectFold 9 0 0 processMs facts pendings
-        case pendings of
-            (pC : _) ->
-                map selRef (selectionSettled sel) `shouldBe` [prRef pC]
-            [] -> expectationFailure "pending assembly is empty"
-        map (T.unpack . exclusionName . snd) (selectionExcluded sel)
-            `shouldBe` [ "no-approval"
-                       , "no-approval"
-                       , "approval-mismatch"
-                       , "approval-mismatch"
-                       , "approval-mismatch"
-                       ]
+            ints = assignKeyInts [keyA, keyB]
+            keyMap = Map.fromList (zip [keyA, keyB] ints)
+            leaves = Map.fromList [(keyA, LeafUnknown), (keyB, LeafActive)]
+            present = Map.fromList [(keyA, False), (keyB, True)]
+            got = buildLiveFacts leaves present keyMap
+        case ints of
+            [iA, iB] -> do
+                Map.lookup iA got `shouldBe` Just (LeafUnknown, False)
+                Map.lookup iB got `shouldBe` Just (LeafActive, True)
+            _ -> expectationFailure "the assembly numbered the keys wrongly"
 
 -- ---------------------------------------------------------
 -- The fold result lists its settled requests
@@ -2171,10 +1409,11 @@ twoEntryFolded =
         , fdUpperSlot = Nothing
         , fdPostBuild = object ["check" .= ("admitted" :: T.Text)]
         , fdDecidedAt = nowMs
-        , fdRemaining = 900000
+        , fdRemaining = Just 900000
         , fdExcluded = []
         , fdCapacityBound = 1
         , fdCapacityProvenance = "prov-1"
+        , fdDonation = 2000000
         , fdPreparation = Nothing
         }
   where
@@ -2185,8 +1424,8 @@ twoEntryFolded =
             , seEdge = edgeInsertActive
             , seOwner = "6f776e657231"
             , seKind = FoldInsertion
-            , seDelivery = Released v1 2000000
-            , seDeadline = Deadline farDeadline (Just (SlotNo 42))
+            , seDelivery = DeliveredDatum v1 (Just (PLC.I 1))
+            , seDeadline = Just (Deadline farDeadline (Just (SlotNo 42)))
             }
     entry2 =
         SettledEntry
@@ -2195,8 +1434,8 @@ twoEntryFolded =
             , seEdge = edgeUpdateTerminal
             , seOwner = "6f776e657232"
             , seKind = FoldTermination
-            , seDelivery = Released v2 2000000
-            , seDeadline = Deadline nearDeadline (Just (SlotNo 43))
+            , seDelivery = Terminated v2
+            , seDeadline = Nothing
             }
 
 foldResultListsItsSettledRequests :: Spec
@@ -2217,8 +1456,9 @@ foldResultListsItsSettledRequests = describe "the fold result lists its settled 
                         , "owner" .= ("6f776e657231" :: T.Text)
                         , "settlement"
                             .= object
-                                [ "released" .= renderOutRef v1
-                                , "deposit" .= (2000000 :: Integer)
+                                [ "liveOutput" .= renderOutRef v1
+                                , "datumHash" .= hexOf (datumHash (PLC.I 1))
+                                , "datumCbor" .= hexOf (datumCbor (PLC.I 1))
                                 ]
                         , "deadline"
                             .= object
@@ -2233,18 +1473,28 @@ foldResultListsItsSettledRequests = describe "the fold result lists its settled 
                         , "owner" .= ("6f776e657232" :: T.Text)
                         , "settlement"
                             .= object
-                                [ "released" .= renderOutRef v2
-                                , "deposit" .= (2000000 :: Integer)
+                                [ "terminated" .= renderOutRef v2
                                 ]
-                        , "deadline"
-                            .= object
-                                [ "posixMs" .= nearDeadline
-                                , "slot" .= (43 :: Integer)
-                                ]
+                        , "deadline" .= Null
                         ]
                     ]
-    it "the fold deadline is the earliest among the entries" $ do
-        deadlineMs (foldDeadline twoEntryFolded) `shouldBe` nearDeadline
+    it
+        "the fold deadline is the earliest among the registrations, a termination having none"
+        $ do
+            fmap deadlineMs (foldDeadline twoEntryFolded)
+                `shouldBe` Just farDeadline
+            case fdSettled twoEntryFolded of
+                e1 :| [e2] -> do
+                    let near =
+                            e1
+                                { seRequest = v3
+                                , seDeadline = Just (Deadline nearDeadline (Just (SlotNo 43)))
+                                }
+                    fmap
+                        deadlineMs
+                        (foldDeadline twoEntryFolded{fdSettled = e1 :| [near, e2]})
+                        `shouldBe` Just nearDeadline
+                _ -> expectationFailure "two entries expected"
 
 settledEntryLookup :: Spec
 settledEntryLookup = describe "settledEntryFor finds the entry for a request" $ do
@@ -2256,3 +1506,7 @@ settledEntryLookup = describe "settledEntryFor finds the entry for a request" $ 
             _ -> expectationFailure "two entries expected"
     it "returns nothing for a request not among them" $ do
         settledEntryFor twoEntryFolded (txRef 9) `shouldBe` Nothing
+
+-- | The lowercase hex a receipt prints bytes as.
+hexOf :: BC.ByteString -> T.Text
+hexOf = T.pack . BC.unpack . B16.encode

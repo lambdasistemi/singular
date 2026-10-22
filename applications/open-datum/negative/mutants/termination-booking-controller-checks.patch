@@ -1,15 +1,14 @@
 diff --git a/applications/open-datum/onchain/validators/open_datum.ak b/applications/open-datum/onchain/validators/open_datum.ak
 --- a/applications/open-datum/onchain/validators/open_datum.ak
 +++ b/applications/open-datum/onchain/validators/open_datum.ak
-@@ -284,9 +284,9 @@ fn bookTerminate(
-             if control.key != key || registryBytes(control.registry) != registry || control.activePolicy != state.active_policy {
-               traceFalse(@"app-terminate-binding")
-             } else if owner != control.controller {
--              traceFalse(@"app-owner")
-+              True
-             } else if !list.has(tx.extra_signatories, control.controller) {
--              traceFalse(@"app-controller-signature")
-+              True
-             } else if name != approvalName(
-               edgeUpdateTerminal,
-               key,
+@@ -113,8 +113,8 @@ pub fn bookTerminationRefusal(
+                   control.registry,
+                 ) != registry || control.activePolicy != state.active_policy {
+                   Some(@"app-terminate-binding")
+-                } else if !list.has(tx.extra_signatories, control.controller) {
+-                  Some(@"app-controller-signature")
++                } else if False && !list.has(tx.extra_signatories, control.controller) {
++                  None
+                 } else if request.destination != #"" {
+                   Some(@"app-terminate-destination")
+                 } else if ordinary_added < 0 || lovelace_of(requested.value) != lovelace_of(

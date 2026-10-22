@@ -45,10 +45,9 @@ import Singular.Application.OpenDatum.Envelope
     , envelopeVersion
     , registryBytes
     )
-import Singular.Application.OpenDatum.Release
+import Singular.Application.OpenDatum.Holding
     ( heldOf
     , liveEnvelope
-    , releaseOf
     , withApplication
     )
 import Singular.Registry.Application
@@ -65,7 +64,6 @@ import Singular.Registry.Ledger
     , TokenId (..)
     )
 import Singular.Registry.TxBuilder.Internal (scriptHashBytes)
-import Singular.Registry.Types (OnChainRequest (..))
 
 -- | Which of the two entry points of the application a registry runs.
 data Mode = Open | Closed
@@ -103,10 +101,8 @@ mkApplication title =
                     { hrCheckCarried = first T.pack . checkCarried
                     , hrFindHoldings = findHoldings
                     , hrLiveOutputFor = liveOutputFor
-                    , hrReleaseOf = \applied pair ->
-                        first T.pack (releaseOf applied pair)
-                    , hrWithApplication = \applied reference live ctx ->
-                        first T.pack (withApplication applied reference live ctx)
+                    , hrWithApplication = \applied reference ctx ->
+                        first T.pack (withApplication applied reference ctx)
                     }
         }
 
@@ -133,17 +129,19 @@ holdingOf e =
             , dhPayloadJson = dataToJson (envPayload e)
             }
 
--- | The datum an insertion's request must carry: the envelope itself.
-checkCarried :: OnChainRequest -> Either String PLC.Data
-checkCarried req = case snd (requestDestination req) of
+-- | The datum a registration's request must carry: the envelope itself.
+checkCarried :: Maybe PLC.Data -> Either String PLC.Data
+checkCarried carried = case carried of
     Nothing ->
         Left
-            "the insertion's request carries no envelope: its delivered output would hold none"
+            "the registration's request carries no envelope: its delivered output would hold none"
     Just datum ->
         case envelopeFromData datum of
             Left why ->
                 Left
-                    ("the envelope the insertion's request carries cannot be read: " <> why)
+                    ( "the envelope the registration's request carries cannot be read: "
+                        <> why
+                    )
             Right _ -> Right datum
 
 {- | This registry's holdings of a key among the outputs at the application

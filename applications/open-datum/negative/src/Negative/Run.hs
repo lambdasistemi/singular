@@ -82,7 +82,7 @@ import Singular.CLI.Session
     , txIdHex
     )
 import Singular.Registry.Application (DecodedHolding (..))
-import Singular.Registry.Types (OnChainRequest (..))
+import Singular.Registry.TxBuilder.Internal (bookedKey)
 
 import Negative.Craft
     ( BookingShape (..)
@@ -295,7 +295,7 @@ runNegativeInsert env args = case entryMode args of
                                                 , ("booking", toJSON (txIdHex (confirmedTx signedBooking)))
                                                 , ("fold", toJSON ("none" :: Text))
                                                 , ("requests", toJSON [txInText tin | ((tin, _), _) <- foldPairs])
-                                                , ("keys", toJSON [hexT (requestKey q) | (_, q) <- foldPairs])
+                                                , ("keys", toJSON [hexT (bookedKey q) | (_, q) <- foldPairs])
                                                 , ("reason", toJSON (T.pack whyFold))
                                                 ,
                                                     ( "failedScripts"
@@ -709,7 +709,7 @@ runNegativeFold env args short = do
             let payment = maybe PayAsOwed PayShort short
             pairs <- reading at (\v -> selectFoldRequests v (atLive at) FoldEvery)
             firstKey <- case pairs of
-                ((_, _), q) : _ -> pure (requestKey q)
+                ((_, _), q) : _ -> pure (bookedKey q)
                 [] ->
                     failWith ClientRefusal "no request is pending for the fold"
             before <- readAround at firstKey wallet
@@ -768,7 +768,7 @@ runNegativeFold env args short = do
                                     LedgerRefusal
                                     [ ("fold", toJSON ("none" :: Text))
                                     , ("requests", toJSON [txInText tin | ((tin, _), _) <- pairs])
-                                    , ("keys", toJSON [hexT (requestKey q) | (_, q) <- pairs])
+                                    , ("keys", toJSON [hexT (bookedKey q) | (_, q) <- pairs])
                                     , ("reason", toJSON (T.pack why))
                                     ,
                                         ( "failedScripts"

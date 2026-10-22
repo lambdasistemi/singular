@@ -52,6 +52,7 @@ import Cardano.Ledger.Api.Tx.Body
     , mintTxBodyL
     , outputsTxBodyL
     , referenceInputsTxBodyL
+    , reqSignerHashesTxBodyL
     )
 import Cardano.Ledger.Api.Tx.Out
     ( TxOut
@@ -73,6 +74,7 @@ import Cardano.Ledger.Credential
     ( Credential (..)
     , StakeReference (..)
     )
+import Cardano.Ledger.Hashes (ScriptHash)
 import Cardano.Ledger.Mary.Value
     ( MaryValue (..)
     , MultiAsset (..)
@@ -112,7 +114,9 @@ import Singular.Registry.TxBuilder.BookingFixture
     )
 import Singular.Registry.TxBuilder.BookingFixture qualified as Fixture
 import Singular.Registry.TxBuilder.Internal
-    ( cageAddrFromCfg
+    ( addrFromKeyHashBytes
+    , addrWitnessKeyHash
+    , cageAddrFromCfg
     , computeScriptHash
     , mkInlineDatum
     , policyIdFromPin
@@ -122,7 +126,8 @@ import Singular.Registry.TxBuilder.Internal
     , toPlcData
     )
 import Singular.Registry.TxBuilder.TerminationBooking
-    ( TerminationBooking (..)
+    ( CustodyAuthority (..)
+    , TerminationBooking (..)
     , bookTerminationImpl
     )
 import Singular.Registry.Types
@@ -183,6 +188,10 @@ requestPolicy = policyIdFromPin Fixture.requestPin
 -- | The custody's script and its address: the toy application script.
 custodyScript :: SBS.ShortByteString
 custodyScript = ncApplication Fixture.codes
+
+-- | The redeemer the toy custody script is spent with.
+custodyRedeemer :: Data
+custodyRedeemer = Constr 2 [I 7]
 
 custodyAddr :: Addr
 custodyAddr =
@@ -312,8 +321,8 @@ bookingAdding added =
         , tbNonce = bookedNonce
         , tbCustody = (custodyRef, custodyOut)
         , tbOrdinaryAdded = Coin added
-        , tbApplicationScript = custodyScript
-        , tbRedeemer = Constr 2 [I 7]
+        , tbCustodyAuthority = ScriptGuarded custodyScript custodyRedeemer
+        , tbRequiredSigners = []
         }
 
 built :: TerminationBooking -> IO ConwayTx
@@ -381,6 +390,7 @@ feeOf tx = let Coin f = tx ^. bodyTxL . feeTxBodyL in f
 spec :: Spec
 spec = describe "chunk3 offchain" $ do
     termination
+    walletCustody
     retainedBytes
 
 termination :: Spec
@@ -442,13 +452,19 @@ termination = describe "the termination booking" $ do
                     | (ConwayMinting (AsIx _), (d, u)) <- Map.toList rs
                     ]
             map (\(i, d, _) -> (i, d)) spends
-                `shouldBe` [(custodyIndex :: Word32, tbRedeemer booking)]
+                `shouldBe` [(custodyIndex :: Word32, custodyRedeemer)]
             map fst mints `shouldBe` [Constr 0 []]
             all (\(_, _, ExUnits m s) -> m > 0 && s > 0) spends `shouldBe` True
             all (\(_, ExUnits m s) -> m > 0 && s > 0) mints `shouldBe` True
     it "preserves the spend redeemer it is given, whatever it is" $ do
         tx <-
-            built booking{tbRedeemer = Constr 5 [B "caller authorization", I 42]}
+            built
+                booking
+                    { tbCustodyAuthority =
+                        ScriptGuarded
+                            custodyScript
+                            (Constr 5 [B "caller authorization", I 42])
+                    }
         let Redeemers rs = tx ^. witsTxL . rdmrsTxWitsL
         [getPlutusData d | (ConwaySpending _, (d, _)) <- Map.toList rs]
             `shouldBe` [Constr 5 [B "caller authorization", I 42]]
@@ -555,7 +571,11 @@ termination = describe "the termination booking" $ do
                     booking
         it "an application script that is not the custody's script" $
             refusesWith "not the custody's script" $
-                built booking{tbApplicationScript = Fixture.program}
+                built
+                    booking
+                        { tbCustodyAuthority =
+                            ScriptGuarded Fixture.program custodyRedeemer
+                        }
         it "a tip below the registry's minimum" $
             refusesWith "tip is below the registry's minimum tip" $
                 built
@@ -648,7 +668,6 @@ termination = describe "the termination booking" $ do
                                 (Map.singleton (nameOf "stranger") 1)
                             )
                     )
-    policyHashOf (PolicyID h) = h
 
 -- ---------------------------------------------------------
 -- Small helpers
@@ -657,6 +676,166 @@ termination = describe "the termination booking" $ do
 unMultiAsset
     :: MultiAsset -> Map.Map PolicyID (Map.Map AssetName Integer)
 unMultiAsset (MultiAsset m) = m
+
+-- | The script hash a policy id names.
+policyHashOf :: PolicyID -> ScriptHash
+policyHashOf (PolicyID h) = h
+
+-- ---------------------------------------------------------
+-- A wallet custody: the holder's signature is the spending condition
+-- ---------------------------------------------------------
+
+-- | The holder's payment key hash: one no other fixture uses.
+holderBytes :: ByteString
+holderBytes = BS.replicate 28 0x77
+
+holderAddr :: Addr
+holderAddr = addrFromKeyHashBytes Testnet holderBytes
+
+-- | The key's one singular tag and lovelace, at a wallet address.
+walletCustodyOut :: TxOut ConwayEra
+walletCustodyOut =
+    mkBasicTxOut
+        holderAddr
+        (MaryValue (Coin custodyLovelace) (singular bookedKey 1))
+
+walletWorldWith :: TxOut ConwayEra -> Served
+walletWorldWith custody =
+    [ (payer, [(fundingIn, fundingOut)])
+    , (cageAddrFromCfg cfg Testnet, [(stateRef, stateOutputFor cfg)])
+    , (holderAddr, [(custodyRef, custody)])
+    ]
+
+-- | The termination of the key out of a wallet: the holder's signature is the authority.
+walletBooking :: TerminationBooking
+walletBooking =
+    booking
+        { tbCustody = (custodyRef, walletCustodyOut)
+        , tbCustodyAuthority = WalletGuarded
+        }
+
+walletBuilt :: TerminationBooking -> IO ConwayTx
+walletBuilt = builtIn (walletWorldWith walletCustodyOut)
+
+walletCustody :: Spec
+walletCustody = describe "a custody a wallet holds" $ do
+    it
+        "spends the custody with no script witness and no spend redeemer, only the request mint"
+        $ do
+            tx <- walletBuilt walletBooking
+            Map.keysSet (tx ^. witsTxL . scriptTxWitsL)
+                `shouldBe` Set.singleton (policyHashOf requestPolicy)
+            let Redeemers rs = tx ^. witsTxL . rdmrsTxWitsL
+            [() | (ConwaySpending _, _) <- Map.toList rs] `shouldBe` []
+            [getPlutusData d | (ConwayMinting _, (d, _)) <- Map.toList rs]
+                `shouldBe` [Constr 0 []]
+            tx ^. bodyTxL . inputsTxBodyL
+                `shouldBe` Set.fromList [custodyRef, fundingIn]
+    it "names the holder's key hash as the required signer" $ do
+        tx <- walletBuilt walletBooking
+        tx ^. bodyTxL . reqSignerHashesTxBodyL
+            `shouldBe` Set.singleton (addrWitnessKeyHash holderBytes)
+    it "keeps the caller's required signers beside the holder's" $ do
+        let other = BS.replicate 28 0x33
+        tx <- walletBuilt walletBooking{tbRequiredSigners = [other]}
+        tx ^. bodyTxL . reqSignerHashesTxBodyL
+            `shouldBe` Set.fromList
+                [addrWitnessKeyHash holderBytes, addrWitnessKeyHash other]
+    it
+        "pays the request address the whole custody value, the singular tag and the trie-ready tag, with the termination datum"
+        $ do
+            tx <- walletBuilt walletBooking
+            case outputsAtRequest tx of
+                [o] -> do
+                    o ^. valueTxOutL `shouldBe` requestValue 0
+                    rawDatumOf o
+                        `shouldBe` Just (terminationWire (custodyLovelace - tip))
+                other -> expectationFailure ("request outputs: " <> show (length other))
+    it "mints exactly the one trie-ready tag under the request policy" $ do
+        tx <- walletBuilt walletBooking
+        tx ^. bodyTxL . mintTxBodyL
+            `shouldBe` MultiAsset
+                (Map.singleton requestPolicy (Map.singleton (nameOf bookedTag) 1))
+    it
+        "takes an ordinary addition into the request beside the whole custody"
+        $ do
+            tx <-
+                walletBuilt
+                    walletBooking
+                        { tbOrdinaryAdded = Coin 750_000
+                        , tbCarrier = Coin (custodyLovelace + 750_000 - tip)
+                        }
+            case outputsAtRequest tx of
+                [o] -> o ^. valueTxOutL `shouldBe` requestValue 750_000
+                other -> expectationFailure ("request outputs: " <> show (length other))
+    it "pays the fee from the payer's funding, never from the custody" $ do
+        tx <- walletBuilt walletBooking
+        let outs = toList (tx ^. bodyTxL . outputsTxBodyL)
+            total = sum [c | o <- outs, let Coin c = o ^. coinTxOutL]
+        total + feeOf tx `shouldBe` custodyLovelace + 100_000_000
+    describe "refuses before building" $ do
+        it "a wallet authority over a custody a script guards" $
+            refusesWith "guarded by a script" $
+                built booking{tbCustodyAuthority = WalletGuarded}
+        it "a script authority over a custody a wallet holds" $
+            refusesWith "not the custody's script" $
+                walletBuilt
+                    walletBooking
+                        { tbCustodyAuthority =
+                            ScriptGuarded custodyScript custodyRedeemer
+                        }
+        it
+            "a wallet custody that holds more than the singular tag and lovelace"
+            $ refusesWith "more than the singular tag and lovelace"
+            $ let stranger =
+                    walletCustodyOut
+                        & valueTxOutL
+                            .~ MaryValue
+                                (Coin custodyLovelace)
+                                ( singular bookedKey 1
+                                    <> MultiAsset
+                                        ( Map.singleton
+                                            Fixture.applicationPolicy
+                                            (Map.singleton (nameOf "stranger") 1)
+                                        )
+                                )
+              in  builtIn
+                    (walletWorldWith stranger)
+                    walletBooking{tbCustody = (custodyRef, stranger)}
+        it "a wallet custody that does not hold the key's singular tag" $
+            refusesWith "does not hold the key's singular tag" $
+                let bare =
+                        walletCustodyOut
+                            & valueTxOutL .~ MaryValue (Coin custodyLovelace) mempty
+                in  builtIn
+                        (walletWorldWith bare)
+                        walletBooking{tbCustody = (custodyRef, bare)}
+        it "a wallet custody that holds two of the key's singular tag" $
+            refusesWith "more than one of the key's singular tag" $
+                let doubled =
+                        walletCustodyOut
+                            & valueTxOutL
+                                .~ MaryValue
+                                    (Coin custodyLovelace)
+                                    (singular bookedKey 2)
+                in  builtIn
+                        (walletWorldWith doubled)
+                        walletBooking{tbCustody = (custodyRef, doubled)}
+        it "a wallet custody the ledger does not answer" $
+            refusesWith "custody output not found" $
+                builtIn
+                    [ (payer, [(fundingIn, fundingOut)])
+                    , (cageAddrFromCfg cfg Testnet, [(stateRef, stateOutputFor cfg)])
+                    , (holderAddr, [])
+                    ]
+                    walletBooking
+        it "a wallet custody stated differently from the ledger's" $
+            refusesWith "differs from the live output" $
+                builtIn
+                    ( walletWorldWith
+                        (walletCustodyOut & coinTxOutL .~ Coin (custodyLovelace + 1))
+                    )
+                    walletBooking
 
 -- ---------------------------------------------------------
 -- The retained compiled bytes
@@ -688,6 +867,36 @@ retainedBytes = describe "over the retained compiled bytes" $
                 [ ()
                   | (ConwayMinting _, Left _) <-
                         Map.toList (judgedBy r (carrierRaised tx))
+                  ]
+                    `shouldSatisfy` (not . null)
+        it "builds a wallet-custody booking the real request policy accepts" $ \r -> do
+            tx <- realWalletBuilt r (realStateOf r)
+            let Redeemers declared = tx ^. witsTxL . rdmrsTxWitsL
+            Map.size declared `shouldBe` 1
+            all (\(_, ExUnits m s) -> m > 0 && s > 0) (Map.elems declared)
+                `shouldBe` True
+            [ p
+              | (p, Left _) <- Map.toList (judgedByWith r (realWalletCustody r) tx)
+              ]
+                `shouldBe` []
+        it
+            "has the real request policy refuse the wallet-custody body with its carrier raised by one lovelace"
+            $ \r -> do
+                tx <- realWalletBuilt r (realStateOf r)
+                [ ()
+                  | (ConwayMinting _, Left _) <-
+                        Map.toList
+                            (judgedByWith r (realWalletCustody r) (carrierRaised tx))
+                  ]
+                    `shouldSatisfy` (not . null)
+        it
+            "has the real request policy refuse the wallet-custody body that no longer spends the custody"
+            $ \r -> do
+                tx <- realWalletBuilt r (realStateOf r)
+                let unspent = tx & bodyTxL . inputsTxBodyL %~ Set.delete custodyRef
+                [ ()
+                  | (ConwayMinting _, Left _) <-
+                        Map.toList (judgedByWith r (realWalletCustody r) unspent)
                   ]
                     `shouldSatisfy` (not . null)
         it "refuses a state that pins the unapplied request validator's hash" $ \r -> do
@@ -766,8 +975,34 @@ realBooking :: RetainedRegistry -> TerminationBooking
 realBooking r =
     booking
         { tbCustody = (custodyRef, realCustody r)
-        , tbApplicationScript = realCustodyScript
+        , tbCustodyAuthority = ScriptGuarded realCustodyScript custodyRedeemer
         }
+
+-- | The key's singular tag under the real active policy, held at a wallet address.
+realWalletCustody :: RetainedRegistry -> TxOut ConwayEra
+realWalletCustody r = realCustody r & addrTxOutL .~ holderAddr
+
+realWalletBooking :: RetainedRegistry -> TerminationBooking
+realWalletBooking r =
+    booking
+        { tbCustody = (custodyRef, realWalletCustody r)
+        , tbCustodyAuthority = WalletGuarded
+        }
+
+realWalletBuilt :: RetainedRegistry -> TxOut ConwayEra -> IO ConwayTx
+realWalletBuilt r stateOut =
+    bookTerminationImpl
+        (rrConfig r)
+        ( viewServing
+            [ (payer, [(fundingIn, fundingOut)])
+            , (cageAddrFromCfg (rrConfig r) Testnet, [(stateRef, stateOut)])
+            , (holderAddr, [(custodyRef, realWalletCustody r)])
+            ]
+        )
+        (rrToken r)
+        stateRef
+        (realWalletBooking r)
+        payer
 
 realServed :: RetainedRegistry -> TxOut ConwayEra -> Served
 realServed r stateOut =
@@ -781,7 +1016,15 @@ judgedBy
     :: RetainedRegistry
     -> ConwayTx
     -> Map.Map (ConwayPlutusPurpose AsIx ConwayEra) (Either String ExUnits)
-judgedBy r tx =
+judgedBy r = judgedByWith r (realCustody r)
+
+-- | The same, over a custody output the caller names: the one the body spends.
+judgedByWith
+    :: RetainedRegistry
+    -> TxOut ConwayEra
+    -> ConwayTx
+    -> Map.Map (ConwayPlutusPurpose AsIx ConwayEra) (Either String ExUnits)
+judgedByWith r custody tx =
     Map.map
         (either (Left . show) Right)
         ( evalTxExUnits
@@ -791,7 +1034,7 @@ judgedBy r tx =
                 ( Map.fromList
                     [ (fundingIn, fundingOut)
                     , (stateRef, stateOutputWith r (pinnedBy (rrConfig r)))
-                    , (custodyRef, realCustody r)
+                    , (custodyRef, custody)
                     ]
                 )
             )

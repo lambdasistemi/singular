@@ -1,30 +1,27 @@
 diff --git a/onchain/lib/registry/fold.ak b/onchain/lib/registry/fold.ak
-index 64e7407..9af4257 100644
 --- a/onchain/lib/registry/fold.ak
 +++ b/onchain/lib/registry/fold.ak
-@@ -209,7 +209,7 @@ fn applyEdge(
-   let inserting = edge == edgeInsertActive
-   let fault =
-     if inserting && !mpf.miss(acc.trie, key, proof) {
--      lib.occupiedRefusal()
-+      None
-     } else if !inserting {
-       terminalFault(acc.trie, key, proof)
-     } else {
-@@ -221,7 +221,15 @@ fn applyEdge(
-       Fold {
-         ..acc,
-         trie: if inserting {
--          mpf.insert(acc.trie, key, leafActive, proof)
-+          if mpf.miss(acc.trie, key, proof) {
-+            mpf.insert(acc.trie, key, leafActive, proof)
-+          } else if mpf.has(acc.trie, key, leafActive, proof) {
-+            mpf.update(acc.trie, key, proof, leafActive, leafActive)
-+          } else if mpf.has(acc.trie, key, leafTerminal, proof) {
-+            mpf.update(acc.trie, key, proof, leafTerminal, leafActive)
-+          } else {
-+            mpf.insert(acc.trie, key, leafActive, proof)
+@@ -260,7 +260,22 @@ fn step(
+           trie: mpf.insert(trie, r.key, leafActive, proof),
+         }
+       } else {
+-        Evolved { refusal: lib.occupiedRefusal(), trie }
++        if mpf.has(trie, r.key, leafActive, proof) {
++          Evolved {
++            refusal: None,
++            trie: mpf.update(trie, r.key, proof, leafActive, leafActive),
 +          }
-         } else {
-           mpf.update(acc.trie, key, proof, leafActive, leafTerminal)
-         },
++        } else if mpf.has(trie, r.key, leafTerminal, proof) {
++          Evolved {
++            refusal: None,
++            trie: mpf.update(trie, r.key, proof, leafTerminal, leafActive),
++          }
++        } else {
++          Evolved {
++            refusal: None,
++            trie: mpf.insert(trie, r.key, leafActive, proof),
++          }
++        }
+       }
+     Terminating(t) ->
+       when terminalFault(trie, t.key, proof) is {

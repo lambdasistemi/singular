@@ -9,7 +9,9 @@ The story's own two folds, at one key, in the story registry:
    token the retirement destroys is the token this fold created, and a
    fixture dropped into the final state would evidence nothing about the
    transition;
-2. the @updateTerminal@ under test, at the SAME key, in the same session.
+2. the termination under test, at the SAME key, in the same session: booked
+   by the shared termination booking out of the wallet that holds the
+   witness, then folded.
 
 'retireStoryKey' records, around them, the mirror's root before the
 insert, after it and after the retirement, the wallet's active holding
@@ -56,7 +58,8 @@ import UpdateTerminal.Narration (die, hex, say)
 import UpdateTerminal.Registry
     ( Registry (..)
     , Session (sessProvider, sessWallet)
-    , book
+    , bookInsert
+    , bookRetire
     , committedRoot
     , foldAndMirror
     , insertOp
@@ -70,7 +73,11 @@ storyKey = "update-terminal-demo"
 
 -- | What the story's insert and retirement did, read back.
 data Retirement = Retirement
-    { retInsertTx :: ConwayTx
+    { retInsertBookingTx :: ConwayTx
+    -- ^ The registration booking: the request the insert's fold settles
+    , retInsertTx :: ConwayTx
+    , retRetireBookingTx :: ConwayTx
+    -- ^ The termination booking: it spends the wallet's output holding the witness
     , retRetireTx :: ConwayTx
     , retRootBeforeInsert :: Root
     , retRootActive :: Root
@@ -88,7 +95,7 @@ retireStoryKey :: Registry -> IO Retirement
 retireStoryKey story = do
     let cfg = regCfg story
     rootBeforeInsert <- rootNow story
-    book story storyKey insertOp
+    insertBooking <- bookInsert story storyKey
     insertTx <- foldAndMirror story storyKey insertOp
     rootActive <- rootNow story
     heldBefore <- activeHeldAt story cfg storyKey
@@ -97,15 +104,15 @@ retireStoryKey story = do
             <> show heldBefore
         )
 
-    -- The exact input the burn will consume, recorded BEFORE it is
-    -- spent: the wallet UTxO carrying this key's one active witness.
+    -- The exact input the termination booking will spend, recorded BEFORE
+    -- it is spent: the wallet UTxO carrying this key's one active witness.
     source <- activeSourceOf story cfg storyKey
 
-    -- The edge under test, at the same key, in the same session. This
-    -- retirement is also the ACCEPTING CONTROL for the Absent refusal:
-    -- same registry, same builder, and the only thing that differs
-    -- there is the leaf.
-    book story storyKey retireOp
+    -- The termination under test, at the same key, in the same session. This
+    -- retirement is also the ACCEPTING CONTROL for the Terminal refusal:
+    -- same registry, same booking, and the only thing that differs there is
+    -- that the key's witness is gone.
+    retireBooking <- bookRetire story storyKey
     retireTx <- foldAndMirror story storyKey retireOp
     rootTerminal <- rootNow story
     heldAfter <- activeHeldAt story cfg storyKey
@@ -116,7 +123,9 @@ retireStoryKey story = do
         )
     pure
         Retirement
-            { retInsertTx = insertTx
+            { retInsertBookingTx = insertBooking
+            , retInsertTx = insertTx
+            , retRetireBookingTx = retireBooking
             , retRetireTx = retireTx
             , retRootBeforeInsert = rootBeforeInsert
             , retRootActive = rootActive

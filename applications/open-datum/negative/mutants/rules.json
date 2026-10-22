@@ -1,9 +1,10 @@
 {
   "mutants": [
     {
-      "name": "release-no-fold",
-      "patch": "release-no-fold.patch",
-      "rule": "release-no-fold",
+      "name": "release-retired-accepted",
+      "patch": "release-retired-accepted.patch",
+      "rule": "release-retired",
+      "anchor": "expect envelope: Envelope = raw",
       "file": "applications/open-datum/onchain/validators/open_datum.ak",
       "flip": [{"pair": "controller-withdraws-outside-a-fold", "command": "withdraw"}],
       "control": "stranger-updates-the-key"
@@ -44,17 +45,18 @@
     {
       "name": "termination-booking-controller-checks",
       "patch": "termination-booking-controller-checks.patch",
-      "rules": ["app-owner", "app-controller-signature"],
-      "anchor": "fn bookTerminate(",
+      "rules": ["app-controller-signature"],
+      "anchor": "pub fn bookTerminationRefusal(",
       "file": "applications/open-datum/onchain/validators/open_datum.ak",
       "flip": [{"pair": "stranger-terminates-the-key", "command": "terminate"}],
       "control": "stranger-updates-the-key"
     },
     {
-      "name": "release-additive",
-      "patch": "release-additive.patch",
-      "rule": "release-additive",
-      "file": "applications/open-datum/onchain/validators/open_datum.ak",
+      "name": "fold-accepts-a-short-donation",
+      "patch": "fold-accepts-a-short-donation.patch",
+      "registry_source": true,
+      "rule": "fold-donation-mismatch",
+      "file": "onchain/lib/registry/modify.ak",
       "flip": [{"pair": "short-fold-of-a-booked-termination", "command": "fold"}],
       "control": "stranger-updates-the-key"
     },

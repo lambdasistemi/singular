@@ -1,6 +1,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TupleSections #-}
 
@@ -162,7 +163,11 @@ import Cardano.Ledger.Api.Tx.Out
     , valueTxOutL
     )
 import Cardano.Ledger.Api.Tx.Wits (datsTxWitsL, rdmrsTxWitsL)
-import Cardano.Ledger.BaseTypes (StrictMaybe (..), TxIx (..))
+import Cardano.Ledger.BaseTypes
+    ( Network (Testnet)
+    , StrictMaybe (..)
+    , TxIx (..)
+    )
 import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
 import Cardano.Ledger.Core (PParams)
 import Cardano.Ledger.Credential (Credential (..))
@@ -208,7 +213,10 @@ import Singular.Application.OpenDatum.LawfulBooking
 import Singular.Application.OpenDatum.Plan (insertionOf)
 import Singular.Application.OpenDatum.Root (runPackagedOpenDatumVia)
 import Singular.Application.OpenDatum.Run (runOpenDatum)
-import Singular.Application.OpenDatum.Value (openDatumApplication)
+import Singular.Application.OpenDatum.Value
+    ( closedDatumApplication
+    , openDatumApplication
+    )
 import Singular.CLI.Booking (BookingVerb (..), bookingEdgeName)
 import Singular.CLI.Command
     ( EntryArgs (..)
@@ -246,6 +254,7 @@ import Singular.CLI.Vault
     , sealVault
     , vaultWorkFactor
     )
+import Singular.Registry.Application (Application)
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Bundle
     ( Bundle (..)
@@ -274,6 +283,7 @@ import Singular.Registry.RawChainFixture
     , RawChain
     , advanceChain
     , jumpChainTo
+    , jumpChainToHostClock
     , newRawChain
     , rawChainProvider
     , recordTransaction
@@ -303,6 +313,8 @@ import Singular.Registry.TxBuilder.Internal
     , extractCageDatum
     , mkInlineDatum
     , policyIdFromPin
+    , requestAddrFromCfg
+    , requestPolicyOf
     , scriptHashBytes
     , toPlcData
     )
@@ -1360,6 +1372,7 @@ withRigIn dir blueprintJson compose use = do
                 , csNetworkTime = syntheticTime
                 }
     advanceChain chain id
+    jumpChainToHostClock chain
     events <- newIORef []
     answer <- newIORef Nothing
     tracer <- compose (Tracer (\t -> modifyIORef' events (<> [t])))
@@ -1435,6 +1448,29 @@ envOf rig =
         , envReads = \_ k -> k (capabilities rig)
         , envWrites = \_ k -> k (capabilities rig)
         }
+
+{- | The environment of a run whose submissions land in the slot the chain
+stood at: each body lands (its outputs live, its inputs spent) and the chain's
+slot does not move. A comparison of a staged chain with a key-file chain builds
+every body of both at the one slot the staged chain is built at (a chained
+view keeps the held view's tip), so what follows the slot (the booked time, the
+nonce both tags commit to, the validity interval) is the same on both sides.
+-}
+envPinned :: Rig -> Env
+envPinned rig =
+    (envOf rig)
+        { envWrites = \_ k -> k pinned
+        }
+  where
+    held = capabilities rig
+    pinned =
+        held
+            { capSubmit = \signed -> do
+                slot <- freshView rig (fmap Cage.observedSlot . SessionIO.tip)
+                answer <- capSubmit held signed
+                jumpChainTo (rigChain rig) slot
+                pure answer
+            }
 
 -- | Reads of the chain fixture, and a submission it applies to its outputs.
 capabilities :: Rig -> Capabilities NoWitness IO
@@ -2132,8 +2168,8 @@ settledAlterations receipt =
                 , overSettlement (withText "liveOutput" flipLeading)
                 )
             ,
-                ( "settled released output"
-                , overSettlement (withText "released" flipLeading)
+                ( "settled terminated request"
+                , overSettlement (withText "terminated" flipLeading)
                 )
             ]
 
@@ -2151,7 +2187,7 @@ settledContradictions =
         , "settled edge"
         , "settled deadline"
         , "settled live output"
-        , "settled released output"
+        , "settled terminated request"
         ]
 
 -- | The receipt with its settled list replaced by these entries.
@@ -2394,7 +2430,7 @@ disagreements invokedKey receipt events =
           | Trace _ (What (Folded _ _ o)) <- events
           , Just o
                 /= ( settledSettlement "liveOutput" receipt
-                        <|> settledSettlement "released" receipt
+                        <|> settledSettlement "terminated" receipt
                    )
           ]
         , [ "the fold's settled list is not exactly the one pending request"
@@ -2860,15 +2896,23 @@ stagedShapeRows shape = do
         $ \st -> do
             (_, _, bodies) <- bundleOf st
             length (stKeyBodies st) `shouldBe` shapeBodies shape
-            map (^. bodyTxL) (canonicalChain bodies)
-                `shouldBe` map (^. bodyTxL) (canonicalChain (stKeyBodies st))
+            map (^. bodyTxL) (canonicalChain (clockChosen shape) bodies)
+                `shouldBe` map (^. bodyTxL) (canonicalChain (clockChosen shape) (stKeyBodies st))
     it
         "binds what the body comparison sets aside to the bodies themselves"
         $ \st -> do
             (_, _, bodies) <- bundleOf st
-            unboundFields (stParams st) (stStagedWindow st) bodies
+            unboundFields
+                (stParams st)
+                (stStagedWindow st)
+                (clockChosen shape)
+                bodies
                 `shouldBe` []
-            unboundFields (stParams st) (stKeyWindow st) (stKeyBodies st)
+            unboundFields
+                (stParams st)
+                (stKeyWindow st)
+                (clockChosen shape)
+                (stKeyBodies st)
                 `shouldBe` []
     it
         "saves the bundle and each unsigned body beside the journal, one waiting line per transaction"
@@ -3011,6 +3055,15 @@ shapes =
         (const ["open-datum", "fold"])
     ]
 
+{- | The positions of a shape's chain whose validity closes at a slot the clock
+chooses: a termination has no processing window to close at, so its fold closes
+a short span after the clock, and two runs seconds apart close it seconds apart.
+-}
+clockChosen :: Shape -> [Int]
+clockChosen shape
+    | shapeName shape == "terminate with the fold" = [1]
+    | otherwise = []
+
 insertWords :: Rig -> [String]
 insertWords rig =
     ["open-datum", "insert", "--key", "bob-1", "--payload", payloadOf rig]
@@ -3138,7 +3191,8 @@ stagingOf shape use = withRig $ \rig -> do
     walletBefore <- walletRefs rig
     (stagedWindow, staged) <- windowed (runHidden rig "staged" line)
     walletAfter <- walletRefs rig
-    (keyWindow, keyFile) <- windowed (run rig "key file" line)
+    (keyWindow, keyFile) <-
+        windowed (runVia rig (envPinned rig) "registry" "key file" line)
     params <-
         SessionIO.withLatest
             (rawChainProvider (rigChain rig))
@@ -3224,14 +3278,17 @@ wall clock, directly or through the hash of a body that carries it, and are
 set aside: the submission time inside a request datum (the booking reads the
 clock); the id of an earlier body of the chain, named by its position instead
 (an id is the hash of a body); and the script data hash (it covers the
-redeemers, whose indices follow the sorted inputs, hence the ids). Nothing
-else is set aside, the validity interval included: the first body of a
-chain is built at the same tip on both sides, and the later ones are compared
-as they come. 'unboundFields' binds each of the three to the body that
-carries it, so that setting them aside here hides no defect.
+redeemers, whose indices follow the sorted inputs, hence the ids). A fourth,
+the upper end of a validity interval the clock chooses (a termination fold has
+no window to close at, so it closes a short span after the clock), is set aside
+at the positions the caller names. Nothing else is set aside, the validity
+interval included: every body of both chains is built at the one slot, so the
+booked time, the nonce both tags commit to and the interval follow the slot
+and are compared as they come. 'unboundFields' binds each of these to the body
+that carries it, so that setting them aside here hides no defect.
 -}
-canonicalChain :: [ConwayTx] -> [ConwayTx]
-canonicalChain bodies = zipWith canonical [0 :: Int ..] bodies
+canonicalChain :: [Int] -> [ConwayTx] -> [ConwayTx]
+canonicalChain clocked bodies = zipWith canonical [0 :: Int ..] bodies
   where
     earlier = zip (map txIdTx bodies) [0 :: Int ..]
     positioned (TxIn spent ix) = case lookup spent earlier of
@@ -3240,12 +3297,17 @@ canonicalChain bodies = zipWith canonical [0 :: Int ..] bodies
     placeholderId k = case parseOutRef (T.pack (replicate 63 'e' <> show k <> "#0")) of
         Right (TxIn tid _) -> tid
         Left why -> error ("canonicalChain: " <> why)
-    canonical _ tx =
+    closedByClock k
+        | k `elem` clocked =
+            bodyTxL . vldtTxBodyL %~ \(ValidityInterval lower _) -> ValidityInterval lower SNothing
+        | otherwise = id
+    canonical k tx =
         tx
             & bodyTxL . inputsTxBodyL %~ Set.map positioned
             & bodyTxL . referenceInputsTxBodyL %~ Set.map positioned
             & bodyTxL . collateralInputsTxBodyL %~ Set.map positioned
             & bodyTxL . scriptIntegrityHashTxBodyL .~ SNothing
+            & closedByClock k
             & bodyTxL . outputsTxBodyL %~ fmap unsubmitted
     unsubmitted out = case extractCageDatum out of
         Just (RequestDatum r) ->
@@ -3518,15 +3580,28 @@ chain only, never the other side of the comparison:
 * a request datum's submission time lies within the wall-clock window of the
   run that built the body, read by the test's own clock;
 * an input that names an earlier member of the chain names an output that
-  member has, and a member earlier than the body that spends it.
+  member has, and a member earlier than the body that spends it;
+* a validity interval the clock closes opens before it closes (it opens at the
+  slot the chain stood at) and closes after the run's window opens and no
+  later than the longest span the fold tries past its end. The synthetic time keeps one-second slots from
+  the epoch, so a slot is a thousand milliseconds.
 -}
 unboundFields
-    :: PParams ConwayEra -> (Integer, Integer) -> [ConwayTx] -> [String]
-unboundFields pp (opened, closed) bodies = concat (zipWith check [0 :: Int ..] bodies)
+    :: PParams ConwayEra
+    -> (Integer, Integer)
+    -> [Int]
+    -> [ConwayTx]
+    -> [String]
+unboundFields pp (opened, closed) clocked bodies = concat (zipWith check [0 :: Int ..] bodies)
   where
     ids = zip (map txIdTx bodies) [0 :: Int ..]
     outputCounts = map (length . (^. bodyTxL . outputsTxBodyL)) bodies
-    check k tx = integrity k tx <> submissions k tx <> positions k tx
+    check k tx =
+        integrity k tx
+            <> submissions k tx
+            <> positions k tx
+            <> closing k tx
+            <> booked k tx
     integrity k tx =
         let Redeemers declared = tx ^. witsTxL . rdmrsTxWitsL
             TxDats datums = tx ^. witsTxL . datsTxWitsL
@@ -3557,6 +3632,35 @@ unboundFields pp (opened, closed) bodies = concat (zipWith check [0 :: Int ..] b
         , Just (RequestDatum r) <- [extractCageDatum out]
         , let submitted = requestSubmittedAt r
         , submitted < opened || submitted > closed
+        ]
+    closing k tx =
+        [ "body "
+            <> show k
+            <> ": its validity "
+            <> show interval
+            <> " does not close inside the run's window "
+            <> show (opened, closed)
+            <> " and the longest span past it"
+        | k `elem` clocked
+        , let interval = tx ^. bodyTxL . vldtTxBodyL
+        , not (closesInside interval)
+        ]
+    closesInside (ValidityInterval lower upper) = case (lower, upper) of
+        (SJust (SlotNo low), SJust (SlotNo high)) ->
+            low < high
+                && toInteger high * 1000 >= opened
+                && toInteger high * 1000 <= closed + 130_000
+        _ -> False
+    booked k tx =
+        [ "body "
+            <> show k
+            <> ": a registration datum states the booked time "
+            <> show (regSubmittedAt r)
+            <> ", which is not the start of the upper slot of its own validity"
+        | let ValidityInterval _ upper = tx ^. bodyTxL . vldtTxBodyL
+        , out <- toList (tx ^. bodyTxL . outputsTxBodyL)
+        , Just (RegistrationDatum r) <- [extractCageDatum out]
+        , upper /= SJust (SlotNo (fromInteger (regSubmittedAt r `div` 1000)))
         ]
     positions k tx =
         [ "body "
@@ -4310,7 +4414,12 @@ vaultStagingOver rig t line use = do
     (signedWindow, signed) <-
         windowed $
             withKeyHidden rig $
-                runAt rig vaultRoot "vault" (line <> vaultArgs vault fd)
+                runVia
+                    rig
+                    (envPinned rig)
+                    vaultRoot
+                    "vault"
+                    (line <> vaultArgs vault fd)
     external <- readBundle (stagedBundlePath rig)
     journal <- journalAt (stagedPartition rig vaultRoot t)
     params <-
@@ -4348,10 +4457,20 @@ vaultShapeRows shape = do
             (_, _, external) <- either fail pure (vsExternal vs)
             (_, _, signed) <- vaultBundleOf vs
             length signed `shouldBe` shapeBodies shape
-            map (^. bodyTxL) (canonicalChain signed)
-                `shouldBe` map (^. bodyTxL) (canonicalChain external)
-            unboundFields (vsParams vs) (vsSignedWindow vs) signed `shouldBe` []
-            unboundFields (vsParams vs) (vsStagedWindow vs) external `shouldBe` []
+            map (^. bodyTxL) (canonicalChain (clockChosen shape) signed)
+                `shouldBe` map (^. bodyTxL) (canonicalChain (clockChosen shape) external)
+            unboundFields
+                (vsParams vs)
+                (vsSignedWindow vs)
+                (clockChosen shape)
+                signed
+                `shouldBe` []
+            unboundFields
+                (vsParams vs)
+                (vsStagedWindow vs)
+                (clockChosen shape)
+                external
+                `shouldBe` []
     unless (shapeBooks shape)
         $ it
             "builds exactly the bundle bytes the external mode writes when no body carries the clock"
@@ -4605,6 +4724,8 @@ chunk4Producers = describe "chunk4 producers" $ do
     registrationBookingRows
     registrationPreviewRows
     registrationDiscoveryRows
+    refusedFoldNarrationRows
+    queryChoiceRows
     receiptRows
     terminationBookingRows
     carrierRows
@@ -4950,7 +5071,26 @@ withLawful
     -> String
     -> (Cage.Session NoWitness IO -> Lawful -> IO a)
     -> IO a
-withLawful rig t key use = do
+withLawful = withLawfulApp openDatumApplication
+
+-- | The same, for a closed registry, whose application value is the closed wrapper.
+withLawfulClosed
+    :: Rig
+    -> String
+    -> String
+    -> (Cage.Session NoWitness IO -> Lawful -> IO a)
+    -> IO a
+withLawfulClosed = withLawfulApp closedDatumApplication
+
+-- | A registry resolved the way a command resolves it, under this application value.
+withLawfulApp
+    :: Application
+    -> Rig
+    -> String
+    -> String
+    -> (Cage.Session NoWitness IO -> Lawful -> IO a)
+    -> IO a
+withLawfulApp app rig t key use = do
     let line =
             ["open-datum", "insert", "--key", key, "--payload", payloadOf rig]
                 <> tokenArgs t
@@ -4967,13 +5107,13 @@ withLawful rig t key use = do
         _ -> failTest "the line is no submission"
     let env = envOf rig
     release <-
-        envLoadRelease env openDatumApplication (entryBlueprint ea)
+        envLoadRelease env app (entryBlueprint ea)
             >>= either failTest pure
     envReads env (writeProvider ws) $ \caps ->
         SessionIO.withLatest (readsIn (envSource env) (envTracer env) caps) $ \v -> do
             saved <-
                 resolveSaved
-                    openDatumApplication
+                    app
                     ""
                     release
                     (entryAccess ea)
@@ -5019,7 +5159,23 @@ landed: the transaction and the request it made. The nonce is the caller's.
 -}
 plantRegistration
     :: Rig -> String -> String -> Integer -> IO (ConwayTx, TxIn)
-plantRegistration rig t key nonce = withLawful rig t key $ \v lw -> do
+plantRegistration = plantRegistrationVia withLawful
+
+-- | The same, resolving the registry through the given application value.
+plantRegistrationVia
+    :: ( forall a
+          . Rig
+         -> String
+         -> String
+         -> (Cage.Session NoWitness IO -> Lawful -> IO a)
+         -> IO a
+       )
+    -> Rig
+    -> String
+    -> String
+    -> Integer
+    -> IO (ConwayTx, TxIn)
+plantRegistrationVia lawfully rig t key nonce = lawfully rig t key $ \v lw -> do
     tip <- SessionIO.tip v
     let saved = lwSaved lw
         payer = lwPayer lw
@@ -5088,6 +5244,194 @@ leafOf rig t key = do
 -- The fold finds a booked registration by the request policy
 -- ---------------------------------------------------------
 
+-- ---------------------------------------------------------
+-- The queries a command makes
+-- ---------------------------------------------------------
+
+{- | The rig's capabilities with every output query recorded, and a refusal
+for the queries a caller names, as a typed failure the provider cannot answer.
+Every other read is served by the chain as it stands.
+-}
+recordingCapabilities
+    :: IORef [Cage.OutputQuery]
+    -> (Cage.OutputQuery -> Maybe Cage.ReadFailure)
+    -> Rig
+    -> Capabilities NoWitness IO
+recordingCapabilities seen refuse rig =
+    (capabilities rig)
+        { capReads =
+            let (network, provider) = rawChainProvider (rigChain rig)
+                recording =
+                    provider
+                        { Cage.acquire =
+                            \requested action ->
+                                Cage.acquire provider requested (recordingReads action)
+                        }
+            in  ( network
+                , observeProvider unverifiedVerifier (\_ -> pure ()) recording
+                )
+        }
+  where
+    recordingReads action session =
+        action
+            session
+                { Cage.outputs = \query -> do
+                    modifyIORef' seen (<> [query])
+                    case refuse query of
+                        Just failure -> pure (Left failure)
+                        Nothing -> Cage.outputs session query
+                }
+
+-- | Whether a query, or any query it composes, reads this address.
+readsAddress :: Addr -> Cage.OutputQuery -> Bool
+readsAddress addr = \case
+    Cage.AtAddress a -> a == addr
+    Cage.AnyOf qs -> any (readsAddress addr) qs
+    Cage.AllOf qs -> any (readsAddress addr) qs
+    _ -> False
+
+-- | Whether a query, or any query it composes, lists this policy's holders.
+listsPolicy :: PolicyID -> Cage.OutputQuery -> Bool
+listsPolicy policy = \case
+    Cage.HoldingPolicy p -> p == policy
+    Cage.AnyOf qs -> any (listsPolicy policy) qs
+    Cage.AllOf qs -> any (listsPolicy policy) qs
+    _ -> False
+
+queryChoiceRows :: Spec
+queryChoiceRows =
+    describe
+        "the pending requests are found by the request policy's listing, and by nothing else"
+        $ do
+            forM_ [("named", True), ("unnamed", False)] $ \(kind, named) ->
+                it
+                    ( "folds a booked registration, "
+                        <> kind
+                        <> ", when the request address cannot be scanned"
+                    )
+                    $ withRig
+                    $ \rig -> do
+                        seed <- fundSeed rig
+                        create <- run rig "create" ["open-datum", "create", "--seed", seed]
+                        t <- tokenOf create
+                        (_, request) <- plantRegistration rig t "bob-1" 11
+                        (policy, address) <- requestRoutes rig t
+                        seen <- newIORef []
+                        let caps =
+                                recordingCapabilities
+                                    seen
+                                    ( \q ->
+                                        if readsAddress address q
+                                            then
+                                                Just (Cage.BackendReadFailure "the request address cannot be scanned")
+                                            else Nothing
+                                    )
+                                    rig
+                            selection =
+                                if named then ["--request", T.unpack (renderOutRef request)] else []
+                        folded <-
+                            runVia
+                                rig
+                                ( (envOf rig)
+                                    { envReads = \_ k -> k caps
+                                    , envWrites = \_ k -> k caps
+                                    }
+                                )
+                                "registry"
+                                "fold with no address scan"
+                                (["open-datum", "fold"] <> selection <> tokenArgs t)
+                        outcomeOf (runReceipt folded) `shouldBe` Just "success"
+                        queries <- readIORef seen
+                        any (listsPolicy policy) queries `shouldBe` True
+                        any (readsAddress address) queries `shouldBe` False
+            it
+                "refuses a fold whose policy listing fails, and never scans the request address instead"
+                $ withRig
+                $ \rig -> do
+                    seed <- fundSeed rig
+                    create <- run rig "create" ["open-datum", "create", "--seed", seed]
+                    t <- tokenOf create
+                    _ <- plantRegistration rig t "bob-1" 11
+                    (policy, address) <- requestRoutes rig t
+                    seen <- newIORef []
+                    let caps =
+                            recordingCapabilities
+                                seen
+                                ( \q ->
+                                    if listsPolicy policy q
+                                        then
+                                            Just (Cage.BackendReadFailure "the listing by policy is incomplete")
+                                        else Nothing
+                                )
+                                rig
+                    folded <-
+                        runVia
+                            rig
+                            ( (envOf rig)
+                                { envReads = \_ k -> k caps
+                                , envWrites = \_ k -> k caps
+                                }
+                            )
+                            "registry"
+                            "fold with a failing listing"
+                            (["open-datum", "fold"] <> tokenArgs t)
+                    outcomeOf (runReceipt folded) `shouldNotBe` Just "success"
+                    queries <- readIORef seen
+                    any (listsPolicy policy) queries `shouldBe` True
+                    any (readsAddress address) queries `shouldBe` False
+                    -- the registration stays pending: a fold that can read finds it
+                    again <- run rig "fold" (["open-datum", "fold"] <> tokenArgs t)
+                    outcomeOf (runReceipt again) `shouldBe` Just "success"
+            it
+                "lists the pending requests of an inspect without scanning the request address"
+                $ withRig
+                $ \rig -> do
+                    seed <- fundSeed rig
+                    create <- run rig "create" ["open-datum", "create", "--seed", seed]
+                    t <- tokenOf create
+                    (_, request) <- plantRegistration rig t "bob-1" 11
+                    (policy, address) <- requestRoutes rig t
+                    seen <- newIORef []
+                    let caps =
+                            recordingCapabilities
+                                seen
+                                ( \q ->
+                                    if readsAddress address q
+                                        then
+                                            Just (Cage.BackendReadFailure "the request address cannot be scanned")
+                                        else Nothing
+                                )
+                                rig
+                    inspected <-
+                        runVia
+                            rig
+                            ( (envOf rig)
+                                { envReads = \_ k -> k caps
+                                , envWrites = \_ k -> k caps
+                                }
+                            )
+                            "registry"
+                            "inspect with no address scan"
+                            (["open-datum", "inspect", "--key", "bob-1"] <> tokenArgs t)
+                    outcomeOf (runReceipt inspected) `shouldBe` Just "success"
+                    T.isInfixOf
+                        (renderOutRef request)
+                        (T.pack (show (valueAt "pendingRequests" (runReceipt inspected))))
+                        `shouldBe` True
+                    queries <- readIORef seen
+                    any (listsPolicy policy) queries `shouldBe` True
+                    any (readsAddress address) queries `shouldBe` False
+
+-- | The request policy and the request address of the registry a rig created.
+requestRoutes :: Rig -> String -> IO (PolicyID, Addr)
+requestRoutes rig t = withLawful rig t "bob-1" $ \_ lw -> do
+    let saved = lwSaved lw
+        cfg = savedCfg saved
+    pure
+        ( requestPolicyOf cfg (savedToken saved)
+        , requestAddrFromCfg cfg (savedToken saved) Testnet
+        )
+
 registrationDiscoveryRows :: Spec
 registrationDiscoveryRows =
     describe "the fold finds a booked registration by the request policy" $ do
@@ -5141,6 +5485,103 @@ registrationDiscoveryRows =
                         )
                 outcomeOf (runReceipt folded) `shouldNotBe` Just "success"
                 leafOf rig t "bob-1" `shouldReturn` Just (toJSON (leafName Unknown))
+
+-- ---------------------------------------------------------
+-- A fold names the booked request it refuses
+-- ---------------------------------------------------------
+
+{- | A registration booked apart from every producer over the slots a caller
+names, landed: the transaction and the request it made. The start of the upper
+slot is the booked time.
+-}
+plantRegistrationBetween
+    :: Rig -> String -> String -> Integer -> (SlotNo, SlotNo) -> IO TxIn
+plantRegistrationBetween rig t key nonce window = withLawful rig t key $ \v lw -> do
+    let saved = lwSaved lw
+        payer = lwPayer lw
+        envelope = insertionOf saved (lwEntry lw) (addrKeyHashBytes payer) (PLC.I 7)
+    tx <-
+        lawfulInsertBooking
+            (savedCfg saved)
+            v
+            (savedToken saved)
+            (fst (liveState (lwLive lw)))
+            (Live.applied saved)
+            envelope
+            (Coin 1_000_000)
+            nonce
+            window
+            payer
+    landTx rig tx
+    pure (TxIn (txIdTx tx) (TxIx 0))
+
+{- | The fold of this request is refused, and the narration names the request,
+its key and its kind before it says so, as the receipt names the request.
+-}
+refusedFoldNamesTheRequest :: Rig -> String -> String -> TxIn -> IO ()
+refusedFoldNamesTheRequest rig t key request = do
+    folded <-
+        run
+            rig
+            "fold"
+            ( ["open-datum", "fold", "--request", T.unpack (renderOutRef request)]
+                <> tokenArgs t
+            )
+    outcomeOf (runReceipt folded) `shouldBe` Just "client-refusal"
+    textAt "pendingRequest" (runReceipt folded)
+        `shouldBe` Just (renderOutRef request)
+    [ (r, e, k)
+      | Trace _ (What (RequestSeen r e k _ _)) <- runEvents folded
+      ]
+        `shouldBe` [
+                       ( renderOutRef request
+                       , T.pack (edgeName edgeInsertActive)
+                       , TE.encodeUtf8 (T.pack key)
+                       )
+                   ]
+    [k | Trace _ (What (Refused k _)) <- runEvents folded]
+        `shouldBe` [ClientRefused]
+    [() | Trace scope _ <- runEvents folded, InEdge (Folding _) <- scope]
+        `shouldBe` []
+
+refusedFoldNarrationRows :: Spec
+refusedFoldNarrationRows =
+    describe
+        "a fold names the booked request, its key and its kind before it refuses it"
+        $ do
+            it
+                "a registration whose key an earlier request of the batch already names"
+                $ withRig
+                $ \rig -> do
+                    seed <- fundSeed rig
+                    create <- run rig "create" ["open-datum", "create", "--seed", seed]
+                    t <- tokenOf create
+                    SlotNo now <- freshView rig (fmap Cage.observedSlot . SessionIO.tip)
+                    first <-
+                        plantRegistrationBetween
+                            rig
+                            t
+                            "key-two"
+                            21
+                            (SlotNo now, SlotNo (now + 10))
+                    second <-
+                        plantRegistrationBetween
+                            rig
+                            t
+                            "key-two"
+                            22
+                            (SlotNo now, SlotNo (now + 10))
+                    -- the request later in ledger input order is the one excluded
+                    refusedFoldNamesTheRequest rig t "key-two" (max first second)
+            it "a registration whose processing window has closed" $
+                withRig $ \rig -> do
+                    seed <- fundSeed rig
+                    create <- run rig "create" ["open-datum", "create", "--seed", seed]
+                    t <- tokenOf create
+                    -- booked in the first minute of the chain's history
+                    late <-
+                        plantRegistrationBetween rig t "key-five" 23 (SlotNo 1, SlotNo 11)
+                    refusedFoldNamesTheRequest rig t "key-five" late
 
 -- | An output put on the chain by a transaction nobody here built.
 landSquatter :: Rig -> TxOut ConwayEra -> IO TxIn
@@ -5485,6 +5926,16 @@ withRetainedRegistry use = withRetainedRig $ \rig -> do
     t <- tokenOf create
     use rig t
 
+-- | A closed registry created over the retained programs.
+withRetainedClosedRegistry :: (Rig -> String -> IO a) -> IO a
+withRetainedClosedRegistry use = withRetainedRig $ \rig -> do
+    seed <- fundSeed rig
+    create <-
+        run rig "create" ["open-datum", "create", "--seed", seed, "--closed"]
+    outcomeOf (runReceipt create) `shouldBe` Just "success"
+    t <- tokenOf create
+    use rig t
+
 -- | What building a transaction under the retained programs ended in.
 evaluatedAs :: IO ConwayTx -> IO (Either String ())
 evaluatedAs build = do
@@ -5494,13 +5945,38 @@ evaluatedAs build = do
         Right _ -> Right ()
 
 applicationMintRows :: Spec
-applicationMintRows =
-    describe "the application mint, evaluated as compiled" $ do
+applicationMintRows = do
+    mintRowsUnder
+        "the application mint (open_datum), evaluated as compiled"
+        withRetainedRegistry
+        withLawful
+    mintRowsUnder
+        "the application mint (closed_datum, the closed wrapper), evaluated as compiled"
+        withRetainedClosedRegistry
+        withLawfulClosed
+
+{- | The compiled mint rows over one kind of registry: the wrapper the registry
+pins is the program evaluated, and every row reads what it expects from the
+registry it created.
+-}
+mintRowsUnder
+    :: String
+    -> (forall a. (Rig -> String -> IO a) -> IO a)
+    -> ( forall b
+          . Rig
+         -> String
+         -> String
+         -> (Cage.Session NoWitness IO -> Lawful -> IO b)
+         -> IO b
+       )
+    -> Spec
+mintRowsUnder title withRegistry withLawfulHere =
+    describe title $ do
         it
             "accepts the registration booked as the law books it (the positive control)"
-            $ withRetainedRegistry
+            $ withRegistry
             $ \rig t ->
-                withLawful rig t "bob-1" $ \v lw -> do
+                withLawfulHere rig t "bob-1" $ \v lw -> do
                     tip <- SessionIO.tip v
                     let saved = lwSaved lw
                         slot = Cage.observedSlot tip
@@ -5520,8 +5996,8 @@ applicationMintRows =
                                 (lwPayer lw)
                     booked `shouldBe` Right ()
         it "refuses a mint under a redeemer that is not one of its own" $
-            withRetainedRegistry $ \rig t ->
-                withLawful rig t "bob-1" $ \v lw -> do
+            withRegistry $ \rig t ->
+                withLawfulHere rig t "bob-1" $ \v lw -> do
                     tip <- SessionIO.tip v
                     let saved = lwSaved lw
                         slot = Cage.observedSlot tip
@@ -5562,8 +6038,8 @@ applicationMintRows =
             "accepts a pure burn of an application tag under the fold's fixed redeemer, whatever its bytes"
             $ burnUnder (PLC.Constr 0 []) `shouldReturn` Right ()
   where
-    burnUnder redeemer = withRetainedRegistry $ \rig t ->
-        withLawful rig t "bob-1" $ \_ lw -> do
+    burnUnder redeemer = withRegistry $ \rig t ->
+        withLawfulHere rig t "bob-1" $ \_ lw -> do
             let saved = lwSaved lw
                 cfg = savedCfg saved
                 tagName = BS.replicate 32 0x7a
@@ -5611,6 +6087,30 @@ retainedProgramRows =
                 $ \rig t -> do
                     (_, request) <- plantRegistration rig t "bob-1" 11
                     withLawful rig t "bob-1" $ \_ lw -> do
+                        let saved = lwSaved lw
+                            cfg = savedCfg saved
+                        folded <-
+                            freshView rig $ \v -> do
+                                live <- attachLive v saved
+                                sel <- requireTrieSelection saved live
+                                ctx <- registryContextFor cfg (savedCodes saved) v (liveRefs live)
+                                evaluatedAs $
+                                    withTrie sel $ \snapshot ->
+                                        updateTokenSelected
+                                            cfg
+                                            v
+                                            snapshot
+                                            (savedToken saved)
+                                            (lwPayer lw)
+                                            ctx
+                                            (request NE.:| [])
+                        folded `shouldBe` Right ()
+            it
+                "settles, by the library's fold, a registration the closed wrapper's mint accepted"
+                $ withRetainedClosedRegistry
+                $ \rig t -> do
+                    (_, request) <- plantRegistrationVia withLawfulClosed rig t "bob-1" 11
+                    withLawfulClosed rig t "bob-1" $ \_ lw -> do
                         let saved = lwSaved lw
                             cfg = savedCfg saved
                         folded <-

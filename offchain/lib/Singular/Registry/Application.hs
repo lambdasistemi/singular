@@ -27,9 +27,9 @@ by name.
 Slice 2: the decoder reads a datum into a holding view (or names why it
 cannot); the holding rules find this registry's holding of a key among
 the outputs at the application address (refusing a foreign or duplicate
-one), release a termination (script, redeemer, recipient and amount), add
-the application's part to the fold context, and check a request's carried
-datum before an insertion is folded. The neutral value carries none of
+one), add the application's part to the fold context, and check a
+registration's carried datum before it is folded. A termination releases
+nothing: the custody enters its request and the fold burns the key's tag. The neutral value carries none of
 them; the application value fills them from the envelope and release.
 -}
 module Singular.Registry.Application
@@ -93,11 +93,7 @@ import Singular.Registry.TxBuilder.Internal
     ( computeScriptHash
     , scriptHashBytes
     )
-import Singular.Registry.TxBuilder.Update
-    ( HolderRelease
-    , RegistryContext
-    )
-import Singular.Registry.Types (OnChainRequest)
+import Singular.Registry.TxBuilder.Update (RegistryContext)
 
 -- | How the registry's application policy is fixed.
 data ApplicationPin
@@ -156,8 +152,8 @@ naming the application. Absent on the neutral value; the open datum fills
 every field from the envelope and release.
 -}
 data HoldingRules = HoldingRules
-    { hrCheckCarried :: OnChainRequest -> Either Text PLC.Data
-    -- ^ The datum an insertion's request must carry to be folded
+    { hrCheckCarried :: Maybe PLC.Data -> Either Text PLC.Data
+    -- ^ The datum a registration's request must carry to be folded
     , hrFindHoldings
         :: CageConfig
         -> TokenId
@@ -174,18 +170,15 @@ data HoldingRules = HoldingRules
         -> [(TxIn, TxOut ConwayEra)]
         -> Either Text ((TxIn, TxOut ConwayEra), DecodedHolding)
     -- ^ The key's one live holding, or why there is none (foreign or duplicate)
-    , hrReleaseOf
-        :: SBS.ShortByteString
-        -> (TxIn, TxOut ConwayEra)
-        -> Either Text (TxIn, HolderRelease)
-    -- ^ How the fold spends one live output: script, redeemer, recipient, amount
     , hrWithApplication
         :: SBS.ShortByteString
         -> Maybe (TxIn, TxOut ConwayEra)
-        -> [(TxIn, TxOut ConwayEra)]
         -> RegistryContext
         -> Either Text RegistryContext
-    -- ^ The fold context with the application's part added
+    {- ^ The fold context with the application's part added: the scripts and
+    reference outputs its tags run under. A termination releases nothing:
+    the custody entered its request when it was booked.
+    -}
     }
 
 instance Show HoldingRules where

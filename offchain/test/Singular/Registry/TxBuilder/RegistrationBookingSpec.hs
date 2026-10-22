@@ -872,6 +872,8 @@ booking =
         , rbLower = SlotNo 4_000
         , rbUpper = SlotNo 4_005
         , rbApplicationScript = ncApplication codes
+        , rbApplicationRedeemer = Nothing
+        , rbRequiredSigners = []
         }
 
 built :: CageConfig -> RegistrationBooking -> IO ConwayTx
@@ -1153,7 +1155,7 @@ realBytesSpec = describe "chunk3 offchain" $
         beforeAll loadRetained $ do
             it "are the bytes the repository pins, the whole file and each script" $ \r -> do
                 bodySha256 (rrFile r)
-                    `shouldBe` "8f02ed0d7d701243011626571785c66ca4543fe60a2daae787cb5110bedade3c"
+                    `shouldBe` "5a906ff1ff7e0726db3982b0f40e2d207aa9943c2878d22dd0c377a55a7a7222"
                 forM_ knownScripts $ \(title, wanted) ->
                     fmap hashText (extractCompiledCode title (rrBlueprint r))
                         `shouldBe` Just wanted

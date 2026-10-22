@@ -41,11 +41,11 @@ library
     Singular.Application.OpenDatum.Entry
     Singular.Application.OpenDatum.Envelope
     Singular.Application.OpenDatum.Help
+    Singular.Application.OpenDatum.Holding
     Singular.Application.OpenDatum.InsertEnvelope
     Singular.Application.OpenDatum.Permanent
     Singular.Application.OpenDatum.Plan
     Singular.Application.OpenDatum.Preview
-    Singular.Application.OpenDatum.Release
     Singular.Application.OpenDatum.Root
     Singular.Application.OpenDatum.Run
     Singular.Application.OpenDatum.Script

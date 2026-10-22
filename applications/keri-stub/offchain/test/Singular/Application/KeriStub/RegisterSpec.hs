@@ -6,36 +6,26 @@ Description : What a keri-stub register books, decided and checked purely
 License     : Apache-2.0
 
 Rows over the register booking 'planRegister' builds: the edge, the
-destination the fold delivers to, the datum the request carries, the
-deposit it protects, and the approval that certifies the mint. Every
-expected value is derived at run time — the stub script's address from
-its own bytes through the ledger's own hash, the approval asset name by
-the library's own binding formula, the redeemer by the same tuple the
-registry's own approvals spell — never typed into the spec.
+destination the fold delivers to, the datum the request carries and the
+deposit it protects. Every expected value is derived at run time (the stub
+script's address from its own bytes through the ledger's own hash) and never
+typed into the spec. The tags a booking mints and the request it makes are
+the registry's own: the rows that read them off a booking built by the
+producer are in the producers' spec.
 -}
 module Singular.Application.KeriStub.RegisterSpec (spec) where
 
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
-import Data.ByteString.Short qualified as SBS
-import Data.Map.Strict qualified as Map
-import Data.Set qualified as Set
-import Data.Text qualified as T
 import Test.Hspec
 
 import Cardano.Ledger.Address (Addr (..), serialiseAddr)
 import Cardano.Ledger.BaseTypes (Network (Testnet))
-import Cardano.Ledger.Core (Script, hashScript)
+import Cardano.Ledger.Core (hashScript)
 import Cardano.Ledger.Credential
     ( Credential (..)
     , StakeReference (..)
     )
-import Cardano.Ledger.Mary.Value
-    ( AssetName (..)
-    , MultiAsset (..)
-    , PolicyID (..)
-    )
-import Cardano.Ledger.TxIn (TxIn)
 import PlutusCore.Data qualified as PLC
 
 import Singular.Application.KeriStub.Datum
@@ -48,16 +38,7 @@ import Singular.Application.KeriStub.Register
     , planRegister
     )
 import Singular.Application.KeriStub.Script (keriStubScript)
-import Singular.Registry.Deployment (parseOutRef)
-import Singular.Registry.Ledger (ConwayEra)
-import Singular.Registry.TxBuilder.Edges
-    ( BookingApproval (..)
-    , edgeDeposit
-    )
-import Singular.Registry.TxBuilder.Internal
-    ( approvalDestination
-    , approvalName
-    )
+import Singular.Registry.TxBuilder.Edges (edgeDeposit)
 import Singular.Registry.Types (edgeInsertActive)
 
 spec :: Spec
@@ -80,13 +61,8 @@ deposit = 4_000_000
 payload :: PLC.Data
 payload = PLC.B "prefix-a"
 
-stateIn :: TxIn
-stateIn = case parseOutRef (T.pack (replicate 64 'a' <> "#0")) of
-    Right i -> i
-    Left why -> error ("RegisterSpec: bad outref: " <> why)
-
 bookingA :: RegisterBooking
-bookingA = planRegister stateIn keyA controllerA deposit payload
+bookingA = planRegister keyA controllerA deposit payload
 
 -- | The stub script's own enterprise address, derived from its bytes.
 stubAddressBytes :: ByteString
@@ -97,11 +73,11 @@ stubAddressBytes =
 booking :: Spec
 booking = describe "what a register books" $ do
     it "books insertActive" $
-        rbEdge bookingA `shouldBe` edgeInsertActive
+        registerEdge bookingA `shouldBe` edgeInsertActive
     it "delivers to the stub script's own enterprise address" $
-        fst (rbDestination bookingA) `shouldBe` stubAddressBytes
+        fst (registerDestination bookingA) `shouldBe` stubAddressBytes
     it "carries the holding as the datum the delivered output holds" $
-        snd (rbDestination bookingA)
+        snd (registerDestination bookingA)
             `shouldBe` Just
                 ( holdingToData
                     Holding
@@ -111,57 +87,22 @@ booking = describe "what a register books" $ do
                         , hdPayload = payload
                         }
                 )
-    it "protects the deposit it was given" $
-        rbDeposit bookingA `shouldBe` deposit
+    it "protects the deposit it was given, as the registration's carrier" $
+        registerDeposit bookingA `shouldBe` deposit
     it "defaults to the library's booking deposit when none is given" $
         defaultDeposit `shouldBe` edgeDeposit
-    it
-        "certifies with the stub's script, attached, the state by reference"
-        $ do
-            let approval = rbApproval bookingA
-            baScript approval `shouldBe` (keriStubScript :: Script ConwayEra)
-            baScriptReference approval `shouldBe` Nothing
-            baReferenceInputs approval `shouldBe` Set.singleton stateIn
 
 binding :: Spec
-binding = describe "the approval the mint requires" $ do
-    it "mints exactly one asset of one policy, in quantity one" $ do
-        let MultiAsset minted = baAsset (rbApproval bookingA)
-        case Map.toList minted of
-            [(policy, names)] -> do
-                policy `shouldBe` PolicyID (hashScript keriStubScript)
-                case Map.toList names of
-                    [(AssetName theName, quantity)] -> do
-                        SBS.length theName `shouldBe` 32
-                        quantity `shouldBe` 1
-                    other -> expectationFailure ("not one asset name: " <> show (length other))
-            other -> expectationFailure ("not one policy: " <> show (length other))
-    it "names the asset by the library's binding formula, recomputed here" $ do
-        let (address, datumHash) = approvalDestination (rbDestination bookingA)
-            expected =
-                approvalName
-                    edgeInsertActive
-                    keyA
-                    controllerA
-                    (address, datumHash)
-        baAsset (rbApproval bookingA)
-            `shouldBe` MultiAsset
-                ( Map.singleton
-                    (PolicyID (hashScript keriStubScript))
-                    (Map.singleton (AssetName (SBS.toShort expected)) 1)
-                )
-    it
-        "spells the same Approve redeemer the registry's own approvals spell"
-        $ do
-            let (address, datumHash) = approvalDestination (rbDestination bookingA)
-            baRedeemer (rbApproval bookingA)
-                `shouldBe` PLC.Constr
-                    0
-                    [ PLC.I edgeInsertActive
-                    , PLC.B keyA
-                    , PLC.B controllerA
-                    , PLC.List [PLC.B address, PLC.B datumHash]
-                    ]
-    it "binds the key: two keys book differently-named approvals" $ do
-        let b = planRegister stateIn keyB controllerA deposit payload
-        baAsset (rbApproval b) `shouldNotBe` baAsset (rbApproval bookingA)
+binding = describe "what the holding binds" $ do
+    it "binds the key: two keys book different holdings" $ do
+        let b = planRegister keyB controllerA deposit payload
+        snd (registerDestination b)
+            `shouldNotBe` snd (registerDestination bookingA)
+    it "binds the controller: two controllers book different holdings" $ do
+        let b = planRegister keyA (BS.replicate 28 8) deposit payload
+        snd (registerDestination b)
+            `shouldNotBe` snd (registerDestination bookingA)
+    it "binds the payload: two payloads book different holdings" $ do
+        let b = planRegister keyA controllerA deposit (PLC.B "prefix-b")
+        snd (registerDestination b)
+            `shouldNotBe` snd (registerDestination bookingA)

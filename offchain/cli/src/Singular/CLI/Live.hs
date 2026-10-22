@@ -91,6 +91,7 @@ import Singular.CLI.Registry (Release (..), hexT)
 import Singular.CLI.TrieTrace (observeTrie)
 import Singular.Registry.Application
     ( Application (..)
+    , ApplicationPin (..)
     , DecodedHolding (..)
     , HoldingRules (..)
     )
@@ -431,11 +432,14 @@ resolveSaved app dir release access roles wallet view = do
             >>= either
                 (failWith Receipt.ClientRefusal . T.unpack . renderIdentityRefusal)
                 pure
-    -- Without holding rules (neutral) no application reference is needed
-    -- (a hash pin publishes none); with them, every needed role is found.
-    let needed = case appHolding app of
-            Nothing -> Set.delete RoleApplication roles
-            Just _ -> roles
+    -- A hash pin publishes no application reference, so a value pinned by hash
+    -- needs none; a value pinned by its script finds it, because the fold of a
+    -- booked registration burns the application tag under that script.
+    let needed = case appPin app of
+            PinByHash _ -> Set.delete RoleApplication roles
+            PinFromState -> Set.delete RoleApplication roles
+            PinByScript _ -> roles
+            PinAsCompiled _ -> roles
     found <-
         findReferences view wallet (resolvedExpected resolved) needed
             >>= either

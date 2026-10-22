@@ -55,7 +55,6 @@ import PlutusCore.Data qualified as PLC
 import Singular.Application.OpenDatum.Envelope (Envelope (..))
 import Singular.Application.OpenDatum.InsertEnvelope (insertEnvelope)
 import Singular.Application.OpenDatum.Plan (controllerCheck)
-import Singular.CLI.FoldRules (FoldKind (FoldTermination), foldKind)
 import Singular.CLI.Live (failTrie)
 import Singular.CLI.Receipt (OutcomeClass (..), exitCodeOf)
 import Singular.CLI.ReclaimRules qualified as Reclaim
@@ -154,7 +153,6 @@ spec = describe
                     let (before, record) = rows !! index
                         (after, _) = rows !! (index + 1)
                         provider = actorSession folder (map snd (take (index + 1) rows))
-                    foldKind edgeUpdateTerminal `shouldBe` Right FoldTermination
                     targetKey <- faulted "fold-own-key" (key controller) (key folder)
                     answer <- withTrieState
                         (lineageTrieState provider)

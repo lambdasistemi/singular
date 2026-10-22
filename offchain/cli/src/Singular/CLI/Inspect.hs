@@ -60,7 +60,6 @@ import Cardano.Ledger.Api.Scripts.Data
     , hashBinaryData
     )
 import Cardano.Ledger.Api.Tx.Out (TxOut, coinTxOutL, datumTxOutL)
-import Cardano.Ledger.BaseTypes (Network (Testnet))
 import Cardano.Ledger.Binary (serialize')
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Core (eraProtVerHigh)
@@ -138,17 +137,20 @@ import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.TxBuilder.Internal
     ( computeScriptHash
     , extractCageDatum
-    , extractOwnerBytes
-    , findRequestUtxos
-    , requestAddrFromCfg
+    , pendingByTag
     , txInToRef
     )
 import Singular.Registry.Types
     ( CageDatum (..)
-    , OnChainRequest (..)
+    , Edge
+    , OnChainRegistrationRequest (..)
     , OnChainRoot (..)
+    , OnChainTerminationRequest (..)
     , OnChainTokenState (..)
+    , edgeInsertActive
     , edgeName
+    , edgeUpdateTerminal
+    , registrationRefundBytes
     )
 
 runInspect :: Application -> Env -> InspectArgs -> IO Value
@@ -359,10 +361,9 @@ inspectSaved app env savedPath mJournal key settings release a = do
             context <- requireTrieSelection saved live
             leaf <- trieLeaf context key root
             outs <- liveOutputs app v saved
-            requests <-
-                Cage.outputsAt
-                    v
-                    (requestAddrFromCfg (savedCfg saved) (savedToken saved) Testnet)
+            -- the pending requests are the outputs the request policy vouches
+            -- for, found through the acquired session
+            pendingFound <- pendingByTag (savedCfg saved) v (savedToken saved)
             listed <- case inspectOutputsAt a of
                 Nothing -> pure []
                 Just text -> do
@@ -388,7 +389,7 @@ inspectSaved app env savedPath mJournal key settings release a = do
                 Just dir -> readJournal dir
                 Nothing -> pure []
             let pending = unresolved entries
-            let pendingOuts = sortOn fst (findRequestUtxos (savedToken saved) requests)
+            let pendingOuts = sortOn fst pendingFound
                 -- what the read found, reported once its read step closes
                 findings =
                     ( []
@@ -408,13 +409,13 @@ inspectSaved app env savedPath mJournal key settings release a = do
                             <> [ ( [InRequest (txInText i)]
                                  , RequestSeen
                                     (txInText i)
-                                    (T.pack (edgeName (requestEdge r)))
-                                    (requestKey r)
+                                    (T.pack (edgeName edge))
+                                    key'
                                     Nothing
                                     Nothing
                                  )
                                | (i, o) <- pendingOuts
-                               , Just (RequestDatum r) <- [extractCageDatum o]
+                               , Just (edge, key') <- [pendingEdgeAndKey o]
                                ]
             let chainPoint = renderPoint point
                 rawDatums =
@@ -566,15 +567,36 @@ inspectSaved app env savedPath mJournal key settings release a = do
 {- | A pending request, as the node holds it: who owns it, what it asks and
 what it actually locks.
 -}
+
+-- | The edge and key a booked request names.
+pendingEdgeAndKey :: TxOut ConwayEra -> Maybe (Edge, ByteString)
+pendingEdgeAndKey o = case extractCageDatum o of
+    Just (RegistrationDatum r) -> Just (edgeInsertActive, regKey r)
+    Just (TerminationDatum t) -> Just (edgeUpdateTerminal, termKey t)
+    _ -> Nothing
+
+{- | A pending request as inspect lists it: a registration with its refund
+owner and its booked time, a termination with the key whose custody it
+holds; both with what they lock.
+-}
 pendingJson :: (TxIn, TxOut ConwayEra) -> Value
 pendingJson (i, o) = case extractCageDatum o of
-    Just (RequestDatum r) ->
+    Just (RegistrationDatum r) ->
         object
             [ "request" .= txInText i
-            , "owner" .= hexT (extractOwnerBytes o)
-            , "key" .= hexT (requestKey r)
-            , "edge" .= edgeName (requestEdge r)
-            , "submittedAt" .= requestSubmittedAt r
+            , "kind" .= ("registration" :: Text)
+            , "owner" .= hexT (registrationRefundBytes r)
+            , "key" .= hexT (regKey r)
+            , "edge" .= edgeName edgeInsertActive
+            , "submittedAt" .= regSubmittedAt r
+            , "locked" .= valueJson o
+            ]
+    Just (TerminationDatum t) ->
+        object
+            [ "request" .= txInText i
+            , "kind" .= ("termination" :: Text)
+            , "key" .= hexT (termKey t)
+            , "edge" .= edgeName edgeUpdateTerminal
             , "locked" .= valueJson o
             ]
     _ -> object ["request" .= txInText i]

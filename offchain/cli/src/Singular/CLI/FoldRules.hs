@@ -32,28 +32,20 @@ module Singular.CLI.FoldRules
       -- * Which requests take the selection (#518)
     , FoldRequestsRefusal (..)
     , foldRequests
+    , foldTaggedRequests
+    , refusedRequest
     , renderFoldRequestsRefusal
-    , refuseNamedEdgeEarly
     , SpendsRefusal (..)
     , spendsSelection
     , renderSpendsRefusal
 
       -- * Which edge
     , FoldKind (..)
-    , foldKind
     , checkCarriedDatum
 
       -- * Selection inputs (#518, pure adapters)
-    , requestEdgeKind
-    , requestOwnerText
-    , pendingDeadlineOf
-    , approvalCheckOf
-    , appVerdictOf
-    , neutralAppExecutable
-    , pendingRequestOf
     , assignKeyInts
     , assignRefPairing
-    , buildPendingRequests
     , buildLiveFacts
 
       -- * Receipt lists and kept top-level fields (#518)
@@ -61,7 +53,6 @@ module Singular.CLI.FoldRules
     , foldReceiptLists
     , KeptReceipt (..)
     , keptReceiptFields
-    , holdsActiveToken
 
       -- * Which funding
     , fundedView
@@ -71,23 +62,13 @@ module Singular.CLI.FoldRules
 
 import Data.Aeson (Value, object, toJSON, (.=))
 import Data.ByteString (ByteString)
-import Data.ByteString.Base16 qualified as B16
-import Data.ByteString.Char8 qualified as BC
-import Data.ByteString.Short qualified as SBS
 import Data.List (intercalate)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Map.Strict qualified as Map
-import Data.Maybe (fromMaybe)
 import Data.Text qualified as T
-import Lens.Micro ((^.))
 
 import Cardano.Ledger.Address (Addr)
-import Cardano.Ledger.Api.Tx.Out (TxOut, valueTxOutL)
-import Cardano.Ledger.Mary.Value
-    ( MaryValue (..)
-    , MultiAsset (..)
-    , PolicyID (..)
-    )
+import Cardano.Ledger.Api.Tx.Out (TxOut)
 import Cardano.Ledger.TxIn (TxIn)
 import PlutusCore.Data qualified as PLC
 
@@ -100,37 +81,21 @@ import Singular.Registry.Deployment (renderOutRef)
 import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.FoldAdmission (foldAdmission)
 import Singular.Registry.FoldSelection
-    ( AppVerdict (..)
-    , ApprovalCheck (..)
-    , EdgeKind (..)
-    , Exclusion (..)
+    ( Exclusion (..)
     , Leaf (..)
     , LiveFacts
     , PendingRequest (..)
     , SelectedRequest (..)
     , Selection (..)
+    , TaggedRequest (..)
+    , TaggedSelection (..)
     , exclusionName
     , exclusionSource
     )
-import Singular.Registry.Ledger (AssetName (..), ConwayEra)
+import Singular.Registry.Ledger (ConwayEra)
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.TxBuilder.Edges (selectFunding)
-import Singular.Registry.TxBuilder.Internal.Edges
-    ( approvalDestination
-    , approvalName
-    )
-import Singular.Registry.TxBuilder.Internal.Identity
-    ( extractOwnerBytes
-    , scriptHashBytes
-    )
-import Singular.Registry.Types
-    ( Edge
-    , OnChainRequest (..)
-    , edgeInsertActive
-    , edgeName
-    , edgeUpdateTerminal
-    )
 
 {- | The widest validity bound the library gives a fold when it cannot place
 the request's deadline in the node's horizon: it tries now plus 30, 5 and 2
@@ -295,21 +260,24 @@ boundStartMs slotOf lo0 hi0 slot = do
                 Just _ -> go mid hi
                 Nothing -> pure Nothing
 
--- | The edges @registry fold@ folds.
+-- | The two kinds of booked request a fold settles.
 data FoldKind = FoldInsertion | FoldTermination
     deriving stock (Eq, Show)
 
--- | The kind a request's edge is, or why it is not one this command folds.
-foldKind :: Edge -> Either String FoldKind
-foldKind e
-    | e == edgeInsertActive = Right FoldInsertion
-    | e == edgeUpdateTerminal = Right FoldTermination
-    | otherwise =
-        Left
-            ( "the request names edge "
-                <> edgeName e
-                <> ", which registry fold does not fold: it folds insertActive and updateTerminal"
-            )
+{- | The datum a registration's request carries for its delivered output,
+read off the request on the chain and never off a file, so any wallet can fold
+the registration. Through the value: the open datum checks it is an envelope;
+the neutral value takes the request's own datum unchanged (decoding nothing),
+and a request that carries none delivers an output that holds none, as the
+model's routing admits.
+-}
+checkCarriedDatum
+    :: Application -> Maybe PLC.Data -> Either String (Maybe PLC.Data)
+checkCarriedDatum app carried = case appHolding app of
+    Just rules -> case hrCheckCarried rules carried of
+        Left why -> Left (T.unpack why)
+        Right datum -> Right (Just datum)
+    Nothing -> Right carried
 
 {- | A view in which the wallet's own address holds only the output the caller
 named to fund the fold: the production fold funds and collateralises from
@@ -479,24 +447,6 @@ postBuildDecision slotOf now deadline deadlineSlot upper = do
     pure
         (postBuildCheck now deadline deadlineSlot upper boundTime, boundTime)
 
-{- | The datum an insertion's request carries for its delivered output
-(#419), read off the request on the chain and never off a file, so any
-wallet can fold the insertion. Through the value: the open datum checks
-it is an envelope; the neutral value takes the request's own datum
-unchanged (decoding nothing).
--}
-checkCarriedDatum
-    :: Application -> OnChainRequest -> Either String PLC.Data
-checkCarriedDatum app req = case appHolding app of
-    Just rules -> case hrCheckCarried rules req of
-        Left why -> Left (T.unpack why)
-        Right datum -> Right datum
-    Nothing -> case snd (requestDestination req) of
-        Nothing ->
-            Left
-                "the insertion's request carries no datum: its delivered output would hold none"
-        Just datum -> Right datum
-
 -- ---------------------------------------------------------
 -- Which requests take the selection (#518)
 -- ---------------------------------------------------------
@@ -537,11 +487,38 @@ foldRequests
     -> Selection
     -> Either FoldRequestsRefusal (NonEmpty TxIn)
 foldRequests named pairing sel =
+    foldRequestsFrom
+        named
+        pairing
+        (map selRef (selectionSettled sel))
+        [(prRef q, exc) | (q, exc) <- selectionExcluded sel]
+
+{- | 'foldRequests' over the tagged selection: the same settled, named and
+excluded decisions, the references being the tagged requests' own.
+-}
+foldTaggedRequests
+    :: Maybe TxIn
+    -> [(TxIn, Int)]
+    -> TaggedSelection
+    -> Either FoldRequestsRefusal (NonEmpty TxIn)
+foldTaggedRequests named pairing sel =
+    foldRequestsFrom
+        named
+        pairing
+        (map tgRef (taggedSettled sel))
+        [(tgRef q, exc) | (q, exc) <- taggedExcluded sel]
+
+foldRequestsFrom
+    :: Maybe TxIn
+    -> [(TxIn, Int)]
+    -> [Int]
+    -> [(Int, Exclusion)]
+    -> Either FoldRequestsRefusal (NonEmpty TxIn)
+foldRequestsFrom named pairing settledRefs excludedPairs =
     let intToTx = [(r, tx) | (tx, r) <- pairing]
         lookupTx r = lookup r intToTx
         pairedInts = map snd pairing
-        settledRefs = map selRef (selectionSettled sel)
-        excludedRefs = map (prRef . fst) (selectionExcluded sel)
+        excludedRefs = map fst excludedPairs
         listedRefs = settledRefs ++ excludedRefs
         missingPairing = [r | r <- listedRefs, r `notElem` pairedInts]
         extraPairingTxs = [tx | (tx, r) <- pairing, r `notElem` listedRefs]
@@ -551,8 +528,8 @@ foldRequests named pairing sel =
                 let settledTxs = [tx | ref <- settledRefs, Just tx <- [lookupTx ref]]
                     excludedTxs =
                         [ (tx, exc)
-                        | (q, exc) <- selectionExcluded sel
-                        , Just tx <- [lookupTx (prRef q)]
+                        | (r, exc) <- excludedPairs
+                        , Just tx <- [lookupTx r]
                         ]
                 in  case settledTxs of
                         [] -> case (pairing, named) of
@@ -583,6 +560,15 @@ foldRequests named pairing sel =
                                 | otherwise -> case [exc | (tx, exc) <- excludedTxs, tx == r] of
                                     (exc : _) -> Left (FoldNamedExcluded r exc)
                                     [] -> Left (FoldNamedNotPending r)
+
+{- | The request a refusal names as excluded by the selection, when it names
+one: a request that was never pending is no booking to name.
+-}
+refusedRequest :: FoldRequestsRefusal -> Maybe TxIn
+refusedRequest = \case
+    FoldNamedExcluded r _ -> Just r
+    FoldNamedNothingSettled r (Just _) _ -> Just r
+    _ -> Nothing
 
 -- | One line naming the refusal, plus one line per exclusion.
 renderFoldRequestsRefusal :: FoldRequestsRefusal -> String
@@ -643,18 +629,6 @@ renderFoldRequestsRefusal = \case
   where
     txt = T.unpack . renderOutRef
 
-{- | Whether the fold refuses a named request's untakeable edge at once,
-before the selection runs and before any other pending request is read:
-only when that request is the only one pending, so the early refusal has no
-other exclusion to name. Consulted only after the named request was found
-pending and its edge was refused by 'foldKind'; every other case goes
-through the selection and 'foldRequests', whose refusal names the named
-request's cause and every other exclusion.
--}
-refuseNamedEdgeEarly :: Maybe TxIn -> [TxIn] -> Bool
-refuseNamedEdgeEarly (Just r) pendings = pendings == [r]
-refuseNamedEdgeEarly Nothing _ = False
-
 -- | Why a built fold does not spend exactly the selection.
 data SpendsRefusal
     = SpendsMissingState TxIn
@@ -701,137 +675,6 @@ renderSpendsRefusal = \case
 -- Selection inputs (#518, pure adapters)
 -- ---------------------------------------------------------
 
-{- | The request's edge as the selection's edge kind: the two admitted
-edges map to themselves, any other edge maps to other carrying the
-model's own edge name.
--}
-requestEdgeKind :: Edge -> EdgeKind
-requestEdgeKind e
-    | e == edgeInsertActive = EdgeInsertActive
-    | e == edgeUpdateTerminal = EdgeUpdateTerminal
-    | otherwise = EdgeOther (T.pack (edgeName e))
-
--- | The owner's raw bytes as hex text.
-requestOwnerText :: ByteString -> T.Text
-requestOwnerText bs = T.pack (BC.unpack (B16.encode bs))
-
-{- | A request's processing deadline: its submission time plus the
-registry's processing time (the same addition the booking receipt states).
--}
-pendingDeadlineOf :: Integer -> Integer -> Integer
-pendingDeadlineOf = requestDeadline
-
-{- | The model's approval check over the output's assets: assets under
-the pinned policy carrying the expected commitment are ok; assets under
-the pinned policy without it are a tuple mismatch; assets only under
-other policies are a policy mismatch; no non-ada asset at all is missing.
-Takes the output's assets as (policy bytes, asset-name bytes), the pinned
-policy, and the expected commitment (the builder's 'approvalName').
--}
-approvalCheckOf
-    :: [(SBS.ShortByteString, ByteString)]
-    -> SBS.ShortByteString
-    -> ByteString
-    -> ApprovalCheck
-approvalCheckOf assets pinned expected
-    | any (\(p, n) -> p == pinned && n == expected) assets = ApprovalOk
-    | any (\(p, _) -> p == pinned) assets = ApprovalTupleMismatch
-    | not (null assets) = ApprovalPolicyMismatch
-    | otherwise = ApprovalMissing
-
-{- | The application step's verdict, through the application value only:
-an insertion whose carried datum the value cannot read is unreadable; a
-termination under a value with no holding rules is required carrying the
-value's executable (the generic wording when it names none); otherwise
-ready. Reuses 'checkCarriedDatum' for readability and 'appHolding' for
-the holding-rules presence; 'neutralTerminationRefusal' in 'Fold' is
-unreachable here ('Fold' imports this module), so the generic wording is
-duplicated as 'neutralAppExecutable' (see the reliance record).
--}
-appVerdictOf :: Application -> OnChainRequest -> AppVerdict
-appVerdictOf app req
-    | requestEdge req == edgeInsertActive = case checkCarriedDatum app req of
-        Left _ -> AppDatumUnreadable
-        Right _ -> AppReady
-    | requestEdge req == edgeUpdateTerminal = case appHolding app of
-        Just _ -> AppReady
-        Nothing -> AppRequired (fromMaybe neutralAppExecutable (appExecutable app))
-    | otherwise = AppReady
-
--- | The generic wording the neutral refusal uses when the value names no executable.
-neutralAppExecutable :: T.Text
-neutralAppExecutable = "the application's own executable"
-
--- | A pending output's non-ada assets as (policy bytes, asset-name bytes).
-outputAssets :: TxOut ConwayEra -> [(SBS.ShortByteString, ByteString)]
-outputAssets out =
-    [ (SBS.toShort (scriptHashBytes policyHash), SBS.fromShort rawName)
-    | (PolicyID policyHash, names) <- Map.toList assets
-    , (AssetName rawName, _) <- Map.toList names
-    ]
-  where
-    MaryValue _ (MultiAsset assets) = out ^. valueTxOutL
-
-{- | One pending request's selection input: the decode verdict, the edge
-kind, the owner (hex of the output's owner bytes, which match the datum
-for a decodable output), the deadline with the submission time it is
-computed from, the model's approval check
-(expected commitment via the builders' 'approvalName' over the request's
-edge, key, owner and destination), and the given application verdict.
-For an undecodable output the datum-derived fields are placeholders that
-the selection never reaches (it refuses undecodable first).
--}
-pendingRequestOf
-    :: Int
-    -> Int
-    -> Either String OnChainRequest
-    -> TxOut ConwayEra
-    -> SBS.ShortByteString
-    -> AppVerdict
-    -> Integer
-    -> PendingRequest
-pendingRequestOf ref key decoded out pinned appVerdict process = case decoded of
-    Left _ ->
-        PendingRequest
-            ref
-            key
-            T.empty
-            (EdgeOther (T.pack "undecodable"))
-            0
-            0
-            False
-            ApprovalMissing
-            appVerdict
-    Right req ->
-        let ownerBytes = extractOwnerBytes out
-            expected =
-                approvalName
-                    (requestEdge req)
-                    (requestKey req)
-                    ownerBytes
-                    (approvalDestination (requestDestination req))
-            assets = outputAssetsPinned out pinned
-        in  PendingRequest
-                ref
-                key
-                (requestOwnerText ownerBytes)
-                (requestEdgeKind (requestEdge req))
-                (pendingDeadlineOf (requestSubmittedAt req) process)
-                (requestSubmittedAt req)
-                True
-                (approvalCheckOf assets pinned expected)
-                appVerdict
-
-{- | A pending output's assets relevant to approval: all non-ada assets as
-(policy bytes, name bytes). Compared against the pinned policy by
-'approvalCheckOf'.
--}
-outputAssetsPinned
-    :: TxOut ConwayEra
-    -> SBS.ShortByteString
-    -> [(SBS.ShortByteString, ByteString)]
-outputAssetsPinned out _ = outputAssets out
-
 {- | Integer keys sharing one number among requests on the same key bytes
 and never among distinct keys, in first-appearance order starting at 1.
 -}
@@ -846,42 +689,6 @@ assignKeyInts = go Map.empty 1
 -- | Distinct integer references in ledger input order, with the pairing.
 assignRefPairing :: [TxIn] -> [(TxIn, Int)]
 assignRefPairing txs = zip txs [1 ..]
-
-{- | The whole pending list's selection inputs with consistent integers:
-key bytes from decodable datums (empty for undecodable, which the
-selection refuses before the key rule), references distinct in ledger
-order, application verdicts assembled from the given application value
-('AppReady' placeholder for undecodable), and the pairing 'foldRequests'
-takes.
--}
-buildPendingRequests
-    :: [(TxIn, TxOut ConwayEra, Either String OnChainRequest)]
-    -> SBS.ShortByteString
-    -> Application
-    -> Integer
-    -> ([PendingRequest], [(TxIn, Int)])
-buildPendingRequests inputs pinned app process =
-    let txs = [tx | (tx, _, _) <- inputs]
-        pairing = assignRefPairing txs
-        refOf tx = case lookup tx pairing of
-            Just r -> r
-            Nothing -> error "buildPendingRequests: missing pairing"
-        keyBytes =
-            [either (const mempty) requestKey decoded | (_, _, decoded) <- inputs]
-        keyInts = assignKeyInts keyBytes
-        verdictOf = either (const AppReady) (appVerdictOf app)
-        pendings =
-            [ pendingRequestOf
-                (refOf tx)
-                k
-                decoded
-                out
-                pinned
-                (verdictOf decoded)
-                process
-            | ((tx, out, decoded), k) <- zip inputs keyInts
-            ]
-    in  (pendings, pairing)
 
 {- | The selection's live facts keyed by the shared integers: the leaf
 from the registry state (unknown when the state never mentions the key)
@@ -902,26 +709,6 @@ buildLiveFacts leaves present keys =
           )
         | (k, i) <- Map.toList keys
         ]
-
-{- | Whether any live output at the application address holds the key's one
-active token: an asset under the active-token policy named by the key bytes.
-Pure over the outputs the routine already reads, so the selection's leaf
-check sees the same holdings the fold would spend, for either application
-value (the neutral value carries no holding rules, but its keys still hold
-tokens at the application address).
--}
-holdsActiveToken
-    :: SBS.ShortByteString
-    -- ^ The active-token policy bytes
-    -> ByteString
-    -- ^ The key bytes
-    -> [(TxIn, TxOut ConwayEra)]
-    -> Bool
-holdsActiveToken _ key _ | key == mempty = False
-holdsActiveToken active key outs =
-    any (holds . snd) outs
-  where
-    holds out = any (\(p, n) -> p == active && n == key) (outputAssets out)
 
 -- ---------------------------------------------------------
 -- Receipt lists and kept top-level fields (#518)
@@ -993,7 +780,7 @@ data KeptReceipt = KeptReceipt
     , keptUpperSlot :: Maybe Integer
     , keptPostBuild :: Value
     , keptHostClockMs :: Integer
-    , keptRemainingMs :: Integer
+    , keptRemainingMs :: Maybe Integer
     }
     deriving stock (Eq, Show)
 

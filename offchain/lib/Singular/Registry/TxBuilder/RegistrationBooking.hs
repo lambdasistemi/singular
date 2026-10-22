@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 {- |
 Module      : Singular.Registry.TxBuilder.RegistrationBooking
 Description : The registration booking transaction
@@ -21,15 +23,25 @@ other application policies or redeemers.
 module Singular.Registry.TxBuilder.RegistrationBooking
     ( RegistrationBooking (..)
     , bookRegistrationImpl
+    , registrationWindow
     , holdsStateToken
     ) where
 
+import Control.Exception
+    ( SomeAsyncException
+    , SomeException
+    , fromException
+    , throwIO
+    , try
+    )
 import Control.Monad (unless)
 import Data.ByteString (ByteString)
+import Data.ByteString qualified as BS
 import Data.ByteString.Short (ShortByteString)
 import Data.ByteString.Short qualified as SBS
 import Data.List (sort)
 import Data.Map.Strict qualified as Map
+import Data.Maybe (fromMaybe)
 import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
 import Lens.Micro ((&), (.~), (^.))
@@ -49,6 +61,7 @@ import Cardano.Ledger.Api.Tx.Body
     , mkBasicTxBody
     , outputsTxBodyL
     , referenceInputsTxBodyL
+    , reqSignerHashesTxBodyL
     , scriptIntegrityHashTxBodyL
     , vldtTxBodyL
     )
@@ -89,7 +102,7 @@ import Singular.Registry.Ledger
     , PParams
     , TokenId (..)
     )
-import Singular.Registry.LedgerProvider (Session)
+import Singular.Registry.LedgerProvider (Session, TipObservation (..))
 import Singular.Registry.SessionIO (outputsAt, parameters)
 import Singular.Registry.SessionIO qualified as Services
 import Singular.Registry.TxBuilder.Edges (selectFunding)
@@ -131,10 +144,51 @@ data RegistrationBooking = RegistrationBooking
     {- ^ The application policy's script, whose hash must be the registry's
     pinned application policy
     -}
+    , rbApplicationRedeemer :: !(Maybe PLC.Data)
+    {- ^ What the application's mint is given. The application owns its
+    registration arm, so its producer names the redeemer; absent, the open
+    policy's own arm is used (constructor 1 over the key, the refund hash, the
+    destination and the nonce).
+    -}
+    , rbRequiredSigners :: ![ByteString]
+    {- ^ The payment key hashes the application's mint requires to sign, as the
+    transaction's required signers. The balancer prices a witness for each; no
+    signature is made here.
+    -}
     }
 
 refuse :: String -> IO a
 refuse = ioError . userError . ("bookRegistration: " <>)
+
+{- | The validity interval a registration booking asks for, from the view that
+builds it: it opens at the slot the view observes and closes at the slot that
+begins soonest after a short span, no wider than the registry's booking width
+and placed inside the horizon the view can convert. The start of the closing
+slot is the booked time, so the span is the time the booking has to be
+included. A span the view cannot convert is replaced by the next shorter one;
+when none converts the failure is the last one's.
+-}
+registrationWindow
+    :: CageConfig -> Session NoWitness IO -> IO (SlotNo, SlotNo)
+registrationWindow cfg view = do
+    observed <- observedSlot <$> Services.tip view
+    openedMs <- Services.slotStart view observed
+    let width = defaultBookingWidth cfg
+        spans =
+            [min width s | width > 0, s <- [30_000, 20_000, 10_000, 5_000, 2_000]]
+        attempt [] =
+            ioError
+                (userError "registrationWindow: the booking width admits no span")
+        attempt [s] = closing s
+        attempt (s : rest) =
+            try (closing s) >>= \case
+                Right slot -> pure slot
+                Left (e :: SomeException)
+                    | Just (_ :: SomeAsyncException) <- fromException e -> throwIO e
+                    | otherwise -> attempt rest
+        closing s = max (observed + 1) <$> Services.ceilingSlot view (openedMs + s)
+    closes <- attempt spans
+    pure (observed, closes)
 
 {- | Build the unsigned booking of one registration, balanced from the
 payer's largest ada-only output, which is also its collateral.
@@ -169,6 +223,8 @@ bookRegistrationImpl cfg view tid stateRef b payer = do
         refuse "the lower slot is not before the upper slot"
     unless (carrier >= 0) $ refuse "the carrier is negative"
     unless (rbNonce b >= 0) $ refuse "the nonce is negative"
+    unless (all ((== 28) . BS.length) (rbRequiredSigners b)) $
+        refuse "a required signer is not a 28-byte key hash"
     unless (tip >= minimumTip) $
         refuse "the tip is below the registry's minimum tip"
     refund <- case rbRefundAddress b of
@@ -264,7 +320,11 @@ bookRegistrationImpl cfg view tid stateRef b payer = do
                         )
                     ,
                         ( ConwayMinting (AsIx (indexOf applicationPolicy))
-                        , (Data (applicationRedeemer b refund), placeholderExUnits)
+                        ,
+                            ( Data
+                                (fromMaybe (applicationRedeemer b refund) (rbApplicationRedeemer b))
+                            , placeholderExUnits
+                            )
                         )
                     ]
         body =
@@ -274,6 +334,8 @@ bookRegistrationImpl cfg view tid stateRef b payer = do
                 & mintTxBodyL .~ tags
                 & referenceInputsTxBodyL .~ Set.singleton stateRef
                 & collateralInputsTxBodyL .~ Set.singleton (fst funding)
+                & reqSignerHashesTxBodyL
+                    .~ Set.fromList (map addrWitnessKeyHash (rbRequiredSigners b))
                 & vldtTxBodyL
                     .~ ValidityInterval (SJust (rbLower b)) (SJust (rbUpper b))
                 & scriptIntegrityHashTxBodyL .~ computeScriptIntegrity pp redeemers

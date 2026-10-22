@@ -156,7 +156,7 @@ import Cardano.Crypto.Hash.Class
     , hashWith
     )
 import Cardano.Ledger.Address (Addr (..), serialiseAddr)
-import Cardano.Ledger.Api.Tx (bodyTxL, mkBasicTx, txIdTx)
+import Cardano.Ledger.Api.Tx (bodyTxL, mkBasicTx, txIdTx, witsTxL)
 import Cardano.Ledger.Api.Tx.Body
     ( ValidityInterval (..)
     , collateralInputsTxBodyL
@@ -173,10 +173,14 @@ import Cardano.Ledger.Api.Tx.Out
     ( TxOut
     , addrTxOutL
     , coinTxOutL
-    , datumTxOutL
     , mkBasicTxOut
     , referenceScriptTxOutL
     , valueTxOutL
+    )
+import Cardano.Ledger.Api.Tx.Wits
+    ( Redeemers (..)
+    , rdmrsTxWitsL
+    , scriptTxWitsL
     )
 import Cardano.Ledger.BaseTypes
     ( Network (Testnet)
@@ -184,12 +188,13 @@ import Cardano.Ledger.BaseTypes
     , TxIx (..)
     )
 import Cardano.Ledger.Binary (decCBOR, decodeFullAnnotator)
+import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
 import Cardano.Ledger.Core (eraProtVerHigh)
 import Cardano.Ledger.Credential
     ( Credential (..)
     , StakeReference (..)
     )
-import Cardano.Ledger.Hashes (ScriptHash (..))
+import Cardano.Ledger.Hashes (KeyHash (..), ScriptHash (..))
 import Cardano.Ledger.Mary.Value
     ( AssetName (..)
     , MaryValue (..)
@@ -282,12 +287,9 @@ import Singular.CLI.Vault
 import Singular.Registry.Application
     ( Application (..)
     , ApplicationPin (..)
-    , DecodedHolding (..)
-    , HoldingRules (..)
-    , datumCbor
-    , datumHash
     , hashPinnedApplication
     , neutralApplication
+    , txOutDatum
     )
 import Singular.Registry.Bundle
     ( Bundle (..)
@@ -323,6 +325,7 @@ import Singular.Registry.RawChainFixture
     , RawChain
     , advanceChain
     , jumpChainTo
+    , jumpChainToHostClock
     , newRawChain
     , rawChainProvider
     , recordTransaction
@@ -342,21 +345,16 @@ import Singular.Registry.TxBuilder.Edges (adaOnlyOut, selectFunding)
 import Singular.Registry.TxBuilder.Internal
     ( addrFromKeyHashBytes
     , addrKeyHashBytes
-    , approvalDestination
-    , approvalName
     , cageAddrFromCfg
     , cagePolicyIdFromCfg
     , computeScriptHash
     , currentPosixMs
     , extractCageDatum
-    , extractOwnerBytes
     , findStateUtxo
-    , mkInlineDatum
-    , mkRequestDatumWith
     , policyIdFromPin
     , requestAddrFromCfg
+    , requestPolicyOf
     , scriptHashBytes
-    , toPlcData
     )
 import Singular.Registry.TxBuilder.Internal.Identity
     ( addrWitnessKeyHash
@@ -372,7 +370,11 @@ import Singular.Registry.TxBuilder.RegistrationBooking
     , bookRegistrationImpl
     )
 import Singular.Registry.TxBuilder.Request (requestEdgeImpl)
-import Singular.Registry.TxBuilder.Update (RegistryContext (..))
+import Singular.Registry.TxBuilder.TerminationBooking
+    ( CustodyAuthority (..)
+    , TerminationBooking (..)
+    , bookTerminationImpl
+    )
 import Singular.Registry.Types
     ( CageDatum (..)
     , OnChainRequest (..)
@@ -1218,6 +1220,8 @@ data Rig = Rig
     -- ^ When set, what the provider answers the next submission instead of taking it
     , rigTracer :: Tracer IO Trace
     -- ^ What the commands trace into: the collector, or a composition holding it
+    , rigApplication :: IORef Application
+    -- ^ The application value every command of the rig is composed with
     }
 
 -- | One command run: its constructor, a label, its exit, its receipt and its events.
@@ -1236,6 +1240,15 @@ magic = 42
 
 withRig :: (Rig -> IO a) -> IO a
 withRig = withRigVia pure
+
+{- | The rig whose commands are composed with the script-pinned application: its
+registry is created without a policy flag, its pin is the application script
+of the blueprint, and a booking can mint under it as the producers do.
+-}
+withScriptRig :: (Rig -> IO a) -> IO a
+withScriptRig use = withRig $ \rig -> do
+    writeIORef (rigApplication rig) scriptPinned
+    use rig
 
 -- | The rig, its commands tracing into a composition built around its collector.
 withRigVia
@@ -1290,10 +1303,23 @@ withRigIn dir blueprintJson compose use = do
                 , csNetworkTime = syntheticTime
                 }
     advanceChain chain id
+    jumpChainToHostClock chain
     events <- newIORef []
     answer <- newIORef Nothing
     tracer <- compose (Tracer (\t -> modifyIORef' events (<> [t])))
-    use (Rig dir chain wallet keyPath blueprint events answer tracer)
+    application <- newIORef neutralApplication
+    use
+        ( Rig
+            dir
+            chain
+            wallet
+            keyPath
+            blueprint
+            events
+            answer
+            tracer
+            application
+        )
 
 -- | A wallet output at the start of the chain.
 fundOutput :: Int -> TxIn
@@ -1475,21 +1501,11 @@ reshapeRehearsalWallet rig approvals = do
   where
     adaOf out = let Coin c = out ^. coinTxOutL in c
 
-{- | Certify the planted requests as real bookings do, then report the
-certified assets: for each planted request output, read its datum and bytes
-at run time and derive the expected commitment exactly as the fold's own
-selection does — @approvalName@ over the request's edge, key and owner with
-@approvalDestination@ over the request's destination — under the registry's
-application pin read at run time. Planted requests carry no destination
-datum, which the neutral fold refuses as unreadable, so each datum is
-rewritten first with the wallet address and a stand-in carried datum
-(lovelace, edge, key, owner, deposit and submission time untouched); the
-commitment is derived from the rewritten datum, exactly what the fold
-reads. The rewritten request outputs carry what a certified booking locks,
-so the fold's selection passes them for the production reason; the union is
-what the rehearsal wallet holds beside its ada, as the devnet legs show a
-reject's change doing. Nothing is typed except the key labels the plants
-already use.
+{- | The stand-in assets a rehearsal wallet holds beside its ada: one asset
+per planted request, named after the request, under a policy the rig owns.
+Their only role is to make the wallet's outputs carry something besides ada, so
+that no output of it can fund a transaction alone; they are not the tags of a
+booking, which stay on the request output.
 -}
 certifyPlanted
     :: Rig
@@ -1498,60 +1514,24 @@ certifyPlanted
     -> RegistryEconomics
     -> [TxIn]
     -> IO (Map.Map PolicyID (Map.Map AssetName Integer))
-certifyPlanted rig tokenStr seedStr econ reqIns = do
-    seedIn <-
-        either
-            (fail . ("certifyPlanted seed: " <>))
-            pure
-            (parseOutRef (T.pack seedStr))
-    tid <- parseTokenId tokenStr
-    let dummy = hashPinnedApplication (SBS.toShort (BS.replicate 28 7))
-    rel <- loadReleaseCodes dummy (rigBlueprint rig) >>= either fail pure
-    let (cfg, _) = registryConfigFor dummy rel econ (txInToRef seedIn)
-        pinned = policyIdFromPin (cfgApplicationPolicy cfg)
-        walletAt = walletAddr (rigWallet rig)
-        walletBytes = serialiseAddr walletAt
-        reqAddr = requestAddrFromCfg cfg tid Testnet
-    atReq <-
-        SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v ->
-            SessionIO.outputsAt v reqAddr
-    let found = [(i, o) | (i, o) <- atReq, i `elem` reqIns]
-    when (length found /= length reqIns) $
-        fail "certifyPlanted: a planted request output is missing"
-    certRows <- mapM (certifyOne pinned walletBytes) found
-    advanceChain (rigChain rig) $ \facts ->
-        facts
-            { csUTxO =
-                foldr (\(i, _, o) m -> Map.insert i o m) (csUTxO facts) certRows
-            }
+certifyPlanted _rig _tokenStr _seedStr _econ reqIns =
     pure
-        ( Map.unionsWith
-            (Map.unionWith (+))
-            [a | (_, a, _) <- certRows]
+        ( Map.singleton
+            rehearsalPolicy
+            ( Map.fromList
+                [ ( AssetName (SBS.toShort (BS.take 32 (TE.encodeUtf8 (renderOutRef r))))
+                  , 1
+                  )
+                | r <- reqIns
+                ]
+            )
         )
-  where
-    certifyOne pinned walletBytes (i, o) = case extractCageDatum o of
-        Just (RequestDatum req) -> do
-            let req' = req{requestDestination = (walletBytes, Just (PLC.Constr 0 []))}
-                expected =
-                    approvalName
-                        (requestEdge req')
-                        (requestKey req')
-                        (extractOwnerBytes o)
-                        (approvalDestination (requestDestination req'))
-                asset =
-                    Map.singleton
-                        pinned
-                        (Map.singleton (AssetName (SBS.toShort expected)) 1)
-                Coin lovelace = o ^. coinTxOutL
-                made =
-                    o
-                        & datumTxOutL .~ mkInlineDatum (toPlcData (RequestDatum req'))
-                        & valueTxOutL .~ MaryValue (Coin lovelace) (MultiAsset asset)
-            pure (i, asset, made)
-        _ ->
-            fail
-                "certifyPlanted: a planted request output carries no request datum"
+
+-- | The policy of the rehearsal wallet's stand-in assets.
+rehearsalPolicy :: PolicyID
+rehearsalPolicy = case hashFromBytes (BS.replicate 28 9) of
+    Just h -> PolicyID (ScriptHash h)
+    Nothing -> error "rehearsalPolicy: not 28 bytes"
 
 -- | Every output of the rig wallet, read at run time.
 readWallet :: Rig -> IO [(TxIn, TxOut ConwayEra)]
@@ -1693,16 +1673,20 @@ prepareFundingRows = describe
     $ do
         it
             "a fold from a wallet with no ada-only output completes with prepared funding"
-            $ withRig
+            $ withScriptRig
             $ \rig -> do
                 seed <- fundSeed rig
-                create <- run rig "create" (["registry", "create"] <> policyArgs)
+                create <-
+                    run
+                        rig
+                        "create"
+                        (["registry", "create", "--seed", seed] <> economicsArgs)
                 runExit create `shouldBe` ExitSuccess
                 t1 <- tokenOf create
                 let keyA = TE.encodeUtf8 "carol-a"
                     keyB = TE.encodeUtf8 "carol-b"
-                (reqA, _) <- plantRequest rig t1 seed economics keyA
-                (reqB, _) <- plantRequest rig t1 seed economics keyB
+                (reqA, _) <- plantBooked rig t1 seed economics keyA
+                (reqB, _) <- plantBooked rig t1 seed economics keyB
                 refsBefore <- countRefs <$> readWallet rig
                 assets <- certifyPlanted rig t1 seed economics [reqA, reqB]
                 names <- reshapeRehearsalWallet rig assets
@@ -1718,49 +1702,31 @@ prepareFundingRows = describe
                 expectCompleted "fold" folded
                 expectPreparationField "fold" folded
         it
-            "a reject from a wallet with no ada-only output completes with prepared funding"
-            $ withRig
+            "the retired reject from a wallet with no ada-only output is refused as an attempt: no preparation, nothing submitted"
+            $ withScriptRig
             $ \rig -> do
                 seed <- fundSeed rig
                 create <-
                     run
                         rig
                         "create"
-                        ( ["registry", "create", "--process-time", "1", "--retract-time", "1"]
-                            <> policyArgs
-                        )
+                        (["registry", "create", "--seed", seed] <> economicsArgs)
                 runExit create `shouldBe` ExitSuccess
                 t1 <- tokenOf create
-                let shortEcon =
-                        RegistryEconomics
-                            { reProcessTime = 1
-                            , reRetractTime = 1
-                            , reTip = Coin 1_000_000
-                            , reRegistrationCost = Coin 0
-                            , reBookingWidth = 60_000
-                            }
-                    keyA = TE.encodeUtf8 "carol-a"
-                    keyB = TE.encodeUtf8 "carol-b"
-                (reqA, subA) <- plantRequest rig t1 seed shortEcon keyA
-                (reqB, subB) <- plantRequest rig t1 seed shortEcon keyB
-                refsBefore <- countRefs <$> readWallet rig
-                assets <- certifyPlanted rig t1 seed shortEcon [reqA, reqB]
-                names <- reshapeRehearsalWallet rig assets
-                wallet <- readWallet rig
-                [o | (_, o) <- wallet, adaOnlyOut o] `shouldBe` []
-                names `shouldBe` 2
-                countRefs wallet `shouldBe` refsBefore
-                jumpToAfter
-                    rig
-                    (max subA subB + reProcessTime shortEcon + reRetractTime shortEcon)
-                    2
+                (reqA, _) <-
+                    plantBooked rig t1 seed economics (TE.encodeUtf8 "carol-a")
+                assets <- certifyPlanted rig t1 seed economics [reqA]
+                _ <- reshapeRehearsalWallet rig assets
                 rejected <-
                     run
                         rig
                         "reject from the rehearsal wallet"
                         (["registry", "reject"] <> tokenArgs t1)
-                expectCompleted "reject" rejected
-                expectPreparationField "reject" rejected
+                runExit rejected `shouldBe` ExitFailure 10
+                (T.isInfixOf "retired" . T.toLower <$> receiptReason rejected)
+                    `shouldBe` Just True
+                expectNoPreparation "reject" rejected
+                expectNoSubmissions "reject" rejected
         it
             "a reclaim from a wallet with no ada-only output completes with prepared funding"
             $ withRig
@@ -1790,14 +1756,18 @@ prepareFundingRows = describe
                 expectPreparationField "reclaim" reclaimed
         it
             "a short wallet is refused before signing, naming the shortfall"
-            $ withRig
+            $ withScriptRig
             $ \rig -> do
                 seed <- fundSeed rig
-                create <- run rig "create" (["registry", "create"] <> policyArgs)
+                create <-
+                    run
+                        rig
+                        "create"
+                        (["registry", "create", "--seed", seed] <> economicsArgs)
                 runExit create `shouldBe` ExitSuccess
                 t1 <- tokenOf create
                 let keyR = TE.encodeUtf8 "carol-r"
-                (reqR, _) <- plantRequest rig t1 seed economics keyR
+                (reqR, _) <- plantBooked rig t1 seed economics keyR
                 assets <- certifyPlanted rig t1 seed economics [reqR]
                 _ <- reshapeRehearsalWallet rig assets
                 shortenWallet rig 500_000
@@ -1824,59 +1794,48 @@ prepareFundingRows = describe
                 expectNoPreparation "fold" refused
                 expectNoSubmissions "fold" refused
         it
-            "a short wallet is refused for a reject before signing"
-            $ withRig
+            "the retired reject from a short wallet is refused as an attempt, before the wallet is read: no preparation, nothing submitted"
+            $ withScriptRig
             $ \rig -> do
                 seed <- fundSeed rig
                 create <-
                     run
                         rig
                         "create"
-                        ( ["registry", "create", "--process-time", "1", "--retract-time", "1"]
-                            <> policyArgs
-                        )
+                        (["registry", "create", "--seed", seed] <> economicsArgs)
                 runExit create `shouldBe` ExitSuccess
                 t1 <- tokenOf create
-                let shortEcon =
-                        RegistryEconomics
-                            { reProcessTime = 1
-                            , reRetractTime = 1
-                            , reTip = Coin 1_000_000
-                            , reRegistrationCost = Coin 0
-                            , reBookingWidth = 60_000
-                            }
-                    keyA = TE.encodeUtf8 "carol-a"
-                (reqA, subA) <- plantRequest rig t1 seed shortEcon keyA
-                assets <- certifyPlanted rig t1 seed shortEcon [reqA]
+                (reqA, _) <-
+                    plantBooked rig t1 seed economics (TE.encodeUtf8 "carol-a")
+                assets <- certifyPlanted rig t1 seed economics [reqA]
                 _ <- reshapeRehearsalWallet rig assets
                 shortenWallet rig 500_000
-                jumpToAfter
-                    rig
-                    (subA + reProcessTime shortEcon + reRetractTime shortEcon)
-                    2
                 refused <-
                     run
                         rig
                         "reject from a short wallet"
                         (["registry", "reject"] <> tokenArgs t1)
                 runExit refused `shouldBe` ExitFailure 10
-                case T.isInfixOf "preparation-unfunded" <$> receiptReason refused of
-                    Just True -> pure ()
-                    _ ->
-                        expectationFailure
-                            ("no preparation-unfunded refusal: " <> show (receiptReason refused))
+                (T.isInfixOf "retired" . T.toLower <$> receiptReason refused)
+                    `shouldBe` Just True
+                (T.isInfixOf "preparation-unfunded" <$> receiptReason refused)
+                    `shouldNotBe` Just True
                 expectNoPreparation "reject" refused
                 expectNoSubmissions "reject" refused
         it
             "an allowance below command plus preparation refuses before signing"
-            $ withRig
+            $ withScriptRig
             $ \rig -> do
                 seed <- fundSeed rig
-                create <- run rig "create" (["registry", "create"] <> policyArgs)
+                create <-
+                    run
+                        rig
+                        "create"
+                        (["registry", "create", "--seed", seed] <> economicsArgs)
                 runExit create `shouldBe` ExitSuccess
                 t1 <- tokenOf create
                 let keyR = TE.encodeUtf8 "carol-r"
-                (reqR, _) <- plantRequest rig t1 seed economics keyR
+                (reqR, _) <- plantBooked rig t1 seed economics keyR
                 assets <- certifyPlanted rig t1 seed economics [reqR]
                 _ <- reshapeRehearsalWallet rig assets
                 refused <-
@@ -1901,14 +1860,18 @@ prepareFundingRows = describe
                 expectNoSubmissions "fold" refused
         it
             "a funded wallet folds with no preparation from its largest output"
-            $ withRig
+            $ withScriptRig
             $ \rig -> do
                 seed <- fundSeed rig
-                create <- run rig "create" (["registry", "create"] <> policyArgs)
+                create <-
+                    run
+                        rig
+                        "create"
+                        (["registry", "create", "--seed", seed] <> economicsArgs)
                 runExit create `shouldBe` ExitSuccess
                 t1 <- tokenOf create
                 let keyN = TE.encodeUtf8 "carol-n"
-                (reqN, _) <- plantRequest rig t1 seed economics keyN
+                (reqN, _) <- plantBooked rig t1 seed economics keyN
                 _ <- certifyPlanted rig t1 seed economics [reqN]
                 walletBefore <- readWallet rig
                 largest <- case sortOn
@@ -1936,14 +1899,18 @@ prepareFundingRows = describe
                 expectNoPreparation "fold" completed
         it
             "an explicit token-carrying choice is refused with today's text"
-            $ withRig
+            $ withScriptRig
             $ \rig -> do
                 seed <- fundSeed rig
-                create <- run rig "create" (["registry", "create"] <> policyArgs)
+                create <-
+                    run
+                        rig
+                        "create"
+                        (["registry", "create", "--seed", seed] <> economicsArgs)
                 runExit create `shouldBe` ExitSuccess
                 t1 <- tokenOf create
                 let keyR = TE.encodeUtf8 "carol-r"
-                (reqR, _) <- plantRequest rig t1 seed economics keyR
+                (reqR, _) <- plantBooked rig t1 seed economics keyR
                 assets <- certifyPlanted rig t1 seed economics [reqR]
                 _ <- reshapeRehearsalWallet rig assets
                 wallet <- readWallet rig
@@ -1971,14 +1938,18 @@ prepareFundingRows = describe
                 expectNoSubmissions "fold" refused
         it
             "a named ada-only output is used with no preparation"
-            $ withRig
+            $ withScriptRig
             $ \rig -> do
                 seed <- fundSeed rig
-                create <- run rig "create" (["registry", "create"] <> policyArgs)
+                create <-
+                    run
+                        rig
+                        "create"
+                        (["registry", "create", "--seed", seed] <> economicsArgs)
                 runExit create `shouldBe` ExitSuccess
                 t1 <- tokenOf create
                 let keyN = TE.encodeUtf8 "carol-n"
-                (reqN, _) <- plantRequest rig t1 seed economics keyN
+                (reqN, _) <- plantBooked rig t1 seed economics keyN
                 _ <- certifyPlanted rig t1 seed economics [reqN]
                 walletBefore <- readWallet rig
                 -- Two eligible ada-only outputs of different sizes, both
@@ -3032,7 +3003,9 @@ runAt rig = runVia rig (envOf rig)
 one whose provider cannot answer a read.
 -}
 runVia :: Rig -> Env -> FilePath -> String -> [String] -> IO Run
-runVia rig env = runViaApp rig env neutralApplication
+runVia rig env registry label args = do
+    app <- readIORef (rigApplication rig)
+    runViaApp rig env app registry label args
 
 {- | The same, composing the caller's application value: the neutral value
 for the switched creates (the policy comes through the parser), another
@@ -4073,8 +4046,6 @@ plantedFacts =
     , "request edge"
     , "request deadline"
     , "edge started"
-    , "rejected request"
-    , "rejected dropped"
     , "reclaimed request"
     , "reclaimed amount"
     , "token"
@@ -4093,9 +4064,12 @@ plantedFacts =
     , "scope edge"
     ]
 
--- | The journal steps that act on an edge: boot, reclaim, reject.
+{- | The journal steps that act on an edge: boot and reclaim. The retired reject
+is refused before it reads anything, so it places no transaction and states
+no rejected request: its stream facts have no producer left in the lifecycle.
+-}
 edgeSteps :: [Text]
-edgeSteps = ["boot", "reclaim", "reject"]
+edgeSteps = ["boot", "reclaim"]
 
 {- | A mechanic that belongs to its transaction once its build has decided
 where it is placed: an evaluation, the build, the signing, submission,
@@ -4120,13 +4094,13 @@ prepared line's list has one entry equal to the scalars.
 -}
 journalTransitionsRow :: Spec
 journalTransitionsRow = describe "a fold's journal line lists its transition" $ do
-    it "writes one transition equal to the scalars" $ withRig $ \rig -> do
+    it "writes one transition equal to the scalars" $ withScriptRig $ \rig -> do
         seed <- fundSeed rig
         create <-
             run
                 rig
                 "create"
-                (["registry", "create", "--seed", seed] <> policyArgs)
+                (["registry", "create", "--seed", seed] <> economicsArgs)
         outcomeOf (runReceipt create) `shouldBe` Just "success"
         t1 <- tokenOf create
         reqIn <- plantFoldableRequest rig t1 seed
@@ -4152,52 +4126,21 @@ journalTransitionsRow = describe "a fold's journal line lists its transition" $ 
                 expectationFailure
                     ("expected one prepared fold line, found: " <> show (length other))
 
-{- | Plant one insertion request a neutral fold settles: its destination
-carries a datum at the wallet address, and its output carries the
-approval asset the selection expects, so the seven checks pass.
+{- | Plant one registration a neutral fold settles: booked by the registration
+booking builder under the script-pinned application, as a producer books it,
+and landed. Its destination is the application's address and it carries a
+datum, so the fold delivers the key's custody there.
 -}
 plantFoldableRequest :: Rig -> String -> String -> IO TxIn
-plantFoldableRequest rig tokenStr seedStr = do
-    seedIn <-
-        either
-            (fail . ("plantFoldableRequest seed: " <>))
-            pure
-            (parseOutRef (T.pack seedStr))
-    tid <- parseTokenId tokenStr
-    let dummy = hashPinnedApplication (SBS.toShort (BS.replicate 28 7))
-    rel <- loadReleaseCodes dummy (rigBlueprint rig) >>= either fail pure
-    let (cfg, _) = registryConfigFor dummy rel economics (txInToRef seedIn)
-        reqAddr = requestAddrFromCfg cfg tid Testnet
-        walletAt = walletAddr (rigWallet rig)
-        keyBytes = "fold-journal-key" :: BS.ByteString
-        edge = edgeInsertActive
-    now <- currentPosixMs
-    let destBytes = serialiseAddr walletAt
-        carried = PLC.Constr 0 [PLC.B "journal"]
-        dest = (destBytes, Just carried)
-        ownerBytes = addrKeyHashBytes walletAt
-        expectedName = approvalName edge keyBytes ownerBytes (approvalDestination dest)
-        pinned = cfgApplicationPolicy cfg
-        approvalAsset =
-            MultiAsset
-                ( Map.singleton
-                    (policyIdFromPin pinned)
-                    (Map.singleton (AssetName (SBS.toShort expectedName)) 1)
-                )
-        deposit = 4_000_000 :: Integer
-        tip = 1_000_000 :: Integer
-        bond = deposit + tip
-        datum = mkRequestDatumWith tid walletAt keyBytes edge deposit now dest
-        reqOut =
-            mkBasicTxOut reqAddr (MaryValue (Coin bond) approvalAsset)
-                & datumTxOutL .~ mkInlineDatum datum
-        reqIn =
-            either
-                (error . ("plantFoldableRequest outref: " <>))
-                id
-                (parseOutRef (T.pack (replicate 64 'e' <> "#0")))
-    advanceChain (rigChain rig) $ \facts -> facts{csUTxO = Map.insert reqIn reqOut (csUTxO facts)}
-    pure reqIn
+plantFoldableRequest rig tokenStr seedStr =
+    plantFoldableRequestAt
+        rig
+        tokenStr
+        seedStr
+        "fold-journal-key"
+        "journal"
+        'e'
+        0
 
 -- | Every journal entry under a registry directory.
 journalEntries :: Rig -> FilePath -> IO [JournalEntry]
@@ -4253,11 +4196,12 @@ commandSubmission rig registry r step key = do
 -- The fold over several requests (bound seam, #518 pull request 3a)
 -- ---------------------------------------------------------
 
-{- | Plant one insertion request a bounded fold settles, with explicit key,
-carried datum bytes, fake reference character (ledger order) and submission
-time override (0 uses the clock): its destination carries the datum at the
-wallet address, and its output carries the approval asset the selection
-expects, so the seven checks pass under the neutral value.
+{- | Plant one registration a bounded fold settles, with an explicit key,
+carried datum bytes, nonce (the character's code) and booked time in
+milliseconds (0 books at the chain's tip): booked by the registration booking
+builder under the script-pinned application and landed. The seed names the
+registry's boot and is not read here. The order of two plants in the ledger is
+the order of their output references, not the order they were planted in.
 -}
 plantFoldableRequestAt
     :: Rig
@@ -4268,47 +4212,15 @@ plantFoldableRequestAt
     -> Char
     -> Integer
     -> IO TxIn
-plantFoldableRequestAt rig tokenStr seedStr keyBytes carriedBytes fakeChar submittedOverride = do
-    seedIn <-
-        either
-            (fail . ("plantFoldableRequestAt seed: " <>))
-            pure
-            (parseOutRef (T.pack seedStr))
-    tid <- parseTokenId tokenStr
-    let dummy = hashPinnedApplication (SBS.toShort (BS.replicate 28 7))
-    rel <- loadReleaseCodes dummy (rigBlueprint rig) >>= either fail pure
-    let (cfg, _) = registryConfigFor dummy rel economics (txInToRef seedIn)
-        reqAddr = requestAddrFromCfg cfg tid Testnet
-        walletAt = walletAddr (rigWallet rig)
-        edge = edgeInsertActive
-    now0 <- currentPosixMs
-    let now = if submittedOverride == 0 then now0 else submittedOverride
-        destBytes = serialiseAddr walletAt
-        carried = PLC.Constr 0 [PLC.B carriedBytes]
-        dest = (destBytes, Just carried)
-        ownerBytes = addrKeyHashBytes walletAt
-        expectedName = approvalName edge keyBytes ownerBytes (approvalDestination dest)
-        pinned = cfgApplicationPolicy cfg
-        approvalAsset =
-            MultiAsset
-                ( Map.singleton
-                    (policyIdFromPin pinned)
-                    (Map.singleton (AssetName (SBS.toShort expectedName)) 1)
-                )
-        deposit = 4_000_000 :: Integer
-        tip = 1_000_000 :: Integer
-        bond = deposit + tip
-        datum = mkRequestDatumWith tid walletAt keyBytes edge deposit now dest
-        reqOut =
-            mkBasicTxOut reqAddr (MaryValue (Coin bond) approvalAsset)
-                & datumTxOutL .~ mkInlineDatum datum
-        reqIn =
-            either
-                (error . ("plantFoldableRequestAt outref: " <>))
-                id
-                (parseOutRef (T.pack (replicate 64 fakeChar <> "#0")))
-    advanceChain (rigChain rig) $ \facts -> facts{csUTxO = Map.insert reqIn reqOut (csUTxO facts)}
-    pure reqIn
+plantFoldableRequestAt rig tokenStr _seedStr keyBytes carriedBytes nonceChar bookedMs =
+    fst
+        <$> bookRegistration
+            rig
+            tokenStr
+            keyBytes
+            carriedBytes
+            (toInteger (fromEnum nonceChar))
+            (if bookedMs == 0 then Nothing else Just bookedMs)
 
 {- | One fold at an explicit capacity bound, through the same dispatch and
 receipt plumbing as 'run': parses the fold command line for its addresses
@@ -4353,7 +4265,9 @@ runFoldAtBoundApp rig bound app tokenStr = do
         _ -> fail "runFoldAtBoundApp: not a fold command"
 
 runFoldAtBound :: Rig -> Int -> String -> IO Run
-runFoldAtBound rig bound = runFoldAtBoundApp rig bound neutralApplication
+runFoldAtBound rig bound t = do
+    app <- readIORef (rigApplication rig)
+    runFoldAtBoundApp rig bound app t
 
 -- | Every settled entry of the receipt, in order.
 settledEntries :: Aeson.Value -> [Aeson.Object]
@@ -4515,31 +4429,32 @@ foldOverSeveralRequestsRow :: Spec
 foldOverSeveralRequestsRow = describe "the fold settles every selected request in one transaction" $ do
     it
         "two insertions of different keys settle in ledger order at bound 3"
-        $ withRig
+        $ withScriptRig
         $ \rig -> do
             seed <- fundSeed rig
             create <-
                 run
                     rig
                     "create"
-                    (["registry", "create", "--seed", seed] <> policyArgs)
+                    (["registry", "create", "--seed", seed] <> economicsArgs)
             outcomeOf (runReceipt create) `shouldBe` Just "success"
             t1 <- tokenOf create
             reqE <-
                 plantFoldableRequestAt rig t1 seed "fold-many-a" "many-a" 'e' 0
             reqF <-
                 plantFoldableRequestAt rig t1 seed "fold-many-b" "many-b" 'f' 0
+            let (firstReq, secondReq) = inLedgerOrder2 reqE reqF
             folded <- runFoldAtBound rig 3 t1
             outcomeOf (runReceipt folded) `shouldBe` Just "success"
             settledRequestRefs (runReceipt folded)
-                `shouldBe` [renderOutRef reqE, renderOutRef reqF]
+                `shouldBe` [renderOutRef firstReq, renderOutRef secondReq]
             length (settledEntries (runReceipt folded)) `shouldBe` 2
             entries <- foldPreparedEntries rig "registry"
             case entries of
                 [entry] -> case journalTransitions entry of
                     Just [first, second] -> do
-                        transitionRequest first `shouldBe` renderOutRef reqE
-                        transitionRequest second `shouldBe` renderOutRef reqF
+                        transitionRequest first `shouldBe` renderOutRef firstReq
+                        transitionRequest second `shouldBe` renderOutRef secondReq
                         transitionRootAfter first `shouldBe` transitionRootBefore second
                         transitionRootAfter first `shouldNotBe` transitionRootAfter second
                         Just (transitionKey first) `shouldBe` journalKey entry
@@ -4555,35 +4470,38 @@ foldOverSeveralRequestsRow = describe "the fold settles every selected request i
             length observed `shouldBe` 1
     it
         "three pending at bound 2 settles two and excludes the third capacity"
-        $ withRig
+        $ withScriptRig
         $ \rig -> do
             seed <- fundSeed rig
             create <-
                 run
                     rig
                     "create"
-                    (["registry", "create", "--seed", seed] <> policyArgs)
+                    (["registry", "create", "--seed", seed] <> economicsArgs)
             outcomeOf (runReceipt create) `shouldBe` Just "success"
             t1 <- tokenOf create
             reqE <- plantFoldableRequestAt rig t1 seed "fold-cap-a" "cap-a" 'd' 0
             reqF <- plantFoldableRequestAt rig t1 seed "fold-cap-b" "cap-b" 'e' 0
-            _reqG <- plantFoldableRequestAt rig t1 seed "fold-cap-c" "cap-c" 'f' 0
+            reqG <- plantFoldableRequestAt rig t1 seed "fold-cap-c" "cap-c" 'f' 0
+            let (firstReq, secondReq, thirdReq) = inLedgerOrder3 reqE reqF reqG
             folded <- runFoldAtBound rig 2 t1
             outcomeOf (runReceipt folded) `shouldBe` Just "success"
             settledRequestRefs (runReceipt folded)
-                `shouldBe` [renderOutRef reqE, renderOutRef reqF]
+                `shouldBe` [renderOutRef firstReq, renderOutRef secondReq]
             case elementsAt "excluded" (runReceipt folded) of
-                Just [Aeson.Object o] -> fieldOf "reason" o `shouldBe` Just "capacity"
+                Just [Aeson.Object o] -> do
+                    fieldOf "reason" o `shouldBe` Just "capacity"
+                    fieldOf "request" o `shouldBe` Just (renderOutRef thirdReq)
                 other ->
                     expectationFailure
                         ("expected one capacity exclusion, found: " <> show other)
-    it "the earlier deadline of the second request bounds the fold" $ withRig $ \rig -> do
+    it "the earlier deadline of the second request bounds the fold" $ withScriptRig $ \rig -> do
         seed <- fundSeed rig
         create <-
             run
                 rig
                 "create"
-                (["registry", "create", "--seed", seed] <> policyArgs)
+                (["registry", "create", "--seed", seed] <> economicsArgs)
         outcomeOf (runReceipt create) `shouldBe` Just "success"
         t1 <- tokenOf create
         now0 <- currentPosixMs
@@ -4607,41 +4525,36 @@ foldOverSeveralRequestsRow = describe "the fold settles every selected request i
                 , Just d <-
                     [integerAt "posixMs" =<< valueAt "deadline" (Aeson.Object o)]
                 ]
-        case deadlines of
-            [first, second] -> (second < first) `shouldBe` True
+            earliest = minimum deadlines
+        -- two different booked times: the later booking's deadline is later
+        length (nub deadlines) `shouldBe` 2
+        case valueAt "foldDeadline" (runReceipt folded) >>= integerAt "posixMs" of
+            Just top -> top `shouldBe` earliest
             other ->
                 expectationFailure
-                    ("expected two entry deadlines, found: " <> show other)
-        case ( valueAt "foldDeadline" (runReceipt folded) >>= integerAt "posixMs"
-             , deadlines
-             ) of
-            (Just top, _ : second : _) -> top `shouldBe` second
-            other ->
-                expectationFailure
-                    ( "expected the top deadline to follow the second entry, found: "
+                    ( "expected the top deadline to follow the earlier entry, found: "
                         <> show other
                     )
         case ( integerAt "hostClockMs" (runReceipt folded)
              , integerAt "remainingMs" (runReceipt folded)
-             , deadlines
              ) of
-            (Just clock, Just remaining, _ : second : _) ->
-                (remaining + clock) `shouldBe` second
+            (Just clock, Just remaining) ->
+                (remaining + clock) `shouldBe` earliest
             other ->
                 expectationFailure
-                    ( "expected the window to follow the second entry, found: "
+                    ( "expected the window to follow the earlier entry, found: "
                         <> show other
                     )
     it
         "two insertions of the same datum to the same destination are both found distinct"
-        $ withRig
+        $ withScriptRig
         $ \rig -> do
             seed <- fundSeed rig
             create <-
                 run
                     rig
                     "create"
-                    (["registry", "create", "--seed", seed] <> policyArgs)
+                    (["registry", "create", "--seed", seed] <> economicsArgs)
             outcomeOf (runReceipt create) `shouldBe` Just "success"
             t1 <- tokenOf create
             reqE <-
@@ -4651,7 +4564,7 @@ foldOverSeveralRequestsRow = describe "the fold settles every selected request i
             folded <- runFoldAtBound rig 3 t1
             outcomeOf (runReceipt folded) `shouldBe` Just "success"
             settledRequestRefs (runReceipt folded)
-                `shouldBe` [renderOutRef reqE, renderOutRef reqF]
+                `shouldBe` map renderOutRef (sort [reqE, reqF])
             let liveOuts =
                     [ t
                     | o <- settledEntries (runReceipt folded)
@@ -4665,15 +4578,15 @@ foldOverSeveralRequestsRow = describe "the fold settles every selected request i
                     expectationFailure
                         ("expected two distinct live outputs, found: " <> show liveOuts)
     it
-        "two insertions and one termination settle with the termination release at bound 3"
-        $ withRig
+        "two insertions and one termination settle together at bound 3, the termination taking in the custody its booking spent"
+        $ withScriptRig
         $ \rig -> do
             seed <- fundSeed rig
             create <-
                 run
                     rig
                     "create"
-                    (["registry", "create", "--seed", seed] <> policyArgs)
+                    (["registry", "create", "--seed", seed] <> economicsArgs)
             outcomeOf (runReceipt create) `shouldBe` Just "success"
             t1 <- tokenOf create
             _priorReq <-
@@ -4684,46 +4597,58 @@ foldOverSeveralRequestsRow = describe "the fold settles every selected request i
             reqA <- plantFoldableRequestAt rig t1 seed "fold-mix-a" "mix-a" 'e' 0
             reqB <- plantFoldableRequestAt rig t1 seed "fold-mix-b" "mix-b" 'f' 0
             reqC <- plantFoldableTerminationAt rig t1 seed "fold-term-key" 'c'
-            folded <- runFoldAtBoundApp rig 3 (testAppExpecting 1) t1
+            folded <- runFoldAtBound rig 3 t1
             outcomeOf (runReceipt folded) `shouldBe` Just "success"
             length (settledEntries (runReceipt folded)) `shouldBe` 3
-            let byRequest =
-                    [ (r, o)
-                    | o <- settledEntries (runReceipt folded)
-                    , Just r <- [fieldOf "request" o]
-                    ]
-                termObjs = [o | (r, o) <- byRequest, r == renderOutRef reqC]
-            length termObjs `shouldBe` 1
-            case termObjs of
-                [o] -> case valueAt "settlement" (Aeson.Object o) of
-                    Just (Aeson.Object s) -> do
-                        fieldOf "released" s `shouldSatisfy` isJust
-                        case KeyMap.lookup "deposit" s of
-                            Just (Aeson.Number _) -> pure ()
-                            other ->
-                                expectationFailure
-                                    ( "expected a deposit in the termination settlement, found: "
-                                        <> show other
-                                    )
-                    other ->
-                        expectationFailure
-                            ( "expected a settlement object for the termination, found: "
-                                <> show other
-                            )
-                _ -> expectationFailure "expected exactly one termination entry"
             settledRequestRefs (runReceipt folded)
-                `shouldSatisfy` ( \refs -> renderOutRef reqA `elem` refs && renderOutRef reqB `elem` refs
-                                )
+                `shouldBe` map renderOutRef (sort [reqA, reqB, reqC])
+            termination <- terminationEntry (runReceipt folded) reqC
+            -- the custody entered the request when it was booked: the fold
+            -- states the request it took in, and no release or deposit
+            settlementFields termination
+                `shouldBe` [("terminated", renderOutRef reqC)]
+            integerAt "deposit" (Aeson.Object termination) `shouldBe` Nothing
     it
-        "an insertion first and a termination second settle with the termination payout at the production bound"
-        $ withRig
+        "terminates a key its own wallet holds, the holder's signature being the spending condition, and the fold settles it"
+        $ withScriptRig
         $ \rig -> do
             seed <- fundSeed rig
             create <-
                 run
                     rig
                     "create"
-                    (["registry", "create", "--seed", seed] <> policyArgs)
+                    (["registry", "create", "--seed", seed] <> economicsArgs)
+            outcomeOf (runReceipt create) `shouldBe` Just "success"
+            t1 <- tokenOf create
+            _registration <- bookWalletRegistration rig t1 "wallet-held-key" 70
+            registered <- runFoldAtBound rig 1 t1
+            outcomeOf (runReceipt registered) `shouldBe` Just "success"
+            (request, booking) <-
+                bookWalletTermination rig t1 "wallet-held-key" 71
+            -- the custody was spent by the holder's signature alone: no
+            -- script witness beside the request policy's, no spend redeemer
+            let Redeemers declared = booking ^. witsTxL . rdmrsTxWitsL
+            [() | (ConwaySpending _, _) <- Map.toList declared] `shouldBe` []
+            Map.size (booking ^. witsTxL . scriptTxWitsL) `shouldBe` 1
+            Set.size (booking ^. bodyTxL . reqSignerHashesTxBodyL) `shouldBe` 1
+            folded <- runFoldAtBound rig 1 t1
+            outcomeOf (runReceipt folded) `shouldBe` Just "success"
+            settledRequestRefs (runReceipt folded)
+                `shouldBe` [renderOutRef request]
+            termination <- terminationEntry (runReceipt folded) request
+            fieldOf "edge" termination `shouldBe` Just "updateTerminal"
+            settlementFields termination
+                `shouldBe` [("terminated", renderOutRef request)]
+    it
+        "an insertion and a termination settle together at the production bound"
+        $ withScriptRig
+        $ \rig -> do
+            seed <- fundSeed rig
+            create <-
+                run
+                    rig
+                    "create"
+                    (["registry", "create", "--seed", seed] <> economicsArgs)
             outcomeOf (runReceipt create) `shouldBe` Just "success"
             t1 <- tokenOf create
             _priorReq <-
@@ -4744,32 +4669,14 @@ foldOverSeveralRequestsRow = describe "the fold settles every selected request i
                 plantFoldableRequestAt rig t1 seed "fold-last-b" "last-b" 'e' 0
             reqC <-
                 plantFoldableTerminationAt rig t1 seed "fold-term-last-key" 'f'
-            folded <- runFoldAtBoundApp rig foldCapacity (testAppExpecting 1) t1
+            folded <- runFoldAtBound rig foldCapacity t1
             outcomeOf (runReceipt folded) `shouldBe` Just "success"
-            -- the termination settles last: it is not first in ledger order.
             settledRequestRefs (runReceipt folded)
-                `shouldBe` [renderOutRef reqA, renderOutRef reqB, renderOutRef reqC]
-            let byRequest =
-                    [ (r, o)
-                    | o <- settledEntries (runReceipt folded)
-                    , Just r <- [fieldOf "request" o]
-                    ]
-                termObjs = [o | (r, o) <- byRequest, r == renderOutRef reqC]
-            length termObjs `shouldBe` 1
-            case termObjs of
-                [o] -> do
-                    fieldOf "edge" o `shouldBe` Just "updateTerminal"
-                    case valueAt "settlement" (Aeson.Object o) of
-                        Just (Aeson.Object s) -> do
-                            fieldOf "released" s
-                                `shouldBe` Just (T.pack (replicate 64 'b' <> "#0"))
-                            integerAt "deposit" (Aeson.Object s) `shouldBe` Just 4_000_000
-                        other ->
-                            expectationFailure
-                                ( "expected a settlement object for the termination, found: "
-                                    <> show other
-                                )
-                _ -> expectationFailure "expected exactly one termination entry"
+                `shouldBe` map renderOutRef (sort [reqA, reqB, reqC])
+            termination <- terminationEntry (runReceipt folded) reqC
+            fieldOf "edge" termination `shouldBe` Just "updateTerminal"
+            settlementFields termination
+                `shouldBe` [("terminated", renderOutRef reqC)]
             case valueAt "capacity" (runReceipt folded) of
                 Just (Aeson.Object c) -> do
                     integerAt "bound" (Aeson.Object c) `shouldBe` Just 9
@@ -4782,156 +4689,95 @@ foldOverSeveralRequestsRow = describe "the fold settles every selected request i
                             <> show other
                         )
 
-{- | Plant one termination request for a key known active: edge updateTerminal
-with the approval asset the selection expects, at a fresh fake reference.
+-- | The settled entry of this request in a fold receipt.
+terminationEntry :: Aeson.Value -> TxIn -> IO Aeson.Object
+terminationEntry receipt request =
+    case [ o
+         | o <- settledEntries receipt
+         , fieldOf "request" o == Just (renderOutRef request)
+         ] of
+        [one] -> pure one
+        other ->
+            fail
+                ( "expected exactly one settled entry for the request, found "
+                    <> show (length other)
+                )
+
+-- | The text fields of a settled entry's settlement.
+settlementFields :: Aeson.Object -> [(Text, Text)]
+settlementFields o = case KeyMap.lookup "settlement" o of
+    Just (Aeson.Object s) ->
+        [(Key.toText k, t) | (k, Aeson.String t) <- KeyMap.toList s]
+    _ -> []
+
+{- | Plant one termination of a key the registry holds active: booked by the
+termination booking builder, which spends the key's custody (the output the
+fold delivered at the application's address) and pays the request address the
+whole custody and an ordinary addition, minting the trie-ready tag alone, and
+landed. The seed names the registry's boot and is not read here.
 -}
 plantFoldableTerminationAt
     :: Rig -> String -> String -> BS.ByteString -> Char -> IO TxIn
-plantFoldableTerminationAt rig tokenStr seedStr keyBytes fakeChar = do
-    seedIn <-
-        either
-            (fail . ("plantFoldableTerminationAt seed: " <>))
-            pure
-            (parseOutRef (T.pack seedStr))
-    tid <- parseTokenId tokenStr
-    let dummy = hashPinnedApplication (SBS.toShort (BS.replicate 28 7))
-    rel <- loadReleaseCodes dummy (rigBlueprint rig) >>= either fail pure
-    let (cfg, _) = registryConfigFor dummy rel economics (txInToRef seedIn)
-        reqAddr = requestAddrFromCfg cfg tid Testnet
-        walletAt = walletAddr (rigWallet rig)
-        edge = edgeUpdateTerminal
-    now <- currentPosixMs
-    let destBytes = serialiseAddr walletAt
-        carried = PLC.Constr 0 [PLC.B "term"]
-        dest = (destBytes, Just carried)
-        ownerBytes = addrKeyHashBytes walletAt
-        expectedName = approvalName edge keyBytes ownerBytes (approvalDestination dest)
-        pinned = cfgApplicationPolicy cfg
-        approvalAsset =
-            MultiAsset
-                ( Map.singleton
-                    (policyIdFromPin pinned)
-                    (Map.singleton (AssetName (SBS.toShort expectedName)) 1)
-                )
-        deposit = 4_000_000 :: Integer
-        tip = 1_000_000 :: Integer
-        bond = deposit + tip
-        datum = mkRequestDatumWith tid walletAt keyBytes edge deposit now dest
-        reqOut =
-            mkBasicTxOut reqAddr (MaryValue (Coin bond) approvalAsset)
-                & datumTxOutL .~ mkInlineDatum datum
-        reqIn =
-            either
-                (error . ("plantFoldableTerminationAt outref: " <>))
-                id
-                (parseOutRef (T.pack (replicate 64 fakeChar <> "#0")))
-    advanceChain (rigChain rig) $ \facts -> facts{csUTxO = Map.insert reqIn reqOut (csUTxO facts)}
-    pure reqIn
+plantFoldableTerminationAt rig tokenStr _seedStr keyBytes nonceChar =
+    withLawfulCli rig tokenStr $ \v lc -> do
+        let saved = lcSaved lc
+            cfg = savedCfg saved
+            active = policyIdFromPin (cfgActivePolicy cfg)
+            holdsKey (_, o) = case o ^. valueTxOutL of
+                MaryValue _ (MultiAsset m) ->
+                    maybe
+                        False
+                        (Map.member (AssetName (SBS.toShort keyBytes)))
+                        (Map.lookup active m)
+            added = 3_000_000 :: Integer
+            tip = 1_000_000 :: Integer
+        atApplication <- SessionIO.outputsAt v (applicationAddress cfg)
+        custody <- case filter holdsKey atApplication of
+            [one] -> pure one
+            other ->
+                fail
+                    ( "plantFoldableTerminationAt: expected one custody output holding the key, found "
+                        <> show (length other)
+                    )
+        let Coin held = snd custody ^. coinTxOutL
+        tx <-
+            bookTerminationImpl
+                cfg
+                v
+                (savedToken saved)
+                (fst (liveState (lcLive lc)))
+                TerminationBooking
+                    { tbKey = keyBytes
+                    , tbDeclaredTip = Coin tip
+                    , tbCarrier = Coin (held + added - tip)
+                    , tbNonce = toInteger (fromEnum nonceChar)
+                    , tbCustody = custody
+                    , tbOrdinaryAdded = Coin added
+                    , tbCustodyAuthority =
+                        ScriptGuarded (Live.applied saved) (PLC.Constr 2 [PLC.I added])
+                    , tbRequiredSigners = []
+                    }
+                (lcPayer lc)
+        landTransaction rig tx
+        requestOutput rig cfg (savedToken saved) tx
 
-{- | Plant one output at the application address carrying the key's active
-token, so the selection's live-facts see a present token for a termination.
+{- | The key's custody is the output a fold delivered at the application's
+address: a fold of its registration already put it there, so there is nothing
+to plant. This checks that exactly one output holds the key's active token.
 -}
 plantActiveTokenFor
     :: Rig -> String -> String -> BS.ByteString -> IO ()
-plantActiveTokenFor rig tokenStr seedStr keyBytes = do
-    seedIn <-
-        either
-            (fail . ("plantActiveTokenFor seed: " <>))
-            pure
-            (parseOutRef (T.pack seedStr))
-    _tid <- parseTokenId tokenStr
-    let dummy = hashPinnedApplication (SBS.toShort (BS.replicate 28 7))
-    rel <- loadReleaseCodes dummy (rigBlueprint rig) >>= either fail pure
-    let (cfg, _) = registryConfigFor dummy rel economics (txInToRef seedIn)
-        active = cfgActivePolicy cfg
-        appAddr = case hashFromBytes (SBS.fromShort (cfgApplicationPolicy cfg)) of
-            Just h -> Addr Testnet (ScriptHashObj (ScriptHash h)) StakeRefNull
-            Nothing -> error "plantActiveTokenFor: pinned policy is not 28 bytes"
-        activeAsset =
-            MultiAsset
-                ( Map.singleton
-                    (policyIdFromPin active)
-                    (Map.singleton (AssetName (SBS.toShort keyBytes)) 1)
-                )
-        out = mkBasicTxOut appAddr (MaryValue (Coin 2_000_000) activeAsset)
-        plantedIn =
-            either
-                (error . ("plantActiveTokenFor outref: " <>))
-                id
-                (parseOutRef (T.pack (replicate 64 'b' <> "#0")))
-    advanceChain (rigChain rig) $ \facts -> facts{csUTxO = Map.insert plantedIn out (csUTxO facts)}
-
-{- | A test value with holding rules for the release row: carried datums read
-as one constant, live holdings are canned per key with that constant, and
-the context entry checks it receives every release (exactly the expected
-count) before adding the holdings to the builder inventory. It names no
-shipped application.
--}
-testAppExpecting :: Int -> Application
-testAppExpecting expected =
-    neutralApplication
-        { appName = Just "fold-many-test"
-        , appExecutable = Just "fold-many-test"
-        , appHolding = Just rules
-        }
-  where
-    constantDatum = PLC.Constr 0 [PLC.B "fold-many-constant"]
-    canned key =
-        DecodedHolding
-            { dhDatumData = constantDatum
-            , dhDatumCbor = datumCbor constantDatum
-            , dhDatumHash = datumHash constantDatum
-            , dhKey = key
-            , dhDeposit = 4_000_000
-            , dhController = BS.replicate 28 9
-            , dhPayload = PLC.I 0
-            , dhDatumJson = Aeson.object ["constant" .= (1 :: Int)]
-            , dhPayloadJson = Aeson.object ["constant" .= (0 :: Int)]
-            }
-    rules =
-        HoldingRules
-            { hrCheckCarried = const (Right constantDatum)
-            , hrFindHoldings = \_ _ _ _ -> []
-            , hrLiveOutputFor = \cfg _ key outs ->
-                let active = cfgActivePolicy cfg
-                    carries (_, o) = case o ^. valueTxOutL of
-                        MaryValue _ (MultiAsset m) -> case Map.lookup (policyIdFromPin active) m of
-                            Just names -> Map.member (AssetName (SBS.toShort key)) names
-                            Nothing -> False
-                    found = [u | u@(_, _) <- outs, carries u]
-                    fakeIn =
-                        either
-                            (error "testApp live output")
-                            id
-                            (parseOutRef (T.pack (replicate 64 'a' <> "#0")))
-                    dummyHash = case hashFromBytes (BS.replicate 28 8) of
-                        Just h -> h
-                        Nothing -> error "testApp hash"
-                    dummyAddr = Addr Testnet (ScriptHashObj (ScriptHash dummyHash)) StakeRefNull
-                    activeAsset =
-                        MultiAsset
-                            ( Map.singleton
-                                (policyIdFromPin active)
-                                (Map.singleton (AssetName (SBS.toShort key)) 1)
-                            )
-                    fakeOut = mkBasicTxOut dummyAddr (MaryValue (Coin 2_000_000) activeAsset)
-                in  case found of
-                        (u : _) -> Right (u, canned key)
-                        [] -> Right ((fakeIn, fakeOut), canned key)
-            , hrReleaseOf = \_ _ -> Left "unused"
-            , hrWithApplication = \_ _ live ctx ->
-                if length live == expected
-                    then Right ctx{rcHolderUtxos = rcHolderUtxos ctx <> live}
-                    else
-                        Left
-                            ( T.pack
-                                ( "testApp expected "
-                                    <> show expected
-                                    <> " holdings, got "
-                                    <> show (length live)
-                                )
-                            )
-            }
+plantActiveTokenFor rig tokenStr _seedStr keyBytes = withLawfulCli rig tokenStr $ \v lc -> do
+    let cfg = savedCfg (lcSaved lc)
+        active = policyIdFromPin (cfgActivePolicy cfg)
+        holdsKey (_, o) = case o ^. valueTxOutL of
+            MaryValue _ (MultiAsset m) ->
+                maybe
+                    False
+                    (Map.member (AssetName (SBS.toShort keyBytes)))
+                    (Map.lookup active m)
+    atApplication <- SessionIO.outputsAt v (applicationAddress cfg)
+    length (filter holdsKey atApplication) `shouldBe` 1
 
 -- ---------------------------------------------------------
 -- The external signer (#641 slice 2)
@@ -5188,16 +5034,16 @@ effectsOf = \case
 stagedFoldRow :: Spec
 stagedFoldRow =
     it "stages a fold as one bundle, waiting for signatures" $
-        withRig $ \rig -> withCountedSubmissions rig $ \env -> do
+        withScriptRig $ \rig -> withCountedSubmissions rig $ \env -> do
             seed <- fundSeed rig
             create <-
                 run
                     rig
                     "create"
-                    (["registry", "create", "--seed", seed] <> policyArgs)
+                    (["registry", "create", "--seed", seed] <> economicsArgs)
             t <- tokenOf create
             (req, _) <-
-                plantRequest rig t seed economics (TE.encodeUtf8 "bob-fold")
+                plantBooked rig t seed economics (TE.encodeUtf8 "bob-fold")
             _ <- certifyPlanted rig t seed economics [req]
             let bundlePath = rigDir rig </> "bob-fold.bundle"
                 registry = "bob-external"
@@ -5285,23 +5131,22 @@ stagedFoldWithPreparationRow :: Spec
 stagedFoldWithPreparationRow =
     it
         "stages the preparation then the fold, the fold spending the preparation's output"
-        $ withRig
+        $ withScriptRig
         $ \rig -> withCountedSubmissions rig $ \env -> do
             seed <- fundSeed rig
             create <-
                 run
                     rig
                     "create"
-                    (["registry", "create", "--seed", seed] <> policyArgs)
+                    (["registry", "create", "--seed", seed] <> economicsArgs)
             t <- tokenOf create
             (req, _) <-
-                plantRequestDeposit
+                plantBooked
                     rig
                     t
                     seed
                     economics
                     (TE.encodeUtf8 "bob-fold-prep")
-                    3_000_000_000
             approvals <- certifyPlanted rig t seed economics [req]
             _ <- reshapeRehearsalWallet rig approvals
             let bundlePath = rigDir rig </> "bob-fold-prep.bundle"
@@ -5382,45 +5227,20 @@ stagedFoldWithPreparationRow =
 
 stagedRejectRow :: Spec
 stagedRejectRow =
-    it "stages a reject as one bundle the key-file path would build too" $
-        withRig $ \rig -> withCountedSubmissions rig $ \env -> do
-            seed2 <- fundSeed2 rig
-            create2 <-
-                runAt
+    it
+        "the retired reject staged for an external signer is refused as an attempt, writes no bundle and sends nothing"
+        $ withScriptRig
+        $ \rig -> withCountedSubmissions rig $ \env -> do
+            seed <- fundSeed rig
+            create <-
+                run
                     rig
-                    "registry-2"
-                    "create short windows"
-                    ( [ "registry"
-                      , "create"
-                      , "--seed"
-                      , seed2
-                      , "--process-time"
-                      , "1"
-                      , "--retract-time"
-                      , "1"
-                      ]
-                        <> policyArgs
-                    )
-            t2 <- tokenOf create2
-            let shortEcon =
-                    RegistryEconomics
-                        { reProcessTime = 1
-                        , reRetractTime = 1
-                        , reTip = Coin 1_000_000
-                        , reRegistrationCost = Coin 0
-                        , reBookingWidth = 60_000
-                        }
-            (_, submitted) <-
-                plantRequest
-                    rig
-                    t2
-                    seed2
-                    shortEcon
-                    (TE.encodeUtf8 "bob-reject")
-            jumpToAfter
-                rig
-                (submitted + reProcessTime shortEcon + reRetractTime shortEcon)
-                2
+                    "create"
+                    (["registry", "create", "--seed", seed] <> economicsArgs)
+            t <- tokenOf create
+            (req, _) <-
+                plantBooked rig t seed economics (TE.encodeUtf8 "bob-reject")
+            _ <- certifyPlanted rig t seed economics [req]
             let bundlePath = rigDir rig </> "bob-reject.bundle"
                 registry = "bob-external-reject"
             staged <-
@@ -5429,27 +5249,17 @@ stagedRejectRow =
                     env
                     registry
                     "staged reject"
-                    (["registry", "reject"] <> tokenArgs t2 <> externalArgs rig bundlePath)
-            runExit staged `shouldBe` ExitFailure 19
-            outcomeOf (runReceipt staged) `shouldBe` Just "waiting-for-signatures"
-            bytes <- BS.readFile bundlePath
-            (bundle, bodies) <- checkedBundle bundlePath
-            bundleCommand bundle `shouldBe` "reject"
-            length bodies `shouldBe` 1
-            assertWaitingJournal rig registry t2 (hashOfBytes bytes) bundle bodies
-            assertStagedTrace staged bodies
+                    (["registry", "reject"] <> tokenArgs t <> externalArgs rig bundlePath)
+            runExit staged `shouldBe` ExitFailure 10
+            outcomeOf (runReceipt staged) `shouldBe` Just "client-refusal"
+            (T.isInfixOf "retired" . T.toLower <$> receiptReason staged)
+                `shouldBe` Just True
+            doesPathExist bundlePath `shouldReturn` False
+            expectNoSubmissions "reject" staged
+            -- the request is untouched: a key-file fold still takes it
             keyRun <-
-                runAt
-                    rig
-                    "registry-2"
-                    "key-file reject after the staged one"
-                    (["registry", "reject"] <> tokenArgs t2)
-            outcomeOf (runReceipt keyRun) `shouldBe` Just "success"
-            assertExpectationOnly staged keyRun
-            keyBodies <- keyFilePreparedBodies rig "registry-2" t2 "reject"
-            map ((^. bodyTxL) . apartFromValidity) keyBodies
-                `shouldBe` map ((^. bodyTxL) . apartFromValidity) bodies
-            ownBodyBounded bodies
+                run rig "key-file fold after the refused reject" (foldLineOf t req)
+            expectFoldSettled "the fold after the refused reject" keyRun
 
 stagedReclaimRow :: Spec
 stagedReclaimRow =
@@ -5510,16 +5320,16 @@ stagedReclaimRow =
 noKeyFileRow :: Spec
 noKeyFileRow =
     it "opens no key file in the external mode" $
-        withRig $ \rig -> do
+        withScriptRig $ \rig -> do
             seed <- fundSeed rig
             create <-
                 run
                     rig
                     "create"
-                    (["registry", "create", "--seed", seed] <> policyArgs)
+                    (["registry", "create", "--seed", seed] <> economicsArgs)
             t <- tokenOf create
             (req, _) <-
-                plantRequest rig t seed economics (TE.encodeUtf8 "bob-nokey")
+                plantBooked rig t seed economics (TE.encodeUtf8 "bob-nokey")
             _ <- certifyPlanted rig t seed economics [req]
             let key = rigKey rig
                 hidden = key <> ".hidden"
@@ -6008,18 +5818,16 @@ journalPhaseRows = describe "the journal phase" $ do
     secondCreateStoppedRow
     explicitSeedCreateStoppedRow
 
-{- | The windows of the registries these rows create. Both bounds are read
-from the wall clock: a fold builds only while the request's processing
-deadline is at least thirty seconds ahead of it, and a reject's upper
-bound is at most two minutes ahead of it. A processing window of a hundred
-seconds and a retract window of one second keep the staged fold buildable
-right after the plant, and put the tip one slot past the retract window
-still inside the reject's reach.
+{- | The windows of the registries these rows create. A fold builds only while
+the request's processing deadline is at least thirty seconds ahead of the wall
+clock, and the fold's own upper bound closes a short span after the tip, well
+before the deadline of a window of ten minutes: a staged fold can pass its
+bound with the registration still open, and be built again.
 -}
 journalWindows :: RegistryEconomics
 journalWindows =
     RegistryEconomics
-        { reProcessTime = 100_000
+        { reProcessTime = 600_000
         , reRetractTime = 1_000
         , reTip = Coin 1_000_000
         , reRegistrationCost = Coin 0
@@ -6038,17 +5846,25 @@ data StagedFold = StagedFold
     , sfBodies :: [ConwayTx]
     }
 
-{- | A registry with one certified planted request of this deposit, the
-wallet shaped by the given action over the certified approvals, and a
-staged fold of the request in this registry directory.
+{- | What a staged fold takes: a registration, whose window closes with the
+bound of the fold's own validity, or a termination, which has no window, so
+that the bundle can pass its bound and the same fold be built again.
+-}
+data StageKind = StageRegistration | StageTermination
+
+{- | A registry with one request booked as a producer books it, and a staged
+fold of the request in this registry directory. The wallet is shaped by the
+given action first: a wallet that holds only assets beside its ada makes the
+fold prepare its funding.
 -}
 stageFoldWith
-    :: Integer
+    :: StageKind
     -> (Map.Map PolicyID (Map.Map AssetName Integer) -> IO ())
     -> Rig
     -> String
     -> IO StagedFold
-stageFoldWith deposit shape rig registry = do
+stageFoldWith kind shape rig registry = do
+    fundSparePayer rig
     seed <- fundSeed rig
     create <-
         run
@@ -6060,17 +5876,11 @@ stageFoldWith deposit shape rig registry = do
                    , "--retract-time"
                    , show (reRetractTime journalWindows)
                    ]
-                <> policyArgs
+                <> economicsArgs
             )
     t <- tokenOf create
-    (req, submitted) <-
-        plantRequestDeposit
-            rig
-            t
-            seed
-            journalWindows
-            (TE.encodeUtf8 (T.pack registry))
-            deposit
+    let key = TE.encodeUtf8 (T.pack registry)
+    (req, submitted) <- bookedRequest kind rig t seed key
     approvals <- certifyPlanted rig t seed journalWindows [req]
     shape approvals
     let bundlePath = rigDir rig </> (registry <> ".bundle")
@@ -6097,13 +5907,45 @@ stageFoldWith deposit shape rig registry = do
             , sfBodies = bodies
             }
 
--- | An ordinary staged fold: a funded wallet, no preparation.
+{- | The request a staged or vaulted fold takes, booked as a producer books it:
+a registration, or the termination of a key a key-file fold has first made
+active.
+-}
+bookedRequest
+    :: StageKind
+    -> Rig
+    -> String
+    -> String
+    -> BS.ByteString
+    -> IO (TxIn, Integer)
+bookedRequest kind rig t seed key = case kind of
+    StageRegistration -> bookRegistration rig t key "journal" 0 Nothing
+    StageTermination -> do
+        (request, _) <- bookRegistration rig t key "journal" 0 Nothing
+        made <-
+            foldNamed
+                rig
+                "registry"
+                t
+                request
+                "key-file fold making the key active"
+        expectFoldSettled "the fold making the key active" made
+        terminated <- plantFoldableTerminationAt rig t seed key 'T'
+        pure (terminated, 0)
+
+-- | An ordinary staged fold of a registration: a funded wallet, no preparation.
 stageAFold :: Rig -> String -> IO StagedFold
-stageAFold = stageFoldWith 1_000_000 (const (pure ()))
+stageAFold = stageFoldWith StageRegistration (const (pure ()))
+
+{- | A staged fold of a termination: a funded wallet, no preparation, and no
+window of the request to close before the fold's own bound does.
+-}
+stageExpiringFold :: Rig -> String -> IO StagedFold
+stageExpiringFold = stageFoldWith StageTermination (const (pure ()))
 
 {- | A staged fold that must prepare its funding, with the setup of the
-staged preparation row: a deposit beyond the wallet's largest ada-only
-output and the wallet reshaped to hold the approvals beside its ada. The
+staged preparation row: the wallet reshaped to hold assets beside its ada, with no ada-only
+output left. The
 bundle is two members, the preparation, which has no upper bound, then the
 fold, which has one.
 -}
@@ -6111,7 +5953,7 @@ stagePreparedFold :: Rig -> String -> IO StagedFold
 stagePreparedFold rig registry = do
     sf <-
         stageFoldWith
-            3_000_000_000
+            StageTermination
             (void . reshapeRehearsalWallet rig)
             rig
             registry
@@ -6128,27 +5970,83 @@ boundedDeadline sf =
         d : _ -> pure d
         [] -> fail "the staged bundle carries no deadline"
 
-{- | The next write of these rows, one that builds over the rig: the tip
-moved one slot past the retract window the registry fixes for a request
-submitted at this time ('journalWindows', which the registry was created
-with and the request planted under), then a key-file reject, which takes
-that request.
+{- | A registration booked as a producer books it, for the next write of these
+rows to fold, paid from the spare payer. The key names it and is the datum it
+carries, so two of them never deliver the same datum; its nonce follows the key.
 -}
-rejectPast :: Rig -> String -> String -> Integer -> String -> IO Run
-rejectPast rig registry t submitted label = do
-    jumpToAfter
-        rig
-        ( submitted
-            + reProcessTime journalWindows
-            + reRetractTime journalWindows
-        )
-        0
-    runAt rig registry label (["registry", "reject"] <> tokenArgs t)
+bookNext :: Rig -> String -> String -> IO TxIn
+bookNext rig t key = bookNextAt rig t key Nothing
 
--- | The same reject, at the rig's current tip.
-rejectNow :: Rig -> String -> String -> String -> IO Run
-rejectNow rig registry t label =
-    runAt rig registry label (["registry", "reject"] <> tokenArgs t)
+-- | The same, booked at this time in milliseconds when one is named.
+bookNextAt :: Rig -> String -> String -> Maybe Integer -> IO TxIn
+bookNextAt rig t key bookedAt =
+    fst
+        <$> bookRegistrationFrom
+            (Just sparePayer)
+            rig
+            t
+            (TE.encodeUtf8 (T.pack key))
+            (TE.encodeUtf8 (T.pack key))
+            (toInteger (sum (map fromEnum key)))
+            bookedAt
+
+-- | A key-file fold of this request, in this registry directory.
+foldNamed :: Rig -> String -> String -> TxIn -> String -> IO Run
+foldNamed rig registry t request label =
+    runAt
+        rig
+        registry
+        label
+        ( ["registry", "fold", "--request", T.unpack (renderOutRef request)]
+            <> tokenArgs t
+        )
+
+{- | The next write of these rows, one that builds over the rig: a registration
+booked for it, then a key-file fold that takes it.
+-}
+foldNext :: Rig -> String -> String -> String -> String -> IO Run
+foldNext rig registry t key label = do
+    next <- bookNext rig t key
+    foldNamed rig registry t next label
+
+{- | The same write once the chain's tip is one slot past the last upper bound of
+the staged bundle's members: the bundle is past its bound, and the registrations
+are not, so the fold it was built for can be built again. The registration
+booked for the write is booked at the time the staged one was, so the one fold
+that takes both opens when the later opens and closes with the earlier.
+-}
+foldPast
+    :: Rig
+    -> String
+    -> String
+    -> [ConwayTx]
+    -> Maybe Integer
+    -> String
+    -> IO Run
+foldPast rig registry t bodies bookedAt label = do
+    case mapMaybe bodyDeadline bodies of
+        [] -> fail "foldPast: no member of the staged bundle has an upper bound"
+        ds -> jumpChainTo (rigChain rig) (SlotNo (maximum ds + 1))
+    next <- bookNextAt rig t (take 32 ("next-" <> registry)) bookedAt
+    foldNamed rig registry t next label
+
+{- | A key-file fold at the rig's current tip that names no request pending:
+a write that starts, finds what is pending of earlier bundles and stops or
+refuses before it builds or sends anything.
+-}
+foldNow :: Rig -> String -> String -> String -> IO Run
+foldNow rig registry t label =
+    runAt
+        rig
+        registry
+        label
+        ( [ "registry"
+          , "fold"
+          , "--request"
+          , replicate 64 'f' <> "#0"
+          ]
+            <> tokenArgs t
+        )
 
 -- | Apply bodies to the rig's chain in order, as a node lands them.
 landOnRig :: Rig -> [ConwayTx] -> IO ()
@@ -6176,12 +6074,12 @@ outputsOf bodies =
 
 {- | Every output of the landed members is spent by transactions no member
 made, through the rig's own chain: a payment takes every output but the
-registry's state, and a key-file fold of another certified request, run
+registry's state, and a key-file fold of another booked registration, run
 from another directory, takes the state output as a later folder would.
 -}
 spendOutputsElsewhere
     :: Rig -> String -> String -> [ConwayTx] -> IO ()
-spendOutputsElsewhere rig t seed bodies = do
+spendOutputsElsewhere rig t _seed bodies = do
     let spentByMembers =
             Set.unions [tx ^. bodyTxL . inputsTxBodyL | tx <- bodies]
         live =
@@ -6197,9 +6095,7 @@ spendOutputsElsewhere rig t seed bodies = do
         [ signedTx
             (selfPayment (rigWallet rig) (filter (not . isState . snd) live))
         ]
-    (other, _) <-
-        plantRequest rig t seed journalWindows (TE.encodeUtf8 "carol-other")
-    _ <- certifyPlanted rig t seed journalWindows [other]
+    other <- bookNext rig t "carol-other"
     folded <-
         runAt
             rig
@@ -6257,7 +6153,7 @@ pendingStopsRow :: Spec
 pendingStopsRow =
     it
         "a pending bundle stops the next write before it builds anything, naming it"
-        $ withRig
+        $ withScriptRig
         $ \rig -> do
             let registry = "bob-pending"
             sf <- stageAFold rig registry
@@ -6305,30 +6201,21 @@ landedSettlesRow :: Spec
 landedSettlesRow =
     it
         "a bundle whose members all landed settles, and the next write builds"
-        $ withRig
+        $ withScriptRig
         $ \rig -> do
             let registry = "bob-landed"
             sf <- stageAFold rig registry
             let t = sfToken sf
                 bodies = sfBodies sf
             landOnRig rig bodies
-            seed <- fundSeed rig
-            (second, submitted) <-
-                plantRequest
-                    rig
-                    t
-                    seed
-                    journalWindows
-                    (TE.encodeUtf8 "bob-landed-second")
-            _ <- certifyPlanted rig t seed journalWindows [second]
             next <-
-                rejectPast
+                foldNext
                     rig
                     registry
                     t
-                    submitted
-                    "key-file reject after the bundle landed"
-            outcomeOf (runReceipt next) `shouldBe` Just "success"
+                    "bob-landed-second"
+                    "key-file fold after the bundle landed"
+            expectFoldSettled "the next write" next
             entries <- readJournal (stagedPartition rig registry t)
             let landed = [e | e <- entries, journalEvent e == "landed"]
             map journalTxId landed `shouldBe` map txIdHex bodies
@@ -6340,7 +6227,7 @@ landedOutputsSpentRow :: Spec
 landedOutputsSpentRow =
     it
         "a landed member whose outputs were spent before the next run is still judged landed, by its identity"
-        $ withRig
+        $ withScriptRig
         $ \rig -> do
             let registry = "bob-landed-spent"
             sf <- stageAFold rig registry
@@ -6350,22 +6237,14 @@ landedOutputsSpentRow =
             seed <- fundSeed rig
             spendOutputsElsewhere rig t seed bodies
             liveAmong rig (outputsOf bodies) `shouldReturn` []
-            (second, submitted) <-
-                plantRequest
-                    rig
-                    t
-                    seed
-                    journalWindows
-                    (TE.encodeUtf8 "bob-landed-spent-second")
-            _ <- certifyPlanted rig t seed journalWindows [second]
             next <-
-                rejectPast
+                foldNext
                     rig
                     registry
                     t
-                    submitted
-                    "key-file reject after the landed outputs were spent"
-            outcomeOf (runReceipt next) `shouldBe` Just "success"
+                    "bob-landed-spent-second"
+                    "key-file fold after the landed outputs were spent"
+            expectFoldSettled "the next write" next
             entries <- readJournal (stagedPartition rig registry t)
             map (memberEvents entries) bodies
                 `shouldBe` [["waiting-for-signatures", "landed"] | _ <- bodies]
@@ -6383,20 +6262,21 @@ expiredDiesRow :: Spec
 expiredDiesRow =
     it
         "a bundle past a member's deadline dies, every member not landed gets a dead line, and the next write builds"
-        $ withRig
+        $ withScriptRig
         $ \rig -> do
             let registry = "bob-expired"
-            sf <- stageAFold rig registry
+            sf <- stageExpiringFold rig registry
             let t = sfToken sf
                 bodies = sfBodies sf
             next <-
-                rejectPast
+                foldPast
                     rig
                     registry
                     t
-                    (sfSubmitted sf)
-                    "key-file reject after the bundle expired"
-            outcomeOf (runReceipt next) `shouldBe` Just "success"
+                    (sfBodies sf)
+                    Nothing
+                    "key-file fold after the bundle expired"
+            expectFoldSettled "the next write" next
             entries <- readJournal (stagedPartition rig registry t)
             let dead = [e | e <- entries, journalEvent e == "dead"]
             map journalTxId dead `shouldBe` map txIdHex bodies
@@ -6411,11 +6291,11 @@ inputsConsumedElsewhereRow :: Spec
 inputsConsumedElsewhereRow =
     it
         "a member whose inputs were consumed elsewhere stays pending until its deadline, then dies, never landed and never rolled back"
-        $ withRig
+        $ withScriptRig
         $ \rig -> do
             let registry = "bob-raced"
                 elsewhere = "carol-elsewhere"
-            sf <- stageAFold rig registry
+            sf <- stageExpiringFold rig registry
             let t = sfToken sf
                 bodies = sfBodies sf
                 dir = stagedPartition rig registry t
@@ -6454,31 +6334,20 @@ inputsConsumedElsewhereRow =
               , Set.member i consumed
               ]
                 `shouldSatisfy` elem (sfRequest sf)
-            seed <- fundSeed rig
-            (second, submitted) <-
-                plantRequest
-                    rig
-                    t
-                    seed
-                    journalWindows
-                    (TE.encodeUtf8 "bob-raced-second")
-            _ <- certifyPlanted rig t seed journalWindows [second]
+            second <- bookNext rig t "bob-raced-second"
             stopped <-
-                rejectNow rig registry t "key-file reject before the deadline"
+                foldNamed rig registry t second "key-file fold before the deadline"
             runExit stopped `shouldBe` ExitFailure 19
             fmap (textAt "hash") (valueAt "pendingBundle" (runReceipt stopped))
                 `shouldBe` Just (Just (sfHash sf))
             journalAtStop <- readJournal dir
             map (memberEvents journalAtStop) bodies
                 `shouldBe` [["waiting-for-signatures"] | _ <- bodies]
+            deadline <- boundedDeadline sf
+            jumpChainTo (rigChain rig) (SlotNo (deadline + 1))
             next <-
-                rejectPast
-                    rig
-                    registry
-                    t
-                    submitted
-                    "key-file reject past the deadline"
-            outcomeOf (runReceipt next) `shouldBe` Just "success"
+                foldNamed rig registry t second "key-file fold past the deadline"
+            expectFoldSettled "the next write" next
             entries <- readJournal dir
             map (memberEvents entries) bodies
                 `shouldBe` [["waiting-for-signatures", "dead"] | _ <- bodies]
@@ -6493,7 +6362,7 @@ preparedBundleDiesWholeRow :: Spec
 preparedBundleDiesWholeRow =
     it
         "a preparation and fold bundle is pending until the fold's bound, then dies whole: the unbounded preparation gets its dead line too"
-        $ withRig
+        $ withScriptRig
         $ \rig -> do
             let registry = "bob-prepared-expired"
             sf <- stagePreparedFold rig registry
@@ -6503,7 +6372,7 @@ preparedBundleDiesWholeRow =
             deadline <- boundedDeadline sf
             jumpChainTo (rigChain rig) (SlotNo (deadline - 1))
             stopped <-
-                rejectNow rig registry t "key-file reject one slot before the bound"
+                foldNow rig registry t "key-file fold one slot before the bound"
             runExit stopped `shouldBe` ExitFailure 19
             awaitedIds <- case valueAt "pendingBundle" (runReceipt stopped) >>= valueAt "awaited" of
                 Just (Aeson.Array as) -> pure (map (textAt "identity") (toList as))
@@ -6511,16 +6380,17 @@ preparedBundleDiesWholeRow =
             awaitedIds `shouldBe` map (Just . txIdHex) bodies
             jumpChainTo (rigChain rig) (SlotNo deadline)
             atBound <-
-                rejectNow rig registry t "key-file reject at the bound"
+                foldNow rig registry t "key-file fold at the bound"
             runExit atBound `shouldNotBe` ExitFailure 19
             next <-
-                rejectPast
+                foldPast
                     rig
                     registry
                     t
-                    (sfSubmitted sf)
-                    "key-file reject past the request's windows"
-            outcomeOf (runReceipt next) `shouldBe` Just "success"
+                    (sfBodies sf)
+                    Nothing
+                    "key-file fold past the request's window"
+            expectFoldSettled "the next write" next
             entries <- readJournal dir
             map (memberEvents entries) bodies
                 `shouldBe` [["waiting-for-signatures", "dead"] | _ <- bodies]
@@ -6544,7 +6414,7 @@ partialLandingRow :: Spec
 partialLandingRow =
     it
         "a bundle whose preparation landed and whose fold expired is dead, naming the preparation as gone through"
-        $ withRig
+        $ withScriptRig
         $ \rig -> do
             let registry = "bob-partial"
             sf <- stagePreparedFold rig registry
@@ -6554,13 +6424,14 @@ partialLandingRow =
                 _ -> fail "the prepared bundle is not two members"
             landOnRig rig [preparation]
             next <-
-                rejectPast
+                foldPast
                     rig
                     registry
                     t
-                    (sfSubmitted sf)
-                    "key-file reject after the fold expired"
-            outcomeOf (runReceipt next) `shouldBe` Just "success"
+                    (sfBodies sf)
+                    Nothing
+                    "key-file fold after the fold expired"
+            expectFoldSettled "the next write" next
             entries <- readJournal (stagedPartition rig registry t)
             memberEvents entries preparation
                 `shouldBe` ["waiting-for-signatures", "landed"]
@@ -6624,7 +6495,7 @@ interruptedDeathRow :: Spec
 interruptedDeathRow =
     it
         "a dead bundle whose run stopped after its first dead line is completed by the next run, every member not landed getting its dead line"
-        $ withRig
+        $ withScriptRig
         $ \rig -> do
             let registry = "bob-interrupted"
             sf <- stagePreparedFold rig registry
@@ -6634,20 +6505,21 @@ interruptedDeathRow =
             deadline <- boundedDeadline sf
             jumpChainTo (rigChain rig) (SlotNo deadline)
             atBound <-
-                rejectNow rig registry t "key-file reject at the bound"
+                foldNow rig registry t "key-file fold at the bound"
             runExit atBound `shouldNotBe` ExitFailure 19
             cutAfterFirstDead dir
             cut <- readJournal dir
             [journalDetail e | e <- cut, journalEvent e == "dead"]
                 `shouldBe` [Just "expired, rebuild"]
             next <-
-                rejectPast
+                foldPast
                     rig
                     registry
                     t
-                    (sfSubmitted sf)
-                    "key-file reject after the interrupted run"
-            outcomeOf (runReceipt next) `shouldBe` Just "success"
+                    (sfBodies sf)
+                    Nothing
+                    "key-file fold after the interrupted run"
+            expectFoldSettled "the next write" next
             entries <- readJournal dir
             map (memberEvents entries) bodies
                 `shouldBe` [["waiting-for-signatures", "dead"] | _ <- bodies]
@@ -6833,22 +6705,27 @@ vaultBundleOf r dir = do
 -- | A registry with one certified request, to fold from the vault.
 vaultRegistry
     :: Rig -> String -> Integer -> Bool -> IO (String, TxIn, Integer)
-vaultRegistry rig key deposit reshape = do
+vaultRegistry = vaultRegistryOf StageRegistration
+
+-- | The same, of a request of this kind.
+vaultRegistryOf
+    :: StageKind
+    -> Rig
+    -> String
+    -> Integer
+    -> Bool
+    -> IO (String, TxIn, Integer)
+vaultRegistryOf kind rig key _deposit reshape = do
+    fundSparePayer rig
     seed <- fundSeed rig
     create <-
         run
             rig
             "create"
-            (["registry", "create", "--seed", seed] <> policyArgs)
+            (["registry", "create", "--seed", seed] <> economicsArgs)
     t <- tokenOf create
     (req, submitted) <-
-        plantRequestDeposit
-            rig
-            t
-            seed
-            economics
-            (TE.encodeUtf8 (T.pack key))
-            deposit
+        bookedRequest kind rig t seed (TE.encodeUtf8 (T.pack key))
     approvals <- certifyPlanted rig t seed economics [req]
     when reshape (void (reshapeRehearsalWallet rig approvals))
     pure (t, req, submitted)
@@ -6863,7 +6740,7 @@ vaultSameBundleRow :: Spec
 vaultSameBundleRow =
     it
         "a vault fold builds the bundle bytes the external mode writes for the vault's address"
-        $ withRig
+        $ withScriptRig
         $ \rig -> do
             (t, req, _) <- vaultRegistry rig "alice-same" 1_000_000 False
             let bundlePath = rigDir rig </> "alice-external.bundle"
@@ -6897,7 +6774,7 @@ vaultAllLandedRow :: Spec
 vaultAllLandedRow =
     it
         "a vault fold signs every member, sends them in order through the submit core and, all landed, journals each landed and states the command's fields as fact, with no secret anywhere"
-        $ withRig
+        $ withScriptRig
         $ \rig -> do
             (t, req, _) <- vaultRegistry rig "alice-prep" 3_000_000_000 True
             vault <- rigVault rig "alice"
@@ -6937,7 +6814,7 @@ vaultRefusedRow :: Spec
 vaultRefusedRow =
     it
         "a node refusal of a member journals the bundle dead and ends as a ledger refusal naming the members that went through"
-        $ withRig
+        $ withScriptRig
         $ \rig -> do
             (t, req, _) <- vaultRegistry rig "alice-refused" 3_000_000_000 True
             vault <- rigVault rig "alice"
@@ -6974,15 +6851,16 @@ vaultRefusedRow =
             fromMaybe "" (receiptReason signed)
                 `shouldSatisfy` T.isInfixOf "the fold's inputs are gone"
             assertNoVaultSecret rig dir signed
-            reference <- keyFileFoldOf 3_000_000_000 True
+            reference <- keyFileFoldOf StageRegistration 3_000_000_000 True
             assertExpectationOnly signed reference
 
 vaultUncertainRow :: Spec
 vaultUncertainRow =
     it
         "an uncertain answer ends the vault run partial, and the next run settles the bundle by identity"
-        $ withRig
+        $ withScriptRig
         $ \rig -> do
+            fundSparePayer rig
             seed <- fundSeed rig
             create <-
                 run
@@ -6994,17 +6872,17 @@ vaultUncertainRow =
                            , "--retract-time"
                            , show (reRetractTime journalWindows)
                            ]
-                        <> policyArgs
+                        <> economicsArgs
                     )
             t <- tokenOf create
             (req, _) <-
-                plantRequest
+                bookRegistration
                     rig
                     t
-                    seed
-                    journalWindows
                     (TE.encodeUtf8 "alice-uncertain")
-            _ <- certifyPlanted rig t seed journalWindows [req]
+                    "uncertain"
+                    0
+                    Nothing
             vault <- rigVault rig "alice"
             fd <- passphraseDescriptor rig "alice" vaultPassphrase
             env <-
@@ -7024,25 +6902,17 @@ vaultUncertainRow =
                     (foldLineOf t req <> vaultArgs vault fd)
             runExit signed `shouldBe` ExitFailure 15
             outcomeOf (runReceipt signed) `shouldBe` Just "partial"
-            reference <- keyFileFoldOf 1_000_000 False
+            reference <- keyFileFoldOf StageRegistration 1_000_000 False
             assertExpectationOnly signed reference
             (h, _, bodies) <- vaultBundleOf signed dir
-            (second, submitted) <-
-                plantRequest
-                    rig
-                    t
-                    seed
-                    journalWindows
-                    (TE.encodeUtf8 "alice-uncertain-second")
-            _ <- certifyPlanted rig t seed journalWindows [second]
             next <-
-                rejectPast
+                foldNext
                     rig
                     registry
                     t
-                    submitted
-                    "key-file reject after the lost answer"
-            outcomeOf (runReceipt next) `shouldBe` Just "success"
+                    "alice-uncertain-second"
+                    "key-file fold after the lost answer"
+            expectFoldSettled "the next write" next
             entries <- readJournal dir
             map (memberEvents entries) bodies
                 `shouldBe` [["waiting-for-signatures", "landed"] | _ <- bodies]
@@ -7053,7 +6923,7 @@ vaultRefusalsRow :: Spec
 vaultRefusalsRow =
     it
         "a wrong passphrase, an unreadable vault or a descriptor without a vault is refused naming it, before the blueprint or anything else is read or written"
-        $ withRig
+        $ withScriptRig
         $ \rig -> do
             (t, req, _) <- vaultRegistry rig "alice-wrong" 1_000_000 False
             vault <- rigVault rig "alice"
@@ -7105,9 +6975,10 @@ vaultRefusalsRow =
 the command's own fields, which a vault run that did not land states only
 under expected.
 -}
-keyFileFoldOf :: Integer -> Bool -> IO Run
-keyFileFoldOf deposit reshape = withRig $ \rig -> do
-    (t, req, _) <- vaultRegistry rig "alice-reference" deposit reshape
+keyFileFoldOf :: StageKind -> Integer -> Bool -> IO Run
+keyFileFoldOf kind deposit reshape = withScriptRig $ \rig -> do
+    (t, req, _) <-
+        vaultRegistryOf kind rig "alice-reference" deposit reshape
     r <- run rig "key-file fold for reference" (foldLineOf t req)
     outcomeOf (runReceipt r) `shouldBe` Just "success"
     pure r
@@ -7124,7 +6995,7 @@ stagedNarrationRows :: Spec
 stagedNarrationRows = describe "staged narration" $ do
     it
         "an external fold narrates no root as seen; a landed vault fold narrates it"
-        $ withRig
+        $ withScriptRig
         $ \rig -> do
             (t, req, _) <- vaultRegistry rig "alice-narration" 1_000_000 False
             let bundlePath = rigDir rig </> "alice-narration.bundle"
@@ -7146,44 +7017,18 @@ stagedNarrationRows = describe "staged narration" $ do
                     (foldLineOf t req <> vaultArgs vault fd)
             outcomeOf (runReceipt signed) `shouldBe` Just "success"
             length (rootsSeen signed) `shouldBe` 1
-    it "an external reject narrates no root as seen" $
-        withRig $ \rig -> do
+    it
+        "the retired reject staged for an external signer is refused, writes no bundle and narrates no root as seen"
+        $ withScriptRig
+        $ \rig -> do
             seed <- fundSeed rig
             create <-
                 run
                     rig
                     "create"
-                    ( [ "registry"
-                      , "create"
-                      , "--seed"
-                      , seed
-                      , "--process-time"
-                      , "1"
-                      , "--retract-time"
-                      , "1"
-                      ]
-                        <> policyArgs
-                    )
+                    (["registry", "create", "--seed", seed] <> economicsArgs)
             t <- tokenOf create
-            let windows =
-                    RegistryEconomics
-                        { reProcessTime = 1
-                        , reRetractTime = 1
-                        , reTip = Coin 1_000_000
-                        , reRegistrationCost = Coin 0
-                        , reBookingWidth = 60_000
-                        }
-            (_, submitted) <-
-                plantRequest
-                    rig
-                    t
-                    seed
-                    windows
-                    (TE.encodeUtf8 "alice-narration-reject")
-            jumpToAfter
-                rig
-                (submitted + reProcessTime windows + reRetractTime windows)
-                2
+            let bundlePath = rigDir rig </> "alice-reject.bundle"
             staged <-
                 runAt
                     rig
@@ -7191,10 +7036,12 @@ stagedNarrationRows = describe "staged narration" $ do
                     "external reject"
                     ( ["registry", "reject"]
                         <> tokenArgs t
-                        <> externalArgs rig (rigDir rig </> "alice-reject.bundle")
+                        <> externalArgs rig bundlePath
                     )
-            runExit staged `shouldBe` ExitFailure 19
+            runExit staged `shouldBe` ExitFailure 10
+            outcomeOf (runReceipt staged) `shouldBe` Just "client-refusal"
             rootsSeen staged `shouldBe` []
+            doesPathExist bundlePath `shouldReturn` False
     it "an external reclaim narrates no root as seen" $
         withRig $ \rig -> do
             seed <- fundSeed rig
@@ -7226,13 +7073,15 @@ stagedNarrationRows = describe "staged narration" $ do
 
 -- | A registry with one certified request under these windows, to fold from the vault.
 vaultRegistryWith
-    :: Rig
+    :: StageKind
+    -> Rig
     -> RegistryEconomics
     -> String
     -> Integer
     -> Bool
     -> IO (String, TxIn, Integer)
-vaultRegistryWith rig windows key deposit reshape = do
+vaultRegistryWith kind rig windows key _deposit reshape = do
+    fundSparePayer rig
     seed <- fundSeed rig
     create <-
         run
@@ -7244,17 +7093,11 @@ vaultRegistryWith rig windows key deposit reshape = do
                    , "--retract-time"
                    , show (reRetractTime windows)
                    ]
-                <> policyArgs
+                <> economicsArgs
             )
     t <- tokenOf create
     (req, submitted) <-
-        plantRequestDeposit
-            rig
-            t
-            seed
-            windows
-            (TE.encodeUtf8 (T.pack key))
-            deposit
+        bookedRequest kind rig t seed (TE.encodeUtf8 (T.pack key))
     approvals <- certifyPlanted rig t seed windows [req]
     when reshape (void (reshapeRehearsalWallet rig approvals))
     pure (t, req, submitted)
@@ -7276,10 +7119,11 @@ vaultBookkeepingRows :: Spec
 vaultBookkeepingRows = describe "the vault signer's bookkeeping" $ do
     it
         "a journal that cannot be appended after every member landed keeps the core's sends and a partial outcome, and the next run settles the bundle"
-        $ withRig
+        $ withScriptRig
         $ \rig -> do
             (t, req, _) <-
                 vaultRegistryWith
+                    StageRegistration
                     rig
                     journalWindows
                     "alice-unjournalled"
@@ -7309,25 +7153,16 @@ vaultBookkeepingRows = describe "the vault signer's bookkeeping" $ do
             map (textAt "identity") sent `shouldBe` map (Just . txIdHex) bodies
             map (textAt "how") sent `shouldBe` [Just "sent" | _ <- bodies]
             valueAt "bookkeeping" (runReceipt signed) `shouldSatisfy` isJust
-            reference <- keyFileFoldOf 3_000_000_000 True
+            reference <- keyFileFoldOf StageRegistration 3_000_000_000 True
             assertExpectationOnly signed reference
-            seed <- fundSeed rig
-            (second, submitted) <-
-                plantRequest
-                    rig
-                    t
-                    seed
-                    journalWindows
-                    (TE.encodeUtf8 "alice-unjournalled-second")
-            _ <- certifyPlanted rig t seed journalWindows [second]
             next <-
-                rejectPast
+                foldNext
                     rig
                     registry
                     t
-                    submitted
-                    "key-file reject after the unjournalled landing"
-            outcomeOf (runReceipt next) `shouldBe` Just "success"
+                    "alice-unjournalled-second"
+                    "key-file fold after the unjournalled landing"
+            expectFoldSettled "the next write" next
             entries <- readJournal dir
             map (memberEvents entries) bodies
                 `shouldBe` [["waiting-for-signatures", "landed"] | _ <- bodies]
@@ -7335,10 +7170,11 @@ vaultBookkeepingRows = describe "the vault signer's bookkeeping" $ do
                 `shouldBe` Just (Just "landed")
     it
         "a journal that cannot be appended after the node refused a member keeps the ledger refusal, its answer and what went through, and the next run settles the bundle"
-        $ withRig
+        $ withScriptRig
         $ \rig -> do
-            (t, req, submitted) <-
+            (t, req, _) <-
                 vaultRegistryWith
+                    StageTermination
                     rig
                     journalWindows
                     "alice-refused-unjournalled"
@@ -7376,16 +7212,17 @@ vaultBookkeepingRows = describe "the vault signer's bookkeeping" $ do
             identitiesAt "wentThrough" (runReceipt signed)
                 `shouldBe` Just [txIdHex preparation]
             valueAt "bookkeeping" (runReceipt signed) `shouldSatisfy` isJust
-            reference <- keyFileFoldOf 3_000_000_000 True
+            reference <- keyFileFoldOf StageTermination 3_000_000_000 True
             assertExpectationOnly signed reference
             next <-
-                rejectPast
+                foldPast
                     rig
                     registry
                     t
-                    submitted
-                    "key-file reject after the unjournalled refusal"
-            outcomeOf (runReceipt next) `shouldBe` Just "success"
+                    bodies
+                    Nothing
+                    "key-file fold after the unjournalled refusal"
+            expectFoldSettled "the next write" next
             entries <- readJournal dir
             memberEvents entries preparation
                 `shouldBe` ["waiting-for-signatures", "landed"]
@@ -7404,10 +7241,16 @@ vaultUnreadJournalRows :: Spec
 vaultUnreadJournalRows = describe "the vault signer's journal unread" $ do
     it
         "a journal that cannot be read after every member landed keeps the core's sends and a partial outcome, naming both failures"
-        $ withRig
+        $ withScriptRig
         $ \rig -> do
             (t, req, _) <-
-                vaultRegistryWith rig journalWindows "alice-unread" 3_000_000_000 True
+                vaultRegistryWith
+                    StageRegistration
+                    rig
+                    journalWindows
+                    "alice-unread"
+                    3_000_000_000
+                    True
             vault <- rigVault rig "alice"
             fd <- passphraseDescriptor rig "alice" vaultPassphrase
             let registry = "alice-vault-unread"
@@ -7433,14 +7276,20 @@ vaultUnreadJournalRows = describe "the vault signer's journal unread" $ do
             map (textAt "how") sent `shouldBe` [Just "sent" | _ <- bodies]
             valueAt "bookkeeping" (runReceipt signed) `shouldSatisfy` isJust
             valueAt "journalUnread" (runReceipt signed) `shouldSatisfy` isJust
-            reference <- keyFileFoldOf 3_000_000_000 True
+            reference <- keyFileFoldOf StageRegistration 3_000_000_000 True
             assertExpectationOnly signed reference
     it
         "a half-written last journal line after the node refused a member keeps the ledger refusal, its answer and what went through, naming both failures"
-        $ withRig
+        $ withScriptRig
         $ \rig -> do
             (t, req, _) <-
-                vaultRegistryWith rig journalWindows "alice-half" 3_000_000_000 True
+                vaultRegistryWith
+                    StageRegistration
+                    rig
+                    journalWindows
+                    "alice-half"
+                    3_000_000_000
+                    True
             vault <- rigVault rig "alice"
             fd <- passphraseDescriptor rig "alice" vaultPassphrase
             let registry = "alice-vault-half"
@@ -7471,7 +7320,7 @@ vaultUnreadJournalRows = describe "the vault signer's journal unread" $ do
                 `shouldBe` Just [txIdHex preparation]
             valueAt "bookkeeping" (runReceipt signed) `shouldSatisfy` isJust
             valueAt "journalUnread" (runReceipt signed) `shouldSatisfy` isJust
-            reference <- keyFileFoldOf 3_000_000_000 True
+            reference <- keyFileFoldOf StageRegistration 3_000_000_000 True
             assertExpectationOnly signed reference
 
 -- ---------------------------------------------------------
@@ -7487,6 +7336,7 @@ read it.
 chunk4Producers :: Spec
 chunk4Producers = describe "chunk4 producers" $ do
     registrationFoldRows
+    queryChoiceRows
     describe "the retired reject is refused as an attempt"
         $ it
             "refuses registry reject over an expired pending request, naming it retired, and submits nothing"
@@ -7540,6 +7390,81 @@ chunk4Producers = describe "chunk4 producers" $ do
             expectNoSubmissions "fold" folded
             (T.isInfixOf "pending" . T.toLower <$> receiptReason folded)
                 `shouldBe` Just True
+    describe "a fold that names a request nothing has booked"
+        $ it
+            "refuses, naming the request and saying it is not pending, and submits nothing"
+        $ withRig
+        $ \rig -> do
+            _ <- fundSeed rig
+            create <- run rig "create" (["registry", "create"] <> policyArgs)
+            runExit create `shouldBe` ExitSuccess
+            t1 <- tokenOf create
+            ghost <-
+                either (fail . ("ghost request: " <>)) pure $
+                    parseOutRef (T.pack (replicate 64 'e' <> "#0"))
+            folded <-
+                run
+                    rig
+                    "fold"
+                    ( ["registry", "fold", "--request", T.unpack (renderOutRef ghost)]
+                        <> tokenArgs t1
+                    )
+            runExit folded `shouldBe` ExitFailure 10
+            expectNoSubmissions "fold" folded
+            let said = T.toLower <$> receiptReason folded
+            (T.isInfixOf (T.toLower (renderOutRef ghost)) <$> said)
+                `shouldBe` Just True
+            (T.isInfixOf "pending" <$> said) `shouldBe` Just True
+    describe "the pending requests an inspect lists, field by field" $ do
+        it
+            "states a booked registration's kind, refund owner, key, edge and booked time"
+            $ withScriptRegistry
+            $ \rig t -> do
+                (request, booked) <-
+                    bookRegistration rig t "carol-listed" "listed" 12 Nothing
+                inspected <-
+                    runViaApp
+                        rig
+                        (envOf rig)
+                        scriptPinned
+                        "registry"
+                        "inspect"
+                        (["registry", "inspect", "--key", "carol-listed"] <> tokenArgs t)
+                entry <- pendingEntry inspected request
+                fieldOf "kind" entry `shouldBe` Just "registration"
+                fieldOf "key" entry
+                    `shouldBe` Just (hexT (TE.encodeUtf8 "carol-listed"))
+                fieldOf "owner" entry
+                    `shouldBe` Just (hexT (addrKeyHashBytes (walletAddr (rigWallet rig))))
+                fieldOf "edge" entry `shouldBe` Just "insertActive"
+                integerAt "submittedAt" (Aeson.Object entry) `shouldBe` Just booked
+        it
+            "states a booked termination's kind, key and edge, and no refund owner"
+            $ withScriptRig
+            $ \rig -> do
+                seed <- fundSeed rig
+                create <-
+                    run
+                        rig
+                        "create"
+                        (["registry", "create", "--seed", seed] <> economicsArgs)
+                outcomeOf (runReceipt create) `shouldBe` Just "success"
+                t <- tokenOf create
+                _ <- bookRegistration rig t "carol-ended" "ended" 13 Nothing
+                made <- runFoldAtBound rig 1 t
+                outcomeOf (runReceipt made) `shouldBe` Just "success"
+                termination <- plantFoldableTerminationAt rig t seed "carol-ended" 'L'
+                inspected <-
+                    run
+                        rig
+                        "inspect"
+                        (["registry", "inspect", "--key", "carol-ended"] <> tokenArgs t)
+                entry <- pendingEntry inspected termination
+                fieldOf "kind" entry `shouldBe` Just "termination"
+                fieldOf "key" entry
+                    `shouldBe` Just (hexT (TE.encodeUtf8 "carol-ended"))
+                fieldOf "edge" entry `shouldBe` Just "updateTerminal"
+                KeyMap.member "owner" entry `shouldBe` False
 
 -- ---------------------------------------------------------
 -- A registration booked apart from every producer
@@ -7627,6 +7552,8 @@ plantTagged rig t key nonce = withLawfulCli rig t $ \v lc -> do
                 , rbLower = slot
                 , rbUpper = slot + 10
                 , rbApplicationScript = Live.applied saved
+                , rbApplicationRedeemer = Nothing
+                , rbRequiredSigners = []
                 }
             (lcPayer lc)
     landTransaction rig tx
@@ -7700,6 +7627,34 @@ registrationFoldRows =
                                 )
                     [] -> expectationFailure "the fold prepared no transaction"
         it
+            "delivers an output that holds no datum when the registration carries none"
+            $ withScriptRegistry
+            $ \rig t -> do
+                request <- plantTagged rig t (TE.encodeUtf8 "carol-bare") 13
+                folded <-
+                    foldScript rig t ["--request", T.unpack (renderOutRef request)]
+                expectFoldSettled "the fold of a registration with no datum" folded
+                live <- case settledEntries (runReceipt folded) of
+                    [entry] -> case valueAt "settlement" (Aeson.Object entry) of
+                        Just (Aeson.Object s) -> do
+                            -- the settlement states the output and no datum
+                            KeyMap.lookup "datumHash" s `shouldBe` Nothing
+                            KeyMap.lookup "datumCbor" s `shouldBe` Nothing
+                            maybe
+                                (fail "the settlement names no live output")
+                                pure
+                                (fieldOf "liveOutput" s)
+                        other -> fail ("no settlement object: " <> show other)
+                    other -> fail ("expected one settled entry, found " <> show (length other))
+                ref <- either (fail . ("liveOutput: " <>)) pure (parseOutRef live)
+                -- the booking names the wallet as its destination
+                held <- readWallet rig
+                case [o | (i, o) <- held, i == ref] of
+                    [o] -> txOutDatum o `shouldBe` Nothing
+                    other ->
+                        fail
+                            ("expected the delivered output live, found " <> show (length other))
+        it
             "lists the booked registration among the pending requests of an inspect"
             $ withScriptRegistry
             $ \rig t -> do
@@ -7717,6 +7672,21 @@ registrationFoldRows =
                     (T.pack (show (valueAt "pendingRequests" (runReceipt inspected))))
                     `shouldBe` True
 
+-- | The pending entry of an inspect receipt that names this request.
+pendingEntry :: Run -> TxIn -> IO Aeson.Object
+pendingEntry inspected request =
+    case [ o
+         | Aeson.Object o <-
+            fromMaybe [] (elementsAt "pendingRequests" (runReceipt inspected))
+         , fieldOf "request" o == Just (renderOutRef request)
+         ] of
+        [one] -> pure one
+        other ->
+            fail
+                ( "expected exactly one pending entry for the request, found "
+                    <> show (length other)
+                )
+
 -- | Every integer a receipt states under a key whose name holds this word, wherever it sits.
 numbersNamed :: Text -> Aeson.Value -> [Integer]
 numbersNamed word = go
@@ -7733,3 +7703,413 @@ numbersNamed word = go
                 ]
         Aeson.Array a -> concatMap go a
         _ -> []
+
+-- ---------------------------------------------------------
+-- Bookings made as the producers make them
+-- ---------------------------------------------------------
+
+-- | The address of the script-pinned application, where the custody of a key sits.
+applicationAddress :: CageConfig -> Addr
+applicationAddress cfg = case hashFromBytes (SBS.fromShort (cfgApplicationPolicy cfg)) of
+    Just h -> Addr Testnet (ScriptHashObj (ScriptHash h)) StakeRefNull
+    Nothing -> error "applicationAddress: the pinned policy is not 28 bytes"
+
+{- | The output of a booking that sits at the registry's request address.
+The booking makes exactly one.
+-}
+requestOutput :: Rig -> CageConfig -> TokenId -> ConwayTx -> IO TxIn
+requestOutput _ cfg tid tx =
+    case [ TxIn (txIdTx tx) (TxIx ix)
+         | (ix, out) <- zip [0 ..] (toList (tx ^. bodyTxL . outputsTxBodyL))
+         , out ^. addrTxOutL == requestAddrFromCfg cfg tid Testnet
+         ] of
+        [one] -> pure one
+        other ->
+            fail
+                ( "requestOutput: expected one output at the request address, found "
+                    <> show (length other)
+                )
+
+{- | A registration of this key, booked by the registration booking builder
+under the script-pinned application and landed: its request and the time it
+is booked at, in milliseconds. The booking is placed at the tip, or closes at
+the slot of the millisecond named; the chain's tip then moves past the booked
+time when it was behind it.
+-}
+bookRegistration
+    :: Rig
+    -> String
+    -> BS.ByteString
+    -> BS.ByteString
+    -> Integer
+    -> Maybe Integer
+    -> IO (TxIn, Integer)
+bookRegistration = bookRegistrationFrom Nothing
+
+{- | The same, paid by this address when one is named: a wallet that holds
+only assets beside its ada cannot fund a booking, so a row that shapes the
+wallet that way books what it still has to book from the spare payer.
+-}
+bookRegistrationFrom
+    :: Maybe Addr
+    -> Rig
+    -> String
+    -> BS.ByteString
+    -> BS.ByteString
+    -> Integer
+    -> Maybe Integer
+    -> IO (TxIn, Integer)
+bookRegistrationFrom spender rig t key carried nonce bookedAt = withLawfulCli rig t $ \v lc -> do
+    let payer = fromMaybe (lcPayer lc) spender
+    tip <- SessionIO.tip v
+    let saved = lcSaved lc
+        cfg = savedCfg saved
+        observed = Cage.observedSlot tip
+        upper = case bookedAt of
+            Nothing -> observed + 10
+            Just ms -> SlotNo (fromInteger (ms `div` 1000))
+        lower = upper - 10
+    tx <-
+        bookRegistrationImpl
+            cfg
+            v
+            (savedToken saved)
+            (fst (liveState (lcLive lc)))
+            RegistrationBooking
+                { rbKey = key
+                , rbRefundAddress = payer
+                , rbDestination = serialiseAddr (applicationAddress cfg)
+                , rbDatum = Just (PLC.Constr 0 [PLC.B carried])
+                , rbDeclaredTip = Coin 1_000_000
+                , rbCarrier = Coin 2_000_000
+                , rbNonce = nonce
+                , rbLower = lower
+                , rbUpper = upper
+                , rbApplicationScript = Live.applied saved
+                , rbApplicationRedeemer = Nothing
+                , rbRequiredSigners = []
+                }
+            payer
+    landTransaction rig tx
+    jumpChainTo (rigChain rig) (max observed (upper + 30))
+    booked <- SessionIO.slotStart v upper
+    request <- requestOutput rig cfg (savedToken saved) tx
+    pure (request, booked)
+
+{- | A registration of this key that delivers to the rig's own wallet and
+carries no datum: the key's token ends in an output the wallet's key spends,
+as the generic open application's does.
+-}
+bookWalletRegistration
+    :: Rig -> String -> BS.ByteString -> Integer -> IO TxIn
+bookWalletRegistration rig t key nonce = withLawfulCli rig t $ \v lc -> do
+    tip <- SessionIO.tip v
+    let saved = lcSaved lc
+        cfg = savedCfg saved
+        upper = Cage.observedSlot tip + 10
+    tx <-
+        bookRegistrationImpl
+            cfg
+            v
+            (savedToken saved)
+            (fst (liveState (lcLive lc)))
+            RegistrationBooking
+                { rbKey = key
+                , rbRefundAddress = lcPayer lc
+                , rbDestination = serialiseAddr (lcPayer lc)
+                , rbDatum = Nothing
+                , rbDeclaredTip = Coin 1_000_000
+                , rbCarrier = Coin 2_000_000
+                , rbNonce = nonce
+                , rbLower = upper - 10
+                , rbUpper = upper
+                , rbApplicationScript = Live.applied saved
+                , rbApplicationRedeemer = Nothing
+                , rbRequiredSigners = []
+                }
+            (lcPayer lc)
+    landTransaction rig tx
+    jumpChainTo (rigChain rig) (max (Cage.observedSlot tip) (upper + 30))
+    requestOutput rig cfg (savedToken saved) tx
+
+{- | The termination of a key out of the output the rig's wallet holds it in:
+the wallet's key is the spending condition, the booking carries no spend
+witness, and the transaction it returns is the one that landed.
+-}
+bookWalletTermination
+    :: Rig -> String -> BS.ByteString -> Integer -> IO (TxIn, ConwayTx)
+bookWalletTermination rig t key nonce = withLawfulCli rig t $ \v lc -> do
+    let saved = lcSaved lc
+        cfg = savedCfg saved
+        active = policyIdFromPin (cfgActivePolicy cfg)
+        holdsKey (_, o) = case o ^. valueTxOutL of
+            MaryValue _ (MultiAsset m) ->
+                maybe
+                    False
+                    (Map.member (AssetName (SBS.toShort key)))
+                    (Map.lookup active m)
+        tip = 1_000_000 :: Integer
+    atWallet <- SessionIO.outputsAt v (lcPayer lc)
+    custody <- case filter holdsKey atWallet of
+        [one] -> pure one
+        other ->
+            fail
+                ( "bookWalletTermination: expected one wallet output holding the key, found "
+                    <> show (length other)
+                )
+    let Coin held = snd custody ^. coinTxOutL
+    tx <-
+        bookTerminationImpl
+            cfg
+            v
+            (savedToken saved)
+            (fst (liveState (lcLive lc)))
+            TerminationBooking
+                { tbKey = key
+                , tbDeclaredTip = Coin tip
+                , tbCarrier = Coin (held - tip)
+                , tbNonce = nonce
+                , tbCustody = custody
+                , tbOrdinaryAdded = Coin 0
+                , tbCustodyAuthority = WalletGuarded
+                , tbRequiredSigners = []
+                }
+            (lcPayer lc)
+    landTransaction rig tx
+    request <- requestOutput rig cfg (savedToken saved) tx
+    pure (request, tx)
+
+-- | Two requests in ledger input order, the order a fold takes them in.
+inLedgerOrder2 :: TxIn -> TxIn -> (TxIn, TxIn)
+inLedgerOrder2 a b = (min a b, max a b)
+
+-- | Three requests in ledger input order.
+inLedgerOrder3 :: TxIn -> TxIn -> TxIn -> (TxIn, TxIn, TxIn)
+inLedgerOrder3 a b c = case sort [a, b, c] of
+    [x, y, z] -> (x, y, z)
+    _ -> error "inLedgerOrder3: three requests sorted to another count"
+
+-- | An address that is not the wallet's, which pays the bookings a shaped wallet cannot.
+sparePayer :: Addr
+sparePayer = case hashFromBytes (BS.replicate 28 3) of
+    Just h -> Addr Testnet (KeyHashObj (KeyHash h)) StakeRefNull
+    Nothing -> error "sparePayer: not 28 bytes"
+
+-- | Give the spare payer one ada-only output, before a row shapes the wallet.
+fundSparePayer :: Rig -> IO ()
+fundSparePayer rig = do
+    ref <-
+        either (fail . ("fundSparePayer: " <>)) pure $
+            parseOutRef (T.pack (replicate 64 'd' <> "#0"))
+    advanceChain (rigChain rig) $ \facts ->
+        facts
+            { csUTxO =
+                Map.insert
+                    ref
+                    (mkBasicTxOut sparePayer (MaryValue (Coin 500_000_000) mempty))
+                    (csUTxO facts)
+            }
+
+{- | A registration booked as a producer books it, for a row that wants a
+pending request under a key: the same shape as 'plantRequest' returns, the
+request and the time it is booked at in milliseconds. The seed and the
+economics name the registry's boot and windows and are not read here.
+-}
+plantBooked
+    :: Rig
+    -> String
+    -> String
+    -> RegistryEconomics
+    -> BS.ByteString
+    -> IO (TxIn, Integer)
+plantBooked rig t _seed _economics key =
+    bookRegistration
+        rig
+        t
+        key
+        key
+        ( toInteger
+            ( BS.foldl' (\acc w -> acc * 31 + fromIntegral w) (7 :: Int) key
+                `mod` 1_000_000
+            )
+        )
+        Nothing
+
+-- ---------------------------------------------------------
+-- The queries a command makes
+-- ---------------------------------------------------------
+
+{- | The rig's capabilities with every output query recorded, and a refusal
+for the queries a caller names: a read the provider cannot answer, as a
+typed failure. Every other read is served by the chain as it stands.
+-}
+recordingCapabilities
+    :: IORef [Cage.OutputQuery]
+    -> (Cage.OutputQuery -> Maybe Cage.ReadFailure)
+    -> Rig
+    -> Capabilities NoWitness IO
+recordingCapabilities seen refuse rig =
+    (capabilities rig)
+        { capReads =
+            let (network, provider) = rawChainProvider (rigChain rig)
+                recording =
+                    provider
+                        { Cage.acquire =
+                            \requested action ->
+                                Cage.acquire provider requested (recordingReads action)
+                        }
+            in  ( network
+                , observeProvider unverifiedVerifier (\_ -> pure ()) recording
+                )
+        }
+  where
+    recordingReads action session =
+        action
+            session
+                { Cage.outputs = \query -> do
+                    modifyIORef' seen (<> [query])
+                    case refuse query of
+                        Just failure -> pure (Left failure)
+                        Nothing -> Cage.outputs session query
+                }
+
+-- | The environment of a run that reads through these capabilities.
+recordingEnv :: Capabilities NoWitness IO -> Rig -> Env
+recordingEnv caps rig =
+    (envOf rig)
+        { envReads = \_ k -> k caps
+        , envWrites = \_ k -> k caps
+        }
+
+{- | Whether a query, or any query it composes, reads this address: the scan
+of the request address that discovery by the request policy replaces.
+-}
+readsAddress :: Addr -> Cage.OutputQuery -> Bool
+readsAddress addr = \case
+    Cage.AtAddress a -> a == addr
+    Cage.AnyOf qs -> any (readsAddress addr) qs
+    Cage.AllOf qs -> any (readsAddress addr) qs
+    _ -> False
+
+-- | Whether a query, or any query it composes, lists this policy's holders.
+listsPolicy :: PolicyID -> Cage.OutputQuery -> Bool
+listsPolicy policy = \case
+    Cage.HoldingPolicy p -> p == policy
+    Cage.AnyOf qs -> any (listsPolicy policy) qs
+    Cage.AllOf qs -> any (listsPolicy policy) qs
+    _ -> False
+
+queryChoiceRows :: Spec
+queryChoiceRows =
+    describe
+        "the pending requests are found by the request policy's listing, and by nothing else"
+        $ do
+            it
+                "folds a booked registration when the request address cannot be scanned"
+                $ withScriptRegistry
+                $ \rig t -> do
+                    request <- plantTagged rig t (TE.encodeUtf8 "carol-q") 21
+                    (policy, address) <- requestRoutes rig t
+                    seen <- newIORef []
+                    let caps =
+                            recordingCapabilities
+                                seen
+                                ( \q ->
+                                    if readsAddress address q
+                                        then
+                                            Just (Cage.BackendReadFailure "the request address cannot be scanned")
+                                        else Nothing
+                                )
+                                rig
+                    folded <-
+                        runViaApp
+                            rig
+                            (recordingEnv caps rig)
+                            scriptPinned
+                            "registry"
+                            "fold with no address scan"
+                            ( ["registry", "fold", "--request", T.unpack (renderOutRef request)]
+                                <> tokenArgs t
+                            )
+                    expectFoldSettled "the fold with no address scan" folded
+                    queries <- readIORef seen
+                    any (listsPolicy policy) queries `shouldBe` True
+                    any (readsAddress address) queries `shouldBe` False
+            it
+                "refuses a fold whose policy listing fails, and never scans the request address instead"
+                $ withScriptRegistry
+                $ \rig t -> do
+                    request <- plantTagged rig t (TE.encodeUtf8 "carol-q") 22
+                    (policy, address) <- requestRoutes rig t
+                    seen <- newIORef []
+                    let caps =
+                            recordingCapabilities
+                                seen
+                                ( \q ->
+                                    if listsPolicy policy q
+                                        then
+                                            Just (Cage.BackendReadFailure "the listing by policy is incomplete")
+                                        else Nothing
+                                )
+                                rig
+                    folded <-
+                        runViaApp
+                            rig
+                            (recordingEnv caps rig)
+                            scriptPinned
+                            "registry"
+                            "fold with a failing listing"
+                            ( ["registry", "fold", "--request", T.unpack (renderOutRef request)]
+                                <> tokenArgs t
+                            )
+                    outcomeOf (runReceipt folded) `shouldNotBe` Just "success"
+                    expectNoSubmissions "fold" folded
+                    queries <- readIORef seen
+                    any (listsPolicy policy) queries `shouldBe` True
+                    any (readsAddress address) queries `shouldBe` False
+                    -- the registry keeps the request pending: a fold that can read finds it
+                    again <-
+                        foldScript rig t ["--request", T.unpack (renderOutRef request)]
+                    expectFoldSettled "the fold once the listing answers" again
+            it
+                "lists the pending requests of an inspect without scanning the request address"
+                $ withScriptRegistry
+                $ \rig t -> do
+                    request <- plantTagged rig t (TE.encodeUtf8 "carol-q") 23
+                    (policy, address) <- requestRoutes rig t
+                    seen <- newIORef []
+                    let caps =
+                            recordingCapabilities
+                                seen
+                                ( \q ->
+                                    if readsAddress address q
+                                        then
+                                            Just (Cage.BackendReadFailure "the request address cannot be scanned")
+                                        else Nothing
+                                )
+                                rig
+                    inspected <-
+                        runViaApp
+                            rig
+                            (recordingEnv caps rig)
+                            scriptPinned
+                            "registry"
+                            "inspect with no address scan"
+                            (["registry", "inspect", "--key", "carol-q"] <> tokenArgs t)
+                    T.isInfixOf
+                        (renderOutRef request)
+                        (T.pack (show (valueAt "pendingRequests" (runReceipt inspected))))
+                        `shouldBe` True
+                    queries <- readIORef seen
+                    any (listsPolicy policy) queries `shouldBe` True
+                    any (readsAddress address) queries `shouldBe` False
+
+-- | The request policy and the request address of the registry a rig created.
+requestRoutes :: Rig -> String -> IO (PolicyID, Addr)
+requestRoutes rig t = withLawfulCli rig t $ \_ lc -> do
+    let saved = lcSaved lc
+        cfg = savedCfg saved
+    pure
+        ( requestPolicyOf cfg (savedToken saved)
+        , requestAddrFromCfg cfg (savedToken saved) Testnet
+        )

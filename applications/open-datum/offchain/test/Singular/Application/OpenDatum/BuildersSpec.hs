@@ -43,7 +43,6 @@ import Cardano.Ledger.Mary.Value
     ( AssetName (..)
     , MaryValue (..)
     , MultiAsset (..)
-    , PolicyID (..)
     )
 import PlutusCore.Data qualified as PLC
 import UntypedPlutusCore.DeBruijn ()
@@ -74,10 +73,8 @@ import Singular.Registry.SyntheticLedger
 import Singular.Registry.SyntheticTime (syntheticTime)
 import Singular.Registry.TraceRender (readPhaseLog)
 import Singular.Registry.TxBuilder.BookingFixture (preprodParams)
-import Singular.Registry.TxBuilder.Edges (BookingApproval (..))
 import Singular.Registry.TxBuilder.Internal
     ( addrFromKeyHashBytes
-    , approvalName
     , computeScriptHash
     , mkInlineDatum
     , policyIdFromPin
@@ -168,39 +165,21 @@ choice = describe "the application a registry pins" $ do
 -- Bookings
 -- ---------------------------------------------------------
 
-mintedName :: BookingApproval -> Maybe ByteString
-mintedName a = case baAsset a of
-    MultiAsset m -> case Map.toList m of
-        [(PolicyID _, names)] -> case Map.toList names of
-            [(AssetName n, 1)] -> Just (SBS.fromShort n)
-            _ -> Nothing
-        _ -> Nothing
-
 bookings :: Spec
 bookings = describe "bookings" $ do
-    let stateIn = ref '5' 0
-        holdingIn = ref '4' 1
-        insert = insertApproval Testnet applied stateIn envelope
-        terminate = terminateApproval applied stateIn holdingIn "keyA" controller
     it
-        "names an insertion's destination as this script, carrying the envelope itself"
+        "names a registration's destination as this script, carrying the envelope itself"
         $ insertDestination Testnet applied envelope
             `shouldBe` ( openDatumAddressBytes Testnet applied
                        , Just (envelopeToData envelope)
                        )
     it
-        "mints one approval bound to the insertion it certifies, by the envelope's hash"
-        $ mintedName insert
-            `shouldBe` Just
-                ( approvalName
-                    1
-                    "keyA"
-                    controller
-                    (openDatumAddressBytes Testnet applied, envelopeHash envelope)
-                )
-    it
-        "carries BookInsert { key, owner, address, envelope } as constructor 0"
-        $ baRedeemer insert
+        "gives the application mint BookInsert { key, owner, address, envelope } as constructor 0"
+        $ bookInsertRedeemer
+            "keyA"
+            controller
+            (openDatumAddressBytes Testnet applied)
+            envelope
             `shouldBe` PLC.Constr
                 0
                 [ PLC.B "keyA"
@@ -208,21 +187,9 @@ bookings = describe "bookings" $ do
                 , PLC.B (openDatumAddressBytes Testnet applied)
                 , envelopeToData envelope
                 ]
-    it "reads the registry state by reference when booking an insertion" $
-        baReferenceInputs insert `shouldBe` Set.singleton stateIn
-    it "binds a termination's approval to no destination" $
-        mintedName terminate
-            `shouldBe` Just (approvalName 3 "keyA" controller ("", ""))
-    it "carries BookTerminate { key, owner, holding } as constructor 1" $
-        case baRedeemer terminate of
-            PLC.Constr 1 [PLC.B k, PLC.B o, PLC.Constr 0 [PLC.B tx, PLC.I ix]] -> do
-                (k, o, ix) `shouldBe` ("keyA", controller, 1)
-                BS.length tx `shouldBe` 32
-            other -> expectationFailure ("unexpected redeemer " <> show other)
     it
-        "reads the state and the live output by reference, spending neither"
-        $ baReferenceInputs terminate
-            `shouldBe` Set.fromList [stateIn, holdingIn]
+        "spends the custody with BookTermination { ordinary_added } as constructor 2"
+        $ bookTerminationRedeemer 7 `shouldBe` PLC.Constr 2 [PLC.I 7]
 
 -- ---------------------------------------------------------
 -- Update

@@ -131,6 +131,7 @@ import Singular.Registry.RawChainFixture
     , RawChain
     , advanceChain
     , jumpChainTo
+    , jumpChainToHostClock
     , newRawChain
     , rawChainProvider
     , recordTransaction
@@ -251,6 +252,7 @@ withRig use = withSystemTempDirectory "keri-stub-producers" $ \dir -> do
                 , csNetworkTime = syntheticTime
                 }
     advanceChain chain id
+    jumpChainToHostClock chain
     use (Rig dir chain wallet keyPath blueprint)
 
 -- | The environment of a run over the rig: the fixture's capabilities.
@@ -532,6 +534,8 @@ plantRegistration rig t key = withLawful rig t $ \v saved live -> do
                 , rbLower = slot
                 , rbUpper = slot + 10
                 , rbApplicationScript = keriStubScriptBytes
+                , rbApplicationRedeemer = Nothing
+                , rbRequiredSigners = []
                 }
             payer
     landTx rig tx
