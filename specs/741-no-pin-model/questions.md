@@ -92,6 +92,18 @@ The [authority binding](authority.md) fixes the accepted root and application re
 
 **Decision needed:** Approve each conclusion's evidence and provenance contract before freezing a reader signature. Recommendation: require authenticated state evidence for full lifecycle classification and keep missing/conflicting evidence unavailable.
 
+## How does the application know the token went to the request validator?
+
+**Actor and goal:** As a registry reader, I want a token that left application custody at termination booking to be held by the authentic request validator, so that its pending and terminal rules still apply.
+
+**Starting state and action:** An active key has one genuine token in application custody. Its controller spends that holding as a termination booking but places the token at a wallet or another validator instead of the request validator. Nothing burns at booking.
+
+**Competing outcomes and base answer:** The custody ruling sends the token to the request; the application must allow that transfer. An application that checks only the token or an approval accepts the counterfeit destination. Knowing the asset policy from an input does not by itself give the request script hash, and moving a token does not run its minting policy. In the proposal the request is parameterized by the state policy and registry asset name while the application is registry-independent, so a direct parameter would create a cycle.
+
+**Evidence and limits:** This is a proposed transaction shape traced from the sources, not an executed counterexample. Whether existing protected data or a policy-validated booking artifact can carry an authenticated destination without a cycle is under investigation.
+
+**Decision needed:** A destination authentication that executes at booking and constrains the exact token, registry, request datum and destination output; a copied tag or an address supplied in a redeemer is not enough. Recommendation: hold acceptance of the application-to-request transfer until such a construction is shown and audited.
+
 ```mermaid
 flowchart TD
   Evidence[Bound evidence] -->|exposes| Question[Open questions]
