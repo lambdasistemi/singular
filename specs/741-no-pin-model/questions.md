@@ -98,3 +98,11 @@ flowchart TD
   Question -->|requires| Ruling[Operator ruling]
   Ruling -->|authorizes| Alignment[Align models]
 ```
+
+## Identity-stage evidence and remaining holds
+
+The complete-identity question is ruled in [decisions.md](decisions.md): approvals commit policy and name. The isolated identity candidate states that rule under finite encoding/hash premises and retains name-only safety solely as a rejected, expected-refutable contrast. The termination custody ruling is also recorded there and belongs to its later stage. These rulings are decisions, not proof receipts.
+
+The role question now has executable competing readings and a concrete genuine-witness/fabricated-state-datum instance. The policy-only reading accepts it; the authenticated reading refuses that instance. General state/role separation remains a stated hypothesis under explicit finite separation and external provenance evidence. Request-tag examples use a simplified registry/role/key preimage, so they do not establish economic payload/nonce binding.
+
+Same-transaction two-policy genesis and across-history spent-once are separate stated obligations. The minimal transaction observations do not establish that a ledger accepts either history. The stronger accepted-history uniqueness claim is held for binding to accepted #679/#680 vocabulary. No new cycle is required by the frozen identity derivation. Hash byte correspondence, provenance authentication, configuration, compatibility and reader evidence still require their original decisions and later evidence.

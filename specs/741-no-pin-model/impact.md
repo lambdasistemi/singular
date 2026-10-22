@@ -2,7 +2,7 @@
 
 As an integrator, I want to see each existing guarantee, the proposed replacement and the evidence still needed before trusting a registry without pins.
 
-This inventory binds the accepted source revision in [authority.md](authority.md). Every candidate claim below is a hypothesis. No declaration, statement, wire format, application rule or accepted guarantee changes in this slice. Old definition digests are SHA256 of the complete source-file blob; theorem digests are the base register's statementSha256. A declaration existing or a digest matching proves identity only.
+This inventory binds the accepted source revision in [authority.md](authority.md). Every candidate claim below is a hypothesis. Accepted declarations, statements, wire formats, application rules and guarantees remain unchanged; hypothetical additions are recorded below. Old definition digests are SHA256 of the complete source-file blob; theorem digests are the base register's statementSha256. A declaration existing or a digest matching proves identity only.
 
 The eleven configuration fields are listed individually. The constitution's driver translation still calls config an "eight-field" value, although the bound structure has eleven fields. This discrepancy is recorded in [questions.md](questions.md); its text is not amended here. The proposed four-field datum does not authorize dropping registration cost or booking width.
 
@@ -125,3 +125,11 @@ flowchart TD
 The isolated `NoPin` project freezes interfaces in [functions-model.md](functions-model.md) and records in [data-model.md](data-model.md). Complete registry identity follows the recorded ruling; name-only binding remains a rejected contrast. State-recognition alternatives stay hypothetical. Custody, economic configuration, reader classification and compatibility remain outside this stage.
 
 The minimal `TxView.spent` must map to accepted ledger spending-input references; `outputs.assets` to complete output values; `mint` to signed per-policy/name quantities; `invoked` to actual policy invocation. A list of views must bind to accepted history and its spent-once theorem before any history claim becomes a ledger guarantee. These are binding obligations on #679/#680, whose vocabulary remains unavailable here. This view has no validity judgement, script evaluator or UTxO update. Its genesis predicate and explicit spent-once premise do not implement those missing layers.
+
+## Identity statements candidate
+
+The candidate states fifteen obligations; every body remains `sorry` and the statement ledger records `sorryAx` debt with standard axioms. Public inversion cases and atomic guards are discovered from the compiled candidate. Separate antecedent instances, candidate instances and single-guard falsifications execute without proof holes. These are author receipts for bounded statement review, not acceptance, general proofs, hosted CI or ledger execution.
+
+Complete-identity approval refusal explicitly covers distinct policies with the same seed-derived name. A single observed transaction can satisfy both application-specific genesis predicates while spending the seed once. The history predicate separately refuses repeated spending in a supplied list of observations. Accepted-history correspondence remains held until the upstream model is bound.
+
+The rejected name-only safety claim and hypothetical policy-only exclusion claim have separate expected-refutable markers. Concrete evaluations expose both unsafe readings. Authenticated state/role separation is stated under explicit finite encoding/hash and seed-name premises; provenance remains external input evidence. Request-tag inversions cover the simplified registry/role/key preimage only, not economic payload/nonce commitments. All preserved economic, custody, consumer and reader rows above retain their prior dispositions; no implementation evidence row changes.

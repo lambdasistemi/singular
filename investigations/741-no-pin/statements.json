@@ -1,0 +1,238 @@
+{
+  "stage": "HYPOTHETICAL-STATEMENTS-ONLY",
+  "acceptedLaw": false,
+  "definitions": {
+    "lean/NoPin/Identity.lean": "f20e4b1b2c3f195832f4eca28ac7d41aef2b31d2cb1e07e03d897f840ab52bb8",
+    "lean/NoPin/Oracle.lean": "aec201a934aa8d00bf1b394ad26465bcceec54e7d40dd2aa37efa43306fff983",
+    "lean/NoPin/Witnesses.lean": "e93bff74e553e43b4ac20514cb91e91b712648d1fbb5c698c0aabd7bbe51168d",
+    "lean/NoPin/Mutants.lean": "cc0288f0807cf66ff0b5733fd0e13411e2bf6f05f5b38794800a65a48add5c61"
+  },
+  "statements": [
+    {
+      "theorem": "NoPin.Statements.full_approval_inversion",
+      "statementSha256": "4407f8442e4cfa251f4074f6b6b6cb5e3114ca2d128c58f83299b42d418dec8a",
+      "status": "STATED",
+      "question": "complete-identity ruling",
+      "witnesses": [
+        "NoPin.Fixtures.full_approval_inversion_antecedent"
+      ],
+      "selectors": [
+        "approvalFull"
+      ],
+      "inversion": "approvalFull",
+      "proofStatus": "STATED"
+    },
+    {
+      "theorem": "NoPin.Statements.name_only_inversion",
+      "statementSha256": "c7b420341c4d38af8a6bd16b248393abb8dcc309d8053593f72bab15ab4ea100",
+      "status": "REJECTED-READING-STATED",
+      "question": "rejected name-only contrast",
+      "witnesses": [
+        "NoPin.Fixtures.name_only_inversion_antecedent"
+      ],
+      "selectors": [
+        "approvalNameOnly"
+      ],
+      "inversion": "approvalNameOnly",
+      "proofStatus": "STATED"
+    },
+    {
+      "theorem": "NoPin.Statements.policy_only_inversion",
+      "statementSha256": "534abe4d1dcfe4b3a255cb1643144d311016d4959434506378febccfb411099c",
+      "status": "STATED",
+      "question": "unresolved shared-policy recognition",
+      "witnesses": [
+        "NoPin.Fixtures.policy_only_inversion_antecedent"
+      ],
+      "selectors": [
+        "policyOnlyPolicy",
+        "policyOnlyDatum"
+      ],
+      "inversion": "policyOnly",
+      "proofStatus": "STATED"
+    },
+    {
+      "theorem": "NoPin.Statements.state_inversion",
+      "statementSha256": "10b90841d01731bb9e1c8c2662ba45a925ab7fda60ada25844baee232729ac7d",
+      "status": "STATED",
+      "question": "shared-policy role question; request tags use simplified registry/role/key only",
+      "witnesses": [
+        "NoPin.Fixtures.state_inversion_antecedent"
+      ],
+      "selectors": [
+        "statePolicy",
+        "stateName",
+        "stateProvenance",
+        "stateDatum"
+      ],
+      "inversion": "state",
+      "proofStatus": "STATED"
+    },
+    {
+      "theorem": "NoPin.Statements.witness_inversion",
+      "statementSha256": "1ffd297a9253c970c98bab87478e9de9814ea002567acd91b420497c4ddaaedf",
+      "status": "STATED",
+      "question": "shared-policy role question; request tags use simplified registry/role/key only",
+      "witnesses": [
+        "NoPin.Fixtures.witness_inversion_antecedent"
+      ],
+      "selectors": [
+        "witnessPolicy",
+        "witnessName",
+        "witnessProvenance"
+      ],
+      "inversion": "witness",
+      "proofStatus": "STATED"
+    },
+    {
+      "theorem": "NoPin.Statements.trieReady_inversion",
+      "statementSha256": "b0d23331bff80bb568f1f0fa8cc03217126e52d0a7cf8fa0a42231f1d9feca4f",
+      "status": "STATED",
+      "question": "shared-policy role question; request tags use simplified registry/role/key only",
+      "witnesses": [
+        "NoPin.Fixtures.trieReady_inversion_antecedent"
+      ],
+      "selectors": [
+        "trieReadyPolicy",
+        "trieReadyName",
+        "trieReadyProvenance"
+      ],
+      "inversion": "trieReady",
+      "limit": "Simplified registry/role/key preimage only; no economic payload or nonce binding.",
+      "proofStatus": "STATED"
+    },
+    {
+      "theorem": "NoPin.Statements.application_inversion",
+      "statementSha256": "4e6422f8106c5c6f2d81889bc0202f1203e5b6f3651774422745fbf8429f3a7a",
+      "status": "STATED",
+      "question": "shared-policy role question; request tags use simplified registry/role/key only",
+      "witnesses": [
+        "NoPin.Fixtures.application_inversion_antecedent"
+      ],
+      "selectors": [
+        "applicationPolicy",
+        "applicationName",
+        "applicationProvenance"
+      ],
+      "inversion": "application",
+      "limit": "Simplified registry/role/key preimage only; no economic payload or nonce binding.",
+      "proofStatus": "STATED"
+    },
+    {
+      "theorem": "NoPin.Statements.genesis_inversion",
+      "statementSha256": "4f35b221a31384f845850d4cb4939a38fcd05c0b90185e85acd46ecaddf7f9b7",
+      "status": "STATED",
+      "question": "same transaction versus history",
+      "witnesses": [
+        "NoPin.Fixtures.genesis_inversion_antecedent"
+      ],
+      "selectors": [
+        "genesisSeed",
+        "genesisInvocation",
+        "genesisMint",
+        "genesisQuantity",
+        "genesisOutput"
+      ],
+      "inversion": "genesis",
+      "proofStatus": "STATED"
+    },
+    {
+      "theorem": "NoPin.Statements.history_inversion",
+      "statementSha256": "cb20158484b4942bb7ef162b3f16d9fbf87435c516f93a4053fbf22e45b534e5",
+      "status": "STATED",
+      "question": "across-history spent-once premise",
+      "witnesses": [
+        "NoPin.Fixtures.history_inversion_antecedent"
+      ],
+      "selectors": [
+        "historySpentOnce"
+      ],
+      "inversion": "history",
+      "proofStatus": "STATED"
+    },
+    {
+      "theorem": "NoPin.Statements.cross_registry_approval_refused",
+      "statementSha256": "f9fdac46e774e863e465bc0996b693322b8e5bc85fcc6cfc9358df20e22cb900",
+      "status": "STATED",
+      "question": "complete-identity ruling, including equal seed names under different policies",
+      "witnesses": [
+        "NoPin.Fixtures.cross_registry_approval_refused_antecedent"
+      ],
+      "selectors": [
+        "approvalFull"
+      ],
+      "inversion": null,
+      "proofStatus": "STATED"
+    },
+    {
+      "theorem": "NoPin.Statements.name_only_separation_claim",
+      "statementSha256": "17ccc089ddf6bde87b7d28e2b3dcdae9adec0c80410c98a2818287988ae512b5",
+      "status": "REJECTED-READING-STATED-EXPECTED-REFUTABLE",
+      "question": "rejected name-only safety claim",
+      "witnesses": [
+        "NoPin.Fixtures.name_only_separation_claim_antecedent"
+      ],
+      "selectors": [
+        "approvalNameOnly"
+      ],
+      "inversion": null,
+      "proofStatus": "STATED"
+    },
+    {
+      "theorem": "NoPin.Statements.policy_only_excludes_witness",
+      "statementSha256": "3a89acaa89fd3b5bafca828317a394294117cc5217365e54483b97da6a555140",
+      "status": "HYPOTHETICAL-READING-STATED-EXPECTED-REFUTABLE",
+      "question": "policy-only recognition of a genuine witness with fabricated state datum",
+      "witnesses": [
+        "NoPin.Fixtures.policy_only_excludes_witness_antecedent"
+      ],
+      "selectors": [
+        "policyOnlyPolicy"
+      ],
+      "inversion": null,
+      "proofStatus": "STATED"
+    },
+    {
+      "theorem": "NoPin.Statements.same_transaction_two_applications",
+      "statementSha256": "2a96503077cb2c3acf567ea933fcd77fd94dce82141d7cbf9f7c2b65a87cd6ea",
+      "status": "STATED",
+      "question": "same seed once, two application-specific policies in one transaction",
+      "witnesses": [
+        "NoPin.Fixtures.same_transaction_two_applications_antecedent"
+      ],
+      "selectors": [
+        "genesisSeed"
+      ],
+      "inversion": null,
+      "proofStatus": "STATED"
+    },
+    {
+      "theorem": "NoPin.Statements.history_reuse_refused",
+      "statementSha256": "539113fde119ea758af931a54925e143d3b83a3fbc5b17b2cbf5a9e248e6195a",
+      "status": "STATED",
+      "question": "across-history repeated seed, separate from same-transaction genesis",
+      "witnesses": [
+        "NoPin.Fixtures.history_reuse_refused_antecedent"
+      ],
+      "selectors": [
+        "historySpentOnce"
+      ],
+      "inversion": null,
+      "proofStatus": "STATED"
+    },
+    {
+      "theorem": "NoPin.Statements.authenticated_state_role_separation",
+      "statementSha256": "a02b62419fd710c99ea807b076a5afd03c0689866eef2a33339e265a06405ee5",
+      "status": "STATED",
+      "question": "shared-policy recognition under finite seed/role separation; simplified request tags",
+      "witnesses": [
+        "NoPin.Fixtures.authenticated_state_role_separation_antecedent"
+      ],
+      "selectors": [
+        "stateName"
+      ],
+      "inversion": null,
+      "proofStatus": "STATED"
+    }
+  ]
+}

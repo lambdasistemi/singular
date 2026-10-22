@@ -1,0 +1,5438 @@
+[
+  {
+    "result": true,
+    "scenario": {
+      "mutation": "none",
+      "query": {
+        "application": 5,
+        "hashes": [
+          {
+            "input": [
+              3,
+              1,
+              10,
+              20,
+              7
+            ],
+            "output": 31
+          },
+          {
+            "input": [
+              3,
+              2,
+              10,
+              20,
+              7
+            ],
+            "output": 32
+          },
+          {
+            "input": [
+              3,
+              3,
+              10,
+              20,
+              7
+            ],
+            "output": 33
+          },
+          {
+            "input": [
+              4,
+              10,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 34
+          },
+          {
+            "input": [
+              4,
+              0,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 35
+          }
+        ],
+        "history": [
+          {
+            "invoked": [
+              10
+            ],
+            "mint": [
+              [
+                {
+                  "name": 20,
+                  "policy": 10
+                },
+                1
+              ]
+            ],
+            "outputs": [
+              {
+                "assets": [
+                  [
+                    {
+                      "name": 20,
+                      "policy": 10
+                    },
+                    1
+                  ]
+                ]
+              }
+            ],
+            "spent": [
+              {
+                "index": 2,
+                "tx": 11
+              }
+            ]
+          }
+        ],
+        "key": 7,
+        "observation": {
+          "asset": {
+            "name": 20,
+            "policy": 10
+          },
+          "provenance": {
+            "name": 20,
+            "policy": 10
+          },
+          "stateDatum": true
+        },
+        "payload": {
+          "destination": 99,
+          "edge": 1,
+          "key": 7,
+          "nonce": 3,
+          "owner": 42
+        },
+        "registry": {
+          "name": 20,
+          "policy": 10
+        },
+        "seed": {
+          "index": 2,
+          "tx": 11
+        },
+        "supplied": {
+          "name": 34,
+          "policy": 5
+        },
+        "surface": "approvalFull",
+        "transaction": {
+          "invoked": [
+            10
+          ],
+          "mint": [
+            [
+              {
+                "name": 20,
+                "policy": 10
+              },
+              1
+            ]
+          ],
+          "outputs": [
+            {
+              "assets": [
+                [
+                  {
+                    "name": 20,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ]
+            }
+          ],
+          "spent": [
+            {
+              "index": 2,
+              "tx": 11
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "result": false,
+    "scenario": {
+      "mutation": {
+        "flip": {
+          "guard": "approvalFull"
+        }
+      },
+      "query": {
+        "application": 5,
+        "hashes": [
+          {
+            "input": [
+              3,
+              1,
+              10,
+              20,
+              7
+            ],
+            "output": 31
+          },
+          {
+            "input": [
+              3,
+              2,
+              10,
+              20,
+              7
+            ],
+            "output": 32
+          },
+          {
+            "input": [
+              3,
+              3,
+              10,
+              20,
+              7
+            ],
+            "output": 33
+          },
+          {
+            "input": [
+              4,
+              10,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 34
+          },
+          {
+            "input": [
+              4,
+              0,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 35
+          }
+        ],
+        "history": [
+          {
+            "invoked": [
+              10
+            ],
+            "mint": [
+              [
+                {
+                  "name": 20,
+                  "policy": 10
+                },
+                1
+              ]
+            ],
+            "outputs": [
+              {
+                "assets": [
+                  [
+                    {
+                      "name": 20,
+                      "policy": 10
+                    },
+                    1
+                  ]
+                ]
+              }
+            ],
+            "spent": [
+              {
+                "index": 2,
+                "tx": 11
+              }
+            ]
+          }
+        ],
+        "key": 7,
+        "observation": {
+          "asset": {
+            "name": 20,
+            "policy": 10
+          },
+          "provenance": {
+            "name": 20,
+            "policy": 10
+          },
+          "stateDatum": true
+        },
+        "payload": {
+          "destination": 99,
+          "edge": 1,
+          "key": 7,
+          "nonce": 3,
+          "owner": 42
+        },
+        "registry": {
+          "name": 20,
+          "policy": 10
+        },
+        "seed": {
+          "index": 2,
+          "tx": 11
+        },
+        "supplied": {
+          "name": 34,
+          "policy": 5
+        },
+        "surface": "approvalFull",
+        "transaction": {
+          "invoked": [
+            10
+          ],
+          "mint": [
+            [
+              {
+                "name": 20,
+                "policy": 10
+              },
+              1
+            ]
+          ],
+          "outputs": [
+            {
+              "assets": [
+                [
+                  {
+                    "name": 20,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ]
+            }
+          ],
+          "spent": [
+            {
+              "index": 2,
+              "tx": 11
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "result": true,
+    "scenario": {
+      "mutation": "none",
+      "query": {
+        "application": 5,
+        "hashes": [
+          {
+            "input": [
+              3,
+              1,
+              10,
+              20,
+              7
+            ],
+            "output": 31
+          },
+          {
+            "input": [
+              3,
+              2,
+              10,
+              20,
+              7
+            ],
+            "output": 32
+          },
+          {
+            "input": [
+              3,
+              3,
+              10,
+              20,
+              7
+            ],
+            "output": 33
+          },
+          {
+            "input": [
+              4,
+              10,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 34
+          },
+          {
+            "input": [
+              4,
+              0,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 35
+          }
+        ],
+        "history": [
+          {
+            "invoked": [
+              10
+            ],
+            "mint": [
+              [
+                {
+                  "name": 20,
+                  "policy": 10
+                },
+                1
+              ]
+            ],
+            "outputs": [
+              {
+                "assets": [
+                  [
+                    {
+                      "name": 20,
+                      "policy": 10
+                    },
+                    1
+                  ]
+                ]
+              }
+            ],
+            "spent": [
+              {
+                "index": 2,
+                "tx": 11
+              }
+            ]
+          }
+        ],
+        "key": 7,
+        "observation": {
+          "asset": {
+            "name": 20,
+            "policy": 10
+          },
+          "provenance": {
+            "name": 20,
+            "policy": 10
+          },
+          "stateDatum": true
+        },
+        "payload": {
+          "destination": 99,
+          "edge": 1,
+          "key": 7,
+          "nonce": 3,
+          "owner": 42
+        },
+        "registry": {
+          "name": 20,
+          "policy": 10
+        },
+        "seed": {
+          "index": 2,
+          "tx": 11
+        },
+        "supplied": {
+          "name": 35,
+          "policy": 5
+        },
+        "surface": "approvalNameOnly",
+        "transaction": {
+          "invoked": [
+            10
+          ],
+          "mint": [
+            [
+              {
+                "name": 20,
+                "policy": 10
+              },
+              1
+            ]
+          ],
+          "outputs": [
+            {
+              "assets": [
+                [
+                  {
+                    "name": 20,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ]
+            }
+          ],
+          "spent": [
+            {
+              "index": 2,
+              "tx": 11
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "result": false,
+    "scenario": {
+      "mutation": {
+        "flip": {
+          "guard": "approvalNameOnly"
+        }
+      },
+      "query": {
+        "application": 5,
+        "hashes": [
+          {
+            "input": [
+              3,
+              1,
+              10,
+              20,
+              7
+            ],
+            "output": 31
+          },
+          {
+            "input": [
+              3,
+              2,
+              10,
+              20,
+              7
+            ],
+            "output": 32
+          },
+          {
+            "input": [
+              3,
+              3,
+              10,
+              20,
+              7
+            ],
+            "output": 33
+          },
+          {
+            "input": [
+              4,
+              10,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 34
+          },
+          {
+            "input": [
+              4,
+              0,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 35
+          }
+        ],
+        "history": [
+          {
+            "invoked": [
+              10
+            ],
+            "mint": [
+              [
+                {
+                  "name": 20,
+                  "policy": 10
+                },
+                1
+              ]
+            ],
+            "outputs": [
+              {
+                "assets": [
+                  [
+                    {
+                      "name": 20,
+                      "policy": 10
+                    },
+                    1
+                  ]
+                ]
+              }
+            ],
+            "spent": [
+              {
+                "index": 2,
+                "tx": 11
+              }
+            ]
+          }
+        ],
+        "key": 7,
+        "observation": {
+          "asset": {
+            "name": 20,
+            "policy": 10
+          },
+          "provenance": {
+            "name": 20,
+            "policy": 10
+          },
+          "stateDatum": true
+        },
+        "payload": {
+          "destination": 99,
+          "edge": 1,
+          "key": 7,
+          "nonce": 3,
+          "owner": 42
+        },
+        "registry": {
+          "name": 20,
+          "policy": 10
+        },
+        "seed": {
+          "index": 2,
+          "tx": 11
+        },
+        "supplied": {
+          "name": 35,
+          "policy": 5
+        },
+        "surface": "approvalNameOnly",
+        "transaction": {
+          "invoked": [
+            10
+          ],
+          "mint": [
+            [
+              {
+                "name": 20,
+                "policy": 10
+              },
+              1
+            ]
+          ],
+          "outputs": [
+            {
+              "assets": [
+                [
+                  {
+                    "name": 20,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ]
+            }
+          ],
+          "spent": [
+            {
+              "index": 2,
+              "tx": 11
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "result": true,
+    "scenario": {
+      "mutation": "none",
+      "query": {
+        "application": 5,
+        "hashes": [
+          {
+            "input": [
+              3,
+              1,
+              10,
+              20,
+              7
+            ],
+            "output": 31
+          },
+          {
+            "input": [
+              3,
+              2,
+              10,
+              20,
+              7
+            ],
+            "output": 32
+          },
+          {
+            "input": [
+              3,
+              3,
+              10,
+              20,
+              7
+            ],
+            "output": 33
+          },
+          {
+            "input": [
+              4,
+              10,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 34
+          },
+          {
+            "input": [
+              4,
+              0,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 35
+          }
+        ],
+        "history": [
+          {
+            "invoked": [
+              10
+            ],
+            "mint": [
+              [
+                {
+                  "name": 20,
+                  "policy": 10
+                },
+                1
+              ]
+            ],
+            "outputs": [
+              {
+                "assets": [
+                  [
+                    {
+                      "name": 20,
+                      "policy": 10
+                    },
+                    1
+                  ]
+                ]
+              }
+            ],
+            "spent": [
+              {
+                "index": 2,
+                "tx": 11
+              }
+            ]
+          }
+        ],
+        "key": 7,
+        "observation": {
+          "asset": {
+            "name": 20,
+            "policy": 10
+          },
+          "provenance": {
+            "name": 20,
+            "policy": 10
+          },
+          "stateDatum": true
+        },
+        "payload": {
+          "destination": 99,
+          "edge": 1,
+          "key": 7,
+          "nonce": 3,
+          "owner": 42
+        },
+        "registry": {
+          "name": 20,
+          "policy": 10
+        },
+        "seed": {
+          "index": 2,
+          "tx": 11
+        },
+        "supplied": {
+          "name": 34,
+          "policy": 5
+        },
+        "surface": "policyOnly",
+        "transaction": {
+          "invoked": [
+            10
+          ],
+          "mint": [
+            [
+              {
+                "name": 20,
+                "policy": 10
+              },
+              1
+            ]
+          ],
+          "outputs": [
+            {
+              "assets": [
+                [
+                  {
+                    "name": 20,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ]
+            }
+          ],
+          "spent": [
+            {
+              "index": 2,
+              "tx": 11
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "result": false,
+    "scenario": {
+      "mutation": {
+        "flip": {
+          "guard": "policyOnlyPolicy"
+        }
+      },
+      "query": {
+        "application": 5,
+        "hashes": [
+          {
+            "input": [
+              3,
+              1,
+              10,
+              20,
+              7
+            ],
+            "output": 31
+          },
+          {
+            "input": [
+              3,
+              2,
+              10,
+              20,
+              7
+            ],
+            "output": 32
+          },
+          {
+            "input": [
+              3,
+              3,
+              10,
+              20,
+              7
+            ],
+            "output": 33
+          },
+          {
+            "input": [
+              4,
+              10,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 34
+          },
+          {
+            "input": [
+              4,
+              0,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 35
+          }
+        ],
+        "history": [
+          {
+            "invoked": [
+              10
+            ],
+            "mint": [
+              [
+                {
+                  "name": 20,
+                  "policy": 10
+                },
+                1
+              ]
+            ],
+            "outputs": [
+              {
+                "assets": [
+                  [
+                    {
+                      "name": 20,
+                      "policy": 10
+                    },
+                    1
+                  ]
+                ]
+              }
+            ],
+            "spent": [
+              {
+                "index": 2,
+                "tx": 11
+              }
+            ]
+          }
+        ],
+        "key": 7,
+        "observation": {
+          "asset": {
+            "name": 20,
+            "policy": 10
+          },
+          "provenance": {
+            "name": 20,
+            "policy": 10
+          },
+          "stateDatum": true
+        },
+        "payload": {
+          "destination": 99,
+          "edge": 1,
+          "key": 7,
+          "nonce": 3,
+          "owner": 42
+        },
+        "registry": {
+          "name": 20,
+          "policy": 10
+        },
+        "seed": {
+          "index": 2,
+          "tx": 11
+        },
+        "supplied": {
+          "name": 34,
+          "policy": 5
+        },
+        "surface": "policyOnly",
+        "transaction": {
+          "invoked": [
+            10
+          ],
+          "mint": [
+            [
+              {
+                "name": 20,
+                "policy": 10
+              },
+              1
+            ]
+          ],
+          "outputs": [
+            {
+              "assets": [
+                [
+                  {
+                    "name": 20,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ]
+            }
+          ],
+          "spent": [
+            {
+              "index": 2,
+              "tx": 11
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "result": false,
+    "scenario": {
+      "mutation": {
+        "flip": {
+          "guard": "policyOnlyDatum"
+        }
+      },
+      "query": {
+        "application": 5,
+        "hashes": [
+          {
+            "input": [
+              3,
+              1,
+              10,
+              20,
+              7
+            ],
+            "output": 31
+          },
+          {
+            "input": [
+              3,
+              2,
+              10,
+              20,
+              7
+            ],
+            "output": 32
+          },
+          {
+            "input": [
+              3,
+              3,
+              10,
+              20,
+              7
+            ],
+            "output": 33
+          },
+          {
+            "input": [
+              4,
+              10,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 34
+          },
+          {
+            "input": [
+              4,
+              0,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 35
+          }
+        ],
+        "history": [
+          {
+            "invoked": [
+              10
+            ],
+            "mint": [
+              [
+                {
+                  "name": 20,
+                  "policy": 10
+                },
+                1
+              ]
+            ],
+            "outputs": [
+              {
+                "assets": [
+                  [
+                    {
+                      "name": 20,
+                      "policy": 10
+                    },
+                    1
+                  ]
+                ]
+              }
+            ],
+            "spent": [
+              {
+                "index": 2,
+                "tx": 11
+              }
+            ]
+          }
+        ],
+        "key": 7,
+        "observation": {
+          "asset": {
+            "name": 20,
+            "policy": 10
+          },
+          "provenance": {
+            "name": 20,
+            "policy": 10
+          },
+          "stateDatum": true
+        },
+        "payload": {
+          "destination": 99,
+          "edge": 1,
+          "key": 7,
+          "nonce": 3,
+          "owner": 42
+        },
+        "registry": {
+          "name": 20,
+          "policy": 10
+        },
+        "seed": {
+          "index": 2,
+          "tx": 11
+        },
+        "supplied": {
+          "name": 34,
+          "policy": 5
+        },
+        "surface": "policyOnly",
+        "transaction": {
+          "invoked": [
+            10
+          ],
+          "mint": [
+            [
+              {
+                "name": 20,
+                "policy": 10
+              },
+              1
+            ]
+          ],
+          "outputs": [
+            {
+              "assets": [
+                [
+                  {
+                    "name": 20,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ]
+            }
+          ],
+          "spent": [
+            {
+              "index": 2,
+              "tx": 11
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "result": true,
+    "scenario": {
+      "mutation": "none",
+      "query": {
+        "application": 5,
+        "hashes": [
+          {
+            "input": [
+              3,
+              1,
+              10,
+              20,
+              7
+            ],
+            "output": 31
+          },
+          {
+            "input": [
+              3,
+              2,
+              10,
+              20,
+              7
+            ],
+            "output": 32
+          },
+          {
+            "input": [
+              3,
+              3,
+              10,
+              20,
+              7
+            ],
+            "output": 33
+          },
+          {
+            "input": [
+              4,
+              10,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 34
+          },
+          {
+            "input": [
+              4,
+              0,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 35
+          }
+        ],
+        "history": [
+          {
+            "invoked": [
+              10
+            ],
+            "mint": [
+              [
+                {
+                  "name": 20,
+                  "policy": 10
+                },
+                1
+              ]
+            ],
+            "outputs": [
+              {
+                "assets": [
+                  [
+                    {
+                      "name": 20,
+                      "policy": 10
+                    },
+                    1
+                  ]
+                ]
+              }
+            ],
+            "spent": [
+              {
+                "index": 2,
+                "tx": 11
+              }
+            ]
+          }
+        ],
+        "key": 7,
+        "observation": {
+          "asset": {
+            "name": 20,
+            "policy": 10
+          },
+          "provenance": {
+            "name": 20,
+            "policy": 10
+          },
+          "stateDatum": true
+        },
+        "payload": {
+          "destination": 99,
+          "edge": 1,
+          "key": 7,
+          "nonce": 3,
+          "owner": 42
+        },
+        "registry": {
+          "name": 20,
+          "policy": 10
+        },
+        "seed": {
+          "index": 2,
+          "tx": 11
+        },
+        "supplied": {
+          "name": 34,
+          "policy": 5
+        },
+        "surface": "state",
+        "transaction": {
+          "invoked": [
+            10
+          ],
+          "mint": [
+            [
+              {
+                "name": 20,
+                "policy": 10
+              },
+              1
+            ]
+          ],
+          "outputs": [
+            {
+              "assets": [
+                [
+                  {
+                    "name": 20,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ]
+            }
+          ],
+          "spent": [
+            {
+              "index": 2,
+              "tx": 11
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "result": false,
+    "scenario": {
+      "mutation": {
+        "flip": {
+          "guard": "statePolicy"
+        }
+      },
+      "query": {
+        "application": 5,
+        "hashes": [
+          {
+            "input": [
+              3,
+              1,
+              10,
+              20,
+              7
+            ],
+            "output": 31
+          },
+          {
+            "input": [
+              3,
+              2,
+              10,
+              20,
+              7
+            ],
+            "output": 32
+          },
+          {
+            "input": [
+              3,
+              3,
+              10,
+              20,
+              7
+            ],
+            "output": 33
+          },
+          {
+            "input": [
+              4,
+              10,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 34
+          },
+          {
+            "input": [
+              4,
+              0,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 35
+          }
+        ],
+        "history": [
+          {
+            "invoked": [
+              10
+            ],
+            "mint": [
+              [
+                {
+                  "name": 20,
+                  "policy": 10
+                },
+                1
+              ]
+            ],
+            "outputs": [
+              {
+                "assets": [
+                  [
+                    {
+                      "name": 20,
+                      "policy": 10
+                    },
+                    1
+                  ]
+                ]
+              }
+            ],
+            "spent": [
+              {
+                "index": 2,
+                "tx": 11
+              }
+            ]
+          }
+        ],
+        "key": 7,
+        "observation": {
+          "asset": {
+            "name": 20,
+            "policy": 10
+          },
+          "provenance": {
+            "name": 20,
+            "policy": 10
+          },
+          "stateDatum": true
+        },
+        "payload": {
+          "destination": 99,
+          "edge": 1,
+          "key": 7,
+          "nonce": 3,
+          "owner": 42
+        },
+        "registry": {
+          "name": 20,
+          "policy": 10
+        },
+        "seed": {
+          "index": 2,
+          "tx": 11
+        },
+        "supplied": {
+          "name": 34,
+          "policy": 5
+        },
+        "surface": "state",
+        "transaction": {
+          "invoked": [
+            10
+          ],
+          "mint": [
+            [
+              {
+                "name": 20,
+                "policy": 10
+              },
+              1
+            ]
+          ],
+          "outputs": [
+            {
+              "assets": [
+                [
+                  {
+                    "name": 20,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ]
+            }
+          ],
+          "spent": [
+            {
+              "index": 2,
+              "tx": 11
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "result": false,
+    "scenario": {
+      "mutation": {
+        "flip": {
+          "guard": "stateName"
+        }
+      },
+      "query": {
+        "application": 5,
+        "hashes": [
+          {
+            "input": [
+              3,
+              1,
+              10,
+              20,
+              7
+            ],
+            "output": 31
+          },
+          {
+            "input": [
+              3,
+              2,
+              10,
+              20,
+              7
+            ],
+            "output": 32
+          },
+          {
+            "input": [
+              3,
+              3,
+              10,
+              20,
+              7
+            ],
+            "output": 33
+          },
+          {
+            "input": [
+              4,
+              10,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 34
+          },
+          {
+            "input": [
+              4,
+              0,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 35
+          }
+        ],
+        "history": [
+          {
+            "invoked": [
+              10
+            ],
+            "mint": [
+              [
+                {
+                  "name": 20,
+                  "policy": 10
+                },
+                1
+              ]
+            ],
+            "outputs": [
+              {
+                "assets": [
+                  [
+                    {
+                      "name": 20,
+                      "policy": 10
+                    },
+                    1
+                  ]
+                ]
+              }
+            ],
+            "spent": [
+              {
+                "index": 2,
+                "tx": 11
+              }
+            ]
+          }
+        ],
+        "key": 7,
+        "observation": {
+          "asset": {
+            "name": 20,
+            "policy": 10
+          },
+          "provenance": {
+            "name": 20,
+            "policy": 10
+          },
+          "stateDatum": true
+        },
+        "payload": {
+          "destination": 99,
+          "edge": 1,
+          "key": 7,
+          "nonce": 3,
+          "owner": 42
+        },
+        "registry": {
+          "name": 20,
+          "policy": 10
+        },
+        "seed": {
+          "index": 2,
+          "tx": 11
+        },
+        "supplied": {
+          "name": 34,
+          "policy": 5
+        },
+        "surface": "state",
+        "transaction": {
+          "invoked": [
+            10
+          ],
+          "mint": [
+            [
+              {
+                "name": 20,
+                "policy": 10
+              },
+              1
+            ]
+          ],
+          "outputs": [
+            {
+              "assets": [
+                [
+                  {
+                    "name": 20,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ]
+            }
+          ],
+          "spent": [
+            {
+              "index": 2,
+              "tx": 11
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "result": false,
+    "scenario": {
+      "mutation": {
+        "flip": {
+          "guard": "stateProvenance"
+        }
+      },
+      "query": {
+        "application": 5,
+        "hashes": [
+          {
+            "input": [
+              3,
+              1,
+              10,
+              20,
+              7
+            ],
+            "output": 31
+          },
+          {
+            "input": [
+              3,
+              2,
+              10,
+              20,
+              7
+            ],
+            "output": 32
+          },
+          {
+            "input": [
+              3,
+              3,
+              10,
+              20,
+              7
+            ],
+            "output": 33
+          },
+          {
+            "input": [
+              4,
+              10,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 34
+          },
+          {
+            "input": [
+              4,
+              0,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 35
+          }
+        ],
+        "history": [
+          {
+            "invoked": [
+              10
+            ],
+            "mint": [
+              [
+                {
+                  "name": 20,
+                  "policy": 10
+                },
+                1
+              ]
+            ],
+            "outputs": [
+              {
+                "assets": [
+                  [
+                    {
+                      "name": 20,
+                      "policy": 10
+                    },
+                    1
+                  ]
+                ]
+              }
+            ],
+            "spent": [
+              {
+                "index": 2,
+                "tx": 11
+              }
+            ]
+          }
+        ],
+        "key": 7,
+        "observation": {
+          "asset": {
+            "name": 20,
+            "policy": 10
+          },
+          "provenance": {
+            "name": 20,
+            "policy": 10
+          },
+          "stateDatum": true
+        },
+        "payload": {
+          "destination": 99,
+          "edge": 1,
+          "key": 7,
+          "nonce": 3,
+          "owner": 42
+        },
+        "registry": {
+          "name": 20,
+          "policy": 10
+        },
+        "seed": {
+          "index": 2,
+          "tx": 11
+        },
+        "supplied": {
+          "name": 34,
+          "policy": 5
+        },
+        "surface": "state",
+        "transaction": {
+          "invoked": [
+            10
+          ],
+          "mint": [
+            [
+              {
+                "name": 20,
+                "policy": 10
+              },
+              1
+            ]
+          ],
+          "outputs": [
+            {
+              "assets": [
+                [
+                  {
+                    "name": 20,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ]
+            }
+          ],
+          "spent": [
+            {
+              "index": 2,
+              "tx": 11
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "result": false,
+    "scenario": {
+      "mutation": {
+        "flip": {
+          "guard": "stateDatum"
+        }
+      },
+      "query": {
+        "application": 5,
+        "hashes": [
+          {
+            "input": [
+              3,
+              1,
+              10,
+              20,
+              7
+            ],
+            "output": 31
+          },
+          {
+            "input": [
+              3,
+              2,
+              10,
+              20,
+              7
+            ],
+            "output": 32
+          },
+          {
+            "input": [
+              3,
+              3,
+              10,
+              20,
+              7
+            ],
+            "output": 33
+          },
+          {
+            "input": [
+              4,
+              10,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 34
+          },
+          {
+            "input": [
+              4,
+              0,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 35
+          }
+        ],
+        "history": [
+          {
+            "invoked": [
+              10
+            ],
+            "mint": [
+              [
+                {
+                  "name": 20,
+                  "policy": 10
+                },
+                1
+              ]
+            ],
+            "outputs": [
+              {
+                "assets": [
+                  [
+                    {
+                      "name": 20,
+                      "policy": 10
+                    },
+                    1
+                  ]
+                ]
+              }
+            ],
+            "spent": [
+              {
+                "index": 2,
+                "tx": 11
+              }
+            ]
+          }
+        ],
+        "key": 7,
+        "observation": {
+          "asset": {
+            "name": 20,
+            "policy": 10
+          },
+          "provenance": {
+            "name": 20,
+            "policy": 10
+          },
+          "stateDatum": true
+        },
+        "payload": {
+          "destination": 99,
+          "edge": 1,
+          "key": 7,
+          "nonce": 3,
+          "owner": 42
+        },
+        "registry": {
+          "name": 20,
+          "policy": 10
+        },
+        "seed": {
+          "index": 2,
+          "tx": 11
+        },
+        "supplied": {
+          "name": 34,
+          "policy": 5
+        },
+        "surface": "state",
+        "transaction": {
+          "invoked": [
+            10
+          ],
+          "mint": [
+            [
+              {
+                "name": 20,
+                "policy": 10
+              },
+              1
+            ]
+          ],
+          "outputs": [
+            {
+              "assets": [
+                [
+                  {
+                    "name": 20,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ]
+            }
+          ],
+          "spent": [
+            {
+              "index": 2,
+              "tx": 11
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "result": true,
+    "scenario": {
+      "mutation": "none",
+      "query": {
+        "application": 5,
+        "hashes": [
+          {
+            "input": [
+              3,
+              1,
+              10,
+              20,
+              7
+            ],
+            "output": 31
+          },
+          {
+            "input": [
+              3,
+              2,
+              10,
+              20,
+              7
+            ],
+            "output": 32
+          },
+          {
+            "input": [
+              3,
+              3,
+              10,
+              20,
+              7
+            ],
+            "output": 33
+          },
+          {
+            "input": [
+              4,
+              10,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 34
+          },
+          {
+            "input": [
+              4,
+              0,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 35
+          }
+        ],
+        "history": [
+          {
+            "invoked": [
+              10
+            ],
+            "mint": [
+              [
+                {
+                  "name": 20,
+                  "policy": 10
+                },
+                1
+              ]
+            ],
+            "outputs": [
+              {
+                "assets": [
+                  [
+                    {
+                      "name": 20,
+                      "policy": 10
+                    },
+                    1
+                  ]
+                ]
+              }
+            ],
+            "spent": [
+              {
+                "index": 2,
+                "tx": 11
+              }
+            ]
+          }
+        ],
+        "key": 7,
+        "observation": {
+          "asset": {
+            "name": 31,
+            "policy": 10
+          },
+          "provenance": {
+            "name": 31,
+            "policy": 10
+          },
+          "stateDatum": true
+        },
+        "payload": {
+          "destination": 99,
+          "edge": 1,
+          "key": 7,
+          "nonce": 3,
+          "owner": 42
+        },
+        "registry": {
+          "name": 20,
+          "policy": 10
+        },
+        "seed": {
+          "index": 2,
+          "tx": 11
+        },
+        "supplied": {
+          "name": 34,
+          "policy": 5
+        },
+        "surface": "witness",
+        "transaction": {
+          "invoked": [
+            10
+          ],
+          "mint": [
+            [
+              {
+                "name": 20,
+                "policy": 10
+              },
+              1
+            ]
+          ],
+          "outputs": [
+            {
+              "assets": [
+                [
+                  {
+                    "name": 20,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ]
+            }
+          ],
+          "spent": [
+            {
+              "index": 2,
+              "tx": 11
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "result": false,
+    "scenario": {
+      "mutation": {
+        "flip": {
+          "guard": "witnessPolicy"
+        }
+      },
+      "query": {
+        "application": 5,
+        "hashes": [
+          {
+            "input": [
+              3,
+              1,
+              10,
+              20,
+              7
+            ],
+            "output": 31
+          },
+          {
+            "input": [
+              3,
+              2,
+              10,
+              20,
+              7
+            ],
+            "output": 32
+          },
+          {
+            "input": [
+              3,
+              3,
+              10,
+              20,
+              7
+            ],
+            "output": 33
+          },
+          {
+            "input": [
+              4,
+              10,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 34
+          },
+          {
+            "input": [
+              4,
+              0,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 35
+          }
+        ],
+        "history": [
+          {
+            "invoked": [
+              10
+            ],
+            "mint": [
+              [
+                {
+                  "name": 20,
+                  "policy": 10
+                },
+                1
+              ]
+            ],
+            "outputs": [
+              {
+                "assets": [
+                  [
+                    {
+                      "name": 20,
+                      "policy": 10
+                    },
+                    1
+                  ]
+                ]
+              }
+            ],
+            "spent": [
+              {
+                "index": 2,
+                "tx": 11
+              }
+            ]
+          }
+        ],
+        "key": 7,
+        "observation": {
+          "asset": {
+            "name": 31,
+            "policy": 10
+          },
+          "provenance": {
+            "name": 31,
+            "policy": 10
+          },
+          "stateDatum": true
+        },
+        "payload": {
+          "destination": 99,
+          "edge": 1,
+          "key": 7,
+          "nonce": 3,
+          "owner": 42
+        },
+        "registry": {
+          "name": 20,
+          "policy": 10
+        },
+        "seed": {
+          "index": 2,
+          "tx": 11
+        },
+        "supplied": {
+          "name": 34,
+          "policy": 5
+        },
+        "surface": "witness",
+        "transaction": {
+          "invoked": [
+            10
+          ],
+          "mint": [
+            [
+              {
+                "name": 20,
+                "policy": 10
+              },
+              1
+            ]
+          ],
+          "outputs": [
+            {
+              "assets": [
+                [
+                  {
+                    "name": 20,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ]
+            }
+          ],
+          "spent": [
+            {
+              "index": 2,
+              "tx": 11
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "result": false,
+    "scenario": {
+      "mutation": {
+        "flip": {
+          "guard": "witnessName"
+        }
+      },
+      "query": {
+        "application": 5,
+        "hashes": [
+          {
+            "input": [
+              3,
+              1,
+              10,
+              20,
+              7
+            ],
+            "output": 31
+          },
+          {
+            "input": [
+              3,
+              2,
+              10,
+              20,
+              7
+            ],
+            "output": 32
+          },
+          {
+            "input": [
+              3,
+              3,
+              10,
+              20,
+              7
+            ],
+            "output": 33
+          },
+          {
+            "input": [
+              4,
+              10,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 34
+          },
+          {
+            "input": [
+              4,
+              0,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 35
+          }
+        ],
+        "history": [
+          {
+            "invoked": [
+              10
+            ],
+            "mint": [
+              [
+                {
+                  "name": 20,
+                  "policy": 10
+                },
+                1
+              ]
+            ],
+            "outputs": [
+              {
+                "assets": [
+                  [
+                    {
+                      "name": 20,
+                      "policy": 10
+                    },
+                    1
+                  ]
+                ]
+              }
+            ],
+            "spent": [
+              {
+                "index": 2,
+                "tx": 11
+              }
+            ]
+          }
+        ],
+        "key": 7,
+        "observation": {
+          "asset": {
+            "name": 31,
+            "policy": 10
+          },
+          "provenance": {
+            "name": 31,
+            "policy": 10
+          },
+          "stateDatum": true
+        },
+        "payload": {
+          "destination": 99,
+          "edge": 1,
+          "key": 7,
+          "nonce": 3,
+          "owner": 42
+        },
+        "registry": {
+          "name": 20,
+          "policy": 10
+        },
+        "seed": {
+          "index": 2,
+          "tx": 11
+        },
+        "supplied": {
+          "name": 34,
+          "policy": 5
+        },
+        "surface": "witness",
+        "transaction": {
+          "invoked": [
+            10
+          ],
+          "mint": [
+            [
+              {
+                "name": 20,
+                "policy": 10
+              },
+              1
+            ]
+          ],
+          "outputs": [
+            {
+              "assets": [
+                [
+                  {
+                    "name": 20,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ]
+            }
+          ],
+          "spent": [
+            {
+              "index": 2,
+              "tx": 11
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "result": false,
+    "scenario": {
+      "mutation": {
+        "flip": {
+          "guard": "witnessProvenance"
+        }
+      },
+      "query": {
+        "application": 5,
+        "hashes": [
+          {
+            "input": [
+              3,
+              1,
+              10,
+              20,
+              7
+            ],
+            "output": 31
+          },
+          {
+            "input": [
+              3,
+              2,
+              10,
+              20,
+              7
+            ],
+            "output": 32
+          },
+          {
+            "input": [
+              3,
+              3,
+              10,
+              20,
+              7
+            ],
+            "output": 33
+          },
+          {
+            "input": [
+              4,
+              10,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 34
+          },
+          {
+            "input": [
+              4,
+              0,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 35
+          }
+        ],
+        "history": [
+          {
+            "invoked": [
+              10
+            ],
+            "mint": [
+              [
+                {
+                  "name": 20,
+                  "policy": 10
+                },
+                1
+              ]
+            ],
+            "outputs": [
+              {
+                "assets": [
+                  [
+                    {
+                      "name": 20,
+                      "policy": 10
+                    },
+                    1
+                  ]
+                ]
+              }
+            ],
+            "spent": [
+              {
+                "index": 2,
+                "tx": 11
+              }
+            ]
+          }
+        ],
+        "key": 7,
+        "observation": {
+          "asset": {
+            "name": 31,
+            "policy": 10
+          },
+          "provenance": {
+            "name": 31,
+            "policy": 10
+          },
+          "stateDatum": true
+        },
+        "payload": {
+          "destination": 99,
+          "edge": 1,
+          "key": 7,
+          "nonce": 3,
+          "owner": 42
+        },
+        "registry": {
+          "name": 20,
+          "policy": 10
+        },
+        "seed": {
+          "index": 2,
+          "tx": 11
+        },
+        "supplied": {
+          "name": 34,
+          "policy": 5
+        },
+        "surface": "witness",
+        "transaction": {
+          "invoked": [
+            10
+          ],
+          "mint": [
+            [
+              {
+                "name": 20,
+                "policy": 10
+              },
+              1
+            ]
+          ],
+          "outputs": [
+            {
+              "assets": [
+                [
+                  {
+                    "name": 20,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ]
+            }
+          ],
+          "spent": [
+            {
+              "index": 2,
+              "tx": 11
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "result": true,
+    "scenario": {
+      "mutation": "none",
+      "query": {
+        "application": 5,
+        "hashes": [
+          {
+            "input": [
+              3,
+              1,
+              10,
+              20,
+              7
+            ],
+            "output": 31
+          },
+          {
+            "input": [
+              3,
+              2,
+              10,
+              20,
+              7
+            ],
+            "output": 32
+          },
+          {
+            "input": [
+              3,
+              3,
+              10,
+              20,
+              7
+            ],
+            "output": 33
+          },
+          {
+            "input": [
+              4,
+              10,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 34
+          },
+          {
+            "input": [
+              4,
+              0,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 35
+          }
+        ],
+        "history": [
+          {
+            "invoked": [
+              10
+            ],
+            "mint": [
+              [
+                {
+                  "name": 20,
+                  "policy": 10
+                },
+                1
+              ]
+            ],
+            "outputs": [
+              {
+                "assets": [
+                  [
+                    {
+                      "name": 20,
+                      "policy": 10
+                    },
+                    1
+                  ]
+                ]
+              }
+            ],
+            "spent": [
+              {
+                "index": 2,
+                "tx": 11
+              }
+            ]
+          }
+        ],
+        "key": 7,
+        "observation": {
+          "asset": {
+            "name": 32,
+            "policy": 10
+          },
+          "provenance": {
+            "name": 32,
+            "policy": 10
+          },
+          "stateDatum": true
+        },
+        "payload": {
+          "destination": 99,
+          "edge": 1,
+          "key": 7,
+          "nonce": 3,
+          "owner": 42
+        },
+        "registry": {
+          "name": 20,
+          "policy": 10
+        },
+        "seed": {
+          "index": 2,
+          "tx": 11
+        },
+        "supplied": {
+          "name": 34,
+          "policy": 5
+        },
+        "surface": "trieReady",
+        "transaction": {
+          "invoked": [
+            10
+          ],
+          "mint": [
+            [
+              {
+                "name": 20,
+                "policy": 10
+              },
+              1
+            ]
+          ],
+          "outputs": [
+            {
+              "assets": [
+                [
+                  {
+                    "name": 20,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ]
+            }
+          ],
+          "spent": [
+            {
+              "index": 2,
+              "tx": 11
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "result": false,
+    "scenario": {
+      "mutation": {
+        "flip": {
+          "guard": "trieReadyPolicy"
+        }
+      },
+      "query": {
+        "application": 5,
+        "hashes": [
+          {
+            "input": [
+              3,
+              1,
+              10,
+              20,
+              7
+            ],
+            "output": 31
+          },
+          {
+            "input": [
+              3,
+              2,
+              10,
+              20,
+              7
+            ],
+            "output": 32
+          },
+          {
+            "input": [
+              3,
+              3,
+              10,
+              20,
+              7
+            ],
+            "output": 33
+          },
+          {
+            "input": [
+              4,
+              10,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 34
+          },
+          {
+            "input": [
+              4,
+              0,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 35
+          }
+        ],
+        "history": [
+          {
+            "invoked": [
+              10
+            ],
+            "mint": [
+              [
+                {
+                  "name": 20,
+                  "policy": 10
+                },
+                1
+              ]
+            ],
+            "outputs": [
+              {
+                "assets": [
+                  [
+                    {
+                      "name": 20,
+                      "policy": 10
+                    },
+                    1
+                  ]
+                ]
+              }
+            ],
+            "spent": [
+              {
+                "index": 2,
+                "tx": 11
+              }
+            ]
+          }
+        ],
+        "key": 7,
+        "observation": {
+          "asset": {
+            "name": 32,
+            "policy": 10
+          },
+          "provenance": {
+            "name": 32,
+            "policy": 10
+          },
+          "stateDatum": true
+        },
+        "payload": {
+          "destination": 99,
+          "edge": 1,
+          "key": 7,
+          "nonce": 3,
+          "owner": 42
+        },
+        "registry": {
+          "name": 20,
+          "policy": 10
+        },
+        "seed": {
+          "index": 2,
+          "tx": 11
+        },
+        "supplied": {
+          "name": 34,
+          "policy": 5
+        },
+        "surface": "trieReady",
+        "transaction": {
+          "invoked": [
+            10
+          ],
+          "mint": [
+            [
+              {
+                "name": 20,
+                "policy": 10
+              },
+              1
+            ]
+          ],
+          "outputs": [
+            {
+              "assets": [
+                [
+                  {
+                    "name": 20,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ]
+            }
+          ],
+          "spent": [
+            {
+              "index": 2,
+              "tx": 11
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "result": false,
+    "scenario": {
+      "mutation": {
+        "flip": {
+          "guard": "trieReadyName"
+        }
+      },
+      "query": {
+        "application": 5,
+        "hashes": [
+          {
+            "input": [
+              3,
+              1,
+              10,
+              20,
+              7
+            ],
+            "output": 31
+          },
+          {
+            "input": [
+              3,
+              2,
+              10,
+              20,
+              7
+            ],
+            "output": 32
+          },
+          {
+            "input": [
+              3,
+              3,
+              10,
+              20,
+              7
+            ],
+            "output": 33
+          },
+          {
+            "input": [
+              4,
+              10,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 34
+          },
+          {
+            "input": [
+              4,
+              0,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 35
+          }
+        ],
+        "history": [
+          {
+            "invoked": [
+              10
+            ],
+            "mint": [
+              [
+                {
+                  "name": 20,
+                  "policy": 10
+                },
+                1
+              ]
+            ],
+            "outputs": [
+              {
+                "assets": [
+                  [
+                    {
+                      "name": 20,
+                      "policy": 10
+                    },
+                    1
+                  ]
+                ]
+              }
+            ],
+            "spent": [
+              {
+                "index": 2,
+                "tx": 11
+              }
+            ]
+          }
+        ],
+        "key": 7,
+        "observation": {
+          "asset": {
+            "name": 32,
+            "policy": 10
+          },
+          "provenance": {
+            "name": 32,
+            "policy": 10
+          },
+          "stateDatum": true
+        },
+        "payload": {
+          "destination": 99,
+          "edge": 1,
+          "key": 7,
+          "nonce": 3,
+          "owner": 42
+        },
+        "registry": {
+          "name": 20,
+          "policy": 10
+        },
+        "seed": {
+          "index": 2,
+          "tx": 11
+        },
+        "supplied": {
+          "name": 34,
+          "policy": 5
+        },
+        "surface": "trieReady",
+        "transaction": {
+          "invoked": [
+            10
+          ],
+          "mint": [
+            [
+              {
+                "name": 20,
+                "policy": 10
+              },
+              1
+            ]
+          ],
+          "outputs": [
+            {
+              "assets": [
+                [
+                  {
+                    "name": 20,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ]
+            }
+          ],
+          "spent": [
+            {
+              "index": 2,
+              "tx": 11
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "result": false,
+    "scenario": {
+      "mutation": {
+        "flip": {
+          "guard": "trieReadyProvenance"
+        }
+      },
+      "query": {
+        "application": 5,
+        "hashes": [
+          {
+            "input": [
+              3,
+              1,
+              10,
+              20,
+              7
+            ],
+            "output": 31
+          },
+          {
+            "input": [
+              3,
+              2,
+              10,
+              20,
+              7
+            ],
+            "output": 32
+          },
+          {
+            "input": [
+              3,
+              3,
+              10,
+              20,
+              7
+            ],
+            "output": 33
+          },
+          {
+            "input": [
+              4,
+              10,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 34
+          },
+          {
+            "input": [
+              4,
+              0,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 35
+          }
+        ],
+        "history": [
+          {
+            "invoked": [
+              10
+            ],
+            "mint": [
+              [
+                {
+                  "name": 20,
+                  "policy": 10
+                },
+                1
+              ]
+            ],
+            "outputs": [
+              {
+                "assets": [
+                  [
+                    {
+                      "name": 20,
+                      "policy": 10
+                    },
+                    1
+                  ]
+                ]
+              }
+            ],
+            "spent": [
+              {
+                "index": 2,
+                "tx": 11
+              }
+            ]
+          }
+        ],
+        "key": 7,
+        "observation": {
+          "asset": {
+            "name": 32,
+            "policy": 10
+          },
+          "provenance": {
+            "name": 32,
+            "policy": 10
+          },
+          "stateDatum": true
+        },
+        "payload": {
+          "destination": 99,
+          "edge": 1,
+          "key": 7,
+          "nonce": 3,
+          "owner": 42
+        },
+        "registry": {
+          "name": 20,
+          "policy": 10
+        },
+        "seed": {
+          "index": 2,
+          "tx": 11
+        },
+        "supplied": {
+          "name": 34,
+          "policy": 5
+        },
+        "surface": "trieReady",
+        "transaction": {
+          "invoked": [
+            10
+          ],
+          "mint": [
+            [
+              {
+                "name": 20,
+                "policy": 10
+              },
+              1
+            ]
+          ],
+          "outputs": [
+            {
+              "assets": [
+                [
+                  {
+                    "name": 20,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ]
+            }
+          ],
+          "spent": [
+            {
+              "index": 2,
+              "tx": 11
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "result": true,
+    "scenario": {
+      "mutation": "none",
+      "query": {
+        "application": 5,
+        "hashes": [
+          {
+            "input": [
+              3,
+              1,
+              10,
+              20,
+              7
+            ],
+            "output": 31
+          },
+          {
+            "input": [
+              3,
+              2,
+              10,
+              20,
+              7
+            ],
+            "output": 32
+          },
+          {
+            "input": [
+              3,
+              3,
+              10,
+              20,
+              7
+            ],
+            "output": 33
+          },
+          {
+            "input": [
+              4,
+              10,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 34
+          },
+          {
+            "input": [
+              4,
+              0,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 35
+          }
+        ],
+        "history": [
+          {
+            "invoked": [
+              10
+            ],
+            "mint": [
+              [
+                {
+                  "name": 20,
+                  "policy": 10
+                },
+                1
+              ]
+            ],
+            "outputs": [
+              {
+                "assets": [
+                  [
+                    {
+                      "name": 20,
+                      "policy": 10
+                    },
+                    1
+                  ]
+                ]
+              }
+            ],
+            "spent": [
+              {
+                "index": 2,
+                "tx": 11
+              }
+            ]
+          }
+        ],
+        "key": 7,
+        "observation": {
+          "asset": {
+            "name": 33,
+            "policy": 10
+          },
+          "provenance": {
+            "name": 33,
+            "policy": 10
+          },
+          "stateDatum": true
+        },
+        "payload": {
+          "destination": 99,
+          "edge": 1,
+          "key": 7,
+          "nonce": 3,
+          "owner": 42
+        },
+        "registry": {
+          "name": 20,
+          "policy": 10
+        },
+        "seed": {
+          "index": 2,
+          "tx": 11
+        },
+        "supplied": {
+          "name": 34,
+          "policy": 5
+        },
+        "surface": "application",
+        "transaction": {
+          "invoked": [
+            10
+          ],
+          "mint": [
+            [
+              {
+                "name": 20,
+                "policy": 10
+              },
+              1
+            ]
+          ],
+          "outputs": [
+            {
+              "assets": [
+                [
+                  {
+                    "name": 20,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ]
+            }
+          ],
+          "spent": [
+            {
+              "index": 2,
+              "tx": 11
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "result": false,
+    "scenario": {
+      "mutation": {
+        "flip": {
+          "guard": "applicationPolicy"
+        }
+      },
+      "query": {
+        "application": 5,
+        "hashes": [
+          {
+            "input": [
+              3,
+              1,
+              10,
+              20,
+              7
+            ],
+            "output": 31
+          },
+          {
+            "input": [
+              3,
+              2,
+              10,
+              20,
+              7
+            ],
+            "output": 32
+          },
+          {
+            "input": [
+              3,
+              3,
+              10,
+              20,
+              7
+            ],
+            "output": 33
+          },
+          {
+            "input": [
+              4,
+              10,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 34
+          },
+          {
+            "input": [
+              4,
+              0,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 35
+          }
+        ],
+        "history": [
+          {
+            "invoked": [
+              10
+            ],
+            "mint": [
+              [
+                {
+                  "name": 20,
+                  "policy": 10
+                },
+                1
+              ]
+            ],
+            "outputs": [
+              {
+                "assets": [
+                  [
+                    {
+                      "name": 20,
+                      "policy": 10
+                    },
+                    1
+                  ]
+                ]
+              }
+            ],
+            "spent": [
+              {
+                "index": 2,
+                "tx": 11
+              }
+            ]
+          }
+        ],
+        "key": 7,
+        "observation": {
+          "asset": {
+            "name": 33,
+            "policy": 10
+          },
+          "provenance": {
+            "name": 33,
+            "policy": 10
+          },
+          "stateDatum": true
+        },
+        "payload": {
+          "destination": 99,
+          "edge": 1,
+          "key": 7,
+          "nonce": 3,
+          "owner": 42
+        },
+        "registry": {
+          "name": 20,
+          "policy": 10
+        },
+        "seed": {
+          "index": 2,
+          "tx": 11
+        },
+        "supplied": {
+          "name": 34,
+          "policy": 5
+        },
+        "surface": "application",
+        "transaction": {
+          "invoked": [
+            10
+          ],
+          "mint": [
+            [
+              {
+                "name": 20,
+                "policy": 10
+              },
+              1
+            ]
+          ],
+          "outputs": [
+            {
+              "assets": [
+                [
+                  {
+                    "name": 20,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ]
+            }
+          ],
+          "spent": [
+            {
+              "index": 2,
+              "tx": 11
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "result": false,
+    "scenario": {
+      "mutation": {
+        "flip": {
+          "guard": "applicationName"
+        }
+      },
+      "query": {
+        "application": 5,
+        "hashes": [
+          {
+            "input": [
+              3,
+              1,
+              10,
+              20,
+              7
+            ],
+            "output": 31
+          },
+          {
+            "input": [
+              3,
+              2,
+              10,
+              20,
+              7
+            ],
+            "output": 32
+          },
+          {
+            "input": [
+              3,
+              3,
+              10,
+              20,
+              7
+            ],
+            "output": 33
+          },
+          {
+            "input": [
+              4,
+              10,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 34
+          },
+          {
+            "input": [
+              4,
+              0,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 35
+          }
+        ],
+        "history": [
+          {
+            "invoked": [
+              10
+            ],
+            "mint": [
+              [
+                {
+                  "name": 20,
+                  "policy": 10
+                },
+                1
+              ]
+            ],
+            "outputs": [
+              {
+                "assets": [
+                  [
+                    {
+                      "name": 20,
+                      "policy": 10
+                    },
+                    1
+                  ]
+                ]
+              }
+            ],
+            "spent": [
+              {
+                "index": 2,
+                "tx": 11
+              }
+            ]
+          }
+        ],
+        "key": 7,
+        "observation": {
+          "asset": {
+            "name": 33,
+            "policy": 10
+          },
+          "provenance": {
+            "name": 33,
+            "policy": 10
+          },
+          "stateDatum": true
+        },
+        "payload": {
+          "destination": 99,
+          "edge": 1,
+          "key": 7,
+          "nonce": 3,
+          "owner": 42
+        },
+        "registry": {
+          "name": 20,
+          "policy": 10
+        },
+        "seed": {
+          "index": 2,
+          "tx": 11
+        },
+        "supplied": {
+          "name": 34,
+          "policy": 5
+        },
+        "surface": "application",
+        "transaction": {
+          "invoked": [
+            10
+          ],
+          "mint": [
+            [
+              {
+                "name": 20,
+                "policy": 10
+              },
+              1
+            ]
+          ],
+          "outputs": [
+            {
+              "assets": [
+                [
+                  {
+                    "name": 20,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ]
+            }
+          ],
+          "spent": [
+            {
+              "index": 2,
+              "tx": 11
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "result": false,
+    "scenario": {
+      "mutation": {
+        "flip": {
+          "guard": "applicationProvenance"
+        }
+      },
+      "query": {
+        "application": 5,
+        "hashes": [
+          {
+            "input": [
+              3,
+              1,
+              10,
+              20,
+              7
+            ],
+            "output": 31
+          },
+          {
+            "input": [
+              3,
+              2,
+              10,
+              20,
+              7
+            ],
+            "output": 32
+          },
+          {
+            "input": [
+              3,
+              3,
+              10,
+              20,
+              7
+            ],
+            "output": 33
+          },
+          {
+            "input": [
+              4,
+              10,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 34
+          },
+          {
+            "input": [
+              4,
+              0,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 35
+          }
+        ],
+        "history": [
+          {
+            "invoked": [
+              10
+            ],
+            "mint": [
+              [
+                {
+                  "name": 20,
+                  "policy": 10
+                },
+                1
+              ]
+            ],
+            "outputs": [
+              {
+                "assets": [
+                  [
+                    {
+                      "name": 20,
+                      "policy": 10
+                    },
+                    1
+                  ]
+                ]
+              }
+            ],
+            "spent": [
+              {
+                "index": 2,
+                "tx": 11
+              }
+            ]
+          }
+        ],
+        "key": 7,
+        "observation": {
+          "asset": {
+            "name": 33,
+            "policy": 10
+          },
+          "provenance": {
+            "name": 33,
+            "policy": 10
+          },
+          "stateDatum": true
+        },
+        "payload": {
+          "destination": 99,
+          "edge": 1,
+          "key": 7,
+          "nonce": 3,
+          "owner": 42
+        },
+        "registry": {
+          "name": 20,
+          "policy": 10
+        },
+        "seed": {
+          "index": 2,
+          "tx": 11
+        },
+        "supplied": {
+          "name": 34,
+          "policy": 5
+        },
+        "surface": "application",
+        "transaction": {
+          "invoked": [
+            10
+          ],
+          "mint": [
+            [
+              {
+                "name": 20,
+                "policy": 10
+              },
+              1
+            ]
+          ],
+          "outputs": [
+            {
+              "assets": [
+                [
+                  {
+                    "name": 20,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ]
+            }
+          ],
+          "spent": [
+            {
+              "index": 2,
+              "tx": 11
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "result": true,
+    "scenario": {
+      "mutation": "none",
+      "query": {
+        "application": 5,
+        "hashes": [
+          {
+            "input": [
+              3,
+              1,
+              10,
+              20,
+              7
+            ],
+            "output": 31
+          },
+          {
+            "input": [
+              3,
+              2,
+              10,
+              20,
+              7
+            ],
+            "output": 32
+          },
+          {
+            "input": [
+              3,
+              3,
+              10,
+              20,
+              7
+            ],
+            "output": 33
+          },
+          {
+            "input": [
+              4,
+              10,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 34
+          },
+          {
+            "input": [
+              4,
+              0,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 35
+          }
+        ],
+        "history": [
+          {
+            "invoked": [
+              10
+            ],
+            "mint": [
+              [
+                {
+                  "name": 20,
+                  "policy": 10
+                },
+                1
+              ]
+            ],
+            "outputs": [
+              {
+                "assets": [
+                  [
+                    {
+                      "name": 20,
+                      "policy": 10
+                    },
+                    1
+                  ]
+                ]
+              }
+            ],
+            "spent": [
+              {
+                "index": 2,
+                "tx": 11
+              }
+            ]
+          }
+        ],
+        "key": 7,
+        "observation": {
+          "asset": {
+            "name": 20,
+            "policy": 10
+          },
+          "provenance": {
+            "name": 20,
+            "policy": 10
+          },
+          "stateDatum": true
+        },
+        "payload": {
+          "destination": 99,
+          "edge": 1,
+          "key": 7,
+          "nonce": 3,
+          "owner": 42
+        },
+        "registry": {
+          "name": 20,
+          "policy": 10
+        },
+        "seed": {
+          "index": 2,
+          "tx": 11
+        },
+        "supplied": {
+          "name": 34,
+          "policy": 5
+        },
+        "surface": "genesis",
+        "transaction": {
+          "invoked": [
+            10
+          ],
+          "mint": [
+            [
+              {
+                "name": 20,
+                "policy": 10
+              },
+              1
+            ]
+          ],
+          "outputs": [
+            {
+              "assets": [
+                [
+                  {
+                    "name": 20,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ]
+            }
+          ],
+          "spent": [
+            {
+              "index": 2,
+              "tx": 11
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "result": false,
+    "scenario": {
+      "mutation": {
+        "flip": {
+          "guard": "genesisSeed"
+        }
+      },
+      "query": {
+        "application": 5,
+        "hashes": [
+          {
+            "input": [
+              3,
+              1,
+              10,
+              20,
+              7
+            ],
+            "output": 31
+          },
+          {
+            "input": [
+              3,
+              2,
+              10,
+              20,
+              7
+            ],
+            "output": 32
+          },
+          {
+            "input": [
+              3,
+              3,
+              10,
+              20,
+              7
+            ],
+            "output": 33
+          },
+          {
+            "input": [
+              4,
+              10,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 34
+          },
+          {
+            "input": [
+              4,
+              0,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 35
+          }
+        ],
+        "history": [
+          {
+            "invoked": [
+              10
+            ],
+            "mint": [
+              [
+                {
+                  "name": 20,
+                  "policy": 10
+                },
+                1
+              ]
+            ],
+            "outputs": [
+              {
+                "assets": [
+                  [
+                    {
+                      "name": 20,
+                      "policy": 10
+                    },
+                    1
+                  ]
+                ]
+              }
+            ],
+            "spent": [
+              {
+                "index": 2,
+                "tx": 11
+              }
+            ]
+          }
+        ],
+        "key": 7,
+        "observation": {
+          "asset": {
+            "name": 20,
+            "policy": 10
+          },
+          "provenance": {
+            "name": 20,
+            "policy": 10
+          },
+          "stateDatum": true
+        },
+        "payload": {
+          "destination": 99,
+          "edge": 1,
+          "key": 7,
+          "nonce": 3,
+          "owner": 42
+        },
+        "registry": {
+          "name": 20,
+          "policy": 10
+        },
+        "seed": {
+          "index": 2,
+          "tx": 11
+        },
+        "supplied": {
+          "name": 34,
+          "policy": 5
+        },
+        "surface": "genesis",
+        "transaction": {
+          "invoked": [
+            10
+          ],
+          "mint": [
+            [
+              {
+                "name": 20,
+                "policy": 10
+              },
+              1
+            ]
+          ],
+          "outputs": [
+            {
+              "assets": [
+                [
+                  {
+                    "name": 20,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ]
+            }
+          ],
+          "spent": [
+            {
+              "index": 2,
+              "tx": 11
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "result": false,
+    "scenario": {
+      "mutation": {
+        "flip": {
+          "guard": "genesisInvocation"
+        }
+      },
+      "query": {
+        "application": 5,
+        "hashes": [
+          {
+            "input": [
+              3,
+              1,
+              10,
+              20,
+              7
+            ],
+            "output": 31
+          },
+          {
+            "input": [
+              3,
+              2,
+              10,
+              20,
+              7
+            ],
+            "output": 32
+          },
+          {
+            "input": [
+              3,
+              3,
+              10,
+              20,
+              7
+            ],
+            "output": 33
+          },
+          {
+            "input": [
+              4,
+              10,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 34
+          },
+          {
+            "input": [
+              4,
+              0,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 35
+          }
+        ],
+        "history": [
+          {
+            "invoked": [
+              10
+            ],
+            "mint": [
+              [
+                {
+                  "name": 20,
+                  "policy": 10
+                },
+                1
+              ]
+            ],
+            "outputs": [
+              {
+                "assets": [
+                  [
+                    {
+                      "name": 20,
+                      "policy": 10
+                    },
+                    1
+                  ]
+                ]
+              }
+            ],
+            "spent": [
+              {
+                "index": 2,
+                "tx": 11
+              }
+            ]
+          }
+        ],
+        "key": 7,
+        "observation": {
+          "asset": {
+            "name": 20,
+            "policy": 10
+          },
+          "provenance": {
+            "name": 20,
+            "policy": 10
+          },
+          "stateDatum": true
+        },
+        "payload": {
+          "destination": 99,
+          "edge": 1,
+          "key": 7,
+          "nonce": 3,
+          "owner": 42
+        },
+        "registry": {
+          "name": 20,
+          "policy": 10
+        },
+        "seed": {
+          "index": 2,
+          "tx": 11
+        },
+        "supplied": {
+          "name": 34,
+          "policy": 5
+        },
+        "surface": "genesis",
+        "transaction": {
+          "invoked": [
+            10
+          ],
+          "mint": [
+            [
+              {
+                "name": 20,
+                "policy": 10
+              },
+              1
+            ]
+          ],
+          "outputs": [
+            {
+              "assets": [
+                [
+                  {
+                    "name": 20,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ]
+            }
+          ],
+          "spent": [
+            {
+              "index": 2,
+              "tx": 11
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "result": false,
+    "scenario": {
+      "mutation": {
+        "flip": {
+          "guard": "genesisMint"
+        }
+      },
+      "query": {
+        "application": 5,
+        "hashes": [
+          {
+            "input": [
+              3,
+              1,
+              10,
+              20,
+              7
+            ],
+            "output": 31
+          },
+          {
+            "input": [
+              3,
+              2,
+              10,
+              20,
+              7
+            ],
+            "output": 32
+          },
+          {
+            "input": [
+              3,
+              3,
+              10,
+              20,
+              7
+            ],
+            "output": 33
+          },
+          {
+            "input": [
+              4,
+              10,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 34
+          },
+          {
+            "input": [
+              4,
+              0,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 35
+          }
+        ],
+        "history": [
+          {
+            "invoked": [
+              10
+            ],
+            "mint": [
+              [
+                {
+                  "name": 20,
+                  "policy": 10
+                },
+                1
+              ]
+            ],
+            "outputs": [
+              {
+                "assets": [
+                  [
+                    {
+                      "name": 20,
+                      "policy": 10
+                    },
+                    1
+                  ]
+                ]
+              }
+            ],
+            "spent": [
+              {
+                "index": 2,
+                "tx": 11
+              }
+            ]
+          }
+        ],
+        "key": 7,
+        "observation": {
+          "asset": {
+            "name": 20,
+            "policy": 10
+          },
+          "provenance": {
+            "name": 20,
+            "policy": 10
+          },
+          "stateDatum": true
+        },
+        "payload": {
+          "destination": 99,
+          "edge": 1,
+          "key": 7,
+          "nonce": 3,
+          "owner": 42
+        },
+        "registry": {
+          "name": 20,
+          "policy": 10
+        },
+        "seed": {
+          "index": 2,
+          "tx": 11
+        },
+        "supplied": {
+          "name": 34,
+          "policy": 5
+        },
+        "surface": "genesis",
+        "transaction": {
+          "invoked": [
+            10
+          ],
+          "mint": [
+            [
+              {
+                "name": 20,
+                "policy": 10
+              },
+              1
+            ]
+          ],
+          "outputs": [
+            {
+              "assets": [
+                [
+                  {
+                    "name": 20,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ]
+            }
+          ],
+          "spent": [
+            {
+              "index": 2,
+              "tx": 11
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "result": false,
+    "scenario": {
+      "mutation": {
+        "flip": {
+          "guard": "genesisQuantity"
+        }
+      },
+      "query": {
+        "application": 5,
+        "hashes": [
+          {
+            "input": [
+              3,
+              1,
+              10,
+              20,
+              7
+            ],
+            "output": 31
+          },
+          {
+            "input": [
+              3,
+              2,
+              10,
+              20,
+              7
+            ],
+            "output": 32
+          },
+          {
+            "input": [
+              3,
+              3,
+              10,
+              20,
+              7
+            ],
+            "output": 33
+          },
+          {
+            "input": [
+              4,
+              10,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 34
+          },
+          {
+            "input": [
+              4,
+              0,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 35
+          }
+        ],
+        "history": [
+          {
+            "invoked": [
+              10
+            ],
+            "mint": [
+              [
+                {
+                  "name": 20,
+                  "policy": 10
+                },
+                1
+              ]
+            ],
+            "outputs": [
+              {
+                "assets": [
+                  [
+                    {
+                      "name": 20,
+                      "policy": 10
+                    },
+                    1
+                  ]
+                ]
+              }
+            ],
+            "spent": [
+              {
+                "index": 2,
+                "tx": 11
+              }
+            ]
+          }
+        ],
+        "key": 7,
+        "observation": {
+          "asset": {
+            "name": 20,
+            "policy": 10
+          },
+          "provenance": {
+            "name": 20,
+            "policy": 10
+          },
+          "stateDatum": true
+        },
+        "payload": {
+          "destination": 99,
+          "edge": 1,
+          "key": 7,
+          "nonce": 3,
+          "owner": 42
+        },
+        "registry": {
+          "name": 20,
+          "policy": 10
+        },
+        "seed": {
+          "index": 2,
+          "tx": 11
+        },
+        "supplied": {
+          "name": 34,
+          "policy": 5
+        },
+        "surface": "genesis",
+        "transaction": {
+          "invoked": [
+            10
+          ],
+          "mint": [
+            [
+              {
+                "name": 20,
+                "policy": 10
+              },
+              1
+            ]
+          ],
+          "outputs": [
+            {
+              "assets": [
+                [
+                  {
+                    "name": 20,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ]
+            }
+          ],
+          "spent": [
+            {
+              "index": 2,
+              "tx": 11
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "result": false,
+    "scenario": {
+      "mutation": {
+        "flip": {
+          "guard": "genesisOutput"
+        }
+      },
+      "query": {
+        "application": 5,
+        "hashes": [
+          {
+            "input": [
+              3,
+              1,
+              10,
+              20,
+              7
+            ],
+            "output": 31
+          },
+          {
+            "input": [
+              3,
+              2,
+              10,
+              20,
+              7
+            ],
+            "output": 32
+          },
+          {
+            "input": [
+              3,
+              3,
+              10,
+              20,
+              7
+            ],
+            "output": 33
+          },
+          {
+            "input": [
+              4,
+              10,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 34
+          },
+          {
+            "input": [
+              4,
+              0,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 35
+          }
+        ],
+        "history": [
+          {
+            "invoked": [
+              10
+            ],
+            "mint": [
+              [
+                {
+                  "name": 20,
+                  "policy": 10
+                },
+                1
+              ]
+            ],
+            "outputs": [
+              {
+                "assets": [
+                  [
+                    {
+                      "name": 20,
+                      "policy": 10
+                    },
+                    1
+                  ]
+                ]
+              }
+            ],
+            "spent": [
+              {
+                "index": 2,
+                "tx": 11
+              }
+            ]
+          }
+        ],
+        "key": 7,
+        "observation": {
+          "asset": {
+            "name": 20,
+            "policy": 10
+          },
+          "provenance": {
+            "name": 20,
+            "policy": 10
+          },
+          "stateDatum": true
+        },
+        "payload": {
+          "destination": 99,
+          "edge": 1,
+          "key": 7,
+          "nonce": 3,
+          "owner": 42
+        },
+        "registry": {
+          "name": 20,
+          "policy": 10
+        },
+        "seed": {
+          "index": 2,
+          "tx": 11
+        },
+        "supplied": {
+          "name": 34,
+          "policy": 5
+        },
+        "surface": "genesis",
+        "transaction": {
+          "invoked": [
+            10
+          ],
+          "mint": [
+            [
+              {
+                "name": 20,
+                "policy": 10
+              },
+              1
+            ]
+          ],
+          "outputs": [
+            {
+              "assets": [
+                [
+                  {
+                    "name": 20,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ]
+            }
+          ],
+          "spent": [
+            {
+              "index": 2,
+              "tx": 11
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "result": true,
+    "scenario": {
+      "mutation": "none",
+      "query": {
+        "application": 5,
+        "hashes": [
+          {
+            "input": [
+              3,
+              1,
+              10,
+              20,
+              7
+            ],
+            "output": 31
+          },
+          {
+            "input": [
+              3,
+              2,
+              10,
+              20,
+              7
+            ],
+            "output": 32
+          },
+          {
+            "input": [
+              3,
+              3,
+              10,
+              20,
+              7
+            ],
+            "output": 33
+          },
+          {
+            "input": [
+              4,
+              10,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 34
+          },
+          {
+            "input": [
+              4,
+              0,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 35
+          }
+        ],
+        "history": [
+          {
+            "invoked": [
+              10
+            ],
+            "mint": [
+              [
+                {
+                  "name": 20,
+                  "policy": 10
+                },
+                1
+              ]
+            ],
+            "outputs": [
+              {
+                "assets": [
+                  [
+                    {
+                      "name": 20,
+                      "policy": 10
+                    },
+                    1
+                  ]
+                ]
+              }
+            ],
+            "spent": [
+              {
+                "index": 2,
+                "tx": 11
+              }
+            ]
+          }
+        ],
+        "key": 7,
+        "observation": {
+          "asset": {
+            "name": 20,
+            "policy": 10
+          },
+          "provenance": {
+            "name": 20,
+            "policy": 10
+          },
+          "stateDatum": true
+        },
+        "payload": {
+          "destination": 99,
+          "edge": 1,
+          "key": 7,
+          "nonce": 3,
+          "owner": 42
+        },
+        "registry": {
+          "name": 20,
+          "policy": 10
+        },
+        "seed": {
+          "index": 2,
+          "tx": 11
+        },
+        "supplied": {
+          "name": 34,
+          "policy": 5
+        },
+        "surface": "history",
+        "transaction": {
+          "invoked": [
+            10
+          ],
+          "mint": [
+            [
+              {
+                "name": 20,
+                "policy": 10
+              },
+              1
+            ]
+          ],
+          "outputs": [
+            {
+              "assets": [
+                [
+                  {
+                    "name": 20,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ]
+            }
+          ],
+          "spent": [
+            {
+              "index": 2,
+              "tx": 11
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "result": false,
+    "scenario": {
+      "mutation": {
+        "flip": {
+          "guard": "historySpentOnce"
+        }
+      },
+      "query": {
+        "application": 5,
+        "hashes": [
+          {
+            "input": [
+              3,
+              1,
+              10,
+              20,
+              7
+            ],
+            "output": 31
+          },
+          {
+            "input": [
+              3,
+              2,
+              10,
+              20,
+              7
+            ],
+            "output": 32
+          },
+          {
+            "input": [
+              3,
+              3,
+              10,
+              20,
+              7
+            ],
+            "output": 33
+          },
+          {
+            "input": [
+              4,
+              10,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 34
+          },
+          {
+            "input": [
+              4,
+              0,
+              20,
+              1,
+              7,
+              42,
+              99,
+              3
+            ],
+            "output": 35
+          }
+        ],
+        "history": [
+          {
+            "invoked": [
+              10
+            ],
+            "mint": [
+              [
+                {
+                  "name": 20,
+                  "policy": 10
+                },
+                1
+              ]
+            ],
+            "outputs": [
+              {
+                "assets": [
+                  [
+                    {
+                      "name": 20,
+                      "policy": 10
+                    },
+                    1
+                  ]
+                ]
+              }
+            ],
+            "spent": [
+              {
+                "index": 2,
+                "tx": 11
+              }
+            ]
+          }
+        ],
+        "key": 7,
+        "observation": {
+          "asset": {
+            "name": 20,
+            "policy": 10
+          },
+          "provenance": {
+            "name": 20,
+            "policy": 10
+          },
+          "stateDatum": true
+        },
+        "payload": {
+          "destination": 99,
+          "edge": 1,
+          "key": 7,
+          "nonce": 3,
+          "owner": 42
+        },
+        "registry": {
+          "name": 20,
+          "policy": 10
+        },
+        "seed": {
+          "index": 2,
+          "tx": 11
+        },
+        "supplied": {
+          "name": 34,
+          "policy": 5
+        },
+        "surface": "history",
+        "transaction": {
+          "invoked": [
+            10
+          ],
+          "mint": [
+            [
+              {
+                "name": 20,
+                "policy": 10
+              },
+              1
+            ]
+          ],
+          "outputs": [
+            {
+              "assets": [
+                [
+                  {
+                    "name": 20,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ]
+            }
+          ],
+          "spent": [
+            {
+              "index": 2,
+              "tx": 11
+            }
+          ]
+        }
+      }
+    }
+  }
+]
