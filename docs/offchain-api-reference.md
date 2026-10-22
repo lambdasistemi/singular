@@ -25,8 +25,8 @@ viewing.
 
 The module extent is the public library of the off-chain Cabal file — every
 exposed module, every internal module, and every module the library
-re-exports under its own name. That complete extent is 74 modules in
-three kinds: 57 explicitly exposed modules and 4 re-exported modules
+re-exports under its own name. That complete extent is 75 modules in
+three kinds: 58 explicitly exposed modules and 4 re-exported modules
 are what a caller imports; the two trie capability owners behind the
 `TrieState` facade (`Singular.Registry.TrieState.Core` and `.Types`),
 the three fold owners behind the `Update`
@@ -131,6 +131,7 @@ Run: mkdocs serve
 - <a href="../offchain/lib/Singular/Registry/Wire/Redeemer.hs" data-api="module">Singular.Registry.Wire.Redeemer</a> — <a href="../offchain/lib/Singular/Registry/Wire/Redeemer.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Wire/Request.hs" data-api="module">Singular.Registry.Wire.Request</a> — <a href="../offchain/lib/Singular/Registry/Wire/Request.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Wire/State.hs" data-api="module">Singular.Registry.Wire.State</a> — <a href="../offchain/lib/Singular/Registry/Wire/State.hs" data-api="source">source</a>
+- <a href="../offchain/lib/Singular/Registry/Witness.hs" data-api="module">Singular.Registry.Witness</a> — <a href="../offchain/lib/Singular/Registry/Witness.hs" data-api="source">source</a>
 
 The facades and owners of the registry builder and blueprint extraction
 are described module by module in the

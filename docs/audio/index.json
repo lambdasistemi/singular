@@ -5864,15 +5864,15 @@
     "index": 2,
     "name": "docs-offchain-api-reference/what-this-reference-contains-02",
     "pause_ms": 400,
-    "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 74 modules in three kinds: 57 explicitly exposed modules and 4 re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger, Singular.Registry.LedgerProvider, Singular.Registry.Evidence and Singular.Registry.Signing are the re-exports: their implementations are owned by the public local-services component (offchain/local-services/) and the main library exposes their stable import paths. The generic provider interface and evidence types let a caller supply capabilities without selecting a node runtime; the Koios constructor supplies unbound, unverified HTTP facts through that interface. The runtime service modules outside this extent — the terminal composition and its transport in koios-http, and the remaining service modules of local-services — are documented with source links in Runtime service ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
-    "v": "fecf7d9930a2"
+    "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 75 modules in three kinds: 58 explicitly exposed modules and 4 re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger, Singular.Registry.LedgerProvider, Singular.Registry.Evidence and Singular.Registry.Signing are the re-exports: their implementations are owned by the public local-services component (offchain/local-services/) and the main library exposes their stable import paths. The generic provider interface and evidence types let a caller supply capabilities without selecting a node runtime; the Koios constructor supplies unbound, unverified HTTP facts through that interface. The runtime service modules outside this extent — the terminal composition and its transport in koios-http, and the remaining service modules of local-services — are documented with source links in Runtime service ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
+    "v": "ca1013cfdf52"
    },
    {
     "index": 3,
     "name": "docs-offchain-api-reference/what-this-reference-contains-03",
     "pause_ms": 400,
-    "text": "MkDocs environment ready! Run: mkdocs serve - Naming.Datum — source - Naming.Register — source - Naming.Request — source - Naming.Verify — source - Naming.Wire — source - Naming.Wire.Vectors — source - Singular.Provider.Koios.Client — source - Singular.Provider.Koios.Evidence — source - Singular.Provider.Koios.History — source - Singular.Provider.Koios.Provider — source - Singular.Provider.Koios.Recorded — source - Singular.Provider.Koios.Runtime — source - Singular.Provider.Koios.State — source - Singular.Provider.Koios.Wire — source - Singular.Registry.Address — source - Singular.Registry.Application — source - Singular.Registry.AssetName — source - Singular.Registry.Blueprint — source - Singular.Registry.Blueprint.Load — source - Singular.Registry.Blueprint.Params — source - Singular.Registry.Blueprint.Schema — source - Singular.Registry.Candidate — source - Singular.Registry.Capabilities — source - Singular.Registry.Config — source - Singular.Registry.Config.Application — source - Singular.Registry.Confirmation — source - Singular.Registry.Deployment — source - Singular.Registry.Deployment.Attach — source - Singular.Registry.Deployment.Manifest — source - Singular.Registry.Deployment.Mirror — source - Singular.Registry.Driver — source - Singular.Registry.Evidence — source - Singular.Registry.FoldAdmission — source - Singular.Registry.FoldSelection — source - Singular.Registry.Funding — source - Singular.Registry.Ledger — source - Singular.Registry.LedgerProvider — source - Singular.Registry.Lifecycle — source - Singular.Registry.Page — source - Singular.Registry.PlainJson — source - Singular.Registry.Proof — source - Singular.Registry.Replay — source - Singular.Registry.Signing — source - Singular.Registry.StateToken — source - Singular.Registry.Trie — source - Singular.Registry.Trie.Pure — source - Singular.Registry.Trie.PureManager — source - Singular.Registry.TrieState — source - Singular.Registry.TrieState.Core — source - Singular.Registry.TrieState.Fixture — source - Singular.Registry.TrieState.Lineage — source - Singular.Registry.TrieState.Types — source - Singular.Registry.TxBuilder.Boot — source - Singular.Registry.TxBuilder.ConnectedFold — source - Singular.Registry.TxBuilder.Edges — source - Singular.Registry.TxBuilder.Internal — source - Singular.Registry.TxBuilder.Internal.Edges — source - Singular.Registry.TxBuilder.Internal.Identity — source - Singular.Registry.TxBuilder.Internal.Lookup — source - Singular.Registry.TxBuilder.Prepare — source - Singular.Registry.TxBuilder.Register — source - Singular.Registry.TxBuilder.Reject — source - Singular.Registry.TxBuilder.Request — source - Singular.Registry.TxBuilder.Retract — source - Singular.Registry.TxBuilder.Update — source - Singular.Registry.TxBuilder.Update.Build — source - Singular.Registry.TxBuilder.Update.Context — source - Singular.Registry.TxBuilder.Update.Duties — source - Singular.Registry.Types — source - Singular.Registry.Wait — source - Singular.Registry.Wire.Primitive — source - Singular.Registry.Wire.Proof — source - Singular.Registry.Wire.Redeemer — source - Singular.Registry.Wire.Request — source - Singular.Registry.Wire.State — source",
-    "v": "54475a95d764"
+    "text": "MkDocs environment ready! Run: mkdocs serve - Naming.Datum — source - Naming.Register — source - Naming.Request — source - Naming.Verify — source - Naming.Wire — source - Naming.Wire.Vectors — source - Singular.Provider.Koios.Client — source - Singular.Provider.Koios.Evidence — source - Singular.Provider.Koios.History — source - Singular.Provider.Koios.Provider — source - Singular.Provider.Koios.Recorded — source - Singular.Provider.Koios.Runtime — source - Singular.Provider.Koios.State — source - Singular.Provider.Koios.Wire — source - Singular.Registry.Address — source - Singular.Registry.Application — source - Singular.Registry.AssetName — source - Singular.Registry.Blueprint — source - Singular.Registry.Blueprint.Load — source - Singular.Registry.Blueprint.Params — source - Singular.Registry.Blueprint.Schema — source - Singular.Registry.Candidate — source - Singular.Registry.Capabilities — source - Singular.Registry.Config — source - Singular.Registry.Config.Application — source - Singular.Registry.Confirmation — source - Singular.Registry.Deployment — source - Singular.Registry.Deployment.Attach — source - Singular.Registry.Deployment.Manifest — source - Singular.Registry.Deployment.Mirror — source - Singular.Registry.Driver — source - Singular.Registry.Evidence — source - Singular.Registry.FoldAdmission — source - Singular.Registry.FoldSelection — source - Singular.Registry.Funding — source - Singular.Registry.Ledger — source - Singular.Registry.LedgerProvider — source - Singular.Registry.Lifecycle — source - Singular.Registry.Page — source - Singular.Registry.PlainJson — source - Singular.Registry.Proof — source - Singular.Registry.Replay — source - Singular.Registry.Signing — source - Singular.Registry.StateToken — source - Singular.Registry.Trie — source - Singular.Registry.Trie.Pure — source - Singular.Registry.Trie.PureManager — source - Singular.Registry.TrieState — source - Singular.Registry.TrieState.Core — source - Singular.Registry.TrieState.Fixture — source - Singular.Registry.TrieState.Lineage — source - Singular.Registry.TrieState.Types — source - Singular.Registry.TxBuilder.Boot — source - Singular.Registry.TxBuilder.ConnectedFold — source - Singular.Registry.TxBuilder.Edges — source - Singular.Registry.TxBuilder.Internal — source - Singular.Registry.TxBuilder.Internal.Edges — source - Singular.Registry.TxBuilder.Internal.Identity — source - Singular.Registry.TxBuilder.Internal.Lookup — source - Singular.Registry.TxBuilder.Prepare — source - Singular.Registry.TxBuilder.Register — source - Singular.Registry.TxBuilder.Reject — source - Singular.Registry.TxBuilder.Request — source - Singular.Registry.TxBuilder.Retract — source - Singular.Registry.TxBuilder.Update — source - Singular.Registry.TxBuilder.Update.Build — source - Singular.Registry.TxBuilder.Update.Context — source - Singular.Registry.TxBuilder.Update.Duties — source - Singular.Registry.Types — source - Singular.Registry.Wait — source - Singular.Registry.Wire.Primitive — source - Singular.Registry.Wire.Proof — source - Singular.Registry.Wire.Redeemer — source - Singular.Registry.Wire.Request — source - Singular.Registry.Wire.State — source - Singular.Registry.Witness — source",
+    "v": "9e2504d1afdd"
    },
    {
     "index": 4,
@@ -9998,6 +9998,57 @@
     "pause_ms": 400,
     "text": "A --state-token or a --network-magic beside the address is checked against it, from wherever each came: the flag, the variable or the key of the settings file. Values that agree are accepted. A state token that names another registry, or a network magic that names another network, is refused in one sentence naming both, so a stale state-token key of the settings file next to a new registry key is refused and the sentence says what disagrees. A command given neither a registry nor a state token is refused as it always was.",
     "v": "d7847c355b01"
+   }
+  ],
+  "reading-one-key-from-the-address": [
+   {
+    "index": 0,
+    "name": "docs-singular-node/reading-one-key-from-the-address-00",
+    "pause_ms": 500,
+    "text": "Reading one key from the address.",
+    "v": "4e0629a3a356"
+   },
+   {
+    "index": 1,
+    "name": "docs-singular-node/reading-one-key-from-the-address-01",
+    "pause_ms": 400,
+    "text": "As Bob, I have the address and the name of a key, and I want to know whether the key is active and which output holds it, from an empty directory, without a file from anyone. I run inspect --key KEY --registry ADDRESS and the answer comes from the chain: the command asks the provider who holds the key's witness token and prints what it found.",
+    "v": "e7c9661b2fe1"
+   },
+   {
+    "index": 2,
+    "name": "docs-singular-node/reading-one-key-from-the-address-02",
+    "pause_ms": 400,
+    "text": "The diagram shows the proof first and the two questions to the provider after it, so a registry whose history does not chain to its root is refused before the provider is asked who holds a token. A key that is active has a witness token: an asset of the registry's active witness policy whose name is the key's bytes. A registration mints it and a termination burns it. The registry has a second policy, for terminal witnesses, and the same name under it is the terminal witness of the key. Both policies belong to this registry. The command works out the two assets to ask for from the registry the address names and from the key, and asks for them by asset, so it does not list every output at the application's address to find the key's output. One function in the library makes that asset from the registry and the key, and it is the only place that does so for this read.",
+    "v": "21074bc7185c"
+   },
+   {
+    "index": 3,
+    "name": "docs-singular-node/reading-one-key-from-the-address-03",
+    "pause_ms": 400,
+    "text": "For a key the registry has recorded, active or terminal, the receipt of inspect carries a field witness with two entries, active and terminal. Each has policy, the policy as hex; assetName, the key's bytes as hex; and holders, the references of the outputs that hold the asset.",
+    "v": "683fd23a03b5"
+   },
+   {
+    "index": 4,
+    "name": "docs-singular-node/reading-one-key-from-the-address-04",
+    "pause_ms": 400,
+    "text": "For a key the registry never recorded the receipt has no witness field and is what it always was.",
+    "v": "28b32746a5c2"
+   },
+   {
+    "index": 5,
+    "name": "docs-singular-node/reading-one-key-from-the-address-05",
+    "pause_ms": 400,
+    "text": "The witness finds the key's output; it does not say whether the key is active. That is still proved: the leaf is checked against the registry's root by replaying the registry's public history, as before, and a witness that disagrees with the proof is refused as proof-inconsistent, as a holding that disagreed with the proof was. The replay is the cost of the proof and it is not made to find the output. A directory that holds nothing reads the same as any other, because inspect without --wallet-address keeps no state.",
+    "v": "b59e7330f309"
+   },
+   {
+    "index": 6,
+    "name": "docs-singular-node/reading-one-key-from-the-address-06",
+    "pause_ms": 400,
+    "text": "One reader still lists the application's outputs. singular registry inspect prints every output at the application's address in its rawDatums, because the program knows no application and shows them all, so it reads that listing and the witness. open-datum inspect prints only the key's output and reads no listing. keri-stub status reads the listing too, because its rule counts an output that carries the key's datum whether or not it holds the key's token, and an output without the token has to be seen to be counted.",
+    "v": "3ac17652eb15"
    }
   ],
   "reading-through-an-index": [

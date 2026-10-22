@@ -20,8 +20,8 @@
 
 ## The key reached by its witness token
 
-- [ ] Intake: what `inspect` does today with a key, stated in the pull request
-- [ ] Tests: a key reached by its witness token from a fresh state directory; a key never registered answered as today
-- [ ] `inspect --key` by the witness token
-- [ ] A hosted check that reaches a key from the address and a fresh state directory
-- [ ] Documentation of the key's reach, with regenerated narration
+- [x] Intake: what `inspect` does today with a key, stated in the pull request
+- [x] Tests: a key reached by its witness token from a fresh state directory; a key never registered answered as today
+- [x] `inspect --key` by the witness token
+- [x] A hosted check that reaches a key from the address and a fresh state directory
+- [x] Documentation of the key's reach, with regenerated narration

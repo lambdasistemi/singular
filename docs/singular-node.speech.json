@@ -437,6 +437,36 @@
       "pause": 400
     }
   ],
+  "reading-one-key-from-the-address": [
+    {
+      "text": "Reading one key from the address.",
+      "pause": 500
+    },
+    {
+      "text": "As Bob, I have the address and the name of a key, and I want to know whether the key is active and which output holds it, from an empty directory, without a file from anyone. I run inspect --key KEY --registry ADDRESS and the answer comes from the chain: the command asks the provider who holds the key's witness token and prints what it found.",
+      "pause": 400
+    },
+    {
+      "text": "The diagram shows the proof first and the two questions to the provider after it, so a registry whose history does not chain to its root is refused before the provider is asked who holds a token. A key that is active has a witness token: an asset of the registry's active witness policy whose name is the key's bytes. A registration mints it and a termination burns it. The registry has a second policy, for terminal witnesses, and the same name under it is the terminal witness of the key. Both policies belong to this registry. The command works out the two assets to ask for from the registry the address names and from the key, and asks for them by asset, so it does not list every output at the application's address to find the key's output. One function in the library makes that asset from the registry and the key, and it is the only place that does so for this read.",
+      "pause": 400
+    },
+    {
+      "text": "For a key the registry has recorded, active or terminal, the receipt of inspect carries a field witness with two entries, active and terminal. Each has policy, the policy as hex; assetName, the key's bytes as hex; and holders, the references of the outputs that hold the asset.",
+      "pause": 400
+    },
+    {
+      "text": "For a key the registry never recorded the receipt has no witness field and is what it always was.",
+      "pause": 400
+    },
+    {
+      "text": "The witness finds the key's output; it does not say whether the key is active. That is still proved: the leaf is checked against the registry's root by replaying the registry's public history, as before, and a witness that disagrees with the proof is refused as proof-inconsistent, as a holding that disagreed with the proof was. The replay is the cost of the proof and it is not made to find the output. A directory that holds nothing reads the same as any other, because inspect without --wallet-address keeps no state.",
+      "pause": 400
+    },
+    {
+      "text": "One reader still lists the application's outputs. singular registry inspect prints every output at the application's address in its rawDatums, because the program knows no application and shows them all, so it reads that listing and the witness. open-datum inspect prints only the key's output and reads no listing. keri-stub status reads the listing too, because its rule counts an output that carries the key's datum whether or not it holds the key's token, and an output without the token has to be seen to be counted.",
+      "pause": 400
+    }
+  ],
   "naming-the-registry-by-its-state-token": [
     {
       "text": "Naming the registry by its state token.",
@@ -707,6 +737,6 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "8590f80ece892865a5248aa29b54cb414d832792b18497de69f4f5c2017acd96"
+    "sha256": "7611b2a8b88d31d75b83f8c720b6cfcf8185e0057b49af440ac12becb5b548af"
   }
 }

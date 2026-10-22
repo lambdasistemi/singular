@@ -36,6 +36,7 @@ module Singular.CLI.Inspect (runInspect, pendingJson) where
 
 import Control.Exception
     ( SomeException
+    , catch
     , fromException
     , throwIO
     , try
@@ -60,7 +61,12 @@ import Cardano.Ledger.Api.Scripts.Data
     , binaryDataToData
     , hashBinaryData
     )
-import Cardano.Ledger.Api.Tx.Out (TxOut, coinTxOutL, datumTxOutL)
+import Cardano.Ledger.Api.Tx.Out
+    ( TxOut
+    , addrTxOutL
+    , coinTxOutL
+    , datumTxOutL
+    )
 import Cardano.Ledger.BaseTypes (Network (Testnet))
 import Cardano.Ledger.Binary (serialize')
 import Cardano.Ledger.Coin (Coin (..))
@@ -131,6 +137,7 @@ import Singular.CLI.Trace
 import Singular.Registry.Application
     ( Application (..)
     , DecodedHolding (..)
+    , HoldingRules (..)
     , txOutDatum
     )
 import Singular.Registry.AssetName (deriveAssetName)
@@ -153,6 +160,7 @@ import Singular.Registry.TxBuilder.Internal
     , extractOwnerBytes
     , findRequestUtxos
     , requestAddrFromCfg
+    , scriptHashBytes
     , txInToRef
     )
 import Singular.Registry.Types
@@ -161,6 +169,10 @@ import Singular.Registry.Types
     , OnChainRoot (..)
     , OnChainTokenState (..)
     , edgeName
+    )
+import Singular.Registry.Witness
+    ( WitnessFound (..)
+    , WitnessKind (..)
     )
 
 runInspect :: Application -> Env -> InspectArgs -> IO Value
@@ -333,16 +345,7 @@ inspectIncompleteCreate app env release requested dir settings identity = do
                     )
     case reached of
         Right v -> pure v
-        Left (e :: SomeException) -> case fromException e of
-            Just (failure :: CommandFailure) -> throwIO failure
-            Nothing ->
-                failWith
-                    NodeUnavailable
-                    ( "the provider at "
-                        <> providerUrl settings
-                        <> " could not be read: "
-                        <> show e
-                    )
+        Left (e :: SomeException) -> unreachable settings e
 
 {- | The inline datum an output carries, as the ledger holds it: its bytes,
 and their BLAKE2b-256 hash, both hex. A public indexer's copy of the same
@@ -408,7 +411,28 @@ inspectSaved app env savedPath mJournal key settings release a = do
                 let root = unOnChainRoot (stateRoot state)
                 context <- requireTrieSelection saved live
                 leaf <- trieLeaf context key root
-                outs <- liveOutputs app v saved
+                -- The key's output is found by its witness token: the provider is
+                -- asked who holds the active witness and the terminal one, and the
+                -- leaf above is still proved against the root by replay.
+                let readingWitness kind =
+                        liveWitness v saved kind key `catch` unreachable settings
+                active <- readingWitness ActiveWitness
+                terminal <- readingWitness TerminalWitness
+                outs <- case appHolding app of
+                    -- a rule that counts an output a holding only when it holds
+                    -- the key's active witness is judged over the holders of that
+                    -- witness at the application address, and reads no other
+                    Just rules
+                        | hrRequiresToken rules ->
+                            pure
+                                [ held
+                                | held@(_, o) <- foundHolders active
+                                , o ^. addrTxOutL == applicationAddr saved
+                                ]
+                    -- every other rule, and the neutral value that prints every
+                    -- output, is judged over every output at the application
+                    -- address, as it always was
+                    _ -> liveOutputs app v saved
                 requests <-
                     Cage.outputsAt
                         v
@@ -434,6 +458,20 @@ inspectSaved app env savedPath mJournal key settings release a = do
                 scope <- sessionReceipt caps v
                 let holdings = holdingsFor app saved key outs
                     keyOutput = liveOutputFor app saved key outs
+                    -- the witnesses looked up, named for a key the registry
+                    -- recorded; a key it never recorded is answered as it always was
+                    witnessReport = case leaf of
+                        Right l
+                            | l == Active || l == Terminal ->
+                                [
+                                    ( "witness"
+                                    , object
+                                        [ "active" .= witnessJson active
+                                        , "terminal" .= witnessJson terminal
+                                        ]
+                                    )
+                                ]
+                        _ -> []
                 entries <- case mJournal of
                     Just dir -> readJournal dir
                     Nothing -> pure []
@@ -528,6 +566,7 @@ inspectSaved app env savedPath mJournal key settings release a = do
                                , ("retractTime", toJSON (stateRetractTime state))
                                , ("applicationOutput", application)
                                ]
+                            <> witnessReport
                             <> [
                                    ( "pendingRequests"
                                    , toJSON
@@ -609,16 +648,38 @@ inspectSaved app env savedPath mJournal key settings release a = do
         Right (findings, v) -> do
             mapM_ (uncurry (report (envTracer registryEnv))) findings
             pure v
-        Left (e :: SomeException) -> case fromException e of
-            Just (failure :: CommandFailure) -> throwIO failure
-            Nothing ->
-                failWith
-                    NodeUnavailable
-                    ( "the provider at "
-                        <> providerUrl settings
-                        <> " could not be read: "
-                        <> show e
-                    )
+        Left (e :: SomeException) -> unreachable settings e
+
+{- | A read of the provider that failed: the command's own refusal if it already
+is one, else the node-unavailable refusal that names the provider. Raised where
+the read is made, inside the gate that carries the application pin's standing,
+the refusal prints that standing as every refusal after the registry was
+resolved does.
+-}
+unreachable :: ProviderSettings -> SomeException -> IO a
+unreachable settings e = case fromException e of
+    Just (failure :: CommandFailure) -> throwIO failure
+    Nothing ->
+        failWith
+            NodeUnavailable
+            ( "the provider at "
+                <> providerUrl settings
+                <> " could not be read: "
+                <> show e
+            )
+
+{- | One witness lookup as the receipt shows it: the asset that was asked for,
+the policy and the key's bytes as the asset name, and the outputs that hold it.
+-}
+witnessJson :: WitnessFound -> Value
+witnessJson found =
+    object
+        [ "policy" .= hexT (scriptHashBytes policy)
+        , "assetName" .= hexT (SBS.fromShort name)
+        , "holders" .= map (txInText . fst) (foundHolders found)
+        ]
+  where
+    (PolicyID policy, AssetName name) = foundAsset found
 
 {- | A pending request, as the node holds it: who owns it, what it asks and
 what it actually locks.

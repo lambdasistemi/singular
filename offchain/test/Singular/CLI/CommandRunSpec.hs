@@ -4870,6 +4870,7 @@ testAppExpecting expected =
                                     <> show (length live)
                                 )
                             )
+            , hrRequiresToken = False
             }
 
 -- ---------------------------------------------------------

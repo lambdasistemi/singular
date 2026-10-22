@@ -144,6 +144,7 @@ library
     Singular.Registry.TxBuilder.Update
     Singular.Registry.Types
     Singular.Registry.Wait
+    Singular.Registry.Witness
 
   -- #267: the fold's focused owners behind the Update facade. They are
   -- implementation modules of the existing public library: the facade
@@ -1019,6 +1020,7 @@ test-suite cage-tests
     Singular.CLI.TrieRefusalSpec
     Singular.CLI.VaultSpec
     Singular.CLI.VersionSpec
+    Singular.CLI.WitnessReachSpec
     Singular.PhaseLogFixture
     Singular.Provider.Koios.ClientSpec
     Singular.Provider.Koios.FakeServer

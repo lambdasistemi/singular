@@ -630,6 +630,41 @@ A pull request that changes the contracts adds their row with no release yet, an
 
 I keep the address with the registry's name, I send it to whoever should act on it, and I give it to `--registry` instead of the state token and the network. `--save-state-token` still keeps the state token in the settings file as the key `state-token`, and the commands after a create find it there as before. A registry named by the state token and the network works exactly as it did.
 
+### Reading one key from the address
+
+As Bob, I have the address and the name of a key, and I want to know whether the key is active and which output holds it, from an empty directory, without a file from anyone. I run `inspect --key KEY --registry ADDRESS` and the answer comes from the chain: the command asks the provider who holds the key's witness token and prints what it found.
+
+```mermaid
+sequenceDiagram
+    actor Bob
+    participant Inspect as inspect --key KEY --registry ADDRESS
+    participant Provider as the provider
+    participant History as the registry's public history
+    Bob->>Inspect: the address and the key
+    Inspect->>History: prove the key's leaf against the registry's root
+    History-->>Inspect: active, terminal or unknown
+    Inspect->>Provider: who holds the active witness of KEY?
+    Provider-->>Inspect: the outputs that hold it
+    Inspect->>Provider: who holds the terminal witness of KEY?
+    Provider-->>Inspect: the outputs that hold it
+    Inspect-->>Bob: the receipt: the leaf, the witnesses, the output
+```
+
+The diagram shows the proof first and the two questions to the provider after it, so a registry whose history does not chain to its root is refused before the provider is asked who holds a token. A key that is active has a witness token: an asset of the registry's active witness policy whose name is the key's bytes. A registration mints it and a termination burns it. The registry has a second policy, for terminal witnesses, and the same name under it is the terminal witness of the key. Both policies belong to this registry. The command works out the two assets to ask for from the registry the address names and from the key, and asks for them by asset, so it does not list every output at the application's address to find the key's output. One function in the library makes that asset from the registry and the key, and it is the only place that does so for this read.
+
+For a key the registry has recorded, active or terminal, the receipt of `inspect` carries a field `witness` with two entries, `active` and `terminal`. Each has `policy`, the policy as hex; `assetName`, the key's bytes as hex; and `holders`, the references of the outputs that hold the asset.
+
+| The key is | `witness.active.holders` | `witness.terminal.holders` |
+| --- | --- | --- |
+| active | the one output that holds the key, the output `applicationOutput` names | empty |
+| terminal | empty, because the termination burned the active token | empty, because the contracts of this release mint no terminal token |
+
+For a key the registry never recorded the receipt has no `witness` field and is what it always was.
+
+The witness finds the key's output; it does not say whether the key is active. That is still proved: the leaf is checked against the registry's root by replaying the registry's public history, as before, and a witness that disagrees with the proof is refused as `proof-inconsistent`, as a holding that disagreed with the proof was. The replay is the cost of the proof and it is not made to find the output. A directory that holds nothing reads the same as any other, because `inspect` without `--wallet-address` keeps no state.
+
+One reader still lists the application's outputs. `singular registry inspect` prints every output at the application's address in its `rawDatums`, because the program knows no application and shows them all, so it reads that listing and the witness. `open-datum inspect` prints only the key's output and reads no listing. `keri-stub status` reads the listing too, because its rule counts an output that carries the key's datum whether or not it holds the key's token, and an output without the token has to be seen to be counted.
+
 ## Naming the registry by its state token
 
 A registry can also be named by its state token, with its network, as it always could; [its address](#naming-the-registry-by-its-address) holds the same token, and says the network too.

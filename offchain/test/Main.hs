@@ -30,6 +30,7 @@ import Singular.CLI.SubmitSpec qualified
 import Singular.CLI.TrieRefusalSpec qualified
 import Singular.CLI.VaultSpec qualified
 import Singular.CLI.VersionSpec qualified
+import Singular.CLI.WitnessReachSpec qualified
 import Singular.Provider.Koios.ClientSpec qualified
 import Singular.Provider.Koios.HttpSpec qualified
 import Singular.Provider.Koios.ProviderSpec qualified
@@ -269,6 +270,9 @@ main = hspec $ do
     describe
         (tagged "Singular.CLI.RegistryAddress" [Cli])
         Singular.CLI.RegistryAddressSpec.spec
+    describe
+        (tagged "Singular.CLI.WitnessReach" [Cli, Provider])
+        Singular.CLI.WitnessReachSpec.spec
     describe
         (tagged "Singular.Registry.Address" [Cli])
         Singular.Registry.AddressSpec.spec

@@ -41,6 +41,7 @@ import Control.Monad (forM, unless, void, when)
 import Control.Tracer (Tracer (..))
 import Data.Aeson (toJSON, (.=))
 import Data.Aeson qualified as Aeson
+import Data.Aeson.Key qualified as AesonKey
 import Data.Aeson.KeyMap qualified as KeyMap
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
@@ -153,6 +154,7 @@ import Cardano.Ledger.Api.Tx.Body
     )
 import Cardano.Ledger.Api.Tx.Out
     ( TxOut
+    , addrTxOutL
     , coinTxOutL
     , datumTxOutL
     , mkBasicTxOut
@@ -207,7 +209,9 @@ import Singular.Application.OpenDatum.Root
     )
 import Singular.Application.OpenDatum.Run (runOpenDatum)
 import Singular.Application.OpenDatum.Value (openDatumApplication)
+import Singular.CLI (runCommand)
 import Singular.CLI.Booking (BookingVerb (..), bookingEdgeName)
+import Singular.CLI.Command (parseCommand)
 import Singular.CLI.ManagedState (addressPartition, managedDir)
 import Singular.CLI.Passphrase (PassphraseSource (..), mkPassphrase)
 import Singular.CLI.Proof (Leaf (..), leafName)
@@ -239,7 +243,11 @@ import Singular.Registry.AddressOracle
     , holdsOf
     )
 import Singular.Registry.Application
-    ( datumFromJson
+    ( Application (..)
+    , DecodedHolding (..)
+    , Decoder (..)
+    , HoldingRules (..)
+    , datumFromJson
     , neutralApplication
     )
 import Singular.Registry.AssetName (deriveAssetName)
@@ -262,7 +270,7 @@ import Singular.Registry.Evidence
     , NoWitness
     , unverifiedVerifier
     )
-import Singular.Registry.Ledger (Coin (..), ConwayEra)
+import Singular.Registry.Ledger (Addr, Coin (..), ConwayEra)
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.PlainJson
     ( PayloadSchema (..)
@@ -305,9 +313,13 @@ import Singular.Registry.TxBuilder.Internal.Identity (txInToRef)
 import Singular.Registry.Types
     ( CageDatum (..)
     , OnChainRequest (..)
+    , OnChainRoot (..)
+    , OnChainTokenState (..)
     , edgeInsertActive
     , edgeName
     , edgeUpdateTerminal
+    , stateActivePolicyBytes
+    , stateTerminalPolicyBytes
     )
 import Singular.Registry.Wallet
     ( Wallet (..)
@@ -330,6 +342,8 @@ spec =
         >> payloadSchemaRunRows
         >> printedPayloadRows
         >> registryAddressRows
+        >> witnessReachRows
+        >> witnessKeptRows
 
 {- | The open datum create receipt carries the working describe line. The
 application owns no describe verb, so the line always names the registry
@@ -5882,6 +5896,802 @@ shouldNameRegistry token address fingerprint = do
     fmap (holdsOf . T.unpack) address
         `shouldBe` Just (Just ("singular_devnet", body))
     fmap T.unpack fingerprint `shouldBe` fingerprintOf body
+
+-- ---------------------------------------------------------
+-- The key reached by its witness token (issue 728, second pull request)
+-- ---------------------------------------------------------
+
+{- | @inspect --key@ finds a key's output by the key's witness token: the
+registry's active witness policy, or the terminal one, with the key's bytes
+as the asset name, asked of the provider as the holders of that asset. It
+does not list every output at the application address, and the leaf is
+still proved against the state root as it was. The facts these rows compare
+with are read from the chain fixture (the output the receipt names, the
+pins in the state datum), never from the code that derives the asset.
+-}
+witnessReachRows :: Spec
+witnessReachRows = describe "the key reached by its witness token" $ do
+    forM_ ["alice-1", "k", replicate 32 'z'] $ \key ->
+        it
+            ( "an active key of "
+                <> show (length key)
+                <> " bytes is found by its witness and the application address is not listed"
+            )
+            $ withRegistry
+            $ \rig token -> do
+                activeKey rig token key
+                (queries, inspected) <- inspectRecording rig token key
+                let receipt = runReceipt inspected
+                    bytes = BC.pack key
+                outcomeOf receipt `shouldBe` Just "success"
+                valueAt "leaf" receipt `shouldBe` Just (Aeson.String "active")
+                output <- heldOutput receipt
+                (policy, address) <- holdingOf rig output bytes
+                queries
+                    `shouldContain` [Cage.HoldingAsset (policy, AssetName (SBS.toShort bytes))]
+                queries `shouldNotContain` [Cage.AtAddress address]
+    it
+        "the receipt names the witnesses looked up and the output that holds the active one"
+        $ withRegistry
+        $ \rig token -> do
+            activeKey rig token "alice-1"
+            (_, inspected) <- inspectRecording rig token "alice-1"
+            let receipt = runReceipt inspected
+            output <- heldOutput receipt
+            (policy, _) <- holdingOf rig output "alice-1"
+            (_, terminal) <- statePins rig token
+            let witness = valueAt "witness" receipt
+            (witness >>= valueAt "active")
+                `shouldBe` Just
+                    ( Aeson.object
+                        [ "policy" .= hexText (policyBytes policy)
+                        , "assetName" .= hexText "alice-1"
+                        , "holders" .= [output]
+                        ]
+                    )
+            (witness >>= valueAt "terminal")
+                `shouldBe` Just
+                    ( Aeson.object
+                        [ "policy" .= hexText terminal
+                        , "assetName" .= hexText "alice-1"
+                        , "holders" .= ([] :: [Text])
+                        ]
+                    )
+    it
+        "a terminated key is reached by both witnesses and none holds a token"
+        $ withRegistry
+        $ \rig token -> do
+            activeKey rig token "alice-1"
+            terminated <-
+                run
+                    rig
+                    "terminate"
+                    (["open-datum", "terminate", "--key", "alice-1"] <> tokenArgs token)
+            outcomeOf (runReceipt terminated) `shouldBe` Just "success"
+            folded <-
+                run
+                    rig
+                    "fold terminal"
+                    (["open-datum", "fold"] <> requestOf terminated <> tokenArgs token)
+            outcomeOf (runReceipt folded) `shouldBe` Just "success"
+            (queries, inspected) <- inspectRecording rig token "alice-1"
+            let receipt = runReceipt inspected
+            outcomeOf receipt `shouldBe` Just "success"
+            valueAt "leaf" receipt `shouldBe` Just (Aeson.String "terminal")
+            (active, terminal) <- statePins rig token
+            let name = AssetName (SBS.toShort "alice-1")
+                asset policy = Cage.HoldingAsset (PolicyID (policyOf policy), name)
+            queries `shouldContain` [asset active]
+            queries `shouldContain` [asset terminal]
+            let witness = valueAt "witness" receipt
+            (witness >>= valueAt "active" >>= valueAt "holders")
+                `shouldBe` Just (Aeson.toJSON ([] :: [Text]))
+            (witness >>= valueAt "terminal" >>= valueAt "holders")
+                `shouldBe` Just (Aeson.toJSON ([] :: [Text]))
+            (witness >>= valueAt "active" >>= textAt "policy")
+                `shouldBe` Just (hexText active)
+    it
+        "a key never registered is answered as it was: no witness field, the same fields, the same exit"
+        $ withRegistry
+        $ \rig token -> do
+            activeKey rig token "alice-1"
+            (_, inspected) <- inspectRecording rig token "nobody"
+            let receipt = runReceipt inspected
+            runExit inspected `shouldBe` ExitSuccess
+            outcomeOf receipt `shouldBe` Just "success"
+            valueAt "witness" receipt `shouldBe` Nothing
+            topLevelKeys receipt `shouldBe` neverRegisteredFields
+    it
+        "a provider that cannot answer the witness query makes inspect refuse naming the provider"
+        $ withRegistry
+        $ \rig token -> do
+            activeKey rig token "alice-1"
+            let key = "alice-1" :: BS.ByteString
+                refusing =
+                    (capabilities rig)
+                        { capReads =
+                            let (network, provider) = rawChainProvider (rigChain rig)
+                                failing =
+                                    provider
+                                        { Cage.acquire = \requested action ->
+                                            Cage.acquire provider requested $ \session ->
+                                                action
+                                                    session
+                                                        { Cage.outputs = \query -> case query of
+                                                            Cage.HoldingAsset (_, AssetName name)
+                                                                | SBS.fromShort name == key ->
+                                                                    pure (Left (Cage.BackendReadFailure "refused"))
+                                                            _ -> Cage.outputs session query
+                                                        }
+                                        }
+                            in  ( network
+                                , observeProvider unverifiedVerifier (\_ -> pure ()) failing
+                                )
+                        }
+            inspected <-
+                runVia
+                    rig
+                    ( (envOf rig)
+                        { envReads = \_ k -> k refusing
+                        , envWrites = \_ k -> k refusing
+                        }
+                    )
+                    "empty-actor"
+                    "inspect with the witness read refused"
+                    (["open-datum", "inspect", "--key", "alice-1"] <> tokenArgs token)
+            outcomeOf (runReceipt inspected) `shouldBe` Just "node-unavailable"
+            runExit inspected `shouldNotBe` ExitSuccess
+            -- the registry was resolved and its pin compared before the read
+            -- failed, so the refusal says so as every refusal after it does
+            valueAt "applicationPin" (runReceipt inspected)
+                `shouldBe` Just (Aeson.String "compared")
+
+-- | A key booked and folded, so that it is active.
+activeKey :: Rig -> String -> String -> IO ()
+activeKey rig token key = do
+    path <- payloadFile rig "witness-payload.json" "0"
+    booked <-
+        run
+            rig
+            "insert"
+            ( ["open-datum", "insert", "--key", key, "--payload", path]
+                <> tokenArgs token
+            )
+    outcomeOf (runReceipt booked) `shouldBe` Just "success"
+    folded <-
+        run
+            rig
+            "fold"
+            (["open-datum", "fold"] <> requestOf booked <> tokenArgs token)
+    outcomeOf (runReceipt folded) `shouldBe` Just "success"
+
+{- | An inspect of a key from an empty directory, with every output query the
+provider answered for it, in order.
+-}
+inspectRecording
+    :: Rig -> String -> String -> IO ([Cage.OutputQuery], Run)
+inspectRecording rig token key = do
+    seen <- newIORef []
+    let recording = recordingCapabilities seen rig
+    inspected <-
+        runVia
+            rig
+            ( (envOf rig)
+                { envReads = \_ k -> k recording
+                , envWrites = \_ k -> k recording
+                }
+            )
+            "empty-actor"
+            ("inspect " <> key)
+            (["open-datum", "inspect", "--key", key] <> tokenArgs token)
+    queries <- readIORef seen
+    pure (queries, inspected)
+
+-- | The output a receipt says holds the key.
+heldOutput :: Aeson.Value -> IO Text
+heldOutput receipt =
+    maybe
+        (fail ("the receipt names no output for the key: " <> show receipt))
+        pure
+        (valueAt "applicationOutput" receipt >>= textAt "output")
+
+{- | The policy that names the key in an output, and the output's address,
+read from the chain fixture.
+-}
+holdingOf :: Rig -> Text -> BS.ByteString -> IO (PolicyID, Addr)
+holdingOf rig output key = do
+    ref <- either fail pure (parseOutRef output)
+    answer <-
+        SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v ->
+            Cage.outputs v (Cage.AtTxIn ref)
+    held <- either (fail . show) (pure . value) answer
+    case held of
+        [(_, out)] ->
+            let MaryValue _ (MultiAsset assets) = out ^. valueTxOutL
+            in  case [ policy
+                     | (policy, names) <- Map.toList assets
+                     , Map.member (AssetName (SBS.toShort key)) names
+                     ] of
+                    [policy] -> pure (policy, out ^. addrTxOutL)
+                    other ->
+                        fail
+                            ( "the output holds the key's token under "
+                                <> show (length other)
+                                <> " policies"
+                            )
+        _ -> fail "the output the receipt names is not live"
+
+{- | The active and the terminal policies the registry's state datum pins,
+read from the chain fixture.
+-}
+statePins :: Rig -> String -> IO (BS.ByteString, BS.ByteString)
+statePins rig token = do
+    asset <-
+        either (fail . T.unpack) pure (parseStateToken (T.pack token))
+    answer <-
+        SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v ->
+            Cage.outputs v (Cage.HoldingAsset asset)
+    held <- either (fail . show) (pure . value) answer
+    case [ st | (_, out) <- held, Just (StateDatum st) <- [extractCageDatum out]
+         ] of
+        st : _ -> pure (stateActivePolicyBytes st, stateTerminalPolicyBytes st)
+        [] -> fail "the state output carries no state datum"
+
+policyBytes :: PolicyID -> BS.ByteString
+policyBytes (PolicyID hash) = scriptHashBytes hash
+
+policyOf :: BS.ByteString -> ScriptHash
+policyOf bytes = case hashFromBytes bytes of
+    Just hash -> ScriptHash hash
+    Nothing -> error "policyOf: not a 28-byte hash"
+
+-- | The names of the fields a receipt prints at its top level, in order.
+topLevelKeys :: Aeson.Value -> [Text]
+topLevelKeys = \case
+    Aeson.Object fields -> sort (map AesonKey.toText (KeyMap.keys fields))
+    _ -> []
+
+{- | The top-level fields of the receipt of an inspect of a key the registry
+never recorded, as the base build (main with the pin gate of issue 730) printed them.
+-}
+neverRegisteredFields :: [Text]
+neverRegisteredFields =
+    [ "applicationOutput"
+    , "applicationPin"
+    , "command"
+    , "fingerprint"
+    , "freshness"
+    , "key"
+    , "keyText"
+    , "leaf"
+    , "mechanism"
+    , "observedTip"
+    , "outcome"
+    , "pendingRequests"
+    , "processTime"
+    , "reconciliation"
+    , "registry"
+    , "retractTime"
+    , "root"
+    , "sessionEvidence"
+    , "stateToken"
+    ]
+
+{- | What stays as it was when a key is reached by its witness token: the
+address alone names the registry, a key never registered gets the receipt the
+base build printed, every refusal of the proof comes before the witness is
+read and the proven leaf still has to agree with the holdings, and the
+neutral program still prints every output at the application's address.
+-}
+witnessKeptRows :: Spec
+witnessKeptRows = describe "what the witness read leaves as it was" $ do
+    it
+        "an active key is reached from the address alone, with no state token and no network magic"
+        $ withRegistry
+        $ \rig token -> do
+            activeKey rig token "alice-1"
+            address <- addressOfToken token
+            (queries, inspected, line) <- inspectByAddress rig address "alice-1"
+            line `shouldSatisfy` notElem "--state-token"
+            line `shouldSatisfy` notElem "--network-magic"
+            let receipt = runReceipt inspected
+            outcomeOf receipt `shouldBe` Just "success"
+            valueAt "leaf" receipt `shouldBe` Just (Aeson.String "active")
+            textAt "registry" receipt `shouldBe` Just (T.pack address)
+            output <- heldOutput receipt
+            (policy, _) <- holdingOf rig output "alice-1"
+            queries
+                `shouldContain` [Cage.HoldingAsset (policy, AssetName (SBS.toShort "alice-1"))]
+            (valueAt "witness" receipt >>= valueAt "active" >>= valueAt "holders")
+                `shouldBe` Just (Aeson.toJSON [output])
+    it
+        "a terminated key is reached from the address alone, both witnesses empty"
+        $ withRegistry
+        $ \rig token -> do
+            activeKey rig token "alice-1"
+            terminateKey rig token "alice-1"
+            address <- addressOfToken token
+            (_, inspected, _) <- inspectByAddress rig address "alice-1"
+            let receipt = runReceipt inspected
+            outcomeOf receipt `shouldBe` Just "success"
+            valueAt "leaf" receipt `shouldBe` Just (Aeson.String "terminal")
+            (valueAt "witness" receipt >>= valueAt "active" >>= valueAt "holders")
+                `shouldBe` Just (Aeson.toJSON ([] :: [Text]))
+    it
+        "a key never registered gets the receipt the base build printed, value for value"
+        $ withRegistry
+        $ \rig token -> do
+            activeKey rig token "alice-1"
+            (_, inspected) <- inspectRecording rig token "nobody"
+            runExit inspected `shouldBe` ExitSuccess
+            withoutSessionId (runReceipt inspected)
+                `shouldBe` baseReceiptOfNobody
+    it
+        "a root that does not chain is refused as stale before the witness is read"
+        $ withRegistry
+        $ \rig token -> do
+            activeKey rig token "alice-1"
+            tamperRoot rig token
+            (queries, inspected) <- inspectRecording rig token "alice-1"
+            outcomeOf (runReceipt inspected) `shouldBe` Just "stale-state"
+            runExit inspected `shouldBe` ExitFailure 14
+            (policy, _) <- witnessPins rig token
+            queries
+                `shouldNotContain` [Cage.HoldingAsset (policy, AssetName (SBS.toShort "alice-1"))]
+    describe "a leaf the holdings do not agree with is refused" $ do
+        it "an active leaf with no holding" $
+            withRegistry $ \rig token -> do
+                activeKey rig token "alice-1"
+                output <- inspectedOutput rig token "alice-1"
+                ref <- either fail pure (parseOutRef output)
+                advanceChain (rigChain rig) $ \facts ->
+                    facts{csUTxO = Map.delete ref (csUTxO facts)}
+                refusedWith rig token "active with 0 holding(s)"
+        it "an active leaf with two holdings" $
+            withRegistry $ \rig token -> do
+                activeKey rig token "alice-1"
+                output <- inspectedOutput rig token "alice-1"
+                copyOutput rig output
+                refusedWith rig token "active with 2 holding(s)"
+        it "a terminal leaf with an active holding" $
+            withRegistry $ \rig token -> do
+                activeKey rig token "alice-1"
+                output <- inspectedOutput rig token "alice-1"
+                held <- chainOutput rig output
+                terminateKey rig token "alice-1"
+                plantOutput rig held
+                refusedWith rig token "terminal with 1 holding(s)"
+    describe "the declaration of an application's holding rule" $ do
+        it "the open datum's rule requires the token, and says so" $
+            fmap hrRequiresToken (appHolding openDatumApplication)
+                `shouldBe` Just True
+        it
+            "a rule that needs no token is judged over every output at the address: a tokenless duplicate of the holding is a second holding"
+            $ withRegistry
+            $ \rig token -> do
+                (address, duplicated) <- plantedTokenless rig token
+                duplicated `shouldBe` True
+                (queries, code, receipt) <-
+                    inspectWith tokenlessApplication rig token "alice-1"
+                queries `shouldContain` [Cage.AtAddress address]
+                code `shouldBe` ExitFailure 18
+                outcomeOf receipt `shouldBe` Just "proof-inconsistent"
+                textAt "refusal" receipt
+                    `shouldSatisfy` maybe False (T.isSuffixOf "active with 2 holding(s)")
+        it
+            "a rule that requires the token neither asks for nor counts the tokenless duplicate"
+            $ withRegistry
+            $ \rig token -> do
+                (address, _) <- plantedTokenless rig token
+                (queries, code, receipt) <-
+                    inspectWith openDatumApplication rig token "alice-1"
+                queries `shouldNotContain` [Cage.AtAddress address]
+                code `shouldBe` ExitSuccess
+                outcomeOf receipt `shouldBe` Just "success"
+                valueAt "leaf" receipt `shouldBe` Just (Aeson.String "active")
+    describe "the neutral program" $ do
+        it
+            "prints every output at the application's address, as before, and names the witness of an active key"
+            $ withRegistry
+            $ \rig token -> do
+                activeKey rig token "alice-1"
+                activeKey rig token "alice-2"
+                output <- inspectedOutput rig token "alice-1"
+                (_, address) <- holdingOf rig output "alice-1"
+                atAddress <-
+                    SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v ->
+                        SessionIO.outputsAt v address
+                length atAddress `shouldBe` 2
+                receipt <- neutralInspect rig token "alice-1"
+                outcomeOf receipt `shouldBe` Just "success"
+                topLevelKeys receipt
+                    `shouldBe` sort (neverRegisteredFields <> ["witness"])
+                let listed = valueAt "applicationOutput" receipt >>= valueAt "rawDatums"
+                fmap (sort . listedOutputs) listed
+                    `shouldBe` Just (sort [renderOutRef ref | (ref, _) <- atAddress])
+                fmap (nub . map objectKeys . listedObjects) listed
+                    `shouldBe` Just
+                        [["datum", "datumCbor", "datumHash", "lovelace", "output"]]
+                (valueAt "applicationOutput" receipt >>= valueAt "holdings")
+                    `shouldBe` Just (Aeson.toJSON ([] :: [Text]))
+                (valueAt "witness" receipt >>= valueAt "active" >>= valueAt "holders")
+                    `shouldBe` Just (Aeson.toJSON [output])
+        it
+            "answers a key never registered with the same listing and no witness field"
+            $ withRegistry
+            $ \rig token -> do
+                activeKey rig token "alice-1"
+                output <- inspectedOutput rig token "alice-1"
+                (_, address) <- holdingOf rig output "alice-1"
+                atAddress <-
+                    SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v ->
+                        SessionIO.outputsAt v address
+                receipt <- neutralInspect rig token "nobody"
+                outcomeOf receipt `shouldBe` Just "success"
+                topLevelKeys receipt `shouldBe` neverRegisteredFields
+                valueAt "witness" receipt `shouldBe` Nothing
+                fmap
+                    (sort . listedOutputs)
+                    (valueAt "applicationOutput" receipt >>= valueAt "rawDatums")
+                    `shouldBe` Just (sort [renderOutRef ref | (ref, _) <- atAddress])
+  where
+    listedObjects = \case
+        Aeson.Array items -> [o | Aeson.Object o <- toList items]
+        _ -> []
+    listedOutputs value =
+        [ t
+        | o <- listedObjects value
+        , Just (Aeson.String t) <- [KeyMap.lookup "output" o]
+        ]
+    objectKeys o = sort (map AesonKey.toText (KeyMap.keys o))
+
+-- | The address of a state token on the rig's network.
+addressOfToken :: String -> IO String
+addressOfToken token =
+    maybe
+        (fail ("no address for " <> token))
+        pure
+        (addressOf (fromIntegral magic) token)
+
+{- | An inspect of a key by the registry's address alone: the line carries
+no state token and no network magic. It returns the output queries answered,
+the run and the words of the line.
+-}
+inspectByAddress
+    :: Rig -> String -> String -> IO ([Cage.OutputQuery], Run, [String])
+inspectByAddress rig address key = do
+    seen <- newIORef []
+    let line =
+            withoutMagic
+                ( commandLine
+                    rig
+                    "empty-actor"
+                    ["open-datum", "inspect", "--key", key, "--registry", address]
+                )
+        recording = recordingCapabilities seen rig
+        env =
+            (envOf rig)
+                { envReads = \_ k -> k recording
+                , envWrites = \_ k -> k recording
+                }
+    writeIORef (rigEvents rig) []
+    command <-
+        either (fail . renderCLIError) pure (parseOpenDatumCommand line)
+    (code, out, _) <- captured (runOpenDatum env command)
+    receipt <-
+        maybe
+            (fail ("no receipt: " <> show out))
+            pure
+            (Aeson.decodeStrict out)
+    events <- readIORef (rigEvents rig)
+    queries <- readIORef seen
+    pure
+        ( queries
+        , Run
+            { runName = constructorOf command
+            , runLabel = "inspect by the address"
+            , runExit = code
+            , runReceipt = receipt
+            , runEvents = events
+            , runKey = Nothing
+            }
+        , line
+        )
+
+-- | The rig's capabilities, every output query it answers also noted.
+recordingCapabilities
+    :: IORef [Cage.OutputQuery] -> Rig -> Capabilities NoWitness IO
+recordingCapabilities seen rig =
+    (capabilities rig)
+        { capReads =
+            let (network, provider) = rawChainProvider (rigChain rig)
+                noting =
+                    provider
+                        { Cage.acquire = \requested action ->
+                            Cage.acquire provider requested $ \session ->
+                                action
+                                    session
+                                        { Cage.outputs = \query ->
+                                            modifyIORef' seen (<> [query])
+                                                >> Cage.outputs session query
+                                        }
+                        }
+            in  ( network
+                , observeProvider unverifiedVerifier (\_ -> pure ()) noting
+                )
+        }
+
+-- | A key booked, folded and then terminated and folded again.
+terminateKey :: Rig -> String -> String -> IO ()
+terminateKey rig token key = do
+    terminated <-
+        run
+            rig
+            "terminate"
+            (["open-datum", "terminate", "--key", key] <> tokenArgs token)
+    outcomeOf (runReceipt terminated) `shouldBe` Just "success"
+    folded <-
+        run
+            rig
+            "fold terminal"
+            (["open-datum", "fold"] <> requestOf terminated <> tokenArgs token)
+    outcomeOf (runReceipt folded) `shouldBe` Just "success"
+
+-- | The output the receipt of an inspect names for an active key.
+inspectedOutput :: Rig -> String -> String -> IO Text
+inspectedOutput rig token key = do
+    inspected <-
+        run
+            rig
+            ("inspect " <> key)
+            (["open-datum", "inspect", "--key", key] <> tokenArgs token)
+    heldOutput (runReceipt inspected)
+
+-- | A live output of the chain fixture, by its reference.
+chainOutput :: Rig -> Text -> IO (TxOut ConwayEra)
+chainOutput rig output = do
+    ref <- either fail pure (parseOutRef output)
+    answer <-
+        SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v ->
+            Cage.outputs v (Cage.AtTxIn ref)
+    held <- either (fail . show) (pure . value) answer
+    case held of
+        [(_, out)] -> pure out
+        _ -> fail "the output is not live"
+
+-- | Put an output on the chain fixture under a reference nothing else has.
+plantOutput :: Rig -> TxOut ConwayEra -> IO ()
+plantOutput rig out = do
+    ref <-
+        either fail pure $
+            parseOutRef (T.pack (replicate 64 'c' <> "#7"))
+    advanceChain (rigChain rig) $ \facts ->
+        facts{csUTxO = Map.insert ref out (csUTxO facts)}
+
+-- | A second output like a live one, so that the key has two holdings.
+copyOutput :: Rig -> Text -> IO ()
+copyOutput rig output = chainOutput rig output >>= plantOutput rig
+
+{- | Change the root in the state datum of the registry, so that the
+registry's public history no longer chains to it.
+-}
+tamperRoot :: Rig -> String -> IO ()
+tamperRoot rig token = do
+    asset <-
+        either (fail . T.unpack) pure (parseStateToken (T.pack token))
+    answer <-
+        SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v ->
+            Cage.outputs v (Cage.HoldingAsset asset)
+    held <- either (fail . show) (pure . value) answer
+    case [ (ref, out, st)
+         | (ref, out) <- held
+         , Just (StateDatum st) <- [extractCageDatum out]
+         ] of
+        (ref, out, st) : _ -> do
+            let wrong = st{stateRoot = OnChainRoot (BS.replicate 32 0xab)}
+                changed = out & datumTxOutL .~ mkInlineDatum (toPlcData (StateDatum wrong))
+            advanceChain (rigChain rig) $ \facts ->
+                facts{csUTxO = Map.insert ref changed (csUTxO facts)}
+        [] -> fail "the state output carries no state datum"
+
+{- | The active witness policy and the key-independent pin of the registry, read
+from the state datum (for the queries a refusal must not have made).
+-}
+witnessPins :: Rig -> String -> IO (PolicyID, BS.ByteString)
+witnessPins rig token = do
+    (active, terminal) <- statePins rig token
+    pure (PolicyID (policyOf active), terminal)
+
+-- | An inspect that is refused because the leaf and the holdings disagree.
+refusedWith :: Rig -> String -> Text -> IO ()
+refusedWith rig token expected = do
+    inspected <-
+        run
+            rig
+            "inspect"
+            (["open-datum", "inspect", "--key", "alice-1"] <> tokenArgs token)
+    outcomeOf (runReceipt inspected) `shouldBe` Just "proof-inconsistent"
+    runExit inspected `shouldBe` ExitFailure 18
+    textAt "refusal" (runReceipt inspected)
+        `shouldSatisfy` maybe False (T.isSuffixOf expected)
+
+-- | The words of the neutral program's inspect of a key, from an empty directory.
+neutralLine :: Rig -> String -> String -> [String]
+neutralLine rig token key =
+    ["registry", "inspect", "--key", key]
+        <> tokenArgs token
+        <> [ "--state-dir"
+           , rigDir rig </> "empty-actor"
+           , "--blueprint"
+           , rigBlueprint rig
+           , "--koios-url"
+           , "http://fixture.invalid"
+           , "--network-magic"
+           , show magic
+           ]
+
+{- | An inspect of a key by an application value over the open-datum registry,
+with every output query the provider answered for it, its exit and its receipt.
+-}
+inspectWith
+    :: Application
+    -> Rig
+    -> String
+    -> String
+    -> IO ([Cage.OutputQuery], ExitCode, Aeson.Value)
+inspectWith app rig token key = do
+    seen <- newIORef []
+    let recording = recordingCapabilities seen rig
+        env =
+            (envOf rig)
+                { envReads = \_ k -> k recording
+                , envWrites = \_ k -> k recording
+                }
+    writeIORef (rigEvents rig) []
+    command <-
+        either (fail . show) pure (parseCommand (neutralLine rig token key))
+    (code, out, _) <- captured (runCommand app env command)
+    receipt <-
+        maybe
+            (fail ("no receipt: " <> show out))
+            pure
+            (Aeson.decodeStrict out)
+    queries <- readIORef seen
+    pure (queries, code, receipt)
+
+{- | An application whose holding rule is the stub's in shape: an output at the
+application address whose datum reads as a holding of the key is one, whether
+or not it holds the key's token. It says so, as the stub does.
+-}
+tokenlessApplication :: Application
+tokenlessApplication =
+    openDatumApplication
+        { appHolding = loosened <$> appHolding openDatumApplication
+        }
+  where
+    loosened rules =
+        rules
+            { hrRequiresToken = False
+            , hrFindHoldings = \_ _ key outs ->
+                [ (u, found)
+                | u@(_, o) <- outs
+                , Just (Decoder decode) <- [appDecoder openDatumApplication]
+                , Right found <- [decode o]
+                , dhKey found == key
+                ]
+            }
+
+{- | A registry with the key alice-1 active and, beside its holding, a copy of
+the holding that holds no token. It returns the application address and
+whether the plant is a second output there.
+-}
+plantedTokenless :: Rig -> String -> IO (Addr, Bool)
+plantedTokenless rig token = do
+    activeKey rig token "alice-1"
+    output <- inspectedOutput rig token "alice-1"
+    held <- chainOutput rig output
+    (_, address) <- holdingOf rig output "alice-1"
+    let MaryValue coin _ = held ^. valueTxOutL
+    plantOutput rig (held & valueTxOutL .~ MaryValue coin mempty)
+    atAddress <-
+        SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v ->
+            SessionIO.outputsAt v address
+    pure (address, length atAddress == 2)
+
+-- | The neutral program's inspect of a key, over the open-datum registry.
+neutralInspect :: Rig -> String -> String -> IO Aeson.Value
+neutralInspect rig token key = do
+    writeIORef (rigEvents rig) []
+    command <-
+        either (fail . show) pure (parseCommand (neutralLine rig token key))
+    (code, out, _) <-
+        captured (runCommand neutralApplication (envOf rig) command)
+    code `shouldBe` ExitSuccess
+    maybe
+        (fail ("no receipt: " <> show out))
+        pure
+        (Aeson.decodeStrict out)
+
+-- | A receipt without the identifier of the session that read it, which counts runs.
+withoutSessionId :: Aeson.Value -> Aeson.Value
+withoutSessionId = \case
+    Aeson.Object fields ->
+        Aeson.Object
+            ( maybe
+                fields
+                ( \evidence -> KeyMap.insert "sessionEvidence" (dropSession evidence) fields
+                )
+                (KeyMap.lookup "sessionEvidence" fields)
+            )
+    other -> other
+  where
+    dropSession = \case
+        Aeson.Object evidence -> Aeson.Object (KeyMap.delete "session" evidence)
+        other -> other
+
+{- | The receipt the base build (main with the pin gate of issue 730) printed for
+an inspect of a key never registered, in a registry whose only key is @alice-1@,
+active: every value, the leaf included, except the identifier of the reading
+session.
+-}
+baseReceiptOfNobody :: Aeson.Value
+baseReceiptOfNobody =
+    Aeson.object
+        [
+            ( "applicationOutput"
+            , Aeson.object
+                [ ("absent", s "no live output holds key 0x6e6f626f6479")
+                , ("holdings", Aeson.Array mempty)
+                ]
+            )
+        , ("applicationPin", s "compared")
+        , ("command", s "inspect")
+        , ("fingerprint", s "asset1frauxgeawqdk3r7jj7e9xxkwug8x5z0qjt9j8a")
+        , ("freshness", s "Latest reads in this process; no snapshot binding")
+        , ("key", s "6e6f626f6479")
+        , ("keyText", s "nobody")
+        , ("leaf", s "unknown")
+        , ("mechanism", s "Koios raw facts through the shared HTTP transport")
+        ,
+            ( "observedTip"
+            , s
+                "10.000000000000000000000000000000000000000000000000000000000000000a"
+            )
+        , ("outcome", s "success")
+        , ("pendingRequests", Aeson.Array mempty)
+        , ("processTime", Aeson.Number 600_000)
+        ,
+            ( "reconciliation"
+            , s "stateless public read: no wallet journal checked"
+            )
+        ,
+            ( "registry"
+            , s
+                "singular_devnet1rphr974gpgngzqujlknd2kw8a4rjrfjuu8yafme7rjrmg8a70pkyk0mj9tpt7p0hf38dn2t2twqhznvz9qdpe7xmfxdpk9xneg9p59"
+            )
+        , ("retractTime", Aeson.Number 300_000)
+        ,
+            ( "root"
+            , s "58397587c712dcf8e99043ab07b63dfe38fe3628000a1b09e4805f647570b76b"
+            )
+        ,
+            ( "sessionEvidence"
+            , Aeson.object
+                [ ("binding", Aeson.object [("kind", s "Unbound")])
+                , ("facts", Aeson.Array mempty)
+                , ("networkMagic", Aeson.Number 42)
+                , ("rawSources", Aeson.Array mempty)
+                ]
+            )
+        ,
+            ( "stateToken"
+            , s
+                "186e32faa80a26810392fda6d559c7ed4721a65ce1c9d4ef3e1c87b4.1fbe786c4b3f722ac2bf05f74c4ed9a96a5b81714d82281a1cf8db499a1b14d3"
+            )
+        ]
+  where
+    s :: Text -> Aeson.Value
+    s = Aeson.String
 
 -- | The state token a registry the rig made has, and its address on the rig's network.
 madeRegistry :: Rig -> IO (String, String)
