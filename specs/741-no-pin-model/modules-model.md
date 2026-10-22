@@ -17,9 +17,7 @@ Promote shared identity vocabulary to the nearest existing upstream owner only w
 
 ```mermaid
 flowchart TD
-  Ledger[Bound ledger premises] -->|constrain| Candidate[Hypothetical identity model]
-  Root[Accepted registry law] -->|constrains| Candidate
-  App[Bound application model] -->|constrains| Candidate
+  Sources["Bound ledger premises<br/>Accepted registry law<br/>Bound application model"] -->|constrain| Candidate[Hypothetical identity model]
   Candidate -->|evidence for| Ruling[Operator decision]
   Ruling -->|authorizes alignment| Export[Root and generated consumers]
 ```
