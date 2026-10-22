@@ -79,8 +79,18 @@
       "pause": 400
     }
   ],
+  "statement-audit-result": [
+    {
+      "text": "Statement audit result.",
+      "pause": 500
+    },
+    {
+      "text": "An independent statement audit on 22 October 2026 found the candidate ready to prove: twelve stated obligations and the true inversion of the rejected name-only reading, with two expected-refutable claims ready for constructive refutation. Nine of nine public cases have one derived inversion, twenty-nine mutants own all twenty-three guards, and fifteen negative controls failed for their intended reasons. The audited statement identities are statements.json 97450a8880920e1f81b97a02e2e449c76aec7baa9ae2b17fab63f7fc93fccb87 and lean/NoPin/Statements.lean 586c5ee86be8a691970ba245472e4d7be67303667242e42f53a905e6f2d838de in investigations/741-no-pin/. This establishes neither the truth of any statement nor hash separation for a real hash, provenance validity, ledger behaviour, or any custody, economic or reader claim. Separation among witness, trie-ready and application assets, and wrong-key and wrong-registry refusal for the authenticated reading, are not yet stated; they are required before any role-authentication claim.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "impact.md",
-    "sha256": "54b1bd6368bd17fa211816aac9d89653eda10c7e34fe82b95bf8b52257a512ed"
+    "sha256": "95c57cedc78c7698fb446fac7f9bfe429032c520bd80b6c6df93f802f82e3995"
   }
 }

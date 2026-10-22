@@ -2,7 +2,7 @@
 
 As the ticket owner, I want independently reviewable evidence at each stage, with semantic decisions reaching the operator before dependent work.
 
-The four tasks marked done carry the ticket owner's acceptance of the bind-and-investigate slice; every other task is pending. Task names are descriptive; accepted task stamps belong to the ticket owner. Source paths denote owners, not blanket writable permission: freeze each stage's exact fence.
+Tasks marked done carry the ticket owner's acceptance of their slice (bind and investigate; identity statements); every other task is pending. Task names are descriptive; accepted task stamps belong to the ticket owner. Source paths denote owners, not blanket writable permission: freeze each stage's exact fence.
 
 ## Setup and authority
 
@@ -15,10 +15,10 @@ The four tasks marked done carry the ticket owner's acceptance of the bind-and-i
 Independent outcome: a reader can inspect exact identity premises and replay the same-seed cases, without claiming the whole design is accepted.
 
 - [x] **Inventory identity premises** — Read `lean/Singular/Model/Registry.lean`, the bound ledger/history sources and the application model; record exact hash/ledger premises with satisfying-witness obligations in `impact.md`. Requirements: Explicit identities; Satisfiable premises.
-- [ ] **Freeze candidate call surfaces** — Complete the hypothetical identity signatures in `functions-model.md` and owned records in `data-model.md` before implementing candidate files. Requirements: Explicit identities; Bound authority.
-- [ ] **Model identity and role cases** — In the frozen `investigations/741-no-pin/` files, state executable naming/application dependencies and state/witness/request-tag classification, including a genuine witness carrying a fabricated state datum. Requirements: Explicit identities; Authenticated asset roles.
-- [ ] **State same-seed history obligations** — In the same candidate namespace, distinguish multiple policies in one transaction from repeated spending across history; preserve any concrete counterexample. Requirement: Scoped history uniqueness.
-- [ ] **Audit identity statements** — Independent auditor checks exact statement hashes, reachable/satisfiable premises, completeness and finite mutation floor; ticket owner records the result in `impact.md` and runtime. Requirements: Satisfiable premises; Scoped history uniqueness; Authenticated asset roles.
+- [x] **Freeze candidate call surfaces** — Complete the hypothetical identity signatures in `functions-model.md` and owned records in `data-model.md` before implementing candidate files. Requirements: Explicit identities; Bound authority.
+- [x] **Model identity and role cases** — In the frozen `investigations/741-no-pin/` files, state executable naming/application dependencies and state/witness/request-tag classification, including a genuine witness carrying a fabricated state datum. Requirements: Explicit identities; Authenticated asset roles.
+- [x] **State same-seed history obligations** — In the same candidate namespace, distinguish multiple policies in one transaction from repeated spending across history; preserve any concrete counterexample. Requirement: Scoped history uniqueness.
+- [x] **Audit identity statements** — Independent auditor checks exact statement hashes, reachable/satisfiable premises, completeness and finite mutation floor; ticket owner records the result in `impact.md` and runtime. Requirements: Satisfiable premises; Scoped history uniqueness; Authenticated asset roles.
 - [ ] **Prove or refute identity claims** — After statement approval, supply proofs or constructive witnesses in the frozen candidate modules; semantic findings go to `decisions.md`. Requirements: Explicit identities; Satisfiable premises; Scoped history uniqueness; Authenticated asset roles.
 
 ## Follow the genuine holding — priority P1

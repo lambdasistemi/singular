@@ -9,7 +9,7 @@
       "pause": 400
     },
     {
-      "text": "The four tasks marked done carry the ticket owner's acceptance of the bind-and-investigate slice; every other task is pending. Task names are descriptive; accepted task stamps belong to the ticket owner. Source paths denote owners, not blanket writable permission: freeze each stage's exact fence.",
+      "text": "Tasks marked done carry the ticket owner's acceptance of their slice (bind and investigate; identity statements); every other task is pending. Task names are descriptive; accepted task stamps belong to the ticket owner. Source paths denote owners, not blanket writable permission: freeze each stage's exact fence.",
       "pause": 400
     }
   ],
@@ -45,19 +45,19 @@
       "pause": 300
     },
     {
-      "text": "[ ] Freeze candidate call surfaces — Complete the hypothetical identity signatures in functions-model.md and owned records in data-model.md before implementing candidate files. Requirements: Explicit identities; Bound authority.",
+      "text": "[x] Freeze candidate call surfaces — Complete the hypothetical identity signatures in functions-model.md and owned records in data-model.md before implementing candidate files. Requirements: Explicit identities; Bound authority.",
       "pause": 300
     },
     {
-      "text": "[ ] Model identity and role cases — In the frozen investigations/741-no-pin/ files, state executable naming/application dependencies and state/witness/request-tag classification, including a genuine witness carrying a fabricated state datum. Requirements: Explicit identities; Authenticated asset roles.",
+      "text": "[x] Model identity and role cases — In the frozen investigations/741-no-pin/ files, state executable naming/application dependencies and state/witness/request-tag classification, including a genuine witness carrying a fabricated state datum. Requirements: Explicit identities; Authenticated asset roles.",
       "pause": 300
     },
     {
-      "text": "[ ] State same-seed history obligations — In the same candidate namespace, distinguish multiple policies in one transaction from repeated spending across history; preserve any concrete counterexample. Requirement: Scoped history uniqueness.",
+      "text": "[x] State same-seed history obligations — In the same candidate namespace, distinguish multiple policies in one transaction from repeated spending across history; preserve any concrete counterexample. Requirement: Scoped history uniqueness.",
       "pause": 300
     },
     {
-      "text": "[ ] Audit identity statements — Independent auditor checks exact statement hashes, reachable/satisfiable premises, completeness and finite mutation floor; ticket owner records the result in impact.md and runtime. Requirements: Satisfiable premises; Scoped history uniqueness; Authenticated asset roles.",
+      "text": "[x] Audit identity statements — Independent auditor checks exact statement hashes, reachable/satisfiable premises, completeness and finite mutation floor; ticket owner records the result in impact.md and runtime. Requirements: Satisfiable premises; Scoped history uniqueness; Authenticated asset roles.",
       "pause": 300
     },
     {
@@ -151,6 +151,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "ebd4676aa2cd7e4dec351054f8800533579725d6d9092a7bdf01d3b32768ccc9"
+    "sha256": "09b58e3e825dc77c425b7c26995806a7865561fd32b8d86fb3b3bfe3c106f8de"
   }
 }

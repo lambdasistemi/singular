@@ -113,6 +113,10 @@ The permanent translation keeps the two-edge law, fixed admission, applicable ex
 | Bind complete identities and distinguish same-transaction genesis | Borrow history uniqueness from spent-once | The narrower rule cannot exclude two policies in one transaction |
 | Publish unavailable provider/ledger evidence | Interpret an empty lookup or missing module as success | Missing evidence cannot satisfy a consumer guarantee |
 
+## Statement audit result
+
+An independent statement audit on 22 October 2026 found the candidate ready to prove: twelve stated obligations and the true inversion of the rejected name-only reading, with two expected-refutable claims ready for constructive refutation. Nine of nine public cases have one derived inversion, twenty-nine mutants own all twenty-three guards, and fifteen negative controls failed for their intended reasons. The audited statement identities are `statements.json` `97450a8880920e1f81b97a02e2e449c76aec7baa9ae2b17fab63f7fc93fccb87` and `lean/NoPin/Statements.lean` `586c5ee86be8a691970ba245472e4d7be67303667242e42f53a905e6f2d838de` in `investigations/741-no-pin/`. This establishes neither the truth of any statement nor hash separation for a real hash, provenance validity, ledger behaviour, or any custody, economic or reader claim. Separation among witness, trie-ready and application assets, and wrong-key and wrong-registry refusal for the authenticated reading, are not yet stated; they are required before any role-authentication claim.
+
 ```mermaid
 flowchart TD
   Source[Existing laws] -->|compare| Proposal[Proposed identities]
