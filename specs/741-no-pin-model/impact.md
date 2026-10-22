@@ -115,8 +115,7 @@ The permanent translation keeps the two-edge law, fixed admission, applicable ex
 
 ```mermaid
 flowchart TD
-  Source[Bound registry and application laws] -->|inventory| Obligation[Existing guarantees]
-  Proposal[Proposed shared identities] -->|compare| Obligation
-  Obligation -->|expose gaps| Question[Concrete user stories]
+  Source[Existing laws] -->|compare| Proposal[Proposed identities]
+  Proposal -->|exposes| Question[Open decisions]
   Question -->|requires| Decision[Operator ruling]
 ```

@@ -90,8 +90,7 @@ The [authority binding](authority.md) fixes the accepted root and application re
 
 ```mermaid
 flowchart TD
-  Evidence[Bound source and runtime evidence] -->|exposes| Question[Concrete competing outcomes]
-  Question -->|holds affected claims| Hold[No dependent acceptance]
-  Question -->|requires| Ruling[Operator decision]
-  Ruling -->|authorizes later| Alignment[Model and consumer alignment]
+  Evidence[Bound evidence] -->|exposes| Question[Open questions]
+  Question -->|requires| Ruling[Operator ruling]
+  Ruling -->|authorizes| Alignment[Align models]
 ```
