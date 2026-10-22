@@ -36,6 +36,7 @@ module Singular.CLI.Inspect (runInspect, pendingJson) where
 
 import Control.Exception
     ( SomeException
+    , catch
     , fromException
     , throwIO
     , try
@@ -344,16 +345,7 @@ inspectIncompleteCreate app env release requested dir settings identity = do
                     )
     case reached of
         Right v -> pure v
-        Left (e :: SomeException) -> case fromException e of
-            Just (failure :: CommandFailure) -> throwIO failure
-            Nothing ->
-                failWith
-                    NodeUnavailable
-                    ( "the provider at "
-                        <> providerUrl settings
-                        <> " could not be read: "
-                        <> show e
-                    )
+        Left (e :: SomeException) -> unreachable settings e
 
 {- | The inline datum an output carries, as the ledger holds it: its bytes,
 and their BLAKE2b-256 hash, both hex. A public indexer's copy of the same
@@ -422,8 +414,10 @@ inspectSaved app env savedPath mJournal key settings release a = do
                 -- The key's output is found by its witness token: the provider is
                 -- asked who holds the active witness and the terminal one, and the
                 -- leaf above is still proved against the root by replay.
-                active <- liveWitness v saved ActiveWitness key
-                terminal <- liveWitness v saved TerminalWitness key
+                let readingWitness kind =
+                        liveWitness v saved kind key `catch` unreachable settings
+                active <- readingWitness ActiveWitness
+                terminal <- readingWitness TerminalWitness
                 outs <- case appHolding app of
                     -- a rule that counts an output a holding only when it holds
                     -- the key's active witness is judged over the holders of that
@@ -654,16 +648,25 @@ inspectSaved app env savedPath mJournal key settings release a = do
         Right (findings, v) -> do
             mapM_ (uncurry (report (envTracer registryEnv))) findings
             pure v
-        Left (e :: SomeException) -> case fromException e of
-            Just (failure :: CommandFailure) -> throwIO failure
-            Nothing ->
-                failWith
-                    NodeUnavailable
-                    ( "the provider at "
-                        <> providerUrl settings
-                        <> " could not be read: "
-                        <> show e
-                    )
+        Left (e :: SomeException) -> unreachable settings e
+
+{- | A read of the provider that failed: the command's own refusal if it already
+is one, else the node-unavailable refusal that names the provider. Raised where
+the read is made, inside the gate that carries the application pin's standing,
+the refusal prints that standing as every refusal after the registry was
+resolved does.
+-}
+unreachable :: ProviderSettings -> SomeException -> IO a
+unreachable settings e = case fromException e of
+    Just (failure :: CommandFailure) -> throwIO failure
+    Nothing ->
+        failWith
+            NodeUnavailable
+            ( "the provider at "
+                <> providerUrl settings
+                <> " could not be read: "
+                <> show e
+            )
 
 {- | One witness lookup as the receipt shows it: the asset that was asked for,
 the policy and the key's bytes as the asset name, and the outputs that hold it.

@@ -6041,6 +6041,10 @@ witnessReachRows = describe "the key reached by its witness token" $ do
                     (["open-datum", "inspect", "--key", "alice-1"] <> tokenArgs token)
             outcomeOf (runReceipt inspected) `shouldBe` Just "node-unavailable"
             runExit inspected `shouldNotBe` ExitSuccess
+            -- the registry was resolved and its pin compared before the read
+            -- failed, so the refusal says so as every refusal after it does
+            valueAt "applicationPin" (runReceipt inspected)
+                `shouldBe` Just (Aeson.String "compared")
 
 -- | A key booked and folded, so that it is active.
 activeKey :: Rig -> String -> String -> IO ()
