@@ -181,7 +181,7 @@ def check_family(records, namespace, prefix, family):
     print(
         json.dumps(
             {
-                "status": ledger["status"],
+                "status": ledger.get("status", "CANDIDATE-STATEMENTS-ONLY"),
                 "statements": len(rows),
                 "sorryAx": sum(row["proofStatus"] == "STATED" for row in rows),
                 "proofStatus": {row["theorem"]: row["proofStatus"] for row in rows},
