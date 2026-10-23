@@ -6,7 +6,7 @@ Description : Slice 2 RED: the hash-pinned value pins its hash with no applicati
 License     : Apache-2.0
 
 Slice 2 (`commands-through-the-value`): `create` with a hash-pinned value
-pins exactly that hash, derives the three witness pins as today, and
+pins exactly that hash, derives the witness pin as today, and
 publishes no application reference (its script bytes do not exist). The
 neutral value names nothing. Every expected value the base producer yields
 at run time (the release, token and witness pins from the fixtures) is never
@@ -120,7 +120,7 @@ hashOmitsApplicationReference =
             refs = expectedReferences (PinByHash policy) release token
         Map.lookup RoleApplication refs `shouldBe` Nothing
 
-{- | The three witness references are derived as today for a hash pin
+{- | The witness reference is derived as today for a hash pin
 (passes at base; the other-seed control proves it can fail).
 -}
 hashDerivesWitnessesAsToday :: Spec
@@ -129,12 +129,8 @@ hashDerivesWitnessesAsToday = describe "hash-pinned witnesses" $ do
         let policy = SBS.toShort (BS.replicate 28 7)
             refsHash = expectedReferences (PinByHash policy) release token
             refsOpen = expectedReferences (appPin openDatumApplication) release token
-        Map.lookup RoleWitnessAbsent refsHash
-            `shouldBe` Map.lookup RoleWitnessAbsent refsOpen
         Map.lookup RoleWitnessActive refsHash
             `shouldBe` Map.lookup RoleWitnessActive refsOpen
-        Map.lookup RoleWitnessTerminal refsHash
-            `shouldBe` Map.lookup RoleWitnessTerminal refsOpen
         Map.lookup RoleState refsHash
             `shouldBe` Map.lookup RoleState refsOpen
         Map.lookup RoleRequest refsHash

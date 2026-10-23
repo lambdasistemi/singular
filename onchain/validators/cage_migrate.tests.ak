@@ -63,8 +63,6 @@ const migrate_predecessor_state =
     retract_time: testRetractTime,
     application_policy: testAppPolicy,
     active_policy: testRepPolicy,
-    absent_policy: testAbsentPolicy,
-    terminal_policy: testTerminalPolicy,
   }
 
 const migrate_predecessor_ref =

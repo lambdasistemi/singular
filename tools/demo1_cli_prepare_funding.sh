@@ -193,19 +193,19 @@ subs_exact() {
     || fail "$1 submissions are not $3: $(jq -c .submissions "$2")"
 }
 
-# refs_wellformed NAME FILE: NAME's create receipt published exactly six
-# reference entries — an ARRAY of objects, the six roles each once, every
+# refs_wellformed NAME FILE: NAME's create receipt published exactly four
+# reference entries — an ARRAY of objects, the four roles each once, every
 # output a distinct well-formed reference.
 refs_wellformed() {
   jq -e '
     (.references | type) == "array"
-    and (.references | length) == 6
+    and (.references | length) == 4
     and (all(.references[]; type == "object"))
-    and ([.references[] | .role] | sort == ["application","request","state","witness-absent","witness-active","witness-terminal"])
-    and ([.references[] | .output] | unique | length) == 6
+    and ([.references[] | .role] | sort == ["application","request","state","witness-active"])
+    and ([.references[] | .output] | unique | length) == 4
     and (all(.references[]; .output | type == "string" and test("^[0-9a-f]{64}#[0-9]+$")))
   ' "$2" >/dev/null \
-    || fail "$1 did not publish six distinct references: $(jq -c .references "$2")"
+    || fail "$1 did not publish four distinct references: $(jq -c .references "$2")"
 }
 
 # state_digest ROOT: the sorted `path<TAB>sha256` of every file under the
@@ -370,7 +370,7 @@ for ref_out in $(jq -r '.references[] | .output' "$receipts/carol-create.json");
   jq -e --arg r "$ref_out" 'any(.live[]; . == $r)' "$probe_one" >/dev/null \
     || fail "carol's reference $ref_out is not live"
 done
-say "carol's six references are live"
+say "carol's four references are live"
 
 orun bob-insert success -- insert --key keyPrepareA --payload "$work/payload-insert.json" --payload-schema detailed \
   "${common[@]}" "${node[@]}" "${bob[@]}"
@@ -454,7 +454,7 @@ for ref_out in $(jq -r '.references[] | .output' "$receipts/carol-create.json");
   jq -e --arg r "$ref_out" 'any(.live[]; . == $r)' "$probe_one" >/dev/null \
     || fail "carol's reference $ref_out is not live after her fold"
 done
-say "the six references are live after carol's fold"
+say "the four references are live after carol's fold"
 
 # Tokens never stranded: every token of the spent outputs is in the
 # preparation's remainder; after the fold carol still holds them in exact

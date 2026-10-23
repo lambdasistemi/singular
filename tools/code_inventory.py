@@ -726,11 +726,6 @@ NONCODE_CLASSES: list[dict] = [
         "source hashes and actual comparisons are checked by cage-tests",
     },
     {
-        "id": "lean-mutation-evidence",
-        "pattern": "lean/insert-absent-mutations.json",
-        "note": "recorded results of the bounded insert-absent mutation campaign",
-    },
-    {
         "id": "lean-model-export",
         "pattern": "lean/*.json",
         "generated": True,

@@ -92,7 +92,7 @@ fn edgeTransaction(edge: Int) -> (ByteArray, Transaction) {
     } else if edge == 6 {
       [
         fx.deliveryOutput(
-          fx.terminalPolicy,
+          fx.foreignPolicy,
           fx.keyA,
           fx.bookerAddress,
           NoDatum,
@@ -106,18 +106,18 @@ fn edgeTransaction(edge: Int) -> (ByteArray, Transaction) {
     }
   let mint =
     if edge == 0 {
-      fx.mintOf(fx.absentPolicy, fx.keyA, 1)
+      fx.mintOf(fx.foreignPolicy, fx.keyA, 1)
     } else if edge == 1 {
       fx.mintOf(fx.activePolicy, fx.keyA, 1)
     } else if edge == 2 {
       merge(
-        fx.mintOf(fx.absentPolicy, fx.keyA, -1),
+        fx.mintOf(fx.foreignPolicy, fx.keyA, -1),
         fx.mintOf(fx.activePolicy, fx.keyA, 1),
       )
     } else if edge == 4 {
-      fx.mintOf(fx.absentPolicy, fx.keyA, -1)
+      fx.mintOf(fx.foreignPolicy, fx.keyA, -1)
     } else if edge == 6 {
-      fx.mintOf(fx.terminalPolicy, fx.keyA, 1)
+      fx.mintOf(fx.foreignPolicy, fx.keyA, 1)
     } else {
       fx.mintOf(fx.activePolicy, fx.keyA, -1)
     }
@@ -255,7 +255,7 @@ fn mixedTransaction() -> (ByteArray, Transaction) {
         fx.deposit,
       ),
       fx.deliveryOutput(
-        fx.terminalPolicy,
+        fx.foreignPolicy,
         fx.keyB,
         fx.bookerAddress,
         NoDatum,
@@ -272,7 +272,7 @@ fn mixedTransaction() -> (ByteArray, Transaction) {
       outputs,
       merge(
         fx.mintOf(fx.activePolicy, fx.keyA, 1),
-        fx.mintOf(fx.terminalPolicy, fx.keyB, 1),
+        fx.mintOf(fx.foreignPolicy, fx.keyB, 1),
       ),
     ),
   )
@@ -400,11 +400,11 @@ test export_request_and_mint_routes() {
         }
       let policy =
         if kind == 0 {
-          fx.absentPolicy
+          fx.foreignPolicy
         } else if kind == 1 {
           fx.activePolicy
         } else {
-          fx.terminalPolicy
+          fx.foreignPolicy
         }
       let mintRedeemer: Data = #""
       let mintContext: Data =
@@ -455,7 +455,7 @@ test export_request_and_mint_routes() {
           mintRedeemer,
           policy,
           tx,
-        ),
+        ) == ( kind == 1 ),
         m1.state.spend(
           Some(StateDatum(fx.stateOf(root))),
           Modify([UpdateAction([])]),

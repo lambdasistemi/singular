@@ -141,9 +141,7 @@ deltaOf edge = case edge of
 -- | The policy a kind names in this registry's configuration.
 policyOfKind :: CageConfig -> Integer -> SBS.ShortByteString
 policyOfKind cfg kind = case kind of
-    0 -> cfgAbsentPolicy cfg
     1 -> cfgActivePolicy cfg
-    2 -> cfgTerminalPolicy cfg
     _ -> error "policyOfKind: not a token kind"
 
 {- | The approval binding (#157 approval-asset-binding): the asset name the application

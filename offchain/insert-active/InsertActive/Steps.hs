@@ -8,7 +8,7 @@ of what the chain now holds:
 
 * 'bootStory' publishes the state validator as a reference output
   BEFORE choosing a seed, boots the registry under the parameterless open
-  application and the three witness policies, reads the boot state datum
+  application and the active witness policy, reads the boot state datum
   and publishes the reference outputs every fold resolves through;
 * 'book' submits one certified @insertActive@ booking that names the
   wallet as its destination;
@@ -305,7 +305,7 @@ cageCfg
 cageCfg stateBytes requestBytes codes seed =
     let stateHash = computeScriptHash stateBytes
         registryId = scriptHashBytes stateHash <> deriveAssetName seed
-        (appPin, absentPin, activePin, terminalPin) =
+        (appPin, activePin) =
             Edges.namingPins codes registryId
     in  CageConfig
             { cageScriptBytes = stateBytes
@@ -317,8 +317,6 @@ cageCfg stateBytes requestBytes codes seed =
             , defaultTip = Coin 1_000_000
             , cfgApplicationPolicy = appPin
             , cfgActivePolicy = activePin
-            , cfgAbsentPolicy = absentPin
-            , cfgTerminalPolicy = terminalPin
             , cfgConsumerScript = SBS.empty
             , network = Testnet
             }

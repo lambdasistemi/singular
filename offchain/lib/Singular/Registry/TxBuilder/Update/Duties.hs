@@ -7,7 +7,7 @@ Description : Fold duty decisions — what each edge owes
 License     : Apache-2.0
 
 The obligations a fold's requests create, computed once, off chain:
-what must move under the registry's three token policies, where a
+what must move under the registry's active token policy, where a
 minted token has to land, which custody has to be spent, which holder
 input a burn consumes, what returns to the owner, and who has to sign
 (the fold: nobody). This is one derivation; the cage computes its own

@@ -48,7 +48,6 @@ theorem lovelace_le_receivedBy (recipient : Recipient) (outputs : List TxOutput)
   cases recipient <;> simp only [receivedBy]
   · exact lovelace_le_foldl _ 0 o mem
   · exact lovelace_le_foldl _ 0 o mem
-  · exact lovelace_le_foldl _ 0 o mem
   · exact lovelace_le_foldl_max _ 0 o mem
 
 /-- One payment is settled by any output list holding an output that pays its

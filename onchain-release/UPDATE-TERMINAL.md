@@ -21,7 +21,7 @@ would evidence nothing about the transition.
 ```mermaid
 flowchart LR
   Archive[This archive] --> Command[update-terminal]
-  Command --> Boot[Boot the open registry, four pinned policies]
+  Command --> Boot[Boot the open registry, two pinned policies]
   Boot --> Insert[Fold one certified insertActive]
   Insert --> Wallet[Active token at the named wallet]
   Wallet --> Retire[Fold updateTerminal at the same key]
@@ -47,10 +47,9 @@ exactly one input from you — `REGISTRY_BLUEPRINT`, the compiled
 blueprint this archive carries at `onchain/plutus.json`.
 
 **No naming blueprint is involved.** `NAMING_BLUEPRINT` need not be set,
-and the command never consults it. All four registry pins come from the
+and the command never consults it. Both registry pins come from the
 one blueprint above: the parameterless `open.open` as the application
-policy, and `witness.witness` applied at kinds 0, 1 and 2 for the
-absent, active and terminal witnesses.
+policy, and `witness.witness` applied at kind 1 for the active witness.
 
 ## What you should see
 

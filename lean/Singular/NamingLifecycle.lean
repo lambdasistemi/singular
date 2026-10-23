@@ -23,8 +23,6 @@ structure ConsumerBinding where
   requestValidatorHash : Nat
   applicationPolicy : Nat
   activePolicy : Nat
-  absentPolicy : Nat
-  terminalPolicy : Nat
   validatorScript : Nat
   deriving Repr, BEq, DecidableEq, ToJson
 
@@ -38,8 +36,7 @@ def namingConsumerBinding : ConsumerBinding :=
   , cageTokenName := canonicalNamingParameters.cageTokenName
   , requestValidatorHash := canonicalNamingParameters.requestValidatorHash
   , applicationPolicy := namingConfig.applicationPolicy
-  , activePolicy := 8, absentPolicy := 9, terminalPolicy := 10,
-    validatorScript := 12 }
+  , activePolicy := 8, validatorScript := 12 }
 
 structure InitializationAttempt where
   sourceRevision : String
@@ -50,8 +47,6 @@ structure InitializationAttempt where
   requestValidatorHash : Nat
   applicationPolicy : Nat
   activePolicy : Nat
-  absentPolicy : Nat
-  terminalPolicy : Nat
   validatorScript : Nat
   deriving Repr, BEq, DecidableEq, ToJson
 
@@ -63,8 +58,7 @@ def canonicalInitialization : InitializationAttempt :=
   , cageTokenName := canonicalNamingParameters.cageTokenName
   , requestValidatorHash := canonicalNamingParameters.requestValidatorHash
   , applicationPolicy := namingConfig.applicationPolicy
-  , activePolicy := 8, absentPolicy := 9, terminalPolicy := 10,
-    validatorScript := 12 }
+  , activePolicy := 8, validatorScript := 12 }
 
 def initializeConsumer (binding : ConsumerBinding) (attempt : InitializationAttempt) :
     Except String Unit := do
@@ -81,8 +75,6 @@ def initializeConsumer (binding : ConsumerBinding) (attempt : InitializationAtte
   if attempt.applicationPolicy != namingApplicationPolicyFor attempt.requestValidatorHash then
     throw "application-policy-derivation"
   if attempt.activePolicy != binding.activePolicy then throw "active-policy"
-  if attempt.absentPolicy != binding.absentPolicy then throw "absent-policy"
-  if attempt.terminalPolicy != binding.terminalPolicy then throw "terminal-policy"
   if attempt.validatorScript != binding.validatorScript then throw "validator-script"
 
 def clearedFixture : NamingFixture := { aliceFixture with paymentDestination := none }

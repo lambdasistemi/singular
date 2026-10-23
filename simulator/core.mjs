@@ -28,7 +28,7 @@ export const EDGES = [
   'deleteActive',
   'witnessTerminal',
 ];
-export const KINDS = ['active', 'absent', 'terminal'];
+export const KINDS = ['active'];
 const leaf = { $option: { $enum: STATES } }; // null is Unknown, else Known s
 
 // ---- schemas ---------------------------------------------------------------
@@ -48,18 +48,14 @@ const configSchema = {
   retractTime: N,
   applicationPolicy: N,
   activePolicy: N,
-  absentPolicy: N,
-  terminalPolicy: N,
   registryId: N,
 };
-const custody = { key: N, refundAddress: N, value: N };
 // A holding keeps the datum its delivery wrote — the request's own, or null for
 // none — so a later fold spends the witness as the chain holds it.
 const holding = { key: N, kind: { $enum: KINDS }, output: N, datum: { $option: N } };
 const stateSchema = {
   config: configSchema,
   trie: [{ key: N, leaf }],
-  custody: [custody],
   held: [holding],
 };
 const requestSchema = {
@@ -323,8 +319,6 @@ export const admittedFoldBatch = (s, batch, w) => admitFold(s, batch, w, () => f
 // ---- the consumer's view (interface §7): tokens, never the root -------------
 export const witnesses = (s, key) => ({
   active: s.held.filter((h) => h.key === key && h.kind === 'active').length,
-  absent: s.custody.filter((c) => c.key === key).length,
-  terminal: s.held.filter((h) => h.key === key && h.kind === 'terminal').length,
 });
 
 export function view(s, key) {
@@ -341,13 +335,10 @@ export const initial = (config) => ({
     retractTime: 3,
     applicationPolicy: 7,
     activePolicy: 8,
-    absentPolicy: 9,
-    terminalPolicy: 10,
     registryId: 0,
     ...config,
   },
   trie: [],
-  custody: [],
   held: [],
 });
 

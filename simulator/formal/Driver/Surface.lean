@@ -34,7 +34,7 @@ def declaredOperations : List String := declaredExits.map exitName
 them; a row reporting a subset is a per-theorem projection and is rejected by
 the checker rather than counted as conformance. -/
 def declaredObservations : List String :=
-  ["config", "custody", "held", "leaf", "mint", "paid", "root", "state", "tx"]
+  ["config", "held", "leaf", "mint", "paid", "root", "state", "tx"]
 
 /-- Fields the model has no vocabulary for, named here so they are a stated
 limit instead of a silent omission. The registry root is the leading case: the
@@ -64,7 +64,7 @@ def declaredJudgements : List String := ["spend", "settle"]
 transaction, since the model builds none for a batch, and with `leaf` read at
 every distinct request key. -/
 def batchObservations : List String :=
-  ["config", "custody", "held", "leaf", "mint", "paid", "root", "state"]
+  ["config", "held", "leaf", "mint", "paid", "root", "state"]
 
 /-- The declared batch questions, each named with its own observation extent:
 `foldBatch`, answered by `Singular.foldBatch`, and `rejectBatch`, a batch of
@@ -84,7 +84,7 @@ structure SurfaceIdentity where
 
 def surface : SurfaceIdentity :=
   { declaration := "Singular.Driver.runSurface"
-  , protocolVersion := 7
+  , protocolVersion := 8
   , operations := declaredOperations
   , observations := declaredObservations
   , unobservable := declaredUnobservable

@@ -54,7 +54,6 @@ theorem insert_active_transaction_row (s : RegistryState) (r : Request) (t : Res
     destinationDatumBinds r = true ∧
     onlyRootChanged s.config t.state.config = true ∧
     t.state.config.root = rootOf t.state.trie ∧
-    t.state.custody = s.custody ∧
     kindCount t.state .active r.key = 1 ∧
     ({ key := r.key, kind := .active, output := r.output
       , datum := r.datum } : Holding) ∈ t.state.held ∧
@@ -71,7 +70,7 @@ theorem insert_active_transaction_row (s : RegistryState) (r : Request) (t : Res
     (∀ (c₁ c₂ : Config) (q : Request) (a : Option Approval),
         c₁.applicationPolicy = c₂.applicationPolicy →
         admitsFor c₁ q a = admitsFor c₂ q a) := by
-  obtain ⟨hfree, ⟨ap', hap', hpol, hedge, hkey, hown, hdst, hasset⟩, htrie, hcfg, hcust,
+  obtain ⟨hfree, ⟨ap', hap', hpol, hedge, hkey, hown, hdst, hasset⟩, htrie, hcfg,
     hheld, hmint, hpaid⟩ := (insert_active_inversion s r t he).mp hok
   have hapeq : ap' = ap := Option.some.inj (hap'.symm.trans hap)
   rw [hapeq] at hpol hedge hkey hown hdst hasset
@@ -96,10 +95,8 @@ theorem insert_active_transaction_row (s : RegistryState) (r : Request) (t : Res
       rw [hfree] at hiff
       exact Leaf.noConfusion (hiff.mp h1)
   have hcount : kindCount t.state .active r.key = 1 := by
-    unfold kindCount
-    rw [hheld, countHeld_cons]
-    simp only [beq_self_eq_true, Bool.and_self, if_pos]
-    have hz : (s.held.filter fun x => x.key == r.key && x.kind == TokenKind.active).length = 0 := hzero
+    have hz := hzero
+    simp [kindCount, hheld, countHeld_cons] at hz ⊢
     omega
   have hstep : ∀ sigs : List (List Nat),
       step s { r with approval := some { ap with signatures := sigs } } = .ok t := by
@@ -108,7 +105,7 @@ theorem insert_active_transaction_row (s : RegistryState) (r : Request) (t : Res
     refine ⟨by simpa using hfree,
       ⟨{ ap with signatures := sigs }, rfl, by simpa using hpol, by simpa using hedge,
         by simpa using hkey, by simpa using hown, by simpa using hdst, by simpa using hasset⟩,
-      by simpa using htrie, by simpa using hcfg, hcust, by simpa using hheld,
+      by simpa using htrie, by simpa using hcfg, by simpa using hheld,
       by simpa using hmint, hpaid⟩
   have hsecond : ∀ r₂ : Request, r₂.edge = .insertActive → r₂.key = r.key →
       admitsFor t.state.config r₂ r₂.approval = true →
@@ -138,8 +135,6 @@ theorem insert_active_transaction_row (s : RegistryState) (r : Request) (t : Res
   have happrovals : approvalsIn r = 1 := by rw [approvalsIn, hap]; rfl
   have hrouted : routedPayment t r .requestOutput = [((TokenKind.active, r.key), 1)] := by
     unfold routedPayment mintRoutedTo; rw [hmint]; simp [route] <;> decide
-  have hcage : txCageOutputs t r = [] := by
-    unfold txCageOutputs routedPayment mintRoutedTo; rw [hmint]; simp [route] <;> decide
   have hburn : txBurnInputs s t r = [] := by
     unfold txBurnInputs; rw [hmint]; simp
   have htx : txOf s r lovelace =
@@ -161,7 +156,7 @@ theorem insert_active_transaction_row (s : RegistryState) (r : Request) (t : Res
           , refunds := [(r.output, r.deposit)] } := by
     rw [txOf_of_step_ok s r lovelace t hok]
     simp [he, obligations, owedTo, ownerOutputs, paymentPaid, txStateOutput,
-      txDestinationOutputs, deliveredDatum, hcage, hburn, happrovals, hdest, hrouted, hbind, hpaid, hmint,
+      txDestinationOutputs, deliveredDatum, hburn, happrovals, hdest, hrouted, hbind, hpaid, hmint,
       requiredSigners, registryDatumForm, registryStateTokens]
   have hsigtx : ∀ sigs : List (List Nat),
       txOf s { r with approval := some { ap with signatures := sigs } } lovelace
@@ -175,8 +170,6 @@ theorem insert_active_transaction_row (s : RegistryState) (r : Request) (t : Res
     have hr : routedPayment t { r with approval := some { ap with signatures := sigs } }
         .requestOutput = [((TokenKind.active, r.key), 1)] := by
       unfold routedPayment mintRoutedTo; rw [hmint]; simp [route] <;> decide
-    have hc : txCageOutputs t { r with approval := some { ap with signatures := sigs } } = [] := by
-      unfold txCageOutputs routedPayment mintRoutedTo; rw [hmint]; simp [route] <;> decide
     have hbi : txBurnInputs s t { r with approval := some { ap with signatures := sigs } } = [] := by
       unfold txBurnInputs; rw [hmint]; simp
     have hb : datumHash (destinationDatum
@@ -184,7 +177,7 @@ theorem insert_active_transaction_row (s : RegistryState) (r : Request) (t : Res
       unfold datumHash destinationDatum
       simp only [hd]
       rw [hasset, hedge, hkey, hown, hdst, hdest]
-    simp only [txStateOutput, txDestinationOutputs, deliveredDatum, hc, hbi, ha, hd, hr, hb, hpaid, hmint,
+    simp only [txStateOutput, txDestinationOutputs, deliveredDatum, hbi, ha, hd, hr, hb, hpaid, hmint,
       requiredSigners, registryDatumForm, registryStateTokens]
     simp [he, obligations, owedTo, ownerOutputs, paymentPaid, requestDestination]
   have hsecondtx : ∀ r₂ : Request, r₂.edge = .insertActive → r₂.key = r.key →
@@ -194,7 +187,7 @@ theorem insert_active_transaction_row (s : RegistryState) (r : Request) (t : Res
     exact txOf_of_step_error _ _ _ _ (hsecond r₂ he₂ hk₂ hadm₂)
   exact ⟨htx,
     by simp [destinationDatumBinds, hap, hbind],
-    by simp [onlyRootChanged, hcfg], by rw [hcfg, htrie], hcust, hcount,
+    by simp [onlyRootChanged, hcfg], by rw [hcfg, htrie], hcount,
     by rw [hheld]; exact List.mem_cons_self,
     rfl, rfl, rfl, hsigtx, hsecondtx, hadmits, hcross⟩
 

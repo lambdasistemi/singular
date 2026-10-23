@@ -3268,9 +3268,7 @@ pinsPolicy rig registry seed policyBytes = do
             sort [t | Aeson.Object o <- refs, Just t <- [fieldOf "role" o]]
                 `shouldBe` [ "request"
                            , "state"
-                           , "witness-absent"
                            , "witness-active"
-                           , "witness-terminal"
                            ]
         Nothing -> expectationFailure ("no references in " <> runLabel r)
     -- the state datum on the chain pins the hash

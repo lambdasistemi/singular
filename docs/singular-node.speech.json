@@ -447,11 +447,11 @@
       "pause": 400
     },
     {
-      "text": "The diagram shows the proof first and the two questions to the provider after it, so a registry whose history does not chain to its root is refused before the provider is asked who holds a token. A key that is active has a witness token: an asset of the registry's active witness policy whose name is the key's bytes. A registration mints it and a termination burns it. The registry has a second policy, for terminal witnesses, and the same name under it is the terminal witness of the key. Both policies belong to this registry. The command works out the two assets to ask for from the registry the address names and from the key, and asks for them by asset, so it does not list every output at the application's address to find the key's output. One function in the library makes that asset from the registry and the key, and it is the only place that does so for this read.",
+      "text": "The diagram shows the proof first and the question to the provider after it, so a registry whose history does not chain to its root is refused before the provider is asked who holds a token. A key that is active has a witness token: an asset of the registry's active witness policy whose name is the key's bytes. A registration mints it and a termination burns it. The policy belongs to this registry. The command works out the asset to ask for from the registry the address names and from the key, and asks for it by asset, so it does not list every output at the application's address to find the key's output. One function in the library makes that asset from the registry and the key, and it is the only place that does so for this read.",
       "pause": 400
     },
     {
-      "text": "For a key the registry has recorded, active or terminal, the receipt of inspect carries a field witness with two entries, active and terminal. Each has policy, the policy as hex; assetName, the key's bytes as hex; and holders, the references of the outputs that hold the asset.",
+      "text": "For a key the registry has recorded, active or terminal, the receipt of inspect carries a field witness with one entry, active. It has policy, the policy as hex; assetName, the key's bytes as hex; and holders, the references of the outputs that hold the asset.",
       "pause": 400
     },
     {
@@ -489,7 +489,7 @@
       "pause": 400
     },
     {
-      "text": "The comparison is total for the application that runs it. singular is told the registry and the release and not the application, so it cannot derive the application policy: it takes it from the datum, compares the other three, and says so, once, in every receipt that shows registry content: the field applicationPin reads not-checked-against-any-blueprint. open-datum knows its own script, so it derives the application policy too and compares all four; its receipts read compared. It derives two application policies, the open one and the closed one, and learns which kind of registry it has only from the comparison: the registry's application policy must be one of the two, and a registry whose application policy is neither is refused naming application, before the command says anything about the registry, even that it is closed. A create reads back the state datum its boot made and compares its four pins with the ones it built, and reports a partial outcome naming the field when they differ.",
+      "text": "The comparison is total for the application that runs it. singular is told the registry and the release and not the application, so it cannot derive the application policy: it takes it from the datum, compares the other three, and says so, once, in every receipt that shows registry content: the field applicationPin reads not-checked-against-any-blueprint. open-datum knows its own script, so it derives the application policy too and compares all four; its receipts read compared. It derives two application policies, the open one and the closed one, and learns which kind of registry it has only from the comparison: the registry's application policy must be one of the two, and a registry whose application policy is neither is refused naming application, before the command says anything about the registry, even that it is closed. A create reads back the state datum its boot made and compares its two pins with the ones it built, and reports a partial outcome naming the field when they differ.",
       "pause": 400
     },
     {
@@ -737,6 +737,6 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "7611b2a8b88d31d75b83f8c720b6cfcf8185e0057b49af440ac12becb5b548af"
+    "sha256": "93989f4ed0291440f220bc49b01dba1a9c3cd03521ef937e9d463187e228f80b"
   }
 }

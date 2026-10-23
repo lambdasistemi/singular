@@ -347,7 +347,7 @@ cageCfg
 cageCfg stateBytes requestBytes codes seed =
     let stateHash = computeScriptHash stateBytes
         registryId = scriptHashBytes stateHash <> deriveAssetName seed
-        (appPin, absentPin, activePin, terminalPin) =
+        (appPin, activePin) =
             Edges.namingPins codes registryId
     in  CageConfig
             { cageScriptBytes = stateBytes
@@ -359,8 +359,6 @@ cageCfg stateBytes requestBytes codes seed =
             , defaultTip = Coin 1_000_000
             , cfgApplicationPolicy = appPin
             , cfgActivePolicy = activePin
-            , cfgAbsentPolicy = absentPin
-            , cfgTerminalPolicy = terminalPin
             , cfgConsumerScript = SBS.empty
             , network = Testnet
             }

@@ -181,11 +181,6 @@ def initializationRows : List Json :=
         ({ canonicalInitialization with activePolicy := 99 } : InitializationAttempt) with
       | .error "active-policy" => true | _ => false)
       (toJson "active-policy")
-  , row "LI06-substituted-terminal-policy-refused"
-      (match initializeConsumer namingConsumerBinding
-        ({ canonicalInitialization with terminalPolicy := 99 } : InitializationAttempt) with
-      | .error "terminal-policy" => true | _ => false)
-      (toJson "terminal-policy")
   , row "LI07-substituted-registry-refused"
       ((match initializeConsumer namingConsumerBinding
           ({ canonicalInitialization with registry := 2 } : InitializationAttempt) with

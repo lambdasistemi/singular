@@ -8,8 +8,8 @@ License     : Apache-2.0
 The acceptance line, executable:
 
 > One boot derives and pins the parameterless open policy plus
-> active/absent/terminal witnesses from the on-chain identity manifest;
-> the resulting eight-field datum decodes with no naming input.
+> active witness from the on-chain identity manifest;
+> the resulting six-field datum decodes with no naming input.
 
 Every clause of that sentence is asserted here against a real devnet
 boot, and the subject is the production entry point
@@ -131,11 +131,11 @@ openBootSpec stateBytes requestBytes openBytes witnessBytes = do
 
                 let registryId =
                         scriptHashBytes (computeScriptHash stateBytes)
-                    (_, absentPin, activePin, terminalPin) =
+                    (_, activePin) =
                         Edges.namingPins codes registryId
-                length (nub [absentPin, activePin, terminalPin]) `shouldBe` 3
+                length (nub [cfgApplicationPolicy cfg, activePin]) `shouldBe` 2
 
-                -- The eight-field datum, read back from chain.
+                -- The six-field datum, read back from chain.
                 let stateAddr = cageAddrFromCfg cfg Testnet
                 stateUtxos <- Cage.withLatest prov (`Cage.outputsAt` stateAddr)
                 case findStateUtxo (cagePolicyIdFromCfg cfg) tokenId stateUtxos of

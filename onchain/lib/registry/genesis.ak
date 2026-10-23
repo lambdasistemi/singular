@@ -18,7 +18,7 @@
 ////
 //// - The ledger guarantees an input is spent at most once, so consuming the
 ////   seed makes the minted token name unique to this registry.
-//// - The seven non-root state fields are chosen freely at boot; a fold, not
+//// - The five non-root state fields are chosen freely at boot; a fold, not
 ////   genesis, keeps them fixed afterwards.
 ////
 //// ## Invariants

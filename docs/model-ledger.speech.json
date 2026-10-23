@@ -33,7 +33,7 @@
       "pause": 500
     },
     {
-      "text": "The trie answers two questions and nothing else: is this key known, and where in its life is it. Applications store nothing in the leaf. Seven edges move a leaf, each an MPFS primitive applied to a state, each a delta over three token kinds.",
+      "text": "The trie answers two questions and nothing else: is this key known, and where in its life is it. Applications store nothing in the leaf. Seven edges move a leaf, each an MPFS primitive applied to a state, each a delta over the one token kind a fold mints, the active witness.",
       "pause": 400
     },
     {
@@ -55,13 +55,27 @@
       "pause": 400
     }
   ],
+  "retired-with-the-unused-policy-pins": [
+    {
+      "text": "Retired with the unused policy pins.",
+      "pause": 500
+    },
+    {
+      "text": "Milestone one mints no absent or terminal token, so the registry state no longer pins a policy for either, and the model keeps one token kind. Four statements whose only subject was a token of a removed kind are retired with no replacement, and one is restated over the leaf:",
+      "pause": 400
+    },
+    {
+      "text": "The lifecycle row that substituted a terminal policy at initialization is retired with the field it altered. The coverage record names every identity that changed.",
+      "pause": 400
+    }
+  ],
   "what-is-covered-and-what-is-not": [
     {
       "text": "What is covered, and what is not.",
       "pause": 500
     },
     {
-      "text": "Covered: the seven edges and their deltas; the complement of the edge table as refusals with distinct reasons; admission by an approval scoped to the request's tuple; the leaf codec both ways; the fold's atomicity, zero-request refusal and mint check; the custody census and the deposit's destination; and the eleven promises over states reachable from genesis.",
+      "text": "Covered: the seven edges and their deltas; the complement of the edge table as refusals with distinct reasons; admission by an approval scoped to the request's tuple; the leaf codec both ways; the fold's atomicity, zero-request refusal and mint check; the deposit's destination; and the seven promises over states reachable from genesis.",
       "pause": 400
     },
     {
@@ -87,6 +101,6 @@
   ],
   "_source": {
     "file": "model-ledger.md",
-    "sha256": "f590f7b5a597a88439142d2e654ea016784506c3b26531c296f80a850e42aee1"
+    "sha256": "7550c99aee7c7fa1fe280edb5d3992dcaa7318ed476a6a1182d531a10ece79cc"
   }
 }

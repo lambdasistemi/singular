@@ -481,7 +481,7 @@ jobs:
             def txid: type == "string" and test("^[0-9a-f]{64}$");
             def text: type == "string" and length > 0;
             def complete: .comparison == "agrees" and .tamper == null
-              and (.compared | length) == 9 and .perturbation.refused > 0;
+              and (.compared | length) == 8 and .perturbation.refused > 0;
             .row == "reject-and-retract-refund-controls"
             and .verdict == "unmet-by-ruling"
             and .base == $base and .dirty == false
@@ -611,7 +611,7 @@ jobs:
             def txid: type == "string" and test("^[0-9a-f]{64}$");
             def text: type == "string" and length > 0;
             def complete: .comparison == "agrees" and .tamper == null
-              and (.compared | length) == 9 and .perturbation.refused > 0;
+              and (.compared | length) == 8 and .perturbation.refused > 0;
             .row == "reject-inside-processing-and-retraction-windows"
             and .verdict == "unmet-by-ruling"
             and .base == $base and .dirty == false
@@ -759,7 +759,7 @@ jobs:
             and .steps[0].request == .steps[1].request
             and .steps[0].request.owner == .steps[2].request.owner
             and .steps[0].request.reference != .steps[2].request.reference
-            and (.steps[1].compared | length) == 9
+            and (.steps[1].compared | length) == 8
             and .steps[1].perturbation.refused > 0
             and .transactions == [.steps[1].chain.txid]
           ' "$f" > /dev/null || { echo 'FAIL: retraction window evidence moved'; exit 1; }

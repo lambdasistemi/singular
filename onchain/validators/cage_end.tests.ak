@@ -115,8 +115,6 @@ test modify_rejects_foreign_policy_same_asset() fail {
       retract_time: testRetractTime,
       application_policy: testAppPolicy,
       active_policy: testRepPolicy,
-      absent_policy: testAbsentPolicy,
-      terminal_policy: testTerminalPolicy,
     }
   let foreign_value = valueFromToken("foreign_policy", testToken)
   let fake_input =
@@ -162,8 +160,6 @@ test end_rejects_foreign_policy_same_asset() fail {
       retract_time: testRetractTime,
       application_policy: testAppPolicy,
       active_policy: testRepPolicy,
-      absent_policy: testAbsentPolicy,
-      terminal_policy: testTerminalPolicy,
     }
   let foreign_value = valueFromToken("foreign_policy", testToken)
   let fake_input =

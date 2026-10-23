@@ -141,15 +141,11 @@ def toState (j : Json) : Except String RegistryState := do
         let leaf ← (entry.getObjVal? "leaf") >>= toLeaf
         pure (key, leaf)
     | .ok _ => .error "trie is not an array"
-  let custody ←
-    match j.getObjVal? "custody" with
-    | .error _ => pure []
-    | .ok c => fromJson? c
   let held ←
     match j.getObjVal? "held" with
     | .error _ => pure []
     | .ok h => fromJson? h
-  pure { config, trie, custody, held }
+  pure { config, trie, held }
 
 /-- The exit a caller names by its operation name, one of the driver's declared
 exits; a caller that names none asks for the fold of the request's own edge. -/
@@ -231,7 +227,6 @@ so nothing else is taken from the caller. -/
 def toOutput (j : Json) : Except String TxOutput := do
   let role ← match (← (j.getObjVal? "role") >>= fromJson? : String) with
     | "destination" => pure TxRole.destination
-    | "cage" => pure .cage
     | "owner" => pure .owner
     | other => throw s!"no judged output has the role {other}"
   let address ← (j.getObjVal? "address") >>= fromJson?

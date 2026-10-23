@@ -14,7 +14,7 @@ wallet that held it, its leaf committed as `Terminal`.
 What it observes, in order:
 
 1. the registry boots under the PARAMETERLESS open application and the
-   three witness policies, all four pins from @REGISTRY_BLUEPRINT@
+   active witness policy, both pins from @REGISTRY_BLUEPRINT@
    alone — no naming blueprint anywhere;
 2. one @insertActive@ folds and the wallet the request named holds
    exactly one @(activePolicy, key)@ token. This is the prerequisite,

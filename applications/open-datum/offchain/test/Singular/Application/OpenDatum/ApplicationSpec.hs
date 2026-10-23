@@ -116,7 +116,7 @@ pinEquivalence =
                         Script.OpenDatumApplication
                         ident
                         (releaseCodes rel)
-                (appOld, absOld, actOld, terOld) = namingPins pinnedOld ident
+                (appOld, actOld) = namingPins pinnedOld ident
                 (cfgNew, codesNew) =
                     configForApplication
                         (appPin openDatumApplication)
@@ -132,12 +132,8 @@ pinEquivalence =
                     <> T.unpack (hex ident)
                     <> " application="
                     <> T.unpack (hex (SBS.fromShort (cfgApplicationPolicy cfgNew)))
-                    <> " absent="
-                    <> T.unpack (hex (SBS.fromShort (cfgAbsentPolicy cfgNew)))
                     <> " active="
                     <> T.unpack (hex (SBS.fromShort (cfgActivePolicy cfgNew)))
-                    <> " terminal="
-                    <> T.unpack (hex (SBS.fromShort (cfgTerminalPolicy cfgNew)))
                     <> " application-code="
                     <> T.unpack
                         (hex (scriptHashBytes (computeScriptHash (ncApplication codesNew))))
@@ -146,9 +142,7 @@ pinEquivalence =
                         (hex (scriptHashBytes (computeScriptHash (ncWitness codesNew))))
                 )
             cfgApplicationPolicy cfgNew `shouldBe` appOld
-            cfgAbsentPolicy cfgNew `shouldBe` absOld
             cfgActivePolicy cfgNew `shouldBe` actOld
-            cfgTerminalPolicy cfgNew `shouldBe` terOld
             ncApplication codesNew `shouldBe` ncApplication pinnedOld
             ncWitness codesNew `shouldBe` ncWitness pinnedOld
 

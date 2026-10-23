@@ -36,10 +36,7 @@ def jRetiredByRecoveryKey : NamingState :=
 def obs (id : String) (state : NamingState) (key : Nat) : Json :=
   let leaf := trieGet state.registry.trie key
   let active := kindCount state.registry .active key
-  let custody := custodyCount state.registry key
-  let terminal := kindCount state.registry .terminal key
-  Json.mkObj [ ("id", toJson id), ("leaf", toJson leaf), ("active", toJson active)
-             , ("absent", toJson custody), ("terminal", toJson terminal) ]
+  Json.mkObj [ ("id", toJson id), ("leaf", toJson leaf), ("active", toJson active) ]
 
 def spellings : List Json :=
   [ Json.mkObj [ ("id", toJson "NS01-alice-known"), ("spelling", toJson "alice")

@@ -133,9 +133,7 @@ import Singular.Registry.Types (OnChainTxOutRef)
 data Pins = Pins
     { pinState :: Text
     , pinApplication :: Text
-    , pinAbsent :: Text
     , pinActive :: Text
-    , pinTerminal :: Text
     }
     deriving stock (Eq, Show, Generic)
 
@@ -244,7 +242,7 @@ economics =
 {- | The configuration of the application registry this release boots from
 this seed, and the codes as that registry runs them: the application
 applied to the registry identity the seed determines, and
-@witness(kind, registry)@ at kinds 0, 1 and 2.
+@witness(kind, registry)@ at kind 1.
 -}
 registryConfigFor
     :: Application
@@ -267,9 +265,7 @@ pinsOf cfg =
     Pins
         { pinState = hexT (scriptHashBytes (cfgScriptHash cfg))
         , pinApplication = hexT (SBS.fromShort (cfgApplicationPolicy cfg))
-        , pinAbsent = hexT (SBS.fromShort (cfgAbsentPolicy cfg))
         , pinActive = hexT (SBS.fromShort (cfgActivePolicy cfg))
-        , pinTerminal = hexT (SBS.fromShort (cfgTerminalPolicy cfg))
         }
 
 hexT :: ByteString -> Text

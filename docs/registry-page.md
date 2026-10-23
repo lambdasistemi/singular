@@ -61,7 +61,7 @@ non-zero.
 
 | Section | What you read | Where it comes from |
 | --- | --- | --- |
-| Registry | the state token, the live state output, the state script the release derives, the four policies the registry's datum pins, and whether the application policy was compared with an application's blueprint | the token, the release, the state datum |
+| Registry | the state token, the live state output, the state script the release derives, the two policies the registry's datum pins, and whether the application policy was compared with an application's blueprint | the token, the release, the state datum |
 | Release | version label, blueprint title and checksum, links to that version's release and documentation asset | the release alone; the links are computed from the label, never fetched |
 | Rules | processing window, retract window, tip per request, key length bound, anyone may build a fold from public inputs | the state datum and the release's own limit |
 | State | root, active and terminal key counts, folds since create, create transaction, last fold, pending requests with owner, key, edge, submission time and locked value | the public replay and the live request outputs |
@@ -85,14 +85,12 @@ them now. A later release prints its own label:
     "outcome": "success",
     "provenance": "the page shows the public history of the state token from create to the live state output, each fold's rebuilt root checked against the root recorded in that fold's state datum, and nothing beyond it. The history was read from Koios. The provider's answers are unverified: it supplies raw facts and untrusted reconstruction material, no ledger proofs and no anchor. The release label is the archive's own claim. The page is unsigned.",
     "registry": {
-        "absentScript": "ea2d49ce6945088b9657e093e24939a6c87ce3b0371b2c49a327b0b",
         "activeScript": "847e1671c3ce4e9c13c28c51b6f563f7d9d7cc3996c744a455715b09",
         "applicationPin": "not-checked-against-any-blueprint",
         "applicationScript": "1d906e06f8c0570316336844b3960935dee26c162e36cf9a17597b7a",
         "stateOutput": "19c5fb15336e7de3dbbe8c8c1009c1927306441fb403eaf9aa416d45a92b79b7#0",
         "stateScript": "68df9c42ebd4468be130e9cd5538a7af39cc31c146cda45f274cccc5",
         "stateToken": "68df9c42ebd4468be130e9cd5538a7af39cc31c146cda45f274cccc5.1d5542bdf2b2c8c76728a5935edd71676d1df5f389c70863b6a4d15fe33bde26",
-        "terminalScript": "f58e458aeeacac74f13d2e367a6793ac997a54867ba2e5b63dfbc176"
     },
     "release": {
         "blueprintSha": "b08853db256269379ca60b25b28f435d9651c8b893e9a1af21472c9941078bad",
@@ -126,11 +124,11 @@ insertion, folded by her, read back under the fold's root.
 
 ## The registry's pinned policies
 
-The registry section shows the four policies the registry's datum pins:
-the application, active, absent and terminal policies. They are the
+The registry section shows the two policies the registry's datum pins:
+the application and active policies. They are the
 registry's own statement, read from its state datum, and they never change
-after the registry is created. The command compares the three witness
-policies with the ones the release derives for this registry before it
+after the registry is created. The command compares the active
+policy with the ones the release derives for this registry before it
 prints anything: a registry that pins another is refused, as the refusals
 below say.
 

@@ -23,8 +23,8 @@ and `registry/fold` modules implement this one active contract. The earlier
 broader implementations and success evidence are archived on
 `preserve/m2/pre-m1-source-removal`; they are not current permanent contract support.
 The witness policy checks state-validator co-presence, so transaction admission
-also requires the state validator. A raw terminal-policy representation or a
-fixture-only pure burn does not enable terminal witnessing.
+also requires the state validator. The witness policy admits the active kind
+only.
 The [candidate evidence](../specs/505-permanent-m1/RESULTS.md) records compiled
 refusal controls and their setup, reachability and live-comparison limits.
 

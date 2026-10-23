@@ -133,10 +133,8 @@ import Singular.Registry.Types
     ( CageDatum (..)
     , OnChainRoot (..)
     , OnChainTokenState (..)
-    , stateAbsentPolicyBytes
     , stateActivePolicyBytes
     , stateAppPolicyBytes
-    , stateTerminalPolicyBytes
     )
 import Singular.Registry.WaitTypes (WaitFailure)
 
@@ -248,8 +246,6 @@ runDescribe app env a = do
                         , pageApplicationPin =
                             renderApplicationPinStanding (savedApplicationPin saved)
                         , pageActiveScript = hexT (stateActivePolicyBytes state)
-                        , pageAbsentScript = hexT (stateAbsentPolicyBytes state)
-                        , pageTerminalScript = hexT (stateTerminalPolicyBytes state)
                         , pageRelease =
                             ReleaseInfo
                                 { releaseVersion = version

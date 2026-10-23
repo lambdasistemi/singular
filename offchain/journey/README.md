@@ -73,8 +73,8 @@ A step that failed to happen here would be a defect in this document.
    requires the scripts the boot transaction carried (in its witness
    set or through the reference outputs it resolved) to be exactly the
    state script, and those the update transaction carried to be
-   exactly the state and request scripts and the three witness
-   policies this registry pins. Prints each validator's **applied**
+   exactly the state and request scripts and the active witness
+   policy this registry pins. Prints each validator's **applied**
    hash alongside its unapplied pin; any mismatch fails the run naming
    both hashes and the parameters used. The state line still prints
    `previousPolicies=[]` and `(1 parameter)`: existing narration kept

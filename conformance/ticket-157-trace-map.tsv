@@ -10,12 +10,10 @@ onchain	t157_a2_wrong_edge_approval_refuses	approval-binding	approval-mismatch
 onchain	t157_a2_wrong_key_approval_refuses	approval-binding	approval-mismatch
 onchain	t157_a2_wrong_owner_approval_refuses	approval-binding	approval-mismatch
 onchain	t157_a3_foreign_policy_approval_refuses	no-approval	no-approval
-onchain	t157_a4_altered_absent_policy_refuses	pins-altered	Model.I-P1-config-preserved
 onchain	t157_a4_altered_active_policy_refuses	pins-altered	Model.I-P1-config-preserved
 onchain	t157_a4_altered_application_policy_refuses	pins-altered	Model.I-P1-config-preserved
 onchain	t157_a4_altered_process_time_refuses	pins-altered	Model.I-P1-config-preserved
 onchain	t157_a4_altered_retract_time_refuses	pins-altered	Model.I-P1-config-preserved
-onchain	t157_a4_altered_terminal_policy_refuses	pins-altered	Model.I-P1-config-preserved
 onchain	t157_a4_altered_tip_refuses	pins-altered	Model.I-P1-config-preserved
 onchain	t157_g1_delete_spelling_bytes_refuses	leaf-codec	Model.decodeState-none
 onchain	t157_g1_insert_empty_value_refuses	leaf-codec	Model.decodeState-none

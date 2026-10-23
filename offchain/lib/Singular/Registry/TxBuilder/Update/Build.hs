@@ -161,7 +161,7 @@ buildProgram
         -- once from the transaction's own evidence.
         -- #157 C5/C6/T1-T6: what the edges owe. The custody an edge
         -- consumes is spent, the tokens it moves are minted or burned
-        -- under the registry's own three policies, and the carriers it
+        -- under the registry's own active policy, and the carriers it
         -- owes — registration destination or retirement deposit return — are created.
         mapM_
             (\sp -> Tx.spendScript (fst (csUtxo sp)) (csRedeemer sp))

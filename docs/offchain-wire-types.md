@@ -31,7 +31,7 @@ support every constructor the wire carries — the sweep included, whose
 refusal is the validator's, a separate layer from the wire. The seven
 edge tags, their diagnostic names
 with the out-of-table fallback, the request's edge and deposit
-positions, the eight-field state order and the four policy accessors
+positions, the six-field state order and the two policy accessors
 are each pinned to their own field. Roundtrips run as supporting
 checks: a symmetric field swap inside a codec keeps every roundtrip
 green, which is exactly why the independent literals carry the wire.
@@ -58,7 +58,7 @@ flowchart TD
 | --- | --- |
 | `Singular.Registry.Wire.Primitive` | The asset-name, output-reference and root values; the shared `Data` conversion helpers; the leaf of the family — depends on no sibling. |
 | `Singular.Registry.Wire.Request` | The edge vocabulary and its seven tags with their names, the request datum with its codec, and the accept\/retract\/reject phase classification. Reads Primitive only. |
-| `Singular.Registry.Wire.State` | The eight-field token state with its codec, the four policy-byte accessors, and the cage datum — request, state, and the refund-only custody of an absent token. Reads Primitive and Request. |
+| `Singular.Registry.Wire.State` | The six-field token state with its codec, the two policy-byte accessors, and the cage datum — request, state, and the refund-only custody of an absent token. Reads Primitive and Request. |
 | `Singular.Registry.Wire.Proof` | The neighbor and the three proof steps of the MPF encoding. Reads Primitive only. |
 | `Singular.Registry.Wire.Redeemer` | Migration parameters, the minting redeemer, per-request actions, the spending redeemer with its retained sweep constructor — decodable on the wire, refused by the validator — and the encode-only pinned-hook redeemer. Reads Primitive and Proof. |
 | `Singular.Registry.Types` | The compatibility facade: the exact original export list, re-exported. Owns no data definition and no codec body. |
@@ -115,7 +115,7 @@ contributor must not move while editing an owner:
 - Field order is part of the wire: the request encodes its seven fields
   in the order the cage reads them, with the destination as a
   two-element list exactly as Aiken encodes a tuple; the state encodes
-  its eight fields root-first.
+  its six fields root-first.
 - The custody of an absent token is refund-only: one byte string naming
   the address the inserter chose. The retired shape that also carried
   the registry key is refused by the decoder, and no test regenerates

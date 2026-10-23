@@ -230,8 +230,6 @@ test modify_zero_fee() {
       retract_time: testRetractTime,
       application_policy: testAppPolicy,
       active_policy: testRepPolicy,
-      absent_policy: testAbsentPolicy,
-      terminal_policy: testTerminalPolicy,
     }
   let zf_request =
     RequestDatum(
@@ -278,8 +276,6 @@ test modify_zero_fee() {
             retract_time: testRetractTime,
             application_policy: testAppPolicy,
             active_policy: testRepPolicy,
-            absent_policy: testAbsentPolicy,
-            terminal_policy: testTerminalPolicy,
           },
         ),
       ),

@@ -239,8 +239,8 @@ first_tx="$(jq -r 'select(.journalEvent == "submitted" and .journalStep == "publ
 [ "$gina_seed" = "$first_tx#1" ] \
   || fail "gina's seed $gina_seed is not the first publication's change $first_tx#1"
 say "gina's seed is the first publication's change $gina_seed"
-jq -e '[.references[] | .role] | sort == ["application","request","state","witness-absent","witness-active","witness-terminal"]' \
-  "$receipts/gina-create.json" >/dev/null || fail "gina's create did not publish the six references"
+jq -e '[.references[] | .role] | sort == ["application","request","state","witness-active"]' \
+  "$receipts/gina-create.json" >/dev/null || fail "gina's create did not publish the four references"
 for ref_out in $(jq -r '.references[] | .output' "$receipts/gina-create.json"); do
   probe_one="$work/gina-ref-probe.json"
   "$devnet" probe --node-socket "$sock" --network-magic 42 --tx-in "$ref_out" >"$probe_one"

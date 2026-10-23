@@ -35,9 +35,8 @@ structure Approval where
 
 /-- One request: apply one of the seven edges to one key. `owner` is the
 controller (or, for the absent edges, the refund address) the request acts for;
-the refund address is named by `insertAbsent` and recorded in the custody datum
-(custody-lovelace-refund); `deposit` is the value the absent token holds; `output` is where active
-and terminal tokens are routed; `approval` is the admission evidence; `claimed`
+the refund address is named by `insertAbsent`; `deposit` is the value an
+absent insertion holds; `output` is where active tokens are routed; `approval` is the admission evidence; `claimed`
 is the mint the transaction claims for this request, summed by the fold; `tip`
 is what the request holds beyond its deposit (on chain `held − deposit`);
 `reference` names the output reference the request sits at, the one a
@@ -91,9 +90,8 @@ instance : ToJson Request where
 carries a datum, none when it carries none, as the chain requires. -/
 def deliveredDatum (r : Request) : DatumForm := datumFormOf r.datum
 
-/-- The destination a request names: the cage-custody sentinel `0` for
-`insertAbsent`, whose token goes to the cage; otherwise the output the request
-named. -/
+/-- The destination a request names: the cage sentinel `0` for
+`insertAbsent`; otherwise the output the request named. -/
 def requestDestination (r : Request) : Nat :=
   if r.edge == .insertAbsent then 0 else r.output
 

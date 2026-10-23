@@ -92,7 +92,7 @@ theorem built_transaction_settles (state : RegistryState) (exit : Exit) (request
             simp only [hedge, obligations]
             apply settle_one
             cases hd : request.datum <;> simp +decide [paysRecipient,
-              txDestinationOutputs, owedTo, ownerOutputs, txCageOutputs,
+              txDestinationOutputs, owedTo, ownerOutputs,
               routedPayment, mintRoutedTo, happ, applyEdge, assetDelta, hedge, delta, route,
               requestDestination, presentsDatum, deliveredDatum, datumFormOf, hd]
       · simp [he] at hstep

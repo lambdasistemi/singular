@@ -1,4 +1,3 @@
-use aiken/fuzz
 use aiken/primitive/bytearray
 use cardano/address
 use cardano/assets.{add, from_lovelace, zero}
@@ -32,13 +31,15 @@ const foreignToken: ByteArray = #"666f726569676e2d746f6b656e"
 
 const registryKey: ByteArray = #"616c696365"
 
-const absentPolicy: ByteArray =
+/// The policy ids the instances of kinds 0 and 2 would have: no registry pins
+/// them and the script admits nothing under them.
+const unusedKindZeroPolicy: ByteArray =
   #"b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0"
 
 const activePolicy: ByteArray =
   #"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1"
 
-const terminalPolicy: ByteArray =
+const unusedKindTwoPolicy: ByteArray =
   #"c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0"
 
 const stateRef: OutputReference =
@@ -67,8 +68,6 @@ fn pins() -> State {
     retract_time: 10_000,
     application_policy: #"a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9",
     active_policy: activePolicy,
-    absent_policy: absentPolicy,
-    terminal_policy: terminalPolicy,
   }
 }
 
@@ -100,11 +99,11 @@ fn contributeRedeemers() {
 
 fn policyOf(kind: Int) -> ByteArray {
   if kind == 0 {
-    absentPolicy
+    unusedKindZeroPolicy
   } else if kind == 1 {
     activePolicy
   } else {
-    terminalPolicy
+    unusedKindTwoPolicy
   }
 }
 
@@ -141,72 +140,40 @@ fn moveWitness(kind: Int, quantity: Int, inFold: Bool) -> Bool {
   )
 }
 
-test witness_absent_mint_outside_a_fold_refuses() fail {
-  moveWitness(0, 1, False)
-}
-
+/// The active kind needs the fold to MINT; the accepting half is what keeps
+/// the refusing half from passing vacuously.
 test witness_active_mint_outside_a_fold_refuses() fail {
   moveWitness(1, 1, False)
-}
-
-test witness_terminal_mint_outside_a_fold_refuses() fail {
-  moveWitness(2, 1, False)
-}
-
-test witness_absent_mint_inside_a_fold_accepts() {
-  moveWitness(0, 1, True)
 }
 
 test witness_active_mint_inside_a_fold_accepts() {
   moveWitness(1, 1, True)
 }
 
-test witness_terminal_mint_inside_a_fold_accepts() {
-  moveWitness(2, 1, True)
-}
-
-/// Every kind needs the fold to MINT; the accepting half of the same
-/// property is what keeps the refusing half from passing vacuously.
-test witness_prop_minting_always_needs_the_fold(kind via fuzz.int_between(0, 2)) {
-  !moveWitness(kind, 1, False) && moveWitness(kind, 1, True)
-}
-
-/// terminal-witnesses-plural: a terminal witness says a name is over, forever. Its holder may
-/// destroy their own copy without a fold.
-test witness_terminal_pure_burn_needs_no_fold() {
-  moveWitness(2, -1, False)
-}
-
-/// ...and only the terminal kind may. An absent or active burn is a
-/// supply change the cage must have computed.
-test witness_absent_pure_burn_still_needs_the_fold() fail {
-  moveWitness(0, -1, False)
-}
-
 test witness_active_pure_burn_still_needs_the_fold() fail {
   moveWitness(1, -1, False)
 }
 
-/// A mint hiding beside a burn is not a pure burn: the terminal
-/// exemption is about DESTROYING a witness, never about creating one.
-test witness_terminal_mint_beside_burn_is_not_a_pure_burn() fail {
-  witness.witness.mint(
-    2,
-    registryId(),
-    emptyRedeemer(),
-    terminalPolicy,
-    Transaction {
-      ..tx_mod.placeholder,
-      mint: add(
-        add(zero, terminalPolicy, registryKey, -1),
-        terminalPolicy,
-        foreignToken,
-        1,
-      ),
-      inputs: [],
-      redeemers: [],
-    },
-  )
+/// No other kind is admitted: not even inside a fold, for a mint or a burn.
+test witness_kind_zero_mint_inside_a_fold_refuses() fail {
+  moveWitness(0, 1, True)
+}
+
+test witness_kind_two_mint_inside_a_fold_refuses() fail {
+  moveWitness(2, 1, True)
+}
+
+test witness_kind_zero_burn_inside_a_fold_refuses() fail {
+  moveWitness(0, -1, True)
+}
+
+test witness_kind_two_burn_inside_a_fold_refuses() fail {
+  moveWitness(2, -1, True)
+}
+
+/// A burn of kind two needs the fold too: nothing is exempt.
+test witness_kind_two_pure_burn_without_a_fold_refuses() fail {
+  moveWitness(2, -1, False)
 }
 
 /// The fold has to be OUR registry's fold. A real, well-formed fold of a

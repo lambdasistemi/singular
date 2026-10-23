@@ -1222,7 +1222,6 @@ acceptedLive =
                     , "comparison" .= ("agrees" :: String)
                     , "compared"
                         .= [ "config"
-                           , "custody"
                            , "held"
                            , "leaf"
                            , "mint"

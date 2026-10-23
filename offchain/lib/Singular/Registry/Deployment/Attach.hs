@@ -110,10 +110,6 @@ data CageParts = CageParts
     -}
     , partsActivePolicy :: SBS.ShortByteString
     -- ^ The active-token policy: `witness(1, registry)` applied.
-    , partsAbsentPolicy :: SBS.ShortByteString
-    -- ^ The absent-token policy: `witness(0, registry)` applied.
-    , partsTerminalPolicy :: SBS.ShortByteString
-    -- ^ The terminal-token policy: `witness(2, registry)` applied.
     , partsConsumerScript :: SBS.ShortByteString
     }
 
@@ -160,8 +156,6 @@ cageConfigFor dep parts = do
                     , defaultTip = Coin (depTip dep)
                     , cfgApplicationPolicy = partsApplicationPolicy parts
                     , cfgActivePolicy = partsActivePolicy parts
-                    , cfgAbsentPolicy = partsAbsentPolicy parts
-                    , cfgTerminalPolicy = partsTerminalPolicy parts
                     , cfgConsumerScript = partsConsumerScript parts
                     , network = Testnet
                     }

@@ -16,7 +16,7 @@ def exitEdges : List Edge :=
   [.insertAbsent, .insertActive, .updateActive, .updateTerminal,
    .deleteAbsent, .deleteActive, .witnessTerminal]
 
-/-- Keys 3 and 4 active, key 6 absent under custody. -/
+/-- Keys 3 and 4 active, key 6 known absent. -/
 def exitState : RegistryState := legacyAbsent (booked (booked s0 3) 4) 6
 
 /-- A request of edge `e` at key `k`, owner 42, deposit 55, tip 7. -/
@@ -84,12 +84,12 @@ def exitTxShape (exit : Exit) (r : Request) (signers : List Nat) (paid : List (N
 
 /-! ### Every exit carries its payments
 
-A fold's `paid` is what the exit owes, then the custody refunds its step already
+A fold's `paid` is what the exit owes, then the refunds its step already
 pays; its transaction carries each floor in the output that pays it, and settles.
 The registry below adds a terminal key to `exitState`, so every edge is admitted at
 one of the keys the rows range over. -/
 
-/-- Keys 3 and 4 active, key 5 terminal, key 6 absent under custody. -/
+/-- Keys 3 and 4 active, key 5 terminal, key 6 known absent. -/
 def paidState : RegistryState :=
   match step (booked exitState 5) (req .updateTerminal 5 42 555) with
   | .ok r => r.state | .error _ => exitState
@@ -158,7 +158,7 @@ def allExits : List Exit := exitEdges.map .fold ++ [.reject, .retract]
 -- the surface's protocol moved for each, and again when a request came to carry
 -- its datum.
 #guard declaredOperations == exitEdges.map edgeName ++ ["reject", "retract"]
-#guard surface.protocolVersion == 7
+#guard surface.protocolVersion == 8
 #guard surface.judgements == ["spend", "settle"]
 #guard surface.batchQuestions.map (·.1) == ["foldBatch", "rejectBatch"]
 #guard surface.batchQuestions.all fun q => !q.2.contains "tx"

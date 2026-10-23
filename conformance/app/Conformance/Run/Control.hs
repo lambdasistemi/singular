@@ -102,12 +102,12 @@ data Control
       oracle was not loosened into a homogeneous list rule.
       -}
       BlueprintWrongArity
-    | {- | state-fields-chain-round-trip armed (#157 X1): the retired SIX-field state encoding
+    | {- | state-fields-chain-round-trip armed (#157 X1): the retired EIGHT-field state encoding
       must decode the chain's datum, which it cannot — the datum has
-      eight fields now. Proves the round-trip row is reading the new
+      six fields now. Proves the round-trip row is reading the new
       contract and would notice a regression to the old one.
       -}
-      LegacySixField
+      LegacyEightField
     deriving stock (Eq, Show)
 
 readControl :: IO Control
@@ -123,7 +123,7 @@ readControl = do
         Just "missing-witness" -> pure MissingWitness
         Just "naive-authenticator" -> pure NaiveAuthenticator
         Just "unapplied-address" -> pure UnappliedAddress
-        Just "legacy-six-field" -> pure LegacySixField
+        Just "legacy-eight-field" -> pure LegacyEightField
         Just "blueprint-wrong-arity" -> pure BlueprintWrongArity
         Just other ->
             failWith

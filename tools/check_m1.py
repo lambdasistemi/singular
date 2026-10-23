@@ -96,7 +96,7 @@ def check(corpus, root):
             ]
             assert sorted(h["key"] for h in state["held"]) == sorted(keys)
             assert all(h["kind"] == "active" for h in state["held"])
-            assert not state["custody"]
+            assert "custody" not in state
             assert state["config"]["root"] == root_of(state["trie"], leaf_bytes)
     return derived
 

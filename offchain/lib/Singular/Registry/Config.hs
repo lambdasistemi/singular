@@ -73,14 +73,6 @@ data CageConfig = CageConfig
     applied hash of `witness(1, registry)`. Renamed from the
     representative policy it became. Derived, never a literal.
     -}
-    , cfgAbsentPolicy :: !ShortByteString
-    {- ^ The absent-token policy (28 raw bytes, genesis-policy-pins): the applied hash
-    of `witness(0, registry)`. Derived, never a literal.
-    -}
-    , cfgTerminalPolicy :: !ShortByteString
-    {- ^ The terminal-token policy (28 raw bytes, genesis-policy-pins): the applied hash
-    of `witness(2, registry)`. Derived, never a literal.
-    -}
     , cfgConsumerScript :: !ShortByteString
     {- ^ Applied consumer script bytes (the witness every consuming
     `Modify` attaches for its hook withdrawal). Builders refuse to
@@ -91,13 +83,13 @@ data CageConfig = CageConfig
     }
 
 {- | Initial `State` datum from a cage configuration (#157 state-datum-fields, genesis-policy-pins):
-empty trie root, configured economics, and the four pinned policies the
-eight-field datum carries. Each of the four comes from the config, which
+empty trie root, configured economics, and the two pinned policies the
+six-field datum carries. Each of the two comes from the config, which
 derives it from the two partitions' `script-identity.json` for the registry
 identity this boot is about to create — the application policy from the
-naming application script, the three witness policies from
-`witness(kind, registry)` applied at kinds 0, 1 and 2. Nothing here is a
-literal or a placeholder, and the conformance rows round-trip all four
+naming application script, the active witness policy from
+`witness(kind, registry)` applied at kind 1. Nothing here is a
+literal or a placeholder, and the conformance rows round-trip both
 through this datum.
 
 Single construction site for bootstrapped states — every journey boots
@@ -116,8 +108,4 @@ bootStateFromCfg cfg root =
             BuiltinByteString (SBS.fromShort (cfgApplicationPolicy cfg))
         , stateActivePolicy =
             BuiltinByteString (SBS.fromShort (cfgActivePolicy cfg))
-        , stateAbsentPolicy =
-            BuiltinByteString (SBS.fromShort (cfgAbsentPolicy cfg))
-        , stateTerminalPolicy =
-            BuiltinByteString (SBS.fromShort (cfgTerminalPolicy cfg))
         }

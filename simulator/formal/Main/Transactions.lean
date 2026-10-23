@@ -17,7 +17,7 @@ manifest detaches the row from its proof and is caught there. -/
 
 def transactionRowTheorem : String := "Singular.Statements.insert_active_transaction_row"
 def transactionRowStatement : String :=
-  "d1c937f62f959c54a332841fe20c817a930e08aaab678dcbb749eb28a3645fb6"
+  "b94da1eb79b528ea2d897998bb4c016fa6ad55444cf7b418581e7b05cffdb12b"
 def keyedMintTheorem : String := "Singular.Statements.fold_batch_claimed_mint_by_kind_key"
 def keyedMintStatement : String :=
   "9c01e278443498d3488e6671cc1799393f565a2a1c0055c1926a8d3e559da988"
@@ -47,7 +47,7 @@ field it may differ in: the frame in which cross-registry separation is observed
 to be absent. -/
 def otherRegistry : Config :=
   { cfg with minimumTip := 9, processTime := 20, retractTime := 30
-           , activePolicy := 80, absentPolicy := 90, terminalPolicy := 100 }
+           , activePolicy := 80 }
 
 /-- The transaction this row is about, built by the model from the executed
 step. -/
@@ -80,7 +80,7 @@ def transactionRowJson : Json :=
 /-- An insertion from genesis with a refund address different from the key. -/
 def retirementRowTheorem : String := "Singular.Statements.update_terminal_transaction_row"
 def retirementRowStatement : String :=
-  "f21126bbaa702ea79d379d7ea755ca49f322c9006105f56dc52af4319e1cfe74"
+  "eda5fcf4def9dc73ac7accf83704d6ac4a635cc141da664a058631c5935fd4f3"
 
 /-- The state an accepted `insertActive` at key 42 produced: the leaf reads
 `Active` and its one active token is held at output 555. -/
@@ -185,7 +185,7 @@ def keyedMintRowJson (id : String) (batch : List Request) : Json :=
     [ ("id", id)
     , ("requestsApplied", toJson applied)
     , ("perKindTotalsAgree", toJson
-        ([TokenKind.active, .absent, .terminal].all fun k =>
+        ([TokenKind.active].all fun k =>
           assetKindTotal (claimedMint batch) k == assetKindTotal (actualMint batch) k))
     , ("theorem", toJson keyedMintTheorem)
     , ("statementSha256", toJson keyedMintStatement)
@@ -196,9 +196,7 @@ def keyedMintRowJson (id : String) (batch : List Request) : Json :=
 
 def tokenPoliciesJson : Json :=
   Json.mkObj
-    [ ("active", toJson (kindPolicy cfg .active))
-    , ("absent", toJson (kindPolicy cfg .absent))
-    , ("terminal", toJson (kindPolicy cfg .terminal)) ]
+    [ ("active", toJson (kindPolicy cfg .active)) ]
 
 /-- The signature sets each admitted fold is folded again with: one signer, and
 two signatures from different keys. -/

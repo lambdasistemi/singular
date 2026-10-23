@@ -99,23 +99,21 @@ def constructors(value):
 
 
 def pins_of(datum_hex):
-    """The four pinned policies of a state datum: the constructor of eight
-    fields whose last four are 28-byte policies, in the order the state
-    declares them: application, active, absent, terminal."""
+    """The two pinned policies of a state datum: the constructor of six
+    fields whose last two are 28-byte policies, in the order the state
+    declares them: application, active."""
     value, _ = decode(bytes.fromhex(datum_hex))
     for constr in constructors(value):
         fields = constr[2]
-        if len(fields) == 8 and all(
+        if len(fields) == 6 and all(
             isinstance(f, bytes) and len(f) == 28 for f in fields[4:]
         ):
-            application, active, absent, terminal = (f.hex() for f in fields[4:])
+            application, active = (f.hex() for f in fields[4:])
             return {
                 "application": application,
                 "active": active,
-                "absent": absent,
-                "terminal": terminal,
             }
-    raise ValueError("no state datum of eight fields in this datum")
+    raise ValueError("no state datum of six fields in this datum")
 
 
 def main():

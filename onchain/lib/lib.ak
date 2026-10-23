@@ -299,12 +299,8 @@ pub const edgeDeleteActive: Int = 5
 
 pub const edgeWitnessTerminal: Int = 6
 
-/// The three token kinds, in the order the state pins their policies.
-pub const kindAbsent: Int = 0
-
+/// The one token kind a fold mints: the active witness.
 pub const kindActive: Int = 1
-
-pub const kindTerminal: Int = 2
 
 // #183 slice b: requests carry an edge index, not value bytes. The leaf
 // bytes above are what each edge's trie move reads and writes, and the

@@ -168,16 +168,14 @@ stateOutput st =
             (Coin 2_000_000)
             (MultiAsset (Map.singleton policy (Map.singleton name 1)))
 
-{- | The six scripts a boot publishes, by their receipt role, as create
+{- | The four scripts a boot publishes, by their receipt role, as create
 builds them.
 -}
 bootScripts :: [(Text, Script ConwayEra)]
 bootScripts =
     [ ("state", scriptFromBytes "state" (cageScriptBytes bootCfg))
     , ("request", mkRequestScript bootCfg (TokenId (snd token)))
-    , ("witness-absent", witnessScriptOf bootCfg bootCodes 0)
     , ("witness-active", witnessScriptOf bootCfg bootCodes 1)
-    , ("witness-terminal", witnessScriptOf bootCfg bootCodes 2)
     ,
         ( "application"
         , scriptFromBytes "open-datum" (ncApplication bootCodes)

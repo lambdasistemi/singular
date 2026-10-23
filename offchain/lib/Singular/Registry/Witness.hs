@@ -50,8 +50,6 @@ import Singular.Registry.TxBuilder.Internal (policyIdFromPin)
 data WitnessKind
     = -- | The token a registration mints and a termination burns
       ActiveWitness
-    | -- | The token that says a key is over
-      TerminalWitness
     deriving stock (Eq, Show, Enum, Bounded)
 
 -- | What the provider said holds a key's witness.
@@ -72,7 +70,6 @@ witnessAsset cfg kind key =
   where
     pin = case kind of
         ActiveWitness -> cfgActivePolicy cfg
-        TerminalWitness -> cfgTerminalPolicy cfg
 
 -- | Whether an output's own value holds at least one unit of the asset.
 holdsAsset :: Asset -> TxOut ConwayEra -> Bool

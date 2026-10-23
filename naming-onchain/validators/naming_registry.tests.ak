@@ -16,8 +16,7 @@ use naming.{NamingRecord, RetirementQuorum}
 // ----------------------------------------------------------------------------
 
 /// Registry-mode rows for naming (#157 Gate S): the six approval arms,
-/// the fold-created record, retirement's authority, completion, and the
-/// three token policies.
+/// the fold-created record, retirement's authority and completion.
 ///
 /// Naming is an INSTANCE of the registry now. Nothing of its runs at fold
 /// time: the approval its mint purpose certifies is evidence the cage
@@ -56,14 +55,13 @@ const strangerAddress: ByteArray =
 const recordDatumHash: ByteArray =
   #"1111111111111111111111111111111111111111111111111111111111111111"
 
-/// The three token policies of this instance.
+/// The active token policy of this instance.
 const activePolicy: ByteArray = fixtures.rep_policy
 
-const absentPolicy: ByteArray =
+/// A policy no registry pins: the custody token of an excluded edge and a
+/// stray second asset sit under it.
+const strayPolicy: ByteArray =
   #"b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0"
-
-const terminalPolicy: ByteArray =
-  #"c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0"
 
 fn bookingDestination() -> (ByteArray, ByteArray) {
   (recordAddress, recordDatumHash)
@@ -138,7 +136,7 @@ fn custodyReference(key: ByteArray, refund: ByteArray) -> Input {
     },
     output: Output {
       address: address.from_script(naming.mpfs_state_hash),
-      value: add(from_lovelace(2_000_000), absentPolicy, key, 1),
+      value: add(from_lovelace(2_000_000), strayPolicy, key, 1),
       datum: InlineDatum(naming.MpfsAbsentCustody { key, refund }),
       reference_script: None,
     },
@@ -582,7 +580,7 @@ test record_with_a_second_asset_refuses() fail {
     Some(fixtures.as_datum(retirementRecord())),
     Retire { key: registryKey, revealed_control: recoveryReveal },
     fixtures.self_ref,
-    retireTx([recoveryKey], add(recordValue(), terminalPolicy, otherKey, 1)),
+    retireTx([recoveryKey], add(recordValue(), strayPolicy, otherKey, 1)),
   )
 }
 
@@ -675,7 +673,7 @@ test recover_without_the_registry_accepts() {
   )
 }
 // ============================================================================
-// tree-change-requires-approval, P2 — the three token policies
+// tree-change-requires-approval, P2 — the active token policy
 // ============================================================================
 //
 // MOVED (#173 I2). `witness.ak` and its rows now live in
@@ -684,10 +682,7 @@ test recover_without_the_registry_accepts() {
 // of the structural mirror this module used to hand them. Naming no
 // longer participates in a registry fold at all.
 //
-// Moved, not retired: the twelve rows (mint needs the fold at each of
-// the three kinds, the two-sided property over all three, the terminal
-// pure-burn exemption and the two non-terminal burns it does not cover)
-// execute unchanged in `onchain/validators/witness.tests.ak`, together
-// with three controls this module never had — a well-formed fold of
-// ANOTHER registry, a state spent with `Contribute`, and one spent with
-// `End`.
+// The rows (mint needs the fold, the active burn needs it too, no other
+// kind is admitted) execute in `onchain/validators/witness.tests.ak`,
+// together with controls for a well-formed fold of ANOTHER registry, a
+// state spent with `Contribute`, and one spent with `End`.

@@ -157,9 +157,7 @@ triePairsOf facts =
 heldOutputOf :: Int -> Int
 heldOutputOf k = 500 + k
 
-{- | The start state for facts: trie, held for live active tokens, custody
-for absent keys so the premise holds.
--}
+-- | The start state for facts: trie and held for live active tokens.
 startJsonOf :: LiveFacts -> Value
 startJsonOf facts =
     let triePairs = triePairsOf facts
@@ -177,11 +175,6 @@ startJsonOf facts =
                 ]
             | (k, (LeafActive, True)) <- Map.toList facts
             ]
-        custodyJson =
-            [ object
-                ["key" .= k, "refundAddress" .= (0 :: Int), "value" .= (55 :: Int)]
-            | (k, (LeafAbsent, _)) <- Map.toList facts
-            ]
         configJson =
             object
                 [ "root" .= rootNumbers
@@ -190,13 +183,10 @@ startJsonOf facts =
                 , "retractTime" .= (0 :: Int)
                 , "applicationPolicy" .= applicationPolicy
                 , "activePolicy" .= activePolicy
-                , "absentPolicy" .= (9 :: Int)
-                , "terminalPolicy" .= (10 :: Int)
                 ]
     in  object
             [ "config" .= configJson
             , "trie" .= trieJson
-            , "custody" .= custodyJson
             , "held" .= heldJson
             ]
 
