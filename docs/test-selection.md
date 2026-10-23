@@ -39,7 +39,22 @@ For example, network-time examples start under `Singular.Registry.NetworkTime [t
 
 ## Suite commands and evidence limits
 
-The Cabal manifests declare five Hspec suites: `cage-tests`, `e2e-tests` exposed as `cage-tests-e2e`, `contract-tests`, `record-value-tests`, and `conformance-tests` exposed for filtering as `conformance-appendix-tests`. The record-value entrypoint defines its examples inline, under the module name `Main`. Contract checks include repeated runs of the same case list against different adapters, each wrapped under its defining module. Development-node evidence descriptions and conformance appendix markers remain inside the module groups.
+The Cabal manifests declare eight test suites: seven Hspec suites, `cage-tests`, `e2e-tests` exposed as `cage-tests-e2e`, `contract-tests`, `record-value-tests`, `conformance-tests` exposed for filtering as `conformance-appendix-tests`, `open-datum-tests` and `keri-stub-tests`, and one Tasty suite, `cleanup-control`. The record-value entrypoint defines its examples inline, under the module name `Main`. Contract checks include repeated runs of the same case list against different adapters, each wrapped under its defining module. Development-node evidence descriptions and conformance appendix markers remain inside the module groups.
+
+Each suite runs in one hosted job, named in the second column. A suite that no hosted job runs is not evidence for a pull request, so a new suite is added to this table with the job that runs it.
+
+| Suite | Hosted job | What the job runs |
+|---|---|---|
+| `cage-tests` | `journey` | `nix run .#cage-tests` from `offchain/`, after the narrated registry journey |
+| `e2e-tests` | `e2e-part` | `nix run .#cage-tests-e2e -- --match "{lane:…}"`, one development-node lane per matrix entry |
+| `contract-tests` | `contract` | `nix run .#contract-tests`, the adapter contract |
+| `record-value-tests` | `naming-validators` | `nix run .#record-value-tests` over the naming validators' blueprint |
+| `conformance-tests` | `conformance-checks` | `nix run .#conformance-appendix-tests`, the Hspec appendix of the conformance book |
+| `cleanup-control` | `evaluation-cleanup-controls` | the evaluation spike's four cleanup controls, `nix run ./conformance#evaluation-cleanup-controls` |
+| `open-datum-tests` | `open-datum-tests` | `nix run .#open-datum-tests` from `applications/open-datum/offchain/` |
+| `keri-stub-tests` | `keri-stub-tests` | `nix run .#keri-stub-tests` from `applications/keri-stub/offchain/`, including the producers' group |
+
+Beside the suites, the check `tagged-law-consumers-check` reads the consumers of the tagged-request law: the statement bindings of the conformance stories against the accepted model, the negative host, the journeys and rehearsal scripts, the retained entrypoints, and these pages. For the journeys it also runs the helpers that read a booking's and a fold's receipt over receipts it builds in the producers' shape: a registration receipt names a processing deadline and a termination receipt names none, and a damaged copy of each helper must be caught; those receipts are built by the check and no node printed them. It runs as `nix run .#tagged-law-consumers-check` in the hosted job `tagged-law-consumers`, and its rows that belong to the hosted lanes still on the earlier law are listed as residual, not as passes.
 
 The public conformance command `nix run .#conformance-tests`, run from `conformance/`, executes the live product book as well as its appendix. Use `nix run .#conformance-appendix-tests -- --match "[conformance]"` to filter the Hspec appendix alone. The published book's requirement text and receipt-computed coverage are unchanged by these harness labels.
 

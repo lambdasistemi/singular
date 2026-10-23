@@ -13,15 +13,27 @@ over; you have read every receipt and seen the refusals; and the transactions
 of your play are on preprod for anyone to look up. The steps take about seventy
 minutes on preprod, mostly waiting for two windows to pass.
 
+**Release history.** This runbook was played on preprod from release v0.12.0,
+which runs the earlier law. The tagged-request law of the next release changes
+three things you will read below. A termination no longer pays the deposit back
+to its controller: the fold donates the key's custody to the treasury, less the
+declared tip. A registry reject is retired: `singular registry reject` refuses by
+name (exit 10, outcome `client-refusal`) and submits nothing. And a request
+nobody folded stays pending until its owner takes it back with `singular
+registry reclaim`. The dated measurements below stay what the v0.12.0 play
+measured; follow the development-node page and the archive's own `DEMO1.md` for
+the release you are playing.
+
 ```mermaid
 flowchart TB
-  Get[Download and check the release] --> Build[Build singular and open-datum]
+  Get[Download and check the release]
+ --> Build[Build singular and open-datum]
   Build --> Wallets[Make Alice's and Bob's vaults]
   Wallets --> Faucet[Fund both from the faucet]
   Faucet --> Create[Alice creates the registry]
   Create --> Play[Insert, fold, inspect, update, terminate]
   Play --> Wait1[Wait: a request nobody folded]
-  Wait1 --> Reject[Bob rejects it]
+  Wait1 --> Reject[Bob rejects it: v0.12.0 only, retired since]
   Reject --> Wait2[Wait: Alice's request past its deadline]
   Wait2 --> Reclaim[Alice takes it back]
   Reclaim --> End[Insert and fold once more]
@@ -194,7 +206,7 @@ What the 18 October play measured, so you can judge how much to ask for:
 | Funding of that play | Alice 400 tADA and Bob 300 tADA, as several 50 tADA outputs. |
 | Fees of the thirteen registry transactions | Alice's eight cost 3.48 tADA, Bob's five 3.44 tADA, 6.92 tADA together; each costs between 0.36 and 0.89 tADA. |
 | Held while a request waits | 3 tADA per request: the key's 2 tADA deposit and a 1 tADA folder's fee. |
-| Held while a key is active | the 2 tADA deposit, paid back when the key is terminated. |
+| Held while a key is active | the 2 tADA deposit; v0.12.0 paid it back when the key was terminated, the tagged-request law donates it to the treasury, less the tip, instead. |
 | Creating a registry | at least 162.65 tADA when no script of this release is on the chain yet, measured on a development node; less when scripts are already published, which the create preview shows before anything is submitted. |
 
 In that play Alice's balance fell by 7.34 tADA and Bob's by 3.58 tADA, the fees plus what is still locked or
@@ -390,7 +402,9 @@ jq '{outcome, request, foldDeadline}' terminate.json
 
 ## Step 9: Bob folds the termination
 
-The fold burns the key's token and pays the deposit back to Alice. Naming the
+The fold burns the key's token. In v0.12.0 it paid the deposit back to Alice; under
+the tagged-request law it donates the custody to the treasury, less the tip, and
+pays none of the custody to Alice. Naming the
 request makes the fold an expectation: it is refused unless that request is among
 the ones it settles.
 
@@ -409,20 +423,22 @@ jq '{leaf, root}' inspect.json
 
 The key reads `terminal`, and the receipt says no live output holds it.
 
-## Step 11: reject a request nobody folded
+## Step 11: reject a request nobody folded (v0.12.0; retired since)
 
 A request that nobody folded and its owner did not take back stays pending past
 both its windows and blocks the registry's fold. Alice books one and nobody folds
-it. While either window is open a reject is refused and writes no bundle. That
+it. In v0.12.0, while either window is open a reject is refused and writes no bundle. That
 refusal is the first expected one: exit 10, the outcome `client-refusal`, and a
 receipt that names the slot where the retract window closes. When the ledger's
-tip passes that slot, any wallet may reject; here, Bob's, the external way.
+tip passes that slot, any wallet may reject; here, Bob's, the external way. That is
+history: the reject is retired, and under the tagged-request law the command
+refuses by name at any time, so the late request leaves by its owner's reclaim
+(step 14) instead.
 
 ```bash
 "$open_datum" insert --state-dir reg --blueprint "$blueprint" "${token[@]}" --key late \
   --payload payload.json "${provider[@]}" "${alice[@]}" --max-outlay 8000000 3< wallets/alice.passphrase
-"$singular" registry reject --state-dir reg --blueprint "$blueprint" "${token[@]}" "${provider[@]}" \
-  --wallet-address "$bob_addr" --bundle reject.bundle > reject-early.json || [ "$?" -eq 10 ]
+"$singular" registry reject --state-dir reg --blueprint "$blueprint" "${token[@]}" "${provider[@]}" --wallet-address "$bob_addr" --bundle reject.bundle > reject-early.json || [ "$?" -eq 10 ]  # history: v0.12.0 ran this reject; it is retired and now refuses by name
 jq '{outcome, reason, tipSlot, pendingRequests}' reject-early.json
 ```
 
@@ -435,18 +451,17 @@ send it at once.
 
 ```bash
 wait_for_slot "$(jq -r '.pendingRequests[0].retractEndsSlot' reject-early.json)"
-waits_for_signatures "$singular" registry reject --state-dir reg --blueprint "$blueprint" "${token[@]}" "${provider[@]}" \
-  --wallet-address "$bob_addr" --bundle reject.bundle --max-outlay 5000000
+waits_for_signatures "$singular" registry reject --state-dir reg --blueprint "$blueprint" "${token[@]}" "${provider[@]}" --wallet-address "$bob_addr" --bundle reject.bundle --max-outlay 5000000  # history: accepted once the window had closed in v0.12.0, retired since
 sign reject && send reject
 ```
 
-The reject cost 0.51 tADA. Alice's request returns to her less the 1 tADA
-folder's fee, which stays with Bob's wallet, and the registry's root does not
+In v0.12.0 the reject cost 0.51 tADA. Alice's request returned to her less the 1 tADA
+folder's fee, which stayed with Bob's wallet, and the registry's root did not
 move.
 
 ## Step 12: Bob books a new insertion
 
-The cleared registry takes requests again. Bob books the key `bob`, signing
+The registry takes requests again (in v0.12.0, once the reject had cleared the late request). Bob books the key `bob`, signing
 externally; his own address is the controller.
 
 ```bash
@@ -509,7 +524,7 @@ minutes.
 
 ## Step 15: Alice books another insertion
 
-The reclaimed request no longer blocks the registry.
+The reclaimed request no longer blocks the registry (and the same reclaim is how a late request leaves under the tagged-request law).
 
 ```bash
 "$open_datum" insert --state-dir reg --blueprint "$blueprint" "${token[@]}" --key dave \

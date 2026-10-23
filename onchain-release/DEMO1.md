@@ -22,8 +22,9 @@ Alice boots a registry whose application is **open datum**: a key's live value
 is an output at the application's script, holding the key's one active token
 under an inline envelope. The envelope has a protected part (this registry, its
 active policy, the key, the controller and a protected deposit) and a free
-payload. Only the controller may replace the payload. The deposit is released
-only when the registry terminates the key.
+payload. Only the controller may replace the payload. A termination does not
+release the key's custody to its controller: the registry takes it in and donates
+it to the treasury, less the declared tip.
 
 An `insert` or a `terminate` books and stops: its request waits at the
 registry, and its receipt names the request and the deadline by which it must
@@ -57,9 +58,10 @@ flowchart TB
   Update --> Inspect2[inspect: new payload, same root]
   Inspect2 --> Terminate[terminate: booked, pending]
   Terminate --> Fold2[fold]
-  Fold2 --> Inspect3[inspect: terminal, deposit released]
-  Inspect3 --> Reject[reject: a request past both windows]
-  Reject --> Insert2[insert: a new request]
+  Fold2 --> Inspect3[inspect: terminal, custody donated]
+  Inspect3 --> Reject[reject: retired, refused by name]
+  Reject --> LateReclaim[reclaim: the owner takes the late request back]
+  LateReclaim --> Insert2[insert: a new request]
   Insert2 --> Fold3[fold]
   Fold3 --> Reclaim[reclaim: the owner takes a new pending request back]
   Reclaim --> Insert3[insert: another request]
@@ -270,7 +272,7 @@ jq '{leaf, root}' inspect.json
 "$open_datum" terminate --state-dir reg --blueprint "$blueprint" "${token[@]}" --key alice \
   "${provider[@]}" "${alice[@]}" 3< alice.passphrase
 
-# 9. Fold it: the fold burns the token and releases the deposit.
+# 9. Fold it: the fold burns the token and donates the held value less the tip.
 waits_for_signatures "$open_datum" fold --state-dir reg --blueprint "$blueprint" "${token[@]}" "${provider[@]}" \
   --wallet-address "$bob_addr" --bundle fold-terminate.bundle   # exits 19
 sign fold-terminate && send fold-terminate
@@ -279,21 +281,19 @@ sign fold-terminate && send fold-terminate
 "$open_datum" inspect --state-dir reg --blueprint "$blueprint" "${token[@]}" --key alice "${provider[@]}" > inspect.json
 jq '{leaf, root}' inspect.json
 
-# 11. A request nobody folded or took back stays pending past both its windows and
-#     blocks the registry's fold. Alice books one and nobody folds it. While a
-#     window is open a reject is refused and writes no bundle; once both have
-#     passed (three minutes here) any wallet may reject it: here, Bob's. The
-#     bundle expires about two minutes after it is built, so sign and send it at once.
+# 11. A request nobody folded stays pending. The retired registry reject, which once
+#     cleared it, is refused by name: exit 10, and no bundle is written.
+#     The way out is its owner's reclaim, after the processing deadline and while
+#     the retract window is open (here, between two and three minutes after it
+#     was booked).
 "$open_datum" insert --state-dir reg --blueprint "$blueprint" "${token[@]}" --key late \
-  --payload payload.json "${provider[@]}" "${alice[@]}" 3< alice.passphrase
-# Too early: exit 10, outcome client-refusal. The receipt names the slot where the retract window closes.
-"$singular" registry reject --state-dir reg --blueprint "$blueprint" "${token[@]}" "${provider[@]}" \
-  --wallet-address "$bob_addr" --bundle reject.bundle > reject-early.json || [ "$?" -eq 10 ]
-jq '{outcome, reason, tipSlot, pendingRequests}' reject-early.json
-wait_for_slot "$(jq -r '.pendingRequests[0].retractEndsSlot' reject-early.json)"
-waits_for_signatures "$singular" registry reject --state-dir reg --blueprint "$blueprint" "${token[@]}" "${provider[@]}" \
-  --wallet-address "$bob_addr" --bundle reject.bundle   # exits 19
-sign reject && send reject
+  --payload payload.json "${provider[@]}" "${alice[@]}" 3< alice.passphrase > late.json
+# Retired: exit 10, outcome client-refusal; nothing was read, signed or submitted.
+"$singular" registry reject --state-dir reg --blueprint "$blueprint" "${token[@]}" "${provider[@]}" --wallet-address "$bob_addr" --bundle reject.bundle > reject-retired.json || [ "$?" -eq 10 ]  # retired: refused by name
+jq '{outcome, reason}' reject-retired.json
+wait_for_slot "$(jq -r .foldDeadline.slot late.json)"
+"$singular" registry reclaim --state-dir reg --blueprint "$blueprint" "${token[@]}" --request "$(jq -r .request late.json)" \
+  "${provider[@]}" "${alice[@]}" 3< alice.passphrase
 
 # 12. The registry takes requests again: book a new insertion.
 waits_for_signatures "$open_datum" insert --state-dir reg --blueprint "$blueprint" "${token[@]}" --key bob \
@@ -331,8 +331,8 @@ the `--fold` switch books and folds in one command, with one wallet: with the
 external signer the one bundle then holds the booking and the fold, and one
 signing covers both; with the vault the one command signs and sends both.
 
-A write that is refused before it builds anything (a reject while a window is
-open, a closed registry's update, a terminal key) writes no bundle. While a
+A write that is refused before it builds anything (the retired reject, a
+closed registry's update, a terminal key) writes no bundle. While a
 bundle waits for its signatures, the same wallet's next write of that registry
 stops with the same outcome, `waiting-for-signatures`, naming the waiting
 bundle, and builds nothing. `singular wallet sign` refuses a bundle whose
@@ -406,25 +406,21 @@ print the envelope it built.
 7. **`open-datum inspect`** shows the new payload, the same control and deposit,
    and the same root.
 8. **`open-datum terminate`** books the termination against the live holding:
-   its receipt names the pending request, the live output the fold will release
-   and the deposit.
+   its receipt names the pending request, the custody output the booking spends
+   into it, the protected deposit and the lovelace it transfers into the
+   request.
 9. **`open-datum fold`** stages and, once sent, lands its fold: the token is
-   burned and the protected deposit is paid back to the controller together with
-   everything else the fold owes.
+   burned and the custody is donated to the treasury, less the declared tip.
+   None of the custody is paid back to the controller. Its receipt states the donation.
 10. **`open-datum inspect`** reads the key `terminal`, with no holding.
-11. **`singular registry reject`** clears a request that is past both its
-    windows: its processing window, in which the registry's fold may take it,
-    and the retract window after it, in which its owner may take it back. It is
-    refused, naming each request and when its retract window closes, while any
-    pending request is still inside a window, and when nothing is pending. The
-    windows are judged from the ledger's tip, not the host's clock. Its receipt
-    names, under `expected`, every request rejected, the value it actually
-    locked, the tip the rejecting wallet keeps, and the refund: the designated
-    output, its recipient and its amount. The registry's root does not move. The
-    refund is the whole owed amount in one output to the request's owner, the
-    one shape the chain accepts.
-12. **`open-datum insert`** stages a new request, which the cleared registry now
-    takes.
+11. **`singular registry reject`** is retired. The registry's state script
+    refuses a spend with the rejected action, so the command refuses by name
+    (exit 10, outcome `client-refusal`) before it reads, signs or submits
+    anything, and writes no bundle. A request nobody folded stays pending until
+    its owner takes it back with `singular registry reclaim`, after its
+    processing deadline and while its retract window is open.
+12. **`open-datum insert`** stages a new request, which the registry takes once
+    the late one is reclaimed.
 13. **`open-datum fold`** folds it, and the key reads `active`.
 14. **`singular registry reclaim`** takes back a new pending insertion that
     nobody folded, inside its retract window. An earlier attempt is refused,
@@ -432,8 +428,9 @@ print the envelope it built.
     The owner's successful receipt names the request, the retract transaction,
     the value that was locked, the recipient and the returned output. The tip
     slot against the deadline slots decides the window, never the host clock.
-    After the window closes the refusal names `registry reject`. Updates and
-    deletions cannot be retracted; insertions and terminal witnesses can. The
+    After the window closes the refusal says the request can no longer be
+    taken back, and the request stays pending. Updates and deletions cannot be
+    retracted; insertions and terminal witnesses can. The
     root stays where it was.
 15. **`open-datum insert`** books a new request after reclaim.
 16. **`open-datum fold`** folds it, and an independent inspection reads `active`.

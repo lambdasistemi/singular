@@ -70,7 +70,7 @@ status=0
 "$controls" render "$copy/receipts" >"$copy.md" 2>"$copy.err" || status=$?
 [ "$status" -ne 0 ] || fail_control "the swapped copy still holds"
 # shellcheck disable=SC2016 # the backticks are the section's own Markdown
-row='| `INV299-AUTHENTICATED` | inspect with the public history it needs withheld prints no leaf and names HistoryIncomplete | does not hold: the withholding never reached the command'"'"'s history read: none of the registry'"'"'s history reads was withheld |'
+row='| inspect with the public history it needs withheld prints no leaf and names HistoryIncomplete | `INV299-AUTHENTICATED` | does not hold: the withholding never reached the command'"'"'s history read: none of the registry'"'"'s history reads was withheld |'
 found=1
 while IFS= read -r line || [ -n "$line" ]; do
   if [ "$line" = "$row" ]; then

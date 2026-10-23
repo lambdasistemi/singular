@@ -92,6 +92,7 @@ import Negative.Craft
     , craftBooking
     , craftFold
     , craftHoldingSpend
+    , donationOf
     , selectFoldRequests
     )
 import Negative.Parse (TamperField (..))
@@ -745,6 +746,7 @@ runNegativeFold env args short = do
                             [ ("fold", toJSON (txIdHex (confirmedTx signed)))
                             , ("requests", toJSON [txInText tin | (tin, _) <- chosen])
                             , ("keys", toJSON [hexT k | (_, k) <- chosen])
+                            , ("donation", toJSON (donationOf (confirmedTx signed)))
                             , ("before", aroundJson before)
                             , ("after", aroundJson after)
                             , ("payShort", toJSON short)

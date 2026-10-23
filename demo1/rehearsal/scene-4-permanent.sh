@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Scene 4, Permanent: Alice terminates alice in one command from her vault (terminate --fold: book and
-# fold), the token is gone, the deposit is back; then she tries to register alice again and is refused;
-# the page counts alice as terminal. The deposit's own frame says it is today's 0.x application: under
-# the ruled economics a termination donates what the request held to the treasury, except the declared tip.
+# fold), the token is gone and the fold's donation to the treasury lies between nothing and what the
+# booking transferred into the request (the receipts carry no tip and no payout, so only those bounds are
+# read); then she tries to register alice again and is refused; the page counts alice as terminal.
 # shellcheck disable=SC2086  # the journal paths are globs over the run's directories the shell must expand
 # shellcheck disable=SC2016  # the typed commands are shown verbatim on screen and evaluated by the tour helper
 set -euo pipefail
@@ -16,8 +16,8 @@ play -t -p 8 $'She terminates alice, booking and folding in one command: one bun
 # WORKAROUND: the forged request from the negative host stays pending on the registry (a reclaim needs the processing window to pass first) -> shown and named in the comments (this receipt names it and leaves it out); it cannot be cleared inside the flow
 play -p 24 $'On chain: the termination is settled; the token is burned and alice is terminal.\nThe forged request is named and left out: its key was already booked.' \
   'jq "{outcome, keyText, booking, fold, settled: [.settled[] | {edge, owner, settlement}], excluded}" terminate.json | short'
-play -p 12 $'The deposit back to Alice is today\'s 0.x application; the ruled economics donate\nwhat the request held to the treasury, except the declared tip.' \
-  'jq "{settled: [.settled[] | {edge, deposit: .settlement.deposit, released: .settlement.released}]}" terminate.json | short'
+play -p 12 $'The booking transferred value from Alice\'s holding into the request, and the fold donated to the\ntreasury an amount strictly between nothing and that transfer. The receipt shows both numbers.' \
+  'jq "{transfer, donation, settled: [.settled[] | {edge, custody: .settlement.custody, terminated: .settlement.terminated}]}" terminate.json | short'
 play -p 14 $'On disk: four new journal lines, for the two transactions: step book, then step fold, each\nwaiting-for-signatures when the bundle was built, then landed.' \
   "tail -n 4 $J | jq -c \"{journalCommand, journalStep, journalEvent, tx: (.journalTxId[0:8])}\""
 play -p 14 $'What the command wrote in her state directory: the journal grew, and the bundle and its two\ntransactions are kept in submissions/ for recovery.' \

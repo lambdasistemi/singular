@@ -15,9 +15,10 @@ or a terminate of a key that is unknown or already Terminal.
 And the registry refuses at its fold a booking the permissive builders
 certify for a key it already holds: a second insertion of a key that is
 Active, and an insertion of a key that is already Terminal. Neither can
-take effect: the registry refuses to fold them because the key exists
-(the model's @duplicate_refused_by_registry@ and
-@resurrection_refused_by_registry@). Each refusal is paired with an
+take effect: the registry refuses to fold them because the key exists.
+They are booked the earlier law's way, so they claim no model statement
+(@duplicate_refused_by_registry@ and @resurrection_refused_by_registry@ are
+published as uncovered). Each refusal is paired with an
 accepting control that differs only in the key: a key the registry has
 never held, booked and folded the same way. Readbacks taken before and
 after every refusal show that nothing moved.
@@ -56,15 +57,21 @@ module Conformance.Cli.Controls
     , Story
 
       -- * Statements
-    , DuplicateRefused
-    , ResurrectionRefused
-    , duplicateRefused
-    , resurrectionRefused
-    , UpdateInversion
-    , updateInversion
+    , RetiredActiveKeyBooking
+    , RetiredTerminalKeyBooking
+    , retiredActiveKeyBooking
+    , retiredTerminalKeyBooking
+    , ClientPolicyActiveKey
+    , ClientPolicyTerminalKey
+    , clientPolicyActiveKey
+    , clientPolicyTerminalKey
+    , AcceptedUpdateReplacesPayload
+    , acceptedUpdateReplacesPayload
     , ClientPolicy
     , earlyRefusalPolicy
     , clientPolicyBindings
+    , retiredBookingBindings
+    , observationBindings
     , terminateBurnsActiveHolding
     , statementBindings
     , resolveStatement
@@ -456,24 +463,36 @@ data Requirement
       SameRegistry
     | {- | The insert and inspect receipts: the key reads Active, its one
       holding is the output the insert delivered, carrying the inserted
-      envelope inline and at least its protected deposit
+      envelope inline and exactly its protected deposit. The destination
+      address and the output's registry tag are not on the receipts, so
+      they are not compared.
       -}
       Delivered
     | {- | Inspect, update, inspect: the root does not move, the holding is
-      the update's output, the payload is the update's and the control and
-      deposit are unchanged
+      the update's output, the payload the update printed and the payload
+      inspect then reads are both the payload the story asked the update to
+      store (the value the harness wrote to the command's input file, not
+      anything the command reported), and the control and deposit are
+      unchanged
       -}
       PayloadReplaced
-    | {- | Inspect, terminate, inspect: the key reads Terminal with no
-      holding, and the terminate released the protected deposit it held
+    | {- | Inspect, terminate, inspect: the terminate's one settled request
+      names the holding the first inspect read as the custody it spent,
+      with the protected deposit that holding carried, and the key then
+      reads Terminal with no holding
       -}
-      Released
+      Terminated
     | -- | One readback the node answered
       Observed
     | {- | Two readbacks that agree on the registry's root, its pending
       requests and the wallet
       -}
       RegistryUnchanged
+    | {- | Two readbacks that agree on the registry's root and its pending
+      requests; the wallet is not compared, because the update they
+      bracket spends its fee
+      -}
+      RegistryStateUnchanged
     | {- | Command receipts that all succeeded, in one registry: the premise
       a telling builds on
       -}
@@ -623,12 +642,6 @@ type Story = Specification.Story CliI
 -- Statements
 -- ---------------------------------------------------------
 
--- | @OpenDatumApplication.Statements.duplicate_refused_by_registry@
-data DuplicateRefused
-
--- | @OpenDatumApplication.Statements.resurrection_refused_by_registry@
-data ResurrectionRefused
-
 {- | The application model revision the statements are read at: the one
 commit in @model-revision@, read when this module compiles. The release
 archive states the same file as @MODEL-REVISION@.
@@ -645,36 +658,10 @@ modelRevision =
             _ -> fail ("model-revision is not one commit: " <> show revision)
      )
 
-duplicateRefused :: Theorem DuplicateRefused
-duplicateRefused =
-    bindTheorem $
-        mkBoundObligation
-            "OpenDatumApplication.Statements.duplicate_refused_by_registry"
-            "25ebf9423d2ed30a61be2f77698905a885312aedd0a65f1078760c0508fe599e"
-            modelRevision
-
-resurrectionRefused :: Theorem ResurrectionRefused
-resurrectionRefused =
-    bindTheorem $
-        mkBoundObligation
-            "OpenDatumApplication.Statements.resurrection_refused_by_registry"
-            "2a84afdffe5b91cfd8f0fe9da7980093e77b75107fdbec76f28ba0d2e5bc6184"
-            modelRevision
-
--- | Statement markers for the lifecycle and the application's boundary.
-data InsertionHoldingInline
-
-data UpdateKeepsRegistry
-
+-- | Statement markers for the two statements the lifecycle and the boundary tell.
 data UpdatePayloadFree
 
-data ReleaseBurnsAtomically
-
 data UpdateRequiresController
-
-data UpdatePreservesCustody
-
-data OnlyFoldReleases
 
 bound :: String -> String -> Theorem thm
 bound name digest =
@@ -685,105 +672,203 @@ bound name digest =
             modelRevision
         )
 
-insertionHoldingInline :: Theorem InsertionHoldingInline
-insertionHoldingInline =
-    bound
-        "insertion_holding_inline"
-        "844d0d9bdbc5bae7875fcd07950bd37919dac92e588a40da79368cbd3b776a18"
-
-updateKeepsRegistry :: Theorem UpdateKeepsRegistry
-updateKeepsRegistry =
-    bound
-        "update_keeps_registry"
-        "1d0bd504d8cbe90ccfcdc7c2a32096a4e370c8652a72d485b01715d5963a3e12"
-
+{- | Every Plutus payload is allowed, whatever its structure. The statement
+quantifies over every payload and amount; the clause that tells it runs a
+second update whose payload is a list holding a map of a negative integer to a
+byte string, and an empty list, accepted and replacing the payload. The first
+update of the same key, a constructor over a byte string and a very large
+integer, is accepted the same way in the observation row of the update that
+leaves the registry's root; between them the two payloads use every form of
+Plutus data. The clause compares the payload the update printed and the payload
+inspect then reads with the payload the story asked it to store, which the
+harness records from the value it wrote to the command's input file; a command
+that ignores its input fails even when it prints the same constant twice. A
+finite example exhibits the statement over those inputs; it does not enumerate
+the quantifier.
+-}
 updatePayloadFree :: Theorem UpdatePayloadFree
 updatePayloadFree =
     bound
         "update_payload_free"
-        "6577b1757d0291d77a26826fca516543cddbda7276cd515263e81e95ee32886e"
+        "54a0d9c8e9d1ebee7c57d1b4e139bec4c8c48c1777a1895042b123b9e520b795"
 
-releaseBurnsAtomically :: Theorem ReleaseBurnsAtomically
-releaseBurnsAtomically =
-    bound
-        "release_burns_atomically"
-        "7e963ef2c919db15cc34ed9965b55d21d030f6de4b524690720126e4aacdf737"
-
+{- | An accepted update was signed by the key's controller. The statement is an
+implication; the story tells it by its contrapositive and the accepted case:
+the controller's own update is accepted, the same update requiring another
+wallet's signature instead of the controller's is refused by the application
+script (the node names it), and the one built without the application's script
+is rejected before any script runs and is not counted as a refusal.
+-}
 updateRequiresController :: Theorem UpdateRequiresController
 updateRequiresController =
     bound
         "update_requires_controller"
-        "bdc250edc8194c67ddb79deb53307780d2ce6e9b865edc11fceceba564b912f7"
+        "f6352ac52a59824220903d947399aaf8664b2eae3b9dd2002d49ac499c349d8e"
 
-updatePreservesCustody :: Theorem UpdatePreservesCustody
-updatePreservesCustody =
-    bound
-        "update_preserves_custody"
-        "56a7b787884ab930d2ccb9524d13fb31a391f5c08aab2ac727080d39c4d498cc"
+{- | The tellings that bear on an accepted statement without telling it. The
+statement's conclusion has conjuncts that no receipt exposes, or a direction
+the story does not run, so binding the statement itself would claim more than
+the clause can distinguish: the statement is published as uncovered, and the
+clause is bound to a row of its own that says in words what the receipts
+show. The row claims no Lean theorem and no row of the CLI's specification.
 
-onlyFoldReleases :: Theorem OnlyFoldReleases
-onlyFoldReleases =
-    bound
-        "only_fold_releases"
-        "aefd57a28089717e856d92cc5ae3c03404e5d47420827f0659798909c080f84d"
+The statements, each with the conjunct the receipts do not show:
 
--- | Statement markers for bookings and the terminating fold's settlement.
-data BookInsertInversion
+* @insertion_holding_inline@: the destination address and the registry tag of
+  the delivered output, and the datum hash against the booked request.
+* @update_keeps_registry@: the registry's economic state beyond its root and
+  its pending requests (the treasury and the custody tables).
+* @update_preserves_custody@: the continuation's recorded flag and reference
+  index, which are model fields, and the outputs list as a whole.
+* @update_inversion@: the converse direction, the successor count, the
+  destination, the assets and the floor of the accepted step.
+* @termination_fold_burns_atomically@: the burn of the key's tag and of the
+  request tags.
+-}
+observationRow :: String -> Theorem thm
+observationRow name =
+    bindTheorem
+        ( mkBoundObligation
+            name
+            "no-theorem-claimed"
+            "observation-without-statement"
+        )
 
-data InsertionRequiresRegistryIdentity
+-- | Row markers for the tellings that bear on a statement without telling it.
+data InsertDeliversHolding
 
-data BookTerminateInversion
+data UpdateLeavesRegistry
 
-data FoldInversion
+data TerminateSettlesRequest
 
-data FoldSettlesAdditively
+data UpdateRefusesCustodyChange
 
-bookInsertInversion :: Theorem BookInsertInversion
-bookInsertInversion =
-    bound
-        "bookInsert_inversion"
-        "52ba3e1fa9dfe4b2fb19471ab5cac3e1ef6e4aa86b928f9b7aa6aec7399f1140"
+data AcceptedUpdateReplacesPayload
 
-insertionRequiresRegistryIdentity
-    :: Theorem InsertionRequiresRegistryIdentity
-insertionRequiresRegistryIdentity =
-    bound
-        "insertion_requires_registry_identity"
-        "73e322298b13ab5d17501865501f684e183c71c486d60c882ff61f68a76a46df"
+-- | The ordinary insert delivers the key's holding, inline, with its deposit.
+insertDeliversHolding :: Theorem InsertDeliversHolding
+insertDeliversHolding =
+    observationRow "insert-delivers-the-holding-inline-with-its-deposit"
 
-bookTerminateInversion :: Theorem BookTerminateInversion
-bookTerminateInversion =
-    bound
-        "bookTerminate_inversion"
-        "a7d7faecdfd89fd337d2219ab5d9a705e287bcce155b2182e51fa4612c6d196c"
+-- | An accepted update leaves the registry's root and its pending requests.
+updateLeavesRegistry :: Theorem UpdateLeavesRegistry
+updateLeavesRegistry =
+    observationRow "update-leaves-the-registry-root-and-pending-requests"
 
-foldInversion :: Theorem FoldInversion
-foldInversion =
-    bound
-        "fold_inversion"
-        "e07a28190a45fdc990042b2f83625ae32b448119a91c2c758a34623dfd7df919"
+-- | The ordinary terminate settles the booked request and the key reads Terminal.
+terminateSettlesRequest :: Theorem TerminateSettlesRequest
+terminateSettlesRequest =
+    observationRow
+        "terminate-settles-the-booked-request-and-leaves-the-key-terminal"
 
-foldSettlesAdditively :: Theorem FoldSettlesAdditively
-foldSettlesAdditively =
-    bound
-        "fold_settles_additively"
-        "0038394b2e4e770589310e9c7461adb80a5c9a8d90e3a83456e2cfa36ae2ba0d"
+-- | A continuation that changes the holding's custody is refused by the application.
+updateRefusesCustodyChange :: Theorem UpdateRefusesCustodyChange
+updateRefusesCustodyChange =
+    observationRow
+        "update-refuses-a-continuation-that-changes-the-custody"
 
--- | Statement markers for the early booking refusals.
-data UpdateInversion
+-- | The controller's accepted update replaces the payload and keeps the control.
+acceptedUpdateReplacesPayload :: Theorem AcceptedUpdateReplacesPayload
+acceptedUpdateReplacesPayload =
+    observationRow
+        "accepted-update-replaces-the-payload-and-keeps-the-control"
 
-updateInversion :: Theorem UpdateInversion
-updateInversion =
-    bound
-        "update_inversion"
-        "e8702fb6ae5e5dfe4de4ba3f7e5a5f06e63231bd0b6273def555ed79d29adc89"
+{- | The rows told on the retired booking: a request in the untagged shape,
+minted approval and deposit riding with the request, folded without a tag.
+The tagged-request law books registrations and terminations through the
+registration and termination builders, and the accepted statements about
+those bookings (for example @bookInsert_inversion@,
+@insertion_requires_registry_identity@, @bookTerminate_inversion@,
+@fold_inversion@ and @only_termination_booking_transfers_custody@) are told
+by no clause of this suite yet: they are published as uncovered. The rows
+below keep running on the retired shape, claim no Lean theorem and no row of
+the CLI's specification, and are retold on the tagged law by the checkpoint
+that moves the remaining legacy callers (the hosted lanes on the tagged
+law); that checkpoint removes this group with the legacy builder.
+-}
+retiredBookingRow :: String -> Theorem thm
+retiredBookingRow name =
+    bindTheorem
+        ( mkBoundObligation
+            name
+            "no-theorem-claimed"
+            "retired-booking"
+        )
+
+-- | Row markers for the tellings on the retired booking.
+data RetiredInsertionBooking
+
+data RetiredEnvelopeIdentityBooking
+
+data RetiredTerminationBooking
+
+data RetiredFoldRelease
+
+data RetiredFoldSettlement
+
+data RetiredReleaseOutsideFold
+
+data RetiredActiveKeyBooking
+
+data RetiredTerminalKeyBooking
+
+retiredInsertionBooking :: Theorem RetiredInsertionBooking
+retiredInsertionBooking = retiredBookingRow "retired-booking-of-an-insertion"
+
+retiredEnvelopeIdentityBooking
+    :: Theorem RetiredEnvelopeIdentityBooking
+retiredEnvelopeIdentityBooking =
+    retiredBookingRow "retired-booking-names-the-registry"
+
+retiredTerminationBooking :: Theorem RetiredTerminationBooking
+retiredTerminationBooking = retiredBookingRow "retired-booking-of-a-termination"
+
+retiredFoldRelease :: Theorem RetiredFoldRelease
+retiredFoldRelease = retiredBookingRow "retired-fold-releases-another-holding"
+
+retiredFoldSettlement :: Theorem RetiredFoldSettlement
+retiredFoldSettlement = retiredBookingRow "retired-fold-pays-the-controller"
+
+retiredReleaseOutsideFold :: Theorem RetiredReleaseOutsideFold
+retiredReleaseOutsideFold =
+    retiredBookingRow "retired-release-outside-the-fold"
+
+{- | The held-key refusals of the control story: a key the registry holds
+Active or Terminal, booked through the earlier law's untagged request and
+folded without local evaluation, beside the ordinary insert's early refusal
+(client policy). They claim no statement: the refusal of a fold by the
+registry is told, on the tagged-request law, only by the negative host's
+pairs, so @duplicate_refused_by_registry@ and
+@resurrection_refused_by_registry@ are published as uncovered.
+-}
+retiredActiveKeyBooking :: Theorem RetiredActiveKeyBooking
+retiredActiveKeyBooking =
+    retiredBookingRow "retired-booking-of-an-active-key"
+
+retiredTerminalKeyBooking :: Theorem RetiredTerminalKeyBooking
+retiredTerminalKeyBooking =
+    retiredBookingRow "retired-booking-of-a-terminal-key"
+
+-- | The tellings on the retired booking, claiming no theorem.
+retiredBookingBindings :: [Binding]
+retiredBookingBindings =
+    [ theoremBinding retiredActiveKeyBooking
+    , theoremBinding retiredTerminalKeyBooking
+    , theoremBinding retiredReleaseOutsideFold
+    , theoremBinding retiredInsertionBooking
+    , theoremBinding retiredEnvelopeIdentityBooking
+    , theoremBinding retiredTerminationBooking
+    , theoremBinding retiredFoldSettlement
+    , theoremBinding retiredFoldRelease
+    ]
 
 {- | The client's own booking policy: an update the key's current entry
 rules out is refused before anything is signed, naming the key and the
 client policy. It claims no Lean theorem and no row of the CLI's
 specification (issue #486: kept labelled as client policy unless the
-model is amended); only the accepted payload update below is told under
-`update_inversion`, which states exactly that accepted step.
+model is amended). The accepted payload update that follows the refusals is
+told as an observation row: `update_inversion` is published as uncovered,
+because the story shows only that statement's accepted direction.
 -}
 data ClientPolicy
 
@@ -796,28 +881,57 @@ earlyRefusalPolicy =
             "client-policy"
         )
 
+data ClientPolicyActiveKey
+
+data ClientPolicyTerminalKey
+
+{- | The ordinary insert of a key the registry holds is refused before
+anything is signed, naming the key and the client policy. That refusal is the
+command's own, ahead of the registry's: it claims no Lean theorem.
+-}
+clientPolicyActiveKey :: Theorem ClientPolicyActiveKey
+clientPolicyActiveKey =
+    bindTheorem
+        ( mkBoundObligation
+            "client-policy-insert-of-an-active-key-refused"
+            "no-theorem-claimed"
+            "client-policy"
+        )
+
+clientPolicyTerminalKey :: Theorem ClientPolicyTerminalKey
+clientPolicyTerminalKey =
+    bindTheorem
+        ( mkBoundObligation
+            "client-policy-insert-of-a-terminal-key-refused"
+            "no-theorem-claimed"
+            "client-policy"
+        )
+
 -- | The client-policy tellings the controls bind, claiming no theorem.
 clientPolicyBindings :: [Binding]
-clientPolicyBindings = [theoremBinding earlyRefusalPolicy]
+clientPolicyBindings =
+    [ theoremBinding earlyRefusalPolicy
+    , theoremBinding clientPolicyActiveKey
+    , theoremBinding clientPolicyTerminalKey
+    ]
 
--- | Every statement the stories bind.
+{- | Every accepted statement the stories bind: the two whose conclusion a clause
+distinguishes from the receipts.
+-}
 statementBindings :: [Binding]
 statementBindings =
-    [ theoremBinding duplicateRefused
-    , theoremBinding resurrectionRefused
-    , theoremBinding insertionHoldingInline
-    , theoremBinding updateKeepsRegistry
-    , theoremBinding updatePayloadFree
-    , theoremBinding releaseBurnsAtomically
+    [ theoremBinding updatePayloadFree
     , theoremBinding updateRequiresController
-    , theoremBinding updatePreservesCustody
-    , theoremBinding onlyFoldReleases
-    , theoremBinding bookInsertInversion
-    , theoremBinding insertionRequiresRegistryIdentity
-    , theoremBinding bookTerminateInversion
-    , theoremBinding foldSettlesAdditively
-    , theoremBinding foldInversion
-    , theoremBinding updateInversion
+    ]
+
+-- | The tellings that bear on an accepted statement without telling it, claiming no theorem.
+observationBindings :: [Binding]
+observationBindings =
+    [ theoremBinding insertDeliversHolding
+    , theoremBinding updateLeavesRegistry
+    , theoremBinding updateRefusesCustodyChange
+    , theoremBinding acceptedUpdateReplacesPayload
+    , theoremBinding terminateSettlesRequest
     ]
 
 {- | A client obligation: a row of the CLI's own specification. It is not a
@@ -1111,9 +1225,9 @@ refusal thm reachedReq premiseTitle control target keyWhat refusedPhrase = do
 -- | A second insertion of an Active key.
 duplicateStory :: Story ()
 duplicateStory =
-    theorem duplicateRefused $
+    theorem retiredActiveKeyBooking $
         refusal
-            duplicateRefused
+            retiredActiveKeyBooking
             ReachedActive
             "the key reached Active through the ordinary commands, in the control registry and in the target, and inspect reads it Active in each"
             (Target "duplicate-control")
@@ -1124,9 +1238,9 @@ duplicateStory =
 -- | An insertion of a key already Terminal.
 resurrectionStory :: Story ()
 resurrectionStory =
-    theorem resurrectionRefused $
+    theorem retiredTerminalKeyBooking $
         refusal
-            resurrectionRefused
+            retiredTerminalKeyBooking
             ReachedTerminal
             "the key reached Terminal through the ordinary commands, in the control registry and in the target, and inspect reads it Terminal in each"
             (Target "resurrection-control")
@@ -1143,10 +1257,10 @@ lifecycleStory = do
     let target = Target "lifecycle"
         alice = "alice"
     inserted <-
-        theorem insertionHoldingInline $
+        theorem insertDeliversHolding $
             clause
-                "the ordinary insert delivers the key's one token to the application, under the inserted envelope inline, in the registry create booted"
-                ( bindCheck insertionHoldingInline $ \(created, ins, seen) -> do
+                "the ordinary insert delivers the key's holding in the registry create booted: inspect reads the key Active, the holding is the output the insert delivered, it carries the inserted envelope inline and it holds exactly the protected deposit"
+                ( bindCheck insertDeliversHolding $ \(created, ins, seen) -> do
                     action (Require SameRegistry [created, ins])
                     action (Require Delivered [ins, seen])
                 )
@@ -1158,17 +1272,28 @@ lifecycleStory = do
                 )
     let (_, _, afterInsert) = inserted
     afterFirst <-
-        theorem updateKeepsRegistry $
-            clause
-                "the controller's update replaces the payload; the registry's root does not move"
-                ( bindCheck updateKeepsRegistry $ \(before, upd, after) ->
-                    action (Require PayloadReplaced [before, upd, after])
-                )
-                ( do
-                    upd <- action (Run (Update 1) target alice)
-                    after <- action (Run Inspect target alice)
-                    pure (afterInsert, upd, after)
-                )
+        theorem updateLeavesRegistry $ do
+            observedBefore <- readbackOf updateLeavesRegistry target alice
+            replaced <-
+                clause
+                    "the controller's update replaces the payload; the registry's root does not move"
+                    ( bindCheck updateLeavesRegistry $ \(before, upd, after) ->
+                        action (Require PayloadReplaced [before, upd, after])
+                    )
+                    ( do
+                        upd <- action (Run (Update 1) target alice)
+                        after <- action (Run Inspect target alice)
+                        pure (afterInsert, upd, after)
+                    )
+            _ <-
+                clause
+                    "the registry's root and its pending requests, read back after the update, are the ones read back before it"
+                    (requirement updateLeavesRegistry RegistryStateUnchanged)
+                    ( do
+                        observedAfter <- action (Observe target alice)
+                        pure [observedBefore, observedAfter]
+                    )
+            pure replaced
     let (_, _, afterUpdate) = afterFirst
     afterSecond <-
         theorem updatePayloadFree $
@@ -1183,12 +1308,12 @@ lifecycleStory = do
                     pure (afterUpdate, upd, after)
                 )
     let (_, _, beforeTerminate) = afterSecond
-    theorem releaseBurnsAtomically $
+    theorem terminateSettlesRequest $
         void $
             clause
-                "the ordinary terminate burns the key's token and releases its protected deposit; the key reads Terminal"
-                ( bindCheck releaseBurnsAtomically $ \(before, term, after) ->
-                    action (Require Released [before, term, after])
+                "the ordinary terminate books the key's termination and folds it: its one settled request names the custody it spent and the protected deposit, and the key reads Terminal with no holding"
+                ( bindCheck terminateSettlesRequest $ \(before, term, after) ->
+                    action (Require Terminated [before, term, after])
                 )
                 ( do
                     term <- action (Run Terminate target alice)
@@ -1228,33 +1353,33 @@ boundaryStory = do
                 (requirement updateRequiresController RejectedBeforeScripts)
                 (pure <$> action (Craft UpdateWithoutScript target heldKey))
         unchangedAfter updateRequiresController target before
-    theorem updatePreservesCustody $ do
-        _ <- stillActive updatePreservesCustody target
+    theorem updateRefusesCustodyChange $ do
+        _ <- stillActive updateRefusesCustodyChange target
         _ <-
             clause
                 "another controller's update, built the same way, is accepted"
-                (requirement updatePreservesCustody Accepted)
+                (requirement updateRefusesCustodyChange Accepted)
                 (pure <$> action (Craft HonestUpdate target heldKey))
-        before <- readback updatePreservesCustody target
+        before <- readback updateRefusesCustodyChange target
         forM_ tampers $ \c ->
             clause
                 (craftedPhrase c <> " is refused by the application")
-                (requirement updatePreservesCustody RefusedByApplication)
+                (requirement updateRefusesCustodyChange RefusedByApplication)
                 (pure <$> action (Craft c target heldKey))
-        unchangedAfter updatePreservesCustody target before
-    theorem onlyFoldReleases $ do
-        _ <- stillActive onlyFoldReleases target
-        before <- readback onlyFoldReleases target
+        unchangedAfter updateRefusesCustodyChange target before
+    theorem retiredReleaseOutsideFold $ do
+        _ <- stillActive retiredReleaseOutsideFold target
+        before <- readback retiredReleaseOutsideFold target
         _ <-
             clause
                 "a release of the live holding outside any fold is refused by the application"
-                (requirement onlyFoldReleases RefusedByApplication)
+                (requirement retiredReleaseOutsideFold RefusedByApplication)
                 (pure <$> action (Craft EarlyWithdrawal target heldKey))
-        unchangedAfter onlyFoldReleases target before
+        unchangedAfter retiredReleaseOutsideFold target before
         void $
             clause
-                "the same holding, released inside the registry's fold by the ordinary terminate, is accepted"
-                (requirement onlyFoldReleases CommandSucceeded)
+                "the same holding, terminated inside the registry's fold by the ordinary terminate, is accepted"
+                (requirement retiredReleaseOutsideFold CommandSucceeded)
                 (pure <$> action (Run Terminate target heldKey))
   where
     tampers =
@@ -1344,73 +1469,73 @@ registry, its pending requests and the wallet as they were.
 bookingStory :: Story ()
 bookingStory = do
     let target = Target "booking"
-    created <- theorem bookInsertInversion $ do
+    created <- theorem retiredInsertionBooking $ do
         created <-
             premiseClause
-                bookInsertInversion
+                retiredInsertionBooking
                 "the registry was created by the ordinary command"
                 Established
                 (pure <$> action (Run Create target ""))
         _ <-
             clause
                 "an insertion booked through the application by the controller is accepted"
-                (requirement bookInsertInversion Accepted)
+                (requirement retiredInsertionBooking Accepted)
                 (pure <$> action (Book target "booked"))
-        before <- readbackOf bookInsertInversion target "booked"
+        before <- readbackOf retiredInsertionBooking target "booked"
         refusedCraft
-            bookInsertInversion
+            retiredInsertionBooking
             BookingByStranger
             target
             "by-stranger"
         refusedCraft
-            bookInsertInversion
+            retiredInsertionBooking
             BookingOtherDestination
             target
             "other-destination"
         refusedCraft
-            bookInsertInversion
+            retiredInsertionBooking
             BookingShortDeposit
             target
             "short-deposit"
-        refusedCraft bookInsertInversion BookingNoDatum target "no-datum"
+        refusedCraft retiredInsertionBooking BookingNoDatum target "no-datum"
         unchangedOf
-            bookInsertInversion
+            retiredInsertionBooking
             RegistryUnchanged
             "the registry's root, its pending requests and the wallet are unchanged by every refusal"
             target
             "booked"
             before
         pure created
-    theorem insertionRequiresRegistryIdentity $ do
+    theorem retiredEnvelopeIdentityBooking $ do
         _ <-
             premiseClause
-                insertionRequiresRegistryIdentity
+                retiredEnvelopeIdentityBooking
                 "the same registry, created by the ordinary command"
                 Established
                 (pure created)
         _ <-
             clause
                 "an envelope naming this registry, booked the same way, is accepted"
-                (requirement insertionRequiresRegistryIdentity Accepted)
+                (requirement retiredEnvelopeIdentityBooking Accepted)
                 (pure <$> action (Book target "named"))
-        before <- readbackOf insertionRequiresRegistryIdentity target "named"
+        before <- readbackOf retiredEnvelopeIdentityBooking target "named"
         refusedCraft
-            insertionRequiresRegistryIdentity
+            retiredEnvelopeIdentityBooking
             EnvelopeOtherStateName
             target
             "other-name"
         refusedCraft
-            insertionRequiresRegistryIdentity
+            retiredEnvelopeIdentityBooking
             EnvelopeOtherStatePolicy
             target
             "other-policy"
         refusedCraft
-            insertionRequiresRegistryIdentity
+            retiredEnvelopeIdentityBooking
             EnvelopeOtherRegistry
             target
             "other-registry"
         unchangedOf
-            insertionRequiresRegistryIdentity
+            retiredEnvelopeIdentityBooking
             RegistryUnchanged
             "the registry's root, its pending requests and the wallet are unchanged by every refusal"
             target
@@ -1426,11 +1551,11 @@ refused beside the same fold without the release.
 settlementStory :: Story ()
 settlementStory = do
     let target = Target "settlement"
-    theorem bookTerminateInversion $ do
+    theorem retiredTerminationBooking $ do
         _ <-
             clause
                 "two keys reached Active through the ordinary commands, and inspect reads each Active"
-                ( bindCheck bookTerminateInversion $ \(heldPrefix, otherPrefix) -> do
+                ( bindCheck retiredTerminationBooking $ \(heldPrefix, otherPrefix) -> do
                     action (Require ReachedActive heldPrefix)
                     action (Require ReachedActive otherPrefix)
                 )
@@ -1440,14 +1565,14 @@ settlementStory = do
                     seen <- action (Run Inspect target otherKey)
                     pure (heldPrefix, [inserted, seen])
                 )
-        before <- readbackOf bookTerminateInversion target heldKey
+        before <- readbackOf retiredTerminationBooking target heldKey
         refusedCraft
-            bookTerminateInversion
+            retiredTerminationBooking
             TerminateBookingByStranger
             target
             heldKey
         unchangedOf
-            bookTerminateInversion
+            retiredTerminationBooking
             RegistryUnchanged
             "the registry's root, its pending requests and the wallet are unchanged by the refusal"
             target
@@ -1456,14 +1581,14 @@ settlementStory = do
         void $
             clause
                 "the controller's own termination booking is accepted"
-                (requirement bookTerminateInversion Accepted)
+                (requirement retiredTerminationBooking Accepted)
                 (pure <$> action (Craft TerminateBooking target heldKey))
-    theorem foldSettlesAdditively $ do
-        _ <- stillActive foldSettlesAdditively target
-        before <- readbackOf foldSettlesAdditively target heldKey
-        refusedCraft foldSettlesAdditively FoldPaysShort target heldKey
+    theorem retiredFoldSettlement $ do
+        _ <- stillActive retiredFoldSettlement target
+        before <- readbackOf retiredFoldSettlement target heldKey
+        refusedCraft retiredFoldSettlement FoldPaysShort target heldKey
         unchangedOf
-            foldSettlesAdditively
+            retiredFoldSettlement
             HoldingUnchanged
             "the registry's root, the key's holding and the wallet are unchanged by the refusal"
             target
@@ -1472,7 +1597,7 @@ settlementStory = do
         _ <-
             clause
                 "the same terminating fold, folded by another wallet, paying the controller in full, is accepted"
-                (requirement foldSettlesAdditively Accepted)
+                (requirement retiredFoldSettlement Accepted)
                 (pure <$> action (Craft FoldPaysInFull target heldKey))
         -- One controller, two releases in one fold; then an insertion and a
         -- termination in one fold. Each short payment is refused beside the
@@ -1481,7 +1606,7 @@ settlementStory = do
         _ <-
             clause
                 "a second registry holds three of the controller's keys Active, and inspect reads each Active"
-                ( bindCheck foldSettlesAdditively $ \(first, others) -> do
+                ( bindCheck retiredFoldSettlement $ \(first, others) -> do
                     action (Require ReachedActive first)
                     mapM_ (action . Require ReachedActive) others
                 )
@@ -1502,7 +1627,7 @@ settlementStory = do
         _ <-
             clause
                 "the controller's terminations of two keys are booked"
-                ( bindCheck foldSettlesAdditively $ \bs ->
+                ( bindCheck retiredFoldSettlement $ \bs ->
                     mapM_ (\b -> action (Require Accepted [b])) bs
                 )
                 ( mapM
@@ -1512,16 +1637,16 @@ settlementStory = do
         pairBefore <-
             clause
                 "the registry, the first key's holding and the wallet are read back before the two-release fold"
-                (bindCheck foldSettlesAdditively (\r -> action (Require Observed [r])))
+                (bindCheck retiredFoldSettlement (\r -> action (Require Observed [r])))
                 (action (Observe batch "pair-a"))
-        refusedCraft foldSettlesAdditively FoldTwoReleasesShort batch "pair-a"
+        refusedCraft retiredFoldSettlement FoldTwoReleasesShort batch "pair-a"
         refusedCraft
-            foldSettlesAdditively
+            retiredFoldSettlement
             FoldTwoReleasesOneFloor
             batch
             "pair-a"
         unchangedOf
-            foldSettlesAdditively
+            retiredFoldSettlement
             HoldingUnchanged
             "the registry's root, the first key's holding and the wallet are unchanged by both refusals"
             batch
@@ -1530,12 +1655,12 @@ settlementStory = do
         _ <-
             clause
                 "the two-release fold paying the controller the sum in full is accepted"
-                (requirement foldSettlesAdditively Accepted)
+                (requirement retiredFoldSettlement Accepted)
                 (pure <$> action (Craft FoldTwoReleasesInFull batch "pair-a"))
         _ <-
             clause
                 "an insertion of a new key and the termination of another are booked for the controller"
-                ( bindCheck foldSettlesAdditively $ \bs ->
+                ( bindCheck retiredFoldSettlement $ \bs ->
                     mapM_ (\b -> action (Require Accepted [b])) bs
                 )
                 ( do
@@ -1546,11 +1671,11 @@ settlementStory = do
         mixedBefore <-
             clause
                 "the registry, the terminated key's holding and the wallet are read back before the mixed fold"
-                (bindCheck foldSettlesAdditively (\r -> action (Require Observed [r])))
+                (bindCheck retiredFoldSettlement (\r -> action (Require Observed [r])))
                 (action (Observe batch "mixed-old"))
-        refusedCraft foldSettlesAdditively FoldMixedShort batch "mixed-old"
+        refusedCraft retiredFoldSettlement FoldMixedShort batch "mixed-old"
         unchangedOf
-            foldSettlesAdditively
+            retiredFoldSettlement
             HoldingUnchanged
             "the registry's root, the terminated key's holding and the wallet are unchanged by the refusal"
             batch
@@ -1559,24 +1684,24 @@ settlementStory = do
         void $
             clause
                 "the mixed fold paying the controller in full is accepted"
-                (requirement foldSettlesAdditively Accepted)
+                (requirement retiredFoldSettlement Accepted)
                 (pure <$> action (Craft FoldMixedInFull batch "mixed-old"))
-    theorem foldInversion $ do
+    theorem retiredFoldRelease $ do
         _ <-
             premiseClause
-                foldInversion
+                retiredFoldRelease
                 "the other key still reads Active, from a readback whose public replay agrees with the chain's root"
                 ReachedActive
                 (pure <$> action (Observe target otherKey))
         _ <-
             clause
                 "an insertion of an absent key, booked through the application, is accepted"
-                (requirement foldInversion Accepted)
+                (requirement retiredFoldRelease Accepted)
                 (pure <$> action (Book target freshKey))
-        before <- readbackOf foldInversion target otherKey
-        refusedCraft foldInversion ReleaseInOtherFold target otherKey
+        before <- readbackOf retiredFoldRelease target otherKey
+        refusedCraft retiredFoldRelease ReleaseInOtherFold target otherKey
         unchangedOf
-            foldInversion
+            retiredFoldRelease
             HoldingUnchanged
             "the registry's root, the other key's holding and the wallet are unchanged by the refusal"
             target
@@ -1585,7 +1710,7 @@ settlementStory = do
         void $
             clause
                 "the same fold, without the release, is accepted"
-                (requirement foldInversion Accepted)
+                (requirement retiredFoldRelease Accepted)
                 (pure <$> action (FoldUnevaluated target freshKey))
   where
     otherKey = "other"
@@ -1597,9 +1722,10 @@ registry only by its state token, has an update or a terminate of the unknown
 or the Terminal key refused at booking, naming the key and the client policy,
 before anything is signed; Alice's same verbs on the Active key are accepted,
 the update replacing the payload with the root unmoved and the terminate
-releasing the deposit. The refusals are the client's own policy with no Lean
-theorem claimed; only the accepted payload update is told under
-`update_inversion`, which states exactly that accepted step.
+settling its booked request. The refusals are the client's own policy with no
+Lean theorem claimed; the accepted payload update is told as an observation
+row, because `update_inversion` is published as uncovered: the story shows only
+its accepted direction.
 -}
 earlyRefusalStory :: Story ()
 earlyRefusalStory = do
@@ -1671,11 +1797,11 @@ earlyRefusalStory = do
                     pure (b, u, a)
                 )
         pure (b, u, a)
-    theorem updateInversion $ do
+    theorem acceptedUpdateReplacesPayload $ do
         void $
             clause
-                "the accepted update replaces the payload with the root unmoved (update_inversion)"
-                ( bindCheck updateInversion $ \(b, u, a) -> do
+                "the accepted update replaces the payload with the root unmoved and the control and deposit unchanged"
+                ( bindCheck acceptedUpdateReplacesPayload $ \(b, u, a) -> do
                     action (Require CommandSucceeded [u])
                     action (Require PayloadReplaced [b, u, a])
                 )
@@ -1720,10 +1846,10 @@ earlyRefusalStory = do
                 )
         void $
             clause
-                "the controller's terminate of the Active key, releasing its deposit, is accepted"
+                "the controller's terminate of the Active key, settling its protected deposit, is accepted"
                 ( bindCheck terminateBurnsActiveHolding $ \(b, t, a) -> do
                     action (Require CommandSucceeded [t])
-                    action (Require Released [b, t, a])
+                    action (Require Terminated [b, t, a])
                 )
                 ( do
                     b <- action (Run Inspect target live)
@@ -1767,11 +1893,11 @@ permanentStory key = do
         unchanged =
             "the registry's root, its pending requests and the wallet are unchanged by the booking refusal"
         absent = "the ordinary insert of the absent key is accepted"
-    inserted <- theorem duplicateRefused $ do
+    inserted <- theorem clientPolicyActiveKey $ do
         opened <-
             clause
                 "the key reached Active through the ordinary insert, and inspect reads it Active"
-                ( bindCheck duplicateRefused $ \(ins, seen) ->
+                ( bindCheck clientPolicyActiveKey $ \(ins, seen) ->
                     action (Require ReachedActive [ins, seen])
                 )
                 ( do
@@ -1783,9 +1909,9 @@ permanentStory key = do
         _ <-
             clause
                 absent
-                (requirement duplicateRefused CommandSucceeded)
+                (requirement clientPolicyActiveKey CommandSucceeded)
                 (pure [ins])
-        refusedInsertion duplicateRefused target key again unchanged
+        refusedInsertion clientPolicyActiveKey target key again unchanged
         pure ins
     finalInspect <- theorem updateRequiresController $ do
         _ <-
@@ -1836,35 +1962,35 @@ permanentStory key = do
                     r <- action (ReadIndexer ix target key finalInspect)
                     pure [finalInspect, r]
                 )
-    terminated <- theorem onlyFoldReleases $ do
+    terminated <- theorem retiredReleaseOutsideFold $ do
         _ <-
             premiseClause
-                onlyFoldReleases
+                retiredReleaseOutsideFold
                 "the key still reads Active, from a fresh inspect"
                 ReachedActive
                 (pure <$> action (Run Inspect target key))
-        before <- readbackOf onlyFoldReleases target key
+        before <- readbackOf retiredReleaseOutsideFold target key
         refusedRelease <-
             clause
                 "a release of the live holding outside any fold is refused by the application"
-                (requirement onlyFoldReleases RefusedByApplication)
+                (requirement retiredReleaseOutsideFold RefusedByApplication)
                 (pure <$> action (Craft EarlyWithdrawal target key))
-        exposureBounded onlyFoldReleases refusedRelease
+        exposureBounded retiredReleaseOutsideFold refusedRelease
         unchangedOf
-            onlyFoldReleases
+            retiredReleaseOutsideFold
             HoldingUnchanged
             "the registry's root, the key's holding and the wallet are unchanged by the refusal"
             target
             key
             before
         clause
-            "the same holding, released inside the registry's fold by the ordinary terminate, is accepted"
-            (requirement onlyFoldReleases CommandSucceeded)
+            "the same holding, terminated inside the registry's fold by the ordinary terminate, is accepted"
+            (requirement retiredReleaseOutsideFold CommandSucceeded)
             (pure <$> action (Run Terminate target key))
-    theorem resurrectionRefused $ do
+    theorem clientPolicyTerminalKey $ do
         _ <-
             premiseClause
-                resurrectionRefused
+                clientPolicyTerminalKey
                 "the key reached Terminal through the ordinary commands, and inspect reads it Terminal"
                 ReachedTerminal
                 ( do
@@ -1874,10 +2000,10 @@ permanentStory key = do
         _ <-
             clause
                 absent
-                (requirement resurrectionRefused CommandSucceeded)
+                (requirement clientPolicyTerminalKey CommandSucceeded)
                 (pure [inserted])
         refusedInsertion
-            resurrectionRefused
+            clientPolicyTerminalKey
             target
             key
             "the ordinary insert of the Terminal key is refused before signing, naming the key already retired"
@@ -2560,6 +2686,12 @@ data Receipt = Receipt
     how many of the targeted registry's history reads the forwarder in
     front of its provider answered empty
     -}
+    , rcRequestedPayload :: Maybe Aeson.Value
+    {- ^ For an @update@ run: the payload the harness wrote to the file it
+    passed as @--payload@, as JSON. The harness sets it from the value it
+    wrote, never from what the command printed or what inspect read, so it
+    is the independent expectation for the stored payload.
+    -}
     }
     deriving stock (Eq, Show)
 
@@ -2598,6 +2730,7 @@ emptyReceipt step act target key =
         , rcEvidence = []
         , rcCommand = Nothing
         , rcWithheldReads = Nothing
+        , rcRequestedPayload = Nothing
         }
 
 instance ToJSON Receipt where
@@ -2632,6 +2765,7 @@ instance ToJSON Receipt where
             , "evidence" .= rcEvidence r
             , "command" .= rcCommand r
             , "withheldReads" .= rcWithheldReads r
+            , "requestedPayload" .= rcRequestedPayload r
             ]
 
 instance FromJSON Receipt where
@@ -2669,6 +2803,7 @@ instance FromJSON Receipt where
             <*> o .: "evidence"
             <*> o .:? "command"
             <*> o .:? "withheldReads"
+            <*> o .:? "requestedPayload"
 
 -- | The action name, target and key a receipt for this action must carry.
 identify :: CliI res -> Maybe (Text, Text, Text)
@@ -3302,6 +3437,17 @@ check req rs = case (req, rs) of
                    | rcTarget a /= rcTarget b
                    ]
         _ -> ["a readback carries no observation"]
+    (RegistryStateUnchanged, [a, b]) -> case (rcObservation a, rcObservation b) of
+        (Just x, Just y) ->
+            ["the registry's root moved" | obRoot x /= obRoot y]
+                <> [ "the pending requests changed"
+                   | (obPending x, obPendingLovelace x)
+                        /= (obPending y, obPendingLovelace y)
+                   ]
+                <> [ "the readbacks are of different registries"
+                   | rcTarget a /= rcTarget b
+                   ]
+        _ -> ["a readback carries no observation"]
     (HoldingUnchanged, [a, b]) -> case (rcObservation a, rcObservation b) of
         (Just x, Just y) ->
             ["the registry's root moved" | obRoot x /= obRoot y]
@@ -3421,8 +3567,9 @@ check req rs = case (req, rs) of
                     , at [field "applicationOutput", field "deposit"] s
                     ) of
                 (Just (Aeson.Number l), Just (Aeson.Number d))
-                    | l >= d -> []
-                    | otherwise -> ["the holding holds less than its protected deposit"]
+                    | l == d -> []
+                    | otherwise ->
+                        ["the holding does not hold exactly its protected deposit"]
                 _ -> ["the holding's lovelace or deposit is not read back"]
     (PayloadReplaced, [b, u, a]) ->
         succeeded "the update" u
@@ -3453,7 +3600,20 @@ check req rs = case (req, rs) of
                 (at [field "applicationOutput", field "deposit"] b)
                 (at [field "applicationOutput", field "deposit"] a)
             <> is "the key's leaf" "active" (at [field "leaf"] a)
-    (Released, [b, t, a]) ->
+            <> case rcRequestedPayload u of
+                Nothing ->
+                    [ "the payload the story asked the update to store is not recorded"
+                    ]
+                Just asked ->
+                    same
+                        "the payload the update printed, against the payload the story asked it to store"
+                        (Just asked)
+                        (at [field "payload"] u)
+                        <> same
+                            "the payload inspect read after the update, against the payload the story asked it to store"
+                            (Just asked)
+                            (at [field "applicationOutput", field "payload"] a)
+    (Terminated, [b, t, a]) ->
         succeeded "the terminate" t
             <> [ "the terminate's settled list is not exactly the one pending request"
                | not (settledIsSingleton t)
@@ -3465,12 +3625,16 @@ check req rs = case (req, rs) of
                 (Aeson.Array mempty)
                 (at [field "applicationOutput", field "holdings"] a)
             <> same
-                "the released deposit"
+                "the custody the terminate spent"
+                (at [field "applicationOutput", field "output"] b)
+                (settlementField "custody" t)
+            <> same
+                "the protected deposit"
                 (at [field "applicationOutput", field "deposit"] b)
                 (settlementField "deposit" t)
-            <> case settlementField "released" t of
+            <> case settlementField "terminated" t of
                 Just (Aeson.String _) -> []
-                _ -> ["the terminate names no released output"]
+                _ -> ["the terminate names no output that records the termination"]
     (CommandSucceeded, [r]) -> succeeded "the command" r
     (Reclaimed, [p, b, r, a]) -> reclaimed p b r a
     (ExposureBounded, [r]) -> collateralBoundedRequired r
@@ -3779,6 +3943,7 @@ check req rs = case (req, rs) of
                            , PartialPending
                            , HoldingUnchanged
                            , RegistryUnchanged
+                           , RegistryStateUnchanged
                            , SameRegistry
                            , Delivered
                            , ReconciledOrRefused
@@ -3787,7 +3952,7 @@ check req rs = case (req, rs) of
                            ]
                     then "two"
                     else
-                        if req `elem` [PayloadReplaced, Released, ResolvedFromChain]
+                        if req `elem` [PayloadReplaced, Terminated, ResolvedFromChain]
                             then "three"
                             else
                                 if req == Reclaimed
@@ -4077,7 +4242,12 @@ validateControls story = do
             ( s
                 `elem` map
                     boName
-                    (statementBindings <> obligationBindings <> clientPolicyBindings)
+                    ( statementBindings
+                        <> obligationBindings
+                        <> clientPolicyBindings
+                        <> retiredBookingBindings
+                        <> observationBindings
+                    )
             )
             $ Left (s <> " is not a statement or obligation this domain binds")
         let titles = [t | (s', t) <- rows, s' == s]
@@ -4172,13 +4342,13 @@ renderControls results story =
         , ""
         , "Alice's story runs through "
             <> introductionExecutablePhrase story
-            <> ", and each claim about it is checked against the receipts those commands print: the registry create booted, the holding insert delivered, the payloads the updates wrote with the root unmoved, and the deposit terminate released."
+            <> ", and each claim about it is checked against the receipts those commands print: the registry create booted, the holding insert delivered, the payloads the updates wrote with the root unmoved, and the custody the terminate took in."
         , ""
         , "The early refusals are the client's: "
             <> introductionExecutablePhrase story
             <> " refuse a booking the key's current entry rules out before anything is signed, naming the key and the client policy, with nothing submitted and no request left pending."
         , ""
-        , "The chain's own refusals are the node's. Each refused transaction is submitted without evaluating its scripts locally, so the node judges it, and each refusal names the script that failed: the registry's state validator for a booking of a key the registry already holds, and the applied open-datum script for a tampered update or a release outside any fold. Every refusal sits beside an accepting control built the same way, and readbacks before and after show that nothing moved. The node does not report the model's reason for a refusal, and no reason is claimed as observed."
+        , "The chain's own refusals are the node's. Each refused transaction is submitted without evaluating its scripts locally, so the node judges it, and each refusal names the script that failed: the registry's state validator for a booking of a key the registry already holds, and the applied open-datum script for a tampered update or a release outside any fold. Every refusal sits beside an accepting control built the same way, and readbacks before and after show that nothing moved. The node does not report the model's reason for a refusal, and no reason is claimed as observed. These bookings are made the earlier law's way, so no accepted statement is claimed for them: the refusals are rows of their own, and the model's refusal of a fold that takes a booking of a held key is published as uncovered."
         , ""
         , "The last tellings are the client's own obligations, not model statements: rows of the CLI's specification (`"
             <> cliSpecification
@@ -4191,14 +4361,14 @@ renderControls results story =
             <> [ ""
                , "### Verdicts, computed from the receipts"
                , ""
-               , "| statement | clause | verdict |"
+               , "| clause | statement or row | verdict |"
                , "|---|---|---|"
                ]
-            <> [ "| `"
+            <> [ "| "
+                    <> crTitle r
+                    <> " | `"
                     <> crStatement r
                     <> "` | "
-                    <> crTitle r
-                    <> " | "
                     <> verdictText (crStatus r)
                     <> " |"
                | r <- results
@@ -4346,6 +4516,24 @@ replacedClauses =
         )
     ]
 
+{- | The statement column of an approved case told on the retired booking:
+the row, and that it claims no model statement and is not told on the
+tagged-request law.
+-}
+retiredRowText :: String -> String
+retiredRowText row =
+    "retired booking row `"
+        <> row
+        <> "`, no model statement: not told on the tagged-request law"
+
+{- | The statement column of the approved cases told as observations of the
+custody an update keeps: the row, that it claims no model statement, and that
+the statement it bears on is published as uncovered.
+-}
+custodyObservationText :: String
+custodyObservationText =
+    "observation row `update-refuses-a-continuation-that-changes-the-custody`, no model statement: `update_preserves_custody` is uncovered"
+
 {- | The approved matrix of controls for the ordinary CLI and the
 open-datum application, each with the statement it bears on (or the
 client safety it checks) and the clause that exercises it live.
@@ -4354,27 +4542,39 @@ approvedCases :: [(String, String, Coverage)]
 approvedCases =
     [
         ( "a second insertion of an Active key"
-        , "`duplicate_refused_by_registry`"
-        , ByClause
-            "duplicate_refused_by_registry"
-            "the ordinary insert of the Active key is refused before signing, naming the key already registered"
+        , "client policy, no model statement and no specification row; `duplicate_refused_by_registry` is uncovered"
+        , ByObligations
+            [
+                ( "retired-booking-of-an-active-key"
+                ,
+                    [ "the ordinary insert of the Active key is refused before signing, naming the key already registered"
+                    ]
+                )
+            ]
         )
     ,
         ( "an insertion of a Terminal key"
-        , "`resurrection_refused_by_registry`"
-        , ByClause
-            "resurrection_refused_by_registry"
-            "the ordinary insert of the Terminal key is refused before signing, naming the key already retired"
+        , "client policy, no model statement and no specification row; `resurrection_refused_by_registry` is uncovered"
+        , ByObligations
+            [
+                ( "retired-booking-of-a-terminal-key"
+                ,
+                    [ "the ordinary insert of the Terminal key is refused before signing, naming the key already retired"
+                    ]
+                )
+            ]
         )
     ,
         ( "an Active key booked through the permissive builders, folded, is refused"
-        , "`duplicate_refused_by_registry`"
-        , ByClause "duplicate_refused_by_registry" registryRefusal
+        , retiredRowText "retired-booking-of-an-active-key"
+        , ByObligations
+            [("retired-booking-of-an-active-key", [registryRefusal])]
         )
     ,
         ( "a Terminal key booked through the permissive builders, folded, is refused"
-        , "`resurrection_refused_by_registry`"
-        , ByClause "resurrection_refused_by_registry" registryRefusal
+        , retiredRowText "retired-booking-of-a-terminal-key"
+        , ByObligations
+            [("retired-booking-of-a-terminal-key", [registryRefusal])]
         )
     ,
         ( "an update of an unknown key"
@@ -4409,10 +4609,13 @@ approvedCases =
         )
     ]
         <> [ ( craftedPhrase c
-             , "`update_preserves_custody`"
-             , ByClause
-                "update_preserves_custody"
-                (craftedPhrase c <> " is refused by the application")
+             , custodyObservationText
+             , ByObligations
+                [
+                    ( "update-refuses-a-continuation-that-changes-the-custody"
+                    , [craftedPhrase c <> " is refused by the application"]
+                    )
+                ]
              )
            | c <-
                 [ UpdateOtherController
@@ -4426,40 +4629,49 @@ approvedCases =
            ]
         <> [
                ( "an update whose continuation duplicates the token's carrier"
-               , "`update_preserves_custody`"
+               , custodyObservationText
                , NotLive
                     "the live suite runs no transaction for it: with one active token per Active key and no active mint in an update, the ledger's conservation of value keeps two carriers from forming, so the application never sees the case. Not tested live; recorded by operator ruling in `specs/299-singular-cli/ruling-duplicate-carrier.md`, which states the argument's limits; the model's and the validator's own tests of it are kept"
                )
            ,
                ( "a release of the live holding outside any fold"
-               , "`only_fold_releases`"
-               , ByClause
-                    "only_fold_releases"
-                    "a release of the live holding outside any fold is refused by the application"
+               , retiredRowText "retired-release-outside-the-fold"
+               , ByObligations
+                    [
+                        ( "retired-release-outside-the-fold"
+                        ,
+                            [ "a release of the live holding outside any fold is refused by the application"
+                            ]
+                        )
+                    ]
                )
            ]
         <> [ ( craftedPhrase c
-             , "`" <> stmt <> "`"
-             , ByClause stmt (craftedPhrase c <> " is refused by the application")
+             , retiredRowText row
+             , ByObligations
+                [(row, [craftedPhrase c <> " is refused by the application"])]
              )
-           | (c, stmt) <-
-                [ (BookingByStranger, "bookInsert_inversion")
-                , (BookingOtherDestination, "bookInsert_inversion")
-                , (BookingShortDeposit, "bookInsert_inversion")
-                , (BookingNoDatum, "bookInsert_inversion")
-                , (EnvelopeOtherStateName, "insertion_requires_registry_identity")
-                , (EnvelopeOtherStatePolicy, "insertion_requires_registry_identity")
-                , (EnvelopeOtherRegistry, "insertion_requires_registry_identity")
-                , (TerminateBookingByStranger, "bookTerminate_inversion")
-                , (ReleaseInOtherFold, "fold_inversion")
-                , (FoldPaysShort, "fold_settles_additively")
+           | (c, row) <-
+                [ (BookingByStranger, "retired-booking-of-an-insertion")
+                , (BookingOtherDestination, "retired-booking-of-an-insertion")
+                , (BookingShortDeposit, "retired-booking-of-an-insertion")
+                , (BookingNoDatum, "retired-booking-of-an-insertion")
+                , (EnvelopeOtherStateName, "retired-booking-names-the-registry")
+                , (EnvelopeOtherStatePolicy, "retired-booking-names-the-registry")
+                , (EnvelopeOtherRegistry, "retired-booking-names-the-registry")
+                , (TerminateBookingByStranger, "retired-booking-of-a-termination")
+                , (ReleaseInOtherFold, "retired-fold-releases-another-holding")
+                , (FoldPaysShort, "retired-fold-pays-the-controller")
                 ]
            ]
         <> [ ( name
-             , "`fold_settles_additively`"
-             , ByClause
-                "fold_settles_additively"
-                (craftedPhrase c <> " is refused by the application")
+             , retiredRowText "retired-fold-pays-the-controller"
+             , ByObligations
+                [
+                    ( "retired-fold-pays-the-controller"
+                    , [craftedPhrase c <> " is refused by the application"]
+                    )
+                ]
              )
            | (name, c) <-
                 [

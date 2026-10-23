@@ -256,6 +256,8 @@ booking codes lower upper =
         , rbLower = lower
         , rbUpper = upper
         , rbApplicationScript = ncApplication codes
+        , rbApplicationRedeemer = Nothing
+        , rbRequiredSigners = []
         }
 
 -- | Take one lovelace from the request output and give it to the change.

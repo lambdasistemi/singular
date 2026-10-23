@@ -173,11 +173,16 @@ import Cardano.Tx.Ledger (ConwayTx)
 import Data.Void (Void)
 
 import Conformance.Cli.Node (NodeCaps (..), withBackendNode)
+import Conformance.Cli.RetiredBooking
+    ( retiredHeldOf
+    , retiredInsertApproval
+    , retiredLiveEnvelope
+    , retiredTerminateApproval
+    , retiredTerminateDestination
+    , retiredWithApplication
+    )
 import Singular.Application.OpenDatum.Book
-    ( insertApproval
-    , insertDestination
-    , terminateApproval
-    , terminateDestination
+    ( insertDestination
     )
 import Singular.Application.OpenDatum.Envelope
     ( Control (..)
@@ -186,11 +191,6 @@ import Singular.Application.OpenDatum.Envelope
     , dataToJson
     , envelopeVersion
     , registryBytes
-    )
-import Singular.Application.OpenDatum.Release
-    ( heldOf
-    , liveEnvelope
-    , withApplication
     )
 import Singular.Application.OpenDatum.Update
     ( continuationOf
@@ -1469,6 +1469,7 @@ runCommandIn env c actor registry key r = do
     pure
         (fromPrinted r status printed file)
             { rcObservation = observation
+            , rcRequestedPayload = requestedPayload env c key
             , rcSubmissions = submissions
             , rcResolved = resolved
             , rcJournal =
@@ -1602,14 +1603,7 @@ commandArgsFor env c actor registry key r = do
         Update n -> do
             common <- named
             let path = envEvidence env </> printf "step-%03d-payload.json" (rcStep r)
-            BL.writeFile
-                path
-                ( encodePretty
-                    ( if attached env
-                        then dataToJson (attachedPayload key n)
-                        else payloadOf n
-                    )
-                )
+            BL.writeFile path (encodePretty (updatePayload env key n))
             pure
                 ( commandPrefix (Update n)
                     <> common
@@ -2300,7 +2294,7 @@ book env target key r = do
         (appRef, _) <- applicationReference reg att
         let e = envelopeFor reg (addrKeyHashBytes (walletAddr wallet)) key
             approval =
-                (insertApproval Testnet (applied reg) (fst (attStateUtxo att)) e)
+                (retiredInsertApproval Testnet (applied reg) (fst (attStateUtxo att)) e)
                     { baScriptReference = Just appRef
                     }
             dest = insertDestination Testnet (applied reg) e
@@ -2444,7 +2438,7 @@ foldWith env target selection tweak byStranger r = do
             either
                 fail
                 pure
-                (withApplication (applied reg) Nothing live ctx0)
+                (retiredWithApplication (applied reg) Nothing live ctx0)
         pp <- Cage.withLatest prov Cage.parameters
         owedDuties <-
             either
@@ -2575,13 +2569,13 @@ observe env target key r = do
         let holdings =
                 [ (i, o)
                 | (i, o) <- live
-                , Right e <- [liveEnvelope o]
+                , Right e <- [retiredLiveEnvelope o]
                 , let c = envControl e
                 , ctlVersion c == envelopeVersion
                 , registryBytes (ctlRegistry c) == identity
                 , ctlActivePolicy c == SBS.fromShort (cfgActivePolicy cfg)
                 , ctlKey c == keyBytes key
-                , heldOf c o == 1
+                , retiredHeldOf c o == 1
                 ]
         holding <- case holdings of
             [] -> pure Nothing
@@ -2616,6 +2610,21 @@ observe env target key r = do
 -- ---------------------------------------------------------
 -- Payloads and hand-built transactions
 -- ---------------------------------------------------------
+
+{- | The payload the harness asks update number @n@ of @key@ to store: the
+story's own input, which the command's @--payload@ file carries. The receipt
+records this value, never what the command printed.
+-}
+updatePayload :: Env -> String -> Int -> Value
+updatePayload env key n
+    | attached env = dataToJson (attachedPayload key n)
+    | otherwise = payloadOf n
+
+-- | The payload a command was asked to store, when the harness chose it.
+requestedPayload :: Env -> Command -> String -> Maybe Value
+requestedPayload env c key = case c of
+    Update n -> Just (updatePayload env key n)
+    _ -> Nothing
 
 -- | The story's payloads, as the command reads them: unrelated shapes.
 payloadOf :: Int -> Value
@@ -2653,14 +2662,14 @@ holdingsOf
 holdingsOf reg key live =
     [ (i, o)
     | (i, o) <- live
-    , Right e <- [liveEnvelope o]
+    , Right e <- [retiredLiveEnvelope o]
     , let c = envControl e
     , ctlVersion c == envelopeVersion
     , registryBytes (ctlRegistry c)
         == scriptHashBytes (cfgScriptHash (regCfg reg)) <> tokenBytes reg
     , ctlActivePolicy c == SBS.fromShort (cfgActivePolicy (regCfg reg))
     , ctlKey c == keyBytes key
-    , heldOf c o == 1
+    , retiredHeldOf c o == 1
     ]
 
 -- | The empty query generalized algebraic data type a hand-built program runs under.
@@ -2720,7 +2729,7 @@ craftHolding env c target key r = do
                     ( show (length us)
                         <> " live holdings for the key; the story needs exactly one"
                     )
-        e <- either fail pure (liveEnvelope hOut)
+        e <- either fail pure (retiredLiveEnvelope hOut)
         let ctl = envControl e
         unless (ctlController ctl == mine) $
             fail "the holding's controller is not this story's wallet"
@@ -2900,7 +2909,7 @@ craftBooking env c target key r = do
                 (attachRegistry reg)
         (appRef, _) <- applicationReference reg att
         let approval =
-                (insertApproval Testnet (applied reg) (fst (attStateUtxo att)) e)
+                (retiredInsertApproval Testnet (applied reg) (fst (attStateUtxo att)) e)
                     { baScriptReference = Just appRef
                     }
             (address, datumHash) = insertDestination Testnet (applied reg) e
@@ -2953,7 +2962,7 @@ craftTermination env byStranger target key r = do
                         <> " live holdings for the key; the booking needs one"
                     )
         let approval =
-                ( terminateApproval
+                ( retiredTerminateApproval
                     (applied reg)
                     (fst (attStateUtxo att))
                     liveIn
@@ -2971,7 +2980,7 @@ craftTermination env byStranger target key r = do
                 (regToken reg)
                 (keyBytes key)
                 edgeUpdateTerminal
-                terminateDestination
+                retiredTerminateDestination
                 edgeDeposit
                 (Just approval)
 

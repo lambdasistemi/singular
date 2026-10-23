@@ -1,17 +1,18 @@
 #!/usr/bin/env bash
 # Carol prepares a funding output when none suits (#491 remainder, pull request 1).
 # From a one-output wallet, by the real commands, reach the rehearsal wallet
-# (create, a booking by another actor, `reject`), assert at run time that the
-# creator's wallet holds no ada-only output and both approval kinds, then run
-# the termination `fold`.
+# (create, then a harness setup step, `devnet carry`: setup only, never
+# booking evidence), assert at run time that the creator's wallet holds no
+# ada-only output and two unrelated asset kinds, then run the termination
+# `fold`.
 #
 # usage: demo1_cli_prepare_funding.sh SINGULAR OPEN_DATUM DEVNET BLUEPRINT WORKDIR
 #
 # SINGULAR, OPEN_DATUM and DEVNET are executables; BLUEPRINT is the registry
 # partition's plutus.json. Carol funds one output (provisional: 500 tADA; the
 # pull request settles amounts from receipts); Bob funds two outputs for the
-# bookings. Carol creates (chained, no seed flag), Bob books two insertions,
-# Carol rejects both, Bob books a termination, Carol folds it:
+# bookings. Carol creates (chained, no seed flag), a harness setup step leaves
+# her wallet token-only, Bob books a termination, Carol folds it:
 # on base the fold exits 10 with the "no ada-only UTxO" refusal; green, the
 # folds, naming the preparation in its receipt and journal. On base it exits
 # 10 with the "no ada-only UTxO" refusal. Short-wallet and allowance legs land
@@ -226,8 +227,8 @@ wallet_utxos() {
 }
 
 # ------------------------------------------------------------------
-# Rehearsal: one-output create, a booking by Bob, Carol's reject,
-# Bob's termination booking, Carol's termination fold
+# Rehearsal: one-output create, the harness setup step that leaves Carol's
+# wallet token-only, Bob's termination booking, Carol's termination fold
 # ------------------------------------------------------------------
 start_devnet devnet-rehearsal --fund "$work/carol.skey:1:500000000" \
   --fund "$work/bob.skey:2:2000000000" --fund "$work/eve.skey:1:2000000" \
@@ -254,41 +255,29 @@ for ref_out in $(jq -r '.references[] | .output' "$receipts/carol-create.json");
 done
 say "carol's six references are live"
 
-orun bob-insert success -- insert --key keyPrepareA --payload "$work/payload-insert.json" \
-  "${common[@]}" "${node[@]}" "${bob[@]}"
-say "bob booked keyPrepareA: $(field bob-insert .request)"
-orun bob-insert-b success -- insert --key keyPrepareB --payload "$work/payload-insert.json" \
-  "${common[@]}" "${node[@]}" "${bob[@]}"
-say "bob booked keyPrepareB: $(field bob-insert-b .request)"
-
-# A reject takes every pending request, so one still inside a window blocks
-# it: wait past both windows, as the journey does, before carol rejects.
-deadline_ms="$(jq -er .foldDeadline.posixMs "$receipts/bob-insert.json")"
-deadline_b_ms="$(jq -er .foldDeadline.posixMs "$receipts/bob-insert-b.json")"
-[ "$deadline_b_ms" -gt "$deadline_ms" ] && deadline_ms="$deadline_b_ms"
-retract_ms="$(jq -er .retractTime "$receipts/carol-create.json")"
-retract_ends=$((deadline_ms + retract_ms))
-wait_ms=$((retract_ends + 3000 - $(date +%s%3N)))
-if [ "$wait_ms" -gt 0 ]; then
-  say "waiting $((wait_ms / 1000 + 1)) s for the booking's retract window to close"
-  sleep $((wait_ms / 1000 + 1))
-fi
-
-srun carol-reject success -- registry reject "${common[@]}" "${node[@]}" "${carol[@]}"
-say "carol rejected: $(field carol-reject .reject)"
+# SETUP, not a booking: the harness spends carol's ada-only outputs, mints
+# one unit of each of two asset kinds under a policy only carol's key can
+# mint, and pays them back to her, so her wallet holds no ada-only output.
+# The receipt says harness-mint; no booking receipt below counts it.
+"$devnet" carry "${node[@]}" --wallet-skey "$work/carol.skey" \
+  --receipt "$receipts/carol-carry.json" 2>"$receipts/carol-carry.err" \
+  || setup_fail "the harness setup step failed for carol: $(head -n 3 "$receipts/carol-carry.err" || true)"
+jq -e '.setup == "harness-mint" and (.kinds | length) == 2' "$receipts/carol-carry.json" >/dev/null \
+  || setup_fail "carol's setup receipt is not a two-kind harness-mint: $(cat "$receipts/carol-carry.json")"
+say "setup, not a booking: the harness minted carol's two asset kinds in $(jq -r .transaction "$receipts/carol-carry.json")"
 
 # The rehearsal wallet: carol's outputs hold no ada-only output and both
-# approval kinds. Read from the provider at run time, never typed.
+# setup asset kinds. Read from the provider at run time, never typed.
 wallet_utxos "$carol_addr" "$work/carol-utxos.json" >"$work/carol-utxo-lines.txt"
 ada_only="$(awk '$3 == 0 && $4 == "none"' "$work/carol-utxo-lines.txt" | wc -l)"
 [ "$ada_only" -eq 0 ] || fail "carol's wallet holds $ada_only ada-only outputs, expected none: $(cat "$work/carol-utxo-lines.txt")"
 with_assets="$(awk '$3 > 0' "$work/carol-utxo-lines.txt" | wc -l)"
 [ "$with_assets" -ge 1 ] || fail "carol's wallet holds no token-carrying output"
 say "carol's wallet holds no ada-only output and $with_assets token-carrying outputs"
-jq -e '[.[] | select(.address == "'"$carol_addr"'") | .asset_list // [] | length] | add > 1' \
+jq -e '[.[] | select(.address == "'"$carol_addr"'") | .asset_list[]? | "\(.policy_id).\(.asset_name)"] | unique | length > 1' \
   "$work/carol-utxos.json" >/dev/null \
-  || fail "carol's wallet does not hold both approval kinds: $(jq -c '[.[] | select(.address == "'"$carol_addr"'") | {output: "\(.tx_hash)#\(.tx_index)", assets: [.asset_list // [] | .[] | "\(.policy_id).\(.asset_name)x\(.quantity)"]}]' "$work/carol-utxos.json")"
-say "carol's wallet holds both approval kinds beside her ada"
+  || fail "carol's wallet does not hold both setup asset kinds: $(jq -c '[.[] | select(.address == "'"$carol_addr"'") | {output: "\(.tx_hash)#\(.tx_index)", assets: [.asset_list // [] | .[] | "\(.policy_id).\(.asset_name)x\(.quantity)"]}]' "$work/carol-utxos.json")"
+say "carol's wallet holds both setup asset kinds beside her ada"
 
 orun bob-insert-t success -- insert --key keyPrepareT --payload "$work/payload-insert.json" \
   "${common[@]}" "${node[@]}" "${bob[@]}"
@@ -305,7 +294,7 @@ say "bob booked the termination: $(field bob-terminate .request)"
 jq -c '[.[] | select(.address == "'"$carol_addr"'") | .asset_list // [] | .[] | "\(.policy_id):\(.asset_name):\(.quantity)" ] | sort' \
   "$work/carol-utxos.json" >"$work/carol-assets-before.json"
 [ "$(jq -r 'length' "$work/carol-assets-before.json")" -ge 2 ] \
-  || fail "carol holds fewer than two approval assets before her fold"
+  || fail "carol holds fewer than two setup assets before her fold"
 
 # The termination fold: green, it prepares one funding output first and then
 # folds, naming the preparation in its receipt and journal. On base it exits
@@ -346,23 +335,18 @@ jq -c '[.[] | select(.address == "'"$carol_addr"'") | .asset_list // [] | .[] | 
   "$work/carol-utxos-after.json" >"$work/carol-assets-after.json"
 [ "$(cat "$work/carol-assets-after.json")" = "$(cat "$work/carol-assets-before.json")" ] \
   || fail "carol's tokens changed across her fold: before $(cat "$work/carol-assets-before.json") after $(cat "$work/carol-assets-after.json")"
-say "carol still holds her approvals in exact quantities after her fold"
+say "carol still holds her setup assets in exact quantities after her fold"
 
 # No needless preparation: a wallet whose natural build succeeds today gets
 # no preparation transaction, no preparation field, one submission only.
-# Bob folds from plenty (two 2000 tADA outputs); Carol rejected while she
-# still held an ada-only output. Both receipts must LACK the preparation
-# member entirely (membership, not value: a null member fails too).
+# Bob folds from plenty (two 2000 tADA outputs). His receipt must LACK the
+# preparation member entirely (membership, not value: a null member fails
+# too).
 jq -e 'has("preparation") | not' "$receipts/bob-fold-t.json" >/dev/null \
   || fail "bob's funded fold carries a preparation member: $(cat "$receipts/bob-fold-t.json")"
 [ "$(jq -r '.submissions | length' "$receipts/bob-fold-t.json")" -eq 1 ] \
   || fail "bob's funded fold submitted more than its own transaction"
 say "bob's funded fold made no preparation"
-jq -e 'has("preparation") | not' "$receipts/carol-reject.json" >/dev/null \
-  || fail "carol's funded reject carries a preparation member: $(cat "$receipts/carol-reject.json")"
-[ "$(jq -r '.submissions | length' "$receipts/carol-reject.json")" -eq 1 ] \
-  || fail "carol's funded reject submitted more than its own transaction"
-say "carol's funded reject made no preparation"
 
 # Explicit choice final: --fund-input on a token-carrying output is refused
 # with today's text; a named ada-only output is used as today. Bob books a
@@ -640,7 +624,7 @@ jq -c --arg a "$dave_addr" '[.[] | select(.address == $a) | .asset_list[] | "\(.
   "$work/dave-utxos-after.json" >"$work/dave-assets-after.json"
 [ "$(cat "$work/dave-assets-after.json")" = "$(cat "$work/dave-assets-before.json")" ] \
   || fail "dave's tokens changed across his insert: before $(cat "$work/dave-assets-before.json") after $(cat "$work/dave-assets-after.json")"
-say "dave still holds his approvals in exact quantities after his insert"
+say "dave still holds his setup assets in exact quantities after his insert"
 refs_wellformed "dave's create" "$receipts/dave-create.json"
 dave_ref_count="$(jq -r '.references | length' "$receipts/dave-create.json")"
 dave_refs_probed=0
@@ -730,7 +714,7 @@ say "eve's short insert was refused before signing: $(jq -r .reason "$receipts/e
 # A funded wallet books with no preparation member: every booking Bob
 # made in this run (inserts and the termination) lacked one, and each
 # submitted exactly its own transaction.
-for r in bob-insert bob-insert-b bob-insert-t bob-insert-e bob-insert-f bob-terminate; do
+for r in bob-insert-t bob-insert-e bob-insert-f bob-terminate; do
   jq -e 'has("preparation") | not' "$receipts/$r.json" >/dev/null \
     || fail "$r carries a preparation member: $(cat "$receipts/$r.json")"
   b_tx="$(field "$r" .booking)"

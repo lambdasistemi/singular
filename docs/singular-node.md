@@ -2,7 +2,7 @@
 
 Dated qualification, 2026-10-15: rejection after the window, rejection before the deadline, request value and refund routing, rejection and retraction refund controls, and rejection inside the processing and retraction windows are all unmet by ruling: implementation follows the superseded rule; the ruled rule is not implemented. The live comparisons still exercise the legacy rejection that spends the registry state output. The ruled rejection reads that output by reference and never spends it. Agreement with the legacy path is not acceptance of the ruled design. The earlier processing-window consumer requirement and the unresolved refund-routing requirement remain open. Historical results below retain their original revision and evidence binding; they do not establish current acceptance.
 
-As a registry operator, you want to use `create`, `fold`, `reclaim`, `reject`, `inspect` and `describe`
+As a registry operator, you want to use `create`, `fold`, `reclaim`, `inspect` and `describe` (`reject` is retired and refuses by name)
 through `singular registry`, and `create`, `insert`, `update`, `terminate`, `fold` and `inspect`
 through `open-datum`, with a Koios API on your chosen network.
 You supply the API settings and pinned time material; each write is signed from
@@ -31,8 +31,8 @@ The overview of each program follows, quoted from the program itself. The first 
 ```text
 Usage: singular COMMAND
 
-Create a Singular registry on Cardano, fold requests into it, reject or
-reclaim requests, read it back, and sign and submit transaction bundles.
+Create a Singular registry on Cardano, fold requests into it, reclaim
+requests, read it back, and sign and submit transaction bundles.
 
 Available settings:
   Show this help text
@@ -44,7 +44,7 @@ Available settings:
 All commands:
   singular registry create    Boot a registry, or preview its identity
   singular registry fold      Fold the pending requests into the registry
-  singular registry reject    Reject all pending requests past their windows
+  singular registry reject    Retired: refuses by name and submits nothing
   singular registry reclaim   Take back your own pending request
   singular registry inspect   Read the registry and a key back
   singular registry describe  Print the registry page
@@ -254,7 +254,7 @@ singular wallet sign --vault bob.vault bundle.json
 singular wallet sign --vault bob.vault --passphrase-fd 9 --out witnesses bundle.json
 ```
 
-The writer's side is a `singular registry create`, `fold`, `reject` or `reclaim` run, or an `open-datum create`, `insert`, `update`, `terminate` or `fold` run, that names `--wallet-address` and `--bundle` in place of the signing key: it builds its whole run as one bundle in build order, signs and sends nothing, states its own fields under `expected` in its receipt, and exits with status 19, `waiting-for-signatures`.
+The writer's side is a `singular registry create`, `fold` or `reclaim` run, or an `open-datum create`, `insert`, `update`, `terminate` or `fold` run, that names `--wallet-address` and `--bundle` in place of the signing key: it builds its whole run as one bundle in build order, signs and sends nothing, states its own fields under `expected` in its receipt, and exits with status 19, `waiting-for-signatures`.
 
 ```mermaid
 %%{init: {'sequence': {'actorMargin': 20, 'width': 110, 'wrap': true, 'mirrorActors': false}}}%%
@@ -373,7 +373,7 @@ not reported.
 
 ## Signing a write elsewhere, or from your vault
 
-As Bob, I keep my key away from the machine that talks to the node. I run a write — `singular registry create`, `fold`, `reject` or `reclaim` — naming my address and a new bundle file in place of the signing key. The command builds its whole run as one bundle of unsigned transactions, signs and sends nothing, and exits with status 19, `waiting-for-signatures`. I sign the bundle with `singular wallet sign` and send it with `singular submit`.
+As Bob, I keep my key away from the machine that talks to the node. I run a write — `singular registry create`, `fold` or `reclaim` — naming my address and a new bundle file in place of the signing key. The command builds its whole run as one bundle of unsigned transactions, signs and sends nothing, and exits with status 19, `waiting-for-signatures`. I sign the bundle with `singular wallet sign` and send it with `singular submit`.
 
 As Alice, I name my vault instead. I type my passphrase once, or hand it over through a descriptor in a script. The command builds the same bundle, signs every transaction from the vault, and sends them in order as `singular submit` does. Its receipt reads what the chain shows.
 
@@ -430,7 +430,6 @@ A bundle can be sent until the first deadline of its transactions. The builders'
 
 | command | the latest deadline its bundle may carry |
 |---|---|
-| `singular registry reject` | about two minutes after it is built |
 | `singular registry fold` | the processing deadline of the earliest request it folds |
 | `singular registry reclaim` | the end of the request's retract window |
 | `singular registry create` | none: its transactions carry no upper bound, so the bundle stays pending until it lands |
@@ -539,7 +538,7 @@ The requester books with its wallet. The folder reads that pending request,
 then builds, signs and funds the fold with the folder's wallet; the saved
 registry journal, mirror and state follow the observed fold:
 
-As Carol, I fold with whatever wallet I have. `fold`, `reject` and `reclaim`
+As Carol, I fold with whatever wallet I have. `fold` and `reclaim`
 fund and collateralise from an ada-only output of my wallet that carries no
 reference script. When my wallet holds none it can use — my ada sits beside
 my tokens, or beside published scripts — the command first spends one
@@ -645,10 +644,10 @@ singular registry reclaim --state-dir reg --blueprint onchain/plutus.json \
 The command judges the window from the actual tip observed through its session and converted
 processing deadline: that deadline must convert, and the tip must reach it.
 The retract deadline stays open while its converted slot is ahead of the tip,
-or when a conversion refusal cannot establish its closing slot, exactly as reject judges it.
+or when a conversion refusal cannot establish its closing slot, exactly as the earlier law's reject judged it.
 An unconverted processing deadline does not prove opening and is refused before
 the window, naming the opening time. A known, reached retract deadline is closed;
-the refusal names `registry reject` as the way to clear expired requests. No
+the request can no longer be taken back, and it stays pending. No
 host clock or estimated slot decides admission. Conversions extend the pinned final era. A moving ledger horizon separately caps the built upper bound, and a short usable interval refuses before signing; a build failure is no evidence of a successful reclaim.
 
 Inside the window, the existing retract builder pays the owner all the
@@ -663,45 +662,27 @@ After confirmation, it reads back the consumed request, exact return output and
 unchanged registry root before journalling `observed`. The mirror and `state.json`
 do not move. The next request can be booked and folded normally.
 
-## Rejecting expired requests
+## Rejecting expired requests: the retired command
+
+As a registry operator who learned the retired `registry reject` from an earlier
+release,
+you need to know it is gone and what takes its place.
+
+`singular registry reject` is retired. The registry's state script refuses a
+spend with the rejected action, so no such transaction can be built, and the
+command refuses by name before it reads, signs or submits anything: a client
+refusal, exit status 10, whose reason says the reject is retired. No state
+directory is resolved and no journal line is written. Its flags still parse, so
+a script that passes them gets the refusal rather than a usage error.
 
 A request that no fold settles and whose owner does not take it back stays
-pending, and `registry reject` clears it. It is an ordinary command: it
-signs and funds with the wallet it is given and journals its own transactions.
-It rejects every pending request in one transaction, using the registry's
-published reference scripts, and the registry's root, its mirror and its saved
-state do not move.
+pending. A booked request leaves the registry in one of two ways: a fold takes
+it in, or its owner takes it back with `registry reclaim` while its retract
+window is open. Nothing clears a request after both windows have passed.
 
-A request is rejected only once it is past both its windows: the processing
-window, in which the registry's fold may take it, and the retract window after
-it, in which its owner may take it back. That is judged from the ledger, not
-from the host's clock. The command converts the retract deadline — the
-request's submission time plus the registry's processing time and retract time
-— to a slot using the pinned time consumed by its build session, and builds only when that session's observed
-tip is at or past it. A deadline pinned time cannot place in a slot is taken as
-still open. Before anything is signed the command refuses, naming the reason:
-nothing pending; any pending request still inside a window, each named with
-when its retract window closes, as a time, as a slot when pinned time converts it,
-and the provider's observed tip slot; the outlay past `--max-outlay`; a funding output
-that is not the wallet's; and a built reject that does not carry each owner's
-whole refund in one designated output.
-
-Each owner is refunded the request's value less the tip, in the one output
-designated for that request; the wallet that runs the reject keeps the tip. The
-receipt names every rejected request, the value it actually locked (its
-lovelace and any other assets: a request holds only what was put into it, and
-one whose deposit never landed holds no deposit), the tip, and where the refund
-went: the output, its recipient and its amount, with the top-up when the
-minimum output required one. After the reject confirms the command reads back
-that every rejected request output is gone, that the root is where it was, and
-that each refund is live at its owner as built, before it journals the reject
-observed.
-
-The check is exact on one shape. The chain pays a refund only when the
-designated output covers the owed amount by itself; a refund split across
-several outputs to the same owner is accepted by the model and refused by the
-chain (issue #361), and `reject` never builds it. A reject that succeeds is
-that shape on this chain, not general reject-refund conformance.
+Under the earlier law the reject cleared every pending request in one
+transaction once all were past both windows, and refunded each owner the
+request's value less the tip. That is history; this release does not build it.
 
 ## What a write records
 

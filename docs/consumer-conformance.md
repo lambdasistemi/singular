@@ -25,6 +25,79 @@ The [candidate evidence](../specs/505-permanent-m1/RESULTS.md) separates compile
 refusal tests, connected CLI execution and their limits. Defined redeemers,
 missing CLI commands and setup failures are not evidence of behavioral refusal.
 
+## What the open-datum stories tell on the tagged-request law, and what stays uncovered
+
+As an integrator who reads the open-datum conformance stories, I need to know
+which accepted statements of the model a clause of the suite actually
+distinguishes from receipts, and which no clause does, so that I do not take a
+green story for more than it demonstrates.
+
+```mermaid
+flowchart LR
+    statement["accepted statement<br/>(model revision<br/>bf43bd1e06d8aee774bc4a9f670de27d2f603ad7)"] -->|a clause distinguishes its whole conclusion from receipts| told["told under<br/>the statement's digest"]
+    statement -->|no clause does| uncovered["published here as uncovered"]
+    uncovered -->|a clause shows part of it| observation["an observation<br/>that claims no statement"]
+    legacy["row still on the earlier law's<br/>untagged request"] -->|claims no statement| retired["retired booking row"]
+```
+
+A statement is told only where a clause of the suite distinguishes its whole
+conclusion from receipts: a receipt set that lacks any part of the conclusion
+must fail the clause. Two are told: that any payload may replace a key's
+payload, and that only the key's controller may update its holding. Fourteen
+others are uncovered: no clause distinguishes their whole conclusion. Sixteen
+tellings claim no statement. Eight run as retired booking rows: six, and the
+control story's two tellings of a held key, still book through the earlier
+law's untagged request and minted approval, and the checkpoint that moves the
+hosted lanes to the tagged-request law retells them. Three are client policy:
+the command's own refusal, before anything is signed, of an update or a
+terminate the key's entry rules out and of an ordinary insert of a key the
+registry holds. That refusal is the client's, ahead of the registry's, and is
+not the registry's enforcement. Five are observations: each says in words what
+the receipts of a clause show, and the statement it bears on is listed as
+uncovered because its conclusion has parts that no receipt shows.
+
+The first table lists the two statements told. Each row opens with the
+requirement in words, names the accepted statement beside it for traceability,
+and says what the receipts show and what they do not.
+
+| What the suite tells | Accepted statement | What the receipts show | What they do not show |
+| --- | --- | --- | --- |
+| The controller can replace the payload of its key with any Plutus data. | `update_payload_free` | A second update, with a payload unrelated to the first (a list holding a map from a negative integer to a byte string, and an empty list), is accepted and replaces the payload, beside the unchanged controller and deposit. The payload the update printed and the payload inspect then read are each compared with the payload the story put in the command's input file, which the harness records from the value it wrote and not from anything the command reported, so a command that ignores its input fails even when it prints the same constant twice. The first update of the same key, whose payload is a constructor over a byte string and a very large integer, is accepted the same way under the observation `update-leaves-the-registry-root-and-pending-requests`; between them the two payloads use every form of Plutus data. | The statement quantifies over every payload and amount; the story shows these two payloads. |
+| Only the key's controller can update its holding. | `update_requires_controller` | The controller's own update is accepted; the same update requiring another wallet's signature instead of the controller's is refused by the application script, which the node names; the same update without the application's script is rejected before any script runs and is not counted as a refusal. The registry and the wallet read back unchanged after each refusal. | Signer sets other than the three told. |
+
+The second table lists the fourteen uncovered statements, again led by the
+requirement in words. Each is accepted in the model and proved; no clause of
+this suite distinguishes its whole conclusion, and none is shown as passing.
+Five have an observation that shows part of the requirement, named in the last
+column with what it shows; the others are told by no clause at all, and the
+last column says what runs instead.
+
+| Requirement | Accepted statement | Why it is uncovered | What runs instead |
+| --- | --- | --- | --- |
+| A key the registry holds Active cannot be registered again. | `duplicate_refused_by_registry` | uncovered: the statement is the registry's refusal of a fold that takes a booking of an Active key. The only clauses on the tagged-request law are the ordinary insert's refusal before anything is signed, which is the command's own policy and never reaches a fold, and, in the control story, a fold of a booking on the earlier law, whose refusal the earlier law explains. | The ordinary insert's refusal, as client policy; a retired booking row; the negative host's pairs for a taken key, which are host evidence. |
+| A key the registry holds Terminal cannot be registered again. | `resurrection_refused_by_registry` | uncovered: the same, for a Terminal key. | The same, for a Terminal key. |
+| A registration booking is accepted exactly under the application's guards on its envelope, key and signer. | `bookInsert_inversion` | uncovered: the clauses that book an insertion by hand still use the earlier law's untagged request and minted approval. | A retired booking row, which claims no statement. |
+| A registration's envelope must name the registry it is booked in. | `insertion_requires_registry_identity` | uncovered: the clauses for an envelope naming another registry are on the same untagged request. | A retired booking row. |
+| A termination booking is accepted exactly under the application's guards and spends the key's custody. | `bookTerminate_inversion` | uncovered: the hand-built termination booking is the earlier law's. | A retired booking row. |
+| A fold is accepted exactly when its rows, the registry's acceptance and the timing agree. | `fold_inversion` | uncovered: the folds that release another holding or pay the controller short are the earlier law's. | Retired booking rows. |
+| Only a termination booking moves a holding's custody. | `only_termination_booking_transfers_custody` | uncovered: the refused release of a live holding outside any fold belongs to the earlier law, where a release was an application action. | A retired booking row; the negative host's pair for the retired release shows the application's refusal. |
+| A fold routes the balance, the carriers and the tips of its requests. | `fold_routes_economics` | uncovered: the suite does not recompute the fold's balance, its carriers and its tips from receipts. | The negative host's short-donation pair, which is host evidence and not part of this suite. |
+| A termination fold donates the held value less the tip to the treasury. | `termination_fold_donates_held_minus_tip` | uncovered: the ordinary terminate prints the fold's donation, but no clause recomputes the held value and the tip. | The Demo 1 journey checks the donation lies strictly between nothing and the transfer; the negative host's short-donation pair checks the exact amount. |
+| The ordinary insert delivers the key's holding, inline, with exactly its deposit. | `insertion_holding_inline` | uncovered: the destination address and the registry tag of the delivered output, and the datum hash against the booked request, are on no receipt. | The observation `insert-delivers-the-holding-inline-with-its-deposit`, which claims no statement: the registry the create booted is the one the insert names, the key reads Active, the holding is the output the insert delivered, it carries the inserted envelope inline and it holds exactly the protected deposit. |
+| An accepted update leaves the registry's state as it was. | `update_keeps_registry` | uncovered: the rest of the economic state, the treasury and the custody and held tables, is on no receipt. | The observation `update-leaves-the-registry-root-and-pending-requests`: the root and the pending requests, their count and their lovelace, read back the same before and after an accepted update. |
+| An accepted update keeps the holding's custody. | `update_preserves_custody` | uncovered: the continuation's recorded flag and reference index are model fields no receipt exposes, and the outputs list as a whole is not read. | The observation `update-refuses-a-continuation-that-changes-the-custody`: seven tampered continuations (another controller, a changed deposit, an escape to the controller's address, a token left behind, a short deposit, no datum, an added asset) are each refused by the application, registry and wallet unchanged. |
+| An update is accepted exactly when it names one successor that keeps the control, the assets and the floor. | `update_inversion` | uncovered: the converse direction, the number of successors, the destination, the assets and the floor are not read. | The observation `accepted-update-replaces-the-payload-and-keeps-the-control`: the controller's update is accepted, the key reads Active, the holding is the update's output with the new payload, the same controller and the same deposit, and the root has not moved. |
+| A termination fold burns the key's token and the request's tags atomically. | `termination_fold_burns_atomically` | uncovered: the burn of the key's tag and of the request tags is on no receipt, and the booking's leaving the pending list is not read. | The observation `terminate-settles-the-booked-request-and-leaves-the-key-terminal`: after the ordinary terminate, booking and fold, the one settled request names the custody the terminate spent and the protected deposit that custody carried, and the key reads Terminal with no holding. |
+
+Four further topics are uncovered by this suite and are not shown as passing:
+
+- Reference-state rejection is uncovered. The ruled rejection reads the registry's state output by reference and never spends it; the implementation of it is the work of the protected-rejection epic, and the rejection rows above stay unmet by ruling.
+- Production node discovery is uncovered. Production discovery of pending requests is accepted through the public index only: the policy's asset list, then the asset outputs. No public node interface reads the request address, and the private development facade scans the whole ledger, so a run through it is harness evidence whose cost grows with the whole ledger, not a production result.
+- Generic open custody is uncovered. In the generic open application the delivered token sits at the holder's own address, so the holder's spending authorization is the custody rule, and the request policy's universal layer checks one genuine active token in one spent input and the transfer of its whole value. No clause of this suite tells a termination of such a holding.
+- Keri-stub custody is uncovered. The keri-stub application's custody rule is its own validator's; its producer tests and its journey exercise it, and no conformance story tells it.
+
+Retraction and the sweep of unrelated outputs at the request address remain uncovered here as well: the stories do not drive them, and the evidence page lists their rows with that state.
+
 ## The contract and its binding
 
 The rows answer to the consumer contract source-bound to

@@ -33,8 +33,8 @@ What no focused row asserts: the query's input-order sorting (the rows
 hand `registryDuties` already-ordered lists, and the built-body row
 folds one request); the quantities of every mint except the active
 burn; a custody refund's output address and amount; a delivering
-edge's destination; and an approval returned by a delivering or
-inadmissible edge. The fresh-blueprint `Criterion3Spec` tests the
+edge's destination; and an approval returned (retired with the earlier law's
+untagged request) by a delivering or inadmissible edge. The fresh-blueprint `Criterion3Spec` tests the
 accepted-edge portion of that gap. It books two real
 requests and presents their real outputs in descending TxIn order to
 one public fold, then runs connected stages for all seven admissible
@@ -98,7 +98,7 @@ action types.
 | `Singular.Registry.FoldSelection` | Which pending requests a fold takes: judging every pending request alone, by seven checks in order, returning each as settled or excluded with a reason, up to nine requests per fold, an estimate not measured on a real network. |
 | `Singular.Registry.TxBuilder.Update` | The six public exports and the two fold entry points; the sequence of preparation, decision and assembly. Nothing else. |
 | `Singular.Registry.TxBuilder.Update.Context` | The `RegistryContext` a caller hands in and its empty value; finding the state, request and fee UTxOs; the ordered speculative proofs through the trie; the new state output and the cage script; the validity upper slot; completing a partly empty context from the provider. |
-| `Singular.Registry.TxBuilder.Update.Duties` | `RegistryDuties` and `registryDuties`: the one derivation of what a fold's requests owe — mints under the three token policies, destinations, custody spends, burn sources, deposit and approval returns, and the (empty) signer set. |
+| `Singular.Registry.TxBuilder.Update.Duties` | `RegistryDuties` and `registryDuties`: the one derivation of what a fold's requests owe — mints under the three token policies, destinations, custody spends, burn sources, the earlier law's deposit and approval returns (retired with the untagged request, kept while the legacy edge builder stays), and the (empty) signer set. |
 | `Singular.Registry.TxBuilder.Update.Build` | `NoCtx`, the evaluation adapter over the provider, and the one transaction story language program: spends, mints, outputs, signatures, attached or referenced scripts, collateral and validity. |
 
 ## The flow a fold runs
@@ -129,7 +129,7 @@ sequenceDiagram
 
 The extraction is a representation change, not a new registry rule.
 The Lean model remains the authority: the fold's mint quantities, owner
-deposits, custody refunds and approval returns are what
+deposits, custody refunds and approval returns of the earlier law (retired with the untagged request, kept while the legacy edge builder stays) are what
 `Singular.obligations` says they are, and no fold requires a signer
 (`Singular.Statements.fold_requires_no_signer`). What the focused tree
 executes: the duties list in the order of the requests it was given —

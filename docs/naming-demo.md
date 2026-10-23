@@ -46,7 +46,7 @@ token, and the witness is what a reader looks at — never the root:
 | insert active | no key | Active | one active witness minted to the booker |
 | update absent to active | Absent | Active | the absent witness burned, an active witness minted |
 | update active to terminal | Active | Terminal | the active witness burned |
-| delete absent | Absent | no key | the absent witness burned, the deposit returned |
+| delete absent | Absent | no key | the absent witness burned; history, the earlier law returned the deposit and the permanent contract excludes this edge |
 | delete active | Active | no key | the active witness burned |
 | read terminal | Terminal | Terminal | one terminal witness minted, the key untouched |
 

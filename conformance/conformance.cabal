@@ -231,6 +231,7 @@ executable cli-controls
     Conformance.Cli.FoldHistory
     Conformance.Cli.Node
     Conformance.Cli.Proof
+    Conformance.Cli.RetiredBooking
     Conformance.Cli.Withhold
 
   build-depends:
@@ -305,6 +306,7 @@ test-suite conformance-tests
     Conformance.Cli.Node
     Conformance.Cli.FoldHistory
     Conformance.Cli.Proof
+    Conformance.Cli.RetiredBooking
     Conformance.Cli.Withhold
     Conformance.Fixture.NodeRejection
     Conformance.Fixture.Receipt

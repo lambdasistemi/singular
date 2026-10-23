@@ -24,8 +24,9 @@ copies it.
   under the stub's policy, with `--fold` folding it in the same command;
   `convict` is the entry command this package owns — it books one
   `updateTerminal` carrying the evidence hash its `--evidence` names,
-  with `--fold` folding it in the same command, releasing the holding
-  to its controller.
+  with `--fold` folding it in the same command. A termination does not
+  release its holding to the controller: the booking spends the custody into
+  the request, and the fold donates it to the treasury less the declared tip.
 
 ## Devnet journey
 
@@ -33,8 +34,8 @@ copies it.
 `tools/keri_stub_journey.sh`: one registry booted for the stub's own
 policy, one key registered and folded to Active, a second register of
 the same key refused at booking, then the key convicted with its
-evidence and folded to Terminal with its holding released to its
-controller and the deposit back. The run uses the stub executable alone:
+evidence and folded to Terminal, the custody taken in by the request and
+donated to the treasury less the tip. The run uses the stub executable alone:
 no other application's executable is on its PATH, in its process record,
 or in what it writes.
 

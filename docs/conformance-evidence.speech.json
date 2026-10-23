@@ -98,7 +98,7 @@
   "what-this-evidence-is-bound-to": [
     {
       "pause": 400,
-      "text": "The runs behind this page checked out code revision c17309ee6073, and the application model revision is de3430054022."
+      "text": "The runs behind this page checked out code revision c17309ee6073, which read application model revision de3430054022. The current application model revision is bf43bd1e06d8, and the runs did not read it."
     },
     {
       "pause": 400,
@@ -111,6 +111,6 @@
   ],
   "_source": {
     "file": "conformance-evidence.md",
-    "sha256": "24123706493cc8471de533e604f18a990e07ffbbd2699f447ce8ff3867fcd70f"
+    "sha256": "d109ad324236ccc6547542161848a0f522ae554c255c27bfcec34a6e86f70f87"
   }
 }

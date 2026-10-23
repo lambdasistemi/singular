@@ -8,13 +8,12 @@ Usage: singular registry reject [--config FILE] [--state-dir DIR] --blueprint
        [--fund-input TXID#IX] [--max-outlay LOVELACE] [--trace LEVEL]
        [--trace-to SINK] [--trace-format FORMAT]
 
-Reject all pending requests past their windows
+Retired: refuses by name and submits nothing
 
-Clears the registry's pending requests, all or none: it is built only once
-every pending request is past both its windows, the processing window and the
-retract window after it. Until then it is refused, naming each request and
-when its retract window closes. Each owner is refunded the request's value
-less the tip; the wallet that runs it keeps the tip.
+The registry reject is retired: the registry's state script refuses a spend
+with the rejected action. The command refuses before it reads, signs or
+submits anything. A booked request leaves the registry through the fold, or
+through its owner's reclaim while its retract window is open.
 
 A write is signed by exactly one signer: --vault (the normal route),
 --wallet-address with --bundle (written for an external signer, ending as

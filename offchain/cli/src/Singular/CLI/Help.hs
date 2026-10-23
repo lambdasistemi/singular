@@ -35,8 +35,8 @@ singularProgram version =
     Program
         { programName = "singular"
         , programSummary =
-            "Create a Singular registry on Cardano, fold requests into it, reject or \
-            \reclaim requests, read it back, and sign and submit transaction bundles."
+            "Create a Singular registry on Cardano, fold requests into it, reclaim \
+            \requests, read it back, and sign and submit transaction bundles."
         , programVersion = version
         , programNodes = [registryGroup, walletGroup, submitLeaf]
         , programFooter =
@@ -170,14 +170,13 @@ rejectLeaf =
     Runs
         Leaf
             { leafName = "reject"
-            , leafSummary = "Reject all pending requests past their windows"
+            , leafSummary = "Retired: refuses by name and submits nothing"
             , leafDescription =
-                [ "Clears the registry's pending requests, all or none: it is built \
-                  \only once every pending request is past both its windows, the \
-                  \processing window and the retract window after it. Until then it \
-                  \is refused, naming each request and when its retract window \
-                  \closes. Each owner is refunded the request's value less the tip; \
-                  \the wallet that runs it keeps the tip."
+                [ "The registry reject is retired: the registry's state script \
+                  \refuses a spend with the rejected action. The command refuses \
+                  \before it reads, signs or submits anything. A booked request \
+                  \leaves the registry through the fold, or through its owner's \
+                  \reclaim while its retract window is open."
                 , signerParagraph
                 ]
             , leafShape =
@@ -213,7 +212,7 @@ reclaimLeaf =
                   \request of this wallet, inside its retract window. The locked \
                   \lovelace returns to the owner in one output; the registry's root \
                   \does not move. An early refusal names when the window opens; \
-                  \once closed, registry reject clears the request."
+                  \once closed, the request can no longer be taken back."
                 , signerParagraph
                 ]
             , leafShape =

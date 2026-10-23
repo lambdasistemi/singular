@@ -19,7 +19,7 @@
       "pause": 500
     },
     {
-      "text": "Alice boots a registry whose application is open datum: a key's live value is an output at the application's script, holding the key's one active token under an inline envelope. The envelope has a protected part (this registry, its active policy, the key, the controller and a protected deposit) and a free payload. Only the controller may replace the payload. The deposit is released only when the registry terminates the key.",
+      "text": "Alice boots a registry whose application is open datum: a key's live value is an output at the application's script, holding the key's one active token under an inline envelope. The envelope has a protected part (this registry, its active policy, the key, the controller and a protected deposit) and a free payload. Only the controller may replace the payload. A termination does not release the key's custody to its controller: the registry takes it in and donates it to the treasury, less the declared tip.",
       "pause": 400
     },
     {
@@ -125,7 +125,7 @@
       "pause": 400
     },
     {
-      "text": "A write that is refused before it builds anything (a reject while a window is open, a closed registry's update, a terminal key) writes no bundle. While a bundle waits for its signatures, the same wallet's next write of that registry stops with the same outcome, waiting-for-signatures, naming the waiting bundle, and builds nothing. singular wallet sign refuses a bundle whose signers do not include the vault's address, and singular submit sends only the transactions the chain does not hold, so it can be run again on a bundle that has landed. A wrong passphrase or an unreadable vault is refused, naming the vault, before the blueprint, the provider or the state directory is read. A vault run whose answer is lost leaves its bundle pending, its fields under expected, and the next write of that wallet stops on it like any waiting bundle.",
+      "text": "A write that is refused before it builds anything (the retired reject, a closed registry's update, a terminal key) writes no bundle. While a bundle waits for its signatures, the same wallet's next write of that registry stops with the same outcome, waiting-for-signatures, naming the waiting bundle, and builds nothing. singular wallet sign refuses a bundle whose signers do not include the vault's address, and singular submit sends only the transactions the chain does not hold, so it can be run again on a bundle that has landed. A wrong passphrase or an unreadable vault is refused, naming the vault, before the blueprint, the provider or the state directory is read. A vault run whose answer is lost leaves its bundle pending, its fields under expected, and the next write of that wallet stops on it like any waiting bundle.",
       "pause": 400
     },
     {
@@ -171,11 +171,11 @@
       "pause": 300
     },
     {
-      "text": "open-datum terminate books the termination against the live holding: its receipt names the pending request, the live output the fold will release and the deposit.",
+      "text": "open-datum terminate books the termination against the live holding: its receipt names the pending request, the custody output the booking spends into it, the protected deposit and the lovelace it transfers into the request.",
       "pause": 300
     },
     {
-      "text": "open-datum fold stages and, once sent, lands its fold: the token is burned and the protected deposit is paid back to the controller together with everything else the fold owes.",
+      "text": "open-datum fold stages and, once sent, lands its fold: the token is burned and the custody is donated to the treasury, less the declared tip. None of the custody is paid back to the controller. Its receipt states the donation.",
       "pause": 300
     },
     {
@@ -183,11 +183,11 @@
       "pause": 300
     },
     {
-      "text": "singular registry reject clears a request that is past both its windows: its processing window, in which the registry's fold may take it, and the retract window after it, in which its owner may take it back. It is refused, naming each request and when its retract window closes, while any pending request is still inside a window, and when nothing is pending. The windows are judged from the ledger's tip, not the host's clock. Its receipt names, under expected, every request rejected, the value it actually locked, the tip the rejecting wallet keeps, and the refund: the designated output, its recipient and its amount. The registry's root does not move. The refund is the whole owed amount in one output to the request's owner, the one shape the chain accepts.",
+      "text": "singular registry reject is retired. The registry's state script refuses a spend with the rejected action, so the command refuses by name (exit 10, outcome client-refusal) before it reads, signs or submits anything, and writes no bundle. A request nobody folded stays pending until its owner takes it back with singular registry reclaim, after its processing deadline and while its retract window is open.",
       "pause": 300
     },
     {
-      "text": "open-datum insert stages a new request, which the cleared registry now takes.",
+      "text": "open-datum insert stages a new request, which the registry takes once the late one is reclaimed.",
       "pause": 300
     },
     {
@@ -195,7 +195,7 @@
       "pause": 300
     },
     {
-      "text": "singular registry reclaim takes back a new pending insertion that nobody folded, inside its retract window. An earlier attempt is refused, naming when it opens; another wallet is refused as not the request's owner. The owner's successful receipt names the request, the retract transaction, the value that was locked, the recipient and the returned output. The tip slot against the deadline slots decides the window, never the host clock. After the window closes the refusal names registry reject. Updates and deletions cannot be retracted; insertions and terminal witnesses can. The root stays where it was.",
+      "text": "singular registry reclaim takes back a new pending insertion that nobody folded, inside its retract window. An earlier attempt is refused, naming when it opens; another wallet is refused as not the request's owner. The owner's successful receipt names the request, the retract transaction, the value that was locked, the recipient and the returned output. The tip slot against the deadline slots decides the window, never the host clock. After the window closes the refusal says the request can no longer be taken back, and the request stays pending. Updates and deletions cannot be retracted; insertions and terminal witnesses can. The root stays where it was.",
       "pause": 300
     },
     {
@@ -303,6 +303,6 @@
   ],
   "_source": {
     "file": "DEMO1.md",
-    "sha256": "d58c24e09ac2d9c3e778233cf69d45114f5d762ce1acc1e6e2f69280cd716fe9"
+    "sha256": "0c3ea4e578c1eb419cac04e98d7b96d7694fc6bebfb739df545101f210b9e2f0"
   }
 }

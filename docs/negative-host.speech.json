@@ -5,7 +5,7 @@
       "pause": 500
     },
     {
-      "text": "You are evaluating Singular, and this repository is all you have. It claims rules: only a key's controller may update that key, a key the registry already holds cannot be taken again, a holding is released only inside a fold. This page shows where those rules are enforced — on the chain, by scripts — and how you can watch each refusal happen from the release archive, with no trust in the client that ships with the repository.",
+      "text": "You are evaluating Singular, and this repository is all you have. It claims rules: only a key's controller may update that key, a key the registry already holds cannot be taken again, a holding is never released to its controller but only booked for termination and folded. This page shows where those rules are enforced — on the chain, by scripts — and how you can watch each refusal happen from the release archive, with no trust in the client that ships with the repository.",
       "pause": 400
     }
   ],
@@ -71,11 +71,11 @@
       "pause": 500
     },
     {
-      "text": "One sequence carries the most rules at once, over one request. Alice has registered alice-2 and is its controller. She books its termination and stops at the pending request; the termination is not done until a fold settles it. Bob, who is nobody in particular, then tries to settle it for less than owed, and finally settles it honestly.",
+      "text": "One sequence carries the most rules at once, over one request. Alice has registered alice-2 and is its controller. She books its termination and stops at the pending request; the termination is not done until a fold settles it. Bob, who is nobody in particular, then tries to settle it with a smaller treasury donation than the booking commits to, and finally settles it honestly.",
       "pause": 400
     },
     {
-      "text": "The sequence is connected over one pending request. Alice, the controller of alice-2, books its termination with the ordinary command and stops at the pending request; the termination is not done until a fold settles it. Bob, who is nobody in particular, first settles it for one lovelace less than owed, through the host: the application's script at the fold refuses, the request stays pending, the deposit stays held. Bob then folds the same request honestly, through the same host and from the same state: the honest fold burns the key's token, leaves the key terminal and pays the controller exactly what the booking owes. The one difference between the two folds is the payment, and that difference alone moves the verdict from refusal to acceptance.",
+      "text": "The sequence is connected over one pending request. Alice, the controller of alice-2, books its termination with the ordinary command and stops at the pending request; the termination is not done until a fold settles it. Bob, who is nobody in particular, first settles it with a treasury donation one lovelace smaller than the request's held value less its declared tip, through the host: the registry's state validator at the fold refuses with its labelled fold-donation-mismatch, the request stays pending, the custody stays booked. Bob then folds the same request honestly, through the same host and from the same state: the honest fold burns the key's token, leaves the key terminal and donates exactly the held value less the tip to the treasury. None of the custody goes to the controller: a termination's custody is not released to its controller, though unrelated ordinary payments to the controller's address are allowed and not examined here. The one difference between the two folds is the donation, and that difference alone moves the verdict from refusal to acceptance. The check reads the held value and the declared tip from the pending request and the donation from the honest fold's own receipt, and requires the donation to equal the held value less the tip exactly.",
       "pause": 400
     }
   ],
@@ -215,7 +215,7 @@
       "pause": 300
     },
     {
-      "text": "The registry row removes two things at once because one alone could never flip: taking out only the labelled refusal leaves the node refusing, since the insert step makes the same check itself. The runner builds this mutant the same way as the others, inside its own scratch copy only: the pin of the registry's state script, the registry manifest, the permanent-contract file and the known-scripts module are regenerated, and so are the application's blueprint, manifest and record, so the executables built there accept the mutated hashes. The checkout, the shipped loader and the permanent contract are not changed, and the run checks that. The control pair for this mutant is stranger-updates-the-key.",
+      "text": "The two registry-source mutants (registry-accepts-a-taken-key in the fold step and fold-accepts-a-short-donation in the donation routing check) each replace exactly one statement of the registry source, and the runner checks that before it starts: the patch touches only the one registry file it names, removes only the anchored statements, and changes lines only inside the function it names. The runner builds this mutant the same way as the others, inside its own scratch copy only: the pin of the registry's state script, the registry manifest, the permanent-contract file and the known-scripts module are regenerated, and so are the application's blueprint, manifest and record, so the executables built there accept the mutated hashes. The checkout, the shipped loader and the permanent contract are not changed, and the run checks that. The control pair for both of them is stranger-updates-the-key.",
       "pause": 400
     },
     {
@@ -225,6 +225,6 @@
   ],
   "_source": {
     "file": "negative-host.md",
-    "sha256": "1c4a3b547cc7e8c95c8ede5c45b76d59f7f9c5b97c3a7bf470e757bf403f9da4"
+    "sha256": "b111da31e43f314576233dfad751065b09fd18d4f2cc861de2c9b879fbbc6fe9"
   }
 }

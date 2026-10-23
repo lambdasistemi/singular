@@ -112,9 +112,10 @@ in
 
   # The consumers of the tagged-request law that no in-process suite runs:
   # the statement bindings, the hash-comparison report, the negative host, the
-  # journeys, the rehearsal and the published pages. Rows of kind behavioral run
-  # a command or function of the repository over real data; rows of kind
-  # inspection read source text. The tool checks its own predicates first.
+  # journeys and the way they read a booking's and a fold's receipt, the rehearsal
+  # and the published pages. Rows of kind behavioral run a command or function
+  # of the repository over data; rows of kind inspection read source text. The
+  # tool checks its own predicates first.
   # Scratch owned: the tool owns its scratch under mktemp with trap cleanup; no
   # process is stopped.
   tagged-law-consumers-check = app (
@@ -131,6 +132,7 @@ in
         gnused
         jq
         nix
+        perl
       ];
       text = ''bash tools/tagged_law_consumers_check.sh "$PWD"'';
     }

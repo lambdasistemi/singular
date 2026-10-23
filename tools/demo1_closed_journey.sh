@@ -17,7 +17,7 @@
 #
 #   create --closed -> page read -> insert -> fold -> inspect
 #       -> chain reads -> refused update -> same chain reads
-#       -> terminate -> chain reads -> fold -> inspect -> deposit read
+#       -> terminate -> chain reads -> fold -> inspect
 #
 # An insert or a terminate books and leaves its request pending; `open-datum
 # fold` folds it, signed by a wallet other than the booking's. The update on
@@ -25,8 +25,8 @@
 # and before any bundle is written, and two chain reads taken before and after it must be equal: the
 # controller's wallet outputs and the name's own output. The controller read
 # taken after the termination booking must differ, which shows it can see a
-# submission; the fold settles the termination and the controller's
-# wallet lists the fold's output of at least the deposit.
+# submission; the booking moves all of the custody value into the request and the fold
+# settles the termination, donating strictly between nothing and the transfer.
 #
 # Each process leaves one JSON receipt. Assertions read those receipts and
 # chain reads, and nothing else. A refusal control names the outcome class it
@@ -96,7 +96,7 @@ read_fn() {
     printing { print }
   ' "$open_journey"
 }
-helpers="exit_of trace_disagreements trace_agrees run journal_lines refused field hexof holds_envelope release_work require_archive_layout booked booking_only journal_count local_files payload story_who story_stage story_settle story_vault story_fold_ok"
+helpers="exit_of trace_disagreements trace_agrees run journal_lines refused field hexof holds_envelope release_work require_archive_layout booking_receipt_ok termination_booking_receipt_ok booked booked_termination booking_only journal_count local_files payload story_who story_stage story_settle story_vault fold_receipt_ok fold_landed_ok story_fold_ok"
 for helper in $helpers; do
   code="$(read_fn "$helper")"
   [ -n "$code" ] || fail "the open journey names no helper $helper"
@@ -388,17 +388,23 @@ tail -n +"$((term_before + 1))" "$term_journal" \
   | jq -s -e '[.[] | select(.journalStep == "book") | .journalEvent] == ["waiting-for-signatures", "landed"] and all(.[]; .journalEvent | IN("waiting-for-signatures", "landed"))' >/dev/null \
   || fail "the vault termination did not leave exactly its waiting-for-signatures and landed lines"
 [ "$(local_files)" = "$files_before" ] || fail "a vault termination created retired trie files"
-booked terminate
-jq -e '(.released | test("^[0-9a-f]{64}#[0-9]+$")) and (.deposit | type == "number" and . > 0)' \
+booked_termination terminate
+jq -e '(.custody | test("^[0-9a-f]{64}#[0-9]+$")) and (.deposit | type == "number" and . > 0) and (.transfer | type == "number" and . > 0)' \
   "$receipts/terminate.json" >/dev/null \
-  || fail "the termination booking does not name the live output and its deposit"
+  || fail "the termination booking does not name the custody output it spends and the lovelace it transfers into the request"
+# All of the custody value enters the request (the booking adds nothing of its own here):
+# the lovelace transferred is the live holding's, read after the insert; the closed
+# registry takes no update, so the holding is the one the insert delivered.
+jq -e --slurpfile i "$receipts/inspect-active.json" '.transfer == $i[0].applicationOutput.lovelace' \
+  "$receipts/terminate.json" >/dev/null \
+  || fail "the booking did not move all of the custody value into the request: transfer $(field terminate .transfer), holding $(field inspect-active .applicationOutput.lovelace)"
 read_controller booked
 cmp -s "$work/canon-chain-controller-before.json" "$work/canon-chain-controller-booked.json" \
   && fail "the controller's reads cannot see the termination booking"
 say "the controller read sees the booking"
 
 # ------------------------------------------------------------------
-# 8. the fold settles it; inspect reads terminal and the deposit is back
+# 8. the fold settles it and inspect reads terminal: the donation is bounded by the transfer
 # ------------------------------------------------------------------
 story_stage terminate-fold bob -- fold --request "$(field terminate .request)" \
   "${common[@]}" "${node[@]}"
@@ -407,19 +413,14 @@ story_fold_ok terminate-fold terminate updateTerminal
 [ "$(field terminate-fold .folder)" = "$bobkey" ] || fail "the termination was not folded with bob's key"
 jq -e --slurpfile b "$receipts/terminate.json" \
   '(.settled | length == 1) and .settled[0].request == $b[0].request and .settled[0].edge == "updateTerminal"
-    and .settled[0].settlement.released == $b[0].released and .settled[0].settlement.deposit == $b[0].deposit' \
-  "$receipts/terminate-fold.json" >/dev/null || fail "the fold does not settle the termination the booking named"
+    and .settled[0].settlement.terminated == $b[0].request
+    and (.donation | type == "number") and .donation > 0 and .donation < $b[0].transfer' \
+  "$receipts/terminate-fold.json" >/dev/null || fail "the fold does not settle the termination the booking named, with a donation strictly between nothing and the transfer"
 run inspect-terminal success -- inspect --key "$key" --outputs-at "$alice_addr" "${common[@]}" "${node[@]}"
 [ "$(field inspect-terminal .leaf)" = terminal ] || fail "the key is not terminal after the fold"
 jq -e '.applicationOutput.absent' "$receipts/inspect-terminal.json" >/dev/null \
   || fail "the holding is still live"
-deposit="$(field terminate .deposit)"
-fold_tx="$(field terminate-fold .fold)"
-jq -e --arg tx "$fold_tx" --argjson d "$deposit" \
-  'any(.outputsAt.outputs[]; (.output | startswith($tx + "#")) and .locked.lovelace >= $d)' \
-  "$receipts/inspect-terminal.json" >/dev/null \
-  || fail "no output of the fold pays the controller at least the deposit $deposit"
-say "the name is terminal and the fold's output pays the controller at least the deposit"
+say "the name is terminal; all of the custody entered the request and the fold donated within its bounds"
 
 # ------------------------------------------------------------------
 # 9. every step leaves a receipt

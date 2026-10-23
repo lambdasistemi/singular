@@ -2,8 +2,8 @@
 
 You are evaluating Singular, and this repository is all you have. It
 claims rules: only a key's controller may update that key, a key the
-registry already holds cannot be taken again, a holding is released
-only inside a fold. This page shows where those rules are enforced —
+registry already holds cannot be taken again, a holding is never
+released to its controller but only booked for termination and folded. This page shows where those rules are enforced —
 on the chain, by scripts — and how you can watch each refusal happen
 from the release archive, with no trust in the client that ships with
 the repository.
@@ -101,19 +101,20 @@ One sequence carries the most rules at once, over one request. Alice
 has registered `alice-2` and is its controller. She books its
 termination and stops at the pending request; the termination is not
 done until a fold settles it. Bob, who is nobody in particular, then
-tries to settle it for less than owed, and finally settles it honestly.
+tries to settle it with a smaller treasury donation than the booking
+commits to, and finally settles it honestly.
 
 ```mermaid
 sequenceDiagram
     participant Alice as Alice
     participant Node as the node
     participant Host as the host
-    participant App as application
+    participant App as registry state validator
     Alice->>Node: terminate alice-2
-    Node-->>Alice: pending, held
+    Node-->>Alice: pending, custody booked
     Host->>Node: fold --pay-short 1
     Node->>App: run the rule
-    App-->>Node: refused: pays less
+    App-->>Node: refused: donation differs
     Node-->>Host: verdict names it
     Host->>Node: read: pending
     Host->>Node: fold, same request
@@ -124,14 +125,22 @@ The sequence is connected over one pending request. Alice, the
 controller of `alice-2`, books its termination with the ordinary
 command and stops at the pending request; the termination is not done
 until a fold settles it. Bob, who is nobody in particular, first
-settles it for one lovelace less than owed, through the host: the
-application's script at the fold refuses, the request stays pending,
-the deposit stays held. Bob then folds the same request honestly,
-through the same host and from the same state: the honest fold burns
-the key's token, leaves the key terminal and pays the controller
-exactly what the booking owes. The one difference between the two
-folds is the payment, and that difference alone moves the verdict from
-refusal to acceptance.
+settles it with a treasury donation one lovelace smaller than the
+request's held value less its declared tip, through the host: the
+registry's state validator at the fold refuses with its labelled
+`fold-donation-mismatch`, the request stays pending, the custody stays
+booked. Bob then folds the same request honestly, through the same
+host and from the same state: the honest fold burns the key's token,
+leaves the key terminal and donates exactly the held value less the
+tip to the treasury. None of the custody goes to the controller:
+a termination's custody is not released to its controller, though
+unrelated ordinary payments to the controller's address are allowed and
+not examined here. The one difference between the two folds is the
+donation, and that difference alone moves the verdict from refusal to
+acceptance. The check reads the held value and the declared tip from
+the pending request and the donation from the honest fold's own
+receipt, and requires the donation to equal the held value less the
+tip exactly.
 
 ## A closed registry refuses an update
 
@@ -189,12 +198,12 @@ post-split ordinary spellings.
 | the controller's update `--tamper address` (`controller-tamper-address`) | the application's spending contract | the same `open-datum update` | the same: the holding's address is protected, not an input | the controller's update with no tamper flag |
 | the controller's update `--tamper datum` (`controller-tamper-datum`) | the application's spending contract | the same `open-datum update` | the same: the recorded control travels with the holding, not an input | the controller's update with no tamper flag |
 | `registry terminate --key alice-1 --wallet-skey bob.skey` — a stranger's termination booking (`stranger-terminates-the-key`) | the application's spending contract, at the booking | `open-datum terminate --key alice-1 --vault bob.vault` | refuses before submitting: the termination booking is the controller's | the controller's own termination booking |
-| `registry withdraw --key alice-1 --wallet-skey alice.skey` (`controller-withdraws-outside-a-fold`) | the application's spending contract | none: no ordinary command releases a holding outside a fold | books the termination (`open-datum terminate`) and folds it (`open-datum fold`); the release happens inside the fold | the same release inside the honest fold of the booked termination |
+| `registry withdraw --key alice-1 --wallet-skey alice.skey` (`controller-withdraws-outside-a-fold`) | the application's spending contract | none: no ordinary command releases a holding | books the termination (`open-datum terminate`) and folds it (`open-datum fold`); the booking spends the custody into the request and the fold donates its value less the tip, never to the controller | the same termination, booked and folded honestly |
 | `registry insert --key alice-1 --payload new.json --wallet-skey bob.skey`, the key already active (`stranger-registers-a-taken-key`) | the registry's state validator, at the fold | `open-datum insert --key alice-1 --payload new.json --vault bob.vault` | refuses before submitting: the key is already registered | the same insertion of a fresh key the registry never held, from the same registry state |
 | the same insertion signed by the key's owner (`owner-registers-a-taken-key-again`) | the registry's state validator, at the fold | the same `open-datum insert` | the same refusal: ownership of the key does not reopen it | the same fresh-key insertion from the same state |
 | `registry insert --key alice-1 --payload new.json --wallet-skey alice.skey`, the key terminal (`owner-revives-a-terminated-key`) | the registry's state validator | the same `open-datum insert` | refuses before submitting: the key is already retired, permanently | the same fresh-key insertion from the same terminal state |
 | the same revival signed by a stranger (`stranger-revives-a-terminated-key`) | the registry's state validator | the same `open-datum insert` | the same refusal: a terminated key stays terminal for everyone | the same fresh-key insertion from the same terminal state |
-| `registry fold --pay-short 1 --wallet-skey bob.skey` over the pending termination of `alice-2` (`short-fold-of-a-booked-termination`) | the application's spending contract, at the fold | `open-datum fold --vault bob.vault` | builds the fold from the public view and pays the controller exactly what the booking owes; no ordinary flag pays less | the honest fold of the same request |
+| `registry fold --pay-short 1 --wallet-skey bob.skey` over the pending termination of `alice-2` (`short-fold-of-a-booked-termination`) | the registry's state validator, at the fold | `open-datum fold --vault bob.vault` | builds the fold from the public view and donates exactly the held value less the declared tip; no ordinary flag donates less | the honest fold of the same request |
 | `registry update --key alice-1 --payload new.json --wallet-skey alice.skey` on a registry created with `open-datum create --closed` (`closed-update`) | the closed application's spending contract | `open-datum update --key alice-1 --payload new.json --vault alice.vault` | refuses before submitting: the registry is closed, a payload is written once and an update is refused | the termination of the same key, booked and folded |
 
 Read the four insertion rows together, because their timing is the
@@ -338,12 +347,12 @@ What is deliberately not there yet:
 | `update-control` | the continuation keeps the holding's recorded control | `controller-tamper-controller`, `controller-tamper-datum`, `controller-tamper-deposit` |
 | `token-continuation-leaves-the-holding` | the token continuation stays at the holding's address and keeps its recorded control — both rules, removed together | `controller-tamper-token` |
 | `termination-booking-controller-checks` | a termination booking is the controller's — the owner and controller-signature checks, removed together | `stranger-terminates-the-key` |
-| `release-no-fold` | a holding is released only inside a fold | `controller-withdraws-outside-a-fold` |
-| `release-additive` | a fold pays the controller at least what is owed | `short-fold-of-a-booked-termination` |
-| `registry-accepts-a-taken-key` | the registry's defence of a taken key — the labelled `key-exists` refusal in the fold and the insert step's own precondition (the Merkle-Patricia-Forestry library's insert requires the key to be absent, the same check the label sits behind) — both parts, removed together | `stranger-registers-a-taken-key`, `owner-registers-a-taken-key-again`, `owner-revives-a-terminated-key`, `stranger-revives-a-terminated-key` |
+| `release-retired-accepted` | the retired release of a holding to its controller stays refused — the labelled `release-retired` refusal in the spending contract | `controller-withdraws-outside-a-fold` |
+| `fold-accepts-a-short-donation` | a fold donates exactly what its members commit to — the labelled `fold-donation-mismatch` refusal in the registry's state validator | `short-fold-of-a-booked-termination` |
+| `registry-accepts-a-taken-key` | the registry's defence of a taken key — the labelled `key-exists` refusal in the fold step, replaced by the three ways a taken or retired key could be taken: an overwrite of an Active leaf, a revival of a Terminal one, or an insert of an absent key | `stranger-registers-a-taken-key`, `owner-registers-a-taken-key-again`, `owner-revives-a-terminated-key`, `stranger-revives-a-terminated-key` |
 | `closed-update-accepted` | the closed application's refusal of an update — the labelled `closed-datum-update` refusal in the closed spend, delegated to the open spend instead | `closed-update` |
 
-The registry row removes two things at once because one alone could never flip: taking out only the labelled refusal leaves the node refusing, since the insert step makes the same check itself. The runner builds this mutant the same way as the others, inside its own scratch copy only: the pin of the registry's state script, the registry manifest, the permanent-contract file and the known-scripts module are regenerated, and so are the application's blueprint, manifest and record, so the executables built there accept the mutated hashes. The checkout, the shipped loader and the permanent contract are not changed, and the run checks that. The control pair for this mutant is `stranger-updates-the-key`.
+The two registry-source mutants (`registry-accepts-a-taken-key` in the fold step and `fold-accepts-a-short-donation` in the donation routing check) each replace exactly one statement of the registry source, and the runner checks that before it starts: the patch touches only the one registry file it names, removes only the anchored statements, and changes lines only inside the function it names. The runner builds this mutant the same way as the others, inside its own scratch copy only: the pin of the registry's state script, the registry manifest, the permanent-contract file and the known-scripts module are regenerated, and so are the application's blueprint, manifest and record, so the executables built there accept the mutated hashes. The checkout, the shipped loader and the permanent contract are not changed, and the run checks that. The control pair for both of them is `stranger-updates-the-key`.
 
 The mutant table is the honest measure of the refusal evidence: each
 row names the one rule a validator had to lose before the chain would

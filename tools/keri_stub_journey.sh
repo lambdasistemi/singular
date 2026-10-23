@@ -4,10 +4,10 @@
 # request folded by the stub's own fold, the key read back active with its
 # holding, a second register of the same key refused at booking — before
 # anything is signed — with the named client-policy reason, then the key
-# convicted with its evidence, folded to terminal with its holding released
-# to its controller and the deposit back — the repayment read back on the
-# chain at the controller's own address, the holding observed spent, and
-# the same observation shown failing at an address never owned.
+# convicted with its evidence, folded to terminal with its custody taken in by
+# the request and donated to the treasury less the tip — the donation read back
+# from the fold's receipt, and the holding observed spent. A termination's
+# custody is not released to its controller.
 #
 # usage: keri_stub_journey.sh KERI_STUB DEVNET BLUEPRINT WORKDIR
 #
@@ -154,6 +154,33 @@ run() {
 }
 field() { jq -r "$2" "$receipts/$1.json"; }
 
+# register_booking_ok FILE KEY_HEX: a booking-only register receipt names the
+# key, its pending request, the requester and the registration's fold deadline.
+# Status only: callers say what failed.
+register_booking_ok() {
+  jq -e --arg k "$2" '.key == $k
+    and (.booking | type == "string" and length > 0)
+    and (.request | type == "string" and length > 0)
+    and (.requester | type == "string" and length > 0)
+    and (.foldDeadline.posixMs | type == "number")' "$1" >/dev/null
+}
+# convict_booking_ok FILE KEY_HEX EVIDENCE_HEX DEPOSIT: a booking-only convict
+# receipt names the key, its pending request, the requester, the evidence, the
+# custody output the booking spends, the held value and the lovelace it
+# transfers into the request. A termination has no processing window, so its
+# receipt names no fold deadline: the field is null.
+convict_booking_ok() {
+  jq -e --arg k "$2" --arg v "$3" --argjson d "$4" '.key == $k
+    and (.booking | type == "string" and length > 0)
+    and (.request | type == "string" and length > 0)
+    and (.requester | type == "string" and length > 0)
+    and .foldDeadline == null
+    and .evidence == $v
+    and (.custody | test("^[0-9a-f]{64}#[0-9]+$"))
+    and .held == $d
+    and .transfer == .held' "$1" >/dev/null
+}
+
 # journal_lines: lines in every journal under the state root, so a refusal
 # that submits nothing is proven by the count not moving.
 journal_lines() {
@@ -163,9 +190,8 @@ journal_lines() {
 
 # key_enterprise HASH28: the bech32 testnet payment-key enterprise address
 # (CIP-19 type 6) for a 28-byte hash as hex. The header is built from the
-# one network nibble above, never typed here; the fold pays a termination's
-# release to the enterprise address of the holding's controller hash, so
-# the journey reads the repayment back there. Encoded by the pinned
+# one network nibble above, never typed here; the controller's own outputs
+# are read back at the enterprise address of its hash. Encoded by the pinned
 # python3 below; a mistyped checksum fails loudly at the status call,
 # whose decoder checks it, never silently.
 key_enterprise() {
@@ -214,21 +240,6 @@ print("addr_test1" + "".join(CHARSET[d] for d in combined))
 PYEOF
 }
 
-# fold_repayment RECEIPT FOLD_TXID EXPECTED BEFORE_FILE: the receipt's
-# outputsAt lists an output of the fold transaction (its reference carries
-# the fold's transaction id) locking exactly EXPECTED lovelace and not
-# named in the before file. The fold pays the release and returns the
-# booking deposit to the same owner in one output, so the repayment is
-# exactly their sum and is new; the wallet's older outputs, however rich,
-# cannot satisfy it, and paying the release elsewhere leaves no such
-# output here. Fails otherwise.
-fold_repayment() {
-  jq -e --arg tx "$2" --argjson exp "$3" --rawfile seen "$4" \
-    '($seen | split("\n")) as $old
-     | [.outputsAt.outputs[]? | select((.output | startswith($tx + "#")) and .locked.lovelace == $exp and ((.output as $o | $old | index($o)) | not))] | length >= 1' \
-    "$1" >/dev/null
-}
-
 # The payload the register carries: an opaque identifier prefix, spelled as
 # the Plutus data the holding datum's payload field is (base16 bytes).
 payload_prefix="stub-prefix-1"
@@ -260,11 +271,7 @@ key_hex="$(printf '%s' "$key" | od -An -tx1 | tr -d ' \n')"
 deposit=4000000
 run register success -- register --key "$key" --deposit "$deposit" --payload "$work/payload.json" \
   "${common[@]}" "${registry[@]}" "${node[@]}" "${alice[@]}"
-jq -e --arg k "$key_hex" '.key == $k
-  and (.booking | type == "string" and length > 0)
-  and (.request | type == "string" and length > 0)
-  and (.requester | type == "string" and length > 0)
-  and (.foldDeadline.posixMs | type == "number")' "$receipts/register.json" >/dev/null \
+register_booking_ok "$receipts/register.json" "$key_hex" \
   || fail "register: the receipt does not name the key, its pending request, the requester and the fold deadline"
 jq -e 'has("submissions") and ([.submissions[]? | select(.step == "book")] | length >= 1)' "$receipts/register.json" >/dev/null \
   || fail "register: the receipt does not name its booking submission"
@@ -302,7 +309,7 @@ jq -e --arg c "$controller" --arg p "$payload_hex" --argjson d "$deposit" \
   || fail "status: the holding the key reads back is not the one booked, with its deposit, controller and payload"
 [ "$(jq -r '.pendingRequests | length' "$receipts/status.json")" = 0 ] \
   || fail "status: a request is still pending after the fold"
-# The repayment addresses are well-formed before anything terminates: the
+# The controller's address is well-formed before anything terminates: the
 # controller's testnet enterprise address lists the signing wallet's own
 # outputs here at the Active stage. This proves the encoder, the header
 # and the reader agree, and it runs on the RED head too, which the
@@ -357,46 +364,25 @@ run status-two success -- status --key "$key_two" "${common[@]}" "${registry[@]}
 evidence_hex="0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
 run convict success -- convict --key "$key" --evidence "$evidence_hex" \
   "${common[@]}" "${registry[@]}" "${node[@]}" "${alice[@]}"
-jq -e --arg k "$key_hex" --arg v "$evidence_hex" --argjson d "$deposit" '.key == $k
-  and (.booking | type == "string" and length > 0)
-  and (.request | type == "string" and length > 0)
-  and (.requester | type == "string" and length > 0)
-  and (.foldDeadline.posixMs | type == "number")
-  and .evidence == $v
-  and (.released | test("^[0-9a-f]{64}#[0-9]+$"))
-  and .deposit == $d
-  and (.bookingDeposit | type == "number" and . > 0)' "$receipts/convict.json" >/dev/null \
-  || fail "convict: the receipt does not name the key, its pending request, the requester, the fold deadline, the evidence, the live output its fold will release and the booking deposit its fold returns"
+convict_booking_ok "$receipts/convict.json" "$key_hex" "$evidence_hex" "$deposit" \
+  || fail "convict: the receipt does not name the key, its pending request, the requester, no fold deadline (a termination has no processing window), the evidence, the custody output the booking spends, the held value and the lovelace it transfers into the request"
 jq -e 'has("submissions") and ([.submissions[]? | select(.step == "book")] | length >= 1)' "$receipts/convict.json" >/dev/null \
   || fail "convict: the receipt does not name its booking submission"
 jq -e 'all(.submissions[]?; .step == "book")' "$receipts/convict.json" >/dev/null \
   || fail "convict: the booking-only command submitted something besides its booking"
 [ "$(field convict .request)" = "$(field convict .booking)#0" ] \
   || fail "convict: the pending request is not the booking's output 0"
-# The repayment the fold will pay is the release plus the booking deposit
-# to the same owner in one output: both numbers come from the booking's
-# own receipt, and the chain output below must match their sum.
-controller_enterprise="$(key_enterprise "$controller")"
-booking_deposit="$(field convict .bookingDeposit)"
-repayment_expected="$((deposit + booking_deposit))"
-say "the fold must pay $repayment_expected lovelace back at $controller_enterprise (deposit $deposit plus booking deposit $booking_deposit)"
-run status-pre success -- status --key "$key" --outputs-at "$controller_enterprise" \
-  "${common[@]}" "${registry[@]}" "${node[@]}"
-jq -r '.outputsAt.outputs[].output' "$receipts/status-pre.json" | sort >"$work/before-one.txt"
 
 # ------------------------------------------------------------------
-# 7. fold the termination: the key reads terminal, the holding released
+# 7. fold the termination: the key reads terminal, the custody is taken in
 # ------------------------------------------------------------------
 run convict-fold success -- fold "${common[@]}" "${registry[@]}" "${node[@]}" "${alice[@]}"
 jq -e --arg k "$key_hex" '(.settled | length == 1)
   and .settled[0].edge == "updateTerminal"
   and .settled[0].key == $k' "$receipts/convict-fold.json" >/dev/null \
   || fail "convict-fold: the settled request is not this key's updateTerminal"
-[ "$(field convict-fold .settled[0].settlement.released)" = "$(field convict .released)" ] \
-  || fail "convict-fold: the fold released another output than the booking named"
-jq -e --argjson d "$deposit" '.settled[0].settlement.deposit == $d
-  and (.settled[0].settlement.released | type == "string" and length > 0)' "$receipts/convict-fold.json" >/dev/null \
-  || fail "convict-fold: the released output and the deposit paid back are not the holding's, derived from the fold's own settlement"
+[ "$(field convict-fold .settled[0].settlement.terminated)" = "$(field convict .request)" ] \
+  || fail "convict-fold: the fold took in another request than the booking named"
 run status-terminal success -- status --key "$key" "${common[@]}" "${registry[@]}" "${node[@]}"
 [ "$(field status-terminal .leaf)" = "terminal" ] \
   || fail "status-terminal: the key is not terminal after the fold"
@@ -404,70 +390,41 @@ run status-terminal success -- status --key "$key" "${common[@]}" "${registry[@]
   || fail "status-terminal: a request is still pending after the fold"
 
 # ------------------------------------------------------------------
-# 7b. the repayment: the fold's own output at the controller's address locks the
-# release plus the booking deposit back, the holding is spent, and a
-# decoy address shows none
+# 7b. the donation: the fold takes the request in and donates the held value
+# less the tip to the treasury, and the holding is spent
 # ------------------------------------------------------------------
-fold_tx="$(field convict-fold .fold)"
-run status-repayment success -- status --key "$key" --outputs-at "$controller_enterprise" \
-  "${common[@]}" "${registry[@]}" "${node[@]}"
-fold_repayment "$receipts/status-repayment.json" "$fold_tx" "$repayment_expected" "$work/before-one.txt" \
-  || fail "status-repayment: no new output of the fold at the controller's address locks $repayment_expected lovelace back"
-say "repayment: $(jq -r --arg tx "$fold_tx" --argjson exp "$repayment_expected" '[.outputsAt.outputs[] | select((.output | startswith($tx + "#")) and .locked.lovelace == $exp)][0] | "\(.output) \(.locked.lovelace)"' "$receipts/status-repayment.json") at the controller's address"
+# The donation is the fold's own, read from its receipt: strictly between
+# nothing and the lovelace the booking transferred into the request, because
+# the tip stays out of it. The receipts carry no tip, so only these bounds are
+# checked. Nothing is claimed about the controller's address: the folder is the
+# same wallet here, and ordinary payments to the controller are allowed.
+jq -e --slurpfile b "$receipts/convict.json" '(.donation | type == "number") and .donation > 0 and .donation < $b[0].transfer' \
+  "$receipts/convict-fold.json" >/dev/null \
+  || fail "convict-fold: the donation is not strictly between nothing and the transfer: donation $(field convict-fold .donation), transfer $(field convict .transfer)"
 # The holding's input is spent: the key reads terminal with no holding.
-# (The read below goes through the stub script's own address internally:
-# `--outputs-at` takes payment-key enterprise addresses alone by design,
-# so no caller spells the script address there. The fold itself also
-# refuses unless the live output is spent.)
+# (The fold itself also refuses unless the live output is spent.)
 jq -e '.applicationOutput.absent and (.applicationOutput.holdings | length == 0)' "$receipts/status-terminal.json" >/dev/null \
   || fail "status-terminal: the holding is still live"
-# The planted control: the same repayment observation aimed at an address
-# the controller never owned fails it.
-decoy_hash="$(od -An -tx1 -N28 /dev/urandom | tr -d ' \n')"
-decoy_enterprise="$(key_enterprise "$decoy_hash")"
-run status-decoy success -- status --key "$key" --outputs-at "$decoy_enterprise" \
-  "${common[@]}" "${registry[@]}" "${node[@]}"
-if jq -e --arg tx "$fold_tx" --argjson exp "$repayment_expected" \
-  '[.outputsAt.outputs[]? | select((.output | startswith($tx + "#")) and .locked.lovelace == $exp)] | length == 0' \
-  "$receipts/status-decoy.json" >/dev/null; then
-  say "decoy: $(jq -r --arg tx "$fold_tx" '[.outputsAt.outputs[]? | select(.output | startswith($tx + "#"))] | length' "$receipts/status-decoy.json") outputs of the fold at the decoy address"
-else
-  fail "status-decoy: a repayment shows at an address the controller never owned"
-fi
-say "the deposit sits at the controller's address, the holding is spent, and a decoy address shows none"
+say "the custody is taken in, the donation is within its bounds, and the holding is spent"
 
 # ------------------------------------------------------------------
 # 8. convict with --fold: the same command folds its own booking
 # ------------------------------------------------------------------
-run status-pre-two success -- status --key "$key_two" --outputs-at "$controller_enterprise" \
-  "${common[@]}" "${registry[@]}" "${node[@]}"
-jq -r '.outputsAt.outputs[].output' "$receipts/status-pre-two.json" | sort >"$work/before-two.txt"
 run convict-two success -- convict --key "$key_two" --evidence "$evidence_hex" --fold \
   "${common[@]}" "${registry[@]}" "${node[@]}" "${alice[@]}"
 jq -e --arg k "$key_two_hex" --arg v "$evidence_hex" --argjson d "$deposit" '.key == $k
   and (.booking | type == "string" and length > 0)
   and (.fold | type == "string" and length > 0)
-  and (.released | test("^[0-9a-f]{64}#[0-9]+$"))
-  and .deposit == $d
+  and (.terminated | test("^[0-9a-f]{64}#[0-9]+$"))
+  and .held == $d
   and .evidence == $v
-  and (.bookingDeposit | type == "number" and . > 0)
   and (.root | type == "string" and length > 0)' \
   "$receipts/convict-two.json" >/dev/null \
-  || fail "convict-two: the combined receipt names no booking, fold, released output, deposit, evidence, booking deposit and root"
+  || fail "convict-two: the combined receipt names no booking, fold, terminated request, held value, evidence and root"
 run status-two-terminal success -- status --key "$key_two" "${common[@]}" "${registry[@]}" "${node[@]}"
 [ "$(field status-two-terminal .leaf)" = "terminal" ] \
   || fail "status-two-terminal: the key folded by --fold is not terminal"
-# The second repayment lands beside the first: the fold's own output at
-# the controller's address locks the release plus the booking deposit
-# back, and the key reads terminal with no holding.
-booking_deposit_two="$(field convict-two .bookingDeposit)"
-repayment_expected_two="$((deposit + booking_deposit_two))"
-fold_tx_two="$(field convict-two .fold)"
-run status-repayment-two success -- status --key "$key_two" --outputs-at "$controller_enterprise" \
-  "${common[@]}" "${registry[@]}" "${node[@]}"
-fold_repayment "$receipts/status-repayment-two.json" "$fold_tx_two" "$repayment_expected_two" "$work/before-two.txt" \
-  || fail "status-repayment-two: no new output of the fold at the controller's address locks $repayment_expected_two lovelace back"
-say "repayment: $(jq -r --arg tx "$fold_tx_two" --argjson exp "$repayment_expected_two" '[.outputsAt.outputs[] | select((.output | startswith($tx + "#")) and .locked.lovelace == $exp)][0] | "\(.output) \(.locked.lovelace)"' "$receipts/status-repayment-two.json") at the controller's address"
+# The key reads terminal with no holding.
 jq -e '.applicationOutput.absent and (.applicationOutput.holdings | length == 0)' "$receipts/status-two-terminal.json" >/dev/null \
   || fail "status-two-terminal: the holding is still live"
 
@@ -491,4 +448,4 @@ if grep -rniE 'open-datum' "$receipts" "$reg" >/dev/null 2>&1; then
 fi
 say "no open-datum executable on the journey's PATH, in its process record or in what it wrote"
 
-say "one key registered, folded, active with its holding, a second register refused at booking, and both keys convicted to terminal with their deposits observed back at the controller's address"
+say "one key registered, folded, active with its holding, a second register refused at booking, and both keys convicted to terminal with their custody taken in and no holding left"

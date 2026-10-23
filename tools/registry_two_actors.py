@@ -41,7 +41,7 @@ REQUIREMENTS = (
     "Bob inserts a key and folds his insertion",
     "Alice folds Bob's termination from her own public replay",
     "Bob folds Alice's termination from his own public replay",
-    "Bob rejects Alice's expired request",
+    "A registry reject is refused as retired and moves nothing",
     "Alice cannot reclaim Bob's request",
     "Bob reclaims his request during its retract window",
     "Another controller cannot update or terminate a key",
@@ -50,17 +50,12 @@ REQUIREMENTS = (
     "An altered request edge refuses RootDoesNotChain without a trie",
     "Another actor folds an insertion",
 )
-# What the reject row observes. The row is the legacy state-spending rejection
-# of an untagged request, which refunds the held value minus the registry's
-# minimum tip; the ruled refund (held value minus the declared tip, with the
-# state read by reference) is not observed by it, and the report says so.
-REJECT_ROW = "Bob rejects Alice's expired request"
-REJECT_ROW_SCOPE = (
-    "this row observes the legacy state-spending rejection, which refunds the "
-    "held value minus the registry's minimum tip; the ruled refund (held value "
-    "minus the declared tip, with the state read by reference) is not covered "
-    "by it"
-)
+# What the reject row observes. A registry reject is retired: the registry's
+# state script refuses a spend with the Rejected action, so the command refuses
+# by name before it reads, signs or submits anything. The row observes that
+# refusal and that the registry is exactly as it was; no accepting control
+# exists, because the ruling retires the command rather than guarding it.
+REJECT_ROW = "A registry reject is refused as retired and moves nothing"
 PAGE_ROWS = REQUIREMENTS[0:2]
 RUN_ONE_ROWS = REQUIREMENTS[2:4]
 RUN_TWO_TERMINATE_ROWS = REQUIREMENTS[4:6]
@@ -79,7 +74,7 @@ WAITING_ON = {
     "Bob folds Alice's termination from his own public replay": (
         "run two legs of the mandate (terminate-and-fold)"
     ),
-    "Bob rejects Alice's expired request": "run three legs of the mandate",
+    "A registry reject is refused as retired and moves nothing": "run three legs of the mandate",
     "Alice cannot reclaim Bob's request": "run three legs of the mandate",
     "Bob reclaims his request during its retract window": (
         "run three legs of the mandate"
@@ -1864,176 +1859,64 @@ class Journey:
             str(self.keys / f"{party}.skey"),
         ]
 
-    def reject_leg(self, booker, rejector, key):
-        """BOOKER books KEY; REJECTOR rejects it once expired.
+    def reject_leg(self, rejector, key):
+        """REJECTOR's registry reject, which is retired, is refused by name.
 
-        The booking receipt's fold deadline plus the creator's retract
-        window decides the waits, never a guessed sleep. The early reject
-        while the retract window is still open is refused by name with the
-        request still pending; the late reject once it has closed succeeds
-        with the refund bound to the request and the root unchanged.
+        The command refuses before it reads, signs or submits anything: a
+        client refusal with exit 10 whose reason says the reject is retired.
+        An inspect of KEY before and after shows the registry's root and its
+        pending requests exactly as they were. No accepting control exists:
+        the ruling retires the command.
         """
-        booker_others = tuple(
-            home for party, home in self.homes.items() if party != booker
-        )
         rejector_others = tuple(
             home for party, home in self.homes.items() if party != rejector
         )
         leg = {}
-        status, booking = self.run_party(
-            booker,
-            "reject-alice-3-booking",
-            self.book(booker, "insert", key, "reject-alice-3"),
-            booker_others,
-        )
-        require(
-            status == 0 and booking.get("outcome") == "success",
-            f"{booker} reject booking failed: exit {status}, {booking}",
-        )
-        require(
-            isinstance(booking.get("request"), str),
-            f"{booker} reject booking named no request: {booking}",
-        )
-        require(
-            isinstance(booking.get("foldDeadline"), dict)
-            and isinstance(booking["foldDeadline"].get("posixMs"), int),
-            f"{booker} booking named no fold deadline: {booking}",
-        )
-        leg["booking"] = "reject-alice-3-booking"
-        deadline_ms = booking["foldDeadline"]["posixMs"]
-        self.sleep_until_ms(deadline_ms + 5000)
-        status, early_before = self.run_party(
+        status, before = self.run_party(
             rejector,
-            "reject-early-inspect-before",
+            "reject-retired-inspect-before",
             self.inspect_key(key),
             rejector_others,
         )
         require(
-            status == 0 and early_before.get("outcome") == "success",
-            f"{rejector} early inspect-before failed: exit {status}, {early_before}",
+            status == 0 and before.get("outcome") == "success",
+            f"{rejector} inspect-before failed: exit {status}, {before}",
         )
-        leg["early_inspect_before"] = "reject-early-inspect-before"
-        require(
-            isinstance(early_before.get("retractTime"), int),
-            f"{rejector} early inspect named no retract time: {early_before}",
-        )
-        retract_ends = deadline_ms + early_before["retractTime"]
-        status, early_reject = self.run_party(
+        leg["inspect_before"] = "reject-retired-inspect-before"
+        status, refused = self.run_party(
             rejector,
-            "reject-early",
+            "reject-retired",
             self.reject_command(rejector),
             rejector_others,
         )
         require(
             status == 10
-            and early_reject.get("outcome") == "client-refusal"
-            and "still inside a window" in early_reject.get("reason", "")
-            and booking["request"] in early_reject.get("reason", ""),
-            f"{rejector} early reject was not refused by window: "
-            f"exit {status}, {early_reject}",
+            and refused.get("outcome") == "client-refusal"
+            and "retired" in refused.get("reason", ""),
+            f"{rejector} reject was not refused as retired: "
+            f"exit {status}, {refused}",
         )
-        leg["early_reject"] = "reject-early"
-        status, early_after = self.run_party(
+        leg["reject"] = "reject-retired"
+        status, after = self.run_party(
             rejector,
-            "reject-early-inspect-after",
+            "reject-retired-inspect-after",
             self.inspect_key(key),
             rejector_others,
         )
         require(
-            status == 0 and early_after.get("outcome") == "success",
-            f"{rejector} early inspect-after failed: exit {status}, {early_after}",
+            status == 0 and after.get("outcome") == "success",
+            f"{rejector} inspect-after failed: exit {status}, {after}",
         )
         require(
-            early_after.get("root") == early_before.get("root"),
+            after.get("root") == before.get("root"),
             f"{rejector} root moved under a refused reject: "
-            f"{early_before.get('root')} -> {early_after.get('root')}",
+            f"{before.get('root')} -> {after.get('root')}",
         )
         require(
-            early_after.get("pendingRequests") == early_before.get("pendingRequests"),
-            f"{rejector} pending moved under a refused reject",
+            after.get("pendingRequests") == before.get("pendingRequests"),
+            f"{rejector} pending requests moved under a refused reject",
         )
-        leg["early_inspect_after"] = "reject-early-inspect-after"
-        self.sleep_until_ms(retract_ends + 5000)
-        status, late_before = self.run_party(
-            rejector,
-            "reject-late-inspect-before",
-            self.inspect_key(key),
-            rejector_others,
-        )
-        require(
-            status == 0 and late_before.get("outcome") == "success",
-            f"{rejector} late inspect-before failed: exit {status}, {late_before}",
-        )
-        leg["late_inspect_before"] = "reject-late-inspect-before"
-        status, late_reject = self.run_party(
-            rejector,
-            "reject-late",
-            self.reject_command(rejector),
-            rejector_others,
-        )
-        require(
-            status == 0 and late_reject.get("outcome") == "success",
-            f"{rejector} reject failed: exit {status}, {late_reject}",
-        )
-        require(
-            isinstance(late_reject.get("reject"), str),
-            f"{rejector} reject named no transaction: {late_reject}",
-        )
-        rejected = late_reject.get("rejected")
-        require(
-            isinstance(rejected, list) and len(rejected) == 1,
-            f"{rejector} reject named no single request: {late_reject}",
-        )
-        require(
-            rejected[0].get("request") == booking["request"],
-            f"{rejector} rejected another request: {rejected[0].get('request')} "
-            f"!= {booking['request']}",
-        )
-        require(
-            rejected[0].get("owner") == booking.get("requester"),
-            f"{rejector} reject names another owner: {rejected[0].get('owner')}",
-        )
-        require(
-            rejected[0].get("returned"),
-            f"{rejector} reject names no refund: {late_reject}",
-        )
-        require(
-            late_reject.get("root"),
-            f"{rejector} reject named no root: {late_reject}",
-        )
-        leg["late_reject"] = "reject-late"
-        status, late_after = self.run_party(
-            rejector,
-            "reject-late-inspect-after",
-            self.inspect_key(key),
-            rejector_others,
-        )
-        require(
-            status == 0 and late_after.get("outcome") == "success",
-            f"{rejector} late inspect-after failed: exit {status}, {late_after}",
-        )
-        require(
-            late_after.get("root")
-            == late_before.get("root")
-            == late_reject.get("root"),
-            f"{rejector} root moved during a reject: "
-            f"{late_before.get('root')} -> {late_after.get('root')} "
-            f"vs {late_reject.get('root')}",
-        )
-        require(
-            late_after.get("leaf") == "unknown",
-            f"{rejector} rejected key is not unknown: {late_after.get('leaf')}",
-        )
-        late_after_pending = late_after.get("pendingRequests") or []
-        require(
-            not any(
-                isinstance(entry, dict) and entry.get("request") == booking["request"]
-                for entry in late_after_pending
-            ),
-            f"{rejector} rejected request is still pending: "
-            f"{late_after.get('pendingRequests')}",
-        )
-        leg["late_inspect_after"] = "reject-late-inspect-after"
+        leg["inspect_after"] = "reject-retired-inspect-after"
         return leg
 
     def reclaim_wrong_leg(self, owner, foreign, key):
@@ -2831,14 +2714,7 @@ class Journey:
         return leg
 
     def report(self, rows):
-        notes = [
-            {"requirement": REJECT_ROW, "scope": REJECT_ROW_SCOPE}
-            for row in rows
-            if row["requirement"] == REJECT_ROW
-        ]
         report = {"requirements": rows}
-        if notes:
-            report["scopeNotes"] = notes
         report["harnessAppendix"] = self.appendix
         (self.work / "journey.json").write_text(json.dumps(report, indent=2) + "\n")
         for row in rows:
@@ -2849,11 +2725,6 @@ class Journey:
             )
             print(
                 f"two actors: {row['requirement']}: {row['state']}{waiting}",
-                flush=True,
-            )
-        for note in notes:
-            print(
-                f'two actors: scope of "{note["requirement"]}": {note["scope"]}',
                 flush=True,
             )
         print(
@@ -3220,183 +3091,39 @@ class Journey:
         return True, list(leg.values()), ""
 
     def reject_agreement(self, legs, receipts=None):
-        """Recompute the cross-actor reject row from its receipts.
+        """Recompute the retired-reject row from its receipts.
 
-        Alice books an insertion and leaves it past its processing
-        deadline. Bob's reject while the retract window is still open is
-        refused by name with the request still pending, and succeeds once
-        the window has closed: the reject names the request, the request
-        is no longer pending, the root is unchanged, and the owner's
-        refund is returned.
+        The reject is refused by name as retired, with a client-refusal
+        outcome and exit 10, and the registry's root and its pending
+        requests are the same before and after.
         """
         leg = legs.get("reject", {})
         docs = {
             slot: self.load_receipt(leg[slot], receipts) if slot in leg else None
-            for slot in (
-                "booking",
-                "early_inspect_before",
-                "early_reject",
-                "early_inspect_after",
-                "late_inspect_before",
-                "late_reject",
-                "late_inspect_after",
-            )
+            for slot in ("inspect_before", "reject", "inspect_after")
         }
         missing = [slot for slot, doc in docs.items() if doc is None]
         if missing:
             return False, [], f"the reject's {', '.join(missing)} receipt"
-        (
-            booking,
-            early_before,
-            early_reject,
-            early_after,
-            late_before,
-            late_reject,
-            late_after,
-        ) = (
-            docs["booking"],
-            docs["early_inspect_before"],
-            docs["early_reject"],
-            docs["early_inspect_after"],
-            docs["late_inspect_before"],
-            docs["late_reject"],
-            docs["late_inspect_after"],
+        before, refused, after = (
+            docs["inspect_before"],
+            docs["reject"],
+            docs["inspect_after"],
         )
-        if not isinstance(booking.get("request"), str):
-            return False, list(leg.values()), "the reject booking request"
-        deadline = booking.get("foldDeadline")
-        if not isinstance(deadline, dict) or not isinstance(
-            deadline.get("posixMs"), int
-        ):
-            return False, list(leg.values()), "the booking fold deadline"
-        deadline_ms = deadline["posixMs"]
-        for slot in ("early_inspect_before", "late_inspect_before"):
-            inspect = docs[slot]
-            if not isinstance(inspect.get("retractTime"), int):
-                return False, list(leg.values()), "the registry retract time"
-            if inspect["retractTime"] != RETRACT_TIME_MS:
-                return False, list(leg.values()), "the fixture window"
-        expected_close = deadline_ms + docs["early_inspect_before"]["retractTime"]
-        if docs["late_inspect_before"].get("retractTime") != docs[
-            "early_inspect_before"
-        ].get("retractTime"):
-            return False, list(leg.values()), "the registry retract time"
-        if self.load_exit(leg["early_reject"], receipts) != 10:
-            return False, list(leg.values()), "the early reject refusal exit"
-        if early_reject.get("outcome") != "client-refusal":
-            return False, list(leg.values()), "the early reject refusal class"
-        if "still inside a window" not in early_reject.get("reason", ""):
-            return False, list(leg.values()), "the early reject refusal name"
-        if booking["request"] not in early_reject.get("reason", ""):
-            return False, list(leg.values()), "the early rejected request name"
-        if early_before.get("root") != early_after.get("root"):
+        if self.load_exit(leg["reject"], receipts) != 10:
+            return False, list(leg.values()), "the reject refusal exit"
+        if refused.get("outcome") != "client-refusal":
+            return False, list(leg.values()), "the reject refusal class"
+        if "retired" not in refused.get("reason", ""):
+            return False, list(leg.values()), "the reject refusal name"
+        if before.get("outcome") != "success" or after.get("outcome") != "success":
+            return False, list(leg.values()), "the readbacks"
+        if not isinstance(before.get("root"), str) or not before.get("root"):
+            return False, list(leg.values()), "the root readback"
+        if before.get("root") != after.get("root"):
             return False, list(leg.values()), "the unchanged root"
-        if early_before.get("pendingRequests") != early_after.get("pendingRequests"):
+        if before.get("pendingRequests") != after.get("pendingRequests"):
             return False, list(leg.values()), "the unchanged pending requests"
-        before_pending = early_before.get("pendingRequests") or []
-        if not any(
-            isinstance(entry, dict) and entry.get("request") == booking["request"]
-            for entry in before_pending
-        ):
-            return False, list(leg.values()), "the still-pending request"
-        if late_reject.get("outcome") != "success":
-            return False, list(leg.values()), "the reject"
-        if not isinstance(late_reject.get("reject"), str):
-            return False, list(leg.values()), "the reject transaction"
-        rejected = late_reject.get("rejected")
-        if not isinstance(rejected, list) or len(rejected) != 1:
-            return False, list(leg.values()), "the rejected request"
-        row = rejected[0]
-        if not isinstance(row, dict):
-            return False, list(leg.values()), "the rejected request"
-        if row.get("request") != booking["request"]:
-            return False, list(leg.values()), "the rejected request"
-        if row.get("owner") != booking.get("requester"):
-            return False, list(leg.values()), "the rejected owner"
-        late_pending_entry = next(
-            (
-                entry
-                for entry in (late_before.get("pendingRequests") or [])
-                if isinstance(entry, dict)
-                and entry.get("request") == booking["request"]
-            ),
-            None,
-        )
-        if late_pending_entry is None:
-            return False, list(leg.values()), "the pending request before reject"
-        expected_locked = late_pending_entry.get("locked")
-        if (
-            not isinstance(expected_locked, dict)
-            or row.get("locked") != expected_locked
-        ):
-            return False, list(leg.values()), "the locked value"
-        # This leg observes the LEGACY state-spending rejection: a legacy
-        # request declares no tip of its own (its deposit is the input less
-        # the state's tip), and that rejection refunds the held value minus
-        # the registry's minimum tip, which the reject receipt reports as
-        # its tip. The ruled refund (held value minus the DECLARED tip, the
-        # state read by reference) is not observed here; see
-        # REJECT_ROW_SCOPE.
-        tip = row.get("tip")
-        fee_bound = self.load_receipt("fee-bound", receipts)
-        if fee_bound is None or not isinstance(fee_bound.get("minimumTip"), int):
-            return False, [], "the registry minimum tip"
-        minimum_tip = fee_bound["minimumTip"]
-        if minimum_tip <= 0:
-            return False, [], "the registry minimum tip"
-        if tip != minimum_tip:
-            return (
-                False,
-                list(leg.values()),
-                "the reject's tip against the registry minimum tip",
-            )
-        returned = row.get("returned")
-        if not isinstance(returned, dict):
-            return False, list(leg.values()), "the owner refund"
-        locked_lovelace = expected_locked.get("lovelace")
-        returned_lovelace = returned.get("lovelace")
-        if not isinstance(locked_lovelace, int) or not isinstance(
-            returned_lovelace, int
-        ):
-            return False, list(leg.values()), "the refund lovelace"
-        if returned_lovelace != locked_lovelace - minimum_tip:
-            return (
-                False,
-                list(leg.values()),
-                "the refund net of the registry minimum tip",
-            )
-        if row.get("topUp", 0) != 0:
-            return False, list(leg.values()), "the top-up"
-        if row.get("processingEnds") != deadline_ms:
-            return False, list(leg.values()), "the processing end"
-        if row.get("retractEnds") != expected_close:
-            return False, list(leg.values()), "the retract close"
-        if returned.get("recipient") != self.wallet_address("alice"):
-            return False, list(leg.values()), "the owner recipient"
-        if returned.get("index") != 1:
-            return False, list(leg.values()), "the designated output"
-        if returned.get("output") != f"{late_reject.get('reject')}#1":
-            return False, list(leg.values()), "the designated output"
-        if not late_reject.get("root"):
-            return False, list(leg.values()), "the reject root"
-        if late_before.get("root") != late_after.get("root"):
-            return False, list(leg.values()), "the unchanged root"
-        if late_before.get("root") != late_reject.get("root"):
-            return False, list(leg.values()), "the reject root readback"
-        late_before_pending = late_before.get("pendingRequests") or []
-        if not any(
-            isinstance(entry, dict) and entry.get("request") == booking["request"]
-            for entry in late_before_pending
-        ):
-            return False, list(leg.values()), "the pending request before reject"
-        late_after_pending = late_after.get("pendingRequests") or []
-        if any(
-            isinstance(entry, dict) and entry.get("request") == booking["request"]
-            for entry in late_after_pending
-        ):
-            return False, list(leg.values()), "the cleared request"
-        if late_after.get("leaf") != "unknown":
-            return False, list(leg.values()), "the rejected key readback"
         return True, list(leg.values()), ""
 
     def wrong_reclaim_agreement(self, legs, receipts=None):
@@ -3921,7 +3648,7 @@ class Journey:
                         "waitingOn": waiting,
                     }
                 )
-            elif name == "Bob rejects Alice's expired request":
+            elif name == REJECT_ROW:
                 passed, receipts, waiting = self.reject_agreement(legs)
                 rows.append(
                     {
@@ -4081,7 +3808,7 @@ class Journey:
                     "alice-books": self.cross_insert_leg("alice", "bob", "alice-2"),
                     "bob-books": self.cross_insert_leg("bob", "alice", "bob-2"),
                 }
-                legs["reject"] = self.reject_leg("alice", "bob", "alice-3")
+                legs["reject"] = self.reject_leg("bob", "alice-1")
                 legs["reclaim-wrong"] = self.reclaim_wrong_leg("bob", "alice", "bob-3")
                 legs["reclaim-owner"] = self.reclaim_owner_leg("bob", "bob-3")
                 legs["withheld"] = self.withheld_leg("alice", "alice-2")

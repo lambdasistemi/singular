@@ -44,8 +44,8 @@ play -p 8 $'On disk: nothing in state-closed is newer than the insert. The refus
 test -z "$(find state-closed -type f -newer closed-insert.json)"
 play -t -p 7 $'Only terminate remains. She terminates checkpoint, booking and folding in one command:\nthe fold burns the token and records the name terminal.' \
   'open-datum terminate --key checkpoint --state-dir state-closed $TOKEN $BLUEPRINT $NODE $VAULT --fold 3< ../vault-pass/alice > closed-terminate.json'
-play -p 12 $'On chain: checkpoint is terminal, and the deposit is released from its application output.\nThe same mint served two applications, with no change to its contract.' \
-  'jq "{outcome, keyText, settled: [.settled[] | {edge, deposit: .settlement.deposit}]}" closed-terminate.json | short'
+play -p 12 $'On chain: checkpoint is terminal, and its application output is spent into the termination.\nThe same mint served two applications, with no change to its contract.' \
+  'jq "{outcome, keyText, transfer, donation, settled: [.settled[] | {edge, terminated: .settlement.terminated}]}" closed-terminate.json | short'
 play -t -p 3 "She reads checkpoint once more: terminal, with no live output holding its token." \
   'open-datum inspect --key checkpoint --state-dir state-closed $TOKEN $BLUEPRINT $NODE > closed-terminal.json'
 play -p 8 $'On chain: terminal. Written once, ended once: that is the whole life of a name in the\nclosed application.' \

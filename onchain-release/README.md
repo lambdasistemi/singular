@@ -206,25 +206,48 @@ sources in this archive still name identifiers the carried library no
 longer exports, a source-level lead you can check against the bytes
 shipped here, not a build result. The rest carry no passing build
 evidence either — unverified rather than proven broken — and for
-`retirement-verify` buildability is simply untested. Their re-cut
-against the current registry mode is
-owned by [#172](https://github.com/lambdasistemi/singular/issues/172)
-— and by [#283](https://github.com/lambdasistemi/singular/issues/283)
-for `register-rows`. Seven of these are the commands earlier release
+`retirement-verify` buildability is simply untested. None of the nine is
+retold, built or verified on the tagged-request law (see the next
+subsection). Seven of them are owned by the open ticket
+[#172](https://github.com/lambdasistemi/singular/issues/172), which re-cuts
+the derived consumers against the registry mode. The other two were closed as
+not planned: [#283](https://github.com/lambdasistemi/singular/issues/283) for
+`register-rows` and [#282](https://github.com/lambdasistemi/singular/issues/282)
+for `connected-verifier`. Those two are non-goals of this release, not future
+work. Seven of these are the commands earlier release
 instructions advertised; do not rely on any row below, and do not read
 a documented name here as a working command:
 
 | retained command | availability in this archive | repair |
 | --- | --- | --- |
-| `nix run .#li01` | unavailable: no passing build evidence; direct build failures on record from earlier project revisions; its carried source under `offchain/journey/li01/` still names removed identifiers | [#172](https://github.com/lambdasistemi/singular/issues/172) |
-| `nix run .#li-refusals` | unavailable: unverified, no passing build evidence | [#172](https://github.com/lambdasistemi/singular/issues/172) |
-| `nix run .#naming-rows` | unavailable: unverified, no passing build evidence | [#172](https://github.com/lambdasistemi/singular/issues/172) |
-| `nix run .#register-rows` | unavailable: unverified, source imports removed identifiers | [#283](https://github.com/lambdasistemi/singular/issues/283) |
-| `nix run .#recovery-rows` | unavailable: no passing build evidence; direct build failures on record from earlier project revisions; its carried source under `offchain/journey/recovery/` still names removed identifiers | [#172](https://github.com/lambdasistemi/singular/issues/172) |
-| `nix run .#retirement-rows` | unavailable: unverified, source imports removed identifiers | [#172](https://github.com/lambdasistemi/singular/issues/172) |
-| `nix run .#retirement-verify` | unavailable: unverified, buildability untested | [#172](https://github.com/lambdasistemi/singular/issues/172) |
-| `repair-rows` | unavailable: unverified, source imports removed identifiers | [#172](https://github.com/lambdasistemi/singular/issues/172) |
-| `connected-verifier` | unavailable: no passing build evidence; direct build failures on record from earlier project revisions; its carried source still names removed library identifiers | [#282](https://github.com/lambdasistemi/singular/issues/282) |
+| `nix run .#li01` | not retold, built or verified on the tagged-request law; unavailable: no passing build evidence; direct build failures on record from earlier project revisions; its carried source under `offchain/journey/li01/` still names removed identifiers | [#172](https://github.com/lambdasistemi/singular/issues/172) |
+| `nix run .#li-refusals` | not retold, built or verified on the tagged-request law; unavailable: unverified, no passing build evidence | [#172](https://github.com/lambdasistemi/singular/issues/172) |
+| `nix run .#naming-rows` | not retold, built or verified on the tagged-request law; unavailable: unverified, no passing build evidence | [#172](https://github.com/lambdasistemi/singular/issues/172) |
+| `nix run .#register-rows` | not retold, built or verified on the tagged-request law; unavailable: unverified, source imports removed identifiers | [#283](https://github.com/lambdasistemi/singular/issues/283), closed as not planned: a non-goal |
+| `nix run .#recovery-rows` | not retold, built or verified on the tagged-request law; unavailable: no passing build evidence; direct build failures on record from earlier project revisions; its carried source under `offchain/journey/recovery/` still names removed identifiers | [#172](https://github.com/lambdasistemi/singular/issues/172) |
+| `nix run .#retirement-rows` | not retold, built or verified on the tagged-request law; unavailable: unverified, source imports removed identifiers | [#172](https://github.com/lambdasistemi/singular/issues/172) |
+| `nix run .#retirement-verify` | not retold, built or verified on the tagged-request law; unavailable: unverified, buildability untested | [#172](https://github.com/lambdasistemi/singular/issues/172) |
+| `repair-rows` | not retold, built or verified on the tagged-request law; unavailable: unverified, source imports removed identifiers | [#172](https://github.com/lambdasistemi/singular/issues/172) |
+| `connected-verifier` | not retold, built or verified on the tagged-request law; unavailable: no passing build evidence; direct build failures on record from earlier project revisions; its carried source still names removed library identifiers | [#282](https://github.com/lambdasistemi/singular/issues/282), closed as not planned: a non-goal |
+
+#### What the earlier law was, and why none of the nine is retold
+
+The nine commands were written for the registry law that preceded the
+tagged-request law. Under that law a registration was an untagged request: a
+request datum with the deposit riding in it, booked together with a minted
+approval token that the registry's state script checked at the fold, and the
+reject, now retired, could clear a request nobody folded or took back. The
+registry's state script refuses a spend with the rejected action, and the
+retired command `singular registry reject` is refused by name and submits
+nothing. The approval is gone with the untagged request: a booking
+now mints a tag that its request carries, the fold finds the booking by that
+tag, and a termination's custody is donated to the treasury, less the tip,
+instead of being released to its controller.
+
+None of the nine is retold, built or verified on the tagged-request law. Their
+source still builds the untagged request and the approval, and still expects the
+reject. The row runners and the independent reader are kept so the archive
+stays faithful to its history; they are not evidence about this release.
 
 Two of the rows — `repair-rows` and `connected-verifier` — were never
 advertised as commands in this archive or its predecessors; they are

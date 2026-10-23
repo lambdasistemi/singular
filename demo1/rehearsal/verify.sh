@@ -62,15 +62,17 @@ jq -e 'select(.journalStep=="fold" and .journalEvent=="rejected")' $B/forged-sta
 jq -e '.leaf=="active"' $B/inspect-after.json >/dev/null || bad "alice not active after the forged attempt"
 [ "$(jq -c .applicationOutput $B/inspect-before.json)" = "$(jq -c .applicationOutput $B/inspect-after.json)" ] || bad "alice's application output changed across the attempts"
 
-# ---- scene 4: terminate --fold, burn, refund, refused re-registration
+# ---- scene 4: terminate --fold, burn, donation, refused re-registration
 jq -e --slurpfile f $B/forged.json '
   .keyText=="alice" and (.settled|length)==1 and .settled[0].edge=="updateTerminal"
-  and .settled[0].settlement.deposit==2000000
+  and (.settled[0].settlement.terminated|test("^[0-9a-f]{64}#[0-9]+$"))
   and (.excluded|length)==1 and .excluded[0].request==$f[0].requests[0] and .excluded[0].reason=="key-exists"' $A/terminate.json >/dev/null || bad "the termination: not one settled alice, with the forged request excluded"
+# the booking moved value into the request; the fold donated an amount strictly between nothing and that transfer. The receipts carry no tip and no payout, so only these bounds are read; unrelated ordinary payments to the controller are allowed and are not examined.
+jq -e '(.transfer|type=="number") and (.donation|type=="number") and .donation>0 and .donation<.transfer' $A/terminate.json >/dev/null || bad "the termination: the donation is not strictly between nothing and the transfer"
 sent_steps '["book","fold"]' <$A/terminate.json >/dev/null || bad "the termination: not one bundle of a booking and a fold, sent from the vault"
-rel=$(jq -r '.settled[0].settlement.released' $A/terminate.json)
-[ "$rel" = "$(jq -r .applicationOutput.output $A/inspect-alice.json)" ] || bad "the released output is not alice's application output"
-live "$rel" && bad "alice's application output is still live after the termination"
+cust=$(jq -r '.settled[0].settlement.custody' $A/terminate.json)
+[ "$cust" = "$(jq -r .applicationOutput.output $A/inspect-alice.json)" ] || bad "the custody the termination took in is not alice's application output"
+live "$cust" && bad "alice's application output is still live after the termination"
 jq -e '.leaf=="terminal" and (.applicationOutput.holdings|length)==0' $A/inspect-terminal.json >/dev/null || bad "alice is not terminal with no holder"
 jq -e '.outcome=="client-refusal" and .leafFound=="terminal"' $A/reregister.json >/dev/null || bad "re-registration of a terminal name was not refused"
 grep -q '^  activeKeys: 0$' $A/page-after.txt && grep -q '^  terminalKeys: 1$' $A/page-after.txt && grep -q '^  foldsSinceCreate: 2$' $A/page-after.txt || bad "the page after scene 4: counts"
@@ -114,9 +116,10 @@ jq -e --arg t "$(jq -r .stateToken $A/closed-create.json)" '.outcome=="client-re
 # WORKAROUND: a find -newer update-wrote-nothing check is defeated by the terminate that follows on the same chain -> the proof reads the journal: no update command line exists in state-closed at all; the cast's own nothing-new frame runs before the terminate, where -newer is honest.
 jq -e 'select(.journalCommand=="update")' $A/state-closed/net-42/*/wallets/*/journal.jsonl >/dev/null && bad "the closed journal names an update command that never ran"
 jq -e '(.settled|length)==1 and .settled[0].edge=="updateTerminal"
-  and (.settled[0].settlement.deposit|type)=="number" and .settled[0].settlement.deposit>0' $A/closed-terminate.json >/dev/null || bad "checkpoint's termination: not one settled updateTerminal with a deposit"
+  and (.settled[0].settlement.terminated|test("^[0-9a-f]{64}#[0-9]+$"))
+  and (.transfer|type)=="number" and .transfer>0 and (.donation|type)=="number" and .donation>0 and .donation<.transfer' $A/closed-terminate.json >/dev/null || bad "checkpoint's termination: not one settled updateTerminal with a donation strictly between nothing and the transfer"
 sent_steps '["book","fold"]' <$A/closed-terminate.json >/dev/null || bad "checkpoint's termination: not one bundle of a booking and a fold, sent from the vault"
 jq -e '.leaf=="terminal" and .applicationOutput.absent' $A/closed-terminal.json >/dev/null || bad "checkpoint is not terminal with the holding gone"
-closed_out=$(jq -r '.settled[0].settlement.released' $A/closed-terminate.json)
+closed_out=$(jq -r '.settled[0].settlement.custody' $A/closed-terminate.json)
 live "$closed_out" && bad "checkpoint's application output is still live after the termination"
 echo "verify: all assertions hold"

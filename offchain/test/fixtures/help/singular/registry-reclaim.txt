@@ -13,7 +13,7 @@ Take back your own pending request
 Takes back the named pending insertion or terminal-witness request of this
 wallet, inside its retract window. The locked lovelace returns to the owner in
 one output; the registry's root does not move. An early refusal names when the
-window opens; once closed, registry reject clears the request.
+window opens; once closed, the request can no longer be taken back.
 
 A write is signed by exactly one signer: --vault (the normal route),
 --wallet-address with --bundle (written for an external signer, ending as

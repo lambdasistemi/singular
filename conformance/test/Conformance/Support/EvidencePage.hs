@@ -84,11 +84,27 @@ spec = describe "Appendix: computing the published evidence page" $ do
         mapM_ (\r -> length (filter (== rowId r) ids) `shouldBe` 1) rows
         length ids `shouldBe` length rows
 
-    it "Names the model revision it was given and the stated revision" $ do
+    it
+        "Names the current model revision, the revision the runs read, and the stated revision, apart"
+        $ do
+            (rows, receipts) <- fixtures
+            page <- rendered rows (snapshotOf "fixture-base" receipts)
+            renderedPage page `shouldSatisfy` T.isInfixOf model
+            renderedPage page `shouldSatisfy` T.isInfixOf readModel
+            renderedPage page `shouldSatisfy` T.isInfixOf "fixture-base"
+            renderedPage page
+                `shouldSatisfy` T.isInfixOf
+                    ("| Application model revision the runs read | `" <> readModel <> "` |")
+            renderedPage page
+                `shouldSatisfy` T.isInfixOf
+                    ("| Current application model revision | `" <> model <> "` |")
+
+    it "Refuses a snapshot that states no model revision for its runs" $ do
         (rows, receipts) <- fixtures
-        page <- rendered rows (snapshotOf "fixture-base" receipts)
-        renderedPage page `shouldSatisfy` T.isInfixOf model
-        renderedPage page `shouldSatisfy` T.isInfixOf "fixture-base"
+        refusal
+            rows
+            (snapshotOf "fixture-base" receipts){snapModel = ""}
+            "no application model revision"
 
     it "Refuses a receipt for another code revision, wherever it stands" $ do
         (rows, receipts) <- fixtures
@@ -259,6 +275,10 @@ spec = describe "Appendix: computing the published evidence page" $ do
 model :: Text
 model = "0123456789abcdef0123456789abcdef01234567"
 
+-- | The application model revision the fixture snapshot's runs read: not the current one.
+readModel :: Text
+readModel = "fedcba9876543210fedcba9876543210fedcba98"
+
 fixtures :: IO ([Row], [Receipt])
 fixtures = (,) <$> committedRows <*> loadFixture "test/fixtures/receipts"
 
@@ -274,6 +294,7 @@ snapshotOf :: Text -> [Receipt] -> Snapshot
 snapshotOf base receipts =
     Snapshot
         { snapBase = base
+        , snapModel = readModel
         , snapSources =
             [ Source
                 "Conformance"

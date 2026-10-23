@@ -107,7 +107,7 @@ renderReclaimRefusal = \case
             <> show end
             <> "); this view's tip is slot "
             <> show tip
-            <> "; registry reject clears expired pending requests"
+            <> "; the request can no longer be taken back"
     WindowUnconverted b _ _ ->
         "the retract window opens at "
             <> show (processingEnds b)

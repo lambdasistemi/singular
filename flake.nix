@@ -1735,7 +1735,15 @@
                     cat "$work/live.log" >&2
                     exit 1
                   fi
-                  echo "script-hash-comparison: OK — $(jq '.validators | length' "$work/union.json") union validators equal the expected set (base $(jq '.validators | length' "$base"), of which $(jq -s '[.[].changed[]] | unique | length' "''${declared_changes_records[@]}") declared changed and the rest at their base hash, + 3 declared #650 additions + $(jq -s '[.[].added[]] | unique | length' "''${declared_changes_records[@]}") declared added = $(jq '.validators | length' "$work/expected.json"), compiler $base_compiler)"
+                  # The sets the summary states, computed from the base and the
+                  # records and never typed: the declared changes are base
+                  # titles the slices moved and titles an earlier record added;
+                  # the base titles no record changed keep their base hash.
+                  declared_changed="$(jq -s '[.[].changed[]] | unique' "''${declared_changes_records[@]}")"
+                  changed_of_base="$(jq -n --slurpfile b "$base" --argjson c "$declared_changed" '($b[0].validators | map(.title)) as $bt | [$c[] | select(. as $t | $bt | index($t))] | length')"
+                  changed_added_earlier="$(jq -n --slurpfile b "$base" --argjson c "$declared_changed" '($b[0].validators | map(.title)) as $bt | [$c[] | select(. as $t | $bt | index($t) | not)] | length')"
+                  base_unchanged="$(jq -n --slurpfile b "$base" --argjson c "$declared_changed" '($b[0].validators | map(.title)) as $bt | [$bt[] | select(. as $t | $c | index($t) | not)] | length')"
+                  echo "script-hash-comparison: OK — $(jq '.validators | length' "$work/union.json") union validators equal the expected set: the base of $(jq '.validators | length' "$base") ($changed_of_base base titles changed, $base_unchanged base titles unchanged at their base hash), $changed_added_earlier earlier-added title changed, + 3 declared #650 additions + $(jq -s '[.[].added[]] | unique | length' "''${declared_changes_records[@]}") declared added = $(jq '.validators | length' "$work/expected.json") expected, compiler $base_compiler"
                   jq -r '.validators | sort_by(.title) | .[] | "\(.title) \(.hash)"' "$work/union.json"
                   jq '(.validators |= map(if .title == "state.state.spend" then .hash = "00000000000000000000000000000000000000000000000000000000" else . end))' "$work/union.json" >"$work/plant-changed.json"
                   jq -e '[.validators[] | select(.title == "state.state.spend" and .hash == "00000000000000000000000000000000000000000000000000000000")] | length == 1' "$work/plant-changed.json" >/dev/null || {

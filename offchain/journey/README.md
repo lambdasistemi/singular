@@ -11,6 +11,31 @@ maintained, because no Singular naming-claim behaviour exists yet.
 Later epic children put Singular's journey inside this runner; until
 then the artifact demonstrates the substrate, and says so.
 
+## Which law this journey runs on
+
+This is the registry journey of the earlier law. It is retained and
+unverified on the tagged-request law, and it is not the verified journey
+of this release.
+
+Under the earlier law a registration was an untagged request: a request
+datum with the deposit riding in it, certified by a minted approval, and
+this runner books its insertion that way (`Edges.bookEdge`). The registry
+reject cleared a request nobody folded or took back; the reject is retired:
+the registry's state script now refuses a spend with the rejected action,
+and `singular registry reject` refuses by name and submits nothing. Under
+the tagged-request law a booking mints a tag
+that its request commits to, the fold finds the booking by that tag, and a
+termination's custody is donated to the treasury, less the tip, instead
+of being released to its controller.
+
+The runner has not been retold on the tagged-request law. Its source still
+builds the untagged request and the approval, so a run of it, including the
+`journey` job in CI, says nothing about this release's law. The checkpoint
+that moves the hosted lanes to the tagged-request law retells it. The
+journey that runs the tagged-request law end to end with the shipped
+executables is the command-line journey described in
+[the first demo](../../docs/first-demo.md).
+
 ## What it does today, step by step
 
 Every step below is performed by the `journey` command in this exact

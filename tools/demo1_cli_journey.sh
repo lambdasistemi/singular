@@ -12,17 +12,18 @@
 # separate process against it:
 #
 #   create -> insert -> fold -> inspect -> update -> inspect
-#          -> terminate -> fold -> inspect -> reject -> insert -> fold
-#          -> reclaim -> insert -> fold
+#          -> terminate -> fold -> inspect -> reclaim (the late request) -> insert
+#          -> fold -> reclaim -> insert -> fold
 #
 # An insert or a terminate books and leaves its request pending; `open-datum
 # fold` folds it, signed by a wallet other than the booking's. The combined
 # `--fold` form is run where a control needs the fold to follow its own
 # booking in one process. The journey also books a request and lets its
 # processing deadline pass: the late fold is refused by the client, by name,
-# before anything is signed. That request is then rejected once its retract
-# window has closed, refused by name while it is still open, and a new request
-# is folded afterwards. Another pending insertion is reclaimed by its owner
+# before anything is signed. `registry reject` is retired: it refuses by name,
+# before anything is read or signed, and the late request is taken back by its
+# owner inside its retract window; a new request is folded afterwards. Another
+# pending insertion is reclaimed by its owner
 # inside its retract window: its whole return is bound to the consumed request
 # and checked against independent reads before and after. Early attempts and
 # another wallet are refused; after reclaim a new request folds.
@@ -415,13 +416,13 @@ trace_disagreements() {
         ($ev[] | select(.event == "root") | select(.after != $r.root) | "root \(.after)"),
         ($ev[] | select(.event == "created") | select(.token != $r.token) | "token \(.token)"),
         ($ev[] | select(.event == "created") | select((.state | split("#")[0]) != $r.boot) | "created state \(.state)"),
-        ($ev[] | select(.event == "rejected") | select((.requests | sort) != ([$r.rejected[]?.request] | sort))
-         | "rejected \(.requests)"),
+        # No command rejects any more, so no stream carries a rejected event.
+        ($ev[] | select(.event == "rejected") | "a rejected event \(.requests)"),
         ($ev[] | select(.event == "reclaimed") | select(.returned != $r.returned.lovelace) | "reclaimed \(.returned)"),
         ($ev[] | select(.event == "updated") | select(.output != $r.liveOutput) | "updated output \(.output)"),
         ($ev[] | select(.event == "folded")
          | select(.output as $o
-            | ([$r.settled[]? | .settlement.liveOutput // .settlement.released] | index($o) | not))
+            | ([$r.settled[]? | .settlement.liveOutput // .settlement.terminated] | index($o) | not))
          | "folded output \(.output)"),
         ($ev[] | select(.event == "refused") | select(refusal_fits(.kind; $r.outcome) | not)
          | "refusal \(.kind) under outcome \($r.outcome)"),
@@ -551,7 +552,7 @@ trie_extent() {
     if jq -e '.outcome == "success" and .preview != true' "$file" >/dev/null; then
       command="$(jq -r .command "$file")"
       case "$command" in
-        insert | update | terminate | fold | reject | reclaim | inspect)
+        insert | update | terminate | fold | reclaim | inspect)
           trie_bound "$file" "${file%.json}.trie.jsonl" \
             || fail "$(basename "$file"): actual command lacks trie evidence bound to its receipt"
           jq -c --slurpfile trace "${file%.json}.trie.jsonl" \
@@ -562,7 +563,7 @@ trie_extent() {
     fi
   done <"$work/trie-command-invocations"
   jq -s -e 'length > 1 and all(.executions > 0)
-      and (map(.command) | unique == ["fold","insert","inspect","reclaim","reject","terminate","update"])' \
+      and (map(.command) | unique == ["fold","insert","inspect","reclaim","terminate","update"])' \
     "$work/trie-command-extent.jsonl" >/dev/null \
     || fail "the executed trie command extent is empty or omits a stored-registry command"
 }
@@ -575,16 +576,35 @@ local_files() {
     || fail "a command wrote a registry.json"
   echo "no identity file"
 }
-# booked NAME: a booking-only receipt names its pending request (the
-# booking's own output 0), the requester, and the deadline by which it must be
-# folded, as a POSIX time and, when the node converts it, a slot; it states no fold and no root.
-booked() {
+# booking_receipt_ok FILE: a registration's booking-only receipt names its
+# pending request (the booking's own output 0), the requester, and the deadline
+# by which it must be folded, as a POSIX time and, when the node converts it, a
+# slot; it states no fold and no root. Status only: callers say what failed.
+booking_receipt_ok() {
   jq -e '(.request | test("^[0-9a-f]{64}#0$")) and .request == (.booking + "#0")
       and (.requester | test("^[0-9a-f]{56}$"))
       and (.foldDeadline.posixMs | type == "number")
       and ((.foldDeadline.slot | type == "number") or (.foldDeadline.slot == null and .foldDeadline.slotUnavailable == "beyond the node\u0027s conversion horizon"))
-      and (has("fold") | not) and (has("root") | not)' "$receipts/$1.json" >/dev/null \
+      and (has("fold") | not) and (has("root") | not)' "$1" >/dev/null
+}
+# termination_booking_receipt_ok FILE: a termination's booking-only receipt
+# names the same pending request and requester and no deadline: a termination
+# has no processing window, so the producers print the deadline null.
+termination_booking_receipt_ok() {
+  jq -e '(.request | test("^[0-9a-f]{64}#0$")) and .request == (.booking + "#0")
+      and (.requester | test("^[0-9a-f]{56}$"))
+      and (.foldDeadline == null)
+      and (has("fold") | not) and (has("root") | not)' "$1" >/dev/null
+}
+# booked NAME: the receipt of a registration booking.
+booked() {
+  booking_receipt_ok "$receipts/$1.json" \
     || fail "$1: the booking's receipt does not name its pending request, requester and fold deadline, or it claims a fold"
+}
+# booked_termination NAME: the receipt of a termination booking.
+booked_termination() {
+  termination_booking_receipt_ok "$receipts/$1.json" \
+    || fail "$1: the termination booking's receipt does not name its pending request and requester with no deadline, or it claims a fold"
 }
 # booking_only NAME JOURNAL BEFORE FILES: since journal line BEFORE the command
 # left exactly the booking's four phases and the mirror and state it started with.
@@ -792,7 +812,6 @@ state_token="$(field create .stateToken)"
 # Managed partitions for this journey's main-registry writers, derived from
 # the token and wallet identities the receipts name; the commands create them.
 alice_journal="$(managed_journal "$reg" "$state_token" "$alicekey")"
-bob_main_journal="$(managed_journal "$reg" "$state_token" "$bobkey")"
 [ ! -e "$reg/registry.json" ] || fail "create wrote a registry.json"
 empty_actor="$work/empty-actor"
 mkdir -p "$empty_actor"
@@ -1685,19 +1704,72 @@ jq -e '.reason | contains("retract-owner") and contains("not the request\u0027s 
 # of that deadline and the observed ledger horizon minus one.
 run fold success -- fold --request "$(field insert .request)" \
   "${common[@]}" "${node[@]}" "${bob[@]}"
+# fold_receipt_ok FOLD BOOKING EDGE: the fold's receipt settles the booking's one
+# request on the edge, with a wallet other than the booker's, and states the
+# validity upper bound it was built under. A registration was folded before its
+# processing deadline with the margin a fold needs, and the bound lies within
+# that deadline's slot. A termination (edge updateTerminal) has no processing
+# window: its booking and its fold name no deadline and no margin, and its
+# post-build record names no window to prove. Status only, over receipt files.
+fold_receipt_ok() {
+  case "$3" in
+    updateTerminal)
+      jq -e --slurpfile b "$2" --arg edge "$3" '
+          (.settled | length == 1)
+          and .settled[0].request == $b[0].request and .settled[0].edge == $edge
+          and $b[0].foldDeadline == null and .foldDeadline == null
+          and .folder != $b[0].requester
+          and (.fold | test("^[0-9a-f]{64}$"))
+          and (.validUntilSlot | type == "number")
+          and (.hostClockMs | type == "number")
+          and .remainingMs == null
+          and .postBuild.validUntilMs == null and .postBuild.validUntilSlot == .validUntilSlot' "$1" >/dev/null
+      ;;
+    *)
+      jq -e --slurpfile b "$2" --arg edge "$3" '
+          (.settled | length == 1)
+          and .settled[0].request == $b[0].request and .settled[0].edge == $edge
+          and (.foldDeadline.posixMs | type == "number")
+          and .foldDeadline.posixMs == $b[0].foldDeadline.posixMs
+          and .folder != $b[0].requester
+          and (.fold | test("^[0-9a-f]{64}$"))
+          and (.validUntilSlot | type == "number")
+          and (if .foldDeadline.slot != null then .validUntilSlot <= .foldDeadline.slot else true end)
+          and (.hostClockMs + 30000 < .foldDeadline.posixMs)
+          and (.remainingMs | type == "number" and . > 30000)' "$1" >/dev/null
+      ;;
+  esac
+}
+# fold_selection_ok PHASES RECEIPT GENESIS EDGE: the validity upper bound the
+# fold's own selection phase records is the one its receipt prints: capped at
+# the ledger horizon observed at the build tip, with the usable interval after
+# that tip the ten-second minimum needs. A registration's window ends at its
+# deadline's slot; a termination has no window, so its selection takes the
+# bound chosen from the clock and its receipt names no deadline.
+fold_selection_ok() {
+  jq -s -e --slurpfile receipt "$2" --slurpfile genesis "$3" --arg edge "$4" '
+      [.[] | select(.phase == "validityUpper")] as $selected
+      | ($selected | length) == 1
+      and ($selected[0] as $s | $receipt[0] as $r | $genesis[0] as $g
+        | ([$s.tip, $s.horizon, $s.effectiveLower, $s.windowUpper, $s.upper, $s.minimumSlots] | all(type == "number"))
+        and $g.networkMagic == 42 and $g.securityParam > 0
+        and $g.activeSlotsCoeff > 0 and $g.activeSlotsCoeff <= 1
+        and $g.epochLength > 0 and $g.slotLength > 0
+        and $s.horizon == (((($s.tip + ((3 * $g.securityParam / $g.activeSlotsCoeff) | ceil)) / $g.epochLength) | ceil) * $g.epochLength)
+        and (if $edge == "updateTerminal"
+             then $r.foldDeadline == null
+             else $s.windowUpper == $r.foldDeadline.slot end)
+        and $s.upper == ([$s.windowUpper, ($s.horizon - 1)] | min)
+        and $s.upper == $r.validUntilSlot
+        and $s.effectiveLower == ([($s.lower // 0), ($s.tip + 1)] | max)
+        and $s.minimumSlots == ((10 / $g.slotLength) | ceil)
+        and ($s.upper - $s.effectiveLower) >= $s.minimumSlots)' "$1" >/dev/null
+}
 fold_ok() {
   local fold_part
   fold_part="$(managed_partition "$reg" "$state_token" "$(field "$1" .folder)")"
-  jq -e --slurpfile b "$receipts/$2.json" '
-      (.settled | length == 1)
-      and .settled[0].request == $b[0].request and .foldDeadline.posixMs == $b[0].foldDeadline.posixMs
-      and .folder != $b[0].requester and .settled[0].edge == "'"$3"'"
-      and (.fold | test("^[0-9a-f]{64}$"))
-      and (.validUntilSlot | type == "number")
-      and (if .foldDeadline.slot != null then .validUntilSlot <= .foldDeadline.slot else true end)
-      and (.hostClockMs + 30000 < .foldDeadline.posixMs)
-      and (.remainingMs | type == "number" and . > 30000)' "$receipts/$1.json" >/dev/null \
-    || fail "$1: the fold does not name the booking's request and deadline, or was signed by the booker"
+  fold_receipt_ok "$receipts/$1.json" "$receipts/$2.json" "$3" \
+    || fail "$1: the fold does not name the booking's request on $3 with the booking's deadline (a termination has none), or was signed by the booker"
   # Read the exact genesis bytes consumed by this body's prepared session,
   # rather than the facade's later current publication or the emitted horizon.
   jq -s -ce --arg tx "$(field "$1" .fold)" '
@@ -1718,23 +1790,8 @@ fold_ok() {
         .query == "Latest block observation" and .value.slot == $selected[0].tip)' \
     "$fold_part/journal.jsonl" >/dev/null \
     || fail "$1: the selected build tip is absent from the prepared body's actual observations"
-  jq -s -e --slurpfile receipt "$receipts/$1.json" --slurpfile genesis "$receipts/$1.genesis.json" '
-      [.[] | select(.phase == "validityUpper")] as $selected
-      | ($selected | length) == 1
-      and ($selected[0] as $s | $receipt[0] as $r | $genesis[0] as $g
-        | ([$s.tip, $s.horizon, $s.effectiveLower, $s.windowUpper, $s.upper, $s.minimumSlots] | all(type == "number"))
-        and $g.networkMagic == 42 and $g.securityParam > 0
-        and $g.activeSlotsCoeff > 0 and $g.activeSlotsCoeff <= 1
-        and $g.epochLength > 0 and $g.slotLength > 0
-        and $s.horizon == (((($s.tip + ((3 * $g.securityParam / $g.activeSlotsCoeff) | ceil)) / $g.epochLength) | ceil) * $g.epochLength)
-        and $s.windowUpper == $r.foldDeadline.slot
-        and $s.upper == ([$s.windowUpper, ($s.horizon - 1)] | min)
-        and $s.upper == $r.validUntilSlot
-        and $s.effectiveLower == ([($s.lower // 0), ($s.tip + 1)] | max)
-        and $s.minimumSlots == ((10 / $g.slotLength) | ceil)
-        and ($s.upper - $s.effectiveLower) >= $s.minimumSlots)' \
-    "$receipts/$1.phases.jsonl" >/dev/null \
-    || fail "$1: the actual selection does not cap the deadline at the observed horizon with the required usable interval"
+  fold_selection_ok "$receipts/$1.phases.jsonl" "$receipts/$1.json" "$receipts/$1.genesis.json" "$3" \
+    || fail "$1: the actual selection does not cap the validity bound at the observed horizon (and, for a registration, at its deadline) with the required usable interval"
   jq -R -e --slurpfile receipt "$receipts/$1.json" \
     "$(cat "$work/cbor.jq") decode | .[0] | mapget(3) == \$receipt[0].validUntilSlot" \
     "$fold_part/submissions/$(field "$1" .fold).cbor.hex" >/dev/null \
@@ -1964,12 +2021,18 @@ before="$(journal_lines "$reg")"
 bob_term_journal="$(managed_journal "$reg" "$state_token" "$bobkey")"
 bob_term_before="$(journal_count "$bob_term_journal")"
 files_before="$(local_files)"
+run inspect-bob-before-terminate success -- inspect --key "$bkey" "${common[@]}" "${node[@]}"
 run bob-terminate success -- terminate --key "$bkey" "${common[@]}" "${node[@]}" "${bob[@]}"
-booked bob-terminate
+booked_termination bob-terminate
 booking_only bob-terminate "$bob_term_journal" "$bob_term_before" "$files_before"
-jq -e '(.released | test("^[0-9a-f]{64}#[0-9]+$")) and (.deposit | type == "number" and . > 0)' \
+jq -e '(.custody | test("^[0-9a-f]{64}#[0-9]+$")) and (.deposit | type == "number" and . > 0) and (.transfer | type == "number" and . > 0)' \
   "$receipts/bob-terminate.json" >/dev/null \
-  || fail "the termination booking does not name the live output its fold will release"
+  || fail "the termination booking does not name the custody output it spends and the lovelace it transfers into the request"
+# All of the custody value enters the request (the booking adds nothing of its own here):
+# the lovelace transferred into the request is the live holding's, read before the booking.
+jq -e --slurpfile i "$receipts/inspect-bob-before-terminate.json" '.transfer == $i[0].applicationOutput.lovelace' \
+  "$receipts/bob-terminate.json" >/dev/null \
+  || fail "the booking did not move all of the custody value into the request: transfer $(field bob-terminate .transfer), holding $(field inspect-bob-before-terminate .applicationOutput.lovelace)"
 run inspect-bob-booked success -- inspect --key "$bkey" "${common[@]}" "${node[@]}"
 [ "$(field inspect-bob-booked .leaf)" = active ] || fail "bob's key is not still active after a termination booking alone"
 # Alice folds bob's termination, naming the request.
@@ -1977,8 +2040,14 @@ run bob-terminate-fold success -- fold --request "$(field bob-terminate .request
   "${common[@]}" "${node[@]}" "${alice[@]}"
 fold_ok bob-terminate-fold bob-terminate updateTerminal
 [ "$(field bob-terminate-fold .folder)" = "$alicekey" ] || fail "bob's termination was not folded with alice's key"
-[ "$(field bob-terminate-fold .settled[0].settlement.released)" = "$(field bob-terminate .released)" ] \
-  || fail "the fold released another output than the booking named"
+[ "$(field bob-terminate-fold .settled[0].settlement.terminated)" = "$(field bob-terminate .request)" ] \
+  || fail "the fold terminated another request than the booking named"
+# The fold donates what the booking transferred into the request less the tip. The
+# receipts carry no tip, so this checks the bounds only: the donation lies strictly
+# between nothing and the transfer. The exact amount is the negative host's pair's.
+jq -e --slurpfile b "$receipts/bob-terminate.json" '(.donation | type == "number") and .donation > 0 and .donation < $b[0].transfer' \
+  "$receipts/bob-terminate-fold.json" >/dev/null \
+  || fail "the fold's donation is not strictly between nothing and the transfer: donation $(field bob-terminate-fold .donation), transfer $(field bob-terminate .transfer)"
 run inspect-4 success -- inspect --key "$bkey" "${common[@]}" "${node[@]}"
 [ "$(field inspect-4 .leaf)" = terminal ] || fail "bob's key is not terminal"
 
@@ -2200,7 +2269,7 @@ fold_selection_earlier() {
   jq -e --slurpfile e "$receipts/eligible-insert.json" --arg k "$(hexof keyH)" --arg owner "$alicekey" '
       .capacity.bound == 9
       and (.capacity.provenance | startswith("an estimate, not a measurement"))
-      and ([has("request"), has("key"), has("edge"), has("liveOutput"), has("envelope"), has("released"), has("deposit"), has("datumHash"), has("datumCbor")] | any | not)
+      and ([has("request"), has("key"), has("edge"), has("liveOutput"), has("envelope"), has("transfer"), has("deposit"), has("datumHash"), has("datumCbor")] | any | not)
       and (.fold | test("^[0-9a-f]{64}$"))
       and (.settled | length == 1)
       and .settled[0].request == $e[0].request
@@ -2237,97 +2306,26 @@ jq -e --slurpfile l "$receipts/late-insert.json" '
 say "the fold settled the eligible request and left the late one out, named; the late one is still the only pending request"
 
 # The same request is past its processing deadline but still inside its
-# retract window, where its owner may take it back: a reject, which takes
-# every pending request, is refused by the client before anything is signed,
-# naming the request and when its retract window closes.
+# retract window, where its owner may take it back. `registry reject`, which
+# once cleared requests nobody folded, is retired: the command refuses before
+# anything is read, signed or submitted, and says so; the request stays
+# pending.
 retract_ms="$(field inspect-pending .retractTime)"
 retract_ends=$((deadline_ms + retract_ms))
 [ "$(($(date +%s%3N) + 5000))" -lt "$retract_ends" ] \
-  || setup_fail "the late request's retract window is nearly over: the early reject would meet the open reject"
-refused reject-early client-refusal -- registry reject "${common[@]}" "${node[@]}" "${bob[@]}"
-jq -e --slurpfile l "$receipts/late-insert.json" --argjson e "$retract_ends" '
-    (.reason | contains($l[0].request) and contains("retract window") and contains($e | tostring))
-    and (.pendingRequests | length == 1)
-    and .pendingRequests[0].request == $l[0].request
-    and .pendingRequests[0].retractEnds == $e
-    and .pendingRequests[0].processingEnds == $l[0].foldDeadline.posixMs
-    and (.tipSlot | type == "number")
-    and (.pendingRequests[0].unplaced | type == "boolean")
-    and (.pendingRequests[0].retractEndsSlot == null or (.pendingRequests[0].retractEndsSlot | type == "number"))' \
-  "$receipts/reject-early.json" >/dev/null \
-  || fail "the early reject does not name the request and when its retract window closes: $(field reject-early .reason)"
+  || setup_fail "the late request's retract window is nearly over: the owner's reclaim would meet the closed window"
+refused reject-retired client-refusal -- registry reject "${common[@]}" "${node[@]}" "${bob[@]}"
+jq -e '.reason | contains("retired") and contains("nothing was read, signed or submitted")' \
+  "$receipts/reject-retired.json" >/dev/null \
+  || fail "the reject does not say it is retired and submits nothing: $(field reject-retired .reason)"
 run inspect-late success -- inspect --key keyD "${common[@]}" "${node[@]}"
 [ "$(field inspect-late .leaf)" = unknown ] || fail "the refused late fold moved the registry"
-say "a fold after the deadline: refused in ${took}s, naming the deadline; its request stays pending"
+jq -e --slurpfile l "$receipts/late-insert.json" '
+    (.pendingRequests | length == 1) and .pendingRequests[0].request == $l[0].request' \
+  "$receipts/inspect-late.json" >/dev/null \
+  || fail "the retired reject, or the late fold, changed the registry's pending requests: $(jq -c .pendingRequests "$receipts/inspect-late.json")"
+say "a fold after the deadline: refused in ${took}s, naming the deadline; the retired reject refuses by name; the late request stays pending"
 
-# ------------------------------------------------------------------
-# 7c. reject: the request nobody folded or took back is cleared
-# ------------------------------------------------------------------
-# Past both windows the request can only be rejected, and while it stays
-# pending the registry's fold, which takes every pending request, is
-# blocked. Bob rejects it with his own wallet: the whole refund goes to the
-# owner in the output designated for it, the receipt names what was locked,
-# what the folder kept and what went to whom, and the root does not move.
-wait_ms=$((retract_ends + 3000 - $(date +%s%3N)))
-if [ "$wait_ms" -gt 0 ]; then
-  say "waiting $((wait_ms / 1000 + 1)) s for the late request's retract window to close"
-  sleep $((wait_ms / 1000 + 1))
-fi
-root_before="$(field inspect-late .root)"
-before="$(journal_lines "$reg")"
-reject_before="$(journal_count "$bob_main_journal")"
-files_before="$(local_files)"
-refused reclaim-closed client-refusal -- registry reclaim --request "$(field late-insert .request)" \
-  "${common[@]}" "${node[@]}" "${alice[@]}"
-jq -e '.reason | contains("closed") and contains("registry reject")' \
-  "$receipts/reclaim-closed.json" >/dev/null || fail "a reclaim after its window did not name its closure and reject"
-# A funding output the rejecting wallet does not hold is refused by name, before
-# anything is signed.
-refused reject-bad-funding client-refusal -- registry reject --fund-input "$(printf '%064d' 0)#0" \
-  "${common[@]}" "${node[@]}" "${bob[@]}"
-jq -e '.reason | contains("cannot fund the reject")' "$receipts/reject-bad-funding.json" >/dev/null \
-  || fail "the reject with a stranger's funding output does not say so: $(field reject-bad-funding .reason)"
-# What the node holds before the reject: the pending request and what it actually locks.
-run inspect-before-reject success -- inspect --key keyD "${common[@]}" "${node[@]}"
-run reject success -- registry reject "${common[@]}" "${node[@]}" "${bob[@]}"
-[ "$(local_files)" = "$files_before" ] || fail "a reject altered identity or created retired trie files"
-[ "$((($(journal_lines "$reg")) - before))" -eq 4 ] \
-  || fail "the reject left $((($(journal_lines "$reg")) - before)) journal lines, expected its four phases"
-tail -n +"$((reject_before + 1))" "$bob_main_journal" \
-  | jq -s -e --arg t "$(field reject .reject)" '(map(.journalEvent) == ["prepared", "submitted", "confirmed", "observed"]) and (map(.journalStep) | unique == ["reject"]) and (map(.journalTxId) | unique == [$t])' >/dev/null \
-  || fail "the journal lines the reject left are not one reject's prepared, submitted, confirmed and observed"
-jq -e --slurpfile l "$receipts/late-insert.json" --arg bob "$bobkey" --arg owner "$alicekey" --arg addr "$alice_addr" --arg k "$(hexof keyD)" '
-    (.reject | test("^[0-9a-f]{64}$")) and .rejector == $bob
-    and (.rejected | length == 1)
-    and (.rejected[0] as $r
-      | $r.request == $l[0].request and $r.owner == $owner and $r.key == $k
-      and $r.returned.recipient == $addr)
-    and .root == "'"$root_before"'"' "$receipts/reject.json" >/dev/null \
-  || fail "the reject receipt does not name the request, its owner and key, and the owner's address: $(jq -c .rejected "$receipts/reject.json")"
-# The receipt's money is bound to what the chain and the signed transactions say,
-# read apart from the receipt and from the reject command:
-#  - each saved signed body is bound to its claim: the transaction id the receipt
-#    claims is the hash of that body's own bytes, and the file's bytes hash to
-#    the journal's saved-body hash;
-#  - the request's locked value as the node held it before the reject, and the
-#    designated refund output as the node holds it afterwards (output reference,
-#    address and amount), read by `open-datum inspect` from the node;
-#  - the tip, and the designated output's index and address, from the reject's
-#    own signed body (state datum and outputs).
-# A receipt that differs in any of them turns the journey red, and each binding is
-# shown able to fail.
-# What the node holds after the reject: the outputs at the owner's address.
-run inspect-refund success -- inspect --key keyD --outputs-at "$alice_addr" "${common[@]}" "${node[@]}"
-reject_tx="$(field reject .reject)"
-booking_tx="$(field late-insert .booking)"
-for t in "$reject_tx" "$booking_tx"; do
-  case "$t" in
-    "$reject_tx") j="$bob_main_journal" ;;
-    *) j="$alice_journal" ;;
-  esac
-  [ "$(jq -s --arg t "$t" '[.[] | select(.journalTxId == $t and .journalEvent == "confirmed")] | length' "$j")" = 1 ] \
-    || fail "the journal does not show $t confirmed"
-done
 # body_bound TXID FILE JOURNAL: zero only when FILE's body hashes to TXID
 # and its bytes to JOURNAL's saved-body hash. The journal is bound
 # explicitly: deriving it from the candidate file turns a tampered body
@@ -2341,101 +2339,39 @@ body_bound() {
   id="$(jq -r --arg t "$1" 'select(.journalTxId == $t and .journalEvent == "prepared") | .journalBodyHash' "$journal")"
   [ "$computed" = "$1" ] && [ -n "$id" ] && [ "$saved" = "$id" ]
 }
-for t in "$reject_tx" "$booking_tx"; do
-  case "$t" in
-    "$reject_tx") j="$bob_main_journal" ;;
-    *) j="$alice_journal" ;;
-  esac
-  body_bound "$t" "$(managed_body "$reg" "$t")" "$j" || fail "the saved body of $t is not the transaction it is claimed to be"
-done
-flip() { # one hex digit changed
-  local c="${1:0:1}"
-  [ "$c" = 0 ] && c=1 || c=0
-  printf '%s%s' "$c" "${1:1}"
-}
-body_bound "$(flip "$reject_tx")" "$(managed_body "$reg" "$reject_tx")" "$bob_main_journal" \
-  && fail "a body passed for a transaction id that is not its own"
-# the same bytes with their last digit changed no longer match the journal's hash
-# (the id, a hash of the body alone, still does)
-body="$(cat "$(managed_body "$reg" "$reject_tx")")"
-if [ "${body: -1}" = 0 ]; then last=1; else last=0; fi
-printf "%s%s" "${body%?}" "$last" >"$work/body-tampered.hex"
-cmp_status=0
-cmp -s "$work/body-tampered.hex" "$(managed_body "$reg" "$reject_tx")" \
-  || cmp_status=$?
-case "$cmp_status" in
-  0) setup_fail "the tampered body equals the saved one" ;;
-  1) ;;
-  *) setup_fail "the tampered body comparison could not run" ;;
-esac
-body_bound "$reject_tx" "$work/body-tampered.hex" "$bob_main_journal" \
-  && fail "a body with changed bytes passed the journal's saved-body hash"
-booking_outs="$(tx_outputs_of "$booking_tx")" || fail "the booking's saved body could not be read"
-reject_outs="$(tx_outputs_of "$reject_tx")" || fail "the reject's saved body could not be read"
-# What the node held before the reject, and holds after it
-node_pending="$(jq -c --arg r "$(field late-insert .request)" '[.pendingRequests[] | select(.request == $r)]' "$receipts/inspect-before-reject.json")"
-node_refunds="$(jq -c '.outputsAt.outputs' "$receipts/inspect-refund.json")"
-[ "$(jq 'length' <<<"$node_pending")" = 1 ] || fail "the node did not show the late request pending before the reject: $node_pending"
-# reject_bound RECEIPT NODE_PENDING NODE_REFUNDS: every binding; zero only when all hold.
-reject_bound() {
-  jq -e --argjson bo "$booking_outs" --argjson ro "$reject_outs" --argjson np "$2" --argjson nr "$3" \
-    --arg owner "$alicekey" --arg tx "$reject_tx" '
-      $bo[0] as $req | $ro[0].datum.value[0].value[1] as $tip | .rejected[0] as $r
-      | ($req.coin | type == "number") and ($tip | type == "number")
-      and $r.locked.lovelace == $req.coin
-      and $r.locked.assets == [$req.assets[] | {policy, name, quantity}]
-      and ($np | length == 1) and $r.locked == $np[0].locked and $r.request == $np[0].request
-      and $r.tip == $tip
-      and $r.returned.index >= 1 and $ro[$r.returned.index] != null
-      and $r.returned.output == ($tx + "#" + ($r.returned.index | tostring))
-      and $ro[$r.returned.index].address == ("60" + $owner)
-      and $ro[$r.returned.index].coin == $r.returned.lovelace
-      and ([$nr[] | select(.output == $r.returned.output and .locked.lovelace == $r.returned.lovelace)] | length == 1)
-      and $r.returned.lovelace == ($req.coin - $tip)
-      and $r.topUp == ([$r.returned.lovelace - ($req.coin - $tip), 0] | max)
-      and $r.owner == $owner' "$1" >/dev/null
-}
-reject_bound "$receipts/reject.json" "$node_pending" "$node_refunds" \
-  || fail "the reject receipt's money differs from the chain and the signed transactions: receipt $(jq -c '.rejected[0] | {locked, tip, returned, topUp}' "$receipts/reject.json"); node before $node_pending; node after $node_refunds; reject outputs $(jq -c 'map({address, coin})' <<<"$reject_outs") tip $(jq -c '.[0].datum.value[0].value[1]' <<<"$reject_outs")"
-# Each binding can fail: a receipt edited in any one money field, or a node read
-# that differs from it, is refused.
-tamper() { # NAME JQ-EDIT
-  jq "$2" "$receipts/reject.json" >"$receipts/reject-tampered-$1.json"
-  if reject_bound "$receipts/reject-tampered-$1.json" "$node_pending" "$node_refunds"; then
-    fail "a reject receipt edited in $1 still passed the independent bindings"
-  fi
-}
-tamper locked '.rejected[0].locked.lovelace += 1'
-tamper locked-assets '.rejected[0].locked.assets = []'
-tamper tip '.rejected[0].tip += 1'
-tamper returned '.rejected[0].returned.lovelace += 1'
-tamper top-up '.rejected[0].topUp += 1'
-# shellcheck disable=SC2016 # Single quotes preserve the jq program's variable.
-tamper index '.rejected[0].returned as $x | .rejected[0].returned.index = ($x.index + 1) | .rejected[0].returned.output = (($x.output | sub("#[0-9]+$"; "")) + "#" + (($x.index + 1) | tostring))'
-tamper index-only '.rejected[0].returned.index += 1'
-tamper output '.rejected[0].returned.output |= sub("#[0-9]+$"; "#9")'
-tamper owner '.rejected[0].owner = "'"$bobkey"'"'
-# a node read that disagrees with the receipt fails it just as well
-if reject_bound "$receipts/reject.json" "$(jq -c '.[0].locked.lovelace += 1' <<<"$node_pending")" "$node_refunds"; then
-  fail "a node read of another locked value still passed the bindings"
-fi
-if reject_bound "$receipts/reject.json" "$node_pending" "$(jq -c --arg o "$(field reject .rejected[0].returned.output)" 'map(if .output == $o then .locked.lovelace += 1 else . end)' <<<"$node_refunds")"; then
-  fail "a node read of another refund amount still passed the bindings"
-fi
-if reject_bound "$receipts/reject.json" "$node_pending" "$(jq -c --arg o "$(field reject .rejected[0].returned.output)" 'map(if .output == $o then .output |= sub("#[0-9]+$"; "#9") else . end)' <<<"$node_refunds")"; then
-  fail "a node read of another output reference still passed the bindings"
-fi
-say "the reject receipt's money equals the signed transactions' (locked, tip, designated output), and each edit of it fails"
-# The refund stays at the owner's address and the root has not moved.
-run inspect-rejected success -- inspect --key keyD "${common[@]}" "${node[@]}"
-[ "$(field inspect-rejected .root)" = "$root_before" ] || fail "the reject moved the registry's root"
-[ "$(field inspect-rejected .leaf)" = unknown ] || fail "the rejected request's key is not unknown"
+
+# ------------------------------------------------------------------
+# 7c. reclaim: the owner takes the late request back inside its window
+# ------------------------------------------------------------------
+# The request nobody folded stays pending, and a registry reject is not the
+# way out: the way out is the owner's reclaim while the retract window is
+# open. Alice reclaims it with her own wallet: the whole return goes to her,
+# the request is consumed, and the root does not move.
+root_before="$(field inspect-late .root)"
+before="$(journal_lines "$reg")"
+late_reclaim_before="$(journal_count "$alice_journal")"
+files_before="$(local_files)"
+run late-reclaim success -- registry reclaim --request "$(field late-insert .request)" \
+  "${common[@]}" "${node[@]}" "${alice[@]}"
+[ "$(local_files)" = "$files_before" ] || fail "the late reclaim altered identity or created retired trie files"
+tail -n +"$((late_reclaim_before + 1))" "$alice_journal" \
+  | jq -s -e --arg t "$(field late-reclaim .retract)" '
+      map(.journalEvent) == ["prepared", "submitted", "confirmed", "observed"]
+      and (map(.journalStep) | unique == ["reclaim"])
+      and (map(.journalTxId) | unique == [$t])' >/dev/null \
+  || fail "the late reclaim did not leave exactly its four journal phases"
+jq -e --slurpfile l "$receipts/late-insert.json" --arg owner "$alicekey" --arg addr "$alice_addr" '
+    .request == $l[0].request and .owner == $owner and .returned.recipient == $addr' \
+  "$receipts/late-reclaim.json" >/dev/null \
+  || fail "the late reclaim receipt does not name the request, its owner and the owner's address: $(jq -c '{request, owner, returned}' "$receipts/late-reclaim.json")"
+run inspect-late-reclaimed success -- inspect --key keyD "${common[@]}" "${node[@]}"
+[ "$(field inspect-late-reclaimed .root)" = "$root_before" ] || fail "the late reclaim moved the registry's root"
+[ "$(field inspect-late-reclaimed .leaf)" = unknown ] || fail "the reclaimed request's key is not unknown"
+[ "$(jq '.pendingRequests | length' "$receipts/inspect-late-reclaimed.json")" = 0 ] \
+  || fail "the late reclaim left a request pending"
 refused fold-after-reject client-refusal -- fold "${common[@]}" "${node[@]}" "${bob[@]}"
 jq -e '.reason | contains("nothing is pending")' "$receipts/fold-after-reject.json" >/dev/null \
-  || fail "after the reject something is still pending: $(field fold-after-reject .reason)"
-refused reject-nothing client-refusal -- registry reject "${common[@]}" "${node[@]}" "${bob[@]}"
-jq -e '.reason | contains("nothing is pending")' "$receipts/reject-nothing.json" >/dev/null \
-  || fail "a reject with nothing pending does not say so: $(field reject-nothing .reason)"
+  || fail "after the reclaim something is still pending: $(field fold-after-reject .reason)"
 # Cleared, the registry folds again: a new request is booked and folded.
 run insert-after-reject success -- insert --key keyE --payload "$work/payload-insert.json" \
   "${common[@]}" "${node[@]}" "${alice[@]}"
@@ -2444,8 +2380,8 @@ run fold-after-insert success -- fold --request "$(field insert-after-reject .re
   "${common[@]}" "${node[@]}" "${bob[@]}"
 fold_ok fold-after-insert insert-after-reject insertActive
 run inspect-after-reject success -- inspect --key keyE "${common[@]}" "${node[@]}"
-[ "$(field inspect-after-reject .leaf)" = active ] || fail "the fold after the reject did not make its key active"
-say "a reject past both windows: refunded to the owner, root unmoved, and a new request folds"
+[ "$(field inspect-after-reject .leaf)" = active ] || fail "the fold after the reclaim did not make its key active"
+say "the late request reclaimed by its owner inside the window: root unmoved, nothing pending, and a new request folds"
 
 # ------------------------------------------------------------------
 # 7d. reclaim: the owner takes a pending insertion back in its window
@@ -2576,30 +2512,11 @@ if [ "$page_steps_run" = 1 ]; then
   } | jq -s -c 'reduce .[] as $s ({}; .[$s.key] = $s.edge) | {active: ([to_entries[] | select(.value == "insertActive")] | length), terminal: ([to_entries[] | select(.value == "updateTerminal")] | length)}')"
   final_active="$(jq -r .active <<<"$final_counts")"
   final_terminal="$(jq -r .terminal <<<"$final_counts")"
-  # The reject spends the live state output and recreates it with the same
-  # root, so the lineage counts it as a fold since create; the reclaim spends
-  # no state output. Both facts are read from this run's saved bodies: the
-  # state outputs are create's and each fold's own output zero, a layout both
-  # pages prove on this run through their live state outputs.
+  # The reclaims spend no state output, and no command rejects any more, so
+  # the lineage counts exactly the folds this run made.
   create_out="$(jq -r .state.createTransaction "$receipts/describe-after-create.json")#0"
   [ "$create_out" != "null#0" ] || fail "the after-create page names no create transaction"
-  state_outputs=("$create_out")
-  for f in "${main_folds[@]}"; do
-    if [ -e "$receipts/$f.json" ]; then
-      state_outputs+=("$(field "$f" .fold)#0")
-    fi
-  done
-  reject_tx="$(field reject .reject)"
-  [ "$reject_tx" != "null" ] && [ -n "$reject_tx" ] || fail "the reject receipt names no transaction"
-  reject_folds=0
-  for out in "${state_outputs[@]}"; do
-    if tx_inputs_of "$reject_tx" | grep -qxF "$out"; then
-      reject_folds=1
-      break
-    fi
-  done
-  [ "$reject_folds" = 1 ] || fail "the reject spent no state output of this registry"
-  final_folds=$(($(main_fold_count) + killed_folds + reject_folds))
+  final_folds=$(($(main_fold_count) + killed_folds))
   [ "$final_folds" -gt 1 ] || fail "the fold history holds $final_folds folds; the comparison needs more than one"
   last_fold="$(field fold-after-reclaim .fold)"
   [ "$last_fold" != "null" ] && [ -n "$last_fold" ] || fail "the last fold receipt names no fold transaction"
@@ -2684,8 +2601,8 @@ jq -e --slurpfile correct "$receipts/inspect-after-reclaim-fold.json" \
 # the root) against reads of the chain. Alice's steps are the vault's, Bob's
 # the external flow's, so that both ways run for both binaries: `open-datum`
 # (Alice's insert, update, terminate and fold; Bob's folds, insert and
-# terminate with the fold) and `singular registry` (Bob's reject; Alice's
-# reclaim).
+# terminate with the fold) and `singular registry` (Alice's reclaim; the retired
+# reject refused).
 say "the story: Alice and Bob keep no signing key on disk. Alice signs from her vault: her command opens the vault, builds its whole run as one bundle, signs it, sends it and lands it in one step. Bob signs the external way: his write names the wallet's address and a new bundle file, builds its whole run as that one bundle, signs nothing, sends nothing and exits with status 19, the outcome waiting-for-signatures; he then signs the bundle from his vault with singular wallet sign and sends it with singular submit."
 s_reg="$story/reg"
 scommon=(--state-dir "$s_reg" --blueprint "$blueprint")
@@ -2780,21 +2697,20 @@ story_envelope_ok() {
         {bytes:$a},{bytes:$k},{bytes:$c},{int:2000000}]}, $p[0]]}' \
     "$receipts/$1.json" >/dev/null
 }
+# fold_landed_ok FOLD: the fold's own transaction is among the ones the receipt
+# says landed.
+fold_landed_ok() {
+  jq -e '(.fold as $f | ((.landed.transactions // .submissions) | map(.identity) | index($f)) != null)' "$1" >/dev/null
+}
 # story_fold_ok NAME BOOKING EDGE: the landed fold settles the booking's one
-# request on the edge, with a wallet other than the booker's, before the
-# deadline and with the margin the key-file fold above keeps.
+# request on the edge, with a wallet other than the booker's. A registration
+# was folded before its deadline and with the margin the key-file fold above
+# keeps; a termination has no deadline and no margin (fold_receipt_ok).
 story_fold_ok() {
-  jq -e --slurpfile b "$receipts/$2.json" '
-      (.settled | length == 1)
-      and .settled[0].request == $b[0].request and .foldDeadline.posixMs == $b[0].foldDeadline.posixMs
-      and .folder != $b[0].requester and .settled[0].edge == "'"$3"'"
-      and (.fold | test("^[0-9a-f]{64}$"))
-      and (.fold as $f | ((.landed.transactions // .submissions) | map(.identity) | index($f)) != null)
-      and (.validUntilSlot | type == "number")
-      and (if .foldDeadline.slot != null then .validUntilSlot <= .foldDeadline.slot else true end)
-      and (.hostClockMs + 30000 < .foldDeadline.posixMs)
-      and (.remainingMs | type == "number" and . > 30000)' "$receipts/$1.json" >/dev/null \
-    || fail "$1: the fold does not name the booking's request and deadline, or the booker folded, or it left no margin"
+  fold_receipt_ok "$receipts/$1.json" "$receipts/$2.json" "$3" \
+    || fail "$1: the fold does not name the booking's request on $3 with the booking's deadline (a termination has none), or the booker folded, or a registration left no margin"
+  fold_landed_ok "$receipts/$1.json" \
+    || fail "$1: the fold's transaction is not among the ones that landed"
 }
 # story_wait_until MS WHAT: sleep until the epoch millisecond MS plus 3 s.
 story_wait_until() {
@@ -2917,20 +2833,26 @@ jq -e --slurpfile p "$story/payload-update.json" '.applicationOutput.payload == 
 say "story 8. Book the termination of the key."
 # 8. Alice books the termination of the key from her vault.
 story_vault story-terminate alice -- terminate --key alice "${scommon[@]}" "${node[@]}"
-booked story-terminate
-jq -e '(.released | test("^[0-9a-f]{64}#[0-9]+$")) and (.deposit | type == "number" and . > 0)' \
+booked_termination story-terminate
+jq -e '(.custody | test("^[0-9a-f]{64}#[0-9]+$")) and (.deposit | type == "number" and . > 0) and (.transfer | type == "number" and . > 0)' \
   "$receipts/story-terminate.json" >/dev/null \
-  || fail "the story termination booking does not name the live output its fold will release"
+  || fail "the story termination booking does not name the custody output it spends and the lovelace it transfers into the request"
+jq -e --slurpfile i "$receipts/story-inspect-2.json" '.transfer == $i[0].applicationOutput.lovelace' \
+  "$receipts/story-terminate.json" >/dev/null \
+  || fail "the story booking did not move all of the custody value into the request: transfer $(field story-terminate .transfer), holding $(field story-inspect-2 .applicationOutput.lovelace)"
 run story-inspect-booked success -- inspect --key alice "${scommon[@]}" "${node[@]}"
 [ "$(field story-inspect-booked .leaf)" = active ] || fail "the story key is not still active after a termination booking alone"
 
-say "story 9. Fold it: the fold burns the token and releases the deposit."
-# 9. Bob folds it, the external way: the fold burns the token and releases the deposit.
+say "story 9. Fold it: the fold burns the token and donates the held value less the tip."
+# 9. Bob folds it, the external way: the fold burns the token and donates the held value less the tip.
 story_stage story-terminate-fold bob -- fold --request "$(field story-terminate .request)" "${scommon[@]}" "${node[@]}"
 story_settle story-terminate-fold bob
 story_fold_ok story-terminate-fold story-terminate updateTerminal
-[ "$(field story-terminate-fold .settled[0].settlement.released)" = "$(field story-terminate .released)" ] \
-  || fail "the story fold released another output than the booking named"
+[ "$(field story-terminate-fold .settled[0].settlement.terminated)" = "$(field story-terminate .request)" ] \
+  || fail "the story fold terminated another request than the booking named"
+jq -e --slurpfile b "$receipts/story-terminate.json" '(.donation | type == "number") and .donation > 0 and .donation < $b[0].transfer' \
+  "$receipts/story-terminate-fold.json" >/dev/null \
+  || fail "the story fold's donation is not strictly between nothing and the transfer: donation $(field story-terminate-fold .donation), transfer $(field story-terminate .transfer)"
 
 say "story 10. Read it back."
 # 10. Read it back.
@@ -2939,39 +2861,32 @@ run story-inspect-3 success -- inspect --key alice "${scommon[@]}" "${node[@]}"
 jq -e '.applicationOutput.absent' "$receipts/story-inspect-3.json" >/dev/null || fail "the story holding is still live"
 [ "$(field story-inspect-3 .root)" = "$(field story-terminate-fold .root)" ] || fail "inspect root differs from the termination fold's"
 
-say "story 11. A request nobody folded or took back stays pending past both its windows and blocks the registry's fold. Reject it; any wallet may: here, Bob's."
-# 11. A request nobody folded or took back stays pending past both its windows
-# and blocks the registry's fold: Alice books one from her vault and nobody
-# folds it. Bob's reject is refused while a window is open (no bundle is
-# written), then he rejects it, the external way.
+say "story 11. A request nobody folded stays pending. The registry reject that once cleared it is retired, so its owner takes it back inside the retract window."
+# 11. Alice books a request and nobody folds it. A registry reject is retired:
+# the command refuses by name and no bundle is written. The way out is the
+# owner's reclaim while the retract window is open, signed from her vault.
 story_vault story-late alice -- insert --key late --payload "$story/payload.json" "${scommon[@]}" "${node[@]}"
 booked story-late
 s_late_deadline="$(field story-late .foldDeadline.posixMs)"
 s_late_retract_ends=$((s_late_deadline + s_window_retract))
-[ "$(($(date +%s%3N) + 5000))" -lt "$s_late_retract_ends" ] || setup_fail "the story's late request has no open window left for the early reject"
-run story-reject-early client-refusal -- registry reject "${scommon[@]}" "${node[@]}" \
-  --wallet-address "$vault_bob_addr" --bundle "$story/bundles/story-reject-early.bundle"
-[ ! -e "$story/bundles/story-reject-early.bundle" ] || fail "a refused reject wrote a bundle"
-jq -e --slurpfile l "$receipts/story-late.json" '.reason | contains($l[0].request) and contains("window")' \
-  "$receipts/story-reject-early.json" >/dev/null || fail "the early story reject does not name the request and its open window"
-story_wait_until "$s_late_retract_ends" "the late request's retract window to close"
+[ "$(($(date +%s%3N) + 5000))" -lt "$s_late_retract_ends" ] || setup_fail "the story's late request has no open window left for the owner's reclaim"
+run story-reject-retired client-refusal -- registry reject "${scommon[@]}" "${node[@]}" \
+  --wallet-address "$vault_bob_addr" --bundle "$story/bundles/story-reject-retired.bundle"
+[ ! -e "$story/bundles/story-reject-retired.bundle" ] || fail "a refused reject wrote a bundle"
+jq -e '.reason | contains("retired")' "$receipts/story-reject-retired.json" >/dev/null \
+  || fail "the story reject does not say it is retired: $(field story-reject-retired .reason)"
 run story-inspect-late success -- inspect --key late "${scommon[@]}" "${node[@]}"
-s_root_before_reject="$(field story-inspect-late .root)"
-story_stage story-reject bob -- registry reject "${scommon[@]}" "${node[@]}"
-jq -e --slurpfile l "$receipts/story-late.json" --arg owner "$s_alicekey" --arg addr "$vault_alice_addr" --arg bob "$s_bobkey" --arg root "$s_root_before_reject" '
-    (.expected.reject | test("^[0-9a-f]{64}$")) and .expected.rejector == $bob and .expected.root == $root
-    and (.expected.rejected | length == 1)
-    and .expected.rejected[0].request == $l[0].request and .expected.rejected[0].owner == $owner
-    and .expected.rejected[0].returned.recipient == $addr' "$receipts/story-reject-staged.json" >/dev/null \
-  || fail "the staged story reject does not return the late request to its owner's address with the root unmoved"
-story_settle story-reject bob
-run story-inspect-rejected success -- inspect --key late "${scommon[@]}" "${node[@]}"
-[ "$(field story-inspect-rejected .root)" = "$s_root_before_reject" ] || fail "the story reject moved the root"
-[ "$(jq '.pendingRequests | length' "$receipts/story-inspect-rejected.json")" = 0 ] \
-  || fail "the story reject left a request pending"
-jq -e --arg r "$(field story-reject .reject)" '
-    [.submissions[] | select(.identity == $r) | .outputs[] | select(.unspent)] | length > 0' \
-  "$receipts/story-reject.submitted.json" >/dev/null || fail "the story reject's outputs are not on chain"
+s_root_before_reclaim="$(field story-inspect-late .root)"
+story_wait_until "$((s_late_deadline + 1))" "the late request's processing deadline"
+story_vault story-late-reclaim alice -- registry reclaim --request "$(field story-late .request)" "${scommon[@]}" "${node[@]}"
+jq -e --slurpfile l "$receipts/story-late.json" --arg owner "$s_alicekey" --arg addr "$vault_alice_addr" '
+    .request == $l[0].request and .owner == $owner and .returned.recipient == $addr' \
+  "$receipts/story-late-reclaim.json" >/dev/null \
+  || fail "the story reclaim does not return the late request to its owner's address"
+run story-inspect-reclaimed success -- inspect --key late "${scommon[@]}" "${node[@]}"
+[ "$(field story-inspect-reclaimed .root)" = "$s_root_before_reclaim" ] || fail "the story reclaim moved the root"
+[ "$(jq '.pendingRequests | length' "$receipts/story-inspect-reclaimed.json")" = 0 ] \
+  || fail "the story reclaim left a request pending"
 
 say "story 12. The registry takes requests again: book a new insertion."
 # 12. The registry takes requests again: Bob books an insertion of his own, the
@@ -3143,16 +3058,16 @@ done
 say "$written prepared submissions in ${#journals[@]} journals each name their actual Unbound acquisition"
 if [ "$mode" = test-harness ]; then
   trie_extent
-  say "test build: all eight stored-registry commands have nonempty capability evidence from actual executions"
+  say "test build: the seven stored-registry commands that succeed have nonempty capability evidence from actual executions"
 fi
 # Every traced command's events agreed with its receipt (checked as it ran).
-# The extent: all eight commands succeeded under narration, with mechanics.
+# The extent: the seven commands that succeed (the retired reject only refuses) succeeded under narration, with mechanics.
 while IFS= read -r name; do
   jq -c --slurpfile trace "$receipts/$name.trace.jsonl" \
     '{command, outcome, how: ($trace | map(select(.level == "how")) | length)}' "$receipts/$name.json"
 done <"$work/trace-command-invocations" >"$work/trace-command-extent.jsonl"
 jq -s -e '[.[] | select(.outcome == "success" and .how > 0) | .command] | unique
-    == ["create","fold","insert","inspect","reclaim","reject","terminate","update"]' \
+    == ["create","fold","insert","inspect","reclaim","terminate","update"]' \
   "$work/trace-command-extent.jsonl" >/dev/null \
   || fail "the narrated command extent omits a command, or narrates it without mechanics"
 # The agreement can fail: one fold's stream, altered in any one fact it

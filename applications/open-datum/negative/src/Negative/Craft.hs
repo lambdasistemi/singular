@@ -22,6 +22,7 @@ module Negative.Craft
     , FoldSelection (..)
     , craftBooking
     , craftFold
+    , donationOf
     , selectFoldRequests
     ) where
 
@@ -537,6 +538,11 @@ craftFold view live folder selection payment = do
                 }
     shortened <- applyPayShort feeAddr payment unsigned
     pure (shortened, chosenKeys)
+
+-- | The lovelace a transaction donates to the treasury.
+donationOf :: ConwayTx -> Integer
+donationOf tx =
+    let Coin donated = tx ^. bodyTxL . treasuryDonationTxBodyL in donated
 
 {- | Lower the treasury donation the fold makes by the named lovelace and
 give the lovelace to the folder's change, the last output paying the folder:

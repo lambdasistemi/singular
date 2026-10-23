@@ -350,37 +350,51 @@ print_forbidden_diagnostic() {
   jq -c '{outcome, failedScripts}' "$receipt" 2>/dev/null | sed 's/^/negative-host-mutants diagnostic forbidden.json: /' || true
 }
 
-# The registry patch-hygiene step (#559 brief 2): the patch touches exactly
-# onchain/lib/registry/fold.ak; its removed lines are exactly the two anchored
-# statements, each found once in the source by its anchor and never retyped;
-# every hunk's preimage matches the source at its claimed position and nowhere
-# else; the applied result changes lines only inside applyEdge. The live run
-# calls it before any scratch copy; the self-check drives it on good and
-# fabricated patches. Each fabricated patch fails exactly one guard, so deleting
-# that guard's check makes it pass.
+# The registry patch-hygiene step (#559 brief 2): the patch touches exactly the
+# one registry file it names, either onchain/lib/registry/fold.ak (the taken-key
+# defence, inside `fn step(`) or onchain/lib/registry/modify.ak (the donation
+# check, inside `fn routing(`); its removed lines are exactly the anchored
+# statements of that file, each found once in the source by its anchor and never
+# retyped; every hunk's preimage matches the source at its claimed position and
+# nowhere else; the applied result changes lines only inside that function. The
+# live run calls it before any scratch copy; the self-check drives it on good
+# and fabricated patches. Each fabricated patch fails exactly one guard, so
+# deleting that guard's check makes it pass.
 registry_patch_hygiene_ok() {
   local patch="$1" expected="$2" source="$3"
   local count="" touched=""
   local scope_start="" scope_end="" hunk="" hstart="" hcount="" total=""
   local hverdict="" htmp="" hheaders="" hline="" hbody_end="" pre_n="" matches=""
   local actual="" ahunk="" astart="" acount="" next_h="" last_line=""
-  local anchor1="lib.occupiedRefusal()" anchor2="mpf.insert(acc.trie, key, leafActive, proof)"
-  local a1line="" a2line=""
+  local scope_fn="" anchors="" anchor="" wanted="" aline=""
+  case "$expected" in
+    onchain/lib/registry/fold.ak)
+      scope_fn="fn step("
+      anchors='Evolved { refusal: lib.occupiedRefusal(), trie }'
+      ;;
+    onchain/lib/registry/modify.ak)
+      scope_fn="fn routing("
+      anchors='donationOf(treasury_donation) != owedDonation(members)
+Some(@"fold-donation-mismatch")'
+      ;;
+    *) return 1 ;; # GUARD-rhfiles
+  esac
   [ -f "$patch" ] || return 1
   [ -f "$source" ] || return 1
   count="$(grep -c '^diff --git ' "$patch" || true)" || return 1
   touched="$(grep '^diff --git ' "$patch" | awk '{print $4}' | sed 's|^b/||' || true)" || return 1
-  { [ "$count" = 1 ] && [ "$touched" = "$expected" ] && [ "$expected" = "onchain/lib/registry/fold.ak" ]; } || return 1 # GUARD-rhfiles
-  [ "$(grep -c -F -- "$anchor1" "$source" || true)" = 1 ] || return 1
-  [ "$(grep -c -F -- "$anchor2" "$source" || true)" = 1 ] || return 1
-  a1line="$(grep -F -- "$anchor1" "$source" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' || true)" || return 1
-  a2line="$(grep -F -- "$anchor2" "$source" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' || true)" || return 1
-  [ -n "$a1line" ] || return 1
-  [ -n "$a2line" ] || return 1
-  [ "$({ grep '^-[^-]' "$patch" 2>/dev/null || true; } | sed 's/^-//;s/^[[:space:]]*//;s/[[:space:]]*$//' | sort || true)" = "$(printf '%s\n%s\n' "$a1line" "$a2line" | sort)" ] || return 1 # GUARD-rhremoved
-  scope_start="$(grep -n -F -- "fn applyEdge(" "$source" | cut -d: -f1 | head -n1 || true)" || return 1
+  { [ "$count" = 1 ] && [ "$touched" = "$expected" ]; } || return 1 # GUARD-rhfiles
+  while IFS= read -r anchor; do
+    [ -n "$anchor" ] || continue
+    [ "$(grep -c -F -- "$anchor" "$source" || true)" = 1 ] || return 1
+    aline="$(grep -F -- "$anchor" "$source" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' || true)" || return 1
+    [ -n "$aline" ] || return 1
+    wanted="$wanted$aline"$'\n'
+  done <<<"$anchors"
+  [ "$({ grep '^-[^-]' "$patch" 2>/dev/null || true; } | sed 's/^-//;s/^[[:space:]]*//;s/[[:space:]]*$//' | sort || true)" = "$(printf '%s' "$wanted" | sort)" ] || return 1 # GUARD-rhremoved
+  scope_start="$(grep -n -F -- "$scope_fn" "$source" | cut -d: -f1 | head -n1 || true)" || return 1
   [ -n "$scope_start" ] || return 1
-  [ "$(grep -c -F -- "fn applyEdge(" "$source" || true)" = 1 ] || return 1
+  [ "$(grep -c -F -- "$scope_fn" "$source" || true)" = 1 ] || return 1
   scope_end="$(awk -v a="$scope_start" 'NR>a && (/^fn / || /^const /) {print NR; exit}' "$source" || true)" || return 1
   if [ -z "$scope_end" ]; then
     total="$(wc -l <"$source")" || return 1
@@ -1147,27 +1161,38 @@ EOF
   reg_source="$root/onchain/lib/registry/fold.ak"
   reg_patch="$mutants_dir/registry-accepts-a-taken-key.patch"
   reg_file="onchain/lib/registry/fold.ak"
+  mod_source="$root/onchain/lib/registry/modify.ak"
+  mod_patch="$mutants_dir/fold-accepts-a-short-donation.patch"
+  mod_file="onchain/lib/registry/modify.ak"
   [ -f "$reg_source" ] || return 1
   [ -f "$reg_patch" ] || return 1
+  [ -f "$mod_source" ] || return 1
+  [ -f "$mod_patch" ] || return 1
   registry_patch_hygiene_ok "$reg_patch" "$reg_file" "$reg_source" && st=0 || st=$?
   [ "$st" -eq 0 ] || {
     echo "negative-host-mutants: hygiene control good-registry-accepts-a-taken-key rejected" >&2
     return 1
   }
   echo "negative-host-mutants: hygiene control good-registry-accepts-a-taken-key: passes (as expected)"
+  registry_patch_hygiene_ok "$mod_patch" "$mod_file" "$mod_source" && st=0 || st=$?
+  [ "$st" -eq 0 ] || {
+    echo "negative-host-mutants: hygiene control good-fold-accepts-a-short-donation rejected" >&2
+    return 1
+  }
+  echo "negative-host-mutants: hygiene control good-fold-accepts-a-short-donation: passes (as expected)"
   mkdir -p "$work/regcheck/$(dirname "$reg_file")" || return 1
   cp "$reg_source" "$work/regcheck/$reg_file" || return 1
   cp "$reg_patch" "$work/reg-extra-hunk.patch" || return 1
-  cat >>"$work/reg-extra-hunk.patch" <<'EOF'
+  cat >>"$work/reg-extra-hunk.patch" <<'EOT'
 @@ -17,6 +17,7 @@
- use aiken/collection/dict
- use aiken/collection/list.{foldl}
- use aiken/crypto.{VerificationKeyHash}
-+// hygiene control: extra hunk outside applyEdge
- use aiken/merkle_patricia_forestry.{MerklePatriciaForestry}
- use aiken/merkle_patricia_forestry as mpf
- use cardano/assets.{PolicyId, Value, from_asset, lovelace_of}
-EOF
+ ////
+ //// ## Invariants
+ //// A pending request is a member only when its output holds exactly what its
++//// hygiene control: extra hunk outside step
+ //// datum declares (lovelace, trie-ready tag, and the application tag of a
+ //// registration or the key's singular tag of a termination) at the request
+ //// address; an input whose datum states a request but whose output does not
+EOT
   (cd "$work/regcheck" && git apply --check "$work/reg-extra-hunk.patch") || {
     echo "negative-host-mutants: hygiene control reg-extra-hunk does not apply" >&2
     return 1
@@ -1185,16 +1210,16 @@ EOF
     return 1
   }
   echo "negative-host-mutants: hygiene control reg-wrong-file: rejected (as expected)"
-  sed 's/^@@ -209,7 +209,7 @@ fn applyEdge(/@@ -150,7 +150,7 @@ fn applyEdge(/' "$reg_patch" >"$work/reg-wrong-header.patch" || return 1
-  grep -q '^@@ -150,7 +150,7 @@ fn applyEdge(' "$work/reg-wrong-header.patch" || return 1
+  sed 's/^@@ -260,7 +260,22 @@ fn step(/@@ -150,7 +150,22 @@ fn step(/' "$reg_patch" >"$work/reg-wrong-header.patch" || return 1
+  grep -q '^@@ -150,7 +150,22 @@ fn step(' "$work/reg-wrong-header.patch" || return 1
   registry_patch_hygiene_ok "$work/reg-wrong-header.patch" "$reg_file" "$reg_source" && st=0 || st=$?
   [ "$st" -ne 0 ] || {
     echo "negative-host-mutants: hygiene control reg-wrong-header passed" >&2
     return 1
   }
   echo "negative-host-mutants: hygiene control reg-wrong-header: rejected (as expected)"
-  sed 's/.*terminalFault(acc.trie, key, proof).*/-      terminalFault(acc.trie, key, proof)\n+      None/' "$reg_patch" >"$work/reg-third-line.patch" || return 1
-  grep -q '^-      terminalFault' "$work/reg-third-line.patch" || return 1
+  sed -e 's/^     Terminating(t) ->$/-    Terminating(t) ->/' -e 's/^@@ -260,7 +260,22 @@ fn step(/@@ -260,7 +260,21 @@ fn step(/' "$reg_patch" >"$work/reg-third-line.patch" || return 1
+  grep -q '^-    Terminating(t) ->' "$work/reg-third-line.patch" || return 1
   (cd "$work/regcheck" && git apply --check "$work/reg-third-line.patch") || {
     echo "negative-host-mutants: hygiene control reg-third-line does not apply" >&2
     return 1
@@ -1205,21 +1230,23 @@ EOF
     return 1
   }
   echo "negative-host-mutants: hygiene control reg-third-line: rejected (as expected)"
-  awk '/^@@ -221/{exit} {print}' "$reg_patch" >"$work/reg-only-one.patch" || return 1
-  grep -q 'lib.occupiedRefusal()' "$work/reg-only-one.patch" || {
-    echo "negative-host-mutants: hygiene control reg-only-one lost its anchor" >&2
+  mkdir -p "$work/modcheck/$(dirname "$mod_file")" || return 1
+  cp "$mod_source" "$work/modcheck/$mod_file" || return 1
+  sed -e 's/^-          Some(@"fold-donation-mismatch")$/           Some(@"fold-donation-mismatch")/' -e '/^+          None$/d' "$mod_patch" >"$work/mod-only-one.patch" || return 1
+  grep -q '^           Some(@"fold-donation-mismatch")$' "$work/mod-only-one.patch" || {
+    echo "negative-host-mutants: hygiene control mod-only-one lost its anchor" >&2
     return 1
   }
-  (cd "$work/regcheck" && git apply --check "$work/reg-only-one.patch") || {
-    echo "negative-host-mutants: hygiene control reg-only-one does not apply" >&2
+  (cd "$work/modcheck" && git apply --check "$work/mod-only-one.patch") || {
+    echo "negative-host-mutants: hygiene control mod-only-one does not apply" >&2
     return 1
   }
-  registry_patch_hygiene_ok "$work/reg-only-one.patch" "$reg_file" "$reg_source" && st=0 || st=$?
+  registry_patch_hygiene_ok "$work/mod-only-one.patch" "$mod_file" "$mod_source" && st=0 || st=$?
   [ "$st" -ne 0 ] || {
-    echo "negative-host-mutants: hygiene control reg-only-one passed" >&2
+    echo "negative-host-mutants: hygiene control mod-only-one passed" >&2
     return 1
   }
-  echo "negative-host-mutants: hygiene control reg-only-one: rejected (as expected)"
+  echo "negative-host-mutants: hygiene control mod-only-one: rejected (as expected)"
 }
 
 mutant_field() {

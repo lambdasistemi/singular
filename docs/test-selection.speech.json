@@ -43,7 +43,15 @@
       "pause": 500
     },
     {
-      "text": "The Cabal manifests declare five Hspec suites: cage-tests, e2e-tests exposed as cage-tests-e2e, contract-tests, record-value-tests, and conformance-tests exposed for filtering as conformance-appendix-tests. The record-value entrypoint defines its examples inline, under the module name Main. Contract checks include repeated runs of the same case list against different adapters, each wrapped under its defining module. Development-node evidence descriptions and conformance appendix markers remain inside the module groups.",
+      "text": "The Cabal manifests declare eight test suites: seven Hspec suites, cage-tests, e2e-tests exposed as cage-tests-e2e, contract-tests, record-value-tests, conformance-tests exposed for filtering as conformance-appendix-tests, open-datum-tests and keri-stub-tests, and one Tasty suite, cleanup-control. The record-value entrypoint defines its examples inline, under the module name Main. Contract checks include repeated runs of the same case list against different adapters, each wrapped under its defining module. Development-node evidence descriptions and conformance appendix markers remain inside the module groups.",
+      "pause": 400
+    },
+    {
+      "text": "Each suite runs in one hosted job, named in the second column. A suite that no hosted job runs is not evidence for a pull request, so a new suite is added to this table with the job that runs it.",
+      "pause": 400
+    },
+    {
+      "text": "Beside the suites, the check tagged-law-consumers-check reads the consumers of the tagged-request law: the statement bindings of the conformance stories against the accepted model, the negative host, the journeys and rehearsal scripts, the retained entrypoints, and these pages. For the journeys it also runs the helpers that read a booking's and a fold's receipt over receipts it builds in the producers' shape: a registration receipt names a processing deadline and a termination receipt names none, and a damaged copy of each helper must be caught; those receipts are built by the check and no node printed them. It runs as nix run .#tagged-law-consumers-check in the hosted job tagged-law-consumers, and its rows that belong to the hosted lanes still on the earlier law are listed as residual, not as passes.",
       "pause": 400
     },
     {
@@ -89,6 +97,6 @@
   ],
   "_source": {
     "file": "test-selection.md",
-    "sha256": "8c9acd8a9c108d5021bfb82b7bd848178f846658608145392d71ca66991a402c"
+    "sha256": "de0cd6ad081798908f5e6eadf5442f0cb699d73c3e62b0e23d3ca979c3f2e469"
   }
 }

@@ -69,6 +69,26 @@ fresh
 conformance evidence-page --root "$copy"
 echo 'control untampered: accepted'
 
+# The model revision the runs read is recorded with the snapshot: changing it,
+# or the current revision, must change the rendering and be refused.
+fresh
+cp "$snapshot/snapshot.json" "$work/before"
+jq -c '.modelRevision = "0000000000000000000000000000000000000000"' "$work/before" >"$snapshot/snapshot.json"
+applied "$work/before" "$snapshot/snapshot.json" 'snapshot model revision'
+refused 'model revision of the runs altered' 'disagrees with the receipts it is computed from'
+
+fresh
+cp "$copy/conformance/model-revision" "$work/before"
+printf '%s\n' 0000000000000000000000000000000000000000 >"$copy/conformance/model-revision"
+applied "$work/before" "$copy/conformance/model-revision" 'current model revision'
+refused 'current model revision altered' 'disagrees with the receipts it is computed from'
+
+fresh
+cp "$snapshot/snapshot.json" "$work/before"
+jq -c 'del(.modelRevision)' "$work/before" >"$snapshot/snapshot.json"
+applied "$work/before" "$snapshot/snapshot.json" 'snapshot without a model revision'
+refused 'snapshot without the revision of the runs' 'modelRevision'
+
 fresh
 cp "$page" "$work/before"
 sed -i '0,/| demonstrated |/s//| uncovered |/' "$page"

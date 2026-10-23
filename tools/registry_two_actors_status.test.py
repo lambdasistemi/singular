@@ -318,7 +318,7 @@ def test_reject_refusal_is_row_result(mod, tmp):
     fake = fake_run(
         trace_text="trace-line\n",
         receipt_text='{"outcome": "client-refusal", '
-        '"reason": "1 pending request is still inside a window: abc#0"}',
+        '"reason": "registry reject is retired: nothing was read, signed or submitted"}',
         code=10,
     )
     with mock.patch.object(mod.subprocess, "run", fake):
@@ -330,7 +330,7 @@ def test_reject_refusal_is_row_result(mod, tmp):
             check(
                 "reject-refusal-is-row-result",
                 False,
-                f"an early reject refusal mapped to setup: {error}",
+                f"a retired reject refusal mapped to setup: {error}",
             )
         except Exception as error:  # noqa: BLE001 - see above
             check(
@@ -388,112 +388,40 @@ def _write_receipt(tmp, name, doc, exit_code=None):
 
 
 def _reject_valid_base(tmp):
-    deadline = 1000000
-    retract_time = 120000
-    expected_close = deadline + retract_time
-    locked = {"lovelace": 3000000, "assets": []}
-    tip = 1000000
-    returned_lovelace = 2000000
-    # Synthetic test-only seed (arbitrary bytes, never funded); the harness
-    # must derive this same address neutrally from the skey file.
-    alice_seed_hex = bytes(range(32)).hex()
-    alice_wallet = "addr_test1vqn78rgwr835xn3nl0gqr5l7qj6mwemrlz9v6cj7p4mskscud5urh"
-    fee_bound = {
-        "command": "fee-bound",
-        "outcome": "success",
-        "stateToken": "policy.name",
-        "minimumTip": 1000000,
-        "processTime": 120000,
-        "retractTime": 120000,
-        "observedTx": "statetx#0",
-    }
-    booking_request = "abc123#0"
-    owner_hex = "ownerhex000000000000000000000000000000000000000000000001"
-    reject_tx = "rejecttx000000000000000000000000000000000000000000000000000001"
     root = "root000000000000000000000000000000000000000000000000000000000001"
     pending_entry = {
-        "request": booking_request,
-        "owner": owner_hex,
-        "locked": locked,
-        "key": "616c6963652d33",
+        "request": "abc123#0",
+        "owner": "ownerhex000000000000000000000000000000000000000000000001",
+        "key": "616c6963652d31",
         "edge": "insertActive",
     }
-    booking = {
-        "command": "insert",
-        "outcome": "success",
-        "request": booking_request,
-        "requester": owner_hex,
-        "foldDeadline": {"posixMs": deadline, "slot": 100},
-    }
-    early_before = {
+    inspect = {
         "command": "inspect",
         "outcome": "success",
         "root": root,
-        "leaf": "unknown",
+        "leaf": "active",
         "pendingRequests": [pending_entry],
-        "retractTime": retract_time,
+        "retractTime": 120000,
         "processTime": 120000,
     }
-    early_reject = {
+    refused = {
         "command": "reject",
         "outcome": "client-refusal",
-        "reason": f"1 pending request is still inside a window: {booking_request}",
+        "reason": (
+            "registry reject is retired: the registry's state script refuses a "
+            "spend with the Rejected action, so no such transaction is built; a "
+            "booked request leaves the registry through the fold (registry "
+            "fold), and nothing was read, signed or submitted"
+        ),
     }
-    early_after = dict(early_before)
-    late_before = dict(early_before)
-    rejected_row = {
-        "request": booking_request,
-        "owner": owner_hex,
-        "key": "616c6963652d33",
-        "edge": "insertActive",
-        "locked": locked,
-        "tip": tip,
-        "returned": {
-            "request": booking_request,
-            "recipient": alice_wallet,
-            "output": f"{reject_tx}#1",
-            "index": 1,
-            "lovelace": returned_lovelace,
-        },
-        "processingEnds": deadline,
-        "retractEnds": expected_close,
-        "topUp": 0,
-    }
-    late_reject = {
-        "command": "reject",
-        "outcome": "success",
-        "reject": reject_tx,
-        "rejected": [rejected_row],
-        "root": root,
-    }
-    late_after = {
-        "command": "inspect",
-        "outcome": "success",
-        "root": root,
-        "leaf": "unknown",
-        "pendingRequests": [],
-        "retractTime": retract_time,
-    }
-    alice_preview = {"command": "create", "outcome": "success", "wallet": alice_wallet}
-    _write_receipt(tmp, "reject-alice-3-booking", booking)
-    _write_receipt(tmp, "reject-early-inspect-before", early_before)
-    _write_receipt(tmp, "reject-early", early_reject, exit_code=10)
-    _write_receipt(tmp, "reject-early-inspect-after", early_after)
-    _write_receipt(tmp, "reject-late-inspect-before", late_before)
-    _write_receipt(tmp, "reject-late", late_reject)
-    _write_receipt(tmp, "reject-late-inspect-after", late_after)
-    _write_receipt(tmp, "alice-preview", alice_preview)
-    Path(tmp, "alice.skey").write_text(alice_seed_hex + "\n")
-    _write_receipt(tmp, "fee-bound", fee_bound)
+    _write_receipt(tmp, "reject-retired-inspect-before", inspect)
+    _write_receipt(tmp, "reject-retired", refused, exit_code=10)
+    _write_receipt(tmp, "reject-retired-inspect-after", dict(inspect))
     legs = {
         "reject": {
-            "booking": "reject-alice-3-booking",
-            "early_inspect_before": "reject-early-inspect-before",
-            "early_reject": "reject-early",
-            "early_inspect_after": "reject-early-inspect-after",
-            "late_inspect_before": "reject-late-inspect-before",
-            "late_reject": "reject-late",
-            "late_inspect_after": "reject-late-inspect-after",
+            "inspect_before": "reject-retired-inspect-before",
+            "reject": "reject-retired",
+            "inspect_after": "reject-retired-inspect-after",
         }
     }
     return legs, Path(tmp)
@@ -639,52 +567,7 @@ def test_money_compares_value_and_recipient(mod, tmp):
     import json as _json
 
     journey = bare(mod, tmp)
-    legs, receipts = _reject_valid_base(tmp)
-    passed, _, _ = journey.reject_agreement(legs, receipts)
-    check("money-valid-reject-passes", passed, "the valid reject base did not pass")
     cases = []
-    raw = Path(tmp, "reject-late.json").read_text()
-    doc = _json.loads(raw)
-    zero = _json.loads(raw)
-    zero["rejected"][0]["returned"] = dict(zero["rejected"][0]["returned"])
-    zero["rejected"][0]["returned"]["lovelace"] = 0
-    _write_receipt(tmp, "reject-late", zero)
-    passed_zero, _, _ = journey.reject_agreement(legs, receipts)
-    cases.append(("zero", not passed_zero))
-    foreign = _json.loads(raw)
-    foreign["rejected"][0]["returned"] = dict(foreign["rejected"][0]["returned"])
-    foreign["rejected"][0]["returned"]["recipient"] = (
-        "addr_test1_foreign_recipient_999999"
-    )
-    _write_receipt(tmp, "reject-late", foreign)
-    passed_foreign, _, _ = journey.reject_agreement(legs, receipts)
-    cases.append(("foreign", not passed_foreign))
-    correlated_full = _json.loads(raw)
-    correlated_full["rejected"][0]["tip"] = 3000000
-    correlated_full["rejected"][0]["returned"] = dict(
-        correlated_full["rejected"][0]["returned"]
-    )
-    correlated_full["rejected"][0]["returned"]["lovelace"] = 0
-    _write_receipt(tmp, "reject-late", correlated_full)
-    passed_corr_full, _, _ = journey.reject_agreement(legs, receipts)
-    cases.append(("correlated-3M-0", not passed_corr_full))
-    correlated_part = _json.loads(raw)
-    correlated_part["rejected"][0]["tip"] = 2000000
-    correlated_part["rejected"][0]["returned"] = dict(
-        correlated_part["rejected"][0]["returned"]
-    )
-    correlated_part["rejected"][0]["returned"]["lovelace"] = 1000000
-    _write_receipt(tmp, "reject-late", correlated_part)
-    passed_corr_part, _, _ = journey.reject_agreement(legs, receipts)
-    cases.append(("correlated-2M-1M", not passed_corr_part))
-    unrelated = _json.loads(raw)
-    unrelated["rejected"][0]["request"] = "ffff#0"
-    unrelated["rejected"][0]["returned"] = dict(unrelated["rejected"][0]["returned"])
-    unrelated["rejected"][0]["returned"]["request"] = "ffff#0"
-    _write_receipt(tmp, "reject-late", unrelated)
-    passed_unrelated, _, _ = journey.reject_agreement(legs, receipts)
-    cases.append(("unrelated", not passed_unrelated))
-    Path(tmp, "reject-late.json").write_text(raw)
     olegs, oreceipts = _owner_valid_base(tmp)
     opassed, _, _ = journey.owner_reclaim_agreement(olegs, oreceipts)
     check("money-valid-owner-passes", opassed, "the valid owner base did not pass")
@@ -711,7 +594,6 @@ def test_money_compares_value_and_recipient(mod, tmp):
     cases.append(("owner-unrelated", not opassed_unrelated))
     Path(tmp, "reclaim-success.json").write_text(oraw)
     _ = odoc
-    _ = doc
     failed = [name for name, ok in cases if not ok]
     check(
         "money-compares-value-and-recipient",
@@ -1320,23 +1202,23 @@ def test_trim_preserves_run_three_predicates(mod, tmp):
     journey = bare(mod, tmp)
     legs, receipts = _reject_valid_base(tmp)
     passed_untrimmed, _, _ = journey.reject_agreement(legs, receipts)
-    raw_booking = Path(tmp, "reject-alice-3-booking.json").read_text()
+    raw_booking = Path(tmp, "reject-retired-inspect-before.json").read_text()
     booking_doc = _json.loads(raw_booking)
     booking_doc["sessionEvidence"] = "x" * (
         getattr(mod, "TRIM_THRESHOLD_BYTES", 262144) + 1
     )
     raw_large = _json.dumps(booking_doc)
-    trimmed = mod.trim_record("insert", 0, raw_large)
-    Path(tmp, "reject-alice-3-booking.json").write_text(trimmed)
-    error = mod.check_record("reject-alice-3-booking.json", trimmed.encode())
-    check("trim-large-booking-is-record", error is None, error or "")
+    trimmed = mod.trim_record("inspect", 0, raw_large)
+    Path(tmp, "reject-retired-inspect-before.json").write_text(trimmed)
+    error = mod.check_record("reject-retired-inspect-before.json", trimmed.encode())
+    check("trim-large-readback-is-record", error is None, error or "")
     passed_trimmed, _, _ = journey.reject_agreement(legs, receipts)
     check(
-        "trim-large-booking-same-state",
+        "trim-large-readback-same-state",
         passed_untrimmed and passed_trimmed,
         f"untrimmed={passed_untrimmed} trimmed={passed_trimmed}",
     )
-    Path(tmp, "reject-alice-3-booking.json").write_text(raw_booking)
+    Path(tmp, "reject-retired-inspect-before.json").write_text(raw_booking)
     _ = _hashlib.sha256(raw_large.encode()).hexdigest()
 
 
@@ -1362,30 +1244,6 @@ def test_refusal_compares_pending_set(mod, tmp):
         "an after-inspect missing the request still passed",
     )
     Path(tmp, "reclaim-early-inspect-after.json").write_text(raw_after)
-
-
-def test_window_comes_from_registry(mod, tmp):
-    import json as _json
-
-    journey = bare(mod, tmp)
-    legs, receipts = _reject_valid_base(tmp)
-    passed_valid, _, _ = journey.reject_agreement(legs, receipts)
-    check(
-        "window-valid-reject-passes", passed_valid, "the valid reject base did not pass"
-    )
-    raw_before = Path(tmp, "reject-early-inspect-before.json").read_text()
-    doc_before = _json.loads(raw_before)
-    doc_before["retractTime"] = 30000
-    Path(tmp, "reject-early-inspect-before.json").write_text(
-        _json.dumps(doc_before) + "\n"
-    )
-    passed_tampered, _, waiting = journey.reject_agreement(legs, receipts)
-    check(
-        "window-comes-from-registry",
-        not passed_tampered,
-        f"a registry window disagreeing with the fixture still passed: {waiting}",
-    )
-    Path(tmp, "reject-early-inspect-before.json").write_text(raw_before)
 
 
 def test_trim_keeps_predicate_fields(mod, tmp):
@@ -2415,115 +2273,48 @@ def test_report_lists_marked_appendix_after_rows(mod, tmp):
     )
 
 
-REJECT_ROW = "Bob rejects Alice's expired request"
+def test_retired_reject_row_refuses_and_moves_nothing(mod, tmp):
+    """The retired reject passes only as a named refusal that moved nothing.
 
-
-def test_reject_row_names_the_registry_minimum_tip(mod, tmp):
-    """The tip the reject row compares against is the registry's minimum tip.
-
-    The state's second field is a floor (a booking declares at least it),
-    never a fee ceiling or bound; the row's reasons say so.
+    The row has no accepting control by ruling, so each of its parts is
+    shown able to fail: an accepted reject, a refusal that does not call the
+    command retired, another exit status, a moved root and a moved pending
+    set each turn the row down.
     """
     import json as _json
 
     journey = bare(mod, tmp)
     legs, receipts = _reject_valid_base(tmp)
-    raw = Path(tmp, "reject-late.json").read_text()
-    off = _json.loads(raw)
-    off["rejected"][0]["returned"] = dict(off["rejected"][0]["returned"])
-    off["rejected"][0]["returned"]["lovelace"] += 1
-    _write_receipt(tmp, "reject-late", off)
     passed, _, waiting = journey.reject_agreement(legs, receipts)
-    check(
-        "reject-refund-names-minimum-tip",
-        (not passed)
-        and "registry minimum tip" in waiting
-        and "fee" not in waiting.lower(),
-        f"the refund reason is {waiting!r}",
-    )
-    Path(tmp, "reject-late.json").write_text(raw)
-    Path(tmp, "fee-bound.json").unlink()
-    passed, _, waiting = journey.reject_agreement(legs, receipts)
-    check(
-        "reject-absent-tip-names-minimum-tip",
-        (not passed)
-        and "registry minimum tip" in waiting
-        and "fee" not in waiting.lower(),
-        f"the absent-tip reason is {waiting!r}",
-    )
-    # The receipts are shared by the cases that follow: put them back.
-    _reject_valid_base(tmp)
+    check("retired-reject-valid-passes", passed, f"the valid base failed: {waiting}")
+    raw_reject = Path(tmp, "reject-retired.json").read_text()
+    raw_after = Path(tmp, "reject-retired-inspect-after.json").read_text()
 
+    def verdict():
+        return journey.reject_agreement(legs, receipts)[0]
 
-def test_report_states_what_the_reject_row_observes(mod, tmp):
-    """Where the reject row is published, its scope is stated.
-
-    The leg observes the legacy state-spending rejection, which refunds the
-    held value minus the registry's minimum tip. The ruled behaviour (held
-    minus the declared tip, with the state read by reference) is not
-    covered by it, and a reader must not take the row for that law.
-    """
-    import contextlib as _contextlib
-    import io as _io
-    import json as _json
-
-    def row(name):
-        return {
-            "requirement": name,
-            "state": "passed",
-            "receipts": [],
-            "dependencies": [],
-            "waitingOn": "",
-        }
-
-    journey = bare(mod, tmp)
-    journey.appendix = [{"fixture": "development-network-and-registry"}]
-    out = _io.StringIO()
-    with _contextlib.redirect_stdout(out):
-        journey.report([row("R1"), row(REJECT_ROW)])
-    lines = out.getvalue().splitlines()
-    scope = [
-        i for i, line in enumerate(lines) if "legacy state-spending rejection" in line
-    ]
-    rows = [i for i, line in enumerate(lines) if line.endswith(": passed")]
-    appendix = [i for i, line in enumerate(lines) if "harness evidence" in line]
-    check(
-        "report-reject-scope-stated-once",
-        len(scope) == 1
-        and REJECT_ROW in lines[scope[0]]
-        and "held value minus the registry's minimum tip" in lines[scope[0]]
-        and "declared tip" in lines[scope[0]]
-        and "not covered" in lines[scope[0]],
-        f"the scope lines are {[lines[i] for i in scope]}",
-    )
-    check(
-        "report-reject-scope-between-rows-and-appendix",
-        bool(scope)
-        and bool(rows)
-        and bool(appendix)
-        and max(rows) < scope[0] < min(appendix),
-        "the scope line is not after the rows and before the appendix",
-    )
-    stored = _json.loads(Path(tmp, "journey.json").read_text())
-    notes = stored.get("scopeNotes")
-    check(
-        "report-reject-scope-stored",
-        list(stored.keys()) == ["requirements", "scopeNotes", "harnessAppendix"]
-        and isinstance(notes, list)
-        and len(notes) == 1
-        and notes[0].get("requirement") == REJECT_ROW
-        and "declared tip" in notes[0].get("scope", ""),
-        f"journey.json is {list(stored.keys())} with {notes}",
-    )
-    out = _io.StringIO()
-    with _contextlib.redirect_stdout(out):
-        journey.report([row("R1")])
-    check(
-        "report-no-scope-without-the-row",
-        "legacy" not in out.getvalue()
-        and "scopeNotes" not in _json.loads(Path(tmp, "journey.json").read_text()),
-        "a scope note appeared for a report without the reject row",
-    )
+    accepted = _json.loads(raw_reject)
+    accepted["outcome"] = "success"
+    _write_receipt(tmp, "reject-retired", accepted, exit_code=0)
+    check("retired-reject-accepted-fails", not verdict(), "an accepted reject passed")
+    unnamed = _json.loads(raw_reject)
+    unnamed["reason"] = "1 pending request is still inside a window: abc123#0"
+    _write_receipt(tmp, "reject-retired", unnamed, exit_code=10)
+    check("retired-reject-unnamed-fails", not verdict(), "a refusal not naming the retirement passed")
+    _write_receipt(tmp, "reject-retired", _json.loads(raw_reject), exit_code=11)
+    check("retired-reject-wrong-exit-fails", not verdict(), "a refusal with another exit passed")
+    _write_receipt(tmp, "reject-retired", _json.loads(raw_reject), exit_code=10)
+    check("retired-reject-restored-passes", verdict(), "the restored base failed")
+    moved = _json.loads(raw_after)
+    moved["root"] = "root000000000000000000000000000000000000000000000000000000000002"
+    _write_receipt(tmp, "reject-retired-inspect-after", moved)
+    check("retired-reject-moved-root-fails", not verdict(), "a moved root passed")
+    cleared = _json.loads(raw_after)
+    cleared["pendingRequests"] = []
+    _write_receipt(tmp, "reject-retired-inspect-after", cleared)
+    check("retired-reject-moved-pending-fails", not verdict(), "a cleared pending set passed")
+    Path(tmp, "reject-retired-inspect-after.json").write_text(raw_after)
+    check("retired-reject-final-passes", verdict(), "the final base failed")
 
 
 def _replay_fault_mocked(mod, tmp, faulted_outcome):
@@ -4380,7 +4171,6 @@ def main():
         test_nonzero_topup_survives_trim,
         test_trim_preserves_run_three_predicates,
         test_refusal_compares_pending_set,
-        test_window_comes_from_registry,
         test_trim_keeps_predicate_fields,
         test_record_tamper_is_detected,
         test_oversize_untrimmed_is_detected,
@@ -4398,8 +4188,7 @@ def main():
         test_runtime_removal_failure_is_setup,
         test_runtime_removal_failure_flows,
         test_report_lists_marked_appendix_after_rows,
-        test_reject_row_names_the_registry_minimum_tip,
-        test_report_states_what_the_reject_row_observes,
+        test_retired_reject_row_refuses_and_moves_nothing,
         test_replay_fault_control_passes,
         test_replay_fault_control_accepted_is_row_failure,
         test_replay_fault_control_needs_unpatched,

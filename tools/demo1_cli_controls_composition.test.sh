@@ -20,7 +20,7 @@ fail() {
   exit 1
 }
 
-clause='| `INV299-AUTHENTICATED` | inspect with the public history it needs withheld prints no leaf and names HistoryIncomplete | '
+clause='| inspect with the public history it needs withheld prints no leaf and names HistoryIncomplete | `INV299-AUTHENTICATED` | '
 alone="${clause}does not hold: the withholding never reached the command's history read: none of the registry's history reads was withheld |"
 beside="${clause}does not hold: the outcome is \"client-refusal\", not \"stale-state\"; the withholding never reached the command's history read: none of the registry's history reads was withheld |"
 

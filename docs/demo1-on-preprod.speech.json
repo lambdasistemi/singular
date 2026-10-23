@@ -11,6 +11,10 @@
     {
       "text": "When it works, a registry you created holds keys that Alice inserted, changed and terminated, that Bob folded for her, and that a new owner of the name took over; you have read every receipt and seen the refusals; and the transactions of your play are on preprod for anyone to look up. The steps take about seventy minutes on preprod, mostly waiting for two windows to pass.",
       "pause": 400
+    },
+    {
+      "text": "Release history. This runbook was played on preprod from release v0.12.0, which runs the earlier law. The tagged-request law of the next release changes three things you will read below. A termination no longer pays the deposit back to its controller: the fold donates the key's custody to the treasury, less the declared tip. A registry reject is retired: singular registry reject refuses by name (exit 10, outcome client-refusal) and submits nothing. And a request nobody folded stays pending until its owner takes it back with singular registry reclaim. The dated measurements below stay what the v0.12.0 play measured; follow the development-node page and the archive's own DEMO1.md for the release you are playing.",
+      "pause": 400
     }
   ],
   "what-has-run-where": [
@@ -263,7 +267,7 @@
       "pause": 500
     },
     {
-      "text": "The fold burns the key's token and pays the deposit back to Alice. Naming the request makes the fold an expectation: it is refused unless that request is among the ones it settles.",
+      "text": "The fold burns the key's token. In v0.12.0 it paid the deposit back to Alice; under the tagged-request law it donates the custody to the treasury, less the tip, and pays none of the custody to Alice. Naming the request makes the fold an expectation: it is refused unless that request is among the ones it settles.",
       "pause": 400
     }
   ],
@@ -277,13 +281,13 @@
       "pause": 400
     }
   ],
-  "step-11-reject-a-request-nobody-folded": [
+  "step-11-reject-a-request-nobody-folded-v0120-retired-since": [
     {
-      "text": "Step 11: reject a request nobody folded.",
+      "text": "Step 11: reject a request nobody folded (v0.12.0; retired since).",
       "pause": 500
     },
     {
-      "text": "A request that nobody folded and its owner did not take back stays pending past both its windows and blocks the registry's fold. Alice books one and nobody folds it. While either window is open a reject is refused and writes no bundle. That refusal is the first expected one: exit 10, the outcome client-refusal, and a receipt that names the slot where the retract window closes. When the ledger's tip passes that slot, any wallet may reject; here, Bob's, the external way.",
+      "text": "A request that nobody folded and its owner did not take back stays pending past both its windows and blocks the registry's fold. Alice books one and nobody folds it. In v0.12.0, while either window is open a reject is refused and writes no bundle. That refusal is the first expected one: exit 10, the outcome client-refusal, and a receipt that names the slot where the retract window closes. When the ledger's tip passes that slot, any wallet may reject; here, Bob's, the external way. That is history: the reject is retired, and under the tagged-request law the command refuses by name at any time, so the late request leaves by its owner's reclaim (step 14) instead.",
       "pause": 400
     },
     {
@@ -291,7 +295,7 @@
       "pause": 400
     },
     {
-      "text": "The reject cost 0.51 tADA. Alice's request returns to her less the 1 tADA folder's fee, which stays with Bob's wallet, and the registry's root does not move.",
+      "text": "In v0.12.0 the reject cost 0.51 tADA. Alice's request returned to her less the 1 tADA folder's fee, which stayed with Bob's wallet, and the registry's root did not move.",
       "pause": 400
     }
   ],
@@ -301,7 +305,7 @@
       "pause": 500
     },
     {
-      "text": "The cleared registry takes requests again. Bob books the key bob, signing externally; his own address is the controller.",
+      "text": "The registry takes requests again (in v0.12.0, once the reject had cleared the late request). Bob books the key bob, signing externally; his own address is the controller.",
       "pause": 400
     },
     {
@@ -343,7 +347,7 @@
       "pause": 500
     },
     {
-      "text": "The reclaimed request no longer blocks the registry.",
+      "text": "The reclaimed request no longer blocks the registry (and the same reclaim is how a late request leaves under the tagged-request law).",
       "pause": 400
     }
   ],
@@ -379,6 +383,6 @@
   ],
   "_source": {
     "file": "demo1-on-preprod.md",
-    "sha256": "df41360eadb78f25b86d299bc6eded350fa5b4e5208982ecf3afc72b6c708b0b"
+    "sha256": "0aab895f0198de2785902aa309860bb8f3e940d3170bf226cb1aa070134fac3f"
   }
 }

@@ -127,9 +127,10 @@ What the excluded transaction leaves on chain depends on the command.
 An excluded `update` leaves nothing: run it again. The fold of an
 `insert` or a `terminate` is the second of two transactions, and the
 first, its booking, is on chain: its request stays pending, holding its
-deposit. Use `registry fold` while its processing window allows it, `registry reclaim`
-with the owner's wallet in its retract window, or `registry reject` after both
-windows expire. An insertion's request carries its envelope on chain. A folder
+deposit. Use `registry fold` while its processing window allows it, or `registry reclaim`
+with the owner's wallet in its retract window. After both windows expire the
+request stays pending: `registry reject`, which once cleared it, is retired.
+An insertion's request carries its envelope on chain. A folder
 reads it publicly and reconstructs proofs from history; neither an insertion
 fold nor a termination fold needs the booker's files.
 

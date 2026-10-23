@@ -101,12 +101,13 @@ spec = describe "registry reclaim admission" $ do
                     , show (retractEnds bounds)
                     , "100"
                     ]
-    it "names the closing bound and how reject clears a closed request" $
-        renderReclaimRefusal (WindowClosed bounds 130 130)
+    it
+        "names the closing bound and says a closed request can no longer be taken back"
+        $ renderReclaimRefusal (WindowClosed bounds 130 130)
             `shouldSatisfy` \said ->
                 all
                     (`isInfixOf` said)
-                    ["closed", show (retractEnds bounds), "registry reject"]
+                    ["closed", show (retractEnds bounds), "can no longer be taken back"]
     it "requires the built interval to be nonempty and inside the window" $ do
         reclaimValidity 100 (DeadlineSlot 130) (Just 100) (Just 130)
             `shouldBe` True

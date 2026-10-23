@@ -162,8 +162,12 @@ name="$(basename "$step")"
 rejection="$(jq -r .rejectionFile "$step")"
 body="$(jq -r .bodyFile "$step")"
 sha256sum "$controls" "$step" "$work/$rejection" "$work/$body" >"$copies/inputs.sha256"
+# The report's row reads clause first, then the statement or row, then the
+# verdict (renderControls). The conformance suite runs this matcher and this
+# claim over the real renderer's report (Conformance.Support.CliControls,
+# "finds the duplicate refusal's failing row ...").
 # shellcheck disable=SC2016 # the backticks are the section's own Markdown
-claim='| `OpenDatumApplication.Statements.duplicate_refused_by_registry` | that request'"'"'s fold, submitted without local evaluation, is refused by the registry'"'"'s state validator | '
+claim='| that request'"'"'s fold, submitted without local evaluation, is refused by the registry'"'"'s state validator | `retired-booking-of-an-active-key` | '
 copy() {
   local kept
   rm -rf "${copies:?}/$1"

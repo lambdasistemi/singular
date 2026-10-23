@@ -36,7 +36,6 @@ import Conformance.Cli.Controls
     , commandName
     , controlsStory
     , craftedName
-    , duplicateRefused
     , duplicateStory
     , emptyReceipt
     , forbiddenInPermanent
@@ -44,6 +43,7 @@ import Conformance.Cli.Controls
     , indexerName
     , judge
     , obligationBindings
+    , observationBindings
     , outline
     , permanentStory
     , provocationName
@@ -51,6 +51,8 @@ import Conformance.Cli.Controls
     , renderControls
     , resolveObligation
     , resolveStatement
+    , retiredActiveKeyBooking
+    , retiredBookingBindings
     , statementBindings
     , validateControls
     )
@@ -89,7 +91,7 @@ import Data.ByteString.Lazy qualified as BL
 import Data.Char (isDigit, ord)
 import Data.Either (isLeft)
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
-import Data.List (isInfixOf, nub)
+import Data.List (isInfixOf, isPrefixOf, nub)
 import Data.Maybe (listToMaybe)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
@@ -101,8 +103,10 @@ import System.Directory
     , doesFileExist
     , removeFile
     )
+import System.Exit (ExitCode (..))
 import System.FilePath ((</>))
 import System.IO.Temp (withSystemTempDirectory)
+import System.Process (readProcessWithExitCode)
 import Test.Hspec
     ( Spec
     , describe
@@ -110,6 +114,7 @@ import Test.Hspec
     , pendingWith
     , shouldBe
     , shouldNotBe
+    , shouldReturn
     , shouldSatisfy
     )
 import Text.Printf (printf)
@@ -266,6 +271,9 @@ honestReceipts story = do
                                         updates
                                         (c == Inspect && leaf == EntryTerminal)
                                     )
+                            , rcRequestedPayload = case c of
+                                Update _ -> Just (askedPayload updates)
+                                _ -> Nothing
                             }
         Craft cr (Target t) k ->
             emit ("craft " <> T.pack (craftedName cr)) t k $ \r ->
@@ -514,22 +522,32 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
             map boName statementBindings
                 `shouldBe` map
                     ("OpenDatumApplication.Statements." <>)
-                    [ "duplicate_refused_by_registry"
-                    , "resurrection_refused_by_registry"
-                    , "insertion_holding_inline"
-                    , "update_keeps_registry"
-                    , "update_payload_free"
-                    , "release_burns_atomically"
+                    [ "update_payload_free"
                     , "update_requires_controller"
-                    , "update_preserves_custody"
-                    , "only_fold_releases"
-                    , "bookInsert_inversion"
-                    , "insertion_requires_registry_identity"
-                    , "bookTerminate_inversion"
-                    , "fold_settles_additively"
-                    , "fold_inversion"
-                    , "update_inversion"
                     ]
+            map boName observationBindings
+                `shouldBe` [ "insert-delivers-the-holding-inline-with-its-deposit"
+                           , "update-leaves-the-registry-root-and-pending-requests"
+                           , "update-refuses-a-continuation-that-changes-the-custody"
+                           , "accepted-update-replaces-the-payload-and-keeps-the-control"
+                           , "terminate-settles-the-booked-request-and-leaves-the-key-terminal"
+                           ]
+            map boDigest observationBindings
+                `shouldBe` replicate 5 "no-theorem-claimed"
+            map boRevision observationBindings
+                `shouldBe` replicate 5 "observation-without-statement"
+            map boName retiredBookingBindings
+                `shouldBe` [ "retired-booking-of-an-active-key"
+                           , "retired-booking-of-a-terminal-key"
+                           , "retired-release-outside-the-fold"
+                           , "retired-booking-of-an-insertion"
+                           , "retired-booking-names-the-registry"
+                           , "retired-booking-of-a-termination"
+                           , "retired-fold-pays-the-controller"
+                           , "retired-fold-releases-another-holding"
+                           ]
+            map boDigest retiredBookingBindings
+                `shouldBe` replicate 8 "no-theorem-claimed"
             found <-
                 firstExisting
                     [ "../applications/open-datum/ledgers.json"
@@ -553,13 +571,13 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
     it
         "states every clause once and refuses a refusal without an accepting control"
         $ do
-            length (outline controlsStory) `shouldBe` 120
+            length (outline controlsStory) `shouldBe` 122
             validateControls controlsStory `shouldBe` Right ()
             let refusedOnly =
-                    theorem duplicateRefused $
+                    theorem retiredActiveKeyBooking $
                         clause
                             "its fold is refused"
-                            (bindCheck duplicateRefused (\_ -> pure ()))
+                            (bindCheck retiredActiveKeyBooking (\_ -> pure ()))
                             (pure ())
             validateControls refusedOnly `shouldSatisfy` isLeft
             validateControls (duplicateStory >> refusedOnly)
@@ -569,9 +587,9 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
         $ do
             rs <- honestReceipts controlsStory
             let results = judge rs controlsStory
-            length results `shouldBe` 120
+            length results `shouldBe` 122
             [crStatus r | r <- results, not (retiredTitle (crTitle r))]
-                `shouldBe` replicate 118 Held
+                `shouldBe` replicate 120 Held
             [crStatus r | r <- results, retiredTitle (crTitle r)]
                 `shouldBe` replicate 2 (Retired selectorRetirement)
             held results `shouldBe` True
@@ -712,12 +730,12 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
         let report = renderControls (judge rs controlsStory) controlsStory
         report
             `shouldSatisfy` isInfixOf
-                ( "an insert with the saved application selector changed is refused before submitting | "
+                ( "an insert with the saved application selector changed is refused before submitting | `INV299-IDENTITY` | "
                     <> selectorRetirement
                 )
         report
             `shouldSatisfy` isInfixOf
-                ( "the same insert, with the selector restored, is accepted | "
+                ( "the same insert, with the selector restored, is accepted | `INV299-IDENTITY` | "
                     <> selectorRetirement
                 )
         report `shouldSatisfy` isInfixOf "; 2 are retired."
@@ -732,7 +750,7 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                         )
                         rs
                 results = judge dropped controlsStory
-            length results `shouldBe` 120
+            length results `shouldBe` 122
             take 4 (statuses results) `shouldBe` [Held, Held, Held, Held]
             [crStatus r | r <- drop 4 results, not (retiredTitle (crTitle r))]
                 `shouldSatisfy` all isUncovered
@@ -814,7 +832,7 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                         )
             renderControls (judge elsewhere controlsStory) controlsStory
                 `shouldSatisfy` isInfixOf
-                    "| `INV299-AUTHENTICATED` | inspect with the public history it needs withheld prints no leaf and names HistoryIncomplete | does not hold: "
+                    "| inspect with the public history it needs withheld prints no leaf and names HistoryIncomplete | `INV299-AUTHENTICATED` | does not hold: "
             renderControls (judge elsewhere controlsStory) controlsStory
                 `shouldSatisfy` isInfixOf
                     "the withholding never reached the command's history read"
@@ -1263,10 +1281,10 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
         rendered `shouldSatisfy` isInfixOf "uncovered: no receipt for step 3"
         rendered
             `shouldSatisfy` isInfixOf
-                "0 of 120 clauses hold; 0 do not; 118 are uncovered; 2 are retired."
+                "0 of 122 clauses hold; 0 do not; 120 are uncovered; 2 are retired."
         rendered
             `shouldSatisfy` isInfixOf
-                "`OpenDatumApplication.Statements.duplicate_refused_by_registry`"
+                "`OpenDatumApplication.Statements.update_payload_free`"
         rendered
             `shouldSatisfy` (\t -> not (any (\d -> ('#' : [d]) `isInfixOf` t) ['0' .. '9']))
     it
@@ -1313,7 +1331,9 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                 titled s results = [crStatus r | r <- results, s `isInfixOf` crTitle r]
             titled "root does not move" (judge moved controlsStory)
                 `shouldSatisfy` (\ss -> not (null ss) && all isNotHeld ss)
-            titled "releases its protected deposit" (judge kept controlsStory)
+            titled
+                "names the custody it spent and the protected deposit"
+                (judge kept controlsStory)
                 `shouldSatisfy` (\ss -> not (null ss) && all isNotHeld ss)
     it
         "does not hold a client obligation its process evidence contradicts"
@@ -1549,7 +1569,7 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                         )
                         controlsStory
                 alone =
-                    "| `INV299-AUTHENTICATED` | inspect with the public history it needs withheld prints no leaf and names HistoryIncomplete | does not hold: the withholding never reached the command's history read: none of the registry's history reads was withheld |"
+                    "| inspect with the public history it needs withheld prints no leaf and names HistoryIncomplete | `INV299-AUTHENTICATED` | does not hold: the withholding never reached the command's history read: none of the registry's history reads was withheld |"
             createDirectoryIfMissing True (work </> "evidence")
             createDirectoryIfMissing True (work </> "targets" </> "process")
             BS.writeFile (work </> T.unpack journal) ""
@@ -1593,12 +1613,12 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
         -- the ruled-out case stays visible and uncovered, citing its ruling
         full
             `shouldSatisfy` isInfixOf
-                "| an update whose continuation duplicates the token's carrier | `update_preserves_custody` | uncovered: the live suite runs no transaction for it"
+                "| an update whose continuation duplicates the token's carrier | observation row `update-refuses-a-continuation-that-changes-the-custody`, no model statement: `update_preserves_custody` is uncovered | uncovered: the live suite runs no transaction for it"
         full
             `shouldSatisfy` isInfixOf "specs/299-singular-cli/ruling-duplicate-carrier.md"
         partial
             `shouldSatisfy` isInfixOf
-                "| a release of the live holding outside any fold | `only_fold_releases` | uncovered"
+                "| a release of the live holding outside any fold | retired booking row `retired-release-outside-the-fold`, no model statement: not told on the tagged-request law | uncovered"
     it
         "never lets a retired promise stand for a live obligation beside it"
         $ do
@@ -1662,7 +1682,7 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                 [ crStatus r
                 | r <- results
                 , crStatement r
-                    == "OpenDatumApplication.Statements.resurrection_refused_by_registry"
+                    == "retired-booking-of-a-terminal-key"
                 ]
         take 1 resurrection `shouldSatisfy` all isNotHeld
         drop 1 resurrection
@@ -1687,7 +1707,7 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                     [ crStatus r
                     | r <- judge wrongLeaf controlsStory
                     , crStatement r
-                        == "OpenDatumApplication.Statements.resurrection_refused_by_registry"
+                        == "retired-booking-of-a-terminal-key"
                     ]
             take 1 premise `shouldSatisfy` all isNotHeld
             case take 1 premise of
@@ -1707,12 +1727,12 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                         rs
                 titled s results = [crStatus r | r <- results, s `isInfixOf` crTitle r]
             titled
-                "delivers the key's one token"
+                "delivers the key's holding in the registry create booted"
                 (judge insertBroken controlsStory)
                 `shouldSatisfy` (\ss -> not (null ss) && all isNotHeld ss)
             show
                 ( titled
-                    "delivers the key's one token"
+                    "delivers the key's holding in the registry create booted"
                     (judge insertBroken controlsStory)
                 )
                 `shouldSatisfy` isInfixOf "the journalled body b is missing"
@@ -1726,11 +1746,165 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                     [ crStatus r
                     | r <- judge createBroken controlsStory
                     , crStatement r
-                        == "OpenDatumApplication.Statements.resurrection_refused_by_registry"
+                        == "retired-booking-of-a-terminal-key"
                     ]
             take 1 resurrection `shouldSatisfy` all isNotHeld
             drop 1 resurrection
                 `shouldSatisfy` (\ss -> not (null ss) && all isUncovered ss)
+    it
+        "does not hold an update that stored another payload than the one the story asked for, though the update and the inspect report the same"
+        $ do
+            rs <- honestReceipts controlsStory
+            let constant = object ["bytes" .= ("ignored" :: String)]
+                -- a producer that ignores the input file stores one constant,
+                -- prints it, and the inspect after it reads it
+                ignoring =
+                    alter "run update" "lifecycle" (withPayload constant) $
+                        alter "run inspect" "lifecycle" (withPayload constant) rs
+                second = "a second update with an unrelated payload"
+                first = "the controller's update replaces the payload"
+                honest = judge rs controlsStory
+                refused = judge ignoring controlsStory
+            [rcRequestedPayload r | r <- rs, rcAction r == "run update"]
+                `shouldSatisfy` (\ps -> not (null ps) && all (/= Nothing) ps)
+            clauseStatuses second honest `shouldBe` [Held]
+            clauseStatuses first honest `shouldBe` [Held]
+            clauseStatuses second refused
+                `shouldSatisfy` (\ss -> not (null ss) && all isNotHeld ss)
+            clauseStatuses first refused
+                `shouldSatisfy` (\ss -> not (null ss) && all isNotHeld ss)
+            show (clauseStatuses second refused)
+                `shouldSatisfy` isInfixOf "asked it to store"
+    it
+        "finds the duplicate refusal's failing row, for the cause admission names, with the artifact control's own matcher and claim"
+        $ withSystemTempDirectory "claim-matcher"
+        $ \work -> do
+            -- The consumer, as tools/demo1_cli_controls.sh defines it: the
+            -- line matcher and the claim string. Nothing is retyped here.
+            found <-
+                firstExisting
+                    ["../tools/demo1_cli_controls.sh", "tools/demo1_cli_controls.sh"]
+            path <-
+                maybe
+                    (fail "tools/demo1_cli_controls.sh is not beside this build")
+                    pure
+                    found
+            script <- lines <$> readFile path
+            let matcher =
+                    takeWhile
+                        (/= "}")
+                        (dropWhile (not . isPrefixOf "line_with() {") script)
+                        <> ["}"]
+                claims = filter (isPrefixOf "claim=") script
+            length matcher `shouldSatisfy` (> 3)
+            length claims `shouldBe` 1
+            writeFile (work </> "consumer.sh") (unlines (matcher <> claims))
+            -- The duplicate refusal's retained evidence, admitted for real:
+            -- a body that decodes as the receipt's transaction and a node
+            -- rejection that yields the receipt's script attribution.
+            createDirectoryIfMissing True (work </> "evidence")
+            rs <- honestReceipts controlsStory
+            dup <- case [ r
+                        | r <- rs
+                        , rcAction r == "fold-unevaluated"
+                        , rcTarget r == "duplicate"
+                        ] of
+                r : _ -> pure r
+                [] -> fail "the story has no duplicate fold refusal"
+            let tx = underfundedTxOf 21
+                bodyBytes = underfundedBodyBytes tx
+                bodyFile = "evidence/step-f1.cbor.hex"
+                rejectionFile = "evidence/step-f1.rejection.txt"
+            -- the node's words for a validator that ran and failed, in the shape
+            -- its rejection has: the failure, the machine error, the script hash
+            let validatorHash = replicate 56 'a'
+                rejectionBytes =
+                    BC.pack
+                        ( "ValidationFailure (PlutusFailure (CekError An error has occurred: the fold takes a key the registry holds) (PlutusWithContext {pwcScriptHash = ScriptHash \""
+                            <> validatorHash
+                            <> "\"}))\n"
+                        )
+                (phaseWords, scripts) = rejectionEvidence (BC.unpack rejectionBytes)
+            scripts `shouldSatisfy` (not . null)
+            BS.writeFile (work </> bodyFile) bodyBytes
+            BS.writeFile (work </> rejectionFile) rejectionBytes
+            let retained =
+                    dup
+                        { rcTxId = Just (txIdHexOf tx)
+                        , rcBodyFile = Just (T.pack bodyFile)
+                        , rcBodySha256 = Just (sha256Hex bodyBytes)
+                        , rcRejectionFile = Just (T.pack rejectionFile)
+                        , rcRejectionSha256 = Just (sha256Hex rejectionBytes)
+                        , rcPhaseWords = phaseWords
+                        , rcRefusingScripts = scripts
+                        , rcStateValidator = listToMaybe scripts
+                        }
+                reportWith r =
+                    renderControls
+                        ( judge
+                            ( map
+                                ( \x ->
+                                    if rcAction x == "fold-unevaluated" && rcTarget x == "duplicate"
+                                        then r
+                                        else x
+                                )
+                                rs
+                            )
+                            controlsStory
+                        )
+                        controlsStory
+                account = rcAccount dup
+            honestAdmitted <- admit work retained
+            rcAdmission honestAdmitted `shouldBe` Just []
+            removeFile (work </> rejectionFile)
+            missingAdmitted <- admit work retained
+            cause <- case rcAdmission missingAdmitted of
+                Just [c] -> pure c
+                other ->
+                    fail
+                        ("expected the one missing-rejection cause, found " <> show other)
+            T.unpack cause
+                `shouldSatisfy` isInfixOf (rejectionFile <> " is missing")
+            let honestReport = reportWith honestAdmitted{rcAccount = account}
+                missingReport = reportWith missingAdmitted{rcAccount = account}
+                matches rpt explicit cause' = do
+                    writeFile (work </> "report.md") rpt
+                    (code, _, _) <-
+                        readProcessWithExitCode
+                            "bash"
+                            ( [ "-c"
+                              , ". \"$1\"; line_with \"$2\" \"${4:-$claim}\" \"$3\""
+                              , "bash"
+                              , work </> "consumer.sh"
+                              , work </> "report.md"
+                              , cause'
+                              ]
+                                <> maybe [] pure explicit
+                            )
+                            ""
+                    pure (code == ExitSuccess)
+            -- the retained rejection present: the claim row holds, and no
+            -- failure is found for it
+            matches honestReport Nothing "holds" `shouldReturn` True
+            matches honestReport Nothing ("does not hold: " <> T.unpack cause)
+                `shouldReturn` False
+            -- the retained rejection missing: the row fails for that cause,
+            -- and for no other
+            matches missingReport Nothing ("does not hold: " <> T.unpack cause)
+                `shouldReturn` True
+            matches
+                missingReport
+                Nothing
+                "does not hold: the retained body evidence/step-f1.cbor.hex is missing"
+                `shouldReturn` False
+            -- the statement-first claim of the earlier report layout finds nothing
+            matches
+                missingReport
+                ( Just
+                    "| `retired-booking-of-an-active-key` | that request\x27s fold, submitted without local evaluation, is refused by the registry\x27s state validator | "
+                )
+                ("does not hold: " <> T.unpack cause)
+                `shouldReturn` False
     it "does not hold a refusal whose retained evidence was not admitted" $ do
         rs <- honestReceipts controlsStory
         let unread =
@@ -1799,15 +1973,15 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                 (action (Run Create (Target "loose") "") >> controlsStory)
                 `shouldSatisfy` isLeft
             let unfounded =
-                    theorem duplicateRefused $ do
+                    theorem retiredActiveKeyBooking $ do
                         _ <-
                             clause
                                 "an absent key is accepted"
-                                (bindCheck duplicateRefused (\_ -> pure ()))
+                                (bindCheck retiredActiveKeyBooking (\_ -> pure ()))
                                 (pure ())
                         clause
                             "the fold is refused"
-                            (bindCheck duplicateRefused (\_ -> pure ()))
+                            (bindCheck retiredActiveKeyBooking (\_ -> pure ()))
                             (pure ())
             validateControls unfounded `shouldSatisfy` isLeft
 
@@ -1879,7 +2053,7 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                     `shouldBe` ["client-policy-booking-refused"]
                 [ t
                   | (s, t) <- rows
-                  , s == "OpenDatumApplication.Statements.update_inversion"
+                  , s == "accepted-update-replaces-the-payload-and-keeps-the-control"
                   , "is refused" `isInfixOf` t
                   ]
                     `shouldBe` []
@@ -2439,6 +2613,13 @@ commandMark c t k = case c of
     Insert -> t <> "/" <> k
     _ -> t <> ":" <> commandName c
 
+{- | The payload the story asks the next update to store, and, for the honest
+producer, the one the update prints and inspect then reads. The harness records
+it from the value it wrote; here it stands for that value.
+-}
+askedPayload :: Int -> Value
+askedPayload updates = object ["bytes" .= ("p" <> show (updates + 1))]
+
 -- | The receipts the ordinary commands print, consistent with one another.
 commandReceipt :: Command -> String -> Int -> Bool -> Value
 commandReceipt c k updates terminal = case c of
@@ -2476,7 +2657,7 @@ commandReceipt c k updates terminal = case c of
         object
             [ "outcome" .= ("success" :: String)
             , "liveOutput" .= ("u" <> show (updates + 1) <> "#0")
-            , "payload" .= payload ("p" <> show (updates + 1))
+            , "payload" .= askedPayload updates
             , "root" .= ("r1" :: String)
             ]
     Terminate ->
@@ -2490,7 +2671,12 @@ commandReceipt c k updates terminal = case c of
                         , "owner" .= ("c0" :: String)
                         , "settlement"
                             .= object
-                                [ "released" .= ("t#1" :: String)
+                                [ "terminated" .= ("t#1" :: String)
+                                , "custody"
+                                    .= ( if updates == 0
+                                            then "i#1"
+                                            else "u" <> show updates <> "#0"
+                                       )
                                 , "deposit" .= (2_000_000 :: Int)
                                 ]
                         , "deadline"
@@ -2583,6 +2769,21 @@ commandReceipt c k updates terminal = case c of
                    , payload p
                    ]
             ]
+
+-- | A command receipt with the payload it prints (or, for an inspect, reads) replaced.
+withPayload :: Value -> Receipt -> Receipt
+withPayload v r = r{rcCommand = fmap set (rcCommand r)}
+  where
+    set (Object o) = case KeyMap.lookup "applicationOutput" o of
+        Just (Object app) ->
+            Object
+                ( KeyMap.insert
+                    "applicationOutput"
+                    (Object (KeyMap.insert "payload" v app))
+                    o
+                )
+        _ -> Object (KeyMap.insert "payload" v o)
+    set x = x
 
 -- | Replace a command receipt's root.
 setRoot :: T.Text -> Value -> Value

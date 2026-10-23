@@ -28,9 +28,16 @@
 # refused) or `tagged-law: history` (an explanation of what was retired) on
 # the line or the line above it. Nothing else is excused.
 #
-# The instrument is checked first: every predicate is run on fixtures that
-# must pass and on fixtures that must fail, and a predicate that cannot fail
-# stops the run with status 2 before any row is judged.
+# The instrument is checked first, and the claim is bounded. Each predicate is
+# run on a fixture it must accept and, where its control below says it refuses,
+# on a fixture it must refuse; a control that fails stops the run with status 2
+# before any row is judged. A predicate whose control has no refusing fixture is
+# a gap in the instrument, not a proof. A passing row shows that a predicate
+# matched the tree. It does not show that the predicate catches every wording
+# of a retired construct: a notice, a limit or a mapping row is a text match,
+# and its full wording and owner are read in the handoff's correspondence
+# tables. No row is a product receipt or a hosted result; the summary line
+# counts the two kinds of row apart.
 #
 # usage: tagged_law_consumers_check.sh [REPO-ROOT]
 # exit 0: no row fails (residual rows do not count); 1: a row fails; 2: the instrument or a setup step
@@ -42,6 +49,8 @@ root="$(realpath -m "$root")"
 
 rows=0
 failing=0
+behavioral_rows=0
+inspection_rows=0
 work="$(mktemp -d)" || {
   echo "tagged-law-consumers: SETUP: no scratch directory" >&2
   exit 2
@@ -56,6 +65,10 @@ residual() { # SECTION LABEL DETAIL
 
 row() { # SECTION KIND LABEL PASS|FAIL [DETAIL]
   rows=$((rows + 1))
+  case "$2" in
+    behavioral) behavioral_rows=$((behavioral_rows + 1)) ;;
+    *) inspection_rows=$((inspection_rows + 1)) ;;
+  esac
   if [ "$4" = PASS ]; then
     printf 'TAGGED-LAW: [%s] %s: %s: PASS%s\n' "$2" "$1" "$3" "${5:+ — $5}"
   else
@@ -125,6 +138,34 @@ statement_variables() { # FILE
     }' "$1"
 }
 
+# The observation rows of the controls module: prints `name variable`, a row
+# being a definition `x =` whose next line is `observationRow "name"`. A row
+# claims no statement; the statement it bears on is published as uncovered.
+observation_rows() { # FILE
+  awk '
+    /^[a-z][A-Za-z0-9_]* =$/ { v = $1; pending = 0; next }
+    v != "" && match($0, /observationRow "[a-z0-9-]+"/) { print substr($0, RSTART + 16, RLENGTH - 17), v; v = ""; next }
+    v != "" && /^[[:space:]]+observationRow$/ { pending = 1; next }
+    v != "" && pending && match($0, /"[a-z0-9-]+"/) { print substr($0, RSTART + 1, RLENGTH - 2), v; v = ""; pending = 0; next }
+    { v = ""; pending = 0 }' "$1"
+}
+
+# The number of bindings one list of the controls module holds: the
+# `theoremBinding` lines between `NAME =` and the list's closing bracket.
+list_length() { # FILE NAME
+  awk -v n="$2" '
+    $0 == n " =" { inlist = 1; next }
+    inlist && /theoremBinding/ { c++ }
+    inlist && /^    \]/ { print c + 0; done = 1; exit }
+    END { if (!done) print 0 }' "$1"
+}
+
+# A count as the pages write it, in words (0 to 20).
+number_word() { # N
+  local words=(zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen twenty)
+  printf '%s' "${words[$1]}"
+}
+
 # Whether the ledger carries the statement under the digest, proved: prints
 # `ok` or the reason.
 ledger_verdict() { # LEDGER NAME DIGEST
@@ -167,15 +208,30 @@ arm_expects_state_validator() { # ARM
 
 # Whether a row of the retained-command table says the command is not retold
 # on the tagged-request law.
-retained_row_ok() { # ROW
-  grep -qiE 'not retold' <<<"$1" && grep -qi 'tagged-request law' <<<"$1"
+# A row of the retained-command table says, in these words, that the command is
+# not retold, built or verified on the tagged-request law, names its owning
+# issue, and, for an issue closed as not planned, says so.
+retained_row_ok() { # ROW OWNER-ISSUE [open|closed]
+  grep -qi 'not retold, built or verified on the tagged-request law' <<<"$1" \
+    && grep -qE "issues/$2([^0-9]|\$)" <<<"$1" \
+    && { [ "${3:-open}" != closed ] || grep -qi 'closed as not planned' <<<"$1"; }
 }
 
-# Whether some line of the files naming the topic also says it is uncovered.
+# Whether some line of the files names the topic and then says it is
+# uncovered (the topic before the word, on one line).
 published_uncovered() { # ERE FILE...
   local re="$1"
   shift
-  cat "$@" | grep -iE -- "$re" | grep -qi 'uncovered'
+  grep -hqiE -- "($re).*uncovered" "$@"
+}
+
+# Whether a table row of the files has the statement, in backquotes, as one of
+# its cells and a later cell that begins with the word uncovered. The first
+# cell of a row is the requirement in words; the statement is its traceability.
+published_uncovered_row() { # NAME FILE...
+  local name="$1"
+  shift
+  grep -hqiE -- "^\\|([^|]*\\|)*[[:space:]]*\`$name\`[[:space:]]*\\|([^|]*\\|)*[[:space:]]*uncovered" "$@"
 }
 
 # Whether the Limits section of the pull-request text states a limit.
@@ -183,16 +239,90 @@ limit_stated() { # FILE ERE
   sed -n '/^## Limits/,$p' "$1" | grep -qiE -- "$2"
 }
 
-# The job id (in backquotes) a page names on a line that names the suite;
-# prints it, or nothing.
+# The job id (in backquotes) a page names on a line that names the suite as a
+# whole name (`cage-tests` is not found inside `cage-tests-e2e`); prints it, or
+# nothing.
 mapped_job() { # SUITE PAGE JOBS
   local suite="$1" page="$2" jobs="$3" line j found=""
   while IFS= read -r line; do
     for j in $jobs; do
       case "$line" in *"\`$j\`"*) found="$j" ;; esac
     done
-  done < <(grep -F -- "$suite" "$page")
+  done < <(grep -E -- "(^|[^-A-Za-z0-9.])$suite([^-A-Za-z0-9]|\$)" "$page")
   [ -z "$found" ] || printf '%s\n' "$found"
+}
+
+# Whether the workflows' job runs the suite: a line of the job's own block
+# carries the suite's command. Prints nothing; the status is the answer.
+suite_command() { # SUITE -> ERE of the command line that runs it
+  case "$1" in
+    cage-tests) printf '%s' '[.]#cage-tests([[:space:]]|$)' ;;
+    e2e-tests) printf '%s' '[.]#cage-tests-e2e' ;;
+    contract-tests) printf '%s' '[.]#contract-tests' ;;
+    record-value-tests) printf '%s' '[.]#record-value-tests' ;;
+    conformance-tests) printf '%s' '[.]#conformance-appendix-tests' ;;
+    cleanup-control) printf '%s' 'evaluation-cleanup-controls' ;;
+    open-datum-tests) printf '%s' '[.]#open-datum-tests' ;;
+    keri-stub-tests) printf '%s' '[.]#keri-stub-tests' ;;
+    *) printf '%s' "[.]#$1" ;;
+  esac
+}
+job_runs() { # SUITE JOB WORKFLOW...
+  local suite="$1" job="$2" re
+  shift 2
+  re="$(suite_command "$suite")"
+  awk -v job="$job" '
+    FNR == 1 { inblock = 0 }
+    /^  [A-Za-z0-9_-]+:[[:space:]]*$/ { name = $1; sub(/:$/, "", name); inblock = (name == job); next }
+    inblock { print }' "$@" | grep -E -- "$re" >/dev/null
+}
+
+# Every refused attempt of the retired reject in FILE (a step `refused NAME
+# client-refusal -- registry reject`) is followed, within four lines, by a check
+# of that step's own receipt for the word retired. Needs at least one attempt.
+retired_reject_attempt_checked() { # FILE
+  awk '
+    { lines[NR] = $0 }
+    END {
+      attempts = 0; bad = 0
+      for (i = 1; i <= NR; i++) {
+        if (match(lines[i], /refused[ \t]+[A-Za-z0-9-]*reject[A-Za-z0-9-]*[ \t]+client-refusal[ \t]+--[ \t]+registry reject/)) {
+          attempts++
+          step = lines[i]; sub(/^.*refused[ \t]+/, "", step); sub(/[ \t].*$/, "", step)
+          ok = 0
+          for (j = i + 1; j <= i + 4 && j <= NR; j++) if (index(lines[j], "receipts/" step ".json") && index(lines[j], "retired")) ok = 1
+          for (j = i + 1; j <= i + 4 && j <= NR; j++) if (index(lines[j], "receipts/" step ".json")) { for (k = i + 1; k <= j; k++) if (index(lines[k], "retired")) ok = 1 }
+          if (!ok) bad++
+        }
+      }
+      exit (attempts > 0 && bad == 0) ? 0 : 1
+    }' "$1"
+}
+
+# The funding script obtains its non-ada outputs by the harness setup step
+# `carry` and judges that step's own receipt as a harness mint.
+labelled_mint() { # FILE
+  grep -qE '"[$]devnet" carry' "$1" && grep -qE '[.]setup == "harness-mint"' "$1"
+}
+
+# The marker lines of FILE (a trailing `tagged-law:` marker, or a comment-only
+# one that excuses the next line) whose excused line does not match ERE: a
+# marker that excuses nothing is decoration, and prints as `line:text`.
+idle_markers() { # FILE ERE
+  local hits
+  hits="$(grep -nE -e "$2" "$1" | cut -d: -f1 | tr '\n' ' ' || true)"
+  awk -v hits="$hits" '
+    BEGIN { n = split(hits, H, " "); for (i = 1; i <= n; i++) want[H[i]] = 1 }
+    { lines[NR] = $0 }
+    END {
+      for (i = 1; i <= NR; i++) {
+        t = lines[i]
+        if (t !~ /tagged-law: (retired|history)/) continue
+        s = t; sub(/^[ \t]+/, "", s)
+        target = (s ~ /^(#|--|\/\/)/) ? i + 1 : i
+        if (!(target in want)) printf "%d:%s\n", i, substr(t, 1, 120)
+      }
+    }' "$1"
 }
 
 # The numbers a hash-comparison report line states against the labels that
@@ -266,9 +396,57 @@ betaVar =
 
 policyVar :: Theorem Policy
 policyVar = bindTheorem (mkBoundObligation "client-policy-booking-refused" "no-theorem-claimed" "client-policy")
+
+gammaVar
+    :: Theorem Gamma
+gammaVar =
+    bound
+        "gamma_statement"
+        "5555555555555555555555555555555555555555555555555555555555555555"
 EOF
-  [ "$(statement_variables "$d/Variables.hs" | sort | tr '\n' ';')" = "alpha_statement alphaVar;beta_statement betaVar;" ] \
+  [ "$(statement_variables "$d/Variables.hs" | sort | tr '\n' ';')" = "alpha_statement alphaVar;beta_statement betaVar;gamma_statement gammaVar;" ] \
     || instrument_fail "statement_variables: wrong variables read from the fixture: $(statement_variables "$d/Variables.hs" | tr '\n' ';')"
+
+  # observation_rows, list_length and number_word: the module's own lists,
+  # counted rather than typed.
+  cat >"$d/Observations.hs" <<'EOF'
+alphaObs :: Theorem AlphaObs
+alphaObs =
+    observationRow "alpha-observation-row"
+
+plain =
+    bindTheorem (mkBoundObligation "client-policy-booking-refused" "no-theorem-claimed" "client-policy")
+
+betaObs :: Theorem BetaObs
+betaObs =
+    observationRow "beta-observation-row"
+
+gammaObs :: Theorem GammaObs
+gammaObs =
+    observationRow
+        "gamma-observation-row"
+
+observationRow :: String -> Theorem thm
+observationRow name =
+    bindTheorem (mkBoundObligation name "no-theorem-claimed" "observation-without-statement")
+
+firstBindings :: [Binding]
+firstBindings =
+    [ theoremBinding one
+    , theoremBinding two
+    ]
+
+secondBindings :: [Binding]
+secondBindings =
+    [ theoremBinding three
+    ]
+EOF
+  [ "$(observation_rows "$d/Observations.hs" | tr '\n' ';')" = "alpha-observation-row alphaObs;beta-observation-row betaObs;gamma-observation-row gammaObs;" ] \
+    || instrument_fail "observation_rows: wrong rows read from the fixture: $(observation_rows "$d/Observations.hs" | tr '\n' ';')"
+  [ "$(list_length "$d/Observations.hs" firstBindings)" = 2 ] && [ "$(list_length "$d/Observations.hs" secondBindings)" = 1 ] && [ "$(list_length "$d/Observations.hs" absentBindings)" = 0 ] \
+    || instrument_fail "list_length: wrong lengths read from the fixture"
+  [ "$(number_word 14)" = fourteen ] && [ "$(number_word 2)" = two ] && [ "$(number_word 16)" = sixteen ] \
+    || instrument_fail "number_word: wrong words"
 
   # ledger_verdict: ok, missing, wrong digest, not proved.
   cat >"$d/ledgers.json" <<'EOF'
@@ -392,16 +570,33 @@ EOF
     || instrument_fail "arm_expects_state_validator: the commands arm alone was accepted"
 
   # A row of the retained-command table.
-  retained_row_ok "| \`nix run .#li01\` | unavailable: not retold, built or verified on the tagged-request law | #172 |" \
+  retained_row_ok "| \`nix run .#li01\` | not retold, built or verified on the tagged-request law; unavailable | [#172](https://github.com/x/y/issues/172) |" 172 \
     || instrument_fail "retained_row_ok: a row that says it was accepted wrongly refused"
-  ! retained_row_ok "| \`nix run .#li01\` | unavailable: unverified, no passing build evidence | #172 |" \
+  ! retained_row_ok "| \`nix run .#li01\` | unavailable: unverified, no passing build evidence | [#172](https://github.com/x/y/issues/172) |" 172 \
     || instrument_fail "retained_row_ok: a row without the statement was accepted"
+  ! retained_row_ok "| \`nix run .#li01\` | not retold, built or verified on the tagged-request law | [#173](https://github.com/x/y/issues/173) |" 172 \
+    || instrument_fail "retained_row_ok: a row naming another owner was accepted"
+  retained_row_ok "| \`x\` | not retold, built or verified on the tagged-request law | [#283](https://github.com/x/y/issues/283), closed as not planned: a non-goal |" 283 closed \
+    || instrument_fail "retained_row_ok: a closed-as-not-planned row wrongly refused"
+  ! retained_row_ok "| \`x\` | not retold, built or verified on the tagged-request law | [#283](https://github.com/x/y/issues/283) |" 283 closed \
+    || instrument_fail "retained_row_ok: a closed row that does not say so was accepted"
 
   # Publication as uncovered, and the Limits section.
   printf '%s\n' 'The sweep is uncovered.' >"$d/pub-yes.md"
   printf '%s\n' 'The sweep is covered by a row.' >"$d/pub-no.md"
   published_uncovered 'sweep' "$d/pub-yes.md" || instrument_fail "published_uncovered: an uncovered topic was missed"
   ! published_uncovered 'sweep' "$d/pub-no.md" || instrument_fail "published_uncovered: a covered topic was accepted"
+  printf '%s\n' 'Everything uncovered is listed; the sweep is covered.' >"$d/pub-before.md"
+  ! published_uncovered 'sweep' "$d/pub-before.md" || instrument_fail "published_uncovered: the word before the topic was accepted"
+  printf '%s\n' "| \`alpha_statement\` | uncovered because no clause tells it | a retired row |" >"$d/pub-row.md"
+  published_uncovered_row alpha_statement "$d/pub-row.md" || instrument_fail "published_uncovered_row: an uncovered row was missed"
+  printf '%s\n' "| \`beta_statement\` | the receipts show it | nothing is uncovered here |" "The statement \`alpha_statement\` is mentioned, uncovered, in prose." >"$d/pub-row-no.md"
+  ! published_uncovered_row beta_statement "$d/pub-row-no.md" || instrument_fail "published_uncovered_row: a told row that says 'uncovered' in prose of its last cell was accepted"
+  ! published_uncovered_row alpha_statement "$d/pub-row-no.md" || instrument_fail "published_uncovered_row: a prose mention was accepted as a row"
+  printf '%s\n' "| A requirement in words | \`gamma_statement\` | uncovered: no clause tells it | a row that runs instead |" "| A told requirement | \`delta_statement\` | the receipts show it | the conjuncts it does not show are uncovered, in prose |" >"$d/pub-row-words.md"
+  published_uncovered_row gamma_statement "$d/pub-row-words.md" || instrument_fail "published_uncovered_row: a requirement-led row with the statement in its second cell was missed"
+  ! published_uncovered_row delta_statement "$d/pub-row-words.md" || instrument_fail "published_uncovered_row: a told requirement-led row was accepted as uncovered"
+  ! published_uncovered_row epsilon_statement "$d/pub-row-words.md" || instrument_fail "published_uncovered_row: a statement named by no row was accepted"
   printf '%s\n' '## How to verify' 'The BadInputsUTxO case is not claimed above.' '## Limits' 'MissingVKeyWitnessesUTXOW is left to the signer.' >"$d/pr.md"
   limit_stated "$d/pr.md" 'MissingVKeyWitnessesUTXOW' || instrument_fail "limit_stated: a stated limit was missed"
   ! limit_stated "$d/pr.md" 'BadInputsUTxO' || instrument_fail "limit_stated: a mention above the Limits section was accepted"
@@ -412,10 +607,72 @@ EOF
     || instrument_fail "mapped_job: a named job was not found"
   [ -z "$(mapped_job keri-stub-tests "$d/selection.md" 'registry-cage-tests other-job')" ] \
     || instrument_fail "mapped_job: a job was invented for a suite that names none"
+  # job_runs: a job runs the suite whose command its own block carries, and not
+  # the suite whose name is a prefix of that command.
+  mkdir -p "$d/wf"
+  cat >"$d/wf/w.yml" <<'EOF2'
+jobs:
+  unit:
+    steps:
+      - run: nix run --quiet .#cage-tests
+  lanes:
+    steps:
+      - run: nix run --quiet .#cage-tests-e2e -- --match lane
+EOF2
+  job_runs cage-tests unit "$d/wf/w.yml" || instrument_fail "job_runs: a job that runs the suite was refused"
+  ! job_runs cage-tests lanes "$d/wf/w.yml" || instrument_fail "job_runs: a job running only the longer suite name was accepted for the shorter"
+  job_runs e2e-tests lanes "$d/wf/w.yml" || instrument_fail "job_runs: the lanes job was not accepted for the end-to-end suite"
+  ! job_runs cage-tests missing "$d/wf/w.yml" || instrument_fail "job_runs: an absent job was accepted"
 
-  # The registry hygiene function, taken from the tool: it must accept a patch
-  # that removes exactly its two anchored statements inside applyEdge and
-  # refuse one that removes only one.
+  # retired_reject_attempt_checked: the refused attempt's own receipt is checked
+  # for the word retired.
+  cat >"$d/reject-yes.sh" <<'EOF2'
+refused reject-retired client-refusal -- registry reject "${common[@]}"
+jq -e '.reason | contains("retired")' "$receipts/reject-retired.json" >/dev/null || fail x
+EOF2
+  cat >"$d/reject-no.sh" <<'EOF2'
+refused reject-retired client-refusal -- registry reject "${common[@]}"
+jq -e '.reason | contains("window")' "$receipts/reject-retired.json" >/dev/null || fail x
+refused reject-other client-refusal -- registry reject "${common[@]}"
+EOF2
+  retired_reject_attempt_checked "$d/reject-yes.sh" || instrument_fail "retired_reject_attempt_checked: a checked attempt was refused"
+  ! retired_reject_attempt_checked "$d/reject-no.sh" || instrument_fail "retired_reject_attempt_checked: an attempt whose reason is not checked for retired was accepted"
+  : >"$d/reject-none.sh"
+  ! retired_reject_attempt_checked "$d/reject-none.sh" || instrument_fail "retired_reject_attempt_checked: a file with no attempt was accepted"
+
+  # labelled_mint: the harness step and the judgement of its receipt.
+  cat >"$d/mint-yes.sh" <<'EOF2'
+"$devnet" carry "${node[@]}" --receipt r.json
+jq -e '.setup == "harness-mint"' r.json
+EOF2
+  cat >"$d/mint-no.sh" <<'EOF2'
+"$devnet" carry "${node[@]}" --receipt r.json
+EOF2
+  labelled_mint "$d/mint-yes.sh" || instrument_fail "labelled_mint: a labelled mint was refused"
+  ! labelled_mint "$d/mint-no.sh" || instrument_fail "labelled_mint: a mint whose receipt is not judged as a harness mint was accepted"
+
+  # idle_markers: a marker that excuses a retired read is used; one that sits
+  # over a line the patterns do not match excuses nothing.
+  cat >"$d/markers.sh" <<'EOF2'
+# tagged-law: retired - the retired read below is a refusal control
+x="$(field step .released)"
+# tagged-law: history - this explains nothing the patterns count
+y="$(field step .live)"
+z="$(field step .released)" # tagged-law: history
+w="$(field step .live)" # tagged-law: retired
+EOF2
+  [ "$(idle_markers "$d/markers.sh" '[.]released' | cut -d: -f1 | tr '\n' ' ')" = "3 6 " ] \
+    || instrument_fail "idle_markers: wrong idle markers read from the fixture: $(idle_markers "$d/markers.sh" '[.]released' | cut -d: -f1 | tr '\n' ' ')"
+
+  printf '%s\n' "The \`cage-tests-e2e\` lanes run in \`lane-job\`." >"$d/selection2.md"
+  [ -z "$(mapped_job cage-tests "$d/selection2.md" 'lane-job')" ] \
+    || instrument_fail "mapped_job: a suite was mapped to the job of a longer suite name that contains it"
+
+  # The registry hygiene function, taken from the tool: for each of the two
+  # registry files it must accept a patch that removes exactly the anchored
+  # statements inside the function it names and refuse one that removes an
+  # extra line, one that removes only some of the anchors, and one that edits
+  # outside the function.
   local fn
   fn="$(sed -n '/^registry_patch_hygiene_ok() {$/,/^}$/p' "$root/tools/negative_host_mutants.sh")"
   [ -n "$fn" ] || instrument_fail "the registry hygiene function is not in tools/negative_host_mutants.sh"
@@ -423,42 +680,76 @@ EOF
     cd "$d" || exit 1
     rm -rf hyg && mkdir -p hyg/onchain/lib/registry && cd hyg || exit 1
     git init -q . && git config user.email t@t && git config user.name t
-    cat >onchain/lib/registry/fold.ak <<'EOF'
+    cat >onchain/lib/registry/fold.ak <<'EOF2'
 use x
 
-fn applyEdge(acc, key) {
+fn step(acc, key) {
   let p1 = 1
   let p2 = 2
   let p3 = 3
-  let a = lib.occupiedRefusal()
-  let b = mpf.insert(acc.trie, key, leafActive, proof)
+  Evolved { refusal: lib.occupiedRefusal(), trie }
   let q1 = 4
   let q2 = 5
   let q3 = 6
-  b
+  q3
 }
 
 fn other() {
   1
 }
-EOF
+EOF2
+    cat >onchain/lib/registry/modify.ak <<'EOF2'
+use x
+
+fn routing(acc, key) {
+  let p1 = 1
+  let p2 = 2
+  let p3 = 3
+        } else if donationOf(treasury_donation) != owedDonation(members) {
+          Some(@"fold-donation-mismatch")
+  let q1 = 4
+  let q2 = 5
+  let q3 = 6
+  q3
+}
+
+fn other() {
+  1
+}
+EOF2
     git add -A && git commit -q -m base
-    grep -v 'lib.occupiedRefusal()\|mpf.insert(acc.trie, key, leafActive, proof)' onchain/lib/registry/fold.ak >fold.new
+    # fold.ak: the anchor replaced inside step (good); the anchor and a
+    # neighbouring line removed (extra); the anchor replaced and a line of
+    # other() edited (outside)
     cp onchain/lib/registry/fold.ak fold.old
-    cp fold.new onchain/lib/registry/fold.ak
-    git diff >../good.patch
+    sed 's/Evolved { refusal: lib.occupiedRefusal(), trie }/Evolved { refusal: None, trie }/' fold.old >onchain/lib/registry/fold.ak
+    git diff >../fold-good.patch
     cp fold.old onchain/lib/registry/fold.ak
-    grep -v 'lib.occupiedRefusal()' onchain/lib/registry/fold.ak >fold.new
-    cp fold.new onchain/lib/registry/fold.ak
-    git diff >../one.patch
+    grep -v 'Evolved { refusal: lib.occupiedRefusal(), trie }\|let q1 = 4' fold.old >onchain/lib/registry/fold.ak
+    git diff >../fold-extra.patch
     cp fold.old onchain/lib/registry/fold.ak
+    sed -e 's/Evolved { refusal: lib.occupiedRefusal(), trie }/Evolved { refusal: None, trie }/' -e 's/^  1$/  2/' fold.old >onchain/lib/registry/fold.ak
+    git diff >../fold-outside.patch
+    cp fold.old onchain/lib/registry/fold.ak
+    # modify.ak: both anchors replaced (good); only the condition replaced
+    cp onchain/lib/registry/modify.ak modify.old
+    sed -e 's/donationOf(treasury_donation) != owedDonation(members)/False \&\& donationOf(treasury_donation) != owedDonation(members)/' -e 's/Some(@"fold-donation-mismatch")/None/' modify.old >onchain/lib/registry/modify.ak
+    git diff >../modify-good.patch
+    cp modify.old onchain/lib/registry/modify.ak
+    sed -e 's/donationOf(treasury_donation) != owedDonation(members)/False \&\& donationOf(treasury_donation) != owedDonation(members)/' modify.old >onchain/lib/registry/modify.ak
+    git diff >../modify-one.patch
+    cp modify.old onchain/lib/registry/modify.ak
   ) >/dev/null 2>&1 || instrument_fail "could not build the hygiene fixtures"
   (
     eval "$fn"
-    registry_patch_hygiene_ok "$d/good.patch" onchain/lib/registry/fold.ak "$d/hyg/onchain/lib/registry/fold.ak" || exit 1
-    registry_patch_hygiene_ok "$d/one.patch" onchain/lib/registry/fold.ak "$d/hyg/onchain/lib/registry/fold.ak" && exit 1
+    hyg="$d/hyg/onchain/lib/registry"
+    registry_patch_hygiene_ok "$d/fold-good.patch" onchain/lib/registry/fold.ak "$hyg/fold.ak" || exit 1
+    registry_patch_hygiene_ok "$d/fold-extra.patch" onchain/lib/registry/fold.ak "$hyg/fold.ak" && exit 1
+    registry_patch_hygiene_ok "$d/fold-outside.patch" onchain/lib/registry/fold.ak "$hyg/fold.ak" && exit 1
+    registry_patch_hygiene_ok "$d/modify-good.patch" onchain/lib/registry/modify.ak "$hyg/modify.ak" || exit 1
+    registry_patch_hygiene_ok "$d/modify-one.patch" onchain/lib/registry/modify.ak "$hyg/modify.ak" && exit 1
     exit 0
-  ) >/dev/null 2>&1 || instrument_fail "registry_patch_hygiene_ok: the good patch was refused or the one-anchor patch accepted"
+  ) >/dev/null 2>&1 || instrument_fail "registry_patch_hygiene_ok: a good patch was refused, or an extra-line, outside-the-function or one-anchor patch was accepted"
 
   echo "tagged-law-consumers: instrument controls held"
 }
@@ -517,6 +808,56 @@ section_bindings() {
       row "$s" inspection "bound statement $name is told by a story ($variable)" FAIL "no 'theorem $variable' clause in the controls module"
     fi
   done < <(statement_variables "$controls_hs")
+  # An observation row claims no statement. It is told by a story, and the page
+  # names it beside the statement it bears on, which is published as uncovered.
+  local obs_name obs_var
+  while read -r obs_name obs_var; do
+    [ -n "$obs_name" ] || continue
+    if grep -qE "theorem[[:space:]]+$obs_var([[:space:]]|\$)" "$controls_hs"; then
+      row "$s" inspection "observation row $obs_name is told by a story ($obs_var)" PASS
+    else
+      row "$s" inspection "observation row $obs_name is told by a story ($obs_var)" FAIL "no 'theorem $obs_var' clause in the controls module"
+    fi
+    if grep -qF -- "\`$obs_name\`" "$root/docs/consumer-conformance.md"; then
+      row "$s" inspection "docs/consumer-conformance.md names observation row $obs_name" PASS
+    else
+      row "$s" inspection "docs/consumer-conformance.md names observation row $obs_name" FAIL "the page does not name it in backquotes"
+    fi
+  done < <(observation_rows "$controls_hs")
+  # The counts the pages state are the lengths of the module's own lists and of
+  # the accepted statements, written in words; none is typed in this tool.
+  local told_n obs_n retired_n policy_n frozen_n uncovered_n silent_n phrase
+  local page="$root/docs/consumer-conformance.md" pr="$root/specs/529-request-tag/pull-request.md"
+  told_n="$(list_length "$controls_hs" statementBindings)"
+  obs_n="$(list_length "$controls_hs" observationBindings)"
+  retired_n="$(list_length "$controls_hs" retiredBookingBindings)"
+  policy_n="$(list_length "$controls_hs" clientPolicyBindings)"
+  frozen_n="$(printf '%s\n' "$frozen_statements" | sed '/^$/d' | wc -l | tr -d ' ')"
+  uncovered_n=$((frozen_n - told_n))
+  silent_n=$((retired_n + policy_n + obs_n))
+  if [ "$told_n" = "$(bound_pairs "$controls_hs" | wc -l | tr -d ' ')" ] && [ "$obs_n" = "$(observation_rows "$controls_hs" | wc -l | tr -d ' ')" ]; then
+    row "$s" inspection "the module's binding lists agree with the statements it binds and the observation rows it defines ($told_n told, $obs_n observed, $retired_n retired, $policy_n client policy)" PASS
+  else
+    row "$s" inspection "the module's binding lists agree with the statements it binds and the observation rows it defines" FAIL "statementBindings $told_n, bound statements $(bound_pairs "$controls_hs" | wc -l | tr -d ' '); observationBindings $obs_n, observation rows $(observation_rows "$controls_hs" | wc -l | tr -d ' ')"
+  fi
+  local page_text
+  page_text="$(tr '\n' ' ' <"$page" | tr -s ' ')"
+  for phrase in "$(number_word "$told_n") are told" "$(number_word "$uncovered_n") others are uncovered" \
+    "$(number_word "$silent_n") tellings claim no statement" "$(number_word "$retired_n") run as retired booking rows" \
+    "$(number_word "$policy_n") are client policy" "$(number_word "$obs_n") are observations"; do
+    if grep -qiF -- "$phrase" <<<"$page_text"; then
+      row "$s" inspection "docs/consumer-conformance.md states the count: '$phrase'" PASS
+    else
+      row "$s" inspection "docs/consumer-conformance.md states the count: '$phrase'" FAIL "the page does not contain it; the module's lists give $told_n told, $uncovered_n uncovered, $silent_n claiming no statement"
+    fi
+  done
+  for phrase in "tell $(number_word "$told_n") accepted statements" "$(number_word "$uncovered_n") accepted statements are uncovered"; do
+    if [ -f "$pr" ] && grep -qiF -- "$phrase" "$pr"; then
+      row "$s" inspection "the pull-request text states the count: '$phrase'" PASS
+    else
+      row "$s" inspection "the pull-request text states the count: '$phrase'" FAIL "the text does not contain it"
+    fi
+  done
   frozen_sorted="$(printf '%s\n' "$frozen_statements" | sed '/^$/d' | sort)"
   bound_names="$(printf '%s' "$bound_names" | sort)"
   # No statement the accepted model dropped stays bound.
@@ -526,6 +867,34 @@ section_bindings() {
   else
     row "$s" inspection "no statement the accepted model dropped is still bound" FAIL "still bound: $extra"
   fi
+  # A statement whose conclusion has a part that no receipt shows is not told:
+  # its clause is an observation row and the statement is published as
+  # uncovered. A statement leaves this list only when a clause shows the part.
+  local partial
+  while IFS='|' read -r name partial; do
+    [ -n "$name" ] || continue
+    if grep -qx "$name" <<<"$bound_names"; then
+      row "$s" inspection "statement $name, whose conclusion has a part no receipt shows ($partial), is not bound" FAIL "it is bound under its digest"
+    else
+      row "$s" inspection "statement $name, whose conclusion has a part no receipt shows ($partial), is not bound" PASS
+    fi
+  done <<'EOF'
+insertion_holding_inline|the delivered output's address and registry tag
+update_keeps_registry|the economic state beyond the root and the pending requests
+update_preserves_custody|the continuation's recorded flag and reference index
+update_inversion|the converse direction and the successor's fields
+termination_fold_burns_atomically|the burn of the key's tag and of the request tags
+EOF
+  # A statement that is bound is not also published as uncovered: a told
+  # statement and an uncovered one are different rows of the same page.
+  while read -r name; do
+    [ -n "$name" ] || continue
+    if published_uncovered_row "$name" "$root/docs/consumer-conformance.md" "$root/docs/conformance-evidence.md" "$root/conformance/BOOK.md"; then
+      row "$s" inspection "bound statement $name is not also published as uncovered" FAIL "a table row names it as uncovered"
+    else
+      row "$s" inspection "bound statement $name is not also published as uncovered" PASS
+    fi
+  done < <(printf '%s\n' "$bound_names")
   # Each statement of the frozen disposition is bound under its accepted digest
   # (a telling exists) or is published as uncovered; none is disabled and none
   # is shown as passing without a telling.
@@ -533,7 +902,7 @@ section_bindings() {
     if grep -qx "$name" <<<"$bound_names"; then
       continue
     fi
-    if published_uncovered "$name" "$root/docs/consumer-conformance.md" "$root/docs/conformance-evidence.md" "$root/conformance/BOOK.md"; then
+    if published_uncovered_row "$name" "$root/docs/consumer-conformance.md" "$root/docs/conformance-evidence.md" "$root/conformance/BOOK.md"; then
       row "$s" inspection "statement $name, not bound, is published as uncovered" PASS
     else
       row "$s" inspection "statement $name is bound under its accepted digest or published as uncovered" FAIL "neither bound nor named with the word uncovered in docs/consumer-conformance.md, docs/conformance-evidence.md or conformance/BOOK.md"
@@ -569,18 +938,22 @@ section_report() {
   local base="$root/specs/528-registry-cli-split/evidence/base-hashes.json"
   local rec1="$root/specs/529-request-tag/evidence/declared-changes.json"
   local rec2="$root/specs/529-request-tag/evidence/declared-changes-fold.json"
-  local out line want got
+  local out line want got hash_status
   [ -f "$base" ] && [ -f "$rec1" ] && [ -f "$rec2" ] || instrument_fail "no base or declared-change records under $root"
   want="$(jq -r -n --slurpfile b "$base" --slurpfile r1 "$rec1" --slurpfile r2 "$rec2" '
       ($b[0].validators | map(.title)) as $bt
       | ([$r1[0].changed[], $r2[0].changed[]] | unique) as $ch
       | "\([$ch[] | select(. as $t | $bt | index($t))] | length) \([$ch[] | select(. as $t | $bt | index($t) | not)] | length) \([$bt[] | select(. as $t | $ch | index($t) | not)] | length)"')" \
     || instrument_fail "cannot compute the sets the report states"
-  out="$(cd "$root" && nix run --quiet .#script-hash-comparison 2>&1)" \
-    || {
-      row "$s" behavioral "the command reports success" FAIL "script-hash-comparison exited non-zero"
-      return
-    }
+  # The command's own output is kept in the log, apart from the rows: the rows
+  # judge it, they do not replace it.
+  out="$(cd "$root" && nix run --quiet .#script-hash-comparison 2>&1)" && hash_status=0 || hash_status=$?
+  printf 'TAGGED-LAW: raw output of nix run .#script-hash-comparison (exit %s), unjudged:\n' "$hash_status"
+  printf '%s\n' "$out" | sed 's/^/  | /'
+  [ "$hash_status" = 0 ] || {
+    row "$s" behavioral "the command reports success" FAIL "script-hash-comparison exited non-zero"
+    return
+  }
   line="$(grep -m1 '^script-hash-comparison: OK — ' <<<"$out" || true)"
   if [ -z "$line" ]; then
     row "$s" behavioral "the command prints its summary line" FAIL "no summary line"
@@ -733,6 +1106,17 @@ section_consumers() {
       row "$s" inspection "$f reads none of the retired receipt keys" FAIL "$n unmarked reads; first: $reads"
     fi
   done
+  # A marker that excuses nothing is decoration. Every `tagged-law:` marker of a
+  # journey, the rehearsal or the funding script sits on, or just above, a line
+  # the census patterns match.
+  for f in tools/demo1_cli_journey.sh tools/demo1_closed_journey.sh tools/keri_stub_journey.sh tools/demo1_cli_prepare_funding.sh demo1/rehearsal/scene-4-permanent.sh demo1/rehearsal/verify.sh; do
+    n="$(idle_markers "$root/$f" "$retired_receipt_keys|$reject_success_step" | head -n 3 | tr '\n' ' ' | cut -c1-200)"
+    if [ -z "$n" ]; then
+      row "$s" inspection "$f carries no marker that excuses nothing" PASS
+    else
+      row "$s" inspection "$f carries no marker that excuses nothing" FAIL "idle: $n"
+    fi
+  done
   # No journey runs the retired reject and expects it to succeed.
   for f in tools/demo1_cli_journey.sh tools/demo1_cli_prepare_funding.sh; do
     n="$(hit_count "$root/$f" "$reject_success_step")"
@@ -744,15 +1128,14 @@ section_consumers() {
   done
   # Where the retired action is still attempted, the attempt is refused and
   # says it is retired.
-  if grep -qE 'refused[[:space:]]+[A-Za-z0-9-]*reject[A-Za-z0-9-]*[[:space:]]+client-refusal' "$root/tools/demo1_cli_journey.sh" \
-    && grep -q 'rejected-retired\|is retired\|retired' <(grep -n 'reject' "$root/tools/demo1_cli_journey.sh" | grep -E 'refused|\.reason'); then
+  if retired_reject_attempt_checked "$root/tools/demo1_cli_journey.sh"; then
     row "$s" inspection "the Demo 1 journey keeps the retired reject as a refused attempt that names it retired" PASS
   else
     row "$s" inspection "the Demo 1 journey keeps the retired reject as a refused attempt that names it retired" FAIL "no refused reject step whose reason is checked for 'retired'"
   fi
   # The funding script builds its token-only wallet without a reject, by a
   # labelled harness mint.
-  if grep -qiE '(setup|harness)[^#]*mint|mint[^#]*(setup|harness)' "$root/tools/demo1_cli_prepare_funding.sh"; then
+  if labelled_mint "$root/tools/demo1_cli_prepare_funding.sh"; then
     row "$s" inspection "the funding script obtains its non-ada outputs by a mint labelled as setup" PASS
   else
     row "$s" inspection "the funding script obtains its non-ada outputs by a mint labelled as setup" FAIL "no line labels a mint as setup or harness"
@@ -763,6 +1146,15 @@ section_consumers() {
     row "$s" inspection "the two-actors journey lists no row in which a reject succeeds" PASS
   else
     row "$s" inspection "the two-actors journey lists no row in which a reject succeeds" FAIL "the row 'Bob rejects Alice's expired request' occurs $n times in the harness and its tests"
+  fi
+  # The rehearsal reads only the bounds of a donation: its checks and its
+  # prose claim neither the exact held-minus-tip amount nor that the controller
+  # was paid nothing, which its receipts do not carry.
+  n="$(grep -ciE 'held value less the tip|paid alice nothing|none of the custody is released' "$root"/demo1/rehearsal/*.sh | awk -F: '{s += $2} END {print s + 0}')"
+  if [ "$n" = 0 ]; then
+    row "$s" inspection "the rehearsal states the donation bounds it reads, not an exact amount or a payout" PASS
+  else
+    row "$s" inspection "the rehearsal states the donation bounds it reads, not an exact amount or a payout" FAIL "$n lines claim the held value less the tip, a payout of nothing, or no custody released"
   fi
   # No hosted consumer builds a request in the retired untagged shape or
   # imports an entry point the producers removed.
@@ -795,6 +1187,46 @@ section_consumers() {
 }
 
 # ------------------------------------------------------------------
+# Section 4a: how the journeys read the receipts of a booking and of a fold
+# ------------------------------------------------------------------
+
+# The Demo 1 journey, the closed journey and the keri-stub journey read a
+# booking's and a fold's receipt with helper functions. A registration has a
+# processing window and a termination has none, so the helpers must accept a
+# termination receipt that names no deadline and refuse a registration receipt
+# that names none. The controls read the helpers out of the journey files, run
+# them over receipts they build in the shape the producers print, and damage
+# each helper in a copy of the journey to see that they notice. The receipts
+# are built by the control, not printed by a node: a pass shows how the
+# helpers interpret a receipt, nothing about a run.
+section_journey_receipts() {
+  local s="journey receipts" script="$root/tools/journey_receipt_controls.sh" out status=0 group
+  if [ ! -f "$script" ]; then
+    row "$s" behavioral "the journey receipt controls exist" FAIL "tools/journey_receipt_controls.sh is absent"
+    return
+  fi
+  out="$(bash "$script" "$root" 2>&1)" || status=$?
+  if [ "$status" = 0 ]; then
+    row "$s" behavioral "the journey receipt controls exit 0: every case came out as expected and every damaged helper was caught" PASS
+  else
+    row "$s" behavioral "the journey receipt controls exit 0: every case came out as expected and every damaged helper was caught" FAIL "exit $status; first lines: $(printf '%s\n' "$out" | grep -E '^(UNEXPECTED|MISSED|journey receipt controls)' | head -n 3 | tr '\n' ' ' | cut -c1-300)"
+  fi
+  for group in "registration booking receipt" "termination booking receipt" "registration fold receipt" "termination fold receipt" \
+    "validity bound of the fold's own selection" "keri-stub registration booking receipt" "keri-stub termination booking receipt"; do
+    if grep -qE "^group $group: [1-9][0-9]* cases, 0 unexpected\$" <<<"$out"; then
+      row "$s" behavioral "the helpers read the $group as the producers print it (receipts built by the control)" PASS
+    else
+      row "$s" behavioral "the helpers read the $group as the producers print it (receipts built by the control)" FAIL "no group line with cases and none unexpected"
+    fi
+  done
+  if grep -qE '^journey receipt controls: [1-9][0-9]* damaged copies of the helpers, 0 not caught$' <<<"$out"; then
+    row "$s" behavioral "each damaged copy of a journey helper is caught by the controls" PASS
+  else
+    row "$s" behavioral "each damaged copy of a journey helper is caught by the controls" FAIL "the controls report no damaged copies or a copy that was not caught"
+  fi
+}
+
+# ------------------------------------------------------------------
 # Section 4b: the nine retained entrypoints, not retold
 # ------------------------------------------------------------------
 
@@ -807,14 +1239,24 @@ section_retained() {
   local s="retained entrypoints" name archive journey line section
   archive="$root/onchain-release/README.md"
   journey="$root/offchain/journey/README.md"
+  # Each retained command, its owning issue and whether that issue is closed as
+  # not planned (a non-goal) or open: read from the tracker when the ruling was
+  # made (the open ticket owns seven; two were closed as not planned).
+  local owner state
   for name in li01 li-refusals naming-rows register-rows recovery-rows retirement-rows retirement-verify repair-rows connected-verifier; do
+    owner=172
+    state=open
+    case "$name" in
+      register-rows) owner=283 state=closed ;;
+      connected-verifier) owner=282 state=closed ;;
+    esac
     line="$(grep -E "^\| \`(nix run \.#)?$name\`" "$archive" | head -n1 || true)"
     if [ -z "$line" ]; then
       row "$s" inspection "the archive README's table of retained commands has a row for $name" FAIL "no row"
-    elif retained_row_ok "$line"; then
-      row "$s" inspection "the archive README says $name is not retold, built or verified on the tagged-request law" PASS
+    elif retained_row_ok "$line" "$owner" "$state"; then
+      row "$s" inspection "the archive README says $name is not retold, built or verified on the tagged-request law and names owner #$owner ($state)" PASS
     else
-      row "$s" inspection "the archive README says $name is not retold, built or verified on the tagged-request law" FAIL "its row does not say it is not retold on the tagged-request law"
+      row "$s" inspection "the archive README says $name is not retold, built or verified on the tagged-request law and names owner #$owner ($state)" FAIL "its row lacks the sentence, the owner's link, or (for a closed ticket) the words 'closed as not planned'"
     fi
   done
   section="$(sed -n '/^### The retained legacy commands/,/^## /p' "$archive")"
@@ -937,6 +1379,11 @@ section_pages() {
     named_job="$(mapped_job "$name" "$doc" "$jobs")"
     if [ -n "$named_job" ]; then
       row "$s" inspection "docs/test-selection.md maps $name to a hosted job ($named_job)" PASS
+      if job_runs "$name" "$named_job" "$root"/.github/workflows/*.yml; then
+        row "$s" inspection "the hosted job $named_job carries the command that runs $name" PASS
+      else
+        row "$s" inspection "the hosted job $named_job carries the command that runs $name" FAIL "no line of that job's block runs $name"
+      fi
     else
       row "$s" inspection "docs/test-selection.md maps $name to a hosted job" FAIL "no line naming the suite also names, in backquotes, a job id of the workflows"
     fi
@@ -950,10 +1397,11 @@ section_bindings
 section_report
 section_negative_host
 section_consumers
+section_journey_receipts
 section_retained
 section_pages
 
-echo "tagged-law-consumers: $rows rows, $failing failing, $residuals residual (listed for the hosted lanes on the tagged law)"
+echo "tagged-law-consumers: $rows rows ($behavioral_rows behavioral over the tree's own data, $inspection_rows source inspections; none is a product receipt or a hosted result), $failing failing, $residuals residual (listed for the hosted lanes on the tagged law)"
 if [ "$failing" -eq 0 ]; then
   exit 0
 fi
