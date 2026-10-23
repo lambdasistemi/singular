@@ -217,7 +217,10 @@ def main():
             (ROOT / name).read_bytes() == original, "slice-2 identity changed: " + name
         )
     require(
-        all(r.get("family") in {None, "held", "application-requests", "history"} for r in records),
+        all(
+            r.get("family") in {None, "held", "application-requests", "history"}
+            for r in records
+        ),
         "unknown evidence family",
     )
     check_family([r for r in records if not r.get("family")], "NoPin", "", None)
@@ -227,49 +230,92 @@ def main():
 
     historical_base = "3f1fe718774c7e4069911fb28a0dab8a68714443"
     paths = subprocess.run(
-        ["git", "ls-tree", "-r", "--name-only", historical_base, "--",
-         "investigations/741-no-pin/lean/NoPin/Held",
-         "investigations/741-no-pin/held-statements.json",
-         "investigations/741-no-pin/held-mutants.json",
-         "investigations/741-no-pin/held-corpus.json"],
-        capture_output=True, text=True, check=True,
+        [
+            "git",
+            "ls-tree",
+            "-r",
+            "--name-only",
+            historical_base,
+            "--",
+            "investigations/741-no-pin/lean/NoPin/Held",
+            "investigations/741-no-pin/held-statements.json",
+            "investigations/741-no-pin/held-mutants.json",
+            "investigations/741-no-pin/held-corpus.json",
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
     ).stdout.splitlines()
     require(len(paths) > 3, "historical held extent empty")
     for path in paths:
-        original = subprocess.run(["git", "show", historical_base + ":" + path],
-                                  capture_output=True, check=True).stdout
+        original = subprocess.run(
+            ["git", "show", historical_base + ":" + path],
+            capture_output=True,
+            check=True,
+        ).stdout
         relative = path.removeprefix("investigations/741-no-pin/")
-        require((ROOT / relative).read_bytes() == original, "historical held row changed: " + path)
+        require(
+            (ROOT / relative).read_bytes() == original,
+            "historical held row changed: " + path,
+        )
     repair_base = "37d90cf0385fbc31fb996099fe117c2acc355ff9"
+
     def original_json(name):
-        return json.loads(subprocess.run(
-            ["git", "show", repair_base + ":investigations/741-no-pin/" + name],
-            capture_output=True, check=True, text=True,
-        ).stdout)
-    current_ledger = json.loads((ROOT / "application-requests-statements.json").read_text())
+        return json.loads(
+            subprocess.run(
+                ["git", "show", repair_base + ":investigations/741-no-pin/" + name],
+                capture_output=True,
+                check=True,
+                text=True,
+            ).stdout
+        )
+
+    current_ledger = json.loads(
+        (ROOT / "application-requests-statements.json").read_text()
+    )
     original_rows = original_json("application-requests-statements.json")["statements"]
     current_rows = {row["theorem"]: row for row in current_ledger["statements"]}
     for row in original_rows:
-        require(current_rows.get(row["theorem"]) == row, "earlier application-request row changed: " + row["theorem"])
+        require(
+            current_rows.get(row["theorem"]) == row,
+            "earlier application-request row changed: " + row["theorem"],
+        )
     old_mutants = original_json("application-requests-mutants.json")["mutants"]
-    current_mutants = json.loads((ROOT / "application-requests-mutants.json").read_text())["mutants"]
-    require(all(row in current_mutants for row in old_mutants), "earlier application-request mutant changed")
+    current_mutants = json.loads(
+        (ROOT / "application-requests-mutants.json").read_text()
+    )["mutants"]
+    require(
+        all(row in current_mutants for row in old_mutants),
+        "earlier application-request mutant changed",
+    )
     old_corpus = original_json("application-requests-corpus.json")
     current_corpus = json.loads((ROOT / "application-requests-corpus.json").read_text())
-    require(current_corpus[:len(old_corpus)] == old_corpus, "earlier application-request replay changed")
+    require(
+        current_corpus[: len(old_corpus)] == old_corpus,
+        "earlier application-request replay changed",
+    )
     supersessions = current_ledger.get("supersessions", [])
     require(len(supersessions) > 0, "missing explicit supersession map")
     for row in supersessions:
-        require(row["prior"] in {r["theorem"] for r in original_rows} and row["replacement"] in current_rows,
-                "unbound supersession")
+        require(
+            row["prior"] in {r["theorem"] for r in original_rows}
+            and row["replacement"] in current_rows,
+            "unbound supersession",
+        )
     subprocess.run([sys.executable, str(ROOT / "effect_controls.py")], check=True)
     source_cases = [r["sourceChanges"] for r in records if "sourceChanges" in r]
-    require(source_cases == [["register", "terminate"]], "uncovered source change constructor")
+    require(
+        source_cases == [["register", "terminate"]],
+        "uncovered source change constructor",
+    )
     check_family(
         [r for r in records if r.get("family") == "application-requests"],
-        "NoPin.ApplicationRequests", "application-requests-", "application-requests"
+        "NoPin.ApplicationRequests",
+        "application-requests-",
+        "application-requests",
     )
     import history_check
+
     history_check.check(records)
 
 
