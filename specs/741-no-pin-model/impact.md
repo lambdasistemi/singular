@@ -125,6 +125,10 @@ An independent statement audit on 23 October 2026 found the application-held ter
 
 An independent statement audit on 23 October 2026 found six of the seven Singular statement families of the application-held design ready to prove: genesis, the whole fold law, the committed holding delivery, state output integrity, state recognition with a root-only datum, and folding from public data, sixteen general statements in all. The audited ledger is `investigations/741-no-pin/application-requests-statements.json` `de702f29fdbaa3f9e7f6300d4b7b4bf1074ef7f39ee7d4f94587bacf1fcfde2d`. Effects are stated independently of the production functions and a substituted transition fails named obligations. This establishes no statement's truth. Supply in step, permanence and history are not yet stated; they are the next slice.
 
+## Singular history audit result
+
+An independent statement audit on 23 October 2026 found the seventh Singular family ready to prove: supply in step, one live token per key per registry, burn only through a terminating fold, and no remint after terminal, stated over connected multi-step, multi-registry histories (including two registries from one seed). The statement ledger now stands at `investigations/741-no-pin/application-requests-statements.json` `de702f29fdbaa3f9e7f6300d4b7b4bf1074ef7f39ee7d4f94587bacf1fcfde2d`. This completes the Singular statements of the application-held design at statement stage; it establishes no statement's truth. Premise sensitivity is partial: the initial no-own-assets and genesis empty-trie premises have no control yet.
+
 ```mermaid
 flowchart TD
   Source[Existing laws] -->|compare| Proposal[Proposed identities]

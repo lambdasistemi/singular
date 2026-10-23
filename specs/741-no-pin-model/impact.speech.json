@@ -263,8 +263,18 @@
       "pause": 400
     }
   ],
+  "singular-history-audit-result": [
+    {
+      "text": "Singular history audit result.",
+      "pause": 500
+    },
+    {
+      "text": "An independent statement audit on 23 October 2026 found the seventh Singular family ready to prove: supply in step, one live token per key per registry, burn only through a terminating fold, and no remint after terminal, stated over connected multi-step, multi-registry histories (including two registries from one seed). The statement ledger now stands at investigations/741-no-pin/application-requests-statements.json de702f29fdbaa3f9e7f6300d4b7b4bf1074ef7f39ee7d4f94587bacf1fcfde2d. This completes the Singular statements of the application-held design at statement stage; it establishes no statement's truth. Premise sensitivity is partial: the initial no-own-assets and genesis empty-trie premises have no control yet.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "impact.md",
-    "sha256": "d98343c7a22328e04a61d6ed7a5473102e9bdfb132390c8a2a93514497461283"
+    "sha256": "400781f9ed6d837e236f91ba137177917a260a8cdd86183c77e547dc6ca52ab1"
   }
 }
