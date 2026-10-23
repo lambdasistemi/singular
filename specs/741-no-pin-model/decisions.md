@@ -136,6 +136,14 @@ The operator, transcribed from speech: "Let's get the lean proofs of what we wan
 
 Scope. #741 ends with proved Lean for Singular (genesis, the fold law, delivery, state output integrity, state recognition with a root-only datum, supply in step, folding from public data) and for open datum (the request lifecycle obligations and the per-journey equivalence). Statements are stated and audited in small slices, then proved; on-chain work follows the operator's adoption ruling.
 
+## The refund address signs a reclaim
+
+Date: 23 October 2026. Decided by the ticket owner under the operator's direction that open datum keeps its semantics.
+
+Today an owner reclaim inside the reclaim window is signed by the request's refund address. The first application-held design had the controller sign it; an executed comparison showed the two designs accept opposite signers.
+
+Scope. The reclaim is signed by the refund address, as today; the controller's signature authorises booking only. The earlier lifecycle statements with the controller as signer are superseded by new rows, kept, not edited.
+
 ```mermaid
 flowchart TD
   Question[Question in questions.md] -->|operator reply| Ruling[Recorded ruling]

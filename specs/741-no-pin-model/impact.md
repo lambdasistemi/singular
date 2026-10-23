@@ -133,6 +133,10 @@ An independent statement audit on 23 October 2026 found the seventh Singular fam
 
 An independent statement audit on 23 October 2026 found the open-datum request lifecycle ready to prove: nineteen general statements covering the three timed registration phases, the termination burn, approvals, booking authority, the treasury deposit and per-seed parameters, folder protection and no stuck termination, with nine derived action inversions and twenty-eight guard sites each with a mutant. The audited ledger is `investigations/741-no-pin/lifecycle-statements.json` `2e453301887220abbb61e28032f61bdd6065069a436f8b2075aad60b8ec65da6`. This establishes no statement's truth; the money flows of each journey and the old-versus-new equivalence are the next slice.
 
+## Journey equivalence audit result
+
+An independent statement audit on 23 October 2026 found the open-datum journeys ready to prove: twelve money statements over sixty-six party-by-journey cells for create, register, update, terminate, and reclaim with cleanup, each cell equal to today or tagged with the ruling that changes it, and nineteen lifecycle statements restated with the refund address as reclaim signer. The audited refund-lifecycle ledger is `investigations/741-no-pin/refund-lifecycle-statements.json` `a985b2f980840f36445489fc4af02f16f47f22f1c647e87c3fd3d62b47d79efd`; every ledger pin now names a tracked file. With this, every statement family of the application-held design is stated and audited; none is proved yet.
+
 ```mermaid
 flowchart TD
   Source[Existing laws] -->|compare| Proposal[Proposed identities]

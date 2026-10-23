@@ -283,14 +283,24 @@
       "pause": 400
     }
   ],
-  "_source": {
-    "file": "impact.md",
-    "sha256": "19bc0cab0add14bd957b0a78b943b771599f8ab82682b5cbb9bccb74855baf69"
-  },
   "money-comparison-and-reclaim-authority-correction": [
     {
       "text": "Money comparison and reclaim authority correction\n\nAs a requester, I want the refund address that could reclaim under the accepted economics to retain that authority. The money comparison exposed a controller/refund-address distinction: controller 42 could reclaim in the earlier hypothetical lifecycle family while refund address 50 could not; accepted economic retraction admitted 50 and refused 42. The bound same-semantics direction preserves refund-address signing for reclaim, with controller signing retained for booking.\n\nThe previous lifecycle audit and its ledger digest above remain a record of that earlier statement checkpoint, available at revision 99682696057a4ab4829067c57623276fa5faf1fd. They do not accept the corrected candidate. The old statement rows and functions remain historical; the refund-signer lifecycle is restated under new qualified names, and its ledger marks the supersession. The current money/oracle surfaces use the replacement handler. Both signing choices execute against both models.\n\nThe money candidate states create, registration booking and fold, payload update, termination booking and fold, full owner reclaim and deposit-only cleanup. Its party-by-journey grid distinguishes exact equal allocations from the ruled bid, treasury and timing differences. The old side calls the accepted economic producers; full old consumer/economic composition, real serialization, provider and ledger correspondence, output minimums, funding availability and inclusion remain external. Every general replacement and money statement is still unproved, with deliberate sorry debt. Compiled finite certificates and source substitutions are narrower evidence and confer no implementation or acceptance standing.",
       "pause": 300
     }
-  ]
+  ],
+  "journey-equivalence-audit-result": [
+    {
+      "text": "Journey equivalence audit result.",
+      "pause": 500
+    },
+    {
+      "text": "An independent statement audit on 23 October 2026 found the open-datum journeys ready to prove: twelve money statements over sixty-six party-by-journey cells for create, register, update, terminate, and reclaim with cleanup, each cell equal to today or tagged with the ruling that changes it, and nineteen lifecycle statements restated with the refund address as reclaim signer. The audited refund-lifecycle ledger is investigations/741-no-pin/refund-lifecycle-statements.json a985b2f980840f36445489fc4af02f16f47f22f1c647e87c3fd3d62b47d79efd; every ledger pin now names a tracked file. With this, every statement family of the application-held design is stated and audited; none is proved yet.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "impact.md",
+    "sha256": "8276b1bcc175ec30eef54727b718d5d716114de0d712716edf256b8ce6dffc67"
+  }
 }

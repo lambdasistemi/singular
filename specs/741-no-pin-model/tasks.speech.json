@@ -101,7 +101,7 @@
       "pause": 300
     },
     {
-      "text": "[ ] Hold requests at the application — In investigations/741-no-pin/, state the Singular fold law per change with requests held at the application for registration and termination, Singular's remaining liveness obligation, the good-application obligations as hypothetical open-datum statements, and the consequences for protected rejection, request tags, pending accounting and the state datum's timing fields. Requirements: Permanent key supply; Consumer and economic agreement; Honest reader conclusions.",
+      "text": "[x] Hold requests at the application — In investigations/741-no-pin/, state the Singular fold law per change with requests held at the application for registration and termination, Singular's remaining liveness obligation, the good-application obligations as hypothetical open-datum statements, and the consequences for protected rejection, request tags, pending accounting and the state datum's timing fields. Requirements: Permanent key supply; Consumer and economic agreement; Honest reader conclusions.",
       "pause": 300
     }
   ],
@@ -169,6 +169,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "fa0bee86f82f0a40d950b9f8b7147eb39da05f8caa4cb46da7eaa03eed02aac7"
+    "sha256": "0f4d8fced63cda564fcd36af575e47f02162ce92e2feb1afde3c5bb878777db0"
   }
 }

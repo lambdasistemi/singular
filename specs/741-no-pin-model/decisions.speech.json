@@ -307,8 +307,26 @@
       "pause": 400
     }
   ],
+  "the-refund-address-signs-a-reclaim": [
+    {
+      "text": "The refund address signs a reclaim.",
+      "pause": 500
+    },
+    {
+      "text": "Date: 23 October 2026. Decided by the ticket owner under the operator's direction that open datum keeps its semantics.",
+      "pause": 400
+    },
+    {
+      "text": "Today an owner reclaim inside the reclaim window is signed by the request's refund address. The first application-held design had the controller sign it; an executed comparison showed the two designs accept opposite signers.",
+      "pause": 400
+    },
+    {
+      "text": "Scope. The reclaim is signed by the refund address, as today; the controller's signature authorises booking only. The earlier lifecycle statements with the controller as signer are superseded by new rows, kept, not edited.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "decisions.md",
-    "sha256": "70fa0f1d73f68787800d49d360b8a18fde2aaf053923de59e442a7b503afbba1"
+    "sha256": "5408de1e0979a725e4f97dcf21c2a714fe91a8910e467c6da741e5683f6d3f39"
   }
 }
