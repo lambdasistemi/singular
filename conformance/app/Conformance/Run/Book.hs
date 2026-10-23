@@ -16,7 +16,6 @@ module Conformance.Run.Book
     , bookEdge
     , edgeDestination
     , edgeDestinationFor
-    , edgeReferences
     ) where
 
 import Conformance.Run.Cage
@@ -29,7 +28,6 @@ import Control.Monad (unless, void)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.List (sortOn)
-import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe)
 import Data.Ord (Down (..))
 import Data.Sequence.Strict qualified as StrictSeq
@@ -78,7 +76,6 @@ import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger
     ( Coin (..)
     , ConwayEra
-    , PolicyID (..)
     , Root (..)
     , TokenId (..)
     , TxOut
@@ -100,9 +97,7 @@ import Singular.Registry.TxBuilder.Internal
     , findRequestUtxos
     , mkInlineDatum
     , mkRequestDatumWith
-    , policyIdFromPin
     , requestAddrFromCfg
-    , scriptHashBytes
     , walkEdge
     )
 import Singular.Registry.Types
@@ -412,26 +407,3 @@ edgeDestinationFor env payerAddr edge = do
         2 -> (serialiseAddr appAddr, Just recordDatum)
         6 -> (serialiseAddr payerAddr, Nothing)
         _ -> (BS.empty, Nothing)
-
-{- | What the certifying arm needs to read. A deletion is authorised by the
-custody's own refund address, which naming reads from the custody UTxO as a
-reference input.
--}
-edgeReferences
-    :: Env -> ByteString -> Edge -> IO [(TxIn, TxOut ConwayEra)]
-edgeReferences env key edge = case edge of
-    4 -> do
-        utxos <- cageUtxos env
-        let absentPolicy =
-                scriptHashBytes
-                    (policyID (policyIdFromPin (cfgAbsentPolicy (envCfg env))))
-        case [ u
-             | u@(_, o) <- utxos
-             , outAssets o == Map.singleton absentPolicy (Map.singleton key 1)
-             , Just (AbsentCustody _) <- [extractCageDatum o]
-             ] of
-            [u] -> pure [u]
-            _ ->
-                failWith
-                    ("edgeReferences: no single custody UTxO for key " <> show key)
-    _ -> pure []

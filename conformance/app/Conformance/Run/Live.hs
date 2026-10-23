@@ -21,7 +21,6 @@ module Conformance.Run.Live
     , observeStep
     , observeAcceptedStep
     , classifyLeaves
-    , observeCustody
     , walletHoldingsOf
     , heldObservation
     , observePaid
@@ -130,7 +129,6 @@ import Data.Maybe
     , fromMaybe
     , isJust
     , isNothing
-    , listToMaybe
     )
 import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
@@ -315,7 +313,6 @@ data LiveStep = LiveStep
     , lsRequestLovelace :: Integer
     , lsAfter :: Maybe OnChainTokenState
     , lsWitness :: Maybe (TxIn, TxOut ConwayEra)
-    , lsCustody :: Maybe (TxIn, TxOut ConwayEra)
     , lsStateUtxo :: Maybe (TxIn, TxOut ConwayEra)
     {- ^ the state input the accepted step spent, retained so observation can
     read what the ledger physically held; @Nothing@ where no step spent one
@@ -604,7 +601,6 @@ submitEdge env state cage exit alteration placement request = do
     registryIdentity <- modelRegistryIdentity state cage
     let registry = show tid
     noteRequest (genesisAddr env) state cage registry request
-    refs <- storyReferences env cage key edge
     let pendingKey =
             ( registry
             , Live.requestKey request
@@ -659,7 +655,6 @@ submitEdge env state cage exit alteration placement request = do
                         Nothing
                         Nothing
                         0
-                        Nothing
                         Nothing
                         Nothing
                         Nothing
@@ -720,7 +715,6 @@ submitEdge env state cage exit alteration placement request = do
                         exit
                         (Live.requestEdge request)
                         ownerKey
-                        Nothing
                         (Just (txInReference reqIn))
                 editsOf transaction = either (failWith . (("tamper: " <> show alteration <> ": ") <>)) pure $
                     case alteration of
@@ -906,7 +900,6 @@ submitEdge env state cage exit alteration placement request = do
                             bond
                             (Just after)
                             witness
-                            (custodyOf refs)
                             retainedState
                             spent
                             (StepAccepted signed (mem, cpu, txSizeBytes signed))
@@ -944,16 +937,11 @@ submitEdge env state cage exit alteration placement request = do
                             bond
                             Nothing
                             witness
-                            (custodyOf refs)
                             Nothing
                             spent
                             (refusedOutcome marker signed diagnostic)
                         )
                 unavailable -> failWith ("submission unavailable: " <> show unavailable)
-  where
-    -- A fold spends the custody its edge consumes; a reject and a retraction
-    -- consume none.
-    custodyOf refs = if exit == Live.Fold then listToMaybe refs else Nothing
 
 {- | One batch instruction: book every request — or take the one a refused batch
 left pending under the same registry, key, edge and wallet — take them all by
@@ -1354,7 +1342,7 @@ batchRecord env state cage exit alteration booked asked rejections signed result
                 [ "question" .= batchName
                 , "id" .= String "live-batch"
                 , "theorem" .= String "Singular.Driver.runSurface"
-                , "statementSha256" .= String "4242624938955313763"
+                , "statementSha256" .= String "7931296848640482987"
                 , "start" .= startValue
                 , "setup" .= setup
                 , "requests" .= asked
@@ -1482,17 +1470,14 @@ the measurement row reads the worst of them across the folds it names.
 measuredJsonOf :: (Integer, Integer, Integer) -> Value
 measuredJsonOf (mem, cpu, size) = object ["mem" .= mem, "cpu" .= cpu, "size" .= size]
 
-{- | What a transaction mints at a key under the registry's three pinned token
-policies, by kind, read off the transaction as submitted.
+{- | What a transaction mints at a key under the registry's pinned token
+policy, by kind, read off the transaction as submitted.
 -}
 claimedAt :: CageConfig -> ConwayTx -> String -> [Value]
 claimedAt cfg signed key =
     [ object ["kind" .= kind, "quantity" .= quantity]
     | (pin, kind) <-
-        [ (cfgActivePolicy cfg, "active" :: T.Text)
-        , (cfgAbsentPolicy cfg, "absent")
-        , (cfgTerminalPolicy cfg, "terminal")
-        ]
+        [(cfgActivePolicy cfg, "active" :: T.Text)]
     , (policy, names) <- Map.toList minted
     , cg21PolicyBytes policy == SBS.fromShort pin
     , (AssetName name, quantity) <- Map.toList names
@@ -1502,12 +1487,12 @@ claimedAt cfg signed key =
   where
     MultiAsset minted = signed ^. bodyTxL . mintTxBodyL
 
--- | The registry's three pinned token policies, as raw script hash bytes.
+-- | The registry's pinned token policy, as raw script hash bytes.
 pinnedPolicies :: CageConfig -> [ByteString]
 pinnedPolicies cfg =
     map
         SBS.fromShort
-        [cfgActivePolicy cfg, cfgAbsentPolicy cfg, cfgTerminalPolicy cfg]
+        [cfgActivePolicy cfg]
 
 {- | The 'Live.MintOnFirstKey' tamper: under the given policies, every quantity
 the transaction mints, and every quantity its outputs carry, at one of the batch's
@@ -2066,7 +2051,7 @@ intermediateAbstractConfig env state cage before = do
     let registry = show tid
         cfg = rcCfg cage
     registryIdentity <- modelRegistryIdentity state cage
-    (application, active, absent, terminal) <-
+    (application, active) <-
         observePins (liveIds state) cfg
     keys <-
         maybe (failWith "rejection evidence has no allocated keys") pure
@@ -2091,8 +2076,6 @@ intermediateAbstractConfig env state cage before = do
             registryIdentity
             application
             active
-            absent
-            terminal
             root
         )
   where
@@ -2397,7 +2380,7 @@ storyModelRequestBy booker ids cfg registryIdentity _exit request deposit tip re
         observeIdentity
             (liveWallets ids)
             (WalletIdentity (serialiseAddr wallet))
-    (application, _, _, _) <- observePins ids cfg
+    (application, _) <- observePins ids cfg
     let (refundAddress, output) = case Live.requestEdge request of
             Live.InsertAbsent -> (destination, 0)
             Live.DeleteAbsent -> (destination, 0)
@@ -2518,7 +2501,7 @@ observeAcceptedStep env state step transaction = do
                     requestedId
                     [(identifier, name) | (identifier, _, name) <- translated]
                 )
-    (application, active, absent, terminal) <- observePins ids cfg
+    (application, active) <- observePins ids cfg
     registryIdentity <- modelRegistryIdentity state cage
     let config =
             abstractConfig
@@ -2526,32 +2509,17 @@ observeAcceptedStep env state step transaction = do
                 registryIdentity
                 application
                 active
-                absent
-                terminal
                 root
         activeBytes = SBS.fromShort (cfgActivePolicy cfg)
-        terminalBytes = SBS.fromShort (cfgTerminalPolicy cfg)
     holdings <-
         concat
             <$> mapM
                 ( walletHoldings
                     ids
                     keys
-                    [("active", activeBytes), ("terminal", terminalBytes)]
+                    [("active", activeBytes)]
                 )
                 wallets
-    cageOutputs <-
-        Cage.withLatest
-            (envProv env)
-            (`Cage.outputsAt` cageAddrFromCfg cfg (network cfg))
-    custody <-
-        mapM
-            (observeCustody ids cfg)
-            [ out
-            | (_, out) <- cageOutputs
-            , Map.member (SBS.fromShort (cfgAbsentPolicy cfg)) (outAssets out)
-            , Just (AbsentCustody _) <- [extractCageDatum out]
-            ]
     let MultiAsset minted = transaction ^. bodyTxL . mintTxBodyL
     mint <-
         mapM
@@ -2578,7 +2546,6 @@ observeAcceptedStep env state step transaction = do
     let owner =
             object
                 [ "config" .= config
-                , "custody" .= custody
                 , "held" .= holdings
                 , "trie" .= trie
                 ]
@@ -2614,7 +2581,6 @@ observeAcceptedStep env state step transaction = do
             orderedMint
             destination
             commitment
-            custody
             paid
             requestOut
             tid
@@ -2622,7 +2588,6 @@ observeAcceptedStep env state step transaction = do
     pure $
         object
             [ "config" .= config
-            , "custody" .= custody
             , "held" .= map heldObservation holdings
             , "leaf" .= leaf
             , "mint" .= orderedMint
@@ -2634,11 +2599,9 @@ observeAcceptedStep env state step transaction = do
   where
     ids = liveIds state
     mintKindOrder (Object fields) = case KM.lookup "kind" fields of
-        Just (String "absent") -> (0 :: Int)
-        Just (String "active") -> 1
-        Just (String "terminal") -> 2
-        _ -> 3
-    mintKindOrder _ = 3
+        Just (String "active") -> (0 :: Int)
+        _ -> 1
+    mintKindOrder _ = 1
     observedDelivery policy key wallets = do
         (addressBytes, delivered) <- storyDelivery policy key transaction
         let expectedAsset = AssetEntry (hexT (cg21PolicyBytes policy)) (hexT key) 1
@@ -2667,8 +2630,7 @@ observeAcceptedStep env state step transaction = do
                                 then pure (2, String "terminal")
                                 else failWith ("unrecognized trie leaf for " <> show key)
         pure (identifier, ordinal, name)
-    -- A wallet holds the active and terminal witnesses the folds routed to
-    -- it; the absent witness stays in the cage's custody.
+    -- A wallet holds the active witnesses the folds routed to it.
     walletHoldings identities keys kinds wallet =
         Cage.withLatest (envProv env) (`Cage.outputsAt` wallet)
             >>= walletHoldingsOf identities keys kinds wallet
@@ -2749,31 +2711,6 @@ classifyLeaves membership observedRoot = do
                     <> " leaf assignments over this registry's allocated keys"
                 )
 
-observeCustody
-    :: LiveIdentities -> CageConfig -> TxOut ConwayEra -> IO Value
-observeCustody ids cfg out = do
-    refund <- case extractCageDatum out of
-        Just (AbsentCustody address) -> pure address
-        _ -> failWith "custody output has no Absent custody datum"
-    let policy = SBS.fromShort (cfgAbsentPolicy cfg)
-    (key, quantity) <- case Map.toList (outAssets out) of
-        [(actualPolicy, names)] | actualPolicy == policy -> case Map.toList names of
-            [(name, count)] -> pure (name, count)
-            _ -> failWith "custody output does not hold one named asset"
-        _ ->
-            failWith
-                "custody output has assets outside this registry's Absent pin"
-    require
-        "custody output does not hold exactly one Absent token"
-        (quantity == 1)
-    keyId <- observeIdentity (liveKeys ids) (KeyIdentity key)
-    refundId <- observeIdentity (liveWallets ids) (WalletIdentity refund)
-    let Coin amount = out ^. coinTxOutL
-    pure
-        ( object
-            ["key" .= keyId, "refundAddress" .= refundId, "value" .= amount]
-        )
-
 {- | The form a ledger output presents its datum in, read off the ledger's own
 datum constructor: carried inline, presented by hash, or not presented.
 -}
@@ -2811,8 +2748,6 @@ deliveredPolicy
 deliveredPolicy cfg exit edge = case (exit, edge) of
     (Live.Fold, Live.InsertActive) -> Just (policyIdFromPin (cfgActivePolicy cfg))
     (Live.Fold, Live.UpdateActive) -> Just (policyIdFromPin (cfgActivePolicy cfg))
-    (Live.Fold, Live.WitnessTerminal) ->
-        Just (policyIdFromPin (cfgTerminalPolicy cfg))
     _ -> Nothing
 
 -- | The transaction's outputs holding the token named @key@ under @policy@.
@@ -2854,11 +2789,6 @@ foldOutputsOf cfg transaction =
                         )
                 , quantity /= 0
                 ]
-            , Payments.outputCustody =
-                out ^. addrTxOutL == cageAddrFromCfg cfg (network cfg)
-                    && case extractCageDatum out of
-                        Just (AbsentCustody _) -> True
-                        _ -> False
             , Payments.outputReference = case out ^. datumTxOutL of
                 Datum inline ->
                     let Data plutus = binaryDataToData inline
@@ -2874,9 +2804,7 @@ foldOutputsOf cfg transaction =
         [ (cg21PolicyBytes policy, SBS.fromShort name)
         | (policy, names) <- Map.toList minted
         , cg21PolicyBytes policy
-            `elem` [ SBS.fromShort (cfgActivePolicy cfg)
-                   , SBS.fromShort (cfgTerminalPolicy cfg)
-                   ]
+            `elem` [SBS.fromShort (cfgActivePolicy cfg)]
         , (AssetName name, quantity) <- Map.toList names
         , quantity > 0
         ]
@@ -2907,15 +2835,6 @@ observePaid
 observePaid ids wallets cfg step transaction requestOut = do
     let edge = Live.requestEdge (lsRequest step)
         outputs = foldOutputsOf cfg transaction
-    refund <- case (edge, lsCustody step) of
-        (e, Just (source, custodyOut)) | e `elem` [Live.UpdateActive, Live.DeleteAbsent] -> do
-            require
-                "custody refund did not spend its source"
-                (source `Set.member` (transaction ^. bodyTxL . inputsTxBodyL))
-            case extractCageDatum custodyOut of
-                Just (AbsentCustody address) -> pure (Just address)
-                _ -> failWith "paid custody source has no Absent datum"
-        _ -> pure Nothing
     owner <- requestOwnerKey requestOut
     payments <-
         either failWith pure $
@@ -2924,7 +2843,6 @@ observePaid ids wallets cfg step transaction requestOut = do
                     (lsExit step)
                     edge
                     owner
-                    refund
                     (txInReference <$> lsRequestIn step)
                 )
                 (map snd outputs)
@@ -2932,10 +2850,7 @@ observePaid ids wallets cfg step transaction requestOut = do
   where
     translate (Payments.Payment payee value) = do
         address <- case payee of
-            Payments.Custody -> pure 0
             Payments.Destination address ->
-                observeIdentity (liveWallets ids) (WalletIdentity address)
-            Payments.Refund address ->
                 observeIdentity (liveWallets ids) (WalletIdentity address)
             Payments.Owner key -> ownerIdentity ids wallets key
         pure (object ["address" .= address, "value" .= value])
@@ -2970,7 +2885,6 @@ settlementOutputs ids wallets cfg step transaction = do
                 (lsExit step)
                 (Live.requestEdge (lsRequest step))
                 owner
-                Nothing
                 (txInReference <$> lsRequestIn step)
         outputs = map snd (foldOutputsOf cfg transaction)
         judged = case lsExit step of
@@ -2985,7 +2899,6 @@ settlementOutputs ids wallets cfg step transaction = do
                     <$> observeIdentity
                         (liveWallets ids)
                         (WalletIdentity (Payments.outputAddress out))
-            Payments.OwedCustody -> pure ("cage", 0)
             Payments.OwedOwner -> (,) "owner" <$> ownerIdentity ids wallets owner
             Payments.OwedBound -> (,) "owner" <$> ownerIdentity ids wallets owner
         reference <-
@@ -3084,11 +2997,7 @@ observeOwnerOutputs ids wallets cfg tid step transaction payments =
                 require
                     "an output crediting the owner carries a registry state or custody datum"
                     (all (isNothing . extractCageDatum) credited)
-                let tokenPins =
-                        [ SBS.fromShort (cfgActivePolicy cfg)
-                        , SBS.fromShort (cfgAbsentPolicy cfg)
-                        , SBS.fromShort (cfgTerminalPolicy cfg)
-                        ]
+                let tokenPins = [SBS.fromShort (cfgActivePolicy cfg)]
                 assets <-
                     mapM
                         ( \(policy, name, quantity) -> observeStepMint ids cfg policy name quantity
@@ -3159,8 +3068,6 @@ observeStepMint ids cfg policy key quantity = do
     kind <- case [ name
                  | (pin, name) <-
                     [ (cfgActivePolicy cfg, "active")
-                    , (cfgAbsentPolicy cfg, "absent")
-                    , (cfgTerminalPolicy cfg, "terminal")
                     ]
                  , SBS.fromShort pin == policy
                  ] of
@@ -3189,7 +3096,6 @@ observedStepTx
     -> Integer
     -> Integer
     -> [Value]
-    -> [Value]
     -> TxOut ConwayEra
     -> TokenId
     -> [Payments.Payment]
@@ -3204,7 +3110,6 @@ observedStepTx
     mint
     destination
     commitment
-    custody
     paid
     requestOut
     tid
@@ -3247,8 +3152,8 @@ observedStepTx
                         , "datumValue" .= value
                         ]
                     ]
-        -- A fold alone spends a witness or a custody, or locks one: a reject and a
-        -- retraction touch neither, whatever edge their request named.
+        -- A fold alone spends a witness: a reject and a retraction touch none,
+        -- whatever edge their request named.
         let folded = lsExit step == Live.Fold
         witnessInputs <-
             if not folded
@@ -3259,76 +3164,15 @@ observedStepTx
                     (Live.DeleteActive, Just held) -> witnessInput "deletion" held
                     (Live.DeleteActive, Nothing) -> failWith "deletion has no observed active witness"
                     _ -> pure []
-        custodyInputs <-
-            if not folded
-                then pure []
-                else case (edge, lsCustody step) of
-                    (Live.UpdateActive, Just held) -> custodyInput held
-                    (Live.DeleteAbsent, Just held) -> custodyInput held
-                    (Live.UpdateActive, Nothing) -> failWith "updateActive has no custody input"
-                    (Live.DeleteAbsent, Nothing) -> failWith "deleteAbsent has no custody input"
-                    _ -> pure []
         let positive =
                 [ asset
                 | asset@(Object fields) <- mint
                 , KM.lookup "kind" fields
-                    `elem` [Just (String "active"), Just (String "terminal")]
+                    `elem` [Just (String "active")]
                 , case KM.lookup "quantity" fields of
                     Just (Number q) -> q > 0
                     _ -> False
                 ]
-            newCustody =
-                [ out
-                | out <- outputValues
-                , Just (AbsentCustody _) <- [extractCageDatum out]
-                ]
-        cageOutputs <-
-            if not folded
-                then pure []
-                else case edge of
-                    Live.InsertAbsent -> case newCustody of
-                        [out] -> do
-                            entry <- observeCustody ids cfg out
-                            require
-                                "new custody was not observed at the cage"
-                                (entry `elem` custody)
-                            keyId <- storyField "key" entry
-                            refundId <- storyField "refundAddress" entry
-                            value <- storyField "value" entry
-                            asset <-
-                                observeStepMint
-                                    ids
-                                    cfg
-                                    (SBS.fromShort (cfgAbsentPolicy cfg))
-                                    requestKeyBytes
-                                    1
-                            require
-                                "new custody is for a different key"
-                                ( keyId
-                                    == fromMaybe
-                                        Null
-                                        ( case lsModelRequest step of
-                                            Object fields -> KM.lookup "key" fields
-                                            _ -> Nothing
-                                        )
-                                )
-                            pure
-                                [ object
-                                    [ "role" .= String "cage"
-                                    , "datum" .= String (datumForm out)
-                                    , "address" .= (0 :: Integer)
-                                    , "stateToken" .= (0 :: Integer)
-                                    , "inlineConfig" .= Null
-                                    , "commitment" .= Null
-                                    , "assets" .= [asset]
-                                    , "custodyDatum" .= [refundId]
-                                    , "lovelace" .= value
-                                    , "reference" .= Null
-                                    , "datumValue" .= Null
-                                    ]
-                                ]
-                        _ -> failWith "insertAbsent did not create one Absent custody output"
-                    _ -> pure []
         (requestQuantity, _) <- storyApprovalOn cfg requestOut
         let requestInput =
                 object
@@ -3361,7 +3205,6 @@ observedStepTx
                     , "inlineConfig" .= config
                     , "commitment" .= Null
                     , "assets" .= ([] :: [Value])
-                    , "custodyDatum" .= Null
                     , "lovelace" .= (0 :: Integer)
                     , "reference" .= Null
                     , "datumValue" .= Null
@@ -3377,7 +3220,6 @@ observedStepTx
                     , "inlineConfig" .= Null
                     , "commitment" .= commitment
                     , "assets" .= positive
-                    , "custodyDatum" .= Null
                     , "lovelace"
                         .= sum
                             [value | Payments.Payment (Payments.Destination _) value <- payments]
@@ -3429,8 +3271,8 @@ observedStepTx
         -- the owner; a retraction spends the request alone and returns it.
         let (inputs, outputs) = case lsExit step of
                 Live.Fold ->
-                    ( stateInputs <> (requestInput : custodyInputs <> witnessInputs)
-                    , stateOutputRows <> destinationOutputs <> cageOutputs <> ownerOutputs
+                    ( stateInputs <> (requestInput : witnessInputs)
+                    , stateOutputRows <> destinationOutputs <> ownerOutputs
                     )
                 Live.Reject ->
                     (stateInputs <> [requestInput], stateOutputRows <> ownerOutputs)
@@ -3444,26 +3286,6 @@ observedStepTx
                 , "refunds" .= paid
                 ]
             )
-      where
-        custodyInput (source, spentOutput) = do
-            require
-                "absent custody was not spent by the accepted fold"
-                (source `Set.member` (transaction ^. bodyTxL . inputsTxBodyL))
-            let cfg = rcCfg (lsCage step)
-                key = TE.encodeUtf8 (T.pack (Live.requestKey (lsRequest step)))
-            asset <-
-                observeStepMint ids cfg (SBS.fromShort (cfgAbsentPolicy cfg)) key 1
-            pure
-                [ object
-                    [ "role" .= String "cage"
-                    , "datum" .= String (datumForm spentOutput)
-                    , "stateToken" .= (0 :: Integer)
-                    , "approvalQuantity" .= (0 :: Integer)
-                    , "lovelace" .= (0 :: Integer)
-                    , "assets" .= [asset]
-                    , "datumValue" .= Null
-                    ]
-                ]
 
 {- | Ask the same driver for every exit. Setup is only the earlier accepted,
 compared folds of this registry; a tamper never joins it, nor a reject or a
@@ -3480,7 +3302,7 @@ askModel _env state step judged = do
             object $
                 [ "id" .= String "live-edge"
                 , "theorem" .= String "Singular.Driver.runSurface"
-                , "statementSha256" .= String "4242624938955313763"
+                , "statementSha256" .= String "7931296848640482987"
                 , "start" .= startValue
                 , "setup" .= setup
                 , "exit"
@@ -3561,7 +3383,7 @@ modelStart state cage = do
             =<< readIORef (liveStarts state)
     setup <-
         Map.findWithDefault [] registry <$> readIORef (liveTraces state)
-    (application, active, absent, terminal) <-
+    (application, active) <-
         observePins (liveIds state) (rcCfg cage)
     pure
         ( start
@@ -3572,11 +3394,8 @@ modelStart state cage = do
                     registryIdentity
                     application
                     active
-                    absent
-                    terminal
                     (Compare.rootOf [])
             , "trie" .= ([] :: [Value])
-            , "custody" .= ([] :: [Value])
             , "held" .= ([] :: [Value])
             ]
         , setup
@@ -4089,13 +3908,11 @@ prepareRegistrationIdentities funder ids cage key recipient = do
         (allocateIdentity (livePolicies ids) . PolicyIdentity . SBS.fromShort)
         (registryPins cfg)
 
--- | A registry's four pinned policies, in the order the model names them.
+-- | A registry's two pinned policies, in the order the model names them.
 registryPins :: CageConfig -> [SBS.ShortByteString]
 registryPins cfg =
     [ cfgApplicationPolicy cfg
     , cfgActivePolicy cfg
-    , cfgAbsentPolicy cfg
-    , cfgTerminalPolicy cfg
     ]
 
 {- | Bind the approval a booked request carries to its model name, while
@@ -4132,18 +3949,16 @@ bindBookedApproval ids cfg requestOut modelRequest = do
 observePins
     :: LiveIdentities
     -> CageConfig
-    -> IO (Integer, Integer, Integer, Integer)
+    -> IO (Integer, Integer)
 observePins ids cfg = do
     pins <-
         mapM
             (observeIdentity (livePolicies ids) . PolicyIdentity . SBS.fromShort)
             [ cfgApplicationPolicy cfg
             , cfgActivePolicy cfg
-            , cfgAbsentPolicy cfg
-            , cfgTerminalPolicy cfg
             ]
     case pins of
-        [a, b, c, d] -> pure (a, b, c, d)
+        [a, b] -> pure (a, b)
         _ -> failWith "registry context has an incomplete policy mapping"
 
 -- | A registry configuration in the model's vocabulary, over an abstract root.
@@ -4152,11 +3967,9 @@ abstractConfig
     -> Integer
     -> Integer
     -> Integer
-    -> Integer
-    -> Integer
     -> [Word8]
     -> Value
-abstractConfig state registryIdentity application active absent terminal root =
+abstractConfig state registryIdentity application active root =
     object
         [ "root" .= root
         , "registryId" .= registryIdentity
@@ -4165,8 +3978,6 @@ abstractConfig state registryIdentity application active absent terminal root =
         , "retractTime" .= stateRetractTime state
         , "applicationPolicy" .= application
         , "activePolicy" .= active
-        , "absentPolicy" .= absent
-        , "terminalPolicy" .= terminal
         ]
 
 {- | What the chain shows, in the model's vocabulary.
@@ -4223,7 +4034,7 @@ hexT = T.pack . hex
 cg21PolicyBytes :: PolicyID -> ByteString
 cg21PolicyBytes (PolicyID sh) = scriptHashBytes sh
 
--- | The cage's live eight-field state datum.
+-- | The cage's live six-field state datum.
 readRegistryState :: Env -> RowCage -> IO OnChainTokenState
 readRegistryState env cage = do
     (_, out) <- cageStateUtxo env cage

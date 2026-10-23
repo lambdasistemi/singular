@@ -325,3 +325,47 @@ These economic retraction identities have no implementation coverage. Restated o
 | `Singular.retraction_output_observations` | none (new declaration) | `3f503a795ff83b5e7dd13325e6377b4d13f11b969a7f39262582027bf1286b05` | uncovered |
 | `Singular.retraction_outputs_ordinary` | none (new declaration) | `036536edf5445b2b1f6b3a48ca1c683f9a73895bcab76428695af1cf94f3a6d2` | uncovered |
 | `Singular.sum_filter_parts` | none (new declaration) | `fc755b58adc12807174942ca2cc98eb144a288b816d78c126d4437a540c3b594` | uncovered |
+
+## Unused witness policy pins
+
+Milestone one mints no absent or terminal token, so the registry state no longer
+pins a policy for either kind and the model keeps one token kind. Declarations
+whose only subject was a token or custody entry of a removed kind are retired
+with no replacement. Declarations whose text mentions a removed field or the
+registry custody list are restated; every restated identity starts uncovered and
+no execution evidence is inherited. The restated `terminal_attestation_permanent`
+keeps its requirement row: a terminated key stays terminated, now stated over the
+leaf.
+
+Retired, with no coverage credit:
+
+| Retired identity | Subject |
+|---|---|
+| `Singular.Statements.absent_witness_unique@968c72784fe79c81a9296e74e23df3d4afa19f99a3ed616fc73d417f3e24053a` | registry custody of absent tokens |
+| `Singular.Statements.terminal_attestation_sound@9cd4b73c811ee93427ae8eab5a96db956d0934eb20f3558117426f5b740b12ef` | held terminal tokens |
+| `Singular.Statements.witness_kinds_exclude@7013211d47dd903d511e417866114e9beac7d125ce81f40d3a08efbe996bfd1a` | three token kinds excluding one another |
+| `Singular.countCustody_cons@ba5fcf949d8cab913cf4d4526a3ea28f362f3509620e4337a3a46990e76ff79a` | custody census lemma |
+| `Singular.countCustody_filter_out@b3abd2076f7e89aa89e8482464dc9a055633ca3844496457eafba535d61f6244` | custody census lemma |
+| `Singular.countCustody_filter_zero@62ee0fec015cdc6dacaac411bf5a7a68b7538dc6a8a0992a83978622d5a36710` | custody census lemma |
+| `Singular.custody_entry_of_present@2a8a61b4e3d3640df6c1b478dbbb323ae517ba55f4c096b1907231820dcac2ff` | custody entry lookup |
+| `Singular.custody_entry_of_present_aux@bb96d812fc292f13d1324ff6a32e454101879c81e18be5e5b7e7d05bc2ca61bc` | custody entry lookup |
+| `Singular.step_preserves_terminal_holding@f104785db9eeeb5419e5ef3a17afbe9584fdd336c99fd62366310bce92af0230` | held terminal token across a step |
+
+Restated:
+
+| Statement | Old identity | New identity | Coverage after |
+|---|---|---|---|
+| `Singular.Statements.biconditional_supply_sync` | `7f1089607f7d6578eac69fb4b68bb4147853f29c6b6ac4067eb0db9e667f3f68` | `10a916e9863a11c960dcb0388a5951fa8e2d1aec5805879670242580631f94e8` | uncovered |
+| `Singular.Statements.booked_at_most_once` | `1c8b3268586a2ca2aaf930c3a45b0f8fde24c061f0ff63bf8962afbb42eb1ec2` | `a9ceaf24998660fb7a77f5e14e283123244f333021a34fe4a0d0e053a50924fb` | uncovered |
+| `Singular.Statements.insert_active_inversion` | `df737501c3c51c4968eb5adcc658f74473984613c591b4886fa092c15e35dc9d` | `5672579320a348104675bf8224b602385ef2dcd7133b46e9ec13b0b3e1382869` | uncovered |
+| `Singular.Statements.insert_active_transaction_row` | `d1c937f62f959c54a332841fe20c817a930e08aaab678dcbb749eb28a3645fb6` | `b94da1eb79b528ea2d897998bb4c016fa6ad55444cf7b418581e7b05cffdb12b` | uncovered |
+| `Singular.Statements.no_tree_change_without_approval` | `675ac9aa1522c14f7f620861bbea5194b21721f612e594c6aa48fe9b753f248b` | `e7401d4920cdf62a9dfc11c780f258ae03f67e09741b733715835f55d6ec52ae` | uncovered |
+| `Singular.Statements.terminal_attestation_permanent` | `e133aaa076a248d60fc059e2698069b69485c9ba6f3c5a7aa4a209e224c888e2` | `06697f836b6aad1ac1799b343313f96ec1e9e498dcec25c9c0ed183d498f7692` | uncovered; row kept |
+| `Singular.Statements.update_terminal_inversion` | `55610f5a33da76d49c9f8e5eee2170af33700b0222530d6548629960133bc470` | `bfbc980beda8627ee3a406cf43ad5a86453aa038a4807ab3bba4b0eef6b84fdc` | uncovered |
+| `Singular.Statements.update_terminal_transaction_row` | `f21126bbaa702ea79d379d7ea755ca49f322c9006105f56dc52af4319e1cfe74` | `eda5fcf4def9dc73ac7accf83704d6ac4a635cc141da664a058631c5935fd4f3` | uncovered |
+| `Singular.applyEdge_insertActive` | `e375c0199e4534c3e2430c02d41a3376f3309e6c764fb25a6671c20b90d2fc68` | `05ffaf5e7ab1880ed388b270a3c5ea1738ca5118de8b538ed401860882a81f60` | uncovered |
+| `Singular.applyEdge_updateTerminal` | `4192e30f6fb701d95b46e02db729b919b65626e4b593dda5a1674e270a766eb3` | `2abcc0acfa2f2ed0bbfe332657f4a2367ca23602435268948cdf5a3aa54eb8c2` | uncovered |
+| `Singular.txOf_of_step_ok` | `9ae165102ee3494987e8a56da69d374f6f415964f940560d063cfcf83c9b5e99` | `7b759fad78418f5d785a4d531f9011021f7ddc4cc3eae9c98b2d8a7f7fffa32a` | uncovered |
+
+The discovered population is 289 declarations: 115 manifest-bound and 174
+unclassified. The ratchet still refuses the removal of any further declaration.

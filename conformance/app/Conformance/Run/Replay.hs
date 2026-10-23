@@ -867,7 +867,7 @@ tracedFor setup applications role hash = do
 
 {- | What the capture records each script as, by its hash: the script an
 output carrying a state or request datum sits at, and the policies the state
-datum pins — the witnesses, and the application.
+datum pins — the witness, and the application.
 -}
 capturedRoles
     :: ConwayTx -> Map TxIn (TxOut ConwayEra) -> Map Text Text
@@ -881,8 +881,6 @@ capturedRoles tx utxo =
         Just (StateDatum st) ->
             [(h, "state.state") | Just h <- [scriptAt out]]
                 <> [ (pin (stateActivePolicy st), "witness.witness")
-                   , (pin (stateAbsentPolicy st), "witness.witness")
-                   , (pin (stateTerminalPolicy st), "witness.witness")
                    , (pin (stateAppPolicy st), "application")
                    ]
         Just (RequestDatum _) -> [(h, "request.request") | Just h <- [scriptAt out]]
@@ -1108,7 +1106,7 @@ witnessApplications statePolicy tokens =
 which takes no parameter, and, for each registry token the capture names — a
 token held by an output it spends, references or creates, or named by a
 request it spends — the request script under the state policy and that token,
-and the three witnesses of that registry.
+and the witness of that registry.
 -}
 deployedApplications
     :: ReplaySetup

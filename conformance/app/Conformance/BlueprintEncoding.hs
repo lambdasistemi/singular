@@ -243,8 +243,6 @@ sampleState =
         , stateRetractTime = 30000
         , stateAppPolicy = BuiltinByteString (BS.replicate 28 6)
         , stateActivePolicy = BuiltinByteString (BS.replicate 28 8)
-        , stateAbsentPolicy = BuiltinByteString (BS.replicate 28 9)
-        , stateTerminalPolicy = BuiltinByteString (BS.replicate 28 10)
         }
 
 {- | Second round-trip sample varying one pin (NOTE-046: the old stake
@@ -618,7 +616,7 @@ instance RealFromData OnChainRequest where
     realFromData _ = Nothing
 
 instance RealFromData OnChainTokenState where
-    realFromData (Constr 0 [r, I mf, I pt, I rt, B ap, B cp, B bp, B tp]) = do
+    realFromData (Constr 0 [r, I mf, I pt, I rt, B ap, B cp]) = do
         rt' <- realFromData r :: Maybe OnChainRoot
         Just
             OnChainTokenState
@@ -628,8 +626,6 @@ instance RealFromData OnChainTokenState where
                 , stateRetractTime = rt
                 , stateAppPolicy = BuiltinByteString ap
                 , stateActivePolicy = BuiltinByteString cp
-                , stateAbsentPolicy = BuiltinByteString bp
-                , stateTerminalPolicy = BuiltinByteString tp
                 }
     realFromData _ = Nothing
 
@@ -727,8 +723,6 @@ checkFieldTitles titles = do
         , "retract_time"
         , "application_policy"
         , "active_policy"
-        , "absent_policy"
-        , "terminal_policy"
         ]
     expectFields
         titles

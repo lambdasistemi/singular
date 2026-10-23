@@ -4,9 +4,7 @@ The chain settles a fold per payee. A fold that delivers a token pays the
 deposit with it: the output carrying the token holds at least the deposit. A
 fold that delivers nothing, and a reject, pay the request's owner: the owner is
 credited the summed lovelace of every output at the owner's payment key that
-carries no token the fold delivers. An absent insertion locks the deposit in the
-custody output it creates. A spent custody's refund address is credited the
-summed lovelace of every output at that address carrying no delivered token. A
+carries no token the fold delivers. A
 retraction returns what the request held through one output at the owner's key
 whose inline datum is the retracted request's own output reference: the largest
 such output is what the chain reads, never a sum of fragments. Every
@@ -55,8 +53,6 @@ data FoldOutput = FoldOutput
     -- ^ the datum form the output presents: @none@, @hashed@ or @inline@
     , outputApprovals :: [Text]
     -- ^ the hex names of the application-policy assets it holds
-    , outputCustody :: Bool
-    -- ^ holds an absent custody datum at the cage
     , outputReference :: Maybe Text
     -- ^ the output reference its inline datum presents, if it presents one
     }
@@ -68,8 +64,6 @@ data ExitFacts = ExitFacts
     , factsEdge :: Edge
     , factsOwner :: ByteString
     -- ^ the payment key hash the request names as its owner
-    , factsRefund :: Maybe ByteString
-    -- ^ the refund address of the custody this fold spent
     , factsReference :: Maybe Text
     -- ^ the output reference the request sat at
     }
@@ -77,14 +71,10 @@ data ExitFacts = ExitFacts
 
 -- | Who a payment reached, in the chain's terms.
 data Payee
-    = -- | the cage's custody
-      Custody
-    | -- | the address holding the delivered token
+    = -- | the address holding the delivered token
       Destination ByteString
     | -- | the request owner's payment key
       Owner ByteString
-    | -- | the refund address a spent custody recorded
-      Refund ByteString
     deriving stock (Eq, Show)
 
 -- | A payment the fold made: its payee and the lovelace that reached it.
@@ -95,22 +85,18 @@ data Payment = Payment
     deriving stock (Eq, Show)
 
 {- | The payments of one accepted fold, in the order the model states them:
-what the fold owes for its request, then the custody refund it pays.
+what the fold owes for its request.
 
 What is owed is reported as the chain paid it, however much that is, so a
 short payment reaches the comparison as a value below the model's floor. What
 cannot be read as a payment at all — a delivered token no single output
-carries, a custody lock that is not there, a spent custody whose source was not
-observed — is refused rather than reported.
+carries — is refused rather than reported.
 -}
 foldPayments :: ExitFacts -> [FoldOutput] -> Either String [Payment]
-foldPayments facts outputs = (<>) <$> owed <*> refunds
+foldPayments facts outputs = owed
   where
     owing = map (outputs !!) (owedOutputs facts outputs)
     owed = case owedPayee facts of
-        OwedCustody -> case owing of
-            [custody] -> Right [Payment Custody (outputLovelace custody)]
-            _ -> Left "insertAbsent locked no single custody output"
         OwedCarrier -> case owing of
             [carrier] ->
                 Right
@@ -126,25 +112,6 @@ foldPayments facts outputs = (<>) <$> owed <*> refunds
                     (Owner (factsOwner facts))
                     (maximum (0 : map outputLovelace owing))
                 ]
-    -- A reject or a retraction consumes no custody, whatever edge it named.
-    refunds = case (factsExit facts, factsEdge facts, factsRefund facts) of
-        (Fold, UpdateActive, Just refund) -> custodyRefund refund
-        (Fold, DeleteAbsent, Just refund) -> custodyRefund refund
-        (Fold, UpdateActive, Nothing) -> Left "updateActive has no observed custody source"
-        (Fold, DeleteAbsent, Nothing) -> Left "deleteAbsent has no observed custody source"
-        _ -> Right []
-    custodyRefund address =
-        Right
-            [ Payment
-                (Refund address)
-                ( sum
-                    [ outputLovelace out
-                    | out <- outputs
-                    , outputAddress out == address
-                    , not (outputCarrier out)
-                    ]
-                )
-            ]
 
 {- | Whether the chain credits an output to an owner's key: it sits at that
 payment key and carries no token the fold delivers.
@@ -153,7 +120,7 @@ creditsOwner :: ByteString -> FoldOutput -> Bool
 creditsOwner owner out = outputKey out == owner && not (outputCarrier out)
 
 -- | Whom an exit owes its request's payment, and so which outputs pay it.
-data OwedPayee = OwedCustody | OwedCarrier | OwedOwner | OwedBound
+data OwedPayee = OwedCarrier | OwedOwner | OwedBound
 
 {- | Whom this exit owes its request's payment: the model's rule, by edge for a
 fold; a reject owes the owner, a retraction the owner through a bound output.
@@ -162,7 +129,7 @@ owedPayee :: ExitFacts -> OwedPayee
 owedPayee facts = case (factsExit facts, factsEdge facts) of
     (Reject, _) -> OwedOwner
     (Retract, _) -> OwedBound
-    (Fold, InsertAbsent) -> OwedCustody
+    (Fold, InsertAbsent) -> OwedOwner
     (Fold, InsertActive) -> OwedCarrier
     (Fold, UpdateActive) -> OwedCarrier
     (Fold, WitnessTerminal) -> OwedCarrier
@@ -181,8 +148,7 @@ bindsTo owner reference out =
         && outputReference out == reference
 
 {- | The positions of the outputs through which the chain settles what an exit
-owes for its request: the custody output an absent insertion locks, the
-outputs carrying a token the fold delivers, for a fold delivering nothing and a
+owes for its request: the outputs carrying a token the fold delivers, for a fold delivering nothing and a
 reject every output crediting the owner's key, and for a retraction every
 output crediting it bound to the retracted request.
 -}
@@ -190,7 +156,6 @@ owedOutputs :: ExitFacts -> [FoldOutput] -> [Int]
 owedOutputs facts outputs = [i | (i, out) <- zip [0 ..] outputs, pays out]
   where
     pays = case owedPayee facts of
-        OwedCustody -> outputCustody
         OwedCarrier -> outputCarrier
         OwedOwner -> creditsOwner (factsOwner facts)
         OwedBound -> bindsTo (factsOwner facts) (factsReference facts)
@@ -234,7 +199,6 @@ tamperEdits alteration facts outputs = case (alteration, owedOutputs facts outpu
             Left
                 "the output paying what the fold owes is its last; no change can take the lovelace"
         | outputCarrier changed
-            || outputCustody changed
             || isJust (outputReference changed)
             || (not retraction && not (null (outputApprovals changed))) ->
             Left "the last output is not change that pays nothing the exit owes"
@@ -318,7 +282,6 @@ ownerOutputObservation owner approvalOf assets stateTokens reference reading = d
             , "inlineConfig" .= Null
             , "commitment" .= returned
             , "assets" .= assets
-            , "custodyDatum" .= Null
             , "lovelace" .= readingLovelace reading
             , "reference" .= reference
             , "datumValue" .= Null

@@ -912,7 +912,7 @@ foldSpecContext env0 v fs = do
     utxos <- cageUtxosOf env cfg
     pure
         RegistryContext
-            { rcWitnessScripts = Map.fromList [(k, witnessAt k) | k <- [0, 1, 2]]
+            { rcWitnessScripts = Map.fromList [(k, witnessAt k) | k <- [1]]
             , rcCageScript = Just (mkCageScript cfg)
             , rcCageUtxos = utxos
             , rcHolderUtxos = fsHolderUtxos fs

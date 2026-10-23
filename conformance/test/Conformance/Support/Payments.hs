@@ -4,8 +4,7 @@ Appendix material: evidence about how the live runner reads the chain, not
 about the registry. Each case is one fold's outputs as the chain would carry
 them, and the payments the chain's settlement credits: a delivering fold pays
 the deposit with the token, a fold delivering nothing pays the owner's key the
-summed lovelace of every output at that key that carries no delivered token, an
-absent insertion locks it in custody, and a spent custody is refunded in full.
+summed lovelace of every output at that key that carries no delivered token.
 -}
 module Conformance.Support.Payments (spec) where
 
@@ -27,10 +26,9 @@ import Data.Either (isLeft)
 import Data.Text (Text)
 import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
 
-owner, holder, refunded :: ByteString
+owner, holder :: ByteString
 owner = "owner-key"
 holder = "holder-key"
-refunded = "refund-key"
 
 -- | An output at a key-hash address named after its key.
 at :: ByteString -> Integer -> FoldOutput
@@ -42,22 +40,21 @@ at key lovelace =
         , outputCarrier = False
         , outputDatum = "none"
         , outputApprovals = []
-        , outputCustody = False
         , outputReference = Nothing
         }
 
 -- | The registry's state continuation: a script output, paying nobody.
 state :: FoldOutput
-state = FoldOutput "cage" "" 1500000 False "inline" [] False Nothing
+state = FoldOutput "cage" "" 1500000 False "inline" [] Nothing
 
 facts :: Edge -> ExitFacts
-facts edge = ExitFacts Fold edge owner Nothing Nothing
+facts edge = ExitFacts Fold edge owner Nothing
 
 {- | The facts of a reject or a retraction of an insertActive request sitting at
 the output reference `booked`.
 -}
 exitFacts :: Exit -> ExitFacts
-exitFacts exit = ExitFacts exit InsertActive owner Nothing (Just booked)
+exitFacts exit = ExitFacts exit InsertActive owner (Just booked)
 
 -- | The output reference the request sat at, and another one.
 booked, elsewhere :: Text
@@ -123,61 +120,6 @@ spec = describe "Reading a fold's payments off its transaction" $ do
             foldPayments (facts InsertActive) [state, carrier, carrier]
                 `shouldSatisfy` isLeft
 
-    it "locks an absent insertion's deposit in custody" $ do
-        foldPayments
-            (facts InsertAbsent)
-            [state, custody 2100000, at owner 9000000]
-            `shouldBe` Right [Payment Custody 2100000]
-        foldPayments (facts InsertAbsent) [state, at owner 9000000]
-            `shouldSatisfy` isLeft
-
-    it "states what the fold owes first, then the custody refund it pays" $ do
-        let refund = at refunded 4000000
-            carrier = (at holder 2500000){outputCarrier = True}
-            spent = Just (outputAddress refund)
-        foldPayments
-            ((facts UpdateActive){factsRefund = spent})
-            [state, carrier, refund]
-            `shouldBe` Right
-                [ Payment (Destination (outputAddress carrier)) 2500000
-                , Payment (Refund (outputAddress refund)) 4000000
-                ]
-        foldPayments
-            ((facts DeleteAbsent){factsRefund = spent})
-            [state, refund, at owner 2000000, at owner 6000000]
-            `shouldBe` Right
-                [ Payment (Owner owner) 8000000
-                , Payment (Refund (outputAddress refund)) 4000000
-                ]
-
-    it
-        "reads a custody refund as paid, above or short, off the outputs at its refund address"
-        $ do
-            -- The chain credits a refund address the summed lovelace of the
-            -- outputs at it that carry no delivered token; the custody's value is
-            -- the model's floor, never a selector.
-            let spent = Just ("address-of-" <> refunded)
-                refundOf outputs =
-                    foldPayments
-                        ((facts DeleteAbsent){factsRefund = spent})
-                        (state : outputs)
-                refund = Payment (Refund ("address-of-" <> refunded))
-                owed = Payment (Owner owner) 0
-            refundOf [at refunded 4000001] `shouldBe` Right [owed, refund 4000001]
-            refundOf [at refunded 3999999] `shouldBe` Right [owed, refund 3999999]
-            refundOf
-                [ (at refunded 1000000){outputApprovals = ["approval-a"]}
-                , at refunded 3000000
-                ]
-                `shouldBe` Right [owed, refund 4000000]
-            refundOf [] `shouldBe` Right [owed, refund 0]
-            refundOf [(at refunded 4000000){outputCarrier = True}]
-                `shouldBe` Right [owed, refund 0]
-
-    it "refuses a spent custody with no observed source" $
-        foldPayments ((facts DeleteAbsent){factsRefund = Nothing}) [state]
-            `shouldSatisfy` isLeft
-
     it "reads the owner output off the outputs crediting the owner's key" $ do
         let deposit = (at owner 2000000){outputApprovals = ["approval-a"]}
             change = at owner 7000000
@@ -212,27 +154,16 @@ spec = describe "Reading a fold's payments off its transaction" $ do
                     , (at owner 2000000){outputApprovals = ["approval-a"]}
                     , at owner 7000000
                     ]
-                locking = [state, custody 2000000, at owner 9000000]
             paymentsAfter ShortByOne InsertActive delivering
                 `shouldBe` Right [Payment (Destination (outputAddress carrier)) 1999999]
             -- The change credits the owner too, so it leaves the owner's key.
             paymentsAfter ShortByOne DeleteActive returning
                 `shouldBe` Right [Payment (Owner owner) 1999999]
-            paymentsAfter ShortByOne InsertAbsent locking
-                `shouldBe` Right [Payment Custody 1999999]
             mapM_
                 (uncurry (conserved ShortByOne))
                 [ (InsertActive, delivering)
                 , (DeleteActive, returning)
-                , (InsertAbsent, locking)
                 ]
-
-    it "moves an absent insertion's custody away from the cage" $
-        paymentsAfter
-            OtherAddress
-            InsertAbsent
-            [state, custody 2000000, at owner 9000000]
-            `shouldSatisfy` isLeft
 
     it "changes no output for an extra signer" $
         tamperEdits
@@ -360,15 +291,6 @@ spec = describe "Reading a fold's payments off its transaction" $ do
             )
             [OtherReference, StateSpent]
 
--- | An absent custody output at the cage.
-custody :: Integer -> FoldOutput
-custody lovelace =
-    (at "" lovelace)
-        { outputAddress = "cage"
-        , outputDatum = "inline"
-        , outputCustody = True
-        }
-
 stranger :: ByteString
 stranger = "stranger-key"
 
@@ -388,7 +310,6 @@ exitTampered alteration exitFacts' outputs =
                 o
                     { outputAddress = "address-of-" <> stranger
                     , outputKey = stranger
-                    , outputCustody = False
                     }
             )
             outs

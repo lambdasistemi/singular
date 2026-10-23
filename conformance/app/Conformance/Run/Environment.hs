@@ -269,8 +269,8 @@ loadCodes path = do
             failWith
                 "blueprint has no state.state/request.request code"
 
-{- | The naming partition's compiled code (#157 genesis-policy-pins). The four pins
-the eight-field boot datum carries are DERIVED from it for the registry
+{- | The naming partition's compiled code (#157 genesis-policy-pins). The two pins
+the six-field boot datum carries are DERIVED from it for the registry
 identity each boot creates — never typed, never a placeholder — so the
 harness needs the code itself, not a recorded hash: the application
 validator declares no parameters, but `witness(kind, registry)` declares
@@ -400,7 +400,7 @@ cageCfgWith stateBytes requestBytes namingCodes seed processMs retractMs =
     -- previous-policies list supplies List[] where the runtime
     -- expects a constructor (unConstrData failure at boot).
     let cfgScriptHashValue = computeScriptHash stateBytes
-        -- #157 genesis-policy-pins: the four pins for THIS registry identity —
+        -- #157 genesis-policy-pins: the two pins for THIS registry identity —
         -- the state policy plus the token name the seed determines —
         -- derived from the naming partition's own compiled code.
         registryId =
@@ -434,9 +434,7 @@ cageCfgWith stateBytes requestBytes namingCodes seed processMs retractMs =
               cfgApplicationPolicy =
                 SBS.toShort
                     (scriptHashBytes (computeScriptHash (ncApplication namingCodes)))
-            , cfgAbsentPolicy = witnessPolicy 0
             , cfgActivePolicy = witnessPolicy 1
-            , cfgTerminalPolicy = witnessPolicy 2
             , cfgConsumerScript = SBS.empty
             , network = Testnet
             }

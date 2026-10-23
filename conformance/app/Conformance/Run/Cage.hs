@@ -258,7 +258,7 @@ cageRefUtxos env cfg tid = do
             ( [ mkCageScript cfg
               , mkRequestScript cfg tid
               ]
-                <> map witnessAt [0, 1, 2]
+                <> map witnessAt [1]
             )
     emit
         "references"
@@ -407,7 +407,7 @@ publishRefScriptWith prov submit script = do
         unavailable -> failWith ("submission unavailable: " <> show unavailable)
     pure (TxIn (txIdTx signed) (TxIx 0), refOut)
 
-{- | The duties context for a row cage: its own three token policies, the
+{- | The duties context for a row cage: its own token policy, the
 cage script its custody spends run, its UTxOs, the one destination datum
 the harness books against, and the reference outputs published at its boot —
 read from the view the fold itself is built in.
@@ -435,7 +435,7 @@ rowRegistryContext env0 v cage tid = do
     utxos <- cageUtxosOf env cfg
     pure
         RegistryContext
-            { rcWitnessScripts = Map.fromList [(k, witnessAt k) | k <- [0, 1, 2]]
+            { rcWitnessScripts = Map.fromList [(k, witnessAt k) | k <- [1]]
             , rcCageScript = Just (mkCageScript cfg)
             , rcCageUtxos = utxos
             , rcAllowInadmissible = False
