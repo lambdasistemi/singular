@@ -15,22 +15,22 @@
   },
   "preservedBaseArtifacts": {
     "held-statements.json": "fbf86c89630d0daf32e49a33640803ac82f1a66baa99a60a2974c7a652d9f66c",
-    "history-statements.json": "af43094d4de35f7616123b2a18570b7d83949b2dec1a43b5a0444817d7b8ca7a",
+    "history-statements.json": "ff505454372956d80e274edec2709509017cdc7e86ecbd942ae753877a4335ab",
     "mutants.json": "96d72f824c5da393440e478732ef8c04ce26e949df10755b92f4258a46696287",
     "history_controls.py": "079b218768c6637f17e5b7295c6d9523675d78df107cf62435a40bc6bcac6011",
     "history-corpus.json": "7956e841731926ac98c906c9be961bbf6bad21377afbd6f8710c5cb9761f60d2",
     "history-mutants.json": "ffc13cbeb2003276f48c91d3b3df785ea5d478d4b666df5148eda6d5683ad1b8",
     "application-requests-corpus.json": "782f1a89aa4f31f277b4f83bbe2e73cd7aabd6fe9de3fbf646b5844f815cd1fd",
-    "lake-manifest.json": "06aa4a449e07d84880d4f7ad95613932202151dac841d352c7a12fa5b1c88188",
-    "README.speech.json": "91420755fb94cd540236c20743fd3537ee2408093bc78db45ca669584a37fd04",
+    "lake-manifest.json": "31cea901292a5f3a4dba5612c9a0362019229a7d25628f3bcb8a8a8505a35443",
+    "README.speech.json": "067839bd36133cf70df722375bbeaa96c53a9a81821d3885dccc7eb2e091cbd6",
     "statements.json": "97450a8880920e1f81b97a02e2e449c76aec7baa9ae2b17fab63f7fc93fccb87",
-    "README.md": "52205979f87d956edfc552e7370a7e97c35baf98b2a2cbe00fd72f4746af4487",
+    "README.md": "0cfd66df9a226446f39f08fe471260ed5d05cc94c7d3c15f8bc548e3f82cabaf",
     "application-requests-statements.json": "de702f29fdbaa3f9e7f6300d4b7b4bf1074ef7f39ee7d4f94587bacf1fcfde2d",
     "corpus.json": "7d327e9b86955dd655ab2e8ed4693c3f03d00fe7aa00ca7da5f764fe5fc7bfd5",
     "effect_controls.py": "6da21ce4ae868b088706baa70f79d166361316a0f460f97bbf00ea82cbbdff15",
     "held-corpus.json": "3772d77210e94584dac4b44517afc9696ac3ecf34484e3059427efd75b98dd5d",
     "application-requests-mutants.json": "fdcbea2d404d14ddeda0fec2cee31015b5f1dce8b1ae99fc9fa7fbb7c045af99",
-    "lakefile.lean": "f6d6bdddb9bd3dee63664ca1ad6a4cc3b179c481159185049be64b61ca4b6091",
+    "lakefile.lean": "a1e4e166390a65f8eee4a5928b7b53285da2a749e184c88fc9de1cfdda5c8d84",
     "history_check.py": "988e46313b3857cd4a2d9ae858b49f941c1f9749743ded79005be6c7c4ec84d8",
     "held-mutants.json": "6a7bb2adb325544430bc94699d2d34a19acf6bade320221ab8d0b312a5f95f1e",
     "lean/NoPin/Mutants.lean": "cc0288f0807cf66ff0b5733fd0e13411e2bf6f05f5b38794800a65a48add5c61",
@@ -525,5 +525,88 @@
     "Canonical bytes, script invocation, real output minimums, provider completeness, wallet availability and inclusion remain external.",
     "Earlier statement, corpus and mutant rows remain byte-identical.",
     "History statement and inversion rows are preserved; its check.py plumbing hash is refreshed for lifecycle integration."
-  ]
+  ],
+  "supersededBy": {
+    "family": "refund-lifecycle",
+    "reason": "Refund address signs reclaim, as the accepted economics requires; controller authorizes booking only.",
+    "answer": "/home/paolino/.orch-runtime/singular/epic-731/ticket-741/commit-owner-12/answers/A-001-reclaim-signing-authority.md",
+    "statements": [
+      {
+        "old": "NoPin.ApplicationRequests.Lifecycle.Statements.configurationCreate_inversion",
+        "replacement": "NoPin.ApplicationRequests.RefundLifecycle.Statements.configurationCreate_inversion"
+      },
+      {
+        "old": "NoPin.ApplicationRequests.Lifecycle.Statements.bookRegistration_inversion",
+        "replacement": "NoPin.ApplicationRequests.RefundLifecycle.Statements.bookRegistration_inversion"
+      },
+      {
+        "old": "NoPin.ApplicationRequests.Lifecycle.Statements.bookTermination_inversion",
+        "replacement": "NoPin.ApplicationRequests.RefundLifecycle.Statements.bookTermination_inversion"
+      },
+      {
+        "old": "NoPin.ApplicationRequests.Lifecycle.Statements.registrationFold_inversion",
+        "replacement": "NoPin.ApplicationRequests.RefundLifecycle.Statements.registrationFold_inversion"
+      },
+      {
+        "old": "NoPin.ApplicationRequests.Lifecycle.Statements.ownerReclaim_inversion",
+        "replacement": "NoPin.ApplicationRequests.RefundLifecycle.Statements.ownerReclaim_inversion"
+      },
+      {
+        "old": "NoPin.ApplicationRequests.Lifecycle.Statements.expiredCleanup_inversion",
+        "replacement": "NoPin.ApplicationRequests.RefundLifecycle.Statements.expiredCleanup_inversion"
+      },
+      {
+        "old": "NoPin.ApplicationRequests.Lifecycle.Statements.terminationFold_inversion",
+        "replacement": "NoPin.ApplicationRequests.RefundLifecycle.Statements.terminationFold_inversion"
+      },
+      {
+        "old": "NoPin.ApplicationRequests.Lifecycle.Statements.liveUpdate_inversion",
+        "replacement": "NoPin.ApplicationRequests.RefundLifecycle.Statements.liveUpdate_inversion"
+      },
+      {
+        "old": "NoPin.ApplicationRequests.Lifecycle.Statements.approvalBurn_inversion",
+        "replacement": "NoPin.ApplicationRequests.RefundLifecycle.Statements.approvalBurn_inversion"
+      },
+      {
+        "old": "NoPin.ApplicationRequests.Lifecycle.Statements.registration_lifecycle",
+        "replacement": "NoPin.ApplicationRequests.RefundLifecycle.Statements.registration_lifecycle"
+      },
+      {
+        "old": "NoPin.ApplicationRequests.Lifecycle.Statements.termination_burn",
+        "replacement": "NoPin.ApplicationRequests.RefundLifecycle.Statements.termination_burn"
+      },
+      {
+        "old": "NoPin.ApplicationRequests.Lifecycle.Statements.booking_authority_and_parameters",
+        "replacement": "NoPin.ApplicationRequests.RefundLifecycle.Statements.booking_authority_and_parameters"
+      },
+      {
+        "old": "NoPin.ApplicationRequests.Lifecycle.Statements.treasury_at_booking",
+        "replacement": "NoPin.ApplicationRequests.RefundLifecycle.Statements.treasury_at_booking"
+      },
+      {
+        "old": "NoPin.ApplicationRequests.Lifecycle.Statements.additive_payments",
+        "replacement": "NoPin.ApplicationRequests.RefundLifecycle.Statements.additive_payments"
+      },
+      {
+        "old": "NoPin.ApplicationRequests.Lifecycle.Statements.folder_protection",
+        "replacement": "NoPin.ApplicationRequests.RefundLifecycle.Statements.folder_protection"
+      },
+      {
+        "old": "NoPin.ApplicationRequests.Lifecycle.Statements.burning_grants_nothing",
+        "replacement": "NoPin.ApplicationRequests.RefundLifecycle.Statements.burning_grants_nothing"
+      },
+      {
+        "old": "NoPin.ApplicationRequests.Lifecycle.Statements.no_stuck_termination",
+        "replacement": "NoPin.ApplicationRequests.RefundLifecycle.Statements.no_stuck_termination"
+      },
+      {
+        "old": "NoPin.ApplicationRequests.Lifecycle.Statements.approval_burn_open",
+        "replacement": "NoPin.ApplicationRequests.RefundLifecycle.Statements.approval_burn_open"
+      },
+      {
+        "old": "NoPin.ApplicationRequests.Lifecycle.Statements.configuration_immutable",
+        "replacement": "NoPin.ApplicationRequests.RefundLifecycle.Statements.configuration_immutable"
+      }
+    ]
+  }
 }

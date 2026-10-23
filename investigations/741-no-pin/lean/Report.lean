@@ -37,7 +37,9 @@ elab "#identity_report" : command => do
       unless name.toString.startsWith "NoPin.Statements." || name.toString.startsWith "NoPin.Held.Statements." ||
           name.toString.startsWith "NoPin.ApplicationRequests.Statements." ||
           name.toString.startsWith "NoPin.ApplicationRequests.HistoryStatements." ||
-          name.toString.startsWith "NoPin.ApplicationRequests.Lifecycle.Statements." do
+          name.toString.startsWith "NoPin.ApplicationRequests.Lifecycle.Statements." ||
+          name.toString.startsWith "NoPin.ApplicationRequests.RefundLifecycle.Statements." ||
+          name.toString.startsWith "NoPin.ApplicationRequests.Money.Statements." do
         let axioms ← collectAxioms name
         unless axioms.all (fun a => a == `propext || a == `Classical.choice || a == `Quot.sound) do
           throwError "unproved candidate definition or example: {name}"
@@ -126,3 +128,9 @@ end NoPin.Report
 
 #lifecycle_report
 #eval NoPin.ApplicationRequests.Lifecycle.Report.reportCorpus
+
+#refund_lifecycle_report
+#eval NoPin.ApplicationRequests.RefundLifecycle.Report.reportCorpus
+
+#money_report
+#eval NoPin.ApplicationRequests.Money.Report.reportCorpus

@@ -219,7 +219,15 @@ def main():
     require(
         all(
             r.get("family")
-            in {None, "held", "application-requests", "history", "lifecycle"}
+            in {
+                None,
+                "held",
+                "application-requests",
+                "history",
+                "lifecycle",
+                "refund-lifecycle",
+                "money",
+            }
             for r in records
         ),
         "unknown evidence family",
@@ -321,6 +329,12 @@ def main():
     import lifecycle_check
 
     lifecycle_check.check(records)
+    import refund_lifecycle_check
+
+    refund_lifecycle_check.check(records)
+    import money_check
+
+    money_check.check(records)
 
 
 if __name__ == "__main__":

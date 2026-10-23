@@ -5,6 +5,7 @@ package «no-pin-investigation» where
   srcDir := "lean"
 
 require singular from "../.."
+require «open-datum» from "../../applications/open-datum"
 
 @[default_target]
 lean_lib NoPin where

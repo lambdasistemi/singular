@@ -2,6 +2,8 @@ import NoPin.Oracle
 import NoPin.Held.Oracle
 import NoPin.ApplicationRequests.Oracle
 import NoPin.ApplicationRequests.Lifecycle
+import NoPin.ApplicationRequests.RefundLifecycle
+import NoPin.ApplicationRequests.Money
 
 /-! Hypothetical #741 oracle, not accepted law: JSON scenarios from stdin.
 This executes named definitions, never statements or theorem projections. -/
@@ -15,6 +17,30 @@ def main : IO UInt32 := do
     if input.isEmpty then return 0
     let parsed := Lean.Json.parse input
     if let .ok json := parsed then
+      if (json.getObjValAs? String "family").toOption == some "money" then
+        match Lean.fromJson? (α := NoPin.ApplicationRequests.Money.Scenario) json with
+        | .error error =>
+          (← IO.getStderr).putStrLn error
+          return 1
+        | .ok scenario =>
+          match NoPin.ApplicationRequests.Money.runScenario scenario with
+          | .error error =>
+            (← IO.getStderr).putStrLn error
+            return 1
+          | .ok result => stdout.putStrLn result.compress
+          continue
+      if (json.getObjValAs? String "family").toOption == some "refund-lifecycle" then
+        match Lean.fromJson? (α := NoPin.ApplicationRequests.RefundLifecycle.Scenario) json with
+        | .error error =>
+          (← IO.getStderr).putStrLn error
+          return 1
+        | .ok scenario =>
+          match NoPin.ApplicationRequests.RefundLifecycle.runScenario scenario with
+          | .error error =>
+            (← IO.getStderr).putStrLn error
+            return 1
+          | .ok result => stdout.putStrLn (Lean.toJson result).compress
+          continue
       if (json.getObjValAs? String "family").toOption == some "lifecycle" then
         match Lean.fromJson? (α := NoPin.ApplicationRequests.Lifecycle.Scenario) json with
         | .error error =>

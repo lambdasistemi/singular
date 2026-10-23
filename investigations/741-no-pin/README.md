@@ -88,6 +88,27 @@ multi-registry history. The public-fold statement promises a constructed balance
 model observation under explicit authenticity, clock, finite encoding/collision
 and ordinary-funding premises; provider completeness, real trie proofs, script
 invocation, output minimums, funding availability, willingness and inclusion
-remain external. Application lifecycle and money equivalence belong to later
-slices. No production validator, application law, hosted CI or release acceptance
+remain external. The current lifecycle and money statement candidate is described below; its general guarantees remain unproved. No production validator, application law, hosted CI or release acceptance
 follows from these checks.
+
+
+## Money and journey statement candidate
+
+As a requester or integrator, I want to see which money flows stay equal and which change by an explicit ruling before treating the simplified application as equivalent. The compiled comparison below is a finite model example, not a ledger receipt. All 12 general money statements remain unproved.
+
+| Journey | Accepted economic baseline | Current candidate |
+|---|---|---|
+| Create | Empty registry; chosen parameters | Empty registry; immutable configuration record |
+| Registration booking | Request holds 23 | Request holds 23 |
+| Registration fold | Holding 7; folder 3; treasury 13 | Holding 7; folder 16; treasury 0 |
+| Payload update | Protected deposit floor 7 | Protected deposit floor 7 |
+| Termination booking | Request holds 10; treasury 0 | Request holds 10; treasury 7 |
+| Termination fold | Folder 2; treasury 8 | Folder 10; treasury 0 |
+| Owner reclaim | Refund 23 | Refund 23; refund address signs |
+| Expired cleanup | Refund 20; cleaner allocation 3 | Refund 7; cleaner allocation 16 |
+
+The table is computed from the compiled party-by-journey grid. The old side calls the accepted economic definitions at revision 00771d77af996605845cf062285263909a049cf8; it does not copy their arithmetic. Folder and cleaner amounts are gross request allocations, separate from ordinary fee funding and change. Arbitrary accepted transactions enforce deposit and refund floors; the public fold builder constructs the displayed full residual allocation. Creation reserves caller-supplied value for its configuration output and claims no equal fee or ledger minimum.
+
+The refund address signs reclaim, matching accepted retraction; the controller signs booking. The earlier controller-signer lifecycle family is retained as history and superseded by the refund-signer family. The new statements and oracle dispatch use RefundApplication and RefundLifecycle. Both concrete signer choices are executed against both models. A genuine old key-mismatch rejection is also executed; the new design has no early rejection and uses later owner reclaim or cleanup.
+
+Registration's residual bid, termination's whole-value bid, deposit-to-treasury at termination booking, no treasury share at a fold, and the three timed phases are recorded differences rather than blanket equality. The old economic termination has no protected-control deposit field: its zero controller obligation is not a claim about the separate legacy application release duty. Old consumer update observations call its own updateStep. Cryptographic bytes, public completeness, real script invocation, minimum outputs, available funding, inclusion and implementation acceptance remain external.

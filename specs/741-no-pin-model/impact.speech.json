@@ -285,6 +285,12 @@
   ],
   "_source": {
     "file": "impact.md",
-    "sha256": "68482bd029fbfc32e6897ca13e6a67c401eb6affbb19ef4475d4cc16eafb0193"
-  }
+    "sha256": "19bc0cab0add14bd957b0a78b943b771599f8ab82682b5cbb9bccb74855baf69"
+  },
+  "money-comparison-and-reclaim-authority-correction": [
+    {
+      "text": "Money comparison and reclaim authority correction\n\nAs a requester, I want the refund address that could reclaim under the accepted economics to retain that authority. The money comparison exposed a controller/refund-address distinction: controller 42 could reclaim in the earlier hypothetical lifecycle family while refund address 50 could not; accepted economic retraction admitted 50 and refused 42. The bound same-semantics direction preserves refund-address signing for reclaim, with controller signing retained for booking.\n\nThe previous lifecycle audit and its ledger digest above remain a record of that earlier statement checkpoint, available at revision 99682696057a4ab4829067c57623276fa5faf1fd. They do not accept the corrected candidate. The old statement rows and functions remain historical; the refund-signer lifecycle is restated under new qualified names, and its ledger marks the supersession. The current money/oracle surfaces use the replacement handler. Both signing choices execute against both models.\n\nThe money candidate states create, registration booking and fold, payload update, termination booking and fold, full owner reclaim and deposit-only cleanup. Its party-by-journey grid distinguishes exact equal allocations from the ruled bid, treasury and timing differences. The old side calls the accepted economic producers; full old consumer/economic composition, real serialization, provider and ledger correspondence, output minimums, funding availability and inclusion remain external. Every general replacement and money statement is still unproved, with deliberate sorry debt. Compiled finite certificates and source substitutions are narrower evidence and confer no implementation or acceptance standing.",
+      "pause": 300
+    }
+  ]
 }
