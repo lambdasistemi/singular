@@ -1490,9 +1490,7 @@ claimedAt cfg signed key =
 -- | The registry's pinned token policy, as raw script hash bytes.
 pinnedPolicies :: CageConfig -> [ByteString]
 pinnedPolicies cfg =
-    map
-        SBS.fromShort
-        [cfgActivePolicy cfg]
+    [SBS.fromShort (cfgActivePolicy cfg)]
 
 {- | The 'Live.MintOnFirstKey' tamper: under the given policies, every quantity
 the transaction mints, and every quantity its outputs carry, at one of the batch's
@@ -2803,8 +2801,7 @@ foldOutputsOf cfg transaction =
     delivered =
         [ (cg21PolicyBytes policy, SBS.fromShort name)
         | (policy, names) <- Map.toList minted
-        , cg21PolicyBytes policy
-            `elem` [SBS.fromShort (cfgActivePolicy cfg)]
+        , cg21PolicyBytes policy == SBS.fromShort (cfgActivePolicy cfg)
         , (AssetName name, quantity) <- Map.toList names
         , quantity > 0
         ]
@@ -3167,8 +3164,7 @@ observedStepTx
         let positive =
                 [ asset
                 | asset@(Object fields) <- mint
-                , KM.lookup "kind" fields
-                    `elem` [Just (String "active")]
+                , KM.lookup "kind" fields == Just (String "active")
                 , case KM.lookup "quantity" fields of
                     Just (Number q) -> q > 0
                     _ -> False

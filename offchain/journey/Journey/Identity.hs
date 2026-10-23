@@ -208,7 +208,7 @@ stepDerivedIdentity si cfg rawState rawRequest rawStaking tid bootTx updateTx re
         updateExpected =
             Set.fromList
                 ( [stateHex, requestHex]
-                    <> map pinHex [cfgActivePolicy cfg]
+                    <> [pinHex (cfgActivePolicy cfg)]
                 )
     unless (bootWitness == Set.singleton stateHex) $
         failWith $
@@ -233,7 +233,7 @@ stepDerivedIdentity si cfg rawState rawRequest rawStaking tid bootTx updateTx re
                 <> " and 0x"
                 <> requestHex
                 <> " with the pinned witness policy "
-                <> show (map pinHex [cfgActivePolicy cfg])
+                <> show [pinHex (cfgActivePolicy cfg)]
                 <> " (request parameters "
                 <> requestParams
                 <> ") but its script witness held "

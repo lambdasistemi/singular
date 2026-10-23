@@ -876,12 +876,12 @@ stepsComplete path receipt steps
                 | comparison == Just (String "agrees")
                 , model == Just (String "accepted")
                 , chain == Just (String "accepted")
-                , Vector.length names == 9 ->
+                , Vector.length names == 8 ->
                     Right ()
                 | Vector.null names -> Right ()
                 | otherwise ->
                     failure
-                        "accepted agreement does not account for all nine observations"
+                        "accepted agreement does not account for all eight observations"
             _ -> failure "missing compared or unobserved arrays"
         case (tamper, model, chain, comparison, at "perturbation" step) of
             ( Just Null

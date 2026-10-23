@@ -539,7 +539,7 @@ publishCageRefs cfg codes prov submit payerAddr tokenId =
         ( [ mkCageScript cfg
           , mkRequestScript cfg tokenId
           ]
-            <> map (witnessScriptOf cfg codes) [1]
+            <> [witnessScriptOf cfg codes 1]
         )
 
 {- | The record datum a booking's destination carries. The cage checks only

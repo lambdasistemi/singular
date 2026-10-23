@@ -258,7 +258,7 @@ cageRefUtxos env cfg tid = do
             ( [ mkCageScript cfg
               , mkRequestScript cfg tid
               ]
-                <> map witnessAt [1]
+                <> [witnessAt 1]
             )
     emit
         "references"
