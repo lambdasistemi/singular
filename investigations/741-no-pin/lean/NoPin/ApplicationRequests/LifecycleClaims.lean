@@ -114,7 +114,7 @@ def configurationProtected (release : PublishedRelease) (o : ApplicationObservat
   o.inputs.all fun input => input.credential != release.applicationCredential ||
     match input.datum with | .configuration _ => false | _ => true
 /-- Hypothesis under #741, not accepted law. -/
-abbrev approval_burn_open_premise (m : AppMutation) (h : Hash) (c : Codec) (t : TrieCommit) (decode : DecodeApplication) (release : PublishedRelease) (q : Input) : Prop := q.observation.inputs = [] ∧ q.observation.actions = [.approvalBurn] ∧ q.observation.donation = 0 ∧
+abbrev approval_burn_open_premise (m : AppMutation) (h : Hash) (c : Codec) (t : TrieCommit) (decode : DecodeApplication) (release : PublishedRelease) (q : Input) : Prop := q.observation.inputs.all (fun input => input.credential != release.applicationCredential) = true ∧ q.observation.actions = [.approvalBurn] ∧ q.observation.donation = 0 ∧
     q.observation.assets.mint.all (fun entry => entry.1.policy != release.applicationPolicy || NoPin.mintQty q.observation.assets entry.1 ≤ 0) = true
 /-- Hypothesis under #741, not accepted law. -/
 abbrev approval_burn_open_claim (m : AppMutation) (h : Hash) (c : Codec) (t : TrieCommit) (decode : DecodeApplication) (release : PublishedRelease) (q : Input) : Prop := applicationStep m h c decode release q.observation = true

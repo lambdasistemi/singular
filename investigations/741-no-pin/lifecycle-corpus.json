@@ -85387,17 +85387,56 @@
                 -1
               ]
             ],
-            "outputs": [],
-            "spent": []
+            "outputs": [
+              {
+                "assets": []
+              }
+            ],
+            "spent": [
+              {
+                "index": 0,
+                "tx": 19
+              }
+            ]
           },
           "donation": 0,
           "fee": 0,
-          "inputs": [],
+          "inputs": [
+            {
+              "assets": [
+                [
+                  {
+                    "name": 565014643638824,
+                    "policy": 5
+                  },
+                  1
+                ]
+              ],
+              "credential": 60,
+              "datum": "empty",
+              "lovelace": 2,
+              "reference": {
+                "index": 0,
+                "tx": 19
+              }
+            }
+          ],
           "interval": {
             "lower": 5,
             "upper": 6
           },
-          "outputs": [],
+          "outputs": [
+            {
+              "assets": [],
+              "credential": 60,
+              "datum": "empty",
+              "lovelace": 2,
+              "reference": {
+                "index": 0,
+                "tx": 20
+              }
+            }
+          ],
           "referenceInputs": [],
           "referenceOutputs": [],
           "signers": []
@@ -86271,17 +86310,56 @@
                 -1
               ]
             ],
-            "outputs": [],
-            "spent": []
+            "outputs": [
+              {
+                "assets": []
+              }
+            ],
+            "spent": [
+              {
+                "index": 0,
+                "tx": 19
+              }
+            ]
           },
           "donation": 0,
           "fee": 0,
-          "inputs": [],
+          "inputs": [
+            {
+              "assets": [
+                [
+                  {
+                    "name": 565014643638824,
+                    "policy": 5
+                  },
+                  1
+                ]
+              ],
+              "credential": 60,
+              "datum": "empty",
+              "lovelace": 2,
+              "reference": {
+                "index": 0,
+                "tx": 19
+              }
+            }
+          ],
           "interval": {
             "lower": 5,
             "upper": 6
           },
-          "outputs": [],
+          "outputs": [
+            {
+              "assets": [],
+              "credential": 60,
+              "datum": "empty",
+              "lovelace": 2,
+              "reference": {
+                "index": 0,
+                "tx": 20
+              }
+            }
+          ],
           "referenceInputs": [],
           "referenceOutputs": [],
           "signers": []
@@ -87159,17 +87237,56 @@
                 -1
               ]
             ],
-            "outputs": [],
-            "spent": []
+            "outputs": [
+              {
+                "assets": []
+              }
+            ],
+            "spent": [
+              {
+                "index": 0,
+                "tx": 19
+              }
+            ]
           },
           "donation": 0,
           "fee": 0,
-          "inputs": [],
+          "inputs": [
+            {
+              "assets": [
+                [
+                  {
+                    "name": 565014643638824,
+                    "policy": 5
+                  },
+                  1
+                ]
+              ],
+              "credential": 60,
+              "datum": "empty",
+              "lovelace": 2,
+              "reference": {
+                "index": 0,
+                "tx": 19
+              }
+            }
+          ],
           "interval": {
             "lower": 5,
             "upper": 6
           },
-          "outputs": [],
+          "outputs": [
+            {
+              "assets": [],
+              "credential": 60,
+              "datum": "empty",
+              "lovelace": 2,
+              "reference": {
+                "index": 0,
+                "tx": 20
+              }
+            }
+          ],
           "referenceInputs": [],
           "referenceOutputs": [],
           "signers": []
@@ -88047,17 +88164,56 @@
                 -1
               ]
             ],
-            "outputs": [],
-            "spent": []
+            "outputs": [
+              {
+                "assets": []
+              }
+            ],
+            "spent": [
+              {
+                "index": 0,
+                "tx": 19
+              }
+            ]
           },
           "donation": 0,
           "fee": 0,
-          "inputs": [],
+          "inputs": [
+            {
+              "assets": [
+                [
+                  {
+                    "name": 565014643638824,
+                    "policy": 5
+                  },
+                  1
+                ]
+              ],
+              "credential": 60,
+              "datum": "empty",
+              "lovelace": 2,
+              "reference": {
+                "index": 0,
+                "tx": 19
+              }
+            }
+          ],
           "interval": {
             "lower": 5,
             "upper": 6
           },
-          "outputs": [],
+          "outputs": [
+            {
+              "assets": [],
+              "credential": 60,
+              "datum": "empty",
+              "lovelace": 2,
+              "reference": {
+                "index": 0,
+                "tx": 20
+              }
+            }
+          ],
           "referenceInputs": [],
           "referenceOutputs": [],
           "signers": []
@@ -88935,17 +89091,56 @@
                 -1
               ]
             ],
-            "outputs": [],
-            "spent": []
+            "outputs": [
+              {
+                "assets": []
+              }
+            ],
+            "spent": [
+              {
+                "index": 0,
+                "tx": 19
+              }
+            ]
           },
           "donation": 0,
           "fee": 0,
-          "inputs": [],
+          "inputs": [
+            {
+              "assets": [
+                [
+                  {
+                    "name": 565014643638824,
+                    "policy": 5
+                  },
+                  1
+                ]
+              ],
+              "credential": 60,
+              "datum": "empty",
+              "lovelace": 2,
+              "reference": {
+                "index": 0,
+                "tx": 19
+              }
+            }
+          ],
           "interval": {
             "lower": 5,
             "upper": 6
           },
-          "outputs": [],
+          "outputs": [
+            {
+              "assets": [],
+              "credential": 60,
+              "datum": "empty",
+              "lovelace": 2,
+              "reference": {
+                "index": 0,
+                "tx": 20
+              }
+            }
+          ],
           "referenceInputs": [],
           "referenceOutputs": [],
           "signers": []

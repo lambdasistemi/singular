@@ -4,10 +4,10 @@
   "base": "d0db25c94e4ad9ca2e50fd1205ce6a350df84aa8",
   "definitions": {
     "lean/NoPin/ApplicationRequests/Lifecycle.lean": "c35846cea26aa5abcf5f39caaad7541e46e9daae5bf527fb6e8555fb76a2eda1",
-    "lean/NoPin/ApplicationRequests/LifecycleClaims.lean": "97e632646345f2c0dae0895bc28c536d9a358226b5d3dec9597cbf78cc1d5934",
+    "lean/NoPin/ApplicationRequests/LifecycleClaims.lean": "f5d21e78238f43c89b23b8938893270ca599392b35bc1c34d6e835c2fff142c2",
     "lean/NoPin/ApplicationRequests/LifecycleConditions.lean": "145ce5fcb2494f41981fc48ba94750fce4704991df019ea0ec67f5ff24005eae",
     "lean/NoPin/ApplicationRequests/LifecycleEvidence.lean": "c78711f6dc439eaf3b925c24b495f2853122163c6c358d43eb682134b6ff6885",
-    "lean/NoPin/ApplicationRequests/LifecycleFixtures.lean": "59b70a7402dba2eccfa7bbecdabc2e1de9ed9714e291d2db15552ba631d31c54",
+    "lean/NoPin/ApplicationRequests/LifecycleFixtures.lean": "5758531bff57dc750a049efa72151a35f5ae1608c7b84dccc5f65de83ab8a2bb",
     "lean/NoPin/ApplicationRequests/LifecycleReport.lean": "06eeacc61106af049c6e96b2b758b4c4913317e26c747f260aa56b5e011c114f",
     "lean/NoPin/ApplicationRequests/LifecycleStatements.lean": "51ca94c109a76ed7a692382010eb07e7cc2a35bd17508d13ad9b3a9d1196dd6f",
     "lifecycle_check.py": "f87e17cc28d0a6fa6239370909321b3fc5c2f9f5018417d35337e55274e2bf0e",

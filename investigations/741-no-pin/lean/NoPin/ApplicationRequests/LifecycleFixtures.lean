@@ -45,7 +45,10 @@ def examples : List (String × ApplicationObservation) :=
       (buildFold hash code commit release NoPin.ApplicationRequests.Fixtures.registry [termination] funding) [termination]),
    ("liveUpdate", observation [live] [{live with reference := ⟨18, 0⟩, datum := .application 1009}]
       [] [.liveUpdate live.reference 0] [42]),
-   ("approvalBurn", observation [] [] [(terminationApproval hash code release registryId 8, -1)] [.approvalBurn])]
+   ("approvalBurn", observation
+      [⟨⟨19, 0⟩, 60, 2, .empty, [(terminationApproval hash code release registryId 8, 1)]⟩]
+      [⟨⟨20, 0⟩, 60, 2, .empty, []⟩]
+      [(terminationApproval hash code release registryId 8, -1)] [.approvalBurn])]
 /-- Hypothesis under #741, not accepted law; select actual generated example. -/
 def exampleFor (name : String) : ApplicationObservation :=
   ((examples.find? fun entry => entry.1 == name).map (·.2)).getD mixedApplication
