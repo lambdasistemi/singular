@@ -81,8 +81,8 @@ The release publisher applies the state program to the shared application once p
 ```mermaid
 flowchart TD
   Published[Release] -->|publish| App[Application]
-  App -->|apply once| Policy[State policy]
-  Seed[Seed] -->|hash| Name[State name]
+  App -->|apply once| Policy["State<br/>policy"]
+  Seed[Seed] -->|hash| Name["State<br/>name"]
   Policy -->|pair| Registry[Registry asset]
   Name -->|pair| Registry
   Registry -->|hash| Assets[Role names]
