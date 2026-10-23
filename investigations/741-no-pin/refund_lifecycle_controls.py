@@ -38,7 +38,7 @@ def main():
             "reclaim-one-tick-early",
             "data.processDeadline ≤ interval.lower",
             "data.processDeadline ≤ interval.lower + 1",
-            "early_reclaim_refund-lifecycle",
+            "early_reclaim_lifecycle",
         ),
         (
             "cleanup-whole-value",
@@ -50,7 +50,7 @@ def main():
             "registration-overdeposit",
             "holding.lovelace == data.deposit",
             "data.deposit ≤ holding.lovelace",
-            "overdeposit_refund-lifecycle",
+            "overdeposit_lifecycle",
         ),
     ]
     results = []
