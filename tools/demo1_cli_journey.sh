@@ -226,7 +226,7 @@ say "a genesis-only wallet: coverage-incomplete/12, nothing written"
 "$devnet" --fund-skey "$work/alice.skey" --fund-skey "$work/bob.skey" \
   --fund-outputs 6 --fund-lovelace 2000000000 \
   --fund "$work/dave.skey:1:5000000" --fund "$work/dave.skey:24:4000000" \
-  --fund "$work/erin.skey:5:30000000" --fund "$work/frank.skey:3:30000000" \
+  --fund "$work/erin.skey:5:30000000" --fund "$work/frank.skey:2:30000000" \
   --fund "$work/grace.skey:1:200000000" \
   --fund-address "$vault_alice_addr:6:2000000000" --fund-address "$vault_bob_addr:6:2000000000" \
   >"$work/devnet.out" 2>"$work/devnet.err" &
@@ -1558,7 +1558,7 @@ say "the refused create left dave's seed unspent"
 # every reference is live carrying its script; at least one publication spent
 # two or more inputs (read from her journal, never typed); Bob reads the
 # registry from the token alone.
-# Frank holds three 30 tADA outputs (seed withheld, so two fund them): the run's
+# Frank holds two 30 tADA outputs (seed withheld, so one funds them): the run's
 # lowest total need exceeds his total, short by less than one 30 tADA
 # output. His preview and his create give one
 # verdict, naming totals from the refusal itself, never typed; nothing is
