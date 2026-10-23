@@ -15,7 +15,7 @@
   },
   "preservedBaseArtifacts": {
     "held-statements.json": "fbf86c89630d0daf32e49a33640803ac82f1a66baa99a60a2974c7a652d9f66c",
-    "history-statements.json": "bfe1fda881defd99a6b7ab64e2309abee1c6d24e37bfcbfdc6adbcdc57221b40",
+    "history-statements.json": "e3d42342312d36b1a6e9aeaf3f4b9113a7f27fdf2dbccae66081d2932873e3e8",
     "mutants.json": "96d72f824c5da393440e478732ef8c04ce26e949df10755b92f4258a46696287",
     "history_controls.py": "079b218768c6637f17e5b7295c6d9523675d78df107cf62435a40bc6bcac6011",
     "history-corpus.json": "7956e841731926ac98c906c9be961bbf6bad21377afbd6f8710c5cb9761f60d2",
@@ -523,6 +523,7 @@
     "Finite examples execute the model only; no chain transaction or application reachability claim.",
     "No top-up rule adopted; availability requires authentic public data, codec and collision premises, public state and ordinary fee funding.",
     "Canonical bytes, script invocation, real output minimums, provider completeness, wallet availability and inclusion remain external.",
-    "Earlier statement, corpus and mutant rows remain byte-identical."
+    "Earlier statement, corpus and mutant rows remain byte-identical.",
+    "History statement and inversion rows are preserved; its check.py plumbing hash is refreshed for lifecycle integration."
   ]
 }
