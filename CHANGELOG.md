@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.17.0](https://github.com/lambdasistemi/singular/compare/v0.16.0...v0.17.0) (2026-10-23)
+
+
+### Features
+
+* the script hash comparison takes declared changes as well as declared additions ([da4c656](https://github.com/lambdasistemi/singular/commit/da4c656451d926bc814dac85f701f8f26745bf14))
+
+
+### Fixes
+
+* **conformance:** retained evidence receipts recorded under the nine-observation surface stay valid ([d24025e](https://github.com/lambdasistemi/singular/commit/d24025e74f0c1ef4750b49755c42abb0dd161228))
+* **conformance:** the model declares eight observations; satisfy hlint hints ([b7c6739](https://github.com/lambdasistemi/singular/commit/b7c6739a69e3e6a8c59e5113c606913bb9f6737b))
+* **naming:** pin the retirement custody hash that follows the new registry state hash ([61194c2](https://github.com/lambdasistemi/singular/commit/61194c2a092f04adc57b8067ae7742ea52e0f7bc))
+* **tools:** follow the six-field state datum, four published references and the cheaper create ([5c5fc0e](https://github.com/lambdasistemi/singular/commit/5c5fc0e2d23273071a0d78679fb6230d695c2833))
+* **tools:** Frank's wallet is short with two outputs now that create publishes fewer scripts ([5828923](https://github.com/lambdasistemi/singular/commit/58289233ad8befe30a5dce55098a8513d86f8452))
+
+
+### Documentation
+
+* describe the registry configuration with one witness policy ([75cfdae](https://github.com/lambdasistemi/singular/commit/75cfdae70cd6821fbb8743c3726356446ee2d31c))
+* describe the registry state with one witness policy ([4f15b40](https://github.com/lambdasistemi/singular/commit/4f15b402db047066bab6cb1bacb11decc265c770))
+
 ## [0.16.0](https://github.com/lambdasistemi/singular/compare/v0.15.0...v0.16.0) (2026-10-22)
 
 
