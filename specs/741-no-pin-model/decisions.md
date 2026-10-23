@@ -80,6 +80,14 @@ The operator, transcribed from speech: "if an application is ill-designed and le
 
 Scope. Singular is one script per application, the state applied to the application policy, and acts only at the fold: per change it checks the consumed application approval, the trie transition, the active token mint into an output with the committed datum or its burn, and the tip to the folder. It has no request script, mints no request tags and runs nothing at booking. Every pending request, registration or termination, is an output at the application address with one approval; a termination also holds the active token. The application owns booking, exits, reclaim, refunds, any lock window, top-up and termination liveness. Singular's remaining liveness obligation is that anyone can fold any acceptable request from public data alone. To be stated, not assumed: protected rejection stops being a Singular guarantee for registrations; request tags and pending accounting leave the model; the request timing fields of the state datum are candidates to drop after a check of every use. Reconciliation with the protected-rejection lane happens at composition.
 
+## Money leaves Singular
+
+Date: 23 October 2026. Supersedes the folder's configured tip and the treasury routing in the two entries above; the treasury receives nothing from Singular, a consequence still to confirm with the operator.
+
+Asked whether money routing also leaves Singular, the operator replied, transcribed from speech: "singular has to be unforgiving about the rest of the Ada, because ... the folder decides if to fold based on whatever he can take. So there is a market now. Okay, I mean, not bad. So now folders will try to fold requests that contains more Ada, and then grab all the Ada. Okay, fine."
+
+Scope. Singular checks no value, and its state datum is the root, subject to a check of every other use of the remaining fields. A request's ADA beyond what the application requires to stay in place is the folder's: requesters bid for priority and folders choose by bid. The application's request rules decide what must stay: for a registration, the new holding receives the initial datum, the genuine token and at least the deposit the application requires; for a termination, whose deposit already returned at booking, the whole request is the folder's unless the application routes part of it elsewhere. With permissionless folding the requester is the folder of last resort, so whether a top-up path is still needed is to be stated, not assumed.
+
 ```mermaid
 flowchart TD
   Question[Question in questions.md] -->|operator reply| Ruling[Recorded ruling]
