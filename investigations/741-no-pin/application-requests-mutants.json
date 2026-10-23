@@ -9,6 +9,12 @@
       "negative": "NoPin.ApplicationRequests.Evidence.active_role_never_state_mutant"
     },
     {
+      "theorem": "NoPin.ApplicationRequests.Statements.batch_effects",
+      "selector": "foldTrie",
+      "positive": "NoPin.ApplicationRequests.Evidence.batch_effects_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.batch_effects_mutant"
+    },
+    {
       "theorem": "NoPin.ApplicationRequests.Statements.batch_inversion",
       "selector": "changeReference",
       "positive": "NoPin.ApplicationRequests.Evidence.batch_changeReference_candidate",
@@ -135,6 +141,18 @@
       "negative": "NoPin.ApplicationRequests.Evidence.batch_foldNoNewConsumed_mutant"
     },
     {
+      "theorem": "NoPin.ApplicationRequests.Statements.fold_minted_outputs",
+      "selector": "foldWholePolicy",
+      "positive": "NoPin.ApplicationRequests.Evidence.fold_minted_outputs_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.fold_minted_outputs_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.fold_untouched_keys",
+      "selector": "foldTrie",
+      "positive": "NoPin.ApplicationRequests.Evidence.fold_untouched_keys_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.fold_untouched_keys_mutant"
+    },
+    {
       "theorem": "NoPin.ApplicationRequests.Statements.genesis_inversion",
       "selector": "genesisSeed",
       "positive": "NoPin.ApplicationRequests.Evidence.genesis_genesisSeed_candidate",
@@ -175,6 +193,12 @@
       "selector": "foldWholePolicy",
       "positive": "NoPin.ApplicationRequests.Evidence.public_fold_constructed_candidate",
       "negative": "NoPin.ApplicationRequests.Evidence.public_fold_constructed_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.public_fold_effects",
+      "selector": "foldWholePolicy",
+      "positive": "NoPin.ApplicationRequests.Evidence.public_fold_effects_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.public_fold_effects_mutant"
     },
     {
       "theorem": "NoPin.ApplicationRequests.Statements.publicFold_inversion",
@@ -339,6 +363,12 @@
       "negative": "NoPin.ApplicationRequests.Evidence.recognition_stateBare_mutant"
     },
     {
+      "theorem": "NoPin.ApplicationRequests.Statements.registration_effects",
+      "selector": "registrationMint",
+      "positive": "NoPin.ApplicationRequests.Evidence.registration_effects_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.registration_effects_mutant"
+    },
+    {
       "theorem": "NoPin.ApplicationRequests.Statements.registration_inversion",
       "selector": "changeReference",
       "positive": "NoPin.ApplicationRequests.Evidence.registration_changeReference_candidate",
@@ -385,6 +415,18 @@
       "selector": "registrationDeposit",
       "positive": "NoPin.ApplicationRequests.Evidence.registration_registrationDeposit_candidate",
       "negative": "NoPin.ApplicationRequests.Evidence.registration_registrationDeposit_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.registration_separate_holdings",
+      "selector": "registrationPlacement",
+      "positive": "NoPin.ApplicationRequests.Evidence.registration_separate_holdings_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.registration_separate_holdings_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.termination_effects",
+      "selector": "terminationBurn",
+      "positive": "NoPin.ApplicationRequests.Evidence.termination_effects_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.termination_effects_mutant"
     },
     {
       "theorem": "NoPin.ApplicationRequests.Statements.termination_inversion",

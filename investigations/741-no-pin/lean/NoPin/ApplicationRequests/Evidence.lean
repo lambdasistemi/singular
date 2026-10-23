@@ -1047,4 +1047,217 @@ theorem public_fold_constructed_mutant : ¬ (public_fold_constructed_premise (.f
       (queryCode (goodQuery .publicFold)) (queryCommit (goodQuery .publicFold)) (goodQuery .publicFold) := by decide
   exact bad (accepted public_fold_constructed_antecedent)
 
+
+/-- Hypothesis fixture under #741, not accepted law; two independently approved registrations. -/
+def secondRegistration : PendingRequest :=
+  let data := { registrationData with key := 9 }
+  .registration ⟨⟨16, 0⟩, release.applicationCredential, 23, .application 2007,
+    [(registrationAsset hash code release data, 1)]⟩ data
+/-- Hypothesis fixture under #741, not accepted law; actual two-carrier fold. -/
+def doubleRegistration : FoldObservation :=
+  buildFold hash code commit release Fixtures.registry [registration, secondRegistration] funding
+/-- Executed cardinality-two positive, not accepted law. -/
+theorem double_registration_accepted : fold .none hash code commit release doubleRegistration = true := by decide
+/-- Hypothesis fixture under #741, not accepted law; shared carrier underfunds the summed deposits. -/
+def sharedRegistration : FoldObservation :=
+  let o := doubleRegistration
+  let holding := { o.outputs[1] with assets := o.outputs[1].assets ++ o.outputs[2].assets }
+  let outputs := [o.outputs[0], holding, { o.outputs[2] with assets := [] }, o.outputs[3]]
+  let changes := o.changes.map fun action => match action with
+    | .register ref key _ deposit => .register ref key 1 deposit
+    | .terminate ref key => .terminate ref key
+  { o with outputs, changes, assets := { o.assets with outputs := outputs.map fun output => ⟨output.assets⟩ } }
+/-- Hypothesis fixture under #741, not accepted law; a real continuation with an illicit state-role mint. -/
+def mintedStateFold : FoldObservation :=
+  { mixed with assets := { mixed.assets with mint := mixed.assets.mint ++ [(registryId, 1)] } }
+/-- Hypothesis fixture under #741, not accepted law; complete serialized observations. -/
+def repairQuery (o : FoldObservation) : Query :=
+  let ps := [.state seed] ++ o.changes.flatMap (changePreimages o)
+  let cs := ps.map fun p => CodeEntry.mk p (code p)
+  { (goodQuery .batch) with
+    observation := o
+    requests := []
+    action := o.changes.head?.getD (.terminate ⟨0, 0⟩ 0)
+    codes := cs
+    hashes := cs.map (fun row => ⟨row.encoded, hash row.encoded⟩)
+    roots := [[], o.before.trie, o.after.trie].map (fun trie => ⟨trie, commit trie⟩) }
+
+/-- Hypothesis instance under #741, not accepted law; complete new statement premise. -/
+abbrev registration_effects_premise (_m : Mutation) (_h : Hash) (_c : Codec) (_t : TrieCommit) (q : Query) : Prop := q.surface = .registration ∧ caseShape q = true
+/-- Hypothesis instance under #741, not accepted law; exact independent conclusion. -/
+abbrev registration_effects_claim (m : Mutation) (h : Hash) (c : Codec) (t : TrieCommit) (q : Query) : Prop := (change m h c q.release q.trie q.action q.observation).toOption = some (targetTrie q.trie q.action) ↔ (changeConditions h c q.release q.trie q.action q.observation).isOk = true
+/-- Executed complete premise, not accepted law. -/
+theorem registration_effects_antecedent : registration_effects_premise .none hash code commit (goodQuery .registration) := by decide
+/-- Executed unmutated instance, not accepted law. -/
+theorem registration_effects_candidate : registration_effects_premise .none hash code commit (goodQuery .registration) → registration_effects_claim .none hash code commit (goodQuery .registration) := by decide
+/-- Executed single-guard falsification, not accepted law. -/
+theorem registration_effects_mutant : ¬ (registration_effects_premise (.flip .registrationMint) hash code commit (goodQuery .registration) → registration_effects_claim (.flip .registrationMint) hash code commit (goodQuery .registration)) := by decide
+
+/-- Hypothesis instance under #741, not accepted law; complete new statement premise. -/
+abbrev termination_effects_premise (_m : Mutation) (_h : Hash) (_c : Codec) (_t : TrieCommit) (q : Query) : Prop := q.surface = .termination ∧ caseShape q = true
+/-- Hypothesis instance under #741, not accepted law; exact independent conclusion. -/
+abbrev termination_effects_claim (m : Mutation) (h : Hash) (c : Codec) (t : TrieCommit) (q : Query) : Prop := (change m h c q.release q.trie q.action q.observation).toOption = some (targetTrie q.trie q.action) ↔ (changeConditions h c q.release q.trie q.action q.observation).isOk = true
+/-- Executed complete premise, not accepted law. -/
+theorem termination_effects_antecedent : termination_effects_premise .none hash code commit (goodQuery .termination) := by decide
+/-- Executed unmutated instance, not accepted law. -/
+theorem termination_effects_candidate : termination_effects_premise .none hash code commit (goodQuery .termination) → termination_effects_claim .none hash code commit (goodQuery .termination) := by decide
+/-- Executed single-guard falsification, not accepted law. -/
+theorem termination_effects_mutant : ¬ (termination_effects_premise (.flip .terminationBurn) hash code commit (goodQuery .termination) → termination_effects_claim (.flip .terminationBurn) hash code commit (goodQuery .termination)) := by decide
+
+/-- Hypothesis instance under #741, not accepted law; complete new statement premise. -/
+abbrev batch_effects_premise (_m : Mutation) (_h : Hash) (_c : Codec) (_t : TrieCommit) (q : Query) : Prop := q.surface = .batch ∧ caseShape q = true
+/-- Hypothesis instance under #741, not accepted law; exact independent conclusion. -/
+abbrev batch_effects_claim (m : Mutation) (h : Hash) (c : Codec) (t : TrieCommit) (q : Query) : Prop := fold m h c t q.release q.observation = true ↔ foldConditions h c t q.release q.observation = true ∧ batchEffects t q.observation
+/-- Executed complete premise, not accepted law. -/
+theorem batch_effects_antecedent : batch_effects_premise .none hash code commit (goodQuery .batch) := by decide
+/-- Executed unmutated instance, not accepted law. -/
+theorem batch_effects_candidate : batch_effects_premise .none hash code commit (goodQuery .batch) → batch_effects_claim .none hash code commit (goodQuery .batch) := by decide
+/-- Executed single-guard falsification, not accepted law. -/
+theorem batch_effects_mutant : ¬ (batch_effects_premise (.flip .foldTrie) hash code commit (goodQuery .batch) → batch_effects_claim (.flip .foldTrie) hash code commit (goodQuery .batch)) := by decide
+
+/-- Hypothesis instance under #741, not accepted law; complete new statement premise. -/
+abbrev registration_separate_holdings_premise (_m : Mutation) (_h : Hash) (_c : Codec) (_t : TrieCommit) (q : Query) : Prop := q.surface = .batch ∧ caseShape q = true
+/-- Hypothesis instance under #741, not accepted law; exact independent conclusion. -/
+abbrev registration_separate_holdings_claim (m : Mutation) (h : Hash) (c : Codec) (t : TrieCommit) (q : Query) : Prop := fold m h c t q.release q.observation = true ↔ foldConditions h c t q.release q.observation = true ∧ holdingDelivery h c q.observation = true
+/-- Executed complete premise, not accepted law. -/
+theorem registration_separate_holdings_antecedent : registration_separate_holdings_premise .none hash code commit (repairQuery sharedRegistration) := by decide
+/-- Executed unmutated instance, not accepted law. -/
+theorem registration_separate_holdings_candidate : registration_separate_holdings_premise .none hash code commit (repairQuery sharedRegistration) → registration_separate_holdings_claim .none hash code commit (repairQuery sharedRegistration) := by decide
+/-- Executed single-guard falsification, not accepted law. -/
+theorem registration_separate_holdings_mutant : ¬ (registration_separate_holdings_premise (.flip .registrationPlacement) hash code commit (repairQuery sharedRegistration) → registration_separate_holdings_claim (.flip .registrationPlacement) hash code commit (repairQuery sharedRegistration)) := by decide
+
+/-- Executed cardinality-two holding delivery, not accepted law. -/
+theorem double_registration_delivery : holdingDelivery hash code doubleRegistration = true := by decide
+/-- Executed refusal of the shared carrier, not accepted law. -/
+theorem shared_registration_refused : fold .none hash code commit release sharedRegistration = false := by decide
+/-- Executed acceptance with the one placement guard flipped, not accepted law. -/
+theorem shared_registration_mutated : fold (.flip .registrationPlacement) hash code commit release sharedRegistration = true := by decide
+/-- Hypothesis instance under #741, not accepted law; exact complete antecedent. -/
+abbrev fold_minted_outputs_premise (m : Mutation) (h : Hash) (c : Codec) (t : TrieCommit) (q : Query) : Prop := MintedOutputsPremises m h c t q
+/-- Hypothesis instance under #741, not accepted law; exact conclusion. -/
+abbrev fold_minted_outputs_claim (m : Mutation) (h : Hash) (c : Codec) (t : TrieCommit) (q : Query) : Prop := MintedOutputsConclusion m h c t q
+/-- Executed finite encoding premise for every changed key, not accepted law. -/
+theorem fold_roles_encoding : FiniteEncoding code (foldRoleDomain mixed) := by
+  intro a ha b hb he
+  change a ∈ [Preimage.state seed, .active registryId 7, .active registryId 8] at ha
+  change b ∈ [Preimage.state seed, .active registryId 7, .active registryId 8] at hb
+  simp only [List.mem_cons, List.mem_nil_iff, or_false] at ha hb
+  rcases ha with rfl | rfl | rfl <;> rcases hb with rfl | rfl | rfl
+  all_goals first | rfl | exact False.elim ((by decide : _ ≠ _) he)
+/-- Executed separate finite collision premise, not accepted law. -/
+theorem fold_roles_collision : FiniteCollisionFree hash code (foldRoleDomain mixed) := by
+  intro a ha b hb he
+  change a ∈ [Preimage.state seed, .active registryId 7, .active registryId 8] at ha
+  change b ∈ [Preimage.state seed, .active registryId 7, .active registryId 8] at hb
+  simp only [List.mem_cons, List.mem_nil_iff, or_false] at ha hb
+  rcases ha with rfl | rfl | rfl <;> rcases hb with rfl | rfl | rfl
+  all_goals first | rfl | exact False.elim ((by decide : _ ≠ _) he)
+/-- Executed full non-vacuous antecedent on a production-accepted mixed fold, not accepted law. -/
+theorem fold_minted_outputs_antecedent : fold_minted_outputs_premise .none hash code commit (goodQuery .batch) :=
+  ⟨fold_roles_encoding, fold_roles_collision, by decide⟩
+/-- Executed real minted output refusal at the whole-policy boundary, not accepted law. -/
+theorem fold_minted_outputs_candidate : fold_minted_outputs_premise .none hash code commit (repairQuery mintedStateFold) → fold_minted_outputs_claim .none hash code commit (repairQuery mintedStateFold) := by
+  intro ⟨_, _, accepted⟩
+  have refused : fold .none hash code commit release mintedStateFold = false := by decide
+  change fold .none hash code commit release mintedStateFold = true at accepted
+  rw [refused] at accepted
+  cases accepted
+/-- Executed single-whole-policy-guard falsification with a recognizable token in the fold's own continuation, not accepted law. -/
+theorem fold_minted_outputs_mutant : ¬ (fold_minted_outputs_premise (.flip .foldWholePolicy) hash code commit (repairQuery mintedStateFold) → fold_minted_outputs_claim (.flip .foldWholePolicy) hash code commit (repairQuery mintedStateFold)) := by
+  intro claimed
+  have prem : fold_minted_outputs_premise (.flip .foldWholePolicy) hash code commit (repairQuery mintedStateFold) :=
+    ⟨fold_roles_encoding, fold_roles_collision, by decide⟩
+  have result := (claimed prem).2 mixed.after.state (by change mixed.after.state ∈ mixed.after.state :: _; exact List.mem_cons_self) (registryId, 1) (by change (registryId, 1) ∈ [(registryId, 1)]; exact List.mem_cons_self) (by decide) (by decide) (by decide)
+  have recognized : recognizeState .none hash code release seed mixed.after.state = true := by decide
+  change recognizeState .none hash code release seed mixed.after.state = false at result
+  rw [recognized] at result
+  cases result
+
+
+/-- Executed conclusion on the production-accepted mixed fold and its actual output extent, not accepted law. -/
+theorem fold_minted_outputs_accepted : fold_minted_outputs_claim .none hash code commit (goodQuery .batch) := by
+  refine ⟨by decide, ?_⟩
+  intro output member
+  change output ∈ [mixed.outputs[0], mixed.outputs[1], mixed.outputs[2]] at member
+  simp only [List.mem_cons, List.mem_nil_iff, or_false] at member
+  rcases member with rfl | rfl | rfl
+  · intro entry member
+    change entry ∈ [(registryId, 1)] at member
+    simp only [List.mem_cons, List.mem_nil_iff, or_false] at member
+    subst entry
+    decide
+  · intro entry member
+    change entry ∈ [(activeAsset hash code registryId 7, 1)] at member
+    simp only [List.mem_cons, List.mem_nil_iff, or_false] at member
+    subst entry
+    decide
+  · intro entry member
+    change entry ∈ ([] : List (TokenId × Nat)) at member
+    cases member
+
+
+/-- Executed universal frame at the fixed mixed example, using accepted trie-update lemmas, not a general candidate proof. -/
+theorem mixed_frame : FoldFrame mixed := by
+  intro key outside
+  have h7 : key ≠ 7 := by intro eq; subst key; exact outside (by decide)
+  have h8 : key ≠ 8 := by intro eq; subst key; exact outside (by decide)
+  change trieGet (trieSet (trieSet Fixtures.registry.trie 7 (.known .active)) 8 (.known .terminal)) key =
+    trieGet Fixtures.registry.trie key
+  rw [trieGet_set_of_ne _ 8 key _ h8, trieGet_set_of_ne _ 7 key _ h7]
+/-- Hypothesis fixture under #741, not accepted law; an extra leaf accepted only through the trie guard. -/
+def frameAttack : FoldObservation :=
+  let trie := trieSet mixed.after.trie 999 (.known .active)
+  let state := { mixed.after.state with datum := .root (commit trie) }
+  let outputs := state :: mixed.outputs.drop 1
+  { mixed with
+    after := { mixed.after with trie, state }
+    outputs := outputs
+    assets := { mixed.assets with outputs := outputs.map (fun output => ⟨output.assets⟩) } }
+/-- Hypothesis instance under #741, not accepted law; complete frame premise. -/
+abbrev fold_untouched_keys_premise (m : Mutation) (h : Hash) (c : Codec) (t : TrieCommit) (q : Query) : Prop :=
+  q.surface = .batch ∧ fold m h c t q.release q.observation = true
+/-- Hypothesis instance under #741, not accepted law; exact frame conclusion. -/
+abbrev fold_untouched_keys_claim (_m : Mutation) (_h : Hash) (_c : Codec) (_t : TrieCommit) (q : Query) : Prop := FoldFrame q.observation
+/-- Executed non-vacuous complete frame antecedent, not accepted law. -/
+theorem fold_untouched_keys_antecedent : fold_untouched_keys_premise .none hash code commit (goodQuery .batch) := by decide
+/-- Executed positive frame consequence, not accepted law. -/
+theorem fold_untouched_keys_accepted : fold_untouched_keys_claim .none hash code commit (goodQuery .batch) := mixed_frame
+/-- Executed unmutated frame-boundary refusal, not accepted law. -/
+theorem fold_untouched_keys_candidate : fold_untouched_keys_premise .none hash code commit (repairQuery frameAttack) → fold_untouched_keys_claim .none hash code commit (repairQuery frameAttack) := by
+  intro ⟨_, accepted⟩
+  have refused : fold .none hash code commit release frameAttack = false := by decide
+  change fold .none hash code commit release frameAttack = true at accepted
+  rw [refused] at accepted
+  cases accepted
+/-- Executed single-trie-guard frame falsification, not accepted law. -/
+theorem fold_untouched_keys_mutant : ¬ (fold_untouched_keys_premise (.flip .foldTrie) hash code commit (repairQuery frameAttack) → fold_untouched_keys_claim (.flip .foldTrie) hash code commit (repairQuery frameAttack)) := by
+  intro claimed
+  have result := claimed (by decide) 999 (by decide)
+  have unequal : trieGet frameAttack.after.trie 999 ≠ trieGet frameAttack.before.trie 999 := by decide
+  exact unequal result
+/-- Hypothesis instance under #741, not accepted law; complete constructive premise. -/
+abbrev public_fold_effects_premise (_m : Mutation) (h : Hash) (c : Codec) (t : TrieCommit) (q : Query) : Prop := PublicPremises h c t q
+/-- Hypothesis instance under #741, not accepted law; independent constructive effects. -/
+abbrev public_fold_effects_claim (m : Mutation) (h : Hash) (c : Codec) (t : TrieCommit) (q : Query) : Prop :=
+  PublicConclusion m h c t q ∧ batchEffects t (buildFold h c t q.release q.observation.before q.requests q.funding) ∧
+    FoldFrame (buildFold h c t q.release q.observation.before q.requests q.funding)
+/-- Executed complete constructive-effect antecedent, not accepted law. -/
+theorem public_fold_effects_antecedent : public_fold_effects_premise .none (NoPin.lookupHash hashes) (queryCode (goodQuery .publicFold)) (queryCommit (goodQuery .publicFold)) (goodQuery .publicFold) := public_fold_constructed_antecedent
+/-- Executed independent public trie/root effects and frame, not accepted law. -/
+theorem public_fold_effects_candidate : public_fold_effects_premise .none (NoPin.lookupHash hashes) (queryCode (goodQuery .publicFold)) (queryCommit (goodQuery .publicFold)) (goodQuery .publicFold) → public_fold_effects_claim .none (NoPin.lookupHash hashes) (queryCode (goodQuery .publicFold)) (queryCommit (goodQuery .publicFold)) (goodQuery .publicFold) := by
+  intro _
+  exact ⟨by decide, by decide, mixed_frame⟩
+/-- Executed single-whole-policy-guard constructive falsification, not accepted law. -/
+theorem public_fold_effects_mutant : ¬ (public_fold_effects_premise (.flip .foldWholePolicy) (NoPin.lookupHash hashes) (queryCode (goodQuery .publicFold)) (queryCommit (goodQuery .publicFold)) (goodQuery .publicFold) → public_fold_effects_claim (.flip .foldWholePolicy) (NoPin.lookupHash hashes) (queryCode (goodQuery .publicFold)) (queryCommit (goodQuery .publicFold)) (goodQuery .publicFold)) := by
+  intro claimed
+  have bad : ¬ PublicConclusion (.flip .foldWholePolicy) (NoPin.lookupHash hashes) (queryCode (goodQuery .publicFold)) (queryCommit (goodQuery .publicFold)) (goodQuery .publicFold) := by decide
+  exact bad (claimed public_fold_effects_antecedent).1
+
+
+/-- Hypothesis boundary controls under #741, not accepted law; actual fold outputs and exact isolated guards. -/
+def repairBadQueries : List (String × Query × Guard) :=
+  [("two-registrations-share-carrier", repairQuery sharedRegistration, .registrationPlacement),
+   ("minted-recognizable-state-in-fold-output", repairQuery mintedStateFold, .foldWholePolicy),
+   ("unrelated-key-changed", repairQuery frameAttack, .foldTrie)]
+
 end NoPin.ApplicationRequests.Evidence

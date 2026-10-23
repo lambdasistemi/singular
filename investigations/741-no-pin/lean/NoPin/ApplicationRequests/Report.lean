@@ -83,7 +83,7 @@ def reportControls : IO Unit := do
       let .ok result := runQuery mutation q | throw (IO.userError "oracle observation incomplete")
       IO.println (Json.mkObj [("family", toJson "application-requests"),
         ("scenario", toJson (Scenario.mk q mutation)), ("result", toJson result)]).compress
-  for (label, q, guard) in Evidence.badQueries do
+  for (label, q, guard) in Evidence.badQueries ++ Evidence.repairBadQueries do
     unless (runQuery .none q).toOption == some false &&
         (runQuery (.flip guard) q).toOption == some true do
       throw (IO.userError ("boundary control does not isolate its guard: " ++ label))

@@ -52,7 +52,8 @@ def changeConditions (hash : Hash) (code : Codec) (release : PublishedRelease)
     unless (trieGet trie key == .unknown) do throw "key-not-unknown"
     let some output := holdingAt observation index | throw "missing-new-holding"
     unless (quantity output active == 1 &&
-         (observation.outputs.map fun output => quantity output active).sum == 1)
+         (observation.outputs.map fun output => quantity output active).sum == 1 &&
+         separateHolding observation action.reference index && oneNewToken hash code observation output)
       do throw "active-placement"
     unless (NoPin.mintQty observation.assets active == 1)
       do throw "active-mint"

@@ -4,15 +4,16 @@
   "definitions": {
     "lean/NoPin/ApplicationRequests/Application.lean": "5a1ac4c17d37eb40cbcd230c288a76099eba66c51f9fe7acc1ddc5db1f2043c7",
     "lean/NoPin/ApplicationRequests/Client.lean": "8e395c324f34c44de1bcede1555ebb404e72fbdc9029baa562c8a4b2810c2062",
-    "lean/NoPin/ApplicationRequests/Conditions.lean": "adeca20e0da16eb671510e067062146c91a8bc166952e3c65d4f7e017970e1c9",
-    "lean/NoPin/ApplicationRequests/Core.lean": "fc9298862b08564aa4280b6e0bcaaa967de60fabdcd86e289238c88c9e2fc60e",
-    "lean/NoPin/ApplicationRequests/Evidence.lean": "c898ae6195157b7d89a169c8e227d910515e6cc21aff3d84bb8d5e1a7677d357",
+    "lean/NoPin/ApplicationRequests/Conditions.lean": "c2a2c3759c59e2343561d0eb0eeb078e386b156a06e4b734b59025fa1cb8e48c",
+    "lean/NoPin/ApplicationRequests/Core.lean": "fbc6fdc77060d684f74c9dccf11d88a4863c39db6ab6f4763dbd252988869d14",
+    "lean/NoPin/ApplicationRequests/Effects.lean": "a6864e492332fea0d317d8d6e834fcc4dec49ba7c4d47c9a275743860f2df1bc",
+    "lean/NoPin/ApplicationRequests/Evidence.lean": "1bc23d108c9ad9402bdfd2e2c952167816da4c0449a9a8d81afd54f7f3960d4d",
     "lean/NoPin/ApplicationRequests/Fixtures.lean": "5d2ee2d82a846ec9b93a6e40ae7a330a50d2a2970d9726fa40a89c896a58c859",
     "lean/NoPin/ApplicationRequests/History.lean": "79de2d0bdd260d1ac6315f81c496c3f420359f6bd715a954c016f28bd81d6089",
     "lean/NoPin/ApplicationRequests/Oracle.lean": "4f935ac84289b19f8980b9502cb334dc48ff8677503f141b0c245db0149713e3",
-    "lean/NoPin/ApplicationRequests/Report.lean": "55d5ee9c9843ffb1b7f1c0ea80b6aaeba46cbe6c539b963c863ffa04055e446b",
+    "lean/NoPin/ApplicationRequests/Report.lean": "903b539108ef0d4b22f80487a8c55ed8829a8fe52b9dd4f8fdaf7caad2d26701",
     "lean/NoPin/ApplicationRequests/Role.lean": "f6f17f8bafa3ebb9c5d271078ecd63fd19f0ba700c3ea7af47604051b8309f96",
-    "lean/NoPin/ApplicationRequests/Statements.lean": "54b4a82fa999d181e2952df7b3c2477c7bd56408a3a811edb0ab6ca60e584cba"
+    "lean/NoPin/ApplicationRequests/Statements.lean": "a964434805faa19e9e6a1703dbebcfd295109b35ebd6941e9e967bf1b968b62a"
   },
   "statements": [
     {
@@ -28,6 +29,21 @@
       ],
       "restates": [
         "NoPin.Statements.authenticated_state_role_separation"
+      ]
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.batch_effects",
+      "statementSha256": "b077e3b325ed589dcccc80fc7944c447288c49dc765b6bb3093ac3ad0e6ccf21",
+      "status": "STATED",
+      "proofStatus": "STATED",
+      "witnesses": [
+        "NoPin.ApplicationRequests.Evidence.batch_effects_antecedent"
+      ],
+      "selectors": [
+        "foldTrie"
+      ],
+      "restates": [
+        "NoPin.ApplicationRequests.Statements.batch_inversion"
       ]
     },
     {
@@ -62,6 +78,36 @@
         "foldNoNewConsumed"
       ],
       "inversion": "batch"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.fold_minted_outputs",
+      "statementSha256": "07e052278c83136ffd51dd52bcd321789ad61d58ce5574d1fa7ee85f7225d7f3",
+      "status": "STATED",
+      "proofStatus": "STATED",
+      "witnesses": [
+        "NoPin.ApplicationRequests.Evidence.fold_minted_outputs_antecedent"
+      ],
+      "selectors": [
+        "foldWholePolicy"
+      ],
+      "restates": [
+        "NoPin.ApplicationRequests.Statements.minted_active_never_state"
+      ]
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.fold_untouched_keys",
+      "statementSha256": "5922d92be8767318b1b8a0c36be9dc2d766d85f9329b4705aab40a71005e25b2",
+      "status": "STATED",
+      "proofStatus": "STATED",
+      "witnesses": [
+        "NoPin.ApplicationRequests.Evidence.fold_untouched_keys_antecedent"
+      ],
+      "selectors": [
+        "foldTrie"
+      ],
+      "restates": [
+        "NoPin.ApplicationRequests.Statements.batch_inversion"
+      ]
     },
     {
       "theorem": "NoPin.ApplicationRequests.Statements.genesis_inversion",
@@ -108,6 +154,21 @@
       ],
       "restates": [
         "NoPin.Held.Statements.composed_available"
+      ]
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.public_fold_effects",
+      "statementSha256": "17fc1bddf5462cd14ee3be8dcfa00f7404d4ddb29bb44868d15dd9cca9f12ef7",
+      "status": "STATED",
+      "proofStatus": "STATED",
+      "witnesses": [
+        "NoPin.ApplicationRequests.Evidence.public_fold_effects_antecedent"
+      ],
+      "selectors": [
+        "foldWholePolicy"
+      ],
+      "restates": [
+        "NoPin.ApplicationRequests.Statements.public_fold_constructed"
       ]
     },
     {
@@ -165,6 +226,21 @@
       ]
     },
     {
+      "theorem": "NoPin.ApplicationRequests.Statements.registration_effects",
+      "statementSha256": "534c2c50ba5cf6a5d9fb9bc20ead73c9f308731d4b3c1b26d1494437c691241c",
+      "status": "STATED",
+      "proofStatus": "STATED",
+      "witnesses": [
+        "NoPin.ApplicationRequests.Evidence.registration_effects_antecedent"
+      ],
+      "selectors": [
+        "registrationMint"
+      ],
+      "restates": [
+        "NoPin.ApplicationRequests.Statements.registration_inversion"
+      ]
+    },
+    {
       "theorem": "NoPin.ApplicationRequests.Statements.registration_inversion",
       "statementSha256": "69dda10fb3f653973851b6850b287eabda01aec3441123a22b20cd9e000cbb8b",
       "status": "STATED",
@@ -185,6 +261,36 @@
       "inversion": "registration"
     },
     {
+      "theorem": "NoPin.ApplicationRequests.Statements.registration_separate_holdings",
+      "statementSha256": "53985f8d9db36caa6616bf91f4ad2531a726f5a3f08c62155cb7437555653b8c",
+      "status": "STATED",
+      "proofStatus": "STATED",
+      "witnesses": [
+        "NoPin.ApplicationRequests.Evidence.registration_separate_holdings_antecedent"
+      ],
+      "selectors": [
+        "registrationPlacement"
+      ],
+      "restates": [
+        "NoPin.ApplicationRequests.Statements.registration_inversion"
+      ]
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.termination_effects",
+      "statementSha256": "444fc107a6994cb52b8bdd3b954df52491badcc13167d3c35b339aa635af717f",
+      "status": "STATED",
+      "proofStatus": "STATED",
+      "witnesses": [
+        "NoPin.ApplicationRequests.Evidence.termination_effects_antecedent"
+      ],
+      "selectors": [
+        "terminationBurn"
+      ],
+      "restates": [
+        "NoPin.ApplicationRequests.Statements.termination_inversion"
+      ]
+    },
+    {
       "theorem": "NoPin.ApplicationRequests.Statements.termination_inversion",
       "statementSha256": "1a7b31d70b86b4f73afd775d23ea7df94cd8a3b48c48556b6c05d677f02d32cf",
       "status": "STATED",
@@ -202,6 +308,43 @@
         "terminationBurn"
       ],
       "inversion": "termination"
+    }
+  ],
+  "supersessions": [
+    {
+      "prior": "NoPin.ApplicationRequests.Statements.batch_inversion",
+      "replacement": "NoPin.ApplicationRequests.Statements.batch_effects",
+      "disposition": "SUPERSEDED-AS-CURRENT-GUARANTEE-ROW-PRESERVED"
+    },
+    {
+      "prior": "NoPin.ApplicationRequests.Statements.minted_active_never_state",
+      "replacement": "NoPin.ApplicationRequests.Statements.fold_minted_outputs",
+      "disposition": "SUPERSEDED-AS-CURRENT-GUARANTEE-ROW-PRESERVED"
+    },
+    {
+      "prior": "NoPin.ApplicationRequests.Statements.batch_inversion",
+      "replacement": "NoPin.ApplicationRequests.Statements.fold_untouched_keys",
+      "disposition": "SUPERSEDED-AS-CURRENT-GUARANTEE-ROW-PRESERVED"
+    },
+    {
+      "prior": "NoPin.ApplicationRequests.Statements.public_fold_constructed",
+      "replacement": "NoPin.ApplicationRequests.Statements.public_fold_effects",
+      "disposition": "SUPERSEDED-AS-CURRENT-GUARANTEE-ROW-PRESERVED"
+    },
+    {
+      "prior": "NoPin.ApplicationRequests.Statements.registration_inversion",
+      "replacement": "NoPin.ApplicationRequests.Statements.registration_effects",
+      "disposition": "SUPERSEDED-AS-CURRENT-GUARANTEE-ROW-PRESERVED"
+    },
+    {
+      "prior": "NoPin.ApplicationRequests.Statements.registration_inversion",
+      "replacement": "NoPin.ApplicationRequests.Statements.registration_separate_holdings",
+      "disposition": "SUPERSEDED-AS-CURRENT-GUARANTEE-ROW-PRESERVED"
+    },
+    {
+      "prior": "NoPin.ApplicationRequests.Statements.termination_inversion",
+      "replacement": "NoPin.ApplicationRequests.Statements.termination_effects",
+      "disposition": "SUPERSEDED-AS-CURRENT-GUARANTEE-ROW-PRESERVED"
     }
   ],
   "openFamilies": [

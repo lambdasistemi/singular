@@ -1,4 +1,4 @@
-import NoPin.ApplicationRequests.Role
+import NoPin.ApplicationRequests.Effects
 
 /-! Hypotheses under #741, not accepted law. General statements are deliberately
 unproved. Concrete evidence lives separately and does not discharge them. -/
@@ -68,5 +68,50 @@ theorem publicFold_inversion (hash : Hash) (code : Codec) (commit : TrieCommit) 
     (_case : q.surface = .publicFold ∧ caseShape q = true) :
     runWith .none hash code commit q = true ↔ expectedWith hash code commit q = true := by
   sorry
+
+
+/-- Hypothesis under #741, not accepted law. Status: STATED.
+Registration exposes the independently active target, retaining every other key. -/
+theorem registration_effects (h : Hash) (c : Codec) (_t : TrieCommit) (q : Query)
+    (_case : q.surface = .registration ∧ caseShape q = true) :
+    (change .none h c q.release q.trie q.action q.observation).toOption = some (targetTrie q.trie q.action) ↔
+      (changeConditions h c q.release q.trie q.action q.observation).isOk = true := by sorry
+/-- Hypothesis under #741, not accepted law. Status: STATED.
+Termination exposes the independently terminal target, retaining every other key. -/
+theorem termination_effects (h : Hash) (c : Codec) (_t : TrieCommit) (q : Query)
+    (_case : q.surface = .termination ∧ caseShape q = true) :
+    (change .none h c q.release q.trie q.action q.observation).toOption = some (targetTrie q.trie q.action) ↔
+      (changeConditions h c q.release q.trie q.action q.observation).isOk = true := by sorry
+/-- Hypothesis under #741, not accepted law. Status: STATED.
+Whole-fold inversion adds the independent ordered trie and commitment effects. -/
+theorem batch_effects (h : Hash) (c : Codec) (t : TrieCommit) (q : Query)
+    (_case : q.surface = .batch ∧ caseShape q = true) :
+    fold .none h c t q.release q.observation = true ↔
+      foldConditions h c t q.release q.observation = true ∧ batchEffects t q.observation := by sorry
+/-- Hypothesis under #741, not accepted law. Status: STATED.
+Each registration owns a distinct output with one new token and its own deposit floor. -/
+theorem registration_separate_holdings (h : Hash) (c : Codec) (t : TrieCommit) (q : Query)
+    (_case : q.surface = .batch ∧ caseShape q = true) :
+    fold .none h c t q.release q.observation = true ↔
+      foldConditions h c t q.release q.observation = true ∧ holdingDelivery h c q.observation = true := by sorry
+/-- Hypothesis under #741, not accepted law. Status: STATED.
+An accepted fold's actual output carrying a positively minted own-policy asset is never recognized as state. -/
+theorem fold_minted_outputs (h : Hash) (c : Codec) (t : TrieCommit) (q : Query)
+    (_premises : MintedOutputsPremises .none h c t q) :
+    MintedOutputsConclusion .none h c t q := by sorry
+
+
+/-- Hypothesis under #741, not accepted law. Status: STATED.
+The whole fold preserves the leaf of every key outside the changed keys. -/
+theorem fold_untouched_keys (h : Hash) (c : Codec) (t : TrieCommit) (q : Query)
+    (_premises : q.surface = .batch ∧ fold .none h c t q.release q.observation = true) :
+    FoldFrame q.observation := by sorry
+/-- Hypothesis under #741, not accepted law. Status: STATED.
+Public construction also has independently specified trie/root effects and the untouched-key frame. -/
+theorem public_fold_effects (h : Hash) (c : Codec) (t : TrieCommit) (q : Query)
+    (_premises : PublicPremises h c t q) :
+    PublicConclusion .none h c t q ∧
+    batchEffects t (buildFold h c t q.release q.observation.before q.requests q.funding) ∧
+    FoldFrame (buildFold h c t q.release q.observation.before q.requests q.funding) := by sorry
 
 end NoPin.ApplicationRequests.Statements

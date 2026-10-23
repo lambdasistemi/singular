@@ -207,6 +207,18 @@ def expectedDelta (hash : Hash) (code : Codec) (observation : FoldObservation) :
     (activeAsset hash code observation.before.identity change.key,
       match change with | .register .. => 1 | .terminate .. => -1)
 
+/-- Hypothesis under #741, not accepted law; each registration has its own carrier. -/
+def separateHolding (observation : FoldObservation) (reference : OutRef) (index : Nat) : Bool :=
+  observation.changes.all fun action => match action with
+    | .register other _ otherIndex _ => other == reference || otherIndex != index
+    | .terminate .. => true
+/-- Hypothesis under #741, not accepted law; the carrier contains one new token in total. -/
+def oneNewToken (hash : Hash) (code : Codec) (observation : FoldObservation)
+    (output : ObservedOutput) : Bool :=
+  ((observation.changes.filterMap fun action => match action with
+    | .register _ key _ _ => some (activeAsset hash code observation.before.identity key)
+    | .terminate .. => none).map (quantity output)).sum == 1
+
 /-- Hypothesis under #741, not accepted law; one exact approval/input, trie step and active movement. -/
 def change (mutation : Mutation) (hash : Hash) (code : Codec) (release : PublishedRelease)
     (trie : Trie) (action : Change) (observation : FoldObservation) : Except String Trie := do
@@ -231,7 +243,8 @@ def change (mutation : Mutation) (hash : Hash) (code : Codec) (release : Publish
     let some output := holdingAt observation index | throw "missing-new-holding"
     unless applyGuard mutation .registrationPlacement
         (quantity output active == 1 &&
-         (observation.outputs.map fun output => quantity output active).sum == 1)
+         (observation.outputs.map fun output => quantity output active).sum == 1 &&
+         separateHolding observation action.reference index && oneNewToken hash code observation output)
       do throw "active-placement"
     unless applyGuard mutation .registrationMint (NoPin.mintQty observation.assets active == 1)
       do throw "active-mint"
