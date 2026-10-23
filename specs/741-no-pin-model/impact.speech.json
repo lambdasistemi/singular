@@ -89,6 +89,16 @@
       "pause": 400
     }
   ],
+  "application-held-statement-audit-result": [
+    {
+      "text": "Application-held statement audit result.",
+      "pause": 500
+    },
+    {
+      "text": "An independent statement audit on 23 October 2026 found the application-held termination candidate ready to prove: twenty-one stated rows (fifteen derived inversions and six obligations), forty-nine guards each owned by a single-flip falsification, settlement statements that follow the controller-settlement ruling, and the identity rows byte-identical. The audited identities are held-statements.json fbf86c89630d0daf32e49a33640803ac82f1a66baa99a60a2974c7a652d9f66c and lean/NoPin/Held/Statements.lean b4a5d6e31242ff83d8bdde8ce90ac2832a3c18bc00de1d0c21daa79aee0f7e6a in investigations/741-no-pin/. This establishes no statement's truth. The accepted non-rejection, supply and permanent-key laws are carried into the candidate at concrete reachable instances only, not in their universal form; the burn coupling, the observation correspondence and the value partition are named premises and recorded debt.",
+      "pause": 400
+    }
+  ],
   "candidate-boundary-at-the-interface-checkpoint": [
     {
       "text": "Candidate boundary at the interface checkpoint.",
@@ -167,18 +177,26 @@
       "pause": 400
     }
   ],
-  "application-held-statement-audit-result": [
+  "shared-request-correspondence-and-encoding-debt": [
     {
-      "text": "Application-held statement audit result.",
+      "text": "Shared-request correspondence and encoding debt.",
       "pause": 500
     },
     {
-      "text": "An independent statement audit on 23 October 2026 found the application-held termination candidate ready to prove: twenty-one stated rows (fifteen derived inversions and six obligations), forty-nine guards each owned by a single-flip falsification, settlement statements that follow the controller-settlement ruling, and the identity rows byte-identical. The audited identities are held-statements.json fbf86c89630d0daf32e49a33640803ac82f1a66baa99a60a2974c7a652d9f66c and lean/NoPin/Held/Statements.lean b4a5d6e31242ff83d8bdde8ce90ac2832a3c18bc00de1d0c21daa79aee0f7e6a in investigations/741-no-pin/. This establishes no statement's truth. The accepted non-rejection, supply and permanent-key laws are carried into the candidate at concrete reachable instances only, not in their universal form; the burn coupling, the observation correspondence and the value partition are named premises and recorded debt.",
+      "text": "The next hypothetical family freezes shared registration surfaces, records and a revision-bound trace. No accepted source, existing identity/held statement, driver, simulator, implementation or conformance standing changes at this checkpoint. The trace distinguishes the legacy Aiken state-reading Retract from the ruled no-state-read retraction, and Contribute/Rejected from the reference-only ruled rejection.",
+      "pause": 400
+    },
+    {
+      "text": "The shared script holds registrations; termination remains application-held. Cross-registry refusal includes distinct policies sharing one seed-derived name in one observed genesis transaction. It must hold for folding, reference-state rejection and reclaim's own booked parameters/tags, with wrong-address controls for each. Every new general statement remains unproved; this checkpoint adds no theorem.",
+      "pause": 400
+    },
+    {
+      "text": "The subsequent termination-shape direction is reserved for the following stage. This family introduces no termination record or termination-ready name. Its terminate client inventory is limited to application approval and active token hashes over constants and chain data; exact revised approval payload and economic/custody shape remain held for that stage. Prior held observations and receipts are not relabelled as evidence for the revision.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "impact.md",
-    "sha256": "8d2419dacff21960c60a3209ac6439b3385dfebab42185a0f3ff49b82ede0b38"
+    "sha256": "a574cbd0884e783637be9da22cbd60e85f07f6cd24ef7f26eea9c2d3e7eb4bc1"
   }
 }

@@ -91,8 +91,26 @@
       "pause": 400
     }
   ],
+  "frozen-shared-request-surface": [
+    {
+      "text": "Frozen shared-request surface.",
+      "pause": 500
+    },
+    {
+      "text": "As a client author, I want all six operations to obtain their identities from release constants, public data and hashes. These pure surfaces are hypothetical signatures in NoPin.Shared; no accepted law is changed. The shared address contains registrations only. The trace and consumer restatement inventory are in shared-request.md.",
+      "pause": 400
+    },
+    {
+      "text": "Economics-preservation statements compare the actual named root judgement and shared wrapper under CompleteRegistryCorrespondence, ConfigurationCorrespondence, RequestObservationCorrespondence and LedgerObservationCorrespondence. The address and identity prerequisites are part of those representation premises; equality is not claimed for a wrong-address or forged observation that the root abstraction cannot express. False or missing correspondence is a held consumer boundary, not an accepted transaction. Witnesses must compute root acceptance, refunds, windows and balances using the accepted producers and must exercise more than one registry and request.",
+      "pause": 400
+    },
+    {
+      "text": "The new public case inventory covers booking, fold, rejection, reclaim, untagged sweep, authentic discovery, each client action, dependency order, name-role separation and the affected held mappings. Inversions are derived from compiled constructors and decision sites. Each general row remains sorry with executed antecedents and owned single-guard selectors. Original identity/held statement signatures and ledgers stay byte-identical; new universal termination protection, exact supply and permanent-retirement rows retain the accepted statements' real reachability and membership premises.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "functions-model.md",
-    "sha256": "9a86f1254bc09768a72b247e994dc0663f5d43eff74d73352739043c437b94b3"
+    "sha256": "9e8fe06c19e8a1c9845ba85cbb5d02dfb4e065dfc772c681b337cf88f03cc4cf"
   }
 }

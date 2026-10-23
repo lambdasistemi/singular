@@ -73,8 +73,30 @@
       "pause": 400
     }
   ],
+  "frozen-shared-request-records": [
+    {
+      "text": "Frozen shared-request records.",
+      "pause": 500
+    },
+    {
+      "text": "As a requester, I want my registration to name its complete registry and its own booked parameters, so that sharing a script cannot substitute another registry's identity or reclaim windows. These records belong to the hypothetical NoPin.Shared family. They define no accepted wire format, ledger evaluator or parameter removal. All earlier records and statement rows remain unchanged.",
+      "pause": 400
+    },
+    {
+      "text": "ConfigurationCorrespondence binds the datum's snapshot to the authenticated booked registry's immutable parameters and the current root world's corresponding configuration fields. The current trie root may differ: equality of snapshot and current root is not required. CompleteRegistryCorrespondence binds the separately observed policy/name to the root's abstract registryId and stateToken interpretation; it does not compare policy alone. RequestObservationCorrespondence binds same-output datum, reference, credential, physical value and candidate assets to the actual root registration, exact accepted tags and booking. LedgerObservationCorrespondence binds complete spending/reference sets, state observations and mint to the same transaction and unspent view. Completeness and authentic origin are premises, never consequences of an empty list.",
+      "pause": 400
+    },
+    {
+      "text": "The canonical serialization premise and finite collision premise range over the preimages actually used, with an explicit nontrivial satisfying domain and violating twins. CDDL, exact CBOR/Plutus Data bytes, list forms, long byte strings and hash choices remain obligations in the impact inventory. Application-held observations, value partition and BurnCoupling keep their earlier explicit boundaries.",
+      "pause": 400
+    },
+    {
+      "text": "Termination shape is under revision in the following stage. No new termination record or termination-ready preimage is introduced here. The terminate client inventory lists the existing complete-identity application approval hash and the active witness hash, with any revised approval payload held for that stage.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "data-model.md",
-    "sha256": "3f1c5c5ce92a6b6c89e6ec89132bf5ff4d54f50c0f2ce2d3a651b521a8f2e1cf"
+    "sha256": "e679bf6da3c70e214aed64903705ee232535db4990ab8324f01b1db011ff1387"
   }
 }

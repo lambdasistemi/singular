@@ -1,0 +1,168 @@
+{
+  "one-request-address-for-a-release": [
+    {
+      "text": "One request address for a release.",
+      "pause": 500
+    },
+    {
+      "text": "As a requester, I want to build a registration from published release constants and public chain data, then have it folded, rejected or reclaimed only under its own registry's rules. As a reader, I want to find authentic requests without accepting another registry's data or an arbitrary datum as a booked request.",
+      "pause": 400
+    }
+  ],
+  "status-and-reading-route": [
+    {
+      "text": "Status and reading route.",
+      "pause": 500
+    },
+    {
+      "text": "This is a hypothetical surface candidate, not accepted law or an implemented shared validator. The source trace binds accepted revision 00771d77af996605845cf062285263909a049cf8. The request script is untouched by the separate removal of the two unused witness pins in #749; this lane keeps its commissioned base and does not rebase. Exact source quotes below establish source identity only. No compiled script, ledger history, performance or client implementation is evidenced here.",
+      "pause": 400
+    },
+    {
+      "text": "The callable surfaces and records freeze the next hypothetical family. The impact inventory records byte, authentication and consumer obligations. Earlier identity and application-held statements remain unchanged.",
+      "pause": 400
+    }
+  ],
+  "todays-spend-paths-and-the-ruled-economics": [
+    {
+      "text": "Today's spend paths and the ruled economics.",
+      "pause": 500
+    },
+    {
+      "text": "The current validator is request(statePolicyId, cageTokenName). Contribute decodes RequestDatum, compares the request's name with its parameter, resolves a spent state, authenticates that state's token using the policy and name, and reads Modify actions. Its processing-window check is bypassed when matchingAction pairs this input with Rejected. matchingAction walks transaction inputs in order and consumes an action only when folded sees an inline request datum with the same request token name. It does not check the input's address or policy there. The state fold performs its separate approval, trie, mint, continuation and settlement checks. Rejection here is Contribute with Rejected; it is not a separate request redeemer.",
+      "pause": 400
+    },
+    {
+      "text": "Retract also compares the request name, checks its supported edge and owner's signature, obtains state using inputOrReferenceByRef, authenticates the policy/name and reads both windows. It then refuses any spending input carrying the state policy and checks one sufficient owner output with inline datum bound to this request reference. There is no additional reclaim branch. Sweep always fails; every other spend constructor and the fallback handler fail. A constructor's presence supplies no successful path.",
+      "pause": 400
+    },
+    {
+      "text": "The ruled economic judgements differ from those legacy handlers. registrationBookingRefusal authenticates exact cost, tip, carrier, both tags minted with booking, the booked upper time and interval width. It has no concrete request script credential parameter. foldAccepted obtains registrations and terminations by their actual pending references, observes complete request contents and executes foldBatch, state continuation, routing and balance. A request's own locking address is not checked by observesRegistration or foldMemberAt. The address read by foldCarrierRefusal is the eventual delivery address, not the request address.",
+      "pause": 400
+    },
+    {
+      "text": "rejectionAccepted authenticates the current complete state token/configuration by reference and refuses every spent state. retractionAccepted refuses both reading and spending state, and reads the booked request, its owner's signature and refund, and the configuration's two windows. Neither receives an applied request program. The hypothetical shared representation must make these correspondences explicit. Today's Aiken Retract reads state; the ruled economic retraction does not. A new prerequisite is not evidence that these existing scripts implement the ruled exits.",
+      "pause": 400
+    },
+    {
+      "text": "The shared request holds registrations only. Pending terminations and their genuine witnesses remain at the application under the 23 October ruling. One economic fold may consume both categories; only its registration members are subject to the shared request address condition. The held projection, deposit partition and exact same-key burn coupling retain their separate premises.",
+      "pause": 400
+    },
+    {
+      "text": "The release fixes one registration address. A fold authenticates a spent state, rejection authenticates a reference state and reclaim authenticates its own booked data without reading state. These are different evidence paths.",
+      "pause": 400
+    }
+  ],
+  "parameter-occurrence-mapping": [
+    {
+      "text": "Parameter occurrence mapping.",
+      "pause": 500
+    },
+    {
+      "text": "Each row is one source occurrence, keyed by source line, one-based column and token. The extraction covers both parameters and the bound cageToken name, including helper signatures and recursive calls. Passing a name through a helper is a use; repeated occurrences on one line are retained. The source register below binds the surrounding definitions, while this table supplies a replacement for every extracted occurrence.",
+      "pause": 400
+    },
+    {
+      "text": "The replacement must preserve where the value is consumed. For Contribute and its folded/matchingAction helpers, every name-only comparison becomes a comparison of the complete datum identity. At fold admission that identity must also equal the authenticated spent state's complete asset. For economic rejection the corresponding identity is supplied by the authenticated state reference, while the state stays unspent. For economic reclaim it is bound to the request's genuine tags and authenticated booked configuration through the named correspondence premise. No helper gains an address-derived identity oracle.",
+      "pause": 400
+    },
+    {
+      "text": "The accepted root requestAddressSpend separately permits an untagged output's prerequisite and requires exact tag disposal for a tagged exit. sweepAccepted leaves the world unchanged and checks complete pending observations. This is not today's Aiken Sweep, which fails unconditionally. The new family gives an untagged sweep its own case and calls that accepted root judgement; it does not use it to remove a pending request or add an owner-seizure path.",
+      "pause": 400
+    }
+  ],
+  "discovery-and-public-inputs": [
+    {
+      "text": "Discovery and public inputs.",
+      "pause": 500
+    },
+    {
+      "text": "Today requestAddrFromCfg hashes request bytes after applyRequestParams supplies the state policy and token name. queryContext and queryRejectContext query that per-registry request address, then findRequestUtxos decodes RequestDatum and filters on the state token name. That name filter relies on the address query's per-registry scope; it is inadequate at a release-shared address. The helper alone checks neither complete registry identity nor genuine tag provenance.",
+      "pause": 400
+    },
+    {
+      "text": "The candidate discovers public outputs at the release's one shared request credential, decodes the complete registration datum, selects the complete registry pair and authenticates the exact trie-ready and application assets, multiplicities and correspondence to accepted exactContents. Origin and completeness of those observations remain a named premise. A foreign registry, copied datum without the genuine tags, wrong role or output at another address is refused selection. The same conditions bind every selected registration in fold, rejection and reclaim. An empty result cannot establish a terminal or never-registered key.",
+      "pause": 400
+    },
+    {
+      "text": "Sharing an address concentrates unrelated registries and spam in one query surface. Readers filter before building and retain unavailable/incomplete status when their provider cannot supply the required public view. No bound on query cost, spam resistance or latency is measured. Application-held termination discovery remains the held family's public application observations and is combined explicitly with registration discovery by the folder.",
+      "pause": 400
+    }
+  ],
+  "client-identities-and-dependency-order": [
+    {
+      "text": "Client identities and dependency order.",
+      "pause": 500
+    },
+    {
+      "text": "The release publisher applies the state program to the shared application once per application per release and publishes the resulting authenticated state policy/spending identity with both shared script identities. A client uses those constants, a public seed/reference, complete registry identity and request payloads. The client performs no parameter application, including during registry creation. This claim depends on authenticated release publication and the model-to-byte application correspondence; a supplied hash alone does not establish either.",
+      "pause": 400
+    },
+    {
+      "text": "The shared request identity has no incoming registry, key, seed, witness or request-name edge. Neither state policy nor state name takes a later asset name as input. The dependency graph's ranked edge list is a candidate observation, checked from each derivation rather than asserted by a picture.",
+      "pause": 400
+    },
+    {
+      "text": "Create uses the published state policy and the seed-derived state name. Register uses that complete registry, the shared registration address, structured registration tags and the application destination. Terminate lists only the application approval name and active token name, both hashes over release constants and public chain data. The termination output shape is under revision in the following stage; this slice neither models it nor freezes a new termination-ready name. It does not move the witness to the shared registration address. Fold uses the complete state identity, both public pending categories, and their exact tag/witness assets. Reject uses the shared address, complete registry's authenticated reference state and both registration tags. Reclaim uses the shared address, genuine registration tags and its authenticated booked windows without reading state. Network and staking-address interpretation stay explicit encoding obligations; no undeclared address form is inferred.",
+      "pause": 400
+    }
+  ],
+  "structured-name-preimages": [
+    {
+      "text": "Structured name preimages.",
+      "pause": 500
+    },
+    {
+      "text": "The new family owns a distinct Preimage inductive with one constructor per asset role it changes: witness(registry,key), registrationReady(registry,bookingData), and registrationApproval(registry,bookingData). The termination derivation inventory names the existing complete-identity NoPin.approvalAsset and the active witness hash only; the termination shape and any changed approval payload remain under revision, outside this family. bookingData includes the exact economic request payload, nonce, booked time, datum, reference and configuration snapshot; tag asset fields are excluded to avoid a self-reference. Every occurrence of registry is the complete policy/name pair. State name retains the existing seed derivation in this hypothetical stage; a decision to move its wire encoding to CBOR remains open.",
+      "pause": 400
+    },
+    {
+      "text": "Codec and Hash are explicit pure parameters. CanonicalSerialisation and FiniteCollisionFree are separate named premises over the finite occurring preimages. Only together do equal digests imply equal structured preimages on that domain. No finite hash is declared globally injective. The structural test codec is not CBOR bytes or Plutus Data serialisation. CDDL, exact bytes, constructor numbering, hash selection and cross-language test vectors including both list forms and a byte string over 64 bytes remain recorded obligations; no vectors are produced in this stage.",
+      "pause": 400
+    }
+  ],
+  "termination-revision-boundary": [
+    {
+      "text": "Termination revision boundary.",
+      "pause": 500
+    },
+    {
+      "text": "A subsequent operator direction is revising the application-held termination output shape. This stage does not model terminations. The client inventory lists its application approval name and active token name only, computed by hashes over release constants and chain data. Any later termination-shape, approval-payload or economic change reopens the held mapping in that following stage; existing slice-four sources and receipts remain history at their own revision. General non-rejection, supply and permanent-retirement obligations retain their accepted root vocabulary and premises, without this stage inventing a replacement termination representation.",
+      "pause": 400
+    }
+  ],
+  "statement-reconciliation": [
+    {
+      "text": "Statement reconciliation.",
+      "pause": 500
+    },
+    {
+      "text": "Every old statement and ledger row remains byte-identical. The following new rows will restate consumer mappings, not silently change the old statements' meaning.",
+      "pause": 400
+    },
+    {
+      "text": "No new general theorem exists at this surfaces checkpoint. The statements checkpoint must provide executed satisfying antecedents, single-guard falsifications, derived public inversions, generic oracle replay and compiled sorry status for every new row. Existing hypothetical guarantees remain unproved.",
+      "pause": 400
+    }
+  ],
+  "choices-and-limits": [
+    {
+      "text": "Choices and limits.",
+      "pause": 500
+    }
+  ],
+  "revision-bound-source-register": [
+    {
+      "text": "Revision-bound source register.",
+      "pause": 500
+    },
+    {
+      "text": "Each quote is the exact trimmed source line at the accepted revision. Citation integrity establishes these source facts, not behavior, script invocation or ledger acceptance.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "shared-request.md",
+    "sha256": "83ac0b2eaf2edf720cc350fca51d18db181fb7cee3bebc7ad5d04cd1e9527f95"
+  }
+}
