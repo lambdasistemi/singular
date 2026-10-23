@@ -3,8 +3,8 @@ Module      : Singular.Registry.Config.Application
 Description : The application pin a registry derives from its seed
 License     : Apache-2.0
 
-A registry's four pins (#157 genesis-policy-pins) are derived, never written down:
-the application policy and @witness(kind, registry)@ at kinds 0, 1 and 2,
+A registry's two pins (#157 genesis-policy-pins) are derived, never written down:
+the application policy and @witness(kind, registry)@ at kind 1,
 all for the registry identity the boot seed determines (state policy ‖
 the token name the seed derives). Which application the first pin comes
 from is the caller's pin ('Singular.Registry.Application'): a hash given

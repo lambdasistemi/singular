@@ -13,7 +13,7 @@ active token to the wallet the request named.
 What it observes, in order:
 
 1. the registry boots under the PARAMETERLESS open application and the
-   three witness policies, all four pins from @REGISTRY_BLUEPRINT@
+   active witness policy, both pins from @REGISTRY_BLUEPRINT@
    alone — no naming blueprint anywhere;
 2. one @insertActive@ folds and exactly one @(activePolicy, key)@ token
    lands in the output at the wallet the request named;

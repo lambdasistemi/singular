@@ -8,7 +8,7 @@ of what the chain now holds:
 
 * 'bootStory' publishes the state validator as a reference output
   BEFORE choosing a seed, boots the registry under the parameterless open
-  application and the three witness policies, reads the boot state datum
+  application and the active witness policy, reads the boot state datum
   and publishes the reference outputs every fold resolves through;
 * 'book' submits one certified @insertActive@ booking that names the
   wallet as its destination;

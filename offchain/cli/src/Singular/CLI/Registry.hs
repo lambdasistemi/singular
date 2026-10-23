@@ -242,7 +242,7 @@ economics =
 {- | The configuration of the application registry this release boots from
 this seed, and the codes as that registry runs them: the application
 applied to the registry identity the seed determines, and
-@witness(kind, registry)@ at kinds 0, 1 and 2.
+@witness(kind, registry)@ at kind 1.
 -}
 registryConfigFor
     :: Application
