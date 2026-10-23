@@ -636,7 +636,7 @@ theorem genesis_consistent (app : App) (c : Config) (asset : StateAsset) :
   refine ⟨?_, ?_, ?_, ?_, ?_⟩
   · first
       | (show Singular.Consistent
-            { config := { c with root := rootOf [] }, trie := [], custody := [], held := [] }
+            { config := { c with root := rootOf [] }, trie := [], held := [] }
          exact ⟨rfl,
            fun key => by simp [kindCount, trieGet],
            fun key => by simp [kindCount, trieGet],

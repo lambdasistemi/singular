@@ -70,7 +70,6 @@ theorem update_terminal_transaction_row (s : RegistryState) (r : Request) (t : R
     onlyRootChanged s.config t.state.config = true ∧
     t.state.config.root = rootOf t.state.trie ∧
     trieGet t.state.trie r.key = .known .terminal ∧
-    t.state.custody = s.custody ∧
     kindPolicy s.config .active = s.config.activePolicy ∧
     tokenAssetName .active r.key = r.key ∧
     (∀ sigs : List (List Nat),
@@ -98,7 +97,7 @@ theorem update_terminal_transaction_row (s : RegistryState) (r : Request) (t : R
       = .error "not-booked" ∧
     txOf { s with held := [] } r lovelace = .error "token-missing" := by
   obtain ⟨hbefore, hpres, ⟨ap', hap', hpol, hedge, hkey, hown, hdst, hasset⟩, htrie, hcfg,
-    hcust, hheld, hmint, hpaid⟩ := (update_terminal_inversion s r t he).mp hok
+    hheld, hmint, hpaid⟩ := (update_terminal_inversion s r t he).mp hok
   have hapeq : ap' = ap := Option.some.inj (hap'.symm.trans hap)
   rw [hapeq] at hpol hedge hkey hown hdst hasset
   -- admission, reassembled so the refusal rows can be stated at other states
@@ -151,8 +150,6 @@ theorem update_terminal_transaction_row (s : RegistryState) (r : Request) (t : R
     rw [hasset, hedge, hkey, hown, hdst]
   have hrouted : routedPayment t r .requestOutput = [] := by
     unfold routedPayment mintRoutedTo; rw [hmint]; simp [route]
-  have hcage : txCageOutputs t r = [] := by
-    unfold txCageOutputs routedPayment mintRoutedTo; rw [hmint]; simp [route]
   have hburn : txBurnInputs s t r =
       [ { role := .witness, datum := heldDatum s r.key .active, stateTokens := 0
         , approvals := 0, lovelace := 0
@@ -181,7 +178,7 @@ theorem update_terminal_transaction_row (s : RegistryState) (r : Request) (t : R
           , refunds := [(r.owner, r.deposit)] } := by
     rw [txOf_of_step_ok s r lovelace t hok]
     simp [he, hap, obligations, owedTo, ownerOutputs, paymentPaid, txStateOutput,
-      txDestinationOutputs, hcage, hburn, happrovals, hdest, hrouted, hpaid, hmint,
+      txDestinationOutputs, hburn, happrovals, hdest, hrouted, hpaid, hmint,
       requiredSigners, registryDatumForm, registryStateTokens]
   -- no signature is read
   have hstep : ∀ sigs : List (List Nat),
@@ -191,7 +188,7 @@ theorem update_terminal_transaction_row (s : RegistryState) (r : Request) (t : R
     refine ⟨by simpa using hbefore, by simpa using hpres,
       ⟨{ ap with signatures := sigs }, rfl, by simpa using hpol, by simpa using hedge,
         by simpa using hkey, by simpa using hown, by simpa using hdst, by simpa using hasset⟩,
-      by simpa using htrie, by simpa using hcfg, hcust, by simpa using hheld,
+      by simpa using htrie, by simpa using hcfg, by simpa using hheld,
       by simpa using hmint, hpaid⟩
   have hsigtx : ∀ sigs : List (List Nat),
       txOf s { r with approval := some { ap with signatures := sigs } } lovelace
@@ -205,8 +202,6 @@ theorem update_terminal_transaction_row (s : RegistryState) (r : Request) (t : R
     have hr : routedPayment t { r with approval := some { ap with signatures := sigs } }
         .requestOutput = [] := by
       unfold routedPayment mintRoutedTo; rw [hmint]; simp [route]
-    have hc : txCageOutputs t { r with approval := some { ap with signatures := sigs } } = [] := by
-      unfold txCageOutputs routedPayment mintRoutedTo; rw [hmint]; simp [route]
     have hbi : txBurnInputs s t { r with approval := some { ap with signatures := sigs } } =
         [ { role := .witness, datum := heldDatum s r.key .active, stateTokens := 0
           , approvals := 0, lovelace := 0
@@ -218,7 +213,7 @@ theorem update_terminal_transaction_row (s : RegistryState) (r : Request) (t : R
       unfold datumHash destinationDatum
       simp only [hd]
       rw [hasset, hedge, hkey, hown, hdst, hdest]
-    simp only [txStateOutput, txDestinationOutputs, hc, hbi, ha, hd, hr, hb, hpaid, hmint,
+    simp only [txStateOutput, txDestinationOutputs, hbi, ha, hd, hr, hb, hpaid, hmint,
       requiredSigners, registryDatumForm, registryStateTokens]
     simp [he, obligations, owedTo, ownerOutputs, paymentPaid]
   -- retirement completes, and the two leaves that never admit it
@@ -248,10 +243,11 @@ theorem update_terminal_transaction_row (s : RegistryState) (r : Request) (t : R
     intro s' r' he' hl hno hadm'
     refine hrefuseTx _ _ _ ?_
     rw [hrefusalOf s' r' he' hadm', hl]
-    simp [hno]
+    simp only [hno]
+    simp
   exact ⟨htx, hone, hwitness, hgone,
     by simp [destinationDatumBinds, hap, hbind],
-    by simp [onlyRootChanged, hcfg], by rw [hcfg, htrie], hterminal, hcust, rfl, rfl,
+    by simp [onlyRootChanged, hcfg], by rw [hcfg, htrie], hterminal, rfl, rfl,
     hsigtx, himmutable, hunknown, hnotbooked, hmissing,
     hunknown _ r he (by simp) hadm,
     hnotbooked _ r he (by simp) hadm,

@@ -52,9 +52,9 @@ inductive Edge where
   | deleteAbsent | deleteActive | witnessTerminal
   deriving Repr, BEq, DecidableEq, ToJson, FromJson
 
-/-- The three token kinds the deltas speak about. -/
+/-- The token kinds the deltas speak about: only the active witness is minted in M1. -/
 inductive TokenKind where
-  | active | absent | terminal
+  | active
   deriving Repr, BEq, DecidableEq, ToJson, FromJson
 
 /-! The derived `BEq` instances above are structural but not registered as

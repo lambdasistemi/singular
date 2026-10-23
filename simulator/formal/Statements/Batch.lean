@@ -158,7 +158,7 @@ theorem fold_batch_claimed_mint_by_kind_key :
     rw [if_neg (by simp [hfalse])]
     rfl
   · refine ⟨{ config := { Oracle.referenceConfig with root := rootOf [] }
-            , trie := [], custody := [], held := [] },
+            , trie := [], held := [] },
       { edge := .insertActive, key := 5, owner := 0, output := 555
       , approval := some { policy := 7, edge := .insertActive, key := 5, owner := 0
                          , destination := 555

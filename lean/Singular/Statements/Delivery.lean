@@ -12,20 +12,15 @@ the fold routes a token to the requester.
 For every state, request, lovelace and admitted fold, over all seven edges: the
 built outputs contain an output in the destination role if and only if the
 edge's routing sends a token to the request's output. A fold that delivers
-nothing — an absent insertion, whose token goes to custody, or a retirement or
-deletion, which burn — describes no destination output, so none can be invented
-for a comparison to agree with. The state, custody and owner outputs never take
-the destination role. -/
+nothing — a retirement or deletion, which burn — describes no destination output,
+so none can be invented for a comparison to agree with. The state and owner
+outputs never take the destination role. -/
 theorem destination_output_iff_delivers (s : RegistryState) (r : Request) (lovelace : Nat)
     (t : Result) (tx : Tx) (hok : step s r = .ok t) (htx : txOf s r lovelace = .ok tx) :
     tx.outputs.any (·.role == .destination) = !(routedPayment t r .requestOutput).isEmpty := by
   rw [txOf_of_step_ok s r lovelace t hok] at htx
   injection htx with htx
   subst htx
-  have hcage : (txCageOutputs t r).any (·.role == .destination) = false := by
-    unfold txCageOutputs
-    dsimp only
-    split <;> rfl
   have howner : ∀ (d : DatumForm) (c : Option Nat) (ps : List Payment),
       (ownerOutputs d c ps).any (·.role == .destination) = false := by
     intro d c ps
@@ -46,7 +41,7 @@ theorem destination_output_iff_delivers (s : RegistryState) (r : Request) (lovel
       simp only [List.map_cons, List.map_nil, List.any_cons, List.any_nil, hf,
         Bool.or_false, Bool.not_false]
       rfl
-  simp only [List.any_cons, List.any_append, hcage, howner, Bool.or_false]
+  simp only [List.any_cons, List.any_append, howner, Bool.or_false]
   rw [hdest]
   · rfl
   · intro o
@@ -82,7 +77,7 @@ theorem witness_input_datum_is_held (s : RegistryState) (r : Request) (lovelace 
       subst ha
       simp only [burnSourceRole] at hrole
       simp only [burnSourceDatum, burnSourceValue]
-      split at hrole <;> simp_all
+      simp_all
     · cases hp
 
 /-- By value: a delivered output carries the request's datum inline when the
@@ -98,13 +93,6 @@ example (s : RegistryState) (k : Key) :
       { edge := .insertActive, key := k }).map (fun o => (o.datum, o.datumValue))
       = [(.none, none)] := by
   simp +decide [txDestinationOutputs, routedPayment, mintRoutedTo, route, deliveredDatum, datumFormOf]
-
-/-- By value, one edge each way: an absent insertion routes its token to custody
-and describes no destination output. -/
-example (s : RegistryState) (k : Key) :
-    txDestinationOutputs { state := s, mint := [((.absent, k), 1)], paid := [] }
-      { edge := .insertAbsent, key := k } = [] := by
-  simp +decide [txDestinationOutputs, routedPayment, mintRoutedTo, route]
 
 /-- By value: an active insertion routes its token to the requester and
 describes exactly one destination output. -/
@@ -133,8 +121,8 @@ theorem delivered_datum_is_request_datum (s : RegistryState) (r : Request)
   subst htx
   intro o ho hrole
   dsimp only at ho
-  rw [List.mem_append, List.mem_append, List.mem_cons] at ho
-  rcases ho with ((ho | ho) | ho) | ho
+  rw [List.mem_append, List.mem_cons] at ho
+  rcases ho with (ho | ho) | ho
   · subst ho
     simp [txStateOutput] at hrole
   · rw [List.mem_map] at ho
@@ -146,13 +134,6 @@ theorem delivered_datum_is_request_datum (s : RegistryState) (r : Request)
     · rw [List.mem_singleton] at hd
       subst hd
       exact ⟨rfl, rfl⟩
-  · unfold txCageOutputs at ho
-    dsimp only at ho
-    split at ho
-    · simp at ho
-    · rw [List.mem_singleton] at ho
-      subst ho
-      simp at hrole
   · rw [ownerOutputs, List.mem_filterMap] at ho
     obtain ⟨p, -, hp⟩ := ho
     split at hp <;> (cases hp <;> simp at hrole)

@@ -204,7 +204,7 @@ def stateTokenInput : TxInput :=
       let paid := { ownerOutput address 1000 with role := role, datum := .none }
       settle owed [paid] == none &&
       settle owed [{ paid with address := some (address + 1) }] == some reason &&
-      [TxRole.state, .request, .destination, .cage, .witness, .owner].all fun other =>
+      [TxRole.state, .request, .destination, .witness, .owner].all fun other =>
         other == role || settle owed [{ paid with role := other }] != none
 
 -- Two obligations to one recipient are summed: one output sized for one is refused,

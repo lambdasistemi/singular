@@ -12,11 +12,10 @@ def policy : Nat := 7
 
 def cfg0 : Config :=
   { root := rootOf [], minimumTip := 0, processTime := 0, retractTime := 0
-  , applicationPolicy := policy, activePolicy := 8, absentPolicy := 9
-  , terminalPolicy := 10 }
+  , applicationPolicy := policy, activePolicy := 8 }
 
 /-- The empty registry: no leaves, no custody, no held tokens. -/
-def s0 : RegistryState := { config := cfg0, trie := [], custody := [], held := [] }
+def s0 : RegistryState := { config := cfg0, trie := [], held := [] }
 
 /-- The empty registry with a processing time of 1000 ms and a retraction time of
 500 ms after it: a request submitted at `t` can be retracted from `t + 1000`,
@@ -42,16 +41,16 @@ def lovelace : Nat := 5
 
 def insertActiveTheorem : String := "Singular.Statements.insert_active_transaction_row"
 def insertActiveDigest : String :=
-  "d1c937f62f959c54a332841fe20c817a930e08aaab678dcbb749eb28a3645fb6"
+  "b94da1eb79b528ea2d897998bb4c016fa6ad55444cf7b418581e7b05cffdb12b"
 def updateTerminalTheorem : String := "Singular.Statements.update_terminal_transaction_row"
 def updateTerminalDigest : String :=
-  "f21126bbaa702ea79d379d7ea755ca49f322c9006105f56dc52af4319e1cfe74"
+  "eda5fcf4def9dc73ac7accf83704d6ac4a635cc141da664a058631c5935fd4f3"
 def insertActiveInversion : String := "Singular.Statements.insert_active_inversion"
 def insertActiveInversionDigest : String :=
-  "df737501c3c51c4968eb5adcc658f74473984613c591b4886fa092c15e35dc9d"
+  "5672579320a348104675bf8224b602385ef2dcd7133b46e9ec13b0b3e1382869"
 def updateTerminalInversion : String := "Singular.Statements.update_terminal_inversion"
 def updateTerminalInversionDigest : String :=
-  "55610f5a33da76d49c9f8e5eee2170af33700b0222530d6548629960133bc470"
+  "bfbc980beda8627ee3a406cf43ad5a86453aa038a4807ab3bba4b0eef6b84fdc"
 def noExitStrandsTheDeposit : String := "Singular.Statements.no_exit_strands_the_deposit"
 def noExitStrandsTheDepositDigest : String :=
   "a2e9655f8a61d303518851ef9907dcfca817d1d05a8071f7104974c2c522230a"
@@ -73,7 +72,7 @@ def foldRefusesForeignDatumDigest : String :=
   "fd23c815f71328cb0595763ea280845bfd28b4aa5b78022080afd43fb12f4aba"
 def bookedAtMostOnce : String := "Singular.Statements.booked_at_most_once"
 def bookedAtMostOnceDigest : String :=
-  "1c8b3268586a2ca2aaf930c3a45b0f8fde24c061f0ff63bf8962afbb42eb1ec2"
+  "a9ceaf24998660fb7a77f5e14e283123244f333021a34fe4a0d0e053a50924fb"
 def claimedMintByKindKey : String := "Singular.Statements.fold_batch_claimed_mint_by_kind_key"
 def claimedMintByKindKeyDigest : String :=
   "9c01e278443498d3488e6671cc1799393f565a2a1c0055c1926a8d3e559da988"
@@ -143,13 +142,12 @@ def registerTakenAgain : Request := { request .insertActive 42 44 557 0 40 with 
 owner, owed back together. -/
 def registerTakenTwice : Request := { request .insertActive 42 43 558 0 40 with tip := 3 }
 
-/-- The synthetic absent state at key 5: known absent with its custody entry, so the premise
-holds and the leaf differs from unknown. -/
+/-- The synthetic absent state at key 5: a leaf known absent, so the premise holds and the leaf
+differs from unknown. -/
 def absentState : RegistryState :=
   let trie : Trie := [(5, .known .absent)]
   { config := { cfg0 with root := rootOf trie }
   , trie := trie
-  , custody := [{ key := 5, refundAddress := 91, value := 55 }]
   , held := [] }
 
 /-- Explicit producer evidence; the driver itself never creates a proof. -/

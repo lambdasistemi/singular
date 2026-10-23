@@ -59,7 +59,6 @@ LIFECYCLE_IDS = {
     "LI01-canonical-initialization-accepts",
     "LI02-alternate-seed-refused",
     "LI05-substituted-active-policy-refused",
-    "LI06-substituted-terminal-policy-refused",
     "LI07-substituted-registry-refused",
     "WD01-fixture-datum-roundtrip",
     "WD02-two-destinations-refused",
@@ -222,6 +221,32 @@ def check_transaction_compatibility(root, corpus, driver_corpus):
         "Singular.Statements.update_terminal_transaction_row",
     }
     retired_fields = {"tip", "lovelaceCoversTip"}
+    # The two unused witness policy pins retire their state-configuration keys,
+    # the output custody datum, the registry custody list and the
+    # absent and terminal token policy entries from the accepted rows. Nothing
+    # else in a historical row may move.
+    retired_pin_keys = {"absentPolicy", "terminalPolicy", "custodyDatum"}
+
+    def without_retired_pins(node, parent=None):
+        if isinstance(node, dict):
+            return {
+                key: without_retired_pins(value, key)
+                for key, value in node.items()
+                if key not in retired_pin_keys
+                and not (
+                    key == "custody"
+                    and all(
+                        isinstance(entry, dict)
+                        and set(entry) == {"key", "refundAddress", "value"}
+                        for entry in value
+                    )
+                )
+                and not (parent == "tokenPolicies" and key in {"absent", "terminal"})
+            }
+        if isinstance(node, list):
+            return [without_retired_pins(item, parent) for item in node]
+        return node
+
     retired_profiles = {
         "insertActive": "Singular.Statements.insert_active_transaction_row",
         "updateTerminal": "Singular.Statements.update_terminal_transaction_row",
@@ -247,6 +272,7 @@ def check_transaction_compatibility(root, corpus, driver_corpus):
             assert name in observed, f"missing historical transaction: {path}/{name}"
             actual = copy.deepcopy(observed[name])
             expected = copy.deepcopy(expected)
+            expected = without_retired_pins(expected)
             if path in {"lean/corpus.json", "simulator/corpus.json"} and (
                 retired_profiles.get(name) == expected["theorem"]
             ):
@@ -880,8 +906,6 @@ def check_derived(corpus, leaf_bytes, deltas, transitions):
         # the registry's pinned policy for the kind.
         policies = {
             "active": obs["config"]["activePolicy"],
-            "absent": obs["config"]["absentPolicy"],
-            "terminal": obs["config"]["terminalPolicy"],
         }
         expected_mint = [
             {
@@ -1287,8 +1311,6 @@ def check_batch_rows(
                 )
                 policies = {
                     "active": obs["config"]["activePolicy"],
-                    "absent": obs["config"]["absentPolicy"],
-                    "terminal": obs["config"]["terminalPolicy"],
                 }
                 for m in obs["mint"]:
                     assert (
@@ -1465,7 +1487,7 @@ def check_batch_controls(corpus, refusals):
             == [x["request"] for x in row["setup"]]
         ]
 
-    shared = ("config", "custody", "held", "mint", "root", "state")
+    shared = ("config", "held", "mint", "root", "state")
     pairs = 0
     for row in rows:
         if len(row["requests"]) != 1 or row["outcome"] == "unsupported":

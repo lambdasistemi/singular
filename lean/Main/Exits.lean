@@ -158,7 +158,7 @@ def allExits : List Exit := exitEdges.map .fold ++ [.reject, .retract]
 -- the surface's protocol moved for each, and again when a request came to carry
 -- its datum.
 #guard declaredOperations == exitEdges.map edgeName ++ ["reject", "retract"]
-#guard surface.protocolVersion == 7
+#guard surface.protocolVersion == 8
 #guard surface.judgements == ["spend", "settle"]
 #guard surface.batchQuestions.map (·.1) == ["foldBatch", "rejectBatch"]
 #guard surface.batchQuestions.all fun q => !q.2.contains "tx"

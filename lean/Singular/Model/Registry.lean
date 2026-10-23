@@ -39,8 +39,6 @@ structure Config where
   retractTime : Nat
   applicationPolicy : Nat
   activePolicy : Nat
-  absentPolicy : Nat
-  terminalPolicy : Nat
   /-- Abstract identity of the registry state token, allocated by the consumer. -/
   registryId : Nat := 0
   registrationCost : Nat := 0
@@ -52,9 +50,7 @@ instance : ToJson Config where
     [ ("registryId", toJson c.registryId), ("root", toJson c.root), ("maxFee", toJson c.minimumTip)
     , ("processTime", toJson c.processTime), ("retractTime", toJson c.retractTime)
     , ("applicationPolicy", toJson c.applicationPolicy)
-    , ("activePolicy", toJson c.activePolicy)
-    , ("absentPolicy", toJson c.absentPolicy)
-    , ("terminalPolicy", toJson c.terminalPolicy) ] ++
+    , ("activePolicy", toJson c.activePolicy) ] ++
     (if c.registrationCost == 0 then [] else [("registrationCost", toJson c.registrationCost)]) ++
     (if c.bookingWidth == 0 then [] else [("bookingWidth", toJson c.bookingWidth)])
 
@@ -66,8 +62,6 @@ instance : FromJson Config where
     let retractTime ← j.getObjVal? "retractTime" >>= fromJson?
     let applicationPolicy ← j.getObjVal? "applicationPolicy" >>= fromJson?
     let activePolicy ← j.getObjVal? "activePolicy" >>= fromJson?
-    let absentPolicy ← j.getObjVal? "absentPolicy" >>= fromJson?
-    let terminalPolicy ← j.getObjVal? "terminalPolicy" >>= fromJson?
     let registryId ← match j.getObjVal? "registryId" with
       | .error _ => pure 0
       | .ok x => fromJson? x
@@ -78,7 +72,7 @@ instance : FromJson Config where
       | .error _ => pure 0
       | .ok x => fromJson? x
     pure { root, minimumTip, processTime, retractTime, applicationPolicy
-         , activePolicy, absentPolicy, terminalPolicy, registryId
+         , activePolicy, registryId
          , registrationCost, bookingWidth }
 
 /-- The booking interval is sized below the processing window. This is a
@@ -97,8 +91,6 @@ def Config.stateToken (c : Config) : TokenId := ⟨c.registryId, 0⟩
 /-- The policy a token kind is minted under, read off the registry's pins. -/
 def kindPolicy (c : Config) : TokenKind → Nat
   | .active => c.activePolicy
-  | .absent => c.absentPolicy
-  | .terminal => c.terminalPolicy
 
 /-- The asset name of a witness token is the key it is about, so the token's
 identity is `(kindPolicy c kind, key)` and nothing else. -/
@@ -147,14 +139,6 @@ def rootOf (t : Trie) : ByteArray :=
       u64bytes (fnv1a [p.1.toUInt8]) ++ [p.1.toUInt8, leafByte p.2]
   ByteArray.mk (u64bytes (fnv1a bytes)).toArray
 
-/-- One outstanding absent token in cage custody: the token, the refund address
-the `insertAbsent` request named, and the value the token holds (custody-lovelace-refund). -/
-structure Custody where
-  key : Key
-  refundAddress : Nat
-  value : Nat
-  deriving Repr, BEq, DecidableEq, ToJson, FromJson
-
 /-- How an output presents its datum: inline, by hash, or not at all. -/
 inductive DatumForm where
   | inline | hashed | none
@@ -196,7 +180,7 @@ def datumOfJson (j : Json) (field : String) : Except String (Option Nat) :=
   | .ok Json.null => pure none
   | .ok v => some <$> fromJson? v
 
-/-- One active or terminal token routed to the output the request named. The
+/-- One active token routed to the output the request named. The
 output carries the datum the delivering fold gave it — the request's own datum,
 or none — which is what a later fold spending it as a witness finds there. -/
 structure Holding where
@@ -232,7 +216,6 @@ def heldObservationJson (h : Holding) : Json :=
 structure RegistryState where
   config : Config
   trie : Trie
-  custody : List Custody
   held : List Holding
   deriving BEq, DecidableEq
 
@@ -252,15 +235,10 @@ instance : ToJson RegistryState where
     [ ("config", toJson s.config)
     , ("trie", Json.arr ((s.trie.map fun p =>
         Json.mkObj [("key", toJson p.1), ("leaf", leafJson p.2)]).toArray))
-    , ("custody", toJson s.custody)
     , ("held", toJson s.held) ]
 
 /-- Outstanding active tokens of one key: at most one (I-W1). -/
 def kindCount (s : RegistryState) (k : TokenKind) (key : Key) : Nat :=
   (s.held.filter fun h => h.key == key && h.kind == k).length
-
-/-- Outstanding absent tokens of one key: the custody census (I-W2). -/
-def custodyCount (s : RegistryState) (key : Key) : Nat :=
-  (s.custody.filter fun c => c.key == key).length
 
 end Singular

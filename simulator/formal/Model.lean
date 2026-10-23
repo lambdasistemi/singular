@@ -46,14 +46,7 @@ inductive Approval where
 
 /-- Where a minted token goes. -/
 inductive Destination where
-  | cageCustody | requestOutput
-  deriving Repr, BEq, DecidableEq
-
-/-- The three candidate deposit destinations for a consumed absent token. Only
-the first is correct (custody-lovelace-refund); the other two exist so a wrong answer is
-expressible and therefore detectable. -/
-inductive RefundTarget where
-  | insertRefundAddress | requestOutput | folder
+  | requestOutput
   deriving Repr, BEq, DecidableEq
 
 /-- The reference configuration the observation surface pins: the oracle's
@@ -61,7 +54,7 @@ inductive RefundTarget where
 application policy. -/
 def referenceConfig : Config :=
   { root := rootOf [], minimumTip := 0, processTime := 0, retractTime := 0
-  , applicationPolicy := 7, activePolicy := 8, absentPolicy := 9, terminalPolicy := 10 }
+  , applicationPolicy := 7, activePolicy := 8 }
 
 /-- A well-formed approval under the reference policy, scoped exactly to the
 canonical request of the edge. -/
@@ -109,38 +102,7 @@ def admits (e : Edge) (a : Approval) : Bool :=
 /-- Routing (token-routing, value-routing), observed. -/
 def route (k : TokenKind) : Destination :=
   match Singular.route k (canonicalRequest .insertActive) with
-  | .cageCustody => .cageCustody
   | .requestOutput => .requestOutput
-
-/-- A synthetic invalid-context state, unreachable from M1 genesis: key 5 is `Known Absent`, its absent token
-in cage custody with refund address 77 and value 100, retained solely for legacy encoding/refusal queries. -/
-def canonicalCustody : RegistryState :=
-  let trie : Trie := [(5, .known .absent)]
-  { config := { referenceConfig with root := rootOf trie }
-  , trie := trie
-  , custody := [{ key := 5, refundAddress := 77, value := 100 }]
-  , held := [] }
-
-/-- The reference request `refund` executes at the canonical state: an approval
-under the pinned policy scoped to the request, key 5, refund address 91,
-destination 99. -/
-def referenceEdgeRequest (e : Edge) : Request :=
-  let r := canonicalRequest e
-  { r with deposit := 55
-         , approval := if e == .witnessTerminal then none else some (canonicalApproval e) }
-
-/-- Legacy refund query over the synthetic absent fixture. Excluded folds
-refuse rather than consume custody; no production success is claimed. -/
-def refund (e : Edge) : Option RefundTarget :=
-  match step canonicalCustody (referenceEdgeRequest e) with
-  | .error _ => none
-  | .ok r =>
-    match r.paid with
-    | [] => none
-    | (dest, _) :: _ =>
-      if dest == 77 then some .insertRefundAddress
-      else if dest == 99 then some .requestOutput
-      else some .folder
 
 end Oracle
 

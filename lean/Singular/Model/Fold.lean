@@ -50,17 +50,13 @@ def actualMint (batch : List Action) : List (Asset × Int) :=
 
 /-- Where a minted token is routed (token-routing). -/
 inductive Destination where
-  | cageCustody | requestOutput
+  | requestOutput
   deriving Repr, BEq, DecidableEq, ToJson, FromJson
 
-/-- Absent tokens go to cage custody — a later fold consumes them without a
-signature — and active and terminal tokens go to the output the request
-named. -/
+/-- The active witness goes to the output the request named. -/
 def route (k : TokenKind) (_request : Request) : Destination :=
   match k with
-  | .absent => .cageCustody
   | .active => .requestOutput
-  | .terminal => .requestOutput
 
 /-- The canonical request of each edge, in the frame where the frozen
 three-argument `admits` observes admission: key 5; owner 42, or 91 — the refund
@@ -185,26 +181,21 @@ def foldBatch (s : RegistryState) (batch : List Action) : Except String Result :
   else throw "net-mint-mismatch"
 
 /-- The ledger/trie consistency invariant: the root commits to the map, the
-biconditional supply laws hold for active and absent tokens, and every terminal
-attestation and custody entry is about a leaf that can still be what it says.
+biconditional supply law holds for active tokens: at most one per key, and exactly one
+iff the leaf is active.
 Holds for every reachable state; the naming profile specializes it as
 `WellFormed`. -/
 def Consistent (s : RegistryState) : Prop :=
   s.config.root = rootOf s.trie ∧
   (∀ key, kindCount s .active key = 1 ↔ trieGet s.trie key = .known .active) ∧
-  (∀ key, kindCount s .active key ≤ 1) ∧
-  (∀ key, custodyCount s key = 1 ↔ trieGet s.trie key = .known .absent) ∧
-  (∀ key, custodyCount s key ≤ 1) ∧
-  (∀ h ∈ s.held, h.kind = .terminal → trieGet s.trie h.key = .known .terminal) ∧
-  (∀ c ∈ s.custody, trieGet s.trie c.key = .known .absent) ∧
-  (∀ c₁ ∈ s.custody, ∀ c₂ ∈ s.custody, c₁.key = c₂.key → c₁ = c₂)
+  (∀ key, kindCount s .active key ≤ 1)
 
 /-- Reachability from genesis: the empty trie under a supplied configuration,
 closed over successful steps. Reachability is a hypothesis, not a weakening:
 over arbitrary `State` values the supply laws are simply false. -/
 inductive Reachable : RegistryState → Prop where
   | initial (c : Config) :
-      Reachable { config := { c with root := rootOf [] }, trie := [], custody := [], held := [] }
+      Reachable { config := { c with root := rootOf [] }, trie := [], held := [] }
   | next {s : RegistryState} {a : Action} {r : Result} :
       Reachable s → step s a = .ok r → Reachable r.state
 

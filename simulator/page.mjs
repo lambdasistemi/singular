@@ -10,8 +10,6 @@ let state = initial(),
 
 const witnessShape = {
   active: 'biconditional',
-  absent: 'biconditional',
-  terminal: 'implicational',
 };
 
 function showWhere() {
@@ -19,7 +17,7 @@ function showWhere() {
   const leaf = trieGet(state.trie, key),
     w = witnesses(state, key);
   $('where').textContent =
-    `key ${key} · leaf ${leafName(leaf)} · active ${w.active} · absent ${w.absent} · terminal ${w.terminal}`;
+    `key ${key} · leaf ${leafName(leaf)} · active ${w.active}`;
   rows(
     $('witnesses'),
     KINDS.map((k) => ({ k, n: w[k] })),
@@ -39,7 +37,6 @@ function renderRefusals() {
         trie: leaf === null ? [] : [{ key, leaf }],
         config: { ...s.config, root: rootOf(leaf === null ? [] : [{ key, leaf }]) },
       };
-      if (leaf === 'absent') s = { ...s, custody: [{ key, refundAddress: 91, value: 200 }] };
       if (leaf === 'active')
         s = { ...s, held: [{ key, kind: 'active', output: 555, datum: null }] };
       const r = step(
@@ -163,8 +160,6 @@ function renderNaming() {
     d.accepted ? 'admitted' : 'refused: ' + d.reason,
     leafName(d.leaf),
     d.witnesses.active,
-    d.witnesses.absent,
-    d.witnesses.terminal,
   ]);
   const c = checkNamingCorpus(NAMINGCORPUS);
   $('naming-status').textContent =

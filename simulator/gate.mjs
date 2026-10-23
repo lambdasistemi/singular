@@ -148,7 +148,6 @@ for (const edge of EDGES)
       ...s,
       trie,
       config: { ...s.config, root: rootOf(trie) },
-      custody: leaf === 'absent' ? [{ key, refundAddress: 91, value: 200 }] : [],
       held: leaf === 'active' ? [{ key, kind: 'active', output: 555, datum: null }] : [],
     };
     const r = step(
@@ -329,7 +328,7 @@ for (const row of report)
     assert.ok(row.exercised, `law not exercised: ${row.name}`);
     checked++;
   }
-assert.ok(checked === 5, `active finite controlled-law count: ${checked}`);
+assert.ok(checked === 3, `active finite controlled-law count: ${checked}`);
 
 // ---- 6b. the evidence boundary: what each exported section is ---------------
 // The report classifies every array section the corpus exports: behavior (the
@@ -442,7 +441,7 @@ assert.equal(
   assert.ok(j.steps[0].accepted && j.steps[1].accepted, 'registration and retirement complete');
   assert.equal(j.steps[2].accepted, false, 'terminal witnessing is excluded');
   assert.equal(j.steps[2].reason, 'edge-inadmissible');
-  assert.equal(j.steps[2].witnesses.terminal, 0);
+  assert.equal(j.steps[2].witnesses.active, 0);
   assert.equal(j.steps[2].leaf, 'terminal');
 }
 

@@ -23,21 +23,6 @@ export const checks = {
       return w.active <= 1 && (w.active === 1) === (leaf === 'active');
     },
   },
-  absent_witness_unique: {
-    applies: () => true,
-    law: (_before, action, after) => {
-      const leaf = trieGet(after.trie, action.key),
-        w = witnesses(after, action.key);
-      return w.absent <= 1 && (w.absent === 1) === (leaf === 'absent');
-    },
-  },
-  witness_kinds_exclude: {
-    applies: () => true,
-    law: (_before, action, after) => {
-      const w = witnesses(after, action.key);
-      return [w.active > 0, w.absent > 0, w.terminal > 0].filter(Boolean).length <= 1;
-    },
-  },
   biconditional_supply_sync: {
     applies: () => true,
     law: (_before, action, after) => {
@@ -45,18 +30,9 @@ export const checks = {
         w = witnesses(after, action.key);
       return (
         (w.active === 1) === (leaf === 'active') &&
-        (w.active === 0) === (leaf !== 'active') &&
-        (w.absent === 1) === (leaf === 'absent') &&
-        (w.absent === 0) === (leaf !== 'absent')
+        (w.active === 0) === (leaf !== 'active')
       );
     },
-  },
-  terminal_attestation_sound: {
-    applies: (_before, _action, after) => after.held.some((h) => h.kind === 'terminal'),
-    law: (_before, _action, after) =>
-      after.held
-        .filter((h) => h.kind === 'terminal')
-        .every((h) => trieGet(after.trie, h.key) === 'terminal'),
   },
   termination: {
     applies: (before, action) => trieGet(before.trie, action.key) === 'terminal',

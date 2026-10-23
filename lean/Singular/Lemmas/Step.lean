@@ -60,7 +60,6 @@ theorem error_of_refusal (s : RegistryState) (a : Action) (why : String)
 theorem applyEdge_insertActive (s : RegistryState) (a : Action) (he : a.edge = .insertActive) :
     (applyEdge s a).state.trie = trieSet s.trie a.key (.known .active) ∧
     (applyEdge s a).state.config = { s.config with root := rootOf (trieSet s.trie a.key (.known .active)) } ∧
-    (applyEdge s a).state.custody = s.custody ∧
     (applyEdge s a).state.held =
       { key := a.key, kind := .active, output := a.output, datum := a.datum } :: s.held ∧
     (applyEdge s a).mint = [((.active, a.key), 1)] ∧ (applyEdge s a).paid = [] := by
@@ -72,7 +71,6 @@ theorem applyEdge_insertActive (s : RegistryState) (a : Action) (he : a.edge = .
 theorem applyEdge_updateTerminal (s : RegistryState) (a : Action) (he : a.edge = .updateTerminal) :
     (applyEdge s a).state.trie = trieSet s.trie a.key (.known .terminal) ∧
     (applyEdge s a).state.config = { s.config with root := rootOf (trieSet s.trie a.key (.known .terminal)) } ∧
-    (applyEdge s a).state.custody = s.custody ∧
     (applyEdge s a).state.held =
       (s.held.filter fun h => !(h.key == a.key && h.kind == .active)) ∧
     (applyEdge s a).mint = [((.active, a.key), -1)] ∧ (applyEdge s a).paid = [] := by
@@ -81,14 +79,12 @@ theorem applyEdge_updateTerminal (s : RegistryState) (a : Action) (he : a.edge =
   have h2 : (applyEdge s a).state.config =
       { s.config with root := rootOf (trieSet s.trie a.key (.known .terminal)) } := by
     simp only [applyEdge, he]
-  have h3 : (applyEdge s a).state.custody = s.custody := by
-    simp only [applyEdge, he]
   have h4 : (applyEdge s a).state.held =
       (s.held.filter fun h => !(h.key == a.key && h.kind == .active)) := by
     simp only [applyEdge, he]
   have h5 : (applyEdge s a).mint = [((.active, a.key), -1)] := by simp [applyEdge, he, delta, assetDelta]
   have h6 : (applyEdge s a).paid = [] := by simp [applyEdge, he]
-  exact ⟨h1, h2, h3, h4, h5, h6⟩
+  exact ⟨h1, h2, h4, h5, h6⟩
 
 
 
@@ -117,20 +113,16 @@ theorem step_ok_consistent (s : RegistryState) (a : Action) (t : Result)
     (hc : Consistent s) (h : step s a = .ok t) : Consistent t.state := by
   obtain ⟨href, ht⟩ := step_eq_ok s a t h
   subst ht
-  obtain ⟨hroot, hA1, hA2, hC1, hC2, hTerm, hCleaf, hCuniq⟩ := hc
+  obtain ⟨hroot, hA1, hA2⟩ := hc
   obtain ⟨ap, hap, hpol, hadm, hcase⟩ := (refusal_none_iff s a).mp href
   rcases hcase with ⟨he, hb⟩ | ⟨he, hb, hac⟩
   · -- insertActive: Unknown → Known Active, +1 active token at the output
-    obtain ⟨htrie, hcfg, hcust, hheld, _, _⟩ := applyEdge_insertActive s a he
+    obtain ⟨htrie, hcfg, hheld, _, _⟩ := applyEdge_insertActive s a he
     have haz : kindCount s .active a.key = 0 := by
       have hne : kindCount s .active a.key ≠ 1 := fun hEq => by
         rw [(hA1 a.key).mp hEq] at hb; exact Leaf.noConfusion hb
       have := hA2 a.key; omega
-    have hnotin : ∀ c ∈ s.custody, c.key ≠ a.key := by
-      intro c hmem hEq
-      have := hCleaf c hmem
-      rw [hEq, hb] at this; exact Leaf.noConfusion this
-    refine ⟨by rw [hcfg, htrie], ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    refine ⟨by rw [hcfg, htrie], ?_, ?_⟩
     · intro key
       by_cases hk : key = a.key
       · subst hk
@@ -153,40 +145,9 @@ theorem step_ok_consistent (s : RegistryState) (a : Action) (t : Result)
           simp [kindCount, hheld, countHeld_cons,
             show (a.key == key) = false from by simpa using fun hh => hk hh.symm]]
         exact hA2 key
-    · intro key
-      rw [show custodyCount (applyEdge s a).state key = custodyCount s key from by
-        simp [custodyCount, hcust]]
-      by_cases hk : key = a.key
-      · subst hk
-        rw [htrie, trieGet_set_eq]
-        constructor
-        · intro hEq; rw [(hC1 a.key).mp hEq] at hb; exact Leaf.noConfusion hb
-        · intro hEq; exact absurd hEq (by decide)
-      · rw [htrie, trieGet_set_of_ne _ _ _ _ hk]; exact hC1 key
-    · intro key
-      rw [show custodyCount (applyEdge s a).state key = custodyCount s key from by
-        simp [custodyCount, hcust]]
-      exact hC2 key
-    · intro hh hmem hk
-      rw [hheld] at hmem
-      rcases List.mem_cons.mp hmem with rfl | hmem'
-      · exact absurd hk (by simp)
-      · have hne : hh.key ≠ a.key := by
-          intro hEq
-          have := hTerm hh hmem' hk
-          rw [hEq, hb] at this; exact Leaf.noConfusion this
-        rw [htrie, trieGet_set_of_ne _ _ _ _ hne]
-        exact hTerm hh hmem' hk
-    · intro c hmem
-      rw [hcust] at hmem
-      rw [htrie, trieGet_set_of_ne _ _ _ _ (hnotin c hmem)]
-      exact hCleaf c hmem
-    · intro c₁ h1 c₂ h2 hk
-      rw [hcust] at h1 h2
-      exact hCuniq c₁ h1 c₂ h2 hk
-  · -- updateTerminal: the active token is consumed; custody is untouched
-    obtain ⟨htrie, hcfg, hcust, hheld, _, _⟩ := applyEdge_updateTerminal s a he
-    refine ⟨by rw [hcfg, htrie], ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · -- updateTerminal: the active token is consumed
+    obtain ⟨htrie, hcfg, hheld, _, _⟩ := applyEdge_updateTerminal s a he
+    refine ⟨by rw [hcfg, htrie], ?_, ?_⟩
     · intro key
       by_cases hk : key = a.key
       · subst hk
@@ -211,40 +172,6 @@ theorem step_ok_consistent (s : RegistryState) (a : Action) (t : Result)
           simpa [kindCount, hheld] using
             countHeld_filter_active_out s.held a.key .active key hk]
         exact hA2 key
-    · intro key
-      rw [show custodyCount (applyEdge s a).state key = custodyCount s key from by
-        simp [custodyCount, hcust]]
-      by_cases hk : key = a.key
-      · subst hk
-        rw [htrie, trieGet_set_eq]
-        constructor
-        · intro hEq; rw [(hC1 a.key).mp hEq] at hb; exact absurd hb (by decide)
-        · intro hEq; exact absurd hEq (by decide)
-      · rw [htrie, trieGet_set_of_ne _ _ _ _ hk]; exact hC1 key
-    · intro key
-      rw [show custodyCount (applyEdge s a).state key = custodyCount s key from by
-        simp [custodyCount, hcust]]
-      exact hC2 key
-    · intro hh hmem hk
-      rw [hheld] at hmem
-      have hmem' := (List.mem_filter.mp hmem).1
-      have hne : hh.key ≠ a.key := by
-        intro hEq
-        have := hTerm hh hmem' hk
-        rw [hEq, hb] at this; exact absurd this (by decide)
-      rw [htrie, trieGet_set_of_ne _ _ _ _ hne]
-      exact hTerm hh hmem' hk
-    · intro c hmem
-      rw [hcust] at hmem
-      have hne : c.key ≠ a.key := by
-        intro hEq
-        have := hCleaf c hmem
-        rw [hEq, hb] at this; exact absurd this (by decide)
-      rw [htrie, trieGet_set_of_ne _ _ _ _ hne]
-      exact hCleaf c hmem
-    · intro c₁ h1 c₂ h2 hk
-      rw [hcust] at h1 h2
-      exact hCuniq c₁ h1 c₂ h2 hk
 
 theorem step_preserves_terminal (s : RegistryState) (a : Action) (t : Result) (key : Key)
     (hterm : trieGet s.trie key = .known .terminal) (hok : step s a = .ok t) :
@@ -257,36 +184,17 @@ theorem step_preserves_terminal (s : RegistryState) (a : Action) (t : Result) (k
       intro hEq
       rw [← hEq, hterm] at hb
       exact absurd hb (by decide)
-  · obtain ⟨h1, _, _, _, _, _⟩ := applyEdge_insertActive s a he
+  · obtain ⟨h1, _, _, _, _⟩ := applyEdge_insertActive s a he
     rw [h1, trieGet_set_of_ne _ _ _ _ hne]; exact hterm
-  · obtain ⟨h1, _, _, _, _, _⟩ := applyEdge_updateTerminal s a he
+  · obtain ⟨h1, _, _, _, _⟩ := applyEdge_updateTerminal s a he
     rw [h1, trieGet_set_of_ne _ _ _ _ hne]; exact hterm
-
-theorem step_preserves_terminal_holding (s : RegistryState) (a : Action) (t : Result)
-    (key : Key) (out : Nat) (hterm : trieGet s.trie key = .known .terminal)
-    (hmem : { key := key, kind := .terminal, output := out } ∈ s.held)
-    (hok : step s a = .ok t) :
-    { key := key, kind := .terminal, output := out } ∈ t.state.held := by
-  obtain ⟨href, ht⟩ := step_eq_ok s a t hok
-  subst ht
-  obtain ⟨_, _, _, _, hcase⟩ := (refusal_none_iff s a).mp href
-  rcases hcase with ⟨he, _⟩ | ⟨he, _, _⟩
-  · obtain ⟨_, _, _, h4, _, _⟩ := applyEdge_insertActive s a he
-    rw [h4]; exact List.mem_cons_of_mem _ hmem
-  · obtain ⟨_, _, _, h4, _, _⟩ := applyEdge_updateTerminal s a he
-    rw [h4]; exact List.mem_filter.mpr ⟨hmem, by simp⟩
 
 theorem reachable_consistent (s : RegistryState) (h : Reachable s) : Consistent s := by
   induction h with
   | initial c =>
     exact ⟨rfl,
       fun key => by simp [kindCount, trieGet],
-      fun key => by simp [kindCount, trieGet],
-      fun key => by simp [custodyCount, trieGet],
-      fun key => by simp [custodyCount, trieGet],
-      fun h0 hm _ => absurd hm (by simp),
-      fun c hm => absurd hm (by simp),
-      fun c₁ h1 _ _ => absurd h1 (by simp)⟩
+      fun key => by simp [kindCount, trieGet]⟩
   | next _ hok ih => exact step_ok_consistent _ _ _ ih hok
 
 /-- No edge stores an `unknown` leaf: the writing edges store a known state and

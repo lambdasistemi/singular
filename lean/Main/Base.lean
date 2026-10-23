@@ -14,10 +14,9 @@ def openPolicyHash : Nat := 7
 
 def cfg : Config :=
   { root := rootOf [], minimumTip := 1, processTime := 2, retractTime := 3
-  , applicationPolicy := openPolicyHash, activePolicy := 8, absentPolicy := 9
-  , terminalPolicy := 10 }
+  , applicationPolicy := openPolicyHash, activePolicy := 8 }
 
-def s0 : RegistryState := { config := cfg, trie := [], custody := [], held := [] }
+def s0 : RegistryState := { config := cfg, trie := [], held := [] }
 
 def apFor (e : Edge) (k o d : Nat) : Option Approval :=
   some { policy := openPolicyHash, edge := e, key := k, owner := o, destination := d

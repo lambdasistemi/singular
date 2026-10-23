@@ -73,7 +73,6 @@ def txOfExit (state : RegistryState) (exit : Exit) (request : Request) (lovelace
           , outputs := txStateOutput t
               :: (txDestinationOutputs t request).map
                   (fun o => { o with lovelace := destinationFloor })
-              ++ txCageOutputs t request
               ++ ownerOutputs .none (request.approval.map (·.assetName)) owed
           , mint := t.mint
           , signers := requiredSigners request
