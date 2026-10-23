@@ -359,8 +359,22 @@
       "pause": 400
     }
   ],
+  "authenticate-the-moved-per-registry-parameters": [
+    {
+      "text": "Authenticate the moved per-registry parameters.",
+      "pause": 500
+    },
+    {
+      "text": "As a requester and treasury recipient, I want registration booking to compare its cost and windows with authentic application parameters. An old configuration with cost ten, minimum tip two and processing/reclaim durations of one hundred refuses cost zero or tip zero, even if that request's controller signs. Moving those fields only into requester-supplied booked data would lose that immutable authority. An application hash does not reveal its internal expected constants.",
+      "pause": 400
+    },
+    {
+      "text": "The ticket owner selected a configuration record per registry to preserve the same-parameter promise. At registry creation, the application policy mints a role-separated configuration token for the complete registry into one application output containing the five parameters inline. The record is immutable and has no spend/removal path. Registration booking reads it by reference, authenticates its token and creation provenance, checks the declared cost and bid floor and books the time/width/deadlines against those values. ParametersForRegistry names the correspondence, with explicit ledger invocation, genuine genesis, quantity and same-output premises. A copied datum is insufficient. The termination tip stays in the application's release constants. These are candidate representation obligations and remain to be stated and checked; accepted law is unchanged.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "questions.md",
-    "sha256": "6076780e7ebba397f8a34daee73b1c4d44a4697693a63724b25b60910d9829f8"
+    "sha256": "b11ab70256e0ce7d8aa99be4e62038e7eb49a8d6fb12d5e1b46132a3562fd7b2"
   }
 }

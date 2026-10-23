@@ -211,10 +211,14 @@
     {
       "text": "The unchanged protected-rejection work retains its own accepted sources and obligations. No #498 or #529 model or implementation is edited. Composition must account for registration cleanup moving to the application, request tags and Singular pending accounting leaving, and every named payment exception. Historical source comparisons remain available above; they are not current implementation evidence for this candidate.",
       "pause": 400
+    },
+    {
+      "text": "The per-registry parameter authority is retained in an immutable application configuration record created with genuine registry genesis, authenticated by a distinct application-policy configuration-role token. Its inline datum contains the same registration cost, minimum tip, processing and reclaim durations, and booking width as the accepted configuration. Registration booking references it and checks the request against those values. The named ParametersForRegistry correspondence binds creation, complete identity, actual quantity and same-output data; clients use public chain data and hashes. This reopens application creation/booking, configuration uniqueness/immutability, role separation, client derivations and their witness/selector rows. It introduces neither a Singular request tag nor another state datum field. Missing or unauthenticated configuration is not a valid open-datum creation or registration, even if a standalone Singular registry exists.",
+      "pause": 400
     }
   ],
   "_source": {
     "file": "impact.md",
-    "sha256": "81be6f73a61742996f26454b08ac1d9b3a4767f8acb653fc8b744c3a4b5537e1"
+    "sha256": "bd6cb2f4c8054d600dab2a80a03f1c1642adbd39025002ae0c55b763cd1f9748"
   }
 }
