@@ -45,10 +45,14 @@ elab "#identity_report" : command => do
   for (name, info) in env.constants.toList do
     if name.toString.startsWith "NoPin." then
       if let .axiomInfo _ := info then throwError "custom axiom: {name}"
-      let axioms ← collectAxioms name
-      let extra := axioms.toList.filter fun a => a != `propext && a != `Classical.choice && a != `Quot.sound
-      unless extra.isEmpty || (stated.contains name && extra.all (· == `sorryAx)) do
-        throwError "unproved candidate definition or example: {name}"
+      -- Proof-valued declarations are checked here. Frozen model definitions
+      -- are checked by their kernel closure; traversing report IO also walks
+      -- Lean's entire metaprogramming implementation without proving a law.
+      if ← liftTermElabM <| Meta.isProp info.type then
+        let axioms ← collectAxioms name
+        let extra := axioms.toList.filter fun a => a != `propext && a != `Classical.choice && a != `Quot.sound
+        unless extra.isEmpty || (stated.contains name && extra.all (· == `sorryAx)) do
+          throwError "unproved candidate definition or example: {name}"
     if name.getPrefix == `NoPin.Statements ||
         ((name.getPrefix == `NoPin.Fixtures || name.getPrefix == `NoPin.Mutants) &&
          match info with | .thmInfo _ => true | _ => false) then

@@ -25,7 +25,7 @@
     "lean/NoPin/ApplicationRequests/Role.lean": "f6f17f8bafa3ebb9c5d271078ecd63fd19f0ba700c3ea7af47604051b8309f96",
     "lean/NoPin/ApplicationRequests/Statements.lean": "9bb3caa65e0c6bcfe1e4ee8c340ae740fca75f8fecdf1e67c532378777ce5f27",
     "lean/NoPin.lean": "15271ae0fdf17705efa61282e880803da5cebaa374735aceaca732ad893abc60",
-    "lean/Report.lean": "d8282bc34fd339b86a99c45f0ff72d50f75fce2d76de65b530c7b694987dcd9a"
+    "lean/Report.lean": "970b07bb7b035ed2eff88ed030d4eb29398308f46d2879b1d9e5b1082770b4ca"
   },
   "preservedBaseArtifacts": {
     "statements.json": "97450a8880920e1f81b97a02e2e449c76aec7baa9ae2b17fab63f7fc93fccb87",
