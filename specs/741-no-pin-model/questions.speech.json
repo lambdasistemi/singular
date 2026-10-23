@@ -255,8 +255,48 @@
       "pause": 400
     }
   ],
+  "how-can-local-release-preserve-the-controllers-combined-payment": [
+    {
+      "text": "How can local release preserve the controller's combined payment?.",
+      "pause": 500
+    },
+    {
+      "text": "As an application controller, I want all registry fold duties and all released protected deposits paid additively, so that one payment cannot satisfy several independent obligations.",
+      "pause": 400
+    },
+    {
+      "text": "Starting state and action: two genuine application outputs for one controller protect deposits five and seven. A fold also owes that controller eleven and pays twelve through otherwise eligible outputs. The accepted validRelease requires twenty-three; a local deposit-only sum requires twelve. Exact same-key burns do not determine the additional eleven or which outputs are eligible to settle it. This is a source-derived discriminator, not executed script or ledger evidence.",
+      "pause": 400
+    },
+    {
+      "text": "Bindings: accepted revision 00771d77af996605845cf062285263909a049cf8, OpenDatumApplication.foldPayments and settleFold; open_datum.ak validRelease, registryOwed, rowDuties and releasedTo; registry/settlement.ak settlesOf; root foldRoutingRefusal and FoldMember.donation. The application-held trace maps every release guard. The economic termination donates held-minus-tip to the treasury, while the application separately protects controller payments; isolated model checks do not establish their composition.",
+      "pause": 400
+    },
+    {
+      "text": "No local equivalent for registryOwed and its settlement-output exclusions has been established. Retaining an authenticated aggregate settlement input, strengthening the executed token-policy contract to enforce the full combined obligation, or explicitly revising the economic/controller promise are alternatives for the operator. None is adopted. The ruling needed is the replacement guarantee and its enforcement owner. Equivalent-settlement and composed permissionless-fold acceptance stay held; independent candidate-state and economic-only results may continue.",
+      "pause": 400
+    }
+  ],
+  "can-a-pending-termination-be-cancelled-or-updated": [
+    {
+      "text": "Can a pending termination be cancelled or updated?.",
+      "pause": 500
+    },
+    {
+      "text": "As a controller, I want to know whether booking retirement is irrevocable and whether its payload or control can change while pending. Start with an authentic controller-booked pending output at the application. Try Update, ordinary Release, rebooking, cancellation or changing its protected controller. The accepted application has only Update and Release spending constructors and no distinct pending tag; its Control is immutable on Update. The 23 October ruling does not specify pending cancellation or updates.",
+      "pause": 400
+    },
+    {
+      "text": "The hypothetical candidate has a distinct pending state, refuses both live spend constructors and rebooking, and exposes no cancellation path. Those restrictions are unruled hypotheses for review, not an operator decision. The operator must decide the desired interaction before affected application-law acceptance; the frozen surfaces preserve the distinction explicitly. Evidence is a source/interface comparison only at the bound accepted revision, with no production implementation or ledger execution.",
+      "pause": 400
+    },
+    {
+      "text": "The constitution explicitly supersedes legacy rejection, retraction, payment and transaction rules with the ruled economic rows. The bound consumer still computes registryPayments from those legacy duties, whereas the economic termination sends held-minus-tip to the treasury. This is a consumer/model conflict as well as a missing local observation. The operator owns the replacement guarantee; equivalent_settlement and composed_fold_available remain held obligations with no theorem claim.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "questions.md",
-    "sha256": "04c8966765305b23fc80adf66058560498f41973d17a7ae40338fde2794bf1ad"
+    "sha256": "2e447c5ba0aff6563103dca5ba3703e99c025d2d5046a7402e2c3b2896e573c1"
   }
 }

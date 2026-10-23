@@ -131,8 +131,18 @@
       "pause": 400
     }
   ],
+  "application-held-termination-source-bindings": [
+    {
+      "text": "Application-held termination source bindings.",
+      "pause": 500
+    },
+    {
+      "text": "The 23 October application-held candidate supersedes only the selected destination-transfer direction. Earlier rows remain historical and unchanged. Every row below is a source fact at revision 00771d77af996605845cf062285263909a049cf8, with a complete-file digest. The candidate is hypothetical; application law, generated consumers and implementation remain unchanged. Full economic-to-candidate token identity, payment observations and the separate FoldObservation-to-TxView correspondence remain debt to accepted ledger/history vocabulary in #679/#680. No validity or script evaluator is introduced.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "impact.md",
-    "sha256": "beebd8f1af5ed225b38f4fa3cd4f3ee6af8f8c0c8987fb2165452ca950407ca7"
+    "sha256": "0c0174445746dc6d1af4382abed32149e4288aea6455181d9026dee3799100a4"
   }
 }
