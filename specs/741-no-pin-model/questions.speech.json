@@ -373,8 +373,18 @@
       "pause": 400
     }
   ],
+  "a-doomed-registration-waits-for-its-booked-exits": [
+    {
+      "text": "A doomed registration waits for its booked exits.",
+      "pause": 500
+    },
+    {
+      "text": "As a requester who books an already-used key, I want the change to early rejection and refunds stated plainly. Accepted lifecycle-mismatch rejection can occur before the processing deadline without my signature and returns held minus tip. With held twenty-three and tip three, that is twenty back and three for the rejecting party. Parent NOTE-007 briefly selected an application key-exists cleanup; the operator correction delivered by NOTE-008 withdrew it before any tracked implementation or fourth-path surface was added. Open datum never reads the registry root or verifies a trie proof. The new registration waits: during the booked reclaim window its owner can recover all twenty-three, or after that anyone can clean it up returning twenty and taking three. There is no early application mismatch spend. This is a decided replacement with changed admission and payment outcomes, not an unresolved equality claim or a fourth path. The three timed phases remain exhaustive. The C7 matrix in the application request trace classifies every accepted request-kind/rejection-ground pair, including the refusal of termination rejection.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "questions.md",
-    "sha256": "b11ab70256e0ce7d8aa99be4e62038e7eb49a8d6fb12d5e1b46132a3562fd7b2"
+    "sha256": "3e7aa7f9f91f45d0de1ccb842e764c27672d67f231a062b40ae00b58d7a9b0a4"
   }
 }

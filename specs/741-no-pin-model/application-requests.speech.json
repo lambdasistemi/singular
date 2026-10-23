@@ -81,7 +81,7 @@
       "pause": 400
     },
     {
-      "text": "The application fixes the processing deadline and reclaim end at booking. Fold intervals end by the processing deadline; signed reclaim intervals start at that deadline and end by the reclaim end; permissionless cleanup intervals start at reclaim end. Nonempty validity intervals make these phases disjoint. Reclaim returns everything held; expired cleanup returns held minus the declared tip to the refund address, and the cleaner receives that tip. This preserves the old three outcomes without a Singular rejection handler. The resolved comparison is recorded in questions.md. Whether a top-up path is needed remains open: a requester may fold its own acceptable request under the same public-data and ordinary-funding premises, but neither willingness nor actual funding is proved by that observation.",
+      "text": "The application fixes the processing deadline and reclaim end at booking. Fold intervals end by the processing deadline; signed reclaim intervals start at that deadline and end by the reclaim end; permissionless cleanup intervals start at reclaim end. Nonempty validity intervals make these phases disjoint. Reclaim returns everything held; expired cleanup returns held minus the declared tip to the refund address, and the cleaner receives that tip. This preserves the three timed outcomes without a Singular rejection handler. The accepted early lifecycle-mismatch rejection is deliberately replaced, as specified below; admission and payments for that journey are not equal. The resolved comparison is recorded in questions.md. Whether a top-up path is needed remains open: a requester may fold its own acceptable request under the same public-data and ordinary-funding premises, but neither willingness nor actual funding is proved by that observation.",
       "pause": 400
     },
     {
@@ -100,6 +100,28 @@
     },
     {
       "text": "Create preserves an empty permanent registry under the same release/application binding, with state ADA supplied by its creator; there is no new treasury payment or ownership right inferred. Successful registration compares the treasury cost, folder allocation and protected holding under exact application allocations. Update preserves controller, control, assets and deposit and changes only the payload. Termination compares the combined booking-plus-fold journey, with deposit returned at booking and the application enforcing treasury allocation at fold; the fixed-tip exception is restated explicitly. Reclaim compares actual admitted intervals and amounts; the decided three-phase schedule preserves its full-refund and permissionless-expired-cleanup outcomes.",
+      "pause": 400
+    }
+  ],
+  "every-rejection-ground-and-request-kind": [
+    {
+      "text": "Every rejection ground and request kind.",
+      "pause": 500
+    },
+    {
+      "text": "The accepted source defines two RejectReason constructors and two EconomicRequest constructors. The tool derives their Cartesian product and checks the actual ground-function branches. Each of the four combinations has a replacement or a refusal disposition here. This constructor reconciliation is source evidence only; hypothetical journey statements and actual producer witnesses remain owed.",
+      "pause": 400
+    },
+    {
+      "text": "The operator withdrew lifecycle-mismatch rejection entirely (parent NOTE-008). Open datum never reads the registry root, verifies a trie proof, or offers an early key-exists cleanup. A registration that cannot fold stays pending until its booked processing deadline; the owner can reclaim everything during the reclaim window, then anyone can clean it up for held minus tip. This is an explicit change in admission, signing and payment outcome, rather than old-versus-new equality for early mismatch rejection. Successful folds still require Singular's authenticated unknown-to-active transition.",
+      "pause": 400
+    },
+    {
+      "text": "For a concrete comparison obligation, take cost thirteen, tip three and carrier seven, so the registration holds twenty-three, booked at zero with processing and reclaim durations one hundred. If its key is already active, old lifecycle-mismatch rejection in interval [ten, eleven) can return twenty to the refund address and allocate three to the rejecting party, without the owner's signature. The new application refuses any spend at that time except an acceptable fold, which this key cannot have. In [one hundred, one hundred one), signed owner reclaim returns twenty-three, with the ledger fee supplied separately. In [two hundred, two hundred one), permissionless cleanup returns twenty and allocates three to the cleaner. The treasury receives none of those request funds. These are the cases the new hypothetical statements and controls must execute; this prose is not a measured receipt.",
+      "pause": 400
+    },
+    {
+      "text": "An early mismatch spend cannot race a fold because the new application has no such spend path. Timed owner reclaim and cleanup cannot race an acceptable processing fold because their nonempty interval tests are disjoint. No fourth registration path, cancellation or state-reference rejection is introduced.",
       "pause": 400
     }
   ],
@@ -171,6 +193,6 @@
   ],
   "_source": {
     "file": "application-requests.md",
-    "sha256": "c1c15c0521eee812e944b907a81923d74dcc8713994026de2a99e7474e8b6c5b"
+    "sha256": "039a65081998406e0c97e882c7a6039abd17a4620b7b09268d375199a0621a03"
   }
 }

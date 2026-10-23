@@ -125,10 +125,18 @@
     {
       "text": "Credential equality here denotes the payment script credential checked by the accepted Aiken continuation. Network and staking-address interpretation are separate byte/address correspondence obligations; no fuller address observation is inferred from a natural-number credential. The new fold keeps the no-drain floor directed by its mandate, while the accepted economic fold's exact state-value equality remains separately recorded in the impact inventory.",
       "pause": 400
+    },
+    {
+      "text": "The registrationSpend owner-reclaim and expired-cleanup branches inspect only the authenticated booked request, actual transaction inputs/outputs/payments and interval. They never project registry roots or logical tries from the shared FoldObservation record. There is no lifecycle-mismatch spending branch: a registration that Singular cannot fold must wait for its timed exits. On its fold branch, open datum checks actual committed holding/token/deposit and payments in the atomic transaction; Singular owns the trie transition. It does not delegate a root or proof verifier to open datum. This deliberate replacement changes the old early mismatch journey, as classified for every accepted request-kind/ground pair.",
+      "pause": 400
+    },
+    {
+      "text": "Application judgements never call the Singular fold or change verifier. In a composed transaction, Singular independently validates its policy and state spend; open datum reads actual assets, mint, datums, value, signatures and intervals and protects its own configuration and requests. Its folding branch reads no before/after trie or root. The composition statement, rather than an application trie-proof check, joins the two successful judgements at the same ledger transaction. Client construction and Singular remain the consumers of PublicRegistry and trie proofs.",
+      "pause": 400
     }
   ],
   "_source": {
     "file": "functions-model.md",
-    "sha256": "c3296bd45a9f207d373827673aa43099362221d60e41e5713cf4fec7e2de02dd"
+    "sha256": "78aaaceccb41b5d92e420b09a5bf4e10e178f6157a0d3b1a0c475eb244808e1e"
   }
 }

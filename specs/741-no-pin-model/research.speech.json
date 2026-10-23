@@ -119,10 +119,14 @@
     {
       "text": "A third discriminator prevents field removal from erasing parameter authority. The old cost and windows are immutable per registry; recording only the requester's chosen values supplies no expected value to compare against. The selected candidate creates an immutable application configuration output with a configuration-role token in the same registry-genesis transaction. Its five inline parameters map to the old Config and are authenticated through a reference-input read at registration booking. The complete record and ParametersForRegistry premises are frozen in the data/function surfaces; token provenance, uniqueness and immutability need their own compiled witnesses and controls in the statements stage.",
       "pause": 400
+    },
+    {
+      "text": "The surfaces audit found that refusal-label coverage did not expose the accepted early lifecycle-mismatch rejection as a separate journey ground. The v5 C7 instrument therefore derives RejectReason and EconomicRequest constructors and reconciles their complete matrix, checking the two accepted ground functions too. Parent NOTE-008 resolves the missing journey by withdrawing rejection entirely: the existing timed reclaim/cleanup paths replace early mismatch rejection, with explicit changed timing, signing and refund amounts. No fourth spend path or application root/trie-proof read is introduced. This finding demonstrates why a source inventory alone cannot establish semantic completeness.",
+      "pause": 400
     }
   ],
   "_source": {
     "file": "research.md",
-    "sha256": "9538c775f3a575635f224870b79462521b28cb24f8df40ae9cd2f9d203bd3bc4"
+    "sha256": "df8ec7a0213740de1aca8bae97724d46fa3067ab2c2099a57189b15ba86299dd"
   }
 }
