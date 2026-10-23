@@ -195,8 +195,26 @@
       "pause": 400
     }
   ],
+  "application-owned-request-replacement": [
+    {
+      "text": "Application-owned request replacement.",
+      "pause": 500
+    },
+    {
+      "text": "The new source and journey trace supersedes the tagged pending and shared-request designs as candidate consumers, without changing any historical source, statement digest or ledger row. It binds accepted revision 00771d77af996605845cf062285263909a049cf8. The new family is hypothetical; no general theorem, accepted-law amendment, implementation, ledger or hosted result is claimed at the surfaces checkpoint.",
+      "pause": 400
+    },
+    {
+      "text": "The source tool derives the eleven Config fields, maps their Lean and Aiken spellings, retains a conservative lexical use superset including examples and homonymous fields, follows the state/fold/exit definition-name closure, and derives the seven application action constructors. Every extracted triple and refusal-label row has a replacement-owner classification in the trace. Such reconciliation establishes textual inventory and source identity only; it does not prove the classifications' behavioral adequacy. The field inventory includes serializers, proofs and fixtures so a datum-size claim cannot silently erase their obligations.",
+      "pause": 400
+    },
+    {
+      "text": "The unchanged protected-rejection work retains its own accepted sources and obligations. No #498 or #529 model or implementation is edited. Composition must account for registration cleanup moving to the application, request tags and Singular pending accounting leaving, and every named payment exception. Historical source comparisons remain available above; they are not current implementation evidence for this candidate.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "impact.md",
-    "sha256": "a574cbd0884e783637be9da22cbd60e85f07f6cd24ef7f26eea9c2d3e7eb4bc1"
+    "sha256": "81be6f73a61742996f26454b08ac1d9b3a4767f8acb653fc8b744c3a4b5537e1"
   }
 }

@@ -1,0 +1,168 @@
+{
+  "requests-belong-to-the-application": [
+    {
+      "text": "Requests belong to the application.",
+      "pause": 500
+    },
+    {
+      "text": "As a requester, I want my application to protect the deposit, refund and initial datum while anyone can fold an acceptable request. As a registry reader, I want Singular to authenticate the exact registry and token transition without inheriting the application's money rules.",
+      "pause": 400
+    }
+  ],
+  "status-and-reading-route": [
+    {
+      "text": "Status and reading route.",
+      "pause": 500
+    },
+    {
+      "text": "This is a hypothetical surface candidate. No new theorem, accepted law, application law, validator behavior, ledger result or journey acceptance is claimed. Accepted source facts bind revision 00771d77af996605845cf062285263909a049cf8; the candidate starts at d4593f146ea5442c0ccec47f89684bb7cca2c836. Read the responsibility diagram, the value and journey qualifications, then the exact records in data-model.md and callables in functions-model.md. The earlier held termination and shared request pages retain their historical meanings.",
+      "pause": 400
+    },
+    {
+      "text": "The frozen mandate is statements only. Every future general theorem remains an explicitly marked hypothesis with a sorry body; finite witnesses and mutation falsifications must be separate kernel-checked declarations. A matching source inventory is source evidence, never proof of a behavioral guarantee. Accepted root, application and implementation files remain unchanged.",
+      "pause": 400
+    }
+  ],
+  "responsibilities-and-trust-boundaries": [
+    {
+      "text": "Responsibilities and trust boundaries.",
+      "pause": 500
+    },
+    {
+      "text": "The application owns booking, request custody, reclaim and ADA routing. Singular authenticates the consumed approvals, state lineage, trie changes and exact active-token mint/burn. The folder needs no controller signature or private booking file. Real funding, proof availability and complete authenticated observations remain explicit premises; public data alone is not a promise of ledger inclusion.",
+      "pause": 400
+    }
+  ],
+  "the-singular-surface": [
+    {
+      "text": "The Singular surface.",
+      "pause": 500
+    },
+    {
+      "text": "Genesis consumes its public seed once, executes the published application-bound state policy and mints only its role-separated state asset at quantity one into one state output at that script. That output contains only ADA and its own state token and commits the empty trie through the explicit trie commitment parameter. Seed uniqueness across accepted history and actual script application/hash correspondence remain upstream premises.",
+      "pause": 400
+    },
+    {
+      "text": "A fold authenticates its spent state token by the structured state-role preimage and its complete policy/name identity, not by the script address, copied root datum or policy alone. Its redeemer supplies the seed; a PublicRegistry observation binds that seed to public genesis data. The new state-role and active-role constructors are distinct. A finite occurring-domain serialization premise and a separate finite collision premise prevent a fold-minted active token from satisfying state recognition. Providing the seed is not a hash inversion procedure: a provider must expose the needed public genesis data, or liveness lacks that input.",
+      "pause": 400
+    },
+    {
+      "text": "The batch is nonempty. Every supplied change pairs with exactly one consumed approval-bearing application request, with distinct input references; there is no missing or surplus action. A registration changes an unknown leaf to active, consumes and burns the exact registration approval, and mints one derived active token into the approval-committed new holding address with its initial datum. A termination consumes the approval and its held genuine active token, burns both, and changes that same active leaf to terminal. A holding created by the batch cannot be consumed by its termination. Every other mint or burn under the state policy is zero, including state-token mint/burn on the fold path. Conservation and the exact observed input/output map bind placement; list membership alone is insufficient.",
+      "pause": 400
+    },
+    {
+      "text": "Exactly one state continuation stays at its script with exactly one same state token, the computed batch root, no foreign asset, and at least the spent state ADA. No request ADA, minimum tip, refund, donation or application deposit appears in Singular's admission. Its permanent-key and supply statements must quantify over actual reachable candidate histories and actual token counts. The accepted permanent-key statements are reused by name only through a declared logical projection satisfying their real reachability and successful-batch premises; the accepted FNV root is never used to name a candidate asset.",
+      "pause": 400
+    }
+  ],
+  "application-request-and-value-surfaces": [
+    {
+      "text": "Application request and value surfaces.",
+      "pause": 500
+    },
+    {
+      "text": "A registration request is one public application output holding exactly one registration approval and its booked data: complete registry, key, controller/refund address, initial holding address and datum, required deposit, booked deadline and declared value allocations. The approval preimage commits the operation, complete registry, key, holding address and initial datum. Booking authorization and immutable request-data provenance belong to the application. A freely burnable approval grants nothing on its own.",
+      "pause": 400
+    },
+    {
+      "text": "A termination request is one output at the application with empty datum, one termination approval and one genuine active token. The approval preimage commits termination, key and the complete registry. Booking is an application operation: the controller authorizes it, its protected deposit is settled at booking, and Singular does nothing. The pending request spends without a controller/folder signature only when its exact held active token burns in the same transaction. Live payload update and ordinary live release cannot consume that pending request. No cancellation or top-up path is invented.",
+      "pause": 400
+    },
+    {
+      "text": "The generic folder remainder is request ADA minus the application-enforced retained/payment allocation. It need not equal the old declared tip: if a request has an extra three ADA beyond those allocations, the market remainder is the old tip plus three. Equality to the old declared tip is an application-specific exact-allocation condition; it is not a Singular guarantee. For registration the holding keeps its committed datum, genuine token and at least the application's deposit. Application-required treasury payments reduce the remainder. For termination, the protected deposit already returned at booking. Open datum enforces the treasury share at fold and caps the request remainder by its fixed release tip; a generic application may impose different value rules.",
+      "pause": 400
+    },
+    {
+      "text": "The decided open-datum rule holds registration cost pending and pays that share to the treasury at fold through its request spending rule, allowing full owner reclaim to return the cost too. The rejected immediate-payment-at-booking contrast exposes why: with cost ten, tip two and carrier five, the old reclaim owes seventeen, while paying ten away first leaves seven. There is no such missing amount under the decided pending-cost rule. Termination booking returns the protected deposit; the pending request holds the bid and treasury share, and its application spending rule enforces that share at fold. Both request kinds therefore pay the treasury at fold. The empty termination datum cannot authenticate the accepted per-request variable split: held ten with declared tip two or three has different old treasury shares but the same new output. The ticket owner selected a fixed application release tip and requires that variable-tip result explicitly restated. With a fixed tip two, both requests now yield two/eight, so the old three/seven result is not called equal. The candidate must still state and prove these allocation obligations; the bound implementation is unchanged.",
+      "pause": 400
+    },
+    {
+      "text": "The application fixes the processing deadline and reclaim end at booking. Fold intervals end by the processing deadline; signed reclaim intervals start at that deadline and end by the reclaim end; permissionless cleanup intervals start at reclaim end. Nonempty validity intervals make these phases disjoint. Reclaim returns everything held; expired cleanup returns held minus the declared tip to the refund address, and the cleaner receives that tip. This preserves the old three outcomes without a Singular rejection handler. The resolved comparison is recorded in questions.md. Whether a top-up path is needed remains open: a requester may fold its own acceptable request under the same public-data and ordinary-funding premises, but neither willingness nor actual funding is proved by that observation.",
+      "pause": 400
+    },
+    {
+      "text": "If a registration remains unspent, the diagram shows which phase its booked times permit next. Spending ends that pending request: folding delivers the holding, reclaim returns everything, and cleanup returns held minus tip. These spends are alternatives under disjoint interval tests. A termination instead moves from live holding to empty-datum pending request through controller-authorized booking, then to a terminal key through the exact held-token burn. Its protected deposit returns on the first transition, and the treasury and fixed folder allocation settle on the second.",
+      "pause": 400
+    }
+  ],
+  "every-application-journey": [
+    {
+      "text": "Every application journey.",
+      "pause": 500
+    },
+    {
+      "text": "The source-derived constructor inventory below retains refused actions as well as successful journeys. Create is the separate accepted genesis function, rather than an AppAction constructor. Old-versus-new means accepted economic rules plus the recorded deposit/controller rulings; legacy registryPayments is not the baseline. Every changed outcome is exposed, never hidden inside the relation's preconditions. Registration retains its old phases and allocations; the fixed termination tip explicitly restates the old variable-tip result.",
+      "pause": 400
+    },
+    {
+      "text": "Create preserves an empty permanent registry under the same release/application binding, with state ADA supplied by its creator; there is no new treasury payment or ownership right inferred. Successful registration compares the treasury cost, folder allocation and protected holding under exact application allocations. Update preserves controller, control, assets and deposit and changes only the payload. Termination compares the combined booking-plus-fold journey, with deposit returned at booking and the application enforcing treasury allocation at fold; the fixed-tip exception is restated explicitly. Reclaim compares actual admitted intervals and amounts; the decided three-phase schedule preserves its full-refund and permissionless-expired-cleanup outcomes.",
+      "pause": 400
+    }
+  ],
+  "state-fields-and-their-replacement-owners": [
+    {
+      "text": "State fields and their replacement owners.",
+      "pause": 500
+    },
+    {
+      "text": "The declaration of Singular.Config supplies the field extent. The source tool inventories 178 source files, including proofs, serializers, examples and Aiken fixtures. The inventory contains 885 field/file/enclosing-declaration triples, including conservative whole-record equality and copy bindings as well as direct field identifiers. To avoid silently dropping a use, this is a conservative lexical superset: it also retains homonymous application-control fields and functions such as a root accessor. It does not claim inferred field types or call-graph semantics. The reason on every row is the new owner of that field's obligation; a fixture or proof occurrence needs restatement with its governing declaration, not a production datum read.",
+      "pause": 400
+    },
+    {
+      "text": "Lean's minimumTip maps to Aiken State.tip (wire maxFee); processTime and retractTime map to process_time and retract_time. The application and witness pins map to application_policy, active_policy, absent_policy and terminal_policy. Root maps to root. Accepted registryId is an abstract Lean identity: Aiken State stores no such field and authenticates identity from its input and validator parameters. Registration cost and booking width have no accepted Aiken State fields; their economic rules exist in Lean. The application Control.activePolicy is a protected full-asset input, a homonymous retained use rather than an extra State field.",
+      "pause": 400
+    },
+    {
+      "text": "Only the root's datum read survives unchanged. Application-policy and active-policy obligations survive through the state script parameter, its own policy and runtime full identities, so merely deleting their checks would be wrong. Registry identity survives as the observed state-role asset. Timing, bid, cost and width leave the Singular datum only with their application owners and decided journey relations explicit. The two excluded-kind pins have no admitted token effect; their preserved historical checks do not create a new obligation to mint those kinds. Thus every non-root storage field is a conditional drop candidate, never an authorization to drop the surviving semantic obligation.",
+      "pause": 400
+    }
+  ],
+  "fold-and-exit-checks": [
+    {
+      "text": "Fold and exit checks.",
+      "pause": 500
+    },
+    {
+      "text": "The tool takes the transitive definition-name closure of the accepted state/modify/admission/fold handlers and Lean fold, rejection and retraction judgements, including helpers that construct their reasons. Short-name ambiguity is conservatively retained. These 128 source-label rows classify the old mechanism; they do not assert that the new candidate executes it. Unlabelled Aiken expect/fail paths also matter: inline datum decoding, actual spent-input lookup, script credential, token selection, genesis-only minting, and refusal of destruction/migration/unrecognized redeemers are explicit state/authentication prerequisites in the new surface. Passing an old refusal string is no implementation proof.",
+      "pause": 400
+    },
+    {
+      "text": "Ledger conservation, complete observation and input-presence checks retain a shared external correspondence owner even where the table's application column records their request-side use. The new Singular law still checks its own observed exact assets, input/action pairing and continuation. A label covering both token placement and ADA splits those responsibilities: token and committed datum in Singular, deposit/payment in the application. No protected-rejection law in another lane is edited; composition must reconcile the changed guarantee explicitly.",
+      "pause": 400
+    }
+  ],
+  "reconcile-earlier-statements-without-rewriting-them": [
+    {
+      "text": "Reconcile earlier statements without rewriting them.",
+      "pause": 500
+    },
+    {
+      "text": "All earlier declaration text, statement digests and ledger rows remain unchanged. The disposition below is an overlay on those historical rows; future restatements use new names and new digests. Superseded means the new design stops relying on that statement, not that the old hypothetical proposition has been disproved. Neither the original identity family nor the held family is silently promoted to accepted law.",
+      "pause": 400
+    }
+  ],
+  "revision-bound-source-register": [
+    {
+      "text": "Revision-bound source register.",
+      "pause": 500
+    },
+    {
+      "text": "Each quote is the exact trimmed line at the accepted revision. The independent citation census and source-line comparison establish citation identity only. The use/check tables above are local source-register paths, not unverified web quotations.",
+      "pause": 400
+    }
+  ],
+  "evidence-and-limits": [
+    {
+      "text": "Evidence and limits.",
+      "pause": 500
+    },
+    {
+      "text": "The source inventory is a local tool; it makes no behavioral or hosted-CI claim. Its removal, quote and line-number controls must fail before it is cited as a complete textual classification. The statements checkpoint still owes compiled type digests, non-vacuous reachable antecedents, same-input single-guard falsifications, source-derived inversions, generic oracle replay, clean committed-head receipts and the packaged root/application/documentation checks. Exact CBOR/Plutus Data bytes, CDDL constructor numbers, real hashing, authenticated release/history observations, application inclusion and client implementation remain separate obligations.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "application-requests.md",
+    "sha256": "bf7f88455a3eb4d21a04dfad31efe8c194fc17b8f7136e20ec7ba712114929cd"
+  }
+}

@@ -109,8 +109,26 @@
       "pause": 400
     }
   ],
+  "application-owned-request-callables": [
+    {
+      "text": "Application-owned request callables.",
+      "pause": 500
+    },
+    {
+      "text": "As a reviewer, I want Singular's complete law separated from the application's request admission and payments. These signatures freeze the new NoPin.ApplicationRequests family; every declaration is hypothetical and every general theorem remains sorry. The new records and trace fix the arguments and changed consumers. No earlier definition or theorem is rewritten.",
+      "pause": 400
+    },
+    {
+      "text": "Public cases and individual guard selectors will be derived from compiled constructors and decision sites. Every general statement needs a satisfying executed antecedent, a relevant single-guard falsification on the same input, an exact inversion and a generic oracle surface. Concrete CBOR bytes, constructor numbering, real hash/application correspondence and authenticated ledger/history mapping remain explicit separate obligations. The earlier minimal NoPin.TxView is unchanged.",
+      "pause": 400
+    },
+    {
+      "text": "Credential equality here denotes the payment script credential checked by the accepted Aiken continuation. Network and staking-address interpretation are separate byte/address correspondence obligations; no fuller address observation is inferred from a natural-number credential. The new fold keeps the no-drain floor directed by its mandate, while the accepted economic fold's exact state-value equality remains separately recorded in the impact inventory.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "functions-model.md",
-    "sha256": "9e8fe06c19e8a1c9845ba85cbb5d02dfb4e065dfc772c681b337cf88f03cc4cf"
+    "sha256": "27ea960b7cd31b013c8757609c8a7b64b83ba54acfeae1534be7527f6a40c622"
   }
 }

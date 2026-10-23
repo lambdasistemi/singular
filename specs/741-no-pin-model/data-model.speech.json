@@ -95,8 +95,22 @@
       "pause": 400
     }
   ],
+  "application-owned-request-records": [
+    {
+      "text": "Application-owned request records.",
+      "pause": 500
+    },
+    {
+      "text": "As an application author, I want every observed output, identity and payment allocation explicit before the candidate states a guarantee. This new hypothetical family is NoPin.ApplicationRequests. Earlier families and their statement rows remain historical and unchanged. The source and journey trace owns the replacement inventory; no record here amends accepted law or specifies concrete CBOR bytes.",
+      "pause": 400
+    },
+    {
+      "text": "Open datum's fixed termination tip is the ticket owner's selected candidate interpretation of the empty-datum direction. It explicitly restates the accepted variable declared-tip result; this exception is not an equality claim or an accepted-law amendment. Registration retains its declared tip and full three-phase refund schedule. Both request kinds enforce their treasury share at fold through the application spending rule; the protected termination deposit returns at booking. Questions records the counterexample and decision provenance.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "data-model.md",
-    "sha256": "e679bf6da3c70e214aed64903705ee232535db4990ab8324f01b1db011ff1387"
+    "sha256": "7700bef492305b0f6ff7eb34d0169fd468a5841a0a510da06cc543db92849155"
   }
 }
