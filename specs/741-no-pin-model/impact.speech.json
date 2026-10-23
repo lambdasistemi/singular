@@ -167,8 +167,18 @@
       "pause": 400
     }
   ],
+  "application-held-statement-audit-result": [
+    {
+      "text": "Application-held statement audit result.",
+      "pause": 500
+    },
+    {
+      "text": "An independent statement audit on 23 October 2026 found the application-held termination candidate ready to prove: twenty-one stated rows (fifteen derived inversions and six obligations), forty-nine guards each owned by a single-flip falsification, settlement statements that follow the controller-settlement ruling, and the identity rows byte-identical. The audited identities are held-statements.json fbf86c89630d0daf32e49a33640803ac82f1a66baa99a60a2974c7a652d9f66c and lean/NoPin/Held/Statements.lean b4a5d6e31242ff83d8bdde8ce90ac2832a3c18bc00de1d0c21daa79aee0f7e6a in investigations/741-no-pin/. This establishes no statement's truth. The accepted non-rejection, supply and permanent-key laws are carried into the candidate at concrete reachable instances only, not in their universal form; the burn coupling, the observation correspondence and the value partition are named premises and recorded debt.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "impact.md",
-    "sha256": "84b3c99f15adec479f5d58ca85dbf24508c724a79edc77c05185d059ecc8f197"
+    "sha256": "8d2419dacff21960c60a3209ac6439b3385dfebab42185a0f3ff49b82ede0b38"
   }
 }

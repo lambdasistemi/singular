@@ -25,9 +25,15 @@ Independent outcome: a reader can inspect exact identity premises and replay the
 
 Independent outcome: the candidate explains legitimate creation, custody and retirement and exposes incompatible application requirements.
 
-- [ ] **Bind application and economic effects** — Map `OpenDatumApplication/Model.lean`, root `Model/Termination.lean` and `Economics/` obligations into `impact.md`, retaining every economic parameter and controller/release obligation. Requirement: Consumer and economic agreement.
-- [ ] **State supply and release obligations** — Freeze signatures, then candidate statements for unknown-key mint, permanent no-remint, exact same-key burn/transition, pending custody and excluded/mixed cases in `investigations/741-no-pin/`. Requirements: Permanent key supply; Consumer and economic agreement.
+- [x] **Bind application and economic effects** — Map `OpenDatumApplication/Model.lean`, root `Model/Termination.lean` and `Economics/` obligations into `impact.md`, retaining every economic parameter and controller/release obligation. Requirement: Consumer and economic agreement.
+- [x] **State supply and release obligations** — Freeze signatures, then candidate statements for unknown-key mint, permanent no-remint, exact same-key burn/transition, pending custody and excluded/mixed cases in `investigations/741-no-pin/`. Requirements: Permanent key supply; Consumer and economic agreement.
 - [ ] **Audit then prove holding claims** — Independent statement audit precedes proof or constructive refutation; retain the selected reachable and mutation witnesses, and record any release/custody conflict in `decisions.md`. Requirements: Permanent key supply; Consumer and economic agreement.
+
+## Share the request script — priority P1
+
+Independent outcome: a participant builds every transaction from release constants, chain data and hashes, with no blueprint parameter application in a client.
+
+- [ ] **Share the request script per release** — In `investigations/741-no-pin/`, state a request script shared per release that authenticates its registry from the request datum against the fold'''s spent state token; a request booked for one registry cannot be consumed, rejected or reclaimed by another registry'''s fold, including two registries from one seed; the dependency order has no cycle; the ruled request economics and public discovery are preserved. Requirements: Explicit identities; Scoped history uniqueness; Consumer and economic agreement.
 
 ## Explain reader conclusions — priority P1
 

@@ -38,6 +38,32 @@ The operator's ruling: "ok, so leaving the termination request in the applicatio
 
 Scope. While a termination is pending, the termination request and the genuine token stay locked at the application script. The application does not need to embed or derive the state or request validator address to release the token: a candidate release condition observes the burn of the exact held token in the same transaction, and the token's minting policy independently enforces the terminal transition of the same registry and key. Approvals still bind the complete registry identity, and token and registry identities remain runtime data. A pending termination is a state distinct from an ordinary live holding: its representation, authorization, spend paths and accounting must be explicit, and the same address does not by itself mean the same logical custody. The existing release check reads the registry fold and its settlement; removing those reads needs an equivalent guarantee for the controller, deposit and economic obligations. No ruling on datum layout, cancellation, deposits or request tags is implied.
 
+## The controller is paid the released deposits
+
+Date: 23 October 2026. Resolves how an application-held termination settles with its controller.
+
+The question put to the operator: at an application-held termination, what must the controller be paid? The current release also pays the registry fold'''s duties to the controller, from the legacy payment rule, while the ruled economics sends a termination'''s held value minus tip to the treasury. The recommended option: the ruled economics governs, and the application release checks the exact burn of the held token plus the sum of the released protected deposits paid to the controller.
+
+The operator'''s reply: "ok with your reccomendation".
+
+Scope. A termination fold owes the controller nothing beyond what the ruled economic fold routes. The application release checks the exact burn and the additive sum of released protected deposits; the legacy registry duty leaves the application'''s release settlement, which restates the application model'''s settlement promise. A pending output holds the declared tip and carrier for the economic fold and the protected deposit separately, with no overlap. No ruling on deposit amounts, datum layout, cancellation or request tags follows.
+
+## Clients build transactions from constants and hashes
+
+Date: 23 October 2026. A design direction for the next stage, not a ruled design.
+
+The operator stated the goal "cheaper operation, but also simpler clients", and on the proposal to investigate a request script shared per release replied: "yes, add it as the next stage, I want participants to be able to build txs in the simplest possible way, so implementing clients carries less complexity to handle."
+
+Scope. A participant builds every transaction (create, register, terminate, fold, reject, reclaim) from release constants, chain data and hashes. Blueprint parameter application happens once per application per release, to derive the state policy; registry creation and every key operation is hashing over constants and chain data, with canonical encodings frozen by the model. Cheaper operation, with shared scripts published once, is the second goal. The next stage investigates a request script shared per release that authenticates its registry from data; its obligations are listed in tasks.md.
+
+## Hashed-name preimages are CBOR, specified in CDDL
+
+Date: 23 October 2026. A direction for the encoding freeze, not a ruled field list.
+
+Discussing how hashed asset names stay unforgeable, the epic owner observed that today's approval name hashes a plain concatenation with a variable-length key ahead of an owner and an address whose lengths the type does not fix, so its byte encoding is ambiguous in principle (exploitability not established). The operator's reply, transcribed from speech: "I would use a Seaboard and that's it. So it's also easy to share the pre-image building for applications. They just use Seaboard CDDL." (Seaboard is CBOR.)
+
+Scope. Every hashed asset-name preimage of the new contract line (witness names, approval names with the complete registry identity, and any new hashed name such as request tags) is the CBOR encoding of a structured value, published as CDDL so applications build preimages with standard tooling. CDDL does not fix one byte encoding, so the specification names the exact bytes, the on-chain Plutus Data serialisation, and pins them with test vectors that off-chain encoders reproduce byte for byte, including a definite and indefinite list case and a byte string longer than 64 bytes. Role separation comes from the structure, for example one constructor per role, and is still stated and checked. Not ruled: exact field lists, constructor numbering, whether the state token name also moves to CBOR, and the hash function per role.
+
 ```mermaid
 flowchart TD
   Question[Question in questions.md] -->|operator reply| Ruling[Recorded ruling]
