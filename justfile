@@ -61,6 +61,8 @@ application-model:
 
 # Build and reconcile the hypothetical no-pin identity statements and controls.
 no-pin-identity:
+    # S20: every file pin binds tracked source at this commit, never local caches.
+    python3 investigations/741-no-pin/pin_check.py
     lean --version | grep -q "version $(sed 's/.*:v//' lean-toolchain),"
     lake -d investigations/741-no-pin --keep-toolchain build
     lake -d investigations/741-no-pin --keep-toolchain env lean investigations/741-no-pin/lean/Report.lean > investigations/741-no-pin/.lake/report.jsonl
