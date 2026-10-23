@@ -218,7 +218,8 @@ def main():
         )
     require(
         all(
-            r.get("family") in {None, "held", "application-requests", "history", "lifecycle"}
+            r.get("family")
+            in {None, "held", "application-requests", "history", "lifecycle"}
             for r in records
         ),
         "unknown evidence family",
