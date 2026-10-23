@@ -32,7 +32,7 @@ def roles : List Role := role_values%
 elab "#identity_report" : command => do
   let env ← getEnv
   let mut stated : NameSet := {}
-  for file in ← IO.FS.readDir "investigations/741-no-pin" do
+  for file in ← ("investigations/741-no-pin" : System.FilePath).readDir do
     if !file.fileName.endsWith "statements.json" then continue
     let .ok ledger := Json.parse (← IO.FS.readFile file.path) | throwError "invalid statement ledger"
     let .ok rows := ledger.getObjValAs? (Array Json) "statements" | throwError "missing statement rows"
