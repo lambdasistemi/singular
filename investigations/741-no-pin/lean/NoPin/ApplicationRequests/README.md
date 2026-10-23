@@ -1,32 +1,36 @@
-# Unfinished application-owned requests candidate
+# Application-owned request candidate
 
-Hypotheses under #741, not accepted law. These modules preserve the executable
-work at the slice-6 cut. They contain no new general statements and no new
-statement ledger, inversion inventory, oracle family or mutant ledger.
+As a reviewer, I want to know which proposed Singular guarantees have complete
+statement-stage evidence and which still need a separate history investigation.
+Every declaration here is a hypothesis under #741, never accepted law.
 
-Core defines the root-only state recognition, genesis, per-change handler and
-batch fold. Application defines the independent application observation,
-configuration and booking rules, three registration exits, termination burn,
-live update and additive money obligations. Client builds a mixed fold from
-public inputs and derives identities without a client blueprint application.
-History defines explicit ledger-observation and separate history relations;
-it does not implement a ledger. Fixtures checks one mixed registration and
-termination batch, its independent application projection, value balance,
-processor amount and exact deposit with kernel `decide`.
+Core defines state recognition, genesis, per-change handling and the whole fold.
+Application, Client and History retain the independently observed application
+rules, public builder and explicit ledger/history correspondence premises.
+Statements states the public inversions, role separation and constructive public
+fold guarantee with deliberate sorry. Evidence supplies complete finite
+antecedents and single-guard falsifications; Report derives the compiled
+inventory and the generic Oracle dispatches named definitions from JSON.
 
-No commissioned statement group is complete. The seven Singular groups
-(genesis, fold law, delivery, state integrity, recognition, supply, public fold)
-are all pending. The five lifecycle groups (three registration phases,
-termination burn, approvals, folder protection, no stuck termination) are all
-pending. Money and old-versus-new statements for create and the seven accepted
-application constructors are all pending. Definitions and five finite examples
-are preparation for those obligations, not substitutes for them.
+The current statement candidate covers genesis, the whole fold law, committed
+holding delivery, state continuation integrity, role-separated recognition and
+public folding. The generated application-requests ledgers bind their exact
+compiled types and the computed corpus. Concrete role witnesses distinguish
+finite encoding from finite collision freedom; neither asserts a cryptographic
+hash implementation. Explicit attacks cover extra mint/burn, wrong delivery,
+state drain, stuffing and an active token presented as a state.
 
-Missing evidence includes complete theorem antecedent witnesses, genuine
-multi-step and multi-registry histories, finite collision/encoding premises,
-single-site mutants, derived inversions, reconciliation of old statement rows,
-new ledgers and oracle replay, and final statement-group gates and controls.
-The actual chain codec, cryptographic hash, public preimage/history provider,
-trie proof, ledger and script correspondences remain explicit upstream debts.
-No claim about production validators, client builders, hosted CI, inclusion or
-accepted application law follows from compiling this directory.
+The global supply and permanence family remains open. CandidateReachable and
+ApplicationReachable are explicit relations, but this cut adds no global supply
+theorem, genuine multi-registry history witness or history-sensitive mutant.
+The five predecessor facts and mixed public fold are finite observations and do
+not establish the history that produced their starting active token. No old
+BurnCoupling is used to fill this gap. Application lifecycle, money and journey
+equivalence statements remain later work.
+
+The chain codec/hash, public provider/preimages, trie proof, ledger and real
+script-invocation correspondences remain external. The model public builder
+requires authentic requests, valid registration phases, separate policy
+identities, finite encoding/collision premises and enough ordinary fee funding.
+It establishes no wallet availability, real output minimum, willingness or
+inclusion. No production or hosted execution acceptance is claimed.

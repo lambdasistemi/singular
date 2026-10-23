@@ -1,0 +1,432 @@
+{
+  "status": "FINITE-SINGLE-GUARD-CONTROLS",
+  "acceptedLaw": false,
+  "mutants": [
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.active_role_never_state",
+      "selector": "stateName",
+      "positive": "NoPin.ApplicationRequests.Evidence.active_role_never_state_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.active_role_never_state_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.batch_inversion",
+      "selector": "changeReference",
+      "positive": "NoPin.ApplicationRequests.Evidence.batch_changeReference_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.batch_changeReference_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.batch_inversion",
+      "selector": "changeApprovalShape",
+      "positive": "NoPin.ApplicationRequests.Evidence.batch_changeApprovalShape_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.batch_changeApprovalShape_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.batch_inversion",
+      "selector": "changeApproval",
+      "positive": "NoPin.ApplicationRequests.Evidence.batch_changeApproval_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.batch_changeApproval_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.batch_inversion",
+      "selector": "changeApprovalBurn",
+      "positive": "NoPin.ApplicationRequests.Evidence.batch_changeApprovalBurn_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.batch_changeApprovalBurn_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.batch_inversion",
+      "selector": "changeLeaf",
+      "positive": "NoPin.ApplicationRequests.Evidence.batch_changeLeaf_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.batch_changeLeaf_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.batch_inversion",
+      "selector": "registrationPlacement",
+      "positive": "NoPin.ApplicationRequests.Evidence.batch_registrationPlacement_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.batch_registrationPlacement_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.batch_inversion",
+      "selector": "registrationMint",
+      "positive": "NoPin.ApplicationRequests.Evidence.batch_registrationMint_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.batch_registrationMint_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.batch_inversion",
+      "selector": "registrationDeposit",
+      "positive": "NoPin.ApplicationRequests.Evidence.batch_registrationDeposit_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.batch_registrationDeposit_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.batch_inversion",
+      "selector": "terminationHeld",
+      "positive": "NoPin.ApplicationRequests.Evidence.batch_terminationHeld_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.batch_terminationHeld_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.batch_inversion",
+      "selector": "terminationBurn",
+      "positive": "NoPin.ApplicationRequests.Evidence.batch_terminationBurn_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.batch_terminationBurn_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.batch_inversion",
+      "selector": "foldIdentity",
+      "positive": "NoPin.ApplicationRequests.Evidence.batch_foldIdentity_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.batch_foldIdentity_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.batch_inversion",
+      "selector": "foldBefore",
+      "positive": "NoPin.ApplicationRequests.Evidence.batch_foldBefore_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.batch_foldBefore_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.batch_inversion",
+      "selector": "foldNonempty",
+      "positive": "NoPin.ApplicationRequests.Evidence.batch_foldNonempty_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.batch_foldNonempty_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.batch_inversion",
+      "selector": "foldDistinct",
+      "positive": "NoPin.ApplicationRequests.Evidence.batch_foldDistinct_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.batch_foldDistinct_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.batch_inversion",
+      "selector": "foldPairing",
+      "positive": "NoPin.ApplicationRequests.Evidence.batch_foldPairing_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.batch_foldPairing_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.batch_inversion",
+      "selector": "foldTrie",
+      "positive": "NoPin.ApplicationRequests.Evidence.batch_foldTrie_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.batch_foldTrie_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.batch_inversion",
+      "selector": "foldContinuation",
+      "positive": "NoPin.ApplicationRequests.Evidence.batch_foldContinuation_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.batch_foldContinuation_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.batch_inversion",
+      "selector": "foldAddress",
+      "positive": "NoPin.ApplicationRequests.Evidence.batch_foldAddress_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.batch_foldAddress_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.batch_inversion",
+      "selector": "foldValue",
+      "positive": "NoPin.ApplicationRequests.Evidence.batch_foldValue_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.batch_foldValue_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.batch_inversion",
+      "selector": "foldWholePolicy",
+      "positive": "NoPin.ApplicationRequests.Evidence.batch_foldWholePolicy_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.batch_foldWholePolicy_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.batch_inversion",
+      "selector": "foldNoNewConsumed",
+      "positive": "NoPin.ApplicationRequests.Evidence.batch_foldNoNewConsumed_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.batch_foldNoNewConsumed_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.genesis_inversion",
+      "selector": "genesisSeed",
+      "positive": "NoPin.ApplicationRequests.Evidence.genesis_genesisSeed_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.genesis_genesisSeed_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.genesis_inversion",
+      "selector": "genesisInvocation",
+      "positive": "NoPin.ApplicationRequests.Evidence.genesis_genesisInvocation_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.genesis_genesisInvocation_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.genesis_inversion",
+      "selector": "genesisMint",
+      "positive": "NoPin.ApplicationRequests.Evidence.genesis_genesisMint_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.genesis_genesisMint_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.genesis_inversion",
+      "selector": "genesisOutput",
+      "positive": "NoPin.ApplicationRequests.Evidence.genesis_genesisOutput_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.genesis_genesisOutput_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.genesis_inversion",
+      "selector": "genesisEmpty",
+      "positive": "NoPin.ApplicationRequests.Evidence.genesis_genesisEmpty_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.genesis_genesisEmpty_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.minted_active_never_state",
+      "selector": "stateName",
+      "positive": "NoPin.ApplicationRequests.Evidence.minted_active_never_state_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.minted_active_never_state_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.public_fold_constructed",
+      "selector": "foldWholePolicy",
+      "positive": "NoPin.ApplicationRequests.Evidence.public_fold_constructed_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.public_fold_constructed_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.publicFold_inversion",
+      "selector": "changeReference",
+      "positive": "NoPin.ApplicationRequests.Evidence.publicFold_changeReference_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.publicFold_changeReference_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.publicFold_inversion",
+      "selector": "changeApprovalShape",
+      "positive": "NoPin.ApplicationRequests.Evidence.publicFold_changeApprovalShape_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.publicFold_changeApprovalShape_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.publicFold_inversion",
+      "selector": "changeApproval",
+      "positive": "NoPin.ApplicationRequests.Evidence.publicFold_changeApproval_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.publicFold_changeApproval_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.publicFold_inversion",
+      "selector": "changeApprovalBurn",
+      "positive": "NoPin.ApplicationRequests.Evidence.publicFold_changeApprovalBurn_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.publicFold_changeApprovalBurn_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.publicFold_inversion",
+      "selector": "changeLeaf",
+      "positive": "NoPin.ApplicationRequests.Evidence.publicFold_changeLeaf_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.publicFold_changeLeaf_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.publicFold_inversion",
+      "selector": "registrationPlacement",
+      "positive": "NoPin.ApplicationRequests.Evidence.publicFold_registrationPlacement_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.publicFold_registrationPlacement_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.publicFold_inversion",
+      "selector": "registrationMint",
+      "positive": "NoPin.ApplicationRequests.Evidence.publicFold_registrationMint_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.publicFold_registrationMint_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.publicFold_inversion",
+      "selector": "registrationDeposit",
+      "positive": "NoPin.ApplicationRequests.Evidence.publicFold_registrationDeposit_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.publicFold_registrationDeposit_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.publicFold_inversion",
+      "selector": "terminationHeld",
+      "positive": "NoPin.ApplicationRequests.Evidence.publicFold_terminationHeld_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.publicFold_terminationHeld_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.publicFold_inversion",
+      "selector": "terminationBurn",
+      "positive": "NoPin.ApplicationRequests.Evidence.publicFold_terminationBurn_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.publicFold_terminationBurn_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.publicFold_inversion",
+      "selector": "foldIdentity",
+      "positive": "NoPin.ApplicationRequests.Evidence.publicFold_foldIdentity_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.publicFold_foldIdentity_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.publicFold_inversion",
+      "selector": "foldBefore",
+      "positive": "NoPin.ApplicationRequests.Evidence.publicFold_foldBefore_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.publicFold_foldBefore_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.publicFold_inversion",
+      "selector": "foldNonempty",
+      "positive": "NoPin.ApplicationRequests.Evidence.publicFold_foldNonempty_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.publicFold_foldNonempty_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.publicFold_inversion",
+      "selector": "foldDistinct",
+      "positive": "NoPin.ApplicationRequests.Evidence.publicFold_foldDistinct_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.publicFold_foldDistinct_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.publicFold_inversion",
+      "selector": "foldPairing",
+      "positive": "NoPin.ApplicationRequests.Evidence.publicFold_foldPairing_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.publicFold_foldPairing_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.publicFold_inversion",
+      "selector": "foldTrie",
+      "positive": "NoPin.ApplicationRequests.Evidence.publicFold_foldTrie_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.publicFold_foldTrie_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.publicFold_inversion",
+      "selector": "foldContinuation",
+      "positive": "NoPin.ApplicationRequests.Evidence.publicFold_foldContinuation_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.publicFold_foldContinuation_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.publicFold_inversion",
+      "selector": "foldAddress",
+      "positive": "NoPin.ApplicationRequests.Evidence.publicFold_foldAddress_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.publicFold_foldAddress_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.publicFold_inversion",
+      "selector": "foldValue",
+      "positive": "NoPin.ApplicationRequests.Evidence.publicFold_foldValue_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.publicFold_foldValue_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.publicFold_inversion",
+      "selector": "foldWholePolicy",
+      "positive": "NoPin.ApplicationRequests.Evidence.publicFold_foldWholePolicy_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.publicFold_foldWholePolicy_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.publicFold_inversion",
+      "selector": "foldNoNewConsumed",
+      "positive": "NoPin.ApplicationRequests.Evidence.publicFold_foldNoNewConsumed_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.publicFold_foldNoNewConsumed_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.recognition_inversion",
+      "selector": "stateCredential",
+      "positive": "NoPin.ApplicationRequests.Evidence.recognition_stateCredential_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.recognition_stateCredential_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.recognition_inversion",
+      "selector": "statePolicy",
+      "positive": "NoPin.ApplicationRequests.Evidence.recognition_statePolicy_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.recognition_statePolicy_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.recognition_inversion",
+      "selector": "stateName",
+      "positive": "NoPin.ApplicationRequests.Evidence.recognition_stateName_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.recognition_stateName_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.recognition_inversion",
+      "selector": "stateQuantity",
+      "positive": "NoPin.ApplicationRequests.Evidence.recognition_stateQuantity_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.recognition_stateQuantity_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.recognition_inversion",
+      "selector": "stateDatum",
+      "positive": "NoPin.ApplicationRequests.Evidence.recognition_stateDatum_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.recognition_stateDatum_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.recognition_inversion",
+      "selector": "stateBare",
+      "positive": "NoPin.ApplicationRequests.Evidence.recognition_stateBare_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.recognition_stateBare_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.registration_inversion",
+      "selector": "changeReference",
+      "positive": "NoPin.ApplicationRequests.Evidence.registration_changeReference_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.registration_changeReference_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.registration_inversion",
+      "selector": "changeApprovalShape",
+      "positive": "NoPin.ApplicationRequests.Evidence.registration_changeApprovalShape_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.registration_changeApprovalShape_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.registration_inversion",
+      "selector": "changeApproval",
+      "positive": "NoPin.ApplicationRequests.Evidence.registration_changeApproval_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.registration_changeApproval_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.registration_inversion",
+      "selector": "changeApprovalBurn",
+      "positive": "NoPin.ApplicationRequests.Evidence.registration_changeApprovalBurn_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.registration_changeApprovalBurn_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.registration_inversion",
+      "selector": "changeLeaf",
+      "positive": "NoPin.ApplicationRequests.Evidence.registration_changeLeaf_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.registration_changeLeaf_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.registration_inversion",
+      "selector": "registrationPlacement",
+      "positive": "NoPin.ApplicationRequests.Evidence.registration_registrationPlacement_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.registration_registrationPlacement_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.registration_inversion",
+      "selector": "registrationMint",
+      "positive": "NoPin.ApplicationRequests.Evidence.registration_registrationMint_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.registration_registrationMint_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.registration_inversion",
+      "selector": "registrationDeposit",
+      "positive": "NoPin.ApplicationRequests.Evidence.registration_registrationDeposit_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.registration_registrationDeposit_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.termination_inversion",
+      "selector": "changeReference",
+      "positive": "NoPin.ApplicationRequests.Evidence.termination_changeReference_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.termination_changeReference_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.termination_inversion",
+      "selector": "changeApprovalShape",
+      "positive": "NoPin.ApplicationRequests.Evidence.termination_changeApprovalShape_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.termination_changeApprovalShape_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.termination_inversion",
+      "selector": "changeApproval",
+      "positive": "NoPin.ApplicationRequests.Evidence.termination_changeApproval_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.termination_changeApproval_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.termination_inversion",
+      "selector": "changeApprovalBurn",
+      "positive": "NoPin.ApplicationRequests.Evidence.termination_changeApprovalBurn_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.termination_changeApprovalBurn_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.termination_inversion",
+      "selector": "changeLeaf",
+      "positive": "NoPin.ApplicationRequests.Evidence.termination_changeLeaf_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.termination_changeLeaf_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.termination_inversion",
+      "selector": "terminationHeld",
+      "positive": "NoPin.ApplicationRequests.Evidence.termination_terminationHeld_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.termination_terminationHeld_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.termination_inversion",
+      "selector": "terminationBurn",
+      "positive": "NoPin.ApplicationRequests.Evidence.termination_terminationBurn_candidate",
+      "negative": "NoPin.ApplicationRequests.Evidence.termination_terminationBurn_mutant"
+    }
+  ]
+}

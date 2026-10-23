@@ -1,0 +1,210 @@
+{
+  "status": "CANDIDATE-STATEMENTS-ONLY",
+  "acceptedLaw": false,
+  "definitions": {
+    "lean/NoPin/ApplicationRequests/Application.lean": "5a1ac4c17d37eb40cbcd230c288a76099eba66c51f9fe7acc1ddc5db1f2043c7",
+    "lean/NoPin/ApplicationRequests/Client.lean": "8e395c324f34c44de1bcede1555ebb404e72fbdc9029baa562c8a4b2810c2062",
+    "lean/NoPin/ApplicationRequests/Conditions.lean": "adeca20e0da16eb671510e067062146c91a8bc166952e3c65d4f7e017970e1c9",
+    "lean/NoPin/ApplicationRequests/Core.lean": "fc9298862b08564aa4280b6e0bcaaa967de60fabdcd86e289238c88c9e2fc60e",
+    "lean/NoPin/ApplicationRequests/Evidence.lean": "c898ae6195157b7d89a169c8e227d910515e6cc21aff3d84bb8d5e1a7677d357",
+    "lean/NoPin/ApplicationRequests/Fixtures.lean": "5d2ee2d82a846ec9b93a6e40ae7a330a50d2a2970d9726fa40a89c896a58c859",
+    "lean/NoPin/ApplicationRequests/History.lean": "79de2d0bdd260d1ac6315f81c496c3f420359f6bd715a954c016f28bd81d6089",
+    "lean/NoPin/ApplicationRequests/Oracle.lean": "4f935ac84289b19f8980b9502cb334dc48ff8677503f141b0c245db0149713e3",
+    "lean/NoPin/ApplicationRequests/Report.lean": "55d5ee9c9843ffb1b7f1c0ea80b6aaeba46cbe6c539b963c863ffa04055e446b",
+    "lean/NoPin/ApplicationRequests/Role.lean": "f6f17f8bafa3ebb9c5d271078ecd63fd19f0ba700c3ea7af47604051b8309f96",
+    "lean/NoPin/ApplicationRequests/Statements.lean": "54b4a82fa999d181e2952df7b3c2477c7bd56408a3a811edb0ab6ca60e584cba"
+  },
+  "statements": [
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.active_role_never_state",
+      "statementSha256": "930af894a2c70af2f4546b42bc11358e0e609bf366606907d60df6d746e0e256",
+      "status": "STATED",
+      "proofStatus": "STATED",
+      "witnesses": [
+        "NoPin.ApplicationRequests.Evidence.active_role_never_state_antecedent"
+      ],
+      "selectors": [
+        "stateName"
+      ],
+      "restates": [
+        "NoPin.Statements.authenticated_state_role_separation"
+      ]
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.batch_inversion",
+      "statementSha256": "39033ec2e784ff1d6a080b1449c3ee5fdd38b6be75bf53db89a9b682f73ce192",
+      "status": "STATED",
+      "proofStatus": "STATED",
+      "witnesses": [
+        "NoPin.ApplicationRequests.Evidence.batch_antecedent"
+      ],
+      "selectors": [
+        "changeReference",
+        "changeApprovalShape",
+        "changeApproval",
+        "changeApprovalBurn",
+        "changeLeaf",
+        "registrationPlacement",
+        "registrationMint",
+        "registrationDeposit",
+        "terminationHeld",
+        "terminationBurn",
+        "foldIdentity",
+        "foldBefore",
+        "foldNonempty",
+        "foldDistinct",
+        "foldPairing",
+        "foldTrie",
+        "foldContinuation",
+        "foldAddress",
+        "foldValue",
+        "foldWholePolicy",
+        "foldNoNewConsumed"
+      ],
+      "inversion": "batch"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.genesis_inversion",
+      "statementSha256": "eec5a8a6011a87c1f485d853796b5c07031c0c4ce86935923ff4df11fe3d12ac",
+      "status": "STATED",
+      "proofStatus": "STATED",
+      "witnesses": [
+        "NoPin.ApplicationRequests.Evidence.genesis_antecedent"
+      ],
+      "selectors": [
+        "genesisSeed",
+        "genesisInvocation",
+        "genesisMint",
+        "genesisOutput",
+        "genesisEmpty"
+      ],
+      "inversion": "genesis",
+      "restates": [
+        "NoPin.Statements.genesis_inversion"
+      ]
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.minted_active_never_state",
+      "statementSha256": "1f96f0b40b8a55a0c134d15a38d483739a2d0d123fc5a52860377dfcd83a05f4",
+      "status": "STATED",
+      "proofStatus": "STATED",
+      "witnesses": [
+        "NoPin.ApplicationRequests.Evidence.minted_active_never_state_antecedent"
+      ],
+      "selectors": [
+        "stateName"
+      ]
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.public_fold_constructed",
+      "statementSha256": "0e5080c01f99f5f69653c53989440f72e993de0abff0c0e6894c2ed3f52f402f",
+      "status": "STATED",
+      "proofStatus": "STATED",
+      "witnesses": [
+        "NoPin.ApplicationRequests.Evidence.public_fold_constructed_antecedent"
+      ],
+      "selectors": [
+        "foldWholePolicy"
+      ],
+      "restates": [
+        "NoPin.Held.Statements.composed_available"
+      ]
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.publicFold_inversion",
+      "statementSha256": "ab9e508b7cca8ef1c85b2e4fe9935087ae68d3d67ab867bdee53fb0b28fc8c2d",
+      "status": "STATED",
+      "proofStatus": "STATED",
+      "witnesses": [
+        "NoPin.ApplicationRequests.Evidence.publicFold_antecedent"
+      ],
+      "selectors": [
+        "changeReference",
+        "changeApprovalShape",
+        "changeApproval",
+        "changeApprovalBurn",
+        "changeLeaf",
+        "registrationPlacement",
+        "registrationMint",
+        "registrationDeposit",
+        "terminationHeld",
+        "terminationBurn",
+        "foldIdentity",
+        "foldBefore",
+        "foldNonempty",
+        "foldDistinct",
+        "foldPairing",
+        "foldTrie",
+        "foldContinuation",
+        "foldAddress",
+        "foldValue",
+        "foldWholePolicy",
+        "foldNoNewConsumed"
+      ],
+      "inversion": "publicFold"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.recognition_inversion",
+      "statementSha256": "b3d97e71c371c1a452652be23d7a639cfe1e766402ea6c97dbcc256c953abe4f",
+      "status": "STATED",
+      "proofStatus": "STATED",
+      "witnesses": [
+        "NoPin.ApplicationRequests.Evidence.recognition_antecedent"
+      ],
+      "selectors": [
+        "stateCredential",
+        "statePolicy",
+        "stateName",
+        "stateQuantity",
+        "stateDatum",
+        "stateBare"
+      ],
+      "inversion": "recognition",
+      "restates": [
+        "NoPin.Statements.state_inversion"
+      ]
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.registration_inversion",
+      "statementSha256": "69dda10fb3f653973851b6850b287eabda01aec3441123a22b20cd9e000cbb8b",
+      "status": "STATED",
+      "proofStatus": "STATED",
+      "witnesses": [
+        "NoPin.ApplicationRequests.Evidence.registration_antecedent"
+      ],
+      "selectors": [
+        "changeReference",
+        "changeApprovalShape",
+        "changeApproval",
+        "changeApprovalBurn",
+        "changeLeaf",
+        "registrationPlacement",
+        "registrationMint",
+        "registrationDeposit"
+      ],
+      "inversion": "registration"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.termination_inversion",
+      "statementSha256": "1a7b31d70b86b4f73afd775d23ea7df94cd8a3b48c48556b6c05d677f02d32cf",
+      "status": "STATED",
+      "proofStatus": "STATED",
+      "witnesses": [
+        "NoPin.ApplicationRequests.Evidence.termination_antecedent"
+      ],
+      "selectors": [
+        "changeReference",
+        "changeApprovalShape",
+        "changeApproval",
+        "changeApprovalBurn",
+        "changeLeaf",
+        "terminationHeld",
+        "terminationBurn"
+      ],
+      "inversion": "termination"
+    }
+  ],
+  "openFamilies": [
+    "history-supply-and-permanence"
+  ]
+}

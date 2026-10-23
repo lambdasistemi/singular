@@ -31,6 +31,8 @@ def load_report(path):
 
 
 def check_family(records, namespace, prefix, family):
+    names = [r["name"] for r in records if "name" in r]
+    require(len(names) == len(set(names)), "duplicate compiled declaration")
     declarations = {r["name"]: r for r in records if "name" in r}
     inventory = [r for r in records if "cases" in r]
     require(len(inventory) == 1, "missing or duplicate compiled inventory")
@@ -42,7 +44,10 @@ def check_family(records, namespace, prefix, family):
     case_guards = {r["case"]: r["guards"] for r in records if "case" in r}
     require(set(case_guards) == set(cases), "public case missing from execution")
     used = [g for group in case_guards.values() for g in group]
-    require(sorted(used) == sorted(guards), "guard coverage not one-to-one")
+    if family == "application-requests":
+        require(set(used) == set(guards), "source guard not exercised")
+    else:
+        require(sorted(used) == sorted(guards), "guard coverage not one-to-one")
     corpus = [r for r in records if "scenario" in r]
     require(corpus, "no executable oracle corpus")
     require(
@@ -212,12 +217,34 @@ def main():
             (ROOT / name).read_bytes() == original, "slice-2 identity changed: " + name
         )
     require(
-        all(r.get("family") in {None, "held"} for r in records),
+        all(r.get("family") in {None, "held", "application-requests"} for r in records),
         "unknown evidence family",
     )
     check_family([r for r in records if not r.get("family")], "NoPin", "", None)
     check_family(
         [r for r in records if r.get("family") == "held"], "NoPin.Held", "held-", "held"
+    )
+
+    historical_base = "3f1fe718774c7e4069911fb28a0dab8a68714443"
+    paths = subprocess.run(
+        ["git", "ls-tree", "-r", "--name-only", historical_base, "--",
+         "investigations/741-no-pin/lean/NoPin/Held",
+         "investigations/741-no-pin/held-statements.json",
+         "investigations/741-no-pin/held-mutants.json",
+         "investigations/741-no-pin/held-corpus.json"],
+        capture_output=True, text=True, check=True,
+    ).stdout.splitlines()
+    require(len(paths) > 3, "historical held extent empty")
+    for path in paths:
+        original = subprocess.run(["git", "show", historical_base + ":" + path],
+                                  capture_output=True, check=True).stdout
+        relative = path.removeprefix("investigations/741-no-pin/")
+        require((ROOT / relative).read_bytes() == original, "historical held row changed: " + path)
+    source_cases = [r["sourceChanges"] for r in records if "sourceChanges" in r]
+    require(source_cases == [["register", "terminate"]], "uncovered source change constructor")
+    check_family(
+        [r for r in records if r.get("family") == "application-requests"],
+        "NoPin.ApplicationRequests", "application-requests-", "application-requests"
     )
 
 

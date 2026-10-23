@@ -79,7 +79,7 @@ structure FoldFunding where
   transactionId : Nat
   interval : Interval
   fee : Nat
-  deriving BEq, DecidableEq
+  deriving BEq, DecidableEq, ToJson, FromJson
 /-- Hypothesis under #741, not accepted law; numbered outputs are actual same-tx outputs. -/
 def numbered (transactionId : Nat) (outputs : List ObservedOutput) : List ObservedOutput :=
   outputs.zipIdx |>.map fun (output, index) => { output with reference := ⟨transactionId, index⟩ }

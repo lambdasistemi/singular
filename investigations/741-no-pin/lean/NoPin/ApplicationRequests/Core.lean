@@ -132,7 +132,7 @@ structure FoldObservation where
   interval : Interval
   fee : Nat
   donation : Nat
-  deriving BEq, DecidableEq
+  deriving BEq, DecidableEq, ToJson, FromJson
 
 /-- Hypothesis under #741, not accepted law; atomic production decision sites. -/
 inductive Guard where

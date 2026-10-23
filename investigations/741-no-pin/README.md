@@ -56,3 +56,38 @@ The existing no-pin-identity recipe checks both evidence families. The report de
 Every general candidate statement remains STATED with sorry debt. Kernel-checked finite witnesses and single-guard falsifications establish the reported instances, not general correctness. Non-rejection, operation/nonce tag commitment, world supply and permanent retirement reuse the accepted root declarations by name at the actual reachable worlds. The report computes counts and statuses; a missing row, witness, selector or inversion fails the check.
 
 Authentication and completeness of observations, the interpretation of the accepted root's abstract registryId as the observed complete registry token, physical value correspondence, and the proposed shared policy's BurnCoupling contract remain explicit external obligations under #679/#680. The unchanged root Config supplies the abstract contents interpretation; this is not a concrete pin-free validator implementation. Cancellation and pending payload/control updates remain unruled hypotheses with no exposed path. No ledger inclusion, policy execution, hosted CI, production acceptance or release is claimed.
+
+
+## Singular statements for application-owned requests
+
+As an integrator, I want to distinguish a candidate fold law from a proved supply
+law before depending on either. The ApplicationRequests family is the current
+hypothetical Singular design. The Held family above remains historical evidence;
+its tagged requests, protected-deposit settlement and assumed burn coupling are
+superseded by the recorded application-owned-request rulings.
+
+The current family states genesis, the whole per-change and batch fold law,
+committed holding delivery, state continuation integrity, state recognition and
+constructive public folding. Its exact inventory, statement hashes, proof debt,
+complete antecedent witnesses, single-guard falsifications and oracle replays are
+computed by the same no-pin-identity recipe from compiled Lean. The separate
+application-requests ledgers preserve every earlier identity and held row. Every
+general statement remains STATED with sorry debt; none is accepted law.
+
+Explicit attacks exercise an extra own-policy mint and burn, delivery to another
+output, state ADA drain, a foreign token in the state continuation, and a genuine
+minted active token with a fabricated root datum. The oracle takes explicit
+finite codec, hash and root observations; incomplete or ambiguous observations
+fail instead of supplying an implicit successful answer. Its public builder uses
+registry/request records and ordinary funding, with no required signer.
+
+Global history supply, uniqueness and permanent no-remint statements remain
+open. The mixed registration/termination fixture starts from an observed active
+key and does not establish its preceding genesis, application booking or a
+multi-registry history. The public-fold statement promises a constructed balanced
+model observation under explicit authenticity, clock, finite encoding/collision
+and ordinary-funding premises; provider completeness, real trie proofs, script
+invocation, output minimums, funding availability, willingness and inclusion
+remain external. Application lifecycle and money equivalence belong to later
+slices. No production validator, application law, hosted CI or release acceptance
+follows from these checks.
