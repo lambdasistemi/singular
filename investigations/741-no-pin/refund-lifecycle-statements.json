@@ -13,7 +13,7 @@
     "lean/NoPin/ApplicationRequests/RefundLifecycleStatements.lean": "12838510519cd282ccefd7bea2efa82ec121a42ae0971cf6000cd981a64bb855",
     "refund_lifecycle_check.py": "71b15c39f3d78ad5d73dd359085dd933b893e753d258692557c3f4810a0a2968",
     "refund_lifecycle_controls.py": "bb4a2650036f87f7732a795db4294694bdec22b286cf28553f22e01e4b357257",
-    "pin_check.py": "4b4571dc34d259f7b2510fc614471704748117e8f4c59155a64a6d6f30230fcc"
+    "pin_check.py": "00c251f08b308bba0cd6ffe72e0c56fa45eb8fe4d83eaa80900f3177328874a5"
   },
   "preservedBaseArtifacts": {
     "README.md": "0cfd66df9a226446f39f08fe471260ed5d05cc94c7d3c15f8bc548e3f82cabaf",

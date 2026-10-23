@@ -3,6 +3,7 @@
 import copy
 import hashlib
 import json
+import os
 from pathlib import Path
 import subprocess
 import tempfile
@@ -27,7 +28,7 @@ def check(ledgers):
             "preservedStatementRows",
         ):
             for name, expected in ledger.get(section, {}).items():
-                path = (ROOT / name).resolve().relative_to(REPO).as_posix()
+                path = Path(os.path.relpath(ROOT / name, REPO)).as_posix()
                 if "__pycache__" in Path(path).parts or path not in tracked:
                     raise ValueError(f"untracked/cache pin: {ledger_path.name}: {name}")
                 ignored = subprocess.run(
@@ -71,9 +72,14 @@ def controls():
         "cache-pin": ("__pycache__/check.cpython-313.pyc", "0" * 64),
         "untracked-pin": ("untracked-pin-control.py", "0" * 64),
         "wrong-committed-digest": (source, "0" * 64),
+        "untracked-symlink": (source, ledgers[target]["definitions"][source]),
     }
     for label, (name, digest) in mutations.items():
         with tempfile.TemporaryDirectory(prefix="no-pin-ledger-control-") as temp:
+            if label == "untracked-symlink":
+                alias = Path(temp) / "untracked-alias"
+                alias.symlink_to(ROOT / source)
+                name = str(alias)
             changed = copy.deepcopy(ledgers)
             changed[target]["definitions"][name] = digest
             for filename, ledger in changed.items():
