@@ -73,7 +73,7 @@
     },
     {
       "theorem": "NoPin.Held.Statements.composed_available",
-      "statementSha256": "6b394febac8fa4962b58c516ab9a3485e11856bb2ca50c5ca1d014b7ddebb8c8",
+      "statementSha256": "fc37c6048cc80e111c77d456c1039071d100b5aa6f4c35159b660f018c397180",
       "status": "STATED",
       "question": "application-held pending termination under the 23 October rulings",
       "witnesses": [
