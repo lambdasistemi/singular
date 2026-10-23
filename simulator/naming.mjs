@@ -32,10 +32,7 @@ function checkResolveObservations(row) {
     throw Error(`naming resolve row with an unreadable leaf: ${row.id}`);
   if (!Number.isSafeInteger(row.active) || row.active < 0)
     throw Error(`naming resolve row without a witness count: ${row.id}`);
-  if (
-    (row.active === 1) !== (leaf === 'active') ||
-    (row.active === 0) !== (leaf !== 'active')
-  )
+  if ((row.active === 1) !== (leaf === 'active') || (row.active === 0) !== (leaf !== 'active'))
     throw Error(`naming resolve row contradicts the supply biconditional: ${row.id}`);
   if (leaf === null && row.active > 0)
     throw Error(`naming resolve row claims a witness on an unknown leaf: ${row.id}`);

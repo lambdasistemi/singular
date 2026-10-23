@@ -14,7 +14,7 @@ def cfg0 : Config :=
   { root := rootOf [], minimumTip := 0, processTime := 0, retractTime := 0
   , applicationPolicy := policy, activePolicy := 8 }
 
-/-- The empty registry: no leaves, no custody, no held tokens. -/
+/-- The empty registry: no leaves and no held tokens. -/
 def s0 : RegistryState := { config := cfg0, trie := [], held := [] }
 
 /-- The empty registry with a processing time of 1000 ms and a retraction time of

@@ -28,10 +28,7 @@ export const checks = {
     law: (_before, action, after) => {
       const leaf = trieGet(after.trie, action.key),
         w = witnesses(after, action.key);
-      return (
-        (w.active === 1) === (leaf === 'active') &&
-        (w.active === 0) === (leaf !== 'active')
-      );
+      return (w.active === 1) === (leaf === 'active') && (w.active === 0) === (leaf !== 'active');
     },
   },
   termination: {

@@ -16,8 +16,7 @@ function showWhere() {
   const key = Number($('key-input').value || 42);
   const leaf = trieGet(state.trie, key),
     w = witnesses(state, key);
-  $('where').textContent =
-    `key ${key} · leaf ${leafName(leaf)} · active ${w.active}`;
+  $('where').textContent = `key ${key} · leaf ${leafName(leaf)} · active ${w.active}`;
   rows(
     $('witnesses'),
     KINDS.map((k) => ({ k, n: w[k] })),

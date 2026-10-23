@@ -29,8 +29,7 @@ def booked (s : RegistryState) (k : Nat) : RegistryState :=
   | .ok r => r.state
   | .error _ => s
 
-/-- A canonical legacyAbsent-absent key: known absent, custody with refund 91 and
-value 200 named by the witness. -/
+/-- A key whose leaf is known absent. -/
 def legacyAbsent (s : RegistryState) (k : Nat) : RegistryState :=
   let trie := trieSet s.trie k (.known .absent)
   { s with trie := trie, config := { s.config with root := rootOf trie } }

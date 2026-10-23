@@ -1136,10 +1136,7 @@ const checks = {
     law: (_before, action, after) => {
       const leaf = trieGet(after.trie, action.key),
         w = witnesses(after, action.key);
-      return (
-        (w.active === 1) === (leaf === 'active') &&
-        (w.active === 0) === (leaf !== 'active')
-      );
+      return (w.active === 1) === (leaf === 'active') && (w.active === 0) === (leaf !== 'active');
     },
   },
   termination: {
@@ -1230,10 +1227,7 @@ function checkResolveObservations(row) {
     throw Error(`naming resolve row with an unreadable leaf: ${row.id}`);
   if (!Number.isSafeInteger(row.active) || row.active < 0)
     throw Error(`naming resolve row without a witness count: ${row.id}`);
-  if (
-    (row.active === 1) !== (leaf === 'active') ||
-    (row.active === 0) !== (leaf !== 'active')
-  )
+  if ((row.active === 1) !== (leaf === 'active') || (row.active === 0) !== (leaf !== 'active'))
     throw Error(`naming resolve row contradicts the supply biconditional: ${row.id}`);
   if (leaf === null && row.active > 0)
     throw Error(`naming resolve row claims a witness on an unknown leaf: ${row.id}`);
@@ -4548,7 +4542,7 @@ const STORIES=[
     ]
   },
   "modelSha256": "8a9530c9dbbc93a601c1970e6365335f54d8982996ee0762cad0ca26418ad1b2",
-  "payloadSha256": "bb6633f0822b0bc7f945e07af222f67a8cdd119e894ccbcaffcdc7cb69058373",
+  "payloadSha256": "aaad1a8a3c5c54d6ab36c9ad88b79d2009a552cf7b0b5f56a63df556c651ca94",
   "registrationBookings": [
     {
       "actualReason": null,
@@ -8923,9 +8917,9 @@ const STORIES=[
   "schema": "singular-logical-corpus-v2",
   "sourceHashes": {
     "lean/Main.lean": "35deae40c7856c5a274e9fbc4e124cb1abc82212302095dedc477bca625b7e21",
-    "lean/Main/Base.lean": "fa6f9442a273e4cc4c9f834cc40bc65aa92c33a1225784da54d44e5db1fcf683",
+    "lean/Main/Base.lean": "acd0da3572c98ce15743f6ca6234aa6e382a79d7b75cd2d4b68bb6ac675d8523",
     "lean/Main/Economics.lean": "f197c71e32e7b95e48557f1814d2a06cd5702196c65548a0bd13c81d74244131",
-    "lean/Main/Exits.lean": "8670dff22b54a349e6a882ce9e68f8b32bf7ec821e31887c5ce86f19c7b0f129",
+    "lean/Main/Exits.lean": "c6e0eb663efde976ab640a0668b7ca0ab15bc6b34a9d45f2d26493b9b8d40a4a",
     "lean/Main/FoldControls.lean": "cd003ab9d5be60c1e7a884d569315e3e2f767255c1f2949bc010ac17e667b34a",
     "lean/Main/FoldFixtures.lean": "c100b8cb2778bd343289d861a4ba60bf2f149bc38ec522c22a667741a8a3f886",
     "lean/Main/Payments.lean": "becba233f03a2ffb2aad4dc0e87b29fd393c1e2575eab93119c1dfa7ffea270f",
@@ -8992,13 +8986,13 @@ const STORIES=[
     "lean/Singular/Model/Admission.lean": "8faff36834234dd96fdf1a740f64b6b469b06ad5e04d84e367e0f3f0545e8d51",
     "lean/Singular/Model/Assets.lean": "ce37d142de6aac50806c440fa7136e337db2936890285ea5637c2ab50628f6b5",
     "lean/Singular/Model/Booking.lean": "ae67700447beaab2169241eb1d88325d74efed312393eb510cdd5da0e2979a65",
-    "lean/Singular/Model/Exits.lean": "0f9fdac4090be8cde39cec468fe9f148fe4394452bf2efa8568fc2fdad49c1be",
-    "lean/Singular/Model/Fold.lean": "248b2e86cc870c5cbe944bdf976189b25d4cf7fb81287877b81da23aac7f845f",
+    "lean/Singular/Model/Exits.lean": "45b0c807adb95713f7198e32fcd67add1796584be80a342e5c3252f5e9906d3b",
+    "lean/Singular/Model/Fold.lean": "e2341ec238fb84262509f320eb688f6e3e799a88616f17f2753268b9024856ed",
     "lean/Singular/Model/LegacyRejection.lean": "177ceea0fe4f9c9adb716ce606a07d8d6bd410ad34168f434da694fcaab8e234",
     "lean/Singular/Model/Payments.lean": "5db0bcb2317730ff1bf2ee59ab13692436f2f8d4bdb217df2fcae09025971bb5",
     "lean/Singular/Model/Primitives.lean": "f3c95bd6d906a57b395fb79dda0719cb534d1a9ee558055847987798618f9327",
     "lean/Singular/Model/Registry.lean": "e4cca2b661209b08617d59b61b708af05c689a34ba17bd3a395d664328f3e90c",
-    "lean/Singular/Model/Request.lean": "022823e289fa8c945ae5fb12fb724ab35e14e9f860d05d283cff7b4aff0738cd",
+    "lean/Singular/Model/Request.lean": "d7fa3b9161fd0463c1a09cfcc49e7d568dc74493082c0e186f766ca7e238e500",
     "lean/Singular/Model/Routing.lean": "21b901ed30d49b9553bad10fda852875edf9a145cc5cb7628e62460fc85c4995",
     "lean/Singular/Model/Termination.lean": "9111b875cdfb3632b52db48c65564e01ce7320e421244348665ca036fb84561b",
     "lean/Singular/Model/Transaction.lean": "f5e83c59863faeecd561f3d6489ab8e86298e4a843be2bc37b68ae62e9caa5a1",
@@ -13118,7 +13112,7 @@ const STORIES=[
     "formal/Driver/LegacyRejection.lean": "4bb2b0d1117af59284b2bb68c0d7bff2ff6598ef2070e82d8174cafb3ecbb45a",
     "formal/Driver/Surface.lean": "db439a811cb95ecf1437392c14171643506ca94801764efe24e915633fef2fc3",
     "formal/DriverMain.lean": "1a99fafbd6f8d3ca8b47161d3f8051a77c541fccd82fb65b75f93fd04c364f1f",
-    "formal/DriverMain/Fixtures.lean": "6f41d4b2b0e873a63a5e973daceb72feff6f397c4fe0bc3e1de6f9d3cf8b337b",
+    "formal/DriverMain/Fixtures.lean": "363fe828fc65a6d93e4a5b91e915c96122d54d9c097ea30cf96571ac67cdec34",
     "formal/DriverMain/Rejection.lean": "9d495b28e0fe8389a87260fe70deedcd2f37c8282a105c031a60db815e9f5d9c",
     "formal/DriverMain/Scenarios.lean": "3d062d7c8ec9b4e9e27a7bd730281f5ed9a53543e651293be04b9520f588e1af",
     "formal/Economics.lean": "b882e67551ffb24ddce3cdf89d4f7d1e2e9843d381229b3025d4501cb96ce188",
@@ -13173,9 +13167,9 @@ const STORIES=[
     "formal/M1Driver.lean": "75a65fe58b5b8838c1df50ca67c0f555ca72d78b4dbd3640b4df97bf57835fcd",
     "formal/M1Main.lean": "6db85c5233560a6900ba38412b6ca3df876b56bfef3a5e83ed95bcbc62a49582",
     "formal/Main.lean": "35deae40c7856c5a274e9fbc4e124cb1abc82212302095dedc477bca625b7e21",
-    "formal/Main/Base.lean": "fa6f9442a273e4cc4c9f834cc40bc65aa92c33a1225784da54d44e5db1fcf683",
+    "formal/Main/Base.lean": "acd0da3572c98ce15743f6ca6234aa6e382a79d7b75cd2d4b68bb6ac675d8523",
     "formal/Main/Economics.lean": "f197c71e32e7b95e48557f1814d2a06cd5702196c65548a0bd13c81d74244131",
-    "formal/Main/Exits.lean": "8670dff22b54a349e6a882ce9e68f8b32bf7ec821e31887c5ce86f19c7b0f129",
+    "formal/Main/Exits.lean": "c6e0eb663efde976ab640a0668b7ca0ab15bc6b34a9d45f2d26493b9b8d40a4a",
     "formal/Main/FoldControls.lean": "cd003ab9d5be60c1e7a884d569315e3e2f767255c1f2949bc010ac17e667b34a",
     "formal/Main/FoldFixtures.lean": "c100b8cb2778bd343289d861a4ba60bf2f149bc38ec522c22a667741a8a3f886",
     "formal/Main/Payments.lean": "becba233f03a2ffb2aad4dc0e87b29fd393c1e2575eab93119c1dfa7ffea270f",
@@ -13190,13 +13184,13 @@ const STORIES=[
     "formal/Model/Admission.lean": "8faff36834234dd96fdf1a740f64b6b469b06ad5e04d84e367e0f3f0545e8d51",
     "formal/Model/Assets.lean": "ce37d142de6aac50806c440fa7136e337db2936890285ea5637c2ab50628f6b5",
     "formal/Model/Booking.lean": "ae67700447beaab2169241eb1d88325d74efed312393eb510cdd5da0e2979a65",
-    "formal/Model/Exits.lean": "0f9fdac4090be8cde39cec468fe9f148fe4394452bf2efa8568fc2fdad49c1be",
-    "formal/Model/Fold.lean": "248b2e86cc870c5cbe944bdf976189b25d4cf7fb81287877b81da23aac7f845f",
+    "formal/Model/Exits.lean": "45b0c807adb95713f7198e32fcd67add1796584be80a342e5c3252f5e9906d3b",
+    "formal/Model/Fold.lean": "e2341ec238fb84262509f320eb688f6e3e799a88616f17f2753268b9024856ed",
     "formal/Model/LegacyRejection.lean": "177ceea0fe4f9c9adb716ce606a07d8d6bd410ad34168f434da694fcaab8e234",
     "formal/Model/Payments.lean": "5db0bcb2317730ff1bf2ee59ab13692436f2f8d4bdb217df2fcae09025971bb5",
     "formal/Model/Primitives.lean": "f3c95bd6d906a57b395fb79dda0719cb534d1a9ee558055847987798618f9327",
     "formal/Model/Registry.lean": "e4cca2b661209b08617d59b61b708af05c689a34ba17bd3a395d664328f3e90c",
-    "formal/Model/Request.lean": "022823e289fa8c945ae5fb12fb724ab35e14e9f860d05d283cff7b4aff0738cd",
+    "formal/Model/Request.lean": "d7fa3b9161fd0463c1a09cfcc49e7d568dc74493082c0e186f766ca7e238e500",
     "formal/Model/Routing.lean": "21b901ed30d49b9553bad10fda852875edf9a145cc5cb7628e62460fc85c4995",
     "formal/Model/Termination.lean": "9111b875cdfb3632b52db48c65564e01ce7320e421244348665ca036fb84561b",
     "formal/Model/Transaction.lean": "f5e83c59863faeecd561f3d6489ab8e86298e4a843be2bc37b68ae62e9caa5a1",
@@ -13238,7 +13232,7 @@ const STORIES=[
     "formal/naming-theorem-debt.json": "e3fd5918f923ee2651d316b099ea5da50eb244ce1dc86808d826f42ca54fa622",
     "formal/theorem-debt.json": "80cee0d969329e6cedb1d3c5597fc921a86484af06ab547d7089e6f852ce0f89",
     "formal/wire-theorem-debt.json": "0976487a901c4321b02998ebd178ba66d2f438fccd0332b4c760a7a593453c65",
-    "corpus.json": "43fdf1250bd1d9c8dcce3af03704169b9f0ed056b2f09065b23b3aa015997f62"
+    "corpus.json": "e80d46861af073ebcef6eeacb73d3697254dd9c693e08de423f48f2c3053f95c"
   },
   "templateSha256": "e56d9c1ea41da19a50e01a1d6945ea51e4b5f29f6c72389cd86a91219ecce416",
   "corpusCases": 29,
@@ -13269,7 +13263,7 @@ const STORIES=[
   ],
   "modelSha256": "8a9530c9dbbc93a601c1970e6365335f54d8982996ee0762cad0ca26418ad1b2",
   "namingStatementsSha256": "f3186206bb71e114f89ae442a13f07d0f227a668511a29ac3f1a57ecccc2d045",
-  "payloadSha256": "1f8acd97be4966704a57ae212088332296a4cf718ad2f33471d2a9a8e7f0af15",
+  "payloadSha256": "4725046f1a3767dc1425b6c9e21e4f384f97cbc1323525fd595070948845f7e8",
   "queues": [
     {
       "actual": true,
@@ -13317,15 +13311,15 @@ const STORIES=[
   "schema": "singular-naming-corpus-v2",
   "sourceHashes": {
     "lean/DriverMain.lean": "1a99fafbd6f8d3ca8b47161d3f8051a77c541fccd82fb65b75f93fd04c364f1f",
-    "lean/DriverMain/Fixtures.lean": "6f41d4b2b0e873a63a5e973daceb72feff6f397c4fe0bc3e1de6f9d3cf8b337b",
+    "lean/DriverMain/Fixtures.lean": "363fe828fc65a6d93e4a5b91e915c96122d54d9c097ea30cf96571ac67cdec34",
     "lean/DriverMain/Rejection.lean": "9d495b28e0fe8389a87260fe70deedcd2f37c8282a105c031a60db815e9f5d9c",
     "lean/DriverMain/Scenarios.lean": "3d062d7c8ec9b4e9e27a7bd730281f5ed9a53543e651293be04b9520f588e1af",
     "lean/LifecycleMain.lean": "ea26022c9ad632fe4739d3eeb04013e7d43e543fb75d985e6c731f06fcedc814",
     "lean/M1Main.lean": "6db85c5233560a6900ba38412b6ca3df876b56bfef3a5e83ed95bcbc62a49582",
     "lean/Main.lean": "35deae40c7856c5a274e9fbc4e124cb1abc82212302095dedc477bca625b7e21",
-    "lean/Main/Base.lean": "fa6f9442a273e4cc4c9f834cc40bc65aa92c33a1225784da54d44e5db1fcf683",
+    "lean/Main/Base.lean": "acd0da3572c98ce15743f6ca6234aa6e382a79d7b75cd2d4b68bb6ac675d8523",
     "lean/Main/Economics.lean": "f197c71e32e7b95e48557f1814d2a06cd5702196c65548a0bd13c81d74244131",
-    "lean/Main/Exits.lean": "8670dff22b54a349e6a882ce9e68f8b32bf7ec821e31887c5ce86f19c7b0f129",
+    "lean/Main/Exits.lean": "c6e0eb663efde976ab640a0668b7ca0ab15bc6b34a9d45f2d26493b9b8d40a4a",
     "lean/Main/FoldControls.lean": "cd003ab9d5be60c1e7a884d569315e3e2f767255c1f2949bc010ac17e667b34a",
     "lean/Main/FoldFixtures.lean": "c100b8cb2778bd343289d861a4ba60bf2f149bc38ec522c22a667741a8a3f886",
     "lean/Main/Payments.lean": "becba233f03a2ffb2aad4dc0e87b29fd393c1e2575eab93119c1dfa7ffea270f",
@@ -13396,13 +13390,13 @@ const STORIES=[
     "lean/Singular/Model/Admission.lean": "8faff36834234dd96fdf1a740f64b6b469b06ad5e04d84e367e0f3f0545e8d51",
     "lean/Singular/Model/Assets.lean": "ce37d142de6aac50806c440fa7136e337db2936890285ea5637c2ab50628f6b5",
     "lean/Singular/Model/Booking.lean": "ae67700447beaab2169241eb1d88325d74efed312393eb510cdd5da0e2979a65",
-    "lean/Singular/Model/Exits.lean": "0f9fdac4090be8cde39cec468fe9f148fe4394452bf2efa8568fc2fdad49c1be",
-    "lean/Singular/Model/Fold.lean": "248b2e86cc870c5cbe944bdf976189b25d4cf7fb81287877b81da23aac7f845f",
+    "lean/Singular/Model/Exits.lean": "45b0c807adb95713f7198e32fcd67add1796584be80a342e5c3252f5e9906d3b",
+    "lean/Singular/Model/Fold.lean": "e2341ec238fb84262509f320eb688f6e3e799a88616f17f2753268b9024856ed",
     "lean/Singular/Model/LegacyRejection.lean": "177ceea0fe4f9c9adb716ce606a07d8d6bd410ad34168f434da694fcaab8e234",
     "lean/Singular/Model/Payments.lean": "5db0bcb2317730ff1bf2ee59ab13692436f2f8d4bdb217df2fcae09025971bb5",
     "lean/Singular/Model/Primitives.lean": "f3c95bd6d906a57b395fb79dda0719cb534d1a9ee558055847987798618f9327",
     "lean/Singular/Model/Registry.lean": "e4cca2b661209b08617d59b61b708af05c689a34ba17bd3a395d664328f3e90c",
-    "lean/Singular/Model/Request.lean": "022823e289fa8c945ae5fb12fb724ab35e14e9f860d05d283cff7b4aff0738cd",
+    "lean/Singular/Model/Request.lean": "d7fa3b9161fd0463c1a09cfcc49e7d568dc74493082c0e186f766ca7e238e500",
     "lean/Singular/Model/Routing.lean": "21b901ed30d49b9553bad10fda852875edf9a145cc5cb7628e62460fc85c4995",
     "lean/Singular/Model/Termination.lean": "9111b875cdfb3632b52db48c65564e01ce7320e421244348665ca036fb84561b",
     "lean/Singular/Model/Transaction.lean": "f5e83c59863faeecd561f3d6489ab8e86298e4a843be2bc37b68ae62e9caa5a1",
@@ -13549,7 +13543,7 @@ const STORIES=[
   ],
   "lifecycleStatementsSha256": "22543ca5fb08916e9b0533575cb1e83bc888a1ee03fc0cc9b38dd45b9ae2e5d8",
   "modelSha256": "7f1ac7e78c1f89bee1234e564fa012c978c239caa793869f4e24dcc4524e6780",
-  "payloadSha256": "d9baae964a1a15cc84e0d77099982e509089314dd6380a6db2c99f0cd7284489",
+  "payloadSha256": "0e9039d7662f9407fdaa3b7402fa431b7cbcfee80bf7479a7a92c378fca03c80",
   "recovery": [
     {
       "detail": true,
@@ -13621,15 +13615,15 @@ const STORIES=[
   "schema": "singular-naming-lifecycle-corpus-v2",
   "sourceHashes": {
     "lean/DriverMain.lean": "1a99fafbd6f8d3ca8b47161d3f8051a77c541fccd82fb65b75f93fd04c364f1f",
-    "lean/DriverMain/Fixtures.lean": "6f41d4b2b0e873a63a5e973daceb72feff6f397c4fe0bc3e1de6f9d3cf8b337b",
+    "lean/DriverMain/Fixtures.lean": "363fe828fc65a6d93e4a5b91e915c96122d54d9c097ea30cf96571ac67cdec34",
     "lean/DriverMain/Rejection.lean": "9d495b28e0fe8389a87260fe70deedcd2f37c8282a105c031a60db815e9f5d9c",
     "lean/DriverMain/Scenarios.lean": "3d062d7c8ec9b4e9e27a7bd730281f5ed9a53543e651293be04b9520f588e1af",
     "lean/LifecycleMain.lean": "ea26022c9ad632fe4739d3eeb04013e7d43e543fb75d985e6c731f06fcedc814",
     "lean/M1Main.lean": "6db85c5233560a6900ba38412b6ca3df876b56bfef3a5e83ed95bcbc62a49582",
     "lean/Main.lean": "35deae40c7856c5a274e9fbc4e124cb1abc82212302095dedc477bca625b7e21",
-    "lean/Main/Base.lean": "fa6f9442a273e4cc4c9f834cc40bc65aa92c33a1225784da54d44e5db1fcf683",
+    "lean/Main/Base.lean": "acd0da3572c98ce15743f6ca6234aa6e382a79d7b75cd2d4b68bb6ac675d8523",
     "lean/Main/Economics.lean": "f197c71e32e7b95e48557f1814d2a06cd5702196c65548a0bd13c81d74244131",
-    "lean/Main/Exits.lean": "8670dff22b54a349e6a882ce9e68f8b32bf7ec821e31887c5ce86f19c7b0f129",
+    "lean/Main/Exits.lean": "c6e0eb663efde976ab640a0668b7ca0ab15bc6b34a9d45f2d26493b9b8d40a4a",
     "lean/Main/FoldControls.lean": "cd003ab9d5be60c1e7a884d569315e3e2f767255c1f2949bc010ac17e667b34a",
     "lean/Main/FoldFixtures.lean": "c100b8cb2778bd343289d861a4ba60bf2f149bc38ec522c22a667741a8a3f886",
     "lean/Main/Payments.lean": "becba233f03a2ffb2aad4dc0e87b29fd393c1e2575eab93119c1dfa7ffea270f",
@@ -13700,13 +13694,13 @@ const STORIES=[
     "lean/Singular/Model/Admission.lean": "8faff36834234dd96fdf1a740f64b6b469b06ad5e04d84e367e0f3f0545e8d51",
     "lean/Singular/Model/Assets.lean": "ce37d142de6aac50806c440fa7136e337db2936890285ea5637c2ab50628f6b5",
     "lean/Singular/Model/Booking.lean": "ae67700447beaab2169241eb1d88325d74efed312393eb510cdd5da0e2979a65",
-    "lean/Singular/Model/Exits.lean": "0f9fdac4090be8cde39cec468fe9f148fe4394452bf2efa8568fc2fdad49c1be",
-    "lean/Singular/Model/Fold.lean": "248b2e86cc870c5cbe944bdf976189b25d4cf7fb81287877b81da23aac7f845f",
+    "lean/Singular/Model/Exits.lean": "45b0c807adb95713f7198e32fcd67add1796584be80a342e5c3252f5e9906d3b",
+    "lean/Singular/Model/Fold.lean": "e2341ec238fb84262509f320eb688f6e3e799a88616f17f2753268b9024856ed",
     "lean/Singular/Model/LegacyRejection.lean": "177ceea0fe4f9c9adb716ce606a07d8d6bd410ad34168f434da694fcaab8e234",
     "lean/Singular/Model/Payments.lean": "5db0bcb2317730ff1bf2ee59ab13692436f2f8d4bdb217df2fcae09025971bb5",
     "lean/Singular/Model/Primitives.lean": "f3c95bd6d906a57b395fb79dda0719cb534d1a9ee558055847987798618f9327",
     "lean/Singular/Model/Registry.lean": "e4cca2b661209b08617d59b61b708af05c689a34ba17bd3a395d664328f3e90c",
-    "lean/Singular/Model/Request.lean": "022823e289fa8c945ae5fb12fb724ab35e14e9f860d05d283cff7b4aff0738cd",
+    "lean/Singular/Model/Request.lean": "d7fa3b9161fd0463c1a09cfcc49e7d568dc74493082c0e186f766ca7e238e500",
     "lean/Singular/Model/Routing.lean": "21b901ed30d49b9553bad10fda852875edf9a145cc5cb7628e62460fc85c4995",
     "lean/Singular/Model/Termination.lean": "9111b875cdfb3632b52db48c65564e01ce7320e421244348665ca036fb84561b",
     "lean/Singular/Model/Transaction.lean": "f5e83c59863faeecd561f3d6489ab8e86298e4a843be2bc37b68ae62e9caa5a1",
@@ -14806,8 +14800,7 @@ function showWhere() {
   const key = Number($('key-input').value || 42);
   const leaf = trieGet(state.trie, key),
     w = witnesses(state, key);
-  $('where').textContent =
-    `key ${key} · leaf ${leafName(leaf)} · active ${w.active}`;
+  $('where').textContent = `key ${key} · leaf ${leafName(leaf)} · active ${w.active}`;
   rows(
     $('witnesses'),
     KINDS.map((k) => ({ k, n: w[k] })),

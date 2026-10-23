@@ -60,7 +60,7 @@ def route (k : TokenKind) (_request : Request) : Destination :=
 
 /-- The canonical request of each edge, in the frame where the frozen
 three-argument `admits` observes admission: key 5; owner 42, or 91 — the refund
-address — for the absent edges; destination 99, or the cage-custody sentinel 0
+address — for the absent edges; destination 99, or the cage sentinel 0
 for `insertAbsent`. -/
 def canonicalRequest (e : Edge) : Request :=
   match e with
