@@ -88,6 +88,54 @@ Asked whether money routing also leaves Singular, the operator replied, transcri
 
 Scope. Singular checks no value, and its state datum is the root, subject to a check of every other use of the remaining fields. A request's ADA beyond what the application requires to stay in place is the folder's: requesters bid for priority and folders choose by bid. The application's request rules decide what must stay: for a registration, the new holding receives the initial datum, the genuine token and at least the deposit the application requires; for a termination, whose deposit already returned at booking, the whole request is the folder's unless the application routes part of it elsewhere. With permissionless folding the requester is the folder of last resort, so whether a top-up path is still needed is to be stated, not assumed.
 
+## Open datum keeps its semantics
+
+Date: 23 October 2026. Binds every open-datum journey of the simplified design.
+
+The operator, transcribed from speech: "So we agree, this epic actually is replacing the open datum application by simplifying completely the system, but making sure that the same semantics remain for open datum, so deposit, treasury and all this."
+
+Scope. Open datum's user-visible outcomes and money flows stay as ruled; only who enforces them moves from Singular to open datum. Each journey (create, register, update, terminate, reclaim and cleanup) is stated old against new, with every difference from today listed as decided by the operator.
+
+## Registrations keep three timed phases and no rejection
+
+Date: 23 October 2026. Replaces Singular's rejection for registrations.
+
+The operator, transcribed from speech: "the full epic of rejection protection is gone for good. I mean, there is nothing to protect anymore. You can only fold what's good. You don't have to prove anything about rejection."
+
+Scope. Open datum's registration request has three phases, disjoint in time: until the processing deadline only a fold may spend it; in the reclaim window the owner reclaims everything; after it anyone may clean it up. Open datum never checks a trie proof or reads the registry root. A registration that can never be folded is no longer rejected early; its owner can reclaim everything, a stated difference from today.
+
+## The request's value is the bid, and the treasury takes the deposit
+
+Date: 23 October 2026. Supersedes the fixed termination tip, the treasury share at the fold and the deposit returned at termination booking.
+
+The operator, transcribed from speech: "so the tip is everything for the termination request, everything minus the deposit for the registration, the deposit is committed in the aproval". And: "treasury is a application concern, open-datum i.e. devolve the deposit to it".
+
+Scope. No tip field: a termination request's whole ADA, and a registration request's ADA minus its committed deposit, is the folder's. The deposit is committed in the registration approval's preimage and stays in the holding for the key's life; it goes to the treasury at termination booking. No treasury share at any fold. A registration reclaim returns everything; the cleanup after the reclaim window returns the deposit to the refund address and the cleaner keeps the rest.
+
+## Singular checks the registration delivery
+
+Date: 23 October 2026.
+
+The operator, transcribed from speech: "the deposit has to get through the fold btw, so the singular will have to validate the registration".
+
+Scope. At a registration fold Singular checks the new holding against the approval it recomputes: the committed address, the committed datum hash, exactly one new token and at least the committed deposit. It routes no money. The state output keeps only ADA and its state token. Open datum's own fold-path rule still checks the genuine token, because burning an approval is open and does not prove a fold.
+
+## Request parameters are fixed per seed
+
+Date: 23 October 2026.
+
+Asked whether the request parameters belong to a per-registry record or to the application release, the operator replied: "yes, parameters are per seed".
+
+Scope. Each registry fixes its own request parameters at creation in an application configuration record, read by reference at booking. Using the application's policy as its address was declined for this contract line.
+
+## Proved Lean before on-chain work
+
+Date: 23 October 2026. Sets the target of this investigation.
+
+The operator, transcribed from speech: "Let's get the lean proofs of what we want. And we need the lean proofs of what we want in the model, both for singular and for open datum. So then we kind of are in a good situation to switch to the on-chain code."
+
+Scope. #741 ends with proved Lean for Singular (genesis, the fold law, delivery, state output integrity, state recognition with a root-only datum, supply in step, folding from public data) and for open datum (the request lifecycle obligations and the per-journey equivalence). Statements are stated and audited in small slices, then proved; on-chain work follows the operator's adoption ruling.
+
 ```mermaid
 flowchart TD
   Question[Question in questions.md] -->|operator reply| Ruling[Recorded ruling]

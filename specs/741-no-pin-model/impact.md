@@ -121,6 +121,10 @@ An independent statement audit on 22 October 2026 found the candidate ready to p
 
 An independent statement audit on 23 October 2026 found the application-held termination candidate ready to prove: twenty-one stated rows (fifteen derived inversions and six obligations), forty-nine guards each owned by a single-flip falsification, settlement statements that follow the controller-settlement ruling, and the identity rows byte-identical. The audited identities are `held-statements.json` `fbf86c89630d0daf32e49a33640803ac82f1a66baa99a60a2974c7a652d9f66c` and `lean/NoPin/Held/Statements.lean` `b4a5d6e31242ff83d8bdde8ce90ac2832a3c18bc00de1d0c21daa79aee0f7e6a` in `investigations/741-no-pin/`. This establishes no statement's truth. The accepted non-rejection, supply and permanent-key laws are carried into the candidate at concrete reachable instances only, not in their universal form; the burn coupling, the observation correspondence and the value partition are named premises and recorded debt.
 
+## Singular statement audit result
+
+An independent statement audit on 23 October 2026 found six of the seven Singular statement families of the application-held design ready to prove: genesis, the whole fold law, the committed holding delivery, state output integrity, state recognition with a root-only datum, and folding from public data, sixteen general statements in all. The audited ledger is `investigations/741-no-pin/application-requests-statements.json` `de702f29fdbaa3f9e7f6300d4b7b4bf1074ef7f39ee7d4f94587bacf1fcfde2d`. Effects are stated independently of the production functions and a substituted transition fails named obligations. This establishes no statement's truth. Supply in step, permanence and history are not yet stated; they are the next slice.
+
 ```mermaid
 flowchart TD
   Source[Existing laws] -->|compare| Proposal[Proposed identities]
