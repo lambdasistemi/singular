@@ -127,4 +127,8 @@ theorem wrong_key_booking_refused : book .none hash encode before (.live (holdin
     wrongKeyBooking.booking.request.key == (holding 7 5).control.key) = false := by decide +kernel
   rw [binding]
   simp
+/-- Executed #741 connected consumption instance, not accepted law; both actual pending outputs leave. -/
+theorem folded_outputs_consumed : (consume two folded.transaction).outputs = [] := by decide +kernel
+/-- Executed #741 connected root instance, not accepted law; selected pending bookings leave the root world. -/
+theorem folded_root_pending_empty : folded.after.terminations = [] := by decide +kernel
 end NoPin.Held.Fixtures

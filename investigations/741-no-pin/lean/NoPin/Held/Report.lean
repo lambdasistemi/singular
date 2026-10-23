@@ -80,6 +80,10 @@ def reportControls : IO Unit := do
     for guard in used do
       IO.println (Json.mkObj [("family", toJson "held"), ("scenario", toJson (Scenario.mk q (.flip guard))),
         ("result", toJson (runQuery (.flip guard) q))]).compress
+  let consumed := { Fixtures.goodQuery .consumption with selected := Fixtures.selected }
+  for mutation in [Mutation.none, Mutation.flip .consumptionReference] do
+    IO.println (Json.mkObj [("family", toJson "held"), ("scenario", toJson (Scenario.mk consumed mutation)),
+      ("result", toJson (runQuery mutation consumed))]).compress
   IO.println (Json.mkObj [("family", toJson "held"), ("roles", toJson ([] : List String)),
     ("guards", toJson guards), ("cases", toJson cases)]).compress
 
