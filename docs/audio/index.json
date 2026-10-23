@@ -12,8 +12,8 @@
     "index": 1,
     "name": "README/design-status-01",
     "pause_ms": 400,
-    "text": "These documents record the adopted design and name the decisions still needed for a concrete protocol. The executable design candidate has 108 proved declarations — 87 for the registry, 7 for the naming instance, 9 for its lifecycle and 5 for its wire encoding, counts that the model check derives from the theorem manifests — plus a playable simulation transcribed from them. The focused checks replay 29 registry rows, 15 naming rows and 21 lifecycle rows; they test correspondence on those finite inputs rather than proving browser behaviour generally. No independent audit acceptance is claimed. The compiled validators and a registry deployed on the public preprod network are recorded in the preprod record, and the conformance evidence states which consumer requirements a named code revision demonstrated against them. The coverage ledger distinguishes finite executable evidence from conditions, abstractions and omissions, and the clarity record states plainly how much independence that evidence has.",
-    "v": "477901d6273e"
+    "text": "These documents record the adopted design and name the decisions still needed for a concrete protocol. The executable design candidate has 105 proved declarations — 84 for the registry, 7 for the naming instance, 9 for its lifecycle and 5 for its wire encoding, counts that the model check derives from the theorem manifests — plus a playable simulation transcribed from them. The focused checks replay 29 registry rows, 15 naming rows and 21 lifecycle rows; they test correspondence on those finite inputs rather than proving browser behaviour generally. No independent audit acceptance is claimed. The compiled validators and a registry deployed on the public preprod network are recorded in the preprod record, and the conformance evidence states which consumer requirements a named code revision demonstrated against them. The coverage ledger distinguishes finite executable evidence from conditions, abstractions and omissions, and the clarity record states plainly how much independence that evidence has.",
+    "v": "6f9c3f209119"
    },
    {
     "index": 2,
@@ -375,71 +375,64 @@
     "index": 3,
     "name": "docs-LEAN-CLARITY/reading-the-promises-back-03",
     "pause_ms": 400,
-    "text": "Soundness of attestation (terminal_attestation_sound). In a reachable state, a terminal attestation exists for a key only if that key's leaf really is terminal. Its companion (terminal_mint_only_by_read) supplies the provenance half: the only edge that can bring a terminal token into existence is the read. Together they say the witness cannot be forged and cannot be minted by a state change.",
-    "v": "3135f5a5238b"
+    "text": "Permanence (terminal_attestation_permanent). A terminated key stays terminated through any later sequence of accepted folds. A terminal leaf has no outgoing edge, so nothing downstream can make the termination false. This is the promise that lets a reader keep the leaf it proved rather than re-reading the chain.",
+    "v": "546014c9a957"
    },
    {
     "index": 4,
     "name": "docs-LEAN-CLARITY/reading-the-promises-back-04",
     "pause_ms": 400,
-    "text": "Permanence (terminal_attestation_permanent). What a terminal attestation says stays true through any later sequence of accepted folds. A terminal leaf has no outgoing edge, so nothing downstream can make an already-issued attestation false. This is the promise that lets a holder keep the witness rather than re-reading the chain.",
-    "v": "9002126c0e8b"
+    "text": "The supply law (biconditional_supply_sync). For every key in a reachable state, the count of outstanding active tokens is one exactly when the leaf is active and zero otherwise — a biconditional, both directions, over all keys, not only the key in hand. This is the statement that ties the token supply to the map and makes \"the token is the name\" more than a slogan.",
+    "v": "de58188919cc"
    },
    {
     "index": 5,
     "name": "docs-LEAN-CLARITY/reading-the-promises-back-05",
     "pause_ms": 400,
-    "text": "The supply law (biconditional_supply_sync). For every key in a reachable state, the count of outstanding active tokens is one exactly when the leaf is active and zero otherwise — a biconditional, both directions, over all keys, not only the key in hand. The same shape holds for the absent witness. This is the statement that ties the token supply to the map and makes \"the token is the name\" more than a slogan.",
-    "v": "ce35e514dab9"
+    "text": "Occupancy and its converse (occupancy, occupancy_free_key_succeeds). A booking edge succeeds only on a key that is not already taken; and on a key that is free, with a matching approval, it does succeed. The converse matters as much as the rule: a registry that refused everything would satisfy the first half perfectly.",
+    "v": "c12e64fa121f"
    },
    {
     "index": 6,
     "name": "docs-LEAN-CLARITY/reading-the-promises-back-06",
     "pause_ms": 400,
-    "text": "Occupancy and its converse (occupancy, occupancy_free_key_succeeds). A booking edge succeeds only on a key that is not already taken; and on a key that is free, with a matching approval, it does succeed. The converse matters as much as the rule: a registry that refused everything would satisfy the first half perfectly.",
-    "v": "dcbb76347929"
+    "text": "Termination (termination). On a terminal key every leaf-moving edge is refused. Not \"should be\", not \"by convention\" — the refusal is the complement of the edge table, so there is no unlisted case that quietly moves a retired name.",
+    "v": "e9a3f089e629"
    },
    {
     "index": 7,
     "name": "docs-LEAN-CLARITY/reading-the-promises-back-07",
     "pause_ms": 400,
-    "text": "Termination (termination). On a terminal key every leaf-moving edge is refused. Not \"should be\", not \"by convention\" — the refusal is the complement of the edge table, so there is no unlisted case that quietly moves a retired name.",
-    "v": "ba9976e219cc"
+    "text": "The witness law (active_witness_unique). At most one active token per key, and exactly one when the leaf is active.",
+    "v": "c0bf1d5f13ab"
    },
    {
     "index": 8,
     "name": "docs-LEAN-CLARITY/reading-the-promises-back-08",
     "pause_ms": 400,
-    "text": "The four witness laws (active_witness_unique, absent_witness_unique, terminal_witness_plural, witness_kinds_exclude). At most one active token per key, and exactly one when the leaf is active. The same for the absent witness. Terminal attestations, by contrast, are plural: any number may exist, each is true, and minting another changes nothing — which is the consequence of the attestation being a read. And the kinds exclude one another: a key cannot have an outstanding active token and an outstanding absent witness at the same time.",
-    "v": "a49c8934c705"
+    "text": "The seven inversions. For each edge, a single statement saying what an accepted application of it did: the leaf before, the leaf after, the new root, the token deltas, the custody movement, the deposit destination. These are the statements the simulator is really transcribing, and they are the ones to read first when asking whether the model matches the interface, because they contain no reachability hypothesis to hide behind.",
+    "v": "c263f772b1b8"
    },
    {
     "index": 9,
     "name": "docs-LEAN-CLARITY/reading-the-promises-back-09",
     "pause_ms": 400,
-    "text": "The seven inversions. For each edge, a single statement saying what an accepted application of it did: the leaf before, the leaf after, the new root, the token deltas, the custody movement, the deposit destination. These are the statements the simulator is really transcribing, and they are the ones to read first when asking whether the model matches the interface, because they contain no reachability hypothesis to hide behind.",
-    "v": "2085d202b5f5"
+    "text": "The deposit (inside update_active_inversion and delete_absent_inversion). The two edges that consume an absent witness pay the deposit back to the refund address the original request named, not to the output of the consuming request and not to whoever folded it. Those two rejected destinations are the reason the statement pins the address rather than merely asserting that some payment occurred.",
+    "v": "e834d30fc09a"
    },
    {
     "index": 10,
     "name": "docs-LEAN-CLARITY/reading-the-promises-back-10",
     "pause_ms": 400,
-    "text": "The deposit (inside update_active_inversion and delete_absent_inversion). The two edges that consume an absent witness pay the deposit back to the refund address the original request named, not to the output of the consuming request and not to whoever folded it. Those two rejected destinations are the reason the statement pins the address rather than merely asserting that some payment occurred.",
-    "v": "7c60fd690d44"
+    "text": "The read (read_changes_nothing, witness_terminal_inversion). An accepted read leaves the leaf, the root and custody exactly as they were and adds one terminal token. It needs no approval at all — and, symmetrically, a stray approval does not make it refuse.",
+    "v": "e68bffbef807"
    },
    {
     "index": 11,
     "name": "docs-LEAN-CLARITY/reading-the-promises-back-11",
     "pause_ms": 400,
-    "text": "The read (read_changes_nothing, witness_terminal_inversion). An accepted read leaves the leaf, the root and custody exactly as they were and adds one terminal token. It needs no approval at all — and, symmetrically, a stray approval does not make it refuse.",
-    "v": "2bb915585b2d"
-   },
-   {
-    "index": 12,
-    "name": "docs-LEAN-CLARITY/reading-the-promises-back-12",
-    "pause_ms": 400,
     "text": "The fold (empty_fold_error, fold_batch_cons). An empty batch is refused rather than accepted as a no-op. A non-empty batch succeeds exactly when its head applies and the rest applies to the result, which is what makes a batch mean the same thing as the sequence of its requests.",
-    "v": "22079a604606"
+    "v": "696d83052262"
    }
   ],
   "the-shape-the-promises-are-made-over": [
@@ -1842,8 +1835,8 @@
     "index": 1,
     "name": "docs-consumer-conformance/current-registry-mode-integration-01",
     "pause_ms": 400,
-    "text": "The released interface follows the eight-field registry-mode state contract above. The historical reports below retain their original transaction identities, measurements and limitations; they are not current execution claims. Coverage requires fresh receipts bound to the source and blueprint being replayed. A build or a green check of expected debt grants no coverage.",
-    "v": "f53caee512ee"
+    "text": "The released interface follows the six-field registry-mode state contract above. The historical reports below retain their original transaction identities, measurements and limitations; they are not current execution claims. Coverage requires fresh receipts bound to the source and blueprint being replayed. A build or a green check of expected debt grants no coverage.",
+    "v": "87fbc18d707e"
    }
   ],
   "current-replay-commands": [
@@ -2163,8 +2156,8 @@
     "index": 1,
     "name": "docs-consumer-conformance/the-cage-datum-a-third-constructor-01",
     "pause_ms": 400,
-    "text": "The absent custody key is the identity of the output's sole non-ADA asset, which must have quantity one under the registry's pinned absent policy. It is not duplicated in the datum. The retired two-field constructor-2 wire is therefore incompatible and must not decode as AbsentCustody.",
-    "v": "2e52337fc33d"
+    "text": "The absent custody key is the identity of the output's sole non-ADA asset, which must have quantity one. It is not duplicated in the datum. The retired two-field constructor-2 wire is therefore incompatible and must not decode as AbsentCustody.",
+    "v": "6f0efc58c1b4"
    }
   ],
   "the-canonical-identity-rows": [
@@ -2511,6 +2504,22 @@
     "v": "5347a032546f"
    }
   ],
+  "the-state-datum-two-pins-leave": [
+   {
+    "index": 0,
+    "name": "docs-consumer-conformance/the-state-datum-two-pins-leave-00",
+    "pause_ms": 500,
+    "text": "The state datum: two pins leave.",
+    "v": "4e31e35bbb6b"
+   },
+   {
+    "index": 1,
+    "name": "docs-consumer-conformance/the-state-datum-two-pins-leave-01",
+    "pause_ms": 400,
+    "text": "Milestone one admits only registration and permanent termination, so nothing is ever minted under the absent or the terminal token policy. The datum drops fields 6 and 7, absentPolicy and terminalPolicy, and keeps the first six fields in the order of the table above. The fold no longer preserves or checks a mint under either policy, and the witness script admits the active kind only. A registry made under the eight-field contract has another state script hash and is served by the releases that made it. A decoder that reads eight fields refuses a six-field datum.",
+    "v": "585551bff788"
+   }
+  ],
   "what-a-reader-should-do": [
    {
     "index": 0,
@@ -2523,8 +2532,8 @@
     "index": 1,
     "name": "docs-consumer-conformance/what-a-reader-should-do-01",
     "pause_ms": 400,
-    "text": "Read tokens, never the root. The presence of an active witness under the active policy, at the asset name equal to the registry key, is a live registration; the presence of a terminal witness is a name that is over. The asset name is the key itself — there is no hashed representative name any more.",
-    "v": "290b9be5cb3f"
+    "text": "Read tokens, never the root. The presence of an active witness under the active policy, at the asset name equal to the registry key, is a live registration; a name that is over is a leaf proved terminal against the root. The asset name is the key itself — there is no hashed representative name any more.",
+    "v": "67199b6cefc5"
    }
   ]
  },
@@ -4448,6 +4457,29 @@
     "v": "dbdfa299a4a7"
    }
   ],
+  "retired-with-the-unused-policy-pins": [
+   {
+    "index": 0,
+    "name": "docs-model-ledger/retired-with-the-unused-policy-pins-00",
+    "pause_ms": 500,
+    "text": "Retired with the unused policy pins.",
+    "v": "ac6bcdfc9aa9"
+   },
+   {
+    "index": 1,
+    "name": "docs-model-ledger/retired-with-the-unused-policy-pins-01",
+    "pause_ms": 400,
+    "text": "Milestone one mints no absent or terminal token, so the registry state no longer pins a policy for either, and the model keeps one token kind. Four statements whose only subject was a token of a removed kind are retired with no replacement, and one is restated over the leaf:",
+    "v": "71b5485afb40"
+   },
+   {
+    "index": 2,
+    "name": "docs-model-ledger/retired-with-the-unused-policy-pins-02",
+    "pause_ms": 400,
+    "text": "The lifecycle row that substituted a terminal policy at initialization is retired with the field it altered. The coverage record names every identity that changed.",
+    "v": "7e289354b9ec"
+   }
+  ],
   "the-retirement-map": [
    {
     "index": 0,
@@ -4483,8 +4515,8 @@
     "index": 1,
     "name": "docs-model-ledger/what-is-covered-and-what-is-not-01",
     "pause_ms": 400,
-    "text": "Covered: the seven edges and their deltas; the complement of the edge table as refusals with distinct reasons; admission by an approval scoped to the request's tuple; the leaf codec both ways; the fold's atomicity, zero-request refusal and mint check; the custody census and the deposit's destination; and the eleven promises over states reachable from genesis.",
-    "v": "aab291572cf4"
+    "text": "Covered: the seven edges and their deltas; the complement of the edge table as refusals with distinct reasons; admission by an approval scoped to the request's tuple; the leaf codec both ways; the fold's atomicity, zero-request refusal and mint check; the deposit's destination; and the seven promises over states reachable from genesis.",
+    "v": "21f69217d52a"
    },
    {
     "index": 2,
@@ -4534,8 +4566,8 @@
     "index": 1,
     "name": "docs-model-ledger/what-the-model-is-and-what-it-abstracts-01",
     "pause_ms": 400,
-    "text": "The trie answers two questions and nothing else: is this key known, and where in its life is it. Applications store nothing in the leaf. Seven edges move a leaf, each an MPFS primitive applied to a state, each a delta over three token kinds.",
-    "v": "2b12d54a2e55"
+    "text": "The trie answers two questions and nothing else: is this key known, and where in its life is it. Applications store nothing in the leaf. Seven edges move a leaf, each an MPFS primitive applied to a state, each a delta over the one token kind a fold mints, the active witness.",
+    "v": "2f7e32fe38ce"
    },
    {
     "index": 2,
@@ -4679,8 +4711,8 @@
     "index": 6,
     "name": "docs-mutants/what-counts-as-a-kill-here-06",
     "pause_ms": 400,
-    "text": "The campaign mutated Model.lean at sha256 c951e4bd7a0037431238affac3e85aa07f3c505d1a7fde4b15c9d86df7669cc8. The current Model.lean is beec6567f46b7b0bb273ebe3e28cf7197bf56668bcdf8dfd4590c58ec6d29d97, and the campaign has not been rerun against it: the four rows below are evidence about the revision they name and nothing later. A campaign is evidence about the exact definitions it broke, so a later model is a later campaign, not a carried-forward result.",
-    "v": "2afb80d6aebc"
+    "text": "The campaign mutated Model.lean at sha256 c951e4bd7a0037431238affac3e85aa07f3c505d1a7fde4b15c9d86df7669cc8. The current Model.lean is beec6567f46b7b0bb273ebe3e28cf7197bf56668bcdf8dfd4590c58ec6d29d97, and the campaign has not been rerun against it: the four rows below are evidence about the revision they name and nothing later. The absent and terminal token kinds have since left the model, so three of the four mutations (those that mint an absent token, attest a key, or keep a custody entry) cannot be written against it; the rows stand as history. A campaign is evidence about the exact definitions it broke, so a later model is a later campaign, not a carried-forward result.",
+    "v": "d6a1101b46f6"
    }
   ],
   "why-the-kills-land-where-they-do": [
@@ -5675,8 +5707,8 @@
     "index": 3,
     "name": "docs-offchain-api-reference/a-worked-example-resolving-a-registry-before-showing-it-03",
     "pause_ms": 400,
-    "text": "The application you pass decides which pins are compared. An application that knows its own script, whether it states it as a blueprint title applied to the registry, as a compiled script or as a hash, has its application policy compared as well as the three witness policies. The neutral value used above knows none, so it takes the application policy from the datum, compares the other three, and records that in the resolved registry: resolvedApplicationPin says whether the application policy was compared or was not checked against any blueprint, and a reader that shows registry content says so. A program that derives several applications from one registry, as open-datum does for its open and its closed registries, calls resolveRegistryAmong with its candidates and gets back the registry and the candidate the datum's application policy selects. pinsDifference is the comparison itself, exported for a command that creates a registry and wants to compare the datum it reads back with the pins it built.",
-    "v": "8e20dcf2c174"
+    "text": "The application you pass decides which pins are compared. An application that knows its own script, whether it states it as a blueprint title applied to the registry, as a compiled script or as a hash, has its application policy compared as well as the active witness policy. The neutral value used above knows none, so it takes the application policy from the datum, compares the active policy, and records that in the resolved registry: resolvedApplicationPin says whether the application policy was compared or was not checked against any blueprint, and a reader that shows registry content says so. A program that derives several applications from one registry, as open-datum does for its open and its closed registries, calls resolveRegistryAmong with its candidates and gets back the registry and the candidate the datum's application policy selects. pinsDifference is the comparison itself, exported for a command that creates a registry and wants to compare the datum it reads back with the pins it built.",
+    "v": "d14f0edc0f60"
    },
    {
     "index": 4,
@@ -7177,8 +7209,8 @@
     "index": 2,
     "name": "docs-offchain-wire-types/the-story-this-serves-02",
     "pause_ms": 400,
-    "text": "What the focused suite pins, both directions of every codec: a hand-typed literal Data expectation for each encoding — typed from the Aiken shapes, never produced by the codec it judges — and a hand-typed wire read back through each unsafe decoder to its hand-typed value. The retired two-field custody payload and the unused update-redeemer encoding at constructor index five are refused by the decoders, which support every constructor the wire carries — the sweep included, whose refusal is the validator's, a separate layer from the wire. The seven edge tags, their diagnostic names with the out-of-table fallback, the request's edge and deposit positions, the eight-field state order and the four policy accessors are each pinned to their own field. Roundtrips run as supporting checks: a symmetric field swap inside a codec keeps every roundtrip green, which is exactly why the independent literals carry the wire.",
-    "v": "68288cb7e8e1"
+    "text": "What the focused suite pins, both directions of every codec: a hand-typed literal Data expectation for each encoding — typed from the Aiken shapes, never produced by the codec it judges — and a hand-typed wire read back through each unsafe decoder to its hand-typed value. The retired two-field custody payload and the unused update-redeemer encoding at constructor index five are refused by the decoders, which support every constructor the wire carries — the sweep included, whose refusal is the validator's, a separate layer from the wire. The seven edge tags, their diagnostic names with the out-of-table fallback, the request's edge and deposit positions, the six-field state order and the two policy accessors are each pinned to their own field. Roundtrips run as supporting checks: a symmetric field swap inside a codec keeps every roundtrip green, which is exactly why the independent literals carry the wire.",
+    "v": "d68b3ab20eb5"
    }
   ],
   "what-must-not-change": [
@@ -7207,8 +7239,8 @@
     "index": 3,
     "name": "docs-offchain-wire-types/what-must-not-change-03",
     "pause_ms": 300,
-    "text": "Field order is part of the wire: the request encodes its seven fields in the order the cage reads them, with the destination as a two-element list exactly as Aiken encodes a tuple; the state encodes its eight fields root-first.",
-    "v": "9af52ddf3af2"
+    "text": "Field order is part of the wire: the request encodes its seven fields in the order the cage reads them, with the destination as a two-element list exactly as Aiken encodes a tuple; the state encodes its six fields root-first.",
+    "v": "3ca7cffedc00"
    },
    {
     "index": 4,
@@ -7320,8 +7352,8 @@
     "index": 2,
     "name": "docs-onchain-api-reference/encoded-requests-and-supported-operations-02",
     "pause_ms": 400,
-    "text": "The canonical state, witness, registry/admission, registry/modify and registry/fold modules implement this one active contract. The earlier broader implementations and success evidence are archived on preserve/m2/pre-m1-source-removal; they are not current permanent contract support. The witness policy checks state-validator co-presence, so transaction admission also requires the state validator. A raw terminal-policy representation or a fixture-only pure burn does not enable terminal witnessing. The candidate evidence records compiled refusal controls and their setup, reachability and live-comparison limits.",
-    "v": "4f697f99cfd8"
+    "text": "The canonical state, witness, registry/admission, registry/modify and registry/fold modules implement this one active contract. The earlier broader implementations and success evidence are archived on preserve/m2/pre-m1-source-removal; they are not current permanent contract support. The witness policy checks state-validator co-presence, so transaction admission also requires the state validator. The witness policy admits the active kind only. The candidate evidence records compiled refusal controls and their setup, reachability and live-comparison limits.",
+    "v": "870250548c09"
    }
   ],
   "validator-api-reference": [
@@ -8915,8 +8947,8 @@
     "index": 1,
     "name": "docs-registry-page/the-registrys-pinned-policies-01",
     "pause_ms": 400,
-    "text": "The registry section shows the four policies the registry's datum pins: the application, active, absent and terminal policies. They are the registry's own statement, read from its state datum, and they never change after the registry is created. The command compares the three witness policies with the ones the release derives for this registry before it prints anything: a registry that pins another is refused, as the refusals below say.",
-    "v": "a34dec4aed5a"
+    "text": "The registry section shows the two policies the registry's datum pins: the application and active policies. They are the registry's own statement, read from its state datum, and they never change after the registry is created. The command compares the active policy with the ones the release derives for this registry before it prints anything: a registry that pins another is refused, as the refusals below say.",
+    "v": "707e87b19fc3"
    },
    {
     "index": 2,
@@ -9055,8 +9087,8 @@
     "index": 5,
     "name": "docs-retirement/what-you-can-do-05",
     "pause_ms": 300,
-    "text": "nothing else moves under the registry's three token policies.",
-    "v": "29e6a224a5e8"
+    "text": "nothing else moves under the registry's active token policy.",
+    "v": "04dd5910890b"
    },
    {
     "index": 6,
@@ -9922,8 +9954,8 @@
     "index": 5,
     "name": "docs-singular-node/naming-the-registry-by-its-state-token-05",
     "pause_ms": 400,
-    "text": "The comparison is total for the application that runs it. singular is told the registry and the release and not the application, so it cannot derive the application policy: it takes it from the datum, compares the other three, and says so, once, in every receipt that shows registry content: the field applicationPin reads not-checked-against-any-blueprint. open-datum knows its own script, so it derives the application policy too and compares all four; its receipts read compared. It derives two application policies, the open one and the closed one, and learns which kind of registry it has only from the comparison: the registry's application policy must be one of the two, and a registry whose application policy is neither is refused naming application, before the command says anything about the registry, even that it is closed. A create reads back the state datum its boot made and compares its four pins with the ones it built, and reports a partial outcome naming the field when they differ.",
-    "v": "343418a5bd4a"
+    "text": "The comparison is total for the application that runs it. singular is told the registry and the release and not the application, so it cannot derive the application policy: it takes it from the datum, compares the other three, and says so, once, in every receipt that shows registry content: the field applicationPin reads not-checked-against-any-blueprint. open-datum knows its own script, so it derives the application policy too and compares all four; its receipts read compared. It derives two application policies, the open one and the closed one, and learns which kind of registry it has only from the comparison: the registry's application policy must be one of the two, and a registry whose application policy is neither is refused naming application, before the command says anything about the registry, even that it is closed. A create reads back the state datum its boot made and compares its two pins with the ones it built, and reports a partial outcome naming the field when they differ.",
+    "v": "d1535281887d"
    },
    {
     "index": 6,
@@ -10019,15 +10051,15 @@
     "index": 2,
     "name": "docs-singular-node/reading-one-key-from-the-address-02",
     "pause_ms": 400,
-    "text": "The diagram shows the proof first and the two questions to the provider after it, so a registry whose history does not chain to its root is refused before the provider is asked who holds a token. A key that is active has a witness token: an asset of the registry's active witness policy whose name is the key's bytes. A registration mints it and a termination burns it. The registry has a second policy, for terminal witnesses, and the same name under it is the terminal witness of the key. Both policies belong to this registry. The command works out the two assets to ask for from the registry the address names and from the key, and asks for them by asset, so it does not list every output at the application's address to find the key's output. One function in the library makes that asset from the registry and the key, and it is the only place that does so for this read.",
-    "v": "21074bc7185c"
+    "text": "The diagram shows the proof first and the question to the provider after it, so a registry whose history does not chain to its root is refused before the provider is asked who holds a token. A key that is active has a witness token: an asset of the registry's active witness policy whose name is the key's bytes. A registration mints it and a termination burns it. The policy belongs to this registry. The command works out the asset to ask for from the registry the address names and from the key, and asks for it by asset, so it does not list every output at the application's address to find the key's output. One function in the library makes that asset from the registry and the key, and it is the only place that does so for this read.",
+    "v": "2e9c3ccab19b"
    },
    {
     "index": 3,
     "name": "docs-singular-node/reading-one-key-from-the-address-03",
     "pause_ms": 400,
-    "text": "For a key the registry has recorded, active or terminal, the receipt of inspect carries a field witness with two entries, active and terminal. Each has policy, the policy as hex; assetName, the key's bytes as hex; and holders, the references of the outputs that hold the asset.",
-    "v": "683fd23a03b5"
+    "text": "For a key the registry has recorded, active or terminal, the receipt of inspect carries a field witness with one entry, active. It has policy, the policy as hex; assetName, the key's bytes as hex; and holders, the references of the outputs that hold the asset.",
+    "v": "6cd820e0f5fb"
    },
    {
     "index": 4,
@@ -10799,8 +10831,8 @@
     "index": 2,
     "name": "docs-theorems/theorem-manifest-02",
     "pause_ms": 400,
-    "text": "All 87 declarations of the registry's own statement module are PROVED from the standard axioms — propext, Classical.choice, Quot.sound — and nothing else. The naming instance adds 7, its lifecycle 9 and its wire encoding 5, for 108 in total, each with its own manifest and its own compiled gate.",
-    "v": "09eb7a88c443"
+    "text": "All 84 declarations of the registry's own statement module are PROVED from the standard axioms — propext, Classical.choice, Quot.sound — and nothing else. The naming instance adds 7, its lifecycle 9 and its wire encoding 5, for 105 in total, each with its own manifest and its own compiled gate.",
+    "v": "7bd623976768"
    },
    {
     "index": 3,
@@ -10810,27 +10842,27 @@
     "v": "e7153270cca3"
    }
   ],
-  "what-the-eleven-promises-are": [
+  "what-the-seven-promises-are": [
    {
     "index": 0,
-    "name": "docs-theorems/what-the-eleven-promises-are-00",
+    "name": "docs-theorems/what-the-seven-promises-are-00",
     "pause_ms": 500,
-    "text": "What the eleven promises are.",
-    "v": "7860e6fce4b2"
+    "text": "What the seven promises are.",
+    "v": "a490a2cd6c82"
    },
    {
     "index": 1,
-    "name": "docs-theorems/what-the-eleven-promises-are-01",
+    "name": "docs-theorems/what-the-seven-promises-are-01",
     "pause_ms": 400,
-    "text": "The interface states eleven guarantees the registry makes for every application, and the model proves each one over states reachable from genesis by folds. Reachability is a hypothesis, not a weakening: over an arbitrary State value the supply laws are simply false.",
-    "v": "d99537667513"
+    "text": "The interface states seven guarantees the registry makes for every application, and the model proves each one over states reachable from genesis by folds. Reachability is a hypothesis, not a weakening: over an arbitrary State value the supply laws are simply false.",
+    "v": "7ac597ac8ed1"
    },
    {
     "index": 2,
-    "name": "docs-theorems/what-the-eleven-promises-are-02",
+    "name": "docs-theorems/what-the-seven-promises-are-02",
     "pause_ms": 400,
     "text": "Every promise is reached through one invariant — Consistent — that the model proves survives each supported transition. That is why the statements read as consequences rather than as separate arguments.",
-    "v": "42d5a6f9f4c1"
+    "v": "5b7573866eaf"
    }
   ],
   "what-this-establishes-and-what-it-does-not": [

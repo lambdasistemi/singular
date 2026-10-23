@@ -98,7 +98,7 @@ action types.
 | `Singular.Registry.FoldSelection` | Which pending requests a fold takes: judging every pending request alone, by seven checks in order, returning each as settled or excluded with a reason, up to nine requests per fold, an estimate not measured on a real network. |
 | `Singular.Registry.TxBuilder.Update` | The six public exports and the two fold entry points; the sequence of preparation, decision and assembly. Nothing else. |
 | `Singular.Registry.TxBuilder.Update.Context` | The `RegistryContext` a caller hands in and its empty value; finding the state, request and fee UTxOs; the ordered speculative proofs through the trie; the new state output and the cage script; the validity upper slot; completing a partly empty context from the provider. |
-| `Singular.Registry.TxBuilder.Update.Duties` | `RegistryDuties` and `registryDuties`: the one derivation of what a fold's requests owe — mints under the three token policies, destinations, custody spends, burn sources, deposit and approval returns, and the (empty) signer set. |
+| `Singular.Registry.TxBuilder.Update.Duties` | `RegistryDuties` and `registryDuties`: the one derivation of what a fold's requests owe — mints under the active token policy, destinations, custody spends, burn sources, deposit and approval returns, and the (empty) signer set. |
 | `Singular.Registry.TxBuilder.Update.Build` | `NoCtx`, the evaluation adapter over the provider, and the one transaction story language program: spends, mints, outputs, signatures, attached or referenced scripts, collateral and validity. |
 
 ## The flow a fold runs

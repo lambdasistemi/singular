@@ -102,6 +102,17 @@ boot creates, from the two partitions' `script-identity.json`: the application
 policy is the naming application script's applied hash, and the three token
 policies are the one parametrised witness script applied at kinds 0, 1 and 2.
 
+### The state datum: two pins leave
+
+Milestone one admits only registration and permanent termination, so nothing
+is ever minted under the absent or the terminal token policy. The datum drops
+fields 6 and 7, `absentPolicy` and `terminalPolicy`, and keeps the first six
+fields in the order of the table above. The fold no longer preserves or
+checks a mint under either policy, and the witness script admits the active
+kind only. A registry made under the eight-field contract has another state
+script hash and is served by the releases that made it. A decoder that reads
+eight fields refuses a six-field datum.
+
 ### The operation: a fourth constructor
 
 | index | before | after |
@@ -181,7 +192,7 @@ with this wire: `edge-inadmissible` for a tag outside `0`-`6`, and
 | 2 | — | `AbsentCustody { refund }` |
 
 The absent custody key is the identity of the output's sole non-ADA asset,
-which must have quantity one under the registry's pinned absent policy. It is
+which must have quantity one. It is
 not duplicated in the datum. The retired two-field constructor-2 wire is
 therefore incompatible and must not decode as `AbsentCustody`.
 
@@ -198,13 +209,13 @@ policy, instantiated three times.
 
 Read tokens, never the root. The presence of an active witness under the
 active policy, at the asset name equal to the registry key, is a live
-registration; the presence of a terminal witness is a name that is over. The
+registration; a name that is over is a leaf proved terminal against the root. The
 asset name is the key itself — there is no hashed representative name any
 more.
 
 ## Current registry-mode integration
 
-The released interface follows the eight-field registry-mode state contract
+The released interface follows the six-field registry-mode state contract
 above. The historical reports below retain their original transaction
 identities, measurements and limitations; they are not current execution
 claims. Coverage requires fresh receipts bound to the source and blueprint
@@ -212,7 +223,7 @@ being replayed. A build or a green check of expected debt grants no coverage.
 
 | Surface | Current contract and remaining limit |
 | --- | --- |
-| State codec, blueprint-encoding-round-trip/submitted-datum-byte-round-trip/state-fields-chain-round-trip | The eight fields are root, maxFee, processTime, retractTime, applicationPolicy, activePolicy, absentPolicy and terminalPolicy. The state round-trip row boots two cages and compares all eight fields submitted versus chain-observed, including the four derived pins; its armed control demands the old six-field encoding and fails. Historical owner, stake_script and consumer-pin receipts do not establish this codec. |
+| State codec, blueprint-encoding-round-trip/submitted-datum-byte-round-trip/state-fields-chain-round-trip | The six fields are root, maxFee, processTime, retractTime, applicationPolicy and activePolicy. The state round-trip row boots two cages and compares all six fields submitted versus chain-observed, including the two derived pins; its armed control demands the old six-field encoding and fails. Historical owner, stake_script and consumer-pin receipts do not establish this codec. |
 | Blueprint encodings, blueprint-encoding-round-trip | Every encoder/decoder pair in the registry types is compared against the compiled blueprint's own declared schema, constructor index and field order — including the appended read operation, the appended request destination and the appended custody datum. The retired consumer encoder is gone with its script. |
 | Parameters, script-parameter-application | State and staking declare zero parameters. Request retains two ordered parameters, statePolicyId and cageTokenName, and order discrimination. The witness policy declares two, kind and registry. The former state allowlist is absent. |
 | Address derivation, applied-validator-identity | State uses the production derivation compared with the actual chain address. The same comparison rejects an erroneous extra application with every other input fixed. Its receipt records addresses, arity, decisions and the off-chain identity venue; it is not a phase-2 rejection. Request retains applied-versus-unapplied address discrimination. |

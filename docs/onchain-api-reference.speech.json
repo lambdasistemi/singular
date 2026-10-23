@@ -19,7 +19,7 @@
       "pause": 400
     },
     {
-      "text": "The canonical state, witness, registry/admission, registry/modify and registry/fold modules implement this one active contract. The earlier broader implementations and success evidence are archived on preserve/m2/pre-m1-source-removal; they are not current permanent contract support. The witness policy checks state-validator co-presence, so transaction admission also requires the state validator. A raw terminal-policy representation or a fixture-only pure burn does not enable terminal witnessing. The candidate evidence records compiled refusal controls and their setup, reachability and live-comparison limits.",
+      "text": "The canonical state, witness, registry/admission, registry/modify and registry/fold modules implement this one active contract. The earlier broader implementations and success evidence are archived on preserve/m2/pre-m1-source-removal; they are not current permanent contract support. The witness policy checks state-validator co-presence, so transaction admission also requires the state validator. The witness policy admits the active kind only. The candidate evidence records compiled refusal controls and their setup, reachability and live-comparison limits.",
       "pause": 400
     }
   ],
@@ -137,6 +137,6 @@
   ],
   "_source": {
     "file": "onchain-api-reference.md",
-    "sha256": "388a4e7fb89c05e165daea979fff6ffc9b1791fdde34fea0a615c491aa0dad9e"
+    "sha256": "4ec5ae2f79c626b82defd0265f963277ac2231aa8943db829a195d1c3a13ac60"
   }
 }

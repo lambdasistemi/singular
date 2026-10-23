@@ -190,9 +190,9 @@ registry-pin-mismatch active: the datum's active policy differs from the one the
 The application you pass decides which pins are compared. An application that
 knows its own script, whether it states it as a blueprint title applied to the
 registry, as a compiled script or as a hash, has its application policy
-compared as well as the three witness policies. The neutral value used above
+compared as well as the active witness policy. The neutral value used above
 knows none, so it takes the application policy from the datum, compares the
-other three, and records that in the resolved registry: `resolvedApplicationPin`
+active policy, and records that in the resolved registry: `resolvedApplicationPin`
 says whether the application policy was compared or was not checked against any
 blueprint, and a reader that shows registry content says so. A program that
 derives several applications from one registry, as `open-datum` does for its

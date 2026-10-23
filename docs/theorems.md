@@ -13,24 +13,22 @@ manifest and its own compiled gate.
 
 The operator-authorized source removal retires ten declarations about excluded success behavior. Their historical proofs and receipts remain on `preserve/m2/pre-m1-source-removal`; they do not certify permanent contract. The active model retains the applicable invariant, exit, refund, datum and public-fold laws. Public unmet consumer requirements remain uncovered.
 
-## What the eleven promises are
+## What the seven promises are
 
-The interface states eleven guarantees the registry makes for *every*
+The interface states seven guarantees the registry makes for *every*
 application, and the model proves each one over states reachable from genesis by
 folds. Reachability is a hypothesis, not a weakening: over an arbitrary `State`
 value the supply laws are simply false.
 
 ```mermaid
 flowchart TD
-    G["Reachable state<br/>(genesis, closed under accepted folds)"] --> C["Consistent:<br/>root commits the map,<br/>supply laws, custody soundness"]
-    C --> S3["Supply matches leaf state<br/>Active witness unique<br/>Absent witness unique<br/>Witness kinds exclude"]
-    C --> S1["Terminal attestation soundness"]
-    S1 --> S2["Terminal attestation permanence"]
+    G["Reachable state<br/>(genesis, closed under accepted folds)"] --> C["Consistent:<br/>root commits the map,<br/>active supply law"]
+    C --> S3["Supply matches leaf state<br/>Active witness unique"]
+    C --> S2["Terminal permanence"]
     C --> O1["Booking requires an untaken key"]
     O1 --> T1["Terminal key cannot change"]
     C --> P1["Tree change requires approval"]
     C --> L1["Request spent once in order"]
-    S1 --> W3["Terminal witnesses may be plural"]
 ```
 
 Every promise is reached through one invariant — `Consistent` — that the model

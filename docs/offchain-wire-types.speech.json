@@ -19,7 +19,7 @@
       "pause": 400
     },
     {
-      "text": "What the focused suite pins, both directions of every codec: a hand-typed literal Data expectation for each encoding — typed from the Aiken shapes, never produced by the codec it judges — and a hand-typed wire read back through each unsafe decoder to its hand-typed value. The retired two-field custody payload and the unused update-redeemer encoding at constructor index five are refused by the decoders, which support every constructor the wire carries — the sweep included, whose refusal is the validator's, a separate layer from the wire. The seven edge tags, their diagnostic names with the out-of-table fallback, the request's edge and deposit positions, the eight-field state order and the four policy accessors are each pinned to their own field. Roundtrips run as supporting checks: a symmetric field swap inside a codec keeps every roundtrip green, which is exactly why the independent literals carry the wire.",
+      "text": "What the focused suite pins, both directions of every codec: a hand-typed literal Data expectation for each encoding — typed from the Aiken shapes, never produced by the codec it judges — and a hand-typed wire read back through each unsafe decoder to its hand-typed value. The retired two-field custody payload and the unused update-redeemer encoding at constructor index five are refused by the decoders, which support every constructor the wire carries — the sweep included, whose refusal is the validator's, a separate layer from the wire. The seven edge tags, their diagnostic names with the out-of-table fallback, the request's edge and deposit positions, the six-field state order and the two policy accessors are each pinned to their own field. Roundtrips run as supporting checks: a symmetric field swap inside a codec keeps every roundtrip green, which is exactly why the independent literals carry the wire.",
       "pause": 400
     }
   ],
@@ -57,7 +57,7 @@
       "pause": 300
     },
     {
-      "text": "Field order is part of the wire: the request encodes its seven fields in the order the cage reads them, with the destination as a two-element list exactly as Aiken encodes a tuple; the state encodes its eight fields root-first.",
+      "text": "Field order is part of the wire: the request encodes its seven fields in the order the cage reads them, with the destination as a two-element list exactly as Aiken encodes a tuple; the state encodes its six fields root-first.",
       "pause": 300
     },
     {
@@ -143,6 +143,6 @@
   ],
   "_source": {
     "file": "offchain-wire-types.md",
-    "sha256": "e39a974dc2f5332681b0c2ced2db9c1932276f8db1517c6f180709b542bf1782"
+    "sha256": "462f8fbdf038590537b83914cceeeb0b93169b9350ed78239aeb86545f247723"
   }
 }

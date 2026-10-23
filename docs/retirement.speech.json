@@ -51,7 +51,7 @@
       "pause": 300
     },
     {
-      "text": "nothing else moves under the registry's three token policies.",
+      "text": "nothing else moves under the registry's active token policy.",
       "pause": 300
     },
     {
@@ -127,6 +127,6 @@
   ],
   "_source": {
     "file": "retirement.md",
-    "sha256": "faa7b841f08d3d770b542e50c1f8378053286ddb8cf477cbf287f6b6bddddaf3"
+    "sha256": "c418a9d38f3e547d7bf6878929777975bed6d8d4346ab25d0ae6492aa1f153d1"
   }
 }

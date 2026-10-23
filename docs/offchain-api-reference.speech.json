@@ -45,7 +45,7 @@
       "pause": 400
     },
     {
-      "text": "The application you pass decides which pins are compared. An application that knows its own script, whether it states it as a blueprint title applied to the registry, as a compiled script or as a hash, has its application policy compared as well as the three witness policies. The neutral value used above knows none, so it takes the application policy from the datum, compares the other three, and records that in the resolved registry: resolvedApplicationPin says whether the application policy was compared or was not checked against any blueprint, and a reader that shows registry content says so. A program that derives several applications from one registry, as open-datum does for its open and its closed registries, calls resolveRegistryAmong with its candidates and gets back the registry and the candidate the datum's application policy selects. pinsDifference is the comparison itself, exported for a command that creates a registry and wants to compare the datum it reads back with the pins it built.",
+      "text": "The application you pass decides which pins are compared. An application that knows its own script, whether it states it as a blueprint title applied to the registry, as a compiled script or as a hash, has its application policy compared as well as the active witness policy. The neutral value used above knows none, so it takes the application policy from the datum, compares the active policy, and records that in the resolved registry: resolvedApplicationPin says whether the application policy was compared or was not checked against any blueprint, and a reader that shows registry content says so. A program that derives several applications from one registry, as open-datum does for its open and its closed registries, calls resolveRegistryAmong with its candidates and gets back the registry and the candidate the datum's application policy selects. pinsDifference is the comparison itself, exported for a command that creates a registry and wants to compare the datum it reads back with the pins it built.",
       "pause": 400
     },
     {
@@ -141,6 +141,6 @@
   ],
   "_source": {
     "file": "offchain-api-reference.md",
-    "sha256": "409f967c38761584d2366c319c4409a26906c050574bb958d3e7e4114eb286a5"
+    "sha256": "0a0b05c780f5b65999071cfb7bdd03b1be29538483f7b0385f2d073e80db324c"
   }
 }

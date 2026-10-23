@@ -39,7 +39,7 @@ stops compiling. Those are different events and only the first is evidence:
 The first run of this campaign killed all four at the effect lemmas. That was a
 near-tautological result and was discarded rather than reported.
 
-The campaign mutated `Model.lean` at sha256 `c951e4bd7a0037431238affac3e85aa07f3c505d1a7fde4b15c9d86df7669cc8`. The current `Model.lean` is `beec6567f46b7b0bb273ebe3e28cf7197bf56668bcdf8dfd4590c58ec6d29d97`, and the campaign has not been rerun against it: the four rows below are evidence about the revision they name and nothing later.
+The campaign mutated `Model.lean` at sha256 `c951e4bd7a0037431238affac3e85aa07f3c505d1a7fde4b15c9d86df7669cc8`. The current `Model.lean` is `beec6567f46b7b0bb273ebe3e28cf7197bf56668bcdf8dfd4590c58ec6d29d97`, and the campaign has not been rerun against it: the four rows below are evidence about the revision they name and nothing later. The absent and terminal token kinds have since left the model, so three of the four mutations (those that mint an absent token, attest a key, or keep a custody entry) cannot be written against it; the rows stand as history.
 A campaign is evidence about the exact definitions it broke, so a later model is
 a later campaign, not a carried-forward result.
 

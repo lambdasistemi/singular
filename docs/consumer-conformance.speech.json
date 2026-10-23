@@ -83,6 +83,16 @@
       "pause": 400
     }
   ],
+  "the-state-datum-two-pins-leave": [
+    {
+      "text": "The state datum: two pins leave.",
+      "pause": 500
+    },
+    {
+      "text": "Milestone one admits only registration and permanent termination, so nothing is ever minted under the absent or the terminal token policy. The datum drops fields 6 and 7, absentPolicy and terminalPolicy, and keeps the first six fields in the order of the table above. The fold no longer preserves or checks a mint under either policy, and the witness script admits the active kind only. A registry made under the eight-field contract has another state script hash and is served by the releases that made it. A decoder that reads eight fields refuses a six-field datum.",
+      "pause": 400
+    }
+  ],
   "the-operation-a-fourth-constructor": [
     {
       "text": "The operation: a fourth constructor.",
@@ -133,7 +143,7 @@
       "pause": 500
     },
     {
-      "text": "The absent custody key is the identity of the output's sole non-ADA asset, which must have quantity one under the registry's pinned absent policy. It is not duplicated in the datum. The retired two-field constructor-2 wire is therefore incompatible and must not decode as AbsentCustody.",
+      "text": "The absent custody key is the identity of the output's sole non-ADA asset, which must have quantity one. It is not duplicated in the datum. The retired two-field constructor-2 wire is therefore incompatible and must not decode as AbsentCustody.",
       "pause": 400
     }
   ],
@@ -153,7 +163,7 @@
       "pause": 500
     },
     {
-      "text": "Read tokens, never the root. The presence of an active witness under the active policy, at the asset name equal to the registry key, is a live registration; the presence of a terminal witness is a name that is over. The asset name is the key itself — there is no hashed representative name any more.",
+      "text": "Read tokens, never the root. The presence of an active witness under the active policy, at the asset name equal to the registry key, is a live registration; a name that is over is a leaf proved terminal against the root. The asset name is the key itself — there is no hashed representative name any more.",
       "pause": 400
     }
   ],
@@ -163,7 +173,7 @@
       "pause": 500
     },
     {
-      "text": "The released interface follows the eight-field registry-mode state contract above. The historical reports below retain their original transaction identities, measurements and limitations; they are not current execution claims. Coverage requires fresh receipts bound to the source and blueprint being replayed. A build or a green check of expected debt grants no coverage.",
+      "text": "The released interface follows the six-field registry-mode state contract above. The historical reports below retain their original transaction identities, measurements and limitations; they are not current execution claims. Coverage requires fresh receipts bound to the source and blueprint being replayed. A build or a green check of expected debt grants no coverage.",
       "pause": 400
     }
   ],
@@ -433,6 +443,6 @@
   ],
   "_source": {
     "file": "consumer-conformance.md",
-    "sha256": "375995d89f437f2ada824c5d65cd01b08d0a73c1551b1c8d26cc0205ff7d4379"
+    "sha256": "7c55121640af0a5223afa94996e38d66cade7b7c29014db37078a464dc7bad1e"
   }
 }

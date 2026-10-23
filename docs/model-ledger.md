@@ -28,7 +28,7 @@ acceptance claim here.
 
 The trie answers two questions and nothing else: is this key known, and where in
 its life is it. Applications store nothing in the leaf. Seven edges move a leaf,
-each an MPFS primitive applied to a state, each a delta over three token kinds.
+each an MPFS primitive applied to a state, each a delta over the one token kind a fold mints, the active witness.
 
 Deliberate abstractions, each of which a reader should hold against every claim
 below:
@@ -100,12 +100,31 @@ satisfy every count.
 The registry-mode statements that replace them are listed in
 [the theorem manifest](theorems.md).
 
+## Retired with the unused policy pins
+
+Milestone one mints no absent or terminal token, so the registry state no longer
+pins a policy for either, and the model keeps one token kind. Four statements
+whose only subject was a token of a removed kind are retired with no
+replacement, and one is restated over the leaf:
+
+| Statement | Disposition | Why |
+| --- | --- | --- |
+| `absent_witness_unique` | **retired** | its subject was the registry custody of absent tokens, which no reachable state holds |
+| `witness_kinds_exclude` | **retired** | it excluded three token kinds from one another; one kind remains, and `active_witness_unique` states its uniqueness |
+| `terminal_attestation_sound` | **retired** | its subject was a held terminal token, which no reachable state holds |
+| `step_preserves_terminal_holding` | **retired** | the lemma behind the permanence of a held terminal token |
+| `terminal_attestation_permanent` | **restated** | a terminated key stays terminated; the statement is now about the leaf, which is reachable behavior |
+
+The lifecycle row that substituted a terminal policy at initialization is
+retired with the field it altered. The coverage record names every identity that
+changed.
+
 ## What is covered, and what is not
 
 Covered: the seven edges and their deltas; the complement of the edge table as
 refusals with distinct reasons; admission by an approval scoped to the request's
 tuple; the leaf codec both ways; the fold's atomicity, zero-request refusal and
-mint check; the custody census and the deposit's destination; and the eleven
+mint check; the deposit's destination; and the seven
 promises over states reachable from genesis.
 
 Not covered, and named rather than left to be discovered:
