@@ -730,9 +730,7 @@ laterScripts
     :: CageConfig -> NamingCodes -> TokenId -> [(Text, Script ConwayEra)]
 laterScripts cfg pinned tid =
     [ ("request", mkRequestScript cfg tid)
-    , ("witness-absent", witnessScriptOf cfg pinned 0)
     , ("witness-active", witnessScriptOf cfg pinned 1)
-    , ("witness-terminal", witnessScriptOf cfg pinned 2)
     ]
         <> [ ("application", scriptFromBytes "application" (ncApplication pinned))
            | not (SBS.null (ncApplication pinned))

@@ -998,7 +998,7 @@ cageCfg stateBytes requestBytes codes seed =
         -- policy is parameterized by is the state policy plus the token
         -- name the seed determines.
         registryId = scriptHashBytes stateHash <> deriveAssetName seed
-        (appPin, absentPin, activePin, terminalPin) =
+        (appPin, activePin) =
             Edges.namingPins codes registryId
     in  CageConfig
             { cageScriptBytes = appliedStateBytes
@@ -1009,9 +1009,7 @@ cageCfg stateBytes requestBytes codes seed =
             , defaultRetractTime = 30_000
             , defaultTip = Coin 1_000_000
             , cfgApplicationPolicy = appPin
-            , cfgAbsentPolicy = absentPin
             , cfgActivePolicy = activePin
-            , cfgTerminalPolicy = terminalPin
             , cfgConsumerScript = SBS.empty
             , network = Testnet
             }

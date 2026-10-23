@@ -5,17 +5,16 @@ License     : Apache-2.0
 
 In registry mode (#157) the REGISTRY blueprint contributes one minting
 validator, @witness(kind, registry)@ (@witness.witness@, moved beside the
-cage by #173), and the deployment applies it three times — kinds 0, 1
-and 2 — to obtain the absent, active and terminal policies. Together
-with the naming application validator's own hash
-(@application.application@, from the NAMING blueprint) those are the four
-identities the eight-field state datum pins (genesis-policy-pins). Every one of them
+cage by #173), and the deployment applies it once — kind 1 — to obtain the
+active policy. Together with the naming application validator's own hash
+(@application.application@, from the NAMING blueprint) those are the two
+identities the five-field state datum pins (genesis-policy-pins). Every one of them
 is derived here from compiled code; none is a literal.
 
 'loadCompiled' reads @REGISTRY_BLUEPRINT@ for the state, request,
 witness and staking validators and @NAMING_BLUEPRINT@ for the naming
 application and the retirement custody script;
-'bindSeed' and 'bindDeployment' bind the three witness policies to the
+'bindSeed' and 'bindDeployment' bind the active witness policy to the
 registry a seed creates; 'partsOf' is the one derivation the manifest,
 the boot configuration and the state datum all take their pins from.
 -}
@@ -61,12 +60,8 @@ data Compiled = Compiled
     -}
     , cWitnessBytes :: SBS.ShortByteString
     -- ^ @witness(kind, registry)@, unapplied.
-    , cAbsentBytes :: SBS.ShortByteString
-    -- ^ @witness(0, registry)@, applied once the seed is known.
     , cActiveBytes :: SBS.ShortByteString
     -- ^ @witness(1, registry)@, applied once the seed is known.
-    , cTerminalBytes :: SBS.ShortByteString
-    -- ^ @witness(2, registry)@, applied once the seed is known.
     , cCustodyBytes :: SBS.ShortByteString
     , cStakingBytes :: SBS.ShortByteString
     }
@@ -90,7 +85,7 @@ loadCompiled = do
     stateBytes <- need "registry" mbp "state.state"
     requestBytes <- need "registry" mbp "request.request"
     appBytes <- need "naming" nbp "application.application"
-    -- #173 I2: the three witness policies moved to the REGISTRY
+    -- #173 I2: the witness policy moved to the REGISTRY
     -- partition, beside the cage whose fold they co-locate with. The
     -- naming application itself stays where it is.
     witnessBytes <- need "registry" mbp "witness.witness"
@@ -105,14 +100,12 @@ loadCompiled = do
             , cWitnessBytes = witnessBytes
             , -- Unbound until a seed names the registry; `bindSeed` fills
               -- these in, and nothing may read them before it has.
-              cAbsentBytes = witnessBytes
-            , cActiveBytes = witnessBytes
-            , cTerminalBytes = witnessBytes
+              cActiveBytes = witnessBytes
             , cCustodyBytes = custodyBytes
             , cStakingBytes = stakingBytes
             }
 
-{- | Bind the three token policies to the registry the seed creates.
+{- | Bind the active token policy to the registry the seed creates.
 
 The registry identity is the state policy followed by the token name the
 seed determines — the same bytes the cage's own pins are computed from, so
@@ -127,9 +120,7 @@ bindSeed c seedIn =
         witnessAt kind =
             applyBytesParam registryId (applyIntParam kind (cWitnessBytes c))
     in  c
-            { cAbsentBytes = witnessAt 0
-            , cActiveBytes = witnessAt 1
-            , cTerminalBytes = witnessAt 2
+            { cActiveBytes = witnessAt 1
             }
 
 -- | Bind to the registry a manifest records, by its seed.
@@ -149,8 +140,6 @@ partsOf c =
         , partsRequestBytes = cRequestBytes c
         , partsApplicationPolicy = policyOf (cAppBytes c)
         , partsActivePolicy = policyOf (cActiveBytes c)
-        , partsAbsentPolicy = policyOf (cAbsentBytes c)
-        , partsTerminalPolicy = policyOf (cTerminalBytes c)
         , -- Registry mode retired the consuming hook: no script is
           -- withdrawn from at a fold, so there is no consumer to carry.
           -- Empty is what the builders refuse a consuming batch on.

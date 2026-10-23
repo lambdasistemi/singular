@@ -201,7 +201,7 @@ refs_wellformed() {
     (.references | type) == "array"
     and (.references | length) == 6
     and (all(.references[]; type == "object"))
-    and ([.references[] | .role] | sort == ["application","request","state","witness-absent","witness-active","witness-terminal"])
+    and ([.references[] | .role] | sort == ["application","request","state","witness-active"])
     and ([.references[] | .output] | unique | length) == 6
     and (all(.references[]; .output | type == "string" and test("^[0-9a-f]{64}#[0-9]+$")))
   ' "$2" >/dev/null \

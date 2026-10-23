@@ -130,10 +130,8 @@ import Singular.Registry.Types
     ( CageDatum (..)
     , OnChainTokenId (..)
     , OnChainTokenState (..)
-    , stateAbsentPolicyBytes
     , stateActivePolicyBytes
     , stateAppPolicyBytes
-    , stateTerminalPolicyBytes
     )
 
 -- | The compiled code a registry command needs from the blueprint.
@@ -184,13 +182,11 @@ renderStateToken (PolicyID policy, AssetName name) =
         <> "."
         <> hexText (SBS.fromShort name)
 
--- | The six scripts a registry runs, by the role their reference plays.
+-- | The four scripts a registry runs, by the role their reference plays.
 data ReferenceRole
     = RoleState
     | RoleRequest
-    | RoleWitnessAbsent
     | RoleWitnessActive
-    | RoleWitnessTerminal
     | RoleApplication
     deriving stock (Eq, Ord, Show, Enum, Bounded)
 
@@ -199,9 +195,7 @@ roleName :: ReferenceRole -> Text
 roleName = \case
     RoleState -> "state"
     RoleRequest -> "request"
-    RoleWitnessAbsent -> "witness-absent"
     RoleWitnessActive -> "witness-active"
-    RoleWitnessTerminal -> "witness-terminal"
     RoleApplication -> "application"
 
 -- | A role from its receipt spelling.
@@ -223,9 +217,7 @@ expectedReferences pinForm release (_, AssetName name) =
     Map.fromList
         ( [ (RoleState, stateHash)
           , (RoleRequest, computeScriptHash requestBytes)
-          , (RoleWitnessAbsent, pinHash absentPin)
           , (RoleWitnessActive, pinHash activePin)
-          , (RoleWitnessTerminal, pinHash terminalPin)
           ]
             <> [(RoleApplication, pinHash applicationPin) | hasApplication]
         )
@@ -233,7 +225,7 @@ expectedReferences pinForm release (_, AssetName name) =
     stateHash = computeScriptHash (releaseState release)
     registryId = scriptHashBytes stateHash <> SBS.fromShort name
     (applicationPin, pinned) = applyPin pinForm registryId (releaseCodes release)
-    (_, absentPin, activePin, terminalPin) =
+    (_, activePin) =
         namingPins pinned registryId
     -- A hash pin (including a pin read from state, which arrives as one)
     -- publishes no application reference; a script or compiled pin does.
@@ -257,8 +249,6 @@ expectedReferences pinForm release (_, AssetName name) =
 data PinField
     = PinApplication
     | PinActive
-    | PinAbsent
-    | PinTerminal
     deriving stock (Eq, Ord, Show, Enum, Bounded)
 
 -- | A registry exists only once every identity check has passed.
@@ -447,7 +437,7 @@ chosenRefusal refusals =
 -- | The datum pins a resolution compares for a pin form, in checking order.
 comparedFields :: ApplicationPin -> [PinField]
 comparedFields = \case
-    PinFromState -> [PinActive, PinAbsent, PinTerminal]
+    PinFromState -> [PinActive]
     _ -> [minBound .. maxBound]
 
 {- | The first of these fields, in the order given, whose datum pin differs
@@ -618,24 +608,18 @@ pinName :: PinField -> Text
 pinName = \case
     PinApplication -> "application"
     PinActive -> "active"
-    PinAbsent -> "absent"
-    PinTerminal -> "terminal"
 
 -- | The pin a state datum carries.
 datumPin :: PinField -> OnChainTokenState -> ByteString
 datumPin = \case
     PinApplication -> stateAppPolicyBytes
     PinActive -> stateActivePolicyBytes
-    PinAbsent -> stateAbsentPolicyBytes
-    PinTerminal -> stateTerminalPolicyBytes
 
 -- | The pin a configuration derives.
 configPin :: PinField -> CageConfig -> SBS.ShortByteString
 configPin = \case
     PinApplication -> cfgApplicationPolicy
     PinActive -> cfgActivePolicy
-    PinAbsent -> cfgAbsentPolicy
-    PinTerminal -> cfgTerminalPolicy
 
 -- | The ledger network a provider's magic names: mainnet's, or a test network.
 ledgerNetwork :: Network -> Ledger.Network

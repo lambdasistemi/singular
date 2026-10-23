@@ -73,14 +73,6 @@ data CageConfig = CageConfig
     applied hash of `witness(1, registry)`. Renamed from the
     representative policy it became. Derived, never a literal.
     -}
-    , cfgAbsentPolicy :: !ShortByteString
-    {- ^ The absent-token policy (28 raw bytes, genesis-policy-pins): the applied hash
-    of `witness(0, registry)`. Derived, never a literal.
-    -}
-    , cfgTerminalPolicy :: !ShortByteString
-    {- ^ The terminal-token policy (28 raw bytes, genesis-policy-pins): the applied hash
-    of `witness(2, registry)`. Derived, never a literal.
-    -}
     , cfgConsumerScript :: !ShortByteString
     {- ^ Applied consumer script bytes (the witness every consuming
     `Modify` attaches for its hook withdrawal). Builders refuse to
@@ -116,8 +108,4 @@ bootStateFromCfg cfg root =
             BuiltinByteString (SBS.fromShort (cfgApplicationPolicy cfg))
         , stateActivePolicy =
             BuiltinByteString (SBS.fromShort (cfgActivePolicy cfg))
-        , stateAbsentPolicy =
-            BuiltinByteString (SBS.fromShort (cfgAbsentPolicy cfg))
-        , stateTerminalPolicy =
-            BuiltinByteString (SBS.fromShort (cfgTerminalPolicy cfg))
         }

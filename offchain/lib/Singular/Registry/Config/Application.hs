@@ -72,7 +72,7 @@ configForApplication
 configForApplication pin codes stateBytes requestBytes econ net seed =
     let registryId = registryIdentity stateBytes seed
         (appPin, pinned) = applyPin pin registryId codes
-        (_, absentPin, activePin, terminalPin) = namingPins pinned registryId
+        (_, activePin) = namingPins pinned registryId
     in  ( CageConfig
             { cageScriptBytes = stateBytes
             , requestScriptBytes = requestBytes
@@ -83,8 +83,6 @@ configForApplication pin codes stateBytes requestBytes econ net seed =
             , defaultTip = reTip econ
             , cfgApplicationPolicy = appPin
             , cfgActivePolicy = activePin
-            , cfgAbsentPolicy = absentPin
-            , cfgTerminalPolicy = terminalPin
             , cfgConsumerScript = SBS.empty
             , network = net
             }

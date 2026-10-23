@@ -343,7 +343,7 @@ structure World where
 /-- An empty registry under a configuration and an actual state asset. -/
 def genesis (app : App) (c : Config) (asset : StateAsset) : World :=
   { app := app
-  , registry := { config := { c with root := rootOf [] }, trie := [], custody := []
+  , registry := { config := { c with root := rootOf [] }, trie := []
                 , held := [] }
   , registryAsset := asset, outputs := [], pending := [], nextRef := 0, lastMint := [] }
 

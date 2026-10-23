@@ -315,7 +315,7 @@ check forged-registry-made "the datum, read from the chain's own record, pins th
   jq -e --arg forged "$forged_policy" '.pins.active == $forged' "$receipts/reader-view.json"
 check forged-registry-made "the datum's other pinned policies are the honest derivation for this registry" \
   jq -e --slurpfile boot "$receipts/boot-forged.json" \
-  '.pins.application == $boot[0].pins.pinApplication and .pins.absent == $boot[0].pins.pinAbsent and .pins.terminal == $boot[0].pins.pinTerminal and .pins.active != $boot[0].honestActivePolicy' \
+  '.pins.application == $boot[0].pins.pinApplication and .pins.active != $boot[0].honestActivePolicy' \
   "$receipts/reader-view.json"
 check forged-registry-made "a token named alice under the datum's active policy is on the chain at the wallet" \
   jq -e --arg address "$wallet_address" --arg output "$minted_output" \
@@ -573,7 +573,7 @@ jq '. + {root: "0000000000000000000000000000000000000000000000000000000000000000
   head -n1 "$work/forged-pins.txt"
 } >"$work/control-narration.err"
 # a refusal that names another pinned policy
-control "the check of the policy a refusal names, given another policy" receipt_is_pin_refusal "$forged_receipt" absent
+control "the check of the policy a refusal names, given another policy" receipt_is_pin_refusal "$forged_receipt" application
 # the same command altered to name the honest registry
 control "the check of the policy a refusal names, given the receipt of a command that names the honest registry" \
   receipt_is_pin_refusal "$receipts/honest-open-datum-inspect.json" active

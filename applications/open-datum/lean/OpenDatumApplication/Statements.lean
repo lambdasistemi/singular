@@ -639,13 +639,8 @@ theorem genesis_consistent (app : App) (c : Config) (asset : StateAsset) :
             { config := { c with root := rootOf [] }, trie := [], held := [] }
          exact ⟨rfl,
            fun key => by simp [kindCount, trieGet],
-           fun key => by simp [kindCount, trieGet],
-           fun key => by simp [custodyCount, trieGet],
-           fun key => by simp [custodyCount, trieGet],
-           fun h0 hm _ => absurd hm (by simp),
-           fun c hm => absurd hm (by simp),
-           fun c₁ h1 _ _ => absurd h1 (by simp)⟩)
-      | (simp [genesis, Singular.Consistent, kindCount, custodyCount, trieGet])
+           fun key => by simp [kindCount, trieGet]⟩)
+      | (simp [genesis, Singular.Consistent, kindCount, trieGet])
   · first
       | exact List.nodup_nil
       | simp [genesis]

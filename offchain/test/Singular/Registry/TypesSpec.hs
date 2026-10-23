@@ -115,8 +115,6 @@ genTokenState =
         <*> genNonNeg
         <*> genBBS28
         <*> genBBS28
-        <*> genBBS28
-        <*> genBBS28
 
 genCageDatum :: Gen CageDatum
 genCageDatum =
@@ -255,8 +253,6 @@ fixedState =
         , stateRetractTime = 600000
         , stateAppPolicy = BuiltinByteString "app-policy-bytes"
         , stateActivePolicy = BuiltinByteString "active-policy-bytes"
-        , stateAbsentPolicy = BuiltinByteString "absent-policy-bytes"
-        , stateTerminalPolicy = BuiltinByteString "terminal-policy-bytes"
         }
 
 fixedStateWire :: Data
@@ -269,8 +265,6 @@ fixedStateWire =
         , I 600000
         , B "app-policy-bytes"
         , B "active-policy-bytes"
-        , B "absent-policy-bytes"
-        , B "terminal-policy-bytes"
         ]
 
 -- ---------------------------------------------------------
@@ -421,7 +415,7 @@ spec = do
         it "roundtrips via ToData/FromData" $
             property $
                 forAll genTokenState roundtrips
-        it "encodes the eight-field state in Aiken field order" $ do
+        it "encodes the six-field state in Aiken field order" $ do
             let state =
                     OnChainTokenState
                         { stateRoot =
@@ -436,12 +430,6 @@ spec = do
                         , stateActivePolicy =
                             BuiltinByteString $
                                 BS.replicate 28 0xaa
-                        , stateAbsentPolicy =
-                            BuiltinByteString $
-                                BS.replicate 28 0xb0
-                        , stateTerminalPolicy =
-                            BuiltinByteString $
-                                BS.replicate 28 0xc0
                         }
                 BuiltinData datum = toBuiltinData state
             datum
@@ -453,18 +441,12 @@ spec = do
                     , I 600000
                     , B $ BS.replicate 28 0xa9
                     , B $ BS.replicate 28 0xaa
-                    , B $ BS.replicate 28 0xb0
-                    , B $ BS.replicate 28 0xc0
                     ]
         it "each policy accessor unwraps its own field's bytes" $ do
             stateAppPolicyBytes fixedState
                 `shouldBe` "app-policy-bytes"
             stateActivePolicyBytes fixedState
                 `shouldBe` "active-policy-bytes"
-            stateAbsentPolicyBytes fixedState
-                `shouldBe` "absent-policy-bytes"
-            stateTerminalPolicyBytes fixedState
-                `shouldBe` "terminal-policy-bytes"
 
     describe "CageDatum" $ do
         it "roundtrips via ToData/FromData" $
@@ -604,7 +586,7 @@ spec = do
         it "reads the seven-field request back from its hand-typed wire" $
             unsafeFromBuiltinData (BuiltinData fixedRequestWire)
                 `shouldBe` fixedRequest
-        it "reads the eight-field state back from its hand-typed wire" $
+        it "reads the six-field state back from its hand-typed wire" $
             unsafeFromBuiltinData (BuiltinData fixedStateWire)
                 `shouldBe` fixedState
         it "reads a request datum back from its hand-typed wire" $

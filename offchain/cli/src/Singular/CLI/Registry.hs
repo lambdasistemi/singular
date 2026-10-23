@@ -133,9 +133,7 @@ import Singular.Registry.Types (OnChainTxOutRef)
 data Pins = Pins
     { pinState :: Text
     , pinApplication :: Text
-    , pinAbsent :: Text
     , pinActive :: Text
-    , pinTerminal :: Text
     }
     deriving stock (Eq, Show, Generic)
 
@@ -267,9 +265,7 @@ pinsOf cfg =
     Pins
         { pinState = hexT (scriptHashBytes (cfgScriptHash cfg))
         , pinApplication = hexT (SBS.fromShort (cfgApplicationPolicy cfg))
-        , pinAbsent = hexT (SBS.fromShort (cfgAbsentPolicy cfg))
         , pinActive = hexT (SBS.fromShort (cfgActivePolicy cfg))
-        , pinTerminal = hexT (SBS.fromShort (cfgTerminalPolicy cfg))
         }
 
 hexT :: ByteString -> Text

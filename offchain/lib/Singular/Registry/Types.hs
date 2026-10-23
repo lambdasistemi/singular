@@ -48,8 +48,6 @@ module Singular.Registry.Types
       -- * State helpers
     , stateActivePolicyBytes
     , stateAppPolicyBytes
-    , stateAbsentPolicyBytes
-    , stateTerminalPolicyBytes
 
       -- * Pinned-hook consumer redeemer (NOTE-021)
     , ConsumerRedeemer (..)
@@ -89,8 +87,6 @@ import Singular.Registry.Wire.Request
 import Singular.Registry.Wire.State
     ( CageDatum (..)
     , OnChainTokenState (..)
-    , stateAbsentPolicyBytes
     , stateActivePolicyBytes
     , stateAppPolicyBytes
-    , stateTerminalPolicyBytes
     )

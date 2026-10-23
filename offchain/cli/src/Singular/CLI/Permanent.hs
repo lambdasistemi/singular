@@ -17,14 +17,14 @@ knownScripts :: [(Text, Text)]
 knownScripts =
     [
         ( "state.state"
-        , "68df9c42ebd4468be130e9cd5538a7af39cc31c146cda45f274cccc5"
+        , "9a84eabb747716a3092996049b5003a97954fa272902f0bf8f744a98"
         )
     ,
         ( "request.request"
-        , "5daa275eaf32556a5527035996e37f11072c51b1b4acd64ca2bdd320"
+        , "0b9f5376e0eaa477fca89b34be3fdb36ffa0c7436f405b46023bb944"
         )
     ,
         ( "witness.witness"
-        , "fde1eb8c2a91a1c2f571f4c2f7b3a2b6ef68339c39bbce5ce2037575"
+        , "7a486c420c5b4fa1de7574bbf4d5be6032c07cd653c6675eddfd16ec"
         )
     ]

@@ -218,7 +218,11 @@ def main():
                         f"{route.lower()}-{edge}",
                         edge,
                         payload,
-                        (edge in (1, 3, 5) if route == "MINT" else route != "JOINED" or edge in (1, 3)),
+                        (
+                            edge in (1, 3, 5)
+                            if route == "MINT"
+                            else route != "JOINED" or edge in (1, 3)
+                        ),
                         route != "JOINED",
                     )
                     for edge, payload in sorted(routes[route].items())

@@ -3,7 +3,7 @@ Module      : Singular.Registry.Wire.State
 Description : Token state, policy accessors, and the cage datum
 License     : Apache-2.0
 
-What the cage holds: the eight-field token state with its codec and
+What the cage holds: the five-field token state with its codec and
 policy-byte accessors, and the cage datum — a pending request, a
 state, or the refund-only custody of an absent token. Reads
 "Singular.Registry.Wire.Primitive" and
@@ -15,8 +15,6 @@ module Singular.Registry.Wire.State
       OnChainTokenState (..)
     , stateActivePolicyBytes
     , stateAppPolicyBytes
-    , stateAbsentPolicyBytes
-    , stateTerminalPolicyBytes
 
       -- * Cage datum
     , CageDatum (..)
@@ -45,10 +43,9 @@ import Singular.Registry.Wire.Request
     ( OnChainRequest (..)
     )
 
-{- | On-chain token state. Matches Aiken @types\/State@ (#157 state-datum-fields: eight
-fields, replacing the six). `consumer_pin` is deleted with the pinned
-consumer; `representative_policy` is renamed `active_policy`; the
-application, absent and terminal policies are new. All four policies are
+{- | On-chain token state. Matches Aiken @types\/State@ (#157 state-datum-fields).
+`consumer_pin` is deleted with the pinned consumer; `representative_policy`
+is renamed `active_policy`; the application policy is new. Both policies are
 set at genesis and preserved by every `Modify`.
 -}
 data OnChainTokenState = OnChainTokenState
@@ -71,14 +68,6 @@ data OnChainTokenState = OnChainTokenState
     representative policy). Under it the asset name is the registry
     key itself (#157 token-name-is-registry-key).
     -}
-    , stateAbsentPolicy :: !BuiltinByteString
-    {- ^ The policy that mints the ABSENT token, held in the cage's own
-    custody beside the inserter's refund address.
-    -}
-    , stateTerminalPolicy :: !BuiltinByteString
-    {- ^ The policy that mints the TERMINAL token: a name is over,
-    forever.
-    -}
     }
     deriving stock (Show, Eq)
 
@@ -94,16 +83,6 @@ stateActivePolicyBytes st = case stateActivePolicy st of
 -- | The application policy as plain bytes (#157 tree-edge-admission-by-approval).
 stateAppPolicyBytes :: OnChainTokenState -> ByteString
 stateAppPolicyBytes st = case stateAppPolicy st of
-    BuiltinByteString bs -> bs
-
--- | The absent-token policy as plain bytes (#157 mint-matches-edge-deltas).
-stateAbsentPolicyBytes :: OnChainTokenState -> ByteString
-stateAbsentPolicyBytes st = case stateAbsentPolicy st of
-    BuiltinByteString bs -> bs
-
--- | The terminal-token policy as plain bytes (#157 mint-matches-edge-deltas).
-stateTerminalPolicyBytes :: OnChainTokenState -> ByteString
-stateTerminalPolicyBytes st = case stateTerminalPolicy st of
     BuiltinByteString bs -> bs
 
 {- | Cage datum: either a pending request or a token
@@ -137,18 +116,14 @@ instance ToData OnChainTokenState where
                 , I stateRetractTime
                 , bbsToD stateAppPolicy
                 , bbsToD stateActivePolicy
-                , bbsToD stateAbsentPolicy
-                , bbsToD stateTerminalPolicy
                 ]
 
 instance FromData OnChainTokenState where
     fromBuiltinData bd = case unD bd of
-        Constr 0 [r, I mf, I pt, I rt, ap, cp, bp, tp] -> do
+        Constr 0 [r, I mf, I pt, I rt, ap, cp] -> do
             stateRoot <- fromBuiltinData (mkD r)
             stateAppPolicy <- bbsFromD ap
             stateActivePolicy <- bbsFromD cp
-            stateAbsentPolicy <- bbsFromD bp
-            stateTerminalPolicy <- bbsFromD tp
             let stateMaxFee = mf
                 stateProcessTime = pt
                 stateRetractTime = rt
@@ -157,9 +132,9 @@ instance FromData OnChainTokenState where
 
 instance UnsafeFromData OnChainTokenState where
     unsafeFromBuiltinData bd = case unD bd of
-        Constr 0 [r, I mf, I pt, I rt, ap, cp, bp, tp] ->
-            case (bbsFromD ap, bbsFromD cp, bbsFromD bp, bbsFromD tp) of
-                (Just appP, Just activeP, Just absentP, Just terminalP) ->
+        Constr 0 [r, I mf, I pt, I rt, ap, cp] ->
+            case (bbsFromD ap, bbsFromD cp) of
+                (Just appP, Just activeP) ->
                     OnChainTokenState
                         { stateRoot =
                             unsafeFromBuiltinData (mkD r)
@@ -168,8 +143,6 @@ instance UnsafeFromData OnChainTokenState where
                         , stateRetractTime = rt
                         , stateAppPolicy = appP
                         , stateActivePolicy = activeP
-                        , stateAbsentPolicy = absentP
-                        , stateTerminalPolicy = terminalP
                         }
                 _ ->
                     error

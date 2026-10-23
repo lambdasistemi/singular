@@ -25,8 +25,8 @@ The shared flags are @--koios-url@, @--network-time@, @--network-magic@,
 @--wallet-skey@ and @--blueprint@ (the deployment blueprint).
 
 @boot@ makes a registry for this application's open mode, or for its closed one
-under @--application closed@: the application, the absent and the terminal pins
-are the honest derivation, the active pin is the always-true script's hash under
+under @--application closed@: the application pin is the honest derivation,
+the active pin is the always-true script's hash under
 @--mode forged@ and the honest derivation under @--mode genuine@, the control.
 Nothing else differs between the two.
 

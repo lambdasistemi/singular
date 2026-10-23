@@ -118,8 +118,8 @@ import Singular.Registry.Types
     , edgeUpdateTerminal
     )
 
-{- | What a fold needs in hand to discharge the obligations: the three
-token policies' scripts by kind, the cage script (custody spends run it),
+{- | What a fold needs in hand to discharge the obligations: the
+active token policy's script by kind, the cage script (custody spends run it),
 and the UTxOs sitting at the cage address (custody lives among them). A
 delivered output's datum is the one its request carries (#419), so nothing
 beyond the chain is in hand.
@@ -175,7 +175,7 @@ data HolderRelease = HolderRelease
     deriving stock (Eq, Show)
 
 {- | The context a fold of tree edges needs beyond the registry's own
-configuration: the three token policies' scripts and the cage script that
+configuration: the active token policy's script and the cage script that
 custody spends run. A delivered output's datum is the one its request
 carries.
 
@@ -606,11 +606,7 @@ guardMintMatch who cfg reqUtxos claimed =
                 )
   where
     pid = policyIdFromPin (cfgActivePolicy cfg)
-    registryPids =
-        [ policyIdFromPin pin
-        | pin <-
-            [cfgActivePolicy cfg, cfgAbsentPolicy cfg, cfgTerminalPolicy cfg]
-        ]
+    registryPids = [pid]
     strip = Map.filter (/= 0)
     summed triples =
         Map.fromListWith

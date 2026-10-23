@@ -160,8 +160,6 @@ bootRegistry wallet prov caps unbound txs processTime retractTime = do
                       -- apart.
                       cfgApplicationPolicy = partsApplicationPolicy parts
                     , cfgActivePolicy = partsActivePolicy parts
-                    , cfgAbsentPolicy = partsAbsentPolicy parts
-                    , cfgTerminalPolicy = partsTerminalPolicy parts
                     , cfgConsumerScript = partsConsumerScript parts
                     , network = Testnet
                     }

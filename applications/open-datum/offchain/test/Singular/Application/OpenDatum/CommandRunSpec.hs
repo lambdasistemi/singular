@@ -319,7 +319,6 @@ import Singular.Registry.Types
     , edgeName
     , edgeUpdateTerminal
     , stateActivePolicyBytes
-    , stateTerminalPolicyBytes
     )
 import Singular.Registry.Wallet
     ( Wallet (..)
@@ -3989,9 +3988,7 @@ createScenarios =
     chain =
         [ "boot"
         , "publish-request"
-        , "publish-witness-absent"
         , "publish-witness-active"
-        , "publish-witness-terminal"
         , "publish-application"
         ]
 
@@ -5902,7 +5899,7 @@ shouldNameRegistry token address fingerprint = do
 -- ---------------------------------------------------------
 
 {- | @inspect --key@ finds a key's output by the key's witness token: the
-registry's active witness policy, or the terminal one, with the key's bytes
+registry's active witness policy with the key's bytes
 as the asset name, asked of the provider as the holders of that asset. It
 does not list every output at the application address, and the leaf is
 still proved against the state root as it was. The facts these rows compare
@@ -5931,7 +5928,7 @@ witnessReachRows = describe "the key reached by its witness token" $ do
                     `shouldContain` [Cage.HoldingAsset (policy, AssetName (SBS.toShort bytes))]
                 queries `shouldNotContain` [Cage.AtAddress address]
     it
-        "the receipt names the witnesses looked up and the output that holds the active one"
+        "the receipt names the witness looked up and the output that holds it"
         $ withRegistry
         $ \rig token -> do
             activeKey rig token "alice-1"
@@ -5939,7 +5936,6 @@ witnessReachRows = describe "the key reached by its witness token" $ do
             let receipt = runReceipt inspected
             output <- heldOutput receipt
             (policy, _) <- holdingOf rig output "alice-1"
-            (_, terminal) <- statePins rig token
             let witness = valueAt "witness" receipt
             (witness >>= valueAt "active")
                 `shouldBe` Just
@@ -5949,16 +5945,8 @@ witnessReachRows = describe "the key reached by its witness token" $ do
                         , "holders" .= [output]
                         ]
                     )
-            (witness >>= valueAt "terminal")
-                `shouldBe` Just
-                    ( Aeson.object
-                        [ "policy" .= hexText terminal
-                        , "assetName" .= hexText "alice-1"
-                        , "holders" .= ([] :: [Text])
-                        ]
-                    )
     it
-        "a terminated key is reached by both witnesses and none holds a token"
+        "a terminated key is reached by its witness and nothing holds the token"
         $ withRegistry
         $ \rig token -> do
             activeKey rig token "alice-1"
@@ -5978,15 +5966,12 @@ witnessReachRows = describe "the key reached by its witness token" $ do
             let receipt = runReceipt inspected
             outcomeOf receipt `shouldBe` Just "success"
             valueAt "leaf" receipt `shouldBe` Just (Aeson.String "terminal")
-            (active, terminal) <- statePins rig token
+            active <- statePins rig token
             let name = AssetName (SBS.toShort "alice-1")
                 asset policy = Cage.HoldingAsset (PolicyID (policyOf policy), name)
             queries `shouldContain` [asset active]
-            queries `shouldContain` [asset terminal]
             let witness = valueAt "witness" receipt
             (witness >>= valueAt "active" >>= valueAt "holders")
-                `shouldBe` Just (Aeson.toJSON ([] :: [Text]))
-            (witness >>= valueAt "terminal" >>= valueAt "holders")
                 `shouldBe` Just (Aeson.toJSON ([] :: [Text]))
             (witness >>= valueAt "active" >>= textAt "policy")
                 `shouldBe` Just (hexText active)
@@ -6124,7 +6109,7 @@ holdingOf rig output key = do
 {- | The active and the terminal policies the registry's state datum pins,
 read from the chain fixture.
 -}
-statePins :: Rig -> String -> IO (BS.ByteString, BS.ByteString)
+statePins :: Rig -> String -> IO BS.ByteString
 statePins rig token = do
     asset <-
         either (fail . T.unpack) pure (parseStateToken (T.pack token))
@@ -6134,7 +6119,7 @@ statePins rig token = do
     held <- either (fail . show) (pure . value) answer
     case [ st | (_, out) <- held, Just (StateDatum st) <- [extractCageDatum out]
          ] of
-        st : _ -> pure (stateActivePolicyBytes st, stateTerminalPolicyBytes st)
+        st : _ -> pure (stateActivePolicyBytes st)
         [] -> fail "the state output carries no state datum"
 
 policyBytes :: PolicyID -> BS.ByteString
@@ -6235,7 +6220,7 @@ witnessKeptRows = describe "what the witness read leaves as it was" $ do
             (queries, inspected) <- inspectRecording rig token "alice-1"
             outcomeOf (runReceipt inspected) `shouldBe` Just "stale-state"
             runExit inspected `shouldBe` ExitFailure 14
-            (policy, _) <- witnessPins rig token
+            policy <- witnessPins rig token
             queries
                 `shouldNotContain` [Cage.HoldingAsset (policy, AssetName (SBS.toShort "alice-1"))]
     describe "a leaf the holdings do not agree with is refused" $ do
@@ -6494,13 +6479,13 @@ tamperRoot rig token = do
                 facts{csUTxO = Map.insert ref changed (csUTxO facts)}
         [] -> fail "the state output carries no state datum"
 
-{- | The active witness policy and the key-independent pin of the registry, read
+{- | The active witness policy of the registry, read
 from the state datum (for the queries a refusal must not have made).
 -}
-witnessPins :: Rig -> String -> IO (PolicyID, BS.ByteString)
+witnessPins :: Rig -> String -> IO PolicyID
 witnessPins rig token = do
-    (active, terminal) <- statePins rig token
-    pure (PolicyID (policyOf active), terminal)
+    active <- statePins rig token
+    pure (PolicyID (policyOf active))
 
 -- | An inspect that is refused because the leaf and the holdings disagree.
 refusedWith :: Rig -> String -> Text -> IO ()

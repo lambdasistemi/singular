@@ -80,18 +80,6 @@ assetRows = describe "the asset a key's witness is" $ do
         forAll genKey $ \key ->
             witnessAsset Fixture.cfg ActiveWitness key
                 === (policyOf (cfgActivePolicy Fixture.cfg), AssetName (SBS.toShort key))
-    it "is the terminal pin with the key's bytes as the name, for any key" $
-        forAll genKey $ \key ->
-            witnessAsset Fixture.cfg TerminalWitness key
-                === ( policyOf (cfgTerminalPolicy Fixture.cfg)
-                    , AssetName (SBS.toShort key)
-                    )
-    it "differs between the two kinds in the policy and not in the name" $
-        forAll genKey $ \key ->
-            let (activePolicy, activeName) = witnessAsset Fixture.cfg ActiveWitness key
-                (terminalPolicy, terminalName) = witnessAsset Fixture.cfg TerminalWitness key
-            in  (activePolicy /= terminalPolicy, activeName == terminalName)
-                    === (True, True)
     it
         "follows each registry: two registries with different pins look up different policies, the same name"
         $ forAll genKey
@@ -102,15 +90,11 @@ assetRows = describe "the asset a key's witness is" $ do
             in  conjoin
                     [ map fst (lookups ActiveWitness)
                         === map (policyOf . cfgActivePolicy) registries
-                    , map fst (lookups TerminalWitness)
-                        === map (policyOf . cfgTerminalPolicy) registries
-                    , map snd (lookups ActiveWitness <> lookups TerminalWitness)
-                        === replicate 4 name
+                    , map snd (lookups ActiveWitness)
+                        === replicate 2 name
                     , counterexample
-                        "the two registries must differ in both pins"
-                        ( cfgActivePolicy Fixture.cfg /= cfgActivePolicy otherRegistry
-                            && cfgTerminalPolicy Fixture.cfg /= cfgTerminalPolicy otherRegistry
-                        )
+                        "the two registries must differ in the active pin"
+                        (cfgActivePolicy Fixture.cfg /= cfgActivePolicy otherRegistry)
                     ]
     it
         "follows the registry: another active pin is another policy, the name the same"
@@ -121,14 +105,12 @@ assetRows = describe "the asset a key's witness is" $ do
             in  (policy, name)
                     === (policyOf (SBS.pack (replicate 28 0x07)), AssetName (SBS.toShort key))
 
--- | A second registry whose four pins all differ from the fixture's.
+-- | A second registry whose two pins both differ from the fixture's.
 otherRegistry :: CageConfig
 otherRegistry =
     Fixture.cfg
         { cfgApplicationPolicy = SBS.pack (replicate 28 0x11)
-        , cfgAbsentPolicy = SBS.pack (replicate 28 0x12)
         , cfgActivePolicy = SBS.pack (replicate 28 0x13)
-        , cfgTerminalPolicy = SBS.pack (replicate 28 0x14)
         }
 
 -- | An output holding these assets, at the fixture's payer.
@@ -159,7 +141,6 @@ readerRows = describe "the reader that asks who holds a key's witness" $ do
     let key = "witness-key" :: ByteString
         name = AssetName (SBS.toShort key)
         active = policyOf (cfgActivePolicy Fixture.cfg)
-        terminal = policyOf (cfgTerminalPolicy Fixture.cfg)
         elsewhere = policyOf (SBS.pack (replicate 28 0x09))
         -- a provider that answers the one query for this asset and refuses
         -- every other, so a second or a different question fails the row
@@ -191,16 +172,6 @@ readerRows = describe "the reader that asks who holds a key's witness" $ do
             found <- findWitness session Fixture.cfg ActiveWitness key
             fmap (map fst . foundHolders) found
                 `shouldBe` Right [outRef 'a' 1, outRef 'b' 0]
-    it
-        "reads the terminal witness under the terminal policy, and finds as many holders as there are"
-        $ do
-            let first = (outRef '1' 0, holding [(terminal, name)])
-                second = (outRef '2' 0, holding [(terminal, name)])
-                active' = (outRef '3' 0, holding [(active, name)])
-                session = servingAs (terminal, name) [first, second, active']
-            found <- findWitness session Fixture.cfg TerminalWitness key
-            fmap (map fst . foundHolders) found
-                `shouldBe` Right [outRef '1' 0, outRef '2' 0]
     it "finds no holder when the provider names none" $ do
         found <-
             findWitness

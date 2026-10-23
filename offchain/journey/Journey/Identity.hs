@@ -143,7 +143,7 @@ which the manifest pins as 0. This step
     derived state script in its witness set or through a
     reference output, the update transaction carries
     exactly the derived state and request scripts and the
-    three witness policies this registry pins.
+    witness policy this registry pins.
 
 Any mismatch fails the run naming both hashes and the
 parameters used — the relationship between the layers is a
@@ -203,17 +203,12 @@ stepDerivedIdentity si cfg rawState rawRequest rawStaking tid bootTx updateTx re
         updateWitness = carriedScriptHashes refs updateTx
         pinHex p = hex (SBS.fromShort p)
         -- The fold spends the state and the request and mints under the
-        -- three witness policies this registry pins, so those five are
+        -- witness policy this registry pins, so those three are
         -- exactly what it carries.
         updateExpected =
             Set.fromList
                 ( [stateHex, requestHex]
-                    <> map
-                        pinHex
-                        [ cfgAbsentPolicy cfg
-                        , cfgActivePolicy cfg
-                        , cfgTerminalPolicy cfg
-                        ]
+                    <> map pinHex [cfgActivePolicy cfg]
                 )
     unless (bootWitness == Set.singleton stateHex) $
         failWith $
@@ -226,8 +221,8 @@ stepDerivedIdentity si cfg rawState rawRequest rawStaking tid bootTx updateTx re
                 <> ") but the scripts it carried held "
                 <> show (Set.toList bootWitness)
     -- #157: the fold withdraws from nothing, so the update transaction
-    -- carries exactly the two derived scripts it spends plus the three
-    -- witness policies it may mint under — the retired consumer hook is
+    -- carries exactly the two derived scripts it spends plus the
+    -- witness policy it may mint under — the retired consumer hook is
     -- no longer among them.
     unless (updateWitness == updateExpected) $
         failWith $
@@ -237,12 +232,8 @@ stepDerivedIdentity si cfg rawState rawRequest rawStaking tid bootTx updateTx re
                 <> stateHex
                 <> " and 0x"
                 <> requestHex
-                <> " with the three pinned witness policies "
-                <> show
-                    ( map
-                        pinHex
-                        [cfgAbsentPolicy cfg, cfgActivePolicy cfg, cfgTerminalPolicy cfg]
-                    )
+                <> " with the pinned witness policy "
+                <> show (map pinHex [cfgActivePolicy cfg])
                 <> " (request parameters "
                 <> requestParams
                 <> ") but its script witness held "

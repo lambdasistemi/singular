@@ -16,7 +16,7 @@ This command books one name on it:
 ```mermaid
 flowchart LR
   Archive[This archive] --> Command[insert-active]
-  Command --> Boot[Boot the open registry, four pinned policies]
+  Command --> Boot[Boot the open registry, two pinned policies]
   Boot --> Fold[Fold one certified insertActive]
   Fold --> Wallet[Active token at the named wallet]
   Wallet --> Repeat[Repeat the same key]
@@ -39,10 +39,9 @@ exactly one input from you — `REGISTRY_BLUEPRINT`, the compiled
 blueprint this archive carries at `onchain/plutus.json`.
 
 **No naming blueprint is involved.** `NAMING_BLUEPRINT` need not be set,
-and the command never consults it. All four registry pins come from the
+and the command never consults it. Both registry pins come from the
 one blueprint above: the parameterless `open.open` as the application
-policy, and `witness.witness` applied at kinds 0, 1 and 2 for the
-absent, active and terminal witnesses.
+policy, and `witness.witness` applied at kind 1 for the active witness.
 
 ## What you should see
 
@@ -54,7 +53,7 @@ Four observations, in this order:
    identity baked into it.
 2. **The fold.** One `insertActive` request folds, and **exactly one**
    `(activePolicy, key)` token lands in the output at the wallet the
-   request named. Under each token policy the asset name IS the registry
+   request named. Under the token policy the asset name IS the registry
    key.
 3. **The accepting control.** A *fresh* key through the same builder
    also folds. This runs **before** the duplicate on purpose: a refused
