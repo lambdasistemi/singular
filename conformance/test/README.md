@@ -9,8 +9,8 @@ uses those instructions without a chapter theorem binding.
 
 The interpreter creates a local Cardano devnet, allocates stable model IDs
 while constructing each request, submits one fold for exactly that request,
-and reads the chain result. Every accepted step compares the driver's nine
-declared observations: configuration, custody, held tokens, leaf, mint,
+and reads the chain result. Every accepted step compares the driver's eight
+declared observations: configuration, held tokens, leaf, mint,
 payments, root, state and transaction. A discovered-value perturbation check
 must make the comparison fail for each observed leaf and array, except the
 declared `outputMinimumAda` leaf. The transaction's signers are read from the

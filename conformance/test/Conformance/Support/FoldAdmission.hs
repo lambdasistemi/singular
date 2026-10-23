@@ -141,11 +141,8 @@ startJson =
                 , "retractTime" .= (0 :: Int)
                 , "applicationPolicy" .= applicationPolicy
                 , "activePolicy" .= activePolicy
-                , "absentPolicy" .= (9 :: Int)
-                , "terminalPolicy" .= (10 :: Int)
                 ]
         , "trie" .= ([] :: [Value])
-        , "custody" .= ([] :: [Value])
         , "held" .= ([] :: [Value])
         ]
 

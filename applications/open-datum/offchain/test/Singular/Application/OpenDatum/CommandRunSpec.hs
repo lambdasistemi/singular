@@ -6190,7 +6190,7 @@ witnessKeptRows = describe "what the witness read leaves as it was" $ do
             (valueAt "witness" receipt >>= valueAt "active" >>= valueAt "holders")
                 `shouldBe` Just (Aeson.toJSON [output])
     it
-        "a terminated key is reached from the address alone, both witnesses empty"
+        "a terminated key is reached from the address alone, the witness empty"
         $ withRegistry
         $ \rig token -> do
             activeKey rig token "alice-1"
@@ -6640,7 +6640,7 @@ baseReceiptOfNobody =
         ,
             ( "observedTip"
             , s
-                "10.000000000000000000000000000000000000000000000000000000000000000a"
+                "8.0000000000000000000000000000000000000000000000000000000000000008"
             )
         , ("outcome", s "success")
         , ("pendingRequests", Aeson.Array mempty)
