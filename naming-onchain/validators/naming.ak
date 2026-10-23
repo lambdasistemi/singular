@@ -201,7 +201,7 @@ pub fn distinct_count(members: List<ByteArray>) -> Int {
 /// Lives here (not in the application validator) so both the validator and
 /// test fixtures share one source with no library→validator import edge.
 pub const mpfs_state_hash =
-  #"68df9c42ebd4468be130e9cd5538a7af39cc31c146cda45f274cccc5"
+  #"9a84eabb747716a3092996049b5003a97954fa272902f0bf8f744a98"
 
 /// Mirror of the registry `State` datum (issue #77, E-001 repair; sixth field
 /// NOTE-013/NOTE-019): the registry configuration carrying the expected
@@ -219,8 +219,6 @@ pub type MpfsState {
     retract_time: Int,
     application_policy: PolicyId,
     active_policy: PolicyId,
-    absent_policy: PolicyId,
-    terminal_policy: PolicyId,
   }
 }
 
@@ -244,12 +242,6 @@ pub fn mpfs_state_policy(datum: Data) -> PolicyId {
 pub fn mpfs_state_application_policy(datum: Data) -> PolicyId {
   expect MpfsStateDatum(state) = datum
   state.application_policy
-}
-
-/// The registry's pinned terminal policy (#157 mint-matches-edge-deltas).
-pub fn mpfs_state_terminal_policy(datum: Data) -> PolicyId {
-  expect MpfsStateDatum(state) = datum
-  state.terminal_policy
 }
 
 /// Decode a registry state datum to its trie root (NOTE-029): the
@@ -373,8 +365,6 @@ pub fn mpfs_state_datum_with_root(
         retract_time: 0,
         application_policy: app_policy,
         active_policy,
-        absent_policy: #"b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0",
-        terminal_policy: #"c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0",
       },
     )
   datum

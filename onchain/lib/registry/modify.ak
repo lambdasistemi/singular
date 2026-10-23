@@ -34,8 +34,8 @@
 //// - Continuation and pin checks precede everything the batch says; the
 ////   fold's own refusal precedes the batch-level checks; every duty is
 ////   discharged before any lovelace is settled; positional rejected-request refunds precede the per-payee sums.
-//// - The seven non-root state fields are equal before and after every fold,
-////   and the mint under the three pinned token policies equals the summed
+//// - The five non-root state fields are equal before and after every fold,
+////   and the mint under the pinned active token policy equals the summed
 ////   edge deltas exactly.
 
 use aiken/collection/list.{foldl, head}
@@ -78,7 +78,7 @@ pub fn validFold(
     // conservation plus the rejected-row floors close the rest.
     Some(@"state-drain")
   } else if !pinsPreserved(pins, next) {
-    // state-datum-fields: the seven non-root fields are registry configuration — genesis
+    // state-datum-fields: the five non-root fields are registry configuration — genesis
     // sets them, every fold preserves them. A fold altering any of them
     // refuses here, before any root, delta or destination check.
     Some(@"pins-altered")
@@ -111,7 +111,7 @@ pub fn validFold(
     } else if mpf.root(folded.trie) != next.root {
       Some(@"root")
     } else if !mintMatches(pins, folded.minted, mint) {
-      // mint-matches-edge-deltas: the transaction's mint under the three pinned token policies
+      // mint-matches-edge-deltas: the transaction's mint under the pinned active token policy
       // equals the summed registration/termination deltas exactly — asset by asset, quantity
       // by quantity — and nothing else moves under them. A mint that
       // adds, omits, doubles or renames one asset is one delta mismatch.
@@ -147,28 +147,16 @@ fn pinsPreserved(before: State, after: State) -> Bool {
     before.retract_time == after.retract_time,
     before.application_policy == after.application_policy,
     before.active_policy == after.active_policy,
-    before.absent_policy == after.absent_policy,
-    before.terminal_policy == after.terminal_policy,
   }
 }
 
-/// mint-matches-edge-deltas: the mint under each of the three pinned token policies equals the
+/// mint-matches-edge-deltas: the mint under the pinned active token policy equals the
 /// summed delta exactly. Both sides are compared as the ledger's own
 /// normalized token maps, so a zero net movement must be absent rather
 /// than present-at-zero.
 fn mintMatches(pins: State, expected: Value, mint: Value) -> Bool {
-  and {
-    assets.tokens(expected, pins.absent_policy) == assets.tokens(
-      mint,
-      pins.absent_policy,
-    ),
-    assets.tokens(expected, pins.active_policy) == assets.tokens(
-      mint,
-      pins.active_policy,
-    ),
-    assets.tokens(expected, pins.terminal_policy) == assets.tokens(
-      mint,
-      pins.terminal_policy,
-    ),
-  }
+  assets.tokens(expected, pins.active_policy) == assets.tokens(
+    mint,
+    pins.active_policy,
+  )
 }

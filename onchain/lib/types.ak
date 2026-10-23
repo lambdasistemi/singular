@@ -232,16 +232,6 @@ pub type State {
   /// the asset name is the registry key itself (token-name-is-registry-key).
   /// Set at genesis, preserved by every `Modify`.
   active_policy: PolicyId,
-  /// The policy that mints the ABSENT token (#157 C5/C7): the witness
-  /// that a key is known-absent, held in the cage's own custody beside
-  /// the inserter's refund address (absent-custody-datum).
-  /// Set at genesis, preserved by every `Modify`.
-  absent_policy: PolicyId,
-  /// The policy that mints the TERMINAL token (#157 C5/C7): the witness
-  /// that a key is over, forever. Minted by a `Read(0x02)` at the read's
-  /// position in the fold; freely burnable by its holder (terminal-witnesses-plural).
-  /// Set at genesis, preserved by every `Modify`.
-  terminal_policy: PolicyId,
 }
 
 /// The seven-admitted-edges row index of a request (#183, Lean `Request.edge`). An edge names

@@ -146,11 +146,11 @@ fn holding() -> Input {
 /// The original envelope vector with only its state-policy bytes rebound;
 /// the CBOR and BLAKE2b-256 were independently regenerated from that vector.
 test envelope_a_serialises_to_the_shared_cbor() {
-  cbor.serialise(envelopeA()) == #"d8799fd8799f01d8799f581c68df9c42ebd4468be130e9cd5538a7af39cc31c146cda45f274cccc54a636167652d746f6b656eff581caaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa446b657941581cd1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d11a001e8480ff45616c696365ff"
+  cbor.serialise(envelopeA()) == #"d8799fd8799f01d8799f581c9a84eabb747716a3092996049b5003a97954fa272902f0bf8f744a984a636167652d746f6b656eff581caaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa446b657941581cd1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d11a001e8480ff45616c696365ff"
 }
 
 test envelope_a_hashes_to_the_shared_digest() {
-  envelopeHash(envelopeA()) == #"01b7ede24bf581093ac9d44e5ba3bf8f24e2dab51114dc4a25961817970f9e38"
+  envelopeHash(envelopeA()) == #"04594ee38435664066a45633a4b4c0963e9922cc70ce7ba221f8805187220f91"
 }
 
 // ----------------------------------------------------------------------------
