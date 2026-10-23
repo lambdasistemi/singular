@@ -273,8 +273,18 @@
       "pause": 400
     }
   ],
+  "open-datum-lifecycle-audit-result": [
+    {
+      "text": "Open-datum lifecycle audit result.",
+      "pause": 500
+    },
+    {
+      "text": "An independent statement audit on 23 October 2026 found the open-datum request lifecycle ready to prove: nineteen general statements covering the three timed registration phases, the termination burn, approvals, booking authority, the treasury deposit and per-seed parameters, folder protection and no stuck termination, with nine derived action inversions and twenty-eight guard sites each with a mutant. The audited ledger is investigations/741-no-pin/lifecycle-statements.json 2e453301887220abbb61e28032f61bdd6065069a436f8b2075aad60b8ec65da6. This establishes no statement's truth; the money flows of each journey and the old-versus-new equivalence are the next slice.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "impact.md",
-    "sha256": "400781f9ed6d837e236f91ba137177917a260a8cdd86183c77e547dc6ca52ab1"
+    "sha256": "68482bd029fbfc32e6897ca13e6a67c401eb6affbb19ef4475d4cc16eafb0193"
   }
 }

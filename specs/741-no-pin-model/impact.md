@@ -129,6 +129,10 @@ An independent statement audit on 23 October 2026 found six of the seven Singula
 
 An independent statement audit on 23 October 2026 found the seventh Singular family ready to prove: supply in step, one live token per key per registry, burn only through a terminating fold, and no remint after terminal, stated over connected multi-step, multi-registry histories (including two registries from one seed). The statement ledger now stands at `investigations/741-no-pin/application-requests-statements.json` `de702f29fdbaa3f9e7f6300d4b7b4bf1074ef7f39ee7d4f94587bacf1fcfde2d`. This completes the Singular statements of the application-held design at statement stage; it establishes no statement's truth. Premise sensitivity is partial: the initial no-own-assets and genesis empty-trie premises have no control yet.
 
+## Open-datum lifecycle audit result
+
+An independent statement audit on 23 October 2026 found the open-datum request lifecycle ready to prove: nineteen general statements covering the three timed registration phases, the termination burn, approvals, booking authority, the treasury deposit and per-seed parameters, folder protection and no stuck termination, with nine derived action inversions and twenty-eight guard sites each with a mutant. The audited ledger is `investigations/741-no-pin/lifecycle-statements.json` `2e453301887220abbb61e28032f61bdd6065069a436f8b2075aad60b8ec65da6`. This establishes no statement's truth; the money flows of each journey and the old-versus-new equivalence are the next slice.
+
 ```mermaid
 flowchart TD
   Source[Existing laws] -->|compare| Proposal[Proposed identities]
