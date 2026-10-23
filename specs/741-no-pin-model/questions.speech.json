@@ -315,6 +315,10 @@
       "pause": 500
     },
     {
+      "text": "This section records the historical baseline and the earlier candidate. NOTE-010 supersedes its cleanup allocation: current cleanup refunds only the committed deposit; full owner reclaim remains unchanged. See the operator money ruling below.",
+      "pause": 400
+    },
+    {
       "text": "As a requester, I want the application's replacement exits to preserve both my refund and the period in which I can claim it. At the accepted economic revision, a request booked at zero with processing and reclaim durations of one hundred, cost ten, tip two and carrier five holds seventeen. Owner reclaim during the reclaim window returns seventeen with separate fee funding; after time two hundred that same reclaim is refused, while permissionless expired rejection returns fifteen and leaves two to its processor. An unbounded owner reclaim returning seventeen would change admission, signing and payment outcomes.",
       "pause": 400
     },
@@ -331,6 +335,10 @@
     {
       "text": "The empty termination and its payment split.",
       "pause": 500
+    },
+    {
+      "text": "Historical Q-002 and its fixed-tip answer are superseded by the operator Tip and Treasury rulings delivered in NOTE-010. The current termination request has no tip or split field: all its ADA is the folder bid.",
+      "pause": 400
     },
     {
       "text": "As a treasury recipient and folder, I want the application to authenticate their payment split. Two accepted economic termination requests can both hold ten, with declared tip two and treasury share eight, or tip three and share seven. Their new empty datum, approval for termination/key/complete registry and genuine active token are identical. A deterministic validator cannot recover which per-request split was intended from that output; a caller-supplied redeemer amount or off-chain history is no authenticated on-chain allocation.",
@@ -365,6 +373,10 @@
       "pause": 500
     },
     {
+      "text": "NOTE-010 retains the five-field record but makes registrationCost and minimumTip unused metadata. The current authentication obligation remains for the three clock fields; the old cost/tip admission problem below is historical.",
+      "pause": 400
+    },
+    {
       "text": "As a requester and treasury recipient, I want registration booking to compare its cost and windows with authentic application parameters. An old configuration with cost ten, minimum tip two and processing/reclaim durations of one hundred refuses cost zero or tip zero, even if that request's controller signs. Moving those fields only into requester-supplied booked data would lose that immutable authority. An application hash does not reveal its internal expected constants.",
       "pause": 400
     },
@@ -379,12 +391,38 @@
       "pause": 500
     },
     {
+      "text": "NOTE-010 keeps the waiting/admission replacement but changes cleanup money: refund deposit only, with everything above it available to the cleaner. The older twenty/three example below is historical.",
+      "pause": 400
+    },
+    {
       "text": "As a requester who books an already-used key, I want the change to early rejection and refunds stated plainly. Accepted lifecycle-mismatch rejection can occur before the processing deadline without my signature and returns held minus tip. With held twenty-three and tip three, that is twenty back and three for the rejecting party. Parent NOTE-007 briefly selected an application key-exists cleanup; the operator correction delivered by NOTE-008 withdrew it before any tracked implementation or fourth-path surface was added. Open datum never reads the registry root or verifies a trie proof. The new registration waits: during the booked reclaim window its owner can recover all twenty-three, or after that anyone can clean it up returning twenty and taking three. There is no early application mismatch spend. This is a decided replacement with changed admission and payment outcomes, not an unresolved equality claim or a fourth path. The three timed phases remain exhaustive. The C7 matrix in the application request trace classifies every accepted request-kind/rejection-ground pair, including the refusal of termination rejection.",
+      "pause": 400
+    }
+  ],
+  "operator-money-ruling-request-value-is-the-bid": [
+    {
+      "text": "Operator money ruling: request value is the bid.",
+      "pause": 500
+    },
+    {
+      "text": "As a requester, controller, folder and treasury recipient, I want every new payment promise stated against the operator's current rule. The Tip and Treasury sections of ruling-20261023-termination-request-shape.md, delivered in parent NOTE-010, supersede Q-002's fixed tip, the fold treasury shares and the controller's deposit return at booking. This is a decided change in money flows, not an unresolved equivalence or a local interpretation. No declared or fixed tip remains. The registration approval commits the deposit as well as the complete registry, key, holding address and initial datum. Its fold puts exactly that deposit in the holding and exposes the remaining request ADA to the folder. A termination request exposes its entire ADA to the folder. Neither fold pays treasury.",
+      "pause": 400
+    },
+    {
+      "text": "The protected deposit stays in the live holding and goes to open datum's treasury at termination booking, under controller authorization. A never-folded registration's signed timed reclaim returns all request ADA, deposit included. Its post-window cleanup returns only the deposit to its refund address and exposes the rest to the cleaner. A doomed registration still has no early exit or application trie/root read. With request ADA twenty-three and approved deposit seven, registration fold and cleanup each expose sixteen; full owner reclaim returns twenty-three. A termination bid of ten exposes all ten at fold, while deposit seven was already donated at booking. These examples are future executed producer obligations, not receipts or accepted-model proofs.",
+      "pause": 400
+    },
+    {
+      "text": "Per-seed registrationCost and minimumTip remain in immutable configuration metadata but become unused: they impose neither a charge nor a minimum bid. processTime, retractTime and bookingWidth still fix registration's phases. Actual fee funding, transaction balance, output minimums, public proof/data availability and willingness remain separate liveness premises. No top-up path or guaranteed net reward follows from treating value as a bid. Historical questions and rejected alternatives above are preserved explicitly, never re-labelled as current law.",
+      "pause": 400
+    },
+    {
+      "text": "The operator Registration delivery ruling (NOTE-011) makes the enforcement boundary explicit. Singular validates the new holding address, datum hash, new token and at least the deposit committed in the approval; it routes no money. The approval preimage is recomputed with the supplied approved-deposit witness, which must not be recovered by assuming that the received amount was intended. Open datum still checks its own exact deposit and genuine token, since an approval can burn freely without a fold. This is a decided delivery-integrity rule, not a return to configured tips or request ADA routing.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "questions.md",
-    "sha256": "3e7aa7f9f91f45d0de1ccb842e764c27672d67f231a062b40ae00b58d7a9b0a4"
+    "sha256": "5442a87a95befc942784b9c62914eb44a02637543aee3469997355b6632b2892"
   }
 }

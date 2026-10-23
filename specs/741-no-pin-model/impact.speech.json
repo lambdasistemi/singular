@@ -201,6 +201,10 @@
       "pause": 500
     },
     {
+      "text": "Historical surfaces checkpoint: its fixed-tip, cost-at-fold and controller-deposit-return descriptions are superseded by the operator money ruling below. Source facts and old receipts remain historical; no earlier candidate allocation is current acceptance evidence.",
+      "pause": 400
+    },
+    {
       "text": "The new source and journey trace supersedes the tagged pending and shared-request designs as candidate consumers, without changing any historical source, statement digest or ledger row. It binds accepted revision 00771d77af996605845cf062285263909a049cf8. The new family is hypothetical; no general theorem, accepted-law amendment, implementation, ledger or hosted result is claimed at the surfaces checkpoint.",
       "pause": 400
     },
@@ -223,12 +227,34 @@
       "pause": 500
     },
     {
+      "text": "The no-early-exit replacement remains current. NOTE-010 supersedes this section's cleanup amount; current cleanup returns only the approved deposit, as detailed below.",
+      "pause": 400
+    },
+    {
       "text": "The registration-exit row above describes the timed routes. The accepted early lifecycle-mismatch rejection is deliberately replaced by those routes too (operator correction delivered in parent NOTE-008); it is not an additional cleanup branch. Open datum never reads the registry root or verifies a trie proof. A doomed registration with cost thirteen, tip three and carrier seven formerly allowed anyone to return twenty and take three before the processing deadline. It now has no early exit: signed owner reclaim in its booked window returns all twenty-three, or later permissionless cleanup returns twenty and allocates three to the cleaner. This changes early admission, signing and payment outcomes explicitly. Same-semantics comparisons retain their stated monetary obligations for each remaining path; no equivalence to the removed rejection mechanism is claimed. The source-derived four-cell request-kind/rejection-ground matrix in application-requests.md records expiry and lifecycle mismatch for both registration and termination, including refused termination rejection. New statements, old-versus-new case witnesses and controls remain owed. The protected-rejection lane is unchanged.",
+      "pause": 400
+    }
+  ],
+  "operator-money-ruling-and-every-journey": [
+    {
+      "text": "Operator money ruling and every journey.",
+      "pause": 500
+    },
+    {
+      "text": "Parent NOTE-010 delivers the operator's final Tip and Treasury directions for this candidate. Request value is the bid. The registration approval commits its deposit; the exact deposit enters its new holding, and the remainder is available to the folder. A termination request's whole ADA is available to the folder. No declared/fixed tip and no fold treasury share remain. Open datum pays its protected deposit to treasury at termination booking. These are decided differences from the accepted economic baseline and preceding candidate settlement, not narrowed equivalence claims.",
+      "pause": 400
+    },
+    {
+      "text": "The five immutable per-seed parameters stay present, but registrationCost and minimumTip do not set any bid floor, charge or allocation; their recorded values remain authenticated immutable metadata. The three clock fields retain their authentication and admission duties. Earlier identity/held theorems, ledgers and accepted source files remain unchanged; the new family must restate all affected guarantees, execute the changed journeys and expose their genuine provenance/ledger, hash/codec, funding and minimum-output limits. No implementation, hosted CI or acceptance follows from these surfaces.",
+      "pause": 400
+    },
+    {
+      "text": "The Registration delivery ruling delivered in NOTE-011 adds the narrow Singular holding-value check: verify the committed address/datum hash and at least the approved deposit, together with the genuine new token. The registration change carries the approved deposit explicitly, rather than treating received ADA as its own authority. Singular routes no money and reads no request bid. Open datum retains its own exact-deposit/genuine-token fold-path rule: open approval burning alone cannot establish that Singular folded. Delivery and application composition statements and their insufficient-deposit/no-token controls must both cover this distinction.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "impact.md",
-    "sha256": "8bdcad8791c7fea3b5044cf62c5bb53e84b55c2fab67c1814b6381af0ffd3fbc"
+    "sha256": "5b722ae01b5ab0dbd48d9e2b912f26d2c10e235d415c862f632bf030221f12e3"
   }
 }
