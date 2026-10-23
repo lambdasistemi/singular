@@ -41,7 +41,8 @@ The first authoring fence is ticket-local investigation/decision documents and t
 |---|---|---|
 | Bind and investigate | Accepted-source inventory, changed-obligation table, dependency graph and concrete questions | May start after team intake; name unavailable upstream artifacts and continue independent inquiry. |
 | State the candidate | Executable hypothetical identity/lifecycle surfaces and complete theorem/inversion statements | Frozen scope and premises; independent statement audit before proof work. |
-| Share the request script | A request script shared per release, authenticated from data, with cross-registry refusal and an acyclic order | After the application-held statements are accepted; operator direction of 23 October in decisions.md. |
+| Share the request script | Superseded on 23 October: the request lifecycle moves to the application; the surfaces stay as history | — |
+| Hold requests at the application | Singular fold law per change, liveness from public data, good-application obligations, consequences for rejection, tags and timing fields | Operator direction of 23 October in decisions.md. |
 | Prove or refute | Exact statements proved or constructively refuted, with finite mutation/witness evidence | Accepted statement hashes; semantic change returns to ruling and statement audit. |
 | Reconcile consumers | Ruled root/consumer alignment, regenerated exports, simulator mirror and honest coverage | Ruling precedes semantic amendment; dependent artifacts bind the same revision. |
 | Decide and hand off | Operator decision packet, integrated audit, exact checks and gaps | No implementation or merge release follows automatically. |

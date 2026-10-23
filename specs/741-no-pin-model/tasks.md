@@ -33,7 +33,9 @@ Independent outcome: the candidate explains legitimate creation, custody and ret
 
 Independent outcome: a participant builds every transaction from release constants, chain data and hashes, with no blueprint parameter application in a client.
 
-- [ ] **Share the request script per release** — In `investigations/741-no-pin/`, state a request script shared per release that authenticates its registry from the request datum against the fold'''s spent state token; a request booked for one registry cannot be consumed, rejected or reclaimed by another registry'''s fold, including two registries from one seed; the dependency order has no cycle; the ruled request economics and public discovery are preserved. Requirements: Explicit identities; Scoped history uniqueness; Consumer and economic agreement.
+- [ ] **Share the request script per release** (superseded on 23 October: the request lifecycle moves to the application) — In `investigations/741-no-pin/`, state a request script shared per release that authenticates its registry from the request datum against the fold'''s spent state token; a request booked for one registry cannot be consumed, rejected or reclaimed by another registry'''s fold, including two registries from one seed; the dependency order has no cycle; the ruled request economics and public discovery are preserved. Requirements: Explicit identities; Scoped history uniqueness; Consumer and economic agreement.
+
+- [ ] **Hold requests at the application** — In `investigations/741-no-pin/`, state the Singular fold law per change with requests held at the application for registration and termination, Singular's remaining liveness obligation, the good-application obligations as hypothetical open-datum statements, and the consequences for protected rejection, request tags, pending accounting and the state datum's timing fields. Requirements: Permanent key supply; Consumer and economic agreement; Honest reader conclusions.
 
 ## Explain reader conclusions — priority P1
 

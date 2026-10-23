@@ -145,8 +145,44 @@
       "pause": 400
     }
   ],
+  "a-termination-request-holds-the-active-token-and-one-approval": [
+    {
+      "text": "A termination request holds the active token and one approval.",
+      "pause": 500
+    },
+    {
+      "text": "Date: 23 October 2026. Supersedes, for terminations, the tagged pending output of the application-held entry above and the fold-time deposit payment of the controller-settlement entry.",
+      "pause": 400
+    },
+    {
+      "text": "The operator, transcribed from speech: \"the termination request is just a UTXO that has both ... the singular token and the approval ... it's singular that should refuse to burn and terminate if there is no approval by the application.\" And: \"we should aim at the simplest possible design ... the datum has to be empty, because there's nothing we can do about the datum. The money, the ADA amount, should contain at least the tip for the folding, and whatever else goes to the treasury.\" Then: \"The point is that planning termination is only part of the application flow. It doesn't involve singular.\" Confirming the folder's tip, the approval as pending marker and the deposit at booking: \"Yes, it's important that the spending validation of terminate, in this case, let the user supply ADA, because if it's not enough to be paid for folding, this is stuck forever ... having stuck termination is not something that we want, so the application has to be careful there.\"",
+      "pause": 400
+    },
+    {
+      "text": "Scope. A termination request is one output at the application address holding the active token, one application approval for terminate, key, state policy and registry name, an empty datum, and ADA. Booking is an application operation only: Singular mints nothing and checks nothing then. At the fold, Singular checks the approval, the burn of the active token, the trie transition and the tip, pays the registry's configured tip to the folder and the rest to the treasury. The holding's protected deposit returns to the controller at booking. The application must offer an open top-up path so that a termination can never be stuck; gating the approval on the tip is the application's option. A pending termination is an application fact, not a Singular state.",
+      "pause": 400
+    }
+  ],
+  "the-request-lifecycle-belongs-to-the-application": [
+    {
+      "text": "The request lifecycle belongs to the application.",
+      "pause": 500
+    },
+    {
+      "text": "Date: 23 October 2026. Supersedes the direction above to investigate a Singular request script shared per release, and the registration-side parts of the protected-rejection economics for this contract line; the client goal of that direction stands.",
+      "pause": 400
+    },
+    {
+      "text": "The operator, transcribed from speech: \"if an application is ill-designed and leave space for this attack, it's a problem of the application, not of singular. So why we should care? Just define the application so that folder will be protected.\" And, confirming the direction: \"Yes, the idea that we can demand [delegate] the request lifecycle to the application is just great, because it makes Singular much easier to prove.\"",
+      "pause": 400
+    },
+    {
+      "text": "Scope. Singular is one script per application, the state applied to the application policy, and acts only at the fold: per change it checks the consumed application approval, the trie transition, the active token mint into an output with the committed datum or its burn, and the tip to the folder. It has no request script, mints no request tags and runs nothing at booking. Every pending request, registration or termination, is an output at the application address with one approval; a termination also holds the active token. The application owns booking, exits, reclaim, refunds, any lock window, top-up and termination liveness. Singular's remaining liveness obligation is that anyone can fold any acceptable request from public data alone. To be stated, not assumed: protected rejection stops being a Singular guarantee for registrations; request tags and pending accounting leave the model; the request timing fields of the state datum are candidates to drop after a check of every use. Reconciliation with the protected-rejection lane happens at composition.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "decisions.md",
-    "sha256": "8a7c5bf6e448d1f827613773bfb53074548d53363a05fe3cd600efcca81101f9"
+    "sha256": "1026a9fbe5b754f8d6b53a95325cc7d16bbbad50149c87f161f2b47a789aa2ea"
   }
 }
