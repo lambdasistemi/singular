@@ -171,6 +171,8 @@ This fixed-tip choice is recorded as a ticket-owner candidate interpretation of 
 
 As a folder, I want every identity and trie proof I must supply obtainable without a private booking file. The root-only datum and state token name do not reveal a seed by hash inversion. The proposed state-recognition mechanism takes a seed in the fold redeemer and verifies its state-role name, so the PublicRegistry observation explicitly includes public genesis provenance and available trie proofs. Complete authentic public history/proof observations are a premise, not established by the minimal transaction view or an empty provider result. A claim over the current state output alone remains unsupported until its missing inputs have an actual public derivation.
 
+The following paragraph records the superseded fixed-tip candidate. Under NOTE-010 the current booking has no configured bid threshold; actual ADA is the bid, with no top-up path introduced and actual funding/willingness still explicit.
+
 Whether an open top-up path is needed remains open. The selected termination booking requires the application's fixed bid funded at booking and exposes no competing top-up spend; a requester can fold its own acceptable request under the same public-data and ordinary-funding premises. This establishes no wallet funding availability, incentive or ledger inclusion. A future top-up rule needs its own no-race and identity-preservation statements before acceptance.
 
 ## Authenticate the moved per-registry parameters

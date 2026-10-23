@@ -363,6 +363,10 @@
       "pause": 400
     },
     {
+      "text": "The following paragraph records the superseded fixed-tip candidate. Under NOTE-010 the current booking has no configured bid threshold; actual ADA is the bid, with no top-up path introduced and actual funding/willingness still explicit.",
+      "pause": 400
+    },
+    {
       "text": "Whether an open top-up path is needed remains open. The selected termination booking requires the application's fixed bid funded at booking and exposes no competing top-up spend; a requester can fold its own acceptable request under the same public-data and ordinary-funding premises. This establishes no wallet funding availability, incentive or ledger inclusion. A future top-up rule needs its own no-race and identity-preservation statements before acceptance.",
       "pause": 400
     }
@@ -423,6 +427,6 @@
   ],
   "_source": {
     "file": "questions.md",
-    "sha256": "5442a87a95befc942784b9c62914eb44a02637543aee3469997355b6632b2892"
+    "sha256": "cb3bae411ce2e08fad61fb463763188894a222b33e17aee50eacef138b16a1e0"
   }
 }
