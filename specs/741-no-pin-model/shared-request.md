@@ -22,11 +22,9 @@ The shared request holds registrations only. Pending terminations and their genu
 
 ```mermaid
 flowchart TD
-  Release[Published release] -->|one constant| Request[Shared registration address]
-  Datum[Registration datum] -->|complete identity| Registry[Policy and state name]
-  Registry -->|fold spends| State[Authenticated state]
-  Registry -->|rejection references| Ref[Authenticated state reference]
-  Datum -->|reclaim uses| Booked[Authenticated booked windows]
+  Release[Release constants] -->|fix| Address[Registration address]
+  Address -->|holds| Datum[Registry and booked data]
+  Datum -->|authenticates| Exit["Fold: spent state<br/>Reject: reference state<br/>Reclaim: booked windows"]
 ```
 
 The release fixes one registration address. A fold authenticates a spent state, rejection authenticates a reference state and reclaim authenticates its own booked data without reading state. These are different evidence paths.
@@ -82,14 +80,12 @@ The release publisher applies the state program to the shared application once p
 
 ```mermaid
 flowchart TD
-  Published[Release constants] -->|shared application| App[Application identity]
-  App -->|publisher applies once| Policy[State policy]
-  Seed[Public seed] -->|name hash| Name[Registry name]
-  Policy -->|pair| Registry[Complete registry]
+  Published[Release] -->|publish| App[Application]
+  App -->|apply once| Policy[State policy]
+  Seed[Seed] -->|hash| Name[State name]
+  Policy -->|pair| Registry[Registry asset]
   Name -->|pair| Registry
-  Published -->|shared credential| Request[Request address]
-  Registry -->|structured preimages| Assets[Witness and request names]
-  Request -->|booking placement| Output[Registration output]
+  Registry -->|hash| Assets[Role names]
 ```
 
 The shared request identity has no incoming registry, key, seed, witness or request-name edge. Neither state policy nor state name takes a later asset name as input. The dependency graph's ranked edge list is a candidate observation, checked from each derivation rather than asserted by a picture.
