@@ -1,0 +1,348 @@
+{
+  "stage": "CANDIDATE-STATEMENTS-ONLY",
+  "acceptedLaw": false,
+  "definitions": {
+    "lean/NoPin/Held/Conditions.lean": "f1e02b96bb6131d06f36d1326f451d82a91ce24c4e2af90652d322e89f428ef9",
+    "lean/NoPin/Held/Corpus.lean": "73fb086b00e5a5fe44e29e8338c0933c5d58bf652299fa3e66365edcb4dc58d6",
+    "lean/NoPin/Held/Equality.lean": "c7f8f3629e6bb1e53616d16d38ecc7dc82fa0871b41462424d0b5cf0d116cd71",
+    "lean/NoPin/Held/Fixtures.lean": "a6378b465c3fbd032f912749748fa675097a29e1c3bea6812ac1b5f24dec2bb7",
+    "lean/NoPin/Held/Good.lean": "54794e8fdf450fa2cd780d10ed34aacfafb573b4aafeef9ff497be9640028459",
+    "lean/NoPin/Held/Instances.lean": "5855a76df1d1f2571be7446a60efea2bdd5cf8f63ffdb89c2ac854234df84299",
+    "lean/NoPin/Held/Model.lean": "78d6aa297b28aa81b09b9ba7fe27423d34a5c828ecc0a7fde98b5ce776aaa510",
+    "lean/NoPin/Held/Mutants.lean": "8aa47ff1374754f904f653566fb072779e624f8d6fefb1bcabd5e1bf53607898",
+    "lean/NoPin/Held/Oracle.lean": "76adeb342e742683de7cd87972f750ff1e48b60b9b0c87ab7283713d58342fd2",
+    "lean/NoPin/Held/Report.lean": "7086cbad44750012cc34a98cc2bf3df05c3fac76a0fa0c648d044335508825eb",
+    "lean/NoPin/Held/Statements.lean": "b4a5d6e31242ff83d8bdde8ce90ac2832a3c18bc00de1d0c21daa79aee0f7e6a",
+    "lean/NoPin/Held/Strong.lean": "0fdfc74858662acd3db8f644eb7792a20801b4abe1079f484b3320afa10852ca",
+    "lean/NoPin/Held/StrongMutants.lean": "86cc251df5d31b4f4e64f085381b0c4460259f6d7cf25f0f6338bb27ce0bd736",
+    "lean/NoPin/Held/Value.lean": "e1707918c12c99b9dbf0e9e696a4461cfc629aa460a8aaa70a353eaed1c10fa0"
+  },
+  "statements": [
+    {
+      "theorem": "NoPin.Held.Statements.additive_settlement",
+      "statementSha256": "5b7bb99241b0446919356346a383ab77018fd87853bf7406ae13f3a83dc0b744",
+      "status": "STATED",
+      "question": "application-held pending termination under the 23 October rulings",
+      "witnesses": [
+        "NoPin.Held.Instances.additive_settlement_antecedent",
+        "NoPin.Held.Instances.additive_settlement_satisfying"
+      ],
+      "selectors": [
+        "releasePayments"
+      ],
+      "proofStatus": "STATED"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.booking_inversion",
+      "statementSha256": "95493b77637b5ae6a29ad28379970085c96bbde689f7c1b70d5142e94baf9b7c",
+      "status": "STATED",
+      "question": "application-held pending termination under the 23 October rulings",
+      "witnesses": [
+        "NoPin.Held.Instances.booking_inversion_antecedent"
+      ],
+      "selectors": [
+        "sourceMember",
+        "bookLive",
+        "bookSigner",
+        "bookFamily",
+        "bookControl",
+        "bookToken",
+        "bookPayload",
+        "bookReference",
+        "bookValue",
+        "bookDeposit",
+        "bookBinding",
+        "bookRoot"
+      ],
+      "inversion": "booking",
+      "proofStatus": "STATED"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.booking_retains",
+      "statementSha256": "790b84a4c18c099b3cd662afe018b151f57a75674cc2becf125f8c8d0555c351",
+      "status": "STATED",
+      "question": "application-held pending termination under the 23 October rulings",
+      "witnesses": [
+        "NoPin.Held.Instances.booking_retains_antecedent",
+        "NoPin.Held.Instances.booking_retains_satisfying"
+      ],
+      "selectors": [
+        "bookSigner"
+      ],
+      "proofStatus": "STATED"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.composed_available",
+      "statementSha256": "6b394febac8fa4962b58c516ab9a3485e11856bb2ca50c5ca1d014b7ddebb8c8",
+      "status": "STATED",
+      "question": "application-held pending termination under the 23 October rulings",
+      "witnesses": [
+        "NoPin.Held.Instances.composed_available_antecedent"
+      ],
+      "selectors": [
+        "composedLocal"
+      ],
+      "proofStatus": "STATED"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.composed_inversion",
+      "statementSha256": "5320b5f39ca52ef9f8e3d2d224c02822e3cf164ce0070201b6d491b6b69d876b",
+      "status": "STATED",
+      "question": "application-held pending termination under the 23 October rulings",
+      "witnesses": [
+        "NoPin.Held.Instances.composed_inversion_antecedent"
+      ],
+      "selectors": [
+        "composedEconomic",
+        "composedPartition",
+        "composedBalance",
+        "composedLocal"
+      ],
+      "inversion": "composed",
+      "proofStatus": "STATED"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.consumption_inversion",
+      "statementSha256": "d32f985acf98ef3c60c97988d853e37cf8bb5d4bf9f78661dd6e97fbf3a1da33",
+      "status": "STATED",
+      "question": "application-held pending termination under the 23 October rulings",
+      "witnesses": [
+        "NoPin.Held.Instances.consumption_inversion_antecedent"
+      ],
+      "selectors": [
+        "consumptionReference"
+      ],
+      "inversion": "consumption",
+      "proofStatus": "STATED"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.coupling_inversion",
+      "statementSha256": "cc5128ad6fcb37275925bf6cc5d3339590862daa3b69aa25b19f52b3f4b43b0d",
+      "status": "STATED",
+      "question": "application-held pending termination under the 23 October rulings",
+      "witnesses": [
+        "NoPin.Held.Instances.coupling_inversion_antecedent"
+      ],
+      "selectors": [
+        "couplingObservation",
+        "couplingFold",
+        "couplingSelected",
+        "couplingTerminal"
+      ],
+      "inversion": "coupling",
+      "proofStatus": "STATED"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.discovery_inversion",
+      "statementSha256": "0674f844b16be305e480af211a33aa5b1b6a333dbe5884d3a097dea98a0ed3b1",
+      "status": "STATED",
+      "question": "application-held pending termination under the 23 October rulings",
+      "witnesses": [
+        "NoPin.Held.Instances.discovery_inversion_antecedent"
+      ],
+      "selectors": [
+        "discoveryPending"
+      ],
+      "inversion": "discovery",
+      "proofStatus": "STATED"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.economicAvailability_inversion",
+      "statementSha256": "1d612470e5b0f053d945ffdc6f4ddba07defb4b97d46a2f0aa98091ee9246038",
+      "status": "STATED",
+      "question": "application-held pending termination under the 23 October rulings",
+      "witnesses": [
+        "NoPin.Held.Instances.economicAvailability_inversion_antecedent"
+      ],
+      "selectors": [
+        "availabilityAccepted"
+      ],
+      "inversion": "economicAvailability",
+      "proofStatus": "STATED"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.genuine_inversion",
+      "statementSha256": "8ae92037ddfa937e8b4f07234d1e95ee24de99badb97fb9c48ce0b282e43247d",
+      "status": "STATED",
+      "question": "application-held pending termination under the 23 October rulings",
+      "witnesses": [
+        "NoPin.Held.Instances.genuine_inversion_antecedent"
+      ],
+      "selectors": [
+        "ownToken",
+        "quantity",
+        "provenance",
+        "rootKey",
+        "rootKind",
+        "pendingReference",
+        "pendingValue",
+        "pendingContents",
+        "pendingCustody"
+      ],
+      "inversion": "genuine",
+      "proofStatus": "STATED"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.liveRelease_inversion",
+      "statementSha256": "cd0a409f7388aa4e29831cd193b5f2b9941f519f5125a7a80a5d709b6e1b4d58",
+      "status": "STATED",
+      "question": "application-held pending termination under the 23 October rulings",
+      "witnesses": [
+        "NoPin.Held.Instances.liveRelease_inversion_antecedent"
+      ],
+      "selectors": [
+        "liveRelease"
+      ],
+      "inversion": "liveRelease",
+      "proofStatus": "STATED"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.liveUpdate_inversion",
+      "statementSha256": "f363b39578bf2d432d51e74a7c66e26af4cd0af8c14babfce0f04ab97ae05a26",
+      "status": "STATED",
+      "question": "application-held pending termination under the 23 October rulings",
+      "witnesses": [
+        "NoPin.Held.Instances.liveUpdate_inversion_antecedent"
+      ],
+      "selectors": [
+        "liveUpdate"
+      ],
+      "inversion": "liveUpdate",
+      "proofStatus": "STATED"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.partition_inversion",
+      "statementSha256": "cf682497ede506315af848e5e6329667662ae532a22b04db4a8c1b2872e84608",
+      "status": "STATED",
+      "question": "application-held pending termination under the 23 October rulings",
+      "witnesses": [
+        "NoPin.Held.Instances.partition_inversion_antecedent"
+      ],
+      "selectors": [
+        "partitionInputs",
+        "partitionOutputs",
+        "partitionDistinct",
+        "partitionIndices",
+        "partitionController"
+      ],
+      "inversion": "partition",
+      "proofStatus": "STATED"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.pending_paths_refused",
+      "statementSha256": "152107d503d52c692c2ad64221b6895a7a7308123f0fff8dd3d46953dfd0c713",
+      "status": "STATED",
+      "question": "application-held pending termination under the 23 October rulings",
+      "witnesses": [
+        "NoPin.Held.Instances.pending_paths_refused_antecedent"
+      ],
+      "selectors": [
+        "liveUpdate"
+      ],
+      "proofStatus": "STATED"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.pending_witness_authentication",
+      "statementSha256": "16eada98ea0649f6638dc608b27a86577f0bf61ead72e28798aee1569870e7fb",
+      "status": "STATED",
+      "question": "application-held pending termination under the 23 October rulings",
+      "witnesses": [
+        "NoPin.Held.Instances.pending_witness_authentication_antecedent",
+        "NoPin.Held.Instances.pending_witness_authentication_satisfying"
+      ],
+      "selectors": [
+        "quantity"
+      ],
+      "proofStatus": "STATED"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.pendingRelease_inversion",
+      "statementSha256": "eed9369fd6955b0b4696ce745f3f88d820d999cdd25f98f57c8b8e64bd69005d",
+      "status": "STATED",
+      "question": "application-held pending termination under the 23 October rulings",
+      "witnesses": [
+        "NoPin.Held.Instances.pendingRelease_inversion_antecedent"
+      ],
+      "selectors": [
+        "releaseGenuine",
+        "releaseSpent",
+        "releaseOnce",
+        "releaseBurn",
+        "releasePayments"
+      ],
+      "inversion": "pendingRelease",
+      "proofStatus": "STATED"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.permanent_inversion",
+      "statementSha256": "7d2a39ee39d408917bb36872db188e7357e9db4631a7a882dcaed0e77009711c",
+      "status": "STATED",
+      "question": "application-held pending termination under the 23 October rulings",
+      "witnesses": [
+        "NoPin.Held.Instances.permanent_inversion_antecedent"
+      ],
+      "selectors": [
+        "permanentDecision"
+      ],
+      "inversion": "permanent",
+      "proofStatus": "STATED"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.projection_inversion",
+      "statementSha256": "c40ea5cbf2e919f06e05962f81903fc1deb0c904c1dadc713769e57a7f713237",
+      "status": "STATED",
+      "question": "application-held pending termination under the 23 October rulings",
+      "witnesses": [
+        "NoPin.Held.Instances.projection_inversion_antecedent"
+      ],
+      "selectors": [
+        "projectionLive",
+        "projectionPending"
+      ],
+      "inversion": "projection",
+      "proofStatus": "STATED"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.rebooking_inversion",
+      "statementSha256": "e6cf256282ad640be9d26b49c6373ef92e6a22f550198ccb0db9ee622aa8b5ab",
+      "status": "STATED",
+      "question": "application-held pending termination under the 23 October rulings",
+      "witnesses": [
+        "NoPin.Held.Instances.rebooking_inversion_antecedent"
+      ],
+      "selectors": [
+        "rebooking"
+      ],
+      "inversion": "rebooking",
+      "proofStatus": "STATED"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.rejection_inversion",
+      "statementSha256": "91ffd699c24131acbc1dffbcacb92ce0da5bb148c9b2b24db7a7fc42c042dce3",
+      "status": "STATED",
+      "question": "application-held pending termination under the 23 October rulings",
+      "witnesses": [
+        "NoPin.Held.Instances.rejection_inversion_antecedent"
+      ],
+      "selectors": [
+        "rejectionDecision"
+      ],
+      "inversion": "rejection",
+      "proofStatus": "STATED"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.release_terminal",
+      "statementSha256": "626d2aad7751716714e8c93a44e02a8585de4598d999954515bf8b14b3a41147",
+      "status": "STATED",
+      "question": "application-held pending termination under the 23 October rulings",
+      "witnesses": [
+        "NoPin.Held.Instances.release_terminal_antecedent",
+        "NoPin.Held.Instances.release_terminal_satisfying"
+      ],
+      "selectors": [
+        "releaseBurn"
+      ],
+      "proofStatus": "STATED"
+    }
+  ]
+}

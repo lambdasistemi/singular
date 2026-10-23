@@ -295,8 +295,22 @@
       "pause": 400
     }
   ],
+  "slice-4-settlement-resolution-and-value-partition-amendment-23-october": [
+    {
+      "text": "Slice-4 settlement resolution and value-partition amendment (23 October).",
+      "pause": 500
+    },
+    {
+      "text": "The operator selected ruled economics and removal of legacy registryPayments (NOTE-002). Application release must still pay every protected deposit additively. The earlier open combined-payment story above is preserved as history; equivalence to legacy registryOwed is no longer the candidate's claim.",
+      "pause": 400
+    },
+    {
+      "text": "A-003 authorizes physical pending lovelace = exact root termination contents + protected deposit. The root observer erases precisely the deposit allocation from the physical pending input and physical controller output. The local release reads the physical outputs. No ruling authorizes cancellation or pending payload/control updates; the candidate exposes no such path as an explicitly unruled hypothesis.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "questions.md",
-    "sha256": "2e447c5ba0aff6563103dca5ba3703e99c025d2d5046a7402e2c3b2896e573c1"
+    "sha256": "28b10364cd64b01b57459c06fb107de3dcf9aafb1f153f85f267ebcc0fb94ffb"
   }
 }

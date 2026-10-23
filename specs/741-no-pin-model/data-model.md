@@ -55,13 +55,23 @@ The records below belong only to NoPin.Held. They are explicitly hypothetical. T
 |---|---|
 | Control | registry : TokenId; key, controller, deposit : Nat |
 | Holding | reference : OutRef; family : Nat; control : Control; token : TokenId; quantity : Nat; provenance : TokenId; rootHolding : Singular.Holding; payload, lovelace : Nat. Complete identity and authenticated origin are explicit, never inferred from payload. |
-| Pending | holding : Holding; booking : Singular.TerminationBooking. The fresh holding reference equals the retained request reference; family/control/token/payload are retained from the spent live holding; root exact contents determine pending value and tags. |
+| Pending | holding : Holding; booking : Singular.TerminationBooking. The fresh holding reference equals the retained request reference; family/control/token/payload are retained from the spent live holding; root exact contents determine tags and the root value allocation; physical lovelace adds the disjoint protected deposit. |
 | LockedOutput | live Holding or pending Pending. Tagged, disjoint states; address equality does not erase the tag. |
-| ApplicationState | registry : Singular.RegistryState; registrations : Singular.RequestPool; outputs : List LockedOutput; treasury : Nat. The economic projection uses these actual records and preserves the root configuration/trie/treasury. |
+| ApplicationState | registryIdentity : TokenId; registry : Singular.RegistryState; registrations : Singular.RequestPool; outputs : List LockedOutput; treasury : Nat. The economic projection uses these actual records and preserves the root configuration/trie/treasury. |
 | LiveSpend | update or release. Derived from OpenDatumSpend; no controller-change path. Both are refused for pending records. |
 | LocalPayment | output index, controller payment-key identity and observed lovelace. Bound to the same transaction outputs by explicit correspondence, not expected amounts. |
 | LocalTransaction | assets : NoPin.TxView; spent : List Pending; payments : List LocalPayment. No state or request-validator credential. Retained deposits can be summed locally; registryOwed and carrier eligibility cannot be recovered from these fields. |
-| FoldObservation | before, after : Singular.World; unspent : Singular.EconomicUtxo; transaction : Singular.EconomicTransaction. Accepted outcome is an explicit proposition over Singular.foldAccepted; no duplicated fold function. |
+| FoldObservation | registryIdentity : TokenId; before, after : Singular.World; unspent : Singular.EconomicUtxo; transaction : Singular.EconomicTransaction. Accepted outcome is an explicit proposition over Singular.foldAccepted; no duplicated fold function. |
 | Case, Guard, Mutation | Separate compiled pending-case and guard inventory; none selects the candidate, flip selects one atomic guard. Does not alter the existing identity selectors. |
 
 Authentication, supply and availability statements name the explicit root projection and its reachability premises. Root abstract tags and candidate shared-policy assets require a named correspondence; new identities use the existing parameterized NoPin hash/codec, never the root FNV stand-ins. Calling the unchanged root admission reads its accepted tag definition and does not adopt that stand-in as a new cryptographic construction.
+
+## Authorized slice-4 physical value partition
+
+A-003 amends the approved pending-output value surface. Holding.lovelace is physical value: pending root request.contents.lovelace plus control.deposit. These are disjoint allocations. The root request itself still contains exactly its declared tip plus carrier, with no protected deposit hidden inside that amount.
+
+PhysicalOutput records output index, optional controller address and physical lovelace. PhysicalView records reference/value input pairs, indexed physical outputs and explicit index/deposit allocations. A FoldObservation records the unchanged economic world before and after, observed unspent set and actual economic transaction. LocalTransaction keeps the minimal TxView plus selected pending records and indexed physical payments. Its local settlement sums deposits by application family and controller, and refuses repeated payment indices.
+
+The valuePartition correspondence subtracts the retained deposit from each physical pending input and each allocated controller output to obtain the root observer's amounts. It proves no fact about the provider or ledger. A two-holding instance uses deposits five and seven; its root and physical balances and twelve-lovelace controller payment must be computed. Overlapping the deposit with root contents and omitting its physical payment are required violating twins.
+
+The observed ApplicationState and FoldObservation also carry registryIdentity : TokenId. This labels the accepted abstract world with its independently observed complete registry token. The named correspondence checks policy and name, while authentication of this label and interpretation of the root registryId remain upstream debt. Booking binds the controller registry to that observed identity and binds the request key/custody to the retained token.

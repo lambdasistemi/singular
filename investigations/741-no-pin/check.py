@@ -30,8 +30,7 @@ def load_report(path):
     return records
 
 
-def main():
-    records = load_report(sys.argv[1])
+def check_family(records, namespace, prefix, family):
     declarations = {r["name"]: r for r in records if "name" in r}
     inventory = [r for r in records if "cases" in r]
     require(len(inventory) == 1, "missing or duplicate compiled inventory")
@@ -47,11 +46,16 @@ def main():
     corpus = [r for r in records if "scenario" in r]
     require(corpus, "no executable oracle corpus")
     require(
-        corpus == json.loads((ROOT / "corpus.json").read_text()), "oracle corpus drift"
+        corpus == json.loads((ROOT / (prefix + "corpus.json")).read_text()),
+        "oracle corpus drift",
     )
     replay = subprocess.run(
         [str(ROOT / ".lake/build/bin/no-pin-oracle")],
-        input="".join(json.dumps(r["scenario"]) + "\n" for r in corpus),
+        input="".join(
+            json.dumps({**r["scenario"], **({"family": family} if family else {})})
+            + "\n"
+            for r in corpus
+        ),
         text=True,
         capture_output=True,
         check=True,
@@ -61,10 +65,10 @@ def main():
         == [r["result"] for r in corpus],
         "oracle replay mismatch",
     )
-    ledger = json.loads((ROOT / "statements.json").read_text())
+    ledger = json.loads((ROOT / (prefix + "statements.json")).read_text())
     rows = ledger["statements"]
-    mutants = json.loads((ROOT / "mutants.json").read_text())["mutants"]
-    discovered = {n for n in declarations if n.startswith("NoPin.Statements.")}
+    mutants = json.loads((ROOT / (prefix + "mutants.json")).read_text())["mutants"]
+    discovered = {n for n in declarations if n.startswith(namespace + ".Statements.")}
     names = [r["theorem"] for r in rows]
     require(len(names) == len(set(names)), "duplicate statement row")
     require(set(names) == discovered, "missing or extra theorem in ledger")
@@ -74,7 +78,7 @@ def main():
             digest((ROOT / file).read_text()) == expected, f"definition digest: {file}"
         )
     for name, proof in declarations.items():
-        if not name.startswith("NoPin.Statements."):
+        if not name.startswith(namespace + ".Statements."):
             require(set(proof["axioms"]) <= STANDARD, f"unproved example: {name}")
     inversions = {}
     selector_owners = set()
@@ -136,12 +140,15 @@ def main():
                 require(
                     proof["kind"] == "theorem", "control is not an elaborated proof"
                 )
-            require("NoPin.Mutation.none" in positive["type"], "candidate is not none")
             require(
-                "NoPin.Mutation.flip" in negative["type"],
+                namespace + ".Mutation.none" in positive["type"],
+                "candidate is not none",
+            )
+            require(
+                namespace + ".Mutation.flip" in negative["type"],
                 "mutant does not use selector",
             )
-            require(f"NoPin.Guard.{selector}" in negative["type"], "wrong guard")
+            require(f"{namespace}.Guard.{selector}" in negative["type"], "wrong guard")
             require(
                 negative["candidateType"] == positive["type"],
                 "candidate/mutant instance mismatch",
@@ -150,6 +157,11 @@ def main():
             negative_count += 1
         if row.get("inversion"):
             case = row["inversion"]
+            if family:
+                require(
+                    declaration["inversion"] == case,
+                    f"compiled inversion binding: {name}",
+                )
             require(case not in inversions, f"duplicate inversion: {case}")
             inversions[case] = row
             require(
@@ -171,9 +183,41 @@ def main():
                 "negativeProofs": negative_count,
                 "oracleReplays": len(corpus),
                 "acceptedLaw": False,
+                "family": family or "identity",
             },
             sort_keys=True,
         )
+    )
+
+
+def main():
+    records = load_report(sys.argv[1])
+    base = "5b1497d4daeb4b8f5f54ff89512fb45b1c22151f"
+    for name in [
+        "statements.json",
+        "mutants.json",
+        "corpus.json",
+        "lean/NoPin/Statements.lean",
+        "lean/NoPin/Identity.lean",
+        "lean/NoPin/Witnesses.lean",
+        "lean/NoPin/Mutants.lean",
+        "lean/NoPin/Oracle.lean",
+    ]:
+        original = subprocess.run(
+            ["git", "show", base + ":investigations/741-no-pin/" + name],
+            capture_output=True,
+            check=True,
+        ).stdout
+        require(
+            (ROOT / name).read_bytes() == original, "slice-2 identity changed: " + name
+        )
+    require(
+        all(r.get("family") in {None, "held"} for r in records),
+        "unknown evidence family",
+    )
+    check_family([r for r in records if not r.get("family")], "NoPin", "", None)
+    check_family(
+        [r for r in records if r.get("family") == "held"], "NoPin.Held", "held-", "held"
     )
 
 

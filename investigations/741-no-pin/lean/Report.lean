@@ -1,6 +1,7 @@
 import Lean
 import NoPin
 import NoPin.Oracle
+import NoPin.Held.Report
 
 /-! Hypothetical #741 evidence, not accepted law. Discover statements, cases,
 guards and compiled proof axioms from the environment rather than a hand list. -/
@@ -32,7 +33,7 @@ elab "#identity_report" : command => do
   for (name, info) in env.constants.toList do
     if name.toString.startsWith "NoPin." then
       if let .axiomInfo _ := info then throwError "custom axiom: {name}"
-      unless name.toString.startsWith "NoPin.Statements." do
+      unless name.toString.startsWith "NoPin.Statements." || name.toString.startsWith "NoPin.Held.Statements." do
         let axioms ← collectAxioms name
         unless axioms.all (fun a => a == `propext || a == `Classical.choice || a == `Quot.sound) do
           throwError "unproved candidate definition or example: {name}"
@@ -109,3 +110,6 @@ def reportControls : IO Unit := do
 #eval reportControls
 
 end NoPin.Report
+
+#held_report
+#eval NoPin.Held.Report.reportControls

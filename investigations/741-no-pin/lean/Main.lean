@@ -1,4 +1,5 @@
 import NoPin.Oracle
+import NoPin.Held.Oracle
 
 /-! Hypothetical #741 oracle, not accepted law: JSON scenarios from stdin.
 This executes named definitions, never statements or theorem projections. -/
@@ -10,7 +11,17 @@ def main : IO UInt32 := do
   repeat
     let input ← stdin.getLine
     if input.isEmpty then return 0
-    match Lean.Json.parse input >>= Lean.fromJson? (α := NoPin.Scenario) with
+    let parsed := Lean.Json.parse input
+    if let .ok json := parsed then
+      if (json.getObjValAs? String "family").toOption == some "held" then
+        match Lean.fromJson? (α := NoPin.Held.Scenario) json with
+        | .error error =>
+          (← IO.getStderr).putStrLn error
+          return 1
+        | .ok scenario =>
+          stdout.putStrLn (Lean.toJson (NoPin.Held.runQuery scenario.mutation scenario.query)).compress
+          continue
+    match parsed >>= Lean.fromJson? (α := NoPin.Scenario) with
     | .error error =>
         (← IO.getStderr).putStrLn error
         return 1

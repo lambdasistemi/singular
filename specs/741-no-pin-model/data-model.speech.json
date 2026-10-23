@@ -51,8 +51,30 @@
       "pause": 400
     }
   ],
+  "authorized-slice-4-physical-value-partition": [
+    {
+      "text": "Authorized slice-4 physical value partition.",
+      "pause": 500
+    },
+    {
+      "text": "A-003 amends the approved pending-output value surface. Holding.lovelace is physical value: pending root request.contents.lovelace plus control.deposit. These are disjoint allocations. The root request itself still contains exactly its declared tip plus carrier, with no protected deposit hidden inside that amount.",
+      "pause": 400
+    },
+    {
+      "text": "PhysicalOutput records output index, optional controller address and physical lovelace. PhysicalView records reference/value input pairs, indexed physical outputs and explicit index/deposit allocations. A FoldObservation records the unchanged economic world before and after, observed unspent set and actual economic transaction. LocalTransaction keeps the minimal TxView plus selected pending records and indexed physical payments. Its local settlement sums deposits by application family and controller, and refuses repeated payment indices.",
+      "pause": 400
+    },
+    {
+      "text": "The valuePartition correspondence subtracts the retained deposit from each physical pending input and each allocated controller output to obtain the root observer's amounts. It proves no fact about the provider or ledger. A two-holding instance uses deposits five and seven; its root and physical balances and twelve-lovelace controller payment must be computed. Overlapping the deposit with root contents and omitting its physical payment are required violating twins.",
+      "pause": 400
+    },
+    {
+      "text": "The observed ApplicationState and FoldObservation also carry registryIdentity : TokenId. This labels the accepted abstract world with its independently observed complete registry token. The named correspondence checks policy and name, while authentication of this label and interpretation of the root registryId remain upstream debt. Booking binds the controller registry to that observed identity and binds the request key/custody to the retained token.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "data-model.md",
-    "sha256": "0c965e47fa449ebad2e712722b539909767df50a9627cb2b5992d511147e5a9e"
+    "sha256": "3f1c5c5ce92a6b6c89e6ec89132bf5ff4d54f50c0f2ce2d3a651b521a8f2e1cf"
   }
 }

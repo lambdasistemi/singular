@@ -4,7 +4,8 @@ import Singular.Statements.Preservation
 
 /-! Hypotheses for #741, not accepted law. The economic judgements are imported,
 not replaced. Physical application address and logical custody are independent.
-Cancellation, pending updates and the controller's combined payment remain unruled. -/
+Cancellation and pending updates remain unruled; local settlement follows the
+operator's additive protected-deposit ruling. -/
 
 namespace NoPin.Held
 open Singular Lean
@@ -40,11 +41,36 @@ inductive LockedOutput where
   deriving BEq, DecidableEq, ToJson, FromJson
 /-- Hypothesis under #741, not accepted law; pure application-to-economic projection. -/
 structure ApplicationState where
+  registryIdentity : TokenId
   registry : RegistryState
   registrations : RequestPool
   outputs : List LockedOutput
   treasury : Nat
-  deriving BEq, DecidableEq, ToJson, FromJson
+  deriving BEq, DecidableEq, ToJson
+/-- Hypothesis under #741, not accepted law; explicit root state decoder. -/
+instance : FromJson ApplicationState where
+  fromJson? j := do
+    let registryIdentity ← j.getObjValAs? TokenId "registryIdentity"
+    let raw ← j.getObjVal? "registry"
+    let config ← raw.getObjValAs? Config "config"
+    let rawTrie ← raw.getObjValAs? (List Json) "trie"
+    let trie ← rawTrie.mapM fun entry => do
+      let key ← entry.getObjValAs? Key "key"
+      let rawLeaf ← entry.getObjVal? "leaf"
+      let leaf ← if rawLeaf == Json.null then pure Leaf.unknown else do
+        let name : String ← fromJson? rawLeaf
+        match name with
+        | "active" => pure (Leaf.known .active)
+        | "terminal" => pure (Leaf.known .terminal)
+        | "absent" => pure (Leaf.known .absent)
+        | _ => throw "unknown leaf"
+      pure (key, leaf)
+    let custody ← raw.getObjValAs? (List Custody) "custody"
+    let held ← raw.getObjValAs? (List Singular.Holding) "held"
+    let registrations ← j.getObjValAs? RequestPool "registrations"
+    let outputs ← j.getObjValAs? (List LockedOutput) "outputs"
+    let treasury ← j.getObjValAs? Nat "treasury"
+    return { registryIdentity, registry := { config, trie, custody, held }, registrations, outputs, treasury }
 /-- Hypothesis under #741, not accepted law; accepted wire constructors only. -/
 inductive LiveSpend where
   | update | release
@@ -63,6 +89,7 @@ structure LocalTransaction where
   deriving BEq, DecidableEq, ToJson, FromJson
 /-- Hypothesis under #741, not accepted law; accepted root observations, no second fold. -/
 structure FoldObservation where
+  registryIdentity : TokenId
   before : World
   after : World
   unspent : EconomicUtxo
@@ -72,24 +99,27 @@ structure FoldObservation where
 inductive Case where
   | liveUpdate | liveRelease | genuine | booking | rebooking
   | pendingRelease | projection | coupling | discovery | consumption | economicAvailability
+  | partition | composed | rejection | permanent
   deriving BEq, DecidableEq, ToJson, FromJson
 /-- Hypothesis under #741, not accepted law; single atomic decision sites only. -/
 inductive Guard where
   | liveUpdate | liveRelease | ownToken | quantity | provenance | rootKey | rootKind
   | pendingReference | pendingValue | pendingContents | pendingCustody
   | sourceMember | bookLive | bookSigner | bookFamily | bookControl | bookToken
-  | bookPayload | bookReference | bookValue | bookDeposit | bookRoot | rebooking
+  | bookPayload | bookReference | bookValue | bookDeposit | bookBinding | bookRoot | rebooking
   | releaseGenuine | releaseSpent | releaseOnce | releaseBurn | releasePayments
   | projectionLive | projectionPending | couplingObservation | couplingFold
   | couplingSelected | couplingTerminal | discoveryPending | consumptionReference
-  | availabilityAccepted
+  | availabilityAccepted | partitionInputs | partitionOutputs | partitionDistinct
+  | partitionIndices | partitionController | composedEconomic | composedPartition
+  | composedBalance | composedLocal | rejectionDecision | permanentDecision
   deriving BEq, DecidableEq, ToJson, FromJson
 /-- Hypothesis under #741, not accepted law; selectors are investigation controls. -/
 inductive Mutation where
   | none | flip (guard : Guard)
   deriving BEq, DecidableEq, ToJson, FromJson
-/-- Hypothesis under #741, not accepted law; one selected guard changes. -/
-def guard (m : Mutation) (site : Guard) (value : Bool) : Bool :=
+/-- Hypothesis under #741, not accepted law; one selected applyGuard changes. -/
+def applyGuard (m : Mutation) (site : Guard) (value : Bool) : Bool :=
   if m == .flip site then !value else value
 /-- Hypothesis under #741, not accepted law; extract physical held-token observation. -/
 def holdingOf : LockedOutput → Holding
@@ -97,64 +127,64 @@ def holdingOf : LockedOutput → Holding
   | .pending p => p.holding
 /-- Hypothesis under #741, not accepted law; address-independent category projection. -/
 def projectWith (m : Mutation) (s : ApplicationState) : World :=
-  { registry := { s.registry with held := s.outputs.filterMap fun o =>
-      if guard m .projectionLive (match o with | .live _ => true | _ => false)
-      then some (holdingOf o).rootHolding else none },
-    pending := s.registrations,
-    terminations := s.outputs.filterMap fun o => match o with
-      | .pending p => if guard m .projectionPending true then some p.booking else none
-      | .live _ => none,
-    treasury := s.treasury }
+  let live := s.outputs.filterMap fun o =>
+    if applyGuard m .projectionLive (match o with | .live _ => true | _ => false)
+    then some ((holdingOf o).rootHolding) else none
+  let pending := s.outputs.filterMap fun o => match o with
+    | .pending p => if applyGuard m .projectionPending true then some p.booking else none
+    | .live _ => none
+  { registry := { s.registry with held := live }, pending := s.registrations,
+    terminations := pending, treasury := s.treasury }
 /-- Hypothesis under #741, not accepted law; actual projection, no typed supply count. -/
 def project (s : ApplicationState) : World := projectWith .none s
 /-- Hypothesis under #741, not accepted law; classify the two accepted live spend paths. -/
 def liveSpend (m : Mutation) (action : LiveSpend) (o : LockedOutput) : Bool :=
-  guard m (match action with | .update => .liveUpdate | .release => .liveRelease)
+  applyGuard m (match action with | .update => .liveUpdate | .release => .liveRelease)
     (match o with | .live _ => true | .pending _ => false)
 /-- Hypothesis under #741, not accepted law; exact identity and supplied origin.
 Root registry/asset correspondence is an external statement premise, not supplied by a datum. -/
 def genuine (m : Mutation) (hash : Hash) (code : Codec) (c : Config) (o : LockedOutput) : Bool :=
   let h := holdingOf o
-  guard m .ownToken (h.token == roleAsset hash code h.control.registry .witness h.control.key) &&
-  guard m .quantity (h.quantity == 1) &&
-  guard m .provenance (h.provenance == h.token) &&
-  guard m .rootKey (h.rootHolding.key == h.control.key) &&
-  guard m .rootKind (h.rootHolding.kind == .active) &&
+  applyGuard m .ownToken (h.token == roleAsset hash code h.control.registry .witness h.control.key) &&
+  applyGuard m .quantity (h.quantity == 1) &&
+  applyGuard m .provenance (h.provenance == h.token) &&
+  applyGuard m .rootKey (h.rootHolding.key == h.control.key) &&
+  applyGuard m .rootKind (h.rootHolding.kind == .active) &&
   match o with
   | .live _ => true
   | .pending p =>
-    guard m .pendingReference (h.reference == p.booking.request.reference) &&
-    guard m .pendingValue (h.lovelace == p.booking.request.contents.lovelace) &&
-    guard m .pendingContents (terminationExactContents c p.booking.request) &&
-    guard m .pendingCustody (p.booking.custodyInputs == [h.rootHolding] &&
+    applyGuard m .pendingReference (h.reference == p.booking.request.reference) &&
+    applyGuard m .pendingValue (h.lovelace == p.booking.request.contents.lovelace + h.control.deposit) &&
+    applyGuard m .pendingContents (terminationExactContents c p.booking.request) &&
+    applyGuard m .pendingCustody (p.booking.custodyInputs == [h.rootHolding] &&
       p.booking.request.key == h.control.key)
 /-- Hypothesis under #741, not accepted law; controller-only transition, exact root admission.
 The root judgement supplies contents/tags; no local reimplementation of those guards. -/
 def book (m : Mutation) (hash : Hash) (code : Codec) (s : ApplicationState)
     (source : LockedOutput) (p : Pending) (signers : List Nat) : Bool :=
   match source with
-  | .pending _ => guard m .rebooking false
+  | .pending _ => applyGuard m .rebooking false
   | .live h =>
-    guard m .sourceMember (s.outputs.contains source) &&
-    guard m .bookLive (genuine .none hash code s.registry.config source) &&
-    guard m .bookSigner (signers.contains h.control.controller) &&
-    guard m .bookFamily (p.holding.family == h.family) &&
-    guard m .bookControl (p.holding.control == h.control) &&
-    guard m .bookToken (p.holding.token == h.token && p.holding.quantity == 1 &&
+    applyGuard m .sourceMember (s.outputs.contains source) &&
+    applyGuard m .bookLive (genuine .none hash code s.registry.config source) &&
+    applyGuard m .bookSigner (signers.contains h.control.controller) &&
+    applyGuard m .bookFamily (p.holding.family == h.family) &&
+    applyGuard m .bookControl (p.holding.control == h.control) &&
+    applyGuard m .bookToken (p.holding.token == h.token && p.holding.quantity == 1 &&
       p.holding.provenance == h.provenance && p.holding.rootHolding == h.rootHolding) &&
-    guard m .bookPayload (p.holding.payload == h.payload) &&
-    guard m .bookReference (p.holding.reference == p.booking.request.reference &&
+    applyGuard m .bookPayload (p.holding.payload == h.payload) &&
+    applyGuard m .bookReference (p.holding.reference == p.booking.request.reference &&
       p.holding.reference != h.reference) &&
-    guard m .bookValue (p.holding.lovelace == p.booking.request.contents.lovelace) &&
-    guard m .bookDeposit (h.control.deposit <= p.holding.lovelace) &&
-    guard m .bookRoot ((bookTermination (project s) p.booking).isOk)
+    applyGuard m .bookValue (p.holding.lovelace == p.booking.request.contents.lovelace + p.holding.control.deposit) &&
+    applyGuard m .bookDeposit (p.holding.control.deposit <= p.holding.lovelace) &&
+    applyGuard m .bookBinding (h.control.registry == s.registryIdentity && p.booking.custodyInputs == [h.rootHolding] && p.booking.request.key == h.control.key) &&
+    applyGuard m .bookRoot ((bookTermination (project s) p.booking).isOk)
 /-- Hypothesis under #741, not accepted law; replace the selected live observation once. -/
 def bookEffect (s : ApplicationState) (source : LockedOutput) (p : Pending) : ApplicationState :=
   { s with outputs := .pending p :: s.outputs.erase source }
 /-- Hypothesis under #741, not accepted law; additive local deposits, not registryOwed. -/
 def releasedTo (ps : List Pending) (family controller : Nat) : Nat :=
-  ((ps.filter fun p => p.holding.family == family && p.holding.control.controller == controller)
-    .map (·.holding.control.deposit)).sum
+  ((ps.filter (fun (p : Pending) => p.holding.family == family && p.holding.control.controller == controller)).map (fun p => p.holding.control.deposit)).sum
 /-- Hypothesis under #741, not accepted law; each observed output counted once.
 This supplies no equivalent of the registry's settlement eligibility or aggregate duties. -/
 def localPayments (tx : LocalTransaction) (controller : Nat) : Nat :=
@@ -163,17 +193,18 @@ def localPayments (tx : LocalTransaction) (controller : Nat) : Nat :=
 Duplicate payment indices refuse; correspondence to ledger outputs is still a premise. -/
 def pendingRelease (m : Mutation) (hash : Hash) (code : Codec) (c : Config)
     (p : Pending) (tx : LocalTransaction) : Bool :=
-  guard m .releaseGenuine (genuine .none hash code c (.pending p)) &&
-  guard m .releaseSpent (tx.spent.contains p && tx.assets.spent.contains p.holding.reference) &&
-  guard m .releaseOnce (decide (tx.assets.spent.Nodup ∧
+  applyGuard m .releaseGenuine (genuine .none hash code c (.pending p)) &&
+  applyGuard m .releaseSpent (tx.spent.contains p && tx.assets.spent.contains p.holding.reference) &&
+  applyGuard m .releaseOnce (decide (tx.assets.spent.Nodup ∧
     (tx.spent.map (·.holding.reference)).Nodup ∧ (tx.payments.map (·.index)).Nodup)) &&
-  guard m .releaseBurn (mintQty tx.assets p.holding.token == -1) &&
-  guard m .releasePayments (releasedTo tx.spent p.holding.family p.holding.control.controller <=
+  applyGuard m .releaseBurn (mintQty tx.assets p.holding.token == -1) &&
+  applyGuard m .releasePayments (releasedTo tx.spent p.holding.family p.holding.control.controller <=
     localPayments tx p.holding.control.controller)
 /-- Hypothesis under #741, not accepted law; per-key correspondence only.
 Full value, script invocation and lineage correspondence remain upstream obligations. -/
-def observationCorrespondence (registry : TokenId) (key : Key) (token : TokenId)
+abbrev observationCorrespondence (registry : TokenId) (key : Key) (token : TokenId)
     (tx : TxView) (o : FoldObservation) : Prop :=
+  registry = o.registryIdentity ∧
   tx.spent = o.transaction.transaction.inputs.filterMap (·.ref) ∧
   mintQty tx token = ((o.transaction.singularMint.filter fun entry =>
     decide (entry.1 = o.before.registry.config.singularTag key)).map (·.2)).sum ∧
@@ -182,11 +213,12 @@ def observationCorrespondence (registry : TokenId) (key : Key) (token : TokenId)
 It is not established by the accepted witness policy's Modify co-presence test. -/
 def couplingCheck (m : Mutation) (registry : TokenId) (key : Key) (token : TokenId)
     (tx : TxView) (o : FoldObservation) : Bool :=
-  guard m .couplingObservation (decide (observationCorrespondence registry key token tx o)) &&
-  guard m .couplingFold (foldAccepted o.before o.unspent o.transaction == .ok o.after) &&
-  guard m .couplingSelected ((foldMembers o.before o.transaction).any fun member =>
+  applyGuard m .couplingObservation (decide (observationCorrespondence registry key token tx o)) &&
+  applyGuard m .couplingFold (match foldAccepted o.before o.unspent o.transaction with
+    | .ok after => after == o.after | .error _ => false) &&
+  applyGuard m .couplingSelected ((foldMembers o.before o.transaction).any fun member =>
     match member with | .termination b => b.request.key == key | _ => false) &&
-  guard m .couplingTerminal (trieGet o.after.registry.trie key == .known .terminal)
+  applyGuard m .couplingTerminal (trieGet o.after.registry.trie key == .known .terminal)
 /-- Hypothesis under #741, not accepted law; same-key terminal guarantee is assumed explicitly. -/
 abbrev BurnCoupling (registry : TokenId) (key : Key) (token : TokenId)
     (tx : TxView) (o : FoldObservation) : Prop :=
@@ -194,7 +226,7 @@ abbrev BurnCoupling (registry : TokenId) (key : Key) (token : TokenId)
 /-- Hypothesis under #741, not accepted law; complete public pending observations required. -/
 def discoverWith (m : Mutation) (s : ApplicationState) : List Pending :=
   s.outputs.filterMap fun o => match o with
-    | .pending p => if guard m .discoveryPending true then some p else none
+    | .pending p => if applyGuard m .discoveryPending true then some p else none
     | .live _ => none
 /-- Hypothesis under #741, not accepted law; no private booking input. -/
 def discover (s : ApplicationState) : List Pending := discoverWith .none s
@@ -203,7 +235,7 @@ The registry's terminal result comes separately from the accepted fold observati
 def consumeWith (m : Mutation) (s : ApplicationState) (tx : EconomicTransaction) : ApplicationState :=
   { s with outputs := s.outputs.filter fun o => match o with
       | .live _ => true
-      | .pending p => !guard m .consumptionReference
+      | .pending p => !applyGuard m .consumptionReference
           (inputsContainReference tx.transaction.inputs p.holding.reference) }
 /-- Hypothesis under #741, not accepted law; pending filtering, no independent registry effect. -/
 def consume (s : ApplicationState) (tx : EconomicTransaction) : ApplicationState := consumeWith .none s tx
@@ -211,7 +243,7 @@ def consume (s : ApplicationState) (tx : EconomicTransaction) : ApplicationState
 def economicAvailability (m : Mutation) (s : ApplicationState) (p : Pending)
     (time funding fee : Nat) : Bool :=
   let w := project s
-  guard m .availabilityAccepted ((foldAccepted w (terminationWitnessUnspent w funding)
+  applyGuard m .availabilityAccepted ((foldAccepted w (terminationWitnessUnspent w funding)
     (terminationWitnessTransaction w p.booking time funding fee)).isOk)
 
 end NoPin.Held

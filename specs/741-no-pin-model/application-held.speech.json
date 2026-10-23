@@ -19,7 +19,7 @@
       "pause": 400
     },
     {
-      "text": "Read the source comparison below, then the frozen records in data-model.md and functions in functions-model.md. The open settlement story holds equivalent-settlement and composed-availability claims.",
+      "text": "Read the source comparison below, then the frozen records in data-model.md and functions in functions-model.md. The operator resolved the settlement story on 23 October: ruled root economics applies, and application release pays the protected deposits additively. The legacy registryPayments duty is removed. General candidate statements remain unproved.",
       "pause": 400
     }
   ],
@@ -29,7 +29,7 @@
       "pause": 500
     },
     {
-      "text": "A tagged pending output is distinct from a live holding even at the same application address. Booking spends the live output and creates a fresh pending output in that application family. It retains the complete genuine asset, protected control and payload; its request and trie-ready tag are checked through the accepted economic booking, rather than a second copy of its content rules. The admitted request holds exactly its declared tip plus carrier. Its value must also cover the retained protected deposit; funding and eventual controller settlement are separate obligations.",
+      "text": "A tagged pending output is distinct from a live holding even at the same application address. Booking spends the live output and creates a fresh pending output in that application family. It retains the complete genuine asset, protected control and payload; its request and trie-ready tag are checked through the accepted economic booking, rather than a second copy of its content rules. The root request contains exactly its declared tip plus carrier. Under the authorized value-partition amendment, the physical pending output contains that amount plus the retained protected deposit, as disjoint allocations. The root observer receives the request allocation; the local release observes the physical controller payments.",
       "pause": 400
     },
     {
@@ -69,11 +69,11 @@
       "pause": 400
     },
     {
-      "text": "registryOwed derives all ReturnDeposit duties through the registry's own dutiesOf, including rejected refunds and terminating rows. releasedTo sums every Release input at this application script for the same controller, rather than checking each input's deposit separately. settlesOf excludes the state credential and all delivered-token carriers. The local view of the held token, control and burn does not compute these other obligations or identify those carriers. An exact burn therefore cannot by itself replace release-settlement or release-additive.",
+      "text": "registryOwed derives all ReturnDeposit duties through the registry's own dutiesOf, including rejected refunds and terminating rows. releasedTo sums every Release input at this application script for the same controller, rather than checking each input's deposit separately. settlesOf excludes the state credential and all delivered-token carriers. The local view of the held token, control and burn does not compute these other obligations or identify those carriers. An exact burn supplies no payment amount. The candidate separately checks the ruled additive application deposits; it does not claim equivalence to the removed legacy aggregate duty.",
       "pause": 400
     },
     {
-      "text": "For example, released deposits of five and seven plus eleven owed by the fold require twenty-three eligible lovelace. Paying twelve covers the local deposits and fails the original combined duty. This is a source-derived discriminator, not an executed exploit. The candidate records the missing guarantee and holds affected acceptance in questions.md.",
+      "text": "For example, released deposits of five and seven plus eleven owed by the fold require twenty-three eligible lovelace. Paying twelve covers the local deposits and fails the original combined duty. This is a source-derived discriminator, not an executed exploit. This contrast explains the operator's choice: the new local obligation is twelve, while root economics independently governs treasury and processor routing. The candidate does not call twelve equivalent to the legacy twenty-three.",
       "pause": 400
     }
   ],
@@ -97,7 +97,7 @@
       "pause": 500
     },
     {
-      "text": "The accepted booked_termination_foldable theorem supplies an economic fold at any chosen time under reachable-world, pending-membership, processor willingness, ordinary funding covering the fee, and fee-within-tip premises. It explicitly excludes application release. The candidate may reuse that economic result, but adding application-local payments and the held settlement obligation requires additional premises; availability of real funding, builder success and ledger inclusion are not established.",
+      "text": "The accepted booked_termination_foldable theorem supplies an economic fold at any chosen time under reachable-world, pending-membership, processor willingness, ordinary funding covering the fee, and fee-within-tip premises. It explicitly excludes application release. The candidate reuses that economic result. Its additional physical construction retains every protected deposit in the inputs and routes those deposits additively to the physical controller outputs. The value-partition correspondence, genuine public observations, finite encoding/hash separation, and coherent asset mapping are explicit premises; availability of real funding, builder success and ledger inclusion are not established.",
       "pause": 400
     },
     {
@@ -129,12 +129,12 @@
       "pause": 400
     },
     {
-      "text": "The constitution explicitly supersedes legacy rejection, retraction, payment and transaction rules with the ruled economic rows. The bound consumer still computes registryPayments from those legacy duties, whereas the economic termination sends held-minus-tip to the treasury. This is a consumer/model conflict as well as a missing local observation. The operator owns the replacement guarantee; equivalent_settlement and composed_fold_available remain held obligations with no theorem claim.",
+      "text": "The constitution explicitly supersedes legacy rejection, retraction, payment and transaction rules with the ruled economic rows. The bound consumer still computes registryPayments from those legacy duties, whereas the economic termination sends held-minus-tip to the treasury. This is a consumer/model conflict as well as a missing local observation. The 23 October operator ruling resolves this conflict in favor of ruled economics and additive protected deposits. A-003 authorizes a disjoint physical allocation: physical pending lovelace equals root contents plus the deposit; valuePartition removes the exact deposit slice from the physical input and controller output before the unchanged root fold. Composed availability is now a candidate statement, still unproved. No claim says observesTermination accepts an unprojected physical pending output.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "application-held.md",
-    "sha256": "1a7c5133c668ba02f528553554fcd4ab57e63ec9681c5e881d3e90bc90ac3f3f"
+    "sha256": "c48b71abfcaad6469d44aeddf8698fd2d12e235306f4e9520197fabb3e9f0823"
   }
 }

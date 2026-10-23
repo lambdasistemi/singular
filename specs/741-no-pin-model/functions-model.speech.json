@@ -65,7 +65,7 @@
       "pause": 500
     },
     {
-      "text": "These are hypothetical signatures for the application-held statement stage. They neither change accepted signatures nor establish the unresolved combined settlement promise. All observations are explicit inputs. The minimal identity TxView and its existing statements remain unchanged.",
+      "text": "These are hypothetical signatures for the application-held statement stage. They preserve accepted signatures. The authorized amendment below applies the operator's additive-deposit settlement ruling. All observations are explicit inputs. The minimal identity TxView and its existing statements remain unchanged.",
       "pause": 400
     },
     {
@@ -73,8 +73,26 @@
       "pause": 400
     }
   ],
+  "authorized-slice-4-value-partition-amendment": [
+    {
+      "text": "Authorized slice-4 value-partition amendment.",
+      "pause": 500
+    },
+    {
+      "text": "A-003 amends the approved surfaces: a physical pending input and its physical controller output include a protected deposit in addition to the unchanged root economic amounts. The operator's settlement ruling removes the legacy registryPayments duty. This is a hypothetical candidate; every general theorem remains STATED.",
+      "pause": 400
+    },
+    {
+      "text": "NoPin.TxView remains unchanged. FoldObservation supplies separate accepted-world observations; observationCorrespondence binds spent references and keyed burns. BurnCoupling is an assumed same-registry/key policy contract. The #679/#680 mapping and physical allocation correspondence remain explicit external debt. No policy evaluation or ledger acceptance follows from these abstractions.",
+      "pause": 400
+    },
+    {
+      "text": "Booking additionally binds the source controller registry to ApplicationState.registryIdentity and binds the retained key and custody to the root request. FoldObservation carries this same independently observed complete registry identity, and observationCorrespondence compares policy and name. The physical and abstract registry interpretation remains an external premise rather than a policy-only authentication shortcut.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "functions-model.md",
-    "sha256": "0c675e9f4dd463039c4cec6ea10b204f186e9ccae040528933637bde656fe154"
+    "sha256": "9a86f1254bc09768a72b247e994dc0663f5d43eff74d73352739043c437b94b3"
   }
 }

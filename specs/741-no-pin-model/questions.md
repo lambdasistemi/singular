@@ -140,3 +140,9 @@ As a controller, I want to know whether booking retirement is irrevocable and wh
 The hypothetical candidate has a distinct pending state, refuses both live spend constructors and rebooking, and exposes no cancellation path. Those restrictions are unruled hypotheses for review, not an operator decision. The operator must decide the desired interaction before affected application-law acceptance; [the frozen surfaces](functions-model.md) preserve the distinction explicitly. Evidence is a source/interface comparison only at the bound accepted revision, with no production implementation or ledger execution.
 
 The constitution explicitly supersedes legacy rejection, retraction, payment and transaction rules with the ruled economic rows. The bound consumer still computes registryPayments from those legacy duties, whereas the economic termination sends held-minus-tip to the treasury. This is a consumer/model conflict as well as a missing local observation. The operator owns the replacement guarantee; equivalent_settlement and composed_fold_available remain held obligations with no theorem claim.
+
+## Slice-4 settlement resolution and value-partition amendment (23 October)
+
+The operator selected ruled economics and removal of legacy registryPayments (NOTE-002). Application release must still pay every protected deposit additively. The earlier open combined-payment story above is preserved as history; equivalence to legacy registryOwed is no longer the candidate's claim.
+
+A-003 authorizes physical pending lovelace = exact root termination contents + protected deposit. The root observer erases precisely the deposit allocation from the physical pending input and physical controller output. The local release reads the physical outputs. No ruling authorizes cancellation or pending payload/control updates; the candidate exposes no such path as an explicitly unruled hypothesis.

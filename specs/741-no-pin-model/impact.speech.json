@@ -141,8 +141,34 @@
       "pause": 400
     }
   ],
+  "slice-4-authorized-observation-and-value-debt-23-october": [
+    {
+      "text": "Slice-4 authorized observation and value debt (23 October).",
+      "pause": 500
+    },
+    {
+      "text": "The operator resolves settlement toward ruled economic routing plus additive protected deposits, removing legacy registryPayments. Earlier source rows and the recorded conflict above remain history, with no changed source declaration or digest.",
+      "pause": 400
+    },
+    {
+      "text": "The hypothetical valuePartition correspondence is new debt: physical pending inputs contain root request.contents.lovelace plus control.deposit; physical controller outputs contain the corresponding deposit allocations. The root observation removes exactly these slices. No claim says accepted observesTermination accepts the physical unprojected output. Physical output identity, completeness, provenance and mapping to actual ledger outputs remain #679/#680 obligations.",
+      "pause": 400
+    },
+    {
+      "text": "The unchanged minimal NoPin.TxView is related to FoldObservation by explicit spent-reference and keyed-burn correspondence. Complete candidate registry identity and the root's abstract registryId/singularTag representation require an external interpretation. BurnCoupling assumes the shared policy enforces this transaction's same-registry, same-key accepted terminal transition; accepted witness.ak co-presence does not establish that contract.",
+      "pause": 400
+    },
+    {
+      "text": "All fifteen original identity statement rows remain unchanged. New pending witness and root-tag commitment statements restate the affected consumers: simplified registry/role/key request tags cannot replace operation/nonce-bearing accepted root tags. Cancellation and pending update interactions remain unruled.",
+      "pause": 400
+    },
+    {
+      "text": "The complete observed registryIdentity is retained separately from the accepted root's abstract registryId; no policy-only comparison substitutes for that identity. Its authentication and interpretation remain external observation debt. A same-policy/different-name twin must refuse coupling, and a retained key-7 token paired with key-8 booking must refuse admission.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "impact.md",
-    "sha256": "0c0174445746dc6d1af4382abed32149e4288aea6455181d9026dee3799100a4"
+    "sha256": "84b3c99f15adec479f5d58ca85dbf24508c724a79edc77c05185d059ecc8f197"
   }
 }
