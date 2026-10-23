@@ -218,7 +218,7 @@ def main():
         )
     require(
         all(
-            r.get("family") in {None, "held", "application-requests", "history"}
+            r.get("family") in {None, "held", "application-requests", "history", "lifecycle"}
             for r in records
         ),
         "unknown evidence family",
@@ -317,6 +317,9 @@ def main():
     import history_check
 
     history_check.check(records)
+    import lifecycle_check
+
+    lifecycle_check.check(records)
 
 
 if __name__ == "__main__":

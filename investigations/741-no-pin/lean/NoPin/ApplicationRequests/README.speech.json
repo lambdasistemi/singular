@@ -21,7 +21,7 @@
       "pause": 400
     },
     {
-      "text": "The constructor inversions are derived from CandidateReachable, including its neutral application transactions. Isolated guard changes and removal of the neutral mint or asset-conservation premise produce certified violating histories. These are finite controls; neither a cryptographic implementation nor a general proof follows. No old BurnCoupling fills the history obligation. Application lifecycle, money and journey equivalence statements remain later work.",
+      "text": "The constructor inversions are derived from CandidateReachable, including its neutral application transactions. Isolated guard changes and removal of the neutral mint or asset-conservation premise produce certified violating histories. These are finite controls; neither a cryptographic implementation nor a general proof follows. No old BurnCoupling fills the history obligation. The lifecycle candidate adds nineteen general statements, nine source-derived action inversions and a single-guard corpus. It states the three registration phases, exact committed deposit delivery, burn-only termination, booking authority, public parameter reads, additive treasury and refunds, configuration preservation and folder protection. The public termination builder needs authentic public data, finite encoding and collision premises, and ordinary funding for its fee. The top-up question remains held. All general lifecycle statements deliberately use sorry; only finite certificates execute without it. Money and journey equivalence statements remain later work.",
       "pause": 400
     },
     {
@@ -31,6 +31,6 @@
   ],
   "_source": {
     "file": "README.md",
-    "sha256": "9a35838c0a7459aa28ea5cfa4b4f6dc544ab21afa466982fdd8cafc455f0d4a3"
+    "sha256": "0ca53681f47eae62dd226d22dc8d2e4a9875ef47abd062b4bb65e43dc972c14b"
   }
 }

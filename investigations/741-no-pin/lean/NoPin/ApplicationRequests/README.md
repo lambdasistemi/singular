@@ -32,8 +32,15 @@ neutral application transactions. Isolated guard changes and removal of the
 neutral mint or asset-conservation premise produce certified violating
 histories. These are finite controls; neither a cryptographic implementation nor
 a general proof follows. No old BurnCoupling fills the history obligation.
-Application lifecycle, money and journey equivalence statements remain later
-work.
+The lifecycle candidate adds nineteen general statements, nine source-derived
+action inversions and a single-guard corpus. It states the three registration
+phases, exact committed deposit delivery, burn-only termination, booking authority,
+public parameter reads, additive treasury and refunds, configuration preservation
+and folder protection. The public termination builder needs authentic public data,
+finite encoding and collision premises, and ordinary funding for its fee. The
+top-up question remains held. All general lifecycle statements deliberately use
+sorry; only finite certificates execute without it. Money and journey equivalence
+statements remain later work.
 
 The chain codec/hash, public provider/preimages, trie proof, ledger and real
 script-invocation correspondences remain external. The model public builder
