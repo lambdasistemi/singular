@@ -18,6 +18,9 @@ MODULES = [
     "Conditions",
     "Role",
     "Effects",
+    "Proofs",
+    "DeliveryProofs",
+    "MintedProofs",
     "Statements",
     "Evidence",
 ]

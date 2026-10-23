@@ -92,10 +92,8 @@ def check_family(records, namespace, prefix, family):
         name = row["theorem"]
         declaration = declarations[name]
         require(declaration["kind"] == "theorem", f"not a theorem: {name}")
-        require(
-            set(declaration["axioms"]) - STANDARD == {"sorryAx"},
-            f"not STATED debt: {name}",
-        )
+        extra = set(declaration["axioms"]) - STANDARD
+        require(extra <= {"sorryAx"}, f"custom axiom: {name}")
         require(
             digest(declaration["type"]) == row["statementSha256"],
             f"statement digest: {name}",
@@ -104,6 +102,8 @@ def check_family(records, namespace, prefix, family):
             row["status"]
             in {
                 "STATED",
+                "PROVED",
+                "REFUTED",
                 "REJECTED-READING-STATED",
                 "REJECTED-READING-STATED-EXPECTED-REFUTABLE",
                 "HYPOTHETICAL-READING-STATED-EXPECTED-REFUTABLE",
@@ -111,7 +111,9 @@ def check_family(records, namespace, prefix, family):
             f"unknown status: {name}",
         )
         proof_status = "STATED" if "sorryAx" in declaration["axioms"] else "PROVED"
-        require(row["proofStatus"] == proof_status == "STATED", f"proof status: {name}")
+        require(row["proofStatus"] == proof_status, f"proof status: {name}")
+        if family != "application-requests":
+            require(proof_status == "STATED", f"out-of-scope proof: {name}")
         marker = re.search(r"Status: ([A-Z-]+)\.", declaration["doc"])
         require(marker and marker.group(1) == row["status"], f"reading status: {name}")
         require(row["witnesses"], f"no witness: {name}")
@@ -179,9 +181,10 @@ def check_family(records, namespace, prefix, family):
     print(
         json.dumps(
             {
-                "status": "CANDIDATE-STATEMENTS-ONLY",
+                "status": ledger["status"],
                 "statements": len(rows),
-                "sorryAx": len(rows),
+                "sorryAx": sum(row["proofStatus"] == "STATED" for row in rows),
+                "proofStatus": {row["theorem"]: row["proofStatus"] for row in rows},
                 "publicCases": len(cases),
                 "atomicGuards": len(guards),
                 "positiveProofs": positive_count,
@@ -286,7 +289,16 @@ def main():
     current_rows = {row["theorem"]: row for row in current_ledger["statements"]}
     for row in original_rows:
         require(
-            current_rows.get(row["theorem"]) == row,
+            {
+                k: v
+                for k, v in current_rows.get(row["theorem"], {}).items()
+                if k not in {"status", "proofStatus", "refutation"}
+            }
+            == {
+                k: v
+                for k, v in row.items()
+                if k not in {"status", "proofStatus", "refutation"}
+            },
             "earlier application-request row changed: " + row["theorem"],
         )
     old_mutants = original_json("application-requests-mutants.json")["mutants"]
@@ -323,6 +335,9 @@ def main():
         "application-requests-",
         "application-requests",
     )
+    import proof_check
+
+    proof_check.check(records)
     import history_check
 
     history_check.check(records)

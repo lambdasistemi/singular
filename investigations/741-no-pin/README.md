@@ -2,6 +2,8 @@
 
 As a registry integrator, I want to inspect candidate identities, distinguish unsafe readings and replay their examples before adopting a new law.
 
+The statement-stage descriptions below retain their historical proof debt. The current Singular proof outcomes are described at the end and computed per declaration by the evidence recipe.
+
 ## Story and status
 
 This isolated Lean project investigates #741 at the supported root compiler. It requires the unchanged root model from `../..`. Every candidate declaration is a hypothesis; no accepted model, application, corpus, coverage record or release behavior changes. Approvals follow the operator's recorded complete-identity ruling in `specs/741-no-pin-model/decisions.md`.
@@ -112,3 +114,11 @@ The table is computed from the compiled party-by-journey grid. The old side call
 The refund address signs reclaim, matching accepted retraction; the controller signs booking. The earlier controller-signer lifecycle family is retained as history and superseded by the refund-signer family. The new statements and oracle dispatch use RefundApplication and RefundLifecycle. Both concrete signer choices are executed against both models. A genuine old key-mismatch rejection is also executed; the new design has no early rejection and uses later owner reclaim or cleanup.
 
 Registration's residual bid, termination's whole-value bid, deposit-to-treasury at termination booking, no treasury share at a fold, and the three timed phases are recorded differences rather than blanket equality. The old economic termination has no protected-control deposit field: its zero controller obligation is not a claim about the separate legacy application release duty. Old consumer update observations call its own updateStep. Cryptographic bytes, public completeness, real script invocation, minimum outputs, available funding, inclusion and implementation acceptance remain external.
+
+## Singular proof candidate
+
+As an integrator, I want to distinguish proved model properties from outstanding construction guarantees. The Singular statement identities remain frozen at revision 47275241c6b8aa2ca5f64cc42e52629dd3804dde. The current candidate supplies proofs for recognition, genesis, per-change and batch inversion, registration and termination effects, ordered trie effects, untouched keys, separate deposit-bearing holdings and recognition refusal for actual fold-minted outputs. These are hypothetical model proofs under their written premises; no accepted law or implementation changes.
+
+The public fold construction and its independent effects remain open. Their original statements and proof holes remain visible. The finite public-builder examples establish only their computed instances. History, application lifecycle and money statements keep their existing status.
+
+The recipe checks compiled axioms against each row, freezes the transitive kernel definitions reached from the sixteen statement types, and preserves every statement digest. Proof-hole exemptions come from individual STATED ledger rows. Compiled controls expose a custom axiom, a compiler-trusted native proof and a weakened state-continuation guard. A clean investigation rebuild and per-target axiom output belong to the candidate receipt; local results do not establish hosted CI, ledger execution or acceptance.

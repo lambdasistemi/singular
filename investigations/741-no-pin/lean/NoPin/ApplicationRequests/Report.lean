@@ -1,4 +1,5 @@
 import NoPin.ApplicationRequests.Evidence
+import NoPin.ApplicationRequests.ProofAudit
 import Lean
 
 /-! Compiled #741 candidate evidence, not accepted law. Inventories are derived
@@ -22,6 +23,9 @@ def guards : List Guard := request_guards%
 
 elab "#application_requests_report" : command => do
   let env ← getEnv
+  let .ok ledger := Json.parse (← IO.FS.readFile "investigations/741-no-pin/application-requests-statements.json")
+    | throwError "invalid Singular proof ledger"
+  let .ok rows := ledger.getObjValAs? (Array Json) "statements" | throwError "missing proof rows"
   let changes ← liftTermElabM do constructors ``Change
   IO.println (Json.mkObj [("family", toJson "application-requests"),
     ("sourceChanges", toJson (changes.map (·.getString!)))]).compress
@@ -55,6 +59,17 @@ elab "#application_requests_report" : command => do
             throwError "inversion is not bound to its actual source/action case: {name}"
         return toJson caseName
       let axioms ← collectAxioms name
+      let mut refutation := Json.null
+      if isStatement then
+        for row in rows do
+          if (row.getObjValAs? String "theorem").toOption != some name.toString then continue
+          if (row.getObjValAs? String "status").toOption != some "REFUTED" then continue
+          let .ok proof := row.getObjValAs? String "refutation" | throwError "missing refutation"
+          let exactType ← liftTermElabM <| ProofAudit.exactNegation name proof.toName
+          unless exactType do throwError "refutation negates another proposition: {name}"
+          let used ← collectAxioms proof.toName
+          refutation := Json.mkObj [("name", toJson proof), ("exact", toJson exactType),
+            ("axioms", toJson (used.toList.map toString))]
       let doc := (← findDocString? env name).getD ""
       let candidateType := match info.type with
         | .app (.const `Not _) inner => inner.replace fun e =>
@@ -64,7 +79,7 @@ elab "#application_requests_report" : command => do
         ("inversion", inversion), ("name", toJson name.toString),
         ("kind", toJson (match info with | .thmInfo _ => "theorem" | _ => "other")),
         ("type", toJson (reprStr info.type)), ("candidateType", toJson (reprStr candidateType)),
-        ("doc", toJson doc), ("axioms", toJson (axioms.toList.map toString))]).compress
+        ("doc", toJson doc), ("refutation", refutation), ("axioms", toJson (axioms.toList.map toString))]).compress
 
 /-- Hypothesis evidence under #741, not accepted law; execute every discovered selector and surface. -/
 def reportControls : IO Unit := do

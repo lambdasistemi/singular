@@ -31,18 +31,24 @@ def roles : List Role := role_values%
 
 elab "#identity_report" : command => do
   let env ← getEnv
+  let mut stated : NameSet := {}
+  for file in ← IO.FS.readDir "investigations/741-no-pin" do
+    if !file.fileName.endsWith "statements.json" then continue
+    let .ok ledger := Json.parse (← IO.FS.readFile file.path) | throwError "invalid statement ledger"
+    let .ok rows := ledger.getObjValAs? (Array Json) "statements" | throwError "missing statement rows"
+    for row in rows do
+      let proofStatus := ((row.getObjValAs? String "proofStatus").toOption).getD
+        (((row.getObjValAs? String "status").toOption).getD "")
+      if proofStatus == "STATED" then
+        let .ok name := row.getObjValAs? String "theorem" | throwError "missing statement name"
+        stated := stated.insert name.toName
   for (name, info) in env.constants.toList do
     if name.toString.startsWith "NoPin." then
       if let .axiomInfo _ := info then throwError "custom axiom: {name}"
-      unless name.toString.startsWith "NoPin.Statements." || name.toString.startsWith "NoPin.Held.Statements." ||
-          name.toString.startsWith "NoPin.ApplicationRequests.Statements." ||
-          name.toString.startsWith "NoPin.ApplicationRequests.HistoryStatements." ||
-          name.toString.startsWith "NoPin.ApplicationRequests.Lifecycle.Statements." ||
-          name.toString.startsWith "NoPin.ApplicationRequests.RefundLifecycle.Statements." ||
-          name.toString.startsWith "NoPin.ApplicationRequests.Money.Statements." do
-        let axioms ← collectAxioms name
-        unless axioms.all (fun a => a == `propext || a == `Classical.choice || a == `Quot.sound) do
-          throwError "unproved candidate definition or example: {name}"
+      let axioms ← collectAxioms name
+      let extra := axioms.toList.filter fun a => a != `propext && a != `Classical.choice && a != `Quot.sound
+      unless extra.isEmpty || (stated.contains name && extra.all (· == `sorryAx)) do
+        throwError "unproved candidate definition or example: {name}"
     if name.getPrefix == `NoPin.Statements ||
         ((name.getPrefix == `NoPin.Fixtures || name.getPrefix == `NoPin.Mutants) &&
          match info with | .thmInfo _ => true | _ => false) then
@@ -121,6 +127,7 @@ end NoPin.Report
 #eval NoPin.Held.Report.reportControls
 
 #application_requests_report
+#singular_proof_closure
 #eval NoPin.ApplicationRequests.Report.reportControls
 
 #history_report
