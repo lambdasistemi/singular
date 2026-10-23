@@ -55,6 +55,7 @@ import Singular.Registry.TrieStateSpec qualified
 import Singular.Registry.TxBuilder.BookEdgeSpec qualified
 import Singular.Registry.TxBuilder.BootSpec qualified
 import Singular.Registry.TxBuilder.ConnectedFoldSpec qualified
+import Singular.Registry.TxBuilder.EdgesSurfaceSpec qualified
 import Singular.Registry.TxBuilder.MeasuredBookingSpec qualified
 import Singular.Registry.TxBuilder.PrepareSpec qualified
 import Singular.Registry.TxBuilder.PublicationFundingSpec qualified
@@ -108,6 +109,9 @@ main = hspec $ do
     describe
         (tagged "Singular.Registry.TxBuilder.ConnectedFold" [Builders])
         Singular.Registry.TxBuilder.ConnectedFoldSpec.spec
+    describe
+        (tagged "Singular.Registry.TxBuilder.EdgesSurface" [Builders])
+        Singular.Registry.TxBuilder.EdgesSurfaceSpec.spec
     describe
         (tagged "Singular.Registry.TxBuilder.RealFold" [Builders])
         Singular.Registry.TxBuilder.RealFoldSpec.spec

@@ -15,14 +15,6 @@
 # journey does. An inspection is no evidence of behaviour; it makes the
 # consumers' retelling checkable until the hosted run reports.
 #
-# A row of status RESIDUAL is neither a pass nor a failure. It lists a consumer
-# that still books through the legacy edge builder or builds the untagged
-# request and that belongs to the hosted lanes on the tagged law, the
-# checkpoint after this one: the devnet end-to-end lanes, the release archive's
-# insert-active control, the live journey, the library's driver and the
-# conformance rows. The list is that checkpoint's starting census; it does not
-# say any lane passes or fails.
-#
 # A line that keeps a retired construct on purpose carries the marker
 # `tagged-law: retired` (a refusal control: the retired action attempted and
 # refused) or `tagged-law: history` (an explanation of what was retired) on
@@ -40,7 +32,7 @@
 # counts the two kinds of row apart.
 #
 # usage: tagged_law_consumers_check.sh [REPO-ROOT]
-# exit 0: no row fails (residual rows do not count); 1: a row fails; 2: the instrument or a setup step
+# exit 0: no row fails; 1: a row fails; 2: the instrument or a setup step
 # failed (never a verdict on the consumers).
 set -uo pipefail
 
@@ -56,12 +48,6 @@ work="$(mktemp -d)" || {
   exit 2
 }
 trap 'rm -rf "$work"' EXIT
-
-residuals=0
-residual() { # SECTION LABEL DETAIL
-  residuals=$((residuals + 1))
-  printf 'TAGGED-LAW: [inspection] %s: %s: RESIDUAL — %s\n' "$1" "$2" "$3"
-}
 
 row() { # SECTION KIND LABEL PASS|FAIL [DETAIL]
   rows=$((rows + 1))
@@ -112,6 +98,75 @@ unmarked_hits() { # FILE ERE
 
 hit_count() { # FILE ERE
   unmarked_hits "$1" "$2" | grep -c . || true
+}
+
+# FILE's Haskell with comments, string literals and character literals blanked,
+# one output line per input line: what the code names, not what its prose says.
+haskell_code() { # FILE
+  awk '
+    BEGIN { depth = 0; q = sprintf("%c", 39); dq = sprintf("%c", 34); sym = "[!#$%&*+./<=>?@\\\\^|~:]" }
+    {
+      line = $0; out = ""; n = length(line); i = 1
+      while (i <= n) {
+        c = substr(line, i, 1); d = substr(line, i, 2)
+        if (depth > 0) {
+          if (d == "-}") { depth--; i += 2 } else if (d == "{-") { depth++; i += 2 } else { i++ }
+          continue
+        }
+        if (d == "{-") { depth++; i += 2; continue }
+        if (d == "--") {
+          p = (i > 1) ? substr(line, i - 1, 1) : " "
+          j = i; while (substr(line, j, 1) == "-") j++
+          if (p !~ sym && substr(line, j, 1) !~ sym) break
+        }
+        if (c == dq) {
+          i++
+          while (i <= n) {
+            e = substr(line, i, 1)
+            if (e == "\\") { i += 2; continue }
+            if (e == dq) { i++; break }
+            i++
+          }
+          out = out " "; continue
+        }
+        if (c == q) {
+          p = (i > 1) ? substr(line, i - 1, 1) : " "
+          if (p !~ "[A-Za-z0-9_" q "]") {
+            if (substr(line, i + 1, 1) == "\\") {
+              k = index(substr(line, i + 2), q)
+              if (k > 0) { i += 2 + k; out = out " "; continue }
+            } else if (substr(line, i + 2, 1) == q) { i += 3; out = out " "; continue }
+          }
+        }
+        out = out c; i++
+      }
+      print out
+    }' "$1"
+}
+
+# The lines of FILE whose code (not comment, not literal) matches the extended
+# regex and that are not excused by a `tagged-law: retired|history` marker on
+# the line or the line above it: prints `line:text`, one per line.
+code_hits() { # FILE ERE
+  local nums
+  nums="$(haskell_code "$1" | grep -nE -e "$2" | cut -d: -f1 | tr '\n' ' ' || true)"
+  [ -n "$nums" ] || return 0
+  awk -v hits="$nums" '
+    BEGIN { n = split(hits, H, " "); for (i = 1; i <= n; i++) want[H[i]] = 1 }
+    { lines[NR] = $0 }
+    END {
+      for (i = 1; i <= NR; i++) {
+        if (!(i in want)) continue
+        t = lines[i]
+        if (t ~ /tagged-law: (retired|history)/) continue
+        if (i > 1 && lines[i - 1] ~ /tagged-law: (retired|history)/) continue
+        printf "%d:%s\n", i, substr(t, 1, 120)
+      }
+    }' "$1"
+}
+
+code_hit_count() { # FILE ERE
+  code_hits "$1" "$2" | grep -c . || true
 }
 
 # The (statement, digest) pairs a Haskell module binds: `bound "name" "hex64"`
@@ -406,6 +461,33 @@ gammaVar =
 EOF
   [ "$(statement_variables "$d/Variables.hs" | sort | tr '\n' ';')" = "alpha_statement alphaVar;beta_statement betaVar;gamma_statement gammaVar;" ] \
     || instrument_fail "statement_variables: wrong variables read from the fixture: $(statement_variables "$d/Variables.hs" | tr '\n' ';')"
+
+  # haskell_code and code_hit_count: a call, an import and an operator that
+  # contains two dashes are code; a comment, a block comment, a string and a
+  # character literal holding a double quote are not; a marker excuses a call.
+  cat >"$d/Code.hs" <<'HS'
+module M where
+-- a comment naming bookEdge
+{- a block comment
+   naming bookEdgeTo, which goes on {- nested -} here -}
+import X (bookEdgeWith)
+f = "bookEdgeMeasured"
+g = bookEdge cfg '"'
+c = '"'
+h x' = x' --> bookEdgeTx
+k = bookEdge
+-- tagged-law: retired
+r = rejectRequestsWithRefs
+s = rejectRequestsWithRefs -- tagged-law: retired
+u = 1
+t = rejectRequestsWithRefs
+HS
+  [ "$(code_hit_count "$d/Code.hs" 'bookEdge(To|With|Tx|Measured)?')" = 4 ] \
+    || instrument_fail "code_hit_count: expected the import, the call, the operator line and the bare name (4), got $(code_hit_count "$d/Code.hs" 'bookEdge(To|With|Tx|Measured)?')"
+  [ "$(code_hit_count "$d/Code.hs" 'rejectRequestsWithRefs')" = 1 ] \
+    || instrument_fail "code_hit_count: a marker on the line, or the line above, did not excuse a call, or the unmarked call was excused"
+  [ "$(code_hit_count "$d/Code.hs" 'bookEdgeMeasured')" = 0 ] \
+    || instrument_fail "code_hit_count: a string literal was counted as code"
 
   # observation_rows, list_length and number_word: the module's own lists,
   # counted rather than typed.
@@ -1166,24 +1248,57 @@ section_consumers() {
       row "$s" inspection "$f names no removed producer entry point" FAIL "$n unmarked lines"
     fi
   done
-  # The hosted lanes on the tagged law are the next checkpoint's: the devnet
-  # lanes, the release archive's insert-active control, the live journey, the
-  # library's driver and the conformance rows still book through the legacy edge
-  # builder or build the untagged request. They are listed here as residual, in
-  # the order they will be retold; a residual row is neither a pass nor a
-  # failure of this check, and its presence shows nothing about any lane.
-  for f in conformance/app-cli/Conformance/Cli/Backend.hs conformance/app-cli/Conformance/Cli/Admission.hs conformance/app-cli/Conformance/Cli/Attach.hs conformance/app/Conformance/Run/Book.hs conformance/app/Conformance/Run/CsRows.hs conformance/app/Conformance/Run/Fold.hs conformance/app/Conformance/Run/Live.hs conformance/app/Conformance/Run/Replay.hs offchain/journey/Journey/Steps.hs offchain/journey/Journey/Controls.hs offchain/journey/Journey/Proofs.hs offchain/journey/Main.hs; do
-    n="$(hit_count "$root/$f" "$legacy_request")"
-    [ "$n" = 0 ] || residual "$s" "$f builds no untagged request and runs no retired reject" "$n unmarked lines"
-  done
-  local legacy
+  # The hosted lanes on the tagged law (CP6): no lane, row, journey, archive
+  # component, library driver or unit spec books through the legacy edge
+  # builder or the approval helpers it needs, no lane or row builds the
+  # untagged request or the retired reject outside a marked refusal control,
+  # the library no longer exports the legacy booking, the compile-only bridge
+  # is gone, and the termination booking lane exists. The nine retained
+  # journey sources (A-041) are outside the builder scan: they are not retold,
+  # built or verified on the tagged-request law. The census reads code only: a
+  # comment or a string literal that names a retired identifier is not a
+  # caller.
+  local legacy_approval legacy_builder booking_files=0 builder_files=0 retained
+  legacy_approval='\b(BookingApproval|bookingApproval|certifyBooking)\b'
+  legacy_builder='\b(requestEdgeImpl|requestLockedAda|rejectRequestsImpl|rejectRequestsWithRefs)\b'
+  retained='offchain/journey/(li01|li-refusals|lmlc|recovery|register|repair|retirement|retire-verify|verifier)/'
   while IFS= read -r f; do
     f="${f#"$root"/}"
-    n="$(hit_count "$root/$f" "$legacy_booking")"
-    [ "$n" = 0 ] || residual "$s" "$f books through no legacy edge builder" "$n unmarked lines name bookEdge, bookEdgeTo, bookEdgeWith, bookEdgeTx or bookEdgeMeasured"
-  done < <(grep -rlE "$legacy_booking" --include='*.hs' "$root/offchain/e2e-test" "$root/offchain/insert-active" "$root/offchain/journey" "$root/offchain/lib/Singular/Registry/Driver.hs" "$root/conformance/app" "$root/conformance/app-cli" 2>/dev/null | sort)
-  legacy="$(hit_count "$root/offchain/lib/Singular/Registry/TxBuilder/Edges.hs" "$legacy_export")"
-  [ "$legacy" = 0 ] || residual "$s" "the library's Edges module exports no legacy edge booking" "the exports leave only when no current consumer remains"
+    n="$(code_hit_count "$root/$f" "$legacy_booking|$legacy_approval")"
+    [ "$n" = 0 ] && continue
+    booking_files=$((booking_files + 1))
+    row "$s" inspection "$f books through no legacy edge builder" FAIL "$n lines of code name bookEdge, bookEdgeTo, bookEdgeWith, bookEdgeTx, bookEdgeMeasured, BookingApproval, bookingApproval or certifyBooking"
+  done < <(grep -rlE "$legacy_booking|$legacy_approval" --include='*.hs' "$root/offchain/e2e-test" "$root/offchain/insert-active" "$root/offchain/update-terminal" "$root/offchain/journey" "$root/offchain/test" "$root/offchain/lib/Singular/Registry/Driver.hs" "$root/conformance/app" "$root/conformance/app-cli" "$root/applications" 2>/dev/null | sort)
+  [ "$booking_files" -gt 0 ] || row "$s" inspection "no file books through a legacy edge builder" PASS
+  while IFS= read -r f; do
+    f="${f#"$root"/}"
+    if [[ $f =~ $retained ]]; then continue; fi
+    n="$(code_hit_count "$root/$f" "$legacy_builder")"
+    [ "$n" = 0 ] && continue
+    builder_files=$((builder_files + 1))
+    row "$s" inspection "$f builds no untagged request and runs no retired reject outside a refusal control" FAIL "$n lines of code name requestEdgeImpl, requestLockedAda, rejectRequestsImpl or rejectRequestsWithRefs without a tagged-law marker"
+  done < <(grep -rlE "$legacy_builder" --include='*.hs' "$root/offchain/e2e-test" "$root/offchain/insert-active" "$root/offchain/update-terminal" "$root/offchain/journey" "$root/conformance/app" "$root/conformance/app-cli" 2>/dev/null | sort)
+  [ "$builder_files" -gt 0 ] || row "$s" inspection "no lane or row builds the untagged request or the retired reject outside a refusal control" PASS
+  n="$(hit_count "$root/offchain/lib/Singular/Registry/TxBuilder/Edges.hs" "$legacy_export")"
+  if [ "$n" = 0 ]; then
+    row "$s" inspection "the library's Edges module exports no legacy edge booking" PASS
+  else
+    row "$s" inspection "the library's Edges module exports no legacy edge booking" FAIL "$n export lines name bookEdge, bookEdgeTo, bookEdgeWith, bookEdgeTx or bookEdgeMeasured"
+  fi
+  if [ -e "$root/conformance/app-cli/Conformance/Cli/RetiredBooking.hs" ]; then
+    row "$s" inspection "the compile-only bridge conformance/app-cli/Conformance/Cli/RetiredBooking.hs is removed" FAIL "the file exists; it keeps the legacy rows building (A-043) and is removed with their last user"
+  else
+    row "$s" inspection "the compile-only bridge conformance/app-cli/Conformance/Cli/RetiredBooking.hs is removed" PASS
+  fi
+  local lane="Singular.Registry.E2E.TerminationBookingSpec" lane_file="$root/offchain/e2e-test/Singular/Registry/E2E/TerminationBookingSpec.hs" missing=""
+  [ -f "$lane_file" ] || missing="${missing}the spec file; "
+  grep -qE "^import $lane qualified" "$root/offchain/e2e-test/main.hs" 2>/dev/null || missing="${missing}its import in main.hs; "
+  grep -qE "^[[:space:]]+$lane$" "$root/offchain/singular-registry.cabal" 2>/dev/null || missing="${missing}its other-modules entry in singular-registry.cabal; "
+  if [ -z "$missing" ]; then
+    row "$s" inspection "the termination booking lane exists, is imported by main.hs and is listed in the cabal file" PASS
+  else
+    row "$s" inspection "the termination booking lane exists, is imported by main.hs and is listed in the cabal file" FAIL "missing: ${missing%; }"
+  fi
 }
 
 # ------------------------------------------------------------------
@@ -1401,7 +1516,7 @@ section_journey_receipts
 section_retained
 section_pages
 
-echo "tagged-law-consumers: $rows rows ($behavioral_rows behavioral over the tree's own data, $inspection_rows source inspections; none is a product receipt or a hosted result), $failing failing, $residuals residual (listed for the hosted lanes on the tagged law)"
+echo "tagged-law-consumers: $rows rows ($behavioral_rows behavioral over the tree's own data, $inspection_rows source inspections; none is a product receipt or a hosted result), $failing failing"
 if [ "$failing" -eq 0 ]; then
   exit 0
 fi

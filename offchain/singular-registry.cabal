@@ -1061,11 +1061,13 @@ test-suite cage-tests
     Singular.Registry.TxBuilder.RegistrationBookingSpec
     Singular.Registry.TxBuilder.CollateralJudgement
     Singular.Registry.TxBuilder.ConnectedFoldSpec
+    Singular.Registry.TxBuilder.EdgesSurfaceSpec
     Singular.Registry.TxBuilder.SelectedFoldSpec
     Singular.Registry.TxBuilder.MeasuredBookingSpec
     Singular.Registry.TxBuilder.PrepareSpec
     Singular.Registry.TxBuilder.RetractFundingSpec
     Singular.Registry.TxBuilder.SkipEvalUnitsSpec
+    Singular.Registry.TxBuilder.TaggedRegistration
     Singular.Registry.TxBuilder.TerminationBookingSpec
     Singular.Registry.TxBuilder.UpperSlotSpec
     Singular.Registry.TypesSpec
@@ -1121,6 +1123,7 @@ test-suite cage-tests
     , singular-registry:koios-http
     , singular-registry:local-services
     , singular-registry:registry-cli
+    , template-haskell
     , temporary
     , text
     , time

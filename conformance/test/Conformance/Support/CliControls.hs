@@ -569,6 +569,20 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                                 `shouldSatisfy` isLeft
                         [] -> fail "no statement is bound"
     it
+        "finds a clause told on the earlier law's booking by its retired row name"
+        $ retiredRowsOf
+            [ ("retired-booking-of-an-active-key", "a")
+            , ("update_payload_free", "b")
+            , ("retired-release-outside-the-fold", "c")
+            , ("retired-booking-of-an-active-key", "d")
+            ]
+            `shouldBe` [ "retired-booking-of-an-active-key"
+                       , "retired-release-outside-the-fold"
+                       ]
+    it
+        "tells no clause on the earlier law's booking: no row is a retired booking row"
+        $ retiredRowsOf (outline controlsStory) `shouldBe` []
+    it
         "states every clause once and refuses a refusal without an accepting control"
         $ do
             length (outline controlsStory) `shouldBe` 122
@@ -1766,7 +1780,7 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                 honest = judge rs controlsStory
                 refused = judge ignoring controlsStory
             [rcRequestedPayload r | r <- rs, rcAction r == "run update"]
-                `shouldSatisfy` (\ps -> not (null ps) && all (/= Nothing) ps)
+                `shouldSatisfy` (\ps -> not (null ps) && notElem Nothing ps)
             clauseStatuses second honest `shouldBe` [Held]
             clauseStatuses first honest `shouldBe` [Held]
             clauseStatuses second refused
@@ -3038,3 +3052,10 @@ retiresIn program = case view program of
         Provoke{} -> emptyReceipt 0 "" "" ""
         Reclaim{} -> emptyReceipt 0 "" "" ""
         ReadIndexer{} -> emptyReceipt 0 "" "" ""
+
+{- | The statements of the rows whose name says they are told on the earlier
+law's booking (the rows the checkpoint before this one kept so that the
+conformance package compiled, A-043), once each, in first-seen order.
+-}
+retiredRowsOf :: [(String, String)] -> [String]
+retiredRowsOf rows = nub [s | (s, _) <- rows, "retired-" `isPrefixOf` s]

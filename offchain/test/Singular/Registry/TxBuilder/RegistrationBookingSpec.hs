@@ -162,6 +162,9 @@ import Singular.Registry.TxBuilder.RegistrationBooking
     ( RegistrationBooking (..)
     , bookRegistrationImpl
     )
+import Singular.Registry.TxBuilder.TaggedRegistration
+    ( carriesTaggedRegistration
+    )
 import Singular.Registry.Types
 
 -- ---------------------------------------------------------
@@ -937,6 +940,14 @@ bookingTxSpec = describe "the registration booking transaction" $ do
                     o ^. valueTxOutL `shouldBe` MaryValue (Coin 5_000_000) tags
                     extractCageDatum o `shouldBe` Just (RegistrationDatum r)
                 other -> expectationFailure ("request outputs: " <> show (length other))
+    it
+        "carries the tagged registration the earlier booking primitive is held to"
+        $ carriesTaggedRegistration (rbKey booking) =<< built cfg booking
+    it
+        "tells another key from the booked one, so that observation can fail on the tagged booking"
+        $ do
+            tx <- built cfg booking
+            carriesTaggedRegistration "another-key" tx `shouldThrow` anyException
     it
         "mints exactly the two tags, one under each policy, and nothing else"
         $ do

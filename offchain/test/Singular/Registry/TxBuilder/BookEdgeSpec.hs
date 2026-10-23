@@ -69,6 +69,9 @@ import Singular.Registry.TxBuilder.Internal
     , approvalName
     , requestAddrFromCfg
     )
+import Singular.Registry.TxBuilder.TaggedRegistration
+    ( carriesTaggedRegistration
+    )
 import Singular.Registry.Types
     ( Edge
     , edgeInsertActive
@@ -221,3 +224,8 @@ spec = do
             second <- booked edgeInsertActive "taken"
             carriesItsApproval edgeInsertActive "taken" first
             carriesItsApproval edgeInsertActive "taken" second
+    describe
+        "the booking primitive books the tagged request the hosted lanes need"
+        $ it "carries the tagged registration datum on its request output"
+        $ carriesTaggedRegistration "tagged-key"
+            =<< booked edgeInsertActive "tagged-key"
