@@ -226,7 +226,7 @@ say "a genesis-only wallet: coverage-incomplete/12, nothing written"
 "$devnet" --fund-skey "$work/alice.skey" --fund-skey "$work/bob.skey" \
   --fund-outputs 6 --fund-lovelace 2000000000 \
   --fund "$work/dave.skey:1:5000000" --fund "$work/dave.skey:24:4000000" \
-  --fund "$work/erin.skey:5:30000000" --fund "$work/frank.skey:4:30000000" \
+  --fund "$work/erin.skey:5:30000000" --fund "$work/frank.skey:3:30000000" \
   --fund "$work/grace.skey:1:200000000" \
   --fund-address "$vault_alice_addr:6:2000000000" --fund-address "$vault_bob_addr:6:2000000000" \
   >"$work/devnet.out" 2>"$work/devnet.err" &
@@ -778,7 +778,7 @@ active="$(field create .pins.pinActive)"
 alicekey="$(field create .walletKeyHash)"
 [ "$(field create .seed)" = "$seed" ] || fail "create booted from another seed"
 jq -e '[.references[] | .role] | sort == ["application","request","state","witness-active"]' \
-  "$receipts/create.json" >/dev/null || fail "create did not publish the six references"
+  "$receipts/create.json" >/dev/null || fail "create did not publish the four references"
 refused create-again client-refusal -- create --process-time 120000 --retract-time 30000 --seed "$seed" "${common[@]}" "${node[@]}" "${alice[@]}"
 jq -e --argjson p "$process_time" --argjson r "$retract_time" \
   '.processTime == $p and .retractTime == $r' "$receipts/create.json" >/dev/null \
@@ -1551,16 +1551,15 @@ say "the refused create left dave's seed unspent"
 # Erin holds five 30 tADA ada-only outputs and nothing else: the seed stays
 # withheld from the publications, so four outputs fund them. Each output is
 # strictly below the largest remaining single publication need (the
-# application, needs 46966310 as the journey prints; state 11557 bytes is
-# already live and reused, so no state publication remains), but the four
-# permitted outputs cover the whole run (run need 109950687 as the refusals
-# print; the seed is withheld from the publications). Her preview reports no
+# application; the state script is already live and reused, so no state
+# publication remains), but the four permitted outputs cover the whole run
+# (the seed is withheld from the publications). Her preview reports no
 # refusal and her create completes;
 # every reference is live carrying its script; at least one publication spent
 # two or more inputs (read from her journal, never typed); Bob reads the
 # registry from the token alone.
-# Frank holds four 30 tADA outputs (seed withheld, so three fund them): the run's
-# lowest total need 109950687 exceeds his total, short by less than one 30 tADA
+# Frank holds three 30 tADA outputs (seed withheld, so two fund them): the run's
+# lowest total need exceeds his total, short by less than one 30 tADA
 # output. His preview and his create give one
 # verdict, naming totals from the refusal itself, never typed; nothing is
 # submitted and every wallet output stays live.
@@ -1574,7 +1573,7 @@ erin_seed="$(field erin-preview .seed)"
 run erin-create success -- create --process-time 120000 --retract-time 30000 \
   --seed "$erin_seed" --state-dir "$two_erin" --blueprint "$blueprint" "${node[@]}" "${erin[@]}"
 jq -e '[.references[] | .role] | sort == ["application","request","state","witness-active"]' \
-  "$receipts/erin-create.json" >/dev/null || fail "erin's create did not publish the six references"
+  "$receipts/erin-create.json" >/dev/null || fail "erin's create did not publish the four references"
 erin_token="$(field erin-create .stateToken)"
 for ref_out in $(jq -r '.references[] | .output' "$receipts/erin-create.json"); do
   probe_one="$work/erin-ref-probe.json"
@@ -1673,7 +1672,7 @@ run grace-create success -- create --process-time 120000 --retract-time 30000 \
 [ "$(field grace-create .seed)" = "$grace_seed" ] \
   || fail "grace's create booted from another seed: $(field grace-create .seed) vs $grace_seed"
 jq -e '[.references[] | .role] | sort == ["application","request","state","witness-active"]' \
-  "$receipts/grace-create.json" >/dev/null || fail "grace's create did not publish the six references"
+  "$receipts/grace-create.json" >/dev/null || fail "grace's create did not publish the four references"
 grace_token="$(field grace-create .stateToken)"
 for ref_out in $(jq -r '.references[] | .output' "$receipts/grace-create.json"); do
   probe_one="$work/grace-ref-probe.json"
@@ -3036,7 +3035,7 @@ jq -e --slurpfile m "$receipts/create.json" '
     and .processTime == '"$s_window_process"' and .retractTime == '"$s_window_retract"'
     and .walletKeyHash == "'"$s_alicekey"'" and .wallet == "'"$vault_alice_addr"'"' \
   "$receipts/story-create.json" >/dev/null \
-  || fail "the story create does not boot from the live state carrier with six references and Alice's windows"
+  || fail "the story create does not boot from the live state carrier with four references and Alice's windows"
 s_state_token="$(field story-create .stateToken)"
 s_state="$(field story-create .pins.pinState)"
 s_token="$(field story-create .token)"

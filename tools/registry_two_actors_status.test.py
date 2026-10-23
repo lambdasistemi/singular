@@ -973,8 +973,6 @@ def _synthetic_state_fields(fee=1000000, process=120000, retract=120000):
         _cbor_uint(retract),
         _cbor_bstr(bytes([1]) * 28),
         _cbor_bstr(bytes([2]) * 28),
-        _cbor_bstr(bytes([3]) * 28),
-        _cbor_bstr(bytes([4]) * 28),
     ]
 
 
@@ -1018,7 +1016,7 @@ def test_cbor_decoder_synthetic(mod, tmp):
     check(
         "cbor-decoder-bare-state",
         isinstance(bare, tuple) and bare[0] == "constr" and bare[1] == 0,
-        "a bare eight-field state datum misdecoded",
+        "a bare six-field state datum misdecoded",
     )
     try:
         indefinite = decode(_synthetic_state_datum_indefinite_hex())

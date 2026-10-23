@@ -443,7 +443,7 @@ def fetch_state_fee_bound(
 
     Queries the Koios-shaped provider for unspent outputs holding the
     state token, reads each output's datum (inline bytes, inline JSON
-    value, or datum_info by hash), and takes the Constr-0 eight-field
+    value, or datum_info by hash), and takes the Constr-0 six-field
     state datum whose process and retract windows match the
     independently observed registry windows. Returns the fee bound with
     its provenance. Raises RuntimeError with a diagnostic otherwise.
@@ -477,7 +477,7 @@ def fetch_state_fee_bound(
                         reasons.append(f"a datum did not decode: {error}")
                         continue
                     # The chain carries the CageDatum envelope: StateDatum is
-                    # variant 1 holding the eight-field State record.
+                    # variant 1 holding the six-field State record.
                     if (
                         isinstance(datum, tuple)
                         and len(datum) == 3
@@ -493,18 +493,18 @@ def fetch_state_fee_bound(
                         or datum[0] != "constr"
                         or datum[1] != 0
                         or not isinstance(datum[2], list)
-                        or len(datum[2]) != 8
+                        or len(datum[2]) != 6
                     ):
                         if isinstance(datum, tuple) and datum[0] == "constr":
                             kinds = ",".join(type(f).__name__ for f in datum[2])
                             reasons.append(
-                                "a datum is not the eight-field state datum: "
+                                "a datum is not the six-field state datum: "
                                 f"constr {datum[1]} of {len(datum[2])} ({kinds}) "
                                 f"at {datum_len} bytes"
                             )
                         else:
                             reasons.append(
-                                "a datum is not the eight-field state datum: "
+                                "a datum is not the six-field state datum: "
                                 f"{type(datum).__name__}"
                             )
                         continue
@@ -1726,7 +1726,7 @@ class Journey:
 
         A neutral harness read through the development network's
         provider (no actor command, no wallet): the unspent output
-        holding the state token carries the eight-field state datum
+        holding the state token carries the six-field state datum
         whose second field is the published fee. Stored for the rows
         beside the command receipts. A missing bound is setup, never a
         row result.
