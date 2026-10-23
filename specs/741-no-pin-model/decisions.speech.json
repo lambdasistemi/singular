@@ -41,6 +41,10 @@
       "pause": 500
     },
     {
+      "text": "Superseded on 23 October 2026: the termination request and its genuine token now stay at the application script; see the last entry. This entry, the open obligation and the proposal below are kept as the history of the investigation.",
+      "pause": 400
+    },
+    {
       "text": "Date: 22 October 2026. Resolves the fourth question, application release versus pending termination.",
       "pause": 400
     },
@@ -65,8 +69,26 @@
       "pause": 400
     }
   ],
+  "the-termination-request-stays-at-the-application-script": [
+    {
+      "text": "The termination request stays at the application script.",
+      "pause": 500
+    },
+    {
+      "text": "Date: 23 October 2026. Supersedes the 22 October custody entry above as the chosen design, and with it the transfer to a separate request validator and the destination commitment proposal.",
+      "pause": 400
+    },
+    {
+      "text": "The operator's ruling: \"ok, so leaving the termination request in the application script is the way to go, that will not require application to know anything about singular\".",
+      "pause": 400
+    },
+    {
+      "text": "Scope. While a termination is pending, the termination request and the genuine token stay locked at the application script. The application does not need to embed or derive the state or request validator address to release the token: a candidate release condition observes the burn of the exact held token in the same transaction, and the token's minting policy independently enforces the terminal transition of the same registry and key. Approvals still bind the complete registry identity, and token and registry identities remain runtime data. A pending termination is a state distinct from an ordinary live holding: its representation, authorization, spend paths and accounting must be explicit, and the same address does not by itself mean the same logical custody. The existing release check reads the registry fold and its settlement; removing those reads needs an equivalent guarantee for the controller, deposit and economic obligations. No ruling on datum layout, cancellation, deposits or request tags is implied.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "decisions.md",
-    "sha256": "07b8e5bf45605f1949d2010b0e3ff47e78bc47fb38261704e10905d91ad94d91"
+    "sha256": "4f5b96bb5c3ad69c2ac3daf45cd614a4baa18062da4ec146bad33e464be53a0a"
   }
 }

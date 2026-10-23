@@ -4,9 +4,9 @@ As the ticket owner, I want a bounded sequence that produces a reviewable model 
 
 ## Status
 
-Completed: specification, source intake and task decomposition. No model work or proof acceptance yet.
-Current: planning handoff to the operator-selected team.
-Blockers for dependent acceptance: identity scope, asset-role authentication, application release versus pending custody, complete economic configuration and reader meanings require the model investigation and operator ruling.
+Completed: source binding and obligation inventory; hypothetical identity statements (audited, not proved); the request-destination investigation. Rulings are recorded in [decisions.md](decisions.md).
+Current: the application-held pending termination stage (23 October ruling).
+Blockers for dependent acceptance: asset-role authentication, the application-held termination release and its settlement obligations, complete economic configuration and reader meanings still need model evidence and, where semantic, an operator ruling.
 Base: `00771d77af996605845cf062285263909a049cf8`. Exact bindings are in [authority.md](authority.md).
 
 ## Technical context

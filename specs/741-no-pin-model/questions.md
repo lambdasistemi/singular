@@ -56,6 +56,8 @@ The [authority binding](authority.md) fixes the accepted root and application re
 
 **Ruling (22 October 2026):** termination booking moves the genuine token from application custody into the request, where the later fold burns it; see [decisions.md](decisions.md). Reconciling the application model follows its own statement and audit stage.
 
+**Superseded ruling (23 October 2026):** the termination request and genuine token stay at the application script, released by the exact burn at the fold; see [decisions.md](decisions.md).
+
 ## Where do the cost and booking-width requirements live?
 
 **Actor and goal:** As a requester, I want the configured registration cost, minimum tip and booked timing guarantees to survive removal of policy pins.
@@ -110,6 +112,8 @@ flowchart TD
   Question -->|requires| Ruling[Operator ruling]
   Ruling -->|authorizes| Alignment[Align models]
 ```
+
+**Superseded (23 October 2026):** with the termination request kept at the application script, the token no longer moves to a separate request validator, so this question no longer decides the design. The [destination investigation](destination.md) stays as history.
 
 ## Identity-stage evidence and remaining holds
 

@@ -123,6 +123,10 @@
     {
       "text": "Ruling (22 October 2026): termination booking moves the genuine token from application custody into the request, where the later fold burns it; see decisions.md. Reconciling the application model follows its own statement and audit stage.",
       "pause": 400
+    },
+    {
+      "text": "Superseded ruling (23 October 2026): the termination request and genuine token stay at the application script, released by the exact burn at the fold; see decisions.md.",
+      "pause": 400
     }
   ],
   "where-do-the-cost-and-booking-width-requirements-live": [
@@ -227,6 +231,10 @@
     {
       "text": "Decision needed: Choose a concrete authenticated registration or certificate-issuer premise, a verified on-chain derivation of the applied request credential, or a revised request dependency, as described in the conditional constructions. Preserve logical user keys, complete registry identity, exact same-output datum/tag/value checks and controller/deposit obligations. Decide encoding and address scope before model statements and independent audit. Recommendation: retain the application-to-request acceptance hold; hashing an attacker-selected destination or copying a tag does not close it.",
       "pause": 400
+    },
+    {
+      "text": "Superseded (23 October 2026): with the termination request kept at the application script, the token no longer moves to a separate request validator, so this question no longer decides the design. The destination investigation stays as history.",
+      "pause": 400
     }
   ],
   "identity-stage-evidence-and-remaining-holds": [
@@ -249,6 +257,6 @@
   ],
   "_source": {
     "file": "questions.md",
-    "sha256": "c142352156567a759e63ba5ebe82f50e273a02fd028c844b8d41a85d28c31da4"
+    "sha256": "04c8966765305b23fc80adf66058560498f41973d17a7ae40338fde2794bf1ad"
   }
 }

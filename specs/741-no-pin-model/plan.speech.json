@@ -15,7 +15,7 @@
       "pause": 500
     },
     {
-      "text": "Completed: specification, source intake and task decomposition. No model work or proof acceptance yet. Current: planning handoff to the operator-selected team. Blockers for dependent acceptance: identity scope, asset-role authentication, application release versus pending custody, complete economic configuration and reader meanings require the model investigation and operator ruling. Base: 00771d77af996605845cf062285263909a049cf8. Exact bindings are in authority.md.",
+      "text": "Completed: source binding and obligation inventory; hypothetical identity statements (audited, not proved); the request-destination investigation. Rulings are recorded in decisions.md. Current: the application-held pending termination stage (23 October ruling). Blockers for dependent acceptance: asset-role authentication, the application-held termination release and its settlement obligations, complete economic configuration and reader meanings still need model evidence and, where semantic, an operator ruling. Base: 00771d77af996605845cf062285263909a049cf8. Exact bindings are in authority.md.",
       "pause": 400
     }
   ],
@@ -141,6 +141,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "c55432981d7e5f3fbc0279a2401661b6f6b19c58705f0e914eaa9aa28b5d6f9c"
+    "sha256": "8c58ed5b29336aa5922bdc6a11c88258899593e1a79194708365b09db0878bbe"
   }
 }
