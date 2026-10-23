@@ -154,7 +154,7 @@ theorem additive_settlement_releasePayments_candidate : additive_settlement_prem
   cases impossible
 
 /-- Executed #741 antecedent, not accepted law; n>1, computed finite separation, explicit fee/funding/willingness. -/
-theorem composed_available_antecedent : composed_available_premise .none hash encode two Fixtures.registry selected 1000 20 1 (fun _ => True) := by
+theorem composed_available_antecedent : composed_available_premise .none hash encode two Fixtures.registry selected 1000 20 1 willing := by
   refine ⟨two_reachable, rfl, ?_, ?_, ?_, ?_, ?_, ?_, ?_, trivial⟩
   · decide +kernel
   · decide +kernel
@@ -172,7 +172,7 @@ theorem composed_available_antecedent : composed_available_premise .none hash en
   · decide +kernel
   · decide +kernel
 /-- Executed #741 candidate instance, not accepted law; permissionless composed fold at chosen later time. -/
-theorem composed_available_composedLocal_candidate : composed_available_premise .none hash encode two Fixtures.registry selected 1000 20 1 (fun _ => True) → composed_available_claim .none hash encode two Fixtures.registry selected 1000 20 1 (fun _ => True) := by
+theorem composed_available_composedLocal_candidate : composed_available_premise .none hash encode two Fixtures.registry selected 1000 20 1 willing → composed_available_claim .none hash encode two Fixtures.registry selected 1000 20 1 willing := by
   intro _
   refine ⟨composition_executes, rfl, rfl, ?_⟩
   intro p member

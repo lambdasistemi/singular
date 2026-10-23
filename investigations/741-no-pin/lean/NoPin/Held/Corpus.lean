@@ -18,4 +18,7 @@ def goodQuery (surface : Case) : Query :=
     pending := pending 7 5, selected := if surface == .consumption then [] else selected,
     signers := [42], key := 7, time := 1000, funding := 20, fee := 1 }
 
+/-- Hypothesis fixture under #741, not accepted law; explicit willing processor, no fee-market claim. -/
+def willing (_ : Nat) : Prop := True
+
 end NoPin.Held.Fixtures

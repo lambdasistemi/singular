@@ -3,7 +3,7 @@
   "acceptedLaw": false,
   "definitions": {
     "lean/NoPin/Held/Conditions.lean": "f1e02b96bb6131d06f36d1326f451d82a91ce24c4e2af90652d322e89f428ef9",
-    "lean/NoPin/Held/Corpus.lean": "73fb086b00e5a5fe44e29e8338c0933c5d58bf652299fa3e66365edcb4dc58d6",
+    "lean/NoPin/Held/Corpus.lean": "279e3048735805a1111f5d4966b7f49df88daff54cccbdfd9ca60684c53b7225",
     "lean/NoPin/Held/Equality.lean": "c7f8f3629e6bb1e53616d16d38ecc7dc82fa0871b41462424d0b5cf0d116cd71",
     "lean/NoPin/Held/Fixtures.lean": "a6378b465c3fbd032f912749748fa675097a29e1c3bea6812ac1b5f24dec2bb7",
     "lean/NoPin/Held/Good.lean": "e5e11740d0970a85460418430bcd44812b598a4ac2c8ceb801e2b3998536e19c",
@@ -13,8 +13,8 @@
     "lean/NoPin/Held/Oracle.lean": "76adeb342e742683de7cd87972f750ff1e48b60b9b0c87ab7283713d58342fd2",
     "lean/NoPin/Held/Report.lean": "9387b94944fbbe3a4745a0467af070578346776d8fd79baa7c2d8fb3c2c3e562",
     "lean/NoPin/Held/Statements.lean": "b4a5d6e31242ff83d8bdde8ce90ac2832a3c18bc00de1d0c21daa79aee0f7e6a",
-    "lean/NoPin/Held/Strong.lean": "0fdfc74858662acd3db8f644eb7792a20801b4abe1079f484b3320afa10852ca",
-    "lean/NoPin/Held/StrongMutants.lean": "86cc251df5d31b4f4e64f085381b0c4460259f6d7cf25f0f6338bb27ce0bd736",
+    "lean/NoPin/Held/Strong.lean": "91d87c732a4cc88cd55b7605a311933bbac92e222f0ed963a3df408782872f86",
+    "lean/NoPin/Held/StrongMutants.lean": "de63bd595b15dbff2c6339835f430e46ac58121ebeaef769298ebb9357837db2",
     "lean/NoPin/Held/Value.lean": "e1707918c12c99b9dbf0e9e696a4461cfc629aa460a8aaa70a353eaed1c10fa0"
   },
   "statements": [

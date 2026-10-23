@@ -65,7 +65,7 @@ theorem additive_settlement_releasePayments_mutant : ¬ (additive_settlement_pre
   exact impossible claim
 
 /-- Executed #741 one-guard violation, not accepted law; root acceptance alone cannot close composition. -/
-theorem composed_available_composedLocal_mutant : ¬ (composed_available_premise (.flip .composedLocal) hash encode two Fixtures.registry selected 1000 20 1 (fun _ => True) → composed_available_claim (.flip .composedLocal) hash encode two Fixtures.registry selected 1000 20 1 (fun _ => True)) := by
+theorem composed_available_composedLocal_mutant : ¬ (composed_available_premise (.flip .composedLocal) hash encode two Fixtures.registry selected 1000 20 1 willing → composed_available_claim (.flip .composedLocal) hash encode two Fixtures.registry selected 1000 20 1 willing) := by
   have changed : composedWith (.flip .composedLocal) hash encode Fixtures.registry selected folded physical = false := by
     have positive := composition_executes
     simp only [composed, composedWith, applyGuard] at positive ⊢
