@@ -124,7 +124,7 @@ As a reviewer, I want Singular's complete law separated from the application's r
 
 | Pure callable | Explicit arguments → result | Frozen contract |
 |---|---|---|
-| publishState | ApplyState → stateProgram → applicationCredential → Nat | Publisher-only parameter application. PublishedReleaseCorrespondence binds its result to authenticated real script bytes and hashing. No client calls ApplyState. |
+| publishState | ApplyState → stateProgram → applicationPolicy → Nat | Publisher-only parameter application. PublishedReleaseCorrespondence binds its result to authenticated real script bytes and hashing. The separate applicationCredential is used by application booking/spending and discovery; Singular authenticates the consumed operation approval under applicationPolicy, without identifying that policy with an address. No client calls ApplyState. |
 | stateAsset | Hash → Codec → PublishedRelease → OutRef → TokenId | Published state policy and hash of the state-role seed preimage. This new family restates the old seed-name consumer without changing its historical statement. |
 | activeAsset | Hash → Codec → TokenId → Key → TokenId | Current state policy plus hash of active-role, complete registry and key. It cannot equal an occurring state-role asset under the separate finite encoding/collision premises. |
 | registrationApproval, terminationApproval | Hash → Codec → PublishedRelease → complete registry and operation data → TokenId | Application policy plus the distinct operation constructor. Registration commits key, new holding address and initial datum; termination commits key and registry only. The application authenticates the rest of its booked request data. |

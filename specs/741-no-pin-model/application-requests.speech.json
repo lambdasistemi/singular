@@ -39,6 +39,10 @@
       "pause": 500
     },
     {
+      "text": "The published application minting policy and application payment script credential are distinct inputs. The state program is applied to the policy once per release; Singular authenticates operation approvals under that policy. Application booking, spending and discovery authenticate their output credential separately. No application-policy/address equality or derivation is assumed.",
+      "pause": 400
+    },
+    {
       "text": "Genesis consumes its public seed once, executes the published application-bound state policy and mints only its role-separated state asset at quantity one into one state output at that script. That output contains only ADA and its own state token and commits the empty trie through the explicit trie commitment parameter. Seed uniqueness across accepted history and actual script application/hash correspondence remain upstream premises.",
       "pause": 400
     },
@@ -167,6 +171,6 @@
   ],
   "_source": {
     "file": "application-requests.md",
-    "sha256": "f9e15dbd69af96acc3c3ecd2e8004750fe3d4d78a81ec1a20514f8458e88f804"
+    "sha256": "c1c15c0521eee812e944b907a81923d74dcc8713994026de2a99e7474e8b6c5b"
   }
 }

@@ -30,6 +30,8 @@ The application owns booking, request custody, reclaim and ADA routing. Singular
 
 ## The Singular surface
 
+The published application minting policy and application payment script credential are distinct inputs. The state program is applied to the policy once per release; Singular authenticates operation approvals under that policy. Application booking, spending and discovery authenticate their output credential separately. No application-policy/address equality or derivation is assumed.
+
 Genesis consumes its public seed once, executes the published application-bound state policy and mints only its role-separated state asset at quantity one into one state output at that script. That output contains only ADA and its own state token and commits the empty trie through the explicit trie commitment parameter. Seed uniqueness across accepted history and actual script application/hash correspondence remain upstream premises.
 
 A fold authenticates its spent state token by the structured state-role preimage and its complete policy/name identity, not by the script address, copied root datum or policy alone. Its redeemer supplies the seed; a PublicRegistry observation binds that seed to public genesis data. The new state-role and active-role constructors are distinct. A finite occurring-domain serialization premise and a separate finite collision premise prevent a fold-minted active token from satisfying state recognition. Providing the seed is not a hash inversion procedure: a provider must expose the needed public genesis data, or liveness lacks that input.
