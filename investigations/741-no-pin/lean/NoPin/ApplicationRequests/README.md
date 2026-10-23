@@ -20,13 +20,20 @@ finite encoding from finite collision freedom; neither asserts a cryptographic
 hash implementation. Explicit attacks cover extra mint/burn, wrong delivery,
 state drain, stuffing and an active token presented as a state.
 
-The global supply and permanence family remains open. CandidateReachable and
-ApplicationReachable are explicit relations, but this cut adds no global supply
-theorem, genuine multi-registry history witness or history-sensitive mutant.
-The five predecessor facts and mixed public fold are finite observations and do
-not establish the history that produced their starting active token. No old
-BurnCoupling is used to fill this gap. Application lifecycle, money and journey
-equivalence statements remain later work.
+The history statement candidate adds actual supply, one live token, burns only
+through terminating folds, and no remint after terminal. These four general
+statements remain unproved. Complete finite certificates include genuine
+multi-step histories, a pending termination, two registries sharing one seed
+under different policies, and multiple registries under one policy. Their
+physical outputs agree across the two release projections.
+
+The constructor inversions are derived from CandidateReachable, including its
+neutral application transactions. Isolated guard changes and removal of the
+neutral mint or asset-conservation premise produce certified violating
+histories. These are finite controls; neither a cryptographic implementation nor
+a general proof follows. No old BurnCoupling fills the history obligation.
+Application lifecycle, money and journey equivalence statements remain later
+work.
 
 The chain codec/hash, public provider/preimages, trie proof, ledger and real
 script-invocation correspondences remain external. The model public builder

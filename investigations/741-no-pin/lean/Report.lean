@@ -35,7 +35,8 @@ elab "#identity_report" : command => do
     if name.toString.startsWith "NoPin." then
       if let .axiomInfo _ := info then throwError "custom axiom: {name}"
       unless name.toString.startsWith "NoPin.Statements." || name.toString.startsWith "NoPin.Held.Statements." ||
-          name.toString.startsWith "NoPin.ApplicationRequests.Statements." do
+          name.toString.startsWith "NoPin.ApplicationRequests.Statements." ||
+          name.toString.startsWith "NoPin.ApplicationRequests.HistoryStatements." do
         let axioms ← collectAxioms name
         unless axioms.all (fun a => a == `propext || a == `Classical.choice || a == `Quot.sound) do
           throwError "unproved candidate definition or example: {name}"
@@ -118,3 +119,6 @@ end NoPin.Report
 
 #application_requests_report
 #eval NoPin.ApplicationRequests.Report.reportControls
+
+#history_report
+#eval NoPin.ApplicationRequests.HistoryReport.reportCorpus

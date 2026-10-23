@@ -217,7 +217,7 @@ def main():
             (ROOT / name).read_bytes() == original, "slice-2 identity changed: " + name
         )
     require(
-        all(r.get("family") in {None, "held", "application-requests"} for r in records),
+        all(r.get("family") in {None, "held", "application-requests", "history"} for r in records),
         "unknown evidence family",
     )
     check_family([r for r in records if not r.get("family")], "NoPin", "", None)
@@ -269,6 +269,8 @@ def main():
         [r for r in records if r.get("family") == "application-requests"],
         "NoPin.ApplicationRequests", "application-requests-", "application-requests"
     )
+    import history_check
+    history_check.check(records)
 
 
 if __name__ == "__main__":
