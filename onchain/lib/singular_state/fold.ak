@@ -45,7 +45,7 @@ use singular_state/preimage.{
   RegistryIdentity, active_token_name, approval_name, initial_datum_hash,
   registration_preimage, state_token_name,
 }
-use singular_state/state.{recognize_state, state_root}
+use singular_state/state.{StateDatum, recognize_state, state_root}
 
 /// The leaf the trie binds to a registered key: the model's `known active`.
 pub const leaf_active: ByteArray = #"01"
@@ -423,34 +423,94 @@ pub fn registration_deposit(deposit: Int, holding: Output) -> Bool {
 /// One change applied to the trie: every guard of the change holds. The trie
 /// after it is `None` when one does not. A termination is refused.
 pub fn apply_change(
-  _application_policy: PolicyId,
-  _registry: RegistryIdentity,
-  _tx: Transaction,
-  _changes: List<Change>,
-  _trie: MerklePatriciaForestry,
-  _change: Change,
+  application_policy: PolicyId,
+  registry: RegistryIdentity,
+  tx: Transaction,
+  changes: List<Change>,
+  trie: MerklePatriciaForestry,
+  change: Change,
 ) -> Option<MerklePatriciaForestry> {
-  None
+  when change is {
+    Register { request, key, holding, deposit, proof } ->
+      when
+        (
+          find_input(tx.inputs, request),
+          list.at(tx.outputs, holding),
+          approval_for(registry, tx.outputs, change),
+        )
+      is {
+        (
+          Some(Input { output: request_output, .. }),
+          Some(holding_output),
+          Some(approval),
+        ) ->
+          if and {
+            change_reference(tx.inputs, request),
+            change_approval_shape(application_policy, request_output),
+            change_approval(application_policy, request_output, approval),
+            change_approval_burn(application_policy, approval, tx.mint),
+            change_leaf(trie, key, proof),
+            registration_placement(
+              registry,
+              tx.outputs,
+              changes,
+              request,
+              key,
+              holding,
+            ),
+            registration_mint(registry, key, tx.mint),
+            registration_deposit(deposit, holding_output),
+          } {
+            Some(mpf.insert(trie, key, leaf_active, proof))
+          } else {
+            None
+          }
+        _ -> None
+      }
+    Terminate { .. } -> None
+  }
 }
 
 /// Model `changeBatch`: the changes applied in order to the trie before.
 pub fn change_batch(
-  _application_policy: PolicyId,
-  _registry: RegistryIdentity,
-  _tx: Transaction,
-  _trie: MerklePatriciaForestry,
-  _changes: List<Change>,
+  application_policy: PolicyId,
+  registry: RegistryIdentity,
+  tx: Transaction,
+  trie: MerklePatriciaForestry,
+  changes: List<Change>,
 ) -> Option<MerklePatriciaForestry> {
-  None
+  apply_changes(application_policy, registry, tx, changes, trie, changes)
+}
+
+fn apply_changes(
+  application_policy: PolicyId,
+  registry: RegistryIdentity,
+  tx: Transaction,
+  changes: List<Change>,
+  trie: MerklePatriciaForestry,
+  remaining: List<Change>,
+) -> Option<MerklePatriciaForestry> {
+  when remaining is {
+    [] -> Some(trie)
+    [change, ..rest] ->
+      when
+        apply_change(application_policy, registry, tx, changes, trie, change)
+      is {
+        Some(next) ->
+          apply_changes(application_policy, registry, tx, changes, next, rest)
+        None -> None
+      }
+  }
 }
 
 /// Model guard `foldTrie`: the batch was applied, and the continuing state
 /// carries the root of the trie it produced.
-pub fn fold_trie(
-  _result: Option<MerklePatriciaForestry>,
-  _after: Output,
-) -> Bool {
-  False
+pub fn fold_trie(result: Option<MerklePatriciaForestry>, after: Output) -> Bool {
+  when result is {
+    Some(trie) ->
+      after.datum == InlineDatum(StateDatum { root: mpf.root(trie) })
+    None -> False
+  }
 }
 
 /// Model guard `foldContinuation`: exactly one output carries the state

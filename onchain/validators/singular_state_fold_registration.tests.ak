@@ -1127,3 +1127,51 @@ test a_leaf_neighbour_agrees_with_the_key_up_to_its_skip() {
     !apart_from(key_d, [branch_of(0), leaf_of(near_at_0_and_2(), 1)]),
   }
 }
+
+// ---------------------------------------------------------------------------
+// fold-root-is-the-computed-root: rows for two mutants of the first campaign
+// ---------------------------------------------------------------------------
+
+test a_change_whose_request_is_spent_twice_is_refused() {
+  let tx = first_transaction()
+  let request = request_input(registry(), registration_a())
+  apply_first(tx, mpf.empty) != None && apply_first(
+    Transaction { ..tx, inputs: list.concat(tx.inputs, [request]) },
+    mpf.empty,
+  ) == None
+}
+
+test a_change_whose_request_carries_a_second_application_token_is_refused() {
+  // the approval is the first token the request carries; a second one sorts after it
+  let tx = first_transaction()
+  let request = request_input(registry(), registration_a())
+  let extra =
+    Input {
+      ..request,
+      output: Output {
+        ..request.output,
+        value: request.output.value
+          |> add(
+              application_policy,
+              #"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+              1,
+            ),
+      },
+    }
+  apply_first(
+    Transaction {
+      ..tx,
+      inputs: list.map(
+        tx.inputs,
+        fn(input) {
+          if input.output_reference == request.output_reference {
+            extra
+          } else {
+            input
+          }
+        },
+      ),
+    },
+    mpf.empty,
+  ) == None
+}
