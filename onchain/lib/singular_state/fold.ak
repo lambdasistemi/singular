@@ -35,12 +35,14 @@ use aiken/merkle_patricia_forestry as mpf
 use aiken/merkle_patricia_forestry/helpers.{nibble, nibbles}
 use aiken/primitive/bytearray
 use cardano/assets.{
-  AssetName, PolicyId, Value, lovelace_of, quantity_of, tokens,
+  AssetName, PolicyId, Value, flatten, lovelace_of, quantity_of, tokens,
+  without_lovelace,
 }
 use cardano/transaction.{
   Datum, InlineDatum, Input, Output, OutputReference, Transaction, TransactionId,
   find_input,
 }
+use singular_state/genesis.{state_candidates}
 use singular_state/preimage.{
   RegistryIdentity, active_token_name, approval_name, initial_datum_hash,
   registration_preimage, state_token_name,
@@ -516,23 +518,29 @@ pub fn fold_trie(result: Option<MerklePatriciaForestry>, after: Output) -> Bool 
 /// Model guard `foldContinuation`: exactly one output carries the state
 /// token, and it carries nothing but ADA besides.
 pub fn fold_continuation(
-  _state_policy: PolicyId,
-  _seed: OutputReference,
-  _outputs: List<Output>,
+  state_policy: PolicyId,
+  seed: OutputReference,
+  outputs: List<Output>,
 ) -> Bool {
-  False
+  when state_candidates(state_policy, seed, outputs) is {
+    [after] ->
+      flatten(without_lovelace(after.value)) == [
+        (state_policy, state_token_name(seed), 1),
+      ]
+    _ -> False
+  }
 }
 
 /// Model guard `foldAddress`: the continuing state is at the same payment
 /// credential.
-pub fn fold_address(_before: Output, _after: Output) -> Bool {
-  False
+pub fn fold_address(before: Output, after: Output) -> Bool {
+  after.address.payment_credential == before.address.payment_credential
 }
 
 /// Model guard `foldValue`: the continuing state holds at least the ADA the
 /// spent one held.
-pub fn fold_value(_before: Output, _after: Output) -> Bool {
-  False
+pub fn fold_value(before: Output, after: Output) -> Bool {
+  lovelace_of(before.value) <= lovelace_of(after.value)
 }
 
 /// Model guard `foldWholePolicy`: the whole state-policy mint is exactly one
