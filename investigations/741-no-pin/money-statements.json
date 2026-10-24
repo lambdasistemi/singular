@@ -24,7 +24,7 @@
     "lean/NoPin/ApplicationRequests/MoneyHoldingClaims.lean": "bdbcb8df8bf170bc7c009a54a00c0add1a0ddc1310e9f2d752ec9fbc8a69fba5",
     "lean/NoPin/ApplicationRequests/MoneyHoldingSeparated.lean": "73c4d81d3c95698b61ead30aba23deb9755657b76efc3e79cd55dfb01df5ac96",
     "money_holding_controls.py": "b6caa2765f40af99b0f5819a1973c703ab9ad02fd017b52061527d824e7c6919",
-    "money-holding-definition-baseline.json": "4e9f352744e3f2d774328db5b41cb8624d8b635dc33211ad8565547e64b8ba2a",
+    "money-holding-definition-baseline.json": "cbabc37d7b69ae20d76179a10e386427b8980393ad19e12bca718130dd9c31b9",
     "lean/NoPin/ApplicationRequests/MoneyHoldingProofs.lean": "7a03b96652e04aaa9eb0e1647c16d7d67d2597b9b1fc1689cf37d1becb9db183"
   },
   "statements": [
