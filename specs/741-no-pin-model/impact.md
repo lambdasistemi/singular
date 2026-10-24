@@ -137,6 +137,10 @@ An independent statement audit on 23 October 2026 found the open-datum request l
 
 An independent statement audit on 23 October 2026 found the open-datum journeys ready to prove: twelve money statements over sixty-six party-by-journey cells for create, register, update, terminate, and reclaim with cleanup, each cell equal to today or tagged with the ruling that changes it, and nineteen lifecycle statements restated with the refund address as reclaim signer. The audited refund-lifecycle ledger is `investigations/741-no-pin/refund-lifecycle-statements.json` `a985b2f980840f36445489fc4af02f16f47f22f1c647e87c3fd3d62b47d79efd`; every ledger pin now names a tracked file. With this, every statement family of the application-held design is stated and audited; none is proved yet.
 
+## Singular proof result
+
+All sixteen Singular statements of the application-held design are proved in Lean, on 24 October 2026: genesis, the whole fold law, the committed holding delivery, state output integrity, state recognition with a root-only datum, and folding from public data. Each proof uses only the standard axioms (propext, Classical.choice, Quot.sound) on a clean build, with no sorry and no native_decide; each statement and the 1112 definitions it reaches are unchanged since their audit. An independent proof audit approved them. The ledger is `investigations/741-no-pin/application-requests-statements.json` `f2bb4c60316bc71f506cd442a3b73b05e8cdf5d610719274bc0946e66f218df1`. These are proofs of hypothetical investigation statements under their named premises, not accepted law; history, open-datum lifecycle, money and identity proofs follow.
+
 ```mermaid
 flowchart TD
   Source[Existing laws] -->|compare| Proposal[Proposed identities]
