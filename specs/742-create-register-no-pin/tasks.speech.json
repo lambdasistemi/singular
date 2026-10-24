@@ -19,7 +19,7 @@
       "pause": 300
     },
     {
-      "text": "[ ] gate-synthesized: the ticket owner's and the auditor's gate tables synthesized once and frozen with both input hashes.",
+      "text": "[x] gate-synthesized: the ticket owner's and the auditor's gate tables synthesized once and frozen with both input hashes.",
       "pause": 300
     }
   ],
@@ -29,11 +29,11 @@
       "pause": 500
     },
     {
-      "text": "[ ] genesis-and-recognition: genesis, recognition from the supplied seed and state output integrity, each statement with a check seen to fail.",
+      "text": "[x] genesis-and-recognition: genesis, recognition from the supplied seed and state output integrity, each statement with a check seen to fail.",
       "pause": 300
     },
     {
-      "text": "[ ] state-titles-declared: the new blueprint titles in the identity manifest and the declared-additions record; current hashes unmoved.",
+      "text": "[x] state-titles-declared: the new blueprint titles in the identity manifest and the declared-additions record; current hashes unmoved.",
       "pause": 300
     }
   ],
@@ -165,6 +165,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "19f9216557b3d3cac06ce164386112a6e80878a9285a9d5c049fd1c19e1bb9bf"
+    "sha256": "2d4a3b090171be171c3b66737da2b2fd77e44904ac10367b6169cc2ea62092a1"
   }
 }
