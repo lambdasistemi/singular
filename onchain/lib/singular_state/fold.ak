@@ -570,11 +570,28 @@ pub fn fold_whole_policy(
 
 /// Model guard `foldNoNewConsumed`: no new holding is also an input.
 pub fn fold_no_new_consumed(
-  _transaction_id: TransactionId,
-  _changes: List<Change>,
-  _inputs: List<Input>,
+  transaction_id: TransactionId,
+  changes: List<Change>,
+  inputs: List<Input>,
 ) -> Bool {
-  False
+  list.all(
+    changes,
+    fn(change) {
+      when change is {
+        Register { holding, .. } ->
+          !list.any(
+            inputs,
+            fn(input) {
+              input.output_reference == OutputReference {
+                transaction_id,
+                output_index: holding,
+              }
+            },
+          )
+        Terminate { .. } -> True
+      }
+    },
+  )
 }
 
 /// The mint handler of a fold: a state input is spent, and its spend handler
