@@ -25,6 +25,7 @@ module Singular.State.Preimage
       -- * The names the line builds
     , stateTokenName
     , activeTokenName
+    , configurationTokenName
     , registrationPreimage
     , approvalName
     ) where
@@ -136,6 +137,10 @@ stateTokenName = roleName . State
 -- | The name of the token that stands for a key in a registry.
 activeTokenName :: RegistryIdentity -> ByteString -> AssetName
 activeTokenName registry = roleName . Active registry
+
+-- | The name of the token of the configuration record of a registry.
+configurationTokenName :: RegistryIdentity -> AssetName
+configurationTokenName _ = AssetName mempty
 
 {- | The Plutus Data serialisation of the registration approval preimage: the
 key, the registry, the address the holding sits at, the hash of the holding's

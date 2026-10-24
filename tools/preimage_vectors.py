@@ -81,6 +81,19 @@ test vector_{snake(vector["id"])}() {{
 """
 
 
+def configuration_test(vector):
+    given = vector["input"]
+    return f"""
+test vector_{snake(vector["id"])}() {{
+  let registry = {registry(given["registry"])}
+  and {{
+    cbor.serialise(ApplicationConfiguration {{ registry }}) == {hexlit(vector["preimage"])},
+    configuration_token_name(registry) == {hexlit(vector["name"])},
+  }}
+}}
+"""
+
+
 def approval_test(vector):
     given = vector["input"]
     return f"""
@@ -108,6 +121,7 @@ test vector_{snake(vector["id"])}() {{
 TESTS = {
     "state": state_test,
     "active": active_test,
+    "configuration": configuration_test,
     "registration-approval": approval_test,
 }
 
@@ -130,6 +144,10 @@ IMPORTS = {
         ["use cardano/transaction.{OutputReference}"],
     ),
     "active": (["Active", "RegistryIdentity", "active_token_name"], []),
+    "configuration": (
+        ["ApplicationConfiguration", "RegistryIdentity", "configuration_token_name"],
+        [],
+    ),
     "registration-approval": (
         ["RegistryIdentity", "approval_name", "registration_preimage"],
         ["use cardano/address.{Address, Inline, Script, VerificationKey}"],

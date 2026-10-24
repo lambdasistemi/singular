@@ -63,6 +63,11 @@ pub fn active_token_name(
   role_name(Active { registry, key })
 }
 
+/// The name of the token of the configuration record of `registry`.
+pub fn configuration_token_name(_registry: RegistryIdentity) -> AssetName {
+  #""
+}
+
 /// The Plutus Data serialisation of the registration approval preimage: the
 /// registry, the key, the address the holding sits at, the hash of the
 /// holding's initial datum and the deposit the holding holds.
