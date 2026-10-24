@@ -122,3 +122,10 @@ As an integrator, I want to distinguish proved model properties from outstanding
 The public fold construction and its independent effects remain open. Their original statements and proof holes remain visible. The finite public-builder examples establish only their computed instances. History, application lifecycle and money statements keep their existing status.
 
 The recipe checks compiled axioms against each row, freezes the transitive kernel definitions reached from the sixteen statement types, and preserves every statement digest. Proof-hole exemptions come from individual STATED ledger rows. Compiled controls expose a custom axiom, a compiler-trusted native proof and a weakened state-continuation guard. A clean investigation rebuild and per-target axiom output belong to the candidate receipt; local results do not establish hosted CI, ledger execution or acceptance.
+
+
+## Refund lifecycle proof candidate
+
+As an application integrator, I want each proof to remain bound to its exact statement and premises. The refund-signer lifecycle now supplies fifteen hypothetical proofs: the nine action inversions, termination burn, booking authority and public parameters, treasury at booking, additive payments, open approval burning and the fact that burning alone grants no application spend or fresh approval. The nineteen statement identities and the definitions they reach remain frozen at revision 56db38c7e244b075f713b6028afb5ff9bcc50d32.
+
+Four statements remain openly unproved: registration effects, folder protection, conditional public termination availability and configuration immutability. Earlier statement-stage wording above describes the retained historical checkpoint. The recipe computes current proof status from compiled axioms, rejects proofs outside this family and compares the refund statement definition closure against a freshly compiled base. A changed reclaim signer must change that closure. Local model proofs establish no accepted application law, implementation, ledger execution or hosted CI result.

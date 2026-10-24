@@ -173,8 +173,22 @@
       "pause": 400
     }
   ],
+  "refund-lifecycle-proof-candidate": [
+    {
+      "text": "Refund lifecycle proof candidate.",
+      "pause": 500
+    },
+    {
+      "text": "As an application integrator, I want each proof to remain bound to its exact statement and premises. The refund-signer lifecycle now supplies fifteen hypothetical proofs: the nine action inversions, termination burn, booking authority and public parameters, treasury at booking, additive payments, open approval burning and the fact that burning alone grants no application spend or fresh approval. The nineteen statement identities and the definitions they reach remain frozen at revision 56db38c7e244b075f713b6028afb5ff9bcc50d32.",
+      "pause": 400
+    },
+    {
+      "text": "Four statements remain openly unproved: registration effects, folder protection, conditional public termination availability and configuration immutability. Earlier statement-stage wording above describes the retained historical checkpoint. The recipe computes current proof status from compiled axioms, rejects proofs outside this family and compares the refund statement definition closure against a freshly compiled base. A changed reclaim signer must change that closure. Local model proofs establish no accepted application law, implementation, ledger execution or hosted CI result.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "README.md",
-    "sha256": "797e59c2a45dd0326cbfafbe9a6f08325eee7cb6c8fc34156b6e3256d1c91fe7"
+    "sha256": "296a0daaaa8e25937c4c18b2cf023ee6315dbc52b3f37dbab78fc5c34c888541"
   }
 }

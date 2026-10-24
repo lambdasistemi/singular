@@ -9,6 +9,7 @@ import NoPin.ApplicationRequests.Report
 import NoPin.ApplicationRequests.HistoryReport
 import NoPin.ApplicationRequests.LifecycleReport
 import NoPin.ApplicationRequests.RefundLifecycleReport
+import NoPin.ApplicationRequests.RefundProofAudit
 import NoPin.ApplicationRequests.MoneyReport
 
 /-! Hypotheses under #741, not accepted law; identity statements and their

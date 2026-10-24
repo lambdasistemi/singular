@@ -99,6 +99,56 @@
       "pause": 400
     }
   ],
+  "singular-statement-audit-result": [
+    {
+      "text": "Singular statement audit result.",
+      "pause": 500
+    },
+    {
+      "text": "An independent statement audit on 23 October 2026 found six of the seven Singular statement families of the application-held design ready to prove: genesis, the whole fold law, the committed holding delivery, state output integrity, state recognition with a root-only datum, and folding from public data, sixteen general statements in all. The audited ledger is investigations/741-no-pin/application-requests-statements.json de702f29fdbaa3f9e7f6300d4b7b4bf1074ef7f39ee7d4f94587bacf1fcfde2d. Effects are stated independently of the production functions and a substituted transition fails named obligations. This establishes no statement's truth. Supply in step, permanence and history are not yet stated; they are the next slice.",
+      "pause": 400
+    }
+  ],
+  "singular-history-audit-result": [
+    {
+      "text": "Singular history audit result.",
+      "pause": 500
+    },
+    {
+      "text": "An independent statement audit on 23 October 2026 found the seventh Singular family ready to prove: supply in step, one live token per key per registry, burn only through a terminating fold, and no remint after terminal, stated over connected multi-step, multi-registry histories (including two registries from one seed). The statement ledger now stands at investigations/741-no-pin/application-requests-statements.json de702f29fdbaa3f9e7f6300d4b7b4bf1074ef7f39ee7d4f94587bacf1fcfde2d. This completes the Singular statements of the application-held design at statement stage; it establishes no statement's truth. Premise sensitivity is partial: the initial no-own-assets and genesis empty-trie premises have no control yet.",
+      "pause": 400
+    }
+  ],
+  "open-datum-lifecycle-audit-result": [
+    {
+      "text": "Open-datum lifecycle audit result.",
+      "pause": 500
+    },
+    {
+      "text": "An independent statement audit on 23 October 2026 found the open-datum request lifecycle ready to prove: nineteen general statements covering the three timed registration phases, the termination burn, approvals, booking authority, the treasury deposit and per-seed parameters, folder protection and no stuck termination, with nine derived action inversions and twenty-eight guard sites each with a mutant. The audited ledger is investigations/741-no-pin/lifecycle-statements.json 2e453301887220abbb61e28032f61bdd6065069a436f8b2075aad60b8ec65da6. This establishes no statement's truth; the money flows of each journey and the old-versus-new equivalence are the next slice.",
+      "pause": 400
+    }
+  ],
+  "journey-equivalence-audit-result": [
+    {
+      "text": "Journey equivalence audit result.",
+      "pause": 500
+    },
+    {
+      "text": "An independent statement audit on 23 October 2026 found the open-datum journeys ready to prove: twelve money statements over sixty-six party-by-journey cells for create, register, update, terminate, and reclaim with cleanup, each cell equal to today or tagged with the ruling that changes it, and nineteen lifecycle statements restated with the refund address as reclaim signer. The audited refund-lifecycle ledger is investigations/741-no-pin/refund-lifecycle-statements.json a985b2f980840f36445489fc4af02f16f47f22f1c647e87c3fd3d62b47d79efd; every ledger pin now names a tracked file. With this, every statement family of the application-held design is stated and audited; none is proved yet.",
+      "pause": 400
+    }
+  ],
+  "singular-proof-result": [
+    {
+      "text": "Singular proof result.",
+      "pause": 500
+    },
+    {
+      "text": "All sixteen Singular statements of the application-held design are proved in Lean, on 24 October 2026: genesis, the whole fold law, the committed holding delivery, state output integrity, state recognition with a root-only datum, and folding from public data. Each proof uses only the standard axioms (propext, Classical.choice, Quot.sound) on a clean build, with no sorry and no native_decide; each statement and the 1112 definitions it reaches are unchanged since their audit. An independent proof audit approved them. The ledger is investigations/741-no-pin/application-requests-statements.json f2bb4c60316bc71f506cd442a3b73b05e8cdf5d610719274bc0946e66f218df1. These are proofs of hypothetical investigation statements under their named premises, not accepted law; history, open-datum lifecycle, money and identity proofs follow.",
+      "pause": 400
+    }
+  ],
   "candidate-boundary-at-the-interface-checkpoint": [
     {
       "text": "Candidate boundary at the interface checkpoint.",
@@ -253,64 +303,36 @@
       "pause": 400
     }
   ],
-  "singular-statement-audit-result": [
-    {
-      "text": "Singular statement audit result.",
-      "pause": 500
-    },
-    {
-      "text": "An independent statement audit on 23 October 2026 found six of the seven Singular statement families of the application-held design ready to prove: genesis, the whole fold law, the committed holding delivery, state output integrity, state recognition with a root-only datum, and folding from public data, sixteen general statements in all. The audited ledger is investigations/741-no-pin/application-requests-statements.json de702f29fdbaa3f9e7f6300d4b7b4bf1074ef7f39ee7d4f94587bacf1fcfde2d. Effects are stated independently of the production functions and a substituted transition fails named obligations. This establishes no statement's truth. Supply in step, permanence and history are not yet stated; they are the next slice.",
-      "pause": 400
-    }
-  ],
-  "singular-history-audit-result": [
-    {
-      "text": "Singular history audit result.",
-      "pause": 500
-    },
-    {
-      "text": "An independent statement audit on 23 October 2026 found the seventh Singular family ready to prove: supply in step, one live token per key per registry, burn only through a terminating fold, and no remint after terminal, stated over connected multi-step, multi-registry histories (including two registries from one seed). The statement ledger now stands at investigations/741-no-pin/application-requests-statements.json de702f29fdbaa3f9e7f6300d4b7b4bf1074ef7f39ee7d4f94587bacf1fcfde2d. This completes the Singular statements of the application-held design at statement stage; it establishes no statement's truth. Premise sensitivity is partial: the initial no-own-assets and genesis empty-trie premises have no control yet.",
-      "pause": 400
-    }
-  ],
-  "open-datum-lifecycle-audit-result": [
-    {
-      "text": "Open-datum lifecycle audit result.",
-      "pause": 500
-    },
-    {
-      "text": "An independent statement audit on 23 October 2026 found the open-datum request lifecycle ready to prove: nineteen general statements covering the three timed registration phases, the termination burn, approvals, booking authority, the treasury deposit and per-seed parameters, folder protection and no stuck termination, with nine derived action inversions and twenty-eight guard sites each with a mutant. The audited ledger is investigations/741-no-pin/lifecycle-statements.json 2e453301887220abbb61e28032f61bdd6065069a436f8b2075aad60b8ec65da6. This establishes no statement's truth; the money flows of each journey and the old-versus-new equivalence are the next slice.",
-      "pause": 400
-    }
-  ],
   "money-comparison-and-reclaim-authority-correction": [
     {
-      "text": "Money comparison and reclaim authority correction\n\nAs a requester, I want the refund address that could reclaim under the accepted economics to retain that authority. The money comparison exposed a controller/refund-address distinction: controller 42 could reclaim in the earlier hypothetical lifecycle family while refund address 50 could not; accepted economic retraction admitted 50 and refused 42. The bound same-semantics direction preserves refund-address signing for reclaim, with controller signing retained for booking.\n\nThe previous lifecycle audit and its ledger digest above remain a record of that earlier statement checkpoint, available at revision 99682696057a4ab4829067c57623276fa5faf1fd. They do not accept the corrected candidate. The old statement rows and functions remain historical; the refund-signer lifecycle is restated under new qualified names, and its ledger marks the supersession. The current money/oracle surfaces use the replacement handler. Both signing choices execute against both models.\n\nThe money candidate states create, registration booking and fold, payload update, termination booking and fold, full owner reclaim and deposit-only cleanup. Its party-by-journey grid distinguishes exact equal allocations from the ruled bid, treasury and timing differences. The old side calls the accepted economic producers; full old consumer/economic composition, real serialization, provider and ledger correspondence, output minimums, funding availability and inclusion remain external. Every general replacement and money statement is still unproved, with deliberate sorry debt. Compiled finite certificates and source substitutions are narrower evidence and confer no implementation or acceptance standing.",
-      "pause": 300
-    }
-  ],
-  "journey-equivalence-audit-result": [
-    {
-      "text": "Journey equivalence audit result.",
+      "text": "Money comparison and reclaim authority correction.",
       "pause": 500
     },
     {
-      "text": "An independent statement audit on 23 October 2026 found the open-datum journeys ready to prove: twelve money statements over sixty-six party-by-journey cells for create, register, update, terminate, and reclaim with cleanup, each cell equal to today or tagged with the ruling that changes it, and nineteen lifecycle statements restated with the refund address as reclaim signer. The audited refund-lifecycle ledger is investigations/741-no-pin/refund-lifecycle-statements.json a985b2f980840f36445489fc4af02f16f47f22f1c647e87c3fd3d62b47d79efd; every ledger pin now names a tracked file. With this, every statement family of the application-held design is stated and audited; none is proved yet.",
+      "text": "As a requester, I want the refund address that could reclaim under the accepted economics to retain that authority. The money comparison exposed a controller/refund-address distinction: controller 42 could reclaim in the earlier hypothetical lifecycle family while refund address 50 could not; accepted economic retraction admitted 50 and refused 42. The bound same-semantics direction preserves refund-address signing for reclaim, with controller signing retained for booking.",
+      "pause": 400
+    },
+    {
+      "text": "The previous lifecycle audit and its ledger digest above remain a record of that earlier statement checkpoint, available at revision 99682696057a4ab4829067c57623276fa5faf1fd. They do not accept the corrected candidate. The old statement rows and functions remain historical; the refund-signer lifecycle is restated under new qualified names, and its ledger marks the supersession. The current money/oracle surfaces use the replacement handler. Both signing choices execute against both models.",
+      "pause": 400
+    },
+    {
+      "text": "The money candidate states create, registration booking and fold, payload update, termination booking and fold, full owner reclaim and deposit-only cleanup. Its party-by-journey grid distinguishes exact equal allocations from the ruled bid, treasury and timing differences. The old side calls the accepted economic producers; full old consumer/economic composition, real serialization, provider and ledger correspondence, output minimums, funding availability and inclusion remain external. Every general replacement and money statement is still unproved, with deliberate sorry debt. Compiled finite certificates and source substitutions are narrower evidence and confer no implementation or acceptance standing.",
       "pause": 400
     }
   ],
-  "singular-proof-result": [
+  "partial-refund-lifecycle-proofs": [
     {
-      "text": "Singular proof result.",
+      "text": "Partial refund lifecycle proofs.",
       "pause": 500
     },
     {
-      "text": "All sixteen Singular statements of the application-held design are proved in Lean, on 24 October 2026: genesis, the whole fold law, the committed holding delivery, state output integrity, state recognition with a root-only datum, and folding from public data. Each proof uses only the standard axioms (propext, Classical.choice, Quot.sound) on a clean build, with no sorry and no native_decide; each statement and the 1112 definitions it reaches are unchanged since their audit. An independent proof audit approved them. The ledger is investigations/741-no-pin/application-requests-statements.json f2bb4c60316bc71f506cd442a3b73b05e8cdf5d610719274bc0946e66f218df1. These are proofs of hypothetical investigation statements under their named premises, not accepted law; history, open-datum lifecycle, money and identity proofs follow.",
+      "text": "As an integrator, I want proved model properties distinguished from outstanding obligations. The refund-signer lifecycle proof candidate retains the nineteen frozen statements and their definition closure at 56db38c7e244b075f713b6028afb5ff9bcc50d32. Fifteen proofs cover all nine action inversions, termination burn, booking authority and parameters, treasury at booking, additive payments, open approval burning and burning granting nothing. Registration effects, folder protection, conditional termination availability and configuration immutability remain unproved. The earlier controller-signer lifecycle, history and money statements remain outside this proof commission. No accepted law, application law, validator, builder, ledger, hosted CI or release acceptance changes.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "impact.md",
-    "sha256": "fe07395c81f420bc4b004ccd3578c23080784368c0c01187770875dc662fc996"
+    "sha256": "59726b873456aad41f8d20e4494a4eba2c794055db231089d1a4aa9d4fd4be53"
   }
 }

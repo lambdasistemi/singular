@@ -29,6 +29,7 @@ MODULES = [
     "Statements",
     "Evidence",
     "RefundLifecycleClaims",
+    "RefundLifecycleProofs",
     "RefundLifecycleStatements",
     "RefundLifecycleFixtures",
     "RefundLifecycleEvidence",

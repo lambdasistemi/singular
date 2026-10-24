@@ -49,13 +49,15 @@ def reconcile(records, ledger):
     for row in rows:
         name = row["theorem"]
         require(
-            row["status"] == "STATED"
-            and set(source[name]["axioms"]) - STANDARD == {"sorryAx"},
+            row["status"] in {"STATED", "PROVED"}
+            and set(source[name]["axioms"]) <= STANDARD | {"sorryAx"}
+            and row["status"]
+            == ("STATED" if "sorryAx" in source[name]["axioms"] else "PROVED"),
             "wrong proof status",
         )
         require(
             "Hypothesis" in source[name]["doc"]
-            and "Status: STATED." in source[name]["doc"],
+            and ("Status: " + row["status"] + ".") in source[name]["doc"],
             "unmarked statement",
         )
         require(
@@ -262,14 +264,19 @@ def check(records):
     )
     (ROOT / ".lake/refund-lifecycle-controls-report.json").write_text(run.stdout)
     independence = json.loads(run.stdout)
+    import refund_proof_check
+
+    proofs = refund_proof_check.check(records, ledger)
     print(
         json.dumps(
             {
-                "status": "CANDIDATE-STATEMENTS-ONLY",
+                "status": "HYPOTHETICAL-PROOF-CANDIDATE",
+                "proofEvidence": proofs,
+                "proved": sum(r["status"] == "PROVED" for r in ledger["statements"]),
                 "family": "refund-lifecycle",
                 "acceptedLaw": False,
                 "statements": len(ledger["statements"]),
-                "sorryAx": len(ledger["statements"]),
+                "sorryAx": sum(r["status"] == "STATED" for r in ledger["statements"]),
                 "inversions": len(ledger["inversions"]),
                 "guards": len(ledger["guards"]),
                 "oracleReplays": len(corpus),

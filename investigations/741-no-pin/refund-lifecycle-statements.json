@@ -1,5 +1,5 @@
 {
-  "status": "CANDIDATE-STATEMENTS-ONLY",
+  "status": "HYPOTHETICAL-PROOF-CANDIDATE",
   "acceptedLaw": false,
   "base": "99682696057a4ab4829067c57623276fa5faf1fd",
   "definitions": {
@@ -10,14 +10,19 @@
     "lean/NoPin/ApplicationRequests/RefundLifecycleEvidence.lean": "c9246a31761c5280c51e621c24d792bebf85306ea8b15c783380f966ab10b562",
     "lean/NoPin/ApplicationRequests/RefundLifecycleFixtures.lean": "1ed6bf5771b0a0a9abb946b6bfeffd5e949ee3dad70ce251709c09aea3edee5a",
     "lean/NoPin/ApplicationRequests/RefundLifecycleReport.lean": "2dbf4562989b63d3b47adbda769d1fb1712920dbe3939c4825596833ce7e883f",
-    "lean/NoPin/ApplicationRequests/RefundLifecycleStatements.lean": "12838510519cd282ccefd7bea2efa82ec121a42ae0971cf6000cd981a64bb855",
-    "refund_lifecycle_check.py": "71b15c39f3d78ad5d73dd359085dd933b893e753d258692557c3f4810a0a2968",
-    "refund_lifecycle_controls.py": "b387ff0c1dc086f94a7fe629877164b4de9be3469850c24c33932cf88b83ada5",
-    "pin_check.py": "00c251f08b308bba0cd6ffe72e0c56fa45eb8fe4d83eaa80900f3177328874a5"
+    "lean/NoPin/ApplicationRequests/RefundLifecycleStatements.lean": "523dd8092cc4a5421b13b5ed7ec19a7fb3a0273ecd2d967adb58198f79386a7e",
+    "refund_lifecycle_check.py": "e0bad5816b94446cd2bf079ea2834a45a4db7641fc704b50c1748a9ae01902a5",
+    "refund_lifecycle_controls.py": "c207cc96d273995a9c5675439ef4c5fc9bef247a00fefb2405181e2d7957ab9f",
+    "pin_check.py": "00c251f08b308bba0cd6ffe72e0c56fa45eb8fe4d83eaa80900f3177328874a5",
+    "refund-proof-definition-baseline.json": "3caffc0fefad2a3e27689012fae0aacf99e6b764fbe3dfd9223338b856b33654",
+    "refund_proof_check.py": "45ada264904119b3b9d0b4f7f17849cbc54111636700103feb584ed5e490e18b",
+    "refund_proof_controls.py": "bcd3020d3749184f42972800dec19c91c994754e591b7d452fa6d2503868d79b",
+    "lean/NoPin/ApplicationRequests/RefundLifecycleProofs.lean": "1496c208f2237610f7fa6b719f61c8af04dbf98937beeec371e745f3072875fd",
+    "lean/NoPin/ApplicationRequests/RefundProofAudit.lean": "eef777947c5109d3a82e8a3f48c1f81574bd73bde41fa32817524fb81e32fd36"
   },
   "preservedBaseArtifacts": {
-    "README.md": "797e59c2a45dd0326cbfafbe9a6f08325eee7cb6c8fc34156b6e3256d1c91fe7",
-    "README.speech.json": "c6c4991939677fcb2204c5cc4b0234ee40ebee32deab8462e21cce55cf4d55dd",
+    "README.md": "296a0daaaa8e25937c4c18b2cf023ee6315dbc52b3f37dbab78fc5c34c888541",
+    "README.speech.json": "718366ede12c22ef29553841903dc9f5bbad0ecc992d274a4bc362d319794f07",
     "application-requests-corpus.json": "782f1a89aa4f31f277b4f83bbe2e73cd7aabd6fe9de3fbf646b5844f815cd1fd",
     "application-requests-mutants.json": "fdcbea2d404d14ddeda0fec2cee31015b5f1dce8b1ae99fc9fa7fbb7c045af99",
     "application-requests-statements.json": "f2bb4c60316bc71f506cd442a3b73b05e8cdf5d610719274bc0946e66f218df1",
@@ -28,7 +33,7 @@
     "held-statements.json": "fbf86c89630d0daf32e49a33640803ac82f1a66baa99a60a2974c7a652d9f66c",
     "history-corpus.json": "7956e841731926ac98c906c9be961bbf6bad21377afbd6f8710c5cb9761f60d2",
     "history-mutants.json": "ffc13cbeb2003276f48c91d3b3df785ea5d478d4b666df5148eda6d5683ad1b8",
-    "history-statements.json": "0ae8e70eece7bc81362a8d2be2c8366c952274b02bd34a3a29e7a194aa227b04",
+    "history-statements.json": "89c4c968414dc8d54044bd932cd7d28a4bd82ed008e0d4f9abe7f928b747737e",
     "history_check.py": "988e46313b3857cd4a2d9ae858b49f941c1f9749743ded79005be6c7c4ec84d8",
     "history_controls.py": "079b218768c6637f17e5b7295c6d9523675d78df107cf62435a40bc6bcac6011",
     "lean/NoPin/ApplicationRequests/Application.lean": "5a1ac4c17d37eb40cbcd230c288a76099eba66c51f9fe7acc1ddc5db1f2043c7",
@@ -79,7 +84,7 @@
     "lean/NoPin/Witnesses.lean": "e93bff74e553e43b4ac20514cb91e91b712648d1fbb5c698c0aabd7bbe51168d",
     "lifecycle-corpus.json": "25ddf3d58d527343babc5c3ed8928917532c7a35495f89719a185899f2956a8c",
     "lifecycle-mutants.json": "1b01b76b28d04a8cbc02901d272b00f77f6a4fd97f0cc2ed0b9efd48b7d012a2",
-    "lifecycle-statements.json": "0a5f68836032cb207f35e6955bcf342e0c9f8817e06b90058f029d0fb64bbd8e",
+    "lifecycle-statements.json": "f92cbe6452eecbe2a09e7d01fa22a0b4f3513fc712e70ed2416b6c9155d48048",
     "lifecycle_check.py": "f87e17cc28d0a6fa6239370909321b3fc5c2f9f5018417d35337e55274e2bf0e",
     "lifecycle_controls.py": "50884f00201dfc5931c69fc6c4cc8658ecbe606c3781b843176fd7c947845015",
     "mutants.json": "96d72f824c5da393440e478732ef8c04ce26e949df10755b92f4258a46696287",
@@ -88,7 +93,7 @@
   "statements": [
     {
       "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.configurationCreate_inversion",
-      "status": "STATED",
+      "status": "PROVED",
       "statementSha256": "dd131d10eeaa0e8f2dd188e937bf17934929f84cfa0e96533739ee254e0251ad",
       "witness": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.configurationCreate_inversion_antecedent",
       "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.configurationCreate_inversion_positive",
@@ -100,7 +105,7 @@
     },
     {
       "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.bookRegistration_inversion",
-      "status": "STATED",
+      "status": "PROVED",
       "statementSha256": "17989b0ae4781111cdb13fe229074202b8af2c6688e72e06f5f699b8ea925aee",
       "witness": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.bookRegistration_inversion_antecedent",
       "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.bookRegistration_inversion_positive",
@@ -112,7 +117,7 @@
     },
     {
       "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.bookTermination_inversion",
-      "status": "STATED",
+      "status": "PROVED",
       "statementSha256": "55b100547e40eb59ddc7283b9cd7b2edd9b6afb6aa5fd1509c7295846375fa66",
       "witness": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.bookTermination_inversion_antecedent",
       "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.bookTermination_inversion_positive",
@@ -124,7 +129,7 @@
     },
     {
       "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.registrationFold_inversion",
-      "status": "STATED",
+      "status": "PROVED",
       "statementSha256": "2ba4ae4afff7b6a8f27250e64575a790b3c39207219b86f8f64b2671b47777a5",
       "witness": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.registrationFold_inversion_antecedent",
       "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.registrationFold_inversion_positive",
@@ -136,7 +141,7 @@
     },
     {
       "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.ownerReclaim_inversion",
-      "status": "STATED",
+      "status": "PROVED",
       "statementSha256": "b34cd0b56dfd9786d99549e1a67f32263901ff4b160a282ea2d723049301a46f",
       "witness": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.ownerReclaim_inversion_antecedent",
       "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.ownerReclaim_inversion_positive",
@@ -148,7 +153,7 @@
     },
     {
       "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.expiredCleanup_inversion",
-      "status": "STATED",
+      "status": "PROVED",
       "statementSha256": "4fc43f2022468fb2df22f46c01bee184b01e71217007859bc7d447875de1a3d4",
       "witness": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.expiredCleanup_inversion_antecedent",
       "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.expiredCleanup_inversion_positive",
@@ -160,7 +165,7 @@
     },
     {
       "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.terminationFold_inversion",
-      "status": "STATED",
+      "status": "PROVED",
       "statementSha256": "9ea72b9dd85f5628813339ca8af4d9c28a9f7b3ca696f5569bb4d15f54a90c4d",
       "witness": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.terminationFold_inversion_antecedent",
       "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.terminationFold_inversion_positive",
@@ -172,7 +177,7 @@
     },
     {
       "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.liveUpdate_inversion",
-      "status": "STATED",
+      "status": "PROVED",
       "statementSha256": "9e2b58bfad29f5728859e8faca925eba909afa067591bd072da8b0ab402026ab",
       "witness": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.liveUpdate_inversion_antecedent",
       "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.liveUpdate_inversion_positive",
@@ -184,7 +189,7 @@
     },
     {
       "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.approvalBurn_inversion",
-      "status": "STATED",
+      "status": "PROVED",
       "statementSha256": "574baccddd4a920ba48d26d4e5724f74573caecab66861acea75d9c70f7de173",
       "witness": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.approvalBurn_inversion_antecedent",
       "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.approvalBurn_inversion_positive",
@@ -208,7 +213,7 @@
     },
     {
       "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.termination_burn",
-      "status": "STATED",
+      "status": "PROVED",
       "statementSha256": "f90b3240e861a79febe36a54f16f3832eafa64501393df20ffe2919be6ee93af",
       "witness": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.termination_burn_antecedent",
       "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.termination_burn_positive",
@@ -220,7 +225,7 @@
     },
     {
       "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.booking_authority_and_parameters",
-      "status": "STATED",
+      "status": "PROVED",
       "statementSha256": "4673c53b898711945ba99924dac2960142d8e37600870a9f1404e15724b8cc85",
       "witness": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.booking_authority_and_parameters_antecedent",
       "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.booking_authority_and_parameters_positive",
@@ -232,7 +237,7 @@
     },
     {
       "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.treasury_at_booking",
-      "status": "STATED",
+      "status": "PROVED",
       "statementSha256": "13f4f345864d098930059e12fdbe22144445fec93cb3f9f267fc5ebbcf3a5ff5",
       "witness": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.treasury_at_booking_antecedent",
       "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.treasury_at_booking_positive",
@@ -244,7 +249,7 @@
     },
     {
       "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.additive_payments",
-      "status": "STATED",
+      "status": "PROVED",
       "statementSha256": "0b91a2e7a4ed877512a72b3928decb538d12aebc2173c0cb17df4ea7c83aca8b",
       "witness": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.additive_payments_antecedent",
       "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.additive_payments_positive",
@@ -268,7 +273,7 @@
     },
     {
       "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.burning_grants_nothing",
-      "status": "STATED",
+      "status": "PROVED",
       "statementSha256": "b57c6598ba5149ddbc04d82bcfd4e3f540ae981155b0160603cb55ea34a53203",
       "witness": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.burning_grants_nothing_antecedent",
       "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.burning_grants_nothing_positive",
@@ -292,7 +297,7 @@
     },
     {
       "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.approval_burn_open",
-      "status": "STATED",
+      "status": "PROVED",
       "statementSha256": "14a72eeb4d1693a21e644b8c626b723623a0461b291f6a62bbf42a15b6a5d7b7",
       "witness": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.approval_burn_open_antecedent",
       "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.approval_burn_open_positive",
@@ -552,7 +557,7 @@
     }
   ],
   "limits": [
-    "All 19 general statements deliberately depend on sorryAx.",
+    "Fifteen target statements are proved; four remain STATED with sorryAx.",
     "Finite examples execute the model only; no chain transaction or application reachability claim.",
     "No top-up rule adopted; availability requires authentic public data, codec and collision premises, public state and ordinary fee funding.",
     "Canonical bytes, script invocation, real output minimums, provider completeness, wallet availability and inclusion remain external.",

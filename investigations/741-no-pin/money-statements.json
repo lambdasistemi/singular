@@ -12,7 +12,7 @@
     "lean/NoPin/ApplicationRequests/MoneyStatements.lean": "fac7189813f608fcda5e9b69c10d75b606625cef105164c33bf62e8b5e0079bb",
     "lean/NoPin/ApplicationRequests/MoneyUpdate.lean": "538fde7dc76da20a3105ce7698672af2fb939eda7acd7efbef67002e7d8abef1",
     "money_check.py": "c42c46bd3c54acda0ae6445e8a6c93d3d2035a9540a18361bb3563e4a6c94856",
-    "money_controls.py": "e9bdc4f8c0a2453fc1bc04d6968e3d789e497b158de02917fff87524ed5df361"
+    "money_controls.py": "3363ff0dc6f699120a36f1ee35fadfd0e8a55acabe948abb90ebc612dec2ec75"
   },
   "statements": [
     {

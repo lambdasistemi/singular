@@ -29,6 +29,7 @@ MODULES = [
     "RefundLifecycleConditions",
     "RefundLifecycle",
     "RefundLifecycleClaims",
+    "RefundLifecycleProofs",
     "RefundLifecycleStatements",
     "RefundLifecycleFixtures",
     "RefundLifecycleEvidence",
