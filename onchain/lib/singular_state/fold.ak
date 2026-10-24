@@ -25,12 +25,15 @@
 //// commits to, with at least the deposit it commits to. Nothing else is
 //// minted or burned under the state policy.
 
+use aiken/collection/list
 use aiken/merkle_patricia_forestry.{MerklePatriciaForestry, Proof}
+use aiken/primitive/bytearray
 use cardano/assets.{AssetName, PolicyId, Value}
 use cardano/transaction.{
-  Datum, Input, Output, OutputReference, Transaction, TransactionId,
+  Datum, Input, Output, OutputReference, Transaction, TransactionId, find_input,
 }
-use singular_state/preimage.{RegistryIdentity}
+use singular_state/preimage.{RegistryIdentity, state_token_name}
+use singular_state/state.{recognize_state, state_root}
 
 /// The leaf the trie binds to a registered key: the model's `known active`.
 pub const leaf_active: ByteArray = #"01"
@@ -72,10 +75,10 @@ pub fn key_of(change: Change) -> ByteArray {
 
 /// The registry created by spending `seed` under `state_policy`.
 pub fn registry_identity(
-  _state_policy: PolicyId,
-  _seed: OutputReference,
+  state_policy: PolicyId,
+  seed: OutputReference,
 ) -> RegistryIdentity {
-  RegistryIdentity { policy: #"", name: #"" }
+  RegistryIdentity { policy: state_policy, name: state_token_name(seed) }
 }
 
 /// The datum of a holding, when it is an application datum: an inline datum
@@ -87,12 +90,30 @@ pub fn application_datum(_datum: Datum) -> Option<Data> {
 /// Model guard `foldBefore`: the spent state is recognised from the supplied
 /// seed, its datum is the root of the trie before, and it is spent once.
 pub fn fold_before(
-  _state_policy: PolicyId,
-  _seed: OutputReference,
-  _own_reference: OutputReference,
-  _inputs: List<Input>,
+  state_policy: PolicyId,
+  seed: OutputReference,
+  own_reference: OutputReference,
+  inputs: List<Input>,
 ) -> Bool {
-  False
+  when find_input(inputs, own_reference) is {
+    Some(Input { output, .. }) -> and {
+        recognize_state(state_policy, seed, output),
+        has_trie_root(output),
+        list.count(
+          inputs,
+          fn(input) { input.output_reference == own_reference },
+        ) == 1,
+      }
+    None -> False
+  }
+}
+
+// `from_root` stops the script on a root that is not 32 bytes.
+fn has_trie_root(output: Output) -> Bool {
+  when state_root(output.datum) is {
+    Some(root) -> bytearray.length(root) == 32
+    None -> False
+  }
 }
 
 /// Model guard `foldNonempty`: the fold carries at least one change.
