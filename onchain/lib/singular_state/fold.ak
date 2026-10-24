@@ -25,14 +25,19 @@
 //// commits to, with at least the deposit it commits to. Nothing else is
 //// minted or burned under the state policy.
 
+use aiken/collection/dict
 use aiken/collection/list
 use aiken/merkle_patricia_forestry.{MerklePatriciaForestry, Proof}
 use aiken/primitive/bytearray
-use cardano/assets.{AssetName, PolicyId, Value}
+use cardano/assets.{AssetName, PolicyId, Value, quantity_of, tokens}
 use cardano/transaction.{
-  Datum, Input, Output, OutputReference, Transaction, TransactionId, find_input,
+  Datum, InlineDatum, Input, Output, OutputReference, Transaction, TransactionId,
+  find_input,
 }
-use singular_state/preimage.{RegistryIdentity, state_token_name}
+use singular_state/preimage.{
+  RegistryIdentity, approval_name, initial_datum_hash, registration_preimage,
+  state_token_name,
+}
 use singular_state/state.{recognize_state, state_root}
 
 /// The leaf the trie binds to a registered key: the model's `known active`.
@@ -84,8 +89,11 @@ pub fn registry_identity(
 /// The datum an application output carries, when it carries one: the data of an
 /// inline datum, whatever its shape. The category of an output is its role in
 /// the fold, not the shape of its datum.
-pub fn application_datum(_datum: Datum) -> Option<Data> {
-  None
+pub fn application_datum(datum: Datum) -> Option<Data> {
+  when datum is {
+    InlineDatum(data) -> Some(data)
+    _ -> None
+  }
 }
 
 /// Model guard `foldBefore`: the spent state is recognised from the supplied
@@ -140,25 +148,45 @@ fn all_distinct(requests: List<OutputReference>) -> Bool {
 /// Model guard `foldPairing`: an input carries an application asset exactly
 /// when a change consumes it.
 pub fn fold_pairing(
-  _application_policy: PolicyId,
-  _changes: List<Change>,
-  _inputs: List<Input>,
+  application_policy: PolicyId,
+  changes: List<Change>,
+  inputs: List<Input>,
 ) -> Bool {
-  False
+  let requests = list.map(changes, request_of)
+  let carriers =
+    list.filter(
+      inputs,
+      fn(input) { carried_by(application_policy, input.output) != [] },
+    )
+  and {
+    list.length(requests) == list.length(carriers),
+    list.all(carriers, fn(input) { list.has(requests, input.output_reference) }),
+  }
+}
+
+// The entries of `output` under `policy`: its name and its quantity.
+fn carried_by(policy: PolicyId, output: Output) -> List<Pair<AssetName, Int>> {
+  list.filter(
+    dict.to_pairs(tokens(output.value, policy)),
+    fn(Pair(_, quantity)) { quantity > 0 },
+  )
 }
 
 /// Model guard `changeReference`: exactly one input spends the request.
-pub fn change_reference(_inputs: List<Input>, _request: OutputReference) -> Bool {
-  False
+pub fn change_reference(inputs: List<Input>, request: OutputReference) -> Bool {
+  list.count(inputs, fn(input) { input.output_reference == request }) == 1
 }
 
 /// Model guard `changeApprovalShape`: the request input carries one token of
 /// the application policy, at quantity one.
 pub fn change_approval_shape(
-  _application_policy: PolicyId,
-  _request: Output,
+  application_policy: PolicyId,
+  request: Output,
 ) -> Bool {
-  False
+  when carried_by(application_policy, request) is {
+    [Pair(_, 1)] -> True
+    _ -> False
+  }
 }
 
 /// The approval a registration commits to, recomputed from the change and the
@@ -166,30 +194,59 @@ pub fn change_approval_shape(
 /// model's `root` category and has none; any other output is an application
 /// output.
 pub fn approval_for(
-  _registry: RegistryIdentity,
-  _outputs: List<Output>,
-  _change: Change,
+  registry: RegistryIdentity,
+  outputs: List<Output>,
+  change: Change,
 ) -> Option<AssetName> {
-  None
+  when change is {
+    Register { key, holding, deposit, .. } ->
+      when list.at(outputs, holding) is {
+        Some(output) ->
+          if quantity_of(output.value, registry.policy, registry.name) > 0 {
+            None
+          } else {
+            when application_datum(output.datum) is {
+              Some(datum) ->
+                Some(
+                  approval_name(
+                    registration_preimage(
+                      key,
+                      registry,
+                      output.address,
+                      initial_datum_hash(datum),
+                      deposit,
+                    ),
+                  ),
+                )
+              None -> None
+            }
+          }
+        None -> None
+      }
+    Terminate { .. } -> None
+  }
 }
 
 /// Model guard `changeApproval`: the application token the request carries is
 /// the approval recomputed from the change.
 pub fn change_approval(
-  _application_policy: PolicyId,
-  _request: Output,
-  _approval: AssetName,
+  application_policy: PolicyId,
+  request: Output,
+  approval: AssetName,
 ) -> Bool {
-  False
+  when carried_by(application_policy, request) is {
+    [Pair(name, _), ..] -> name == approval
+    [] -> False
+  }
 }
 
 /// Model guard `changeApprovalBurn`: the approval is burned.
 pub fn change_approval_burn(
-  _application_policy: PolicyId,
-  _approval: AssetName,
-  _mint: Value,
+  application_policy: PolicyId,
+  approval: AssetName,
+  mint: Value,
 ) -> Bool {
-  False
+  quantity_of(mint, application_policy, approval) == -1
 }
 
 /// Model guard `changeLeaf`, for a registration: the trie proof shows the key

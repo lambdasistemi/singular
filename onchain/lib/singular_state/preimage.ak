@@ -45,40 +45,52 @@ pub type Preimage {
   TerminationApproval { registry: RegistryIdentity, key: ByteArray }
 }
 
+fn role_name(preimage: Preimage) -> AssetName {
+  blake2b_256(cbor.serialise(preimage))
+}
+
 /// The name of the state token of the registry created by spending `seed`:
 /// the blake2b-256 hash of the Plutus Data serialisation of its preimage.
 pub fn state_token_name(seed: OutputReference) -> AssetName {
-  blake2b_256(cbor.serialise(State { seed }))
+  role_name(State { seed })
 }
 
 /// The name of the token that stands for `key` in `registry`.
 pub fn active_token_name(
-  _registry: RegistryIdentity,
-  _key: ByteArray,
+  registry: RegistryIdentity,
+  key: ByteArray,
 ) -> AssetName {
-  #""
+  role_name(Active { registry, key })
 }
 
 /// The Plutus Data serialisation of the registration approval preimage: the
 /// registry, the key, the address the holding sits at, the hash of the
 /// holding's initial datum and the deposit the holding holds.
 pub fn registration_preimage(
-  _key: ByteArray,
-  _registry: RegistryIdentity,
-  _holding_address: Address,
-  _datum_hash: ByteArray,
-  _deposit: Int,
+  key: ByteArray,
+  registry: RegistryIdentity,
+  holding_address: Address,
+  datum_hash: ByteArray,
+  deposit: Int,
 ) -> ByteArray {
-  #""
+  cbor.serialise(
+    RegistrationApproval {
+      registry,
+      key,
+      holding_address,
+      initial_datum: datum_hash,
+      deposit,
+    },
+  )
 }
 
 /// The name of the registration approval token whose preimage is `preimage`.
-pub fn approval_name(_preimage: ByteArray) -> AssetName {
-  #""
+pub fn approval_name(preimage: ByteArray) -> AssetName {
+  blake2b_256(preimage)
 }
 
 /// The hash of a holding's initial datum, as the registration approval
 /// commits it.
-pub fn initial_datum_hash(_datum: Data) -> ByteArray {
-  #""
+pub fn initial_datum_hash(datum: Data) -> ByteArray {
+  blake2b_256(cbor.serialise(datum))
 }

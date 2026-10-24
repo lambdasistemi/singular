@@ -907,3 +907,14 @@ test no_approval_is_recomputed_for_the_output_that_carries_the_state_token() {
     first_change(),
   ) == None && approval_for(registry(), outputs(), first_change()) != None
 }
+
+test an_input_listed_twice_is_not_paired_with_a_single_change() {
+  // a ledger lists an input once; the guard still counts the inputs it is given
+  let only = Scenario { ..scenario(), registrations: [registration_a()] }
+  let request = request_input(registry(), registration_a())
+  fold_pairing(application_policy, changes_of(only), [request]) && !fold_pairing(
+    application_policy,
+    changes_of(only),
+    [request, request],
+  )
+}
