@@ -2320,7 +2320,7 @@
                   # application's onchain flake from the same two trees
                   # (jq merge, preamble from the registry's), it must equal
                   # the expected set exactly and carry byte-identical
-                  # compiledCode for all 17 validators — the pairing
+                  # compiledCode for every validator — the pairing
                   # guarantee every executable's --blueprint relies on.
                   merged_bp="$(nix build --quiet --no-link --print-out-paths "$root/applications/open-datum/onchain#open-datum-blueprint")"
                   [ -f "$merged_bp" ] || {
