@@ -6,12 +6,12 @@ the ticket owner accepts its slice.
 ## Binding
 
 - [ ] lean-binding-rebound: the plan's Lean binding rebound to the aligned models landed on the epic branch, statement by statement.
-- [ ] gate-synthesized: the ticket owner's and the auditor's gate tables synthesized once and frozen with both input hashes.
+- [x] gate-synthesized: the ticket owner's and the auditor's gate tables synthesized once and frozen with both input hashes.
 
 ## Pull request 1: state genesis
 
-- [ ] genesis-and-recognition: genesis, recognition from the supplied seed and state output integrity, each statement with a check seen to fail.
-- [ ] state-titles-declared: the new blueprint titles in the identity manifest and the declared-additions record; current hashes unmoved.
+- [x] genesis-and-recognition: genesis, recognition from the supplied seed and state output integrity, each statement with a check seen to fail.
+- [x] state-titles-declared: the new blueprint titles in the identity manifest and the declared-additions record; current hashes unmoved.
 
 ## Pull request 1: state registration fold
 
