@@ -1,0 +1,90 @@
+{
+  "create-a-registry-and-register-a-key-on-the-proved-design": [
+    {
+      "text": "Create a registry and register a key on the proved design.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 742, part of epic 731. This page is for an open-datum user, for an author of another application, and for the people who review the pull request. It records the story, the requirements, the refusals and the checks that prove them.",
+      "pause": 400
+    }
+  ],
+  "story": [
+    {
+      "text": "Story.",
+      "pause": 500
+    },
+    {
+      "text": "As an open-datum user, I run singular and open-datum to create a registry for open datum, book the registration of a key with its initial payload and deposit, and see a fold deliver the key's genuine token into a new open-datum holding that carries my payload and deposit. If nobody folds it, I reclaim everything in my window; after the window anyone can clean it up and my deposit comes back to me.",
+      "pause": 400
+    }
+  ],
+  "what-the-two-validators-promise": [
+    {
+      "text": "What the two validators promise.",
+      "pause": 500
+    },
+    {
+      "text": "The binding Lean statements are listed in the plan; they come from the aligned models of issue 741.",
+      "pause": 400
+    }
+  ],
+  "requirements": [
+    {
+      "text": "Requirements.",
+      "pause": 500
+    },
+    {
+      "text": "validators-follow-the-model: the two validators implement the aligned Lean statements for genesis, the registration fold, delivery, state output integrity, state recognition and the open-datum registration lifecycle; each statement has an executable check that has been seen to fail.",
+      "pause": 300
+    },
+    {
+      "text": "devnet-registration-journey: through the packaged commands on a development network: create a registry; book a registration; fold it; the holding carries the token, the payload and the deposit; a reclaim inside the window returns everything; a cleanup after the window returns the deposit.",
+      "pause": 300
+    },
+    {
+      "text": "devnet-refusals: on a development network, each of these is refused: a fold without the approval; a token delivered to another address or with less than the deposit; a second registration of the same key; extra tokens added to the state output; a parked token presented as a registry state.",
+      "pause": 300
+    },
+    {
+      "text": "creation-measured: the transactions and the locked ADA for the first registry of an application and for a later one.",
+      "pause": 300
+    },
+    {
+      "text": "conformance-old-versus-new: the conformance suite states the old and new outcome of each registration journey (folded, reclaimed, cleaned up) in requirement language, including the decided difference: a registration that can never be folded waits for reclaim instead of being rejected early.",
+      "pause": 300
+    },
+    {
+      "text": "documentation-and-board: user documentation for the commands ships in the same pull request; hosted checks are green on the pull request into the epic branch.",
+      "pause": 300
+    },
+    {
+      "text": "preimage-bytes-pinned: each new hashed-name preimage has byte vectors reproduced by the on-chain and off-chain encoders, including a definite and an indefinite list case and a byte string longer than 64 bytes.",
+      "pause": 300
+    },
+    {
+      "text": "interrupted-commands-keep-identity: cancellation and uncertain submission preserve the transaction identity; no command resubmits on its own.",
+      "pause": 300
+    }
+  ],
+  "refusals": [
+    {
+      "text": "Refusals.",
+      "pause": 500
+    }
+  ],
+  "out-of-scope": [
+    {
+      "text": "Out of scope.",
+      "pause": 500
+    },
+    {
+      "text": "Holding updates and termination (issue 743), the reader (issue 744), the preimage specification command (issue 745), batch folding limits (issue 746), integration into main and release (issue 747), the model work itself (issue 741), and the paused protected-rejection work (issues 498 and 529). The application policy doubling as its address is a later version.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "5b5fc2f0c36b46379ab8b7b024e54ff2bf1cbd857be50eed13bf218b9078cc35"
+  }
+}

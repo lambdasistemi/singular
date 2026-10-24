@@ -1,0 +1,36 @@
+{
+  "modules-for-creating-a-registry-and-registering-a-key-on-the-proved-design": [
+    {
+      "text": "Modules for creating a registry and registering a key on the proved design.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 742. This page places the new code and fixes its dependency direction. Records are in the data model and signatures in the functions model. Nothing of the current contract line is edited (answer A-001).",
+      "pause": 400
+    }
+  ],
+  "new-components": [
+    {
+      "text": "New components.",
+      "pause": 500
+    },
+    {
+      "text": "Paths are proposals. When the aligned Lean models name a component differently, the code takes the model's name, and the mandate is versioned before the slice that creates it starts.",
+      "pause": 400
+    }
+  ],
+  "dependency-direction": [
+    {
+      "text": "Dependency direction.",
+      "pause": 500
+    },
+    {
+      "text": "Singular never depends on open datum. Open datum learns the state policy and the registry name as data from its own approved request, never from a compiled hash.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "modules-model.md",
+    "sha256": "c6263ad44d693ed99db4c409882dceb7a39b45d1a82aef90c0418139126a6af0"
+  }
+}

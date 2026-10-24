@@ -1,0 +1,170 @@
+{
+  "plan-for-creating-a-registry-and-registering-a-key-on-the-proved-design": [
+    {
+      "text": "Plan for creating a registry and registering a key on the proved design.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 742. This page is for the people who implement and review the pull request. It binds the model, the rulings, the placement, the consumers, the slices and the gate. The story and the requirements are in the specification.",
+      "pause": 400
+    }
+  ],
+  "lane": [
+    {
+      "text": "Lane.",
+      "pause": 500
+    }
+  ],
+  "lean-binding": [
+    {
+      "text": "Lean binding.",
+      "pause": 500
+    },
+    {
+      "text": "Lean is the authority. Implementation starts only after issue 741 lands its aligned models on the epic branch, beside the current lean/Singular models. The epic owner forwards their module paths in a release note, and this section is then rebound to that revision, statement by statement, before the first slice is released. Until then the binding is provisional, to pull request 748 at 4126a951:",
+      "pause": 400
+    },
+    {
+      "text": "Termination, update and history statements (termination_*, bookTermination_inversion, liveUpdate_inversion, treasury_at_booking, no_stuck_termination, update_*, HistoryStatements) belong to issue 743. A statement the aligned models rename or restate is rebound by name; one they drop, or one whose meaning the code cannot meet, is a question to the epic owner, never a quiet change of the check.",
+      "pause": 400
+    }
+  ],
+  "rulings-in-force": [
+    {
+      "text": "Rulings in force.",
+      "pause": 500
+    },
+    {
+      "text": "Recorded with the operator's words in the epic runtime root (ruling-20261023-request-lifecycle-to-application.md, ruling-20261023-termination-request-shape.md, ruling-20261023-cbor-preimages.md) and in issue 741's specs/741-no-pin-model/decisions.md. In short:",
+      "pause": 400
+    },
+    {
+      "text": "Singular is one validator per application, the state applied to the application policy. It acts only at the fold. It has no request script, no witness scripts and routes no money. Its datum is the root.",
+      "pause": 300
+    },
+    {
+      "text": "At a registration fold Singular checks the new holding against the approval it recomputes: the committed address, the committed datum hash, exactly one new token and at least the committed deposit. The continuing state output holds only ADA and its state token.",
+      "pause": 300
+    },
+    {
+      "text": "Approvals bind the complete registry identity, the state policy and the state token name. Anyone may burn an approval.",
+      "pause": 300
+    },
+    {
+      "text": "The request lifecycle belongs to open datum: three timed phases for a pending registration, no rejection. Open datum never reads the root or checks a trie proof. A registration that can never be folded waits for reclaim.",
+      "pause": 300
+    },
+    {
+      "text": "The folder takes the request value above the committed deposit. A reclaim inside the window returns everything; a cleanup after it returns the deposit to the refund address. The refund address signs a reclaim.",
+      "pause": 300
+    },
+    {
+      "text": "The five request parameters live in a configuration record fixed per registry at creation.",
+      "pause": 300
+    },
+    {
+      "text": "Hashed-name preimages are CBOR in the Plutus Data serialisation, pinned by byte vectors.",
+      "pause": 300
+    },
+    {
+      "text": "Command line split (issue 528): commands build against the library's request and fold, not the open-datum envelope.",
+      "pause": 300
+    },
+    {
+      "text": "The new line goes beside the current one (answer A-001): new validators are new blueprint titles, new builders are new modules, the new journey is a new hosted job, and nothing of the current line is edited. Issue 743 removes the current line when the new one gains update and termination.",
+      "pause": 300
+    },
+    {
+      "text": "Not in this line: the application policy doubling as its address.",
+      "pause": 300
+    }
+  ],
+  "commands": [
+    {
+      "text": "Commands.",
+      "pause": 500
+    },
+    {
+      "text": "Epic-scoped names from the model's vocabulary (answer A-001); issue 743 moves them onto the established names when the current line is removed. These names are checked at plan review.",
+      "pause": 400
+    },
+    {
+      "text": "Every command keeps today's recovery promise: cancellation and uncertain submission preserve the transaction identity, and nothing is resubmitted on its own.",
+      "pause": 400
+    }
+  ],
+  "placement": [
+    {
+      "text": "Placement.",
+      "pause": 500
+    },
+    {
+      "text": "The modules model places the new code. The data model holds the records and their invariants, and the functions model the new signatures.",
+      "pause": 400
+    }
+  ],
+  "consumers": [
+    {
+      "text": "Consumers.",
+      "pause": 500
+    },
+    {
+      "text": "The consumers page lists every place in the tree a slice can break, from the census of 0c0ab880.",
+      "pause": 400
+    }
+  ],
+  "slices": [
+    {
+      "text": "Slices.",
+      "pause": 500
+    },
+    {
+      "text": "Each slice is one bisect-safe commit range on this branch, finishing in well under two hours, with its own RED evidence and checkpoints. The commit owner may cut a slice smaller; it may not merge two.",
+      "pause": 400
+    }
+  ],
+  "gate": [
+    {
+      "text": "Gate.",
+      "pause": 500
+    },
+    {
+      "text": "The ticket owner's table, written before the auditor's. The auditor writes its own table independently when it is seated; the ticket owner synthesizes the two once, records both input hashes and freezes the result in the runtime root before the commit owner starts. Every command is an existing hosted command, or one this ticket adds to a hosted job and marks so.",
+      "pause": 400
+    },
+    {
+      "text": "Rows run scoped to what each slice can break. just ci runs once on the final candidate, then the push; hosted checks on the pull request head are the net. Every build or test runs in a named, memory-capped scope: systemd-run --user --scope --unit=t742-<what>-<n> -p MemoryMax=24G timeout 3600 <command>.",
+      "pause": 400
+    }
+  ],
+  "evidence-the-pull-request-will-carry": [
+    {
+      "text": "Evidence the pull request will carry.",
+      "pause": 500
+    },
+    {
+      "text": "per statement: the validator test that executes it and the RED run that showed it fail;",
+      "pause": 300
+    },
+    {
+      "text": "the byte vectors and the two encoders that reproduce them;",
+      "pause": 300
+    },
+    {
+      "text": "the hosted journey job's receipt: transactions, the holding's token, payload and deposit, the reclaim and cleanup payouts, the five refusals, and the creation measurement for a first and a later registry;",
+      "pause": 300
+    },
+    {
+      "text": "the conformance statement of each registration journey, old against new;",
+      "pause": 300
+    },
+    {
+      "text": "left uncovered, stated in the pull request: update and termination (issue 743), the reader (issue 744), batch limits (issue 746), release of the new titles (issue 747).",
+      "pause": 300
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "233911b4bd7af2c35f58f0d3e524630eae2dfc985db316bb8fd990e58766c30e"
+  }
+}
