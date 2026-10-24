@@ -13,7 +13,7 @@ name: Release bundles
 # formula).
 on:
   pull_request:
-    branches: [main]
+    branches: [main, 'epic/**']
     types: [opened, synchronize, reopened]
   push:
     branches: [main]
