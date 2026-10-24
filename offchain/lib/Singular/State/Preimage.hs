@@ -61,8 +61,8 @@ import Singular.Registry.TrieState
     )
 
 {- | The structured value hashed into a name, one constructor per role,
-numbered as the model's @Preimage@. The configuration and termination
-constructors keep that numbering; nothing builds them in this line yet.
+numbered as the model's @Preimage@. The termination constructor keeps that
+numbering; nothing builds it in this line yet.
 -}
 data Preimage
     = -- | The registry created by spending the seed.
@@ -140,7 +140,7 @@ activeTokenName registry = roleName . Active registry
 
 -- | The name of the token of the configuration record of a registry.
 configurationTokenName :: RegistryIdentity -> AssetName
-configurationTokenName _ = AssetName mempty
+configurationTokenName = roleName . ApplicationConfiguration
 
 {- | The Plutus Data serialisation of the registration approval preimage: the
 key, the registry, the address the holding sits at, the hash of the holding's
