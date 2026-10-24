@@ -7547,22 +7547,57 @@
     "index": 21,
     "name": "docs-onchain-api-reference/what-this-reference-contains-21",
     "pause_ms": 400,
-    "text": "Test support, documented because it is public to the test modules:",
-    "v": "b81c56d064d9"
+    "text": "The Singular state validator of the new line, beside the current one:",
+    "v": "316599e409fc"
    },
    {
     "index": 22,
     "name": "docs-onchain-api-reference/what-this-reference-contains-22",
     "pause_ms": 300,
-    "text": "cage_fixtures",
-    "v": "8ef0608a062a"
+    "text": "singular_state/genesis — creating a registry state: one function per genesis guard, and their conjunction",
+    "v": "a9e8b3751191"
    },
    {
     "index": 23,
     "name": "docs-onchain-api-reference/what-this-reference-contains-23",
     "pause_ms": 300,
+    "text": "singular_state/preimage — the structured values hashed into token names, and the state token name",
+    "v": "2da60e2d6538"
+   },
+   {
+    "index": 24,
+    "name": "docs-onchain-api-reference/what-this-reference-contains-24",
+    "pause_ms": 300,
+    "text": "singular_state/state — the root-only state datum, recognising a state from its seed, and comparing the whole mint of a policy",
+    "v": "6850a7b6fc0f"
+   },
+   {
+    "index": 25,
+    "name": "docs-onchain-api-reference/what-this-reference-contains-25",
+    "pause_ms": 400,
+    "text": "Test support, documented because it is public to the test modules:",
+    "v": "c35e32cc85f6"
+   },
+   {
+    "index": 26,
+    "name": "docs-onchain-api-reference/what-this-reference-contains-26",
+    "pause_ms": 300,
+    "text": "cage_fixtures",
+    "v": "6f1d5baa1a4f"
+   },
+   {
+    "index": 27,
+    "name": "docs-onchain-api-reference/what-this-reference-contains-27",
+    "pause_ms": 300,
     "text": "registry_fixtures",
-    "v": "2325b4bae6de"
+    "v": "78bf34a884ba"
+   },
+   {
+    "index": 28,
+    "name": "docs-onchain-api-reference/what-this-reference-contains-28",
+    "pause_ms": 300,
+    "text": "singular_state_fixtures",
+    "v": "3e1c95305ffb"
    }
   ]
  },
