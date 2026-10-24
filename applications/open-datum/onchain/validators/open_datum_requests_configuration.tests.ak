@@ -251,6 +251,29 @@ test the_genesis_takes_the_policy_the_registry_names() {
   configuration_genesis(registry, seed_a, tx)
 }
 
+test the_genesis_refuses_a_token_that_is_not_named_from_the_seed() {
+  // The seed is spent once, the state policy mints one token of the name the
+  // registry names, and the name is not the one the seed gives.
+  let registry =
+    RegistryIdentity {
+      policy: state_policy,
+      name: #"6e6f742d66726f6d2d7468652d73656564",
+    }
+  let tx =
+    Transaction {
+      ..creation_transaction(seed_a),
+      mint: from_asset(registry.policy, registry.name, 1),
+    }
+  and {
+    !configuration_genesis(registry, seed_a, tx),
+    configuration_genesis(
+      registry_of(seed_a),
+      seed_a,
+      creation_transaction(seed_a),
+    ),
+  }
+}
+
 test the_genesis_refuses_a_policy_that_does_not_mint_the_token() {
   let registry =
     RegistryIdentity { policy: other_policy, name: state_token_name(seed_a) }
@@ -353,6 +376,14 @@ test the_mint_is_fresh_beside_the_births_of_other_assets() {
 test the_mint_is_not_fresh_when_nothing_is_minted() {
   let asset = asset_of(seed_a)
   !fresh_asset(zero, [asset], asset)
+}
+
+test the_mint_is_not_fresh_when_nothing_is_minted_and_nothing_is_born() {
+  let asset = asset_of(seed_a)
+  and {
+    !fresh_asset(zero, [], asset),
+    fresh_asset(from_asset(asset.policy, asset.name, 1), [asset], asset),
+  }
 }
 
 test the_mint_is_not_fresh_without_a_birth() {
