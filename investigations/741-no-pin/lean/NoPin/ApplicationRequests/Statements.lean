@@ -59,16 +59,16 @@ theorem minted_active_never_state (hash : Hash) (code : Codec) (commit : TrieCom
     recognizeState .none hash code q.release q.seed q.output = false := by
   exact Proofs.active_not_state hash code q _premises.1
 
-/-- Hypothesis under #741, not accepted law. Status: STATED.
+/-- Hypothesis under #741, not accepted law. Status: PROVED.
 Anyone constructs this accepted and balanced model fold from public records alone.
 Actual provider completeness, real output minimums, willingness and inclusion remain external. -/
 theorem public_fold_constructed (hash : Hash) (code : Codec) (commit : TrieCommit) (q : Query)
     (_premises : PublicPremises hash code commit q) :
     PublicConclusion .none hash code commit q := by
   apply Proofs.public_conclusion_of_remaining hash code commit q _premises
-  · sorry
-  · sorry
-  · sorry
+  · exact Proofs.public_build_pairing hash code commit q _premises
+  · exact Proofs.public_build_batch hash code commit q _premises
+  · exact Proofs.public_build_continuation hash code commit q _premises
 
 /-- Hypothesis under #741, not accepted law. Status: PROVED.
 The generic public-builder surface exposes the same complete fold conditions. -/
@@ -134,7 +134,7 @@ theorem fold_untouched_keys (h : Hash) (c : Codec) (t : TrieCommit) (q : Query)
   intro key outside
   rw [same]
   exact Proofs.target_frame q.observation.changes q.observation.before.trie key outside
-/-- Hypothesis under #741, not accepted law. Status: STATED.
+/-- Hypothesis under #741, not accepted law. Status: PROVED.
 Public construction also has independently specified trie/root effects and the untouched-key frame. -/
 theorem public_fold_effects (h : Hash) (c : Codec) (t : TrieCommit) (q : Query)
     (_premises : PublicPremises h c t q) :
