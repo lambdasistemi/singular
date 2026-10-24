@@ -23,6 +23,7 @@ MODULES = [
     "Proofs",
     "DeliveryProofs",
     "MintedProofs",
+    "PublicProofs",
     "Statements",
     "Evidence",
     "RefundLifecycleConditions",

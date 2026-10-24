@@ -13,14 +13,15 @@
     "lean/NoPin/ApplicationRequests/Oracle.lean": "4f935ac84289b19f8980b9502cb334dc48ff8677503f141b0c245db0149713e3",
     "lean/NoPin/ApplicationRequests/Report.lean": "74b49dfa4522fa1e20f259757ba4c343dbb996f4df5920d4f863a3de86342212",
     "lean/NoPin/ApplicationRequests/Role.lean": "f6f17f8bafa3ebb9c5d271078ecd63fd19f0ba700c3ea7af47604051b8309f96",
-    "lean/NoPin/ApplicationRequests/Statements.lean": "9bb3caa65e0c6bcfe1e4ee8c340ae740fca75f8fecdf1e67c532378777ce5f27",
+    "lean/NoPin/ApplicationRequests/Statements.lean": "d7421ffbfb02fe94dfc96c762272aca90e4df724572d17e42c961e1e3c7538d9",
     "lean/NoPin/ApplicationRequests/Proofs.lean": "a6ef0dd78a9cc5b14d50d565c981e9485a886f8fda362be154cff6151a6be50a",
     "lean/NoPin/ApplicationRequests/DeliveryProofs.lean": "4cda28d7caa79dabce68fcd00c114ea041ba1900e598dcd1d777b250943ac66d",
     "lean/NoPin/ApplicationRequests/MintedProofs.lean": "921c7b084f7ef9166cccd1ea2ff76a686626b0b365bd81f42c43736d5470720a",
     "lean/NoPin/ApplicationRequests/ProofAudit.lean": "4b17d94c3b0fde3d1127cba8bbbc187cd8b1cdbf6711c4137ddef7d5afb748d9",
     "proof_check.py": "2870319bae359f07703287570248c186a5cc9bca62b6c4e161e7c20cb18560bc",
     "proof_controls.py": "374bb5db6da373e23af2a03b365fcf0a002981e404e5d7c8155ee040473e7ccb",
-    "proof-definition-baseline.json": "49e44d0e83edcba27f841b3cc76f18a842f526bab0e556f13cf3717354f31d8c"
+    "proof-definition-baseline.json": "49e44d0e83edcba27f841b3cc76f18a842f526bab0e556f13cf3717354f31d8c",
+    "lean/NoPin/ApplicationRequests/PublicProofs.lean": "c009b814c9623f40942188c6e2473f7223e0215c1da952d7dd77ffa4466caa09"
   },
   "statements": [
     {

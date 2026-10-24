@@ -1,4 +1,4 @@
-import NoPin.ApplicationRequests.MintedProofs
+import NoPin.ApplicationRequests.PublicProofs
 
 /-! Hypothetical model statements, not accepted law. Proof status is recorded per
 declaration; finite instance evidence remains separate from general proofs. -/
@@ -65,7 +65,10 @@ Actual provider completeness, real output minimums, willingness and inclusion re
 theorem public_fold_constructed (hash : Hash) (code : Codec) (commit : TrieCommit) (q : Query)
     (_premises : PublicPremises hash code commit q) :
     PublicConclusion .none hash code commit q := by
-  sorry
+  apply Proofs.public_conclusion_of_remaining hash code commit q _premises
+  · sorry
+  · sorry
+  · sorry
 
 /-- Hypothesis under #741, not accepted law. Status: PROVED.
 The generic public-builder surface exposes the same complete fold conditions. -/
@@ -137,6 +140,7 @@ theorem public_fold_effects (h : Hash) (c : Codec) (t : TrieCommit) (q : Query)
     (_premises : PublicPremises h c t q) :
     PublicConclusion .none h c t q ∧
     batchEffects t (buildFold h c t q.release q.observation.before q.requests q.funding) ∧
-    FoldFrame (buildFold h c t q.release q.observation.before q.requests q.funding) := by sorry
+    FoldFrame (buildFold h c t q.release q.observation.before q.requests q.funding) := by
+  exact Proofs.public_effects_of_conclusion h c t q (public_fold_constructed h c t q _premises)
 
 end NoPin.ApplicationRequests.Statements
