@@ -1,3 +1,4 @@
+import SingularApplicationHeld.HistoryClaims
 import SingularApplicationHeld.Statements
 
 /-! The application-held Singular model beside the current one, to be removed
