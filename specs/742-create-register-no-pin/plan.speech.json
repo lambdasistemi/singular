@@ -25,7 +25,15 @@
       "pause": 400
     },
     {
-      "text": "The Singular family is bound to the Lake project models/singular-application-held (library SingularApplicationHeld, recipe just application-held-model) at epic-branch commit b1be26a6, statements in SingularApplicationHeld.Statements, all proved with the standard axioms. The model's vocabulary (Preimage.state, Preimage.active, Preimage.registrationApproval, PublishedRelease, FoldObservation, genesis, recognizeState, fold) names the code. The open-datum families stay provisional, to pull request 748 at 4126a951, until issue 741's open-datum models land; pull request 2 is rebound then.",
+      "text": "The Singular family is bound to the Lake project models/singular-application-held (library SingularApplicationHeld, recipe just application-held-model) at epic-branch commit b1be26a6, statements in SingularApplicationHeld.Statements, all proved with the standard axioms. The model's vocabulary (Preimage.state, Preimage.active, Preimage.registrationApproval, PublishedRelease, FoldObservation, genesis, recognizeState, fold) names the code. The open-datum families are bound to the Lake project models/open-datum-application-held (library OpenDatumApplicationHeld, recipe just open-datum-application-held-model) at epic-branch commit 2d2a8fc2, statements in OpenDatumApplicationHeld.RefundLifecycle.Statements and OpenDatumApplicationHeld.Money.Statements, all proved.",
+      "pause": 400
+    },
+    {
+      "text": "Correspondence premise (the epic owner's ruling): the model's datum category of an output is read from its role in the fold. The output carrying the state token is the root; every other output, including the holding a change points at, is an application output. No address and no payload shape is excluded.",
+      "pause": 400
+    },
+    {
+      "text": "The absence check (the trie proof shows the key absent) is open: the new line's trie moves to CSMT (aiken-csmt on chain, haskell-csmt off chain, keys hashed before insertion), and this plan is revised once when that release is ready.",
       "pause": 400
     },
     {
@@ -123,6 +131,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "72de5d0ed16780526613dd0e790da6e8b6a35ac63bbc54515c8b5fe20cb30ef0"
+    "sha256": "565208719c9645b3a11ef510ba12b9651381d731789bbf901629545f7ccde5c6"
   }
 }
