@@ -22,7 +22,7 @@ use cardano/assets.{add, from_lovelace, zero}
 use cardano/transaction.{
   DatumHash, InlineDatum, Input, NoDatum, Output, OutputReference, Transaction,
 }
-use registry_fixtures.{leafStep}
+use registry_fixtures.{branchStep, leafStep, slotOf}
 use singular_state/fold.{
   Change, Register, Terminate, apart_from, apply_change, change_batch,
   change_leaf, fold_trie, leaf_active, one_new_token, registration_deposit,
@@ -1010,4 +1010,110 @@ test a_holding_with_the_token_of_another_registration_does_not_place_this_one() 
     changes(),
     1,
   )
+}
+
+// ---------------------------------------------------------------------------
+// registration-key-was-unknown: a proof has one reading. Each step moves the
+// cursor forward from where the walk stands, and the absence check holds only
+// for a proof the library's exclusion walk reads as the check does.
+// ---------------------------------------------------------------------------
+
+fn bump_low(byte: Int) -> Int {
+  byte - byte % 16 + ( byte % 16 + 1 ) % 16
+}
+
+// the hash of key_d with the low nibble of byte 1 (nibble 3) changed
+fn near_at_3() -> ByteArray {
+  bytearray.concat(
+    bytearray.take(path(), 1),
+    bytearray.concat(
+      bytearray.push(#"", bump_low(bytearray.at(path(), 1))),
+      bytearray.drop(path(), 2),
+    ),
+  )
+}
+
+// the hash of key_d with nibbles 3 and 5 changed
+fn near_at_3_and_5() -> ByteArray {
+  bytearray.concat(
+    bytearray.take(path(), 1),
+    bytearray.concat(
+      bytearray.push(#"", bump_low(bytearray.at(path(), 1))),
+      bytearray.concat(
+        bytearray.push(#"", bump_low(bytearray.at(path(), 2))),
+        bytearray.drop(path(), 3),
+      ),
+    ),
+  )
+}
+
+// the hash of key_d with nibbles 0 and 2 changed
+fn near_at_0_and_2() -> ByteArray {
+  bytearray.drop(path(), 2)
+    |> bytearray.push(( bytearray.at(path(), 1) + 16 ) % 256)
+    |> bytearray.push(( bytearray.at(path(), 0) + 16 ) % 256)
+}
+
+// the hash of key_d with the high nibble of byte 0 (nibble 0) changed
+fn near_at_0() -> ByteArray {
+  bytearray.push(
+    bytearray.drop(path(), 1),
+    ( bytearray.at(path(), 0) + 16 ) % 256,
+  )
+}
+
+test a_later_step_with_a_negative_skip_does_not_show_a_bound_key_unknown() {
+  // the trie binds key_d and key_a. The first step carries the honest siblings of
+  // key_d's branch; the last step is a leaf whose key differs from key_d's hash
+  // in nibble 0 only, with skip -1: the walk reads it at cursor 1, a check that
+  // adds the skip to the cursor reads it at nibble 0
+  let trie = trie_of([key_d, key_a])
+  let siblings =
+    branchStep(list.map([key_a], fn(held) { slotOf(held, leaf_active) }), key_d)
+  let proof = [siblings, leaf_of(near_at_0(), -1)]
+  mpf.miss(trie, key_d, proof) && !change_leaf(trie, key_d, proof)
+}
+
+test a_leaf_skip_that_is_not_the_shared_prefix_does_not_show_a_key_unknown() {
+  // `miss` ignores the skip of a last leaf, so any skip within the hash is
+  // read the same by the walk; only the true shared prefix (0 here) is honest
+  let trie = trie_of([key_d])
+  let proof_with =
+    fn(skip) { [leaf_of(path(), skip)] }
+  and {
+    mpf.miss(trie, key_a, proof_with(0)),
+    mpf.miss(trie, key_a, proof_with(5)),
+    change_leaf(trie, key_a, proof_with(0)),
+    !change_leaf(trie, key_a, proof_with(1)),
+    !change_leaf(trie, key_a, proof_with(5)),
+    !change_leaf(trie, key_a, proof_with(40)),
+  }
+}
+
+test a_proof_never_moves_the_cursor_backward() {
+  and {
+    !apart_from(key_d, [branch_of(3), leaf_of(near_at_0(), -1)]),
+    !apart_from(key_d, [branch_of(3), fork_at(-2, elsewhere(2))]),
+    !apart_from(key_d, [branch_of(3), branch_of(-4)]),
+    !apart_from(key_d, [branch_of(0), branch_of(0), branch_of(-2)]),
+    apart_from(key_d, [branch_of(3), branch_of(0), fork_at(1, elsewhere(5))]),
+  }
+}
+
+test a_leaf_neighbour_agrees_with_the_key_up_to_its_skip() {
+  and {
+    // the true shared prefix of key_d's hash and near_at_3 is 3 nibbles
+    apart_from(key_d, [leaf_of(near_at_3(), 3)]),
+    // a skip past the divergence lands on a nibble that differs again, but the
+    // nibbles before it do not agree
+    !apart_from(key_d, [leaf_of(near_at_3_and_5(), 5)]),
+    apart_from(key_d, [leaf_of(near_at_3_and_5(), 3)]),
+    // the same with a branch before the leaf
+    apart_from(key_d, [branch_of(1), leaf_of(near_at_3_and_5(), 1)]),
+    !apart_from(key_d, [branch_of(1), leaf_of(near_at_3_and_5(), 3)]),
+    // a leaf that differs from the key before the cursor is not on the key's
+    // branch, though from the cursor on it agrees up to a differing nibble
+    apart_from(key_d, [branch_of(0), leaf_of(near_at_3(), 2)]),
+    !apart_from(key_d, [branch_of(0), leaf_of(near_at_0_and_2(), 1)]),
+  }
 }

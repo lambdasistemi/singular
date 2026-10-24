@@ -32,7 +32,7 @@ use aiken/merkle_patricia_forestry.{
   Branch, Fork, Leaf, MerklePatriciaForestry, Proof, ProofStep,
 }
 use aiken/merkle_patricia_forestry as mpf
-use aiken/merkle_patricia_forestry/helpers.{nibble}
+use aiken/merkle_patricia_forestry/helpers.{nibble, nibbles}
 use aiken/primitive/bytearray
 use cardano/assets.{AssetName, PolicyId, Value, quantity_of, tokens}
 use cardano/transaction.{
@@ -267,12 +267,16 @@ pub fn change_leaf(
   }
 }
 
-/// Whether every neighbour of `proof` is on a branch other than the key's and at a
-/// nibble inside the hash. The library's `miss` takes the digest of a last leaf
-/// or fork step as the trie without the key, whatever that step names, so with
-/// the key's own leaf as the neighbour it is true for a key the trie binds. An
-/// honest proof has its neighbours elsewhere, which insertion needs of it as
-/// well.
+/// Whether `proof` has one reading for `key`. Every step moves the cursor
+/// forward by a skip that is not negative and lands inside the hash. A fork
+/// neighbour sits on a branch other than the key's. A leaf neighbour agrees with
+/// the key from the start of the hash up to the nibble the skip lands on and
+/// differs at it, so its skip is the prefix the two share beyond the cursor. The
+/// library's `miss` ignores the skip of a last leaf and takes the digest of a
+/// last leaf or fork step as the trie without the key, whatever that step names:
+/// given the key's own leaf, or a leaf read at a cursor the walk never stood at,
+/// it is true for a key the trie binds. An honest proof satisfies all of this,
+/// and insertion needs the same of it.
 pub fn apart_from(key: ByteArray, proof: Proof) -> Bool {
   on_other_branches(blake2b_256(key), 0, proof)
 }
@@ -281,9 +285,10 @@ fn on_other_branches(path: ByteArray, cursor: Int, proof: Proof) -> Bool {
   when proof is {
     [] -> True
     [step, ..steps] -> {
-      let index = cursor + skip_of(step)
+      let skip = skip_of(step)
+      let index = cursor + skip
       and {
-        index >= 0,
+        skip >= 0,
         index < 64,
         differs_at(path, index, step),
         on_other_branches(path, index + 1, steps),
@@ -304,8 +309,11 @@ fn differs_at(path: ByteArray, index: Int, step: ProofStep) -> Bool {
   when step is {
     Branch { .. } -> True
     Fork { neighbor, .. } -> nibble(path, index) != neighbor.nibble
-    Leaf { key, .. } ->
-      bytearray.length(key) == 32 && nibble(path, index) != nibble(key, index)
+    Leaf { key, .. } -> and {
+        bytearray.length(key) == 32,
+        nibbles(path, 0, index) == nibbles(key, 0, index),
+        nibble(path, index) != nibble(key, index),
+      }
   }
 }
 
