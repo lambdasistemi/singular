@@ -340,3 +340,8 @@ Eleven other frozen money statements are proved. The affected registration-fold 
 ## Corrected registration payment claim is proved
 
 As a folder, I want my reward measured without the new holding, so that a registrant who names my address as the holding address cannot inflate it. A new statement, `registration_fold_journey_holding_separated`, keeps every premise and conclusion of the refuted registration-fold claim except the folder's payment, which now counts only outputs at the folder address that carry no newly active token. Lean proves it with the standard axioms only, and the earlier counterexample satisfies it. The refuted statement stays recorded and names its successor. The twelve original statement identities and their definition closure are unchanged; the new statement's closure baseline comes from the canonical Lake build. No party is paid differently from today. No accepted law, implementation, ledger, hosted CI or release acceptance follows.
+
+
+## History guarantees are proved
+
+As an integrator, I want the token-supply guarantees of the registry proved over every reachable history, so that a validator built from them can rely on one live token per key. All four history statements are proved with the standard axioms only: supply is one exactly for an active leaf and zero otherwise (`supply_in_step`), at most one token per registry and key is unspent (`one_live_token`), a token burns only in a fold that terminates the same registry and key (`burn_only_terminating_fold`), and no accepted fold mints a terminal key again (`no_remint_after_terminal`). The statement identities and their constructor-aware definition closure are unchanged from the slice base. No accepted law, implementation, ledger, hosted CI or release acceptance follows.

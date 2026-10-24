@@ -374,8 +374,17 @@
       "text": "As a folder, I want my reward measured without the new holding, so that a registrant who names my address as the holding address cannot inflate it. A new statement, registration_fold_journey_holding_separated, keeps every premise and conclusion of the refuted registration-fold claim except the folder's payment, which now counts only outputs at the folder address that carry no newly active token. Lean proves it with the standard axioms only, and the earlier counterexample satisfies it. The refuted statement stays recorded and names its successor. The twelve original statement identities and their definition closure are unchanged; the new statement's closure baseline comes from the canonical Lake build. No party is paid differently from today. No accepted law, implementation, ledger, hosted CI or release acceptance follows."
     }
   ],
+  "history-guarantees-are-proved": [
+    {
+      "text": "History guarantees are proved.",
+      "pause": 500
+    },
+    {
+      "text": "As an integrator, I want the token-supply guarantees of the registry proved over every reachable history, so that a validator built from them can rely on one live token per key. All four history statements are proved with the standard axioms only: supply is one exactly for an active leaf and zero otherwise (supply in step), at most one token per registry and key is unspent (one live token), a token burns only in a fold that terminates the same registry and key (burn only terminating fold), and no accepted fold mints a terminal key again (no remint after terminal). The statement identities and their constructor-aware definition closure are unchanged from the slice base. No accepted law, implementation, ledger, hosted CI or release acceptance follows."
+    }
+  ],
   "_source": {
     "file": "impact.md",
-    "sha256": "b88c2e97ec4323df696377ac53fdc8b28426546cae7cd685273f8023f0e913af"
+    "sha256": "459f147330ac6eba3c97675e93fcb8c8928672226947264b8f257a329c3c23de"
   }
 }
