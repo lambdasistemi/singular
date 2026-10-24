@@ -1,7 +1,7 @@
 # Create a registry and register a key on the proved design
 
 Issue 742, part of epic 731. This page is for an open-datum user, for an author of another application, and for the
-people who review the pull request. It records the story, the requirements, the refusals and the checks that prove them.
+people who review the four pull requests. It records the story, the requirements, the refusals and the checks that prove them.
 
 ## Story
 
@@ -44,6 +44,11 @@ The binding Lean statements are listed in [the plan](plan.md#lean-binding); they
 - devnet-registration-journey: through the packaged commands on a development network: create a registry; book a
   registration; fold it; the holding carries the token, the payload and the deposit; a reclaim inside the window returns
   everything; a cleanup after the window returns the deposit.
+- fold-from-public-data: in that journey the fold is built and signed by a second wallet, not the booker's, from chain
+  data alone: no file, key or record from the booker. A fold that needs the booker's private data is a critical defect.
+- scripts-published-once: creating the first registry of an application publishes the state script and the open-datum
+  script as reference scripts when no live copy exists; a later registry reuses the live copies and publishes none; a
+  reference script whose hash is not the expected one is never reused.
 - devnet-refusals: on a development network, each of these is refused: a fold without the approval; a token delivered to
   another address or with less than the deposit; a second registration of the same key; extra tokens added to the state
   output; a parked token presented as a registry state.
@@ -51,8 +56,8 @@ The binding Lean statements are listed in [the plan](plan.md#lean-binding); they
 - conformance-old-versus-new: the conformance suite states the old and new outcome of each registration journey (folded,
   reclaimed, cleaned up) in requirement language, including the decided difference: a registration that can never be
   folded waits for reclaim instead of being rejected early.
-- documentation-and-board: user documentation for the commands ships in the same pull request; hosted checks are green
-  on the pull request into the epic branch.
+- documentation-and-board: user documentation for the commands ships in the pull request that adds them; hosted checks are green
+  on each pull request into the epic branch.
 - preimage-bytes-pinned: each new hashed-name preimage has byte vectors reproduced by the on-chain and off-chain encoders,
   including a definite and an indefinite list case and a byte string longer than 64 bytes.
 - interrupted-commands-keep-identity: cancellation and uncertain submission preserve the transaction identity; no command

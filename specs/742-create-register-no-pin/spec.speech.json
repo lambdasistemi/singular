@@ -5,7 +5,7 @@
       "pause": 500
     },
     {
-      "text": "Issue 742, part of epic 731. This page is for an open-datum user, for an author of another application, and for the people who review the pull request. It records the story, the requirements, the refusals and the checks that prove them.",
+      "text": "Issue 742, part of epic 731. This page is for an open-datum user, for an author of another application, and for the people who review the four pull requests. It records the story, the requirements, the refusals and the checks that prove them.",
       "pause": 400
     }
   ],
@@ -43,6 +43,14 @@
       "pause": 300
     },
     {
+      "text": "fold-from-public-data: in that journey the fold is built and signed by a second wallet, not the booker's, from chain data alone: no file, key or record from the booker. A fold that needs the booker's private data is a critical defect.",
+      "pause": 300
+    },
+    {
+      "text": "scripts-published-once: creating the first registry of an application publishes the state script and the open-datum script as reference scripts when no live copy exists; a later registry reuses the live copies and publishes none; a reference script whose hash is not the expected one is never reused.",
+      "pause": 300
+    },
+    {
       "text": "devnet-refusals: on a development network, each of these is refused: a fold without the approval; a token delivered to another address or with less than the deposit; a second registration of the same key; extra tokens added to the state output; a parked token presented as a registry state.",
       "pause": 300
     },
@@ -55,7 +63,7 @@
       "pause": 300
     },
     {
-      "text": "documentation-and-board: user documentation for the commands ships in the same pull request; hosted checks are green on the pull request into the epic branch.",
+      "text": "documentation-and-board: user documentation for the commands ships in the pull request that adds them; hosted checks are green on each pull request into the epic branch.",
       "pause": 300
     },
     {
@@ -85,6 +93,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "5b5fc2f0c36b46379ab8b7b024e54ff2bf1cbd857be50eed13bf218b9078cc35"
+    "sha256": "778f964bd8aa16a1b9f3ba20289f51f088c4e237e4c121a66cce0f7dfb7e995c"
   }
 }
