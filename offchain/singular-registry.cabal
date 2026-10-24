@@ -145,6 +145,7 @@ library
     Singular.Registry.Types
     Singular.Registry.Wait
     Singular.Registry.Witness
+    Singular.State.Preimage
 
   -- #267: the fold's focused owners behind the Update facade. They are
   -- implementation modules of the existing public library: the facade
@@ -1078,6 +1079,7 @@ test-suite cage-tests
     Singular.Registry.TxBuilder.UpperSlotSpec
     Singular.Registry.TypesSpec
     Singular.Registry.WaitSpec
+    Singular.State.PreimageSpec
     Test.Tags
 
   build-depends:
@@ -1104,6 +1106,7 @@ test-suite cage-tests
     , cardano-strict-containers
     , cardano-tx-tools:tx-build
     , case-insensitive
+    , cborg
     , containers
     , contra-tracer
     , crypton

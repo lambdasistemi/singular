@@ -1,0 +1,73 @@
+{
+  "description": "Byte vectors of the hashed-name preimages of the Singular state: for each role its inputs, the preimage (the Plutus Data serialisation of the role's constructor) and the name (the blake2b-256 hash of the preimage). The on-chain functions and the off-chain codec both reproduce every vector; the generated Aiken tests are made from this file.",
+  "provenance": "Made by an independent reference encoder written from the definition of the Plutus Data serialisation (integers as plain or tagged big numbers, byte strings chunked above 64 bytes, the empty list definite and any other list indefinite, constructors as tag 121 plus the index) with blake2b-256 from Python hashlib. Neither the on-chain nor the off-chain encoder produced a byte of this file.",
+  "inputs": {
+    "state": "seed: transactionId (hex), outputIndex",
+    "active": "registry: policy (hex), name (hex); key (hex)",
+    "registration-approval": "registry; key; holdingAddress: payment [key|script, hash], stake null or [key|script, hash]; datumHash (hex); deposit (decimal string)"
+  },
+  "vectors": [
+    {
+      "id": "state-output-index-zero",
+      "role": "state",
+      "note": "the output index 0 is the one-byte integer 00",
+      "edges": [
+        "indefinite-length-list"
+      ],
+      "input": {
+        "seed": {
+          "transactionId": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+          "outputIndex": 0
+        }
+      },
+      "preimage": "d8799fd8799f5820000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f00ffff",
+      "name": "f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139daf"
+    },
+    {
+      "id": "active-key-32-bytes",
+      "role": "active",
+      "note": "a 32-byte key is one definite byte string",
+      "edges": [
+        "indefinite-length-list"
+      ],
+      "input": {
+        "registry": {
+          "policy": "70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f7",
+          "name": "f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139daf"
+        },
+        "key": "0104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e"
+      },
+      "preimage": "d87a9fd8799f581c70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f75820f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139dafff58200104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5eff",
+      "name": "7bb99a3ed884c2143636542734ff8987649b8deb960ba4b787bf1ab40f35fecb"
+    },
+    {
+      "id": "approval-script-payment-key-stake",
+      "role": "registration-approval",
+      "note": "a script payment credential with an inline stake key credential",
+      "edges": [
+        "indefinite-length-list"
+      ],
+      "input": {
+        "registry": {
+          "policy": "70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f7",
+          "name": "f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139daf"
+        },
+        "key": "0104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e",
+        "holdingAddress": {
+          "payment": [
+            "script",
+            "20272e353c434a51585f666d747b828990979ea5acb3bac1c8cfd6dd"
+          ],
+          "stake": [
+            "key",
+            "3039424b545d666f78818a939ca5aeb7c0c9d2dbe4edf6ff08111a23"
+          ]
+        },
+        "datumHash": "404b56616c77828d98a3aeb9c4cfdae5f0fb06111c27323d48535e69747f8a95",
+        "deposit": "2000000"
+      },
+      "preimage": "d87c9fd8799f581c70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f75820f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139dafff58200104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5ed8799fd87a9f581c20272e353c434a51585f666d747b828990979ea5acb3bac1c8cfd6ddffd8799fd8799fd8799f581c3039424b545d666f78818a939ca5aeb7c0c9d2dbe4edf6ff08111a23ffffffff5820404b56616c77828d98a3aeb9c4cfdae5f0fb06111c27323d48535e69747f8a951a001e8480ff",
+      "name": "7650779196dc13c7237489239331d09eda883fbfa15c8768f3e284228e8fdaa1"
+    }
+  ]
+}

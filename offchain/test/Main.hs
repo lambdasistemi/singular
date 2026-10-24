@@ -73,6 +73,7 @@ import Singular.Registry.TxBuilder.SkipEvalUnitsSpec qualified
 import Singular.Registry.TxBuilder.UpperSlotSpec qualified
 import Singular.Registry.TypesSpec qualified
 import Singular.Registry.WaitSpec qualified
+import Singular.State.PreimageSpec qualified
 import Test.Hspec (describe, hspec)
 import Test.Tags (Area (..), tagged)
 
@@ -309,3 +310,6 @@ main = hspec $ do
     describe
         (tagged "Singular.Provider.Koios.ReferenceScripts" [Provider])
         Singular.Provider.Koios.ReferenceScriptsSpec.spec
+    describe
+        (tagged "Singular.State.Preimage" [Builders])
+        Singular.State.PreimageSpec.spec
