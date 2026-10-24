@@ -21,6 +21,7 @@
 //// accepted action; two actions never create the same output.
 
 use aiken/collection/list
+use application/births.{positive_mints_are_births}
 use application/configuration.{configuration_asset, configuration_create}
 use application/held.{TokenId}
 use application/registration.{
@@ -84,10 +85,20 @@ pub fn births_of(
   )
 }
 
+/// The output an action creates, when it creates one.
+fn birth_position(action: ApplicationAction) -> Option<Int> {
+  when action is {
+    ConfigurationCreate { output_index, .. } -> Some(output_index)
+    BookRegistration { output_index } -> Some(output_index)
+    ApprovalBurn -> None
+  }
+}
+
 /// Model conjunct `birthCoverage`: no two actions create the output at one
 /// index.
-pub fn birth_positions_are_distinct(_actions: List<ApplicationAction>) -> Bool {
-  False
+pub fn birth_positions_are_distinct(actions: List<ApplicationAction>) -> Bool {
+  let positions = list.filter_map(actions, birth_position)
+  list.length(list.unique(positions)) == list.length(positions)
 }
 
 /// Model `applicationAction` for the actions of a mint.
@@ -109,14 +120,17 @@ pub fn action_accepted(
       )
     BookRegistration { output_index } ->
       registration_book(application_policy, output_index, tx, births)
-    ApprovalBurn -> False
+    ApprovalBurn -> True
   }
 }
 
 /// Model conjunct `moneyTreasury` for a transaction with no termination
 /// booking: the treasury donation is `required`.
-pub fn donation_is(_tx: Transaction, _required: Int) -> Bool {
-  False
+pub fn donation_is(tx: Transaction, required: Int) -> Bool {
+  when tx.treasury_donation is {
+    None -> required == 0
+    Some(donation) -> donation == required
+  }
 }
 
 /// The model's `applicationStep` for the mint handler of the application
@@ -127,8 +141,13 @@ pub fn application_mint(
   tx: Transaction,
 ) -> Bool {
   let births = births_of(application_policy, tx.outputs, actions)
-  list.all(
-    actions,
-    fn(action) { action_accepted(application_policy, tx, births, action) },
-  )
+  and {
+    birth_positions_are_distinct(actions),
+    list.all(
+      actions,
+      fn(action) { action_accepted(application_policy, tx, births, action) },
+    ),
+    positive_mints_are_births(application_policy, tx.mint, births),
+    donation_is(tx, 0),
+  }
 }

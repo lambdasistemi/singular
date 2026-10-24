@@ -16,9 +16,10 @@
 //// Nothing is minted under the application policy that an action of the
 //// transaction does not account for, so a burn grants nothing.
 
+use aiken/collection/dict
 use aiken/collection/list
 use application/held.{TokenId}
-use cardano/assets.{PolicyId, Value, quantity_of}
+use cardano/assets.{PolicyId, Value, quantity_of, tokens}
 
 /// Model guard `freshApproval`: the minted quantity of `asset` is exactly the
 /// number of its births, and there is at least one.
@@ -34,9 +35,17 @@ pub fn fresh_asset(mint: Value, births: List<TokenId>, asset: TokenId) -> Bool {
 /// application policy is a burn, or an asset one of the actions brings into
 /// being.
 pub fn positive_mints_are_births(
-  _application_policy: PolicyId,
-  _mint: Value,
-  _births: List<TokenId>,
+  application_policy: PolicyId,
+  mint: Value,
+  births: List<TokenId>,
 ) -> Bool {
-  False
+  list.all(
+    dict.to_pairs(tokens(mint, application_policy)),
+    fn(Pair(name, quantity)) {
+      quantity <= 0 || list.has(
+        births,
+        TokenId { policy: application_policy, name },
+      )
+    },
+  )
 }
