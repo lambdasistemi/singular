@@ -224,7 +224,7 @@
         # witnesses come from one build. Chosen by test over composing both
         # validators directories into one project and running `aiken build`
         # once: the merge copies both blueprints' `compiledCode` bytes
-        # verbatim, so the 17 hashes are byte-identical by construction
+        # verbatim, so every hash is byte-identical by construction
         # (manual jq merge tested 14/14 equal base-hashes.json, 26
         # definitions, preamble from the registry's); a single rebuild
         # would recompile, reintroduce the single-project layout the split
@@ -280,11 +280,12 @@
                 }
               ' "$registryBlueprint" "$appBlueprint" > "$out"
               count="$(jq '.validators | length' "$out")"
-              [ "$count" = "17" ] || {
-                echo "open-datum-blueprint: expected 17 validators, built $count" >&2
+              expected="$(jq -s '(.[0].validators | length) + (.[1].validators | length)' "$registryBlueprint" "$appBlueprint")"
+              [ "$count" = "$expected" ] || {
+                echo "open-datum-blueprint: expected $expected validators (registry plus application), built $count" >&2
                 exit 1
               }
-              echo "open-datum-blueprint: OK — 17 validators, preamble $(jq -r '.preamble.title' "$out"), $(jq '.definitions | keys | length' "$out") definitions" >&2
+              echo "open-datum-blueprint: OK — $count validators, preamble $(jq -r '.preamble.title' "$out"), $(jq '.definitions | keys | length' "$out") definitions" >&2
             '';
 
         # #278: every hand-written and generated Aiken source is in the
