@@ -80,6 +80,7 @@ library
     , plutus-tx
     , process
     , scientific
+    , serialise
     , singular-registry:local-services
     , text                              >=2.0  && <2.2
     , time
