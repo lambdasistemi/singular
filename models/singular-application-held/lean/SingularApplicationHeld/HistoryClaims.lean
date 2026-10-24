@@ -1,4 +1,4 @@
-import SingularApplicationHeld.History
+import SingularApplicationHeld.HistorySupplyProofs
 
 /-! History statements for the application-held model. A finite
 domain includes the queried active-role preimage as well as every occurrence
@@ -60,23 +60,39 @@ def HistoryTransaction (h : Hash) (c : Codec) (t : TrieCommit) (release : Publis
 
 namespace HistoryStatements
 
-/-- History statement; proof pending independent statement review.
+/-- History guarantee.
 For every reachable registry and every logical key, the actual live supply is
 one exactly for an active leaf and zero for every other leaf. -/
 theorem supply_in_step (h : Hash) (c : Codec) (t : TrieCommit) (release : PublishedRelease)
     (world : CandidateWorld) (registry : PublicRegistry) (key : Key)
     (_premises : HistoryPremises h c t release world registry key) :
-    SupplyAt h c world registry key := by sorry
+    SupplyAt h c world registry key := by
+  rcases _premises with ⟨reachable, member, encoding, collision⟩
+  have own : registry.identity.policy = release.statePolicy := by
+    rw [(HistoryProofs.registry_identity h c t release world reachable registry member).1]
+    rfl
+  have supply := HistoryProofs.world_supply h c t release world reachable registry.identity key own encoding collision
+  rw [HistoryProofs.world_indicator_at h c t release world reachable registry member key] at supply
+  have equality : Int.ofNat (liveActiveCount h c registry.identity key world.unspent) =
+      if trieGet registry.trie key = .known .active then (1 : Int) else 0 := supply
+  unfold SupplyAt
+  by_cases active : trieGet registry.trie key = .known .active
+  all_goals
+    simp only [active, ↓reduceIte] at equality ⊢
+    exact Int.ofNat.inj equality
 
-/-- History statement; proof pending independent statement review.
+/-- History guarantee.
 Every reachable registry/key has at most one token in the complete unspent set.
 This quantifies the full policy/name identity, never the seed-derived name alone. -/
 theorem one_live_token (h : Hash) (c : Codec) (t : TrieCommit) (release : PublishedRelease)
     (world : CandidateWorld) (registry : PublicRegistry) (key : Key)
     (_premises : HistoryPremises h c t release world registry key) :
-    liveActiveCount h c registry.identity key world.unspent ≤ 1 := by sorry
+    liveActiveCount h c registry.identity key world.unspent ≤ 1 := by
+  have supply := supply_in_step h c t release world registry key _premises
+  unfold SupplyAt at supply
+  split at supply <;> omega
 
-/-- History statement; proof pending independent statement review.
+/-- History guarantee.
 Any burn in an accepted fold from a reachable world belongs to that registry
 and a termination of that logical key, whose final leaf is terminal. -/
 theorem burn_only_terminating_fold (h : Hash) (c : Codec) (t : TrieCommit)
@@ -90,9 +106,34 @@ theorem burn_only_terminating_fold (h : Hash) (c : Codec) (t : TrieCommit)
       SingularApplicationHeld.Assets.mintQty view (activeAsset h c registry.identity key) < 0) :
     ∃ o, folded = some o ∧ registry.identity = o.before.identity ∧
     (∃ reference, Change.terminate reference key ∈ o.changes) ∧
-    trieGet o.after.trie key = .known .terminal := by sorry
+    trieGet o.after.trie key = .known .terminal := by
+  rcases _premises with ⟨transaction, history, encoding, collision, burn⟩
+  rcases history with ⟨reachable, member, _, _⟩
+  have own : registry.identity.policy = release.statePolicy := by
+    rw [(HistoryProofs.registry_identity h c t release before reachable registry member).1]
+    rfl
+  rcases transaction with ⟨_, transaction⟩
+  cases folded with
+  | none =>
+    rcases transaction with created | neutral
+    · rcases created with ⟨seed, inputs, outputs, created, fee, donation, ledger, accepted, _⟩
+      have nonnegative := HistoryProofs.genesis_nonnegative h c t release seed view outputs
+        (activeAsset h c registry.identity key) own accepted
+      omega
+    · rcases neutral with ⟨inputs, outputs, fee, donation, ledger, noMint, _⟩
+      have zero := Proofs.delta_at view release.statePolicy [] noMint
+        (activeAsset h c registry.identity key) own
+      simp only [List.filter_nil, List.map_nil, List.sum_nil] at zero
+      omega
+  | some o =>
+    rcases transaction with ⟨rfl, premises⟩
+    obtain ⟨same, reference, action⟩ := HistoryProofs.fold_burn_action h c t release before after o
+      premises.domain registry key encoding collision own premises.accepted burn
+    refine ⟨o, rfl, same, ⟨reference, action⟩, ?_⟩
+    exact HistoryProofs.terminal_after_burn h c release o o.changes o.before.trie o.after.trie
+      key reference action (Proofs.fold_result h c t release o premises.accepted).1
 
-/-- History statement; proof pending independent statement review.
+/-- History guarantee.
 An accepted fold cannot mint a terminal key again, including in another registry's fold.
 The original history relation supplies the premise; no separate projection is assumed. -/
 theorem no_remint_after_terminal (h : Hash) (c : Codec) (t : TrieCommit)
@@ -105,7 +146,39 @@ theorem no_remint_after_terminal (h : Hash) (c : Codec) (t : TrieCommit)
       trieGet registry.trie key = .known .terminal) :
     SingularApplicationHeld.Assets.mintQty o.assets (activeAsset h c registry.identity key) ≤ 0 ∧
       ∀ successor ∈ after.registries, successor.identity = registry.identity →
-        trieGet successor.trie key = .known .terminal := by sorry
+        trieGet successor.trie key = .known .terminal := by
+  rcases _premises with ⟨premises, history, encoding, collision, terminal⟩
+  rcases history with ⟨reachable, member, _, _⟩
+  have own : registry.identity.policy = release.statePolicy := by
+    rw [(HistoryProofs.registry_identity h c t release before reachable registry member).1]
+    rfl
+  have outside : registry.identity = o.before.identity → key ∉ o.changes.map Change.key := by
+    intro same
+    have equal := HistoryProofs.registry_unique h c t release before reachable registry member
+      o.before premises.present same
+    exact (HistoryProofs.terminal_batch h c release o o.changes o.before.trie o.after.trie key
+      (Proofs.fold_result h c t release o premises.accepted).1 (by simpa [equal] using terminal)).1
+  have zero := HistoryProofs.delta_zero_outside h c t release before after o premises.domain
+    registry key encoding collision own premises.accepted outside
+  refine ⟨by omega, ?_⟩
+  intro successor successorMember sameIdentity
+  rw [premises.registries] at successorMember
+  obtain ⟨previous, previousMember, same⟩ := List.mem_map.mp successorMember
+  have conditions := premises.accepted
+  simp only [fold, Proofs.applyGuard_none, Bool.and_eq_true] at conditions
+  have afterIdentity := Proofs.token_eq _ _ conditions.1.1.1.1.1.1.1.1.1.1.1.2
+  by_cases hit : previous.identity == o.before.identity
+  · simp only [hit, ↓reduceIte] at same
+    subst successor
+    have equal := HistoryProofs.registry_unique h c t release before reachable registry member
+      o.before premises.present (sameIdentity.symm.trans afterIdentity)
+    exact (HistoryProofs.terminal_batch h c release o o.changes o.before.trie o.after.trie key
+      (Proofs.fold_result h c t release o premises.accepted).1 (by simpa [equal] using terminal)).2
+  · simp only [hit, Bool.false_eq_true, ↓reduceIte] at same
+    subst successor
+    have equal := HistoryProofs.registry_unique h c t release before reachable previous previousMember
+      registry member sameIdentity
+    simpa [equal] using terminal
 
 end HistoryStatements
 end SingularApplicationHeld
