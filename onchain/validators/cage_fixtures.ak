@@ -133,8 +133,6 @@ pub const state =
     retract_time: testRetractTime,
     application_policy: testAppPolicy,
     active_policy: testRepPolicy,
-    absent_policy: testAbsentPolicy,
-    terminal_policy: testTerminalPolicy,
   }
 
 // Raw datum for input/output UTxOs (no Option wrapper)
@@ -222,8 +220,6 @@ pub const feeState =
     retract_time: testRetractTime,
     application_policy: testAppPolicy,
     active_policy: testRepPolicy,
-    absent_policy: testAbsentPolicy,
-    terminal_policy: testTerminalPolicy,
   }
 
 pub const feeStateDatum = Some(StateDatum(feeState))
@@ -290,8 +286,6 @@ pub const feeStateOutput =
           retract_time: testRetractTime,
           application_policy: testAppPolicy,
           active_policy: testRepPolicy,
-          absent_policy: testAbsentPolicy,
-          terminal_policy: testTerminalPolicy,
         },
       ),
     ),
@@ -329,8 +323,6 @@ pub const capturedRefundState =
     retract_time: testRetractTime,
     application_policy: testAppPolicy,
     active_policy: testRepPolicy,
-    absent_policy: testAbsentPolicy,
-    terminal_policy: testTerminalPolicy,
   }
 
 pub const capturedRefundStateDatum = Some(StateDatum(capturedRefundState))
@@ -461,8 +453,6 @@ pub const output =
           retract_time: testRetractTime,
           application_policy: testAppPolicy,
           active_policy: testRepPolicy,
-          absent_policy: testAbsentPolicy,
-          terminal_policy: testTerminalPolicy,
         },
       ),
     ),

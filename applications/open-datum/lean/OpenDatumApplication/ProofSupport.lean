@@ -220,11 +220,11 @@ theorem step_app_edge (s : RegistryState) (a : Request) (r : Result) (h : step s
       · rw [he'] at he; exact absurd he (by decide)
       · exact hb
   rcases he with he | he
-  · obtain ⟨h1, h2, _, _, h5, _⟩ := applyEdge_insertActive s a he
+  · obtain ⟨h1, h2, _, h5, _⟩ := applyEdge_insertActive s a he
     refine ⟨fun k hk => by rw [h1]; exact trieGet_set_of_ne _ _ _ _ hk, by rw [h2], fun _ => ?_,
       fun he' => by rw [he] at he'; exact absurd he' (by decide)⟩
     exact ⟨hbefore.1 he, by rw [h1]; exact trieGet_set_eq _ _ _, h5⟩
-  · obtain ⟨h1, h2, _, _, h5, _⟩ := applyEdge_updateTerminal s a he
+  · obtain ⟨h1, h2, _, h5, _⟩ := applyEdge_updateTerminal s a he
     refine ⟨fun k hk => by rw [h1]; exact trieGet_set_of_ne _ _ _ _ hk, by rw [h2],
       fun he' => by rw [he] at he'; exact absurd he' (by decide), fun _ => ?_⟩
     exact ⟨hbefore.2 he, by rw [h1]; exact trieGet_set_eq _ _ _, h5⟩
@@ -1019,7 +1019,7 @@ theorem mem_foldl_dedup (k : Key) : ∀ (l acc : List Key),
 
 theorem mem_stateKeys (s : RegistryState) (k : Key) :
     k ∈ Singular.Driver.stateKeys s ↔
-      k ∈ s.trie.map (·.1) ∨ k ∈ s.custody.map (·.key) ∨ k ∈ s.held.map (·.key) := by
+      k ∈ s.trie.map (·.1) ∨ k ∈ s.held.map (·.key) := by
   unfold Singular.Driver.stateKeys
   rw [mem_foldl_dedup]
   simp only [List.not_mem_nil, false_or, List.mem_append, or_assoc]
@@ -1038,13 +1038,6 @@ theorem kindCount_of_not_mem (s : RegistryState) (kk : TokenKind) (k : Key)
   intro x hx hxk
   simp only [Bool.and_eq_true, beq_iff_eq] at hxk
   exact h (List.mem_map.2 ⟨x, hx, hxk.1⟩)
-
-theorem custodyCount_of_not_mem (s : RegistryState) (k : Key)
-    (h : k ∉ s.custody.map (·.key)) : custodyCount s k = 0 := by
-  unfold custodyCount
-  rw [List.length_eq_zero_iff, List.filter_eq_nil_iff]
-  intro x hx hxk
-  exact h (List.mem_map.2 ⟨x, hx, by simpa using hxk⟩)
 
 theorem two_le_length_of_ne {α : Type} [DecidableEq α] (l : List α) (a b : α) (ha : a ∈ l)
     (hb : b ∈ l) (hab : a ≠ b) : 2 ≤ l.length := by
@@ -1071,56 +1064,28 @@ theorem consistentB_iff (s : RegistryState) :
   unfold Singular.Driver.consistentB
   simp only [Bool.and_eq_true, List.all_eq_true]
   constructor
-  · rintro ⟨⟨⟨hroot, hkeys⟩, hheld⟩, hcust⟩
+  · rintro ⟨hroot, hkeys⟩
     have hk : ∀ k, (kindCount s .active k = 1 ↔ trieGet s.trie k = .known .active) ∧
-        kindCount s .active k ≤ 1 ∧
-        (custodyCount s k = 1 ↔ trieGet s.trie k = .known .absent) ∧ custodyCount s k ≤ 1 := by
+        kindCount s .active k ≤ 1 := by
       intro k
       by_cases hm : k ∈ Singular.Driver.stateKeys s
       · have := hkeys k hm
         simp only [decide_eq_true_eq] at this
-        obtain ⟨⟨⟨h1, h2⟩, h3⟩, h4⟩ := this
-        rw [bool_iff_beq] at h1 h3
-        simp only [beq_iff_eq] at h1 h3
-        exact ⟨h1, h2, h3, h4⟩
+        obtain ⟨h1, h2⟩ := this
+        rw [bool_iff_beq] at h1
+        simp only [beq_iff_eq] at h1
+        exact ⟨h1, h2⟩
       · rw [mem_stateKeys] at hm
         simp only [not_or] at hm
-        obtain ⟨ht, hc, hh⟩ := hm
-        rw [kindCount_of_not_mem s _ k hh, custodyCount_of_not_mem s k hc, trieGet_of_not_mem _ k ht]
+        obtain ⟨ht, hh⟩ := hm
+        rw [kindCount_of_not_mem s _ k hh, trieGet_of_not_mem _ k ht]
         simp
-    refine ⟨byteArray_eq_of_toList _ _ (by simpa using hroot), fun k => (hk k).1, fun k => (hk k).2.1,
-      fun k => (hk k).2.2.1, fun k => (hk k).2.2.2, ?_, ?_, ?_⟩
-    · intro h hh hkind
-      have := hheld h hh
-      simp only [Bool.or_eq_true, Bool.not_eq_true', beq_iff_eq, beq_eq_false_iff_ne] at this
-      rcases this with h1 | h1
-      · exact absurd hkind h1
-      · exact h1
-    · intro c hc
-      simpa using hcust c hc
-    · intro c₁ h1 c₂ h2 hkey
-      by_cases hne : c₁ = c₂
-      · exact hne
-      exfalso
-      have hle := (hk c₁.key).2.2.2
-      have hm1 : c₁ ∈ s.custody.filter (·.key == c₁.key) := List.mem_filter.2 ⟨h1, by simp⟩
-      have hm2 : c₂ ∈ s.custody.filter (·.key == c₁.key) := List.mem_filter.2 ⟨h2, by simp [hkey]⟩
-      have := two_le_length_of_ne _ _ _ hm1 hm2 hne
-      unfold custodyCount at hle
-      omega
-  · rintro ⟨hroot, hA1, hA2, hC1, hC2, hTerm, hCleaf, _⟩
-    refine ⟨⟨⟨by rw [hroot]; simp, ?_⟩, ?_⟩, ?_⟩
-    · intro k _
-      simp only [decide_eq_true_eq]
-      exact ⟨⟨⟨(bool_iff_beq _ _).2 (by simp only [beq_iff_eq]; exact hA1 k), hA2 k⟩,
-        (bool_iff_beq _ _).2 (by simp only [beq_iff_eq]; exact hC1 k)⟩, hC2 k⟩
-    · intro h hh
-      simp only [Bool.or_eq_true, Bool.not_eq_true', beq_iff_eq, beq_eq_false_iff_ne]
-      by_cases hkind : h.kind = .terminal
-      · exact Or.inr (hTerm h hh hkind)
-      · exact Or.inl hkind
-    · intro c hc
-      simpa using hCleaf c hc
+    exact ⟨byteArray_eq_of_toList _ _ (by simpa using hroot), fun k => (hk k).1, fun k => (hk k).2⟩
+  · rintro ⟨hroot, hA1, hA2⟩
+    refine ⟨by rw [hroot]; simp, ?_⟩
+    intro k _
+    simp only [decide_eq_true_eq]
+    exact ⟨(bool_iff_beq _ _).2 (by simp only [beq_iff_eq]; exact hA1 k), hA2 k⟩
 
 /-- The occurrence observation: no reference repeats. -/
 theorem eraseDups_length_le {α} [BEq α] [LawfulBEq α] : ∀ l : List α,
@@ -1191,10 +1156,10 @@ theorem step_keeps_holding (s : RegistryState) (a : Request) (r : Result) (h : s
   obtain ⟨_, hr⟩ := step_eq_ok s a r h
   subst hr
   rcases he with he | he
-  · obtain ⟨_, _, _, hheld, _, _⟩ := applyEdge_insertActive s a he
+  · obtain ⟨_, _, hheld, _, _⟩ := applyEdge_insertActive s a he
     rw [hheld]
     exact List.mem_cons_of_mem _ hx
-  · obtain ⟨_, _, _, hheld, _, _⟩ := applyEdge_updateTerminal s a he
+  · obtain ⟨_, _, hheld, _, _⟩ := applyEdge_updateTerminal s a he
     rw [hheld]
     refine List.mem_filter.2 ⟨hx, ?_⟩
     have hne : (x.key == a.key) = false := by simpa using (hk he).symm
@@ -1232,7 +1197,7 @@ theorem foldActions_insert_holding : ∀ (batch : List Request) (s : RegistrySta
       fun c hc => hE c (List.mem_cons_of_mem _ hc)
     rcases List.mem_cons.1 hb with rfl | hb'
     · obtain ⟨_, hm⟩ := step_eq_ok s b m hs
-      have hheld := (applyEdge_insertActive s b hins).2.2.2.1
+      have hheld := (applyEdge_insertActive s b hins).2.2.1
       let x : Holding := { key := b.key, kind := .active, output := b.output, datum := b.datum }
       have hxm : x ∈ m.state.held := by
         rw [hm, hheld]

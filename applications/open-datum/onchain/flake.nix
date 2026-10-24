@@ -454,8 +454,8 @@
               cp ${appSrc}/validators/open_datum.tests.ak "$work/mutant/validators/open_datum.tests.ak"
               cp ${appSrc}/validators/application/envelope.ak "$work/mutant/validators/application/envelope.ak"
               chmod -R u+w "$work/mutant"
-              sed -i 's|01b7ede24bf581093ac9d44e5ba3bf8f24e2dab51114dc4a25961817970f9e38|01b7ede24bf581093ac9d44e5ba3bf8f24e2dab51114dc4a25961817970f9e39|' "$work/mutant/validators/open_datum.tests.ak"
-              grep -q 'f9e39' "$work/mutant/validators/open_datum.tests.ak" || {
+              sed -i 's|04594ee38435664066a45633a4b4c0963e9922cc70ce7ba221f8805187220f91|04594ee38435664066a45633a4b4c0963e9922cc70ce7ba221f8805187220f92|' "$work/mutant/validators/open_datum.tests.ak"
+              grep -q '0f92' "$work/mutant/validators/open_datum.tests.ak" || {
                 echo "FAIL: the mutant plant did not apply" >&2
                 exit 2
               }

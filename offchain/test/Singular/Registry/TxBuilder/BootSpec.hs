@@ -273,8 +273,6 @@ cfg =
         , defaultTip = Coin 1_000_000
         , cfgApplicationPolicy = SBS.empty
         , cfgActivePolicy = SBS.empty
-        , cfgAbsentPolicy = SBS.empty
-        , cfgTerminalPolicy = SBS.empty
         , cfgConsumerScript = SBS.empty
         , network = Testnet
         }

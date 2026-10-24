@@ -142,7 +142,7 @@ data PageInputs = PageInputs
     , pageStateOutput :: Text
     -- ^ The live state output holding the token
     , pageStateScript :: Text
-    {- ^ The state script hash the release derives, and the four policies the
+    {- ^ The state script hash the release derives, and the two policies the
     registry's datum pins, each hex
     -}
     , pageApplicationScript :: Text
@@ -151,8 +151,6 @@ data PageInputs = PageInputs
     checked against any blueprint
     -}
     , pageActiveScript :: Text
-    , pageAbsentScript :: Text
-    , pageTerminalScript :: Text
     , pageRelease :: ReleaseInfo
     , pageProcessTime :: Integer
     -- ^ The processing window in milliseconds, from the state datum
@@ -229,8 +227,6 @@ renderPageJson (Page inputs links) =
                 , "applicationScript" .= pageApplicationScript inputs
                 , "applicationPin" .= pageApplicationPin inputs
                 , "activeScript" .= pageActiveScript inputs
-                , "absentScript" .= pageAbsentScript inputs
-                , "terminalScript" .= pageTerminalScript inputs
                 ]
         , "release"
             .= object

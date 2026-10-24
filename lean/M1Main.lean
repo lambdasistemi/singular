@@ -7,9 +7,9 @@ namespace PermanentCorpus
 
 def config : Config :=
   { root := rootOf [], minimumTip := 0, processTime := 1000, retractTime := 500
-  , applicationPolicy := 7, activePolicy := 8, absentPolicy := 9, terminalPolicy := 10 }
+  , applicationPolicy := 7, activePolicy := 8 }
 
-def initial : RegistryState := { config := config, trie := [], custody := [], held := [] }
+def initial : RegistryState := { config := config, trie := [], held := [] }
 
 def request (edge : Edge) (key : Nat := 5) : Request :=
   let base : Request :=

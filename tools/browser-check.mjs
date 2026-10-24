@@ -44,7 +44,7 @@ async function checkPage(page, evidence) {
   assert(refused.length === 26, `26 refused rows (saw ${refused.length})`);
   // Every refusal is a NAME a reader can look up, and the whole vocabulary is
   // exercised: a page that collapsed two causes onto one name fails here.
-  // The table supplies the custody entry and the active token for every row, so
+  // The table supplies the active token for every row, so
   // custody-missing and token-missing cannot appear here; the Lean corpus rows
   // replayed above (GC01-GC06) are what exercise those two.
   const vocabulary = [

@@ -36,8 +36,6 @@ def onlyRootChanged (before after : Config) : Bool :=
   after.retractTime == before.retractTime &&
   after.applicationPolicy == before.applicationPolicy &&
   after.activePolicy == before.activePolicy &&
-  after.absentPolicy == before.absentPolicy &&
-  after.terminalPolicy == before.terminalPolicy &&
   after.registrationCost == before.registrationCost &&
   after.minimumTip == before.minimumTip &&
   after.bookingWidth == before.bookingWidth
@@ -135,13 +133,11 @@ def routedPayment (t : Result) (r : Request) (d : Destination) : List (Asset × 
   (mintRoutedTo t r d).filter fun p => 0 < p.2
 
 /-- Where a token of a kind already lives, and therefore which UTxO a fold
-spends to destroy one: cage custody holds the absent tokens, and a requester
-holds the active and terminal witnesses at the output the fold that minted them
-named. Read off `route`, so the token is consumed from the place the same rule
+spends to destroy one: a requester holds the active witness at the output
+the fold that minted it named. Read off `route`, so the token is consumed from the place the same rule
 sent it to. -/
 def burnSourceRole (d : Destination) : TxRole :=
   match d with
-  | .cageCustody => .cage
   | .requestOutput => .witness
 
 /-- The datum form of the output holding a token of this kind at this key: the
@@ -158,19 +154,16 @@ the datum the fold that delivered it wrote, the request's own. -/
 def heldValue (s : RegistryState) (key : Key) (kind : TokenKind) : Option Nat :=
   (s.held.find? (fun h => h.key == key && h.kind == kind)).bind (·.datum)
 
-/-- The datum form of the UTxO a burned token is spent from: cage custody carries
-its custody datum inline, and a witness carries whatever its delivering fold gave
-the output it sits at (#304). -/
+/-- The datum form of the UTxO a burned token is spent from: a witness carries whatever its
+delivering fold gave the output it sits at (#304). -/
 def burnSourceDatum (s : RegistryState) (d : Destination) (asset : Asset) : DatumForm :=
   match d with
-  | .cageCustody => registryDatumForm
   | .requestOutput => heldDatum s asset.2 asset.1
 
 /-- The datum value of the UTxO a burned token is spent from: a witness carries the
-datum its delivery wrote; cage custody presents its custody datum, no request's. -/
+datum its delivery wrote. -/
 def burnSourceValue (s : RegistryState) (d : Destination) (asset : Asset) : Option Nat :=
   match d with
-  | .cageCustody => none
   | .requestOutput => heldValue s asset.2 asset.1
 
 /-- The inputs that supply the tokens this fold destroys: one UTxO per burned
@@ -209,19 +202,6 @@ def txDestinationOutputs (t : Result) (r : Request) : List TxOutput :=
         , address := some (requestDestination r), stateTokens := 0, config := none
         , commitment := some (datumHash (destinationDatum r))
         , assets := assets, datumValue := r.datum }]
-
-/-- The address custody outputs sit at: the cage. -/
-abbrev cageAddress : Nat := 0
-
-/-- The cage output, present only when this edge routes a token to cage custody.
-`insertActive` routes none, so its transaction has exactly two outputs; the
-constructor is general so the shape is not special-cased to one edge. -/
-def txCageOutputs (t : Result) (r : Request) : List TxOutput :=
-  let assets := routedPayment t r .cageCustody
-  if assets.isEmpty then []
-  else [{ role := .cage, datum := registryDatumForm, address := some cageAddress
-        , stateTokens := 0, config := none, commitment := none, assets := assets
-        , custodyDatum := some [r.refundAddress], lovelace := r.deposit }]
 
 
 end Singular

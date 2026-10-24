@@ -34,17 +34,16 @@ open Lean
 /-! ## The law premise -/
 
 /-- The keys a state can possibly violate `Consistent` at: a key bound nowhere
-has no active token, no custody entry and reads `unknown`, so every conjunct
+has no active token and reads `unknown`, so every conjunct
 holds of it trivially. Quantifying over this discovered extent is what makes the
 premise decidable without weakening it. -/
 def stateKeys (s : RegistryState) : List Key :=
-  (s.trie.map (·.1) ++ s.custody.map (·.key) ++ s.held.map (·.key)).foldl
+  (s.trie.map (·.1) ++ s.held.map (·.key)).foldl
     (fun acc k => if acc.contains k then acc else acc ++ [k]) []
 
 /-- The decidable finite characterization of `Singular.Consistent`: the root
-commits to the map, the active and absent supply laws hold as biconditionals
-with at most one token each, and every terminal attestation and custody entry is
-about a leaf that can still be what it says.
+commits to the map, the active supply law holds as a biconditional
+with at most one token.
 
 This is a Bool over a finite key extent, not the `Prop` itself; what it
 establishes is that no key the state actually mentions violates a conjunct. -/
@@ -52,11 +51,7 @@ def consistentB (s : RegistryState) : Bool :=
   (s.config.root.toList == (rootOf s.trie).toList)
   && (stateKeys s).all (fun k =>
        ((kindCount s .active k == 1) == (trieGet s.trie k == .known .active))
-       && decide (kindCount s .active k ≤ 1)
-       && ((custodyCount s k == 1) == (trieGet s.trie k == .known .absent))
-       && decide (custodyCount s k ≤ 1))
-  && s.held.all (fun h => !(h.kind == .terminal) || trieGet s.trie h.key == .known .terminal)
-  && s.custody.all (fun c => trieGet s.trie c.key == .known .absent)
+       && decide (kindCount s .active k ≤ 1))
 
 def premiseDeclaration : String := "Singular.Driver.consistentB"
 
@@ -139,7 +134,6 @@ alike: the state it produced, read back field by field, and its own mint and
 payments. -/
 def resultObservations (c : Config) (res : Result) : List (String × Json) :=
   [ ("config", toJson res.state.config)
-  , ("custody", toJson res.state.custody)
   , ("held", Json.arr (res.state.held.map heldObservationJson).toArray)
   , ("mint", assetsJson c res.mint)
   , ("paid", Json.arr ((res.paid.map fun p =>

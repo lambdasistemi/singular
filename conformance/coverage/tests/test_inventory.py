@@ -86,10 +86,13 @@ class RealInventoryTest(unittest.TestCase):
         # declarations remain: 121 = 67 manifest-bound + 54 unclassified.
         # Protected rejection adds five statements for bound evidence, protection,
         # effects and expiry: 126 = 72 manifest-bound + 54 unclassified.
+        # Removing the unused absent and terminal witness policy pins retires
+        # three statements and six helper lemmas about the removed token kinds:
+        # 289 = 115 manifest-bound + 174 unclassified.
         inv = build_inventory(REPO_ROOT)
-        self.assertEqual(inv.manifest_bound, 118)
-        self.assertEqual(inv.unclassified, 180)
-        self.assertEqual(inv.manifest_bound + inv.unclassified, 298)
+        self.assertEqual(inv.manifest_bound, 115)
+        self.assertEqual(inv.unclassified, 174)
+        self.assertEqual(inv.manifest_bound + inv.unclassified, 289)
         self.assertEqual(
             len([o for o in inv.obligations if o.source == "lean/Singular/M1.lean"]),
             10,

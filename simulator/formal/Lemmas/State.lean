@@ -1,6 +1,6 @@
 import Singular.Model
 
-/-! Trie, custody and holding facts reused by transition proofs. -/
+/-! Trie and holding facts reused by transition proofs. -/
 
 namespace Singular
 
@@ -100,9 +100,11 @@ theorem countHeld_cons (held : List Holding) (h : Holding) (kk : TokenKind) (key
       if h.key == key && h.kind == kk
       then (held.filter fun x => x.key == key && x.kind == kk).length + 1
       else (held.filter fun x => x.key == key && x.kind == kk).length := by
-  by_cases hp : h.key == key && h.kind == kk
-  · simp [hp, List.filter_cons_of_pos]
-  · simp [hp, List.filter_cons_of_neg]
+  by_cases hp : (h.key == key && h.kind == kk) = true
+  · rw [List.filter_cons_of_pos (p := fun x : Holding => x.key == key && x.kind == kk) hp,
+      List.length_cons, if_pos hp]
+  · rw [List.filter_cons_of_neg (p := fun x : Holding => x.key == key && x.kind == kk) hp,
+      if_neg hp]
 
 /-- Nothing of a key and kind survives a filter that removed that exact pair. -/
 theorem countHeld_filter_zero (held : List Holding) (a : Key) (kk : TokenKind) :
@@ -164,60 +166,7 @@ theorem countHeld_filter_active_le (held : List Holding) (a : Key) (kk : TokenKi
       (held.filter fun x => x.key == key && x.kind == kk).length :=
   (List.Sublist.filter _ (List.filter_sublist)).length_le
 
-/-- Consing a custody entry changes the census only at the consed key. -/
-theorem countCustody_cons (custody : List Custody) (c : Custody) (key : Key) :
-    ((c :: custody).filter (·.key == key)).length =
-      if c.key == key then (custody.filter (·.key == key)).length + 1
-      else (custody.filter (·.key == key)).length := by
-  by_cases hp : c.key == key
-  · simp [hp, List.filter_cons_of_pos]
-  · simp [hp, List.filter_cons_of_neg]
-
-/-- Filtering one key out preserves every other key's custody census. -/
-theorem countCustody_filter_out (custody : List Custody) (a : Key) (key : Key)
-    (h : key ≠ a) :
-    ((custody.filter (·.key != a)).filter (·.key == key)).length =
-      (custody.filter (·.key == key)).length := by
-  have hcongr : (custody.filter (·.key != a)).filter (·.key == key) =
-      custody.filter (·.key == key) :=
-    filter_filter_congr _ _ _ (by
-      intro x hx
-      have hx1 : x.key = key := by simpa using hx
-      exact show (x.key != a) = true by rw [hx1]; simpa using h)
-  rw [hcongr]
-
-theorem countCustody_filter_zero (custody : List Custody) (a : Key) :
-    ((custody.filter (·.key != a)).filter (·.key == a)).length = 0 := by
-  have hnone := filter_filter_none (custody : List Custody)
-    (fun x => x.key != a) (fun x => x.key == a)
-    (by intro x hx; simpa using hx)
-  rw [hnone]
-  simp
-
 /-! ### Step and effects -/
-/-- A present-key flag yields a findable custody entry with that key. -/
-theorem custody_entry_of_present_aux (key : Key) (custody : List Custody)
-    (hp : custody.any (·.key == key) = true) :
-    ∃ c, custody.find? (·.key == key) = some c ∧ c.key = key := by
-  induction custody with
-  | nil => exfalso; simp at hp
-  | cons x xs ih =>
-    by_cases hx : x.key = key
-    · refine ⟨x, ?_, hx⟩
-      simp [List.find?, show (x.key == key) = true from by simpa using hx]
-    · have hb : (x.key == key) = false := by simpa using hx
-      simp only [List.any_cons, Bool.or_eq_true, hb, Bool.false_or] at hp
-      obtain ⟨c, hc, hkey⟩ := ih hp
-      refine ⟨c, ?_, hkey⟩
-      simp only [List.find?]
-      rw [hb]
-      exact hc
-
-theorem custody_entry_of_present (s : RegistryState) (key : Key)
-    (hp : s.custody.any (·.key == key) = true) :
-    ∃ c, s.custody.find? (·.key == key) = some c ∧ c.key = key :=
-  custody_entry_of_present_aux key s.custody hp
-
 /-- A present-flag for an active token yields a findable holding entry. -/
 theorem holding_entry_of_present_aux (key : Key) (held : List Holding)
     (hp : held.any (fun x => x.key == key && x.kind == .active) = true) :
@@ -241,7 +190,6 @@ theorem holding_entry_of_present_aux (key : Key) (held : List Holding)
           have h2f : (x.kind == .active) = false := by
             cases hc : x.kind with
             | active => exact absurd hc h2
-            | _ => rfl
           rw [show (x.key == key) = true from by simpa using h1, h2f]
           rfl
         · rw [show (x.key == key) = false from by simpa using h1]

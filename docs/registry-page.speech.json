@@ -55,7 +55,7 @@
       "pause": 500
     },
     {
-      "text": "The registry section shows the four policies the registry's datum pins: the application, active, absent and terminal policies. They are the registry's own statement, read from its state datum, and they never change after the registry is created. The command compares the three witness policies with the ones the release derives for this registry before it prints anything: a registry that pins another is refused, as the refusals below say.",
+      "text": "The registry section shows the two policies the registry's datum pins: the application and active policies. They are the registry's own statement, read from its state datum, and they never change after the registry is created. The command compares the active policy with the ones the release derives for this registry before it prints anything: a registry that pins another is refused, as the refusals below say.",
       "pause": 400
     },
     {
@@ -95,6 +95,6 @@
   ],
   "_source": {
     "file": "registry-page.md",
-    "sha256": "c52ff026b357491f0f70b29117cb74da390e86a16a719245597512bc5d1a16b6"
+    "sha256": "69f505df84b8a234a0deb45c452e346d35c067fb9affd7a35cdc918a0203395c"
   }
 }

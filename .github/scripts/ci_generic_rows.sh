@@ -170,7 +170,7 @@ grep -q '^control: surplus-fold-actions control: exact 1:1 fold accepted (tx=[0-
 }
 # 8. The supported edge compositions (#232): each row's program, in registries of its
 #    own, every request accepted by the chain and by the model and compared
-#    on all nine observations, its transactions the envelope's.
+#    on all eight observations, its transactions the envelope's.
 #    insert-key registers Active; retract-inside-window retracts an
 #    insertion inside phase 2; reject-after-window rejects one after the windows.
 for spec in \
@@ -189,7 +189,7 @@ for spec in \
     and all(.steps[];
       .model.outcome == "accepted" and .chain.outcome == "accepted"
       and (.chain.txid | txid) and .comparison == "agrees"
-      and (.compared | length) == 9 and (.perturbation.refused > 0))
+      and (.compared | length) == 8 and (.perturbation.refused > 0))
     and .transactions == [.steps[].chain.txid]
   ' "${CONFORMANCE_RECEIPTS}/receipt-$row.json" >/dev/null || {
     echo "FAIL: $row program evidence moved"
@@ -208,7 +208,7 @@ nix run --quiet nixpkgs#jq -- -e --arg state "$state_hash" '
   and ([.steps[].registry] | unique | length) == 1
   and ([.steps[].request.key] | unique | length) == 1
   and (.steps[0] | .model.outcome == "accepted" and .chain.outcome == "accepted"
-    and .comparison == "agrees" and (.compared | length) == 9 and .perturbation.refused > 0)
+    and .comparison == "agrees" and (.compared | length) == 8 and .perturbation.refused > 0)
   and .steps[1].model == {"outcome": "refused", "reason": "key-exists"}
   and .steps[2].model == {"outcome": "refused", "reason": "edge-inadmissible"}
   and all(.steps[1:3][]; .chain.outcome == "refused"
@@ -268,7 +268,7 @@ e="${CONFORMANCE_RECEIPTS}/receipt-register-active-key.json"
 # shellcheck disable=SC2016
 nix run --quiet nixpkgs#jq -- -e --arg state "$state_hash" '
   def txid: type == "string" and test("^[0-9a-f]{64}$");
-  def complete: (.compared | length) == 9 and (.unobserved | type) == "array"
+  def complete: (.compared | length) == 8 and (.unobserved | type) == "array"
     and (.perturbation.refused > 0);
   ([.steps[] | select(.tamper == "other-address") | .request | del(.submittedAt)][0]) as $tampered |
   .row == "register-active-key" and .outcome == "accepted"
@@ -393,7 +393,7 @@ nix run --quiet nixpkgs#jq -- -e --arg state "$state_hash" '
     and .comparison == "agrees")
   and (.steps[1] | .edge == "insertActive" and .tamper == null
     and .model.outcome == "accepted" and .chain.outcome == "accepted"
-    and .comparison == "agrees" and (.compared | length) == 9)
+    and .comparison == "agrees" and (.compared | length) == 8)
   and ([.steps[].registry] | unique | length) == 1
   and .transactions == [.steps[1].chain.txid]
 ' "${CONFORMANCE_RECEIPTS}"/receipt-empty-fold.json >/dev/null || {

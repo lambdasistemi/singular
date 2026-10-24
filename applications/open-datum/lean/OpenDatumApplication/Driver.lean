@@ -251,7 +251,7 @@ def app0 : App := { registry := { policy := 50, assetName := 51 }, policy := 7 }
 
 def cfg0 : Config :=
   { root := rootOf [], minimumTip := 0, processTime := 0, retractTime := 0
-  , applicationPolicy := 7, activePolicy := 8, absentPolicy := 9, terminalPolicy := 10 }
+  , applicationPolicy := 7, activePolicy := 8 }
 
 def controller : Nat := 42
 def stranger : Nat := 43

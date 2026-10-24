@@ -17,14 +17,6 @@ use types.{
   AbsentCustody, CageDatum, Request, RequestDatum, State, StateDatum, TokenId,
 }
 
-/// The retired two-field constructor, retained only as a negative wire
-/// control. Its two leading arms keep absent custody at constructor index 2.
-type LegacyCageDatum {
-  LegacyRequest(Data)
-  LegacyState(Data)
-  LegacyAbsentCustody(ByteArray, ByteArray)
-}
-
 // ----------------------------------------------------------------------------
 // Registry configuration
 // ----------------------------------------------------------------------------
@@ -45,12 +37,6 @@ pub const appPolicy: ByteArray =
 
 pub const activePolicy: ByteArray =
   #"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-
-pub const absentPolicy: ByteArray =
-  #"b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0"
-
-pub const terminalPolicy: ByteArray =
-  #"c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0"
 
 pub const foreignPolicy: ByteArray =
   #"f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0"
@@ -320,8 +306,6 @@ pub fn stateOf(root: ByteArray) -> State {
     retract_time: retractTime,
     application_policy: appPolicy,
     active_policy: activePolicy,
-    absent_policy: absentPolicy,
-    terminal_policy: terminalPolicy,
   }
 }
 
@@ -459,7 +443,7 @@ pub fn deliveryOutputN(
   }
 }
 
-/// The cage's own custody of a minted absent token.
+/// The cage's own custody of an absent token, under a policy no registry pins.
 pub fn custodyDatum(_key: ByteArray, refund: ByteArray) -> CageDatum {
   AbsentCustody { refund }
 }
@@ -467,24 +451,8 @@ pub fn custodyDatum(_key: ByteArray, refund: ByteArray) -> CageDatum {
 pub fn custodyOutput(key: ByteArray, refund: ByteArray, lovelace: Int) -> Output {
   Output {
     address: cageAddress(),
-    value: merge(from_lovelace(lovelace), from_asset(absentPolicy, key, 1)),
+    value: merge(from_lovelace(lovelace), from_asset(foreignPolicy, key, 1)),
     datum: InlineDatum(custodyDatum(key, refund)),
-    reference_script: None,
-  }
-}
-
-/// The old two-field wire at constructor index 2. It is deliberately built as
-/// raw data so this refusal control survives the production type correction.
-pub fn legacyCustodyOutput(
-  key: ByteArray,
-  refund: ByteArray,
-  lovelace: Int,
-) -> Output {
-  let legacy: Data = LegacyAbsentCustody(key, refund)
-  Output {
-    address: cageAddress(),
-    value: merge(from_lovelace(lovelace), from_asset(absentPolicy, key, 1)),
-    datum: InlineDatum(legacy),
     reference_script: None,
   }
 }
@@ -503,26 +471,6 @@ pub fn custodyInput(
   Input {
     output_reference: custodyRef(index),
     output: custodyOutput(key, refund, lovelace),
-  }
-}
-
-/// A custody input whose complete value is supplied by the row. The datum is
-/// produced through the same helper as ordinary custody; only the asset extent
-/// is varied.
-pub fn custodyInputWithValue(
-  index: Int,
-  key: ByteArray,
-  refund: ByteArray,
-  value: Value,
-) -> Input {
-  Input {
-    output_reference: custodyRef(index),
-    output: Output {
-      address: cageAddress(),
-      value,
-      datum: InlineDatum(custodyDatum(key, refund)),
-      reference_script: None,
-    },
   }
 }
 
@@ -610,35 +558,6 @@ pub fn foldTxWith(
     inputs: list.concat([stateInput(root)], list.concat(requests, extraInputs)),
     outputs: list.concat([continuation], outputs),
     mint,
-  }
-}
-
-/// A custody UTxO carrying another non-ADA asset: the shape absent-token-registry-custody refuses.
-pub fn custodyOutputWithExtra(
-  tokenKey: ByteArray,
-  refund: ByteArray,
-  lovelace: Int,
-  extra: Value,
-) -> Output {
-  Output {
-    address: cageAddress(),
-    value: merge(
-      merge(from_lovelace(lovelace), from_asset(absentPolicy, tokenKey, 1)),
-      extra,
-    ),
-    datum: InlineDatum(custodyDatum(tokenKey, refund)),
-    reference_script: None,
-  }
-}
-
-/// A custody token sitting in a wallet output instead of the cage's own
-/// custody.
-pub fn strayCustodyOutput(key: ByteArray, lovelace: Int) -> Output {
-  Output {
-    address: addressOf(inserterAddress),
-    value: merge(from_lovelace(lovelace), from_asset(absentPolicy, key, 1)),
-    datum: NoDatum,
-    reference_script: None,
   }
 }
 

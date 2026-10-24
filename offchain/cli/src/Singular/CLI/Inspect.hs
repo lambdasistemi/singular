@@ -412,12 +412,11 @@ inspectSaved app env savedPath mJournal key settings release a = do
                 context <- requireTrieSelection saved live
                 leaf <- trieLeaf context key root
                 -- The key's output is found by its witness token: the provider is
-                -- asked who holds the active witness and the terminal one, and the
-                -- leaf above is still proved against the root by replay.
+                -- asked who holds the active witness, and the leaf above is still
+                -- proved against the root by replay.
                 let readingWitness kind =
                         liveWitness v saved kind key `catch` unreachable settings
                 active <- readingWitness ActiveWitness
-                terminal <- readingWitness TerminalWitness
                 outs <- case appHolding app of
                     -- a rule that counts an output a holding only when it holds
                     -- the key's active witness is judged over the holders of that
@@ -466,9 +465,7 @@ inspectSaved app env savedPath mJournal key settings release a = do
                                 [
                                     ( "witness"
                                     , object
-                                        [ "active" .= witnessJson active
-                                        , "terminal" .= witnessJson terminal
-                                        ]
+                                        ["active" .= witnessJson active]
                                     )
                                 ]
                         _ -> []

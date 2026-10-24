@@ -645,19 +645,17 @@ sequenceDiagram
     History-->>Inspect: active, terminal or unknown
     Inspect->>Provider: who holds the active witness of KEY?
     Provider-->>Inspect: the outputs that hold it
-    Inspect->>Provider: who holds the terminal witness of KEY?
-    Provider-->>Inspect: the outputs that hold it
     Inspect-->>Bob: the receipt: the leaf, the witnesses, the output
 ```
 
-The diagram shows the proof first and the two questions to the provider after it, so a registry whose history does not chain to its root is refused before the provider is asked who holds a token. A key that is active has a witness token: an asset of the registry's active witness policy whose name is the key's bytes. A registration mints it and a termination burns it. The registry has a second policy, for terminal witnesses, and the same name under it is the terminal witness of the key. Both policies belong to this registry. The command works out the two assets to ask for from the registry the address names and from the key, and asks for them by asset, so it does not list every output at the application's address to find the key's output. One function in the library makes that asset from the registry and the key, and it is the only place that does so for this read.
+The diagram shows the proof first and the question to the provider after it, so a registry whose history does not chain to its root is refused before the provider is asked who holds a token. A key that is active has a witness token: an asset of the registry's active witness policy whose name is the key's bytes. A registration mints it and a termination burns it. The policy belongs to this registry. The command works out the asset to ask for from the registry the address names and from the key, and asks for it by asset, so it does not list every output at the application's address to find the key's output. One function in the library makes that asset from the registry and the key, and it is the only place that does so for this read.
 
-For a key the registry has recorded, active or terminal, the receipt of `inspect` carries a field `witness` with two entries, `active` and `terminal`. Each has `policy`, the policy as hex; `assetName`, the key's bytes as hex; and `holders`, the references of the outputs that hold the asset.
+For a key the registry has recorded, active or terminal, the receipt of `inspect` carries a field `witness` with one entry, `active`. It has `policy`, the policy as hex; `assetName`, the key's bytes as hex; and `holders`, the references of the outputs that hold the asset.
 
-| The key is | `witness.active.holders` | `witness.terminal.holders` |
-| --- | --- | --- |
-| active | the one output that holds the key, the output `applicationOutput` names | empty |
-| terminal | empty, because the termination burned the active token | empty, because the contracts of this release mint no terminal token |
+| The key is | `witness.active.holders` |
+| --- | --- |
+| active | the one output that holds the key, the output `applicationOutput` names |
+| terminal | empty, because the termination burned the active token |
 
 For a key the registry never recorded the receipt has no `witness` field and is what it always was.
 
@@ -720,7 +718,7 @@ and the closed one, and learns which kind of registry it has only from the
 comparison: the registry's application policy must be one of the two, and a
 registry whose application policy is neither is refused naming `application`,
 before the command says anything about the registry, even that it is closed. A
-create reads back the state datum its boot made and compares its four pins with
+create reads back the state datum its boot made and compares its two pins with
 the ones it built, and reports a partial outcome naming the field when they
 differ.
 

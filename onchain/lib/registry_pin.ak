@@ -31,4 +31,4 @@
 /// so a stale pin is a red identity check on every commit rather than
 /// a red devnet row on whichever ticket next moves a token.
 pub const registryStateHash: ByteArray =
-  #"68df9c42ebd4468be130e9cd5538a7af39cc31c146cda45f274cccc5"
+  #"9a84eabb747716a3092996049b5003a97954fa272902f0bf8f744a98"

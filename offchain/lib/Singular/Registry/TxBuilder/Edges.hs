@@ -9,7 +9,7 @@ License     : Apache-2.0
 M1 admits insertActive and updateTerminal (#157 seven-admitted-edges), and every
 processed edge rides on an approval the naming application's
 mint arm certified (#157 tree-edge-admission-by-approval, approval-asset-binding). A caller that wants a fold to
-land therefore needs three things this module supplies: the four policy
+land therefore needs three things this module supplies: the two policy
 pins derived from the naming partition's own compiled code, a booking
 transaction that carries each edge's certification — which edges get
 an approval, what it is, and nothing at all for a read — and the duties
@@ -205,9 +205,9 @@ witnessScriptOf cfg codes kind =
             (applyDataParam (PLC.I kind) (ncWitness codes))
         )
 
-{- | The four pins a registry identity carries (#157 genesis-policy-pins), derived
+{- | The two pins a registry identity carries (#157 genesis-policy-pins), derived
 from the naming partition's own compiled code: the application validator
-for the approval, and @witness(kind, registry)@ at kinds 0, 1 and 2.
+for the approval, and @witness(1, registry)@ for the active token.
 
 The registry id the witness policies are parameterized by depends on the
 state script hash and the boot seed, so this takes them directly rather
@@ -217,17 +217,11 @@ namingPins
     :: NamingCodes
     -> ByteString
     -- ^ The registry id: state script hash then boot token name
-    -> ( SBS.ShortByteString
-       , SBS.ShortByteString
-       , SBS.ShortByteString
-       , SBS.ShortByteString
-       )
-    -- ^ Application, absent, active, terminal
+    -> (SBS.ShortByteString, SBS.ShortByteString)
+    -- ^ Application, active
 namingPins codes registryId =
     ( pinOf (ncApplication codes)
-    , witnessPin 0
     , witnessPin 1
-    , witnessPin 2
     )
   where
     pinOf = SBS.toShort . scriptHashBytes . computeScriptHash
@@ -529,7 +523,7 @@ stateRefIn cfg utxos =
         [] -> Nothing
 
 {- | Publish this cage's scripts as reference outputs: the cage, the
-request validator and the three token policies.
+request validator and the active token policy.
 -}
 publishCageRefs
     :: CageConfig
@@ -545,7 +539,7 @@ publishCageRefs cfg codes prov submit payerAddr tokenId =
         ( [ mkCageScript cfg
           , mkRequestScript cfg tokenId
           ]
-            <> map (witnessScriptOf cfg codes) [0, 1, 2]
+            <> [witnessScriptOf cfg codes 1]
         )
 
 {- | The record datum a booking's destination carries. The cage checks only
@@ -1043,7 +1037,7 @@ requireCarriesMinimums pp tx = do
             <> [r | SJust r <- [body ^. collateralReturnTxBodyL]]
     carries o = o ^. coinTxOutL >= getMinCoinTxOut pp o
 
-{- | What a fold of tree edges needs in hand: the three token policies
+{- | What a fold of tree edges needs in hand: the active token policy
 this registry pins, the cage script custody spends run, the cage's own
 UTxOs, the one destination datum a booking binds, and the reference
 outputs the fold's scripts resolve through.
@@ -1059,7 +1053,7 @@ registryContextFor cfg codes v refs = do
     pure
         emptyRegistryContext
             { rcWitnessScripts =
-                Map.fromList [(k, witnessScriptOf cfg codes k) | k <- [0, 1, 2]]
+                Map.fromList [(k, witnessScriptOf cfg codes k) | k <- [1]]
             , rcCageScript = Just (mkCageScript cfg)
             , rcCageUtxos = utxos
             , rcRefUtxos = refs

@@ -1,0 +1,908 @@
+{
+  "status": "CANDIDATE-STATEMENTS-ONLY",
+  "acceptedLaw": false,
+  "base": "99682696057a4ab4829067c57623276fa5faf1fd",
+  "acceptedEconomicRevision": "00771d77af996605845cf062285263909a049cf8",
+  "definitions": {
+    "lean/NoPin/ApplicationRequests/Money.lean": "fb6cfbcc063fbe5d6f99667624008e4db630740fbf19e9c3ab47807413d77c54",
+    "lean/NoPin/ApplicationRequests/MoneyClaims.lean": "b62c51640ba3596d44f844fde1f614b6661bf41ada14a94f2e14a8924c98cf96",
+    "lean/NoPin/ApplicationRequests/MoneyEvidence.lean": "fcc7186cd695d24e95be3912746a02d1d5aabaaf976c640dac141e0937edafa2",
+    "lean/NoPin/ApplicationRequests/MoneyFixtures.lean": "02af7e0acfb10d6c19c910e707f4a506ffdb9dd43b2f29ebbc99b0f96e954f98",
+    "lean/NoPin/ApplicationRequests/MoneyReport.lean": "327c0e707bf78bbd746a2c7ff0336530629fe5d710f51842fdee489ca6f38d93",
+    "lean/NoPin/ApplicationRequests/MoneyStatements.lean": "0365c1c3f80bed53829a036acf1e0398bd6b624531e3ff8e27e5901274ce8d53",
+    "lean/NoPin/ApplicationRequests/MoneyUpdate.lean": "b2a1c84b543a84c5e7886cd8e51457281c55866e976971373e927161c18f9c75",
+    "money_check.py": "f5b4261b4c5286d8f0318f2f838061027d7a4a07fff0544c7e9057eb525ed795",
+    "money_controls.py": "216318fd9a4d70e39c878ae96567d0e7be505ed7eea5cde8ac562fad50da4a04",
+    "lean/NoPin/ApplicationRequests/MoneyProofs.lean": "8a13b8c8f6c39e176b87a12cc857407488cbd9b883bf7098929fefbc107b9a25",
+    "lean/NoPin/ApplicationRequests/MoneyJourneyProofs.lean": "65401c306a72fdf2e8eff190aae6050b1762d9a59b3110ceb5d9dbc1ee2efa72",
+    "lean/NoPin/ApplicationRequests/MoneyFoldProofs.lean": "ee3698e433b044b96ed6da8424720467813f78dd40fa0943134a387b0a8df817",
+    "lean/NoPin/ApplicationRequests/MoneyRefutation.lean": "d48665e3f2d22a1865f01e86b5316b74be41cb192d7c032090e560b39795105e",
+    "lean/NoPin/ApplicationRequests/MoneyProofAudit.lean": "3fed4dab7a6b42171436780b10ad46f713d3a9f34041e7cc6652431a4e4fd2dd",
+    "money-proof-definition-baseline.json": "456337aab14774569d1af8ca8812e2ee09e434b44ba4b97fbf90bf97b56588fc",
+    "money_proof_check.py": "3657d8196aae8e88f72870cfa3638945addcef4568a02e0ec786cfada08b80d0",
+    "money_proof_controls.py": "aba95c1c18fe6b9eba79451a2f64054e0f7639133ea0b6f85266fe73626c6a79",
+    "lean/NoPin/ApplicationRequests/MoneyHoldingClaims.lean": "bdbcb8df8bf170bc7c009a54a00c0add1a0ddc1310e9f2d752ec9fbc8a69fba5",
+    "lean/NoPin/ApplicationRequests/MoneyHoldingSeparated.lean": "73c4d81d3c95698b61ead30aba23deb9755657b76efc3e79cd55dfb01df5ac96",
+    "money_holding_controls.py": "b6caa2765f40af99b0f5819a1973c703ab9ad02fd017b52061527d824e7c6919",
+    "money-holding-definition-baseline.json": "cbabc37d7b69ae20d76179a10e386427b8980393ad19e12bca718130dd9c31b9",
+    "lean/NoPin/ApplicationRequests/MoneyHoldingProofs.lean": "7a03b96652e04aaa9eb0e1647c16d7d67d2597b9b1fc1689cf37d1becb9db183"
+  },
+  "statements": [
+    {
+      "theorem": "NoPin.ApplicationRequests.Money.Statements.create_journey",
+      "status": "PROVED",
+      "statementSha256": "423cf84680edd244d611c4980d97a15203e0e068d4d141a4c33c6c1d8dc65260",
+      "witness": "NoPin.ApplicationRequests.Money.Evidence.create_journey_antecedent",
+      "positive": "NoPin.ApplicationRequests.Money.Evidence.create_journey_positive",
+      "mutant": "NoPin.ApplicationRequests.Money.Evidence.create_journey_mutant",
+      "selector": {
+        "application": "configurationShape"
+      },
+      "journey": "create",
+      "description": "create journey",
+      "proofStatus": "PROVED"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Money.Statements.registration_booking_journey",
+      "status": "PROVED",
+      "statementSha256": "5052392c4804a8bc0da2e8f21c4e84bde776842083a17d3a6350cbee96bd5f5c",
+      "witness": "NoPin.ApplicationRequests.Money.Evidence.registration_booking_journey_antecedent",
+      "positive": "NoPin.ApplicationRequests.Money.Evidence.registration_booking_journey_positive",
+      "mutant": "NoPin.ApplicationRequests.Money.Evidence.registration_booking_journey_mutant",
+      "selector": {
+        "application": "bookingSignature"
+      },
+      "journey": "registrationBooking",
+      "description": "registration booking journey",
+      "proofStatus": "PROVED"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Money.Statements.registration_fold_journey",
+      "status": "REFUTED",
+      "statementSha256": "c7707f3a5ecef17c7b5a6490d26b6a961531333b3f85361a23447b77b1a670ab",
+      "witness": "NoPin.ApplicationRequests.Money.Evidence.registration_fold_journey_antecedent",
+      "positive": "NoPin.ApplicationRequests.Money.Evidence.registration_fold_journey_positive",
+      "mutant": "NoPin.ApplicationRequests.Money.Evidence.registration_fold_journey_mutant",
+      "selector": {
+        "application": "registrationDelivery"
+      },
+      "journey": "registrationFold",
+      "description": "registration fold journey",
+      "proofStatus": "STATED",
+      "refutation": "NoPin.ApplicationRequests.Money.Refutation.registration_fold_journey_refutation",
+      "supersededBy": "NoPin.ApplicationRequests.Money.Statements.registration_fold_journey_holding_separated"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Money.Statements.update_journey",
+      "status": "PROVED",
+      "statementSha256": "5c7abeb042590e1f9fa57860f495384d127c05814e50b4d8f53a665ade9e4cde",
+      "witness": "NoPin.ApplicationRequests.Money.Evidence.update_journey_antecedent",
+      "positive": "NoPin.ApplicationRequests.Money.Evidence.update_journey_positive",
+      "mutant": "NoPin.ApplicationRequests.Money.Evidence.update_journey_mutant",
+      "selector": {
+        "application": "updateControl"
+      },
+      "journey": "update",
+      "description": "update journey",
+      "proofStatus": "PROVED"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Money.Statements.termination_booking_journey",
+      "status": "PROVED",
+      "statementSha256": "3332a40db00cd09c6cc668c824ccd3dcb421f89cdb062fc9cc8038bef1bbce1c",
+      "witness": "NoPin.ApplicationRequests.Money.Evidence.termination_booking_journey_antecedent",
+      "positive": "NoPin.ApplicationRequests.Money.Evidence.termination_booking_journey_positive",
+      "mutant": "NoPin.ApplicationRequests.Money.Evidence.termination_booking_journey_mutant",
+      "selector": {
+        "application": "moneyTreasury"
+      },
+      "journey": "terminationBooking",
+      "description": "termination booking journey",
+      "proofStatus": "PROVED"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Money.Statements.termination_fold_journey",
+      "status": "PROVED",
+      "statementSha256": "0a4c2b2e66c1bcdfb5cea8d31bb3dd094b9d577c5ebb90b6a54500a301c7d0ae",
+      "witness": "NoPin.ApplicationRequests.Money.Evidence.termination_fold_journey_antecedent",
+      "positive": "NoPin.ApplicationRequests.Money.Evidence.termination_fold_journey_positive",
+      "mutant": "NoPin.ApplicationRequests.Money.Evidence.termination_fold_journey_mutant",
+      "selector": {
+        "application": "terminationActiveBurn"
+      },
+      "journey": "terminationFold",
+      "description": "termination fold journey",
+      "proofStatus": "PROVED"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Money.Statements.reclaim_journey",
+      "status": "PROVED",
+      "statementSha256": "1f7dc6524dde63093deb918a688518d23f8aa720a489e9a416b15726f82c7c71",
+      "witness": "NoPin.ApplicationRequests.Money.Evidence.reclaim_journey_antecedent",
+      "positive": "NoPin.ApplicationRequests.Money.Evidence.reclaim_journey_positive",
+      "mutant": "NoPin.ApplicationRequests.Money.Evidence.reclaim_journey_mutant",
+      "selector": {
+        "application": "moneyOutputs"
+      },
+      "journey": "reclaim",
+      "description": "reclaim journey",
+      "proofStatus": "PROVED"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Money.Statements.cleanup_journey",
+      "status": "PROVED",
+      "statementSha256": "06c5e233a9f2c2a98e5ffd0d57a5920b43cb4176ecd7009f6944c15b5a1e893b",
+      "witness": "NoPin.ApplicationRequests.Money.Evidence.cleanup_journey_antecedent",
+      "positive": "NoPin.ApplicationRequests.Money.Evidence.cleanup_journey_positive",
+      "mutant": "NoPin.ApplicationRequests.Money.Evidence.cleanup_journey_mutant",
+      "selector": {
+        "application": "moneyOutputs"
+      },
+      "journey": "cleanup",
+      "description": "cleanup journey",
+      "proofStatus": "PROVED"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Money.Statements.accepted_economic_allocations",
+      "status": "PROVED",
+      "statementSha256": "ff583024d13a04d0c4bf41d63f49c0401787e370a9db566215216fe3261b7151",
+      "witness": "NoPin.ApplicationRequests.Money.Evidence.accepted_economic_allocations_antecedent",
+      "positive": "NoPin.ApplicationRequests.Money.Evidence.accepted_economic_allocations_positive",
+      "mutant": "NoPin.ApplicationRequests.Money.Evidence.accepted_economic_allocations_mutant",
+      "selector": {
+        "allocation": "oldRegistrationTip"
+      },
+      "journey": "registrationFold",
+      "description": "accepted economic allocations",
+      "proofStatus": "PROVED"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Money.Statements.journey_allocations",
+      "status": "PROVED",
+      "statementSha256": "7dbda5454df0c673351a1adbc0e16571fb8eb2d2a5dfe1ddab66077ac5a5a215",
+      "witness": "NoPin.ApplicationRequests.Money.Evidence.journey_allocations_antecedent",
+      "positive": "NoPin.ApplicationRequests.Money.Evidence.journey_allocations_positive",
+      "mutant": "NoPin.ApplicationRequests.Money.Evidence.journey_allocations_mutant",
+      "selector": {
+        "allocation": "registrationResidual"
+      },
+      "journey": "registrationFold",
+      "description": "journey allocations",
+      "proofStatus": "PROVED"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Money.Statements.accepted_update_authority",
+      "status": "PROVED",
+      "statementSha256": "fb721ba281d4d8f1c095e75d27f37ed4d82a5eec93fa8ea664ec3ca6a4e45e95",
+      "witness": "NoPin.ApplicationRequests.Money.Evidence.accepted_update_authority_antecedent",
+      "positive": "NoPin.ApplicationRequests.Money.Evidence.accepted_update_authority_positive",
+      "mutant": "NoPin.ApplicationRequests.Money.Evidence.accepted_update_authority_mutant",
+      "selector": {
+        "allocation": "oldUpdateSigner"
+      },
+      "journey": "update",
+      "description": "accepted update authority",
+      "proofStatus": "PROVED"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Money.Statements.update_both_models",
+      "status": "PROVED",
+      "statementSha256": "9c1b51171e1b44c03aa29567c2dc8c41853a8c34a46b5ce25fe42dc16fc0f855",
+      "witness": "NoPin.ApplicationRequests.Money.Evidence.update_both_models_antecedent",
+      "positive": "NoPin.ApplicationRequests.Money.Evidence.update_both_models_positive",
+      "mutant": "NoPin.ApplicationRequests.Money.Evidence.update_both_models_mutant",
+      "selector": {
+        "application": "updateControl"
+      },
+      "journey": "update",
+      "description": "update both models",
+      "proofStatus": "PROVED"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Money.Statements.registration_fold_journey_holding_separated",
+      "status": "PROVED",
+      "proofStatus": "PROVED",
+      "statementSha256": "ecb9cae142e5264b3b050b006ce8d67bf0be8538c59ca98b840d8709aaa33cb8",
+      "witness": "NoPin.ApplicationRequests.Money.Evidence.registration_fold_journey_holding_separated_antecedent",
+      "positive": "NoPin.ApplicationRequests.Money.Evidence.registration_fold_journey_holding_separated_positive",
+      "mutant": "NoPin.ApplicationRequests.Money.Evidence.registration_fold_journey_holding_separated_mutant",
+      "selector": {
+        "holdingPayment": "includeHolding"
+      },
+      "journey": "registrationFold",
+      "description": "Registration fold separates the protected holding from the folder payment",
+      "supersedes": "registration_fold_journey"
+    }
+  ],
+  "applicationGuards": [
+    "configurationShape",
+    "configurationGenesis",
+    "configurationReference",
+    "registrationShape",
+    "registrationControl",
+    "registrationClock",
+    "registrationFunding",
+    "bookingSignature",
+    "terminationShape",
+    "liveShape",
+    "liveControl",
+    "liveDeposit",
+    "requestInput",
+    "approvalBurn",
+    "freshApproval",
+    "processingPhase",
+    "reclaimPhase",
+    "cleanupPhase",
+    "registrationDelivery",
+    "terminationActiveBurn",
+    "terminationInvocation",
+    "updateControl",
+    "updateAssets",
+    "updateDeposit",
+    "inputCoverage",
+    "birthCoverage",
+    "moneyOutputs",
+    "moneyTreasury"
+  ],
+  "allocationSites": [
+    {
+      "site": "oldRegistrationTip",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.Money.Evidence.site_oldRegistrationTip_positive",
+      "mutant": "NoPin.ApplicationRequests.Money.Evidence.site_oldRegistrationTip_mutant"
+    },
+    {
+      "site": "oldRegistrationCarrier",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.Money.Evidence.site_oldRegistrationCarrier_positive",
+      "mutant": "NoPin.ApplicationRequests.Money.Evidence.site_oldRegistrationCarrier_mutant"
+    },
+    {
+      "site": "registrationResidual",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.Money.Evidence.site_registrationResidual_positive",
+      "mutant": "NoPin.ApplicationRequests.Money.Evidence.site_registrationResidual_mutant"
+    },
+    {
+      "site": "terminationResidual",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.Money.Evidence.site_terminationResidual_positive",
+      "mutant": "NoPin.ApplicationRequests.Money.Evidence.site_terminationResidual_mutant"
+    },
+    {
+      "site": "bookingTreasury",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.Money.Evidence.site_bookingTreasury_positive",
+      "mutant": "NoPin.ApplicationRequests.Money.Evidence.site_bookingTreasury_mutant"
+    },
+    {
+      "site": "cleanupRefund",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.Money.Evidence.site_cleanupRefund_positive",
+      "mutant": "NoPin.ApplicationRequests.Money.Evidence.site_cleanupRefund_mutant"
+    },
+    {
+      "site": "oldRefund",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.Money.Evidence.site_oldRefund_positive",
+      "mutant": "NoPin.ApplicationRequests.Money.Evidence.site_oldRefund_mutant"
+    },
+    {
+      "site": "oldUpdateSigner",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.Money.Evidence.site_oldUpdateSigner_positive",
+      "mutant": "NoPin.ApplicationRequests.Money.Evidence.site_oldUpdateSigner_mutant"
+    }
+  ],
+  "acceptedJourneys": [
+    {
+      "acceptedConstructor": "bookInsert",
+      "family": "money",
+      "replacementJourneys": [
+        "registrationBooking",
+        "registrationFold",
+        "reclaim",
+        "cleanup"
+      ]
+    },
+    {
+      "acceptedConstructor": "bookTerminate",
+      "family": "money",
+      "replacementJourneys": [
+        "terminationBooking",
+        "terminationFold"
+      ]
+    },
+    {
+      "acceptedConstructor": "bookOther",
+      "family": "money",
+      "replacementJourneys": [
+        "unsupportedBooking"
+      ]
+    },
+    {
+      "acceptedConstructor": "update",
+      "family": "money",
+      "replacementJourneys": [
+        "update"
+      ]
+    },
+    {
+      "acceptedConstructor": "fold",
+      "family": "money",
+      "replacementJourneys": [
+        "registrationFold",
+        "terminationFold"
+      ]
+    },
+    {
+      "acceptedConstructor": "reject",
+      "family": "money",
+      "replacementJourneys": [
+        "earlyRejection",
+        "reclaim",
+        "cleanup"
+      ]
+    },
+    {
+      "acceptedConstructor": "withdraw",
+      "family": "money",
+      "replacementJourneys": [
+        "liveWithdrawal"
+      ]
+    }
+  ],
+  "differences": [
+    {
+      "family": "money",
+      "journey": "create",
+      "new": 0,
+      "old": 0,
+      "party": "pending",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "create",
+      "new": 0,
+      "old": 0,
+      "party": "holding",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "create",
+      "new": 0,
+      "old": 0,
+      "party": "refund",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "create",
+      "new": 0,
+      "old": 0,
+      "party": "controller",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "create",
+      "new": 0,
+      "old": 0,
+      "party": "folder",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "create",
+      "new": 0,
+      "old": 0,
+      "party": "treasury",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "registrationBooking",
+      "new": 23,
+      "old": 23,
+      "party": "pending",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "registrationBooking",
+      "new": 0,
+      "old": 0,
+      "party": "holding",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "registrationBooking",
+      "new": 0,
+      "old": 0,
+      "party": "refund",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "registrationBooking",
+      "new": 0,
+      "old": 0,
+      "party": "controller",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "registrationBooking",
+      "new": 0,
+      "old": 0,
+      "party": "folder",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "registrationBooking",
+      "new": 0,
+      "old": 0,
+      "party": "treasury",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "registrationFold",
+      "new": 0,
+      "old": 0,
+      "party": "pending",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "registrationFold",
+      "new": 7,
+      "old": 7,
+      "party": "holding",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "registrationFold",
+      "new": 0,
+      "old": 0,
+      "party": "refund",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "registrationFold",
+      "new": 0,
+      "old": 0,
+      "party": "controller",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "registrationFold",
+      "new": 16,
+      "old": 3,
+      "party": "folder",
+      "ruling": "valueIsBid"
+    },
+    {
+      "family": "money",
+      "journey": "registrationFold",
+      "new": 0,
+      "old": 13,
+      "party": "treasury",
+      "ruling": "noTreasuryAtFold"
+    },
+    {
+      "family": "money",
+      "journey": "update",
+      "new": 0,
+      "old": 0,
+      "party": "pending",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "update",
+      "new": 7,
+      "old": 7,
+      "party": "holding",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "update",
+      "new": 0,
+      "old": 0,
+      "party": "refund",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "update",
+      "new": 0,
+      "old": 0,
+      "party": "controller",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "update",
+      "new": 0,
+      "old": 0,
+      "party": "folder",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "update",
+      "new": 0,
+      "old": 0,
+      "party": "treasury",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "terminationBooking",
+      "new": 10,
+      "old": 10,
+      "party": "pending",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "terminationBooking",
+      "new": 0,
+      "old": 0,
+      "party": "holding",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "terminationBooking",
+      "new": 0,
+      "old": 0,
+      "party": "refund",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "terminationBooking",
+      "new": 0,
+      "old": 0,
+      "party": "controller",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "terminationBooking",
+      "new": 0,
+      "old": 0,
+      "party": "folder",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "terminationBooking",
+      "new": 7,
+      "old": 0,
+      "party": "treasury",
+      "ruling": "treasuryAtTerminationBooking"
+    },
+    {
+      "family": "money",
+      "journey": "terminationFold",
+      "new": 0,
+      "old": 0,
+      "party": "pending",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "terminationFold",
+      "new": 0,
+      "old": 0,
+      "party": "holding",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "terminationFold",
+      "new": 0,
+      "old": 0,
+      "party": "refund",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "terminationFold",
+      "new": 0,
+      "old": 0,
+      "party": "controller",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "terminationFold",
+      "new": 10,
+      "old": 2,
+      "party": "folder",
+      "ruling": "valueIsBid"
+    },
+    {
+      "family": "money",
+      "journey": "terminationFold",
+      "new": 0,
+      "old": 8,
+      "party": "treasury",
+      "ruling": "noTreasuryAtFold"
+    },
+    {
+      "family": "money",
+      "journey": "reclaim",
+      "new": 0,
+      "old": 0,
+      "party": "pending",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "reclaim",
+      "new": 0,
+      "old": 0,
+      "party": "holding",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "reclaim",
+      "new": 23,
+      "old": 23,
+      "party": "refund",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "reclaim",
+      "new": 0,
+      "old": 0,
+      "party": "controller",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "reclaim",
+      "new": 0,
+      "old": 0,
+      "party": "folder",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "reclaim",
+      "new": 0,
+      "old": 0,
+      "party": "treasury",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "cleanup",
+      "new": 0,
+      "old": 0,
+      "party": "pending",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "cleanup",
+      "new": 0,
+      "old": 0,
+      "party": "holding",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "cleanup",
+      "new": 7,
+      "old": 20,
+      "party": "refund",
+      "ruling": "threePhases"
+    },
+    {
+      "family": "money",
+      "journey": "cleanup",
+      "new": 0,
+      "old": 0,
+      "party": "controller",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "cleanup",
+      "new": 16,
+      "old": 3,
+      "party": "folder",
+      "ruling": "threePhases"
+    },
+    {
+      "family": "money",
+      "journey": "cleanup",
+      "new": 0,
+      "old": 0,
+      "party": "treasury",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "earlyRejection",
+      "new": 0,
+      "old": 0,
+      "party": "pending",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "earlyRejection",
+      "new": 0,
+      "old": 0,
+      "party": "holding",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "earlyRejection",
+      "new": 0,
+      "old": 20,
+      "party": "refund",
+      "ruling": "threePhases"
+    },
+    {
+      "family": "money",
+      "journey": "earlyRejection",
+      "new": 0,
+      "old": 0,
+      "party": "controller",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "earlyRejection",
+      "new": 0,
+      "old": 3,
+      "party": "folder",
+      "ruling": "threePhases"
+    },
+    {
+      "family": "money",
+      "journey": "earlyRejection",
+      "new": 0,
+      "old": 0,
+      "party": "treasury",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "unsupportedBooking",
+      "new": 0,
+      "old": 0,
+      "party": "pending",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "unsupportedBooking",
+      "new": 0,
+      "old": 0,
+      "party": "holding",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "unsupportedBooking",
+      "new": 0,
+      "old": 0,
+      "party": "refund",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "unsupportedBooking",
+      "new": 0,
+      "old": 0,
+      "party": "controller",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "unsupportedBooking",
+      "new": 0,
+      "old": 0,
+      "party": "folder",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "unsupportedBooking",
+      "new": 0,
+      "old": 0,
+      "party": "treasury",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "liveWithdrawal",
+      "new": 0,
+      "old": 0,
+      "party": "pending",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "liveWithdrawal",
+      "new": 0,
+      "old": 0,
+      "party": "holding",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "liveWithdrawal",
+      "new": 0,
+      "old": 0,
+      "party": "refund",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "liveWithdrawal",
+      "new": 0,
+      "old": 0,
+      "party": "controller",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "liveWithdrawal",
+      "new": 0,
+      "old": 0,
+      "party": "folder",
+      "ruling": null
+    },
+    {
+      "family": "money",
+      "journey": "liveWithdrawal",
+      "new": 0,
+      "old": 0,
+      "party": "treasury",
+      "ruling": null
+    }
+  ],
+  "rulings": {
+    "valueIsBid": "decisions.md#the-requests-value-is-the-bid-and-the-treasury-takes-the-deposit",
+    "treasuryAtTerminationBooking": "decisions.md#the-requests-value-is-the-bid-and-the-treasury-takes-the-deposit",
+    "noTreasuryAtFold": "decisions.md#the-requests-value-is-the-bid-and-the-treasury-takes-the-deposit",
+    "threePhases": "decisions.md#registrations-keep-three-timed-phases-and-no-rejection"
+  },
+  "rulingSourceSha256": "70fa0f1d73f68787800d49d360b8a18fde2aaf053923de59e442a7b503afbba1",
+  "limits": [
+    "Every general statement remains STATED with sorryAx.",
+    "These are model allocations and actual model observations, not ledger transactions or wallet wealth.",
+    "The public fold builder pays the whole residual; arbitrary accepted transactions constrain deposit/refund floors, not a named folder payment.",
+    "The old economic termination has no protected-control deposit field. Its zero controller obligation is not an equivalence to the separate legacy application release rule.",
+    "Create reserves caller-supplied ADA for the new configuration output; no fee or minimum-output equality is claimed.",
+    "The old consumer update fixture is a bounded live snapshot, not a proved economic/consumer composition.",
+    "No cryptographic bytes, provider completeness, script invocation, output minimum, fee estimation, funding availability, inclusion, production, hosted CI or acceptance claim."
+  ],
+  "preservedStatementRows": {
+    "application-requests-statements.json": "2ea59d83615f0297309e278823c3bc15d0f73b20559975afea56f6416176c3d6",
+    "held-statements.json": "db3dcfe74f1660404e797ca73138e2b94a83d7def1f2514919535ea38a8a286b",
+    "history-statements.json": "59793fd7385b0d5c6c89b2a7dd497d270f4bce2bcfa6ef0dd18f6f3277a20ea4",
+    "lifecycle-statements.json": "5c00284a1f20289163329b193faed77f9717941390cdd1235bd1434da63c2d72",
+    "statements.json": "abe7b068f2800f62dead9f5c7bffdc239a7f5083cf788aae1dcf8ef598b1d101"
+  }
+}

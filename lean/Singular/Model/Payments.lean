@@ -18,11 +18,11 @@ inductive Exit where
   deriving Repr, BEq, DecidableEq
 
 /-- Who a payment is owed to: the address a delivering fold names under the datum
-its request carries, the cage's custody, the request's owner, or the owner
+its request carries, the request's owner, or the owner
 through an output bound to the request it retracts, by that request's
 `reference`. -/
 inductive Recipient where
-  | destination (address : Nat) (datum : Option Nat) | custody | owner (key : Nat)
+  | destination (address : Nat) (datum : Option Nat) | owner (key : Nat)
   | bound (key reference : Nat)
   deriving Repr, DecidableEq
 
@@ -60,7 +60,6 @@ inline datum presents. An output pays at most one of the recipients one exit
 owes, and the state continuation pays none. -/
 def paysRecipient (recipient : Recipient) (output : TxOutput) : Bool :=
   match recipient with
-  | .custody => output.role == .cage && output.address == some cageAddress
   | .destination address datum =>
     output.role == .destination && output.address == some address && presentsDatum datum output
   | .owner key => output.role == .owner && output.address == some key
@@ -68,13 +67,12 @@ def paysRecipient (recipient : Recipient) (output : TxOutput) : Bool :=
     output.role == .owner && output.address == some key && output.datum == .inline
       && output.reference == some reference
 
-/-- The chain's reason for a recipient left unpaid: custody or a destination no
-output reaches is `absent-custody` or `destination` — an output at the named
-address carrying another datum does not reach it; custody or a destination
-reached short, or an owner short or unreached, is `deposit-returned`. -/
+/-- The chain's reason for a recipient left unpaid: a destination no output reaches
+is `destination` — an output at the named address carrying another datum does
+not reach it; a destination reached short, or an owner short or unreached, is
+`deposit-returned`. -/
 def unpaidReason (recipient : Recipient) (paying : List TxOutput) : String :=
   match recipient with
-  | .custody => if paying.isEmpty then "absent-custody" else "deposit-returned"
   | .destination _ _ => if paying.isEmpty then "destination" else "deposit-returned"
   | .owner _ | .bound _ _ => "deposit-returned"
 
@@ -113,11 +111,10 @@ def settle (payments : List Payment) (outputs : List TxOutput) : Option String :
     else some (unpaidReason recipient paying)
 
 /-- A payment as the (address, value) pair `Result.paid` carries, at the address
-`paysRecipient` reads for its recipient: the cage's for custody, the named address
-for a destination, and the owner's key for the owner. -/
+`paysRecipient` reads for its recipient: the named address for a destination,
+and the owner's key for the owner. -/
 def paymentPaid (payment : Payment) : Nat × Nat :=
   match payment.recipient with
-  | .custody => (cageAddress, payment.atLeast)
   | .destination address _ => (address, payment.atLeast)
   | .owner key | .bound key _ => (key, payment.atLeast)
 

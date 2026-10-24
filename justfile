@@ -69,6 +69,26 @@ no-pin-identity:
     python3 investigations/741-no-pin/check.py investigations/741-no-pin/.lake/report.jsonl
     python3 tools/check_presentation.py --front investigations/741-no-pin/README.md investigations/741-no-pin/README.md specs/741-no-pin-model
 
+# The application-held model is isolated from the current model's corpus extent.
+application-held-model:
+    lean --version | grep -q "version $(sed 's/.*:v//' lean-toolchain),"
+    python3 models/singular-application-held/check.py
+    lake -d models/singular-application-held --keep-toolchain build
+    lake -d models/singular-application-held --keep-toolchain env lean models/singular-application-held/lean/SingularApplicationHeld/Audit.lean > models/singular-application-held/.lake/audit-report.txt
+    python3 models/singular-application-held/check.py --report models/singular-application-held/.lake/audit-report.txt
+    python3 models/singular-application-held/check.py --controls
+
+# The application-held open-datum model beside the current application.
+open-datum-application-held-model:
+    lean --version | grep -q "version $(sed 's/.*:v//' lean-toolchain),"
+    python3 models/open-datum-application-held/check.py
+    lake -d models/open-datum-application-held --keep-toolchain build
+    lake -d models/open-datum-application-held --keep-toolchain env lean models/open-datum-application-held/lean/OpenDatumApplicationHeld/Audit.lean > models/open-datum-application-held/.lake/audit-report.txt
+    python3 models/open-datum-application-held/check.py --report models/open-datum-application-held/.lake/audit-report.txt
+    lake -d models/open-datum-application-held --keep-toolchain env lean models/open-datum-application-held/lean/MoneyEvidenceAudit.lean > models/open-datum-application-held/.lake/money-evidence-report.txt
+    python3 models/open-datum-application-held/check.py --evidence models/open-datum-application-held/.lake/money-evidence-report.txt
+    python3 models/open-datum-application-held/check.py --controls
+
 simulator:
     node simulator/mirror-check.mjs
     node simulator/build.mjs --check

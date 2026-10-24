@@ -21,7 +21,6 @@ theorem insert_active_inversion (s : RegistryState) (r : Request) (t : Result)
       ap.assetName = approvalAssetName ap.edge ap.key ap.owner ap.destination) ∧
     t.state.trie = trieSet s.trie r.key (.known .active) ∧
     t.state.config = { s.config with root := rootOf (trieSet s.trie r.key (.known .active)) } ∧
-    t.state.custody = s.custody ∧
     t.state.held = { key := r.key, kind := .active, output := r.output
                      , datum := r.datum } :: s.held ∧
     t.mint = [((.active, r.key), 1)] ∧ t.paid = [] := by
@@ -31,14 +30,14 @@ theorem insert_active_inversion (s : RegistryState) (r : Request) (t : Result)
     subst ht
     obtain ⟨ap, hap, hpol, hadm, hcase⟩ := (refusal_none_iff s r).mp href
     have hguard : trieGet s.trie r.key = .unknown := by simpa [he] using hcase
-    obtain ⟨htrie, hcfg, hcust, hheld, hmint, hpaid⟩ := applyEdge_insertActive s r he
+    obtain ⟨htrie, hcfg, hheld, hmint, hpaid⟩ := applyEdge_insertActive s r he
     unfold admitsFor at hadm
     rw [hap] at hadm
     simp only [Bool.and_eq_true, beq_iff_eq] at hadm
     obtain ⟨⟨⟨⟨⟨_, hedge'⟩, hkey'⟩, hown'⟩, hdst'⟩, hasset'⟩ := hadm
     refine ⟨hguard, ⟨ap, hap, hpol, by rw [hedge', he], hkey', hown', hdst', hasset'⟩,
-      htrie, hcfg, hcust, hheld, hmint, hpaid⟩
-  · rintro ⟨hb, ⟨ap, hap, hpol, hedge, hkey, hown, hdst, hasset⟩, htrie, hcfg, hcust, hheld,
+      htrie, hcfg, hheld, hmint, hpaid⟩
+  · rintro ⟨hb, ⟨ap, hap, hpol, hedge, hkey, hown, hdst, hasset⟩, htrie, hcfg, hheld,
       hmint, hpaid⟩
     have hadm : admitsFor s.config r r.approval = true := by
       unfold admitsFor
@@ -49,20 +48,19 @@ theorem insert_active_inversion (s : RegistryState) (r : Request) (t : Result)
     have href : refusal s r = none :=
       (refusal_none_iff s r).mpr ⟨ap, hap, hpol, hadm, Or.inl ⟨he, hb⟩⟩
     rw [ok_of_refusal s r href]
-    obtain ⟨htrie', hcfg', hcust', hheld', hmint', hpaid'⟩ := applyEdge_insertActive s r he
+    obtain ⟨htrie', hcfg', hheld', hmint', hpaid'⟩ := applyEdge_insertActive s r he
     have hSt : ∀ (x y : RegistryState), x.config = y.config → x.trie = y.trie →
-        x.custody = y.custody → x.held = y.held → x = y := by
-      intro ⟨c1, t1, cu1, hh1⟩ ⟨c2, t2, cu2, hh2⟩ e1 e2 e3 e4
-      simp only at e1 e2 e3 e4
-      subst e1; subst e2; subst e3; subst e4; rfl
+        x.held = y.held → x = y := by
+      intro ⟨c1, t1, hh1⟩ ⟨c2, t2, hh2⟩ e1 e2 e3
+      simp only at e1 e2 e3
+      subst e1; subst e2; subst e3; rfl
     have hRes : ∀ (x y : Result), x.state = y.state → x.mint = y.mint → x.paid = y.paid →
         x = y := by
       intro ⟨s1, m1, p1⟩ ⟨s2, m2, p2⟩ e1 e2 e3
       simp only at e1 e2 e3
       subst e1; subst e2; subst e3; rfl
     exact congrArg Except.ok (hRes _ _
-      (hSt _ _ (by rw [hcfg', hcfg]) (by rw [htrie', htrie])
-        (by rw [hcust', hcust]) (by rw [hheld', hheld]))
+      (hSt _ _ (by rw [hcfg', hcfg]) (by rw [htrie', htrie]) (by rw [hheld', hheld]))
       (by rw [hmint', hmint]) (by rw [hpaid', hpaid]))
 
 
@@ -78,7 +76,6 @@ theorem update_terminal_inversion (s : RegistryState) (r : Request) (t : Result)
       ap.assetName = approvalAssetName ap.edge ap.key ap.owner ap.destination) ∧
     t.state.trie = trieSet s.trie r.key (.known .terminal) ∧
     t.state.config = { s.config with root := rootOf (trieSet s.trie r.key (.known .terminal)) } ∧
-    t.state.custody = s.custody ∧
     t.state.held = (s.held.filter fun h => !(h.key == r.key && h.kind == .active)) ∧
     t.mint = [((.active, r.key), -1)] ∧ t.paid = [] := by
   constructor
@@ -87,14 +84,14 @@ theorem update_terminal_inversion (s : RegistryState) (r : Request) (t : Result)
     subst ht
     obtain ⟨ap, hap, hpol, hadm, hcase⟩ := (refusal_none_iff s r).mp href
     have hguard : trieGet s.trie r.key = .known .active ∧ s.held.any (fun x => x.key == r.key && x.kind == .active) = true := by simpa [he] using hcase
-    obtain ⟨htrie, hcfg, hcust, hheld, hmint, hpaid⟩ := applyEdge_updateTerminal s r he
+    obtain ⟨htrie, hcfg, hheld, hmint, hpaid⟩ := applyEdge_updateTerminal s r he
     unfold admitsFor at hadm
     rw [hap] at hadm
     simp only [Bool.and_eq_true, beq_iff_eq] at hadm
     obtain ⟨⟨⟨⟨⟨_, hedge'⟩, hkey'⟩, hown'⟩, hdst'⟩, hasset'⟩ := hadm
     refine ⟨hguard.1, hguard.2, ⟨ap, hap, hpol, by rw [hedge', he], hkey', hown', hdst', hasset'⟩,
-      htrie, hcfg, hcust, hheld, hmint, hpaid⟩
-  · rintro ⟨hb, hpres, ⟨ap, hap, hpol, hedge, hkey, hown, hdst, hasset⟩, htrie, hcfg, hcust, hheld,
+      htrie, hcfg, hheld, hmint, hpaid⟩
+  · rintro ⟨hb, hpres, ⟨ap, hap, hpol, hedge, hkey, hown, hdst, hasset⟩, htrie, hcfg, hheld,
       hmint, hpaid⟩
     have hadm : admitsFor s.config r r.approval = true := by
       unfold admitsFor
@@ -105,20 +102,19 @@ theorem update_terminal_inversion (s : RegistryState) (r : Request) (t : Result)
     have href : refusal s r = none :=
       (refusal_none_iff s r).mpr ⟨ap, hap, hpol, hadm, Or.inr ⟨he, hb, hpres⟩⟩
     rw [ok_of_refusal s r href]
-    obtain ⟨htrie', hcfg', hcust', hheld', hmint', hpaid'⟩ := applyEdge_updateTerminal s r he
+    obtain ⟨htrie', hcfg', hheld', hmint', hpaid'⟩ := applyEdge_updateTerminal s r he
     have hSt : ∀ (x y : RegistryState), x.config = y.config → x.trie = y.trie →
-        x.custody = y.custody → x.held = y.held → x = y := by
-      intro ⟨c1, t1, cu1, hh1⟩ ⟨c2, t2, cu2, hh2⟩ e1 e2 e3 e4
-      simp only at e1 e2 e3 e4
-      subst e1; subst e2; subst e3; subst e4; rfl
+        x.held = y.held → x = y := by
+      intro ⟨c1, t1, hh1⟩ ⟨c2, t2, hh2⟩ e1 e2 e3
+      simp only at e1 e2 e3
+      subst e1; subst e2; subst e3; rfl
     have hRes : ∀ (x y : Result), x.state = y.state → x.mint = y.mint → x.paid = y.paid →
         x = y := by
       intro ⟨s1, m1, p1⟩ ⟨s2, m2, p2⟩ e1 e2 e3
       simp only at e1 e2 e3
       subst e1; subst e2; subst e3; rfl
     exact congrArg Except.ok (hRes _ _
-      (hSt _ _ (by rw [hcfg', hcfg]) (by rw [htrie', htrie])
-        (by rw [hcust', hcust]) (by rw [hheld', hheld]))
+      (hSt _ _ (by rw [hcfg', hcfg]) (by rw [htrie', htrie]) (by rw [hheld', hheld]))
       (by rw [hmint', hmint]) (by rw [hpaid', hpaid]))
 
 

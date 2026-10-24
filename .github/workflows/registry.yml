@@ -38,7 +38,7 @@ on:
       - 'lean/**'
       - '.github/workflows/registry.yml'
   pull_request:
-    branches: [main]
+    branches: [main, 'epic/**']
 permissions:
   contents: read
 concurrency:

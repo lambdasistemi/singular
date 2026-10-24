@@ -218,7 +218,11 @@ def main():
                         f"{route.lower()}-{edge}",
                         edge,
                         payload,
-                        route != "JOINED" or edge in (1, 3),
+                        (
+                            edge in (1, 3, 5)
+                            if route == "MINT"
+                            else route != "JOINED" or edge in (1, 3)
+                        ),
                         route != "JOINED",
                     )
                     for edge, payload in sorted(routes[route].items())
@@ -306,7 +310,7 @@ def main():
         "limits": [
             "fixture roots are not connected ledger journeys",
             "absent states are unreachable from M1 genesis",
-            "request and witness components admit co-present folds; the state's decision enforces the boundary",
+            "the request component admits co-present folds and the witness component admits the active kind in one; the state's decision enforces the boundary",
             "route fixture witness policies are not applied ledger policy identities",
             "Aiken CEK evaluation does not establish ledger acceptance or execution budgets",
         ],

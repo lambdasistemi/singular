@@ -58,7 +58,7 @@ datum a delivered or spent witness carries, and how a batch of one folds — tha
 flowchart TD
     G["genesis"] -->|"accepted fold"| S["Reachable state"]
     S -->|"accepted fold"| S
-    S --> INV["Consistent:<br/>root commits the map ·<br/>supply laws ·<br/>custody soundness"]
+    S --> INV["Consistent:<br/>root commits the map ·<br/>active supply law"]
     INV --> A["what the promises are proved about"]
     ARB["an arbitrary RegistryState value"] -.->|"not reachable"| X["supply laws are simply false here"]
 ```
@@ -93,23 +93,16 @@ spends each request once, in order. The statement is about the *step function*,
 so a request cannot be applied twice within one batch, and a batch that fails
 anywhere produces no state at all rather than a partial one.
 
-**Soundness of attestation** (`terminal_attestation_sound`). In a reachable
-state, a terminal attestation exists for a key only if that key's leaf really is
-terminal. Its companion (`terminal_mint_only_by_read`) supplies the provenance
-half: the only edge that can bring a terminal token into existence is the read.
-Together they say the witness cannot be forged and cannot be minted by a state
-change.
-
-**Permanence** (`terminal_attestation_permanent`). What a terminal attestation
-says stays true through any later sequence of accepted folds. A terminal leaf
-has no outgoing edge, so nothing downstream can make an already-issued
-attestation false. This is the promise that lets a holder keep the witness
-rather than re-reading the chain.
+**Permanence** (`terminal_attestation_permanent`). A terminated key stays
+terminated through any later sequence of accepted folds. A terminal leaf has no
+outgoing edge, so nothing downstream can make the termination false. This is
+the promise that lets a reader keep the leaf it proved rather than re-reading
+the chain.
 
 **The supply law** (`biconditional_supply_sync`). For every key in a reachable
 state, the count of outstanding active tokens is one exactly when the leaf is
 active and zero otherwise — a biconditional, both directions, over all keys, not
-only the key in hand. The same shape holds for the absent witness. This is the
+only the key in hand. This is the
 statement that ties the token supply to the map and makes "the token is the
 name" more than a slogan.
 
@@ -123,14 +116,8 @@ half perfectly.
 refused. Not "should be", not "by convention" — the refusal is the complement of
 the edge table, so there is no unlisted case that quietly moves a retired name.
 
-**The four witness laws** (`active_witness_unique`, `absent_witness_unique`,
-`terminal_witness_plural`, `witness_kinds_exclude`). At most one active token
-per key, and exactly one when the leaf is active. The same for the absent
-witness. Terminal attestations, by contrast, are **plural**: any number may
-exist, each is true, and minting another changes nothing — which is the
-consequence of the attestation being a read. And the kinds exclude one another:
-a key cannot have an outstanding active token and an outstanding absent witness
-at the same time.
+**The witness law** (`active_witness_unique`). At most one active token
+per key, and exactly one when the leaf is active.
 
 **The seven inversions.** For each edge, a single statement saying what an
 accepted application of it did: the leaf before, the leaf after, the new root,

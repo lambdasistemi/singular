@@ -491,8 +491,6 @@ directories = describe "the actor's directory" $ do
     pinsOf c =
         [ cfgApplicationPolicy c
         , cfgActivePolicy c
-        , cfgAbsentPolicy c
-        , cfgTerminalPolicy c
         ]
     resolveIn dir = do
         logRef <- newIORef []

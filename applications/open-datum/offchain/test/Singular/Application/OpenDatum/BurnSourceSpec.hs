@@ -220,8 +220,6 @@ cfg =
         , defaultTip = Coin 1000000
         , cfgApplicationPolicy = pin 0xa1
         , cfgActivePolicy = witnessPin 1
-        , cfgAbsentPolicy = witnessPin 0
-        , cfgTerminalPolicy = witnessPin 2
         , cfgConsumerScript = SBS.empty
         , network = Testnet
         }
@@ -240,9 +238,6 @@ tokenState =
         , stateRetractTime = 30000
         , stateAppPolicy = toBuiltin (SBS.fromShort (cfgApplicationPolicy cfg))
         , stateActivePolicy = toBuiltin (SBS.fromShort (cfgActivePolicy cfg))
-        , stateAbsentPolicy = toBuiltin (SBS.fromShort (cfgAbsentPolicy cfg))
-        , stateTerminalPolicy =
-            toBuiltin (SBS.fromShort (cfgTerminalPolicy cfg))
         }
 
 requestIn :: TxIn
@@ -298,7 +293,7 @@ witnessScripts =
                         "t177 witness"
                         (applyDataParam (PLC.I (fromIntegral k)) (unitProgram 2))
                   )
-                | k <- [0, 1, 2]
+                | k <- [1]
                 ]
         }
 

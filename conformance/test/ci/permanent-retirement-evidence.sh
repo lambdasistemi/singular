@@ -8,7 +8,7 @@ nix run --quiet nixpkgs#jq -- -e --arg base "$base" --arg state "$state" '
   def txid: type == "string" and test("^[0-9a-f]{64}$");
   def text: type == "string" and length > 0;
   def complete: .comparison == "agrees" and .tamper == null
-    and (.compared | length) == 9 and .perturbation.refused > 0;
+    and (.compared | length) == 8 and .perturbation.refused > 0;
   .row == "permanent-retire-active-key"
   and .verdict == "agrees-with-model"
   and .base == $base and .dirty == false

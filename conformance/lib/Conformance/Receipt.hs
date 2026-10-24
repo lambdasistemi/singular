@@ -537,6 +537,15 @@ fifth of headroom.
 maxReceiptBytes :: Int
 maxReceiptBytes = 18432
 
+{- | How many observations an accepted agreement accounts for. The model now
+declares eight; the receipts retained on the evidence page were recorded
+under the earlier surface, which also declared the custody of an absent
+token, so those carry nine. A current run reports exactly what the model
+declares, and the hosted rows require eight of their own receipts.
+-}
+declaredObservationCounts :: [Int]
+declaredObservationCounts = [8, 9]
+
 -- | The tampers that alter the payment an exit owes, as a step record names them.
 paymentTampers :: [Text]
 paymentTampers =
@@ -876,12 +885,12 @@ stepsComplete path receipt steps
                 | comparison == Just (String "agrees")
                 , model == Just (String "accepted")
                 , chain == Just (String "accepted")
-                , Vector.length names == 9 ->
+                , Vector.length names `elem` declaredObservationCounts ->
                     Right ()
                 | Vector.null names -> Right ()
                 | otherwise ->
                     failure
-                        "accepted agreement does not account for all nine observations"
+                        "accepted agreement does not account for every declared observation"
             _ -> failure "missing compared or unobserved arrays"
         case (tamper, model, chain, comparison, at "perturbation" step) of
             ( Just Null

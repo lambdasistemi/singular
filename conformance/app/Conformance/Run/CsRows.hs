@@ -682,12 +682,12 @@ writeCSReceiptWith correspondence dir row outcome verdict txs refusal rejected m
             , receiptVenue = venue
             }
 
-{- | state-fields-chain-round-trip (#157 X1): the eight fields of `OnChainTokenState` survive a
+{- | state-fields-chain-round-trip (#157 X1): the six fields of `OnChainTokenState` survive a
 chain round trip, with the ACTIVE policy varied Base versus Alt
 (NOTE-046: no stake script exists to vary; #157 state-datum-fields renamed the field
-this row always varied). The four pinned policies are the ones genesis-policy-pins
+this row always varied). The two pinned policies are the ones genesis-policy-pins
 derives — the application policy from the naming application script and
-the three token policies from `witness(kind, registry)` applied — so
+the token policy from `witness(kind, registry)` applied — so
 this row is also what says the derivation reaches the chain intact.
 -}
 runStateFieldsChainRoundTrip
@@ -704,7 +704,7 @@ runStateFieldsChainRoundTrip
     -> String
     -> IO ()
 runStateFieldsChainRoundTrip prov submit stateBytes requestBytes namingCodes nodeVer base dirty receiptsDir control blueprintIdStr = do
-    -- Base cage: all four pins derived for its own registry identity.
+    -- Base cage: both pins derived for its own registry identity.
     (seedBase, _) <- largestWalletUtxo submit prov
     let cfgBase = cageCfg stateBytes requestBytes namingCodes (txInToRef seedBase)
     unsignedBootBase <-
@@ -736,17 +736,17 @@ runStateFieldsChainRoundTrip prov submit stateBytes requestBytes namingCodes nod
             require
                 "state-fields-chain-round-trip: Base and Alt states unexpectedly match (control)"
                 (observedBase == observedAlt)
-        LegacySixField -> do
+        LegacyEightField -> do
             emit
                 "control"
-                "state-fields-chain-round-trip ARMED (legacy-six-field): demanding the retired \
-                \six-field state encoding of the chain's own datum"
+                "state-fields-chain-round-trip ARMED (legacy-eight-field): demanding the retired \
+                \eight-field state encoding of the chain's own datum"
             require
                 ( "state-fields-chain-round-trip: the chain state encodes "
                     <> show (stateDatumArity observedBase)
-                    <> " fields, not the six the retired contract had"
+                    <> " fields, not the eight the retired contract had"
                 )
-                (stateDatumArity observedBase == 6)
+                (stateDatumArity observedBase == 8)
         _ -> do
             require
                 ( "state-fields-chain-round-trip: Base state fields differ: expected "
@@ -762,7 +762,7 @@ runStateFieldsChainRoundTrip prov submit stateBytes requestBytes namingCodes nod
                     <> show observedAlt
                 )
                 (expectedAlt == observedAlt)
-            -- The eight fields, each explicitly, against the boot tx.
+            -- The six fields, each explicitly, against the boot tx.
             require
                 "state-fields-chain-round-trip: Base root mismatch"
                 (stateRoot observedBase == stateRoot expectedBase)
@@ -799,18 +799,6 @@ runStateFieldsChainRoundTrip prov submit stateBytes requestBytes namingCodes nod
             require
                 "state-fields-chain-round-trip: Alt activePolicy mismatch"
                 (stateActivePolicy observedAlt == stateActivePolicy expectedAlt)
-            require
-                "state-fields-chain-round-trip: Base absentPolicy mismatch"
-                (stateAbsentPolicy observedBase == stateAbsentPolicy expectedBase)
-            require
-                "state-fields-chain-round-trip: Alt absentPolicy mismatch"
-                (stateAbsentPolicy observedAlt == stateAbsentPolicy expectedAlt)
-            require
-                "state-fields-chain-round-trip: Base terminalPolicy mismatch"
-                (stateTerminalPolicy observedBase == stateTerminalPolicy expectedBase)
-            require
-                "state-fields-chain-round-trip: Alt terminalPolicy mismatch"
-                (stateTerminalPolicy observedAlt == stateTerminalPolicy expectedAlt)
             -- The varied field discriminates; the held fields are stable.
             require
                 "state-fields-chain-round-trip: Base and Alt activePolicy unexpectedly match"
@@ -819,25 +807,22 @@ runStateFieldsChainRoundTrip prov submit stateBytes requestBytes namingCodes nod
                 "state-fields-chain-round-trip: applicationPolicy moved between cages"
                 (stateAppPolicy observedBase == stateAppPolicy observedAlt)
             -- genesis-policy-pins: the pins are DERIVED. A placeholder would be all
-            -- zeroes, and the three token policies are three distinct
-            -- applications of one script, so they cannot coincide.
+            -- zeroes, and the application policy and the active witness policy
+            -- are different scripts, so they cannot coincide.
             require
                 "state-fields-chain-round-trip: a pinned policy is a placeholder (28 zero bytes)"
                 ( BuiltinByteString (BS.replicate 28 0)
                     `notElem` [ stateAppPolicy observedBase
                               , stateActivePolicy observedBase
-                              , stateAbsentPolicy observedBase
-                              , stateTerminalPolicy observedBase
                               ]
                 )
             require
-                "state-fields-chain-round-trip: the three derived token policies are not distinct"
+                "state-fields-chain-round-trip: the two derived pinned policies are not distinct"
                 ( let ps =
-                        [ stateActivePolicy observedBase
-                        , stateAbsentPolicy observedBase
-                        , stateTerminalPolicy observedBase
+                        [ stateAppPolicy observedBase
+                        , stateActivePolicy observedBase
                         ]
-                  in  length (nub ps) == 3
+                  in  length (nub ps) == 2
                 )
     let mem = max mem1 mem2
         cpu = max cpu1 cpu2
@@ -862,10 +847,10 @@ runStateFieldsChainRoundTrip prov submit stateBytes requestBytes namingCodes nod
         Nothing
     emit
         "row"
-        "state-fields-chain-round-trip: ACCEPTED eight fields survive (Base+AltActivePolicy)"
+        "state-fields-chain-round-trip: ACCEPTED six fields survive (Base+AltActivePolicy)"
 
 {- | How many fields the state datum actually encodes. The retired
-contract had six; #157 state-datum-fields made it eight, and the armed control demands
+contract had eight; the two unused witness pins left the state datum, and the armed control demands
 the old arity so the row is shown able to notice a regression.
 -}
 stateDatumArity :: OnChainTokenState -> Int

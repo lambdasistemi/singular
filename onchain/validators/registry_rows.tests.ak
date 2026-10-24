@@ -446,15 +446,7 @@ test altered_active_policy_refuses() fail {
   foldAltering(types.State { ..nextState(), active_policy: fx.foreignPolicy })
 }
 
-test altered_absent_policy_refuses() fail {
-  foldAltering(types.State { ..nextState(), absent_policy: fx.foreignPolicy })
-}
-
-test altered_terminal_policy_refuses() fail {
-  foldAltering(types.State { ..nextState(), terminal_policy: fx.foreignPolicy })
-}
-
-test all_seven_preserved_accepts() {
+test all_five_preserved_accepts() {
   foldAltering(nextState())
 }
 
@@ -474,26 +466,6 @@ test active_token_for_another_key_refuses() fail {
 
 test exactly_one_active_token_accepts() {
   foldEdge(1)
-}
-
-test absent_mint_on_active_leaf_refuses() fail {
-  foldEdgeMinting(
-    3,
-    merge(
-      fx.mintOf(fx.activePolicy, fx.keyA, -1),
-      fx.mintOf(fx.absentPolicy, fx.keyA, 1),
-    ),
-  )
-}
-
-test stray_terminal_mint_refuses() fail {
-  foldEdgeMinting(
-    1,
-    merge(
-      fx.mintOf(fx.activePolicy, fx.keyA, 1),
-      fx.mintOf(fx.terminalPolicy, fx.keyB, 1),
-    ),
-  )
 }
 
 test token_named_other_than_the_key_refuses() fail {

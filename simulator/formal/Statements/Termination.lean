@@ -72,7 +72,7 @@ theorem world_supply_sync (world : World) (reachable : WorldReachable world) (ke
       ∀ key, carriedSingularCount world key = pendingTerminationCount world key := by
     induction reachable with
     | initial registry reach =>
-      obtain ⟨root, active, bound, rest⟩ := reachable_consistent registry reach
+      obtain ⟨root, active, bound⟩ := reachable_consistent registry reach
       constructor
       · intro key
         simp only [worldSingularSupply, carriedSingularCount, List.flatMap_nil, List.countP_nil,

@@ -240,7 +240,7 @@ refusals = describe "the identity refusals" $ do
             | i <- [0 .. length faults - 1]
             , j <- [i + 1 .. length faults - 1]
             ]
-    it "name the pin that differs, for each of the four" $
+    it "name the pin that differs, for each of the two" $
         mapM_
             ( \(field, st) -> do
                 (result, _) <- resolveOn (withState st honestChain) token
@@ -249,8 +249,6 @@ refusals = describe "the identity refusals" $ do
             )
             [ (PinApplication, bootState{stateAppPolicy = otherPin})
             , (PinActive, bootState{stateActivePolicy = otherPin})
-            , (PinAbsent, bootState{stateAbsentPolicy = otherPin})
-            , (PinTerminal, bootState{stateTerminalPolicy = otherPin})
             ]
     it "refuse a foreign release before the provider is asked anything" $ do
         foreignFault <- case faults of
@@ -339,8 +337,6 @@ refusals = describe "the identity refusals" $ do
                 , "registry-pin-mismatch application"
                 )
             , (RegistryPinMismatch PinActive, "registry-pin-mismatch active")
-            , (RegistryPinMismatch PinAbsent, "registry-pin-mismatch absent")
-            , (RegistryPinMismatch PinTerminal, "registry-pin-mismatch terminal")
             , (NetworkMismatch (LP.Network 764_824_073), "network-mismatch")
             ]
 
@@ -443,12 +439,12 @@ search = describe "finding the references a command needs" $ do
     it
         "refuses a role neither the provider nor the wallet carries, naming its hash and the remedy"
         $ do
-            let wanted = Set.fromList [RoleWitnessAbsent, RoleWitnessTerminal]
-                hash = bootExpected Map.! RoleWitnessAbsent
+            let wanted = Set.fromList [RoleWitnessActive]
+                hash = bootExpected Map.! RoleWitnessActive
             (found, _) <- searchOn honestChain wanted
-            found `shouldBe` Left (ReferenceMissing RoleWitnessAbsent hash)
-            renderReferenceRefusal (ReferenceMissing RoleWitnessAbsent hash)
-                `shouldBe` ( "reference-missing witness-absent "
+            found `shouldBe` Left (ReferenceMissing RoleWitnessActive hash)
+            renderReferenceRefusal (ReferenceMissing RoleWitnessActive hash)
+                `shouldBe` ( "reference-missing witness-active "
                                 <> hashHex hash
                                 <> ": not found by this provider or wallet; publish it with singular registry publish-references"
                            )
@@ -536,16 +532,14 @@ inTheWallet held chain =
 walletRead :: Text -> Bool
 walletRead = (== T.pack (show (LP.AtAddress walletAddress)))
 
-{- | A receipt name to its role, written by hand from the six names the
+{- | A receipt name to its role, written by hand from the four names the
 boot publishes, never by the code under test.
 -}
 testParseRole :: Text -> Maybe ReferenceRole
 testParseRole = \case
     "state" -> Just RoleState
     "request" -> Just RoleRequest
-    "witness-absent" -> Just RoleWitnessAbsent
     "witness-active" -> Just RoleWitnessActive
-    "witness-terminal" -> Just RoleWitnessTerminal
     "application" -> Just RoleApplication
     _ -> Nothing
 
@@ -655,8 +649,6 @@ refusalName = \case
     StateOutputMissing -> "state-output-missing"
     RegistryPinMismatch PinApplication -> "registry-pin-mismatch application"
     RegistryPinMismatch PinActive -> "registry-pin-mismatch active"
-    RegistryPinMismatch PinAbsent -> "registry-pin-mismatch absent"
-    RegistryPinMismatch PinTerminal -> "registry-pin-mismatch terminal"
     RegistryPinMismatchEvery -> "registry-pin-mismatch application"
     NetworkMismatch _ -> "network-mismatch"
     IdentityUnreadable _ -> "unreadable"
@@ -665,8 +657,6 @@ pins :: CageConfig -> [SBS.ShortByteString]
 pins c =
     [ cfgApplicationPolicy c
     , cfgActivePolicy c
-    , cfgAbsentPolicy c
-    , cfgTerminalPolicy c
     ]
 
 otherScript :: Script ConwayEra

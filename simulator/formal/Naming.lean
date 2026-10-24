@@ -303,8 +303,7 @@ def Option.toExcept (o : Option α) (why : String) : Except String α :=
   match o with | some a => .ok a | none => .error why
 
 /-- The naming context for a key: the record's fixture and controller when the
-key is booked; the custody datum's refund address when an absence is witnessed;
-the requester otherwise. -/
+key is booked; the requester otherwise. -/
 def namingContext (state : NamingState) (key : Key) (owner : List Nat) :
     Option NamingCtx :=
   match state.records.find? (·.key == key) with
@@ -312,14 +311,8 @@ def namingContext (state : NamingState) (key : Key) (owner : List Nat) :
       some { controllerBytes := controllerAddress.bytes, refundBytes := owner
            , fixture := record.fixture }
   | none =>
-      match state.registry.custody.find? (·.key == key) with
-      | some entry =>
-          some { controllerBytes := owner
-               , refundBytes := toBytes28 entry.refundAddress
-               , fixture := aliceFixture }
-      | none =>
-          some { controllerBytes := owner, refundBytes := owner
-               , fixture := aliceFixture }
+      some { controllerBytes := owner, refundBytes := owner
+           , fixture := aliceFixture }
 
 /-- M1 naming certifies registration on the controller's signature and termination
 on the committed recovery key or distinct-member quorum. All other wire edges
@@ -341,9 +334,7 @@ def namingConfig : Config :=
   , processTime := 2
   , retractTime := 3
   , applicationPolicy := namingApplicationPolicyFor canonicalNamingParameters.requestValidatorHash
-  , activePolicy := 8
-  , absentPolicy := 9
-  , terminalPolicy := 10 }
+  , activePolicy := 8 }
 
 /-- The naming transition: a request is admitted only if the cage admits it
 and naming's policy certifies it (naming-approval-rules); every uncertified request is refused
@@ -368,7 +359,7 @@ def namingStep (hasher : RecoveryHasher) (state : NamingState) (r : Request)
 
 /-- The registry the naming journeys start from. -/
 def namingInitial : NamingState :=
-  { registry := { config := namingConfig, trie := [], custody := [], held := [] }
+  { registry := { config := namingConfig, trie := [], held := [] }
   , records := []
   , parameters := canonicalNamingParameters
   , pendingRetirements := [] }

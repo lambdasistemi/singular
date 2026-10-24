@@ -7,8 +7,8 @@ Description : @singular registry create@: boot a registry from the caller's seed
 License     : Apache-2.0
 
 The seed decides the registry's identity — its state token name, and so
-the application applied to that identity and the three witness
-policies — so every pin is derived before anything is submitted, and
+the application applied to that identity and the active witness
+policy — so every pin is derived before anything is submitted, and
 @--preview@ stops there, submitting nothing and writing nothing. When a
 live carrier of the state validator exists, the seed is the wallet's
 largest ada-only output, as before; otherwise it is the first
@@ -23,8 +23,8 @@ the next: the state validator is published first when no carrier was found
 (its change is the seed) and from outside the seed when one was found (the
 seed survives the publication); the boot consumes
 the seed and creates the state output at the empty root, running the state
-validator from that reference; the request validator, the three witness
-policies and the applied application are published as reference outputs to
+validator from that reference; the request validator, the active witness
+policy and the applied application are published as reference outputs to
 the creator's wallet. The receipt names the state token, which is the
 registry: no identity file is written, and the pending identity recorded
 for an interrupted create is removed once it finishes. An explicit seed
@@ -730,9 +730,7 @@ laterScripts
     :: CageConfig -> NamingCodes -> TokenId -> [(Text, Script ConwayEra)]
 laterScripts cfg pinned tid =
     [ ("request", mkRequestScript cfg tid)
-    , ("witness-absent", witnessScriptOf cfg pinned 0)
     , ("witness-active", witnessScriptOf cfg pinned 1)
-    , ("witness-terminal", witnessScriptOf cfg pinned 2)
     ]
         <> [ ("application", scriptFromBytes "application" (ncApplication pinned))
            | not (SBS.null (ncApplication pinned))

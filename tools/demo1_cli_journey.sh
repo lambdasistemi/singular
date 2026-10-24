@@ -226,7 +226,7 @@ say "a genesis-only wallet: coverage-incomplete/12, nothing written"
 "$devnet" --fund-skey "$work/alice.skey" --fund-skey "$work/bob.skey" \
   --fund-outputs 6 --fund-lovelace 2000000000 \
   --fund "$work/dave.skey:1:5000000" --fund "$work/dave.skey:24:4000000" \
-  --fund "$work/erin.skey:5:30000000" --fund "$work/frank.skey:4:30000000" \
+  --fund "$work/erin.skey:5:30000000" --fund "$work/frank.skey:2:30000000" \
   --fund "$work/grace.skey:1:200000000" \
   --fund-address "$vault_alice_addr:6:2000000000" --fund-address "$vault_bob_addr:6:2000000000" \
   >"$work/devnet.out" 2>"$work/devnet.err" &
@@ -777,8 +777,8 @@ token="$(field create .token)"
 active="$(field create .pins.pinActive)"
 alicekey="$(field create .walletKeyHash)"
 [ "$(field create .seed)" = "$seed" ] || fail "create booted from another seed"
-jq -e '[.references[] | .role] | sort == ["application","request","state","witness-absent","witness-active","witness-terminal"]' \
-  "$receipts/create.json" >/dev/null || fail "create did not publish the six references"
+jq -e '[.references[] | .role] | sort == ["application","request","state","witness-active"]' \
+  "$receipts/create.json" >/dev/null || fail "create did not publish the four references"
 refused create-again client-refusal -- create --process-time 120000 --retract-time 30000 --seed "$seed" "${common[@]}" "${node[@]}" "${alice[@]}"
 jq -e --argjson p "$process_time" --argjson r "$retract_time" \
   '.processTime == $p and .retractTime == $r' "$receipts/create.json" >/dev/null \
@@ -1062,16 +1062,12 @@ done
 # key's witness and prints the asset it asked for and the output that holds it. Every fact is
 # compared with a receipt of the fold, never with a value typed here: the holder is the output
 # the fold delivered the key at, the asset's name is the key the fold settled, and the policy
-# is not the terminal one.
+# is a script hash.
 witness_agrees() { # witness_agrees INSPECT-FILE FOLD-RECEIPT
   jq -e --slurpfile f "$receipts/$2.json" '
       .witness.active.assetName == $f[0].settled[0].key
-      and .witness.terminal.assetName == $f[0].settled[0].key
       and (.witness.active.policy | test("^[0-9a-f]{56}$"))
-      and (.witness.terminal.policy | test("^[0-9a-f]{56}$"))
-      and .witness.active.policy != .witness.terminal.policy
       and .witness.active.holders == [$f[0].settled[0].settlement.liveOutput]
-      and .witness.terminal.holders == []
       and .applicationOutput.output == $f[0].settled[0].settlement.liveOutput' "$1" >/dev/null
 }
 witness_agrees "$receipts/address-inspect.json" address-fold \
@@ -1080,8 +1076,7 @@ witness_agrees "$receipts/address-inspect.json" address-fold \
 for altered in \
   '.witness.active.holders = []' \
   '.witness.active.assetName = "00"' \
-  '.witness.terminal.holders = ["00#0"]' \
-  '.witness.active.policy = .witness.terminal.policy' \
+  '.witness.active.policy = "00"' \
   'del(.witness)'; do
   jq "$altered" "$receipts/address-inspect.json" >"$work/witness-tampered.json"
   if witness_agrees "$work/witness-tampered.json" address-fold; then
@@ -1099,7 +1094,7 @@ jq -e '.leaf != "active" and .leaf != "terminal" and (has("witness") | not)' \
   || fail "a key never booked is not answered without a witness field"
 # the termination: Alice books it and Bob folds it, each from an empty directory on the address
 # alone, and the third empty directory reads the key terminal. The active witness was held by the
-# output the fold released, and nothing holds it now, nor a terminal one.
+# output the fold released, and nothing holds it now.
 run address-terminate success -- terminate --key keyAddress \
   --state-dir "$address_alice" --blueprint "$blueprint" --registry "$registry_address" "${node_address[@]}" "${alice[@]}"
 run address-terminate-fold success -- fold --request "$(field address-terminate .request)" \
@@ -1111,7 +1106,6 @@ run address-inspect-terminal success -- inspect --key keyAddress --registry "$re
 witness_ended() { # witness_ended INSPECT-FILE BEFORE-RECEIPT TERMINATION-FOLD-RECEIPT
   jq -e --slurpfile b "$receipts/$2.json" --slurpfile t "$receipts/$3.json" '
       .witness.active.holders == []
-      and .witness.terminal.holders == []
       and .witness.active.policy == $b[0].witness.active.policy
       and .witness.active.assetName == $b[0].witness.active.assetName
       and .applicationOutput.holdings == []
@@ -1121,7 +1115,6 @@ witness_ended "$receipts/address-inspect-terminal.json" address-inspect address-
   || fail "the witness of a terminated key is not empty, or the output that held it is not the one the termination released"
 for altered in \
   '.witness.active.holders = ["00#0"]' \
-  '.witness.terminal.holders = ["00#0"]' \
   '.witness.active.assetName = "00"' \
   'del(.witness)'; do
   jq "$altered" "$receipts/address-inspect-terminal.json" >"$work/witness-tampered.json"
@@ -1558,16 +1551,15 @@ say "the refused create left dave's seed unspent"
 # Erin holds five 30 tADA ada-only outputs and nothing else: the seed stays
 # withheld from the publications, so four outputs fund them. Each output is
 # strictly below the largest remaining single publication need (the
-# application, needs 46966310 as the journey prints; state 11557 bytes is
-# already live and reused, so no state publication remains), but the four
-# permitted outputs cover the whole run (run need 109950687 as the refusals
-# print; the seed is withheld from the publications). Her preview reports no
+# application; the state script is already live and reused, so no state
+# publication remains), but the four permitted outputs cover the whole run
+# (the seed is withheld from the publications). Her preview reports no
 # refusal and her create completes;
 # every reference is live carrying its script; at least one publication spent
 # two or more inputs (read from her journal, never typed); Bob reads the
 # registry from the token alone.
-# Frank holds four 30 tADA outputs (seed withheld, so three fund them): the run's
-# lowest total need 109950687 exceeds his total, short by less than one 30 tADA
+# Frank holds two 30 tADA outputs (seed withheld, so one funds them): the run's
+# lowest total need exceeds his total, short by less than one 30 tADA
 # output. His preview and his create give one
 # verdict, naming totals from the refusal itself, never typed; nothing is
 # submitted and every wallet output stays live.
@@ -1580,8 +1572,8 @@ jq -e '.createRefusal == null' "$receipts/erin-preview.json" >/dev/null \
 erin_seed="$(field erin-preview .seed)"
 run erin-create success -- create --process-time 120000 --retract-time 30000 \
   --seed "$erin_seed" --state-dir "$two_erin" --blueprint "$blueprint" "${node[@]}" "${erin[@]}"
-jq -e '[.references[] | .role] | sort == ["application","request","state","witness-absent","witness-active","witness-terminal"]' \
-  "$receipts/erin-create.json" >/dev/null || fail "erin's create did not publish the six references"
+jq -e '[.references[] | .role] | sort == ["application","request","state","witness-active"]' \
+  "$receipts/erin-create.json" >/dev/null || fail "erin's create did not publish the four references"
 erin_token="$(field erin-create .stateToken)"
 for ref_out in $(jq -r '.references[] | .output' "$receipts/erin-create.json"); do
   probe_one="$work/erin-ref-probe.json"
@@ -1679,8 +1671,8 @@ run grace-create success -- create --process-time 120000 --retract-time 30000 \
   || fail "grace's create made another token: $(field grace-create .stateToken) vs $grace_token_preview"
 [ "$(field grace-create .seed)" = "$grace_seed" ] \
   || fail "grace's create booted from another seed: $(field grace-create .seed) vs $grace_seed"
-jq -e '[.references[] | .role] | sort == ["application","request","state","witness-absent","witness-active","witness-terminal"]' \
-  "$receipts/grace-create.json" >/dev/null || fail "grace's create did not publish the six references"
+jq -e '[.references[] | .role] | sort == ["application","request","state","witness-active"]' \
+  "$receipts/grace-create.json" >/dev/null || fail "grace's create did not publish the four references"
 grace_token="$(field grace-create .stateToken)"
 for ref_out in $(jq -r '.references[] | .output' "$receipts/grace-create.json"); do
   probe_one="$work/grace-ref-probe.json"
@@ -3039,11 +3031,11 @@ jq -e --slurpfile m "$receipts/create.json" '
     [.references[] | select(.role == "state") | .output]
       == [$m[0].references[] | select(.role == "state") | .output]
     and (.bundle.transactions | map(.step) | index("publish-state") | not)
-    and (.references | map(.role) | sort == ["application","request","state","witness-absent","witness-active","witness-terminal"])
+    and (.references | map(.role) | sort == ["application","request","state","witness-active"])
     and .processTime == '"$s_window_process"' and .retractTime == '"$s_window_retract"'
     and .walletKeyHash == "'"$s_alicekey"'" and .wallet == "'"$vault_alice_addr"'"' \
   "$receipts/story-create.json" >/dev/null \
-  || fail "the story create does not boot from the live state carrier with six references and Alice's windows"
+  || fail "the story create does not boot from the live state carrier with four references and Alice's windows"
 s_state_token="$(field story-create .stateToken)"
 s_state="$(field story-create .pins.pinState)"
 s_token="$(field story-create .token)"

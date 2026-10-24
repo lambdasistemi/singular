@@ -14,19 +14,13 @@ const NAMING_OBSERVATIONS = {
   folds: ['expected', 'actual'],
   steps: ['expected', 'actual'],
   replays: ['expected', 'actual'],
-  resolves: ['leaf', 'active', 'absent', 'terminal'],
+  resolves: ['leaf', 'active'],
 };
 
 /** A resolve row's observations must agree with the model's own laws: the
- * supply biconditional in full — Statements.lean S3 claims one witness IFF the
- * leaf says so AND zero witnesses IFF it does not, for both the active and the
- * absent kind — plus terminal attestation soundness (S1: no attestation of a
- * non-terminal leaf; plural attestations on a terminal leaf stay allowed, W3).
- * Kind exclusion is not checked separately: with the zero halves in place a
- * count above zero pins the leaf, and one leaf cannot be two states, so a row
- * failing exclusion always fails the biconditional or the terminal check
- * first. A row that claims witnesses and the wrong leaf contradicts itself
- * and is not evidence. */
+ * supply biconditional in full — one active witness IFF the leaf is active AND
+ * zero witnesses IFF it is not. A row that claims a witness and the wrong leaf
+ * contradicts itself and is not evidence. */
 function checkResolveObservations(row) {
   const leaf =
     row.leaf === 'unknown'
@@ -36,20 +30,12 @@ function checkResolveObservations(row) {
         : undefined;
   if (leaf !== null && !['absent', 'active', 'terminal'].includes(leaf))
     throw Error(`naming resolve row with an unreadable leaf: ${row.id}`);
-  for (const k of ['active', 'absent', 'terminal'])
-    if (!Number.isSafeInteger(row[k]) || row[k] < 0)
-      throw Error(`naming resolve row without a witness count: ${row.id}`);
-  if (
-    (row.active === 1) !== (leaf === 'active') ||
-    (row.active === 0) !== (leaf !== 'active') ||
-    (row.absent === 1) !== (leaf === 'absent') ||
-    (row.absent === 0) !== (leaf !== 'absent')
-  )
+  if (!Number.isSafeInteger(row.active) || row.active < 0)
+    throw Error(`naming resolve row without a witness count: ${row.id}`);
+  if ((row.active === 1) !== (leaf === 'active') || (row.active === 0) !== (leaf !== 'active'))
     throw Error(`naming resolve row contradicts the supply biconditional: ${row.id}`);
-  if (leaf === null && (row.active > 0 || row.absent > 0 || row.terminal > 0))
-    throw Error(`naming resolve row claims witnesses on an unknown leaf: ${row.id}`);
-  if (leaf !== 'terminal' && row.terminal > 0)
-    throw Error(`naming resolve row attests a leaf that is not terminal: ${row.id}`);
+  if (leaf === null && row.active > 0)
+    throw Error(`naming resolve row claims a witness on an unknown leaf: ${row.id}`);
 }
 
 /** Inspect the naming corpus: every row states an expectation the Lean model

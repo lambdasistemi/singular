@@ -41,7 +41,7 @@ What has to be true for it to go through:
 - the registry's entry for your key reads **Active**;
 - the transaction carries **your** token — the one the booking delivered
   — as an input for the burn to destroy;
-- nothing else moves under the registry's three token policies.
+- nothing else moves under the registry's active token policy.
 
 What comes out:
 

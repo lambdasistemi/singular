@@ -98,9 +98,8 @@ theorem pending_custody_counts (c : Config) (bookings : List TerminationBooking)
     obtain ⟨heldKey, heldKind⟩ := shapeB holding (by simp [custody])
     obtain ⟨ihHeld, ihTags⟩ := ih (fun b member => shape b (by simp [member]))
     by_cases same : b.request.key = key <;>
-      simp [List.flatMap_cons, List.filter_append, custody, heldKey, heldKind, tags,
-        Config.singularTag, same, ihHeld]
-    all_goals exact ihTags
+      simp [List.flatMap_cons, custody, heldKey, tags, Config.singularTag, same] at ihHeld ihTags ⊢ <;>
+      exact ⟨ihHeld, ihTags⟩
 
 theorem members_equal_of_length_le_one {α : Type} {xs : List α}
     (bound : xs.length ≤ 1) {a b : α} (ha : a ∈ xs) (hb : b ∈ xs) : a = b := by
@@ -208,8 +207,9 @@ theorem fold_preserves_world_supply {world after : World} {u : EconomicUtxo}
     have law := supply key
     unfold worldSingularSupply at law
     rw [counts] at law
-    simpa [kindCount, foldProjectedRegistry, List.filter_append, restored,
-      pendingTerminationCount] using law
+    simp [kindCount, foldProjectedRegistry, List.filter_append,
+      pendingTerminationCount] at restored law ⊢
+    omega
   have finalSupply := foldActions_active_supply projected (foldBatch_inv _ _ _ registry).2
   intro key
   have remainingBound : pendingTerminationCount after key ≤ 1 := by

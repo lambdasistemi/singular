@@ -147,8 +147,6 @@ unpinned =
         , defaultTip = Coin 1_000_000
         , cfgApplicationPolicy = SBS.empty
         , cfgActivePolicy = SBS.empty
-        , cfgAbsentPolicy = SBS.empty
-        , cfgTerminalPolicy = SBS.empty
         , cfgConsumerScript = SBS.empty
         , network = Testnet
         }
@@ -176,17 +174,13 @@ cfg :: CageConfig
 cfg =
     unpinned
         { cfgApplicationPolicy = applicationPin
-        , cfgAbsentPolicy = absentPin
         , cfgActivePolicy = activePin
-        , cfgTerminalPolicy = terminalPin
         }
 
 applicationPin
-    , absentPin
     , activePin
-    , terminalPin
         :: SBS.ShortByteString
-(applicationPin, absentPin, activePin, terminalPin) =
+(applicationPin, activePin) =
     namingPins codes (registryIdOf unpinned)
 
 {- | The policy the naming application certifies approvals under: the

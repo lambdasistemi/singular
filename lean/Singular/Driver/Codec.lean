@@ -21,7 +21,7 @@ def assetsJson (c : Config) (ds : List (Asset × Int)) : Json :=
 
 def txRoleName : TxRole → String
   | .state => "state" | .request => "request"
-  | .destination => "destination" | .cage => "cage"
+  | .destination => "destination"
   | .witness => "witness" | .owner => "owner"
 
 def txInputJson (c : Config) (i : TxInput) : Json :=
@@ -45,7 +45,6 @@ def txOutputJson (c : Config) (o : TxOutput) : Json :=
     , ("inlineConfig", match o.config with | none => Json.null | some cfg => toJson cfg)
     , ("commitment", match o.commitment with | none => Json.null | some x => toJson x)
     , ("assets", assetsJson c o.assets)
-    , ("custodyDatum", toJson o.custodyDatum)
     , ("lovelace", toJson o.lovelace)
     , ("reference", match o.reference with | none => Json.null | some x => toJson x)
     , ("datumValue", datumJson o.datumValue) ] ++
@@ -80,7 +79,7 @@ def txRoleOfJson (j : Json) : Except String TxRole := do
   let name : String ← fromJson? j
   match name with
   | "state" => pure .state | "request" => pure .request
-  | "destination" => pure .destination | "cage" => pure .cage
+  | "destination" => pure .destination
   | "witness" => pure .witness | "owner" => pure .owner
   | _ => throw "unknown transaction role"
 
@@ -118,13 +117,12 @@ def txOutputOfJson (c : Config) (j : Json) : Except String TxOutput := do
   let config : Option Config ← j.getObjVal? "inlineConfig" >>= fromJson?
   let commitment ← j.getObjVal? "commitment" >>= fromJson?
   let assets ← j.getObjVal? "assets" >>= assetsOfJson c
-  let custodyDatum ← defaultField j "custodyDatum" none
   let lovelace ← defaultField j "lovelace" 0
   let reference ← defaultField j "reference" none
   let datumValue ← defaultField j "datumValue" none
   let stateToken ← defaultField j "stateTokenId" (config.map Config.stateToken)
   pure { role, datum, address, stateTokens, config, commitment, assets
-       , custodyDatum, lovelace, reference, datumValue, stateToken }
+       , lovelace, reference, datumValue, stateToken }
 
 def txOfJson (c : Config) (j : Json) : Except String Tx := do
   let inputs ← (← (← j.getObjVal? "inputs").getArr?).toList.mapM (txInputOfJson c)

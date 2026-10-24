@@ -5,7 +5,7 @@ about the registry. Each case runs the transaction observation the live
 chapters run — @Conformance.Run.Live.observedStepTx@ — over one submitted
 transaction with the outputs it spent, exactly as an accepted live step hands
 them over, and reads the forms it reports for the spent state, request,
-custody and witness inputs and the destination output. A form comes from the
+witness inputs and the destination output. A form comes from the
 ledger's own datum constructors: an output presenting its datum by hash
 reports hashed, one presenting nothing reports none, and only a datum the
 output actually carries reports inline. The comparison legs run the same
@@ -174,8 +174,6 @@ fixtureCfg =
         , defaultTip = Coin 1_000_000
         , cfgApplicationPolicy = pin 0x14
         , cfgActivePolicy = pin 0x15
-        , cfgAbsentPolicy = pin 0x16
-        , cfgTerminalPolicy = pin 0x17
         , cfgConsumerScript = pin 0x18
         , network = Testnet
         }
@@ -203,11 +201,11 @@ named n =
         (txIdTx (mkBasicTx (mkBasicTxBody & feeTxBodyL .~ Coin n) :: ConwayTx))
         (TxIx 0)
 
-stateIn, requestIn, witnessIn, custodyIn, elsewhere :: TxIn
+stateIn, requestIn, witnessIn, heldIn, elsewhere :: TxIn
 stateIn = named 1
 requestIn = named 2
 witnessIn = named 3
-custodyIn = named 4
+heldIn = named 4
 elsewhere = named 5
 
 -- | A state policy pin, in the builtin spelling a state datum carries.
@@ -224,8 +222,6 @@ tokenState =
         , stateRetractTime = 30_000
         , stateAppPolicy = statePolicy 0x14
         , stateActivePolicy = statePolicy 0x15
-        , stateAbsentPolicy = statePolicy 0x16
-        , stateTerminalPolicy = statePolicy 0x17
         }
 
 keyBytes :: ByteString
@@ -295,10 +291,6 @@ spentState = outAt (walletAt 0x24) 2_000_000 mempty
 spentWitness :: Datum ConwayEra -> TxOut ConwayEra
 spentWitness form = outAt holderWallet 1_000_000 activeAsset (nonState form)
 
--- | The spent absent custody of a fold, presenting the form it is told to.
-spentCustody :: Datum ConwayEra -> TxOut ConwayEra
-spentCustody form = outAt (walletAt 0x26) 3_000_000 mempty (nonState form)
-
 -- | The spent request output of a fixture step, presenting the form it is told to.
 spentRequest :: Datum ConwayEra -> TxOut ConwayEra
 spentRequest form = outAt (walletAt 0x25) 4_000_000 mempty (nonState form)
@@ -336,7 +328,7 @@ mintedAsset kind quantity =
 
 {- | One live step of the fixture, in the observation's own vocabulary: the
 cage, the edge it books, then the outputs the ledger physically held for the
-state, the witness and the custody, the request output, and the transaction
+state and the witness, the request output, and the transaction
 the step submitted.
 -}
 fixtureStep
@@ -344,11 +336,10 @@ fixtureStep
     -> Live.Edge
     -> Maybe (TxIn, TxOut ConwayEra)
     -> Maybe (TxIn, TxOut ConwayEra)
-    -> Maybe (TxIn, TxOut ConwayEra)
     -> TxOut ConwayEra
     -> ConwayTx
     -> LiveStep
-fixtureStep cage edge state witness custody requestOut transaction =
+fixtureStep cage edge state witness requestOut transaction =
     LiveStep
         { lsCage = cage
         , lsRequest = Live.EdgeRequest edge "fixture-key" ownerWallet
@@ -363,7 +354,6 @@ fixtureStep cage edge state witness custody requestOut transaction =
         , lsRequestLovelace = 4_000_000
         , lsAfter = Nothing
         , lsWitness = witness
-        , lsCustody = custody
         , lsStateUtxo = state
         , lsSpent = []
         , lsOutcome = StepAccepted transaction (0, 0, 0)
@@ -400,7 +390,6 @@ observedTx step transaction mint payments destination = do
         mint
         destination
         7
-        []
         []
         (fromJust (lsRequestOut step))
         (TokenId (AssetName (SBS.toShort (BSC.pack "fixture-token"))))
@@ -611,30 +600,11 @@ retirement cage stateForm witnessForm =
         Live.UpdateTerminal
         (Just (stateIn, spentState stateForm))
         (Just (witnessIn, spentWitness witnessForm))
-        Nothing
         (spentRequest inlineDatum)
         ( submitted
             [stateIn, requestIn, witnessIn]
             [stateOutput, ownerOutput 4_000_000]
             mempty
-        )
-
-{- | An update spends a state, a request and an absent custody, and delivers a
-token, so its destination is a physical carrier.
--}
-update :: RowCage -> Datum ConwayEra -> Datum ConwayEra -> LiveStep
-update cage stateForm custodyForm =
-    fixtureStep
-        cage
-        Live.UpdateActive
-        (Just (stateIn, spentState stateForm))
-        Nothing
-        (Just (custodyIn, spentCustody custodyForm))
-        (spentRequest inlineDatum)
-        ( submitted
-            [stateIn, requestIn, custodyIn]
-            [stateOutput, carrier inlineDatum]
-            activeAsset
         )
 
 {- | An insertion spends a state and a request, and delivers the active token
@@ -652,7 +622,6 @@ delivery cage stateForm carrierForm requestForm =
         Live.InsertActive
         (Just (stateIn, spentState stateForm))
         Nothing
-        Nothing
         (spentRequest requestForm)
         ( submitted
             [stateIn, requestIn]
@@ -667,10 +636,6 @@ stateFold form cage = delivery cage form inlineDatum inlineDatum
 -- | A fold whose only non-inline role is the request input it spends.
 requestFold :: Datum ConwayEra -> RowCage -> LiveStep
 requestFold form cage = delivery cage inlineDatum inlineDatum form
-
--- | A fold whose only non-inline role is the absent custody it spends.
-custodyFold :: Datum ConwayEra -> RowCage -> LiveStep
-custodyFold form cage = update cage inlineDatum form
 
 -- | A fold whose only non-inline role is the active witness it spends.
 witnessFold :: Datum ConwayEra -> RowCage -> LiveStep
@@ -701,15 +666,6 @@ spec =
                     , roleKey = "request"
                     , roleArray = "inputs"
                     , roleStep = requestFold
-                    , roleMint = activeMint
-                    , rolePayments = delivering
-                    , roleDestination = 1
-                    }
-                , Role
-                    { roleName = "the spent custody input"
-                    , roleKey = "cage"
-                    , roleArray = "inputs"
-                    , roleStep = custodyFold
                     , roleMint = activeMint
                     , rolePayments = delivering
                     , roleDestination = 1
@@ -793,18 +749,6 @@ spec =
             datumFormOf (entry "outputs" "destination" observation)
                 `shouldBe` String "inline"
 
-        it "keeps each role's form bound to its own output on an update" $ do
-            cage <- fixtureCage
-            let step = update cage NoDatum hashedDatum
-            observation <-
-                observedTx step (lsTransactionOf step) activeMint delivering 1
-            datumFormOf (entry "inputs" "state" observation)
-                `shouldBe` String "none"
-            datumFormOf (entry "inputs" "cage" observation)
-                `shouldBe` String "hashed"
-            datumFormOf (entry "inputs" "request" observation)
-                `shouldBe` String "inline"
-
         it "keeps each role's form bound to its own output on a retirement" $ do
             cage <- fixtureCage
             let step = retirement cage hashedDatum NoDatum
@@ -847,7 +791,6 @@ spec =
                         Live.InsertActive
                         state
                         Nothing
-                        Nothing
                         request
                         tx
                     )
@@ -874,7 +817,6 @@ spec =
                         Live.InsertActive
                         state
                         Nothing
-                        Nothing
                         request
                         tx
             observedTx step tx activeMint delivering 1
@@ -892,7 +834,6 @@ spec =
                     fixtureStep
                         cage
                         Live.InsertActive
-                        Nothing
                         Nothing
                         Nothing
                         request
@@ -915,32 +856,10 @@ spec =
                         Live.UpdateTerminal
                         state
                         (Just (witnessIn, spentWitness inlineDatum))
-                        Nothing
                         request
                         tx
             observedTx step tx [] [] 0
                 `shouldThrow` errorMentioning "witness"
-
-        it "a custody the transaction did not spend" $ do
-            cage <- fixtureCage
-            let state = Just (stateIn, spentState inlineDatum)
-                request = spentRequest inlineDatum
-                tx =
-                    submitted
-                        [stateIn, requestIn]
-                        [stateOutput, carrier inlineDatum]
-                        activeAsset
-                step =
-                    fixtureStep
-                        cage
-                        Live.UpdateActive
-                        state
-                        Nothing
-                        (Just (custodyIn, spentCustody inlineDatum))
-                        request
-                        tx
-            observedTx step tx activeMint delivering 1
-                `shouldThrow` errorMentioning "custody"
 
         -- A held token sits on the output its delivery wrote: the census
         -- reads the datum that output carries for each token it carries, as
@@ -948,18 +867,18 @@ spec =
         it
             "a held token on an output carrying its datum inline is held with that datum"
             $ do
-                (plain, datums) <- heldDatums [(custodyIn, carrier inlineDatum)]
+                (plain, datums) <- heldDatums [(heldIn, carrier inlineDatum)]
                 datums `shouldBe` [Number (fromInteger plain)]
 
         forM_ nonInlineForms $ \(told, form, _) ->
             it ("a held token on an output " <> told <> " is held with no datum") $ do
-                (_, datums) <- heldDatums [(custodyIn, carrier form)]
+                (_, datums) <- heldDatums [(heldIn, carrier form)]
                 datums `shouldBe` [Null]
 
         it "keeps each held token's datum bound to its own output" $ do
             (plain, datums) <-
                 heldDatums
-                    [ (custodyIn, carrier inlineDatum)
+                    [ (heldIn, carrier inlineDatum)
                     , (elsewhere, carrier NoDatum)
                     ]
             datums `shouldBe` [Number (fromInteger plain), Null]
@@ -980,13 +899,13 @@ spec =
                     [keyBytes]
                     [("active", SBS.fromShort (cfgActivePolicy fixtureCfg))]
                     holderWallet
-                    [(custodyIn, carrier inlineDatum)]
+                    [(heldIn, carrier inlineDatum)]
                     `shouldThrow` errorMentioning "datum"
 
         it
             "the held census keeps key, kind and output, and leaves the datum to the state"
             $ do
-                holdings <- snd <$> holdingsOn [(custodyIn, carrier hashedDatum)]
+                holdings <- snd <$> holdingsOn [(heldIn, carrier hashedDatum)]
                 map (fieldsOf . heldObservation) holdings
                     `shouldBe` [["key", "kind", "output"]]
                 map fieldsOf holdings `shouldBe` [["datum", "key", "kind", "output"]]
@@ -1040,7 +959,6 @@ asObservations :: Value -> Value
 asObservations transaction =
     object
         [ "config" .= Null
-        , "custody" .= Null
         , "held" .= Null
         , "leaf" .= Null
         , "mint" .= Null
@@ -1051,8 +969,8 @@ asObservations transaction =
         ]
 
 {- | Every refusal this observer raises on missing or ambiguous evidence
-names the role whose evidence it could not read, as its witness and custody
-refusals already do, so each case can hold it to one obligation. The state,
+names the role whose evidence it could not read, as its witness
+refusal already does, so each case can hold it to one obligation. The state,
 request and destination refusals are the repair's to write on those terms.
 -}
 errorMentioning :: Text -> ErrorCall -> Bool

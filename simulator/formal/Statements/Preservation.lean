@@ -33,9 +33,7 @@ theorem no_tree_change_without_approval (s : RegistryState) (r : Request) (t : R
       ap.destination = requestDestination r ∧
       ap.assetName = approvalAssetName ap.edge ap.key ap.owner ap.destination) ∧
     t.state.config.applicationPolicy = s.config.applicationPolicy ∧
-    t.state.config.activePolicy = s.config.activePolicy ∧
-    t.state.config.absentPolicy = s.config.absentPolicy ∧
-    t.state.config.terminalPolicy = s.config.terminalPolicy := by
+    t.state.config.activePolicy = s.config.activePolicy := by
   obtain ⟨href, ht⟩ := step_eq_ok s r t hok
   subst ht
   obtain ⟨ap, hap, hpol, hadm, hcase⟩ := (refusal_none_iff s r).mp href
@@ -45,7 +43,6 @@ theorem no_tree_change_without_approval (s : RegistryState) (r : Request) (t : R
     simp only [Bool.and_eq_true, beq_iff_eq] at hadm <;>
     obtain ⟨⟨⟨⟨⟨_, hedge⟩, hkey⟩, hown⟩, hdst⟩, hasset⟩ := hadm <;>
     exact ⟨⟨ap, hap, hpol, by rw [hedge, he], hkey, hown, hdst, hasset⟩,
-      by simp [applyEdge, he], by simp [applyEdge, he],
       by simp [applyEdge, he], by simp [applyEdge, he]⟩
 
 /-- **request-spent-once-in-order** — each request is spent once and in order (the fold is a step
@@ -55,7 +52,7 @@ theorem booked_at_most_once (s : RegistryState) (batch : List Request) (t : Resu
     (h : Reachable s) (hok : foldBatch s batch = .ok t) :
     Folds s batch t ∧
     (∀ b bs, batch = b :: bs → ∀ why, step s b = .error why → foldBatch s batch = .error why) ∧
-    (∀ key, kindCount t.state .active key ≤ 1 ∧ custodyCount t.state key ≤ 1) := by
+    (∀ key, kindCount t.state .active key ≤ 1) := by
   obtain ⟨hne, hacts⟩ := foldBatch_inv s batch t hok
   have hfolds : ∀ (u : RegistryState) (bs : List Request) (r : Result),
       foldActions u bs = .ok r → Folds u bs r := by
@@ -118,62 +115,24 @@ theorem booked_at_most_once (s : RegistryState) (batch : List Request) (t : Resu
     simp only [bind, Except.bind, pure, Except.pure]
     rw [hstep]
   · intro key
-    obtain ⟨_, _, hA2, _, hC2, _, _, _⟩ := reachable_consistent t.state hreach
-    exact ⟨hA2 key, hC2 key⟩
+    obtain ⟨_, _, hA2⟩ := reachable_consistent t.state hreach
+    exact hA2 key
 
-/-- **terminal-attestation-sound** — every terminal attestation in a reachable state is about a leaf
-that is terminal: no attestation of an Active, Absent or Unknown key exists. -/
-theorem terminal_attestation_sound (s : RegistryState) (key : Key) (out : Nat)
-    (h : Reachable s) (hmem : { key := key, kind := .terminal, output := out } ∈ s.held) :
-    trieGet s.trie key = .known .terminal := by
-  exact (reachable_consistent s h).2.2.2.2.2.1 _ hmem rfl
-
-
-
-/-- **terminal-attestation-permanent** — a terminal attestation is valid in every later state: a terminal
-leaf admits no edge that moves it, and no edge burns an attestation. -/
+/-- **terminal-attestation-permanent** — a terminated key stays terminated in every later state: a
+terminal leaf admits no edge that moves it. -/
 theorem terminal_attestation_permanent (s : RegistryState) (acts : List Request) (t : Result)
-    (h : Reachable s) (hok : foldBatch s acts = .ok t) (key : Key) (out : Nat)
-    (hmem : { key := key, kind := .terminal, output := out } ∈ s.held) :
-    { key := key, kind := .terminal, output := out } ∈ t.state.held ∧
-      trieGet t.state.trie key = .known .terminal := by
-  have hterm : trieGet s.trie key = .known .terminal :=
-    (reachable_consistent s h).2.2.2.2.2.1 _ hmem rfl
-  have hacts := (foldBatch_inv s acts t hok).2
-  refine ⟨?_, foldActions_preserves_terminal s acts t key hterm hacts⟩
-  clear hok
-  induction acts generalizing s t with
-  | nil =>
-    unfold foldActions at hacts
-    have : emptyResult s = t := by injection hacts
-    rw [← this]; exact hmem
-  | cons b bs ih =>
-    unfold foldActions at hacts
-    simp only [bind, Except.bind, pure, Except.pure] at hacts
-    cases hs : step s b with
-    | error e => rw [hs] at hacts; exact nomatch hacts
-    | ok m =>
-      rw [hs] at hacts
-      simp only [bind, Except.bind, pure, Except.pure] at hacts
-      cases hrest : foldActions m.state bs with
-      | error e => rw [hrest] at hacts; exact nomatch hacts
-      | ok rr =>
-        rw [hrest] at hacts
-        have hEq : combineResults m rr = t := by injection hacts
-        rw [← hEq]
-        exact ih m.state rr (Reachable.next h hs)
-          (step_preserves_terminal_holding s b m key out hterm hmem hs)
-          (step_preserves_terminal s b m key hterm hs) hrest
+    (h : Reachable s) (hok : foldBatch s acts = .ok t) (key : Key)
+    (hterm : trieGet s.trie key = .known .terminal) :
+    trieGet t.state.trie key = .known .terminal := by
+  exact foldActions_preserves_terminal s acts t key hterm (foldBatch_inv s acts t hok).2
 
 /-- **supply-matches-leaf-state** — the biconditional supply law, unconditionally over reachable
 states: supply is 1 iff the key is in that token's state, 0 otherwise. -/
 theorem biconditional_supply_sync (s : RegistryState) (h : Reachable s) (key : Key) :
     (kindCount s .active key = 1 ↔ trieGet s.trie key = .known .active) ∧
-    (kindCount s .active key = 0 ↔ trieGet s.trie key ≠ .known .active) ∧
-    (custodyCount s key = 1 ↔ trieGet s.trie key = .known .absent) ∧
-    (custodyCount s key = 0 ↔ trieGet s.trie key ≠ .known .absent) := by
-  obtain ⟨_, hA1, hA2, hC1, hC2, _, _, _⟩ := reachable_consistent s h
-  refine ⟨hA1 key, ?_, hC1 key, ?_⟩
+    (kindCount s .active key = 0 ↔ trieGet s.trie key ≠ .known .active) := by
+  obtain ⟨_, hA1, hA2⟩ := reachable_consistent s h
+  refine ⟨hA1 key, ?_⟩
   · constructor
     · intro h0 hEq
       have := (hA1 key).mpr hEq
@@ -181,14 +140,6 @@ theorem biconditional_supply_sync (s : RegistryState) (h : Reachable s) (key : K
     · intro hne
       have := hA2 key
       have hnot1 : kindCount s .active key ≠ 1 := fun hEq => hne ((hA1 key).mp hEq)
-      omega
-  · constructor
-    · intro h0 hEq
-      have := (hC1 key).mpr hEq
-      omega
-    · intro hne
-      have := hC2 key
-      have hnot1 : custodyCount s key ≠ 1 := fun hEq => hne ((hC1 key).mp hEq)
       omega
 
 /-- Registration requires an untaken key and leaves exactly an Active leaf. -/
@@ -242,75 +193,7 @@ theorem termination (s : RegistryState) (key : Key) (h : Reachable s)
 theorem active_witness_unique (s : RegistryState) (h : Reachable s) (key : Key) :
     kindCount s .active key ≤ 1 ∧
     (kindCount s .active key = 1 ↔ trieGet s.trie key = .known .active) := by
-  obtain ⟨_, hA1, hA2, _, _, _, _, _⟩ := reachable_consistent s h
+  obtain ⟨_, hA1, hA2⟩ := reachable_consistent s h
   exact ⟨hA2 key, hA1 key⟩
-
-/-- **absent-witness-unique** — at most one absent witness, exactly one iff the leaf is Absent. -/
-theorem absent_witness_unique (s : RegistryState) (h : Reachable s) (key : Key) :
-    custodyCount s key ≤ 1 ∧
-    (custodyCount s key = 1 ↔ trieGet s.trie key = .known .absent) := by
-  obtain ⟨_, _, _, hC1, hC2, _, _, _⟩ := reachable_consistent s h
-  exact ⟨hC2 key, hC1 key⟩
-
-
-
-/-- **witness-kinds-exclude** — kind exclusion: at most one kind of witness is outstanding for a
-key, so a consumer that finds one kind knows the other two do not exist. -/
-theorem witness_kinds_exclude (s : RegistryState) (h : Reachable s) (key : Key) :
-    (kindCount s .active key > 0 → custodyCount s key = 0 ∧ kindCount s .terminal key = 0) ∧
-    (custodyCount s key > 0 → kindCount s .active key = 0 ∧ kindCount s .terminal key = 0) ∧
-    (kindCount s .terminal key > 0 → kindCount s .active key = 0 ∧ custodyCount s key = 0) := by
-  obtain ⟨_, hA1, hA2, hC1, hC2, hTerm, _, _⟩ := reachable_consistent s h
-  have hterm_leaf : kindCount s .terminal key > 0 → trieGet s.trie key = .known .terminal := by
-    intro hpos
-    unfold kindCount at hpos
-    cases hf : (s.held.filter fun x => x.key == key && x.kind == .terminal) with
-    | nil => rw [hf] at hpos; simp at hpos
-    | cons x xs =>
-      have hx : x ∈ s.held.filter (fun x => x.key == key && x.kind == .terminal) := by
-        rw [hf]; exact List.mem_cons_self
-      have hmem := (List.mem_filter.mp hx).1
-      have hxp := (List.mem_filter.mp hx).2
-      have hxk : x.key = key := by simpa using (Bool.and_eq_true_iff.mp hxp).1
-      have hxkind : x.kind = .terminal := by simpa using (Bool.and_eq_true_iff.mp hxp).2
-      have := hTerm x hmem hxkind
-      rw [hxk] at this; exact this
-  have hactive_leaf : kindCount s .active key > 0 → trieGet s.trie key = .known .active := by
-    intro hpos
-    have h1 : kindCount s .active key = 1 := by have := hA2 key; omega
-    exact (hA1 key).mp h1
-  have hcust_leaf : custodyCount s key > 0 → trieGet s.trie key = .known .absent := by
-    intro hpos
-    have h1 : custodyCount s key = 1 := by have := hC2 key; omega
-    exact (hC1 key).mp h1
-  refine ⟨?_, ?_, ?_⟩
-  · intro hpos
-    have hl := hactive_leaf hpos
-    refine ⟨?_, ?_⟩
-    · rcases Nat.eq_zero_or_pos (custodyCount s key) with h0 | hp
-      · exact h0
-      · have := hcust_leaf hp; rw [hl] at this; exact absurd this (by decide)
-    · rcases Nat.eq_zero_or_pos (kindCount s .terminal key) with h0 | hp
-      · exact h0
-      · have := hterm_leaf hp; rw [hl] at this; exact absurd this (by decide)
-  · intro hpos
-    have hl := hcust_leaf hpos
-    refine ⟨?_, ?_⟩
-    · rcases Nat.eq_zero_or_pos (kindCount s .active key) with h0 | hp
-      · exact h0
-      · have := hactive_leaf hp; rw [hl] at this; exact absurd this (by decide)
-    · rcases Nat.eq_zero_or_pos (kindCount s .terminal key) with h0 | hp
-      · exact h0
-      · have := hterm_leaf hp; rw [hl] at this; exact absurd this (by decide)
-  · intro hpos
-    have hl := hterm_leaf hpos
-    refine ⟨?_, ?_⟩
-    · rcases Nat.eq_zero_or_pos (kindCount s .active key) with h0 | hp
-      · exact h0
-      · have := hactive_leaf hp; rw [hl] at this; exact absurd this (by decide)
-    · rcases Nat.eq_zero_or_pos (custodyCount s key) with h0 | hp
-      · exact h0
-      · have := hcust_leaf hp; rw [hl] at this; exact absurd this (by decide)
-
 
 end Singular.Statements

@@ -11,7 +11,7 @@ request names `e`, and is refused `exit-edge-mismatch` otherwise. A reject or a
 retract carries no admission here: it leaves the registry state as it was and
 mints nothing; a retraction's admission stands in front of this step, in
 `admittedExitStep`. Every exit pays what it owes, each payment recorded by
-`paymentPaid`; supported registry steps create no additional custody refunds. -/
+`paymentPaid`; supported registry steps create no additional refunds. -/
 def exitStep (state : RegistryState) (exit : Exit) (request : Request) : Except String Result :=
   let executed : Except String Result :=
     match exit with
@@ -41,8 +41,7 @@ def ownerOutputs (datum : DatumForm) (commitment : Option Nat) (payments : List 
 
 /-- The transaction an exit builds, or the model's refusal. A fold's spends the
 registry's state and the request, and the tokens its mint destroys; it moves the
-state, delivers to the destination the request names, locks custody when its edge
-routes a token there, and pays the owner one output per owner payment: an
+state, delivers to the destination the request names, and pays the owner one output per owner payment: an
 output with no datum that returns the request's approval, so it names that
 approval's asset name as its commitment. A reject is settled inside a
 transaction that spends the registry's state and returns it unchanged, beside the
@@ -73,7 +72,6 @@ def txOfExit (state : RegistryState) (exit : Exit) (request : Request) (lovelace
           , outputs := txStateOutput t
               :: (txDestinationOutputs t request).map
                   (fun o => { o with lovelace := destinationFloor })
-              ++ txCageOutputs t request
               ++ ownerOutputs .none (request.approval.map (·.assetName)) owed
           , mint := t.mint
           , signers := requiredSigners request

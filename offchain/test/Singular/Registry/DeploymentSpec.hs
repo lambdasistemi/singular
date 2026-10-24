@@ -382,8 +382,6 @@ stateProgram
     , requestProgram
     , applicationProgram
     , activeProgram
-    , absentProgram
-    , terminalProgram
     , consumerProgram
     , custodyProgram
     , otherProgram
@@ -392,8 +390,6 @@ stateProgram = lambdas 1
 requestProgram = lambdas 2
 applicationProgram = lambdas 3
 activeProgram = lambdas 4
-absentProgram = lambdas 5
-terminalProgram = lambdas 6
 consumerProgram = lambdas 7
 custodyProgram = lambdas 9
 otherProgram = lambdas 8
@@ -516,8 +512,6 @@ parts =
         , partsRequestBytes = requestProgram
         , partsApplicationPolicy = applicationProgram
         , partsActivePolicy = activeProgram
-        , partsAbsentPolicy = absentProgram
-        , partsTerminalPolicy = terminalProgram
         , partsConsumerScript = consumerProgram
         }
 
@@ -537,8 +531,6 @@ fixtureCfg =
         , defaultTip = Coin 2_000_000
         , cfgApplicationPolicy = applicationProgram
         , cfgActivePolicy = activeProgram
-        , cfgAbsentPolicy = absentProgram
-        , cfgTerminalPolicy = terminalProgram
         , cfgConsumerScript = consumerProgram
         , network = Testnet
         }
@@ -556,8 +548,6 @@ cfgOf
        , SBS.ShortByteString
        , SBS.ShortByteString
        , SBS.ShortByteString
-       , SBS.ShortByteString
-       , SBS.ShortByteString
        , Network
        )
 cfgOf c =
@@ -570,8 +560,6 @@ cfgOf c =
     , let Coin n = defaultTip c in n
     , cfgApplicationPolicy c
     , cfgActivePolicy c
-    , cfgAbsentPolicy c
-    , cfgTerminalPolicy c
     , cfgConsumerScript c
     , network c
     )
@@ -677,9 +665,6 @@ agreeingState =
         , stateRetractTime = 60_000
         , stateAppPolicy = BuiltinByteString (SBS.fromShort applicationProgram)
         , stateActivePolicy = BuiltinByteString (SBS.fromShort activeProgram)
-        , stateAbsentPolicy = BuiltinByteString (SBS.fromShort absentProgram)
-        , stateTerminalPolicy =
-            BuiltinByteString (SBS.fromShort terminalProgram)
         }
 
 stateUtxo :: (TxIn, TxOut ConwayEra)
