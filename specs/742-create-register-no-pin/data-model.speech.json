@@ -1,0 +1,32 @@
+{
+  "records-for-creating-a-registry-and-registering-a-key-on-the-proved-design": [
+    {
+      "text": "Records for creating a registry and registering a key on the proved design.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 742. This page names the new records, their fields and the invariants each one must keep. Field encodings follow the aligned Lean models; where those models fix an order or a constructor number, that wins over this page.",
+      "pause": 400
+    }
+  ],
+  "records": [
+    {
+      "text": "Records.",
+      "pause": 500
+    }
+  ],
+  "time-phases-of-a-pending-registration": [
+    {
+      "text": "Time phases of a pending registration.",
+      "pause": 500
+    },
+    {
+      "text": "The phases are disjoint: a validity interval that is not wholly inside one phase is refused.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "data-model.md",
+    "sha256": "964ee72a569a3cc73bf72f316f3bb042b394844c6b89a2c9e34eeea4d445ecc8"
+  }
+}

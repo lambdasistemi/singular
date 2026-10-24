@@ -65,10 +65,17 @@ The shared vocabulary and the other validators:
 - <a href="../onchain/lib/registry_pin.ak" data-api="module">registry_pin</a> — the pinned state hash shared by the witness and the open-datum application
 - <a href="../onchain/validators/cage.ak" data-api="module">cage</a> — the phase predicates the property tests use
 
+The Singular state validator of the new line, beside the current one:
+
+- <a href="../onchain/lib/singular_state/genesis.ak" data-api="module">singular_state/genesis</a> — creating a registry state: one function per genesis guard, and their conjunction
+- <a href="../onchain/lib/singular_state/preimage.ak" data-api="module">singular_state/preimage</a> — the structured values hashed into token names, and the state token name
+- <a href="../onchain/lib/singular_state/state.ak" data-api="module">singular_state/state</a> — the root-only state datum, recognising a state from its seed, and comparing the whole mint of a policy
+
 Test support, documented because it is public to the test modules:
 
 - <a href="../onchain/validators/cage_fixtures.ak" data-api="module">cage_fixtures</a>
 - <a href="../onchain/lib/registry_fixtures.ak" data-api="module">registry_fixtures</a>
+- <a href="../onchain/validators/singular_state_fixtures.ak" data-api="module">singular_state_fixtures</a>
 
 ## What it leaves out
 

@@ -1,0 +1,8 @@
+{
+  "changed": [],
+  "added": [
+    "singular_state.singular_state.mint",
+    "singular_state.singular_state.spend",
+    "singular_state.singular_state.else"
+  ]
+}
