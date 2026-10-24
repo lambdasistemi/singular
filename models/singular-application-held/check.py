@@ -71,13 +71,17 @@ def code_only(text):
     return "".join(result)
 
 
-def preflight():
-    sources = sorted((PROJECT / "lean").rglob("*.lean"))
+def preflight(statement_stage=False):
+    sources = sorted((PROJECT / "lean").rglob("*.lean")) + [PROJECT / "lakefile.lean"]
     require(sources, "empty library source extent")
     for source in sources:
+        text = code_only(source.read_text())
+        if statement_stage and source.name == "HistoryClaims.lean":
+            require(text.count(":= by sorry") == 4, "expected four history proof holes")
+            text = text.replace(":= by sorry", ":= by")
         escape = re.search(
-            r"\b(sorry|admit|axiom|unsafe|implemented_by|extern)\b",
-            code_only(source.read_text()),
+            r"\b(sorry|admit|axiom|unsafe|implemented_by|extern|native_decide|ofReduceBool)\b",
+            text,
         )
         require(
             not escape, f"library escape in {source.relative_to(PROJECT)}: {escape}"
@@ -92,7 +96,9 @@ def preflight():
         digest(ledger_bytes) == record["ledgerSha256"], "investigation ledger changed"
     )
     ledger = json.loads(ledger_bytes)["statements"]
-    rows = record["statements"]
+    rows = [
+        row for row in record["statements"] if ".HistoryStatements." not in row["name"]
+    ]
     require(len(rows) == len(ledger) == 16, "expected sixteen statement rows")
     for key in ("investigationName", "name"):
         require(len({row[key] for row in rows}) == 16, f"duplicate {key}")
@@ -116,11 +122,14 @@ def preflight():
     print(
         f"PASS source binding: {len(rows)} distinct compiled types; escape scan {len(sources)} files"
     )
+    import history_check
+
+    history_check.preflight()
     return rows
 
 
-def compiled(report):
-    rows = preflight()
+def compiled(report, statement_stage=False):
+    rows = preflight(statement_stage)
     text = report.read_text()
     statements = []
     for line in text.splitlines():
@@ -156,6 +165,12 @@ def compiled(report):
             f"untrusted axioms for {name}: {sorted(dependencies)}",
         )
     print("PASS compiled correspondence and standard-axiom audit: sixteen statements")
+    import history_check
+
+    history_check.compiled(
+        [json.loads(line) for line in text.splitlines() if line.startswith("{")],
+        statement_stage,
+    )
 
 
 def controls():
@@ -185,6 +200,8 @@ def controls():
             ("dropped-premise", "compiled statement differs"),
             ("recorded-type", "recorded type digest differs"),
             ("unreferenced-hole", "library escape"),
+            ("history-definition", "frozen history closure changed"),
+            ("history-row-dropped", "expected four history statements"),
         ):
             scratch = Path(temporary) / label
             shutil.copytree(baseline, scratch)
@@ -213,6 +230,31 @@ def controls():
                 require(
                     " altered" in path.read_text(), "record control was not applied"
                 )
+            elif label == "history-definition":
+                path = project / "lean/SingularApplicationHeld/HistoryClaims.lean"
+                text = path.read_text()
+                before = "  world.domain ++ [.active registry.identity key]"
+                require(
+                    text.count(before) == 1, "history definition edit extent differs"
+                )
+                path.write_text(
+                    text.replace(
+                        before, "  id (world.domain ++ [.active registry.identity key])"
+                    )
+                )
+                require(
+                    path.read_text() != text, "history definition edit was not applied"
+                )
+            elif label == "history-row-dropped":
+                path = project / "correspondence.json"
+                record = json.loads(path.read_text())
+                rows = record["statements"]
+                record["statements"] = rows[:-1]
+                require(
+                    len(rows) == len(record["statements"]) + 1,
+                    "history row edit failed",
+                )
+                path.write_text(json.dumps(record, indent=2) + "\n")
             else:
                 path = project / "lean/Unreferenced.lean"
                 path.write_text("theorem unreferenced : True := by sorry\n")
@@ -230,7 +272,7 @@ def controls():
                 result.returncode != 0 and diagnostic in result.stdout,
                 f"control {label} failed for another reason or survived:\n{result.stdout}",
             )
-            if label == "dropped-premise":
+            if label in {"dropped-premise", "history-definition"}:
                 require(
                     "error: Lean exited" not in result.stdout,
                     "premise control did not compile",
@@ -244,13 +286,14 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--report", type=Path)
     parser.add_argument("--controls", action="store_true")
+    parser.add_argument("--statement-stage", action="store_true")
     args = parser.parse_args()
     if args.controls:
         controls()
     elif args.report:
-        compiled(args.report)
+        compiled(args.report, args.statement_stage)
     else:
-        preflight()
+        preflight(args.statement_stage)
 
 
 if __name__ == "__main__":

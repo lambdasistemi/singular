@@ -1,3 +1,4 @@
+import SingularApplicationHeld.HistoryClaims
 import SingularApplicationHeld.Statements
 import Lean
 
@@ -61,3 +62,62 @@ elab "#application_held_types" : command => do
       (value.map Expr.getUsedConstants |>.getD #[]).toList ++ pending
 
 #application_held_types
+
+private def investigationName (name : Name) : Name :=
+  let text := name.toString
+  if text.startsWith "SingularApplicationHeld.Assets." then
+    ("NoPin." ++ (text.drop "SingularApplicationHeld.Assets.".length).toString).toName
+  else if text.startsWith "SingularApplicationHeld." then
+    ("NoPin.ApplicationRequests." ++ (text.drop "SingularApplicationHeld.".length).toString).toName
+  else if text.startsWith "OpenDatumApplicationHeld." then
+    ("NoPin.ApplicationRequests." ++ (text.drop "OpenDatumApplicationHeld.".length).toString).toName
+  else name
+
+private def alphaExpr : Expr → Expr
+  | .const name levels => .const (investigationName name) levels
+  | .proj name index value => .proj (investigationName name) index (alphaExpr value)
+  | .lam _ type body info => .lam .anonymous (alphaExpr type) (alphaExpr body) info
+  | .forallE _ type body info => .forallE .anonymous (alphaExpr type) (alphaExpr body) info
+  | .letE _ type value body nonDep => .letE .anonymous (alphaExpr type) (alphaExpr value) (alphaExpr body) nonDep
+  | .app fn argument => .app (alphaExpr fn) (alphaExpr argument)
+  | .mdata data value => .mdata data (alphaExpr value)
+  | expression => expression
+
+private def reached (env : Environment) (roots : List Name) (constructors : Bool) : Array Json := Id.run do
+  let mut pending := roots
+  let mut seen : NameSet := {}
+  let mut records := #[]
+  while !pending.isEmpty do
+    let name := pending.head!
+    pending := pending.tail!
+    if seen.contains name then continue
+    seen := seen.insert name
+    let some info := env.find? name | continue
+    let value := info.value? (allowOpaque := true)
+    let members := if constructors then match info with
+      | .inductInfo data => data.ctors ++ ((getStructureInfo? env name).map (fun s => s.fieldInfo.toList.map (·.projFn)) |>.getD [])
+      | _ => []
+      else []
+    if name.toString.startsWith "Singular." || name.toString.startsWith "SingularApplicationHeld." then
+      records := records.push (Json.mkObj [("name", toJson (investigationName name).toString),
+      ("currentName", toJson name.toString),
+      ("type", toJson (reprStr info.type)), ("value", toJson (value.map reprStr)),
+      ("alphaType", toJson (reprStr (alphaExpr info.type))),
+      ("alphaValue", toJson (value.map (fun v => reprStr (alphaExpr v)))),
+      ("members", toJson (members.map (fun n => (investigationName n).toString)))])
+    pending := members ++ info.type.getUsedConstants.toList ++
+      (value.map Expr.getUsedConstants |>.getD #[]).toList ++ pending
+  return records
+
+
+elab "#history_types" : command => do
+  let env ← getEnv
+  let statements := env.constants.toList.filter fun (name, _) =>
+    name.getPrefix == `SingularApplicationHeld.HistoryStatements
+  for (name, info) in statements do
+    IO.println (Json.mkObj [("historyStatement", toJson name.toString),
+      ("type", toJson (reprStr (investigationType info.type))),
+      ("compiledType", toJson (reprStr info.type)),
+      ("axioms", toJson ((← collectAxioms name).toList.map toString)),
+      ("closure", toJson (reached env info.type.getUsedConstants.toList true))]).compress
+#history_types
