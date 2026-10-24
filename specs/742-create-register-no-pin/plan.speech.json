@@ -21,11 +21,15 @@
       "pause": 500
     },
     {
-      "text": "Lean is the authority. Implementation starts only after issue 741 lands its aligned models on the epic branch, beside the current lean/Singular models. The epic owner forwards their module paths in a release note, and this section is then rebound to that revision, statement by statement, before the first slice is released. Until then the binding is provisional, to pull request 748 at 4126a951:",
+      "text": "Lean is the authority. Issue 741 lands its aligned models on the epic branch beside the current lean/Singular models, and each family is bound to the landed revision before the first slice that implements it is released.",
       "pause": 400
     },
     {
-      "text": "Termination, update and history statements belong to issue 743. A statement the aligned models rename or restate is rebound by name; one they drop, or one whose meaning the code cannot meet, is a question to the epic owner, never a quiet change of the check.",
+      "text": "The Singular family is bound to the Lake project models/singular-application-held (library SingularApplicationHeld, recipe just application-held-model) at epic-branch commit b1be26a6, statements in SingularApplicationHeld.Statements, all proved with the standard axioms. The model's vocabulary (Preimage.state, Preimage.active, Preimage.registrationApproval, PublishedRelease, FoldObservation, genesis, recognizeState, fold) names the code. The open-datum families stay provisional, to pull request 748 at 4126a951, until issue 741's open-datum models land; pull request 2 is rebound then.",
+      "pause": 400
+    },
+    {
+      "text": "termination_inversion, termination_effects, and the termination, update and history statements belong to issue 743. A statement the aligned models rename or restate is rebound by name; one they drop, or one whose meaning the code cannot meet, is a question to the epic owner, never a quiet change of the check.",
       "pause": 400
     }
   ],
@@ -119,6 +123,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "2e850208de9fa5fc64e1e97d5ff4933ede6871015278969b77a9352242419188"
+    "sha256": "72de5d0ed16780526613dd0e790da6e8b6a35ac63bbc54515c8b5fe20cb30ef0"
   }
 }

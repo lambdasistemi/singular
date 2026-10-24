@@ -17,18 +17,23 @@ the commands, the pull requests and their slices, and the seats. The story and t
 
 ## Lean binding
 
-Lean is the authority. Implementation starts only after issue 741 lands its aligned models on the epic branch, beside the
-current `lean/Singular` models. The epic owner forwards their module paths in a release note, and this section is then
-rebound to that revision, statement by statement, before the first slice is released. Until then the binding is
-provisional, to pull request 748 at 4126a951:
+Lean is the authority. Issue 741 lands its aligned models on the epic branch beside the current `lean/Singular` models,
+and each family is bound to the landed revision before the first slice that implements it is released.
+
+The Singular family is bound to the Lake project `models/singular-application-held` (library `SingularApplicationHeld`,
+recipe `just application-held-model`) at epic-branch commit b1be26a6, statements in `SingularApplicationHeld.Statements`,
+all proved with the standard axioms. The model's vocabulary (`Preimage.state`, `Preimage.active`,
+`Preimage.registrationApproval`, `PublishedRelease`, `FoldObservation`, `genesis`, `recognizeState`, `fold`) names the
+code. The open-datum families stay provisional, to pull request 748 at 4126a951, until issue 741's open-datum models
+land; pull request 2 is rebound then.
 
 | Family | Statements this ticket implements and checks |
 | --- | --- |
-| Singular | `genesis_inversion`, `recognition_inversion`, `registration_inversion`, `registration_effects`, `registration_separate_holdings`, `batch_inversion`, `batch_effects`, `fold_minted_outputs`, `fold_untouched_keys`, `active_role_never_state`, `minted_active_never_state`, `public_fold_constructed`, `public_fold_effects` |
-| Open-datum lifecycle | `configurationCreate_inversion`, `configuration_immutable`, `bookRegistration_inversion`, `booking_authority_and_parameters`, `approvalBurn_inversion`, `approval_burn_open`, `burning_grants_nothing`, `registrationFold_inversion`, `folder_protection`, `ownerReclaim_inversion`, `expiredCleanup_inversion`, `registration_lifecycle`, `additive_payments` |
-| Money and equivalence | `create_journey`, `registration_booking_journey`, `registration_fold_journey` (restated in issue 741), `reclaim_journey`, `cleanup_journey`, `journey_allocations`, `accepted_economic_allocations` |
+| Singular, bound at b1be26a6 | `genesis_inversion`, `recognition_inversion`, `registration_inversion`, `registration_effects`, `registration_separate_holdings`, `batch_inversion`, `publicFold_inversion`, `batch_effects`, `fold_minted_outputs`, `fold_untouched_keys`, `active_role_never_state`, `minted_active_never_state`, `public_fold_constructed`, `public_fold_effects` |
+| Open-datum lifecycle, provisional | `configurationCreate_inversion`, `configuration_immutable`, `bookRegistration_inversion`, `booking_authority_and_parameters`, `approvalBurn_inversion`, `approval_burn_open`, `burning_grants_nothing`, `registrationFold_inversion`, `folder_protection`, `ownerReclaim_inversion`, `expiredCleanup_inversion`, `registration_lifecycle`, `additive_payments` |
+| Money and equivalence, provisional | `create_journey`, `registration_booking_journey`, `registration_fold_journey` (restated in issue 741), `reclaim_journey`, `cleanup_journey`, `journey_allocations`, `accepted_economic_allocations` |
 
-Termination, update and history statements belong to issue 743. A statement the aligned models rename or restate is
+`termination_inversion`, `termination_effects`, and the termination, update and history statements belong to issue 743. A statement the aligned models rename or restate is
 rebound by name; one they drop, or one whose meaning the code cannot meet, is a question to the epic owner, never a quiet
 change of the check.
 
@@ -102,7 +107,7 @@ flowchart LR
 | --- | --- | --- | --- |
 | 1 (PR 754) | state-genesis | genesis, state recognition from the supplied seed, state output integrity, the state-name and root-datum encoding; blueprint titles, identity manifest, declared-additions record | validators-follow-the-model |
 | 1 | state-registration-fold | approval recomputed and consumed for exactly the change, trie proof of absence, one token into the committed address and datum with at least the committed deposit, nothing else under the state policy | validators-follow-the-model |
-| 1 | preimage-vectors | the CBOR approval preimage and state token name in Aiken and Haskell, with shared byte vectors | preimage-bytes-pinned |
+| 1 | preimage-vectors | the CBOR preimages of the model's state, active and registration-approval roles (`Preimage.state`, `Preimage.active`, `Preimage.registrationApproval`) in Aiken and Haskell, with shared byte vectors | preimage-bytes-pinned |
 | 2 | approvals-and-configuration | the configuration record at creation, the registration approval mint with its committed fields, the open burn | validators-follow-the-model |
 | 2 | pending-registration | the three phases and the fold path's genuine-token check | validators-follow-the-model |
 | 3 | library-create-and-fold | genesis and registration fold builders; reference-script publication once per application, reuse for a later registry | devnet-registration-journey, scripts-published-once |
