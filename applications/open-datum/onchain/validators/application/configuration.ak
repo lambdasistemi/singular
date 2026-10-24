@@ -105,20 +105,37 @@ pub fn configuration_create(
 /// The parameters of the configuration record `output` is, when it is the
 /// record of `registry`.
 pub fn configuration_parameters(
-  _application_policy: PolicyId,
-  _registry: RegistryIdentity,
-  _output: Output,
+  application_policy: PolicyId,
+  registry: RegistryIdentity,
+  output: Output,
 ) -> Option<ApplicationParameters> {
-  None
+  if configuration_shape(application_policy, registry, output) {
+    when held_datum(output) is {
+      Some(Configuration { parameters }) -> Some(parameters)
+      _ -> None
+    }
+  } else {
+    None
+  }
 }
 
 /// Model `configurationRead`: some reference input is the configuration
 /// record of `registry` and its parameters satisfy `accepts`.
 pub fn configuration_read(
-  _application_policy: PolicyId,
-  _registry: RegistryIdentity,
-  _reference_inputs: List<Input>,
-  _accepts: fn(ApplicationParameters) -> Bool,
+  application_policy: PolicyId,
+  registry: RegistryIdentity,
+  reference_inputs: List<Input>,
+  accepts: fn(ApplicationParameters) -> Bool,
 ) -> Bool {
-  False
+  list.any(
+    reference_inputs,
+    fn(input) {
+      when
+        configuration_parameters(application_policy, registry, input.output)
+      is {
+        Some(parameters) -> accepts(parameters)
+        None -> False
+      }
+    },
+  )
 }
