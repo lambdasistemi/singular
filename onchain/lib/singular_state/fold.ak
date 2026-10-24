@@ -34,7 +34,9 @@ use aiken/merkle_patricia_forestry.{
 use aiken/merkle_patricia_forestry as mpf
 use aiken/merkle_patricia_forestry/helpers.{nibble, nibbles}
 use aiken/primitive/bytearray
-use cardano/assets.{AssetName, PolicyId, Value, quantity_of, tokens}
+use cardano/assets.{
+  AssetName, PolicyId, Value, lovelace_of, quantity_of, tokens,
+}
 use cardano/transaction.{
   Datum, InlineDatum, Input, Output, OutputReference, Transaction, TransactionId,
   find_input,
@@ -396,8 +398,8 @@ pub fn registration_mint(
 }
 
 /// Model guard `registrationDeposit`: the holding holds at least the deposit.
-pub fn registration_deposit(_deposit: Int, _holding: Output) -> Bool {
-  False
+pub fn registration_deposit(deposit: Int, holding: Output) -> Bool {
+  deposit <= lovelace_of(holding.value)
 }
 
 /// One change applied to the trie: every guard of the change holds. The trie
