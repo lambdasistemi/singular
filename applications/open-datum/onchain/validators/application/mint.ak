@@ -23,6 +23,9 @@
 use aiken/collection/list
 use application/configuration.{configuration_asset, configuration_create}
 use application/held.{TokenId}
+use application/registration.{
+  registration_asset, registration_at, registration_book,
+}
 use cardano/assets.{PolicyId}
 use cardano/transaction.{Output, OutputReference, Transaction}
 use singular_state/preimage.{RegistryIdentity}
@@ -48,7 +51,7 @@ pub type ApplicationAction {
 /// Model `birth`: the asset an action brings into being, when it does.
 pub fn birth(
   application_policy: PolicyId,
-  _outputs: List<Output>,
+  outputs: List<Output>,
   action: ApplicationAction,
 ) -> Option<TokenId> {
   when action is {
@@ -59,7 +62,13 @@ pub fn birth(
           RegistryIdentity { policy: state_policy, name: state_name },
         ),
       )
-    _ -> None
+    BookRegistration { output_index } ->
+      when registration_at(outputs, output_index) is {
+        Some((_, registration)) ->
+          Some(registration_asset(application_policy, registration))
+        None -> None
+      }
+    ApprovalBurn -> None
   }
 }
 
@@ -98,7 +107,9 @@ pub fn action_accepted(
         tx,
         births,
       )
-    _ -> False
+    BookRegistration { output_index } ->
+      registration_book(application_policy, output_index, tx, births)
+    ApprovalBurn -> False
   }
 }
 

@@ -16,6 +16,7 @@
 //// A range without two finite bounds is no clock. Inclusive and exclusive
 //// bounds are brought to the one half-open reading before any comparison.
 
+use aiken/interval.{Finite}
 use application/held.{ApplicationParameters, RegistrationData}
 use cardano/transaction.{ValidityRange}
 
@@ -27,8 +28,25 @@ pub type Bounds {
 }
 
 /// The half-open interval of a validity range, when both bounds are finite.
-pub fn validity_bounds(_range: ValidityRange) -> Option<Bounds> {
-  None
+pub fn validity_bounds(range: ValidityRange) -> Option<Bounds> {
+  when (range.lower_bound.bound_type, range.upper_bound.bound_type) is {
+    (Finite(lower), Finite(upper)) ->
+      Some(
+        Bounds {
+          lower: if range.lower_bound.is_inclusive {
+            lower
+          } else {
+            lower + 1
+          },
+          upper: if range.upper_bound.is_inclusive {
+            upper + 1
+          } else {
+            upper
+          },
+        },
+      )
+    _ -> None
+  }
 }
 
 /// Model guard `registrationClock`: the interval is non-empty, the booking
@@ -36,9 +54,18 @@ pub fn validity_bounds(_range: ValidityRange) -> Option<Bounds> {
 /// deadlines are the booking time moved by the processing and the reclaim
 /// times of the registry.
 pub fn registration_clock(
-  _registration: RegistrationData,
-  _parameters: ApplicationParameters,
-  _range: ValidityRange,
+  registration: RegistrationData,
+  parameters: ApplicationParameters,
+  range: ValidityRange,
 ) -> Bool {
-  False
+  when validity_bounds(range) is {
+    Some(Bounds { lower, upper }) -> and {
+        lower < upper,
+        registration.booked_at == upper,
+        upper - lower <= parameters.booking_width,
+        registration.process_deadline == registration.booked_at + parameters.process_time,
+        registration.reclaim_end == registration.process_deadline + parameters.retract_time,
+      }
+    None -> False
+  }
 }
