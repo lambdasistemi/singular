@@ -149,6 +149,16 @@
       "pause": 400
     }
   ],
+  "open-datum-lifecycle-proof-result": [
+    {
+      "text": "Open-datum lifecycle proof result.",
+      "pause": 500
+    },
+    {
+      "text": "All nineteen open-datum refund-lifecycle statements are proved in Lean, on 24 October 2026: the three timed registration phases with the refund address signing the reclaim, the termination burn, approvals and booking authority, the treasury deposit at termination booking, per-seed parameters, folder protection, and no stuck termination (which reuses the proved Singular public-fold construction). Each proof uses only the standard axioms on a clean build; each statement and the 1298 definitions it reaches are unchanged since their audit. An independent proof audit approved them. The ledger is investigations/741-no-pin/refund-lifecycle-statements.json 1b1ca2cdd2afb143d08e572466c6f1dd217dc18626c417948dae35a338d1b8f7. These are proofs of hypothetical investigation statements, not accepted law; money, history and identity proofs follow.",
+      "pause": 400
+    }
+  ],
   "candidate-boundary-at-the-interface-checkpoint": [
     {
       "text": "Candidate boundary at the interface checkpoint.",
@@ -341,18 +351,22 @@
       "pause": 400
     }
   ],
-  "open-datum-lifecycle-proof-result": [
+  "registration-payment-and-holding-address-can-coincide-in-the-frozen-money-statement": [
     {
-      "text": "Open-datum lifecycle proof result.",
+      "text": "Registration payment and holding address can coincide in the frozen money statement.",
       "pause": 500
     },
     {
-      "text": "All nineteen open-datum refund-lifecycle statements are proved in Lean, on 24 October 2026: the three timed registration phases with the refund address signing the reclaim, the termination burn, approvals and booking authority, the treasury deposit at termination booking, per-seed parameters, folder protection, and no stuck termination (which reuses the proved Singular public-fold construction). Each proof uses only the standard axioms on a clean build; each statement and the 1298 definitions it reaches are unchanged since their audit. An independent proof audit approved them. The ledger is investigations/741-no-pin/refund-lifecycle-statements.json 1b1ca2cdd2afb143d08e572466c6f1dd217dc18626c417948dae35a338d1b8f7. These are proofs of hypothetical investigation statements, not accepted law; money, history and identity proofs follow.",
+      "text": "As a folder, I want the claimed gross bid to exclude a protected deposit that a new holding credits at my address, so that the amount described as my reward remains accurate. The frozen registration-fold statement admits a complete observation whose holding address equals the folder address: a deposit of 7 and a residual bid of 16 credit 23 at that address, contradicting its required total of 16. Lean proves the exact negation in Money.Refutation.registration_fold_journey_refutation. The statement has no authenticated booking-history premise, although the booking rule requires the holding address to be the application address. No reachable booking history or production exploit is claimed.",
+      "pause": 400
+    },
+    {
+      "text": "Eleven other frozen money statements are proved. The affected registration-fold claim remains held. The decision is whether a later statement should require authenticated booking provenance or measure the separate ordinary payment output. Preserving the frozen statement and recording its refutation is the outcome here; no definition, accepted application law or implementation changes. The full statement-definition closure is bound to a fresh compilation of the slice base.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "impact.md",
-    "sha256": "494c624a804cd4a101138efd7dd32803f077041c6c93ddf9f20d41651b6514d1"
+    "sha256": "79e979154ae45805ed2480a5041c5ad6f8032834e7607648f388917c95281fbe"
   }
 }

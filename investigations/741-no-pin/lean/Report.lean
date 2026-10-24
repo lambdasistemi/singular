@@ -4,6 +4,7 @@ import NoPin.Oracle
 import NoPin.Held.Report
 import NoPin.ApplicationRequests.Report
 import NoPin.ApplicationRequests.RefundProofAudit
+import NoPin.ApplicationRequests.MoneyProofAudit
 
 /-! Hypothetical #741 evidence, not accepted law. Discover statements, cases,
 guards and compiled proof axioms from the environment rather than a hand list. -/
@@ -146,4 +147,5 @@ end NoPin.Report
 #eval NoPin.ApplicationRequests.RefundLifecycle.Report.reportCorpus
 
 #money_report
+#money_proof_closure
 #eval NoPin.ApplicationRequests.Money.Report.reportCorpus

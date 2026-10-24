@@ -15,7 +15,7 @@
     "refund_lifecycle_controls.py": "c207cc96d273995a9c5675439ef4c5fc9bef247a00fefb2405181e2d7957ab9f",
     "pin_check.py": "00c251f08b308bba0cd6ffe72e0c56fa45eb8fe4d83eaa80900f3177328874a5",
     "refund-proof-definition-baseline.json": "3caffc0fefad2a3e27689012fae0aacf99e6b764fbe3dfd9223338b856b33654",
-    "refund_proof_check.py": "45ada264904119b3b9d0b4f7f17849cbc54111636700103feb584ed5e490e18b",
+    "refund_proof_check.py": "21312c1f96a0341ca49cc894de38fd7d52906b43f8ac1f602b335553f93094c0",
     "refund_proof_controls.py": "bcd3020d3749184f42972800dec19c91c994754e591b7d452fa6d2503868d79b",
     "lean/NoPin/ApplicationRequests/RefundLifecycleProofs.lean": "2de5fd3a0b32a693f78d99800a6a5dc26b96b65980562f725543e9259e203f7d",
     "lean/NoPin/ApplicationRequests/RefundProofAudit.lean": "eef777947c5109d3a82e8a3f48c1f81574bd73bde41fa32817524fb81e32fd36"

@@ -43,14 +43,25 @@ def reconcile(records, ledger):
     for row in rows:
         name = row["theorem"]
         declaration = statements[name]
-        require(
-            row["status"] == "STATED"
-            and set(declaration["axioms"]) - STANDARD == {"sorryAx"},
-            "wrong proof status",
-        )
+        axioms = set(declaration["axioms"])
+        proof_status = "STATED" if "sorryAx" in axioms else "PROVED"
+        require(axioms <= STANDARD | {"sorryAx"}, "untrusted proof axiom")
+        require(row.get("proofStatus") == proof_status, "wrong compiled proof status")
+        require(row["status"] in {proof_status, "REFUTED"}, "wrong proof status")
+        if row["status"] == "REFUTED":
+            refutation = declaration.get("refutation") or {}
+            require(
+                refutation.get("name") == row.get("refutation")
+                and refutation.get("exact") is True,
+                "refutation is not the exact negation",
+            )
+            require(
+                set(refutation.get("axioms", ["missing"])) <= STANDARD,
+                "unproved refutation",
+            )
         require(
             "Hypothesis" in declaration["doc"]
-            and "Status: STATED." in declaration["doc"],
+            and ("Status: " + row["status"] + ".") in declaration["doc"],
             "unmarked statement",
         )
         require(
@@ -335,14 +346,23 @@ def check(records):
     )
     (ROOT / ".lake/money-controls-report.json").write_text(run.stdout)
     independence = json.loads(run.stdout)
+    import money_proof_check
+
+    proof_evidence = money_proof_check.check(records, ledger)
     print(
         json.dumps(
             {
                 "family": "money",
-                "status": "CANDIDATE-STATEMENTS-ONLY",
+                "status": "HYPOTHETICAL-PROOF-CANDIDATE",
                 "acceptedLaw": False,
                 "statements": len(ledger["statements"]),
-                "sorryAx": len(ledger["statements"]),
+                "proved": sum(r["status"] == "PROVED" for r in ledger["statements"]),
+                "refuted": sum(r["status"] == "REFUTED" for r in ledger["statements"]),
+                "open": sum(r["status"] == "STATED" for r in ledger["statements"]),
+                "sorryAx": sum(
+                    r["proofStatus"] == "STATED" for r in ledger["statements"]
+                ),
+                "proofEvidence": proof_evidence,
                 "partyJourneyCells": len(ledger["differences"]),
                 "oracleReplays": len(corpus),
                 "authorityControls": len(authorities),

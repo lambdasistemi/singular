@@ -43,6 +43,12 @@ MODULES = [
 
 def main():
     sources = {name: (BASE / (name + ".lean")).read_text() for name in MODULES}
+    sources["MoneyStatements"] = re.sub(
+        r":= by.*?(?=\n/--|\nend NoPin.ApplicationRequests.Money.Statements)",
+        ":= by sorry\n",
+        sources["MoneyStatements"],
+        flags=re.S,
+    )
     changes = [
         (
             "carrier-counted-as-old-tip",

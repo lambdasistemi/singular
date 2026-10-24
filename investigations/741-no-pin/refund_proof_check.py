@@ -66,7 +66,7 @@ def check(records, ledger):
         controls.append("refund-proved-with-sorry-refused")
     else:
         raise ValueError("PROVED refund with sorry survived")
-    for family in ["lifecycle", "history", "money"]:
+    for family in ["lifecycle", "history"]:
         module = __import__(family + "_check")
         proposed = json.loads((ROOT / (family + "-statements.json")).read_text())
         proposed["statements"][0]["status"] = "PROVED"

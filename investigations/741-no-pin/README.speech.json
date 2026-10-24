@@ -139,7 +139,7 @@
       "pause": 500
     },
     {
-      "text": "As a requester or integrator, I want to see which money flows stay equal and which change by an explicit ruling before treating the simplified application as equivalent. The compiled comparison below is a finite model example, not a ledger receipt. All 12 general money statements remain unproved.",
+      "text": "As a requester or integrator, I want to see which money flows stay equal and which change by an explicit ruling before treating the simplified application as equivalent. The compiled comparison below is a finite model example, not a ledger receipt. Eleven general money statements are proved and the registration-fold statement is constructively refuted, as explained below.",
       "pause": 400
     },
     {
@@ -187,8 +187,26 @@
       "pause": 400
     }
   ],
+  "money-proof-result-and-a-held-registration-claim": [
+    {
+      "text": "Money proof result and a held registration claim.",
+      "pause": 500
+    },
+    {
+      "text": "As a folder or application integrator, I want a payment claim to distinguish the bid from a protected deposit credited at the same address. Eleven of the twelve frozen money statements now have hypothetical proofs with standard axioms. They cover creation, registration booking, payload update in both models, termination booking and folding, reclaim, cleanup, accepted economic allocations, all sixty-six party-by-journey comparisons and retained update authority.",
+      "pause": 400
+    },
+    {
+      "text": "The registration-fold statement is constructively refuted without changing its type or any monetary definition. Its premises admit a request whose holding address is the folder address. With deposit 7 and residual bid 16, the builder creates a holding worth 7 and an ordinary payment worth 16 at that address. The address total is 23, whereas the conclusion requires 16. The counterexample satisfies the complete written antecedent. It does not establish an authorised booking history: booking requires the holding at the application address, but that provenance is absent from this statement's premises.",
+      "pause": 400
+    },
+    {
+      "text": "The affected registration-fold guarantee remains held for a design decision. A subsequent statement revision can require the missing booking provenance or observe the ordinary residual output separately; this proof slice selects neither. The exact negation is checked in Lean and its proof uses only standard axioms. The original proposition retains its proof hole and is marked refuted, never proved. Definition and statement identities stay frozen. These are model results, with no accepted-law, implementation, ledger or hosted-CI acceptance.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "README.md",
-    "sha256": "ccdfac3701a5e6da8380281cdf2005aa4521d79d0488d0690ba1388383c2a2d3"
+    "sha256": "8bb054ce80a708b46d961f497fe4fde68d64d3fdd61dc218935e6457860ce4a4"
   }
 }

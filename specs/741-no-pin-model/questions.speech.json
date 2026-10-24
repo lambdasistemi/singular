@@ -425,8 +425,22 @@
       "pause": 400
     }
   ],
+  "registration-payment-and-holding-address-can-coincide-in-the-frozen-money-statement": [
+    {
+      "text": "Registration payment and holding address can coincide in the frozen money statement.",
+      "pause": 500
+    },
+    {
+      "text": "As a folder, I want the claimed gross bid to exclude a protected deposit that a new holding credits at my address, so that the amount described as my reward remains accurate. The frozen registration-fold statement admits a complete observation whose holding address equals the folder address: a deposit of 7 and a residual bid of 16 credit 23 at that address, contradicting its required total of 16. Lean proves the exact negation in Money.Refutation.registration_fold_journey_refutation. The statement has no authenticated booking-history premise, although the booking rule requires the holding address to be the application address. No reachable booking history or production exploit is claimed.",
+      "pause": 400
+    },
+    {
+      "text": "Eleven other frozen money statements are proved. The affected registration-fold claim remains held. The decision is whether a later statement should require authenticated booking provenance or measure the separate ordinary payment output. Preserving the frozen statement and recording its refutation is the outcome here; no definition, accepted application law or implementation changes. The full statement-definition closure is bound to a fresh compilation of the slice base.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "questions.md",
-    "sha256": "cb3bae411ce2e08fad61fb463763188894a222b33e17aee50eacef138b16a1e0"
+    "sha256": "aead707a8942cc354c525e5642463606408771517d38cb766a316187ee739155"
   }
 }

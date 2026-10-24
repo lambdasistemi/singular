@@ -30,13 +30,34 @@ abbrev UpdateClaim (m : Mutation) (h : Hash) (c : Codec) (t : TrieCommit) (decod
     OldUpdateVisible world after reference successor
 
 namespace Statements
-/-- Hypothesis under #741, not accepted law. Status: STATED.
+/-- Hypothesis under #741, not accepted law. Status: PROVED.
 Both update models preserve protected control, assets and deposit while delivering the proposed payload. -/
 theorem update_both_models (h : Hash) (c : Codec) (t : TrieCommit) (decode : DecodeApplication)
     (release : PublishedRelease) (q : Input) (world : OpenDatumApplication.World) (reference : Nat)
     (successor : OpenDatumApplication.Successor) (signers : List Nat)
     (_premises : UpdatePremise h c t decode release q world reference successor signers) :
-    UpdateClaim .none h c t decode release q world reference successor signers := by sorry
+    UpdateClaim .none h c t decode release q world reference successor signers := by
+  have current := Proofs.simple_journey h c t decode release .update q _premises.1 (by decide) (by decide)
+  have oldAccepted := _premises.2.1
+  cases result : oldUpdate .none world reference [successor] signers with
+  | error why => simp [result, Except.isOk, Except.toBool] at oldAccepted
+  | ok after =>
+    have accepted : OpenDatumApplication.updateStep OpenDatumApplication.Law.standard
+        world reference [successor] signers = .ok after := by
+      simpa [oldUpdate, amountAt, OpenDatumApplication.Law.standard] using result
+    obtain ⟨before, selected, found, signed, carrying, address, control, assets, deposit, effect⟩ :=
+      (OpenDatumApplication.Statements.update_inversion world after reference [successor] signers).mp accepted
+    have member : selected ∈ ([successor].filter fun x =>
+        OpenDatumApplication.carriesKey x.assets before.envelope.control.key) := by
+      rw [carrying]
+      simp
+    have same := List.mem_singleton.mp (List.mem_filter.mp member).1
+    subst selected
+    refine ⟨current, after, result, before,
+      ⟨world.nextRef, successor.address, successor.lovelace, successor.assets, successor.envelope⟩,
+      found, ?_, control, assets, rfl, deposit⟩
+    rw [effect]
+    exact List.mem_append_right _ List.mem_cons_self
 end Statements
 
 namespace Fixtures

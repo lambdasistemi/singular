@@ -11,6 +11,7 @@ import NoPin.ApplicationRequests.LifecycleReport
 import NoPin.ApplicationRequests.RefundLifecycleReport
 import NoPin.ApplicationRequests.RefundProofAudit
 import NoPin.ApplicationRequests.MoneyReport
+import NoPin.ApplicationRequests.MoneyProofAudit
 
 /-! Hypotheses under #741, not accepted law; identity statements and their
 separate executed witnesses and single-guard falsifications. -/

@@ -1,4 +1,6 @@
 import NoPin.ApplicationRequests.MoneyUpdate
+import NoPin.ApplicationRequests.MoneyRefutation
+import NoPin.ApplicationRequests.ProofAudit
 
 /-! Hypothetical compiled comparison inventory, not accepted law. Extents,
 certificate bindings, accepted dependencies and every amount come from Lean. -/
@@ -82,9 +84,18 @@ elab "#money_report" : command => do
           IO.println (Json.mkObj [("family", toJson "money"), ("binding", toJson name.toString),
             ("witness", toJson witnessName.toString), ("positive", toJson positiveName.toString),
             ("mutant", toJson mutantName.toString)]).compress
+      let refutationName := Name.str `NoPin.ApplicationRequests.Money.Refutation
+        (name.getString! ++ "_refutation")
+      let mut refutation := Json.null
+      if env.contains refutationName then
+        let exactMatch ← liftTermElabM <| NoPin.ApplicationRequests.ProofAudit.exactNegation name refutationName
+        refutation := Json.mkObj [("name", toJson refutationName.toString),
+          ("exact", toJson exactMatch),
+          ("axioms", toJson ((← collectAxioms refutationName).toList.map toString))]
       IO.println (Json.mkObj [("family", toJson "money"), ("name", toJson name.toString),
         ("type", toJson (reprStr info.type)), ("doc", toJson ((← findDocString? env name).getD "")),
-        ("axioms", toJson ((← collectAxioms name).toList.map toString))]).compress
+        ("axioms", toJson ((← collectAxioms name).toList.map toString)),
+        ("refutation", refutation)]).compress
 
 /-- Hypothesis under #741, not accepted law; computed amounts and ordinary definition replay. -/
 def reportCorpus : IO Unit := do

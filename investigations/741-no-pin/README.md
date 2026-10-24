@@ -96,7 +96,7 @@ follows from these checks.
 
 ## Money and journey statement candidate
 
-As a requester or integrator, I want to see which money flows stay equal and which change by an explicit ruling before treating the simplified application as equivalent. The compiled comparison below is a finite model example, not a ledger receipt. All 12 general money statements remain unproved.
+As a requester or integrator, I want to see which money flows stay equal and which change by an explicit ruling before treating the simplified application as equivalent. The compiled comparison below is a finite model example, not a ledger receipt. Eleven general money statements are proved and the registration-fold statement is constructively refuted, as explained below.
 
 | Journey | Accepted economic baseline | Current candidate |
 |---|---|---|
@@ -129,3 +129,12 @@ The recipe checks compiled axioms against each row, freezes the transitive kerne
 As an application integrator, I want each proof to remain bound to its exact statement and premises. The refund-signer lifecycle now supplies nineteen hypothetical proofs: the nine action inversions, termination burn, booking authority and public parameters, treasury at booking, additive payments, open approval burning and the fact that burning alone grants no application spend or fresh approval, plus registration effects, folder protection, conditional public termination availability and configuration immutability. The nineteen statement identities and the definitions they reach remain frozen at revision 56db38c7e244b075f713b6028afb5ff9bcc50d32.
 
 All nineteen refund-signer lifecycle statements now have proof terms. Conditional termination availability composes the public Singular builder with the refund application under the written funding, authenticity, encoding and collision premises. Earlier statement-stage wording above describes the retained historical checkpoint. The recipe computes current proof status from compiled axioms, rejects proofs outside this family and compares the refund statement definition closure against a freshly compiled base. A changed reclaim signer must change that closure. Local model proofs establish no accepted application law, implementation, ledger execution or hosted CI result.
+
+
+## Money proof result and a held registration claim
+
+As a folder or application integrator, I want a payment claim to distinguish the bid from a protected deposit credited at the same address. Eleven of the twelve frozen money statements now have hypothetical proofs with standard axioms. They cover creation, registration booking, payload update in both models, termination booking and folding, reclaim, cleanup, accepted economic allocations, all sixty-six party-by-journey comparisons and retained update authority.
+
+The registration-fold statement is constructively refuted without changing its type or any monetary definition. Its premises admit a request whose holding address is the folder address. With deposit 7 and residual bid 16, the builder creates a holding worth 7 and an ordinary payment worth 16 at that address. The address total is 23, whereas the conclusion requires 16. The counterexample satisfies the complete written antecedent. It does not establish an authorised booking history: booking requires the holding at the application address, but that provenance is absent from this statement's premises.
+
+The affected registration-fold guarantee remains held for a design decision. A subsequent statement revision can require the missing booking provenance or observe the ordinary residual output separately; this proof slice selects neither. The exact negation is checked in Lean and its proof uses only standard axioms. The original proposition retains its proof hole and is marked refuted, never proved. Definition and statement identities stay frozen. These are model results, with no accepted-law, implementation, ledger or hosted-CI acceptance.

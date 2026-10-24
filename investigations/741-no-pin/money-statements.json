@@ -8,16 +8,24 @@
     "lean/NoPin/ApplicationRequests/MoneyClaims.lean": "b62c51640ba3596d44f844fde1f614b6661bf41ada14a94f2e14a8924c98cf96",
     "lean/NoPin/ApplicationRequests/MoneyEvidence.lean": "fcc7186cd695d24e95be3912746a02d1d5aabaaf976c640dac141e0937edafa2",
     "lean/NoPin/ApplicationRequests/MoneyFixtures.lean": "02af7e0acfb10d6c19c910e707f4a506ffdb9dd43b2f29ebbc99b0f96e954f98",
-    "lean/NoPin/ApplicationRequests/MoneyReport.lean": "1b9b709022e40b1338cca1828f30946bee66179e6b8b463116547510f9b8c748",
-    "lean/NoPin/ApplicationRequests/MoneyStatements.lean": "fac7189813f608fcda5e9b69c10d75b606625cef105164c33bf62e8b5e0079bb",
-    "lean/NoPin/ApplicationRequests/MoneyUpdate.lean": "538fde7dc76da20a3105ce7698672af2fb939eda7acd7efbef67002e7d8abef1",
-    "money_check.py": "c42c46bd3c54acda0ae6445e8a6c93d3d2035a9540a18361bb3563e4a6c94856",
-    "money_controls.py": "3363ff0dc6f699120a36f1ee35fadfd0e8a55acabe948abb90ebc612dec2ec75"
+    "lean/NoPin/ApplicationRequests/MoneyReport.lean": "62b9d4396545bc64c0890c7a31a78dbd613b7b1ccab7545c202cf81f4042562e",
+    "lean/NoPin/ApplicationRequests/MoneyStatements.lean": "0365c1c3f80bed53829a036acf1e0398bd6b624531e3ff8e27e5901274ce8d53",
+    "lean/NoPin/ApplicationRequests/MoneyUpdate.lean": "b2a1c84b543a84c5e7886cd8e51457281c55866e976971373e927161c18f9c75",
+    "money_check.py": "052f159c0b6911b214bfbd5d01c540d9ef095dd3e55014fe7ef0ae273a625aa4",
+    "money_controls.py": "216318fd9a4d70e39c878ae96567d0e7be505ed7eea5cde8ac562fad50da4a04",
+    "lean/NoPin/ApplicationRequests/MoneyProofs.lean": "8a13b8c8f6c39e176b87a12cc857407488cbd9b883bf7098929fefbc107b9a25",
+    "lean/NoPin/ApplicationRequests/MoneyJourneyProofs.lean": "65401c306a72fdf2e8eff190aae6050b1762d9a59b3110ceb5d9dbc1ee2efa72",
+    "lean/NoPin/ApplicationRequests/MoneyFoldProofs.lean": "ee3698e433b044b96ed6da8424720467813f78dd40fa0943134a387b0a8df817",
+    "lean/NoPin/ApplicationRequests/MoneyRefutation.lean": "d48665e3f2d22a1865f01e86b5316b74be41cb192d7c032090e560b39795105e",
+    "lean/NoPin/ApplicationRequests/MoneyProofAudit.lean": "46b32e5c543263838598151d76a383e32b4c52876f765d69f7c8c86827e23979",
+    "money-proof-definition-baseline.json": "456337aab14774569d1af8ca8812e2ee09e434b44ba4b97fbf90bf97b56588fc",
+    "money_proof_check.py": "91a42236d07dc0717c959afa7a89a90c81dffde13a5eda0a86e231bf4eacd4a5",
+    "money_proof_controls.py": "aba95c1c18fe6b9eba79451a2f64054e0f7639133ea0b6f85266fe73626c6a79"
   },
   "statements": [
     {
       "theorem": "NoPin.ApplicationRequests.Money.Statements.create_journey",
-      "status": "STATED",
+      "status": "PROVED",
       "statementSha256": "423cf84680edd244d611c4980d97a15203e0e068d4d141a4c33c6c1d8dc65260",
       "witness": "NoPin.ApplicationRequests.Money.Evidence.create_journey_antecedent",
       "positive": "NoPin.ApplicationRequests.Money.Evidence.create_journey_positive",
@@ -26,11 +34,12 @@
         "application": "configurationShape"
       },
       "journey": "create",
-      "description": "create journey"
+      "description": "create journey",
+      "proofStatus": "PROVED"
     },
     {
       "theorem": "NoPin.ApplicationRequests.Money.Statements.registration_booking_journey",
-      "status": "STATED",
+      "status": "PROVED",
       "statementSha256": "5052392c4804a8bc0da2e8f21c4e84bde776842083a17d3a6350cbee96bd5f5c",
       "witness": "NoPin.ApplicationRequests.Money.Evidence.registration_booking_journey_antecedent",
       "positive": "NoPin.ApplicationRequests.Money.Evidence.registration_booking_journey_positive",
@@ -39,11 +48,12 @@
         "application": "bookingSignature"
       },
       "journey": "registrationBooking",
-      "description": "registration booking journey"
+      "description": "registration booking journey",
+      "proofStatus": "PROVED"
     },
     {
       "theorem": "NoPin.ApplicationRequests.Money.Statements.registration_fold_journey",
-      "status": "STATED",
+      "status": "REFUTED",
       "statementSha256": "c7707f3a5ecef17c7b5a6490d26b6a961531333b3f85361a23447b77b1a670ab",
       "witness": "NoPin.ApplicationRequests.Money.Evidence.registration_fold_journey_antecedent",
       "positive": "NoPin.ApplicationRequests.Money.Evidence.registration_fold_journey_positive",
@@ -52,11 +62,13 @@
         "application": "registrationDelivery"
       },
       "journey": "registrationFold",
-      "description": "registration fold journey"
+      "description": "registration fold journey",
+      "proofStatus": "STATED",
+      "refutation": "NoPin.ApplicationRequests.Money.Refutation.registration_fold_journey_refutation"
     },
     {
       "theorem": "NoPin.ApplicationRequests.Money.Statements.update_journey",
-      "status": "STATED",
+      "status": "PROVED",
       "statementSha256": "5c7abeb042590e1f9fa57860f495384d127c05814e50b4d8f53a665ade9e4cde",
       "witness": "NoPin.ApplicationRequests.Money.Evidence.update_journey_antecedent",
       "positive": "NoPin.ApplicationRequests.Money.Evidence.update_journey_positive",
@@ -65,11 +77,12 @@
         "application": "updateControl"
       },
       "journey": "update",
-      "description": "update journey"
+      "description": "update journey",
+      "proofStatus": "PROVED"
     },
     {
       "theorem": "NoPin.ApplicationRequests.Money.Statements.termination_booking_journey",
-      "status": "STATED",
+      "status": "PROVED",
       "statementSha256": "3332a40db00cd09c6cc668c824ccd3dcb421f89cdb062fc9cc8038bef1bbce1c",
       "witness": "NoPin.ApplicationRequests.Money.Evidence.termination_booking_journey_antecedent",
       "positive": "NoPin.ApplicationRequests.Money.Evidence.termination_booking_journey_positive",
@@ -78,11 +91,12 @@
         "application": "moneyTreasury"
       },
       "journey": "terminationBooking",
-      "description": "termination booking journey"
+      "description": "termination booking journey",
+      "proofStatus": "PROVED"
     },
     {
       "theorem": "NoPin.ApplicationRequests.Money.Statements.termination_fold_journey",
-      "status": "STATED",
+      "status": "PROVED",
       "statementSha256": "0a4c2b2e66c1bcdfb5cea8d31bb3dd094b9d577c5ebb90b6a54500a301c7d0ae",
       "witness": "NoPin.ApplicationRequests.Money.Evidence.termination_fold_journey_antecedent",
       "positive": "NoPin.ApplicationRequests.Money.Evidence.termination_fold_journey_positive",
@@ -91,11 +105,12 @@
         "application": "terminationActiveBurn"
       },
       "journey": "terminationFold",
-      "description": "termination fold journey"
+      "description": "termination fold journey",
+      "proofStatus": "PROVED"
     },
     {
       "theorem": "NoPin.ApplicationRequests.Money.Statements.reclaim_journey",
-      "status": "STATED",
+      "status": "PROVED",
       "statementSha256": "1f7dc6524dde63093deb918a688518d23f8aa720a489e9a416b15726f82c7c71",
       "witness": "NoPin.ApplicationRequests.Money.Evidence.reclaim_journey_antecedent",
       "positive": "NoPin.ApplicationRequests.Money.Evidence.reclaim_journey_positive",
@@ -104,11 +119,12 @@
         "application": "moneyOutputs"
       },
       "journey": "reclaim",
-      "description": "reclaim journey"
+      "description": "reclaim journey",
+      "proofStatus": "PROVED"
     },
     {
       "theorem": "NoPin.ApplicationRequests.Money.Statements.cleanup_journey",
-      "status": "STATED",
+      "status": "PROVED",
       "statementSha256": "06c5e233a9f2c2a98e5ffd0d57a5920b43cb4176ecd7009f6944c15b5a1e893b",
       "witness": "NoPin.ApplicationRequests.Money.Evidence.cleanup_journey_antecedent",
       "positive": "NoPin.ApplicationRequests.Money.Evidence.cleanup_journey_positive",
@@ -117,11 +133,12 @@
         "application": "moneyOutputs"
       },
       "journey": "cleanup",
-      "description": "cleanup journey"
+      "description": "cleanup journey",
+      "proofStatus": "PROVED"
     },
     {
       "theorem": "NoPin.ApplicationRequests.Money.Statements.accepted_economic_allocations",
-      "status": "STATED",
+      "status": "PROVED",
       "statementSha256": "ff583024d13a04d0c4bf41d63f49c0401787e370a9db566215216fe3261b7151",
       "witness": "NoPin.ApplicationRequests.Money.Evidence.accepted_economic_allocations_antecedent",
       "positive": "NoPin.ApplicationRequests.Money.Evidence.accepted_economic_allocations_positive",
@@ -130,11 +147,12 @@
         "allocation": "oldRegistrationTip"
       },
       "journey": "registrationFold",
-      "description": "accepted economic allocations"
+      "description": "accepted economic allocations",
+      "proofStatus": "PROVED"
     },
     {
       "theorem": "NoPin.ApplicationRequests.Money.Statements.journey_allocations",
-      "status": "STATED",
+      "status": "PROVED",
       "statementSha256": "7dbda5454df0c673351a1adbc0e16571fb8eb2d2a5dfe1ddab66077ac5a5a215",
       "witness": "NoPin.ApplicationRequests.Money.Evidence.journey_allocations_antecedent",
       "positive": "NoPin.ApplicationRequests.Money.Evidence.journey_allocations_positive",
@@ -143,11 +161,12 @@
         "allocation": "registrationResidual"
       },
       "journey": "registrationFold",
-      "description": "journey allocations"
+      "description": "journey allocations",
+      "proofStatus": "PROVED"
     },
     {
       "theorem": "NoPin.ApplicationRequests.Money.Statements.accepted_update_authority",
-      "status": "STATED",
+      "status": "PROVED",
       "statementSha256": "fb721ba281d4d8f1c095e75d27f37ed4d82a5eec93fa8ea664ec3ca6a4e45e95",
       "witness": "NoPin.ApplicationRequests.Money.Evidence.accepted_update_authority_antecedent",
       "positive": "NoPin.ApplicationRequests.Money.Evidence.accepted_update_authority_positive",
@@ -156,11 +175,12 @@
         "allocation": "oldUpdateSigner"
       },
       "journey": "update",
-      "description": "accepted update authority"
+      "description": "accepted update authority",
+      "proofStatus": "PROVED"
     },
     {
       "theorem": "NoPin.ApplicationRequests.Money.Statements.update_both_models",
-      "status": "STATED",
+      "status": "PROVED",
       "statementSha256": "9c1b51171e1b44c03aa29567c2dc8c41853a8c34a46b5ce25fe42dc16fc0f855",
       "witness": "NoPin.ApplicationRequests.Money.Evidence.update_both_models_antecedent",
       "positive": "NoPin.ApplicationRequests.Money.Evidence.update_both_models_positive",
@@ -169,7 +189,8 @@
         "application": "updateControl"
       },
       "journey": "update",
-      "description": "update both models"
+      "description": "update both models",
+      "proofStatus": "PROVED"
     }
   ],
   "applicationGuards": [
