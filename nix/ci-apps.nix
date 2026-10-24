@@ -37,6 +37,7 @@ let
       pkgs.python3
     ];
     text = ''
+      # Tool, not a guarantee: writes the Aiken rows of the preimage byte vectors from the shared table; their freshness is enforced by the vectors-check job.
       table=offchain/test/fixtures/preimage-vectors.json
       committed=onchain/validators/singular_state_preimage_vectors.tests.ak
       tmp="$(mktemp -d)"
@@ -52,7 +53,7 @@ let
           if diff -u "$committed" "$tmp/generated.ak"; then
             echo "preimage-vectors: PASS — committed tests match the table"
           else
-            echo "ERROR: the preimage vector tests are stale — run 'nix run .#preimage-vectors -- generate' and commit" >&2
+            echo "ERROR: the preimage vector tests are stale — run the preimage-vectors app with generate and commit" >&2
             exit 1
           fi
           ;;
