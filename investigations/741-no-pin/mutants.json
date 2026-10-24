@@ -1,0 +1,180 @@
+{
+  "candidateSelector": "none",
+  "purpose": "Single atomic guard flips; not production law.",
+  "mutants": [
+    {
+      "theorem": "NoPin.Statements.full_approval_inversion",
+      "selector": "approvalFull",
+      "positive": "NoPin.Fixtures.full_approval_inversion_approvalFull_candidate",
+      "negative": "NoPin.Mutants.full_approval_inversion_approvalFull_mutant"
+    },
+    {
+      "theorem": "NoPin.Statements.name_only_inversion",
+      "selector": "approvalNameOnly",
+      "positive": "NoPin.Fixtures.name_only_inversion_approvalNameOnly_candidate",
+      "negative": "NoPin.Mutants.name_only_inversion_approvalNameOnly_mutant"
+    },
+    {
+      "theorem": "NoPin.Statements.policy_only_inversion",
+      "selector": "policyOnlyPolicy",
+      "positive": "NoPin.Fixtures.policy_only_inversion_policyOnlyPolicy_candidate",
+      "negative": "NoPin.Mutants.policy_only_inversion_policyOnlyPolicy_mutant"
+    },
+    {
+      "theorem": "NoPin.Statements.policy_only_inversion",
+      "selector": "policyOnlyDatum",
+      "positive": "NoPin.Fixtures.policy_only_inversion_policyOnlyDatum_candidate",
+      "negative": "NoPin.Mutants.policy_only_inversion_policyOnlyDatum_mutant"
+    },
+    {
+      "theorem": "NoPin.Statements.state_inversion",
+      "selector": "statePolicy",
+      "positive": "NoPin.Fixtures.state_inversion_statePolicy_candidate",
+      "negative": "NoPin.Mutants.state_inversion_statePolicy_mutant"
+    },
+    {
+      "theorem": "NoPin.Statements.state_inversion",
+      "selector": "stateName",
+      "positive": "NoPin.Fixtures.state_inversion_stateName_candidate",
+      "negative": "NoPin.Mutants.state_inversion_stateName_mutant"
+    },
+    {
+      "theorem": "NoPin.Statements.state_inversion",
+      "selector": "stateProvenance",
+      "positive": "NoPin.Fixtures.state_inversion_stateProvenance_candidate",
+      "negative": "NoPin.Mutants.state_inversion_stateProvenance_mutant"
+    },
+    {
+      "theorem": "NoPin.Statements.state_inversion",
+      "selector": "stateDatum",
+      "positive": "NoPin.Fixtures.state_inversion_stateDatum_candidate",
+      "negative": "NoPin.Mutants.state_inversion_stateDatum_mutant"
+    },
+    {
+      "theorem": "NoPin.Statements.witness_inversion",
+      "selector": "witnessPolicy",
+      "positive": "NoPin.Fixtures.witness_inversion_witnessPolicy_candidate",
+      "negative": "NoPin.Mutants.witness_inversion_witnessPolicy_mutant"
+    },
+    {
+      "theorem": "NoPin.Statements.witness_inversion",
+      "selector": "witnessName",
+      "positive": "NoPin.Fixtures.witness_inversion_witnessName_candidate",
+      "negative": "NoPin.Mutants.witness_inversion_witnessName_mutant"
+    },
+    {
+      "theorem": "NoPin.Statements.witness_inversion",
+      "selector": "witnessProvenance",
+      "positive": "NoPin.Fixtures.witness_inversion_witnessProvenance_candidate",
+      "negative": "NoPin.Mutants.witness_inversion_witnessProvenance_mutant"
+    },
+    {
+      "theorem": "NoPin.Statements.trieReady_inversion",
+      "selector": "trieReadyPolicy",
+      "positive": "NoPin.Fixtures.trieReady_inversion_trieReadyPolicy_candidate",
+      "negative": "NoPin.Mutants.trieReady_inversion_trieReadyPolicy_mutant"
+    },
+    {
+      "theorem": "NoPin.Statements.trieReady_inversion",
+      "selector": "trieReadyName",
+      "positive": "NoPin.Fixtures.trieReady_inversion_trieReadyName_candidate",
+      "negative": "NoPin.Mutants.trieReady_inversion_trieReadyName_mutant"
+    },
+    {
+      "theorem": "NoPin.Statements.trieReady_inversion",
+      "selector": "trieReadyProvenance",
+      "positive": "NoPin.Fixtures.trieReady_inversion_trieReadyProvenance_candidate",
+      "negative": "NoPin.Mutants.trieReady_inversion_trieReadyProvenance_mutant"
+    },
+    {
+      "theorem": "NoPin.Statements.application_inversion",
+      "selector": "applicationPolicy",
+      "positive": "NoPin.Fixtures.application_inversion_applicationPolicy_candidate",
+      "negative": "NoPin.Mutants.application_inversion_applicationPolicy_mutant"
+    },
+    {
+      "theorem": "NoPin.Statements.application_inversion",
+      "selector": "applicationName",
+      "positive": "NoPin.Fixtures.application_inversion_applicationName_candidate",
+      "negative": "NoPin.Mutants.application_inversion_applicationName_mutant"
+    },
+    {
+      "theorem": "NoPin.Statements.application_inversion",
+      "selector": "applicationProvenance",
+      "positive": "NoPin.Fixtures.application_inversion_applicationProvenance_candidate",
+      "negative": "NoPin.Mutants.application_inversion_applicationProvenance_mutant"
+    },
+    {
+      "theorem": "NoPin.Statements.genesis_inversion",
+      "selector": "genesisSeed",
+      "positive": "NoPin.Fixtures.genesis_inversion_genesisSeed_candidate",
+      "negative": "NoPin.Mutants.genesis_inversion_genesisSeed_mutant"
+    },
+    {
+      "theorem": "NoPin.Statements.genesis_inversion",
+      "selector": "genesisInvocation",
+      "positive": "NoPin.Fixtures.genesis_inversion_genesisInvocation_candidate",
+      "negative": "NoPin.Mutants.genesis_inversion_genesisInvocation_mutant"
+    },
+    {
+      "theorem": "NoPin.Statements.genesis_inversion",
+      "selector": "genesisMint",
+      "positive": "NoPin.Fixtures.genesis_inversion_genesisMint_candidate",
+      "negative": "NoPin.Mutants.genesis_inversion_genesisMint_mutant"
+    },
+    {
+      "theorem": "NoPin.Statements.genesis_inversion",
+      "selector": "genesisQuantity",
+      "positive": "NoPin.Fixtures.genesis_inversion_genesisQuantity_candidate",
+      "negative": "NoPin.Mutants.genesis_inversion_genesisQuantity_mutant"
+    },
+    {
+      "theorem": "NoPin.Statements.genesis_inversion",
+      "selector": "genesisOutput",
+      "positive": "NoPin.Fixtures.genesis_inversion_genesisOutput_candidate",
+      "negative": "NoPin.Mutants.genesis_inversion_genesisOutput_mutant"
+    },
+    {
+      "theorem": "NoPin.Statements.history_inversion",
+      "selector": "historySpentOnce",
+      "positive": "NoPin.Fixtures.history_inversion_historySpentOnce_candidate",
+      "negative": "NoPin.Mutants.history_inversion_historySpentOnce_mutant"
+    },
+    {
+      "theorem": "NoPin.Statements.cross_registry_approval_refused",
+      "selector": "approvalFull",
+      "positive": "NoPin.Fixtures.cross_registry_approval_refused_approvalFull_candidate",
+      "negative": "NoPin.Mutants.cross_registry_approval_refused_approvalFull_mutant"
+    },
+    {
+      "theorem": "NoPin.Statements.name_only_separation_claim",
+      "selector": "approvalNameOnly",
+      "positive": "NoPin.Fixtures.name_only_separation_claim_approvalNameOnly_candidate",
+      "negative": "NoPin.Mutants.name_only_separation_claim_approvalNameOnly_mutant"
+    },
+    {
+      "theorem": "NoPin.Statements.policy_only_excludes_witness",
+      "selector": "policyOnlyPolicy",
+      "positive": "NoPin.Fixtures.policy_only_excludes_witness_policyOnlyPolicy_candidate",
+      "negative": "NoPin.Mutants.policy_only_excludes_witness_policyOnlyPolicy_mutant"
+    },
+    {
+      "theorem": "NoPin.Statements.same_transaction_two_applications",
+      "selector": "genesisSeed",
+      "positive": "NoPin.Fixtures.same_transaction_two_applications_genesisSeed_candidate",
+      "negative": "NoPin.Mutants.same_transaction_two_applications_genesisSeed_mutant"
+    },
+    {
+      "theorem": "NoPin.Statements.history_reuse_refused",
+      "selector": "historySpentOnce",
+      "positive": "NoPin.Fixtures.history_reuse_refused_historySpentOnce_candidate",
+      "negative": "NoPin.Mutants.history_reuse_refused_historySpentOnce_mutant"
+    },
+    {
+      "theorem": "NoPin.Statements.authenticated_state_role_separation",
+      "selector": "stateName",
+      "positive": "NoPin.Fixtures.authenticated_state_role_separation_stateName_candidate",
+      "negative": "NoPin.Mutants.authenticated_state_role_separation_stateName_mutant"
+    }
+  ]
+}

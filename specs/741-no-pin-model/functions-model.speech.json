@@ -1,0 +1,130 @@
+{
+  "callable-boundaries-for-the-model-investigation": [
+    {
+      "text": "Callable boundaries for the model investigation.",
+      "pause": 500
+    },
+    {
+      "text": "As a reviewer, I want changes to call signatures distinguished from changes to the meaning of an accepted law.",
+      "pause": 400
+    }
+  ],
+  "planning-stage-contract": [
+    {
+      "text": "Planning-stage contract.",
+      "pause": 500
+    },
+    {
+      "text": "This is an investigation specification. No production function signature is changed by planning. New hypothetical Lean signatures are frozen in this file by the ticket owner after the authority/impact inventory and before the commit owner implements them. An unresolved semantic choice stays a question; inventing a complete replacement signature now would prejudge that investigation.",
+      "pause": 400
+    },
+    {
+      "text": "The following existing signatures identify the affected boundaries; they are not instructions to rewrite them:",
+      "pause": 400
+    },
+    {
+      "text": "The candidate's signatures must name all identity, hash-function, ledger-premise and observation inputs explicitly, with pure results. Record any serialization/driver surface changes before implementing them. Reuse the generic driver surface where its semantics suffice; do not add per-theorem expected-result projections.",
+      "pause": 400
+    },
+    {
+      "text": "This staged signature freeze is a planned output of investigation, not a claim that the production design is already specified.",
+      "pause": 400
+    }
+  ],
+  "bound-signature-inventory": [
+    {
+      "text": "Bound signature inventory.",
+      "pause": 500
+    },
+    {
+      "text": "The six boundaries above are traced individually in impact.md, together with the application registry/control dependencies. Their definitions and source hashes bind the accepted base; runtime declaration checks elaborate their current types. The candidate interfaces below are frozen for the hypothetical statement stage; accepted signatures remain unchanged. The registry-independent ledger script/history vocabulary remains unavailable at this base and is not replaced with a local ledger layer. Questions records the decisions needed before that freeze.",
+      "pause": 400
+    }
+  ],
+  "frozen-hypothetical-identity-surface": [
+    {
+      "text": "Frozen hypothetical identity surface.",
+      "pause": 500
+    },
+    {
+      "text": "The isolated Lake project at investigations/741-no-pin/ requires the unchanged root from ../... Namespace NoPin owns Identity.lean (pure definitions), Statements.lean (hypotheses with sorry), Witnesses.lean (satisfying instances), Mutants.lean (falsifications) and Report.lean (compiled inventory). check.py reconciles the report with statement and mutant ledgers. Accepted signatures and drivers remain unchanged.",
+      "pause": 400
+    },
+    {
+      "text": "Derivation order: release → application policy → state policy; independently seed → state name; then complete registry asset → role assets and approvals. No later output is an earlier input. Hash : List Nat → Nat and Codec : Preimage → List Nat are explicit parameters; tagged structural natural-number encoding makes no Cardano byte claim.",
+      "pause": 400
+    },
+    {
+      "text": "Mutation.none is the candidate. Other selectors flip exactly one named atomic guard and exist only for the mutant ledger. The four Role constructors and other public predicates supply the inversion inventory; the compiled constructors determine its extent. Name-only safety is marked rejected and expected refutable, separately from stated hypotheses. No accepted serialization changes.",
+      "pause": 400
+    }
+  ],
+  "frozen-application-held-termination-surface": [
+    {
+      "text": "Frozen application-held termination surface.",
+      "pause": 500
+    },
+    {
+      "text": "These are hypothetical signatures for the application-held statement stage. They preserve accepted signatures. The authorized amendment below applies the operator's additive-deposit settlement ruling. All observations are explicit inputs. The minimal identity TxView and its existing statements remain unchanged.",
+      "pause": 400
+    },
+    {
+      "text": "New theorem bodies remain sorry. Every antecedent gets a satisfying executed instance, every selector is a single atomic guard flip in the same definition, and the public-case inventory is derived from compiled constructors. Ordinary funding, fee, observation authenticity and policy coupling remain premises. Economic-only availability is distinguished from the held composed availability claim.",
+      "pause": 400
+    }
+  ],
+  "authorized-slice-4-value-partition-amendment": [
+    {
+      "text": "Authorized slice-4 value-partition amendment.",
+      "pause": 500
+    },
+    {
+      "text": "A-003 amends the approved surfaces: a physical pending input and its physical controller output include a protected deposit in addition to the unchanged root economic amounts. The operator's settlement ruling removes the legacy registryPayments duty. This is a hypothetical candidate; every general theorem remains STATED.",
+      "pause": 400
+    },
+    {
+      "text": "NoPin.TxView remains unchanged. FoldObservation supplies separate accepted-world observations; observationCorrespondence binds spent references and keyed burns. BurnCoupling is an assumed same-registry/key policy contract. The #679/#680 mapping and physical allocation correspondence remain explicit external debt. No policy evaluation or ledger acceptance follows from these abstractions.",
+      "pause": 400
+    },
+    {
+      "text": "Booking additionally binds the source controller registry to ApplicationState.registryIdentity and binds the retained key and custody to the root request. FoldObservation carries this same independently observed complete registry identity, and observationCorrespondence compares policy and name. The physical and abstract registry interpretation remains an external premise rather than a policy-only authentication shortcut.",
+      "pause": 400
+    }
+  ],
+  "frozen-shared-request-surface": [
+    {
+      "text": "Frozen shared-request surface.",
+      "pause": 500
+    },
+    {
+      "text": "As a client author, I want all six operations to obtain their identities from release constants, public data and hashes. These pure surfaces are hypothetical signatures in NoPin.Shared; no accepted law is changed. The shared address contains registrations only. The trace and consumer restatement inventory are in shared-request.md.",
+      "pause": 400
+    },
+    {
+      "text": "Economics-preservation statements compare the actual named root judgement and shared wrapper under CompleteRegistryCorrespondence, ConfigurationCorrespondence, RequestObservationCorrespondence and LedgerObservationCorrespondence. The address and identity prerequisites are part of those representation premises; equality is not claimed for a wrong-address or forged observation that the root abstraction cannot express. False or missing correspondence is a held consumer boundary, not an accepted transaction. Witnesses must compute root acceptance, refunds, windows and balances using the accepted producers and must exercise more than one registry and request.",
+      "pause": 400
+    },
+    {
+      "text": "The new public case inventory covers booking, fold, rejection, reclaim, untagged sweep, authentic discovery, each client action, dependency order, name-role separation and the affected held mappings. Inversions are derived from compiled constructors and decision sites. Each general row remains sorry with executed antecedents and owned single-guard selectors. Original identity/held statement signatures and ledgers stay byte-identical; new universal termination protection, exact supply and permanent-retirement rows retain the accepted statements' real reachability and membership premises.",
+      "pause": 400
+    }
+  ],
+  "application-owned-request-callables": [
+    {
+      "text": "Application-owned request callables.",
+      "pause": 500
+    },
+    {
+      "text": "As a reviewer, I want the same-output approval and deposit binding, application clock and actual bid separated. These NoPin.ApplicationRequests signatures follow the operator money ruling in NOTE-010. Every general theorem remains hypothetical with sorry; neither current nor historical source prose claims implementation acceptance.",
+      "pause": 400
+    },
+    {
+      "text": "Open datum never calls Singular's fold/change judgement or reads its root/trie. The same ledger transaction executes both contracts independently; a composition theorem joins their successful judgements and actual observations. No top-up or other competing pending spend is introduced. Case/guard constructors, inversion bindings and oracle replay must be derived from the compiled new family. All historical identity/held statements remain byte-identical; explicit restatements carry the changed money outcomes.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "3060d74bb6d39a8d73395cc7f8acae465e54fed9f176eeb7b0e9a676ec91a0fe"
+  }
+}

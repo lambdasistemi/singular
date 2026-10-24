@@ -1,0 +1,58 @@
+{
+  "application-owned-request-candidate": [
+    {
+      "text": "Application-owned request candidate.",
+      "pause": 500
+    },
+    {
+      "text": "As a reviewer, I want to know which proposed Singular guarantees have complete statement-stage evidence and which still need a separate history investigation. Every declaration here is a hypothesis under #741, never accepted law.",
+      "pause": 400
+    },
+    {
+      "text": "Core defines state recognition, genesis, per-change handling and the whole fold. Application, Client and History retain the independently observed application rules, public builder and explicit ledger/history correspondence premises. Statements states the public inversions, role separation and constructive public fold guarantee with deliberate sorry. Evidence supplies complete finite antecedents and single-guard falsifications; Report derives the compiled inventory and the generic Oracle dispatches named definitions from JSON.",
+      "pause": 400
+    },
+    {
+      "text": "The current statement candidate covers genesis, the whole fold law, committed holding delivery, state continuation integrity, role-separated recognition and public folding. The generated application-requests ledgers bind their exact compiled types and the computed corpus. Concrete role witnesses distinguish finite encoding from finite collision freedom; neither asserts a cryptographic hash implementation. Explicit attacks cover extra mint/burn, wrong delivery, state drain, stuffing and an active token presented as a state.",
+      "pause": 400
+    },
+    {
+      "text": "The history statement candidate adds actual supply, one live token, burns only through terminating folds, and no remint after terminal. These four general statements remain unproved. Complete finite certificates include genuine multi-step histories, a pending termination, two registries sharing one seed under different policies, and multiple registries under one policy. Their physical outputs agree across the two release projections.",
+      "pause": 400
+    },
+    {
+      "text": "The constructor inversions are derived from CandidateReachable, including its neutral application transactions. Isolated guard changes and removal of the neutral mint or asset-conservation premise produce certified violating histories. These are finite controls; neither a cryptographic implementation nor a general proof follows. No old BurnCoupling fills the history obligation. The lifecycle candidate adds nineteen general statements, nine source-derived action inversions and a single-guard corpus. It states the three registration phases, exact committed deposit delivery, burn-only termination, booking authority, public parameter reads, additive treasury and refunds, configuration preservation and folder protection. The public termination builder needs authentic public data, finite encoding and collision premises, and ordinary funding for its fee. The top-up question remains held. All general lifecycle statements deliberately use sorry; only finite certificates execute without it. The current lifecycle and money statement candidate is described below; its general guarantees remain unproved.",
+      "pause": 400
+    },
+    {
+      "text": "The chain codec/hash, public provider/preimages, trie proof, ledger and real script-invocation correspondences remain external. The model public builder requires authentic requests, valid registration phases, separate policy identities, finite encoding/collision premises and enough ordinary fee funding. It establishes no wallet availability, real output minimum, willingness or inclusion. No production or hosted execution acceptance is claimed.",
+      "pause": 400
+    }
+  ],
+  "money-and-journey-statement-candidate": [
+    {
+      "text": "Money and journey statement candidate.",
+      "pause": 500
+    },
+    {
+      "text": "As a requester or integrator, I want to see which money flows stay equal and which change by an explicit ruling before treating the simplified application as equivalent. The compiled comparison below is a finite model example, not a ledger receipt. All 12 general money statements remain unproved.",
+      "pause": 400
+    },
+    {
+      "text": "The table is computed from the compiled party-by-journey grid. The old side calls the accepted economic definitions at revision 00771d77af996605845cf062285263909a049cf8; it does not copy their arithmetic. Folder and cleaner amounts are gross request allocations, separate from ordinary fee funding and change. Arbitrary accepted transactions enforce deposit and refund floors; the public fold builder constructs the displayed full residual allocation. Creation reserves caller-supplied value for its configuration output and claims no equal fee or ledger minimum.",
+      "pause": 400
+    },
+    {
+      "text": "The refund address signs reclaim, matching accepted retraction; the controller signs booking. The earlier controller-signer lifecycle family is retained as history and superseded by the refund-signer family. The new statements and oracle dispatch use RefundApplication and RefundLifecycle. Both concrete signer choices are executed against both models. A genuine old key-mismatch rejection is also executed; the new design has no early rejection and uses later owner reclaim or cleanup.",
+      "pause": 400
+    },
+    {
+      "text": "Registration's residual bid, termination's whole-value bid, deposit-to-treasury at termination booking, no treasury share at a fold, and the three timed phases are recorded differences rather than blanket equality. The old economic termination has no protected-control deposit field: its zero controller obligation is not a claim about the separate legacy application release duty. Old consumer update observations call its own updateStep. Cryptographic bytes, public completeness, real script invocation, minimum outputs, available funding, inclusion and implementation acceptance remain external.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "README.md",
+    "sha256": "468533df4b4ba17b3051556c7c589dfe257c0e4c155c220c6ac2cd9e7c642be4"
+  }
+}

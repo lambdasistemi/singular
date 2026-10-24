@@ -1,0 +1,132 @@
+{
+  "source-intake-for-the-investigation": [
+    {
+      "text": "Source intake for the investigation.",
+      "pause": 500
+    },
+    {
+      "text": "As the ticket team, I want the verified source facts and unresolved dependencies in one place so that planning does not accidentally turn a proposal into an accepted guarantee.",
+      "pause": 400
+    }
+  ],
+  "findings": [
+    {
+      "text": "Findings.",
+      "pause": 500
+    },
+    {
+      "text": "At the bound base, lean/Singular/Model/Registry.lean defines TokenId with policy/name, but Config.stateToken uses the abstract registry identity and name zero. Its comment explicitly leaves byte correspondence separate.",
+      "pause": 300
+    },
+    {
+      "text": "The same file reads witness policies from pins and defines tokenAssetName as the key. This does not state the proposal's finite hash injectivity premise.",
+      "pause": 300
+    },
+    {
+      "text": "Config retains registrationCost and bookingWidth in addition to the proposed residual fields. The issue's four-field datum is a hypothesis to reconcile.",
+      "pause": 300
+    },
+    {
+      "text": "applications/open-datum/lean/OpenDatumApplication/Model.lean defines App.registry and protected Control.registry/activePolicy. Application unparameterization is not a consequence already established by this consumer.",
+      "pause": 300
+    },
+    {
+      "text": "The constitution's ruled economic translation moves a genuine tag to a pending termination before fold; a burn-only application release proposal must account for that path.",
+      "pause": 300
+    },
+    {
+      "text": "Ledger tickets #679/#680 are open and their ledger modules are absent from main. No current upstream acceptance or integration is presumed.",
+      "pause": 300
+    },
+    {
+      "text": "nix/model.nix supplies the actual packaged model-check. The root justfile supplies application-model and simulator checks.",
+      "pause": 300
+    },
+    {
+      "text": ".specify/ contains the constitution only. Global Spec Kit templates guide these documents; no generated script is available to run locally and no initialization overwrite is needed.",
+      "pause": 300
+    }
+  ],
+  "planning-decisions-and-alternatives": [
+    {
+      "text": "Planning decisions and alternatives.",
+      "pause": 500
+    },
+    {
+      "text": "The accepted design remains in the sources bound by authority.md. The initial findings above are source review. The bounded runtime checks below supply their separately stated execution evidence.",
+      "pause": 400
+    }
+  ],
+  "identity-premises-and-their-instances": [
+    {
+      "text": "Identity premises and their instances.",
+      "pause": 500
+    },
+    {
+      "text": "The runtime scratch file declares each proposition before checking its instance. It imports only the existing model and economics. These are finite examples over that model, not accepted candidate laws or proof that a cryptographic hash is injective. The runtime receipt names, exits and log hashes are listed in base-hashes.json; the unchanged source declarations and their hashes are listed in impact.md.",
+      "pause": 400
+    },
+    {
+      "text": "All six instantiated propositions compile and execute successfully in the scratch check. Their violating twins test a constant hash, actual colliding approval/root pairs, a duplicate key, an empty domain, a one-element domain and an over-wide interval against the same declared predicates. The control exits and their failure reasons are retained separately from the successful run. Earlier scratch setup/type errors are preserved as failed attempts, not counted as counterexamples or successful controls.",
+      "pause": 400
+    }
+  ],
+  "premises-that-await-a-candidate-or-upstream-law": [
+    {
+      "text": "Premises that await a candidate or upstream law.",
+      "pause": 500
+    },
+    {
+      "text": "The dependency graph and the exact unresolved choices are in questions.md. In particular, acyclic application identity is not inferred merely from removing an application parameter in prose. The application currently binds a registry in both its application and protected control records. At the inventory checkpoint no candidate signature, serialization or driver surface was frozen; the later hypothetical stage is recorded below.",
+      "pause": 400
+    }
+  ],
+  "hypothetical-identity-instances": [
+    {
+      "text": "Hypothetical identity instances.",
+      "pause": 500
+    },
+    {
+      "text": "The isolated candidate uses an explicit tagged structural encoding and a caller-supplied hash; it never reuses the accepted FNV stand-ins. The satisfying encoding/hash domains for approval and application separation contain distinct occurring preimages. No universal hash injectivity is asserted. Its transaction record carries observations only, with the future upstream mapping in impact.md.",
+      "pause": 400
+    },
+    {
+      "text": "The candidate keeps complete registry identity in approvals as ruled. Concrete evaluations distinguish equal names under different policies, unsafe name-only reuse, policy-only recognition of a genuine witness carrying a fabricated state datum, and the authenticated candidate's refusal. A finite seed/role separation obligation is stated separately. Request tags here use the simplified registry/role/key preimage, leaving economic payload/nonce commitments outside this stage.",
+      "pause": 400
+    },
+    {
+      "text": "The compiled report discovers public classification cases and guard selectors, checks statement/instance predicate correspondence and computes axiom evidence. Executed antecedents, positive controls and mutant falsifications remain separate from the fifteen sorry-bearing statements. The generic JSON oracle replays the computed case/guard corpus, never theorem-specific projections. These are model instances, not accepted laws or ledger histories; independent statement review remains pending.",
+      "pause": 400
+    }
+  ],
+  "source-trace-for-application-owned-requests": [
+    {
+      "text": "Source trace for application-owned requests.",
+      "pause": 500
+    },
+    {
+      "text": "The new application request trace binds every source occurrence to accepted revision 00771d77af996605845cf062285263909a049cf8. The runtime tool reads a git-archive snapshot, derives Config's field extent and the application action constructors, scans Lean/Aiken declaration bodies after comment removal, and retains conservative lexical occurrences rather than filtering away ambiguous or homonymous names. Its refusal inventory follows transitive definition-name references, including ambiguous short-name matches as a disclosed superset. Source-tool results must remain distinct from compiled Lean and script execution evidence.",
+      "pause": 400
+    },
+    {
+      "text": "The important consequences are semantic rather than field counts: application/active/registry identities still have checks when their datum storage disappears; state ADA and a single bare state asset remain protected; a root-looking datum on an active token is insufficient state recognition; and every request payment/window still needs an application enforcement owner. The accepted economic state-value equality is recorded separately from the selected state no-drain floor.",
+      "pause": 400
+    },
+    {
+      "text": "Earlier source comparisons exposed underfunded refunds if registration cost left at booking and the inability of an empty termination datum to authenticate the old variable tip split. The operator subsequently superseded both candidate allocations (NOTE-010): no declared/fixed tip or fold treasury share remains; a registration leaves its approved deposit and a termination leaves nothing from its ADA bid. The protected deposit funds treasury at termination booking. Singular checks at least the committed holding deposit (NOTE-011), while open datum independently checks the genuine token and its exact deposit. The current stories and decided differences are in questions.md; the earlier comparisons remain historical evidence rather than current money law.",
+      "pause": 400
+    },
+    {
+      "text": "A third discriminator prevents field removal from erasing parameter authority. The old cost and windows are immutable per registry; recording only the requester's chosen values supplies no expected value to compare against. The selected candidate creates an immutable application configuration output with a configuration-role token in the same registry-genesis transaction. Its five inline parameters map to the old Config and are authenticated through a reference-input read at registration booking. The complete record and ParametersForRegistry premises are frozen in the data/function surfaces; token provenance, uniqueness and immutability need their own compiled witnesses and controls in the statements stage.",
+      "pause": 400
+    },
+    {
+      "text": "The surfaces audit found that refusal-label coverage did not expose the accepted early lifecycle-mismatch rejection as a separate journey ground. The v5 C7 instrument therefore derives RejectReason and EconomicRequest constructors and reconciles their complete matrix, checking the two accepted ground functions too. Parent NOTE-008 resolves the missing journey by withdrawing rejection entirely: the existing timed reclaim/cleanup paths replace early mismatch rejection, with explicit changed timing, signing and refund amounts. No fourth spend path or application root/trie-proof read is introduced. This finding demonstrates why a source inventory alone cannot establish semantic completeness.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "research.md",
+    "sha256": "a0126d40c623748354506b6080a79faab72f89f1f5fc346d5a08e7ab54f2daa6"
+  }
+}
