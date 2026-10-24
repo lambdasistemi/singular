@@ -177,16 +177,18 @@ termOf bytes = case deserialiseFromBytes decodeTerm (BL.fromStrict bytes) of
 
 {- | The encoding edges a CBOR term exercises, found in its structure: the
 empty list is written definite, any other list indefinite, a byte string of
-more than 64 bytes in chunks, a number beyond 64 bits as a tagged big number.
+more than 64 bytes in chunks, a number beyond 64 bits as a tagged big number
+(which the reader returns as an integer that no 64-bit word holds).
 -}
 edgesOf :: Term -> Set Text
 edgesOf = \case
     TList items -> Set.insert "definite-length-list" (foldMap edgesOf items)
     TListI items -> Set.insert "indefinite-length-list" (foldMap edgesOf items)
     TBytesI _ -> Set.singleton "chunked-byte-string"
-    TTagged tag inner
-        | tag == 2 || tag == 3 -> Set.insert "big-number" (edgesOf inner)
-        | otherwise -> edgesOf inner
+    TTagged _ inner -> edgesOf inner
+    TInteger n
+        | n >= 2 ^ (64 :: Int) || n < negate (2 ^ (64 :: Int)) ->
+            Set.singleton "big-number"
     _ -> Set.empty
 
 -- | The tag of the constructor that opens a preimage.
