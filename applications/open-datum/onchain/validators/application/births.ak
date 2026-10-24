@@ -16,17 +16,18 @@
 //// Nothing is minted under the application policy that an action of the
 //// transaction does not account for, so a burn grants nothing.
 
+use aiken/collection/list
 use application/held.{TokenId}
-use cardano/assets.{PolicyId, Value}
+use cardano/assets.{PolicyId, Value, quantity_of}
 
 /// Model guard `freshApproval`: the minted quantity of `asset` is exactly the
 /// number of its births, and there is at least one.
-pub fn fresh_asset(
-  _mint: Value,
-  _births: List<TokenId>,
-  _asset: TokenId,
-) -> Bool {
-  False
+pub fn fresh_asset(mint: Value, births: List<TokenId>, asset: TokenId) -> Bool {
+  let born = list.count(births, fn(birth) { birth == asset })
+  and {
+    quantity_of(mint, asset.policy, asset.name) == born,
+    born > 0,
+  }
 }
 
 /// Model conjunct of `applicationStep` on the mint: every entry under the

@@ -9,8 +9,9 @@
 ////
 //// ## Dependencies
 //// `application/births` for the accounting of the mint; `application/held`
-//// for the records; `singular_state/preimage` for the registry identity and
-//// the name of the state token; the Aiken standard library.
+//// for the records; `singular_state/preimage` for the registry identity, the
+//// name of the configuration token and the name of the state token; the Aiken
+//// standard library.
 ////
 //// ## Assumptions
 //// The state policy of the registry is minted by its own genesis, which
@@ -20,52 +21,85 @@
 //// The token of a configuration record is named from the registry it
 //// configures, so the record of one registry is never the record of another.
 
-use application/held.{ApplicationParameters, TokenId}
-use cardano/assets.{PolicyId}
+use aiken/collection/list
+use application/births.{fresh_asset}
+use application/held.{
+  ApplicationParameters, Configuration, TokenId, held_datum, holds_exactly_one,
+}
+use cardano/address.{Script}
+use cardano/assets.{PolicyId, policies, quantity_of}
 use cardano/transaction.{Input, Output, OutputReference, Transaction}
-use singular_state/preimage.{RegistryIdentity, configuration_token_name}
+use singular_state/preimage.{
+  RegistryIdentity, configuration_token_name, state_token_name,
+}
 
 /// The token of the configuration record of `registry`.
 pub fn configuration_asset(
-  _application_policy: PolicyId,
+  application_policy: PolicyId,
   registry: RegistryIdentity,
 ) -> TokenId {
-  TokenId { policy: #"", name: configuration_token_name(registry) }
+  TokenId {
+    policy: application_policy,
+    name: configuration_token_name(registry),
+  }
 }
 
 /// Model guard `configurationShape`: `output` sits at the application
 /// address, carries a configuration record inline, and holds exactly the one
 /// token of the configuration of `registry` besides ADA.
 pub fn configuration_shape(
-  _application_policy: PolicyId,
-  _registry: RegistryIdentity,
-  _output: Output,
+  application_policy: PolicyId,
+  registry: RegistryIdentity,
+  output: Output,
 ) -> Bool {
-  False
+  and {
+    output.address.payment_credential == Script(application_policy),
+    when held_datum(output) is {
+      Some(Configuration { .. }) -> True
+      _ -> False
+    },
+    holds_exactly_one(output, configuration_asset(application_policy, registry)),
+  }
 }
 
 /// Model guard `configurationGenesis`: `registry` is the registry created by
 /// spending `seed`, the seed is spent once, the state policy is invoked and
 /// the state token is minted once.
 pub fn configuration_genesis(
-  _registry: RegistryIdentity,
-  _seed: OutputReference,
-  _tx: Transaction,
+  registry: RegistryIdentity,
+  seed: OutputReference,
+  tx: Transaction,
 ) -> Bool {
-  False
+  and {
+    registry.name == state_token_name(seed),
+    list.count(tx.inputs, fn(input) { input.output_reference == seed }) == 1,
+    list.has(policies(tx.mint), registry.policy),
+    quantity_of(tx.mint, registry.policy, registry.name) == 1,
+  }
 }
 
 /// Model `configurationCreate`: the action that creates the configuration
 /// record of `registry` in the output at `output_index`.
 pub fn configuration_create(
-  _application_policy: PolicyId,
-  _registry: RegistryIdentity,
-  _seed: OutputReference,
-  _output_index: Int,
-  _tx: Transaction,
-  _births: List<TokenId>,
+  application_policy: PolicyId,
+  registry: RegistryIdentity,
+  seed: OutputReference,
+  output_index: Int,
+  tx: Transaction,
+  births: List<TokenId>,
 ) -> Bool {
-  False
+  when list.at(tx.outputs, output_index) is {
+    Some(output) -> and {
+        configuration_shape(application_policy, registry, output),
+        configuration_genesis(registry, seed, tx),
+        fresh_asset(
+          tx.mint,
+          births,
+          configuration_asset(application_policy, registry),
+        ),
+      }
+    None -> False
+  }
 }
 
 /// The parameters of the configuration record `output` is, when it is the

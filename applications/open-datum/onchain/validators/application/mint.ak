@@ -20,9 +20,12 @@
 //// Everything minted under the policy is either burned or accounted for by an
 //// accepted action; two actions never create the same output.
 
+use aiken/collection/list
+use application/configuration.{configuration_asset, configuration_create}
 use application/held.{TokenId}
 use cardano/assets.{PolicyId}
 use cardano/transaction.{Output, OutputReference, Transaction}
+use singular_state/preimage.{RegistryIdentity}
 
 /// The actions of the model's `ApplicationAction` that take part in a mint.
 /// The registry of a configuration creation is named by its state policy and
@@ -44,20 +47,32 @@ pub type ApplicationAction {
 
 /// Model `birth`: the asset an action brings into being, when it does.
 pub fn birth(
-  _application_policy: PolicyId,
+  application_policy: PolicyId,
   _outputs: List<Output>,
-  _action: ApplicationAction,
+  action: ApplicationAction,
 ) -> Option<TokenId> {
-  None
+  when action is {
+    ConfigurationCreate { state_policy, state_name, .. } ->
+      Some(
+        configuration_asset(
+          application_policy,
+          RegistryIdentity { policy: state_policy, name: state_name },
+        ),
+      )
+    _ -> None
+  }
 }
 
 /// The assets the actions bring into being, in the order of the actions.
 pub fn births_of(
-  _application_policy: PolicyId,
-  _outputs: List<Output>,
-  _actions: List<ApplicationAction>,
+  application_policy: PolicyId,
+  outputs: List<Output>,
+  actions: List<ApplicationAction>,
 ) -> List<TokenId> {
-  []
+  list.filter_map(
+    actions,
+    fn(action) { birth(application_policy, outputs, action) },
+  )
 }
 
 /// Model conjunct `birthCoverage`: no two actions create the output at one
@@ -68,12 +83,23 @@ pub fn birth_positions_are_distinct(_actions: List<ApplicationAction>) -> Bool {
 
 /// Model `applicationAction` for the actions of a mint.
 pub fn action_accepted(
-  _application_policy: PolicyId,
-  _tx: Transaction,
-  _births: List<TokenId>,
-  _action: ApplicationAction,
+  application_policy: PolicyId,
+  tx: Transaction,
+  births: List<TokenId>,
+  action: ApplicationAction,
 ) -> Bool {
-  False
+  when action is {
+    ConfigurationCreate { state_policy, state_name, seed, output_index } ->
+      configuration_create(
+        application_policy,
+        RegistryIdentity { policy: state_policy, name: state_name },
+        seed,
+        output_index,
+        tx,
+        births,
+      )
+    _ -> False
+  }
 }
 
 /// Model conjunct `moneyTreasury` for a transaction with no termination
@@ -85,9 +111,13 @@ pub fn donation_is(_tx: Transaction, _required: Int) -> Bool {
 /// The model's `applicationStep` for the mint handler of the application
 /// policy.
 pub fn application_mint(
-  _application_policy: PolicyId,
-  _actions: List<ApplicationAction>,
-  _tx: Transaction,
+  application_policy: PolicyId,
+  actions: List<ApplicationAction>,
+  tx: Transaction,
 ) -> Bool {
-  False
+  let births = births_of(application_policy, tx.outputs, actions)
+  list.all(
+    actions,
+    fn(action) { action_accepted(application_policy, tx, births, action) },
+  )
 }

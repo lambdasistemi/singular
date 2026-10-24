@@ -21,7 +21,7 @@
 
 use aiken/crypto.{VerificationKeyHash}
 use cardano/address.{Address}
-use cardano/assets.{AssetName, PolicyId}
+use cardano/assets.{AssetName, PolicyId, flatten, without_lovelace}
 use cardano/transaction.{InlineDatum, Output}
 use singular_state/preimage.{RegistryIdentity}
 
@@ -81,6 +81,11 @@ pub fn held_datum_of(datum: Data) -> Option<HeldDatum> {
   } else {
     None
   }
+}
+
+/// Whether `output` holds `token` once and no other token besides ADA.
+pub fn holds_exactly_one(output: Output, token: TokenId) -> Bool {
+  flatten(without_lovelace(output.value)) == [(token.policy, token.name, 1)]
 }
 
 /// The record `output` carries inline, when it carries one.
