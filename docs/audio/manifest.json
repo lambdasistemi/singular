@@ -195476,17 +195476,17 @@
    ]
   },
   "docs-offchain-api-reference/what-this-reference-contains-02": {
-   "audio_sha256": "ca1013cfdf528d1d83cdc7833fbe0cb82cc799632f88f58441d014b9985b7685",
+   "audio_sha256": "6a26423e627b2707d360cc6c0039be86d749e6eda59bb99282c11eb9f8ec58c1",
    "characters": 1875,
    "cost": 0.0018562499999999998,
-   "duration": 131.525,
+   "duration": 131.575,
    "index": 2,
-   "key": "1fc1c9264b21b471952714240b12da3a5019c89adbfd7863758a23719f3d0eca",
+   "key": "1a16286e6982a4704486475a10f93f710e8996c7a9857198b3d219d8eea12502",
    "page": "docs/offchain-api-reference.md",
    "pause_ms": 400,
    "section": "what-this-reference-contains",
-   "sent_text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 75 modules in three kinds: 58 explicitly exposed modules and 4 re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger, Singular.Registry.LedgerProvider, Singular.Registry.Evidence and Singular.Registry.Signing are the re-exports: their implementations are owned by the public local-services component (offchain/local-services/) and the main library exposes their stable import paths. The generic provider interface and evidence types let a caller supply capabilities without selecting a node runtime; the Koios constructor supplies unbound, unverified HTTP facts through that interface. The runtime service modules outside this extent — the terminal composition and its transport in koios-http, and the remaining service modules of local-services — are documented with source links in Runtime service ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
-   "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 75 modules in three kinds: 58 explicitly exposed modules and 4 re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger, Singular.Registry.LedgerProvider, Singular.Registry.Evidence and Singular.Registry.Signing are the re-exports: their implementations are owned by the public local-services component (offchain/local-services/) and the main library exposes their stable import paths. The generic provider interface and evidence types let a caller supply capabilities without selecting a node runtime; the Koios constructor supplies unbound, unverified HTTP facts through that interface. The runtime service modules outside this extent — the terminal composition and its transport in koios-http, and the remaining service modules of local-services — are documented with source links in Runtime service ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
+   "sent_text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 77 modules in three kinds: 60 explicitly exposed modules and 4 re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger, Singular.Registry.LedgerProvider, Singular.Registry.Evidence and Singular.Registry.Signing are the re-exports: their implementations are owned by the public local-services component (offchain/local-services/) and the main library exposes their stable import paths. The generic provider interface and evidence types let a caller supply capabilities without selecting a node runtime; the Koios constructor supplies unbound, unverified HTTP facts through that interface. The runtime service modules outside this extent — the terminal composition and its transport in koios-http, and the remaining service modules of local-services — are documented with source links in Runtime service ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
+   "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 77 modules in three kinds: 60 explicitly exposed modules and 4 re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger, Singular.Registry.LedgerProvider, Singular.Registry.Evidence and Singular.Registry.Signing are the re-exports: their implementations are owned by the public local-services component (offchain/local-services/) and the main library exposes their stable import paths. The generic provider interface and evidence types let a caller supply capabilities without selecting a node runtime; the Koios constructor supplies unbound, unverified HTTP facts through that interface. The runtime service modules outside this extent — the terminal composition and its transport in koios-http, and the remaining service modules of local-services — are documented with source links in Runtime service ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
    "words": [
     {
      "end": 0.325,
@@ -195654,1479 +195654,1479 @@
      "text": "That"
     },
     {
-     "end": 12.762,
+     "end": 12.788,
      "start": 12.4,
      "text": "complete"
     },
     {
-     "end": 13.262,
-     "start": 12.762,
+     "end": 13.312,
+     "start": 12.788,
      "text": "extent"
     },
     {
-     "end": 13.45,
-     "start": 13.262,
+     "end": 13.5,
+     "start": 13.312,
      "text": "is"
     },
     {
-     "end": 14.15,
-     "start": 13.45,
-     "text": "75"
+     "end": 14.25,
+     "start": 13.5,
+     "text": "77"
     },
     {
-     "end": 14.6,
-     "start": 14.15,
+     "end": 14.725,
+     "start": 14.25,
      "text": "modules"
     },
     {
-     "end": 14.75,
-     "start": 14.6,
+     "end": 14.875,
+     "start": 14.725,
      "text": "in"
     },
     {
-     "end": 14.975,
-     "start": 14.75,
+     "end": 15.125,
+     "start": 14.875,
      "text": "three"
     },
     {
-     "end": 15.925,
-     "start": 14.975,
+     "end": 16.1,
+     "start": 15.125,
      "text": "kinds"
     },
     {
-     "end": 16.125,
-     "start": 15.925,
+     "end": 16.3,
+     "start": 16.1,
      "text": ":"
     },
     {
-     "end": 16.85,
-     "start": 16.325,
-     "text": "58"
+     "end": 16.95,
+     "start": 16.525,
+     "text": "60"
     },
     {
-     "end": 17.525,
-     "start": 16.85,
+     "end": 17.625,
+     "start": 16.95,
      "text": "explicitly"
     },
     {
-     "end": 18.1,
-     "start": 17.525,
+     "end": 18.2,
+     "start": 17.625,
      "text": "exposed"
     },
     {
-     "end": 18.712,
-     "start": 18.1,
+     "end": 18.812,
+     "start": 18.2,
      "text": "modules"
     },
     {
-     "end": 18.9,
-     "start": 18.712,
+     "end": 19.0,
+     "start": 18.812,
      "text": "and"
     },
     {
-     "end": 19.212,
-     "start": 18.9,
+     "end": 19.312,
+     "start": 19.0,
      "text": "4"
     },
     {
-     "end": 19.925,
-     "start": 19.212,
+     "end": 20.025,
+     "start": 19.312,
      "text": "re-exported"
     },
     {
-     "end": 20.562,
-     "start": 19.925,
+     "end": 20.612,
+     "start": 20.025,
      "text": "modules"
     },
     {
-     "end": 20.7,
-     "start": 20.562,
+     "end": 20.75,
+     "start": 20.612,
      "text": "are"
     },
     {
-     "end": 20.837,
-     "start": 20.7,
+     "end": 20.888,
+     "start": 20.75,
      "text": "what"
     },
     {
-     "end": 20.9,
-     "start": 20.837,
+     "end": 20.95,
+     "start": 20.888,
      "text": "a"
     },
     {
-     "end": 21.275,
-     "start": 20.9,
+     "end": 21.325,
+     "start": 20.95,
      "text": "caller"
     },
     {
-     "end": 22.45,
-     "start": 21.275,
+     "end": 22.5,
+     "start": 21.325,
      "text": "imports"
     },
     {
-     "end": 22.65,
-     "start": 22.45,
+     "end": 22.7,
+     "start": 22.5,
      "text": ";"
     },
     {
-     "end": 22.962,
-     "start": 22.85,
+     "end": 23.013,
+     "start": 22.9,
      "text": "the"
     },
     {
-     "end": 23.237,
-     "start": 22.962,
+     "end": 23.288,
+     "start": 23.013,
      "text": "two"
     },
     {
-     "end": 23.5,
-     "start": 23.237,
+     "end": 23.55,
+     "start": 23.288,
      "text": "trie"
     },
     {
-     "end": 24.188,
-     "start": 23.5,
+     "end": 24.237,
+     "start": 23.55,
      "text": "capability"
     },
     {
-     "end": 24.65,
-     "start": 24.188,
+     "end": 24.7,
+     "start": 24.237,
      "text": "owners"
     },
     {
-     "end": 25.062,
-     "start": 24.65,
+     "end": 25.112,
+     "start": 24.7,
      "text": "behind"
     },
     {
-     "end": 25.163,
-     "start": 25.062,
+     "end": 25.212,
+     "start": 25.112,
      "text": "the"
     },
     {
-     "end": 25.8,
-     "start": 25.163,
+     "end": 25.85,
+     "start": 25.212,
      "text": "TrieState"
     },
     {
-     "end": 26.4,
-     "start": 25.8,
+     "end": 26.45,
+     "start": 25.85,
      "text": "facade"
     },
     {
-     "end": 26.475,
-     "start": 26.4,
+     "end": 26.525,
+     "start": 26.45,
      "text": "("
     },
     {
-     "end": 27.05,
-     "start": 26.475,
+     "end": 27.1,
+     "start": 26.525,
      "text": "Singular"
     },
     {
-     "end": 27.15,
-     "start": 27.05,
+     "end": 27.2,
+     "start": 27.1,
      "text": "."
     },
     {
-     "end": 27.75,
-     "start": 27.15,
+     "end": 27.8,
+     "start": 27.2,
      "text": "Registry"
     },
     {
-     "end": 27.825,
-     "start": 27.75,
+     "end": 27.875,
+     "start": 27.8,
      "text": "."
     },
     {
-     "end": 28.45,
-     "start": 27.825,
+     "end": 28.5,
+     "start": 27.875,
      "text": "TrieState"
     },
     {
-     "end": 28.525,
-     "start": 28.45,
+     "end": 28.575,
+     "start": 28.5,
      "text": "."
     },
     {
-     "end": 28.763,
-     "start": 28.525,
+     "end": 28.812,
+     "start": 28.575,
      "text": "Core"
     },
     {
-     "end": 28.875,
-     "start": 28.763,
+     "end": 28.925,
+     "start": 28.812,
      "text": "and"
     },
     {
-     "end": 29.925,
-     "start": 28.875,
+     "end": 29.975,
+     "start": 28.925,
      "text": ".Types"
     },
     {
-     "end": 30.1,
-     "start": 29.925,
+     "end": 30.15,
+     "start": 29.975,
      "text": ")"
     },
     {
-     "end": 30.15,
-     "start": 30.1,
+     "end": 30.2,
+     "start": 30.15,
      "text": ","
     },
     {
-     "end": 30.462,
-     "start": 30.35,
+     "end": 30.513,
+     "start": 30.4,
      "text": "the"
     },
     {
-     "end": 30.763,
-     "start": 30.462,
+     "end": 30.812,
+     "start": 30.513,
      "text": "three"
     },
     {
-     "end": 31.138,
-     "start": 30.763,
+     "end": 31.188,
+     "start": 30.812,
      "text": "fold"
     },
     {
-     "end": 31.55,
-     "start": 31.138,
+     "end": 31.6,
+     "start": 31.188,
      "text": "owners"
     },
     {
-     "end": 31.938,
-     "start": 31.55,
+     "end": 31.987,
+     "start": 31.6,
      "text": "behind"
     },
     {
-     "end": 32.05,
-     "start": 31.938,
+     "end": 32.1,
+     "start": 31.987,
      "text": "the"
     },
     {
-     "end": 32.5,
-     "start": 32.05,
+     "end": 32.55,
+     "start": 32.1,
      "text": "Update"
     },
     {
-     "end": 33.1,
-     "start": 32.5,
+     "end": 33.15,
+     "start": 32.55,
      "text": "facade"
     },
     {
-     "end": 33.188,
-     "start": 33.1,
+     "end": 33.237,
+     "start": 33.15,
      "text": "—"
     },
     {
-     "end": 33.725,
-     "start": 33.188,
+     "end": 33.775,
+     "start": 33.237,
      "text": "Singular"
     },
     {
-     "end": 33.825,
-     "start": 33.725,
+     "end": 33.875,
+     "start": 33.775,
      "text": "."
     },
     {
-     "end": 34.475,
-     "start": 33.825,
+     "end": 34.525,
+     "start": 33.875,
      "text": "Registry"
     },
     {
-     "end": 34.575,
-     "start": 34.475,
+     "end": 34.625,
+     "start": 34.525,
      "text": "."
-    },
-    {
-     "end": 35.325,
-     "start": 34.575,
-     "text": "TxBuilder"
     },
     {
      "end": 35.375,
-     "start": 35.325,
+     "start": 34.625,
+     "text": "TxBuilder"
+    },
+    {
+     "end": 35.425,
+     "start": 35.375,
      "text": "."
     },
     {
-     "end": 35.75,
-     "start": 35.375,
+     "end": 35.8,
+     "start": 35.425,
      "text": "Update"
     },
     {
-     "end": 35.825,
-     "start": 35.75,
+     "end": 35.875,
+     "start": 35.8,
      "text": "."
     },
     {
-     "end": 36.775,
-     "start": 35.825,
+     "end": 36.825,
+     "start": 35.875,
      "text": "Build"
     },
     {
-     "end": 37.0,
-     "start": 36.775,
+     "end": 37.05,
+     "start": 36.825,
      "text": ","
     },
     {
-     "end": 37.9,
-     "start": 37.2,
+     "end": 37.95,
+     "start": 37.25,
      "text": ".Context"
     },
     {
-     "end": 38.05,
-     "start": 37.9,
+     "end": 38.1,
+     "start": 37.95,
      "text": "and"
     },
     {
-     "end": 38.625,
-     "start": 38.05,
+     "end": 38.675,
+     "start": 38.1,
      "text": ".Duties"
     },
     {
-     "end": 38.688,
-     "start": 38.625,
+     "end": 38.737,
+     "start": 38.675,
      "text": "—"
     },
     {
-     "end": 38.812,
-     "start": 38.688,
+     "end": 38.862,
+     "start": 38.737,
      "text": "the"
     },
     {
-     "end": 39.175,
-     "start": 38.812,
+     "end": 39.225,
+     "start": 38.862,
      "text": "five"
     },
     {
-     "end": 39.562,
-     "start": 39.175,
+     "end": 39.612,
+     "start": 39.225,
      "text": "wire"
     },
     {
-     "end": 39.95,
-     "start": 39.562,
+     "end": 40.0,
+     "start": 39.612,
      "text": "owners"
     },
     {
-     "end": 40.338,
-     "start": 39.95,
+     "end": 40.388,
+     "start": 40.0,
      "text": "behind"
     },
     {
-     "end": 40.425,
-     "start": 40.338,
+     "end": 40.475,
+     "start": 40.388,
      "text": "the"
     },
     {
-     "end": 40.775,
-     "start": 40.425,
+     "end": 40.825,
+     "start": 40.475,
      "text": "Types"
     },
     {
-     "end": 41.375,
-     "start": 40.775,
+     "end": 41.425,
+     "start": 40.825,
      "text": "facade"
     },
     {
-     "end": 41.45,
-     "start": 41.375,
+     "end": 41.5,
+     "start": 41.425,
      "text": "—"
     },
     {
-     "end": 41.925,
-     "start": 41.45,
+     "end": 41.975,
+     "start": 41.5,
      "text": "Singular"
     },
     {
-     "end": 42.0,
-     "start": 41.925,
+     "end": 42.05,
+     "start": 41.975,
      "text": "."
     },
     {
-     "end": 42.6,
-     "start": 42.0,
+     "end": 42.65,
+     "start": 42.05,
      "text": "Registry"
     },
     {
-     "end": 42.7,
-     "start": 42.6,
+     "end": 42.75,
+     "start": 42.65,
      "text": "."
     },
     {
-     "end": 43.025,
-     "start": 42.7,
+     "end": 43.075,
+     "start": 42.75,
      "text": "Wire"
     },
     {
-     "end": 43.1,
-     "start": 43.025,
+     "end": 43.15,
+     "start": 43.075,
      "text": "."
     },
     {
-     "end": 44.2,
-     "start": 43.1,
+     "end": 44.25,
+     "start": 43.15,
      "text": "Primitive"
     },
     {
-     "end": 44.425,
-     "start": 44.2,
+     "end": 44.475,
+     "start": 44.25,
      "text": ","
-    },
-    {
-     "end": 44.975,
-     "start": 44.6,
-     "text": ".Request"
     },
     {
      "end": 45.025,
-     "start": 44.975,
+     "start": 44.65,
+     "text": ".Request"
+    },
+    {
+     "end": 45.075,
+     "start": 45.025,
      "text": ","
     },
     {
-     "end": 45.7,
-     "start": 45.025,
+     "end": 45.75,
+     "start": 45.075,
      "text": ".State"
     },
     {
-     "end": 45.9,
-     "start": 45.7,
+     "end": 45.95,
+     "start": 45.75,
      "text": ","
     },
     {
-     "end": 46.45,
-     "start": 46.1,
+     "end": 46.5,
+     "start": 46.15,
      "text": ".Proof"
     },
     {
-     "end": 46.575,
-     "start": 46.45,
+     "end": 46.625,
+     "start": 46.5,
      "text": "and"
     },
     {
-     "end": 47.2,
-     "start": 46.575,
+     "end": 47.25,
+     "start": 46.625,
      "text": ".Redeemer"
     },
     {
-     "end": 47.287,
-     "start": 47.2,
+     "end": 47.338,
+     "start": 47.25,
      "text": "—"
     },
     {
-     "end": 47.412,
-     "start": 47.287,
+     "end": 47.463,
+     "start": 47.338,
      "text": "and"
     },
     {
-     "end": 47.537,
-     "start": 47.412,
+     "end": 47.588,
+     "start": 47.463,
      "text": "the"
     },
     {
-     "end": 47.775,
-     "start": 47.537,
+     "end": 47.825,
+     "start": 47.588,
      "text": "three"
     },
     {
-     "end": 48.362,
-     "start": 47.775,
+     "end": 48.412,
+     "start": 47.825,
      "text": "deployment"
     },
     {
-     "end": 48.8,
-     "start": 48.362,
+     "end": 48.85,
+     "start": 48.412,
      "text": "owners"
     },
     {
-     "end": 49.213,
-     "start": 48.8,
+     "end": 49.263,
+     "start": 48.85,
      "text": "behind"
     },
     {
-     "end": 49.3,
-     "start": 49.213,
+     "end": 49.35,
+     "start": 49.263,
      "text": "the"
     },
     {
-     "end": 49.9,
-     "start": 49.3,
+     "end": 49.95,
+     "start": 49.35,
      "text": "Deployment"
     },
     {
-     "end": 50.513,
-     "start": 49.9,
+     "end": 50.562,
+     "start": 49.95,
      "text": "facade"
     },
     {
-     "end": 50.612,
-     "start": 50.513,
+     "end": 50.662,
+     "start": 50.562,
      "text": "—"
     },
     {
-     "end": 51.2,
-     "start": 50.612,
+     "end": 51.25,
+     "start": 50.662,
      "text": "Singular"
     },
     {
-     "end": 51.3,
-     "start": 51.2,
+     "end": 51.35,
+     "start": 51.25,
      "text": "."
     },
     {
-     "end": 51.9,
-     "start": 51.3,
+     "end": 51.95,
+     "start": 51.35,
      "text": "Registry"
     },
     {
-     "end": 51.975,
-     "start": 51.9,
+     "end": 52.025,
+     "start": 51.95,
      "text": "."
     },
     {
-     "end": 52.575,
-     "start": 51.975,
+     "end": 52.625,
+     "start": 52.025,
      "text": "Deployment"
     },
     {
-     "end": 52.675,
-     "start": 52.575,
+     "end": 52.725,
+     "start": 52.625,
      "text": "."
     },
     {
-     "end": 53.975,
-     "start": 52.675,
+     "end": 54.025,
+     "start": 52.725,
      "text": "Manifest"
     },
     {
-     "end": 54.2,
-     "start": 53.975,
+     "end": 54.25,
+     "start": 54.025,
      "text": ","
     },
     {
-     "end": 54.975,
-     "start": 54.475,
+     "end": 55.025,
+     "start": 54.525,
      "text": ".Mirror"
     },
     {
-     "end": 55.15,
-     "start": 54.975,
+     "end": 55.2,
+     "start": 55.025,
      "text": "and"
     },
     {
-     "end": 55.225,
-     "start": 55.15,
+     "end": 55.275,
+     "start": 55.2,
      "text": "."
     },
     {
-     "end": 55.85,
-     "start": 55.225,
+     "end": 55.9,
+     "start": 55.275,
      "text": "Attach"
     },
     {
-     "end": 55.938,
-     "start": 55.85,
+     "end": 55.987,
+     "start": 55.9,
      "text": "—"
     },
     {
-     "end": 56.112,
-     "start": 55.938,
+     "end": 56.162,
+     "start": 55.987,
      "text": "are"
     },
     {
-     "end": 57.025,
-     "start": 56.112,
+     "end": 57.075,
+     "start": 56.162,
      "text": "package-internal"
     },
     {
-     "end": 57.875,
-     "start": 57.025,
+     "end": 57.925,
+     "start": 57.075,
      "text": "other-modules"
     },
     {
-     "end": 58.062,
-     "start": 57.875,
+     "end": 58.112,
+     "start": 57.925,
      "text": "with"
     },
     {
-     "end": 58.688,
-     "start": 58.062,
+     "end": 58.737,
+     "start": 58.112,
      "text": "generated"
     },
     {
-     "end": 59.15,
-     "start": 58.688,
+     "end": 59.2,
+     "start": 58.737,
      "text": "pages"
     },
     {
-     "end": 59.425,
-     "start": 59.15,
+     "end": 59.475,
+     "start": 59.2,
      "text": "here"
     },
     {
-     "end": 59.55,
-     "start": 59.425,
+     "end": 59.6,
+     "start": 59.475,
      "text": "for"
     },
     {
-     "end": 59.65,
-     "start": 59.55,
+     "end": 59.7,
+     "start": 59.6,
      "text": "the"
     },
     {
-     "end": 60.312,
-     "start": 59.65,
+     "end": 60.362,
+     "start": 59.7,
      "text": "contributor"
     },
     {
-     "end": 60.725,
-     "start": 60.312,
+     "end": 60.775,
+     "start": 60.362,
      "text": "reading"
     },
     {
-     "end": 60.825,
-     "start": 60.725,
+     "end": 60.875,
+     "start": 60.775,
      "text": "the"
     },
     {
-     "end": 61.4,
-     "start": 60.825,
+     "end": 61.45,
+     "start": 60.875,
      "text": "facades'"
     },
     {
-     "end": 63.075,
-     "start": 61.4,
+     "end": 63.125,
+     "start": 61.45,
      "text": "implementations"
     },
     {
-     "end": 63.275,
-     "start": 63.075,
+     "end": 63.325,
+     "start": 63.125,
      "text": ","
     },
     {
-     "end": 63.562,
-     "start": 63.45,
+     "end": 63.612,
+     "start": 63.5,
      "text": "but"
     },
     {
-     "end": 63.725,
-     "start": 63.562,
+     "end": 63.775,
+     "start": 63.612,
      "text": "no"
     },
     {
-     "end": 64.012,
-     "start": 63.725,
+     "end": 64.062,
+     "start": 63.775,
      "text": "caller"
     },
     {
-     "end": 64.3,
-     "start": 64.012,
+     "end": 64.35,
+     "start": 64.062,
      "text": "import"
     },
     {
-     "end": 65.05,
-     "start": 64.3,
+     "end": 65.1,
+     "start": 64.35,
      "text": "path"
     },
     {
-     "end": 65.275,
-     "start": 65.05,
+     "end": 65.325,
+     "start": 65.1,
      "text": ":"
     },
     {
-     "end": 65.55,
-     "start": 65.475,
+     "end": 65.6,
+     "start": 65.525,
      "text": "a"
     },
     {
-     "end": 65.925,
-     "start": 65.55,
+     "end": 65.975,
+     "start": 65.6,
      "text": "caller"
     },
     {
-     "end": 66.5,
-     "start": 65.925,
+     "end": 66.55,
+     "start": 65.975,
      "text": "compiles"
     },
     {
-     "end": 66.838,
-     "start": 66.5,
+     "end": 66.887,
+     "start": 66.55,
      "text": "against"
     },
     {
-     "end": 66.925,
-     "start": 66.838,
+     "end": 66.975,
+     "start": 66.887,
      "text": "the"
     },
     {
-     "end": 67.425,
-     "start": 66.925,
+     "end": 67.475,
+     "start": 66.975,
      "text": "facades'"
     },
     {
-     "end": 68.05,
-     "start": 67.425,
+     "end": 68.1,
+     "start": 67.475,
      "text": "exports"
     },
     {
-     "end": 68.125,
-     "start": 68.05,
+     "end": 68.175,
+     "start": 68.1,
      "text": ","
     },
     {
-     "end": 68.338,
-     "start": 68.125,
+     "end": 68.387,
+     "start": 68.175,
      "text": "not"
     },
     {
-     "end": 68.662,
-     "start": 68.338,
+     "end": 68.713,
+     "start": 68.387,
      "text": "against"
     },
     {
-     "end": 68.875,
-     "start": 68.662,
+     "end": 68.925,
+     "start": 68.713,
      "text": "these"
     },
     {
-     "end": 69.975,
-     "start": 68.875,
+     "end": 70.025,
+     "start": 68.925,
      "text": "modules"
     },
     {
-     "end": 70.175,
-     "start": 69.975,
+     "end": 70.225,
+     "start": 70.025,
      "text": "."
-    },
-    {
-     "end": 70.8,
-     "start": 70.4,
-     "text": "Singular"
     },
     {
      "end": 70.85,
-     "start": 70.8,
+     "start": 70.45,
+     "text": "Singular"
+    },
+    {
+     "end": 70.9,
+     "start": 70.85,
      "text": "."
     },
     {
-     "end": 71.3,
-     "start": 70.85,
+     "end": 71.35,
+     "start": 70.9,
      "text": "Registry"
     },
     {
-     "end": 71.375,
-     "start": 71.3,
+     "end": 71.425,
+     "start": 71.35,
      "text": "."
     },
     {
-     "end": 71.775,
-     "start": 71.375,
+     "end": 71.825,
+     "start": 71.425,
      "text": "Ledger"
     },
     {
-     "end": 71.887,
-     "start": 71.775,
+     "end": 71.938,
+     "start": 71.825,
      "text": ","
-    },
-    {
-     "end": 72.375,
-     "start": 71.887,
-     "text": "Singular"
     },
     {
      "end": 72.425,
-     "start": 72.375,
+     "start": 71.938,
+     "text": "Singular"
+    },
+    {
+     "end": 72.475,
+     "start": 72.425,
      "text": "."
     },
     {
-     "end": 72.9,
-     "start": 72.425,
+     "end": 72.95,
+     "start": 72.475,
      "text": "Registry"
     },
     {
-     "end": 72.975,
-     "start": 72.9,
+     "end": 73.025,
+     "start": 72.95,
      "text": "."
     },
     {
-     "end": 74.175,
-     "start": 72.975,
+     "end": 74.225,
+     "start": 73.025,
      "text": "LedgerProvider"
     },
     {
-     "end": 74.4,
-     "start": 74.175,
+     "end": 74.45,
+     "start": 74.225,
      "text": ","
     },
     {
-     "end": 75.075,
-     "start": 74.625,
+     "end": 75.125,
+     "start": 74.675,
      "text": "Singular"
     },
     {
-     "end": 75.15,
-     "start": 75.075,
+     "end": 75.2,
+     "start": 75.125,
      "text": "."
     },
     {
-     "end": 75.7,
-     "start": 75.15,
+     "end": 75.75,
+     "start": 75.2,
      "text": "Registry"
     },
     {
-     "end": 75.775,
-     "start": 75.7,
+     "end": 75.825,
+     "start": 75.75,
      "text": "."
     },
     {
-     "end": 76.275,
-     "start": 75.775,
+     "end": 76.325,
+     "start": 75.825,
      "text": "Evidence"
     },
     {
-     "end": 76.438,
-     "start": 76.275,
+     "end": 76.488,
+     "start": 76.325,
      "text": "and"
-    },
-    {
-     "end": 76.925,
-     "start": 76.438,
-     "text": "Singular"
     },
     {
      "end": 76.975,
-     "start": 76.925,
+     "start": 76.488,
+     "text": "Singular"
+    },
+    {
+     "end": 77.025,
+     "start": 76.975,
      "text": "."
     },
     {
-     "end": 77.575,
-     "start": 76.975,
+     "end": 77.625,
+     "start": 77.025,
      "text": "Registry"
     },
     {
-     "end": 77.7,
-     "start": 77.575,
+     "end": 77.75,
+     "start": 77.625,
      "text": "."
     },
     {
-     "end": 78.075,
-     "start": 77.7,
+     "end": 78.125,
+     "start": 77.75,
      "text": "Signing"
     },
     {
-     "end": 78.162,
-     "start": 78.075,
+     "end": 78.213,
+     "start": 78.125,
      "text": "are"
     },
     {
-     "end": 78.25,
-     "start": 78.162,
+     "end": 78.3,
+     "start": 78.213,
      "text": "the"
     },
     {
-     "end": 79.55,
-     "start": 78.25,
+     "end": 79.6,
+     "start": 78.3,
      "text": "re-exports"
     },
     {
-     "end": 79.75,
-     "start": 79.55,
+     "end": 79.8,
+     "start": 79.6,
      "text": ":"
     },
     {
-     "end": 80.113,
-     "start": 79.975,
+     "end": 80.162,
+     "start": 80.025,
      "text": "their"
     },
     {
-     "end": 81.05,
-     "start": 80.113,
+     "end": 81.1,
+     "start": 80.162,
      "text": "implementations"
     },
     {
-     "end": 81.213,
-     "start": 81.05,
+     "end": 81.262,
+     "start": 81.1,
      "text": "are"
     },
     {
-     "end": 81.6,
-     "start": 81.213,
+     "end": 81.65,
+     "start": 81.262,
      "text": "owned"
     },
     {
-     "end": 81.775,
-     "start": 81.6,
+     "end": 81.825,
+     "start": 81.65,
      "text": "by"
     },
     {
-     "end": 81.887,
-     "start": 81.775,
+     "end": 81.938,
+     "start": 81.825,
      "text": "the"
     },
     {
-     "end": 82.3,
-     "start": 81.887,
+     "end": 82.35,
+     "start": 81.938,
      "text": "public"
     },
     {
-     "end": 83.175,
-     "start": 82.3,
+     "end": 83.225,
+     "start": 82.35,
      "text": "local-services"
     },
     {
-     "end": 83.863,
-     "start": 83.175,
+     "end": 83.912,
+     "start": 83.225,
      "text": "component"
     },
     {
-     "end": 83.95,
-     "start": 83.863,
+     "end": 84.0,
+     "start": 83.912,
      "text": "("
     },
     {
-     "end": 86.5,
-     "start": 83.95,
+     "end": 86.55,
+     "start": 84.0,
      "text": "offchain/local-services/"
     },
     {
-     "end": 86.6,
-     "start": 86.5,
+     "end": 86.65,
+     "start": 86.55,
      "text": ")"
     },
     {
-     "end": 86.713,
-     "start": 86.6,
+     "end": 86.762,
+     "start": 86.65,
      "text": "and"
     },
     {
-     "end": 86.8,
-     "start": 86.713,
+     "end": 86.85,
+     "start": 86.762,
      "text": "the"
     },
     {
-     "end": 87.1,
-     "start": 86.8,
+     "end": 87.15,
+     "start": 86.85,
      "text": "main"
     },
     {
-     "end": 87.675,
-     "start": 87.1,
+     "end": 87.725,
+     "start": 87.15,
      "text": "library"
     },
     {
-     "end": 88.325,
-     "start": 87.675,
+     "end": 88.375,
+     "start": 87.725,
      "text": "exposes"
     },
     {
-     "end": 88.537,
-     "start": 88.325,
+     "end": 88.588,
+     "start": 88.375,
      "text": "their"
     },
     {
-     "end": 89.025,
-     "start": 88.537,
+     "end": 89.075,
+     "start": 88.588,
      "text": "stable"
     },
     {
-     "end": 89.5,
-     "start": 89.025,
+     "end": 89.55,
+     "start": 89.075,
      "text": "import"
     },
     {
-     "end": 90.725,
-     "start": 89.5,
+     "end": 90.775,
+     "start": 89.55,
      "text": "paths"
     },
     {
-     "end": 90.975,
-     "start": 90.725,
+     "end": 91.025,
+     "start": 90.775,
      "text": "."
     },
     {
-     "end": 91.275,
-     "start": 91.175,
+     "end": 91.325,
+     "start": 91.225,
      "text": "The"
     },
     {
-     "end": 91.775,
-     "start": 91.275,
+     "end": 91.825,
+     "start": 91.325,
      "text": "generic"
     },
     {
-     "end": 92.3,
-     "start": 91.775,
+     "end": 92.35,
+     "start": 91.825,
      "text": "provider"
     },
     {
-     "end": 92.95,
-     "start": 92.3,
+     "end": 93.0,
+     "start": 92.35,
      "text": "interface"
     },
     {
-     "end": 93.088,
-     "start": 92.95,
+     "end": 93.137,
+     "start": 93.0,
      "text": "and"
     },
     {
-     "end": 93.637,
-     "start": 93.088,
+     "end": 93.688,
+     "start": 93.137,
      "text": "evidence"
     },
     {
-     "end": 94.062,
-     "start": 93.637,
+     "end": 94.113,
+     "start": 93.688,
      "text": "types"
     },
     {
-     "end": 94.238,
-     "start": 94.062,
+     "end": 94.287,
+     "start": 94.113,
      "text": "let"
     },
     {
-     "end": 94.338,
-     "start": 94.238,
+     "end": 94.387,
+     "start": 94.287,
      "text": "a"
     },
     {
-     "end": 94.725,
-     "start": 94.338,
+     "end": 94.775,
+     "start": 94.387,
      "text": "caller"
     },
     {
-     "end": 95.1,
-     "start": 94.725,
+     "end": 95.15,
+     "start": 94.775,
      "text": "supply"
     },
     {
-     "end": 95.925,
-     "start": 95.1,
+     "end": 95.975,
+     "start": 95.15,
      "text": "capabilities"
     },
     {
-     "end": 96.275,
-     "start": 95.925,
+     "end": 96.325,
+     "start": 95.975,
      "text": "without"
     },
     {
-     "end": 96.825,
-     "start": 96.275,
+     "end": 96.875,
+     "start": 96.325,
      "text": "selecting"
     },
     {
-     "end": 96.938,
-     "start": 96.825,
+     "end": 96.988,
+     "start": 96.875,
      "text": "a"
     },
     {
-     "end": 97.3,
-     "start": 96.938,
+     "end": 97.35,
+     "start": 96.988,
      "text": "node"
     },
     {
-     "end": 98.5,
-     "start": 97.3,
+     "end": 98.55,
+     "start": 97.35,
      "text": "runtime"
     },
     {
-     "end": 98.725,
-     "start": 98.5,
+     "end": 98.775,
+     "start": 98.55,
      "text": ";"
     },
     {
-     "end": 98.975,
-     "start": 98.9,
+     "end": 99.025,
+     "start": 98.95,
      "text": "the"
     },
     {
-     "end": 99.375,
-     "start": 98.975,
+     "end": 99.425,
+     "start": 99.025,
      "text": "Koios"
     },
     {
-     "end": 100.0,
-     "start": 99.375,
+     "end": 100.05,
+     "start": 99.425,
      "text": "constructor"
     },
     {
-     "end": 100.537,
-     "start": 100.0,
+     "end": 100.588,
+     "start": 100.05,
      "text": "supplies"
     },
     {
-     "end": 101.3,
-     "start": 100.537,
+     "end": 101.35,
+     "start": 100.588,
      "text": "unbound"
     },
     {
-     "end": 101.4,
-     "start": 101.3,
+     "end": 101.45,
+     "start": 101.35,
      "text": ","
     },
     {
-     "end": 102.188,
-     "start": 101.4,
+     "end": 102.238,
+     "start": 101.45,
      "text": "unverified"
     },
     {
-     "end": 103.062,
-     "start": 102.188,
+     "end": 103.113,
+     "start": 102.238,
      "text": "HTTP"
     },
     {
-     "end": 103.525,
-     "start": 103.062,
+     "end": 103.575,
+     "start": 103.113,
      "text": "facts"
     },
     {
-     "end": 103.725,
-     "start": 103.525,
+     "end": 103.775,
+     "start": 103.575,
      "text": "through"
     },
     {
-     "end": 103.963,
-     "start": 103.725,
+     "end": 104.012,
+     "start": 103.775,
      "text": "that"
     },
     {
-     "end": 105.1,
-     "start": 103.963,
+     "end": 105.15,
+     "start": 104.012,
      "text": "interface"
     },
     {
-     "end": 105.3,
-     "start": 105.1,
+     "end": 105.35,
+     "start": 105.15,
      "text": "."
     },
     {
-     "end": 105.6,
-     "start": 105.5,
+     "end": 105.65,
+     "start": 105.55,
      "text": "The"
     },
     {
-     "end": 106.113,
-     "start": 105.6,
+     "end": 106.162,
+     "start": 105.65,
      "text": "runtime"
     },
     {
-     "end": 106.512,
-     "start": 106.113,
+     "end": 106.562,
+     "start": 106.162,
      "text": "service"
     },
     {
-     "end": 107.037,
-     "start": 106.512,
+     "end": 107.088,
+     "start": 106.562,
      "text": "modules"
     },
     {
-     "end": 107.65,
-     "start": 107.037,
+     "end": 107.7,
+     "start": 107.088,
      "text": "outside"
     },
     {
-     "end": 107.85,
-     "start": 107.65,
+     "end": 107.9,
+     "start": 107.7,
      "text": "this"
     },
     {
-     "end": 108.475,
-     "start": 107.85,
+     "end": 108.525,
+     "start": 107.9,
      "text": "extent"
     },
     {
-     "end": 108.537,
-     "start": 108.475,
+     "end": 108.588,
+     "start": 108.525,
      "text": "—"
     },
     {
-     "end": 108.637,
-     "start": 108.537,
+     "end": 108.688,
+     "start": 108.588,
      "text": "the"
     },
     {
-     "end": 109.125,
-     "start": 108.637,
+     "end": 109.175,
+     "start": 108.688,
      "text": "terminal"
     },
     {
-     "end": 109.875,
-     "start": 109.125,
+     "end": 109.925,
+     "start": 109.175,
      "text": "composition"
     },
     {
-     "end": 109.988,
-     "start": 109.875,
+     "end": 110.037,
+     "start": 109.925,
      "text": "and"
     },
     {
-     "end": 110.15,
-     "start": 109.988,
+     "end": 110.2,
+     "start": 110.037,
      "text": "its"
     },
     {
-     "end": 110.775,
-     "start": 110.15,
+     "end": 110.825,
+     "start": 110.2,
      "text": "transport"
     },
     {
-     "end": 110.963,
-     "start": 110.775,
+     "end": 111.012,
+     "start": 110.825,
      "text": "in"
     },
     {
-     "end": 112.925,
-     "start": 110.963,
+     "end": 112.975,
+     "start": 111.012,
      "text": "koios-http"
     },
     {
-     "end": 113.2,
-     "start": 112.925,
+     "end": 113.25,
+     "start": 112.975,
      "text": ","
     },
     {
-     "end": 113.537,
-     "start": 113.425,
+     "end": 113.588,
+     "start": 113.475,
      "text": "and"
     },
     {
-     "end": 113.625,
-     "start": 113.537,
+     "end": 113.675,
+     "start": 113.588,
      "text": "the"
     },
     {
-     "end": 114.137,
-     "start": 113.625,
+     "end": 114.188,
+     "start": 113.675,
      "text": "remaining"
     },
     {
-     "end": 114.55,
-     "start": 114.137,
+     "end": 114.6,
+     "start": 114.188,
      "text": "service"
     },
     {
-     "end": 115.075,
-     "start": 114.55,
+     "end": 115.125,
+     "start": 114.6,
      "text": "modules"
     },
     {
-     "end": 115.225,
-     "start": 115.075,
+     "end": 115.275,
+     "start": 115.125,
      "text": "of"
     },
     {
-     "end": 116.275,
-     "start": 115.225,
+     "end": 116.325,
+     "start": 115.275,
      "text": "local-services"
     },
     {
-     "end": 116.35,
-     "start": 116.275,
+     "end": 116.4,
+     "start": 116.325,
      "text": "—"
     },
     {
-     "end": 116.512,
-     "start": 116.35,
+     "end": 116.562,
+     "start": 116.4,
      "text": "are"
     },
     {
-     "end": 117.2,
-     "start": 116.512,
+     "end": 117.25,
+     "start": 116.562,
      "text": "documented"
     },
     {
-     "end": 117.387,
-     "start": 117.2,
+     "end": 117.438,
+     "start": 117.25,
      "text": "with"
     },
     {
-     "end": 117.775,
-     "start": 117.387,
+     "end": 117.825,
+     "start": 117.438,
      "text": "source"
     },
     {
-     "end": 118.162,
-     "start": 117.775,
+     "end": 118.213,
+     "start": 117.825,
      "text": "links"
     },
     {
-     "end": 118.338,
-     "start": 118.162,
+     "end": 118.387,
+     "start": 118.213,
      "text": "in"
     },
     {
-     "end": 118.938,
-     "start": 118.338,
+     "end": 118.988,
+     "start": 118.387,
      "text": "Runtime"
     },
     {
-     "end": 119.35,
-     "start": 118.938,
+     "end": 119.4,
+     "start": 118.988,
      "text": "service"
     },
     {
-     "end": 120.55,
-     "start": 119.35,
+     "end": 120.6,
+     "start": 119.4,
      "text": "ownership"
     },
     {
-     "end": 120.775,
-     "start": 120.55,
+     "end": 120.825,
+     "start": 120.6,
      "text": "."
     },
     {
-     "end": 121.1,
-     "start": 120.975,
+     "end": 121.15,
+     "start": 121.025,
      "text": "The"
     },
     {
-     "end": 121.5,
-     "start": 121.1,
+     "end": 121.55,
+     "start": 121.15,
      "text": "extent"
     },
     {
-     "end": 121.963,
-     "start": 121.5,
+     "end": 122.012,
+     "start": 121.55,
      "text": "below"
     },
     {
-     "end": 122.125,
-     "start": 121.963,
+     "end": 122.175,
+     "start": 122.012,
      "text": "is"
     },
     {
-     "end": 122.225,
-     "start": 122.125,
+     "end": 122.275,
+     "start": 122.175,
      "text": "the"
     },
     {
-     "end": 122.787,
-     "start": 122.225,
+     "end": 122.838,
+     "start": 122.275,
      "text": "complete"
     },
     {
-     "end": 123.45,
-     "start": 122.787,
+     "end": 123.5,
+     "start": 122.838,
      "text": "documented"
     },
     {
-     "end": 123.838,
-     "start": 123.45,
+     "end": 123.887,
+     "start": 123.5,
      "text": "module"
     },
     {
-     "end": 124.5,
-     "start": 123.838,
+     "end": 124.55,
+     "start": 123.887,
      "text": "surface"
     },
     {
-     "end": 124.575,
-     "start": 124.5,
+     "end": 124.625,
+     "start": 124.55,
      "text": "—"
     },
     {
-     "end": 125.325,
-     "start": 124.575,
+     "end": 125.375,
+     "start": 124.625,
      "text": "exposed"
     },
     {
-     "end": 125.412,
-     "start": 125.325,
+     "end": 125.463,
+     "start": 125.375,
      "text": ","
     },
     {
-     "end": 126.15,
-     "start": 125.412,
+     "end": 126.2,
+     "start": 125.463,
      "text": "re-exported"
     },
     {
-     "end": 126.275,
-     "start": 126.15,
+     "end": 126.325,
+     "start": 126.2,
      "text": "and"
     },
     {
-     "end": 127.125,
-     "start": 126.275,
+     "end": 127.175,
+     "start": 126.325,
      "text": "package-internal"
     },
     {
-     "end": 128.15,
-     "start": 127.125,
+     "end": 128.2,
+     "start": 127.175,
      "text": "alike"
     },
     {
-     "end": 128.375,
-     "start": 128.15,
+     "end": 128.425,
+     "start": 128.2,
      "text": ";"
     },
     {
-     "end": 128.625,
-     "start": 128.55,
+     "end": 128.675,
+     "start": 128.6,
      "text": "the"
     },
     {
-     "end": 128.85,
-     "start": 128.625,
+     "end": 128.9,
+     "start": 128.675,
      "text": "site"
     },
     {
-     "end": 129.1,
-     "start": 128.85,
+     "end": 129.15,
+     "start": 128.9,
      "text": "check"
     },
     {
-     "end": 129.413,
-     "start": 129.1,
+     "end": 129.462,
+     "start": 129.15,
      "text": "fails"
     },
     {
-     "end": 129.775,
-     "start": 129.413,
+     "end": 129.825,
+     "start": 129.462,
      "text": "until"
     },
     {
-     "end": 129.925,
-     "start": 129.775,
+     "end": 129.975,
+     "start": 129.825,
      "text": "it"
     },
     {
-     "end": 130.038,
-     "start": 129.925,
+     "end": 130.087,
+     "start": 129.975,
      "text": "and"
     },
     {
-     "end": 130.225,
-     "start": 130.038,
+     "end": 130.275,
+     "start": 130.087,
      "text": "this"
     },
     {
-     "end": 130.45,
-     "start": 130.225,
+     "end": 130.5,
+     "start": 130.275,
      "text": "list"
     },
     {
-     "end": 131.3,
-     "start": 130.45,
+     "end": 131.35,
+     "start": 130.5,
      "text": "agree"
     },
     {
-     "end": 131.525,
-     "start": 131.3,
+     "end": 131.575,
+     "start": 131.35,
      "text": "."
     }
    ]
   },
   "docs-offchain-api-reference/what-this-reference-contains-03": {
-   "audio_sha256": "9e2504d1afdd113f8071fc9606415365da51a605f072980e2473b2daee5795fa",
-   "characters": 3211,
-   "cost": 0.0031788899999999998,
-   "duration": 152.075,
+   "audio_sha256": "234673675911db6bccc94cd3949da3ccd371764ac370ee51e937ceca6ef12cbf",
+   "characters": 3377,
+   "cost": 0.00334323,
+   "duration": 163.725,
    "index": 3,
-   "key": "b605440f140b924aa9e1bb7f04114fa6dc504a47e42952dc57f6ee760513298d",
+   "key": "f94f943850bb26998861980a154d0563ed2de44a35daf0cf06848f33b3355463",
    "page": "docs/offchain-api-reference.md",
    "pause_ms": 400,
    "section": "what-this-reference-contains",
-   "sent_text": "MkDocs environment ready! Run: mkdocs serve - Naming.Datum — source - Naming.Register — source - Naming.Request — source - Naming.Verify — source - Naming.Wire — source - Naming.Wire.Vectors — source - Singular.Provider.Koios.Client — source - Singular.Provider.Koios.Evidence — source - Singular.Provider.Koios.History — source - Singular.Provider.Koios.Provider — source - Singular.Provider.Koios.Recorded — source - Singular.Provider.Koios.Runtime — source - Singular.Provider.Koios.State — source - Singular.Provider.Koios.Wire — source - Singular.Registry.Address — source - Singular.Registry.Application — source - Singular.Registry.AssetName — source - Singular.Registry.Blueprint — source - Singular.Registry.Blueprint.Load — source - Singular.Registry.Blueprint.Params — source - Singular.Registry.Blueprint.Schema — source - Singular.Registry.Candidate — source - Singular.Registry.Capabilities — source - Singular.Registry.Config — source - Singular.Registry.Config.Application — source - Singular.Registry.Confirmation — source - Singular.Registry.Deployment — source - Singular.Registry.Deployment.Attach — source - Singular.Registry.Deployment.Manifest — source - Singular.Registry.Deployment.Mirror — source - Singular.Registry.Driver — source - Singular.Registry.Evidence — source - Singular.Registry.FoldAdmission — source - Singular.Registry.FoldSelection — source - Singular.Registry.Funding — source - Singular.Registry.Ledger — source - Singular.Registry.LedgerProvider — source - Singular.Registry.Lifecycle — source - Singular.Registry.Page — source - Singular.Registry.PlainJson — source - Singular.Registry.Proof — source - Singular.Registry.Replay — source - Singular.Registry.Signing — source - Singular.Registry.StateToken — source - Singular.Registry.Trie — source - Singular.Registry.Trie.Pure — source - Singular.Registry.Trie.PureManager — source - Singular.Registry.TrieState — source - Singular.Registry.TrieState.Core — source - Singular.Registry.TrieState.Fixture — source - Singular.Registry.TrieState.Lineage — source - Singular.Registry.TrieState.Types — source - Singular.Registry.TxBuilder.Boot — source - Singular.Registry.TxBuilder.ConnectedFold — source - Singular.Registry.TxBuilder.Edges — source - Singular.Registry.TxBuilder.Internal — source - Singular.Registry.TxBuilder.Internal.Edges — source - Singular.Registry.TxBuilder.Internal.Identity — source - Singular.Registry.TxBuilder.Internal.Lookup — source - Singular.Registry.TxBuilder.Prepare — source - Singular.Registry.TxBuilder.Register — source - Singular.Registry.TxBuilder.Reject — source - Singular.Registry.TxBuilder.Request — source - Singular.Registry.TxBuilder.Retract — source - Singular.Registry.TxBuilder.Update — source - Singular.Registry.TxBuilder.Update.Build — source - Singular.Registry.TxBuilder.Update.Context — source - Singular.Registry.TxBuilder.Update.Duties — source - Singular.Registry.Types — source - Singular.Registry.Wait — source - Singular.Registry.Wire.Primitive — source - Singular.Registry.Wire.Proof — source - Singular.Registry.Wire.Redeemer — source - Singular.Registry.Wire.Request — source - Singular.Registry.Wire.State — source - Singular.Registry.Witness — source",
-   "text": "MkDocs environment ready! Run: mkdocs serve - Naming.Datum — source - Naming.Register — source - Naming.Request — source - Naming.Verify — source - Naming.Wire — source - Naming.Wire.Vectors — source - Singular.Provider.Koios.Client — source - Singular.Provider.Koios.Evidence — source - Singular.Provider.Koios.History — source - Singular.Provider.Koios.Provider — source - Singular.Provider.Koios.Recorded — source - Singular.Provider.Koios.Runtime — source - Singular.Provider.Koios.State — source - Singular.Provider.Koios.Wire — source - Singular.Registry.Address — source - Singular.Registry.Application — source - Singular.Registry.AssetName — source - Singular.Registry.Blueprint — source - Singular.Registry.Blueprint.Load — source - Singular.Registry.Blueprint.Params — source - Singular.Registry.Blueprint.Schema — source - Singular.Registry.Candidate — source - Singular.Registry.Capabilities — source - Singular.Registry.Config — source - Singular.Registry.Config.Application — source - Singular.Registry.Confirmation — source - Singular.Registry.Deployment — source - Singular.Registry.Deployment.Attach — source - Singular.Registry.Deployment.Manifest — source - Singular.Registry.Deployment.Mirror — source - Singular.Registry.Driver — source - Singular.Registry.Evidence — source - Singular.Registry.FoldAdmission — source - Singular.Registry.FoldSelection — source - Singular.Registry.Funding — source - Singular.Registry.Ledger — source - Singular.Registry.LedgerProvider — source - Singular.Registry.Lifecycle — source - Singular.Registry.Page — source - Singular.Registry.PlainJson — source - Singular.Registry.Proof — source - Singular.Registry.Replay — source - Singular.Registry.Signing — source - Singular.Registry.StateToken — source - Singular.Registry.Trie — source - Singular.Registry.Trie.Pure — source - Singular.Registry.Trie.PureManager — source - Singular.Registry.TrieState — source - Singular.Registry.TrieState.Core — source - Singular.Registry.TrieState.Fixture — source - Singular.Registry.TrieState.Lineage — source - Singular.Registry.TrieState.Types — source - Singular.Registry.TxBuilder.Boot — source - Singular.Registry.TxBuilder.ConnectedFold — source - Singular.Registry.TxBuilder.Edges — source - Singular.Registry.TxBuilder.Internal — source - Singular.Registry.TxBuilder.Internal.Edges — source - Singular.Registry.TxBuilder.Internal.Identity — source - Singular.Registry.TxBuilder.Internal.Lookup — source - Singular.Registry.TxBuilder.Prepare — source - Singular.Registry.TxBuilder.Register — source - Singular.Registry.TxBuilder.Reject — source - Singular.Registry.TxBuilder.Request — source - Singular.Registry.TxBuilder.Retract — source - Singular.Registry.TxBuilder.Update — source - Singular.Registry.TxBuilder.Update.Build — source - Singular.Registry.TxBuilder.Update.Context — source - Singular.Registry.TxBuilder.Update.Duties — source - Singular.Registry.Types — source - Singular.Registry.Wait — source - Singular.Registry.Wire.Primitive — source - Singular.Registry.Wire.Proof — source - Singular.Registry.Wire.Redeemer — source - Singular.Registry.Wire.Request — source - Singular.Registry.Wire.State — source - Singular.Registry.Witness — source",
+   "sent_text": "MkDocs environment ready! Run: mkdocs serve - Naming.Datum — source - Naming.Register — source - Naming.Request — source - Naming.Verify — source - Naming.Wire — source - Naming.Wire.Vectors — source - Singular.Provider.Koios.Client — source - Singular.Provider.Koios.Evidence — source - Singular.Provider.Koios.History — source - Singular.Provider.Koios.Provider — source - Singular.Provider.Koios.Recorded — source - Singular.Provider.Koios.Runtime — source - Singular.Provider.Koios.State — source - Singular.Provider.Koios.Wire — source - Singular.Registry.Address — source - Singular.Registry.Application — source - Singular.Registry.AssetName — source - Singular.Registry.Blueprint — source - Singular.Registry.Blueprint.Load — source - Singular.Registry.Blueprint.Params — source - Singular.Registry.Blueprint.Schema — source - Singular.Registry.Candidate — source - Singular.Registry.Capabilities — source - Singular.Registry.Config — source - Singular.Registry.Config.Application — source - Singular.Registry.Confirmation — source - Singular.Registry.Deployment — source - Singular.Registry.Deployment.Attach — source - Singular.Registry.Deployment.Manifest — source - Singular.Registry.Deployment.Mirror — source - Singular.Registry.Driver — source - Singular.Registry.Evidence — source - Singular.Registry.FoldAdmission — source - Singular.Registry.FoldSelection — source - Singular.Registry.Funding — source - Singular.Registry.Ledger — source - Singular.Registry.LedgerProvider — source - Singular.Registry.Lifecycle — source - Singular.Registry.Page — source - Singular.Registry.PlainJson — source - Singular.Registry.Proof — source - Singular.Registry.Replay — source - Singular.Registry.Signing — source - Singular.Registry.StateToken — source - Singular.Registry.Trie — source - Singular.Registry.Trie.Pure — source - Singular.Registry.Trie.PureManager — source - Singular.Registry.TrieState — source - Singular.Registry.TrieState.Core — source - Singular.Registry.TrieState.Fixture — source - Singular.Registry.TrieState.Lineage — source - Singular.Registry.TrieState.Types — source - Singular.Registry.TxBuilder.Boot — source - Singular.Registry.TxBuilder.ConnectedFold — source - Singular.Registry.TxBuilder.Edges — source - Singular.Registry.TxBuilder.Internal — source - Singular.Registry.TxBuilder.Internal.Edges — source - Singular.Registry.TxBuilder.Internal.Identity — source - Singular.Registry.TxBuilder.Internal.Lookup — source - Singular.Registry.TxBuilder.Prepare — source - Singular.Registry.TxBuilder.Register — source - Singular.Registry.TxBuilder.Reject — source - Singular.Registry.TxBuilder.Request — source - Singular.Registry.TxBuilder.Retract — source - Singular.Registry.TxBuilder.Update — source - Singular.Registry.TxBuilder.Update.Build — source - Singular.Registry.TxBuilder.Update.Context — source - Singular.Registry.TxBuilder.Update.Duties — source - Singular.Registry.Types — source - Singular.Registry.Wait — source - Singular.Registry.Wire.Primitive — source - Singular.Registry.Wire.Proof — source - Singular.Registry.Wire.Redeemer — source - Singular.Registry.Wire.Request — source - Singular.Registry.Wire.State — source - Singular.Registry.Witness — source - Singular.State.Preimage — source — the off-chain encoder of the Singular state, active and registration-approval preimages, byte for byte equal to the on-chain one",
+   "text": "MkDocs environment ready! Run: mkdocs serve - Naming.Datum — source - Naming.Register — source - Naming.Request — source - Naming.Verify — source - Naming.Wire — source - Naming.Wire.Vectors — source - Singular.Provider.Koios.Client — source - Singular.Provider.Koios.Evidence — source - Singular.Provider.Koios.History — source - Singular.Provider.Koios.Provider — source - Singular.Provider.Koios.Recorded — source - Singular.Provider.Koios.Runtime — source - Singular.Provider.Koios.State — source - Singular.Provider.Koios.Wire — source - Singular.Registry.Address — source - Singular.Registry.Application — source - Singular.Registry.AssetName — source - Singular.Registry.Blueprint — source - Singular.Registry.Blueprint.Load — source - Singular.Registry.Blueprint.Params — source - Singular.Registry.Blueprint.Schema — source - Singular.Registry.Candidate — source - Singular.Registry.Capabilities — source - Singular.Registry.Config — source - Singular.Registry.Config.Application — source - Singular.Registry.Confirmation — source - Singular.Registry.Deployment — source - Singular.Registry.Deployment.Attach — source - Singular.Registry.Deployment.Manifest — source - Singular.Registry.Deployment.Mirror — source - Singular.Registry.Driver — source - Singular.Registry.Evidence — source - Singular.Registry.FoldAdmission — source - Singular.Registry.FoldSelection — source - Singular.Registry.Funding — source - Singular.Registry.Ledger — source - Singular.Registry.LedgerProvider — source - Singular.Registry.Lifecycle — source - Singular.Registry.Page — source - Singular.Registry.PlainJson — source - Singular.Registry.Proof — source - Singular.Registry.Replay — source - Singular.Registry.Signing — source - Singular.Registry.StateToken — source - Singular.Registry.Trie — source - Singular.Registry.Trie.Pure — source - Singular.Registry.Trie.PureManager — source - Singular.Registry.TrieState — source - Singular.Registry.TrieState.Core — source - Singular.Registry.TrieState.Fixture — source - Singular.Registry.TrieState.Lineage — source - Singular.Registry.TrieState.Types — source - Singular.Registry.TxBuilder.Boot — source - Singular.Registry.TxBuilder.ConnectedFold — source - Singular.Registry.TxBuilder.Edges — source - Singular.Registry.TxBuilder.Internal — source - Singular.Registry.TxBuilder.Internal.Edges — source - Singular.Registry.TxBuilder.Internal.Identity — source - Singular.Registry.TxBuilder.Internal.Lookup — source - Singular.Registry.TxBuilder.Prepare — source - Singular.Registry.TxBuilder.Register — source - Singular.Registry.TxBuilder.Reject — source - Singular.Registry.TxBuilder.Request — source - Singular.Registry.TxBuilder.Retract — source - Singular.Registry.TxBuilder.Update — source - Singular.Registry.TxBuilder.Update.Build — source - Singular.Registry.TxBuilder.Update.Context — source - Singular.Registry.TxBuilder.Update.Duties — source - Singular.Registry.Types — source - Singular.Registry.Wait — source - Singular.Registry.Wire.Primitive — source - Singular.Registry.Wire.Proof — source - Singular.Registry.Wire.Redeemer — source - Singular.Registry.Wire.Request — source - Singular.Registry.Wire.State — source - Singular.Registry.Witness — source - Singular.State.Preimage — source — the off-chain encoder of the Singular state, active and registration-approval preimages, byte for byte equal to the on-chain one",
    "words": [
     {
      "end": 0.837,
@@ -200069,18 +200069,18 @@
      "text": "."
     },
     {
-     "end": 132.4,
+     "end": 132.375,
      "start": 131.85,
      "text": "Update"
     },
     {
-     "end": 132.475,
-     "start": 132.4,
+     "end": 132.45,
+     "start": 132.375,
      "text": "."
     },
     {
      "end": 132.712,
-     "start": 132.475,
+     "start": 132.45,
      "text": "Build"
     },
     {
@@ -200099,88 +200099,88 @@
      "text": "-"
     },
     {
-     "end": 133.375,
+     "end": 133.4,
      "start": 133.075,
      "text": "Singular"
     },
     {
-     "end": 133.425,
-     "start": 133.375,
+     "end": 133.45,
+     "start": 133.4,
      "text": "."
     },
     {
-     "end": 133.85,
-     "start": 133.425,
+     "end": 133.875,
+     "start": 133.45,
      "text": "Registry"
     },
     {
-     "end": 133.9,
-     "start": 133.85,
+     "end": 133.925,
+     "start": 133.875,
      "text": "."
-    },
-    {
-     "end": 134.5,
-     "start": 133.9,
-     "text": "TxBuilder"
     },
     {
      "end": 134.525,
-     "start": 134.5,
+     "start": 133.925,
+     "text": "TxBuilder"
+    },
+    {
+     "end": 134.55,
+     "start": 134.525,
      "text": "."
     },
     {
-     "end": 134.975,
-     "start": 134.525,
+     "end": 134.95,
+     "start": 134.55,
      "text": "Update"
     },
     {
-     "end": 135.075,
-     "start": 134.975,
+     "end": 135.025,
+     "start": 134.95,
      "text": "."
     },
     {
-     "end": 135.587,
-     "start": 135.075,
+     "end": 135.562,
+     "start": 135.025,
      "text": "Context"
     },
     {
-     "end": 135.65,
-     "start": 135.587,
+     "end": 135.625,
+     "start": 135.562,
      "text": "—"
     },
     {
-     "end": 135.887,
-     "start": 135.65,
+     "end": 135.863,
+     "start": 135.625,
      "text": "source"
     },
     {
-     "end": 135.95,
-     "start": 135.887,
+     "end": 135.925,
+     "start": 135.863,
      "text": "-"
     },
     {
-     "end": 136.275,
-     "start": 135.95,
+     "end": 136.25,
+     "start": 135.925,
      "text": "Singular"
     },
     {
-     "end": 136.325,
-     "start": 136.275,
+     "end": 136.3,
+     "start": 136.25,
      "text": "."
     },
     {
-     "end": 136.8,
-     "start": 136.325,
+     "end": 136.75,
+     "start": 136.3,
      "text": "Registry"
     },
     {
-     "end": 136.85,
-     "start": 136.8,
+     "end": 136.8,
+     "start": 136.75,
      "text": "."
     },
     {
      "end": 137.4,
-     "start": 136.85,
+     "start": 136.8,
      "text": "TxBuilder"
     },
     {
@@ -200309,18 +200309,18 @@
      "text": "."
     },
     {
-     "end": 142.325,
+     "end": 142.3,
      "start": 141.825,
      "text": "Registry"
     },
     {
-     "end": 142.375,
-     "start": 142.325,
+     "end": 142.35,
+     "start": 142.3,
      "text": "."
     },
     {
      "end": 142.5,
-     "start": 142.375,
+     "start": 142.35,
      "text": "Wire"
     },
     {
@@ -200329,259 +200329,409 @@
      "text": "."
     },
     {
-     "end": 142.887,
+     "end": 142.938,
      "start": 142.55,
      "text": "Primitive"
     },
     {
-     "end": 142.95,
-     "start": 142.887,
+     "end": 143.0,
+     "start": 142.938,
      "text": "—"
     },
     {
-     "end": 143.188,
-     "start": 142.95,
+     "end": 143.262,
+     "start": 143.0,
      "text": "source"
     },
     {
-     "end": 143.25,
-     "start": 143.188,
+     "end": 143.325,
+     "start": 143.262,
      "text": "-"
     },
     {
-     "end": 143.525,
-     "start": 143.25,
+     "end": 143.625,
+     "start": 143.325,
      "text": "Singular"
     },
     {
-     "end": 143.575,
-     "start": 143.525,
+     "end": 143.675,
+     "start": 143.625,
      "text": "."
     },
     {
-     "end": 144.0,
-     "start": 143.575,
+     "end": 144.1,
+     "start": 143.675,
      "text": "Registry"
     },
     {
-     "end": 144.05,
-     "start": 144.0,
+     "end": 144.15,
+     "start": 144.1,
      "text": "."
     },
     {
-     "end": 144.275,
-     "start": 144.05,
+     "end": 144.375,
+     "start": 144.15,
      "text": "Wire"
     },
     {
-     "end": 144.325,
-     "start": 144.275,
+     "end": 144.425,
+     "start": 144.375,
      "text": "."
     },
     {
-     "end": 144.538,
-     "start": 144.325,
+     "end": 144.688,
+     "start": 144.425,
      "text": "Proof"
     },
     {
-     "end": 144.6,
-     "start": 144.538,
+     "end": 144.75,
+     "start": 144.688,
      "text": "—"
     },
     {
-     "end": 144.837,
-     "start": 144.6,
+     "end": 144.988,
+     "start": 144.75,
      "text": "source"
     },
     {
-     "end": 144.9,
-     "start": 144.837,
+     "end": 145.05,
+     "start": 144.988,
      "text": "-"
     },
     {
-     "end": 145.175,
-     "start": 144.9,
+     "end": 145.325,
+     "start": 145.05,
      "text": "Singular"
     },
     {
-     "end": 145.225,
-     "start": 145.175,
+     "end": 145.375,
+     "start": 145.325,
      "text": "."
     },
     {
-     "end": 145.625,
-     "start": 145.225,
+     "end": 145.8,
+     "start": 145.375,
      "text": "Registry"
     },
     {
-     "end": 145.675,
-     "start": 145.625,
+     "end": 145.85,
+     "start": 145.8,
      "text": "."
     },
     {
-     "end": 145.825,
-     "start": 145.675,
+     "end": 146.0,
+     "start": 145.85,
      "text": "Wire"
     },
     {
-     "end": 145.875,
-     "start": 145.825,
+     "end": 146.05,
+     "start": 146.0,
      "text": "."
     },
     {
-     "end": 146.238,
-     "start": 145.875,
+     "end": 146.413,
+     "start": 146.05,
      "text": "Redeemer"
     },
     {
-     "end": 146.3,
-     "start": 146.238,
+     "end": 146.475,
+     "start": 146.413,
      "text": "—"
     },
     {
-     "end": 146.538,
-     "start": 146.3,
+     "end": 146.712,
+     "start": 146.475,
      "text": "source"
     },
     {
-     "end": 146.6,
-     "start": 146.538,
+     "end": 146.775,
+     "start": 146.712,
      "text": "-"
     },
     {
-     "end": 146.875,
-     "start": 146.6,
+     "end": 147.05,
+     "start": 146.775,
      "text": "Singular"
     },
     {
-     "end": 146.925,
-     "start": 146.875,
+     "end": 147.1,
+     "start": 147.05,
      "text": "."
     },
     {
-     "end": 147.3,
-     "start": 146.925,
+     "end": 147.475,
+     "start": 147.1,
      "text": "Registry"
     },
     {
-     "end": 147.35,
-     "start": 147.3,
+     "end": 147.525,
+     "start": 147.475,
      "text": "."
     },
     {
-     "end": 147.5,
-     "start": 147.35,
+     "end": 147.675,
+     "start": 147.525,
      "text": "Wire"
     },
     {
-     "end": 147.55,
-     "start": 147.5,
+     "end": 147.725,
+     "start": 147.675,
      "text": "."
     },
     {
-     "end": 147.962,
-     "start": 147.55,
+     "end": 148.137,
+     "start": 147.725,
      "text": "Request"
     },
     {
-     "end": 148.025,
-     "start": 147.962,
+     "end": 148.2,
+     "start": 148.137,
      "text": "—"
     },
     {
-     "end": 148.288,
-     "start": 148.025,
+     "end": 148.462,
+     "start": 148.2,
      "text": "source"
     },
     {
-     "end": 148.35,
-     "start": 148.288,
+     "end": 148.525,
+     "start": 148.462,
      "text": "-"
     },
     {
-     "end": 148.625,
-     "start": 148.35,
+     "end": 148.8,
+     "start": 148.525,
      "text": "Singular"
     },
     {
-     "end": 148.675,
-     "start": 148.625,
+     "end": 148.85,
+     "start": 148.8,
      "text": "."
     },
     {
-     "end": 149.075,
-     "start": 148.675,
+     "end": 149.275,
+     "start": 148.85,
      "text": "Registry"
-    },
-    {
-     "end": 149.125,
-     "start": 149.075,
-     "text": "."
     },
     {
      "end": 149.325,
-     "start": 149.125,
+     "start": 149.275,
+     "text": "."
+    },
+    {
+     "end": 149.575,
+     "start": 149.325,
      "text": "Wire"
     },
     {
-     "end": 149.375,
-     "start": 149.325,
+     "end": 149.625,
+     "start": 149.575,
      "text": "."
     },
     {
-     "end": 149.637,
-     "start": 149.375,
+     "end": 149.913,
+     "start": 149.625,
      "text": "State"
     },
     {
-     "end": 149.7,
-     "start": 149.637,
+     "end": 149.975,
+     "start": 149.913,
      "text": "—"
     },
     {
-     "end": 149.938,
-     "start": 149.7,
+     "end": 150.238,
+     "start": 149.975,
      "text": "source"
-    },
-    {
-     "end": 150.0,
-     "start": 149.938,
-     "text": "-"
     },
     {
      "end": 150.3,
-     "start": 150.0,
+     "start": 150.238,
+     "text": "-"
+    },
+    {
+     "end": 150.675,
+     "start": 150.3,
      "text": "Singular"
     },
     {
-     "end": 150.35,
-     "start": 150.3,
+     "end": 150.725,
+     "start": 150.675,
      "text": "."
     },
     {
-     "end": 150.775,
-     "start": 150.35,
+     "end": 151.75,
+     "start": 150.725,
      "text": "Registry"
     },
     {
-     "end": 150.85,
-     "start": 150.775,
+     "end": 151.975,
+     "start": 151.75,
      "text": "."
     },
     {
-     "end": 151.188,
-     "start": 150.85,
+     "end": 152.613,
+     "start": 152.2,
      "text": "Witness"
     },
     {
-     "end": 151.25,
-     "start": 151.188,
+     "end": 152.688,
+     "start": 152.613,
      "text": "—"
     },
     {
-     "end": 152.075,
-     "start": 151.25,
+     "end": 153.062,
+     "start": 152.688,
      "text": "source"
+    },
+    {
+     "end": 153.125,
+     "start": 153.062,
+     "text": "-"
+    },
+    {
+     "end": 153.575,
+     "start": 153.125,
+     "text": "Singular"
+    },
+    {
+     "end": 153.65,
+     "start": 153.575,
+     "text": "."
+    },
+    {
+     "end": 153.975,
+     "start": 153.65,
+     "text": "State"
+    },
+    {
+     "end": 154.05,
+     "start": 153.975,
+     "text": "."
+    },
+    {
+     "end": 154.65,
+     "start": 154.05,
+     "text": "Preimage"
+    },
+    {
+     "end": 154.738,
+     "start": 154.65,
+     "text": "—"
+    },
+    {
+     "end": 155.137,
+     "start": 154.738,
+     "text": "source"
+    },
+    {
+     "end": 155.188,
+     "start": 155.137,
+     "text": "—"
+    },
+    {
+     "end": 155.312,
+     "start": 155.188,
+     "text": "the"
+    },
+    {
+     "end": 155.925,
+     "start": 155.312,
+     "text": "off-chain"
+    },
+    {
+     "end": 156.438,
+     "start": 155.925,
+     "text": "encoder"
+    },
+    {
+     "end": 156.512,
+     "start": 156.438,
+     "text": "of"
+    },
+    {
+     "end": 156.613,
+     "start": 156.512,
+     "text": "the"
+    },
+    {
+     "end": 157.1,
+     "start": 156.613,
+     "text": "Singular"
+    },
+    {
+     "end": 158.025,
+     "start": 157.1,
+     "text": "state"
+    },
+    {
+     "end": 158.25,
+     "start": 158.025,
+     "text": ","
+    },
+    {
+     "end": 158.925,
+     "start": 158.45,
+     "text": "active"
+    },
+    {
+     "end": 159.05,
+     "start": 158.925,
+     "text": "and"
+    },
+    {
+     "end": 160.1,
+     "start": 159.05,
+     "text": "registration-approval"
+    },
+    {
+     "end": 160.9,
+     "start": 160.1,
+     "text": "preimages"
+    },
+    {
+     "end": 161.0,
+     "start": 160.9,
+     "text": ","
+    },
+    {
+     "end": 161.275,
+     "start": 161.0,
+     "text": "byte"
+    },
+    {
+     "end": 161.4,
+     "start": 161.275,
+     "text": "for"
+    },
+    {
+     "end": 161.675,
+     "start": 161.4,
+     "text": "byte"
+    },
+    {
+     "end": 162.05,
+     "start": 161.675,
+     "text": "equal"
+    },
+    {
+     "end": 162.137,
+     "start": 162.05,
+     "text": "to"
+    },
+    {
+     "end": 162.275,
+     "start": 162.137,
+     "text": "the"
+    },
+    {
+     "end": 162.85,
+     "start": 162.275,
+     "text": "on-chain"
+    },
+    {
+     "end": 163.725,
+     "start": 162.85,
+     "text": "one"
     }
    ]
   },
