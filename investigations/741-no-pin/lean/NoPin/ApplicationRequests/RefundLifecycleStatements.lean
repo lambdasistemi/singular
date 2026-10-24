@@ -102,12 +102,19 @@ theorem approvalBurn_inversion (h : Hash) (c : Codec) (t : TrieCommit) (decode :
     show applicationStep .none h c decode release q.observation = applicationStepConditions h c decode release q.observation from Proofs.step_eq h c decode release q.observation,
     show applicationAction .none h c decode release q.observation q.action = applicationActionConditions h c decode release q.observation q.action from Proofs.action_eq h c decode release q.observation q.action]
 
-/-- Hypothesis under #741, not accepted law. Status: STATED.
+/-- Hypothesis under #741, not accepted law. Status: PROVED.
 registration lifecycle; independent conditions and observed effects. -/
 theorem registration_lifecycle (h : Hash) (c : Codec) (t : TrieCommit) (decode : DecodeApplication)
     (release : PublishedRelease) (q : Input)
     (_premises : registration_lifecycle_premise .none h c t decode release q) :
-    registration_lifecycle_claim .none h c t decode release q := by sorry
+    registration_lifecycle_claim .none h c t decode release q := by
+  change applicationStep .none h c decode release q.observation = true ↔ _
+  rw [Proofs.step_eq]
+  constructor
+  · intro accepted
+    refine ⟨accepted, Proofs.registration_effects h c decode release q.observation ?_⟩
+    rwa [Proofs.step_eq]
+  · exact And.left
 
 /-- Hypothesis under #741, not accepted law. Status: PROVED.
 termination burn; independent conditions and observed effects. -/
@@ -167,12 +174,19 @@ theorem additive_payments (h : Hash) (c : Codec) (t : TrieCommit) (decode : Deco
     exact accepted.2.1
   · exact And.left
 
-/-- Hypothesis under #741, not accepted law. Status: STATED.
+/-- Hypothesis under #741, not accepted law. Status: PROVED.
 folder protection; independent conditions and observed effects. -/
 theorem folder_protection (h : Hash) (c : Codec) (t : TrieCommit) (decode : DecodeApplication)
     (release : PublishedRelease) (q : Input)
     (_premises : folder_protection_premise .none h c t decode release q) :
-    folder_protection_claim .none h c t decode release q := by sorry
+    folder_protection_claim .none h c t decode release q := by
+  change applicationStep .none h c decode release q.observation = true ↔ _
+  rw [Proofs.step_eq]
+  constructor
+  · intro accepted
+    refine ⟨accepted, Proofs.folder_protected h c decode release q.observation ?_⟩
+    rwa [Proofs.step_eq]
+  · exact And.left
 
 /-- Hypothesis under #741, not accepted law. Status: PROVED.
 burning grants nothing; independent conditions and observed effects. -/
@@ -188,12 +202,13 @@ theorem burning_grants_nothing (h : Hash) (c : Codec) (t : TrieCommit) (decode :
     rwa [Proofs.step_eq]
   · exact And.left
 
-/-- Hypothesis under #741, not accepted law. Status: STATED.
+/-- Hypothesis under #741, not accepted law. Status: PROVED.
 no stuck termination; independent conditions and observed effects. -/
 theorem no_stuck_termination (h : Hash) (c : Codec) (t : TrieCommit) (decode : DecodeApplication)
     (release : PublishedRelease) (q : Input)
     (_premises : no_stuck_termination_premise .none h c t decode release q) :
-    no_stuck_termination_claim .none h c t decode release q := by sorry
+    no_stuck_termination_claim .none h c t decode release q := by
+  exact Proofs.termination_available h c t q _premises
 
 /-- Hypothesis under #741, not accepted law. Status: PROVED.
 approval burn open. -/
@@ -204,11 +219,18 @@ theorem approval_burn_open (h : Hash) (c : Codec) (t : TrieCommit) (decode : Dec
   rcases _premises with ⟨outside, actions, donation, mint⟩
   exact Proofs.approval_open h c decode release q.observation outside actions donation mint
 
-/-- Hypothesis under #741, not accepted law. Status: STATED.
+/-- Hypothesis under #741, not accepted law. Status: PROVED.
 configuration immutable. -/
 theorem configuration_immutable (h : Hash) (c : Codec) (t : TrieCommit) (decode : DecodeApplication)
     (release : PublishedRelease) (q : Input)
     (_premises : configuration_immutable_premise .none h c t decode release q) :
-    configuration_immutable_claim .none h c t decode release q := by sorry
+    configuration_immutable_claim .none h c t decode release q := by
+  change applicationStep .none h c decode release q.observation = true ↔ _
+  rw [Proofs.step_eq]
+  constructor
+  · intro accepted
+    refine ⟨accepted, Proofs.configuration_protected h c decode release q.observation ?_⟩
+    rwa [Proofs.step_eq]
+  · exact And.left
 
 end NoPin.ApplicationRequests.RefundLifecycle.Statements

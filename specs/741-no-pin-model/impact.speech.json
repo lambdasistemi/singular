@@ -331,8 +331,18 @@
       "pause": 400
     }
   ],
+  "remaining-refund-lifecycle-proof-terms": [
+    {
+      "text": "Remaining refund lifecycle proof terms.",
+      "pause": 500
+    },
+    {
+      "text": "As an integrator, I want the remaining lifecycle guarantees connected to their unchanged premises. The candidate adds proofs of registration effects, folder protection, conditional public termination availability and configuration immutability. Individual refund obligations follow from the grouped payment floor; physical reference uniqueness binds consumed configurations to handlers that refuse them. The termination construction composes the proved public Singular builder with the refund application, keeping its explicit funding, authenticity, encoding and collision premises. These complete the nineteen refund-signer lifecycle proof terms; the statement identities and their definition closure remain frozen at 56db38c7e244b075f713b6028afb5ff9bcc50d32. The earlier partial checkpoint remains recorded above. History, the superseded controller-signer lifecycle and money proofs remain outside this commission. No accepted law, implementation, ledger, hosted CI or release acceptance follows.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "impact.md",
-    "sha256": "59726b873456aad41f8d20e4494a4eba2c794055db231089d1a4aa9d4fd4be53"
+    "sha256": "0677b0887d261329d8347a68f2a65fc9f120368d26fd191541c923fe9572a281"
   }
 }
