@@ -29,7 +29,7 @@ flowchart LR
 | `offchain/test/fixtures/help/singular/*.txt`, `applications/open-datum/offchain/test/fixtures/help/open-datum/*.txt` | commands slice | new help snapshots for the new groups; the root help snapshot of each executable changes |
 | `offchain/test/fixtures/cli-corpus/singular.json`, `applications/open-datum/offchain/test/fixtures/cli-corpus/open-datum.json` | commands slice | new parser rows recorded with the specs' own switch (`CLI_CORPUS_RECORD`) |
 | `docs/singular-node.md` settings table, `tools/cli_flags_check.sh` | commands and documentation | the new flags are documented; the check's expected command counts per executable move with the new groups, and its invocation matcher learns the new groups; specs pages name no flag before its slice lands it |
-| `.github/workflows/registry.yml`, `.github/ci/e2e-parts.json` | journey slice | a new hosted job for the devnet journey, its refusals and its measurement (CI change in this ticket) |
+| `.github/workflows/registry.yml`, `.github/ci/e2e-parts.json` | journey slice | two new hosted jobs, `no-pin-registration-journey` and `no-pin-registration-refusals`, and their root flake apps (CI change in this ticket) |
 | Speech companions of every new page under `specs/742-create-register-no-pin/` and `docs/` | every slice that writes a page | stamped companions; `nix run .#docs-check` |
 
 ## The current line stays untouched

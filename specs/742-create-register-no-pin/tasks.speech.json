@@ -5,7 +5,7 @@
       "pause": 500
     },
     {
-      "text": "Issue 742. One group per slice of the plan. A task is checked only after the ticket owner accepts its slice.",
+      "text": "Issue 742. Grouped by pull request and slice of the plan. A task is checked only after the ticket owner accepts its slice.",
       "pause": 400
     }
   ],
@@ -23,13 +23,13 @@
       "pause": 300
     }
   ],
-  "state-genesis": [
+  "pull-request-1-state-genesis": [
     {
-      "text": "State genesis.",
+      "text": "Pull request 1: state genesis.",
       "pause": 500
     },
     {
-      "text": "[ ] genesis-and-recognition: the Singular state validator's genesis, recognition from the supplied seed and state output integrity, each statement with a check seen to fail.",
+      "text": "[ ] genesis-and-recognition: genesis, recognition from the supplied seed and state output integrity, each statement with a check seen to fail.",
       "pause": 300
     },
     {
@@ -37,9 +37,9 @@
       "pause": 300
     }
   ],
-  "state-registration-fold": [
+  "pull-request-1-state-registration-fold": [
     {
-      "text": "State registration fold.",
+      "text": "Pull request 1: state registration fold.",
       "pause": 500
     },
     {
@@ -47,9 +47,9 @@
       "pause": 300
     }
   ],
-  "preimage-vectors": [
+  "pull-request-1-preimage-vectors": [
     {
-      "text": "Preimage vectors.",
+      "text": "Pull request 1: preimage vectors.",
       "pause": 500
     },
     {
@@ -57,9 +57,9 @@
       "pause": 300
     }
   ],
-  "open-datum-approvals-and-configuration": [
+  "pull-request-2-approvals-and-configuration": [
     {
-      "text": "Open-datum approvals and configuration.",
+      "text": "Pull request 2: approvals and configuration.",
       "pause": 500
     },
     {
@@ -71,9 +71,9 @@
       "pause": 300
     }
   ],
-  "open-datum-pending-registration": [
+  "pull-request-2-pending-registration": [
     {
-      "text": "Open-datum pending registration.",
+      "text": "Pull request 2: pending registration.",
       "pause": 500
     },
     {
@@ -85,9 +85,9 @@
       "pause": 300
     }
   ],
-  "library-create-and-fold": [
+  "pull-request-3-library-create-and-fold": [
     {
-      "text": "Library create and fold.",
+      "text": "Pull request 3: library create and fold.",
       "pause": 500
     },
     {
@@ -95,13 +95,17 @@
       "pause": 300
     },
     {
-      "text": "[ ] registration-fold-builder: the registration fold transaction against the new validator.",
+      "text": "[ ] registration-fold-builder: the registration fold transaction against the new validator, from chain data alone.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] scripts-published-once: publication of both reference scripts when no live copy exists, reuse otherwise, and the control that a reference script with another hash is not reused.",
       "pause": 300
     }
   ],
-  "open-datum-builders": [
+  "pull-request-3-open-datum-builders": [
     {
-      "text": "Open-datum builders.",
+      "text": "Pull request 3: open-datum builders.",
       "pause": 500
     },
     {
@@ -109,9 +113,9 @@
       "pause": 300
     }
   ],
-  "commands-and-documentation": [
+  "pull-request-3-commands-and-documentation": [
     {
-      "text": "Commands and documentation.",
+      "text": "Pull request 3: commands and documentation.",
       "pause": 500
     },
     {
@@ -127,27 +131,31 @@
       "pause": 300
     }
   ],
-  "devnet-journey-and-refusals": [
+  "pull-request-4-devnet-journey-and-refusals": [
     {
-      "text": "Devnet journey and refusals.",
+      "text": "Pull request 4: devnet journey and refusals.",
       "pause": 500
     },
     {
-      "text": "[ ] journey-job: a new hosted job runs create, book, fold, reclaim and cleanup through the packaged commands.",
+      "text": "[ ] journey-job: the hosted job no-pin-registration-journey runs create, book, fold, reclaim and cleanup through the packaged commands.",
       "pause": 300
     },
     {
-      "text": "[ ] refusals-on-devnet: the five refusals of the specification, each seen on the development network.",
+      "text": "[ ] fold-by-a-second-wallet: the journey's fold is built and signed by a wallet other than the booker's, from chain data only.",
       "pause": 300
     },
     {
-      "text": "[ ] creation-measured: transactions and locked ADA for a first and a later registry, as a receipt.",
+      "text": "[ ] refusals-on-devnet: the hosted job no-pin-registration-refusals shows the five refusals of the specification, each with its control.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] creation-measured: transactions and locked ADA for a first and a later registry, as a receipt; the later one publishes no script.",
       "pause": 300
     }
   ],
-  "conformance-old-versus-new": [
+  "pull-request-4-conformance-old-versus-new": [
     {
-      "text": "Conformance old versus new.",
+      "text": "Pull request 4: conformance old versus new.",
       "pause": 500
     },
     {
@@ -157,6 +165,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "95c8630422bfae36f58daee4f40147ab895f0e4eeb0a7c94aa2cfb7bff17c74e"
+    "sha256": "498f20d12a2eb1a636807fc93187cc238b2e8b90b55efbca110fe2fa5b98cabc"
   }
 }
