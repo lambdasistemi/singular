@@ -121,15 +121,3 @@ elab "#history_types" : command => do
       ("axioms", toJson ((← collectAxioms name).toList.map toString)),
       ("closure", toJson (reached env info.type.getUsedConstants.toList true))]).compress
 #history_types
-
-elab "#history_proof_dependencies" : command => do
-  let env ← getEnv
-  let statements := env.constants.toList.filter fun (name, _) =>
-    name.getPrefix == `SingularApplicationHeld.HistoryStatements
-  for (name, info) in statements do
-    let value := info.value? (allowOpaque := true)
-    let roots := info.type.getUsedConstants.toList ++
-      (value.map Expr.getUsedConstants |>.getD #[]).toList
-    IO.println (Json.mkObj [("proofStatement", toJson name.toString),
-      ("closure", toJson (reached env roots true))]).compress
-#history_proof_dependencies
