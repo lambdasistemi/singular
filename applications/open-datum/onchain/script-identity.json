@@ -34,6 +34,21 @@
       "title": "open_datum.open_datum.else",
       "hash": "de5dcd41260b3f0e2a8f0965bcea2dfc96877056979273ec6de25609",
       "parameters": 1
+    },
+    {
+      "title": "open_datum_requests.open_datum_requests.mint",
+      "hash": "c061a344fee723822c2844578925b5cc882edb489087968356438401",
+      "parameters": 0
+    },
+    {
+      "title": "open_datum_requests.open_datum_requests.spend",
+      "hash": "c061a344fee723822c2844578925b5cc882edb489087968356438401",
+      "parameters": 0
+    },
+    {
+      "title": "open_datum_requests.open_datum_requests.else",
+      "hash": "c061a344fee723822c2844578925b5cc882edb489087968356438401",
+      "parameters": 0
     }
   ]
 }
