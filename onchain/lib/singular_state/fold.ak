@@ -118,13 +118,23 @@ fn has_trie_root(output: Output) -> Bool {
 }
 
 /// Model guard `foldNonempty`: the fold carries at least one change.
-pub fn fold_nonempty(_changes: List<Change>) -> Bool {
-  False
+pub fn fold_nonempty(changes: List<Change>) -> Bool {
+  when changes is {
+    [] -> False
+    _ -> True
+  }
 }
 
 /// Model guard `foldDistinct`: no two changes consume the same request.
-pub fn fold_distinct(_changes: List<Change>) -> Bool {
-  False
+pub fn fold_distinct(changes: List<Change>) -> Bool {
+  all_distinct(list.map(changes, request_of))
+}
+
+fn all_distinct(requests: List<OutputReference>) -> Bool {
+  when requests is {
+    [] -> True
+    [first, ..rest] -> !list.has(rest, first) && all_distinct(rest)
+  }
 }
 
 /// Model guard `foldPairing`: an input carries an application asset exactly
