@@ -28,7 +28,7 @@ on:
       - 'flake.lock'
       - '.github/workflows/negative-host.yml'
   pull_request:
-    branches: [main]
+    branches: [main, 'epic/**']
 permissions:
   contents: read
 concurrency:

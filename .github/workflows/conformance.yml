@@ -11,7 +11,7 @@ on:
       - 'tools/**'
       - '.github/workflows/conformance.yml'
   pull_request:
-    branches: [main]
+    branches: [main, 'epic/**']
 permissions:
   contents: read
 concurrency:
