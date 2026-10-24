@@ -27,7 +27,12 @@
 
 use aiken/collection/dict
 use aiken/collection/list
-use aiken/merkle_patricia_forestry.{MerklePatriciaForestry, Proof}
+use aiken/crypto.{blake2b_256}
+use aiken/merkle_patricia_forestry.{
+  Branch, Fork, Leaf, MerklePatriciaForestry, Proof, ProofStep,
+}
+use aiken/merkle_patricia_forestry as mpf
+use aiken/merkle_patricia_forestry/helpers.{nibble}
 use aiken/primitive/bytearray
 use cardano/assets.{AssetName, PolicyId, Value, quantity_of, tokens}
 use cardano/transaction.{
@@ -252,11 +257,56 @@ pub fn change_approval_burn(
 /// Model guard `changeLeaf`, for a registration: the trie proof shows the key
 /// absent.
 pub fn change_leaf(
-  _trie: MerklePatriciaForestry,
-  _key: ByteArray,
-  _proof: Proof,
+  trie: MerklePatriciaForestry,
+  key: ByteArray,
+  proof: Proof,
 ) -> Bool {
-  False
+  and {
+    mpf.miss(trie, key, proof),
+    apart_from(key, proof),
+  }
+}
+
+/// Whether every neighbour of `proof` is on a branch other than the key's and at a
+/// nibble inside the hash. The library's `miss` takes the digest of a last leaf
+/// or fork step as the trie without the key, whatever that step names, so with
+/// the key's own leaf as the neighbour it is true for a key the trie binds. An
+/// honest proof has its neighbours elsewhere, which insertion needs of it as
+/// well.
+pub fn apart_from(key: ByteArray, proof: Proof) -> Bool {
+  on_other_branches(blake2b_256(key), 0, proof)
+}
+
+fn on_other_branches(path: ByteArray, cursor: Int, proof: Proof) -> Bool {
+  when proof is {
+    [] -> True
+    [step, ..steps] -> {
+      let index = cursor + skip_of(step)
+      and {
+        index >= 0,
+        index < 64,
+        differs_at(path, index, step),
+        on_other_branches(path, index + 1, steps),
+      }
+    }
+  }
+}
+
+fn skip_of(step: ProofStep) -> Int {
+  when step is {
+    Branch { skip, .. } -> skip
+    Fork { skip, .. } -> skip
+    Leaf { skip, .. } -> skip
+  }
+}
+
+fn differs_at(path: ByteArray, index: Int, step: ProofStep) -> Bool {
+  when step is {
+    Branch { .. } -> True
+    Fork { neighbor, .. } -> nibble(path, index) != neighbor.nibble
+    Leaf { key, .. } ->
+      bytearray.length(key) == 32 && nibble(path, index) != nibble(key, index)
+  }
 }
 
 /// Model `separateHolding`: no other registration names the same holding.

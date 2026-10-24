@@ -12,8 +12,11 @@
 
 use aiken/builtin
 use aiken/collection/list
+use aiken/crypto.{blake2b_256}
+use aiken/merkle_patricia_forestry.{Branch, Fork, Leaf, Neighbor}
 use aiken/merkle_patricia_forestry as mpf
-use aiken/merkle_patricia_forestry/helpers.{combine}
+use aiken/merkle_patricia_forestry/helpers.{combine, nibble}
+use aiken/primitive/bytearray
 use cardano/address.{from_script}
 use cardano/assets.{add, from_lovelace, zero}
 use cardano/transaction.{
@@ -21,9 +24,9 @@ use cardano/transaction.{
 }
 use registry_fixtures.{leafStep}
 use singular_state/fold.{
-  Change, Register, Terminate, apply_change, change_batch, change_leaf,
-  fold_trie, leaf_active, one_new_token, registration_deposit, registration_mint,
-  registration_placement, separate_holding,
+  Change, Register, Terminate, apart_from, apply_change, change_batch,
+  change_leaf, fold_trie, leaf_active, one_new_token, registration_deposit,
+  registration_mint, registration_placement, separate_holding,
 }
 use singular_state/preimage.{RegistryIdentity, active_token_name}
 use singular_state_fixtures.{
@@ -115,6 +118,37 @@ test a_key_the_trie_binds_is_not_unknown_whatever_the_proof() {
         },
       )
     },
+  )
+}
+
+test a_proof_that_names_the_key_as_its_own_neighbour_does_not_show_it_unknown() {
+  // the Forestry library's `miss` is true here although the trie binds the key:
+  // the only leaf of the trie is presented as the neighbour of the key
+  let trie = trie_of([key_d])
+  let itself =
+    [Leaf { skip: 0, key: blake2b_256(key_d), value: blake2b_256(leaf_active) }]
+  mpf.miss(trie, key_d, itself) && !change_leaf(trie, key_d, itself) && !change_leaf(
+    trie,
+    key_d,
+    proof_into([key_d], key_e),
+  ) && change_leaf(trie, key_a, proof_into([key_d], key_a))
+}
+
+test a_proof_with_a_step_beyond_the_hash_does_not_show_a_key_unknown() {
+  // `miss` ignores the skip of a last leaf step; no honest proof has one
+  let trie = trie_of([key_d])
+  let beyond =
+    [
+      Leaf {
+        skip: 99,
+        key: blake2b_256(key_d),
+        value: blake2b_256(leaf_active),
+      },
+    ]
+  mpf.miss(trie, key_a, beyond) && !change_leaf(trie, key_a, beyond) && change_leaf(
+    trie,
+    key_a,
+    proof_into([key_d], key_a),
   )
 }
 
@@ -853,4 +887,88 @@ test the_leaf_of_a_registered_key_is_the_active_leaf() {
   leaf_active == #"01" && root_after(
     apply_first(first_transaction(), mpf.empty),
   ) == Some(mpf.root(mpf.insert(mpf.empty, key_a, #"01", [])))
+}
+
+// ---------------------------------------------------------------------------
+// registration-key-was-unknown: the neighbours of a proof are on other branches
+// ---------------------------------------------------------------------------
+
+fn path() -> ByteArray {
+  blake2b_256(key_d)
+}
+
+fn elsewhere(index: Int) -> Int {
+  ( nibble(path(), index) + 1 ) % 16
+}
+
+fn fork_at(skip: Int, nibble: Int) -> mpf.ProofStep {
+  Fork { skip, neighbor: Neighbor { nibble, prefix: #"", root: #"" } }
+}
+
+fn leaf_of(key: ByteArray, skip: Int) -> mpf.ProofStep {
+  Leaf { skip, key, value: blake2b_256(leaf_active) }
+}
+
+fn branch_of(skip: Int) -> mpf.ProofStep {
+  Branch { skip, neighbors: #"" }
+}
+
+// a key that agrees with the hash of key_d in every nibble but the last
+fn near() -> ByteArray {
+  bytearray.concat(bytearray.take(path(), 31), #"00")
+}
+
+test a_proof_whose_neighbours_are_on_other_branches_is_apart() {
+  and {
+    apart_from(key_d, []),
+    apart_from(key_d, [branch_of(0)]),
+    apart_from(key_d, [fork_at(0, elsewhere(0))]),
+    apart_from(key_d, [leaf_of(blake2b_256(key_a), 0)]),
+    // the cursor advances past each step: a fork after a branch of skip 1
+    // sits at nibble 2
+    apart_from(key_d, [branch_of(1), fork_at(0, elsewhere(2))]),
+    apart_from(key_d, [branch_of(1), fork_at(2, elsewhere(4)), branch_of(0)]),
+  }
+}
+
+test a_fork_on_the_branch_of_the_key_is_not_apart() {
+  and {
+    !apart_from(key_d, [fork_at(0, nibble(path(), 0))]),
+    !apart_from(key_d, [fork_at(3, nibble(path(), 3))]),
+    !apart_from(key_d, [branch_of(1), fork_at(0, nibble(path(), 2))]),
+    !apart_from(
+      key_d,
+      [branch_of(0), fork_at(0, elsewhere(1)), fork_at(1, nibble(path(), 3))],
+    ),
+  }
+}
+
+test a_leaf_on_the_branch_of_the_key_is_not_apart() {
+  and {
+    !apart_from(key_d, [leaf_of(path(), 0)]),
+    !apart_from(key_d, [leaf_of(near(), 0)]),
+    !apart_from(key_d, [leaf_of(near(), 5)]),
+    !apart_from(key_d, [branch_of(1), leaf_of(near(), 0)]),
+  }
+}
+
+test a_proof_outside_the_hash_is_not_apart() {
+  and {
+    apart_from(key_d, [branch_of(63)]),
+    !apart_from(key_d, [branch_of(64)]),
+    !apart_from(key_d, [branch_of(-1)]),
+    !apart_from(key_d, [branch_of(40), branch_of(30)]),
+    !apart_from(key_d, [branch_of(63), branch_of(0)]),
+    !apart_from(key_d, [fork_at(64, 0)]),
+    !apart_from(key_d, [leaf_of(blake2b_256(key_a), 64)]),
+  }
+}
+
+test a_leaf_whose_key_is_no_hash_is_not_apart() {
+  and {
+    apart_from(key_d, [leaf_of(blake2b_256(key_a), 0)]),
+    !apart_from(key_d, [leaf_of(bytearray.take(blake2b_256(key_a), 31), 0)]),
+    !apart_from(key_d, [leaf_of(bytearray.push(blake2b_256(key_a), 0), 0)]),
+    !apart_from(key_d, [leaf_of(#"", 0)]),
+  }
 }
