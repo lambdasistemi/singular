@@ -1,0 +1,572 @@
+{
+  "status": "HYPOTHETICAL-PROOF-CANDIDATE",
+  "acceptedLaw": false,
+  "base": "99682696057a4ab4829067c57623276fa5faf1fd",
+  "definitions": {
+    "lean/NoPin/ApplicationRequests/RefundApplication.lean": "5f91673bedaa77e0fcb18f783ece966af8abd392ba21a755c3de959f9ae7cc7b",
+    "lean/NoPin/ApplicationRequests/RefundLifecycle.lean": "365622f48264e29aaaf8d9cfb37abb67c32c7fcf0f05d1fd9bb9bd9df68eb82c",
+    "lean/NoPin/ApplicationRequests/RefundLifecycleClaims.lean": "5109d8bbee2c897e3e34cf10120728431da370913a0815b1296efdd494a87526",
+    "lean/NoPin/ApplicationRequests/RefundLifecycleConditions.lean": "a41eb25a10ae8b015a1e4f4cf047e9cca9a0f466e8ef5383e84583259a8115c7",
+    "lean/NoPin/ApplicationRequests/RefundLifecycleEvidence.lean": "c9246a31761c5280c51e621c24d792bebf85306ea8b15c783380f966ab10b562",
+    "lean/NoPin/ApplicationRequests/RefundLifecycleFixtures.lean": "1ed6bf5771b0a0a9abb946b6bfeffd5e949ee3dad70ce251709c09aea3edee5a",
+    "lean/NoPin/ApplicationRequests/RefundLifecycleReport.lean": "2dbf4562989b63d3b47adbda769d1fb1712920dbe3939c4825596833ce7e883f",
+    "lean/NoPin/ApplicationRequests/RefundLifecycleStatements.lean": "e965120154cb026f4c1b5d8774ccc4ad32516b8e3b42a6936c0918fda1ce2bc9",
+    "refund_lifecycle_check.py": "e0bad5816b94446cd2bf079ea2834a45a4db7641fc704b50c1748a9ae01902a5",
+    "refund_lifecycle_controls.py": "c207cc96d273995a9c5675439ef4c5fc9bef247a00fefb2405181e2d7957ab9f",
+    "pin_check.py": "00c251f08b308bba0cd6ffe72e0c56fa45eb8fe4d83eaa80900f3177328874a5",
+    "refund-proof-definition-baseline.json": "3caffc0fefad2a3e27689012fae0aacf99e6b764fbe3dfd9223338b856b33654",
+    "refund_proof_check.py": "21312c1f96a0341ca49cc894de38fd7d52906b43f8ac1f602b335553f93094c0",
+    "refund_proof_controls.py": "bcd3020d3749184f42972800dec19c91c994754e591b7d452fa6d2503868d79b",
+    "lean/NoPin/ApplicationRequests/RefundLifecycleProofs.lean": "2de5fd3a0b32a693f78d99800a6a5dc26b96b65980562f725543e9259e203f7d",
+    "lean/NoPin/ApplicationRequests/RefundProofAudit.lean": "eef777947c5109d3a82e8a3f48c1f81574bd73bde41fa32817524fb81e32fd36"
+  },
+  "preservedBaseArtifacts": {
+    "README.md": "e7c7a8c0c1b05fef471924999e7f8e65844c021c5dfe589e2f9829659361e277",
+    "README.speech.json": "1033fe757f4f440eee14c94b202dbdb09ef9e7c6f2bc7e58e15e9ec56c1a1f0e",
+    "application-requests-corpus.json": "782f1a89aa4f31f277b4f83bbe2e73cd7aabd6fe9de3fbf646b5844f815cd1fd",
+    "application-requests-mutants.json": "fdcbea2d404d14ddeda0fec2cee31015b5f1dce8b1ae99fc9fa7fbb7c045af99",
+    "application-requests-statements.json": "f2bb4c60316bc71f506cd442a3b73b05e8cdf5d610719274bc0946e66f218df1",
+    "corpus.json": "7d327e9b86955dd655ab2e8ed4693c3f03d00fe7aa00ca7da5f764fe5fc7bfd5",
+    "effect_controls.py": "26648c0d1ae76cb5c26da227ee1301eb8e03e8b2916d9d4793635d839318f509",
+    "held-corpus.json": "3772d77210e94584dac4b44517afc9696ac3ecf34484e3059427efd75b98dd5d",
+    "held-mutants.json": "6a7bb2adb325544430bc94699d2d34a19acf6bade320221ab8d0b312a5f95f1e",
+    "held-statements.json": "fbf86c89630d0daf32e49a33640803ac82f1a66baa99a60a2974c7a652d9f66c",
+    "history-corpus.json": "7956e841731926ac98c906c9be961bbf6bad21377afbd6f8710c5cb9761f60d2",
+    "history-mutants.json": "ffc13cbeb2003276f48c91d3b3df785ea5d478d4b666df5148eda6d5683ad1b8",
+    "history-statements.json": "743141fc8dff516c958f52b3b80906c52d7a8a9878a8d675775a82af6338da1a",
+    "history_check.py": "988e46313b3857cd4a2d9ae858b49f941c1f9749743ded79005be6c7c4ec84d8",
+    "history_controls.py": "079b218768c6637f17e5b7295c6d9523675d78df107cf62435a40bc6bcac6011",
+    "lean/NoPin/ApplicationRequests/Application.lean": "5a1ac4c17d37eb40cbcd230c288a76099eba66c51f9fe7acc1ddc5db1f2043c7",
+    "lean/NoPin/ApplicationRequests/Client.lean": "8e395c324f34c44de1bcede1555ebb404e72fbdc9029baa562c8a4b2810c2062",
+    "lean/NoPin/ApplicationRequests/Conditions.lean": "c2a2c3759c59e2343561d0eb0eeb078e386b156a06e4b734b59025fa1cb8e48c",
+    "lean/NoPin/ApplicationRequests/Core.lean": "fbc6fdc77060d684f74c9dccf11d88a4863c39db6ab6f4763dbd252988869d14",
+    "lean/NoPin/ApplicationRequests/Effects.lean": "a6864e492332fea0d317d8d6e834fcc4dec49ba7c4d47c9a275743860f2df1bc",
+    "lean/NoPin/ApplicationRequests/Evidence.lean": "1bc23d108c9ad9402bdfd2e2c952167816da4c0449a9a8d81afd54f7f3960d4d",
+    "lean/NoPin/ApplicationRequests/Fixtures.lean": "5d2ee2d82a846ec9b93a6e40ae7a330a50d2a2970d9726fa40a89c896a58c859",
+    "lean/NoPin/ApplicationRequests/History.lean": "79de2d0bdd260d1ac6315f81c496c3f420359f6bd715a954c016f28bd81d6089",
+    "lean/NoPin/ApplicationRequests/HistoryBindings.lean": "52bf2a9f79ef2537b27f3f730600b0d735012398e0e19cf237ea362481930c61",
+    "lean/NoPin/ApplicationRequests/HistoryClaims.lean": "15683a7d94721f3811db664f3c48320de1cfb175ef2b3402b418443dccff0624",
+    "lean/NoPin/ApplicationRequests/HistoryEvidence.lean": "794ffc618d3c0a5644155b0901a72d2382d0509e8bdf07605f5e198083ffe1fa",
+    "lean/NoPin/ApplicationRequests/HistoryFixtures.lean": "eaaaf656f590ea91a82b665dd7245467ec612f462664fd972a68bf6b02f51a9e",
+    "lean/NoPin/ApplicationRequests/HistoryOrigins.lean": "87922b557807d5b9ee50b9906f71b4b4a144537f87c97335755760d803d4b099",
+    "lean/NoPin/ApplicationRequests/HistoryReport.lean": "9678f55f28a625194f297b7c446b923f362c09ad34bd2f72857289e01d93926e",
+    "lean/NoPin/ApplicationRequests/Lifecycle.lean": "c35846cea26aa5abcf5f39caaad7541e46e9daae5bf527fb6e8555fb76a2eda1",
+    "lean/NoPin/ApplicationRequests/LifecycleClaims.lean": "f5d21e78238f43c89b23b8938893270ca599392b35bc1c34d6e835c2fff142c2",
+    "lean/NoPin/ApplicationRequests/LifecycleConditions.lean": "145ce5fcb2494f41981fc48ba94750fce4704991df019ea0ec67f5ff24005eae",
+    "lean/NoPin/ApplicationRequests/LifecycleEvidence.lean": "c78711f6dc439eaf3b925c24b495f2853122163c6c358d43eb682134b6ff6885",
+    "lean/NoPin/ApplicationRequests/LifecycleFixtures.lean": "5758531bff57dc750a049efa72151a35f5ae1608c7b84dccc5f65de83ab8a2bb",
+    "lean/NoPin/ApplicationRequests/LifecycleReport.lean": "06eeacc61106af049c6e96b2b758b4c4913317e26c747f260aa56b5e011c114f",
+    "lean/NoPin/ApplicationRequests/LifecycleStatements.lean": "51ca94c109a76ed7a692382010eb07e7cc2a35bd17508d13ad9b3a9d1196dd6f",
+    "lean/NoPin/ApplicationRequests/Oracle.lean": "4f935ac84289b19f8980b9502cb334dc48ff8677503f141b0c245db0149713e3",
+    "lean/NoPin/ApplicationRequests/README.md": "468533df4b4ba17b3051556c7c589dfe257c0e4c155c220c6ac2cd9e7c642be4",
+    "lean/NoPin/ApplicationRequests/README.speech.json": "af96bd2deb73b04b452e37ac9e3e5dcf8eb4105b2bc03c733c2ea0ae1ee4d43e",
+    "lean/NoPin/ApplicationRequests/Report.lean": "74b49dfa4522fa1e20f259757ba4c343dbb996f4df5920d4f863a3de86342212",
+    "lean/NoPin/ApplicationRequests/Role.lean": "f6f17f8bafa3ebb9c5d271078ecd63fd19f0ba700c3ea7af47604051b8309f96",
+    "lean/NoPin/ApplicationRequests/Statements.lean": "93618c4ca032d36acc461f2e67db19bbd3b8f8b8e5e7168282b4601d7e9018fa",
+    "lean/NoPin/Held/Conditions.lean": "f1e02b96bb6131d06f36d1326f451d82a91ce24c4e2af90652d322e89f428ef9",
+    "lean/NoPin/Held/Corpus.lean": "279e3048735805a1111f5d4966b7f49df88daff54cccbdfd9ca60684c53b7225",
+    "lean/NoPin/Held/Equality.lean": "c7f8f3629e6bb1e53616d16d38ecc7dc82fa0871b41462424d0b5cf0d116cd71",
+    "lean/NoPin/Held/Fixtures.lean": "a6378b465c3fbd032f912749748fa675097a29e1c3bea6812ac1b5f24dec2bb7",
+    "lean/NoPin/Held/Good.lean": "e5e11740d0970a85460418430bcd44812b598a4ac2c8ceb801e2b3998536e19c",
+    "lean/NoPin/Held/Instances.lean": "5855a76df1d1f2571be7446a60efea2bdd5cf8f63ffdb89c2ac854234df84299",
+    "lean/NoPin/Held/Model.lean": "78d6aa297b28aa81b09b9ba7fe27423d34a5c828ecc0a7fde98b5ce776aaa510",
+    "lean/NoPin/Held/Mutants.lean": "8aa47ff1374754f904f653566fb072779e624f8d6fefb1bcabd5e1bf53607898",
+    "lean/NoPin/Held/Oracle.lean": "76adeb342e742683de7cd87972f750ff1e48b60b9b0c87ab7283713d58342fd2",
+    "lean/NoPin/Held/Report.lean": "9387b94944fbbe3a4745a0467af070578346776d8fd79baa7c2d8fb3c2c3e562",
+    "lean/NoPin/Held/Statements.lean": "b4a5d6e31242ff83d8bdde8ce90ac2832a3c18bc00de1d0c21daa79aee0f7e6a",
+    "lean/NoPin/Held/Strong.lean": "91d87c732a4cc88cd55b7605a311933bbac92e222f0ed963a3df408782872f86",
+    "lean/NoPin/Held/StrongMutants.lean": "de63bd595b15dbff2c6339835f430e46ac58121ebeaef769298ebb9357837db2",
+    "lean/NoPin/Held/Value.lean": "e1707918c12c99b9dbf0e9e696a4461cfc629aa460a8aaa70a353eaed1c10fa0",
+    "lean/NoPin/Identity.lean": "f20e4b1b2c3f195832f4eca28ac7d41aef2b31d2cb1e07e03d897f840ab52bb8",
+    "lean/NoPin/Mutants.lean": "cc0288f0807cf66ff0b5733fd0e13411e2bf6f05f5b38794800a65a48add5c61",
+    "lean/NoPin/Oracle.lean": "aec201a934aa8d00bf1b394ad26465bcceec54e7d40dd2aa37efa43306fff983",
+    "lean/NoPin/Statements.lean": "586c5ee86be8a691970ba245472e4d7be67303667242e42f53a905e6f2d838de",
+    "lean/NoPin/Witnesses.lean": "e93bff74e553e43b4ac20514cb91e91b712648d1fbb5c698c0aabd7bbe51168d",
+    "lifecycle-corpus.json": "25ddf3d58d527343babc5c3ed8928917532c7a35495f89719a185899f2956a8c",
+    "lifecycle-mutants.json": "1b01b76b28d04a8cbc02901d272b00f77f6a4fd97f0cc2ed0b9efd48b7d012a2",
+    "lifecycle-statements.json": "ad574781ce806503cafb27520d79f297a25ccb93223a4e7faac39addf0e82a92",
+    "lifecycle_check.py": "f87e17cc28d0a6fa6239370909321b3fc5c2f9f5018417d35337e55274e2bf0e",
+    "lifecycle_controls.py": "50884f00201dfc5931c69fc6c4cc8658ecbe606c3781b843176fd7c947845015",
+    "mutants.json": "96d72f824c5da393440e478732ef8c04ce26e949df10755b92f4258a46696287",
+    "statements.json": "97450a8880920e1f81b97a02e2e449c76aec7baa9ae2b17fab63f7fc93fccb87"
+  },
+  "statements": [
+    {
+      "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.configurationCreate_inversion",
+      "status": "PROVED",
+      "statementSha256": "dd131d10eeaa0e8f2dd188e937bf17934929f84cfa0e96533739ee254e0251ad",
+      "witness": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.configurationCreate_inversion_antecedent",
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.configurationCreate_inversion_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.configurationCreate_inversion_mutant",
+      "selector": "configurationShape",
+      "description": "configurationCreate inversion",
+      "family": "source-derived action inversion",
+      "supersedes": "NoPin.ApplicationRequests.Lifecycle.Statements.configurationCreate_inversion"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.bookRegistration_inversion",
+      "status": "PROVED",
+      "statementSha256": "17989b0ae4781111cdb13fe229074202b8af2c6688e72e06f5f699b8ea925aee",
+      "witness": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.bookRegistration_inversion_antecedent",
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.bookRegistration_inversion_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.bookRegistration_inversion_mutant",
+      "selector": "configurationShape",
+      "description": "bookRegistration inversion",
+      "family": "source-derived action inversion",
+      "supersedes": "NoPin.ApplicationRequests.Lifecycle.Statements.bookRegistration_inversion"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.bookTermination_inversion",
+      "status": "PROVED",
+      "statementSha256": "55b100547e40eb59ddc7283b9cd7b2edd9b6afb6aa5fd1509c7295846375fa66",
+      "witness": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.bookTermination_inversion_antecedent",
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.bookTermination_inversion_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.bookTermination_inversion_mutant",
+      "selector": "bookingSignature",
+      "description": "bookTermination inversion",
+      "family": "source-derived action inversion",
+      "supersedes": "NoPin.ApplicationRequests.Lifecycle.Statements.bookTermination_inversion"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.registrationFold_inversion",
+      "status": "PROVED",
+      "statementSha256": "2ba4ae4afff7b6a8f27250e64575a790b3c39207219b86f8f64b2671b47777a5",
+      "witness": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.registrationFold_inversion_antecedent",
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.registrationFold_inversion_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.registrationFold_inversion_mutant",
+      "selector": "registrationShape",
+      "description": "registrationFold inversion",
+      "family": "source-derived action inversion",
+      "supersedes": "NoPin.ApplicationRequests.Lifecycle.Statements.registrationFold_inversion"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.ownerReclaim_inversion",
+      "status": "PROVED",
+      "statementSha256": "b34cd0b56dfd9786d99549e1a67f32263901ff4b160a282ea2d723049301a46f",
+      "witness": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.ownerReclaim_inversion_antecedent",
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.ownerReclaim_inversion_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.ownerReclaim_inversion_mutant",
+      "selector": "registrationShape",
+      "description": "ownerReclaim inversion",
+      "family": "source-derived action inversion",
+      "supersedes": "NoPin.ApplicationRequests.Lifecycle.Statements.ownerReclaim_inversion"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.expiredCleanup_inversion",
+      "status": "PROVED",
+      "statementSha256": "4fc43f2022468fb2df22f46c01bee184b01e71217007859bc7d447875de1a3d4",
+      "witness": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.expiredCleanup_inversion_antecedent",
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.expiredCleanup_inversion_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.expiredCleanup_inversion_mutant",
+      "selector": "registrationShape",
+      "description": "expiredCleanup inversion",
+      "family": "source-derived action inversion",
+      "supersedes": "NoPin.ApplicationRequests.Lifecycle.Statements.expiredCleanup_inversion"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.terminationFold_inversion",
+      "status": "PROVED",
+      "statementSha256": "9ea72b9dd85f5628813339ca8af4d9c28a9f7b3ca696f5569bb4d15f54a90c4d",
+      "witness": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.terminationFold_inversion_antecedent",
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.terminationFold_inversion_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.terminationFold_inversion_mutant",
+      "selector": "terminationShape",
+      "description": "terminationFold inversion",
+      "family": "source-derived action inversion",
+      "supersedes": "NoPin.ApplicationRequests.Lifecycle.Statements.terminationFold_inversion"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.liveUpdate_inversion",
+      "status": "PROVED",
+      "statementSha256": "9e2b58bfad29f5728859e8faca925eba909afa067591bd072da8b0ab402026ab",
+      "witness": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.liveUpdate_inversion_antecedent",
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.liveUpdate_inversion_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.liveUpdate_inversion_mutant",
+      "selector": "bookingSignature",
+      "description": "liveUpdate inversion",
+      "family": "source-derived action inversion",
+      "supersedes": "NoPin.ApplicationRequests.Lifecycle.Statements.liveUpdate_inversion"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.approvalBurn_inversion",
+      "status": "PROVED",
+      "statementSha256": "574baccddd4a920ba48d26d4e5724f74573caecab66861acea75d9c70f7de173",
+      "witness": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.approvalBurn_inversion_antecedent",
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.approvalBurn_inversion_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.approvalBurn_inversion_mutant",
+      "selector": "inputCoverage",
+      "description": "approvalBurn inversion",
+      "family": "source-derived action inversion",
+      "supersedes": "NoPin.ApplicationRequests.Lifecycle.Statements.approvalBurn_inversion"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.registration_lifecycle",
+      "status": "PROVED",
+      "statementSha256": "ba3f180e02479bf8b3504a2e5afd3dfeb796ba05b1e5f85368326074119a83f2",
+      "witness": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.registration_lifecycle_antecedent",
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.registration_lifecycle_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.registration_lifecycle_mutant",
+      "selector": "reclaimPhase",
+      "description": "registration lifecycle",
+      "family": "independent application effect",
+      "supersedes": "NoPin.ApplicationRequests.Lifecycle.Statements.registration_lifecycle"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.termination_burn",
+      "status": "PROVED",
+      "statementSha256": "f90b3240e861a79febe36a54f16f3832eafa64501393df20ffe2919be6ee93af",
+      "witness": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.termination_burn_antecedent",
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.termination_burn_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.termination_burn_mutant",
+      "selector": "terminationActiveBurn",
+      "description": "termination burn",
+      "family": "independent application effect",
+      "supersedes": "NoPin.ApplicationRequests.Lifecycle.Statements.termination_burn"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.booking_authority_and_parameters",
+      "status": "PROVED",
+      "statementSha256": "4673c53b898711945ba99924dac2960142d8e37600870a9f1404e15724b8cc85",
+      "witness": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.booking_authority_and_parameters_antecedent",
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.booking_authority_and_parameters_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.booking_authority_and_parameters_mutant",
+      "selector": "bookingSignature",
+      "description": "booking authority and parameters",
+      "family": "independent application effect",
+      "supersedes": "NoPin.ApplicationRequests.Lifecycle.Statements.booking_authority_and_parameters"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.treasury_at_booking",
+      "status": "PROVED",
+      "statementSha256": "13f4f345864d098930059e12fdbe22144445fec93cb3f9f267fc5ebbcf3a5ff5",
+      "witness": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.treasury_at_booking_antecedent",
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.treasury_at_booking_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.treasury_at_booking_mutant",
+      "selector": "moneyTreasury",
+      "description": "treasury at booking",
+      "family": "independent application effect",
+      "supersedes": "NoPin.ApplicationRequests.Lifecycle.Statements.treasury_at_booking"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.additive_payments",
+      "status": "PROVED",
+      "statementSha256": "0b91a2e7a4ed877512a72b3928decb538d12aebc2173c0cb17df4ea7c83aca8b",
+      "witness": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.additive_payments_antecedent",
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.additive_payments_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.additive_payments_mutant",
+      "selector": "moneyOutputs",
+      "description": "additive payments",
+      "family": "independent application effect",
+      "supersedes": "NoPin.ApplicationRequests.Lifecycle.Statements.additive_payments"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.folder_protection",
+      "status": "PROVED",
+      "statementSha256": "6c0fe51ca9528b6da1768659df22e6e3e30a5cceb8a9dc9ab5a42aba64b6bac6",
+      "witness": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.folder_protection_antecedent",
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.folder_protection_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.folder_protection_mutant",
+      "selector": "reclaimPhase",
+      "description": "folder protection",
+      "family": "independent application effect",
+      "supersedes": "NoPin.ApplicationRequests.Lifecycle.Statements.folder_protection"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.burning_grants_nothing",
+      "status": "PROVED",
+      "statementSha256": "b57c6598ba5149ddbc04d82bcfd4e3f540ae981155b0160603cb55ea34a53203",
+      "witness": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.burning_grants_nothing_antecedent",
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.burning_grants_nothing_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.burning_grants_nothing_mutant",
+      "selector": "inputCoverage",
+      "description": "burning grants nothing",
+      "family": "independent application effect",
+      "supersedes": "NoPin.ApplicationRequests.Lifecycle.Statements.burning_grants_nothing"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.no_stuck_termination",
+      "status": "PROVED",
+      "statementSha256": "d3a007ed530900a35e18d5a70b0eb6f841cc7454958e2b428f2cf41c7accba1a",
+      "witness": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.no_stuck_termination_antecedent",
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.no_stuck_termination_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.no_stuck_termination_mutant",
+      "selector": "terminationActiveBurn",
+      "description": "no stuck termination",
+      "family": "conditional public termination availability",
+      "supersedes": "NoPin.ApplicationRequests.Lifecycle.Statements.no_stuck_termination"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.approval_burn_open",
+      "status": "PROVED",
+      "statementSha256": "14a72eeb4d1693a21e644b8c626b723623a0461b291f6a62bbf42a15b6a5d7b7",
+      "witness": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.approval_burn_open_antecedent",
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.approval_burn_open_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.approval_burn_open_mutant",
+      "selector": "inputCoverage",
+      "description": "approval burn open",
+      "family": "independent application effect",
+      "supersedes": "NoPin.ApplicationRequests.Lifecycle.Statements.approval_burn_open"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.configuration_immutable",
+      "status": "PROVED",
+      "statementSha256": "fc8d3f3567891371ba216e55602db8959e58d140d7c9fcc3e9b910a741b5bb07",
+      "witness": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.configuration_immutable_antecedent",
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.configuration_immutable_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.configuration_immutable_mutant",
+      "selector": "configurationShape",
+      "description": "configuration immutable",
+      "family": "independent application effect",
+      "supersedes": "NoPin.ApplicationRequests.Lifecycle.Statements.configuration_immutable"
+    }
+  ],
+  "inversions": [
+    {
+      "constructor": "configurationCreate",
+      "inversion": "NoPin.ApplicationRequests.RefundLifecycle.Statements.configurationCreate_inversion"
+    },
+    {
+      "constructor": "bookRegistration",
+      "inversion": "NoPin.ApplicationRequests.RefundLifecycle.Statements.bookRegistration_inversion"
+    },
+    {
+      "constructor": "bookTermination",
+      "inversion": "NoPin.ApplicationRequests.RefundLifecycle.Statements.bookTermination_inversion"
+    },
+    {
+      "constructor": "registrationFold",
+      "inversion": "NoPin.ApplicationRequests.RefundLifecycle.Statements.registrationFold_inversion"
+    },
+    {
+      "constructor": "ownerReclaim",
+      "inversion": "NoPin.ApplicationRequests.RefundLifecycle.Statements.ownerReclaim_inversion"
+    },
+    {
+      "constructor": "expiredCleanup",
+      "inversion": "NoPin.ApplicationRequests.RefundLifecycle.Statements.expiredCleanup_inversion"
+    },
+    {
+      "constructor": "terminationFold",
+      "inversion": "NoPin.ApplicationRequests.RefundLifecycle.Statements.terminationFold_inversion"
+    },
+    {
+      "constructor": "liveUpdate",
+      "inversion": "NoPin.ApplicationRequests.RefundLifecycle.Statements.liveUpdate_inversion"
+    },
+    {
+      "constructor": "approvalBurn",
+      "inversion": "NoPin.ApplicationRequests.RefundLifecycle.Statements.approvalBurn_inversion"
+    }
+  ],
+  "guards": [
+    {
+      "selector": "configurationShape",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_configurationShape_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_configurationShape_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "configurationGenesis",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_configurationGenesis_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_configurationGenesis_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "configurationReference",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_configurationReference_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_configurationReference_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "registrationShape",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_registrationShape_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_registrationShape_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "registrationControl",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_registrationControl_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_registrationControl_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "registrationClock",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_registrationClock_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_registrationClock_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "registrationFunding",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_registrationFunding_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_registrationFunding_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "bookingSignature",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_bookingSignature_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_bookingSignature_mutant",
+      "sourceOccurrences": 3
+    },
+    {
+      "selector": "terminationShape",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_terminationShape_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_terminationShape_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "liveShape",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_liveShape_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_liveShape_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "liveControl",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_liveControl_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_liveControl_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "liveDeposit",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_liveDeposit_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_liveDeposit_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "requestInput",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_requestInput_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_requestInput_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "approvalBurn",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_approvalBurn_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_approvalBurn_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "freshApproval",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_freshApproval_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_freshApproval_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "processingPhase",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_processingPhase_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_processingPhase_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "reclaimPhase",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_reclaimPhase_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_reclaimPhase_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "cleanupPhase",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_cleanupPhase_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_cleanupPhase_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "registrationDelivery",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_registrationDelivery_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_registrationDelivery_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "terminationActiveBurn",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_terminationActiveBurn_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_terminationActiveBurn_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "terminationInvocation",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_terminationInvocation_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_terminationInvocation_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "updateControl",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_updateControl_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_updateControl_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "updateAssets",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_updateAssets_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_updateAssets_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "updateDeposit",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_updateDeposit_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_updateDeposit_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "inputCoverage",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_inputCoverage_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_inputCoverage_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "birthCoverage",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_birthCoverage_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_birthCoverage_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "moneyOutputs",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_moneyOutputs_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_moneyOutputs_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "moneyTreasury",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_moneyTreasury_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_moneyTreasury_mutant",
+      "sourceOccurrences": 1
+    }
+  ],
+  "limits": [
+    "Fifteen target statements are proved; four remain STATED with sorryAx.",
+    "Finite examples execute the model only; no chain transaction or application reachability claim.",
+    "No top-up rule adopted; availability requires authentic public data, codec and collision premises, public state and ordinary fee funding.",
+    "Canonical bytes, script invocation, real output minimums, provider completeness, wallet availability and inclusion remain external.",
+    "Earlier statement, corpus and mutant rows remain byte-identical.",
+    "History statement and inversion rows are preserved; its check.py plumbing hash is refreshed for lifecycle integration."
+  ],
+  "supersession": {
+    "reason": "Refund address signs reclaim, as the accepted economics requires; controller authorizes booking only.",
+    "answer": "/home/paolino/.orch-runtime/singular/epic-731/ticket-741/commit-owner-12/answers/A-001-reclaim-signing-authority.md",
+    "historicalFamily": "lifecycle"
+  }
+}
