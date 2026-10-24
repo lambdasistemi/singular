@@ -134,6 +134,13 @@
         "application": "updateControl"
       },
       "mutant": "NoPin.ApplicationRequests.Money.Evidence.update_both_models_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Money.Statements.registration_fold_journey_holding_separated",
+      "selector": {
+        "holdingPayment": "includeHolding"
+      },
+      "mutant": "NoPin.ApplicationRequests.Money.Evidence.registration_fold_journey_holding_separated_mutant"
     }
   ]
 }
