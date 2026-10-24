@@ -96,7 +96,34 @@ def controls():
                     raise
             else:
                 raise ValueError(f"ledger pin control survived: {label}")
-    return list(mutations)
+    history = json.loads(
+        git("show", "HEAD:investigations/741-no-pin/history-statements.json")
+    )
+    stale = copy.deepcopy(history["statements"])
+    stale[0]["status"] = "STATED" if stale[0]["status"] == "PROVED" else "PROVED"
+    stale_digest = hashlib.sha256(
+        json.dumps(stale, ensure_ascii=False, separators=(",", ":")).encode()
+    ).hexdigest()
+    with tempfile.TemporaryDirectory(prefix="no-pin-history-ripple-control-") as temp:
+        changed = copy.deepcopy(ledgers)
+        changed["money-statements.json"]["preservedStatementRows"][
+            "history-statements.json"
+        ] = stale_digest
+        for filename, ledger in changed.items():
+            (Path(temp) / filename).write_text(json.dumps(ledger))
+        try:
+            check(Path(temp))
+        except ValueError as error:
+            if (
+                "committed pin mismatch: money-statements.json: history-statements.json"
+                not in str(error)
+            ):
+                raise
+        else:
+            raise ValueError(
+                "history status change without refreshing its dependent pin survived"
+            )
+    return list(mutations) + ["history-status-ripple"]
 
 
 if __name__ == "__main__":

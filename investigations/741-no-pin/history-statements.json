@@ -1,11 +1,11 @@
 {
-  "status": "CANDIDATE-STATEMENTS-ONLY",
+  "status": "PARTIAL-HYPOTHETICAL-PROOF-CANDIDATE",
   "acceptedLaw": false,
   "base": "4f09454f95266809f5c2f5a19246b7eac204ab99",
   "definitions": {
     "check.py": "8bf846b5fa544f84b147cdddcb539a9428fb9a51ad74e7cf181faa4da4730e7b",
-    "history_check.py": "988e46313b3857cd4a2d9ae858b49f941c1f9749743ded79005be6c7c4ec84d8",
-    "history_controls.py": "079b218768c6637f17e5b7295c6d9523675d78df107cf62435a40bc6bcac6011",
+    "history_check.py": "04d81f5cd4e521157d0c832ad7c045942b3b49d0ac62099fdb9df9ed9b12bc6c",
+    "history_controls.py": "c578062209ad1a067f732f609cc625e0d5a001bfbced28f2b7f396ede779ca30",
     "lean/NoPin/ApplicationRequests/Application.lean": "5a1ac4c17d37eb40cbcd230c288a76099eba66c51f9fe7acc1ddc5db1f2043c7",
     "lean/NoPin/ApplicationRequests/Client.lean": "8e395c324f34c44de1bcede1555ebb404e72fbdc9029baa562c8a4b2810c2062",
     "lean/NoPin/ApplicationRequests/Conditions.lean": "c2a2c3759c59e2343561d0eb0eeb078e386b156a06e4b734b59025fa1cb8e48c",
@@ -15,7 +15,7 @@
     "lean/NoPin/ApplicationRequests/Fixtures.lean": "5d2ee2d82a846ec9b93a6e40ae7a330a50d2a2970d9726fa40a89c896a58c859",
     "lean/NoPin/ApplicationRequests/History.lean": "79de2d0bdd260d1ac6315f81c496c3f420359f6bd715a954c016f28bd81d6089",
     "lean/NoPin/ApplicationRequests/HistoryBindings.lean": "52bf2a9f79ef2537b27f3f730600b0d735012398e0e19cf237ea362481930c61",
-    "lean/NoPin/ApplicationRequests/HistoryClaims.lean": "15683a7d94721f3811db664f3c48320de1cfb175ef2b3402b418443dccff0624",
+    "lean/NoPin/ApplicationRequests/HistoryClaims.lean": "e3bd0eb671a35cceba205126d6777c82404b38d56f2b63cfea03bee8342dd8fb",
     "lean/NoPin/ApplicationRequests/HistoryEvidence.lean": "794ffc618d3c0a5644155b0901a72d2382d0509e8bdf07605f5e198083ffe1fa",
     "lean/NoPin/ApplicationRequests/HistoryFixtures.lean": "eaaaf656f590ea91a82b665dd7245467ec612f462664fd972a68bf6b02f51a9e",
     "lean/NoPin/ApplicationRequests/HistoryOrigins.lean": "87922b557807d5b9ee50b9906f71b4b4a144537f87c97335755760d803d4b099",
@@ -24,8 +24,13 @@
     "lean/NoPin/ApplicationRequests/Report.lean": "74b49dfa4522fa1e20f259757ba4c343dbb996f4df5920d4f863a3de86342212",
     "lean/NoPin/ApplicationRequests/Role.lean": "f6f17f8bafa3ebb9c5d271078ecd63fd19f0ba700c3ea7af47604051b8309f96",
     "lean/NoPin/ApplicationRequests/Statements.lean": "93618c4ca032d36acc461f2e67db19bbd3b8f8b8e5e7168282b4601d7e9018fa",
-    "lean/NoPin.lean": "42805da01985c89395c193af2608cce51b363fc74f8651c03cddab4659d34da9",
-    "lean/Report.lean": "7466c0069c49d58517854d931bdca08905eab0bb059ee58db55544fd55c40799"
+    "lean/NoPin.lean": "f95fcde11c6b6c957e8cccdc9c8c6d186db1d3af04eaa5e4f287f75a9a4f867b",
+    "lean/Report.lean": "3d392ae9b716aa5ea6d4e1ae8344681d2cacb83c805db9398081fefa9487b10e",
+    "history_proof_check.py": "684bfc8f7e32e8389f2ae58e31eeb710d0d4a20ce1f81e12e7a357d026bd401a",
+    "history_proof_controls.py": "789f7f6cd487842ac37585fe71261b37f59909d54034ef98b81233568400cb20",
+    "history-proof-definition-baseline.json": "965b2d8836b617c0ea7e7412b06f27980382fef4ac6be70bcfbe6cbf8697e895",
+    "lean/NoPin/ApplicationRequests/HistoryProofs.lean": "6502852fc8692a37c080def9bc954113520463555d2075c73d3f9cacdd690f3c",
+    "lean/NoPin/ApplicationRequests/HistoryProofAudit.lean": "687b9de56b33741a235ed31dc13a5c7f7a6b9136e1f7967343aa3976f1cc24fe"
   },
   "preservedBaseArtifacts": {
     "statements.json": "97450a8880920e1f81b97a02e2e449c76aec7baa9ae2b17fab63f7fc93fccb87",
@@ -42,7 +47,7 @@
     {
       "theorem": "NoPin.ApplicationRequests.HistoryStatements.burn_only_terminating_fold",
       "requirement": "A token burns only in a fold terminating the same registry and key.",
-      "status": "STATED",
+      "status": "PROVED",
       "statementSha256": "26097d75a8dbb040586c0286455f8384380b3a49589647652bfaa0be1c980bca",
       "witness": "NoPin.ApplicationRequests.HistoryEvidence.burn_antecedent",
       "positive": "NoPin.ApplicationRequests.HistoryEvidence.burn_candidate",
@@ -53,7 +58,7 @@
     {
       "theorem": "NoPin.ApplicationRequests.HistoryStatements.no_remint_after_terminal",
       "requirement": "A fold cannot remint a terminal key and preserves its terminal leaf.",
-      "status": "STATED",
+      "status": "PROVED",
       "statementSha256": "f87d2e0eb1a269028095cb156ad847a22496c8526e7d801c17b000634a080c16",
       "witness": "NoPin.ApplicationRequests.HistoryEvidence.permanence_antecedent",
       "positive": "NoPin.ApplicationRequests.HistoryEvidence.permanence_candidate",

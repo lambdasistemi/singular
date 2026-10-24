@@ -146,6 +146,8 @@ def check(records, ledger):
         proposed = json.loads((ROOT / (family + "-statements.json")).read_text())
         module.reconcile(records, proposed)
         proposed["statements"][0]["status"] = "PROVED"
+        if family == "history":
+            proposed["statements"][0]["theorem"] = target
         try:
             module.reconcile(records, proposed)
         except ValueError:

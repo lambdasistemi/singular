@@ -59,6 +59,14 @@ def main():
         m: (ROOT / "lean/NoPin/ApplicationRequests" / f"{m}.lean").read_text()
         for m in MODULES
     }
+    # Mutation controls test the frozen statements and explicit instances, rather
+    # than attempting to transport production proof terms across changed laws.
+    sources["HistoryClaims"] = re.sub(
+        r":= by.*?(?=\n/--|\nend HistoryStatements)",
+        ":= by sorry\n",
+        sources["HistoryClaims"],
+        flags=re.S,
+    )
     prefix = (
         "\nnamespace NoPin.HistoryControl.HistoryEvidence\nopen Singular Fixtures\n"
     )

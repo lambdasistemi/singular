@@ -137,6 +137,7 @@ end NoPin.Report
 #eval NoPin.ApplicationRequests.Report.reportControls
 
 #history_report
+#history_proof_closure
 #eval NoPin.ApplicationRequests.HistoryReport.reportCorpus
 
 #lifecycle_report

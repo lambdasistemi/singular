@@ -74,7 +74,7 @@ constructive public folding. Its exact inventory, statement hashes, proof debt,
 complete antecedent witnesses, single-guard falsifications and oracle replays are
 computed by the same no-pin-identity recipe from compiled Lean. The separate
 application-requests ledgers preserve every earlier identity and held row. Every
-general statement remains STATED with sorry debt; none is accepted law.
+general statement has its own compiled proof status; none is accepted law.
 
 Explicit attacks exercise an extra own-policy mint and burn, delivery to another
 output, state ADA drain, a foreign token in the state continuation, and a genuine
@@ -83,14 +83,17 @@ finite codec, hash and root observations; incomplete or ambiguous observations
 fail instead of supplying an implicit successful answer. Its public builder uses
 registry/request records and ordinary funding, with no required signer.
 
-Global history supply, uniqueness and permanent no-remint statements remain
-open. The mixed registration/termination fixture starts from an observed active
+Global history supply and uniqueness statements remain open. Hypothetical
+proofs establish that a burn belongs to a fold terminating that registry and
+key, and that a terminal key cannot be reminted, including by another registry's
+fold. Their statements and reached definitions stay frozen; the supply and
+one-live-token rows retain their proof holes. The mixed registration/termination fixture starts from an observed active
 key and does not establish its preceding genesis, application booking or a
 multi-registry history. The public-fold statement promises a constructed balanced
 model observation under explicit authenticity, clock, finite encoding/collision
 and ordinary-funding premises; provider completeness, real trie proofs, script
 invocation, output minimums, funding availability, willingness and inclusion
-remain external. The current lifecycle and money statement candidate is described below; its general guarantees remain unproved. No production validator, application law, hosted CI or release acceptance
+remain external. The current lifecycle and money statement candidate is described below; its proof status is computed per statement from compiled axioms. No production validator, application law, hosted CI or release acceptance
 follows from these checks.
 
 

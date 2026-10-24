@@ -121,7 +121,7 @@
       "pause": 400
     },
     {
-      "text": "The current family states genesis, the whole per-change and batch fold law, committed holding delivery, state continuation integrity, state recognition and constructive public folding. Its exact inventory, statement hashes, proof debt, complete antecedent witnesses, single-guard falsifications and oracle replays are computed by the same no-pin-identity recipe from compiled Lean. The separate application-requests ledgers preserve every earlier identity and held row. Every general statement remains STATED with sorry debt; none is accepted law.",
+      "text": "The current family states genesis, the whole per-change and batch fold law, committed holding delivery, state continuation integrity, state recognition and constructive public folding. Its exact inventory, statement hashes, proof debt, complete antecedent witnesses, single-guard falsifications and oracle replays are computed by the same no-pin-identity recipe from compiled Lean. The separate application-requests ledgers preserve every earlier identity and held row. Every general statement has its own compiled proof status; none is accepted law.",
       "pause": 400
     },
     {
@@ -129,7 +129,7 @@
       "pause": 400
     },
     {
-      "text": "Global history supply, uniqueness and permanent no-remint statements remain open. The mixed registration/termination fixture starts from an observed active key and does not establish its preceding genesis, application booking or a multi-registry history. The public-fold statement promises a constructed balanced model observation under explicit authenticity, clock, finite encoding/collision and ordinary-funding premises; provider completeness, real trie proofs, script invocation, output minimums, funding availability, willingness and inclusion remain external. The current lifecycle and money statement candidate is described below; its general guarantees remain unproved. No production validator, application law, hosted CI or release acceptance follows from these checks.",
+      "text": "Global history supply and uniqueness statements remain open. Hypothetical proofs establish that a burn belongs to a fold terminating that registry and key, and that a terminal key cannot be reminted, including by another registry's fold. Their statements and reached definitions stay frozen; the supply and one-live-token rows retain their proof holes. The mixed registration/termination fixture starts from an observed active key and does not establish its preceding genesis, application booking or a multi-registry history. The public-fold statement promises a constructed balanced model observation under explicit authenticity, clock, finite encoding/collision and ordinary-funding premises; provider completeness, real trie proofs, script invocation, output minimums, funding availability, willingness and inclusion remain external. The current lifecycle and money statement candidate is described below; its proof status is computed per statement from compiled axioms. No production validator, application law, hosted CI or release acceptance follows from these checks.",
       "pause": 400
     }
   ],
@@ -221,6 +221,6 @@
   ],
   "_source": {
     "file": "README.md",
-    "sha256": "e7c7a8c0c1b05fef471924999e7f8e65844c021c5dfe589e2f9829659361e277"
+    "sha256": "f0c8daa80c243c697673fed9881563940f78620c3b890d387d7a8f4ee98f6231"
   }
 }

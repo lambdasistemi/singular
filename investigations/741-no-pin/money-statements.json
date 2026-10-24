@@ -19,7 +19,7 @@
     "lean/NoPin/ApplicationRequests/MoneyRefutation.lean": "d48665e3f2d22a1865f01e86b5316b74be41cb192d7c032090e560b39795105e",
     "lean/NoPin/ApplicationRequests/MoneyProofAudit.lean": "3fed4dab7a6b42171436780b10ad46f713d3a9f34041e7cc6652431a4e4fd2dd",
     "money-proof-definition-baseline.json": "456337aab14774569d1af8ca8812e2ee09e434b44ba4b97fbf90bf97b56588fc",
-    "money_proof_check.py": "3657d8196aae8e88f72870cfa3638945addcef4568a02e0ec786cfada08b80d0",
+    "money_proof_check.py": "4c64b00e5ec4649c47c1503e0e32e3d9e86060b08aaeb2ceeca8cc4f1aa0a067",
     "money_proof_controls.py": "aba95c1c18fe6b9eba79451a2f64054e0f7639133ea0b6f85266fe73626c6a79",
     "lean/NoPin/ApplicationRequests/MoneyHoldingClaims.lean": "bdbcb8df8bf170bc7c009a54a00c0add1a0ddc1310e9f2d752ec9fbc8a69fba5",
     "lean/NoPin/ApplicationRequests/MoneyHoldingSeparated.lean": "73c4d81d3c95698b61ead30aba23deb9755657b76efc3e79cd55dfb01df5ac96",
@@ -901,7 +901,7 @@
   "preservedStatementRows": {
     "application-requests-statements.json": "2ea59d83615f0297309e278823c3bc15d0f73b20559975afea56f6416176c3d6",
     "held-statements.json": "db3dcfe74f1660404e797ca73138e2b94a83d7def1f2514919535ea38a8a286b",
-    "history-statements.json": "59793fd7385b0d5c6c89b2a7dd497d270f4bce2bcfa6ef0dd18f6f3277a20ea4",
+    "history-statements.json": "dc9f1e9d71debb3508c4e5b19d6c0e6f3f524d89106ae48f114fe71583ea5ddd",
     "lifecycle-statements.json": "5c00284a1f20289163329b193faed77f9717941390cdd1235bd1434da63c2d72",
     "statements.json": "abe7b068f2800f62dead9f5c7bffdc239a7f5083cf788aae1dcf8ef598b1d101"
   }

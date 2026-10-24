@@ -48,12 +48,13 @@ def reconcile(records, ledger):
             )
     for row in rows:
         declaration = source[row["theorem"]]
+        axioms = set(declaration["axioms"])
+        status = "STATED" if "sorryAx" in axioms else "PROVED"
+        require(axioms <= STANDARD | {"sorryAx"}, "nonstandard history axiom")
         require(
-            row["status"] == "STATED"
-            and set(declaration["axioms"]) - STANDARD == {"sorryAx"},
-            "unexpected proof status",
+            row["status"] == status, "history status does not match compiled axioms"
         )
-        require("Status: STATED." in declaration["doc"], "unmarked hypothesis")
+        require("Status: " + status + "." in declaration["doc"], "unmarked hypothesis")
         require(
             row["statementSha256"] == digest(declaration["type"]), "changed statement"
         )
@@ -117,6 +118,9 @@ def check(records):
             "earlier artifact changed: " + file,
         )
     reconcile(records, ledger)
+    import history_proof_check
+
+    proof = history_proof_check.check(records, ledger)
     corpus = [
         r
         for r in records
@@ -230,11 +234,13 @@ def check(records):
     print(
         json.dumps(
             {
-                "status": "CANDIDATE-STATEMENTS-ONLY",
+                "status": "PARTIAL-HYPOTHETICAL-PROOF-CANDIDATE",
                 "family": "history",
                 "acceptedLaw": False,
                 "statements": len(ledger["statements"]),
-                "sorryAx": len(ledger["statements"]),
+                "proved": sum(r["status"] == "PROVED" for r in ledger["statements"]),
+                "sorryAx": sum(r["status"] == "STATED" for r in ledger["statements"]),
+                "proof": proof,
                 "constructorInversions": len(ledger["inversions"]),
                 "checkerNegativeControls": controls,
                 "historyMutants": len(expected),

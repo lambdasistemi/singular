@@ -70,6 +70,8 @@ def check(records, ledger):
         module = __import__(family + "_check")
         proposed = json.loads((ROOT / (family + "-statements.json")).read_text())
         proposed["statements"][0]["status"] = "PROVED"
+        if family == "history":
+            proposed["statements"][0]["theorem"] = target
         try:
             module.reconcile(records, proposed)
         except ValueError:

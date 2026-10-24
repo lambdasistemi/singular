@@ -7,6 +7,7 @@ import NoPin.Witnesses
 import NoPin.Mutants
 import NoPin.ApplicationRequests.Report
 import NoPin.ApplicationRequests.HistoryReport
+import NoPin.ApplicationRequests.HistoryProofAudit
 import NoPin.ApplicationRequests.LifecycleReport
 import NoPin.ApplicationRequests.RefundLifecycleReport
 import NoPin.ApplicationRequests.RefundProofAudit
