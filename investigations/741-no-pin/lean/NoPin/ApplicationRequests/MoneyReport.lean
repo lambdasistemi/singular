@@ -1,5 +1,6 @@
 import NoPin.ApplicationRequests.MoneyUpdate
 import NoPin.ApplicationRequests.MoneyRefutation
+import NoPin.ApplicationRequests.MoneyHoldingSeparated
 import NoPin.ApplicationRequests.ProofAudit
 
 /-! Hypothetical compiled comparison inventory, not accepted law. Extents,
@@ -40,12 +41,14 @@ elab "#money_report" : command => do
   let .inductInfo siteInfo ← getConstInfo ``Site | throwError "missing sites"
   let .inductInfo appInfo ← getConstInfo ``ApplicationAction | throwError "missing application actions"
   let .inductInfo oldInfo ← getConstInfo ``OpenDatumApplication.AppAction | throwError "missing accepted actions"
+  let .inductInfo holdingInfo ← getConstInfo ``HoldingPaymentMutation | throwError "missing holding payment guards"
   IO.println (Json.mkObj [("family", toJson "money"),
     ("journeys", toJson (journeyInfo.ctors.map (·.getString!))),
     ("parties", toJson (partyInfo.ctors.map (·.getString!))),
     ("sites", toJson (siteInfo.ctors.map (·.getString!))),
     ("applicationConstructors", toJson (appInfo.ctors.map (·.getString!))),
-    ("acceptedApplicationConstructors", toJson (oldInfo.ctors.map (·.getString!)))]).compress
+    ("acceptedApplicationConstructors", toJson (oldInfo.ctors.map (·.getString!))),
+    ("holdingPaymentGuards", toJson ((holdingInfo.ctors.map (·.getString!)).filter (· != "none")))]).compress
   for constructor in oldInfo.ctors do
     let classified := oldJourneys constructor.getString!
     if classified.isEmpty then throwError "unclassified accepted journey: {constructor}"
@@ -78,7 +81,9 @@ elab "#money_report" : command => do
           let .app (.const `Not _) implication := mutant.type | throwError "not a falsification"
           let repaired := implication.replace fun e =>
             if e.isAppOf ``Mutation.application || e.isAppOf ``Mutation.allocation then
-              some (Lean.mkConst ``Mutation.none) else none
+              some (Lean.mkConst ``Mutation.none)
+            else if e.isConstOf ``HoldingPaymentMutation.includeHolding then
+              some (Lean.mkConst ``HoldingPaymentMutation.none) else none
           let expected ← mkArrow (← inferType witness) (← inferType (Lean.mkConst positiveName))
           unless ← isDefEq repaired expected do throwError "mutant not bound to complete money statement: {name}"
           IO.println (Json.mkObj [("family", toJson "money"), ("binding", toJson name.toString),

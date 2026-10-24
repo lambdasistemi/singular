@@ -81,6 +81,11 @@ def reconcile(records, ledger):
                 selector["allocation"] in inventory["sites"],
                 "unknown allocation selector",
             )
+        elif "holdingPayment" in selector:
+            require(
+                selector["holdingPayment"] in inventory["holdingPaymentGuards"],
+                "unknown holding payment selector",
+            )
         else:
             require(
                 selector.get("application") in ledger["applicationGuards"],

@@ -8,19 +8,23 @@
     "lean/NoPin/ApplicationRequests/MoneyClaims.lean": "b62c51640ba3596d44f844fde1f614b6661bf41ada14a94f2e14a8924c98cf96",
     "lean/NoPin/ApplicationRequests/MoneyEvidence.lean": "fcc7186cd695d24e95be3912746a02d1d5aabaaf976c640dac141e0937edafa2",
     "lean/NoPin/ApplicationRequests/MoneyFixtures.lean": "02af7e0acfb10d6c19c910e707f4a506ffdb9dd43b2f29ebbc99b0f96e954f98",
-    "lean/NoPin/ApplicationRequests/MoneyReport.lean": "62b9d4396545bc64c0890c7a31a78dbd613b7b1ccab7545c202cf81f4042562e",
+    "lean/NoPin/ApplicationRequests/MoneyReport.lean": "327c0e707bf78bbd746a2c7ff0336530629fe5d710f51842fdee489ca6f38d93",
     "lean/NoPin/ApplicationRequests/MoneyStatements.lean": "0365c1c3f80bed53829a036acf1e0398bd6b624531e3ff8e27e5901274ce8d53",
     "lean/NoPin/ApplicationRequests/MoneyUpdate.lean": "b2a1c84b543a84c5e7886cd8e51457281c55866e976971373e927161c18f9c75",
-    "money_check.py": "052f159c0b6911b214bfbd5d01c540d9ef095dd3e55014fe7ef0ae273a625aa4",
+    "money_check.py": "f5b4261b4c5286d8f0318f2f838061027d7a4a07fff0544c7e9057eb525ed795",
     "money_controls.py": "216318fd9a4d70e39c878ae96567d0e7be505ed7eea5cde8ac562fad50da4a04",
     "lean/NoPin/ApplicationRequests/MoneyProofs.lean": "8a13b8c8f6c39e176b87a12cc857407488cbd9b883bf7098929fefbc107b9a25",
     "lean/NoPin/ApplicationRequests/MoneyJourneyProofs.lean": "65401c306a72fdf2e8eff190aae6050b1762d9a59b3110ceb5d9dbc1ee2efa72",
     "lean/NoPin/ApplicationRequests/MoneyFoldProofs.lean": "ee3698e433b044b96ed6da8424720467813f78dd40fa0943134a387b0a8df817",
     "lean/NoPin/ApplicationRequests/MoneyRefutation.lean": "d48665e3f2d22a1865f01e86b5316b74be41cb192d7c032090e560b39795105e",
-    "lean/NoPin/ApplicationRequests/MoneyProofAudit.lean": "46b32e5c543263838598151d76a383e32b4c52876f765d69f7c8c86827e23979",
+    "lean/NoPin/ApplicationRequests/MoneyProofAudit.lean": "3fed4dab7a6b42171436780b10ad46f713d3a9f34041e7cc6652431a4e4fd2dd",
     "money-proof-definition-baseline.json": "456337aab14774569d1af8ca8812e2ee09e434b44ba4b97fbf90bf97b56588fc",
-    "money_proof_check.py": "91a42236d07dc0717c959afa7a89a90c81dffde13a5eda0a86e231bf4eacd4a5",
-    "money_proof_controls.py": "aba95c1c18fe6b9eba79451a2f64054e0f7639133ea0b6f85266fe73626c6a79"
+    "money_proof_check.py": "3657d8196aae8e88f72870cfa3638945addcef4568a02e0ec786cfada08b80d0",
+    "money_proof_controls.py": "aba95c1c18fe6b9eba79451a2f64054e0f7639133ea0b6f85266fe73626c6a79",
+    "lean/NoPin/ApplicationRequests/MoneyHoldingClaims.lean": "bdbcb8df8bf170bc7c009a54a00c0add1a0ddc1310e9f2d752ec9fbc8a69fba5",
+    "lean/NoPin/ApplicationRequests/MoneyHoldingSeparated.lean": "1be7c367833baba2c730b595b71c21125f8acc3284b5102c8e95d85048fe7249",
+    "money_holding_controls.py": "b6caa2765f40af99b0f5819a1973c703ab9ad02fd017b52061527d824e7c6919",
+    "money-holding-definition-baseline.json": "4e9f352744e3f2d774328db5b41cb8624d8b635dc33211ad8565547e64b8ba2a"
   },
   "statements": [
     {
@@ -64,7 +68,8 @@
       "journey": "registrationFold",
       "description": "registration fold journey",
       "proofStatus": "STATED",
-      "refutation": "NoPin.ApplicationRequests.Money.Refutation.registration_fold_journey_refutation"
+      "refutation": "NoPin.ApplicationRequests.Money.Refutation.registration_fold_journey_refutation",
+      "supersededBy": "NoPin.ApplicationRequests.Money.Statements.registration_fold_journey_holding_separated"
     },
     {
       "theorem": "NoPin.ApplicationRequests.Money.Statements.update_journey",
@@ -191,6 +196,21 @@
       "journey": "update",
       "description": "update both models",
       "proofStatus": "PROVED"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Money.Statements.registration_fold_journey_holding_separated",
+      "status": "STATED",
+      "proofStatus": "STATED",
+      "statementSha256": "ecb9cae142e5264b3b050b006ce8d67bf0be8538c59ca98b840d8709aaa33cb8",
+      "witness": "NoPin.ApplicationRequests.Money.Evidence.registration_fold_journey_holding_separated_antecedent",
+      "positive": "NoPin.ApplicationRequests.Money.Evidence.registration_fold_journey_holding_separated_positive",
+      "mutant": "NoPin.ApplicationRequests.Money.Evidence.registration_fold_journey_holding_separated_mutant",
+      "selector": {
+        "holdingPayment": "includeHolding"
+      },
+      "journey": "registrationFold",
+      "description": "Registration fold separates the protected holding from the folder payment",
+      "supersedes": "registration_fold_journey"
     }
   ],
   "applicationGuards": [
