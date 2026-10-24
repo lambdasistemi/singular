@@ -236,7 +236,11 @@ test the_genesis_refuses_a_registry_not_named_from_the_seed() {
   )
 }
 
-test the_genesis_refuses_a_registry_named_from_the_seed_under_another_policy() {
+/// The model's `configurationGenesis` does not name the state policy: it asks that
+/// the policy the registry names is invoked and mints the token once. Which
+/// policy is the state script of the application is decided by that script,
+/// not here.
+test the_genesis_takes_the_policy_the_registry_names() {
   let registry =
     RegistryIdentity { policy: other_policy, name: state_token_name(seed_a) }
   let tx =
@@ -244,7 +248,13 @@ test the_genesis_refuses_a_registry_named_from_the_seed_under_another_policy() {
       ..creation_transaction(seed_a),
       mint: from_asset(other_policy, registry.name, 1),
     }
-  !configuration_genesis(registry, seed_a, tx)
+  configuration_genesis(registry, seed_a, tx)
+}
+
+test the_genesis_refuses_a_policy_that_does_not_mint_the_token() {
+  let registry =
+    RegistryIdentity { policy: other_policy, name: state_token_name(seed_a) }
+  !configuration_genesis(registry, seed_a, creation_transaction(seed_a))
 }
 
 test the_genesis_refuses_a_seed_that_is_not_spent() {
