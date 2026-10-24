@@ -40,8 +40,8 @@ use cardano/transaction.{
   find_input,
 }
 use singular_state/preimage.{
-  RegistryIdentity, approval_name, initial_datum_hash, registration_preimage,
-  state_token_name,
+  RegistryIdentity, active_token_name, approval_name, initial_datum_hash,
+  registration_preimage, state_token_name,
 }
 use singular_state/state.{recognize_state, state_root}
 
@@ -311,42 +311,80 @@ fn differs_at(path: ByteArray, index: Int, step: ProofStep) -> Bool {
 
 /// Model `separateHolding`: no other registration names the same holding.
 pub fn separate_holding(
-  _changes: List<Change>,
-  _request: OutputReference,
-  _holding: Int,
+  changes: List<Change>,
+  request: OutputReference,
+  holding: Int,
 ) -> Bool {
-  False
+  list.all(
+    changes,
+    fn(change) {
+      when change is {
+        Register { request: other, holding: other_holding, .. } ->
+          other == request || other_holding != holding
+        Terminate { .. } -> True
+      }
+    },
+  )
 }
 
 /// Model `oneNewToken`: the holding holds one new token in total.
 pub fn one_new_token(
-  _registry: RegistryIdentity,
-  _changes: List<Change>,
-  _holding: Output,
+  registry: RegistryIdentity,
+  changes: List<Change>,
+  holding: Output,
 ) -> Bool {
-  False
+  list.foldl(
+    changes,
+    0,
+    fn(change, total) {
+      when change is {
+        Register { key, .. } ->
+          total + quantity_of(
+            holding.value,
+            registry.policy,
+            active_token_name(registry, key),
+          )
+        Terminate { .. } -> total
+      }
+    },
+  ) == 1
 }
 
 /// Model guard `registrationPlacement`: the token of the key is in the holding
 /// once, and in no other output.
 pub fn registration_placement(
-  _registry: RegistryIdentity,
-  _outputs: List<Output>,
-  _changes: List<Change>,
-  _request: OutputReference,
-  _key: ByteArray,
-  _holding: Int,
+  registry: RegistryIdentity,
+  outputs: List<Output>,
+  changes: List<Change>,
+  request: OutputReference,
+  key: ByteArray,
+  holding: Int,
 ) -> Bool {
-  False
+  let active = active_token_name(registry, key)
+  when list.at(outputs, holding) is {
+    Some(output) -> and {
+        quantity_of(output.value, registry.policy, active) == 1,
+        list.foldl(
+          outputs,
+          0,
+          fn(each, total) {
+            total + quantity_of(each.value, registry.policy, active)
+          },
+        ) == 1,
+        separate_holding(changes, request, holding),
+        one_new_token(registry, changes, output),
+      }
+    None -> False
+  }
 }
 
 /// Model guard `registrationMint`: one token of the key is minted.
 pub fn registration_mint(
-  _registry: RegistryIdentity,
-  _key: ByteArray,
-  _mint: Value,
+  registry: RegistryIdentity,
+  key: ByteArray,
+  mint: Value,
 ) -> Bool {
-  False
+  quantity_of(mint, registry.policy, active_token_name(registry, key)) == 1
 }
 
 /// Model guard `registrationDeposit`: the holding holds at least the deposit.

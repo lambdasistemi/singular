@@ -972,3 +972,42 @@ test a_leaf_whose_key_is_no_hash_is_not_apart() {
     !apart_from(key_d, [leaf_of(#"", 0)]),
   }
 }
+
+// ---------------------------------------------------------------------------
+// registration-token-placed-once: rows for two mutants of the first campaign
+// ---------------------------------------------------------------------------
+
+test a_termination_in_the_batch_is_not_a_new_token() {
+  let terminate =
+    Terminate { request: registration_c().request, key: key_c, proof: [] }
+  let batch = list.concat(changes(), [terminate])
+  one_new_token(registry(), batch, output_at(holding_index(0))) && !one_new_token(
+    registry(),
+    batch,
+    holding_with(from_lovelace(3_000_000)),
+  )
+}
+
+test a_holding_with_the_token_of_another_registration_does_not_place_this_one() {
+  // the first two holdings swap their tokens: each holding holds exactly one
+  // new token and each token is in exactly one output, but not in the holding
+  // its change names
+  let first = output_at(holding_index(0))
+  let second = output_at(holding_index(1))
+  let swapped =
+    replace_output(holding_index(0), Output { ..first, value: second.value })
+      |> list.indexed_map(
+          fn(at, kept) {
+            if at == holding_index(1) {
+              Output { ..second, value: first.value }
+            } else {
+              kept
+            }
+          },
+        )
+  placed(outputs(), changes(), 0) && !placed(swapped, changes(), 0) && !placed(
+    swapped,
+    changes(),
+    1,
+  )
+}
