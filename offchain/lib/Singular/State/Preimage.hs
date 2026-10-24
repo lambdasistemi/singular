@@ -93,7 +93,7 @@ preimageData :: Preimage -> Data
 preimageData = \case
     State seed -> Constr 0 [seedData seed]
     Active registry key -> Constr 1 [registryData registry, B key]
-    ApplicationConfiguration{} -> reserved
+    ApplicationConfiguration registry -> Constr 2 [registryData registry]
     RegistrationApproval registry key holding hash deposit ->
         Constr
             3
@@ -103,11 +103,8 @@ preimageData = \case
             , datumHashData hash
             , I (getLovelace deposit)
             ]
-    TerminationApproval{} -> reserved
-
--- | The constructors that keep the model's numbering; nothing builds them yet.
-reserved :: a
-reserved = error "Singular.State.Preimage: no encoding for a reserved role"
+    TerminationApproval registry key ->
+        Constr 4 [registryData registry, B key]
 
 -- | An output reference: the transaction id and the output index.
 seedData :: TxIn -> Data
