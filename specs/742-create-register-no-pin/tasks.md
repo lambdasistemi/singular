@@ -19,7 +19,7 @@ the ticket owner accepts its slice.
 
 ## Pull request 1: preimage vectors
 
-- [ ] preimage-vectors-shared: byte vectors for the approval preimage and the state token name, reproduced on-chain and off-chain, including a definite and an indefinite list and a byte string longer than 64 bytes.
+- [ ] preimage-vectors-shared: byte vectors for the state, active and registration-approval preimages, reproduced on-chain and off-chain, including a definite and an indefinite list and a byte string longer than 64 bytes.
 
 ## Pull request 2: approvals and configuration
 

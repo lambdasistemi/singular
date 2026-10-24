@@ -53,7 +53,7 @@
       "pause": 500
     },
     {
-      "text": "[ ] preimage-vectors-shared: byte vectors for the approval preimage and the state token name, reproduced on-chain and off-chain, including a definite and an indefinite list and a byte string longer than 64 bytes.",
+      "text": "[ ] preimage-vectors-shared: byte vectors for the state, active and registration-approval preimages, reproduced on-chain and off-chain, including a definite and an indefinite list and a byte string longer than 64 bytes.",
       "pause": 300
     }
   ],
@@ -165,6 +165,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "498f20d12a2eb1a636807fc93187cc238b2e8b90b55efbca110fe2fa5b98cabc"
+    "sha256": "19f9216557b3d3cac06ce164386112a6e80878a9285a9d5c049fd1c19e1bb9bf"
   }
 }
