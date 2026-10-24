@@ -59,6 +59,15 @@ application-model:
     lake -d applications/open-datum --keep-toolchain env lean applications/open-datum/lean/AuditReport.lean > applications/open-datum/.lake/axioms-report.txt
     python3 tools/check_application_model.py --axioms-report applications/open-datum/.lake/axioms-report.txt
 
+# The application-held model is isolated from the current model's corpus extent.
+application-held-model:
+    lean --version | grep -q "version $(sed 's/.*:v//' lean-toolchain),"
+    python3 models/singular-application-held/check.py
+    lake -d models/singular-application-held --keep-toolchain build
+    lake -d models/singular-application-held --keep-toolchain env lean models/singular-application-held/lean/SingularApplicationHeld/Audit.lean > models/singular-application-held/.lake/audit-report.txt
+    python3 models/singular-application-held/check.py --report models/singular-application-held/.lake/audit-report.txt
+    python3 models/singular-application-held/check.py --controls
+
 simulator:
     node simulator/mirror-check.mjs
     node simulator/build.mjs --check
