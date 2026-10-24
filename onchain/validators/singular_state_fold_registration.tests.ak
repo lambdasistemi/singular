@@ -110,7 +110,7 @@ test a_key_the_trie_binds_is_not_unknown_whatever_the_proof() {
           !change_leaf(trie_of(existing), key, proof_into(others, key)) && !change_leaf(
             trie_of(existing),
             key,
-            proof_into(existing, key),
+            proof_into(existing, key_e),
           ) && !change_leaf(trie_of(existing), key, [])
         },
       )
@@ -141,7 +141,7 @@ test a_key_the_trie_binds_to_any_leaf_is_not_unknown() {
   !change_leaf(trie, key_a, []) && !change_leaf(
     trie,
     key_a,
-    [leafStep(key_a, terminal, key_a)],
+    [leafStep(key_b, terminal, key_a)],
   ) && change_leaf(trie, key_b, [leafStep(key_a, terminal, key_b)])
 }
 

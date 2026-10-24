@@ -18,9 +18,12 @@ use cardano/transaction.{
   InlineDatum, Input, NoDatum, Output, OutputReference, Transaction,
 }
 use singular_state
-use singular_state/fold.{Fold, StateSpend, Terminate}
+use singular_state/fold.{Fold, Register, StateSpend, Terminate}
 use singular_state/genesis.{Folded}
-use singular_state/preimage.{active_token_name, state_token_name}
+use singular_state/preimage.{
+  active_token_name, approval_name, initial_datum_hash, registration_preimage,
+  state_token_name,
+}
 use singular_state_fixtures.{
   application_policy, ordinary_output, other_policy, other_script, root_datum,
   seed_a, seed_b, seed_fuzzer, seeds, spent, state_policy,
@@ -120,6 +123,42 @@ test the_validator_folds_registrations_in_any_order() {
 test the_validator_folds_a_registration_whose_holding_holds_exactly_the_deposit() {
   // registration b: its holding holds exactly its deposit
   folds(Scenario { ..scenario(), registrations: [registration_b()] })
+}
+
+test the_validator_folds_a_registration_whose_holding_datum_is_shaped_as_a_state_datum() {
+  // the category of an output is its role in the fold, not the shape of its
+  // datum
+  list.all(
+    [#"aa", #"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"],
+    fn(root) {
+      folds(
+        Scenario {
+          ..first_registration(),
+          registrations: [
+            Registration {
+              ..registration_a(),
+              datum: builtin.constr_data(0, [builtin.b_data(root)]),
+            },
+          ],
+        },
+      )
+    },
+  )
+}
+
+test the_validator_folds_a_registration_whose_holding_is_at_the_state_script_address() {
+  folds(
+    Scenario {
+      ..scenario(),
+      registrations: [
+        Registration {
+          ..registration_a(),
+          holding_address: from_script(state_policy),
+        },
+        registration_b(),
+      ],
+    },
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -314,7 +353,7 @@ test a_state_output_that_carries_the_wrong_root_is_refused() {
     [
       root_datum(root_of([key_d])),
       root_datum(root_of([key_d, key_a, key_b])),
-      root_datum(root_of([key_d, key_a, key_b, key_c, key_a])),
+      root_datum(root_of([key_d, key_a, key_c])),
       NoDatum,
     ],
     fn(datum) {
@@ -639,5 +678,75 @@ test prop_a_fold_of_one_registry_is_refused_under_the_seed_of_another(
   seed == other || !spend(
     Fold { seed: other, changes: changes_of(Scenario { ..scenario(), seed }) },
     transaction_of(Scenario { ..scenario(), seed }),
+  )
+}
+
+// ---------------------------------------------------------------------------
+// A change cannot name the continuing state output as its holding
+// ---------------------------------------------------------------------------
+
+test a_fold_whose_change_points_at_the_continuing_state_output_is_refused() {
+  // the booker commits the continuing state output itself as the holding
+  // (its address and the datum it will carry), the approval matches that
+  // commitment, and the output carries the token of the key as well
+  let registry = registry_of(seed_a)
+  let registration = registration_a()
+  let tx = transaction_of(first_registration())
+  let state = output_at(tx, 1)
+  expect InlineDatum(state_datum) = state.datum
+  let active = active_token_name(registry, registration.key)
+  let approval =
+    approval_name(
+      registration_preimage(
+        registration.key,
+        registry,
+        state.address,
+        initial_datum_hash(state_datum),
+        registration.deposit,
+      ),
+    )
+  let request = request_input(registry, registration)
+  let attempt =
+    Transaction {
+      ..tx,
+      inputs: list.map(
+        tx.inputs,
+        fn(input) {
+          if input.output_reference == registration.request {
+            Input {
+              ..input,
+              output: Output {
+                ..request.output,
+                value: from_lovelace(5_000_000)
+                  |> add(application_policy, approval, 1),
+              },
+            }
+          } else {
+            input
+          }
+        },
+      ),
+      outputs: [
+        ordinary_output,
+        Output { ..state, value: state.value |> add(state_policy, active, 1) },
+      ],
+      mint: zero
+        |> add(state_policy, active, 1)
+        |> add(application_policy, approval, -1),
+    }
+  !spend(
+    Fold {
+      seed: seed_a,
+      changes: [
+        Register {
+          request: registration.request,
+          key: registration.key,
+          holding: 1,
+          deposit: registration.deposit,
+          proof: [],
+        },
+      ],
+    },
+    attempt,
   )
 }

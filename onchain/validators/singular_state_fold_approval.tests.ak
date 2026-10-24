@@ -232,7 +232,7 @@ test the_hash_of_an_initial_datum_differs_by_datum() {
 // The datum of a holding
 // ---------------------------------------------------------------------------
 
-test an_inline_datum_that_is_no_state_datum_is_an_application_datum() {
+test an_inline_datum_is_an_application_datum() {
   list.all(
     [
       builtin.i_data(11),
@@ -242,6 +242,16 @@ test an_inline_datum_that_is_no_state_datum_is_an_application_datum() {
       builtin.constr_data(0, [builtin.b_data(#"aa"), builtin.b_data(#"bb")]),
       builtin.constr_data(0, []),
       builtin.list_data([builtin.b_data(#"aa")]),
+      // the shape of a state datum is no reason to refuse a holding
+      builtin.constr_data(0, [builtin.b_data(#"aa")]),
+      builtin.constr_data(
+        0,
+        [
+          builtin.b_data(
+            #"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+          ),
+        ],
+      ),
     ],
     fn(data) { application_datum(InlineDatum(data)) == Some(data) },
   )
@@ -255,13 +265,6 @@ test no_datum_and_a_datum_hash_are_no_application_datum() {
       #"00000000000000000000000000000000000000000000000000000000000000aa",
     ),
   ) == None
-}
-
-test a_state_datum_is_no_application_datum() {
-  list.all(
-    [#"", #"aa", #"0123456789abcdef0123456789abcdef"],
-    fn(root) { application_datum(root_datum(root)) == None },
-  )
 }
 
 // ---------------------------------------------------------------------------
@@ -437,7 +440,6 @@ test no_approval_is_recomputed_for_a_holding_without_an_application_datum() {
       DatumHash(
         #"00000000000000000000000000000000000000000000000000000000000000aa",
       ),
-      root_datum(#"aa"),
     ],
     fn(datum) {
       approval_for(
@@ -831,4 +833,77 @@ test a_request_that_carries_two_application_tokens_still_counts_once() {
 test the_state_input_and_the_funding_input_are_not_requests() {
   let all = inputs()
   list.length(all) == 5 && paired(all)
+}
+
+// ---------------------------------------------------------------------------
+// every-change-has-its-one-approval: the category of an output is its role in
+// the fold. The output that carries the state token is the model's `root`
+// category and has no approval; every other output is an `application` output
+// whatever its address or the shape of its datum.
+// ---------------------------------------------------------------------------
+
+fn state_shaped(root: ByteArray) -> Data {
+  builtin.constr_data(0, [builtin.b_data(root)])
+}
+
+test the_recomputed_approval_of_a_holding_shaped_as_a_state_datum_commits_that_datum() {
+  let holding = holding_of_first()
+  let registration = registration_a()
+  list.all(
+    [#"aa", #"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"],
+    fn(root) {
+      approval_for(
+        registry(),
+        replace_output(
+          holding_index(0),
+          Output { ..holding, datum: InlineDatum(state_shaped(root)) },
+        ),
+        first_change(),
+      ) == Some(
+        approval_with(
+          registration.key,
+          registry(),
+          registration.holding_address,
+          state_shaped(root),
+          registration.deposit,
+        ),
+      )
+    },
+  )
+}
+
+test the_recomputed_approval_of_a_holding_at_the_state_script_commits_that_address() {
+  let holding = holding_of_first()
+  let registration = registration_a()
+  let at_state = from_script(state_policy)
+  approval_for(
+    registry(),
+    replace_output(holding_index(0), Output { ..holding, address: at_state }),
+    first_change(),
+  ) == Some(
+    approval_with(
+      registration.key,
+      registry(),
+      at_state,
+      registration.datum,
+      registration.deposit,
+    ),
+  )
+}
+
+test no_approval_is_recomputed_for_the_output_that_carries_the_state_token() {
+  // the continuing state output, and a holding that also carries the state
+  // token; the same holding without it has an approval
+  let holding = holding_of_first()
+  let carrying =
+    Output {
+      ..holding,
+      value: holding.value
+        |> add(state_policy, state_token_name(seed_a), 1),
+    }
+  approval_for(registry(), outputs(), change_with_holding(first_change(), 1)) == None && approval_for(
+    registry(),
+    replace_output(holding_index(0), carrying),
+    first_change(),
+  ) == None && approval_for(registry(), outputs(), first_change()) != None
 }

@@ -81,8 +81,9 @@ pub fn registry_identity(
   RegistryIdentity { policy: state_policy, name: state_token_name(seed) }
 }
 
-/// The datum of a holding, when it is an application datum: an inline datum
-/// that is not shaped as a state root.
+/// The datum an application output carries, when it carries one: the data of an
+/// inline datum, whatever its shape. The category of an output is its role in
+/// the fold, not the shape of its datum.
 pub fn application_datum(_datum: Datum) -> Option<Data> {
   None
 }
@@ -151,7 +152,9 @@ pub fn change_approval_shape(
 }
 
 /// The approval a registration commits to, recomputed from the change and the
-/// holding output it names.
+/// holding output it names. The output that carries the state token is the
+/// model's `root` category and has none; any other output is an application
+/// output.
 pub fn approval_for(
   _registry: RegistryIdentity,
   _outputs: List<Output>,

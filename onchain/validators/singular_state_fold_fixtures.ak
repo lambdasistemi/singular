@@ -54,15 +54,19 @@ pub const key_e: ByteArray = #"6b657945"
 /// "keyF": 7.
 pub const key_f: ByteArray = #"6b657946"
 
-/// The proof that inserts `key` into the trie that holds exactly `existing`.
+/// The proof that inserts `key` into the trie that holds exactly `existing`. When
+/// `existing` already holds the key, no such proof exists; the proof returned is
+/// the one a booker would build against the trie without the key, which shows
+/// the key absent from a trie that is not the one in the state.
 pub fn proof_into(existing: List<ByteArray>, key: ByteArray) -> Proof {
-  when existing is {
+  let others = list.filter(existing, fn(held) { held != key })
+  when others is {
     [] -> []
     [one] -> [leafStep(one, leaf_active, key)]
     _ ->
       [
         branchStep(
-          list.map(existing, fn(held) { slotOf(held, leaf_active) }),
+          list.map(others, fn(held) { slotOf(held, leaf_active) }),
           key,
         ),
       ]
@@ -77,15 +81,21 @@ fn insert_all(
   when keys is {
     [] -> trie
     [key, ..rest] ->
-      insert_all(
-        mpf.insert(trie, key, leaf_active, proof_into(done, key)),
-        list.concat(done, [key]),
-        rest,
-      )
+      if list.has(done, key) {
+        insert_all(trie, done, rest)
+      } else {
+        insert_all(
+          mpf.insert(trie, key, leaf_active, proof_into(done, key)),
+          list.concat(done, [key]),
+          rest,
+        )
+      }
   }
 }
 
-/// The trie that holds exactly `keys`, each bound to the active leaf.
+/// The trie that holds exactly `keys`, each bound to the active leaf. A key listed
+/// twice is bound once, so a scenario that registers a key twice still has a
+/// continuing state to build.
 pub fn trie_of(keys: List<ByteArray>) -> MerklePatriciaForestry {
   insert_all(mpf.empty, [], keys)
 }
