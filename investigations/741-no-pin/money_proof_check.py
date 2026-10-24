@@ -1,3 +1,4 @@
+# Tool, not a guarantee: replay the frozen investigation; no hosted job runs it.
 """Freeze the money types and their kernel definition closure; bind outcomes."""
 
 import copy

@@ -1,3 +1,4 @@
+# Tool, not a guarantee: replay the frozen investigation; no hosted job runs it.
 """Reconcile compiled journey allocations, accepted dependencies and differences."""
 
 import copy

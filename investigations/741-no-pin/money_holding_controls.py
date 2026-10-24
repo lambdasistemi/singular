@@ -1,3 +1,4 @@
+# Tool, not a guarantee: replay the frozen investigation; no hosted job runs it.
 """Compile the holding-payment guard and ledger-root isolation controls."""
 
 import json

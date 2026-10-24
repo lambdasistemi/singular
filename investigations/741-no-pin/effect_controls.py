@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Tool, not a guarantee: replay the frozen investigation; no hosted job runs it.
 """Execute independent-effect witnesses against isolated production mutations."""
 
 import json

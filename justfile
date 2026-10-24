@@ -59,16 +59,6 @@ application-model:
     lake -d applications/open-datum --keep-toolchain env lean applications/open-datum/lean/AuditReport.lean > applications/open-datum/.lake/axioms-report.txt
     python3 tools/check_application_model.py --axioms-report applications/open-datum/.lake/axioms-report.txt
 
-# Build and reconcile the hypothetical no-pin identity statements and controls.
-no-pin-identity:
-    # S20: every file pin binds tracked source at this commit, never local caches.
-    python3 investigations/741-no-pin/pin_check.py
-    lean --version | grep -q "version $(sed 's/.*:v//' lean-toolchain),"
-    lake -d investigations/741-no-pin --keep-toolchain build
-    lake -d investigations/741-no-pin --keep-toolchain env lean investigations/741-no-pin/lean/Report.lean > investigations/741-no-pin/.lake/report.jsonl
-    python3 investigations/741-no-pin/check.py investigations/741-no-pin/.lake/report.jsonl
-    python3 tools/check_presentation.py --front investigations/741-no-pin/README.md investigations/741-no-pin/README.md specs/741-no-pin-model
-
 # The application-held model is isolated from the current model's corpus extent.
 application-held-model:
     lean --version | grep -q "version $(sed 's/.*:v//' lean-toolchain),"

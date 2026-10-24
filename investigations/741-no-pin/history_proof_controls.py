@@ -1,3 +1,4 @@
+# Tool, not a guarantee: replay the frozen investigation; no hosted job runs it.
 """Compile definition and premise mutations under the same four named roots."""
 
 import json

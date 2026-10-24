@@ -1,3 +1,4 @@
+# Tool, not a guarantee: replay the frozen investigation; no hosted job runs it.
 """Bind hypothetical proof outcomes to unchanged kernel statements and definitions."""
 
 import copy

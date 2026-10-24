@@ -1,3 +1,4 @@
+# Tool, not a guarantee: replay the frozen investigation; no hosted job runs it.
 """Execute kernel controls for the hypothetical proof evidence instrument."""
 
 import json

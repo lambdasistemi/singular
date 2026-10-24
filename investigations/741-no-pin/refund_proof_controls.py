@@ -1,3 +1,4 @@
+# Tool, not a guarantee: replay the frozen investigation; no hosted job runs it.
 """A compiled signer mutation must alter the refund-rooted kernel closure."""
 
 import json

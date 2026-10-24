@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Tool, not a guarantee: replay the frozen investigation; no hosted job runs it.
 """Compile complete violating histories after isolated guard/premise changes.
 
 The substitutions are made in temporary namespaces. The candidate sources are

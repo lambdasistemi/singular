@@ -13,6 +13,28 @@
       "pause": 400
     }
   ],
+  "retained-investigation-record": [
+    {
+      "text": "Retained investigation record.",
+      "pause": 500
+    },
+    {
+      "text": "As an integrator, I want to reproduce the frozen investigation at its last green revision and find the accepted models that CI now proves.",
+      "pause": 400
+    },
+    {
+      "text": "This record last passed at revision 64f1f057864981eb5d6249827daf552890635830. Reproduce it from that checkout:",
+      "pause": 400
+    },
+    {
+      "text": "On the epic branch's root this investigation does not build: #749 removed root members bound by its frozen definition closures. Its checkers and controls are record tools that no hosted job runs; the recipe and its CI step have been removed. The historical results below describe their recorded revisions.",
+      "pause": 400
+    },
+    {
+      "text": "The accepted forms are re-proved in CI in models/singular-application-held (#755, #757) and models/open-datum-application-held (#756).",
+      "pause": 400
+    }
+  ],
   "story-and-status": [
     {
       "text": "Story and status.",
@@ -59,7 +81,7 @@
       "pause": 500
     },
     {
-      "text": "Run nix develop --quiet -c just no-pin-identity from the repository root. The Development shell checks job runs this same recipe. It builds the isolated library and generic oracle, elaborates the fresh environment report, checks compiled statement identities and axioms against statements.json, and replays corpus.json through the oracle. Successful local execution is not hosted CI evidence.",
+      "text": "At the frozen revision above, the recorded no-pin-identity recipe builds the isolated library and generic oracle, elaborates the fresh environment report, checks compiled statement identities and axioms against statements.json, and replays corpus.json through the oracle. Successful local execution is not hosted CI evidence.",
       "pause": 400
     },
     {
@@ -99,7 +121,7 @@
       "pause": 400
     },
     {
-      "text": "The existing no-pin-identity recipe checks both evidence families. The report derives statement types, proof axioms, public constructors and atomic guard coverage from the compiled environment. Separate held ledgers and corpus preserve the original identity rows byte for byte. The same JSON oracle accepts the held family through an explicit family field; inputs contain public observations rather than theorem names or expected answers.",
+      "text": "At the frozen revision, the recorded no-pin-identity recipe checks both evidence families. The report derives statement types, proof axioms, public constructors and atomic guard coverage from the compiled environment. Separate held ledgers and corpus preserve the original identity rows byte for byte. The same JSON oracle accepts the held family through an explicit family field; inputs contain public observations rather than theorem names or expected answers.",
       "pause": 400
     },
     {
@@ -235,6 +257,6 @@
   ],
   "_source": {
     "file": "README.md",
-    "sha256": "f22ffcce12adc895e5b41702d101c851c1562b3233611cdf84a1803a4f54f215"
+    "sha256": "1183cc9e82b821667396eb5de25ffdb68329f2105584fffac11bc9ec4c8953d6"
   }
 }

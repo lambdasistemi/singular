@@ -1,3 +1,4 @@
+# Tool, not a guarantee: replay the frozen investigation; no hosted job runs it.
 """Execute application-source substitutions against independent refund-lifecycle evidence."""
 
 import hashlib

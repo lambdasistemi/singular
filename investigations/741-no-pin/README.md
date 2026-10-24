@@ -4,6 +4,29 @@ As a registry integrator, I want to inspect candidate identities, distinguish un
 
 The statement-stage descriptions below retain their historical proof debt. The current Singular proof outcomes are described at the end and computed per declaration by the evidence recipe.
 
+## Retained investigation record
+
+As an integrator, I want to reproduce the frozen investigation at its last green
+revision and find the accepted models that CI now proves.
+
+This record last passed at revision
+`64f1f057864981eb5d6249827daf552890635830`. Reproduce it from that checkout:
+
+```sh
+git checkout 64f1f057 && just no-pin-identity
+```
+
+On the epic branch's root this investigation does not build: #749 removed root
+members bound by its frozen definition closures. Its checkers and controls are
+record tools that no hosted job runs; the recipe and its CI step have been
+removed. The historical results below describe their recorded revisions.
+
+The accepted forms are re-proved in CI in
+[`models/singular-application-held`](../../models/singular-application-held/README.md)
+(#755, #757) and
+[`models/open-datum-application-held`](../../models/open-datum-application-held/README.md)
+(#756).
+
 ## Story and status
 
 This isolated Lean project investigates #741 at the supported root compiler. It requires the unchanged root model from `../..`. Every candidate declaration is a hypothesis; no accepted model, application, corpus, coverage record or release behavior changes. Approvals follow the operator's recorded complete-identity ruling in `specs/741-no-pin-model/decisions.md`.
@@ -35,7 +58,7 @@ flowchart TD
 
 ## Reproduce the evidence
 
-Run `nix develop --quiet -c just no-pin-identity` from the repository root. The Development shell checks job runs this same recipe. It builds the isolated library and generic oracle, elaborates the fresh environment report, checks compiled statement identities and axioms against `statements.json`, and replays `corpus.json` through the oracle. Successful local execution is not hosted CI evidence.
+At the frozen revision above, the recorded `no-pin-identity` recipe builds the isolated library and generic oracle, elaborates the fresh environment report, checks compiled statement identities and axioms against `statements.json`, and replays `corpus.json` through the oracle. Successful local execution is not hosted CI evidence.
 
 `Report.lean` discovers public cases, guards and roles from compiled constructors. It executes each case and measures which selectors change it; inversion rows must cover exactly that discovered extent. Every statement row needs an executed antecedent witness and at least one owned selector with a positive candidate instance and a false mutant instance. Normalizing that selector to `none` must give the identical compiled proposition as the positive control.
 
@@ -53,7 +76,7 @@ As a holder, I want booking to keep my genuine token and request at the applicat
 
 The Held modules distinguish live holdings from pending terminations, bind booking to the observed complete registry and the retained key/custody, and call the unchanged root booking and economic fold. A physical pending input contains the exact root request amount plus its protected deposit. The root observer removes that deposit slice; local release reads the physical payments and sums the released deposits. A connected instance registers two keys, books both, folds both, and computes both balances and the controller's payment. Wrong-key booking, wrong complete registry identity, overlapping value and missing payment are violating twins.
 
-The existing no-pin-identity recipe checks both evidence families. The report derives statement types, proof axioms, public constructors and atomic guard coverage from the compiled environment. Separate held ledgers and corpus preserve the original identity rows byte for byte. The same JSON oracle accepts the held family through an explicit family field; inputs contain public observations rather than theorem names or expected answers.
+At the frozen revision, the recorded no-pin-identity recipe checks both evidence families. The report derives statement types, proof axioms, public constructors and atomic guard coverage from the compiled environment. Separate held ledgers and corpus preserve the original identity rows byte for byte. The same JSON oracle accepts the held family through an explicit family field; inputs contain public observations rather than theorem names or expected answers.
 
 Every general candidate statement remains STATED with sorry debt. Kernel-checked finite witnesses and single-guard falsifications establish the reported instances, not general correctness. Non-rejection, operation/nonce tag commitment, world supply and permanent retirement reuse the accepted root declarations by name at the actual reachable worlds. The report computes counts and statuses; a missing row, witness, selector or inversion fails the check.
 

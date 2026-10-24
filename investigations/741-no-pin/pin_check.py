@@ -1,3 +1,4 @@
+# Tool, not a guarantee: replay the frozen investigation; no hosted job runs it.
 """Bind file pins to tracked, committed source and reject local cache artifacts."""
 
 import copy

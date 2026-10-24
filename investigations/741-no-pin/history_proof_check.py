@@ -1,3 +1,4 @@
+# Tool, not a guarantee: replay the frozen investigation; no hosted job runs it.
 """Bind hypothetical history proof status and reached definitions to the base."""
 
 import copy

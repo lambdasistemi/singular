@@ -1,3 +1,4 @@
+# Tool, not a guarantee: replay the frozen investigation; no hosted job runs it.
 """Compile money and accepted-economic substitutions in an isolated namespace."""
 
 import json

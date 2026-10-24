@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Tool, not a guarantee: replay the frozen investigation; no hosted job runs it.
 """Check the compiled #741 hypothesis evidence; this is not acceptance of a law."""
 
 import hashlib

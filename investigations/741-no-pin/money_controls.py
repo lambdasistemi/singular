@@ -1,3 +1,4 @@
+# Tool, not a guarantee: replay the frozen investigation; no hosted job runs it.
 """Execute source substitutions against independent compiled money obligations."""
 
 import hashlib

@@ -1,3 +1,4 @@
+# Tool, not a guarantee: replay the frozen investigation; no hosted job runs it.
 """Frozen refund statement and definition identities, including hostile controls."""
 
 import copy

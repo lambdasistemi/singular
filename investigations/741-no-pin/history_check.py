@@ -1,3 +1,4 @@
+# Tool, not a guarantee: replay the frozen investigation; no hosted job runs it.
 """Reconcile compiled history statements and constructor inversions."""
 
 import copy
