@@ -219,8 +219,22 @@
       "pause": 400
     }
   ],
+  "actual-token-supply-follows-the-registry-history": [
+    {
+      "text": "Actual token supply follows the registry history.",
+      "pause": 500
+    },
+    {
+      "text": "As an integrator, I want the complete unspent token census to agree with each registry's leaf, including tokens held in pending application requests. All four frozen history statements now have hypothetical proof terms: supply is one exactly for an active leaf and zero otherwise, each registry and key has at most one live token, a burn belongs to a fold terminating that same registry and key, and a terminal key cannot be minted again.",
+      "pause": 400
+    },
+    {
+      "text": "The supply proof covers arbitrary queried assets, including assets absent from the finite support. It connects the complete conservation observation to the accepted batch's per-key mint delta, then follows genesis, folds and neutral application transactions through the original reachability relation. Finite encoding and collision separation include the queried active role and every recorded history occurrence. The theorem statements and their reached model definitions remain unchanged. These are conditional model proofs; authentic observations, concrete cryptography, ledger execution, implementation and accepted-law evidence remain separate obligations.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "README.md",
-    "sha256": "f0c8daa80c243c697673fed9881563940f78620c3b890d387d7a8f4ee98f6231"
+    "sha256": "f22ffcce12adc895e5b41702d101c851c1562b3233611cdf84a1803a4f54f215"
   }
 }

@@ -1,4 +1,4 @@
-import NoPin.ApplicationRequests.HistoryProofs
+import NoPin.ApplicationRequests.HistorySupplyProofs
 
 /-! Hypothetical history statements under #741, not accepted law. A finite
 domain includes the queried active-role preimage as well as every occurrence
@@ -60,21 +60,37 @@ def HistoryTransaction (h : Hash) (c : Codec) (t : TrieCommit) (release : Publis
 
 namespace HistoryStatements
 
-/-- Hypothesis under #741, not accepted law. Status: STATED.
+/-- Hypothesis under #741, not accepted law. Status: PROVED.
 For every reachable registry and every logical key, the actual live supply is
 one exactly for an active leaf and zero for every other leaf. -/
 theorem supply_in_step (h : Hash) (c : Codec) (t : TrieCommit) (release : PublishedRelease)
     (world : CandidateWorld) (registry : PublicRegistry) (key : Key)
     (_premises : HistoryPremises h c t release world registry key) :
-    SupplyAt h c world registry key := by sorry
+    SupplyAt h c world registry key := by
+  rcases _premises with ⟨reachable, member, encoding, collision⟩
+  have own : registry.identity.policy = release.statePolicy := by
+    rw [(HistoryProofs.registry_identity h c t release world reachable registry member).1]
+    rfl
+  have supply := HistoryProofs.world_supply h c t release world reachable registry.identity key own encoding collision
+  rw [HistoryProofs.world_indicator_at h c t release world reachable registry member key] at supply
+  have equality : Int.ofNat (liveActiveCount h c registry.identity key world.unspent) =
+      if trieGet registry.trie key = .known .active then (1 : Int) else 0 := supply
+  unfold SupplyAt
+  by_cases active : trieGet registry.trie key = .known .active
+  all_goals
+    simp only [active, ↓reduceIte] at equality ⊢
+    exact Int.ofNat.inj equality
 
-/-- Hypothesis under #741, not accepted law. Status: STATED.
+/-- Hypothesis under #741, not accepted law. Status: PROVED.
 Every reachable registry/key has at most one token in the complete unspent set.
 This quantifies the full policy/name identity, never the seed-derived name alone. -/
 theorem one_live_token (h : Hash) (c : Codec) (t : TrieCommit) (release : PublishedRelease)
     (world : CandidateWorld) (registry : PublicRegistry) (key : Key)
     (_premises : HistoryPremises h c t release world registry key) :
-    liveActiveCount h c registry.identity key world.unspent ≤ 1 := by sorry
+    liveActiveCount h c registry.identity key world.unspent ≤ 1 := by
+  have supply := supply_in_step h c t release world registry key _premises
+  unfold SupplyAt at supply
+  split at supply <;> omega
 
 /-- Hypothesis under #741, not accepted law. Status: PROVED.
 Any burn in an accepted fold from a reachable world belongs to that registry
