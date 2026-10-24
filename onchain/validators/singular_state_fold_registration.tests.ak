@@ -901,8 +901,12 @@ fn elsewhere(index: Int) -> Int {
   ( nibble(path(), index) + 1 ) % 16
 }
 
+fn digest() -> ByteArray {
+  blake2b_256(#"")
+}
+
 fn fork_at(skip: Int, nibble: Int) -> mpf.ProofStep {
-  Fork { skip, neighbor: Neighbor { nibble, prefix: #"", root: #"" } }
+  Fork { skip, neighbor: Neighbor { nibble, prefix: #"", root: digest() } }
 }
 
 fn leaf_of(key: ByteArray, skip: Int) -> mpf.ProofStep {
@@ -910,7 +914,13 @@ fn leaf_of(key: ByteArray, skip: Int) -> mpf.ProofStep {
 }
 
 fn branch_of(skip: Int) -> mpf.ProofStep {
-  Branch { skip, neighbors: #"" }
+  Branch {
+    skip,
+    neighbors: bytearray.concat(
+      bytearray.concat(digest(), digest()),
+      bytearray.concat(digest(), digest()),
+    ),
+  }
 }
 
 // a key that agrees with the hash of key_d in every nibble but the last

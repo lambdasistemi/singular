@@ -264,26 +264,31 @@ pub fn change_leaf(
   proof: Proof,
 ) -> Bool {
   and {
-    mpf.miss(trie, key, proof),
     apart_from(key, proof),
+    mpf.miss(trie, key, proof),
   }
 }
 
-/// Whether `proof` has one reading for `key`. Every step moves the cursor
-/// forward by a skip that is not negative and lands inside the hash. A fork
-/// neighbour sits on a branch other than the key's. A leaf neighbour agrees with
-/// the key from the start of the hash up to the nibble the skip lands on and
-/// differs at it, so its skip is the prefix the two share beyond the cursor. The
-/// library's `miss` ignores the skip of a last leaf and takes the digest of a
-/// last leaf or fork step as the trie without the key, whatever that step names:
-/// given the key's own leaf, or a leaf read at a cursor the walk never stood at,
-/// it is true for a key the trie binds. An honest proof satisfies all of this,
-/// and insertion needs the same of it.
+/// Whether every field of every step of `proof` is in its canonical domain for
+/// `key`, so the proof has one reading and the trie library is asked nothing
+/// about a proof outside it. The cursor of the walk starts at nibble 0 and
+/// moves forward past each step by its skip and one. A skip is not negative and
+/// lands inside the hash. A branch carries four digests. A fork has a branch
+/// number that is a nibble other than the key's at the landing nibble, a prefix
+/// of nibbles that fits below it and a digest for its root. A leaf closes the
+/// proof, carries a hash and a digest, and agrees with the key from the start of
+/// the hash up to the landing nibble and differs at it, so its skip is the prefix
+/// the two share beyond the cursor.
+///
+/// The library's `miss` ignores the skip of a last leaf, takes the digest of a
+/// last leaf or fork step as the trie without the key whatever that step names,
+/// and does no range check on a fork's branch number: outside this domain it can
+/// be true for a key the trie binds. An honest proof is inside the domain.
 pub fn apart_from(key: ByteArray, proof: Proof) -> Bool {
-  on_other_branches(blake2b_256(key), 0, proof)
+  in_canonical_domain(blake2b_256(key), 0, proof)
 }
 
-fn on_other_branches(path: ByteArray, cursor: Int, proof: Proof) -> Bool {
+fn in_canonical_domain(path: ByteArray, cursor: Int, proof: Proof) -> Bool {
   when proof is {
     [] -> True
     [step, ..steps] -> {
@@ -292,8 +297,8 @@ fn on_other_branches(path: ByteArray, cursor: Int, proof: Proof) -> Bool {
       and {
         skip >= 0,
         index < 64,
-        differs_at(path, index, step),
-        on_other_branches(path, index + 1, steps),
+        in_domain(path, index, step, steps == []),
+        in_canonical_domain(path, index + 1, steps),
       }
     }
   }
@@ -307,12 +312,25 @@ fn skip_of(step: ProofStep) -> Int {
   }
 }
 
-fn differs_at(path: ByteArray, index: Int, step: ProofStep) -> Bool {
+fn in_domain(path: ByteArray, index: Int, step: ProofStep, last: Bool) -> Bool {
   when step is {
-    Branch { .. } -> True
-    Fork { neighbor, .. } -> nibble(path, index) != neighbor.nibble
-    Leaf { key, .. } -> and {
+    Branch { neighbors, .. } -> bytearray.length(neighbors) == 128
+    Fork { neighbor, .. } -> and {
+        neighbor.nibble >= 0,
+        neighbor.nibble < 16,
+        nibble(path, index) != neighbor.nibble,
+        bytearray.length(neighbor.prefix) <= 63 - index,
+        bytearray.foldl(
+          neighbor.prefix,
+          True,
+          fn(byte, all) { all && byte < 16 },
+        ),
+        bytearray.length(neighbor.root) == 32,
+      }
+    Leaf { key, value, .. } -> and {
+        last,
         bytearray.length(key) == 32,
+        bytearray.length(value) == 32,
         nibbles(path, 0, index) == nibbles(key, 0, index),
         nibble(path, index) != nibble(key, index),
       }
