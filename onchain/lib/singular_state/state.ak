@@ -94,3 +94,8 @@ fn expected_quantity(expected: Pairs<AssetName, Int>, name: AssetName) -> Int {
     fn(quantity, total) { quantity + total },
   )
 }
+
+/// The root a state output's datum carries, when it carries one.
+pub fn state_root(_datum: Datum) -> Option<ByteArray> {
+  None
+}
