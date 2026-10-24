@@ -1,0 +1,361 @@
+{
+  "status": "HYPOTHETICAL-PROOF-CANDIDATE",
+  "acceptedLaw": false,
+  "definitions": {
+    "lean/NoPin/ApplicationRequests/Application.lean": "5a1ac4c17d37eb40cbcd230c288a76099eba66c51f9fe7acc1ddc5db1f2043c7",
+    "lean/NoPin/ApplicationRequests/Client.lean": "8e395c324f34c44de1bcede1555ebb404e72fbdc9029baa562c8a4b2810c2062",
+    "lean/NoPin/ApplicationRequests/Conditions.lean": "c2a2c3759c59e2343561d0eb0eeb078e386b156a06e4b734b59025fa1cb8e48c",
+    "lean/NoPin/ApplicationRequests/Core.lean": "fbc6fdc77060d684f74c9dccf11d88a4863c39db6ab6f4763dbd252988869d14",
+    "lean/NoPin/ApplicationRequests/Effects.lean": "a6864e492332fea0d317d8d6e834fcc4dec49ba7c4d47c9a275743860f2df1bc",
+    "lean/NoPin/ApplicationRequests/Evidence.lean": "1bc23d108c9ad9402bdfd2e2c952167816da4c0449a9a8d81afd54f7f3960d4d",
+    "lean/NoPin/ApplicationRequests/Fixtures.lean": "5d2ee2d82a846ec9b93a6e40ae7a330a50d2a2970d9726fa40a89c896a58c859",
+    "lean/NoPin/ApplicationRequests/History.lean": "79de2d0bdd260d1ac6315f81c496c3f420359f6bd715a954c016f28bd81d6089",
+    "lean/NoPin/ApplicationRequests/Oracle.lean": "4f935ac84289b19f8980b9502cb334dc48ff8677503f141b0c245db0149713e3",
+    "lean/NoPin/ApplicationRequests/Report.lean": "74b49dfa4522fa1e20f259757ba4c343dbb996f4df5920d4f863a3de86342212",
+    "lean/NoPin/ApplicationRequests/Role.lean": "f6f17f8bafa3ebb9c5d271078ecd63fd19f0ba700c3ea7af47604051b8309f96",
+    "lean/NoPin/ApplicationRequests/Statements.lean": "93618c4ca032d36acc461f2e67db19bbd3b8f8b8e5e7168282b4601d7e9018fa",
+    "lean/NoPin/ApplicationRequests/Proofs.lean": "a6ef0dd78a9cc5b14d50d565c981e9485a886f8fda362be154cff6151a6be50a",
+    "lean/NoPin/ApplicationRequests/DeliveryProofs.lean": "4cda28d7caa79dabce68fcd00c114ea041ba1900e598dcd1d777b250943ac66d",
+    "lean/NoPin/ApplicationRequests/MintedProofs.lean": "921c7b084f7ef9166cccd1ea2ff76a686626b0b365bd81f42c43736d5470720a",
+    "lean/NoPin/ApplicationRequests/ProofAudit.lean": "4b17d94c3b0fde3d1127cba8bbbc187cd8b1cdbf6711c4137ddef7d5afb748d9",
+    "proof_check.py": "2870319bae359f07703287570248c186a5cc9bca62b6c4e161e7c20cb18560bc",
+    "proof_controls.py": "374bb5db6da373e23af2a03b365fcf0a002981e404e5d7c8155ee040473e7ccb",
+    "proof-definition-baseline.json": "49e44d0e83edcba27f841b3cc76f18a842f526bab0e556f13cf3717354f31d8c",
+    "lean/NoPin/ApplicationRequests/PublicProofs.lean": "65f7f8631e614525c135607502d7088d81e6b5004fd1434a0c116e71d23da1e2"
+  },
+  "statements": [
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.active_role_never_state",
+      "statementSha256": "930af894a2c70af2f4546b42bc11358e0e609bf366606907d60df6d746e0e256",
+      "status": "PROVED",
+      "proofStatus": "PROVED",
+      "witnesses": [
+        "NoPin.ApplicationRequests.Evidence.active_role_never_state_antecedent"
+      ],
+      "selectors": [
+        "stateName"
+      ],
+      "restates": [
+        "NoPin.Statements.authenticated_state_role_separation"
+      ]
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.batch_effects",
+      "statementSha256": "b077e3b325ed589dcccc80fc7944c447288c49dc765b6bb3093ac3ad0e6ccf21",
+      "status": "PROVED",
+      "proofStatus": "PROVED",
+      "witnesses": [
+        "NoPin.ApplicationRequests.Evidence.batch_effects_antecedent"
+      ],
+      "selectors": [
+        "foldTrie"
+      ],
+      "restates": [
+        "NoPin.ApplicationRequests.Statements.batch_inversion"
+      ]
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.batch_inversion",
+      "statementSha256": "39033ec2e784ff1d6a080b1449c3ee5fdd38b6be75bf53db89a9b682f73ce192",
+      "status": "PROVED",
+      "proofStatus": "PROVED",
+      "witnesses": [
+        "NoPin.ApplicationRequests.Evidence.batch_antecedent"
+      ],
+      "selectors": [
+        "changeReference",
+        "changeApprovalShape",
+        "changeApproval",
+        "changeApprovalBurn",
+        "changeLeaf",
+        "registrationPlacement",
+        "registrationMint",
+        "registrationDeposit",
+        "terminationHeld",
+        "terminationBurn",
+        "foldIdentity",
+        "foldBefore",
+        "foldNonempty",
+        "foldDistinct",
+        "foldPairing",
+        "foldTrie",
+        "foldContinuation",
+        "foldAddress",
+        "foldValue",
+        "foldWholePolicy",
+        "foldNoNewConsumed"
+      ],
+      "inversion": "batch"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.fold_minted_outputs",
+      "statementSha256": "07e052278c83136ffd51dd52bcd321789ad61d58ce5574d1fa7ee85f7225d7f3",
+      "status": "PROVED",
+      "proofStatus": "PROVED",
+      "witnesses": [
+        "NoPin.ApplicationRequests.Evidence.fold_minted_outputs_antecedent"
+      ],
+      "selectors": [
+        "foldWholePolicy"
+      ],
+      "restates": [
+        "NoPin.ApplicationRequests.Statements.minted_active_never_state"
+      ]
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.fold_untouched_keys",
+      "statementSha256": "5922d92be8767318b1b8a0c36be9dc2d766d85f9329b4705aab40a71005e25b2",
+      "status": "PROVED",
+      "proofStatus": "PROVED",
+      "witnesses": [
+        "NoPin.ApplicationRequests.Evidence.fold_untouched_keys_antecedent"
+      ],
+      "selectors": [
+        "foldTrie"
+      ],
+      "restates": [
+        "NoPin.ApplicationRequests.Statements.batch_inversion"
+      ]
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.genesis_inversion",
+      "statementSha256": "eec5a8a6011a87c1f485d853796b5c07031c0c4ce86935923ff4df11fe3d12ac",
+      "status": "PROVED",
+      "proofStatus": "PROVED",
+      "witnesses": [
+        "NoPin.ApplicationRequests.Evidence.genesis_antecedent"
+      ],
+      "selectors": [
+        "genesisSeed",
+        "genesisInvocation",
+        "genesisMint",
+        "genesisOutput",
+        "genesisEmpty"
+      ],
+      "inversion": "genesis",
+      "restates": [
+        "NoPin.Statements.genesis_inversion"
+      ]
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.minted_active_never_state",
+      "statementSha256": "1f96f0b40b8a55a0c134d15a38d483739a2d0d123fc5a52860377dfcd83a05f4",
+      "status": "PROVED",
+      "proofStatus": "PROVED",
+      "witnesses": [
+        "NoPin.ApplicationRequests.Evidence.minted_active_never_state_antecedent"
+      ],
+      "selectors": [
+        "stateName"
+      ]
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.public_fold_constructed",
+      "statementSha256": "0e5080c01f99f5f69653c53989440f72e993de0abff0c0e6894c2ed3f52f402f",
+      "status": "PROVED",
+      "proofStatus": "PROVED",
+      "witnesses": [
+        "NoPin.ApplicationRequests.Evidence.public_fold_constructed_antecedent"
+      ],
+      "selectors": [
+        "foldWholePolicy"
+      ],
+      "restates": [
+        "NoPin.Held.Statements.composed_available"
+      ]
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.public_fold_effects",
+      "statementSha256": "17fc1bddf5462cd14ee3be8dcfa00f7404d4ddb29bb44868d15dd9cca9f12ef7",
+      "status": "PROVED",
+      "proofStatus": "PROVED",
+      "witnesses": [
+        "NoPin.ApplicationRequests.Evidence.public_fold_effects_antecedent"
+      ],
+      "selectors": [
+        "foldWholePolicy"
+      ],
+      "restates": [
+        "NoPin.ApplicationRequests.Statements.public_fold_constructed"
+      ]
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.publicFold_inversion",
+      "statementSha256": "ab9e508b7cca8ef1c85b2e4fe9935087ae68d3d67ab867bdee53fb0b28fc8c2d",
+      "status": "PROVED",
+      "proofStatus": "PROVED",
+      "witnesses": [
+        "NoPin.ApplicationRequests.Evidence.publicFold_antecedent"
+      ],
+      "selectors": [
+        "changeReference",
+        "changeApprovalShape",
+        "changeApproval",
+        "changeApprovalBurn",
+        "changeLeaf",
+        "registrationPlacement",
+        "registrationMint",
+        "registrationDeposit",
+        "terminationHeld",
+        "terminationBurn",
+        "foldIdentity",
+        "foldBefore",
+        "foldNonempty",
+        "foldDistinct",
+        "foldPairing",
+        "foldTrie",
+        "foldContinuation",
+        "foldAddress",
+        "foldValue",
+        "foldWholePolicy",
+        "foldNoNewConsumed"
+      ],
+      "inversion": "publicFold"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.recognition_inversion",
+      "statementSha256": "b3d97e71c371c1a452652be23d7a639cfe1e766402ea6c97dbcc256c953abe4f",
+      "status": "PROVED",
+      "proofStatus": "PROVED",
+      "witnesses": [
+        "NoPin.ApplicationRequests.Evidence.recognition_antecedent"
+      ],
+      "selectors": [
+        "stateCredential",
+        "statePolicy",
+        "stateName",
+        "stateQuantity",
+        "stateDatum",
+        "stateBare"
+      ],
+      "inversion": "recognition",
+      "restates": [
+        "NoPin.Statements.state_inversion"
+      ]
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.registration_effects",
+      "statementSha256": "534c2c50ba5cf6a5d9fb9bc20ead73c9f308731d4b3c1b26d1494437c691241c",
+      "status": "PROVED",
+      "proofStatus": "PROVED",
+      "witnesses": [
+        "NoPin.ApplicationRequests.Evidence.registration_effects_antecedent"
+      ],
+      "selectors": [
+        "registrationMint"
+      ],
+      "restates": [
+        "NoPin.ApplicationRequests.Statements.registration_inversion"
+      ]
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.registration_inversion",
+      "statementSha256": "69dda10fb3f653973851b6850b287eabda01aec3441123a22b20cd9e000cbb8b",
+      "status": "PROVED",
+      "proofStatus": "PROVED",
+      "witnesses": [
+        "NoPin.ApplicationRequests.Evidence.registration_antecedent"
+      ],
+      "selectors": [
+        "changeReference",
+        "changeApprovalShape",
+        "changeApproval",
+        "changeApprovalBurn",
+        "changeLeaf",
+        "registrationPlacement",
+        "registrationMint",
+        "registrationDeposit"
+      ],
+      "inversion": "registration"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.registration_separate_holdings",
+      "statementSha256": "53985f8d9db36caa6616bf91f4ad2531a726f5a3f08c62155cb7437555653b8c",
+      "status": "PROVED",
+      "proofStatus": "PROVED",
+      "witnesses": [
+        "NoPin.ApplicationRequests.Evidence.registration_separate_holdings_antecedent"
+      ],
+      "selectors": [
+        "registrationPlacement"
+      ],
+      "restates": [
+        "NoPin.ApplicationRequests.Statements.registration_inversion"
+      ]
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.termination_effects",
+      "statementSha256": "444fc107a6994cb52b8bdd3b954df52491badcc13167d3c35b339aa635af717f",
+      "status": "PROVED",
+      "proofStatus": "PROVED",
+      "witnesses": [
+        "NoPin.ApplicationRequests.Evidence.termination_effects_antecedent"
+      ],
+      "selectors": [
+        "terminationBurn"
+      ],
+      "restates": [
+        "NoPin.ApplicationRequests.Statements.termination_inversion"
+      ]
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Statements.termination_inversion",
+      "statementSha256": "1a7b31d70b86b4f73afd775d23ea7df94cd8a3b48c48556b6c05d677f02d32cf",
+      "status": "PROVED",
+      "proofStatus": "PROVED",
+      "witnesses": [
+        "NoPin.ApplicationRequests.Evidence.termination_antecedent"
+      ],
+      "selectors": [
+        "changeReference",
+        "changeApprovalShape",
+        "changeApproval",
+        "changeApprovalBurn",
+        "changeLeaf",
+        "terminationHeld",
+        "terminationBurn"
+      ],
+      "inversion": "termination"
+    }
+  ],
+  "supersessions": [
+    {
+      "prior": "NoPin.ApplicationRequests.Statements.batch_inversion",
+      "replacement": "NoPin.ApplicationRequests.Statements.batch_effects",
+      "disposition": "SUPERSEDED-AS-CURRENT-GUARANTEE-ROW-PRESERVED"
+    },
+    {
+      "prior": "NoPin.ApplicationRequests.Statements.minted_active_never_state",
+      "replacement": "NoPin.ApplicationRequests.Statements.fold_minted_outputs",
+      "disposition": "SUPERSEDED-AS-CURRENT-GUARANTEE-ROW-PRESERVED"
+    },
+    {
+      "prior": "NoPin.ApplicationRequests.Statements.batch_inversion",
+      "replacement": "NoPin.ApplicationRequests.Statements.fold_untouched_keys",
+      "disposition": "SUPERSEDED-AS-CURRENT-GUARANTEE-ROW-PRESERVED"
+    },
+    {
+      "prior": "NoPin.ApplicationRequests.Statements.public_fold_constructed",
+      "replacement": "NoPin.ApplicationRequests.Statements.public_fold_effects",
+      "disposition": "SUPERSEDED-AS-CURRENT-GUARANTEE-ROW-PRESERVED"
+    },
+    {
+      "prior": "NoPin.ApplicationRequests.Statements.registration_inversion",
+      "replacement": "NoPin.ApplicationRequests.Statements.registration_effects",
+      "disposition": "SUPERSEDED-AS-CURRENT-GUARANTEE-ROW-PRESERVED"
+    },
+    {
+      "prior": "NoPin.ApplicationRequests.Statements.registration_inversion",
+      "replacement": "NoPin.ApplicationRequests.Statements.registration_separate_holdings",
+      "disposition": "SUPERSEDED-AS-CURRENT-GUARANTEE-ROW-PRESERVED"
+    },
+    {
+      "prior": "NoPin.ApplicationRequests.Statements.termination_inversion",
+      "replacement": "NoPin.ApplicationRequests.Statements.termination_effects",
+      "disposition": "SUPERSEDED-AS-CURRENT-GUARANTEE-ROW-PRESERVED"
+    }
+  ],
+  "openFamilies": [
+    "history-supply-and-permanence"
+  ]
+}

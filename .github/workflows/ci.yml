@@ -506,6 +506,7 @@ jobs:
       # #544: the IO ownership check and its controls (census, allowlist,
       # site binding, B1-B5) run here, in the shell that pins python3.
       - run: nix develop --quiet -c just application-model
+      - run: nix develop --quiet -c just application-held-model
       - run: nix develop --quiet -c just check-presentation
       - run: nix develop --quiet -c just rename-registry-test
       - run: nix develop --quiet -c bash tools/no-global-fixture-state.sh
