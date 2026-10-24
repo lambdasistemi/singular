@@ -12,7 +12,7 @@
 use aiken/builtin
 use aiken/collection/list
 use aiken/fuzz
-use cardano/address.{from_script}
+use cardano/address.{from_script, from_verification_key}
 use cardano/assets.{add, from_asset, from_lovelace, zero}
 use cardano/transaction.{
   InlineDatum, Input, NoDatum, Output, OutputReference, Transaction,
@@ -748,5 +748,51 @@ test a_fold_whose_change_points_at_the_continuing_state_output_is_refused() {
       ],
     },
     attempt,
+  )
+}
+
+// ---------------------------------------------------------------------------
+// The spent input must be a state at the script
+// ---------------------------------------------------------------------------
+
+test a_spent_input_at_a_key_address_is_not_a_state() {
+  let tx = valid()
+  !spend(
+    redeemer_of(scenario()),
+    Transaction {
+      ..tx,
+      inputs: list.map(
+        tx.inputs,
+        fn(input) {
+          if input.output_reference == state_reference {
+            Input {
+              ..input,
+              output: Output {
+                ..input.output,
+                address: from_verification_key(
+                  #"0505050505050505050505050505050505050505050505050505050505",
+                ),
+              },
+            }
+          } else {
+            input
+          }
+        },
+      ),
+    },
+  )
+}
+
+test a_spent_reference_that_is_not_among_the_inputs_is_not_a_state() {
+  let tx = valid()
+  !spend(
+    redeemer_of(scenario()),
+    Transaction {
+      ..tx,
+      inputs: list.filter(
+        tx.inputs,
+        fn(input) { input.output_reference != state_reference },
+      ),
+    },
   )
 }

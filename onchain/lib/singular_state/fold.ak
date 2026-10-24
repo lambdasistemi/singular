@@ -34,6 +34,7 @@ use aiken/merkle_patricia_forestry.{
 use aiken/merkle_patricia_forestry as mpf
 use aiken/merkle_patricia_forestry/helpers.{nibble, nibbles}
 use aiken/primitive/bytearray
+use cardano/address.{Script}
 use cardano/assets.{
   AssetName, PolicyId, Value, flatten, lovelace_of, quantity_of, tokens,
   without_lovelace,
@@ -597,20 +598,79 @@ pub fn fold_no_new_consumed(
 /// The mint handler of a fold: a state input is spent, and its spend handler
 /// decides the fold.
 pub fn fold_spends_state_script(
-  _state_policy: PolicyId,
-  _inputs: List<Input>,
+  state_policy: PolicyId,
+  inputs: List<Input>,
 ) -> Bool {
-  False
+  list.any(
+    inputs,
+    fn(input) {
+      input.output.address.payment_credential == Script(state_policy)
+    },
+  )
 }
 
 /// The model's `fold` for the state script of `application_policy`, spending
 /// the state output `own_reference` of the registry created from `seed`.
 pub fn fold(
-  _application_policy: PolicyId,
-  _seed: OutputReference,
-  _changes: List<Change>,
-  _own_reference: OutputReference,
-  _tx: Transaction,
+  application_policy: PolicyId,
+  seed: OutputReference,
+  changes: List<Change>,
+  own_reference: OutputReference,
+  tx: Transaction,
 ) -> Bool {
-  False
+  when find_input(tx.inputs, own_reference) is {
+    Some(Input { output: before, .. }) ->
+      when before.address.payment_credential is {
+        Script(state_policy) ->
+          fold_state(
+            application_policy,
+            state_policy,
+            seed,
+            changes,
+            own_reference,
+            before,
+            tx,
+          )
+        _ -> False
+      }
+    None -> False
+  }
+}
+
+fn fold_state(
+  application_policy: PolicyId,
+  state_policy: PolicyId,
+  seed: OutputReference,
+  changes: List<Change>,
+  own_reference: OutputReference,
+  before: Output,
+  tx: Transaction,
+) -> Bool {
+  let registry = registry_identity(state_policy, seed)
+  when
+    (state_root(before.datum), state_candidates(state_policy, seed, tx.outputs))
+  is {
+    (Some(root), [after]) -> and {
+        fold_before(state_policy, seed, own_reference, tx.inputs),
+        fold_nonempty(changes),
+        fold_distinct(changes),
+        fold_pairing(application_policy, changes, tx.inputs),
+        fold_continuation(state_policy, seed, tx.outputs),
+        fold_address(before, after),
+        fold_value(before, after),
+        fold_whole_policy(registry, changes, tx.mint),
+        fold_no_new_consumed(tx.id, changes, tx.inputs),
+        fold_trie(
+          change_batch(
+            application_policy,
+            registry,
+            tx,
+            mpf.from_root(root),
+            changes,
+          ),
+          after,
+        ),
+      }
+    _ -> False
+  }
 }
