@@ -63,8 +63,18 @@
       "pause": 300
     }
   ],
+  "synthesis": [
+    {
+      "text": "Synthesis.",
+      "pause": 500
+    },
+    {
+      "text": "The ticket owner's table and the auditor's independent table were joined once on 24 October 2026. Rows G12 to G15 came from the auditor's inventory or from its missing-job findings. A green existing command proves nothing about the new line until the new checks are in what it selects: each slice names, in its decision record, the test that executes each statement and the hosted step that runs it. \"Hosted checks green on each pull request\" is not a gate row; the ticket owner records it from the required checks at the pull request head before handing the pull request to the epic owner.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "gate.md",
-    "sha256": "c9e6291a481ecd2b6a3efe5b079c4b0fac7a6188c5b981aefb86a9baad4da7e8"
+    "sha256": "39a817b34eefcc6ef340ffd464804923598fff3e3afcae706b2a2de58270ac5b"
   }
 }
