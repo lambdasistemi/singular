@@ -21,8 +21,8 @@
     "lean/NoPin/ApplicationRequests/RefundProofAudit.lean": "eef777947c5109d3a82e8a3f48c1f81574bd73bde41fa32817524fb81e32fd36"
   },
   "preservedBaseArtifacts": {
-    "README.md": "8bb054ce80a708b46d961f497fe4fde68d64d3fdd61dc218935e6457860ce4a4",
-    "README.speech.json": "56adf970b948ff4a2365a56f4616d2ec24a165e4f2c1a5b862dcdbc38ba86bae",
+    "README.md": "e7c7a8c0c1b05fef471924999e7f8e65844c021c5dfe589e2f9829659361e277",
+    "README.speech.json": "1033fe757f4f440eee14c94b202dbdb09ef9e7c6f2bc7e58e15e9ec56c1a1f0e",
     "application-requests-corpus.json": "782f1a89aa4f31f277b4f83bbe2e73cd7aabd6fe9de3fbf646b5844f815cd1fd",
     "application-requests-mutants.json": "fdcbea2d404d14ddeda0fec2cee31015b5f1dce8b1ae99fc9fa7fbb7c045af99",
     "application-requests-statements.json": "f2bb4c60316bc71f506cd442a3b73b05e8cdf5d610719274bc0946e66f218df1",
@@ -59,7 +59,7 @@
     "lean/NoPin/ApplicationRequests/LifecycleStatements.lean": "51ca94c109a76ed7a692382010eb07e7cc2a35bd17508d13ad9b3a9d1196dd6f",
     "lean/NoPin/ApplicationRequests/Oracle.lean": "4f935ac84289b19f8980b9502cb334dc48ff8677503f141b0c245db0149713e3",
     "lean/NoPin/ApplicationRequests/README.md": "468533df4b4ba17b3051556c7c589dfe257c0e4c155c220c6ac2cd9e7c642be4",
-    "lean/NoPin/ApplicationRequests/README.speech.json": "a424661a202f79bf9a991c5e3f6a665a92ec12d6ec1de538213a2827cbcb1647",
+    "lean/NoPin/ApplicationRequests/README.speech.json": "af96bd2deb73b04b452e37ac9e3e5dcf8eb4105b2bc03c733c2ea0ae1ee4d43e",
     "lean/NoPin/ApplicationRequests/Report.lean": "74b49dfa4522fa1e20f259757ba4c343dbb996f4df5920d4f863a3de86342212",
     "lean/NoPin/ApplicationRequests/Role.lean": "f6f17f8bafa3ebb9c5d271078ecd63fd19f0ba700c3ea7af47604051b8309f96",
     "lean/NoPin/ApplicationRequests/Statements.lean": "93618c4ca032d36acc461f2e67db19bbd3b8f8b8e5e7168282b4601d7e9018fa",
@@ -84,7 +84,7 @@
     "lean/NoPin/Witnesses.lean": "e93bff74e553e43b4ac20514cb91e91b712648d1fbb5c698c0aabd7bbe51168d",
     "lifecycle-corpus.json": "25ddf3d58d527343babc5c3ed8928917532c7a35495f89719a185899f2956a8c",
     "lifecycle-mutants.json": "1b01b76b28d04a8cbc02901d272b00f77f6a4fd97f0cc2ed0b9efd48b7d012a2",
-    "lifecycle-statements.json": "37f3183e9ba3eb906707ce783123dfed26ce05499d94de4fde76230d19a24e2b",
+    "lifecycle-statements.json": "ad574781ce806503cafb27520d79f297a25ccb93223a4e7faac39addf0e82a92",
     "lifecycle_check.py": "f87e17cc28d0a6fa6239370909321b3fc5c2f9f5018417d35337e55274e2bf0e",
     "lifecycle_controls.py": "50884f00201dfc5931c69fc6c4cc8658ecbe606c3781b843176fd7c947845015",
     "mutants.json": "96d72f824c5da393440e478732ef8c04ce26e949df10755b92f4258a46696287",

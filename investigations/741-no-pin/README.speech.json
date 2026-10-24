@@ -205,8 +205,22 @@
       "pause": 400
     }
   ],
+  "registration-rewards-keep-the-protected-holding-separate": [
+    {
+      "text": "Registration rewards keep the protected holding separate.",
+      "pause": 500
+    },
+    {
+      "text": "As a folder or application integrator, I want the reward observation to exclude the new protected holding even when both outputs share my address. A new hypothetical statement retains the original registration-fold premise and all its other effects, and counts folder payments only through outputs carrying zero quantity of that registration's new active asset. The public builder's ordinary residual payment meets that statement.",
+      "pause": 400
+    },
+    {
+      "text": "The twelve earlier statement rows and their types remain unchanged, apart from a link from the refuted row to its successor. The original counterexample remains a proof of the old claim's exact negation and now satisfies the corrected claim. Removing the active-asset exclusion fails on that same input. The new statement has a proof term, while the original refuted proposition retains its proof hole. This is a result about the hypothetical public-builder observation; it supplies no authenticated booking history, accepted application law, production, ledger or hosted-CI acceptance.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "README.md",
-    "sha256": "8bb054ce80a708b46d961f497fe4fde68d64d3fdd61dc218935e6457860ce4a4"
+    "sha256": "e7c7a8c0c1b05fef471924999e7f8e65844c021c5dfe589e2f9829659361e277"
   }
 }

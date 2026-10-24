@@ -1,9 +1,9 @@
 import NoPin.ApplicationRequests.MoneyHoldingClaims
 import NoPin.ApplicationRequests.MoneyEvidence
 import NoPin.ApplicationRequests.MoneyRefutation
+import NoPin.ApplicationRequests.MoneyHoldingProofs
 
-/-! Hypothetical finite correction evidence; the general statement awaits its
-independent statement review before proof work. -/
+/-! Hypothetical corrected registration claim and independent finite evidence. -/
 namespace NoPin.ApplicationRequests.Money
 open Singular Lean NoPin.ApplicationRequests.Fixtures
 set_option maxRecDepth 8192
@@ -40,12 +40,13 @@ end Evidence
 
 namespace Statements
 
-/-- Hypothesis under #741, not accepted law. Status: STATED.
+/-- Hypothesis under #741, not accepted law. Status: PROVED.
 Registration fold: the folder's residual payment excludes the new holding even when their addresses coincide. -/
 theorem registration_fold_journey_holding_separated (h : Hash) (c : Codec) (t : TrieCommit)
     (decode : DecodeApplication) (release : PublishedRelease) (q : Input)
     (_premises : NewPremise h c t decode release .registrationFold q) :
-    HoldingSeparatedClaim .none h c t decode release q := by sorry
+    HoldingSeparatedClaim .none h c t decode release q := by
+  exact Proofs.registration_holding_journey h c t decode release q _premises
 
 end Statements
 end NoPin.ApplicationRequests.Money
