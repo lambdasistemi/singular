@@ -137,7 +137,7 @@ def compiled(report):
     )
     for row in rows:
         require(
-            observed[row["name"]] == renamed(row["investigationType"]),
+            observed[row["name"]] == row["investigationType"],
             f"compiled statement differs: {row['name']}; printer={PRINTER}",
         )
     axioms = {}

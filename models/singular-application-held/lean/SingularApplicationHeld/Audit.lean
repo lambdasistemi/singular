@@ -2,8 +2,9 @@ import SingularApplicationHeld.Statements
 import Lean
 
 /-! The application-held Singular model beside the current one, to be removed
-with it in #743. Compiled statement and root-dependency records use reprStr,
-the same printer as the investigation. -/
+with it in #743. Compiled statements rename constant names back to the
+investigation vocabulary before reprStr, preserving its width-sensitive layout.
+Root-dependency records print the unchanged root constants directly. -/
 
 #print axioms SingularApplicationHeld.Statements.active_role_never_state
 #print axioms SingularApplicationHeld.Statements.batch_effects
@@ -24,6 +25,17 @@ the same printer as the investigation. -/
 
 open Lean Elab Command
 
+private def investigationType (type : Expr) : Expr :=
+  type.replace fun expression => match expression with
+    | .const name levels =>
+      let text := name.toString
+      if text.startsWith "SingularApplicationHeld.Assets." then
+        some (.const ("NoPin." ++ (text.drop "SingularApplicationHeld.Assets.".length).toString).toName levels)
+      else if text.startsWith "SingularApplicationHeld." then
+        some (.const ("NoPin.ApplicationRequests." ++ (text.drop "SingularApplicationHeld.".length).toString).toName levels)
+      else none
+    | _ => none
+
 elab "#application_held_types" : command => do
   let env ← getEnv
   let statements := env.constants.toList.filter fun (name, _) =>
@@ -31,7 +43,7 @@ elab "#application_held_types" : command => do
   let mut pending : List Name := []
   for (name, info) in statements do
     IO.println (Json.mkObj [("statement", toJson name.toString),
-      ("type", toJson (reprStr info.type))]).compress
+      ("type", toJson (reprStr (investigationType info.type)))]).compress
     pending := info.type.getUsedConstants.toList ++ pending
   let mut seen : NameSet := {}
   while !pending.isEmpty do
