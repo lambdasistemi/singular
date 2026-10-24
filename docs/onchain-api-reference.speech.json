@@ -113,11 +113,15 @@
       "pause": 400
     },
     {
+      "text": "singular_state/fold — folding registrations into a registry state: one function per guard of the fold, and their conjunction",
+      "pause": 300
+    },
+    {
       "text": "singular_state/genesis — creating a registry state: one function per genesis guard, and their conjunction",
       "pause": 300
     },
     {
-      "text": "singular_state/preimage — the structured values hashed into token names, and the state token name",
+      "text": "singular_state/preimage — the structured values hashed into token names, and the name of the state token, of a registered key's token and of a registration approval",
       "pause": 300
     },
     {
@@ -139,6 +143,10 @@
     {
       "text": "singular_state_fixtures",
       "pause": 300
+    },
+    {
+      "text": "singular_state_fold_fixtures",
+      "pause": 300
     }
   ],
   "what-it-leaves-out": [
@@ -157,6 +165,6 @@
   ],
   "_source": {
     "file": "onchain-api-reference.md",
-    "sha256": "6a5c4dd22e7604e895025e1cff83e49540186e5204f8331f1a363184b54297de"
+    "sha256": "8e84406e67bd9049d4b0aa00937d78cfa9e09185897f3c374e35bd717ac8ffa8"
   }
 }

@@ -7554,50 +7554,64 @@
     "index": 22,
     "name": "docs-onchain-api-reference/what-this-reference-contains-22",
     "pause_ms": 300,
-    "text": "singular_state/genesis — creating a registry state: one function per genesis guard, and their conjunction",
-    "v": "a9e8b3751191"
+    "text": "singular_state/fold — folding registrations into a registry state: one function per guard of the fold, and their conjunction",
+    "v": "39957af9e91f"
    },
    {
     "index": 23,
     "name": "docs-onchain-api-reference/what-this-reference-contains-23",
     "pause_ms": 300,
-    "text": "singular_state/preimage — the structured values hashed into token names, and the state token name",
-    "v": "2da60e2d6538"
+    "text": "singular_state/genesis — creating a registry state: one function per genesis guard, and their conjunction",
+    "v": "2fc404bec2d8"
    },
    {
     "index": 24,
     "name": "docs-onchain-api-reference/what-this-reference-contains-24",
     "pause_ms": 300,
-    "text": "singular_state/state — the root-only state datum, recognising a state from its seed, and comparing the whole mint of a policy",
-    "v": "6850a7b6fc0f"
+    "text": "singular_state/preimage — the structured values hashed into token names, and the name of the state token, of a registered key's token and of a registration approval",
+    "v": "a857a864ea6d"
    },
    {
     "index": 25,
     "name": "docs-onchain-api-reference/what-this-reference-contains-25",
-    "pause_ms": 400,
-    "text": "Test support, documented because it is public to the test modules:",
-    "v": "c35e32cc85f6"
+    "pause_ms": 300,
+    "text": "singular_state/state — the root-only state datum, recognising a state from its seed, and comparing the whole mint of a policy",
+    "v": "c509f164c8ef"
    },
    {
     "index": 26,
     "name": "docs-onchain-api-reference/what-this-reference-contains-26",
-    "pause_ms": 300,
-    "text": "cage_fixtures",
-    "v": "6f1d5baa1a4f"
+    "pause_ms": 400,
+    "text": "Test support, documented because it is public to the test modules:",
+    "v": "f24f4e253b3a"
    },
    {
     "index": 27,
     "name": "docs-onchain-api-reference/what-this-reference-contains-27",
     "pause_ms": 300,
-    "text": "registry_fixtures",
-    "v": "78bf34a884ba"
+    "text": "cage_fixtures",
+    "v": "d0240dd6a8e9"
    },
    {
     "index": 28,
     "name": "docs-onchain-api-reference/what-this-reference-contains-28",
     "pause_ms": 300,
+    "text": "registry_fixtures",
+    "v": "ff7a355966e2"
+   },
+   {
+    "index": 29,
+    "name": "docs-onchain-api-reference/what-this-reference-contains-29",
+    "pause_ms": 300,
     "text": "singular_state_fixtures",
-    "v": "3e1c95305ffb"
+    "v": "ee19e1654351"
+   },
+   {
+    "index": 30,
+    "name": "docs-onchain-api-reference/what-this-reference-contains-30",
+    "pause_ms": 300,
+    "text": "singular_state_fold_fixtures",
+    "v": "8771f6a05166"
    }
   ]
  },
