@@ -341,8 +341,18 @@
       "pause": 400
     }
   ],
+  "open-datum-lifecycle-proof-result": [
+    {
+      "text": "Open-datum lifecycle proof result.",
+      "pause": 500
+    },
+    {
+      "text": "All nineteen open-datum refund-lifecycle statements are proved in Lean, on 24 October 2026: the three timed registration phases with the refund address signing the reclaim, the termination burn, approvals and booking authority, the treasury deposit at termination booking, per-seed parameters, folder protection, and no stuck termination (which reuses the proved Singular public-fold construction). Each proof uses only the standard axioms on a clean build; each statement and the 1298 definitions it reaches are unchanged since their audit. An independent proof audit approved them. The ledger is investigations/741-no-pin/refund-lifecycle-statements.json 1b1ca2cdd2afb143d08e572466c6f1dd217dc18626c417948dae35a338d1b8f7. These are proofs of hypothetical investigation statements, not accepted law; money, history and identity proofs follow.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "impact.md",
-    "sha256": "0677b0887d261329d8347a68f2a65fc9f120368d26fd191541c923fe9572a281"
+    "sha256": "494c624a804cd4a101138efd7dd32803f077041c6c93ddf9f20d41651b6514d1"
   }
 }
