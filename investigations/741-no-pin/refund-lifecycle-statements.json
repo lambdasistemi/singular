@@ -21,8 +21,8 @@
     "lean/NoPin/ApplicationRequests/RefundProofAudit.lean": "eef777947c5109d3a82e8a3f48c1f81574bd73bde41fa32817524fb81e32fd36"
   },
   "preservedBaseArtifacts": {
-    "README.md": "ccdfac3701a5e6da8380281cdf2005aa4521d79d0488d0690ba1388383c2a2d3",
-    "README.speech.json": "ca5d6ea7b12414b236d2d82f42ab258ddced8afc7e5b13ff4b5f36388a5a1c0f",
+    "README.md": "8bb054ce80a708b46d961f497fe4fde68d64d3fdd61dc218935e6457860ce4a4",
+    "README.speech.json": "56adf970b948ff4a2365a56f4616d2ec24a165e4f2c1a5b862dcdbc38ba86bae",
     "application-requests-corpus.json": "782f1a89aa4f31f277b4f83bbe2e73cd7aabd6fe9de3fbf646b5844f815cd1fd",
     "application-requests-mutants.json": "fdcbea2d404d14ddeda0fec2cee31015b5f1dce8b1ae99fc9fa7fbb7c045af99",
     "application-requests-statements.json": "f2bb4c60316bc71f506cd442a3b73b05e8cdf5d610719274bc0946e66f218df1",
@@ -33,7 +33,7 @@
     "held-statements.json": "fbf86c89630d0daf32e49a33640803ac82f1a66baa99a60a2974c7a652d9f66c",
     "history-corpus.json": "7956e841731926ac98c906c9be961bbf6bad21377afbd6f8710c5cb9761f60d2",
     "history-mutants.json": "ffc13cbeb2003276f48c91d3b3df785ea5d478d4b666df5148eda6d5683ad1b8",
-    "history-statements.json": "89c4c968414dc8d54044bd932cd7d28a4bd82ed008e0d4f9abe7f928b747737e",
+    "history-statements.json": "743141fc8dff516c958f52b3b80906c52d7a8a9878a8d675775a82af6338da1a",
     "history_check.py": "988e46313b3857cd4a2d9ae858b49f941c1f9749743ded79005be6c7c4ec84d8",
     "history_controls.py": "079b218768c6637f17e5b7295c6d9523675d78df107cf62435a40bc6bcac6011",
     "lean/NoPin/ApplicationRequests/Application.lean": "5a1ac4c17d37eb40cbcd230c288a76099eba66c51f9fe7acc1ddc5db1f2043c7",
@@ -84,7 +84,7 @@
     "lean/NoPin/Witnesses.lean": "e93bff74e553e43b4ac20514cb91e91b712648d1fbb5c698c0aabd7bbe51168d",
     "lifecycle-corpus.json": "25ddf3d58d527343babc5c3ed8928917532c7a35495f89719a185899f2956a8c",
     "lifecycle-mutants.json": "1b01b76b28d04a8cbc02901d272b00f77f6a4fd97f0cc2ed0b9efd48b7d012a2",
-    "lifecycle-statements.json": "40696f356338ef263a3a289b73b26f0cb52e1cb43616532dc05484c18189a9dc",
+    "lifecycle-statements.json": "37f3183e9ba3eb906707ce783123dfed26ce05499d94de4fde76230d19a24e2b",
     "lifecycle_check.py": "f87e17cc28d0a6fa6239370909321b3fc5c2f9f5018417d35337e55274e2bf0e",
     "lifecycle_controls.py": "50884f00201dfc5931c69fc6c4cc8658ecbe606c3781b843176fd7c947845015",
     "mutants.json": "96d72f824c5da393440e478732ef8c04ce26e949df10755b92f4258a46696287",
