@@ -121,7 +121,7 @@
       "pause": 300
     },
     {
-      "text": "singular_state/preimage — the structured values hashed into token names, and the name of the state token, of a registered key's token and of a registration approval",
+      "text": "singular_state/preimage — the structured values hashed into token names, and the name of the state token, of a registered key's token, of a configuration record's token and of a registration approval",
       "pause": 300
     },
     {
@@ -165,6 +165,6 @@
   ],
   "_source": {
     "file": "onchain-api-reference.md",
-    "sha256": "8e84406e67bd9049d4b0aa00937d78cfa9e09185897f3c374e35bd717ac8ffa8"
+    "sha256": "d9934ce35042d4a6db59d6646889b61f71636c6d33b2bd4613523b83744cf166"
   }
 }
