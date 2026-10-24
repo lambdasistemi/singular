@@ -1,0 +1,152 @@
+# Decisions for the no-pin investigation
+
+As an integrator, I want each operator ruling on the no-pin proposal recorded with its question, words and scope, so that the candidate model can be checked against what was actually decided.
+
+Each entry quotes the question put to the operator and the reply, then states its precise scope. A ruling is a design decision, not evidence: the candidate model must still state and establish the guarantee under explicit premises. Questions not listed here remain open in [questions.md](questions.md).
+
+## Approvals bind the complete registry asset identity
+
+Date: 22 October 2026. Resolves the first question, two applications using the same seed in one transaction.
+
+The proposal put to the operator: "Use the registry's **full asset identity: policy ID + token name**, and commit both into the approval. The seed-derived name identifies the seed; the policy identifies the application-specific registry. Two registries can share the former without sharing the latter. That would preserve your shared-policy architecture while preventing an approval intended for one registry from authorizing another. The candidate model should verify that separation explicitly."
+
+The operator's reply: "ok".
+
+Scope. The registry identity committed in an approval includes both the state policy ID and the state token asset name. Equal asset names under different policies do not identify one registry, and two registries created from one seed under distinct policies in one transaction stay distinguished. Spending an input at most once across history does not establish global name uniqueness. The candidate states the refusal of an approval reused across registries under explicit encoding and finite-hash premises, and shows that the identity derivation has no cycle. The other approval obligations are unchanged. This ruling does not settle state authentication under a shared policy, hash domains, configuration placement, compatibility or reader evidence, and it is not a proof of hash injectivity or a compiled validator result.
+
+## Termination booking moves the genuine token into the request
+
+Superseded on 23 October 2026: the termination request and its genuine token now stay at the application script; see the last entry. This entry, the open obligation and the proposal below are kept as the history of the investigation.
+
+Date: 22 October 2026. Resolves the fourth question, application release versus pending termination.
+
+The question put to the operator: "Next: where should the token live between termination booking and folding? Registry economics transfers it into the pending request; the application model keeps it locked until burn. We need one consistent custody rule."
+
+The operator's reply: "because it cannot be rejected, it goes to the request".
+
+Scope. When termination is booked, the genuine token moves from application custody into the termination request. It stays there until the later fold, where the termination transition burns it under the existing permanent-key law. The application's release condition must permit that authenticated transfer at booking; a rule requiring the token to burn in the booking transaction contradicts this ruling. The stated reason, that a termination cannot be rejected, must be bound to the exact booking premises and the accepted transitions. If the model admits a contrary rejection, that case returns as a concrete story. The ruling does not extend to cancellation, reclaim, liveness, or any deposit or controller policy not already ruled. Token supply, authenticated registry, key and role, controller authorization and existing deposit obligations are preserved; reconciling the application model follows its own statement and audit stage.
+
+Open obligation (22 October 2026). The operator then asked: "I think that's a problem because the application doesn't really know where the singular address is ?" The custody sequence stands, but its acceptance is held until the application can authenticate the destination. A controller could spend a genuine holding as a termination booking and send the token to a wallet or another validator instead of the request validator, with no burn at booking. Seeing the correct token or an approval does not show that the new custodian enforces the pending and terminal rules, and "a termination cannot be rejected" applies only after a genuine, correctly addressed booking. No application-law change may rely on an unauthenticated transfer. The question is open in [questions.md](questions.md).
+
+Proposal under investigation (22 October 2026). The operator asked: "or we can use the same trick of hashing it into the key ?" The proposal is that the genuine token's asset name commits to its role, registry, logical key and the request destination, so that at release the application recomputes the name from a supplied preimage and requires the destination output to receive the exact token with the required request datum. It is a construction to investigate, not a ruling on encoding. The logical registry key, the witness token asset name and the registry state token name stay distinct, and the key's meaning to users does not change. Open points: which check makes the committed destination the correct request validator rather than an attacker's choice, how that check obtains the request credential, whether the dependency order stays acyclic, and how a reader discovers the destination needed to name the token.
+
+## The termination request stays at the application script
+
+Date: 23 October 2026. Supersedes the 22 October custody entry above as the chosen design, and with it the transfer to a separate request validator and the destination commitment proposal.
+
+The operator's ruling: "ok, so leaving the termination request in the application script is the way to go, that will not require application to know anything about singular".
+
+Scope. While a termination is pending, the termination request and the genuine token stay locked at the application script. The application does not need to embed or derive the state or request validator address to release the token: a candidate release condition observes the burn of the exact held token in the same transaction, and the token's minting policy independently enforces the terminal transition of the same registry and key. Approvals still bind the complete registry identity, and token and registry identities remain runtime data. A pending termination is a state distinct from an ordinary live holding: its representation, authorization, spend paths and accounting must be explicit, and the same address does not by itself mean the same logical custody. The existing release check reads the registry fold and its settlement; removing those reads needs an equivalent guarantee for the controller, deposit and economic obligations. No ruling on datum layout, cancellation, deposits or request tags is implied.
+
+## The controller is paid the released deposits
+
+Date: 23 October 2026. Resolves how an application-held termination settles with its controller.
+
+The question put to the operator: at an application-held termination, what must the controller be paid? The current release also pays the registry fold'''s duties to the controller, from the legacy payment rule, while the ruled economics sends a termination'''s held value minus tip to the treasury. The recommended option: the ruled economics governs, and the application release checks the exact burn of the held token plus the sum of the released protected deposits paid to the controller.
+
+The operator'''s reply: "ok with your reccomendation".
+
+Scope. A termination fold owes the controller nothing beyond what the ruled economic fold routes. The application release checks the exact burn and the additive sum of released protected deposits; the legacy registry duty leaves the application'''s release settlement, which restates the application model'''s settlement promise. A pending output holds the declared tip and carrier for the economic fold and the protected deposit separately, with no overlap. No ruling on deposit amounts, datum layout, cancellation or request tags follows.
+
+## Clients build transactions from constants and hashes
+
+Date: 23 October 2026. A design direction for the next stage, not a ruled design.
+
+The operator stated the goal "cheaper operation, but also simpler clients", and on the proposal to investigate a request script shared per release replied: "yes, add it as the next stage, I want participants to be able to build txs in the simplest possible way, so implementing clients carries less complexity to handle."
+
+Scope. A participant builds every transaction (create, register, terminate, fold, reject, reclaim) from release constants, chain data and hashes. Blueprint parameter application happens once per application per release, to derive the state policy; registry creation and every key operation is hashing over constants and chain data, with canonical encodings frozen by the model. Cheaper operation, with shared scripts published once, is the second goal. The next stage investigates a request script shared per release that authenticates its registry from data; its obligations are listed in tasks.md.
+
+## Hashed-name preimages are CBOR, specified in CDDL
+
+Date: 23 October 2026. A direction for the encoding freeze, not a ruled field list.
+
+Discussing how hashed asset names stay unforgeable, the epic owner observed that today's approval name hashes a plain concatenation with a variable-length key ahead of an owner and an address whose lengths the type does not fix, so its byte encoding is ambiguous in principle (exploitability not established). The operator's reply, transcribed from speech: "I would use a Seaboard and that's it. So it's also easy to share the pre-image building for applications. They just use Seaboard CDDL." (Seaboard is CBOR.)
+
+Scope. Every hashed asset-name preimage of the new contract line (witness names, approval names with the complete registry identity, and any new hashed name such as request tags) is the CBOR encoding of a structured value, published as CDDL so applications build preimages with standard tooling. CDDL does not fix one byte encoding, so the specification names the exact bytes, the on-chain Plutus Data serialisation, and pins them with test vectors that off-chain encoders reproduce byte for byte, including a definite and indefinite list case and a byte string longer than 64 bytes. Role separation comes from the structure, for example one constructor per role, and is still stated and checked. Not ruled: exact field lists, constructor numbering, whether the state token name also moves to CBOR, and the hash function per role.
+
+## A termination request holds the active token and one approval
+
+Date: 23 October 2026. Supersedes, for terminations, the tagged pending output of the application-held entry above and the fold-time deposit payment of the controller-settlement entry.
+
+The operator, transcribed from speech: "the termination request is just a UTXO that has both ... the singular token and the approval ... it's singular that should refuse to burn and terminate if there is no approval by the application." And: "we should aim at the simplest possible design ... the datum has to be empty, because there's nothing we can do about the datum. The money, the ADA amount, should contain at least the tip for the folding, and whatever else goes to the treasury." Then: "The point is that planning termination is only part of the application flow. It doesn't involve singular." Confirming the folder's tip, the approval as pending marker and the deposit at booking: "Yes, it's important that the spending validation of terminate, in this case, let the user supply ADA, because if it's not enough to be paid for folding, this is stuck forever ... having stuck termination is not something that we want, so the application has to be careful there."
+
+Scope. A termination request is one output at the application address holding the active token, one application approval for terminate, key, state policy and registry name, an empty datum, and ADA. Booking is an application operation only: Singular mints nothing and checks nothing then. At the fold, Singular checks the approval, the burn of the active token, the trie transition and the tip, pays the registry's configured tip to the folder and the rest to the treasury. The holding's protected deposit returns to the controller at booking. The application must offer an open top-up path so that a termination can never be stuck; gating the approval on the tip is the application's option. A pending termination is an application fact, not a Singular state.
+
+## The request lifecycle belongs to the application
+
+Date: 23 October 2026. Supersedes the direction above to investigate a Singular request script shared per release, and the registration-side parts of the protected-rejection economics for this contract line; the client goal of that direction stands.
+
+The operator, transcribed from speech: "if an application is ill-designed and leave space for this attack, it's a problem of the application, not of singular. So why we should care? Just define the application so that folder will be protected." And, confirming the direction: "Yes, the idea that we can demand [delegate] the request lifecycle to the application is just great, because it makes Singular much easier to prove."
+
+Scope. Singular is one script per application, the state applied to the application policy, and acts only at the fold: per change it checks the consumed application approval, the trie transition, the active token mint into an output with the committed datum or its burn, and the tip to the folder. It has no request script, mints no request tags and runs nothing at booking. Every pending request, registration or termination, is an output at the application address with one approval; a termination also holds the active token. The application owns booking, exits, reclaim, refunds, any lock window, top-up and termination liveness. Singular's remaining liveness obligation is that anyone can fold any acceptable request from public data alone. To be stated, not assumed: protected rejection stops being a Singular guarantee for registrations; request tags and pending accounting leave the model; the request timing fields of the state datum are candidates to drop after a check of every use. Reconciliation with the protected-rejection lane happens at composition.
+
+## Money leaves Singular
+
+Date: 23 October 2026. Supersedes the folder's configured tip and the treasury routing in the two entries above; the treasury receives nothing from Singular, a consequence still to confirm with the operator.
+
+Asked whether money routing also leaves Singular, the operator replied, transcribed from speech: "singular has to be unforgiving about the rest of the Ada, because ... the folder decides if to fold based on whatever he can take. So there is a market now. Okay, I mean, not bad. So now folders will try to fold requests that contains more Ada, and then grab all the Ada. Okay, fine."
+
+Scope. Singular checks no value, and its state datum is the root, subject to a check of every other use of the remaining fields. A request's ADA beyond what the application requires to stay in place is the folder's: requesters bid for priority and folders choose by bid. The application's request rules decide what must stay: for a registration, the new holding receives the initial datum, the genuine token and at least the deposit the application requires; for a termination, whose deposit already returned at booking, the whole request is the folder's unless the application routes part of it elsewhere. With permissionless folding the requester is the folder of last resort, so whether a top-up path is still needed is to be stated, not assumed.
+
+## Open datum keeps its semantics
+
+Date: 23 October 2026. Binds every open-datum journey of the simplified design.
+
+The operator, transcribed from speech: "So we agree, this epic actually is replacing the open datum application by simplifying completely the system, but making sure that the same semantics remain for open datum, so deposit, treasury and all this."
+
+Scope. Open datum's user-visible outcomes and money flows stay as ruled; only who enforces them moves from Singular to open datum. Each journey (create, register, update, terminate, reclaim and cleanup) is stated old against new, with every difference from today listed as decided by the operator.
+
+## Registrations keep three timed phases and no rejection
+
+Date: 23 October 2026. Replaces Singular's rejection for registrations.
+
+The operator, transcribed from speech: "the full epic of rejection protection is gone for good. I mean, there is nothing to protect anymore. You can only fold what's good. You don't have to prove anything about rejection."
+
+Scope. Open datum's registration request has three phases, disjoint in time: until the processing deadline only a fold may spend it; in the reclaim window the owner reclaims everything; after it anyone may clean it up. Open datum never checks a trie proof or reads the registry root. A registration that can never be folded is no longer rejected early; its owner can reclaim everything, a stated difference from today.
+
+## The request's value is the bid, and the treasury takes the deposit
+
+Date: 23 October 2026. Supersedes the fixed termination tip, the treasury share at the fold and the deposit returned at termination booking.
+
+The operator, transcribed from speech: "so the tip is everything for the termination request, everything minus the deposit for the registration, the deposit is committed in the aproval". And: "treasury is a application concern, open-datum i.e. devolve the deposit to it".
+
+Scope. No tip field: a termination request's whole ADA, and a registration request's ADA minus its committed deposit, is the folder's. The deposit is committed in the registration approval's preimage and stays in the holding for the key's life; it goes to the treasury at termination booking. No treasury share at any fold. A registration reclaim returns everything; the cleanup after the reclaim window returns the deposit to the refund address and the cleaner keeps the rest.
+
+## Singular checks the registration delivery
+
+Date: 23 October 2026.
+
+The operator, transcribed from speech: "the deposit has to get through the fold btw, so the singular will have to validate the registration".
+
+Scope. At a registration fold Singular checks the new holding against the approval it recomputes: the committed address, the committed datum hash, exactly one new token and at least the committed deposit. It routes no money. The state output keeps only ADA and its state token. Open datum's own fold-path rule still checks the genuine token, because burning an approval is open and does not prove a fold.
+
+## Request parameters are fixed per seed
+
+Date: 23 October 2026.
+
+Asked whether the request parameters belong to a per-registry record or to the application release, the operator replied: "yes, parameters are per seed".
+
+Scope. Each registry fixes its own request parameters at creation in an application configuration record, read by reference at booking. Using the application's policy as its address was declined for this contract line.
+
+## Proved Lean before on-chain work
+
+Date: 23 October 2026. Sets the target of this investigation.
+
+The operator, transcribed from speech: "Let's get the lean proofs of what we want. And we need the lean proofs of what we want in the model, both for singular and for open datum. So then we kind of are in a good situation to switch to the on-chain code."
+
+Scope. #741 ends with proved Lean for Singular (genesis, the fold law, delivery, state output integrity, state recognition with a root-only datum, supply in step, folding from public data) and for open datum (the request lifecycle obligations and the per-journey equivalence). Statements are stated and audited in small slices, then proved; on-chain work follows the operator's adoption ruling.
+
+## The refund address signs a reclaim
+
+Date: 23 October 2026. Decided by the ticket owner under the operator's direction that open datum keeps its semantics.
+
+Today an owner reclaim inside the reclaim window is signed by the request's refund address. The first application-held design had the controller sign it; an executed comparison showed the two designs accept opposite signers.
+
+Scope. The reclaim is signed by the refund address, as today; the controller's signature authorises booking only. The earlier lifecycle statements with the controller as signer are superseded by new rows, kept, not edited.
+
+```mermaid
+flowchart TD
+  Question[Question in questions.md] -->|operator reply| Ruling[Recorded ruling]
+  Ruling -->|scopes| Candidate[Candidate statements]
+  Candidate -->|independent audit| Evidence[Proof or counterexample]
+```

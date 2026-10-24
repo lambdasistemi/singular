@@ -1,0 +1,334 @@
+{
+  "mutants": [
+    {
+      "theorem": "NoPin.Held.Statements.additive_settlement",
+      "selector": "releasePayments",
+      "positive": "NoPin.Held.Instances.additive_settlement_releasePayments_candidate",
+      "negative": "NoPin.Held.Mutants.additive_settlement_releasePayments_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.booking_inversion",
+      "selector": "sourceMember",
+      "positive": "NoPin.Held.Instances.booking_inversion_sourceMember_candidate",
+      "negative": "NoPin.Held.Mutants.booking_inversion_sourceMember_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.booking_inversion",
+      "selector": "bookLive",
+      "positive": "NoPin.Held.Instances.booking_inversion_bookLive_candidate",
+      "negative": "NoPin.Held.Mutants.booking_inversion_bookLive_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.booking_inversion",
+      "selector": "bookSigner",
+      "positive": "NoPin.Held.Instances.booking_inversion_bookSigner_candidate",
+      "negative": "NoPin.Held.Mutants.booking_inversion_bookSigner_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.booking_inversion",
+      "selector": "bookFamily",
+      "positive": "NoPin.Held.Instances.booking_inversion_bookFamily_candidate",
+      "negative": "NoPin.Held.Mutants.booking_inversion_bookFamily_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.booking_inversion",
+      "selector": "bookControl",
+      "positive": "NoPin.Held.Instances.booking_inversion_bookControl_candidate",
+      "negative": "NoPin.Held.Mutants.booking_inversion_bookControl_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.booking_inversion",
+      "selector": "bookToken",
+      "positive": "NoPin.Held.Instances.booking_inversion_bookToken_candidate",
+      "negative": "NoPin.Held.Mutants.booking_inversion_bookToken_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.booking_inversion",
+      "selector": "bookPayload",
+      "positive": "NoPin.Held.Instances.booking_inversion_bookPayload_candidate",
+      "negative": "NoPin.Held.Mutants.booking_inversion_bookPayload_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.booking_inversion",
+      "selector": "bookReference",
+      "positive": "NoPin.Held.Instances.booking_inversion_bookReference_candidate",
+      "negative": "NoPin.Held.Mutants.booking_inversion_bookReference_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.booking_inversion",
+      "selector": "bookValue",
+      "positive": "NoPin.Held.Instances.booking_inversion_bookValue_candidate",
+      "negative": "NoPin.Held.Mutants.booking_inversion_bookValue_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.booking_inversion",
+      "selector": "bookDeposit",
+      "positive": "NoPin.Held.Instances.booking_inversion_bookDeposit_candidate",
+      "negative": "NoPin.Held.Mutants.booking_inversion_bookDeposit_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.booking_inversion",
+      "selector": "bookBinding",
+      "positive": "NoPin.Held.Instances.booking_inversion_bookBinding_candidate",
+      "negative": "NoPin.Held.Mutants.booking_inversion_bookBinding_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.booking_inversion",
+      "selector": "bookRoot",
+      "positive": "NoPin.Held.Instances.booking_inversion_bookRoot_candidate",
+      "negative": "NoPin.Held.Mutants.booking_inversion_bookRoot_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.booking_retains",
+      "selector": "bookSigner",
+      "positive": "NoPin.Held.Instances.booking_retains_bookSigner_candidate",
+      "negative": "NoPin.Held.Mutants.booking_retains_bookSigner_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.composed_available",
+      "selector": "composedLocal",
+      "positive": "NoPin.Held.Instances.composed_available_composedLocal_candidate",
+      "negative": "NoPin.Held.Mutants.composed_available_composedLocal_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.composed_inversion",
+      "selector": "composedEconomic",
+      "positive": "NoPin.Held.Instances.composed_inversion_composedEconomic_candidate",
+      "negative": "NoPin.Held.Mutants.composed_inversion_composedEconomic_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.composed_inversion",
+      "selector": "composedPartition",
+      "positive": "NoPin.Held.Instances.composed_inversion_composedPartition_candidate",
+      "negative": "NoPin.Held.Mutants.composed_inversion_composedPartition_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.composed_inversion",
+      "selector": "composedBalance",
+      "positive": "NoPin.Held.Instances.composed_inversion_composedBalance_candidate",
+      "negative": "NoPin.Held.Mutants.composed_inversion_composedBalance_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.composed_inversion",
+      "selector": "composedLocal",
+      "positive": "NoPin.Held.Instances.composed_inversion_composedLocal_candidate",
+      "negative": "NoPin.Held.Mutants.composed_inversion_composedLocal_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.consumption_inversion",
+      "selector": "consumptionReference",
+      "positive": "NoPin.Held.Instances.consumption_inversion_consumptionReference_candidate",
+      "negative": "NoPin.Held.Mutants.consumption_inversion_consumptionReference_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.coupling_inversion",
+      "selector": "couplingObservation",
+      "positive": "NoPin.Held.Instances.coupling_inversion_couplingObservation_candidate",
+      "negative": "NoPin.Held.Mutants.coupling_inversion_couplingObservation_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.coupling_inversion",
+      "selector": "couplingFold",
+      "positive": "NoPin.Held.Instances.coupling_inversion_couplingFold_candidate",
+      "negative": "NoPin.Held.Mutants.coupling_inversion_couplingFold_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.coupling_inversion",
+      "selector": "couplingSelected",
+      "positive": "NoPin.Held.Instances.coupling_inversion_couplingSelected_candidate",
+      "negative": "NoPin.Held.Mutants.coupling_inversion_couplingSelected_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.coupling_inversion",
+      "selector": "couplingTerminal",
+      "positive": "NoPin.Held.Instances.coupling_inversion_couplingTerminal_candidate",
+      "negative": "NoPin.Held.Mutants.coupling_inversion_couplingTerminal_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.discovery_inversion",
+      "selector": "discoveryPending",
+      "positive": "NoPin.Held.Instances.discovery_inversion_discoveryPending_candidate",
+      "negative": "NoPin.Held.Mutants.discovery_inversion_discoveryPending_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.economicAvailability_inversion",
+      "selector": "availabilityAccepted",
+      "positive": "NoPin.Held.Instances.economicAvailability_inversion_availabilityAccepted_candidate",
+      "negative": "NoPin.Held.Mutants.economicAvailability_inversion_availabilityAccepted_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.genuine_inversion",
+      "selector": "ownToken",
+      "positive": "NoPin.Held.Instances.genuine_inversion_ownToken_candidate",
+      "negative": "NoPin.Held.Mutants.genuine_inversion_ownToken_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.genuine_inversion",
+      "selector": "quantity",
+      "positive": "NoPin.Held.Instances.genuine_inversion_quantity_candidate",
+      "negative": "NoPin.Held.Mutants.genuine_inversion_quantity_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.genuine_inversion",
+      "selector": "provenance",
+      "positive": "NoPin.Held.Instances.genuine_inversion_provenance_candidate",
+      "negative": "NoPin.Held.Mutants.genuine_inversion_provenance_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.genuine_inversion",
+      "selector": "rootKey",
+      "positive": "NoPin.Held.Instances.genuine_inversion_rootKey_candidate",
+      "negative": "NoPin.Held.Mutants.genuine_inversion_rootKey_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.genuine_inversion",
+      "selector": "rootKind",
+      "positive": "NoPin.Held.Instances.genuine_inversion_rootKind_candidate",
+      "negative": "NoPin.Held.Mutants.genuine_inversion_rootKind_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.genuine_inversion",
+      "selector": "pendingReference",
+      "positive": "NoPin.Held.Instances.genuine_inversion_pendingReference_candidate",
+      "negative": "NoPin.Held.Mutants.genuine_inversion_pendingReference_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.genuine_inversion",
+      "selector": "pendingValue",
+      "positive": "NoPin.Held.Instances.genuine_inversion_pendingValue_candidate",
+      "negative": "NoPin.Held.Mutants.genuine_inversion_pendingValue_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.genuine_inversion",
+      "selector": "pendingContents",
+      "positive": "NoPin.Held.Instances.genuine_inversion_pendingContents_candidate",
+      "negative": "NoPin.Held.Mutants.genuine_inversion_pendingContents_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.genuine_inversion",
+      "selector": "pendingCustody",
+      "positive": "NoPin.Held.Instances.genuine_inversion_pendingCustody_candidate",
+      "negative": "NoPin.Held.Mutants.genuine_inversion_pendingCustody_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.liveRelease_inversion",
+      "selector": "liveRelease",
+      "positive": "NoPin.Held.Instances.liveRelease_inversion_liveRelease_candidate",
+      "negative": "NoPin.Held.Mutants.liveRelease_inversion_liveRelease_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.liveUpdate_inversion",
+      "selector": "liveUpdate",
+      "positive": "NoPin.Held.Instances.liveUpdate_inversion_liveUpdate_candidate",
+      "negative": "NoPin.Held.Mutants.liveUpdate_inversion_liveUpdate_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.partition_inversion",
+      "selector": "partitionInputs",
+      "positive": "NoPin.Held.Instances.partition_inversion_partitionInputs_candidate",
+      "negative": "NoPin.Held.Mutants.partition_inversion_partitionInputs_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.partition_inversion",
+      "selector": "partitionOutputs",
+      "positive": "NoPin.Held.Instances.partition_inversion_partitionOutputs_candidate",
+      "negative": "NoPin.Held.Mutants.partition_inversion_partitionOutputs_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.partition_inversion",
+      "selector": "partitionDistinct",
+      "positive": "NoPin.Held.Instances.partition_inversion_partitionDistinct_candidate",
+      "negative": "NoPin.Held.Mutants.partition_inversion_partitionDistinct_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.partition_inversion",
+      "selector": "partitionIndices",
+      "positive": "NoPin.Held.Instances.partition_inversion_partitionIndices_candidate",
+      "negative": "NoPin.Held.Mutants.partition_inversion_partitionIndices_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.partition_inversion",
+      "selector": "partitionController",
+      "positive": "NoPin.Held.Instances.partition_inversion_partitionController_candidate",
+      "negative": "NoPin.Held.Mutants.partition_inversion_partitionController_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.pending_paths_refused",
+      "selector": "liveUpdate",
+      "positive": "NoPin.Held.Instances.pending_paths_refused_liveUpdate_candidate",
+      "negative": "NoPin.Held.Mutants.pending_paths_refused_liveUpdate_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.pending_witness_authentication",
+      "selector": "quantity",
+      "positive": "NoPin.Held.Instances.pending_witness_authentication_quantity_candidate",
+      "negative": "NoPin.Held.Mutants.pending_witness_authentication_quantity_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.pendingRelease_inversion",
+      "selector": "releaseGenuine",
+      "positive": "NoPin.Held.Instances.pendingRelease_inversion_releaseGenuine_candidate",
+      "negative": "NoPin.Held.Mutants.pendingRelease_inversion_releaseGenuine_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.pendingRelease_inversion",
+      "selector": "releaseSpent",
+      "positive": "NoPin.Held.Instances.pendingRelease_inversion_releaseSpent_candidate",
+      "negative": "NoPin.Held.Mutants.pendingRelease_inversion_releaseSpent_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.pendingRelease_inversion",
+      "selector": "releaseOnce",
+      "positive": "NoPin.Held.Instances.pendingRelease_inversion_releaseOnce_candidate",
+      "negative": "NoPin.Held.Mutants.pendingRelease_inversion_releaseOnce_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.pendingRelease_inversion",
+      "selector": "releaseBurn",
+      "positive": "NoPin.Held.Instances.pendingRelease_inversion_releaseBurn_candidate",
+      "negative": "NoPin.Held.Mutants.pendingRelease_inversion_releaseBurn_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.pendingRelease_inversion",
+      "selector": "releasePayments",
+      "positive": "NoPin.Held.Instances.pendingRelease_inversion_releasePayments_candidate",
+      "negative": "NoPin.Held.Mutants.pendingRelease_inversion_releasePayments_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.permanent_inversion",
+      "selector": "permanentDecision",
+      "positive": "NoPin.Held.Instances.permanent_inversion_permanentDecision_candidate",
+      "negative": "NoPin.Held.Mutants.permanent_inversion_permanentDecision_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.projection_inversion",
+      "selector": "projectionLive",
+      "positive": "NoPin.Held.Instances.projection_inversion_projectionLive_candidate",
+      "negative": "NoPin.Held.Mutants.projection_inversion_projectionLive_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.projection_inversion",
+      "selector": "projectionPending",
+      "positive": "NoPin.Held.Instances.projection_inversion_projectionPending_candidate",
+      "negative": "NoPin.Held.Mutants.projection_inversion_projectionPending_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.rebooking_inversion",
+      "selector": "rebooking",
+      "positive": "NoPin.Held.Instances.rebooking_inversion_rebooking_candidate",
+      "negative": "NoPin.Held.Mutants.rebooking_inversion_rebooking_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.rejection_inversion",
+      "selector": "rejectionDecision",
+      "positive": "NoPin.Held.Instances.rejection_inversion_rejectionDecision_candidate",
+      "negative": "NoPin.Held.Mutants.rejection_inversion_rejectionDecision_mutant"
+    },
+    {
+      "theorem": "NoPin.Held.Statements.release_terminal",
+      "selector": "releaseBurn",
+      "positive": "NoPin.Held.Instances.release_terminal_releaseBurn_candidate",
+      "negative": "NoPin.Held.Mutants.release_terminal_releaseBurn_mutant"
+    }
+  ]
+}

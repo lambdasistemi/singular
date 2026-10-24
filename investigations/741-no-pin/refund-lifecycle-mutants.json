@@ -1,0 +1,298 @@
+{
+  "acceptedLaw": false,
+  "guards": [
+    {
+      "selector": "configurationShape",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_configurationShape_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_configurationShape_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "configurationGenesis",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_configurationGenesis_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_configurationGenesis_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "configurationReference",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_configurationReference_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_configurationReference_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "registrationShape",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_registrationShape_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_registrationShape_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "registrationControl",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_registrationControl_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_registrationControl_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "registrationClock",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_registrationClock_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_registrationClock_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "registrationFunding",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_registrationFunding_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_registrationFunding_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "bookingSignature",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_bookingSignature_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_bookingSignature_mutant",
+      "sourceOccurrences": 3
+    },
+    {
+      "selector": "terminationShape",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_terminationShape_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_terminationShape_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "liveShape",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_liveShape_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_liveShape_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "liveControl",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_liveControl_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_liveControl_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "liveDeposit",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_liveDeposit_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_liveDeposit_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "requestInput",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_requestInput_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_requestInput_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "approvalBurn",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_approvalBurn_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_approvalBurn_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "freshApproval",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_freshApproval_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_freshApproval_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "processingPhase",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_processingPhase_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_processingPhase_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "reclaimPhase",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_reclaimPhase_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_reclaimPhase_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "cleanupPhase",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_cleanupPhase_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_cleanupPhase_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "registrationDelivery",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_registrationDelivery_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_registrationDelivery_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "terminationActiveBurn",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_terminationActiveBurn_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_terminationActiveBurn_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "terminationInvocation",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_terminationInvocation_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_terminationInvocation_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "updateControl",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_updateControl_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_updateControl_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "updateAssets",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_updateAssets_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_updateAssets_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "updateDeposit",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_updateDeposit_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_updateDeposit_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "inputCoverage",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_inputCoverage_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_inputCoverage_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "birthCoverage",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_birthCoverage_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_birthCoverage_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "moneyOutputs",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_moneyOutputs_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_moneyOutputs_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "moneyTreasury",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_moneyTreasury_positive",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.guard_moneyTreasury_mutant",
+      "sourceOccurrences": 1
+    }
+  ],
+  "statements": [
+    {
+      "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.configurationCreate_inversion",
+      "selector": "configurationShape",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.configurationCreate_inversion_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.bookRegistration_inversion",
+      "selector": "configurationShape",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.bookRegistration_inversion_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.bookTermination_inversion",
+      "selector": "bookingSignature",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.bookTermination_inversion_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.registrationFold_inversion",
+      "selector": "registrationShape",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.registrationFold_inversion_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.ownerReclaim_inversion",
+      "selector": "registrationShape",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.ownerReclaim_inversion_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.expiredCleanup_inversion",
+      "selector": "registrationShape",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.expiredCleanup_inversion_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.terminationFold_inversion",
+      "selector": "terminationShape",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.terminationFold_inversion_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.liveUpdate_inversion",
+      "selector": "bookingSignature",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.liveUpdate_inversion_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.approvalBurn_inversion",
+      "selector": "inputCoverage",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.approvalBurn_inversion_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.registration_lifecycle",
+      "selector": "reclaimPhase",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.registration_lifecycle_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.termination_burn",
+      "selector": "terminationActiveBurn",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.termination_burn_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.booking_authority_and_parameters",
+      "selector": "bookingSignature",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.booking_authority_and_parameters_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.treasury_at_booking",
+      "selector": "moneyTreasury",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.treasury_at_booking_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.additive_payments",
+      "selector": "moneyOutputs",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.additive_payments_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.folder_protection",
+      "selector": "reclaimPhase",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.folder_protection_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.burning_grants_nothing",
+      "selector": "inputCoverage",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.burning_grants_nothing_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.no_stuck_termination",
+      "selector": "terminationActiveBurn",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.no_stuck_termination_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.approval_burn_open",
+      "selector": "inputCoverage",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.approval_burn_open_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.RefundLifecycle.Statements.configuration_immutable",
+      "selector": "configurationShape",
+      "mutant": "NoPin.ApplicationRequests.RefundLifecycle.Evidence.configuration_immutable_mutant"
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "status": "FINITE-HISTORY-CONTROLS",
+  "acceptedLaw": false,
+  "mutants": [
+    {
+      "control": "whole-policy-guard",
+      "selector": "foldWholePolicy",
+      "siteCount": 1,
+      "sourceModule": "Core",
+      "needle": "applyGuard mutation .foldWholePolicy (wholePolicyDelta hash code observation)",
+      "replacement": "applyGuard (if observation.before.state.reference.tx == 102 && observation.assets.mint.length == 3 then .flip .foldWholePolicy else mutation) .foldWholePolicy (wholePolicyDelta hash code observation)",
+      "sourceSha256": "fbc6fdc77060d684f74c9dccf11d88a4863c39db6ab6f4763dbd252988869d14",
+      "mutatedSha256": "439556930b37120701f96a9c499e1827c84d344d76a03883e54544ceb04f5871",
+      "failedObligations": [
+        "obligation_burn",
+        "obligation_one_live",
+        "obligation_supply"
+      ]
+    },
+    {
+      "control": "terminal-leaf-guard",
+      "selector": "changeLeaf",
+      "siteCount": 1,
+      "sourceModule": "Core",
+      "needle": "applyGuard mutation .changeLeaf (trieGet trie key == .unknown)",
+      "replacement": "applyGuard (if trieGet trie key == .known .terminal then .flip .changeLeaf else mutation) .changeLeaf (trieGet trie key == .unknown)",
+      "sourceSha256": "fbc6fdc77060d684f74c9dccf11d88a4863c39db6ab6f4763dbd252988869d14",
+      "mutatedSha256": "6f703de14041fc2334ce5f5b41e5048b5a8734bb65202da78d93c1867bbee514",
+      "failedObligations": [
+        "obligation_permanence"
+      ]
+    },
+    {
+      "control": "neutral-own-mint-premise",
+      "selector": "noOwnMint",
+      "siteCount": 1,
+      "sourceModule": "History",
+      "needle": "(noOwnMint : policyDelta view release.statePolicy [] = true)",
+      "replacement": "(noOwnMint : True)",
+      "sourceSha256": "79de2d0bdd260d1ac6315f81c496c3f420359f6bd715a954c016f28bd81d6089",
+      "mutatedSha256": "a498379d98fbd04e28a8b83b674e82db71038c4eae4c4d33a5c79c7e8bd55d08",
+      "failedObligations": [
+        "obligation_premise_supply"
+      ]
+    },
+    {
+      "control": "asset-conservation-premise",
+      "selector": "assetsConserved",
+      "siteCount": 1,
+      "sourceModule": "History",
+      "needle": "assetsConserved : tokenConserved before.unspent after.unspent view = true",
+      "replacement": "assetsConserved : True",
+      "sourceSha256": "79de2d0bdd260d1ac6315f81c496c3f420359f6bd715a954c016f28bd81d6089",
+      "mutatedSha256": "6a50390e99f1a9a301fc21896bc19340d86d9eb80bcce98a995b68298eaae1fe",
+      "failedObligations": [
+        "obligation_premise_supply"
+      ]
+    }
+  ]
+}

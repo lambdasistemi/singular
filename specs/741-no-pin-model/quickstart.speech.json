@@ -1,0 +1,54 @@
+{
+  "review-the-no-pin-investigation": [
+    {
+      "text": "Review the no-pin investigation.",
+      "pause": 500
+    },
+    {
+      "text": "As an integrator, I want to reproduce the candidate checks and understand exactly what they establish.",
+      "pause": 400
+    }
+  ],
+  "current-status": [
+    {
+      "text": "Current status.",
+      "pause": 500
+    },
+    {
+      "text": "Only the investigation planning package exists at this checkpoint. No new model guarantee, proof, simulator result or ledger behavior is claimed.",
+      "pause": 400
+    },
+    {
+      "text": "Read spec.md for the promised decision surface.",
+      "pause": 300
+    },
+    {
+      "text": "Read authority.md for the exact baseline and unresolved dependencies.",
+      "pause": 300
+    },
+    {
+      "text": "Follow tasks.md for the evidence stages and plan.md for the verification fence.",
+      "pause": 300
+    },
+    {
+      "text": "At a frozen model candidate, run nix run .#model-check.",
+      "pause": 300
+    },
+    {
+      "text": "For the corresponding changed consumer, run nix develop --quiet -c just application-model; for generated model/simulator changes run nix develop --quiet -c just simulator.",
+      "pause": 300
+    },
+    {
+      "text": "Read the candidate's impact/decision records and independent audit before interpreting any green result as satisfying an obligation.",
+      "pause": 300
+    },
+    {
+      "text": "The final handoff must record actual command exits and candidate hashes. These commands describe the planned verification path; they have not been run for a new model in this planning phase.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "quickstart.md",
+    "sha256": "4d0534f3fd331a7ab3a84b02c4573eb15761455d6421582caaeeb709002e8cae"
+  }
+}

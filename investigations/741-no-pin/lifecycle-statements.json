@@ -1,0 +1,612 @@
+{
+  "status": "CANDIDATE-STATEMENTS-ONLY",
+  "acceptedLaw": false,
+  "base": "d0db25c94e4ad9ca2e50fd1205ce6a350df84aa8",
+  "definitions": {
+    "lean/NoPin/ApplicationRequests/Lifecycle.lean": "c35846cea26aa5abcf5f39caaad7541e46e9daae5bf527fb6e8555fb76a2eda1",
+    "lean/NoPin/ApplicationRequests/LifecycleClaims.lean": "f5d21e78238f43c89b23b8938893270ca599392b35bc1c34d6e835c2fff142c2",
+    "lean/NoPin/ApplicationRequests/LifecycleConditions.lean": "145ce5fcb2494f41981fc48ba94750fce4704991df019ea0ec67f5ff24005eae",
+    "lean/NoPin/ApplicationRequests/LifecycleEvidence.lean": "c78711f6dc439eaf3b925c24b495f2853122163c6c358d43eb682134b6ff6885",
+    "lean/NoPin/ApplicationRequests/LifecycleFixtures.lean": "5758531bff57dc750a049efa72151a35f5ae1608c7b84dccc5f65de83ab8a2bb",
+    "lean/NoPin/ApplicationRequests/LifecycleReport.lean": "06eeacc61106af049c6e96b2b758b4c4913317e26c747f260aa56b5e011c114f",
+    "lean/NoPin/ApplicationRequests/LifecycleStatements.lean": "51ca94c109a76ed7a692382010eb07e7cc2a35bd17508d13ad9b3a9d1196dd6f",
+    "lifecycle_check.py": "f87e17cc28d0a6fa6239370909321b3fc5c2f9f5018417d35337e55274e2bf0e",
+    "lifecycle_controls.py": "50884f00201dfc5931c69fc6c4cc8658ecbe606c3781b843176fd7c947845015"
+  },
+  "preservedBaseArtifacts": {
+    "held-statements.json": "fbf86c89630d0daf32e49a33640803ac82f1a66baa99a60a2974c7a652d9f66c",
+    "history-statements.json": "e3cf50f8c634df9ea87b2e0ce16bacb180d2545d13adef414722651ba8493022",
+    "mutants.json": "96d72f824c5da393440e478732ef8c04ce26e949df10755b92f4258a46696287",
+    "history_controls.py": "c578062209ad1a067f732f609cc625e0d5a001bfbced28f2b7f396ede779ca30",
+    "history-corpus.json": "7956e841731926ac98c906c9be961bbf6bad21377afbd6f8710c5cb9761f60d2",
+    "history-mutants.json": "ffc13cbeb2003276f48c91d3b3df785ea5d478d4b666df5148eda6d5683ad1b8",
+    "application-requests-corpus.json": "782f1a89aa4f31f277b4f83bbe2e73cd7aabd6fe9de3fbf646b5844f815cd1fd",
+    "lake-manifest.json": "31cea901292a5f3a4dba5612c9a0362019229a7d25628f3bcb8a8a8505a35443",
+    "README.speech.json": "3556a362b15ef8d0e682d6b19d7ebc0e4bc80ea87eda3da9f908128aa271b8e0",
+    "statements.json": "97450a8880920e1f81b97a02e2e449c76aec7baa9ae2b17fab63f7fc93fccb87",
+    "README.md": "f0c8daa80c243c697673fed9881563940f78620c3b890d387d7a8f4ee98f6231",
+    "application-requests-statements.json": "f2bb4c60316bc71f506cd442a3b73b05e8cdf5d610719274bc0946e66f218df1",
+    "corpus.json": "7d327e9b86955dd655ab2e8ed4693c3f03d00fe7aa00ca7da5f764fe5fc7bfd5",
+    "effect_controls.py": "26648c0d1ae76cb5c26da227ee1301eb8e03e8b2916d9d4793635d839318f509",
+    "held-corpus.json": "3772d77210e94584dac4b44517afc9696ac3ecf34484e3059427efd75b98dd5d",
+    "application-requests-mutants.json": "fdcbea2d404d14ddeda0fec2cee31015b5f1dce8b1ae99fc9fa7fbb7c045af99",
+    "lakefile.lean": "a1e4e166390a65f8eee4a5928b7b53285da2a749e184c88fc9de1cfdda5c8d84",
+    "history_check.py": "04d81f5cd4e521157d0c832ad7c045942b3b49d0ac62099fdb9df9ed9b12bc6c",
+    "held-mutants.json": "6a7bb2adb325544430bc94699d2d34a19acf6bade320221ab8d0b312a5f95f1e",
+    "lean/NoPin/Mutants.lean": "cc0288f0807cf66ff0b5733fd0e13411e2bf6f05f5b38794800a65a48add5c61",
+    "lean/NoPin/Witnesses.lean": "e93bff74e553e43b4ac20514cb91e91b712648d1fbb5c698c0aabd7bbe51168d",
+    "lean/NoPin/Statements.lean": "586c5ee86be8a691970ba245472e4d7be67303667242e42f53a905e6f2d838de",
+    "lean/NoPin/Oracle.lean": "aec201a934aa8d00bf1b394ad26465bcceec54e7d40dd2aa37efa43306fff983",
+    "lean/NoPin/Identity.lean": "f20e4b1b2c3f195832f4eca28ac7d41aef2b31d2cb1e07e03d897f840ab52bb8",
+    "lean/NoPin/Held/Instances.lean": "5855a76df1d1f2571be7446a60efea2bdd5cf8f63ffdb89c2ac854234df84299",
+    "lean/NoPin/Held/Corpus.lean": "279e3048735805a1111f5d4966b7f49df88daff54cccbdfd9ca60684c53b7225",
+    "lean/NoPin/Held/Model.lean": "78d6aa297b28aa81b09b9ba7fe27423d34a5c828ecc0a7fde98b5ce776aaa510",
+    "lean/NoPin/Held/Strong.lean": "91d87c732a4cc88cd55b7605a311933bbac92e222f0ed963a3df408782872f86",
+    "lean/NoPin/Held/Oracle.lean": "76adeb342e742683de7cd87972f750ff1e48b60b9b0c87ab7283713d58342fd2",
+    "lean/NoPin/Held/Fixtures.lean": "a6378b465c3fbd032f912749748fa675097a29e1c3bea6812ac1b5f24dec2bb7",
+    "lean/NoPin/Held/Equality.lean": "c7f8f3629e6bb1e53616d16d38ecc7dc82fa0871b41462424d0b5cf0d116cd71",
+    "lean/NoPin/Held/Value.lean": "e1707918c12c99b9dbf0e9e696a4461cfc629aa460a8aaa70a353eaed1c10fa0",
+    "lean/NoPin/Held/StrongMutants.lean": "de63bd595b15dbff2c6339835f430e46ac58121ebeaef769298ebb9357837db2",
+    "lean/NoPin/Held/Conditions.lean": "f1e02b96bb6131d06f36d1326f451d82a91ce24c4e2af90652d322e89f428ef9",
+    "lean/NoPin/Held/Good.lean": "e5e11740d0970a85460418430bcd44812b598a4ac2c8ceb801e2b3998536e19c",
+    "lean/NoPin/Held/Mutants.lean": "8aa47ff1374754f904f653566fb072779e624f8d6fefb1bcabd5e1bf53607898",
+    "lean/NoPin/Held/Statements.lean": "b4a5d6e31242ff83d8bdde8ce90ac2832a3c18bc00de1d0c21daa79aee0f7e6a",
+    "lean/NoPin/Held/Report.lean": "9387b94944fbbe3a4745a0467af070578346776d8fd79baa7c2d8fb3c2c3e562",
+    "lean/NoPin/ApplicationRequests/Evidence.lean": "1bc23d108c9ad9402bdfd2e2c952167816da4c0449a9a8d81afd54f7f3960d4d",
+    "lean/NoPin/ApplicationRequests/HistoryClaims.lean": "e3bd0eb671a35cceba205126d6777c82404b38d56f2b63cfea03bee8342dd8fb",
+    "lean/NoPin/ApplicationRequests/Oracle.lean": "4f935ac84289b19f8980b9502cb334dc48ff8677503f141b0c245db0149713e3",
+    "lean/NoPin/ApplicationRequests/Role.lean": "f6f17f8bafa3ebb9c5d271078ecd63fd19f0ba700c3ea7af47604051b8309f96",
+    "lean/NoPin/ApplicationRequests/Effects.lean": "a6864e492332fea0d317d8d6e834fcc4dec49ba7c4d47c9a275743860f2df1bc",
+    "lean/NoPin/ApplicationRequests/HistoryOrigins.lean": "87922b557807d5b9ee50b9906f71b4b4a144537f87c97335755760d803d4b099",
+    "lean/NoPin/ApplicationRequests/HistoryBindings.lean": "52bf2a9f79ef2537b27f3f730600b0d735012398e0e19cf237ea362481930c61",
+    "lean/NoPin/ApplicationRequests/HistoryFixtures.lean": "eaaaf656f590ea91a82b665dd7245467ec612f462664fd972a68bf6b02f51a9e",
+    "lean/NoPin/ApplicationRequests/Fixtures.lean": "5d2ee2d82a846ec9b93a6e40ae7a330a50d2a2970d9726fa40a89c896a58c859",
+    "lean/NoPin/ApplicationRequests/Core.lean": "fbc6fdc77060d684f74c9dccf11d88a4863c39db6ab6f4763dbd252988869d14",
+    "lean/NoPin/ApplicationRequests/Statements.lean": "93618c4ca032d36acc461f2e67db19bbd3b8f8b8e5e7168282b4601d7e9018fa",
+    "lean/NoPin/ApplicationRequests/Report.lean": "74b49dfa4522fa1e20f259757ba4c343dbb996f4df5920d4f863a3de86342212",
+    "lean/NoPin/ApplicationRequests/HistoryReport.lean": "9678f55f28a625194f297b7c446b923f362c09ad34bd2f72857289e01d93926e",
+    "lean/NoPin/ApplicationRequests/Client.lean": "8e395c324f34c44de1bcede1555ebb404e72fbdc9029baa562c8a4b2810c2062",
+    "lean/NoPin/ApplicationRequests/Conditions.lean": "c2a2c3759c59e2343561d0eb0eeb078e386b156a06e4b734b59025fa1cb8e48c",
+    "lean/NoPin/ApplicationRequests/History.lean": "79de2d0bdd260d1ac6315f81c496c3f420359f6bd715a954c016f28bd81d6089",
+    "lean/NoPin/ApplicationRequests/Application.lean": "5a1ac4c17d37eb40cbcd230c288a76099eba66c51f9fe7acc1ddc5db1f2043c7",
+    "lean/NoPin/ApplicationRequests/HistoryEvidence.lean": "794ffc618d3c0a5644155b0901a72d2382d0509e8bdf07605f5e198083ffe1fa"
+  },
+  "statements": [
+    {
+      "theorem": "NoPin.ApplicationRequests.Lifecycle.Statements.configurationCreate_inversion",
+      "status": "STATED",
+      "statementSha256": "4bc8891b318a456c43d0adeac402a6782c9e20d765903f99cfb2a84438e0a809",
+      "witness": "NoPin.ApplicationRequests.Lifecycle.Evidence.configurationCreate_inversion_antecedent",
+      "positive": "NoPin.ApplicationRequests.Lifecycle.Evidence.configurationCreate_inversion_positive",
+      "mutant": "NoPin.ApplicationRequests.Lifecycle.Evidence.configurationCreate_inversion_mutant",
+      "selector": "configurationShape",
+      "description": "configurationCreate inversion",
+      "family": "source-derived action inversion"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Lifecycle.Statements.bookRegistration_inversion",
+      "status": "STATED",
+      "statementSha256": "c8ab4a82bb25b6ef14b4211fad039cf046bb8c0d6922448c74f8a87c3742db8f",
+      "witness": "NoPin.ApplicationRequests.Lifecycle.Evidence.bookRegistration_inversion_antecedent",
+      "positive": "NoPin.ApplicationRequests.Lifecycle.Evidence.bookRegistration_inversion_positive",
+      "mutant": "NoPin.ApplicationRequests.Lifecycle.Evidence.bookRegistration_inversion_mutant",
+      "selector": "configurationShape",
+      "description": "bookRegistration inversion",
+      "family": "source-derived action inversion"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Lifecycle.Statements.bookTermination_inversion",
+      "status": "STATED",
+      "statementSha256": "19d34a720eb24e2dbf5e1bc4ed394efb97b2de1dbb1782ef1364ed3c99d17a16",
+      "witness": "NoPin.ApplicationRequests.Lifecycle.Evidence.bookTermination_inversion_antecedent",
+      "positive": "NoPin.ApplicationRequests.Lifecycle.Evidence.bookTermination_inversion_positive",
+      "mutant": "NoPin.ApplicationRequests.Lifecycle.Evidence.bookTermination_inversion_mutant",
+      "selector": "bookingSignature",
+      "description": "bookTermination inversion",
+      "family": "source-derived action inversion"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Lifecycle.Statements.registrationFold_inversion",
+      "status": "STATED",
+      "statementSha256": "9f032e2e0646a32af11b1df0ce2380b09ec0f88e9059edd09b6e386753631b72",
+      "witness": "NoPin.ApplicationRequests.Lifecycle.Evidence.registrationFold_inversion_antecedent",
+      "positive": "NoPin.ApplicationRequests.Lifecycle.Evidence.registrationFold_inversion_positive",
+      "mutant": "NoPin.ApplicationRequests.Lifecycle.Evidence.registrationFold_inversion_mutant",
+      "selector": "registrationShape",
+      "description": "registrationFold inversion",
+      "family": "source-derived action inversion"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Lifecycle.Statements.ownerReclaim_inversion",
+      "status": "STATED",
+      "statementSha256": "16f1be109e6fdc9803cc7442fb9231b70c5fc33f77019f31b09417a0340e13f4",
+      "witness": "NoPin.ApplicationRequests.Lifecycle.Evidence.ownerReclaim_inversion_antecedent",
+      "positive": "NoPin.ApplicationRequests.Lifecycle.Evidence.ownerReclaim_inversion_positive",
+      "mutant": "NoPin.ApplicationRequests.Lifecycle.Evidence.ownerReclaim_inversion_mutant",
+      "selector": "registrationShape",
+      "description": "ownerReclaim inversion",
+      "family": "source-derived action inversion"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Lifecycle.Statements.expiredCleanup_inversion",
+      "status": "STATED",
+      "statementSha256": "3d82a61e4b3ad467149759e9e911437f3a0270da4e79b81086f39c72327990e4",
+      "witness": "NoPin.ApplicationRequests.Lifecycle.Evidence.expiredCleanup_inversion_antecedent",
+      "positive": "NoPin.ApplicationRequests.Lifecycle.Evidence.expiredCleanup_inversion_positive",
+      "mutant": "NoPin.ApplicationRequests.Lifecycle.Evidence.expiredCleanup_inversion_mutant",
+      "selector": "registrationShape",
+      "description": "expiredCleanup inversion",
+      "family": "source-derived action inversion"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Lifecycle.Statements.terminationFold_inversion",
+      "status": "STATED",
+      "statementSha256": "15523e270999d7309046b16306be39d3aabd63e773ffe8ff237d908fc9949d50",
+      "witness": "NoPin.ApplicationRequests.Lifecycle.Evidence.terminationFold_inversion_antecedent",
+      "positive": "NoPin.ApplicationRequests.Lifecycle.Evidence.terminationFold_inversion_positive",
+      "mutant": "NoPin.ApplicationRequests.Lifecycle.Evidence.terminationFold_inversion_mutant",
+      "selector": "terminationShape",
+      "description": "terminationFold inversion",
+      "family": "source-derived action inversion"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Lifecycle.Statements.liveUpdate_inversion",
+      "status": "STATED",
+      "statementSha256": "665372ce6922e5a74a811c5746ef9933d6d6f170733640af7107ad842a096884",
+      "witness": "NoPin.ApplicationRequests.Lifecycle.Evidence.liveUpdate_inversion_antecedent",
+      "positive": "NoPin.ApplicationRequests.Lifecycle.Evidence.liveUpdate_inversion_positive",
+      "mutant": "NoPin.ApplicationRequests.Lifecycle.Evidence.liveUpdate_inversion_mutant",
+      "selector": "bookingSignature",
+      "description": "liveUpdate inversion",
+      "family": "source-derived action inversion"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Lifecycle.Statements.approvalBurn_inversion",
+      "status": "STATED",
+      "statementSha256": "3bd532545df3773deff872684b99ba7942e80159305824dacaf687104880d8af",
+      "witness": "NoPin.ApplicationRequests.Lifecycle.Evidence.approvalBurn_inversion_antecedent",
+      "positive": "NoPin.ApplicationRequests.Lifecycle.Evidence.approvalBurn_inversion_positive",
+      "mutant": "NoPin.ApplicationRequests.Lifecycle.Evidence.approvalBurn_inversion_mutant",
+      "selector": "inputCoverage",
+      "description": "approvalBurn inversion",
+      "family": "source-derived action inversion"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Lifecycle.Statements.registration_lifecycle",
+      "status": "STATED",
+      "statementSha256": "4bd25284121ffc11153732be4feb021ce7dda4419b67c74ff747b8f392acd09d",
+      "witness": "NoPin.ApplicationRequests.Lifecycle.Evidence.registration_lifecycle_antecedent",
+      "positive": "NoPin.ApplicationRequests.Lifecycle.Evidence.registration_lifecycle_positive",
+      "mutant": "NoPin.ApplicationRequests.Lifecycle.Evidence.registration_lifecycle_mutant",
+      "selector": "reclaimPhase",
+      "description": "registration lifecycle",
+      "family": "independent application effect"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Lifecycle.Statements.termination_burn",
+      "status": "STATED",
+      "statementSha256": "cfea4df95dc1f237d77e562820e24e5ed114cfd1fe2d214cfc162cc55b8838c4",
+      "witness": "NoPin.ApplicationRequests.Lifecycle.Evidence.termination_burn_antecedent",
+      "positive": "NoPin.ApplicationRequests.Lifecycle.Evidence.termination_burn_positive",
+      "mutant": "NoPin.ApplicationRequests.Lifecycle.Evidence.termination_burn_mutant",
+      "selector": "terminationActiveBurn",
+      "description": "termination burn",
+      "family": "independent application effect"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Lifecycle.Statements.booking_authority_and_parameters",
+      "status": "STATED",
+      "statementSha256": "800b6e916e3fa84ccc0c191f605479730328e2ad84aa7e6697fbc4acf670568b",
+      "witness": "NoPin.ApplicationRequests.Lifecycle.Evidence.booking_authority_and_parameters_antecedent",
+      "positive": "NoPin.ApplicationRequests.Lifecycle.Evidence.booking_authority_and_parameters_positive",
+      "mutant": "NoPin.ApplicationRequests.Lifecycle.Evidence.booking_authority_and_parameters_mutant",
+      "selector": "bookingSignature",
+      "description": "booking authority and parameters",
+      "family": "independent application effect"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Lifecycle.Statements.treasury_at_booking",
+      "status": "STATED",
+      "statementSha256": "05ce3a60dd1c6fc7690c1648f436f95d338aca0518d97db8c8c3273e025aa439",
+      "witness": "NoPin.ApplicationRequests.Lifecycle.Evidence.treasury_at_booking_antecedent",
+      "positive": "NoPin.ApplicationRequests.Lifecycle.Evidence.treasury_at_booking_positive",
+      "mutant": "NoPin.ApplicationRequests.Lifecycle.Evidence.treasury_at_booking_mutant",
+      "selector": "moneyTreasury",
+      "description": "treasury at booking",
+      "family": "independent application effect"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Lifecycle.Statements.additive_payments",
+      "status": "STATED",
+      "statementSha256": "e0dd9a053f05bf237fa990e5ea7857d6216aca60bcddb5ea452ad3274bdf987f",
+      "witness": "NoPin.ApplicationRequests.Lifecycle.Evidence.additive_payments_antecedent",
+      "positive": "NoPin.ApplicationRequests.Lifecycle.Evidence.additive_payments_positive",
+      "mutant": "NoPin.ApplicationRequests.Lifecycle.Evidence.additive_payments_mutant",
+      "selector": "moneyOutputs",
+      "description": "additive payments",
+      "family": "independent application effect"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Lifecycle.Statements.folder_protection",
+      "status": "STATED",
+      "statementSha256": "7d866b6e9d814cdd917935d990e9e0f719cb281d38f2128c9bc8bfec3a507959",
+      "witness": "NoPin.ApplicationRequests.Lifecycle.Evidence.folder_protection_antecedent",
+      "positive": "NoPin.ApplicationRequests.Lifecycle.Evidence.folder_protection_positive",
+      "mutant": "NoPin.ApplicationRequests.Lifecycle.Evidence.folder_protection_mutant",
+      "selector": "reclaimPhase",
+      "description": "folder protection",
+      "family": "independent application effect"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Lifecycle.Statements.burning_grants_nothing",
+      "status": "STATED",
+      "statementSha256": "87aa48e547987a19995ef21ad9e13968793db3b89024d7fd3431785257c93f93",
+      "witness": "NoPin.ApplicationRequests.Lifecycle.Evidence.burning_grants_nothing_antecedent",
+      "positive": "NoPin.ApplicationRequests.Lifecycle.Evidence.burning_grants_nothing_positive",
+      "mutant": "NoPin.ApplicationRequests.Lifecycle.Evidence.burning_grants_nothing_mutant",
+      "selector": "inputCoverage",
+      "description": "burning grants nothing",
+      "family": "independent application effect"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Lifecycle.Statements.no_stuck_termination",
+      "status": "STATED",
+      "statementSha256": "a3c093b26a65f62d8b6f2a78ae234d41006386fb47fc7807e7109401a574899a",
+      "witness": "NoPin.ApplicationRequests.Lifecycle.Evidence.no_stuck_termination_antecedent",
+      "positive": "NoPin.ApplicationRequests.Lifecycle.Evidence.no_stuck_termination_positive",
+      "mutant": "NoPin.ApplicationRequests.Lifecycle.Evidence.no_stuck_termination_mutant",
+      "selector": "terminationActiveBurn",
+      "description": "no stuck termination",
+      "family": "conditional public termination availability"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Lifecycle.Statements.approval_burn_open",
+      "status": "STATED",
+      "statementSha256": "d3f9c9a5290d3b82e96ed8f242cb94d44b777ec0ba950f1a1bee9eb5871258d6",
+      "witness": "NoPin.ApplicationRequests.Lifecycle.Evidence.approval_burn_open_antecedent",
+      "positive": "NoPin.ApplicationRequests.Lifecycle.Evidence.approval_burn_open_positive",
+      "mutant": "NoPin.ApplicationRequests.Lifecycle.Evidence.approval_burn_open_mutant",
+      "selector": "inputCoverage",
+      "description": "approval burn open",
+      "family": "independent application effect"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Lifecycle.Statements.configuration_immutable",
+      "status": "STATED",
+      "statementSha256": "927d75f83637151fceabe3a6990e57ca9ea754880e59dc9dd78beb5d14ec8cf7",
+      "witness": "NoPin.ApplicationRequests.Lifecycle.Evidence.configuration_immutable_antecedent",
+      "positive": "NoPin.ApplicationRequests.Lifecycle.Evidence.configuration_immutable_positive",
+      "mutant": "NoPin.ApplicationRequests.Lifecycle.Evidence.configuration_immutable_mutant",
+      "selector": "configurationShape",
+      "description": "configuration immutable",
+      "family": "independent application effect"
+    }
+  ],
+  "inversions": [
+    {
+      "constructor": "configurationCreate",
+      "inversion": "NoPin.ApplicationRequests.Lifecycle.Statements.configurationCreate_inversion"
+    },
+    {
+      "constructor": "bookRegistration",
+      "inversion": "NoPin.ApplicationRequests.Lifecycle.Statements.bookRegistration_inversion"
+    },
+    {
+      "constructor": "bookTermination",
+      "inversion": "NoPin.ApplicationRequests.Lifecycle.Statements.bookTermination_inversion"
+    },
+    {
+      "constructor": "registrationFold",
+      "inversion": "NoPin.ApplicationRequests.Lifecycle.Statements.registrationFold_inversion"
+    },
+    {
+      "constructor": "ownerReclaim",
+      "inversion": "NoPin.ApplicationRequests.Lifecycle.Statements.ownerReclaim_inversion"
+    },
+    {
+      "constructor": "expiredCleanup",
+      "inversion": "NoPin.ApplicationRequests.Lifecycle.Statements.expiredCleanup_inversion"
+    },
+    {
+      "constructor": "terminationFold",
+      "inversion": "NoPin.ApplicationRequests.Lifecycle.Statements.terminationFold_inversion"
+    },
+    {
+      "constructor": "liveUpdate",
+      "inversion": "NoPin.ApplicationRequests.Lifecycle.Statements.liveUpdate_inversion"
+    },
+    {
+      "constructor": "approvalBurn",
+      "inversion": "NoPin.ApplicationRequests.Lifecycle.Statements.approvalBurn_inversion"
+    }
+  ],
+  "guards": [
+    {
+      "selector": "configurationShape",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_configurationShape_positive",
+      "mutant": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_configurationShape_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "configurationGenesis",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_configurationGenesis_positive",
+      "mutant": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_configurationGenesis_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "configurationReference",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_configurationReference_positive",
+      "mutant": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_configurationReference_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "registrationShape",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_registrationShape_positive",
+      "mutant": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_registrationShape_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "registrationControl",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_registrationControl_positive",
+      "mutant": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_registrationControl_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "registrationClock",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_registrationClock_positive",
+      "mutant": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_registrationClock_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "registrationFunding",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_registrationFunding_positive",
+      "mutant": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_registrationFunding_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "bookingSignature",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_bookingSignature_positive",
+      "mutant": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_bookingSignature_mutant",
+      "sourceOccurrences": 3
+    },
+    {
+      "selector": "terminationShape",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_terminationShape_positive",
+      "mutant": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_terminationShape_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "liveShape",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_liveShape_positive",
+      "mutant": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_liveShape_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "liveControl",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_liveControl_positive",
+      "mutant": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_liveControl_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "liveDeposit",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_liveDeposit_positive",
+      "mutant": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_liveDeposit_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "requestInput",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_requestInput_positive",
+      "mutant": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_requestInput_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "approvalBurn",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_approvalBurn_positive",
+      "mutant": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_approvalBurn_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "freshApproval",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_freshApproval_positive",
+      "mutant": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_freshApproval_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "processingPhase",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_processingPhase_positive",
+      "mutant": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_processingPhase_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "reclaimPhase",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_reclaimPhase_positive",
+      "mutant": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_reclaimPhase_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "cleanupPhase",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_cleanupPhase_positive",
+      "mutant": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_cleanupPhase_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "registrationDelivery",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_registrationDelivery_positive",
+      "mutant": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_registrationDelivery_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "terminationActiveBurn",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_terminationActiveBurn_positive",
+      "mutant": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_terminationActiveBurn_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "terminationInvocation",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_terminationInvocation_positive",
+      "mutant": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_terminationInvocation_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "updateControl",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_updateControl_positive",
+      "mutant": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_updateControl_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "updateAssets",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_updateAssets_positive",
+      "mutant": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_updateAssets_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "updateDeposit",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_updateDeposit_positive",
+      "mutant": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_updateDeposit_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "inputCoverage",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_inputCoverage_positive",
+      "mutant": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_inputCoverage_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "birthCoverage",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_birthCoverage_positive",
+      "mutant": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_birthCoverage_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "moneyOutputs",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_moneyOutputs_positive",
+      "mutant": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_moneyOutputs_mutant",
+      "sourceOccurrences": 1
+    },
+    {
+      "selector": "moneyTreasury",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_moneyTreasury_positive",
+      "mutant": "NoPin.ApplicationRequests.Lifecycle.Evidence.guard_moneyTreasury_mutant",
+      "sourceOccurrences": 1
+    }
+  ],
+  "limits": [
+    "All 19 general statements deliberately depend on sorryAx.",
+    "Finite examples execute the model only; no chain transaction or application reachability claim.",
+    "No top-up rule adopted; availability requires authentic public data, codec and collision premises, public state and ordinary fee funding.",
+    "Canonical bytes, script invocation, real output minimums, provider completeness, wallet availability and inclusion remain external.",
+    "Earlier statement, corpus and mutant rows remain byte-identical.",
+    "History statement and inversion rows are preserved; its check.py plumbing hash is refreshed for lifecycle integration."
+  ],
+  "supersededBy": {
+    "family": "refund-lifecycle",
+    "reason": "Refund address signs reclaim, as the accepted economics requires; controller authorizes booking only.",
+    "answer": "/home/paolino/.orch-runtime/singular/epic-731/ticket-741/commit-owner-12/answers/A-001-reclaim-signing-authority.md",
+    "statements": [
+      {
+        "old": "NoPin.ApplicationRequests.Lifecycle.Statements.configurationCreate_inversion",
+        "replacement": "NoPin.ApplicationRequests.RefundLifecycle.Statements.configurationCreate_inversion"
+      },
+      {
+        "old": "NoPin.ApplicationRequests.Lifecycle.Statements.bookRegistration_inversion",
+        "replacement": "NoPin.ApplicationRequests.RefundLifecycle.Statements.bookRegistration_inversion"
+      },
+      {
+        "old": "NoPin.ApplicationRequests.Lifecycle.Statements.bookTermination_inversion",
+        "replacement": "NoPin.ApplicationRequests.RefundLifecycle.Statements.bookTermination_inversion"
+      },
+      {
+        "old": "NoPin.ApplicationRequests.Lifecycle.Statements.registrationFold_inversion",
+        "replacement": "NoPin.ApplicationRequests.RefundLifecycle.Statements.registrationFold_inversion"
+      },
+      {
+        "old": "NoPin.ApplicationRequests.Lifecycle.Statements.ownerReclaim_inversion",
+        "replacement": "NoPin.ApplicationRequests.RefundLifecycle.Statements.ownerReclaim_inversion"
+      },
+      {
+        "old": "NoPin.ApplicationRequests.Lifecycle.Statements.expiredCleanup_inversion",
+        "replacement": "NoPin.ApplicationRequests.RefundLifecycle.Statements.expiredCleanup_inversion"
+      },
+      {
+        "old": "NoPin.ApplicationRequests.Lifecycle.Statements.terminationFold_inversion",
+        "replacement": "NoPin.ApplicationRequests.RefundLifecycle.Statements.terminationFold_inversion"
+      },
+      {
+        "old": "NoPin.ApplicationRequests.Lifecycle.Statements.liveUpdate_inversion",
+        "replacement": "NoPin.ApplicationRequests.RefundLifecycle.Statements.liveUpdate_inversion"
+      },
+      {
+        "old": "NoPin.ApplicationRequests.Lifecycle.Statements.approvalBurn_inversion",
+        "replacement": "NoPin.ApplicationRequests.RefundLifecycle.Statements.approvalBurn_inversion"
+      },
+      {
+        "old": "NoPin.ApplicationRequests.Lifecycle.Statements.registration_lifecycle",
+        "replacement": "NoPin.ApplicationRequests.RefundLifecycle.Statements.registration_lifecycle"
+      },
+      {
+        "old": "NoPin.ApplicationRequests.Lifecycle.Statements.termination_burn",
+        "replacement": "NoPin.ApplicationRequests.RefundLifecycle.Statements.termination_burn"
+      },
+      {
+        "old": "NoPin.ApplicationRequests.Lifecycle.Statements.booking_authority_and_parameters",
+        "replacement": "NoPin.ApplicationRequests.RefundLifecycle.Statements.booking_authority_and_parameters"
+      },
+      {
+        "old": "NoPin.ApplicationRequests.Lifecycle.Statements.treasury_at_booking",
+        "replacement": "NoPin.ApplicationRequests.RefundLifecycle.Statements.treasury_at_booking"
+      },
+      {
+        "old": "NoPin.ApplicationRequests.Lifecycle.Statements.additive_payments",
+        "replacement": "NoPin.ApplicationRequests.RefundLifecycle.Statements.additive_payments"
+      },
+      {
+        "old": "NoPin.ApplicationRequests.Lifecycle.Statements.folder_protection",
+        "replacement": "NoPin.ApplicationRequests.RefundLifecycle.Statements.folder_protection"
+      },
+      {
+        "old": "NoPin.ApplicationRequests.Lifecycle.Statements.burning_grants_nothing",
+        "replacement": "NoPin.ApplicationRequests.RefundLifecycle.Statements.burning_grants_nothing"
+      },
+      {
+        "old": "NoPin.ApplicationRequests.Lifecycle.Statements.no_stuck_termination",
+        "replacement": "NoPin.ApplicationRequests.RefundLifecycle.Statements.no_stuck_termination"
+      },
+      {
+        "old": "NoPin.ApplicationRequests.Lifecycle.Statements.approval_burn_open",
+        "replacement": "NoPin.ApplicationRequests.RefundLifecycle.Statements.approval_burn_open"
+      },
+      {
+        "old": "NoPin.ApplicationRequests.Lifecycle.Statements.configuration_immutable",
+        "replacement": "NoPin.ApplicationRequests.RefundLifecycle.Statements.configuration_immutable"
+      }
+    ]
+  }
+}

@@ -1,0 +1,133 @@
+{
+  "status": "PARTIAL-HYPOTHETICAL-PROOF-CANDIDATE",
+  "acceptedLaw": false,
+  "base": "4f09454f95266809f5c2f5a19246b7eac204ab99",
+  "definitions": {
+    "check.py": "8bf846b5fa544f84b147cdddcb539a9428fb9a51ad74e7cf181faa4da4730e7b",
+    "history_check.py": "04d81f5cd4e521157d0c832ad7c045942b3b49d0ac62099fdb9df9ed9b12bc6c",
+    "history_controls.py": "c578062209ad1a067f732f609cc625e0d5a001bfbced28f2b7f396ede779ca30",
+    "lean/NoPin/ApplicationRequests/Application.lean": "5a1ac4c17d37eb40cbcd230c288a76099eba66c51f9fe7acc1ddc5db1f2043c7",
+    "lean/NoPin/ApplicationRequests/Client.lean": "8e395c324f34c44de1bcede1555ebb404e72fbdc9029baa562c8a4b2810c2062",
+    "lean/NoPin/ApplicationRequests/Conditions.lean": "c2a2c3759c59e2343561d0eb0eeb078e386b156a06e4b734b59025fa1cb8e48c",
+    "lean/NoPin/ApplicationRequests/Core.lean": "fbc6fdc77060d684f74c9dccf11d88a4863c39db6ab6f4763dbd252988869d14",
+    "lean/NoPin/ApplicationRequests/Effects.lean": "a6864e492332fea0d317d8d6e834fcc4dec49ba7c4d47c9a275743860f2df1bc",
+    "lean/NoPin/ApplicationRequests/Evidence.lean": "1bc23d108c9ad9402bdfd2e2c952167816da4c0449a9a8d81afd54f7f3960d4d",
+    "lean/NoPin/ApplicationRequests/Fixtures.lean": "5d2ee2d82a846ec9b93a6e40ae7a330a50d2a2970d9726fa40a89c896a58c859",
+    "lean/NoPin/ApplicationRequests/History.lean": "79de2d0bdd260d1ac6315f81c496c3f420359f6bd715a954c016f28bd81d6089",
+    "lean/NoPin/ApplicationRequests/HistoryBindings.lean": "52bf2a9f79ef2537b27f3f730600b0d735012398e0e19cf237ea362481930c61",
+    "lean/NoPin/ApplicationRequests/HistoryClaims.lean": "e3bd0eb671a35cceba205126d6777c82404b38d56f2b63cfea03bee8342dd8fb",
+    "lean/NoPin/ApplicationRequests/HistoryEvidence.lean": "794ffc618d3c0a5644155b0901a72d2382d0509e8bdf07605f5e198083ffe1fa",
+    "lean/NoPin/ApplicationRequests/HistoryFixtures.lean": "eaaaf656f590ea91a82b665dd7245467ec612f462664fd972a68bf6b02f51a9e",
+    "lean/NoPin/ApplicationRequests/HistoryOrigins.lean": "87922b557807d5b9ee50b9906f71b4b4a144537f87c97335755760d803d4b099",
+    "lean/NoPin/ApplicationRequests/HistoryReport.lean": "9678f55f28a625194f297b7c446b923f362c09ad34bd2f72857289e01d93926e",
+    "lean/NoPin/ApplicationRequests/Oracle.lean": "4f935ac84289b19f8980b9502cb334dc48ff8677503f141b0c245db0149713e3",
+    "lean/NoPin/ApplicationRequests/Report.lean": "74b49dfa4522fa1e20f259757ba4c343dbb996f4df5920d4f863a3de86342212",
+    "lean/NoPin/ApplicationRequests/Role.lean": "f6f17f8bafa3ebb9c5d271078ecd63fd19f0ba700c3ea7af47604051b8309f96",
+    "lean/NoPin/ApplicationRequests/Statements.lean": "93618c4ca032d36acc461f2e67db19bbd3b8f8b8e5e7168282b4601d7e9018fa",
+    "lean/NoPin.lean": "f95fcde11c6b6c957e8cccdc9c8c6d186db1d3af04eaa5e4f287f75a9a4f867b",
+    "lean/Report.lean": "3d392ae9b716aa5ea6d4e1ae8344681d2cacb83c805db9398081fefa9487b10e",
+    "history_proof_check.py": "684bfc8f7e32e8389f2ae58e31eeb710d0d4a20ce1f81e12e7a357d026bd401a",
+    "history_proof_controls.py": "789f7f6cd487842ac37585fe71261b37f59909d54034ef98b81233568400cb20",
+    "history-proof-definition-baseline.json": "965b2d8836b617c0ea7e7412b06f27980382fef4ac6be70bcfbe6cbf8697e895",
+    "lean/NoPin/ApplicationRequests/HistoryProofs.lean": "6502852fc8692a37c080def9bc954113520463555d2075c73d3f9cacdd690f3c",
+    "lean/NoPin/ApplicationRequests/HistoryProofAudit.lean": "687b9de56b33741a235ed31dc13a5c7f7a6b9136e1f7967343aa3976f1cc24fe"
+  },
+  "preservedBaseArtifacts": {
+    "statements.json": "97450a8880920e1f81b97a02e2e449c76aec7baa9ae2b17fab63f7fc93fccb87",
+    "mutants.json": "96d72f824c5da393440e478732ef8c04ce26e949df10755b92f4258a46696287",
+    "corpus.json": "7d327e9b86955dd655ab2e8ed4693c3f03d00fe7aa00ca7da5f764fe5fc7bfd5",
+    "held-statements.json": "fbf86c89630d0daf32e49a33640803ac82f1a66baa99a60a2974c7a652d9f66c",
+    "held-mutants.json": "6a7bb2adb325544430bc94699d2d34a19acf6bade320221ab8d0b312a5f95f1e",
+    "held-corpus.json": "3772d77210e94584dac4b44517afc9696ac3ecf34484e3059427efd75b98dd5d",
+    "application-requests-statements.json": "f2bb4c60316bc71f506cd442a3b73b05e8cdf5d610719274bc0946e66f218df1",
+    "application-requests-mutants.json": "fdcbea2d404d14ddeda0fec2cee31015b5f1dce8b1ae99fc9fa7fbb7c045af99",
+    "application-requests-corpus.json": "782f1a89aa4f31f277b4f83bbe2e73cd7aabd6fe9de3fbf646b5844f815cd1fd"
+  },
+  "statements": [
+    {
+      "theorem": "NoPin.ApplicationRequests.HistoryStatements.burn_only_terminating_fold",
+      "requirement": "A token burns only in a fold terminating the same registry and key.",
+      "status": "PROVED",
+      "statementSha256": "26097d75a8dbb040586c0286455f8384380b3a49589647652bfaa0be1c980bca",
+      "witness": "NoPin.ApplicationRequests.HistoryEvidence.burn_antecedent",
+      "positive": "NoPin.ApplicationRequests.HistoryEvidence.burn_candidate",
+      "selectors": [
+        "foldWholePolicy"
+      ]
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.HistoryStatements.no_remint_after_terminal",
+      "requirement": "A fold cannot remint a terminal key and preserves its terminal leaf.",
+      "status": "PROVED",
+      "statementSha256": "f87d2e0eb1a269028095cb156ad847a22496c8526e7d801c17b000634a080c16",
+      "witness": "NoPin.ApplicationRequests.HistoryEvidence.permanence_antecedent",
+      "positive": "NoPin.ApplicationRequests.HistoryEvidence.permanence_candidate",
+      "selectors": [
+        "changeLeaf"
+      ]
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.HistoryStatements.one_live_token",
+      "requirement": "Every complete registry identity and key has at most one live token.",
+      "status": "STATED",
+      "statementSha256": "af7bb5a14d1a6269be457a1cc21c14b4d02f0c41f07de02d8dfc35ba38422460",
+      "witness": "NoPin.ApplicationRequests.HistoryEvidence.one_live_antecedent",
+      "positive": "NoPin.ApplicationRequests.HistoryEvidence.one_live_candidate",
+      "selectors": [
+        "foldWholePolicy"
+      ]
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.HistoryStatements.supply_in_step",
+      "requirement": "The actual live supply is one for an active leaf and zero for every other leaf.",
+      "status": "STATED",
+      "statementSha256": "57dbf1a601289592c6900fb5b9a3f286fae5bf236213bcff340916f39c187388",
+      "witness": "NoPin.ApplicationRequests.HistoryEvidence.supply_antecedent",
+      "positive": "NoPin.ApplicationRequests.HistoryEvidence.supply_candidate",
+      "selectors": [
+        "foldWholePolicy"
+      ]
+    }
+  ],
+  "inversions": [
+    {
+      "constructor": "NoPin.ApplicationRequests.CandidateReachable.initial",
+      "inversion": "NoPin.ApplicationRequests.HistoryOrigins.initial",
+      "certificate": "NoPin.ApplicationRequests.HistoryEvidence.origin_initial",
+      "sourceTypeSha256": "d59ba14009e2e5701934f225ba150b835339445061338811c11d71b562460635",
+      "inversionTypeSha256": "04efad7552d6bac8774b00822592f7f2bf68793627daaba67a5d9c2302bb500b",
+      "inversionValueSha256": "eb979e6735dd8b88738f3d3337fcb458f5dec62d95d5e4263cba7f45863faece"
+    },
+    {
+      "constructor": "NoPin.ApplicationRequests.CandidateReachable.genesis",
+      "inversion": "NoPin.ApplicationRequests.HistoryOrigins.genesis",
+      "certificate": "NoPin.ApplicationRequests.HistoryEvidence.origin_genesis",
+      "sourceTypeSha256": "a53ed63d0978d2ed8be91c6acbe5c0ad3125036c5c4129327f487ae32910b78d",
+      "inversionTypeSha256": "04efad7552d6bac8774b00822592f7f2bf68793627daaba67a5d9c2302bb500b",
+      "inversionValueSha256": "bbaeabf5de8649018609030142358066376f779b3f01ba44960deca318ee92e5"
+    },
+    {
+      "constructor": "NoPin.ApplicationRequests.CandidateReachable.fold",
+      "inversion": "NoPin.ApplicationRequests.HistoryOrigins.fold",
+      "certificate": "NoPin.ApplicationRequests.HistoryEvidence.origin_fold",
+      "sourceTypeSha256": "47dc2840150e887596a6eb7233d716db1f820e6bc7a027e7c00fbc1a54cb7a5e",
+      "inversionTypeSha256": "04efad7552d6bac8774b00822592f7f2bf68793627daaba67a5d9c2302bb500b",
+      "inversionValueSha256": "1db784385430cf6bc7852f2be11599ad283affa4cb4d8bf47c2f63c4f0906b6d"
+    },
+    {
+      "constructor": "NoPin.ApplicationRequests.CandidateReachable.neutral",
+      "inversion": "NoPin.ApplicationRequests.HistoryOrigins.neutral",
+      "certificate": "NoPin.ApplicationRequests.HistoryEvidence.origin_neutral",
+      "sourceTypeSha256": "c73168c3fcdc4a0ae42702c0c5cbec950f95dad15a463ba71aa0b0be83e432a5",
+      "inversionTypeSha256": "04efad7552d6bac8774b00822592f7f2bf68793627daaba67a5d9c2302bb500b",
+      "inversionValueSha256": "c7c0735eec39fcb1ebd772ac83658eecda3816b5837a536702fc436ff8eec169"
+    }
+  ],
+  "limits": [
+    "All four general statements remain unproved.",
+    "Constructor predicates expose every compiled source premise; their certificates are finite instances.",
+    "Neutral-mint and asset-conservation premises are tested; other history premises are not claimed mutation-complete.",
+    "Same-seed registries use two release projections of the same physical observations.",
+    "Application provenance, real cryptography, ledger and implementation acceptance remain external."
+  ]
+}
