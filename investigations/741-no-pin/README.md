@@ -22,9 +22,9 @@ record tools that no hosted job runs; the recipe and its CI step have been
 removed. The historical results below describe their recorded revisions.
 
 The accepted forms are re-proved in CI in
-[`models/singular-application-held`](../../models/singular-application-held/README.md)
+[`models/singular-application-held`](../../models/singular-application-held/)
 (#755, #757) and
-[`models/open-datum-application-held`](../../models/open-datum-application-held/README.md)
+[`models/open-datum-application-held`](../../models/open-datum-application-held/)
 (#756).
 
 ## Story and status
