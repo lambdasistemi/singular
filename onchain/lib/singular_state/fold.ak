@@ -47,7 +47,7 @@ use singular_state/preimage.{
   RegistryIdentity, active_token_name, approval_name, initial_datum_hash,
   registration_preimage, state_token_name,
 }
-use singular_state/state.{StateDatum, recognize_state, state_root}
+use singular_state/state.{StateDatum, policy_delta, recognize_state, state_root}
 
 /// The leaf the trie binds to a registered key: the model's `known active`.
 pub const leaf_active: ByteArray = #"01"
@@ -546,11 +546,26 @@ pub fn fold_value(before: Output, after: Output) -> Bool {
 /// Model guard `foldWholePolicy`: the whole state-policy mint is exactly one
 /// token for each registered key.
 pub fn fold_whole_policy(
-  _registry: RegistryIdentity,
-  _changes: List<Change>,
-  _mint: Value,
+  registry: RegistryIdentity,
+  changes: List<Change>,
+  mint: Value,
 ) -> Bool {
-  False
+  policy_delta(
+    mint,
+    registry.policy,
+    list.map(
+      changes,
+      fn(change) {
+        Pair(
+          active_token_name(registry, key_of(change)),
+          when change is {
+            Register { .. } -> 1
+            Terminate { .. } -> -1
+          },
+        )
+      },
+    ),
+  )
 }
 
 /// Model guard `foldNoNewConsumed`: no new holding is also an input.
