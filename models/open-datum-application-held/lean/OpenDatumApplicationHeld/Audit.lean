@@ -1,3 +1,4 @@
+import OpenDatumApplicationHeld.MoneyStatements
 import OpenDatumApplicationHeld.RefundLifecycleStatements
 import Lean
 
@@ -96,3 +97,15 @@ elab "#refund_types" : command => do
       ("closure", toJson (reached env [`Singular.Config, `Singular.RegistryState] withConstructors))]).compress
 
 #refund_types
+
+elab "#money_types" : command => do
+  let env ← getEnv
+  let statements := env.constants.toList.filter fun (name, _) =>
+    name.getPrefix == `OpenDatumApplicationHeld.Money.Statements
+  for (name, info) in statements do
+    IO.println (Json.mkObj [("moneyStatement", toJson name.toString),
+      ("type", toJson (reprStr (investigationType info.type))),
+      ("compiledType", toJson (reprStr info.type)),
+      ("axioms", toJson ((← collectAxioms name).toList.map toString)),
+      ("closure", toJson (reached env info.type.getUsedConstants.toList true))]).compress
+#money_types

@@ -167,13 +167,20 @@ def code_only(text):
     return "".join(result)
 
 
-def preflight():
-    sources = sorted((PROJECT / "lean").rglob("*.lean"))
+def preflight(statement_stage=False):
+    sources = sorted((PROJECT / "lean").rglob("*.lean")) + [PROJECT / "lakefile.lean"]
     require(sources, "empty library source extent")
     for source in sources:
+        text = code_only(source.read_text())
+        if statement_stage and source.name == "MoneyStatements.lean":
+            require(
+                text.count(":= by sorry") == 12,
+                "statement stage must expose twelve proof holes",
+            )
+            text = text.replace(":= by sorry", ":= by")
         escape = re.search(
-            r"\b(sorry|admit|axiom|unsafe|implemented_by|extern|native_decide)\b",
-            code_only(source.read_text()),
+            r"\b(sorry|admit|axiom|unsafe|implemented_by|extern|native_decide|ofReduceBool)\b",
+            text,
         )
         require(
             not escape, f"library escape in {source.relative_to(PROJECT)}: {escape}"
@@ -215,11 +222,14 @@ def preflight():
     print(
         f"PASS source binding: {len(rows)} distinct compiled types; escape scan {len(sources)} files"
     )
+    import money_check
+
+    money_check.preflight()
     return rows
 
 
-def compiled(report):
-    rows = preflight()
+def compiled(report, statement_stage=False):
+    rows = preflight(statement_stage)
     text = report.read_text()
     statements = []
     for line in text.splitlines():
@@ -257,6 +267,12 @@ def compiled(report):
             f"untrusted axioms for {name}: {sorted(dependencies)}",
         )
     print("PASS compiled correspondence and standard-axiom audit: nineteen statements")
+    import money_check
+
+    money_check.compiled(
+        [json.loads(line) for line in text.splitlines() if line.startswith("{")],
+        statement_stage,
+    )
 
 
 def controls():
@@ -289,10 +305,16 @@ def controls():
             baseline / "models/singular-application-held",
             ignore=shutil.ignore_patterns("__pycache__"),
         )
+        shutil.copytree(
+            REPOSITORY / "applications/open-datum",
+            baseline / "applications/open-datum",
+            ignore=shutil.ignore_patterns("__pycache__"),
+        )
         for label, diagnostic in (
             ("dropped-premise", "compiled statement differs"),
             ("recorded-type", "recorded type digest differs"),
             ("unreferenced-hole", "library escape"),
+            ("money-definition", "frozen money closure changed"),
         ):
             scratch = Path(temporary) / label
             shutil.copytree(baseline, scratch)
@@ -322,6 +344,13 @@ def controls():
                 require(
                     " altered" in path.read_text(), "record control was not applied"
                 )
+            elif label == "money-definition":
+                path = project / "lean/OpenDatumApplicationHeld/MoneyClaims.lean"
+                text = path.read_text()
+                before = "def oldGenesis (b : Baseline) : RegistryState :="
+                require(text.count(before) == 1, "money control edit extent differs")
+                path.write_text(text.replace(before, before + " id"))
+                require(path.read_text() != text, "money control not applied")
             else:
                 path = project / "lean/Unreferenced.lean"
                 path.write_text("theorem unreferenced : True := by sorry\n")
@@ -339,7 +368,7 @@ def controls():
                 result.returncode != 0 and diagnostic in result.stdout,
                 f"control {label} failed for another reason or survived:\n{result.stdout}",
             )
-            if label == "dropped-premise":
+            if label in {"dropped-premise", "money-definition"}:
                 require(
                     "error: Lean exited" not in result.stdout,
                     "premise control did not compile",
@@ -353,13 +382,19 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--report", type=Path)
     parser.add_argument("--controls", action="store_true")
+    parser.add_argument("--statement-stage", action="store_true")
+    parser.add_argument("--evidence", type=Path)
     args = parser.parse_args()
-    if args.controls:
+    if args.evidence:
+        import money_check
+
+        money_check.evidence(args.evidence)
+    elif args.controls:
         controls()
     elif args.report:
-        compiled(args.report)
+        compiled(args.report, args.statement_stage)
     else:
-        preflight()
+        preflight(args.statement_stage)
 
 
 if __name__ == "__main__":
