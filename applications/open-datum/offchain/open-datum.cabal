@@ -48,6 +48,7 @@ library
     Singular.Application.OpenDatum.Release
     Singular.Application.OpenDatum.Requests.Booking
     Singular.Application.OpenDatum.Requests.Configuration
+    Singular.Application.OpenDatum.Requests.Fold
     Singular.Application.OpenDatum.Requests.Pending
     Singular.Application.OpenDatum.Requests.Records
     Singular.Application.OpenDatum.Requests.Refusal
@@ -69,7 +70,6 @@ library
     , base16-bytestring
     , bytestring                         >=0.11 && <0.13
     , cardano-crypto-class
-    , cardano-ledger-alonzo
     , cardano-ledger-api
     , cardano-ledger-conway
     , cardano-ledger-core
@@ -150,8 +150,12 @@ test-suite open-datum-tests
     Negative.Submit
     Singular.Application.OpenDatum.BuildersSpec
     Singular.Application.OpenDatum.BuildSpec
+    Singular.Application.OpenDatum.CreationWorld
     Singular.Application.OpenDatum.RequestBookingSpec
     Singular.Application.OpenDatum.RequestConfigurationSpec
+    Singular.Application.OpenDatum.RequestCreationSpec
+    Singular.Application.OpenDatum.RequestFoldSpec
+    Singular.Application.OpenDatum.RequestPublicationSpec
     Singular.Application.OpenDatum.RequestPendingSpec
     Singular.Application.OpenDatum.RequestRecordsSpec
     Singular.Application.OpenDatum.RequestScriptSpec

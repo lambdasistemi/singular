@@ -146,7 +146,15 @@ library
     Singular.Registry.Types
     Singular.Registry.Wait
     Singular.Registry.Witness
+    Singular.State.Assemble
+    Singular.State.Fold
+    Singular.State.Genesis
+    Singular.State.Lineage
     Singular.State.Preimage
+    Singular.State.Publication
+    Singular.State.Records
+    Singular.State.Refusal
+    Singular.State.Script
 
   -- #267: the fold's focused owners behind the Update facade. They are
   -- implementation modules of the existing public library: the facade
@@ -1081,6 +1089,12 @@ test-suite cage-tests
     Singular.Registry.TypesSpec
     Singular.Registry.WaitSpec
     Singular.State.PreimageSpec
+    Singular.State.StateFoldSpec
+    Singular.State.StateGenesisSpec
+    Singular.State.StateLineageSpec
+    Singular.State.StatePublicationSpec
+    Singular.State.StateRecordsSpec
+    Singular.State.StateWorld
     Test.Tags
 
   build-depends:

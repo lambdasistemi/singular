@@ -74,6 +74,11 @@ import Singular.Registry.TxBuilder.UpperSlotSpec qualified
 import Singular.Registry.TypesSpec qualified
 import Singular.Registry.WaitSpec qualified
 import Singular.State.PreimageSpec qualified
+import Singular.State.StateFoldSpec qualified
+import Singular.State.StateGenesisSpec qualified
+import Singular.State.StateLineageSpec qualified
+import Singular.State.StatePublicationSpec qualified
+import Singular.State.StateRecordsSpec qualified
 import Test.Hspec (describe, hspec)
 import Test.Tags (Area (..), tagged)
 
@@ -313,3 +318,18 @@ main = hspec $ do
     describe
         (tagged "Singular.State.Preimage" [Builders])
         Singular.State.PreimageSpec.spec
+    describe
+        (tagged "Singular.State.StateRecords" [Builders])
+        Singular.State.StateRecordsSpec.spec
+    describe
+        (tagged "Singular.State.StateGenesis" [Builders, Evaluation])
+        Singular.State.StateGenesisSpec.spec
+    describe
+        (tagged "Singular.State.StatePublication" [Builders])
+        Singular.State.StatePublicationSpec.spec
+    describe
+        (tagged "Singular.State.StateLineage" [Builders, Trie, History])
+        Singular.State.StateLineageSpec.spec
+    describe
+        (tagged "Singular.State.StateFold" [Builders, Trie, Evaluation])
+        Singular.State.StateFoldSpec.spec

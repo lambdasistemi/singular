@@ -28,6 +28,8 @@ module Singular.State.Preimage
     , configurationTokenName
     , registrationPreimage
     , approvalName
+    , initialDatumHash
+    , seedData
     ) where
 
 import Codec.Serialise (serialise)
@@ -107,7 +109,7 @@ preimageData = \case
     TerminationApproval registry key ->
         Constr 4 [registryData registry, B key]
 
--- | An output reference: the transaction id and the output index.
+-- | An output reference: the transaction id and the output index, as a script reads it.
 seedData :: TxIn -> Data
 seedData (TxIn (TxId hash) (TxIx index)) =
     Constr 0 [B (hashToBytes (extractHash hash)), I (toInteger index)]
@@ -160,3 +162,15 @@ registrationPreimage key registry holding datumHash deposit =
 -- | The name of the approval token whose preimage is the given bytes.
 approvalName :: ByteString -> AssetName
 approvalName = AssetName . SBS.toShort . BA.convert . hashWith Blake2b_256
+
+{- | The hash a registration approval commits for the datum a holding starts
+with: the blake2b-256 hash of its Plutus Data serialisation.
+-}
+initialDatumHash :: Data -> DatumHash
+initialDatumHash =
+    DatumHash
+        . BuiltinByteString
+        . BA.convert
+        . hashWith Blake2b_256
+        . BL.toStrict
+        . serialise

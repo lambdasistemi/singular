@@ -131,6 +131,19 @@
             ((import ../naming-onchain/flake.nix).outputs {
               inherit nixpkgs flake-utils;
             }).packages.${system}.plutus-blueprint;
+          # The Singular state validator the builder rows judge their
+          # transactions with: the blueprint built by the on-chain tree, and
+          # the pinned identity manifest its hash is checked against.
+          stateBlueprint =
+            ((import ../onchain/flake.nix).outputs {
+              inherit
+                nixpkgs
+                flake-utils
+                haskellNix
+                iohkNix
+                ;
+            }).packages.${system}.plutus-blueprint;
+          stateScriptIdentity = ../onchain/script-identity.json;
         };
 
         # #278 terminal-attestation-permanent: the pinned house formatter. Fourmolu is resolved by the

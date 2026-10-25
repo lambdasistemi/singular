@@ -132,7 +132,15 @@ Run: mkdocs serve
 - <a href="../offchain/lib/Singular/Registry/Wire/Request.hs" data-api="module">Singular.Registry.Wire.Request</a> — <a href="../offchain/lib/Singular/Registry/Wire/Request.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Wire/State.hs" data-api="module">Singular.Registry.Wire.State</a> — <a href="../offchain/lib/Singular/Registry/Wire/State.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Witness.hs" data-api="module">Singular.Registry.Witness</a> — <a href="../offchain/lib/Singular/Registry/Witness.hs" data-api="source">source</a>
+- <a href="../offchain/lib/Singular/State/Assemble.hs" data-api="module">Singular.State.Assemble</a> — <a href="../offchain/lib/Singular/State/Assemble.hs" data-api="source">source</a> — the payer, the reads of the chain and the assembly of a transaction that the builders of the Singular state share
+- <a href="../offchain/lib/Singular/State/Fold.hs" data-api="module">Singular.State.Fold</a> — <a href="../offchain/lib/Singular/State/Fold.hs" data-api="source">source</a> — the fold of pending registrations into a registry from public data alone, with the application's part handed in
+- <a href="../offchain/lib/Singular/State/Genesis.hs" data-api="module">Singular.State.Genesis</a> — <a href="../offchain/lib/Singular/State/Genesis.hs" data-api="source">source</a> — the creation of a registry from a seed, with the application's steps in the same transaction
+- <a href="../offchain/lib/Singular/State/Lineage.hs" data-api="module">Singular.State.Lineage</a> — <a href="../offchain/lib/Singular/State/Lineage.hs" data-api="source">source</a> — a registry's trie rebuilt from the public history of its state token, every root checked against the chain
 - <a href="../offchain/lib/Singular/State/Preimage.hs" data-api="module">Singular.State.Preimage</a> — <a href="../offchain/lib/Singular/State/Preimage.hs" data-api="source">source</a> — the off-chain encoder of the Singular state, active, configuration and registration-approval preimages, byte for byte equal to the on-chain one
+- <a href="../offchain/lib/Singular/State/Publication.hs" data-api="module">Singular.State.Publication</a> — <a href="../offchain/lib/Singular/State/Publication.hs" data-api="source">source</a> — the state script and the application's script published as reference scripts once and reused by later registries
+- <a href="../offchain/lib/Singular/State/Records.hs" data-api="module">Singular.State.Records</a> — <a href="../offchain/lib/Singular/State/Records.hs" data-api="source">source</a> — the datum and the actions of the state validator, as Plutus Data in the layout it decodes
+- <a href="../offchain/lib/Singular/State/Refusal.hs" data-api="module">Singular.State.Refusal</a> — <a href="../offchain/lib/Singular/State/Refusal.hs" data-api="source">source</a> — why a builder of the Singular state declines to build
+- <a href="../offchain/lib/Singular/State/Script.hs" data-api="module">Singular.State.Script</a> — <a href="../offchain/lib/Singular/State/Script.hs" data-api="source">source</a> — the state validator of an application as the builders carry it, attached or by reference
 
 The facades and owners of the registry builder and blueprint extraction
 are described module by module in the
@@ -401,8 +409,8 @@ application value — and the request builders of the registry on the proved
 design: the booking of a registration, its reclaim by the refund address and
 its cleanup after the window, the configuration record added to the creation
 of a registry, the records and actions of the request validator in the layout
-it decodes, the validator as a transaction carries it, and the reasons a
-builder declines:
+it decodes, the validator as a transaction carries it, the reasons a
+builder declines, and what open datum hands the fold of a registry:
 `Singular.Application.OpenDatum.Book`,
 `Singular.Application.OpenDatum.Build`,
 `Singular.Application.OpenDatum.Command`,
@@ -415,6 +423,7 @@ builder declines:
 `Singular.Application.OpenDatum.Release`,
 `Singular.Application.OpenDatum.Requests.Booking`,
 `Singular.Application.OpenDatum.Requests.Configuration`,
+`Singular.Application.OpenDatum.Requests.Fold`,
 `Singular.Application.OpenDatum.Requests.Pending`,
 `Singular.Application.OpenDatum.Requests.Records`,
 `Singular.Application.OpenDatum.Requests.Refusal`,

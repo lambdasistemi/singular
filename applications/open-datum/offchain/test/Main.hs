@@ -24,7 +24,10 @@ import Singular.Application.OpenDatum.RegistryAddressSpec qualified
 import Singular.Application.OpenDatum.RegistryStateTokenSpec qualified
 import Singular.Application.OpenDatum.RequestBookingSpec qualified
 import Singular.Application.OpenDatum.RequestConfigurationSpec qualified
+import Singular.Application.OpenDatum.RequestCreationSpec qualified
+import Singular.Application.OpenDatum.RequestFoldSpec qualified
 import Singular.Application.OpenDatum.RequestPendingSpec qualified
+import Singular.Application.OpenDatum.RequestPublicationSpec qualified
 import Singular.Application.OpenDatum.RequestRecordsSpec qualified
 import Singular.Application.OpenDatum.RequestScriptSpec qualified
 import Singular.Application.OpenDatum.SaveStateTokenSpec qualified
@@ -89,6 +92,24 @@ main = hspec $ do
             [Application, Builders, Evaluation]
         )
         Singular.Application.OpenDatum.RequestConfigurationSpec.spec
+    describe
+        ( tagged
+            "Singular.Application.OpenDatum.RequestCreation"
+            [Application, Builders, Evaluation]
+        )
+        Singular.Application.OpenDatum.RequestCreationSpec.spec
+    describe
+        ( tagged
+            "Singular.Application.OpenDatum.RequestFold"
+            [Application, Builders, Evaluation, Trie]
+        )
+        Singular.Application.OpenDatum.RequestFoldSpec.spec
+    describe
+        ( tagged
+            "Singular.Application.OpenDatum.RequestPublication"
+            [Application, Builders, Evaluation]
+        )
+        Singular.Application.OpenDatum.RequestPublicationSpec.spec
     describe
         ( tagged
             "Singular.Application.OpenDatum.RequestPending"

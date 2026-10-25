@@ -1,0 +1,465 @@
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE NumericUnderscores #-}
+{-# LANGUAGE OverloadedStrings #-}
+
+{- |
+Module      : Singular.State.StateFoldSpec
+Description : The fold builder meets the compiled state validator, from public data alone
+License     : Apache-2.0
+
+As a folder who is not the booker I hold a wallet and the address of a
+registry. From the chain alone I find the registry's state, rebuild its trie
+from the history of its state token and fold the pending registrations: their
+approvals are burned, their keys proved absent, their tokens minted into the
+holdings they committed to with at least their deposits, and what they hold
+above the deposit comes to me. The compiled state validator accepts the
+transaction, and refuses it again when one fact of it is made wrong.
+-}
+module Singular.State.StateFoldSpec
+    ( spec
+    ) where
+
+import Control.Monad (forM_)
+import Data.ByteString (ByteString)
+import Data.Map.Strict qualified as Map
+import Lens.Micro ((&), (.~), (^.))
+import PlutusCore.Data qualified as PLC
+import Test.Hspec
+
+import Cardano.Ledger.Address (Addr)
+import Cardano.Ledger.Api.Tx.Out (addrTxOutL, coinTxOutL, valueTxOutL)
+import Cardano.Ledger.Coin (Coin (..))
+import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
+import Cardano.Ledger.Mary.Value
+    ( AssetName
+    , MaryValue (..)
+    , MultiAsset (..)
+    )
+import Cardano.Ledger.TxIn (TxIn)
+import Cardano.Slotting.Slot (SlotNo (..))
+import Cardano.Tx.Ledger (ConwayTx)
+
+import Singular.Registry.Ledger (ConwayEra, TxOut)
+import Singular.Registry.TrieState (RegistryIdentity (..))
+import Singular.State.Fold (buildRegistrationFold)
+import Singular.State.Preimage (activeTokenName)
+import Singular.State.Records
+    ( Change (..)
+    , decodeFoldRedeemer
+    , foldRedeemer
+    , stateDatum
+    )
+import Singular.State.Refusal (Refusal (..))
+import Singular.State.Script
+    ( stateAddress
+    , statePolicy
+    )
+import Singular.State.StateWorld
+
+spec :: Spec
+spec = do
+    describe
+        "the fold of one pending registration, built by a second wallet from the chain"
+        $ do
+            it "is accepted by the compiled state validator" $ do
+                rg <- newRegistered
+                (tx, _) <- folded rg [bookedKey "key one" processingDeadline]
+                judged <- judge (rgWorld rg) tx
+                everyScriptAccepts judged `shouldBe` True
+                purposesRun judged `shouldBe` [(Mint, 2), (Spend, 2)]
+
+            it "burns the approval and mints one token of the key, nothing else" $ do
+                rg <- newRegistered
+                let booked = bookedKey "key one" processingDeadline
+                (tx, _) <- folded rg [booked]
+                let policy = statePolicy (rgScript rg)
+                sort' (mintedOf tx)
+                    `shouldBe` sort'
+                        [ (policy, activeTokenName (rgRegistry rg) "key one", 1)
+                        , (standInPolicy, approvalFor (rgRegistry rg) booked, -1)
+                        ]
+
+            it
+                "writes the root of the trie with the key into a state output that holds the token and ADA alone"
+                $ do
+                    rg <- newRegistered
+                    (tx, _) <- folded rg [bookedKey "key one" processingDeadline]
+                    previous <- liveState rg
+                    [state] <- pure (stateOutputsOf rg tx)
+                    outputAddress state `shouldBe` stateAddress network (rgScript rg)
+                    assetsOf state
+                        `shouldBe` [(statePolicy (rgScript rg), snd' (rgRegistry rg), 1)]
+                    inlineDatum state
+                        `shouldBe` Just (stateDatum (oracleRoot ["key one"]))
+                    valueAda state `shouldBe` valueAda previous
+
+            it
+                "delivers the token into the committed holding with the deposit and the datum"
+                $ do
+                    rg <- newRegistered
+                    let booked = bookedKey "key one" processingDeadline
+                    (tx, _) <- folded rg [booked]
+                    let token = activeTokenName (rgRegistry rg) "key one"
+                        holdings =
+                            [ out
+                            | out <- outputsOf tx
+                            , tokenQuantity (statePolicy (rgScript rg)) token out == 1
+                            ]
+                    length holdings `shouldBe` 1
+                    [holding] <- pure holdings
+                    outputAddress holding `shouldBe` bkHolding booked
+                    valueAda holding `shouldBe` bkDeposit booked
+                    inlineDatum holding `shouldBe` Just (bkDatum booked)
+
+            it
+                "leaves the folder what the pending registration held above the deposit, less the fee"
+                $ do
+                    rg <- newRegistered
+                    let booked = bookedKey "key one" processingDeadline
+                    (tx, _) <- folded rg [booked]
+                    paidTo (rgFolder rg) tx
+                        `shouldBe` valueAda' 50 + bkTip booked - feeOf tx
+
+            it "ends before the processing deadline" $ do
+                rg <- newRegistered
+                (tx, _) <- folded rg [bookedKey "key one" processingDeadline]
+                case validityOf tx of
+                    (_, Just (SlotNo upper)) ->
+                        toInteger upper * 1_000 `shouldSatisfy` (<= processingDeadline)
+                    other -> expectationFailure ("no upper bound: " <> show other)
+
+            it
+                "pays its way: value is conserved, outputs hold their minimum, collateral is declared"
+                $ do
+                    rg <- newRegistered
+                    (tx, _) <- folded rg [bookedKey "key one" processingDeadline]
+                    soundnessProblems (rgWorld rg) tx `shouldReturn` []
+
+    describe "a batch of several registrations" $ do
+        it "is folded in one transaction that the validator accepts" $ do
+            rg <- newRegistered
+            let keys = ["key one", "key two", "key three"]
+            (tx, _) <- folded rg [bookedKey k processingDeadline | k <- keys]
+            judged <- judge (rgWorld rg) tx
+            everyScriptAccepts judged `shouldBe` True
+            purposesRun judged `shouldBe` [(Mint, 2), (Spend, 4)]
+            [state] <- pure (stateOutputsOf rg tx)
+            inlineDatum state `shouldBe` Just (stateDatum (oracleRoot keys))
+
+        it
+            "mints one token for each key and delivers each into its own holding"
+            $ do
+                rg <- newRegistered
+                let keys = ["key one", "key two", "key three"]
+                (tx, _) <- folded rg [bookedKey k processingDeadline | k <- keys]
+                forM_ keys $ \key ->
+                    length
+                        [ ()
+                        | out <- outputsOf tx
+                        , tokenQuantity
+                            (statePolicy (rgScript rg))
+                            (activeTokenName (rgRegistry rg) key)
+                            out
+                            == 1
+                        ]
+                        `shouldBe` 1
+
+    describe "a later fold" $ do
+        it "sees the keys of the folds before it and is accepted" $ do
+            rg <- newRegistered
+            (first, _) <- folded rg [bookedKey "key one" processingDeadline]
+            applyTx (rgWorld rg) first
+            second <- foldedAgain rg 'q' [bookedKey "key two" processingDeadline]
+            judged <- judge (rgWorld rg) second
+            everyScriptAccepts judged `shouldBe` True
+            [state] <- pure (stateOutputsOf rg second)
+            inlineDatum state
+                `shouldBe` Just (stateDatum (oracleRoot ["key one", "key two"]))
+
+        it "declines a key that is already registered" $ do
+            rg <- newRegistered
+            (first, _) <- folded rg [bookedKey "key one" processingDeadline]
+            applyTx (rgWorld rg) first
+            refs <- book rg 'q' [bookedKey "key one" processingDeadline]
+            outcome <- foldNow rg refs
+            outcome `shouldBe` Left (KeyAlreadyRegistered "key one")
+
+    describe
+        "the validator refuses the fold once one fact of it is made wrong"
+        $ do
+            it "the approval is not burned" $ do
+                rg <- newRegistered
+                (tx, _) <- folded rg [bookedKey "key one" processingDeadline]
+                refused rg (withoutMintOf standInPolicy tx)
+
+            it "the token is delivered to another address" $ do
+                rg <- newRegistered
+                (tx, _) <- folded rg [bookedKey "key one" processingDeadline]
+                refused
+                    rg
+                    ( mapHolding
+                        rg
+                        "key one"
+                        (\out -> out & addrTxOutL .~ keyAddress 0x66)
+                        tx
+                    )
+
+            it "the holding keeps less than the deposit" $ do
+                rg <- newRegistered
+                let booked = bookedKey "key one" processingDeadline
+                (tx, _) <- folded rg [booked]
+                refused
+                    rg
+                    ( mapHolding
+                        rg
+                        "key one"
+                        (\out -> out & coinTxOutL .~ Coin (bkDeposit booked - 1))
+                        tx
+                    )
+
+            it "another token is added to the state output" $ do
+                rg <- newRegistered
+                (tx, _) <- folded rg [bookedKey "key one" processingDeadline]
+                let extra =
+                        MaryValue
+                            (Coin 0)
+                            ( MultiAsset
+                                (Map.singleton standInPolicy (Map.singleton (snd' (rgRegistry rg)) 1))
+                            )
+                refused
+                    rg
+                    ( mapOutput
+                        (stateIndex rg tx)
+                        (\out -> out & valueTxOutL .~ ((out ^. valueTxOutL) <> extra))
+                        tx
+                    )
+
+            it "the root is not the root of the trie with the key" $ do
+                rg <- newRegistered
+                (tx, _) <- folded rg [bookedKey "key one" processingDeadline]
+                refused
+                    rg
+                    ( mapOutput
+                        (stateIndex rg tx)
+                        (withDatum (stateDatum (oracleRoot ["other"])))
+                        tx
+                    )
+
+            it "the proof is not the proof of the key's absence" $ do
+                rg <- newRegistered
+                (first, _) <- folded rg [bookedKey "key one" processingDeadline]
+                applyTx (rgWorld rg) first
+                second <- foldedAgain rg 'q' [bookedKey "key two" processingDeadline]
+                judgedSecond <- judge (rgWorld rg) second
+                everyScriptAccepts judgedSecond `shouldBe` True
+                refused rg (mapRedeemers dropProofs second)
+
+    describe "the builder declines before it builds" $ do
+        it "when there is nothing to fold" $ do
+            rg <- newRegistered
+            outcome <- foldNow rg []
+            outcome `shouldBe` Left NothingToFold
+
+        it "when the same pending registration is named twice" $ do
+            rg <- newRegistered
+            refs <- book rg 'q' [bookedKey "key one" processingDeadline]
+            outcome <- foldNow rg (refs <> refs)
+            outcome `shouldBe` Left (DuplicateRequest (firstOf refs))
+
+        it "when two pending registrations ask for the same key" $ do
+            rg <- newRegistered
+            refs <-
+                book
+                    rg
+                    'q'
+                    [ bookedKey "key one" processingDeadline
+                    , (bookedKey "key one" processingDeadline){bkDeposit = 6_000_000}
+                    ]
+            outcome <- foldNow rg refs
+            outcome `shouldBe` Left (DuplicateKey "key one")
+
+        it "when a pending registration is not on the chain" $ do
+            rg <- newRegistered
+            outcome <- foldNow rg [txInOf '8' 8]
+            outcome `shouldBe` Left (PendingNotFound (txInOf '8' 8))
+
+        it "when an output is no pending registration of the application" $ do
+            rg <- newRegistered
+            let wallet = txInOf '2' 0
+            outcome <- foldNow rg [wallet]
+            outcome `shouldBe` Left (NotAPendingRegistration wallet)
+
+        it "when the pending registration holds no approval" $ do
+            rg <- newRegistered
+            let booked = bookedKey "key one" processingDeadline
+                bare =
+                    pendingOutput (rgRegistry rg) booked
+                        & valueTxOutL .~ MaryValue (Coin 6_000_000) mempty
+                ref = txInOf 'r' 0
+            addLive (rgWorld rg) [(ref, bare)]
+            outcome <- foldNow rg [ref]
+            outcome `shouldBe` Left (NotAPendingRegistration ref)
+
+        it "when the pending registration asks for another registry" $ do
+            rg <- newRegistered
+            let elsewhere =
+                    RegistryIdentity
+                        (policyOf (rgRegistry rg))
+                        (nameOf (registryOf (rgScript rg) (txInOf '4' 4)))
+                booked = bookedKey "key one" processingDeadline
+                ref = txInOf 'r' 1
+            addLive (rgWorld rg) [(ref, pendingOutput elsewhere booked)]
+            outcome <- foldNow rg [ref]
+            outcome `shouldBe` Left (PendingOfAnotherRegistry ref)
+
+        it "when the deposit is below the minimum ADA of its holding" $ do
+            rg <- newRegistered
+            refs <-
+                book
+                    rg
+                    'q'
+                    [(bookedKey "key one" processingDeadline){bkDeposit = 100_000}]
+            outcome <- foldNow rg refs
+            outcome `shouldSatisfy` \case
+                Left (DepositBelowHolding ref (Coin 100_000) _) -> ref == firstOf refs
+                _ -> False
+
+        it "when the processing deadline has passed" $ do
+            rg <- newRegistered
+            refs <- book rg 'q' [bookedKey "key one" processingDeadline]
+            setSlot (rgWorld rg) 10_700
+            outcome <- foldNow rg refs
+            outcome `shouldBe` Left ProcessingWindowClosed
+
+        it "when no output holds the state token of the registry" $ do
+            rg <- newRegistered
+            refs <- book rg 'q' [bookedKey "key one" processingDeadline]
+            let unknown = registryOf (rgScript rg) (txInOf '4' 4)
+            outcome <- foldFor rg unknown refs
+            outcome `shouldBe` Left (NoRegistryState unknown)
+
+        it "when the folder holds no ADA" $ do
+            rg <- newRegistered
+            refs <- book rg 'q' [bookedKey "key one" processingDeadline]
+            outcome <- foldAs rg (keyAddress 0x99) refs
+            outcome `shouldBe` Left PayerHasNoFunding
+
+        it "when the folder is a script" $ do
+            rg <- newRegistered
+            refs <- book rg 'q' [bookedKey "key one" processingDeadline]
+            outcome <- foldAs rg standInAddress refs
+            outcome `shouldBe` Left PayerIsNotAKey
+  where
+    snd' (RegistryIdentity _ name) = name
+    nameOf = snd'
+    policyOf (RegistryIdentity policy _) = policy
+    sort' = Map.toList . Map.fromList . map (\(p, n, q) -> ((p, n), q))
+    valueAda' n = n * 1_000_000
+
+-- | Book these registrations and build the fold of them as the second wallet.
+folded :: Registered -> [Booked] -> IO (ConwayTx, [TxIn])
+folded rg bookings = do
+    refs <- book rg 'p' bookings
+    tx <- foldNow rg refs >>= expectBuilt
+    pure (tx, refs)
+
+-- | The fold of a batch booked after an earlier fold was applied.
+foldedAgain :: Registered -> Char -> [Booked] -> IO ConwayTx
+foldedAgain rg tag bookings = do
+    refs <- book rg tag bookings
+    foldNow rg refs >>= expectBuilt
+
+-- | The fold builder's answer for these pending registrations, built by the folder.
+foldNow :: Registered -> [TxIn] -> IO (Either Refusal ConwayTx)
+foldNow rg = foldAs rg (rgFolder rg)
+
+foldAs :: Registered -> Addr -> [TxIn] -> IO (Either Refusal ConwayTx)
+foldAs rg folder refs =
+    withSession (rgWorld rg) $ \session ->
+        buildRegistrationFold
+            session
+            (rgScript rg)
+            standInApplication
+            (rgRegistry rg)
+            refs
+            folder
+
+foldFor
+    :: Registered
+    -> RegistryIdentity
+    -> [TxIn]
+    -> IO (Either Refusal ConwayTx)
+foldFor rg registry refs =
+    withSession (rgWorld rg) $ \session ->
+        buildRegistrationFold
+            session
+            (rgScript rg)
+            standInApplication
+            registry
+            refs
+            (rgFolder rg)
+
+-- | The validator refuses the transaction: some script purpose answers with a failure.
+refused :: Registered -> ConwayTx -> Expectation
+refused rg tx = do
+    judged <- judge (rgWorld rg) tx
+    refusedBy judged `shouldBe` True
+
+-- | The live state output of the registry.
+liveState :: Registered -> IO (TxOut ConwayEra)
+liveState rg = outputAt (rgWorld rg) (rgState rg) >>= maybe (fail "no state") pure
+
+-- | The outputs of a transaction that hold the state token.
+stateOutputsOf :: Registered -> ConwayTx -> [TxOut ConwayEra]
+stateOutputsOf rg tx =
+    [ out
+    | out <- outputsOf tx
+    , tokenQuantity
+        (statePolicy (rgScript rg))
+        (nameOfRegistry (rgRegistry rg))
+        out
+        == 1
+    ]
+
+nameOfRegistry :: RegistryIdentity -> AssetName
+nameOfRegistry (RegistryIdentity _ name) = name
+
+-- | The index of the output that holds the state token.
+stateIndex :: Registered -> ConwayTx -> Int
+stateIndex rg =
+    holderIndex
+        (statePolicy (rgScript rg))
+        (nameOfRegistry (rgRegistry rg))
+
+-- | Change the holding of a key.
+mapHolding
+    :: Registered
+    -> ByteString
+    -> (TxOut ConwayEra -> TxOut ConwayEra)
+    -> ConwayTx
+    -> ConwayTx
+mapHolding rg key change tx =
+    mapOutput
+        ( holderIndex
+            (statePolicy (rgScript rg))
+            (activeTokenName (rgRegistry rg) key)
+            tx
+        )
+        change
+        tx
+
+-- | The state redeemer with the proofs of its changes emptied.
+dropProofs :: ConwayPlutusPurpose f ConwayEra -> PLC.Data -> PLC.Data
+dropProofs _ datum = case decodeFoldRedeemer datum of
+    Just (seed, changes) -> foldRedeemer seed (map empty changes)
+    Nothing -> datum
+  where
+    empty = \case
+        Register request key holding deposit _ -> Register request key holding deposit []
+        Terminate request key _ -> Terminate request key []
+
+-- | The first of the pending registrations just booked.
+firstOf :: [TxIn] -> TxIn
+firstOf = \case
+    ref : _ -> ref
+    [] -> error "nothing was booked"

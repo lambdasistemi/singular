@@ -161,6 +161,14 @@
             inherit nixpkgs flake-utils;
           }).packages.${system}.plutus-blueprint;
 
+        # The Singular state validator the composed rows judge their transactions
+        # with, beside the request validator: the blueprint of the registry
+        # on-chain tree.
+        singularStateBlueprint =
+          ((import ../onchain/flake.nix).outputs {
+            inherit nixpkgs flake-utils;
+          }).packages.${system}.registry-blueprint;
+
         # The Koios fixtures live once, in the registry tree; the test
         # runner stages them where the tests expect them, beside the
         # application's own fixtures, since the repository holds no second
@@ -178,6 +186,7 @@
             chmod -R u+w "$fixture_dir/test/fixtures"
             export OPEN_DATUM_BLUEPRINT=${openDatumBlueprint}
             export OPEN_DATUM_SCRIPT_IDENTITY=${../onchain/script-identity.json}
+            export SINGULAR_STATE_BLUEPRINT=${singularStateBlueprint}
             cd "$fixture_dir"
             ${pkgs.lib.getExe openDatumComponents.tests.open-datum-tests} "$@"
           '';

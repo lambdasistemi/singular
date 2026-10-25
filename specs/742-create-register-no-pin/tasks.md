@@ -39,9 +39,9 @@ the ticket owner accepts its slice.
 
 ## Pull request 3: library create and fold
 
-- [ ] genesis-builder: the genesis transaction against the new validator.
-- [ ] registration-fold-builder: the registration fold transaction against the new validator, from chain data alone.
-- [ ] scripts-published-once: publication of both reference scripts when no live copy exists, reuse otherwise, and the control that a reference script with another hash is not reused.
+- [x] genesis-builder: the genesis transaction against the new validator.
+- [x] registration-fold-builder: the registration fold transaction against the new validator, from chain data alone.
+- [x] scripts-published-once: publication of both reference scripts when no live copy exists, reuse otherwise, and the control that a reference script with another hash is not reused.
 
 ## Pull request 3: open-datum builders
 

@@ -191071,17 +191071,17 @@
    ]
   },
   "docs-offchain-api-reference/what-the-reference-does-not-claim-01": {
-   "audio_sha256": "e551ad8a29dc852f7c208c2741e9a995a05db03a33a06468c528124ab1257c9b",
-   "characters": 3980,
-   "cost": 0.0039402,
-   "duration": 295.6,
+   "audio_sha256": "1e90810def0f3924e5d35dd3e90b11981d9483fdb4200bcac77167c814f876b2",
+   "characters": 4072,
+   "cost": 0.00403128,
+   "duration": 302.25,
    "index": 1,
-   "key": "772033ddfe6d6e6eed71713bcc1c7093bf99046608a0cf24dd90c3e7151dc0ab",
+   "key": "ee514be92e7dc7689592083e0056680810079e6f809382c2caec13ca65cc6458",
    "page": "docs/offchain-api-reference.md",
    "pause_ms": 400,
    "section": "what-the-reference-does-not-claim",
-   "sent_text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the runtime service modules staying outside it in Runtime service ownership, and the conformance reference's extent is the conformance library's. The executables and the on-chain Aiken validators remain outside the generated references. The public local-services component also exposes LocalEvaluation, NetworkTime, ProviderSettings, ProviderTrace, SessionEvidence, SessionIO, SessionServices, TimeMaterial, TimeSource, Trace, TraceRender, WaitTypes and Wallet; their sources live under offchain/local-services/Singular/Registry/. Their generated pages are not in this main-library reference. The public open-datum-application component (applications/open-datum/offchain/) carries the open-datum application the command line composes — entry commands, envelope, booking approval and destination, payload update, release rules, script, and the application value — and the request builders of the registry on the proved design: the booking of a registration, its reclaim by the refund address and its cleanup after the window, the configuration record added to the creation of a registry, the records and actions of the request validator in the layout it decodes, the validator as a transaction carries it, and the reasons a builder declines: Singular.Application.OpenDatum.Book, Singular.Application.OpenDatum.Build, Singular.Application.OpenDatum.Command, Singular.Application.OpenDatum.Entry, Singular.Application.OpenDatum.Envelope, Singular.Application.OpenDatum.InsertEnvelope, Singular.Application.OpenDatum.Permanent, Singular.Application.OpenDatum.Plan, Singular.Application.OpenDatum.Preview, Singular.Application.OpenDatum.Release, Singular.Application.OpenDatum.Requests.Booking, Singular.Application.OpenDatum.Requests.Configuration, Singular.Application.OpenDatum.Requests.Pending, Singular.Application.OpenDatum.Requests.Records, Singular.Application.OpenDatum.Requests.Refusal, Singular.Application.OpenDatum.Requests.Script, Singular.Application.OpenDatum.Root, Singular.Application.OpenDatum.Run, Singular.Application.OpenDatum.Script, Singular.Application.OpenDatum.Update and Singular.Application.OpenDatum.Value; their sources live under applications/open-datum/offchain/src/Singular/Application/OpenDatum/, and the executable's entry point lives in applications/open-datum/offchain/app/. The public registry-cli component (offchain/cli/) carries the registry command line the two binaries link — session, journal and receipts, the flag group, create, fold, reject, reclaim, inspect, reconcile, recovery and the booking call: Singular.CLI, Singular.CLI.Attached, Singular.CLI.Command, Singular.CLI.Create, Singular.CLI.Finish, Singular.CLI.Fold, Singular.CLI.FoldRules, Singular.CLI.Inspect, Singular.CLI.Key, Singular.CLI.Live, Singular.CLI.ManagedState, Singular.CLI.Outlay, Singular.CLI.Payload, Singular.CLI.Permanent, Singular.CLI.Plan, Singular.CLI.Proof, Singular.CLI.Receipt, Singular.CLI.ReceiptBody, Singular.CLI.Reclaim, Singular.CLI.ReclaimRules, Singular.CLI.Reconcile, Singular.CLI.Recovery, Singular.CLI.Registry, Singular.CLI.Reject, Singular.CLI.RejectRules, Singular.CLI.RequestWindow, Singular.CLI.Root, Singular.CLI.Session, Singular.CLI.Trace, Singular.CLI.TrieHistory and Singular.CLI.TrieTrace; their sources live under offchain/cli/src/Singular/CLI/.",
-   "text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the runtime service modules staying outside it in Runtime service ownership, and the conformance reference's extent is the conformance library's. The executables and the on-chain Aiken validators remain outside the generated references. The public local-services component also exposes LocalEvaluation, NetworkTime, ProviderSettings, ProviderTrace, SessionEvidence, SessionIO, SessionServices, TimeMaterial, TimeSource, Trace, TraceRender, WaitTypes and Wallet; their sources live under offchain/local-services/Singular/Registry/. Their generated pages are not in this main-library reference. The public open-datum-application component (applications/open-datum/offchain/) carries the open-datum application the command line composes — entry commands, envelope, booking approval and destination, payload update, release rules, script, and the application value — and the request builders of the registry on the proved design: the booking of a registration, its reclaim by the refund address and its cleanup after the window, the configuration record added to the creation of a registry, the records and actions of the request validator in the layout it decodes, the validator as a transaction carries it, and the reasons a builder declines: Singular.Application.OpenDatum.Book, Singular.Application.OpenDatum.Build, Singular.Application.OpenDatum.Command, Singular.Application.OpenDatum.Entry, Singular.Application.OpenDatum.Envelope, Singular.Application.OpenDatum.InsertEnvelope, Singular.Application.OpenDatum.Permanent, Singular.Application.OpenDatum.Plan, Singular.Application.OpenDatum.Preview, Singular.Application.OpenDatum.Release, Singular.Application.OpenDatum.Requests.Booking, Singular.Application.OpenDatum.Requests.Configuration, Singular.Application.OpenDatum.Requests.Pending, Singular.Application.OpenDatum.Requests.Records, Singular.Application.OpenDatum.Requests.Refusal, Singular.Application.OpenDatum.Requests.Script, Singular.Application.OpenDatum.Root, Singular.Application.OpenDatum.Run, Singular.Application.OpenDatum.Script, Singular.Application.OpenDatum.Update and Singular.Application.OpenDatum.Value; their sources live under applications/open-datum/offchain/src/Singular/Application/OpenDatum/, and the executable's entry point lives in applications/open-datum/offchain/app/. The public registry-cli component (offchain/cli/) carries the registry command line the two binaries link — session, journal and receipts, the flag group, create, fold, reject, reclaim, inspect, reconcile, recovery and the booking call: Singular.CLI, Singular.CLI.Attached, Singular.CLI.Command, Singular.CLI.Create, Singular.CLI.Finish, Singular.CLI.Fold, Singular.CLI.FoldRules, Singular.CLI.Inspect, Singular.CLI.Key, Singular.CLI.Live, Singular.CLI.ManagedState, Singular.CLI.Outlay, Singular.CLI.Payload, Singular.CLI.Permanent, Singular.CLI.Plan, Singular.CLI.Proof, Singular.CLI.Receipt, Singular.CLI.ReceiptBody, Singular.CLI.Reclaim, Singular.CLI.ReclaimRules, Singular.CLI.Reconcile, Singular.CLI.Recovery, Singular.CLI.Registry, Singular.CLI.Reject, Singular.CLI.RejectRules, Singular.CLI.RequestWindow, Singular.CLI.Root, Singular.CLI.Session, Singular.CLI.Trace, Singular.CLI.TrieHistory and Singular.CLI.TrieTrace; their sources live under offchain/cli/src/Singular/CLI/.",
+   "sent_text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the runtime service modules staying outside it in Runtime service ownership, and the conformance reference's extent is the conformance library's. The executables and the on-chain Aiken validators remain outside the generated references. The public local-services component also exposes LocalEvaluation, NetworkTime, ProviderSettings, ProviderTrace, SessionEvidence, SessionIO, SessionServices, TimeMaterial, TimeSource, Trace, TraceRender, WaitTypes and Wallet; their sources live under offchain/local-services/Singular/Registry/. Their generated pages are not in this main-library reference. The public open-datum-application component (applications/open-datum/offchain/) carries the open-datum application the command line composes — entry commands, envelope, booking approval and destination, payload update, release rules, script, and the application value — and the request builders of the registry on the proved design: the booking of a registration, its reclaim by the refund address and its cleanup after the window, the configuration record added to the creation of a registry, the records and actions of the request validator in the layout it decodes, the validator as a transaction carries it, the reasons a builder declines, and what open datum hands the fold of a registry: Singular.Application.OpenDatum.Book, Singular.Application.OpenDatum.Build, Singular.Application.OpenDatum.Command, Singular.Application.OpenDatum.Entry, Singular.Application.OpenDatum.Envelope, Singular.Application.OpenDatum.InsertEnvelope, Singular.Application.OpenDatum.Permanent, Singular.Application.OpenDatum.Plan, Singular.Application.OpenDatum.Preview, Singular.Application.OpenDatum.Release, Singular.Application.OpenDatum.Requests.Booking, Singular.Application.OpenDatum.Requests.Configuration, Singular.Application.OpenDatum.Requests.Fold, Singular.Application.OpenDatum.Requests.Pending, Singular.Application.OpenDatum.Requests.Records, Singular.Application.OpenDatum.Requests.Refusal, Singular.Application.OpenDatum.Requests.Script, Singular.Application.OpenDatum.Root, Singular.Application.OpenDatum.Run, Singular.Application.OpenDatum.Script, Singular.Application.OpenDatum.Update and Singular.Application.OpenDatum.Value; their sources live under applications/open-datum/offchain/src/Singular/Application/OpenDatum/, and the executable's entry point lives in applications/open-datum/offchain/app/. The public registry-cli component (offchain/cli/) carries the registry command line the two binaries link — session, journal and receipts, the flag group, create, fold, reject, reclaim, inspect, reconcile, recovery and the booking call: Singular.CLI, Singular.CLI.Attached, Singular.CLI.Command, Singular.CLI.Create, Singular.CLI.Finish, Singular.CLI.Fold, Singular.CLI.FoldRules, Singular.CLI.Inspect, Singular.CLI.Key, Singular.CLI.Live, Singular.CLI.ManagedState, Singular.CLI.Outlay, Singular.CLI.Payload, Singular.CLI.Permanent, Singular.CLI.Plan, Singular.CLI.Proof, Singular.CLI.Receipt, Singular.CLI.ReceiptBody, Singular.CLI.Reclaim, Singular.CLI.ReclaimRules, Singular.CLI.Reconcile, Singular.CLI.Recovery, Singular.CLI.Registry, Singular.CLI.Reject, Singular.CLI.RejectRules, Singular.CLI.RequestWindow, Singular.CLI.Root, Singular.CLI.Session, Singular.CLI.Trace, Singular.CLI.TrieHistory and Singular.CLI.TrieTrace; their sources live under offchain/cli/src/Singular/CLI/.",
+   "text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the runtime service modules staying outside it in Runtime service ownership, and the conformance reference's extent is the conformance library's. The executables and the on-chain Aiken validators remain outside the generated references. The public local-services component also exposes LocalEvaluation, NetworkTime, ProviderSettings, ProviderTrace, SessionEvidence, SessionIO, SessionServices, TimeMaterial, TimeSource, Trace, TraceRender, WaitTypes and Wallet; their sources live under offchain/local-services/Singular/Registry/. Their generated pages are not in this main-library reference. The public open-datum-application component (applications/open-datum/offchain/) carries the open-datum application the command line composes — entry commands, envelope, booking approval and destination, payload update, release rules, script, and the application value — and the request builders of the registry on the proved design: the booking of a registration, its reclaim by the refund address and its cleanup after the window, the configuration record added to the creation of a registry, the records and actions of the request validator in the layout it decodes, the validator as a transaction carries it, the reasons a builder declines, and what open datum hands the fold of a registry: Singular.Application.OpenDatum.Book, Singular.Application.OpenDatum.Build, Singular.Application.OpenDatum.Command, Singular.Application.OpenDatum.Entry, Singular.Application.OpenDatum.Envelope, Singular.Application.OpenDatum.InsertEnvelope, Singular.Application.OpenDatum.Permanent, Singular.Application.OpenDatum.Plan, Singular.Application.OpenDatum.Preview, Singular.Application.OpenDatum.Release, Singular.Application.OpenDatum.Requests.Booking, Singular.Application.OpenDatum.Requests.Configuration, Singular.Application.OpenDatum.Requests.Fold, Singular.Application.OpenDatum.Requests.Pending, Singular.Application.OpenDatum.Requests.Records, Singular.Application.OpenDatum.Requests.Refusal, Singular.Application.OpenDatum.Requests.Script, Singular.Application.OpenDatum.Root, Singular.Application.OpenDatum.Run, Singular.Application.OpenDatum.Script, Singular.Application.OpenDatum.Update and Singular.Application.OpenDatum.Value; their sources live under applications/open-datum/offchain/src/Singular/Application/OpenDatum/, and the executable's entry point lives in applications/open-datum/offchain/app/. The public registry-cli component (offchain/cli/) carries the registry command line the two binaries link — session, journal and receipts, the flag group, create, fold, reject, reclaim, inspect, reconcile, recovery and the booking call: Singular.CLI, Singular.CLI.Attached, Singular.CLI.Command, Singular.CLI.Create, Singular.CLI.Finish, Singular.CLI.Fold, Singular.CLI.FoldRules, Singular.CLI.Inspect, Singular.CLI.Key, Singular.CLI.Live, Singular.CLI.ManagedState, Singular.CLI.Outlay, Singular.CLI.Payload, Singular.CLI.Permanent, Singular.CLI.Plan, Singular.CLI.Proof, Singular.CLI.Receipt, Singular.CLI.ReceiptBody, Singular.CLI.Reclaim, Singular.CLI.ReclaimRules, Singular.CLI.Reconcile, Singular.CLI.Recovery, Singular.CLI.Registry, Singular.CLI.Reject, Singular.CLI.RejectRules, Singular.CLI.RequestWindow, Singular.CLI.Root, Singular.CLI.Session, Singular.CLI.Trace, Singular.CLI.TrieHistory and Singular.CLI.TrieTrace; their sources live under offchain/cli/src/Singular/CLI/.",
    "words": [
     {
      "end": 0.375,
@@ -192559,1903 +192559,2003 @@
      "text": "a"
     },
     {
-     "end": 128.962,
+     "end": 128.9,
      "start": 128.225,
      "text": "transaction"
     },
     {
-     "end": 129.387,
-     "start": 128.962,
+     "end": 129.312,
+     "start": 128.9,
      "text": "carries"
     },
     {
-     "end": 129.625,
-     "start": 129.387,
+     "end": 129.525,
+     "start": 129.312,
      "text": "it"
     },
     {
-     "end": 129.725,
-     "start": 129.625,
+     "end": 129.6,
+     "start": 129.525,
      "text": ","
     },
     {
-     "end": 129.837,
-     "start": 129.725,
-     "text": "and"
-    },
-    {
-     "end": 129.925,
-     "start": 129.837,
+     "end": 129.725,
+     "start": 129.6,
      "text": "the"
     },
     {
-     "end": 130.413,
-     "start": 129.925,
+     "end": 130.212,
+     "start": 129.725,
      "text": "reasons"
     },
     {
-     "end": 130.475,
-     "start": 130.413,
+     "end": 130.275,
+     "start": 130.212,
      "text": "a"
     },
     {
-     "end": 130.85,
-     "start": 130.475,
+     "end": 130.65,
+     "start": 130.275,
      "text": "builder"
     },
     {
-     "end": 132.025,
-     "start": 130.85,
+     "end": 131.85,
+     "start": 130.65,
      "text": "declines"
     },
     {
-     "end": 132.225,
-     "start": 132.025,
+     "end": 132.075,
+     "start": 131.85,
+     "text": ","
+    },
+    {
+     "end": 132.363,
+     "start": 132.275,
+     "text": "and"
+    },
+    {
+     "end": 132.5,
+     "start": 132.363,
+     "text": "what"
+    },
+    {
+     "end": 132.825,
+     "start": 132.5,
+     "text": "open"
+    },
+    {
+     "end": 133.25,
+     "start": 132.825,
+     "text": "datum"
+    },
+    {
+     "end": 133.538,
+     "start": 133.25,
+     "text": "hands"
+    },
+    {
+     "end": 133.637,
+     "start": 133.538,
+     "text": "the"
+    },
+    {
+     "end": 133.988,
+     "start": 133.637,
+     "text": "fold"
+    },
+    {
+     "end": 134.062,
+     "start": 133.988,
+     "text": "of"
+    },
+    {
+     "end": 134.125,
+     "start": 134.062,
+     "text": "a"
+    },
+    {
+     "end": 135.175,
+     "start": 134.125,
+     "text": "registry"
+    },
+    {
+     "end": 135.4,
+     "start": 135.175,
      "text": ":"
     },
     {
-     "end": 132.875,
-     "start": 132.45,
+     "end": 136.05,
+     "start": 135.625,
      "text": "Singular"
     },
     {
-     "end": 132.925,
-     "start": 132.875,
+     "end": 136.1,
+     "start": 136.05,
      "text": "."
-    },
-    {
-     "end": 133.6,
-     "start": 132.925,
-     "text": "Application"
-    },
-    {
-     "end": 133.65,
-     "start": 133.6,
-     "text": "."
-    },
-    {
-     "end": 134.275,
-     "start": 133.65,
-     "text": "OpenDatum"
-    },
-    {
-     "end": 134.375,
-     "start": 134.275,
-     "text": "."
-    },
-    {
-     "end": 134.65,
-     "start": 134.375,
-     "text": "Book"
-    },
-    {
-     "end": 134.738,
-     "start": 134.65,
-     "text": ","
-    },
-    {
-     "end": 135.225,
-     "start": 134.738,
-     "text": "Singular"
-    },
-    {
-     "end": 135.275,
-     "start": 135.225,
-     "text": "."
-    },
-    {
-     "end": 136.0,
-     "start": 135.275,
-     "text": "Application"
-    },
-    {
-     "end": 136.075,
-     "start": 136.0,
-     "text": "."
-    },
-    {
-     "end": 136.7,
-     "start": 136.075,
-     "text": "OpenDatum"
     },
     {
      "end": 136.775,
-     "start": 136.7,
+     "start": 136.1,
+     "text": "Application"
+    },
+    {
+     "end": 136.825,
+     "start": 136.775,
      "text": "."
     },
     {
-     "end": 137.65,
-     "start": 136.775,
+     "end": 137.45,
+     "start": 136.825,
+     "text": "OpenDatum"
+    },
+    {
+     "end": 137.55,
+     "start": 137.45,
+     "text": "."
+    },
+    {
+     "end": 137.825,
+     "start": 137.55,
+     "text": "Book"
+    },
+    {
+     "end": 137.913,
+     "start": 137.825,
+     "text": ","
+    },
+    {
+     "end": 138.4,
+     "start": 137.913,
+     "text": "Singular"
+    },
+    {
+     "end": 138.45,
+     "start": 138.4,
+     "text": "."
+    },
+    {
+     "end": 139.175,
+     "start": 138.45,
+     "text": "Application"
+    },
+    {
+     "end": 139.25,
+     "start": 139.175,
+     "text": "."
+    },
+    {
+     "end": 139.875,
+     "start": 139.25,
+     "text": "OpenDatum"
+    },
+    {
+     "end": 139.95,
+     "start": 139.875,
+     "text": "."
+    },
+    {
+     "end": 140.825,
+     "start": 139.95,
      "text": "Build"
     },
     {
-     "end": 137.875,
-     "start": 137.65,
+     "end": 141.05,
+     "start": 140.825,
      "text": ","
     },
     {
-     "end": 138.55,
-     "start": 138.1,
+     "end": 141.725,
+     "start": 141.275,
      "text": "Singular"
     },
     {
-     "end": 138.6,
-     "start": 138.55,
+     "end": 141.775,
+     "start": 141.725,
      "text": "."
     },
     {
-     "end": 139.3,
-     "start": 138.6,
+     "end": 142.475,
+     "start": 141.775,
      "text": "Application"
     },
     {
-     "end": 139.375,
-     "start": 139.3,
+     "end": 142.55,
+     "start": 142.475,
      "text": "."
     },
     {
-     "end": 140.15,
-     "start": 139.375,
+     "end": 143.325,
+     "start": 142.55,
      "text": "OpenDatum"
     },
     {
-     "end": 140.225,
-     "start": 140.15,
+     "end": 143.4,
+     "start": 143.325,
      "text": "."
     },
     {
-     "end": 140.725,
-     "start": 140.225,
+     "end": 143.9,
+     "start": 143.4,
      "text": "Command"
     },
     {
-     "end": 140.812,
-     "start": 140.725,
+     "end": 143.988,
+     "start": 143.9,
      "text": ","
     },
     {
-     "end": 141.3,
-     "start": 140.812,
+     "end": 144.475,
+     "start": 143.988,
      "text": "Singular"
     },
     {
-     "end": 141.35,
-     "start": 141.3,
+     "end": 144.525,
+     "start": 144.475,
      "text": "."
     },
     {
-     "end": 142.075,
-     "start": 141.35,
+     "end": 145.25,
+     "start": 144.525,
      "text": "Application"
-    },
-    {
-     "end": 142.15,
-     "start": 142.075,
-     "text": "."
-    },
-    {
-     "end": 142.75,
-     "start": 142.15,
-     "text": "OpenDatum"
-    },
-    {
-     "end": 142.825,
-     "start": 142.75,
-     "text": "."
-    },
-    {
-     "end": 143.8,
-     "start": 142.825,
-     "text": "Entry"
-    },
-    {
-     "end": 144.1,
-     "start": 143.8,
-     "text": ","
-    },
-    {
-     "end": 144.625,
-     "start": 144.3,
-     "text": "Singular"
-    },
-    {
-     "end": 144.675,
-     "start": 144.625,
-     "text": "."
     },
     {
      "end": 145.325,
-     "start": 144.675,
-     "text": "Application"
-    },
-    {
-     "end": 145.4,
-     "start": 145.325,
+     "start": 145.25,
      "text": "."
     },
     {
-     "end": 145.975,
-     "start": 145.4,
+     "end": 145.925,
+     "start": 145.325,
      "text": "OpenDatum"
     },
     {
-     "end": 146.05,
-     "start": 145.975,
+     "end": 146.0,
+     "start": 145.925,
      "text": "."
     },
     {
-     "end": 146.95,
-     "start": 146.05,
+     "end": 146.975,
+     "start": 146.0,
+     "text": "Entry"
+    },
+    {
+     "end": 147.275,
+     "start": 146.975,
+     "text": ","
+    },
+    {
+     "end": 147.8,
+     "start": 147.475,
+     "text": "Singular"
+    },
+    {
+     "end": 147.85,
+     "start": 147.8,
+     "text": "."
+    },
+    {
+     "end": 148.5,
+     "start": 147.85,
+     "text": "Application"
+    },
+    {
+     "end": 148.575,
+     "start": 148.5,
+     "text": "."
+    },
+    {
+     "end": 149.15,
+     "start": 148.575,
+     "text": "OpenDatum"
+    },
+    {
+     "end": 149.225,
+     "start": 149.15,
+     "text": "."
+    },
+    {
+     "end": 150.125,
+     "start": 149.225,
      "text": "Envelope"
     },
     {
-     "end": 147.175,
-     "start": 146.95,
+     "end": 150.35,
+     "start": 150.125,
      "text": ","
     },
     {
-     "end": 147.7,
-     "start": 147.375,
+     "end": 150.875,
+     "start": 150.55,
      "text": "Singular"
     },
     {
-     "end": 147.75,
-     "start": 147.7,
+     "end": 150.925,
+     "start": 150.875,
      "text": "."
     },
     {
-     "end": 148.375,
-     "start": 147.75,
+     "end": 151.55,
+     "start": 150.925,
      "text": "Application"
     },
     {
-     "end": 148.45,
-     "start": 148.375,
+     "end": 151.625,
+     "start": 151.55,
      "text": "."
     },
     {
-     "end": 149.025,
-     "start": 148.45,
+     "end": 152.2,
+     "start": 151.625,
      "text": "OpenDatum"
     },
     {
-     "end": 149.075,
-     "start": 149.025,
+     "end": 152.25,
+     "start": 152.2,
      "text": "."
     },
     {
-     "end": 150.4,
-     "start": 149.075,
+     "end": 153.575,
+     "start": 152.25,
      "text": "InsertEnvelope"
     },
     {
-     "end": 150.625,
-     "start": 150.4,
+     "end": 153.8,
+     "start": 153.575,
      "text": ","
     },
     {
-     "end": 151.3,
-     "start": 150.85,
+     "end": 154.475,
+     "start": 154.025,
      "text": "Singular"
     },
     {
-     "end": 151.35,
-     "start": 151.3,
+     "end": 154.525,
+     "start": 154.475,
      "text": "."
     },
     {
-     "end": 152.05,
-     "start": 151.35,
+     "end": 155.225,
+     "start": 154.525,
      "text": "Application"
     },
     {
-     "end": 152.125,
-     "start": 152.05,
+     "end": 155.3,
+     "start": 155.225,
      "text": "."
     },
     {
-     "end": 152.9,
-     "start": 152.125,
+     "end": 156.075,
+     "start": 155.3,
      "text": "OpenDatum"
     },
     {
-     "end": 152.975,
-     "start": 152.9,
+     "end": 156.15,
+     "start": 156.075,
      "text": "."
     },
     {
-     "end": 153.475,
-     "start": 152.975,
+     "end": 156.65,
+     "start": 156.15,
      "text": "Permanent"
     },
     {
-     "end": 153.562,
-     "start": 153.475,
+     "end": 156.738,
+     "start": 156.65,
      "text": ","
     },
     {
-     "end": 154.05,
-     "start": 153.562,
+     "end": 157.225,
+     "start": 156.738,
      "text": "Singular"
     },
     {
-     "end": 154.1,
-     "start": 154.05,
+     "end": 157.275,
+     "start": 157.225,
      "text": "."
     },
     {
-     "end": 154.85,
-     "start": 154.1,
+     "end": 158.025,
+     "start": 157.275,
      "text": "Application"
     },
     {
-     "end": 154.925,
-     "start": 154.85,
+     "end": 158.1,
+     "start": 158.025,
      "text": "."
     },
     {
-     "end": 155.6,
-     "start": 154.925,
+     "end": 158.775,
+     "start": 158.1,
      "text": "OpenDatum"
     },
     {
-     "end": 155.675,
-     "start": 155.6,
+     "end": 158.85,
+     "start": 158.775,
      "text": "."
     },
     {
-     "end": 156.6,
-     "start": 155.675,
+     "end": 159.775,
+     "start": 158.85,
      "text": "Plan"
     },
     {
-     "end": 156.825,
-     "start": 156.6,
+     "end": 160.0,
+     "start": 159.775,
      "text": ","
     },
     {
-     "end": 157.5,
-     "start": 157.05,
+     "end": 160.675,
+     "start": 160.225,
      "text": "Singular"
     },
     {
-     "end": 157.55,
-     "start": 157.5,
+     "end": 160.725,
+     "start": 160.675,
      "text": "."
     },
     {
-     "end": 158.225,
-     "start": 157.55,
+     "end": 161.4,
+     "start": 160.725,
      "text": "Application"
     },
     {
-     "end": 158.275,
-     "start": 158.225,
+     "end": 161.45,
+     "start": 161.4,
      "text": "."
     },
     {
-     "end": 158.9,
-     "start": 158.275,
+     "end": 162.075,
+     "start": 161.45,
      "text": "OpenDatum"
     },
     {
-     "end": 158.975,
-     "start": 158.9,
+     "end": 162.15,
+     "start": 162.075,
      "text": "."
     },
     {
-     "end": 159.4,
-     "start": 158.975,
+     "end": 162.575,
+     "start": 162.15,
      "text": "Preview"
     },
     {
-     "end": 159.488,
-     "start": 159.4,
+     "end": 162.663,
+     "start": 162.575,
      "text": ","
     },
     {
-     "end": 159.975,
-     "start": 159.488,
+     "end": 163.15,
+     "start": 162.663,
      "text": "Singular"
     },
     {
-     "end": 160.025,
-     "start": 159.975,
+     "end": 163.2,
+     "start": 163.15,
      "text": "."
     },
     {
-     "end": 160.775,
-     "start": 160.025,
+     "end": 163.95,
+     "start": 163.2,
      "text": "Application"
     },
     {
-     "end": 160.85,
-     "start": 160.775,
+     "end": 164.025,
+     "start": 163.95,
      "text": "."
     },
     {
-     "end": 161.425,
-     "start": 160.85,
+     "end": 164.6,
+     "start": 164.025,
      "text": "OpenDatum"
-    },
-    {
-     "end": 161.475,
-     "start": 161.425,
-     "text": "."
-    },
-    {
-     "end": 162.55,
-     "start": 161.475,
-     "text": "Release"
-    },
-    {
-     "end": 162.775,
-     "start": 162.55,
-     "text": ","
-    },
-    {
-     "end": 163.3,
-     "start": 162.975,
-     "text": "Singular"
-    },
-    {
-     "end": 163.35,
-     "start": 163.3,
-     "text": "."
-    },
-    {
-     "end": 164.0,
-     "start": 163.35,
-     "text": "Application"
-    },
-    {
-     "end": 164.075,
-     "start": 164.0,
-     "text": "."
     },
     {
      "end": 164.65,
-     "start": 164.075,
-     "text": "OpenDatum"
+     "start": 164.6,
+     "text": "."
     },
     {
-     "end": 164.7,
+     "end": 165.725,
      "start": 164.65,
-     "text": "."
+     "text": "Release"
     },
     {
-     "end": 165.175,
-     "start": 164.7,
-     "text": "Requests"
-    },
-    {
-     "end": 165.25,
-     "start": 165.175,
-     "text": "."
-    },
-    {
-     "end": 166.15,
-     "start": 165.25,
-     "text": "Booking"
-    },
-    {
-     "end": 166.35,
-     "start": 166.15,
+     "end": 165.95,
+     "start": 165.725,
      "text": ","
     },
     {
-     "end": 166.975,
-     "start": 166.575,
+     "end": 166.475,
+     "start": 166.15,
      "text": "Singular"
     },
     {
-     "end": 167.025,
-     "start": 166.975,
+     "end": 166.525,
+     "start": 166.475,
      "text": "."
     },
     {
-     "end": 167.7,
-     "start": 167.025,
+     "end": 167.175,
+     "start": 166.525,
      "text": "Application"
     },
     {
-     "end": 167.775,
-     "start": 167.7,
+     "end": 167.25,
+     "start": 167.175,
      "text": "."
     },
     {
-     "end": 168.375,
-     "start": 167.775,
+     "end": 167.825,
+     "start": 167.25,
      "text": "OpenDatum"
+    },
+    {
+     "end": 167.875,
+     "start": 167.825,
+     "text": "."
+    },
+    {
+     "end": 168.35,
+     "start": 167.875,
+     "text": "Requests"
     },
     {
      "end": 168.425,
-     "start": 168.375,
+     "start": 168.35,
      "text": "."
     },
     {
-     "end": 168.925,
+     "end": 169.325,
      "start": 168.425,
+     "text": "Booking"
+    },
+    {
+     "end": 169.525,
+     "start": 169.325,
+     "text": ","
+    },
+    {
+     "end": 170.15,
+     "start": 169.75,
+     "text": "Singular"
+    },
+    {
+     "end": 170.2,
+     "start": 170.15,
+     "text": "."
+    },
+    {
+     "end": 170.875,
+     "start": 170.2,
+     "text": "Application"
+    },
+    {
+     "end": 170.95,
+     "start": 170.875,
+     "text": "."
+    },
+    {
+     "end": 171.55,
+     "start": 170.95,
+     "text": "OpenDatum"
+    },
+    {
+     "end": 171.6,
+     "start": 171.55,
+     "text": "."
+    },
+    {
+     "end": 172.1,
+     "start": 171.6,
      "text": "Requests"
     },
     {
-     "end": 168.975,
-     "start": 168.925,
+     "end": 172.15,
+     "start": 172.1,
      "text": "."
     },
     {
-     "end": 170.325,
-     "start": 168.975,
+     "end": 173.5,
+     "start": 172.15,
      "text": "Configuration"
     },
     {
-     "end": 170.525,
-     "start": 170.325,
+     "end": 173.7,
+     "start": 173.5,
      "text": ","
     },
     {
-     "end": 171.05,
-     "start": 170.725,
+     "end": 174.225,
+     "start": 173.9,
      "text": "Singular"
     },
     {
-     "end": 171.1,
-     "start": 171.05,
+     "end": 174.275,
+     "start": 174.225,
      "text": "."
     },
     {
-     "end": 171.75,
-     "start": 171.1,
-     "text": "Application"
-    },
-    {
-     "end": 171.825,
-     "start": 171.75,
-     "text": "."
-    },
-    {
-     "end": 172.375,
-     "start": 171.825,
-     "text": "OpenDatum"
-    },
-    {
-     "end": 172.425,
-     "start": 172.375,
-     "text": "."
-    },
-    {
-     "end": 172.9,
-     "start": 172.425,
-     "text": "Requests"
-    },
-    {
-     "end": 172.975,
-     "start": 172.9,
-     "text": "."
-    },
-    {
-     "end": 173.875,
-     "start": 172.975,
-     "text": "Pending"
-    },
-    {
-     "end": 174.075,
-     "start": 173.875,
-     "text": ","
-    },
-    {
-     "end": 174.6,
+     "end": 174.9,
      "start": 174.275,
-     "text": "Singular"
-    },
-    {
-     "end": 174.65,
-     "start": 174.6,
-     "text": "."
-    },
-    {
-     "end": 175.35,
-     "start": 174.65,
      "text": "Application"
     },
     {
-     "end": 175.425,
-     "start": 175.35,
+     "end": 174.95,
+     "start": 174.9,
      "text": "."
     },
     {
-     "end": 176.0,
-     "start": 175.425,
+     "end": 175.5,
+     "start": 174.95,
      "text": "OpenDatum"
     },
     {
-     "end": 176.05,
-     "start": 176.0,
+     "end": 175.55,
+     "start": 175.5,
      "text": "."
     },
     {
-     "end": 176.5,
-     "start": 176.05,
+     "end": 176.025,
+     "start": 175.55,
      "text": "Requests"
     },
     {
-     "end": 176.55,
-     "start": 176.5,
+     "end": 176.125,
+     "start": 176.025,
      "text": "."
     },
     {
-     "end": 177.5,
-     "start": 176.55,
-     "text": "Records"
+     "end": 176.975,
+     "start": 176.125,
+     "text": "Fold"
+    },
+    {
+     "end": 177.175,
+     "start": 176.975,
+     "text": ","
     },
     {
      "end": 177.7,
-     "start": 177.5,
-     "text": ","
-    },
-    {
-     "end": 178.25,
-     "start": 177.9,
+     "start": 177.375,
      "text": "Singular"
     },
     {
-     "end": 178.3,
-     "start": 178.25,
+     "end": 177.75,
+     "start": 177.7,
      "text": "."
     },
     {
-     "end": 178.975,
-     "start": 178.3,
+     "end": 178.4,
+     "start": 177.75,
      "text": "Application"
     },
     {
-     "end": 179.05,
-     "start": 178.975,
+     "end": 178.475,
+     "start": 178.4,
      "text": "."
+    },
+    {
+     "end": 179.025,
+     "start": 178.475,
+     "text": "OpenDatum"
+    },
+    {
+     "end": 179.075,
+     "start": 179.025,
+     "text": "."
+    },
+    {
+     "end": 179.55,
+     "start": 179.075,
+     "text": "Requests"
     },
     {
      "end": 179.625,
-     "start": 179.05,
+     "start": 179.55,
+     "text": "."
+    },
+    {
+     "end": 180.525,
+     "start": 179.625,
+     "text": "Pending"
+    },
+    {
+     "end": 180.725,
+     "start": 180.525,
+     "text": ","
+    },
+    {
+     "end": 181.25,
+     "start": 180.925,
+     "text": "Singular"
+    },
+    {
+     "end": 181.3,
+     "start": 181.25,
+     "text": "."
+    },
+    {
+     "end": 182.0,
+     "start": 181.3,
+     "text": "Application"
+    },
+    {
+     "end": 182.075,
+     "start": 182.0,
+     "text": "."
+    },
+    {
+     "end": 182.65,
+     "start": 182.075,
      "text": "OpenDatum"
     },
     {
-     "end": 179.675,
-     "start": 179.625,
+     "end": 182.7,
+     "start": 182.65,
      "text": "."
     },
     {
-     "end": 180.175,
-     "start": 179.675,
+     "end": 183.15,
+     "start": 182.7,
      "text": "Requests"
     },
     {
-     "end": 180.225,
-     "start": 180.175,
+     "end": 183.2,
+     "start": 183.15,
      "text": "."
     },
     {
-     "end": 181.325,
-     "start": 180.225,
+     "end": 184.15,
+     "start": 183.2,
+     "text": "Records"
+    },
+    {
+     "end": 184.35,
+     "start": 184.15,
+     "text": ","
+    },
+    {
+     "end": 184.9,
+     "start": 184.55,
+     "text": "Singular"
+    },
+    {
+     "end": 184.95,
+     "start": 184.9,
+     "text": "."
+    },
+    {
+     "end": 185.625,
+     "start": 184.95,
+     "text": "Application"
+    },
+    {
+     "end": 185.7,
+     "start": 185.625,
+     "text": "."
+    },
+    {
+     "end": 186.275,
+     "start": 185.7,
+     "text": "OpenDatum"
+    },
+    {
+     "end": 186.325,
+     "start": 186.275,
+     "text": "."
+    },
+    {
+     "end": 186.825,
+     "start": 186.325,
+     "text": "Requests"
+    },
+    {
+     "end": 186.875,
+     "start": 186.825,
+     "text": "."
+    },
+    {
+     "end": 187.975,
+     "start": 186.875,
      "text": "Refusal"
     },
     {
-     "end": 181.525,
-     "start": 181.325,
-     "text": ","
-    },
-    {
-     "end": 182.2,
-     "start": 181.75,
-     "text": "Singular"
-    },
-    {
-     "end": 182.25,
-     "start": 182.2,
-     "text": "."
-    },
-    {
-     "end": 182.925,
-     "start": 182.25,
-     "text": "Application"
-    },
-    {
-     "end": 182.975,
-     "start": 182.925,
-     "text": "."
-    },
-    {
-     "end": 183.6,
-     "start": 182.975,
-     "text": "OpenDatum"
-    },
-    {
-     "end": 183.65,
-     "start": 183.6,
-     "text": "."
-    },
-    {
-     "end": 184.2,
-     "start": 183.65,
-     "text": "Requests"
-    },
-    {
-     "end": 184.275,
-     "start": 184.2,
-     "text": "."
-    },
-    {
-     "end": 184.675,
-     "start": 184.275,
-     "text": "Script"
-    },
-    {
-     "end": 184.762,
-     "start": 184.675,
-     "text": ","
-    },
-    {
-     "end": 185.25,
-     "start": 184.762,
-     "text": "Singular"
-    },
-    {
-     "end": 185.3,
-     "start": 185.25,
-     "text": "."
-    },
-    {
-     "end": 185.975,
-     "start": 185.3,
-     "text": "Application"
-    },
-    {
-     "end": 186.025,
-     "start": 185.975,
-     "text": "."
-    },
-    {
-     "end": 186.65,
-     "start": 186.025,
-     "text": "OpenDatum"
-    },
-    {
-     "end": 186.725,
-     "start": 186.65,
-     "text": "."
-    },
-    {
-     "end": 187.525,
-     "start": 186.725,
-     "text": "Root"
-    },
-    {
-     "end": 187.75,
-     "start": 187.525,
-     "text": ","
-    },
-    {
-     "end": 188.4,
+     "end": 188.175,
      "start": 187.975,
+     "text": ","
+    },
+    {
+     "end": 188.85,
+     "start": 188.4,
      "text": "Singular"
     },
     {
-     "end": 188.45,
-     "start": 188.4,
+     "end": 188.9,
+     "start": 188.85,
      "text": "."
     },
     {
-     "end": 189.125,
-     "start": 188.45,
+     "end": 189.575,
+     "start": 188.9,
      "text": "Application"
     },
     {
-     "end": 189.175,
-     "start": 189.125,
+     "end": 189.625,
+     "start": 189.575,
      "text": "."
     },
     {
-     "end": 189.825,
-     "start": 189.175,
+     "end": 190.25,
+     "start": 189.625,
      "text": "OpenDatum"
     },
     {
-     "end": 189.925,
-     "start": 189.825,
+     "end": 190.3,
+     "start": 190.25,
      "text": "."
-    },
-    {
-     "end": 190.275,
-     "start": 189.925,
-     "text": "Run"
-    },
-    {
-     "end": 190.363,
-     "start": 190.275,
-     "text": ","
     },
     {
      "end": 190.85,
-     "start": 190.363,
-     "text": "Singular"
+     "start": 190.3,
+     "text": "Requests"
     },
     {
-     "end": 190.9,
+     "end": 190.925,
      "start": 190.85,
      "text": "."
     },
     {
-     "end": 191.625,
-     "start": 190.9,
-     "text": "Application"
+     "end": 191.325,
+     "start": 190.925,
+     "text": "Script"
     },
     {
-     "end": 191.675,
-     "start": 191.625,
+     "end": 191.413,
+     "start": 191.325,
+     "text": ","
+    },
+    {
+     "end": 191.9,
+     "start": 191.413,
+     "text": "Singular"
+    },
+    {
+     "end": 191.95,
+     "start": 191.9,
      "text": "."
     },
     {
-     "end": 192.275,
-     "start": 191.675,
-     "text": "OpenDatum"
+     "end": 192.625,
+     "start": 191.95,
+     "text": "Application"
     },
     {
-     "end": 192.35,
-     "start": 192.275,
+     "end": 192.675,
+     "start": 192.625,
      "text": "."
     },
     {
      "end": 193.3,
-     "start": 192.35,
-     "text": "Script"
+     "start": 192.675,
+     "text": "OpenDatum"
     },
     {
-     "end": 193.5,
+     "end": 193.375,
      "start": 193.3,
-     "text": ","
+     "text": "."
     },
     {
      "end": 194.175,
-     "start": 193.725,
+     "start": 193.375,
+     "text": "Root"
+    },
+    {
+     "end": 194.4,
+     "start": 194.175,
+     "text": ","
+    },
+    {
+     "end": 195.05,
+     "start": 194.625,
      "text": "Singular"
     },
     {
-     "end": 194.225,
-     "start": 194.175,
+     "end": 195.1,
+     "start": 195.05,
      "text": "."
     },
     {
-     "end": 194.925,
-     "start": 194.225,
+     "end": 195.775,
+     "start": 195.1,
      "text": "Application"
     },
     {
-     "end": 195.0,
-     "start": 194.925,
+     "end": 195.825,
+     "start": 195.775,
      "text": "."
     },
     {
-     "end": 195.8,
-     "start": 195.0,
+     "end": 196.475,
+     "start": 195.825,
      "text": "OpenDatum"
     },
     {
-     "end": 195.875,
-     "start": 195.8,
+     "end": 196.575,
+     "start": 196.475,
      "text": "."
     },
     {
-     "end": 196.3,
-     "start": 195.875,
+     "end": 196.925,
+     "start": 196.575,
+     "text": "Run"
+    },
+    {
+     "end": 197.012,
+     "start": 196.925,
+     "text": ","
+    },
+    {
+     "end": 197.5,
+     "start": 197.012,
+     "text": "Singular"
+    },
+    {
+     "end": 197.55,
+     "start": 197.5,
+     "text": "."
+    },
+    {
+     "end": 198.275,
+     "start": 197.55,
+     "text": "Application"
+    },
+    {
+     "end": 198.325,
+     "start": 198.275,
+     "text": "."
+    },
+    {
+     "end": 198.925,
+     "start": 198.325,
+     "text": "OpenDatum"
+    },
+    {
+     "end": 199.0,
+     "start": 198.925,
+     "text": "."
+    },
+    {
+     "end": 199.95,
+     "start": 199.0,
+     "text": "Script"
+    },
+    {
+     "end": 200.15,
+     "start": 199.95,
+     "text": ","
+    },
+    {
+     "end": 200.825,
+     "start": 200.375,
+     "text": "Singular"
+    },
+    {
+     "end": 200.875,
+     "start": 200.825,
+     "text": "."
+    },
+    {
+     "end": 201.575,
+     "start": 200.875,
+     "text": "Application"
+    },
+    {
+     "end": 201.65,
+     "start": 201.575,
+     "text": "."
+    },
+    {
+     "end": 202.45,
+     "start": 201.65,
+     "text": "OpenDatum"
+    },
+    {
+     "end": 202.525,
+     "start": 202.45,
+     "text": "."
+    },
+    {
+     "end": 202.95,
+     "start": 202.525,
      "text": "Update"
     },
     {
-     "end": 196.438,
-     "start": 196.3,
+     "end": 203.087,
+     "start": 202.95,
      "text": "and"
     },
     {
-     "end": 196.975,
-     "start": 196.438,
+     "end": 203.625,
+     "start": 203.087,
      "text": "Singular"
     },
     {
-     "end": 197.05,
-     "start": 196.975,
+     "end": 203.7,
+     "start": 203.625,
      "text": "."
     },
     {
-     "end": 197.775,
-     "start": 197.05,
+     "end": 204.425,
+     "start": 203.7,
      "text": "Application"
     },
     {
-     "end": 197.85,
-     "start": 197.775,
+     "end": 204.5,
+     "start": 204.425,
      "text": "."
     },
     {
-     "end": 198.5,
-     "start": 197.85,
+     "end": 205.15,
+     "start": 204.5,
      "text": "OpenDatum"
     },
     {
-     "end": 198.575,
-     "start": 198.5,
+     "end": 205.225,
+     "start": 205.15,
      "text": "."
     },
     {
-     "end": 199.425,
-     "start": 198.575,
+     "end": 206.075,
+     "start": 205.225,
      "text": "Value"
     },
     {
-     "end": 199.775,
-     "start": 199.425,
+     "end": 206.425,
+     "start": 206.075,
      "text": ";"
     },
     {
-     "end": 200.175,
-     "start": 200.0,
+     "end": 206.825,
+     "start": 206.65,
      "text": "their"
     },
     {
-     "end": 200.663,
-     "start": 200.175,
+     "end": 207.312,
+     "start": 206.825,
      "text": "sources"
     },
     {
-     "end": 200.887,
-     "start": 200.663,
+     "end": 207.538,
+     "start": 207.312,
      "text": "live"
     },
     {
-     "end": 201.1,
-     "start": 200.887,
+     "end": 207.75,
+     "start": 207.538,
      "text": "under"
     },
     {
-     "end": 210.0,
-     "start": 201.1,
+     "end": 216.65,
+     "start": 207.75,
      "text": "applications/open-datum/offchain/src/Singular/Application/OpenDatum/"
     },
     {
-     "end": 210.275,
-     "start": 210.0,
+     "end": 216.925,
+     "start": 216.65,
      "text": ","
     },
     {
-     "end": 210.562,
-     "start": 210.475,
+     "end": 217.212,
+     "start": 217.125,
      "text": "and"
     },
     {
-     "end": 210.675,
-     "start": 210.562,
+     "end": 217.325,
+     "start": 217.212,
      "text": "the"
     },
     {
-     "end": 211.413,
-     "start": 210.675,
+     "end": 218.062,
+     "start": 217.325,
      "text": "executable's"
     },
     {
-     "end": 211.75,
-     "start": 211.413,
+     "end": 218.4,
+     "start": 218.062,
      "text": "entry"
     },
     {
-     "end": 212.125,
-     "start": 211.75,
+     "end": 218.775,
+     "start": 218.4,
      "text": "point"
     },
     {
-     "end": 212.5,
-     "start": 212.125,
+     "end": 219.15,
+     "start": 218.775,
      "text": "lives"
     },
     {
-     "end": 212.6,
-     "start": 212.5,
+     "end": 219.25,
+     "start": 219.15,
      "text": "in"
     },
     {
-     "end": 215.5,
-     "start": 212.6,
+     "end": 222.15,
+     "start": 219.25,
      "text": "applications/open-datum/offchain"
     },
     {
-     "end": 216.275,
-     "start": 215.5,
+     "end": 222.925,
+     "start": 222.15,
      "text": "app/."
     },
     {
-     "end": 216.55,
-     "start": 216.475,
+     "end": 223.2,
+     "start": 223.125,
      "text": "The"
     },
     {
-     "end": 216.95,
-     "start": 216.55,
+     "end": 223.6,
+     "start": 223.2,
      "text": "public"
     },
     {
-     "end": 217.725,
-     "start": 216.95,
+     "end": 224.375,
+     "start": 223.6,
      "text": "registry-cli"
     },
     {
-     "end": 218.387,
-     "start": 217.725,
+     "end": 225.038,
+     "start": 224.375,
      "text": "component"
     },
     {
-     "end": 218.475,
-     "start": 218.387,
+     "end": 225.125,
+     "start": 225.038,
      "text": "("
     },
     {
-     "end": 220.425,
-     "start": 218.475,
+     "end": 227.075,
+     "start": 225.125,
      "text": "offchain/cli/"
     },
     {
-     "end": 220.562,
-     "start": 220.425,
+     "end": 227.212,
+     "start": 227.075,
      "text": ")"
     },
     {
-     "end": 220.975,
-     "start": 220.562,
+     "end": 227.625,
+     "start": 227.212,
      "text": "carries"
     },
     {
-     "end": 221.1,
-     "start": 220.975,
+     "end": 227.75,
+     "start": 227.625,
      "text": "the"
     },
     {
-     "end": 221.6,
-     "start": 221.1,
+     "end": 228.25,
+     "start": 227.75,
      "text": "registry"
     },
     {
-     "end": 222.1,
-     "start": 221.6,
+     "end": 228.75,
+     "start": 228.25,
      "text": "command"
     },
     {
-     "end": 222.387,
-     "start": 222.1,
+     "end": 229.038,
+     "start": 228.75,
      "text": "line"
     },
     {
-     "end": 222.488,
-     "start": 222.387,
+     "end": 229.137,
+     "start": 229.038,
      "text": "the"
     },
     {
-     "end": 222.7,
-     "start": 222.488,
+     "end": 229.35,
+     "start": 229.137,
      "text": "two"
     },
     {
-     "end": 223.238,
-     "start": 222.7,
+     "end": 229.887,
+     "start": 229.35,
      "text": "binaries"
     },
     {
-     "end": 223.587,
-     "start": 223.238,
+     "end": 230.238,
+     "start": 229.887,
      "text": "link"
     },
     {
-     "end": 223.675,
-     "start": 223.587,
+     "end": 230.325,
+     "start": 230.238,
      "text": "—"
     },
     {
-     "end": 224.75,
-     "start": 223.675,
+     "end": 231.4,
+     "start": 230.325,
      "text": "session"
     },
     {
-     "end": 224.975,
-     "start": 224.75,
+     "end": 231.625,
+     "start": 231.4,
      "text": ","
     },
     {
-     "end": 225.525,
-     "start": 225.175,
+     "end": 232.175,
+     "start": 231.825,
      "text": "journal"
     },
     {
-     "end": 225.637,
-     "start": 225.525,
+     "end": 232.288,
+     "start": 232.175,
      "text": "and"
     },
     {
-     "end": 226.1,
-     "start": 225.637,
+     "end": 232.75,
+     "start": 232.288,
      "text": "receipts"
     },
     {
-     "end": 226.137,
-     "start": 226.1,
+     "end": 232.788,
+     "start": 232.75,
      "text": ","
     },
     {
-     "end": 226.225,
-     "start": 226.137,
+     "end": 232.875,
+     "start": 232.788,
      "text": "the"
     },
     {
-     "end": 226.575,
-     "start": 226.225,
+     "end": 233.225,
+     "start": 232.875,
      "text": "flag"
     },
     {
-     "end": 226.85,
-     "start": 226.575,
+     "end": 233.5,
+     "start": 233.225,
      "text": "group"
     },
     {
-     "end": 226.913,
-     "start": 226.85,
+     "end": 233.562,
+     "start": 233.5,
      "text": ","
     },
     {
-     "end": 227.35,
-     "start": 226.913,
+     "end": 234.0,
+     "start": 233.562,
      "text": "create"
     },
     {
-     "end": 227.438,
-     "start": 227.35,
+     "end": 234.087,
+     "start": 234.0,
      "text": ","
     },
     {
-     "end": 227.9,
-     "start": 227.438,
+     "end": 234.55,
+     "start": 234.087,
      "text": "fold"
     },
     {
-     "end": 227.95,
-     "start": 227.9,
+     "end": 234.6,
+     "start": 234.55,
      "text": ","
     },
     {
-     "end": 228.425,
-     "start": 227.95,
+     "end": 235.075,
+     "start": 234.6,
      "text": "reject"
     },
     {
-     "end": 228.475,
-     "start": 228.425,
+     "end": 235.125,
+     "start": 235.075,
      "text": ","
     },
     {
-     "end": 229.025,
-     "start": 228.475,
+     "end": 235.675,
+     "start": 235.125,
      "text": "reclaim"
     },
     {
-     "end": 229.075,
-     "start": 229.025,
+     "end": 235.725,
+     "start": 235.675,
      "text": ","
     },
     {
-     "end": 229.6,
-     "start": 229.075,
+     "end": 236.25,
+     "start": 235.725,
      "text": "inspect"
     },
     {
-     "end": 229.65,
-     "start": 229.6,
+     "end": 236.3,
+     "start": 236.25,
      "text": ","
     },
     {
-     "end": 230.9,
-     "start": 229.65,
+     "end": 237.55,
+     "start": 236.3,
      "text": "reconcile"
     },
     {
-     "end": 231.125,
-     "start": 230.9,
+     "end": 237.775,
+     "start": 237.55,
      "text": ","
     },
     {
-     "end": 231.775,
-     "start": 231.3,
+     "end": 238.425,
+     "start": 237.95,
      "text": "recovery"
     },
     {
-     "end": 231.887,
-     "start": 231.775,
+     "end": 238.538,
+     "start": 238.425,
      "text": "and"
     },
     {
-     "end": 231.975,
-     "start": 231.887,
+     "end": 238.625,
+     "start": 238.538,
      "text": "the"
     },
     {
-     "end": 232.3,
-     "start": 231.975,
+     "end": 238.95,
+     "start": 238.625,
      "text": "booking"
     },
     {
-     "end": 233.0,
-     "start": 232.3,
+     "end": 239.65,
+     "start": 238.95,
      "text": "call"
     },
     {
-     "end": 233.2,
-     "start": 233.0,
+     "end": 239.85,
+     "start": 239.65,
      "text": ":"
     },
     {
-     "end": 233.875,
-     "start": 233.425,
+     "end": 240.525,
+     "start": 240.075,
      "text": "Singular"
     },
     {
-     "end": 233.95,
-     "start": 233.875,
+     "end": 240.6,
+     "start": 240.525,
      "text": "."
     },
     {
-     "end": 234.475,
-     "start": 233.95,
+     "end": 241.125,
+     "start": 240.6,
      "text": "CLI"
     },
     {
-     "end": 234.562,
-     "start": 234.475,
+     "end": 241.212,
+     "start": 241.125,
      "text": ","
     },
     {
-     "end": 235.05,
-     "start": 234.562,
+     "end": 241.7,
+     "start": 241.212,
      "text": "Singular"
     },
     {
-     "end": 235.125,
-     "start": 235.05,
+     "end": 241.775,
+     "start": 241.7,
      "text": "."
     },
     {
-     "end": 235.975,
-     "start": 235.125,
+     "end": 242.625,
+     "start": 241.775,
      "text": "CLI.Attached"
     },
     {
-     "end": 236.062,
-     "start": 235.975,
+     "end": 242.712,
+     "start": 242.625,
      "text": ","
     },
     {
-     "end": 236.55,
-     "start": 236.062,
+     "end": 243.2,
+     "start": 242.712,
      "text": "Singular"
     },
     {
-     "end": 236.625,
-     "start": 236.55,
+     "end": 243.275,
+     "start": 243.2,
      "text": "."
     },
     {
-     "end": 237.4,
-     "start": 236.625,
+     "end": 244.05,
+     "start": 243.275,
      "text": "CLI.Command"
     },
     {
-     "end": 237.488,
-     "start": 237.4,
+     "end": 244.137,
+     "start": 244.05,
      "text": ","
     },
     {
-     "end": 237.95,
-     "start": 237.488,
+     "end": 244.6,
+     "start": 244.137,
      "text": "Singular"
     },
     {
-     "end": 238.0,
-     "start": 237.95,
+     "end": 244.65,
+     "start": 244.6,
      "text": "."
     },
     {
-     "end": 239.35,
-     "start": 238.0,
+     "end": 246.0,
+     "start": 244.65,
      "text": "CLI.Create"
     },
     {
-     "end": 239.6,
-     "start": 239.35,
+     "end": 246.25,
+     "start": 246.0,
      "text": ","
     },
     {
-     "end": 240.3,
-     "start": 239.85,
+     "end": 246.95,
+     "start": 246.5,
      "text": "Singular"
     },
     {
-     "end": 240.375,
-     "start": 240.3,
+     "end": 247.025,
+     "start": 246.95,
      "text": "."
     },
     {
-     "end": 241.15,
-     "start": 240.375,
+     "end": 247.8,
+     "start": 247.025,
      "text": "CLI.Finish"
     },
     {
-     "end": 241.238,
-     "start": 241.15,
+     "end": 247.887,
+     "start": 247.8,
      "text": ","
     },
     {
-     "end": 241.75,
-     "start": 241.238,
+     "end": 248.4,
+     "start": 247.887,
      "text": "Singular"
     },
     {
-     "end": 241.85,
-     "start": 241.75,
+     "end": 248.5,
+     "start": 248.4,
      "text": "."
     },
     {
-     "end": 242.7,
-     "start": 241.85,
+     "end": 249.35,
+     "start": 248.5,
      "text": "CLI.Fold"
     },
     {
-     "end": 242.788,
-     "start": 242.7,
+     "end": 249.438,
+     "start": 249.35,
      "text": ","
     },
     {
-     "end": 243.325,
-     "start": 242.788,
+     "end": 249.975,
+     "start": 249.438,
      "text": "Singular"
     },
     {
-     "end": 243.425,
-     "start": 243.325,
+     "end": 250.075,
+     "start": 249.975,
      "text": "."
     },
     {
-     "end": 244.475,
-     "start": 243.425,
+     "end": 251.125,
+     "start": 250.075,
      "text": "CLI.FoldRules"
     },
     {
-     "end": 244.538,
-     "start": 244.475,
+     "end": 251.188,
+     "start": 251.125,
      "text": ","
     },
     {
-     "end": 245.025,
-     "start": 244.538,
+     "end": 251.675,
+     "start": 251.188,
      "text": "Singular"
     },
     {
-     "end": 245.1,
-     "start": 245.025,
+     "end": 251.75,
+     "start": 251.675,
      "text": "."
     },
     {
-     "end": 246.625,
-     "start": 245.1,
+     "end": 253.275,
+     "start": 251.75,
      "text": "CLI.Inspect"
     },
     {
-     "end": 246.85,
-     "start": 246.625,
+     "end": 253.5,
+     "start": 253.275,
      "text": ","
     },
     {
-     "end": 247.55,
-     "start": 247.1,
+     "end": 254.2,
+     "start": 253.75,
      "text": "Singular"
     },
     {
-     "end": 247.625,
-     "start": 247.55,
+     "end": 254.275,
+     "start": 254.2,
      "text": "."
     },
     {
-     "end": 248.25,
-     "start": 247.625,
+     "end": 254.9,
+     "start": 254.275,
      "text": "CLI.Key"
     },
     {
-     "end": 248.337,
-     "start": 248.25,
+     "end": 254.988,
+     "start": 254.9,
      "text": ","
     },
     {
-     "end": 248.85,
-     "start": 248.337,
+     "end": 255.5,
+     "start": 254.988,
      "text": "Singular"
     },
     {
-     "end": 248.95,
-     "start": 248.85,
+     "end": 255.6,
+     "start": 255.5,
      "text": "."
     },
     {
-     "end": 249.75,
-     "start": 248.95,
+     "end": 256.4,
+     "start": 255.6,
      "text": "CLI.Live"
     },
     {
-     "end": 249.837,
-     "start": 249.75,
+     "end": 256.487,
+     "start": 256.4,
      "text": ","
     },
     {
-     "end": 250.325,
-     "start": 249.837,
+     "end": 256.975,
+     "start": 256.487,
      "text": "Singular"
     },
     {
-     "end": 250.4,
-     "start": 250.325,
+     "end": 257.05,
+     "start": 256.975,
      "text": "."
     },
     {
-     "end": 251.5,
-     "start": 250.4,
+     "end": 258.15,
+     "start": 257.05,
      "text": "CLI.ManagedState"
     },
     {
-     "end": 251.587,
-     "start": 251.5,
+     "end": 258.237,
+     "start": 258.15,
      "text": ","
     },
     {
-     "end": 252.075,
-     "start": 251.587,
+     "end": 258.725,
+     "start": 258.237,
      "text": "Singular"
     },
     {
-     "end": 252.125,
-     "start": 252.075,
+     "end": 258.775,
+     "start": 258.725,
      "text": "."
     },
     {
-     "end": 253.475,
-     "start": 252.125,
+     "end": 260.125,
+     "start": 258.775,
      "text": "CLI.Outlay"
     },
     {
-     "end": 253.8,
-     "start": 253.475,
+     "end": 260.45,
+     "start": 260.125,
      "text": ","
     },
     {
-     "end": 254.5,
-     "start": 254.05,
+     "end": 261.15,
+     "start": 260.7,
      "text": "Singular"
     },
     {
-     "end": 254.575,
-     "start": 254.5,
+     "end": 261.225,
+     "start": 261.15,
      "text": "."
     },
     {
-     "end": 255.475,
-     "start": 254.575,
+     "end": 262.125,
+     "start": 261.225,
      "text": "CLI.Payload"
     },
     {
-     "end": 255.538,
-     "start": 255.475,
+     "end": 262.188,
+     "start": 262.125,
      "text": ","
     },
     {
-     "end": 256.1,
-     "start": 255.538,
+     "end": 262.75,
+     "start": 262.188,
      "text": "Singular"
     },
     {
-     "end": 256.2,
-     "start": 256.1,
+     "end": 262.85,
+     "start": 262.75,
      "text": "."
     },
     {
-     "end": 257.075,
-     "start": 256.2,
+     "end": 263.725,
+     "start": 262.85,
      "text": "CLI.Permanent"
     },
     {
-     "end": 257.163,
-     "start": 257.075,
+     "end": 263.812,
+     "start": 263.725,
      "text": ","
     },
     {
-     "end": 257.675,
-     "start": 257.163,
+     "end": 264.325,
+     "start": 263.812,
      "text": "Singular"
     },
     {
-     "end": 257.775,
-     "start": 257.675,
+     "end": 264.425,
+     "start": 264.325,
      "text": "."
     },
     {
-     "end": 258.525,
-     "start": 257.775,
+     "end": 265.175,
+     "start": 264.425,
      "text": "CLI.Plan"
     },
     {
-     "end": 258.612,
-     "start": 258.525,
+     "end": 265.263,
+     "start": 265.175,
      "text": ","
     },
     {
-     "end": 259.1,
-     "start": 258.612,
+     "end": 265.75,
+     "start": 265.263,
      "text": "Singular"
     },
     {
-     "end": 259.175,
-     "start": 259.1,
+     "end": 265.825,
+     "start": 265.75,
      "text": "."
     },
     {
-     "end": 260.525,
-     "start": 259.175,
+     "end": 267.175,
+     "start": 265.825,
      "text": "CLI.Proof"
     },
     {
-     "end": 260.75,
-     "start": 260.525,
+     "end": 267.4,
+     "start": 267.175,
      "text": ","
     },
     {
-     "end": 261.425,
-     "start": 260.975,
+     "end": 268.075,
+     "start": 267.625,
      "text": "Singular"
     },
     {
-     "end": 261.5,
-     "start": 261.425,
+     "end": 268.15,
+     "start": 268.075,
      "text": "."
     },
     {
-     "end": 262.225,
-     "start": 261.5,
+     "end": 268.875,
+     "start": 268.15,
      "text": "CLI.Receipt"
     },
     {
-     "end": 262.288,
-     "start": 262.225,
+     "end": 268.938,
+     "start": 268.875,
      "text": ","
     },
     {
-     "end": 262.825,
-     "start": 262.288,
+     "end": 269.475,
+     "start": 268.938,
      "text": "Singular"
     },
     {
-     "end": 262.925,
-     "start": 262.825,
+     "end": 269.575,
+     "start": 269.475,
      "text": "."
     },
     {
-     "end": 263.9,
-     "start": 262.925,
+     "end": 270.55,
+     "start": 269.575,
      "text": "CLI.ReceiptBody"
     },
     {
-     "end": 263.987,
-     "start": 263.9,
+     "end": 270.638,
+     "start": 270.55,
      "text": ","
     },
     {
-     "end": 264.475,
-     "start": 263.987,
+     "end": 271.125,
+     "start": 270.638,
      "text": "Singular"
     },
     {
-     "end": 264.55,
-     "start": 264.475,
+     "end": 271.2,
+     "start": 271.125,
      "text": "."
     },
     {
-     "end": 265.925,
-     "start": 264.55,
+     "end": 272.575,
+     "start": 271.2,
      "text": "CLI.Reclaim"
     },
     {
-     "end": 266.15,
-     "start": 265.925,
+     "end": 272.8,
+     "start": 272.575,
      "text": ","
     },
     {
-     "end": 266.825,
-     "start": 266.375,
+     "end": 273.475,
+     "start": 273.025,
      "text": "Singular"
     },
     {
-     "end": 266.9,
-     "start": 266.825,
+     "end": 273.55,
+     "start": 273.475,
      "text": "."
     },
     {
-     "end": 268.05,
-     "start": 266.9,
+     "end": 274.7,
+     "start": 273.55,
      "text": "CLI.ReclaimRules"
     },
     {
-     "end": 268.138,
-     "start": 268.05,
+     "end": 274.788,
+     "start": 274.7,
      "text": ","
     },
     {
-     "end": 268.65,
-     "start": 268.138,
+     "end": 275.3,
+     "start": 274.788,
      "text": "Singular"
     },
     {
-     "end": 268.75,
-     "start": 268.65,
+     "end": 275.4,
+     "start": 275.3,
      "text": "."
     },
     {
-     "end": 269.775,
-     "start": 268.75,
+     "end": 276.425,
+     "start": 275.4,
      "text": "CLI.Reconcile"
     },
     {
-     "end": 269.862,
-     "start": 269.775,
+     "end": 276.513,
+     "start": 276.425,
      "text": ","
     },
     {
-     "end": 270.35,
-     "start": 269.862,
+     "end": 277.0,
+     "start": 276.513,
      "text": "Singular"
     },
     {
-     "end": 270.425,
-     "start": 270.35,
+     "end": 277.075,
+     "start": 277.0,
      "text": "."
     },
     {
-     "end": 271.9,
-     "start": 270.425,
+     "end": 278.55,
+     "start": 277.075,
      "text": "CLI.Recovery"
     },
     {
-     "end": 272.125,
-     "start": 271.9,
+     "end": 278.775,
+     "start": 278.55,
      "text": ","
     },
     {
-     "end": 272.8,
-     "start": 272.35,
+     "end": 279.45,
+     "start": 279.0,
      "text": "Singular"
     },
     {
-     "end": 272.875,
-     "start": 272.8,
+     "end": 279.525,
+     "start": 279.45,
      "text": "."
     },
     {
-     "end": 273.8,
-     "start": 272.875,
+     "end": 280.45,
+     "start": 279.525,
      "text": "CLI.Registry"
     },
     {
-     "end": 273.888,
-     "start": 273.8,
+     "end": 280.538,
+     "start": 280.45,
      "text": ","
     },
     {
-     "end": 274.4,
-     "start": 273.888,
+     "end": 281.05,
+     "start": 280.538,
      "text": "Singular"
-    },
-    {
-     "end": 274.475,
-     "start": 274.4,
-     "text": "."
-    },
-    {
-     "end": 275.275,
-     "start": 274.475,
-     "text": "CLI.Reject"
-    },
-    {
-     "end": 275.337,
-     "start": 275.275,
-     "text": ","
-    },
-    {
-     "end": 275.825,
-     "start": 275.337,
-     "text": "Singular"
-    },
-    {
-     "end": 275.9,
-     "start": 275.825,
-     "text": "."
-    },
-    {
-     "end": 277.625,
-     "start": 275.9,
-     "text": "CLI.RejectRules"
-    },
-    {
-     "end": 277.825,
-     "start": 277.625,
-     "text": ","
-    },
-    {
-     "end": 278.525,
-     "start": 278.075,
-     "text": "Singular"
-    },
-    {
-     "end": 278.6,
-     "start": 278.525,
-     "text": "."
-    },
-    {
-     "end": 279.675,
-     "start": 278.6,
-     "text": "CLI.RequestWindow"
-    },
-    {
-     "end": 279.763,
-     "start": 279.675,
-     "text": ","
-    },
-    {
-     "end": 280.275,
-     "start": 279.763,
-     "text": "Singular"
-    },
-    {
-     "end": 280.375,
-     "start": 280.275,
-     "text": "."
     },
     {
      "end": 281.125,
-     "start": 280.375,
+     "start": 281.05,
+     "text": "."
+    },
+    {
+     "end": 281.925,
+     "start": 281.125,
+     "text": "CLI.Reject"
+    },
+    {
+     "end": 281.987,
+     "start": 281.925,
+     "text": ","
+    },
+    {
+     "end": 282.475,
+     "start": 281.987,
+     "text": "Singular"
+    },
+    {
+     "end": 282.55,
+     "start": 282.475,
+     "text": "."
+    },
+    {
+     "end": 284.275,
+     "start": 282.55,
+     "text": "CLI.RejectRules"
+    },
+    {
+     "end": 284.475,
+     "start": 284.275,
+     "text": ","
+    },
+    {
+     "end": 285.175,
+     "start": 284.725,
+     "text": "Singular"
+    },
+    {
+     "end": 285.25,
+     "start": 285.175,
+     "text": "."
+    },
+    {
+     "end": 286.325,
+     "start": 285.25,
+     "text": "CLI.RequestWindow"
+    },
+    {
+     "end": 286.413,
+     "start": 286.325,
+     "text": ","
+    },
+    {
+     "end": 286.925,
+     "start": 286.413,
+     "text": "Singular"
+    },
+    {
+     "end": 287.025,
+     "start": 286.925,
+     "text": "."
+    },
+    {
+     "end": 287.775,
+     "start": 287.025,
      "text": "CLI.Root"
     },
     {
-     "end": 281.212,
-     "start": 281.125,
+     "end": 287.862,
+     "start": 287.775,
      "text": ","
     },
     {
-     "end": 281.725,
-     "start": 281.212,
+     "end": 288.375,
+     "start": 287.862,
      "text": "Singular"
     },
     {
-     "end": 281.825,
-     "start": 281.725,
+     "end": 288.475,
+     "start": 288.375,
      "text": "."
     },
     {
-     "end": 282.675,
-     "start": 281.825,
+     "end": 289.325,
+     "start": 288.475,
      "text": "CLI.Session"
     },
     {
-     "end": 282.763,
-     "start": 282.675,
+     "end": 289.413,
+     "start": 289.325,
      "text": ","
     },
     {
-     "end": 283.25,
-     "start": 282.763,
+     "end": 289.9,
+     "start": 289.413,
      "text": "Singular"
     },
     {
-     "end": 283.325,
-     "start": 283.25,
+     "end": 289.975,
+     "start": 289.9,
      "text": "."
     },
     {
-     "end": 284.725,
-     "start": 283.325,
+     "end": 291.375,
+     "start": 289.975,
      "text": "CLI.Trace"
     },
     {
-     "end": 284.95,
-     "start": 284.725,
+     "end": 291.6,
+     "start": 291.375,
      "text": ","
     },
     {
-     "end": 285.525,
-     "start": 285.15,
+     "end": 292.175,
+     "start": 291.8,
      "text": "Singular"
     },
     {
-     "end": 285.575,
-     "start": 285.525,
+     "end": 292.225,
+     "start": 292.175,
      "text": "."
     },
     {
-     "end": 286.55,
-     "start": 285.575,
+     "end": 293.2,
+     "start": 292.225,
      "text": "CLI.TrieHistory"
     },
     {
-     "end": 286.688,
-     "start": 286.55,
+     "end": 293.337,
+     "start": 293.2,
      "text": "and"
     },
     {
-     "end": 287.125,
-     "start": 286.688,
+     "end": 293.775,
+     "start": 293.337,
      "text": "Singular"
     },
     {
-     "end": 287.175,
-     "start": 287.125,
+     "end": 293.825,
+     "start": 293.775,
      "text": "."
     },
     {
-     "end": 288.6,
-     "start": 287.175,
+     "end": 295.25,
+     "start": 293.825,
      "text": "CLI.TrieTrace"
     },
     {
-     "end": 288.8,
-     "start": 288.6,
+     "end": 295.45,
+     "start": 295.25,
      "text": ";"
     },
     {
-     "end": 289.175,
-     "start": 289.0,
+     "end": 295.825,
+     "start": 295.65,
      "text": "their"
     },
     {
-     "end": 289.625,
-     "start": 289.175,
+     "end": 296.275,
+     "start": 295.825,
      "text": "sources"
     },
     {
-     "end": 289.812,
-     "start": 289.625,
+     "end": 296.462,
+     "start": 296.275,
      "text": "live"
     },
     {
-     "end": 290.062,
-     "start": 289.812,
+     "end": 296.712,
+     "start": 296.462,
      "text": "under"
     },
     {
-     "end": 295.6,
-     "start": 290.062,
+     "end": 302.25,
+     "start": 296.712,
      "text": "offchain/cli/src/Singular/CLI/."
     }
    ]
@@ -197771,17 +197871,17 @@
    ]
   },
   "docs-offchain-api-reference/what-this-reference-contains-03": {
-   "audio_sha256": "4c08b9ba964544009b18d1088e2fec7e06c4a3e13539ab77bf3bcf4c35bfee51",
-   "characters": 3392,
-   "cost": 0.00335808,
-   "duration": 164.775,
+   "audio_sha256": "592f49bdd1edf46569400037b3a43211942935642e1c6b74acd6c30276f899dc",
+   "characters": 4453,
+   "cost": 0.00440847,
+   "duration": 231.538,
    "index": 3,
-   "key": "10705b543af67f45ecfc0b83981ce4ded47137fbbbc86d4a6c93bcbd4bc5ea05",
+   "key": "f535fc3b2c87300ad457858a5ae6406bc67a5d34a350baa6ade81462622f6564",
    "page": "docs/offchain-api-reference.md",
    "pause_ms": 400,
    "section": "what-this-reference-contains",
-   "sent_text": "MkDocs environment ready! Run: mkdocs serve - Naming.Datum — source - Naming.Register — source - Naming.Request — source - Naming.Verify — source - Naming.Wire — source - Naming.Wire.Vectors — source - Singular.Provider.Koios.Client — source - Singular.Provider.Koios.Evidence — source - Singular.Provider.Koios.History — source - Singular.Provider.Koios.Provider — source - Singular.Provider.Koios.Recorded — source - Singular.Provider.Koios.Runtime — source - Singular.Provider.Koios.State — source - Singular.Provider.Koios.Wire — source - Singular.Registry.Address — source - Singular.Registry.Application — source - Singular.Registry.AssetName — source - Singular.Registry.Blueprint — source - Singular.Registry.Blueprint.Load — source - Singular.Registry.Blueprint.Params — source - Singular.Registry.Blueprint.Schema — source - Singular.Registry.Candidate — source - Singular.Registry.Capabilities — source - Singular.Registry.Config — source - Singular.Registry.Config.Application — source - Singular.Registry.Confirmation — source - Singular.Registry.Deployment — source - Singular.Registry.Deployment.Attach — source - Singular.Registry.Deployment.Manifest — source - Singular.Registry.Deployment.Mirror — source - Singular.Registry.Driver — source - Singular.Registry.Evidence — source - Singular.Registry.FoldAdmission — source - Singular.Registry.FoldSelection — source - Singular.Registry.Funding — source - Singular.Registry.Ledger — source - Singular.Registry.LedgerProvider — source - Singular.Registry.Lifecycle — source - Singular.Registry.Page — source - Singular.Registry.PlainJson — source - Singular.Registry.Proof — source - Singular.Registry.Replay — source - Singular.Registry.Signing — source - Singular.Registry.StateToken — source - Singular.Registry.Trie — source - Singular.Registry.Trie.Pure — source - Singular.Registry.Trie.PureManager — source - Singular.Registry.TrieState — source - Singular.Registry.TrieState.Core — source - Singular.Registry.TrieState.Fixture — source - Singular.Registry.TrieState.Lineage — source - Singular.Registry.TrieState.Types — source - Singular.Registry.TxBuilder.Boot — source - Singular.Registry.TxBuilder.ConnectedFold — source - Singular.Registry.TxBuilder.Edges — source - Singular.Registry.TxBuilder.Internal — source - Singular.Registry.TxBuilder.Internal.Edges — source - Singular.Registry.TxBuilder.Internal.Identity — source - Singular.Registry.TxBuilder.Internal.Lookup — source - Singular.Registry.TxBuilder.Prepare — source - Singular.Registry.TxBuilder.Register — source - Singular.Registry.TxBuilder.Reject — source - Singular.Registry.TxBuilder.Request — source - Singular.Registry.TxBuilder.Retract — source - Singular.Registry.TxBuilder.Update — source - Singular.Registry.TxBuilder.Update.Build — source - Singular.Registry.TxBuilder.Update.Context — source - Singular.Registry.TxBuilder.Update.Duties — source - Singular.Registry.Types — source - Singular.Registry.Wait — source - Singular.Registry.Wire.Primitive — source - Singular.Registry.Wire.Proof — source - Singular.Registry.Wire.Redeemer — source - Singular.Registry.Wire.Request — source - Singular.Registry.Wire.State — source - Singular.Registry.Witness — source - Singular.State.Preimage — source — the off-chain encoder of the Singular state, active, configuration and registration-approval preimages, byte for byte equal to the on-chain one",
-   "text": "MkDocs environment ready! Run: mkdocs serve - Naming.Datum — source - Naming.Register — source - Naming.Request — source - Naming.Verify — source - Naming.Wire — source - Naming.Wire.Vectors — source - Singular.Provider.Koios.Client — source - Singular.Provider.Koios.Evidence — source - Singular.Provider.Koios.History — source - Singular.Provider.Koios.Provider — source - Singular.Provider.Koios.Recorded — source - Singular.Provider.Koios.Runtime — source - Singular.Provider.Koios.State — source - Singular.Provider.Koios.Wire — source - Singular.Registry.Address — source - Singular.Registry.Application — source - Singular.Registry.AssetName — source - Singular.Registry.Blueprint — source - Singular.Registry.Blueprint.Load — source - Singular.Registry.Blueprint.Params — source - Singular.Registry.Blueprint.Schema — source - Singular.Registry.Candidate — source - Singular.Registry.Capabilities — source - Singular.Registry.Config — source - Singular.Registry.Config.Application — source - Singular.Registry.Confirmation — source - Singular.Registry.Deployment — source - Singular.Registry.Deployment.Attach — source - Singular.Registry.Deployment.Manifest — source - Singular.Registry.Deployment.Mirror — source - Singular.Registry.Driver — source - Singular.Registry.Evidence — source - Singular.Registry.FoldAdmission — source - Singular.Registry.FoldSelection — source - Singular.Registry.Funding — source - Singular.Registry.Ledger — source - Singular.Registry.LedgerProvider — source - Singular.Registry.Lifecycle — source - Singular.Registry.Page — source - Singular.Registry.PlainJson — source - Singular.Registry.Proof — source - Singular.Registry.Replay — source - Singular.Registry.Signing — source - Singular.Registry.StateToken — source - Singular.Registry.Trie — source - Singular.Registry.Trie.Pure — source - Singular.Registry.Trie.PureManager — source - Singular.Registry.TrieState — source - Singular.Registry.TrieState.Core — source - Singular.Registry.TrieState.Fixture — source - Singular.Registry.TrieState.Lineage — source - Singular.Registry.TrieState.Types — source - Singular.Registry.TxBuilder.Boot — source - Singular.Registry.TxBuilder.ConnectedFold — source - Singular.Registry.TxBuilder.Edges — source - Singular.Registry.TxBuilder.Internal — source - Singular.Registry.TxBuilder.Internal.Edges — source - Singular.Registry.TxBuilder.Internal.Identity — source - Singular.Registry.TxBuilder.Internal.Lookup — source - Singular.Registry.TxBuilder.Prepare — source - Singular.Registry.TxBuilder.Register — source - Singular.Registry.TxBuilder.Reject — source - Singular.Registry.TxBuilder.Request — source - Singular.Registry.TxBuilder.Retract — source - Singular.Registry.TxBuilder.Update — source - Singular.Registry.TxBuilder.Update.Build — source - Singular.Registry.TxBuilder.Update.Context — source - Singular.Registry.TxBuilder.Update.Duties — source - Singular.Registry.Types — source - Singular.Registry.Wait — source - Singular.Registry.Wire.Primitive — source - Singular.Registry.Wire.Proof — source - Singular.Registry.Wire.Redeemer — source - Singular.Registry.Wire.Request — source - Singular.Registry.Wire.State — source - Singular.Registry.Witness — source - Singular.State.Preimage — source — the off-chain encoder of the Singular state, active, configuration and registration-approval preimages, byte for byte equal to the on-chain one",
+   "sent_text": "MkDocs environment ready! Run: mkdocs serve - Naming.Datum — source - Naming.Register — source - Naming.Request — source - Naming.Verify — source - Naming.Wire — source - Naming.Wire.Vectors — source - Singular.Provider.Koios.Client — source - Singular.Provider.Koios.Evidence — source - Singular.Provider.Koios.History — source - Singular.Provider.Koios.Provider — source - Singular.Provider.Koios.Recorded — source - Singular.Provider.Koios.Runtime — source - Singular.Provider.Koios.State — source - Singular.Provider.Koios.Wire — source - Singular.Registry.Address — source - Singular.Registry.Application — source - Singular.Registry.AssetName — source - Singular.Registry.Blueprint — source - Singular.Registry.Blueprint.Load — source - Singular.Registry.Blueprint.Params — source - Singular.Registry.Blueprint.Schema — source - Singular.Registry.Candidate — source - Singular.Registry.Capabilities — source - Singular.Registry.Config — source - Singular.Registry.Config.Application — source - Singular.Registry.Confirmation — source - Singular.Registry.Deployment — source - Singular.Registry.Deployment.Attach — source - Singular.Registry.Deployment.Manifest — source - Singular.Registry.Deployment.Mirror — source - Singular.Registry.Driver — source - Singular.Registry.Evidence — source - Singular.Registry.FoldAdmission — source - Singular.Registry.FoldSelection — source - Singular.Registry.Funding — source - Singular.Registry.Ledger — source - Singular.Registry.LedgerProvider — source - Singular.Registry.Lifecycle — source - Singular.Registry.Page — source - Singular.Registry.PlainJson — source - Singular.Registry.Proof — source - Singular.Registry.Replay — source - Singular.Registry.Signing — source - Singular.Registry.StateToken — source - Singular.Registry.Trie — source - Singular.Registry.Trie.Pure — source - Singular.Registry.Trie.PureManager — source - Singular.Registry.TrieState — source - Singular.Registry.TrieState.Core — source - Singular.Registry.TrieState.Fixture — source - Singular.Registry.TrieState.Lineage — source - Singular.Registry.TrieState.Types — source - Singular.Registry.TxBuilder.Boot — source - Singular.Registry.TxBuilder.ConnectedFold — source - Singular.Registry.TxBuilder.Edges — source - Singular.Registry.TxBuilder.Internal — source - Singular.Registry.TxBuilder.Internal.Edges — source - Singular.Registry.TxBuilder.Internal.Identity — source - Singular.Registry.TxBuilder.Internal.Lookup — source - Singular.Registry.TxBuilder.Prepare — source - Singular.Registry.TxBuilder.Register — source - Singular.Registry.TxBuilder.Reject — source - Singular.Registry.TxBuilder.Request — source - Singular.Registry.TxBuilder.Retract — source - Singular.Registry.TxBuilder.Update — source - Singular.Registry.TxBuilder.Update.Build — source - Singular.Registry.TxBuilder.Update.Context — source - Singular.Registry.TxBuilder.Update.Duties — source - Singular.Registry.Types — source - Singular.Registry.Wait — source - Singular.Registry.Wire.Primitive — source - Singular.Registry.Wire.Proof — source - Singular.Registry.Wire.Redeemer — source - Singular.Registry.Wire.Request — source - Singular.Registry.Wire.State — source - Singular.Registry.Witness — source - Singular.State.Assemble — source — the payer, the reads of the chain and the assembly of a transaction that the builders of the Singular state share - Singular.State.Fold — source — the fold of pending registrations into a registry from public data alone, with the application's part handed in - Singular.State.Genesis — source — the creation of a registry from a seed, with the application's steps in the same transaction - Singular.State.Lineage — source — a registry's trie rebuilt from the public history of its state token, every root checked against the chain - Singular.State.Preimage — source — the off-chain encoder of the Singular state, active, configuration and registration-approval preimages, byte for byte equal to the on-chain one - Singular.State.Publication — source — the state script and the application's script published as reference scripts once and reused by later registries - Singular.State.Records — source — the datum and the actions of the state validator, as Plutus Data in the layout it decodes - Singular.State.Refusal — source — why a builder of the Singular state declines to build - Singular.State.Script — source — the state validator of an application as the builders carry it, attached or by reference",
+   "text": "MkDocs environment ready! Run: mkdocs serve - Naming.Datum — source - Naming.Register — source - Naming.Request — source - Naming.Verify — source - Naming.Wire — source - Naming.Wire.Vectors — source - Singular.Provider.Koios.Client — source - Singular.Provider.Koios.Evidence — source - Singular.Provider.Koios.History — source - Singular.Provider.Koios.Provider — source - Singular.Provider.Koios.Recorded — source - Singular.Provider.Koios.Runtime — source - Singular.Provider.Koios.State — source - Singular.Provider.Koios.Wire — source - Singular.Registry.Address — source - Singular.Registry.Application — source - Singular.Registry.AssetName — source - Singular.Registry.Blueprint — source - Singular.Registry.Blueprint.Load — source - Singular.Registry.Blueprint.Params — source - Singular.Registry.Blueprint.Schema — source - Singular.Registry.Candidate — source - Singular.Registry.Capabilities — source - Singular.Registry.Config — source - Singular.Registry.Config.Application — source - Singular.Registry.Confirmation — source - Singular.Registry.Deployment — source - Singular.Registry.Deployment.Attach — source - Singular.Registry.Deployment.Manifest — source - Singular.Registry.Deployment.Mirror — source - Singular.Registry.Driver — source - Singular.Registry.Evidence — source - Singular.Registry.FoldAdmission — source - Singular.Registry.FoldSelection — source - Singular.Registry.Funding — source - Singular.Registry.Ledger — source - Singular.Registry.LedgerProvider — source - Singular.Registry.Lifecycle — source - Singular.Registry.Page — source - Singular.Registry.PlainJson — source - Singular.Registry.Proof — source - Singular.Registry.Replay — source - Singular.Registry.Signing — source - Singular.Registry.StateToken — source - Singular.Registry.Trie — source - Singular.Registry.Trie.Pure — source - Singular.Registry.Trie.PureManager — source - Singular.Registry.TrieState — source - Singular.Registry.TrieState.Core — source - Singular.Registry.TrieState.Fixture — source - Singular.Registry.TrieState.Lineage — source - Singular.Registry.TrieState.Types — source - Singular.Registry.TxBuilder.Boot — source - Singular.Registry.TxBuilder.ConnectedFold — source - Singular.Registry.TxBuilder.Edges — source - Singular.Registry.TxBuilder.Internal — source - Singular.Registry.TxBuilder.Internal.Edges — source - Singular.Registry.TxBuilder.Internal.Identity — source - Singular.Registry.TxBuilder.Internal.Lookup — source - Singular.Registry.TxBuilder.Prepare — source - Singular.Registry.TxBuilder.Register — source - Singular.Registry.TxBuilder.Reject — source - Singular.Registry.TxBuilder.Request — source - Singular.Registry.TxBuilder.Retract — source - Singular.Registry.TxBuilder.Update — source - Singular.Registry.TxBuilder.Update.Build — source - Singular.Registry.TxBuilder.Update.Context — source - Singular.Registry.TxBuilder.Update.Duties — source - Singular.Registry.Types — source - Singular.Registry.Wait — source - Singular.Registry.Wire.Primitive — source - Singular.Registry.Wire.Proof — source - Singular.Registry.Wire.Redeemer — source - Singular.Registry.Wire.Request — source - Singular.Registry.Wire.State — source - Singular.Registry.Witness — source - Singular.State.Assemble — source — the payer, the reads of the chain and the assembly of a transaction that the builders of the Singular state share - Singular.State.Fold — source — the fold of pending registrations into a registry from public data alone, with the application's part handed in - Singular.State.Genesis — source — the creation of a registry from a seed, with the application's steps in the same transaction - Singular.State.Lineage — source — a registry's trie rebuilt from the public history of its state token, every root checked against the chain - Singular.State.Preimage — source — the off-chain encoder of the Singular state, active, configuration and registration-approval preimages, byte for byte equal to the on-chain one - Singular.State.Publication — source — the state script and the application's script published as reference scripts once and reused by later registries - Singular.State.Records — source — the datum and the actions of the state validator, as Plutus Data in the layout it decodes - Singular.State.Refusal — source — why a builder of the Singular state declines to build - Singular.State.Script — source — the state validator of an application as the builders carry it, attached or by reference",
    "words": [
     {
      "end": 0.837,
@@ -201224,179 +201324,1169 @@
      "text": "."
     },
     {
-     "end": 152.613,
-     "start": 152.2,
+     "end": 152.488,
+     "start": 152.175,
      "text": "Witness"
     },
     {
-     "end": 152.688,
-     "start": 152.613,
+     "end": 152.55,
+     "start": 152.488,
      "text": "—"
     },
     {
-     "end": 153.062,
-     "start": 152.688,
+     "end": 152.812,
+     "start": 152.55,
      "text": "source"
     },
     {
-     "end": 153.125,
-     "start": 153.062,
+     "end": 152.875,
+     "start": 152.812,
      "text": "-"
     },
     {
-     "end": 153.575,
-     "start": 153.125,
+     "end": 153.25,
+     "start": 152.875,
      "text": "Singular"
+    },
+    {
+     "end": 153.3,
+     "start": 153.25,
+     "text": "."
     },
     {
      "end": 153.65,
-     "start": 153.575,
-     "text": "."
-    },
-    {
-     "end": 153.975,
-     "start": 153.65,
+     "start": 153.3,
      "text": "State"
     },
     {
-     "end": 154.05,
-     "start": 153.975,
+     "end": 153.75,
+     "start": 153.65,
      "text": "."
     },
     {
-     "end": 154.65,
-     "start": 154.05,
-     "text": "Preimage"
+     "end": 154.212,
+     "start": 153.75,
+     "text": "Assemble"
     },
     {
-     "end": 154.738,
-     "start": 154.65,
+     "end": 154.275,
+     "start": 154.212,
      "text": "—"
     },
     {
-     "end": 155.137,
-     "start": 154.738,
+     "end": 154.562,
+     "start": 154.275,
      "text": "source"
     },
     {
-     "end": 155.188,
-     "start": 155.137,
+     "end": 154.613,
+     "start": 154.562,
      "text": "—"
     },
     {
-     "end": 155.312,
-     "start": 155.188,
+     "end": 154.7,
+     "start": 154.613,
      "text": "the"
     },
     {
-     "end": 155.925,
-     "start": 155.312,
-     "text": "off-chain"
+     "end": 155.6,
+     "start": 154.7,
+     "text": "payer"
     },
     {
-     "end": 156.438,
-     "start": 155.925,
-     "text": "encoder"
+     "end": 155.825,
+     "start": 155.6,
+     "text": ","
     },
     {
-     "end": 156.512,
-     "start": 156.438,
+     "end": 156.163,
+     "start": 156.05,
+     "text": "the"
+    },
+    {
+     "end": 156.562,
+     "start": 156.163,
+     "text": "reads"
+    },
+    {
+     "end": 156.675,
+     "start": 156.562,
      "text": "of"
     },
     {
-     "end": 156.613,
-     "start": 156.512,
+     "end": 156.812,
+     "start": 156.675,
      "text": "the"
     },
     {
-     "end": 157.1,
-     "start": 156.613,
-     "text": "Singular"
+     "end": 157.337,
+     "start": 156.812,
+     "text": "chain"
     },
     {
-     "end": 158.025,
-     "start": 157.1,
-     "text": "state"
-    },
-    {
-     "end": 158.25,
-     "start": 158.025,
-     "text": ","
-    },
-    {
-     "end": 158.875,
-     "start": 158.45,
-     "text": "active"
-    },
-    {
-     "end": 158.95,
-     "start": 158.875,
-     "text": ","
-    },
-    {
-     "end": 159.962,
-     "start": 158.95,
-     "text": "configuration"
-    },
-    {
-     "end": 160.1,
-     "start": 159.962,
+     "end": 157.462,
+     "start": 157.337,
      "text": "and"
     },
     {
-     "end": 161.1,
-     "start": 160.1,
-     "text": "registration-approval"
-    },
-    {
-     "end": 162.275,
-     "start": 161.1,
-     "text": "preimages"
-    },
-    {
-     "end": 162.475,
-     "start": 162.275,
-     "text": ","
-    },
-    {
-     "end": 162.85,
-     "start": 162.65,
-     "text": "byte"
-    },
-    {
-     "end": 162.975,
-     "start": 162.85,
-     "text": "for"
-    },
-    {
-     "end": 163.188,
-     "start": 162.975,
-     "text": "byte"
-    },
-    {
-     "end": 163.45,
-     "start": 163.188,
-     "text": "equal"
-    },
-    {
-     "end": 163.538,
-     "start": 163.45,
-     "text": "to"
-    },
-    {
-     "end": 163.65,
-     "start": 163.538,
+     "end": 157.575,
+     "start": 157.462,
      "text": "the"
     },
     {
-     "end": 164.125,
-     "start": 163.65,
+     "end": 158.15,
+     "start": 157.575,
+     "text": "assembly"
+    },
+    {
+     "end": 158.238,
+     "start": 158.15,
+     "text": "of"
+    },
+    {
+     "end": 158.325,
+     "start": 158.238,
+     "text": "a"
+    },
+    {
+     "end": 159.2,
+     "start": 158.325,
+     "text": "transaction"
+    },
+    {
+     "end": 159.325,
+     "start": 159.2,
+     "text": "that"
+    },
+    {
+     "end": 159.462,
+     "start": 159.325,
+     "text": "the"
+    },
+    {
+     "end": 159.975,
+     "start": 159.462,
+     "text": "builders"
+    },
+    {
+     "end": 160.1,
+     "start": 159.975,
+     "text": "of"
+    },
+    {
+     "end": 160.238,
+     "start": 160.1,
+     "text": "the"
+    },
+    {
+     "end": 160.788,
+     "start": 160.238,
+     "text": "Singular"
+    },
+    {
+     "end": 161.225,
+     "start": 160.788,
+     "text": "state"
+    },
+    {
+     "end": 161.587,
+     "start": 161.225,
+     "text": "share"
+    },
+    {
+     "end": 162.425,
+     "start": 161.65,
+     "text": "Singular"
+    },
+    {
+     "end": 162.5,
+     "start": 162.425,
+     "text": "."
+    },
+    {
+     "end": 163.05,
+     "start": 162.5,
+     "text": "State"
+    },
+    {
+     "end": 163.1,
+     "start": 163.05,
+     "text": "."
+    },
+    {
+     "end": 163.663,
+     "start": 163.1,
+     "text": "Fold"
+    },
+    {
+     "end": 163.8,
+     "start": 163.663,
+     "text": "—"
+    },
+    {
+     "end": 164.288,
+     "start": 163.8,
+     "text": "source"
+    },
+    {
+     "end": 164.337,
+     "start": 164.288,
+     "text": "—"
+    },
+    {
+     "end": 164.5,
+     "start": 164.337,
+     "text": "the"
+    },
+    {
+     "end": 164.887,
+     "start": 164.5,
+     "text": "fold"
+    },
+    {
+     "end": 165.05,
+     "start": 164.887,
+     "text": "of"
+    },
+    {
+     "end": 165.438,
+     "start": 165.05,
+     "text": "pending"
+    },
+    {
+     "end": 166.337,
+     "start": 165.438,
+     "text": "registrations"
+    },
+    {
+     "end": 166.6,
+     "start": 166.337,
+     "text": "into"
+    },
+    {
+     "end": 166.7,
+     "start": 166.6,
+     "text": "a"
+    },
+    {
+     "end": 167.212,
+     "start": 166.7,
+     "text": "registry"
+    },
+    {
+     "end": 167.425,
+     "start": 167.212,
+     "text": "from"
+    },
+    {
+     "end": 167.812,
+     "start": 167.425,
+     "text": "public"
+    },
+    {
+     "end": 168.188,
+     "start": 167.812,
+     "text": "data"
+    },
+    {
+     "end": 169.5,
+     "start": 168.188,
+     "text": "alone"
+    },
+    {
+     "end": 169.812,
+     "start": 169.7,
+     "text": "with"
+    },
+    {
+     "end": 169.925,
+     "start": 169.812,
+     "text": "the"
+    },
+    {
+     "end": 170.663,
+     "start": 169.925,
+     "text": "application's"
+    },
+    {
+     "end": 170.988,
+     "start": 170.663,
+     "text": "part"
+    },
+    {
+     "end": 171.45,
+     "start": 170.988,
+     "text": "handed"
+    },
+    {
+     "end": 171.6,
+     "start": 171.45,
+     "text": "in"
+    },
+    {
+     "end": 172.225,
+     "start": 171.65,
+     "text": "Singular"
+    },
+    {
+     "end": 172.3,
+     "start": 172.225,
+     "text": "."
+    },
+    {
+     "end": 172.925,
+     "start": 172.3,
+     "text": "State"
+    },
+    {
+     "end": 172.975,
+     "start": 172.925,
+     "text": "."
+    },
+    {
+     "end": 173.637,
+     "start": 172.975,
+     "text": "Genesis"
+    },
+    {
+     "end": 173.75,
+     "start": 173.637,
+     "text": "—"
+    },
+    {
+     "end": 174.163,
+     "start": 173.75,
+     "text": "source"
+    },
+    {
+     "end": 174.212,
+     "start": 174.163,
+     "text": "—"
+    },
+    {
+     "end": 174.325,
+     "start": 174.212,
+     "text": "the"
+    },
+    {
+     "end": 174.788,
+     "start": 174.325,
+     "text": "creation"
+    },
+    {
+     "end": 174.875,
+     "start": 174.788,
+     "text": "of"
+    },
+    {
+     "end": 174.975,
+     "start": 174.875,
+     "text": "a"
+    },
+    {
+     "end": 175.462,
+     "start": 174.975,
+     "text": "registry"
+    },
+    {
+     "end": 175.6,
+     "start": 175.462,
+     "text": "from"
+    },
+    {
+     "end": 175.725,
+     "start": 175.6,
+     "text": "a"
+    },
+    {
+     "end": 176.9,
+     "start": 175.725,
+     "text": "seed"
+    },
+    {
+     "end": 177.238,
+     "start": 177.125,
+     "text": "with"
+    },
+    {
+     "end": 177.35,
+     "start": 177.238,
+     "text": "the"
+    },
+    {
+     "end": 178.163,
+     "start": 177.35,
+     "text": "application's"
+    },
+    {
+     "end": 178.55,
+     "start": 178.163,
+     "text": "steps"
+    },
+    {
+     "end": 178.637,
+     "start": 178.55,
+     "text": "in"
+    },
+    {
+     "end": 178.762,
+     "start": 178.637,
+     "text": "the"
+    },
+    {
+     "end": 179.1,
+     "start": 178.762,
+     "text": "same"
+    },
+    {
+     "end": 179.988,
+     "start": 179.1,
+     "text": "transaction"
+    },
+    {
+     "end": 180.087,
+     "start": 179.988,
+     "text": "-"
+    },
+    {
+     "end": 180.75,
+     "start": 180.087,
+     "text": "Singular"
+    },
+    {
+     "end": 180.85,
+     "start": 180.75,
+     "text": "."
+    },
+    {
+     "end": 181.35,
+     "start": 180.85,
+     "text": "State"
+    },
+    {
+     "end": 181.45,
+     "start": 181.35,
+     "text": "."
+    },
+    {
+     "end": 182.113,
+     "start": 181.45,
+     "text": "Lineage"
+    },
+    {
+     "end": 182.212,
+     "start": 182.113,
+     "text": "—"
+    },
+    {
+     "end": 182.675,
+     "start": 182.212,
+     "text": "source"
+    },
+    {
+     "end": 182.75,
+     "start": 182.675,
+     "text": "—"
+    },
+    {
+     "end": 182.85,
+     "start": 182.75,
+     "text": "a"
+    },
+    {
+     "end": 183.438,
+     "start": 182.85,
+     "text": "registry's"
+    },
+    {
+     "end": 183.812,
+     "start": 183.438,
+     "text": "trie"
+    },
+    {
+     "end": 184.25,
+     "start": 183.812,
+     "text": "rebuilt"
+    },
+    {
+     "end": 184.387,
+     "start": 184.25,
+     "text": "from"
+    },
+    {
+     "end": 184.475,
+     "start": 184.387,
+     "text": "the"
+    },
+    {
+     "end": 184.85,
+     "start": 184.475,
+     "text": "public"
+    },
+    {
+     "end": 185.25,
+     "start": 184.85,
+     "text": "history"
+    },
+    {
+     "end": 185.337,
+     "start": 185.25,
+     "text": "of"
+    },
+    {
+     "end": 185.475,
+     "start": 185.337,
+     "text": "its"
+    },
+    {
+     "end": 185.8,
+     "start": 185.475,
+     "text": "state"
+    },
+    {
+     "end": 186.925,
+     "start": 185.8,
+     "text": "token"
+    },
+    {
+     "end": 187.175,
+     "start": 186.925,
+     "text": ","
+    },
+    {
+     "end": 187.675,
+     "start": 187.375,
+     "text": "every"
+    },
+    {
+     "end": 187.913,
+     "start": 187.675,
+     "text": "root"
+    },
+    {
+     "end": 188.225,
+     "start": 187.913,
+     "text": "checked"
+    },
+    {
+     "end": 188.587,
+     "start": 188.225,
+     "text": "against"
+    },
+    {
+     "end": 188.712,
+     "start": 188.587,
+     "text": "the"
+    },
+    {
+     "end": 189.075,
+     "start": 188.712,
+     "text": "chain"
+    },
+    {
+     "end": 189.675,
+     "start": 189.125,
+     "text": "Singular"
+    },
+    {
+     "end": 189.75,
+     "start": 189.675,
+     "text": "."
+    },
+    {
+     "end": 190.175,
+     "start": 189.75,
+     "text": "State"
+    },
+    {
+     "end": 190.225,
+     "start": 190.175,
+     "text": "."
+    },
+    {
+     "end": 190.938,
+     "start": 190.225,
+     "text": "Preimage"
+    },
+    {
+     "end": 191.05,
+     "start": 190.938,
+     "text": "—"
+    },
+    {
+     "end": 191.413,
+     "start": 191.05,
+     "text": "source"
+    },
+    {
+     "end": 191.462,
+     "start": 191.413,
+     "text": "—"
+    },
+    {
+     "end": 191.637,
+     "start": 191.462,
+     "text": "the"
+    },
+    {
+     "end": 192.225,
+     "start": 191.637,
+     "text": "off-chain"
+    },
+    {
+     "end": 192.762,
+     "start": 192.225,
+     "text": "encoder"
+    },
+    {
+     "end": 192.837,
+     "start": 192.762,
+     "text": "of"
+    },
+    {
+     "end": 193.0,
+     "start": 192.837,
+     "text": "the"
+    },
+    {
+     "end": 193.475,
+     "start": 193.0,
+     "text": "Singular"
+    },
+    {
+     "end": 194.625,
+     "start": 193.475,
+     "text": "state"
+    },
+    {
+     "end": 195.25,
+     "start": 194.825,
+     "text": "active"
+    },
+    {
+     "end": 195.325,
+     "start": 195.25,
+     "text": ","
+    },
+    {
+     "end": 196.337,
+     "start": 195.325,
+     "text": "configuration"
+    },
+    {
+     "end": 196.475,
+     "start": 196.337,
+     "text": "and"
+    },
+    {
+     "end": 197.475,
+     "start": 196.475,
+     "text": "registration-approval"
+    },
+    {
+     "end": 198.65,
+     "start": 197.475,
+     "text": "preimages"
+    },
+    {
+     "end": 198.85,
+     "start": 198.65,
+     "text": ","
+    },
+    {
+     "end": 199.35,
+     "start": 199.075,
+     "text": "byte"
+    },
+    {
+     "end": 199.5,
+     "start": 199.35,
+     "text": "for"
+    },
+    {
+     "end": 199.775,
+     "start": 199.5,
+     "text": "byte"
+    },
+    {
+     "end": 200.15,
+     "start": 199.775,
+     "text": "equal"
+    },
+    {
+     "end": 200.238,
+     "start": 200.15,
+     "text": "to"
+    },
+    {
+     "end": 200.387,
+     "start": 200.238,
+     "text": "the"
+    },
+    {
+     "end": 201.0,
+     "start": 200.387,
      "text": "on-chain"
     },
     {
-     "end": 164.775,
-     "start": 164.125,
+     "end": 201.225,
+     "start": 201.0,
      "text": "one"
+    },
+    {
+     "end": 201.9,
+     "start": 201.275,
+     "text": "Singular"
+    },
+    {
+     "end": 201.975,
+     "start": 201.9,
+     "text": "."
+    },
+    {
+     "end": 202.45,
+     "start": 201.975,
+     "text": "State"
+    },
+    {
+     "end": 202.5,
+     "start": 202.45,
+     "text": "."
+    },
+    {
+     "end": 203.413,
+     "start": 202.5,
+     "text": "Publication"
+    },
+    {
+     "end": 203.525,
+     "start": 203.413,
+     "text": "—"
+    },
+    {
+     "end": 203.887,
+     "start": 203.525,
+     "text": "source"
+    },
+    {
+     "end": 203.938,
+     "start": 203.887,
+     "text": "—"
+    },
+    {
+     "end": 204.05,
+     "start": 203.938,
+     "text": "the"
+    },
+    {
+     "end": 204.438,
+     "start": 204.05,
+     "text": "state"
+    },
+    {
+     "end": 204.887,
+     "start": 204.438,
+     "text": "script"
+    },
+    {
+     "end": 204.988,
+     "start": 204.887,
+     "text": "and"
+    },
+    {
+     "end": 205.1,
+     "start": 204.988,
+     "text": "the"
+    },
+    {
+     "end": 205.887,
+     "start": 205.1,
+     "text": "application's"
+    },
+    {
+     "end": 206.3,
+     "start": 205.887,
+     "text": "script"
+    },
+    {
+     "end": 206.8,
+     "start": 206.3,
+     "text": "published"
+    },
+    {
+     "end": 206.962,
+     "start": 206.8,
+     "text": "as"
+    },
+    {
+     "end": 207.375,
+     "start": 206.962,
+     "text": "reference"
+    },
+    {
+     "end": 207.825,
+     "start": 207.375,
+     "text": "scripts"
+    },
+    {
+     "end": 208.163,
+     "start": 207.825,
+     "text": "once"
+    },
+    {
+     "end": 208.337,
+     "start": 208.163,
+     "text": "and"
+    },
+    {
+     "end": 208.913,
+     "start": 208.337,
+     "text": "reused"
+    },
+    {
+     "end": 209.113,
+     "start": 208.913,
+     "text": "by"
+    },
+    {
+     "end": 209.462,
+     "start": 209.113,
+     "text": "later"
+    },
+    {
+     "end": 210.188,
+     "start": 209.462,
+     "text": "registries"
+    },
+    {
+     "end": 210.262,
+     "start": 210.188,
+     "text": "-"
+    },
+    {
+     "end": 210.975,
+     "start": 210.262,
+     "text": "Singular"
+    },
+    {
+     "end": 211.05,
+     "start": 210.975,
+     "text": "."
+    },
+    {
+     "end": 211.475,
+     "start": 211.05,
+     "text": "State"
+    },
+    {
+     "end": 211.525,
+     "start": 211.475,
+     "text": "."
+    },
+    {
+     "end": 212.012,
+     "start": 211.525,
+     "text": "Records"
+    },
+    {
+     "end": 212.125,
+     "start": 212.012,
+     "text": "—"
+    },
+    {
+     "end": 212.512,
+     "start": 212.125,
+     "text": "source"
+    },
+    {
+     "end": 212.562,
+     "start": 212.512,
+     "text": "—"
+    },
+    {
+     "end": 212.725,
+     "start": 212.562,
+     "text": "the"
+    },
+    {
+     "end": 213.188,
+     "start": 212.725,
+     "text": "datum"
+    },
+    {
+     "end": 213.288,
+     "start": 213.188,
+     "text": "and"
+    },
+    {
+     "end": 213.462,
+     "start": 213.288,
+     "text": "the"
+    },
+    {
+     "end": 213.938,
+     "start": 213.462,
+     "text": "actions"
+    },
+    {
+     "end": 214.012,
+     "start": 213.938,
+     "text": "of"
+    },
+    {
+     "end": 214.125,
+     "start": 214.012,
+     "text": "the"
+    },
+    {
+     "end": 214.45,
+     "start": 214.125,
+     "text": "state"
+    },
+    {
+     "end": 216.05,
+     "start": 214.45,
+     "text": "validator"
+    },
+    {
+     "end": 216.512,
+     "start": 216.35,
+     "text": "as"
+    },
+    {
+     "end": 216.938,
+     "start": 216.512,
+     "text": "Plutus"
+    },
+    {
+     "end": 217.325,
+     "start": 216.938,
+     "text": "Data"
+    },
+    {
+     "end": 217.413,
+     "start": 217.325,
+     "text": "in"
+    },
+    {
+     "end": 217.525,
+     "start": 217.413,
+     "text": "the"
+    },
+    {
+     "end": 217.975,
+     "start": 217.525,
+     "text": "layout"
+    },
+    {
+     "end": 218.1,
+     "start": 217.975,
+     "text": "it"
+    },
+    {
+     "end": 218.65,
+     "start": 218.1,
+     "text": "decodes"
+    },
+    {
+     "end": 219.325,
+     "start": 218.7,
+     "text": "Singular"
+    },
+    {
+     "end": 219.4,
+     "start": 219.325,
+     "text": "."
+    },
+    {
+     "end": 219.975,
+     "start": 219.4,
+     "text": "State"
+    },
+    {
+     "end": 220.025,
+     "start": 219.975,
+     "text": "."
+    },
+    {
+     "end": 220.613,
+     "start": 220.025,
+     "text": "Refusal"
+    },
+    {
+     "end": 220.725,
+     "start": 220.613,
+     "text": "—"
+    },
+    {
+     "end": 221.212,
+     "start": 220.725,
+     "text": "source"
+    },
+    {
+     "end": 221.3,
+     "start": 221.212,
+     "text": "—"
+    },
+    {
+     "end": 221.55,
+     "start": 221.3,
+     "text": "why"
+    },
+    {
+     "end": 221.663,
+     "start": 221.55,
+     "text": "a"
+    },
+    {
+     "end": 222.038,
+     "start": 221.663,
+     "text": "builder"
+    },
+    {
+     "end": 222.113,
+     "start": 222.038,
+     "text": "of"
+    },
+    {
+     "end": 222.275,
+     "start": 222.113,
+     "text": "the"
+    },
+    {
+     "end": 222.775,
+     "start": 222.275,
+     "text": "Singular"
+    },
+    {
+     "end": 223.087,
+     "start": 222.775,
+     "text": "state"
+    },
+    {
+     "end": 223.712,
+     "start": 223.087,
+     "text": "declines"
+    },
+    {
+     "end": 223.837,
+     "start": 223.712,
+     "text": "to"
+    },
+    {
+     "end": 224.163,
+     "start": 223.837,
+     "text": "build"
+    },
+    {
+     "end": 224.825,
+     "start": 224.225,
+     "text": "Singular"
+    },
+    {
+     "end": 224.875,
+     "start": 224.825,
+     "text": "."
+    },
+    {
+     "end": 225.35,
+     "start": 224.875,
+     "text": "State"
+    },
+    {
+     "end": 225.4,
+     "start": 225.35,
+     "text": "."
+    },
+    {
+     "end": 225.863,
+     "start": 225.4,
+     "text": "Script"
+    },
+    {
+     "end": 225.988,
+     "start": 225.863,
+     "text": "—"
+    },
+    {
+     "end": 226.413,
+     "start": 225.988,
+     "text": "source"
+    },
+    {
+     "end": 226.462,
+     "start": 226.413,
+     "text": "—"
+    },
+    {
+     "end": 226.6,
+     "start": 226.462,
+     "text": "the"
+    },
+    {
+     "end": 226.938,
+     "start": 226.6,
+     "text": "state"
+    },
+    {
+     "end": 227.538,
+     "start": 226.938,
+     "text": "validator"
+    },
+    {
+     "end": 227.613,
+     "start": 227.538,
+     "text": "of"
+    },
+    {
+     "end": 227.75,
+     "start": 227.613,
+     "text": "an"
+    },
+    {
+     "end": 228.55,
+     "start": 227.75,
+     "text": "application"
+    },
+    {
+     "end": 228.663,
+     "start": 228.55,
+     "text": "as"
+    },
+    {
+     "end": 228.775,
+     "start": 228.663,
+     "text": "the"
+    },
+    {
+     "end": 229.25,
+     "start": 228.775,
+     "text": "builders"
+    },
+    {
+     "end": 229.938,
+     "start": 229.25,
+     "text": "carry"
+    },
+    {
+     "end": 230.475,
+     "start": 230.137,
+     "text": "attached"
+    },
+    {
+     "end": 230.55,
+     "start": 230.475,
+     "text": "or"
+    },
+    {
+     "end": 230.688,
+     "start": 230.55,
+     "text": "by"
+    },
+    {
+     "end": 231.538,
+     "start": 230.688,
+     "text": "reference"
     }
    ]
   },
