@@ -37,17 +37,17 @@
     },
     {
       "title": "open_datum_requests.open_datum_requests.mint",
-      "hash": "c061a344fee723822c2844578925b5cc882edb489087968356438401",
+      "hash": "354b3b58b56265bde12e38a992b40eaf9818b09dd0034bfeae07a835",
       "parameters": 0
     },
     {
       "title": "open_datum_requests.open_datum_requests.spend",
-      "hash": "c061a344fee723822c2844578925b5cc882edb489087968356438401",
+      "hash": "354b3b58b56265bde12e38a992b40eaf9818b09dd0034bfeae07a835",
       "parameters": 0
     },
     {
       "title": "open_datum_requests.open_datum_requests.else",
-      "hash": "c061a344fee723822c2844578925b5cc882edb489087968356438401",
+      "hash": "354b3b58b56265bde12e38a992b40eaf9818b09dd0034bfeae07a835",
       "parameters": 0
     }
   ]
