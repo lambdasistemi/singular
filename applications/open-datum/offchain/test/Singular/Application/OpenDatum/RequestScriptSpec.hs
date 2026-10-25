@@ -20,6 +20,7 @@ module Singular.Application.OpenDatum.RequestScriptSpec
 
 import Control.Exception (SomeException, try)
 import Control.Monad (forM_)
+import Data.List (isPrefixOf)
 import Data.Map.Strict qualified as Map
 import Lens.Micro ((&), (.~), (^.))
 import PlutusCore.Data qualified as PLC
@@ -70,6 +71,7 @@ import Singular.Application.OpenDatum.RequestWorld
     , referencesOf
     , refusedBy
     , removeOutputs
+    , soundnessProblems
     , txInOf
     , withDatum
     , withReferences
@@ -161,6 +163,12 @@ spec = do
                             (handReturn sc held ref ByCleanup)
                         )
                 verdicts `shouldSatisfy` refusedBy
+        it "reports a transaction that does not balance and pays no fee" $ do
+            sc <- newScenario tipSlot
+            problems <- soundnessProblems (scChain sc) (handBooking sc)
+            problems `shouldSatisfy` any (isPrefixOf "value is not conserved")
+            problems
+                `shouldSatisfy` any (isPrefixOf "the fee 0 is below the minimum")
         it
             "tells a transaction it cannot judge from one the validator refuses"
             $ do

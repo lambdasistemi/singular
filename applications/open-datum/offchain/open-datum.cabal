@@ -59,7 +59,9 @@ library
     Singular.Application.OpenDatum.Value
 
   autogen-modules: Paths_open_datum
-  other-modules: Paths_open_datum
+  other-modules:
+    Paths_open_datum
+    Singular.Application.OpenDatum.Requests.Assemble
 
   build-depends:
     , aeson                              >=2.1  && <2.3
@@ -67,6 +69,7 @@ library
     , base16-bytestring
     , bytestring                         >=0.11 && <0.13
     , cardano-crypto-class
+    , cardano-ledger-alonzo
     , cardano-ledger-api
     , cardano-ledger-conway
     , cardano-ledger-core
@@ -75,13 +78,18 @@ library
     , cardano-tx-tools:tx-build
     , containers                         >=0.6  && <0.8
     , contra-tracer
+    , crypton
+    , memory
     , microlens
     , plutus-core
+    , plutus-ledger-api
     , plutus-tx
+    , serialise
     , singular-registry
     , singular-registry:local-services
     , singular-registry:registry-cli
     , text                               >=2.0  && <2.2
+    , transformers
 
 executable open-datum
   import:           warnings

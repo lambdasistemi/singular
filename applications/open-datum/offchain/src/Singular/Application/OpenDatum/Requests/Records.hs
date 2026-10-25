@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 {- |
 Module      : Singular.Application.OpenDatum.Requests.Records
 Description : The records and actions of the open-datum request validator, as Plutus Data
@@ -36,17 +38,43 @@ module Singular.Application.OpenDatum.Requests.Records
     , AsData (..)
     ) where
 
+import Codec.Serialise (serialise)
+import Crypto.Hash (Blake2b_256 (..), hashWith)
+import Data.ByteArray qualified as BA
 import Data.ByteString (ByteString)
+import Data.ByteString.Lazy qualified as BL
+import Data.ByteString.Short qualified as SBS
 import PlutusCore.Data qualified as PLC
-import PlutusTx.Builtins.Internal (BuiltinData (..))
-import PlutusTx.IsData.Class (ToData (..))
+import PlutusLedgerApi.V1 qualified as PV1
+import PlutusLedgerApi.V3 qualified as PV3
+import PlutusTx.Builtins.Internal
+    ( BuiltinByteString (..)
+    , BuiltinData (..)
+    )
+import PlutusTx.IsData.Class (FromData (..), ToData (..))
 
-import Cardano.Ledger.Address (Addr)
-import Cardano.Ledger.BaseTypes (Network)
-import Cardano.Ledger.Mary.Value (AssetName)
-import Cardano.Ledger.TxIn (TxIn)
+import Cardano.Crypto.Hash (hashFromBytes, hashToBytes)
+import Cardano.Ledger.Address (Addr (..))
+import Cardano.Ledger.BaseTypes (Network, TxIx (..))
+import Cardano.Ledger.Credential
+    ( Credential (..)
+    , StakeReference (..)
+    )
+import Cardano.Ledger.Hashes (ScriptHash (..), extractHash)
+import Cardano.Ledger.Keys (KeyHash (..))
+import Cardano.Ledger.Mary.Value (AssetName (..))
+import Cardano.Ledger.Plutus.TxInfo (transAddr)
+import Cardano.Ledger.TxIn (TxId (..), TxIn (..))
 
-import Singular.Registry.TrieState (RegistryIdentity)
+import Singular.Registry.TrieState
+    ( RegistryIdentity (..)
+    , StatePolicyId (..)
+    )
+import Singular.State.Preimage
+    ( activeTokenName
+    , approvalName
+    , registrationPreimage
+    )
 
 {- | The five request parameters of a registry, fixed when its configuration
 record is created. Times are milliseconds. The registration cost and the
@@ -85,23 +113,103 @@ data RegistrationData = RegistrationData
 
 -- | The datum of a configuration record.
 configurationDatum :: RequestParameters -> PLC.Data
-configurationDatum _ = error "Requests.Records.configurationDatum: not built"
+configurationDatum p =
+    PLC.Constr
+        0
+        [ PLC.Constr
+            0
+            ( map
+                PLC.I
+                [ rpRegistrationCost p
+                , rpMinimumTip p
+                , rpProcessTime p
+                , rpRetractTime p
+                , rpBookingWidth p
+                ]
+            )
+        ]
 
 -- | The parameters a configuration datum carries.
 decodeConfiguration :: PLC.Data -> Maybe RequestParameters
-decodeConfiguration _ = Nothing
+decodeConfiguration = \case
+    PLC.Constr
+        0
+        [ PLC.Constr
+                0
+                [ PLC.I cost
+                    , PLC.I tipped
+                    , PLC.I process
+                    , PLC.I retract
+                    , PLC.I width
+                    ]
+            ] -> Just (RequestParameters cost tipped process retract width)
+    _ -> Nothing
 
 {- | The datum of a pending registration; nothing when an address has no
 Plutus form.
 -}
 registrationDatum :: RegistrationData -> Maybe PLC.Data
-registrationDatum _ = error "Requests.Records.registrationDatum: not built"
+registrationDatum r = do
+    refund <- addressData (rdRefundAddress r)
+    holding <- addressData (rdHoldingAddress r)
+    pure $
+        PLC.Constr
+            1
+            [ PLC.Constr
+                0
+                [ registryData (rdRegistry r)
+                , PLC.B (rdKey r)
+                , PLC.B (rdController r)
+                , refund
+                , holding
+                , rdInitialDatum r
+                , PLC.I (rdDeposit r)
+                , PLC.I (rdBookedAt r)
+                , PLC.I (rdProcessDeadline r)
+                , PLC.I (rdReclaimEnd r)
+                ]
+            ]
 
 {- | The registration a pending registration's datum carries; the network
 completes the addresses, which the datum holds without one.
 -}
 decodeRegistration :: Network -> PLC.Data -> Maybe RegistrationData
-decodeRegistration _ _ = Nothing
+decodeRegistration net = \case
+    PLC.Constr
+        1
+        [ PLC.Constr
+                0
+                [ PLC.Constr 0 [PLC.B policy, PLC.B name]
+                    , PLC.B key
+                    , PLC.B controller
+                    , refund
+                    , holding
+                    , initial
+                    , PLC.I deposit
+                    , PLC.I booked
+                    , PLC.I process
+                    , PLC.I reclaim
+                    ]
+            ] -> do
+            refundAddress <- ledgerAddress net refund
+            holdingAddress <- ledgerAddress net holding
+            pure
+                RegistrationData
+                    { rdRegistry =
+                        RegistryIdentity
+                            (StatePolicyId policy)
+                            (AssetName (SBS.toShort name))
+                    , rdKey = key
+                    , rdController = controller
+                    , rdRefundAddress = refundAddress
+                    , rdHoldingAddress = holdingAddress
+                    , rdInitialDatum = initial
+                    , rdDeposit = deposit
+                    , rdBookedAt = booked
+                    , rdProcessDeadline = process
+                    , rdReclaimEnd = reclaim
+                    }
+    _ -> Nothing
 
 {- | The datum a holding starts with: a live record whose control names the
 registry, the key, the controller, the deposit and the active token of the
@@ -118,15 +226,41 @@ liveDatum
     -> PLC.Data
     -- ^ Payload
     -> PLC.Data
-liveDatum _ _ _ _ _ = error "Requests.Records.liveDatum: not built"
+liveDatum registry@(RegistryIdentity (StatePolicyId policy) _) key controller deposit payload =
+    PLC.Constr
+        2
+        [ PLC.Constr
+            0
+            [ registryData registry
+            , PLC.Constr
+                0
+                [PLC.B policy, PLC.B (assetBytes (activeTokenName registry key))]
+            , PLC.B key
+            , PLC.B controller
+            , PLC.I deposit
+            ]
+        , payload
+        ]
 
 -- | The hash a registration approval commits for an initial datum.
 initialDatumHash :: PLC.Data -> ByteString
-initialDatumHash _ = error "Requests.Records.initialDatumHash: not built"
+initialDatumHash datum =
+    BA.convert (hashWith Blake2b_256 (BL.toStrict (serialise datum)))
 
 -- | The name of the approval token of a registration.
 approvalNameOf :: RegistrationData -> Maybe AssetName
-approvalNameOf _ = Nothing
+approvalNameOf r = do
+    holding <- transAddr (rdHoldingAddress r)
+    pure $
+        approvalName $
+            registrationPreimage
+                (rdKey r)
+                (rdRegistry r)
+                holding
+                ( PV3.DatumHash
+                    (BuiltinByteString (initialDatumHash (rdInitialDatum r)))
+                )
+                (PV3.Lovelace (rdDeposit r))
 
 -- | The actions of the request validator's mint.
 data MintAction
@@ -142,7 +276,24 @@ data MintAction
 
 -- | The redeemer of the request validator's mint: its actions, in order.
 mintRedeemer :: [MintAction] -> PLC.Data
-mintRedeemer _ = error "Requests.Records.mintRedeemer: not built"
+mintRedeemer = PLC.List . map action
+  where
+    action = \case
+        ConfigurationCreate registry (TxIn (TxId seed) (TxIx index)) output ->
+            let RegistryIdentity (StatePolicyId policy) (AssetName name) = registry
+            in  PLC.Constr
+                    0
+                    [ PLC.B policy
+                    , PLC.B (SBS.fromShort name)
+                    , PLC.Constr
+                        0
+                        [ PLC.B (hashToBytes (extractHash seed))
+                        , PLC.I (toInteger index)
+                        ]
+                    , PLC.I output
+                    ]
+        BookRegistration output -> PLC.Constr 1 [PLC.I output]
+        ApprovalBurn -> PLC.Constr 2 []
 
 -- | The actions of the request validator's spend of a pending registration.
 data SpendAction
@@ -156,10 +307,48 @@ data SpendAction
 
 -- | The redeemer of one spend action.
 spendRedeemer :: SpendAction -> PLC.Data
-spendRedeemer _ = error "Requests.Records.spendRedeemer: not built"
+spendRedeemer = \case
+    RegistrationFold output -> PLC.Constr 0 [PLC.I output]
+    OwnerReclaim -> PLC.Constr 1 []
+    ExpiredCleanup -> PLC.Constr 2 []
 
 -- | Plutus Data handed to the transaction builder as it is.
 newtype AsData = AsData PLC.Data
 
 instance ToData AsData where
     toBuiltinData (AsData d) = BuiltinData d
+
+-- | A registry identity: the state policy and the state token name.
+registryData :: RegistryIdentity -> PLC.Data
+registryData (RegistryIdentity (StatePolicyId policy) name) =
+    PLC.Constr 0 [PLC.B policy, PLC.B (assetBytes name)]
+
+assetBytes :: AssetName -> ByteString
+assetBytes (AssetName name) = SBS.fromShort name
+
+{- | An address as the validator reads it: the ledger's own translation of
+it for a script.
+-}
+addressData :: Addr -> Maybe PLC.Data
+addressData address = do
+    translated <- transAddr address
+    let BuiltinData d = toBuiltinData translated
+    pure d
+
+{- | The ledger address a Plutus address stands for on a network; nothing for
+a pointer address or for hashes that are not 28 bytes.
+-}
+ledgerAddress :: Network -> PLC.Data -> Maybe Addr
+ledgerAddress net datum = do
+    PV1.Address payment staking <- fromBuiltinData (BuiltinData datum)
+    Addr net <$> credential payment <*> stakeReference staking
+  where
+    credential = \case
+        PV1.PubKeyCredential (PV1.PubKeyHash (BuiltinByteString h)) ->
+            KeyHashObj . KeyHash <$> hashFromBytes h
+        PV1.ScriptCredential (PV1.ScriptHash (BuiltinByteString h)) ->
+            ScriptHashObj . ScriptHash <$> hashFromBytes h
+    stakeReference = \case
+        Nothing -> Just StakeRefNull
+        Just (PV1.StakingHash c) -> StakeRefBase <$> credential c
+        Just PV1.StakingPtr{} -> Nothing

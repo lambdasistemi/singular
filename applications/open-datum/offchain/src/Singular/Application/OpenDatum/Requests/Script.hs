@@ -26,20 +26,24 @@ module Singular.Application.OpenDatum.Requests.Script
 
 import Data.Text (Text)
 
-import Cardano.Ledger.Address (Addr)
+import Cardano.Ledger.Address (Addr (..))
 import Cardano.Ledger.BaseTypes (Network)
+import Cardano.Ledger.Core (Script, hashScript)
+import Cardano.Ledger.Credential
+    ( Credential (..)
+    , StakeReference (..)
+    )
 import Cardano.Ledger.Hashes (ScriptHash)
-import Cardano.Ledger.Mary.Value (PolicyID)
+import Cardano.Ledger.Mary.Value (PolicyID (..))
 import Cardano.Ledger.TxIn (TxIn)
 import Cardano.Tx.Build (TxBuild)
+import Cardano.Tx.Build qualified as Tx
 
-import Cardano.Ledger.Core (Script)
+import Singular.Application.OpenDatum.Requests.Refusal (Refusal (..))
 import Singular.Registry.Blueprint (Blueprint)
 import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger (ConwayEra, TxOut)
 import Singular.Registry.LedgerProvider (Session)
-
-import Singular.Application.OpenDatum.Requests.Refusal (Refusal)
 
 -- | Where a transaction takes the script's code from.
 data ScriptSource
@@ -62,19 +66,21 @@ requestScriptTitle = "open_datum_requests.open_datum_requests.spend"
 -- | The request validator a blueprint carries.
 requestScriptFromBlueprint
     :: Blueprint -> Either String (Script ConwayEra)
-requestScriptFromBlueprint _ = Left "Requests.Script.requestScriptFromBlueprint: not built"
+requestScriptFromBlueprint _ =
+    Left "Requests.Script.requestScriptFromBlueprint: not built"
 
 -- | The hash of the script: its approval policy and its address credential.
 requestScriptHash :: RequestScript -> ScriptHash
-requestScriptHash _ = error "Requests.Script.requestScriptHash: not built"
+requestScriptHash = hashScript . rsScript
 
 -- | The policy of the tokens the script mints.
 requestPolicy :: RequestScript -> PolicyID
-requestPolicy _ = error "Requests.Script.requestPolicy: not built"
+requestPolicy = PolicyID . requestScriptHash
 
 -- | The enterprise address of the script on a network.
 requestAddress :: Network -> RequestScript -> Addr
-requestAddress _ _ = error "Requests.Script.requestAddress: not built"
+requestAddress net script =
+    Addr net (ScriptHashObj (requestScriptHash script)) StakeRefNull
 
 {- | The reference outputs a transaction using the script resolves: none when
 the code is attached, the output otherwise, after checking that the script it
@@ -84,8 +90,12 @@ referenceOutputs
     :: Session NoWitness IO
     -> RequestScript
     -> IO (Either Refusal [(TxIn, TxOut ConwayEra)])
-referenceOutputs _ _ = error "Requests.Script.referenceOutputs: not built"
+referenceOutputs _ script = case rsSource script of
+    Attached -> pure (Right [])
+    Referenced _ -> pure (Left (BuildFailed "reference scripts are not built"))
 
 -- | Make the script available to the transaction under construction.
 useScript :: RequestScript -> TxBuild q e ()
-useScript _ = error "Requests.Script.useScript: not built"
+useScript script = case rsSource script of
+    Attached -> Tx.attachScript (rsScript script)
+    Referenced reference -> Tx.reference reference
