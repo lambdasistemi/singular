@@ -27,6 +27,7 @@ module Singular.State.Preimage
     , activeTokenName
     , configurationTokenName
     , registrationPreimage
+    , terminationPreimage
     , approvalName
     , initialDatumHash
     , seedData
@@ -158,6 +159,12 @@ registrationPreimage
 registrationPreimage key registry holding datumHash deposit =
     encodePreimage
         (RegistrationApproval registry key holding datumHash deposit)
+
+{- | The Plutus Data serialisation of the termination approval preimage: the
+registry and the key.
+-}
+terminationPreimage :: ByteString -> RegistryIdentity -> ByteString
+terminationPreimage _ _ = mempty
 
 -- | The name of the approval token whose preimage is the given bytes.
 approvalName :: ByteString -> AssetName

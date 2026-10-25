@@ -12,12 +12,14 @@ are generated from the same file). The table was made by an independent
 reference encoder, so no byte in it comes from the code under test.
 
 These cases hold three things. The codec reproduces every vector, byte and
-name. The table covers the edges of the encoding: a definite-length list, an
+name, and the termination preimage function reproduces its vectors as well.
+The table covers the edges of the encoding: a definite-length list, an
 indefinite-length list, a chunked byte string and a big number, each found in
 the bytes by a CBOR reader and not trusted from the label. The roles are
 separated: one constructor per role, numbered as the model, no two vectors
-sharing a preimage or a name, and a preimage without its constructor naming
-another token.
+sharing a preimage or a name, a termination named apart from the active token
+and the registration approvals of its registry and key, and a preimage without
+its constructor naming another token.
 -}
 module Singular.State.PreimageSpec (spec) where
 
@@ -72,6 +74,7 @@ import Singular.State.Preimage
     , registrationPreimage
     , roleName
     , stateTokenName
+    , terminationPreimage
     )
 
 -- | One row of the table, with its inputs read into the codec's types.
@@ -124,6 +127,8 @@ inputOf role = withObject (T.unpack role) $ \o -> case role of
             <*> (o .: "holdingAddress" >>= addressOf)
             <*> (P.DatumHash . BuiltinByteString <$> (o .: "datumHash" >>= hexBytes))
             <*> (P.Lovelace <$> (o .: "deposit" >>= integerOf))
+    "termination-approval" ->
+        TerminationApproval <$> (o .: "registry" >>= registryOf) <*> keyOf o
     _ -> fail ("the role " <> T.unpack role <> " has no reader")
 
 integerOf :: String -> Parser Integer
@@ -220,7 +225,8 @@ nameByFunction = \case
     RegistrationApproval registry key holding datumHash deposit ->
         approvalName
             (registrationPreimage key registry holding datumHash deposit)
-    other -> roleName other
+    TerminationApproval registry key ->
+        approvalName (terminationPreimage key registry)
 
 spec :: Spec
 spec = do
@@ -234,7 +240,12 @@ tableRows :: [Vector] -> Spec
 tableRows vectors = describe "the table" $ do
     it "holds a vector for each role the line builds"
         $ forM_
-            ["state", "active", "configuration", "registration-approval"]
+            [ "state"
+            , "active"
+            , "configuration"
+            , "registration-approval"
+            , "termination-approval"
+            ]
         $ \role ->
             (role, any ((== role) . vectorRole) vectors) `shouldBe` (role, True)
 
@@ -261,6 +272,53 @@ tableRows vectors = describe "the table" $ do
         forM_ [0, 64, 65, 128, 129] $ \len ->
             (len, len `elem` keyLengths) `shouldBe` (len, True)
 
+    it
+        "covers the byte string lengths around the chunk size for a termination" $ do
+        let keyLengths =
+                [ BS.length key
+                | TerminationApproval _ key <- vectorInput <$> vectors
+                ]
+        forM_ [0, 64, 65, 129] $ \len ->
+            (len, len `elem` keyLengths) `shouldBe` (len, True)
+
+    it
+        "holds two registries that differ only in the policy and only in the name" $ do
+        let terminations =
+                [ (registry, key)
+                | TerminationApproval registry key <- vectorInput <$> vectors
+                ]
+            differing field =
+                [ (a, b)
+                | (a, keyA) <- terminations
+                , (b, keyB) <- terminations
+                , keyA == keyB
+                , field a /= field b
+                ]
+            policy (RegistryIdentity p _) = p
+            name (RegistryIdentity _ n) = n
+            onlyIn same (a, b) = same a == same b
+        any (onlyIn name) (differing policy) `shouldBe` True
+        any (onlyIn policy) (differing name) `shouldBe` True
+
+    it
+        "sets a termination vector beside the active and registration vectors of its registry and key" $ do
+        let beside t = [o | o <- vectors, isOtherRole o, sameFacts t o]
+            isOtherRole o = vectorRole o `elem` ["active", "registration-approval"]
+            sameFacts t o = facts (vectorInput t) == facts (vectorInput o)
+            facts = \case
+                TerminationApproval registry key -> Just (registry, key)
+                Active registry key -> Just (registry, key)
+                RegistrationApproval registry key _ _ _ -> Just (registry, key)
+                _ -> Nothing
+            roles t = vectorRole <$> beside t
+            terminations = [v | v <- vectors, vectorRole v == "termination-approval"]
+        -- the pairing is not empty: some termination has both roles beside it
+        any
+            ( \t -> "active" `elem` roles t && "registration-approval" `elem` roles t
+            )
+            terminations
+            `shouldBe` True
+
 reproductionRows :: [Vector] -> Spec
 reproductionRows vectors = describe "the codec reproduces every vector" $
     forM_ vectors $ \v -> describe (T.unpack (vectorId v)) $ do
@@ -270,6 +328,11 @@ reproductionRows vectors = describe "the codec reproduces every vector" $
             nameBytes (roleName (vectorInput v)) `shouldBe` vectorName v
         it "names it by the function of its role" $
             nameBytes (nameByFunction (vectorInput v)) `shouldBe` vectorName v
+        case vectorInput v of
+            TerminationApproval registry key ->
+                it "builds its preimage by the function of its role" $
+                    terminationPreimage key registry `shouldBe` vectorPreimage v
+            _ -> pure ()
 
 separationRows :: [Vector] -> Spec
 separationRows vectors = describe "the roles are separated" $ do
@@ -310,6 +373,30 @@ separationRows vectors = describe "the roles are separated" $ do
                 termination = TerminationApproval registry key
             encodePreimage active `shouldNotBe` encodePreimage termination
             roleName active `shouldNotBe` roleName termination
+
+    it
+        "names a termination apart from the active token and every registration approval of its registry and key"
+        $ forM_ vectors
+        $ \v -> case vectorInput v of
+            TerminationApproval registry key -> do
+                let name = nameBytes (approvalName (terminationPreimage key registry))
+                    others =
+                        [ vectorName o
+                        | o <- vectors
+                        , vectorRole o `elem` ["active", "registration-approval"]
+                        , sameFacts (vectorInput o) registry key
+                        ]
+                    sameFacts input r k = case input of
+                        Active r' k' -> (r', k') == (r, k)
+                        RegistrationApproval r' k' _ _ _ -> (r', k') == (r, k)
+                        _ -> False
+                ( vectorId v
+                    , name == vectorName v
+                    , name `elem` others
+                    , name == nameBytes (activeTokenName registry key)
+                    )
+                    `shouldBe` (vectorId v, True, False, False)
+            _ -> pure ()
 
     it "names another token for a preimage without its role constructor" $
         forM_ vectors $ \v -> do

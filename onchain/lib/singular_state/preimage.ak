@@ -88,6 +88,15 @@ pub fn registration_preimage(
   )
 }
 
+/// The Plutus Data serialisation of the termination approval preimage: the
+/// registry and the key.
+pub fn termination_preimage(
+  _key: ByteArray,
+  _registry: RegistryIdentity,
+) -> ByteArray {
+  #""
+}
+
 /// The name of the registration approval token whose preimage is `preimage`.
 pub fn approval_name(preimage: ByteArray) -> AssetName {
   blake2b_256(preimage)

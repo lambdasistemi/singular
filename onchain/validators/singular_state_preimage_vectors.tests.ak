@@ -11,7 +11,7 @@ use cardano/transaction.{OutputReference}
 use singular_state/preimage.{
   Active, ApplicationConfiguration, RegistryIdentity, State, active_token_name,
   approval_name, configuration_token_name, registration_preimage,
-  state_token_name,
+  state_token_name, termination_preimage,
 }
 
 test vector_state_output_index_zero() {
@@ -395,6 +395,134 @@ test vector_configuration_registry_with_an_empty_name() {
   }
 }
 
+test vector_termination_key_32_bytes() {
+  let registry =
+    RegistryIdentity {
+      policy: #"70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f7",
+      name: #"f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139daf",
+    }
+  let key = #"0104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e"
+  let preimage = termination_preimage(key, registry)
+  let other_roles =
+    [
+      #"7bb99a3ed884c2143636542734ff8987649b8deb960ba4b787bf1ab40f35fecb",
+      #"7650779196dc13c7237489239331d09eda883fbfa15c8768f3e284228e8fdaa1",
+      #"df2da01e7b5fda9bed6efd6f958659b295b59a2e428c74eec7d7f8a83aa40eee",
+      #"c91d6fe3bbddb1d60e2bb6164e8ab00f379baa9f23b59926f3aa1e4525196469",
+      #"dca1e9a91dc4bcfd25d9aa58b46e20a9abd11bbb15df71afeafb3e3420e3b0ed",
+      #"9a28bf920f35654564e4fd2f13200d7b5b56a20b839e36f89e87c1e5f2cda662",
+      #"21aa1b08626025ed1b736a15563b90a97873900963022cbb282017b9680b8e20",
+      #"819d2964fe9a619ed544936d1f25d5af74b045d7b875bda4ae77e42de534865f",
+    ]
+  and {
+    preimage == #"d87d9fd8799f581c70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f75820f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139dafff58200104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5eff",
+    approval_name(preimage) == #"81493ea777908b204b6455a18d98c91663198e1c0093081e9b5ac76f0a4502be",
+    !list.has(other_roles, approval_name(preimage)),
+  }
+}
+
+test vector_termination_key_empty() {
+  let registry =
+    RegistryIdentity {
+      policy: #"70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f7",
+      name: #"f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139daf",
+    }
+  let key = #""
+  let preimage = termination_preimage(key, registry)
+  let other_roles =
+    [#"255fa9d4839d21127407a54e791da515053e3145348eea7330be2509032619f6"]
+  and {
+    preimage == #"d87d9fd8799f581c70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f75820f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139dafff40ff",
+    approval_name(preimage) == #"1da94304f13b7b38378aa5ccc64f089e7e5c755dca0f2fbe8a17cc1205dd3627",
+    !list.has(other_roles, approval_name(preimage)),
+  }
+}
+
+test vector_termination_key_64_bytes() {
+  let registry =
+    RegistryIdentity {
+      policy: #"70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f7",
+      name: #"f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139daf",
+    }
+  let key =
+    #"0104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e6164676a6d707376797c7f8285888b8e9194979a9da0a3a6a9acafb2b5b8bbbe"
+  let preimage = termination_preimage(key, registry)
+  let other_roles =
+    [#"ef4d54968e89f53065fb10f327baa1d5e53675992a6e140aed21e9eb78715de9"]
+  and {
+    preimage == #"d87d9fd8799f581c70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f75820f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139dafff58400104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e6164676a6d707376797c7f8285888b8e9194979a9da0a3a6a9acafb2b5b8bbbeff",
+    approval_name(preimage) == #"a9787e729863f0bb50dbc404714eddf8aadd4877d755fdfa4d4fa429400fd956",
+    !list.has(other_roles, approval_name(preimage)),
+  }
+}
+
+test vector_termination_key_65_bytes() {
+  let registry =
+    RegistryIdentity {
+      policy: #"70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f7",
+      name: #"f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139daf",
+    }
+  let key =
+    #"0104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e6164676a6d707376797c7f8285888b8e9194979a9da0a3a6a9acafb2b5b8bbbec1"
+  let preimage = termination_preimage(key, registry)
+  let other_roles =
+    [
+      #"4252db9d9c2dc7a8229e2b857b05271e1f4dbcc27407dc4facbcae88ef170cb3",
+      #"bfa6de27728a4c5f2e1b38e7a3683a6b04c612b87a130b40dc3ddcab5771c7c5",
+    ]
+  and {
+    preimage == #"d87d9fd8799f581c70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f75820f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139dafff5f58400104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e6164676a6d707376797c7f8285888b8e9194979a9da0a3a6a9acafb2b5b8bbbe41c1ffff",
+    approval_name(preimage) == #"9d8c4c47d67bda58be1e27fc58aeaa80649b6434a2d653f23095c15034369a9c",
+    !list.has(other_roles, approval_name(preimage)),
+  }
+}
+
+test vector_termination_key_129_bytes() {
+  let registry =
+    RegistryIdentity {
+      policy: #"70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f7",
+      name: #"f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139daf",
+    }
+  let key =
+    #"0104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e6164676a6d707376797c7f8285888b8e9194979a9da0a3a6a9acafb2b5b8bbbec1c4c7cacdd0d3d6d9dcdfe2e5e8ebeef1f4f7fafd000306090c0f1215181b1e2124272a2d303336393c3f4245484b4e5154575a5d606366696c6f7275787b7e81"
+  let preimage = termination_preimage(key, registry)
+  let other_roles =
+    [#"5bddc0632226e255d6cf4330511bd4f1873c66eb04870e7f96f1fe29ff91b6aa"]
+  and {
+    preimage == #"d87d9fd8799f581c70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f75820f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139dafff5f58400104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e6164676a6d707376797c7f8285888b8e9194979a9da0a3a6a9acafb2b5b8bbbe5840c1c4c7cacdd0d3d6d9dcdfe2e5e8ebeef1f4f7fafd000306090c0f1215181b1e2124272a2d303336393c3f4245484b4e5154575a5d606366696c6f7275787b7e4181ffff",
+    approval_name(preimage) == #"af470aef0d3ceb3df6ecd1fdcd4f399fe9e43b9be4b34879694dd85b13dc401e",
+    !list.has(other_roles, approval_name(preimage)),
+  }
+}
+
+test vector_termination_registry_differing_only_in_policy() {
+  let registry =
+    RegistryIdentity {
+      policy: #"70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f6",
+      name: #"f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139daf",
+    }
+  let key = #"0104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e"
+  let preimage = termination_preimage(key, registry)
+  and {
+    preimage == #"d87d9fd8799f581c70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f65820f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139dafff58200104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5eff",
+    approval_name(preimage) == #"10d4af76a83606b336243396aabd907b353756a124684654aa2de8f69704502e",
+  }
+}
+
+test vector_termination_registry_differing_only_in_name() {
+  let registry =
+    RegistryIdentity {
+      policy: #"70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f7",
+      name: #"f99522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139daf",
+    }
+  let key = #"0104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e"
+  let preimage = termination_preimage(key, registry)
+  and {
+    preimage == #"d87d9fd8799f581c70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f75820f99522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139dafff58200104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5eff",
+    approval_name(preimage) == #"d4d93933baa26f8e29f8f53ab62777345a2b7cd22651d8fd407608c6c1f91d02",
+  }
+}
+
 test the_preimages_of_the_vectors_are_pairwise_distinct() {
   let preimages =
     [
@@ -418,6 +546,13 @@ test the_preimages_of_the_vectors_are_pairwise_distinct() {
       #"d87b9fd8799f581c70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f75820f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139dafffff",
       #"d87b9fd8799f581cffffffffffffffffffffffffffffffffffffffffffffffffffffffff5820ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
       #"d87b9fd8799f581c0000000000000000000000000000000000000000000000000000000040ffff",
+      #"d87d9fd8799f581c70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f75820f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139dafff58200104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5eff",
+      #"d87d9fd8799f581c70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f75820f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139dafff40ff",
+      #"d87d9fd8799f581c70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f75820f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139dafff58400104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e6164676a6d707376797c7f8285888b8e9194979a9da0a3a6a9acafb2b5b8bbbeff",
+      #"d87d9fd8799f581c70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f75820f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139dafff5f58400104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e6164676a6d707376797c7f8285888b8e9194979a9da0a3a6a9acafb2b5b8bbbe41c1ffff",
+      #"d87d9fd8799f581c70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f75820f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139dafff5f58400104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e6164676a6d707376797c7f8285888b8e9194979a9da0a3a6a9acafb2b5b8bbbe5840c1c4c7cacdd0d3d6d9dcdfe2e5e8ebeef1f4f7fafd000306090c0f1215181b1e2124272a2d303336393c3f4245484b4e5154575a5d606366696c6f7275787b7e4181ffff",
+      #"d87d9fd8799f581c70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f65820f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139dafff58200104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5eff",
+      #"d87d9fd8799f581c70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f75820f99522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139dafff58200104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5eff",
     ]
   list.length(list.unique(preimages)) == list.length(preimages)
 }
@@ -445,6 +580,13 @@ test the_names_of_the_vectors_are_pairwise_distinct() {
       #"bbb895f9594c6a51a81fae044cfbc4549f82e213e22808b7f5bcf557260d535c",
       #"a3b06acde4dec83cbfed1516298e5546944b94aeb2b27007df4deb9b2d089fdc",
       #"b458fd3658b3cbe2d4d70d6d53d9107c3e18c1dabf55f1b35426e8aa5fc005bf",
+      #"81493ea777908b204b6455a18d98c91663198e1c0093081e9b5ac76f0a4502be",
+      #"1da94304f13b7b38378aa5ccc64f089e7e5c755dca0f2fbe8a17cc1205dd3627",
+      #"a9787e729863f0bb50dbc404714eddf8aadd4877d755fdfa4d4fa429400fd956",
+      #"9d8c4c47d67bda58be1e27fc58aeaa80649b6434a2d653f23095c15034369a9c",
+      #"af470aef0d3ceb3df6ecd1fdcd4f399fe9e43b9be4b34879694dd85b13dc401e",
+      #"10d4af76a83606b336243396aabd907b353756a124684654aa2de8f69704502e",
+      #"d4d93933baa26f8e29f8f53ab62777345a2b7cd22651d8fd407608c6c1f91d02",
     ]
   list.length(list.unique(names)) == list.length(names)
 }
