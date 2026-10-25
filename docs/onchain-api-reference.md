@@ -80,6 +80,7 @@ Test support, documented because it is public to the test modules:
 - <a href="../onchain/validators/singular_state_fold_fixtures.ak" data-api="module">singular_state_fold_fixtures</a>
 - <a href="../onchain/validators/singular_state_termination_fixtures.ak" data-api="module">singular_state_termination_fixtures</a>
 - <a href="../onchain/validators/singular_state_proof_builder.ak" data-api="module">singular_state_proof_builder</a>
+- <a href="../onchain/validators/singular_state_history.ak" data-api="module">singular_state_history</a>
 
 ## What it leaves out
 

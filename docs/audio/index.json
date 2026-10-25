@@ -7734,6 +7734,13 @@
     "pause_ms": 300,
     "text": "singular_state_proof_builder",
     "v": "c30739e6b1d3"
+   },
+   {
+    "index": 33,
+    "name": "docs-onchain-api-reference/what-this-reference-contains-33",
+    "pause_ms": 300,
+    "text": "singular_state_history",
+    "v": "a121e9bfc779"
    }
   ]
  },

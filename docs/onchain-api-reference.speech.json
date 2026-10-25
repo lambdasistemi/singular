@@ -155,6 +155,10 @@
     {
       "text": "singular_state_proof_builder",
       "pause": 300
+    },
+    {
+      "text": "singular_state_history",
+      "pause": 300
     }
   ],
   "what-it-leaves-out": [
@@ -173,6 +177,6 @@
   ],
   "_source": {
     "file": "onchain-api-reference.md",
-    "sha256": "25addb6543a4e5840fe97046f06a089d7a08203be6c7519025e2808bb36b00eb"
+    "sha256": "e767d503673f341708bd172d2bba728ae80782686184b3e3d9e68b8602f27bdf"
   }
 }

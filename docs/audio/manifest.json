@@ -264430,6 +264430,26 @@
     }
    ]
   },
+  "docs-onchain-api-reference/what-this-reference-contains-33": {
+   "audio_sha256": "a121e9bfc77969bacd9638b6ddb36d14a79bdcf1f746a43f0d0bb57cdfe3895a",
+   "characters": 22,
+   "cost": 2.1779999999999998e-05,
+   "duration": 1.55,
+   "index": 33,
+   "key": "b0ee80050810292ca5c03c192f482a3ea8e0c204182f2988db7b7932fab2ca90",
+   "page": "docs/onchain-api-reference.md",
+   "pause_ms": 300,
+   "section": "what-this-reference-contains",
+   "sent_text": "singular_state_history",
+   "text": "singular_state_history",
+   "words": [
+    {
+     "end": 1.55,
+     "start": 0.2,
+     "text": "singular_state_history"
+    }
+   ]
+  },
   "docs-onchain-validator-owners/evidence-and-limits-00": {
    "audio_sha256": "e66aa9d9b1d115dce51fdf540dcfd802ac9d670b02a94db9c3ec6d515799faff",
    "characters": 20,
