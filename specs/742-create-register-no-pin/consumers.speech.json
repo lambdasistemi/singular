@@ -37,10 +37,14 @@
     {
       "text": "The stake part of the state address is not constrained, as in the model, which checks the payment credential only.",
       "pause": 400
+    },
+    {
+      "text": "The open-datum request validator decides the whole transaction's money in every handler, so its cost grows with the cube of the number of pending registrations spent in one transaction; about six fit the ledger's limits today. Batch limits are issue 746's.",
+      "pause": 400
     }
   ],
   "_source": {
     "file": "consumers.md",
-    "sha256": "e354432603c67f9d4c05ef991ad28b774aef2e6c3c2120ca09c08674aed5b6d7"
+    "sha256": "b83bde7615b50d06cbf63192ce72df2ddfc7d1b66b8ea2e8be983888a70ef00c"
   }
 }

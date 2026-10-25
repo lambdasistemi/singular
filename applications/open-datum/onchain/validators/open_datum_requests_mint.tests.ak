@@ -17,6 +17,9 @@ use application/mint.{
   action_accepted, birth, birth_positions_are_distinct, births_of, donation_is,
 }
 use application/registration.{registration_asset}
+use application/spend.{
+  ExpiredCleanup, OwnerReclaim, RegistrationFold, SpendAction,
+}
 use cardano/address.{Script}
 use cardano/assets.{add, from_asset, from_lovelace, zero}
 use cardano/script_context.{ScriptContext, Withdrawing}
@@ -471,11 +474,11 @@ test the_validator_refuses_a_booking_that_donates_to_the_treasury() {
 // approvals-burn-openly: a burn grants nothing
 // ---------------------------------------------------------------------------
 
-fn spend_with(datum: Data) -> Bool {
+fn spend_with(datum: Data, action: SpendAction) -> Bool {
   let burning = burn_transaction(approval_a(), 1)
   open_datum_requests.open_datum_requests.spend(
     Some(datum),
-    ApprovalBurn,
+    action,
     configuration_reference,
     Transaction {
       ..burning,
@@ -493,7 +496,10 @@ fn spend_with(datum: Data) -> Bool {
 /// rules for the pending registration arrive; it is not a RED leg of its own.
 test the_validator_does_not_let_a_burn_unlock_a_pending_registration() {
   let pending: Data = Registration { registration: registration_a() }
-  spend_with(pending) == False
+  list.all(
+    [RegistrationFold { holding_index: 0 }, OwnerReclaim, ExpiredCleanup],
+    fn(action) { spend_with(pending, action) == False },
+  )
 }
 
 test the_validator_refuses_every_other_purpose() fail {

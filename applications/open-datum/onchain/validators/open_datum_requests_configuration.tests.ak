@@ -17,8 +17,11 @@ use application/configuration.{
 use application/held.{
   ApplicationParameters, Configuration, Live, Registration, TokenId,
 }
-use application/mint.{ApplicationAction, ApprovalBurn}
+use application/mint.{ApplicationAction}
 use application/registration.{registration_asset}
+use application/spend.{
+  ExpiredCleanup, OwnerReclaim, RegistrationFold, SpendAction,
+}
 use cardano/address.{from_script, from_verification_key}
 use cardano/assets.{add, from_asset, from_lovelace, zero}
 use cardano/transaction.{
@@ -677,7 +680,7 @@ test the_read_asks_every_record_of_the_registry() {
 // configuration-is-immutable-and-read-by-reference: no spend path
 // ---------------------------------------------------------------------------
 
-fn spend_of_record(seed: OutputReference, redeemer: Data) -> Bool {
+fn spend_of_record(seed: OutputReference, redeemer: SpendAction) -> Bool {
   let datum: Data = Configuration { parameters }
   open_datum_requests.open_datum_requests.spend(
     Some(datum),
@@ -698,12 +701,13 @@ fn spend_of_record(seed: OutputReference, redeemer: Data) -> Bool {
 /// The refusal is a pin of the constant refusal of the spend handler until the
 /// rules for the other records arrive; it is not a RED leg of its own.
 test the_validator_has_no_spend_path_for_a_configuration_record() {
-  let approval_burn: Data = ApprovalBurn
-  let number: Data = 0
   list.all(
     seeds,
     fn(seed) {
-      !spend_of_record(seed, approval_burn) && !spend_of_record(seed, number)
+      list.all(
+        [RegistrationFold { holding_index: 0 }, OwnerReclaim, ExpiredCleanup],
+        fn(action) { !spend_of_record(seed, action) },
+      )
     },
   )
 }

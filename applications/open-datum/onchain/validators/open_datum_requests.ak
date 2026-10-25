@@ -1,11 +1,12 @@
 //// ## Responsibility
 //// The open-datum request validator: it creates the configuration record of a
 //// registry, approves the booking of registrations, lets anyone burn
-//// approvals, and keeps the pending registrations and the configuration
-//// records at its address.
+//// approvals, decides the spend of a pending registration, and keeps the
+//// pending registrations and the configuration records at its address.
 ////
 //// ## Dependencies
-//// `application/mint` decides the mint.
+//// `application/mint` decides the mint and `application/spend` the spend of a
+//// pending registration.
 ////
 //// ## Assumptions
 //// The hash of this script is both the policy of its tokens and the payment
@@ -13,11 +14,14 @@
 //// application is applied to that hash.
 ////
 //// ## Invariants
-//// A configuration record is never spent. No output at this address is spent
-//// by any rule that has not been written: the spend paths of a pending
-//// registration and of a live holding arrive with their own rules.
+//// A configuration record is never spent. A pending registration is spent only
+//// by a fold before its deadline, by its refund address inside the reclaim
+//// window, or by anyone after the window. No other output at this address is
+//// spent by any rule that has not been written: the spend path of a live
+//// holding arrives with its own rules.
 
 use application/mint.{ApplicationAction, application_mint}
+use application/spend.{SpendAction, application_spend}
 use cardano/assets.{PolicyId}
 use cardano/transaction.{OutputReference, Transaction}
 
@@ -25,7 +29,8 @@ use cardano/transaction.{OutputReference, Transaction}
 ///
 /// - `mint`: the actions of the redeemer are decided by
 ///   `application/mint`.
-/// - `spend`: every spend is refused.
+/// - `spend`: the action of the redeemer is decided by `application/spend`;
+///   an input that is not a pending registration is refused.
 /// - `else`: every other purpose fails.
 validator open_datum_requests {
   mint(redeemer: List<ApplicationAction>, policy_id: PolicyId, tx: Transaction) {
@@ -34,11 +39,11 @@ validator open_datum_requests {
 
   spend(
     _datum: Option<Data>,
-    _redeemer: Data,
-    _own_reference: OutputReference,
-    _tx: Transaction,
+    redeemer: SpendAction,
+    own_reference: OutputReference,
+    tx: Transaction,
   ) {
-    False
+    application_spend(redeemer, own_reference, tx)
   }
 
   else(_) {
