@@ -21,7 +21,7 @@ use singular_state/fold.{
 }
 use singular_state/preimage.{
   RegistryIdentity, active_token_name, approval_name, initial_datum_hash,
-  registration_preimage, state_token_name,
+  registration_preimage, state_token_name, termination_preimage,
 }
 use singular_state_fixtures.{
   application_policy, other_policy, other_script, root_datum, seed_a, seed_b,
@@ -451,12 +451,18 @@ test no_approval_is_recomputed_for_a_holding_without_an_application_datum() {
   )
 }
 
-test no_approval_is_recomputed_for_a_termination() {
-  approval_for(
+test the_approval_recomputed_for_a_termination_is_named_by_the_key_and_the_registry() {
+  let terminate =
+    Terminate { request: registration_a().request, key: key_a, proof: [] }
+  let other_key =
+    Terminate { request: registration_a().request, key: key_b, proof: [] }
+  let other_registry = RegistryIdentity { ..registry(), name: #"aa" }
+  let recomputed = approval_for(registry(), outputs(), terminate)
+  recomputed == Some(approval_name(termination_preimage(key_a, registry()))) && approval_for(
     registry(),
     outputs(),
-    Terminate { request: registration_a().request, key: key_a, proof: [] },
-  ) == None
+    other_key,
+  ) != recomputed && approval_for(other_registry, outputs(), terminate) != recomputed
 }
 
 // ---------------------------------------------------------------------------

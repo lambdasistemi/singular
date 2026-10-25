@@ -6,8 +6,8 @@
 //// mint handler that lets the tokens of a fold be minted.
 ////
 //// Every refusal row differs from the accepted fold in one part and names the
-//// attempt it stands for. A fold with the termination of a key is refused in
-//// this version of the validator, whatever else it carries.
+//// attempt it stands for. The termination of a key is in the modules beside
+//// this one.
 
 use aiken/builtin
 use aiken/collection/list
@@ -510,7 +510,7 @@ test a_fold_whose_request_is_only_a_reference_input_is_refused() {
   )
 }
 
-test a_fold_that_carries_a_termination_is_refused() {
+test a_termination_that_the_transaction_does_not_fit_is_refused() {
   let tx = valid()
   let terminate =
     Terminate { request: registration_a().request, key: key_d, proof: [] }

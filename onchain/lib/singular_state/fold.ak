@@ -1,15 +1,16 @@
-//// Registration fold of a registry state.
+//// Fold of a registry state: registrations and terminations.
 ////
 //// ## Responsibility
-//// The decision sites of the model's `fold` for registration changes: one
-//// function per guard, and `fold`, which conjoins them for the spend handler
-//// of the state script.
+//// The decision sites of the model's `fold` for registration and termination
+//// changes: one function per guard, and `fold`, which conjoins them for the
+//// spend handler of the state script.
 ////
 //// ## Dependencies
 //// `singular_state/state` for recognition and the mint comparison;
 //// `singular_state/genesis` for the outputs that carry the state token;
 //// `singular_state/preimage` for the role names; the Merkle Patricia
-//// Forestry library for the proof of absence and the new root.
+//// Forestry library for the proofs of absence and of presence and the new
+//// root.
 ////
 //// ## Assumptions
 //// The ledger runs the spend handler once for each input at the state script,
@@ -23,7 +24,10 @@
 //// into the one bare output that continues it, at the same script. Each
 //// registration consumes the one approval of exactly that change, proves its
 //// key absent, and mints one token for the key into the holding the approval
-//// commits to, with at least the deposit it commits to. Nothing else is
+//// commits to, with at least the deposit it commits to. Each termination
+//// consumes the one approval of exactly that change, proves its key active,
+//// finds the key's one active token on the request that carries the approval,
+//// and burns both; the leaf of the key becomes terminal. Nothing else is
 //// minted or burned under the state policy.
 
 use aiken/collection/dict
@@ -43,15 +47,19 @@ use cardano/transaction.{
 use singular_state/genesis.{state_candidates}
 use singular_state/preimage.{
   RegistryIdentity, active_token_name, approval_name, initial_datum_hash,
-  registration_preimage, state_token_name,
+  registration_preimage, state_token_name, termination_preimage,
 }
 use singular_state/state.{StateDatum, policy_delta, recognize_state, state_root}
 
 /// The leaf the trie binds to a registered key: the model's `known active`.
 pub const leaf_active: ByteArray = #"01"
 
+/// The leaf the trie binds to a terminated key: the model's `known terminal`.
+pub const leaf_terminal: ByteArray = #"02"
+
 /// One change of a fold, in the order of the model's `Change`. A termination
-/// is declared to keep that order; a fold that carries one is refused.
+/// names the request that carries its approval and the active token, the key,
+/// and the proof that shows the key active.
 pub type Change {
   Register {
     request: OutputReference,
@@ -196,10 +204,11 @@ pub fn change_approval_shape(
   }
 }
 
-/// The approval a registration commits to, recomputed from the change and the
-/// holding output it names. The output that carries the state token is the
-/// model's `root` category and has none; any other output is an application
-/// output.
+/// The approval a change commits to, recomputed from the change. A registration
+/// commits to the holding output it names; the output that carries the state
+/// token is the model's `root` category and has none, and any other output is
+/// an application output. A termination commits to the key and the registry
+/// alone.
 pub fn approval_for(
   registry: RegistryIdentity,
   outputs: List<Output>,
@@ -230,7 +239,8 @@ pub fn approval_for(
           }
         None -> None
       }
-    Terminate { .. } -> None
+    Terminate { key, .. } ->
+      Some(approval_name(termination_preimage(key, registry)))
   }
 }
 
@@ -349,8 +359,37 @@ pub fn registration_deposit(deposit: Int, holding: Output) -> Bool {
   deposit <= lovelace_of(holding.value)
 }
 
+/// Model guard `changeLeaf`, for a termination: the trie proof shows the key
+/// active.
+pub fn change_leaf_active(
+  trie: MerklePatriciaForestry,
+  key: ByteArray,
+  proof: Proof,
+) -> Bool {
+  mpf.has(trie, key, leaf_active, proof)
+}
+
+/// Model guard `terminationHeld`: the request input holds the active token of
+/// the key once.
+pub fn termination_held(
+  registry: RegistryIdentity,
+  key: ByteArray,
+  request: Output,
+) -> Bool {
+  quantity_of(request.value, registry.policy, active_token_name(registry, key)) == 1
+}
+
+/// Model guard `terminationBurn`: the active token of the key is burned once.
+pub fn termination_burn(
+  registry: RegistryIdentity,
+  key: ByteArray,
+  mint: Value,
+) -> Bool {
+  quantity_of(mint, registry.policy, active_token_name(registry, key)) == -1
+}
+
 /// One change applied to the trie: every guard of the change holds. The trie
-/// after it is `None` when one does not. A termination is refused.
+/// after it is `None` when one does not.
 pub fn apply_change(
   application_policy: PolicyId,
   registry: RegistryIdentity,
@@ -396,7 +435,29 @@ pub fn apply_change(
           }
         _ -> None
       }
-    Terminate { .. } -> None
+    Terminate { request, key, proof } ->
+      when
+        (
+          find_input(tx.inputs, request),
+          approval_for(registry, tx.outputs, change),
+        )
+      is {
+        (Some(Input { output: request_output, .. }), Some(approval)) ->
+          if and {
+            change_reference(tx.inputs, request),
+            change_approval_shape(application_policy, request_output),
+            change_approval(application_policy, request_output, approval),
+            change_approval_burn(application_policy, approval, tx.mint),
+            change_leaf_active(trie, key, proof),
+            termination_held(registry, key, request_output),
+            termination_burn(registry, key, tx.mint),
+          } {
+            Some(mpf.update(trie, key, proof, leaf_active, leaf_terminal))
+          } else {
+            None
+          }
+        _ -> None
+      }
   }
 }
 
@@ -471,7 +532,7 @@ pub fn fold_value(before: Output, after: Output) -> Bool {
 }
 
 /// Model guard `foldWholePolicy`: the whole state-policy mint is exactly one
-/// token for each registered key.
+/// token for each registered key and the burn of one for each terminated key.
 pub fn fold_whole_policy(
   registry: RegistryIdentity,
   changes: List<Change>,

@@ -647,7 +647,7 @@ test a_change_whose_holding_is_short_of_the_deposit_is_refused() {
   ) == Some(root_of([key_a]))
 }
 
-test a_termination_is_refused() {
+test a_termination_in_the_transaction_of_a_registration_is_refused() {
   let tx = first_transaction()
   let terminate =
     Terminate { request: registration_a().request, key: key_a, proof: [] }
