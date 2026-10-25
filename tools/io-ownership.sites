@@ -76,6 +76,14 @@ applications/open-datum/offchain/test/Singular/Application/OpenDatum/RegistrySta
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/RegistryStateTokenSpec.hs resolveOn readIORef 1
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/RegistryStateTokenSpec.hs searchOn newIORef 1
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/RegistryStateTokenSpec.hs searchOn readIORef 1
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/RequestWorld.hs <decl> IORef 2
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/RequestWorld.hs addOutputs modifyIORef' 1
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/RequestWorld.hs applyTransaction modifyIORef' 1
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/RequestWorld.hs chainSession readIORef 2
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/RequestWorld.hs lookupOutput readIORef 1
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/RequestWorld.hs newChain newIORef 2
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/RequestWorld.hs removeOutputs modifyIORef' 1
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/RequestWorld.hs setTip writeIORef 1
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/StateTokenFixture.hs chainSession IORef 1
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/StateTokenFixture.hs chainSession modifyIORef' 2
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/StateTokenSpec.hs directories newIORef 1
