@@ -1964,6 +1964,7 @@
                   declared_changes_records=(
                     "$root/specs/749-unused-witness-pins/evidence/declared-changes.json"
                     "$root/specs/742-create-register-no-pin/evidence/declared-changes.json"
+                    "$root/specs/743-update-terminate-no-pin/evidence/declared-changes.json"
                   )
                   [ -f "$declared" ] || {
                     echo "script-hash-comparison: no declared-additions.json under $root" >&2
