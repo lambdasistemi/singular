@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 {- |
 Module      : Singular.Application.OpenDatum.Requests.Script
 Description : The open-datum request validator as the builders carry it
@@ -24,10 +26,14 @@ module Singular.Application.OpenDatum.Requests.Script
     , useScript
     ) where
 
+import Control.Exception (throwIO)
 import Data.Text (Text)
+import Data.Text qualified as T
+import Lens.Micro ((^.))
 
 import Cardano.Ledger.Address (Addr (..))
-import Cardano.Ledger.BaseTypes (Network)
+import Cardano.Ledger.Api.Tx.Out (referenceScriptTxOutL)
+import Cardano.Ledger.BaseTypes (Network, StrictMaybe (..))
 import Cardano.Ledger.Core (Script, hashScript)
 import Cardano.Ledger.Credential
     ( Credential (..)
@@ -39,11 +45,17 @@ import Cardano.Ledger.TxIn (TxIn)
 import Cardano.Tx.Build (TxBuild)
 import Cardano.Tx.Build qualified as Tx
 
+import Singular.Application.OpenDatum.Requests.Assemble (readOutputs)
 import Singular.Application.OpenDatum.Requests.Refusal (Refusal (..))
-import Singular.Registry.Blueprint (Blueprint)
+import Singular.Registry.Blueprint (Blueprint, extractCompiledCode)
 import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger (ConwayEra, TxOut)
-import Singular.Registry.LedgerProvider (Session)
+import Singular.Registry.LedgerProvider
+    ( OutputQuery (..)
+    , ReadFailure (..)
+    , Session
+    )
+import Singular.Registry.TxBuilder.Internal (scriptFromBytes)
 
 -- | Where a transaction takes the script's code from.
 data ScriptSource
@@ -66,8 +78,11 @@ requestScriptTitle = "open_datum_requests.open_datum_requests.spend"
 -- | The request validator a blueprint carries.
 requestScriptFromBlueprint
     :: Blueprint -> Either String (Script ConwayEra)
-requestScriptFromBlueprint _ =
-    Left "Requests.Script.requestScriptFromBlueprint: not built"
+requestScriptFromBlueprint blueprint =
+    maybe
+        (Left ("the blueprint carries no " <> T.unpack requestScriptTitle))
+        (Right . scriptFromBytes "open-datum-requests")
+        (extractCompiledCode requestScriptTitle blueprint)
 
 -- | The hash of the script: its approval policy and its address credential.
 requestScriptHash :: RequestScript -> ScriptHash
@@ -90,9 +105,24 @@ referenceOutputs
     :: Session NoWitness IO
     -> RequestScript
     -> IO (Either Refusal [(TxIn, TxOut ConwayEra)])
-referenceOutputs _ script = case rsSource script of
+referenceOutputs session script = case rsSource script of
     Attached -> pure (Right [])
-    Referenced _ -> pure (Left (BuildFailed "reference scripts are not built"))
+    Referenced reference ->
+        readOutputs session (AtTxIn reference) >>= \case
+            Left (MissingOutput _) -> pure (Left (ReferenceScriptMissing reference))
+            Left failure -> throwIO failure
+            Right found -> pure $ case found of
+                [(ref, output)] -> carries ref output
+                _ -> Left (ReferenceScriptMissing reference)
+  where
+    expected = requestScriptHash script
+    carries ref output = case output ^. referenceScriptTxOutL of
+        SJust carried
+            | hashScript carried == expected -> Right [(ref, output)]
+            | otherwise ->
+                Left
+                    (ReferenceScriptMismatch ref (Just (hashScript carried)) expected)
+        SNothing -> Left (ReferenceScriptMismatch ref Nothing expected)
 
 -- | Make the script available to the transaction under construction.
 useScript :: RequestScript -> TxBuild q e ()
