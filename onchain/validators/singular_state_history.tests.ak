@@ -32,10 +32,11 @@
 use aiken/collection/list
 use aiken/crypto.{blake2b_256}
 use aiken/fuzz
+use aiken/merkle_patricia_forestry.{Leaf, Proof}
 use aiken/merkle_patricia_forestry/helpers.{nibble}
 use cardano/transaction.{OutputReference, Transaction}
 use singular_state
-use singular_state/fold.{StateSpend}
+use singular_state/fold.{Change, Register, StateSpend, Terminate}
 use singular_state/genesis.{StateMint}
 use singular_state_fixtures.{application_policy, state_policy}
 use singular_state_fold_fixtures.{key_a, key_b, key_c}
@@ -51,6 +52,7 @@ use singular_state_history.{
   runs_end_committed, scripts_accept, supply_follows_leaves,
   terminal_keys_are_never_minted_again, universe,
 }
+use singular_state_termination_fixtures.{key_t, key_v}
 
 /// The mint handler of the state validator, run as the ledger runs it.
 fn mint_handler(redeemer: StateMint, tx: Transaction) -> Bool {
@@ -98,18 +100,33 @@ fn sequences() -> Fuzzer<List<Int>> {
 /// them is booked and folded. The steps a run has go to what the statements are
 /// about, terminations, mints and burns, and an attack on a terminal key, in its
 /// registry or through the other, has what it needs.
+fn opening_wants() -> List<Want> {
+  [
+    create(0),
+    create(1),
+    fold(0, [key_a, key_t]),
+    book(0, key_a),
+    fold(0, [key_a]),
+  ]
+}
+
 fn opening() -> List<Outcome> {
-  run_script(
-    scripts,
-    initial_world(),
-    [
-      create(0),
-      create(1),
-      fold(0, [key_a, key_b]),
-      book(0, key_a),
-      fold(0, [key_a]),
-    ],
-  )
+  run_script(scripts, initial_world(), opening_wants())
+}
+
+/// The opening is proposed in full and accepted in full, and leaves the first
+/// registry with one key terminal and, beside it, one active that shares its
+/// first nibble, so the choices that follow find what they are about.
+test the_opening_of_every_run_is_accepted_in_full() {
+  let started = opening()
+  expect Some(last) = list.last(started)
+  let registry = registry_at(last.after, 0)
+  and {
+    list.length(started) == list.length(opening_wants()),
+    list.all(started, fn(outcome) { outcome.accepted }),
+    leaf_of(registry, key_a) == Terminal,
+    leaf_of(registry, key_t) == Active,
+  }
 }
 
 /// The opening, then the steps the choices select from the world it left.
@@ -192,13 +209,64 @@ test prop_the_history_statements_hold_over_generated_worlds(
   }
 }
 
-/// The keys the generator draws on begin with different nibbles, so every proof it
-/// builds for a registration or a termination is one step long.
-test the_keys_the_generator_draws_on_begin_with_different_nibbles() {
-  let first = list.map(universe(), fn(key) { nibble(blake2b_256(key), 0) })
-  list.length(first) >= 3 && list.length(list.unique(first)) == list.length(
-    first,
+/// The number of leading nibbles two hashes share.
+fn shared_nibbles(left: ByteArray, right: ByteArray, at: Int) -> Int {
+  if at >= 64 {
+    64
+  } else if nibble(left, at) == nibble(right, at) {
+    shared_nibbles(left, right, at + 1)
+  } else {
+    at
+  }
+}
+
+/// How many leading nibbles of their hashes each two different keys of the
+/// universe share.
+fn shared_by_pairs() -> List<Int> {
+  list.flat_map(
+    universe(),
+    fn(key) {
+      list.filter_map(
+        universe(),
+        fn(other) {
+          if other == key {
+            None
+          } else {
+            Some(shared_nibbles(blake2b_256(key), blake2b_256(other), 0))
+          }
+        },
+      )
+    },
   )
+}
+
+/// Some two keys the generator draws on share their first nibble and differ in
+/// the second, so a trie of the keys has a node below its root.
+test the_keys_the_generator_draws_on_include_two_that_share_only_their_first_nibble() {
+  list.has(shared_by_pairs(), 1)
+}
+
+/// Some two keys share three nibbles, so a trie of the keys has a node below a
+/// node.
+test the_keys_the_generator_draws_on_include_two_that_share_three_nibbles() {
+  list.any(shared_by_pairs(), fn(shared) { shared >= 3 })
+}
+
+/// The proof of a change.
+fn proof_of(change: Change) -> Proof {
+  when change is {
+    Register { proof, .. } -> proof
+    Terminate { proof, .. } -> proof
+  }
+}
+
+/// Whether a leaf step has steps after it.
+fn leaf_step_with_steps_after(proof: Proof) -> Bool {
+  when proof is {
+    [] -> False
+    [Leaf { .. }, ..rest] -> rest != []
+    [_, ..rest] -> leaf_step_with_steps_after(rest)
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -419,6 +487,61 @@ test a_fold_that_mixes_terminations_and_a_registration_keeps_every_other_token()
     live_supply(world, registry, key_a) == 0,
     live_supply(world, registry, key_b) == 1,
     live_supply(world, registry, key_c) == 1,
+  }
+}
+
+/// A registry that holds two keys that share their first nibble takes a third
+/// that shares three nibbles with one of them. The honest proof that the third
+/// is absent has a leaf step with another step after it, and the fold accepts
+/// the registration.
+test a_key_that_shares_nibbles_with_held_keys_is_registered_by_a_proof_whose_leaf_step_has_steps_after_it() {
+  let wants = [create(0), fold(0, [key_a, key_t]), fold(0, [key_v])]
+  let outcomes = run_script(scripts, initial_world(), wants)
+  expect Some(last) = list.last(outcomes)
+  let world = last.after
+  let registry = registry_at(world, 0)
+  and {
+    list.length(outcomes) == list.length(wants),
+    list.all(outcomes, fn(outcome) { outcome.accepted }),
+    list.all(outcomes, all_statements),
+    runs_end_committed(outcomes),
+    list.any(
+      changes_of(last.proposal),
+      fn(change) { leaf_step_with_steps_after(proof_of(change)) },
+    ),
+    leaf_of(registry, key_v) == Active,
+    live_supply(world, registry, key_v) == 1,
+  }
+}
+
+/// The termination of a key whose neighbours share nibbles with it: the proof
+/// that shows the key active has a leaf step with another step after it, the
+/// fold accepts it and burns the token of that key alone.
+test a_key_that_shares_nibbles_with_held_keys_is_terminated_by_a_proof_whose_leaf_step_has_steps_after_it() {
+  let wants =
+    [
+      create(0),
+      fold(0, [key_a, key_t, key_v]),
+      book(0, key_t),
+      fold(0, [key_t]),
+    ]
+  let outcomes = run_script(scripts, initial_world(), wants)
+  expect Some(last) = list.last(outcomes)
+  let world = last.after
+  let registry = registry_at(world, 0)
+  and {
+    list.length(outcomes) == list.length(wants),
+    list.all(outcomes, fn(outcome) { outcome.accepted }),
+    list.all(outcomes, all_statements),
+    runs_end_committed(outcomes),
+    list.any(
+      changes_of(last.proposal),
+      fn(change) { leaf_step_with_steps_after(proof_of(change)) },
+    ),
+    leaf_of(registry, key_t) == Terminal,
+    live_supply(world, registry, key_t) == 0,
+    live_supply(world, registry, key_a) == 1,
+    live_supply(world, registry, key_v) == 1,
   }
 }
 
