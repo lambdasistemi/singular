@@ -24,8 +24,8 @@ the ticket owner accepts its slice.
 
 ## Pull request 2: approvals and configuration
 
-- [ ] configuration-record: the configuration record at creation, immutable, read by reference.
-- [ ] registration-approval: the approval mint committing its fields; the open burn.
+- [x] configuration-record: the configuration record at creation, immutable, read by reference.
+- [x] registration-approval: the approval mint committing its fields; the open burn.
 
 ## Pull request 2: pending registration
 

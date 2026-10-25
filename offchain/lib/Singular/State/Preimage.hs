@@ -25,6 +25,7 @@ module Singular.State.Preimage
       -- * The names the line builds
     , stateTokenName
     , activeTokenName
+    , configurationTokenName
     , registrationPreimage
     , approvalName
     ) where
@@ -60,8 +61,8 @@ import Singular.Registry.TrieState
     )
 
 {- | The structured value hashed into a name, one constructor per role,
-numbered as the model's @Preimage@. The configuration and termination
-constructors keep that numbering; nothing builds them in this line yet.
+numbered as the model's @Preimage@. The termination constructor keeps that
+numbering; nothing builds it in this line yet.
 -}
 data Preimage
     = -- | The registry created by spending the seed.
@@ -136,6 +137,10 @@ stateTokenName = roleName . State
 -- | The name of the token that stands for a key in a registry.
 activeTokenName :: RegistryIdentity -> ByteString -> AssetName
 activeTokenName registry = roleName . Active registry
+
+-- | The name of the token of the configuration record of a registry.
+configurationTokenName :: RegistryIdentity -> AssetName
+configurationTokenName = roleName . ApplicationConfiguration
 
 {- | The Plutus Data serialisation of the registration approval preimage: the
 key, the registry, the address the holding sits at, the hash of the holding's

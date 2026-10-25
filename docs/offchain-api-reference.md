@@ -132,7 +132,7 @@ Run: mkdocs serve
 - <a href="../offchain/lib/Singular/Registry/Wire/Request.hs" data-api="module">Singular.Registry.Wire.Request</a> — <a href="../offchain/lib/Singular/Registry/Wire/Request.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Wire/State.hs" data-api="module">Singular.Registry.Wire.State</a> — <a href="../offchain/lib/Singular/Registry/Wire/State.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Witness.hs" data-api="module">Singular.Registry.Witness</a> — <a href="../offchain/lib/Singular/Registry/Witness.hs" data-api="source">source</a>
-- <a href="../offchain/lib/Singular/State/Preimage.hs" data-api="module">Singular.State.Preimage</a> — <a href="../offchain/lib/Singular/State/Preimage.hs" data-api="source">source</a> — the off-chain encoder of the Singular state, active and registration-approval preimages, byte for byte equal to the on-chain one
+- <a href="../offchain/lib/Singular/State/Preimage.hs" data-api="module">Singular.State.Preimage</a> — <a href="../offchain/lib/Singular/State/Preimage.hs" data-api="source">source</a> — the off-chain encoder of the Singular state, active, configuration and registration-approval preimages, byte for byte equal to the on-chain one
 
 The facades and owners of the registry builder and blueprint extraction
 are described module by module in the

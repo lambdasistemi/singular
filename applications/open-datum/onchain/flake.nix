@@ -380,11 +380,13 @@
         # alone nor as a second copy in the repository: the runner below
         # assembles, in a scratch directory that is never committed, the
         # registry Aiken project (validators/ and lib/ as committed) plus
-        # this application's validators/ (open_datum.ak,
-        # application/envelope.ak, open_datum.tests.ak, text verbatim —
-        # the five `state.*` call sites stay as they are), and runs
-        # `aiken check` there. The assembly is read from the two trees at
-        # build time; no copy of either side lives in the repository.
+        # this application's whole validators/ directory as committed
+        # (open_datum.ak, application/envelope.ak, open_datum.tests.ak, text
+        # verbatim — the five `state.*` call sites stay as they are — and
+        # the request validator with its modules, fixtures and tests, which
+        # import only the registry's lib/ modules), and runs `aiken check`
+        # there. The assembly is read from the two trees at build time; no
+        # copy of either side lives in the repository.
         open-datum-aiken-tests-runner = pkgs.writeShellApplication {
           name = "open-datum-aiken-tests";
           runtimeInputs = [
@@ -400,9 +402,7 @@
             cp -r ${registrySrc}/lib/. "$work/assembly/lib/"
             cp ${registrySrc}/aiken.toml "$work/assembly/aiken.toml"
             cp ${registrySrc}/aiken.lock "$work/assembly/aiken.lock"
-            cp ${appSrc}/validators/open_datum.ak "$work/assembly/validators/open_datum.ak"
-            cp ${appSrc}/validators/open_datum.tests.ak "$work/assembly/validators/open_datum.tests.ak"
-            cp ${appSrc}/validators/application/envelope.ak "$work/assembly/validators/application/envelope.ak"
+            cp -r ${appSrc}/validators/. "$work/assembly/validators/"
             chmod -R u+w "$work/assembly"
             mkdir -p "$work/assembly/build/packages"
             cp ${assemblyPackagesToml} "$work/assembly/build/packages/packages.toml"
@@ -418,7 +418,9 @@
         # The check runs the runner and requires its log to name the
         # application's suite (a run that never executed the moved tests
         # is a failure, not a pass) and to name a closed refusal row (a run
-        # that never executed the closed rows is a failure, not a pass);
+        # that never executed the closed rows is a failure, not a pass) and
+        # to name each suite of the request validator (a run that never
+        # executed one is a failure, not a pass);
         # then a control run over a scratch copy with one expected digest
         # mutated must fail, and a second control run with the closed Update
         # arm planted to accept must fail naming a closed refusal row — a
@@ -444,6 +446,12 @@
                 echo "FAIL: the test assembly never executed the closed refusal rows" >&2
                 exit 1
               }
+              for suite in configuration registration mint; do
+                grep -q "open_datum_requests_$suite.tests" "$out" || {
+                  echo "FAIL: the test assembly never executed the request validator suite $suite" >&2
+                  exit 1
+                }
+              done
               work="$(mktemp -d)"
               trap 'rm -rf "$work"' EXIT
               mkdir -p "$work/mutant/validators/application" "$work/mutant/lib"

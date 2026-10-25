@@ -67,6 +67,7 @@ import Singular.State.Preimage
     ( Preimage (..)
     , activeTokenName
     , approvalName
+    , configurationTokenName
     , encodePreimage
     , registrationPreimage
     , roleName
@@ -114,6 +115,8 @@ inputOf role = withObject (T.unpack role) $ \o -> case role of
         seed <- o .: "seed"
         State <$> seedOf seed
     "active" -> Active <$> (o .: "registry" >>= registryOf) <*> keyOf o
+    "configuration" ->
+        ApplicationConfiguration <$> (o .: "registry" >>= registryOf)
     "registration-approval" ->
         RegistrationApproval
             <$> (o .: "registry" >>= registryOf)
@@ -213,6 +216,7 @@ nameByFunction :: Preimage -> AssetName
 nameByFunction = \case
     State seed -> stateTokenName seed
     Active registry key -> activeTokenName registry key
+    ApplicationConfiguration registry -> configurationTokenName registry
     RegistrationApproval registry key holding datumHash deposit ->
         approvalName
             (registrationPreimage key registry holding datumHash deposit)
@@ -228,8 +232,10 @@ spec = do
 
 tableRows :: [Vector] -> Spec
 tableRows vectors = describe "the table" $ do
-    it "holds a vector for each role the line builds" $
-        forM_ ["state", "active", "registration-approval"] $ \role ->
+    it "holds a vector for each role the line builds"
+        $ forM_
+            ["state", "active", "configuration", "registration-approval"]
+        $ \role ->
             (role, any ((== role) . vectorRole) vectors) `shouldBe` (role, True)
 
     it "names the edges each vector exercises, and its bytes show them" $

@@ -11,7 +11,7 @@ Types refer to [the data model](data-model.md).
 | `state_token_name` | `seed: OutputReference` | `AssetName` | equal to the off-chain `stateTokenName` on every vector |
 | `registration_preimage` | `key: ByteArray`, `registry: RegistryIdentity`, `holding_address: Address`, `datum_hash: ByteArray`, `deposit: Int` | `ByteArray` | the Plutus Data serialisation of the structured value |
 | `approval_name` | `preimage: ByteArray` | `AssetName` | the hash function the aligned model names |
-| `open_datum_requests` (validator) | `application_policy: PolicyId` | mint and spend handlers | reads the configuration record by reference; never reads a root or a trie proof |
+| `open_datum_requests` (validator) | none: its own hash is both the approval policy and the address of pending registrations (epic owner ruling) | mint and spend handlers | reads the configuration record by reference; never reads a root or a trie proof |
 
 ## Off-chain
 

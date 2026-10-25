@@ -9,8 +9,9 @@ use aiken/collection/list
 use cardano/address.{Address, Inline, Script, VerificationKey}
 use cardano/transaction.{OutputReference}
 use singular_state/preimage.{
-  Active, RegistryIdentity, State, active_token_name, approval_name,
-  registration_preimage, state_token_name,
+  Active, ApplicationConfiguration, RegistryIdentity, State, active_token_name,
+  approval_name, configuration_token_name, registration_preimage,
+  state_token_name,
 }
 
 test vector_state_output_index_zero() {
@@ -358,6 +359,42 @@ test vector_approval_deposit_bignum() {
   }
 }
 
+test vector_configuration_registry_of_the_other_roles() {
+  let registry =
+    RegistryIdentity {
+      policy: #"70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f7",
+      name: #"f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139daf",
+    }
+  and {
+    cbor.serialise(ApplicationConfiguration { registry }) == #"d87b9fd8799f581c70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f75820f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139dafffff",
+    configuration_token_name(registry) == #"bbb895f9594c6a51a81fae044cfbc4549f82e213e22808b7f5bcf557260d535c",
+  }
+}
+
+test vector_configuration_registry_of_ff_bytes() {
+  let registry =
+    RegistryIdentity {
+      policy: #"ffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      name: #"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    }
+  and {
+    cbor.serialise(ApplicationConfiguration { registry }) == #"d87b9fd8799f581cffffffffffffffffffffffffffffffffffffffffffffffffffffffff5820ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    configuration_token_name(registry) == #"a3b06acde4dec83cbfed1516298e5546944b94aeb2b27007df4deb9b2d089fdc",
+  }
+}
+
+test vector_configuration_registry_with_an_empty_name() {
+  let registry =
+    RegistryIdentity {
+      policy: #"00000000000000000000000000000000000000000000000000000000",
+      name: #"",
+    }
+  and {
+    cbor.serialise(ApplicationConfiguration { registry }) == #"d87b9fd8799f581c0000000000000000000000000000000000000000000000000000000040ffff",
+    configuration_token_name(registry) == #"b458fd3658b3cbe2d4d70d6d53d9107c3e18c1dabf55f1b35426e8aa5fc005bf",
+  }
+}
+
 test the_preimages_of_the_vectors_are_pairwise_distinct() {
   let preimages =
     [
@@ -378,6 +415,9 @@ test the_preimages_of_the_vectors_are_pairwise_distinct() {
       #"d87c9fd8799f581c70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f75820f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139dafff58200104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5ed8799fd8799f581c101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e61ffd87a80ff5820404b56616c77828d98a3aeb9c4cfdae5f0fb06111c27323d48535e69747f8a951b0000000100000000ff",
       #"d87c9fd8799f581c70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f75820f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139dafff58200104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5ed8799fd8799f581c101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e61ffd87a80ff5820404b56616c77828d98a3aeb9c4cfdae5f0fb06111c27323d48535e69747f8a951bffffffffffffffffff",
       #"d87c9fd8799f581c70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f75820f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139dafff58200104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5ed8799fd8799f581c101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e61ffd87a80ff5820404b56616c77828d98a3aeb9c4cfdae5f0fb06111c27323d48535e69747f8a95c249010000000000000000ff",
+      #"d87b9fd8799f581c70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f75820f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139dafffff",
+      #"d87b9fd8799f581cffffffffffffffffffffffffffffffffffffffffffffffffffffffff5820ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      #"d87b9fd8799f581c0000000000000000000000000000000000000000000000000000000040ffff",
     ]
   list.length(list.unique(preimages)) == list.length(preimages)
 }
@@ -402,6 +442,9 @@ test the_names_of_the_vectors_are_pairwise_distinct() {
       #"9a28bf920f35654564e4fd2f13200d7b5b56a20b839e36f89e87c1e5f2cda662",
       #"21aa1b08626025ed1b736a15563b90a97873900963022cbb282017b9680b8e20",
       #"819d2964fe9a619ed544936d1f25d5af74b045d7b875bda4ae77e42de534865f",
+      #"bbb895f9594c6a51a81fae044cfbc4549f82e213e22808b7f5bcf557260d535c",
+      #"a3b06acde4dec83cbfed1516298e5546944b94aeb2b27007df4deb9b2d089fdc",
+      #"b458fd3658b3cbe2d4d70d6d53d9107c3e18c1dabf55f1b35426e8aa5fc005bf",
     ]
   list.length(list.unique(names)) == list.length(names)
 }

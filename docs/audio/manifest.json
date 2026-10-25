@@ -197116,17 +197116,17 @@
    ]
   },
   "docs-offchain-api-reference/what-this-reference-contains-03": {
-   "audio_sha256": "234673675911db6bccc94cd3949da3ccd371764ac370ee51e937ceca6ef12cbf",
-   "characters": 3377,
-   "cost": 0.00334323,
-   "duration": 163.725,
+   "audio_sha256": "4c08b9ba964544009b18d1088e2fec7e06c4a3e13539ab77bf3bcf4c35bfee51",
+   "characters": 3392,
+   "cost": 0.00335808,
+   "duration": 164.775,
    "index": 3,
-   "key": "f94f943850bb26998861980a154d0563ed2de44a35daf0cf06848f33b3355463",
+   "key": "10705b543af67f45ecfc0b83981ce4ded47137fbbbc86d4a6c93bcbd4bc5ea05",
    "page": "docs/offchain-api-reference.md",
    "pause_ms": 400,
    "section": "what-this-reference-contains",
-   "sent_text": "MkDocs environment ready! Run: mkdocs serve - Naming.Datum — source - Naming.Register — source - Naming.Request — source - Naming.Verify — source - Naming.Wire — source - Naming.Wire.Vectors — source - Singular.Provider.Koios.Client — source - Singular.Provider.Koios.Evidence — source - Singular.Provider.Koios.History — source - Singular.Provider.Koios.Provider — source - Singular.Provider.Koios.Recorded — source - Singular.Provider.Koios.Runtime — source - Singular.Provider.Koios.State — source - Singular.Provider.Koios.Wire — source - Singular.Registry.Address — source - Singular.Registry.Application — source - Singular.Registry.AssetName — source - Singular.Registry.Blueprint — source - Singular.Registry.Blueprint.Load — source - Singular.Registry.Blueprint.Params — source - Singular.Registry.Blueprint.Schema — source - Singular.Registry.Candidate — source - Singular.Registry.Capabilities — source - Singular.Registry.Config — source - Singular.Registry.Config.Application — source - Singular.Registry.Confirmation — source - Singular.Registry.Deployment — source - Singular.Registry.Deployment.Attach — source - Singular.Registry.Deployment.Manifest — source - Singular.Registry.Deployment.Mirror — source - Singular.Registry.Driver — source - Singular.Registry.Evidence — source - Singular.Registry.FoldAdmission — source - Singular.Registry.FoldSelection — source - Singular.Registry.Funding — source - Singular.Registry.Ledger — source - Singular.Registry.LedgerProvider — source - Singular.Registry.Lifecycle — source - Singular.Registry.Page — source - Singular.Registry.PlainJson — source - Singular.Registry.Proof — source - Singular.Registry.Replay — source - Singular.Registry.Signing — source - Singular.Registry.StateToken — source - Singular.Registry.Trie — source - Singular.Registry.Trie.Pure — source - Singular.Registry.Trie.PureManager — source - Singular.Registry.TrieState — source - Singular.Registry.TrieState.Core — source - Singular.Registry.TrieState.Fixture — source - Singular.Registry.TrieState.Lineage — source - Singular.Registry.TrieState.Types — source - Singular.Registry.TxBuilder.Boot — source - Singular.Registry.TxBuilder.ConnectedFold — source - Singular.Registry.TxBuilder.Edges — source - Singular.Registry.TxBuilder.Internal — source - Singular.Registry.TxBuilder.Internal.Edges — source - Singular.Registry.TxBuilder.Internal.Identity — source - Singular.Registry.TxBuilder.Internal.Lookup — source - Singular.Registry.TxBuilder.Prepare — source - Singular.Registry.TxBuilder.Register — source - Singular.Registry.TxBuilder.Reject — source - Singular.Registry.TxBuilder.Request — source - Singular.Registry.TxBuilder.Retract — source - Singular.Registry.TxBuilder.Update — source - Singular.Registry.TxBuilder.Update.Build — source - Singular.Registry.TxBuilder.Update.Context — source - Singular.Registry.TxBuilder.Update.Duties — source - Singular.Registry.Types — source - Singular.Registry.Wait — source - Singular.Registry.Wire.Primitive — source - Singular.Registry.Wire.Proof — source - Singular.Registry.Wire.Redeemer — source - Singular.Registry.Wire.Request — source - Singular.Registry.Wire.State — source - Singular.Registry.Witness — source - Singular.State.Preimage — source — the off-chain encoder of the Singular state, active and registration-approval preimages, byte for byte equal to the on-chain one",
-   "text": "MkDocs environment ready! Run: mkdocs serve - Naming.Datum — source - Naming.Register — source - Naming.Request — source - Naming.Verify — source - Naming.Wire — source - Naming.Wire.Vectors — source - Singular.Provider.Koios.Client — source - Singular.Provider.Koios.Evidence — source - Singular.Provider.Koios.History — source - Singular.Provider.Koios.Provider — source - Singular.Provider.Koios.Recorded — source - Singular.Provider.Koios.Runtime — source - Singular.Provider.Koios.State — source - Singular.Provider.Koios.Wire — source - Singular.Registry.Address — source - Singular.Registry.Application — source - Singular.Registry.AssetName — source - Singular.Registry.Blueprint — source - Singular.Registry.Blueprint.Load — source - Singular.Registry.Blueprint.Params — source - Singular.Registry.Blueprint.Schema — source - Singular.Registry.Candidate — source - Singular.Registry.Capabilities — source - Singular.Registry.Config — source - Singular.Registry.Config.Application — source - Singular.Registry.Confirmation — source - Singular.Registry.Deployment — source - Singular.Registry.Deployment.Attach — source - Singular.Registry.Deployment.Manifest — source - Singular.Registry.Deployment.Mirror — source - Singular.Registry.Driver — source - Singular.Registry.Evidence — source - Singular.Registry.FoldAdmission — source - Singular.Registry.FoldSelection — source - Singular.Registry.Funding — source - Singular.Registry.Ledger — source - Singular.Registry.LedgerProvider — source - Singular.Registry.Lifecycle — source - Singular.Registry.Page — source - Singular.Registry.PlainJson — source - Singular.Registry.Proof — source - Singular.Registry.Replay — source - Singular.Registry.Signing — source - Singular.Registry.StateToken — source - Singular.Registry.Trie — source - Singular.Registry.Trie.Pure — source - Singular.Registry.Trie.PureManager — source - Singular.Registry.TrieState — source - Singular.Registry.TrieState.Core — source - Singular.Registry.TrieState.Fixture — source - Singular.Registry.TrieState.Lineage — source - Singular.Registry.TrieState.Types — source - Singular.Registry.TxBuilder.Boot — source - Singular.Registry.TxBuilder.ConnectedFold — source - Singular.Registry.TxBuilder.Edges — source - Singular.Registry.TxBuilder.Internal — source - Singular.Registry.TxBuilder.Internal.Edges — source - Singular.Registry.TxBuilder.Internal.Identity — source - Singular.Registry.TxBuilder.Internal.Lookup — source - Singular.Registry.TxBuilder.Prepare — source - Singular.Registry.TxBuilder.Register — source - Singular.Registry.TxBuilder.Reject — source - Singular.Registry.TxBuilder.Request — source - Singular.Registry.TxBuilder.Retract — source - Singular.Registry.TxBuilder.Update — source - Singular.Registry.TxBuilder.Update.Build — source - Singular.Registry.TxBuilder.Update.Context — source - Singular.Registry.TxBuilder.Update.Duties — source - Singular.Registry.Types — source - Singular.Registry.Wait — source - Singular.Registry.Wire.Primitive — source - Singular.Registry.Wire.Proof — source - Singular.Registry.Wire.Redeemer — source - Singular.Registry.Wire.Request — source - Singular.Registry.Wire.State — source - Singular.Registry.Witness — source - Singular.State.Preimage — source — the off-chain encoder of the Singular state, active and registration-approval preimages, byte for byte equal to the on-chain one",
+   "sent_text": "MkDocs environment ready! Run: mkdocs serve - Naming.Datum — source - Naming.Register — source - Naming.Request — source - Naming.Verify — source - Naming.Wire — source - Naming.Wire.Vectors — source - Singular.Provider.Koios.Client — source - Singular.Provider.Koios.Evidence — source - Singular.Provider.Koios.History — source - Singular.Provider.Koios.Provider — source - Singular.Provider.Koios.Recorded — source - Singular.Provider.Koios.Runtime — source - Singular.Provider.Koios.State — source - Singular.Provider.Koios.Wire — source - Singular.Registry.Address — source - Singular.Registry.Application — source - Singular.Registry.AssetName — source - Singular.Registry.Blueprint — source - Singular.Registry.Blueprint.Load — source - Singular.Registry.Blueprint.Params — source - Singular.Registry.Blueprint.Schema — source - Singular.Registry.Candidate — source - Singular.Registry.Capabilities — source - Singular.Registry.Config — source - Singular.Registry.Config.Application — source - Singular.Registry.Confirmation — source - Singular.Registry.Deployment — source - Singular.Registry.Deployment.Attach — source - Singular.Registry.Deployment.Manifest — source - Singular.Registry.Deployment.Mirror — source - Singular.Registry.Driver — source - Singular.Registry.Evidence — source - Singular.Registry.FoldAdmission — source - Singular.Registry.FoldSelection — source - Singular.Registry.Funding — source - Singular.Registry.Ledger — source - Singular.Registry.LedgerProvider — source - Singular.Registry.Lifecycle — source - Singular.Registry.Page — source - Singular.Registry.PlainJson — source - Singular.Registry.Proof — source - Singular.Registry.Replay — source - Singular.Registry.Signing — source - Singular.Registry.StateToken — source - Singular.Registry.Trie — source - Singular.Registry.Trie.Pure — source - Singular.Registry.Trie.PureManager — source - Singular.Registry.TrieState — source - Singular.Registry.TrieState.Core — source - Singular.Registry.TrieState.Fixture — source - Singular.Registry.TrieState.Lineage — source - Singular.Registry.TrieState.Types — source - Singular.Registry.TxBuilder.Boot — source - Singular.Registry.TxBuilder.ConnectedFold — source - Singular.Registry.TxBuilder.Edges — source - Singular.Registry.TxBuilder.Internal — source - Singular.Registry.TxBuilder.Internal.Edges — source - Singular.Registry.TxBuilder.Internal.Identity — source - Singular.Registry.TxBuilder.Internal.Lookup — source - Singular.Registry.TxBuilder.Prepare — source - Singular.Registry.TxBuilder.Register — source - Singular.Registry.TxBuilder.Reject — source - Singular.Registry.TxBuilder.Request — source - Singular.Registry.TxBuilder.Retract — source - Singular.Registry.TxBuilder.Update — source - Singular.Registry.TxBuilder.Update.Build — source - Singular.Registry.TxBuilder.Update.Context — source - Singular.Registry.TxBuilder.Update.Duties — source - Singular.Registry.Types — source - Singular.Registry.Wait — source - Singular.Registry.Wire.Primitive — source - Singular.Registry.Wire.Proof — source - Singular.Registry.Wire.Redeemer — source - Singular.Registry.Wire.Request — source - Singular.Registry.Wire.State — source - Singular.Registry.Witness — source - Singular.State.Preimage — source — the off-chain encoder of the Singular state, active, configuration and registration-approval preimages, byte for byte equal to the on-chain one",
+   "text": "MkDocs environment ready! Run: mkdocs serve - Naming.Datum — source - Naming.Register — source - Naming.Request — source - Naming.Verify — source - Naming.Wire — source - Naming.Wire.Vectors — source - Singular.Provider.Koios.Client — source - Singular.Provider.Koios.Evidence — source - Singular.Provider.Koios.History — source - Singular.Provider.Koios.Provider — source - Singular.Provider.Koios.Recorded — source - Singular.Provider.Koios.Runtime — source - Singular.Provider.Koios.State — source - Singular.Provider.Koios.Wire — source - Singular.Registry.Address — source - Singular.Registry.Application — source - Singular.Registry.AssetName — source - Singular.Registry.Blueprint — source - Singular.Registry.Blueprint.Load — source - Singular.Registry.Blueprint.Params — source - Singular.Registry.Blueprint.Schema — source - Singular.Registry.Candidate — source - Singular.Registry.Capabilities — source - Singular.Registry.Config — source - Singular.Registry.Config.Application — source - Singular.Registry.Confirmation — source - Singular.Registry.Deployment — source - Singular.Registry.Deployment.Attach — source - Singular.Registry.Deployment.Manifest — source - Singular.Registry.Deployment.Mirror — source - Singular.Registry.Driver — source - Singular.Registry.Evidence — source - Singular.Registry.FoldAdmission — source - Singular.Registry.FoldSelection — source - Singular.Registry.Funding — source - Singular.Registry.Ledger — source - Singular.Registry.LedgerProvider — source - Singular.Registry.Lifecycle — source - Singular.Registry.Page — source - Singular.Registry.PlainJson — source - Singular.Registry.Proof — source - Singular.Registry.Replay — source - Singular.Registry.Signing — source - Singular.Registry.StateToken — source - Singular.Registry.Trie — source - Singular.Registry.Trie.Pure — source - Singular.Registry.Trie.PureManager — source - Singular.Registry.TrieState — source - Singular.Registry.TrieState.Core — source - Singular.Registry.TrieState.Fixture — source - Singular.Registry.TrieState.Lineage — source - Singular.Registry.TrieState.Types — source - Singular.Registry.TxBuilder.Boot — source - Singular.Registry.TxBuilder.ConnectedFold — source - Singular.Registry.TxBuilder.Edges — source - Singular.Registry.TxBuilder.Internal — source - Singular.Registry.TxBuilder.Internal.Edges — source - Singular.Registry.TxBuilder.Internal.Identity — source - Singular.Registry.TxBuilder.Internal.Lookup — source - Singular.Registry.TxBuilder.Prepare — source - Singular.Registry.TxBuilder.Register — source - Singular.Registry.TxBuilder.Reject — source - Singular.Registry.TxBuilder.Request — source - Singular.Registry.TxBuilder.Retract — source - Singular.Registry.TxBuilder.Update — source - Singular.Registry.TxBuilder.Update.Build — source - Singular.Registry.TxBuilder.Update.Context — source - Singular.Registry.TxBuilder.Update.Duties — source - Singular.Registry.Types — source - Singular.Registry.Wait — source - Singular.Registry.Wire.Primitive — source - Singular.Registry.Wire.Proof — source - Singular.Registry.Wire.Redeemer — source - Singular.Registry.Wire.Request — source - Singular.Registry.Wire.State — source - Singular.Registry.Witness — source - Singular.State.Preimage — source — the off-chain encoder of the Singular state, active, configuration and registration-approval preimages, byte for byte equal to the on-chain one",
    "words": [
     {
      "end": 0.837,
@@ -200669,68 +200669,78 @@
      "text": ","
     },
     {
-     "end": 158.925,
+     "end": 158.875,
      "start": 158.45,
      "text": "active"
     },
     {
-     "end": 159.05,
-     "start": 158.925,
-     "text": "and"
-    },
-    {
-     "end": 160.1,
-     "start": 159.05,
-     "text": "registration-approval"
-    },
-    {
-     "end": 160.9,
-     "start": 160.1,
-     "text": "preimages"
-    },
-    {
-     "end": 161.0,
-     "start": 160.9,
+     "end": 158.95,
+     "start": 158.875,
      "text": ","
     },
     {
-     "end": 161.275,
-     "start": 161.0,
-     "text": "byte"
+     "end": 159.962,
+     "start": 158.95,
+     "text": "configuration"
     },
     {
-     "end": 161.4,
-     "start": 161.275,
-     "text": "for"
+     "end": 160.1,
+     "start": 159.962,
+     "text": "and"
     },
     {
-     "end": 161.675,
-     "start": 161.4,
-     "text": "byte"
-    },
-    {
-     "end": 162.05,
-     "start": 161.675,
-     "text": "equal"
-    },
-    {
-     "end": 162.137,
-     "start": 162.05,
-     "text": "to"
+     "end": 161.1,
+     "start": 160.1,
+     "text": "registration-approval"
     },
     {
      "end": 162.275,
-     "start": 162.137,
-     "text": "the"
+     "start": 161.1,
+     "text": "preimages"
+    },
+    {
+     "end": 162.475,
+     "start": 162.275,
+     "text": ","
     },
     {
      "end": 162.85,
-     "start": 162.275,
+     "start": 162.65,
+     "text": "byte"
+    },
+    {
+     "end": 162.975,
+     "start": 162.85,
+     "text": "for"
+    },
+    {
+     "end": 163.188,
+     "start": 162.975,
+     "text": "byte"
+    },
+    {
+     "end": 163.45,
+     "start": 163.188,
+     "text": "equal"
+    },
+    {
+     "end": 163.538,
+     "start": 163.45,
+     "text": "to"
+    },
+    {
+     "end": 163.65,
+     "start": 163.538,
+     "text": "the"
+    },
+    {
+     "end": 164.125,
+     "start": 163.65,
      "text": "on-chain"
     },
     {
-     "end": 163.725,
-     "start": 162.85,
+     "end": 164.775,
+     "start": 164.125,
      "text": "one"
     }
    ]
@@ -257826,156 +257836,186 @@
    ]
   },
   "docs-onchain-api-reference/what-this-reference-contains-24": {
-   "audio_sha256": "a857a864ea6d50926b43455d2023ee6c84f325714d5991112bbceb8218a77eed",
-   "characters": 164,
-   "cost": 0.00016236,
-   "duration": 10.275,
+   "audio_sha256": "66dea78aaf5e41a878f8efe15840483a1bad3c643e570c21d56f6d92c4d71071",
+   "characters": 199,
+   "cost": 0.00019700999999999999,
+   "duration": 12.6,
    "index": 24,
-   "key": "6ed12b8001f33478b2014f88d574ad62fbb96fdd9972c4738ed4406ddc644592",
+   "key": "68449c9e04db4c3b09a7c45e6322a7484e03a1633cb7873a9e34bea15969e72b",
    "page": "docs/onchain-api-reference.md",
    "pause_ms": 300,
    "section": "what-this-reference-contains",
-   "sent_text": "singular_state/preimage — the structured values hashed into token names, and the name of the state token, of a registered key's token and of a registration approval",
-   "text": "singular_state/preimage — the structured values hashed into token names, and the name of the state token, of a registered key's token and of a registration approval",
+   "sent_text": "singular_state/preimage — the structured values hashed into token names, and the name of the state token, of a registered key's token, of a configuration record's token and of a registration approval",
+   "text": "singular_state/preimage — the structured values hashed into token names, and the name of the state token, of a registered key's token, of a configuration record's token and of a registration approval",
    "words": [
     {
-     "end": 1.775,
-     "start": 0.3,
+     "end": 1.8,
+     "start": 0.325,
      "text": "singular_state/preimage"
     },
     {
-     "end": 1.85,
-     "start": 1.775,
+     "end": 1.875,
+     "start": 1.8,
      "text": "—"
     },
     {
-     "end": 1.975,
-     "start": 1.85,
+     "end": 2.0,
+     "start": 1.875,
      "text": "the"
     },
     {
-     "end": 2.525,
-     "start": 1.975,
+     "end": 2.55,
+     "start": 2.0,
      "text": "structured"
     },
     {
-     "end": 3.037,
-     "start": 2.525,
+     "end": 3.062,
+     "start": 2.55,
      "text": "values"
     },
     {
-     "end": 3.412,
-     "start": 3.037,
+     "end": 3.487,
+     "start": 3.062,
      "text": "hashed"
     },
     {
-     "end": 3.662,
-     "start": 3.412,
+     "end": 3.737,
+     "start": 3.487,
      "text": "into"
     },
     {
-     "end": 4.1,
-     "start": 3.662,
+     "end": 4.175,
+     "start": 3.737,
      "text": "token"
     },
     {
-     "end": 4.6,
-     "start": 4.1,
+     "end": 4.675,
+     "start": 4.175,
      "text": "names"
     },
     {
-     "end": 4.675,
-     "start": 4.6,
+     "end": 4.75,
+     "start": 4.675,
      "text": ","
     },
     {
-     "end": 4.787,
-     "start": 4.675,
+     "end": 4.863,
+     "start": 4.75,
      "text": "and"
     },
     {
-     "end": 4.875,
-     "start": 4.787,
+     "end": 4.95,
+     "start": 4.863,
      "text": "the"
-    },
-    {
-     "end": 5.188,
-     "start": 4.875,
-     "text": "name"
     },
     {
      "end": 5.262,
-     "start": 5.188,
+     "start": 4.95,
+     "text": "name"
+    },
+    {
+     "end": 5.338,
+     "start": 5.262,
      "text": "of"
     },
     {
-     "end": 5.35,
-     "start": 5.262,
+     "end": 5.425,
+     "start": 5.338,
      "text": "the"
     },
     {
-     "end": 5.688,
-     "start": 5.35,
+     "end": 5.762,
+     "start": 5.425,
      "text": "state"
     },
     {
-     "end": 6.225,
-     "start": 5.688,
+     "end": 6.25,
+     "start": 5.762,
      "text": "token"
     },
     {
      "end": 6.325,
-     "start": 6.225,
+     "start": 6.25,
      "text": ","
     },
     {
-     "end": 6.438,
+     "end": 6.45,
      "start": 6.325,
      "text": "of"
     },
     {
-     "end": 6.537,
-     "start": 6.438,
+     "end": 6.562,
+     "start": 6.45,
      "text": "a"
     },
     {
-     "end": 7.113,
-     "start": 6.537,
+     "end": 7.137,
+     "start": 6.562,
      "text": "registered"
     },
     {
-     "end": 7.463,
-     "start": 7.113,
+     "end": 7.488,
+     "start": 7.137,
      "text": "key's"
     },
     {
-     "end": 7.988,
-     "start": 7.463,
+     "end": 8.1,
+     "start": 7.488,
      "text": "token"
     },
     {
-     "end": 8.113,
-     "start": 7.988,
-     "text": "and"
+     "end": 8.2,
+     "start": 8.1,
+     "text": ","
     },
     {
-     "end": 8.188,
-     "start": 8.113,
+     "end": 8.312,
+     "start": 8.2,
      "text": "of"
     },
     {
-     "end": 8.275,
-     "start": 8.188,
+     "end": 8.375,
+     "start": 8.312,
      "text": "a"
     },
     {
-     "end": 9.025,
-     "start": 8.275,
-     "text": "registration"
+     "end": 9.262,
+     "start": 8.375,
+     "text": "configuration"
+    },
+    {
+     "end": 9.712,
+     "start": 9.262,
+     "text": "record's"
     },
     {
      "end": 10.275,
-     "start": 9.025,
+     "start": 9.712,
+     "text": "token"
+    },
+    {
+     "end": 10.413,
+     "start": 10.275,
+     "text": "and"
+    },
+    {
+     "end": 10.488,
+     "start": 10.413,
+     "text": "of"
+    },
+    {
+     "end": 10.575,
+     "start": 10.488,
+     "text": "a"
+    },
+    {
+     "end": 11.35,
+     "start": 10.575,
+     "text": "registration"
+    },
+    {
+     "end": 12.6,
+     "start": 11.35,
      "text": "approval"
     }
    ]

@@ -67,11 +67,11 @@
       "pause": 500
     },
     {
-      "text": "[ ] configuration-record: the configuration record at creation, immutable, read by reference.",
+      "text": "[x] configuration-record: the configuration record at creation, immutable, read by reference.",
       "pause": 300
     },
     {
-      "text": "[ ] registration-approval: the approval mint committing its fields; the open burn.",
+      "text": "[x] registration-approval: the approval mint committing its fields; the open burn.",
       "pause": 300
     }
   ],
@@ -183,6 +183,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "ef0babd9d250c29b0871118fc66452acd0dc696651b9be9c98f90c47bf777a46"
+    "sha256": "437a614df10650feaef1b90876b006ac45222a31e97133f9e655270512b6e355"
   }
 }

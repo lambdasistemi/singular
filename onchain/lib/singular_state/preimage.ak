@@ -28,9 +28,8 @@ pub type RegistryIdentity {
 }
 
 /// The structured value hashed into a token name, one constructor per role,
-/// numbered as the model's `Preimage`. The configuration and termination
-/// constructors are declared to keep that numbering; nothing builds them in
-/// this line yet.
+/// numbered as the model's `Preimage`. The termination constructor is declared
+/// to keep that numbering; nothing builds it in this line yet.
 pub type Preimage {
   State { seed: OutputReference }
   Active { registry: RegistryIdentity, key: ByteArray }
@@ -61,6 +60,11 @@ pub fn active_token_name(
   key: ByteArray,
 ) -> AssetName {
   role_name(Active { registry, key })
+}
+
+/// The name of the token of the configuration record of `registry`.
+pub fn configuration_token_name(registry: RegistryIdentity) -> AssetName {
+  role_name(ApplicationConfiguration { registry })
 }
 
 /// The Plutus Data serialisation of the registration approval preimage: the

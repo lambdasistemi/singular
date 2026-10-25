@@ -1,10 +1,11 @@
 {
   "description": "Byte vectors of the hashed-name preimages of the Singular state: for each role its inputs, the preimage (the Plutus Data serialisation of the role's constructor) and the name (the blake2b-256 hash of the preimage). The on-chain functions and the off-chain codec both reproduce every vector; the generated Aiken tests are made from this file.",
-  "provenance": "Made by an independent reference encoder written from the definition of the Plutus Data serialisation (integers as plain or tagged big numbers, byte strings chunked above 64 bytes, the empty list definite and any other list indefinite, constructors as tag 121 plus the index) with blake2b-256 from Python hashlib. Neither the on-chain nor the off-chain encoder produced a byte of this file.",
+  "provenance": "Made by an independent reference encoder written from the definition of the Plutus Data serialisation (integers as plain or tagged big numbers, byte strings chunked above 64 bytes, the empty list definite and any other list indefinite, constructors as tag 121 plus the index) with blake2b-256 from Python hashlib. Neither the on-chain nor the off-chain encoder produced a byte of this file. The configuration vectors were added later with the same definition, written again and run apart from both encoders.",
   "inputs": {
     "state": "seed: transactionId (hex), outputIndex",
     "active": "registry: policy (hex), name (hex); key (hex)",
-    "registration-approval": "registry; key; holdingAddress: payment [key|script, hash], stake null or [key|script, hash]; datumHash (hex); deposit (decimal string)"
+    "registration-approval": "registry; key; holdingAddress: payment [key|script, hash], stake null or [key|script, hash]; datumHash (hex); deposit (decimal string)",
+    "configuration": "registry: policy (hex), name (hex)"
   },
   "edges": {
     "definite-length-list": "a list written with its length first: the empty list, here the fields of a constructor without fields",
@@ -389,6 +390,54 @@
       },
       "preimage": "d87c9fd8799f581c70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f75820f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139dafff58200104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5ed8799fd8799f581c101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e61ffd87a80ff5820404b56616c77828d98a3aeb9c4cfdae5f0fb06111c27323d48535e69747f8a95c249010000000000000000ff",
       "name": "819d2964fe9a619ed544936d1f25d5af74b045d7b875bda4ae77e42de534865f"
+    },
+    {
+      "id": "configuration-registry-of-the-other-roles",
+      "role": "configuration",
+      "note": "the registry the active vectors use: the registry is a nested constructor inside the role constructor",
+      "edges": [
+        "indefinite-length-list"
+      ],
+      "input": {
+        "registry": {
+          "policy": "70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f7",
+          "name": "f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139daf"
+        }
+      },
+      "preimage": "d87b9fd8799f581c70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f75820f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139dafffff",
+      "name": "bbb895f9594c6a51a81fae044cfbc4549f82e213e22808b7f5bcf557260d535c"
+    },
+    {
+      "id": "configuration-registry-of-ff-bytes",
+      "role": "configuration",
+      "note": "a policy and a name of nothing but ff bytes: the longest name a token can have",
+      "edges": [
+        "indefinite-length-list"
+      ],
+      "input": {
+        "registry": {
+          "policy": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "name": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+        }
+      },
+      "preimage": "d87b9fd8799f581cffffffffffffffffffffffffffffffffffffffffffffffffffffffff5820ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "name": "a3b06acde4dec83cbfed1516298e5546944b94aeb2b27007df4deb9b2d089fdc"
+    },
+    {
+      "id": "configuration-registry-with-an-empty-name",
+      "role": "configuration",
+      "note": "the empty name is the empty byte string",
+      "edges": [
+        "indefinite-length-list"
+      ],
+      "input": {
+        "registry": {
+          "policy": "00000000000000000000000000000000000000000000000000000000",
+          "name": ""
+        }
+      },
+      "preimage": "d87b9fd8799f581c0000000000000000000000000000000000000000000000000000000040ffff",
+      "name": "b458fd3658b3cbe2d4d70d6d53d9107c3e18c1dabf55f1b35426e8aa5fc005bf"
     }
   ]
 }
