@@ -30,6 +30,7 @@ module Singular.Application.OpenDatum.CreationWorld
       -- * The creation of a registry
     , parameters
     , createRegistry
+    , requestReferences
     , created
     , holderIndex
     , outputAddress
@@ -112,6 +113,7 @@ import Singular.Application.OpenDatum.Requests.Records
 import Singular.Application.OpenDatum.Requests.Refusal (Refusal)
 import Singular.Application.OpenDatum.Requests.Script
     ( RequestScript (..)
+    , referenceOutputs
     , requestAddress
     , requestPolicy
     )
@@ -276,18 +278,27 @@ parameters =
         , rpBookingWidth = 60_000
         }
 
+-- | The outputs that carry the request validator's code, when it is referenced.
+requestReferences :: Creation -> IO [(TxIn, TxOut ConwayEra)]
+requestReferences world =
+    withSession world $ \session ->
+        referenceOutputs session (crRequest world)
+            >>= either (fail . show) pure
+
 {- | The creation of the registry the seed names: the state builder's genesis
 with the configuration record of the request validator added to it.
 -}
 createRegistry
     :: Creation -> IO (Either State.Refusal (ConwayTx, RegistryIdentity))
-createRegistry world =
+createRegistry world = do
+    references <- requestReferences world
     withSession world $ \session ->
         buildGenesis
             session
             (crState world)
             (crSeed world)
             (crBooker world)
+            references
             ( \registry ->
                 configurationCreate
                     (crRequest world)

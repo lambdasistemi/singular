@@ -194,6 +194,42 @@ last journalled phase and its case; the journal does not move.
 `inspect` names the same unresolved transaction and its case, with the
 outcome `partial`, alongside the root and chain point it read.
 
+## The commands that create a registry and register keys
+
+As Carol, Alice or Bob running one of the commands of
+[create a registry and register keys on the proved design](registry-commands.md),
+you are interrupted in the same ways as above and promised the same thing: the
+transaction keeps its identity, the next write settles it, and nothing is sent a
+second time.
+
+Each transaction is journalled as `prepared` before it is sent, under the step
+that names it: `publish-scripts` and `create` for a creation, then `book`,
+`fold`, `reclaim` and `cleanup`. The journal also records what the first output of
+the transaction must hold once it is on the chain: a reference script for a
+publication, the state token for a creation and for a fold, the approval token for
+a booking, a payment to the refund address for a reclaim and a cleanup. A creation
+is journalled under the application and the wallet, because the name of the
+registry it makes is known only once its seed is chosen. The other commands are
+journalled under the registry and the wallet.
+
+Before it builds anything, the next write of the same wallet reads its journal
+against the chain. The table shows what it does with an earlier transaction in each
+case.
+
+| what happened to the earlier transaction | what the next write does |
+| --- | --- |
+| the node took it and the answer was lost | finds the first output on the chain, records the transaction as observed once, names it under `reconciled` and goes on |
+| the process was killed after the send | the same |
+| it never reached the node | stops with status 15, names the transaction under `unresolved` with the case `unknown`, builds nothing, sends nothing, and leaves the journal as it was |
+
+A transaction the chain does not show cannot be told from one the network has not
+yet delivered, and these commands never declare it excluded: the next write keeps
+naming it and stops. Wait for the network and run the command again; a transaction
+that lands is reconciled. When it can never land, the way out is `--state-dir`
+naming another state directory, which starts a fresh journal for that registry and
+wallet, or for a creation, for that application and wallet; the old journal stays
+as a record.
+
 ## What the checks show
 
 The recovery controls run each hosted partition as separate `singular`
@@ -210,6 +246,7 @@ nix run --quiet .#cli-recovery-partitions
 nix run --quiet .#cli-recovery-partition -- history
 nix run --quiet .#cli-recovery-partition -- two-requests
 nix run --quiet .#cli-recovery-partition -- rollback
+nix run --quiet .#cli-recovery-partition -- state-line
 nix run --quiet .#cli-recovery-partition -- 'cross-wallet:SINGULAR_HARNESS_HOLD_AFTER_SEND'
 ```
 
@@ -228,6 +265,7 @@ are generated from the same partition list the workflow matrix uses.
 | never sent, past its upper bound | a fold never reaches the node, and the tip passes its upper bound | the next write journals excluded with the chain point and live inputs, then proceeds from fresh public replay |
 | never sent, without an upper bound | a booking never reaches the node | the next write stops naming the booking and unknown; it neither resubmits nor invents its inclusion |
 | rolled back | the generated node restores a database copy from before an observed booking and fold | public reads show their inputs live again; the journal appends rolled-back, writes stop naming the booking and no transaction is resent |
+| the commands of the proved design | a creation, a booking, a reclaim, a fold and a cleanup, each with its answer lost after the node took it, with its process killed after the send, and with the send never made | the next write of the wallet observes an included transaction once, an unsent one stops it naming the transaction, nothing is built or sent past it, and no transaction is sent twice |
 
 
 The rolled-back control is a mechanism of the generated development

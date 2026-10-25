@@ -30,6 +30,7 @@ import Singular.CLI.Command
     , InspectArgs (..)
     , ReclaimArgs (..)
     , RejectArgs (..)
+    , StateCreateArgs (..)
     , SubmitArgs (..)
     , walletAddressCommand
     , walletCreateCommand
@@ -51,6 +52,7 @@ import Singular.CLI.Registry (registryFields)
 import Singular.CLI.Reject (runReject)
 import Singular.CLI.Session (Env (..), openWriteSigner)
 import Singular.CLI.SettingsFile (keepStateToken)
+import Singular.CLI.State (neutralHost, runStateCreate)
 import Singular.CLI.Submit (submitBundle)
 import Singular.Registry.Application (Application)
 import Singular.Registry.StateToken (renderStateToken)
@@ -93,6 +95,13 @@ runRegistryCommand app env = \case
             "reclaim"
             (reclaimReceipt a)
             ( openWriteSigner (reclaimWrite a) >>= \ws -> runReclaim env a{reclaimWrite = ws}
+            )
+    StateCreate a ->
+        finish
+            (envTracer env)
+            "state create"
+            (stateCreateReceipt a)
+            ( openWriteSigner (stateCreateWrite a) >>= \ws -> runStateCreate env neutralHost a{stateCreateWrite = ws}
             )
     Inspect a ->
         finish

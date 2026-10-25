@@ -1,0 +1,19 @@
+open-datum VERSION (commit unknown)
+
+Usage: open-datum registration COMMAND
+
+Book a registration, take it back, or clean it up
+
+A registration is booked with a key, its payload and a deposit. Until its
+processing deadline only a fold spends it; in the window that follows, the
+refund address takes everything back; after the window anyone cleans it up,
+the deposit returning to the refund address.
+
+Available settings:
+  Show this help text
+  switch: -h|--help
+
+Available commands:
+  book      Book the registration of a key     
+  reclaim   Take back a registration you booked
+  cleanup   Clean up an expired registration   

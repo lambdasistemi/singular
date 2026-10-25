@@ -49,9 +49,9 @@ the ticket owner accepts its slice.
 
 ## Pull request 3: commands and documentation
 
-- [ ] six-commands: the commands of the plan with help snapshots and parser rows.
-- [ ] recovery-kept: cancellation and uncertain submission keep the transaction identity; nothing is resubmitted.
-- [ ] command-reference: the user documentation of the commands with its speech.
+- [x] six-commands: the commands of the plan with help snapshots and parser rows.
+- [x] recovery-kept: cancellation and uncertain submission keep the transaction identity; nothing is resubmitted.
+- [x] command-reference: the user documentation of the commands with its speech.
 
 ## Pull request 4: devnet journey and refusals
 

@@ -1,0 +1,20 @@
+open-datum VERSION (commit unknown)
+
+Usage: open-datum state COMMAND
+
+Create a registry on the proved design and fold into it
+
+A registry of open datum on the proved design is made by spending a seed
+output of your wallet: one state output that holds the registry's token and
+the root of its keys, and one configuration record that fixes the registry's
+five parameters for its life. Registrations are booked with the registration
+commands and folded into the registry here by whichever wallet runs the fold,
+from the chain alone.
+
+Available settings:
+  Show this help text
+  switch: -h|--help
+
+Available commands:
+  create   Create a registry              
+  fold     Fold the registrations you name

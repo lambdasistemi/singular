@@ -137,15 +137,15 @@
       "pause": 500
     },
     {
-      "text": "[ ] six-commands: the commands of the plan with help snapshots and parser rows.",
+      "text": "[x] six-commands: the commands of the plan with help snapshots and parser rows.",
       "pause": 300
     },
     {
-      "text": "[ ] recovery-kept: cancellation and uncertain submission keep the transaction identity; nothing is resubmitted.",
+      "text": "[x] recovery-kept: cancellation and uncertain submission keep the transaction identity; nothing is resubmitted.",
       "pause": 300
     },
     {
-      "text": "[ ] command-reference: the user documentation of the commands with its speech.",
+      "text": "[x] command-reference: the user documentation of the commands with its speech.",
       "pause": 300
     }
   ],
@@ -183,6 +183,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "0764f602820e5a72f3d03b46656dbde5596dc12c8729fe09220d4c7388feb375"
+    "sha256": "d25c6327f45467df7e56afa12f1a7053f53054a7612ea54d00b61ec0cdc2f599"
   }
 }

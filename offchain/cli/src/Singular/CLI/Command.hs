@@ -42,6 +42,8 @@ module Singular.CLI.Command
     , ProviderSettings (..)
     , RejectArgs (..)
     , ReclaimArgs (..)
+    , StateCreateArgs (..)
+    , StateFoldArgs (..)
     , WalletArgs (..)
     , WriteSettings (..)
     , RegistryAccess (..)
@@ -351,6 +353,36 @@ data RejectArgs = RejectArgs
     }
     deriving stock (Eq, Show)
 
+{- | @state create@: the registry of an application, made by spending a seed
+of the wallet. The state validator is the one the release carries, applied to
+the application's policy; the program that hosts the command may fix that
+policy itself, as open datum does.
+-}
+data StateCreateArgs = StateCreateArgs
+    { stateCreateStateDir :: Maybe FilePath
+    -- ^ Optional state root override; absent, the managed default root applies
+    , stateCreateBlueprint :: FilePath
+    , stateCreateWrite :: WriteSettings
+    , stateCreateSeed :: Maybe TxIn
+    -- ^ The wallet output the creation spends; the largest ada-only output when absent
+    , stateCreatePolicy :: Maybe ApplicationPolicy
+    -- ^ The application's policy, when the program does not fix it
+    , stateCreateReceipt :: Maybe FilePath
+    }
+    deriving stock (Eq, Show)
+
+-- | @state fold@: the pending registrations of a registry, folded by this wallet.
+data StateFoldArgs = StateFoldArgs
+    { stateFoldStateDir :: Maybe FilePath
+    , stateFoldAccess :: RegistryAccess
+    , stateFoldBlueprint :: FilePath
+    , stateFoldWrite :: WriteSettings
+    , stateFoldPending :: [TxIn]
+    -- ^ The pending registrations to fold, as named; none is chosen implicitly
+    , stateFoldReceipt :: Maybe FilePath
+    }
+    deriving stock (Eq, Show)
+
 -- | @registry reclaim@: take back this wallet's own pending request.
 data ReclaimArgs = ReclaimArgs
     { reclaimStateDir :: Maybe FilePath
@@ -460,6 +492,7 @@ data Command
     | Fold FoldArgs
     | Reject RejectArgs
     | Reclaim ReclaimArgs
+    | StateCreate StateCreateArgs
     | Inspect InspectArgs
     | WalletCreate WalletArgs
     | WalletAddress WalletArgs
@@ -598,6 +631,10 @@ commandFrom environment (Raw ws allFlags) = do
                             ["registry", "reject"] ->
                                 refuseApplicationPolicy flags
                                     >> (Reject <$> (registryFlags flags >>= rejectArgs environment))
+                            ["state"] -> Right askedFor
+                            ["state", "create"] ->
+                                refuseOutside "state create" stateCreateAllowed flags
+                                    >> (StateCreate <$> stateCreateArgs flags)
                             ["registry", "reclaim"] ->
                                 refuseApplicationPolicy flags
                                     >> (Reclaim <$> (registryFlags flags >>= reclaimArgs environment))
@@ -748,6 +785,7 @@ commandFrom environment (Raw ws allFlags) = do
                             )
     registryWrites =
         [["registry", w] | w <- ["create", "fold", "reject", "reclaim"]]
+            <> [["state", "create"]]
     -- A wallet command takes its own flags and nothing else from
     -- the shared group: every other setting is refused by name rather
     -- than ignored.
@@ -959,6 +997,73 @@ commandFrom environment (Raw ws allFlags) = do
                 , rejectFund = fund
                 , rejectMaxOutlay = outlay
                 , rejectReceipt = optional "--receipt" flags
+                }
+    -- The state line's commands name what they take, and refuse the rest by
+    -- name: the builders choose the funding, so a funding choice or a spending
+    -- limit is a setting the command does not enforce.
+    stateCreateAllowed =
+        [ "--state-dir"
+        , "--blueprint"
+        , "--seed"
+        , "--application-policy"
+        , "--receipt"
+        ]
+            <> stateWriteFlags
+    stateWriteFlags =
+        [ "--koios-url"
+        , "--network-magic"
+        , "--koios-token-file"
+        , "--network-time"
+        , "--vault"
+        , "--passphrase-fd"
+        , "--wallet-address"
+        , "--bundle"
+        , "--wallet-skey"
+        , "--confirm-timeout"
+        , "--trace"
+        , "--trace-to"
+        , "--trace-format"
+        ]
+    refuseOutside command allowed flags =
+        forM_ flags $ \(flag, _) ->
+            unless (flag `elem` allowed) $
+                Left $
+                    if flag `elem` ["--fund-input", "--max-outlay"]
+                        then
+                            BadValue
+                                flag
+                                ( "is not accepted by "
+                                    <> command
+                                    <> ": the builders choose the funding, so there is no funding choice and no spending limit"
+                                )
+                        else BadValue flag ("is not accepted by " <> command)
+    stateCreateArgs flags = do
+        let dir = optional "--state-dir" flags
+        bp <- required "--blueprint" flags
+        policy <-
+            applicationPolicyFrom flags >>= \case
+                Nothing -> Left (MissingFlag "--application-policy")
+                Just pinned -> Right pinned
+        settings <-
+            parseFlagGroup
+                MissingFlag
+                BadValue
+                UnsafeSettings
+                WriteSettings
+                flags
+        seeded <- case optional "--seed" flags of
+            Nothing -> Right Nothing
+            Just s -> case parseOutRef (T.pack s) of
+                Right i -> Right (Just i)
+                Left err -> Left (BadValue "--seed" err)
+        pure
+            StateCreateArgs
+                { stateCreateStateDir = dir
+                , stateCreateBlueprint = bp
+                , stateCreateWrite = settings
+                , stateCreateSeed = seeded
+                , stateCreatePolicy = Just policy
+                , stateCreateReceipt = optional "--receipt" flags
                 }
     reclaimArgs env flags = do
         let dir = optional "--state-dir" flags
@@ -1347,6 +1452,7 @@ neededRoles = \case
     Fold _ -> everything
     Reject _ -> Set.fromList [RoleState, RoleRequest]
     Reclaim _ -> Set.empty
+    StateCreate _ -> Set.empty
     Inspect _ -> Set.empty
     WalletCreate _ -> Set.empty
     WalletAddress _ -> Set.empty

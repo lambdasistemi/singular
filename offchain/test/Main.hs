@@ -26,6 +26,7 @@ import Singular.CLI.SaveStateTokenSpec qualified
 import Singular.CLI.SettingsFileSpec qualified
 import Singular.CLI.SignSpec qualified
 import Singular.CLI.SourcesSpec qualified
+import Singular.CLI.StateCommandSpec qualified
 import Singular.CLI.SubmitSpec qualified
 import Singular.CLI.TrieRefusalSpec qualified
 import Singular.CLI.VaultSpec qualified
@@ -267,6 +268,9 @@ main = hspec $ do
     describe
         (tagged "Singular.CLI.Sources" [Cli])
         Singular.CLI.SourcesSpec.spec
+    describe
+        (tagged "Singular.CLI.StateCommand" [Cli, Recovery])
+        Singular.CLI.StateCommandSpec.spec
     describe
         (tagged "Singular.CLI.SaveStateToken" [Cli])
         Singular.CLI.SaveStateTokenSpec.spec

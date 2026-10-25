@@ -26,7 +26,22 @@ One contradicting event is a failure, whatever other events agree.
 The commands run are the 'Command' constructors, read from the type, not
 listed here; a constructor no run exercises fails the extent row.
 -}
-module Singular.Application.OpenDatum.CommandRunSpec (spec) where
+module Singular.Application.OpenDatum.CommandRunSpec
+    ( spec
+    , Rig (..)
+    , Run (..)
+    , capabilities
+    , envOf
+    , fundOutput
+    , magic
+    , outcomeOf
+    , runAt
+    , runVia
+    , runWithKey
+    , submissionsOf
+    , textAt
+    , withRigOf
+    ) where
 
 import Control.Applicative ((<|>))
 import Control.Exception
@@ -729,6 +744,11 @@ constructorOf = \case
     OpenTerminate _ -> "OpenTerminate"
     OpenFold _ -> "OpenFold"
     OpenInspect _ -> "OpenInspect"
+    OpenStateCreate _ _ -> "OpenStateCreate"
+    OpenStateFold _ -> "OpenStateFold"
+    OpenRegistrationBook _ -> "OpenRegistrationBook"
+    OpenRegistrationReclaim _ -> "OpenRegistrationReclaim"
+    OpenRegistrationCleanup _ -> "OpenRegistrationCleanup"
 
 -- ---------------------------------------------------------
 -- Tracing setup re-cut: a trace file that cannot be written
@@ -1417,6 +1437,8 @@ blueprintWith further program =
                  , validator "open_datum.open_datum" 2
                  , validator "witness.witness" 3
                  , validator "witness.witness" 3
+                 , validator "singular_state.singular_state.spend" 2
+                 , validator "open_datum_requests.open_datum_requests.spend" 1
                  ]
                     <> [validator title arity | (title, arity) <- further]
                )
@@ -1813,7 +1835,10 @@ lifecycle rig = do
             ( ["open-datum", "insert", "--key", "alice-6", "--payload", payload]
                 <> tokenArgs t1
             )
-    pure
+    -- The new line: a registry of open datum on the proved design, a booking
+    -- folded, a booking reclaimed inside its window, a booking cleaned up after it.
+    registrationRuns <- registrationLifecycle rig
+    pure $
         [ create
         , insert
         , fold1
@@ -1846,10 +1871,85 @@ lifecycle rig = do
         , rejected
         , unanswered
         ]
+            <> registrationRuns
   where
     payload = rigDir rig </> "payload.json"
     payload2 = rigDir rig </> "payload-2.json"
     previewAddr = bech32Address (walletAddr (rigWallet rig))
+
+{- | The commands of the proved design, each run once on a registry of its own:
+the creation, a booking folded, a booking reclaimed inside its window and a
+booking cleaned up after it. The validators of the rig accept everything, so
+these runs read what the commands build, send and print; the rows over the
+compiled validators are the registration command spec's.
+-}
+registrationLifecycle :: Rig -> IO [Run]
+registrationLifecycle rig = do
+    created <- runAt rig "proved" "state create" ["state", "create"]
+    token <- tokenOf created
+    booked <- runAt rig "proved" "registration book" (book token "fold")
+    folded <-
+        runAt
+            rig
+            "proved"
+            "state fold"
+            (["state", "fold", "--state-token", token] <> pendingOf booked)
+    toReclaim <-
+        runAt
+            rig
+            "proved"
+            "registration book to reclaim"
+            (book token "reclaim")
+    reachMs (milliseconds "processDeadline" toReclaim)
+    reclaimed <-
+        runAt
+            rig
+            "proved"
+            "registration reclaim"
+            ( ["registration", "reclaim", "--state-token", token]
+                <> pendingOf toReclaim
+            )
+    toClean <-
+        runAt
+            rig
+            "proved"
+            "registration book to clean up"
+            (book token "cleanup")
+    reachMs (milliseconds "reclaimEnd" toClean)
+    cleaned <-
+        runAt
+            rig
+            "proved"
+            "registration cleanup"
+            ( ["registration", "cleanup", "--state-token", token]
+                <> pendingOf toClean
+            )
+    pure [created, booked, folded, toReclaim, reclaimed, toClean, cleaned]
+  where
+    book token key =
+        [ "registration"
+        , "book"
+        , "--state-token"
+        , token
+        , "--key"
+        , key
+        , "--payload"
+        , rigDir rig </> "payload.json"
+        ]
+    pendingOf r =
+        maybe
+            []
+            (\p -> ["--pending", T.unpack p])
+            (textAt "pending" (runReceipt r))
+    milliseconds field r = case valueAt field (runReceipt r) of
+        Just (Aeson.Number n) -> truncate n :: Integer
+        _ -> 0
+    reachMs ms = do
+        slot <-
+            SessionIO.withLatest
+                (rawChainProvider (rigChain rig))
+                (`SessionIO.ceilingSlot` ms)
+        jumpChainTo (rigChain rig) (SlotNo (unSlotNo slot + 1))
 
 -- | A wallet output the create can consume as its seed.
 fundSeed :: Rig -> IO String

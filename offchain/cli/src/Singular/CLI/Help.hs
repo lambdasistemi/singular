@@ -39,7 +39,7 @@ singularProgram version =
             "Create a Singular registry on Cardano, fold requests into it, reject or \
             \reclaim requests, read it back, and sign and submit transaction bundles."
         , programVersion = version
-        , programNodes = [registryGroup, walletGroup, submitLeaf]
+        , programNodes = [registryGroup, stateGroup, walletGroup, submitLeaf]
         , programFooter =
             [ ""
             , "Every command takes --trace, --trace-to and --trace-format to narrate"
@@ -77,6 +77,20 @@ registryGroup =
         , describeLeaf
         ]
 
+stateGroup :: Node
+stateGroup =
+    Group
+        "state"
+        "Create a registry on the proved design"
+        [ "The state commands make the registry of an application: its state, a single \
+          \output that holds the registry's token and the root of its keys. The \
+          \registry is named by its seed, an output of your wallet, and by the \
+          \application whose policy the state validator is made for. The commands \
+          \take the compiled validators of the release (--blueprint) and a single \
+          \signer."
+        ]
+        [stateCreateLeaf]
+
 walletGroup :: Node
 walletGroup =
     Group
@@ -90,6 +104,49 @@ walletGroup =
           \names it."
         ]
         [walletCreateLeaf, walletAddressLeaf, walletSignLeaf]
+
+-- ---------------------------------------------------------------------------
+-- state
+
+stateCreateLeaf :: Node
+stateCreateLeaf =
+    Runs
+        Leaf
+            { leafName = "create"
+            , leafSummary = "Create the registry of an application"
+            , leafDescription =
+                [ "Creates one registry of the application whose policy is given, by \
+                  \spending a seed output of your wallet, and prints the registry's \
+                  \address, its state token and the transactions it sent. The first \
+                  \registry of an application publishes the state validator as a \
+                  \reference script, in a transaction of its own, before it creates \
+                  \the registry; a later registry finds the live copy and sends one \
+                  \transaction."
+                , "The seed fixes the registry's identity. The wallet funds the \
+                  \transactions and keeps their change."
+                , signerParagraph
+                ]
+            , leafShape =
+                Each
+                    [ Takes stateDir
+                    , Needs blueprint
+                    , Needs stateApplicationPolicy
+                    , Takes seed
+                    , nodeShape
+                    , writeShape
+                    , tracingShape
+                    ]
+            , leafWord = Nothing
+            , leafEnvironment =
+                [environmentLog, environmentState, environmentPassphrase]
+            , leafExamples =
+                [ "singular state create --blueprint plutus.json \\"
+                , "    --application-policy <policy> \\"
+                , "    " <> preprodExample <> " \\"
+                , "    --vault alice.vault"
+                ]
+            , leafNotes = exitStatuses
+            }
 
 -- ---------------------------------------------------------------------------
 -- registry
@@ -508,6 +565,13 @@ applicationPolicy =
         "--application-policy"
         "HEX"
         "Pin an application policy at creation: 56 hex characters, a 28-byte hash."
+
+stateApplicationPolicy :: Flag
+stateApplicationPolicy =
+    valued
+        "--application-policy"
+        "HEX"
+        "The policy of the application the registry is for: 56 hex characters, a 28-byte hash. It is the one parameter of the state validator."
 
 foldRequest :: Flag
 foldRequest =

@@ -147,6 +147,28 @@
       "pause": 400
     }
   ],
+  "the-commands-that-create-a-registry-and-register-keys": [
+    {
+      "text": "The commands that create a registry and register keys.",
+      "pause": 500
+    },
+    {
+      "text": "As Carol, Alice or Bob running one of the commands of create a registry and register keys on the proved design, you are interrupted in the same ways as above and promised the same thing: the transaction keeps its identity, the next write settles it, and nothing is sent a second time.",
+      "pause": 400
+    },
+    {
+      "text": "Each transaction is journalled as prepared before it is sent, under the step that names it: publish-scripts and create for a creation, then book, fold, reclaim and cleanup. The journal also records what the first output of the transaction must hold once it is on the chain: a reference script for a publication, the state token for a creation and for a fold, the approval token for a booking, a payment to the refund address for a reclaim and a cleanup. A creation is journalled under the application and the wallet, because the name of the registry it makes is known only once its seed is chosen. The other commands are journalled under the registry and the wallet.",
+      "pause": 400
+    },
+    {
+      "text": "Before it builds anything, the next write of the same wallet reads its journal against the chain. The table shows what it does with an earlier transaction in each case.",
+      "pause": 400
+    },
+    {
+      "text": "A transaction the chain does not show cannot be told from one the network has not yet delivered, and these commands never declare it excluded: the next write keeps naming it and stops. Wait for the network and run the command again; a transaction that lands is reconciled. When it can never land, the way out is --state-dir naming another state directory, which starts a fresh journal for that registry and wallet, or for a creation, for that application and wallet; the old journal stays as a record.",
+      "pause": 400
+    }
+  ],
   "what-the-checks-show": [
     {
       "text": "What the checks show.",
@@ -167,6 +189,6 @@
   ],
   "_source": {
     "file": "cli-recovery.md",
-    "sha256": "462b7cd1e98754c1d8ff28c1ec0d933ed3647631f41eaed1882879d80f878557"
+    "sha256": "4c5e579ee17f964f561503c05fa172aa6124938739b2f8c777b7e34bb1604d30"
   }
 }

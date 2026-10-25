@@ -132,7 +132,7 @@ spec = do
                         pure ()
                 (tx, RegistryIdentity _ (AssetName name)) <-
                     withSession (scWorld sc) $ \session ->
-                        buildGenesis session (scScript sc) (scSeed sc) (scPayer sc) step
+                        buildGenesis session (scScript sc) (scSeed sc) (scPayer sc) [] step
                             >>= expectBuilt
                 [ inlineDatum out
                   | out <- outputsOf tx
@@ -188,6 +188,27 @@ spec = do
                 (tx, _) <- built sc
                 refused sc (withoutMintOf (statePolicy (scScript sc)) tx)
 
+    describe "the fee of a creation" $ do
+        it
+            "covers the reference script of the application code the creation names"
+            $ do
+                sc <- creation
+                let code = txInOf '8' 0
+                    holder = referenceHolder (keyAddress 0x77) applicationCode
+                addLive (scWorld sc) [(code, holder)]
+                (tx, _) <-
+                    withSession (scWorld sc) $ \session ->
+                        buildGenesis
+                            session
+                            (scScript sc)
+                            (scSeed sc)
+                            (scPayer sc)
+                            [(code, holder)]
+                            (const (Tx.reference code))
+                            >>= expectBuilt
+                needed <- ledgerMinimumFee (scWorld sc) tx
+                (needed, feeOf tx) `shouldSatisfy` uncurry (<=)
+
     describe "the builder declines before it builds" $ do
         it "a seed that the payer does not hold" $ do
             sc <- creation
@@ -232,6 +253,7 @@ built sc =
             (scScript sc)
             (scSeed sc)
             (scPayer sc)
+            []
             (const (pure ()))
             >>= expectBuilt
 
@@ -240,7 +262,7 @@ declined :: Scenario -> TxIn -> Addr -> IO (Either Refusal ())
 declined sc seed payer =
     withSession (scWorld sc) $ \session ->
         void
-            <$> buildGenesis session (scScript sc) seed payer (const (pure ()))
+            <$> buildGenesis session (scScript sc) seed payer [] (const (pure ()))
 
 -- | The validator refuses the transaction: some script purpose answers with a failure.
 refused :: Scenario -> ConwayTx -> Expectation

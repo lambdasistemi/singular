@@ -230,6 +230,7 @@ library registry-cli
     Singular.CLI.Permanent
     Singular.CLI.Plan
     Singular.CLI.Prepare
+    Singular.CLI.Promise
     Singular.CLI.Proof
     Singular.CLI.Receipt
     Singular.CLI.ReceiptBody
@@ -247,6 +248,8 @@ library registry-cli
     Singular.CLI.Sign
     Singular.CLI.SettingsFile
     Singular.CLI.Sources
+    Singular.CLI.State
+    Singular.CLI.Steps
     Singular.CLI.Submit
     Singular.CLI.Trace
     Singular.CLI.TrieHistory
@@ -1021,6 +1024,7 @@ test-suite cage-tests
     Singular.CLI.SaveStateTokenSpec
     Singular.CLI.SettingsFileSpec
     Singular.CLI.SourcesSpec
+    Singular.CLI.StateCommandSpec
     Singular.CLI.FoldRulesSpec
     Singular.CLI.JournalTransitionsSpec
     Singular.CLI.ReclaimSpec

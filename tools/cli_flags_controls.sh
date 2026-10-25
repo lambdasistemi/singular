@@ -325,4 +325,56 @@ grep -q 'ghost-wallet-flag' "$table" || {
 }
 expect documented-missing-wallet 1 '^documented, not in --help: the settings table gives --ghost-wallet-flag to singular wallet create'
 
+# The new groups, both directions on each command (#742): a flag a group
+# command's help prints that the settings table never mentions, and a table
+# row giving a flag a group command's --help does not print.
+fresh
+stand_in_singular 'state create' "$(plant --planted-flag)"
+expect undocumented-flag-state-create 1 '^undocumented: singular state create takes --planted-flag'
+
+for command in 'state create' 'state fold' 'registration book' 'registration reclaim' 'registration cleanup'; do
+  fresh
+  stand_in_od "$command" "$(plant --planted-flag)"
+  expect "undocumented-flag-od-${command// /-}" 1 "^undocumented: open-datum $command takes --planted-flag"
+done
+
+fresh
+sed -i '/^| `--receipt FILE`/a | `--ghost-flag X` | `singular state create`, `open-datum registration book` | A flag the binary does not take. |' "$table"
+grep -q 'ghost-flag' "$table" || {
+  echo "SETUP-FAIL: the ghost group row did not apply" >&2
+  exit 2
+}
+expect documented-missing-state-create 1 '^documented, not in --help: the settings table gives --ghost-flag to singular state create'
+expect documented-missing-registration-book 1 '^documented, not in --help: the settings table gives --ghost-flag to open-datum registration book'
+
+# A flag documented for a group command whose --help does not give it.
+fresh
+sed -i 's/^| `--pending TXID#IX` | \(.*\)`open-datum state fold`/| `--pending TXID#IX` | \1`open-datum state fold`, `open-datum registration book`/' "$table"
+grep -q '`open-datum state fold`, `open-datum registration book`' "$table" || {
+  echo "SETUP-FAIL: the pending row did not gain book" >&2
+  exit 2
+}
+expect wrong-command-registration 1 '^documented, not in --help: the settings table gives --pending to open-datum registration book'
+
+# A documented invocation of a group command uses a flag it does not print.
+for invocation in 'singular state create' 'open-datum state create' 'open-datum state fold' 'open-datum registration book' 'open-datum registration reclaim' 'open-datum registration cleanup'; do
+  fresh
+  printf '\n```sh\n%s --state-dir ./reg \\\n  --made-up-flag 1\n```\n' "$invocation" >>"$scratch/t/docs/cli-recovery.md"
+  expect "invocation-unknown-${invocation// /-}" 1 "docs/cli-recovery.md:[0-9]+: $invocation --made-up-flag"
+done
+
+# An invocation of a verb the groups do not have fails, for each binary.
+fresh
+printf '\n```sh\nsingular state zap --state-dir ./reg \\\n  --made-up-flag 1\n```\n' >>"$scratch/t/docs/cli-recovery.md"
+expect unknown-verb-state 1 'docs/cli-recovery.md:[0-9]+: singular state zap .*not a command singular supports'
+
+fresh
+printf '\n```sh\nopen-datum registration zap --state-dir ./reg \\\n  --made-up-flag 1\n```\n' >>"$scratch/t/docs/cli-recovery.md"
+expect unknown-verb-registration 1 'docs/cli-recovery.md:[0-9]+: open-datum registration zap .*not a command open-datum supports'
+
+# The documented write counts name the new commands: a count that omits them fails.
+fresh
+sed -i 's/the five singular writes and the ten open-datum writes/the four singular writes and the five open-datum writes/' "$table"
+expect write-counts-omit-the-groups 1 'settings table: .* applies to "the four singular writes and the five open-datum writes", but singular --help names 5 write commands'
+
 echo "PASS cli-flags-controls: $controls controls over ${#pages[@]} pages"

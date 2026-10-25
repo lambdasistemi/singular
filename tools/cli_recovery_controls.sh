@@ -169,7 +169,7 @@ setup_fail() {
   echo "recovery: SETUP: $*" >&2
   exit 3
 }
-known_parts="accepting lost-answer killed two-requests cross-wallet never-sent whole-journal rollback trie-capability"
+known_parts="accepting lost-answer killed two-requests cross-wallet never-sent whole-journal rollback state-line trie-capability"
 for requested in ${CLI_RECOVERY_PARTS:-}; do
   # cross-wallet:<hold>[:lost-answer] tokens are validated against the
   # source census below, before any node starts.
@@ -393,7 +393,8 @@ record_identity() {
 }
 
 # run NAME ARGS...: one ordinary process; its receipt and exit status kept.
-# A `registry` first word runs through `singular`; a bare verb
+# A `registry` or `singular` first word runs through `singular` (the second
+# is dropped); a bare verb
 # (`create`, `insert`, `update`, `terminate`, `fold`, `inspect`) runs through
 # `open-datum`, as the journey dispatches them.
 run() {
@@ -402,6 +403,10 @@ run() {
   local status=0
   local bin="$open_datum"
   [ "${1:-}" = registry ] && bin="$singular"
+  if [ "${1:-}" = singular ]; then
+    bin="$singular"
+    shift
+  fi
   record_identity "$name" "$@"
   : >"$receipts/$name.trace.jsonl"
   : >"$receipts/$name.trie.jsonl"
@@ -419,6 +424,10 @@ held() {
   shift 2
   local bin="$open_datum"
   [ "${1:-}" = registry ] && bin="$singular"
+  if [ "${1:-}" = singular ]; then
+    bin="$singular"
+    shift
+  fi
   local go="$work/$name.go"
   rm -f "$go" "$go.waiting"
   record_identity "$name" "$@"
@@ -456,6 +465,10 @@ paused() {
   shift 3
   local bin="$open_datum"
   [ "${1:-}" = registry ] && bin="$singular"
+  if [ "${1:-}" = singular ]; then
+    bin="$singular"
+    shift
+  fi
   local go="$work/$name.go"
   rm -f "$go" "$go.waiting"
   record_identity "$name" "$@"
@@ -1750,6 +1763,228 @@ ARCHIVE
   say "$control: $(chained_after "$mark" | wc -l) block(s) chained by the restored node"
   jq -r '.journalEvent' "$journal" | sort | uniq -c
 
+fi
+
+# shellcheck disable=SC2034 # case_line and case_next are read through the namerefs of sl_case
+if part state-line; then
+  # ------------------------------------------------------------------
+  # the commands of the proved design, each interrupted three ways
+  # ------------------------------------------------------------------
+  # open-datum state create, state fold and registration book, reclaim and
+  # cleanup, and singular state create, on a registry of their own beside the
+  # current line's. Each command that sends is interrupted three ways: its
+  # answer lost after the node took it, killed after the send, and never sent.
+  # The transaction keeps its identity in the journal, the next write of the
+  # same wallet observes an included one once and refuses while an unsent one is
+  # unresolved, and nothing is sent twice. The new line's commands do not join
+  # the trie observation, which belongs to the current line's commands; the
+  # current line's registry is read back beside them instead.
+  control="state line"
+  sl_root="$work/state-line"
+  mkdir -p "$sl_root"
+  sl_base=(--blueprint "$blueprint" "${node[@]}")
+  sl_params=(--process-time 60000 --reclaim-time 300000 --booking-width 60000)
+  sl_app_policy="$(jq -r '.validators[] | select(.title == "open_datum_requests.open_datum_requests.spend") | .hash' "$blueprint")"
+  [[ "$sl_app_policy" =~ ^[0-9a-f]{56}$ ]] || setup_fail "the blueprint carries no request validator hash"
+  sl_forget() { sed -i "/^$1\$/d" "$work/trie-command-invocations"; }
+  sl_run() {
+    local n="$1"
+    run "$@"
+    sl_forget "$n"
+  }
+  # The transaction a step prepared last, in a journal.
+  sl_prepared() { jq -rs --arg s "$2" '[.[] | select(.journalStep == $s and .journalEvent == "prepared")] | last | .journalTxId' "$1"; }
+  sl_wait_until_ms() {
+    local target="$1" now
+    while :; do
+      now="$(date +%s%3N)"
+      [ "$now" -ge "$((target + 4000))" ] && break
+      sleep 1
+    done
+  }
+  # --- the first registry of the application: both scripts published, then the registry ---
+  sl_main="$sl_root/main"
+  sl_run sl-create state create "${sl_params[@]}" --state-dir "$sl_main" "${sl_base[@]}" "${alice[@]}"
+  clause "the first creation succeeds" outcome_is sl-create success
+  clause "it publishes the scripts in a transaction of its own, then creates the registry" \
+    is_equal "$(field sl-create '[.submissions[].step] | tojson')" '["publish-scripts","create"]'
+  clause "each of its transactions was prepared, confirmed and observed, once each" \
+    is_equal "$(field sl-create '[.submissions[] | select(.observed == true)] | length')" 2
+  sl_token="$(field sl-create .stateToken)"
+  [[ "$sl_token" =~ ^[0-9a-f]{56}\.[0-9a-f]{64}$ ]] || setup_fail "the first creation printed no state token"
+  sl_state_policy="${sl_token%%.*}"
+  clause "the node holds the registry's state output unspent" \
+    jq -e --arg o "$(field sl-create .stateOutput)" '.live | index($o) != null' <(probe_ins "$(field sl-create .stateOutput)")
+  # A later registry of the application, made by singular, reuses the live copy of the state script.
+  sl_run sl-singular-create singular state create --application-policy "$sl_app_policy" \
+    --state-dir "$sl_root/singular" "${sl_base[@]}" "${alice[@]}"
+  clause "singular creates a registry of the same application" outcome_is sl-singular-create success
+  clause "from the live copy of the state script: one transaction" \
+    is_equal "$(field sl-singular-create '[.submissions[].step] | tojson')" '["create"]'
+  clause "its registry is another registry" bash -c '[ "$1" != "$2" ]' _ "$(field sl-singular-create .stateToken)" "$sl_token"
+
+  # --- state create, interrupted ---
+  sl_create_line=(state create "${sl_params[@]}")
+  # --- the booking line, and the bookings the cleanups need, made now so that their windows run beside the cases ---
+  sl_book_line() { # KEY DIR WALLET...: the line that books KEY from DIR
+    local key="$1" dir="$2"
+    shift 2
+    printf '%s\n' registration book --state-token "$sl_token" --key "$key" --payload "$work/payload.json" \
+      --payload-schema detailed --deposit 2100000 --tip 1000000 --state-dir "$dir" "${sl_base[@]}" "$@"
+  }
+  sl_book() { # NAME: a clean booking by alice in the main directory, of the key that bears the name
+    local name="$1" key="$1" line
+    mapfile -t line < <(sl_book_line "$key" "$sl_main" "${alice[@]}")
+    sl_run "$name" "${line[@]}"
+    clause "$name: the booking succeeds" outcome_is "$name" success
+  }
+  for sl_mode in lost-answer killed never-sent; do
+    sl_book "sl-cleanup-pending-$sl_mode"
+  done
+  sl_first_cleanup_ms="$(field sl-cleanup-pending-lost-answer .reclaimEnd)"
+
+  # sl_case LABEL STEP MODE JOURNAL LINE NEXT: one command interrupted one way,
+  # then the next write of the same wallet and directory.
+  sl_case() {
+    local label="$1" step="$2" mode="$3" jr="$4"
+    local -n ref_line="$5" ref_next="$6"
+    local name="sl-$label-$mode" reached=0 lost="" i
+    journal="$jr"
+    case "$mode" in
+      lost-answer)
+        sl_at_send() {
+          sl_held_tx="$(sl_prepared "$journal" "$step")"
+          sl_held_last="$(last_event "$sl_held_tx")"
+        }
+        sl_held_tx="" sl_held_last=""
+        export SINGULAR_HARNESS_DROP_ANSWER="$step" SINGULAR_HARNESS_HOLD_STEP="$step"
+        paused "$name" SINGULAR_HARNESS_HOLD_AFTER_SEND sl_at_send "${ref_line[@]}" || reached=1
+        unset SINGULAR_HARNESS_DROP_ANSWER SINGULAR_HARNESS_HOLD_STEP
+        sl_forget "$name"
+        lost="$(submission_tx "$name" "$step")"
+        clause "$label, answer lost: the command was held once its transaction was sent" is_equal "$reached" 0
+        clause "$label, answer lost: at that moment prepared was the transaction's last journalled phase" is_equal "$sl_held_last" prepared
+        clause "$label, answer lost: the held transaction is the one the receipt names" is_equal "$sl_held_tx" "$lost"
+        clause "$label, answer lost: the command stops partial (exit 15)" exit_is "$name" 15
+        clause "$label, answer lost: its receipt names the transaction's case unknown" is_equal "$(submission_case "$name" "$step")" unknown
+        ;;
+      killed)
+        export SINGULAR_HARNESS_HOLD_STEP="$step"
+        held "$name" SINGULAR_HARNESS_HOLD_AFTER_SEND "${ref_line[@]}" || reached=1
+        unset SINGULAR_HARNESS_HOLD_STEP
+        sl_forget "$name"
+        lost="$(sl_prepared "$journal" "$step")"
+        clause "$label, killed: the command was killed once its transaction was sent" is_equal "$reached" 0
+        clause "$label, killed: the transaction is journalled prepared and nothing more" is_equal "$(events_of "$lost")" '["prepared"]'
+        ;;
+      never-sent)
+        export SINGULAR_HARNESS_DROP_SEND="$step"
+        sl_run "$name" "${ref_line[@]}"
+        unset SINGULAR_HARNESS_DROP_SEND
+        lost="$(submission_tx "$name" "$step")"
+        clause "$label, never sent: the command stops partial (exit 15)" exit_is "$name" 15
+        clause "$label, never sent: its receipt names the transaction's case unknown" is_equal "$(submission_case "$name" "$step")" unknown
+        clause "$label, never sent: the transaction is journalled prepared, then unknown" is_equal "$(events_of "$lost")" '["prepared","submit-unknown"]'
+        ;;
+    esac
+    clause "$label, $mode: the interrupted command names a transaction" is_txid "$lost"
+    clause "$label, $mode: the transaction was prepared once" prepared_once "$lost"
+    clause "$label, $mode: its saved body is bound to its prepared line by hash" body_bound "$lost"
+    cp "$journal" "$work/$name.before-next.jsonl"
+    case "$mode" in
+      never-sent)
+        sl_run "$name-next" "${ref_next[@]}"
+        clause "$label, $mode: the next write is refused partial (exit 15)" exit_is "$name-next" 15
+        clause "$label, $mode: it names the transaction unresolved" is_equal "$(field "$name-next" .unresolved.tx)" "$lost"
+        clause "$label, $mode: it names the case unknown" is_equal "$(field "$name-next" .unresolved.case)" unknown
+        clause "$label, $mode: it built and sent nothing: the journal did not move" cmp -s "$work/$name.before-next.jsonl" "$journal"
+        clause "$label, $mode: the transaction was never sent again" bash -c '[ "$1" = "[\"prepared\",\"submit-unknown\"]" ]' _ "$(events_of "$lost")"
+        ;;
+      *)
+        # While the transaction is not yet on the chain the next write is refused before it builds anything.
+        for i in $(seq 1 60); do
+          sl_run "$name-next" "${ref_next[@]}"
+          outcome_is "$name-next" partial || break
+          sleep 2
+        done
+        clause "$label, $mode: the next write reconciles and succeeds" outcome_is "$name-next" success
+        clause "$label, $mode: it observed the interrupted transaction" \
+          is_equal "$(field "$name-next" "[.reconciled.observed[]? | select(. == \"$lost\")] | length")" 1
+        clause "$label, $mode: the transaction is observed exactly once in the journal" is_equal "$(event_count "$lost" observed)" 1
+        clause "$label, $mode: the transaction was prepared once and never sent again" prepared_once "$lost"
+        ;;
+    esac
+  }
+
+  # sl_next_of DIR WALLET...: the next write of a wallet: a booking of a fresh key.
+  sl_next_of() {
+    local dir="$1"
+    shift
+    local key
+    key="sl-next-$(basename "$dir")"
+    mapfile -t sl_next_line < <(sl_book_line "$key" "$dir" "$@")
+  }
+
+  # --- state create, three ways (the creation journal of the application and the wallet) ---
+  for sl_mode in lost-answer killed never-sent; do
+    sl_dir="$sl_root/create-$sl_mode"
+    case_line=("${sl_create_line[@]}" --state-dir "$sl_dir" "${sl_base[@]}" "${alice[@]}")
+    case_next=("${sl_create_line[@]}" --state-dir "$sl_dir" "${sl_base[@]}" "${alice[@]}")
+    sl_case state-create create "$sl_mode" "$(managed_journal "$sl_dir" "$sl_state_policy." "$alicekey")" case_line case_next
+  done
+
+  # --- registration book, three ways ---
+  for sl_mode in lost-answer killed never-sent; do
+    sl_dir="$sl_root/book-$sl_mode"
+    mapfile -t case_line < <(sl_book_line "sl-book-$sl_mode" "$sl_dir" "${alice[@]}")
+    sl_next_of "$sl_dir" "${alice[@]}"
+    case_next=("${sl_next_line[@]}")
+    sl_case registration-book book "$sl_mode" "$(managed_journal "$sl_dir" "$sl_token" "$alicekey")" case_line case_next
+  done
+
+  # --- registration reclaim, three ways, inside the window of pendings booked now ---
+  for sl_mode in lost-answer killed never-sent; do
+    sl_book "sl-reclaim-pending-$sl_mode"
+  done
+  sl_wait_until_ms "$(field sl-reclaim-pending-lost-answer .processDeadline)"
+  for sl_mode in lost-answer killed never-sent; do
+    sl_dir="$sl_root/reclaim-$sl_mode"
+    sl_pending="$(field "sl-reclaim-pending-$sl_mode" .pending)"
+    case_line=(registration reclaim --state-token "$sl_token" --pending "$sl_pending" --state-dir "$sl_dir" "${sl_base[@]}" "${alice[@]}")
+    sl_next_of "$sl_dir" "${alice[@]}"
+    case_next=("${sl_next_line[@]}")
+    sl_case registration-reclaim reclaim "$sl_mode" "$(managed_journal "$sl_dir" "$sl_token" "$alicekey")" case_line case_next
+  done
+
+  # --- state fold, three ways, by the second wallet, each over a booking made just before ---
+  for sl_mode in lost-answer killed never-sent; do
+    sl_book "sl-fold-pending-$sl_mode"
+    sl_dir="$sl_root/fold-$sl_mode"
+    sl_pending="$(field "sl-fold-pending-$sl_mode" .pending)"
+    case_line=(state fold --state-token "$sl_token" --pending "$sl_pending" --state-dir "$sl_dir" "${sl_base[@]}" "${bob[@]}")
+    sl_next_of "$sl_dir" "${bob[@]}"
+    case_next=("${sl_next_line[@]}")
+    sl_case state-fold fold "$sl_mode" "$(managed_journal "$sl_dir" "$sl_token" "$bobkey")" case_line case_next
+  done
+
+  # --- registration cleanup, three ways, by the second wallet, once the windows of the pendings have run out ---
+  sl_wait_until_ms "$sl_first_cleanup_ms"
+  for sl_mode in lost-answer killed never-sent; do
+    sl_dir="$sl_root/cleanup-$sl_mode"
+    sl_pending="$(field "sl-cleanup-pending-$sl_mode" .pending)"
+    case_line=(registration cleanup --state-token "$sl_token" --pending "$sl_pending" --state-dir "$sl_dir" "${sl_base[@]}" "${bob[@]}")
+    sl_next_of "$sl_dir" "${bob[@]}"
+    case_next=("${sl_next_line[@]}")
+    sl_case registration-cleanup cleanup "$sl_mode" "$(managed_journal "$sl_dir" "$sl_token" "$bobkey")" case_line case_next
+  done
+
+  # --- the current line beside the new one ---
+  control="state line, the current line beside it"
+  run sl-old-inspect inspect --key-hex 6b0a "${common[@]}" "${node[@]}"
+  clause "the current line's registry still reads back at its first root" \
+    is_equal "$(field sl-old-inspect '.outcome + "/" + .root')" "success/0000000000000000000000000000000000000000000000000000000000000000"
+
+# ------------------------------------------------------------------
 fi
 
 if part trie-capability; then

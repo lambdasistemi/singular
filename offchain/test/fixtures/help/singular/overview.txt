@@ -20,6 +20,7 @@ All commands:
   singular registry reclaim   Take back your own pending request
   singular registry inspect   Read the registry and a key back
   singular registry describe  Print the registry page
+  singular state create       Create the registry of an application
   singular wallet create      Create a vault with a fresh key
   singular wallet address     Print the address of a vault's key
   singular wallet sign        Sign a bundle of transactions offline

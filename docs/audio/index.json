@@ -1038,6 +1038,43 @@
     "v": "07ed913bf82f"
    }
   ],
+  "the-commands-that-create-a-registry-and-register-keys": [
+   {
+    "index": 0,
+    "name": "docs-cli-recovery/the-commands-that-create-a-registry-and-register-keys-00",
+    "pause_ms": 500,
+    "text": "The commands that create a registry and register keys.",
+    "v": "8319f1ae48ca"
+   },
+   {
+    "index": 1,
+    "name": "docs-cli-recovery/the-commands-that-create-a-registry-and-register-keys-01",
+    "pause_ms": 400,
+    "text": "As Carol, Alice or Bob running one of the commands of create a registry and register keys on the proved design, you are interrupted in the same ways as above and promised the same thing: the transaction keeps its identity, the next write settles it, and nothing is sent a second time.",
+    "v": "afe420f9fd11"
+   },
+   {
+    "index": 2,
+    "name": "docs-cli-recovery/the-commands-that-create-a-registry-and-register-keys-02",
+    "pause_ms": 400,
+    "text": "Each transaction is journalled as prepared before it is sent, under the step that names it: publish-scripts and create for a creation, then book, fold, reclaim and cleanup. The journal also records what the first output of the transaction must hold once it is on the chain: a reference script for a publication, the state token for a creation and for a fold, the approval token for a booking, a payment to the refund address for a reclaim and a cleanup. A creation is journalled under the application and the wallet, because the name of the registry it makes is known only once its seed is chosen. The other commands are journalled under the registry and the wallet.",
+    "v": "2148c3592a32"
+   },
+   {
+    "index": 3,
+    "name": "docs-cli-recovery/the-commands-that-create-a-registry-and-register-keys-03",
+    "pause_ms": 400,
+    "text": "Before it builds anything, the next write of the same wallet reads its journal against the chain. The table shows what it does with an earlier transaction in each case.",
+    "v": "56aaf436fd9d"
+   },
+   {
+    "index": 4,
+    "name": "docs-cli-recovery/the-commands-that-create-a-registry-and-register-keys-04",
+    "pause_ms": 400,
+    "text": "A transaction the chain does not show cannot be told from one the network has not yet delivered, and these commands never declare it excluded: the next write keeps naming it and stops. Wait for the network and run the command again; a transaction that lands is reconciled. When it can never land, the way out is --state-dir naming another state directory, which starts a fresh journal for that registry and wallet, or for a creation, for that application and wallet; the old journal stays as a record.",
+    "v": "26199ef34aab"
+   }
+  ],
   "the-next-command-reconciles": [
    {
     "index": 0,
@@ -5866,8 +5903,8 @@
     "index": 1,
     "name": "docs-offchain-api-reference/what-the-reference-does-not-claim-01",
     "pause_ms": 400,
-    "text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the runtime service modules staying outside it in Runtime service ownership, and the conformance reference's extent is the conformance library's. The executables and the on-chain Aiken validators remain outside the generated references. The public local-services component also exposes LocalEvaluation, NetworkTime, ProviderSettings, ProviderTrace, SessionEvidence, SessionIO, SessionServices, TimeMaterial, TimeSource, Trace, TraceRender, WaitTypes and Wallet; their sources live under offchain/local-services/Singular/Registry/. Their generated pages are not in this main-library reference. The public open-datum-application component (applications/open-datum/offchain/) carries the open-datum application the command line composes — entry commands, envelope, booking approval and destination, payload update, release rules, script, and the application value — and the request builders of the registry on the proved design: the booking of a registration, its reclaim by the refund address and its cleanup after the window, the configuration record added to the creation of a registry, the records and actions of the request validator in the layout it decodes, the validator as a transaction carries it, the reasons a builder declines, and what open datum hands the fold of a registry: Singular.Application.OpenDatum.Book, Singular.Application.OpenDatum.Build, Singular.Application.OpenDatum.Command, Singular.Application.OpenDatum.Entry, Singular.Application.OpenDatum.Envelope, Singular.Application.OpenDatum.InsertEnvelope, Singular.Application.OpenDatum.Permanent, Singular.Application.OpenDatum.Plan, Singular.Application.OpenDatum.Preview, Singular.Application.OpenDatum.Release, Singular.Application.OpenDatum.Requests.Booking, Singular.Application.OpenDatum.Requests.Configuration, Singular.Application.OpenDatum.Requests.Fold, Singular.Application.OpenDatum.Requests.Pending, Singular.Application.OpenDatum.Requests.Records, Singular.Application.OpenDatum.Requests.Refusal, Singular.Application.OpenDatum.Requests.Script, Singular.Application.OpenDatum.Root, Singular.Application.OpenDatum.Run, Singular.Application.OpenDatum.Script, Singular.Application.OpenDatum.Update and Singular.Application.OpenDatum.Value; their sources live under applications/open-datum/offchain/src/Singular/Application/OpenDatum/, and the executable's entry point lives in applications/open-datum/offchain/app/. The public registry-cli component (offchain/cli/) carries the registry command line the two binaries link — session, journal and receipts, the flag group, create, fold, reject, reclaim, inspect, reconcile, recovery and the booking call: Singular.CLI, Singular.CLI.Attached, Singular.CLI.Command, Singular.CLI.Create, Singular.CLI.Finish, Singular.CLI.Fold, Singular.CLI.FoldRules, Singular.CLI.Inspect, Singular.CLI.Key, Singular.CLI.Live, Singular.CLI.ManagedState, Singular.CLI.Outlay, Singular.CLI.Payload, Singular.CLI.Permanent, Singular.CLI.Plan, Singular.CLI.Proof, Singular.CLI.Receipt, Singular.CLI.ReceiptBody, Singular.CLI.Reclaim, Singular.CLI.ReclaimRules, Singular.CLI.Reconcile, Singular.CLI.Recovery, Singular.CLI.Registry, Singular.CLI.Reject, Singular.CLI.RejectRules, Singular.CLI.RequestWindow, Singular.CLI.Root, Singular.CLI.Session, Singular.CLI.Trace, Singular.CLI.TrieHistory and Singular.CLI.TrieTrace; their sources live under offchain/cli/src/Singular/CLI/.",
-    "v": "1e90810def0f"
+    "text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the runtime service modules staying outside it in Runtime service ownership, and the conformance reference's extent is the conformance library's. The executables and the on-chain Aiken validators remain outside the generated references. The public local-services component also exposes LocalEvaluation, NetworkTime, ProviderSettings, ProviderTrace, SessionEvidence, SessionIO, SessionServices, TimeMaterial, TimeSource, Trace, TraceRender, WaitTypes and Wallet; their sources live under offchain/local-services/Singular/Registry/. Their generated pages are not in this main-library reference. The public open-datum-application component (applications/open-datum/offchain/) carries the open-datum application the command line composes — entry commands, envelope, booking approval and destination, payload update, release rules, script, and the application value — and the request builders of the registry on the proved design: the booking of a registration, its reclaim by the refund address and its cleanup after the window, the configuration record added to the creation of a registry, the records and actions of the request validator in the layout it decodes, the validator as a transaction carries it, the reasons a builder declines, what open datum hands the fold of a registry, and the commands that create a registry and book, reclaim and clean up a registration: Singular.Application.OpenDatum.Book, Singular.Application.OpenDatum.Build, Singular.Application.OpenDatum.Command, Singular.Application.OpenDatum.Entry, Singular.Application.OpenDatum.Envelope, Singular.Application.OpenDatum.InsertEnvelope, Singular.Application.OpenDatum.Permanent, Singular.Application.OpenDatum.Plan, Singular.Application.OpenDatum.Preview, Singular.Application.OpenDatum.Registration, Singular.Application.OpenDatum.Release, Singular.Application.OpenDatum.Requests.Booking, Singular.Application.OpenDatum.Requests.Configuration, Singular.Application.OpenDatum.Requests.Fold, Singular.Application.OpenDatum.Requests.Pending, Singular.Application.OpenDatum.Requests.Records, Singular.Application.OpenDatum.Requests.Refusal, Singular.Application.OpenDatum.Requests.Script, Singular.Application.OpenDatum.Root, Singular.Application.OpenDatum.Run, Singular.Application.OpenDatum.Script, Singular.Application.OpenDatum.Update and Singular.Application.OpenDatum.Value; their sources live under applications/open-datum/offchain/src/Singular/Application/OpenDatum/, and the executable's entry point lives in applications/open-datum/offchain/app/. The public registry-cli component (offchain/cli/) carries the registry command line the two binaries link — session, journal and receipts, the flag group, create, fold, reject, reclaim, inspect, reconcile, recovery, the booking call and the creation of a registry on the proved design with the fold into it: Singular.CLI, Singular.CLI.Attached, Singular.CLI.Command, Singular.CLI.Create, Singular.CLI.Finish, Singular.CLI.Fold, Singular.CLI.FoldRules, Singular.CLI.Inspect, Singular.CLI.Key, Singular.CLI.Live, Singular.CLI.ManagedState, Singular.CLI.Outlay, Singular.CLI.Payload, Singular.CLI.Permanent, Singular.CLI.Plan, Singular.CLI.Promise, Singular.CLI.Proof, Singular.CLI.Receipt, Singular.CLI.ReceiptBody, Singular.CLI.Reclaim, Singular.CLI.ReclaimRules, Singular.CLI.Reconcile, Singular.CLI.Recovery, Singular.CLI.Registry, Singular.CLI.Reject, Singular.CLI.RejectRules, Singular.CLI.RequestWindow, Singular.CLI.Root, Singular.CLI.Session, Singular.CLI.State, Singular.CLI.Steps, Singular.CLI.Trace, Singular.CLI.TrieHistory and Singular.CLI.TrieTrace; their sources live under offchain/cli/src/Singular/CLI/.",
+    "v": "ef2238639faa"
    },
    {
     "index": 2,
@@ -8884,6 +8921,232 @@
    }
   ]
  },
+ "docs/registry-commands.md": {
+  "book-a-registration": [
+   {
+    "index": 0,
+    "name": "docs-registry-commands/book-a-registration-00",
+    "pause_ms": 500,
+    "text": "Book a registration.",
+    "v": "b75ad4ebffee"
+   },
+   {
+    "index": 1,
+    "name": "docs-registry-commands/book-a-registration-01",
+    "pause_ms": 400,
+    "text": "As Alice, you book a key with its payload and a deposit under a registry you name by its address, and the registry's configuration decides the deadlines.",
+    "v": "48e22b584b30"
+   },
+   {
+    "index": 2,
+    "name": "docs-registry-commands/book-a-registration-02",
+    "pause_ms": 400,
+    "text": "The booking puts a pending registration at the request address of open datum. It holds the deposit (2 000 000 lovelace unless --deposit says more; a deposit below the minimum ADA of the output that will hold the key's token with its payload is refused, naming that minimum), the tip for whoever folds it (--tip, nothing by default), and its approval, the token that a fold, a reclaim or a cleanup consumes. The payload is the file --payload names, read in the form --payload-schema gives, plain JSON unless you say otherwise; store ordinary JSON as a key's payload gives the rules. --refund-address says where a reclaim or a cleanup returns the value, and it is your own address when you do not say.",
+    "v": "4407a456a2b3"
+   },
+   {
+    "index": 3,
+    "name": "docs-registry-commands/book-a-registration-03",
+    "pause_ms": 400,
+    "text": "The receipt names the pending registration, its approval, the key, the deposit, the tip, the refund address and the three times that matter: when it was booked, its processing deadline, and the end of its reclaim window. Whoever folds it, or you taking it back, names the pending registration with --pending.",
+    "v": "7f4c47b850b6"
+   }
+  ],
+  "create-a-registry": [
+   {
+    "index": 0,
+    "name": "docs-registry-commands/create-a-registry-00",
+    "pause_ms": 500,
+    "text": "Create a registry.",
+    "v": "de4eb0f290bc"
+   },
+   {
+    "index": 1,
+    "name": "docs-registry-commands/create-a-registry-01",
+    "pause_ms": 400,
+    "text": "As Carol, you spend one output of your wallet to make a registry, and the output you spend fixes the registry's identity.",
+    "v": "3e786f30542f"
+   },
+   {
+    "index": 2,
+    "name": "docs-registry-commands/create-a-registry-02",
+    "pause_ms": 400,
+    "text": "The second diagram shows what a creation does. The command reads your wallet and looks for live reference copies of the validators. The first registry of an application publishes them, in a transaction of its own, before it creates the registry. A later registry finds the live copies and sends one transaction. The registry's state token appears on the first output of the creation, and the command reads it back before it prints the receipt.",
+    "v": "8c6b17ba38b6"
+   },
+   {
+    "index": 3,
+    "name": "docs-registry-commands/create-a-registry-03",
+    "pause_ms": 400,
+    "text": "open-datum state create makes a registry of open datum. Five parameters are fixed here for the life of the registry: the processing time and the reclaim time of a booked registration (--process-time and --reclaim-time), the widest validity interval a booking may declare (--booking-width), and the registration cost and the minimum tip (--registration-cost and --minimum-tip), which the registry carries and nothing enforces.",
+    "v": "e3d03b2b3c90"
+   },
+   {
+    "index": 4,
+    "name": "docs-registry-commands/create-a-registry-04",
+    "pause_ms": 400,
+    "text": "singular state create makes the registry of any application whose policy you give with --application-policy: the policy is the one parameter of the state validator. The command publishes the state validator when no live copy of it exists, and creates the registry whose state token that validator guards.",
+    "v": "1f6f014b5690"
+   },
+   {
+    "index": 5,
+    "name": "docs-registry-commands/create-a-registry-05",
+    "pause_ms": 400,
+    "text": "The seed is your wallet's largest ada-only output, chosen when the registry is built and after the validators have been published when they had to be, so the publication cannot have spent it. --seed names another output of your wallet. The wallet funds the transactions and keeps their change. The builders choose the funding, so these commands refuse --fund-input, --max-outlay and --preview by name rather than ignore them.",
+    "v": "7defc07eb480"
+   },
+   {
+    "index": 6,
+    "name": "docs-registry-commands/create-a-registry-06",
+    "pause_ms": 400,
+    "text": "The receipt names the registry's address and fingerprint, its state token, the seed, the output that now holds the state, the registry's root, the policy of the application, each validator with the output that carries its reference script and whether this command published it, and every transaction the command sent with what became of it.",
+    "v": "41f9a09d7164"
+   }
+  ],
+  "create-a-registry-and-register-keys-on-the-proved-design": [
+   {
+    "index": 0,
+    "name": "docs-registry-commands/create-a-registry-and-register-keys-on-the-proved-design-00",
+    "pause_ms": 500,
+    "text": "Create a registry and register keys on the proved design.",
+    "v": "d6270e904534"
+   },
+   {
+    "index": 1,
+    "name": "docs-registry-commands/create-a-registry-and-register-keys-on-the-proved-design-01",
+    "pause_ms": 400,
+    "text": "As Carol, you create a registry for an application with one command and read its address and its state token from the receipt. As Alice, you book the registration of a key with its payload and a deposit, and the receipt names the pending registration the booking made. As Bob, you fold the registrations you name into the registry from the chain alone, and keep what each of them holds above its deposit. As Alice again, when nobody folds your registration you take it back inside its reclaim window, and when that window has passed anyone can clean it up and your deposit goes back to the refund address you chose. When a command is interrupted, the next write of the same wallet settles what it left, and nothing is ever sent a second time.",
+    "v": "c7d821df3244"
+   },
+   {
+    "index": 2,
+    "name": "docs-registry-commands/create-a-registry-and-register-keys-on-the-proved-design-02",
+    "pause_ms": 400,
+    "text": "The first diagram shows the life of one registration. A booking makes it pending. Until its processing deadline only a fold can spend it. After the deadline, and until the reclaim window ends, only the refund address can take it back. After the window anyone can clean it up.",
+    "v": "89fcc94cf9ef"
+   },
+   {
+    "index": 3,
+    "name": "docs-registry-commands/create-a-registry-and-register-keys-on-the-proved-design-03",
+    "pause_ms": 400,
+    "text": "This page describes six commands: singular state create, open-datum state create, open-datum state fold, open-datum registration book, open-datum registration reclaim and open-datum registration cleanup. Every flag they take is listed with its description and its default in the settings table, and each command prints the same information with --help.",
+    "v": "31e47aae698b"
+   }
+  ],
+  "fold-registrations-into-the-registry": [
+   {
+    "index": 0,
+    "name": "docs-registry-commands/fold-registrations-into-the-registry-00",
+    "pause_ms": 500,
+    "text": "Fold registrations into the registry.",
+    "v": "376a929e2902"
+   },
+   {
+    "index": 1,
+    "name": "docs-registry-commands/fold-registrations-into-the-registry-01",
+    "pause_ms": 400,
+    "text": "As Bob, you fold the registrations you name into the registry in one transaction, and you need nothing from anyone who booked them.",
+    "v": "2d9aa50193a0"
+   },
+   {
+    "index": 2,
+    "name": "docs-registry-commands/fold-registrations-into-the-registry-02",
+    "pause_ms": 400,
+    "text": "Each registration's approval is consumed and the key's token is minted into the holding the registration committed to. The fold is built from the chain alone, and the wallet that runs it keeps what each request holds above its deposit. Nothing is chosen for you: every registration is named with --pending, and a registration that cannot be folded refuses the command, saying why.",
+    "v": "4fe352714e70"
+   },
+   {
+    "index": 3,
+    "name": "docs-registry-commands/fold-registrations-into-the-registry-03",
+    "pause_ms": 400,
+    "text": "The receipt names the registry's new root, the output that holds the state, and each registration folded with its key.",
+    "v": "0cea72fa9a55"
+   }
+  ],
+  "take-a-registration-back-or-clean-it-up": [
+   {
+    "index": 0,
+    "name": "docs-registry-commands/take-a-registration-back-or-clean-it-up-00",
+    "pause_ms": 500,
+    "text": "Take a registration back, or clean it up.",
+    "v": "e7cf6735220e"
+   },
+   {
+    "index": 1,
+    "name": "docs-registry-commands/take-a-registration-back-or-clean-it-up-01",
+    "pause_ms": 400,
+    "text": "As Alice, you take back a registration you booked while its reclaim window is open.",
+    "v": "f1864fe7fa53"
+   },
+   {
+    "index": 2,
+    "name": "docs-registry-commands/take-a-registration-back-or-clean-it-up-02",
+    "pause_ms": 400,
+    "text": "Everything the registration holds returns to its refund address, which must be the wallet that runs the command, and its approval is burned. Before the window opens or after it closes the command is refused, saying when.",
+    "v": "d8270c457a02"
+   },
+   {
+    "index": 3,
+    "name": "docs-registry-commands/take-a-registration-back-or-clean-it-up-03",
+    "pause_ms": 400,
+    "text": "As anyone, you clean up an expired registration once its reclaim window has ended.",
+    "v": "989cad42afb4"
+   },
+   {
+    "index": 4,
+    "name": "docs-registry-commands/take-a-registration-back-or-clean-it-up-04",
+    "pause_ms": 400,
+    "text": "The deposit returns to the refund address, the wallet that runs the command keeps what the request holds above the deposit, and the approval is burned. Both commands name exactly one pending registration.",
+    "v": "fc9acbf45620"
+   }
+  ],
+  "when-a-command-is-interrupted": [
+   {
+    "index": 0,
+    "name": "docs-registry-commands/when-a-command-is-interrupted-00",
+    "pause_ms": 500,
+    "text": "When a command is interrupted.",
+    "v": "848394e892bc"
+   },
+   {
+    "index": 1,
+    "name": "docs-registry-commands/when-a-command-is-interrupted-01",
+    "pause_ms": 400,
+    "text": "As any of the three, you may lose the connection, stop the command, or run past --confirm-timeout. The command never sends a transaction twice.",
+    "v": "7fd9a36e7e3a"
+   },
+   {
+    "index": 2,
+    "name": "docs-registry-commands/when-a-command-is-interrupted-02",
+    "pause_ms": 400,
+    "text": "The third diagram shows what happens to a transaction that was in flight. Every transaction is written to the journal under its identity before it is sent. If the command is interrupted, whatever the moment, the transaction keeps that identity. The next write of the same wallet for the same registry reads its journal before it builds anything. A transaction the chain holds is recorded as landed and named under reconciled in the next receipt, and a transaction the node refused stays recorded as refused. A transaction the chain does not yet show stops the next write, naming it, and nothing is built or sent until it is settled. A creation is journalled under the application and the wallet, because the name of the registry it makes is known only once its seed is chosen; the other commands are journalled under the registry.",
+    "v": "25a2cd9c513a"
+   },
+   {
+    "index": 3,
+    "name": "docs-registry-commands/when-a-command-is-interrupted-03",
+    "pause_ms": 400,
+    "text": "--state-dir names the root of the journals, and the default is the per-user state directory. Recovering a registry command shows each of these interruptions on a development network.",
+    "v": "8394e797be45"
+   }
+  ],
+  "where-the-keys-token-goes": [
+   {
+    "index": 0,
+    "name": "docs-registry-commands/where-the-keys-token-goes-00",
+    "pause_ms": 500,
+    "text": "Where the key's token goes.",
+    "v": "5cefe77cdd3f"
+   },
+   {
+    "index": 1,
+    "name": "docs-registry-commands/where-the-keys-token-goes-01",
+    "pause_ms": 400,
+    "text": "A registration commits, when it is booked, to the address that will hold its key's token once it is folded. open-datum registration book commits the request address of open datum. The fold accepts any address a registration committed to, the address of the state validator itself included. A token folded into a holding at the state validator's own address stays where only the state validator can spend it. That is the choice of whoever booked the registration, and the fold does not refuse it.",
+    "v": "a6e8dafcfe90"
+   }
+  ]
+ },
  "docs/registry-page.md": {
   "a-page-from-the-two-actor-run": [
    {
@@ -9702,8 +9965,8 @@
     "index": 2,
     "name": "docs-singular-node/connecting-singular-to-a-ledger-provider-02",
     "pause_ms": 400,
-    "text": "As a registry operator, you want to use create, fold, reclaim, reject, inspect and describe through singular registry, and create, insert, update, terminate, fold and inspect through open-datum, with a Koios API on your chosen network. You supply the API settings and pinned time material; each write is signed from your vault, or by a signer elsewhere through a bundle file (see Signing a write elsewhere, or from your vault). Commands read raw facts through one logical session, build and evaluate locally, submit signed transactions, and preserve recovery evidence in the registry journal.",
-    "v": "7b2df3f06658"
+    "text": "As a registry operator, you want to use create, fold, reclaim, reject, inspect and describe through singular registry, and create, insert, update, terminate, fold and inspect through open-datum, with a Koios API on your chosen network. The commands that create a registry and book, fold, reclaim and clean up a registration are described in create a registry and register keys on the proved design. You supply the API settings and pinned time material; each write is signed from your vault, or by a signer elsewhere through a bundle file (see Signing a write elsewhere, or from your vault). Commands read raw facts through one logical session, build and evaluate locally, submit signed transactions, and preserve recovery evidence in the registry journal.",
+    "v": "2675aacba8f6"
    },
    {
     "index": 3,

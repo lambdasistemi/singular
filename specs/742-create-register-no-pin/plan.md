@@ -85,8 +85,8 @@ Epic-scoped names from the model's vocabulary (answer A-001); issue 743 moves th
 | Command | What it does | Model operation |
 | --- | --- | --- |
 | `singular state create` | spends a seed and creates the registry state of an application with an empty root; publishes the state script as a reference script when no live copy exists, reuses it otherwise | genesis |
-| `singular state fold` | folds pending registrations from chain data alone: consumes each approval, proves each key absent, mints each token into its holding | registration fold |
 | `open-datum state create` | creates an open-datum registry: the state, from the library's genesis, and its configuration record; publishes or reuses both reference scripts | genesis and configuration create |
+| `open-datum state fold` | folds pending registrations from chain data alone, with the library's shared fold command hosted by open datum: consumes each approval, proves each key absent, mints each token into its holding | registration fold |
 | `open-datum registration book` | books a registration: the approval and the request value at the open-datum address | book registration |
 | `open-datum registration reclaim` | the refund address takes everything back inside the reclaim window | owner reclaim |
 | `open-datum registration cleanup` | after the window, returns the deposit to the refund address; the cleaner keeps the rest | expired cleanup |

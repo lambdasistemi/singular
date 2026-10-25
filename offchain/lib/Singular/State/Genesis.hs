@@ -26,6 +26,7 @@ import Cardano.Tx.Build qualified as Tx
 import Cardano.Tx.Ledger (ConwayTx)
 
 import Singular.Registry.Evidence (NoWitness)
+import Singular.Registry.Ledger (ConwayEra, TxOut)
 import Singular.Registry.LedgerProvider (Session)
 import Singular.Registry.SessionIO (outputsAt)
 import Singular.Registry.TrieState
@@ -56,7 +57,10 @@ import Singular.State.Script
 
 {- | Build the genesis transaction of the registry the seed creates. The payer
 funds it and holds the seed. The application's steps receive the registry
-being created and add their outputs and mints to the same transaction.
+being created and add their outputs and mints to the same transaction. The
+outputs that carry the application's code, when it is referenced and not
+attached, are priced with the state script's, so that the fee covers every
+reference script the transaction names.
 -}
 buildGenesis
     :: Session NoWitness IO
@@ -65,10 +69,14 @@ buildGenesis
     -- ^ The seed: an unspent output of the payer, spent by the genesis
     -> Addr
     -- ^ The payer: fee, collateral and change
+    -> [(TxIn, TxOut ConwayEra)]
+    {- ^ The outputs that carry the application's code, already checked, when
+    it is referenced
+    -}
     -> (RegistryIdentity -> Program ())
     -- ^ The application's steps of the creation
     -> IO (Either Refusal (ConwayTx, RegistryIdentity))
-buildGenesis session script seed payerAddress application = runExceptT $ do
+buildGenesis session script seed payerAddress applicationReferences application = runExceptT $ do
     payer <- ExceptT (resolvePayer session payerAddress)
     owned <- liftIO (outputsAt session payerAddress)
     seedOutput <-
@@ -92,7 +100,7 @@ buildGenesis session script seed payerAddress application = runExceptT $ do
             assembleTransaction
                 session
                 spent
-                scriptOutputs
+                (scriptOutputs <> applicationReferences)
                 payerAddress
                 ( do
                     _ <-

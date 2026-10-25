@@ -410,7 +410,8 @@ design: the booking of a registration, its reclaim by the refund address and
 its cleanup after the window, the configuration record added to the creation
 of a registry, the records and actions of the request validator in the layout
 it decodes, the validator as a transaction carries it, the reasons a
-builder declines, and what open datum hands the fold of a registry:
+builder declines, what open datum hands the fold of a registry, and the commands
+that create a registry and book, reclaim and clean up a registration:
 `Singular.Application.OpenDatum.Book`,
 `Singular.Application.OpenDatum.Build`,
 `Singular.Application.OpenDatum.Command`,
@@ -420,6 +421,7 @@ builder declines, and what open datum hands the fold of a registry:
 `Singular.Application.OpenDatum.Permanent`,
 `Singular.Application.OpenDatum.Plan`,
 `Singular.Application.OpenDatum.Preview`,
+`Singular.Application.OpenDatum.Registration`,
 `Singular.Application.OpenDatum.Release`,
 `Singular.Application.OpenDatum.Requests.Booking`,
 `Singular.Application.OpenDatum.Requests.Configuration`,
@@ -439,17 +441,19 @@ and the executable's entry point lives in
 The public `registry-cli` component (`offchain/cli/`) carries the registry
 command line the two binaries link — session, journal and receipts, the
 flag group, `create`, `fold`, `reject`, `reclaim`, `inspect`, reconcile,
-recovery and the booking call: `Singular.CLI`, `Singular.CLI.Attached`,
+recovery, the booking call and the creation of a registry on the proved design
+with the fold into it: `Singular.CLI`, `Singular.CLI.Attached`,
 `Singular.CLI.Command`, `Singular.CLI.Create`,
 `Singular.CLI.Finish`, `Singular.CLI.Fold`, `Singular.CLI.FoldRules`,
 `Singular.CLI.Inspect`, `Singular.CLI.Key`, `Singular.CLI.Live`,
 `Singular.CLI.ManagedState`, `Singular.CLI.Outlay`, `Singular.CLI.Payload`, `Singular.CLI.Permanent`,
-`Singular.CLI.Plan`, `Singular.CLI.Proof`,
+`Singular.CLI.Plan`, `Singular.CLI.Promise`, `Singular.CLI.Proof`,
 `Singular.CLI.Receipt`, `Singular.CLI.ReceiptBody`, `Singular.CLI.Reclaim`,
 `Singular.CLI.ReclaimRules`, `Singular.CLI.Reconcile`,
 `Singular.CLI.Recovery`, `Singular.CLI.Registry`, `Singular.CLI.Reject`,
 `Singular.CLI.RejectRules`, `Singular.CLI.RequestWindow`,
-`Singular.CLI.Root`, `Singular.CLI.Session`, `Singular.CLI.Trace`,
+`Singular.CLI.Root`, `Singular.CLI.Session`, `Singular.CLI.State`,
+`Singular.CLI.Steps`, `Singular.CLI.Trace`,
 `Singular.CLI.TrieHistory` and `Singular.CLI.TrieTrace`; their sources live
 under `offchain/cli/src/Singular/CLI/`.
 

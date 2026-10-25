@@ -33,6 +33,10 @@ module Singular.Application.OpenDatum.Command
     , EntryMode (..)
     , FoldArgs (..)
     , InspectArgs (..)
+    , StateCreateArgs (..)
+    , StateFoldArgs (..)
+    , BookArgs (..)
+    , PendingArgs (..)
     , ProviderSettings (..)
     , Signer (..)
     , WriteSettings (..)
@@ -75,6 +79,7 @@ import Data.Version (Version)
 import GHC.Generics (Generic)
 import Text.Read (readMaybe)
 
+import Cardano.Ledger.TxIn (TxIn)
 import Paths_open_datum qualified as Paths
 import Singular.Application.OpenDatum.Build
     ( DepositRefusal (..)
@@ -82,6 +87,9 @@ import Singular.Application.OpenDatum.Build
     , readDeposit
     )
 import Singular.Application.OpenDatum.Help (openDatumProgram)
+import Singular.Application.OpenDatum.Requests.Records
+    ( RequestParameters (..)
+    )
 import Singular.Application.OpenDatum.Value (Mode (..))
 import Singular.CLI.Command
     ( CreateArgs (..)
@@ -91,11 +99,14 @@ import Singular.CLI.Command
     , InspectArgs (..)
     , Key (..)
     , RegistryAccess (..)
+    , StateCreateArgs (..)
+    , StateFoldArgs (..)
     , WriteSettings (..)
     )
 import Singular.CLI.Declared (saveStateToken)
 import Singular.CLI.FlagGroup
     ( Signer (..)
+    , anyAddress
     , commonFlagGroup
     , commonSwitches
     , parseFlagGroup
@@ -141,6 +152,7 @@ import Singular.CLI.Trace (TraceRequest (..))
 import Singular.CLI.Version (releaseVersion)
 import Singular.Registry.Config.Application (RegistryEconomics (..))
 import Singular.Registry.Deployment (parseOutRef)
+import Singular.Registry.PlainJson (PayloadSchema)
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
 import Singular.Registry.StateToken
     ( ReferenceRole (..)
@@ -159,7 +171,46 @@ data OpenDatumCommand
     | OpenTerminate EntryArgs
     | OpenFold FoldArgs
     | OpenInspect InspectArgs
+    | OpenStateCreate StateCreateArgs RequestParameters
+    | OpenStateFold StateFoldArgs
+    | OpenRegistrationBook BookArgs
+    | OpenRegistrationReclaim PendingArgs
+    | OpenRegistrationCleanup PendingArgs
     deriving stock (Eq, Show, Generic)
+
+{- | @registration book@: a registration of a key, with its payload and deposit,
+booked in a registry of open datum.
+-}
+data BookArgs = BookArgs
+    { bookArgsStateDir :: Maybe FilePath
+    , bookArgsAccess :: RegistryAccess
+    , bookArgsBlueprint :: FilePath
+    , bookArgsWrite :: WriteSettings
+    , bookArgsKey :: Key
+    , bookArgsPayload :: FilePath
+    , bookArgsPayloadSchema :: PayloadSchema
+    , bookArgsDeposit :: Integer
+    -- ^ What the holding keeps, in lovelace
+    , bookArgsTip :: Integer
+    -- ^ What the request holds above the deposit for the folder, in lovelace
+    , bookArgsRefund :: Maybe String
+    -- ^ The address a reclaim or a cleanup returns to; the booker's own when absent
+    , bookArgsReceipt :: Maybe FilePath
+    }
+    deriving stock (Eq, Show)
+
+{- | @registration reclaim@ and @registration cleanup@: a pending registration
+taken back inside its window, or cleaned up after it.
+-}
+data PendingArgs = PendingArgs
+    { pendingArgsStateDir :: Maybe FilePath
+    , pendingArgsAccess :: RegistryAccess
+    , pendingArgsBlueprint :: FilePath
+    , pendingArgsWrite :: WriteSettings
+    , pendingArgsPending :: TxIn
+    , pendingArgsReceipt :: Maybe FilePath
+    }
+    deriving stock (Eq, Show)
 
 -- | Why an open-datum command line was refused before anything ran.
 data CLIError
@@ -315,6 +366,29 @@ commandFrom environment (Raw ws allFlags) = do
                                                 <$> (registryFlags flags >>= entryArgs True Nothing environment)
                                            )
                                 ["open-datum", "fold"] -> OpenFold <$> (registryFlags flags >>= foldArgs environment)
+                                ["state"] -> Right askedFor
+                                ["state", "create"] ->
+                                    refuseOutside "state create" stateCreateAllowed flags
+                                        >> (OpenStateCreate <$> stateCreateArgs flags <*> parametersFrom flags)
+                                ["state", "fold"] ->
+                                    refuseOutside "state fold" stateFoldAllowed flags
+                                        >> (OpenStateFold <$> (registryFlags flags >>= stateFoldArgs environment))
+                                ["registration"] -> Right askedFor
+                                ["registration", "book"] ->
+                                    refuseOutside "registration book" bookAllowed flags
+                                        >> ( OpenRegistrationBook
+                                                <$> (registryFlags flags >>= bookArgs environment)
+                                           )
+                                ["registration", "reclaim"] ->
+                                    refuseOutside "registration reclaim" pendingAllowed flags
+                                        >> ( OpenRegistrationReclaim
+                                                <$> (registryFlags flags >>= pendingArgs environment)
+                                           )
+                                ["registration", "cleanup"] ->
+                                    refuseOutside "registration cleanup" pendingAllowed flags
+                                        >> ( OpenRegistrationCleanup
+                                                <$> (registryFlags flags >>= pendingArgs environment)
+                                           )
                                 ["open-datum", "inspect"] ->
                                     refuseSpendingFlags "inspect" flags
                                         >> refuseRequest flags
@@ -367,7 +441,7 @@ commandFrom environment (Raw ws allFlags) = do
                     )
                 )
     refuseWindows words' flags =
-        unless (words' == ["open-datum", "create"]) $
+        unless (words' `elem` [["open-datum", "create"], ["state", "create"]]) $
             forM_ ["--process-time", "--retract-time"] $ \flag ->
                 when (isJust (lookup flag flags)) $
                     Left
@@ -410,6 +484,210 @@ commandFrom environment (Raw ws allFlags) = do
                     "--fold"
                     "is taken by insert and terminate only: they book, and with it also fold"
                 )
+    -- The commands of the two new groups name what they take, and refuse the
+    -- rest by name: the builders choose the funding, so there is no funding
+    -- choice and no spending limit to give.
+    stateWriteFlags =
+        [ "--koios-url"
+        , "--network-magic"
+        , "--koios-token-file"
+        , "--network-time"
+        , "--vault"
+        , "--passphrase-fd"
+        , "--wallet-address"
+        , "--bundle"
+        , "--wallet-skey"
+        , "--confirm-timeout"
+        , "--trace"
+        , "--trace-to"
+        , "--trace-format"
+        ]
+    registryNaming = ["--registry", "--state-token"]
+    stateCreateAllowed =
+        [ "--state-dir"
+        , "--blueprint"
+        , "--seed"
+        , "--receipt"
+        , "--process-time"
+        , "--reclaim-time"
+        , "--booking-width"
+        , "--registration-cost"
+        , "--minimum-tip"
+        ]
+            <> stateWriteFlags
+    stateFoldAllowed =
+        ["--state-dir", "--blueprint", "--pending", "--receipt"]
+            <> registryNaming
+            <> stateWriteFlags
+    bookAllowed =
+        [ "--state-dir"
+        , "--blueprint"
+        , "--receipt"
+        , "--key"
+        , "--key-hex"
+        , "--payload"
+        , "--payload-schema"
+        , "--deposit"
+        , "--tip"
+        , "--refund-address"
+        ]
+            <> registryNaming
+            <> stateWriteFlags
+    pendingAllowed = stateFoldAllowed
+    refuseOutside command allowed flags =
+        forM_ flags $ \(flag, _) ->
+            unless (flag `elem` allowed) $
+                Left $
+                    BadValue flag $
+                        "is not accepted by "
+                            <> command
+                            <> if flag `elem` ["--fund-input", "--max-outlay"]
+                                then
+                                    ": the builders choose the funding, so there is no funding choice and no spending limit"
+                                else ""
+    stateCreateArgs flags = do
+        let dir = optional "--state-dir" flags
+        bp <- required "--blueprint" flags
+        settings <-
+            parseFlagGroup
+                MissingFlag
+                BadValue
+                UnsafeSettings
+                WriteSettings
+                flags
+        seeded <- case optional "--seed" flags of
+            Nothing -> Right Nothing
+            Just s -> case parseOutRef (T.pack s) of
+                Right i -> Right (Just i)
+                Left err -> Left (BadValue "--seed" err)
+        pure
+            StateCreateArgs
+                { stateCreateStateDir = dir
+                , stateCreateBlueprint = bp
+                , stateCreateWrite = settings
+                , stateCreateSeed = seeded
+                , stateCreatePolicy = Nothing
+                , stateCreateReceipt = optional "--receipt" flags
+                }
+    -- The five parameters of a registry's configuration, fixed at its creation.
+    parametersFrom flags = do
+        processing <-
+            windowFrom "--process-time" (reProcessTime economics) flags
+        reclaiming <-
+            windowFrom "--reclaim-time" (reRetractTime economics) flags
+        width <- windowFrom "--booking-width" 300_000 flags
+        cost <- lovelaceFrom "--registration-cost" 0 flags
+        tipped <- lovelaceFrom "--minimum-tip" 0 flags
+        pure
+            RequestParameters
+                { rpRegistrationCost = cost
+                , rpMinimumTip = tipped
+                , rpProcessTime = processing
+                , rpRetractTime = reclaiming
+                , rpBookingWidth = width
+                }
+    lovelaceFrom name fallback flags = case optional name flags of
+        Nothing -> Right fallback
+        Just value
+            | not (null value) && all isDigit value -> Right (read value)
+            | otherwise ->
+                Left (BadValue name "needs a whole number of lovelace")
+    pendingRefs flags =
+        case [value | ("--pending", Just value) <- flags] of
+            [] -> Left (MissingFlag "--pending")
+            values ->
+                traverse
+                    (first (BadValue "--pending") . parseOutRef . T.pack)
+                    values
+    stateFoldArgs env flags = do
+        let dir = optional "--state-dir" flags
+        bp <- required "--blueprint" flags
+        settings <-
+            parseFlagGroup
+                MissingFlag
+                BadValue
+                UnsafeSettings
+                WriteSettings
+                flags
+        pending <- pendingRefs flags
+        access <- registryAccess env flags
+        pure
+            StateFoldArgs
+                { stateFoldStateDir = dir
+                , stateFoldAccess = access
+                , stateFoldBlueprint = bp
+                , stateFoldWrite = settings
+                , stateFoldPending = pending
+                , stateFoldReceipt = optional "--receipt" flags
+                }
+    pendingArgs env flags = do
+        let dir = optional "--state-dir" flags
+        bp <- required "--blueprint" flags
+        settings <-
+            parseFlagGroup
+                MissingFlag
+                BadValue
+                UnsafeSettings
+                WriteSettings
+                flags
+        pending <- pendingRefs flags
+        access <- registryAccess env flags
+        case pending of
+            [one] ->
+                pure
+                    PendingArgs
+                        { pendingArgsStateDir = dir
+                        , pendingArgsAccess = access
+                        , pendingArgsBlueprint = bp
+                        , pendingArgsWrite = settings
+                        , pendingArgsPending = one
+                        , pendingArgsReceipt = optional "--receipt" flags
+                        }
+            _ ->
+                Left
+                    ( BadValue
+                        "--pending"
+                        "names one pending registration: give it once"
+                    )
+    bookArgs env flags = do
+        let dir = optional "--state-dir" flags
+        bp <- required "--blueprint" flags
+        key <- keyFrom flags
+        settings <-
+            parseFlagGroup
+                MissingFlag
+                BadValue
+                UnsafeSettings
+                WriteSettings
+                flags
+        payload <- required "--payload" flags
+        schema <- payloadSchemaFrom BadValue flags
+        deposit <-
+            first
+                DepositRefused
+                (readDeposit (T.pack <$> optional "--deposit" flags))
+        tipped <- lovelaceFrom "--tip" 0 flags
+        refund <- case optional "--refund-address" flags of
+            Nothing -> Right Nothing
+            Just given ->
+                first
+                    (BadValue "--refund-address")
+                    (Just given <$ anyAddress (T.pack given))
+        access <- registryAccess env flags
+        pure
+            BookArgs
+                { bookArgsStateDir = dir
+                , bookArgsAccess = access
+                , bookArgsBlueprint = bp
+                , bookArgsWrite = settings
+                , bookArgsKey = key
+                , bookArgsPayload = payload
+                , bookArgsPayloadSchema = schema
+                , bookArgsDeposit = deposit
+                , bookArgsTip = tipped
+                , bookArgsRefund = refund
+                , bookArgsReceipt = optional "--receipt" flags
+                }
     createArgs flags = do
         saveTo <- saveTarget flags
         when (isJust (lookup "--state-token" flags)) $
@@ -745,9 +1023,17 @@ loadOpenDatumSources environment args =
 invocationFlags :: [String]
 invocationFlags = commonFlagGroup <> extraValuedFlags <> traceFlags
 
--- | The valued flags this binary owns beyond the common group: none.
+-- | The valued flags this binary owns beyond the common group: the registration commands'.
 extraValuedFlags :: [String]
-extraValuedFlags = []
+extraValuedFlags =
+    [ "--pending"
+    , "--reclaim-time"
+    , "--booking-width"
+    , "--registration-cost"
+    , "--minimum-tip"
+    , "--tip"
+    , "--refund-address"
+    ]
 
 -- | The registry a command line names, refused as the command line refuses.
 registryRefused :: RegistryRefusal -> CLIError
@@ -841,6 +1127,11 @@ neededRoles = \case
         | otherwise -> Set.singleton RoleApplication
     OpenFold _ -> everything
     OpenInspect _ -> Set.empty
+    OpenStateCreate{} -> Set.empty
+    OpenStateFold _ -> Set.empty
+    OpenRegistrationBook _ -> Set.empty
+    OpenRegistrationReclaim _ -> Set.empty
+    OpenRegistrationCleanup _ -> Set.empty
     OpenHelp _ -> Set.empty
   where
     everything = Set.fromList [minBound .. maxBound]

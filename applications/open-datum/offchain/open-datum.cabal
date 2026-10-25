@@ -45,6 +45,7 @@ library
     Singular.Application.OpenDatum.Permanent
     Singular.Application.OpenDatum.Plan
     Singular.Application.OpenDatum.Preview
+    Singular.Application.OpenDatum.Registration
     Singular.Application.OpenDatum.Release
     Singular.Application.OpenDatum.Requests.Booking
     Singular.Application.OpenDatum.Requests.Configuration
@@ -152,6 +153,7 @@ test-suite open-datum-tests
     Singular.Application.OpenDatum.BuildSpec
     Singular.Application.OpenDatum.CreationWorld
     Singular.Application.OpenDatum.RequestBookingSpec
+    Singular.Application.OpenDatum.RequestCommandSpec
     Singular.Application.OpenDatum.RequestConfigurationSpec
     Singular.Application.OpenDatum.RequestCreationSpec
     Singular.Application.OpenDatum.RequestFoldSpec

@@ -29,6 +29,7 @@ nav:
   - Keep recovery and retirement available: docs/record-value.md
   - Read the registry page generated from the chain: docs/registry-page.md
   - Connecting singular to a ledger provider: docs/singular-node.md
+  - Create a registry and register keys: docs/registry-commands.md
   - Conformance evidence: docs/conformance-evidence.md
   - Consumer conformance record: docs/consumer-conformance.md
   - What singular-negative shows: docs/negative-host.md

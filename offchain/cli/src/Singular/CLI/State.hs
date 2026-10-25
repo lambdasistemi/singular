@@ -1,0 +1,409 @@
+{-# LANGUAGE OverloadedStrings #-}
+
+{- |
+Module      : Singular.CLI.State
+Description : Create the registry of an application, and fold its pending registrations, with the library's builders
+License     : Apache-2.0
+
+The commands that make a registry on the proved design and fold what is booked
+in it. They are written once, against the library's builders, and a program
+hosts them by handing over what it knows of its application: the policy of the
+application and the validators it owns, the steps it adds to the creation of a
+registry, and the pending registrations it lets a fold spend. The neutral
+@singular@ program knows no application beyond the policy it is given; open datum
+knows its request validator.
+
+@create@ publishes the state validator, and the validators the application
+owns, as reference scripts when no live copy of them exists, in a transaction of
+its own; a later registry finds the live copies and sends one transaction. The
+transaction that creates the registry spends the seed.
+
+@fold@ builds, from the chain alone, the transaction that folds the pending
+registrations the caller names into the registry: it reads the registry's state,
+replays its public history and proves each key absent. Nothing of the
+registrations' booker is needed.
+-}
+module Singular.CLI.State
+    ( -- * What a program hosts
+      Host (..)
+    , neutralHost
+
+      -- * The commands
+    , runStateCreate
+    , runStateFold
+    ) where
+
+import Control.Monad (forM, unless)
+import Data.Aeson (Value, object, toJSON, (.=))
+import Data.ByteString (ByteString)
+import Data.ByteString.Base16 qualified as B16
+import Data.ByteString.Char8 qualified as BC
+import Data.ByteString.Short qualified as SBS
+import Data.List.NonEmpty qualified as NE
+import Data.Maybe (fromMaybe)
+import Data.Text (Text)
+import Data.Text qualified as T
+import Lens.Micro ((^.))
+
+import Cardano.Crypto.Hash (hashFromBytes)
+import Cardano.Ledger.Address (Addr)
+import Cardano.Ledger.Api.Tx.Out (coinTxOutL)
+import Cardano.Ledger.BaseTypes (Network (Testnet))
+import Cardano.Ledger.Coin (Coin (..))
+import Cardano.Ledger.Core (Script, hashScript)
+import Cardano.Ledger.Hashes (ScriptHash (..))
+import Cardano.Ledger.Mary.Value (PolicyID (..))
+import Cardano.Ledger.TxIn (TxIn)
+
+import Singular.CLI.Command
+    ( ApplicationPolicy (..)
+    , RegistryAccess (..)
+    , StateCreateArgs (..)
+    , StateFoldArgs (..)
+    , WriteSettings (..)
+    )
+import Singular.CLI.Live (receipt, txInText)
+import Singular.CLI.Promise (Promise (..))
+import Singular.CLI.Receipt (OutcomeClass (..))
+import Singular.CLI.Registry (registryFields)
+import Singular.CLI.Session
+    ( Env
+    , WriteContext (..)
+    , failWith
+    , readStep
+    )
+import Singular.CLI.Steps
+    ( creationToken
+    , loadReleaseBlueprint
+    , observeOutput
+    , refusing
+    , scriptSource
+    , sendStep
+    , stateWrite
+    )
+import Singular.Registry.Blueprint (Blueprint)
+import Singular.Registry.Evidence (NoWitness)
+import Singular.Registry.Ledger (ConwayEra, TxOut)
+import Singular.Registry.LedgerProvider
+    ( OutputQuery (..)
+    , Session
+    )
+import Singular.Registry.ProviderSettings (ProviderSettings (..))
+import Singular.Registry.StateToken (renderStateToken)
+import Singular.Registry.TrieState
+    ( RegistryIdentity (..)
+    , StatePolicyId (..)
+    )
+import Singular.Registry.TxBuilder.Internal (scriptHashBytes)
+import Singular.State.Assemble
+    ( Payer (..)
+    , Program
+    , inlineDatumOf
+    , readOutputs
+    , resolvePayer
+    )
+import Singular.State.Fold qualified as Fold
+import Singular.State.Genesis (buildGenesis)
+import Singular.State.Publication
+    ( Publication (..)
+    , References (..)
+    , planReferences
+    )
+import Singular.State.Records (decodeStateDatum)
+import Singular.State.Script
+    ( ScriptSource (..)
+    , StateScript (..)
+    , referenceOutputs
+    , stateScriptFromBlueprint
+    )
+
+-- | What a program that hosts the commands knows of its application.
+data Host = Host
+    { hostScripts
+        :: Blueprint
+        -> Maybe ApplicationPolicy
+        -> Either String (PolicyID, [Script ConwayEra])
+    {- ^ The policy of the application, which is the state validator's one
+    parameter, and the validators the application owns, from the release's
+    blueprint and the policy the caller gave, when the program lets the
+    caller give it
+    -}
+    , hostCreation
+        :: [(Script ConwayEra, ScriptSource)]
+        -> TxIn
+        -> RegistryIdentity
+        -> Program ()
+    {- ^ The steps the application adds to the transaction that creates a
+    registry, given where each validator it owns is taken from, the seed and
+    the registry
+    -}
+    , hostFold
+        :: Session NoWitness IO
+        -> Network
+        -> [(Script ConwayEra, ScriptSource)]
+        -> IO (Either String Fold.Application)
+    {- ^ What the application contributes to a fold, given where each
+    validator it owns is taken from
+    -}
+    }
+
+{- | The program that knows no application beyond the policy it is given: it
+creates a registry with no step of its own and folds nothing.
+-}
+neutralHost :: Host
+neutralHost =
+    Host
+        { hostScripts = \_ given -> case given of
+            Nothing -> Left "no application policy is given"
+            Just (ApplicationPolicy bytes) -> case hashFromBytes (SBS.fromShort bytes) of
+                Just hash -> Right (PolicyID (ScriptHash hash), [])
+                Nothing -> Left "the application policy is not a 28-byte hash"
+        , hostCreation = \_ _ _ -> pure ()
+        , hostFold = \_ _ _ ->
+            pure
+                (Left "this program composes no application, so it folds nothing")
+        }
+
+-- ---------------------------------------------------------
+-- create
+-- ---------------------------------------------------------
+
+{- | Create a registry: publish the scripts no live copy carries, then spend
+the seed.
+-}
+runStateCreate :: Env -> Host -> StateCreateArgs -> IO Value
+runStateCreate env host a = do
+    blueprint <- loadReleaseBlueprint (stateCreateBlueprint a)
+    (application, own) <-
+        either (failWith ClientRefusal) pure $
+            hostScripts host blueprint (stateCreatePolicy a)
+    stateScript <-
+        either (failWith ClientRefusal . ("the state validator: " <>)) pure $
+            stateScriptFromBlueprint blueprint application
+    let ws = stateCreateWrite a
+        magic = providerMagic (writeProvider ws)
+        scripts = stateScript : own
+    stateWrite
+        env
+        (stateCreateStateDir a)
+        (creationToken (hashScript stateScript))
+        "state create"
+        ws
+        $ \wc reconciled -> do
+            let payer = wcCaller wc
+            planned <-
+                readStep
+                    (wcTracer wc)
+                    (wcSource wc)
+                    ["wallet outputs", "reference scripts"]
+                    (wcCapabilities wc)
+                    (\view -> planReferences view payer scripts)
+            references <- refusing planned
+            published <- case referencesPublication references of
+                Nothing -> pure []
+                Just _ -> publishScripts wc payer scripts
+            let found =
+                    [(hash, ref) | (hash, (ref, _)) <- referencesLive references]
+                        <> published
+                sourceOf script = scriptSource script found
+                stateSource = sourceOf stateScript
+                ownSources = [(script, sourceOf script) | script <- own]
+            (confirmed, (registry, seed)) <-
+                sendStep
+                    wc
+                    "create"
+                    ["wallet outputs"]
+                    ( \(RegistryIdentity _ name, _) -> HoldsToken (PolicyID (hashScript stateScript)) name
+                    )
+                    $ \view -> do
+                        funded <- resolvePayer view payer >>= refusing
+                        let seed = fromMaybe (fst (payerFunding funded)) (stateCreateSeed a)
+                        carriers <-
+                            concat
+                                <$> traverse
+                                    ( \(script, source) ->
+                                        referenceOutputs view script source >>= refusing
+                                    )
+                                    ownSources
+                        (tx, registry) <-
+                            buildGenesis
+                                view
+                                (StateScript stateScript stateSource)
+                                seed
+                                payer
+                                carriers
+                                (hostCreation host ownSources seed)
+                                >>= refusing
+                        pure (tx, (registry, seed))
+            let RegistryIdentity _ name = registry
+                token = (PolicyID (hashScript stateScript), name)
+            (output, out) <-
+                observeOutput wc "create" confirmed 0 (HoldsToken (fst token) name)
+            pure . receipt "state create" Success $
+                registryFields magic token
+                    <> [ ("stateToken", toJSON (renderStateToken token))
+                       , ("seed", toJSON (txInText seed))
+                       , ("stateOutput", toJSON (txInText output))
+                       , ("root", toJSON (rootOf out))
+                       ,
+                           ( "applicationPolicy"
+                           , toJSON (hexOf (scriptHashBytes (policyHash application)))
+                           )
+                       ,
+                           ( "scripts"
+                           , toJSON
+                                ( scriptsFields
+                                    (zip ("state" : map (const "application") own) scripts)
+                                    found
+                                    published
+                                )
+                           )
+                       , ("reconciled", reconciled)
+                       ]
+  where
+    policyHash (PolicyID hash) = hash
+
+{- | Publish the scripts no live copy carries, in one transaction, and say
+where each now sits.
+-}
+publishScripts
+    :: WriteContext -> Addr -> [Script ConwayEra] -> IO [(ScriptHash, TxIn)]
+publishScripts wc payer scripts = do
+    (confirmed, located) <-
+        sendStep
+            wc
+            "publish-scripts"
+            ["wallet outputs", "reference scripts"]
+            (CarriesScript . fst . NE.head)
+            $ \view -> do
+                references <- planReferences view payer scripts >>= refusing
+                case referencesPublication references of
+                    Nothing ->
+                        failWith
+                            ClientRefusal
+                            "the wallet's view changed while the scripts were being planned: every script has a live copy now; run the command again"
+                    Just publication ->
+                        case NE.nonEmpty (publicationOutputs publication) of
+                            Nothing ->
+                                failWith
+                                    ClientRefusal
+                                    "the publication holds no script"
+                            Just located -> pure (publicationTx publication, located)
+    _ <-
+        observeOutput
+            wc
+            "publish-scripts"
+            confirmed
+            0
+            (CarriesScript (fst (NE.head located)))
+    pure (NE.toList located)
+
+-- | The scripts of the creation, each with where it is taken from and whether this run published it.
+scriptsFields
+    :: [(Text, Script ConwayEra)]
+    -> [(ScriptHash, TxIn)]
+    -> [(ScriptHash, TxIn)]
+    -> [Value]
+scriptsFields named found published =
+    [ object
+        [ "script" .= role
+        , "hash" .= hexOf (scriptHashBytes (hashScript script))
+        , "reference" .= fmap txInText (lookup (hashScript script) found)
+        , "published" .= (hashScript script `elem` map fst published)
+        ]
+    | (role, script) <- named
+    ]
+
+-- | The root a state output's datum carries, in hex.
+rootOf :: TxOut ConwayEra -> Text
+rootOf out = maybe "" hexOf (inlineDatumOf out >>= decodeStateDatum)
+
+hexOf :: ByteString -> Text
+hexOf = T.pack . BC.unpack . B16.encode
+
+-- ---------------------------------------------------------
+-- fold
+-- ---------------------------------------------------------
+
+{- | Fold the pending registrations the caller names into the registry, built
+from the chain alone.
+-}
+runStateFold :: Env -> Host -> StateFoldArgs -> IO Value
+runStateFold env host a = do
+    blueprint <- loadReleaseBlueprint (stateFoldBlueprint a)
+    (application, own) <-
+        either (failWith ClientRefusal) pure $
+            hostScripts host blueprint Nothing
+    stateScript <-
+        either (failWith ClientRefusal . ("the state validator: " <>)) pure $
+            stateScriptFromBlueprint blueprint application
+    let token@(policy, name) = accessToken (stateFoldAccess a)
+        ws = stateFoldWrite a
+        magic = providerMagic (writeProvider ws)
+        PolicyID statePolicyHash = policy
+        registry =
+            RegistryIdentity
+                (StatePolicyId (scriptHashBytes statePolicyHash))
+                name
+        scripts = stateScript : own
+    unless (policy == PolicyID (hashScript stateScript)) $
+        failWith
+            ClientRefusal
+            ( "the registry's state policy is not the one the release's state validator has for this application: "
+                <> "this blueprint is not the registry's release"
+            )
+    stateWrite env (stateFoldStateDir a) token "state fold" ws $ \wc reconciled -> do
+        let payer = wcCaller wc
+        (confirmed, folded) <-
+            sendStep
+                wc
+                "fold"
+                ["wallet outputs", "reference scripts", "registry"]
+                (const (HoldsToken policy name))
+                $ \view -> do
+                    references <- planReferences view payer scripts >>= refusing
+                    let found = [(hash, ref) | (hash, (ref, _)) <- referencesLive references]
+                        sourceOf script = scriptSource script found
+                    contributed <-
+                        hostFold host view Testnet [(script, sourceOf script) | script <- own]
+                            >>= either (failWith ClientRefusal) pure
+                    keys <- forM (stateFoldPending a) $ \pending -> do
+                        read' <- readOutputs view (AtTxIn pending)
+                        pure
+                            ( pending
+                            , case read' of
+                                Right [(_, out)] -> Fold.regKey <$> Fold.appDecode contributed out
+                                _ -> Nothing
+                            )
+                    tx <-
+                        Fold.buildRegistrationFold
+                            view
+                            (StateScript stateScript (sourceOf stateScript))
+                            contributed
+                            registry
+                            (stateFoldPending a)
+                            payer
+                            >>= refusing
+                    pure (tx, keys)
+        (output, out) <-
+            observeOutput wc "fold" confirmed 0 (HoldsToken policy name)
+        pure . receipt "state fold" Success $
+            registryFields magic token
+                <> [ ("stateToken", toJSON (renderStateToken token))
+                   , ("stateOutput", toJSON (txInText output))
+                   , ("root", toJSON (rootOf out))
+                   , ("lovelace", toJSON (coinOf out))
+                   ,
+                       ( "folded"
+                       , toJSON
+                            [ object
+                                [ "pending" .= txInText pending
+                                , "key" .= fmap hexOf key
+                                ]
+                            | (pending, key) <- folded
+                            ]
+                       )
+                   , ("reconciled", reconciled)
+                   ]
+  where
+    coinOf out = let Coin c = out ^. coinTxOutL in c

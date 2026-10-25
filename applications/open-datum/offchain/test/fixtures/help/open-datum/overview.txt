@@ -14,12 +14,17 @@ Available settings:
   switch: --version
 
 All commands:
-  open-datum create           Boot a registry, or preview its identity
-  open-datum insert           Book a new key with its payload
-  open-datum update           Replace the payload of a key
-  open-datum terminate        Book the termination of a key
-  open-datum fold             Fold the pending requests into the registry
-  open-datum inspect          Read a key back, with its payload
+  open-datum create                Boot a registry, or preview its identity
+  open-datum insert                Book a new key with its payload
+  open-datum update                Replace the payload of a key
+  open-datum terminate             Book the termination of a key
+  open-datum fold                  Fold the pending requests into the registry
+  open-datum inspect               Read a key back, with its payload
+  open-datum state create          Create a registry
+  open-datum state fold            Fold the registrations you name
+  open-datum registration book     Book the registration of a key
+  open-datum registration reclaim  Take back a registration you booked
+  open-datum registration cleanup  Clean up an expired registration
 
 Help on one command: open-datum COMMAND --help
 Shell completion (bash): source <(open-datum --bash-completion-script "$(which open-datum)")

@@ -23,6 +23,7 @@ import Singular.Application.OpenDatum.RecoverySpec qualified
 import Singular.Application.OpenDatum.RegistryAddressSpec qualified
 import Singular.Application.OpenDatum.RegistryStateTokenSpec qualified
 import Singular.Application.OpenDatum.RequestBookingSpec qualified
+import Singular.Application.OpenDatum.RequestCommandSpec qualified
 import Singular.Application.OpenDatum.RequestConfigurationSpec qualified
 import Singular.Application.OpenDatum.RequestCreationSpec qualified
 import Singular.Application.OpenDatum.RequestFoldSpec qualified
@@ -167,6 +168,12 @@ main = hspec $ do
     describe
         (tagged "Singular.Application.OpenDatum.CommandRun" [Cli])
         Singular.Application.OpenDatum.CommandRunSpec.spec
+    describe
+        ( tagged
+            "Singular.Application.OpenDatum.RequestCommand"
+            [Cli, Recovery, Evaluation]
+        )
+        Singular.Application.OpenDatum.RequestCommandSpec.spec
     describe
         (tagged "Singular.Application.OpenDatum.ClosedMode" [Cli])
         Singular.Application.OpenDatum.ClosedModeSpec.spec

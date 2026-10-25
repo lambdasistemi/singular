@@ -39,12 +39,25 @@ import Data.Text qualified as T
 import System.Exit (ExitCode (..))
 
 import Singular.Application.OpenDatum.Command
-    ( OpenDatumCommand (..)
+    ( BookArgs (..)
+    , OpenDatumCommand (..)
+    , PendingArgs (..)
+    , StateCreateArgs (..)
+    , StateFoldArgs (..)
     )
 import Singular.Application.OpenDatum.Entry
     ( runInsert
     , runTerminate
     , runUpdate
+    )
+import Singular.Application.OpenDatum.Registration
+    ( openDatumHost
+    , runBook
+    , runCleanup
+    , runReclaim
+    )
+import Singular.Application.OpenDatum.Requests.Records
+    ( RequestParameters (..)
     )
 import Singular.Application.OpenDatum.Value
     ( Mode (..)
@@ -73,6 +86,7 @@ import Singular.CLI.Session
     , readOnce
     )
 import Singular.CLI.SettingsFile (keepStateToken)
+import Singular.CLI.State (runStateCreate, runStateFold)
 import Singular.Registry.Application (Application (..))
 import Singular.Registry.Config.Application ()
 import Singular.Registry.LedgerProvider (Asset)
@@ -198,6 +212,48 @@ runOpenDatum env = \case
         finish (envTracer env) "fold" (foldReceipt a) $ do
             (mode, modeEnv) <- readModeForFold env a
             runFold (applicationIn mode) modeEnv a
+    OpenStateCreate a parameters ->
+        finish
+            (envTracer env)
+            "state create"
+            (stateCreateReceipt a)
+            ( openWriteSigner (stateCreateWrite a)
+                >>= \ws ->
+                    runStateCreate env (openDatumHost parameters) a{stateCreateWrite = ws}
+            )
+    OpenStateFold a ->
+        finish
+            (envTracer env)
+            "state fold"
+            (stateFoldReceipt a)
+            ( openWriteSigner (stateFoldWrite a)
+                >>= \ws ->
+                    runStateFold env (openDatumHost noParameters) a{stateFoldWrite = ws}
+            )
+    OpenRegistrationBook a ->
+        finish
+            (envTracer env)
+            "registration book"
+            (bookArgsReceipt a)
+            ( openWriteSigner (bookArgsWrite a)
+                >>= \ws -> runBook env a{bookArgsWrite = ws}
+            )
+    OpenRegistrationReclaim a ->
+        finish
+            (envTracer env)
+            "registration reclaim"
+            (pendingArgsReceipt a)
+            ( openWriteSigner (pendingArgsWrite a)
+                >>= \ws -> runReclaim env a{pendingArgsWrite = ws}
+            )
+    OpenRegistrationCleanup a ->
+        finish
+            (envTracer env)
+            "registration cleanup"
+            (pendingArgsReceipt a)
+            ( openWriteSigner (pendingArgsWrite a)
+                >>= \ws -> runCleanup env a{pendingArgsWrite = ws}
+            )
     OpenInspect a ->
         finish (envTracer env) "inspect" (inspectReceipt a) $ do
             (mode, modeEnv) <- readModeForInspect env a
@@ -276,3 +332,16 @@ readModeForInspect env a = followed env =<< gatedMode env settings blueprint tok
 -- | A mode with the environment that follows it.
 followed :: Env -> Mode -> IO (Mode, Env)
 followed env mode = pure (mode, followingMode mode env)
+
+{- | The parameters of a registry's configuration, none of which a fold reads: the
+fold creates nothing.
+-}
+noParameters :: RequestParameters
+noParameters =
+    RequestParameters
+        { rpRegistrationCost = 0
+        , rpMinimumTip = 0
+        , rpProcessTime = 0
+        , rpRetractTime = 0
+        , rpBookingWidth = 0
+        }

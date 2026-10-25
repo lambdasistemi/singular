@@ -121,6 +121,7 @@ spec = do
                 world <- newCreation
                 single <- createRegistry world
                 void single `shouldBe` Right ()
+                references <- requestReferences world
                 outcome <-
                     withSession world $ \session ->
                         buildGenesis
@@ -128,6 +129,7 @@ spec = do
                             (crState world)
                             (crSeed world)
                             (crBooker world)
+                            references
                             ( \registry -> do
                                 record world registry
                                 record world registry

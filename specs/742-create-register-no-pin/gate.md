@@ -29,6 +29,7 @@ the commit owner starts. Every command is an existing hosted command, or one thi
 | G14 | the current line's vectors are unmoved; if the new preimage vectors join the generated vectors, they are fresh too | ci.yml `registry-test-vectors`; registry.yml `vectors-fresh` | `nix build --quiet --no-link .#checks.x86_64-linux.cage-test-vectors` in `offchain/`; `nix run --quiet .#vectors-check` | 0 |
 | G15 | the new commands keep transaction identity on cancellation and uncertain submission, without resubmitting | registry.yml `cli-recovery-partition`, with partitions for the new commands (CI change in this ticket) | `nix run --quiet .#cli-recovery-partition -- <partition>` | 0 |
 | G16 | the open-datum model proves the configuration statement and keeps its other proofs | ci.yml `dev-shell-checks` | `nix develop --quiet -c just open-datum-application-held-model` | 0 |
+| G17 | the effect sites of new off-chain code are owned and listed, and nothing reaches the node outside its confinement | ci.yml `dev-shell-checks` | `nix develop --quiet -c just io-ownership-check`; `nix develop --quiet -c just io-ownership-controls`; `nix develop --quiet -c just node-confinement` | 0 |
 
 Rows run scoped to what each slice can break. `just ci` runs once on the final candidate of each pull request, then the
 push; hosted checks on the pull request head are the net. Every build or test runs in a named, memory-capped scope:

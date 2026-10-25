@@ -62,6 +62,7 @@ module Singular.State.StateWorld
     , registryOf
     , seedOf
     , otherScript
+    , applicationCode
     , referenceHolder
 
       -- * A registry to fold into
@@ -79,6 +80,7 @@ module Singular.State.StateWorld
     , everyScriptAccepts
     , refusedBy
     , soundnessProblems
+    , ledgerMinimumFee
 
       -- * Reading a transaction
     , outputsOf
@@ -155,6 +157,7 @@ import Cardano.Ledger.Api.Tx.Body
     , mintTxBodyL
     , mkBasicTxBody
     , outputsTxBodyL
+    , referenceInputsTxBodyL
     , vldtTxBodyL
     )
 import Cardano.Ledger.Api.Tx.Out
@@ -192,6 +195,7 @@ import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import Cardano.Ledger.Plutus.TxInfo (transAddr)
 import Cardano.Ledger.TxIn (TxId (..), TxIn (..))
 import Cardano.Slotting.Slot (SlotNo (..))
+import Cardano.Tx.Balance (refScriptsSize)
 import Cardano.Tx.Build qualified as Tx
 import Cardano.Tx.Ledger (ConwayTx)
 
@@ -218,6 +222,7 @@ import Singular.Registry.RawChainFixture
 import Singular.Registry.SessionIO (evaluateTx, withLatest)
 import Singular.Registry.SyntheticLedger
     ( errorProgram
+    , paddedProgram
     , unitProgram
     , withSyntheticCosts
     )
@@ -728,6 +733,27 @@ soundnessProblems world tx = do
                     && Set.null (body ^. collateralInputsTxBodyL)
                ]
 
+{- | The least fee the ledger accepts for a transaction as built, priced for one
+key witness and for the reference scripts of every input and reference input
+it names, read from the chain.
+-}
+ledgerMinimumFee :: World -> ConwayTx -> IO Integer
+ledgerMinimumFee world tx = do
+    let named =
+            inputsOf tx
+                <> Set.toAscList (tx ^. bodyTxL . referenceInputsTxBodyL)
+    held <- mapM (outputAt world) named
+    let outputs = [(ref, out) | (ref, Just out) <- zip named held]
+        pp = withSyntheticCosts preprodParams
+        Coin minimumFee =
+            estimateMinFeeTx
+                pp
+                tx
+                1
+                0
+                (refScriptsSize (Set.fromList (map fst outputs)) outputs)
+    pure minimumFee
+
 -- ---------------------------------------------------------
 -- Reading a transaction
 -- ---------------------------------------------------------
@@ -851,6 +877,10 @@ paidTo address tx =
 -- | A script that is neither the state validator nor the stand-in.
 otherScript :: Script ConwayEra
 otherScript = scriptFromBytes "another script" (errorProgram 1)
+
+-- | The code of an application, as large as a compiled validator.
+applicationCode :: Script ConwayEra
+applicationCode = scriptFromBytes "application code" (paddedProgram 1 8_000)
 
 -- | An output that carries a script as a reference script.
 referenceHolder :: Addr -> Script ConwayEra -> TxOut ConwayEra

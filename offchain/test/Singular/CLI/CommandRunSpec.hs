@@ -30,6 +30,7 @@ module Singular.CLI.CommandRunSpec
     , Rig (..)
     , Run (..)
     , withRig
+    , withRigOf
     , run
     , runAt
     , runVia
@@ -46,6 +47,7 @@ module Singular.CLI.CommandRunSpec
     , textAt
     , valueAt
     , elementsAt
+    , submissionsOf
     , receiptReason
     ) where
 
@@ -977,6 +979,7 @@ constructorOf = \case
     Fold _ -> "Fold"
     Reject _ -> "Reject"
     Reclaim _ -> "Reclaim"
+    StateCreate _ -> "StateCreate"
     Inspect _ -> "Inspect"
     WalletCreate _ -> "WalletCreate"
     WalletAddress _ -> "WalletAddress"
@@ -1374,6 +1377,7 @@ blueprintOf program =
                , validator "script-app.script-app" 2
                , validator "witness.witness" 3
                , validator "witness.witness" 3
+               , validator "singular_state.singular_state.spend" 2
                ]
         , "definitions" .= Aeson.object []
         ]
@@ -2933,6 +2937,9 @@ lifecycle rig = do
             "registry"
             "describe by state token"
             (["registry", "describe", "--json"] <> tokenArgs t1)
+    -- The registry of an application on the proved design, made by the state line.
+    stateCreate <-
+        runAt rig "state" "state create" (["state", "create"] <> policyArgs)
     -- The address of the registry the create made: no node, blueprint or key.
     address <- runAddress rig "address from the state token" t1
     -- A signed bundle of one self-payment from the wallet, sent by submit:
@@ -2960,6 +2967,7 @@ lifecycle rig = do
         , page
         , address
         , submitted
+        , stateCreate
         ]
 
 {- | @registry address@ over the rig: it reads no chain and takes no node,

@@ -126,6 +126,7 @@ spec = describe "the command lines in use" $ do
                 , "Reclaim"
                 , "Reject"
                 , "RegistryAddress"
+                , "StateCreate"
                 , "SubmitBundle"
                 , "WalletAddress"
                 , "WalletCreate"
