@@ -559,8 +559,33 @@ fn folds(facts: List<Facts>) -> List<Candidate> {
   )
 }
 
-fn attacks(_world: World, _facts: List<Facts>) -> List<Candidate> {
-  []
+fn attacks(world: World, _facts: List<Facts>) -> List<Candidate> {
+  list.flat_map(
+    list.filter(
+      world.pending,
+      fn(each) { each.registry < list.length(world.registries) },
+    ),
+    fn(each) { attacks_on_request(world, each) },
+  )
+}
+
+fn attacks_on_request(world: World, each: Pending) -> List<Candidate> {
+  let registry = registry_at(world, each.registry)
+  let key = key_of_step(each.step)
+  when each.step is {
+    Terminating(_) ->
+      if leaf_of(registry, key) == Active {
+        [candidate(TerminateKeepingToken, each.registry, key, 0)]
+      } else {
+        []
+      }
+    Registering(_) ->
+      when leaf_of(registry, key) is {
+        Absent -> [candidate(RegisterWithTwoTokens, each.registry, key, 0)]
+        Active -> [candidate(RegisterActiveKey, each.registry, key, 0)]
+        Terminal -> []
+      }
+  }
 }
 
 fn is_registration(step: Step) -> Bool {
@@ -666,6 +691,12 @@ pub fn build(world: World, chosen: Candidate) -> Proposal {
           fn(step) { list.has(chosen.keys, key_of_step(step)) },
         ),
       )
+    TerminateKeepingToken ->
+      terminate_keeping_token(world, chosen.registry, chosen.key)
+    RegisterWithTwoTokens ->
+      register_with_two_tokens(world, chosen.registry, chosen.key)
+    RegisterActiveKey ->
+      register_not_absent(RegisterActiveKey, world, chosen.registry, chosen.key)
     _ -> fail @"this attack is not proposed yet"
   }
 }
@@ -849,6 +880,102 @@ fn fold_proposal(
 fn fold_batch(world: World, index: Int, steps: List<Step>) -> Proposal {
   fold_proposal(
     FoldBatch,
+    world,
+    index,
+    steps,
+    fold_transaction(world, index, steps),
+  )
+}
+
+fn step_for(world: World, index: Int, key: ByteArray) -> Step {
+  expect Some(each) =
+    list.find(
+      world.pending,
+      fn(each) { each.registry == index && key_of_step(each.step) == key },
+    )
+  each.step
+}
+
+/// `value` with one more of the token `name` of the state policy.
+fn with_token(value: Value, name: AssetName, quantity: Int) -> Value {
+  value |> add(state_policy, name, quantity)
+}
+
+fn token_name(world: World, index: Int, key: ByteArray) -> AssetName {
+  name_in(registry_at(world, index), key)
+}
+
+/// An output at a script address that holds nothing but the token `name`: where
+/// the token goes when a fold does not burn it, or mints it for a key it does not
+/// register.
+fn token_output(name: AssetName) -> Output {
+  Output {
+    address: from_script(holding_script_b),
+    value: with_token(from_lovelace(2_000_000), name, 1),
+    datum: NoDatum,
+    reference_script: None,
+  }
+}
+
+/// A termination whose fold does not burn the token: the token goes to an output
+/// of its own instead.
+fn terminate_keeping_token(world: World, index: Int, key: ByteArray) -> Proposal {
+  let steps = [step_for(world, index, key)]
+  let base = fold_transaction(world, index, steps)
+  let name = token_name(world, index, key)
+  fold_proposal(
+    TerminateKeepingToken,
+    world,
+    index,
+    steps,
+    Transaction {
+      ..base,
+      mint: with_token(base.mint, name, 1),
+      outputs: list.concat(base.outputs, [token_output(name)]),
+    },
+  )
+}
+
+/// A registration that mints two tokens for the key and delivers both to the
+/// holding.
+fn register_with_two_tokens(
+  world: World,
+  index: Int,
+  key: ByteArray,
+) -> Proposal {
+  let steps = [step_for(world, index, key)]
+  let base = fold_transaction(world, index, steps)
+  let name = token_name(world, index, key)
+  expect [change, state, holding, ..rest] = base.outputs
+  fold_proposal(
+    RegisterWithTwoTokens,
+    world,
+    index,
+    steps,
+    Transaction {
+      ..base,
+      mint: with_token(base.mint, name, 1),
+      outputs: [
+        change,
+        state,
+        Output { ..holding, value: with_token(holding.value, name, 1) },
+        ..rest
+      ],
+    },
+  )
+}
+
+/// The registration of a key that is not absent, the one the fold builds when
+/// it is shown the trie without the key.
+fn register_not_absent(
+  kind: Kind,
+  world: World,
+  index: Int,
+  key: ByteArray,
+) -> Proposal {
+  let steps = [step_for(world, index, key)]
+  fold_proposal(
+    kind,
     world,
     index,
     steps,
