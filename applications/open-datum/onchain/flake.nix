@@ -446,7 +446,7 @@
                 echo "FAIL: the test assembly never executed the closed refusal rows" >&2
                 exit 1
               }
-              for suite in configuration registration mint; do
+              for suite in configuration registration mint phases fold reclaim cleanup payments; do
                 grep -q "open_datum_requests_$suite.tests" "$out" || {
                   echo "FAIL: the test assembly never executed the request validator suite $suite" >&2
                   exit 1

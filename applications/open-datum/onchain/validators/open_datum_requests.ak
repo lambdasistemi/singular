@@ -5,7 +5,8 @@
 //// records at its address.
 ////
 //// ## Dependencies
-//// `application/mint` decides the mint.
+//// `application/mint` decides the mint and `application/spend` the spend of a
+//// pending registration.
 ////
 //// ## Assumptions
 //// The hash of this script is both the policy of its tokens and the payment
@@ -18,6 +19,7 @@
 //// registration and of a live holding arrive with their own rules.
 
 use application/mint.{ApplicationAction, application_mint}
+use application/spend.{SpendAction, application_spend}
 use cardano/assets.{PolicyId}
 use cardano/transaction.{OutputReference, Transaction}
 
@@ -34,11 +36,11 @@ validator open_datum_requests {
 
   spend(
     _datum: Option<Data>,
-    _redeemer: Data,
-    _own_reference: OutputReference,
-    _tx: Transaction,
+    redeemer: SpendAction,
+    own_reference: OutputReference,
+    tx: Transaction,
   ) {
-    False
+    application_spend(redeemer, own_reference, tx)
   }
 
   else(_) {
