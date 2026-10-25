@@ -46,6 +46,12 @@ library
     Singular.Application.OpenDatum.Plan
     Singular.Application.OpenDatum.Preview
     Singular.Application.OpenDatum.Release
+    Singular.Application.OpenDatum.Requests.Booking
+    Singular.Application.OpenDatum.Requests.Configuration
+    Singular.Application.OpenDatum.Requests.Pending
+    Singular.Application.OpenDatum.Requests.Records
+    Singular.Application.OpenDatum.Requests.Refusal
+    Singular.Application.OpenDatum.Requests.Script
     Singular.Application.OpenDatum.Root
     Singular.Application.OpenDatum.Run
     Singular.Application.OpenDatum.Script
@@ -136,6 +142,12 @@ test-suite open-datum-tests
     Negative.Submit
     Singular.Application.OpenDatum.BuildersSpec
     Singular.Application.OpenDatum.BuildSpec
+    Singular.Application.OpenDatum.RequestBookingSpec
+    Singular.Application.OpenDatum.RequestConfigurationSpec
+    Singular.Application.OpenDatum.RequestPendingSpec
+    Singular.Application.OpenDatum.RequestRecordsSpec
+    Singular.Application.OpenDatum.RequestScriptSpec
+    Singular.Application.OpenDatum.RequestWorld
     Singular.Application.OpenDatum.EnvelopeSpec
     Singular.Application.OpenDatum.CommandRunSpec
     Singular.Application.OpenDatum.FlagGroupExtentSpec

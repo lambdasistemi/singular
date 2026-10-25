@@ -22,6 +22,11 @@ import Singular.Application.OpenDatum.PinGateSpec qualified
 import Singular.Application.OpenDatum.RecoverySpec qualified
 import Singular.Application.OpenDatum.RegistryAddressSpec qualified
 import Singular.Application.OpenDatum.RegistryStateTokenSpec qualified
+import Singular.Application.OpenDatum.RequestBookingSpec qualified
+import Singular.Application.OpenDatum.RequestConfigurationSpec qualified
+import Singular.Application.OpenDatum.RequestPendingSpec qualified
+import Singular.Application.OpenDatum.RequestRecordsSpec qualified
+import Singular.Application.OpenDatum.RequestScriptSpec qualified
 import Singular.Application.OpenDatum.SaveStateTokenSpec qualified
 import Singular.Application.OpenDatum.SourcesSpec qualified
 import Singular.Application.OpenDatum.StateTokenSpec qualified
@@ -66,6 +71,36 @@ main = hspec $ do
     describe
         (tagged "Singular.Application.OpenDatum.Build" [Application, Builders])
         Singular.Application.OpenDatum.BuildSpec.spec
+    describe
+        ( tagged
+            "Singular.Application.OpenDatum.RequestRecords"
+            [Application, Builders]
+        )
+        Singular.Application.OpenDatum.RequestRecordsSpec.spec
+    describe
+        ( tagged
+            "Singular.Application.OpenDatum.RequestBooking"
+            [Application, Builders, Evaluation]
+        )
+        Singular.Application.OpenDatum.RequestBookingSpec.spec
+    describe
+        ( tagged
+            "Singular.Application.OpenDatum.RequestConfiguration"
+            [Application, Builders, Evaluation]
+        )
+        Singular.Application.OpenDatum.RequestConfigurationSpec.spec
+    describe
+        ( tagged
+            "Singular.Application.OpenDatum.RequestPending"
+            [Application, Builders, Evaluation]
+        )
+        Singular.Application.OpenDatum.RequestPendingSpec.spec
+    describe
+        ( tagged
+            "Singular.Application.OpenDatum.RequestScript"
+            [Application, Builders, Evaluation]
+        )
+        Singular.Application.OpenDatum.RequestScriptSpec.spec
     describe
         (tagged "Singular.Application.OpenDatum.InsertEnvelope" [Cli])
         Singular.Application.OpenDatum.InsertEnvelopeSpec.spec

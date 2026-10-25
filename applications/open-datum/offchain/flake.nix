@@ -153,6 +153,14 @@
           inherit (project.project) shell;
         };
 
+        # The request validator the builder rows judge their transactions with:
+        # the blueprint built by the application's on-chain tree, and the pinned
+        # identity manifest its hash is checked against.
+        openDatumBlueprint =
+          ((import ../onchain/flake.nix).outputs {
+            inherit nixpkgs flake-utils;
+          }).packages.${system}.plutus-blueprint;
+
         # The Koios fixtures live once, in the registry tree; the test
         # runner stages them where the tests expect them, beside the
         # application's own fixtures, since the repository holds no second
@@ -168,6 +176,8 @@
             chmod -R u+w "$fixture_dir/test/fixtures"
             cp -R ${appSrc}/test/fixtures/. "$fixture_dir/test/fixtures/"
             chmod -R u+w "$fixture_dir/test/fixtures"
+            export OPEN_DATUM_BLUEPRINT=${openDatumBlueprint}
+            export OPEN_DATUM_SCRIPT_IDENTITY=${../onchain/script-identity.json}
             cd "$fixture_dir"
             ${pkgs.lib.getExe openDatumComponents.tests.open-datum-tests} "$@"
           '';
