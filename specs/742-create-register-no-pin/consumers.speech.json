@@ -1,0 +1,36 @@
+{
+  "consumers-of-creating-a-registry-and-registering-a-key-on-the-proved-design": [
+    {
+      "text": "Consumers of creating a registry and registering a key on the proved design.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 742. This page is for the commit owner and the auditor: every place in the tree a slice of the plan can break, and what moves there.",
+      "pause": 400
+    }
+  ],
+  "census": [
+    {
+      "text": "Census.",
+      "pause": 500
+    },
+    {
+      "text": "Census of the current tree at 0c0ab880. Because the new line is added beside the current one, most of these are rows the slices must keep green rather than files they edit.",
+      "pause": 400
+    }
+  ],
+  "the-current-line-stays-untouched": [
+    {
+      "text": "The current line stays untouched.",
+      "pause": 500
+    },
+    {
+      "text": "The registry pin, the naming custody pin, the permanent contract tables and the generated Permanent.hs keep their bytes. A diff that moves one of them has edited the current line, which answer A-001 leaves to issue 743.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "consumers.md",
+    "sha256": "a974f77472ca8e9fa1449c52edcc31c6fbc4a1536df7aac2ed0f15449af9a650"
+  }
+}
