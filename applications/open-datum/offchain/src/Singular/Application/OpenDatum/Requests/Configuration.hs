@@ -15,15 +15,33 @@ module Singular.Application.OpenDatum.Requests.Configuration
     ( configurationCreate
     ) where
 
+import Data.Map.Strict qualified as Map
+
 import Cardano.Ledger.BaseTypes (Network)
+import Cardano.Ledger.Coin (Coin (..))
+import Cardano.Ledger.Mary.Value
+    ( MaryValue (..)
+    , MultiAsset (..)
+    )
 import Cardano.Ledger.TxIn (TxIn)
 import Cardano.Tx.Build (TxBuild)
+import Cardano.Tx.Build qualified as Tx
 
 import Singular.Application.OpenDatum.Requests.Records
-    ( RequestParameters
+    ( AsData (..)
+    , MintAction (..)
+    , RequestParameters
+    , configurationDatum
+    , mintRedeemer
     )
-import Singular.Application.OpenDatum.Requests.Script (RequestScript)
+import Singular.Application.OpenDatum.Requests.Script
+    ( RequestScript
+    , requestAddress
+    , requestPolicy
+    , useScript
+    )
 import Singular.Registry.TrieState (RegistryIdentity)
+import Singular.State.Preimage (configurationTokenName)
 
 {- | Add the configuration record of a registry to a transaction under
 construction: an output at the request address holding exactly the token of
@@ -38,4 +56,22 @@ configurationCreate
     -- ^ The seed the registry's genesis spends
     -> RequestParameters
     -> TxBuild q e ()
-configurationCreate _ _ _ _ _ = pure ()
+configurationCreate script net registry seed parameters = do
+    output <-
+        Tx.payTo'
+            (requestAddress net script)
+            ( MaryValue
+                (Coin 0)
+                (MultiAsset (Map.singleton policy (Map.singleton name 1)))
+            )
+            (AsData (configurationDatum parameters))
+    Tx.mint
+        policy
+        (Map.singleton name 1)
+        ( AsData
+            (mintRedeemer [ConfigurationCreate registry seed (toInteger output)])
+        )
+    useScript script
+  where
+    policy = requestPolicy script
+    name = configurationTokenName registry

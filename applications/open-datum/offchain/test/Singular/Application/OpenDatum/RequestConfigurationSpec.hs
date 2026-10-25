@@ -80,6 +80,7 @@ import Singular.Application.OpenDatum.RequestWorld
     , removeOutputs
     , seedIn
     , soundnessProblems
+    , txInOf
     , validatorAddress
     , withDatum
     , withMint
@@ -173,10 +174,11 @@ evaluator session tx =
 -- | Build a transaction from these inputs, the program and a collateral input.
 buildFrom
     :: Scenario
+    -> TxIn
     -> [TxIn]
     -> Tx.TxBuild NoQuery Void ()
     -> IO (Either (Tx.BuildError Void) ConwayTx)
-buildFrom sc spent program = do
+buildFrom sc collateral spent program = do
     let session = chainSession (scChain sc)
     pp <- parameters session
     resolved <- mapM (resolve sc) spent
@@ -187,7 +189,7 @@ buildFrom sc spent program = do
         resolved
         []
         (scPayer sc)
-        (program >> Tx.collateral (scFunding sc))
+        (program >> Tx.collateral collateral)
 
 resolve :: Scenario -> TxIn -> IO (TxIn, TxOut ConwayEra)
 resolve sc ref =
@@ -207,7 +209,11 @@ creationProgram sc = do
 
 creationTx :: Scenario -> IO ConwayTx
 creationTx sc =
-    buildFrom sc [seedIn, scFunding sc] (creationProgram sc)
+    buildFrom
+        sc
+        (scFunding sc)
+        [seedIn, scFunding sc]
+        (creationProgram sc)
         >>= expectBuilt
 
 -- | The record: the output at the validator's address, with its index.
@@ -359,8 +365,10 @@ spec = do
             sc <- creationScenario
             tx <- creationTx sc
             applyTransaction (scChain sc) tx
-            -- The seed is spent and the state token is not minted again.
-            later <- buildFrom sc [scFunding sc] (theStep sc)
+            -- The seed is spent and the state token is not minted again; the
+            -- later transaction is funded by another output of the payer.
+            let spare = txInOf '4' 0
+            later <- buildFrom sc spare [spare] (theStep sc)
             case later of
                 Left (Tx.EvalFailure _ _) -> pure ()
                 other ->
