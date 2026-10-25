@@ -91,7 +91,7 @@
       "pause": 400
     },
     {
-      "text": "Pull request 1's two chains are independent: the Singular chain and the open-datum chain may run in either order, one slice at a time.",
+      "text": "Pull request 1 is opened as two pull requests, so each merges into the epic branch as soon as it is complete: the Singular chain first, then the open-datum chain stacked on it.",
       "pause": 400
     }
   ],
@@ -117,6 +117,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "3a9a7df329000fb71c57432c03412ef51825ccf04255b4fb5b1833873f71acaf"
+    "sha256": "1762e6d94a2e209b14750b81c1e171abf70e4505d75c650e10cbb535f90be600"
   }
 }

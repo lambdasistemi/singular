@@ -110,8 +110,8 @@ flowchart LR
 | 4 | established-names | the new commands take the established `singular registry` and `open-datum` names; help snapshots, parser rows and recovery partitions follow | current-line-removed |
 | 4 | documentation-follows | the user documentation describes only the new line | current-line-removed |
 
-Pull request 1's two chains are independent: the Singular chain and the open-datum chain may run in either order, one
-slice at a time.
+Pull request 1 is opened as two pull requests, so each merges into the epic branch as soon as it is complete: the
+Singular chain first, then the open-datum chain stacked on it.
 
 ## Seats and briefs
 

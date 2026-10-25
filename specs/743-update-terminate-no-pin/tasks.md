@@ -11,7 +11,7 @@ the ticket owner accepts its slice.
 ## Pull request 1: Singular
 
 - [x] termination-preimage-vectors: byte vectors for the termination approval preimage, reproduced on-chain and off-chain.
-- [ ] termination-fold: the termination change and mixed batches; each statement with a check seen to fail.
+- [x] termination-fold: the termination change and mixed batches; each statement with a check seen to fail.
 - [ ] supply-and-history: the four history statements over generated accepted sequences, and the refused registration of a terminal key.
 
 ## Pull request 1: open datum
