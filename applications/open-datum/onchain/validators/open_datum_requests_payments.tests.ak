@@ -25,8 +25,8 @@ use cardano/transaction.{
 }
 use open_datum_requests
 use open_datum_requests_fixtures.{
-  application_policy, key_a, key_b, key_c, other_script, registration_a,
-  registration_of, registry_a, state_policy,
+  application_policy, key_a, key_b, key_c, other_script, pending_output,
+  registration_a, registration_of, registry_a, state_policy,
 }
 use open_datum_requests_pending_fixtures.{
   Spending, active_mint_of, between, burn_of, change, funding_reference,
@@ -307,6 +307,31 @@ test the_redeemer_of_an_input_at_another_script_requires_nothing() {
           output_reference: pending_reference_n(0),
           output: Output {
             ..pending_with_datum(registration, InlineDatum(0)),
+            address: from_script(other_script),
+          },
+        },
+      ],
+    }
+  and {
+    requires(base) == [
+      owes(registration.refund_address, request_lovelace(registration)),
+    ],
+    requires(elsewhere) == [],
+  }
+}
+
+/// The input carries a genuine registration, so only its address keeps it out.
+test the_redeemer_of_a_registration_held_at_another_script_requires_nothing() {
+  let registration = registration_a()
+  let base = transaction_spending([spending_of(0, registration, OwnerReclaim)])
+  let elsewhere =
+    Transaction {
+      ..base,
+      inputs: [
+        Input {
+          output_reference: pending_reference_n(0),
+          output: Output {
+            ..pending_output(registration),
             address: from_script(other_script),
           },
         },
