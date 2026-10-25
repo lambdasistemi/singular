@@ -1,0 +1,36 @@
+{
+  "consumers-of-updating-a-holding-and-terminating-its-key-on-the-proved-design": [
+    {
+      "text": "Consumers of updating a holding and terminating its key on the proved design.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 743. This page is for the commit owner and the auditor: every place in the tree a slice of the plan can break, and what moves there. Census of the tree at 000ccf6a.",
+      "pause": 400
+    }
+  ],
+  "pull-requests-1-to-3": [
+    {
+      "text": "Pull requests 1 to 3.",
+      "pause": 500
+    }
+  ],
+  "pull-request-4-the-current-line": [
+    {
+      "text": "Pull request 4: the current line.",
+      "pause": 500
+    },
+    {
+      "text": "The current line spans every layer of the repository. Its size, from the census:",
+      "pause": 400
+    },
+    {
+      "text": "What pull request 4 removes, keeps or rehomes in each layer is set by the plan's removal decisions.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "consumers.md",
+    "sha256": "806ab1ab36ebde794a405f58452ee567c4b003d0e278347afe9aa74a652aef90"
+  }
+}

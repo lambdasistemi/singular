@@ -1,0 +1,32 @@
+{
+  "records-for-updating-a-holding-and-terminating-its-key-on-the-proved-design": [
+    {
+      "text": "Records for updating a holding and terminating its key on the proved design.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 743. This page names the new and changed records, their fields and the invariants each one must keep. Field encodings follow the aligned Lean models; where those models fix an order or a constructor number, that wins over this page. Records issue 742 introduced are in its data model and are not repeated.",
+      "pause": 400
+    }
+  ],
+  "records": [
+    {
+      "text": "Records.",
+      "pause": 500
+    }
+  ],
+  "life-of-a-key": [
+    {
+      "text": "Life of a key.",
+      "pause": 500
+    },
+    {
+      "text": "A pending termination is not a Singular state: its leaf stays active until the fold. A terminal leaf has no transition.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "data-model.md",
+    "sha256": "c637e648f1d213f81c38b5e3c842ef6145b2863e87fa20a8240d4242a12ee906"
+  }
+}
