@@ -121,6 +121,19 @@ abbrev approval_burn_open_premise (m : AppMutation) (h : Hash) (c : Codec) (t : 
 
 abbrev approval_burn_open_claim (m : AppMutation) (h : Hash) (c : Codec) (t : TrieCommit) (decode : DecodeApplication) (release : PublishedRelease) (q : Input) : Prop := applicationStep m h c decode release q.observation = true
 
+def configurationCreations (registry : TokenId) (actions : List ApplicationAction) : Nat :=
+  actions.countP fun action => match action with
+    | .configurationCreate created _ _ => created == registry
+    | _ => false
+
+abbrev configuration_created_once_premise (m : AppMutation) (h : Hash) (c : Codec) (t : TrieCommit) (decode : DecodeApplication) (release : PublishedRelease) (q : Input) : Prop := True
+
+abbrev configuration_created_once_claim (m : AppMutation) (h : Hash) (c : Codec) (t : TrieCommit) (decode : DecodeApplication) (release : PublishedRelease) (q : Input) : Prop :=
+  applicationStep m h c decode release q.observation = true →
+    ∀ registry seed index, ApplicationAction.configurationCreate registry seed index ∈ q.observation.actions →
+      configurationCreations registry q.observation.actions = 1 ∧
+        SingularApplicationHeld.Assets.mintQty q.observation.assets (configurationAsset h c release registry) = 1
+
 abbrev configuration_immutable_premise (m : AppMutation) (h : Hash) (c : Codec) (t : TrieCommit) (decode : DecodeApplication) (release : PublishedRelease) (q : Input) : Prop := True
 
 abbrev configuration_immutable_claim (m : AppMutation) (h : Hash) (c : Codec) (t : TrieCommit) (decode : DecodeApplication) (release : PublishedRelease) (q : Input) : Prop := applicationStep m h c decode release q.observation = true ↔

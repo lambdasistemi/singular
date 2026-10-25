@@ -120,7 +120,8 @@ def configurationCreate (mutation : AppMutation) (hash : Hash) (code : Codec)
   configurationShape mutation hash code release registry output &&
   appGuard mutation .configurationGenesis
     (registry.name == hash (code (.state seed)) && observation.assets.spent.count seed == 1 &&
-      observation.assets.invoked.contains registry.policy && SingularApplicationHeld.Assets.mintQty observation.assets registry == 1) &&
+      observation.assets.invoked.contains registry.policy && SingularApplicationHeld.Assets.mintQty observation.assets registry == 1 &&
+      SingularApplicationHeld.Assets.mintQty observation.assets (configurationAsset hash code release registry) == 1) &&
   freshAsset mutation hash code decode release observation (configurationAsset hash code release registry)
 
 def registrationBook (mutation : AppMutation) (hash : Hash) (code : Codec)

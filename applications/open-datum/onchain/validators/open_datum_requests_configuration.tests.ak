@@ -1,7 +1,8 @@
 //// The configuration record of a registry, against the model's
 //// `configurationCreate`, `configurationShape` and `configurationRead`
-//// (statements `configurationCreate_inversion` and `configuration_immutable`,
-//// bound at the revision of the epic branch that landed the open-datum model).
+//// (statements `configurationCreate_inversion`, `configuration_created_once`
+//// and `configuration_immutable`, bound at the revision of the epic branch
+//// that landed the open-datum model).
 ////
 //// The guards are tested one function each, so a refused row names the guard
 //// that refused it; the validator rows at the end run the whole handlers.
@@ -12,7 +13,8 @@ use aiken/collection/list
 use application/births.{fresh_asset}
 use application/configuration.{
   configuration_asset, configuration_create, configuration_genesis,
-  configuration_parameters, configuration_read, configuration_shape,
+  configuration_minted_once, configuration_parameters, configuration_read,
+  configuration_shape,
 }
 use application/held.{
   ApplicationParameters, Configuration, Live, Registration, TokenId,
@@ -33,7 +35,8 @@ use open_datum_requests_fixtures.{
   configuration_reference, control_of, controller, creation_actions,
   creation_transaction, holding_address, key_a, live_datum, other_policy,
   other_script, parameters, payload, registration_a, registries, registry_of,
-  seed_a, seed_b, seed_c, seed_d, seeds, spent, state_policy, token_value,
+  seed_a, seed_b, seed_c, seed_d, seeds, spent, state_output, state_policy,
+  token_value,
 }
 use singular_state/preimage.{
   RegistryIdentity, configuration_token_name, state_token_name,
@@ -352,6 +355,57 @@ test the_genesis_refuses_the_state_token_of_another_seed_in_its_place() {
 }
 
 // ---------------------------------------------------------------------------
+// configuration-created-once-with-the-registry: guard configurationGenesis on
+// the configuration token
+// ---------------------------------------------------------------------------
+
+fn minted_once(seed: OutputReference, tx: Transaction) -> Bool {
+  configuration_minted_once(application_policy, registry_of(seed), tx)
+}
+
+test the_minted_once_guard_accepts_the_creation_of_every_registry() {
+  list.all(seeds, fn(seed) { minted_once(seed, creation_transaction(seed)) })
+}
+
+test the_minted_once_guard_refuses_a_token_minted_twice() {
+  !minted_once(
+    seed_a,
+    records_transaction(seed_a, [genuine(seed_a), genuine(seed_a)], 2),
+  )
+}
+
+test the_minted_once_guard_refuses_a_token_that_is_not_minted() {
+  !minted_once(seed_a, records_transaction(seed_a, [genuine(seed_a)], 0))
+}
+
+test the_minted_once_guard_refuses_a_token_burned() {
+  !minted_once(seed_a, records_transaction(seed_a, [genuine(seed_a)], -1))
+}
+
+test the_minted_once_guard_refuses_the_token_of_another_registry_in_its_place() {
+  let registry = registry_of(seed_a)
+  let other = asset_of(seed_b)
+  let tx =
+    Transaction {
+      ..creation_transaction(seed_a),
+      mint: from_asset(registry.policy, registry.name, 1)
+        |> add(other.policy, other.name, 1),
+    }
+  !minted_once(seed_a, tx)
+}
+
+test the_minted_once_guard_refuses_the_name_of_the_token_under_another_policy() {
+  let registry = registry_of(seed_a)
+  let tx =
+    Transaction {
+      ..creation_transaction(seed_a),
+      mint: from_asset(registry.policy, registry.name, 1)
+        |> add(other_policy, asset_of(seed_a).name, 1),
+    }
+  !minted_once(seed_a, tx)
+}
+
+// ---------------------------------------------------------------------------
 // configuration-created-once-with-the-registry: the mint of the token
 // ---------------------------------------------------------------------------
 
@@ -551,6 +605,148 @@ test the_validator_refuses_a_creation_whose_record_is_at_another_script() {
       ],
     }
   mint(creation_actions(seed_a), tx) == False
+}
+
+// ---------------------------------------------------------------------------
+// configuration-created-once-with-the-registry: one record per registry
+// ---------------------------------------------------------------------------
+
+/// The creation of the registry of `seed` with `records` configuration
+/// records after the state output, `minted` of the configuration token.
+fn records_transaction(
+  seed: OutputReference,
+  records: List<Output>,
+  minted: Int,
+) -> Transaction {
+  let registry = registry_of(seed)
+  let asset = asset_of(seed)
+  Transaction {
+    ..creation_transaction(seed),
+    outputs: [state_output(registry), ..records],
+    mint: from_asset(registry.policy, registry.name, 1)
+      |> add(asset.policy, asset.name, minted),
+  }
+}
+
+/// One creation action per output after the state output, in order.
+fn record_actions(seed: OutputReference, count: Int) -> List<ApplicationAction> {
+  list.map(list.range(1, count), fn(index) { mint_action_at(seed, index) })
+}
+
+fn two_registries_transaction() -> Transaction {
+  let a = registry_of(seed_a)
+  let b = registry_of(seed_b)
+  Transaction {
+    ..creation_transaction(seed_a),
+    inputs: [spent(seed_a), spent(seed_b)],
+    outputs: [
+      state_output(a),
+      genuine(seed_a),
+      state_output(b),
+      genuine(seed_b),
+    ],
+    mint: from_asset(a.policy, a.name, 1)
+      |> add(b.policy, b.name, 1)
+      |> add(asset_of(seed_a).policy, asset_of(seed_a).name, 1)
+      |> add(asset_of(seed_b).policy, asset_of(seed_b).name, 1),
+  }
+}
+
+test the_validator_accepts_one_record_with_a_mint_of_one() {
+  mint(
+    record_actions(seed_a, 1),
+    records_transaction(seed_a, [genuine(seed_a)], 1),
+  )
+}
+
+test the_validator_refuses_a_second_record_of_one_registry() {
+  let tx = records_transaction(seed_a, [genuine(seed_a), genuine(seed_a)], 2)
+  mint(record_actions(seed_a, 2), tx) == False
+}
+
+test the_validator_refuses_a_third_record_of_one_registry() {
+  let tx =
+    records_transaction(
+      seed_a,
+      [genuine(seed_a), genuine(seed_a), genuine(seed_a)],
+      3,
+    )
+  mint(record_actions(seed_a, 3), tx) == False
+}
+
+test the_validator_refuses_two_records_that_mint_one_token() {
+  let tx = records_transaction(seed_a, [genuine(seed_a), genuine(seed_a)], 1)
+  mint(record_actions(seed_a, 2), tx) == False
+}
+
+test the_validator_refuses_one_record_whose_token_is_minted_twice() {
+  let tx = records_transaction(seed_a, [genuine(seed_a)], 2)
+  mint(record_actions(seed_a, 1), tx) == False
+}
+
+test the_validator_refuses_one_record_whose_token_is_not_minted() {
+  let tx = records_transaction(seed_a, [genuine(seed_a)], 0)
+  mint(record_actions(seed_a, 1), tx) == False
+}
+
+test the_validator_refuses_one_record_whose_token_is_burned() {
+  let tx = records_transaction(seed_a, [genuine(seed_a)], -1)
+  mint(record_actions(seed_a, 1), tx) == False
+}
+
+test the_validator_accepts_one_record_each_for_two_registries() {
+  let actions = [mint_action_at(seed_a, 1), mint_action_at(seed_b, 3)]
+  mint(actions, two_registries_transaction())
+}
+
+test the_validator_refuses_a_second_record_of_one_of_two_registries() {
+  let a = registry_of(seed_a)
+  let b = registry_of(seed_b)
+  let tx =
+    Transaction {
+      ..two_registries_transaction(),
+      outputs: [
+        state_output(a),
+        genuine(seed_a),
+        state_output(b),
+        genuine(seed_b),
+        genuine(seed_b),
+      ],
+      mint: from_asset(a.policy, a.name, 1)
+        |> add(b.policy, b.name, 1)
+        |> add(asset_of(seed_a).policy, asset_of(seed_a).name, 1)
+        |> add(asset_of(seed_b).policy, asset_of(seed_b).name, 2),
+    }
+  let actions =
+    [
+      mint_action_at(seed_a, 1),
+      mint_action_at(seed_b, 3),
+      mint_action_at(seed_b, 4),
+    ]
+  mint(actions, tx) == False
+}
+
+test the_creation_refuses_a_second_birth_of_the_same_token() {
+  let tx = records_transaction(seed_a, [genuine(seed_a), genuine(seed_a)], 2)
+  !configuration_create(
+    application_policy,
+    registry_of(seed_a),
+    seed_a,
+    1,
+    tx,
+    [asset_of(seed_a), asset_of(seed_a)],
+  )
+}
+
+test the_creation_accepts_its_record_beside_the_birth_of_another_registrys_token() {
+  configuration_create(
+    application_policy,
+    registry_of(seed_a),
+    seed_a,
+    1,
+    two_registries_transaction(),
+    [asset_of(seed_a), asset_of(seed_b)],
+  )
 }
 
 // ---------------------------------------------------------------------------

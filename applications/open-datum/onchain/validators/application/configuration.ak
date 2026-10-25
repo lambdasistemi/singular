@@ -20,6 +20,9 @@
 //// ## Invariants
 //// The token of a configuration record is named from the registry it
 //// configures, so the record of one registry is never the record of another.
+//// A registry has one record: its configuration token is minted once, and the
+//// mint accounts for exactly one creation action, so a second record of the
+//// same registry is refused.
 
 use aiken/collection/list
 use application/births.{fresh_asset}
@@ -62,9 +65,10 @@ pub fn configuration_shape(
   }
 }
 
-/// Model guard `configurationGenesis`: `registry` is the registry created by
-/// spending `seed`, the seed is spent once, the state policy is invoked and
-/// the state token is minted once.
+/// Model guard `configurationGenesis`, its conjuncts on the registry:
+/// `registry` is the registry created by spending `seed`, the seed is spent
+/// once, the state policy is invoked and the state token is minted once. The
+/// conjunct on the configuration token is `configuration_minted_once`.
 pub fn configuration_genesis(
   registry: RegistryIdentity,
   seed: OutputReference,
@@ -76,6 +80,20 @@ pub fn configuration_genesis(
     list.has(policies(tx.mint), registry.policy),
     quantity_of(tx.mint, registry.policy, registry.name) == 1,
   }
+}
+
+/// Model guard `configurationGenesis`, its conjunct on the configuration
+/// token: the token of the record of `registry` is minted once. With the
+/// accounting of `fresh_asset`, which equates the mint with the number of
+/// creation actions, a transaction holds one creation of a registry and never
+/// two.
+pub fn configuration_minted_once(
+  application_policy: PolicyId,
+  registry: RegistryIdentity,
+  tx: Transaction,
+) -> Bool {
+  let asset = configuration_asset(application_policy, registry)
+  quantity_of(tx.mint, asset.policy, asset.name) == 1
 }
 
 /// Model `configurationCreate`: the action that creates the configuration
@@ -92,6 +110,7 @@ pub fn configuration_create(
     Some(output) -> and {
         configuration_shape(application_policy, registry, output),
         configuration_genesis(registry, seed, tx),
+        configuration_minted_once(application_policy, registry, tx),
         fresh_asset(
           tx.mint,
           births,

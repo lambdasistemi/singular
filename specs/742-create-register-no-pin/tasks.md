@@ -34,8 +34,8 @@ the ticket owner accepts its slice.
 
 ## Pull request 2: one configuration record
 
-- [ ] one-configuration-record-model: the statement that a registry's genesis mints its configuration asset exactly once, proved, the other proofs kept.
-- [ ] one-configuration-record-validator: the validator refuses a second configuration record and a configuration mint other than one, a refusal row each.
+- [x] one-configuration-record-model: the statement that a registry's genesis mints its configuration asset exactly once, proved, the other proofs kept.
+- [x] one-configuration-record-validator: the validator refuses a second configuration record and a configuration mint other than one, a refusal row each.
 
 ## Pull request 3: library create and fold
 

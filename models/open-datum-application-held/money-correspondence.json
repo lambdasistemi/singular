@@ -2027,6 +2027,7 @@
       "classification": "restated",
       "changedConstants": [
         "NoPin.ApplicationRequests.Money.oldGenesis",
+        "NoPin.ApplicationRequests.RefundLifecycle.configurationCreateConditions",
         "NoPin.ApplicationRequests.applicationAction.match_1",
         "NoPin.ApplicationRequests.applicationFoldView",
         "NoPin.ApplicationRequests.applicationFoldView.match_1",
@@ -2036,6 +2037,7 @@
         "NoPin.ApplicationRequests.birth.match_1",
         "NoPin.ApplicationRequests.birth.match_3",
         "NoPin.ApplicationRequests.birth.match_4",
+        "NoPin.ApplicationRequests.configurationCreate",
         "NoPin.ApplicationRequests.initialControl._sparseCasesOn_2",
         "NoPin.ApplicationRequests.initialControl.match_1",
         "NoPin.ApplicationRequests.requiredTreasury",
@@ -2065,13 +2067,20 @@
         "Singular.applyEdge"
       ],
       "compiledTypeSha256": "59af0609b4440842757278a68e7ef1042049cb88b02a88a7a5559ef8ac67d7ef",
-      "walkedClosureSha256": "a90bb536649575a4cecc4b4d6fe2a7c3f132df391f58953d3f72e6b4675c9f29",
+      "walkedClosureSha256": "5b71c8aa5fd235dd41fbc12d80e0830ecdf540c1ad1ef29b44db4e2830d4fa4c",
       "changedConstantDispositions": {
         "NoPin.ApplicationRequests.Money.oldGenesis": {
           "disposition": "construction-restatement",
           "listedChanges": [
             "RegistryState"
           ]
+        },
+        "NoPin.ApplicationRequests.RefundLifecycle.configurationCreateConditions": {
+          "disposition": "ruled-restatement",
+          "listedChanges": [
+            "configurationCreate"
+          ],
+          "addition": "the configuration asset is minted once"
         },
         "NoPin.ApplicationRequests.applicationAction.match_1": {
           "disposition": "generated-auxiliary-layout",
@@ -2117,6 +2126,13 @@
           "disposition": "generated-auxiliary-layout",
           "onlyAuxiliaryReferencesDiffer": false,
           "sourceComparison": "NoPin.ApplicationRequests.birth"
+        },
+        "NoPin.ApplicationRequests.configurationCreate": {
+          "disposition": "ruled-restatement",
+          "listedChanges": [
+            "configurationCreate"
+          ],
+          "addition": "the configuration asset is minted once"
         },
         "NoPin.ApplicationRequests.initialControl._sparseCasesOn_2": {
           "disposition": "generated-auxiliary-layout",
@@ -3166,6 +3182,7 @@
       "classification": "restated",
       "changedConstants": [
         "NoPin.ApplicationRequests.Money.oldGenesis",
+        "NoPin.ApplicationRequests.RefundLifecycle.configurationCreateConditions",
         "NoPin.ApplicationRequests.applicationAction.match_1",
         "NoPin.ApplicationRequests.applicationFoldView",
         "NoPin.ApplicationRequests.applicationFoldView.match_1",
@@ -3175,6 +3192,7 @@
         "NoPin.ApplicationRequests.birth.match_1",
         "NoPin.ApplicationRequests.birth.match_3",
         "NoPin.ApplicationRequests.birth.match_4",
+        "NoPin.ApplicationRequests.configurationCreate",
         "NoPin.ApplicationRequests.initialControl._sparseCasesOn_2",
         "NoPin.ApplicationRequests.initialControl.match_1",
         "NoPin.ApplicationRequests.requiredTreasury",
@@ -3204,13 +3222,20 @@
         "Singular.applyEdge"
       ],
       "compiledTypeSha256": "0410bdfd2c4398e7bd70e5e4d2b1a9ce6bf47a22337f06b994eb3c1c4e60fb57",
-      "walkedClosureSha256": "a90bb536649575a4cecc4b4d6fe2a7c3f132df391f58953d3f72e6b4675c9f29",
+      "walkedClosureSha256": "5b71c8aa5fd235dd41fbc12d80e0830ecdf540c1ad1ef29b44db4e2830d4fa4c",
       "changedConstantDispositions": {
         "NoPin.ApplicationRequests.Money.oldGenesis": {
           "disposition": "construction-restatement",
           "listedChanges": [
             "RegistryState"
           ]
+        },
+        "NoPin.ApplicationRequests.RefundLifecycle.configurationCreateConditions": {
+          "disposition": "ruled-restatement",
+          "listedChanges": [
+            "configurationCreate"
+          ],
+          "addition": "the configuration asset is minted once"
         },
         "NoPin.ApplicationRequests.applicationAction.match_1": {
           "disposition": "generated-auxiliary-layout",
@@ -3256,6 +3281,13 @@
           "disposition": "generated-auxiliary-layout",
           "onlyAuxiliaryReferencesDiffer": false,
           "sourceComparison": "NoPin.ApplicationRequests.birth"
+        },
+        "NoPin.ApplicationRequests.configurationCreate": {
+          "disposition": "ruled-restatement",
+          "listedChanges": [
+            "configurationCreate"
+          ],
+          "addition": "the configuration asset is minted once"
         },
         "NoPin.ApplicationRequests.initialControl._sparseCasesOn_2": {
           "disposition": "generated-auxiliary-layout",
@@ -4823,6 +4855,7 @@
       "classification": "restated",
       "changedConstants": [
         "NoPin.ApplicationRequests.Money.oldGenesis",
+        "NoPin.ApplicationRequests.RefundLifecycle.configurationCreateConditions",
         "NoPin.ApplicationRequests.applicationAction.match_1",
         "NoPin.ApplicationRequests.applicationFoldView",
         "NoPin.ApplicationRequests.applicationFoldView.match_1",
@@ -4832,6 +4865,7 @@
         "NoPin.ApplicationRequests.birth.match_1",
         "NoPin.ApplicationRequests.birth.match_3",
         "NoPin.ApplicationRequests.birth.match_4",
+        "NoPin.ApplicationRequests.configurationCreate",
         "NoPin.ApplicationRequests.initialControl._sparseCasesOn_2",
         "NoPin.ApplicationRequests.initialControl.match_1",
         "NoPin.ApplicationRequests.requiredTreasury",
@@ -4861,13 +4895,20 @@
         "Singular.applyEdge"
       ],
       "compiledTypeSha256": "e27369b3974d9e1bbadfb92125309f8ba421fe1cb51abd0cb864ffc3bfbc10f6",
-      "walkedClosureSha256": "a90bb536649575a4cecc4b4d6fe2a7c3f132df391f58953d3f72e6b4675c9f29",
+      "walkedClosureSha256": "5b71c8aa5fd235dd41fbc12d80e0830ecdf540c1ad1ef29b44db4e2830d4fa4c",
       "changedConstantDispositions": {
         "NoPin.ApplicationRequests.Money.oldGenesis": {
           "disposition": "construction-restatement",
           "listedChanges": [
             "RegistryState"
           ]
+        },
+        "NoPin.ApplicationRequests.RefundLifecycle.configurationCreateConditions": {
+          "disposition": "ruled-restatement",
+          "listedChanges": [
+            "configurationCreate"
+          ],
+          "addition": "the configuration asset is minted once"
         },
         "NoPin.ApplicationRequests.applicationAction.match_1": {
           "disposition": "generated-auxiliary-layout",
@@ -4913,6 +4954,13 @@
           "disposition": "generated-auxiliary-layout",
           "onlyAuxiliaryReferencesDiffer": false,
           "sourceComparison": "NoPin.ApplicationRequests.birth"
+        },
+        "NoPin.ApplicationRequests.configurationCreate": {
+          "disposition": "ruled-restatement",
+          "listedChanges": [
+            "configurationCreate"
+          ],
+          "addition": "the configuration asset is minted once"
         },
         "NoPin.ApplicationRequests.initialControl._sparseCasesOn_2": {
           "disposition": "generated-auxiliary-layout",
@@ -5962,6 +6010,7 @@
       "classification": "restated",
       "changedConstants": [
         "NoPin.ApplicationRequests.Money.oldGenesis",
+        "NoPin.ApplicationRequests.RefundLifecycle.configurationCreateConditions",
         "NoPin.ApplicationRequests.applicationAction.match_1",
         "NoPin.ApplicationRequests.applicationFoldView",
         "NoPin.ApplicationRequests.applicationFoldView.match_1",
@@ -5971,6 +6020,7 @@
         "NoPin.ApplicationRequests.birth.match_1",
         "NoPin.ApplicationRequests.birth.match_3",
         "NoPin.ApplicationRequests.birth.match_4",
+        "NoPin.ApplicationRequests.configurationCreate",
         "NoPin.ApplicationRequests.initialControl._sparseCasesOn_2",
         "NoPin.ApplicationRequests.initialControl.match_1",
         "NoPin.ApplicationRequests.requiredTreasury",
@@ -6000,13 +6050,20 @@
         "Singular.applyEdge"
       ],
       "compiledTypeSha256": "9e4ec3d09cf32ccd956644f12fca4024e39d11b9e73a4d8b1b8f42fb5f9e7285",
-      "walkedClosureSha256": "a90bb536649575a4cecc4b4d6fe2a7c3f132df391f58953d3f72e6b4675c9f29",
+      "walkedClosureSha256": "5b71c8aa5fd235dd41fbc12d80e0830ecdf540c1ad1ef29b44db4e2830d4fa4c",
       "changedConstantDispositions": {
         "NoPin.ApplicationRequests.Money.oldGenesis": {
           "disposition": "construction-restatement",
           "listedChanges": [
             "RegistryState"
           ]
+        },
+        "NoPin.ApplicationRequests.RefundLifecycle.configurationCreateConditions": {
+          "disposition": "ruled-restatement",
+          "listedChanges": [
+            "configurationCreate"
+          ],
+          "addition": "the configuration asset is minted once"
         },
         "NoPin.ApplicationRequests.applicationAction.match_1": {
           "disposition": "generated-auxiliary-layout",
@@ -6052,6 +6109,13 @@
           "disposition": "generated-auxiliary-layout",
           "onlyAuxiliaryReferencesDiffer": false,
           "sourceComparison": "NoPin.ApplicationRequests.birth"
+        },
+        "NoPin.ApplicationRequests.configurationCreate": {
+          "disposition": "ruled-restatement",
+          "listedChanges": [
+            "configurationCreate"
+          ],
+          "addition": "the configuration asset is minted once"
         },
         "NoPin.ApplicationRequests.initialControl._sparseCasesOn_2": {
           "disposition": "generated-auxiliary-layout",
@@ -7037,6 +7101,7 @@
       "investigationClosureSha256": "77094e1afea95b4f957676905fd9ea271b2adab92ce12c0ab4e71ae0f758646a",
       "classification": "restated",
       "changedConstants": [
+        "NoPin.ApplicationRequests.RefundLifecycle.configurationCreateConditions",
         "NoPin.ApplicationRequests.applicationAction.match_1",
         "NoPin.ApplicationRequests.applicationFoldView",
         "NoPin.ApplicationRequests.applicationFoldView.match_1",
@@ -7046,6 +7111,7 @@
         "NoPin.ApplicationRequests.birth.match_1",
         "NoPin.ApplicationRequests.birth.match_3",
         "NoPin.ApplicationRequests.birth.match_4",
+        "NoPin.ApplicationRequests.configurationCreate",
         "NoPin.ApplicationRequests.initialControl._sparseCasesOn_2",
         "NoPin.ApplicationRequests.initialControl.match_1",
         "NoPin.ApplicationRequests.requiredTreasury",
@@ -7061,8 +7127,15 @@
         "Singular.TokenKind.terminal"
       ],
       "compiledTypeSha256": "c6d05299875a85714f5f40615391a47f2191507dfbe1ec3c5a0a35390fd1a4ce",
-      "walkedClosureSha256": "7b1a8caccc647a30e70b526b5c8e8fcfe1568ce8a0d673a5635cf9cad8f8787e",
+      "walkedClosureSha256": "9ac6d217ea380b28af67383804eba7534c5c75432a9503d14908eb235769b128",
       "changedConstantDispositions": {
+        "NoPin.ApplicationRequests.RefundLifecycle.configurationCreateConditions": {
+          "disposition": "ruled-restatement",
+          "listedChanges": [
+            "configurationCreate"
+          ],
+          "addition": "the configuration asset is minted once"
+        },
         "NoPin.ApplicationRequests.applicationAction.match_1": {
           "disposition": "generated-auxiliary-layout",
           "onlyAuxiliaryReferencesDiffer": false,
@@ -7107,6 +7180,13 @@
           "disposition": "generated-auxiliary-layout",
           "onlyAuxiliaryReferencesDiffer": false,
           "sourceComparison": "NoPin.ApplicationRequests.birth"
+        },
+        "NoPin.ApplicationRequests.configurationCreate": {
+          "disposition": "ruled-restatement",
+          "listedChanges": [
+            "configurationCreate"
+          ],
+          "addition": "the configuration asset is minted once"
         },
         "NoPin.ApplicationRequests.initialControl._sparseCasesOn_2": {
           "disposition": "generated-auxiliary-layout",
@@ -8068,6 +8148,7 @@
       "classification": "restated",
       "changedConstants": [
         "NoPin.ApplicationRequests.Money.oldGenesis",
+        "NoPin.ApplicationRequests.RefundLifecycle.configurationCreateConditions",
         "NoPin.ApplicationRequests.applicationAction.match_1",
         "NoPin.ApplicationRequests.applicationFoldView",
         "NoPin.ApplicationRequests.applicationFoldView.match_1",
@@ -8077,6 +8158,7 @@
         "NoPin.ApplicationRequests.birth.match_1",
         "NoPin.ApplicationRequests.birth.match_3",
         "NoPin.ApplicationRequests.birth.match_4",
+        "NoPin.ApplicationRequests.configurationCreate",
         "NoPin.ApplicationRequests.initialControl._sparseCasesOn_2",
         "NoPin.ApplicationRequests.initialControl.match_1",
         "NoPin.ApplicationRequests.requiredTreasury",
@@ -8106,13 +8188,20 @@
         "Singular.applyEdge"
       ],
       "compiledTypeSha256": "957052139d4ed3fc3ebd51d2130886c806ae30856df0199523cdc41b9f2873f0",
-      "walkedClosureSha256": "a90bb536649575a4cecc4b4d6fe2a7c3f132df391f58953d3f72e6b4675c9f29",
+      "walkedClosureSha256": "5b71c8aa5fd235dd41fbc12d80e0830ecdf540c1ad1ef29b44db4e2830d4fa4c",
       "changedConstantDispositions": {
         "NoPin.ApplicationRequests.Money.oldGenesis": {
           "disposition": "construction-restatement",
           "listedChanges": [
             "RegistryState"
           ]
+        },
+        "NoPin.ApplicationRequests.RefundLifecycle.configurationCreateConditions": {
+          "disposition": "ruled-restatement",
+          "listedChanges": [
+            "configurationCreate"
+          ],
+          "addition": "the configuration asset is minted once"
         },
         "NoPin.ApplicationRequests.applicationAction.match_1": {
           "disposition": "generated-auxiliary-layout",
@@ -8158,6 +8247,13 @@
           "disposition": "generated-auxiliary-layout",
           "onlyAuxiliaryReferencesDiffer": false,
           "sourceComparison": "NoPin.ApplicationRequests.birth"
+        },
+        "NoPin.ApplicationRequests.configurationCreate": {
+          "disposition": "ruled-restatement",
+          "listedChanges": [
+            "configurationCreate"
+          ],
+          "addition": "the configuration asset is minted once"
         },
         "NoPin.ApplicationRequests.initialControl._sparseCasesOn_2": {
           "disposition": "generated-auxiliary-layout",
@@ -9207,6 +9303,7 @@
       "classification": "restated",
       "changedConstants": [
         "NoPin.ApplicationRequests.Money.oldGenesis",
+        "NoPin.ApplicationRequests.RefundLifecycle.configurationCreateConditions",
         "NoPin.ApplicationRequests.applicationAction.match_1",
         "NoPin.ApplicationRequests.applicationFoldView",
         "NoPin.ApplicationRequests.applicationFoldView.match_1",
@@ -9216,6 +9313,7 @@
         "NoPin.ApplicationRequests.birth.match_1",
         "NoPin.ApplicationRequests.birth.match_3",
         "NoPin.ApplicationRequests.birth.match_4",
+        "NoPin.ApplicationRequests.configurationCreate",
         "NoPin.ApplicationRequests.initialControl._sparseCasesOn_2",
         "NoPin.ApplicationRequests.initialControl.match_1",
         "NoPin.ApplicationRequests.requiredTreasury",
@@ -9245,13 +9343,20 @@
         "Singular.applyEdge"
       ],
       "compiledTypeSha256": "04fb659e8d98e4bed3bb3b0fe57f7828a041f8fb73dbacfb277725a1962f37ea",
-      "walkedClosureSha256": "a90bb536649575a4cecc4b4d6fe2a7c3f132df391f58953d3f72e6b4675c9f29",
+      "walkedClosureSha256": "5b71c8aa5fd235dd41fbc12d80e0830ecdf540c1ad1ef29b44db4e2830d4fa4c",
       "changedConstantDispositions": {
         "NoPin.ApplicationRequests.Money.oldGenesis": {
           "disposition": "construction-restatement",
           "listedChanges": [
             "RegistryState"
           ]
+        },
+        "NoPin.ApplicationRequests.RefundLifecycle.configurationCreateConditions": {
+          "disposition": "ruled-restatement",
+          "listedChanges": [
+            "configurationCreate"
+          ],
+          "addition": "the configuration asset is minted once"
         },
         "NoPin.ApplicationRequests.applicationAction.match_1": {
           "disposition": "generated-auxiliary-layout",
@@ -9297,6 +9402,13 @@
           "disposition": "generated-auxiliary-layout",
           "onlyAuxiliaryReferencesDiffer": false,
           "sourceComparison": "NoPin.ApplicationRequests.birth"
+        },
+        "NoPin.ApplicationRequests.configurationCreate": {
+          "disposition": "ruled-restatement",
+          "listedChanges": [
+            "configurationCreate"
+          ],
+          "addition": "the configuration asset is minted once"
         },
         "NoPin.ApplicationRequests.initialControl._sparseCasesOn_2": {
           "disposition": "generated-auxiliary-layout",
@@ -10474,6 +10586,7 @@
       "classification": "restated",
       "changedConstants": [
         "NoPin.ApplicationRequests.Money.oldGenesis",
+        "NoPin.ApplicationRequests.RefundLifecycle.configurationCreateConditions",
         "NoPin.ApplicationRequests.applicationAction.match_1",
         "NoPin.ApplicationRequests.applicationFoldView",
         "NoPin.ApplicationRequests.applicationFoldView.match_1",
@@ -10483,6 +10596,7 @@
         "NoPin.ApplicationRequests.birth.match_1",
         "NoPin.ApplicationRequests.birth.match_3",
         "NoPin.ApplicationRequests.birth.match_4",
+        "NoPin.ApplicationRequests.configurationCreate",
         "NoPin.ApplicationRequests.initialControl._sparseCasesOn_2",
         "NoPin.ApplicationRequests.initialControl.match_1",
         "NoPin.ApplicationRequests.requiredTreasury",
@@ -10512,13 +10626,20 @@
         "Singular.applyEdge"
       ],
       "compiledTypeSha256": "6fdc5c90a07faac1b59fb6df423ea739b7e5620ebed99e88bfeb1cdfc77623ca",
-      "walkedClosureSha256": "8b0379e5964af0e777ea26169ff5326c68d7a6f7ec273820d46dce3f72d242cc",
+      "walkedClosureSha256": "907807c5a01e927d71f22148c513e51d2c010bd9c576d1f3b14ebcaec3e5853d",
       "changedConstantDispositions": {
         "NoPin.ApplicationRequests.Money.oldGenesis": {
           "disposition": "construction-restatement",
           "listedChanges": [
             "RegistryState"
           ]
+        },
+        "NoPin.ApplicationRequests.RefundLifecycle.configurationCreateConditions": {
+          "disposition": "ruled-restatement",
+          "listedChanges": [
+            "configurationCreate"
+          ],
+          "addition": "the configuration asset is minted once"
         },
         "NoPin.ApplicationRequests.applicationAction.match_1": {
           "disposition": "generated-auxiliary-layout",
@@ -10564,6 +10685,13 @@
           "disposition": "generated-auxiliary-layout",
           "onlyAuxiliaryReferencesDiffer": false,
           "sourceComparison": "NoPin.ApplicationRequests.birth"
+        },
+        "NoPin.ApplicationRequests.configurationCreate": {
+          "disposition": "ruled-restatement",
+          "listedChanges": [
+            "configurationCreate"
+          ],
+          "addition": "the configuration asset is minted once"
         },
         "NoPin.ApplicationRequests.initialControl._sparseCasesOn_2": {
           "disposition": "generated-auxiliary-layout",
@@ -11613,6 +11741,7 @@
       "classification": "restated",
       "changedConstants": [
         "NoPin.ApplicationRequests.Money.oldGenesis",
+        "NoPin.ApplicationRequests.RefundLifecycle.configurationCreateConditions",
         "NoPin.ApplicationRequests.applicationAction.match_1",
         "NoPin.ApplicationRequests.applicationFoldView",
         "NoPin.ApplicationRequests.applicationFoldView.match_1",
@@ -11622,6 +11751,7 @@
         "NoPin.ApplicationRequests.birth.match_1",
         "NoPin.ApplicationRequests.birth.match_3",
         "NoPin.ApplicationRequests.birth.match_4",
+        "NoPin.ApplicationRequests.configurationCreate",
         "NoPin.ApplicationRequests.initialControl._sparseCasesOn_2",
         "NoPin.ApplicationRequests.initialControl.match_1",
         "NoPin.ApplicationRequests.requiredTreasury",
@@ -11651,13 +11781,20 @@
         "Singular.applyEdge"
       ],
       "compiledTypeSha256": "1c53f16431b727248061322d86a615e2ed01fdaaf2fd93fc9e71b29c3abd3ef3",
-      "walkedClosureSha256": "a90bb536649575a4cecc4b4d6fe2a7c3f132df391f58953d3f72e6b4675c9f29",
+      "walkedClosureSha256": "5b71c8aa5fd235dd41fbc12d80e0830ecdf540c1ad1ef29b44db4e2830d4fa4c",
       "changedConstantDispositions": {
         "NoPin.ApplicationRequests.Money.oldGenesis": {
           "disposition": "construction-restatement",
           "listedChanges": [
             "RegistryState"
           ]
+        },
+        "NoPin.ApplicationRequests.RefundLifecycle.configurationCreateConditions": {
+          "disposition": "ruled-restatement",
+          "listedChanges": [
+            "configurationCreate"
+          ],
+          "addition": "the configuration asset is minted once"
         },
         "NoPin.ApplicationRequests.applicationAction.match_1": {
           "disposition": "generated-auxiliary-layout",
@@ -11703,6 +11840,13 @@
           "disposition": "generated-auxiliary-layout",
           "onlyAuxiliaryReferencesDiffer": false,
           "sourceComparison": "NoPin.ApplicationRequests.birth"
+        },
+        "NoPin.ApplicationRequests.configurationCreate": {
+          "disposition": "ruled-restatement",
+          "listedChanges": [
+            "configurationCreate"
+          ],
+          "addition": "the configuration asset is minted once"
         },
         "NoPin.ApplicationRequests.initialControl._sparseCasesOn_2": {
           "disposition": "generated-auxiliary-layout",

@@ -373,6 +373,62 @@ theorem configuration_protected (h : Hash) (c : Codec) (decode : DecodeApplicati
   · simp [credential]
 
 
+theorem countP_le_count_filterMap {α β : Type} [BEq β] [LawfulBEq β] (xs : List α)
+    (p : α → Bool) (f : α → Option β) (x : β) (selected : ∀ a, p a = true → f a = some x) :
+    xs.countP p ≤ (xs.filterMap f).count x := by
+  induction xs with
+  | nil => simp
+  | cons a rest ih =>
+    cases pa : p a
+    · rw [List.countP_cons_of_neg (by simp [pa])]
+      cases fa : f a with
+      | none => rw [List.filterMap_cons_none fa]; exact ih
+      | some b =>
+        rw [List.filterMap_cons_some fa, List.count_cons]
+        split <;> omega
+    · have fa := selected a pa
+      rw [List.countP_cons_of_pos (by simp [pa]), List.filterMap_cons_some fa, List.count_cons_self]
+      omega
+
+
+theorem configuration_minted_once (h : Hash) (c : Codec) (decode : DecodeApplication)
+    (release : PublishedRelease) (o : ApplicationObservation)
+    (accepted : applicationStep .none h c decode release o = true)
+    (registry : TokenId) (seed : OutRef) (index : Nat)
+    (member : ApplicationAction.configurationCreate registry seed index ∈ o.actions) :
+    configurationCreations registry o.actions = 1 ∧
+      SingularApplicationHeld.Assets.mintQty o.assets (configurationAsset h c release registry) = 1 := by
+  have created := accepted_actions h c decode release o accepted _ member
+  rw [action_eq] at created
+  unfold applicationActionConditions at created
+  dsimp only [Id.run, pure, bind] at created
+  split at created
+  · unfold configurationCreateConditions at created
+    simp only [Bool.and_eq_true, beq_iff_eq] at created
+    have mint : SingularApplicationHeld.Assets.mintQty o.assets (configurationAsset h c release registry) = 1 := by
+      omega
+    have fresh := created.2
+    unfold freshAssetConditions at fresh
+    simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq, Int.ofNat_eq_natCast] at fresh
+    have births : (o.actions.filterMap (birthConditions h c decode release o)).count
+        (configurationAsset h c release registry) = 1 := by omega
+    have bound : configurationCreations registry o.actions ≤
+        (o.actions.filterMap (birthConditions h c decode release o)).count
+          (configurationAsset h c release registry) :=
+      countP_le_count_filterMap o.actions _ (birthConditions h c decode release o) _
+        (by
+          intro action chosen
+          cases action <;> simp at chosen
+          rename_i created _ _
+          have same : created = registry := chosen
+          subst same
+          rfl)
+    have lower : 0 < configurationCreations registry o.actions :=
+      List.countP_pos_iff.mpr ⟨_, member, by simp⟩
+    exact ⟨by omega, mint⟩
+  · simp at created
+
+
 theorem termination_quantity (h : Hash) (c : Codec) (release : PublishedRelease)
     (o : ApplicationObservation) (input : ObservedOutput) (registry : TokenId) (key : Key)
     (member : input ∈ o.inputs)

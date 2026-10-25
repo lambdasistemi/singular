@@ -95,11 +95,11 @@
       "pause": 500
     },
     {
-      "text": "[ ] one-configuration-record-model: the statement that a registry's genesis mints its configuration asset exactly once, proved, the other proofs kept.",
+      "text": "[x] one-configuration-record-model: the statement that a registry's genesis mints its configuration asset exactly once, proved, the other proofs kept.",
       "pause": 300
     },
     {
-      "text": "[ ] one-configuration-record-validator: the validator refuses a second configuration record and a configuration mint other than one, a refusal row each.",
+      "text": "[x] one-configuration-record-validator: the validator refuses a second configuration record and a configuration mint other than one, a refusal row each.",
       "pause": 300
     }
   ],
@@ -183,6 +183,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "d4f2436bbc3452b7cde1a34204011c237f3dccd732bebcb548904e4446ff9fe0"
+    "sha256": "923d25cba5c3e342b1e168a6f595fccc2e630c6442cdd2ab2db5e90e4b76d8e8"
   }
 }
