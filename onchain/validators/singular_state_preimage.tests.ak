@@ -1,10 +1,11 @@
 //// The roles of the hashed names are told apart by their constructor.
 ////
-//// The vectors pin the bytes of the state, active and registration approval
-//// roles. These rows state why the roles cannot be confused: every preimage
-//// is one constructor of the model's `Preimage`, numbered as the model, so
-//// two roles that carry the same fields still serialise differently, and a
-//// preimage with its constructor taken off is another name.
+//// The vectors pin the bytes of the state, active, configuration, registration
+//// approval and termination approval roles. These rows state why the roles
+//// cannot be confused: every preimage is one constructor of the model's
+//// `Preimage`, numbered as the model, so two roles that carry the same fields
+//// still serialise differently, and a preimage with its constructor taken off
+//// is another name.
 
 use aiken/cbor
 use aiken/crypto.{blake2b_256}
@@ -16,6 +17,7 @@ use cardano/transaction.{Output, OutputReference}
 use singular_state/preimage.{
   Active, ApplicationConfiguration, RegistrationApproval, RegistryIdentity,
   State, TerminationApproval, active_token_name, state_token_name,
+  termination_preimage,
 }
 use singular_state/state.{recognize_state}
 use singular_state_fixtures.{
@@ -88,7 +90,7 @@ test prop_an_active_preimage_is_not_a_termination_preimage_of_the_same_fields(
   (registry, key) via fuzz.tuple(registry_fuzzer(), key_fuzzer()),
 ) {
   let active = cbor.serialise(Active { registry, key })
-  let termination = cbor.serialise(TerminationApproval { registry, key })
+  let termination = termination_preimage(key, registry)
   and {
     active != termination,
     blake2b_256(active) != blake2b_256(termination),

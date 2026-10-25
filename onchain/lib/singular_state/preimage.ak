@@ -28,8 +28,7 @@ pub type RegistryIdentity {
 }
 
 /// The structured value hashed into a token name, one constructor per role,
-/// numbered as the model's `Preimage`. The termination constructor is declared
-/// to keep that numbering; nothing builds it in this line yet.
+/// numbered as the model's `Preimage`.
 pub type Preimage {
   State { seed: OutputReference }
   Active { registry: RegistryIdentity, key: ByteArray }
@@ -91,10 +90,10 @@ pub fn registration_preimage(
 /// The Plutus Data serialisation of the termination approval preimage: the
 /// registry and the key.
 pub fn termination_preimage(
-  _key: ByteArray,
-  _registry: RegistryIdentity,
+  key: ByteArray,
+  registry: RegistryIdentity,
 ) -> ByteArray {
-  #""
+  cbor.serialise(TerminationApproval { registry, key })
 }
 
 /// The name of the registration approval token whose preimage is `preimage`.

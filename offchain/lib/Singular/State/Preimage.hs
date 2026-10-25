@@ -64,8 +64,7 @@ import Singular.Registry.TrieState
     )
 
 {- | The structured value hashed into a name, one constructor per role,
-numbered as the model's @Preimage@. The termination constructor keeps that
-numbering; nothing builds it in this line yet.
+numbered as the model's @Preimage@.
 -}
 data Preimage
     = -- | The registry created by spending the seed.
@@ -164,7 +163,8 @@ registrationPreimage key registry holding datumHash deposit =
 registry and the key.
 -}
 terminationPreimage :: ByteString -> RegistryIdentity -> ByteString
-terminationPreimage _ _ = mempty
+terminationPreimage key registry =
+    encodePreimage (TerminationApproval registry key)
 
 -- | The name of the approval token whose preimage is the given bytes.
 approvalName :: ByteString -> AssetName

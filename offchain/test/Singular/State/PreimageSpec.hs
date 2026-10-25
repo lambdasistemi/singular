@@ -273,51 +273,54 @@ tableRows vectors = describe "the table" $ do
             (len, len `elem` keyLengths) `shouldBe` (len, True)
 
     it
-        "covers the byte string lengths around the chunk size for a termination" $ do
-        let keyLengths =
-                [ BS.length key
-                | TerminationApproval _ key <- vectorInput <$> vectors
-                ]
-        forM_ [0, 64, 65, 129] $ \len ->
-            (len, len `elem` keyLengths) `shouldBe` (len, True)
+        "covers the byte string lengths around the chunk size for a termination"
+        $ do
+            let keyLengths =
+                    [ BS.length key
+                    | TerminationApproval _ key <- vectorInput <$> vectors
+                    ]
+            forM_ [0, 64, 65, 129] $ \len ->
+                (len, len `elem` keyLengths) `shouldBe` (len, True)
 
     it
-        "holds two registries that differ only in the policy and only in the name" $ do
-        let terminations =
-                [ (registry, key)
-                | TerminationApproval registry key <- vectorInput <$> vectors
-                ]
-            differing field =
-                [ (a, b)
-                | (a, keyA) <- terminations
-                , (b, keyB) <- terminations
-                , keyA == keyB
-                , field a /= field b
-                ]
-            policy (RegistryIdentity p _) = p
-            name (RegistryIdentity _ n) = n
-            onlyIn same (a, b) = same a == same b
-        any (onlyIn name) (differing policy) `shouldBe` True
-        any (onlyIn policy) (differing name) `shouldBe` True
+        "holds two registries that differ only in the policy and only in the name"
+        $ do
+            let terminations =
+                    [ (registry, key)
+                    | TerminationApproval registry key <- vectorInput <$> vectors
+                    ]
+                differing field =
+                    [ (a, b)
+                    | (a, keyA) <- terminations
+                    , (b, keyB) <- terminations
+                    , keyA == keyB
+                    , field a /= field b
+                    ]
+                policy (RegistryIdentity p _) = p
+                name (RegistryIdentity _ n) = n
+                onlyIn same (a, b) = same a == same b
+            any (onlyIn name) (differing policy) `shouldBe` True
+            any (onlyIn policy) (differing name) `shouldBe` True
 
     it
-        "sets a termination vector beside the active and registration vectors of its registry and key" $ do
-        let beside t = [o | o <- vectors, isOtherRole o, sameFacts t o]
-            isOtherRole o = vectorRole o `elem` ["active", "registration-approval"]
-            sameFacts t o = facts (vectorInput t) == facts (vectorInput o)
-            facts = \case
-                TerminationApproval registry key -> Just (registry, key)
-                Active registry key -> Just (registry, key)
-                RegistrationApproval registry key _ _ _ -> Just (registry, key)
-                _ -> Nothing
-            roles t = vectorRole <$> beside t
-            terminations = [v | v <- vectors, vectorRole v == "termination-approval"]
-        -- the pairing is not empty: some termination has both roles beside it
-        any
-            ( \t -> "active" `elem` roles t && "registration-approval" `elem` roles t
-            )
-            terminations
-            `shouldBe` True
+        "sets a termination vector beside the active and registration vectors of its registry and key"
+        $ do
+            let beside t = [o | o <- vectors, isOtherRole o, sameFacts t o]
+                isOtherRole o = vectorRole o `elem` ["active", "registration-approval"]
+                sameFacts t o = facts (vectorInput t) == facts (vectorInput o)
+                facts = \case
+                    TerminationApproval registry key -> Just (registry, key)
+                    Active registry key -> Just (registry, key)
+                    RegistrationApproval registry key _ _ _ -> Just (registry, key)
+                    _ -> Nothing
+                roles t = vectorRole <$> beside t
+                terminations = [v | v <- vectors, vectorRole v == "termination-approval"]
+            -- the pairing is not empty: some termination has both roles beside it
+            any
+                ( \t -> "active" `elem` roles t && "registration-approval" `elem` roles t
+                )
+                terminations
+                `shouldBe` True
 
 reproductionRows :: [Vector] -> Spec
 reproductionRows vectors = describe "the codec reproduces every vector" $
