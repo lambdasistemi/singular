@@ -15,7 +15,7 @@
       "pause": 500
     },
     {
-      "text": "[ ] lean-binding-rebound: the plan's Lean binding rebound to the aligned models landed on the epic branch, statement by statement.",
+      "text": "[x] lean-binding-rebound: the plan's Lean binding rebound to the aligned models landed on the epic branch, statement by statement.",
       "pause": 300
     },
     {
@@ -53,7 +53,7 @@
       "pause": 500
     },
     {
-      "text": "[ ] preimage-vectors-shared: byte vectors for the state, active and registration-approval preimages, reproduced on-chain and off-chain, including a definite and an indefinite list and a byte string longer than 64 bytes.",
+      "text": "[x] preimage-vectors-shared: byte vectors for the state, active and registration-approval preimages, reproduced on-chain and off-chain, including a definite and an indefinite list and a byte string longer than 64 bytes.",
       "pause": 300
     }
   ],
@@ -165,6 +165,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "2d4a3b090171be171c3b66737da2b2fd77e44904ac10367b6169cc2ea62092a1"
+    "sha256": "be6a802fa315d66213851733a35daf6744c10871c7c97872b929f80dcd3dc6fe"
   }
 }

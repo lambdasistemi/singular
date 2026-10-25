@@ -5,7 +5,7 @@ the ticket owner accepts its slice.
 
 ## Binding
 
-- [ ] lean-binding-rebound: the plan's Lean binding rebound to the aligned models landed on the epic branch, statement by statement.
+- [x] lean-binding-rebound: the plan's Lean binding rebound to the aligned models landed on the epic branch, statement by statement.
 - [x] gate-synthesized: the ticket owner's and the auditor's gate tables synthesized once and frozen with both input hashes.
 
 ## Pull request 1: state genesis
@@ -19,7 +19,7 @@ the ticket owner accepts its slice.
 
 ## Pull request 1: preimage vectors
 
-- [ ] preimage-vectors-shared: byte vectors for the state, active and registration-approval preimages, reproduced on-chain and off-chain, including a definite and an indefinite list and a byte string longer than 64 bytes.
+- [x] preimage-vectors-shared: byte vectors for the state, active and registration-approval preimages, reproduced on-chain and off-chain, including a definite and an indefinite list and a byte string longer than 64 bytes.
 
 ## Pull request 2: approvals and configuration
 

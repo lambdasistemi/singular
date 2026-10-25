@@ -24,14 +24,22 @@ The Singular family is bound to the Lake project `models/singular-application-he
 recipe `just application-held-model`) at epic-branch commit b1be26a6, statements in `SingularApplicationHeld.Statements`,
 all proved with the standard axioms. The model's vocabulary (`Preimage.state`, `Preimage.active`,
 `Preimage.registrationApproval`, `PublishedRelease`, `FoldObservation`, `genesis`, `recognizeState`, `fold`) names the
-code. The open-datum families stay provisional, to pull request 748 at 4126a951, until issue 741's open-datum models
-land; pull request 2 is rebound then.
+code. The open-datum families are bound to the Lake project `models/open-datum-application-held` (library
+`OpenDatumApplicationHeld`, recipe `just open-datum-application-held-model`) at epic-branch commit 2d2a8fc2, statements in
+`OpenDatumApplicationHeld.RefundLifecycle.Statements` and `OpenDatumApplicationHeld.Money.Statements`, all proved.
+
+Correspondence premise (the epic owner's ruling): the model's datum category of an output is read from its role in the
+fold. The output carrying the state token is the root; every other output, including the holding a change points at, is
+an application output. No address and no payload shape is excluded.
+
+The absence check (the trie proof shows the key absent) is open: the new line's trie moves to CSMT (aiken-csmt on chain,
+haskell-csmt off chain, keys hashed before insertion), and this plan is revised once when that release is ready.
 
 | Family | Statements this ticket implements and checks |
 | --- | --- |
 | Singular, bound at b1be26a6 | `genesis_inversion`, `recognition_inversion`, `registration_inversion`, `registration_effects`, `registration_separate_holdings`, `batch_inversion`, `publicFold_inversion`, `batch_effects`, `fold_minted_outputs`, `fold_untouched_keys`, `active_role_never_state`, `minted_active_never_state`, `public_fold_constructed`, `public_fold_effects` |
-| Open-datum lifecycle, provisional | `configurationCreate_inversion`, `configuration_immutable`, `bookRegistration_inversion`, `booking_authority_and_parameters`, `approvalBurn_inversion`, `approval_burn_open`, `burning_grants_nothing`, `registrationFold_inversion`, `folder_protection`, `ownerReclaim_inversion`, `expiredCleanup_inversion`, `registration_lifecycle`, `additive_payments` |
-| Money and equivalence, provisional | `create_journey`, `registration_booking_journey`, `registration_fold_journey` (restated in issue 741), `reclaim_journey`, `cleanup_journey`, `journey_allocations`, `accepted_economic_allocations` |
+| Open-datum lifecycle, bound at 2d2a8fc2 | `configurationCreate_inversion`, `configuration_immutable`, `bookRegistration_inversion`, `booking_authority_and_parameters`, `approvalBurn_inversion`, `approval_burn_open`, `burning_grants_nothing`, `registrationFold_inversion`, `folder_protection`, `ownerReclaim_inversion`, `expiredCleanup_inversion`, `registration_lifecycle`, `additive_payments` |
+| Money and equivalence, bound at 2d2a8fc2 | `create_journey`, `registration_booking_journey`, `registration_fold_journey_holding_separated`, `reclaim_journey`, `cleanup_journey`, `journey_allocations`, `accepted_economic_allocations` |
 
 `termination_inversion`, `termination_effects`, and the termination, update and history statements belong to issue 743. A statement the aligned models rename or restate is
 rebound by name; one they drop, or one whose meaning the code cannot meet, is a question to the epic owner, never a quiet

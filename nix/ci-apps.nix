@@ -24,8 +24,50 @@ let
     type = "app";
     program = pkgs.lib.getExe drv;
   };
+  # The Aiken tests that read the preimage byte vectors are made from the one
+  # committed table, offchain/test/fixtures/preimage-vectors.json, which the
+  # off-chain suite reads directly. `generate` writes the committed module;
+  # `check` diffs it with a fresh one, both formatted with the pinned Aiken.
+  preimageVectors = pkgs.writeShellApplication {
+    name = "preimage-vectors";
+    runtimeInputs = [
+      aiken
+      pkgs.coreutils
+      pkgs.diffutils
+      pkgs.python3
+    ];
+    text = ''
+      # Tool, not a guarantee: writes the Aiken rows of the preimage byte vectors from the shared table; their freshness is enforced by the vectors-check job.
+      table=offchain/test/fixtures/preimage-vectors.json
+      committed=onchain/validators/singular_state_preimage_vectors.tests.ak
+      tmp="$(mktemp -d)"
+      trap 'rm -rf "$tmp"' EXIT
+      python3 tools/preimage_vectors.py "$table" "$tmp/generated.ak"
+      aiken fmt "$tmp/generated.ak"
+      case "''${1:-}" in
+        generate)
+          cp "$tmp/generated.ak" "$committed"
+          echo "preimage-vectors: wrote $committed"
+          ;;
+        check)
+          if diff -u "$committed" "$tmp/generated.ak"; then
+            echo "preimage-vectors: PASS — committed tests match the table"
+          else
+            echo "ERROR: the preimage vector tests are stale — run the preimage-vectors app with generate and commit" >&2
+            exit 1
+          fi
+          ;;
+        *)
+          echo "usage: preimage-vectors generate|check" >&2
+          exit 2
+          ;;
+      esac
+    '';
+  };
 in
 {
+  preimage-vectors = app preimageVectors;
+
   presentation-check = app (
     pkgs.writeShellApplication {
       name = "presentation-check";
@@ -54,6 +96,7 @@ in
           echo "ERROR: committed vectors are stale — run 'just generate-vectors' and commit" >&2
           exit 1
         fi
+        ${pkgs.lib.getExe preimageVectors} check
       '';
     }
   );
