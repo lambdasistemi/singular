@@ -23,16 +23,11 @@ import Data.Map.Strict qualified as Map
 import Lens.Micro ((^.))
 
 import Cardano.Ledger.Address (Addr (..))
-import Cardano.Ledger.Api.Tx.Out (addrTxOutL, coinTxOutL, valueTxOutL)
+import Cardano.Ledger.Api.Tx.Out (addrTxOutL, coinTxOutL)
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Credential (Credential (..))
 import Cardano.Ledger.Keys (KeyHash (..))
-import Cardano.Ledger.Mary.Value
-    ( AssetName
-    , MaryValue (..)
-    , MultiAsset (..)
-    , PolicyID
-    )
+import Cardano.Ledger.Mary.Value (AssetName, MaryValue (..))
 import Cardano.Ledger.TxIn (TxIn)
 import Cardano.Tx.Build qualified as Tx
 import Cardano.Tx.Ledger (ConwayTx)
@@ -40,6 +35,7 @@ import Cardano.Tx.Ledger (ConwayTx)
 import Singular.Application.OpenDatum.Requests.Assemble
     ( Payer (..)
     , assembleTransaction
+    , holdsOnly
     , inlineDatumOf
     , readOutputs
     , resolvePayer
@@ -232,9 +228,3 @@ readPending session script pending =
                     then Right (Held output registration approval)
                     else declined
         _ -> declined
-
--- | The output holds this token once and nothing but ADA besides.
-holdsOnly :: PolicyID -> AssetName -> TxOut ConwayEra -> Bool
-holdsOnly policy name output =
-    let MaryValue _ (MultiAsset assets) = output ^. valueTxOutL
-    in  assets == Map.singleton policy (Map.singleton name 1)

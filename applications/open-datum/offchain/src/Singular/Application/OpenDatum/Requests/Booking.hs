@@ -33,15 +33,13 @@ import Cardano.Ledger.Api.Tx.Out
     , datumTxOutL
     , getMinCoinTxOut
     , mkBasicTxOut
-    , valueTxOutL
     )
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Credential (Credential (..))
 import Cardano.Ledger.Hashes (ScriptHash (..))
 import Cardano.Ledger.Keys (KeyHash (..))
 import Cardano.Ledger.Mary.Value
-    ( AssetName
-    , MaryValue (..)
+    ( MaryValue (..)
     , MultiAsset (..)
     , PolicyID (..)
     )
@@ -53,6 +51,7 @@ import Cardano.Tx.Ledger (ConwayTx)
 import Singular.Application.OpenDatum.Requests.Assemble
     ( Payer (..)
     , assembleTransaction
+    , holdsOnly
     , inlineDatumOf
     , readOutputs
     , resolvePayer
@@ -246,12 +245,6 @@ configurationRecord session script registry = do
     atScript output = case output ^. addrTxOutL of
         Addr _ (ScriptHashObj h) _ -> h == requestScriptHash script
         _ -> False
-
--- | The output holds this token once and nothing but ADA besides.
-holdsOnly :: PolicyID -> AssetName -> TxOut ConwayEra -> Bool
-holdsOnly policy name output =
-    let MaryValue _ (MultiAsset assets) = output ^. valueTxOutL
-    in  assets == Map.singleton policy (Map.singleton name 1)
 
 {- | The interval a booking declares: from the tip, as long as the booking
 width and the ledger's horizon allow, and the time its upper bound stands at,

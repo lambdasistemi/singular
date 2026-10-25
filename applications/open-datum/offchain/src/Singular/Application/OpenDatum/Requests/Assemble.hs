@@ -22,6 +22,7 @@ module Singular.Application.OpenDatum.Requests.Assemble
       -- * Reading the chain
     , readOutputs
     , inlineDatumOf
+    , holdsOnly
     , tipSlot
     , validityFromTip
 
@@ -44,11 +45,17 @@ import Cardano.Ledger.Api.Scripts.Data
     , Datum (..)
     , binaryDataToData
     )
-import Cardano.Ledger.Api.Tx.Out (datumTxOutL)
+import Cardano.Ledger.Api.Tx.Out (datumTxOutL, valueTxOutL)
 import Cardano.Ledger.BaseTypes (Network)
 import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose)
 import Cardano.Ledger.Credential (Credential (..))
 import Cardano.Ledger.Keys (KeyHash (..), KeyRole (Guard))
+import Cardano.Ledger.Mary.Value
+    ( AssetName
+    , MaryValue (..)
+    , MultiAsset (..)
+    , PolicyID
+    )
 import Cardano.Ledger.Plutus.ExUnits (ExUnits)
 import Cardano.Ledger.TxIn (TxIn)
 import Cardano.Slotting.Slot (SlotNo (..))
@@ -114,6 +121,12 @@ inlineDatumOf :: TxOut ConwayEra -> Maybe PLC.Data
 inlineDatumOf output = case output ^. datumTxOutL of
     Datum binary -> let Data d = binaryDataToData binary in Just d
     _ -> Nothing
+
+-- | The output holds this token once and nothing but ADA besides.
+holdsOnly :: PolicyID -> AssetName -> TxOut ConwayEra -> Bool
+holdsOnly policy name output =
+    let MaryValue _ (MultiAsset assets) = output ^. valueTxOutL
+    in  assets == Map.singleton policy (Map.singleton name 1)
 
 -- | The slot the chain has reached.
 tipSlot :: Session NoWitness IO -> IO SlotNo
