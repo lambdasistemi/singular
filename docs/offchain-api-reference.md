@@ -397,7 +397,12 @@ in this main-library reference. The public `open-datum-application`
 component (`applications/open-datum/offchain/`) carries the open-datum
 application the command line composes — entry commands, envelope, booking
 approval and destination, payload update, release rules, script, and the
-application value:
+application value — and the request builders of the registry on the proved
+design: the booking of a registration, its reclaim by the refund address and
+its cleanup after the window, the configuration record added to the creation
+of a registry, the records and actions of the request validator in the layout
+it decodes, the validator as a transaction carries it, and the reasons a
+builder declines:
 `Singular.Application.OpenDatum.Book`,
 `Singular.Application.OpenDatum.Build`,
 `Singular.Application.OpenDatum.Command`,
@@ -408,6 +413,12 @@ application value:
 `Singular.Application.OpenDatum.Plan`,
 `Singular.Application.OpenDatum.Preview`,
 `Singular.Application.OpenDatum.Release`,
+`Singular.Application.OpenDatum.Requests.Booking`,
+`Singular.Application.OpenDatum.Requests.Configuration`,
+`Singular.Application.OpenDatum.Requests.Pending`,
+`Singular.Application.OpenDatum.Requests.Records`,
+`Singular.Application.OpenDatum.Requests.Refusal`,
+`Singular.Application.OpenDatum.Requests.Script`,
 `Singular.Application.OpenDatum.Root`,
 `Singular.Application.OpenDatum.Run`,
 `Singular.Application.OpenDatum.Script`,

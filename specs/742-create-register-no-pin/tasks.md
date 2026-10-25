@@ -45,7 +45,7 @@ the ticket owner accepts its slice.
 
 ## Pull request 3: open-datum builders
 
-- [ ] request-builders: configuration create, book, reclaim and cleanup.
+- [x] request-builders: configuration create, book, reclaim and cleanup.
 
 ## Pull request 3: commands and documentation
 
