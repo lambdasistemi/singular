@@ -191071,17 +191071,17 @@
    ]
   },
   "docs-offchain-api-reference/what-the-reference-does-not-claim-01": {
-   "audio_sha256": "28e2bdad55a39cba14bf373f02f3a0963f463005818f2b6acf9594e9e7da9edc",
-   "characters": 3302,
-   "cost": 0.0032689799999999995,
-   "duration": 249.175,
+   "audio_sha256": "e551ad8a29dc852f7c208c2741e9a995a05db03a33a06468c528124ab1257c9b",
+   "characters": 3980,
+   "cost": 0.0039402,
+   "duration": 295.6,
    "index": 1,
-   "key": "22298f2d2211536739b758f5b4c787bf0e55ae84a1606cc59d565c28ea92a7d5",
+   "key": "772033ddfe6d6e6eed71713bcc1c7093bf99046608a0cf24dd90c3e7151dc0ab",
    "page": "docs/offchain-api-reference.md",
    "pause_ms": 400,
    "section": "what-the-reference-does-not-claim",
-   "sent_text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the runtime service modules staying outside it in Runtime service ownership, and the conformance reference's extent is the conformance library's. The executables and the on-chain Aiken validators remain outside the generated references. The public local-services component also exposes LocalEvaluation, NetworkTime, ProviderSettings, ProviderTrace, SessionEvidence, SessionIO, SessionServices, TimeMaterial, TimeSource, Trace, TraceRender, WaitTypes and Wallet; their sources live under offchain/local-services/Singular/Registry/. Their generated pages are not in this main-library reference. The public open-datum-application component (applications/open-datum/offchain/) carries the open-datum application the command line composes — entry commands, envelope, booking approval and destination, payload update, release rules, script, and the application value: Singular.Application.OpenDatum.Book, Singular.Application.OpenDatum.Build, Singular.Application.OpenDatum.Command, Singular.Application.OpenDatum.Entry, Singular.Application.OpenDatum.Envelope, Singular.Application.OpenDatum.InsertEnvelope, Singular.Application.OpenDatum.Permanent, Singular.Application.OpenDatum.Plan, Singular.Application.OpenDatum.Preview, Singular.Application.OpenDatum.Release, Singular.Application.OpenDatum.Root, Singular.Application.OpenDatum.Run, Singular.Application.OpenDatum.Script, Singular.Application.OpenDatum.Update and Singular.Application.OpenDatum.Value; their sources live under applications/open-datum/offchain/src/Singular/Application/OpenDatum/, and the executable's entry point lives in applications/open-datum/offchain/app/. The public registry-cli component (offchain/cli/) carries the registry command line the two binaries link — session, journal and receipts, the flag group, create, fold, reject, reclaim, inspect, reconcile, recovery and the booking call: Singular.CLI, Singular.CLI.Attached, Singular.CLI.Command, Singular.CLI.Create, Singular.CLI.Finish, Singular.CLI.Fold, Singular.CLI.FoldRules, Singular.CLI.Inspect, Singular.CLI.Key, Singular.CLI.Live, Singular.CLI.ManagedState, Singular.CLI.Outlay, Singular.CLI.Payload, Singular.CLI.Permanent, Singular.CLI.Plan, Singular.CLI.Proof, Singular.CLI.Receipt, Singular.CLI.ReceiptBody, Singular.CLI.Reclaim, Singular.CLI.ReclaimRules, Singular.CLI.Reconcile, Singular.CLI.Recovery, Singular.CLI.Registry, Singular.CLI.Reject, Singular.CLI.RejectRules, Singular.CLI.RequestWindow, Singular.CLI.Root, Singular.CLI.Session, Singular.CLI.Trace, Singular.CLI.TrieHistory and Singular.CLI.TrieTrace; their sources live under offchain/cli/src/Singular/CLI/.",
-   "text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the runtime service modules staying outside it in Runtime service ownership, and the conformance reference's extent is the conformance library's. The executables and the on-chain Aiken validators remain outside the generated references. The public local-services component also exposes LocalEvaluation, NetworkTime, ProviderSettings, ProviderTrace, SessionEvidence, SessionIO, SessionServices, TimeMaterial, TimeSource, Trace, TraceRender, WaitTypes and Wallet; their sources live under offchain/local-services/Singular/Registry/. Their generated pages are not in this main-library reference. The public open-datum-application component (applications/open-datum/offchain/) carries the open-datum application the command line composes — entry commands, envelope, booking approval and destination, payload update, release rules, script, and the application value: Singular.Application.OpenDatum.Book, Singular.Application.OpenDatum.Build, Singular.Application.OpenDatum.Command, Singular.Application.OpenDatum.Entry, Singular.Application.OpenDatum.Envelope, Singular.Application.OpenDatum.InsertEnvelope, Singular.Application.OpenDatum.Permanent, Singular.Application.OpenDatum.Plan, Singular.Application.OpenDatum.Preview, Singular.Application.OpenDatum.Release, Singular.Application.OpenDatum.Root, Singular.Application.OpenDatum.Run, Singular.Application.OpenDatum.Script, Singular.Application.OpenDatum.Update and Singular.Application.OpenDatum.Value; their sources live under applications/open-datum/offchain/src/Singular/Application/OpenDatum/, and the executable's entry point lives in applications/open-datum/offchain/app/. The public registry-cli component (offchain/cli/) carries the registry command line the two binaries link — session, journal and receipts, the flag group, create, fold, reject, reclaim, inspect, reconcile, recovery and the booking call: Singular.CLI, Singular.CLI.Attached, Singular.CLI.Command, Singular.CLI.Create, Singular.CLI.Finish, Singular.CLI.Fold, Singular.CLI.FoldRules, Singular.CLI.Inspect, Singular.CLI.Key, Singular.CLI.Live, Singular.CLI.ManagedState, Singular.CLI.Outlay, Singular.CLI.Payload, Singular.CLI.Permanent, Singular.CLI.Plan, Singular.CLI.Proof, Singular.CLI.Receipt, Singular.CLI.ReceiptBody, Singular.CLI.Reclaim, Singular.CLI.ReclaimRules, Singular.CLI.Reconcile, Singular.CLI.Recovery, Singular.CLI.Registry, Singular.CLI.Reject, Singular.CLI.RejectRules, Singular.CLI.RequestWindow, Singular.CLI.Root, Singular.CLI.Session, Singular.CLI.Trace, Singular.CLI.TrieHistory and Singular.CLI.TrieTrace; their sources live under offchain/cli/src/Singular/CLI/.",
+   "sent_text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the runtime service modules staying outside it in Runtime service ownership, and the conformance reference's extent is the conformance library's. The executables and the on-chain Aiken validators remain outside the generated references. The public local-services component also exposes LocalEvaluation, NetworkTime, ProviderSettings, ProviderTrace, SessionEvidence, SessionIO, SessionServices, TimeMaterial, TimeSource, Trace, TraceRender, WaitTypes and Wallet; their sources live under offchain/local-services/Singular/Registry/. Their generated pages are not in this main-library reference. The public open-datum-application component (applications/open-datum/offchain/) carries the open-datum application the command line composes — entry commands, envelope, booking approval and destination, payload update, release rules, script, and the application value — and the request builders of the registry on the proved design: the booking of a registration, its reclaim by the refund address and its cleanup after the window, the configuration record added to the creation of a registry, the records and actions of the request validator in the layout it decodes, the validator as a transaction carries it, and the reasons a builder declines: Singular.Application.OpenDatum.Book, Singular.Application.OpenDatum.Build, Singular.Application.OpenDatum.Command, Singular.Application.OpenDatum.Entry, Singular.Application.OpenDatum.Envelope, Singular.Application.OpenDatum.InsertEnvelope, Singular.Application.OpenDatum.Permanent, Singular.Application.OpenDatum.Plan, Singular.Application.OpenDatum.Preview, Singular.Application.OpenDatum.Release, Singular.Application.OpenDatum.Requests.Booking, Singular.Application.OpenDatum.Requests.Configuration, Singular.Application.OpenDatum.Requests.Pending, Singular.Application.OpenDatum.Requests.Records, Singular.Application.OpenDatum.Requests.Refusal, Singular.Application.OpenDatum.Requests.Script, Singular.Application.OpenDatum.Root, Singular.Application.OpenDatum.Run, Singular.Application.OpenDatum.Script, Singular.Application.OpenDatum.Update and Singular.Application.OpenDatum.Value; their sources live under applications/open-datum/offchain/src/Singular/Application/OpenDatum/, and the executable's entry point lives in applications/open-datum/offchain/app/. The public registry-cli component (offchain/cli/) carries the registry command line the two binaries link — session, journal and receipts, the flag group, create, fold, reject, reclaim, inspect, reconcile, recovery and the booking call: Singular.CLI, Singular.CLI.Attached, Singular.CLI.Command, Singular.CLI.Create, Singular.CLI.Finish, Singular.CLI.Fold, Singular.CLI.FoldRules, Singular.CLI.Inspect, Singular.CLI.Key, Singular.CLI.Live, Singular.CLI.ManagedState, Singular.CLI.Outlay, Singular.CLI.Payload, Singular.CLI.Permanent, Singular.CLI.Plan, Singular.CLI.Proof, Singular.CLI.Receipt, Singular.CLI.ReceiptBody, Singular.CLI.Reclaim, Singular.CLI.ReclaimRules, Singular.CLI.Reconcile, Singular.CLI.Recovery, Singular.CLI.Registry, Singular.CLI.Reject, Singular.CLI.RejectRules, Singular.CLI.RequestWindow, Singular.CLI.Root, Singular.CLI.Session, Singular.CLI.Trace, Singular.CLI.TrieHistory and Singular.CLI.TrieTrace; their sources live under offchain/cli/src/Singular/CLI/.",
+   "text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the runtime service modules staying outside it in Runtime service ownership, and the conformance reference's extent is the conformance library's. The executables and the on-chain Aiken validators remain outside the generated references. The public local-services component also exposes LocalEvaluation, NetworkTime, ProviderSettings, ProviderTrace, SessionEvidence, SessionIO, SessionServices, TimeMaterial, TimeSource, Trace, TraceRender, WaitTypes and Wallet; their sources live under offchain/local-services/Singular/Registry/. Their generated pages are not in this main-library reference. The public open-datum-application component (applications/open-datum/offchain/) carries the open-datum application the command line composes — entry commands, envelope, booking approval and destination, payload update, release rules, script, and the application value — and the request builders of the registry on the proved design: the booking of a registration, its reclaim by the refund address and its cleanup after the window, the configuration record added to the creation of a registry, the records and actions of the request validator in the layout it decodes, the validator as a transaction carries it, and the reasons a builder declines: Singular.Application.OpenDatum.Book, Singular.Application.OpenDatum.Build, Singular.Application.OpenDatum.Command, Singular.Application.OpenDatum.Entry, Singular.Application.OpenDatum.Envelope, Singular.Application.OpenDatum.InsertEnvelope, Singular.Application.OpenDatum.Permanent, Singular.Application.OpenDatum.Plan, Singular.Application.OpenDatum.Preview, Singular.Application.OpenDatum.Release, Singular.Application.OpenDatum.Requests.Booking, Singular.Application.OpenDatum.Requests.Configuration, Singular.Application.OpenDatum.Requests.Pending, Singular.Application.OpenDatum.Requests.Records, Singular.Application.OpenDatum.Requests.Refusal, Singular.Application.OpenDatum.Requests.Script, Singular.Application.OpenDatum.Root, Singular.Application.OpenDatum.Run, Singular.Application.OpenDatum.Script, Singular.Application.OpenDatum.Update and Singular.Application.OpenDatum.Value; their sources live under applications/open-datum/offchain/src/Singular/Application/OpenDatum/, and the executable's entry point lives in applications/open-datum/offchain/app/. The public registry-cli component (offchain/cli/) carries the registry command line the two binaries link — session, journal and receipts, the flag group, create, fold, reject, reclaim, inspect, reconcile, recovery and the booking call: Singular.CLI, Singular.CLI.Attached, Singular.CLI.Command, Singular.CLI.Create, Singular.CLI.Finish, Singular.CLI.Fold, Singular.CLI.FoldRules, Singular.CLI.Inspect, Singular.CLI.Key, Singular.CLI.Live, Singular.CLI.ManagedState, Singular.CLI.Outlay, Singular.CLI.Payload, Singular.CLI.Permanent, Singular.CLI.Plan, Singular.CLI.Proof, Singular.CLI.Receipt, Singular.CLI.ReceiptBody, Singular.CLI.Reclaim, Singular.CLI.ReclaimRules, Singular.CLI.Reconcile, Singular.CLI.Recovery, Singular.CLI.Registry, Singular.CLI.Reject, Singular.CLI.RejectRules, Singular.CLI.RequestWindow, Singular.CLI.Root, Singular.CLI.Session, Singular.CLI.Trace, Singular.CLI.TrieHistory and Singular.CLI.TrieTrace; their sources live under offchain/cli/src/Singular/CLI/.",
    "words": [
     {
      "end": 0.375,
@@ -192234,1573 +192234,2228 @@
      "text": ","
     },
     {
-     "end": 106.262,
-     "start": 106.175,
+     "end": 106.287,
+     "start": 106.2,
      "text": "and"
     },
     {
-     "end": 106.338,
-     "start": 106.262,
+     "end": 106.375,
+     "start": 106.287,
      "text": "the"
     },
     {
-     "end": 106.9,
-     "start": 106.338,
+     "end": 107.075,
+     "start": 106.375,
      "text": "application"
     },
     {
-     "end": 107.675,
-     "start": 106.9,
+     "end": 107.688,
+     "start": 107.075,
      "text": "value"
     },
     {
-     "end": 107.9,
-     "start": 107.675,
+     "end": 107.787,
+     "start": 107.688,
+     "text": "—"
+    },
+    {
+     "end": 107.912,
+     "start": 107.787,
+     "text": "and"
+    },
+    {
+     "end": 108.0,
+     "start": 107.912,
+     "text": "the"
+    },
+    {
+     "end": 108.5,
+     "start": 108.0,
+     "text": "request"
+    },
+    {
+     "end": 108.938,
+     "start": 108.5,
+     "text": "builders"
+    },
+    {
+     "end": 109.012,
+     "start": 108.938,
+     "text": "of"
+    },
+    {
+     "end": 109.125,
+     "start": 109.012,
+     "text": "the"
+    },
+    {
+     "end": 109.75,
+     "start": 109.125,
+     "text": "registry"
+    },
+    {
+     "end": 109.887,
+     "start": 109.75,
+     "text": "on"
+    },
+    {
+     "end": 109.988,
+     "start": 109.887,
+     "text": "the"
+    },
+    {
+     "end": 110.375,
+     "start": 109.988,
+     "text": "proved"
+    },
+    {
+     "end": 111.5,
+     "start": 110.375,
+     "text": "design"
+    },
+    {
+     "end": 111.7,
+     "start": 111.5,
      "text": ":"
     },
     {
-     "end": 108.55,
-     "start": 108.125,
-     "text": "Singular"
+     "end": 111.95,
+     "start": 111.875,
+     "text": "the"
     },
     {
-     "end": 108.6,
-     "start": 108.55,
-     "text": "."
+     "end": 112.262,
+     "start": 111.95,
+     "text": "booking"
     },
     {
-     "end": 109.275,
-     "start": 108.6,
-     "text": "Application"
+     "end": 112.338,
+     "start": 112.262,
+     "text": "of"
     },
     {
-     "end": 109.325,
-     "start": 109.275,
-     "text": "."
+     "end": 112.4,
+     "start": 112.338,
+     "text": "a"
     },
     {
-     "end": 109.95,
-     "start": 109.325,
-     "text": "OpenDatum"
+     "end": 113.6,
+     "start": 112.4,
+     "text": "registration"
     },
     {
-     "end": 110.05,
-     "start": 109.95,
-     "text": "."
-    },
-    {
-     "end": 110.325,
-     "start": 110.05,
-     "text": "Book"
-    },
-    {
-     "end": 110.412,
-     "start": 110.325,
+     "end": 113.8,
+     "start": 113.6,
      "text": ","
     },
     {
-     "end": 110.9,
-     "start": 110.412,
-     "text": "Singular"
+     "end": 114.15,
+     "start": 114.0,
+     "text": "its"
     },
     {
-     "end": 110.95,
-     "start": 110.9,
-     "text": "."
+     "end": 114.675,
+     "start": 114.15,
+     "text": "reclaim"
     },
     {
-     "end": 111.675,
-     "start": 110.95,
-     "text": "Application"
+     "end": 114.812,
+     "start": 114.675,
+     "text": "by"
     },
     {
-     "end": 111.75,
-     "start": 111.675,
-     "text": "."
+     "end": 114.9,
+     "start": 114.812,
+     "text": "the"
     },
     {
-     "end": 112.375,
-     "start": 111.75,
-     "text": "OpenDatum"
+     "end": 115.287,
+     "start": 114.9,
+     "text": "refund"
     },
     {
-     "end": 112.45,
-     "start": 112.375,
-     "text": "."
+     "end": 115.812,
+     "start": 115.287,
+     "text": "address"
     },
     {
-     "end": 113.325,
-     "start": 112.45,
-     "text": "Build"
+     "end": 115.938,
+     "start": 115.812,
+     "text": "and"
     },
     {
-     "end": 113.55,
-     "start": 113.325,
-     "text": ","
+     "end": 116.1,
+     "start": 115.938,
+     "text": "its"
     },
     {
-     "end": 114.225,
-     "start": 113.775,
-     "text": "Singular"
+     "end": 116.525,
+     "start": 116.1,
+     "text": "cleanup"
     },
     {
-     "end": 114.275,
-     "start": 114.225,
-     "text": "."
+     "end": 116.787,
+     "start": 116.525,
+     "text": "after"
     },
     {
-     "end": 114.975,
-     "start": 114.275,
-     "text": "Application"
-    },
-    {
-     "end": 115.05,
-     "start": 114.975,
-     "text": "."
-    },
-    {
-     "end": 115.825,
-     "start": 115.05,
-     "text": "OpenDatum"
-    },
-    {
-     "end": 115.9,
-     "start": 115.825,
-     "text": "."
-    },
-    {
-     "end": 116.4,
-     "start": 115.9,
-     "text": "Command"
-    },
-    {
-     "end": 116.488,
-     "start": 116.4,
-     "text": ","
-    },
-    {
-     "end": 116.975,
-     "start": 116.488,
-     "text": "Singular"
-    },
-    {
-     "end": 117.025,
-     "start": 116.975,
-     "text": "."
+     "end": 116.875,
+     "start": 116.787,
+     "text": "the"
     },
     {
      "end": 117.75,
-     "start": 117.025,
-     "text": "Application"
+     "start": 116.875,
+     "text": "window"
     },
     {
-     "end": 117.825,
+     "end": 118.025,
      "start": 117.75,
-     "text": "."
-    },
-    {
-     "end": 118.425,
-     "start": 117.825,
-     "text": "OpenDatum"
-    },
-    {
-     "end": 118.5,
-     "start": 118.425,
-     "text": "."
-    },
-    {
-     "end": 119.475,
-     "start": 118.5,
-     "text": "Entry"
-    },
-    {
-     "end": 119.775,
-     "start": 119.475,
      "text": ","
+    },
+    {
+     "end": 118.275,
+     "start": 118.2,
+     "text": "the"
+    },
+    {
+     "end": 119.175,
+     "start": 118.275,
+     "text": "configuration"
+    },
+    {
+     "end": 119.762,
+     "start": 119.175,
+     "text": "record"
+    },
+    {
+     "end": 120.125,
+     "start": 119.762,
+     "text": "added"
+    },
+    {
+     "end": 120.213,
+     "start": 120.125,
+     "text": "to"
     },
     {
      "end": 120.3,
-     "start": 119.975,
-     "text": "Singular"
+     "start": 120.213,
+     "text": "the"
     },
     {
-     "end": 120.35,
+     "end": 120.838,
      "start": 120.3,
-     "text": "."
+     "text": "creation"
     },
     {
-     "end": 121.0,
-     "start": 120.35,
-     "text": "Application"
+     "end": 120.912,
+     "start": 120.838,
+     "text": "of"
     },
     {
-     "end": 121.075,
-     "start": 121.0,
-     "text": "."
+     "end": 120.975,
+     "start": 120.912,
+     "text": "a"
     },
     {
-     "end": 121.65,
-     "start": 121.075,
-     "text": "OpenDatum"
+     "end": 122.05,
+     "start": 120.975,
+     "text": "registry"
     },
     {
-     "end": 121.725,
-     "start": 121.65,
-     "text": "."
-    },
-    {
-     "end": 122.625,
-     "start": 121.725,
-     "text": "Envelope"
-    },
-    {
-     "end": 122.85,
-     "start": 122.625,
+     "end": 122.275,
+     "start": 122.05,
      "text": ","
     },
     {
-     "end": 123.375,
-     "start": 123.05,
-     "text": "Singular"
+     "end": 122.562,
+     "start": 122.45,
+     "text": "the"
     },
     {
-     "end": 123.425,
-     "start": 123.375,
-     "text": "."
+     "end": 123.1,
+     "start": 122.562,
+     "text": "records"
     },
     {
-     "end": 124.05,
-     "start": 123.425,
-     "text": "Application"
+     "end": 123.238,
+     "start": 123.1,
+     "text": "and"
     },
     {
-     "end": 124.125,
-     "start": 124.05,
-     "text": "."
+     "end": 123.775,
+     "start": 123.238,
+     "text": "actions"
     },
     {
-     "end": 124.7,
-     "start": 124.125,
-     "text": "OpenDatum"
+     "end": 123.863,
+     "start": 123.775,
+     "text": "of"
     },
     {
-     "end": 124.75,
-     "start": 124.7,
-     "text": "."
+     "end": 123.95,
+     "start": 123.863,
+     "text": "the"
     },
     {
-     "end": 126.075,
-     "start": 124.75,
-     "text": "InsertEnvelope"
+     "end": 124.45,
+     "start": 123.95,
+     "text": "request"
     },
     {
-     "end": 126.3,
-     "start": 126.075,
+     "end": 125.1,
+     "start": 124.45,
+     "text": "validator"
+    },
+    {
+     "end": 125.188,
+     "start": 125.1,
+     "text": "in"
+    },
+    {
+     "end": 125.275,
+     "start": 125.188,
+     "text": "the"
+    },
+    {
+     "end": 125.675,
+     "start": 125.275,
+     "text": "layout"
+    },
+    {
+     "end": 125.8,
+     "start": 125.675,
+     "text": "it"
+    },
+    {
+     "end": 126.925,
+     "start": 125.8,
+     "text": "decodes"
+    },
+    {
+     "end": 127.125,
+     "start": 126.925,
      "text": ","
     },
     {
-     "end": 126.975,
-     "start": 126.525,
-     "text": "Singular"
+     "end": 127.4,
+     "start": 127.3,
+     "text": "the"
     },
     {
-     "end": 127.025,
-     "start": 126.975,
-     "text": "."
+     "end": 128.038,
+     "start": 127.4,
+     "text": "validator"
     },
     {
-     "end": 127.725,
-     "start": 127.025,
-     "text": "Application"
+     "end": 128.163,
+     "start": 128.038,
+     "text": "as"
     },
     {
-     "end": 127.8,
-     "start": 127.725,
-     "text": "."
+     "end": 128.225,
+     "start": 128.163,
+     "text": "a"
     },
     {
-     "end": 128.575,
-     "start": 127.8,
-     "text": "OpenDatum"
+     "end": 128.962,
+     "start": 128.225,
+     "text": "transaction"
     },
     {
-     "end": 128.65,
-     "start": 128.575,
-     "text": "."
+     "end": 129.387,
+     "start": 128.962,
+     "text": "carries"
     },
     {
-     "end": 129.15,
-     "start": 128.65,
-     "text": "Permanent"
-    },
-    {
-     "end": 129.238,
-     "start": 129.15,
-     "text": ","
+     "end": 129.625,
+     "start": 129.387,
+     "text": "it"
     },
     {
      "end": 129.725,
-     "start": 129.238,
-     "text": "Singular"
-    },
-    {
-     "end": 129.775,
-     "start": 129.725,
-     "text": "."
-    },
-    {
-     "end": 130.525,
-     "start": 129.775,
-     "text": "Application"
-    },
-    {
-     "end": 130.6,
-     "start": 130.525,
-     "text": "."
-    },
-    {
-     "end": 131.275,
-     "start": 130.6,
-     "text": "OpenDatum"
-    },
-    {
-     "end": 131.35,
-     "start": 131.275,
-     "text": "."
-    },
-    {
-     "end": 132.275,
-     "start": 131.35,
-     "text": "Plan"
-    },
-    {
-     "end": 132.5,
-     "start": 132.275,
+     "start": 129.625,
      "text": ","
     },
     {
-     "end": 133.175,
-     "start": 132.725,
+     "end": 129.837,
+     "start": 129.725,
+     "text": "and"
+    },
+    {
+     "end": 129.925,
+     "start": 129.837,
+     "text": "the"
+    },
+    {
+     "end": 130.413,
+     "start": 129.925,
+     "text": "reasons"
+    },
+    {
+     "end": 130.475,
+     "start": 130.413,
+     "text": "a"
+    },
+    {
+     "end": 130.85,
+     "start": 130.475,
+     "text": "builder"
+    },
+    {
+     "end": 132.025,
+     "start": 130.85,
+     "text": "declines"
+    },
+    {
+     "end": 132.225,
+     "start": 132.025,
+     "text": ":"
+    },
+    {
+     "end": 132.875,
+     "start": 132.45,
      "text": "Singular"
     },
     {
-     "end": 133.225,
-     "start": 133.175,
+     "end": 132.925,
+     "start": 132.875,
      "text": "."
     },
     {
-     "end": 133.9,
-     "start": 133.225,
+     "end": 133.6,
+     "start": 132.925,
      "text": "Application"
     },
     {
-     "end": 133.95,
-     "start": 133.9,
+     "end": 133.65,
+     "start": 133.6,
      "text": "."
     },
     {
-     "end": 134.575,
-     "start": 133.95,
+     "end": 134.275,
+     "start": 133.65,
      "text": "OpenDatum"
+    },
+    {
+     "end": 134.375,
+     "start": 134.275,
+     "text": "."
     },
     {
      "end": 134.65,
-     "start": 134.575,
-     "text": "."
+     "start": 134.375,
+     "text": "Book"
     },
     {
-     "end": 135.075,
+     "end": 134.738,
      "start": 134.65,
-     "text": "Preview"
-    },
-    {
-     "end": 135.163,
-     "start": 135.075,
      "text": ","
     },
     {
-     "end": 135.65,
-     "start": 135.163,
+     "end": 135.225,
+     "start": 134.738,
      "text": "Singular"
     },
     {
-     "end": 135.7,
-     "start": 135.65,
+     "end": 135.275,
+     "start": 135.225,
      "text": "."
     },
     {
-     "end": 136.45,
-     "start": 135.7,
+     "end": 136.0,
+     "start": 135.275,
      "text": "Application"
     },
     {
-     "end": 136.525,
-     "start": 136.45,
+     "end": 136.075,
+     "start": 136.0,
      "text": "."
     },
     {
-     "end": 137.1,
-     "start": 136.525,
+     "end": 136.7,
+     "start": 136.075,
      "text": "OpenDatum"
     },
     {
-     "end": 137.15,
-     "start": 137.1,
+     "end": 136.775,
+     "start": 136.7,
      "text": "."
     },
     {
-     "end": 138.225,
-     "start": 137.15,
-     "text": "Release"
+     "end": 137.65,
+     "start": 136.775,
+     "text": "Build"
     },
     {
-     "end": 138.45,
-     "start": 138.225,
+     "end": 137.875,
+     "start": 137.65,
      "text": ","
     },
     {
-     "end": 139.125,
-     "start": 138.675,
+     "end": 138.55,
+     "start": 138.1,
      "text": "Singular"
     },
     {
-     "end": 139.175,
-     "start": 139.125,
+     "end": 138.6,
+     "start": 138.55,
      "text": "."
     },
     {
-     "end": 139.85,
-     "start": 139.175,
+     "end": 139.3,
+     "start": 138.6,
      "text": "Application"
     },
     {
-     "end": 139.9,
-     "start": 139.85,
+     "end": 139.375,
+     "start": 139.3,
      "text": "."
     },
     {
-     "end": 140.55,
-     "start": 139.9,
+     "end": 140.15,
+     "start": 139.375,
      "text": "OpenDatum"
     },
     {
-     "end": 140.65,
-     "start": 140.55,
+     "end": 140.225,
+     "start": 140.15,
      "text": "."
     },
     {
-     "end": 140.95,
-     "start": 140.65,
-     "text": "Root"
+     "end": 140.725,
+     "start": 140.225,
+     "text": "Command"
     },
     {
-     "end": 141.038,
-     "start": 140.95,
+     "end": 140.812,
+     "start": 140.725,
      "text": ","
     },
     {
-     "end": 141.525,
-     "start": 141.038,
+     "end": 141.3,
+     "start": 140.812,
      "text": "Singular"
     },
     {
-     "end": 141.575,
-     "start": 141.525,
+     "end": 141.35,
+     "start": 141.3,
      "text": "."
     },
     {
-     "end": 142.3,
-     "start": 141.575,
+     "end": 142.075,
+     "start": 141.35,
      "text": "Application"
     },
     {
-     "end": 142.375,
-     "start": 142.3,
+     "end": 142.15,
+     "start": 142.075,
      "text": "."
     },
     {
-     "end": 142.975,
-     "start": 142.375,
+     "end": 142.75,
+     "start": 142.15,
      "text": "OpenDatum"
     },
     {
-     "end": 143.05,
-     "start": 142.975,
+     "end": 142.825,
+     "start": 142.75,
      "text": "."
     },
     {
-     "end": 143.9,
-     "start": 143.05,
-     "text": "Run"
+     "end": 143.8,
+     "start": 142.825,
+     "text": "Entry"
     },
     {
-     "end": 144.125,
-     "start": 143.9,
+     "end": 144.1,
+     "start": 143.8,
      "text": ","
     },
     {
-     "end": 144.65,
-     "start": 144.325,
+     "end": 144.625,
+     "start": 144.3,
      "text": "Singular"
     },
     {
-     "end": 144.7,
-     "start": 144.65,
+     "end": 144.675,
+     "start": 144.625,
      "text": "."
     },
     {
      "end": 145.325,
-     "start": 144.7,
+     "start": 144.675,
      "text": "Application"
     },
     {
-     "end": 145.375,
+     "end": 145.4,
      "start": 145.325,
      "text": "."
     },
     {
-     "end": 145.95,
-     "start": 145.375,
+     "end": 145.975,
+     "start": 145.4,
      "text": "OpenDatum"
     },
     {
-     "end": 146.025,
-     "start": 145.95,
+     "end": 146.05,
+     "start": 145.975,
      "text": "."
     },
     {
-     "end": 146.875,
-     "start": 146.025,
-     "text": "Script"
+     "end": 146.95,
+     "start": 146.05,
+     "text": "Envelope"
     },
     {
-     "end": 147.075,
-     "start": 146.875,
+     "end": 147.175,
+     "start": 146.95,
      "text": ","
+    },
+    {
+     "end": 147.7,
+     "start": 147.375,
+     "text": "Singular"
     },
     {
      "end": 147.75,
-     "start": 147.3,
-     "text": "Singular"
-    },
-    {
-     "end": 147.8,
-     "start": 147.75,
+     "start": 147.7,
      "text": "."
     },
     {
-     "end": 148.5,
-     "start": 147.8,
+     "end": 148.375,
+     "start": 147.75,
      "text": "Application"
     },
     {
-     "end": 148.575,
-     "start": 148.5,
+     "end": 148.45,
+     "start": 148.375,
      "text": "."
     },
     {
-     "end": 149.375,
-     "start": 148.575,
+     "end": 149.025,
+     "start": 148.45,
      "text": "OpenDatum"
     },
     {
-     "end": 149.45,
-     "start": 149.375,
+     "end": 149.075,
+     "start": 149.025,
      "text": "."
     },
     {
-     "end": 149.875,
-     "start": 149.45,
-     "text": "Update"
-    },
-    {
-     "end": 150.012,
-     "start": 149.875,
-     "text": "and"
-    },
-    {
-     "end": 150.55,
-     "start": 150.012,
-     "text": "Singular"
+     "end": 150.4,
+     "start": 149.075,
+     "text": "InsertEnvelope"
     },
     {
      "end": 150.625,
-     "start": 150.55,
-     "text": "."
+     "start": 150.4,
+     "text": ","
+    },
+    {
+     "end": 151.3,
+     "start": 150.85,
+     "text": "Singular"
     },
     {
      "end": 151.35,
-     "start": 150.625,
+     "start": 151.3,
+     "text": "."
+    },
+    {
+     "end": 152.05,
+     "start": 151.35,
      "text": "Application"
     },
     {
-     "end": 151.425,
-     "start": 151.35,
+     "end": 152.125,
+     "start": 152.05,
      "text": "."
     },
     {
-     "end": 152.075,
-     "start": 151.425,
+     "end": 152.9,
+     "start": 152.125,
      "text": "OpenDatum"
     },
     {
-     "end": 152.15,
-     "start": 152.075,
+     "end": 152.975,
+     "start": 152.9,
      "text": "."
     },
     {
-     "end": 153.0,
-     "start": 152.15,
-     "text": "Value"
+     "end": 153.475,
+     "start": 152.975,
+     "text": "Permanent"
     },
     {
-     "end": 153.35,
-     "start": 153.0,
-     "text": ";"
-    },
-    {
-     "end": 153.75,
-     "start": 153.575,
-     "text": "their"
-    },
-    {
-     "end": 154.238,
-     "start": 153.75,
-     "text": "sources"
-    },
-    {
-     "end": 154.462,
-     "start": 154.238,
-     "text": "live"
-    },
-    {
-     "end": 154.675,
-     "start": 154.462,
-     "text": "under"
-    },
-    {
-     "end": 163.575,
-     "start": 154.675,
-     "text": "applications/open-datum/offchain/src/Singular/Application/OpenDatum/"
-    },
-    {
-     "end": 163.85,
-     "start": 163.575,
+     "end": 153.562,
+     "start": 153.475,
      "text": ","
     },
     {
-     "end": 164.137,
-     "start": 164.05,
-     "text": "and"
+     "end": 154.05,
+     "start": 153.562,
+     "text": "Singular"
     },
     {
-     "end": 164.25,
-     "start": 164.137,
-     "text": "the"
+     "end": 154.1,
+     "start": 154.05,
+     "text": "."
     },
     {
-     "end": 164.988,
-     "start": 164.25,
-     "text": "executable's"
+     "end": 154.85,
+     "start": 154.1,
+     "text": "Application"
     },
     {
-     "end": 165.325,
-     "start": 164.988,
-     "text": "entry"
+     "end": 154.925,
+     "start": 154.85,
+     "text": "."
     },
     {
-     "end": 165.7,
-     "start": 165.325,
-     "text": "point"
+     "end": 155.6,
+     "start": 154.925,
+     "text": "OpenDatum"
     },
     {
-     "end": 166.075,
-     "start": 165.7,
-     "text": "lives"
+     "end": 155.675,
+     "start": 155.6,
+     "text": "."
     },
     {
-     "end": 166.175,
-     "start": 166.075,
-     "text": "in"
+     "end": 156.6,
+     "start": 155.675,
+     "text": "Plan"
     },
     {
-     "end": 169.075,
-     "start": 166.175,
-     "text": "applications/open-datum/offchain"
+     "end": 156.825,
+     "start": 156.6,
+     "text": ","
     },
     {
-     "end": 169.85,
-     "start": 169.075,
-     "text": "app/."
+     "end": 157.5,
+     "start": 157.05,
+     "text": "Singular"
     },
     {
-     "end": 170.125,
-     "start": 170.05,
-     "text": "The"
+     "end": 157.55,
+     "start": 157.5,
+     "text": "."
+    },
+    {
+     "end": 158.225,
+     "start": 157.55,
+     "text": "Application"
+    },
+    {
+     "end": 158.275,
+     "start": 158.225,
+     "text": "."
+    },
+    {
+     "end": 158.9,
+     "start": 158.275,
+     "text": "OpenDatum"
+    },
+    {
+     "end": 158.975,
+     "start": 158.9,
+     "text": "."
+    },
+    {
+     "end": 159.4,
+     "start": 158.975,
+     "text": "Preview"
+    },
+    {
+     "end": 159.488,
+     "start": 159.4,
+     "text": ","
+    },
+    {
+     "end": 159.975,
+     "start": 159.488,
+     "text": "Singular"
+    },
+    {
+     "end": 160.025,
+     "start": 159.975,
+     "text": "."
+    },
+    {
+     "end": 160.775,
+     "start": 160.025,
+     "text": "Application"
+    },
+    {
+     "end": 160.85,
+     "start": 160.775,
+     "text": "."
+    },
+    {
+     "end": 161.425,
+     "start": 160.85,
+     "text": "OpenDatum"
+    },
+    {
+     "end": 161.475,
+     "start": 161.425,
+     "text": "."
+    },
+    {
+     "end": 162.55,
+     "start": 161.475,
+     "text": "Release"
+    },
+    {
+     "end": 162.775,
+     "start": 162.55,
+     "text": ","
+    },
+    {
+     "end": 163.3,
+     "start": 162.975,
+     "text": "Singular"
+    },
+    {
+     "end": 163.35,
+     "start": 163.3,
+     "text": "."
+    },
+    {
+     "end": 164.0,
+     "start": 163.35,
+     "text": "Application"
+    },
+    {
+     "end": 164.075,
+     "start": 164.0,
+     "text": "."
+    },
+    {
+     "end": 164.65,
+     "start": 164.075,
+     "text": "OpenDatum"
+    },
+    {
+     "end": 164.7,
+     "start": 164.65,
+     "text": "."
+    },
+    {
+     "end": 165.175,
+     "start": 164.7,
+     "text": "Requests"
+    },
+    {
+     "end": 165.25,
+     "start": 165.175,
+     "text": "."
+    },
+    {
+     "end": 166.15,
+     "start": 165.25,
+     "text": "Booking"
+    },
+    {
+     "end": 166.35,
+     "start": 166.15,
+     "text": ","
+    },
+    {
+     "end": 166.975,
+     "start": 166.575,
+     "text": "Singular"
+    },
+    {
+     "end": 167.025,
+     "start": 166.975,
+     "text": "."
+    },
+    {
+     "end": 167.7,
+     "start": 167.025,
+     "text": "Application"
+    },
+    {
+     "end": 167.775,
+     "start": 167.7,
+     "text": "."
+    },
+    {
+     "end": 168.375,
+     "start": 167.775,
+     "text": "OpenDatum"
+    },
+    {
+     "end": 168.425,
+     "start": 168.375,
+     "text": "."
+    },
+    {
+     "end": 168.925,
+     "start": 168.425,
+     "text": "Requests"
+    },
+    {
+     "end": 168.975,
+     "start": 168.925,
+     "text": "."
+    },
+    {
+     "end": 170.325,
+     "start": 168.975,
+     "text": "Configuration"
     },
     {
      "end": 170.525,
-     "start": 170.125,
-     "text": "public"
-    },
-    {
-     "end": 171.3,
-     "start": 170.525,
-     "text": "registry-cli"
-    },
-    {
-     "end": 171.962,
-     "start": 171.3,
-     "text": "component"
-    },
-    {
-     "end": 172.05,
-     "start": 171.962,
-     "text": "("
-    },
-    {
-     "end": 174.0,
-     "start": 172.05,
-     "text": "offchain/cli/"
-    },
-    {
-     "end": 174.137,
-     "start": 174.0,
-     "text": ")"
-    },
-    {
-     "end": 174.55,
-     "start": 174.137,
-     "text": "carries"
-    },
-    {
-     "end": 174.675,
-     "start": 174.55,
-     "text": "the"
-    },
-    {
-     "end": 175.175,
-     "start": 174.675,
-     "text": "registry"
-    },
-    {
-     "end": 175.675,
-     "start": 175.175,
-     "text": "command"
-    },
-    {
-     "end": 175.962,
-     "start": 175.675,
-     "text": "line"
-    },
-    {
-     "end": 176.062,
-     "start": 175.962,
-     "text": "the"
-    },
-    {
-     "end": 176.275,
-     "start": 176.062,
-     "text": "two"
-    },
-    {
-     "end": 176.812,
-     "start": 176.275,
-     "text": "binaries"
-    },
-    {
-     "end": 177.163,
-     "start": 176.812,
-     "text": "link"
-    },
-    {
-     "end": 177.25,
-     "start": 177.163,
-     "text": "—"
-    },
-    {
-     "end": 178.325,
-     "start": 177.25,
-     "text": "session"
-    },
-    {
-     "end": 178.55,
-     "start": 178.325,
+     "start": 170.325,
      "text": ","
     },
     {
-     "end": 179.1,
-     "start": 178.75,
-     "text": "journal"
+     "end": 171.05,
+     "start": 170.725,
+     "text": "Singular"
     },
     {
-     "end": 179.212,
-     "start": 179.1,
-     "text": "and"
+     "end": 171.1,
+     "start": 171.05,
+     "text": "."
+    },
+    {
+     "end": 171.75,
+     "start": 171.1,
+     "text": "Application"
+    },
+    {
+     "end": 171.825,
+     "start": 171.75,
+     "text": "."
+    },
+    {
+     "end": 172.375,
+     "start": 171.825,
+     "text": "OpenDatum"
+    },
+    {
+     "end": 172.425,
+     "start": 172.375,
+     "text": "."
+    },
+    {
+     "end": 172.9,
+     "start": 172.425,
+     "text": "Requests"
+    },
+    {
+     "end": 172.975,
+     "start": 172.9,
+     "text": "."
+    },
+    {
+     "end": 173.875,
+     "start": 172.975,
+     "text": "Pending"
+    },
+    {
+     "end": 174.075,
+     "start": 173.875,
+     "text": ","
+    },
+    {
+     "end": 174.6,
+     "start": 174.275,
+     "text": "Singular"
+    },
+    {
+     "end": 174.65,
+     "start": 174.6,
+     "text": "."
+    },
+    {
+     "end": 175.35,
+     "start": 174.65,
+     "text": "Application"
+    },
+    {
+     "end": 175.425,
+     "start": 175.35,
+     "text": "."
+    },
+    {
+     "end": 176.0,
+     "start": 175.425,
+     "text": "OpenDatum"
+    },
+    {
+     "end": 176.05,
+     "start": 176.0,
+     "text": "."
+    },
+    {
+     "end": 176.5,
+     "start": 176.05,
+     "text": "Requests"
+    },
+    {
+     "end": 176.55,
+     "start": 176.5,
+     "text": "."
+    },
+    {
+     "end": 177.5,
+     "start": 176.55,
+     "text": "Records"
+    },
+    {
+     "end": 177.7,
+     "start": 177.5,
+     "text": ","
+    },
+    {
+     "end": 178.25,
+     "start": 177.9,
+     "text": "Singular"
+    },
+    {
+     "end": 178.3,
+     "start": 178.25,
+     "text": "."
+    },
+    {
+     "end": 178.975,
+     "start": 178.3,
+     "text": "Application"
+    },
+    {
+     "end": 179.05,
+     "start": 178.975,
+     "text": "."
+    },
+    {
+     "end": 179.625,
+     "start": 179.05,
+     "text": "OpenDatum"
     },
     {
      "end": 179.675,
-     "start": 179.212,
-     "text": "receipts"
+     "start": 179.625,
+     "text": "."
     },
     {
-     "end": 179.712,
+     "end": 180.175,
      "start": 179.675,
-     "text": ","
+     "text": "Requests"
     },
     {
-     "end": 179.8,
-     "start": 179.712,
-     "text": "the"
+     "end": 180.225,
+     "start": 180.175,
+     "text": "."
     },
     {
-     "end": 180.15,
-     "start": 179.8,
-     "text": "flag"
-    },
-    {
-     "end": 180.425,
-     "start": 180.15,
-     "text": "group"
-    },
-    {
-     "end": 180.488,
-     "start": 180.425,
-     "text": ","
-    },
-    {
-     "end": 180.925,
-     "start": 180.488,
-     "text": "create"
-    },
-    {
-     "end": 181.012,
-     "start": 180.925,
-     "text": ","
-    },
-    {
-     "end": 181.475,
-     "start": 181.012,
-     "text": "fold"
+     "end": 181.325,
+     "start": 180.225,
+     "text": "Refusal"
     },
     {
      "end": 181.525,
-     "start": 181.475,
+     "start": 181.325,
      "text": ","
     },
     {
-     "end": 182.0,
-     "start": 181.525,
-     "text": "reject"
-    },
-    {
-     "end": 182.05,
-     "start": 182.0,
-     "text": ","
-    },
-    {
-     "end": 182.6,
-     "start": 182.05,
-     "text": "reclaim"
-    },
-    {
-     "end": 182.65,
-     "start": 182.6,
-     "text": ","
-    },
-    {
-     "end": 183.175,
-     "start": 182.65,
-     "text": "inspect"
-    },
-    {
-     "end": 183.225,
-     "start": 183.175,
-     "text": ","
-    },
-    {
-     "end": 184.475,
-     "start": 183.225,
-     "text": "reconcile"
-    },
-    {
-     "end": 184.7,
-     "start": 184.475,
-     "text": ","
-    },
-    {
-     "end": 185.35,
-     "start": 184.875,
-     "text": "recovery"
-    },
-    {
-     "end": 185.462,
-     "start": 185.35,
-     "text": "and"
-    },
-    {
-     "end": 185.55,
-     "start": 185.462,
-     "text": "the"
-    },
-    {
-     "end": 185.875,
-     "start": 185.55,
-     "text": "booking"
-    },
-    {
-     "end": 186.575,
-     "start": 185.875,
-     "text": "call"
-    },
-    {
-     "end": 186.775,
-     "start": 186.575,
-     "text": ":"
-    },
-    {
-     "end": 187.45,
-     "start": 187.0,
+     "end": 182.2,
+     "start": 181.75,
      "text": "Singular"
+    },
+    {
+     "end": 182.25,
+     "start": 182.2,
+     "text": "."
+    },
+    {
+     "end": 182.925,
+     "start": 182.25,
+     "text": "Application"
+    },
+    {
+     "end": 182.975,
+     "start": 182.925,
+     "text": "."
+    },
+    {
+     "end": 183.6,
+     "start": 182.975,
+     "text": "OpenDatum"
+    },
+    {
+     "end": 183.65,
+     "start": 183.6,
+     "text": "."
+    },
+    {
+     "end": 184.2,
+     "start": 183.65,
+     "text": "Requests"
+    },
+    {
+     "end": 184.275,
+     "start": 184.2,
+     "text": "."
+    },
+    {
+     "end": 184.675,
+     "start": 184.275,
+     "text": "Script"
+    },
+    {
+     "end": 184.762,
+     "start": 184.675,
+     "text": ","
+    },
+    {
+     "end": 185.25,
+     "start": 184.762,
+     "text": "Singular"
+    },
+    {
+     "end": 185.3,
+     "start": 185.25,
+     "text": "."
+    },
+    {
+     "end": 185.975,
+     "start": 185.3,
+     "text": "Application"
+    },
+    {
+     "end": 186.025,
+     "start": 185.975,
+     "text": "."
+    },
+    {
+     "end": 186.65,
+     "start": 186.025,
+     "text": "OpenDatum"
+    },
+    {
+     "end": 186.725,
+     "start": 186.65,
+     "text": "."
     },
     {
      "end": 187.525,
-     "start": 187.45,
-     "text": "."
+     "start": 186.725,
+     "text": "Root"
     },
     {
-     "end": 188.05,
+     "end": 187.75,
      "start": 187.525,
-     "text": "CLI"
-    },
-    {
-     "end": 188.137,
-     "start": 188.05,
      "text": ","
     },
     {
-     "end": 188.625,
-     "start": 188.137,
+     "end": 188.4,
+     "start": 187.975,
      "text": "Singular"
     },
     {
-     "end": 188.7,
-     "start": 188.625,
+     "end": 188.45,
+     "start": 188.4,
      "text": "."
     },
     {
-     "end": 189.55,
-     "start": 188.7,
-     "text": "CLI.Attached"
+     "end": 189.125,
+     "start": 188.45,
+     "text": "Application"
     },
     {
-     "end": 189.637,
-     "start": 189.55,
+     "end": 189.175,
+     "start": 189.125,
+     "text": "."
+    },
+    {
+     "end": 189.825,
+     "start": 189.175,
+     "text": "OpenDatum"
+    },
+    {
+     "end": 189.925,
+     "start": 189.825,
+     "text": "."
+    },
+    {
+     "end": 190.275,
+     "start": 189.925,
+     "text": "Run"
+    },
+    {
+     "end": 190.363,
+     "start": 190.275,
      "text": ","
     },
     {
-     "end": 190.125,
-     "start": 189.637,
+     "end": 190.85,
+     "start": 190.363,
      "text": "Singular"
     },
     {
-     "end": 190.2,
-     "start": 190.125,
+     "end": 190.9,
+     "start": 190.85,
      "text": "."
     },
     {
-     "end": 190.975,
-     "start": 190.2,
-     "text": "CLI.Command"
+     "end": 191.625,
+     "start": 190.9,
+     "text": "Application"
     },
     {
-     "end": 191.062,
-     "start": 190.975,
+     "end": 191.675,
+     "start": 191.625,
+     "text": "."
+    },
+    {
+     "end": 192.275,
+     "start": 191.675,
+     "text": "OpenDatum"
+    },
+    {
+     "end": 192.35,
+     "start": 192.275,
+     "text": "."
+    },
+    {
+     "end": 193.3,
+     "start": 192.35,
+     "text": "Script"
+    },
+    {
+     "end": 193.5,
+     "start": 193.3,
      "text": ","
     },
     {
-     "end": 191.525,
-     "start": 191.062,
+     "end": 194.175,
+     "start": 193.725,
      "text": "Singular"
     },
     {
-     "end": 191.575,
-     "start": 191.525,
+     "end": 194.225,
+     "start": 194.175,
      "text": "."
     },
     {
-     "end": 192.925,
-     "start": 191.575,
-     "text": "CLI.Create"
+     "end": 194.925,
+     "start": 194.225,
+     "text": "Application"
     },
     {
-     "end": 193.175,
-     "start": 192.925,
-     "text": ","
+     "end": 195.0,
+     "start": 194.925,
+     "text": "."
     },
     {
-     "end": 193.875,
-     "start": 193.425,
+     "end": 195.8,
+     "start": 195.0,
+     "text": "OpenDatum"
+    },
+    {
+     "end": 195.875,
+     "start": 195.8,
+     "text": "."
+    },
+    {
+     "end": 196.3,
+     "start": 195.875,
+     "text": "Update"
+    },
+    {
+     "end": 196.438,
+     "start": 196.3,
+     "text": "and"
+    },
+    {
+     "end": 196.975,
+     "start": 196.438,
      "text": "Singular"
     },
     {
-     "end": 193.95,
-     "start": 193.875,
+     "end": 197.05,
+     "start": 196.975,
      "text": "."
     },
     {
-     "end": 194.725,
-     "start": 193.95,
-     "text": "CLI.Finish"
+     "end": 197.775,
+     "start": 197.05,
+     "text": "Application"
     },
     {
-     "end": 194.812,
-     "start": 194.725,
-     "text": ","
-    },
-    {
-     "end": 195.325,
-     "start": 194.812,
-     "text": "Singular"
-    },
-    {
-     "end": 195.425,
-     "start": 195.325,
+     "end": 197.85,
+     "start": 197.775,
      "text": "."
     },
     {
-     "end": 196.275,
-     "start": 195.425,
-     "text": "CLI.Fold"
+     "end": 198.5,
+     "start": 197.85,
+     "text": "OpenDatum"
     },
     {
-     "end": 196.363,
-     "start": 196.275,
-     "text": ","
-    },
-    {
-     "end": 196.9,
-     "start": 196.363,
-     "text": "Singular"
-    },
-    {
-     "end": 197.0,
-     "start": 196.9,
+     "end": 198.575,
+     "start": 198.5,
      "text": "."
     },
     {
-     "end": 198.05,
-     "start": 197.0,
-     "text": "CLI.FoldRules"
+     "end": 199.425,
+     "start": 198.575,
+     "text": "Value"
     },
     {
-     "end": 198.113,
-     "start": 198.05,
+     "end": 199.775,
+     "start": 199.425,
+     "text": ";"
+    },
+    {
+     "end": 200.175,
+     "start": 200.0,
+     "text": "their"
+    },
+    {
+     "end": 200.663,
+     "start": 200.175,
+     "text": "sources"
+    },
+    {
+     "end": 200.887,
+     "start": 200.663,
+     "text": "live"
+    },
+    {
+     "end": 201.1,
+     "start": 200.887,
+     "text": "under"
+    },
+    {
+     "end": 210.0,
+     "start": 201.1,
+     "text": "applications/open-datum/offchain/src/Singular/Application/OpenDatum/"
+    },
+    {
+     "end": 210.275,
+     "start": 210.0,
      "text": ","
     },
     {
-     "end": 198.6,
-     "start": 198.113,
-     "text": "Singular"
+     "end": 210.562,
+     "start": 210.475,
+     "text": "and"
     },
     {
-     "end": 198.675,
-     "start": 198.6,
-     "text": "."
+     "end": 210.675,
+     "start": 210.562,
+     "text": "the"
     },
     {
-     "end": 200.2,
-     "start": 198.675,
-     "text": "CLI.Inspect"
+     "end": 211.413,
+     "start": 210.675,
+     "text": "executable's"
     },
     {
-     "end": 200.425,
-     "start": 200.2,
+     "end": 211.75,
+     "start": 211.413,
+     "text": "entry"
+    },
+    {
+     "end": 212.125,
+     "start": 211.75,
+     "text": "point"
+    },
+    {
+     "end": 212.5,
+     "start": 212.125,
+     "text": "lives"
+    },
+    {
+     "end": 212.6,
+     "start": 212.5,
+     "text": "in"
+    },
+    {
+     "end": 215.5,
+     "start": 212.6,
+     "text": "applications/open-datum/offchain"
+    },
+    {
+     "end": 216.275,
+     "start": 215.5,
+     "text": "app/."
+    },
+    {
+     "end": 216.55,
+     "start": 216.475,
+     "text": "The"
+    },
+    {
+     "end": 216.95,
+     "start": 216.55,
+     "text": "public"
+    },
+    {
+     "end": 217.725,
+     "start": 216.95,
+     "text": "registry-cli"
+    },
+    {
+     "end": 218.387,
+     "start": 217.725,
+     "text": "component"
+    },
+    {
+     "end": 218.475,
+     "start": 218.387,
+     "text": "("
+    },
+    {
+     "end": 220.425,
+     "start": 218.475,
+     "text": "offchain/cli/"
+    },
+    {
+     "end": 220.562,
+     "start": 220.425,
+     "text": ")"
+    },
+    {
+     "end": 220.975,
+     "start": 220.562,
+     "text": "carries"
+    },
+    {
+     "end": 221.1,
+     "start": 220.975,
+     "text": "the"
+    },
+    {
+     "end": 221.6,
+     "start": 221.1,
+     "text": "registry"
+    },
+    {
+     "end": 222.1,
+     "start": 221.6,
+     "text": "command"
+    },
+    {
+     "end": 222.387,
+     "start": 222.1,
+     "text": "line"
+    },
+    {
+     "end": 222.488,
+     "start": 222.387,
+     "text": "the"
+    },
+    {
+     "end": 222.7,
+     "start": 222.488,
+     "text": "two"
+    },
+    {
+     "end": 223.238,
+     "start": 222.7,
+     "text": "binaries"
+    },
+    {
+     "end": 223.587,
+     "start": 223.238,
+     "text": "link"
+    },
+    {
+     "end": 223.675,
+     "start": 223.587,
+     "text": "—"
+    },
+    {
+     "end": 224.75,
+     "start": 223.675,
+     "text": "session"
+    },
+    {
+     "end": 224.975,
+     "start": 224.75,
      "text": ","
     },
     {
-     "end": 201.125,
-     "start": 200.675,
-     "text": "Singular"
+     "end": 225.525,
+     "start": 225.175,
+     "text": "journal"
     },
     {
-     "end": 201.2,
-     "start": 201.125,
-     "text": "."
+     "end": 225.637,
+     "start": 225.525,
+     "text": "and"
     },
     {
-     "end": 201.825,
-     "start": 201.2,
-     "text": "CLI.Key"
+     "end": 226.1,
+     "start": 225.637,
+     "text": "receipts"
     },
     {
-     "end": 201.913,
-     "start": 201.825,
+     "end": 226.137,
+     "start": 226.1,
      "text": ","
     },
     {
-     "end": 202.425,
-     "start": 201.913,
-     "text": "Singular"
+     "end": 226.225,
+     "start": 226.137,
+     "text": "the"
     },
     {
-     "end": 202.525,
-     "start": 202.425,
-     "text": "."
+     "end": 226.575,
+     "start": 226.225,
+     "text": "flag"
     },
     {
-     "end": 203.325,
-     "start": 202.525,
-     "text": "CLI.Live"
+     "end": 226.85,
+     "start": 226.575,
+     "text": "group"
     },
     {
-     "end": 203.413,
-     "start": 203.325,
+     "end": 226.913,
+     "start": 226.85,
      "text": ","
     },
     {
-     "end": 203.9,
-     "start": 203.413,
-     "text": "Singular"
+     "end": 227.35,
+     "start": 226.913,
+     "text": "create"
     },
     {
-     "end": 203.975,
-     "start": 203.9,
-     "text": "."
-    },
-    {
-     "end": 205.075,
-     "start": 203.975,
-     "text": "CLI.ManagedState"
-    },
-    {
-     "end": 205.163,
-     "start": 205.075,
+     "end": 227.438,
+     "start": 227.35,
      "text": ","
     },
     {
-     "end": 205.65,
-     "start": 205.163,
-     "text": "Singular"
+     "end": 227.9,
+     "start": 227.438,
+     "text": "fold"
     },
     {
-     "end": 205.7,
-     "start": 205.65,
-     "text": "."
-    },
-    {
-     "end": 207.05,
-     "start": 205.7,
-     "text": "CLI.Outlay"
-    },
-    {
-     "end": 207.375,
-     "start": 207.05,
+     "end": 227.95,
+     "start": 227.9,
      "text": ","
     },
     {
-     "end": 208.075,
-     "start": 207.625,
-     "text": "Singular"
+     "end": 228.425,
+     "start": 227.95,
+     "text": "reject"
     },
     {
-     "end": 208.15,
-     "start": 208.075,
-     "text": "."
-    },
-    {
-     "end": 209.05,
-     "start": 208.15,
-     "text": "CLI.Payload"
-    },
-    {
-     "end": 209.113,
-     "start": 209.05,
+     "end": 228.475,
+     "start": 228.425,
      "text": ","
     },
     {
-     "end": 209.675,
-     "start": 209.113,
-     "text": "Singular"
+     "end": 229.025,
+     "start": 228.475,
+     "text": "reclaim"
     },
     {
-     "end": 209.775,
-     "start": 209.675,
-     "text": "."
-    },
-    {
-     "end": 210.65,
-     "start": 209.775,
-     "text": "CLI.Permanent"
-    },
-    {
-     "end": 210.738,
-     "start": 210.65,
+     "end": 229.075,
+     "start": 229.025,
      "text": ","
     },
     {
-     "end": 211.25,
-     "start": 210.738,
-     "text": "Singular"
+     "end": 229.6,
+     "start": 229.075,
+     "text": "inspect"
     },
     {
-     "end": 211.35,
-     "start": 211.25,
-     "text": "."
-    },
-    {
-     "end": 212.1,
-     "start": 211.35,
-     "text": "CLI.Plan"
-    },
-    {
-     "end": 212.188,
-     "start": 212.1,
+     "end": 229.65,
+     "start": 229.6,
      "text": ","
     },
     {
-     "end": 212.675,
-     "start": 212.188,
-     "text": "Singular"
+     "end": 230.9,
+     "start": 229.65,
+     "text": "reconcile"
     },
     {
-     "end": 212.75,
-     "start": 212.675,
-     "text": "."
-    },
-    {
-     "end": 214.1,
-     "start": 212.75,
-     "text": "CLI.Proof"
-    },
-    {
-     "end": 214.325,
-     "start": 214.1,
+     "end": 231.125,
+     "start": 230.9,
      "text": ","
     },
     {
-     "end": 215.0,
-     "start": 214.55,
-     "text": "Singular"
+     "end": 231.775,
+     "start": 231.3,
+     "text": "recovery"
     },
     {
-     "end": 215.075,
-     "start": 215.0,
-     "text": "."
+     "end": 231.887,
+     "start": 231.775,
+     "text": "and"
     },
     {
-     "end": 215.8,
-     "start": 215.075,
-     "text": "CLI.Receipt"
+     "end": 231.975,
+     "start": 231.887,
+     "text": "the"
     },
     {
-     "end": 215.863,
-     "start": 215.8,
-     "text": ","
+     "end": 232.3,
+     "start": 231.975,
+     "text": "booking"
     },
     {
-     "end": 216.4,
-     "start": 215.863,
-     "text": "Singular"
+     "end": 233.0,
+     "start": 232.3,
+     "text": "call"
     },
     {
-     "end": 216.5,
-     "start": 216.4,
-     "text": "."
+     "end": 233.2,
+     "start": 233.0,
+     "text": ":"
     },
     {
-     "end": 217.475,
-     "start": 216.5,
-     "text": "CLI.ReceiptBody"
-    },
-    {
-     "end": 217.562,
-     "start": 217.475,
-     "text": ","
-    },
-    {
-     "end": 218.05,
-     "start": 217.562,
-     "text": "Singular"
-    },
-    {
-     "end": 218.125,
-     "start": 218.05,
-     "text": "."
-    },
-    {
-     "end": 219.5,
-     "start": 218.125,
-     "text": "CLI.Reclaim"
-    },
-    {
-     "end": 219.725,
-     "start": 219.5,
-     "text": ","
-    },
-    {
-     "end": 220.4,
-     "start": 219.95,
-     "text": "Singular"
-    },
-    {
-     "end": 220.475,
-     "start": 220.4,
-     "text": "."
-    },
-    {
-     "end": 221.625,
-     "start": 220.475,
-     "text": "CLI.ReclaimRules"
-    },
-    {
-     "end": 221.712,
-     "start": 221.625,
-     "text": ","
-    },
-    {
-     "end": 222.225,
-     "start": 221.712,
-     "text": "Singular"
-    },
-    {
-     "end": 222.325,
-     "start": 222.225,
-     "text": "."
-    },
-    {
-     "end": 223.35,
-     "start": 222.325,
-     "text": "CLI.Reconcile"
-    },
-    {
-     "end": 223.438,
-     "start": 223.35,
-     "text": ","
-    },
-    {
-     "end": 223.925,
-     "start": 223.438,
-     "text": "Singular"
-    },
-    {
-     "end": 224.0,
-     "start": 223.925,
-     "text": "."
-    },
-    {
-     "end": 225.475,
-     "start": 224.0,
-     "text": "CLI.Recovery"
-    },
-    {
-     "end": 225.7,
-     "start": 225.475,
-     "text": ","
-    },
-    {
-     "end": 226.375,
-     "start": 225.925,
-     "text": "Singular"
-    },
-    {
-     "end": 226.45,
-     "start": 226.375,
-     "text": "."
-    },
-    {
-     "end": 227.375,
-     "start": 226.45,
-     "text": "CLI.Registry"
-    },
-    {
-     "end": 227.462,
-     "start": 227.375,
-     "text": ","
-    },
-    {
-     "end": 227.975,
-     "start": 227.462,
-     "text": "Singular"
-    },
-    {
-     "end": 228.05,
-     "start": 227.975,
-     "text": "."
-    },
-    {
-     "end": 228.85,
-     "start": 228.05,
-     "text": "CLI.Reject"
-    },
-    {
-     "end": 228.913,
-     "start": 228.85,
-     "text": ","
-    },
-    {
-     "end": 229.4,
-     "start": 228.913,
-     "text": "Singular"
-    },
-    {
-     "end": 229.475,
-     "start": 229.4,
-     "text": "."
-    },
-    {
-     "end": 231.2,
-     "start": 229.475,
-     "text": "CLI.RejectRules"
-    },
-    {
-     "end": 231.4,
-     "start": 231.2,
-     "text": ","
-    },
-    {
-     "end": 232.1,
-     "start": 231.65,
-     "text": "Singular"
-    },
-    {
-     "end": 232.175,
-     "start": 232.1,
-     "text": "."
-    },
-    {
-     "end": 233.25,
-     "start": 232.175,
-     "text": "CLI.RequestWindow"
-    },
-    {
-     "end": 233.337,
-     "start": 233.25,
-     "text": ","
-    },
-    {
-     "end": 233.85,
-     "start": 233.337,
+     "end": 233.875,
+     "start": 233.425,
      "text": "Singular"
     },
     {
      "end": 233.95,
-     "start": 233.85,
+     "start": 233.875,
      "text": "."
     },
     {
-     "end": 234.7,
+     "end": 234.475,
      "start": 233.95,
+     "text": "CLI"
+    },
+    {
+     "end": 234.562,
+     "start": 234.475,
+     "text": ","
+    },
+    {
+     "end": 235.05,
+     "start": 234.562,
+     "text": "Singular"
+    },
+    {
+     "end": 235.125,
+     "start": 235.05,
+     "text": "."
+    },
+    {
+     "end": 235.975,
+     "start": 235.125,
+     "text": "CLI.Attached"
+    },
+    {
+     "end": 236.062,
+     "start": 235.975,
+     "text": ","
+    },
+    {
+     "end": 236.55,
+     "start": 236.062,
+     "text": "Singular"
+    },
+    {
+     "end": 236.625,
+     "start": 236.55,
+     "text": "."
+    },
+    {
+     "end": 237.4,
+     "start": 236.625,
+     "text": "CLI.Command"
+    },
+    {
+     "end": 237.488,
+     "start": 237.4,
+     "text": ","
+    },
+    {
+     "end": 237.95,
+     "start": 237.488,
+     "text": "Singular"
+    },
+    {
+     "end": 238.0,
+     "start": 237.95,
+     "text": "."
+    },
+    {
+     "end": 239.35,
+     "start": 238.0,
+     "text": "CLI.Create"
+    },
+    {
+     "end": 239.6,
+     "start": 239.35,
+     "text": ","
+    },
+    {
+     "end": 240.3,
+     "start": 239.85,
+     "text": "Singular"
+    },
+    {
+     "end": 240.375,
+     "start": 240.3,
+     "text": "."
+    },
+    {
+     "end": 241.15,
+     "start": 240.375,
+     "text": "CLI.Finish"
+    },
+    {
+     "end": 241.238,
+     "start": 241.15,
+     "text": ","
+    },
+    {
+     "end": 241.75,
+     "start": 241.238,
+     "text": "Singular"
+    },
+    {
+     "end": 241.85,
+     "start": 241.75,
+     "text": "."
+    },
+    {
+     "end": 242.7,
+     "start": 241.85,
+     "text": "CLI.Fold"
+    },
+    {
+     "end": 242.788,
+     "start": 242.7,
+     "text": ","
+    },
+    {
+     "end": 243.325,
+     "start": 242.788,
+     "text": "Singular"
+    },
+    {
+     "end": 243.425,
+     "start": 243.325,
+     "text": "."
+    },
+    {
+     "end": 244.475,
+     "start": 243.425,
+     "text": "CLI.FoldRules"
+    },
+    {
+     "end": 244.538,
+     "start": 244.475,
+     "text": ","
+    },
+    {
+     "end": 245.025,
+     "start": 244.538,
+     "text": "Singular"
+    },
+    {
+     "end": 245.1,
+     "start": 245.025,
+     "text": "."
+    },
+    {
+     "end": 246.625,
+     "start": 245.1,
+     "text": "CLI.Inspect"
+    },
+    {
+     "end": 246.85,
+     "start": 246.625,
+     "text": ","
+    },
+    {
+     "end": 247.55,
+     "start": 247.1,
+     "text": "Singular"
+    },
+    {
+     "end": 247.625,
+     "start": 247.55,
+     "text": "."
+    },
+    {
+     "end": 248.25,
+     "start": 247.625,
+     "text": "CLI.Key"
+    },
+    {
+     "end": 248.337,
+     "start": 248.25,
+     "text": ","
+    },
+    {
+     "end": 248.85,
+     "start": 248.337,
+     "text": "Singular"
+    },
+    {
+     "end": 248.95,
+     "start": 248.85,
+     "text": "."
+    },
+    {
+     "end": 249.75,
+     "start": 248.95,
+     "text": "CLI.Live"
+    },
+    {
+     "end": 249.837,
+     "start": 249.75,
+     "text": ","
+    },
+    {
+     "end": 250.325,
+     "start": 249.837,
+     "text": "Singular"
+    },
+    {
+     "end": 250.4,
+     "start": 250.325,
+     "text": "."
+    },
+    {
+     "end": 251.5,
+     "start": 250.4,
+     "text": "CLI.ManagedState"
+    },
+    {
+     "end": 251.587,
+     "start": 251.5,
+     "text": ","
+    },
+    {
+     "end": 252.075,
+     "start": 251.587,
+     "text": "Singular"
+    },
+    {
+     "end": 252.125,
+     "start": 252.075,
+     "text": "."
+    },
+    {
+     "end": 253.475,
+     "start": 252.125,
+     "text": "CLI.Outlay"
+    },
+    {
+     "end": 253.8,
+     "start": 253.475,
+     "text": ","
+    },
+    {
+     "end": 254.5,
+     "start": 254.05,
+     "text": "Singular"
+    },
+    {
+     "end": 254.575,
+     "start": 254.5,
+     "text": "."
+    },
+    {
+     "end": 255.475,
+     "start": 254.575,
+     "text": "CLI.Payload"
+    },
+    {
+     "end": 255.538,
+     "start": 255.475,
+     "text": ","
+    },
+    {
+     "end": 256.1,
+     "start": 255.538,
+     "text": "Singular"
+    },
+    {
+     "end": 256.2,
+     "start": 256.1,
+     "text": "."
+    },
+    {
+     "end": 257.075,
+     "start": 256.2,
+     "text": "CLI.Permanent"
+    },
+    {
+     "end": 257.163,
+     "start": 257.075,
+     "text": ","
+    },
+    {
+     "end": 257.675,
+     "start": 257.163,
+     "text": "Singular"
+    },
+    {
+     "end": 257.775,
+     "start": 257.675,
+     "text": "."
+    },
+    {
+     "end": 258.525,
+     "start": 257.775,
+     "text": "CLI.Plan"
+    },
+    {
+     "end": 258.612,
+     "start": 258.525,
+     "text": ","
+    },
+    {
+     "end": 259.1,
+     "start": 258.612,
+     "text": "Singular"
+    },
+    {
+     "end": 259.175,
+     "start": 259.1,
+     "text": "."
+    },
+    {
+     "end": 260.525,
+     "start": 259.175,
+     "text": "CLI.Proof"
+    },
+    {
+     "end": 260.75,
+     "start": 260.525,
+     "text": ","
+    },
+    {
+     "end": 261.425,
+     "start": 260.975,
+     "text": "Singular"
+    },
+    {
+     "end": 261.5,
+     "start": 261.425,
+     "text": "."
+    },
+    {
+     "end": 262.225,
+     "start": 261.5,
+     "text": "CLI.Receipt"
+    },
+    {
+     "end": 262.288,
+     "start": 262.225,
+     "text": ","
+    },
+    {
+     "end": 262.825,
+     "start": 262.288,
+     "text": "Singular"
+    },
+    {
+     "end": 262.925,
+     "start": 262.825,
+     "text": "."
+    },
+    {
+     "end": 263.9,
+     "start": 262.925,
+     "text": "CLI.ReceiptBody"
+    },
+    {
+     "end": 263.987,
+     "start": 263.9,
+     "text": ","
+    },
+    {
+     "end": 264.475,
+     "start": 263.987,
+     "text": "Singular"
+    },
+    {
+     "end": 264.55,
+     "start": 264.475,
+     "text": "."
+    },
+    {
+     "end": 265.925,
+     "start": 264.55,
+     "text": "CLI.Reclaim"
+    },
+    {
+     "end": 266.15,
+     "start": 265.925,
+     "text": ","
+    },
+    {
+     "end": 266.825,
+     "start": 266.375,
+     "text": "Singular"
+    },
+    {
+     "end": 266.9,
+     "start": 266.825,
+     "text": "."
+    },
+    {
+     "end": 268.05,
+     "start": 266.9,
+     "text": "CLI.ReclaimRules"
+    },
+    {
+     "end": 268.138,
+     "start": 268.05,
+     "text": ","
+    },
+    {
+     "end": 268.65,
+     "start": 268.138,
+     "text": "Singular"
+    },
+    {
+     "end": 268.75,
+     "start": 268.65,
+     "text": "."
+    },
+    {
+     "end": 269.775,
+     "start": 268.75,
+     "text": "CLI.Reconcile"
+    },
+    {
+     "end": 269.862,
+     "start": 269.775,
+     "text": ","
+    },
+    {
+     "end": 270.35,
+     "start": 269.862,
+     "text": "Singular"
+    },
+    {
+     "end": 270.425,
+     "start": 270.35,
+     "text": "."
+    },
+    {
+     "end": 271.9,
+     "start": 270.425,
+     "text": "CLI.Recovery"
+    },
+    {
+     "end": 272.125,
+     "start": 271.9,
+     "text": ","
+    },
+    {
+     "end": 272.8,
+     "start": 272.35,
+     "text": "Singular"
+    },
+    {
+     "end": 272.875,
+     "start": 272.8,
+     "text": "."
+    },
+    {
+     "end": 273.8,
+     "start": 272.875,
+     "text": "CLI.Registry"
+    },
+    {
+     "end": 273.888,
+     "start": 273.8,
+     "text": ","
+    },
+    {
+     "end": 274.4,
+     "start": 273.888,
+     "text": "Singular"
+    },
+    {
+     "end": 274.475,
+     "start": 274.4,
+     "text": "."
+    },
+    {
+     "end": 275.275,
+     "start": 274.475,
+     "text": "CLI.Reject"
+    },
+    {
+     "end": 275.337,
+     "start": 275.275,
+     "text": ","
+    },
+    {
+     "end": 275.825,
+     "start": 275.337,
+     "text": "Singular"
+    },
+    {
+     "end": 275.9,
+     "start": 275.825,
+     "text": "."
+    },
+    {
+     "end": 277.625,
+     "start": 275.9,
+     "text": "CLI.RejectRules"
+    },
+    {
+     "end": 277.825,
+     "start": 277.625,
+     "text": ","
+    },
+    {
+     "end": 278.525,
+     "start": 278.075,
+     "text": "Singular"
+    },
+    {
+     "end": 278.6,
+     "start": 278.525,
+     "text": "."
+    },
+    {
+     "end": 279.675,
+     "start": 278.6,
+     "text": "CLI.RequestWindow"
+    },
+    {
+     "end": 279.763,
+     "start": 279.675,
+     "text": ","
+    },
+    {
+     "end": 280.275,
+     "start": 279.763,
+     "text": "Singular"
+    },
+    {
+     "end": 280.375,
+     "start": 280.275,
+     "text": "."
+    },
+    {
+     "end": 281.125,
+     "start": 280.375,
      "text": "CLI.Root"
     },
     {
-     "end": 234.788,
-     "start": 234.7,
+     "end": 281.212,
+     "start": 281.125,
      "text": ","
     },
     {
-     "end": 235.3,
-     "start": 234.788,
+     "end": 281.725,
+     "start": 281.212,
      "text": "Singular"
     },
     {
-     "end": 235.4,
-     "start": 235.3,
+     "end": 281.825,
+     "start": 281.725,
      "text": "."
     },
     {
-     "end": 236.25,
-     "start": 235.4,
+     "end": 282.675,
+     "start": 281.825,
      "text": "CLI.Session"
     },
     {
-     "end": 236.337,
-     "start": 236.25,
+     "end": 282.763,
+     "start": 282.675,
      "text": ","
     },
     {
-     "end": 236.825,
-     "start": 236.337,
+     "end": 283.25,
+     "start": 282.763,
      "text": "Singular"
     },
     {
-     "end": 236.9,
-     "start": 236.825,
+     "end": 283.325,
+     "start": 283.25,
      "text": "."
     },
     {
-     "end": 238.3,
-     "start": 236.9,
+     "end": 284.725,
+     "start": 283.325,
      "text": "CLI.Trace"
     },
     {
-     "end": 238.525,
-     "start": 238.3,
+     "end": 284.95,
+     "start": 284.725,
      "text": ","
     },
     {
-     "end": 239.1,
-     "start": 238.725,
+     "end": 285.525,
+     "start": 285.15,
      "text": "Singular"
     },
     {
-     "end": 239.15,
-     "start": 239.1,
+     "end": 285.575,
+     "start": 285.525,
      "text": "."
     },
     {
-     "end": 240.125,
-     "start": 239.15,
+     "end": 286.55,
+     "start": 285.575,
      "text": "CLI.TrieHistory"
     },
     {
-     "end": 240.262,
-     "start": 240.125,
+     "end": 286.688,
+     "start": 286.55,
      "text": "and"
     },
     {
-     "end": 240.7,
-     "start": 240.262,
+     "end": 287.125,
+     "start": 286.688,
      "text": "Singular"
     },
     {
-     "end": 240.75,
-     "start": 240.7,
+     "end": 287.175,
+     "start": 287.125,
      "text": "."
     },
     {
-     "end": 242.175,
-     "start": 240.75,
+     "end": 288.6,
+     "start": 287.175,
      "text": "CLI.TrieTrace"
     },
     {
-     "end": 242.375,
-     "start": 242.175,
+     "end": 288.8,
+     "start": 288.6,
      "text": ";"
     },
     {
-     "end": 242.75,
-     "start": 242.575,
+     "end": 289.175,
+     "start": 289.0,
      "text": "their"
     },
     {
-     "end": 243.2,
-     "start": 242.75,
+     "end": 289.625,
+     "start": 289.175,
      "text": "sources"
     },
     {
-     "end": 243.387,
-     "start": 243.2,
+     "end": 289.812,
+     "start": 289.625,
      "text": "live"
     },
     {
-     "end": 243.637,
-     "start": 243.387,
+     "end": 290.062,
+     "start": 289.812,
      "text": "under"
     },
     {
-     "end": 249.175,
-     "start": 243.637,
+     "end": 295.6,
+     "start": 290.062,
      "text": "offchain/cli/src/Singular/CLI/."
     }
    ]
