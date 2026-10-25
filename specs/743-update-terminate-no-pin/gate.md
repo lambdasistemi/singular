@@ -25,7 +25,7 @@ the commit owner starts. Every command is an existing hosted command, or one thi
 | G10 | the update and termination journeys old against new, and the coverage ratchet | conformance.yml `conformance-checks`, `coverage-gate` | `nix run --quiet .#conformance-appendix-tests`; `nix run --quiet ./conformance#coverage-gate -- --root . ratchet` | 0 |
 | G11 | the journey continuation through the packaged commands: update, termination booking with the deposit at the treasury, the fold by a second wallet from chain data only, the refused re-registration | issue 742's journey job, extended (CI change in this ticket) | `nix run --quiet .#no-pin-registration-journey` | 0 |
 | G12 | the four termination refusals on a development network, each with its passing control | new registry.yml job `no-pin-termination-refusals`, "No-pin termination refusals on a development network" (CI change in this ticket) | `nix run --quiet .#no-pin-termination-refusals` | 0 |
-| G13 | the changed validators compile into the blueprints every other row reads | registry.yml `blueprint`, `application-blueprint` | `nix build --quiet --no-link --print-out-paths .#plutus-blueprint` in `onchain/` and in `applications/open-datum/onchain/` | 0 |
+| G13 | the changed validators compile into the blueprints every other row reads | registry.yml `blueprint`, `application-blueprint` | `nix build --quiet --no-link --print-out-paths .#plutus-blueprint` in `onchain/` and in `applications/open-datum/onchain/`; `nix build --quiet --no-link --print-out-paths .#open-datum-blueprint` in `applications/open-datum/onchain/` | 0 |
 | G14 | the packages with the new builders and commands build | ci.yml `offchain-component-build`, `open-datum-component-build` | `nix build --quiet .#component-build` in `offchain/` and in `applications/open-datum/offchain/` | 0 |
 | G15 | the new commands keep transaction identity on cancellation and uncertain submission, without resubmitting | registry.yml `cli-recovery-partition`, with partitions for the new commands (CI change in this ticket) | `nix run --quiet .#cli-recovery-partition -- <partition>` | 0 |
 | G16 | the aligned models still build with every statement proved | ci.yml `dev-shell-checks` | `nix develop --quiet -c just application-held-model`; `nix develop --quiet -c just open-datum-application-held-model` | 0 |
@@ -54,3 +54,20 @@ flowchart LR
 - the refusals job's receipt: each of the four refusals and its control;
 - the conformance statement of the update and termination journeys, old against new;
 - left uncovered, stated in the pull requests: the reader (issue 744), batch limits (issue 746), release (issue 747).
+
+## Synthesis
+
+The ticket owner's table and the auditor's independent table were joined once on 25 October 2026. The auditor's table
+added the merged open-datum blueprint to G13 and confirmed every other row of pull request 1 by its workflow line. Its
+rows for the current Lean models (`model-check`, `application-model`) are left out: no slice of pull requests 1 to 3
+touches them. Three of its findings bind the slices:
+
+- RED evidence is lane evidence: each checkpoint record names the defective candidate or fault and the run that failed;
+  no hosted job runs it.
+- The history statements are checked by property tests inside the Aiken suites (G1, G3), or by a check this ticket wires
+  into a hosted job in the same diff; a generator no hosted job runs is not evidence.
+- The off-chain encoder's reproduction of the termination vectors runs in the off-chain suite (G5), which the `journey`
+  job runs.
+
+The link from a test to the Lean statement it executes is recorded in each slice's decision record and in the pull
+request's correspondence, not in a gate row.
