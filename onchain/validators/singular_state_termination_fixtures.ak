@@ -14,6 +14,7 @@
 //// built here.
 
 use aiken/collection/list
+use aiken/crypto.{blake2b_256}
 use aiken/merkle_patricia_forestry.{MerklePatriciaForestry, Proof}
 use aiken/merkle_patricia_forestry as mpf
 use cardano/address.{from_script, from_verification_key}
@@ -38,6 +39,7 @@ use singular_state_fold_fixtures.{
   registry_of, request_input, request_reference, request_script, state_lovelace,
   state_reference,
 }
+use singular_state_proof_builder.{entry_of, proof_in, root_of_entries}
 
 // ---------------------------------------------------------------------------
 // Leaves and tries
@@ -58,9 +60,23 @@ pub fn terminal(key: ByteArray) -> Held {
 }
 
 /// The proof that shows `key` in the trie that holds `held` and `key`: the
-/// siblings on its path. It is also the proof that shows `key` absent from the
-/// trie that holds exactly `held`.
+/// siblings on its path, whatever the shape of the trie. It is also the proof
+/// that shows `key` absent from the trie that holds exactly `held`.
 pub fn proof_for(held: List<Held>, key: ByteArray) -> Proof {
+  let others = list.filter(held, fn(each) { each.key != key })
+  proof_in(
+    list.concat(
+      list.map(others, fn(each) { entry_of(each.key, each.leaf) }),
+      [entry_of(key, leaf_active)],
+    ),
+    0,
+    blake2b_256(key),
+  )
+}
+
+/// The same proof from the proof builders of `registry_fixtures`, which describe
+/// a trie with one leaf per first nibble and nothing else.
+pub fn dense_proof_for(held: List<Held>, key: ByteArray) -> Proof {
   let others = list.filter(held, fn(each) { each.key != key })
   when others is {
     [] -> []
@@ -73,6 +89,12 @@ pub fn proof_for(held: List<Held>, key: ByteArray) -> Proof {
         ),
       ]
   }
+}
+
+/// The root of the trie that holds exactly `held`, from the digests the proof
+/// builder computes, not from the library.
+pub fn built_root_of(held: List<Held>) -> ByteArray {
+  root_of_entries(list.map(held, fn(each) { entry_of(each.key, each.leaf) }))
 }
 
 fn insert_each(
@@ -193,6 +215,97 @@ pub fn termination_f() -> Termination {
     request: request_reference(15),
     request_lovelace: 4_500_000,
   }
+}
+
+/// A termination of `key` whose request is the `n`th of the scenario.
+pub fn terminating(key: ByteArray, n: Int) -> Termination {
+  Termination {
+    key,
+    request: request_reference(100 + n),
+    request_lovelace: 3_000_000 + n * 100_000,
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Keys that share prefixes
+// ---------------------------------------------------------------------------
+
+/// Keys whose hashes share leading nibbles, so that the tries built from them
+/// have nodes below the first nibble. `deep_tries` says which share what; the
+/// rows that use them check the shape of the proofs they get.
+pub const key_t: ByteArray = "node676"
+
+pub const key_v: ByteArray = "node2035"
+
+pub const key_w: ByteArray = "node457"
+
+pub const key_x: ByteArray = "node3647"
+
+pub const key_u: ByteArray = "node60"
+
+pub const key_y: ByteArray = "node1"
+
+pub const key_z: ByteArray = "node31"
+
+/// Two keys whose hashes begin with the nibble f and share the next two, so a
+/// trie with one of the keys above and these two has a branch at the last
+/// branch number as the neighbour of that key.
+pub const key_f1: ByteArray = "node379"
+
+pub const key_f2: ByteArray = "node1390"
+
+/// Keys to register into the deep tries: their hashes begin with the nibbles
+/// 6 and f, so they share the first nibble with the keys above and the second
+/// with each other.
+pub const key_n: ByteArray = "node42"
+
+pub const key_o: ByteArray = "node255"
+
+/// A registration of `key` whose request is the `n`th of the scenario.
+pub fn registering(key: ByteArray, n: Int) -> Registration {
+  Registration {
+    key,
+    request: request_reference(200 + n),
+    holding_address: from_script(
+      #"d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7",
+    ),
+    datum: builtin_datum(70 + n),
+    deposit: 1_000_000 + n * 50_000,
+    holding_lovelace: 2_000_000 + n * 70_000,
+  }
+}
+
+/// Tries whose honest proofs are not one step: a leaf neighbour that follows a
+/// shared prefix, a neighbour that is a branch with a prefix of its own, three
+/// children or more at a node, and a leaf step that other steps follow.
+pub fn deep_tries() -> List<List<Held>> {
+  [
+    [active(key_t), active(key_v)],
+    [active(key_t), active(key_v), active(key_u)],
+    [active(key_t), active(key_v), active(key_w), active(key_x)],
+    [active(key_t), active(key_v), active(key_w), active(key_x), active(key_u)],
+    [
+      active(key_t),
+      active(key_v),
+      active(key_w),
+      active(key_x),
+      active(key_u),
+      active(key_y),
+      active(key_z),
+    ],
+    [active(key_t), active(key_y)],
+    [active(key_t), active(key_v), active(key_y)],
+    [active(key_t), active(key_v), active(key_w), active(key_x), active(key_y)],
+    [
+      active(key_t),
+      terminal(key_v),
+      active(key_w),
+      terminal(key_x),
+      active(key_u),
+      active(key_y),
+      active(key_z),
+    ],
+  ]
 }
 
 pub fn registration_e() -> Registration {

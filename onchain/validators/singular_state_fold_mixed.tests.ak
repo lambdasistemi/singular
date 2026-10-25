@@ -28,10 +28,11 @@ use singular_state_fold_fixtures.{
 }
 use singular_state_termination_fixtures.{
   Held, Mixed, Registering, Step, Terminating, Termination, active,
-  after_termination, changes_of_mixed, held_after, proof_for, redeemer_mixed,
-  registration_e, registration_f, root_of_held, terminal, termination_a,
-  termination_b, termination_c, termination_d, termination_e, termination_f,
-  transaction_mixed, trie_of_held,
+  after_termination, changes_of_mixed, held_after, key_n, key_o, key_t, key_u,
+  key_v, key_w, key_x, key_y, key_z, proof_for, redeemer_mixed, registering,
+  registration_e, registration_f, root_of_held, terminal, terminating,
+  termination_a, termination_b, termination_c, termination_d, termination_e,
+  termination_f, transaction_mixed, trie_of_held,
 }
 
 fn registry() -> RegistryIdentity {
@@ -67,8 +68,37 @@ fn fold_of(before: List<Held>, steps: List<Step>) -> Mixed {
 // mixed-batch: the accepted folds
 // ---------------------------------------------------------------------------
 
+/// A trie whose keys share prefixes: three levels of nodes, two children at
+/// some and more at others.
+fn deep_before() -> List<Held> {
+  [
+    active(key_t),
+    active(key_v),
+    active(key_w),
+    active(key_x),
+    active(key_u),
+    active(key_y),
+    active(key_z),
+  ]
+}
+
+/// Terminations and registrations of keys whose paths share prefixes with each
+/// other and with the keys already held; the second registration lands beside
+/// the first.
+fn deep_steps() -> List<Step> {
+  [
+    Terminating(terminating(key_t, 1)),
+    Registering(registering(key_n, 2)),
+    Terminating(terminating(key_w, 3)),
+    Registering(registering(key_o, 4)),
+    Terminating(terminating(key_z, 5)),
+  ]
+}
+
 fn orders() -> List<Mixed> {
   [
+    fold_of(deep_before(), deep_steps()),
+    fold_of(deep_before(), list.reverse(deep_steps())),
     fold_of(
       [active(key_a)],
       [Terminating(termination_a()), Registering(registration_e())],
