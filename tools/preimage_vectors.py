@@ -50,7 +50,7 @@ def address(value):
     )
 
 
-def state_test(vector, _vectors):
+def state_test(vector):
     seed = vector["input"]["seed"]
     return f"""
 test vector_{snake(vector["id"])}() {{
@@ -67,7 +67,7 @@ test vector_{snake(vector["id"])}() {{
 """
 
 
-def active_test(vector, _vectors):
+def active_test(vector):
     given = vector["input"]
     return f"""
 test vector_{snake(vector["id"])}() {{
@@ -81,7 +81,7 @@ test vector_{snake(vector["id"])}() {{
 """
 
 
-def configuration_test(vector, _vectors):
+def configuration_test(vector):
     given = vector["input"]
     return f"""
 test vector_{snake(vector["id"])}() {{
@@ -94,7 +94,7 @@ test vector_{snake(vector["id"])}() {{
 """
 
 
-def approval_test(vector, _vectors):
+def approval_test(vector):
     given = vector["input"]
     return f"""
 test vector_{snake(vector["id"])}() {{
@@ -118,39 +118,16 @@ test vector_{snake(vector["id"])}() {{
 """
 
 
-def beside(vector, vectors):
-    """The names the table gives the active and registration roles for the
-    registry and key of `vector`."""
+def termination_test(vector):
     given = vector["input"]
-    return [
-        other["name"]
-        for other in vectors
-        if other["role"] in ("active", "registration-approval")
-        and other["input"]["registry"] == given["registry"]
-        and other["input"]["key"] == given["key"]
-    ]
-
-
-def termination_test(vector, vectors):
-    given = vector["input"]
-    others = beside(vector, vectors)
-    other_names = ""
-    distinct = ""
-    if others:
-        items = ",\n    ".join(hexlit(name) for name in others)
-        other_names = f"""
-  let other_roles = [
-    {items},
-  ]"""
-        distinct = "\n    !list.has(other_roles, approval_name(preimage)),"
     return f"""
 test vector_{snake(vector["id"])}() {{
   let registry = {registry(given["registry"])}
   let key = {hexlit(given["key"])}
-  let preimage = termination_preimage(key, registry){other_names}
+  let preimage = termination_preimage(key, registry)
   and {{
     preimage == {hexlit(vector["preimage"])},
-    approval_name(preimage) == {hexlit(vector["name"])},{distinct}
+    approval_name(preimage) == {hexlit(vector["name"])},
   }}
 }}
 """
@@ -218,7 +195,7 @@ def render(table):
         *uses,
         "use singular_state/preimage.{" + ", ".join(preimage_names) + "}",
     ]
-    body = [TESTS[vector["role"]](vector, vectors) for vector in vectors]
+    body = [TESTS[vector["role"]](vector) for vector in vectors]
     body.append(distinct_test("preimages", [v["preimage"] for v in vectors]))
     body.append(distinct_test("names", [v["name"] for v in vectors]))
     return "\n".join(head) + "\n" + "".join(body)
