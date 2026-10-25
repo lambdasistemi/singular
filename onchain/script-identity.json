@@ -26,6 +26,21 @@
       "parameters": 2
     },
     {
+      "title": "singular_state.singular_state.mint",
+      "hash": "55073a99ba3f295f54b7e68330c93bb5a4305cfa16985eab62742f50",
+      "parameters": 1
+    },
+    {
+      "title": "singular_state.singular_state.spend",
+      "hash": "55073a99ba3f295f54b7e68330c93bb5a4305cfa16985eab62742f50",
+      "parameters": 1
+    },
+    {
+      "title": "singular_state.singular_state.else",
+      "hash": "55073a99ba3f295f54b7e68330c93bb5a4305cfa16985eab62742f50",
+      "parameters": 1
+    },
+    {
       "title": "staking.staking.withdraw",
       "hash": "4ab26c95029067185f709d140300cccb15b0b20bbd62a7e9aa2e2e10",
       "parameters": 0

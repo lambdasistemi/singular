@@ -29,8 +29,18 @@
       "pause": 400
     }
   ],
+  "named-limits-so-far": [
+    {
+      "text": "Named limits so far.",
+      "pause": 500
+    },
+    {
+      "text": "The stake part of the state address is not constrained, as in the model, which checks the payment credential only.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "consumers.md",
-    "sha256": "a974f77472ca8e9fa1449c52edcc31c6fbc4a1536df7aac2ed0f15449af9a650"
+    "sha256": "e354432603c67f9d4c05ef991ad28b774aef2e6c3c2120ca09c08674aed5b6d7"
   }
 }

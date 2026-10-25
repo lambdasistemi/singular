@@ -109,6 +109,22 @@
       "pause": 300
     },
     {
+      "text": "The Singular state validator of the new line, beside the current one:",
+      "pause": 400
+    },
+    {
+      "text": "singular_state/genesis — creating a registry state: one function per genesis guard, and their conjunction",
+      "pause": 300
+    },
+    {
+      "text": "singular_state/preimage — the structured values hashed into token names, and the state token name",
+      "pause": 300
+    },
+    {
+      "text": "singular_state/state — the root-only state datum, recognising a state from its seed, and comparing the whole mint of a policy",
+      "pause": 300
+    },
+    {
       "text": "Test support, documented because it is public to the test modules:",
       "pause": 400
     },
@@ -118,6 +134,10 @@
     },
     {
       "text": "registry_fixtures",
+      "pause": 300
+    },
+    {
+      "text": "singular_state_fixtures",
       "pause": 300
     }
   ],
@@ -137,6 +157,6 @@
   ],
   "_source": {
     "file": "onchain-api-reference.md",
-    "sha256": "4ec5ae2f79c626b82defd0265f963277ac2231aa8943db829a195d1c3a13ac60"
+    "sha256": "6a5c4dd22e7604e895025e1cff83e49540186e5204f8331f1a363184b54297de"
   }
 }
