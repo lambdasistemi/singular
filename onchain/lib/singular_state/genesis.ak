@@ -27,9 +27,11 @@ use cardano/transaction.{
 use singular_state/preimage.{state_token_name}
 use singular_state/state.{StateDatum, policy_delta, recognize_state}
 
-/// The redeemer of the state policy.
+/// The redeemer of the state policy: the genesis of a registry, or a mint that
+/// belongs to a fold, whose spend handler decides it.
 pub type StateMint {
   Genesis { seed: OutputReference }
+  Folded
 }
 
 /// Model guard `genesisSeed`: the seed is spent by exactly one input.

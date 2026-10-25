@@ -257466,11 +257466,126 @@
    ]
   },
   "docs-onchain-api-reference/what-this-reference-contains-22": {
-   "audio_sha256": "a9e8b3751191d004b249aed7818e0874429026c735bca08a7b6b1184fc76eb1d",
+   "audio_sha256": "39957af9e91fd71f4d9e7a625c7e6891c2a00df5954f615650f699f0aff89c8f",
+   "characters": 124,
+   "cost": 0.00012276,
+   "duration": 8.2,
+   "index": 22,
+   "key": "9b16184e16b55ac12e5fafbdeacfdb632e618761818d735bfbe15ccbe9cce527",
+   "page": "docs/onchain-api-reference.md",
+   "pause_ms": 300,
+   "section": "what-this-reference-contains",
+   "sent_text": "singular_state/fold — folding registrations into a registry state: one function per guard of the fold, and their conjunction",
+   "text": "singular_state/fold — folding registrations into a registry state: one function per guard of the fold, and their conjunction",
+   "words": [
+    {
+     "end": 1.55,
+     "start": 0.225,
+     "text": "singular_state/fold"
+    },
+    {
+     "end": 1.638,
+     "start": 1.55,
+     "text": "—"
+    },
+    {
+     "end": 2.05,
+     "start": 1.638,
+     "text": "folding"
+    },
+    {
+     "end": 2.888,
+     "start": 2.05,
+     "text": "registrations"
+    },
+    {
+     "end": 3.1,
+     "start": 2.888,
+     "text": "into"
+    },
+    {
+     "end": 3.2,
+     "start": 3.1,
+     "text": "a"
+    },
+    {
+     "end": 3.7,
+     "start": 3.2,
+     "text": "registry"
+    },
+    {
+     "end": 4.575,
+     "start": 3.7,
+     "text": "state"
+    },
+    {
+     "end": 4.775,
+     "start": 4.575,
+     "text": ":"
+    },
+    {
+     "end": 5.2,
+     "start": 4.975,
+     "text": "one"
+    },
+    {
+     "end": 5.6,
+     "start": 5.2,
+     "text": "function"
+    },
+    {
+     "end": 5.75,
+     "start": 5.6,
+     "text": "per"
+    },
+    {
+     "end": 6.037,
+     "start": 5.75,
+     "text": "guard"
+    },
+    {
+     "end": 6.113,
+     "start": 6.037,
+     "text": "of"
+    },
+    {
+     "end": 6.213,
+     "start": 6.113,
+     "text": "the"
+    },
+    {
+     "end": 6.675,
+     "start": 6.213,
+     "text": "fold"
+    },
+    {
+     "end": 6.75,
+     "start": 6.675,
+     "text": ","
+    },
+    {
+     "end": 6.863,
+     "start": 6.75,
+     "text": "and"
+    },
+    {
+     "end": 7.025,
+     "start": 6.863,
+     "text": "their"
+    },
+    {
+     "end": 8.2,
+     "start": 7.025,
+     "text": "conjunction"
+    }
+   ]
+  },
+  "docs-onchain-api-reference/what-this-reference-contains-23": {
+   "audio_sha256": "2fc404bec2d8d46f78c3640464a896b6d50ea9973ce24085c5f43429e9c598b1",
    "characters": 105,
    "cost": 0.00010394999999999999,
    "duration": 6.9,
-   "index": 22,
+   "index": 23,
    "key": "dfd54ba488db3dcb798664e772ef4161d5569cadf1cf42e30d818b45462e05a7",
    "page": "docs/onchain-api-reference.md",
    "pause_ms": 300,
@@ -257560,102 +257675,167 @@
     }
    ]
   },
-  "docs-onchain-api-reference/what-this-reference-contains-23": {
-   "audio_sha256": "2da60e2d6538e9a195693597d5b975fb89faa6fe7b2a620604df17a92f7dfdcf",
-   "characters": 97,
-   "cost": 9.602999999999999e-05,
-   "duration": 6.45,
-   "index": 23,
-   "key": "790fa56a1fc95e2ba0d92d33b3a1fc65dfe96564b3f359dd9ad0f24463db231b",
+  "docs-onchain-api-reference/what-this-reference-contains-24": {
+   "audio_sha256": "a857a864ea6d50926b43455d2023ee6c84f325714d5991112bbceb8218a77eed",
+   "characters": 164,
+   "cost": 0.00016236,
+   "duration": 10.275,
+   "index": 24,
+   "key": "6ed12b8001f33478b2014f88d574ad62fbb96fdd9972c4738ed4406ddc644592",
    "page": "docs/onchain-api-reference.md",
    "pause_ms": 300,
    "section": "what-this-reference-contains",
-   "sent_text": "singular_state/preimage — the structured values hashed into token names, and the state token name",
-   "text": "singular_state/preimage — the structured values hashed into token names, and the state token name",
+   "sent_text": "singular_state/preimage — the structured values hashed into token names, and the name of the state token, of a registered key's token and of a registration approval",
+   "text": "singular_state/preimage — the structured values hashed into token names, and the name of the state token, of a registered key's token and of a registration approval",
    "words": [
     {
-     "end": 1.7,
-     "start": 0.25,
+     "end": 1.775,
+     "start": 0.3,
      "text": "singular_state/preimage"
     },
     {
-     "end": 1.775,
-     "start": 1.7,
+     "end": 1.85,
+     "start": 1.775,
      "text": "—"
     },
     {
-     "end": 1.875,
-     "start": 1.775,
+     "end": 1.975,
+     "start": 1.85,
      "text": "the"
     },
     {
-     "end": 2.4,
-     "start": 1.875,
+     "end": 2.525,
+     "start": 1.975,
      "text": "structured"
     },
     {
-     "end": 2.912,
-     "start": 2.4,
+     "end": 3.037,
+     "start": 2.525,
      "text": "values"
     },
     {
-     "end": 3.263,
-     "start": 2.912,
+     "end": 3.412,
+     "start": 3.037,
      "text": "hashed"
     },
     {
-     "end": 3.5,
-     "start": 3.263,
+     "end": 3.662,
+     "start": 3.412,
      "text": "into"
     },
     {
-     "end": 3.9,
-     "start": 3.5,
+     "end": 4.1,
+     "start": 3.662,
      "text": "token"
     },
     {
-     "end": 4.425,
-     "start": 3.9,
+     "end": 4.6,
+     "start": 4.1,
      "text": "names"
     },
     {
-     "end": 4.5,
-     "start": 4.425,
+     "end": 4.675,
+     "start": 4.6,
      "text": ","
     },
     {
-     "end": 4.613,
-     "start": 4.5,
+     "end": 4.787,
+     "start": 4.675,
      "text": "and"
     },
     {
-     "end": 4.7,
-     "start": 4.613,
+     "end": 4.875,
+     "start": 4.787,
      "text": "the"
     },
     {
-     "end": 5.025,
-     "start": 4.7,
+     "end": 5.188,
+     "start": 4.875,
+     "text": "name"
+    },
+    {
+     "end": 5.262,
+     "start": 5.188,
+     "text": "of"
+    },
+    {
+     "end": 5.35,
+     "start": 5.262,
+     "text": "the"
+    },
+    {
+     "end": 5.688,
+     "start": 5.35,
      "text": "state"
     },
     {
-     "end": 5.4,
-     "start": 5.025,
+     "end": 6.225,
+     "start": 5.688,
      "text": "token"
     },
     {
-     "end": 6.45,
-     "start": 5.4,
-     "text": "name"
+     "end": 6.325,
+     "start": 6.225,
+     "text": ","
+    },
+    {
+     "end": 6.438,
+     "start": 6.325,
+     "text": "of"
+    },
+    {
+     "end": 6.537,
+     "start": 6.438,
+     "text": "a"
+    },
+    {
+     "end": 7.113,
+     "start": 6.537,
+     "text": "registered"
+    },
+    {
+     "end": 7.463,
+     "start": 7.113,
+     "text": "key's"
+    },
+    {
+     "end": 7.988,
+     "start": 7.463,
+     "text": "token"
+    },
+    {
+     "end": 8.113,
+     "start": 7.988,
+     "text": "and"
+    },
+    {
+     "end": 8.188,
+     "start": 8.113,
+     "text": "of"
+    },
+    {
+     "end": 8.275,
+     "start": 8.188,
+     "text": "a"
+    },
+    {
+     "end": 9.025,
+     "start": 8.275,
+     "text": "registration"
+    },
+    {
+     "end": 10.275,
+     "start": 9.025,
+     "text": "approval"
     }
    ]
   },
-  "docs-onchain-api-reference/what-this-reference-contains-24": {
-   "audio_sha256": "6850a7b6fc0f940fd97010a72a19fb1233875cbaf57446123bfa3971a9939639",
+  "docs-onchain-api-reference/what-this-reference-contains-25": {
+   "audio_sha256": "c509f164c8ef34fdae5111792c9625be6081284171124012c093405c5254a574",
    "characters": 125,
    "cost": 0.00012375,
    "duration": 8.2,
-   "index": 24,
+   "index": 25,
    "key": "bdded399815160878c50080bf565985954dab3fb9e124708b59127c59f8f266f",
    "page": "docs/onchain-api-reference.md",
    "pause_ms": 300,
@@ -257775,12 +257955,12 @@
     }
    ]
   },
-  "docs-onchain-api-reference/what-this-reference-contains-25": {
-   "audio_sha256": "c35e32cc85f6d5eb55823354bd02b1e9a2885a77bdd0578f4ec5dbf631c84bc5",
+  "docs-onchain-api-reference/what-this-reference-contains-26": {
+   "audio_sha256": "f24f4e253b3acf2a91ef8d44856c16d1a80453d12aa6ef930021d55c105f09ce",
    "characters": 66,
    "cost": 6.534e-05,
    "duration": 4.475,
-   "index": 25,
+   "index": 26,
    "key": "c029518ecfb24c8e468e5549c31b81aa43df76739b216188c0be6e3f070a71be",
    "page": "docs/onchain-api-reference.md",
    "pause_ms": 400,
@@ -257855,12 +258035,12 @@
     }
    ]
   },
-  "docs-onchain-api-reference/what-this-reference-contains-26": {
-   "audio_sha256": "6f1d5baa1a4f638b0e2ab05b04ca04733a2dab9bb992a9cd836b65b222a6ee6f",
+  "docs-onchain-api-reference/what-this-reference-contains-27": {
+   "audio_sha256": "d0240dd6a8e97217647415140bdf83627cb9ab9992d24eb5e010b27698efecd7",
    "characters": 13,
    "cost": 1.2869999999999999e-05,
    "duration": 1.275,
-   "index": 26,
+   "index": 27,
    "key": "19587bcb008039bef8b09771de48bda212c64ebe7183b819b35385c1cde0706f",
    "page": "docs/onchain-api-reference.md",
    "pause_ms": 300,
@@ -257875,12 +258055,12 @@
     }
    ]
   },
-  "docs-onchain-api-reference/what-this-reference-contains-27": {
-   "audio_sha256": "78bf34a884bacef0043d219f07f98d9f2a8b419433873792f6e3be3fdaff8869",
+  "docs-onchain-api-reference/what-this-reference-contains-28": {
+   "audio_sha256": "ff7a355966e215c4b65728f06dcb54d94b9f562057ef73c26b553f48ef865793",
    "characters": 17,
    "cost": 1.683e-05,
    "duration": 1.575,
-   "index": 27,
+   "index": 28,
    "key": "f006d1d819c4336531745a7647abc0a598119d070268187c0993309c5b2fcd40",
    "page": "docs/onchain-api-reference.md",
    "pause_ms": 300,
@@ -257895,12 +258075,12 @@
     }
    ]
   },
-  "docs-onchain-api-reference/what-this-reference-contains-28": {
-   "audio_sha256": "3e1c95305ffbdb2f9f62de9b324ce8582705c908b062c9d002971c637f646ed3",
+  "docs-onchain-api-reference/what-this-reference-contains-29": {
+   "audio_sha256": "ee19e16543518b73d7888cc425ec35f9302a83616e206766918ec3e49329a3e0",
    "characters": 23,
    "cost": 2.277e-05,
    "duration": 1.675,
-   "index": 28,
+   "index": 29,
    "key": "99be864539873ca7107d8361ffce7118410c174e07f4ccd22609e951d299242e",
    "page": "docs/onchain-api-reference.md",
    "pause_ms": 300,
@@ -257912,6 +258092,26 @@
      "end": 1.675,
      "start": 0.2,
      "text": "singular_state_fixtures"
+    }
+   ]
+  },
+  "docs-onchain-api-reference/what-this-reference-contains-30": {
+   "audio_sha256": "8771f6a05166b8040c393c7fc4f1293a8413ce09ef03db05cee57e1ef52ee1ce",
+   "characters": 28,
+   "cost": 2.772e-05,
+   "duration": 1.925,
+   "index": 30,
+   "key": "3432b5dedd4f8d8333942dbb2f5ee108794180afe9063f85fb2f25306ec17bcd",
+   "page": "docs/onchain-api-reference.md",
+   "pause_ms": 300,
+   "section": "what-this-reference-contains",
+   "sent_text": "singular_state_fold_fixtures",
+   "text": "singular_state_fold_fixtures",
+   "words": [
+    {
+     "end": 1.925,
+     "start": 0.2,
+     "text": "singular_state_fold_fixtures"
     }
    ]
   },

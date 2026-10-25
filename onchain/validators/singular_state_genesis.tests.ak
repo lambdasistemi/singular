@@ -463,16 +463,6 @@ test the_validator_refuses_a_state_output_with_a_root_that_is_not_empty() {
   )
 }
 
-test the_validator_has_no_spending_path_for_a_state_output() fail {
-  singular_state.singular_state.spend(
-    application_policy,
-    Some(builtin.b_data(#"00")),
-    builtin.i_data(0),
-    OutputReference { transaction_id: #"00", output_index: 0 },
-    valid(),
-  )
-}
-
 // ---------------------------------------------------------------------------
 // Properties over every seed
 // ---------------------------------------------------------------------------

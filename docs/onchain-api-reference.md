@@ -67,8 +67,9 @@ The shared vocabulary and the other validators:
 
 The Singular state validator of the new line, beside the current one:
 
+- <a href="../onchain/lib/singular_state/fold.ak" data-api="module">singular_state/fold</a> — folding registrations into a registry state: one function per guard of the fold, and their conjunction
 - <a href="../onchain/lib/singular_state/genesis.ak" data-api="module">singular_state/genesis</a> — creating a registry state: one function per genesis guard, and their conjunction
-- <a href="../onchain/lib/singular_state/preimage.ak" data-api="module">singular_state/preimage</a> — the structured values hashed into token names, and the state token name
+- <a href="../onchain/lib/singular_state/preimage.ak" data-api="module">singular_state/preimage</a> — the structured values hashed into token names, and the name of the state token, of a registered key's token and of a registration approval
 - <a href="../onchain/lib/singular_state/state.ak" data-api="module">singular_state/state</a> — the root-only state datum, recognising a state from its seed, and comparing the whole mint of a policy
 
 Test support, documented because it is public to the test modules:
@@ -76,6 +77,7 @@ Test support, documented because it is public to the test modules:
 - <a href="../onchain/validators/cage_fixtures.ak" data-api="module">cage_fixtures</a>
 - <a href="../onchain/lib/registry_fixtures.ak" data-api="module">registry_fixtures</a>
 - <a href="../onchain/validators/singular_state_fixtures.ak" data-api="module">singular_state_fixtures</a>
+- <a href="../onchain/validators/singular_state_fold_fixtures.ak" data-api="module">singular_state_fold_fixtures</a>
 
 ## What it leaves out
 

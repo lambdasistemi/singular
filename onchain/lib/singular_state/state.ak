@@ -48,20 +48,8 @@ pub fn recognize_state(
         output.address.payment_credential == Script(state_policy),
         policy == state_policy,
         quantity == 1,
-        is_root_datum(output.datum),
+        state_root(output.datum) != None,
         name == state_token_name(seed),
-      }
-    _ -> False
-  }
-}
-
-fn is_root_datum(datum: Datum) -> Bool {
-  when datum is {
-    InlineDatum(data) ->
-      if data is StateDatum { root: _ }: StateDatum {
-        True
-      } else {
-        False
       }
     _ -> False
   }
@@ -93,4 +81,17 @@ fn expected_quantity(expected: Pairs<AssetName, Int>, name: AssetName) -> Int {
     0,
     fn(quantity, total) { quantity + total },
   )
+}
+
+/// The root a state output's datum carries, when it carries one.
+pub fn state_root(datum: Datum) -> Option<ByteArray> {
+  when datum is {
+    InlineDatum(data) ->
+      if data is StateDatum { root }: StateDatum {
+        Some(root)
+      } else {
+        None
+      }
+    _ -> None
+  }
 }
