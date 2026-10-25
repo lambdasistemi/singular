@@ -33,7 +33,11 @@
       "pause": 400
     },
     {
-      "text": "The absence check (the trie proof shows the key absent) is open: the new line's trie moves to CSMT (aiken-csmt on chain, haskell-csmt off chain, keys hashed before insertion), and this plan is revised once when that release is ready.",
+      "text": "The registration fold's absence check (the trie proof shows the key absent) stays on the current trie library (operator, 2026-10-25); its slice is open in pull request 1.",
+      "pause": 400
+    },
+    {
+      "text": "Pull request 2 adds one statement to OpenDatumApplicationHeld.RefundLifecycle.Statements, proved: a registry's genesis mints its configuration asset exactly once. Its Lean change consumers (the model recipe just open-datum-application-held-model and its hosted step) are listed in the gate as row G16.",
       "pause": 400
     },
     {
@@ -91,6 +95,14 @@
       "pause": 300
     },
     {
+      "text": "Configuration record (operator, 2026-10-25): exactly one per registry. The open-datum model gains that statement, proved, and the validator refuses a second configuration record and a configuration mint other than one.",
+      "pause": 300
+    },
+    {
+      "text": "Trie (operator, 2026-10-25): the new line keeps the current trie library, on cost.",
+      "pause": 300
+    },
+    {
       "text": "Not in this line: the application policy doubling as its address.",
       "pause": 300
     }
@@ -131,6 +143,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "565208719c9645b3a11ef510ba12b9651381d731789bbf901629545f7ccde5c6"
+    "sha256": "0398f8f0f73528470d652cbef0f60e439ddf8129e35a729b9bc0010b7a22a3fc"
   }
 }
