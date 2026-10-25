@@ -18,14 +18,17 @@
 //// ## Assumptions
 //// The ledger runs the spend handler once for every input at the address of
 //// the script, with that input's redeemer, so every application input has
-//// exactly one action. The Singular state script decides which token is the
-//// genuine active token of a registration; this script checks that exactly
-//// one is minted and that the holding carries it.
+//// exactly one action, and `transaction.redeemers` lists the redeemer of every
+//// spent input as the ledger hands it to that input's handler. The Singular
+//// state script decides which token is the genuine active token of a
+//// registration; this script checks that exactly one is minted and that the
+//// holding carries it.
 ////
 //// ## Invariants
 //// Before the processing deadline only a fold spends a pending registration.
 //// Whoever spends one burns its approval, so an approval is good for one
-//// spend.
+//// spend. The payments the spent registrations of a transaction require are
+//// covered together, so one output does not satisfy two spends.
 
 use aiken/collection/list
 use aiken/crypto.{VerificationKeyHash}
@@ -38,7 +41,7 @@ use application/registration.{
 use cardano/address.{Script, VerificationKey}
 use cardano/assets.{PolicyId, Value, lovelace_of, quantity_of}
 use cardano/transaction.{
-  InlineDatum, Input, Output, OutputReference, Transaction,
+  InlineDatum, Input, Output, OutputReference, Spend, Transaction,
 }
 use singular_state/preimage.{active_token_name}
 
@@ -126,17 +129,87 @@ pub fn refund_signature(
 }
 
 /// The action a redeemer carries, when it carries one.
-pub fn spend_action_of(_redeemer: Data) -> Option<SpendAction> {
-  None
+pub fn spend_action_of(redeemer: Data) -> Option<SpendAction> {
+  if redeemer is RegistrationFold { holding_index }: SpendAction {
+    Some(RegistrationFold { holding_index })
+  } else if redeemer is OwnerReclaim: SpendAction {
+    Some(OwnerReclaim)
+  } else if redeemer is ExpiredCleanup: SpendAction {
+    Some(ExpiredCleanup)
+  } else {
+    None
+  }
+}
+
+/// The payment the action requires of the transaction that spends `input`, the
+/// pending registration `registration`: a fold pays the deposit at the holding
+/// address, a reclaim pays everything the request holds and a cleanup pays the
+/// deposit, both at the refund address.
+fn payment_of(
+  action: SpendAction,
+  input: Output,
+  registration: RegistrationData,
+) -> Payment {
+  when action is {
+    RegistrationFold { .. } ->
+      Payment {
+        address: registration.holding_address,
+        amount: registration.deposit,
+      }
+    OwnerReclaim ->
+      Payment {
+        address: registration.refund_address,
+        amount: lovelace_of(input.value),
+      }
+    ExpiredCleanup ->
+      Payment {
+        address: registration.refund_address,
+        amount: registration.deposit,
+      }
+  }
+}
+
+/// The payment that the spend of the input at `reference` requires, when that
+/// input is a pending registration at the address of this script and the
+/// redeemer is an action.
+fn payment_for(
+  application_policy: PolicyId,
+  reference: OutputReference,
+  redeemer: Data,
+  inputs: List<Input>,
+) -> Option<Payment> {
+  when list.find(inputs, fn(input) { input.output_reference == reference }) is {
+    Some(Input { output, .. }) ->
+      if output.address.payment_credential == Script(application_policy) {
+        when (held_datum(output), spend_action_of(redeemer)) is {
+          (Some(Registration { registration }), Some(action)) ->
+            Some(payment_of(action, output, registration))
+          _ -> None
+        }
+      } else {
+        None
+      }
+    None -> None
+  }
 }
 
 /// Model `requiredPayments`: the payments the spent registrations of the
-/// transaction require, one per spent registration.
+/// transaction require, one per spent registration, read from the redeemer of
+/// each spent input at the address of this script.
 pub fn required_payments(
-  _application_policy: PolicyId,
-  _tx: Transaction,
+  application_policy: PolicyId,
+  tx: Transaction,
 ) -> List<Payment> {
-  []
+  list.filter_map(
+    tx.redeemers,
+    fn(Pair(purpose, redeemer)) {
+      when purpose is {
+        Spend(reference) ->
+          payment_for(application_policy, reference, redeemer, tx.inputs)
+        _ -> None
+      }
+    },
+  )
 }
 
 /// Model `registrationSpend`: the decision on the spend of `input`, the
@@ -165,28 +238,9 @@ pub fn registration_spend(
       OwnerReclaim -> and {
           classify_phase(registration, tx.validity_range) == Reclaim,
           refund_signature(registration, tx.extra_signatories),
-          payments_covered(
-            [
-              Payment {
-                address: registration.refund_address,
-                amount: lovelace_of(input.value),
-              },
-            ],
-            tx.outputs,
-          ),
         }
-      ExpiredCleanup -> and {
-          classify_phase(registration, tx.validity_range) == Cleanup,
-          payments_covered(
-            [
-              Payment {
-                address: registration.refund_address,
-                amount: registration.deposit,
-              },
-            ],
-            tx.outputs,
-          ),
-        }
+      ExpiredCleanup ->
+        classify_phase(registration, tx.validity_range) == Cleanup
     },
   }
 }
@@ -202,14 +256,19 @@ pub fn application_spend(
       when input.address.payment_credential is {
         Script(application_policy) ->
           when held_datum(input) is {
-            Some(Registration { registration }) ->
-              registration_spend(
-                application_policy,
-                action,
-                input,
-                registration,
-                tx,
-              )
+            Some(Registration { registration }) -> and {
+                registration_spend(
+                  application_policy,
+                  action,
+                  input,
+                  registration,
+                  tx,
+                ),
+                payments_covered(
+                  required_payments(application_policy, tx),
+                  tx.outputs,
+                ),
+              }
             _ -> False
           }
         _ -> False

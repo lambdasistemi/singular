@@ -604,7 +604,7 @@ test the_validator_refuses_the_fold_of_two_registrations_when_one_has_no_holding
       [],
     )
   and {
-    run_at(RegistrationFold { holding_index: 0 }, pending_reference_n(0), tx),
+    !run_at(RegistrationFold { holding_index: 0 }, pending_reference_n(0), tx),
     !run_at(RegistrationFold { holding_index: 1 }, pending_reference_n(1), tx),
   }
 }

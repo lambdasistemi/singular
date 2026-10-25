@@ -12,9 +12,9 @@
 //// library.
 ////
 //// ## Assumptions
-//// Booking a termination, a live update and the spend paths of a pending
-//// registration belong to other rules; their actions are not listed here, so
-//// no approval for them can be minted.
+//// Booking a termination and a live update belong to other rules; their actions
+//// are not listed here, so no approval for them can be minted. The spend of a
+//// pending registration is decided by `application/spend`.
 ////
 //// ## Invariants
 //// Everything minted under the policy is either burned or accounted for by an
