@@ -77,6 +77,7 @@ import Singular.Registry.LedgerProvider
 import Singular.Registry.SessionIO
     ( ceilingSlot
     , floorSlot
+    , slotStart
     )
 
 {- | A pending registration read from the chain: the output, the
@@ -156,7 +157,44 @@ buildCleanup
     -> Addr
     -- ^ The payer
     -> IO (Either Refusal ConwayTx)
-buildCleanup _ _ _ _ = pure (Left (BuildFailed "not built"))
+buildCleanup session script pending payerAddress = runExceptT $ do
+    held <- ExceptT (readPending session script pending)
+    let registration = heldRegistration held
+    payer <- ExceptT (resolvePayer session payerAddress)
+    now <- lift (tipSlot session)
+    opens <- lift (ceilingSlot session (rdReclaimEnd registration))
+    when (now < opens) $ throwE (WindowNotOpen Cleanup)
+    nowMs <- lift (slotStart session now)
+    span' <- lift (floorSlot session (nowMs + cleanupSpan))
+    upper <-
+        lift (validityFromTip session now span')
+            >>= maybe
+                (throwE (BuildFailed "no validity interval at the tip is usable"))
+                pure
+    scriptOutputs <- ExceptT (referenceOutputs session script)
+    let funding = payerFunding payer
+    ExceptT $
+        assembleTransaction
+            session
+            [funding, (pending, heldOutput held)]
+            scriptOutputs
+            payerAddress
+            ( do
+                _ <- Tx.spendScript pending (AsData (spendRedeemer ExpiredCleanup))
+                burnApproval script held
+                useScript script
+                _ <-
+                    Tx.payTo
+                        (rdRefundAddress registration)
+                        (MaryValue (Coin (rdDeposit registration)) mempty)
+                Tx.validFrom now
+                Tx.validTo upper
+                Tx.collateral (fst funding)
+            )
+
+-- | How long a cleanup stays valid from the tip, in milliseconds.
+cleanupSpan :: Integer
+cleanupSpan = 3_600_000
 
 -- | Burn the approval a pending registration holds.
 burnApproval :: RequestScript -> Held -> Tx.TxBuild q e ()
