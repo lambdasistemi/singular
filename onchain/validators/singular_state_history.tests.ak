@@ -6,15 +6,19 @@
 //// minted again, by a fold of its registry or of another
 //// (`no_remint_after_terminal`).
 ////
-//// The statements quantify over every reachable world, so the properties run
-//// over generated sequences of transactions against the real handlers of the
-//// state validator. A sequence is a list of choices; each choice selects one
+//// The statements quantify over every reachable world, so one property runs over
+//// generated sequences of transactions against the real handlers of the state
+//// validator, and reads all four statements in each world. A sequence opens with the creation of both registries, the registration of two
+//// keys and the termination of one, then is a list of choices; each choice selects one
 //// proposal of the world it finds (a registry is created, a request is made,
 //// a termination is booked, a holding moves, requests are folded, or an
 //// attacker's transaction that breaks one rule of the fold), the ledger rules
 //// and the handlers decide, and an accepted proposal becomes the next world.
-//// Every statement is read after every accepted step, over every registry and
-//// key, and the last world of each run is read against the trie library.
+//// The supply, the burns and the mints are read after every accepted step, over
+//// every registry and key; the last world of each run is read against the trie
+//// library, and for the most live tokens of a key, which the supply of each step
+//// implies. The
+//// keys are three, with different first nibbles.
 ////
 //// Each statement is also shown able to fail. A control runs a hand-written
 //// sequence against a validator that waives its rules for one kind of attack,
@@ -34,18 +38,18 @@ use singular_state
 use singular_state/fold.{StateSpend}
 use singular_state/genesis.{StateMint}
 use singular_state_fixtures.{application_policy, state_policy}
-use singular_state_fold_fixtures.{key_a, key_b, key_c, key_d}
+use singular_state_fold_fixtures.{key_a, key_b, key_c}
 use singular_state_history.{
   Active, BookTermination, BurnBesideRegistration, BurnOutsideFold,
   CreateRegistry, FoldBatch, Kind, MintTerminalKeyThroughAnotherRegistry,
   Outcome, Proposal, RegisterActiveKey, RegisterTerminalKey,
   RegisterWithTwoTokens, RequestRegistration, Terminal, TerminateKeepingToken,
   Want, allowed_attacks, at_most_one_live_token,
-  burns_belong_to_terminating_folds, choose, describe, folds_registrations,
-  folds_terminations, initial_world, is_mixed_fold, leaf_of, live_supply,
-  registry_at, rules_are_followed, run, run_script, runs_end_committed,
-  scripts_accept, supply_follows_leaves, terminal_keys_are_never_minted_again,
-  universe,
+  burns_belong_to_terminating_folds, changes_of, choose, describe,
+  folds_registrations, folds_terminations, initial_world, is_mixed_fold, leaf_of,
+  live_supply, registry_at, rules_are_followed, run, run_script,
+  runs_end_committed, scripts_accept, supply_follows_leaves,
+  terminal_keys_are_never_minted_again, universe,
 }
 
 /// The mint handler of the state validator, run as the ledger runs it.
@@ -86,7 +90,33 @@ fn waiving(kind: Kind) -> fn(Proposal) -> Bool {
 }
 
 fn sequences() -> Fuzzer<List<Int>> {
-  fuzz.list_between(fuzz.int_between(0, 9999), 10, 10)
+  fuzz.list_between(fuzz.int_between(0, 9999), 4, 4)
+}
+
+/// Every run opens the same way: both registries are created through genesis, the
+/// first one folds the registrations of two keys, and the termination of one of
+/// them is booked and folded. The steps a run has go to what the statements are
+/// about, terminations, mints and burns, and an attack on a terminal key, in its
+/// registry or through the other, has what it needs.
+fn opening() -> List<Outcome> {
+  run_script(
+    scripts,
+    initial_world(),
+    [
+      create(0),
+      create(1),
+      fold(0, [key_a, key_b]),
+      book(0, key_a),
+      fold(0, [key_a]),
+    ],
+  )
+}
+
+/// The opening, then the steps the choices select from the world it left.
+fn history(choices: List<Int>) -> List<Outcome> {
+  let started = opening()
+  expect Some(last) = list.last(started)
+  list.concat(started, run(scripts, last.after, choices))
 }
 
 /// Labels every step of a run, and the shape of every accepted fold, so the
@@ -148,28 +178,17 @@ fn all_statements(outcome: Outcome) -> Bool {
   }
 }
 
-test prop_a_key_has_one_live_token_exactly_when_its_leaf_is_active(
+test prop_the_history_statements_hold_over_generated_worlds(
   choices via sequences(),
 ) {
-  let outcomes = run(scripts, initial_world(), choices)
+  let outcomes = history(choices)
   and {
     labelled(outcomes),
-    rules_are_followed(outcomes),
-    list.all(outcomes, supply),
-    list.all(outcomes, one_token),
-    runs_end_committed(outcomes),
-  }
-}
-
-test prop_a_burn_is_a_termination_of_its_registry_and_a_terminal_key_is_never_minted_again(
-  choices via sequences(),
-) {
-  let outcomes = run(scripts, initial_world(), choices)
-  and {
-    labelled(outcomes),
-    rules_are_followed(outcomes),
-    list.all(outcomes, burns),
-    list.all(outcomes, remint),
+    rules_are_followed(outcomes)?,
+    list.all(outcomes, supply)?,
+    list.all(outcomes, burns)?,
+    list.all(outcomes, remint)?,
+    runs_end_committed(outcomes)?,
   }
 }
 
@@ -177,7 +196,7 @@ test prop_a_burn_is_a_termination_of_its_registry_and_a_terminal_key_is_never_mi
 /// builds for a registration or a termination is one step long.
 test the_keys_the_generator_draws_on_begin_with_different_nibbles() {
   let first = list.map(universe(), fn(key) { nibble(blake2b_256(key), 0) })
-  list.length(first) >= 4 && list.length(list.unique(first)) == list.length(
+  list.length(first) >= 3 && list.length(list.unique(first)) == list.length(
     first,
   )
 }
@@ -240,12 +259,26 @@ fn run_of(
   (list.take(outcomes, list.length(prefix)), last)
 }
 
+/// The proposal carries the changes the attack is about: a termination for the
+/// attack on a termination, registrations for the attacks on a registration, and
+/// none for the burn outside a fold. A control whose attack is built over another
+/// change would pass for the wrong reason.
+fn is_the_attack_it_names(proposal: Proposal) -> Bool {
+  when proposal.kind is {
+    TerminateKeepingToken ->
+      folds_terminations(proposal) && !folds_registrations(proposal)
+    BurnOutsideFold -> changes_of(proposal) == []
+    _ -> folds_registrations(proposal) && !folds_terminations(proposal)
+  }
+}
+
 /// The world allows the attack, the real validator refuses it, the ledger's
 /// rules held for it, and every statement holds before and after.
 fn refused(prefix: List<Want>, attack: Want) -> Bool {
   let (before, last) = run_of(scripts, prefix, attack)
   and {
     list.has(allowed_attacks(last.before), attack.kind),
+    is_the_attack_it_names(last.proposal),
     !last.accepted,
     last.lawful,
     list.all(before, all_statements),
@@ -262,6 +295,7 @@ fn waived(
 ) -> Bool {
   let (before, last) = run_of(waiving(attack.kind), prefix, attack)
   and {
+    is_the_attack_it_names(last.proposal),
     last.accepted,
     list.all(before, statement),
     !statement(last),
@@ -289,18 +323,11 @@ test a_registration_that_mints_two_tokens_leaves_two_live_when_the_mint_is_waive
 }
 
 test a_registration_of_a_key_that_is_active_is_refused() {
-  refused(
-    list.concat(registered(), [request(0, key_a)]),
-    want(RegisterActiveKey, 0, key_a),
-  )
+  refused(registered(), want(RegisterActiveKey, 0, key_a))
 }
 
 test a_registration_of_a_key_that_is_active_leaves_two_live_when_the_absence_is_waived() {
-  waived(
-    list.concat(registered(), [request(0, key_a)]),
-    want(RegisterActiveKey, 0, key_a),
-    one_token,
-  )
+  waived(registered(), want(RegisterActiveKey, 0, key_a), one_token)
 }
 
 // A burn is a termination of a fold.
@@ -324,18 +351,11 @@ test a_burn_in_a_fold_that_terminates_nothing_is_a_burn_of_no_termination_when_t
 // The token of a terminal key is never minted again.
 
 test a_registration_of_a_terminal_key_is_refused() {
-  refused(
-    list.concat(terminated(), [request(0, key_a)]),
-    want(RegisterTerminalKey, 0, key_a),
-  )
+  refused(terminated(), want(RegisterTerminalKey, 0, key_a))
 }
 
 test a_registration_of_a_terminal_key_is_a_remint_when_the_absence_is_waived() {
-  waived(
-    list.concat(terminated(), [request(0, key_a)]),
-    want(RegisterTerminalKey, 0, key_a),
-    remint,
-  )
+  waived(terminated(), want(RegisterTerminalKey, 0, key_a), remint)
 }
 
 test the_token_of_a_terminal_key_is_not_minted_in_the_fold_of_another_registry() {
@@ -373,16 +393,15 @@ test the_key_a_registry_ended_is_registered_in_a_fresh_registry() {
   }
 }
 
-/// A fold that terminates two keys and registers a fourth in one batch, over a
+/// A fold that terminates one key and registers another in one batch, over a
 /// registry that holds a third: every key outside the changes keeps its token.
 test a_fold_that_mixes_terminations_and_a_registration_keeps_every_other_token() {
   let wants =
     [
       create(0),
-      fold(0, [key_a, key_b, key_c]),
+      fold(0, [key_a, key_b]),
       book(0, key_a),
-      book(0, key_b),
-      fold(0, [key_a, key_b, key_d]),
+      fold(0, [key_a, key_c]),
     ]
   let outcomes = run_script(scripts, initial_world(), wants)
   expect Some(last) = list.last(outcomes)
@@ -395,30 +414,27 @@ test a_fold_that_mixes_terminations_and_a_registration_keeps_every_other_token()
     runs_end_committed(outcomes),
     is_mixed_fold(last.proposal),
     leaf_of(registry, key_a) == Terminal,
-    leaf_of(registry, key_b) == Terminal,
+    leaf_of(registry, key_b) == Active,
     leaf_of(registry, key_c) == Active,
-    leaf_of(registry, key_d) == Active,
     live_supply(world, registry, key_a) == 0,
-    live_supply(world, registry, key_b) == 0,
+    live_supply(world, registry, key_b) == 1,
     live_supply(world, registry, key_c) == 1,
-    live_supply(world, registry, key_d) == 1,
   }
 }
 
-/// A choice selects every kind of attack the world allows: the first member of
-/// each group of attacks is the choice that names the group, so the attacks the
-/// scripted worlds allow are the attacks the generator proposes.
+/// A choice selects every kind of attack the world allows: the choices that name
+/// the groups of attacks reach every kind, so the attacks the scripted worlds
+/// allow are the attacks the generator proposes.
 test a_choice_selects_every_kind_of_attack_the_world_allows() {
   let wants =
     [
       create(0),
       create(1),
-      fold(0, [key_a, key_b, key_c]),
+      fold(0, [key_a, key_b]),
       book(0, key_a),
       fold(0, [key_a]),
-      request(0, key_a),
       request(0, key_b),
-      book(0, key_c),
+      book(0, key_b),
     ]
   let outcomes = run_script(scripts, initial_world(), wants)
   expect Some(last) = list.last(outcomes)
@@ -426,7 +442,7 @@ test a_choice_selects_every_kind_of_attack_the_world_allows() {
   let allowed = allowed_attacks(world)
   let chosen =
     list.filter_map(
-      list.range(0, list.length(allowed) - 1),
+      list.range(0, 2 * list.length(allowed)),
       fn(pick) {
         when choose(world, pick * 3) is {
           Some(candidate) -> Some(candidate.kind)

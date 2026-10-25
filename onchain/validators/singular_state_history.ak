@@ -9,12 +9,14 @@
 ////
 //// What the statements read is the world itself. The live supply of a key's
 //// token is counted over every unspent output; the leaf of a key is read from
-//// the trie the registry's state output commits to, which must be the root of
-//// the leaves the world holds; a burn or a mint is read from the mint of the
-//// transaction. The proposals are the rules' own transactions (a registry is
-//// created, a request is made, a termination is booked, a holding moves, a
-//// batch of requests is folded) and, beside them, the transactions an
-//// attacker would try: the ones that break exactly one rule of a fold.
+//// the leaves the world keeps for its registry, which the state output of the last
+//// world of a run must commit to, with the root the trie library computes; a burn
+//// or a mint is read from the mint of the transaction.
+////
+//// The proposals are the rules' own transactions (a registry is created, a request
+//// is made, a termination is booked, a holding moves, a batch of requests is
+//// folded) and, beside them, the transactions an attacker would try: the ones
+//// that break exactly one rule of a fold.
 ////
 //// Not modelled: lovelace. Every proposal conserves every other asset, which
 //// is what the supply of a token depends on, and the world checks it.
@@ -43,7 +45,7 @@ use singular_state_fixtures.{
 }
 use singular_state_fold_fixtures.{
   Registration, approval_of, holding_output, holding_script_b, key_a, key_b,
-  key_c, key_d, registry_of, request_input, state_lovelace,
+  key_c, registry_of, request_input, state_lovelace,
 }
 use singular_state_termination_fixtures.{
   Held, Mixed, Registering, Step, Terminating, Termination, built_root_of,
@@ -98,42 +100,64 @@ fn seed_reference(index: Int) -> OutputReference {
 
 /// The registration of `key` in the registry created from the seed at `index`
 /// that the world starts with a request for.
-fn first_registration(index: Int, position: Int, key: ByteArray) -> Registration {
+fn first_registration(
+  index: Int,
+  position: Int,
+  key: ByteArray,
+  copy: Int,
+) -> Registration {
   Registration {
-    ..registering(key, index * 4 + position),
+    ..registering(key, copy * 8 + index * 4 + position),
     request: OutputReference {
       transaction_id: initial_transaction,
-      output_index: 100 + index * 4 + position,
+      output_index: 100 + copy * 8 + index * 4 + position,
     },
   }
 }
 
 /// The requests the world starts with: for each registry it can create, one
-/// registration of each key. The application made them before any registry
+/// registration of each key, and a second one of the first key that stays
+/// behind once the first is folded, so a registration of a key that is active or
+/// terminal is there to be tried. The application made them before any registry
 /// existed; they carry tokens of its own policy only.
 fn first_requests() -> List<Pending> {
   list.flat_map(
     list.range(0, most_registries - 1),
     fn(index) {
-      list.indexed_map(
-        universe(),
-        fn(position, key) {
-          Pending {
-            registry: index,
-            step: Registering(first_registration(index, position, key)),
-          }
-        },
+      list.flat_map(
+        list.indexed_map(
+          universe(),
+          fn(position, key) {
+            list.map(
+              if position < 1 {
+                [0, 1]
+              } else {
+                [0]
+              },
+              fn(copy) {
+                Pending {
+                  registry: index,
+                  step: Registering(
+                    first_registration(index, position, key, copy),
+                  ),
+                }
+              },
+            )
+          },
+        ),
+        fn(requests) { requests },
       )
     },
   )
 }
 
-/// The world before anything is created: plain outputs, and one registration
-/// request of each key for each registry the world can create.
+/// The world before anything is created: plain outputs, and for each registry the
+/// world can create one registration request of each key and a second one of the
+/// first key.
 pub fn initial_world() -> World {
   World {
     unspent: list.concat(
-      list.map(list.range(0, 4), fn(index) { spent(seed_reference(index)) }),
+      list.map(list.range(0, 2), fn(index) { spent(seed_reference(index)) }),
       list.map(
         first_requests(),
         fn(each) {
@@ -154,11 +178,11 @@ pub fn initial_world() -> World {
   }
 }
 
-/// The keys the proposals draw on: the first nibbles of their hashes differ
-/// for some and agree for others, so the tries have nodes below the first
-/// nibble.
+/// The keys the proposals draw on. The first nibbles of their hashes all differ, so
+/// every proof the proposals carry is one step long; key sets that share a first
+/// nibble are not covered.
 pub fn universe() -> List<ByteArray> {
-  [key_a, key_b, key_c, key_d]
+  [key_a, key_b, key_c]
 }
 
 /// The most registries a world creates.
@@ -297,6 +321,20 @@ fn is_pending(world: World, index: Int, key: ByteArray) -> Bool {
   )
 }
 
+/// Whether a termination of `key` waits in the registry at `index`.
+fn is_terminating(world: World, index: Int, key: ByteArray) -> Bool {
+  list.any(
+    world.pending,
+    fn(each) {
+      and {
+        each.registry == index,
+        key_of_step(each.step) == key,
+        !is_registration(each.step),
+      }
+    },
+  )
+}
+
 /// Whether the request can be folded now: a registration for a key that is
 /// absent, a termination for a key that is active.
 fn is_foldable(registry: Registry, step: Step) -> Bool {
@@ -307,16 +345,32 @@ fn is_foldable(registry: Registry, step: Step) -> Bool {
 }
 
 /// The requests of the registry at `index` that can be folded now, in the
-/// order they were made.
+/// order they were made; of two requests for one key, the earlier.
 fn waiting(world: World, index: Int) -> List<Step> {
   let registry = registry_at(world, index)
-  list.filter_map(
+  list.foldl(
     world.pending,
-    fn(each) {
-      if each.registry == index && is_foldable(registry, each.step) {
-        Some(each.step)
+    [],
+    fn(each, kept) {
+      if each.registry == index && is_foldable(registry, each.step) && !list.any(
+        kept,
+        fn(step) { key_of_step(step) == key_of_step(each.step) },
+      ) {
+        list.concat(kept, [each.step])
       } else {
-        None
+        kept
+      }
+    },
+  )
+}
+
+fn registrations_waiting(world: World, index: Int) -> List<Step> {
+  list.filter(
+    waiting(world, index),
+    fn(step) {
+      when step is {
+        Registering(_) -> True
+        Terminating(_) -> False
       }
     },
   )
@@ -425,7 +479,7 @@ fn held_keys(
     fn(key) {
       and {
         leaf_of(registry, key) == Active,
-        !is_pending(world, index, key),
+        !is_terminating(world, index, key),
         holder_in(tokens, registry, key) != None,
       }
     },
@@ -559,13 +613,16 @@ fn folds(facts: List<Facts>) -> List<Candidate> {
   )
 }
 
-fn attacks(world: World, _facts: List<Facts>) -> List<Candidate> {
-  list.flat_map(
-    list.filter(
-      world.pending,
-      fn(each) { each.registry < list.length(world.registries) },
+fn attacks(world: World, facts: List<Facts>) -> List<Candidate> {
+  list.concat(
+    list.flat_map(
+      list.filter(
+        world.pending,
+        fn(each) { each.registry < list.length(world.registries) },
+      ),
+      fn(each) { attacks_on_request(world, each) },
     ),
-    fn(each) { attacks_on_request(world, each) },
+    list.flat_map(facts, fn(each) { attacks_on_registry(each, facts) }),
   )
 }
 
@@ -583,8 +640,46 @@ fn attacks_on_request(world: World, each: Pending) -> List<Candidate> {
       when leaf_of(registry, key) is {
         Absent -> [candidate(RegisterWithTwoTokens, each.registry, key, 0)]
         Active -> [candidate(RegisterActiveKey, each.registry, key, 0)]
-        Terminal -> []
+        Terminal -> [candidate(RegisterTerminalKey, each.registry, key, 0)]
       }
+  }
+}
+
+fn attacks_on_registry(each: Facts, all: List<Facts>) -> List<Candidate> {
+  let registering = list.any(each.waiting, is_registration)
+  if registering {
+    list.concat(
+      list.flat_map(
+        each.holdable,
+        fn(key) {
+          [
+            candidate(BurnOutsideFold, each.index, key, 0),
+            candidate(BurnBesideRegistration, each.index, key, 0),
+          ]
+        },
+      ),
+      list.flat_map(
+        list.filter(all, fn(other) { other.index != each.index }),
+        fn(other) {
+          list.map(
+            other.terminal,
+            fn(key) {
+              candidate(
+                MintTerminalKeyThroughAnotherRegistry,
+                each.index,
+                key,
+                other.index,
+              )
+            },
+          )
+        },
+      ),
+    )
+  } else {
+    list.map(
+      each.holdable,
+      fn(key) { candidate(BurnOutsideFold, each.index, key, 0) },
+    )
   }
 }
 
@@ -616,7 +711,8 @@ fn rule_groups(world: World, facts: List<Facts>) -> List<List<Candidate>> {
 }
 
 /// The attacks the world allows, grouped by kind; the groups that hold nothing
-/// are left out.
+/// are left out. The two ways to mint a terminal key's token again weigh twice:
+/// they need a key to have ended first, which a run reaches late.
 fn attack_groups(world: World, facts: List<Facts>) -> List<List<Candidate>> {
   let all = attacks(world, facts)
   list.filter(
@@ -697,7 +793,23 @@ pub fn build(world: World, chosen: Candidate) -> Proposal {
       register_with_two_tokens(world, chosen.registry, chosen.key)
     RegisterActiveKey ->
       register_not_absent(RegisterActiveKey, world, chosen.registry, chosen.key)
-    _ -> fail @"this attack is not proposed yet"
+    RegisterTerminalKey ->
+      register_not_absent(
+        RegisterTerminalKey,
+        world,
+        chosen.registry,
+        chosen.key,
+      )
+    BurnOutsideFold -> burn_outside_fold(world, chosen.registry, chosen.key)
+    BurnBesideRegistration ->
+      burn_beside_registration(world, chosen.registry, chosen.key)
+    MintTerminalKeyThroughAnotherRegistry ->
+      mint_through_another_registry(
+        world,
+        chosen.registry,
+        chosen.key,
+        chosen.other,
+      )
   }
 }
 
@@ -887,11 +999,17 @@ fn fold_batch(world: World, index: Int, steps: List<Step>) -> Proposal {
   )
 }
 
-fn step_for(world: World, index: Int, key: ByteArray) -> Step {
+fn step_for(world: World, index: Int, key: ByteArray, registering: Bool) -> Step {
   expect Some(each) =
     list.find(
       world.pending,
-      fn(each) { each.registry == index && key_of_step(each.step) == key },
+      fn(each) {
+        and {
+          each.registry == index,
+          key_of_step(each.step) == key,
+          is_registration(each.step) == registering,
+        }
+      },
     )
   each.step
 }
@@ -920,7 +1038,7 @@ fn token_output(name: AssetName) -> Output {
 /// A termination whose fold does not burn the token: the token goes to an output
 /// of its own instead.
 fn terminate_keeping_token(world: World, index: Int, key: ByteArray) -> Proposal {
-  let steps = [step_for(world, index, key)]
+  let steps = [step_for(world, index, key, False)]
   let base = fold_transaction(world, index, steps)
   let name = token_name(world, index, key)
   fold_proposal(
@@ -943,7 +1061,7 @@ fn register_with_two_tokens(
   index: Int,
   key: ByteArray,
 ) -> Proposal {
-  let steps = [step_for(world, index, key)]
+  let steps = [step_for(world, index, key, True)]
   let base = fold_transaction(world, index, steps)
   let name = token_name(world, index, key)
   expect [change, state, holding, ..rest] = base.outputs
@@ -973,13 +1091,81 @@ fn register_not_absent(
   index: Int,
   key: ByteArray,
 ) -> Proposal {
-  let steps = [step_for(world, index, key)]
+  let steps = [step_for(world, index, key, True)]
   fold_proposal(
     kind,
     world,
     index,
     steps,
     fold_transaction(world, index, steps),
+  )
+}
+
+/// A transaction that burns a token and folds nothing.
+fn burn_outside_fold(world: World, index: Int, key: ByteArray) -> Proposal {
+  let registry = registry_at(world, index)
+  expect Some(holder) = holder_in(state_tokens(world), registry, key)
+  Proposal {
+    kind: BurnOutsideFold,
+    tx: transaction_of(
+      world,
+      [holder],
+      [],
+      with_token(zero, token_name(world, index, key), -1),
+    ),
+    mint_redeemer: Some(Folded),
+    state_spends: [],
+    effect: Unchanged,
+  }
+}
+
+/// A registration fold that also spends the holding of an active key and
+/// burns its token.
+fn burn_beside_registration(
+  world: World,
+  index: Int,
+  key: ByteArray,
+) -> Proposal {
+  let registry = registry_at(world, index)
+  expect Some(holder) = holder_in(state_tokens(world), registry, key)
+  expect [first, ..] = registrations_waiting(world, index)
+  let steps = [first]
+  let base = fold_transaction(world, index, steps)
+  fold_proposal(
+    BurnBesideRegistration,
+    world,
+    index,
+    steps,
+    Transaction {
+      ..base,
+      inputs: list.concat(base.inputs, [holder]),
+      mint: with_token(base.mint, token_name(world, index, key), -1),
+    },
+  )
+}
+
+/// A registration fold of one registry that also mints the token a terminal
+/// key has in another.
+fn mint_through_another_registry(
+  world: World,
+  index: Int,
+  key: ByteArray,
+  other: Int,
+) -> Proposal {
+  expect [first, ..] = registrations_waiting(world, index)
+  let steps = [first]
+  let base = fold_transaction(world, index, steps)
+  let name = token_name(world, other, key)
+  fold_proposal(
+    MintTerminalKeyThroughAnotherRegistry,
+    world,
+    index,
+    steps,
+    Transaction {
+      ..base,
+      mint: with_token(base.mint, name, 1),
+      outputs: list.concat(base.outputs, [token_output(name)]),
+    },
   )
 }
 
@@ -1205,8 +1391,15 @@ pub type Want {
 
 /// The candidate that is what the world is asked for. A fold names the keys of
 /// the requests it folds; any other proposal names its key, or none when the
-/// kind has none.
+/// kind has none. A proposal that follows the rules is built as named, and fails
+/// to build when the world does not allow it; an attack is looked for among the
+/// attacks the world allows, and a world that allows none leaves the run short.
 fn resolve(world: World, want: Want) -> Option<Candidate> {
+  let key =
+    when want.keys is {
+      [first, ..] -> first
+      [] -> #""
+    }
   if want.kind == FoldBatch {
     Some(
       Candidate {
@@ -1214,6 +1407,8 @@ fn resolve(world: World, want: Want) -> Option<Candidate> {
         keys: want.keys,
       },
     )
+  } else if !is_attack(want.kind) {
+    Some(candidate(want.kind, want.registry, key, 0))
   } else {
     list.head(
       list.filter(
@@ -1314,16 +1509,20 @@ fn commits_to_its_leaves(world: World, registry: Registry) -> Bool {
   }
 }
 
-/// The state output of every registry of the last world of a run commits to the
-/// leaves the world holds for it, with the root the trie library computes from
-/// them: the outputs the folds wrote carry the root of the proof builder.
+/// The last world of a run is read as a whole: no key has more than one live
+/// token (a corollary of the supply of each step), and the state output of every
+/// registry commits to the leaves the world holds for it, with the root the trie
+/// library computes from them: the outputs the folds wrote carry the root of the
+/// proof builder.
 pub fn runs_end_committed(outcomes: List<Outcome>) -> Bool {
   when list.last(outcomes) is {
-    Some(last) ->
-      list.all(
-        last.after.registries,
-        fn(registry) { commits_to_its_leaves(last.after, registry) },
-      )
+    Some(last) -> and {
+        has_at_most_one_live_token(last.after),
+        list.all(
+          last.after.registries,
+          fn(registry) { commits_to_its_leaves(last.after, registry) },
+        ),
+      }
     None -> True
   }
 }
@@ -1363,18 +1562,17 @@ pub fn supply_follows_leaves(outcome: Outcome) -> Bool {
 
 /// History statement `one_live_token`: at most one token of a key is live.
 pub fn at_most_one_live_token(outcome: Outcome) -> Bool {
-  let world = outcome.after
+  !outcome.accepted || has_at_most_one_live_token(outcome.after)
+}
+
+fn has_at_most_one_live_token(world: World) -> Bool {
   let tokens = state_tokens(world)
-  if outcome.accepted {
-    list.all(
-      world.registries,
-      fn(registry) {
-        list.all(universe(), fn(key) { supply_in(tokens, registry, key) <= 1 })
-      },
-    )
-  } else {
-    True
-  }
+  list.all(
+    world.registries,
+    fn(registry) {
+      list.all(universe(), fn(key) { supply_in(tokens, registry, key) <= 1 })
+    },
+  )
 }
 
 fn minted_of(tx: Transaction, registry: Registry, key: ByteArray) -> Int {
@@ -1440,7 +1638,7 @@ fn terminates(outcome: Outcome, index: Int, key: ByteArray) -> Bool {
 /// key, whose final leaf is terminal; and every burn of the state policy is the
 /// token of a key of a registry of the world.
 pub fn burns_belong_to_terminating_folds(outcome: Outcome) -> Bool {
-  if outcome.accepted {
+  if outcome.accepted && burned_by(outcome.proposal.tx) > 0 {
     let burned = burns_of(outcome.before, outcome.proposal.tx)
     and {
       list.length(burned) == burned_by(outcome.proposal.tx),
@@ -1525,12 +1723,14 @@ pub fn is_mixed_fold(proposal: Proposal) -> Bool {
 /// The kinds of attack the world allows.
 pub fn allowed_attacks(world: World) -> List<Kind> {
   let facts = facts_of(world, state_tokens(world))
-  list.map(
-    attack_groups(world, facts),
-    fn(group) {
-      expect [first, ..] = group
-      first.kind
-    },
+  list.unique(
+    list.map(
+      attack_groups(world, facts),
+      fn(group) {
+        expect [first, ..] = group
+        first.kind
+      },
+    ),
   )
 }
 
