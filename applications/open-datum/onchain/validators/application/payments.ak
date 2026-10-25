@@ -16,7 +16,9 @@
 //// Several payments owed to one address are covered together: one output
 //// does not satisfy two payments.
 
+use aiken/collection/list
 use cardano/address.{Address}
+use cardano/assets.{lovelace_of}
 use cardano/transaction.{Output}
 
 /// A payment a spent registration requires: `amount` lovelace to `address`.
@@ -26,16 +28,40 @@ pub type Payment {
 }
 
 /// Model `paidTo`: the lovelace the outputs pay to `address`.
-pub fn paid_to(_outputs: List<Output>, _address: Address) -> Int {
-  0
+pub fn paid_to(outputs: List<Output>, address: Address) -> Int {
+  list.foldr(
+    outputs,
+    0,
+    fn(output, total) {
+      if output.address == address {
+        total + lovelace_of(output.value)
+      } else {
+        total
+      }
+    },
+  )
 }
 
 /// Model conjunct `moneyOutputs` of `requestValueSplit`: for every payment,
 /// all the payments owed to its address, together, are within what the
 /// outputs pay to that address.
-pub fn payments_covered(
-  _payments: List<Payment>,
-  _outputs: List<Output>,
-) -> Bool {
-  False
+pub fn payments_covered(payments: List<Payment>, outputs: List<Output>) -> Bool {
+  list.all(
+    payments,
+    fn(payment) {
+      let owed =
+        list.foldr(
+          payments,
+          0,
+          fn(other, total) {
+            if other.address == payment.address {
+              total + other.amount
+            } else {
+              total
+            }
+          },
+        )
+      owed <= paid_to(outputs, payment.address)
+    },
+  )
 }

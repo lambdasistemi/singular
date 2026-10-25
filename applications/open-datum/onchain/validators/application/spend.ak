@@ -30,12 +30,12 @@
 use aiken/collection/list
 use aiken/crypto.{VerificationKeyHash}
 use application/held.{Registration, RegistrationData, TokenId, held_datum}
-use application/payments.{Payment}
-use application/phases.{Processing, classify_phase}
+use application/payments.{Payment, payments_covered}
+use application/phases.{Processing, Reclaim, classify_phase}
 use application/registration.{
   registration_asset, registration_funding, registration_shape,
 }
-use cardano/address.{Script}
+use cardano/address.{Script, VerificationKey}
 use cardano/assets.{PolicyId, Value, lovelace_of, quantity_of}
 use cardano/transaction.{
   InlineDatum, Input, Output, OutputReference, Transaction,
@@ -111,12 +111,18 @@ pub fn registration_delivery(
   }
 }
 
-/// Model `reclaimPhase`, signature part: the refund address signs.
+/// Model `reclaimPhase`, signature part: the refund address signs, when its
+/// payment credential is a verification key that is among the required
+/// signers. A script cannot sign.
 pub fn refund_signature(
-  _registration: RegistrationData,
-  _signatories: List<VerificationKeyHash>,
+  registration: RegistrationData,
+  signatories: List<VerificationKeyHash>,
 ) -> Bool {
-  False
+  let refund = registration.refund_address
+  when refund.payment_credential is {
+    VerificationKey(hash) -> list.has(signatories, hash)
+    Script(_) -> False
+  }
 }
 
 /// The action a redeemer carries, when it carries one.
@@ -156,7 +162,19 @@ pub fn registration_spend(
             holding_index,
           ),
         }
-      OwnerReclaim -> False
+      OwnerReclaim -> and {
+          classify_phase(registration, tx.validity_range) == Reclaim,
+          refund_signature(registration, tx.extra_signatories),
+          payments_covered(
+            [
+              Payment {
+                address: registration.refund_address,
+                amount: lovelace_of(input.value),
+              },
+            ],
+            tx.outputs,
+          ),
+        }
       ExpiredCleanup -> False
     },
   }
