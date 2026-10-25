@@ -31,7 +31,7 @@ use aiken/collection/list
 use aiken/crypto.{VerificationKeyHash}
 use application/held.{Registration, RegistrationData, TokenId, held_datum}
 use application/payments.{Payment, payments_covered}
-use application/phases.{Processing, Reclaim, classify_phase}
+use application/phases.{Cleanup, Processing, Reclaim, classify_phase}
 use application/registration.{
   registration_asset, registration_funding, registration_shape,
 }
@@ -175,7 +175,18 @@ pub fn registration_spend(
             tx.outputs,
           ),
         }
-      ExpiredCleanup -> False
+      ExpiredCleanup -> and {
+          classify_phase(registration, tx.validity_range) == Cleanup,
+          payments_covered(
+            [
+              Payment {
+                address: registration.refund_address,
+                amount: registration.deposit,
+              },
+            ],
+            tx.outputs,
+          ),
+        }
     },
   }
 }
