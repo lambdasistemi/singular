@@ -40,3 +40,7 @@ The registry pin, the naming custody pin, the permanent contract tables and the 
 ## Named limits so far
 
 The stake part of the state address is not constrained, as in the model, which checks the payment credential only.
+
+The open-datum request validator decides the whole transaction's money in every handler, so its cost grows with the cube of
+the number of pending registrations spent in one transaction; about six fit the ledger's limits today. Batch limits are issue
+746's.

@@ -77,11 +77,11 @@
       "pause": 500
     },
     {
-      "text": "[ ] three-phases: fold only before the deadline, refund-address reclaim of everything in the window, cleanup returning the deposit after it.",
+      "text": "[x] three-phases: fold only before the deadline, refund-address reclaim of everything in the window, cleanup returning the deposit after it.",
       "pause": 300
     },
     {
-      "text": "[ ] fold-path-genuine-token: the fold path checks the genuine token reaches the new holding.",
+      "text": "[x] fold-path-genuine-token: the fold path checks the genuine token reaches the new holding.",
       "pause": 300
     }
   ],
@@ -165,6 +165,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "2a4d4e4825bc2fbeedd005779f850ddcdd51d532aad97c4870a72e59bffeb272"
+    "sha256": "f4d32cb13386bff655ce3353dedf099e1645c6e4968ba483ae00de202f0314db"
   }
 }

@@ -28,8 +28,8 @@ the ticket owner accepts its slice.
 
 ## Pull request 2: pending registration
 
-- [ ] three-phases: fold only before the deadline, refund-address reclaim of everything in the window, cleanup returning the deposit after it.
-- [ ] fold-path-genuine-token: the fold path checks the genuine token reaches the new holding.
+- [x] three-phases: fold only before the deadline, refund-address reclaim of everything in the window, cleanup returning the deposit after it.
+- [x] fold-path-genuine-token: the fold path checks the genuine token reaches the new holding.
 
 ## Pull request 3: library create and fold
 
