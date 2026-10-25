@@ -109,7 +109,7 @@
       "pause": 500
     },
     {
-      "text": "[ ] request-builders: configuration create, book, reclaim and cleanup.",
+      "text": "[x] request-builders: configuration create, book, reclaim and cleanup.",
       "pause": 300
     }
   ],
@@ -165,6 +165,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "f4d32cb13386bff655ce3353dedf099e1645c6e4968ba483ae00de202f0314db"
+    "sha256": "5b01ac45338db2095f38ac932b56da4db4e630bac151216b4801acdd06884934"
   }
 }
