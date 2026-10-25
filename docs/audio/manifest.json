@@ -264390,6 +264390,46 @@
     }
    ]
   },
+  "docs-onchain-api-reference/what-this-reference-contains-31": {
+   "audio_sha256": "95a593239740110e7fe1b92c6d038b786ade486c0c5811dab16f2d45eb2680dd",
+   "characters": 35,
+   "cost": 3.4649999999999995e-05,
+   "duration": 2.2,
+   "index": 31,
+   "key": "5e7e9416aff47dabe9d5903505458987db7f82224d6180331d0192116c90f18b",
+   "page": "docs/onchain-api-reference.md",
+   "pause_ms": 300,
+   "section": "what-this-reference-contains",
+   "sent_text": "singular_state_termination_fixtures",
+   "text": "singular_state_termination_fixtures",
+   "words": [
+    {
+     "end": 2.2,
+     "start": 0.2,
+     "text": "singular_state_termination_fixtures"
+    }
+   ]
+  },
+  "docs-onchain-api-reference/what-this-reference-contains-32": {
+   "audio_sha256": "c30739e6b1d3899484b8df6783efc6c419746eeb9ad047b8b15df626f08a000d",
+   "characters": 28,
+   "cost": 2.772e-05,
+   "duration": 1.675,
+   "index": 32,
+   "key": "a1a5829843c1b5b7bf6ece2502fc845be88858affa6056c51150fa9f9e198064",
+   "page": "docs/onchain-api-reference.md",
+   "pause_ms": 300,
+   "section": "what-this-reference-contains",
+   "sent_text": "singular_state_proof_builder",
+   "text": "singular_state_proof_builder",
+   "words": [
+    {
+     "end": 1.675,
+     "start": 0.2,
+     "text": "singular_state_proof_builder"
+    }
+   ]
+  },
   "docs-onchain-validator-owners/evidence-and-limits-00": {
    "audio_sha256": "e66aa9d9b1d115dce51fdf540dcfd802ac9d670b02a94db9c3ec6d515799faff",
    "characters": 20,

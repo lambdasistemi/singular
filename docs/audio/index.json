@@ -7720,6 +7720,20 @@
     "pause_ms": 300,
     "text": "singular_state_fold_fixtures",
     "v": "8771f6a05166"
+   },
+   {
+    "index": 31,
+    "name": "docs-onchain-api-reference/what-this-reference-contains-31",
+    "pause_ms": 300,
+    "text": "singular_state_termination_fixtures",
+    "v": "95a593239740"
+   },
+   {
+    "index": 32,
+    "name": "docs-onchain-api-reference/what-this-reference-contains-32",
+    "pause_ms": 300,
+    "text": "singular_state_proof_builder",
+    "v": "c30739e6b1d3"
    }
   ]
  },

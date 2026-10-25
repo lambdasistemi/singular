@@ -147,6 +147,14 @@
     {
       "text": "singular_state_fold_fixtures",
       "pause": 300
+    },
+    {
+      "text": "singular_state_termination_fixtures",
+      "pause": 300
+    },
+    {
+      "text": "singular_state_proof_builder",
+      "pause": 300
     }
   ],
   "what-it-leaves-out": [
@@ -165,6 +173,6 @@
   ],
   "_source": {
     "file": "onchain-api-reference.md",
-    "sha256": "d9934ce35042d4a6db59d6646889b61f71636c6d33b2bd4613523b83744cf166"
+    "sha256": "25addb6543a4e5840fe97046f06a089d7a08203be6c7519025e2808bb36b00eb"
   }
 }
