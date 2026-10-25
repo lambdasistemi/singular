@@ -32,14 +32,18 @@ Correspondence premise (the epic owner's ruling): the model's datum category of 
 fold. The output carrying the state token is the root; every other output, including the holding a change points at, is
 an application output. No address and no payload shape is excluded.
 
-The absence check (the trie proof shows the key absent) is open: the new line's trie moves to CSMT (aiken-csmt on chain,
-haskell-csmt off chain, keys hashed before insertion), and this plan is revised once when that release is ready.
+The registration fold's absence check (the trie proof shows the key absent) stays on the current trie library (operator,
+2026-10-25); its slice is open in pull request 1.
 
 | Family | Statements this ticket implements and checks |
 | --- | --- |
 | Singular, bound at b1be26a6 | `genesis_inversion`, `recognition_inversion`, `registration_inversion`, `registration_effects`, `registration_separate_holdings`, `batch_inversion`, `publicFold_inversion`, `batch_effects`, `fold_minted_outputs`, `fold_untouched_keys`, `active_role_never_state`, `minted_active_never_state`, `public_fold_constructed`, `public_fold_effects` |
 | Open-datum lifecycle, bound at 2d2a8fc2 | `configurationCreate_inversion`, `configuration_immutable`, `bookRegistration_inversion`, `booking_authority_and_parameters`, `approvalBurn_inversion`, `approval_burn_open`, `burning_grants_nothing`, `registrationFold_inversion`, `folder_protection`, `ownerReclaim_inversion`, `expiredCleanup_inversion`, `registration_lifecycle`, `additive_payments` |
 | Money and equivalence, bound at 2d2a8fc2 | `create_journey`, `registration_booking_journey`, `registration_fold_journey_holding_separated`, `reclaim_journey`, `cleanup_journey`, `journey_allocations`, `accepted_economic_allocations` |
+
+Pull request 2 adds one statement to `OpenDatumApplicationHeld.RefundLifecycle.Statements`, proved: a registry's genesis
+mints its configuration asset exactly once. Its Lean change consumers (the model recipe `just open-datum-application-held-model`
+and its hosted step) are listed in [the gate](gate.md) as row G16.
 
 `termination_inversion`, `termination_effects`, and the termination, update and history statements belong to issue 743. A statement the aligned models rename or restate is
 rebound by name; one they drop, or one whose meaning the code cannot meet, is a question to the epic owner, never a quiet
@@ -69,6 +73,9 @@ The operator's words, from the epic runtime root's ruling records and issue 741'
 - Inline request datum (planning rule): the pending registration's datum is inline, with no size cap beyond the ledger's.
 - Command line split (issue 528): commands build against the library's request and fold, not the open-datum envelope.
 - Placement (answer A-001): the new line goes beside the current one; issue 743 removes the current line.
+- Configuration record (operator, 2026-10-25): exactly one per registry. The open-datum model gains that statement, proved,
+  and the validator refuses a second configuration record and a configuration mint other than one.
+- Trie (operator, 2026-10-25): the new line keeps the current trie library, on cost.
 - Not in this line: the application policy doubling as its address.
 
 ## Commands
@@ -116,10 +123,12 @@ flowchart LR
 | 1 (PR 754) | state-genesis | genesis, state recognition from the supplied seed, state output integrity, the state-name and root-datum encoding; blueprint titles, identity manifest, declared-additions record | validators-follow-the-model |
 | 1 | state-registration-fold | approval recomputed and consumed for exactly the change, trie proof of absence, one token into the committed address and datum with at least the committed deposit, nothing else under the state policy | validators-follow-the-model |
 | 1 | preimage-vectors | the CBOR preimages of the model's state, active and registration-approval roles (`Preimage.state`, `Preimage.active`, `Preimage.registrationApproval`) in Aiken and Haskell, with shared byte vectors | preimage-bytes-pinned |
+| 1 | absence-check | the registration fold's absence check on the current trie library, completing state-registration-fold | validators-follow-the-model |
 | 2 | approvals-and-configuration | the configuration record at creation, the registration approval mint with its committed fields, the open burn | validators-follow-the-model |
 | 2 | pending-registration | the three phases and the fold path's genuine-token check | validators-follow-the-model |
+| 2 | one-configuration-record | the open-datum model statement that a registry has exactly one configuration record, proved, and the validator's refusal of a second record and of a configuration mint other than one | validators-follow-the-model |
 | 3 | library-create-and-fold | genesis and registration fold builders; reference-script publication once per application, reuse for a later registry | devnet-registration-journey, scripts-published-once |
-| 3 | open-datum-builders | configuration create, book, reclaim, cleanup | devnet-registration-journey |
+| 3 | open-datum-builders | configuration create, book, reclaim, cleanup (done first, as they read no trie) | devnet-registration-journey |
 | 3 | commands-and-documentation | the six commands, help snapshots, parser rows, recovery behaviour, the command reference | documentation-and-board, interrupted-commands-keep-identity |
 | 4 | devnet-journey-and-refusals | the hosted journey job, its refusals and the creation measurement; the fold by a second wallet from chain data only | devnet-registration-journey, devnet-refusals, creation-measured, fold-from-public-data |
 | 4 | conformance-old-versus-new | old against new for folded, reclaimed and cleaned-up registrations | conformance-old-versus-new |

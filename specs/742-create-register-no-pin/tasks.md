@@ -16,6 +16,7 @@ the ticket owner accepts its slice.
 ## Pull request 1: state registration fold
 
 - [ ] registration-fold: approval consumed for exactly the change, key absent, one token into the committed address and datum with at least the deposit, nothing else under the state policy; each statement with a check seen to fail.
+- [ ] absence-check: the registration fold's absence check on the current trie library, with its refusal rows.
 
 ## Pull request 1: preimage vectors
 
@@ -30,6 +31,11 @@ the ticket owner accepts its slice.
 
 - [ ] three-phases: fold only before the deadline, refund-address reclaim of everything in the window, cleanup returning the deposit after it.
 - [ ] fold-path-genuine-token: the fold path checks the genuine token reaches the new holding.
+
+## Pull request 2: one configuration record
+
+- [ ] one-configuration-record-model: the statement that a registry's genesis mints its configuration asset exactly once, proved, the other proofs kept.
+- [ ] one-configuration-record-validator: the validator refuses a second configuration record and a configuration mint other than one, a refusal row each.
 
 ## Pull request 3: library create and fold
 

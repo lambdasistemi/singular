@@ -45,6 +45,10 @@
     {
       "text": "[ ] registration-fold: approval consumed for exactly the change, key absent, one token into the committed address and datum with at least the deposit, nothing else under the state policy; each statement with a check seen to fail.",
       "pause": 300
+    },
+    {
+      "text": "[ ] absence-check: the registration fold's absence check on the current trie library, with its refusal rows.",
+      "pause": 300
     }
   ],
   "pull-request-1-preimage-vectors": [
@@ -82,6 +86,20 @@
     },
     {
       "text": "[ ] fold-path-genuine-token: the fold path checks the genuine token reaches the new holding.",
+      "pause": 300
+    }
+  ],
+  "pull-request-2-one-configuration-record": [
+    {
+      "text": "Pull request 2: one configuration record.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] one-configuration-record-model: the statement that a registry's genesis mints its configuration asset exactly once, proved, the other proofs kept.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] one-configuration-record-validator: the validator refuses a second configuration record and a configuration mint other than one, a refusal row each.",
       "pause": 300
     }
   ],
@@ -165,6 +183,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "be6a802fa315d66213851733a35daf6744c10871c7c97872b929f80dcd3dc6fe"
+    "sha256": "ef0babd9d250c29b0871118fc66452acd0dc696651b9be9c98f90c47bf777a46"
   }
 }

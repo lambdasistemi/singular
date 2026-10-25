@@ -28,6 +28,7 @@ the commit owner starts. Every command is an existing hosted command, or one thi
 | G13 | the packages with the new builders and commands build | ci.yml `offchain-component-build`, `open-datum-component-build` | `nix build --quiet .#component-build` in `offchain/`; `cd applications/open-datum/offchain && nix build --quiet .#component-build` | 0 |
 | G14 | the current line's vectors are unmoved; if the new preimage vectors join the generated vectors, they are fresh too | ci.yml `registry-test-vectors`; registry.yml `vectors-fresh` | `nix build --quiet --no-link .#checks.x86_64-linux.cage-test-vectors` in `offchain/`; `nix run --quiet .#vectors-check` | 0 |
 | G15 | the new commands keep transaction identity on cancellation and uncertain submission, without resubmitting | registry.yml `cli-recovery-partition`, with partitions for the new commands (CI change in this ticket) | `nix run --quiet .#cli-recovery-partition -- <partition>` | 0 |
+| G16 | the open-datum model proves the configuration statement and keeps its other proofs | ci.yml `dev-shell-checks` | `nix develop --quiet -c just open-datum-application-held-model` | 0 |
 
 Rows run scoped to what each slice can break. `just ci` runs once on the final candidate of each pull request, then the
 push; hosted checks on the pull request head are the net. Every build or test runs in a named, memory-capped scope:
@@ -38,7 +39,7 @@ push; hosted checks on the pull request head are the net. Every build or test ru
 ```mermaid
 flowchart LR
     P1[Pull request 1] --> R1[G1 G2 G4 G7 G9 G12 G14]
-    P2[Pull request 2] --> R2[G2 G3 G7 G9 G12]
+    P2[Pull request 2] --> R2[G2 G3 G7 G9 G12 G16]
     P3[Pull request 3] --> R3[G4 G5 G6 G7 G9 G13 G15]
     P4[Pull request 4] --> R4[G7 G8 G9 G10 G11]
 ```
