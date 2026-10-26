@@ -166,6 +166,7 @@ import Singular.State.Assemble
 import Singular.State.Fold
     ( Application (..)
     , Registration (..)
+    , Request (..)
     )
 import Singular.State.Lineage
     ( Replayed (..)
@@ -403,7 +404,10 @@ honestFacts env session application pending (stateIn, _, root) = do
         maybe
             (die "the pending registration is not a registration of open datum")
             pure
-            (appDecode application (snd pending))
+            ( case appDecode application (registryOf env) [] (snd pending) of
+                Just (RegistrationRequest decoded) -> Just decoded
+                _ -> Nothing
+            )
     (proofs, newRoot) <-
         withTrie env session stateIn root $ \snapshot ->
             speculateEdges

@@ -243,8 +243,8 @@ folding world registry requests = withSession world $ \session -> do
                 }
         asksController = \case
             AtAddress address -> address == crBooker world
-            AnyOf queries -> any asksController (toList queries)
-            AllOf queries -> any asksController (toList queries)
+            AnyOf queries -> any asksController queries
+            AllOf queries -> any asksController queries
             _ -> False
     application <-
         expectBuilt =<< openDatumApplication public (crRequest world) network

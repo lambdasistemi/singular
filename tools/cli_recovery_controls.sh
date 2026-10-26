@@ -68,8 +68,8 @@ forged_adopted_in() {
     { grep -o 'Adopted block forged in slot [0-9]*' <<<"$window" || true; } | awk '{ print $6 }'
     { grep -F '"ns":"Forge.Loop.AdoptedBlock"' <<<"$window" || true; } | jq -r .data.slot
   )"
-  { grep -o 'Forged block in slot [0-9]*' <<<"$window" || true; } |
-    awk -v adopted="$adopted" '
+  { grep -o 'Forged block in slot [0-9]*' <<<"$window" || true; } \
+    | awk -v adopted="$adopted" '
       BEGIN { n = split(adopted, slots, "\n"); for (i = 1; i <= n; i++) seen[slots[i]] = 1 }
       { forged++; if ($5 in seen) covered++ }
       END { print forged + 0 "/" covered + 0 }'
@@ -604,8 +604,8 @@ insert_of() { args=(insert --fold --key-hex "$1" --payload "$work/insert-payload
 run preview create --process-time 120000 --retract-time 15000 --preview "${common[@]}" "${node[@]}" "${alice[@]}"
 outcome_is preview success || setup_fail "create --preview did not succeed"
 run create create --process-time 120000 --retract-time 15000 --seed "$(field preview .seed)" "${common[@]}" "${node[@]}" "${alice[@]}"
-jq -e '.processTime == 120000 and .retractTime == 15000' "$receipts/create.json" >/dev/null ||
-  setup_fail "the recovery registry did not read back the CI recovery windows"
+jq -e '.processTime == 120000 and .retractTime == 15000' "$receipts/create.json" >/dev/null \
+  || setup_fail "the recovery registry did not read back the CI recovery windows"
 outcome_is create success || setup_fail "create did not succeed"
 token="$(field create .token)"
 # Every later command names the registry by the state token create printed.
@@ -818,8 +818,8 @@ if part lost-answer; then
     insert_of 6b0c
     run insert-c "${args[@]}"
     outcome_is insert-c partial || break
-    if ! journal_same "s1-try-$i" || ! trie_files_absent "s1-try-$i" || ! trie_files_absent "s1-try-$i" ||
-      [ "$(field insert-c .unresolved.tx)" != "$lost" ]; then
+    if ! journal_same "s1-try-$i" || ! trie_files_absent "s1-try-$i" || ! trie_files_absent "s1-try-$i" \
+      || [ "$(field insert-c .unresolved.tx)" != "$lost" ]; then
       refusals_clean=1
     fi
     sleep 2
@@ -953,8 +953,8 @@ if part two-requests; then
     run two-recover-a insert --fold --key-hex 6b22 --payload "$work/insert-payload.json" --payload-schema detailed \
       "${common[@]}" "${node[@]}" "${bob[@]}"
     outcome_is two-recover-a partial || break
-    if ! journal_same "two-a-try-$i" || ! trie_files_absent ||
-      [ "$(field two-recover-a .unresolved.tx)" != "$lost_two" ]; then
+    if ! journal_same "two-a-try-$i" || ! trie_files_absent \
+      || [ "$(field two-recover-a .unresolved.tx)" != "$lost_two" ]; then
       two_refusals_clean=1
     fi
     sleep 2
@@ -1164,14 +1164,14 @@ if [ "$cross_any" -eq 1 ]; then
     # Her update journals exactly its own four phases; nothing of it touches
     # another wallet's fold, which her journal never names.
     cross_update_phases="$(jq -s -r --arg t "$cross_update" '[.[] | select(.journalTxId == $t) | .journalEvent] | sort | join(",")' "$journal")"
-    [ "$cross_update_phases" = "confirmed,observed,prepared,submitted" ] ||
-      {
+    [ "$cross_update_phases" = "confirmed,observed,prepared,submitted" ] \
+      || {
         say "$control: her update journalled [$cross_update_phases], not its four phases"
         refusals_clean=1
       }
     cross_fold_alice="$(jq -s --arg t "$cross_fold" '[.[] | select(.journalTxId == $t)] | length' "$journal")"
-    [ "$cross_fold_alice" = 0 ] ||
-      {
+    [ "$cross_fold_alice" = 0 ] \
+      || {
         say "$control: her journal names the other wallet's fold $cross_fold"
         refusals_clean=1
       }
@@ -1409,8 +1409,8 @@ if part rollback; then
   opened_tip_after() {
     local window
     window="$(tail -n +"$(($1 + 1))" "$nlog")"
-    grep -m1 'ChainDB.OpenEvent.OpenedDB' <<<"$window" |
-      sed -nE 's/.* and tip ([0-9a-f]{64}) at slot ([0-9]+)$/{"hash":"\1","slot":\2}/p'
+    grep -m1 'ChainDB.OpenEvent.OpenedDB' <<<"$window" \
+      | sed -nE 's/.* and tip ([0-9a-f]{64}) at slot ([0-9]+)$/{"hash":"\1","slot":\2}/p'
   }
   # Every block the node put on its chain after line LINE of its log. The
   # only block producer, it adopts every block it forges, and the adoption
@@ -1449,13 +1449,13 @@ if part rollback; then
   }
   # The blocks the node adopted carrying TX: {"hash","slot"} per line.
   carrying() {
-    grep -F '"ns":"Forge.Loop.AdoptedBlock"' "$nlog" |
-      jq -c --arg t "$1" 'select(any(.data.txIds[]; contains($t))) | {hash: .data.blockHash, slot: .data.slot}'
+    grep -F '"ns":"Forge.Loop.AdoptedBlock"' "$nlog" \
+      | jq -c --arg t "$1" 'select(any(.data.txIds[]; contains($t))) | {hash: .data.blockHash, slot: .data.slot}'
   }
   # carried_since LINE TX: blocks adopted after LINE that carry TX.
   carried_since() {
-    tail -n +"$(($1 + 1))" "$nlog" | grep -F '"ns":"Forge.Loop.AdoptedBlock"' |
-      jq -c --arg t "$2" 'select(any(.data.txIds[]; contains($t)))' | wc -l
+    tail -n +"$(($1 + 1))" "$nlog" | grep -F '"ns":"Forge.Loop.AdoptedBlock"' \
+      | jq -c --arg t "$2" 'select(any(.data.txIds[]; contains($t)))' | wc -l
   }
   # The private controller is sequential: quiesce and join the current
   # facade before stopping the exact node, then obtain fresh real settings.
@@ -1577,8 +1577,8 @@ ENDPOINT
   run preview-rb create --process-time 120000 --retract-time 15000 --preview "${common[@]}" "${node[@]}" "${alice[@]}"
   outcome_is preview-rb success || setup_fail "the second create --preview did not succeed"
   run create-rb create --process-time 120000 --retract-time 15000 --seed "$(field preview-rb .seed)" "${common[@]}" "${node[@]}" "${alice[@]}"
-  jq -e '.processTime == 120000 and .retractTime == 15000' "$receipts/create-rb.json" >/dev/null ||
-    setup_fail "the rollback registry did not read back the CI recovery windows"
+  jq -e '.processTime == 120000 and .retractTime == 15000' "$receipts/create-rb.json" >/dev/null \
+    || setup_fail "the rollback registry did not read back the CI recovery windows"
   outcome_is create-rb success || setup_fail "the second create did not succeed"
   state_token="$(field create-rb .stateToken)"
   [[ "$state_token" =~ ^[0-9a-f]{56}\.[0-9a-f]{64}$ ]] || setup_fail "the second create printed no state token"
@@ -1648,8 +1648,8 @@ ENDPOINT
   resume_facade
   restored_tip="$(opened_tip_after "$mark")"
   [ -n "$restored_tip" ] || setup_fail "the restored node reported no tip it opened"
-  post="$(probe_ins "${book_ins_a[@]}" "${fold_ins_a[@]}" "$rb_book#0" "$rb_fold#0")" ||
-    setup_fail "the restored node answers no local state query"
+  post="$(probe_ins "${book_ins_a[@]}" "${fold_ins_a[@]}" "$rb_book#0" "$rb_fold#0")" \
+    || setup_fail "the restored node answers no local state query"
   say "$control: restored at $restored_tip; node reads $(jq -c .tip <<<"$post")"
   clause "the restored node opened its database at the snapshot's tip" \
     jq -n -e --argjson s "$snap_tip" --argjson r "$restored_tip" '$s == $r'
