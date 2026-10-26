@@ -164,24 +164,26 @@ buildBookTermination session script reference payerAddress = runExceptT $ do
             MultiAsset (Map.singleton activePolicy (Map.singleton active 1))
                 <> MultiAsset
                     (Map.singleton (requestPolicy script) (Map.singleton approval 1))
-    ExceptT $ assembleTransaction
-        session
-        [funding, (reference, before)]
-        references
-        payerAddress $ do
-        index <- Tx.payTo (before ^. addrTxOutL) (MaryValue (Coin 0) tokens)
-        _ <-
-            Tx.spendScript
-                reference
-                (AsData (spendRedeemer (TerminationBook (toInteger index))))
-        Tx.mint
-            (requestPolicy script)
-            (Map.singleton approval 1)
-            (AsData (mintRedeemer [BookTermination reference (toInteger index)]))
-        Tx.donateToTreasury (Coin (holdingDeposit held))
-        useScript script
-        Tx.requireSignature (payerKey payer)
-        Tx.collateral (fst funding)
+    ExceptT
+        $ assembleTransaction
+            session
+            [funding, (reference, before)]
+            references
+            payerAddress
+        $ do
+            index <- Tx.payTo (before ^. addrTxOutL) (MaryValue (Coin 0) tokens)
+            _ <-
+                Tx.spendScript
+                    reference
+                    (AsData (spendRedeemer (TerminationBook (toInteger index))))
+            Tx.mint
+                (requestPolicy script)
+                (Map.singleton approval 1)
+                (AsData (mintRedeemer [BookTermination reference (toInteger index)]))
+            Tx.donateToTreasury (Coin (holdingDeposit held))
+            useScript script
+            Tx.requireSignature (payerKey payer)
+            Tx.collateral (fst funding)
 
 -- | A live holding of this application; provider faults retain their identity.
 readHolding

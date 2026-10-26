@@ -28,11 +28,11 @@ import Singular.Application.OpenDatum.RequestConfigurationSpec qualified
 import Singular.Application.OpenDatum.RequestCreationSpec qualified
 import Singular.Application.OpenDatum.RequestFoldSpec qualified
 import Singular.Application.OpenDatum.RequestHoldingSpec qualified
-import Singular.Application.OpenDatum.RequestTerminationFoldSpec qualified
 import Singular.Application.OpenDatum.RequestPendingSpec qualified
 import Singular.Application.OpenDatum.RequestPublicationSpec qualified
 import Singular.Application.OpenDatum.RequestRecordsSpec qualified
 import Singular.Application.OpenDatum.RequestScriptSpec qualified
+import Singular.Application.OpenDatum.RequestTerminationFoldSpec qualified
 import Singular.Application.OpenDatum.SaveStateTokenSpec qualified
 import Singular.Application.OpenDatum.SourcesSpec qualified
 import Singular.Application.OpenDatum.StateTokenSpec qualified
