@@ -65,6 +65,7 @@
           cp -r ${appSrc}/src $out/open-datum/src
           cp -r ${appSrc}/app $out/open-datum/app
           cp -r ${appSrc}/forged-registry $out/open-datum/forged-registry
+          cp -r ${appSrc}/refusals $out/open-datum/refusals
           if [ -d ${appSrc}/test ]; then cp -r ${appSrc}/test $out/open-datum/test; fi
           # The Koios fixtures live once, in the registry tree; stage them
           # beside the application's own fixtures (its command-line corpus
@@ -130,6 +131,7 @@
               open-datum-unstamped = openDatumComponents.exes.open-datum;
               inherit (negativeComponents.exes) singular-negative;
               inherit (openDatumComponents.exes) forged-registry;
+              inherit (openDatumComponents.exes) no-pin-refusals;
             };
             tests = {
               inherit (openDatumComponents.tests) open-datum-tests;
@@ -237,6 +239,8 @@
           inherit (negativeComponents.exes) singular-negative;
           # #730: the test-only harness of the forged-pins journey.
           inherit (openDatumComponents.exes) forged-registry;
+          # #742: the test-only harness of the refusals journey.
+          inherit (openDatumComponents.exes) no-pin-refusals;
           inherit (registryComponents.exes) singular;
           fourmolu = fourmoluTool;
         };

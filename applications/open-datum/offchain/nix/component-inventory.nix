@@ -27,6 +27,9 @@ let
       # #730: the test-only harness of the forged-pins journey; no release
       # archive carries it.
       "forged-registry"
+      # #742: the test-only harness of the refusals journey; no release
+      # archive carries it.
+      "no-pin-refusals"
     ];
     tests = [
       "open-datum-tests"
@@ -61,6 +64,12 @@ let
       class = "built-here";
       kind = "exe";
       name = "forged-registry";
+      detail = "";
+    }
+    {
+      class = "built-here";
+      kind = "exe";
+      name = "no-pin-refusals";
       detail = "";
     }
     {

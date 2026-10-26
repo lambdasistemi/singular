@@ -1783,6 +1783,100 @@
           // (
             let
               pkgs = import nixpkgs { inherit system; };
+              # #742: the registration journey and the refusals of the proved
+              # design. One development network funds four wallets; the
+              # release's packaged `singular` and `open-datum` create
+              # registries, book, fold, reclaim and clean up registrations as
+              # separate processes, each wallet in a directory and a home of its
+              # own; the chain is read afterwards from the network's own record
+              # by a program that takes nothing from any command, and each
+              # assertion is shown failing on altered input. The refusals job
+              # submits folds made wrong in one way through the test harness
+              # no-pin-refusals and reads the node's answer. The release is the
+              # deployment blueprint and the programs this flake packages, not a
+              # build made for the job. The raw development network reads its
+              # genesis from E2E_GENESIS_DIR explicitly, never from the working
+              # directory. The scripts sit in one directory because the journeys
+              # source the rig they share from beside themselves.
+              noPinScripts = pkgs.runCommand "no-pin-scripts" { } ''
+                mkdir -p $out
+                cp ${./tools/no_pin_rig.sh} $out/no_pin_rig.sh
+                cp ${./tools/no_pin_registration_journey.sh} $out/no_pin_registration_journey.sh
+                cp ${./tools/no_pin_registration_refusals.sh} $out/no_pin_registration_refusals.sh
+                cp ${./tools/no_pin_chain_view.py} $out/no_pin_chain_view.py
+              '';
+              noPinRuntime = [
+                pkgs.bash
+                pkgs.coreutils
+                pkgs.diffutils
+                pkgs.findutils
+                pkgs.gawk
+                pkgs.gnugrep
+                pkgs.gnused
+                pkgs.jq
+                # the journeys stop their own node by the pids they recorded
+                pkgs.procps
+                # the chain view program is Python
+                pkgs.python3Minimal
+              ];
+              noPinJourney =
+                {
+                  name,
+                  results,
+                  script,
+                  programs,
+                  extra ? [ ],
+                }:
+                pkgs.writeShellApplication {
+                  inherit name;
+                  runtimeInputs = noPinRuntime;
+                  text = ''
+                    set -euo pipefail
+                    base="''${TMPDIR:-/tmp}"
+                    mkdir -p "$base"
+                    work="''${${results}:-$(mktemp -d "$base/${name}.XXXXXX")/results}"
+                    echo "${name}: receipts in $work"
+                    export E2E_GENESIS_DIR=${./offchain/e2e-test/genesis}
+                    bash ${noPinScripts}/${script} \
+                      ${pkgs.lib.concatStringsSep " " programs} \
+                      ${pkgs.lib.getExe offchain.packages.${system}.devnet} \
+                      ${open-datum-onchain.packages.${system}.open-datum-blueprint} \
+                      ${noPinScripts}/no_pin_chain_view.py \
+                      ${pkgs.lib.concatStringsSep " " extra} \
+                      "$work"
+                  '';
+                };
+              noPinRegistrationJourney = noPinJourney {
+                name = "no-pin-registration-journey";
+                results = "NO_PIN_JOURNEY_RESULTS";
+                script = "no_pin_registration_journey.sh";
+                programs = [
+                  (pkgs.lib.getExe (stampedSingular system))
+                  (pkgs.lib.getExe (stampedOpenDatum system))
+                ];
+              };
+              noPinRegistrationRefusals = noPinJourney {
+                name = "no-pin-registration-refusals";
+                results = "NO_PIN_REFUSALS_RESULTS";
+                script = "no_pin_registration_refusals.sh";
+                programs = [ (pkgs.lib.getExe (stampedOpenDatum system)) ];
+                extra = [ "${open-datum.packages.${system}.no-pin-refusals}/bin/no-pin-refusals" ];
+              };
+            in
+            {
+              no-pin-registration-journey = {
+                type = "app";
+                program = pkgs.lib.getExe noPinRegistrationJourney;
+              };
+              no-pin-registration-refusals = {
+                type = "app";
+                program = pkgs.lib.getExe noPinRegistrationRefusals;
+              };
+            }
+          )
+          // (
+            let
+              pkgs = import nixpkgs { inherit system; };
               # #528 S5.1: the split-blueprint hash comparison. The open-datum
               # validators build in their own Aiken project now, so no single
               # blueprint holds the whole contract: this app rebuilds the

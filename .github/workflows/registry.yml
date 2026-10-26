@@ -1302,3 +1302,79 @@ jobs:
       # above, names changed.
       - name: Run the forged pins journey against a real devnet
         run: nix run --quiet .#forged-pins-check
+  no-pin-registration-journey:
+    name: No-pin registration journey through the packaged commands
+    needs: blueprint
+    runs-on: nixos
+    timeout-minutes: 45
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # #742: one development network funds four wallets. The release's packaged
+      # singular and open-datum create a registry, book three keys, fold one
+      # (by a second wallet that holds nothing of the booker's), take one back
+      # inside its window and clean one up after it (by a wallet that is not
+      # the refund address), then create a second registry and one made by
+      # singular, which publish no script. Every verdict is read from the
+      # network's own record of the chain, never from a command's receipt, and
+      # each assertion is shown failing on altered input. The verdict table and
+      # the creation measurement are uploaded whatever the outcome.
+      - name: Run the registration journey against a development network
+        run: |
+          printf 'NO_PIN_JOURNEY_RESULTS=%s\n' "$RUNNER_TEMP/no-pin-journey-results" >> "$GITHUB_ENV"
+          NO_PIN_JOURNEY_RESULTS="$RUNNER_TEMP/no-pin-journey-results" nix run --quiet .#no-pin-registration-journey
+      - name: Preserve the journey's verdicts, measurement and receipts
+        if: always() && env.NO_PIN_JOURNEY_RESULTS != ''
+        uses: actions/upload-artifact@v7
+        with:
+          name: no-pin-registration-journey
+          path: ${{ env.NO_PIN_JOURNEY_RESULTS }}
+          if-no-files-found: error
+  no-pin-registration-refusals:
+    name: No-pin registration refusals on a development network
+    needs: blueprint
+    runs-on: nixos
+    timeout-minutes: 45
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # #742: one development network, one registry. Each wrong fold is the
+      # honest fold of a booked registration with a single fact changed (no
+      # approval, a token delivered elsewhere or with less than the deposit,
+      # a second registration of an active key, an extra token in the state
+      # output, a parked token presented as the registry state), submitted
+      # to the node, which refuses it by the failure of a validator's own
+      # script. Beside each refusal runs a control: the same fold with that
+      # fact restored, which the node accepts and the chain records. The
+      # verdict table and the receipt are uploaded whatever the outcome.
+      - name: Submit the wrong folds to a development network
+        run: |
+          printf 'NO_PIN_REFUSALS_RESULTS=%s\n' "$RUNNER_TEMP/no-pin-refusals-results" >> "$GITHUB_ENV"
+          NO_PIN_REFUSALS_RESULTS="$RUNNER_TEMP/no-pin-refusals-results" nix run --quiet .#no-pin-registration-refusals
+      - name: Preserve the refusals' verdicts, receipt and answers
+        if: always() && env.NO_PIN_REFUSALS_RESULTS != ''
+        uses: actions/upload-artifact@v7
+        with:
+          name: no-pin-registration-refusals
+          path: ${{ env.NO_PIN_REFUSALS_RESULTS }}
+          if-no-files-found: error

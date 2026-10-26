@@ -137,6 +137,39 @@ executable forged-registry
 
   ghc-options:      -threaded -with-rtsopts=-N
 
+-- #742: a test harness for the refusals journey, never evidence and never a
+-- product command: it builds the fold of a pending registration with one fact
+-- made wrong and submits it, so that the node judges what the packaged commands
+-- decline before they send. It lives with the application whose request
+-- validator it exercises.
+executable no-pin-refusals
+  import:           warnings
+  default-language: GHC2021
+  hs-source-dirs:   refusals
+  main-is:          Main.hs
+  build-depends:
+    , aeson                              >=2.1  && <2.3
+    , base                               >=4.14 && <5
+    , bytestring                         >=0.11 && <0.13
+    , cardano-ledger-api
+    , cardano-ledger-core
+    , cardano-ledger-mary
+    , cardano-tx-tools:tx-build
+    , containers                         >=0.6  && <0.8
+    , contra-tracer
+    , microlens
+    , open-datum
+    , plutus-core
+    , plutus-tx
+    , serialise
+    , singular-registry
+    , singular-registry:koios-http
+    , singular-registry:local-services
+    , singular-registry:registry-cli
+    , text                               >=2.0  && <2.2
+
+  ghc-options:      -threaded -with-rtsopts=-N
+
 test-suite open-datum-tests
   import:           warnings
   type:             exitcode-stdio-1.0

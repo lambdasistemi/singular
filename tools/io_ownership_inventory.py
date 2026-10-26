@@ -137,6 +137,7 @@ CATEGORIES: list[tuple[str, str, tuple[str, ...]]] = [
             "applications/open-datum/offchain/test/",
             "applications/open-datum/offchain/test-tags/",
             "applications/open-datum/offchain/forged-registry/",
+            "applications/open-datum/offchain/refusals/",
             "applications/keri-stub/offchain/test/",
             "applications/keri-stub/offchain/test-tags/",
         ),
