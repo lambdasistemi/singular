@@ -74,6 +74,7 @@ import Cardano.Ledger.Api.Tx.Wits (rdmrsTxWitsL)
 import Cardano.Ledger.BaseTypes (Inject (..), TxIx (..))
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
+import Cardano.Ledger.Conway.TxBody (treasuryDonationTxBodyL)
 import Cardano.Ledger.Credential (Credential (..))
 import Cardano.Ledger.Keys (KeyHash (..))
 import Cardano.Ledger.Mary.Value (AssetName, MaryValue (..), PolicyID)
@@ -365,9 +366,10 @@ soundnessProblems world tx = do
         valueIn =
             mconcat (map (^. valueTxOutL) spent)
                 <> MaryValue (Coin 0) (body ^. mintTxBodyL)
+        Coin donation = body ^. treasuryDonationTxBodyL
         valueOut =
             mconcat (map (^. valueTxOutL) (outputsOf tx))
-                <> MaryValue (Coin fee) mempty
+                <> MaryValue (Coin (fee + donation)) mempty
         Redeemers declared = tx ^. witsTxL . rdmrsTxWitsL
         thin =
             [ i
