@@ -48,7 +48,6 @@ import Cardano.Ledger.Alonzo.TxWits (Redeemers (..), TxDats (..))
 import Cardano.Ledger.Api.Scripts.Data (Data (..))
 import Cardano.Ledger.Api.Tx
     ( addrTxWitsL
-    , bodyTxL
     , mkBasicTx
     , txIdTx
     , witsTxL
