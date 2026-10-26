@@ -93,50 +93,52 @@ spec = describe "Appendix: keeping the published requirements complete" $ do
         filter (isExecutedPlan . rowState) rows `shouldBe` []
 
     it
-        "Publishes update and termination comparisons as uncovered statements with their evidence boundary" $ do
-        rows <- loadCommitted
-        let journeys = filter ((== "holding-journeys") . rowGroup) rows
-            rendered = renderInventory "current-base" [] rows
-        sort (map rowId journeys)
-            `shouldBe` [ "holding-update-outcome"
-                       , "termination-booking-outcome"
-                       , "termination-fold-outcome"
-                       ]
-        forM_ journeys $ \row -> do
-            effectiveState "current-base" [] row `shouldBe` ShownPlanned Uncovered
-            rowRequirement row `shouldSatisfy` T.isInfixOf "previous design"
-            rowSource row `shouldSatisfy` \text ->
-                all
-                    (`T.isInfixOf` text)
-                    [ "OpenDatumApplicationHeld.Money.oldAllocation"
-                    , "OpenDatumApplicationHeld.Money.newAllocation"
-                    ]
-            rowExpected row
-                `shouldSatisfy` T.isInfixOf
-                    "no executable comparison with the application-held model exists yet"
-            rowEvidence row `shouldSatisfy` \evidence -> case evidence of
-                Nothing -> False
-                Just text ->
+        "Publishes update and termination comparisons as uncovered statements with their evidence boundary"
+        $ do
+            rows <- loadCommitted
+            let journeys = filter ((== "holding-journeys") . rowGroup) rows
+                rendered = renderInventory "current-base" [] rows
+            sort (map rowId journeys)
+                `shouldBe` [ "holding-update-outcome"
+                           , "termination-booking-outcome"
+                           , "termination-fold-outcome"
+                           ]
+            forM_ journeys $ \row -> do
+                effectiveState "current-base" [] row `shouldBe` ShownPlanned Uncovered
+                rowRequirement row `shouldSatisfy` T.isInfixOf "previous design"
+                rowSource row `shouldSatisfy` \text ->
                     all
                         (`T.isInfixOf` text)
-                        [ "no-pin-registration-journey"
-                        , "no-pin-termination-refusals"
-                        , "nothing about agreement with the model"
+                        [ "OpenDatumApplicationHeld.Money.oldAllocation"
+                        , "OpenDatumApplicationHeld.Money.newAllocation"
                         ]
-            rendered `shouldSatisfy` T.isInfixOf (rowRequirement row)
+                rowExpected row
+                    `shouldSatisfy` T.isInfixOf
+                        "no executable comparison with the application-held model exists yet"
+                rowEvidence row `shouldSatisfy` \evidence -> case evidence of
+                    Nothing -> False
+                    Just text ->
+                        all
+                            (`T.isInfixOf` text)
+                            [ "no-pin-registration-journey"
+                            , "no-pin-termination-refusals"
+                            , "nothing about agreement with the model"
+                            ]
+                rendered `shouldSatisfy` T.isInfixOf (rowRequirement row)
 
     it
-        "States the treasury timing and the folder's whole request value in the termination comparisons" $ do
-        rows <- loadCommitted
-        let statement name = T.unwords [rowRequirement row | row <- rows, rowId row == name]
-        statement "termination-booking-outcome" `shouldSatisfy` \text ->
-            all
-                (`T.isInfixOf` text)
-                ["deposit", "treasury", "booking", "previous design"]
-        statement "termination-fold-outcome" `shouldSatisfy` \text ->
-            all
-                (`T.isInfixOf` text)
-                ["whole value", "folder", "tip", "treasury", "previous design"]
+        "States the treasury timing and the folder's whole request value in the termination comparisons"
+        $ do
+            rows <- loadCommitted
+            let statement name = T.unwords [rowRequirement row | row <- rows, rowId row == name]
+            statement "termination-booking-outcome" `shouldSatisfy` \text ->
+                all
+                    (`T.isInfixOf` text)
+                    ["deposit", "treasury", "booking", "previous design"]
+            statement "termination-fold-outcome" `shouldSatisfy` \text ->
+                all
+                    (`T.isInfixOf` text)
+                    ["whole value", "folder", "tip", "treasury", "previous design"]
 
     it "Rejects an empty list of requirements" $
         validateInventory [] `shouldSatisfy` isLeft
