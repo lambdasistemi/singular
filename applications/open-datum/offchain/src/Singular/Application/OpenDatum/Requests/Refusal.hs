@@ -45,6 +45,12 @@ data Refusal
       no fold could ever deliver it; the deposit and that minimum.
       -}
       DepositBelowHolding Coin Coin
+    | -- | The holding to spend is not on the chain.
+      HoldingNotFound TxIn
+    | -- | The output is not a live holding of this application.
+      NotALiveHolding TxIn
+    | -- | The payer's payment key is not the holding's controller.
+      PayerIsNotController
     | -- | The output to spend is not on the chain.
       PendingNotFound TxIn
     | -- | The output is not a pending registration of this script.

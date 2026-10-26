@@ -50,6 +50,7 @@ library
     Singular.Application.OpenDatum.Requests.Booking
     Singular.Application.OpenDatum.Requests.Configuration
     Singular.Application.OpenDatum.Requests.Fold
+    Singular.Application.OpenDatum.Requests.Holding
     Singular.Application.OpenDatum.Requests.Pending
     Singular.Application.OpenDatum.Requests.Records
     Singular.Application.OpenDatum.Requests.Refusal

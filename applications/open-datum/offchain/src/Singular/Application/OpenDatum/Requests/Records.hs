@@ -303,6 +303,8 @@ data SpendAction
       OwnerReclaim
     | -- | Anyone returns the deposit after the window.
       ExpiredCleanup
+    | -- | Recreate a live holding at this output index with a new payload.
+      LiveUpdate Integer
     deriving stock (Eq, Show)
 
 -- | The redeemer of one spend action.
@@ -311,6 +313,7 @@ spendRedeemer = \case
     RegistrationFold output -> PLC.Constr 0 [PLC.I output]
     OwnerReclaim -> PLC.Constr 1 []
     ExpiredCleanup -> PLC.Constr 2 []
+    LiveUpdate output -> PLC.Constr 3 [PLC.I output]
 
 -- | Plutus Data handed to the transaction builder as it is.
 newtype AsData = AsData PLC.Data
