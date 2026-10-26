@@ -52,6 +52,9 @@ From the epic runtime root's ruling records and issue 741's decisions page, as t
   line and moves the new commands onto the established names.
 - Fold command (issue 742, commands answer A-001): the fold is shared library command code hosted by `open-datum` as its
   state fold command; this ticket extends it to termination requests.
+- Publication (operator, 2026-10-26): with the termination actions the request script no longer fits beside the state
+  script in one transaction under the ledger maximum; the first registry's create publishes the two scripts in two
+  transactions, then creates the registry; a rerun publishes only what is missing.
 - Staffing (operator, 2026-10-25): as issue 742's team: Claude Opus 5.5 high ticket owner, Claude Sonnet 5.5 xhigh
   commit owner, Muse xhigh auditor. No other seats.
 

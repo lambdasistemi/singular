@@ -28,6 +28,7 @@ import Control.Concurrent
     )
 import Control.Concurrent.Async (async, cancel, race, waitCatch)
 import Control.Monad (forM, forM_, void, when, (>=>))
+import Control.Tracer (Tracer (..), traceWith)
 import Data.Aeson qualified as Aeson
 import Data.Aeson.KeyMap qualified as KeyMap
 import Data.ByteString qualified as BS
@@ -104,6 +105,12 @@ import Singular.CLI.Options (commandPaths)
 import Singular.CLI.Payload (readPayloadFile)
 import Singular.CLI.Receipt (JournalEntry (..), readJournal)
 import Singular.CLI.Session (Env (..), txIdHex)
+import Singular.CLI.Trace
+    ( Event (..)
+    , How (..)
+    , Trace (..)
+    , TxEvent (..)
+    )
 import Singular.Registry.Blueprint (loadBlueprint)
 import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.Deployment (parseOutRef, renderOutRef)
@@ -146,6 +153,7 @@ spec = describe "the registration commands" $ do
     parserRows
     commandExtentRow
     lifecycleRows
+    publicationRecoveryRows
     interruptionRows
 
 -- ---------------------------------------------------------
@@ -556,7 +564,7 @@ lifecycleRows = describe "from a registry to a cleanup" $ do
             (r, token) <- createdRegistry rig
             textAt "command" (runReceipt r) `shouldBe` Just "state create"
             [step | (step, _, _, _) <- submissionsOf (runReceipt r)]
-                `shouldBe` ["publish-scripts", "create"]
+                `shouldBe` ["publish-state-script", "publish-application-script", "create"]
             registry <- registryOf token
             states <- outputsFor rig (HoldingAsset registry)
             case states of
@@ -737,7 +745,7 @@ lifecycleRows = describe "from a registry to a cleanup" $ do
 {- | One command of the two groups, with the state it needs: the key to sign
 with, the line to run, the directory of its journal, and the number of the
 submission to interrupt, counted from the start of its run (the first creation
-of a registry sends two transactions, the others one).
+of a registry sends three transactions, the others one).
 -}
 data Scenario = Scenario
     { scenarioName :: String
@@ -755,16 +763,8 @@ registryJournal rig registry wallet =
 
 scenarios :: [Scenario]
 scenarios =
-    [ Scenario "state create" 2 $ \rig -> do
-        scripts <- scriptsOf rig
-        pure
-            ( rigKey rig
-            , ["state", "create"] <> parameterFlags
-            , registryJournal
-                rig
-                (statePolicy (scState scripts), AssetName mempty)
-                (rigWallet rig)
-            )
+    [ Scenario "state create" 3 creationSetup
+    , Scenario "second script publication" 2 creationSetup
     , Scenario "registration book" 1 $ \rig -> do
         (_, token) <- createdRegistry rig
         registry <- registryOf token
@@ -810,6 +810,68 @@ scenarios =
             , registryJournal rig registry bob
             )
     ]
+
+creationSetup :: Rig -> IO (FilePath, [String], FilePath)
+creationSetup rig = do
+    scripts <- scriptsOf rig
+    pure
+        ( rigKey rig
+        , ["state", "create"] <> parameterFlags
+        , registryJournal
+            rig
+            (statePolicy (scState scripts), AssetName mempty)
+            (rigWallet rig)
+        )
+
+publicationRecoveryRows :: Spec
+publicationRecoveryRows = describe "a half-published application" $
+    it
+        "resumes after the state script is observed, publishing only the missing request script before creating the registry" $
+        withReleaseRig $ \rig -> do
+            (keyPath, line, journalDir) <- creationSetup rig
+            reached <- newEmptyMVar
+            let base = envOf rig
+                env =
+                    base
+                        { envTracer = Tracer $ \event -> do
+                            traceWith (envTracer base) event
+                            case traceEvent event of
+                                How (Tx (TxObserved _ tx _)) -> do
+                                    putMVar reached tx
+                                    threadDelay maxBound
+                                _ -> pure ()
+                        }
+            running <-
+                async (runKeyed rig env keyPath "between publications" line)
+            outcome <- race (takeMVar reached) (waitCatch running)
+            first <- case outcome of
+                Right ended ->
+                    fail
+                        ( "creation stopped before its second publication: "
+                            <> either show (const "with a receipt") ended
+                        )
+                Left tx -> pure tx
+            cancel running
+            _ <- waitCatch running
+            entries <- readJournal journalDir
+            let observed = [journalTxId e | e <- entries, journalEvent e == "observed"]
+            observed `shouldBe` [first]
+            (nextEnv, sent) <- recordingEnv rig
+            r <- runKeyed rig nextEnv keyPath "after stop" line
+            outcomeOf (runReceipt r) `shouldBe` Just "success"
+            [step | (step, _, _, _) <- submissionsOf (runReceipt r)]
+                `shouldBe` ["publish-application-script", "create"]
+            resent <- map txIdHex <$> sent
+            resent
+                `shouldBe` map (\(_, tx, _, _) -> tx) (submissionsOf (runReceipt r))
+            resent `shouldNotContain` [first]
+            later <- readJournal journalDir
+            [ journalTxId e
+              | e <- later
+              , journalEvent e == "prepared"
+              , journalTxId e == first
+              ]
+                `shouldBe` [first]
 
 {- | The environment whose node answers the submission the scenario names
 otherwise, counting from the first one of this environment: it applies the
@@ -863,7 +925,18 @@ interruptionRows = describe "an interrupted command" $
                   ]
                     `shouldBe` [lost]
                 (env2, sent2) <- recordingEnv rig
-                _ <- runKeyed rig env2 keyPath "next" line
+                next <- runKeyed rig env2 keyPath "next" line
+                when (scenarioName scenario == "second script publication") $ do
+                    outcomeOf (runReceipt next) `shouldBe` Just "success"
+                    [step | (step, _, _, _) <- submissionsOf (runReceipt next)]
+                        `shouldBe` ["create"]
+                    length
+                        [ e
+                        | e <- entries
+                        , journalStep e == "publish-state-script"
+                        , journalEvent e == "observed"
+                        ]
+                        `shouldBe` 1
                 later <- readJournal journalDir
                 length
                     [e | e <- later, journalTxId e == lost, journalEvent e == "observed"]

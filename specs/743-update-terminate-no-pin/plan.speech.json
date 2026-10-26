@@ -67,6 +67,10 @@
       "pause": 300
     },
     {
+      "text": "Publication (operator, 2026-10-26): with the termination actions the request script no longer fits beside the state script in one transaction under the ledger maximum; the first registry's create publishes the two scripts in two transactions, then creates the registry; a rerun publishes only what is missing.",
+      "pause": 300
+    },
+    {
       "text": "Staffing (operator, 2026-10-25): as issue 742's team: Claude Opus 5.5 high ticket owner, Claude Sonnet 5.5 xhigh commit owner, Muse xhigh auditor. No other seats.",
       "pause": 300
     }
@@ -117,6 +121,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "1762e6d94a2e209b14750b81c1e171abf70e4505d75c650e10cbb535f90be600"
+    "sha256": "fd102c43547595122221c91a2b71b072008a493c15eca02b3ed0a76e284ca434"
   }
 }

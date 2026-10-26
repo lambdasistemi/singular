@@ -14,6 +14,7 @@ module Singular.State.Publication
     ( References (..)
     , Publication (..)
     , planReferences
+    , planNextReference
     ) where
 
 import Control.Exception (throwIO)
@@ -101,6 +102,16 @@ planReferences session payerAddress requested = runExceptT $ do
     pure (References live publication)
   where
     scripts = nubBy (\a b -> hashScript a == hashScript b) requested
+
+{- | Find every live copy and plan the next publication, in the order requested.
+Call again after that transaction is live, using the new chain view.
+-}
+planNextReference
+    :: Session NoWitness IO
+    -> Addr
+    -> [Script ConwayEra]
+    -> IO (Either Refusal References)
+planNextReference = planReferences
 
 {- | The live output with the lowest reference that carries this script as a
 reference script. The provider's answer to the query is a list of candidates:
