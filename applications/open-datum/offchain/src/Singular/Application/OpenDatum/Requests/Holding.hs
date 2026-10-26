@@ -48,13 +48,16 @@ import Singular.Application.OpenDatum.Requests.Assemble
     )
 import Singular.Application.OpenDatum.Requests.Records
     ( AsData (..)
+    , MintAction (..)
     , SpendAction (..)
+    , mintRedeemer
     , spendRedeemer
     )
 import Singular.Application.OpenDatum.Requests.Refusal (Refusal (..))
 import Singular.Application.OpenDatum.Requests.Script
     ( RequestScript
     , referenceOutputs
+    , requestPolicy
     , requestScriptHash
     , useScript
     )
@@ -70,13 +73,20 @@ import Singular.Registry.TrieState
     , StatePolicyId (..)
     )
 import Singular.State.Lineage (registryAsset)
-import Singular.State.Preimage (activeTokenName)
+import Singular.State.Preimage
+    ( activeTokenName
+    , approvalName
+    , terminationPreimage
+    )
 
 -- | The chain output and the protected control an update must preserve.
 data Holding = Holding
     { holdingOutput :: TxOut ConwayEra
     , holdingControl :: PLC.Data
     , holdingController :: ByteString
+    , holdingRegistry :: RegistryIdentity
+    , holdingKey :: ByteString
+    , holdingDeposit :: Integer
     }
 
 {- | Update a live holding with any payload. The payer's payment key must be
@@ -123,8 +133,9 @@ buildUpdate session script reference payload payerAddress = runExceptT $ do
             Tx.requireSignature (payerKey payer)
             Tx.collateral (fst funding)
 
-{- | A live holding of this application; provider faults retain their identity.
-| Build the controller's termination booking, funded by the payer.
+{- | Book permanent termination. The controller funds a minimum-ADA request
+holding exactly its active token and one new approval, with no datum. The
+protected deposit is donated before script evaluation and balancing.
 -}
 buildBookTermination
     :: Session NoWitness IO
@@ -132,8 +143,47 @@ buildBookTermination
     -> TxIn
     -> Addr
     -> IO (Either Refusal ConwayTx)
-buildBookTermination _ _ _ _ = pure (Left (BuildFailed "termination booking unavailable"))
+buildBookTermination session script reference payerAddress = runExceptT $ do
+    held <- ExceptT (readHolding session script reference)
+    payer <- ExceptT (resolvePayer session payerAddress)
+    let KeyHash key = payerKey payer
+    unless (hashToBytes key == holdingController held) $
+        throwE PayerIsNotController
+    references <- ExceptT (referenceOutputs session script)
+    let registry = holdingRegistry held
+        active = activeTokenName registry (holdingKey held)
+        approval = approvalName (terminationPreimage (holdingKey held) registry)
+        funding = payerFunding payer
+        before = holdingOutput held
+    (activePolicy, _) <-
+        maybe
+            (throwE (NotALiveHolding reference))
+            pure
+            (registryAsset registry)
+    let tokens =
+            MultiAsset (Map.singleton activePolicy (Map.singleton active 1))
+                <> MultiAsset
+                    (Map.singleton (requestPolicy script) (Map.singleton approval 1))
+    ExceptT $ assembleTransaction
+        session
+        [funding, (reference, before)]
+        references
+        payerAddress $ do
+        index <- Tx.payTo (before ^. addrTxOutL) (MaryValue (Coin 0) tokens)
+        _ <-
+            Tx.spendScript
+                reference
+                (AsData (spendRedeemer (TerminationBook (toInteger index))))
+        Tx.mint
+            (requestPolicy script)
+            (Map.singleton approval 1)
+            (AsData (mintRedeemer [BookTermination reference (toInteger index)]))
+        Tx.donateToTreasury (Coin (holdingDeposit held))
+        useScript script
+        Tx.requireSignature (payerKey payer)
+        Tx.collateral (fst funding)
 
+-- | A live holding of this application; provider faults retain their identity.
 readHolding
     :: Session NoWitness IO
     -> RequestScript
@@ -173,4 +223,4 @@ readHolding session script reference =
         unless
             ((Map.lookup statePolicy assets >>= Map.lookup expected) == Just 1)
             Nothing
-        pure (Holding output control controller)
+        pure (Holding output control controller registry key deposit)

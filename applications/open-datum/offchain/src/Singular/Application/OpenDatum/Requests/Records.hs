@@ -74,6 +74,7 @@ import Singular.State.Preimage
     ( activeTokenName
     , approvalName
     , registrationPreimage
+    , seedData
     )
 
 {- | The five request parameters of a registry, fixed when its configuration
@@ -272,6 +273,8 @@ data MintAction
       BookRegistration Integer
     | -- | Burn approvals; grants nothing.
       ApprovalBurn
+    | -- | Book termination from the holding input into this output.
+      BookTermination TxIn Integer
     deriving stock (Eq, Show)
 
 -- | The redeemer of the request validator's mint: its actions, in order.
@@ -294,6 +297,7 @@ mintRedeemer = PLC.List . map action
                     ]
         BookRegistration output -> PLC.Constr 1 [PLC.I output]
         ApprovalBurn -> PLC.Constr 2 []
+        BookTermination reference output -> PLC.Constr 3 [seedData reference, PLC.I output]
 
 -- | The actions of the request validator's spend of a pending registration.
 data SpendAction
@@ -305,6 +309,8 @@ data SpendAction
       ExpiredCleanup
     | -- | Recreate a live holding at this output index with a new payload.
       LiveUpdate Integer
+    | -- | Move the active token into a termination request at this output.
+      TerminationBook Integer
     deriving stock (Eq, Show)
 
 -- | The redeemer of one spend action.
@@ -314,6 +320,7 @@ spendRedeemer = \case
     OwnerReclaim -> PLC.Constr 1 []
     ExpiredCleanup -> PLC.Constr 2 []
     LiveUpdate output -> PLC.Constr 3 [PLC.I output]
+    TerminationBook output -> PLC.Constr 4 [PLC.I output]
 
 -- | Plutus Data handed to the transaction builder as it is.
 newtype AsData = AsData PLC.Data
