@@ -557,6 +557,37 @@ reachMillisecond rig ms = do
 lifecycleRows :: Spec
 lifecycleRows = describe "from a registry to a cleanup" $ do
     it
+        "keeps the explicitly chosen seed for creation through both publications"
+        $ withReleaseRig
+        $ \rig -> do
+            let seed = fundOutput 2
+            (env, sent) <- recordingEnv rig
+            r <-
+                runKeyed
+                    rig
+                    env
+                    (rigKey rig)
+                    "chosen seed"
+                    ( ["state", "create"]
+                        <> parameterFlags
+                        <> ["--seed", T.unpack (renderOutRef seed)]
+                    )
+            transactions <- sent
+            forM_ (take 2 transactions) $ \publication ->
+                toList (publication ^. bodyTxL . inputsTxBodyL)
+                    `shouldNotContain` [seed]
+            outcomeOf (runReceipt r) `shouldBe` Just "success"
+            textAt "seed" (runReceipt r) `shouldBe` Just (renderOutRef seed)
+            case transactions of
+                [statePublication, requestPublication, creation] -> do
+                    toList (statePublication ^. bodyTxL . inputsTxBodyL)
+                        `shouldNotContain` [seed]
+                    toList (requestPublication ^. bodyTxL . inputsTxBodyL)
+                        `shouldNotContain` [seed]
+                    toList (creation ^. bodyTxL . inputsTxBodyL) `shouldContain` [seed]
+                _ -> expectationFailure "creation did not follow both publications"
+
+    it
         "creates a registry: the state, its configuration record with the parameters given, and the scripts published once"
         $ withReleaseRig
         $ \rig -> do
