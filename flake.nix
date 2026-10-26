@@ -730,12 +730,18 @@
             rollback = "rollback trie-capability";
             two-requests = "two-requests trie-capability";
             state-line = "state-line trie-capability";
+            holding-update = "holding-update trie-capability";
+            holding-terminate = "holding-terminate trie-capability";
+            termination-fold = "termination-fold trie-capability";
           };
           cliRecoveryPartitionNames = {
             history = "accepting, lost-answer, killed, never-sent and whole-journal with trie observations";
             rollback = "restored node rollback (rollback trie-capability)";
             two-requests = "interrupted two-request fold with trie observations";
             state-line = "the commands of the proved design, each interrupted three ways, with the current line read beside them";
+            holding-update = "controller holding updates interrupted three ways";
+            holding-terminate = "permanent termination bookings interrupted three ways";
+            termination-fold = "public termination folds by a second wallet interrupted three ways";
           };
           # #451 re-cut: the shared collector derivation, exposed as an
           # app; its buildable package form lives in packages.

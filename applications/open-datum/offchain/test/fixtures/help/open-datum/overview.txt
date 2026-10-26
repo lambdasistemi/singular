@@ -21,10 +21,12 @@ All commands:
   open-datum fold                  Fold the pending requests into the registry
   open-datum inspect               Read a key back, with its payload
   open-datum state create          Create a registry
-  open-datum state fold            Fold the registrations you name
+  open-datum state fold            Fold the registrations and terminations you name
   open-datum registration book     Book the registration of a key
   open-datum registration reclaim  Take back a registration you booked
   open-datum registration cleanup  Clean up an expired registration
+  open-datum holding update        Replace the payload of a live holding
+  open-datum holding terminate     Book permanent termination of a live holding
 
 Help on one command: open-datum COMMAND --help
 Shell completion (bash): source <(open-datum --bash-completion-script "$(which open-datum)")

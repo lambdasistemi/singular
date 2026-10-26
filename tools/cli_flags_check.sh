@@ -95,7 +95,7 @@ overview_commands() {
     t && $1 == prog {
       if (prog == "singular" && $2 == "registry") print $3
       else if (prog == "singular" && ($2 == "wallet" || $2 == "state")) print $2 " " $3
-      else if (prog == "open-datum" && ($2 == "state" || $2 == "registration")) print $2 " " $3
+      else if (prog == "open-datum" && ($2 == "state" || $2 == "registration" || $2 == "holding")) print $2 " " $3
       else print $2
     }
   '
@@ -444,11 +444,11 @@ for page in "${pages[@]}"; do
       }
       {
         if (cmd != "") { acc = acc " " $0; if ($0 !~ /\\[[:space:]]*$/) flush(); next }
-        if (match($0, /(^|[^A-Za-z0-9_-])("?[$][{]?open[-_]datum[}]?"?|[A-Za-z0-9_.~\/-]*open[-_]datum)[ \t]+((state|registration)[ \t]+[a-z][a-z-]*|[a-z][a-z-]*)/)) {
+        if (match($0, /(^|[^A-Za-z0-9_-])("?[$][{]?open[-_]datum[}]?"?|[A-Za-z0-9_.~\/-]*open[-_]datum)[ \t]+((state|registration|holding)[ \t]+[a-z][a-z-]*|[a-z][a-z-]*)/)) {
           m = substr($0, RSTART, RLENGTH)
           n = split(m, w, /[ \t]+/)
           verb = w[n]
-          if (w[n-1] == "state" || w[n-1] == "registration") verb = w[n-1] " " verb
+          if (w[n-1] == "state" || w[n-1] == "registration" || w[n-1] == "holding") verb = w[n-1] " " verb
           vstart = RSTART + RLENGTH - length(verb)
           pre = substr($0, 1, vstart-1)
           tmp = pre

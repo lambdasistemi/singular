@@ -746,6 +746,8 @@ constructorOf = \case
     OpenInspect _ -> "OpenInspect"
     OpenStateCreate _ _ -> "OpenStateCreate"
     OpenStateFold _ -> "OpenStateFold"
+    OpenHoldingUpdate{} -> "OpenHoldingUpdate"
+    OpenHoldingTerminate{} -> "OpenHoldingTerminate"
     OpenRegistrationBook _ -> "OpenRegistrationBook"
     OpenRegistrationReclaim _ -> "OpenRegistrationReclaim"
     OpenRegistrationCleanup _ -> "OpenRegistrationCleanup"

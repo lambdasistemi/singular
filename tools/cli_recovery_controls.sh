@@ -169,7 +169,7 @@ setup_fail() {
   echo "recovery: SETUP: $*" >&2
   exit 3
 }
-known_parts="accepting lost-answer killed two-requests cross-wallet never-sent whole-journal rollback state-line trie-capability"
+known_parts="accepting lost-answer killed two-requests cross-wallet never-sent whole-journal rollback state-line holding-update holding-terminate termination-fold trie-capability"
 for requested in ${CLI_RECOVERY_PARTS:-}; do
   # cross-wallet:<hold>[:lost-answer] tokens are validated against the
   # source census below, before any node starts.
@@ -1766,7 +1766,7 @@ ARCHIVE
 fi
 
 # shellcheck disable=SC2034 # case_line and case_next are read through the namerefs of sl_case
-if part state-line; then
+if part state-line || part holding-update || part holding-terminate || part termination-fold; then
   # ------------------------------------------------------------------
   # the commands of the proved design, each interrupted three ways
   # ------------------------------------------------------------------
@@ -1838,10 +1838,12 @@ if part state-line; then
     sl_run "$name" "${line[@]}"
     clause "$name: the booking succeeds" outcome_is "$name" success
   }
+  if part state-line; then
   for sl_mode in lost-answer killed never-sent; do
     sl_book "sl-cleanup-pending-$sl_mode"
   done
   sl_first_cleanup_ms="$(field sl-cleanup-pending-lost-answer .reclaimEnd)"
+  fi
 
   # sl_case LABEL STEP MODE JOURNAL LINE NEXT: one command interrupted one way,
   # then the next write of the same wallet and directory.
@@ -1925,6 +1927,7 @@ if part state-line; then
     mapfile -t sl_next_line < <(sl_book_line "$key" "$dir" "$@")
   }
 
+  if part state-line; then
   # --- state create, three ways (the creation journal of the application and the wallet) ---
   for sl_mode in lost-answer killed never-sent; do
     sl_dir="$sl_root/create-$sl_mode"
@@ -1976,6 +1979,53 @@ if part state-line; then
     sl_next_of "$sl_dir" "${bob[@]}"
     case_next=("${sl_next_line[@]}")
     sl_case registration-cleanup cleanup "$sl_mode" "$(managed_journal "$sl_dir" "$sl_token" "$bobkey")" case_line case_next
+  done
+
+  fi
+
+  # Each holding command has its own hosted partition. The same recovery
+  # predicates judge included-but-unanswered, killed, and never-sent bodies.
+  for sl_part in holding-update holding-terminate termination-fold; do
+    if part "$sl_part"; then
+      control="$sl_part"
+      for sl_mode in lost-answer killed never-sent; do
+        sl_label="sl-$sl_part-$sl_mode"
+        sl_book "$sl_label-book"
+        sl_pending="$(field "$sl_label-book" .pending)"
+        sl_run "$sl_label-reach" state fold --state-token "$sl_token" --pending "$sl_pending" \
+          --state-dir "$sl_main" "${sl_base[@]}" "${bob[@]}"
+        clause "$sl_part, $sl_mode: a successful registration fold reaches the live holding" outcome_is "$sl_label-reach" success
+        sl_holding="$(submission_tx "$sl_label-reach" fold)#1"
+        clause "$sl_part, $sl_mode: that holding is on the chain" \
+          jq -e --arg o "$sl_holding" '.live | index($o) != null' <(probe_ins "$sl_holding")
+        sl_dir="$sl_root/$sl_part-$sl_mode"
+        case "$sl_part" in
+          holding-update)
+            case_line=(holding update --state-token "$sl_token" --holding "$sl_holding" --payload "$work/payload.json" --payload-schema detailed --state-dir "$sl_dir" "${sl_base[@]}" "${alice[@]}")
+            sl_step=update
+            sl_walletkey="$alicekey"
+            sl_next_of "$sl_dir" "${alice[@]}"
+            ;;
+          holding-terminate)
+            case_line=(holding terminate --state-token "$sl_token" --holding "$sl_holding" --state-dir "$sl_dir" "${sl_base[@]}" "${alice[@]}")
+            sl_step=terminate
+            sl_walletkey="$alicekey"
+            sl_next_of "$sl_dir" "${alice[@]}"
+            ;;
+          termination-fold)
+            sl_run "$sl_label-terminate" holding terminate --state-token "$sl_token" --holding "$sl_holding" --state-dir "$sl_main" "${sl_base[@]}" "${alice[@]}"
+            clause "$sl_part, $sl_mode: termination booking succeeds" outcome_is "$sl_label-terminate" success
+            sl_pending="$(field "$sl_label-terminate" .pending)"
+            case_line=(state fold --state-token "$sl_token" --pending "$sl_pending" --state-dir "$sl_dir" "${sl_base[@]}" "${bob[@]}")
+            sl_step=fold
+            sl_walletkey="$bobkey"
+            sl_next_of "$sl_dir" "${bob[@]}"
+            ;;
+        esac
+        case_next=("${sl_next_line[@]}")
+        sl_case "$sl_part" "$sl_step" "$sl_mode" "$(managed_journal "$sl_dir" "$sl_token" "$sl_walletkey")" case_line case_next
+      done
+    fi
   done
 
   # --- the current line beside the new one ---

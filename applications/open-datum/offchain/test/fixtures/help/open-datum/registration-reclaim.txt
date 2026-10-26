@@ -61,8 +61,8 @@ Available settings:
     state-token: # or null
       <string>
 
-  The pending registration to act on, as the booking printed it; none is
-  chosen for you.
+  The pending request to act on, as the booking printed it; none is chosen for
+  you.
   option: --pending TXID#IX
 
   Base URL of the Koios API used to read the chain and to submit.

@@ -82,6 +82,9 @@ spec = describe "the help pages" $ do
                        , ["registration", "book"]
                        , ["registration", "reclaim"]
                        , ["registration", "cleanup"]
+                       , ["holding"]
+                       , ["holding", "update"]
+                       , ["holding", "terminate"]
                        ]
     it "are a well-formed declaration for the library" $
         lintDeclaration program `shouldBe` True

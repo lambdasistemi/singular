@@ -1006,6 +1006,9 @@ jobs:
         with:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # Holding updates, termination bookings and public termination folds each
+      # have their own partition in the root flake. The discovered matrix runs
+      # every one through the same journal and no-resubmission predicates.
       # The hosted recovery partitions live in one place in the root flake.
       # This step prints them (no node) for the matrix below and judges the
       # census: every scenario part in exactly one partition, every

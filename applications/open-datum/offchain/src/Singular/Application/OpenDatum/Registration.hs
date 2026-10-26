@@ -19,13 +19,18 @@ module Singular.Application.OpenDatum.Registration
     ( openDatumHost
     , runBook
     , runReclaim
+    , runHoldingUpdate
+    , runHoldingTerminate
     , runCleanup
     ) where
 
+import Control.Exception (throwIO)
+import Control.Monad (unless)
 import Data.Aeson (Value, object, toJSON, (.=))
 import Data.ByteString (ByteString)
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
+import Data.ByteString.Short qualified as SBS
 import Data.Foldable (toList)
 import Data.Map.Strict qualified as Map
 import Data.Text (Text)
@@ -33,6 +38,7 @@ import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
 import Data.Text.Encoding.Error (lenientDecode)
 import Lens.Micro ((^.))
+import PlutusCore.Data qualified as PLC
 
 import Cardano.Ledger.Address (Addr)
 import Cardano.Ledger.Api.Tx (bodyTxL)
@@ -42,15 +48,17 @@ import Cardano.Ledger.BaseTypes (Network (Testnet))
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Core (Script, hashScript)
 import Cardano.Ledger.Mary.Value
-    ( AssetName
+    ( AssetName (..)
     , MultiAsset (..)
     , PolicyID (..)
     )
 import Cardano.Ledger.TxIn (TxIn)
 import Cardano.Tx.Ledger (ConwayTx)
 
+import Cardano.Ledger.Conway.TxBody (treasuryDonationTxBodyL)
 import Singular.Application.OpenDatum.Command
     ( BookArgs (..)
+    , HoldingArgs (..)
     , Key (..)
     , PendingArgs (..)
     , RegistryAccess (..)
@@ -65,6 +73,10 @@ import Singular.Application.OpenDatum.Requests.Configuration
     )
 import Singular.Application.OpenDatum.Requests.Fold
     ( openDatumApplication
+    )
+import Singular.Application.OpenDatum.Requests.Holding
+    ( buildBookTermination
+    , buildUpdate
     )
 import Singular.Application.OpenDatum.Requests.Pending
     ( buildCleanup
@@ -87,7 +99,7 @@ import Singular.Application.OpenDatum.Requests.Script
 import Singular.CLI.FlagGroup (anyAddress)
 import Singular.CLI.Live (receipt, txInText)
 import Singular.CLI.Payload (readPayloadFile)
-import Singular.CLI.Promise (Promise (..), paidTo)
+import Singular.CLI.Promise (Promise (..), matchesOutput, paidTo)
 import Singular.CLI.Receipt (OutcomeClass (..))
 import Singular.CLI.Registry (registryFields)
 import Singular.CLI.Session
@@ -107,7 +119,12 @@ import Singular.CLI.Steps
 import Singular.Registry.Blueprint (Blueprint)
 import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger (ConwayEra, TxOut)
-import Singular.Registry.LedgerProvider (OutputQuery (..), Session)
+import Singular.Registry.LedgerProvider
+    ( OutputQuery (..)
+    , ReadFailure (..)
+    , Session
+    )
+import Singular.Registry.PlainJson (PayloadSchema)
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
 import Singular.Registry.StateToken (renderStateToken)
 import Singular.Registry.TrieState
@@ -291,6 +308,87 @@ runPending command step build env a = do
   where
     coinOf :: TxOut ConwayEra -> Integer
     coinOf out = let Coin c = out ^. coinTxOutL in c
+
+-- | Replace only the payload of the chosen live holding.
+runHoldingUpdate
+    :: Env -> HoldingArgs -> FilePath -> PayloadSchema -> IO Value
+runHoldingUpdate env a path schema = do
+    payload <- readPayloadFile schema path
+    runHolding
+        "holding update"
+        "update"
+        "holding"
+        (\view script ref payer -> buildUpdate view script ref payload payer)
+        env
+        a
+
+-- | Book permanent termination and donate the protected deposit.
+runHoldingTerminate :: Env -> HoldingArgs -> IO Value
+runHoldingTerminate =
+    runHolding
+        "holding terminate"
+        "terminate"
+        "pending"
+        buildBookTermination
+
+runHolding
+    :: Text
+    -> Text
+    -> Text
+    -> ( Session NoWitness IO
+         -> RequestScript
+         -> TxIn
+         -> Addr
+         -> IO (Either Refusal ConwayTx)
+       )
+    -> Env
+    -> HoldingArgs
+    -> IO Value
+runHolding command step outputField build env a = do
+    blueprint <- loadReleaseBlueprint (holdingArgsBlueprint a)
+    script <- requestScriptIn blueprint
+    let ws = holdingArgsWrite a
+        token@(PolicyID policy, AssetName name) = accessToken (holdingArgsAccess a)
+        magic = providerMagic (writeProvider ws)
+        reference = holdingArgsHolding a
+    stateWrite env (holdingArgsStateDir a) token command ws $ \wc reconciled -> do
+        let payer = wcCaller wc
+        (confirmed, (expected, donated)) <- sendStep
+            wc
+            step
+            ["wallet outputs", "live holding", "reference scripts"]
+            (matchesOutput . fst)
+            $ \view -> do
+                readOutputs view (AtTxIn reference) >>= \case
+                    Right [(_, out)] -> case inlineDatumOf out of
+                        Just (PLC.Constr 2 [PLC.Constr 0 (registry : _), _]) ->
+                            unless
+                                ( registry
+                                    == PLC.Constr
+                                        0
+                                        [PLC.B (scriptHashBytes policy), PLC.B (SBS.fromShort name)]
+                                )
+                                $ failWith ClientRefusal "the holding belongs to another registry"
+                        _ -> pure ()
+                    Left (MissingOutput _) -> pure ()
+                    Left failure -> throwIO failure
+                    Right _ -> pure ()
+                source <- sourceOf view payer script
+                tx <-
+                    build view (RequestScript script source) reference payer >>= requested
+                case toList (tx ^. bodyTxL . outputsTxBodyL) of
+                    first : _ -> pure (tx, (first, tx ^. bodyTxL . treasuryDonationTxBodyL))
+                    [] -> failWith ClientRefusal "the holding transaction creates no output"
+        (output, _) <-
+            observeOutput wc step confirmed 0 (matchesOutput expected)
+        let Coin donation = donated
+        pure . receipt command Success $
+            registryFields magic token
+                <> [ ("stateToken", toJSON (renderStateToken token))
+                   , (outputField, toJSON (txInText output))
+                   , ("treasuryDonation", toJSON donation)
+                   , ("reconciled", reconciled)
+                   ]
 
 -- ---------------------------------------------------------
 -- shared

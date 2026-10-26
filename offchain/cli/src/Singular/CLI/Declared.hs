@@ -13,6 +13,7 @@ module Singular.CLI.Declared
     ( -- * Shared flags
       stateDir
     , blueprint
+    , holding
     , stateToken
     , registry
     , stateTokenVariable
@@ -99,6 +100,14 @@ blueprint =
             "FILE"
             "The compiled validators (plutus.json) of the release."
         )
+
+-- | The live holding a controller chooses to spend.
+holding :: Flag
+holding =
+    valued
+        "--holding"
+        "TXID#IX"
+        "The live holding to update or terminate, as its transaction printed it; none is chosen for you."
 
 stateToken :: Flag
 stateToken =

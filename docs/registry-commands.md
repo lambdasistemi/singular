@@ -1,4 +1,4 @@
-# Create a registry and register keys on the proved design
+# Create a registry and manage its keys on the proved design
 
 As Carol, you create a registry for an application with one command and read
 its address and its state token from the receipt. As Alice, you book the
@@ -27,10 +27,11 @@ pending. Until its processing deadline only a fold can spend it. After the
 deadline, and until the reclaim window ends, only the refund address can take it
 back. After the window anyone can clean it up.
 
-This page describes six commands: `singular state create`,
+This page describes eight commands: `singular state create`,
 `open-datum state create`, `open-datum state fold`,
 `open-datum registration book`, `open-datum registration reclaim` and
-`open-datum registration cleanup`. Every flag they take is listed with its
+`open-datum registration cleanup`, `open-datum holding update` and
+`open-datum holding terminate`. Every flag they take is listed with its
 description and its default in [the settings table](singular-node.md#the-settings-you-give),
 and each command prints the same information with `--help`.
 
@@ -130,7 +131,7 @@ the tip, the refund address and the three times that matter: when it was booked,
 its processing deadline, and the end of its reclaim window. Whoever folds it, or
 you taking it back, names the pending registration with `--pending`.
 
-## Fold registrations into the registry
+## Fold registrations and terminations into the registry
 
 As Bob, you fold the registrations you name into the registry in one
 transaction, and you need nothing from anyone who booked them.
@@ -160,6 +161,58 @@ the address of the state validator itself included. A token folded into a holdin
 at the state validator's own address stays where only the state validator can
 spend it. That is the choice of whoever booked the registration, and the fold
 does not refuse it.
+
+## Update a live holding
+
+As Alice, you choose the output that holds your active key and replace its
+payload. The control stays the same: its registry, active token, key,
+controller and protected deposit. The holding keeps all its tokens and at
+least the deposit. If the larger datum needs more minimum ADA, your wallet
+supplies it. No registry state is spent by the update.
+
+```sh
+open-datum holding update --blueprint plutus.json \
+    --state-token POLICY.NAME --holding TXID#IX \
+    --koios-url https://preprod.koios.rest/api/v1 --network-magic 1 \
+    --vault alice.vault --payload new.json
+```
+
+The receipt names the new `holding` output. Use that reference for a later
+update or termination. A missing holding, another controller, or another
+named registry is refused before the transaction is signed.
+
+## Book permanent termination, then fold it
+
+As Alice, you choose your live holding and book permanent termination.
+Its protected deposit is donated to the treasury in this transaction.
+The new request has no datum and holds exactly the active token and one
+termination approval; its ADA is the reward available to the folder.
+The active token moves into this request and is not burned at booking.
+There is no reclaim or cancellation window for this booking.
+
+```sh
+open-datum holding terminate --blueprint plutus.json \
+    --state-token POLICY.NAME --holding TXID#IX \
+    --koios-url https://preprod.koios.rest/api/v1 --network-magic 1 \
+    --vault alice.vault
+```
+
+```mermaid
+stateDiagram-v2
+    Live --> Live: controller updates the payload
+    Live --> PendingTermination: controller books and donates deposit
+    PendingTermination --> Terminal: any wallet folds and burns both tokens
+    Terminal --> [*]
+```
+
+The receipt names the `pending` output and the `treasuryDonation` in lovelace.
+As Bob, you fold that pending output with `open-datum state fold`, using
+`--pending TXID#IX` and your own vault. You need the public chain and your wallet;
+Alice's key, local directory and records are unnecessary. The fold burns the
+active token and the approval, creates no replacement holding, and leaves the
+key terminal permanently. You receive the request's whole value; your ordinary
+wallet input pays the transaction fee. A batch may mix terminations with
+registrations of other keys. A termination has no processing deadline.
 
 ## Take a registration back, or clean it up
 

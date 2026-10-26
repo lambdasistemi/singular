@@ -16,6 +16,7 @@ command reconciles the journal.
 -}
 module Singular.CLI.Promise
     ( Promise (..)
+    , matchesOutput
     , paidTo
     , renderPromise
     , parsePromise
@@ -39,7 +40,8 @@ import Cardano.Ledger.Api.Tx.Out
     , valueTxOutL
     )
 import Cardano.Ledger.BaseTypes (StrictMaybe (..))
-import Cardano.Ledger.Core (hashScript)
+import Cardano.Ledger.Binary (serialize')
+import Cardano.Ledger.Core (eraProtVerLow, hashScript)
 import Cardano.Ledger.Hashes (ScriptHash (..))
 import Cardano.Ledger.Mary.Value
     ( AssetName (..)
@@ -61,7 +63,13 @@ data Promise
       HoldsToken PolicyID AssetName
     | -- | ADA alone at the address with this bech32 spelling
       PaidTo Text
+    | -- | The complete public output, encoded at the supported ledger version.
+      MatchesOutput ByteString
     deriving stock (Eq, Show)
+
+-- | Bind recovery to the full output: address, value, datum and reference script.
+matchesOutput :: TxOut ConwayEra -> Promise
+matchesOutput = MatchesOutput . serialize' (eraProtVerLow @ConwayEra)
 
 -- | ADA alone at this address.
 paidTo :: Addr -> Promise
@@ -77,6 +85,7 @@ renderPromise = \case
             <> "."
             <> hexOf (SBS.fromShort name)
     PaidTo address -> "paid:" <> address
+    MatchesOutput bytes -> "output:" <> hexOf bytes
 
 {- | The promise a journalled line is: the part before its colon, and the rest
 with its colon, as the reconciliation reads a line.
@@ -94,6 +103,9 @@ parsePromise tag colonRest = case tag of
                 (AssetName (SBS.toShort name))
             )
     "paid" -> Just (PaidTo body)
+    "output" -> case B16.decode (BC.pack (T.unpack body)) of
+        Right bytes | not (BC.null bytes) -> Just (MatchesOutput bytes)
+        _ -> Nothing
     _ -> Nothing
   where
     body = T.drop 1 colonRest
@@ -110,6 +122,7 @@ promiseKept promise out = case promise of
     HoldsToken policy name ->
         let MaryValue _ (MultiAsset assets) = out ^. valueTxOutL
         in  assets == Map.singleton policy (Map.singleton name 1)
+    MatchesOutput bytes -> matchesOutput out == MatchesOutput bytes
     PaidTo address ->
         T.pack (bech32Address (out ^. addrTxOutL)) == address
             && adaOnlyOut out
@@ -119,6 +132,8 @@ describePromise :: Promise -> Text
 describePromise = \case
     CarriesScript _ -> "the first output is live carrying its reference script"
     HoldsToken{} -> "the first output is live holding the token alone"
+    MatchesOutput _ ->
+        "the first output matches the complete output prepared by the command"
     PaidTo _ ->
         "the first output is live, ada only, at the address it was paid to"
 

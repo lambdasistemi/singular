@@ -40,6 +40,7 @@ import System.Exit (ExitCode (..))
 
 import Singular.Application.OpenDatum.Command
     ( BookArgs (..)
+    , HoldingArgs (..)
     , OpenDatumCommand (..)
     , PendingArgs (..)
     , StateCreateArgs (..)
@@ -54,6 +55,8 @@ import Singular.Application.OpenDatum.Registration
     ( openDatumHost
     , runBook
     , runCleanup
+    , runHoldingTerminate
+    , runHoldingUpdate
     , runReclaim
     )
 import Singular.Application.OpenDatum.Requests.Records
@@ -229,6 +232,20 @@ runOpenDatum env = \case
             ( openWriteSigner (stateFoldWrite a)
                 >>= \ws ->
                     runStateFold env (openDatumHost noParameters) a{stateFoldWrite = ws}
+            )
+    OpenHoldingUpdate a path schema ->
+        finish
+            (envTracer env)
+            "holding update"
+            (holdingArgsReceipt a)
+            ( openWriteSigner (holdingArgsWrite a) >>= \ws -> runHoldingUpdate env a{holdingArgsWrite = ws} path schema
+            )
+    OpenHoldingTerminate a ->
+        finish
+            (envTracer env)
+            "holding terminate"
+            (holdingArgsReceipt a)
+            ( openWriteSigner (holdingArgsWrite a) >>= \ws -> runHoldingTerminate env a{holdingArgsWrite = ws}
             )
     OpenRegistrationBook a ->
         finish

@@ -41,7 +41,7 @@ import Data.List (isInfixOf, nub)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe, mapMaybe)
 import Data.Text qualified as T
-import Lens.Micro ((^.))
+import Lens.Micro ((&), (.~), (^.))
 import PlutusCore.Data qualified as PLC
 import System.Directory
     ( doesDirectoryExist
@@ -115,6 +115,12 @@ import Singular.CLI.Command (singularVersion)
 import Singular.CLI.ManagedState (managedDir, walletPartition)
 import Singular.CLI.Options (commandPaths)
 import Singular.CLI.Payload (readPayloadFile)
+import Singular.CLI.Promise
+    ( matchesOutput
+    , parsePromise
+    , promiseKept
+    , renderPromise
+    )
 import Singular.CLI.Receipt (JournalEntry (..), readJournal)
 import Singular.CLI.Session (Env (..), txIdHex)
 import Singular.CLI.Trace
@@ -848,110 +854,126 @@ holdingFlags token ref = ["--state-token", token, "--holding", T.unpack (renderO
 holdingLifecycleRows :: Spec
 holdingLifecycleRows = describe "the holding commands" $ do
     it
-        "updates a reached holding and preserves its control, token value and deposit" $ withReleaseRig $ \rig -> do
-        (token, ref) <- reachedHolding rig
-        [(_, before)] <- outputsFor rig (AtTxIn ref)
-        writeFile (rigDir rig </> "payload.json") "{\"updated\":42}"
-        result <-
-            run'
-                rig
-                "holding update"
-                ( ["holding", "update"]
-                    <> holdingFlags token ref
-                    <> ["--payload", rigDir rig </> "payload.json"]
+        "updates a reached holding and preserves its control, token value and deposit"
+        $ withReleaseRig
+        $ \rig -> do
+            (token, ref) <- reachedHolding rig
+            [(_, before)] <- outputsFor rig (AtTxIn ref)
+            writeFile (rigDir rig </> "payload.json") "{\"updated\":42}"
+            result <-
+                run'
+                    rig
+                    "holding update"
+                    ( ["holding", "update"]
+                        <> holdingFlags token ref
+                        <> ["--payload", rigDir rig </> "payload.json"]
+                    )
+            runExit result `shouldBe` ExitSuccess
+            textAt "command" (runReceipt result) `shouldBe` Just "holding update"
+            next <-
+                maybe
+                    (fail "no holding in receipt")
+                    (either fail pure . parseOutRef)
+                    (textAt "holding" (runReceipt result))
+            [(_, after)] <- outputsFor rig (AtTxIn next)
+            let MaryValue (Coin kept) afterTokens = after ^. valueTxOutL
+                MaryValue _ beforeTokens = before ^. valueTxOutL
+            let promise = matchesOutput after
+                (tag, body) = T.breakOn ":" (renderPromise promise)
+            parsePromise tag body `shouldBe` Just promise
+            promiseKept promise after `shouldBe` True
+            promiseKept promise before `shouldBe` False
+            promiseKept promise (after & coinTxOutL .~ Coin 0) `shouldBe` False
+            afterTokens `shouldBe` beforeTokens
+            kept `shouldSatisfy` (>= 2_000_000)
+            case (inlineDatumOf before, inlineDatumOf after) of
+                ( Just (PLC.Constr 2 [control, old])
+                    , Just (PLC.Constr 2 [control', new])
+                    ) -> do
+                        control' `shouldBe` control
+                        new `shouldNotBe` old
+                        expected <-
+                            readPayloadFile PlainSchema (rigDir rig </> "payload.json")
+                        new `shouldBe` expected
+                _ -> expectationFailure "the update did not preserve a live datum"
+    it
+        "refuses another registry before preparing or sending the holding transaction"
+        $ withReleaseRig
+        $ \rig -> do
+            (_, ref) <- reachedHolding rig
+            (_, other) <- createdRegistry rig
+            already <- length <$> readIORef (rigSubmitted rig)
+            result <-
+                run'
+                    rig
+                    "wrong registry"
+                    (["holding", "terminate"] <> holdingFlags other ref)
+            outcomeOf (runReceipt result) `shouldBe` Just "client-refusal"
+            length <$> readIORef (rigSubmitted rig) `shouldReturn` already
+    it
+        "books termination with its deposit donation, then a second wallet folds with the controller key and state directory absent"
+        $ withReleaseRig
+        $ \rig -> do
+            (token, ref) <- reachedHolding rig
+            [(_, before)] <- outputsFor rig (AtTxIn ref)
+            deposit <- case inlineDatumOf before of
+                Just (PLC.Constr 2 [PLC.Constr 0 [_, _, _, _, PLC.I amount], _]) -> pure amount
+                _ -> fail "missing deposit"
+            result <-
+                run'
+                    rig
+                    "holding terminate"
+                    (["holding", "terminate"] <> holdingFlags token ref)
+            runExit result `shouldBe` ExitSuccess
+            pending <- pendingOf result
+            transactions <- readIORef (rigSubmitted rig)
+            (last transactions ^. bodyTxL . treasuryDonationTxBodyL)
+                `shouldBe` Coin deposit
+            [(_, request)] <- outputsFor rig (AtTxIn pending)
+            inlineDatumOf request `shouldBe` Nothing
+            (keyPath, bob) <- secondWallet rig
+            registry <- registryOf token
+            let controllerDir =
+                    managedDir
+                        (rigDir rig </> "registry")
+                        (fromIntegral magic)
+                        registry
+                        (walletPartition (rigWallet rig))
+            removeFile (rigKey rig)
+            removePathForcibly (rigDir rig </> "registry")
+            doesFileExist (rigKey rig) `shouldReturn` False
+            doesDirectoryExist (rigDir rig </> "registry") `shouldReturn` False
+            doesDirectoryExist controllerDir `shouldReturn` False
+            beforeFolder <-
+                sum . map (\(_, out) -> let Coin amount = out ^. coinTxOutL in amount)
+                    <$> liveAt rig (walletAddr bob)
+            folded <-
+                runWithKey
+                    keyPath
+                    rig
+                    "termination fold"
+                    (["state", "fold"] <> pendingFlags token pending)
+            runExit folded `shouldBe` ExitSuccess
+            isLive rig pending `shouldReturn` False
+            sent <- last <$> readIORef (rigSubmitted rig)
+            let MultiAsset burned = sent ^. bodyTxL . mintTxBodyL
+                active = activeTokenName (identityOf registry) "alpha"
+            scripts <- scriptsOf rig
+            let approval = approvalName (terminationPreimage "alpha" (identityOf registry))
+            (Map.lookup (fst registry) burned >>= Map.lookup active)
+                `shouldBe` Just (-1)
+            ( Map.lookup (requestPolicy (scRequest scripts)) burned
+                    >>= Map.lookup approval
                 )
-        runExit result `shouldBe` ExitSuccess
-        textAt "command" (runReceipt result) `shouldBe` Just "holding update"
-        next <-
-            maybe
-                (fail "no holding in receipt")
-                (either fail pure . parseOutRef)
-                (textAt "holding" (runReceipt result))
-        [(_, after)] <- outputsFor rig (AtTxIn next)
-        after ^. valueTxOutL `shouldBe` before ^. valueTxOutL
-        case (inlineDatumOf before, inlineDatumOf after) of
-            ( Just (PLC.Constr 2 [control, old])
-                , Just (PLC.Constr 2 [control', new])
-                ) -> do
-                control' `shouldBe` control
-                new `shouldNotBe` old
-                expected <-
-                    readPayloadFile PlainSchema (rigDir rig </> "payload.json")
-                new `shouldBe` expected
-            _ -> expectationFailure "the update did not preserve a live datum"
-    it
-        "refuses another registry before preparing or sending the holding transaction" $ withReleaseRig $ \rig -> do
-        (_, ref) <- reachedHolding rig
-        (_, other) <- createdRegistry rig
-        already <- length <$> readIORef (rigSubmitted rig)
-        result <-
-            run'
-                rig
-                "wrong registry"
-                (["holding", "terminate"] <> holdingFlags other ref)
-        outcomeOf (runReceipt result) `shouldBe` Just "client-refusal"
-        length <$> readIORef (rigSubmitted rig) `shouldReturn` already
-    it
-        "books termination with its deposit donation, then a second wallet folds with the controller key and state directory absent" $ withReleaseRig $ \rig -> do
-        (token, ref) <- reachedHolding rig
-        [(_, before)] <- outputsFor rig (AtTxIn ref)
-        deposit <- case inlineDatumOf before of
-            Just (PLC.Constr 2 [PLC.Constr 0 [_, _, _, _, PLC.I amount], _]) -> pure amount
-            _ -> fail "missing deposit"
-        result <-
-            run'
-                rig
-                "holding terminate"
-                (["holding", "terminate"] <> holdingFlags token ref)
-        runExit result `shouldBe` ExitSuccess
-        pending <- pendingOf result
-        transactions <- readIORef (rigSubmitted rig)
-        (last transactions ^. bodyTxL . treasuryDonationTxBodyL)
-            `shouldBe` Coin deposit
-        [(_, request)] <- outputsFor rig (AtTxIn pending)
-        inlineDatumOf request `shouldBe` Nothing
-        (keyPath, bob) <- secondWallet rig
-        registry <- registryOf token
-        let controllerDir =
-                managedDir
-                    (rigDir rig </> "registry")
-                    (fromIntegral magic)
-                    registry
-                    (walletPartition (rigWallet rig))
-        removeFile (rigKey rig)
-        removePathForcibly controllerDir
-        doesFileExist (rigKey rig) `shouldReturn` False
-        doesDirectoryExist controllerDir `shouldReturn` False
-        beforeFolder <-
-            sum . map (\(_, out) -> let Coin amount = out ^. coinTxOutL in amount)
-                <$> liveAt rig (walletAddr bob)
-        folded <-
-            runWithKey
-                keyPath
-                rig
-                "termination fold"
-                (["state", "fold"] <> pendingFlags token pending)
-        runExit folded `shouldBe` ExitSuccess
-        isLive rig pending `shouldReturn` False
-        sent <- last <$> readIORef (rigSubmitted rig)
-        let MultiAsset burned = sent ^. bodyTxL . mintTxBodyL
-            active = activeTokenName (identityOf registry) "alpha"
-        scripts <- scriptsOf rig
-        let approval = approvalName (terminationPreimage "alpha" (identityOf registry))
-        (Map.lookup (fst registry) burned >>= Map.lookup active)
-            `shouldBe` Just (-1)
-        ( Map.lookup (requestPolicy (scRequest scripts)) burned
-                >>= Map.lookup approval
-            )
-            `shouldBe` Just (-1)
-        afterFolder <-
-            sum . map (\(_, out) -> let Coin amount = out ^. coinTxOutL in amount)
-                <$> liveAt rig (walletAddr bob)
-        let Coin reward = request ^. coinTxOutL
-            Coin fee = sent ^. bodyTxL . feeTxBodyL
-        afterFolder - beforeFolder `shouldBe` reward - fee
-        doesFileExist (rigKey rig) `shouldReturn` False
-        doesDirectoryExist controllerDir `shouldReturn` False
+                `shouldBe` Just (-1)
+            afterFolder <-
+                sum . map (\(_, out) -> let Coin amount = out ^. coinTxOutL in amount)
+                    <$> liveAt rig (walletAddr bob)
+            let Coin reward = request ^. coinTxOutL
+                Coin fee = sent ^. bodyTxL . feeTxBodyL
+            afterFolder - beforeFolder `shouldBe` reward - fee
+            doesFileExist (rigKey rig) `shouldReturn` False
+            doesDirectoryExist controllerDir `shouldReturn` False
 
 -- ---------------------------------------------------------
 -- Interrupted commands

@@ -44,6 +44,7 @@ openDatumProgram version =
             , inspectLeaf
             , stateGroup
             , registrationGroup
+            , holdingGroup
             ]
         , programFooter =
             [ ""
@@ -80,6 +81,56 @@ registrationGroup =
           \anyone cleans it up, the deposit returning to the refund address."
         ]
         [bookLeaf, reclaimLeaf, cleanupLeaf]
+
+-- | The controller's actions on a live holding.
+holdingGroup :: Node
+holdingGroup =
+    Group
+        "holding"
+        "Update a live payload or book permanent termination"
+        [ "The controller chooses one live holding by its output reference. An update replaces only its payload. Termination donates its protected deposit immediately and leaves a request for any wallet to fold; the termination cannot be reclaimed."
+        ]
+        [holdingLeaf False, holdingLeaf True]
+
+holdingLeaf :: Bool -> Node
+holdingLeaf terminating =
+    Runs
+        Leaf
+            { leafName = if terminating then "terminate" else "update"
+            , leafSummary =
+                if terminating
+                    then "Book permanent termination of a live holding"
+                    else "Replace the payload of a live holding"
+            , leafDescription =
+                [ if terminating
+                    then
+                        "Spends the chosen holding, donates exactly its protected deposit to the treasury, and creates a datumless request holding the active token and one termination approval. The active token remains until state fold burns both tokens. The folder receives the whole request value; its wallet may be different from the controller's. This booking is permanent and has no reclaim window."
+                    else
+                        "Spends the chosen holding and recreates it at the same address with the new payload, the same protected control and the complete token value, keeping at least its protected deposit. No registry state is spent. Only the controller can sign this update."
+                , "The named registry must be the registry in the holding's protected control. The signing wallet must control the holding; a missing holding or another controller is refused before signing."
+                , "An interrupted send keeps its transaction identity in the journal. The next write checks that transaction on the chain and refuses while it remains unresolved. No command resubmits it automatically."
+                , signerParagraph
+                ]
+            , leafShape =
+                Each
+                    ( [Takes stateDir, Needs blueprint, registryShape, Needs holding]
+                        <> (if terminating then [] else [Needs payload, Takes payloadSchema])
+                        <> [registryNodeShape, writeShape, tracingShape]
+                    )
+            , leafWord = Nothing
+            , leafEnvironment =
+                [environmentLog, environmentState, environmentPassphrase]
+            , leafExamples =
+                [ "open-datum holding "
+                    <> (if terminating then "terminate" else "update")
+                    <> " --blueprint plutus.json \\"
+                , "    --state-token POLICY.NAME --holding TXID#IX \\"
+                , "    " <> preprodExample <> " \\"
+                , "    --vault alice.vault"
+                    <> (if terminating then "" else " --payload new.json")
+                ]
+            , leafNotes = exitStatuses
+            }
 
 stateCreateLeaf :: Node
 stateCreateLeaf =
@@ -132,15 +183,9 @@ stateFoldLeaf =
         Leaf
             { leafName = "fold"
             , leafSummary =
-                "Fold the registrations you name"
+                "Fold the registrations and terminations you name"
             , leafDescription =
-                [ "Folds the named pending registrations into the registry in one \
-                  \transaction: each registration's approval is consumed and the key's \
-                  \token is minted into the holding the registration committed to; a \
-                  \key the registry already holds is refused. The transaction is built \
-                  \from the chain alone and signed by the wallet that runs the command, \
-                  \which keeps what each request holds above its deposit. Nothing is \
-                  \chosen for you: name each registration with --pending."
+                [ "Folds the named pending registrations and terminations into the registry in one transaction. A registration burns its approval and creates its committed holding with the new active token and deposit. A termination burns its approval and active token, creates no holding, and pays its whole request value to the folder. Mixed batches use distinct keys. The transaction is built from public chain data and signed by the wallet running the command; no controller file, key or local record is needed. Name each request with --pending."
                 , signerParagraph
                 ]
             , leafShape =
@@ -567,7 +612,7 @@ pending =
     valued
         "--pending"
         "TXID#IX"
-        "The pending registration to act on, as the booking printed it; none is chosen for you."
+        "The pending request to act on, as the booking printed it; none is chosen for you."
 
 reclaimTime :: Flag
 reclaimTime =

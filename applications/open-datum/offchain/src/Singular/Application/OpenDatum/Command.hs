@@ -37,6 +37,7 @@ module Singular.Application.OpenDatum.Command
     , StateFoldArgs (..)
     , BookArgs (..)
     , PendingArgs (..)
+    , HoldingArgs (..)
     , ProviderSettings (..)
     , Signer (..)
     , WriteSettings (..)
@@ -176,6 +177,8 @@ data OpenDatumCommand
     | OpenRegistrationBook BookArgs
     | OpenRegistrationReclaim PendingArgs
     | OpenRegistrationCleanup PendingArgs
+    | OpenHoldingUpdate HoldingArgs FilePath PayloadSchema
+    | OpenHoldingTerminate HoldingArgs
     deriving stock (Eq, Show, Generic)
 
 {- | @registration book@: a registration of a key, with its payload and deposit,
@@ -209,6 +212,17 @@ data PendingArgs = PendingArgs
     , pendingArgsWrite :: WriteSettings
     , pendingArgsPending :: TxIn
     , pendingArgsReceipt :: Maybe FilePath
+    }
+    deriving stock (Eq, Show)
+
+-- | A live holding controlled by the signing wallet, in the named registry.
+data HoldingArgs = HoldingArgs
+    { holdingArgsStateDir :: Maybe FilePath
+    , holdingArgsAccess :: RegistryAccess
+    , holdingArgsBlueprint :: FilePath
+    , holdingArgsWrite :: WriteSettings
+    , holdingArgsHolding :: TxIn
+    , holdingArgsReceipt :: Maybe FilePath
     }
     deriving stock (Eq, Show)
 
@@ -373,6 +387,22 @@ commandFrom environment (Raw ws allFlags) = do
                                 ["state", "fold"] ->
                                     refuseOutside "state fold" stateFoldAllowed flags
                                         >> (OpenStateFold <$> (registryFlags flags >>= stateFoldArgs environment))
+                                ["holding"] -> Right askedFor
+                                ["holding", "update"] ->
+                                    refuseOutside
+                                        "holding update"
+                                        (holdingAllowed <> ["--payload", "--payload-schema"])
+                                        flags
+                                        >> ( OpenHoldingUpdate
+                                                <$> (registryFlags flags >>= holdingArgs environment)
+                                                <*> required "--payload" flags
+                                                <*> payloadSchemaFrom BadValue flags
+                                           )
+                                ["holding", "terminate"] ->
+                                    refuseOutside "holding terminate" holdingAllowed flags
+                                        >> ( OpenHoldingTerminate
+                                                <$> (registryFlags flags >>= holdingArgs environment)
+                                           )
                                 ["registration"] -> Right askedFor
                                 ["registration", "book"] ->
                                     refuseOutside "registration book" bookAllowed flags
@@ -533,6 +563,10 @@ commandFrom environment (Raw ws allFlags) = do
         ]
             <> registryNaming
             <> stateWriteFlags
+    holdingAllowed =
+        ["--state-dir", "--blueprint", "--holding", "--receipt"]
+            <> registryNaming
+            <> stateWriteFlags
     pendingAllowed = stateFoldAllowed
     refuseOutside command allowed flags =
         forM_ flags $ \(flag, _) ->
@@ -619,6 +653,23 @@ commandFrom environment (Raw ws allFlags) = do
                 , stateFoldWrite = settings
                 , stateFoldPending = pending
                 , stateFoldReceipt = optional "--receipt" flags
+                }
+    holdingArgs env flags = do
+        bp <- required "--blueprint" flags
+        settings <-
+            parseFlagGroup MissingFlag BadValue UnsafeSettings WriteSettings flags
+        ref <-
+            required "--holding" flags
+                >>= first (BadValue "--holding") . parseOutRef . T.pack
+        access <- registryAccess env flags
+        pure
+            HoldingArgs
+                { holdingArgsStateDir = optional "--state-dir" flags
+                , holdingArgsAccess = access
+                , holdingArgsBlueprint = bp
+                , holdingArgsWrite = settings
+                , holdingArgsHolding = ref
+                , holdingArgsReceipt = optional "--receipt" flags
                 }
     pendingArgs env flags = do
         let dir = optional "--state-dir" flags
@@ -1026,7 +1077,8 @@ invocationFlags = commonFlagGroup <> extraValuedFlags <> traceFlags
 -- | The valued flags this binary owns beyond the common group: the registration commands'.
 extraValuedFlags :: [String]
 extraValuedFlags =
-    [ "--pending"
+    [ "--holding"
+    , "--pending"
     , "--reclaim-time"
     , "--booking-width"
     , "--registration-cost"
@@ -1129,6 +1181,8 @@ neededRoles = \case
     OpenInspect _ -> Set.empty
     OpenStateCreate{} -> Set.empty
     OpenStateFold _ -> Set.empty
+    OpenHoldingUpdate{} -> Set.empty
+    OpenHoldingTerminate{} -> Set.empty
     OpenRegistrationBook _ -> Set.empty
     OpenRegistrationReclaim _ -> Set.empty
     OpenRegistrationCleanup _ -> Set.empty

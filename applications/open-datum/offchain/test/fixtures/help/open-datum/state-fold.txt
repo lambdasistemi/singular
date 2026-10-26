@@ -8,14 +8,16 @@ Usage: open-datum state fold [--config FILE] [--state-dir DIR] --blueprint
        [--confirm-timeout SECONDS] [--receipt FILE] [--trace LEVEL]
        [--trace-to SINK] [--trace-format FORMAT]
 
-Fold the registrations you name
+Fold the registrations and terminations you name
 
-Folds the named pending registrations into the registry in one transaction:
-each registration's approval is consumed and the key's token is minted into
-the holding the registration committed to; a key the registry already holds is
-refused. The transaction is built from the chain alone and signed by the
-wallet that runs the command, which keeps what each request holds above its
-deposit. Nothing is chosen for you: name each registration with --pending.
+Folds the named pending registrations and terminations into the registry in
+one transaction. A registration burns its approval and creates its committed
+holding with the new active token and deposit. A termination burns its
+approval and active token, creates no holding, and pays its whole request
+value to the folder. Mixed batches use distinct keys. The transaction is built
+from public chain data and signed by the wallet running the command; no
+controller file, key or local record is needed. Name each request with
+--pending.
 
 A write is signed by exactly one signer: --vault (the normal route),
 --wallet-address with --bundle (written for an external signer, ending as
@@ -63,8 +65,8 @@ Available settings:
     state-token: # or null
       <string>
 
-  The pending registration to act on, as the booking printed it; none is
-  chosen for you.
+  The pending request to act on, as the booking printed it; none is chosen for
+  you.
   option: --pending TXID#IX
 
   Base URL of the Koios API used to read the chain and to submit.

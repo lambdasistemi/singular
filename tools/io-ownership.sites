@@ -79,6 +79,7 @@ applications/open-datum/offchain/test/Singular/Application/OpenDatum/RegistrySta
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/RequestCommandSpec.hs answeringAfter modifyIORef' 2
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/RequestCommandSpec.hs answeringAfter newIORef 2
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/RequestCommandSpec.hs answeringAfter readIORef 2
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/RequestCommandSpec.hs holdingLifecycleRows readIORef 4
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/RequestCommandSpec.hs interruptionRows async 1
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/RequestCommandSpec.hs interruptionRows cancel 1
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/RequestCommandSpec.hs interruptionRows modifyIORef' 1

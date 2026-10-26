@@ -16,5 +16,5 @@ Available settings:
   switch: -h|--help
 
 Available commands:
-  create   Create a registry              
-  fold     Fold the registrations you name
+  create   Create a registry                               
+  fold     Fold the registrations and terminations you name
