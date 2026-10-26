@@ -315,13 +315,12 @@ buildRegistrationFold session script application registry requests payerAddress 
                             (BuiltinData (stateDatum newRoot))
                     changed <- forM (zip pendings (walkProofs walked)) $ \(pending, proof) -> do
                         let request = pendingRequest pending
-                            folded holding =
+                            folded =
                                 Folded
                                     (pendingRef pending)
                                     (pendingApproval pending)
                                     registry
                                     (requestKey request)
-                                    holding
                         case request of
                             RegistrationRequest registration -> do
                                 holding <- Tx.output (holdingFor registry registration)
