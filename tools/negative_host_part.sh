@@ -779,11 +779,15 @@ if [ "$part" = stranger-registers-a-taken-key ]; then
   grep -q "singular registry reclaim" "$receipts/singular-help.out" || setup_fail "singular --help does not name registry reclaim"
   "$singular" registry reclaim --help >"$receipts/singular-reclaim-help.out" 2>"$receipts/singular-reclaim-help.err" || setup_fail "singular registry reclaim --help failed"
   grep -q -- "--request" "$receipts/singular-reclaim-help.out" || setup_fail "reclaim --help names no --request"
-  "$open_datum" --help >"$receipts/opendatum-help.out" 2>"$receipts/opendatum-help.err" || setup_fail "open-datum --help failed"
-  if grep -q "reclaim" "$receipts/opendatum-help.out"; then
-    setup_fail "open-datum --help names reclaim (ordinary reclaim lives in singular only)"
+  # The reclaim of this part takes a request and is singular's. The application also has a reclaim,
+  # for a pending registration of the no-pin design; it takes --pending and never --request, so the
+  # harness knows the command it invokes below is not that one.
+  "$open_datum" registration reclaim --help >"$receipts/opendatum-reclaim-help.out" 2>"$receipts/opendatum-reclaim-help.err" || setup_fail "open-datum registration reclaim --help failed"
+  grep -q -- "--pending" "$receipts/opendatum-reclaim-help.out" || setup_fail "open-datum registration reclaim --help names no --pending: not the reclaim of a pending registration"
+  if grep -q -- "--request" "$receipts/opendatum-reclaim-help.out"; then
+    setup_fail "open-datum registration reclaim --help names --request: it cannot be told from singular registry reclaim, which this part invokes"
   fi
-  say "ordinary command: singular registry reclaim --request $reclaim_request (help agrees; open-datum has none)"
+  say "ordinary command: singular registry reclaim --request $reclaim_request (help agrees; open-datum's own reclaim takes --pending)"
   run_ok bob-preview "$open_datum" open-datum create --process-time "$process_time" --retract-time "$retract_time" --preview \
     --state-dir "$work/bob-preview" --blueprint "$blueprint" "${node[@]}" --wallet-skey "$work/bob.skey" \
     || setup_fail "bob preview failed"

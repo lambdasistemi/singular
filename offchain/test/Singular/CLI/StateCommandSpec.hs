@@ -269,9 +269,9 @@ parserRows = describe "the command line" $ do
 -- The rig
 -- ---------------------------------------------------------
 
-{- | The validators of the registry the commands name, as accept-all programs:
-the state validator takes the application policy and then its context, the
-request validator of the application takes its context alone.
+{- | The validator of the registry the commands name, as an accept-all program:
+the state validator takes the application policy and then its context. The
+commands of the registry read no other validator of the blueprint.
 -}
 stateBlueprint :: Aeson.Value
 stateBlueprint =
@@ -282,9 +282,7 @@ stateBlueprint =
                 , "plutusVersion" Aeson..= ("v3" :: Text)
                 ]
         , "validators"
-            Aeson..= [ validator "singular_state.singular_state.spend" 2
-                     , validator "open_datum_requests.open_datum_requests.spend" 1
-                     ]
+            Aeson..= [validator "singular_state.singular_state.spend" 2]
         , "definitions" Aeson..= Aeson.object []
         ]
   where
