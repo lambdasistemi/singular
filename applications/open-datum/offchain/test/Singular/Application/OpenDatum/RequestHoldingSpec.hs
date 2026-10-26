@@ -228,8 +228,9 @@ spec = do
 
     describe "a controller books permanent termination" $ do
         it
-            "mints one approval, keeps exactly both tokens with no datum and donates the protected deposit" $
-            withHolding $ \world registry ref _ -> do
+            "mints one approval, keeps exactly both tokens with no datum and donates the protected deposit"
+            $ withHolding
+            $ \world registry ref _ -> do
                 tx <- expectBuilt =<< terminate world ref
                 judge world tx >>= (`shouldSatisfy` everyScriptAccepts)
                 let approval = approvalName (terminationPreimage key registry)
@@ -249,8 +250,9 @@ spec = do
                 soundnessProblems world tx `shouldReturn` []
 
         it
-            "refuses absent donation, wrong token value, foreign datum and absent signature beside a passing booking" $
-            withHolding $ \world registry ref _ -> do
+            "refuses absent donation, wrong token value, foreign datum and absent signature beside a passing booking"
+            $ withHolding
+            $ \world registry ref _ -> do
                 tx <- expectBuilt =<< terminate world ref
                 judge world tx >>= (`shouldSatisfy` everyScriptAccepts)
                 let index =
@@ -282,11 +284,13 @@ spec = do
             terminate world missing `shouldReturn` Left (HoldingNotFound missing)
 
         it
-            "declines a payer who is not the controller beside a successful booking" $ withHolding $ \world _ ref _ -> do
-            _ <- expectBuilt =<< terminate world ref
-            withSession
-                world
-                ( \session ->
-                    buildBookTermination session (crRequest world) ref (crFolder world)
-                )
-                `shouldReturn` Left PayerIsNotController
+            "declines a payer who is not the controller beside a successful booking"
+            $ withHolding
+            $ \world _ ref _ -> do
+                _ <- expectBuilt =<< terminate world ref
+                withSession
+                    world
+                    ( \session ->
+                        buildBookTermination session (crRequest world) ref (crFolder world)
+                    )
+                    `shouldReturn` Left PayerIsNotController
