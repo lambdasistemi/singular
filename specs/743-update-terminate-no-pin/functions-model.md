@@ -20,8 +20,8 @@ commit owner's. Types refer to [the data model](data-model.md) and to
 | Function | Arguments | Result | Effect |
 | --- | --- | --- | --- |
 | `terminationPreimage` | `key :: ByteString`, `registry :: RegistryIdentity` | `ByteString` | pure; equal to the on-chain encoder on every vector |
-| `buildUpdate` | `session :: Session`, `holding :: TxIn`, `payload :: Datum` | a transaction | signed by the controller; reads the holding through the session |
-| `buildBookTermination` | `session :: Session`, `holding :: TxIn` | a transaction | signed by the controller; donates the deposit to the treasury |
+| `buildUpdate` | `session :: Session NoWitness IO`, `requestScript :: RequestScript`, `holding :: TxIn`, `payload :: PLC.Data`, `payer :: Addr` | `IO (Either Refusal ConwayTx)` | unsigned; the payer funds the transaction, gives collateral and is the required signer; refused before signing when the payer's payment key is not the holding's controller or the holding is missing |
+| `buildBookTermination` | `session :: Session NoWitness IO`, `requestScript :: RequestScript`, `holding :: TxIn`, `payer :: Addr` | `IO (Either Refusal ConwayTx)` | unsigned; as above; mints the approval and donates the deposit to the treasury |
 | the registration fold builder of issue 742 | gains termination requests among the pending requests it folds | a transaction | reads the state, the requests and the trie through the session, from chain data alone |
 
 Where the aligned Lean models or issue 742's builders fix a different argument set, the mandate is versioned before the
