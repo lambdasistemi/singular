@@ -6,6 +6,7 @@ No command receipt supplies an expected outcome or amount. Fees and wallet
 funding are separated from the termination request's value.
 """
 
+import copy
 import json
 import sys
 from pathlib import Path
@@ -111,6 +112,7 @@ def judge(transactions, policy, state_name, key):
         len(fold["signers"]) == 1 and controller not in fold["signers"],
         "the controller signs the termination fold",
     )
+    require(not fold["requiredSigners"], "the termination fold requires a signer")
     require(fold["donation"] == 0, "the fold pays the treasury again")
     require(
         sorted(fold["mint"], key=lambda a: a["policy"])
@@ -174,7 +176,53 @@ def main():
     # A transaction may have been observed under more than one name.
     unique = {tx["id"]: tx for tx in transactions}
     try:
-        print(json.dumps(judge(list(unique.values()), policy, state_name, key)))
+        observed = list(unique.values())
+        result = judge(observed, policy, state_name, key)
+        controls = []
+        # Each control changes an actual observation, rather than inventing a
+        # successful fixture. Check both application and economic boundaries.
+        changes = [
+            ("update signature", "update", "signers", [], "controller did not sign"),
+            ("booking treasury", "booking", "donation", 0, "treasury at booking"),
+            ("fold burn", "fold", "mint", [], "burn exactly"),
+            ("fold treasury", "fold", "donation", 1, "treasury again"),
+            (
+                "fold authorization",
+                "fold",
+                "requiredSigners",
+                [result["folder"]],
+                "requires a signer",
+            ),
+        ]
+        for name, stage, field, value, reason in changes:
+            altered = copy.deepcopy(observed)
+            selected = next(tx for tx in altered if tx["id"] == result[stage])
+            selected[field] = value
+            require(altered != observed, "a control did not alter its observation")
+            try:
+                judge(altered, policy, state_name, key)
+            except ValueError as error:
+                require(reason in str(error), "a control failed for another reason")
+                controls.append(name)
+            else:
+                raise ValueError("altered observation accepted: " + name)
+        altered = copy.deepcopy(observed)
+        folded = next(tx for tx in altered if tx["id"] == result["fold"])
+        payment = next(o for o in folded["outputs"] if o["credential"]["type"] == "key")
+        payment["lovelace"] -= 1
+        require(altered != observed, "the payment control changed nothing")
+        try:
+            judge(altered, policy, state_name, key)
+        except ValueError as error:
+            require(
+                "whole request value" in str(error),
+                "payment control failed for another reason",
+            )
+            controls.append("whole request value")
+        else:
+            raise ValueError("a short folder payment was accepted")
+        result["controlsRejected"] = controls
+        print(json.dumps(result))
     except ValueError as error:
         sys.exit(str(error))
 

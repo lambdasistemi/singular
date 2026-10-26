@@ -150,7 +150,11 @@ import Singular.Registry.TxBuilder.Internal
     , scriptFromBytes
     , scriptHashBytes
     )
-import Singular.Registry.Types (ProofStep, edgeInsertActive)
+import Singular.Registry.Types
+    ( ProofStep
+    , edgeInsertActive
+    , edgeUpdateTerminal
+    )
 import Singular.Registry.Wallet (Wallet (..), loadWallet)
 import Singular.State.Assemble
     ( NoQuery
@@ -173,7 +177,11 @@ import Singular.State.Lineage
     , registryTrieState
     , replayRegistry
     )
-import Singular.State.Preimage (activeTokenName)
+import Singular.State.Preimage
+    ( activeTokenName
+    , approvalName
+    , terminationPreimage
+    )
 import Singular.State.Publication (References (..), planReferences)
 import Singular.State.Records
     ( Change (..)
@@ -217,9 +225,10 @@ main = do
         ("spares" : flags) -> withEnv flags (sparesCommand out)
         ("plain-copy" : flags) -> withEnv flags (plainCopyCommand out)
         ("fold" : flags) -> withEnv flags (foldCommand out)
+        ("terminate" : flags) -> withEnv flags (terminationCommand out)
         _ ->
             die
-                "usage: no-pin-refusals (spares|plain-copy|fold) \
+                "usage: no-pin-refusals (spares|plain-copy|fold|terminate) \
                 \--koios-url URL --network-time DIR --network-magic N \
                 \--wallet-skey FILE --blueprint FILE --state-token POLICY.NAME \
                 \[--case CASE] [--pending TXID#IX] [--parked TXID#IX] [--spare TXID#IX]"
@@ -732,6 +741,134 @@ foldCommand out env = do
   where
     lessBy n (Coin c) = Coin (c - n)
     withoutAda (MaryValue _ assets) = MaryValue (Coin 0) assets
+
+{- | Submit a termination made wrong in one fact. The request has been reached
+through the packaged registration and booking commands. The application spend
+always names the genuine request and key; a different-key state change is
+therefore judged by the state validator, independently of that spend.
+
+For the unapproved-change case the state change names ordinary funding, which
+holds no approval, while the genuine request is spent separately. An approval
+elsewhere in the transaction cannot approve that named input.
+-}
+terminationCommand :: Handle -> Env -> IO ()
+terminationCommand out env = do
+    caseName <- need "--case"
+    key <- BC.pack <$> need "--key"
+    pendingRef <- outRefFlag env "--pending"
+    let registry = registryOf env
+        active = activeTokenName registry key
+        approval = approvalName (terminationPreimage key registry)
+    Services.withLatest (provider env) $ \session -> do
+        (stateScript, requestScript) <- sourcesOf env session
+        application <-
+            openDatumApplication session requestScript Ledger.Testnet
+                >>= either (die . show) pure
+        pending <- outputAt session pendingRef
+        unlessTermination (appDecode application registry [key] pending)
+        (stateIn, stateOut, root) <- findState env session
+        payer <-
+            resolvePayer session (payerOf env) >>= either (die . show) pure
+        Replayed{replayedSeed = seed} <- seedOf env session stateIn root
+        (changeKey, fact) <- case caseName of
+            "burn-without-fold" ->
+                pure
+                    ( key
+                    , "the active token is burned without spending the registry state"
+                        :: Text
+                    )
+            "other-key" -> do
+                other <- BC.pack <$> need "--other-key"
+                when (other == key) $ die "the other key must differ"
+                pure
+                    ( other
+                    , "the state change terminates another active key than the request approves"
+                    )
+            "no-approval" ->
+                pure
+                    ( key
+                    , "the state change names an ordinary input with no approval instead of the approved request"
+                    )
+            "spend-without-burn" ->
+                pure
+                    ( key
+                    , "the request is spent and its approval burned but its active token is not burned"
+                    )
+            _ -> die "unknown termination case"
+        (proof, newRoot) <- withTrie env session stateIn root $ \snapshot -> do
+            leaf <- leafAt snapshot changeKey >>= either (die . trieRefusal) pure
+            when (leaf /= Active) $ die "the change must start from an active key"
+            walked <-
+                speculateEdges
+                    snapshot
+                    (NE.singleton (changeKey, toInteger edgeUpdateTerminal))
+                    >>= either (die . trieRefusal) pure
+            case walkProofs walked of
+                [one] -> pure (one, unRoot (walkRoot walked))
+                _ -> die "no single termination proof"
+        references <-
+            referenceOutputs session (ssScript stateScript) (ssSource stateScript)
+                >>= either (die . renderRefusal) pure
+        let withState = caseName /= "burn-without-fold" && caseName /= "spend-without-burn"
+            burnActive = caseName /= "spend-without-burn"
+            funding = payerFunding payer
+            changedRequest = if caseName == "no-approval" then fst funding else pendingRef
+            spent =
+                [funding, (pendingRef, pending)] <> [(stateIn, stateOut) | withState]
+            program = do
+                void (Tx.spend (fst funding))
+                when withState $ do
+                    _ <-
+                        Tx.payTo'
+                            (stateAddress (payerNetwork payer) stateScript)
+                            (stateOut ^. valueTxOutL)
+                            (BuiltinData (stateDatum newRoot))
+                    void $
+                        Tx.spendScript
+                            stateIn
+                            ( BuiltinData
+                                (foldRedeemer seed [Terminate changedRequest changeKey proof])
+                            )
+                when burnActive $ do
+                    Tx.mint
+                        (statePolicy stateScript)
+                        (Map.singleton active (-1))
+                        (BuiltinData foldedRedeemer)
+                    useScript (ssScript stateScript) (ssSource stateScript)
+                void $
+                    Tx.spendScript
+                        pendingRef
+                        (AsData (spendRedeemer (TerminationFold registry key)))
+                Tx.mint
+                    (requestPolicy requestScript)
+                    (Map.singleton approval (-1))
+                    (AsData (mintRedeemer [ApprovalBurn]))
+                Request.useScript requestScript
+                Tx.collateral (fst funding)
+        tx <-
+            assembleLenient
+                session
+                spent
+                (references <> appReferences application)
+                (payerOf env)
+                (void program)
+                >>= either (die . T.unpack) pure
+        answer <- answerTo env tx
+        emit out $
+            object
+                ( [ "case" .= caseName
+                  , "alteredFact" .= fact
+                  , "pending" .= renderOutRef pendingRef
+                  , "state" .= renderOutRef stateIn
+                  ]
+                    <> answerJson answer
+                )
+  where
+    need name =
+        maybe (die ("missing " <> name)) pure (flagValue name (envFlags env))
+    unlessTermination = \case
+        Just TerminationRequest{} -> pure ()
+        _ -> die "the input is not a genuine termination request for this key"
 
 -- | The proof the registry itself gives for a key it holds.
 presenceProof

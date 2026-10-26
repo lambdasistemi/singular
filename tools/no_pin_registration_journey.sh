@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # The registration journey of the proved design (#742): a registry of open
-# datum is created, keys are booked, folded, reclaimed and cleaned up through
+# datum is created, keys are booked, folded, updated, terminated, reclaimed and cleaned up through
 # the packaged `singular` and `open-datum` programs on a generated development
 # network, and the chain is read afterwards by a program that takes nothing
 # from any command.
@@ -34,6 +34,10 @@
 #   cleanup       a registration is cleaned up after its window by a wallet that
 #                 is not the refund address; the deposit returns to the refund
 #                 address
+#   termination   the controller updates the holding and books termination,
+#                 donating its deposit; a second wallet in fresh directories
+#                 folds the public request and receives its whole value after
+#                 its fee; registration of that terminated key is declined
 #   controls      each assertion above, handed altered input, fails
 #
 # Every verdict is computed from the chain's own record or from files; none is
@@ -264,6 +268,48 @@ control "an approval that was minted, not burned, is not this one" \
 say "the folder's listing before the fold:"
 cat "$listings/bob-before-fold.txt"
 
+# The live holding continues through the controller's two commands. The
+# independent observer below follows input references, not command receipts.
+leg="update and termination"
+printf '%s\n' '{"name":"updated"}' >"$work/actors/alice/cwd/updated.json"
+as alice update "$open_datum" holding update --blueprint plutus.json \
+  --state-token "$token" --holding "$holding" --payload updated.json
+view_tx update "$(tx_of update update)"
+updated_holding="$(field update .holding)"
+check "the updated holding carries the chosen payload with the same protected deposit" \
+  holding_is "$chain_dir/update.tx.json" "$state_policy" "$state_name" "$key_hex" "$controller" "$deposit" \
+  '{"map":[[{"bytes":"6e616d65"},{"bytes":"75706461746564"}]]}'
+as alice terminate "$open_datum" holding terminate --blueprint plutus.json \
+  --state-token "$token" --holding "$updated_holding"
+view_tx terminate "$(tx_of terminate terminate)"
+view_unspent after-termination-booking
+active_name="$(jq -r --arg r "$holding" '.outputs[] | select(.ref == $r) | .datum.fields[0].fields[1].fields[1].bytes' "$chain_dir/fold.tx.json")"
+public_pending="$(jq -er --arg sp "$state_policy" --arg active "$active_name" --arg app "$application_hash" '
+  [.outputs[] | select(.credential == {type: "script", hash: $app} and .datum == null)
+    | select(any(.assets[]; .policy == $sp and .name == $active and .quantity == 1))]
+  | if length == 1 then .[0].ref else error("no unique public termination request") end' "$chain_dir/after-termination-booking.unspent.json")"
+check "the termination request found on chain is the one the controller booked" equal "$public_pending" "$(field terminate .pending)"
+
+# Bob uses a fresh process home and working directory with only copies of
+# his own key and the public release. Neither Alice's files nor Bob's earlier
+# command records are inputs to this fold.
+mkdir -p "$work/actors/bob-public/cwd" "$work/actors/bob-public/home"
+cp "$work/actors/bob/cwd/bob.skey" "$work/actors/bob-public/cwd/bob-public.skey"
+cp "$work/release/plutus.json" "$work/actors/bob-public/cwd/plutus.json"
+(cd "$work/actors/bob-public" && find cwd home -mindepth 1 | LC_ALL=C sort) >"$listings/bob-before-termination-fold.txt"
+as bob-public termination-fold "$open_datum" state fold --blueprint plutus.json \
+  --state-token "$token" --pending "$public_pending"
+view_tx termination-fold "$(tx_of termination-fold fold)"
+view_unspent after-termination-fold
+check "no unspent output carries the terminated key's active token" \
+  none_unspent_with "$chain_dir/after-termination-fold.unspent.json" "$state_policy" "$active_name"
+control "the live state token is not a burned active token" \
+  none_unspent_with "$chain_dir/after-termination-fold.unspent.json" "$state_policy" "$state_name"
+as alice book-terminal "$open_datum" registration book --blueprint plutus.json \
+  --state-token "$token" --key journey-fold --payload payload.json --deposit "$deposit" --tip "$tip"
+run_as bob-public reregister "$open_datum" state fold --blueprint plutus.json \
+  --state-token "$token" --pending "$(field book-terminal .pending)"
+
 # ------------------------------------------------------------------
 # 4. Alice takes the second back inside its window
 # ------------------------------------------------------------------
@@ -365,36 +411,13 @@ check "only the first registry locked ADA in reference scripts" \
 control "a measurement that gave a later registry two transactions would be seen" \
   jq -e '[.registries[].transactionCount] == [2, 2, 1]' "$work/creation-measurement.json"
 
-# ------------------------------------------------------------------
-# The receipt
-# ------------------------------------------------------------------
-# What the journey showed, in the words of the story, from the files above.
-{
-  printf '# Registration journey receipt\n\n'
-  printf 'Release (sha256 of the validators every wallet ran against): `%s`\n' "$release_hash"
-  printf 'Registry: `%s`\n\n' "$token"
-  printf '## The folder had nothing of the booker'"'"'s\n\n'
-  printf 'The directories of the second wallet, listed before the fold:\n\n```\n'
-  cat "$listings/bob-before-fold.txt"
-  printf '```\n\n'
-  printf 'The fold was signed by `%s`; the booking was signed by `%s`.\n\n' \
-    "$(jq -r '.signers | join(", ")' "$chain_dir/fold.tx.json")" "$(jq -r '.signers | join(", ")' "$chain_dir/book-fold.tx.json")"
-  printf '## The holding the fold delivered\n\n```json\n'
-  jq --arg sp "$state_policy" --arg sn "$state_name" '[.outputs[] | select(any(.assets[]; .policy == $sp and .name != $sn))][0]' "$chain_dir/fold.tx.json"
-  printf '```\n\n'
-  printf '## What the creations sent and locked\n\n'
-  printf '| registry | command | transactions | state | configuration | reference scripts | total (lovelace) | fees (lovelace) |\n|---|---|---|---|---|---|---|---|\n'
-  jq -r '.registries[] | "| \(.registry) | `\(.command)` | \(.transactionCount) | \(.lockedLovelace.state) | \(.lockedLovelace.configuration) | \(.lockedLovelace.referenceScripts) | \(.lockedLovelace.total) | \(.feesLovelace) |"' "$work/creation-measurement.json"
-  printf '\n## Verdicts\n\n'
-  cat "$verdicts"
-} >"$work/receipt.md"
-
-# ------------------------------------------------------------------
-# The verdict
-# ------------------------------------------------------------------
+observe_termination() {
+  python3 -I "$(dirname "$chain_view")/no_pin_termination_observations.py" "$chain_dir" "$state_policy" "$state_name" "$key_hex" \
+    >"$work/termination-measurement.json" 2>"$work/termination-measurement.err"
+}
 leg="update and termination"
 check "the connected update and termination route the deposit and the whole request value as ruled" \
-  python3 -I "$(dirname "$chain_view")/no_pin_termination_observations.py" "$chain_dir" "$state_policy" "$state_name" "$key_hex"
+  observe_termination
 if [ -r "$listings/bob-before-termination-fold.txt" ]; then
   check "the termination folder holds only its own key and the release" \
     listing_is "$listings/bob-before-termination-fold.txt" cwd/bob-public.skey cwd/plutus.json
@@ -409,6 +432,40 @@ else
   record "$leg" "a new registration of the terminated key is refused" "COULD-NOT-EVALUATE"
   failed=1
 fi
+
+# ------------------------------------------------------------------
+# The receipt
+# ------------------------------------------------------------------
+# What the journey showed, in the words of the story, from the files above.
+{
+  printf '# Registration, update and termination journey receipt\n\n'
+  printf 'Release (sha256 of the validators every wallet ran against): `%s`\n' "$release_hash"
+  printf 'Registry: `%s`\n\n' "$token"
+  printf '## The folder had nothing of the booker'"'"'s\n\n'
+  printf 'The directories of the second wallet, listed before the fold:\n\n```\n'
+  cat "$listings/bob-before-fold.txt"
+  printf '```\n\n'
+  printf 'The fold was signed by `%s`; the booking was signed by `%s`.\n\n' \
+    "$(jq -r '.signers | join(", ")' "$chain_dir/fold.tx.json")" "$(jq -r '.signers | join(", ")' "$chain_dir/book-fold.tx.json")"
+  printf '## The holding the fold delivered\n\n```json\n'
+  jq --arg sp "$state_policy" --arg sn "$state_name" '[.outputs[] | select(any(.assets[]; .policy == $sp and .name != $sn))][0]' "$chain_dir/fold.tx.json"
+  printf '```\n\n'
+  printf '## What the creations sent and locked\n\n'
+  printf '| registry | command | transactions | state | configuration | reference scripts | total (lovelace) | fees (lovelace) |\n|---|---|---|---|---|---|---|---|\n'
+  jq -r '.registries[] | "| \(.registry) | `\(.command)` | \(.transactionCount) | \(.lockedLovelace.state) | \(.lockedLovelace.configuration) | \(.lockedLovelace.referenceScripts) | \(.lockedLovelace.total) | \(.feesLovelace) |"' "$work/creation-measurement.json"
+  printf '\n## Update and termination, read from the chain\n\n```json\n'
+  cat "$work/termination-measurement.json"
+  printf '\n```\n\nThe second wallet held these files before termination folding:\n\n```\n'
+  cat "$listings/bob-before-termination-fold.txt"
+  printf '```\n\nThe packaged re-registration fold reported:\n\n```json\n'
+  cat "$receipts/reregister.json"
+  printf '\n```\n\n## Verdicts\n\n'
+  cat "$verdicts"
+} >"$work/receipt.md"
+
+# ------------------------------------------------------------------
+# The verdict
+# ------------------------------------------------------------------
 leg="journey"
 [ "$(grep -c ' holds |' "$verdicts")" -gt 0 ] || {
   say "no clause was judged"

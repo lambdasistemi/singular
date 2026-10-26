@@ -23,7 +23,6 @@ refused_by_script() {
     and ((.answer | test("overspending the budget")) | not)
     and (.answer | capture("The script hash is:ScriptHash [\\\\\"]+(?<hash>[0-9a-f]{56})").hash == $hash)' "$1"
 }
-accepted() { jq -e '.outcome == "accepted"' "$1"; }
 chain_holds_tx() { chain tx "$1" >/dev/null 2>&1; }
 chain_lacks_tx() { [[ "$1" =~ ^[0-9a-f]{64}$ ]] && ! chain_holds_tx "$1"; }
 tx_id_of() { field "$1" .transaction; }
@@ -83,6 +82,23 @@ for case in burn-without-fold other-key no-approval spend-without-burn; do
   control "$case: another script's failure is not this refusal" \
     refused_by_script "$receipts/attempt-$case.json" "00000000000000000000000000000000000000000000000000000000"
 done
+
+# The last control made this key terminal through its genuine burn. The
+# packaged fold declines its new registration; here the node also judges
+# a registration that carries the current state's own presence proof.
+leg="registration after termination"
+as alice book-terminal "$open_datum" registration book --blueprint plutus.json \
+  --state-token "$token" --key termination-spend-without-burn --payload payload.json --deposit 3000000 --tip 1000000
+run_as bob attempt-terminal "$harness" fold --case second-registration \
+  --pending "$(field book-terminal .pending)" --blueprint plutus.json --state-token "$token"
+settle
+check "a new registration of the terminated key is refused by the state validator" \
+  refused_by_script "$receipts/attempt-terminal.json" "$state_policy"
+check "the refused registration is absent from the chain" chain_lacks_tx "$(tx_id_of attempt-terminal)"
+register terminal-control fresh-key-after-termination >"$work/terminal-control-holding.txt"
+check "a fresh key still registers beside the refused terminal key" chain_holds_tx "$(tx_of register-terminal-control fold)"
+control "a fresh registration is not the refused terminal registration" \
+  chain_lacks_tx "$(tx_of register-terminal-control fold)"
 
 {
   printf '# Termination refusals on a development network\n\n'

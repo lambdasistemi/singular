@@ -243,7 +243,9 @@ def transaction(txid):
                 "referenceInputs": [output(i) for i in material["reference_inputs"]],
                 "outputs": [output(o) for o in material["outputs"]],
                 "signers": sorted(set(signers)),
+                "requiredSigners": [signer.hex() for signer in get(body, 14) or []],
                 "fee": get(body, 2),
+                "donation": get(body, 22) or 0,
                 "mint": mint,
             }
     sys.exit("the chain holds no transaction %s" % txid)
