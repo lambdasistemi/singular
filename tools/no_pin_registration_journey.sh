@@ -149,18 +149,30 @@ token="$(field create-first .stateToken)"
 state_policy="${token%%.*}"
 state_name="${token##*.}"
 say "registry $token created"
-publish_tx="$(tx_of create-first publish-scripts)"
+publish_state_tx="$(tx_of create-first publish-state-script)"
+publish_request_tx="$(tx_of create-first publish-application-script)"
 create_tx="$(tx_of create-first create)"
-view_tx first-publish "$publish_tx"
+view_tx first-publish-state "$publish_state_tx"
+view_tx first-publish-request "$publish_request_tx"
 view_tx first-create "$create_tx"
 state_reference="$(field create-first '.scripts[] | select(.script == "state") | .reference')"
 application_reference="$(field create-first '.scripts[] | select(.script == "application") | .reference')"
 live_copies="$(jq -c -n --arg s "$state_reference" --arg a "$application_reference" '[$s, $a]')"
-check "the first registry sends the publication and the creation, each included and observed" \
-  receipt_steps_are "$receipts/create-first.json" '["publish-scripts","create"]'
+check "the first registry sends the state publication, the request publication and the creation, each included and observed" \
+  receipt_steps_are "$receipts/create-first.json" '["publish-state-script","publish-application-script","create"]'
+check "the publications and the creation are distinct transactions" \
+  all_distinct "$publish_state_tx" "$publish_request_tx" "$create_tx"
 check "it publishes both scripts" scripts_published_are "$receipts/create-first.json" '[true,true]'
-check "the chain holds the two reference scripts in the publication's outputs" \
-  refs_equal "$(script_outputs_of "$chain_dir/first-publish.tx.json")" "$live_copies"
+check "the chain holds the state reference script in the first publication" \
+  refs_equal "$(script_outputs_of "$chain_dir/first-publish-state.tx.json")" "[\"$state_reference\"]"
+check "the chain holds the request reference script in the second publication" \
+  refs_equal "$(script_outputs_of "$chain_dir/first-publish-request.tx.json")" "[\"$application_reference\"]"
+control "one transaction named twice is not two publications and a creation" \
+  all_distinct "$publish_state_tx" "$publish_state_tx" "$create_tx"
+control "the first publication does not carry both scripts" \
+  refs_equal "$(script_outputs_of "$chain_dir/first-publish-state.tx.json")" "$live_copies"
+control "the second publication does not carry the state script" \
+  refs_equal "$(script_outputs_of "$chain_dir/first-publish-request.tx.json")" "[\"$state_reference\"]"
 check "the creation reads both live copies by reference" reads_refs "$chain_dir/first-create.tx.json" "$live_copies"
 check "the creation mints the registry's state token" mints "$chain_dir/first-create.tx.json" "$state_policy" "$state_name" 1
 control "a creation that sent the creation alone is not the first registry's" \
@@ -305,7 +317,7 @@ check "it publishes no script" scripts_published_are "$receipts/create-later.jso
 check "the chain shows it reading the live copies and creating no reference script" \
   reads_and_creates_no_script "$chain_dir/later-create.tx.json" "$live_copies"
 control "the first registry's publication is not a creation that created no reference script" \
-  reads_and_creates_no_script "$chain_dir/first-publish.tx.json" "$live_copies"
+  reads_and_creates_no_script "$chain_dir/first-publish-state.tx.json" "$live_copies"
 control "a later registry that read other outputs is not this one" \
   reads_and_creates_no_script "$chain_dir/later-create.tx.json" '["0000000000000000000000000000000000000000000000000000000000000000#0"]'
 check "singular creates a registry of the same application from the live copy of the state script" \
@@ -335,7 +347,7 @@ locked_of() { # STATE-NAME TX... : the creation transactions, as JSON
     | .feesLovelace = ([.transactions[].fee] | add)' "${@:2}"
 }
 jq -n \
-  --argjson first "$(locked_of "$state_name" "$chain_dir/first-publish.tx.json" "$chain_dir/first-create.tx.json")" \
+  --argjson first "$(locked_of "$state_name" "$chain_dir/first-publish-state.tx.json" "$chain_dir/first-publish-request.tx.json" "$chain_dir/first-create.tx.json")" \
   --argjson later "$(locked_of "$(field create-later .stateToken | sed 's/.*\.//')" "$chain_dir/later-create.tx.json")" \
   --argjson singular "$(locked_of "$(field create-singular .stateToken | sed 's/.*\.//')" "$chain_dir/singular-create.tx.json")" \
   --arg app "$application_hash" --arg release "$release_hash" \
@@ -346,8 +358,8 @@ jq -n \
       ($singular + {registry: "a registry made by singular from the same state script", command: "singular state create"})]}' \
   >"$work/creation-measurement.json"
 say "creation measurement: $(jq -c '[.registries[] | {registry, transactions: .transactionCount, locked: .lockedLovelace.total}]' "$work/creation-measurement.json")"
-check "the measurement counts two transactions for the first registry and one for a later one" \
-  jq -e '[.registries[].transactionCount] == [2, 1, 1]' "$work/creation-measurement.json"
+check "the measurement counts three transactions for the first registry and one for a later one" \
+  jq -e '[.registries[].transactionCount] == [3, 1, 1]' "$work/creation-measurement.json"
 check "only the first registry locked ADA in reference scripts" \
   jq -e '[.registries[].lockedLovelace.referenceScripts > 0] == [true, false, false]' "$work/creation-measurement.json"
 control "a measurement that gave a later registry two transactions would be seen" \

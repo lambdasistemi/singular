@@ -95,8 +95,9 @@ stateCreateLeaf =
                   \width of a booking's validity interval, and the registration cost \
                   \and the minimum tip, which are carried and enforce nothing. The \
                   \first registry of open datum publishes the state validator and the \
-                  \request validator as reference scripts, in a transaction of its \
-                  \own; a later registry finds the live copies and sends one \
+                  \request validator as reference scripts, each in its own transaction, \
+                  \waiting for both before creating the registry. A rerun publishes \
+                  \only what is missing; a later registry finds the live copies and sends one \
                   \transaction."
                 , signerParagraph
                 ]

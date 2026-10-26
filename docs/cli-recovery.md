@@ -203,7 +203,9 @@ transaction keeps its identity, the next write settles it, and nothing is sent a
 second time.
 
 Each transaction is journalled as `prepared` before it is sent, under the step
-that names it: `publish-scripts` and `create` for a creation, then `book`,
+that names it: `publish-state-script`, `publish-application-script` and `create`
+for open datum's first creation, `publish-scripts` and `create` for Singular's,
+then `book`,
 `fold`, `reclaim` and `cleanup`. The journal also records what the first output of
 the transaction must hold once it is on the chain: a reference script for a
 publication, the state token for a creation and for a fold, the approval token for

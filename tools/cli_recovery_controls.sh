@@ -1806,10 +1806,10 @@ if part state-line; then
   sl_main="$sl_root/main"
   sl_run sl-create state create "${sl_params[@]}" --state-dir "$sl_main" "${sl_base[@]}" "${alice[@]}"
   clause "the first creation succeeds" outcome_is sl-create success
-  clause "it publishes the scripts in a transaction of its own, then creates the registry" \
-    is_equal "$(field sl-create '[.submissions[].step] | tojson')" '["publish-scripts","create"]'
+  clause "it publishes each script in its own transaction, then creates the registry" \
+    is_equal "$(field sl-create '[.submissions[].step] | tojson')" '["publish-state-script","publish-application-script","create"]'
   clause "each of its transactions was prepared, confirmed and observed, once each" \
-    is_equal "$(field sl-create '[.submissions[] | select(.observed == true)] | length')" 2
+    is_equal "$(field sl-create '[.submissions[] | select(.observed == true)] | length')" 3
   sl_token="$(field sl-create .stateToken)"
   [[ "$sl_token" =~ ^[0-9a-f]{56}\.[0-9a-f]{64}$ ]] || setup_fail "the first creation printed no state token"
   sl_state_policy="${sl_token%%.*}"

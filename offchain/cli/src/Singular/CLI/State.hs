@@ -14,8 +14,8 @@ registry, and the pending registrations it lets a fold spend. The neutral
 knows its request validator.
 
 @create@ publishes the state validator, and the validators the application
-owns, as reference scripts when no live copy of them exists, in a transaction of
-its own; a later registry finds the live copies and sends one transaction. The
+owns, as reference scripts when no live copy of them exists, each in a transaction
+of its own; a later registry finds the live copies and sends one transaction. The
 transaction that creates the registry spends the seed.
 
 @fold@ builds, from the chain alone, the transaction that folds the pending
@@ -39,7 +39,6 @@ import Data.ByteString (ByteString)
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Short qualified as SBS
-import Data.List.NonEmpty qualified as NE
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -107,6 +106,7 @@ import Singular.State.Genesis (buildGenesis)
 import Singular.State.Publication
     ( Publication (..)
     , References (..)
+    , planNextReference
     , planReferences
     )
 import Singular.State.Records (decodeStateDatum)
@@ -191,21 +191,8 @@ runStateCreate env host a = do
         ws
         $ \wc reconciled -> do
             let payer = wcCaller wc
-            planned <-
-                readStep
-                    (wcTracer wc)
-                    (wcSource wc)
-                    ["wallet outputs", "reference scripts"]
-                    (wcCapabilities wc)
-                    (\view -> planReferences view payer scripts)
-            references <- refusing planned
-            published <- case referencesPublication references of
-                Nothing -> pure []
-                Just _ -> publishScripts wc payer scripts
-            let found =
-                    [(hash, ref) | (hash, (ref, _)) <- referencesLive references]
-                        <> published
-                sourceOf script = scriptSource script found
+            (found, published) <- publishScripts wc payer scripts
+            let sourceOf script = scriptSource script found
                 stateSource = sourceOf stateScript
                 ownSources = [(script, sourceOf script) | script <- own]
             (confirmed, (registry, seed)) <-
@@ -263,40 +250,66 @@ runStateCreate env host a = do
   where
     policyHash (PolicyID hash) = hash
 
-{- | Publish the scripts no live copy carries, in one transaction, and say
-where each now sits.
+{- | Publish one missing script at a time. Confirmation and readback finish
+before the next fresh chain view chooses funding or a missing script. A rerun
+reuses every genuine live copy after stateWrite reconciles uncertain sends.
 -}
 publishScripts
-    :: WriteContext -> Addr -> [Script ConwayEra] -> IO [(ScriptHash, TxIn)]
-publishScripts wc payer scripts = do
-    (confirmed, located) <-
-        sendStep
-            wc
-            "publish-scripts"
-            ["wallet outputs", "reference scripts"]
-            (CarriesScript . fst . NE.head)
-            $ \view -> do
-                references <- planReferences view payer scripts >>= refusing
-                case referencesPublication references of
-                    Nothing ->
-                        failWith
-                            ClientRefusal
-                            "the wallet's view changed while the scripts were being planned: every script has a live copy now; run the command again"
-                    Just publication ->
-                        case NE.nonEmpty (publicationOutputs publication) of
-                            Nothing ->
-                                failWith
-                                    ClientRefusal
-                                    "the publication holds no script"
-                            Just located -> pure (publicationTx publication, located)
-    _ <-
-        observeOutput
-            wc
-            "publish-scripts"
-            confirmed
-            0
-            (CarriesScript (fst (NE.head located)))
-    pure (NE.toList located)
+    :: WriteContext
+    -> Addr
+    -> [Script ConwayEra]
+    -> IO ([(ScriptHash, TxIn)], [(ScriptHash, TxIn)])
+publishScripts wc payer scripts = next []
+  where
+    next published = do
+        let remaining =
+                [ script
+                | script <- scripts
+                , hashScript script `notElem` map fst published
+                ]
+        references <-
+            readStep
+                (wcTracer wc)
+                (wcSource wc)
+                ["wallet outputs", "reference scripts"]
+                (wcCapabilities wc)
+                (\view -> planNextReference view payer remaining)
+                >>= refusing
+        case referencesPublication references of
+            Nothing ->
+                pure
+                    ( [(hash, ref) | (hash, (ref, _)) <- referencesLive references]
+                        <> published
+                    , published
+                    )
+            Just publication -> case publicationOutputs publication of
+                [(hash, _)] -> do
+                    let step = publicationStep hash
+                    (confirmed, located) <-
+                        sendStep
+                            wc
+                            step
+                            ["wallet outputs", "reference scripts"]
+                            (CarriesScript . fst)
+                            $ \view -> do
+                                fresh <- planNextReference view payer remaining >>= refusing
+                                case referencesPublication fresh of
+                                    Just built
+                                        | [located@(actual, _)] <- publicationOutputs built
+                                        , actual == hash ->
+                                            pure (publicationTx built, located)
+                                    _ ->
+                                        failWith
+                                            ClientRefusal
+                                            "the live script copies changed while publication was being planned; run the command again"
+                    _ <- observeOutput wc step confirmed 0 (CarriesScript hash)
+                    next (published <> [located])
+                _ ->
+                    failWith ClientRefusal "the publication must hold exactly one script"
+    publicationStep hash = case scripts of
+        [_] -> "publish-scripts"
+        state : _ | hashScript state == hash -> "publish-state-script"
+        _ -> "publish-application-script"
 
 -- | The scripts of the creation, each with where it is taken from and whether this run published it.
 scriptsFields

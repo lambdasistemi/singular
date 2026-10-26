@@ -89,7 +89,27 @@ planReferences
     -- ^ The payer: fee, collateral, change and the owner of the new outputs
     -> [Script ConwayEra]
     -> IO (Either Refusal References)
-planReferences session payerAddress requested = runExceptT $ do
+planReferences = planPublications id
+
+{- | Find every live copy and plan one missing script's publication, in the
+order requested. Call again after that transaction is live, using the new
+chain view. Each transaction is size-checked independently.
+-}
+planNextReference
+    :: Session NoWitness IO
+    -> Addr
+    -> [Script ConwayEra]
+    -> IO (Either Refusal References)
+planNextReference = planPublications (take 1)
+
+-- | Share authenticated discovery between batch and sequential publication.
+planPublications
+    :: ([Script ConwayEra] -> [Script ConwayEra])
+    -> Session NoWitness IO
+    -> Addr
+    -> [Script ConwayEra]
+    -> IO (Either Refusal References)
+planPublications choose session payerAddress requested = runExceptT $ do
     found <-
         liftIO
             (mapM (\script -> (,) script <$> liveCopy session script) scripts)
@@ -98,20 +118,10 @@ planReferences session payerAddress requested = runExceptT $ do
     publication <-
         if null missing
             then pure Nothing
-            else Just <$> ExceptT (publish session payerAddress missing)
+            else Just <$> ExceptT (publish session payerAddress (choose missing))
     pure (References live publication)
   where
     scripts = nubBy (\a b -> hashScript a == hashScript b) requested
-
-{- | Find every live copy and plan the next publication, in the order requested.
-Call again after that transaction is live, using the new chain view.
--}
-planNextReference
-    :: Session NoWitness IO
-    -> Addr
-    -> [Script ConwayEra]
-    -> IO (Either Refusal References)
-planNextReference = planReferences
 
 {- | The live output with the lowest reference that carries this script as a
 reference script. The provider's answer to the query is a list of candidates:

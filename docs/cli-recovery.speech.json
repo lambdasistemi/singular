@@ -157,7 +157,7 @@
       "pause": 400
     },
     {
-      "text": "Each transaction is journalled as prepared before it is sent, under the step that names it: publish-scripts and create for a creation, then book, fold, reclaim and cleanup. The journal also records what the first output of the transaction must hold once it is on the chain: a reference script for a publication, the state token for a creation and for a fold, the approval token for a booking, a payment to the refund address for a reclaim and a cleanup. A creation is journalled under the application and the wallet, because the name of the registry it makes is known only once its seed is chosen. The other commands are journalled under the registry and the wallet.",
+      "text": "Each transaction is journalled as prepared before it is sent, under the step that names it: publish-state-script, publish-application-script and create for open datum's first creation, publish-scripts and create for Singular's, then book, fold, reclaim and cleanup. The journal also records what the first output of the transaction must hold once it is on the chain: a reference script for a publication, the state token for a creation and for a fold, the approval token for a booking, a payment to the refund address for a reclaim and a cleanup. A creation is journalled under the application and the wallet, because the name of the registry it makes is known only once its seed is chosen. The other commands are journalled under the registry and the wallet.",
       "pause": 400
     },
     {
@@ -189,6 +189,6 @@
   ],
   "_source": {
     "file": "cli-recovery.md",
-    "sha256": "4c5e579ee17f964f561503c05fa172aa6124938739b2f8c777b7e34bb1604d30"
+    "sha256": "e78d95004a5e4d0a16ad9cb05834aaeab3ce1b2d77351aba69acff8bb336e64a"
   }
 }

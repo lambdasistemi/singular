@@ -17,8 +17,9 @@ parameters are fixed here for its life: the processing time and the reclaim
 time of a booked registration, the width of a booking's validity interval, and
 the registration cost and the minimum tip, which are carried and enforce
 nothing. The first registry of open datum publishes the state validator and
-the request validator as reference scripts, in a transaction of its own; a
-later registry finds the live copies and sends one transaction.
+the request validator as reference scripts, each in its own transaction,
+waiting for both before creating the registry. A rerun publishes only what is
+missing; a later registry finds the live copies and sends one transaction.
 
 A write is signed by exactly one signer: --vault (the normal route),
 --wallet-address with --bundle (written for an external signer, ending as

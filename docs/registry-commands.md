@@ -40,24 +40,28 @@ As Carol, you spend one output of your wallet to make a registry, and the output
 you spend fixes the registry's identity.
 
 ```mermaid
+%%{init: {'sequence': {'actorMargin': 5, 'width': 80, 'diagramMarginX': 10}}}%%
 sequenceDiagram
     participant Carol
-    participant Command as state create
+    participant Command as Create
     participant Chain
-    Carol->>Command: one signer, one blueprint, one provider
-    Command->>Chain: read the wallet, the live reference scripts
-    opt no live copy of a validator
-        Command->>Chain: publish the validators as reference scripts
+    Carol->>Command: signer<br/>blueprint<br/>provider
+    Command->>Chain: wallet and<br/>live scripts
+    loop missing scripts
+        Command->>Chain: publish one<br/>script
+        Chain-->>Command: confirmed<br/>read back
     end
-    Command->>Chain: create the registry from the seed
-    Chain-->>Command: the registry's state token on its first output
-    Command-->>Carol: receipt with the address and the token
+    Command->>Chain: create from<br/>the seed
+    Chain-->>Command: state token<br/>on the first<br/>output
+    Command-->>Carol: receipt<br/>token<br/>address
 ```
 
 The second diagram shows what a creation does. The command reads your wallet
 and looks for live reference copies of the validators. The first registry of an
-application publishes them, in a transaction of its own, before it creates the
-registry. A later registry finds the live copies and sends one transaction. The
+application publishes each in its own transaction, state first, and waits for
+both before it creates the registry. If you stop between publications, a rerun
+finds the live copy and publishes only the missing script. A later registry
+finds both live copies and sends one transaction. The
 registry's state token appears on the first output of the creation, and the
 command reads it back before it prints the receipt.
 

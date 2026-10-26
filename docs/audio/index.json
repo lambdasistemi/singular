@@ -1057,8 +1057,8 @@
     "index": 2,
     "name": "docs-cli-recovery/the-commands-that-create-a-registry-and-register-keys-02",
     "pause_ms": 400,
-    "text": "Each transaction is journalled as prepared before it is sent, under the step that names it: publish-scripts and create for a creation, then book, fold, reclaim and cleanup. The journal also records what the first output of the transaction must hold once it is on the chain: a reference script for a publication, the state token for a creation and for a fold, the approval token for a booking, a payment to the refund address for a reclaim and a cleanup. A creation is journalled under the application and the wallet, because the name of the registry it makes is known only once its seed is chosen. The other commands are journalled under the registry and the wallet.",
-    "v": "2148c3592a32"
+    "text": "Each transaction is journalled as prepared before it is sent, under the step that names it: publish-state-script, publish-application-script and create for open datum's first creation, publish-scripts and create for Singular's, then book, fold, reclaim and cleanup. The journal also records what the first output of the transaction must hold once it is on the chain: a reference script for a publication, the state token for a creation and for a fold, the approval token for a booking, a payment to the refund address for a reclaim and a cleanup. A creation is journalled under the application and the wallet, because the name of the registry it makes is known only once its seed is chosen. The other commands are journalled under the registry and the wallet.",
+    "v": "7e8037d9820b"
    },
    {
     "index": 3,
@@ -9063,8 +9063,8 @@
     "index": 2,
     "name": "docs-registry-commands/create-a-registry-02",
     "pause_ms": 400,
-    "text": "The second diagram shows what a creation does. The command reads your wallet and looks for live reference copies of the validators. The first registry of an application publishes them, in a transaction of its own, before it creates the registry. A later registry finds the live copies and sends one transaction. The registry's state token appears on the first output of the creation, and the command reads it back before it prints the receipt.",
-    "v": "8c6b17ba38b6"
+    "text": "The second diagram shows what a creation does. The command reads your wallet and looks for live reference copies of the validators. The first registry of an application publishes each in its own transaction, state first, and waits for both before it creates the registry. If you stop between publications, a rerun finds the live copy and publishes only the missing script. A later registry finds both live copies and sends one transaction. The registry's state token appears on the first output of the creation, and the command reads it back before it prints the receipt.",
+    "v": "e1b5d40af6db"
    },
    {
     "index": 3,

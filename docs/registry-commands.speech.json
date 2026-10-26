@@ -27,7 +27,7 @@
       "pause": 400
     },
     {
-      "text": "The second diagram shows what a creation does. The command reads your wallet and looks for live reference copies of the validators. The first registry of an application publishes them, in a transaction of its own, before it creates the registry. A later registry finds the live copies and sends one transaction. The registry's state token appears on the first output of the creation, and the command reads it back before it prints the receipt.",
+      "text": "The second diagram shows what a creation does. The command reads your wallet and looks for live reference copies of the validators. The first registry of an application publishes each in its own transaction, state first, and waits for both before it creates the registry. If you stop between publications, a rerun finds the live copy and publishes only the missing script. A later registry finds both live copies and sends one transaction. The registry's state token appears on the first output of the creation, and the command reads it back before it prints the receipt.",
       "pause": 400
     },
     {
@@ -135,6 +135,6 @@
   ],
   "_source": {
     "file": "registry-commands.md",
-    "sha256": "9d6824694dea14ba82b2258509c848e618353e0c6f8748a58e9b7684465ce6e1"
+    "sha256": "bf3b84d6e73b2fa0eccaf86788f47e00613c4561d1a751a029a7384e3403d232"
   }
 }

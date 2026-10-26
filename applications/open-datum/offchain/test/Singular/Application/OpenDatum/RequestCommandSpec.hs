@@ -824,54 +824,55 @@ creationSetup rig = do
         )
 
 publicationRecoveryRows :: Spec
-publicationRecoveryRows = describe "a half-published application" $
-    it
-        "resumes after the state script is observed, publishing only the missing request script before creating the registry" $
-        withReleaseRig $ \rig -> do
-            (keyPath, line, journalDir) <- creationSetup rig
-            reached <- newEmptyMVar
-            let base = envOf rig
-                env =
-                    base
-                        { envTracer = Tracer $ \event -> do
-                            traceWith (envTracer base) event
-                            case traceEvent event of
-                                How (Tx (TxObserved _ tx _)) -> do
-                                    putMVar reached tx
-                                    threadDelay maxBound
-                                _ -> pure ()
-                        }
-            running <-
-                async (runKeyed rig env keyPath "between publications" line)
-            outcome <- race (takeMVar reached) (waitCatch running)
-            first <- case outcome of
-                Right ended ->
-                    fail
-                        ( "creation stopped before its second publication: "
-                            <> either show (const "with a receipt") ended
-                        )
-                Left tx -> pure tx
-            cancel running
-            _ <- waitCatch running
-            entries <- readJournal journalDir
-            let observed = [journalTxId e | e <- entries, journalEvent e == "observed"]
-            observed `shouldBe` [first]
-            (nextEnv, sent) <- recordingEnv rig
-            r <- runKeyed rig nextEnv keyPath "after stop" line
-            outcomeOf (runReceipt r) `shouldBe` Just "success"
-            [step | (step, _, _, _) <- submissionsOf (runReceipt r)]
-                `shouldBe` ["publish-application-script", "create"]
-            resent <- map txIdHex <$> sent
-            resent
-                `shouldBe` map (\(_, tx, _, _) -> tx) (submissionsOf (runReceipt r))
-            resent `shouldNotContain` [first]
-            later <- readJournal journalDir
-            [ journalTxId e
-              | e <- later
-              , journalEvent e == "prepared"
-              , journalTxId e == first
-              ]
-                `shouldBe` [first]
+publicationRecoveryRows = describe "a half-published application"
+    $ it
+        "resumes after the state script is observed, publishing only the missing request script before creating the registry"
+    $ withReleaseRig
+    $ \rig -> do
+        (keyPath, line, journalDir) <- creationSetup rig
+        reached <- newEmptyMVar
+        let base = envOf rig
+            env =
+                base
+                    { envTracer = Tracer $ \event -> do
+                        traceWith (envTracer base) event
+                        case traceEvent event of
+                            How (Tx (TxObserved _ tx _)) -> do
+                                putMVar reached tx
+                                threadDelay maxBound
+                            _ -> pure ()
+                    }
+        running <-
+            async (runKeyed rig env keyPath "between publications" line)
+        outcome <- race (takeMVar reached) (waitCatch running)
+        first <- case outcome of
+            Right ended ->
+                fail
+                    ( "creation stopped before its second publication: "
+                        <> either show (const "with a receipt") ended
+                    )
+            Left tx -> pure tx
+        cancel running
+        _ <- waitCatch running
+        entries <- readJournal journalDir
+        let observed = [journalTxId e | e <- entries, journalEvent e == "observed"]
+        observed `shouldBe` [first]
+        (nextEnv, sent) <- recordingEnv rig
+        r <- runKeyed rig nextEnv keyPath "after stop" line
+        outcomeOf (runReceipt r) `shouldBe` Just "success"
+        [step | (step, _, _, _) <- submissionsOf (runReceipt r)]
+            `shouldBe` ["publish-application-script", "create"]
+        resent <- map txIdHex <$> sent
+        resent
+            `shouldBe` map (\(_, tx, _, _) -> tx) (submissionsOf (runReceipt r))
+        resent `shouldNotContain` [first]
+        later <- readJournal journalDir
+        [ journalTxId e
+          | e <- later
+          , journalEvent e == "prepared"
+          , journalTxId e == first
+          ]
+            `shouldBe` [first]
 
 {- | The environment whose node answers the submission the scenario names
 otherwise, counting from the first one of this environment: it applies the
