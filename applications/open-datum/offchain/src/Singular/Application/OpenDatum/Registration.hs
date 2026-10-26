@@ -359,7 +359,9 @@ renderRefusal = \case
     HoldingNotFound ref ->
         "the holding " <> T.unpack (txInText ref) <> " is not on the chain"
     NotALiveHolding ref ->
-        "the output " <> T.unpack (txInText ref) <> " is not a live holding of this application"
+        "the output "
+            <> T.unpack (txInText ref)
+            <> " is not a live holding of this application"
     PayerIsNotController ->
         "only the holding's controller can update it or book its termination"
     PendingNotFound ref ->

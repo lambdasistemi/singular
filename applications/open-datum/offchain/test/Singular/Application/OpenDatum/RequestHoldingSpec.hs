@@ -14,9 +14,16 @@ module Singular.Application.OpenDatum.RequestHoldingSpec (spec) where
 
 import Control.Monad (forM_)
 import Data.ByteString (ByteString)
-import Lens.Micro ((&), (.~), (^.))
+import Lens.Micro ((%~), (&), (.~), (^.))
 import PlutusCore.Data qualified as PLC
 import Test.Hspec
+    ( Spec
+    , describe
+    , it
+    , shouldBe
+    , shouldReturn
+    , shouldSatisfy
+    )
 
 import Cardano.Ledger.Api.Tx (bodyTxL)
 import Cardano.Ledger.Api.Tx.Out (coinTxOutL, valueTxOutL)
@@ -112,37 +119,39 @@ spec = do
             [ PLC.I 0
             , PLC.B "new payload"
             , PLC.Constr 3 [PLC.List [PLC.I 8, PLC.I 9]]
-            ] $ \payload ->
-            it ("changes only the payload to " <> show payload) $ withHolding $ \world registry ref before -> do
-                tx <- expectBuilt =<< update world ref payload
-                judge world tx >>= (`shouldSatisfy` everyScriptAccepts)
-                let index =
-                        holderIndex
-                            (statePolicy (crState world))
-                            (activeTokenName registry key)
-                            tx
-                after <-
-                    maybe (fail "no updated holding") pure (outputAtIndex tx index)
-                assetsOf after `shouldBe` assetsOf before
-                valueAda after `shouldSatisfy` (>= 5_000_000)
-                inlineDatum after
-                    `shouldBe` Just
-                        ( oracleLive
-                            registry
-                            key
-                            (controllerOf (crBooker world))
-                            5_000_000
-                            payload
-                        )
-                mintedOf tx `shouldBe` []
-                referencesOf tx `shouldBe` []
-                signersOf tx `shouldBe` [controllerOf (crBooker world)]
-                tx ^. bodyTxL . treasuryDonationTxBodyL `shouldBe` Coin 0
-                soundnessProblems world tx `shouldReturn` []
+            ]
+            $ \payload ->
+                it ("changes only the payload to " <> show payload) $ withHolding $ \world registry ref before -> do
+                    tx <- expectBuilt =<< update world ref payload
+                    judge world tx >>= (`shouldSatisfy` everyScriptAccepts)
+                    let index =
+                            holderIndex
+                                (statePolicy (crState world))
+                                (activeTokenName registry key)
+                                tx
+                    after <-
+                        maybe (fail "no updated holding") pure (outputAtIndex tx index)
+                    assetsOf after `shouldBe` assetsOf before
+                    valueAda after `shouldSatisfy` (>= 5_000_000)
+                    inlineDatum after
+                        `shouldBe` Just
+                            ( oracleLive
+                                registry
+                                key
+                                (controllerOf (crBooker world))
+                                5_000_000
+                                payload
+                            )
+                    mintedOf tx `shouldBe` []
+                    referencesOf tx `shouldBe` []
+                    signersOf tx `shouldBe` [controllerOf (crBooker world)]
+                    tx ^. bodyTxL . treasuryDonationTxBodyL `shouldBe` Coin 0
+                    soundnessProblems world tx `shouldReturn` []
 
         it
-            "refuses mutations of signature, protected control, tokens and deposit beside a passing update" $
-            withHolding $ \world registry ref _ -> do
+            "refuses mutations of signature, protected control, tokens and deposit beside a passing update"
+            $ withHolding
+            $ \world registry ref _ -> do
                 tx <- expectBuilt =<< update world ref (PLC.I 7)
                 judge world tx >>= (`shouldSatisfy` everyScriptAccepts)
                 let index =
@@ -168,6 +177,13 @@ spec = do
                             index
                             (\out -> out & valueTxOutL .~ MaryValue (Coin (valueAda out)) mempty)
                             tx
+                        , mapOutput
+                            index
+                            ( \out ->
+                                out
+                                    & valueTxOutL %~ \(MaryValue coin assets) -> MaryValue coin (assets <> assets)
+                            )
+                            tx
                         , mapOutput index (\out -> out & coinTxOutL .~ Coin 4_999_999) tx
                         ]
                 forM_ mutated $ \bad -> judge world bad >>= (`shouldSatisfy` refusedBy)
@@ -179,11 +195,13 @@ spec = do
             update world missing (PLC.I 7)
                 `shouldReturn` Left (HoldingNotFound missing)
         it
-            "declines a payer who is not the controller beside each successful builder" $ withHolding $ \world _ ref _ -> do
-            _ <- expectBuilt =<< update world ref (PLC.I 7)
-            withSession
-                world
-                ( \session ->
-                    buildUpdate session (crRequest world) ref (PLC.I 7) (crFolder world)
-                )
-                `shouldReturn` Left PayerIsNotController
+            "declines a payer who is not the controller beside each successful builder"
+            $ withHolding
+            $ \world _ ref _ -> do
+                _ <- expectBuilt =<< update world ref (PLC.I 7)
+                withSession
+                    world
+                    ( \session ->
+                        buildUpdate session (crRequest world) ref (PLC.I 7) (crFolder world)
+                    )
+                    `shouldReturn` Left PayerIsNotController
