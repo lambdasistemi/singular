@@ -102,12 +102,13 @@ buildUpdate session script reference payload payerAddress = runExceptT $ do
     let funding = payerFunding payer
         before = holdingOutput held
         datum = PLC.Constr 2 [holdingControl held, payload]
-    ExceptT $
-        assembleTransaction
+    ExceptT
+        $ assembleTransaction
             session
             [funding, (reference, before)]
             references
-            payerAddress $ do
+            payerAddress
+        $ do
             index <-
                 Tx.payTo'
                     (before ^. addrTxOutL)
