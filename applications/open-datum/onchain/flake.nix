@@ -156,17 +156,18 @@
           version = "0.0.0";
           # The blueprint build reads every module `aiken build`
           # type-checks, and `aiken build` type-checks the whole project
-          # including its tests — but the moved
-          # `validators/open_datum.tests.ak` calls the registry's state
-          # validator (`use state`), which no dependent project can
-          # import (A-002: a dependent sees only the dependency's lib/
-          # modules). So the production build filters exactly that one
-          # non-validator file out of its source; the committed tree keeps
-          # it at the briefed path, `aiken fmt` still visits it, and the
-          # suite itself runs only in the composed assembly below. The
+          # including its tests — but the composed
+          # `validators/open_datum.tests.ak` and
+          # `validators/open_datum_requests_termination_composed.tests.ak`
+          # call the registry's state validators, which no dependent project
+          # can import (a dependent sees only the dependency's lib/ modules).
+          # The production build filters exactly these two non-validator
+          # files out of its source; the committed tree keeps them,
+          # `aiken fmt` still visits them, and their tests run only in the
+          # composed assembly below. The
           # blueprint still holds the application's validators only.
           # (Consequence: a bare `aiken build` in a dev shell, over the
-          # unfiltered tree, refuses the tests file; build the blueprint
+          # unfiltered tree, refuses these test files; build the blueprint
           # with `nix build .#plutus-blueprint` and run the suite with
           # `nix run .#open-datum-aiken-tests`.)
           src = pkgs.lib.cleanSourceWith {
@@ -174,7 +175,13 @@
             filter =
               path: type:
               pkgs.lib.cleanSourceFilter path type
-              && !(type == "regular" && baseNameOf (toString path) == "open_datum.tests.ak");
+              && !(
+                type == "regular"
+                && builtins.elem (baseNameOf (toString path)) [
+                  "open_datum.tests.ak"
+                  "open_datum_requests_termination_composed.tests.ak"
+                ]
+              );
           };
           nativeBuildInputs = [ pkgs.aiken ];
           buildPhase = ''
