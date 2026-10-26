@@ -17,7 +17,6 @@ module Singular.Application.OpenDatum.RequestTerminationFoldSpec (spec) where
 
 import Control.Monad (forM_)
 import Data.ByteString qualified as BS
-import Data.Foldable (toList)
 import Data.Map.Strict qualified as Map
 import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
