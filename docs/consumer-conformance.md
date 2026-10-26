@@ -49,10 +49,10 @@ name.
 
 ## The denominator
 
-`conformance/rows.json` carries **47 rows, 46 owned**: one permanent contract requirement, five registry identity
-requirements, twenty-four registry operation requirements, eight serialization
-requirements, five consumer resolution requirements and three execution-limit
-requirements, plus the checkpoint and treasury policy (bonds, poison,
+`conformance/rows.json` carries **52 rows, 51 owned**: one permanent contract requirement, five registry identity
+requirements, twenty-five registry operation requirements, eight serialization
+requirements, five consumer resolution requirements, three execution-limit
+requirements and four registration journey requirements (stated below), plus the checkpoint and treasury policy (bonds, poison,
 the juvenility window `W`, the signature threshold) recorded as
 **out of scope** — it belongs to cardano-keri's checkpoint machine
 and treasury, explicitly never claimed by Singular. `list` prints the
@@ -64,6 +64,63 @@ accounting: relabelling a row pays no coverage and shrinks no board.
 coverage plan and the parser rejects the string. A row prints as
 executed only when a run receipt for it exists and matches the
 current base (`--receipts DIR` or `CONFORMANCE_RECEIPTS`).
+
+## Registration journeys: the previous design against the no-pin design
+
+As an integrator, I read what happens to a booked registration that is folded,
+reclaimed or cleaned up, under the previous design and under the no-pin design,
+and I see that these statements are published uncovered: no executable
+comparison with the application-held model backs them yet.
+
+Four rows in the group `registration-journeys` state the outcomes. The outcomes
+are those the declarations `OpenDatumApplicationHeld.Money.oldAllocation` and
+`OpenDatumApplicationHeld.Money.newAllocation` state; the rows name the
+declarations and retype no number.
+
+```mermaid
+flowchart LR
+    booked["Booked registration"] -->|"before its processing deadline"| folded["Folded: the holding receives the deposit"]
+    booked -->|"processing deadline to reclaim end"| reclaimed["Reclaimed: everything returns to the refund address"]
+    booked -->|"after the reclaim end"| cleaned["Cleaned up: the deposit returns, the cleaner takes the rest"]
+```
+
+| Journey | Previous design | No-pin design |
+| --- | --- | --- |
+| Folded | The holding receives the deposit, the folder receives the booking's tip and the registration cost goes to the treasury. | The holding receives the deposit and the folder receives the booked value above the deposit; no treasury is paid. |
+| Reclaimed | The owner's retraction returns the whole value to the refund address. | The controller, signing alone, reclaims between the processing deadline and the reclaim end: the whole value returns to the refund address and no folder is paid. |
+| Cleaned up | After the retraction window a folder rejects the request, refunds the owner everything but the tip and keeps the tip. | After the reclaim window anyone cleans the registration up: the deposit returns to the refund address and the cleaner receives the booked value above the deposit. |
+
+### The decided difference
+
+A booked registration that can never be folded, because its key is already
+registered or for any other reason, is not rejected early. It stays pending until
+its refund address reclaims it inside the reclaim window, or until anyone cleans
+it up after that window and the deposit returns to the refund address. Under the
+previous design a folder could reject such a request at once, with evidence of the
+mismatch, while it could still be folded or retracted. The previous design's
+requirements for rejection after the window, rejection before the deadline,
+request value and refund routing, the rejection and retraction refund controls,
+and rejection inside the processing and retraction windows stay published exactly
+as they were, with the dated qualification at the top of this page.
+
+### What backs these statements
+
+Each of the four rows reads uncovered, with the reason that no executable
+comparison with the application-held model exists yet. Two hosted jobs, the
+registration journey and the registration refusals, run the packaged commands on a
+development network and read the chain's own record. They are a separate evidence
+boundary: they establish what they run and nothing about agreement with the model.
+A row changes state only when a run receipt for it exists.
+
+### Appendix: how the statements are checked
+
+This appendix is harness evidence and says nothing more about the product. The
+hosted conformance checks list the inventory with the runner, then require of every
+row in the group that it reads uncovered, gives its reason, states the previous
+design's outcome, names its declarations and both hosted jobs, retypes no number
+and names no internal identifier, and that the five early-rejection rows are
+unchanged. The same script then runs thirteen times against scratch copies with one
+wrong fact planted each, and must refuse every one.
 
 ## The registry-mode contract change
 

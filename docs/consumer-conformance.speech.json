@@ -47,11 +47,55 @@
       "pause": 500
     },
     {
-      "text": "conformance/rows.json carries 47 rows, 46 owned: one permanent contract requirement, five registry identity requirements, twenty-four registry operation requirements, eight serialization requirements, five consumer resolution requirements and three execution-limit requirements, plus the checkpoint and treasury policy (bonds, poison, the juvenility window W, the signature threshold) recorded as out of scope — it belongs to cardano-keri's checkpoint machine and treasury, explicitly never claimed by Singular. list prints the owned denominator separately so the boundary stays visible. Superseded and held rows stay in the denominator and visible to completeness accounting: relabelling a row pays no coverage and shrinks no board.",
+      "text": "conformance/rows.json carries 52 rows, 51 owned: one permanent contract requirement, five registry identity requirements, twenty-five registry operation requirements, eight serialization requirements, five consumer resolution requirements, three execution-limit requirements and four registration journey requirements (stated below), plus the checkpoint and treasury policy (bonds, poison, the juvenility window W, the signature threshold) recorded as out of scope — it belongs to cardano-keri's checkpoint machine and treasury, explicitly never claimed by Singular. list prints the owned denominator separately so the boundary stays visible. Superseded and held rows stay in the denominator and visible to completeness accounting: relabelling a row pays no coverage and shrinks no board.",
       "pause": 400
     },
     {
       "text": "rows.json never carries executed: the declared field is the coverage plan and the parser rejects the string. A row prints as executed only when a run receipt for it exists and matches the current base (--receipts DIR or CONFORMANCE_RECEIPTS).",
+      "pause": 400
+    }
+  ],
+  "registration-journeys-the-previous-design-against-the-no-pin-design": [
+    {
+      "text": "Registration journeys: the previous design against the no-pin design.",
+      "pause": 500
+    },
+    {
+      "text": "As an integrator, I read what happens to a booked registration that is folded, reclaimed or cleaned up, under the previous design and under the no-pin design, and I see that these statements are published uncovered: no executable comparison with the application-held model backs them yet.",
+      "pause": 400
+    },
+    {
+      "text": "Four rows in the group registration-journeys state the outcomes. The outcomes are those the declarations OpenDatumApplicationHeld.Money.oldAllocation and OpenDatumApplicationHeld.Money.newAllocation state; the rows name the declarations and retype no number.",
+      "pause": 400
+    }
+  ],
+  "the-decided-difference": [
+    {
+      "text": "The decided difference.",
+      "pause": 500
+    },
+    {
+      "text": "A booked registration that can never be folded, because its key is already registered or for any other reason, is not rejected early. It stays pending until its refund address reclaims it inside the reclaim window, or until anyone cleans it up after that window and the deposit returns to the refund address. Under the previous design a folder could reject such a request at once, with evidence of the mismatch, while it could still be folded or retracted. The previous design's requirements for rejection after the window, rejection before the deadline, request value and refund routing, the rejection and retraction refund controls, and rejection inside the processing and retraction windows stay published exactly as they were, with the dated qualification at the top of this page.",
+      "pause": 400
+    }
+  ],
+  "what-backs-these-statements": [
+    {
+      "text": "What backs these statements.",
+      "pause": 500
+    },
+    {
+      "text": "Each of the four rows reads uncovered, with the reason that no executable comparison with the application-held model exists yet. Two hosted jobs, the registration journey and the registration refusals, run the packaged commands on a development network and read the chain's own record. They are a separate evidence boundary: they establish what they run and nothing about agreement with the model. A row changes state only when a run receipt for it exists.",
+      "pause": 400
+    }
+  ],
+  "appendix-how-the-statements-are-checked": [
+    {
+      "text": "Appendix: how the statements are checked.",
+      "pause": 500
+    },
+    {
+      "text": "This appendix is harness evidence and says nothing more about the product. The hosted conformance checks list the inventory with the runner, then require of every row in the group that it reads uncovered, gives its reason, states the previous design's outcome, names its declarations and both hosted jobs, retypes no number and names no internal identifier, and that the five early-rejection rows are unchanged. The same script then runs thirteen times against scratch copies with one wrong fact planted each, and must refuse every one.",
       "pause": 400
     }
   ],
@@ -443,6 +487,6 @@
   ],
   "_source": {
     "file": "consumer-conformance.md",
-    "sha256": "7c55121640af0a5223afa94996e38d66cade7b7c29014db37078a464dc7bad1e"
+    "sha256": "2c2065d9ebbf3f73514386435ac6944730a6a67270ed0e21feb4d73f59b6ae1c"
   }
 }

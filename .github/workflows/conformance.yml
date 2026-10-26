@@ -230,6 +230,20 @@ jobs:
         # The current retirement receipt proves Active to Terminal and the
         # excluded encodings. The original Absent/deletion-refund promises
         # remain separately published and uncovered (A-004).
+      # The registration journeys of the no-pin design are stated beside the
+      # previous design's early-rejection rows. With no executable comparison
+      # against the application-held model, each statement must read uncovered
+      # from the runner's own listing, with its reason, naming the declarations
+      # that state its outcomes and the two hosted jobs as a separate evidence
+      # boundary; the early-rejection rows must be unchanged. The second command
+      # plants thirteen wrong facts into scratch copies and requires the check
+      # to refuse each.
+      - name: Registration-journey statements are published uncovered beside the unchanged early-rejection rows
+        working-directory: conformance
+        run: |
+          nix run --quiet .#conformance -- list > "$RUNNER_TEMP/registration-journey-inventory.tsv"
+          nix shell --quiet nixpkgs#jq nixpkgs#coreutils nixpkgs#gawk nixpkgs#gnugrep -c bash test/ci/registration-journey-rows.sh "$RUNNER_TEMP/registration-journey-inventory.tsv" rows.json test/ci/registration-journey-frozen-rows.txt
+          nix shell --quiet nixpkgs#jq nixpkgs#coreutils nixpkgs#gawk nixpkgs#gnugrep -c bash test/ci/registration-journey-rows-control.sh "$RUNNER_TEMP/registration-journey-inventory.tsv" rows.json test/ci/registration-journey-frozen-rows.txt
   conformance-budget:
     name: "Conformance devnet: honest fold budget regression"
     runs-on: nixos

@@ -66,12 +66,12 @@ This bounded story targets the new permanent contract. Its evidence state is com
 | --- | --- |
 | Code revision the runs checked out | `c17309ee607368615b96f23ea4f96401467195f5` |
 | Application model revision | `de34300540223ccedf1ca85216b131fd09a148b4` |
-| Requirements in the inventory | 48 (1 out of scope) |
+| Requirements in the inventory | 52 (1 out of scope) |
 | Demonstrated by a run | 22 |
 | Partly demonstrated by a run | 0 |
 | Run, result not a pass | 4 |
 | Bound to evidence elsewhere | 5 |
-| Uncovered | 16 |
+| Uncovered | 20 |
 | Backend adapters in the contract runs | 6 |
 
 ```mermaid
@@ -138,12 +138,16 @@ Every requirement without a receipt for this code revision is listed with the pl
 | permanent-m1-two-edge-contract | A new permanent registry admits registration and permanent termination only; every caller is refused the other five registry transitions, including terminal witnessing without approval and an excluded member of a mixed batch. Its ordinary open-datum CLI journey registers a key, updates the application payload without moving the registry and terminates the key permanently. | accept registration and termination; refuse all other registry edges | uncovered |
 | permanent-retire-active-key | On a real devnet, registration delivers an Active token and termination burns that exact token, leaves no live holding and commits Terminal. Unknown-key termination and excluded insertion/deletion encodings are refused beside reached controls; an excluded deletion leaves the Active key able to terminate, and its Terminal key cannot register again. | accept registration and termination; refuse unknown termination, excluded encodings and Terminal reinsertion | uncovered |
 | prevent-second-live-representative | Several candidates impossible: a second live representative for one registered key cannot be created. | refuse | uncovered |
+| registration-cleanup-outcome | After the reclaim window of a booked registration has closed, any wallet may clean it up. The deposit returns to the refund address and the cleaner receives the booked value above the deposit. Under the previous design a folder rejected such a request after its retraction window, refunded the owner everything but the tip and kept the tip. | The cleanup is accepted and pays out as stated. Uncovered: no executable comparison with the application-held model exists yet | uncovered |
+| registration-fold-outcome | A booked registration is folded, before its processing deadline, by any wallet that holds only public chain data. The key's token reaches a new holding at the committed address that carries the registration's payload and exactly its deposit, and the folder receives the booked value above the deposit; no treasury is paid. Under the previous design the same fold gave the folder only the booking's tip and paid the registration cost to the treasury. | The fold is accepted and pays out as stated. Uncovered: no executable comparison with the application-held model exists yet | uncovered |
+| registration-reclaim-outcome | A booked registration is reclaimed by its controller, signing alone, between its processing deadline and the end of its reclaim window. Everything the booking held returns to the refund address and no folder is paid. Under the previous design the owner's retraction returned the same whole value; the window is now the one the booking itself records, from its processing deadline to its reclaim end. | The reclaim is accepted and pays out as stated. Uncovered: no executable comparison with the application-held model exists yet | uncovered |
 | request-and-mint-constructor-witnesses | Each RequestAction (Update 0, Rejected 1) and MintRedeemer (Minting 0, Burning 2) constructor is exercised by an accepting witness or an action-attributed phase-2 refusal witness with a sound index discriminator; Migrating 1 unconditional refusal recorded with wire constructor retained. | partial: accept (Update 0, Rejected 1, Minting 0 with executing witnesses); Burning 2 unexercised named residual; Migrating 1 explicit gap | uncovered |
 | resolve-active-registration | Present: resolve the active registration's application UTxO from the authenticated canonical registry. | accept | uncovered |
 | resolve-pending-terminal-request | Resolve while the representative sits in a pending terminal request: report pending, not a usable output. | pending | uncovered |
 | resolve-with-no-candidate | Zero candidates resolves to reject. | reject, fail closed | uncovered |
 | retired-stake-hook-with-withdrawal | stake_script hook set: a fold carrying the matching withdrawal. | retired — the registry interface has no stake_script hook, so nothing runs this row | uncovered |
 | retired-stake-hook-without-withdrawal | stake_script hook set, withdrawal absent. | retired — the registry interface has no stake_script hook, so nothing runs this row | uncovered |
+| unfoldable-registration-waits-for-reclaim | A booked registration that can never be folded, because its key is already registered or for any other reason, is not rejected early. It stays pending until its refund address reclaims it inside the reclaim window, or until anyone cleans it up after that window and the deposit returns to the refund address. Under the previous design a folder could reject such a request at once, with evidence of the mismatch, while it could still be folded or retracted; the previous design's early-rejection requirements stay published as they are. | No early rejection exists: the registration waits for its reclaim window. Uncovered: no executable comparison with the application-held model exists yet | uncovered |
 | update-redeemer-constructor-witnesses | Each UpdateRedeemer constructor (End 0, Contribute 1, Modify 2, Retract 3, Sweep 4) is exercised by an accepting witness or an action-attributed phase-2 refusal witness with a sound index discriminator. | partial: accept (Contribute 1, Modify 2, Retract 3 with executing witnesses); End 0 and Sweep 4 unexercised named residuals (no accepting path yet, issue #18 tracks completion) | uncovered |
 
 ### Bound to evidence elsewhere

@@ -19,7 +19,7 @@ nix run ./conformance#conformance -- list
 nix run ./conformance#conformance -- run insert-key insert-occupied-key permanent-retire-active-key
 ```
 
-`list` prints the complete 48-row inventory from `rows.json` with each
+`list` prints the complete 52-row inventory from `rows.json` with each
 row's state (`executed` / `bound-elsewhere` / `uncovered` /
 `out-of-scope`). `run` executes rows against a real devnet; the
 blueprint comes from the caller at run time:
@@ -33,8 +33,9 @@ The runner sets its own unique `TMPDIR` before starting a node and
 never touches the default path, so concurrent devnet lanes on one host
 keep their databases.
 
-`rows.json` carries the complete inventory: the 47 owned consumer rows
-plus checkpoint-and-treasury-policy (cardano-keri's checkpoint policy), recorded as out-of-scope
+`rows.json` carries the complete inventory: the 47 owned consumer rows,
+the four owned rows that state the registration journeys of the no-pin design
+against the previous design (below), plus checkpoint-and-treasury-policy (cardano-keri's checkpoint policy), recorded as out-of-scope
 so the boundary is visible. `rows.json` never carries `executed` —
 that state is computed from run receipts, never typed. A `run` writes
 one `receipt-<ROW>.json` per executed row under its own output
@@ -57,6 +58,21 @@ Current retirement has a separate requirement and receipt; it cannot satisfy
 those broader promises. Excluded wire encodings are tested as refusals, and
 their refusal creates no Absent state or deletion refund. Application deposit
 release is checked separately against the Open Datum application law.
+
+## Registration journeys: the previous design against the no-pin design
+
+Four rows (group `registration-journeys`) state, for a booked registration that is
+folded, reclaimed and cleaned up, what the previous design did and what the no-pin
+design does, and the decided difference: a registration that can never be folded
+waits for its reclaim window instead of being rejected early. The outcomes are those
+the declarations `OpenDatumApplicationHeld.Money.oldAllocation` and
+`OpenDatumApplicationHeld.Money.newAllocation` state; the rows name them and retype
+no number. No executable comparison with the application-held model exists yet, so
+the rows are published `uncovered` and give that reason. The hosted jobs
+`no-pin-registration-journey` and `no-pin-registration-refusals` run the packaged
+commands on a development network and read the chain's own record; they are a
+separate evidence boundary and establish nothing about agreement with the model.
+The previous design's early-rejection rows stay published as they were.
 
 ## Registration checked against executable Lean
 

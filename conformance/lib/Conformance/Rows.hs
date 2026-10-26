@@ -1,12 +1,12 @@
 {- |
 Module      : Conformance.Rows
-Description : The 48-row consumer inventory and its validation
+Description : The 52-row consumer inventory and its validation
 License     : Apache-2.0
 
 The complete consumer-row inventory from @rows.json@: id, group,
 requirement, source, expected outcome and declared plan. @list@
-prints it; @validateInventory@ enforces the denominator — 48 rows,
-47 owned — so a truncated inventory fails loudly instead of printing
+prints it; @validateInventory@ enforces the denominator — 52 rows,
+51 owned — so a truncated inventory fails loudly instead of printing
 a smaller-but-plausible table.
 
 @executed@ is not a value @rows.json@ can carry: the declared field
@@ -48,19 +48,23 @@ historical-permissionless-fold, the F-002 permissionless-folder regression, regi
 insertActive fold and its two refusal fixtures, retire-active-key, #177's
 updateTerminal retirement and its two refusal fixtures, reject-and-retract-refund-controls,
 issue #258's reject and retract with their tampered refunds, and reject-inside-processing-and-retraction-windows,
-issue #320's early rejection in two windows) plus checkpoint-and-treasury-policy,
-cardano-keri's checkpoint policy, recorded as out-of-scope so the
-boundary is visible instead of forgotten. The original broader retirement
+issue #320's early rejection in two windows), the four owned rows that state
+the folded, reclaimed and cleaned-up registration journeys and the decided
+difference of the no-pin design against the previous design
+(registration-fold-outcome, registration-reclaim-outcome,
+registration-cleanup-outcome, unfoldable-registration-waits-for-reclaim),
+plus checkpoint-and-treasury-policy, cardano-keri's checkpoint policy,
+recorded as out-of-scope so the boundary is visible instead of forgotten. The original broader retirement
 requirement stays present; permanent-retire-active-key is a separate requirement.
 -}
 expectedRowCount :: Int
-expectedRowCount = 48
+expectedRowCount = 52
 
 {- | Rows Singular owns and must eventually evidence. Out-of-scope
 rows (checkpoint-and-treasury-policy) are carried for the boundary, never counted.
 -}
 ownedDenominator :: Int
-ownedDenominator = 47
+ownedDenominator = 51
 
 {- | A row's declared coverage plan. @executed@ is unrepresentable
 here by construction: only a run receipt can establish it.

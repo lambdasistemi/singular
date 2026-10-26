@@ -1837,6 +1837,22 @@
   ]
  },
  "docs/consumer-conformance.md": {
+  "appendix-how-the-statements-are-checked": [
+   {
+    "index": 0,
+    "name": "docs-consumer-conformance/appendix-how-the-statements-are-checked-00",
+    "pause_ms": 500,
+    "text": "Appendix: how the statements are checked.",
+    "v": "4e2d687e44d6"
+   },
+   {
+    "index": 1,
+    "name": "docs-consumer-conformance/appendix-how-the-statements-are-checked-01",
+    "pause_ms": 400,
+    "text": "This appendix is harness evidence and says nothing more about the product. The hosted conformance checks list the inventory with the runner, then require of every row in the group that it reads uncovered, gives its reason, states the previous design's outcome, names its declarations and both hosted jobs, retypes no number and names no internal identifier, and that the five early-rejection rows are unchanged. The same script then runs thirteen times against scratch copies with one wrong fact planted each, and must refuse every one.",
+    "v": "8a510b1dc202"
+   }
+  ],
   "consumer-conformance-record": [
    {
     "index": 0,
@@ -2181,6 +2197,29 @@
     "v": "caf41652589d"
    }
   ],
+  "registration-journeys-the-previous-design-against-the-no-pin-design": [
+   {
+    "index": 0,
+    "name": "docs-consumer-conformance/registration-journeys-the-previous-design-against-the-no-pin-design-00",
+    "pause_ms": 500,
+    "text": "Registration journeys: the previous design against the no-pin design.",
+    "v": "60f1ce37cc18"
+   },
+   {
+    "index": 1,
+    "name": "docs-consumer-conformance/registration-journeys-the-previous-design-against-the-no-pin-design-01",
+    "pause_ms": 400,
+    "text": "As an integrator, I read what happens to a booked registration that is folded, reclaimed or cleaned up, under the previous design and under the no-pin design, and I see that these statements are published uncovered: no executable comparison with the application-held model backs them yet.",
+    "v": "f9cfcb901731"
+   },
+   {
+    "index": 2,
+    "name": "docs-consumer-conformance/registration-journeys-the-previous-design-against-the-no-pin-design-02",
+    "pause_ms": 400,
+    "text": "Four rows in the group registration-journeys state the outcomes. The outcomes are those the declarations OpenDatumApplicationHeld.Money.oldAllocation and OpenDatumApplicationHeld.Money.newAllocation state; the rows name the declarations and retype no number.",
+    "v": "2787b3d1c186"
+   }
+  ],
   "the-cage-datum-a-third-constructor": [
    {
     "index": 0,
@@ -2243,6 +2282,22 @@
     "v": "92052f9db934"
    }
   ],
+  "the-decided-difference": [
+   {
+    "index": 0,
+    "name": "docs-consumer-conformance/the-decided-difference-00",
+    "pause_ms": 500,
+    "text": "The decided difference.",
+    "v": "b4febb6241d5"
+   },
+   {
+    "index": 1,
+    "name": "docs-consumer-conformance/the-decided-difference-01",
+    "pause_ms": 400,
+    "text": "A booked registration that can never be folded, because its key is already registered or for any other reason, is not rejected early. It stays pending until its refund address reclaims it inside the reclaim window, or until anyone cleans it up after that window and the deposit returns to the refund address. Under the previous design a folder could reject such a request at once, with evidence of the mismatch, while it could still be folded or retracted. The previous design's requirements for rejection after the window, rejection before the deadline, request value and refund routing, the rejection and retraction refund controls, and rejection inside the processing and retraction windows stay published exactly as they were, with the dated qualification at the top of this page.",
+    "v": "6b2d683608f3"
+   }
+  ],
   "the-denominator": [
    {
     "index": 0,
@@ -2255,8 +2310,8 @@
     "index": 1,
     "name": "docs-consumer-conformance/the-denominator-01",
     "pause_ms": 400,
-    "text": "conformance/rows.json carries 47 rows, 46 owned: one permanent contract requirement, five registry identity requirements, twenty-four registry operation requirements, eight serialization requirements, five consumer resolution requirements and three execution-limit requirements, plus the checkpoint and treasury policy (bonds, poison, the juvenility window W, the signature threshold) recorded as out of scope — it belongs to cardano-keri's checkpoint machine and treasury, explicitly never claimed by Singular. list prints the owned denominator separately so the boundary stays visible. Superseded and held rows stay in the denominator and visible to completeness accounting: relabelling a row pays no coverage and shrinks no board.",
-    "v": "882a05f71a40"
+    "text": "conformance/rows.json carries 52 rows, 51 owned: one permanent contract requirement, five registry identity requirements, twenty-five registry operation requirements, eight serialization requirements, five consumer resolution requirements, three execution-limit requirements and four registration journey requirements (stated below), plus the checkpoint and treasury policy (bonds, poison, the juvenility window W, the signature threshold) recorded as out of scope — it belongs to cardano-keri's checkpoint machine and treasury, explicitly never claimed by Singular. list prints the owned denominator separately so the boundary stays visible. Superseded and held rows stay in the denominator and visible to completeness accounting: relabelling a row pays no coverage and shrinks no board.",
+    "v": "1e69f4ad1002"
    },
    {
     "index": 2,
@@ -2571,6 +2626,22 @@
     "pause_ms": 400,
     "text": "Read tokens, never the root. The presence of an active witness under the active policy, at the asset name equal to the registry key, is a live registration; a name that is over is a leaf proved terminal against the root. The asset name is the key itself — there is no hashed representative name any more.",
     "v": "67199b6cefc5"
+   }
+  ],
+  "what-backs-these-statements": [
+   {
+    "index": 0,
+    "name": "docs-consumer-conformance/what-backs-these-statements-00",
+    "pause_ms": 500,
+    "text": "What backs these statements.",
+    "v": "7472929f5760"
+   },
+   {
+    "index": 1,
+    "name": "docs-consumer-conformance/what-backs-these-statements-01",
+    "pause_ms": 400,
+    "text": "Each of the four rows reads uncovered, with the reason that no executable comparison with the application-held model exists yet. Two hosted jobs, the registration journey and the registration refusals, run the packaged commands on a development network and read the chain's own record. They are a separate evidence boundary: they establish what they run and nothing about agreement with the model. A row changes state only when a run receipt for it exists.",
+    "v": "9ff1d4a0d24f"
    }
   ]
  },
