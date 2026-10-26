@@ -12,7 +12,7 @@ identities are read independently from the transaction.
 -}
 module Singular.Application.OpenDatum.RequestHoldingSpec (spec, withHoldingIn) where
 
-import Control.Monad (forM_)
+import Control.Monad (forM_, (>=>))
 import Data.ByteString (ByteString)
 import Lens.Micro ((%~), (&), (.~), (^.))
 import PlutusCore.Data qualified as PLC
@@ -193,7 +193,7 @@ spec = do
                             tx
                         , mapOutput index (\out -> out & coinTxOutL .~ Coin 4_999_999) tx
                         ]
-                forM_ mutated $ \bad -> judge world bad >>= (`shouldSatisfy` refusedBy)
+                forM_ mutated (judge world >=> (`shouldSatisfy` refusedBy))
 
     describe "an update builder declines before signing" $ do
         it "declines a missing holding beside each successful builder" $ withHolding $ \world _ ref _ -> do
