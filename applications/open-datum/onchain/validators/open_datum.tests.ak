@@ -106,6 +106,7 @@ test application_held_no_stuck_termination_from_a_booked_request() {
       mint: from_asset(c.active_asset.policy, c.active_asset.name, -1)
         |> assets.add(approval.policy, approval.name, -1),
     }
+  expect [paid, _continuation] = tx.outputs
   let fold_raw =
     builtin.constr_data(
       5,
@@ -153,7 +154,8 @@ test application_held_no_stuck_termination_from_a_booked_request() {
           tx,
         ),
         tx.extra_signatories == [],
-        assets.lovelace_of(reward.value) + pending.request_lovelace <= funding + pending.request_lovelace,
+        paid.address == reward.address,
+        assets.lovelace_of(paid.value) == funding + pending.request_lovelace,
         tx.treasury_donation == None,
       }
     None -> False

@@ -3,6 +3,7 @@
 //// bookTermination_inversion, booking_authority_and_parameters and treasury_at_booking.
 
 use aiken/collection/list
+use aiken/fuzz
 use application/held.{Live, ProtectedControl}
 use application/mint.{ApplicationAction}
 use application/spend.{spend_action_of}
@@ -196,6 +197,40 @@ test the_booking_donation_sums_two_distinct_holdings() {
       Transaction { ..two, treasury_donation: Some(f.deposit) },
       f.seed_b,
       1,
+    ),
+  }
+}
+
+test the_booking_donation_uses_the_deposit_with_generated_surplus(
+  amount via fuzz.int_between(0, 10_000_000),
+) {
+  let c = ProtectedControl { ..t.control(f.key_a), deposit: amount }
+  let input = t.holding(c)
+  let tx =
+    Transaction {
+      ..t.booking(),
+      inputs: [
+        Input {
+          output_reference: f.seed_a,
+          output: Output {
+            ..input,
+            value: add(input.value, #"", #"", 1_000_000),
+          },
+        },
+      ],
+      treasury_donation: Some(amount),
+    }
+  and {
+    booked(tx),
+    !mint_at(
+      Transaction { ..tx, treasury_donation: Some(amount + 1) },
+      f.seed_a,
+      0,
+    ),
+    !spend_at(
+      Transaction { ..tx, treasury_donation: Some(amount + 1) },
+      f.seed_a,
+      0,
     ),
   }
 }

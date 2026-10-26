@@ -1,4 +1,4 @@
-//// The spend of a pending registration.
+//// Spending the records at the application address.
 ////
 //// ## Responsibility
 //// Decides the spend of a pending registration from the action of its
@@ -6,7 +6,9 @@
 //// the processing deadline, the refund address reclaims the whole request
 //// inside the reclaim window, and anyone cleans the request up after the
 //// window, returning the deposit to the refund address. Every spend burns the
-//// approval it consumes.
+//// approval it consumes. A live holding is updated or booked for termination
+//// by its controller. An empty termination request spends only with both
+//// token burns, without a signer or a clock.
 ////
 //// ## Dependencies
 //// `application/held` for the records, `application/phases` for the phase of
@@ -39,16 +41,18 @@ use application/phases.{Cleanup, Processing, Reclaim, classify_phase}
 use application/registration.{
   registration_asset, registration_funding, registration_shape,
 }
-use application/termination.{termination_approval, termination_book}
+use application/termination.{
+  termination_approval, termination_book, termination_shape,
+}
 use cardano/address.{Script, VerificationKey}
 use cardano/assets.{PolicyId, Value, lovelace_of, quantity_of}
 use cardano/transaction.{
   InlineDatum, Input, Output, OutputReference, Spend, Transaction,
 }
-use singular_state/preimage.{active_token_name}
+use singular_state/preimage.{RegistryIdentity, active_token_name}
 
-/// The actions of the model's `ApplicationAction` that spend a pending
-/// registration. The reference of the input is the one the ledger hands the
+/// The actions of the model's `ApplicationAction` that spend an application
+/// input. The reference of the input is the one the ledger hands the
 /// handler.
 pub type SpendAction {
   RegistrationFold { holding_index: Int }
@@ -56,6 +60,11 @@ pub type SpendAction {
   ExpiredCleanup
   LiveUpdate { successor_index: Int }
   BookTermination { output_index: Int }
+  TerminationFold {
+    state_policy: ByteArray,
+    state_name: ByteArray,
+    key: ByteArray,
+  }
 }
 
 /// Model `requestInput`: the output that `reference` spends, when exactly one
@@ -144,6 +153,8 @@ pub fn spend_action_of(redeemer: Data) -> Option<SpendAction> {
     Some(LiveUpdate { successor_index })
   } else if redeemer is BookTermination { output_index }: SpendAction {
     Some(BookTermination { output_index })
+  } else if redeemer is TerminationFold { state_policy, state_name, key }: SpendAction {
+    Some(TerminationFold { state_policy, state_name, key })
   } else {
     None
   }
@@ -157,25 +168,30 @@ fn payment_of(
   action: SpendAction,
   input: Output,
   registration: RegistrationData,
-) -> Payment {
+) -> Option<Payment> {
   when action is {
     RegistrationFold { .. } ->
-      Payment {
-        address: registration.holding_address,
-        amount: registration.deposit,
-      }
+      Some(
+        Payment {
+          address: registration.holding_address,
+          amount: registration.deposit,
+        },
+      )
     OwnerReclaim ->
-      Payment {
-        address: registration.refund_address,
-        amount: lovelace_of(input.value),
-      }
+      Some(
+        Payment {
+          address: registration.refund_address,
+          amount: lovelace_of(input.value),
+        },
+      )
     ExpiredCleanup ->
-      Payment {
-        address: registration.refund_address,
-        amount: registration.deposit,
-      }
-    LiveUpdate { .. } | BookTermination { .. } ->
-      Payment { address: registration.refund_address, amount: 0 }
+      Some(
+        Payment {
+          address: registration.refund_address,
+          amount: registration.deposit,
+        },
+      )
+    LiveUpdate { .. } | BookTermination { .. } | TerminationFold { .. } -> None
   }
 }
 
@@ -193,7 +209,7 @@ fn payment_for(
       if output.address.payment_credential == Script(application_policy) {
         when (held_datum(output), spend_action_of(redeemer)) is {
           (Some(Registration { registration }), Some(action)) ->
-            Some(payment_of(action, output, registration))
+            payment_of(action, output, registration)
           _ -> None
         }
       } else {
@@ -251,7 +267,8 @@ pub fn registration_spend(
         }
       ExpiredCleanup ->
         classify_phase(registration, tx.validity_range) == Cleanup
-      LiveUpdate { .. } | BookTermination { .. } -> False
+      LiveUpdate { .. } | BookTermination { .. } | TerminationFold { .. } ->
+        False
     },
   }
 }
@@ -308,12 +325,43 @@ pub fn application_spend(
                     )
                   _ -> False
                 }
-              _ -> False
+              _ ->
+                when action is {
+                  TerminationFold { state_policy, state_name, key } ->
+                    termination_spend(
+                      application_policy,
+                      input,
+                      RegistryIdentity {
+                        policy: state_policy,
+                        name: state_name,
+                      },
+                      key,
+                      tx,
+                    )
+                  _ -> False
+                }
             },
           }
         _ -> False
       }
     None -> False
+  }
+}
+
+/// Model terminationSpend: no signature or clock. A nonzero mint under the
+/// active policy invokes that policy by ledger rules; its validator decides
+/// whether the burn belongs to a fold of this registry.
+pub fn termination_spend(
+  application_policy: PolicyId,
+  input: Output,
+  registry: RegistryIdentity,
+  key: ByteArray,
+  tx: Transaction,
+) -> Bool {
+  and {
+    termination_shape(application_policy, input, registry, key),
+    approval_burned(tx, termination_approval(application_policy, registry, key)),
+    quantity_of(tx.mint, registry.policy, active_token_name(registry, key)) == -1,
   }
 }
 

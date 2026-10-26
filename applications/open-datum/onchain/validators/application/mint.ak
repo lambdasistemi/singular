@@ -4,7 +4,7 @@
 //// Decides a transaction's mint under the application policy from the actions
 //// its redeemer lists: each action is accepted by its own rule, no positive
 //// quantity is minted that no action brings into being, burning is open, and
-//// the transaction donates nothing to the treasury.
+//// the treasury receives the sum of the deposits booked for termination.
 ////
 //// ## Dependencies
 //// `application/births`, `application/configuration`, `application/held` and
@@ -12,9 +12,8 @@
 //// library.
 ////
 //// ## Assumptions
-//// Booking a termination and a live update belong to other rules; their actions
-//// are not listed here, so no approval for them can be minted. The spend of a
-//// pending registration is decided by `application/spend`.
+//// The ledger also checks the matching booking spend. Updates do not mint;
+//// spending inputs are decided by `application/spend`.
 ////
 //// ## Invariants
 //// Everything minted under the policy is either burned or accounted for by an
@@ -29,7 +28,6 @@ use application/registration.{
 }
 use application/spend.{
   BookTermination as BookingSpend, donation_matches, request_input,
-  spend_action_of,
 }
 use application/termination.{termination_approval, termination_book}
 use cardano/assets.{PolicyId}

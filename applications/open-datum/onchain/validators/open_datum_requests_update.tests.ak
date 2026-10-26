@@ -4,6 +4,7 @@
 
 use aiken/builtin
 use aiken/collection/list
+use aiken/fuzz
 use application/held.{Live, ProtectedControl}
 use application/spend.{spend_action_of}
 use cardano/address.{from_script}
@@ -217,4 +218,34 @@ test an_update_donates_nothing_without_a_termination_booking() {
     run(tx),
     !run(Transaction { ..tx, treasury_donation: Some(1) }),
   }
+}
+
+fn updates_from(current: Output, payloads: List<ByteArray>) -> Bool {
+  when payloads is {
+    [] -> True
+    [payload, ..rest] -> {
+      let next =
+        Output {
+          ..current,
+          datum: InlineDatum(Live { control: control(), payload }),
+        }
+      let tx =
+        Transaction {
+          ..transaction(),
+          inputs: [Input { output_reference: f.seed_a, output: current }],
+          outputs: [next],
+        }
+      and {
+        run(tx),
+        !run(Transaction { ..tx, extra_signatories: [] }),
+        updates_from(next, rest),
+      }
+    }
+  }
+}
+
+test the_controller_updates_generated_payload_histories(
+  payloads via fuzz.list_between(fuzz.bytearray_between(0, 64), 2, 8),
+) {
+  updates_from(holding(control(), f.payload), payloads)
 }
