@@ -1896,6 +1896,45 @@ registrationLifecycle rig = do
             "proved"
             "state fold"
             (["state", "fold", "--state-token", token] <> pendingOf booked)
+    foldedTx <- last <$> readIORef (rigSubmitted rig)
+    let holding = renderOutRef (TxIn (txIdTx foldedTx) (TxIx 1))
+    updated <-
+        runAt
+            rig
+            "proved"
+            "holding update"
+            [ "holding"
+            , "update"
+            , "--state-token"
+            , token
+            , "--holding"
+            , T.unpack holding
+            , "--payload"
+            , rigDir rig </> "payload.json"
+            ]
+    nextHolding <-
+        maybe
+            (fail "the update prints no holding")
+            pure
+            (textAt "holding" (runReceipt updated))
+    terminated <-
+        runAt
+            rig
+            "proved"
+            "holding terminate"
+            [ "holding"
+            , "terminate"
+            , "--state-token"
+            , token
+            , "--holding"
+            , T.unpack nextHolding
+            ]
+    terminationFold <-
+        runAt
+            rig
+            "proved"
+            "termination fold"
+            (["state", "fold", "--state-token", token] <> pendingOf terminated)
     toReclaim <-
         runAt
             rig
@@ -1926,7 +1965,18 @@ registrationLifecycle rig = do
             ( ["registration", "cleanup", "--state-token", token]
                 <> pendingOf toClean
             )
-    pure [created, booked, folded, toReclaim, reclaimed, toClean, cleaned]
+    pure
+        [ created
+        , booked
+        , folded
+        , updated
+        , terminated
+        , terminationFold
+        , toReclaim
+        , reclaimed
+        , toClean
+        , cleaned
+        ]
   where
     book token key =
         [ "registration"

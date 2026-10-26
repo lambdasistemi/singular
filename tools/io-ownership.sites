@@ -45,6 +45,7 @@ applications/open-datum/offchain/test/Singular/Application/OpenDatum/CommandRunS
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/CommandRunSpec.hs neutralInspect writeIORef 1
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/CommandRunSpec.hs recordingCapabilities IORef 1
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/CommandRunSpec.hs recordingCapabilities modifyIORef' 1
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/CommandRunSpec.hs registrationLifecycle readIORef 1
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/CommandRunSpec.hs registryAddressRows modifyIORef' 2
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/CommandRunSpec.hs registryAddressRows newIORef 1
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/CommandRunSpec.hs registryAddressRows readIORef 1
