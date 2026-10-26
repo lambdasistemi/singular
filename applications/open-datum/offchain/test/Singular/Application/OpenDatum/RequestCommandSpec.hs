@@ -42,14 +42,25 @@ import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe, mapMaybe)
 import Data.Text qualified as T
 import Lens.Micro ((^.))
+import PlutusCore.Data qualified as PLC
+import System.Directory
+    ( doesDirectoryExist
+    , doesFileExist
+    , removeFile
+    , removePathForcibly
+    )
 import System.Environment (lookupEnv)
 import System.Exit (ExitCode (..))
 import System.FilePath ((</>))
-import Test.Hspec
+import Test.Hspec hiding (after, before, pending)
 
 import Cardano.Ledger.Address (Addr)
 import Cardano.Ledger.Api.Tx (bodyTxL)
-import Cardano.Ledger.Api.Tx.Body (inputsTxBodyL)
+import Cardano.Ledger.Api.Tx.Body
+    ( feeTxBodyL
+    , inputsTxBodyL
+    , mintTxBodyL
+    )
 import Cardano.Ledger.Api.Tx.Out
     ( addrTxOutL
     , coinTxOutL
@@ -58,6 +69,7 @@ import Cardano.Ledger.Api.Tx.Out
     )
 import Cardano.Ledger.BaseTypes (Network (Testnet))
 import Cardano.Ledger.Coin (Coin (..))
+import Cardano.Ledger.Conway.TxBody (treasuryDonationTxBodyL)
 import Cardano.Ledger.Mary.Value
     ( AssetName (..)
     , MaryValue (..)
@@ -139,7 +151,11 @@ import Singular.Registry.TxBuilder.Internal
     )
 import Singular.Registry.Wallet (Wallet (..), loadWallet)
 import Singular.State.Assemble (inlineDatumOf, readOutputs)
-import Singular.State.Preimage (activeTokenName)
+import Singular.State.Preimage
+    ( activeTokenName
+    , approvalName
+    , terminationPreimage
+    )
 import Singular.State.Records (decodeStateDatum)
 import Singular.State.Script
     ( ScriptSource (..)
@@ -153,6 +169,7 @@ spec = describe "the registration commands" $ do
     parserRows
     commandExtentRow
     lifecycleRows
+    holdingLifecycleRows
     publicationRecoveryRows
     interruptionRows
 
@@ -242,6 +259,28 @@ commandLines =
             <> keyFile
         , "OpenRegistrationCleanup"
         )
+    ,
+        ( "holding update"
+        , ["holding", "update"]
+            <> node
+            <> [ "--state-token"
+               , aToken
+               , "--holding"
+               , aRef
+               , "--payload"
+               , "payload.json"
+               ]
+            <> keyFile
+        , "OpenHoldingUpdate"
+        )
+    ,
+        ( "holding terminate"
+        , ["holding", "terminate"]
+            <> node
+            <> ["--state-token", aToken, "--holding", aRef]
+            <> keyFile
+        , "OpenHoldingTerminate"
+        )
     ]
 
 lineOf :: String -> [String]
@@ -295,6 +334,17 @@ parserRows = describe "the command line" $ do
             forM_ [["--fund-input", aRef], ["--max-outlay", "5000000"]] $ \extra ->
                 (name, fmap snd (aboutRefusal (reading (line <> extra))))
                     `shouldBe` (name, Just (concat (take 1 extra)))
+    it "requires the holding reference for both holding commands" $
+        forM_ ["holding update", "holding terminate"] $ \name ->
+            aboutRefusal (reading (dropFlag "--holding" (lineOf name)))
+                `shouldBe` Just ("MissingFlag", "--holding")
+    it "requires the new payload only for holding update" $ do
+        aboutRefusal
+            (reading (dropFlag "--payload" (lineOf "holding update")))
+            `shouldBe` Just ("MissingFlag", "--payload")
+        aboutRefusal
+            (reading (lineOf "holding terminate" <> ["--payload", "payload.json"]))
+            `shouldBe` Just ("BadValue", "--payload")
     it
         "reads the five parameters of a registry's configuration, and refuses one that is not a number"
         $ do
@@ -340,7 +390,7 @@ commandExtentRow =
             let declared =
                     [ unwords path
                     | path <- commandPaths (openDatumProgram singularVersion)
-                    , take 1 path `elem` [["state"], ["registration"]]
+                    , take 1 path `elem` [["state"], ["registration"], ["holding"]]
                     , length path == 2
                     ]
                 covered = [name | (name, _, _) <- commandLines]
@@ -769,6 +819,140 @@ lifecycleRows = describe "from a registry to a cleanup" $ do
             held
                 `shouldSatisfy` (> funded + (request - rdDeposit registration) - 2_000_000)
 
+-- | Reach a holding using the public command surface alone.
+reachedHolding :: Rig -> IO (String, TxIn)
+reachedHolding rig = do
+    (_, token) <- createdRegistry rig
+    booked <- run' rig "book" (bookLine rig token "alpha")
+    pending <- pendingOf booked
+    folded <-
+        run'
+            rig
+            "registration fold"
+            (["state", "fold"] <> pendingFlags token pending)
+    outcomeOf (runReceipt folded) `shouldBe` Just "success"
+    registry <- registryOf token
+    held <-
+        outputsFor
+            rig
+            ( HoldingAsset
+                (fst registry, activeTokenName (identityOf registry) "alpha")
+            )
+    case held of
+        [(ref, _)] -> pure (token, ref)
+        _ -> fail "the registration fold did not leave one live holding"
+
+holdingFlags :: String -> TxIn -> [String]
+holdingFlags token ref = ["--state-token", token, "--holding", T.unpack (renderOutRef ref)]
+
+holdingLifecycleRows :: Spec
+holdingLifecycleRows = describe "the holding commands" $ do
+    it
+        "updates a reached holding and preserves its control, token value and deposit" $ withReleaseRig $ \rig -> do
+        (token, ref) <- reachedHolding rig
+        [(_, before)] <- outputsFor rig (AtTxIn ref)
+        writeFile (rigDir rig </> "payload.json") "{\"updated\":42}"
+        result <-
+            run'
+                rig
+                "holding update"
+                ( ["holding", "update"]
+                    <> holdingFlags token ref
+                    <> ["--payload", rigDir rig </> "payload.json"]
+                )
+        runExit result `shouldBe` ExitSuccess
+        textAt "command" (runReceipt result) `shouldBe` Just "holding update"
+        next <-
+            maybe
+                (fail "no holding in receipt")
+                (either fail pure . parseOutRef)
+                (textAt "holding" (runReceipt result))
+        [(_, after)] <- outputsFor rig (AtTxIn next)
+        after ^. valueTxOutL `shouldBe` before ^. valueTxOutL
+        case (inlineDatumOf before, inlineDatumOf after) of
+            ( Just (PLC.Constr 2 [control, old])
+                , Just (PLC.Constr 2 [control', new])
+                ) -> do
+                control' `shouldBe` control
+                new `shouldNotBe` old
+                expected <-
+                    readPayloadFile PlainSchema (rigDir rig </> "payload.json")
+                new `shouldBe` expected
+            _ -> expectationFailure "the update did not preserve a live datum"
+    it
+        "refuses another registry before preparing or sending the holding transaction" $ withReleaseRig $ \rig -> do
+        (_, ref) <- reachedHolding rig
+        (_, other) <- createdRegistry rig
+        already <- length <$> readIORef (rigSubmitted rig)
+        result <-
+            run'
+                rig
+                "wrong registry"
+                (["holding", "terminate"] <> holdingFlags other ref)
+        outcomeOf (runReceipt result) `shouldBe` Just "client-refusal"
+        length <$> readIORef (rigSubmitted rig) `shouldReturn` already
+    it
+        "books termination with its deposit donation, then a second wallet folds with the controller key and state directory absent" $ withReleaseRig $ \rig -> do
+        (token, ref) <- reachedHolding rig
+        [(_, before)] <- outputsFor rig (AtTxIn ref)
+        deposit <- case inlineDatumOf before of
+            Just (PLC.Constr 2 [PLC.Constr 0 [_, _, _, _, PLC.I amount], _]) -> pure amount
+            _ -> fail "missing deposit"
+        result <-
+            run'
+                rig
+                "holding terminate"
+                (["holding", "terminate"] <> holdingFlags token ref)
+        runExit result `shouldBe` ExitSuccess
+        pending <- pendingOf result
+        transactions <- readIORef (rigSubmitted rig)
+        (last transactions ^. bodyTxL . treasuryDonationTxBodyL)
+            `shouldBe` Coin deposit
+        [(_, request)] <- outputsFor rig (AtTxIn pending)
+        inlineDatumOf request `shouldBe` Nothing
+        (keyPath, bob) <- secondWallet rig
+        registry <- registryOf token
+        let controllerDir =
+                managedDir
+                    (rigDir rig </> "registry")
+                    (fromIntegral magic)
+                    registry
+                    (walletPartition (rigWallet rig))
+        removeFile (rigKey rig)
+        removePathForcibly controllerDir
+        doesFileExist (rigKey rig) `shouldReturn` False
+        doesDirectoryExist controllerDir `shouldReturn` False
+        beforeFolder <-
+            sum . map (\(_, out) -> let Coin amount = out ^. coinTxOutL in amount)
+                <$> liveAt rig (walletAddr bob)
+        folded <-
+            runWithKey
+                keyPath
+                rig
+                "termination fold"
+                (["state", "fold"] <> pendingFlags token pending)
+        runExit folded `shouldBe` ExitSuccess
+        isLive rig pending `shouldReturn` False
+        sent <- last <$> readIORef (rigSubmitted rig)
+        let MultiAsset burned = sent ^. bodyTxL . mintTxBodyL
+            active = activeTokenName (identityOf registry) "alpha"
+        scripts <- scriptsOf rig
+        let approval = approvalName (terminationPreimage "alpha" (identityOf registry))
+        (Map.lookup (fst registry) burned >>= Map.lookup active)
+            `shouldBe` Just (-1)
+        ( Map.lookup (requestPolicy (scRequest scripts)) burned
+                >>= Map.lookup approval
+            )
+            `shouldBe` Just (-1)
+        afterFolder <-
+            sum . map (\(_, out) -> let Coin amount = out ^. coinTxOutL in amount)
+                <$> liveAt rig (walletAddr bob)
+        let Coin reward = request ^. coinTxOutL
+            Coin fee = sent ^. bodyTxL . feeTxBodyL
+        afterFolder - beforeFolder `shouldBe` reward - fee
+        doesFileExist (rigKey rig) `shouldReturn` False
+        doesDirectoryExist controllerDir `shouldReturn` False
+
 -- ---------------------------------------------------------
 -- Interrupted commands
 -- ---------------------------------------------------------
@@ -813,6 +997,39 @@ scenarios =
         pure
             ( keyPath
             , ["state", "fold"] <> pendingFlags token ref
+            , registryJournal rig registry bob
+            )
+    , Scenario "holding update" 1 $ \rig -> do
+        (token, ref) <- reachedHolding rig
+        registry <- registryOf token
+        pure
+            ( rigKey rig
+            , ["holding", "update"]
+                <> holdingFlags token ref
+                <> ["--payload", rigDir rig </> "payload.json"]
+            , registryJournal rig registry (rigWallet rig)
+            )
+    , Scenario "holding terminate" 1 $ \rig -> do
+        (token, ref) <- reachedHolding rig
+        registry <- registryOf token
+        pure
+            ( rigKey rig
+            , ["holding", "terminate"] <> holdingFlags token ref
+            , registryJournal rig registry (rigWallet rig)
+            )
+    , Scenario "termination fold" 1 $ \rig -> do
+        (token, ref) <- reachedHolding rig
+        booked <-
+            run'
+                rig
+                "termination book"
+                (["holding", "terminate"] <> holdingFlags token ref)
+        pending <- pendingOf booked
+        (keyPath, bob) <- secondWallet rig
+        registry <- registryOf token
+        pure
+            ( keyPath
+            , ["state", "fold"] <> pendingFlags token pending
             , registryJournal rig registry bob
             )
     , Scenario "registration reclaim" 1 $ \rig -> do
