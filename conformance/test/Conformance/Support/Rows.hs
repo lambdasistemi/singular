@@ -5,10 +5,11 @@ License     : Apache-2.0
 -}
 module Conformance.Support.Rows (spec) where
 
+import Control.Monad (forM_)
 import Data.Aeson (eitherDecode)
 import Data.ByteString.Lazy qualified as BSL
 import Data.Either (isLeft)
-import Data.List (isInfixOf, nub)
+import Data.List (isInfixOf, nub, sort)
 import Data.Text qualified as T
 import Test.Hspec
     ( Spec
@@ -23,9 +24,12 @@ import Conformance.RowNames (canonicalRowName, historicalRowNames)
 import Conformance.Rows
     ( Row (..)
     , RowState (..)
+    , ShownState (..)
+    , effectiveState
     , expectedRowCount
     , loadRows
     , ownedDenominator
+    , renderInventory
     , rowId
     , rowState
     , validateInventory
@@ -87,6 +91,52 @@ spec = describe "Appendix: keeping the published requirements complete" $ do
     it "Does not store claims of completed tests in the requirements file" $ do
         rows <- loadCommitted
         filter (isExecutedPlan . rowState) rows `shouldBe` []
+
+    it
+        "Publishes update and termination comparisons as uncovered statements with their evidence boundary" $ do
+        rows <- loadCommitted
+        let journeys = filter ((== "holding-journeys") . rowGroup) rows
+            rendered = renderInventory "current-base" [] rows
+        sort (map rowId journeys)
+            `shouldBe` [ "holding-update-outcome"
+                       , "termination-booking-outcome"
+                       , "termination-fold-outcome"
+                       ]
+        forM_ journeys $ \row -> do
+            effectiveState "current-base" [] row `shouldBe` ShownPlanned Uncovered
+            rowRequirement row `shouldSatisfy` T.isInfixOf "previous design"
+            rowSource row `shouldSatisfy` \text ->
+                all
+                    (`T.isInfixOf` text)
+                    [ "OpenDatumApplicationHeld.Money.oldAllocation"
+                    , "OpenDatumApplicationHeld.Money.newAllocation"
+                    ]
+            rowExpected row
+                `shouldSatisfy` T.isInfixOf
+                    "no executable comparison with the application-held model exists yet"
+            rowEvidence row `shouldSatisfy` \evidence -> case evidence of
+                Nothing -> False
+                Just text ->
+                    all
+                        (`T.isInfixOf` text)
+                        [ "no-pin-registration-journey"
+                        , "no-pin-termination-refusals"
+                        , "nothing about agreement with the model"
+                        ]
+            rendered `shouldSatisfy` T.isInfixOf (rowRequirement row)
+
+    it
+        "States the treasury timing and the folder's whole request value in the termination comparisons" $ do
+        rows <- loadCommitted
+        let statement name = T.unwords [rowRequirement row | row <- rows, rowId row == name]
+        statement "termination-booking-outcome" `shouldSatisfy` \text ->
+            all
+                (`T.isInfixOf` text)
+                ["deposit", "treasury", "booking", "previous design"]
+        statement "termination-fold-outcome" `shouldSatisfy` \text ->
+            all
+                (`T.isInfixOf` text)
+                ["whole value", "folder", "tip", "treasury", "previous design"]
 
     it "Rejects an empty list of requirements" $
         validateInventory [] `shouldSatisfy` isLeft
