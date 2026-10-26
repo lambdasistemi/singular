@@ -52,6 +52,8 @@ data Refusal
       DuplicateKey ByteString
     | -- | The key is already registered: its leaf is not unknown.
       KeyAlreadyRegistered ByteString
+    | -- | A termination can only consume an active key.
+      KeyNotActive ByteString
     | -- | The output to fold is not on the chain.
       PendingNotFound TxIn
     | {- | The output is not a pending registration the application decodes and

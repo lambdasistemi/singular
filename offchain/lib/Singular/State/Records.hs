@@ -67,10 +67,7 @@ the state output decides it.
 foldedRedeemer :: PLC.Data
 foldedRedeemer = PLC.Constr 1 []
 
-{- | One change of a fold, in the order of the validator's @Change@. A
-termination is declared to keep that order; no builder writes one yet, and a
-fold that carries one is refused by the validator.
--}
+-- | One registration or termination change, in the validator's @Change@ order.
 data Change
     = Register
         { changeRequest :: TxIn

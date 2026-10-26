@@ -33,7 +33,7 @@ module Singular.CLI.State
     , runStateFold
     ) where
 
-import Control.Monad (forM, unless)
+import Control.Monad (unless)
 import Data.Aeson (Value, object, toJSON, (.=))
 import Data.ByteString (ByteString)
 import Data.ByteString.Base16 qualified as B16
@@ -83,10 +83,7 @@ import Singular.CLI.Steps
 import Singular.Registry.Blueprint (Blueprint)
 import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger (ConwayEra, TxOut)
-import Singular.Registry.LedgerProvider
-    ( OutputQuery (..)
-    , Session
-    )
+import Singular.Registry.LedgerProvider (Session)
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
 import Singular.Registry.StateToken (renderStateToken)
 import Singular.Registry.TrieState
@@ -98,7 +95,6 @@ import Singular.State.Assemble
     ( Payer (..)
     , Program
     , inlineDatumOf
-    , readOutputs
     , resolvePayer
     )
 import Singular.State.Fold qualified as Fold
@@ -382,14 +378,6 @@ runStateFold env host a = do
                     contributed <-
                         hostFold host view Testnet [(script, sourceOf script) | script <- own]
                             >>= either (failWith ClientRefusal) pure
-                    keys <- forM (stateFoldPending a) $ \pending -> do
-                        read' <- readOutputs view (AtTxIn pending)
-                        pure
-                            ( pending
-                            , case read' of
-                                Right [(_, out)] -> Fold.regKey <$> Fold.appDecode contributed out
-                                _ -> Nothing
-                            )
                     tx <-
                         Fold.buildRegistrationFold
                             view
@@ -399,6 +387,7 @@ runStateFold env host a = do
                             (stateFoldPending a)
                             payer
                             >>= refusing
+                    let keys = [(pending, Just key) | (pending, key) <- Fold.foldedRequests tx]
                     pure (tx, keys)
         (output, out) <-
             observeOutput wc "fold" confirmed 0 (HoldsToken policy name)

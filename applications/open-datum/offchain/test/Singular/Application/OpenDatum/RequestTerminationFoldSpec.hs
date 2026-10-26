@@ -260,8 +260,9 @@ folding world registry requests = withSession world $ \session -> do
 spec :: Spec
 spec = describe "termination folds from public data" $ do
     it
-        "burns both tokens, pays the whole request to a second wallet and is signed only by that wallet" $
-        withTermination $ \world registry request held -> do
+        "burns both tokens, pays the whole request to a second wallet and is signed only by that wallet"
+        $ withTermination
+        $ \world registry request held -> do
             funding <- withSession world $ \session -> expectBuilt =<< resolvePayer session (crFolder world)
             tx <- folding world registry [request]
             judge world tx >>= (`shouldSatisfy` everyScriptAccepts)

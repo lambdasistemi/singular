@@ -242,6 +242,7 @@ import Singular.State.Fold
     ( Application (..)
     , Folded (..)
     , Registration (..)
+    , Request (..)
     )
 import Singular.State.Preimage
     ( approvalName
@@ -424,14 +425,14 @@ standInApplication :: Application
 standInApplication =
     Application
         { appPolicy = standInPolicy
-        , appDecode = decode
+        , appDecode = \_ _ output -> RegistrationRequest <$> decode output
         , appReferences = []
         , appFold = \folded -> do
             mapM_
                 ( \f ->
                     Tx.spendScript
                         (foldedRequest f)
-                        (BuiltinData (PLC.I (toInteger (foldedHolding f))))
+                        (BuiltinData (PLC.I (maybe 0 toInteger (foldedHolding f))))
                 )
                 folded
             Tx.mint

@@ -93,7 +93,7 @@ import Singular.Registry.TrieState.Core (snapshotObserved)
 import Singular.Registry.TrieState.Lineage (publicHistory)
 import Singular.Registry.TrieState.Types (CompleteFromCreate (..))
 import Singular.Registry.TxBuilder.Internal (emptyRoot, walkEdge)
-import Singular.Registry.Types (edgeInsertActive)
+import Singular.Registry.Types (edgeInsertActive, edgeUpdateTerminal)
 import Singular.State.Preimage (stateTokenName)
 import Singular.State.Records
     ( Change (..)
@@ -312,9 +312,10 @@ foldStep who seed standing tx = do
             Right
             (decodeFoldRedeemer datum)
     unless (named == seed) $ Left (WrongRegistry who (Just tid) SeedName)
-    keys <- traverse (registered undecodable) changes
+    let edges = map changed changes
+        keys = map fst edges
     (output, root, _) <- stateOutput who tx
-    let nodes = foldl insertKey (standingNodes standing) keys
+    let nodes = foldl applyEdge (standingNodes standing) edges
         rebuilt = rootFromDb nodes
     when (rebuilt /= Root root) $
         Left (RootDoesNotChain who (Just tid) (RootsPart rebuilt (Root root)))
@@ -327,11 +328,11 @@ foldStep who seed standing tx = do
             , standingKeys = foldr Set.insert (standingKeys standing) keys
             }
   where
-    registered undecodable = \case
-        Register{changeKey} -> Right changeKey
-        Terminate{} -> undecodable (UnreadableRecord "a fold terminates a key")
-    insertKey nodes key =
-        execState (walkEdge stateTrie key edgeInsertActive) nodes
+    changed = \case
+        Register{changeKey} -> (changeKey, edgeInsertActive)
+        Terminate{changeKey} -> (changeKey, edgeUpdateTerminal)
+    applyEdge nodes (key, edge) =
+        execState (walkEdge stateTrie key edge) nodes
 
 {- | The one output of the transaction that holds the state token, with the
 root its inline datum carries and the address it sits at.

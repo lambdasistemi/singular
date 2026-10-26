@@ -19,10 +19,16 @@ import Data.Map.Strict qualified as Map
 import Lens.Micro ((^.))
 
 import Cardano.Ledger.Address (Addr (..))
-import Cardano.Ledger.Api.Tx.Out (addrTxOutL)
+import Cardano.Ledger.Api.Scripts.Data (Datum (NoDatum))
+import Cardano.Ledger.Api.Tx.Out
+    ( addrTxOutL
+    , datumTxOutL
+    , valueTxOutL
+    )
 import Cardano.Ledger.BaseTypes (Network)
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Credential (Credential (..))
+import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
 import Cardano.Tx.Build qualified as Tx
 
 import Singular.Application.OpenDatum.Requests.Assemble
@@ -51,6 +57,14 @@ import Singular.State.Fold
     ( Application (..)
     , Folded (..)
     , Registration (..)
+    , Request (..)
+    )
+
+import Singular.State.Lineage (registryAsset)
+import Singular.State.Preimage
+    ( activeTokenName
+    , approvalName
+    , terminationPreimage
     )
 
 {- | The open-datum application of a fold: the request validator's pending
@@ -75,27 +89,51 @@ openDatumApplication session script net = runExceptT $ do
                         (foldedRequest f)
                         ( AsData
                             ( spendRedeemer
-                                (RegistrationFold (toInteger (foldedHolding f)))
+                                ( case foldedHolding f of
+                                    Just holding -> RegistrationFold (toInteger holding)
+                                    Nothing -> TerminationFold (foldedRegistry f) (foldedKey f)
+                                )
                             )
                         )
                 Tx.mint
                     (requestPolicy script)
-                    (Map.fromList [(foldedApproval f, -1) | f <- folded])
+                    (Map.fromListWith (+) [(foldedApproval f, -1) | f <- folded])
                     (AsData (mintRedeemer [ApprovalBurn]))
                 useScript script
             }
   where
-    decode output = case output ^. addrTxOutL of
+    decode registry candidates output = case output ^. addrTxOutL of
         Addr _ (ScriptHashObj hash) _
             | hash == requestScriptHash script -> do
-                registration <- inlineDatumOf output >>= decodeRegistration net
-                pure
-                    Registration
-                        { regRegistry = rdRegistry registration
-                        , regKey = rdKey registration
-                        , regHolding = rdHoldingAddress registration
-                        , regDatum = rdInitialDatum registration
-                        , regDeposit = Coin (rdDeposit registration)
-                        , regDeadline = rdProcessDeadline registration
-                        }
+                case output ^. datumTxOutL of
+                    NoDatum -> do
+                        (policy, _) <- registryAsset registry
+                        let MaryValue _ actual = output ^. valueTxOutL
+                            matches key =
+                                actual
+                                    == MultiAsset
+                                        ( Map.fromListWith
+                                            (Map.unionWith (+))
+                                            [ (policy, Map.singleton (activeTokenName registry key) 1)
+                                            ,
+                                                ( requestPolicy script
+                                                , Map.singleton (approvalName (terminationPreimage key registry)) 1
+                                                )
+                                            ]
+                                        )
+                        case filter matches candidates of
+                            [key] -> Just (TerminationRequest registry key)
+                            _ -> Nothing
+                    _ -> registration output
         _ -> Nothing
+    registration output = do
+        r <- inlineDatumOf output >>= decodeRegistration net
+        pure . RegistrationRequest $
+            Registration
+                { regRegistry = rdRegistry r
+                , regKey = rdKey r
+                , regHolding = rdHoldingAddress r
+                , regDatum = rdInitialDatum r
+                , regDeposit = Coin (rdDeposit r)
+                , regDeadline = rdProcessDeadline r
+                }

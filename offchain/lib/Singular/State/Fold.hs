@@ -19,9 +19,12 @@ things; the builder owns everything the state validator decides.
 -}
 module Singular.State.Fold
     ( Registration (..)
+    , Request (..)
+    , requestKey
     , Folded (..)
     , Application (..)
     , buildRegistrationFold
+    , foldedRequests
     ) where
 
 import Control.Exception (throwIO)
@@ -32,6 +35,7 @@ import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.List.NonEmpty qualified as NE
 import Data.Map.Strict qualified as Map
+import Data.Maybe (mapMaybe)
 import Data.Word (Word32)
 import Lens.Micro ((&), (.~), (^.))
 import PlutusCore.Data qualified as PLC
@@ -39,13 +43,18 @@ import PlutusLedgerApi.V3 qualified as PV3
 import PlutusTx.Builtins.Internal (BuiltinData (..))
 
 import Cardano.Ledger.Address (Addr (..))
+import Cardano.Ledger.Alonzo.TxWits (Redeemers (..))
+import Cardano.Ledger.Api.Scripts.Data (getPlutusData)
+import Cardano.Ledger.Api.Tx (witsTxL)
 import Cardano.Ledger.Api.Tx.Out
     ( addrTxOutL
     , coinTxOutL
     , datumTxOutL
     , getMinCoinTxOut
     , mkBasicTxOut
+    , valueTxOutL
     )
+import Cardano.Ledger.Api.Tx.Wits (rdmrsTxWitsL)
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Credential (Credential (..))
 import Cardano.Ledger.Mary.Value
@@ -66,7 +75,7 @@ import Singular.Registry.LedgerProvider
     , ReadFailure (..)
     , Session (..)
     )
-import Singular.Registry.SessionIO (floorSlot, parameters)
+import Singular.Registry.SessionIO (floorSlot, parameters, slotStart)
 import Singular.Registry.TrieState
     ( Leaf (..)
     , RegistryIdentity (..)
@@ -79,7 +88,7 @@ import Singular.Registry.TrieState
 import Singular.Registry.TrieState.Core (snapshotObserved)
 import Singular.Registry.TrieState.Types (CompleteFromCreate (..))
 import Singular.Registry.TxBuilder.Internal (mkInlineDatum)
-import Singular.Registry.Types (edgeInsertActive)
+import Singular.Registry.Types (edgeInsertActive, edgeUpdateTerminal)
 import Singular.State.Assemble
     ( Payer (..)
     , Program
@@ -101,9 +110,11 @@ import Singular.State.Preimage
     , approvalName
     , initialDatumHash
     , registrationPreimage
+    , terminationPreimage
     )
 import Singular.State.Records
     ( Change (..)
+    , decodeFoldRedeemer
     , decodeStateDatum
     , foldRedeemer
     , foldedRedeemer
@@ -137,13 +148,27 @@ data Registration = Registration
     }
     deriving stock (Eq, Show)
 
--- | One pending registration being folded, as the transaction places it.
+-- | An application request, decoded from public data.
+data Request
+    = RegistrationRequest Registration
+    | TerminationRequest RegistryIdentity ByteString
+    deriving stock (Eq, Show)
+
+requestKey :: Request -> ByteString
+requestKey (RegistrationRequest r) = regKey r
+requestKey (TerminationRequest _ key) = key
+
+requestRegistry :: Request -> RegistryIdentity
+requestRegistry (RegistrationRequest r) = regRegistry r
+requestRegistry (TerminationRequest registry _) = registry
+
+-- | A request being folded, with a holding output only for registration.
 data Folded = Folded
     { foldedRequest :: TxIn
     , foldedApproval :: AssetName
-    -- ^ The approval the pending registration holds
-    , foldedHolding :: Word32
-    -- ^ The index of the output that is its holding
+    , foldedRegistry :: RegistryIdentity
+    , foldedKey :: ByteString
+    , foldedHolding :: Maybe Word32
     }
     deriving stock (Eq, Show)
 
@@ -151,7 +176,8 @@ data Folded = Folded
 data Application = Application
     { appPolicy :: PolicyID
     -- ^ The policy of the approvals
-    , appDecode :: TxOut ConwayEra -> Maybe Registration
+    , appDecode
+        :: RegistryIdentity -> [ByteString] -> TxOut ConwayEra -> Maybe Request
     -- ^ The public decoding of a pending registration
     , appReferences :: [(TxIn, TxOut ConwayEra)]
     -- ^ The outputs that carry its code, already checked, when it is referenced
@@ -165,7 +191,7 @@ data Application = Application
 data Pending = Pending
     { pendingRef :: TxIn
     , pendingOutput :: TxOut ConwayEra
-    , pendingRegistration :: Registration
+    , pendingRequest :: Request
     , pendingApproval :: AssetName
     }
 
@@ -190,16 +216,6 @@ buildRegistrationFold session script application registry requests payerAddress 
         payer <- ExceptT (resolvePayer session payerAddress)
         (stateIn, stateOut, root) <-
             ExceptT (findState session script registry)
-        pendings <-
-            forM requests (ExceptT . readPending session application registry)
-        let keys = map (regKey . pendingRegistration) pendings
-        forM_ (duplicates keys) (throwError . DuplicateKey)
-        protocol <- liftIO (parameters session)
-        forM_ pendings $ \pending -> do
-            let smallest = getMinCoinTxOut protocol (holdingFor registry pending)
-                deposit = regDeposit (pendingRegistration pending)
-            when (deposit < smallest) $
-                throwError (DepositBelowHolding (pendingRef pending) deposit smallest)
         let selection =
                 TrieSelection
                     { trieSelectionIdentity = registry
@@ -217,24 +233,56 @@ buildRegistrationFold session script application registry requests payerAddress 
                     nodes
                     (CompleteFromCreate 0)
                     Nothing
-        forM_ keys $ \key ->
-            ExceptT (either (Left . TrieRefused) Right <$> leafAt snapshot key)
-                >>= \case
-                    Unknown -> pure ()
-                    _ -> throwError (KeyAlreadyRegistered key)
+        pendings <-
+            forM
+                requests
+                ( ExceptT
+                    . readPending session application registry (replayedKeys replayed)
+                )
+        let keys = map (requestKey . pendingRequest) pendings
+        forM_ (duplicates keys) (throwError . DuplicateKey)
+        protocol <- liftIO (parameters session)
+        forM_ pendings $ \pending -> case pendingRequest pending of
+            RegistrationRequest registration -> do
+                let smallest = getMinCoinTxOut protocol (holdingFor registry registration)
+                    deposit = regDeposit registration
+                when (deposit < smallest) $
+                    throwError (DepositBelowHolding (pendingRef pending) deposit smallest)
+            TerminationRequest{} -> pure ()
+        forM_ pendings $ \pending -> do
+            let request = pendingRequest pending
+                key = requestKey request
+            leaf <-
+                ExceptT (either (Left . TrieRefused) Right <$> leafAt snapshot key)
+            case request of
+                RegistrationRequest{} -> unless (leaf == Unknown) (throwError (KeyAlreadyRegistered key))
+                TerminationRequest{} -> unless (leaf == Active) (throwError (KeyNotActive key))
         walked <-
             ExceptT
                 ( either (Left . TrieRefused) Right
                     <$> speculateEdges
                         snapshot
-                        (NE.fromList [(key, toInteger edgeInsertActive) | key <- keys])
+                        ( NE.fromList
+                            [ (requestKey request, toInteger (edgeFor request))
+                            | pending <- pendings
+                            , let request = pendingRequest pending
+                            ]
+                        )
                 )
         now <- liftIO (tipSlot session)
+        fallback <- (+ 3600000) <$> liftIO (slotStart session now)
         deadline <-
             liftIO
                 ( floorSlot
                     session
-                    (minimum (map (regDeadline . pendingRegistration) pendings))
+                    ( minimum
+                        ( fallback
+                            : [ regDeadline r
+                              | pending <- pendings
+                              , RegistrationRequest r <- [pendingRequest pending]
+                              ]
+                        )
+                    )
                 )
         upper <-
             liftIO (validityFromTip session now deadline)
@@ -265,37 +313,49 @@ buildRegistrationFold session script application registry requests payerAddress 
                             (stateAddress (payerNetwork payer) script)
                             stateValue
                             (BuiltinData (stateDatum newRoot))
-                    holdings <- forM pendings (Tx.output . holdingFor registry)
-                    let changes =
-                            [ Register
-                                { changeRequest = pendingRef pending
-                                , changeKey = regKey (pendingRegistration pending)
-                                , changeHolding = toInteger holding
-                                , changeDeposit =
-                                    let Coin d = regDeposit (pendingRegistration pending) in d
-                                , changeProof = proof
-                                }
-                            | (pending, holding, proof) <-
-                                zip3 pendings holdings (walkProofs walked)
-                            ]
+                    changed <- forM (zip pendings (walkProofs walked)) $ \(pending, proof) -> do
+                        let request = pendingRequest pending
+                            folded holding =
+                                Folded
+                                    (pendingRef pending)
+                                    (pendingApproval pending)
+                                    registry
+                                    (requestKey request)
+                                    holding
+                        case request of
+                            RegistrationRequest registration -> do
+                                holding <- Tx.output (holdingFor registry registration)
+                                let Coin deposit = regDeposit registration
+                                pure
+                                    ( Register
+                                        (pendingRef pending)
+                                        (regKey registration)
+                                        (toInteger holding)
+                                        deposit
+                                        proof
+                                    , folded (Just holding)
+                                    )
+                            TerminationRequest _ key ->
+                                pure (Terminate (pendingRef pending) key proof, folded Nothing)
+                    let changes = map fst changed
                     _ <-
                         Tx.spendScript
                             stateIn
                             (BuiltinData (foldRedeemer (replayedSeed replayed) changes))
                     Tx.mint
                         policy
-                        ( Map.fromList
-                            [ (activeTokenName registry (regKey (pendingRegistration p)), 1)
+                        ( Map.fromListWith
+                            (+)
+                            [ ( activeTokenName registry (requestKey request)
+                              , case request of RegistrationRequest{} -> 1; TerminationRequest{} -> -1
+                              )
                             | p <- pendings
+                            , let request = pendingRequest p
                             ]
                         )
                         (BuiltinData foldedRedeemer)
                     useScript (ssScript script) (ssSource script)
-                    appFold
-                        application
-                        [ Folded (pendingRef p) (pendingApproval p) holding
-                        | (p, holding) <- zip pendings holdings
-                        ]
+                    appFold application (map snd changed)
                     Tx.collateral (fst funding)
                     Tx.validFrom now
                     Tx.validTo upper
@@ -309,12 +369,12 @@ duplicates xs = take 1 [x | (i, x) <- zip [0 :: Int ..] xs, x `elem` take i xs]
 address the registration commits to, with the datum it commits to and exactly
 its deposit.
 -}
-holdingFor :: RegistryIdentity -> Pending -> TxOut ConwayEra
-holdingFor registry@(RegistryIdentity _ _) pending =
+holdingFor :: RegistryIdentity -> Registration -> TxOut ConwayEra
+holdingFor registry registration =
     mkBasicTxOut regHolding (MaryValue regDeposit tokens)
         & datumTxOutL .~ mkInlineDatum regDatum
   where
-    Registration{regKey, regHolding, regDatum, regDeposit} = pendingRegistration pending
+    Registration{regKey, regHolding, regDatum, regDeposit} = registration
     tokens = case registryAsset registry of
         Just (policy, _) ->
             MultiAsset
@@ -366,9 +426,10 @@ readPending
     :: Session NoWitness IO
     -> Application
     -> RegistryIdentity
+    -> [ByteString]
     -> TxIn
     -> IO (Either Refusal Pending)
-readPending session application registry ref =
+readPending session application registry candidates ref =
     readOutputs session (AtTxIn ref) >>= \case
         Left (MissingOutput _) -> pure (Left (PendingNotFound ref))
         Left failure -> throwIO failure
@@ -377,16 +438,39 @@ readPending session application registry ref =
   where
     declined = Left (NotAPendingRegistration ref)
     shaped output = do
-        registration <- maybe declined Right (appDecode application output)
-        when (regRegistry registration /= registry) $
+        request <-
+            maybe
+                declined
+                Right
+                (appDecode application registry candidates output)
+        when (requestRegistry request /= registry) $
             Left (PendingOfAnotherRegistry ref)
-        approval <- maybe declined Right (approvalOf registration)
-        unless (holdsOnly (appPolicy application) approval output) declined
-        pure (Pending ref output registration approval)
+        approval <- maybe declined Right (approvalOf request)
+        case request of
+            RegistrationRequest{} ->
+                unless (holdsOnly (appPolicy application) approval output) declined
+            TerminationRequest _ key -> do
+                (policy, _) <- maybe declined Right (registryAsset registry)
+                let expected =
+                        MultiAsset
+                            ( Map.fromListWith
+                                (Map.unionWith (+))
+                                [ (policy, Map.singleton (activeTokenName registry key) 1)
+                                , (appPolicy application, Map.singleton approval 1)
+                                ]
+                            )
+                    MaryValue _ actual = output ^. valueTxOutL
+                unless (actual == expected) declined
+        pure (Pending ref output request approval)
+
+edgeFor :: Request -> Int
+edgeFor RegistrationRequest{} = fromIntegral edgeInsertActive
+edgeFor TerminationRequest{} = fromIntegral edgeUpdateTerminal
 
 -- | The name of the approval a registration commits to.
-approvalOf :: Registration -> Maybe AssetName
-approvalOf registration = do
+approvalOf :: Request -> Maybe AssetName
+approvalOf (TerminationRequest registry key) = Just (approvalName (terminationPreimage key registry))
+approvalOf (RegistrationRequest registration) = do
     holding <- transAddr (regHolding registration)
     let Coin deposit = regDeposit registration
     pure . approvalName $
@@ -396,3 +480,17 @@ approvalOf registration = do
             holding
             (initialDatumHash (regDatum registration))
             (PV3.Lovelace deposit)
+
+-- | Requests named by the fold redeemer of a built transaction.
+foldedRequests :: ConwayTx -> [(TxIn, ByteString)]
+foldedRequests tx =
+    [ (changeRequest change, changeKey change)
+    | (_, changes) <- decoded
+    , change <- changes
+    ]
+  where
+    Redeemers redeemers = tx ^. witsTxL . rdmrsTxWitsL
+    decoded =
+        mapMaybe
+            (decodeFoldRedeemer . getPlutusData . fst)
+            (Map.elems redeemers)

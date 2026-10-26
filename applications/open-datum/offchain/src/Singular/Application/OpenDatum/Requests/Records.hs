@@ -311,6 +311,8 @@ data SpendAction
       LiveUpdate Integer
     | -- | Move the active token into a termination request at this output.
       TerminationBook Integer
+    | -- | Fold a booked termination for this registry and key.
+      TerminationFold RegistryIdentity ByteString
     deriving stock (Eq, Show)
 
 -- | The redeemer of one spend action.
@@ -321,6 +323,8 @@ spendRedeemer = \case
     ExpiredCleanup -> PLC.Constr 2 []
     LiveUpdate output -> PLC.Constr 3 [PLC.I output]
     TerminationBook output -> PLC.Constr 4 [PLC.I output]
+    TerminationFold (RegistryIdentity (StatePolicyId policy) name) key ->
+        PLC.Constr 5 [PLC.B policy, PLC.B (assetBytes name), PLC.B key]
 
 -- | Plutus Data handed to the transaction builder as it is.
 newtype AsData = AsData PLC.Data

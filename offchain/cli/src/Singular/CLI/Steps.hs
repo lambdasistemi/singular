@@ -245,6 +245,8 @@ renderRefusal = \case
         "two pending registrations name the key " <> showHex' key
     KeyAlreadyRegistered key ->
         "the key " <> showHex' key <> " is already registered"
+    KeyNotActive key ->
+        "the key " <> showHex' key <> " is not active"
     PendingNotFound ref ->
         "the pending registration " <> showRef ref <> " is not on the chain"
     NotAPendingRegistration ref ->
