@@ -1809,7 +1809,9 @@
                 cp ${./tools/no_pin_rig.sh} $out/no_pin_rig.sh
                 cp ${./tools/no_pin_registration_journey.sh} $out/no_pin_registration_journey.sh
                 cp ${./tools/no_pin_registration_refusals.sh} $out/no_pin_registration_refusals.sh
+                cp ${./tools/no_pin_termination_refusals.sh} $out/no_pin_termination_refusals.sh
                 cp ${./tools/no_pin_chain_view.py} $out/no_pin_chain_view.py
+                cp ${./tools/no_pin_termination_observations.py} $out/no_pin_termination_observations.py
               '';
               noPinRuntime = [
                 pkgs.bash
@@ -1868,6 +1870,13 @@
                 programs = [ (pkgs.lib.getExe (stampedOpenDatum system)) ];
                 extra = [ "${open-datum.packages.${system}.no-pin-refusals}/bin/no-pin-refusals" ];
               };
+              noPinTerminationRefusals = noPinJourney {
+                name = "no-pin-termination-refusals";
+                results = "NO_PIN_TERMINATION_REFUSALS_RESULTS";
+                script = "no_pin_termination_refusals.sh";
+                programs = [ (pkgs.lib.getExe (stampedOpenDatum system)) ];
+                extra = [ "${open-datum.packages.${system}.no-pin-refusals}/bin/no-pin-refusals" ];
+              };
             in
             {
               no-pin-registration-journey = {
@@ -1877,6 +1886,10 @@
               no-pin-registration-refusals = {
                 type = "app";
                 program = pkgs.lib.getExe noPinRegistrationRefusals;
+              };
+              no-pin-termination-refusals = {
+                type = "app";
+                program = pkgs.lib.getExe noPinTerminationRefusals;
               };
             }
           )

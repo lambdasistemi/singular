@@ -392,6 +392,23 @@ control "a measurement that gave a later registry two transactions would be seen
 # ------------------------------------------------------------------
 # The verdict
 # ------------------------------------------------------------------
+leg="update and termination"
+check "the connected update and termination route the deposit and the whole request value as ruled" \
+  python3 -I "$(dirname "$chain_view")/no_pin_termination_observations.py" "$chain_dir" "$state_policy" "$state_name" "$key_hex"
+if [ -r "$listings/bob-before-termination-fold.txt" ]; then
+  check "the termination folder holds only its own key and the release" \
+    listing_is "$listings/bob-before-termination-fold.txt" cwd/bob-public.skey cwd/plutus.json
+else
+  record "$leg" "the termination folder holds only its own key and the release" "COULD-NOT-EVALUATE"
+  failed=1
+fi
+if [ -s "$receipts/reregister.json" ]; then
+  check "the packaged fold refuses a new registration of the terminated key" \
+    jq -e '.outcome == "client-refusal" and (.reason | contains("is already registered")) and (.submissions | length) == 0' "$receipts/reregister.json"
+else
+  record "$leg" "a new registration of the terminated key is refused" "COULD-NOT-EVALUATE"
+  failed=1
+fi
 leg="journey"
 [ "$(grep -c ' holds |' "$verdicts")" -gt 0 ] || {
   say "no clause was judged"
