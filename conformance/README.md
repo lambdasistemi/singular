@@ -19,7 +19,7 @@ nix run ./conformance#conformance -- list
 nix run ./conformance#conformance -- run insert-key insert-occupied-key permanent-retire-active-key
 ```
 
-`list` prints the complete 52-row inventory from `rows.json` with each
+`list` prints the complete 55-row inventory from `rows.json` with each
 row's state (`executed` / `bound-elsewhere` / `uncovered` /
 `out-of-scope`). `run` executes rows against a real devnet; the
 blueprint comes from the caller at run time:
@@ -35,7 +35,8 @@ keep their databases.
 
 `rows.json` carries the complete inventory: the 47 owned consumer rows,
 the four owned rows that state the registration journeys of the no-pin design
-against the previous design (below), plus checkpoint-and-treasury-policy (cardano-keri's checkpoint policy), recorded as out-of-scope
+against the previous design (below), the three owned update and termination journey
+statements, plus checkpoint-and-treasury-policy (cardano-keri's checkpoint policy), recorded as out-of-scope
 so the boundary is visible. `rows.json` never carries `executed` —
 that state is computed from run receipts, never typed. A `run` writes
 one `receipt-<ROW>.json` per executed row under its own output
@@ -73,6 +74,25 @@ the rows are published `uncovered` and give that reason. The hosted jobs
 commands on a development network and read the chain's own record; they are a
 separate evidence boundary and establish nothing about agreement with the model.
 The previous design's early-rejection rows stay published as they were.
+
+## Update and termination journeys: the previous design against the no-pin design
+
+As an integrator, I can read the controller's payload update, termination booking
+and public-data fold as three separate requirements, and see their comparison
+with the previous design. The update preserves protected control, all tokens and
+the deposit floor in both designs. The no-pin booking pays the protected deposit
+to the treasury at booking; the no-pin fold pays the request's whole value to the
+folder before the folder's separately funded fee and pays no treasury. The previous
+design paid no treasury at booking, then paid the carrier value to the treasury
+and only the declared tip to the folder at the fold.
+
+The three rows in `holding-journeys` name the same model's `oldAllocation` and
+`newAllocation`, together with the update and termination statements. They remain
+published uncovered: no executable comparison with the application-held model
+exists yet. The hosted `no-pin-registration-journey` continuation and
+`no-pin-termination-refusals` exercise packaged commands and node refusals on a
+development network. Those chain observations establish what was run; they are a
+separate evidence boundary and do not establish agreement with the model.
 
 ## Registration checked against executable Lean
 

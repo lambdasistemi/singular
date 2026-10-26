@@ -92,7 +92,7 @@
   "uncovered": [
     {
       "pause": 400,
-      "text": "20 requirements have no evidence yet."
+      "text": "23 requirements have no evidence yet."
     }
   ],
   "what-this-evidence-is-bound-to": [
@@ -102,7 +102,7 @@
     },
     {
       "pause": 400,
-      "text": "52 requirements are in the inventory. 22 were demonstrated by a run, 0 partly, 4 ran without a pass, 5 are bound to evidence elsewhere, 20 are uncovered and 1 are out of scope."
+      "text": "55 requirements are in the inventory. 22 were demonstrated by a run, 0 partly, 4 ran without a pass, 5 are bound to evidence elsewhere, 23 are uncovered and 1 are out of scope."
     },
     {
       "pause": 400,
@@ -111,6 +111,6 @@
   ],
   "_source": {
     "file": "conformance-evidence.md",
-    "sha256": "c2a08bc6626136e43aff5f8ddfc913cbe18db60e2a74e39fdd84b643c1bb9118"
+    "sha256": "f69fbadc65d0d0a0871b4d9313fb5634344f2353dee2a2080e61a26c9c66be96"
   }
 }

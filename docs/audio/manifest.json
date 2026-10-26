@@ -58475,6 +58475,346 @@
     }
    ]
   },
+  "docs-consumer-conformance/appendix-checking-the-published-comparisons-00": {
+   "audio_sha256": "43fd5d6a2f75d9b23517b3097dcaa00525786f2311b33b9c8be8092babd94cde",
+   "characters": 45,
+   "cost": 4.455e-05,
+   "duration": 3.7,
+   "index": 0,
+   "key": "371e7fc5ed21d981aa25fac069e1312f7e2f676ed735a93a8bc17400559b4b2b",
+   "page": "docs/consumer-conformance.md",
+   "pause_ms": 500,
+   "section": "appendix-checking-the-published-comparisons",
+   "sent_text": "Appendix: checking the published comparisons.",
+   "text": "Appendix: checking the published comparisons.",
+   "words": [
+    {
+     "end": 1.125,
+     "start": 0.2,
+     "text": "Appendix"
+    },
+    {
+     "end": 1.35,
+     "start": 1.125,
+     "text": ":"
+    },
+    {
+     "end": 1.837,
+     "start": 1.55,
+     "text": "checking"
+    },
+    {
+     "end": 1.925,
+     "start": 1.837,
+     "text": "the"
+    },
+    {
+     "end": 2.325,
+     "start": 1.925,
+     "text": "published"
+    },
+    {
+     "end": 3.5,
+     "start": 2.325,
+     "text": "comparisons"
+    },
+    {
+     "end": 3.7,
+     "start": 3.5,
+     "text": "."
+    }
+   ]
+  },
+  "docs-consumer-conformance/appendix-checking-the-published-comparisons-01": {
+   "audio_sha256": "b436ad8c6803bca924219e5229743399ae2c705d87297691fc6fd5c6d891a747",
+   "characters": 383,
+   "cost": 0.00037917,
+   "duration": 24.575,
+   "index": 1,
+   "key": "f079b6fa9e777ccc921927da44e1491ca314b241ea8e90230c5fdd580d60d8e9",
+   "page": "docs/consumer-conformance.md",
+   "pause_ms": 400,
+   "section": "appendix-checking-the-published-comparisons",
+   "sent_text": "The appendix loads the actual requirement inventory, discovers every holding journey statement, and checks its previous-design outcome, model declaration binding, uncovered classification without comparison receipts, and stated evidence boundary. It also checks that the reader renders each requirement's text. These publication checks establish no application-held model comparison.",
+   "text": "The appendix loads the actual requirement inventory, discovers every holding journey statement, and checks its previous-design outcome, model declaration binding, uncovered classification without comparison receipts, and stated evidence boundary. It also checks that the reader renders each requirement's text. These publication checks establish no application-held model comparison.",
+   "words": [
+    {
+     "end": 0.35,
+     "start": 0.225,
+     "text": "The"
+    },
+    {
+     "end": 0.887,
+     "start": 0.35,
+     "text": "appendix"
+    },
+    {
+     "end": 1.25,
+     "start": 0.887,
+     "text": "loads"
+    },
+    {
+     "end": 1.413,
+     "start": 1.25,
+     "text": "the"
+    },
+    {
+     "end": 1.85,
+     "start": 1.413,
+     "text": "actual"
+    },
+    {
+     "end": 2.475,
+     "start": 1.85,
+     "text": "requirement"
+    },
+    {
+     "end": 3.15,
+     "start": 2.475,
+     "text": "inventory"
+    },
+    {
+     "end": 3.225,
+     "start": 3.15,
+     "text": ","
+    },
+    {
+     "end": 3.812,
+     "start": 3.225,
+     "text": "discovers"
+    },
+    {
+     "end": 4.15,
+     "start": 3.812,
+     "text": "every"
+    },
+    {
+     "end": 4.537,
+     "start": 4.15,
+     "text": "holding"
+    },
+    {
+     "end": 4.9,
+     "start": 4.537,
+     "text": "journey"
+    },
+    {
+     "end": 5.425,
+     "start": 4.9,
+     "text": "statement"
+    },
+    {
+     "end": 5.5,
+     "start": 5.425,
+     "text": ","
+    },
+    {
+     "end": 5.637,
+     "start": 5.5,
+     "text": "and"
+    },
+    {
+     "end": 5.975,
+     "start": 5.637,
+     "text": "checks"
+    },
+    {
+     "end": 6.188,
+     "start": 5.975,
+     "text": "its"
+    },
+    {
+     "end": 7.088,
+     "start": 6.188,
+     "text": "previous-design"
+    },
+    {
+     "end": 7.75,
+     "start": 7.088,
+     "text": "outcome"
+    },
+    {
+     "end": 7.863,
+     "start": 7.75,
+     "text": ","
+    },
+    {
+     "end": 8.25,
+     "start": 7.863,
+     "text": "model"
+    },
+    {
+     "end": 8.9,
+     "start": 8.25,
+     "text": "declaration"
+    },
+    {
+     "end": 9.525,
+     "start": 8.9,
+     "text": "binding"
+    },
+    {
+     "end": 9.625,
+     "start": 9.525,
+     "text": ","
+    },
+    {
+     "end": 10.225,
+     "start": 9.625,
+     "text": "uncovered"
+    },
+    {
+     "end": 11.1,
+     "start": 10.225,
+     "text": "classification"
+    },
+    {
+     "end": 11.45,
+     "start": 11.1,
+     "text": "without"
+    },
+    {
+     "end": 12.075,
+     "start": 11.45,
+     "text": "comparison"
+    },
+    {
+     "end": 12.65,
+     "start": 12.075,
+     "text": "receipts"
+    },
+    {
+     "end": 12.725,
+     "start": 12.65,
+     "text": ","
+    },
+    {
+     "end": 12.863,
+     "start": 12.725,
+     "text": "and"
+    },
+    {
+     "end": 13.3,
+     "start": 12.863,
+     "text": "stated"
+    },
+    {
+     "end": 13.75,
+     "start": 13.3,
+     "text": "evidence"
+    },
+    {
+     "end": 14.975,
+     "start": 13.75,
+     "text": "boundary"
+    },
+    {
+     "end": 15.225,
+     "start": 14.975,
+     "text": "."
+    },
+    {
+     "end": 15.5,
+     "start": 15.4,
+     "text": "It"
+    },
+    {
+     "end": 15.863,
+     "start": 15.5,
+     "text": "also"
+    },
+    {
+     "end": 16.2,
+     "start": 15.863,
+     "text": "checks"
+    },
+    {
+     "end": 16.337,
+     "start": 16.2,
+     "text": "that"
+    },
+    {
+     "end": 16.425,
+     "start": 16.337,
+     "text": "the"
+    },
+    {
+     "end": 16.775,
+     "start": 16.425,
+     "text": "reader"
+    },
+    {
+     "end": 17.288,
+     "start": 16.775,
+     "text": "renders"
+    },
+    {
+     "end": 17.525,
+     "start": 17.288,
+     "text": "each"
+    },
+    {
+     "end": 18.125,
+     "start": 17.525,
+     "text": "requirement's"
+    },
+    {
+     "end": 19.025,
+     "start": 18.125,
+     "text": "text"
+    },
+    {
+     "end": 19.225,
+     "start": 19.025,
+     "text": "."
+    },
+    {
+     "end": 19.625,
+     "start": 19.4,
+     "text": "These"
+    },
+    {
+     "end": 20.337,
+     "start": 19.625,
+     "text": "publication"
+    },
+    {
+     "end": 20.763,
+     "start": 20.337,
+     "text": "checks"
+    },
+    {
+     "end": 21.425,
+     "start": 20.763,
+     "text": "establish"
+    },
+    {
+     "end": 21.812,
+     "start": 21.425,
+     "text": "no"
+    },
+    {
+     "end": 22.775,
+     "start": 21.812,
+     "text": "application-held"
+    },
+    {
+     "end": 23.15,
+     "start": 22.775,
+     "text": "model"
+    },
+    {
+     "end": 24.375,
+     "start": 23.15,
+     "text": "comparison"
+    },
+    {
+     "end": 24.575,
+     "start": 24.375,
+     "text": "."
+    }
+   ]
+  },
   "docs-consumer-conformance/appendix-how-the-statements-are-checked-00": {
    "audio_sha256": "4e2d687e44d6f1eccf0955bbb46b4fba6fe1e9ac2635b87fc7642c704c01c4ee",
    "characters": 41,
@@ -77506,17 +77846,17 @@
    ]
   },
   "docs-consumer-conformance/the-denominator-01": {
-   "audio_sha256": "1e69f4ad1002183a93e7dcf3a413f8f0ea54dd451d0a6b35da678d40cb248f53",
-   "characters": 788,
-   "cost": 0.00078012,
-   "duration": 55.175,
+   "audio_sha256": "d9be2bb0064911e39d7a008142c172f5b5b17ee883ccf76e9c49e624b06eddb0",
+   "characters": 839,
+   "cost": 0.00083061,
+   "duration": 58.4,
    "index": 1,
-   "key": "e6643b1866bef0f9932220f576c4945dc521a790e03ea303099090e0ba2b733f",
+   "key": "74a5e21211af4957e53597bc6d075821be7f9d999881990f915531ae4307c9a4",
    "page": "docs/consumer-conformance.md",
    "pause_ms": 400,
    "section": "the-denominator",
-   "sent_text": "conformance/rows.json carries 52 rows, 51 owned: one permanent contract requirement, five registry identity requirements, twenty-five registry operation requirements, eight serialization requirements, five consumer resolution requirements, three execution-limit requirements and four registration journey requirements (stated below), plus the checkpoint and treasury policy (bonds, poison, the juvenility window W, the signature threshold) recorded as out of scope — it belongs to cardano-keri's checkpoint machine and treasury, explicitly never claimed by Singular. list prints the owned denominator separately so the boundary stays visible. Superseded and held rows stay in the denominator and visible to completeness accounting: relabelling a row pays no coverage and shrinks no board.",
-   "text": "conformance/rows.json carries 52 rows, 51 owned: one permanent contract requirement, five registry identity requirements, twenty-five registry operation requirements, eight serialization requirements, five consumer resolution requirements, three execution-limit requirements and four registration journey requirements (stated below), plus the checkpoint and treasury policy (bonds, poison, the juvenility window W, the signature threshold) recorded as out of scope — it belongs to cardano-keri's checkpoint machine and treasury, explicitly never claimed by Singular. list prints the owned denominator separately so the boundary stays visible. Superseded and held rows stay in the denominator and visible to completeness accounting: relabelling a row pays no coverage and shrinks no board.",
+   "sent_text": "conformance/rows.json carries 55 rows, 54 owned: one permanent contract requirement, five registry identity requirements, twenty-five registry operation requirements, eight serialization requirements, five consumer resolution requirements, three execution-limit requirements, four registration journey requirements and three update and termination journey requirements (stated below), plus the checkpoint and treasury policy (bonds, poison, the juvenility window W, the signature threshold) recorded as out of scope — it belongs to cardano-keri's checkpoint machine and treasury, explicitly never claimed by Singular. list prints the owned denominator separately so the boundary stays visible. Superseded and held rows stay in the denominator and visible to completeness accounting: relabelling a row pays no coverage and shrinks no board.",
+   "text": "conformance/rows.json carries 55 rows, 54 owned: one permanent contract requirement, five registry identity requirements, twenty-five registry operation requirements, eight serialization requirements, five consumer resolution requirements, three execution-limit requirements, four registration journey requirements and three update and termination journey requirements (stated below), plus the checkpoint and treasury policy (bonds, poison, the juvenility window W, the signature threshold) recorded as out of scope — it belongs to cardano-keri's checkpoint machine and treasury, explicitly never claimed by Singular. list prints the owned denominator separately so the boundary stays visible. Superseded and held rows stay in the denominator and visible to completeness accounting: relabelling a row pays no coverage and shrinks no board.",
    "words": [
     {
      "end": 2.275,
@@ -77529,608 +77869,643 @@
      "text": "carries"
     },
     {
-     "end": 3.125,
+     "end": 3.2,
      "start": 2.625,
-     "text": "52"
-    },
-    {
-     "end": 3.5,
-     "start": 3.125,
-     "text": "rows"
+     "text": "55"
     },
     {
      "end": 3.55,
-     "start": 3.5,
-     "text": ","
-    },
-    {
-     "end": 4.025,
-     "start": 3.55,
-     "text": "51"
-    },
-    {
-     "end": 4.85,
-     "start": 4.025,
-     "text": "owned"
-    },
-    {
-     "end": 5.075,
-     "start": 4.85,
-     "text": ":"
-    },
-    {
-     "end": 5.525,
-     "start": 5.3,
-     "text": "one"
-    },
-    {
-     "end": 5.95,
-     "start": 5.525,
-     "text": "permanent"
-    },
-    {
-     "end": 6.438,
-     "start": 5.95,
-     "text": "contract"
-    },
-    {
-     "end": 7.075,
-     "start": 6.438,
-     "text": "requirement"
-    },
-    {
-     "end": 7.188,
-     "start": 7.075,
-     "text": ","
-    },
-    {
-     "end": 7.575,
-     "start": 7.188,
-     "text": "five"
-    },
-    {
-     "end": 8.062,
-     "start": 7.575,
-     "text": "registry"
-    },
-    {
-     "end": 8.55,
-     "start": 8.062,
-     "text": "identity"
-    },
-    {
-     "end": 9.75,
-     "start": 8.55,
-     "text": "requirements"
-    },
-    {
-     "end": 9.95,
-     "start": 9.75,
-     "text": ","
-    },
-    {
-     "end": 10.8,
-     "start": 10.15,
-     "text": "twenty-five"
-    },
-    {
-     "end": 11.3,
-     "start": 10.8,
-     "text": "registry"
-    },
-    {
-     "end": 11.875,
-     "start": 11.3,
-     "text": "operation"
-    },
-    {
-     "end": 12.65,
-     "start": 11.875,
-     "text": "requirements"
-    },
-    {
-     "end": 12.762,
-     "start": 12.65,
-     "text": ","
-    },
-    {
-     "end": 13.038,
-     "start": 12.762,
-     "text": "eight"
-    },
-    {
-     "end": 13.85,
-     "start": 13.038,
-     "text": "serialization"
-    },
-    {
-     "end": 15.075,
-     "start": 13.85,
-     "text": "requirements"
-    },
-    {
-     "end": 15.275,
-     "start": 15.075,
-     "text": ","
-    },
-    {
-     "end": 15.775,
-     "start": 15.475,
-     "text": "five"
-    },
-    {
-     "end": 16.275,
-     "start": 15.775,
-     "text": "consumer"
-    },
-    {
-     "end": 16.812,
-     "start": 16.275,
-     "text": "resolution"
-    },
-    {
-     "end": 17.85,
-     "start": 16.812,
-     "text": "requirements"
-    },
-    {
-     "end": 18.05,
-     "start": 17.85,
-     "text": ","
-    },
-    {
-     "end": 18.575,
-     "start": 18.25,
-     "text": "three"
-    },
-    {
-     "end": 19.5,
-     "start": 18.575,
-     "text": "execution-limit"
-    },
-    {
-     "end": 20.263,
-     "start": 19.5,
-     "text": "requirements"
-    },
-    {
-     "end": 20.462,
-     "start": 20.263,
-     "text": "and"
-    },
-    {
-     "end": 20.8,
-     "start": 20.462,
-     "text": "four"
-    },
-    {
-     "end": 21.5,
-     "start": 20.8,
-     "text": "registration"
-    },
-    {
-     "end": 21.825,
-     "start": 21.5,
-     "text": "journey"
-    },
-    {
-     "end": 22.663,
-     "start": 21.825,
-     "text": "requirements"
-    },
-    {
-     "end": 22.75,
-     "start": 22.663,
-     "text": "("
-    },
-    {
-     "end": 23.15,
-     "start": 22.75,
-     "text": "stated"
-    },
-    {
-     "end": 24.125,
-     "start": 23.15,
-     "text": "below"
-    },
-    {
-     "end": 24.475,
-     "start": 24.125,
-     "text": ")"
-    },
-    {
-     "end": 24.55,
-     "start": 24.475,
-     "text": ","
-    },
-    {
-     "end": 25.0,
-     "start": 24.75,
-     "text": "plus"
-    },
-    {
-     "end": 25.138,
-     "start": 25.0,
-     "text": "the"
-    },
-    {
-     "end": 25.663,
-     "start": 25.138,
-     "text": "checkpoint"
-    },
-    {
-     "end": 25.775,
-     "start": 25.663,
-     "text": "and"
-    },
-    {
-     "end": 26.2,
-     "start": 25.775,
-     "text": "treasury"
-    },
-    {
-     "end": 26.888,
-     "start": 26.2,
-     "text": "policy"
-    },
-    {
-     "end": 26.975,
-     "start": 26.888,
-     "text": "("
-    },
-    {
-     "end": 27.45,
-     "start": 26.975,
-     "text": "bonds"
-    },
-    {
-     "end": 27.538,
-     "start": 27.45,
-     "text": ","
-    },
-    {
-     "end": 28.05,
-     "start": 27.538,
-     "text": "poison"
-    },
-    {
-     "end": 28.087,
-     "start": 28.05,
-     "text": ","
-    },
-    {
-     "end": 28.175,
-     "start": 28.087,
-     "text": "the"
-    },
-    {
-     "end": 28.8,
-     "start": 28.175,
-     "text": "juvenility"
-    },
-    {
-     "end": 29.125,
-     "start": 28.8,
-     "text": "window"
-    },
-    {
-     "end": 30.05,
-     "start": 29.125,
-     "text": "W"
-    },
-    {
-     "end": 30.35,
-     "start": 30.05,
-     "text": ","
-    },
-    {
-     "end": 30.663,
-     "start": 30.55,
-     "text": "the"
-    },
-    {
-     "end": 31.212,
-     "start": 30.663,
-     "text": "signature"
-    },
-    {
-     "end": 31.95,
-     "start": 31.212,
-     "text": "threshold"
-    },
-    {
-     "end": 32.0,
-     "start": 31.95,
-     "text": ")"
-    },
-    {
-     "end": 32.525,
-     "start": 32.0,
-     "text": "recorded"
-    },
-    {
-     "end": 32.675,
-     "start": 32.525,
-     "text": "as"
-    },
-    {
-     "end": 32.862,
-     "start": 32.675,
-     "text": "out"
-    },
-    {
-     "end": 32.963,
-     "start": 32.862,
-     "text": "of"
-    },
-    {
-     "end": 33.588,
-     "start": 32.963,
-     "text": "scope"
-    },
-    {
-     "end": 33.688,
-     "start": 33.588,
-     "text": "—"
-    },
-    {
-     "end": 33.825,
-     "start": 33.688,
-     "text": "it"
-    },
-    {
-     "end": 34.375,
-     "start": 33.825,
-     "text": "belongs"
-    },
-    {
-     "end": 34.5,
-     "start": 34.375,
-     "text": "to"
-    },
-    {
-     "end": 35.438,
-     "start": 34.5,
-     "text": "cardano-keri's"
-    },
-    {
-     "end": 35.938,
-     "start": 35.438,
-     "text": "checkpoint"
-    },
-    {
-     "end": 36.4,
-     "start": 35.938,
-     "text": "machine"
-    },
-    {
-     "end": 36.525,
-     "start": 36.4,
-     "text": "and"
-    },
-    {
-     "end": 37.65,
-     "start": 36.525,
-     "text": "treasury"
-    },
-    {
-     "end": 37.9,
-     "start": 37.65,
-     "text": ","
-    },
-    {
-     "end": 38.7,
-     "start": 38.1,
-     "text": "explicitly"
-    },
-    {
-     "end": 38.95,
-     "start": 38.7,
-     "text": "never"
-    },
-    {
-     "end": 39.3,
-     "start": 38.95,
-     "text": "claimed"
-    },
-    {
-     "end": 39.487,
-     "start": 39.3,
-     "text": "by"
-    },
-    {
-     "end": 40.425,
-     "start": 39.487,
-     "text": "Singular"
-    },
-    {
-     "end": 40.625,
-     "start": 40.425,
-     "text": "."
-    },
-    {
-     "end": 41.125,
-     "start": 40.85,
-     "text": "list"
-    },
-    {
-     "end": 41.388,
-     "start": 41.125,
-     "text": "prints"
-    },
-    {
-     "end": 41.525,
-     "start": 41.388,
-     "text": "the"
-    },
-    {
-     "end": 41.75,
-     "start": 41.525,
-     "text": "owned"
-    },
-    {
-     "end": 42.475,
-     "start": 41.75,
-     "text": "denominator"
-    },
-    {
-     "end": 43.15,
-     "start": 42.475,
-     "text": "separately"
-    },
-    {
-     "end": 43.338,
-     "start": 43.15,
-     "text": "so"
-    },
-    {
-     "end": 43.425,
-     "start": 43.338,
-     "text": "the"
-    },
-    {
-     "end": 43.925,
-     "start": 43.425,
-     "text": "boundary"
-    },
-    {
-     "end": 44.3,
-     "start": 43.925,
-     "text": "stays"
-    },
-    {
-     "end": 45.275,
-     "start": 44.3,
-     "text": "visible"
-    },
-    {
-     "end": 45.475,
-     "start": 45.275,
-     "text": "."
-    },
-    {
-     "end": 46.5,
-     "start": 45.7,
-     "text": "Superseded"
-    },
-    {
-     "end": 46.625,
-     "start": 46.5,
-     "text": "and"
-    },
-    {
-     "end": 46.9,
-     "start": 46.625,
-     "text": "held"
-    },
-    {
-     "end": 47.287,
-     "start": 46.9,
+     "start": 3.2,
      "text": "rows"
     },
     {
-     "end": 47.65,
-     "start": 47.287,
-     "text": "stay"
+     "end": 3.6,
+     "start": 3.55,
+     "text": ","
     },
     {
-     "end": 47.737,
-     "start": 47.65,
-     "text": "in"
+     "end": 4.125,
+     "start": 3.6,
+     "text": "54"
     },
     {
-     "end": 47.825,
-     "start": 47.737,
-     "text": "the"
+     "end": 4.975,
+     "start": 4.125,
+     "text": "owned"
     },
     {
-     "end": 48.7,
-     "start": 47.825,
-     "text": "denominator"
-    },
-    {
-     "end": 48.875,
-     "start": 48.7,
-     "text": "and"
-    },
-    {
-     "end": 49.3,
-     "start": 48.875,
-     "text": "visible"
-    },
-    {
-     "end": 49.425,
-     "start": 49.3,
-     "text": "to"
-    },
-    {
-     "end": 50.025,
-     "start": 49.425,
-     "text": "completeness"
-    },
-    {
-     "end": 51.225,
-     "start": 50.025,
-     "text": "accounting"
-    },
-    {
-     "end": 51.425,
-     "start": 51.225,
+     "end": 5.2,
+     "start": 4.975,
      "text": ":"
     },
     {
-     "end": 52.1,
-     "start": 51.625,
-     "text": "relabelling"
+     "end": 5.65,
+     "start": 5.425,
+     "text": "one"
     },
     {
-     "end": 52.175,
-     "start": 52.1,
-     "text": "a"
+     "end": 6.075,
+     "start": 5.65,
+     "text": "permanent"
     },
     {
-     "end": 52.4,
-     "start": 52.175,
-     "text": "row"
+     "end": 6.562,
+     "start": 6.075,
+     "text": "contract"
     },
     {
-     "end": 52.8,
-     "start": 52.4,
-     "text": "pays"
+     "end": 7.2,
+     "start": 6.562,
+     "text": "requirement"
     },
     {
-     "end": 52.975,
-     "start": 52.8,
-     "text": "no"
+     "end": 7.312,
+     "start": 7.2,
+     "text": ","
     },
     {
-     "end": 53.425,
-     "start": 52.975,
-     "text": "coverage"
+     "end": 7.7,
+     "start": 7.312,
+     "text": "five"
     },
     {
-     "end": 53.562,
-     "start": 53.425,
+     "end": 8.188,
+     "start": 7.7,
+     "text": "registry"
+    },
+    {
+     "end": 8.675,
+     "start": 8.188,
+     "text": "identity"
+    },
+    {
+     "end": 9.875,
+     "start": 8.675,
+     "text": "requirements"
+    },
+    {
+     "end": 10.075,
+     "start": 9.875,
+     "text": ","
+    },
+    {
+     "end": 10.925,
+     "start": 10.275,
+     "text": "twenty-five"
+    },
+    {
+     "end": 11.425,
+     "start": 10.925,
+     "text": "registry"
+    },
+    {
+     "end": 12.0,
+     "start": 11.425,
+     "text": "operation"
+    },
+    {
+     "end": 12.775,
+     "start": 12.0,
+     "text": "requirements"
+    },
+    {
+     "end": 12.887,
+     "start": 12.775,
+     "text": ","
+    },
+    {
+     "end": 13.163,
+     "start": 12.887,
+     "text": "eight"
+    },
+    {
+     "end": 13.975,
+     "start": 13.163,
+     "text": "serialization"
+    },
+    {
+     "end": 15.2,
+     "start": 13.975,
+     "text": "requirements"
+    },
+    {
+     "end": 15.4,
+     "start": 15.2,
+     "text": ","
+    },
+    {
+     "end": 15.925,
+     "start": 15.6,
+     "text": "five"
+    },
+    {
+     "end": 16.475,
+     "start": 15.925,
+     "text": "consumer"
+    },
+    {
+     "end": 17.05,
+     "start": 16.475,
+     "text": "resolution"
+    },
+    {
+     "end": 17.775,
+     "start": 17.05,
+     "text": "requirements"
+    },
+    {
+     "end": 17.862,
+     "start": 17.775,
+     "text": ","
+    },
+    {
+     "end": 18.2,
+     "start": 17.862,
+     "text": "three"
+    },
+    {
+     "end": 19.038,
+     "start": 18.2,
+     "text": "execution-limit"
+    },
+    {
+     "end": 20.225,
+     "start": 19.038,
+     "text": "requirements"
+    },
+    {
+     "end": 20.425,
+     "start": 20.225,
+     "text": ","
+    },
+    {
+     "end": 20.925,
+     "start": 20.65,
+     "text": "four"
+    },
+    {
+     "end": 21.688,
+     "start": 20.925,
+     "text": "registration"
+    },
+    {
+     "end": 22.025,
+     "start": 21.688,
+     "text": "journey"
+    },
+    {
+     "end": 22.837,
+     "start": 22.025,
+     "text": "requirements"
+    },
+    {
+     "end": 23.0,
+     "start": 22.837,
      "text": "and"
     },
     {
-     "end": 53.95,
-     "start": 53.562,
-     "text": "shrinks"
+     "end": 23.388,
+     "start": 23.0,
+     "text": "three"
     },
     {
-     "end": 54.125,
-     "start": 53.95,
+     "end": 23.875,
+     "start": 23.388,
+     "text": "update"
+    },
+    {
+     "end": 24.0,
+     "start": 23.875,
+     "text": "and"
+    },
+    {
+     "end": 24.7,
+     "start": 24.0,
+     "text": "termination"
+    },
+    {
+     "end": 25.025,
+     "start": 24.7,
+     "text": "journey"
+    },
+    {
+     "end": 25.837,
+     "start": 25.025,
+     "text": "requirements"
+    },
+    {
+     "end": 25.925,
+     "start": 25.837,
+     "text": "("
+    },
+    {
+     "end": 26.325,
+     "start": 25.925,
+     "text": "stated"
+    },
+    {
+     "end": 27.35,
+     "start": 26.325,
+     "text": "below"
+    },
+    {
+     "end": 27.7,
+     "start": 27.35,
+     "text": ")"
+    },
+    {
+     "end": 27.775,
+     "start": 27.7,
+     "text": ","
+    },
+    {
+     "end": 28.225,
+     "start": 27.975,
+     "text": "plus"
+    },
+    {
+     "end": 28.362,
+     "start": 28.225,
+     "text": "the"
+    },
+    {
+     "end": 28.888,
+     "start": 28.362,
+     "text": "checkpoint"
+    },
+    {
+     "end": 29.0,
+     "start": 28.888,
+     "text": "and"
+    },
+    {
+     "end": 29.425,
+     "start": 29.0,
+     "text": "treasury"
+    },
+    {
+     "end": 30.112,
+     "start": 29.425,
+     "text": "policy"
+    },
+    {
+     "end": 30.2,
+     "start": 30.112,
+     "text": "("
+    },
+    {
+     "end": 30.675,
+     "start": 30.2,
+     "text": "bonds"
+    },
+    {
+     "end": 30.763,
+     "start": 30.675,
+     "text": ","
+    },
+    {
+     "end": 31.275,
+     "start": 30.763,
+     "text": "poison"
+    },
+    {
+     "end": 31.312,
+     "start": 31.275,
+     "text": ","
+    },
+    {
+     "end": 31.4,
+     "start": 31.312,
+     "text": "the"
+    },
+    {
+     "end": 32.025,
+     "start": 31.4,
+     "text": "juvenility"
+    },
+    {
+     "end": 32.35,
+     "start": 32.025,
+     "text": "window"
+    },
+    {
+     "end": 33.275,
+     "start": 32.35,
+     "text": "W"
+    },
+    {
+     "end": 33.575,
+     "start": 33.275,
+     "text": ","
+    },
+    {
+     "end": 33.888,
+     "start": 33.775,
+     "text": "the"
+    },
+    {
+     "end": 34.438,
+     "start": 33.888,
+     "text": "signature"
+    },
+    {
+     "end": 35.175,
+     "start": 34.438,
+     "text": "threshold"
+    },
+    {
+     "end": 35.225,
+     "start": 35.175,
+     "text": ")"
+    },
+    {
+     "end": 35.75,
+     "start": 35.225,
+     "text": "recorded"
+    },
+    {
+     "end": 35.9,
+     "start": 35.75,
+     "text": "as"
+    },
+    {
+     "end": 36.088,
+     "start": 35.9,
+     "text": "out"
+    },
+    {
+     "end": 36.188,
+     "start": 36.088,
+     "text": "of"
+    },
+    {
+     "end": 36.812,
+     "start": 36.188,
+     "text": "scope"
+    },
+    {
+     "end": 36.912,
+     "start": 36.812,
+     "text": "—"
+    },
+    {
+     "end": 37.05,
+     "start": 36.912,
+     "text": "it"
+    },
+    {
+     "end": 37.6,
+     "start": 37.05,
+     "text": "belongs"
+    },
+    {
+     "end": 37.725,
+     "start": 37.6,
+     "text": "to"
+    },
+    {
+     "end": 38.662,
+     "start": 37.725,
+     "text": "cardano-keri's"
+    },
+    {
+     "end": 39.162,
+     "start": 38.662,
+     "text": "checkpoint"
+    },
+    {
+     "end": 39.625,
+     "start": 39.162,
+     "text": "machine"
+    },
+    {
+     "end": 39.75,
+     "start": 39.625,
+     "text": "and"
+    },
+    {
+     "end": 40.875,
+     "start": 39.75,
+     "text": "treasury"
+    },
+    {
+     "end": 41.125,
+     "start": 40.875,
+     "text": ","
+    },
+    {
+     "end": 41.925,
+     "start": 41.325,
+     "text": "explicitly"
+    },
+    {
+     "end": 42.175,
+     "start": 41.925,
+     "text": "never"
+    },
+    {
+     "end": 42.525,
+     "start": 42.175,
+     "text": "claimed"
+    },
+    {
+     "end": 42.713,
+     "start": 42.525,
+     "text": "by"
+    },
+    {
+     "end": 43.65,
+     "start": 42.713,
+     "text": "Singular"
+    },
+    {
+     "end": 43.85,
+     "start": 43.65,
+     "text": "."
+    },
+    {
+     "end": 44.35,
+     "start": 44.075,
+     "text": "list"
+    },
+    {
+     "end": 44.612,
+     "start": 44.35,
+     "text": "prints"
+    },
+    {
+     "end": 44.75,
+     "start": 44.612,
+     "text": "the"
+    },
+    {
+     "end": 44.975,
+     "start": 44.75,
+     "text": "owned"
+    },
+    {
+     "end": 45.7,
+     "start": 44.975,
+     "text": "denominator"
+    },
+    {
+     "end": 46.375,
+     "start": 45.7,
+     "text": "separately"
+    },
+    {
+     "end": 46.562,
+     "start": 46.375,
+     "text": "so"
+    },
+    {
+     "end": 46.65,
+     "start": 46.562,
+     "text": "the"
+    },
+    {
+     "end": 47.15,
+     "start": 46.65,
+     "text": "boundary"
+    },
+    {
+     "end": 47.525,
+     "start": 47.15,
+     "text": "stays"
+    },
+    {
+     "end": 48.5,
+     "start": 47.525,
+     "text": "visible"
+    },
+    {
+     "end": 48.7,
+     "start": 48.5,
+     "text": "."
+    },
+    {
+     "end": 49.725,
+     "start": 48.925,
+     "text": "Superseded"
+    },
+    {
+     "end": 49.85,
+     "start": 49.725,
+     "text": "and"
+    },
+    {
+     "end": 50.125,
+     "start": 49.85,
+     "text": "held"
+    },
+    {
+     "end": 50.513,
+     "start": 50.125,
+     "text": "rows"
+    },
+    {
+     "end": 50.875,
+     "start": 50.513,
+     "text": "stay"
+    },
+    {
+     "end": 50.963,
+     "start": 50.875,
+     "text": "in"
+    },
+    {
+     "end": 51.05,
+     "start": 50.963,
+     "text": "the"
+    },
+    {
+     "end": 51.925,
+     "start": 51.05,
+     "text": "denominator"
+    },
+    {
+     "end": 52.1,
+     "start": 51.925,
+     "text": "and"
+    },
+    {
+     "end": 52.525,
+     "start": 52.1,
+     "text": "visible"
+    },
+    {
+     "end": 52.65,
+     "start": 52.525,
+     "text": "to"
+    },
+    {
+     "end": 53.25,
+     "start": 52.65,
+     "text": "completeness"
+    },
+    {
+     "end": 54.45,
+     "start": 53.25,
+     "text": "accounting"
+    },
+    {
+     "end": 54.65,
+     "start": 54.45,
+     "text": ":"
+    },
+    {
+     "end": 55.325,
+     "start": 54.85,
+     "text": "relabelling"
+    },
+    {
+     "end": 55.4,
+     "start": 55.325,
+     "text": "a"
+    },
+    {
+     "end": 55.625,
+     "start": 55.4,
+     "text": "row"
+    },
+    {
+     "end": 56.025,
+     "start": 55.625,
+     "text": "pays"
+    },
+    {
+     "end": 56.2,
+     "start": 56.025,
      "text": "no"
     },
     {
-     "end": 54.975,
-     "start": 54.125,
+     "end": 56.65,
+     "start": 56.2,
+     "text": "coverage"
+    },
+    {
+     "end": 56.787,
+     "start": 56.65,
+     "text": "and"
+    },
+    {
+     "end": 57.175,
+     "start": 56.787,
+     "text": "shrinks"
+    },
+    {
+     "end": 57.35,
+     "start": 57.175,
+     "text": "no"
+    },
+    {
+     "end": 58.2,
+     "start": 57.35,
      "text": "board"
     },
     {
-     "end": 55.175,
-     "start": 54.975,
+     "end": 58.4,
+     "start": 58.2,
      "text": "."
     }
    ]
@@ -94071,6 +94446,1256 @@
     {
      "end": 38.55,
      "start": 38.35,
+     "text": "."
+    }
+   ]
+  },
+  "docs-consumer-conformance/update-and-termination-journeys-the-previous-design-against-the-no-pin-design-00": {
+   "audio_sha256": "a94b54dfa0e8f3f23119295518b648ce2556611e2481a7aedb669d018b67cd57",
+   "characters": 79,
+   "cost": 7.821e-05,
+   "duration": 5.375,
+   "index": 0,
+   "key": "341cde82cd340c46b9a282fb76d1186d106cd6eb6ec77254691e03ee7c779b72",
+   "page": "docs/consumer-conformance.md",
+   "pause_ms": 500,
+   "section": "update-and-termination-journeys-the-previous-design-against-the-no-pin-design",
+   "sent_text": "Update and termination journeys: the previous design against the no-pin design.",
+   "text": "Update and termination journeys: the previous design against the no-pin design.",
+   "words": [
+    {
+     "end": 0.538,
+     "start": 0.175,
+     "text": "Update"
+    },
+    {
+     "end": 0.65,
+     "start": 0.538,
+     "text": "and"
+    },
+    {
+     "end": 1.225,
+     "start": 0.65,
+     "text": "termination"
+    },
+    {
+     "end": 2.15,
+     "start": 1.225,
+     "text": "journeys"
+    },
+    {
+     "end": 2.35,
+     "start": 2.15,
+     "text": ":"
+    },
+    {
+     "end": 2.6,
+     "start": 2.525,
+     "text": "the"
+    },
+    {
+     "end": 3.025,
+     "start": 2.6,
+     "text": "previous"
+    },
+    {
+     "end": 3.425,
+     "start": 3.025,
+     "text": "design"
+    },
+    {
+     "end": 3.713,
+     "start": 3.425,
+     "text": "against"
+    },
+    {
+     "end": 3.8,
+     "start": 3.713,
+     "text": "the"
+    },
+    {
+     "end": 4.25,
+     "start": 3.8,
+     "text": "no-pin"
+    },
+    {
+     "end": 5.175,
+     "start": 4.25,
+     "text": "design"
+    },
+    {
+     "end": 5.375,
+     "start": 5.175,
+     "text": "."
+    }
+   ]
+  },
+  "docs-consumer-conformance/update-and-termination-journeys-the-previous-design-against-the-no-pin-design-01": {
+   "audio_sha256": "d1b81c6326e1428cf157bab6aa225fddebdf19ed71bdaeeddf09e0db7d8bf2e6",
+   "characters": 371,
+   "cost": 0.00036729,
+   "duration": 23.55,
+   "index": 1,
+   "key": "4f690644a93e2893b689bad73d135013919681767117f698150b507a2885f755",
+   "page": "docs/consumer-conformance.md",
+   "pause_ms": 400,
+   "section": "update-and-termination-journeys-the-previous-design-against-the-no-pin-design",
+   "sent_text": "As an integrator, I can follow the controller's payload update, termination booking and the fold by any wallet, and compare what each allocates under the previous design and the no-pin design. These are three owned statements in the suite's description language. They remain published uncovered because no executable comparison with the application-held model exists yet.",
+   "text": "As an integrator, I can follow the controller's payload update, termination booking and the fold by any wallet, and compare what each allocates under the previous design and the no-pin design. These are three owned statements in the suite's description language. They remain published uncovered because no executable comparison with the application-held model exists yet.",
+   "words": [
+    {
+     "end": 0.412,
+     "start": 0.25,
+     "text": "As"
+    },
+    {
+     "end": 0.5,
+     "start": 0.412,
+     "text": "an"
+    },
+    {
+     "end": 1.075,
+     "start": 0.5,
+     "text": "integrator"
+    },
+    {
+     "end": 1.125,
+     "start": 1.075,
+     "text": ","
+    },
+    {
+     "end": 1.275,
+     "start": 1.125,
+     "text": "I"
+    },
+    {
+     "end": 1.462,
+     "start": 1.275,
+     "text": "can"
+    },
+    {
+     "end": 1.825,
+     "start": 1.462,
+     "text": "follow"
+    },
+    {
+     "end": 1.925,
+     "start": 1.825,
+     "text": "the"
+    },
+    {
+     "end": 2.612,
+     "start": 1.925,
+     "text": "controller's"
+    },
+    {
+     "end": 3.1,
+     "start": 2.612,
+     "text": "payload"
+    },
+    {
+     "end": 3.6,
+     "start": 3.1,
+     "text": "update"
+    },
+    {
+     "end": 3.688,
+     "start": 3.6,
+     "text": ","
+    },
+    {
+     "end": 4.4,
+     "start": 3.688,
+     "text": "termination"
+    },
+    {
+     "end": 4.875,
+     "start": 4.4,
+     "text": "booking"
+    },
+    {
+     "end": 4.988,
+     "start": 4.875,
+     "text": "and"
+    },
+    {
+     "end": 5.1,
+     "start": 4.988,
+     "text": "the"
+    },
+    {
+     "end": 5.575,
+     "start": 5.1,
+     "text": "fold"
+    },
+    {
+     "end": 5.787,
+     "start": 5.575,
+     "text": "by"
+    },
+    {
+     "end": 6.113,
+     "start": 5.787,
+     "text": "any"
+    },
+    {
+     "end": 6.625,
+     "start": 6.113,
+     "text": "wallet"
+    },
+    {
+     "end": 6.7,
+     "start": 6.625,
+     "text": ","
+    },
+    {
+     "end": 6.825,
+     "start": 6.7,
+     "text": "and"
+    },
+    {
+     "end": 7.225,
+     "start": 6.825,
+     "text": "compare"
+    },
+    {
+     "end": 7.4,
+     "start": 7.225,
+     "text": "what"
+    },
+    {
+     "end": 7.65,
+     "start": 7.4,
+     "text": "each"
+    },
+    {
+     "end": 8.25,
+     "start": 7.65,
+     "text": "allocates"
+    },
+    {
+     "end": 8.438,
+     "start": 8.25,
+     "text": "under"
+    },
+    {
+     "end": 8.538,
+     "start": 8.438,
+     "text": "the"
+    },
+    {
+     "end": 9.0,
+     "start": 8.538,
+     "text": "previous"
+    },
+    {
+     "end": 9.675,
+     "start": 9.0,
+     "text": "design"
+    },
+    {
+     "end": 9.812,
+     "start": 9.675,
+     "text": "and"
+    },
+    {
+     "end": 9.9,
+     "start": 9.812,
+     "text": "the"
+    },
+    {
+     "end": 10.375,
+     "start": 9.9,
+     "text": "no-pin"
+    },
+    {
+     "end": 11.65,
+     "start": 10.375,
+     "text": "design"
+    },
+    {
+     "end": 11.875,
+     "start": 11.65,
+     "text": "."
+    },
+    {
+     "end": 12.3,
+     "start": 12.075,
+     "text": "These"
+    },
+    {
+     "end": 12.475,
+     "start": 12.3,
+     "text": "are"
+    },
+    {
+     "end": 12.75,
+     "start": 12.475,
+     "text": "three"
+    },
+    {
+     "end": 12.975,
+     "start": 12.75,
+     "text": "owned"
+    },
+    {
+     "end": 13.55,
+     "start": 12.975,
+     "text": "statements"
+    },
+    {
+     "end": 13.637,
+     "start": 13.55,
+     "text": "in"
+    },
+    {
+     "end": 13.738,
+     "start": 13.637,
+     "text": "the"
+    },
+    {
+     "end": 14.1,
+     "start": 13.738,
+     "text": "suite's"
+    },
+    {
+     "end": 14.625,
+     "start": 14.1,
+     "text": "description"
+    },
+    {
+     "end": 15.6,
+     "start": 14.625,
+     "text": "language"
+    },
+    {
+     "end": 15.825,
+     "start": 15.6,
+     "text": "."
+    },
+    {
+     "end": 16.175,
+     "start": 16.025,
+     "text": "They"
+    },
+    {
+     "end": 16.638,
+     "start": 16.175,
+     "text": "remain"
+    },
+    {
+     "end": 17.175,
+     "start": 16.638,
+     "text": "published"
+    },
+    {
+     "end": 17.825,
+     "start": 17.175,
+     "text": "uncovered"
+    },
+    {
+     "end": 18.2,
+     "start": 17.825,
+     "text": "because"
+    },
+    {
+     "end": 18.538,
+     "start": 18.2,
+     "text": "no"
+    },
+    {
+     "end": 19.25,
+     "start": 18.538,
+     "text": "executable"
+    },
+    {
+     "end": 20.0,
+     "start": 19.25,
+     "text": "comparison"
+    },
+    {
+     "end": 20.138,
+     "start": 20.0,
+     "text": "with"
+    },
+    {
+     "end": 20.288,
+     "start": 20.138,
+     "text": "the"
+    },
+    {
+     "end": 21.237,
+     "start": 20.288,
+     "text": "application-held"
+    },
+    {
+     "end": 21.825,
+     "start": 21.237,
+     "text": "model"
+    },
+    {
+     "end": 22.413,
+     "start": 21.825,
+     "text": "exists"
+    },
+    {
+     "end": 23.325,
+     "start": 22.413,
+     "text": "yet"
+    },
+    {
+     "end": 23.55,
+     "start": 23.325,
+     "text": "."
+    }
+   ]
+  },
+  "docs-consumer-conformance/update-and-termination-journeys-the-previous-design-against-the-no-pin-design-02": {
+   "audio_sha256": "f46fa14a5381814cac01de8ee87889197367678d334d61f405a276d8e883cbb7",
+   "characters": 406,
+   "cost": 0.00040194,
+   "duration": 26.4,
+   "index": 2,
+   "key": "148e3a8b2762351f1ed1d9fee5cee4642302aea993827ee68e32a1c6a5ad9300",
+   "page": "docs/consumer-conformance.md",
+   "pause_ms": 400,
+   "section": "update-and-termination-journeys-the-previous-design-against-the-no-pin-design",
+   "sent_text": "The two money changes are explicit: the protected deposit goes to the treasury when termination is booked, and the folder receives the termination request's whole value at the fold. The whole value is the gross allocation; ordinary wallet funding and the ledger fee are accounted for separately. The old carrier payment is not renamed a deposit, and the new folder payment is not limited to a declared tip.",
+   "text": "The two money changes are explicit: the protected deposit goes to the treasury when termination is booked, and the folder receives the termination request's whole value at the fold. The whole value is the gross allocation; ordinary wallet funding and the ledger fee are accounted for separately. The old carrier payment is not renamed a deposit, and the new folder payment is not limited to a declared tip.",
+   "words": [
+    {
+     "end": 0.25,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.412,
+     "start": 0.25,
+     "text": "two"
+    },
+    {
+     "end": 0.625,
+     "start": 0.412,
+     "text": "money"
+    },
+    {
+     "end": 1.025,
+     "start": 0.625,
+     "text": "changes"
+    },
+    {
+     "end": 1.138,
+     "start": 1.025,
+     "text": "are"
+    },
+    {
+     "end": 2.2,
+     "start": 1.138,
+     "text": "explicit"
+    },
+    {
+     "end": 2.4,
+     "start": 2.2,
+     "text": ":"
+    },
+    {
+     "end": 2.65,
+     "start": 2.575,
+     "text": "the"
+    },
+    {
+     "end": 3.175,
+     "start": 2.65,
+     "text": "protected"
+    },
+    {
+     "end": 3.838,
+     "start": 3.175,
+     "text": "deposit"
+    },
+    {
+     "end": 4.15,
+     "start": 3.838,
+     "text": "goes"
+    },
+    {
+     "end": 4.238,
+     "start": 4.15,
+     "text": "to"
+    },
+    {
+     "end": 4.325,
+     "start": 4.238,
+     "text": "the"
+    },
+    {
+     "end": 4.825,
+     "start": 4.325,
+     "text": "treasury"
+    },
+    {
+     "end": 5.0,
+     "start": 4.825,
+     "text": "when"
+    },
+    {
+     "end": 5.725,
+     "start": 5.0,
+     "text": "termination"
+    },
+    {
+     "end": 5.887,
+     "start": 5.725,
+     "text": "is"
+    },
+    {
+     "end": 6.725,
+     "start": 5.887,
+     "text": "booked"
+    },
+    {
+     "end": 6.925,
+     "start": 6.725,
+     "text": ","
+    },
+    {
+     "end": 7.213,
+     "start": 7.125,
+     "text": "and"
+    },
+    {
+     "end": 7.312,
+     "start": 7.213,
+     "text": "the"
+    },
+    {
+     "end": 7.725,
+     "start": 7.312,
+     "text": "folder"
+    },
+    {
+     "end": 8.25,
+     "start": 7.725,
+     "text": "receives"
+    },
+    {
+     "end": 8.35,
+     "start": 8.25,
+     "text": "the"
+    },
+    {
+     "end": 9.05,
+     "start": 8.35,
+     "text": "termination"
+    },
+    {
+     "end": 9.587,
+     "start": 9.05,
+     "text": "request's"
+    },
+    {
+     "end": 9.85,
+     "start": 9.587,
+     "text": "whole"
+    },
+    {
+     "end": 10.25,
+     "start": 9.85,
+     "text": "value"
+    },
+    {
+     "end": 10.337,
+     "start": 10.25,
+     "text": "at"
+    },
+    {
+     "end": 10.438,
+     "start": 10.337,
+     "text": "the"
+    },
+    {
+     "end": 11.4,
+     "start": 10.438,
+     "text": "fold"
+    },
+    {
+     "end": 11.6,
+     "start": 11.4,
+     "text": "."
+    },
+    {
+     "end": 11.9,
+     "start": 11.8,
+     "text": "The"
+    },
+    {
+     "end": 12.15,
+     "start": 11.9,
+     "text": "whole"
+    },
+    {
+     "end": 12.637,
+     "start": 12.15,
+     "text": "value"
+    },
+    {
+     "end": 12.8,
+     "start": 12.637,
+     "text": "is"
+    },
+    {
+     "end": 12.938,
+     "start": 12.8,
+     "text": "the"
+    },
+    {
+     "end": 13.325,
+     "start": 12.938,
+     "text": "gross"
+    },
+    {
+     "end": 14.2,
+     "start": 13.325,
+     "text": "allocation"
+    },
+    {
+     "end": 14.337,
+     "start": 14.2,
+     "text": ";"
+    },
+    {
+     "end": 14.913,
+     "start": 14.337,
+     "text": "ordinary"
+    },
+    {
+     "end": 15.325,
+     "start": 14.913,
+     "text": "wallet"
+    },
+    {
+     "end": 15.812,
+     "start": 15.325,
+     "text": "funding"
+    },
+    {
+     "end": 15.938,
+     "start": 15.812,
+     "text": "and"
+    },
+    {
+     "end": 16.025,
+     "start": 15.938,
+     "text": "the"
+    },
+    {
+     "end": 16.362,
+     "start": 16.025,
+     "text": "ledger"
+    },
+    {
+     "end": 16.712,
+     "start": 16.362,
+     "text": "fee"
+    },
+    {
+     "end": 16.875,
+     "start": 16.712,
+     "text": "are"
+    },
+    {
+     "end": 17.4,
+     "start": 16.875,
+     "text": "accounted"
+    },
+    {
+     "end": 17.587,
+     "start": 17.4,
+     "text": "for"
+    },
+    {
+     "end": 18.775,
+     "start": 17.587,
+     "text": "separately"
+    },
+    {
+     "end": 19.0,
+     "start": 18.775,
+     "text": "."
+    },
+    {
+     "end": 19.325,
+     "start": 19.2,
+     "text": "The"
+    },
+    {
+     "end": 19.612,
+     "start": 19.325,
+     "text": "old"
+    },
+    {
+     "end": 20.05,
+     "start": 19.612,
+     "text": "carrier"
+    },
+    {
+     "end": 20.513,
+     "start": 20.05,
+     "text": "payment"
+    },
+    {
+     "end": 20.688,
+     "start": 20.513,
+     "text": "is"
+    },
+    {
+     "end": 20.975,
+     "start": 20.688,
+     "text": "not"
+    },
+    {
+     "end": 21.438,
+     "start": 20.975,
+     "text": "renamed"
+    },
+    {
+     "end": 21.5,
+     "start": 21.438,
+     "text": "a"
+    },
+    {
+     "end": 22.25,
+     "start": 21.5,
+     "text": "deposit"
+    },
+    {
+     "end": 22.35,
+     "start": 22.25,
+     "text": ","
+    },
+    {
+     "end": 22.462,
+     "start": 22.35,
+     "text": "and"
+    },
+    {
+     "end": 22.562,
+     "start": 22.462,
+     "text": "the"
+    },
+    {
+     "end": 22.812,
+     "start": 22.562,
+     "text": "new"
+    },
+    {
+     "end": 23.2,
+     "start": 22.812,
+     "text": "folder"
+    },
+    {
+     "end": 23.638,
+     "start": 23.2,
+     "text": "payment"
+    },
+    {
+     "end": 23.812,
+     "start": 23.638,
+     "text": "is"
+    },
+    {
+     "end": 24.112,
+     "start": 23.812,
+     "text": "not"
+    },
+    {
+     "end": 24.538,
+     "start": 24.112,
+     "text": "limited"
+    },
+    {
+     "end": 24.675,
+     "start": 24.538,
+     "text": "to"
+    },
+    {
+     "end": 24.75,
+     "start": 24.675,
+     "text": "a"
+    },
+    {
+     "end": 25.212,
+     "start": 24.75,
+     "text": "declared"
+    },
+    {
+     "end": 26.175,
+     "start": 25.212,
+     "text": "tip"
+    },
+    {
+     "end": 26.4,
+     "start": 26.175,
+     "text": "."
+    }
+   ]
+  },
+  "docs-consumer-conformance/update-and-termination-journeys-the-previous-design-against-the-no-pin-design-03": {
+   "audio_sha256": "3ca096cd980557f5b17ab241e1a2c7fe2390afdac0dbcba854f63e8f273dec63",
+   "characters": 610,
+   "cost": 0.0006039,
+   "duration": 39.625,
+   "index": 3,
+   "key": "2a0b91a2343a49b3c3a7dc542c934a86fb9bb124629d8b8f796564f4cbcf22d2",
+   "page": "docs/consumer-conformance.md",
+   "pause_ms": 400,
+   "section": "update-and-termination-journeys-the-previous-design-against-the-no-pin-design",
+   "sent_text": "The rows name OpenDatumApplicationHeld.Money.oldAllocation and OpenDatumApplicationHeld.Money.newAllocation, the update and termination journey statements, and journey_allocations. Their published state still comes from the suite's receipts. The hosted registration journey now continues through the update and termination, and the termination refusal job submits malformed attempts beside passing packaged controls. They read the development network's chain record and the node's answers. This is a separate evidence boundary: those runs establish what they execute and nothing about agreement with the model.",
+   "text": "The rows name OpenDatumApplicationHeld.Money.oldAllocation and OpenDatumApplicationHeld.Money.newAllocation, the update and termination journey statements, and journey_allocations. Their published state still comes from the suite's receipts. The hosted registration journey now continues through the update and termination, and the termination refusal job submits malformed attempts beside passing packaged controls. They read the development network's chain record and the node's answers. This is a separate evidence boundary: those runs establish what they execute and nothing about agreement with the model.",
+   "words": [
+    {
+     "end": 0.338,
+     "start": 0.225,
+     "text": "The"
+    },
+    {
+     "end": 0.7,
+     "start": 0.338,
+     "text": "rows"
+    },
+    {
+     "end": 1.013,
+     "start": 0.7,
+     "text": "name"
+    },
+    {
+     "end": 2.8,
+     "start": 1.013,
+     "text": "OpenDatumApplicationHeld"
+    },
+    {
+     "end": 2.9,
+     "start": 2.8,
+     "text": "."
+    },
+    {
+     "end": 4.2,
+     "start": 2.9,
+     "text": "Money.oldAllocation"
+    },
+    {
+     "end": 4.325,
+     "start": 4.2,
+     "text": "and"
+    },
+    {
+     "end": 6.2,
+     "start": 4.325,
+     "text": "OpenDatumApplicationHeld"
+    },
+    {
+     "end": 6.3,
+     "start": 6.2,
+     "text": "."
+    },
+    {
+     "end": 7.425,
+     "start": 6.3,
+     "text": "Money.newAllocation"
+    },
+    {
+     "end": 7.5,
+     "start": 7.425,
+     "text": ","
+    },
+    {
+     "end": 7.662,
+     "start": 7.5,
+     "text": "the"
+    },
+    {
+     "end": 8.175,
+     "start": 7.662,
+     "text": "update"
+    },
+    {
+     "end": 8.3,
+     "start": 8.175,
+     "text": "and"
+    },
+    {
+     "end": 9.038,
+     "start": 8.3,
+     "text": "termination"
+    },
+    {
+     "end": 9.387,
+     "start": 9.038,
+     "text": "journey"
+    },
+    {
+     "end": 9.975,
+     "start": 9.387,
+     "text": "statements"
+    },
+    {
+     "end": 10.05,
+     "start": 9.975,
+     "text": ","
+    },
+    {
+     "end": 10.188,
+     "start": 10.05,
+     "text": "and"
+    },
+    {
+     "end": 12.05,
+     "start": 10.188,
+     "text": "journey_allocations"
+    },
+    {
+     "end": 12.275,
+     "start": 12.05,
+     "text": "."
+    },
+    {
+     "end": 12.575,
+     "start": 12.45,
+     "text": "Their"
+    },
+    {
+     "end": 12.962,
+     "start": 12.575,
+     "text": "published"
+    },
+    {
+     "end": 13.275,
+     "start": 12.962,
+     "text": "state"
+    },
+    {
+     "end": 13.55,
+     "start": 13.275,
+     "text": "still"
+    },
+    {
+     "end": 13.837,
+     "start": 13.55,
+     "text": "comes"
+    },
+    {
+     "end": 13.962,
+     "start": 13.837,
+     "text": "from"
+    },
+    {
+     "end": 14.05,
+     "start": 13.962,
+     "text": "the"
+    },
+    {
+     "end": 14.375,
+     "start": 14.05,
+     "text": "suite's"
+    },
+    {
+     "end": 15.375,
+     "start": 14.375,
+     "text": "receipts"
+    },
+    {
+     "end": 15.575,
+     "start": 15.375,
+     "text": "."
+    },
+    {
+     "end": 15.85,
+     "start": 15.75,
+     "text": "The"
+    },
+    {
+     "end": 16.3,
+     "start": 15.85,
+     "text": "hosted"
+    },
+    {
+     "end": 17.038,
+     "start": 16.3,
+     "text": "registration"
+    },
+    {
+     "end": 17.375,
+     "start": 17.038,
+     "text": "journey"
+    },
+    {
+     "end": 17.763,
+     "start": 17.375,
+     "text": "now"
+    },
+    {
+     "end": 18.425,
+     "start": 17.763,
+     "text": "continues"
+    },
+    {
+     "end": 18.612,
+     "start": 18.425,
+     "text": "through"
+    },
+    {
+     "end": 18.763,
+     "start": 18.612,
+     "text": "the"
+    },
+    {
+     "end": 19.25,
+     "start": 18.763,
+     "text": "update"
+    },
+    {
+     "end": 19.375,
+     "start": 19.25,
+     "text": "and"
+    },
+    {
+     "end": 20.7,
+     "start": 19.375,
+     "text": "termination"
+    },
+    {
+     "end": 20.9,
+     "start": 20.7,
+     "text": ","
+    },
+    {
+     "end": 21.188,
+     "start": 21.1,
+     "text": "and"
+    },
+    {
+     "end": 21.275,
+     "start": 21.188,
+     "text": "the"
+    },
+    {
+     "end": 22.0,
+     "start": 21.275,
+     "text": "termination"
+    },
+    {
+     "end": 22.538,
+     "start": 22.0,
+     "text": "refusal"
+    },
+    {
+     "end": 23.05,
+     "start": 22.538,
+     "text": "job"
+    },
+    {
+     "end": 23.538,
+     "start": 23.05,
+     "text": "submits"
+    },
+    {
+     "end": 24.175,
+     "start": 23.538,
+     "text": "malformed"
+    },
+    {
+     "end": 24.65,
+     "start": 24.175,
+     "text": "attempts"
+    },
+    {
+     "end": 25.175,
+     "start": 24.65,
+     "text": "beside"
+    },
+    {
+     "end": 25.638,
+     "start": 25.175,
+     "text": "passing"
+    },
+    {
+     "end": 26.125,
+     "start": 25.638,
+     "text": "packaged"
+    },
+    {
+     "end": 27.4,
+     "start": 26.125,
+     "text": "controls"
+    },
+    {
+     "end": 27.6,
+     "start": 27.4,
+     "text": "."
+    },
+    {
+     "end": 27.938,
+     "start": 27.775,
+     "text": "They"
+    },
+    {
+     "end": 28.188,
+     "start": 27.938,
+     "text": "read"
+    },
+    {
+     "end": 28.275,
+     "start": 28.188,
+     "text": "the"
+    },
+    {
+     "end": 28.825,
+     "start": 28.275,
+     "text": "development"
+    },
+    {
+     "end": 29.288,
+     "start": 28.825,
+     "text": "network's"
+    },
+    {
+     "end": 29.625,
+     "start": 29.288,
+     "text": "chain"
+    },
+    {
+     "end": 30.2,
+     "start": 29.625,
+     "text": "record"
+    },
+    {
+     "end": 30.337,
+     "start": 30.2,
+     "text": "and"
+    },
+    {
+     "end": 30.425,
+     "start": 30.337,
+     "text": "the"
+    },
+    {
+     "end": 30.775,
+     "start": 30.425,
+     "text": "node's"
+    },
+    {
+     "end": 31.85,
+     "start": 30.775,
+     "text": "answers"
+    },
+    {
+     "end": 32.05,
+     "start": 31.85,
+     "text": "."
+    },
+    {
+     "end": 32.475,
+     "start": 32.25,
+     "text": "This"
+    },
+    {
+     "end": 32.65,
+     "start": 32.475,
+     "text": "is"
+    },
+    {
+     "end": 32.775,
+     "start": 32.65,
+     "text": "a"
+    },
+    {
+     "end": 33.225,
+     "start": 32.775,
+     "text": "separate"
+    },
+    {
+     "end": 33.675,
+     "start": 33.225,
+     "text": "evidence"
+    },
+    {
+     "end": 34.325,
+     "start": 33.675,
+     "text": "boundary"
+    },
+    {
+     "end": 34.425,
+     "start": 34.325,
+     "text": ":"
+    },
+    {
+     "end": 34.7,
+     "start": 34.425,
+     "text": "those"
+    },
+    {
+     "end": 35.075,
+     "start": 34.7,
+     "text": "runs"
+    },
+    {
+     "end": 35.725,
+     "start": 35.075,
+     "text": "establish"
+    },
+    {
+     "end": 35.875,
+     "start": 35.725,
+     "text": "what"
+    },
+    {
+     "end": 36.062,
+     "start": 35.875,
+     "text": "they"
+    },
+    {
+     "end": 36.763,
+     "start": 36.062,
+     "text": "execute"
+    },
+    {
+     "end": 36.938,
+     "start": 36.763,
+     "text": "and"
+    },
+    {
+     "end": 37.325,
+     "start": 36.938,
+     "text": "nothing"
+    },
+    {
+     "end": 37.625,
+     "start": 37.325,
+     "text": "about"
+    },
+    {
+     "end": 38.15,
+     "start": 37.625,
+     "text": "agreement"
+    },
+    {
+     "end": 38.287,
+     "start": 38.15,
+     "text": "with"
+    },
+    {
+     "end": 38.375,
+     "start": 38.287,
+     "text": "the"
+    },
+    {
+     "end": 39.4,
+     "start": 38.375,
+     "text": "model"
+    },
+    {
+     "end": 39.625,
+     "start": 39.4,
      "text": "."
     }
    ]
