@@ -49,8 +49,8 @@ use singular_state_fold_fixtures.{
 }
 use singular_state_termination_fixtures.{
   Held, Mixed, Registering, Step, Terminating, Termination, built_root_of,
-  held_after, minted_mixed, redeemer_mixed, registering, root_of_held,
-  termination_approval_of, termination_input,
+  held_after, key_t, key_v, minted_mixed, redeemer_mixed, registering,
+  root_of_held, termination_approval_of, termination_input,
 }
 
 // ---------------------------------------------------------------------------
@@ -106,11 +106,13 @@ fn first_registration(
   key: ByteArray,
   copy: Int,
 ) -> Registration {
+  let number =
+    ( copy * most_registries + index ) * list.length(universe()) + position
   Registration {
-    ..registering(key, copy * 8 + index * 4 + position),
+    ..registering(key, number),
     request: OutputReference {
       transaction_id: initial_transaction,
-      output_index: 100 + copy * 8 + index * 4 + position,
+      output_index: 100 + number,
     },
   }
 }
@@ -178,11 +180,12 @@ pub fn initial_world() -> World {
   }
 }
 
-/// The keys the proposals draw on. The first nibbles of their hashes all differ, so
-/// every proof the proposals carry is one step long; key sets that share a first
-/// nibble are not covered.
+/// The keys the proposals draw on: `key_a` and `key_t` share the first nibble of
+/// their hashes, `key_t` and `key_v` share three, and `key_b` and `key_c` share
+/// none with them, so the tries of a run have nodes below the root, and proofs of
+/// several steps with leaf steps among them.
 pub fn universe() -> List<ByteArray> {
-  [key_a, key_b, key_c]
+  [key_a, key_t, key_v, key_b, key_c]
 }
 
 /// The most registries a world creates.

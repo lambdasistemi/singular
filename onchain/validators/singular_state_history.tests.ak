@@ -18,7 +18,8 @@
 //// every registry and key; the last world of each run is read against the trie
 //// library, and for the most live tokens of a key, which the supply of each step
 //// implies. The
-//// keys are three, with different first nibbles.
+//// keys are five: three whose hashes share their first nibble, two of which
+//// share three, and two that share none with them.
 ////
 //// Each statement is also shown able to fail. A control runs a hand-written
 //// sequence against a validator that waives its rules for one kind of attack,

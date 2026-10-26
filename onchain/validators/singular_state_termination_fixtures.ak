@@ -8,10 +8,6 @@
 //// Forestry library through the proof builders of `registry_fixtures`, as the
 //// earlier changes of the batch advanced the trie. A test changes one part of
 //// a valid fold and nothing else.
-////
-//// The keys differ in the first nibble of their hash, so the proof builders,
-//// which describe a root with one leaf per first nibble, describe every trie
-//// built here.
 
 use aiken/collection/list
 use aiken/crypto.{blake2b_256}
