@@ -90,6 +90,13 @@ applications/open-datum/offchain/test/Singular/Application/OpenDatum/RequestComm
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/RequestCommandSpec.hs interruptionRows takeMVar 1
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/RequestCommandSpec.hs interruptionRows waitCatch 2
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/RequestCommandSpec.hs lifecycleRows readIORef 2
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/RequestCommandSpec.hs publicationRecoveryRows async 1
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/RequestCommandSpec.hs publicationRecoveryRows cancel 1
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/RequestCommandSpec.hs publicationRecoveryRows newEmptyMVar 1
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/RequestCommandSpec.hs publicationRecoveryRows putMVar 1
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/RequestCommandSpec.hs publicationRecoveryRows race 1
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/RequestCommandSpec.hs publicationRecoveryRows takeMVar 1
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/RequestCommandSpec.hs publicationRecoveryRows waitCatch 2
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/RequestWorld.hs <decl> IORef 2
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/RequestWorld.hs addOutputs modifyIORef' 1
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/RequestWorld.hs applyTransaction modifyIORef' 1
