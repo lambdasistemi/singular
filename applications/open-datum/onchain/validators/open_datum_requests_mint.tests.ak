@@ -67,7 +67,7 @@ fn outputs_of_booking() -> List<Output> {
 }
 
 test a_configuration_creation_brings_its_token_into_being() {
-  birth(application_policy, [], create_at(seed_a, 1)) == Some(
+  birth(application_policy, [], [], create_at(seed_a, 1)) == Some(
     configuration_asset(application_policy, registry_of(seed_a)),
   )
 }
@@ -75,6 +75,7 @@ test a_configuration_creation_brings_its_token_into_being() {
 test a_booking_brings_the_approval_of_its_output_into_being() {
   birth(
     application_policy,
+    [],
     outputs_of_booking(),
     BookRegistration { output_index: 0 },
   ) == Some(approval_a())
@@ -84,16 +85,19 @@ test a_booking_of_an_output_that_is_not_a_registration_brings_nothing_into_being
   and {
     birth(
       application_policy,
+      [],
       outputs_of_booking(),
       BookRegistration { output_index: 1 },
     ) == None,
     birth(
       application_policy,
+      [],
       [spent(seed_c).output],
       BookRegistration { output_index: 0 },
     ) == None,
     birth(
       application_policy,
+      [],
       [configuration_output(registry_a(), booking_parameters())],
       BookRegistration { output_index: 0 },
     ) == None,
@@ -105,13 +109,14 @@ fn booking_parameters() -> held.ApplicationParameters {
 }
 
 test a_burn_brings_nothing_into_being() {
-  birth(application_policy, outputs_of_booking(), ApprovalBurn) == None
+  birth(application_policy, [], outputs_of_booking(), ApprovalBurn) == None
 }
 
 test the_births_follow_the_actions_in_order() {
   let outputs = outputs_of_booking()
   births_of(
     application_policy,
+    [],
     outputs,
     [create_at(seed_a, 1), ApprovalBurn, BookRegistration { output_index: 0 }],
   ) == [

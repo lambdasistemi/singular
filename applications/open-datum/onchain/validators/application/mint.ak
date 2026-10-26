@@ -23,12 +23,17 @@
 use aiken/collection/list
 use application/births.{positive_mints_are_births}
 use application/configuration.{configuration_asset, configuration_create}
-use application/held.{TokenId}
+use application/held.{Live, TokenId, held_datum}
 use application/registration.{
   registration_asset, registration_at, registration_book,
 }
+use application/spend.{
+  BookTermination as BookingSpend, donation_matches, request_input,
+  spend_action_of,
+}
+use application/termination.{termination_approval, termination_book}
 use cardano/assets.{PolicyId}
-use cardano/transaction.{Output, OutputReference, Transaction}
+use cardano/transaction.{Input, Output, OutputReference, Spend, Transaction}
 use singular_state/preimage.{RegistryIdentity}
 
 /// The actions of the model's `ApplicationAction` that take part in a mint.
@@ -47,11 +52,13 @@ pub type ApplicationAction {
   }
   BookRegistration { output_index: Int }
   ApprovalBurn
+  BookTermination { input_reference: OutputReference, output_index: Int }
 }
 
 /// Model `birth`: the asset an action brings into being, when it does.
 pub fn birth(
   application_policy: PolicyId,
+  inputs: List<Input>,
   outputs: List<Output>,
   action: ApplicationAction,
 ) -> Option<TokenId> {
@@ -70,18 +77,35 @@ pub fn birth(
         None -> None
       }
     ApprovalBurn -> None
+    BookTermination { input_reference, .. } ->
+      when request_input(inputs, input_reference) is {
+        Some(input) ->
+          when held_datum(input) is {
+            Some(Live { control, .. }) ->
+              Some(
+                termination_approval(
+                  application_policy,
+                  control.registry,
+                  control.key,
+                ),
+              )
+            _ -> None
+          }
+        None -> None
+      }
   }
 }
 
 /// The assets the actions bring into being, in the order of the actions.
 pub fn births_of(
   application_policy: PolicyId,
+  inputs: List<Input>,
   outputs: List<Output>,
   actions: List<ApplicationAction>,
 ) -> List<TokenId> {
   list.filter_map(
     actions,
-    fn(action) { birth(application_policy, outputs, action) },
+    fn(action) { birth(application_policy, inputs, outputs, action) },
   )
 }
 
@@ -90,6 +114,7 @@ fn birth_position(action: ApplicationAction) -> Option<Int> {
   when action is {
     ConfigurationCreate { output_index, .. } -> Some(output_index)
     BookRegistration { output_index } -> Some(output_index)
+    BookTermination { output_index, .. } -> Some(output_index)
     ApprovalBurn -> None
   }
 }
@@ -121,6 +146,28 @@ pub fn action_accepted(
     BookRegistration { output_index } ->
       registration_book(application_policy, output_index, tx, births)
     ApprovalBurn -> True
+    BookTermination { input_reference, output_index } ->
+      when request_input(tx.inputs, input_reference) is {
+        Some(input) ->
+          when held_datum(input) is {
+            Some(Live { control, .. }) -> and {
+                list.has(
+                  tx.redeemers,
+                  Pair(Spend(input_reference), booking_spend_data(output_index)),
+                ),
+                termination_book(
+                  application_policy,
+                  input,
+                  control,
+                  output_index,
+                  tx,
+                  births,
+                ),
+              }
+            _ -> False
+          }
+        None -> False
+      }
   }
 }
 
@@ -140,14 +187,30 @@ pub fn application_mint(
   actions: List<ApplicationAction>,
   tx: Transaction,
 ) -> Bool {
-  let births = births_of(application_policy, tx.outputs, actions)
+  let births = births_of(application_policy, tx.inputs, tx.outputs, actions)
+  let booked_inputs =
+    list.filter_map(
+      actions,
+      fn(action) {
+        when action is {
+          BookTermination { input_reference, .. } -> Some(input_reference)
+          _ -> None
+        }
+      },
+    )
   and {
+    list.length(booked_inputs) == list.length(list.unique(booked_inputs)),
     birth_positions_are_distinct(actions),
     list.all(
       actions,
       fn(action) { action_accepted(application_policy, tx, births, action) },
     ),
     positive_mints_are_births(application_policy, tx.mint, births),
-    donation_is(tx, 0),
+    donation_matches(application_policy, tx),
   }
+}
+
+fn booking_spend_data(output_index: Int) -> Data {
+  let action: Data = BookingSpend { output_index }
+  action
 }

@@ -39,6 +39,7 @@ use application/phases.{Cleanup, Processing, Reclaim, classify_phase}
 use application/registration.{
   registration_asset, registration_funding, registration_shape,
 }
+use application/termination.{termination_approval, termination_book}
 use cardano/address.{Script, VerificationKey}
 use cardano/assets.{PolicyId, Value, lovelace_of, quantity_of}
 use cardano/transaction.{
@@ -54,6 +55,7 @@ pub type SpendAction {
   OwnerReclaim
   ExpiredCleanup
   LiveUpdate { successor_index: Int }
+  BookTermination { output_index: Int }
 }
 
 /// Model `requestInput`: the output that `reference` spends, when exactly one
@@ -140,6 +142,8 @@ pub fn spend_action_of(redeemer: Data) -> Option<SpendAction> {
     Some(ExpiredCleanup)
   } else if redeemer is LiveUpdate { successor_index }: SpendAction {
     Some(LiveUpdate { successor_index })
+  } else if redeemer is BookTermination { output_index }: SpendAction {
+    Some(BookTermination { output_index })
   } else {
     None
   }
@@ -170,7 +174,7 @@ fn payment_of(
         address: registration.refund_address,
         amount: registration.deposit,
       }
-    LiveUpdate { .. } ->
+    LiveUpdate { .. } | BookTermination { .. } ->
       Payment { address: registration.refund_address, amount: 0 }
   }
 }
@@ -247,7 +251,7 @@ pub fn registration_spend(
         }
       ExpiredCleanup ->
         classify_phase(registration, tx.validity_range) == Cleanup
-      LiveUpdate { .. } -> False
+      LiveUpdate { .. } | BookTermination { .. } -> False
     },
   }
 }
@@ -261,41 +265,91 @@ pub fn application_spend(
   when request_input(tx.inputs, own_reference) is {
     Some(input) ->
       when input.address.payment_credential is {
-        Script(application_policy) ->
-          when held_datum(input) is {
-            Some(Registration { registration }) -> and {
-                registration_spend(
-                  application_policy,
-                  action,
-                  input,
-                  registration,
-                  tx,
-                ),
-                payments_covered(
-                  required_payments(application_policy, tx),
-                  tx.outputs,
-                ),
-              }
-            Some(Live { control, .. }) ->
-              when action is {
-                LiveUpdate { successor_index } -> and {
+        Script(application_policy) -> and {
+            donation_matches(application_policy, tx),
+            when held_datum(input) is {
+              Some(Registration { registration }) -> and {
+                  registration_spend(
+                    application_policy,
+                    action,
+                    input,
+                    registration,
+                    tx,
+                  ),
+                  payments_covered(
+                    required_payments(application_policy, tx),
+                    tx.outputs,
+                  ),
+                }
+              Some(Live { control, .. }) ->
+                when action is {
+                  LiveUpdate { successor_index } ->
                     live_update(
                       application_policy,
                       input,
                       control,
                       successor_index,
                       tx,
-                    ),
-                    tx.treasury_donation == None || tx.treasury_donation == Some(
-                      0,
-                    ),
-                  }
-                _ -> False
-              }
-            _ -> False
+                    )
+                  BookTermination { output_index } ->
+                    termination_book(
+                      application_policy,
+                      input,
+                      control,
+                      output_index,
+                      tx,
+                      [
+                        termination_approval(
+                          application_policy,
+                          control.registry,
+                          control.key,
+                        ),
+                      ],
+                    )
+                  _ -> False
+                }
+              _ -> False
+            },
           }
         _ -> False
       }
     None -> False
+  }
+}
+
+/// Model requiredTreasury, read from the complete ledger-supplied spend
+/// redeemers: each termination booking contributes its protected deposit.
+pub fn required_treasury(application_policy: PolicyId, tx: Transaction) -> Int {
+  list.foldl(
+    tx.redeemers,
+    0,
+    fn(Pair(purpose, redeemer), total) {
+      when purpose is {
+        Spend(reference) ->
+          when
+            (request_input(tx.inputs, reference), spend_action_of(redeemer))
+          is {
+            (Some(input), Some(BookTermination { .. })) ->
+              if input.address.payment_credential == Script(application_policy) {
+                when held_datum(input) is {
+                  Some(Live { control, .. }) -> total + control.deposit
+                  _ -> total
+                }
+              } else {
+                total
+              }
+            _ -> total
+          }
+        _ -> total
+      }
+    },
+  )
+}
+
+pub fn donation_matches(application_policy: PolicyId, tx: Transaction) -> Bool {
+  let required = required_treasury(application_policy, tx)
+  when tx.treasury_donation is {
+    None -> required == 0
+    Some(donation) -> donation == required
   }
 }
