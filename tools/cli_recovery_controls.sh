@@ -1830,7 +1830,7 @@ if part state-line || part holding-update || part holding-terminate || part term
     local key="$1" dir="$2"
     shift 2
     printf '%s\n' registration book --state-token "$sl_token" --key "$key" --payload "$work/payload.json" \
-      --payload-schema detailed --deposit 2100000 --tip 1000000 --state-dir "$dir" "${sl_base[@]}" "$@"
+      --payload-schema detailed --deposit 3000000 --tip 1000000 --state-dir "$dir" "${sl_base[@]}" "$@"
   }
   sl_book() { # NAME: a clean booking by alice in the main directory, of the key that bears the name
     local name="$1" key="${2:-$1}" line
