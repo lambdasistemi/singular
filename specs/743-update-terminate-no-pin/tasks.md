@@ -16,9 +16,9 @@ the ticket owner accepts its slice.
 
 ## Pull request 1: open datum
 
-- [ ] holding-update: the controller-signed update keeping control, tokens and deposit.
-- [ ] termination-booking: the approval mint, the request shape, the treasury donation equal to the deposit.
-- [ ] termination-request: spent only with its token and approval burned, by anyone; no stuck termination.
+- [x] holding-update: the controller-signed update keeping control, tokens and deposit.
+- [x] termination-booking: the approval mint, the request shape, the treasury donation equal to the deposit.
+- [x] termination-request: spent only with its token and approval burned, by anyone; no stuck termination.
 
 ## Pull request 2: builders and commands
 

@@ -15,7 +15,7 @@
       "pause": 500
     },
     {
-      "text": "[ ] gate-synthesized: the ticket owner's and the auditor's gate tables synthesized once and frozen with both input hashes.",
+      "text": "[x] gate-synthesized: the ticket owner's and the auditor's gate tables synthesized once and frozen with both input hashes.",
       "pause": 300
     },
     {
@@ -29,15 +29,15 @@
       "pause": 500
     },
     {
-      "text": "[ ] termination-preimage-vectors: byte vectors for the termination approval preimage, reproduced on-chain and off-chain.",
+      "text": "[x] termination-preimage-vectors: byte vectors for the termination approval preimage, reproduced on-chain and off-chain.",
       "pause": 300
     },
     {
-      "text": "[ ] termination-fold: the termination change and mixed batches; each statement with a check seen to fail.",
+      "text": "[x] termination-fold: the termination change and mixed batches; each statement with a check seen to fail.",
       "pause": 300
     },
     {
-      "text": "[ ] supply-and-history: the four history statements over generated accepted sequences, and the refused registration of a terminal key.",
+      "text": "[x] supply-and-history: the four history statements over generated accepted sequences, and the refused registration of a terminal key.",
       "pause": 300
     }
   ],
@@ -47,15 +47,15 @@
       "pause": 500
     },
     {
-      "text": "[ ] holding-update: the controller-signed update keeping control, tokens and deposit.",
+      "text": "[x] holding-update: the controller-signed update keeping control, tokens and deposit.",
       "pause": 300
     },
     {
-      "text": "[ ] termination-booking: the approval mint, the request shape, the treasury donation equal to the deposit.",
+      "text": "[x] termination-booking: the approval mint, the request shape, the treasury donation equal to the deposit.",
       "pause": 300
     },
     {
-      "text": "[ ] termination-request: spent only with its token and approval burned, by anyone; no stuck termination.",
+      "text": "[x] termination-request: spent only with its token and approval burned, by anyone; no stuck termination.",
       "pause": 300
     }
   ],
@@ -115,6 +115,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "e978baf6cef8e71446a594fcad535a0a130e49b39d2e1d3b38a887fa0f5635cb"
+    "sha256": "a49edfa8710f2826a9ac8fb45ef041c2a4e9ffb11c53ebfeec8c2b4382dde8ba"
   }
 }
