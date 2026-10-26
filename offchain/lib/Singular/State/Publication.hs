@@ -58,7 +58,7 @@ import Singular.State.Assemble
     ( Payer (..)
     , assembleTransaction
     , readOutputs
-    , resolvePayer
+    , resolvePayerReserving
     )
 import Singular.State.Refusal (Refusal (..))
 
@@ -89,14 +89,17 @@ planReferences
     -- ^ The payer: fee, collateral, change and the owner of the new outputs
     -> [Script ConwayEra]
     -> IO (Either Refusal References)
-planReferences = planPublications id
+planReferences = planPublications id []
 
 {- | Find every live copy and plan one missing script's publication, in the
 order requested. Call again after that transaction is live, using the new
-chain view. Each transaction is size-checked independently.
+chain view. Each transaction is size-checked independently, and the reserved
+wallet outputs are left unspent for the later creation.
 -}
 planNextReference
-    :: Session NoWitness IO
+    :: [TxIn]
+    -- ^ Wallet outputs reserved for the later transaction
+    -> Session NoWitness IO
     -> Addr
     -> [Script ConwayEra]
     -> IO (Either Refusal References)
@@ -105,11 +108,12 @@ planNextReference = planPublications (take 1)
 -- | Share authenticated discovery between batch and sequential publication.
 planPublications
     :: ([Script ConwayEra] -> [Script ConwayEra])
+    -> [TxIn]
     -> Session NoWitness IO
     -> Addr
     -> [Script ConwayEra]
     -> IO (Either Refusal References)
-planPublications choose session payerAddress requested = runExceptT $ do
+planPublications choose reserved session payerAddress requested = runExceptT $ do
     found <-
         liftIO
             (mapM (\script -> (,) script <$> liveCopy session script) scripts)
@@ -118,7 +122,9 @@ planPublications choose session payerAddress requested = runExceptT $ do
     publication <-
         if null missing
             then pure Nothing
-            else Just <$> ExceptT (publish session payerAddress (choose missing))
+            else
+                Just
+                    <$> ExceptT (publish reserved session payerAddress (choose missing))
     pure (References live publication)
   where
     scripts = nubBy (\a b -> hashScript a == hashScript b) requested
@@ -146,12 +152,13 @@ liveCopy session script = do
 
 -- | Publish these scripts, each in an output of the payer's address.
 publish
-    :: Session NoWitness IO
+    :: [TxIn]
+    -> Session NoWitness IO
     -> Addr
     -> [Script ConwayEra]
     -> IO (Either Refusal Publication)
-publish session payerAddress missing = runExceptT $ do
-    payer <- ExceptT (resolvePayer session payerAddress)
+publish reserved session payerAddress missing = runExceptT $ do
+    payer <- ExceptT (resolvePayerReserving reserved session payerAddress)
     protocol <- liftIO (parameters session)
     let holders = map (holder protocol payerAddress) missing
     tx <-

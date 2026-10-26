@@ -23,6 +23,7 @@ module Singular.State.Assemble
     , PayerFault (..)
     , findPayer
     , resolvePayer
+    , resolvePayerReserving
 
       -- * Reading the chain
     , readOutputs
@@ -118,10 +119,20 @@ it holds no ADA-only output to fund and secure a transaction.
 -}
 findPayer
     :: Session NoWitness IO -> Addr -> IO (Either PayerFault Payer)
-findPayer session address = case address of
+findPayer = findPayerReserving []
+
+-- | Select funding without spending outputs reserved for a later transaction.
+findPayerReserving
+    :: [TxIn]
+    -> Session NoWitness IO
+    -> Addr
+    -> IO (Either PayerFault Payer)
+findPayerReserving reserved session address = case address of
     Addr net (KeyHashObj (KeyHash key)) _ -> do
         known <- outputsAt session address
-        pure $ case selectFunding Nothing known of
+        pure $ case selectFunding
+            Nothing
+            [entry | entry@(ref, _) <- known, ref `notElem` reserved] of
             Left _ -> Left NoFunding
             Right funding -> Right (Payer net (KeyHash key) funding)
     _ -> pure (Left NotAKey)
@@ -129,8 +140,19 @@ findPayer session address = case address of
 -- | The payer at an address, with the refusal of the state builders.
 resolvePayer
     :: Session NoWitness IO -> Addr -> IO (Either Refusal Payer)
-resolvePayer session address =
-    first refusal <$> findPayer session address
+resolvePayer = resolvePayerReserving []
+
+{- | The payer of a publication that must leave the reserved outputs unspent
+for a later transaction. Selection still uses the session's actual wallet
+outputs and the ordinary ADA-only funding rule.
+-}
+resolvePayerReserving
+    :: [TxIn]
+    -> Session NoWitness IO
+    -> Addr
+    -> IO (Either Refusal Payer)
+resolvePayerReserving reserved session address =
+    first refusal <$> findPayerReserving reserved session address
   where
     refusal = \case
         NoFunding -> PayerHasNoFunding

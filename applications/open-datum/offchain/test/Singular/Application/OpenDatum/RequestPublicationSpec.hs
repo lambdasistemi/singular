@@ -112,6 +112,7 @@ spec = do
     planned world =
         withSession world $ \session ->
             planNextReference
+                []
                 session
                 (crBooker world)
                 [ssScript (crState world), rsScript (crRequest world)]

@@ -39,7 +39,7 @@ import Data.ByteString (ByteString)
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Short qualified as SBS
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, maybeToList)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Lens.Micro ((^.))
@@ -191,7 +191,8 @@ runStateCreate env host a = do
         ws
         $ \wc reconciled -> do
             let payer = wcCaller wc
-            (found, published) <- publishScripts wc payer scripts
+            (found, published) <-
+                publishScripts wc payer (maybeToList (stateCreateSeed a)) scripts
             let sourceOf script = scriptSource script found
                 stateSource = sourceOf stateScript
                 ownSources = [(script, sourceOf script) | script <- own]
@@ -257,9 +258,10 @@ reuses every genuine live copy after stateWrite reconciles uncertain sends.
 publishScripts
     :: WriteContext
     -> Addr
+    -> [TxIn]
     -> [Script ConwayEra]
     -> IO ([(ScriptHash, TxIn)], [(ScriptHash, TxIn)])
-publishScripts wc payer scripts = next []
+publishScripts wc payer reserved scripts = next []
   where
     next published = do
         let remaining =
@@ -273,7 +275,7 @@ publishScripts wc payer scripts = next []
                 (wcSource wc)
                 ["wallet outputs", "reference scripts"]
                 (wcCapabilities wc)
-                (\view -> planNextReference view payer remaining)
+                (\view -> planNextReference reserved view payer remaining)
                 >>= refusing
         case referencesPublication references of
             Nothing ->
@@ -292,7 +294,7 @@ publishScripts wc payer scripts = next []
                             ["wallet outputs", "reference scripts"]
                             (CarriesScript . fst)
                             $ \view -> do
-                                fresh <- planNextReference view payer remaining >>= refusing
+                                fresh <- planNextReference reserved view payer remaining >>= refusing
                                 case referencesPublication fresh of
                                     Just built
                                         | [located@(actual, _)] <- publicationOutputs built
