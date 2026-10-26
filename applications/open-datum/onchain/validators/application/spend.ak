@@ -32,7 +32,8 @@
 
 use aiken/collection/list
 use aiken/crypto.{VerificationKeyHash}
-use application/held.{Registration, RegistrationData, TokenId, held_datum}
+use application/held.{Live, Registration, RegistrationData, TokenId, held_datum}
+use application/live.{live_update}
 use application/payments.{Payment, payments_covered}
 use application/phases.{Cleanup, Processing, Reclaim, classify_phase}
 use application/registration.{
@@ -52,6 +53,7 @@ pub type SpendAction {
   RegistrationFold { holding_index: Int }
   OwnerReclaim
   ExpiredCleanup
+  LiveUpdate { successor_index: Int }
 }
 
 /// Model `requestInput`: the output that `reference` spends, when exactly one
@@ -136,6 +138,8 @@ pub fn spend_action_of(redeemer: Data) -> Option<SpendAction> {
     Some(OwnerReclaim)
   } else if redeemer is ExpiredCleanup: SpendAction {
     Some(ExpiredCleanup)
+  } else if redeemer is LiveUpdate { successor_index }: SpendAction {
+    Some(LiveUpdate { successor_index })
   } else {
     None
   }
@@ -166,6 +170,8 @@ fn payment_of(
         address: registration.refund_address,
         amount: registration.deposit,
       }
+    LiveUpdate { .. } ->
+      Payment { address: registration.refund_address, amount: 0 }
   }
 }
 
@@ -241,6 +247,7 @@ pub fn registration_spend(
         }
       ExpiredCleanup ->
         classify_phase(registration, tx.validity_range) == Cleanup
+      LiveUpdate { .. } -> False
     },
   }
 }
@@ -268,6 +275,22 @@ pub fn application_spend(
                   required_payments(application_policy, tx),
                   tx.outputs,
                 ),
+              }
+            Some(Live { control, .. }) ->
+              when action is {
+                LiveUpdate { successor_index } -> and {
+                    live_update(
+                      application_policy,
+                      input,
+                      control,
+                      successor_index,
+                      tx,
+                    ),
+                    tx.treasury_donation == None || tx.treasury_donation == Some(
+                      0,
+                    ),
+                  }
+                _ -> False
               }
             _ -> False
           }
