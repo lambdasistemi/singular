@@ -1833,7 +1833,7 @@ if part state-line || part holding-update || part holding-terminate || part term
       --payload-schema detailed --deposit 2100000 --tip 1000000 --state-dir "$dir" "${sl_base[@]}" "$@"
   }
   sl_book() { # NAME: a clean booking by alice in the main directory, of the key that bears the name
-    local name="$1" key="$1" line
+    local name="$1" key="${2:-$1}" line
     mapfile -t line < <(sl_book_line "$key" "$sl_main" "${alice[@]}")
     sl_run "$name" "${line[@]}"
     clause "$name: the booking succeeds" outcome_is "$name" success
@@ -1924,6 +1924,7 @@ if part state-line || part holding-update || part holding-terminate || part term
     shift
     local key
     key="sl-next-$(basename "$dir")"
+    if [ "${#key}" -gt 32 ]; then key="n-$(basename "$dir")"; fi
     mapfile -t sl_next_line < <(sl_book_line "$key" "$dir" "$@")
   }
 
@@ -1990,7 +1991,7 @@ if part state-line || part holding-update || part holding-terminate || part term
       control="$sl_part"
       for sl_mode in lost-answer killed never-sent; do
         sl_label="sl-$sl_part-$sl_mode"
-        sl_book "$sl_label-book"
+        sl_book "$sl_label-book" "$sl_part-$sl_mode"
         sl_pending="$(field "$sl_label-book" .pending)"
         sl_run "$sl_label-reach" state fold --state-token "$sl_token" --pending "$sl_pending" \
           --state-dir "$sl_main" "${sl_base[@]}" "${bob[@]}"
