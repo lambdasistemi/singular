@@ -12,6 +12,7 @@ submission. No mutable resource outlives the session supplied by the caller.
 -}
 module Singular.Application.OpenDatum.Requests.Holding
     ( buildUpdate
+    , buildBookTermination
     ) where
 
 import Control.Exception (throwIO)
@@ -122,7 +123,17 @@ buildUpdate session script reference payload payerAddress = runExceptT $ do
             Tx.requireSignature (payerKey payer)
             Tx.collateral (fst funding)
 
--- | A live holding of this application; provider faults retain their identity.
+{- | A live holding of this application; provider faults retain their identity.
+| Build the controller's termination booking, funded by the payer.
+-}
+buildBookTermination
+    :: Session NoWitness IO
+    -> RequestScript
+    -> TxIn
+    -> Addr
+    -> IO (Either Refusal ConwayTx)
+buildBookTermination _ _ _ _ = pure (Left (BuildFailed "termination booking unavailable"))
+
 readHolding
     :: Session NoWitness IO
     -> RequestScript

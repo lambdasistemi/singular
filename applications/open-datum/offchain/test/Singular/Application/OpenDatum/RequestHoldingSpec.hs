@@ -21,6 +21,7 @@ import Test.Hspec
     , describe
     , it
     , shouldBe
+    , shouldMatchList
     , shouldReturn
     , shouldSatisfy
     )
@@ -54,12 +55,20 @@ import Singular.Application.OpenDatum.Requests.Booking (Booking (..))
 import Singular.Application.OpenDatum.Requests.Fold
     ( openDatumApplication
     )
-import Singular.Application.OpenDatum.Requests.Holding (buildUpdate)
+import Singular.Application.OpenDatum.Requests.Holding
+    ( buildBookTermination
+    , buildUpdate
+    )
 import Singular.Application.OpenDatum.Requests.Refusal (Refusal (..))
+import Singular.Application.OpenDatum.Requests.Script (requestPolicy)
 import Singular.Registry.Ledger (ConwayEra, TxOut)
 import Singular.Registry.TrieState (RegistryIdentity)
 import Singular.State.Fold (buildRegistrationFold)
-import Singular.State.Preimage (activeTokenName)
+import Singular.State.Preimage
+    ( activeTokenName
+    , approvalName
+    , terminationPreimage
+    )
 import Singular.State.Script (statePolicy)
 
 key :: ByteString
@@ -118,6 +127,10 @@ withHoldingIn makeWorld action = do
 update :: Creation -> TxIn -> PLC.Data -> IO (Either Refusal ConwayTx)
 update world ref payload = withSession world $ \session ->
     buildUpdate session (crRequest world) ref payload (crBooker world)
+
+terminate :: Creation -> TxIn -> IO (Either Refusal ConwayTx)
+terminate world ref = withSession world $ \session ->
+    buildBookTermination session (crRequest world) ref (crBooker world)
 
 spec :: Spec
 spec = do
@@ -212,3 +225,68 @@ spec = do
                         buildUpdate session (crRequest world) ref (PLC.I 7) (crFolder world)
                     )
                     `shouldReturn` Left PayerIsNotController
+
+    describe "a controller books permanent termination" $ do
+        it
+            "mints one approval, keeps exactly both tokens with no datum and donates the protected deposit" $
+            withHolding $ \world registry ref _ -> do
+                tx <- expectBuilt =<< terminate world ref
+                judge world tx >>= (`shouldSatisfy` everyScriptAccepts)
+                let approval = approvalName (terminationPreimage key registry)
+                    active = activeTokenName registry key
+                    index = holderIndex (statePolicy (crState world)) active tx
+                request <-
+                    maybe (fail "no termination request") pure (outputAtIndex tx index)
+                assetsOf request
+                    `shouldMatchList` [ (statePolicy (crState world), active, 1)
+                                      , (requestPolicy (crRequest world), approval, 1)
+                                      ]
+                inlineDatum request `shouldBe` Nothing
+                mintedOf tx
+                    `shouldBe` [(requestPolicy (crRequest world), approval, 1)]
+                tx ^. bodyTxL . treasuryDonationTxBodyL `shouldBe` Coin 5_000_000
+                signersOf tx `shouldBe` [controllerOf (crBooker world)]
+                soundnessProblems world tx `shouldReturn` []
+
+        it
+            "refuses absent donation, wrong token value, foreign datum and absent signature beside a passing booking" $
+            withHolding $ \world registry ref _ -> do
+                tx <- expectBuilt =<< terminate world ref
+                judge world tx >>= (`shouldSatisfy` everyScriptAccepts)
+                let index =
+                        holderIndex
+                            (statePolicy (crState world))
+                            (activeTokenName registry key)
+                            tx
+                    mutations =
+                        [ tx & bodyTxL . treasuryDonationTxBodyL .~ Coin 0
+                        , mapOutput index (withDatum (PLC.I 0)) tx
+                        , mapOutput
+                            index
+                            (\out -> out & valueTxOutL .~ MaryValue (Coin (valueAda out)) mempty)
+                            tx
+                        , mapOutput
+                            index
+                            ( \out ->
+                                out
+                                    & valueTxOutL %~ \(MaryValue coin assets) -> MaryValue coin (assets <> assets)
+                            )
+                            tx
+                        , withSigners [] tx
+                        ]
+                forM_ mutations (judge world >=> (`shouldSatisfy` refusedBy))
+
+        it "declines a missing holding beside a successful booking" $ withHolding $ \world _ ref _ -> do
+            _ <- expectBuilt =<< terminate world ref
+            let missing = txInOf 'f' 0
+            terminate world missing `shouldReturn` Left (HoldingNotFound missing)
+
+        it
+            "declines a payer who is not the controller beside a successful booking" $ withHolding $ \world _ ref _ -> do
+            _ <- expectBuilt =<< terminate world ref
+            withSession
+                world
+                ( \session ->
+                    buildBookTermination session (crRequest world) ref (crFolder world)
+                )
+                `shouldReturn` Left PayerIsNotController
