@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 {- |
 Module      : Conformance.Support.Rows
 Description : Inventory loading and denominator enforcement tests
@@ -115,7 +117,7 @@ spec = describe "Appendix: keeping the published requirements complete" $ do
                 rowExpected row
                     `shouldSatisfy` T.isInfixOf
                         "no executable comparison with the application-held model exists yet"
-                rowEvidence row `shouldSatisfy` \evidence -> case evidence of
+                rowEvidence row `shouldSatisfy` \case
                     Nothing -> False
                     Just text ->
                         all
