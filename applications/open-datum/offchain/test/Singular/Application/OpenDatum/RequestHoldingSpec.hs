@@ -10,7 +10,7 @@ registration. Its controller then updates or books termination. The ledger's
 script evaluator judges the actual built transaction; output values and
 identities are read independently from the transaction.
 -}
-module Singular.Application.OpenDatum.RequestHoldingSpec (spec) where
+module Singular.Application.OpenDatum.RequestHoldingSpec (spec, withHoldingIn) where
 
 import Control.Monad (forM_)
 import Data.ByteString (ByteString)
@@ -69,8 +69,15 @@ key = "a live key"
 withHolding
     :: (Creation -> RegistryIdentity -> TxIn -> TxOut ConwayEra -> IO ())
     -> IO ()
-withHolding action = do
-    world <- newCreation
+withHolding = withHoldingIn newCreation
+
+-- | Reach a holding in an explicitly supplied public-chain fixture.
+withHoldingIn
+    :: IO Creation
+    -> (Creation -> RegistryIdentity -> TxIn -> TxOut ConwayEra -> IO ())
+    -> IO ()
+withHoldingIn makeWorld action = do
+    world <- makeWorld
     registry <- created world
     booking <-
         expectBuilt

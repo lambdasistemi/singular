@@ -192,6 +192,7 @@ test-suite open-datum-tests
     Singular.Application.OpenDatum.RequestCreationSpec
     Singular.Application.OpenDatum.RequestFoldSpec
     Singular.Application.OpenDatum.RequestHoldingSpec
+    Singular.Application.OpenDatum.RequestTerminationFoldSpec
     Singular.Application.OpenDatum.RequestPublicationSpec
     Singular.Application.OpenDatum.RequestPendingSpec
     Singular.Application.OpenDatum.RequestRecordsSpec

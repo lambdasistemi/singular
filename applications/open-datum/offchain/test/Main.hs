@@ -28,6 +28,7 @@ import Singular.Application.OpenDatum.RequestConfigurationSpec qualified
 import Singular.Application.OpenDatum.RequestCreationSpec qualified
 import Singular.Application.OpenDatum.RequestFoldSpec qualified
 import Singular.Application.OpenDatum.RequestHoldingSpec qualified
+import Singular.Application.OpenDatum.RequestTerminationFoldSpec qualified
 import Singular.Application.OpenDatum.RequestPendingSpec qualified
 import Singular.Application.OpenDatum.RequestPublicationSpec qualified
 import Singular.Application.OpenDatum.RequestRecordsSpec qualified
@@ -112,6 +113,12 @@ main = hspec $ do
             [Application, Builders, Evaluation]
         )
         Singular.Application.OpenDatum.RequestHoldingSpec.spec
+    describe
+        ( tagged
+            "Singular.Application.OpenDatum.RequestTerminationFold"
+            [Application, Builders, Evaluation, Trie]
+        )
+        Singular.Application.OpenDatum.RequestTerminationFoldSpec.spec
     describe
         ( tagged
             "Singular.Application.OpenDatum.RequestPublication"

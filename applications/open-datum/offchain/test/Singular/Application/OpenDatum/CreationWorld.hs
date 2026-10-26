@@ -18,6 +18,7 @@ module Singular.Application.OpenDatum.CreationWorld
     ( -- * The world
       Creation (..)
     , newCreation
+    , newCreationFor
     , withSession
     , applyTx
     , setSlot
@@ -159,7 +160,11 @@ and a wallet, a second party holds a wallet of its own, and nothing else
 exists.
 -}
 newCreation :: IO Creation
-newCreation = do
+newCreation = newCreationFor (keyAddress 0x41) (keyAddress 0x42)
+
+-- | The same public chain, with the parties' explicit addresses.
+newCreationFor :: Addr -> Addr -> IO Creation
+newCreationFor booker folder = do
     request <- attachedScript
     path <-
         lookupEnv "SINGULAR_STATE_BLUEPRINT" >>= \case
@@ -172,8 +177,6 @@ newCreation = do
     state <-
         either (fail . ("state script: " <>)) pure $
             stateScriptFromBlueprint blueprint (requestPolicy request)
-    let booker = keyAddress 0x41
-        folder = keyAddress 0x42
     chain <-
         newRawChain
             ChainFacts
