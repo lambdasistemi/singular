@@ -332,7 +332,7 @@ fresh
 stand_in_singular 'state create' "$(plant --planted-flag)"
 expect undocumented-flag-state-create 1 '^undocumented: singular state create takes --planted-flag'
 
-for command in 'state create' 'state fold' 'registration book' 'registration reclaim' 'registration cleanup'; do
+for command in 'state create' 'state fold' 'registration book' 'registration reclaim' 'registration cleanup' 'holding update' 'holding terminate'; do
   fresh
   stand_in_od "$command" "$(plant --planted-flag)"
   expect "undocumented-flag-od-${command// /-}" 1 "^undocumented: open-datum $command takes --planted-flag"
@@ -357,7 +357,7 @@ grep -q '`open-datum state fold`, `open-datum registration book`' "$table" || {
 expect wrong-command-registration 1 '^documented, not in --help: the settings table gives --pending to open-datum registration book'
 
 # A documented invocation of a group command uses a flag it does not print.
-for invocation in 'singular state create' 'open-datum state create' 'open-datum state fold' 'open-datum registration book' 'open-datum registration reclaim' 'open-datum registration cleanup'; do
+for invocation in 'singular state create' 'open-datum state create' 'open-datum state fold' 'open-datum registration book' 'open-datum registration reclaim' 'open-datum registration cleanup' 'open-datum holding update' 'open-datum holding terminate'; do
   fresh
   printf '\n```sh\n%s --state-dir ./reg \\\n  --made-up-flag 1\n```\n' "$invocation" >>"$scratch/t/docs/cli-recovery.md"
   expect "invocation-unknown-${invocation// /-}" 1 "docs/cli-recovery.md:[0-9]+: $invocation --made-up-flag"
@@ -372,9 +372,17 @@ fresh
 printf '\n```sh\nopen-datum registration zap --state-dir ./reg \\\n  --made-up-flag 1\n```\n' >>"$scratch/t/docs/cli-recovery.md"
 expect unknown-verb-registration 1 'docs/cli-recovery.md:[0-9]+: open-datum registration zap .*not a command open-datum supports'
 
+fresh
+printf '\n```sh\nopen-datum holding zap --state-dir ./reg \\\n  --made-up-flag 1\n```\n' >>"$scratch/t/docs/cli-recovery.md"
+expect unknown-verb-holding 1 'docs/cli-recovery.md:[0-9]+: open-datum holding zap .*not a command open-datum supports'
+
 # The documented write counts name the new commands: a count that omits them fails.
 fresh
-sed -i 's/the five singular writes and the ten open-datum writes/the four singular writes and the five open-datum writes/' "$table"
+sed -i 's/the five singular writes and the [a-z][a-z]* open-datum writes/the four singular writes and the five open-datum writes/' "$table"
+grep -q 'the four singular writes and the five open-datum writes' "$table" || {
+  echo "SETUP-FAIL: the incorrect write counts did not apply" >&2
+  exit 2
+}
 expect write-counts-omit-the-groups 1 'settings table: .* applies to "the four singular writes and the five open-datum writes", but singular --help names 5 write commands'
 
 echo "PASS cli-flags-controls: $controls controls over ${#pages[@]} pages"
