@@ -429,6 +429,7 @@ offchain/private-facade/Singular/Registry/Private/Smoke.hs runFacadeSmoke withMV
 offchain/test/Singular/CLI/CommandRunSpec.hs <decl> IORef 2
 offchain/test/Singular/CLI/CommandRunSpec.hs capabilities readIORef 1
 offchain/test/Singular/CLI/CommandRunSpec.hs capabilities writeIORef 1
+offchain/test/Singular/CLI/CommandRunSpec.hs previewFundingRows readIORef 10
 offchain/test/Singular/CLI/CommandRunSpec.hs runViaApp readIORef 1
 offchain/test/Singular/CLI/CommandRunSpec.hs runViaApp writeIORef 1
 offchain/test/Singular/CLI/CommandRunSpec.hs withRigIn modifyIORef' 1

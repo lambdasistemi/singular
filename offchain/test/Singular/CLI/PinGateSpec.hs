@@ -5,7 +5,7 @@ Module      : Singular.CLI.PinGateSpec
 Description : Submit checks the registry named by a bundle before sending it
 License     : Apache-2.0
 
-The retained submit command is exercised against its real composition and a
+Retained library pin-form checks and the submit command are exercised against a
 chain fixture. A legacy registry is prepared through the shared create helper
 still used by application commands; no retired Singular parser route is invoked. This
 establishes submit's pin and pre-send refusals over the exercised fixtures,
@@ -14,6 +14,7 @@ not a new-line registry reader or ledger acceptance.
 module Singular.CLI.PinGateSpec (spec) where
 
 import Cardano.Ledger.Api.Tx.Out (datumTxOutL)
+import Control.Monad (forM_)
 import Data.Aeson qualified as Aeson
     ( ToJSON (toJSON)
     , Value (Array)
@@ -47,17 +48,23 @@ import Singular.CLI.CommandRunSpec
     , envOf
     , outcomeOf
     , readWallet
+    , scriptPinned
     , textAt
     , valueAt
     , withRig
     )
 import Singular.CLI.Create (createApplication, runCreate)
 import Singular.CLI.FlagGroup (Signer (..))
-import Singular.CLI.Registry (economics)
+import Singular.CLI.Registry (economics, loadReleaseCodes)
 import Singular.CLI.Root (runPackagedVia)
 import Singular.CLI.Session (Env (..))
 import Singular.CLI.SubmitSpec (selfPaymentFiles)
-import Singular.Registry.Application (neutralApplication)
+import Singular.Registry.Application
+    ( Application (..)
+    , ApplicationPin (..)
+    , hashPinnedApplication
+    , neutralApplication
+    )
 import Singular.Registry.Bundle
     ( Bundle (..)
     , decodeBundle
@@ -67,14 +74,25 @@ import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.Config.Application
     ( RegistryEconomics (..)
     )
+import Singular.Registry.Deployment (renderOutRef)
 import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.LedgerProvider qualified as Cage
     ( LedgerProvider (acquire)
     , Session (inclusion)
     )
 import Singular.Registry.RawChainFixture
-    ( ChainFacts (csUTxO)
+    ( ChainFacts (..)
     , advanceChain
+    , rawChainProvider
+    )
+import Singular.Registry.SessionIO qualified as SessionIO
+    ( withLatest
+    )
+import Singular.Registry.StateToken
+    ( IdentityRefusal (..)
+    , PinField (..)
+    , parseStateToken
+    , resolveRegistry
     )
 import Singular.Registry.TxBuilder.Internal
     ( extractCageDatum
@@ -100,7 +118,7 @@ import Test.Hspec
     )
 
 spec :: Spec
-spec = describe "submit gates the registry its bundle names" submitRows
+spec = describe "retained pin library and submit" $ formRows >> submitRows
 
 -- ---------------------------------------------------------------------------
 -- The registries and the forgery
@@ -413,3 +431,145 @@ submitRows = do
             (env, probe) <- probedEnv rig
             ran <- submitWith env [] ["submit", "--witnesses", witness, bundle]
             expectSubmitted probe ran
+
+gateRefusal
+    :: Rig -> Application -> String -> IO (Maybe IdentityRefusal)
+gateRefusal rig app tokenText = do
+    release <-
+        loadReleaseCodes app (rigBlueprint rig) >>= either fail pure
+    asset <-
+        either (fail . T.unpack) pure (parseStateToken (T.pack tokenText))
+    resolved <-
+        SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \view ->
+            resolveRegistry app release asset view
+    pure (either Just (const Nothing) resolved)
+
+compiledPinned :: Application
+compiledPinned = scriptPinned{appPin = PinAsCompiled "script-app.script-app"}
+
+formRows :: Spec
+formRows = do
+    it "accepts each form's own registry" $ withRig $ \rig -> do
+        byHash <- createdByHash rig "by-hash" (seedAt 1)
+        seed2 <- freshSeed rig
+        byScript <- createdByScript rig scriptPinned "by-script" seed2
+        seed3 <- freshSeed rig
+        byCompiled <- createdByScript rig compiledPinned "by-compiled" seed3
+        gateRefusal
+            rig
+            (hashPinnedApplication (SBS.toShort givenPolicy))
+            byHash
+            `shouldReturn` Nothing
+        gateRefusal rig scriptPinned byScript `shouldReturn` Nothing
+        gateRefusal rig compiledPinned byCompiled `shouldReturn` Nothing
+    it
+        "refuses a registry pinning another policy, naming the application, in the script form"
+        $ withRig
+        $ \rig -> do
+            byHash <- createdByHash rig "by-hash" (seedAt 1)
+            gateRefusal rig scriptPinned byHash
+                `shouldReturn` Just (RegistryPinMismatch PinApplication)
+    it
+        "refuses a registry pinning another policy, naming the application, in the hash form"
+        $ withRig
+        $ \rig -> do
+            byHash <- createdByHash rig "by-hash" (seedAt 1)
+            gateRefusal
+                rig
+                (hashPinnedApplication (SBS.toShort foreignPolicy))
+                byHash
+                `shouldReturn` Just (RegistryPinMismatch PinApplication)
+    it
+        "refuses a registry pinning another policy, naming the application, in the compiled form"
+        $ withRig
+        $ \rig -> do
+            byScript <- createdByScript rig scriptPinned "by-script" (seedAt 1)
+            gateRefusal rig compiledPinned byScript
+                `shouldReturn` Just (RegistryPinMismatch PinApplication)
+    it
+        "refuses a forged application pin in the hash form after the datum is rewritten"
+        $ withRig
+        $ \rig -> do
+            byHash <- createdByHash rig "by-hash" (seedAt 1)
+            forgeState rig forgeApplication
+            gateRefusal
+                rig
+                (hashPinnedApplication (SBS.toShort givenPolicy))
+                byHash
+                `shouldReturn` Just (RegistryPinMismatch PinApplication)
+    it
+        "still refuses a forged active policy whichever way the application is stated"
+        $ withRig
+        $ \rig -> do
+            byHash <- createdByHash rig "by-hash" (seedAt 1)
+            forgeState rig forgeActive
+            forM_
+                [ hashPinnedApplication (SBS.toShort givenPolicy)
+                , neutralApplication
+                ]
+                $ \app ->
+                    gateRefusal rig app byHash
+                        `shouldReturn` Just (RegistryPinMismatch PinActive)
+
+-- ---------------------------------------------------------------------------
+-- Each command over a registry whose active policy is forged
+-- ---------------------------------------------------------------------------
+
+{- | The commands of the table that name a registry and run with the neutral
+value, each as a person types it after the registry's state token: the
+label, and the words the command line is made of given the rig and the
+token.
+-}
+forgeApplication :: OnChainTokenState -> OnChainTokenState
+forgeApplication st = st{stateAppPolicy = BuiltinByteString foreignPolicy}
+
+-- ---------------------------------------------------------------------------
+-- The library: one forged application pin per pin form
+-- ---------------------------------------------------------------------------
+
+{- | The refusal the gate gives, or nothing when it accepts: the application
+is composed the way a program composes it and the release loaded from the
+blueprint for it.
+-}
+freshSeed :: Rig -> IO String
+freshSeed rig = do
+    held <- readWallet rig
+    case reverse (map fst held) of
+        i : _ -> pure (T.unpack (renderOutRef i))
+        [] -> fail "the wallet holds nothing for another registry"
+
+givenPolicy :: BS.ByteString
+givenPolicy = BS.replicate 28 7
+
+-- | A policy no application derives.
+
+-- | The script-pinned library fixture uses the retained builder directly.
+createdByScript :: Rig -> Application -> String -> String -> IO String
+createdByScript rig app dir seed = do
+    effective <- createApplication app Nothing
+    receipt <-
+        runCreate
+            effective
+            (envOf rig)
+            CreateArgs
+                { createStateDir = Just (rigDir rig </> dir)
+                , createBlueprint = rigBlueprint rig
+                , createMode =
+                    Submit
+                        ( WriteSettings
+                            (ProviderSettings "http://fixture.invalid" 42 Nothing Nothing)
+                            (SignerKeyFile (rigKey rig))
+                            Nothing
+                        )
+                , createSeed = Just seed
+                , createPreview = False
+                , createReceipt = Nothing
+                , createSaveStateTokenTo = Nothing
+                , createProcessTime = reProcessTime economics
+                , createRetractTime = reRetractTime economics
+                }
+    outcomeOf receipt `shouldBe` Just "success"
+    maybe
+        (fail "script fixture has no token")
+        (pure . T.unpack)
+        (textAt "stateToken" receipt)
