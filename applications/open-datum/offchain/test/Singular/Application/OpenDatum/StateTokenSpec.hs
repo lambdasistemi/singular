@@ -21,22 +21,22 @@ import Data.ByteString.Base16 qualified as B16 (encode)
 import Data.ByteString.Char8 qualified as BC (unpack)
 import Data.ByteString.Short qualified as SBS (fromShort)
 import Data.List (isInfixOf)
-import Data.Maybe (fromMaybe)
 import Data.Set qualified as Set (empty, fromList, singleton)
 import Data.Text qualified as T (isInfixOf, replicate)
 import Singular.Application.OpenDatum.Command
-    ( CLIError (BadValue, MissingFlag)
-    , EntryArgs (entryAccess)
-    , FoldArgs (foldAccess)
-    , InspectArgs (inspectAccess)
-    , OpenDatumCommand
-        ( OpenFold
-        , OpenInsert
-        , OpenInspect
-        , OpenTerminate
-        , OpenUpdate
-        )
+    ( BookArgs (..)
+    , CLIError (BadValue, MissingFlag)
+    , EntryArgs (..)
+    , EntryMode (..)
+    , HoldingArgs (..)
+    , Key (..)
+    , OpenDatumCommand (..)
+    , PendingArgs (..)
+    , ProviderSettings (..)
     , RegistryAccess (..)
+    , Signer (..)
+    , StateFoldArgs (..)
+    , WriteSettings (..)
     , neededRoles
     , parseOpenDatumCommand
     , parseOpenDatumCommandWithEnvironment
@@ -48,6 +48,7 @@ import Singular.Application.OpenDatum.StateTokenFixture
     )
 import Singular.CLI.Registry (checkPendingToken)
 import Singular.Registry.LedgerProvider qualified as LP (Asset)
+import Singular.Registry.PlainJson (PayloadSchema (PlainSchema))
 import Singular.Registry.StateToken (ReferenceRole (..))
 import Singular.Registry.TxBuilder.Internal (scriptHashBytes)
 import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
@@ -92,28 +93,39 @@ request = replicate 64 '7' <> "#0"
 commands :: [(String, [String])]
 commands =
     [
-        ( "insert"
-        , ["open-datum", "insert", "--key", "k", "--payload", "/p.json"] <> rest
+        ( "registration book"
+        , ["registration", "book", "--key", "k", "--payload", "/p.json"] <> rest
+        )
+    , ("state fold", ["state", "fold", "--pending", request] <> rest)
+    ,
+        ( "registration reclaim"
+        , ["registration", "reclaim", "--pending", request] <> rest
         )
     ,
-        ( "update"
-        , ["open-datum", "update", "--key", "k", "--payload", "/p.json"] <> rest
+        ( "registration cleanup"
+        , ["registration", "cleanup", "--pending", request] <> rest
         )
-    , ("terminate", ["open-datum", "terminate", "--key", "k"] <> rest)
-    , ("fold", ["open-datum", "fold"] <> rest)
-    , ("inspect", ["open-datum", "inspect", "--key", "k"] <> restInspect)
+    ,
+        ( "holding update"
+        , ["holding", "update", "--holding", request, "--payload", "/p.json"]
+            <> rest
+        )
+    ,
+        ( "holding terminate"
+        , ["holding", "terminate", "--holding", request] <> rest
+        )
     ]
   where
     rest = dirAndRelease <> provider <> wallet
-    restInspect = dirAndRelease <> provider
 
 accessOf :: OpenDatumCommand -> Maybe RegistryAccess
 accessOf = \case
-    OpenInsert a -> Just (entryAccess a)
-    OpenUpdate a -> Just (entryAccess a)
-    OpenTerminate a -> Just (entryAccess a)
-    OpenFold a -> Just (foldAccess a)
-    OpenInspect a -> Just (inspectAccess a)
+    OpenRegistrationBook a -> Just (bookArgsAccess a)
+    OpenStateFold a -> Just (stateFoldAccess a)
+    OpenRegistrationReclaim a -> Just (pendingArgsAccess a)
+    OpenRegistrationCleanup a -> Just (pendingArgsAccess a)
+    OpenHoldingUpdate a _ _ -> Just (holdingArgsAccess a)
+    OpenHoldingTerminate a -> Just (holdingArgsAccess a)
     _ -> Nothing
 
 ours :: RegistryAccess
@@ -160,7 +172,7 @@ tokenOnEveryCommand = describe "the state token" $ do
                         `shouldSatisfy` badValueOf "--state-token"
     it "is refused on create, which makes one" $
         parseOpenDatumCommand
-            ( ["open-datum", "create", "--seed", request]
+            ( ["state", "create", "--seed", request]
                 <> dirAndRelease
                 <> provider
                 <> wallet
@@ -197,7 +209,7 @@ tokenOnEveryCommand = describe "the state token" $ do
   where
     environment t = ("SINGULAR_STATE_TOKEN", spelled t)
     createLine =
-        ["open-datum", "create", "--seed", request]
+        ["state", "create", "--seed", request]
             <> dirAndRelease
             <> provider
             <> wallet
@@ -221,32 +233,42 @@ badValueOf flag = \case
 -- ---------------------------------------------------------------------------
 
 rolesPerCommand :: Spec
-rolesPerCommand = describe "the reference roles each command's transactions run"
-    $ it
-        "are the application for a booking, every script for a fold, none for an inspect"
-    $ do
-        let roles args = fmap neededRoles (parseOpenDatumCommand (args <> tokenFlag))
-            everything = Set.fromList [minBound .. maxBound]
-            line name = fromMaybe (error name) (lookup name commands)
-        roles (line "insert") `shouldBe` Right (Set.singleton RoleApplication)
-        roles (line "update") `shouldBe` Right (Set.singleton RoleApplication)
-        roles (line "terminate")
-            `shouldBe` Right (Set.singleton RoleApplication)
-        roles (line "insert" <> ["--fold"]) `shouldBe` Right everything
-        roles (line "terminate" <> ["--fold"]) `shouldBe` Right everything
-        roles (line "fold") `shouldBe` Right everything
-        roles (line "inspect") `shouldBe` Right Set.empty
-        fmap
-            neededRoles
-            ( parseOpenDatumCommand
-                ( ["open-datum", "create", "--seed", request]
-                    <> dirAndRelease
-                    <> provider
-                    <> wallet
-                )
-            )
-            `shouldBe` Right (Set.singleton RoleState)
-
--- ---------------------------------------------------------------------------
--- Publication funding before the boot
--- ---------------------------------------------------------------------------
+rolesPerCommand = describe "the reference roles each internal preparation value needs" $ do
+    let args =
+            EntryArgs
+                { entryStateDir = Nothing
+                , entryAccess = ours
+                , entryBlueprint = "/srv/plutus.json"
+                , entryMode =
+                    Submit
+                        ( WriteSettings
+                            (ProviderSettings "http://127.0.0.1:8080/api/v1" 42 Nothing Nothing)
+                            (SignerKeyFile "/keys/payment.skey")
+                            Nothing
+                        )
+                , entryKey = Key "k"
+                , entryDocument = Just "/p.json"
+                , entryPayloadSchema = PlainSchema
+                , entryDeposit = Nothing
+                , entryFund = Nothing
+                , entryMaxOutlay = Nothing
+                , entryReceipt = Nothing
+                , entryFold = False
+                }
+        everything = Set.fromList [minBound .. maxBound]
+    it
+        "uses the application for each entry and all roles for a combined booking and fold"
+        $ do
+            neededRoles (OpenInsert args) `shouldBe` Set.singleton RoleApplication
+            neededRoles (OpenUpdate args) `shouldBe` Set.singleton RoleApplication
+            neededRoles (OpenTerminate args)
+                `shouldBe` Set.singleton RoleApplication
+            neededRoles (OpenInsert args{entryFold = True}) `shouldBe` everything
+            neededRoles (OpenTerminate args{entryFold = True})
+                `shouldBe` everything
+    it
+        "keeps the request-contract commands independent of the old reference roles"
+        $ forM_ commands
+        $ \(_, line) ->
+            fmap neededRoles (parseOpenDatumCommand (line <> tokenFlag))
+                `shouldBe` Right Set.empty

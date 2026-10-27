@@ -3,7 +3,7 @@ Module      : Main
 Description : The packaged @open-datum@ command
 License     : Apache-2.0
 
-@open-datum create|insert|update|terminate|fold|inspect@:
+@open-datum state@, @open-datum registration@ and @open-datum holding@:
 one ordinary process per command over your state directory. See
 "Singular.Application.OpenDatum.Command" for the command line and
 "Singular.Application.OpenDatum.Run" for what each command does.

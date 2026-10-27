@@ -10,9 +10,8 @@ The checks and the choices that turn an attached registry and a caller's
 public identity into the transactions a write command builds: the
 envelope's identity and deposit, who may act on a key, the application's
 published reference, the booking's approval and destination, and the
-update's builder arguments. Nothing here signs, submits or journals, so the
-submitting commands ("Singular.Application.OpenDatum.Entry") and the read-only preparation
-route ("Singular.Application.OpenDatum.Preview") decide from the same code and cannot drift.
+update's builder arguments. Nothing here signs, submits or journals. The
+read-only preparation in "Singular.Application.OpenDatum.Preview" uses these values.
 -}
 module Singular.Application.OpenDatum.Plan
     ( -- * Who acts

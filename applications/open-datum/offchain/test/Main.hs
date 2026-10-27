@@ -35,12 +35,10 @@ import Singular.Application.OpenDatum.RequestPublicationSpec qualified
 import Singular.Application.OpenDatum.RequestRecordsSpec qualified
 import Singular.Application.OpenDatum.RequestScriptSpec qualified
 import Singular.Application.OpenDatum.RequestTerminationFoldSpec qualified
-import Singular.Application.OpenDatum.SaveStateTokenSpec qualified
 import Singular.Application.OpenDatum.SourcesSpec qualified
 import Singular.Application.OpenDatum.StateTokenSpec qualified
 import Singular.Application.OpenDatum.TraceSpec qualified
 import Singular.Application.OpenDatum.WalletAdmissionSpec qualified
-import Singular.Application.OpenDatum.WalletShortfallSpec qualified
 import Singular.Application.OpenDatum.WriteSpec qualified
 import Test.Hspec (describe, hspec)
 import Test.Tags (Area (..), tagged)
@@ -53,9 +51,6 @@ main = hspec $ do
     describe
         (tagged "Singular.Application.OpenDatum.Outlay" [Cli])
         Singular.Application.OpenDatum.OutlaySpec.spec
-    describe
-        (tagged "Singular.Application.OpenDatum.WalletShortfall" [Cli])
-        Singular.Application.OpenDatum.WalletShortfallSpec.spec
     describe
         (tagged "Singular.Application.OpenDatum.Application" [Application])
         Singular.Application.OpenDatum.ApplicationSpec.spec
@@ -170,9 +165,6 @@ main = hspec $ do
     describe
         (tagged "Singular.Application.OpenDatum.Sources" [Cli])
         Singular.Application.OpenDatum.SourcesSpec.spec
-    describe
-        (tagged "Singular.Application.OpenDatum.SaveStateToken" [Cli])
-        Singular.Application.OpenDatum.SaveStateTokenSpec.spec
     describe
         (tagged "Singular.Application.OpenDatum.RegistryAddress" [Cli])
         Singular.Application.OpenDatum.RegistryAddressSpec.spec

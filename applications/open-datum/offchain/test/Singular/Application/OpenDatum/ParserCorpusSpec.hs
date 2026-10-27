@@ -27,24 +27,23 @@ to FILE instead of comparing.
 -}
 module Singular.Application.OpenDatum.ParserCorpusSpec (spec) where
 
+import Cardano.Ledger.BaseTypes (Network (Testnet))
+import Crypto.Hash (Digest, SHA256, hash)
 import Data.Aeson (Value (..), object, (.=))
-import Data.Aeson qualified as Aeson
-import Data.Aeson.Key qualified as Key
-import Data.Aeson.KeyMap qualified as KeyMap
+import Data.Aeson qualified as Aeson (decodeStrict, encode)
+import Data.Aeson.Key qualified as Key (fromString, toString)
+import Data.Aeson.KeyMap qualified as KeyMap (lookup, toList)
 import Data.ByteString qualified as BS
-import Data.ByteString.Char8 qualified as BC
-import Data.ByteString.Lazy.Char8 qualified as LBC
+    ( readFile
+    , replicate
+    , writeFile
+    )
+import Data.ByteString.Char8 qualified as BC (intercalate, pack)
+import Data.ByteString.Lazy.Char8 qualified as LBC (unpack)
 import Data.Foldable (toList)
 import Data.List (nub, sort)
 import Data.Maybe (fromMaybe, mapMaybe)
-import Data.Text qualified as T
-import System.Environment (lookupEnv)
-import Test.Hspec
-
-import Crypto.Hash (Digest, SHA256, hash)
-
-import Cardano.Ledger.BaseTypes (Network (Testnet))
-
+import Data.Text qualified as T (unpack)
 import Singular.Application.OpenDatum.Command
     ( CLIError
     , OpenDatumCommand (..)
@@ -52,8 +51,20 @@ import Singular.Application.OpenDatum.Command
     , renderCLIError
     )
 import Singular.CLI.Trace (TraceRequest)
-import Singular.Registry.TxBuilder.Internal (addrFromKeyHashBytes)
+import Singular.Registry.TxBuilder.Internal
+    ( addrFromKeyHashBytes
+    )
 import Singular.Registry.Wallet (bech32Address)
+import System.Environment (lookupEnv)
+import Test.Hspec
+    ( Spec
+    , describe
+    , expectationFailure
+    , it
+    , pendingWith
+    , shouldBe
+    , shouldSatisfy
+    )
 
 -- | Where the committed corpus lives, relative to the package.
 corpusFile :: FilePath
@@ -111,11 +122,7 @@ spec = describe "the command lines in use" $ do
         let accepted = nub (sort (mapMaybe acceptedKind entries))
         accepted
             `shouldBe` sort
-                [ "OpenCreate"
-                , "OpenFold"
-                , "OpenHelp"
-                , "OpenInsert"
-                , "OpenInspect"
+                [ "OpenHelp"
                 , "OpenHoldingUpdate"
                 , "OpenHoldingTerminate"
                 , "OpenRegistrationBook"
@@ -123,8 +130,6 @@ spec = describe "the command lines in use" $ do
                 , "OpenRegistrationReclaim"
                 , "OpenStateCreate"
                 , "OpenStateFold"
-                , "OpenTerminate"
-                , "OpenUpdate"
                 ]
         length entries `shouldSatisfy` (> 1500)
         length [() | e <- entries, "refused" `isPrefix` expectedResult e]

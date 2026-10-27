@@ -398,7 +398,7 @@ generated references. The public `local-services` component also exposes
 `offchain/local-services/Singular/Registry/`. Their generated pages are not
 in this main-library reference. The public `open-datum-application`
 component (`applications/open-datum/offchain/`) carries the open-datum
-application the command line composes — entry commands, envelope, booking
+application the command line composes — command groups, envelope, booking
 approval and destination, payload update, release rules, script, and the
 application value — and the request builders of the registry on the proved
 design: the booking of a registration, its reclaim by the refund address and
@@ -410,7 +410,6 @@ that create a registry and book, reclaim and clean up a registration:
 `Singular.Application.OpenDatum.Book`,
 `Singular.Application.OpenDatum.Build`,
 `Singular.Application.OpenDatum.Command`,
-`Singular.Application.OpenDatum.Entry`,
 `Singular.Application.OpenDatum.Envelope`,
 `Singular.Application.OpenDatum.InsertEnvelope`,
 `Singular.Application.OpenDatum.Permanent`,

@@ -20,24 +20,31 @@ module Singular.Application.OpenDatum.RegistryAddressSpec (spec) where
 
 import Control.Monad (forM_)
 import Data.List (isInfixOf)
-import Data.Text qualified as T
+import Data.Text qualified as T (unpack)
 import Data.Word (Word32)
-import Test.Hspec
-
 import Singular.Application.OpenDatum.Command
-    ( EntryArgs (..)
-    , EntryMode (..)
-    , FoldArgs (..)
-    , InspectArgs (..)
+    ( BookArgs (..)
+    , HoldingArgs (..)
     , OpenDatumCommand (..)
+    , PendingArgs (..)
     , ProviderSettings (..)
     , RegistryAccess (..)
+    , StateFoldArgs (..)
     , WriteSettings (..)
     , parseOpenDatumInvocationFrom
     , renderCLIError
     )
 import Singular.CLI.Sources (Sources (..))
 import Singular.Registry.StateToken (renderStateToken)
+import Test.Hspec
+    ( Expectation
+    , Spec
+    , describe
+    , expectationFailure
+    , it
+    , shouldBe
+    , shouldSatisfy
+    )
 
 policyHex, nameHex, devnetAddress, preprodAddress :: String
 policyHex = "68df9c42ebd4468be130e9cd5538a7af39cc31c146cda45f274cccc5"
@@ -57,19 +64,19 @@ tokenText = policyHex <> "." <> nameHex
 -- | The registry a command was told to act on: its state token and its network.
 reading :: OpenDatumCommand -> Maybe (String, Word32)
 reading = \case
-    OpenInsert a -> entry a
-    OpenUpdate a -> entry a
-    OpenTerminate a -> entry a
-    OpenFold a -> named (foldAccess a) (providerMagic (writeProvider (foldWrite a)))
-    OpenInspect a -> named (inspectAccess a) (providerMagic (inspectProvider a))
+    OpenStateFold a -> named (stateFoldAccess a) (stateFoldWrite a)
+    OpenRegistrationBook a -> named (bookArgsAccess a) (bookArgsWrite a)
+    OpenRegistrationReclaim a -> named (pendingArgsAccess a) (pendingArgsWrite a)
+    OpenRegistrationCleanup a -> named (pendingArgsAccess a) (pendingArgsWrite a)
+    OpenHoldingUpdate a _ _ -> named (holdingArgsAccess a) (holdingArgsWrite a)
+    OpenHoldingTerminate a -> named (holdingArgsAccess a) (holdingArgsWrite a)
     _ -> Nothing
   where
-    entry a = named (entryAccess a) (providerMagic (entryProvider a))
-    entryProvider a = case entryMode a of
-        Submit settings -> writeProvider settings
-        Preview settings _ -> settings
-    named access magic =
-        Just (T.unpack (renderStateToken (accessToken access)), magic)
+    named access settings =
+        Just
+            ( T.unpack (renderStateToken (accessToken access))
+            , providerMagic (writeProvider settings)
+            )
 
 -- | What a person is told about a line: the reading, or the sentence.
 told
@@ -167,29 +174,28 @@ spec = describe "a registry given by its address" $ do
     wallet = ["--wallet-skey", "/keys/payment.skey"]
     verbs =
         [
-            ( "insert"
-            , ["insert", "--key", "key", "--payload", "/p.json"]
-                <> createReg
-                <> node
-                <> wallet
+            ( "registration book"
+            , ["registration", "book", "--key", "key", "--payload", "/p.json"]
+                <> rest
+            )
+        , ("state fold", ["state", "fold", "--pending", ref] <> rest)
+        ,
+            ( "registration reclaim"
+            , ["registration", "reclaim", "--pending", ref] <> rest
             )
         ,
-            ( "update"
-            , ["update", "--key", "key", "--payload", "/p.json"]
-                <> createReg
-                <> node
-                <> wallet
+            ( "registration cleanup"
+            , ["registration", "cleanup", "--pending", ref] <> rest
             )
         ,
-            ( "terminate"
-            , ["terminate", "--key", "key"]
-                <> createReg
-                <> node
-                <> wallet
+            ( "holding update"
+            , ["holding", "update", "--holding", ref, "--payload", "/p.json"]
+                <> rest
             )
-        , ("fold", ["fold"] <> createReg <> node <> wallet)
         ,
-            ( "inspect"
-            , ["inspect", "--key", "key"] <> createReg <> node
+            ( "holding terminate"
+            , ["holding", "terminate", "--holding", ref] <> rest
             )
         ]
+    rest = createReg <> node <> wallet
+    ref = replicate 64 'a' <> "#0"
