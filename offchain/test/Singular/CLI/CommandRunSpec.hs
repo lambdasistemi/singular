@@ -8009,7 +8009,7 @@ registryAddressRows :: Spec
 registryAddressRows =
     describe "a registry has an address" $ do
         createReceiptAddressRows
-        pageAndInspectAddressRows
+        inspectAddressRows
         addressGivenRows
         foreignContractsRows
 
@@ -8111,9 +8111,9 @@ createReceiptAddressRows = describe "the create receipt" $ do
             (pure . T.unpack)
             (textAt key receipt)
 
-pageAndInspectAddressRows :: Spec
-pageAndInspectAddressRows =
-    describe "the describe and the inspect receipts"
+inspectAddressRows :: Spec
+inspectAddressRows =
+    describe "the inspect receipt"
         $ it
             "name the address, the state token and the fingerprint of the registry, and keep what they carried"
         $ withRig
@@ -8125,20 +8125,7 @@ pageAndInspectAddressRows =
             create <- named "create"
             inspected <-
                 named "inspect from an empty directory with the state token"
-            page <- named "describe by state token"
             token <- tokenOf create
-            -- describe: the registry object keeps its keys, and holds the two new ones
-            let registryObject = valueAt "registry" (runReceipt page)
-            shouldNameRegistry
-                token
-                (registryObject >>= textAt "address")
-                (registryObject >>= textAt "fingerprint")
-            (registryObject >>= textAt "stateToken")
-                `shouldBe` Just (T.pack token)
-            forM_ ["stateOutput", "stateScript", "applicationScript"] $ \key ->
-                (registryObject >>= valueAt key) `shouldSatisfy` isJust
-            forM_ ["release", "rules", "state", "provenance"] $ \key ->
-                valueAt key (runReceipt page) `shouldSatisfy` isJust
             -- inspect: the registry it read, by address, state token and fingerprint
             outcomeOf (runReceipt inspected) `shouldBe` Just "success"
             shouldNameRegistry

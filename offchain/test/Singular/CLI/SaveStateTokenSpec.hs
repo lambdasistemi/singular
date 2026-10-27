@@ -167,6 +167,6 @@ spec = describe "the switch --save-state-token of registry create" $ do
             page `shouldSatisfy` isInfixOf "state-token"
             page `shouldSatisfy` isInfixOf "settings file"
         it "of the other registry commands does not mention it" $
-            forM_ ["fold", "reject", "reclaim", "inspect", "describe"] $ \command ->
+            forM_ ["fold", "reject", "reclaim", "inspect"] $ \command ->
                 singularHelp singularVersion [] ["registry", command]
                     `shouldSatisfy` (not . isInfixOf switch)
