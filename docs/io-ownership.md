@@ -26,6 +26,12 @@ that would catch a regression.
 
 ## What the census covers
 
+The counts and old-runner diagram below record the earlier census. The
+standalone registry journey, archive runners and deployment command have
+since been removed, together with their ownership entries. Run
+`just io-inventory` for the current extent; those removed runners provide
+no current evidence.
+
 The census discovers every Haskell source by walking the tree — no per-file
 list — and puts each in exactly one structural category. Anything it cannot
 classify fails the run instead of slipping through.

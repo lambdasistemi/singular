@@ -1,5 +1,10 @@
 # Who owns a registry command
 
+These four standalone runners have been removed from the command layer.
+This page records their former structure; its commands and evidence below
+are historical. Use the [application command journey](registry-commands.md)
+for the retained implementation.
+
 A contributor changing what one of the registry commands does — a flag,
 a narrated step, a field of the observation JSON, a deliberate refusal —
 wants to open the one module that owns that concern and have the review

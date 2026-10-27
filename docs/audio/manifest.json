@@ -140631,11 +140631,266 @@
    ]
   },
   "docs-io-ownership/what-the-census-covers-01": {
-   "audio_sha256": "af2bba7ac68391cf7976dd2826849b88633934a94ad4204d6b8d35ed1176ebd6",
+   "audio_sha256": "702aa208d459aa28416787dfa0c18e0cdf12d3a17d598ebb3489d92c3f075f5c",
+   "characters": 299,
+   "cost": 0.00029601,
+   "duration": 19.95,
+   "index": 1,
+   "key": "05454558bebf5f21d74331fca4b1da5802a640b27c930c7bf4a21ae45c735d40",
+   "page": "docs/io-ownership.md",
+   "pause_ms": 400,
+   "section": "what-the-census-covers",
+   "sent_text": "The counts and old-runner diagram below record the earlier census. The standalone registry journey, archive runners and deployment command have since been removed, together with their ownership entries. Run just io-inventory for the current extent; those removed runners provide no current evidence.",
+   "text": "The counts and old-runner diagram below record the earlier census. The standalone registry journey, archive runners and deployment command have since been removed, together with their ownership entries. Run just io-inventory for the current extent; those removed runners provide no current evidence.",
+   "words": [
+    {
+     "end": 0.287,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.75,
+     "start": 0.287,
+     "text": "counts"
+    },
+    {
+     "end": 0.875,
+     "start": 0.75,
+     "text": "and"
+    },
+    {
+     "end": 1.475,
+     "start": 0.875,
+     "text": "old-runner"
+    },
+    {
+     "end": 2.138,
+     "start": 1.475,
+     "text": "diagram"
+    },
+    {
+     "end": 2.537,
+     "start": 2.138,
+     "text": "below"
+    },
+    {
+     "end": 2.912,
+     "start": 2.537,
+     "text": "record"
+    },
+    {
+     "end": 3.05,
+     "start": 2.912,
+     "text": "the"
+    },
+    {
+     "end": 3.45,
+     "start": 3.05,
+     "text": "earlier"
+    },
+    {
+     "end": 4.525,
+     "start": 3.45,
+     "text": "census"
+    },
+    {
+     "end": 4.725,
+     "start": 4.525,
+     "text": "."
+    },
+    {
+     "end": 4.975,
+     "start": 4.9,
+     "text": "The"
+    },
+    {
+     "end": 5.475,
+     "start": 4.975,
+     "text": "standalone"
+    },
+    {
+     "end": 5.963,
+     "start": 5.475,
+     "text": "registry"
+    },
+    {
+     "end": 6.775,
+     "start": 5.963,
+     "text": "journey"
+    },
+    {
+     "end": 7.0,
+     "start": 6.775,
+     "text": ","
+    },
+    {
+     "end": 7.625,
+     "start": 7.175,
+     "text": "archive"
+    },
+    {
+     "end": 8.075,
+     "start": 7.625,
+     "text": "runners"
+    },
+    {
+     "end": 8.188,
+     "start": 8.075,
+     "text": "and"
+    },
+    {
+     "end": 8.625,
+     "start": 8.188,
+     "text": "deployment"
+    },
+    {
+     "end": 9.113,
+     "start": 8.625,
+     "text": "command"
+    },
+    {
+     "end": 9.325,
+     "start": 9.113,
+     "text": "have"
+    },
+    {
+     "end": 9.6,
+     "start": 9.325,
+     "text": "since"
+    },
+    {
+     "end": 9.775,
+     "start": 9.6,
+     "text": "been"
+    },
+    {
+     "end": 10.8,
+     "start": 9.775,
+     "text": "removed"
+    },
+    {
+     "end": 11.0,
+     "start": 10.8,
+     "text": ","
+    },
+    {
+     "end": 11.6,
+     "start": 11.175,
+     "text": "together"
+    },
+    {
+     "end": 11.712,
+     "start": 11.6,
+     "text": "with"
+    },
+    {
+     "end": 11.85,
+     "start": 11.712,
+     "text": "their"
+    },
+    {
+     "end": 12.25,
+     "start": 11.85,
+     "text": "ownership"
+    },
+    {
+     "end": 13.125,
+     "start": 12.25,
+     "text": "entries"
+    },
+    {
+     "end": 13.325,
+     "start": 13.125,
+     "text": "."
+    },
+    {
+     "end": 13.837,
+     "start": 13.55,
+     "text": "Run"
+    },
+    {
+     "end": 14.125,
+     "start": 13.837,
+     "text": "just"
+    },
+    {
+     "end": 15.05,
+     "start": 14.125,
+     "text": "io-inventory"
+    },
+    {
+     "end": 15.163,
+     "start": 15.05,
+     "text": "for"
+    },
+    {
+     "end": 15.25,
+     "start": 15.163,
+     "text": "the"
+    },
+    {
+     "end": 15.575,
+     "start": 15.25,
+     "text": "current"
+    },
+    {
+     "end": 16.225,
+     "start": 15.575,
+     "text": "extent"
+    },
+    {
+     "end": 16.325,
+     "start": 16.225,
+     "text": ";"
+    },
+    {
+     "end": 16.6,
+     "start": 16.325,
+     "text": "those"
+    },
+    {
+     "end": 17.075,
+     "start": 16.6,
+     "text": "removed"
+    },
+    {
+     "end": 17.525,
+     "start": 17.075,
+     "text": "runners"
+    },
+    {
+     "end": 17.987,
+     "start": 17.525,
+     "text": "provide"
+    },
+    {
+     "end": 18.263,
+     "start": 17.987,
+     "text": "no"
+    },
+    {
+     "end": 18.6,
+     "start": 18.263,
+     "text": "current"
+    },
+    {
+     "end": 19.725,
+     "start": 18.6,
+     "text": "evidence"
+    },
+    {
+     "end": 19.95,
+     "start": 19.725,
+     "text": "."
+    }
+   ]
+  },
+  "docs-io-ownership/what-the-census-covers-02": {
+   "audio_sha256": "834e12c178b392d2b83e2b4fd3c2b7cec1c8594570013bf67a9b3e8f17c1931f",
    "characters": 203,
    "cost": 0.00020097,
    "duration": 13.6,
-   "index": 1,
+   "index": 2,
    "key": "68186b5efe6a8f0f5091d65dcdb5fdaf8790db6c7658b0503881e6a580df50fa",
    "page": "docs/io-ownership.md",
    "pause_ms": 400,
@@ -140825,12 +141080,12 @@
     }
    ]
   },
-  "docs-io-ownership/what-the-census-covers-02": {
-   "audio_sha256": "f495e31a04b13e6cab3f21f94b44227de3203deafac8b4b1973f0ccc6a80d3de",
+  "docs-io-ownership/what-the-census-covers-03": {
+   "audio_sha256": "6bd04916930219467e05a6003d7be10ad22f811df9f6600f9b93f6a4e5a7a3e8",
    "characters": 307,
    "cost": 0.00030393,
    "duration": 21.075,
-   "index": 2,
+   "index": 3,
    "key": "7c9d364e29f50d7fb8ade35da26bdcb6f753302cbaab9a562978e765c7895b75",
    "page": "docs/io-ownership.md",
    "pause_ms": 400,
@@ -217946,11 +218201,211 @@
    ]
   },
   "docs-offchain-command-entrypoints/who-owns-a-registry-command-01": {
-   "audio_sha256": "cb01b6e60465662b8be9899cfdadb8e0031f81064acdedfc1e9645027a42bb61",
-   "characters": 783,
-   "cost": 0.00048546,
-   "duration": 52.225,
+   "audio_sha256": "ae1c03098d1b29b517163be5c8be49e0359fb912f04dc0882c3eb79979687c9d",
+   "characters": 230,
+   "cost": 0.00022769999999999998,
+   "duration": 14.65,
    "index": 1,
+   "key": "33f929383e7285bd67bce534296a8324dea227953060ac99e84ca326e40b009b",
+   "page": "docs/offchain-command-entrypoints.md",
+   "pause_ms": 400,
+   "section": "who-owns-a-registry-command",
+   "sent_text": "These four standalone runners have been removed from the command layer. This page records their former structure; its commands and evidence below are historical. Use the application command journey for the retained implementation.",
+   "text": "These four standalone runners have been removed from the command layer. This page records their former structure; its commands and evidence below are historical. Use the application command journey for the retained implementation.",
+   "words": [
+    {
+     "end": 0.425,
+     "start": 0.175,
+     "text": "These"
+    },
+    {
+     "end": 0.675,
+     "start": 0.425,
+     "text": "four"
+    },
+    {
+     "end": 1.275,
+     "start": 0.675,
+     "text": "standalone"
+    },
+    {
+     "end": 1.8,
+     "start": 1.275,
+     "text": "runners"
+    },
+    {
+     "end": 1.925,
+     "start": 1.8,
+     "text": "have"
+    },
+    {
+     "end": 2.1,
+     "start": 1.925,
+     "text": "been"
+    },
+    {
+     "end": 2.625,
+     "start": 2.1,
+     "text": "removed"
+    },
+    {
+     "end": 2.763,
+     "start": 2.625,
+     "text": "from"
+    },
+    {
+     "end": 2.85,
+     "start": 2.763,
+     "text": "the"
+    },
+    {
+     "end": 3.25,
+     "start": 2.85,
+     "text": "command"
+    },
+    {
+     "end": 4.125,
+     "start": 3.25,
+     "text": "layer"
+    },
+    {
+     "end": 4.325,
+     "start": 4.125,
+     "text": "."
+    },
+    {
+     "end": 4.738,
+     "start": 4.525,
+     "text": "This"
+    },
+    {
+     "end": 5.1,
+     "start": 4.738,
+     "text": "page"
+    },
+    {
+     "end": 5.575,
+     "start": 5.1,
+     "text": "records"
+    },
+    {
+     "end": 5.787,
+     "start": 5.575,
+     "text": "their"
+    },
+    {
+     "end": 6.175,
+     "start": 5.787,
+     "text": "former"
+    },
+    {
+     "end": 6.825,
+     "start": 6.175,
+     "text": "structure"
+    },
+    {
+     "end": 6.925,
+     "start": 6.825,
+     "text": ";"
+    },
+    {
+     "end": 7.125,
+     "start": 6.925,
+     "text": "its"
+    },
+    {
+     "end": 7.725,
+     "start": 7.125,
+     "text": "commands"
+    },
+    {
+     "end": 7.85,
+     "start": 7.725,
+     "text": "and"
+    },
+    {
+     "end": 8.3,
+     "start": 7.85,
+     "text": "evidence"
+    },
+    {
+     "end": 8.762,
+     "start": 8.3,
+     "text": "below"
+    },
+    {
+     "end": 8.9,
+     "start": 8.762,
+     "text": "are"
+    },
+    {
+     "end": 10.1,
+     "start": 8.9,
+     "text": "historical"
+    },
+    {
+     "end": 10.3,
+     "start": 10.1,
+     "text": "."
+    },
+    {
+     "end": 10.738,
+     "start": 10.5,
+     "text": "Use"
+    },
+    {
+     "end": 10.85,
+     "start": 10.738,
+     "text": "the"
+    },
+    {
+     "end": 11.525,
+     "start": 10.85,
+     "text": "application"
+    },
+    {
+     "end": 11.938,
+     "start": 11.525,
+     "text": "command"
+    },
+    {
+     "end": 12.438,
+     "start": 11.938,
+     "text": "journey"
+    },
+    {
+     "end": 12.562,
+     "start": 12.438,
+     "text": "for"
+    },
+    {
+     "end": 12.65,
+     "start": 12.562,
+     "text": "the"
+    },
+    {
+     "end": 13.113,
+     "start": 12.65,
+     "text": "retained"
+    },
+    {
+     "end": 14.45,
+     "start": 13.113,
+     "text": "implementation"
+    },
+    {
+     "end": 14.65,
+     "start": 14.45,
+     "text": "."
+    }
+   ]
+  },
+  "docs-offchain-command-entrypoints/who-owns-a-registry-command-02": {
+   "audio_sha256": "d14ae9a95ffd06bd73c911cdbc7f33bbb3c9860e3e6efef40892ebbdf3d1824d",
+   "characters": 783,
+   "cost": 0.0007751699999999999,
+   "duration": 52.225,
+   "index": 2,
    "key": "431441f647b2038153a3c3ebc9618fbbe6741aae8f6617926ba8e4902360398d",
    "page": "docs/offchain-command-entrypoints.md",
    "pause_ms": 400,

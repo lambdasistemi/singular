@@ -15,10 +15,6 @@
 #    and the commands run as separate processes against ONE node, a booking
 #    and its fold by another wallet among them, with the archive's own
 #    blueprint. Injected process controls run in the separate explicit test carrier.
-# 3. The retained insert-active and update-terminal archive commands run
-#    from the same extracted archive with their accepting and refusing
-#    controls, asserted by the same observation programs their CI steps
-#    use.
 set -euo pipefail
 
 [ "$#" -eq 1 ] || {
@@ -108,51 +104,4 @@ if require_archive_layout "$scratch/no-version/onchain/plutus.json" test-harness
   fail "control: the harness path ran past a missing version file"
 fi
 
-cd "$extracted/offchain"
-
-# The retained archive commands, from the same extraction.
-observed="$scratch/insert-active.json"
-REGISTRY_BLUEPRINT="$extracted/onchain/plutus.json" \
-  nix run --quiet .#insert-active -- --observed "$observed"
-jq -e '
-  .edge == "insertActive"
-  and (.fold.txid | test("^[0-9a-f]{64}$"))
-  and .wallet.address == .requested.address
-  and .wallet.assets == [{"policy": .active.policy, "name": .key, "quantity": 1}]
-  and ."key-exists".outcome == "refused"
-  and (."key-exists".control.outcome == "accepted")
-  and (."key-exists".detail | type == "string" and length > 0)
-' "$observed" >/dev/null || fail "insert-active did not observe one active token at the named wallet"
-
-observed="$scratch/update-terminal.json"
-REGISTRY_BLUEPRINT="$extracted/onchain/plutus.json" \
-  nix run --quiet .#update-terminal -- --observed "$observed"
-# shellcheck disable=SC2016
-jq -e '
-  def txid: type == "string" and test("^[0-9a-f]{64}$");
-  def text: type == "string" and length > 0;
-  .edge == "updateTerminal"
-  and (.retirement != null)
-  and (.retirement as $r |
-    ($r.activePolicy | text) and ($r.key | text)
-    and ($r.insertTxid | txid) and ($r.retireTxid | txid)
-    and $r.insertTxid != $r.retireTxid
-    and ([$r.roots.beforeInsert, $r.roots.active, $r.roots.terminal]
-      | all(.[]; text) and (unique | length == 3))
-    and $r.quantities == {"before": 1, "after": 0}
-    and $r.mint == [{"policy": $r.activePolicy, "name": $r.key, "quantity": -1}]
-    and ($r.source.outref | text)
-    and $r.source.policy == $r.activePolicy
-    and $r.source.name == $r.key
-    and $r.source.quantity == 1
-    and $r.leaf == "Terminal"
-    and ($r.unknown.detail | text)
-    and ($r.unknown.trace == null or $r.unknown.trace == "key-unknown")
-    and ($r.unknown.controlTxid | txid)
-    and ($r.terminal.detail | text)
-    and ($r.terminal.trace == null or $r.terminal.trace == "terminal-immutable")
-    and ($r.terminal.controlTxid | txid)
-  )
-' "$observed" >/dev/null || fail "update-terminal observation moved"
-
-echo "demo1-cli-check: PASS from $extracted — the release verified as published (sums, model revision, members, the singular journey as separate processes on one node), the page, and the retained insert-active and update-terminal controls"
+echo "demo1-cli-check: PASS from $extracted — the release verified as published (sums, model revision, members, the singular journey as separate processes on one node), and the archive layout controls"

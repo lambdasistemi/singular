@@ -203,15 +203,6 @@ if onchain_present:
             "MODEL-REVISION",
             "SHA256SUMS",
             "verify-identities.sh",
-            # #173 A173-COMMAND: the packaged verb's run page. Required, so
-            # the archive cannot ship the command without its authority.
-            "INSERT-ACTIVE.md",
-            "offchain/insert-active/Main.hs",
-            # #177 I177-COMMAND: the second packaged verb's run page and its
-            # tracked source. Required, so the archive cannot ship the
-            # retirement command without the page that documents it.
-            "UPDATE-TERMINAL.md",
-            "offchain/update-terminal/Main.hs",
             # #299: the ordinary commands' entry point. Required, so the
             # archive cannot ship `singular registry` without its source.
             "offchain/cli/Main.hs",
@@ -256,11 +247,6 @@ if onchain_present:
             "naming-onchain/flake.lock",
             "offchain/flake.nix",
             "offchain/flake.lock",
-            "offchain/journey/README.md",
-            "offchain/journey/Main.hs",
-            "offchain/journey/li01/Main.hs",
-            "offchain/journey/li-refusals/Main.hs",
-            "offchain/journey/lmlc/Main.hs",
             "offchain/naming/src/Naming/Wire/Vectors.hs",
             "fixtures/Naming-Wire-Vectors.hs",
             "fixtures/README.md",

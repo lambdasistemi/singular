@@ -4,7 +4,7 @@
 Every Haskell source the tree holds is discovered by walking it — no
 per-file list anywhere in this tool — classified into exactly one
 structural category (production, tool, conformance library, conformance
-runner, test/harness, old journey, application), and scanned for the
+runner, test/harness, application), and scanned for the
 effect classes below. Anything unclassified fails closed.
 
 Effect classes are import-anchored: a class is reported only when the
@@ -84,14 +84,11 @@ CATEGORIES: list[tuple[str, str, tuple[str, ...]]] = [
     ),
     (
         "tool",
-        "standalone operator executables (deployment, devnet, recorders)",
+        "standalone operator executables (devnet, recorders)",
         (
-            "offchain/deployment/",
             "offchain/devnet/",
             "offchain/koios-http/app/",
             "offchain/app/",
-            "offchain/insert-active/",
-            "offchain/update-terminal/",
             "offchain/cli/Main.hs",
             "applications/open-datum/offchain/app/",
             "applications/keri-stub/offchain/app/",
@@ -141,11 +138,6 @@ CATEGORIES: list[tuple[str, str, tuple[str, ...]]] = [
             "applications/keri-stub/offchain/test/",
             "applications/keri-stub/offchain/test-tags/",
         ),
-    ),
-    (
-        "journey",
-        "old registry journey executables: kept running, never extended",
-        ("offchain/journey/",),
     ),
 ]
 

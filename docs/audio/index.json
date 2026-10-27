@@ -4167,15 +4167,22 @@
     "index": 1,
     "name": "docs-io-ownership/what-the-census-covers-01",
     "pause_ms": 400,
-    "text": "The census discovers every Haskell source by walking the tree — no per-file list — and puts each in exactly one structural category. Anything it cannot classify fails the run instead of slipping through.",
-    "v": "af2bba7ac683"
+    "text": "The counts and old-runner diagram below record the earlier census. The standalone registry journey, archive runners and deployment command have since been removed, together with their ownership entries. Run just io-inventory for the current extent; those removed runners provide no current evidence.",
+    "v": "702aa208d459"
    },
    {
     "index": 2,
     "name": "docs-io-ownership/what-the-census-covers-02",
     "pause_ms": 400,
+    "text": "The census discovers every Haskell source by walking the tree — no per-file list — and puts each in exactly one structural category. Anything it cannot classify fails the run instead of slipping through.",
+    "v": "834e12c178b3"
+   },
+   {
+    "index": 3,
+    "name": "docs-io-ownership/what-the-census-covers-03",
+    "pause_ms": 400,
     "text": "455 sources in total. The census establishes structural facts — which files can name which effects — and never runtime behavior. That a module can name a mutable cell says nothing about what it does with it; what a command does is settled by the cage tests, the journeys and the hosted runs below, not here.",
-    "v": "f495e31a04b1"
+    "v": "6bd049169302"
    }
   ],
   "where-the-production-effects-live": [
@@ -6424,8 +6431,15 @@
     "index": 1,
     "name": "docs-offchain-command-entrypoints/who-owns-a-registry-command-01",
     "pause_ms": 400,
+    "text": "These four standalone runners have been removed from the command layer. This page records their former structure; its commands and evidence below are historical. Use the application command journey for the retained implementation.",
+    "v": "ae1c03098d1b"
+   },
+   {
+    "index": 2,
+    "name": "docs-offchain-command-entrypoints/who-owns-a-registry-command-02",
+    "pause_ms": 400,
     "text": "A contributor changing what one of the registry commands does — a flag, a narrated step, a field of the observation JSON, a deliberate refusal — wants to open the one module that owns that concern and have the review ask one question. Before this division, each command was a single entry file of up to 1417 lines, and a change to the journey's negative cases was reviewed beside its identity manifest parser and its proof checks. Now each command's Main.hs holds only its outer failure handler, and named command-local modules own the options, the steps, the deliberate controls and the observation. This page says which module to open, which way the dependencies run, what may never change while the code moves, who calls each command, and what the evidence does and does not show.",
-    "v": "cb01b6e60465"
+    "v": "d14ae9a95ffd"
    }
   ]
  },

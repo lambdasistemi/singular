@@ -20,30 +20,14 @@
 let
   inherit (pkgs) lib;
 
-  # Derived at intake 2026-09-24 from the live workflow commands (see the
-  # table in the ticket evidence; every consumer is cited there):
-  #   cage-test-vectors  registry.yml:194 just vectors-check -> .#test-vectors
-  #   journey            registry.yml:347 nix run .#journey
-  #   insert-active      registry.yml:379 release-archive nix run .#insert-active
-  #   update-terminal    registry.yml:439 release-archive nix run .#update-terminal
-  #   record-value-tests registry.yml:84  nix run .#record-value-tests
-  #   cage-tests         registry.yml:414 nix run .#cage-tests
-  #   e2e-tests          registry.yml:309 nix run .#cage-tests-e2e
-  # plus the supported shipped packages devnet and deployment (issue #102
-  # tooling; no D6 record, flake packages). The library is consumed by every
-  # component and, across the flake boundary, by the required conformance
-  # jobs (conformance/conformance.cabal depends on singular-registry).
-  #
+  # Retained commands, shared libraries and test suites are built here.
+  # Every declared component must still have exactly one classification.
   builtHere = {
     library = [ "singular-registry" ];
     exes = [
       "local-services-record"
       "cage-test-vectors"
-      "journey"
-      "insert-active"
-      "update-terminal"
       "devnet"
-      "deployment"
       # #299: the packaged `singular registry` commands the release
       # archive documents and the demo1-cli-check CI step runs.
       "singular"

@@ -20,8 +20,6 @@ offchain/lib/Singular/Registry/Trie/PureManager.hs: ioref — owner=each caller 
 offchain/local-services/Singular/Registry/SessionIO.hs: ioref — owner=one local-services observation session; lifetime=single withLatest call; serial; last-observation cell keeps horizon continuity across polls
 
 # ---- tools: standalone operator executables ----
-offchain/deployment/Deployment/Deploy.hs: ioref — owner=one deployment command; lifetime=single command; serial; newest-first tx accumulator reversed for the bootstrap manifest, partial narration preserved on throw
-offchain/deployment/Deployment/Node.hs: ioref — owner=the deployment node session; lifetime=single command; serial; caller-supplied tx sink threaded through the node callbacks
 offchain/devnet/Devnet/Probe.hs: async — owner=one devnet probe run; lifetime=single probe command; link withAsync over the probe thread, cancelled and joined before the command returns; the harness must run node and client together
 offchain/devnet/Main.hs: mvar — owner=one devnet command; lifetime=single command; serial output lock for interleaved narration, released by withMVar
 offchain/koios-http/app/Main.hs: ioref — owner=one recorder probe run; lifetime=single command; serial failure flag folded into the exit status
@@ -50,10 +48,6 @@ conformance/coverage/evaluation/spike-app/Main.hs: ioref — owner=one evaluatio
 
 # ---- application host: adversarial, never linked by ordinary executables ----
 applications/open-datum/negative/src/Negative/Craft.hs: ioref — owner=one adversarial crafting run; lifetime=single run; serial; the hostile builder accumulates its own mutations; no ordinary executable links a host module
-
-# ---- old journeys: retained runners, never extended ----
-offchain/journey/Journey/Proofs.hs: ioref — owner=one journey command; lifetime=single command; serial on the command thread; proof observations for the retained runner
-offchain/journey/Journey/Scenario.hs: ioref — owner=one journey command; lifetime=single command; serial on the command thread; scenario state for the retained runner
 
 # ---- tests and harness: owned by the test run, joined before the example ends ----
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/ApplicationSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; fixture refs accumulated for assertions

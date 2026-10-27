@@ -47,7 +47,7 @@
 .|simulator|check|hosted under another name: the simulator job runs the simulator-check app, the same checker body this check's sandbox executes
 offchain|cage-test-vectors|app|hosted under another name: the registry-test-vectors job builds checks.x86_64-linux.cage-test-vectors, whose sandbox executes this app's binary in its JSON mode
 offchain|singular|app|hosted under another name: the demo1-archive job runs this packaged command line from the extracted release archive (the archive assembly builds ./offchain#singular, this app's program, and the journey drives it as separate singular processes)
-offchain|cage-tests|check|hosted under another name: the journey job's focused off-chain suite step runs the cage-tests app, the same wrapped test binary this check executes in its sandbox
+offchain|cage-tests|check|hosted under another name: the cage-tests job's off-chain suite step runs the cage-tests app, the same wrapped test binary this check executes in its sandbox
 offchain|cage-tests-e2e|check|hosted under another name: the e2e-part matrix jobs run .#cage-tests-e2e, this same wrapped derivation, one lane per job
 offchain|library|check|hosted under another name: the offchain-component-build job builds .#component-build, whose member paths include this library derivation (build only: no test executes)
 offchain|lint|check|hosted under another name: the offchain-lint job runs .#lint, this same writeShellApplication derivation (apps.lint is checks.lint)

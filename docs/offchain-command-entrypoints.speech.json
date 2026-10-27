@@ -5,6 +5,10 @@
       "pause": 500
     },
     {
+      "text": "These four standalone runners have been removed from the command layer. This page records their former structure; its commands and evidence below are historical. Use the application command journey for the retained implementation.",
+      "pause": 400
+    },
+    {
       "text": "A contributor changing what one of the registry commands does — a flag, a narrated step, a field of the observation JSON, a deliberate refusal — wants to open the one module that owns that concern and have the review ask one question. Before this division, each command was a single entry file of up to 1417 lines, and a change to the journey's negative cases was reviewed beside its identity manifest parser and its proof checks. Now each command's Main.hs holds only its outer failure handler, and named command-local modules own the options, the steps, the deliberate controls and the observation. This page says which module to open, which way the dependencies run, what may never change while the code moves, who calls each command, and what the evidence does and does not show.",
       "pause": 400
     }
@@ -115,6 +119,6 @@
   ],
   "_source": {
     "file": "offchain-command-entrypoints.md",
-    "sha256": "fe2e4ca591356805a636dc7e471a6ec1d67f6d1cc1f93236738a26a7060a2bae"
+    "sha256": "79d80f06588a2e0495c04d74c0eae5f8669bd203e0054dd01fd36cee1705a638"
   }
 }

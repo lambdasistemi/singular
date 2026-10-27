@@ -296,95 +296,7 @@
           '';
         };
 
-        # The bounded journey runner (D-012). A Nix-built binary —
-        # haskell.nix resolves every dependency, so a clean runner
-        # needs no cabal, no package index and no warm state (D-011)
-        # — wrapped so it brings the locked cardano-node on its own
-        # PATH, exactly like cage-tests-e2e in ./nix/checks.nix.
-        # The blueprint and the identity manifest come from the
-        # caller at run time (REGISTRY_BLUEPRINT, REGISTRY_SCRIPT_IDENTITY);
-        # no store path is baked in.
-        journey =
-          pkgs.runCommand "journey"
-            {
-              buildInputs = [ pkgs.makeWrapper ];
-              meta = (components.exes.journey.meta or { }) // {
-                mainProgram = "journey";
-              };
-            }
-            ''
-              mkdir -p $out/bin
-              makeWrapper ${pkgs.lib.getExe components.exes.devnet} $out/bin/journey \
-                --add-flags "run ${pkgs.lib.getExe components.exes.journey}" \
-                --set E2E_GENESIS_DIR ${./e2e-test/genesis} \
-                --prefix PATH : ${cardanoNode}/bin
-            '';
-
-        # #173 A173-COMMAND: the retained runner receives an explicit
-        # provider and wallet. Its default private CI fixture belongs to
-        # the devnet launcher, which forwards HTTP/time settings only.
-        # The blueprint comes from the caller at run time
-        # (REGISTRY_BLUEPRINT); no store path is baked in, which is what
-        # lets it run from an EXTRACTED ARCHIVE with no checkout.
-        insert-active =
-          pkgs.runCommand "insert-active"
-            {
-              buildInputs = [ pkgs.makeWrapper ];
-              meta = (components.exes.insert-active.meta or { }) // {
-                mainProgram = "insert-active";
-              };
-            }
-            ''
-              mkdir -p $out/bin
-              makeWrapper ${pkgs.lib.getExe components.exes.devnet} $out/bin/insert-active \
-                --add-flags "run ${pkgs.lib.getExe components.exes.insert-active}" \
-                --set E2E_GENESIS_DIR ${./e2e-test/genesis} \
-                --prefix PATH : ${cardanoNode}/bin
-            '';
-
-        # #177 I177-COMMAND: the retained runner receives HTTP/time and
-        # wallet settings from its private CI launcher. The blueprint
-        # comes from the caller at run time
-        # (REGISTRY_BLUEPRINT); no store path is baked in, which is what
-        # lets it run from an EXTRACTED ARCHIVE with no checkout.
-        update-terminal =
-          pkgs.runCommand "update-terminal"
-            {
-              buildInputs = [ pkgs.makeWrapper ];
-              meta = (components.exes.update-terminal.meta or { }) // {
-                mainProgram = "update-terminal";
-              };
-            }
-            ''
-              mkdir -p $out/bin
-              makeWrapper ${pkgs.lib.getExe components.exes.devnet} $out/bin/update-terminal \
-                --add-flags "run ${pkgs.lib.getExe components.exes.update-terminal}" \
-                --set E2E_GENESIS_DIR ${./e2e-test/genesis} \
-                --prefix PATH : ${cardanoNode}/bin
-            '';
-
-        # The deployment tool (issue #102): boots one registry, publishes
-        # one set of reference scripts, records the manifest, and checks a
-        # recorded manifest against a node. Wrapped like the runners so the
-        # locked cardano-node is on its own PATH when the devnet path is
-        # taken.
-        deployment =
-          pkgs.runCommand "deployment"
-            {
-              buildInputs = [ pkgs.makeWrapper ];
-              meta = (components.exes.deployment.meta or { }) // {
-                mainProgram = "deployment";
-              };
-            }
-            ''
-              mkdir -p $out/bin
-              makeWrapper ${pkgs.lib.getExe components.exes.deployment} $out/bin/deployment \
-                --prefix PATH : ${cardanoNode}/bin
-            '';
-
-        # A devnet that outlives the process that needed it (issue #102):
-        # a deployment is attached to by later runs, so proving attachment
-        # works needs one chain several processes can reach.
+        # A standalone development node for commands and their test harnesses.
         devnet =
           pkgs.runCommand "devnet"
             {
@@ -499,14 +411,10 @@
           # their public local-services owner; private Node pages stay out.
           local-services-haddock = components.sublibs.local-services.haddock;
           inherit test-vectors test-vectors-json;
-          # Issue #102: the deployment tool and the devnet a deployment can
-          # outlive, both exposed so the attach check can reach them.
-          inherit deployment devnet;
+          # The generic development node remains available to command journeys.
+          inherit devnet;
           # #326: the contract suite and its external leg.
           inherit contract-tests contract-external;
-          # #173 A173-COMMAND: the packaged verb, exposed so the release
-          # archive's documented invocation resolves without a checkout.
-          inherit insert-active update-terminal;
           # #299: the packaged `singular registry` commands. It reaches a
           # node through the socket its caller names and spawns none, so it
           # needs no cardano-node on its PATH.
@@ -556,19 +464,6 @@
           singular = {
             type = "app";
             program = pkgs.lib.getExe singular;
-          };
-          # #173 A173-COMMAND.
-          update-terminal = {
-            type = "app";
-            program = pkgs.lib.getExe update-terminal;
-          };
-          insert-active = {
-            type = "app";
-            program = pkgs.lib.getExe insert-active;
-          };
-          journey = {
-            type = "app";
-            program = pkgs.lib.getExe journey;
           };
           # #562 item 2: the registry CLI build-graph check and its controls.
           registry-cli-build-graph-check = {

@@ -147,8 +147,8 @@ expect_reject c2-unsafe-escape \
 
 # c3 — a forkIO site added to a tool file.
 scratch c3-fork-site
-c3target="$work/c3-fork-site/offchain/deployment/Deployment/Node.hs"
-plant_target c3-fork-site offchain/deployment/Deployment/Node.hs
+c3target="$work/c3-fork-site/offchain/devnet/Main.hs"
+plant_target c3-fork-site offchain/devnet/Main.hs
 cp "$c3target" "$c3target.plant" && rm "$c3target" && mv "$c3target.plant" "$c3target"
 printf '\nimport Control.Concurrent (forkIO)\n' >>"$c3target"
 printf '\norphanThread :: IO ()\norphanThread = forkIO (pure ()) >> pure ()\n' >>"$c3target"

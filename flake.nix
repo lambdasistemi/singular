@@ -619,8 +619,7 @@
         );
       # #299: the Demo 1 journey from the extracted release archive, run as
       # separate `singular` and `open-datum` processes on one development
-      # node, plus the retained insert-active and update-terminal archive
-      # controls. Run from the repository root: `nix run --quiet .#demo1-cli-check`.
+      # node. Run from the repository root: `nix run --quiet .#demo1-cli-check`.
       demo1 =
         system:
         let

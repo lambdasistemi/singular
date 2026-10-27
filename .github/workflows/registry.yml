@@ -489,11 +489,10 @@ jobs:
           name: contract-results
           path: ${{ env.CONTRACT_RESULTS_DIR }}
           if-no-files-found: error
-  journey:
-    name: The bounded registry journey, narrated end to end
-    needs: blueprint
+  cage-tests:
+    name: Off-chain registry and command tests
     runs-on: nixos
-    timeout-minutes: 45
+    timeout-minutes: 20
     steps:
       - name: Reuse this runner's Nix cache
         run: |
@@ -507,159 +506,9 @@ jobs:
         with:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      # Issue #37: the epic's runnable artifact. One command boots a
-      # cage, submits a request, applies it and reads the resulting
-      # state back on a real devnet, printing one line per step plus
-      # the pinned unapplied script identities (read from
-      # onchain/script-identity.json) and the applied hashes this run
-      # derived from them and carried on chain — the
-      # derived-applied-identity assertion fails the job when the
-      # derivation does not reproduce an applied hash. It is the
-      # same library code
-      # path as the e2e suite — no mocks, no stubbed node — and it is
-      # hermetic (D-011): the Nix-built binary brings the locked
-      # cardano-node on its own PATH; no cabal, no package index, no
-      # warm developer state. It covers the cage protocol surface
-      # only — it does not demonstrate Singular naming-claim or
-      # maintenance behaviour.
-      - name: Run the bounded registry journey against a real devnet
-        working-directory: offchain
-        run: |
-          blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
-          REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#journey
-      # #173 A173-COMMAND (NOTE-014 ruling): the day-0 artifact rule made
-      # concrete. A documented command that does not exist in CI is the
-      # same defect as an unrun check, so the release archive the
-      # publishing pipeline builds is built HERE, extracted OUTSIDE the
-      # checkout, and its documented `insert-active` invocation is run
-      # against this job's devnet with no checkout and no naming
-      # blueprint in sight. The step asserts exit 0 and the active token
-      # at the wallet the command named.
-      #
-      # Falsification: on any ancestor where the verb is absent from the
-      # archive this step fails at the invocation itself — that is the
-      # RED this row was frozen with, and it is the reason the step
-      # extracts rather than running the verb from the worktree.
-      - name: Run insert-active from the extracted release archive
-        run: |
-          set -e
-          release_dir="$(mktemp -d "$RUNNER_TEMP/release.XXXXXX")"
-          nix run --quiet .#release-artifacts -- "$release_dir"
-          version="$(cat version.txt)"
-          # Extracted OUTSIDE the checkout: a reviewer with the archive
-          # and nothing else must reach the same place.
-          extracted="$(mktemp -d "$RUNNER_TEMP/extracted.XXXXXX")"
-          tar -C "$extracted" -xzf "$release_dir/singular-onchain-$version.tar.gz"
-          test ! -e "$extracted/.git" || { echo 'FAIL: the archive carries a git checkout'; exit 1; }
-          # The archive's own run page is the authority for the command;
-          # the step runs exactly what the page documents.
-          test -f "$extracted/INSERT-ACTIVE.md" || { echo 'FAIL: the archive carries no insert-active run page'; exit 1; }
-          observed="$(mktemp "$RUNNER_TEMP/insert-active.XXXXXX.json")"
-          (
-            cd "$extracted/offchain"
-            REGISTRY_BLUEPRINT="$extracted/onchain/plutus.json" \
-              nix run --quiet .#insert-active -- --observed "$observed"
-          )
-          # The observation, not the exit code: exactly one active token,
-          # at the key the command inserted, in the output at the wallet
-          # the command named.
-          #
-          # The duplicate is asserted by its OUTCOME and its accepting
-          # control, not by a trace name. The ledger's EvalFailure carries
-          # an EMPTY Plutus log list, so the cage's `key-exists` trace is
-          # not recoverable from it and the command emits null rather than
-          # a guess. The NAME is asserted at the Aiken layer, through
-          # `lib.occupiedRefusal`, the construction site the validator
-          # reads. Asserting it here would be asserting a literal the
-          # command wrote to make this step pass.
-          nix run --quiet nixpkgs#jq -- -e '
-            .edge == "insertActive"
-            and (.fold.txid | test("^[0-9a-f]{64}$"))
-            and .wallet.address == .requested.address
-            and .wallet.assets == [{"policy": .active.policy, "name": .key, "quantity": 1}]
-            and ."key-exists".outcome == "refused"
-            and (."key-exists".control.outcome == "accepted")
-            and (."key-exists".detail | type == "string" and length > 0)
-          ' "$observed" > /dev/null || { echo 'FAIL: insert-active did not observe one active token at the named wallet'; exit 1; }
-          echo "ARCHIVE = insert-active ran from $extracted with no checkout and observed the active token at the named wallet."
-      # #177 A-002 row S03, CI change in this ticket: the focused
-      # off-chain suite carries the retirement's holder-selection,
-      # wrong-key and no-sweep controls. They are pure decisions of
-      # `registryDuties` — the one place the off-chain side decides what
-      # an edge owes — so they belong on the cheap job beside the
-      # devnet one, not inside it.
-      #
-      # Falsification: on any ancestor where `registryDuties` returns
-      # `mempty` for edge 3, the burn-without-source row fails here.
-      - name: Run the focused off-chain suite
+      - name: Run the off-chain suite
         working-directory: offchain
         run: nix run --quiet .#cage-tests
-      # #177 I177-COMMAND (A-002 ruling), the sibling of the
-      # insert-active step above: the release archive is built HERE,
-      # extracted OUTSIDE the checkout, and its documented
-      # `update-terminal` invocation is run against this job's devnet
-      # with no checkout in sight. The step asserts the OBSERVATION, not
-      # the exit code.
-      #
-      # Falsification: on any ancestor where the verb or its page is
-      # absent from the archive this step fails at the required page or
-      # at the invocation itself.
-      - name: Run update-terminal from the extracted release archive
-        run: |
-          set -e
-          release_dir="$(mktemp -d "$RUNNER_TEMP/release.XXXXXX")"
-          nix run --quiet .#release-artifacts -- "$release_dir"
-          version="$(cat version.txt)"
-          extracted="$(mktemp -d "$RUNNER_TEMP/extracted.XXXXXX")"
-          tar -C "$extracted" -xzf "$release_dir/singular-onchain-$version.tar.gz"
-          test ! -e "$extracted/.git" || { echo 'FAIL: the archive carries a git checkout'; exit 1; }
-          test -f "$extracted/UPDATE-TERMINAL.md" || { echo 'FAIL: the archive carries no update-terminal run page'; exit 1; }
-          observed="$(mktemp "$RUNNER_TEMP/update-terminal.XXXXXX.json")"
-          (
-            cd "$extracted/offchain"
-            REGISTRY_BLUEPRINT="$extracted/onchain/plutus.json" \
-              nix run --quiet .#update-terminal -- --observed "$observed"
-          )
-          # The observation, not the exit code: the active quantity goes
-          # 1 -> 0, the exact keyed `-1` mint is burned from a
-          # token-bearing source input, the three roots are distinct and
-          # the committed leaf reads Terminal. The two refusals are
-          # asserted by OUTCOME and by their accepting controls; a trace
-          # name is accepted only when the ledger actually surfaced it,
-          # because an EvalFailure carries an empty Plutus log list and
-          # the exact names are enforced at the Aiken layer.
-          # The jq program below is single-quoted ON PURPOSE: every `$`
-          # in it is a JQ variable, not a shell one, and the body is
-          # byte-identical to the frozen gate.sh. shellcheck cannot tell
-          # the two languages apart.
-          # shellcheck disable=SC2016
-          nix run --quiet nixpkgs#jq -- -e '
-            def txid: type == "string" and test("^[0-9a-f]{64}$");
-            def text: type == "string" and length > 0;
-            .edge == "updateTerminal"
-            and (.retirement != null)
-            and (.retirement as $r |
-              ($r.activePolicy | text) and ($r.key | text)
-              and ($r.insertTxid | txid) and ($r.retireTxid | txid)
-              and $r.insertTxid != $r.retireTxid
-              and ([$r.roots.beforeInsert, $r.roots.active, $r.roots.terminal]
-                | all(.[]; text) and (unique | length == 3))
-              and $r.quantities == {"before": 1, "after": 0}
-              and $r.mint == [{"policy": $r.activePolicy, "name": $r.key, "quantity": -1}]
-              and ($r.source.outref | text)
-              and $r.source.policy == $r.activePolicy
-              and $r.source.name == $r.key
-              and $r.source.quantity == 1
-              and $r.leaf == "Terminal"
-              and ($r.unknown.detail | text)
-              and ($r.unknown.trace == null or $r.unknown.trace == "key-unknown")
-              and ($r.unknown.controlTxid | txid)
-              and ($r.terminal.detail | text)
-              and ($r.terminal.trace == null or $r.terminal.trace == "terminal-immutable")
-              and ($r.terminal.controlTxid | txid)
-            )
-          ' "$observed" > /dev/null || { echo 'FAIL: update-terminal observation moved'; exit 1; }
-          echo "ARCHIVE = update-terminal ran from $extracted with no checkout and observed the keyed burn and the Terminal leaf."
   demo1-archive:
     name: Demo 1 journey from the release archive
     needs: blueprint
