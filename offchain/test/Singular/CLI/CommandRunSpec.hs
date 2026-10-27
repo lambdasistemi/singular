@@ -5484,6 +5484,7 @@ signerFlagRefusalRows =
                 [ "--wallet-skey"
                 , "key.skey"
                 , "--wallet-address"
+                , address
                 , "--bundle"
                 , "run.bundle"
                 ]
