@@ -41,7 +41,6 @@ import Singular.CLI.Create
     , createApplication
     , runCreate
     )
-import Singular.CLI.Describe (runDescribeCommand)
 import Singular.CLI.Finish (finish)
 import Singular.CLI.Fold (runFold)
 import Singular.CLI.Inspect (runInspect)
@@ -109,7 +108,6 @@ runRegistryCommand app env = \case
             "inspect"
             (inspectReceipt a)
             (runInspect app env a)
-    Describe a -> runDescribeCommand app env a
     RegistryAddress a ->
         finish
             (envTracer env)

@@ -42,7 +42,7 @@ import Data.Text qualified as T
 import Lens.Micro ((&), (.~))
 import System.Directory (createDirectoryIfMissing)
 import System.Exit (ExitCode (..))
-import System.FilePath (takeDirectory, (</>))
+import System.FilePath ((</>))
 import Test.Hspec
 
 import Cardano.Ledger.Api.Tx.Out (datumTxOutL)
@@ -311,10 +311,6 @@ tableCommands =
                 <> tokenArgs t
                 <> ["--wallet-address", bech32Address (walletAddr (rigWallet rig))]
         )
-    ,
-        ( "describe"
-        , \_ t -> ["registry", "describe", "--json"] <> tokenArgs t
-        )
     , ("fold", \_ t -> ["registry", "fold"] <> tokenArgs t)
     , ("reject", \_ t -> ["registry", "reject"] <> tokenArgs t)
     ,
@@ -355,7 +351,6 @@ activeRows :: Spec
 activeRows = do
     forM_ tableCommands $ \(label, wordsOf) ->
         it ("refuses " <> label <> ", naming the active field") $ withRig $ \rig -> do
-            writeVersion rig
             t <- createdByHash rig "registry" (seedAt 1)
             forgeState rig forgeActive
             (env, probe) <- probedEnv rig
@@ -367,27 +362,18 @@ activeRows = do
             ("gives " <> label <> " on an honest registry its own outcome")
             $ withRig
             $ \rig -> do
-                writeVersion rig
                 t <- createdByHash rig "registry" (seedAt 1)
                 r <- run rig label (wordsOf rig t)
-                expectHonest label t r
+                expectHonest label r
 
 {- | What an honest registry gets from each command: a read succeeds and
 shows the registry, a write with nothing to act on is refused for exactly
 that, in the command's own words, never for any other reason.
 -}
-expectHonest :: String -> String -> Run -> Expectation
-expectHonest label token r = case label of
+expectHonest :: String -> Run -> Expectation
+expectHonest label r = case label of
     "inspect" -> read'
     "inspect with a wallet address" -> read'
-    "describe" -> do
-        outcomeOf rcpt `shouldBe` Just "success"
-        (valueAt "registry" rcpt >>= textAt "stateToken")
-            `shouldBe` Just (T.pack token)
-        (valueAt "state" rcpt >>= valueAt "activeKeys")
-            `shouldBe` Just (Aeson.toJSON (0 :: Int))
-        (valueAt "state" rcpt >>= valueAt "terminalKeys")
-            `shouldBe` Just (Aeson.toJSON (0 :: Int))
     "fold" -> refusedFor "nothing is pending: there is no request to fold"
     "reject" -> refusedFor "nothing is pending: there is no request to reject"
     "reclaim" -> do
@@ -406,12 +392,6 @@ expectHonest label token r = case label of
         runExit r `shouldBe` ExitFailure 10
         outcomeOf rcpt `shouldBe` Just "client-refusal"
         receiptReason r `shouldBe` Just reason
-
-writeVersion :: Rig -> IO ()
-writeVersion rig =
-    writeFile
-        (takeDirectory (rigBlueprint rig) </> "version.txt")
-        "0.10.1\n"
 
 -- ---------------------------------------------------------------------------
 -- The standing of the application pin
@@ -458,19 +438,6 @@ standingRows = do
                     (["registry", "inspect", "--key", "alice"] <> tokenArgs t)
             outcomeOf (runReceipt r) `shouldBe` Just "success"
             textAt "applicationPin" (runReceipt r) `shouldBe` Just standing
-    it
-        "says it in the describe page beside the application policy, not in the release block"
-        $ withRig
-        $ \rig -> do
-            writeVersion rig
-            t <- createdByHash rig "registry" (seedAt 1)
-            r <-
-                run rig "describe" (["registry", "describe", "--json"] <> tokenArgs t)
-            outcomeOf (runReceipt r) `shouldBe` Just "success"
-            fmap (textAt "applicationPin") (valueAt "registry" (runReceipt r))
-                `shouldBe` Just (Just standing)
-            fmap (valueAt "applicationHash") (valueAt "release" (runReceipt r))
-                `shouldBe` Just Nothing
     it "says it in the receipt of a fold that stops with nothing pending" $
         withRig $ \rig -> do
             t <- createdByHash rig "registry" (seedAt 1)

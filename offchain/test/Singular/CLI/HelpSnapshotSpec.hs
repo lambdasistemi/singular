@@ -25,7 +25,8 @@ import System.Environment (lookupEnv)
 import Test.Hspec
 
 import Singular.CLI.Command
-    ( Command (..)
+    ( CLIError (..)
+    , Command (..)
     , parseCommand
     , parseInvocation
     , singularHint
@@ -76,7 +77,10 @@ spec = describe "the help pages" $ do
                     && ["registry", "address"] `elem` paths
                     && ["state"] `elem` paths
                     && ["state", "create"] `elem` paths
-                    && length paths == 16
+                    && length paths == 15
+    it "refuses the removed registry page command" $
+        parseCommand ["registry", "describe"]
+            `shouldBe` Left (UnknownCommand ["registry", "describe"])
     it "are a well-formed declaration for the library" $
         lintDeclaration program `shouldBe` True
     forM_ (commandPaths program) $ \path ->

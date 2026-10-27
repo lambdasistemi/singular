@@ -7,7 +7,6 @@ import Naming.RetireVerifySpec qualified
 import Singular.CLI.BookingRefusalSpec qualified
 import Singular.CLI.CommandRunSpec qualified
 import Singular.CLI.CreateFundingSpec qualified
-import Singular.CLI.DescribeSpec qualified
 import Singular.CLI.FailureSentenceSpec qualified
 import Singular.CLI.FlagGroupSpec qualified
 import Singular.CLI.FoldRulesSpec qualified
@@ -226,9 +225,6 @@ main = hspec $ do
     describe
         (tagged "Singular.CLI.FoldRules" [Cli])
         Singular.CLI.FoldRulesSpec.spec
-    describe
-        (tagged "Singular.CLI.Describe" [Cli])
-        Singular.CLI.DescribeSpec.spec
     describe
         (tagged "Singular.CLI.JournalTransitions" [Cli])
         Singular.CLI.JournalTransitionsSpec.spec

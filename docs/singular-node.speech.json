@@ -9,7 +9,7 @@
       "pause": 400
     },
     {
-      "text": "As a registry operator, you want to use create, fold, reclaim, reject, inspect and describe through singular registry, and create, insert, update, terminate, fold and inspect through open-datum, with a Koios API on your chosen network. The commands that create a registry and book, fold, reclaim and clean up a registration are described in create a registry and register keys on the proved design. You supply the API settings and pinned time material; each write is signed from your vault, or by a signer elsewhere through a bundle file (see Signing a write elsewhere, or from your vault). Commands read raw facts through one logical session, build and evaluate locally, submit signed transactions, and preserve recovery evidence in the registry journal.",
+      "text": "As a registry operator, you want to use create, fold, reclaim, reject and inspect through singular registry, and create, insert, update, terminate, fold and inspect through open-datum, with a Koios API on your chosen network. The commands that create a registry and book, fold, reclaim and clean up a registration are described in create a registry and register keys on the proved design. You supply the API settings and pinned time material; each write is signed from your vault, or by a signer elsewhere through a bundle file (see Signing a write elsewhere, or from your vault). Commands read raw facts through one logical session, build and evaluate locally, submit signed transactions, and preserve recovery evidence in the registry journal.",
       "pause": 400
     },
     {
@@ -373,7 +373,7 @@
       "pause": 400
     },
     {
-      "text": "The address does not say what the registry is for. The blueprint does. singular registry describe --blueprint plutus.json --registry ADDRESS with a Koios URL prints the page, and its release section names the blueprint's title and the application script the registry pins, which is the application that decides what its keys hold. The same page and the receipt of inspect carry the address, the state token and the fingerprint of the registry they read.",
+      "text": "The registry page command has been removed. Reading a registry on the proved design is tracked in issue 744; this command removal supplies no replacement reader.",
       "pause": 400
     }
   ],
@@ -419,7 +419,7 @@
       "pause": 400
     },
     {
-      "text": "Every release ships a table from the hash of Singular's state contract to the releases that carry it, one committed file, data/contracts/state-contracts.json, packaged with the program and shipped in every release bundle. It was filled from the on-chain archive each release published, by the script tools/fill_contract_table.sh, which takes the hash from the blueprint the way the programs do and checks it against the hash the blueprint states. The file names every release it leaves out, with the reason; the first release has no on-chain archive. What the refusal says depends on the table:",
+      "text": "Every release ships a table from the hash of Singular's state contract to the releases that carry it, one committed file, data/contracts/state-contracts.json, packaged with the program and shipped in every release bundle. It was filled from the on-chain archive each release published, by a tool of the earlier command line. That tool has been removed with the registry page command; the table remains packaged until its library and release consumers are retired. The file names every release it leaves out, with the reason; the first release has no on-chain archive. What the refusal says depends on the table:",
       "pause": 400
     },
     {
@@ -477,7 +477,7 @@
       "pause": 400
     },
     {
-      "text": "As Carol, the creator, I run create from an empty directory. Its receipt names stateToken, the registry's state token as POLICY.NAME in hex, and describeCommand, the working singular registry describe line built from the arguments the create ran with: the blueprint as given, the new state token, the provider and network settings, and the network time directory when given. It names no wallet key and no credential file. Run it as printed to read the registry page. I publish nothing else and keep no file anyone else needs: create writes no identity file, and the pending identity it records before its first submission is removed once it finishes. When I add --save-state-token, a create that succeeds also keeps the state token in my settings file, as the registry's name kept by create says.",
+      "text": "As Carol, the creator, I run create from an empty directory. Its receipt names stateToken, the registry's state token as POLICY.NAME in hex. I publish nothing else and keep no file anyone else needs: create writes no identity file, and the pending identity it records before its first submission is removed once it finishes. When I add --save-state-token, a create that succeeds also keeps the state token in my settings file, as the registry's name kept by create says.",
       "pause": 400
     },
     {
@@ -485,7 +485,7 @@
       "pause": 400
     },
     {
-      "text": "As Bob, handed the address of a registry that Mallory created with a policy of her own pinned as its active policy, I am refused before anything about the registry is shown or built, and the refusal names the pinned policy that differs. Every command that names a registry runs this comparison first, the reads included: inspect and describe do, and so does the report of an interrupted create, which resolves the state token before it prints the identity the create recorded. A registry that fails the comparison is refused and the report is not printed; the report goes on for a registry that passes and for a token the chain has no record of, where no registry exists to be shown. singular submit runs it for the registry a bundle names, as submitting a signed bundle says.",
+      "text": "As Bob, handed the address of a registry that Mallory created with a policy of her own pinned as its active policy, I am refused before anything about the registry is shown or built, and the refusal names the pinned policy that differs. Every command that names a registry runs this comparison first, the reads included: inspect does, and so does the report of an interrupted create, which resolves the state token before it prints the identity the create recorded. A registry that fails the comparison is refused and the report is not printed; the report goes on for a registry that passes and for a token the chain has no record of, where no registry exists to be shown. singular submit runs it for the registry a bundle names, as submitting a signed bundle says.",
       "pause": 400
     },
     {
@@ -737,6 +737,6 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "9ad82280572370358431b1c035ce99bc83cc2357b03b6a75bf261bb556912d73"
+    "sha256": "e41ca5c3648693be780c19d1214d0bdb45022dcacf9aaf29f606d82383913134"
   }
 }

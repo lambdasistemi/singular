@@ -139,7 +139,6 @@ spec = describe "the switch --save-state-token of registry create" $ do
             , ["registry", "reject"]
             , ["registry", "reclaim"]
             , ["registry", "inspect"]
-            , ["registry", "describe"]
             , ["submit", "create.bundle"]
             , ["wallet", "create"]
             , ["wallet", "address"]

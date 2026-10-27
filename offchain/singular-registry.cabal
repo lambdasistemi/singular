@@ -212,7 +212,6 @@ library registry-cli
     Singular.CLI.Command
     Singular.CLI.Create
     Singular.CLI.Declared
-    Singular.CLI.Describe
     Singular.CLI.Failure
     Singular.CLI.Finish
     Singular.CLI.FlagGroup
@@ -592,7 +591,6 @@ test-suite cage-tests
     Singular.CLI.BookingRefusalSpec
     Singular.CLI.CommandRunSpec
     Singular.CLI.CreateFundingSpec
-    Singular.CLI.DescribeSpec
     Singular.CLI.OneOutputCreateSpec
     Singular.CLI.PayloadSpec
     Singular.CLI.PrepareSpec

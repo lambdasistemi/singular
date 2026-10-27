@@ -195,8 +195,7 @@ flowchart TD
 
 The folder `share` also holds the deployment blueprint, `plutus.json`, that the
 commands take as `--blueprint`, with `version.txt` beside it naming the release:
-`singular registry describe` reads its version label from that file and refuses
-a blueprint without one.
+the on-chain archive carries the same blueprint and adjacent version label.
 
 On Linux the folders `lib` and `lib-node` each also hold a C library and its loader,
 and the launcher starts the program through that loader, which is why the programs

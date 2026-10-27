@@ -180,16 +180,6 @@ spec = describe "the settings given by the environment and a config file" $ do
                 ["wallet", "create", "--vault", "new.vault", "--network-magic", "1"]
                 `shouldBe` meaning
                     ["wallet", "create", "--vault", "new.vault", "--network-magic", "1"]
-        it "gives describe no state directory to refuse" $ do
-            let line =
-                    ["registry", "describe"]
-                        <> concat
-                            [ [f, v]
-                            | (f, _, _, v) <- settings
-                            , f /= "--state-dir"
-                            ]
-            withEnvironment [("SINGULAR_STATE_DIR", "/state")] line
-                `shouldBe` meaning line
     describe "the vault" $ do
         let signed = meaning (foldWith settings)
             rivalsOnTheLine =

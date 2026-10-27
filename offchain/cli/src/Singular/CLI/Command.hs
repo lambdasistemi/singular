@@ -19,8 +19,6 @@ below happens before anything is read or submitted.
   its windows, signed and funded by the wallet that runs it;
 * @registry inspect@ reads the registry and one key back, and accepts
   no signing key at all;
-* @registry describe@ reads the registry page from the chain alone, and
-  accepts no wallet, key, state directory or other actor file at all;
 * @submit@ sends a bundle its signers witnessed, taking the witness
   files, the bundle and the node settings, and no wallet key or vault.
 
@@ -34,7 +32,6 @@ module Singular.CLI.Command
       Command (..)
     , AddressArgs (..)
     , CreateArgs (..)
-    , DescribeArgs (..)
     , EntryArgs (..)
     , EntryMode (..)
     , FoldArgs (..)
@@ -258,24 +255,6 @@ data CreateArgs = CreateArgs
     }
     deriving stock (Eq, Show)
 
-{- | @registry describe@: the token, the blueprint, a provider and a network.
-
-Never a wallet, key, state directory or other actor file: those are
-refused with their names before anything is read. The page prints as
-indented JSON; @--json@ is accepted and changes nothing.
--}
-data DescribeArgs = DescribeArgs
-    { describeBlueprint :: FilePath
-    , describeAccess :: RegistryAccess
-    {- ^ The registry, by its state token: required, as on every command
-    but create.
-    -}
-    , describeProvider :: ProviderSettings
-    , describeJson :: Bool
-    -- ^ @--json@ given: accepted for scripts that pass it, the page is JSON either way
-    }
-    deriving stock (Eq, Show)
-
 {- | What an entry command does with the transactions it builds: sign and
 submit them with the caller's key, or prepare them for a public address
 and submit nothing. A preview carries no signing key at all.
@@ -487,7 +466,6 @@ data Command
       -}
       Help String
     | Create CreateArgs (Maybe ApplicationPolicy)
-    | Describe DescribeArgs
     | RegistryAddress AddressArgs
     | Fold FoldArgs
     | Reject RejectArgs
@@ -515,12 +493,6 @@ data CLIError
       its name and the command, before any key is read or anything written
       -}
       UnsupportedFlag String String
-    | {- | A setting @registry describe@ does not take: refused with its
-      name, before anything is read. Describe reads the public registry
-      and writes nothing; it takes no wallet, key, state directory or
-      other actor file.
-      -}
-      RefusedSetting String
     | -- | the settings the config file or the environment give cannot be used, said in one sentence
       ConfigRefused String
     deriving stock (Eq, Show)
@@ -556,7 +528,7 @@ readFlags group =
         . readLine
             Accepted
                 { acceptedValued = group <> ["--witnesses", "--config"]
-                , acceptedEarly = ["--json"]
+                , acceptedEarly = []
                 , acceptedSwitches =
                     commonSwitches <> ["--version", flagName saveStateToken]
                 }
@@ -567,12 +539,11 @@ first, as the commands read them.
 -}
 commandFrom :: [(String, String)] -> Raw -> Either CLIError Command
 commandFrom environment (Raw ws allFlags) = do
-    let jsonSwitch = any ((== "--json") . fst) allFlags
-        witnesses = [v | ("--witnesses", Just v) <- allFlags]
+    let witnesses = [v | ("--witnesses", Just v) <- allFlags]
         flags =
             [ flag
             | flag@(name, _) <- allFlags
-            , name `notElem` ["--json", "--witnesses", "--version", "--config"]
+            , name `notElem` ["--witnesses", "--version", "--config"]
             ]
         helpAsked = "--help" `elem` map fst flags
         askedFor =
@@ -595,7 +566,6 @@ commandFrom environment (Raw ws allFlags) = do
                     refuseWindows ws flags
                         >> refuseSaveStateToken ws flags
                         >> refuseOutputsAt ws flags
-                        >> refuseJson ws jsonSwitch
                         >> refuseWitnesses ws witnesses
                         >> refuseWalletSettings ws flags
                         >> case ws of
@@ -645,13 +615,6 @@ commandFrom environment (Raw ws allFlags) = do
                                     >> refuseRequest flags
                                     >> refuseFold flags
                                     >> (Inspect <$> (registryFlags flags >>= inspectArgs environment))
-                            ["registry", "describe"] ->
-                                refuseApplicationPolicy flags
-                                    >> refuseDescribeSettings flags
-                                    >> ( Describe
-                                            <$> ( registryFlags flags >>= \completed -> describeArgs environment completed jsonSwitch
-                                                )
-                                       )
                             _ -> Left (UnknownCommand ws)
   where
     -- @--witnesses@ names what @submit@ sends; any other command refuses
@@ -662,13 +625,6 @@ commandFrom environment (Raw ws allFlags) = do
                 ( BadValue
                     "--witnesses"
                     "is a submit flag: only submit reads witness files"
-                )
-    refuseJson words' json =
-        when (json && words' /= ["registry", "describe"]) $
-            Left
-                ( BadValue
-                    "--json"
-                    "is a registry describe flag: only describe prints the page as JSON"
                 )
     -- @--save-state-token@ keeps the name of the registry a create makes; any
     -- other command refuses it by name rather than ignore it.
@@ -821,33 +777,6 @@ commandFrom environment (Raw ws allFlags) = do
                     "--application-policy"
                     "is a registry create flag: only create pins an application policy"
                 )
-    -- @registry describe@ reads the public registry and writes nothing:
-    -- every setting below names something it neither enforces nor keeps,
-    -- so each is refused with its own name.
-    refuseDescribeSettings flags =
-        forM_ describeRefusedFlags $ \flag ->
-            when (isJust (lookup flag flags)) $
-                Left (RefusedSetting flag)
-    describeRefusedFlags :: [String]
-    describeRefusedFlags =
-        [ "--wallet-skey"
-        , "--bundle"
-        , "--state-dir"
-        , "--receipt"
-        , "--wallet-address"
-        , "--seed"
-        , "--key"
-        , "--key-hex"
-        , "--deposit"
-        , "--payload"
-        , "--payload-schema"
-        , "--fund-input"
-        , "--max-outlay"
-        , "--confirm-timeout"
-        , "--preview"
-        , "--request"
-        , "--fold"
-        ]
     createArgs flags = do
         saveTo <- saveTarget flags
         when (isJust (lookup "--state-token" flags)) $
@@ -1166,17 +1095,6 @@ commandFrom environment (Raw ws allFlags) = do
             _ ->
                 Left
                     (BadValue "--max-outlay" "is not a positive number of lovelace")
-    describeArgs env flags json = do
-        bp <- required "--blueprint" flags
-        settings <- readProviderSettings MissingFlag BadValue flags
-        access <- registryAccess env flags
-        pure
-            DescribeArgs
-                { describeBlueprint = bp
-                , describeAccess = access
-                , describeProvider = settings
-                , describeJson = json
-                }
     inspectArgs env flags = do
         when (isJust (lookup "--wallet-skey" flags)) $
             Left SigningKeyNotAccepted
@@ -1411,9 +1329,6 @@ renderCLIError = \case
             <> command
             <> "`: only fold, reclaim and reject enforce it, and a constraint the command does not enforce is refused, never ignored"
     ConfigRefused why -> why
-    RefusedSetting flag ->
-        flag
-            <> " is not accepted by `registry describe`: describe reads the public registry and writes nothing"
 
 -- | The overview of the supported commands: the page `singular --help` prints.
 usage :: String
@@ -1447,7 +1362,6 @@ references it looks up.
 neededRoles :: Command -> Set ReferenceRole
 neededRoles = \case
     Create _ _ -> Set.singleton RoleState
-    Describe _ -> Set.empty
     RegistryAddress _ -> Set.empty
     Fold _ -> everything
     Reject _ -> Set.fromList [RoleState, RoleRequest]

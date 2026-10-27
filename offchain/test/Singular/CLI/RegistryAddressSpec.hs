@@ -47,7 +47,6 @@ import Test.Hspec
 
 import Singular.CLI.Command
     ( Command (..)
-    , DescribeArgs (..)
     , FoldArgs (..)
     , InspectArgs (..)
     , ProviderSettings (..)
@@ -104,7 +103,6 @@ reading = \case
             (reclaimAccess a)
             (providerMagic (writeProvider (reclaimWrite a)))
     Inspect a -> named (inspectAccess a) (providerMagic (inspectProvider a))
-    Describe a -> named (describeAccess a) (providerMagic (describeProvider a))
     _ -> Nothing
   where
     named access magic =
@@ -173,7 +171,6 @@ commands =
         ( "registry inspect"
         , ["registry", "inspect"] <> node <> ["--key", "key"]
         )
-    , ("registry describe", ["registry", "describe"] <> node)
     ]
 
 inspectLine :: [String]
@@ -616,7 +613,7 @@ agreementRows = describe "a state token and a network magic beside the registry"
                     , (magicForm, magicSetting, "42")
                     ]
                     `refusedWith` ["42", "singular_preprod", "--network-magic"]
-    it "refuses each of the five commands that takes a state token" $
+    it "refuses each of the four commands that takes a state token" $
         forM_ commands $ \(name, base) -> do
             toldPlaced
                 base
@@ -749,7 +746,7 @@ settingBlock option page =
 -- | The help tells what the registry setting is and where it is read.
 helpRows :: Spec
 helpRows = describe "the help" $ do
-    forM_ ["fold", "reject", "reclaim", "inspect", "describe"] $ \command ->
+    forM_ ["fold", "reject", "reclaim", "inspect"] $ \command ->
         describe ("of registry " <> command) $ do
             let page = singularHelp singularVersion [] ["registry", command]
             it "lists --registry, its variable and its key" $ do

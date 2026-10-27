@@ -1188,35 +1188,6 @@ previewIdentity app submitting a rel addr utxos pp mustPublish = do
         providerFromCreate = case createMode a of
             Submit settings -> writeProvider settings
             Preview settings _ -> settings
-        quotedForShell word =
-            if not (null word) && all (`elem` safeChars) word
-                then word
-                else "'" <> concatMap escapeTick word <> "'"
-          where
-            safeChars = ['a' .. 'z'] <> ['A' .. 'Z'] <> ['0' .. '9'] <> "_@%+=:,./-"
-            escapeTick '\'' = "'\\''"
-            escapeTick letter = [letter]
-        describeParts =
-            [ "singular"
-            , "registry"
-            , "describe"
-            , "--blueprint"
-            , createBlueprint a
-            , "--state-token"
-            , T.unpack (renderStateToken (stateTokenOf rel seedIn))
-            , "--koios-url"
-            , providerUrl providerFromCreate
-            , "--network-magic"
-            , show (providerMagic providerFromCreate)
-            ]
-                <> maybe
-                    []
-                    (\file -> ["--koios-token-file", file])
-                    (providerTokenFile providerFromCreate)
-                <> case providerTimeDirectory providerFromCreate of
-                    Nothing -> []
-                    Just dir -> ["--network-time", dir]
-        describeLine = T.pack (unwords (map quotedForShell describeParts))
         -- the address and the fingerprint of the registry, null while it has no identity
         registryIdentity
             | isFirstFailure =
@@ -1232,12 +1203,6 @@ previewIdentity app submitting a rel addr utxos pp mustPublish = do
                 , if isFirstFailure
                     then toJSON Aeson.Null
                     else toJSON (renderStateToken (stateTokenOf rel seedIn))
-                )
-            ,
-                ( "describeCommand"
-                , if isFirstFailure
-                    then toJSON Aeson.Null
-                    else toJSON describeLine
                 )
             ,
                 ( "seed"

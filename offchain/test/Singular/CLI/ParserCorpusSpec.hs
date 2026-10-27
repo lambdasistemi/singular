@@ -119,7 +119,6 @@ spec = describe "the command lines in use" $ do
         accepted
             `shouldBe` sort
                 [ "Create"
-                , "Describe"
                 , "Fold"
                 , "Help"
                 , "Inspect"

@@ -3958,8 +3958,8 @@
     "index": 2,
     "name": "docs-install/what-is-inside-the-tarball-02",
     "pause_ms": 400,
-    "text": "The folder share also holds the deployment blueprint, plutus.json, that the commands take as --blueprint, with version.txt beside it naming the release: singular registry describe reads its version label from that file and refuses a blueprint without one.",
-    "v": "35fc55cae9e2"
+    "text": "The folder share also holds the deployment blueprint, plutus.json, that the commands take as --blueprint, with version.txt beside it naming the release: the on-chain archive carries the same blueprint and adjacent version label.",
+    "v": "788e249bc27e"
    },
    {
     "index": 3,
@@ -8973,162 +8973,6 @@
    }
   ]
  },
- "docs/registry-page.md": {
-  "a-page-from-the-two-actor-run": [
-   {
-    "index": 0,
-    "name": "docs-registry-page/a-page-from-the-two-actor-run-00",
-    "pause_ms": 500,
-    "text": "A page from the two-actor run.",
-    "v": "f50e65b22c68"
-   },
-   {
-    "index": 1,
-    "name": "docs-registry-page/a-page-from-the-two-actor-run-01",
-    "pause_ms": 400,
-    "text": "Alice's page after her own fold, on the development network: the facts that run recorded, with the release it ran, version 0.10.1, as the command prints them now. A later release prints its own label:",
-    "v": "f7687f8d5fa9"
-   },
-   {
-    "index": 2,
-    "name": "docs-registry-page/a-page-from-the-two-actor-run-02",
-    "pause_ms": 400,
-    "text": "One active key, no terminal keys, one fold since create: Alice's own insertion, folded by her, read back under the fold's root.",
-    "v": "9dc0116f1aa6"
-   }
-  ],
-  "read-it": [
-   {
-    "index": 0,
-    "name": "docs-registry-page/read-it-00",
-    "pause_ms": 500,
-    "text": "Read it.",
-    "v": "0e6b15808fd8"
-   },
-   {
-    "index": 1,
-    "name": "docs-registry-page/read-it-01",
-    "pause_ms": 400,
-    "text": "From the extracted release archive, whose blueprint is onchain/plutus.json with the version.txt beside it, and with the state token:",
-    "v": "2aae2a2ea58c"
-   },
-   {
-    "index": 2,
-    "name": "docs-registry-page/read-it-02",
-    "pause_ms": 400,
-    "text": "The page prints as indented JSON, which a person reads and any JSON parser reads. A script takes a field by name:",
-    "v": "df413fcb4c5a"
-   },
-   {
-    "index": 3,
-    "name": "docs-registry-page/read-it-03",
-    "pause_ms": 400,
-    "text": "The json switch is accepted and changes nothing, so a script that passes it keeps working:",
-    "v": "31fa67be955c"
-   },
-   {
-    "index": 4,
-    "name": "docs-registry-page/read-it-04",
-    "pause_ms": 400,
-    "text": "The command takes the state token, the blueprint of the packaged release, a provider and a network. It takes no wallet, no signing key, no state directory and no file of any actor; any other setting is refused by name before anything is read. The version label comes from the version file beside the blueprint. From an extracted release archive, run the archive's own singular with its blueprint and the adjacent version file: the Demo 1 journey reads the page this way right after create, from the command the create receipt printed. A success prints the page alone and writes no file; every refusal prints one JSON receipt and exits non-zero.",
-    "v": "b1b412823a82"
-   },
-   {
-    "index": 5,
-    "name": "docs-registry-page/read-it-05",
-    "pause_ms": 400,
-    "text": "The page carries no clock, no chain tip and no session identity, so identical inputs give identical bytes. Pending requests appear in one fixed order. With or without the json switch the page is the same bytes: the keys come in alphabetical order, as the encoder prints them, and the table above is the order of this page's sections, not of the keys.",
-    "v": "3a619f42423b"
-   }
-  ],
-  "read-the-registry-page-generated-from-the-chain": [
-   {
-    "index": 0,
-    "name": "docs-registry-page/read-the-registry-page-generated-from-the-chain-00",
-    "pause_ms": 500,
-    "text": "Read the registry page generated from the chain.",
-    "v": "8f1e897ab2f5"
-   },
-   {
-    "index": 1,
-    "name": "docs-registry-page/read-the-registry-page-generated-from-the-chain-01",
-    "pause_ms": 400,
-    "text": "As Alice, you hold a registry's state token and the packaged release, and nothing else: no wallet file of yours, nothing from the person who created the registry. You run one command and read which registry this is, which release it runs, what its rules are and what it holds now. As Bob, on your own machine, you run the same command: reading the same chain state with the same release gives you the same bytes. As a script, you read the page with an ordinary JSON parser and take its fields by name. As an integrator, you want to know what the page does not prove, and the page says so itself.",
-    "v": "1420df58fcc8"
-   }
-  ],
-  "refusals": [
-   {
-    "index": 0,
-    "name": "docs-registry-page/refusals-00",
-    "pause_ms": 500,
-    "text": "Refusals.",
-    "v": "c3205b6b070b"
-   },
-   {
-    "index": 1,
-    "name": "docs-registry-page/refusals-01",
-    "pause_ms": 400,
-    "text": "A refusal prints one JSON receipt on standard output with a non-zero exit status, as every command does.",
-    "v": "627fc4801843"
-   }
-  ],
-  "the-registrys-pinned-policies": [
-   {
-    "index": 0,
-    "name": "docs-registry-page/the-registrys-pinned-policies-00",
-    "pause_ms": 500,
-    "text": "The registry's pinned policies.",
-    "v": "4433ed65c39c"
-   },
-   {
-    "index": 1,
-    "name": "docs-registry-page/the-registrys-pinned-policies-01",
-    "pause_ms": 400,
-    "text": "The registry section shows the two policies the registry's datum pins: the application and active policies. They are the registry's own statement, read from its state datum, and they never change after the registry is created. The command compares the active policy with the ones the release derives for this registry before it prints anything: a registry that pins another is refused, as the refusals below say.",
-    "v": "707e87b19fc3"
-   },
-   {
-    "index": 2,
-    "name": "docs-registry-page/the-registrys-pinned-policies-02",
-    "pause_ms": 400,
-    "text": "The application policy is the one the command cannot derive. The command is told the registry and the release, and the release does not say which application the registry was created for, so the application policy shown is the datum's own and the page says so beside it: the field applicationPin reads not-checked-against-any-blueprint. An application's own program, which knows its blueprint, derives the application policy as well and compares it, and its output reads compared. The page never presents a value read from the datum as if the release had derived it, and the release section holds only the release's own claims.",
-    "v": "154680ee17df"
-   }
-  ],
-  "what-is-not-in-this-page": [
-   {
-    "index": 0,
-    "name": "docs-registry-page/what-is-not-in-this-page-00",
-    "pause_ms": 500,
-    "text": "What is not in this page.",
-    "v": "8eab929971d5"
-   },
-   {
-    "index": 1,
-    "name": "docs-registry-page/what-is-not-in-this-page-01",
-    "pause_ms": 400,
-    "text": "A block anchor for the last fold waits on its own provider read. The documentation links are computed from the claimed version, not checked against a published asset. The independently derived action identity in the public report waits on its own slice. None of these changes what the page shows; each arrives separately.",
-    "v": "9056695ccfde"
-   }
-  ],
-  "what-the-page-does-not-prove": [
-   {
-    "index": 0,
-    "name": "docs-registry-page/what-the-page-does-not-prove-00",
-    "pause_ms": 500,
-    "text": "What the page does not prove.",
-    "v": "8ba9e82135e1"
-   },
-   {
-    "index": 1,
-    "name": "docs-registry-page/what-the-page-does-not-prove-01",
-    "pause_ms": 400,
-    "text": "The provenance field says it in fixed text: the page shows the public history of the state token from create to the live state output, each fold's rebuilt root checked against the root recorded in that fold's state datum, and nothing beyond it. The history was read from Koios. The provider's answers are unverified: raw facts and untrusted reconstruction material, no ledger proofs and no anchor. The release label is the archive's own claim. The page is unsigned.",
-    "v": "730e46d8c82b"
-   }
-  ]
- },
  "docs/retirement.md": {
   "archived-broader-model-retirement-evidence": [
    {
@@ -9557,8 +9401,8 @@
     "index": 2,
     "name": "docs-singular-node/a-registry-of-other-contracts-02",
     "pause_ms": 400,
-    "text": "Every release ships a table from the hash of Singular's state contract to the releases that carry it, one committed file, data/contracts/state-contracts.json, packaged with the program and shipped in every release bundle. It was filled from the on-chain archive each release published, by the script tools/fill_contract_table.sh, which takes the hash from the blueprint the way the programs do and checks it against the hash the blueprint states. The file names every release it leaves out, with the reason; the first release has no on-chain archive. What the refusal says depends on the table:",
-    "v": "b9f115f8a4f9"
+    "text": "Every release ships a table from the hash of Singular's state contract to the releases that carry it, one committed file, data/contracts/state-contracts.json, packaged with the program and shipped in every release bundle. It was filled from the on-chain archive each release published, by a tool of the earlier command line. That tool has been removed with the registry page command; the table remains packaged until its library and release consumers are retired. The file names every release it leaves out, with the reason; the first release has no on-chain archive. What the refusal says depends on the table:",
+    "v": "51c55a62eae6"
    },
    {
     "index": 3,
@@ -9791,8 +9635,8 @@
     "index": 2,
     "name": "docs-singular-node/connecting-singular-to-a-ledger-provider-02",
     "pause_ms": 400,
-    "text": "As a registry operator, you want to use create, fold, reclaim, reject, inspect and describe through singular registry, and create, insert, update, terminate, fold and inspect through open-datum, with a Koios API on your chosen network. The commands that create a registry and book, fold, reclaim and clean up a registration are described in create a registry and register keys on the proved design. You supply the API settings and pinned time material; each write is signed from your vault, or by a signer elsewhere through a bundle file (see Signing a write elsewhere, or from your vault). Commands read raw facts through one logical session, build and evaluate locally, submit signed transactions, and preserve recovery evidence in the registry journal.",
-    "v": "2675aacba8f6"
+    "text": "As a registry operator, you want to use create, fold, reclaim, reject and inspect through singular registry, and create, insert, update, terminate, fold and inspect through open-datum, with a Koios API on your chosen network. The commands that create a registry and book, fold, reclaim and clean up a registration are described in create a registry and register keys on the proved design. You supply the API settings and pinned time material; each write is signed from your vault, or by a signer elsewhere through a bundle file (see Signing a write elsewhere, or from your vault). Commands read raw facts through one logical session, build and evaluate locally, submit signed transactions, and preserve recovery evidence in the registry journal.",
+    "v": "dd690b4422af"
    },
    {
     "index": 3,
@@ -10071,8 +9915,8 @@
     "index": 2,
     "name": "docs-singular-node/naming-the-registry-by-its-state-token-02",
     "pause_ms": 400,
-    "text": "As Carol, the creator, I run create from an empty directory. Its receipt names stateToken, the registry's state token as POLICY.NAME in hex, and describeCommand, the working singular registry describe line built from the arguments the create ran with: the blueprint as given, the new state token, the provider and network settings, and the network time directory when given. It names no wallet key and no credential file. Run it as printed to read the registry page. I publish nothing else and keep no file anyone else needs: create writes no identity file, and the pending identity it records before its first submission is removed once it finishes. When I add --save-state-token, a create that succeeds also keeps the state token in my settings file, as the registry's name kept by create says.",
-    "v": "9b4f5b124983"
+    "text": "As Carol, the creator, I run create from an empty directory. Its receipt names stateToken, the registry's state token as POLICY.NAME in hex. I publish nothing else and keep no file anyone else needs: create writes no identity file, and the pending identity it records before its first submission is removed once it finishes. When I add --save-state-token, a create that succeeds also keeps the state token in my settings file, as the registry's name kept by create says.",
+    "v": "5cd169f237f2"
    },
    {
     "index": 3,
@@ -10085,8 +9929,8 @@
     "index": 4,
     "name": "docs-singular-node/naming-the-registry-by-its-state-token-04",
     "pause_ms": 400,
-    "text": "As Bob, handed the address of a registry that Mallory created with a policy of her own pinned as its active policy, I am refused before anything about the registry is shown or built, and the refusal names the pinned policy that differs. Every command that names a registry runs this comparison first, the reads included: inspect and describe do, and so does the report of an interrupted create, which resolves the state token before it prints the identity the create recorded. A registry that fails the comparison is refused and the report is not printed; the report goes on for a registry that passes and for a token the chain has no record of, where no registry exists to be shown. singular submit runs it for the registry a bundle names, as submitting a signed bundle says.",
-    "v": "4b2df66c86a4"
+    "text": "As Bob, handed the address of a registry that Mallory created with a policy of her own pinned as its active policy, I am refused before anything about the registry is shown or built, and the refusal names the pinned policy that differs. Every command that names a registry runs this comparison first, the reads included: inspect does, and so does the report of an interrupted create, which resolves the state token before it prints the identity the create recorded. A registry that fails the comparison is refused and the report is not printed; the report goes on for a registry that passes and for a token the chain has no record of, where no registry exists to be shown. singular submit runs it for the registry a bundle names, as submitting a signed bundle says.",
+    "v": "d0a8cf8f619d"
    },
    {
     "index": 5,
@@ -10742,8 +10586,8 @@
     "index": 5,
     "name": "docs-singular-node/what-the-address-is-05",
     "pause_ms": 400,
-    "text": "The address does not say what the registry is for. The blueprint does. singular registry describe --blueprint plutus.json --registry ADDRESS with a Koios URL prints the page, and its release section names the blueprint's title and the application script the registry pins, which is the application that decides what its keys hold. The same page and the receipt of inspect carry the address, the state token and the fingerprint of the registry they read.",
-    "v": "75e6ee5e4dd8"
+    "text": "The registry page command has been removed. Reading a registry on the proved design is tracked in issue 744; this command removal supplies no replacement reader.",
+    "v": "ccc67fa59f0f"
    }
   ],
   "when-the-provider-cannot-be-used": [

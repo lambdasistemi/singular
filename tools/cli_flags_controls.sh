@@ -167,7 +167,7 @@ expect undocumented-flag-address 1 '^undocumented: singular registry address tak
 # The settings table forgets that the address command takes the registry's address.
 fresh
 sed -i 's/^\(| `--registry ADDRESS` | .*\), `address` |/\1 |/' "$table"
-grep -q '^| `--registry ADDRESS` | .*`describe` |' "$table" || {
+grep -q '^| `--registry ADDRESS` | .*`inspect` |' "$table" || {
   echo "SETUP-FAIL: the registry row did not change" >&2
   exit 2
 }
@@ -216,8 +216,8 @@ expect command-help-fails-od 1 '^open-datum update --help exited non-zero'
 
 # A quotation of a program's help that the program no longer prints.
 fresh
-sed -i 's/^  singular registry describe  Print the registry page$/  singular registry describe  Print the register page/' "$table"
-grep -q 'Print the register page' "$table" || {
+sed -i 's/Boot a registry, or preview its identity/Boot a register, or preview its identity/' "$table"
+grep -q 'Boot a register, or preview its identity' "$table" || {
   echo "SETUP-FAIL: the quotation did not change" >&2
   exit 2
 }

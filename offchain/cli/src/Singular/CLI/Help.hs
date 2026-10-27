@@ -25,7 +25,6 @@ import Singular.CLI.Options
     , Shape (..)
     , helpText
     , standing
-    , switch'
     , usageText
     , valued
     )
@@ -74,7 +73,6 @@ registryGroup =
         , rejectLeaf
         , reclaimLeaf
         , inspectLeaf
-        , describeLeaf
         ]
 
 stateGroup :: Node
@@ -371,43 +369,6 @@ inspectLeaf =
             , leafNotes = exitStatuses
             }
 
-describeLeaf :: Node
-describeLeaf =
-    Runs
-        Leaf
-            { leafName = "describe"
-            , leafSummary = "Print the registry page"
-            , leafDescription =
-                [ "Reads the registry page from the chain alone: which registry this \
-                  \is, which release it runs, what its rules are and what it holds \
-                  \now. It takes no wallet, key, state directory or other actor file: \
-                  \each such setting is refused by name before anything is read."
-                , "The version label comes from the version file beside the \
-                  \blueprint; it is refused by name when missing, unreadable or \
-                  \malformed."
-                , "The page is printed as indented JSON, which a JSON parser \
-                  \reads. --json is accepted and changes nothing: the page is \
-                  \JSON either way."
-                ]
-            , leafShape =
-                Each
-                    [ Needs blueprint
-                    , registryShape
-                    , registryNodeShape
-                    , Takes json
-                    , tracingShape
-                    ]
-            , leafWord = Nothing
-            , leafEnvironment = [environmentLog]
-            , leafExamples =
-                [ "singular registry describe --blueprint plutus.json \\"
-                , "    --registry <address> " <> preprodUrlExample
-                ]
-            , leafNotes =
-                "Prints the page alone, as indented JSON with or without --json, and writes no file."
-                    : drop 1 exitStatuses
-            }
-
 -- ---------------------------------------------------------------------------
 -- wallet and submit
 
@@ -583,12 +544,6 @@ foldRequest =
 reclaimRequest :: Flag
 reclaimRequest =
     valued "--request" "TXID#IX" "The pending request to take back."
-
-json :: Flag
-json =
-    switch'
-        "--json"
-        "Accepted and changes nothing: the page is printed as indented JSON either way."
 
 vaultToCreate :: Flag
 vaultToCreate =
