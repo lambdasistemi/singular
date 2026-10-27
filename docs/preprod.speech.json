@@ -95,7 +95,7 @@
       "pause": 400
     },
     {
-      "text": "Two availability facts to read this reproduction with. The deployment tool builds from the current source, but no required workflow exercises it on every candidate — the verifier output above is a historical run of 2026-09-15 against release main-c27c3dd8…, and the manifest's own claims are what you would re-check. The attached claim command names register-rows, a retained legacy command that is not currently buildable or verified against the released source, with its repair owned by #283; until that repair lands the attached claim is this record's history, not a runnable instruction.",
+      "text": "Two availability facts to read this reproduction with. The deployment tool builds from the current source, but no required workflow exercises it on every candidate — the verifier output above is a historical run of 2026-09-15 against release main-c27c3dd8…, and the manifest's own claims are what you would re-check. The attached claim command names register-rows, which has been removed from the current source along with its flake export. The attached claim remains part of this record's history; it is not a runnable instruction for this source.",
       "pause": 400
     },
     {
@@ -125,6 +125,6 @@
   ],
   "_source": {
     "file": "preprod.md",
-    "sha256": "fc048f51b14ef68f6dc30a95770ab8312726cc5313de884f9929700976d295fa"
+    "sha256": "a27252d20dfbde64e057afad104e8f88549bb1668e264a2a5e09abd7699f8bc0"
   }
 }

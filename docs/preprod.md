@@ -161,7 +161,7 @@ nix run ./offchain#deployment -- verify \
   --wallet-skey ./joiner.skey \
   --deployment docs/preprod.json
 
-# Historical invocation only; register-rows remains unverified under #283.
+# Historical invocation only; the current source no longer exports register-rows.
 nix run .#register-rows -- \
   --node-socket /run/cardano-node/node.socket --network-magic 1 \
   --wallet-skey ./joiner.skey \
@@ -172,12 +172,7 @@ Two availability facts to read this reproduction with. The `deployment`
 tool builds from the current source, but no required workflow exercises
 it on every candidate — the verifier output above is a historical run of
 2026-09-15 against release `main-c27c3dd8…`, and the manifest's own
-claims are what you would re-check. The attached claim command names
-`register-rows`, a retained legacy command that is not currently
-buildable or verified against the released source, with its repair owned
-by [#283](https://github.com/lambdasistemi/singular/issues/283); until
-that repair lands the attached claim is this record's history, not a
-runnable instruction.
+claims are what you would re-check. The attached claim command names `register-rows`, which has been removed from the current source along with its flake export. The attached claim remains part of this record's history; it is not a runnable instruction for this source.
 
 `verify` re-runs the manifest checks against facts returned by the selected
 API. Those facts remain Unbound and Unverified; a successful verifier run

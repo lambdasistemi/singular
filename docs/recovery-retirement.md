@@ -27,14 +27,7 @@ certifying the edge in advance; the fold itself asks no application to sign.
 
 ## What you can do
 
-The recovery row runner is a retained legacy command of the current
-release: it stays declared and shipped, but it is not currently buildable
-or verified against the released source, and its re-cut against the
-current registry mode is owned by
-[#172](https://github.com/lambdasistemi/singular/issues/172). Its usage
-is kept below so the page stays faithful to what these rows did — not as
-a claim you can run it today. When it was current, it ran the eleven
-recovery rows against a real devnet node from `offchain/`:
+The recovery row runner has been removed from the current source, including its executable declaration and flake export. The historical invocation below records how the archived eleven recovery rows ran against a real devnet node; it is not a runnable instruction for the current source. Naming has no command port to the new design.
 
 ```sh
 cd offchain
@@ -92,13 +85,7 @@ could end a name, the thief could end it and recovery would arrive too late.
 The recovery route is the same proof recovery itself uses: reveal the preimage
 of the stored commitment, and sign with that address's payment key.
 
-Run the ending rows against a real devnet node from `offchain/` — the
-same retained-legacy status applies here as above: the retirement row
-runner stays declared and shipped, is not currently buildable or verified
-against the released source, and its re-cut is owned by
-[#172](https://github.com/lambdasistemi/singular/issues/172). The usage
-is kept so the ending route stays documented, not as a claim you can run
-it today:
+The retirement row runner has also been removed from the current source. These historical invocations describe the archived ending rows and their controls; the current source exports no such command.
 
 ```sh
 cd offchain

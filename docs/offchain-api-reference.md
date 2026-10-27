@@ -299,8 +299,7 @@ session ownership changed.
 
 This source inventory explains ownership, not ledger coverage. Each retained
 owner below uses serial access for the stated lifetime. Test producers stay
-independent of the pure computation being compared. No public interface or
-retained journey is removed.
+independent of the pure computation being compared. The retired naming runner sources have been removed.
 
 | Source module or executable | Disposition, owner and lifetime |
 | --- | --- |
@@ -319,10 +318,6 @@ retained journey is removed.
 | `UpdateTerminal.Registry` | `openSession` transfers its evolving manager to the one retirement session; that session owns it until the run ends. |
 | `Journey.Proofs` | The journey owns the shared mirror reference; `stepVerifyPresent` advances it before verifying against chain readback. |
 | `Journey.Scenario` | The `withRunner` callback owns the evolving registry manager for the whole bounded journey. |
-| `journey/register/Main` | The runner owns its loaded mirror manager and independent fresh-control manager; the second-registry control owns its separate manager for that control. Dumped values persist between runs, not IO handles. |
-| `journey/recovery/Main` | The runner owns the loaded mirror manager for the recovery journey and dumps values for the next run. |
-| `journey/retirement/Main` | The runner owns the loaded mirror manager for the retirement journey and dumps values for the next run. |
-| `journey/repair/Main` | The runner owns separate evolving and fresh-control managers for the repair run. |
 | `E2E.CageSpec` | `withE2ETimed` owns its builder manager for one devnet fixture. |
 | `E2E.Fork81Spec` | One test owns an independent evolving proof fixture until its chain-root comparison ends. |
 | `E2E.ReplaySpec` | One replay test owns its evolving reference; exclusion controls own a disposable copied reference for their speculative proof. |

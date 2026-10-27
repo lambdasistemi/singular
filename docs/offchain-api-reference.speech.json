@@ -95,7 +95,7 @@
       "pause": 500
     },
     {
-      "text": "This source inventory explains ownership, not ledger coverage. Each retained owner below uses serial access for the stated lifetime. Test producers stay independent of the pure computation being compared. No public interface or retained journey is removed.",
+      "text": "This source inventory explains ownership, not ledger coverage. Each retained owner below uses serial access for the stated lifetime. Test producers stay independent of the pure computation being compared. The retired naming runner sources have been removed.",
       "pause": 400
     }
   ],
@@ -141,6 +141,6 @@
   ],
   "_source": {
     "file": "offchain-api-reference.md",
-    "sha256": "e22f2bf3b0053b0c06bc555c94fda76acafe3a1761e6a4a44f562aef195e9f57"
+    "sha256": "f9699a955eebb511e642c0984aaf5a78e9aaf307a53b8e5a50a915ec007d7920"
   }
 }
