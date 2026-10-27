@@ -683,7 +683,7 @@ For a key the registry never recorded the receipt has no `witness` field and is 
 
 The witness finds the key's output; it does not say whether the key is active. That is still proved: the leaf is checked against the registry's root by replaying the registry's public history, as before, and a witness that disagrees with the proof is refused as `proof-inconsistent`, as a holding that disagreed with the proof was. The replay is the cost of the proof and it is not made to find the output. A directory that holds nothing reads the same as any other, because `inspect` without `--wallet-address` keeps no state.
 
-One reader still lists the application's outputs. `singular registry inspect` prints every output at the application's address in its `rawDatums`, because the program knows no application and shows them all, so it reads that listing and the witness. `open-datum inspect` prints only the key's output and reads no listing. `keri-stub status` reads the listing too, because its rule counts an output that carries the key's datum whether or not it holds the key's token, and an output without the token has to be seen to be counted.
+One reader still lists the application's outputs. `singular registry inspect` prints every output at the application's address in its `rawDatums`, because the program knows no application and shows them all, so it reads that listing and the witness. `open-datum inspect` prints only the key's output and reads no listing.
 
 ## Naming the registry by its state token
 

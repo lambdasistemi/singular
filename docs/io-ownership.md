@@ -32,7 +32,8 @@ since been removed, together with their ownership entries. Run
 `just io-inventory` for the current extent; those removed runners provide
 no current evidence. The adversarial host and its dedicated tests have also
 been removed; its category and diagram node below belong to that same
-historical snapshot.
+historical snapshot. The KERI stub application has since been removed in full
+as well; the earlier counts and diagram include it.
 
 The census discovers every Haskell source by walking the tree — no per-file
 list — and puts each in exactly one structural category. Anything it cannot

@@ -31,7 +31,7 @@
       "pause": 400
     },
     {
-      "text": "update takes the same file and the same setting, and so do the previews of both and keri-stub register: every command that reads a payload file reads it one way.",
+      "text": "update takes the same file and the same setting, and so do the previews of both: every command that reads a payload file reads it one way.",
       "pause": 400
     }
   ],
@@ -179,6 +179,6 @@
   ],
   "_source": {
     "file": "payload-json.md",
-    "sha256": "b556f20fc6c32d9330f1caaad2eaa0c9db754b07cd044332d6212e708ea78d02"
+    "sha256": "39893e4dcf1c2d7cced928f8d95c70af2373664596965191654ac1f03d1d94c6"
   }
 }

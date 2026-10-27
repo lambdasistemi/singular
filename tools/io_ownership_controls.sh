@@ -51,7 +51,7 @@ if ! bash "$check" "$root" >"$work/baseline.log" 2>&1; then
   cat "$work/baseline.log" >&2
   exit 1
 fi
-echo "controls: baseline PASS — the tree's 95 gated sites are allowlisted, B1-B5 hold"
+echo "controls: baseline PASS — the tree's gated sites are allowlisted, B1-B5 hold"
 
 # One baseline copy; each control derives its own scratch from it.
 # Hardlinks are read-only sharing: EVERY plant step below removes its target

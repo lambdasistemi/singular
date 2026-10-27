@@ -79,7 +79,6 @@ CATEGORIES: list[tuple[str, str, tuple[str, ...]]] = [
             "offchain/koios-http/src/",
             "offchain/cli/src/",
             "applications/open-datum/offchain/src/",
-            "applications/keri-stub/offchain/src/",
         ),
     ),
     (
@@ -91,7 +90,6 @@ CATEGORIES: list[tuple[str, str, tuple[str, ...]]] = [
             "offchain/app/",
             "offchain/cli/Main.hs",
             "applications/open-datum/offchain/app/",
-            "applications/keri-stub/offchain/app/",
         ),
     ),
     (
@@ -129,8 +127,6 @@ CATEGORIES: list[tuple[str, str, tuple[str, ...]]] = [
             "applications/open-datum/offchain/test-tags/",
             "applications/open-datum/offchain/forged-registry/",
             "applications/open-datum/offchain/refusals/",
-            "applications/keri-stub/offchain/test/",
-            "applications/keri-stub/offchain/test-tags/",
         ),
     ),
 ]

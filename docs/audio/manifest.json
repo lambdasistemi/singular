@@ -140631,17 +140631,17 @@
    ]
   },
   "docs-io-ownership/what-the-census-covers-01": {
-   "audio_sha256": "c4a1d9cd1b47f4f887ebea4126321f290fa08dbfe53a926f5596ca94192dd55c",
-   "characters": 445,
-   "cost": 0.00044054999999999995,
-   "duration": 30.425,
+   "audio_sha256": "aef010b493ff160e23e28cd67a8442a5aa017e26ddaf74afdadfa0e677c04695",
+   "characters": 565,
+   "cost": 0.00055935,
+   "duration": 37.575,
    "index": 1,
-   "key": "bc25a1e2206ef61bae0b2892b318ae79707510e79b1228a5d8792df2e863f18f",
+   "key": "f1f4e2372d929f67fc0f90e27c70887a3dffdd5d9c3d3be34b5dc8d212731652",
    "page": "docs/io-ownership.md",
    "pause_ms": 400,
    "section": "what-the-census-covers",
-   "sent_text": "The counts and old-runner diagram below record the earlier census. The standalone registry journey, archive runners and deployment command have since been removed, together with their ownership entries. Run just io-inventory for the current extent; those removed runners provide no current evidence. The adversarial host and its dedicated tests have also been removed; its category and diagram node below belong to that same historical snapshot.",
-   "text": "The counts and old-runner diagram below record the earlier census. The standalone registry journey, archive runners and deployment command have since been removed, together with their ownership entries. Run just io-inventory for the current extent; those removed runners provide no current evidence. The adversarial host and its dedicated tests have also been removed; its category and diagram node below belong to that same historical snapshot.",
+   "sent_text": "The counts and old-runner diagram below record the earlier census. The standalone registry journey, archive runners and deployment command have since been removed, together with their ownership entries. Run just io-inventory for the current extent; those removed runners provide no current evidence. The adversarial host and its dedicated tests have also been removed; its category and diagram node below belong to that same historical snapshot. The [KERI](/kˈɛɹi/) stub application has since been removed in full as well; the earlier counts and diagram include it.",
+   "text": "The counts and old-runner diagram below record the earlier census. The standalone registry journey, archive runners and deployment command have since been removed, together with their ownership entries. Run just io-inventory for the current extent; those removed runners provide no current evidence. The adversarial host and its dedicated tests have also been removed; its category and diagram node below belong to that same historical snapshot. The KERI stub application has since been removed in full as well; the earlier counts and diagram include it.",
    "words": [
     {
      "end": 0.287,
@@ -141006,6 +141006,111 @@
     {
      "end": 30.425,
      "start": 30.2,
+     "text": "."
+    },
+    {
+     "end": 30.7,
+     "start": 30.6,
+     "text": "The"
+    },
+    {
+     "end": 31.025,
+     "start": 30.7,
+     "text": "KERI"
+    },
+    {
+     "end": 31.3,
+     "start": 31.025,
+     "text": "stub"
+    },
+    {
+     "end": 32.05,
+     "start": 31.3,
+     "text": "application"
+    },
+    {
+     "end": 32.263,
+     "start": 32.05,
+     "text": "has"
+    },
+    {
+     "end": 32.575,
+     "start": 32.263,
+     "text": "since"
+    },
+    {
+     "end": 32.75,
+     "start": 32.575,
+     "text": "been"
+    },
+    {
+     "end": 33.275,
+     "start": 32.75,
+     "text": "removed"
+    },
+    {
+     "end": 33.438,
+     "start": 33.275,
+     "text": "in"
+    },
+    {
+     "end": 33.7,
+     "start": 33.438,
+     "text": "full"
+    },
+    {
+     "end": 33.85,
+     "start": 33.7,
+     "text": "as"
+    },
+    {
+     "end": 34.65,
+     "start": 33.85,
+     "text": "well"
+    },
+    {
+     "end": 34.85,
+     "start": 34.65,
+     "text": ";"
+    },
+    {
+     "end": 35.15,
+     "start": 35.025,
+     "text": "the"
+    },
+    {
+     "end": 35.475,
+     "start": 35.15,
+     "text": "earlier"
+    },
+    {
+     "end": 35.763,
+     "start": 35.475,
+     "text": "counts"
+    },
+    {
+     "end": 35.875,
+     "start": 35.763,
+     "text": "and"
+    },
+    {
+     "end": 36.375,
+     "start": 35.875,
+     "text": "diagram"
+    },
+    {
+     "end": 36.825,
+     "start": 36.375,
+     "text": "include"
+    },
+    {
+     "end": 37.375,
+     "start": 36.825,
+     "text": "it"
+    },
+    {
+     "end": 37.575,
+     "start": 37.375,
      "text": "."
     }
    ]
@@ -259201,181 +259306,166 @@
    ]
   },
   "docs-payload-json/store-a-document-03": {
-   "audio_sha256": "23172a03013978a3ad14a80aabd0c21c4772dbec76c37e1492d31c8f6bec8cdb",
-   "characters": 161,
-   "cost": 0.00015938999999999998,
-   "duration": 10.825,
+   "audio_sha256": "161296bb8b57cdedbccc2a0fedc88ed2a70ddf3d6c002941fc2e3f885430ff01",
+   "characters": 138,
+   "cost": 0.00013661999999999998,
+   "duration": 8.925,
    "index": 3,
-   "key": "e65332c4086f2cee6aeae51e9daf555e3438ccd8cbf842db816191b5be8a26c4",
+   "key": "d8d2d32b0ad14f2c95196512d2f749f4af99e2d12fb54b84d7bed0628399dc50",
    "page": "docs/payload-json.md",
    "pause_ms": 400,
    "section": "store-a-document",
-   "sent_text": "update takes the same file and the same setting, and so do the previews of both and keri-stub register: every command that reads a payload file reads it one way.",
-   "text": "update takes the same file and the same setting, and so do the previews of both and keri-stub register: every command that reads a payload file reads it one way.",
+   "sent_text": "update takes the same file and the same setting, and so do the previews of both: every command that reads a payload file reads it one way.",
+   "text": "update takes the same file and the same setting, and so do the previews of both: every command that reads a payload file reads it one way.",
    "words": [
     {
-     "end": 0.65,
+     "end": 0.625,
      "start": 0.2,
      "text": "update"
     },
     {
-     "end": 0.925,
-     "start": 0.65,
+     "end": 0.9,
+     "start": 0.625,
      "text": "takes"
     },
     {
-     "end": 1.062,
-     "start": 0.925,
+     "end": 1.025,
+     "start": 0.9,
      "text": "the"
     },
     {
-     "end": 1.425,
-     "start": 1.062,
+     "end": 1.337,
+     "start": 1.025,
      "text": "same"
     },
     {
-     "end": 1.925,
-     "start": 1.425,
+     "end": 1.775,
+     "start": 1.337,
      "text": "file"
     },
     {
-     "end": 2.037,
-     "start": 1.925,
+     "end": 1.888,
+     "start": 1.775,
      "text": "and"
     },
     {
-     "end": 2.138,
-     "start": 2.037,
+     "end": 1.975,
+     "start": 1.888,
      "text": "the"
     },
     {
-     "end": 2.487,
-     "start": 2.138,
+     "end": 2.287,
+     "start": 1.975,
      "text": "same"
     },
     {
-     "end": 3.025,
-     "start": 2.487,
+     "end": 2.775,
+     "start": 2.287,
      "text": "setting"
     },
     {
-     "end": 3.125,
-     "start": 3.025,
+     "end": 2.875,
+     "start": 2.775,
      "text": ","
     },
     {
-     "end": 3.263,
-     "start": 3.125,
+     "end": 3.013,
+     "start": 2.875,
      "text": "and"
     },
     {
-     "end": 3.475,
-     "start": 3.263,
+     "end": 3.225,
+     "start": 3.013,
      "text": "so"
     },
     {
-     "end": 3.65,
-     "start": 3.475,
+     "end": 3.388,
+     "start": 3.225,
      "text": "do"
     },
     {
-     "end": 3.75,
-     "start": 3.65,
+     "end": 3.475,
+     "start": 3.388,
      "text": "the"
     },
     {
-     "end": 4.25,
-     "start": 3.75,
+     "end": 3.912,
+     "start": 3.475,
      "text": "previews"
     },
     {
-     "end": 4.387,
-     "start": 4.25,
+     "end": 4.025,
+     "start": 3.912,
      "text": "of"
     },
     {
-     "end": 4.863,
-     "start": 4.387,
+     "end": 4.925,
+     "start": 4.025,
      "text": "both"
     },
     {
-     "end": 5.062,
-     "start": 4.863,
-     "text": "and"
-    },
-    {
-     "end": 5.7,
-     "start": 5.062,
-     "text": "keri-stub"
-    },
-    {
-     "end": 6.825,
-     "start": 5.7,
-     "text": "register"
-    },
-    {
-     "end": 7.05,
-     "start": 6.825,
+     "end": 5.15,
+     "start": 4.925,
      "text": ":"
     },
     {
-     "end": 7.525,
-     "start": 7.25,
+     "end": 5.625,
+     "start": 5.35,
      "text": "every"
     },
     {
-     "end": 7.912,
-     "start": 7.525,
+     "end": 6.012,
+     "start": 5.625,
      "text": "command"
     },
     {
-     "end": 8.05,
-     "start": 7.912,
+     "end": 6.15,
+     "start": 6.012,
      "text": "that"
     },
     {
-     "end": 8.288,
-     "start": 8.05,
+     "end": 6.387,
+     "start": 6.15,
      "text": "reads"
     },
     {
-     "end": 8.35,
-     "start": 8.288,
+     "end": 6.45,
+     "start": 6.387,
      "text": "a"
     },
     {
-     "end": 8.812,
-     "start": 8.35,
+     "end": 6.912,
+     "start": 6.45,
      "text": "payload"
     },
     {
-     "end": 9.25,
-     "start": 8.812,
+     "end": 7.35,
+     "start": 6.912,
      "text": "file"
     },
     {
-     "end": 9.538,
-     "start": 9.25,
+     "end": 7.637,
+     "start": 7.35,
      "text": "reads"
     },
     {
-     "end": 9.625,
-     "start": 9.538,
+     "end": 7.725,
+     "start": 7.637,
      "text": "it"
     },
     {
-     "end": 9.85,
-     "start": 9.625,
+     "end": 7.95,
+     "start": 7.725,
      "text": "one"
     },
     {
-     "end": 10.6,
-     "start": 9.85,
+     "end": 8.7,
+     "start": 7.95,
      "text": "way"
     },
     {
-     "end": 10.825,
-     "start": 10.6,
+     "end": 8.925,
+     "start": 8.7,
      "text": "."
     }
    ]
@@ -362916,17 +363006,17 @@
    ]
   },
   "docs-singular-node/reading-one-key-from-the-address-06": {
-   "audio_sha256": "3ac17652eb1506d6e6257ce0136ae531e1ff645d10f2a17bc6e65e95c4d40099",
-   "characters": 521,
-   "cost": 0.00051579,
-   "duration": 33.575,
+   "audio_sha256": "96d62da1d30226648669f1a4fa81e90e9f343753d6045ed40b522c7d08c87d63",
+   "characters": 315,
+   "cost": 0.00031184999999999996,
+   "duration": 20.575,
    "index": 6,
-   "key": "eaffbc610850cbcec1d8c15e7ac65058a21c16cd80de0f85d4f4692e2be54c12",
+   "key": "b680dfd410d9fe37365822d39deb646b9e8ab74045518d7c4c8341d48852cf99",
    "page": "docs/singular-node.md",
    "pause_ms": 400,
    "section": "reading-one-key-from-the-address",
-   "sent_text": "One reader still lists the application's outputs. singular registry inspect prints every output at the application's address in its rawDatums, because the program knows no application and shows them all, so it reads that listing and the witness. open-datum inspect prints only the key's output and reads no listing. keri-stub status reads the listing too, because its rule counts an output that carries the key's datum whether or not it holds the key's token, and an output without the token has to be seen to be counted.",
-   "text": "One reader still lists the application's outputs. singular registry inspect prints every output at the application's address in its rawDatums, because the program knows no application and shows them all, so it reads that listing and the witness. open-datum inspect prints only the key's output and reads no listing. keri-stub status reads the listing too, because its rule counts an output that carries the key's datum whether or not it holds the key's token, and an output without the token has to be seen to be counted.",
+   "sent_text": "One reader still lists the application's outputs. singular registry inspect prints every output at the application's address in its rawDatums, because the program knows no application and shows them all, so it reads that listing and the witness. open-datum inspect prints only the key's output and reads no listing.",
+   "text": "One reader still lists the application's outputs. singular registry inspect prints every output at the application's address in its rawDatums, because the program knows no application and shows them all, so it reads that listing and the witness. open-datum inspect prints only the key's output and reads no listing.",
    "words": [
     {
      "end": 0.425,
@@ -363196,211 +363286,6 @@
     {
      "end": 20.575,
      "start": 20.375,
-     "text": "."
-    },
-    {
-     "end": 21.263,
-     "start": 20.75,
-     "text": "keri-stub"
-    },
-    {
-     "end": 21.65,
-     "start": 21.263,
-     "text": "status"
-    },
-    {
-     "end": 21.913,
-     "start": 21.65,
-     "text": "reads"
-    },
-    {
-     "end": 21.987,
-     "start": 21.913,
-     "text": "the"
-    },
-    {
-     "end": 22.337,
-     "start": 21.987,
-     "text": "listing"
-    },
-    {
-     "end": 23.05,
-     "start": 22.337,
-     "text": "too"
-    },
-    {
-     "end": 23.275,
-     "start": 23.05,
-     "text": ","
-    },
-    {
-     "end": 23.8,
-     "start": 23.475,
-     "text": "because"
-    },
-    {
-     "end": 24.013,
-     "start": 23.8,
-     "text": "its"
-    },
-    {
-     "end": 24.413,
-     "start": 24.013,
-     "text": "rule"
-    },
-    {
-     "end": 24.763,
-     "start": 24.413,
-     "text": "counts"
-    },
-    {
-     "end": 24.888,
-     "start": 24.763,
-     "text": "an"
-    },
-    {
-     "end": 25.45,
-     "start": 24.888,
-     "text": "output"
-    },
-    {
-     "end": 25.625,
-     "start": 25.45,
-     "text": "that"
-    },
-    {
-     "end": 26.025,
-     "start": 25.625,
-     "text": "carries"
-    },
-    {
-     "end": 26.163,
-     "start": 26.025,
-     "text": "the"
-    },
-    {
-     "end": 26.5,
-     "start": 26.163,
-     "text": "key's"
-    },
-    {
-     "end": 27.013,
-     "start": 26.5,
-     "text": "datum"
-    },
-    {
-     "end": 27.288,
-     "start": 27.013,
-     "text": "whether"
-    },
-    {
-     "end": 27.375,
-     "start": 27.288,
-     "text": "or"
-    },
-    {
-     "end": 27.65,
-     "start": 27.375,
-     "text": "not"
-    },
-    {
-     "end": 27.75,
-     "start": 27.65,
-     "text": "it"
-    },
-    {
-     "end": 28.075,
-     "start": 27.75,
-     "text": "holds"
-    },
-    {
-     "end": 28.175,
-     "start": 28.075,
-     "text": "the"
-    },
-    {
-     "end": 28.475,
-     "start": 28.175,
-     "text": "key's"
-    },
-    {
-     "end": 29.5,
-     "start": 28.475,
-     "text": "token"
-    },
-    {
-     "end": 29.725,
-     "start": 29.5,
-     "text": ","
-    },
-    {
-     "end": 30.013,
-     "start": 29.925,
-     "text": "and"
-    },
-    {
-     "end": 30.138,
-     "start": 30.013,
-     "text": "an"
-    },
-    {
-     "end": 30.587,
-     "start": 30.138,
-     "text": "output"
-    },
-    {
-     "end": 30.888,
-     "start": 30.587,
-     "text": "without"
-    },
-    {
-     "end": 30.975,
-     "start": 30.888,
-     "text": "the"
-    },
-    {
-     "end": 31.487,
-     "start": 30.975,
-     "text": "token"
-    },
-    {
-     "end": 31.725,
-     "start": 31.487,
-     "text": "has"
-    },
-    {
-     "end": 31.812,
-     "start": 31.725,
-     "text": "to"
-    },
-    {
-     "end": 31.962,
-     "start": 31.812,
-     "text": "be"
-    },
-    {
-     "end": 32.225,
-     "start": 31.962,
-     "text": "seen"
-    },
-    {
-     "end": 32.312,
-     "start": 32.225,
-     "text": "to"
-    },
-    {
-     "end": 32.425,
-     "start": 32.312,
-     "text": "be"
-    },
-    {
-     "end": 33.35,
-     "start": 32.425,
-     "text": "counted"
-    },
-    {
-     "end": 33.575,
-     "start": 33.35,
      "text": "."
     }
    ]

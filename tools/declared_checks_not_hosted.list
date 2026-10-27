@@ -61,8 +61,5 @@ conformance|hlint-check|check|hosted under another name: the format-check job's 
 applications/open-datum/offchain|open-datum|app|hosted under another name: the registry-two-actors-replay-fault job builds and drives this application CLI (nix build of applications/open-datum/offchain#open-datum is the control's setup)
 applications/open-datum/offchain|lint|check|hosted under another name: the open-datum-component-build job runs .#lint, this same writeShellApplication derivation (apps.lint is checks.lint)
 applications/open-datum/offchain|open-datum-tests|check|hosted under another name: the open-datum-tests job runs the open-datum-tests app, the same fixture-staged runner this check executes in its sandbox
-applications/keri-stub/offchain|keri-stub|app|hosted under another name: the keri-stub job builds this application CLI (keri-stub-check builds applications/keri-stub/offchain#keri-stub and drives it on a devnet)
-applications/keri-stub/offchain|keri-stub-tests|check|hosted under another name: the keri-stub-tests job runs the keri-stub-tests app, the same runner this check executes in its sandbox
-applications/keri-stub/offchain|lint|check|hosted under another name: the keri-stub-component-build job runs .#lint, this same derivation (apps.lint is checks.lint)
 applications/open-datum/onchain|open-datum-aiken-tests|app|hosted under another name: the application-aiken-suite job's nix flake check builds checks.open-datum-aiken-tests, which executes this app's runner inside the check derivation
 .|linux-artifact-smoke|app|hosted under another name: the bundle job (its Linux leg) and the linux-packages job run it through the dev-assets linux-release action, which calls nix run .#linux-artifact-smoke on the packages it builds

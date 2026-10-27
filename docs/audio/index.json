@@ -4167,8 +4167,8 @@
     "index": 1,
     "name": "docs-io-ownership/what-the-census-covers-01",
     "pause_ms": 400,
-    "text": "The counts and old-runner diagram below record the earlier census. The standalone registry journey, archive runners and deployment command have since been removed, together with their ownership entries. Run just io-inventory for the current extent; those removed runners provide no current evidence. The adversarial host and its dedicated tests have also been removed; its category and diagram node below belong to that same historical snapshot.",
-    "v": "c4a1d9cd1b47"
+    "text": "The counts and old-runner diagram below record the earlier census. The standalone registry journey, archive runners and deployment command have since been removed, together with their ownership entries. Run just io-inventory for the current extent; those removed runners provide no current evidence. The adversarial host and its dedicated tests have also been removed; its category and diagram node below belong to that same historical snapshot. The KERI stub application has since been removed in full as well; the earlier counts and diagram include it.",
+    "v": "aef010b493ff"
    },
    {
     "index": 2,
@@ -7749,8 +7749,8 @@
     "index": 3,
     "name": "docs-payload-json/store-a-document-03",
     "pause_ms": 400,
-    "text": "update takes the same file and the same setting, and so do the previews of both and keri-stub register: every command that reads a payload file reads it one way.",
-    "v": "23172a030139"
+    "text": "update takes the same file and the same setting, and so do the previews of both: every command that reads a payload file reads it one way.",
+    "v": "161296bb8b57"
    }
   ],
   "store-ordinary-json-as-a-keys-payload": [
@@ -10203,8 +10203,8 @@
     "index": 6,
     "name": "docs-singular-node/reading-one-key-from-the-address-06",
     "pause_ms": 400,
-    "text": "One reader still lists the application's outputs. singular registry inspect prints every output at the application's address in its rawDatums, because the program knows no application and shows them all, so it reads that listing and the witness. open-datum inspect prints only the key's output and reads no listing. keri-stub status reads the listing too, because its rule counts an output that carries the key's datum whether or not it holds the key's token, and an output without the token has to be seen to be counted.",
-    "v": "3ac17652eb15"
+    "text": "One reader still lists the application's outputs. singular registry inspect prints every output at the application's address in its rawDatums, because the program knows no application and shows them all, so it reads that listing and the witness. open-datum inspect prints only the key's output and reads no listing.",
+    "v": "96d62da1d302"
    }
   ],
   "reading-through-an-index": [

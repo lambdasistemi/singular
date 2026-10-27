@@ -463,7 +463,7 @@
       "pause": 400
     },
     {
-      "text": "One reader still lists the application's outputs. singular registry inspect prints every output at the application's address in its rawDatums, because the program knows no application and shows them all, so it reads that listing and the witness. open-datum inspect prints only the key's output and reads no listing. keri-stub status reads the listing too, because its rule counts an output that carries the key's datum whether or not it holds the key's token, and an output without the token has to be seen to be counted.",
+      "text": "One reader still lists the application's outputs. singular registry inspect prints every output at the application's address in its rawDatums, because the program knows no application and shows them all, so it reads that listing and the witness. open-datum inspect prints only the key's output and reads no listing.",
       "pause": 400
     }
   ],
@@ -737,6 +737,6 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "613b7f575e717b827fa8e7fd1e1db642abb07c59030dc519efceed8960fd08c0"
+    "sha256": "9ad82280572370358431b1c035ce99bc83cc2357b03b6a75bf261bb556912d73"
   }
 }

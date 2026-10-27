@@ -265,29 +265,6 @@ POLICIES: dict[str, dict] = {
         "Cabal hs-source-dirs stanza of open-datum.cabal plus test — "
         "with no directory exclusions.",
     },
-    "hlint-keri-stub": {
-        "kind": "lint",
-        "tool": "hlint",
-        "status": "enforced",
-        "carrier": "applications/keri-stub/offchain `nix run .#lint` — "
-        "the application's own flake lint (fourmolu + hlint over the "
-        "manifest-discovered extent); registry.yml job 'Keri-stub "
-        "component build'",
-        "note": "bound to the checker's own discovered extent: every Cabal "
-        "hs-source-dirs stanza of keri-stub.cabal (visited recursively, "
-        "as the checker's find does) plus test, with no exclusions.",
-    },
-    "fourmolu-keri-stub": {
-        "kind": "format",
-        "tool": "fourmolu",
-        "status": "enforced",
-        "carrier": "applications/keri-stub/offchain `nix run .#lint` — "
-        "and the whole-tree `just format-check` inside `just ci`",
-        "note": "the committed house fourmolu.yaml at the repository "
-        "root, over the application's manifest-discovered set — every "
-        "Cabal hs-source-dirs stanza of keri-stub.cabal plus test — "
-        "with no directory exclusions.",
-    },
     "aiken-fmt": {
         "kind": "format",
         "tool": "aiken fmt --check",
@@ -520,21 +497,6 @@ CODE_RULES: list[dict] = [
         "generated": False,
         "note": VENDOR_NOTE,
     },
-    # The keri-stub application: restricted like the open datum to the
-    # checker's own manifest-discovered extent — the Cabal hs-source-dirs
-    # of keri-stub.cabal plus test, visited recursively exactly as
-    # applications/keri-stub/offchain/nix/checks.nix does — so an enforced
-    # policy is never claimed for a file the checker does not visit.
-    {
-        "id": "hs-keri-stub",
-        "family": "haskell",
-        "pattern": "applications/keri-stub/offchain/**/*.hs",
-        "where": "haskell-checker-extent",
-        "lint": "hlint-keri-stub",
-        "format": "fourmolu-keri-stub",
-        "generated": False,
-        "note": VENDOR_NOTE,
-    },
     # A reject rule: an application Haskell source NO checker-visited
     # component directory contains is a finding, never a row.
     {
@@ -543,7 +505,7 @@ CODE_RULES: list[dict] = [
         "pattern": "applications/**/*.hs",
         "reject": "haskell source outside every checker-visited component "
         "directory (the application lint discovers its extent from "
-        "open-datum.cabal and keri-stub.cabal hs-source-dirs plus test, "
+        "open-datum.cabal hs-source-dirs plus test, "
         "add the component "
         "to the Cabal manifest)",
     },
@@ -1121,7 +1083,6 @@ def parse_manifests(root: Path) -> Manifests:
         "conformance/conformance.cabal",
         "conformance/coverage/evaluation/spike.cabal",
         "applications/open-datum/offchain/open-datum.cabal",
-        "applications/keri-stub/offchain/keri-stub.cabal",
     ]
     for rel in cabal_files:
         text = _read(root, rel)
