@@ -5,27 +5,17 @@ Module      : Singular.CLI.Command
 Description : What a @singular@ command line asks for, parsed without effects
 License     : Apache-2.0
 
-The registry commands and help, read from the command line alone:
+The state, wallet and submit commands, read from the command line alone:
 no file, node, key or environment is touched here, so every refusal
 below happens before anything is read or submitted.
 
-* @registry create@ boots one registry from a seed the caller chose in
-  their own wallet, or previews its identity with @--preview@;
-* @registry fold@ takes the selection and folds every included request, signed and funded by
-  the wallet that runs it;
-* @registry reclaim@ takes back the wallet's named pending insertion or
-  terminal-witness request inside its retract window;
-* @registry reject@ rejects every pending request, once each is past both
-  its windows, signed and funded by the wallet that runs it;
-* @registry inspect@ reads the registry and one key back, and accepts
-  no signing key at all;
+* @state create@ creates the registry of an application;
 * @submit@ sends a bundle its signers witnessed, taking the witness
   files, the bundle and the node settings, and no wallet key or vault.
 
-Write commands name the Koios URL, network and wallet key. Partial settings
-and mainnet are refused before file reads or provider effects. Read commands
-carry a public wallet address instead of a signing key. Obsolete backend and
-socket settings are refused on every command, including --backend koios.
+The create command names the Koios URL, network and signer. Partial settings
+and mainnet are refused before file reads or provider effects. Obsolete backend
+and socket settings are refused on every command, including --backend koios.
 -}
 module Singular.CLI.Command
     ( -- * Commands
@@ -36,8 +26,6 @@ module Singular.CLI.Command
     , FoldArgs (..)
     , InspectArgs (..)
     , ProviderSettings (..)
-    , RejectArgs (..)
-    , ReclaimArgs (..)
     , StateCreateArgs (..)
     , StateFoldArgs (..)
     , WalletArgs (..)
@@ -73,33 +61,27 @@ module Singular.CLI.Command
     , SubmitArgs (..)
     ) where
 
+import Cardano.Crypto.DSIGN (Ed25519DSIGN, SignKeyDSIGN)
+import Cardano.Ledger.TxIn (TxIn)
 import Control.Monad (forM_, unless, when)
 import Data.Bifunctor (first)
 import Data.ByteString (ByteString)
-import Data.ByteString qualified as BS
-import Data.ByteString.Base16 qualified as B16
+import Data.ByteString qualified as BS (length)
+import Data.ByteString.Base16 qualified as B16 (decode)
 import Data.ByteString.Short qualified as SBS
-import Data.Char
-    ( GeneralCategory (Surrogate)
-    , generalCategory
-    , isDigit
+    ( ShortByteString
+    , toShort
     )
 import Data.List (partition)
-import Data.Maybe (fromMaybe, isJust, isNothing)
+import Data.Maybe (isJust)
 import Data.Set (Set)
-import Data.Set qualified as Set
-import Data.Text qualified as T
-import Data.Text.Encoding qualified as TE
+import Data.Set qualified as Set (empty, fromList)
+import Data.Text qualified as T (pack)
+import Data.Text.Encoding qualified as TE (encodeUtf8)
 import Data.Version (Version)
 import Data.Word (Word32)
 import GHC.Generics (Generic)
-import System.Exit (ExitCode (..))
-import System.IO (hPutStrLn, stderr)
-import Text.Read (readMaybe)
-
-import Cardano.Crypto.DSIGN (Ed25519DSIGN, SignKeyDSIGN)
-import Cardano.Ledger.TxIn (TxIn)
-import Paths_singular_registry qualified as Paths
+import Paths_singular_registry qualified as Paths (version)
 import Singular.CLI.Declared (saveStateToken)
 import Singular.CLI.FlagGroup
     ( Signer (..)
@@ -111,18 +93,16 @@ import Singular.CLI.FlagGroup
     , traceRequestFrom
     )
 import Singular.CLI.Help (singularHelp, singularProgram)
-import Singular.CLI.Key
-    ( KeyEncoding (..)
-    , KeyRefusal (..)
-    , keyFlags
-    , maxKeyBytes
-    , readKey
-    )
+import Singular.CLI.Key (KeyRefusal (..), keyFlags, maxKeyBytes)
 import Singular.CLI.Options
-    ( Accepted (..)
-    , Flag (..)
+    ( Accepted
+        ( Accepted
+        , acceptedEarly
+        , acceptedSwitches
+        , acceptedValued
+        )
+    , Flag (flagName)
     , Raw (..)
-    , defaultConfigFile
     , hintLines
     , identityLine
     , readLine
@@ -136,16 +116,10 @@ import Singular.CLI.Passphrase
     , renderPassphraseRefusal
     , sourceFor
     )
-import Singular.CLI.Registry (economics)
-import Singular.CLI.RegistryReading
-    ( RegistryRefusal (..)
-    , completeRegistry
-    )
 import Singular.CLI.Sign (signBundle)
 import Singular.CLI.Sources
-    ( Sources (..)
+    ( Sources (sourceConfig, sourceEnvironment)
     , applySources
-    , configPath
     , loadSources
     , missingHint
     , noSources
@@ -164,20 +138,19 @@ import Singular.CLI.Vault
     , vaultWorkFactor
     )
 import Singular.CLI.Version (releaseVersion)
-import Singular.Registry.Config.Application (RegistryEconomics (..))
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.LedgerProvider (Asset)
 import Singular.Registry.PlainJson (PayloadSchema)
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
-import Singular.Registry.StateToken
-    ( ReferenceRole (..)
-    , parseStateToken
-    )
+import Singular.Registry.StateToken (ReferenceRole)
 import Singular.Registry.Wallet
     ( Wallet (..)
     , bech32Address
     , walletFromSignKey
     )
+import System.Exit (ExitCode (..))
+import System.IO (hPutStrLn, stderr)
+import Text.Read (readMaybe)
 
 -- | A registry key: the bytes the leaf and the active token are named by.
 newtype Key = Key {unKey :: ByteString}
@@ -303,21 +276,6 @@ data FoldArgs = FoldArgs
     }
     deriving stock (Eq, Show)
 
--- | @registry reject@: every pending request, rejected by this wallet.
-data RejectArgs = RejectArgs
-    { rejectStateDir :: Maybe FilePath
-    -- ^ Optional state root override; absent, the managed default root applies
-    , rejectAccess :: RegistryAccess
-    , rejectBlueprint :: FilePath
-    , rejectWrite :: WriteSettings
-    , rejectFund :: Maybe TxIn
-    -- ^ @--fund-input@: the wallet output that funds and collateralises the reject
-    , rejectMaxOutlay :: Maybe Integer
-    -- ^ @--max-outlay@: lovelace the reject may put out; past it nothing is signed
-    , rejectReceipt :: Maybe FilePath
-    }
-    deriving stock (Eq, Show)
-
 {- | @state create@: the registry of an application, made by spending a seed
 of the wallet. The state validator is the one the release carries, applied to
 the application's policy; the program that hosts the command may fix that
@@ -345,24 +303,6 @@ data StateFoldArgs = StateFoldArgs
     , stateFoldPending :: [TxIn]
     -- ^ The pending registrations to fold, as named; none is chosen implicitly
     , stateFoldReceipt :: Maybe FilePath
-    }
-    deriving stock (Eq, Show)
-
--- | @registry reclaim@: take back this wallet's own pending request.
-data ReclaimArgs = ReclaimArgs
-    { reclaimStateDir :: Maybe FilePath
-    -- ^ Optional state root override; absent, the managed default root applies
-    , reclaimAccess :: RegistryAccess
-    , reclaimBlueprint :: FilePath
-    , reclaimWrite :: WriteSettings
-    , reclaimRequest :: TxIn
-    -- ^ The pending request to take back; required, never chosen implicitly
-    , reclaimFund :: Maybe TxIn
-    -- ^ The wallet output that funds and collateralises the reclaim
-    , reclaimMaxOutlay :: Maybe Integer
-    -- ^ The maximum fee outlay; the return pays the caller's own wallet
-    , reclaimReceipt :: Maybe FilePath
-    -- ^ Also retain the printed receipt at this path
     }
     deriving stock (Eq, Show)
 
@@ -451,12 +391,9 @@ data Command
       line asked for it, so nothing else runs
       -}
       Help String
-    | Create CreateArgs (Maybe ApplicationPolicy)
-    | Fold FoldArgs
-    | Reject RejectArgs
-    | Reclaim ReclaimArgs
+    | -- | Internal value used by the retained OpenDatum fold helper to select references; no public parser route
+      Fold FoldArgs
     | StateCreate StateCreateArgs
-    | Inspect InspectArgs
     | WalletCreate WalletArgs
     | WalletAddress WalletArgs
     | WalletSign SignArgs
@@ -550,12 +487,10 @@ commandFrom environment (Raw ws allFlags) = do
                 else
                     refuseWindows ws flags
                         >> refuseSaveStateToken ws flags
-                        >> refuseOutputsAt ws flags
                         >> refuseWitnesses ws witnesses
                         >> refuseWalletSettings ws flags
                         >> case ws of
                             [] -> Right askedFor
-                            ["registry"] -> Right askedFor
                             ["wallet"] -> Right askedFor
                             ["wallet", "create"] ->
                                 refuseWalletCommandSettings "wallet create" flags
@@ -572,31 +507,10 @@ commandFrom environment (Raw ws allFlags) = do
                                 SubmitBundle <$> submitArgs bundle witnesses flags
                             ["submit"] ->
                                 Left (MissingFlag "BUNDLE")
-                            ["registry", "create"] ->
-                                refuseSpendingFlags "create" flags
-                                    >> refuseRequest flags
-                                    >> refuseFold flags
-                                    >> (Create <$> createArgs flags <*> applicationPolicyFrom flags)
-                            ["registry", "fold"] ->
-                                refuseApplicationPolicy flags
-                                    >> (Fold <$> (registryFlags flags >>= foldArgs environment))
-                            ["registry", "reject"] ->
-                                refuseApplicationPolicy flags
-                                    >> (Reject <$> (registryFlags flags >>= rejectArgs environment))
                             ["state"] -> Right askedFor
                             ["state", "create"] ->
                                 refuseOutside "state create" stateCreateAllowed flags
                                     >> (StateCreate <$> stateCreateArgs flags)
-                            ["registry", "reclaim"] ->
-                                refuseApplicationPolicy flags
-                                    >> (Reclaim <$> (registryFlags flags >>= reclaimArgs environment))
-                            ["registry", "inspect"] ->
-                                refuseApplicationPolicy flags
-                                    >> refuseSpendingFlags "inspect" flags
-                                    >> refuseBundle "registry inspect" flags
-                                    >> refuseRequest flags
-                                    >> refuseFold flags
-                                    >> (Inspect <$> (registryFlags flags >>= inspectArgs environment))
                             _ -> Left (UnknownCommand ws)
   where
     -- @--witnesses@ names what @submit@ sends; any other command refuses
@@ -625,29 +539,6 @@ commandFrom environment (Raw ws allFlags) = do
     -- nothing and an external signer's registry does not exist until its bundle
     -- is submitted, so neither has a name to keep. The file is the one the
     -- settings are read from.
-    saveTarget flags
-        | isNothing (lookup saveSwitch flags) = Right Nothing
-        | isJust (lookup "--preview" flags) =
-            Left
-                ( BadValue
-                    saveSwitch
-                    "cannot be used with --preview: nothing is created, so there is no name to keep"
-                )
-        | isJust (lookup "--wallet-address" flags)
-            && isJust (lookup "--bundle" flags) =
-            Left
-                ( BadValue
-                    saveSwitch
-                    "cannot be used with --wallet-address and --bundle: the registry does not exist until the bundle is submitted, so there is no name to keep yet"
-                )
-        | otherwise =
-            Right
-                ( Just
-                    ( fromMaybe
-                        defaultConfigFile
-                        (configPath environment (Raw ws allFlags))
-                    )
-                )
     refuseWindows words' flags =
         unless (words' == ["registry", "create"]) $
             forM_ ["--process-time", "--retract-time"] $ \flag ->
@@ -659,52 +550,6 @@ commandFrom environment (Raw ws allFlags) = do
                         )
     -- @--bundle@ is where a write's run goes for signing elsewhere; a
     -- command that writes nothing refuses it by name rather than ignore it.
-    refuseBundle command flags =
-        when (isJust (lookup "--bundle" flags)) $
-            Left
-                ( BadValue
-                    "--bundle"
-                    ("is a write flag: " <> command <> " writes nothing")
-                )
-    -- The constraints on a write's spending belong to insert, update and
-    -- terminate. A command that does not enforce one refuses it by name rather
-    -- than discard what the caller stated.
-    refuseSpendingFlags command flags =
-        forM_ ["--fund-input", "--max-outlay"] $ \flag ->
-            when (isJust (lookup flag flags)) $
-                Left (UnsupportedFlag flag command)
-    -- @--outputs-at@ is read by @registry inspect@ alone; any other command
-    -- refuses it by name rather than ignore it.
-    refuseOutputsAt words' flags =
-        when
-            ( isJust (lookup "--outputs-at" flags)
-                && words' /= ["registry", "inspect"]
-            )
-            $ Left
-                ( BadValue
-                    "--outputs-at"
-                    "is a registry inspect flag: only inspect reads another address's outputs"
-                )
-    -- @--request@ names what @registry fold@ folds or reclaim takes back; @--fold@ belongs to the
-    -- two commands that book. Any other command refuses either by name.
-    refuseRequest flags =
-        when (isJust (lookup "--request" flags)) $
-            Left
-                ( BadValue
-                    "--request"
-                    "names the pending request @registry fold@ folds or @registry reclaim@ takes back; this command takes none"
-                )
-    refuseFold flags =
-        when (isJust (lookup "--fold" flags)) $
-            Left
-                ( BadValue
-                    "--fold"
-                    "is taken by insert and terminate only: they book, and with it also fold"
-                )
-    -- The output directory belongs to the wallet verbs alone, and the
-    -- vault and its passphrase descriptor to them and the four registry
-    -- writes, which sign from the vault; any other command refuses each by
-    -- name rather than ignore it.
     refuseWalletSettings words' flags =
         unless (take 1 words' == ["wallet"]) $ do
             when (isJust (lookup "--out" flags)) $
@@ -721,9 +566,7 @@ commandFrom environment (Raw ws allFlags) = do
                                 flag
                                 "is a signer flag: only the wallet commands and the registry writes read it"
                             )
-    registryWrites =
-        [["registry", w] | w <- ["create", "fold", "reject", "reclaim"]]
-            <> [["state", "create"]]
+    registryWrites = [["state", "create"]]
     -- A wallet command takes its own flags and nothing else from
     -- the shared group: every other setting is refused by name rather
     -- than ignored.
@@ -752,65 +595,6 @@ commandFrom environment (Raw ws allFlags) = do
                 )
     -- @--application-policy@ pins what @registry create@ boots; any other
     -- command refuses it by name rather than ignore it.
-    refuseApplicationPolicy flags =
-        when (isJust (lookup "--application-policy" flags)) $
-            Left
-                ( BadValue
-                    "--application-policy"
-                    "is a registry create flag: only create pins an application policy"
-                )
-    createArgs flags = do
-        saveTo <- saveTarget flags
-        when (isJust (lookup "--state-token" flags)) $
-            Left
-                ( BadValue
-                    "--state-token"
-                    "is refused by registry create, which makes one"
-                )
-        when (isJust (lookup "--registry" flags)) $
-            Left
-                ( BadValue
-                    "--registry"
-                    "is refused by registry create, which makes the registry and prints its address"
-                )
-        processing <-
-            windowFrom "--process-time" (reProcessTime economics) flags
-        retracting <-
-            windowFrom "--retract-time" (reRetractTime economics) flags
-        let dir = optional "--state-dir" flags
-        bp <- required "--blueprint" flags
-        let preview = isJust (lookup "--preview" flags)
-            publicPreview = preview && isJust (lookup "--wallet-address" flags)
-        mode <-
-            if publicPreview
-                then previewMode flags
-                else
-                    Submit
-                        <$> parseFlagGroup
-                            MissingFlag
-                            BadValue
-                            UnsafeSettings
-                            WriteSettings
-                            flags
-        -- No `--seed` flag auto-selects (#406 slice 2): the largest ada-only
-        -- output with a live carrier, else the first publication's change.
-        seed <- case lookup "--seed" flags of
-            Just (Just s) -> case parseOutRef (T.pack s) of
-                Right _ -> Right (Just s)
-                Left err -> Left (BadValue "--seed" err)
-            _ -> Right Nothing
-        pure
-            CreateArgs
-                { createStateDir = dir
-                , createBlueprint = bp
-                , createMode = mode
-                , createSeed = seed
-                , createPreview = preview
-                , createReceipt = optional "--receipt" flags
-                , createSaveStateTokenTo = saveTo
-                , createProcessTime = processing
-                , createRetractTime = retracting
-                }
     applicationPolicyFrom flags = case optional "--application-policy" flags of
         Nothing -> Right Nothing
         Just spelling -> case parseApplicationPolicy (T.pack spelling) of
@@ -828,90 +612,6 @@ commandFrom environment (Raw ws allFlags) = do
                         <> show (BS.length bytes)
                         <> " bytes, not 28: give 56 hex characters (a 28-byte policy hash)"
                     )
-    windowFrom name fallback flags = case optional name flags of
-        Nothing -> Right fallback
-        Just value -> case readMaybe value of
-            Just n | n > 0 && all isDigit value -> Right n
-            _ ->
-                Left (BadValue name "needs a positive integer number of milliseconds")
-    foldArgs env flags = do
-        let dir = optional "--state-dir" flags
-        bp <- required "--blueprint" flags
-        forM_
-            ( map fst keyFlags
-                <> ["--deposit", "--payload", "--payload-schema", "--preview", "--fold"]
-            )
-            $ \flag ->
-                when (isJust (lookup flag flags)) $
-                    Left
-                        ( BadValue
-                            flag
-                            "is not accepted by registry fold: it folds the pending request, whose key and edge the request names"
-                        )
-        settings <-
-            parseFlagGroup
-                MissingFlag
-                BadValue
-                UnsafeSettings
-                WriteSettings
-                flags
-        request <- case optional "--request" flags of
-            Nothing -> Right Nothing
-            Just s -> case parseOutRef (T.pack s) of
-                Right i -> Right (Just i)
-                Left err -> Left (BadValue "--request" err)
-        fund <- fundFrom flags
-        outlay <- outlayFrom flags
-        access <- registryAccess env flags
-        pure
-            FoldArgs
-                { foldStateDir = dir
-                , foldAccess = access
-                , foldBlueprint = bp
-                , foldWrite = settings
-                , foldRequest = request
-                , foldFund = fund
-                , foldMaxOutlay = outlay
-                , foldReceipt = optional "--receipt" flags
-                }
-    rejectArgs env flags = do
-        let dir = optional "--state-dir" flags
-        bp <- required "--blueprint" flags
-        forM_
-            ( ["--request"]
-                <> map fst keyFlags
-                <> ["--deposit", "--payload", "--payload-schema", "--preview", "--fold"]
-            )
-            $ \flag ->
-                when (isJust (lookup flag flags)) $
-                    Left
-                        ( BadValue
-                            flag
-                            "is not accepted by registry reject: it takes every pending request, once each is past both its windows"
-                        )
-        settings <-
-            parseFlagGroup
-                MissingFlag
-                BadValue
-                UnsafeSettings
-                WriteSettings
-                flags
-        fund <- fundFrom flags
-        outlay <- outlayFrom flags
-        access <- registryAccess env flags
-        pure
-            RejectArgs
-                { rejectStateDir = dir
-                , rejectAccess = access
-                , rejectBlueprint = bp
-                , rejectWrite = settings
-                , rejectFund = fund
-                , rejectMaxOutlay = outlay
-                , rejectReceipt = optional "--receipt" flags
-                }
-    -- The state line's commands name what they take, and refuse the rest by
-    -- name: the builders choose the funding, so a funding choice or a spending
-    -- limit is a setting the command does not enforce.
     stateCreateAllowed =
         [ "--state-dir"
         , "--blueprint"
@@ -976,123 +676,6 @@ commandFrom environment (Raw ws allFlags) = do
                 , stateCreatePolicy = Just policy
                 , stateCreateReceipt = optional "--receipt" flags
                 }
-    reclaimArgs env flags = do
-        let dir = optional "--state-dir" flags
-        bp <- required "--blueprint" flags
-        forM_
-            ( map fst keyFlags
-                <> ["--deposit", "--payload", "--payload-schema", "--preview", "--fold"]
-            )
-            $ \flag ->
-                when (isJust (lookup flag flags)) $
-                    Left
-                        ( BadValue
-                            flag
-                            "is not accepted by registry reclaim: it takes back the named pending request"
-                        )
-        settings <-
-            parseFlagGroup
-                MissingFlag
-                BadValue
-                UnsafeSettings
-                WriteSettings
-                flags
-        named <- required "--request" flags
-        request <- first (BadValue "--request") (parseOutRef (T.pack named))
-        fund <- fundFrom flags
-        outlay <- outlayFrom flags
-        access <- registryAccess env flags
-        pure
-            ReclaimArgs
-                { reclaimStateDir = dir
-                , reclaimAccess = access
-                , reclaimBlueprint = bp
-                , reclaimWrite = settings
-                , reclaimRequest = request
-                , reclaimFund = fund
-                , reclaimMaxOutlay = outlay
-                , reclaimReceipt = optional "--receipt" flags
-                }
-    registryAccess env flags = do
-        tokenStr <- case optional "--state-token" flags of
-            Just s -> Right s
-            Nothing -> case lookup "SINGULAR_STATE_TOKEN" env of
-                Just s -> Right s
-                Nothing -> Left (MissingFlag "--state-token")
-        token <-
-            first
-                (BadValue "--state-token" . T.unpack)
-                (parseStateToken (T.pack tokenStr))
-        pure RegistryAccess{accessToken = token}
-    -- The registry named by its address gives the flags its state token and its
-    -- network, so the rest of the reading is the one it always was.
-    registryFlags flags =
-        first registryRefused (completeRegistry environment flags)
-    fundFrom flags = case optional "--fund-input" flags of
-        Nothing -> Right Nothing
-        Just s -> case parseOutRef (T.pack s) of
-            Right i -> Right (Just i)
-            Left err -> Left (BadValue "--fund-input" err)
-    outlayFrom flags = case optional "--max-outlay" flags of
-        Nothing -> Right Nothing
-        Just s -> case readMaybe s of
-            Just n | n > 0 -> Right (Just n)
-            _ ->
-                Left
-                    (BadValue "--max-outlay" "is not a positive number of lovelace")
-    inspectArgs env flags = do
-        when (isJust (lookup "--wallet-skey" flags)) $
-            Left SigningKeyNotAccepted
-        let dir = optional "--state-dir" flags
-        bp <- required "--blueprint" flags
-        key <- keyFrom flags
-        settings <- readProviderSettings MissingFlag BadValue flags
-        access <- registryAccess env flags
-        pure
-            InspectArgs
-                { inspectStateDir = dir
-                , inspectAccess = access
-                , inspectBlueprint = bp
-                , inspectProvider = settings
-                , inspectKey = key
-                , inspectOutputsAt = optional "--outputs-at" flags
-                , inspectWalletAddress = optional "--wallet-address" flags
-                , inspectReceipt = optional "--receipt" flags
-                }
-    -- A preview reads a node and names a public address; it holds no key,
-    -- so a signing key is refused before anything is read.
-    previewMode flags = do
-        when (isJust (lookup "--wallet-skey" flags)) $
-            Left PreviewTakesNoKey
-        when (isJust (lookup "--bundle" flags)) $
-            Left
-                ( BadValue
-                    "--bundle"
-                    "cannot be used with --preview: a preview signs and writes nothing"
-                )
-        settings <- readProviderSettings MissingFlag BadValue flags
-        addr <- required "--wallet-address" flags
-        pure (Preview settings addr)
-    -- --key is the text of the key and --key-hex its base16: one of the two,
-    -- read by the library, so no command keeps a decoder of its own.
-    keyFrom flags = case [ (encoding, argument)
-                         | (flag, encoding) <- keyFlags
-                         , Just argument <- [optional flag flags]
-                         ] of
-        [(KeyText, argument)]
-            | any isSurrogate argument ->
-                Left
-                    ( BadValue
-                        "--key"
-                        "is not text in this locale's encoding: run under a UTF-8 locale, or spell the bytes with --key-hex"
-                    )
-            | otherwise -> readKeyAs KeyText argument
-        [(KeyHex, argument)] -> readKeyAs KeyHex argument
-        [] -> Left (MissingFlag "--key")
-        _ -> Left (BadValue "--key-hex" "excludes --key: name the key once")
-    readKeyAs encoding argument =
-        Key <$> first KeyRefused (readKey encoding (T.pack argument))
-    isSurrogate c = generalCategory c == Surrogate
     walletArgs flags = do
         vault <- required "--vault" flags
         magicText <- required "--network-magic" flags
@@ -1236,13 +819,6 @@ an application policy, and the wallet commands name an output directory.
 extraValuedFlags :: [String]
 extraValuedFlags = ["--application-policy", "--out"]
 
--- | The registry a command line names, refused as the command line refuses.
-registryRefused :: RegistryRefusal -> CLIError
-registryRefused = \case
-    RegistryMissing flag -> MissingFlag flag
-    RegistryBad flag why -> BadValue flag why
-
--- | One line naming the refusal.
 renderCLIError :: CLIError -> String
 renderCLIError = \case
     RemovedSetting name ->
@@ -1306,19 +882,13 @@ references it looks up.
 -}
 neededRoles :: Command -> Set ReferenceRole
 neededRoles = \case
-    Create _ _ -> Set.singleton RoleState
-    Fold _ -> everything
-    Reject _ -> Set.fromList [RoleState, RoleRequest]
-    Reclaim _ -> Set.empty
+    Fold _ -> Set.fromList [minBound .. maxBound]
     StateCreate _ -> Set.empty
-    Inspect _ -> Set.empty
     WalletCreate _ -> Set.empty
     WalletAddress _ -> Set.empty
     WalletSign _ -> Set.empty
     SubmitBundle _ -> Set.empty
     Help _ -> Set.empty
-  where
-    everything = Set.fromList [minBound .. maxBound]
 
 -- * The wallet verbs
 

@@ -1,5 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
-
 {- |
 Module      : Singular.CLI.FlagGroupSpec
 Description : Both parsers accept exactly the shared flag group
@@ -20,14 +18,6 @@ prove it.
 -}
 module Singular.CLI.FlagGroupSpec (spec) where
 
-import Control.Monad (forM_)
-import Data.ByteString qualified as BS
-import Data.ByteString.Base16 qualified as B16
-import Data.ByteString.Char8 qualified as BC
-import Data.Either (isRight)
-import Data.List (isPrefixOf, nub)
-import Test.Hspec
-
 import Cardano.Crypto.Hash.Class (hashFromBytes)
 import Cardano.Ledger.Address (Addr (..))
 import Cardano.Ledger.BaseTypes (Network (Testnet))
@@ -36,7 +26,12 @@ import Cardano.Ledger.Credential
     , StakeReference (..)
     )
 import Cardano.Ledger.Hashes (ScriptHash (..))
-
+import Control.Monad (forM_)
+import Data.ByteString qualified as BS (replicate)
+import Data.ByteString.Base16 qualified as B16 (encode)
+import Data.ByteString.Char8 qualified as BC (pack)
+import Data.Either (isRight)
+import Data.List (nub)
 import Singular.CLI.Command
     ( CLIError (..)
     , WriteSettings (..)
@@ -65,11 +60,19 @@ import Singular.Registry.Wallet
     , parseSignKey
     , walletFromSignKey
     )
+import Test.Hspec
+    ( Spec
+    , describe
+    , it
+    , shouldBe
+    , shouldNotBe
+    , shouldSatisfy
+    )
 
 spec :: Spec
 spec = describe "common flag group" $ do
     publishedGroup
-    registryTokenizer
+    applicationPolicySpellingizer
     siblingTokenizer
     tracing
     settings
@@ -135,8 +138,8 @@ publishedGroup = describe "published group" $ do
     it "publishes no duplicate spelling" $
         nub commonFlagGroup `shouldBe` commonFlagGroup
 
-registryTokenizer :: Spec
-registryTokenizer = describe "registry tokenizer" $ do
+applicationPolicySpellingizer :: Spec
+applicationPolicySpellingizer = describe "registry tokenizer" $ do
     forM_ pinnedCommonValued $ \flag ->
         it ("takes " <> flag) $
             tokenizesRegistry ["cmd", flag, "value"]
@@ -528,18 +531,18 @@ scriptSpelling =
         Nothing -> error "scriptSpelling: 28 bytes are not a script hash"
 
 -- | A well-formed state token spelling, built at run time.
-registryToken :: String
-registryToken = replicate 56 'a' <> "." <> replicate 64 'b'
+applicationPolicySpelling :: String
+applicationPolicySpelling = replicate 56 'a'
 
--- | A valid fold command line; probes append one flag to it.
-validFold :: [String]
-validFold =
-    [ "registry"
-    , "fold"
+-- | A valid state create command line; probes append one flag to it.
+validStateCreate :: [String]
+validStateCreate =
+    [ "state"
+    , "create"
     , "--blueprint"
     , "blueprint.json"
-    , "--state-token"
-    , registryToken
+    , "--application-policy"
+    , applicationPolicySpelling
     , "--koios-url"
     , "https://koios.example"
     , "--network-magic"
@@ -555,34 +558,16 @@ unknownRefusal flag = BadValue flag "is not a flag singular reads"
 registryCommand :: Spec
 registryCommand = describe "registry command" $ do
     it "refuses an unknown flag by name" $
-        parseCommand ["registry", "fold", "--frobnicate", "x"]
+        parseCommand ["state", "create", "--frobnicate", "x"]
             `shouldBe` Left (unknownRefusal "--frobnicate")
     forM_ (pinnedCommonValued <> registryExtras) $ \flag ->
         it ("owns " <> flag) $
-            parseCommand (validFold <> [flag, "value"])
+            parseCommand (validStateCreate <> [flag, "value"])
                 `shouldNotBe` Left (unknownRefusal flag)
     forM_ pinnedSwitches $ \flag ->
         it ("owns " <> flag) $
-            parseCommand (validFold <> [flag])
+            parseCommand (validStateCreate <> [flag])
                 `shouldNotBe` Left (unknownRefusal flag)
-    forM_ ["fold", "reject", "reclaim"] $ \verb ->
-        it
-            ( "refuses --payload-schema in registry "
-                <> verb
-                <> " as it refuses --payload"
-            )
-            $ do
-                let line flag = ["registry", verb] <> drop 2 validFold <> [flag, "plain"]
-                    renamed = \case
-                        Left (BadValue _ why) -> Left (BadValue "--payload-schema" why)
-                        other -> other
-                parseCommand (line "--payload-schema")
-                    `shouldBe` renamed (parseCommand (line "--payload"))
-                parseCommand (line "--payload-schema")
-                    `shouldSatisfy` \case
-                        Left (BadValue "--payload-schema" why) ->
-                            ("is not accepted by registry " <> verb) `isPrefixOf` why
-                        _ -> False
 
 -- | Whether a full valued list accepts every common flag.
 acceptsCommon :: [String] -> Bool

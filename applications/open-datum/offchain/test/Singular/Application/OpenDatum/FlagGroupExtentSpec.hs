@@ -21,13 +21,7 @@ control.
 module Singular.Application.OpenDatum.FlagGroupExtentSpec (spec) where
 
 import Control.Monad (forM_)
-import Data.ByteString qualified as BS
 import Data.Either (isRight)
-import Data.Text qualified as T
-import Test.Hspec
-
-import Cardano.Ledger.BaseTypes (Network (..))
-
 import Singular.Application.OpenDatum.Command
     ( parseOpenDatumCommand
     , parseOpenDatumWithGroup
@@ -42,8 +36,14 @@ import Singular.CLI.FlagGroup
     , commonSwitches
     , tokenizeWith
     )
-import Singular.Registry.TxBuilder.Internal (addrFromKeyHashBytes)
-import Singular.Registry.Wallet (bech32Address)
+import Test.Hspec
+    ( Spec
+    , describe
+    , it
+    , shouldBe
+    , shouldNotBe
+    , shouldSatisfy
+    )
 
 spec :: Spec
 spec = describe "flag group extent" $ do
@@ -52,57 +52,6 @@ spec = describe "flag group extent" $ do
     extrasAsymmetry
     anchors
     productionVariants
-    createFollowsRegistry
-
-{- | Open-datum's create accepts a signer exactly when the registry's create
-does: both parsers answer the same create lines the same way, their
-refusal texts differing only in the binary's own name.
--}
-createFollowsRegistry :: Spec
-createFollowsRegistry = describe "create follows the registry's create" $ do
-    it
-        "answers the external-signer create lines as the registry's create does"
-        $ do
-            let node = ["--koios-url", "u", "--network-magic", "1"]
-                registryCreate extra =
-                    parseCommand
-                        (["registry", "create", "--blueprint", "b"] <> node <> extra)
-                siblingCreate extra =
-                    parseOpenDatumCommand
-                        (["open-datum", "create", "--blueprint", "b"] <> node <> extra)
-                inRegistryName =
-                    T.unpack
-                        . T.replace "open-datum inspect" "registry inspect"
-                        . T.pack
-                normalize (Registry.BadValue flag why) = Just (flag, inRegistryName why)
-                normalize Registry.PreviewTakesNoKey = Just ("--wallet-skey", "no key")
-                normalize _ = Nothing
-                normalizeSibling (Sibling.BadValue flag why) =
-                    Just (flag, inRegistryName why)
-                normalizeSibling Sibling.PreviewTakesNoKey =
-                    Just ("--wallet-skey", "no key")
-                normalizeSibling _ = Nothing
-                sameAs line = do
-                    let registryAnswer = either normalize (const Nothing) (registryCreate line)
-                        siblingAnswer =
-                            either normalizeSibling (const Nothing) (siblingCreate line)
-                    registryAnswer `shouldBe` siblingAnswer
-            -- outside a preview, the address with its bundle file is accepted by
-            -- both creates
-            sameAs ["--wallet-address", anAddress, "--bundle", "b"]
-            -- the address alone gets the shared reader's refusal in both
-            sameAs ["--wallet-address", anAddress]
-            -- the bundle file alone is meaningless in both
-            sameAs ["--bundle", "b"]
-            -- two signers together are refused by both
-            sameAs
-                ["--wallet-skey", "k", "--wallet-address", anAddress, "--bundle", "b"]
-            -- a preview refuses the bundle file in both binaries
-            sameAs ["--preview", "--wallet-address", anAddress, "--bundle", "b"]
-
--- | A bech32 payment-key address, produced from a key hash, never typed.
-anAddress :: String
-anAddress = bech32Address (addrFromKeyHashBytes Testnet (BS.replicate 28 0x5a))
 
 -- | The one valued flag the registry parser owns beyond the group.
 registryExtras :: [String]
@@ -131,12 +80,12 @@ extentToken = replicate 56 'a' <> "." <> replicate 64 'b'
 -- | A valid registry fold; probes append one flag to it.
 registryFold :: [String]
 registryFold =
-    [ "registry"
-    , "fold"
+    [ "state"
+    , "create"
     , "--blueprint"
     , "blueprint.json"
-    , "--state-token"
-    , extentToken
+    , "--application-policy"
+    , replicate 56 'a'
     , "--koios-url"
     , "u"
     , "--network-magic"
@@ -165,8 +114,8 @@ siblingFold =
 -- | A valid registry fold without its token, for the token variant.
 registryFoldBare :: [String]
 registryFoldBare =
-    [ "registry"
-    , "fold"
+    [ "state"
+    , "create"
     , "--blueprint"
     , "b"
     , "--koios-url"
@@ -180,12 +129,12 @@ registryFoldBare =
 -- | A valid registry fold without its url, for the url variant.
 registryFoldNoKoios :: [String]
 registryFoldNoKoios =
-    [ "registry"
-    , "fold"
+    [ "state"
+    , "create"
     , "--blueprint"
     , "b"
-    , "--state-token"
-    , extentToken
+    , "--application-policy"
+    , replicate 56 'a'
     , "--network-magic"
     , "1"
     , "--wallet-skey"
@@ -272,7 +221,7 @@ anchors = describe "true groups parse" $ do
         parseWithGroup
             registryFull
             []
-            (registryFoldBare <> ["--state-token", extentToken])
+            (registryFoldBare <> ["--application-policy", replicate 56 'a'])
             `shouldSatisfy` isRight
         parseOpenDatumWithGroup
             siblingFull
@@ -282,7 +231,7 @@ anchors = describe "true groups parse" $ do
 
 -- | A group with one common flag dropped.
 droppedRegistry :: [String]
-droppedRegistry = filter (/= "--state-token") registryFull
+droppedRegistry = filter (/= "--application-policy") registryFull
 
 -- | A group with one common flag renamed.
 renamedRegistry :: [String]
@@ -303,12 +252,12 @@ rename other = other
 productionVariants :: Spec
 productionVariants = describe "planted divergence through the parsers" $ do
     it
-        "a registry group dropping --state-token refuses it through the parser"
+        "a registry group dropping --application-policy refuses it through the parser"
         $ parseWithGroup
             droppedRegistry
             []
-            (registryFoldBare <> ["--state-token", extentToken])
-            `shouldBe` Left (registryUnknown "--state-token")
+            (registryFoldBare <> ["--application-policy", replicate 56 'a'])
+            `shouldBe` Left (registryUnknown "--application-policy")
     it
         "a registry group renaming --koios-url refuses it through the parser"
         $ parseWithGroup

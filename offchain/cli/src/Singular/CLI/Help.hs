@@ -15,8 +15,22 @@ module Singular.CLI.Help
     ) where
 
 import Data.Version (Version)
-
 import Singular.CLI.Declared
+    ( blueprint
+    , environmentLog
+    , environmentPassphrase
+    , environmentState
+    , exitStatuses
+    , nodeShape
+    , passphraseFd
+    , preprodExample
+    , receipt
+    , seed
+    , signerParagraph
+    , stateDir
+    , tracingShape
+    , writeShape
+    )
 import Singular.CLI.Options
     ( Flag (..)
     , Leaf (..)
@@ -35,10 +49,9 @@ singularProgram version =
     Program
         { programName = "singular"
         , programSummary =
-            "Create a Singular registry on Cardano, fold requests into it, reject or \
-            \reclaim requests, read it back, and sign and submit transaction bundles."
+            "Create a Singular registry on Cardano, and sign and submit transaction bundles."
         , programVersion = version
-        , programNodes = [registryGroup, stateGroup, walletGroup, submitLeaf]
+        , programNodes = [stateGroup, walletGroup, submitLeaf]
         , programFooter =
             [ ""
             , "Every command takes --trace, --trace-to and --trace-format to narrate"
@@ -53,26 +66,6 @@ singularHelp version = helpText (singularProgram version)
 -- | The usage line of a command.
 singularUsageLine :: Version -> [String] -> [String]
 singularUsageLine version = usageText (singularProgram version)
-
-registryGroup :: Node
-registryGroup =
-    Group
-        "registry"
-        "Create a registry and act on it"
-        [ "The registry commands name a registry by its address, which create \
-          \prints: one word that holds the registry's state token and its network, \
-          \so a command given it needs nothing else to find the registry. Every \
-          \command but create takes it from --registry or from SINGULAR_REGISTRY. \
-          \A registry may still be named by its state token (--state-token or \
-          \SINGULAR_STATE_TOKEN) with the network (--network-magic); given both, \
-          \they must agree."
-        ]
-        [ createLeaf
-        , foldLeaf
-        , rejectLeaf
-        , reclaimLeaf
-        , inspectLeaf
-        ]
 
 stateGroup :: Node
 stateGroup =
@@ -142,192 +135,6 @@ stateCreateLeaf =
                 , "    " <> preprodExample <> " \\"
                 , "    --vault alice.vault"
                 ]
-            , leafNotes = exitStatuses
-            }
-
--- ---------------------------------------------------------------------------
--- registry
-
-createLeaf :: Node
-createLeaf =
-    Runs
-        Leaf
-            { leafName = "create"
-            , leafSummary = "Boot a registry, or preview its identity"
-            , leafDescription =
-                [ "Boots one registry from a seed output of your wallet and prints its \
-                  \address, which every other command names the registry by, with its \
-                  \state token and its fingerprint. The processing window and the \
-                  \retract window are fixed here for the life of the registry."
-                , signerParagraph
-                , previewParagraph
-                ]
-            , leafShape =
-                Each
-                    [ Takes stateDir
-                    , Needs blueprint
-                    , Takes seed
-                    , Takes applicationPolicy
-                    , Takes processTime
-                    , Takes retractTime
-                    , nodeShape
-                    , OneOf
-                        [ Each [writeShape, Takes saveStateToken]
-                        , Each [Needs preview, Needs previewAddress]
-                        ]
-                    , tracingShape
-                    ]
-            , leafWord = Nothing
-            , leafEnvironment =
-                [environmentLog, environmentState, environmentPassphrase]
-            , leafExamples =
-                [ "singular registry create --blueprint plutus.json \\"
-                , "    " <> preprodExample <> " \\"
-                , "    --vault alice.vault"
-                ]
-            , leafNotes = exitStatuses
-            }
-
-foldLeaf :: Node
-foldLeaf =
-    Runs
-        Leaf
-            { leafName = "fold"
-            , leafSummary = "Fold the pending requests into the registry"
-            , leafDescription =
-                [ "Folds the pending requests the registry can settle into it, \
-                  \signed and funded by the wallet that runs it, and names every \
-                  \request it leaves out. With --request, the command is refused \
-                  \unless that request is among those folded."
-                , signerParagraph
-                ]
-            , leafShape =
-                Each
-                    [ Takes stateDir
-                    , Needs blueprint
-                    , registryShape
-                    , registryNodeShape
-                    , writeShape
-                    , Takes foldRequest
-                    , spendingShape
-                    , tracingShape
-                    ]
-            , leafWord = Nothing
-            , leafEnvironment =
-                [environmentLog, environmentState, environmentPassphrase]
-            , leafExamples =
-                [ "singular registry fold --blueprint plutus.json \\"
-                , "    --registry <address> \\"
-                , "    " <> preprodUrlExample <> " \\"
-                , "    --vault alice.vault"
-                ]
-            , leafNotes = exitStatuses
-            }
-
-rejectLeaf :: Node
-rejectLeaf =
-    Runs
-        Leaf
-            { leafName = "reject"
-            , leafSummary = "Reject all pending requests past their windows"
-            , leafDescription =
-                [ "Clears the registry's pending requests, all or none: it is built \
-                  \only once every pending request is past both its windows, the \
-                  \processing window and the retract window after it. Until then it \
-                  \is refused, naming each request and when its retract window \
-                  \closes. Each owner is refunded the request's value less the tip; \
-                  \the wallet that runs it keeps the tip."
-                , signerParagraph
-                ]
-            , leafShape =
-                Each
-                    [ Takes stateDir
-                    , Needs blueprint
-                    , registryShape
-                    , registryNodeShape
-                    , writeShape
-                    , spendingShape
-                    , tracingShape
-                    ]
-            , leafWord = Nothing
-            , leafEnvironment =
-                [environmentLog, environmentState, environmentPassphrase]
-            , leafExamples =
-                [ "singular registry reject --blueprint plutus.json \\"
-                , "    --registry <address> \\"
-                , "    " <> preprodUrlExample <> " \\"
-                , "    --vault alice.vault"
-                ]
-            , leafNotes = exitStatuses
-            }
-
-reclaimLeaf :: Node
-reclaimLeaf =
-    Runs
-        Leaf
-            { leafName = "reclaim"
-            , leafSummary = "Take back your own pending request"
-            , leafDescription =
-                [ "Takes back the named pending insertion or terminal-witness \
-                  \request of this wallet, inside its retract window. The locked \
-                  \lovelace returns to the owner in one output; the registry's root \
-                  \does not move. An early refusal names when the window opens; \
-                  \once closed, registry reject clears the request."
-                , signerParagraph
-                ]
-            , leafShape =
-                Each
-                    [ Takes stateDir
-                    , Needs blueprint
-                    , registryShape
-                    , Needs reclaimRequest
-                    , registryNodeShape
-                    , writeShape
-                    , spendingShape
-                    , tracingShape
-                    ]
-            , leafWord = Nothing
-            , leafEnvironment =
-                [environmentLog, environmentState, environmentPassphrase]
-            , leafExamples =
-                [ "singular registry reclaim --blueprint plutus.json \\"
-                , "    --registry <address> --request <txid>#<ix> \\"
-                , "    " <> preprodUrlExample <> " \\"
-                , "    --vault alice.vault"
-                ]
-            , leafNotes = exitStatuses
-            }
-
-inspectLeaf :: Node
-inspectLeaf =
-    Runs
-        Leaf
-            { leafName = "inspect"
-            , leafSummary = "Read the registry and a key back"
-            , leafDescription =
-                [ "Reads the registry and one key back: the key's state, the pending \
-                  \requests with what each actually locks, and the registry's root. \
-                  \It reads only: it takes no signing key and submits nothing."
-                , "With --wallet-address it reconciles that wallet's managed journal \
-                  \as a write would; without it the read is stateless and creates no \
-                  \state."
-                ]
-            , leafShape =
-                Each
-                    [ Takes stateDir
-                    , Needs blueprint
-                    , registryShape
-                    , keyShape
-                    , registryNodeShape
-                    , Takes outputsAt
-                    , Takes reconcileAddress
-                    , Takes receipt
-                    , tracingShape
-                    ]
-            , leafWord = Nothing
-            , leafEnvironment =
-                [environmentLog, environmentState]
-            , leafExamples = []
             , leafNotes = exitStatuses
             }
 
@@ -482,30 +289,12 @@ submitLeaf =
 -- ---------------------------------------------------------------------------
 -- flags only this program reads, or reads with its own words
 
-applicationPolicy :: Flag
-applicationPolicy =
-    valued
-        "--application-policy"
-        "HEX"
-        "Pin an application policy at creation: 56 hex characters, a 28-byte hash."
-
 stateApplicationPolicy :: Flag
 stateApplicationPolicy =
     valued
         "--application-policy"
         "HEX"
         "The policy of the application the registry is for: 56 hex characters, a 28-byte hash. It is the one parameter of the state validator."
-
-foldRequest :: Flag
-foldRequest =
-    valued
-        "--request"
-        "TXID#IX"
-        "Expect this pending request to be folded; refused if it is not among those settled."
-
-reclaimRequest :: Flag
-reclaimRequest =
-    valued "--request" "TXID#IX" "The pending request to take back."
 
 vaultToCreate :: Flag
 vaultToCreate =

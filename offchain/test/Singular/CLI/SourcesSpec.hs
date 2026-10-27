@@ -19,15 +19,11 @@ module Singular.CLI.SourcesSpec (spec) where
 
 import Control.Monad (forM_)
 import Data.Aeson (Value (..), object, (.=))
-import Data.Aeson.Key qualified as Key
+import Data.Aeson.Key qualified as Key (fromString)
 import Data.Char (toUpper)
 import Data.Either (isLeft, isRight)
 import Data.List (isInfixOf, nub, sort)
 import Data.Maybe (fromMaybe, isJust)
-import System.FilePath ((</>))
-import System.IO.Temp (withSystemTempDirectory)
-import Test.Hspec
-
 import Singular.CLI.Command
     ( CLIError (..)
     , parseInvocation
@@ -54,6 +50,9 @@ import Singular.CLI.Sources
     , loadSourcesAt
     )
 import Singular.Registry.AddressOracle (addressOf)
+import System.FilePath ((</>))
+import System.IO.Temp (withSystemTempDirectory)
+import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
 
 program :: Program
 program = singularProgram singularVersion
@@ -84,8 +83,6 @@ settings =
     , ("--network-magic", "SINGULAR_NETWORK_MAGIC", "network-magic", "42")
     , ("--blueprint", "SINGULAR_BLUEPRINT", "blueprint", "plutus.json")
     , ("--state-dir", "SINGULAR_STATE_DIR", "state-dir", "/state")
-    , ("--state-token", "SINGULAR_STATE_TOKEN", "state-token", token)
-    , ("--registry", "SINGULAR_REGISTRY", "registry", registryAddress)
     ,
         ( "--koios-token-file"
         , "SINGULAR_KOIOS_TOKEN_FILE"
@@ -100,10 +97,10 @@ settings =
 flagOf :: (String, String, String, String) -> String
 flagOf (f, _, _, _) = f
 
--- | A fold with the named settings on its command line and no signer.
+-- | A state create with the named settings on its command line and no signer.
 foldBase :: [(String, String, String, String)] -> [String]
 foldBase kept =
-    ["registry", "fold"]
+    ["state", "create", "--application-policy", replicate 56 'a']
         <> concat [[f, v] | (f, _, _, v) <- kept]
 
 -- | The same with a vault.
@@ -190,21 +187,6 @@ spec = describe "the settings given by the environment and a config file" $ do
                     )
                 , ("--bundle", "bundle.json")
                 ]
-            preview =
-                [ "registry"
-                , "create"
-                , "--preview"
-                , "--blueprint"
-                , "plutus.json"
-                , "--koios-url"
-                , "http://koios.example"
-                , "--network-time"
-                , "/times"
-                , "--network-magic"
-                , "42"
-                , "--wallet-address"
-                , "addr_test1vpd95kj6tfd95kj6tfd95kj6tfd95kj6tfd95kj6tfd95ksypknf7"
-                ]
         it "left out is read from SINGULAR_VAULT" $
             withEnvironment
                 [("SINGULAR_VAULT", "alice.vault")]
@@ -275,11 +257,6 @@ spec = describe "the settings given by the environment and a config file" $ do
                 [("SINGULAR_VAULT", "alice.vault")]
                 (foldBase settings <> ["--passphrase-fd", "0"])
                 `shouldSatisfy` isRight
-        it "is not taken by a preview, which signs nothing" $ do
-            meaning preview `shouldSatisfy` isRight
-            withEnvironment [("SINGULAR_VAULT", "alice.vault")] preview
-                `shouldBe` meaning preview
-            withFile [("vault", "alice.vault")] preview `shouldBe` meaning preview
         it "does not hold up a request for help" $
             withEnvironment
                 [("SINGULAR_VAULT", "alice.vault")]
@@ -314,13 +291,13 @@ spec = describe "the settings given by the environment and a config file" $ do
                 fst
                 ( parseInvocationFrom
                     (Sources [] (Left "the config file x.json does not exist"))
-                    ["registry", "fold"]
+                    ["state", "create", "--application-policy", replicate 56 'a']
                 )
                 `shouldBe` Left (ConfigRefused "the config file x.json does not exist")
         it "is ignored for a request for help" $
             parseInvocationFrom
                 (Sources [] (Left "the config file x.json does not exist"))
-                ["registry", "fold", "--help"]
+                ["state", "create", "--help"]
                 `shouldSatisfy` isRight
     describe "the keys of a file" $ do
         let read' = configFromValue program "demo.json"
@@ -353,7 +330,6 @@ spec = describe "the settings given by the environment and a config file" $ do
                     , "wallet-skey"
                     , "wallet-address"
                     , "bundle"
-                    , "preview"
                     , "config"
                     ]
             forM_ typedOnly $ \name ->

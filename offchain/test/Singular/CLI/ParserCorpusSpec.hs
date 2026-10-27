@@ -118,21 +118,16 @@ spec = describe "the command lines in use" $ do
         let accepted = nub (sort (mapMaybe acceptedKind entries))
         accepted
             `shouldBe` sort
-                [ "Create"
-                , "Fold"
-                , "Help"
-                , "Inspect"
-                , "Reclaim"
-                , "Reject"
+                [ "Help"
                 , "StateCreate"
                 , "SubmitBundle"
                 , "WalletAddress"
                 , "WalletCreate"
                 , "WalletSign"
                 ]
-        length entries `shouldSatisfy` (> 1500)
+        length entries `shouldBe` 586
         length [() | e <- entries, "refused" `isPrefix` expectedResult e]
-            `shouldSatisfy` (> 500)
+            `shouldBe` 451
   where
     isPrefix p s = take (length p) s == p
     acceptedKind entry = case parseEntry entry of

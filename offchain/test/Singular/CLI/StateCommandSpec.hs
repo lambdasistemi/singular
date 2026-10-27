@@ -26,31 +26,6 @@ journey.
 -}
 module Singular.CLI.StateCommandSpec (spec) where
 
-import Control.Concurrent
-    ( newEmptyMVar
-    , putMVar
-    , takeMVar
-    , threadDelay
-    )
-import Control.Concurrent.Async (async, cancel, race, waitCatch)
-import Control.Monad (forM_, void, when)
-import Data.Aeson qualified as Aeson
-import Data.ByteString qualified as BS
-import Data.ByteString.Base16 qualified as B16
-import Data.ByteString.Short qualified as SBS
-import Data.Foldable (toList)
-import Data.IORef (modifyIORef', newIORef, readIORef)
-import Data.Map.Strict qualified as Map
-import Data.Maybe (fromMaybe)
-import Data.Text (Text)
-import Data.Text qualified as T
-import Data.Text.Encoding qualified as TE
-import Lens.Micro ((&), (.~), (^.))
-import System.Directory (doesFileExist)
-import System.Exit (ExitCode (..))
-import System.FilePath ((</>))
-import Test.Hspec
-
 import Cardano.Crypto.Hash (hashFromBytes)
 import Cardano.Ledger.Api.Tx (bodyTxL, witsTxL)
 import Cardano.Ledger.Api.Tx.Body
@@ -80,11 +55,35 @@ import Cardano.Ledger.Mary.Value
     )
 import Cardano.Ledger.TxIn (TxIn)
 import Cardano.Tx.Ledger (ConwayTx)
-
-import Singular.CLI.Command
-    ( CLIError (..)
-    , parseCommand
+import Control.Concurrent
+    ( newEmptyMVar
+    , putMVar
+    , takeMVar
+    , threadDelay
     )
+import Control.Concurrent.Async (async, cancel, race, waitCatch)
+import Control.Monad (forM_, void, when)
+import Data.Aeson qualified as Aeson
+    ( KeyValue ((.=))
+    , Value
+    , object
+    )
+import Data.ByteString qualified as BS
+    ( ByteString
+    , readFile
+    , replicate
+    )
+import Data.ByteString.Base16 qualified as B16 (encode)
+import Data.ByteString.Short qualified as SBS (fromShort)
+import Data.Foldable (toList)
+import Data.IORef (modifyIORef', newIORef, readIORef)
+import Data.Map.Strict qualified as Map (singleton)
+import Data.Maybe (fromMaybe)
+import Data.Text (Text)
+import Data.Text qualified as T (isInfixOf, pack, unpack)
+import Data.Text.Encoding qualified as TE (decodeUtf8)
+import Lens.Micro ((&), (.~), (^.))
+import Singular.CLI.Command (CLIError (..), parseCommand)
 import Singular.CLI.CommandRunSpec
     ( Rig (..)
     , Run (..)
@@ -114,11 +113,20 @@ import Singular.Registry.Evidence
     , unverifiedVerifier
     )
 import Singular.Registry.Ledger (ConwayEra, TxOut)
-import Singular.Registry.LedgerProvider (OutputQuery (..), Session)
+import Singular.Registry.LedgerProvider
+    ( OutputQuery (..)
+    , Session
+    )
 import Singular.Registry.LedgerProvider qualified as Cage
+    ( LedgerProvider (acquire)
+    , Session (outputs)
+    , SubmitResult (SubmitFailed)
+    )
 import Singular.Registry.RawChainFixture (rawChainProvider)
 import Singular.Registry.SessionEvidence (observeProvider)
 import Singular.Registry.SessionIO qualified as SessionIO
+    ( withLatest
+    )
 import Singular.Registry.Signing (signedTx)
 import Singular.Registry.SyntheticLedger (unitProgram)
 import Singular.Registry.TxBuilder.Edges (selectFunding)
@@ -139,6 +147,21 @@ import Singular.State.Script
     , stateAddress
     , statePolicy
     , stateScriptFromBlueprint
+    )
+import System.Directory (doesFileExist)
+import System.Exit (ExitCode (..))
+import System.FilePath ((</>))
+import Test.Hspec
+    ( Spec
+    , describe
+    , expectationFailure
+    , it
+    , shouldBe
+    , shouldContain
+    , shouldNotBe
+    , shouldNotContain
+    , shouldReturn
+    , shouldSatisfy
     )
 
 spec :: Spec
@@ -234,13 +257,9 @@ parserRows = describe "the command line" $ do
                 )
             )
             `shouldBe` Just ("missing", "--blueprint")
-    it "refuses two signers as the registry commands refuse them" $ do
-        let signers = keyFile <> vaultFile
-            already = ["registry", "create"] <> node <> signers
-        aboutRefusal (reading (stateCreate signers))
-            `shouldSatisfy` (/= Nothing)
-        aboutRefusal (reading (stateCreate signers))
-            `shouldBe` aboutRefusal (reading already)
+    it "refuses two signers, naming the conflicting vault" $
+        aboutRefusal (reading (stateCreate (keyFile <> vaultFile)))
+            `shouldBe` Just ("bad value", "--vault")
     it "refuses a setting the command does not take, naming it"
         $ forM_
             [ (["--fund-input", replicate 64 'b' <> "#0"], "--fund-input")

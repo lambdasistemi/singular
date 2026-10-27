@@ -135,14 +135,14 @@ for page in README.md docs/unlisted.md; do
   printf '\n```sh\nsingular registry describe\n```\n' >>"$scratch/t/$page"
   expect "removed-page-command-${page//\//-}" 1 "$page:[0-9]+: singular registry describe .*not a command singular supports"
   fresh
-  printf '\n```sh\nsingular registry fold --made-up-flag 1\n```\n' >>"$scratch/t/$page"
-  expect "unknown-current-flag-${page//\//-}" 1 "$page:[0-9]+: singular registry fold --made-up-flag"
+  printf '\n```sh\nsingular state create --made-up-flag 1\n```\n' >>"$scratch/t/$page"
+  expect "unknown-current-flag-${page//\//-}" 1 "$page:[0-9]+: singular state create --made-up-flag"
 done
 
 # The singular binary takes a flag the documentation never mentions.
 fresh
-stand_in_singular 'registry create' "$(plant --planted-flag)"
-expect undocumented-flag 1 '^undocumented: singular registry create takes --planted-flag'
+stand_in_singular 'state create' "$(plant --planted-flag)"
+expect undocumented-flag 1 '^undocumented: singular state create takes --planted-flag'
 
 # The submit verb takes a flag the documentation never mentions: the
 # check reads submit's own usage line, not only the registry group.
@@ -188,7 +188,7 @@ grep -q '^| `--key KEY` | `create`' "$table" || {
   echo "SETUP-FAIL: the key row did not change" >&2
   exit 2
 }
-expect wrong-command 1 '^documented, not in --help: the settings table gives --key to singular registry create'
+expect wrong-command 1 '^documented, not in --help: the settings table gives --key to open-datum create'
 
 # A flag documented for a command whose --help does not give it (open-datum side).
 fresh
@@ -207,12 +207,12 @@ grep -q '^| `--registry ADDRESS` | `create`' "$table" || {
   echo "SETUP-FAIL: the registry row did not gain create" >&2
   exit 2
 }
-expect wrong-command-registry 1 '^documented, not in --help: the settings table gives --registry to singular registry create'
+expect wrong-command-registry 1 '^documented, not in --help: the settings table gives --registry to open-datum create'
 
 # A documented singular invocation uses a flag its command does not print.
 fresh
-printf '\n```sh\nsingular registry inspect --state-dir ./reg \\\n  --made-up-flag 1\n```\n' >>"$scratch/t/docs/cli-recovery.md"
-expect invocation-unknown 1 'docs/cli-recovery.md:[0-9]+: singular registry inspect --made-up-flag'
+printf '\n```sh\nsingular state create --state-dir ./reg \\\n  --made-up-flag 1\n```\n' >>"$scratch/t/docs/cli-recovery.md"
+expect invocation-unknown 1 'docs/cli-recovery.md:[0-9]+: singular state create --made-up-flag'
 
 # A documented open-datum invocation uses a flag its command does not print.
 fresh
@@ -223,12 +223,12 @@ expect invocation-unknown-od 1 'docs/cli-recovery.md:[0-9]+: open-datum insert -
 fresh
 cat >"$scratch/singular" <<EOF
 #!/usr/bin/env bash
-if [ "\$*" = "registry fold --help" ]; then exit 3; fi
+if [ "\$*" = "state create --help" ]; then exit 3; fi
 exec "$real_singular" "\$@"
 EOF
 chmod +x "$scratch/singular"
 binary_singular="$scratch/singular"
-expect command-help-fails 1 '^singular registry fold --help exited non-zero'
+expect command-help-fails 1 '^singular state create --help exited non-zero'
 
 fresh
 cat >"$scratch/open-datum" <<EOF
@@ -263,7 +263,7 @@ expect no-quotation 2 '^EMPTY EXTENT: no page quotes a program'"'"'s help'
 # commands goes, wallet verbs and submit included.
 fresh
 stand_in_singular '' 's/^All commands:$/Other commands:/'
-expect empty-help 2 '^EMPTY EXTENT: singular --help names no registry command'
+expect empty-help 2 '^EMPTY EXTENT: singular --help names no command'
 
 fresh
 stand_in_od '' 's/^All commands:$/Other commands:/'
@@ -288,8 +288,8 @@ expect unknown-verb-od 1 'docs/cli-recovery.md:[0-9]+: open-datum reject .*not a
 # on verbs the committed controls do not cover (`fold` here; the committed
 # `inspect`/`insert` controls stay as they are).
 fresh
-printf '\n```sh\nsingular registry fold --state-dir ./reg \\\n  --made-up-flag 1\n```\n' >>"$scratch/t/docs/cli-recovery.md"
-expect invocation-known-bad-flag 1 'docs/cli-recovery.md:[0-9]+: singular registry fold --made-up-flag'
+printf '\n```sh\nsingular state create --state-dir ./reg \\\n  --made-up-flag 1\n```\n' >>"$scratch/t/docs/cli-recovery.md"
+expect invocation-known-bad-flag 1 'docs/cli-recovery.md:[0-9]+: singular state create --made-up-flag'
 
 fresh
 printf '\n```sh\nopen-datum fold --state-dir ./reg \\\n  --made-up-flag 1\n```\n' >>"$scratch/t/docs/cli-recovery.md"
@@ -323,7 +323,7 @@ expect removed-verb-refusal-value 1 'docs/cli-recovery.md:[0-9]+: singular regis
 # Each invocation omits --help so it reaches dispatch: at the base the verb
 # parses and is refused for a missing flag, never as unknown, so this
 # control fails there; after the split it is refused as unknown.
-for verb in insert update terminate address; do
+for verb in insert update terminate address create fold reject reclaim inspect; do
   fresh
   got=0
   "$binary_singular" registry "$verb" >"$scratch/out-$verb" 2>"$scratch/err-$verb" || got=$?
@@ -404,11 +404,11 @@ expect unknown-verb-holding 1 'docs/cli-recovery.md:[0-9]+: open-datum holding z
 
 # The documented write counts name the new commands: a count that omits them fails.
 fresh
-sed -i 's/the five singular writes and the [a-z][a-z]* open-datum writes/the four singular writes and the five open-datum writes/' "$table"
+sed -i 's/the one singular write and the [a-z][a-z]* open-datum writes/the four singular writes and the five open-datum writes/' "$table"
 grep -q 'the four singular writes and the five open-datum writes' "$table" || {
   echo "SETUP-FAIL: the incorrect write counts did not apply" >&2
   exit 2
 }
-expect write-counts-omit-the-groups 1 'settings table: .* applies to "the four singular writes and the five open-datum writes", but singular --help names 5 write commands'
+expect write-counts-omit-the-groups 1 'settings table: .* applies to "the four singular writes and the five open-datum writes", but singular --help names 1 write commands'
 
 echo "PASS cli-flags-controls: $controls controls over ${#pages[@]} pages"

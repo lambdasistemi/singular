@@ -435,7 +435,7 @@ and the executable's entry point lives in
 `applications/open-datum/offchain/app/`.
 The public `registry-cli` component (`offchain/cli/`) carries the registry
 command line the two binaries link — session, journal and receipts, the
-flag group, `create`, `fold`, `reject`, `reclaim`, `inspect`, reconcile,
+flag group, the retained OpenDatum `create`, `fold` and `inspect` helpers, reconcile,
 recovery, the booking call and the creation of a registry on the proved design
 with the fold into it: `Singular.CLI`, `Singular.CLI.Attached`,
 `Singular.CLI.Command`, `Singular.CLI.Create`,
@@ -443,9 +443,9 @@ with the fold into it: `Singular.CLI`, `Singular.CLI.Attached`,
 `Singular.CLI.Inspect`, `Singular.CLI.Key`, `Singular.CLI.Live`,
 `Singular.CLI.ManagedState`, `Singular.CLI.Outlay`, `Singular.CLI.Payload`, `Singular.CLI.Permanent`,
 `Singular.CLI.Plan`, `Singular.CLI.Promise`, `Singular.CLI.Proof`,
-`Singular.CLI.Receipt`, `Singular.CLI.ReceiptBody`, `Singular.CLI.Reclaim`,
+`Singular.CLI.Receipt`, `Singular.CLI.ReceiptBody`,
 `Singular.CLI.ReclaimRules`, `Singular.CLI.Reconcile`,
-`Singular.CLI.Recovery`, `Singular.CLI.Registry`, `Singular.CLI.Reject`,
+`Singular.CLI.Recovery`, `Singular.CLI.Registry`,
 `Singular.CLI.RejectRules`, `Singular.CLI.RequestWindow`,
 `Singular.CLI.Root`, `Singular.CLI.Session`, `Singular.CLI.State`,
 `Singular.CLI.Steps`, `Singular.CLI.Trace`,

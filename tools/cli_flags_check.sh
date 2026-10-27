@@ -138,7 +138,7 @@ status=0
 }
 mapfile -t singular_commands < <(overview_commands singular <"$scratch/help.singular")
 if [ ${#singular_commands[@]} -eq 0 ]; then
-  echo "EMPTY EXTENT: singular --help names no registry command" >&2
+  echo "EMPTY EXTENT: singular --help names no command" >&2
   exit 2
 fi
 : >"$scratch/singular.pairs"
@@ -254,8 +254,8 @@ while IFS= read -r row; do
       status=1
     }
     for c in "${od_commands[@]}"; do applies+=("open-datum $c"); done
-  elif [[ "$cmdcell" == *"singular writes"* || "$cmdcell" == *"open-datum writes"* ]]; then
-    if [[ $cmdcell =~ the\ ([a-z]+)\ singular\ writes ]]; then
+  elif [[ "$cmdcell" == *"singular write"* || "$cmdcell" == *"open-datum writes"* ]]; then
+    if [[ $cmdcell =~ the\ ([a-z]+)\ singular\ writes? ]]; then
       word=${BASH_REMATCH[1]}
       [ "${#singular_writes[@]}" = "$(number_word "$word")" ] || {
         echo "settings table: '${rowflags[*]}' applies to \"$cmdcell\", but singular --help names ${#singular_writes[@]} write commands (wanted $word)" >&2

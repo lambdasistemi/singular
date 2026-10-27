@@ -28,16 +28,104 @@ the reader, and the packaged controls drive the real binary with one.
 -}
 module Singular.CLI.SignSpec (spec) where
 
+import Cardano.Crypto.DSIGN
+    ( Ed25519DSIGN
+    , SigDSIGN
+    , SignKeyDSIGN
+    , VerKeyDSIGN
+    , deriveVerKeyDSIGN
+    , rawDeserialiseSigDSIGN
+    , rawDeserialiseVerKeyDSIGN
+    , rawSerialiseSignKeyDSIGN
+    , rawSerialiseVerKeyDSIGN
+    , verifyDSIGN
+    )
+import Cardano.Ledger.Api.Tx (mkBasicTx)
+import Cardano.Tx.Ledger (ConwayTx)
 import Control.Exception (SomeException, throwIO, try)
 import Control.Monad (forM_)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
+    ( breakSubstring
+    , drop
+    , isInfixOf
+    , length
+    , null
+    , readFile
+    , writeFile
+    )
 import Data.ByteString.Char8 qualified as BC
+    ( break
+    , pack
+    , unpack
+    , writeFile
+    )
 import Data.Char (toLower, toUpper)
 import Data.List (isInfixOf, sort)
 import Data.List.NonEmpty (NonEmpty ((:|)), toList)
 import Data.Text qualified as Text
+    ( Text
+    , pack
+    , replicate
+    , unpack
+    )
 import GHC.IO.Handle (hDuplicate, hDuplicateTo)
+import Singular.CLI.Command
+    ( CLIError (..)
+    , Command (..)
+    , SignArgs (..)
+    , StateCreateArgs (..)
+    , WriteSettings (..)
+    , parseCommand
+    )
+import Singular.CLI.FlagGroup (Signer (..), commonFlagGroup)
+import Singular.CLI.Passphrase
+    ( PassphraseSource (..)
+    , mkPassphrase
+    , publicNetworks
+    )
+import Singular.CLI.Sign
+    ( PlannedWitness (plannedBytes, plannedPath, plannedSummary)
+    , SignRefusal (SignVaultNotAmongSigners)
+    , bundleWitnesses
+    , renderSignRefusal
+    , signBundle
+    , witnessPlan
+    )
+import Singular.CLI.Vault
+    ( createVaultFile
+    , freshSignKey
+    , sealVault
+    , vaultWorkFactor
+    )
+import Singular.Registry.Bundle
+    ( Bundle (..)
+    , BundleTransaction
+        ( bundleTxEffects
+        , bundleTxEnvelope
+        , bundleTxIdentity
+        )
+    , DetachedWitness (DetachedWitness, detachedKeyBytes)
+    , TextEnvelope (envelopeCborHex)
+    , bodyIdentity
+    , decodeTransactionEnvelope
+    , decodeWitnessEnvelope
+    , encodeBundle
+    , hexText
+    , renderBundleRefusal
+    , transactionEnvelope
+    )
+import Singular.Registry.BundleSpec
+    ( bundleTxOf
+    , fixedSigner
+    , syntheticBody
+    )
+import Singular.Registry.Ledger (ConwayTxBody)
+import Singular.Registry.Wallet
+    ( bech32Address
+    , walletAddr
+    , walletFromSignKey
+    )
 import System.Directory
     ( doesDirectoryExist
     , doesFileExist
@@ -62,54 +150,15 @@ import System.Posix.IO
     )
 import System.Posix.Types (Fd (..))
 import Test.Hspec
-
-import Cardano.Crypto.DSIGN
-    ( Ed25519DSIGN
-    , SigDSIGN
-    , SignKeyDSIGN
-    , VerKeyDSIGN
-    , deriveVerKeyDSIGN
-    , rawDeserialiseSigDSIGN
-    , rawDeserialiseVerKeyDSIGN
-    , rawSerialiseSignKeyDSIGN
-    , rawSerialiseVerKeyDSIGN
-    , verifyDSIGN
-    )
-
-import Cardano.Ledger.Api.Tx (mkBasicTx)
-import Cardano.Tx.Ledger (ConwayTx)
-import Singular.CLI.Command
-    ( CLIError (..)
-    , Command (..)
-    , FoldArgs (..)
-    , SignArgs (..)
-    , WriteSettings (..)
-    , parseCommand
-    )
-import Singular.CLI.FlagGroup (Signer (..), commonFlagGroup)
-import Singular.CLI.Passphrase
-    ( PassphraseSource (..)
-    , mkPassphrase
-    , publicNetworks
-    )
-import Singular.CLI.Sign
-import Singular.CLI.Vault
-    ( createVaultFile
-    , freshSignKey
-    , sealVault
-    , vaultWorkFactor
-    )
-import Singular.Registry.Bundle
-import Singular.Registry.BundleSpec
-    ( bundleTxOf
-    , fixedSigner
-    , syntheticBody
-    )
-import Singular.Registry.Ledger (ConwayTxBody)
-import Singular.Registry.Wallet
-    ( bech32Address
-    , walletAddr
-    , walletFromSignKey
+    ( Spec
+    , describe
+    , expectationFailure
+    , it
+    , shouldBe
+    , shouldNotBe
+    , shouldNotSatisfy
+    , shouldReturn
+    , shouldSatisfy
     )
 
 spec :: Spec
@@ -199,9 +248,10 @@ theCommandLine = describe "the command line" $ do
             ] of
             Left (BadValue "--network-magic" _) -> pure ()
             other -> expectationFailure ("--network-magic was taken: " <> show other)
-    it "takes the wallet vault flag on a registry write, as its signer" $
+    it "takes the wallet vault flag on a state create, as its signer" $
         case parseCommand (vaultFoldLine ["--vault", "x"]) of
-            Right (Fold a) -> writeSigner (foldWrite a) `shouldBe` SignerVault "x" Nothing
+            Right (StateCreate a) ->
+                writeSigner (stateCreateWrite a) `shouldBe` SignerVault "x" Nothing
             other -> expectationFailure ("--vault was not taken: " <> show other)
     it "refuses the output directory outside wallet sign" $
         case parseCommand ["wallet", "create", "--out", "d", "--vault", "v"] of
@@ -701,15 +751,15 @@ secretSpellings key =
   where
     raw = rawSerialiseSignKeyDSIGN key
 
--- | A registry fold line complete but for its signer, which the probe names.
+-- | A state create line complete but for its signer, which the probe names.
 vaultFoldLine :: [String] -> [String]
 vaultFoldLine signer =
-    [ "registry"
-    , "fold"
+    [ "state"
+    , "create"
     , "--blueprint"
     , "blueprint.json"
-    , "--state-token"
-    , replicate 56 'a' <> "." <> replicate 64 'b'
+    , "--application-policy"
+    , replicate 56 'a'
     , "--koios-url"
     , "https://koios.example"
     , "--network-magic"

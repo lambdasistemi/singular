@@ -2,8 +2,7 @@
 
 Dated qualification, 2026-10-15: rejection after the window, rejection before the deadline, request value and refund routing, rejection and retraction refund controls, and rejection inside the processing and retraction windows are all unmet by ruling: implementation follows the superseded rule; the ruled rule is not implemented. The live comparisons still exercise the legacy rejection that spends the registry state output. The ruled rejection reads that output by reference and never spends it. Agreement with the legacy path is not acceptance of the ruled design. The earlier processing-window consumer requirement and the unresolved refund-routing requirement remain open. Historical results below retain their original revision and evidence binding; they do not establish current acceptance.
 
-As a registry operator, you want to use `create`, `fold`, `reclaim`, `reject` and `inspect`
-through `singular registry`, and `create`, `insert`, `update`, `terminate`, `fold` and `inspect`
+As a registry operator, you create a registry through `singular state create` and sign and submit bundles through `singular wallet` and `singular submit`. You also use `create`, `insert`, `update`, `terminate`, `fold` and `inspect`
 through `open-datum`, with a Koios API on your chosen network.
 The commands that create a registry and book, fold, reclaim and clean up a registration
 are described in [create a registry and register keys on the proved design](registry-commands.md).
@@ -35,8 +34,8 @@ The overview of each program follows, quoted from the program itself. The first 
 ```text
 Usage: singular COMMAND
 
-Create a Singular registry on Cardano, fold requests into it, reject or
-reclaim requests, read it back, and sign and submit transaction bundles.
+Create a Singular registry on Cardano, and sign and submit transaction
+bundles.
 
 Available settings:
   Show this help text
@@ -46,11 +45,6 @@ Available settings:
   switch: --version
 
 All commands:
-  singular registry create    Boot a registry, or preview its identity
-  singular registry fold      Fold the pending requests into the registry
-  singular registry reject    Reject all pending requests past their windows
-  singular registry reclaim   Take back your own pending request
-  singular registry inspect   Read the registry and a key back
   singular state create       Create the registry of an application
   singular wallet create      Create a vault with a fresh key
   singular wallet address     Print the address of a vault's key
@@ -107,35 +101,35 @@ what it does; standard output carries the receipt alone.
 
 | Setting | Commands | What it is |
 | --- | --- | --- |
-| `--koios-url URL` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `singular submit`, `insert`, `update`, `terminate`, `singular state create`, `open-datum state create`, `open-datum state fold`, `open-datum registration book`, `open-datum registration reclaim`, `open-datum registration cleanup`, `open-datum holding update`, `open-datum holding terminate` | The Koios API base URL used for raw reads and signed submission. There is one ordinary provider path. When the flag is absent, `SINGULAR_KOIOS_URL` or the key `koios-url` of the config file gives it; see [the three forms](#giving-the-chain-the-contracts-and-the-registry-once). |
-| `--koios-token-file FILE` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `singular submit`, `insert`, `update`, `terminate`, `singular state create`, `open-datum state create`, `open-datum state fold`, `open-datum registration book`, `open-datum registration reclaim`, `open-datum registration cleanup`, `open-datum holding update`, `open-datum holding terminate` | An optional authentication token read from this file. Keep its contents private; receipts and logs redact it. When the flag is absent, `SINGULAR_KOIOS_TOKEN_FILE` or the key `koios-token-file` of the config file gives it; see [the three forms](#giving-the-chain-the-contracts-and-the-registry-once). |
-| `--network-time DIR` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `singular submit`, `insert`, `update`, `terminate`, `singular state create`, `open-datum state create`, `open-datum state fold`, `open-datum registration book`, `open-datum registration reclaim`, `open-datum registration cleanup`, `open-datum holding update`, `open-datum holding terminate` | Pinned time-manifest.json, shelley-genesis.json and era-history.cbor. Preprod can use the reviewed packaged recording; generated network 42 requires its exact published directory. When the flag is absent, `SINGULAR_NETWORK_TIME` or the key `network-time` of the config file gives it. |
-| `--network-magic N` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `singular submit`, `singular wallet create`, `singular wallet address`, `insert`, `update`, `terminate`, `singular state create`, `open-datum state create`, `open-datum state fold`, `open-datum registration book`, `open-datum registration reclaim`, `open-datum registration cleanup`, `open-datum holding update`, `open-datum holding terminate` | The requested network: 1 for preprod or 42 for the generated development network. Time material and provider answers must agree with it; unsupported time networks refuse. Mainnet's magic is refused for writes. The wallet commands take it alone, with no provider: it selects the network the address is built for. When the flag is absent, `SINGULAR_NETWORK_MAGIC` or the key `network-magic` of the config file gives it. |
+| `--koios-url URL` | `create`, `fold`, `inspect`, `singular submit`, `insert`, `update`, `terminate`, `singular state create`, `open-datum state create`, `open-datum state fold`, `open-datum registration book`, `open-datum registration reclaim`, `open-datum registration cleanup`, `open-datum holding update`, `open-datum holding terminate` | The Koios API base URL used for raw reads and signed submission. There is one ordinary provider path. When the flag is absent, `SINGULAR_KOIOS_URL` or the key `koios-url` of the config file gives it; see [the three forms](#giving-the-chain-the-contracts-and-the-registry-once). |
+| `--koios-token-file FILE` | `create`, `fold`, `inspect`, `singular submit`, `insert`, `update`, `terminate`, `singular state create`, `open-datum state create`, `open-datum state fold`, `open-datum registration book`, `open-datum registration reclaim`, `open-datum registration cleanup`, `open-datum holding update`, `open-datum holding terminate` | An optional authentication token read from this file. Keep its contents private; receipts and logs redact it. When the flag is absent, `SINGULAR_KOIOS_TOKEN_FILE` or the key `koios-token-file` of the config file gives it; see [the three forms](#giving-the-chain-the-contracts-and-the-registry-once). |
+| `--network-time DIR` | `create`, `fold`, `inspect`, `singular submit`, `insert`, `update`, `terminate`, `singular state create`, `open-datum state create`, `open-datum state fold`, `open-datum registration book`, `open-datum registration reclaim`, `open-datum registration cleanup`, `open-datum holding update`, `open-datum holding terminate` | Pinned time-manifest.json, shelley-genesis.json and era-history.cbor. Preprod can use the reviewed packaged recording; generated network 42 requires its exact published directory. When the flag is absent, `SINGULAR_NETWORK_TIME` or the key `network-time` of the config file gives it. |
+| `--network-magic N` | `create`, `fold`, `inspect`, `singular submit`, `singular wallet create`, `singular wallet address`, `insert`, `update`, `terminate`, `singular state create`, `open-datum state create`, `open-datum state fold`, `open-datum registration book`, `open-datum registration reclaim`, `open-datum registration cleanup`, `open-datum holding update`, `open-datum holding terminate` | The requested network: 1 for preprod or 42 for the generated development network. Time material and provider answers must agree with it; unsupported time networks refuse. Mainnet's magic is refused for writes. The wallet commands take it alone, with no provider: it selects the network the address is built for. When the flag is absent, `SINGULAR_NETWORK_MAGIC` or the key `network-magic` of the config file gives it. |
 | `--process-time MS` | `create`, `open-datum state create` | How long a booked request may wait for its fold, in positive integer milliseconds: 600 000 (ten minutes) when omitted. Fixed for the life of the registry. |
 | `--retract-time MS` | `create` | How long the owner may reclaim a request after its processing deadline, in positive integer milliseconds: 300 000 (five minutes) when omitted. Fixed for the life of the registry. |
 | `--reclaim-time MS` | `open-datum state create` | How long the refund address may take a registration back after its processing deadline, in milliseconds: 300 000 (five minutes) when omitted. Fixed for the life of the registry. |
 | `--booking-width MS` | `open-datum state create` | The widest validity interval a booking may declare, in milliseconds: 300 000 (five minutes) when omitted. Fixed for the life of the registry. |
 | `--registration-cost LOVELACE` | `open-datum state create` | The registration cost the registry carries, in whole lovelace: 0 when omitted. Nothing enforces it. Fixed for the life of the registry. |
 | `--minimum-tip LOVELACE` | `open-datum state create` | The minimum tip the registry carries, in whole lovelace: 0 when omitted. Nothing enforces it. Fixed for the life of the registry. |
-| `--application-policy HEX` | `singular create`, `singular state create` | The application policy pinned at creation, as hex, for an application whose script does not depend on the registry identity. `open-datum create` carries its own from its application value and refuses this flag. `singular state create` requires it: it is the one parameter of the state validator, and the registry it creates is the registry of that application. |
-| `--confirm-timeout SECONDS` | the five singular writes and the twelve open-datum writes | How long each submission may take to appear on chain; ten minutes when not given. Past it the command stops with the submission journalled as unconfirmed and never resubmits it. |
-| `--state-dir DIR` | `singular create`, `singular fold`, `singular reject`, `singular reclaim`, `singular inspect`, `open-datum create`, `open-datum insert`, `open-datum update`, `open-datum terminate`, `open-datum fold`, `open-datum inspect`, `singular state create`, `open-datum state create`, `open-datum state fold`, `open-datum registration book`, `open-datum registration reclaim`, `open-datum registration cleanup`, `open-datum holding update`, `open-datum holding terminate` | Optional state root override. Absent, each command resolves its own managed state directory under the platform per-user state location (`XDG_STATE_HOME`, falling back to `$HOME/.local/state`, namespace `singular`), partitioned by network, complete state token and the caller's stable wallet payment identity: the same identity reuses its journal and lock across invocations and key-file relocation, and different wallets and tokens never share one. A configured root keeps the same partitioning; it is never a per-registry directory. The journal of your submissions, their saved bodies and, while `create` runs, its pending identity live under that partition. When the flag is absent, `SINGULAR_STATE_DIR` or the key `state-dir` of the config file gives it. |
-| `--state-token POLICY.NAME` | `insert`, `update`, `terminate`, `fold`, `reclaim`, `reject`, `inspect`, `open-datum state fold`, `open-datum registration book`, `open-datum registration reclaim`, `open-datum registration cleanup`, `open-datum holding update`, `open-datum holding terminate` | The registry, by its state token: the policy and the name in hex, as `create` prints it. When the flag is absent, `SINGULAR_STATE_TOKEN` or the key `state-token` of the config file gives it; the flag wins. The command derives everything else from the token, the blueprint and the chain before it builds anything, and refuses by name when they disagree. `create` refuses it: it makes one. Beside `--registry` it must name the registry that address holds, or the command is refused naming both. |
-| `--registry ADDRESS` | `insert`, `update`, `terminate`, `fold`, `reclaim`, `reject`, `inspect` | The registry, by its address, as `create` prints it: one word that holds the registry's state token and its network, so the command needs no `--state-token` and no `--network-magic`. When the flag is absent, `SINGULAR_REGISTRY` or the key `registry` of the config file gives it; the flag wins. A `--state-token` or a `--network-magic` beside it that names another registry or another network is refused in one sentence naming both; the same values are accepted. A word that is not the address of a registry is refused before anything else is done, saying which of four causes it is: not a bech32 word, a wrong checksum, an unknown prefix, or a body that is not 60 bytes. `create` refuses it: it makes the registry and prints its address. |
+| `--application-policy HEX` | `singular state create` | The application policy pinned at creation, as hex, for an application whose script does not depend on the registry identity. `open-datum create` carries its own from its application value and refuses this flag. `singular state create` requires it: it is the one parameter of the state validator, and the registry it creates is the registry of that application. |
+| `--confirm-timeout SECONDS` | the one singular write and the twelve open-datum writes | How long each submission may take to appear on chain; ten minutes when not given. Past it the command stops with the submission journalled as unconfirmed and never resubmits it. |
+| `--state-dir DIR` | `open-datum create`, `open-datum insert`, `open-datum update`, `open-datum terminate`, `open-datum fold`, `open-datum inspect`, `singular state create`, `open-datum state create`, `open-datum state fold`, `open-datum registration book`, `open-datum registration reclaim`, `open-datum registration cleanup`, `open-datum holding update`, `open-datum holding terminate` | Optional state root override. Absent, each command resolves its own managed state directory under the platform per-user state location (`XDG_STATE_HOME`, falling back to `$HOME/.local/state`, namespace `singular`), partitioned by network, complete state token and the caller's stable wallet payment identity: the same identity reuses its journal and lock across invocations and key-file relocation, and different wallets and tokens never share one. A configured root keeps the same partitioning; it is never a per-registry directory. The journal of your submissions, their saved bodies and, while `create` runs, its pending identity live under that partition. When the flag is absent, `SINGULAR_STATE_DIR` or the key `state-dir` of the config file gives it. |
+| `--state-token POLICY.NAME` | `insert`, `update`, `terminate`, `fold`, `inspect`, `open-datum state fold`, `open-datum registration book`, `open-datum registration reclaim`, `open-datum registration cleanup`, `open-datum holding update`, `open-datum holding terminate` | The registry, by its state token: the policy and the name in hex, as `create` prints it. When the flag is absent, `SINGULAR_STATE_TOKEN` or the key `state-token` of the config file gives it; the flag wins. The command derives everything else from the token, the blueprint and the chain before it builds anything, and refuses by name when they disagree. `create` refuses it: it makes one. Beside `--registry` it must name the registry that address holds, or the command is refused naming both. |
+| `--registry ADDRESS` | `insert`, `update`, `terminate`, `fold`, `inspect` | The registry, by its address, as `create` prints it: one word that holds the registry's state token and its network, so the command needs no `--state-token` and no `--network-magic`. When the flag is absent, `SINGULAR_REGISTRY` or the key `registry` of the config file gives it; the flag wins. A `--state-token` or a `--network-magic` beside it that names another registry or another network is refused in one sentence naming both; the same values are accepted. A word that is not the address of a registry is refused before anything else is done, saying which of four causes it is: not a bech32 word, a wrong checksum, an unknown prefix, or a body that is not 60 bytes. `create` refuses it: it makes the registry and prints its address. |
 | `--registry ADDRESS` | `open-datum state fold`, `open-datum registration book`, `open-datum registration reclaim`, `open-datum registration cleanup`, `open-datum holding update`, `open-datum holding terminate` | The registry the command acts on, by its address, as `open-datum state create` prints it. It is the same word as for the commands above and means the same: it holds the registry's state token and its network, so the command needs no `--state-token` and no `--network-magic`, and a token or a magic beside it that names another registry or network is refused. `open-datum state create` makes a registry and refuses it. |
-| `--config FILE` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `singular submit`, `singular wallet create`, `singular wallet address`, `singular wallet sign`, `insert`, `update`, `terminate`, `singular state create`, `open-datum state create`, `open-datum state fold`, `open-datum registration book`, `open-datum registration reclaim`, `open-datum registration cleanup`, `open-datum holding update`, `open-datum holding terminate` | The JSON file that gives the settings above that have a key when neither the command line nor the environment does; the variable `SINGULAR_CONFIG` names it too. When neither is given the file is `singular.json` in the folder the command runs from, if there is one. See [the three forms](#giving-the-chain-the-contracts-and-the-registry-once). |
-| `--blueprint FILE` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `singular submit`, `insert`, `update`, `terminate`, `singular state create`, `open-datum state create`, `open-datum state fold`, `open-datum registration book`, `open-datum registration reclaim`, `open-datum registration cleanup`, `open-datum holding update`, `open-datum holding terminate` | The registry partition's compiled blueprint, the `onchain/plutus.json` a release archive carries. When the flag is absent, `SINGULAR_BLUEPRINT` or the key `blueprint` of the config file gives it. For `singular submit` it is the release the registry a bundle names was created under, which the registry's pinned policies are checked against before the first send; a create bundle names no registry and needs none. |
-| `--wallet-address ADDR` | `create`, `insert`, `update`, `terminate`, `inspect`, `singular fold`, `singular reclaim`, `singular reject`, `open-datum insert`, `open-datum update`, `open-datum terminate`, `open-datum fold`, `singular state create`, `open-datum state create`, `open-datum state fold`, `open-datum registration book`, `open-datum registration reclaim`, `open-datum registration cleanup`, `open-datum holding update`, `open-datum holding terminate` | Your wallet's public address, in place of the signing key on a preview: the command reads that wallet and prints what it would submit, and signs, submits and journals nothing. On `inspect` it locates the managed journal that address's wallet reconciles, with the same lock-or-skip semantics as a write; without it `inspect` is a stateless chain read that checks no wallet journal and creates no state. On `singular create`, `singular fold`, `singular reclaim`, `singular reject`, `open-datum create`, `open-datum insert`, `open-datum update`, `open-datum terminate` and `open-datum fold` it names an external signer in place of the signing key, together with `--bundle`: the address must be bech32 and pay a key, so a script or bootstrap address is refused, naming it, and so is `--wallet-skey` beside it, because a write takes exactly one signer. Such a run builds its whole chain as one bundle and ends with the outcome `waiting-for-signatures`, exit status 19, as `--bundle` describes. `singular state create` and the commands of `open-datum state` and `open-datum registration` take it the same way, with `--bundle`. |
-| `--bundle FILE` | `singular create`, `singular fold`, `singular reclaim`, `singular reject`, `open-datum create`, `open-datum insert`, `open-datum update`, `open-datum terminate`, `open-datum fold`, `singular state create`, `open-datum state create`, `open-datum state fold`, `open-datum registration book`, `open-datum registration reclaim`, `open-datum registration cleanup`, `open-datum holding update`, `open-datum holding terminate` | The new file an external signer's run is written to: one bundle of unsigned transactions for `singular wallet sign`. It goes with `--wallet-address`: either one alone is refused, a preview refuses it, and an existing path is refused with its bytes untouched. The command builds its whole run as that one bundle in build order, signs and sends nothing, saves the bundle and each unsigned body beside the journal with one `waiting-for-signatures` line per transaction, and ends with the outcome `waiting-for-signatures`, exit status 19. The bundle holds, on `singular create` and `open-datum create`, its whole chain in the order it builds it (the state publication when no carrier is live, the boot, the request, the witness publications and the pinned application publication); on `singular fold`, `singular reclaim` and `singular reject`, the preparation when the funding needs one and then the command's own transaction spending it; on `open-datum insert` and `open-datum terminate`, the preparation when needed and then the booking, and with `--fold` also the fold's preparation when needed and the fold; on `open-datum update`, the preparation when needed and then the update; on `open-datum fold`, the preparation when needed and then the fold. Its receipt names the bundle (its hash, the written and saved paths, the signer, and per transaction its step, identity, deadline and effects) and states the command's own fields under `expected`, because nothing has landed yet: for the open-datum writes these are the booking, the request, the fold deadline, the live output and the root. For a bundle file, open-datum's own booked, updated and root-seen lines, and the root a fold reads, are not narrated: a staged run narrates each of its transactions as built and staged, and with the vault those lines are narrated once the bundle has landed. A create bundle names no state token and carries no deadline, and create keeps its pending identity recorded, so the token the bundle will mint is never lost. While a bundle of the wallet is waiting for signatures, the next `open-datum insert`, `open-datum update`, `open-datum terminate` or `open-datum fold` of that registry by the same wallet, by the key file or by an external signer, stops before building anything with the outcome `waiting-for-signatures` and exit status 19, naming the bundle (its hash and saved path) and the members awaited with their deadlines, builds nothing, writes no bundle file and journals nothing of its own, while the earlier bundle's members found on chain are recorded as landed; a second `open-datum create` is stopped the same way by an earlier create's waiting bundle, not by another write's. A bundle that has landed or died never blocks, and the next write's receipt reports it under `reconciled`. A pending bundle stops the next write of the same registry by the same wallet only. A write in another registry, a create of a new registry included, is not stopped, and it may spend a wallet output that the pending bundle needs. A bundle whose transactions carry a deadline then dies by expiry, and running the command again rebuilds it. A bundle signed elsewhere whose transactions carry none, an `open-datum insert`, `update` or `terminate` without `--fold` and a create, never expires: if it can never land, it keeps stopping the next write of that registry by that wallet at status 19. The way out today is, for a create, a create that names another output with `--seed`, as [When a bundle waits for signatures](cli-recovery.md#when-a-bundle-waits-for-signatures) says; for the others, `--state-dir` naming another state directory, which starts a fresh journal for that registry and wallet. On `singular state create` and `open-datum state create` the bundle holds the publication of the validators when no live copy exists and then the creation, in that order; on the other commands of the proved design it holds their one transaction. |
+| `--config FILE` | `create`, `fold`, `inspect`, `singular submit`, `singular wallet create`, `singular wallet address`, `singular wallet sign`, `insert`, `update`, `terminate`, `singular state create`, `open-datum state create`, `open-datum state fold`, `open-datum registration book`, `open-datum registration reclaim`, `open-datum registration cleanup`, `open-datum holding update`, `open-datum holding terminate` | The JSON file that gives the settings above that have a key when neither the command line nor the environment does; the variable `SINGULAR_CONFIG` names it too. When neither is given the file is `singular.json` in the folder the command runs from, if there is one. See [the three forms](#giving-the-chain-the-contracts-and-the-registry-once). |
+| `--blueprint FILE` | `create`, `fold`, `inspect`, `singular submit`, `insert`, `update`, `terminate`, `singular state create`, `open-datum state create`, `open-datum state fold`, `open-datum registration book`, `open-datum registration reclaim`, `open-datum registration cleanup`, `open-datum holding update`, `open-datum holding terminate` | The registry partition's compiled blueprint, the `onchain/plutus.json` a release archive carries. When the flag is absent, `SINGULAR_BLUEPRINT` or the key `blueprint` of the config file gives it. For `singular submit` it is the release the registry a bundle names was created under, which the registry's pinned policies are checked against before the first send; a create bundle names no registry and needs none. |
+| `--wallet-address ADDR` | `create`, `insert`, `update`, `terminate`, `inspect`, `open-datum insert`, `open-datum update`, `open-datum terminate`, `open-datum fold`, `singular state create`, `open-datum state create`, `open-datum state fold`, `open-datum registration book`, `open-datum registration reclaim`, `open-datum registration cleanup`, `open-datum holding update`, `open-datum holding terminate` | Your wallet's public address, in place of the signing key on a preview: the command reads that wallet and prints what it would submit, and signs, submits and journals nothing. On `inspect` it locates the managed journal that address's wallet reconciles, with the same lock-or-skip semantics as a write; without it `inspect` is a stateless chain read that checks no wallet journal and creates no state. On `singular state create`, `open-datum create`, `open-datum insert`, `open-datum update`, `open-datum terminate` and `open-datum fold` it names an external signer in place of the signing key, together with `--bundle`: the address must be bech32 and pay a key, so a script or bootstrap address is refused, naming it, and so is `--wallet-skey` beside it, because a write takes exactly one signer. Such a run builds its whole chain as one bundle and ends with the outcome `waiting-for-signatures`, exit status 19, as `--bundle` describes. `singular state create` and the commands of `open-datum state` and `open-datum registration` take it the same way, with `--bundle`. |
+| `--bundle FILE` | `open-datum create`, `open-datum insert`, `open-datum update`, `open-datum terminate`, `open-datum fold`, `singular state create`, `open-datum state create`, `open-datum state fold`, `open-datum registration book`, `open-datum registration reclaim`, `open-datum registration cleanup`, `open-datum holding update`, `open-datum holding terminate` | The new file an external signer's run is written to: one bundle of unsigned transactions for `singular wallet sign`. It goes with `--wallet-address`: either one alone is refused, a preview refuses it, and an existing path is refused with its bytes untouched. The command builds its whole run as that one bundle in build order, signs and sends nothing, saves the bundle and each unsigned body beside the journal with one `waiting-for-signatures` line per transaction, and ends with the outcome `waiting-for-signatures`, exit status 19. The bundle holds, on `singular create` and `open-datum create`, its whole chain in the order it builds it (the state publication when no carrier is live, the boot, the request, the witness publications and the pinned application publication); on `singular fold`, `singular reclaim` and `singular reject`, the preparation when the funding needs one and then the command's own transaction spending it; on `open-datum insert` and `open-datum terminate`, the preparation when needed and then the booking, and with `--fold` also the fold's preparation when needed and the fold; on `open-datum update`, the preparation when needed and then the update; on `open-datum fold`, the preparation when needed and then the fold. Its receipt names the bundle (its hash, the written and saved paths, the signer, and per transaction its step, identity, deadline and effects) and states the command's own fields under `expected`, because nothing has landed yet: for the open-datum writes these are the booking, the request, the fold deadline, the live output and the root. For a bundle file, open-datum's own booked, updated and root-seen lines, and the root a fold reads, are not narrated: a staged run narrates each of its transactions as built and staged, and with the vault those lines are narrated once the bundle has landed. A create bundle names no state token and carries no deadline, and create keeps its pending identity recorded, so the token the bundle will mint is never lost. While a bundle of the wallet is waiting for signatures, the next `open-datum insert`, `open-datum update`, `open-datum terminate` or `open-datum fold` of that registry by the same wallet, by the key file or by an external signer, stops before building anything with the outcome `waiting-for-signatures` and exit status 19, naming the bundle (its hash and saved path) and the members awaited with their deadlines, builds nothing, writes no bundle file and journals nothing of its own, while the earlier bundle's members found on chain are recorded as landed; a second `open-datum create` is stopped the same way by an earlier create's waiting bundle, not by another write's. A bundle that has landed or died never blocks, and the next write's receipt reports it under `reconciled`. A pending bundle stops the next write of the same registry by the same wallet only. A write in another registry, a create of a new registry included, is not stopped, and it may spend a wallet output that the pending bundle needs. A bundle whose transactions carry a deadline then dies by expiry, and running the command again rebuilds it. A bundle signed elsewhere whose transactions carry none, an `open-datum insert`, `update` or `terminate` without `--fold` and a create, never expires: if it can never land, it keeps stopping the next write of that registry by that wallet at status 19. The way out today is, for a create, a create that names another output with `--seed`, as [When a bundle waits for signatures](cli-recovery.md#when-a-bundle-waits-for-signatures) says; for the others, `--state-dir` naming another state directory, which starts a fresh journal for that registry and wallet. On `singular state create` and `open-datum state create` the bundle holds the publication of the validators when no live copy exists and then the creation, in that order; on the other commands of the proved design it holds their one transaction. |
 | `--seed TXID#IX` | `create`, `singular state create`, `open-datum state create` | The output the new registry is booted from, which fixes its identity. On `create` it is your wallet's largest ada-only output when a live state carrier exists, or the first publication's change when the state script must be published; an explicit `--seed` names a held output, or the previewed chained seed to pin the identity, and a held sole output while the state must be published is refused — omit `--seed` and the first publication's change becomes the seed. On `singular state create` and `open-datum state create` it is your wallet's largest ada-only output, chosen when the registry is built and after the validators have been published when they must be, so the publication cannot have spent it. |
 | `--preview` | `create` | Names the identity the new registry would have, and the output it would be booted from, before anything is submitted; the alternative to `--seed`. |
 | `--save-state-token` | `create` | After a create that succeeds, keep the new registry's state token as the key `state-token` of the settings file, so the commands after it need no `--state-token`; see [the registry's name kept by create](#the-registrys-name-kept-by-create). It is a switch of this command and not a standing setting: it has no variable and no key of the config file. It is refused with `--preview` and with `--wallet-address` and `--bundle`, because no registry exists to name yet, and every other command refuses it by name. |
 | `--closed` | `open-datum create` | Boot a closed-datum registry whose payload is written once. The receipt names the application `open_datum.closed_datum`. Every later command follows the registry's mode, which it learns from the registry's pinned application policy once the pinned policies have been compared, with no further flag, and an update on a closed registry stops before anything is built or signed, saying the registry is closed. |
 | `--preview` | `insert`, `update`, `terminate` | Build and measure what the command would submit — fee, measured units, stated collateral, outlay — from the wallet a public address names, and print it; nothing is signed, submitted or journalled. |
-| `--fund-input TXID#IX` | `insert`, `update`, `terminate`, `fold`, `reclaim`, `reject` | The wallet output that funds and collateralises the write. `create`, `inspect` refuse it rather than ignore it. The commands of the proved design refuse it too: their builders choose the funding. |
-| `--max-outlay LOVELACE` | `insert`, `update`, `terminate`, `fold`, `reclaim`, `reject` | The most the write may put out of your wallet. A booking, an update, a fold, reclaim or reject past it is not signed; an insert or terminate given `--fold` whose fold, built after its booking confirms, costs more than the booking left of it stops partial, its request pending and the fold unsigned. `create`, `inspect` refuse it. The commands of the proved design refuse it too: their builders choose the funding. |
-| `--fold` | `insert`, `terminate` | Also fold pending requests, including the one this command just booked, in the same command and by the same routine `registry fold` runs. Without it the command books and stops. A preview and `update` refuse it. |
-| `--request TXID#IX` | `fold`, `reclaim` | The pending request to act on. Required by reclaim, which takes back only that request. On fold it is optional, and an expectation: without it the fold settles every settleable pending request, up to the capacity bound, in ledger input order and names every request it leaves out. With it the command is refused unless that request is among the settled ones, naming why it is not. A named request that is not pending is refused. |
+| `--fund-input TXID#IX` | `insert`, `update`, `terminate`, `fold` | The wallet output that funds and collateralises the write. `create`, `inspect` refuse it rather than ignore it. The commands of the proved design refuse it too: their builders choose the funding. |
+| `--max-outlay LOVELACE` | `insert`, `update`, `terminate`, `fold` | The most the write may put out of your wallet. A booking, an update or a fold past it is not signed; an insert or terminate given `--fold` whose fold, built after its booking confirms, costs more than the booking left of it stops partial, its request pending and the fold unsigned. `create`, `inspect` refuse it. The commands of the proved design refuse it too: their builders choose the funding. |
+| `--fold` | `insert`, `terminate` | Also fold pending requests, including the one this command just booked, in the same command and by the same routine `open-datum fold` runs. Without it the command books and stops. A preview and `update` refuse it. |
+| `--request TXID#IX` | `fold` | The pending request to act on. On fold it is optional, and an expectation: without it the fold settles every settleable pending request, up to the capacity bound, in ledger input order and names every request it leaves out. With it the command is refused unless that request is among the settled ones, naming why it is not. A named request that is not pending is refused. |
 | `--key KEY` | `insert`, `update`, `terminate`, `inspect` | The registry key the command acts on, as text: its UTF-8 bytes, between 1 and 32 of them. A string that looks like hex is still text. Give this or `--key-hex`, not both. |
 | `--key KEY` | `open-datum registration book` | The registry key the registration is for, as text: its UTF-8 bytes, between 1 and 32 of them. Give this or `--key-hex`, not both. |
 | `--key-hex HEX` | `insert`, `update`, `terminate`, `inspect`, `open-datum registration book` | The same key spelled as base16 bytes, for a key that is not printable text. The receipts print every key as hex, and as text when its bytes are valid UTF-8. |
@@ -148,15 +142,15 @@ what it does; standard output carries the receipt alone.
 | `--refund-address ADDR` | `open-datum registration book` | Where a reclaim or a cleanup returns the registration's value, a bech32 address: your own address when omitted. A reclaim must be run by the wallet of that address. |
 | `--holding TXID#IX` | `open-datum holding update`, `open-datum holding terminate` | The live holding to spend, by transaction identity and output index. Required; none is chosen automatically. The named registry and signing controller must match its protected control. |
 | `--pending TXID#IX` | `open-datum state fold`, `open-datum registration reclaim`, `open-datum registration cleanup` | The pending request to act on, as the receipt of `open-datum registration book` names it. Nothing is chosen for you. The fold takes the flag once for each registration it folds in its one transaction; a reclaim and a cleanup take exactly one. |
-| `--receipt FILE` | `singular create`, `singular fold`, `singular reject`, `singular reclaim`, `singular inspect`, `singular submit`, `open-datum create`, `open-datum insert`, `open-datum update`, `open-datum terminate`, `open-datum fold`, `open-datum inspect`, `singular state create`, `open-datum state create`, `open-datum state fold`, `open-datum registration book`, `open-datum registration reclaim`, `open-datum registration cleanup`, `open-datum holding update`, `open-datum holding terminate` | Also write the JSON receipt the command prints on standard output to this file. |
-| `--vault FILE` | `singular wallet create`, `singular wallet address`, `singular wallet sign`, `singular create`, `singular fold`, `singular reclaim`, `singular reject`, `open-datum create`, `open-datum insert`, `open-datum update`, `open-datum terminate`, `open-datum fold`, `singular state create`, `open-datum state create`, `open-datum state fold`, `open-datum registration book`, `open-datum registration reclaim`, `open-datum registration cleanup`, `open-datum holding update`, `open-datum holding terminate` | The encrypted wallet vault. `wallet create` makes this file — a fresh signing key sealed inside it — and refuses an existing path of any kind, a symbolic link included, leaving its bytes untouched; the file is created readable by its owner only, and a failed write removes what it made. `wallet address` and `wallet sign` open it. On `singular create`, `singular fold`, `singular reclaim`, `singular reject` and the five open-datum writes (`open-datum create`, with or without `--closed`, `insert` and `terminate`, alone and with `--fold`, `update` and `fold`) it names the signer in place of the signing key: the command opens the vault once, before anything else is read, builds the same bundle an external signer's run writes for the vault's address, signs every transaction from the vault and sends them in order as `singular submit` does. When every one has landed, each is journalled landed and the receipt states the command's fields as fact. When the node refuses one, the bundle is journalled dead and the run ends as a ledger refusal naming what went through. An uncertain answer ends the run partial, and the next run settles the bundle by identity. A wrong passphrase or an unreadable vault is refused, naming the vault, before the blueprint, the provider or the state directory is read, and so is `--wallet-skey` or `--wallet-address` beside it, because a write takes exactly one signer. Every `open-datum` preview and `open-datum inspect` refuses `--vault` by name. When the flag is absent, `SINGULAR_VAULT` or the key `vault` of the config file gives it, unless the line names the key file or an external signer, which is refused naming both, or is a preview, which signs nothing; see [the vault from the environment or the file](#the-vault-from-the-environment-or-the-file). `singular state create` and the commands of `open-datum state` and `open-datum registration` take it the same way. |
-| `--passphrase-fd N` | `singular wallet create`, `singular wallet address`, `singular wallet sign`, `singular create`, `singular fold`, `singular reclaim`, `singular reject`, `open-datum create`, `open-datum insert`, `open-datum update`, `open-datum terminate`, `open-datum fold`, `singular state create`, `open-datum state create`, `open-datum state fold`, `open-datum registration book`, `open-datum registration reclaim`, `open-datum registration cleanup`, `open-datum holding update`, `open-datum holding terminate` | The inherited file descriptor the passphrase is read from, one line: the way a script supplies it. It wins over the variable `SINGULAR_PASSPHRASE`, which gives the passphrase on a development network only (see [the passphrase from the environment](#the-passphrase-from-the-environment-on-a-development-network)). Without either, the passphrase is typed at a prompt on the terminal with the echo off — twice on a creation, once on an opening or a signing — and a differing confirmation is refused. On a write it goes with `--vault`, and alone it is refused. The passphrase itself is never taken as an argument, and no output, refusal, journal line or trace names it. The commands of the proved design take it the same way. |
-| `--wallet-skey FILE` | `create`, `insert`, `update`, `terminate`, `fold`, `reclaim`, `reject`, `singular state create`, `open-datum state create`, `open-datum state fold`, `open-datum registration book`, `open-datum registration reclaim`, `open-datum registration cleanup`, `open-datum holding update`, `open-datum holding terminate` | Being retired ([issue 672](https://github.com/lambdasistemi/singular/issues/672)): not a way to start. Your payment signing key: a `cardano-cli` text envelope, its `cborHex` value or the 32 key bytes as bare hex, or the 32 raw key bytes. The key funds and signs every write; it is read and never printed — only the address derived from it appears. `inspect` refuse it. The five open-datum writes still accept the key file, until it is retired; the registry's `singular` commands, the negative host, the bounded journey and the deployment tool keep key files for now (issue 672 retires the registry's), and the last three are harnesses. |
+| `--receipt FILE` | `singular submit`, `open-datum create`, `open-datum insert`, `open-datum update`, `open-datum terminate`, `open-datum fold`, `open-datum inspect`, `singular state create`, `open-datum state create`, `open-datum state fold`, `open-datum registration book`, `open-datum registration reclaim`, `open-datum registration cleanup`, `open-datum holding update`, `open-datum holding terminate` | Also write the JSON receipt the command prints on standard output to this file. |
+| `--vault FILE` | `singular wallet create`, `singular wallet address`, `singular wallet sign`, `open-datum create`, `open-datum insert`, `open-datum update`, `open-datum terminate`, `open-datum fold`, `singular state create`, `open-datum state create`, `open-datum state fold`, `open-datum registration book`, `open-datum registration reclaim`, `open-datum registration cleanup`, `open-datum holding update`, `open-datum holding terminate` | The encrypted wallet vault. `wallet create` makes this file — a fresh signing key sealed inside it — and refuses an existing path of any kind, a symbolic link included, leaving its bytes untouched; the file is created readable by its owner only, and a failed write removes what it made. `wallet address` and `wallet sign` open it. On `singular state create` and the five open-datum writes (`open-datum create`, with or without `--closed`, `insert` and `terminate`, alone and with `--fold`, `update` and `fold`) it names the signer in place of the signing key: the command opens the vault once, before anything else is read, builds the same bundle an external signer's run writes for the vault's address, signs every transaction from the vault and sends them in order as `singular submit` does. When every one has landed, each is journalled landed and the receipt states the command's fields as fact. When the node refuses one, the bundle is journalled dead and the run ends as a ledger refusal naming what went through. An uncertain answer ends the run partial, and the next run settles the bundle by identity. A wrong passphrase or an unreadable vault is refused, naming the vault, before the blueprint, the provider or the state directory is read, and so is `--wallet-skey` or `--wallet-address` beside it, because a write takes exactly one signer. Every `open-datum` preview and `open-datum inspect` refuses `--vault` by name. When the flag is absent, `SINGULAR_VAULT` or the key `vault` of the config file gives it, unless the line names the key file or an external signer, which is refused naming both, or is a preview, which signs nothing; see [the vault from the environment or the file](#the-vault-from-the-environment-or-the-file). `singular state create` and the commands of `open-datum state` and `open-datum registration` take it the same way. |
+| `--passphrase-fd N` | `singular wallet create`, `singular wallet address`, `singular wallet sign`, `open-datum create`, `open-datum insert`, `open-datum update`, `open-datum terminate`, `open-datum fold`, `singular state create`, `open-datum state create`, `open-datum state fold`, `open-datum registration book`, `open-datum registration reclaim`, `open-datum registration cleanup`, `open-datum holding update`, `open-datum holding terminate` | The inherited file descriptor the passphrase is read from, one line: the way a script supplies it. It wins over the variable `SINGULAR_PASSPHRASE`, which gives the passphrase on a development network only (see [the passphrase from the environment](#the-passphrase-from-the-environment-on-a-development-network)). Without either, the passphrase is typed at a prompt on the terminal with the echo off — twice on a creation, once on an opening or a signing — and a differing confirmation is refused. On a write it goes with `--vault`, and alone it is refused. The passphrase itself is never taken as an argument, and no output, refusal, journal line or trace names it. The commands of the proved design take it the same way. |
+| `--wallet-skey FILE` | `create`, `insert`, `update`, `terminate`, `fold`, `singular state create`, `open-datum state create`, `open-datum state fold`, `open-datum registration book`, `open-datum registration reclaim`, `open-datum registration cleanup`, `open-datum holding update`, `open-datum holding terminate` | Being retired ([issue 672](https://github.com/lambdasistemi/singular/issues/672)): not a way to start. Your payment signing key: a `cardano-cli` text envelope, its `cborHex` value or the 32 key bytes as bare hex, or the 32 raw key bytes. The key funds and signs every write; it is read and never printed — only the address derived from it appears. `inspect` refuse it. The five open-datum writes still accept the key file, until it is retired; the registry's `singular` commands, the negative host, the bounded journey and the deployment tool keep key files for now (issue 672 retires the registry's), and the last three are harnesses. |
 | `--out DIR` | `singular wallet sign` | Where the witness files go: one file per transaction of the bundle, each named by its transaction's identity with `.witness` appended and created exclusively — an existing file is refused with its bytes untouched. The directory is made when absent; the bundle's own directory when not given. |
 | `--witnesses FILE` | `singular submit` | A witness file `singular wallet sign` wrote, or a directory standing for the `.witness` files it holds; give it once per file or directory. Each witness is matched to its transaction by its signature, never by its file name. |
-| `--trace LEVEL` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `singular submit`, `singular wallet create`, `singular wallet address`, `singular wallet sign`, `insert`, `update`, `terminate`, `singular state create`, `open-datum state create`, `open-datum state fold`, `open-datum registration book`, `open-datum registration reclaim`, `open-datum registration cleanup`, `open-datum holding update`, `open-datum holding terminate` | How much the command narrates as it runs: `off`, `what` (its protocol steps: the registry, key, request, edge and transaction it acts on, and each verdict) or `how` (also the mechanics under each step: reads, script evaluation, build, signing, submission, confirmation, with their times). When not given: `what` if standard error is a terminal, otherwise `off`. Any other value is refused before anything runs. When the flag is absent, `SINGULAR_TRACE` or the key `trace` of the config file gives it. |
-| `--trace-to SINK` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `singular submit`, `singular wallet create`, `singular wallet address`, `singular wallet sign`, `insert`, `update`, `terminate`, `singular state create`, `open-datum state create`, `open-datum state fold`, `open-datum registration book`, `open-datum registration reclaim`, `open-datum registration cleanup`, `open-datum holding update`, `open-datum holding terminate` | Where the narration goes: `stderr`, or `file:PATH`, appended a line at a time as each event happens. Give it more than once to narrate to several places; standard error when not given. Any other value is refused before anything runs. When the flag is absent, `SINGULAR_TRACE_TO` or the key `trace-to` of the config file gives one place; repeat the flag to narrate to several. |
-| `--trace-format FORMAT` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `singular submit`, `singular wallet create`, `singular wallet address`, `singular wallet sign`, `insert`, `update`, `terminate`, `singular state create`, `open-datum state create`, `open-datum state fold`, `open-datum registration book`, `open-datum registration reclaim`, `open-datum registration cleanup`, `open-datum holding update`, `open-datum holding terminate` | `text`, indented lines for a person, or `json`, one JSON object per line for a program. When not given: text on standard error, JSON in a file. When the flag is absent, `SINGULAR_TRACE_FORMAT` or the key `trace-format` of the config file gives it. |
+| `--trace LEVEL` | `create`, `fold`, `inspect`, `singular submit`, `singular wallet create`, `singular wallet address`, `singular wallet sign`, `insert`, `update`, `terminate`, `singular state create`, `open-datum state create`, `open-datum state fold`, `open-datum registration book`, `open-datum registration reclaim`, `open-datum registration cleanup`, `open-datum holding update`, `open-datum holding terminate` | How much the command narrates as it runs: `off`, `what` (its protocol steps: the registry, key, request, edge and transaction it acts on, and each verdict) or `how` (also the mechanics under each step: reads, script evaluation, build, signing, submission, confirmation, with their times). When not given: `what` if standard error is a terminal, otherwise `off`. Any other value is refused before anything runs. When the flag is absent, `SINGULAR_TRACE` or the key `trace` of the config file gives it. |
+| `--trace-to SINK` | `create`, `fold`, `inspect`, `singular submit`, `singular wallet create`, `singular wallet address`, `singular wallet sign`, `insert`, `update`, `terminate`, `singular state create`, `open-datum state create`, `open-datum state fold`, `open-datum registration book`, `open-datum registration reclaim`, `open-datum registration cleanup`, `open-datum holding update`, `open-datum holding terminate` | Where the narration goes: `stderr`, or `file:PATH`, appended a line at a time as each event happens. Give it more than once to narrate to several places; standard error when not given. Any other value is refused before anything runs. When the flag is absent, `SINGULAR_TRACE_TO` or the key `trace-to` of the config file gives one place; repeat the flag to narrate to several. |
+| `--trace-format FORMAT` | `create`, `fold`, `inspect`, `singular submit`, `singular wallet create`, `singular wallet address`, `singular wallet sign`, `insert`, `update`, `terminate`, `singular state create`, `open-datum state create`, `open-datum state fold`, `open-datum registration book`, `open-datum registration reclaim`, `open-datum registration cleanup`, `open-datum holding update`, `open-datum holding terminate` | `text`, indented lines for a person, or `json`, one JSON object per line for a program. When not given: text on standard error, JSON in a file. When the flag is absent, `SINGULAR_TRACE_FORMAT` or the key `trace-format` of the config file gives it. |
 
 The URL, network magic and one signer (the signing key, the vault, or on `singular create`, `singular fold`, `singular reclaim`, `singular reject`, `open-datum create`, `open-datum insert`, `open-datum update`, `open-datum terminate` and `open-datum fold` an address with its bundle file) travel together on a write: naming only some of
 them is refused as partially configured, and so is a write that names none,
@@ -223,12 +217,12 @@ A line that carries every flag it needs means what it meant before. An environme
 As Alice, I create a registry and act on it next, and I do not want to copy its state token out of the receipt. I add the switch `--save-state-token` to `create`, and the command keeps the name for me. The example below creates a registry on the development network and asks for its name to be kept.
 
 ```sh
-singular registry create --blueprint plutus.json \
+open-datum create --blueprint plutus.json \
   --koios-url "$koios_url" --network-magic 42 \
   --vault alice.vault --save-state-token
 ```
 
-When the create succeeds, the command writes the new registry's state token into the settings file as the key `state-token`, and says on standard error which file now holds it. `open-datum create` takes the same switch. The next commands find the state token there, and the other settings in the same file when it already holds them, as in the section above. With a file that holds the chain and the contracts, `singular registry fold --vault alice.vault` and `open-datum insert --key alice --payload payload.json --vault alice.vault` name no registry on their line.
+When the create succeeds, the command writes the new registry's state token into the settings file as the key `state-token`, and says on standard error which file now holds it. `open-datum create` takes the same switch. The next commands find the state token there, and the other settings in the same file when it already holds them, as in the section above. With a file that holds the chain and the contracts, `open-datum fold --vault alice.vault` and `open-datum insert --key alice --payload payload.json --vault alice.vault` name no registry on their line.
 
 The file is the one the other commands read: the file named by `--config`, else the one named by `SINGULAR_CONFIG`, else `singular.json` in the folder the command runs from. When none of the three exists as a file, `create` makes `singular.json` there, holding the one key. Every other key keeps its value and its kind, text or number, and an existing `state-token` is replaced. The file is rewritten as one indented JSON object, so its key order and spacing may change. The new file replaces the old one in a single step and keeps the old file's permissions, so a failure leaves the old file or the new one and never half of each. The receipt is the same with the switch and without it.
 
@@ -342,7 +336,7 @@ singular wallet sign --vault bob.vault bundle.json
 singular wallet sign --vault bob.vault --passphrase-fd 9 --out witnesses bundle.json
 ```
 
-The writer's side is a `singular registry create`, `fold`, `reject` or `reclaim` run, or an `open-datum create`, `insert`, `update`, `terminate` or `fold` run, that names `--wallet-address` and `--bundle` in place of the signing key: it builds its whole run as one bundle in build order, signs and sends nothing, states its own fields under `expected` in its receipt, and exits with status 19, `waiting-for-signatures`.
+The writer's side is a `singular state create` run, or an `open-datum create`, `insert`, `update`, `terminate` or `fold` run, that names `--wallet-address` and `--bundle` in place of the signing key: it builds its whole run as one bundle in build order, signs and sends nothing, states its own fields under `expected` in its receipt, and exits with status 19, `waiting-for-signatures`.
 
 ```mermaid
 %%{init: {'sequence': {'actorMargin': 20, 'width': 110, 'wrap': true, 'mirrorActors': false}}}%%
@@ -486,14 +480,14 @@ not reported.
 
 ## Signing a write elsewhere, or from your vault
 
-As Bob, I keep my key away from the machine that talks to the node. I run a write — `singular registry create`, `fold`, `reject` or `reclaim` — naming my address and a new bundle file in place of the signing key. The command builds its whole run as one bundle of unsigned transactions, signs and sends nothing, and exits with status 19, `waiting-for-signatures`. I sign the bundle with `singular wallet sign` and send it with `singular submit`.
+As Bob, I keep my key away from the machine that talks to the node. I run a write of open datum naming my address and a new bundle file in place of the signing key. The command builds its whole run as one bundle of unsigned transactions, signs and sends nothing, and exits with status 19, `waiting-for-signatures`. I sign the bundle with `singular wallet sign` and send it with `singular submit`.
 
 As Alice, I name my vault instead. I type my passphrase once, or hand it over through a descriptor in a script. The command builds the same bundle, signs every transaction from the vault, and sends them in order as `singular submit` does. Its receipt reads what the chain shows.
 
 ```sh
-singular registry fold --state-dir ./reg --blueprint plutus.json --state-token POLICY.NAME \
+open-datum fold --state-dir ./reg --blueprint plutus.json --state-token POLICY.NAME \
   --koios-url URL --network-magic 1 --wallet-address ADDR --bundle fold.bundle
-singular registry fold --state-dir ./reg --blueprint plutus.json --state-token POLICY.NAME \
+open-datum fold --state-dir ./reg --blueprint plutus.json --state-token POLICY.NAME \
   --koios-url URL --network-magic 1 --vault alice.vault --passphrase-fd 9
 ```
 
@@ -509,7 +503,7 @@ A write takes exactly one signer:
 %%{init: {'sequence': {'actorMargin': 20, 'width': 120, 'wrap': true, 'mirrorActors': false}}}%%
 sequenceDiagram
     participant A as Alice
-    participant W as singular registry fold
+    participant W as open-datum fold
     participant V as alice.vault
     participant N as Node
     A->>W: Run the fold, naming the vault
@@ -543,223 +537,21 @@ A bundle can be sent until the first deadline of its transactions. The builders'
 
 | command | the latest deadline its bundle may carry |
 |---|---|
-| `singular registry reject` | about two minutes after it is built |
-| `singular registry fold` | the processing deadline of the earliest request it folds |
-| `singular registry reclaim` | the end of the request's retract window |
-| `singular registry create` | none: its transactions carry no upper bound, so the bundle stays pending until it lands |
+| `open-datum fold` | the processing deadline of the earliest request it folds |
+| `open-datum create` | none: its transactions carry no upper bound, so the bundle stays pending until it lands |
 
 A builder can choose an earlier bound. It takes a near one when the end of a window cannot be translated to a slot yet, and it never goes past the ledger's horizon. So the deadline a transaction actually carries is the one the receipt prints for it, `deadline` per transaction, and it can be only seconds or minutes after the build: sign and send before that printed deadline.
 
 A pending create bundle blocks its own state directory only, which is keyed by the network, the token it will mint and the wallet. A second create from the same wallet and seed waits for it. So does one without `--seed` while the same output is unspent, because it picks that output again. A create naming another output with `--seed` makes a different registry, which nothing blocks, and the pending create's journal stays as a record.
 
-## Naming the registry by its address
+## Naming the registry
 
-As Bob, I am told about a registry in one message, and I want to act on it without asking for a state token, a network or any file. Carol, who created the registry, copies the `registry` line of her `create` receipt into the message: a word that starts with `singular_preprod1`. I give that word to `--registry`, or to the variable `SINGULAR_REGISTRY`, or to the key `registry` of my settings file, and every command that takes a registry finds it from that word alone. The word says which network the registry is on and which registry it is, so I type no `--state-token` and no `--network-magic`.
-
-```mermaid
-sequenceDiagram
-    actor Carol
-    actor Bob
-    participant Create as singular registry create
-    participant Command as any command that takes a registry
-    participant Chain as the chain
-    Carol->>Create: create the registry
-    Create-->>Carol: the receipt names registry, stateToken and fingerprint
-    Carol->>Bob: the address, one word
-    Bob->>Command: --registry ADDRESS
-    Command->>Command: read the word, get the network and the state token
-    Command->>Chain: look the registry up on that network
-    Chain-->>Bob: the receipt of the command
-```
-
-The diagram follows the address from the creator to the reader. The command reads the word before it does anything else, so a word that is wrong never reaches the chain, a wallet or a file.
-
-### What the address is
-
-The address is the registry's NFT, the one asset that is the registry on chain, written as one bech32 word. The word has four parts, and its body is the state token and nothing else:
-
-| Part | Size | What it says |
-| --- | --- | --- |
-| the prefix | a few letters | the network the registry is on |
-| the policy | 28 bytes | the hash of the on-chain state contract, so the version of the contracts that made the registry |
-| the asset name | 32 bytes | derived from the seed output of the creator's wallet, so that no two registries share it |
-| the checksum | six characters | catches a mistyped character |
-
-The body of the word is the 28 bytes of the policy followed by the 32 bytes of the name, which is exactly the state token that `POLICY.NAME` spells in hex; the address is that token with its network and a checksum. The checksum is the original bech32 one, and the word is printed in lower case. It is read in all lower case or all upper case, never in a mixture. The receipt of `create` prints the address as `registry`, the state token as `stateToken`, unchanged, and the CIP-14 fingerprint of the same asset as `fingerprint`: the short name that wallets and explorers show for it. On success one line on standard error says the three.
-
-The prefix names the network. Four networks have one:
-
-| Prefix | Network | Network magic |
-| --- | --- | --- |
-| `singular` | mainnet | 764824073 |
-| `singular_preprod` | preprod | 1 |
-| `singular_preview` | preview | 2 |
-| `singular_devnet` | the generated development network | 42 |
-
-On any other network a `create` still works, prints `null` as `registry`, keeps the fingerprint and says on standard error that the network has no prefix. The address says which network to use, and nothing else about it: the Koios URL and the pinned time directory are still given, and the network the address names is the network every later step uses, exactly as `--network-magic` would be.
-
-The registry page command has been removed. Reading a registry on the proved design is tracked in [issue 744](https://github.com/lambdasistemi/singular/issues/744); this command removal supplies no replacement reader.
-
-### Reading an address
-
-A command checks the word in a fixed order and says which cause it is, with exit status 2, before it reads the chain, opens a vault or reads any file but the settings. A word that fails an earlier check is never told a later cause.
-
-```mermaid
-flowchart TD
-    word["the value of --registry"] --> one{"one bech32 word,<br/>all lower or all upper case?"}
-    one -- no --> r1["not an address"]
-    one -- yes --> two{"the checksum matches?"}
-    two -- no --> r2["a wrong checksum: a character is mistyped"]
-    two -- yes --> three{"the prefix is one of the four?"}
-    three -- no --> r3["an unknown prefix, with the four listed"]
-    three -- yes --> four{"the body is 60 bytes?"}
-    four -- no --> r4["the body has the length it has, not 60 bytes"]
-    four -- yes --> ok["the network and the state token"]
-```
-
-The diagram reads from the top: each question is asked only when the one before it passed. A value that is not an address is told so with one more clause: `--registry` once named the state directory, which is `--state-dir` now.
-
-A `--state-token` or a `--network-magic` beside the address is checked against it, from wherever each came: the flag, the variable or the key of the settings file. Values that agree are accepted. A state token that names another registry, or a network magic that names another network, is refused in one sentence naming both, so a stale `state-token` key of the settings file next to a new `registry` key is refused and the sentence says what disagrees. A command given neither a registry nor a state token is refused as it always was.
-
-### A registry of other contracts
-
-A command is given one blueprint, and a blueprint has one state contract. The policy of the registry is the hash of the state contract that made it, so a registry whose policy is another hash was made by other contracts, which this program cannot run against. That has always been refused as `state-token-foreign-release`, before any chain read. The refusal now says which contracts made the registry.
-
-Every release ships a table from the hash of Singular's state contract to the releases that carry it, one committed file, `data/contracts/state-contracts.json`, packaged with the program and shipped in every release bundle. It was filled from the on-chain archive each release published, by a tool of the earlier command line. That tool has been removed with the registry page command; the table remains packaged until its library and release consumers are retired. The file names every release it leaves out, with the reason; the first release has no on-chain archive. What the refusal says depends on the table:
-
-| The table | The refusal says |
-| --- | --- |
-| knows the hash | the registry was made by the contracts of the releases listed, and the page of the newest of them, `https://github.com/lambdasistemi/singular/releases/tag/<tag>`, is where to get it |
-| knows the hash and lists no release | the registry was made by contracts that are not released yet |
-| does not know the hash | the registry was made by contracts of no known release |
-
-A pull request that changes the contracts adds their row with no release yet, and the release that first carries them adds its tag to that row. A check of the repository fails when the table lacks the hash of the blueprint being built, so the table cannot fall behind the contracts.
-
-### What I do with the address
-
-I keep the address with the registry's name, I send it to whoever should act on it, and I give it to `--registry` instead of the state token and the network. `--save-state-token` still keeps the state token in the settings file as the key `state-token`, and the commands after a create find it there as before. A registry named by the state token and the network works exactly as it did.
-
-### Reading one key from the address
-
-As Bob, I have the address and the name of a key, and I want to know whether the key is active and which output holds it, from an empty directory, without a file from anyone. I run `inspect --key KEY --registry ADDRESS` and the answer comes from the chain: the command asks the provider who holds the key's witness token and prints what it found.
-
-```mermaid
-sequenceDiagram
-    actor Bob
-    participant Inspect as inspect --key KEY --registry ADDRESS
-    participant Provider as the provider
-    participant History as the registry's public history
-    Bob->>Inspect: the address and the key
-    Inspect->>History: prove the key's leaf against the registry's root
-    History-->>Inspect: active, terminal or unknown
-    Inspect->>Provider: who holds the active witness of KEY?
-    Provider-->>Inspect: the outputs that hold it
-    Inspect-->>Bob: the receipt: the leaf, the witnesses, the output
-```
-
-The diagram shows the proof first and the question to the provider after it, so a registry whose history does not chain to its root is refused before the provider is asked who holds a token. A key that is active has a witness token: an asset of the registry's active witness policy whose name is the key's bytes. A registration mints it and a termination burns it. The policy belongs to this registry. The command works out the asset to ask for from the registry the address names and from the key, and asks for it by asset, so it does not list every output at the application's address to find the key's output. One function in the library makes that asset from the registry and the key, and it is the only place that does so for this read.
-
-For a key the registry has recorded, active or terminal, the receipt of `inspect` carries a field `witness` with one entry, `active`. It has `policy`, the policy as hex; `assetName`, the key's bytes as hex; and `holders`, the references of the outputs that hold the asset.
-
-| The key is | `witness.active.holders` |
-| --- | --- |
-| active | the one output that holds the key, the output `applicationOutput` names |
-| terminal | empty, because the termination burned the active token |
-
-For a key the registry never recorded the receipt has no `witness` field and is what it always was.
-
-The witness finds the key's output; it does not say whether the key is active. That is still proved: the leaf is checked against the registry's root by replaying the registry's public history, as before, and a witness that disagrees with the proof is refused as `proof-inconsistent`, as a holding that disagreed with the proof was. The replay is the cost of the proof and it is not made to find the output. A directory that holds nothing reads the same as any other, because `inspect` without `--wallet-address` keeps no state.
-
-One reader still lists the application's outputs. `singular registry inspect` prints every output at the application's address in its `rawDatums`, because the program knows no application and shows them all, so it reads that listing and the witness. `open-datum inspect` prints only the key's output and reads no listing.
-
-## Naming the registry by its state token
-
-A registry can also be named by its state token, with its network, as it always could; [its address](#naming-the-registry-by-its-address) holds the same token, and says the network too.
-
-As Carol, the creator, I run `create` from an empty directory. Its receipt
-names `stateToken`, the registry's state token as `POLICY.NAME` in hex. I
-publish nothing else and keep no file anyone else needs: `create` writes no
-identity file, and the pending identity it records before its first submission
-is removed once it finishes. When I add `--save-state-token`, a create that
-succeeds also keeps the state token in my settings file, as [the registry's name
-kept by create](#the-registrys-name-kept-by-create) says.
-
-As Bob, I start from an empty directory with the release, my wallet and a
-Koios URL, and give every command the state token. The command derives the
-registry from the token and the blueprint and checks it against the chain
-before it builds anything, refusing by name, in this order:
-
-| Refusal | What the chain disagrees with |
-| --- | --- |
-| `state-token-foreign-release` | the token's policy is not this release's state script |
-| `state-token-not-found` | the provider has no record of the asset |
-| `state-token-burned` | the asset's supply is not one |
-| `state-token-seed-mismatch` | the minting transaction spends no input whose derived name is the token's |
-| `state-output-missing` | no output holds the token at the state address with a state datum |
-| `registry-pin-mismatch FIELD` | one of the datum's pinned policies differs from the one the program derives for this registry; the field is `application`, `active`, `absent` or `terminal` |
-| `network-mismatch` | the provider's network is not the release's |
-
-As Bob, handed the address of a registry that Mallory created with a policy of
-her own pinned as its active policy, I am refused before anything about the
-registry is shown or built, and the refusal names the pinned policy that
-differs. Every command that names a registry runs this comparison first, the
-reads included: `inspect` does, and so does the report of an
-interrupted create, which resolves the state token before it prints the
-identity the create recorded. A registry that fails the comparison is refused
-and the report is not printed; the report goes on for a registry that passes and
-for a token the chain has no record of, where no registry exists to be shown.
-`singular submit` runs it for the registry a bundle names, as
-[submitting a signed bundle](#submitting-a-signed-bundle) says.
-
-The comparison is total for the application that runs it. `singular` is told the
-registry and the release and not the application, so it cannot derive the
-application policy: it takes it from the datum, compares the other three, and
-says so, once, in every receipt that shows registry content: the field
-`applicationPin` reads `not-checked-against-any-blueprint`. `open-datum` knows
-its own script, so it derives the application policy too and compares all four;
-its receipts read `compared`. It derives two application policies, the open one
-and the closed one, and learns which kind of registry it has only from the
-comparison: the registry's application policy must be one of the two, and a
-registry whose application policy is neither is refused naming `application`,
-before the command says anything about the registry, even that it is closed. A
-create reads back the state datum its boot made and compares its two pins with
-the ones it built, and reports a partial outcome naming the field when they
-differ.
-
-The pins are compared when the command resolves its registry, and not again
-inside the same run. That is enough because every fold preserves them on chain:
-the state contract refuses a fold that alters a pinned policy, so the state
-output the command reads again later in its run carries the pins already
-accepted. `open-datum` makes one extra comparison before the command's own
-resolution, to choose between its two derivations.
-
-A program that is not one of ours must run the same comparison before it shows
-what a registry holds: `Singular.Registry.StateToken.resolveRegistry` does it,
-with a worked example in the [off-chain API reference](offchain-api-reference.md#a-worked-example-resolving-a-registry-before-showing-it),
-and [the protocol page](../specs/protocol/spec.md#reading-a-registry-what-each-layer-guarantees) says why.
-
-Each command then looks up only the reference scripts its own transactions
-run, by hash: the provider's answer first, then your own wallet's outputs,
-which are read only when the provider has none for some script, taking the
-lowest output reference among the outputs that carry the right script. A
-command that runs no reference script, such as `inspect`, looks up none.
-The hash is computed from the script each output carries, never taken from
-the provider. When neither has one the command refuses
-`reference-missing ROLE HASH: not found by this provider or wallet`, naming
-`singular registry publish-references` as the remedy.
-An empty provider answer means only that this provider found none.
-
-The provider's answers are unverified, and the token is not signed by anyone:
-a genuine registry of the same release made by someone else passes every
-check. The ledger revalidates every reference input of a write, so a stale or
-wrong carrier can fail a submission but never run another script. A registry
-made by an earlier release is refused by name here and stays operable with
-the release that made it.
+As an application operator, use the state token and registry address returned by the creation command. The commands on the proved design are documented in [creating a registry and registering keys](registry-commands.md). The former `singular registry` routes have been retired. Reading the new line is tracked separately in issue 744.
 
 ## Choosing a registry's windows
 
 As a registry creator, you choose the processing and retract windows when you
-run `registry create`, through `--process-time MS` and `--retract-time MS`.
+run `open-datum create`, through `--process-time MS` and `--retract-time MS`.
 Each must be a positive integer number of milliseconds; any other value is
 refused before the command builds or signs anything. When omitted, they are
 600 000 and 300 000 milliseconds: ten minutes to fold a booked request, then
@@ -791,7 +583,7 @@ preview and live. The fold still validates every booking it folds, so a
 booking made through the permissive builders can still reach the chain's
 own refusal at the fold.
 
-`registry fold` folds pending requests. It is an ordinary command: it signs and
+`open-datum fold` folds pending requests. It is an ordinary command: it signs and
 funds with the wallet it is given, journals its own transactions, and may be
 run by any wallet, not only the one that booked. An insertion's request carries
 the envelope its fold delivers, so the folder reads it from the pending request
@@ -849,7 +641,7 @@ sequenceDiagram
     Note over W: Journal and mirror
 ```
 
-`registry fold` judges each pending request on its own — against the registry's live state, the host clock and the application's rules — and settles every request that passes, up to the capacity bound, in ledger input order, at most one per key. Two users who book at the same moment are settled by one fold. The receipt's `capacity` field states the bound, 9, with its provenance: an estimate, not a measurement, of how many requests fit in a fold. A request past the bound is named `capacity` and is for the next fold. A fold is never refused because several requests are pending. The fold folds `insertActive` and `updateTerminal`; any other edge is refused `edge-inadmissible` in the model's words.
+`open-datum fold` judges each pending request on its own — against the registry's live state, the host clock and the application's rules — and settles every request that passes, up to the capacity bound, in ledger input order, at most one per key. Two users who book at the same moment are settled by one fold. The receipt's `capacity` field states the bound, 9, with its provenance: an estimate, not a measurement, of how many requests fit in a fold. A request past the bound is named `capacity` and is for the next fold. A fold is never refused because several requests are pending. The fold folds `insertActive` and `updateTerminal`; any other edge is refused `edge-inadmissible` in the model's words.
 
 Every request the fold leaves out is named in the receipt with its reason and where the reason comes from. Nine reasons are the model's own refusal words, reported verbatim; five are the processor's own selection policy, which the model has no counterpart for. The table lists all fourteen names by source.
 
@@ -858,7 +650,7 @@ Every request the fold leaves out is named in the receipt with its reason and wh
 | model refusal, verbatim | `edge-inadmissible`, `no-approval`, `approval-mismatch`, `key-exists`, `token-missing`, `key-unknown`, `not-booked`, `terminal-immutable`, `not-phase1` |
 | selection policy | `undecodable`, `application-datum-unreadable`, `application-required`, `key-in-batch`, `capacity` |
 
-A request refused in the model's words failed the model's own check — its edge, its window, its approval, or its leaf against the live state — and stays refused while the state still rules it out. The window check asks the model's admission at the probe bound the folder would build under, the clock plus the thirty seconds a fold needs to be included: a bound past the request's deadline is refused `not-phase1`, and a bound equal to the deadline admits, as the chain admits it. A request left out by selection policy failed the processor's own rule: it does not decode as a request; its carried datum does not read, or, for a termination under the neutral value, the value carries no holding rules and the detail names the application's own executable; an earlier included request already names its key; or the fold is at its capacity bound. A request named `capacity` is for the next fold. A request refused `not-phase1` stays pending — it cannot become settleable, because its deadline is fixed by its booking and the remaining time only shortens; its owner can take it back with `registry reclaim` after its processing deadline, while its retract window remains open, and `registry reject` clears requests past both their windows.
+A request refused in the model's words failed the model's own check — its edge, its window, its approval, or its leaf against the live state — and stays refused while the state still rules it out. The window check asks the model's admission at the probe bound the folder would build under, the clock plus the thirty seconds a fold needs to be included: a bound past the request's deadline is refused `not-phase1`, and a bound equal to the deadline admits, as the chain admits it. A request left out by selection policy failed the processor's own rule: it does not decode as a request; its carried datum does not read, or, for a termination under the neutral value, the value carries no holding rules and the detail names the application's own executable; an earlier included request already names its key; or the fold is at its capacity bound. A request named `capacity` is for the next fold. A request refused `not-phase1` stays pending. The former generic retraction and rejection commands have been retired.
 
 The receipt no longer carries the single-request fields it once printed at the top level: `request`, `key`, `edge`, `liveOutput`, `envelope`, `released` and `deposit`, and the datum hash and datum bytes of a datum delivery, are gone. Each fact about a settled request is read from its entry in `settled`: its request, key, edge, owner, settlement and deadline, where the settlement carries the live output and the envelope, or the datum hash and bytes, or the released output and the deposit. What stays at the top level are the facts of the transaction: the folder, the fold transaction, the root, the fold deadline, the validity bound slot, the post-build verdict, the host clock and the time remaining, then the three lists. `settled` names each settled request in ledger order; `excluded` names each left-out request with its request, reason, source and detail, in ledger order; `capacity` states the bound with its provenance. The example shows the lists with two pending requests of which one is left out: the first settles, the second is named with its reason and source, and the capacity states the bound of 9 with its provenance.
 
@@ -891,11 +683,11 @@ The receipt no longer carries the single-request fields it once printed at the t
 
 `--request R` is an expectation: the command is refused unless R is among the settled requests. The refusal names why R is not settled: R's own reason and source when R is pending but left out, or that R is not pending — folded, retracted or never booked. With pending requests but nothing settleable, the command is refused `nothing-to-fold`, naming every exclusion with its reason and source. With nothing pending it says so: nothing is pending and there is no request to fold. Past its window means past the processing deadline as the probe bound reads it: the bound the folder would build under, the clock plus the thirty seconds a fold needs to be included, past the request's deadline.
 
-`insert --fold` and `terminate --fold`, which run through the `open-datum` executable since the command-line split, take the same selection and print the same lists as `registry fold`. The fold-derived facts are no longer printed beside them: the live output, the envelope, the released output and the deposit are read from the entry for the request they just booked in `settled`. What the combined forms keep of their own is the booking's key fields, the booking transaction, the fold transaction and the root. If the request the command just booked is left out, the command stops partial: the booking is confirmed and its request stays pending, named with the reason.
+`insert --fold` and `terminate --fold`, which run through the `open-datum` executable since the command-line split, take the same selection and print the same lists as `open-datum fold`. The fold-derived facts are no longer printed beside them: the live output, the envelope, the released output and the deposit are read from the entry for the request they just booked in `settled`. What the combined forms keep of their own is the booking's key fields, the booking transaction, the fold transaction and the root. If the request the command just booked is left out, the command stops partial: the booking is confirmed and its request stays pending, named with the reason.
 
 Before anything is signed the command still refuses the outlay past `--max-outlay` and a funding output that is not the wallet's. When a preparation is needed, the outlay counts its fee; once the preparation is confirmed the outlay of the command, rebuilt from a fresh read of the wallet, is judged again, and a command past the allowance is not signed: the refusal says that the preparation stands confirmed.
 
-A booking wallet is judged on what the booking costs. Opening a write session applies no wallet threshold. Before anything is built, a wallet holding less than the fold reserve (from the network parameters and the reference scripts the fold reads) is refused, and a wallet that holds nothing it may spend at all, or whose `--fund-input` is not among its ada-only outputs, is refused. A wallet whose spendable outputs all carry tokens is not refused for that: the command prepares the funding output it needs, as above. Outputs that publish a script are never spent, so a wallet holding only those holds nothing it may spend and is refused as such. After the booking is built and before it is signed, a wallet holding less than the measured outlay (its fee, the bond its request locks, the bound on the fold that follows and, when a preparation was needed, the fee of the preparation) is refused. The shortfall refusal is `client-refusal` and carries the wallet address, what it holds, what is required, the shortfall, the UTxO count and that the policy is the client's; `requiredIs` says what is required: the fold reserve, the measured outlay, or the preparation. For the fold reserve and the measured outlay the reason ends `(client policy)`. For the preparation, reached when the wallet cannot pay for the command and the preparation it needs, the reason begins `preparation-unfunded`, names what the command needs, the fee of the preparation and its remainder floor, and ends `(client policy); nothing was submitted`; that refusal also carries the fee, the remainder floor and the largest output the wallet may spend. An empty wallet or a foreign funding output is refused as `client-refusal` with `(client policy)`, carrying the wallet address, the UTxO count, what it holds and the client policy, and no required or shortfall. The empty-wallet refusal ends with the faucet step — Fund this address, then rerun. On preprod the faucet is https://docs.cardano.org/cardano-testnets/tools/faucet. One funded output is enough: nothing is split by hand, and every write spends the wallet's largest ada-only output and returns its change, or first prepares one from what the wallet holds. The foreign funding choice does not end with the faucet step. Preview and write judge the same wallet at the same points in the same order. `update` is judged the same way with its own fee as the outlay: it has no fold to pay for, so no fold reserve is asked of it, and a wallet that cannot pay for the update and its preparation is refused before anything is signed, naming what is needed and what the wallet holds; `--max-outlay` below the update's outlay plus the preparation's fee is refused before anything is signed, naming both amounts and ending `(client policy); nothing was submitted`; the same allowance is judged again once the preparation is confirmed, and a command past it is not signed, the reason then ending `(client policy); the preparation`, the output it made, `stands confirmed and the command was not signed`. `reject`, `reclaim`, `fold` and `create` get no further measured judgement: a build that succeeds proves the wallet pays the fee, and a wallet that needs a preparation it cannot pay for is refused with the same shortfall.
+A booking wallet is judged on what the booking costs. Opening a write session applies no wallet threshold. Before anything is built, a wallet holding less than the fold reserve (from the network parameters and the reference scripts the fold reads) is refused, and a wallet that holds nothing it may spend at all, or whose `--fund-input` is not among its ada-only outputs, is refused. A wallet whose spendable outputs all carry tokens is not refused for that: the command prepares the funding output it needs, as above. Outputs that publish a script are never spent, so a wallet holding only those holds nothing it may spend and is refused as such. After the booking is built and before it is signed, a wallet holding less than the measured outlay (its fee, the bond its request locks, the bound on the fold that follows and, when a preparation was needed, the fee of the preparation) is refused. The shortfall refusal is `client-refusal` and carries the wallet address, what it holds, what is required, the shortfall, the UTxO count and that the policy is the client's; `requiredIs` says what is required: the fold reserve, the measured outlay, or the preparation. For the fold reserve and the measured outlay the reason ends `(client policy)`. For the preparation, reached when the wallet cannot pay for the command and the preparation it needs, the reason begins `preparation-unfunded`, names what the command needs, the fee of the preparation and its remainder floor, and ends `(client policy); nothing was submitted`; that refusal also carries the fee, the remainder floor and the largest output the wallet may spend. An empty wallet or a foreign funding output is refused as `client-refusal` with `(client policy)`, carrying the wallet address, the UTxO count, what it holds and the client policy, and no required or shortfall. The empty-wallet refusal ends with the faucet step — Fund this address, then rerun. On preprod the faucet is https://docs.cardano.org/cardano-testnets/tools/faucet. One funded output is enough: nothing is split by hand, and every write spends the wallet's largest ada-only output and returns its change, or first prepares one from what the wallet holds. The foreign funding choice does not end with the faucet step. Preview and write judge the same wallet at the same points in the same order. `update` is judged the same way with its own fee as the outlay: it has no fold to pay for, so no fold reserve is asked of it, and a wallet that cannot pay for the update and its preparation is refused before anything is signed, naming what is needed and what the wallet holds; `--max-outlay` below the update's outlay plus the preparation's fee is refused before anything is signed, naming both amounts and ending `(client policy); nothing was submitted`; the same allowance is judged again once the preparation is confirmed, and a command past it is not signed, the reason then ending `(client policy); the preparation`, the output it made, `stands confirmed and the command was not signed`. `fold` and `create` get no further measured judgement: a build that succeeds proves the wallet pays the fee, and a wallet that needs a preparation it cannot pay for is refused with the same shortfall.
 
 That check is the fast refusal, not the proof. After the fold is built and
 before it is signed, its validity upper bound is judged again from the built
@@ -908,82 +700,6 @@ clock and the deadline in the receipt.
 The deadline the fold is judged against is the earliest among the settled requests, each as its booking's receipt states. A fold refused for it submitted nothing, and pending requests stay pending.
 
 What this page still does not claim, stated plainly: the capacity of 9 is an estimate, not measured on a real network, and this page claims no preprod number; measuring it belongs to #530. Recovery of a fold of several requests is proved by unit-level checks, and the interruption of such a fold on a development network is not executed yet. One fold's batch is compared by the state, mint and payments it reaches, never by a model transaction it does not build; folding requests together is not shown equal to folding them apart, and two orders are not shown to give equal roots. For a batch with two different defects the model names the edge set, then the window, then the law, while the chain checks each request's window beside its law, so the first reason can differ and no live row compares such a batch. A retraction still carries its own submission time until its admission moves onto the request's.
-
-## Reclaiming your pending request
-
-As a requester, you can take back your pending insertion or terminal-witness
-request after its processing deadline, while its retract window remains open.
-`registry reclaim` requires `--request TXID#IX` and signs with the wallet you
-give it. It refuses before building when that request is not pending, belongs
-to another wallet, or names an update or deletion edge that Lean cannot retract.
-
-```bash
-singular registry reclaim --state-dir reg --blueprint onchain/plutus.json \
-  --state-token "$state_token" --request TXID#IX \
-  --koios-url "$koios_url" --network-time "$time_dir" --network-magic 42 \
-  --vault alice.vault --passphrase-fd 3 --receipt reclaim.json 3< alice.passphrase
-```
-
-The command judges the window from the actual tip observed through its session and converted
-processing deadline: that deadline must convert, and the tip must reach it.
-The retract deadline stays open while its converted slot is ahead of the tip,
-or when a conversion refusal cannot establish its closing slot, exactly as reject judges it.
-An unconverted processing deadline does not prove opening and is refused before
-the window, naming the opening time. A known, reached retract deadline is closed;
-the refusal names `registry reject` as the way to clear expired requests. No
-host clock or estimated slot decides admission. Conversions extend the pinned final era. A moving ledger horizon separately caps the built upper bound, and a short usable interval refuses before signing; a build failure is no evidence of a successful reclaim.
-
-Inside the window, the existing retract builder pays the owner all the
-request's locked lovelace in one output whose inline datum is that request's
-reference. The command checks that output and the built validity interval before
-signing. When the retract deadline has no slot, the built upper bound must still
-be placed in time by that same session's pinned time and be no later than the deadline. The
-receipt names the request, retract transaction, actual locked value,
-owner, return address and output, returned value and any minimum-output top-up.
-It does not assume a protected holding deposit ever reached the request.
-After confirmation, it reads back the consumed request, exact return output and
-unchanged registry root before journalling `observed`. The mirror and `state.json`
-do not move. The next request can be booked and folded normally.
-
-## Rejecting expired requests
-
-A request that no fold settles and whose owner does not take it back stays
-pending, and `registry reject` clears it. It is an ordinary command: it
-signs and funds with the wallet it is given and journals its own transactions.
-It rejects every pending request in one transaction, using the registry's
-published reference scripts, and the registry's root, its mirror and its saved
-state do not move.
-
-A request is rejected only once it is past both its windows: the processing
-window, in which the registry's fold may take it, and the retract window after
-it, in which its owner may take it back. That is judged from the ledger, not
-from the host's clock. The command converts the retract deadline — the
-request's submission time plus the registry's processing time and retract time
-— to a slot using the pinned time consumed by its build session, and builds only when that session's observed
-tip is at or past it. A deadline pinned time cannot place in a slot is taken as
-still open. Before anything is signed the command refuses, naming the reason:
-nothing pending; any pending request still inside a window, each named with
-when its retract window closes, as a time, as a slot when pinned time converts it,
-and the provider's observed tip slot; the outlay past `--max-outlay`; a funding output
-that is not the wallet's; and a built reject that does not carry each owner's
-whole refund in one designated output.
-
-Each owner is refunded the request's value less the tip, in the one output
-designated for that request; the wallet that runs the reject keeps the tip. The
-receipt names every rejected request, the value it actually locked (its
-lovelace and any other assets: a request holds only what was put into it, and
-one whose deposit never landed holds no deposit), the tip, and where the refund
-went: the output, its recipient and its amount, with the top-up when the
-minimum output required one. After the reject confirms the command reads back
-that every rejected request output is gone, that the root is where it was, and
-that each refund is live at its owner as built, before it journals the reject
-observed.
-
-The check is exact on one shape. The chain pays a refund only when the
-designated output covers the owed amount by itself; a refund split across
-several outputs to the same owner is accepted by the model and refused by the
-chain (issue #361), and `reject` never builds it. A reject that succeeds is
-that shape on this chain, not general reject-refund conformance.
 
 ## What a write records
 
@@ -1094,7 +810,7 @@ base16, and no event carries a signing key or the text of a failure: a failure
 names only its type.
 
 ```sh
-singular registry fold --state-dir ./reg --blueprint onchain/plutus.json \
+open-datum fold --state-dir ./reg --blueprint onchain/plutus.json \
   --state-token "$state_token" --koios-url "$koios_url" --network-magic 1 \
   --vault alice.vault --passphrase-fd 3 \
   --trace how --trace-to stderr --trace-to file:fold.trace.jsonl 3< alice.passphrase

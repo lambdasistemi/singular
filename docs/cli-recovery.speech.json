@@ -5,7 +5,7 @@
       "pause": 500
     },
     {
-      "text": "You run singular registry create, open-datum insert, open-datum update, open-datum terminate or inspect (singular registry inspect or open-datum inspect), and something goes wrong between your machine and the chain: the node's answer to a submission never arrives, the process is killed, the machine stops halfway through saving its files, or a transaction the chain had included is rolled back. You want to know which of those happened, you want the next command to pick up from where the last one stopped without sending anything twice, and you want to be told plainly when it cannot.",
+      "text": "You run singular state create, open-datum insert, open-datum update, open-datum terminate or open-datum inspect, and something goes wrong between your machine and the chain: the node's answer to a submission never arrives, the process is killed, the machine stops halfway through saving its files, or a transaction the chain had included is rolled back. You want to know which of those happened, you want the next command to pick up from where the last one stopped without sending anything twice, and you want to be told plainly when it cannot.",
       "pause": 400
     },
     {
@@ -19,7 +19,7 @@
       "pause": 500
     },
     {
-      "text": "As a requester recovering after an interruption, you read processTime and retractTime from registry inspect to see the windows stored in the live state datum. They were chosen once at registry create with --process-time and --retract-time, or defaulted to 600 000 and 300 000 milliseconds (ten and five minutes). Both are fixed for the life of the registry; restarting a command or reconciling its journal does not restart or extend a request's windows. A booking's fold deadline remains its submission time plus the registry's processing window, followed by the owner's retract window.",
+      "text": "As a requester recovering after an interruption, you read processTime and retractTime from open-datum inspect to see the windows stored in the live state datum. They were chosen once at open-datum create with --process-time and --retract-time, or defaulted to 600 000 and 300 000 milliseconds (ten and five minutes). Both are fixed for the life of the registry; restarting a command or reconciling its journal does not restart or extend a request's windows. A booking's fold deadline remains its submission time plus the registry's processing window, followed by the owner's retract window.",
       "pause": 400
     }
   ],
@@ -79,7 +79,7 @@
       "pause": 400
     },
     {
-      "text": "What the excluded transaction leaves on chain depends on the command. An excluded update leaves nothing: run it again. The fold of an insert or a terminate is the second of two transactions, and the first, its booking, is on chain: its request stays pending, holding its deposit. Use registry fold while its processing window allows it, registry reclaim with the owner's wallet in its retract window, or registry reject after both windows expire. An insertion's request carries its envelope on chain. A folder reads it publicly and reconstructs proofs from history; neither an insertion fold nor a termination fold needs the booker's files.",
+      "text": "What the excluded transaction leaves on chain depends on the command. An excluded update leaves nothing: run it again. The fold of an insert or a terminate is the second of two transactions, and the first, its booking, is on chain: its request stays pending, holding its deposit. Use open-datum fold while its processing window allows it. The former generic retraction and rejection commands have been retired. A folder reads it publicly and reconstructs proofs from history; neither an insertion fold nor a termination fold needs the booker's files.",
       "pause": 400
     },
     {
@@ -197,6 +197,6 @@
   ],
   "_source": {
     "file": "cli-recovery.md",
-    "sha256": "3b7043d0156e04cf4c69c95608420a8e2054a5a1eb9b462b78d916246c9273f5"
+    "sha256": "5c615849bcf6f8408a8cd5958a5297b646c2fa29895cf8b56f859d0f409d4f38"
   }
 }

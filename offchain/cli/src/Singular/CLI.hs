@@ -18,77 +18,30 @@ module Singular.CLI
     , runRegistryCommand
     ) where
 
-import System.Exit (ExitCode (..))
-
 import Singular.CLI.Command
     ( Command (..)
-    , CreateArgs (..)
-    , EntryMode (..)
-    , FoldArgs (..)
-    , InspectArgs (..)
-    , ReclaimArgs (..)
-    , RejectArgs (..)
     , StateCreateArgs (..)
     , SubmitArgs (..)
     , walletAddressCommand
     , walletCreateCommand
     , walletSignCommand
     )
-import Singular.CLI.Create
-    ( announceCreated
-    , createApplication
-    , runCreate
-    )
 import Singular.CLI.Finish (finish)
-import Singular.CLI.Fold (runFold)
-import Singular.CLI.Inspect (runInspect)
-import Singular.CLI.Reclaim (runReclaim)
-import Singular.CLI.Reject (runReject)
 import Singular.CLI.Session (Env (..), openWriteSigner)
-import Singular.CLI.SettingsFile (keepStateToken)
 import Singular.CLI.State (neutralHost, runStateCreate)
 import Singular.CLI.Submit (submitBundle)
 import Singular.Registry.Application (Application)
+import System.Exit (ExitCode (..))
 
 -- | Run one command in the environment the entry point composed; the exit status names its outcome class.
 runCommand :: Application -> Env -> Command -> IO ExitCode
 runCommand = runRegistryCommand
 
--- | Run one registry command (was runCommand): create, fold, reject, reclaim, inspect, help; no insert, update or terminate.
+-- | Run one registry command (was runCommand): state create, wallet, submit and help.
 runRegistryCommand :: Application -> Env -> Command -> IO ExitCode
 runRegistryCommand app env = \case
     Help text -> putStr text >> pure ExitSuccess
-    Create a policy ->
-        finish
-            (envTracer env)
-            "create"
-            (createReceipt a)
-            ( keepStateToken "singular" (createSaveStateTokenTo a) $
-                openCreate a >>= \opened ->
-                    createApplication app policy >>= \effective ->
-                        runCreate effective env opened >>= announceCreated a
-            )
-    Fold a ->
-        finish
-            (envTracer env)
-            "fold"
-            (foldReceipt a)
-            ( openWriteSigner (foldWrite a) >>= \ws -> runFold app env a{foldWrite = ws}
-            )
-    Reject a ->
-        finish
-            (envTracer env)
-            "reject"
-            (rejectReceipt a)
-            ( openWriteSigner (rejectWrite a) >>= \ws -> runReject env a{rejectWrite = ws}
-            )
-    Reclaim a ->
-        finish
-            (envTracer env)
-            "reclaim"
-            (reclaimReceipt a)
-            ( openWriteSigner (reclaimWrite a) >>= \ws -> runReclaim env a{reclaimWrite = ws}
-            )
+    Fold _ -> pure (ExitFailure 2)
     StateCreate a ->
         finish
             (envTracer env)
@@ -96,12 +49,6 @@ runRegistryCommand app env = \case
             (stateCreateReceipt a)
             ( openWriteSigner (stateCreateWrite a) >>= \ws -> runStateCreate env neutralHost a{stateCreateWrite = ws}
             )
-    Inspect a ->
-        finish
-            (envTracer env)
-            "inspect"
-            (inspectReceipt a)
-            (runInspect app env a)
     WalletCreate a -> walletCreateCommand a
     WalletAddress a -> walletAddressCommand a
     WalletSign a -> walletSignCommand a
@@ -114,11 +61,3 @@ runRegistryCommand app env = \case
             (submitBundlePath a)
             (submitWitnessPaths a)
             (submitReceipt a)
-
-{- | A create's arguments with the vault its write names opened, before
-anything else of the run; a preview names no signer to open.
--}
-openCreate :: CreateArgs -> IO CreateArgs
-openCreate a = case createMode a of
-    Submit ws -> (\opened -> a{createMode = Submit opened}) <$> openWriteSigner ws
-    Preview{} -> pure a

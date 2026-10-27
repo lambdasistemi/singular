@@ -1,7 +1,7 @@
 # Recovering a registry command
 
-You run `singular registry create`, `open-datum insert`, `open-datum update`, `open-datum terminate` or
-`inspect` (`singular registry inspect` or `open-datum inspect`), and something goes wrong between your machine and the chain:
+You run `singular state create`, `open-datum insert`, `open-datum update`, `open-datum terminate` or
+`open-datum inspect`, and something goes wrong between your machine and the chain:
 the node's answer to a submission never arrives, the process is killed,
 the machine stops halfway through saving its files, or a transaction the
 chain had included is rolled back. You want to know which of those
@@ -22,8 +22,8 @@ journal is only ever appended to; saved bodies are never rewritten.
 ## The request keeps its registry's windows
 
 As a requester recovering after an interruption, you read `processTime` and
-`retractTime` from `registry inspect` to see the windows stored in the live
-state datum. They were chosen once at `registry create` with `--process-time`
+`retractTime` from `open-datum inspect` to see the windows stored in the live
+state datum. They were chosen once at `open-datum create` with `--process-time`
 and `--retract-time`, or defaulted to 600 000 and 300 000 milliseconds (ten
 and five minutes). Both are fixed for the life of the registry; restarting a
 command or reconciling its journal does not restart or extend a request's
@@ -127,10 +127,8 @@ What the excluded transaction leaves on chain depends on the command.
 An excluded `update` leaves nothing: run it again. The fold of an
 `insert` or a `terminate` is the second of two transactions, and the
 first, its booking, is on chain: its request stays pending, holding its
-deposit. Use `registry fold` while its processing window allows it, `registry reclaim`
-with the owner's wallet in its retract window, or `registry reject` after both
-windows expire. An insertion's request carries its envelope on chain. A folder
-reads it publicly and reconstructs proofs from history; neither an insertion
+deposit. Use `open-datum fold` while its processing window allows it. The former generic retraction and rejection commands have been retired.
+A folder reads it publicly and reconstructs proofs from history; neither an insertion
 fold nor a termination fold needs the booker's files.
 
 A fold carries an upper bound on its validity window. A booking, and the

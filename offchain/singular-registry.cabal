@@ -233,13 +233,11 @@ library registry-cli
     Singular.CLI.Proof
     Singular.CLI.Receipt
     Singular.CLI.ReceiptBody
-    Singular.CLI.Reclaim
     Singular.CLI.ReclaimRules
     Singular.CLI.Reconcile
     Singular.CLI.Recovery
     Singular.CLI.Registry
     Singular.CLI.RegistryReading
-    Singular.CLI.Reject
     Singular.CLI.RejectRules
     Singular.CLI.RequestWindow
     Singular.CLI.Root
@@ -596,12 +594,10 @@ test-suite cage-tests
     Singular.CLI.PrepareSpec
     Singular.CLI.PinGateSpec
     Singular.CLI.PrintedPayloadSpec
-    Singular.CLI.RegistryAddressSpec
     Singular.CLI.FailureSentenceSpec
     Singular.CLI.FlagGroupSpec
     Singular.CLI.HelpSnapshotSpec
     Singular.CLI.ParserCorpusSpec
-    Singular.CLI.SaveStateTokenSpec
     Singular.CLI.SettingsFileSpec
     Singular.CLI.SourcesSpec
     Singular.CLI.StateCommandSpec

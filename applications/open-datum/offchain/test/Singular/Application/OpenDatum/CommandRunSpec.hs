@@ -43,98 +43,6 @@ module Singular.Application.OpenDatum.CommandRunSpec
     , withRigOf
     ) where
 
-import Control.Applicative ((<|>))
-import Control.Exception
-    ( bracket
-    , finally
-    , throwIO
-    )
-import Control.Monad (forM, unless, when)
-import Control.Tracer (Tracer (..))
-import Data.Aeson (toJSON, (.=))
-import Data.Aeson qualified as Aeson
-import Data.Aeson.Key qualified as AesonKey
-import Data.Aeson.KeyMap qualified as KeyMap
-import Data.ByteString qualified as BS
-import Data.ByteString.Base16 qualified as B16
-import Data.ByteString.Char8 qualified as BC
-import Data.ByteString.Lazy qualified as BL
-import Data.ByteString.Short qualified as SBS
-import Data.Either (fromLeft)
-import Data.Foldable (forM_, toList)
-import Data.Function ((&))
-import Data.IORef
-    ( IORef
-    , modifyIORef'
-    , newIORef
-    , readIORef
-    , writeIORef
-    )
-import Data.List (isInfixOf, nub, partition, sort)
-import Data.Map.Strict qualified as Map
-import Data.Maybe
-    ( fromMaybe
-    , isJust
-    , isNothing
-    , listToMaybe
-    , mapMaybe
-    )
-import Data.Proxy (Proxy (..))
-import Data.Set qualified as Set
-import Data.Text (Text)
-import Data.Text qualified as T
-import Data.Text.Encoding qualified as TE
-import Data.Time (UTCTime)
-import Data.Time.Clock.POSIX (getPOSIXTime)
-import Data.Time.Format.ISO8601 (iso8601ParseM)
-import Data.Word (Word64)
-import GHC.Generics
-    ( C1
-    , Constructor
-    , D1
-    , Generic (..)
-    , conName
-    , (:+:)
-    )
-import Lens.Micro ((%~), (.~), (^.))
-import System.Directory
-    ( createDirectory
-    , doesDirectoryExist
-    , doesFileExist
-    , doesPathExist
-    , listDirectory
-    , removeFile
-    , removePathForcibly
-    , renameFile
-    )
-import System.Exit (ExitCode (..))
-import System.FilePath (takeFileName, (</>))
-import System.IO
-    ( IOMode (..)
-    , hClose
-    , hFlush
-    , hPrint
-    , openFile
-    , openTempFile
-    , stderr
-    , stdout
-    )
-import System.IO.Temp (withSystemTempDirectory)
-import System.Posix.Files (setFileMode)
-import System.Posix.IO
-    ( OpenFileFlags (..)
-    , OpenMode (..)
-    , closeFd
-    , defaultFileFlags
-    , dup
-    , dupTo
-    , openFd
-    , stdError
-    , stdOutput
-    )
-import System.Posix.Types (Fd (..))
-import Test.Hspec
-
 import Cardano.Crypto.DSIGN
     ( Ed25519DSIGN
     , SignKeyDSIGN
@@ -155,7 +63,12 @@ import Cardano.Ledger.Alonzo.Tx
     , hashScriptIntegrity
     )
 import Cardano.Ledger.Alonzo.TxWits (Redeemers (..), TxDats (..))
-import Cardano.Ledger.Api.Tx (addrTxWitsL, bodyTxL, txIdTx, witsTxL)
+import Cardano.Ledger.Api.Tx
+    ( addrTxWitsL
+    , bodyTxL
+    , txIdTx
+    , witsTxL
+    )
 import Cardano.Ledger.Api.Tx.Body
     ( collateralInputsTxBodyL
     , inputsTxBodyL
@@ -193,13 +106,137 @@ import Cardano.Ledger.Plutus.Language (Language (PlutusV3))
 import Cardano.Ledger.TxIn (TxId (..), TxIn (..))
 import Cardano.Slotting.Slot (SlotNo (..))
 import Cardano.Tx.Ledger (ConwayTx)
-
+import Control.Applicative ((<|>))
+import Control.Exception (bracket, finally, throwIO)
+import Control.Monad (forM, unless, when)
+import Control.Tracer (Tracer (..))
+import Data.Aeson (toJSON, (.=))
+import Data.Aeson qualified as Aeson
+    ( Key
+    , Object
+    , Result (Success)
+    , ToJSON (toJSON)
+    , Value (..)
+    , decodeStrict
+    , eitherDecode
+    , eitherDecodeStrict'
+    , encode
+    , fromJSON
+    , object
+    )
+import Data.Aeson.Key qualified as AesonKey (toText)
+import Data.Aeson.KeyMap qualified as KeyMap
+    ( delete
+    , elems
+    , empty
+    , insert
+    , keys
+    , lookup
+    , null
+    , toList
+    )
+import Data.ByteString qualified as BS
+    ( ByteString
+    , empty
+    , isInfixOf
+    , readFile
+    , replicate
+    , writeFile
+    )
+import Data.ByteString.Base16 qualified as B16 (decode, encode)
+import Data.ByteString.Char8 qualified as BC
+    ( filter
+    , lines
+    , pack
+    , replicate
+    , unpack
+    , writeFile
+    )
+import Data.ByteString.Lazy qualified as BL
+    ( ByteString
+    , toStrict
+    , writeFile
+    )
+import Data.ByteString.Short qualified as SBS
+    ( ShortByteString
+    , fromShort
+    , toShort
+    )
+import Data.Either (fromLeft)
+import Data.Foldable (forM_, toList)
+import Data.Function ((&))
+import Data.IORef
+    ( IORef
+    , modifyIORef'
+    , newIORef
+    , readIORef
+    , writeIORef
+    )
+import Data.List (isInfixOf, nub, partition, sort)
+import Data.Map.Strict qualified as Map
+    ( Map
+    , delete
+    , fromList
+    , insert
+    , isSubmapOfBy
+    , member
+    , null
+    , singleton
+    , toList
+    , union
+    , unionWith
+    )
+import Data.Maybe
+    ( fromMaybe
+    , isJust
+    , isNothing
+    , listToMaybe
+    , mapMaybe
+    )
+import Data.Proxy (Proxy (..))
+import Data.Set qualified as Set
+    ( delete
+    , empty
+    , insert
+    , map
+    , member
+    , singleton
+    , toList
+    )
+import Data.Text (Text)
+import Data.Text qualified as T
+    ( drop
+    , isInfixOf
+    , isPrefixOf
+    , isSuffixOf
+    , pack
+    , splitOn
+    , take
+    , takeWhile
+    , toLower
+    , unpack
+    )
+import Data.Text.Encoding qualified as TE
+    ( decodeUtf8
+    , encodeUtf8
+    )
+import Data.Time (UTCTime)
+import Data.Time.Clock.POSIX (getPOSIXTime)
+import Data.Time.Format.ISO8601 (iso8601ParseM)
+import Data.Word (Word64)
+import GHC.Generics
+    ( C1
+    , Constructor
+    , D1
+    , Generic (..)
+    , conName
+    , (:+:)
+    )
+import Lens.Micro ((%~), (.~), (^.))
+import PlutusCore.Data qualified as PD (Data (I))
 import PlutusCore.MkPlc (mkConstant)
 import PlutusCore.Version (plcVersion110)
-import PlutusLedgerApi.V3 qualified as PLC
-import UntypedPlutusCore qualified as UPLC
-
-import PlutusCore.Data qualified as PD
+import PlutusLedgerApi.V3 qualified as PLC (serialiseUPLC)
 import Singular.Application.OpenDatum.Command
     ( OpenDatumCommand (..)
     , parseOpenDatumCommand
@@ -215,12 +252,17 @@ import Singular.Application.OpenDatum.Root
     , runPackagedOpenDatumVia
     )
 import Singular.Application.OpenDatum.Run (runOpenDatum)
-import Singular.Application.OpenDatum.Value (openDatumApplication)
-import Singular.CLI (runCommand)
+import Singular.Application.OpenDatum.Value
+    ( openDatumApplication
+    )
 import Singular.CLI.Booking (BookingVerb (..), bookingEdgeName)
-import Singular.CLI.Command (parseCommand)
+import Singular.CLI.Finish (finish)
+import Singular.CLI.Inspect (runInspect)
 import Singular.CLI.ManagedState (addressPartition, managedDir)
-import Singular.CLI.Passphrase (PassphraseSource (..), mkPassphrase)
+import Singular.CLI.Passphrase
+    ( PassphraseSource (..)
+    , mkPassphrase
+    )
 import Singular.CLI.Proof (Leaf (..), leafName)
 import Singular.CLI.Receipt
     ( JournalEntry (..)
@@ -238,6 +280,62 @@ import Singular.CLI.Session (Env (..), txIdHex)
 import Singular.CLI.Sign (signBundle)
 import Singular.CLI.Submit (submitBundle)
 import Singular.CLI.Trace
+    ( ConfirmVerdict
+        ( ConfirmFailed
+        , ConfirmThrew
+        , ConfirmTimedOut
+        , Confirmed
+        )
+    , EdgeAction
+        ( Booking
+        , Booting
+        , Folding
+        , Reclaiming
+        , Rejecting
+        , Updating
+        )
+    , Ended (Done, FailedWith)
+    , Event (How, What)
+    , Fetch (fetchElapsed, fetchEnd, fetchSource, fetchWhat)
+    , How (Fetched, Read, Tx)
+    , RefusalKind (..)
+    , Scope (InEdge, InKey, InRequest, InTransaction)
+    , SubmitVerdict
+        ( Accepted
+        , LedgerRefusedIt
+        , ProviderFailed
+        , SubmitThrew
+        , WrongNetwork
+        )
+    , Trace (Trace)
+    , TxEvent
+        ( TxBuilt
+        , TxConfirmed
+        , TxObserved
+        , TxSigned
+        , TxSubmitted
+        , submitStep
+        , submitTxId
+        , submitVerdict
+        )
+    , What
+        ( Booked
+        , CommandEnded
+        , Created
+        , EdgeStarted
+        , Folded
+        , KeySeen
+        , Reclaimed
+        , Refused
+        , RegistrySeen
+        , Rejected
+        , RequestSeen
+        , RootSeen
+        , Updated
+        )
+    , fanOut
+    , renderText
+    )
 import Singular.CLI.Vault
     ( createVaultFile
     , sealVault
@@ -279,6 +377,13 @@ import Singular.Registry.Evidence
     )
 import Singular.Registry.Ledger (Addr, Coin (..), ConwayEra)
 import Singular.Registry.LedgerProvider qualified as Cage
+    ( LedgerProvider (acquire)
+    , OutputQuery (AtAddress, AtTxIn, HoldingAsset)
+    , Outputs
+    , ReadFailure (BackendReadFailure, MissingOutput)
+    , Session (outputs)
+    , SubmitResult (SubmitAccepted, SubmitFailed, SubmitRefused)
+    )
 import Singular.Registry.PlainJson
     ( PayloadSchema (..)
     , payloadFromJson
@@ -295,6 +400,11 @@ import Singular.Registry.RawChainFixture
     )
 import Singular.Registry.SessionEvidence (observeProvider)
 import Singular.Registry.SessionIO qualified as SessionIO
+    ( ceilingSlot
+    , outputsAt
+    , parameters
+    , withLatest
+    )
 import Singular.Registry.Signing (detachedWitness, signedTx)
 import Singular.Registry.StateToken (parseStateToken)
 import Singular.Registry.SyntheticLedger
@@ -331,6 +441,67 @@ import Singular.Registry.Wallet
     ( Wallet (..)
     , bech32Address
     , loadWallet
+    )
+import System.Directory
+    ( createDirectory
+    , doesDirectoryExist
+    , doesFileExist
+    , doesPathExist
+    , listDirectory
+    , removeFile
+    , removePathForcibly
+    , renameFile
+    )
+import System.Exit (ExitCode (..))
+import System.FilePath (takeFileName, (</>))
+import System.IO
+    ( IOMode (..)
+    , hClose
+    , hFlush
+    , hPrint
+    , openFile
+    , openTempFile
+    , stderr
+    , stdout
+    )
+import System.IO.Temp (withSystemTempDirectory)
+import System.Posix.Files (setFileMode)
+import System.Posix.IO
+    ( OpenFileFlags (..)
+    , OpenMode (..)
+    , closeFd
+    , defaultFileFlags
+    , dup
+    , dupTo
+    , openFd
+    , stdError
+    , stdOutput
+    )
+import System.Posix.Types (Fd (..))
+import Test.Hspec
+    ( Expectation
+    , Spec
+    , SpecWith
+    , anyException
+    , around
+    , aroundAll
+    , describe
+    , expectationFailure
+    , it
+    , shouldBe
+    , shouldContain
+    , shouldMatchList
+    , shouldNotBe
+    , shouldNotContain
+    , shouldNotSatisfy
+    , shouldReturn
+    , shouldSatisfy
+    , shouldThrow
+    )
+import UntypedPlutusCore qualified as UPLC
+    ( DeBruijn (DeBruijn)
+    , Program (Program)
+    , Term (Apply, LamAbs)
     )
 
 spec :: Spec
@@ -6288,61 +6459,6 @@ witnessKeptRows = describe "what the witness read leaves as it was" $ do
                 code `shouldBe` ExitSuccess
                 outcomeOf receipt `shouldBe` Just "success"
                 valueAt "leaf" receipt `shouldBe` Just (Aeson.String "active")
-    describe "the neutral program" $ do
-        it
-            "prints every output at the application's address, as before, and names the witness of an active key"
-            $ withRegistry
-            $ \rig token -> do
-                activeKey rig token "alice-1"
-                activeKey rig token "alice-2"
-                output <- inspectedOutput rig token "alice-1"
-                (_, address) <- holdingOf rig output "alice-1"
-                atAddress <-
-                    SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v ->
-                        SessionIO.outputsAt v address
-                length atAddress `shouldBe` 2
-                receipt <- neutralInspect rig token "alice-1"
-                outcomeOf receipt `shouldBe` Just "success"
-                topLevelKeys receipt
-                    `shouldBe` sort (neverRegisteredFields <> ["witness"])
-                let listed = valueAt "applicationOutput" receipt >>= valueAt "rawDatums"
-                fmap (sort . listedOutputs) listed
-                    `shouldBe` Just (sort [renderOutRef ref | (ref, _) <- atAddress])
-                fmap (nub . map objectKeys . listedObjects) listed
-                    `shouldBe` Just
-                        [["datum", "datumCbor", "datumHash", "lovelace", "output"]]
-                (valueAt "applicationOutput" receipt >>= valueAt "holdings")
-                    `shouldBe` Just (Aeson.toJSON ([] :: [Text]))
-                (valueAt "witness" receipt >>= valueAt "active" >>= valueAt "holders")
-                    `shouldBe` Just (Aeson.toJSON [output])
-        it
-            "answers a key never registered with the same listing and no witness field"
-            $ withRegistry
-            $ \rig token -> do
-                activeKey rig token "alice-1"
-                output <- inspectedOutput rig token "alice-1"
-                (_, address) <- holdingOf rig output "alice-1"
-                atAddress <-
-                    SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v ->
-                        SessionIO.outputsAt v address
-                receipt <- neutralInspect rig token "nobody"
-                outcomeOf receipt `shouldBe` Just "success"
-                topLevelKeys receipt `shouldBe` neverRegisteredFields
-                valueAt "witness" receipt `shouldBe` Nothing
-                fmap
-                    (sort . listedOutputs)
-                    (valueAt "applicationOutput" receipt >>= valueAt "rawDatums")
-                    `shouldBe` Just (sort [renderOutRef ref | (ref, _) <- atAddress])
-  where
-    listedObjects = \case
-        Aeson.Array items -> [o | Aeson.Object o <- toList items]
-        _ -> []
-    listedOutputs value =
-        [ t
-        | o <- listedObjects value
-        , Just (Aeson.String t) <- [KeyMap.lookup "output" o]
-        ]
-    objectKeys o = sort (map AesonKey.toText (KeyMap.keys o))
 
 -- | The address of a state token on the rig's network.
 addressOfToken :: String -> IO String
@@ -6517,7 +6633,7 @@ refusedWith rig token expected = do
 -- | The words of the neutral program's inspect of a key, from an empty directory.
 neutralLine :: Rig -> String -> String -> [String]
 neutralLine rig token key =
-    ["registry", "inspect", "--key", key]
+    ["open-datum", "inspect", "--key", key]
         <> tokenArgs token
         <> [ "--state-dir"
            , rigDir rig </> "empty-actor"
@@ -6548,8 +6664,13 @@ inspectWith app rig token key = do
                 }
     writeIORef (rigEvents rig) []
     command <-
-        either (fail . show) pure (parseCommand (neutralLine rig token key))
-    (code, out, _) <- captured (runCommand app env command)
+        either
+            (fail . show)
+            pure
+            (parseOpenDatumCommand (neutralLine rig token key))
+    (code, out, _) <- captured $ case command of
+        OpenInspect args -> finish (envTracer env) "inspect" Nothing (runInspect app env args)
+        _ -> fail "the retained open-datum inspect fixture did not parse"
     receipt <-
         maybe
             (fail ("no receipt: " <> show out))
@@ -6596,20 +6717,6 @@ plantedTokenless rig token = do
         SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v ->
             SessionIO.outputsAt v address
     pure (address, length atAddress == 2)
-
--- | The neutral program's inspect of a key, over the open-datum registry.
-neutralInspect :: Rig -> String -> String -> IO Aeson.Value
-neutralInspect rig token key = do
-    writeIORef (rigEvents rig) []
-    command <-
-        either (fail . show) pure (parseCommand (neutralLine rig token key))
-    (code, out, _) <-
-        captured (runCommand neutralApplication (envOf rig) command)
-    code `shouldBe` ExitSuccess
-    maybe
-        (fail ("no receipt: " <> show out))
-        pure
-        (Aeson.decodeStrict out)
 
 -- | A receipt without the identifier of the session that read it, which counts runs.
 withoutSessionId :: Aeson.Value -> Aeson.Value
