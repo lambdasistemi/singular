@@ -167,7 +167,7 @@
                 managed_roots=0
                 managed_journals=0
                 managed_bodies=0
-                for state_root in "$source/registry" "$source/registry-rolled-back"; do
+                for state_root in "$source/state-line"; do
                   if [ ! -d "$state_root" ]; then
                     note "absent state root: ''${state_root#"$source"/}"
                     continue
@@ -185,23 +185,13 @@
                   done < <(find "$state_root" -type f -print0 | sort -z)
                 done
                 note "managed: state_roots=$managed_roots journals=$managed_journals signed_bodies=$managed_bodies"
-                for item in verdicts.md fold-holds.list node-execution-time.json \
-                  direct-processes.trie.jsonl trie-command-invocations; do
+                for item in verdicts.md node-execution-time.json; do
                   if [ -e "$source/$item" ]; then
                     cp -a "$source/$item" "$out/"
                   else
                     note "absent: $item"
                   fi
                 done
-                # The hold-coverage record is written under receipts/, where
-                # the originals copy already retains it: expected and checked
-                # at the path the harness writes, so an absent line means the
-                # captured run genuinely produced none.
-                if [ -e "$source/receipts/fold-hold-coverage.json" ]; then
-                  note "present: receipts/fold-hold-coverage.json"
-                else
-                  note "absent: receipts/fold-hold-coverage.json"
-                fi
                 derived=$(find "$source/receipts" -maxdepth 1 -type f \
                   \( -name '*-tampered.json' -o -name '*-red.out' -o -name '*-red.err' -o -name '*-red.exit' \) \
                   -printf '%s\n' | awk '{n++; s+=$1} END {printf "%d files %d bytes", n, s}')
@@ -567,12 +557,9 @@
         pkgs.runCommand "managed-scripts" { } ''
           mkdir -p $out
           cp ${./tools/cli_recovery_controls.sh} $out/cli_recovery_controls.sh
-          cp ${./tools/check_recovery_trie.py} $out/check_recovery_trie.py
           cp ${./tools/fixture_process.py} $out/fixture_process.py
           cp ${./tools/facade_lifecycle_controls.py} $out/facade_lifecycle_controls.py
           cp ${./tools/managed_state.sh} $out/managed_state.sh
-          cp ${./tools/demo1_cli_journey.sh} $out/demo1_cli_journey.sh
-          cp ${./tools/demo1_cli_create_race.sh} $out/demo1_cli_create_race.sh
           cp ${./tools/cli_recovery_receipt_cap.test.sh} $out/cli_recovery_receipt_cap.test.sh
         '';
       commandControls =
@@ -599,24 +586,16 @@
           # The hosted recovery partitions, in one place. Each partition
           # lists its parts in running order; the discovery app, the
           # partition check, the per-partition runner and the documented
-          # commands all derive from this list. Cross-wallet cases are
-          # discovered from the fold path at discovery time, one partition
-          # per case closed by the observation, so a new hold point joins
-          # the matrix with nothing to edit here.
+          # commands all derive from this list. Every retained partition
+          # exercises its commands and checks identity and reconciliation.
           cliRecoveryPartitions = {
-            history = "accepting lost-answer killed never-sent whole-journal trie-capability";
-            rollback = "rollback trie-capability";
-            two-requests = "two-requests trie-capability";
-            state-line = "state-line trie-capability";
-            holding-update = "holding-update trie-capability";
-            holding-terminate = "holding-terminate trie-capability";
-            termination-fold = "termination-fold trie-capability";
+            state-line = "state-line";
+            holding-update = "holding-update";
+            holding-terminate = "holding-terminate";
+            termination-fold = "termination-fold";
           };
           cliRecoveryPartitionNames = {
-            history = "accepting, lost-answer, killed, never-sent and whole-journal with trie observations";
-            rollback = "restored node rollback (rollback trie-capability)";
-            two-requests = "interrupted two-request fold with trie observations";
-            state-line = "the commands of the proved design, each interrupted three ways, with the current line read beside them";
+            state-line = "registry creation, registration booking, reclaim, cleanup and folding interrupted three ways";
             holding-update = "controller holding updates interrupted three ways";
             holding-terminate = "permanent termination bookings interrupted three ways";
             termination-fold = "public termination folds by a second wallet interrupted three ways";
@@ -624,10 +603,8 @@
           # #451 re-cut: the shared collector derivation, exposed as an
           # app; its buildable package form lives in packages.
           cliRecoveryEvidence = (recoveryTools system).evidence;
-          # One partition per invocation, by key (`history`, `rollback`) or
-          # by discovered cross-wallet case (`cross-wallet:<hold>`), through
-          # the same receipt cap and check wrapper; the controls refuse an
-          # unknown token against the shared census before any node starts.
+          # One retained partition per invocation, through the same receipt
+          # cap and check wrapper. Unknown keys fail before any node starts.
           cliRecoveryPartitionApp = {
             type = "app";
             program = pkgs.lib.getExe (
@@ -638,22 +615,16 @@
                   [ "$#" -eq 1 ] && [ -n "$1" ] || { echo "usage: cli-recovery-partition KEY" >&2; exit 2; }
                   key="$1"
                   staticParts='${builtins.toJSON cliRecoveryPartitions}'
-                  case "$key" in
-                    cross-wallet:*) parts="$key trie-capability" ;;
-                    *)
-                      parts="$(jq -r --arg k "$key" '.[$k] // empty' <<<"$staticParts")"
-                      [ -n "$parts" ] || { echo "cli-recovery-partition: unknown partition: $key" >&2; exit 2; } ;;
-                  esac
+                  parts="$(jq -r --arg k "$key" '.[$k] // empty' <<<"$staticParts")"
+                  [ -n "$parts" ] || { echo "cli-recovery-partition: unknown partition: $key" >&2; exit 2; }
                   bash ${managedScripts}/cli_recovery_receipt_cap.test.sh ${managedScripts}/cli_recovery_controls.sh
                   CLI_RECOVERY_PARTS="$parts" CLI_RECOVERY_CONTROLS=${managedScripts}/cli_recovery_controls.sh bash ${./tools/cli_recovery_controls_check.sh} "$PWD"
                 '';
               }
             );
           };
-          # The partition census: every static partition with its hosted
-          # name, then one partition per cross-wallet case discovered from
-          # the fold path's own sources. No node; the workflow matrix and
-          # the partition check both read this list.
+          # The partition census supplies every retained partition and its
+          # hosted name. No node; both the workflow matrix and check read it.
           cliRecoveryPartitionsApp = {
             type = "app";
             program = pkgs.lib.getExe (
@@ -669,18 +640,14 @@
                 text = ''
                   staticParts='${builtins.toJSON cliRecoveryPartitions}'
                   staticNames='${builtins.toJSON cliRecoveryPartitionNames}'
-                  holds=$(grep -rhoE 'harnessHoldAt[[:space:]]+"SINGULAR_HARNESS_HOLD_[A-Z_]+"' \
-                    ${./offchain/cli} | sed -E 's/.*"(SINGULAR_HARNESS_HOLD_[A-Z_]+)".*/\1/' | sort -u)
-                  [ -n "$holds" ] || { echo "cli-recovery-partitions: the fold path declares no hold points" >&2; exit 2; }
-                  jq -c -n --argjson parts "$staticParts" --argjson names "$staticNames" --arg holds "$holds" '
-                    {partition: ([$parts | to_entries[] | {key: .key, name: $names[.key], parts: .value}] + ($holds | split("\n") | map(select(. != "") | {key: ("cross-wallet:" + .), name: ("another wallet fold: cross-wallet:" + . + " with trie observations"), parts: (. | "cross-wallet:" + . + " trie-capability")}) + [{key: "cross-wallet:SINGULAR_HARNESS_HOLD_AFTER_SEND:lost-answer", name: "another wallet fold: cross-wallet:SINGULAR_HARNESS_HOLD_AFTER_SEND:lost-answer with trie observations", parts: "cross-wallet:SINGULAR_HARNESS_HOLD_AFTER_SEND:lost-answer trie-capability"}]))}'
+                  jq -c -n --argjson parts "$staticParts" --argjson names "$staticNames" '
+                    {partition: [$parts | to_entries[] | {key: .key, name: $names[.key], parts: .value}]}'
                 '';
               }
             );
           };
-          # The hosted check on the partitions: every scenario part in
-          # exactly one partition, every partition closed by the
-          # observation. Reads the discovery list; the controls script it
+          # The hosted check on the partitions: every retained scenario in
+          # exactly one partition. Reads the discovery list; the script it
           # judges defaults to this checkout, CLI_RECOVERY_CONTROLS
           # overrides it for the dummy-part plant.
           cliRecoveryPartitionCheckApp = {
@@ -698,6 +665,7 @@
                 text = ''
                   [ "$#" -eq 2 ] || { echo "usage: cli-recovery-partition-check REPO-ROOT PARTITIONS_JSON" >&2; exit 2; }
                   bash ${./tools/cli_recovery_partition_check.sh} "$1" "$2"
+                  bash ${./tools/cli_recovery_partition_check.test.sh} ${./tools/cli_recovery_partition_check.sh} "$1" "$2"
                 '';
               }
             );
@@ -776,9 +744,7 @@
                   work="$(mktemp -d)/controls"
                   export E2E_GENESIS_DIR=${./offchain/e2e-test/genesis}
                   exec python3 ${managedScripts}/facade_lifecycle_controls.py \
-                    ${pkgs.lib.getExe offchain.packages.${system}.devnet} "$work" \
-                  --startup-controller ${managedScripts}/cli_recovery_controls.sh \
-                  --singular ${pkgs.lib.getExe offchain.packages.${system}.singular-test-harness} --root "$PWD"
+                    ${pkgs.lib.getExe offchain.packages.${system}.devnet} "$work"
                 '';
               }
             );

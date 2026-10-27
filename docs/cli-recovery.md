@@ -234,47 +234,49 @@ as a record.
 
 ## What the checks show
 
-The recovery controls run each hosted partition as separate `singular`
-processes against its own generated development node, and judge every
-clause from the receipts the processes printed, the registry's journal,
-its saved bodies and its files, and — for exclusion and rollback — from
-the node's own answers, read with `devnet probe` and its block adoption
-trace, never through the command under test. The partitions are listed in
-one place in the root flake; the discovery command prints them for the
-workflow matrix, and each partition runs by key:
+The recovery controls run the commands of the proved design as separate
+`singular` and `open-datum` processes against one generated development node
+per partition. Each sending command is interrupted three ways: the node takes
+its transaction but the answer is lost, the process is killed after sending,
+and the command prepares a transaction without sending it. The checks read the
+process receipts, managed journals and saved signed bodies. The node's own
+`devnet probe` confirms the outputs used to reach each holding.
+
+The root flake declares the four retained partitions. Discovery prints their
+complete list for the workflow matrix; the census refuses empty discovery,
+unknown parts, duplicate parts and missing parts. Each partition runs by key:
 
 ```sh
 nix run --quiet .#cli-recovery-partitions
-nix run --quiet .#cli-recovery-partition -- history
-nix run --quiet .#cli-recovery-partition -- two-requests
-nix run --quiet .#cli-recovery-partition -- rollback
 nix run --quiet .#cli-recovery-partition -- state-line
-nix run --quiet .#cli-recovery-partition -- 'cross-wallet:SINGULAR_HARNESS_HOLD_AFTER_SEND'
+nix run --quiet .#cli-recovery-partition -- holding-update
+nix run --quiet .#cli-recovery-partition -- holding-terminate
+nix run --quiet .#cli-recovery-partition -- termination-fold
 ```
 
-The combined `.#cli-recovery-controls` command is retired: it serialised
-every part on one node and exceeded the receipt cap of 52428800 bytes
-before reaching never-sent and rollback. The per-partition commands above
-are generated from the same partition list the workflow matrix uses.
+| Partition | Commands exercised |
+|---|---|
+| Registry creation and registration | Application and Singular registry creation, registration booking, reclaim, registration fold and cleanup |
+| Holding update | A registered holding is updated by its controller |
+| Termination booking | The controller books a registered holding's permanent termination |
+| Termination fold | A second wallet folds a booked termination from chain data |
 
-| control | what happens | what the next command does |
-|---|---|---|
-| accepting | an insert and fold complete | both submissions are named included and observed once; inspect reconstructs the fold's root from public history |
-| lost answer | the node accepts a fold but its answer is lost | the prepared line and saved body predate the send; the next command reconstructs public state, observes the fold once and proceeds |
-| killed before the commit | a fold confirms, then its process is killed before fresh replay | the next command reconstructs public state, observes the fold once and proceeds |
-| killed before the observation | a fold's replay is checked, then its process is killed before observed | the next command reconstructs public state, observes the fold once and proceeds |
-| two requests | two bookings, a fold of both interrupted by a lost answer and by a kill before the observation | each time the next ordinary command recovers the fold, both keys reconciled once, nothing sent twice |
-| never sent, past its upper bound | a fold never reaches the node, and the tip passes its upper bound | the next write journals excluded with the chain point and live inputs, then proceeds from fresh public replay |
-| never sent, without an upper bound | a booking never reaches the node | the next write stops naming the booking and unknown; it neither resubmits nor invents its inclusion |
-| rolled back | the generated node restores a database copy from before an observed booking and fold | public reads show their inputs live again; the journal appends rolled-back, writes stop naming the booking and no transaction is resent |
-| the commands of the proved design | a creation, a booking, a reclaim, a fold and a cleanup, each with its answer lost after the node took it, with its process killed after the send, and with the send never made | the next write of the wallet observes an included transaction once, an unsent one stops it naming the transaction, nothing is built or sent past it, and no transaction is sent twice |
+Each interrupted transaction keeps exactly one prepared identity and a saved
+body whose hash matches its journal entry. A later write by the same wallet
+observes an included transaction exactly once. While an unsent transaction
+remains unresolved, the next write stops with that identity and case; its
+journal does not move and it builds or sends nothing. No command automatically
+resubmits the interrupted transaction.
 
+Every partition retains its original receipts, journals and signed bodies
+under their source-relative paths, with a manifest binding the candidate, run,
+partition and file hashes. The workflow verifies those hashes and records from
+both wallets before uploading each partition separately. The receipt guard
+refuses more than 52428800 bytes and accepts that boundary.
 
-The rolled-back control is a mechanism of the generated development
-node — its database restored to an earlier copy — and not a fork of a
-public chain: it shows what the commands do when the chain they read no
-longer holds a transaction, not how often or how deeply a public network
-rolls back. Across every control, each journalled transaction has
-exactly one `prepared` line, the journal is only ever appended to, and
-no saved body changes. These controls do not establish durability
-across a power loss, only across a killed process.
+The current line's history, rollback, two-request and cross-wallet recovery
+scenarios have been retired with their old bootstrap. Their trie observations
+are not evidence for the retained commands. The separate facade lifecycle
+controls continue to exercise fatal failure, restart, cancellation and joined
+cleanup on their generated node. These checks establish process interruption
+and recovery over the exercised cases, not durability across a power loss.

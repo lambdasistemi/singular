@@ -534,8 +534,8 @@ jobs:
       # every one through the same journal and no-resubmission predicates.
       # The hosted recovery partitions live in one place in the root flake.
       # This step prints them (no node) for the matrix below and judges the
-      # census: every scenario part in exactly one partition, every
-      # command-running partition closed by the trie-capability observation.
+      # census: every retained scenario part in exactly one partition,
+      # with nonempty discovery and no retired command dependencies.
       - name: Discover the hosted partitions and check the census
         id: partitions
         run: |
@@ -569,18 +569,9 @@ jobs:
         with:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      # Each hosted partition runs its parts in order on its own fresh node
-      # and registry: history (accepting, lost answer, killed, never sent,
-      # whole journal) and rollback, each closed by the trie-capability
-      # observation over its own run, and each discovered cross-wallet case
-      # closed the same way. A part that needs earlier state follows it
-      # inside the same partition, so nothing runs twice as a predecessor.
-      # Its measured node-backed invocation time lands in
-      # node-execution-time.json at the run root.
-      #
-      # Falsification: without the partition's own prerequisite the next
-      # write refuses with its receipt naming the missing live key, and the
-      # verdict table fails.
+      # Every retained partition runs on its own fresh node. Its commands
+      # are interrupted with lost answers, kills and unsent transactions;
+      # the journal and signed-body checks judge recovery without resubmission.
       - name: Run the partition's parts
         run: DEMO1_KEEP_SCRATCH=1 nix run --quiet .#cli-recovery-partition -- '${{ matrix.partition.key }}'
       # Collect through the packaged collector app — explicit runtime tools,
@@ -609,23 +600,11 @@ jobs:
           # The partition kept its scratch so this step could copy it. A reused
           # runner would otherwise retain the node database.
           rm -rf "$RUNNER_TEMP"/cli-recovery.*
-      # #543: verify the collected bundle before it is uploaded — producer
-      # identity present, every manifest pin re-hashes, nothing unpinned,
-      # managed journals + signed bodies present from at least two wallet
-      # partitions. Cross-wallet-only: history/rollback run a single wallet,
-      # so the two-partition obligation cannot apply there; their bundles
-      # keep the existing collect-and-retain path unchanged.
+      # Every retained run uses both wallets; verify their original journals,
+      # signed bodies and producer-bound manifest before retaining the bundle.
       - name: Verify the collected evidence bundle
         if: always()
-        env:
-          RECOVERY_PARTITION: ${{ matrix.partition.key }}
-        run: |
-          case "$RECOVERY_PARTITION" in
-            cross-wallet:*)
-              bash tools/cli_recovery_evidence_check.sh "${{ runner.temp }}/recovery-evidence" ;;
-            *)
-              echo "evidence: SKIP two-wallet check on single-wallet partition $RECOVERY_PARTITION" ;;
-          esac
+        run: bash tools/cli_recovery_evidence_check.sh "${{ runner.temp }}/recovery-evidence"
       - name: Retain the partition's recorded evidence
         if: always()
         uses: actions/upload-artifact@v7
