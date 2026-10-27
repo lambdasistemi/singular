@@ -54,12 +54,6 @@ applications/open-datum/negative/src/Negative/Craft.hs: ioref — owner=one adve
 # ---- old journeys: retained runners, never extended ----
 offchain/journey/Journey/Proofs.hs: ioref — owner=one journey command; lifetime=single command; serial on the command thread; proof observations for the retained runner
 offchain/journey/Journey/Scenario.hs: ioref — owner=one journey command; lifetime=single command; serial on the command thread; scenario state for the retained runner
-offchain/journey/li-refusals/Main.hs: ioref — owner=one journey command; lifetime=single command; serial on the command thread; run observations for the retained runner
-offchain/journey/lmlc/Main.hs: ioref — owner=one journey command; lifetime=single command; serial on the command thread; run observations for the retained runner
-offchain/journey/recovery/Main.hs: ioref — owner=one journey command; lifetime=single command; serial on the command thread; run observations for the retained runner
-offchain/journey/register/Main.hs: ioref — owner=one journey command; lifetime=single command; serial on the command thread; run observations for the retained runner
-offchain/journey/repair/Main.hs: ioref — owner=one journey command; lifetime=single command; serial on the command thread; run observations for the retained runner
-offchain/journey/retirement/Main.hs: ioref — owner=one journey command; lifetime=single command; serial on the command thread; run observations for the retained runner
 
 # ---- tests and harness: owned by the test run, joined before the example ends ----
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/ApplicationSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; fixture refs accumulated for assertions
