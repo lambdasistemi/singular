@@ -617,90 +617,32 @@
             inherit path;
           }) (packages system)
         );
-      # #299: the Demo 1 journey from the extracted release archive, run as
-      # separate `singular` and `open-datum` processes on one development
-      # node. Run from the repository root: `nix run --quiet .#demo1-cli-check`.
-      demo1 =
+      # Scripts sourcing managed_state.sh are packaged with their sibling helpers.
+      commandScripts =
         system:
         let
           pkgs = import nixpkgs { inherit system; };
-          # Scripts sourcing managed_state.sh travel with it: a bare
-          # ${./tools/<script>} copies one file, leaving the sourced
-          # sibling behind, so every such entry point resolves from here.
-          managedScripts = pkgs.runCommand "managed-scripts" { } ''
-            mkdir -p $out
-            cp ${./tools/cli_recovery_controls.sh} $out/cli_recovery_controls.sh
-            cp ${./tools/check_recovery_trie.py} $out/check_recovery_trie.py
-            cp ${./tools/fixture_process.py} $out/fixture_process.py
-            cp ${./tools/facade_lifecycle_controls.py} $out/facade_lifecycle_controls.py
-            cp ${./tools/managed_state.sh} $out/managed_state.sh
-            cp ${./tools/demo1_cli_journey.sh} $out/demo1_cli_journey.sh
-            cp ${./tools/demo1_closed_journey.sh} $out/demo1_closed_journey.sh
-            cp ${./tools/demo1_cli_create_race.sh} $out/demo1_cli_create_race.sh
-            cp ${./tools/demo1_cli_one_output_create.sh} $out/demo1_cli_one_output_create.sh
-            cp ${./tools/registry_bundle_control.sh} $out/registry_bundle_control.sh
-            cp ${./tools/demo1_cli_prepare_funding.sh} $out/demo1_cli_prepare_funding.sh
-            cp ${./tools/cli_recovery_receipt_cap.test.sh} $out/cli_recovery_receipt_cap.test.sh
-          '';
-          # #707: the ordinary tools the bundle journey runs on, and nothing
-          # else: the PATH of a user who has no Nix
-          bundleJourneyTools = pkgs.buildEnv {
-            name = "demo1-bundle-journey-tools";
-            paths =
-              with pkgs;
-              [
-                bash
-                coreutils
-                curl
-                diffutils
-                findutils
-                gawk
-                gnugrep
-                gnused
-                gnutar
-                gzip
-                jq
-                procps
-              ]
-              # the journey watches which files a command opens and locks its state
-              ++ pkgs.lib.optionals pkgs.stdenv.isLinux [
-                pkgs.strace
-                pkgs.util-linux
-              ];
-          };
-          # #449: the recovery controls as one app per part, each on its own
-          # development node, so CI runs the parts as parallel jobs. An empty
-          # part list runs them all.
-          # #300/#449: the demonstration's four refusals on one existing
-          # registry, run as `open-datum` and `singular` processes (open verbs
-          # through `open-datum`, takes through `cli-controls` with
-          # `--singular`); an empty part list runs every part.
-          attachApp = name: parts: {
-            type = "app";
-            program = pkgs.lib.getExe (
-              pkgs.writeShellApplication {
-                inherit name;
-                runtimeInputs = with pkgs; [
-                  bash
-                  python3
-                  curl
-                  xxd
-                  coreutils
-                  diffutils
-                  findutils
-                  git
-                  gnugrep
-                  gnused
-                  gnutar
-                  gzip
-                  jq
-                  procps
-                  nix
-                ];
-                text = ''CLI_ATTACH_PARTS="${parts}" bash ${./tools/demo1_cli_attach_check.sh} "$PWD"'';
-              }
-            );
-          };
+        in
+        pkgs.runCommand "managed-scripts" { } ''
+          mkdir -p $out
+          cp ${./tools/cli_recovery_controls.sh} $out/cli_recovery_controls.sh
+          cp ${./tools/check_recovery_trie.py} $out/check_recovery_trie.py
+          cp ${./tools/fixture_process.py} $out/fixture_process.py
+          cp ${./tools/facade_lifecycle_controls.py} $out/facade_lifecycle_controls.py
+          cp ${./tools/managed_state.sh} $out/managed_state.sh
+          cp ${./tools/demo1_cli_journey.sh} $out/demo1_cli_journey.sh
+          cp ${./tools/demo1_closed_journey.sh} $out/demo1_closed_journey.sh
+          cp ${./tools/demo1_cli_create_race.sh} $out/demo1_cli_create_race.sh
+          cp ${./tools/demo1_cli_one_output_create.sh} $out/demo1_cli_one_output_create.sh
+          cp ${./tools/registry_bundle_control.sh} $out/registry_bundle_control.sh
+          cp ${./tools/demo1_cli_prepare_funding.sh} $out/demo1_cli_prepare_funding.sh
+          cp ${./tools/cli_recovery_receipt_cap.test.sh} $out/cli_recovery_receipt_cap.test.sh
+        '';
+      commandControls =
+        system:
+        let
+          pkgs = import nixpkgs { inherit system; };
+          managedScripts = commandScripts system;
           # Every direct/wrapped recovery controller carries the same tools.
           # The lifecycle composition must not inherit them from an ambient
           # developer PATH after eliminating the old launcher wrapper chain.
@@ -833,6 +775,156 @@
             gnused
             nix
           ];
+        in
+        {
+          # #326: the flags documented for `singular` and `open-datum` equal
+          # what each binary's --help prints, triple by triple, with the
+          # removed `singular registry insert | update | terminate` verbs
+          # refused: `nix run --quiet .#cli-flags-check`.
+          cli-flags-check = {
+            type = "app";
+            program = pkgs.lib.getExe (
+              pkgs.writeShellApplication {
+                name = "cli-flags-check";
+                runtimeInputs = flagsTools;
+                text = ''bash ${./tools/cli_flags_check.sh} "$PWD"'';
+              }
+            );
+          };
+          # Its controls: `nix run --quiet .#cli-flags-controls`.
+          cli-flags-controls = {
+            type = "app";
+            program = pkgs.lib.getExe (
+              pkgs.writeShellApplication {
+                name = "cli-flags-controls";
+                runtimeInputs = flagsTools;
+                text = ''bash ${./tools/cli_flags_controls.sh} "$PWD"'';
+              }
+            );
+          };
+          # #638 + #639: the packaged wallet vault controls — the real
+          # `singular` through a passphrase descriptor with no
+          # `cardano-cli` on the path, each control planted-defect
+          # falsified; the sign family rewrites the committed bundle
+          # fixture's signers with jq, and proves the offline verb under
+          # a bwrap network namespace where the runner allows one, else
+          # through provider refusals plus a python counting canary:
+          # `nix run --quiet .#wallet-vault-controls`.
+          wallet-vault-controls = {
+            type = "app";
+            program = pkgs.lib.getExe (
+              pkgs.writeShellApplication {
+                name = "wallet-vault-controls";
+                runtimeInputs = flagsTools ++ [
+                  pkgs.jq
+                  pkgs.python3
+                  pkgs.bubblewrap
+                  pkgs.systemd
+                ];
+                text = ''bash ${./tools/wallet_vault_controls.sh} "$PWD"'';
+              }
+            );
+          };
+          # The private facade's joined lifecycle and fatal failure controls,
+          # run as `open-datum` and `singular` processes — judged from
+          # receipts and journals:
+          # `nix run --quiet .#facade-lifecycle-controls`.
+          facade-lifecycle-controls = {
+            type = "app";
+            program = pkgs.lib.getExe (
+              pkgs.writeShellApplication {
+                name = "facade-lifecycle-controls";
+                runtimeInputs = recoveryRuntimeInputs;
+                text = ''
+                  work="$(mktemp -d)/controls"
+                  export E2E_GENESIS_DIR=${./offchain/e2e-test/genesis}
+                  exec python3 ${managedScripts}/facade_lifecycle_controls.py \
+                    ${pkgs.lib.getExe offchain.packages.${system}.devnet} "$work" \
+                  --startup-controller ${managedScripts}/cli_recovery_controls.sh \
+                  --singular ${pkgs.lib.getExe offchain.packages.${system}.singular-test-harness} --root "$PWD"
+                '';
+              }
+            );
+          };
+          # The portable collector — the hosted gate runs the census app, the
+          # per-partition matrix and the collector app per matrix job.
+          cli-recovery-cross-wallet-evidence = {
+            type = "app";
+            program = pkgs.lib.getExe cliRecoveryEvidence;
+          };
+          # The hosted partitions, derived from the single list above:
+          # one runner, one discovery list and one census check.
+          cli-recovery-partition = cliRecoveryPartitionApp;
+          cli-recovery-partitions = cliRecoveryPartitionsApp;
+          cli-recovery-partition-check = cliRecoveryPartitionCheckApp;
+        };
+      # #299: the Demo 1 journey from the extracted release archive, run as
+      # separate `singular` and `open-datum` processes on one development
+      # node. Run from the repository root: `nix run --quiet .#demo1-cli-check`.
+      demo1 =
+        system:
+        let
+          pkgs = import nixpkgs { inherit system; };
+          managedScripts = commandScripts system;
+          # #707: the ordinary tools the bundle journey runs on, and nothing
+          # else: the PATH of a user who has no Nix
+          bundleJourneyTools = pkgs.buildEnv {
+            name = "demo1-bundle-journey-tools";
+            paths =
+              with pkgs;
+              [
+                bash
+                coreutils
+                curl
+                diffutils
+                findutils
+                gawk
+                gnugrep
+                gnused
+                gnutar
+                gzip
+                jq
+                procps
+              ]
+              # the journey watches which files a command opens and locks its state
+              ++ pkgs.lib.optionals pkgs.stdenv.isLinux [
+                pkgs.strace
+                pkgs.util-linux
+              ];
+          };
+          # #449: the recovery controls as one app per part, each on its own
+          # development node, so CI runs the parts as parallel jobs. An empty
+          # part list runs them all.
+          # #300/#449: the demonstration's four refusals on one existing
+          # registry, run as `open-datum` and `singular` processes (open verbs
+          # through `open-datum`, takes through `cli-controls` with
+          # `--singular`); an empty part list runs every part.
+          attachApp = name: parts: {
+            type = "app";
+            program = pkgs.lib.getExe (
+              pkgs.writeShellApplication {
+                inherit name;
+                runtimeInputs = with pkgs; [
+                  bash
+                  python3
+                  curl
+                  xxd
+                  coreutils
+                  diffutils
+                  findutils
+                  git
+                  gnugrep
+                  gnused
+                  gnutar
+                  gzip
+                  jq
+                  procps
+                  nix
+                ];
+                text = ''CLI_ATTACH_PARTS="${parts}" bash ${./tools/demo1_cli_attach_check.sh} "$PWD"'';
+              }
+            );
+          };
           # #326: verify a published release from its downloaded bytes —
           # sums, the stated model revision against the one the
           # conformance evidence is compiled against, archive members, and
@@ -1406,86 +1498,7 @@
               }
             );
           };
-          # #326: the flags documented for `singular` and `open-datum` equal
-          # what each binary's --help prints, triple by triple, with the
-          # removed `singular registry insert | update | terminate` verbs
-          # refused: `nix run --quiet .#cli-flags-check`.
-          cli-flags-check = {
-            type = "app";
-            program = pkgs.lib.getExe (
-              pkgs.writeShellApplication {
-                name = "cli-flags-check";
-                runtimeInputs = flagsTools;
-                text = ''bash ${./tools/cli_flags_check.sh} "$PWD"'';
-              }
-            );
-          };
-          # Its controls: `nix run --quiet .#cli-flags-controls`.
-          cli-flags-controls = {
-            type = "app";
-            program = pkgs.lib.getExe (
-              pkgs.writeShellApplication {
-                name = "cli-flags-controls";
-                runtimeInputs = flagsTools;
-                text = ''bash ${./tools/cli_flags_controls.sh} "$PWD"'';
-              }
-            );
-          };
-          # #638 + #639: the packaged wallet vault controls — the real
-          # `singular` through a passphrase descriptor with no
-          # `cardano-cli` on the path, each control planted-defect
-          # falsified; the sign family rewrites the committed bundle
-          # fixture's signers with jq, and proves the offline verb under
-          # a bwrap network namespace where the runner allows one, else
-          # through provider refusals plus a python counting canary:
-          # `nix run --quiet .#wallet-vault-controls`.
-          wallet-vault-controls = {
-            type = "app";
-            program = pkgs.lib.getExe (
-              pkgs.writeShellApplication {
-                name = "wallet-vault-controls";
-                runtimeInputs = flagsTools ++ [
-                  pkgs.jq
-                  pkgs.python3
-                  pkgs.bubblewrap
-                  pkgs.systemd
-                ];
-                text = ''bash ${./tools/wallet_vault_controls.sh} "$PWD"'';
-              }
-            );
-          };
-          # The private facade's joined lifecycle and fatal failure controls,
-          # run as `open-datum` and `singular` processes — judged from
-          # receipts and journals:
-          # `nix run --quiet .#facade-lifecycle-controls`.
-          facade-lifecycle-controls = {
-            type = "app";
-            program = pkgs.lib.getExe (
-              pkgs.writeShellApplication {
-                name = "facade-lifecycle-controls";
-                runtimeInputs = recoveryRuntimeInputs;
-                text = ''
-                  work="$(mktemp -d)/controls"
-                  export E2E_GENESIS_DIR=${./offchain/e2e-test/genesis}
-                  exec python3 ${managedScripts}/facade_lifecycle_controls.py \
-                    ${pkgs.lib.getExe offchain.packages.${system}.devnet} "$work" \
-                  --startup-controller ${managedScripts}/cli_recovery_controls.sh \
-                  --singular ${pkgs.lib.getExe offchain.packages.${system}.singular-test-harness} --root "$PWD"
-                '';
-              }
-            );
-          };
-          # The portable collector — the hosted gate runs the census app, the
-          # per-partition matrix and the collector app per matrix job.
-          cli-recovery-cross-wallet-evidence = {
-            type = "app";
-            program = pkgs.lib.getExe cliRecoveryEvidence;
-          };
-          # The hosted partitions, derived from the single list above:
-          # one runner, one discovery list and one census check.
-          cli-recovery-partition = cliRecoveryPartitionApp;
-          cli-recovery-partitions = cliRecoveryPartitionsApp;
-          cli-recovery-partition-check = cliRecoveryPartitionCheckApp;
+
         };
     in
     {
@@ -1511,6 +1524,7 @@
           // (coverage system).apps
           // (inventory system).apps
           // (demo1 system)
+          // (commandControls system)
           // (import ./nix/ci-apps.nix {
             pkgs = import nixpkgs { inherit system; };
             inherit offchain onchain system;
