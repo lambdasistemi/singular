@@ -4536,11 +4536,141 @@
    ]
   },
   "README/singular-00": {
+   "audio_sha256": "17b2832e1c0238eb151f5f5ef2e41aea72a6e132bdd6f006d9cb535cbf32280b",
+   "characters": 131,
+   "cost": 0.00012969,
+   "duration": 9.125,
+   "index": 0,
+   "key": "d7558c4acd9e26382d8f625cd14ce8a05c33d5b392bcdc3a89e8bfa5fcec1e7b",
+   "page": "README.md",
+   "pause_ms": 400,
+   "section": "singular",
+   "sent_text": "Not for mainnet. Do not deploy Singular or open datum on mainnet until on-chain verification and an independent audit are complete.",
+   "text": "Not for mainnet. Do not deploy Singular or open datum on mainnet until on-chain verification and an independent audit are complete.",
+   "words": [
+    {
+     "end": 0.4,
+     "start": 0.2,
+     "text": "Not"
+    },
+    {
+     "end": 0.512,
+     "start": 0.4,
+     "text": "for"
+    },
+    {
+     "end": 1.225,
+     "start": 0.512,
+     "text": "mainnet"
+    },
+    {
+     "end": 1.425,
+     "start": 1.225,
+     "text": "."
+    },
+    {
+     "end": 1.775,
+     "start": 1.625,
+     "text": "Do"
+    },
+    {
+     "end": 2.0,
+     "start": 1.775,
+     "text": "not"
+    },
+    {
+     "end": 2.4,
+     "start": 2.0,
+     "text": "deploy"
+    },
+    {
+     "end": 3.013,
+     "start": 2.4,
+     "text": "Singular"
+    },
+    {
+     "end": 3.237,
+     "start": 3.013,
+     "text": "or"
+    },
+    {
+     "end": 3.6,
+     "start": 3.237,
+     "text": "open"
+    },
+    {
+     "end": 4.025,
+     "start": 3.6,
+     "text": "datum"
+    },
+    {
+     "end": 4.225,
+     "start": 4.025,
+     "text": "on"
+    },
+    {
+     "end": 4.675,
+     "start": 4.225,
+     "text": "mainnet"
+    },
+    {
+     "end": 5.0,
+     "start": 4.675,
+     "text": "until"
+    },
+    {
+     "end": 5.55,
+     "start": 5.0,
+     "text": "on-chain"
+    },
+    {
+     "end": 6.463,
+     "start": 5.55,
+     "text": "verification"
+    },
+    {
+     "end": 6.588,
+     "start": 6.463,
+     "text": "and"
+    },
+    {
+     "end": 6.7,
+     "start": 6.588,
+     "text": "an"
+    },
+    {
+     "end": 7.275,
+     "start": 6.7,
+     "text": "independent"
+    },
+    {
+     "end": 7.6,
+     "start": 7.275,
+     "text": "audit"
+    },
+    {
+     "end": 7.725,
+     "start": 7.6,
+     "text": "are"
+    },
+    {
+     "end": 8.9,
+     "start": 7.725,
+     "text": "complete"
+    },
+    {
+     "end": 9.125,
+     "start": 8.9,
+     "text": "."
+    }
+   ]
+  },
+  "README/singular-01": {
    "audio_sha256": "03dc7deb5027c2cda6b73646bcfbef22818d72870ceb1bf1aaeb8276d594a3ab",
    "characters": 9,
    "cost": 5.58e-06,
    "duration": 1.275,
-   "index": 0,
+   "index": 1,
    "key": "a5241a4965703690d5032ead4611f9be857ce493fd84d82bcb2610463b940ced",
    "page": "README.md",
    "pause_ms": 500,
@@ -4560,12 +4690,12 @@
     }
    ]
   },
-  "README/singular-01": {
+  "README/singular-02": {
    "audio_sha256": "c56a93b8deb5792f98d932aa94433736f8d2482fae66dac129ec61fa3811cd8b",
    "characters": 93,
    "cost": 5.766e-05,
    "duration": 6.475,
-   "index": 1,
+   "index": 2,
    "key": "44bf8646af3df60d4ebab942685f1ac5dbfdfac924c43f8767320c7d07d17a24",
    "page": "README.md",
    "pause_ms": 400,

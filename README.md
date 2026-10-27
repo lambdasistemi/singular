@@ -1,3 +1,5 @@
+Not for mainnet. Do not deploy Singular or open datum on mainnet until on-chain verification and an independent audit are complete.
+
 # Singular
 
 A permissionless registry on Cardano for unique identities and independent application state.
