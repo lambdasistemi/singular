@@ -139,7 +139,7 @@
               # that captured producer, never this collector's own candidate.
               [ "$#" -eq 5 ] || { echo "usage: cli-recovery-cross-wallet-evidence SOURCE OUTPUT SHA RUN PART" >&2; exit 2; }
               source="$1" out="$2" sha="$3" run="$4" part="$5"
-              mkdir -p "$out/receipts" "$out/registry"
+              mkdir -p "$out/receipts"
               manifest="$out/manifest.txt"
               note() { printf '%s\n' "$*" >>"$manifest"; }
               printf 'producer_sha=%s\nproducer_run=%s\nproducer_part=%s\n' "$sha" "$run" "$part" >"$manifest"
@@ -167,11 +167,10 @@
                 managed_roots=0
                 managed_journals=0
                 managed_bodies=0
-                for state_root in "$source/state-line"; do
-                  if [ ! -d "$state_root" ]; then
-                    note "absent state root: ''${state_root#"$source"/}"
-                    continue
-                  fi
+                state_root="$source/state-line"
+                if [ ! -d "$state_root" ]; then
+                  note "absent state root: ''${state_root#"$source"/}"
+                else
                   managed_roots=$((managed_roots + 1))
                   while IFS= read -r -d ''' record; do
                     rel="''${record#"$source"/}"
@@ -183,7 +182,7 @@
                     mkdir -p "$out/$(dirname "$rel")"
                     cp -a "$record" "$out/$rel"
                   done < <(find "$state_root" -type f -print0 | sort -z)
-                done
+                fi
                 note "managed: state_roots=$managed_roots journals=$managed_journals signed_bodies=$managed_bodies"
                 for item in verdicts.md node-execution-time.json; do
                   if [ -e "$source/$item" ]; then
@@ -208,7 +207,7 @@
               fi
             '';
           };
-          # The cross-wallet case census now lives in the partition discovery app below.
+          # Retained recovery cases are declared by the partition table below.
         };
       packages = system: {
         default = (project system).docs;

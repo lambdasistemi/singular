@@ -39,6 +39,7 @@ known="${known%\"}"
 read -ra known_tokens <<<"$known"
 
 entries_tmp="$(mktemp -d "${TMPDIR:-/tmp}/cli-recovery-partition-check.XXXXXX")" || setup_fail "cannot create scratch directory"
+trap 'rm -rf "$entries_tmp"' EXIT
 entries_file="$entries_tmp/entries.txt"
 jq -c 'if type=="object" and has("partition") then .partition[] else .[] end' "$json" >"$entries_file" || setup_fail "partitions file is not a JSON array: $json"
 [ -s "$entries_file" ] || setup_fail "the partition list is empty: nothing is hosted"

@@ -228,9 +228,8 @@ def owned_process(command, environment, work, name, stdout_name=None, stderr_nam
                                 )
             except BaseException as error:
                 cleanup_error = {"type": type(error).__name__, "diagnostic": str(error)}
-                # A failed owner is not allowed to abandon the experiment.
-                # Bind the exact starting child before any fallback signal;
-                # stop replacement, then fixture, then the controller itself.
+                # A failed owner must still stop its fixture node and direct
+                # child before returning the cleanup failure.
                 fixture_node = work / "fixture-node.json"
                 if fixture_node.is_file():
                     stop(json.loads(fixture_node.read_text()), "KILL", 5)
