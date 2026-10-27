@@ -190241,17 +190241,17 @@
    ]
   },
   "docs-offchain-api-reference/appendix-discovered-adapter-consumers-01": {
-   "audio_sha256": "df70b8a0d4de86d9d24dfde603efb356bcaa762f14c009531ab367690bab4c35",
-   "characters": 256,
-   "cost": 0.00025343999999999996,
-   "duration": 17.75,
+   "audio_sha256": "3081f5fcd0393dae22794a4a543d21b7143627bd7e4ef20e6ae9d0df0dea6c8b",
+   "characters": 257,
+   "cost": 0.00025443,
+   "duration": 17.575,
    "index": 1,
-   "key": "141b047442ac03a364938ce1c18b372fa0b10418508a754a5151f93e8fa2e3d1",
+   "key": "e27771eaa4444882f0342589e5f240b2ee3215309d98c589fb55fbb285f50db7",
    "page": "docs/offchain-api-reference.md",
    "pause_ms": 400,
    "section": "appendix-discovered-adapter-consumers",
-   "sent_text": "This source inventory explains ownership, not ledger coverage. Each retained owner below uses serial access for the stated lifetime. Test producers stay independent of the pure computation being compared. No public interface or retained journey is removed.",
-   "text": "This source inventory explains ownership, not ledger coverage. Each retained owner below uses serial access for the stated lifetime. Test producers stay independent of the pure computation being compared. No public interface or retained journey is removed.",
+   "sent_text": "This source inventory explains ownership, not ledger coverage. Each retained owner below uses serial access for the stated lifetime. Test producers stay independent of the pure computation being compared. The retired naming runner sources have been removed.",
+   "text": "This source inventory explains ownership, not ledger coverage. Each retained owner below uses serial access for the stated lifetime. Test producers stay independent of the pure computation being compared. The retired naming runner sources have been removed.",
    "words": [
     {
      "end": 0.412,
@@ -190419,48 +190419,48 @@
      "text": "."
     },
     {
-     "end": 14.6,
-     "start": 14.4,
-     "text": "No"
+     "end": 14.45,
+     "start": 14.375,
+     "text": "The"
     },
     {
-     "end": 14.962,
-     "start": 14.6,
-     "text": "public"
+     "end": 15.025,
+     "start": 14.45,
+     "text": "retired"
     },
     {
-     "end": 15.45,
-     "start": 14.962,
-     "text": "interface"
+     "end": 15.35,
+     "start": 15.025,
+     "text": "naming"
     },
     {
-     "end": 15.575,
-     "start": 15.45,
-     "text": "or"
+     "end": 15.675,
+     "start": 15.35,
+     "text": "runner"
     },
     {
-     "end": 16.0,
-     "start": 15.575,
-     "text": "retained"
+     "end": 16.125,
+     "start": 15.675,
+     "text": "sources"
     },
     {
-     "end": 16.438,
-     "start": 16.0,
-     "text": "journey"
+     "end": 16.237,
+     "start": 16.125,
+     "text": "have"
     },
     {
-     "end": 16.6,
-     "start": 16.438,
-     "text": "is"
+     "end": 16.4,
+     "start": 16.237,
+     "text": "been"
     },
     {
-     "end": 17.55,
-     "start": 16.6,
+     "end": 17.375,
+     "start": 16.4,
      "text": "removed"
     },
     {
-     "end": 17.75,
-     "start": 17.55,
+     "end": 17.575,
+     "start": 17.375,
      "text": "."
     }
    ]
@@ -226026,17 +226026,17 @@
    ]
   },
   "docs-offchain-development/current-boundaries-01": {
-   "audio_sha256": "e0d03f6a342905a3cdfe4f0d095f096d8f628c0dc80e949f08863ab89b37afa0",
-   "characters": 1648,
-   "cost": 0.00102176,
-   "duration": 117.35,
+   "audio_sha256": "4f2efb1076f6451475440acd73e77f7a780222557fd29edcc90825eaecdb507b",
+   "characters": 834,
+   "cost": 0.00082566,
+   "duration": 56.875,
    "index": 1,
-   "key": "bf4b51835fcdf8fb56741d7a0a404055e1e929ba8ebea14c0d5c89f84bc91e8f",
+   "key": "13414f593bc81064d3e5f78ebbec2cda7af35fb90ea17c5bfa392561f5ea882c",
    "page": "docs/offchain-development.md",
    "pause_ms": 400,
    "section": "current-boundaries",
-   "sent_text": "The source inventory, formatter extent, HLint extent and component build extent are different claims. The two independent verifier sources left the #264 source fence in #278: they are formatted and HLint-checked like every other Haskell source. connected-verifier remains declared and exported, but its build failure on record at an earlier revision is tracked by #282. The retained journeys recovery-rows, retirement-rows and repair-rows are unverified under #172, subject to a check that current commands do not depend on them. register-rows is outside that journey retirement record and remains separately unverified under #283. All five Cabal components and flake apps remain declared; this ticket does not claim their commands work. Under the 2026-09-25 release-instruction correction, the archive README and consumer guides say the same thing to their readers: the verified journey and checks are presented as runnable, and all nine unverified declarations are disclosed as retained, not currently buildable or verified, with their owning issues. offchain/deployment-attach-check.sh is a local gate whose three row-runner dependencies are among the retained commands; no active workflow or carrier command consumes it, and its guide discloses that it cannot currently run. The carrier's earlier run directly failed at recovery-rows; the other retained commands have source-level missing-import evidence, not direct build results from that run. Neither Fourmolu nor HLint has directory exclusions. A retained journey that does not compile is still formatted and HLint-checked; those checks parse source and say nothing about whether it builds.",
-   "text": "The source inventory, formatter extent, HLint extent and component build extent are different claims. The two independent verifier sources left the #264 source fence in #278: they are formatted and HLint-checked like every other Haskell source. connected-verifier remains declared and exported, but its build failure on record at an earlier revision is tracked by #282. The retained journeys recovery-rows, retirement-rows and repair-rows are unverified under #172, subject to a check that current commands do not depend on them. register-rows is outside that journey retirement record and remains separately unverified under #283. All five Cabal components and flake apps remain declared; this ticket does not claim their commands work. Under the 2026-09-25 release-instruction correction, the archive README and consumer guides say the same thing to their readers: the verified journey and checks are presented as runnable, and all nine unverified declarations are disclosed as retained, not currently buildable or verified, with their owning issues. offchain/deployment-attach-check.sh is a local gate whose three row-runner dependencies are among the retained commands; no active workflow or carrier command consumes it, and its guide discloses that it cannot currently run. The carrier's earlier run directly failed at recovery-rows; the other retained commands have source-level missing-import evidence, not direct build results from that run. Neither Fourmolu nor HLint has directory exclusions. A retained journey that does not compile is still formatted and HLint-checked; those checks parse source and say nothing about whether it builds.",
+   "sent_text": "The source inventory, formatter extent, HLint extent and component build extent are different claims. The nine retired naming runners have been removed with their Cabal declarations and flake exports: initialization, its refusals, maintenance, recovery, registration, retirement, repair and the two verification tools. Their old unverified inventory entries are removed as well; an absent component is not a successful build. The naming and registry libraries remain for their separate removal layer. Fourmolu and HLint continue to discover their complete remaining source extents without directory exclusions. The component carrier reports the components it actually builds, and runs no tests or commands. Historical receipts and the run pages in the old release archive describe their own revisions, not the current command surface.",
+   "text": "The source inventory, formatter extent, HLint extent and component build extent are different claims. The nine retired naming runners have been removed with their Cabal declarations and flake exports: initialization, its refusals, maintenance, recovery, registration, retirement, repair and the two verification tools. Their old unverified inventory entries are removed as well; an absent component is not a successful build. The naming and registry libraries remain for their separate removal layer. Fourmolu and HLint continue to discover their complete remaining source extents without directory exclusions. The component carrier reports the components it actually builds, and runs no tests or commands. Historical receipts and the run pages in the old release archive describe their own revisions, not the current command surface.",
    "words": [
     {
      "end": 0.312,
@@ -226124,1243 +226124,608 @@
      "text": "."
     },
     {
-     "end": 7.25,
+     "end": 7.238,
      "start": 7.125,
      "text": "The"
     },
     {
      "end": 7.575,
-     "start": 7.25,
-     "text": "two"
-    },
-    {
-     "end": 8.2,
-     "start": 7.575,
-     "text": "independent"
-    },
-    {
-     "end": 8.8,
-     "start": 8.2,
-     "text": "verifier"
-    },
-    {
-     "end": 9.337,
-     "start": 8.8,
-     "text": "sources"
-    },
-    {
-     "end": 9.65,
-     "start": 9.337,
-     "text": "left"
-    },
-    {
-     "end": 9.788,
-     "start": 9.65,
-     "text": "the"
-    },
-    {
-     "end": 11.113,
-     "start": 9.788,
-     "text": "264"
-    },
-    {
-     "end": 11.45,
-     "start": 11.113,
-     "text": "source"
-    },
-    {
-     "end": 11.825,
-     "start": 11.45,
-     "text": "fence"
-    },
-    {
-     "end": 11.988,
-     "start": 11.825,
-     "text": "in"
-    },
-    {
-     "end": 13.8,
-     "start": 11.988,
-     "text": "278"
-    },
-    {
-     "end": 14.025,
-     "start": 13.8,
-     "text": ":"
-    },
-    {
-     "end": 14.325,
-     "start": 14.2,
-     "text": "they"
-    },
-    {
-     "end": 14.462,
-     "start": 14.325,
-     "text": "are"
-    },
-    {
-     "end": 15.05,
-     "start": 14.462,
-     "text": "formatted"
-    },
-    {
-     "end": 15.175,
-     "start": 15.05,
-     "text": "and"
-    },
-    {
-     "end": 15.975,
-     "start": 15.175,
-     "text": "HLint-checked"
-    },
-    {
-     "end": 16.212,
-     "start": 15.975,
-     "text": "like"
-    },
-    {
-     "end": 16.55,
-     "start": 16.212,
-     "text": "every"
-    },
-    {
-     "end": 16.85,
-     "start": 16.55,
-     "text": "other"
-    },
-    {
-     "end": 17.337,
-     "start": 16.85,
-     "text": "Haskell"
-    },
-    {
-     "end": 18.25,
-     "start": 17.337,
-     "text": "source"
-    },
-    {
-     "end": 18.45,
-     "start": 18.25,
-     "text": "."
-    },
-    {
-     "end": 19.8,
-     "start": 18.675,
-     "text": "connected-verifier"
-    },
-    {
-     "end": 20.325,
-     "start": 19.8,
-     "text": "remains"
-    },
-    {
-     "end": 20.975,
-     "start": 20.325,
-     "text": "declared"
-    },
-    {
-     "end": 21.1,
-     "start": 20.975,
-     "text": "and"
-    },
-    {
-     "end": 21.85,
-     "start": 21.1,
-     "text": "exported"
-    },
-    {
-     "end": 21.925,
-     "start": 21.85,
-     "text": ","
-    },
-    {
-     "end": 22.062,
-     "start": 21.925,
-     "text": "but"
-    },
-    {
-     "end": 22.25,
-     "start": 22.062,
-     "text": "its"
-    },
-    {
-     "end": 22.55,
-     "start": 22.25,
-     "text": "build"
-    },
-    {
-     "end": 23.05,
-     "start": 22.55,
-     "text": "failure"
-    },
-    {
-     "end": 23.263,
-     "start": 23.05,
-     "text": "on"
-    },
-    {
-     "end": 23.788,
-     "start": 23.263,
-     "text": "record"
-    },
-    {
-     "end": 23.888,
-     "start": 23.788,
-     "text": "at"
-    },
-    {
-     "end": 24.038,
-     "start": 23.888,
-     "text": "an"
-    },
-    {
-     "end": 24.5,
-     "start": 24.038,
-     "text": "earlier"
-    },
-    {
-     "end": 25.087,
-     "start": 24.5,
-     "text": "revision"
-    },
-    {
-     "end": 25.263,
-     "start": 25.087,
-     "text": "is"
-    },
-    {
-     "end": 25.725,
-     "start": 25.263,
-     "text": "tracked"
-    },
-    {
-     "end": 25.95,
-     "start": 25.725,
-     "text": "by"
-    },
-    {
-     "end": 27.85,
-     "start": 25.95,
-     "text": "282"
-    },
-    {
-     "end": 28.15,
-     "start": 27.85,
-     "text": "."
-    },
-    {
-     "end": 28.4,
-     "start": 28.325,
-     "text": "The"
-    },
-    {
-     "end": 28.825,
-     "start": 28.4,
-     "text": "retained"
-    },
-    {
-     "end": 29.1,
-     "start": 28.825,
-     "text": "journeys"
-    },
-    {
-     "end": 30.275,
-     "start": 29.1,
-     "text": "recovery-rows"
-    },
-    {
-     "end": 30.475,
-     "start": 30.275,
-     "text": ","
-    },
-    {
-     "end": 31.65,
-     "start": 30.675,
-     "text": "retirement-rows"
-    },
-    {
-     "end": 31.775,
-     "start": 31.65,
-     "text": "and"
-    },
-    {
-     "end": 32.562,
-     "start": 31.775,
-     "text": "repair-rows"
-    },
-    {
-     "end": 32.725,
-     "start": 32.562,
-     "text": "are"
-    },
-    {
-     "end": 33.6,
-     "start": 32.725,
-     "text": "unverified"
-    },
-    {
-     "end": 33.8,
-     "start": 33.6,
-     "text": "under"
-    },
-    {
-     "end": 35.45,
-     "start": 33.8,
-     "text": "172"
-    },
-    {
-     "end": 35.7,
-     "start": 35.45,
-     "text": ","
-    },
-    {
-     "end": 36.325,
-     "start": 35.9,
-     "text": "subject"
-    },
-    {
-     "end": 36.45,
-     "start": 36.325,
-     "text": "to"
-    },
-    {
-     "end": 36.562,
-     "start": 36.45,
-     "text": "a"
-    },
-    {
-     "end": 36.9,
-     "start": 36.562,
-     "text": "check"
-    },
-    {
-     "end": 37.075,
-     "start": 36.9,
-     "text": "that"
-    },
-    {
-     "end": 37.375,
-     "start": 37.075,
-     "text": "current"
-    },
-    {
-     "end": 37.938,
-     "start": 37.375,
-     "text": "commands"
-    },
-    {
-     "end": 38.1,
-     "start": 37.938,
-     "text": "do"
-    },
-    {
-     "end": 38.312,
-     "start": 38.1,
-     "text": "not"
-    },
-    {
-     "end": 38.662,
-     "start": 38.312,
-     "text": "depend"
-    },
-    {
-     "end": 38.812,
-     "start": 38.662,
-     "text": "on"
-    },
-    {
-     "end": 39.55,
-     "start": 38.812,
-     "text": "them"
-    },
-    {
-     "end": 39.725,
-     "start": 39.55,
-     "text": "."
-    },
-    {
-     "end": 40.7,
-     "start": 39.95,
-     "text": "register-rows"
-    },
-    {
-     "end": 40.862,
-     "start": 40.7,
-     "text": "is"
-    },
-    {
-     "end": 41.55,
-     "start": 40.862,
-     "text": "outside"
-    },
-    {
-     "end": 41.775,
-     "start": 41.55,
-     "text": "that"
-    },
-    {
-     "end": 42.15,
-     "start": 41.775,
-     "text": "journey"
-    },
-    {
-     "end": 42.862,
-     "start": 42.15,
-     "text": "retirement"
-    },
-    {
-     "end": 43.362,
-     "start": 42.862,
-     "text": "record"
-    },
-    {
-     "end": 43.5,
-     "start": 43.362,
-     "text": "and"
-    },
-    {
-     "end": 44.112,
-     "start": 43.5,
-     "text": "remains"
-    },
-    {
-     "end": 44.65,
-     "start": 44.112,
-     "text": "separately"
-    },
-    {
-     "end": 45.525,
-     "start": 44.65,
-     "text": "unverified"
-    },
-    {
-     "end": 45.787,
-     "start": 45.525,
-     "text": "under"
-    },
-    {
-     "end": 47.65,
-     "start": 45.787,
-     "text": "283"
-    },
-    {
-     "end": 47.9,
-     "start": 47.65,
-     "text": "."
-    },
-    {
-     "end": 48.275,
-     "start": 48.1,
-     "text": "All"
-    },
-    {
-     "end": 48.6,
-     "start": 48.275,
-     "text": "five"
-    },
-    {
-     "end": 48.95,
-     "start": 48.6,
-     "text": "Cabal"
-    },
-    {
-     "end": 49.525,
-     "start": 48.95,
-     "text": "components"
-    },
-    {
-     "end": 49.65,
-     "start": 49.525,
-     "text": "and"
-    },
-    {
-     "end": 49.925,
-     "start": 49.65,
-     "text": "flake"
-    },
-    {
-     "end": 50.2,
-     "start": 49.925,
-     "text": "apps"
-    },
-    {
-     "end": 50.575,
-     "start": 50.2,
-     "text": "remain"
-    },
-    {
-     "end": 51.575,
-     "start": 50.575,
-     "text": "declared"
-    },
-    {
-     "end": 51.775,
-     "start": 51.575,
-     "text": ";"
-    },
-    {
-     "end": 52.125,
-     "start": 51.95,
-     "text": "this"
-    },
-    {
-     "end": 52.475,
-     "start": 52.125,
-     "text": "ticket"
-    },
-    {
-     "end": 52.65,
-     "start": 52.475,
-     "text": "does"
-    },
-    {
-     "end": 52.875,
-     "start": 52.65,
-     "text": "not"
-    },
-    {
-     "end": 53.112,
-     "start": 52.875,
-     "text": "claim"
-    },
-    {
-     "end": 53.225,
-     "start": 53.112,
-     "text": "their"
-    },
-    {
-     "end": 53.65,
-     "start": 53.225,
-     "text": "commands"
-    },
-    {
-     "end": 54.425,
-     "start": 53.65,
-     "text": "work"
-    },
-    {
-     "end": 54.625,
-     "start": 54.425,
-     "text": "."
-    },
-    {
-     "end": 55.037,
-     "start": 54.825,
-     "text": "Under"
-    },
-    {
-     "end": 55.125,
-     "start": 55.037,
-     "text": "the"
-    },
-    {
-     "end": 57.6,
-     "start": 55.125,
-     "text": "2026-09-25"
-    },
-    {
-     "end": 58.525,
-     "start": 57.6,
-     "text": "release-instruction"
-    },
-    {
-     "end": 59.625,
-     "start": 58.525,
-     "text": "correction"
-    },
-    {
-     "end": 59.825,
-     "start": 59.625,
-     "text": ","
-    },
-    {
-     "end": 60.125,
-     "start": 60.0,
-     "text": "the"
-    },
-    {
-     "end": 60.588,
-     "start": 60.125,
-     "text": "archive"
-    },
-    {
-     "end": 61.713,
-     "start": 60.588,
-     "text": "README"
-    },
-    {
-     "end": 61.85,
-     "start": 61.713,
-     "text": "and"
-    },
-    {
-     "end": 62.4,
-     "start": 61.85,
-     "text": "consumer"
-    },
-    {
-     "end": 62.838,
-     "start": 62.4,
-     "text": "guides"
-    },
-    {
-     "end": 63.062,
-     "start": 62.838,
-     "text": "say"
-    },
-    {
-     "end": 63.188,
-     "start": 63.062,
-     "text": "the"
-    },
-    {
-     "end": 63.5,
-     "start": 63.188,
-     "text": "same"
-    },
-    {
-     "end": 63.725,
-     "start": 63.5,
-     "text": "thing"
-    },
-    {
-     "end": 63.812,
-     "start": 63.725,
-     "text": "to"
-    },
-    {
-     "end": 64.0,
-     "start": 63.812,
-     "text": "their"
-    },
-    {
-     "end": 65.025,
-     "start": 64.0,
-     "text": "readers"
-    },
-    {
-     "end": 65.225,
-     "start": 65.025,
-     "text": ":"
-    },
-    {
-     "end": 65.475,
-     "start": 65.4,
-     "text": "the"
-    },
-    {
-     "end": 66.025,
-     "start": 65.475,
-     "text": "verified"
-    },
-    {
-     "end": 66.35,
-     "start": 66.025,
-     "text": "journey"
-    },
-    {
-     "end": 66.488,
-     "start": 66.35,
-     "text": "and"
-    },
-    {
-     "end": 66.925,
-     "start": 66.488,
-     "text": "checks"
-    },
-    {
-     "end": 67.025,
-     "start": 66.925,
-     "text": "are"
-    },
-    {
-     "end": 67.562,
-     "start": 67.025,
-     "text": "presented"
-    },
-    {
-     "end": 67.738,
-     "start": 67.562,
-     "text": "as"
-    },
-    {
-     "end": 68.7,
-     "start": 67.738,
-     "text": "runnable"
-    },
-    {
-     "end": 68.9,
-     "start": 68.7,
-     "text": ","
-    },
-    {
-     "end": 69.2,
-     "start": 69.1,
-     "text": "and"
-    },
-    {
-     "end": 69.425,
-     "start": 69.2,
-     "text": "all"
-    },
-    {
-     "end": 69.75,
-     "start": 69.425,
+     "start": 7.238,
      "text": "nine"
     },
     {
-     "end": 70.45,
-     "start": 69.75,
-     "text": "unverified"
+     "end": 8.175,
+     "start": 7.575,
+     "text": "retired"
     },
     {
-     "end": 71.25,
-     "start": 70.45,
-     "text": "declarations"
+     "end": 8.525,
+     "start": 8.175,
+     "text": "naming"
     },
     {
-     "end": 71.35,
-     "start": 71.25,
-     "text": "are"
+     "end": 8.95,
+     "start": 8.525,
+     "text": "runners"
     },
     {
-     "end": 71.95,
-     "start": 71.35,
-     "text": "disclosed"
-    },
-    {
-     "end": 72.1,
-     "start": 71.95,
-     "text": "as"
-    },
-    {
-     "end": 73.175,
-     "start": 72.1,
-     "text": "retained"
-    },
-    {
-     "end": 73.375,
-     "start": 73.175,
-     "text": ","
-    },
-    {
-     "end": 73.775,
-     "start": 73.575,
-     "text": "not"
-    },
-    {
-     "end": 74.1,
-     "start": 73.775,
-     "text": "currently"
-    },
-    {
-     "end": 74.6,
-     "start": 74.1,
-     "text": "buildable"
-    },
-    {
-     "end": 74.75,
-     "start": 74.6,
-     "text": "or"
-    },
-    {
-     "end": 75.375,
-     "start": 74.75,
-     "text": "verified"
-    },
-    {
-     "end": 75.425,
-     "start": 75.375,
-     "text": ","
-    },
-    {
-     "end": 75.562,
-     "start": 75.425,
-     "text": "with"
-    },
-    {
-     "end": 75.725,
-     "start": 75.562,
-     "text": "their"
-    },
-    {
-     "end": 76.025,
-     "start": 75.725,
-     "text": "owning"
-    },
-    {
-     "end": 77.025,
-     "start": 76.025,
-     "text": "issues"
-    },
-    {
-     "end": 77.225,
-     "start": 77.025,
-     "text": "."
-    },
-    {
-     "end": 80.488,
-     "start": 77.45,
-     "text": "offchain/deployment-attach-check.sh"
-    },
-    {
-     "end": 80.625,
-     "start": 80.488,
-     "text": "is"
-    },
-    {
-     "end": 80.725,
-     "start": 80.625,
-     "text": "a"
-    },
-    {
-     "end": 81.075,
-     "start": 80.725,
-     "text": "local"
-    },
-    {
-     "end": 81.4,
-     "start": 81.075,
-     "text": "gate"
-    },
-    {
-     "end": 81.7,
-     "start": 81.4,
-     "text": "whose"
-    },
-    {
-     "end": 82.062,
-     "start": 81.7,
-     "text": "three"
-    },
-    {
-     "end": 82.625,
-     "start": 82.062,
-     "text": "row-runner"
-    },
-    {
-     "end": 83.438,
-     "start": 82.625,
-     "text": "dependencies"
-    },
-    {
-     "end": 83.6,
-     "start": 83.438,
-     "text": "are"
-    },
-    {
-     "end": 83.912,
-     "start": 83.6,
-     "text": "among"
-    },
-    {
-     "end": 84.0,
-     "start": 83.912,
-     "text": "the"
-    },
-    {
-     "end": 84.525,
-     "start": 84.0,
-     "text": "retained"
-    },
-    {
-     "end": 85.8,
-     "start": 84.525,
-     "text": "commands"
-    },
-    {
-     "end": 86.025,
-     "start": 85.8,
-     "text": ";"
-    },
-    {
-     "end": 86.512,
-     "start": 86.25,
-     "text": "no"
-    },
-    {
-     "end": 86.9,
-     "start": 86.512,
-     "text": "active"
-    },
-    {
-     "end": 87.488,
-     "start": 86.9,
-     "text": "workflow"
-    },
-    {
-     "end": 87.662,
-     "start": 87.488,
-     "text": "or"
-    },
-    {
-     "end": 88.1,
-     "start": 87.662,
-     "text": "carrier"
-    },
-    {
-     "end": 88.625,
-     "start": 88.1,
-     "text": "command"
-    },
-    {
-     "end": 89.238,
-     "start": 88.625,
-     "text": "consumes"
-    },
-    {
-     "end": 89.5,
-     "start": 89.238,
-     "text": "it"
-    },
-    {
-     "end": 89.575,
-     "start": 89.5,
-     "text": ","
-    },
-    {
-     "end": 89.688,
-     "start": 89.575,
-     "text": "and"
-    },
-    {
-     "end": 89.838,
-     "start": 89.688,
-     "text": "its"
-    },
-    {
-     "end": 90.2,
-     "start": 89.838,
-     "text": "guide"
-    },
-    {
-     "end": 90.925,
-     "start": 90.2,
-     "text": "discloses"
-    },
-    {
-     "end": 91.062,
-     "start": 90.925,
-     "text": "that"
-    },
-    {
-     "end": 91.175,
-     "start": 91.062,
-     "text": "it"
-    },
-    {
-     "end": 91.55,
-     "start": 91.175,
-     "text": "cannot"
-    },
-    {
-     "end": 91.975,
-     "start": 91.55,
-     "text": "currently"
-    },
-    {
-     "end": 92.95,
-     "start": 91.975,
-     "text": "run"
-    },
-    {
-     "end": 93.175,
-     "start": 92.95,
-     "text": "."
-    },
-    {
-     "end": 93.425,
-     "start": 93.35,
-     "text": "The"
-    },
-    {
-     "end": 93.9,
-     "start": 93.425,
-     "text": "carrier's"
-    },
-    {
-     "end": 94.325,
-     "start": 93.9,
-     "text": "earlier"
-    },
-    {
-     "end": 94.625,
-     "start": 94.325,
-     "text": "run"
-    },
-    {
-     "end": 95.162,
-     "start": 94.625,
-     "text": "directly"
-    },
-    {
-     "end": 95.512,
-     "start": 95.162,
-     "text": "failed"
-    },
-    {
-     "end": 95.588,
-     "start": 95.512,
-     "text": "at"
-    },
-    {
-     "end": 96.875,
-     "start": 95.588,
-     "text": "recovery-rows"
-    },
-    {
-     "end": 97.075,
-     "start": 96.875,
-     "text": ";"
-    },
-    {
-     "end": 97.4,
-     "start": 97.275,
-     "text": "the"
-    },
-    {
-     "end": 97.7,
-     "start": 97.4,
-     "text": "other"
-    },
-    {
-     "end": 98.2,
-     "start": 97.7,
-     "text": "retained"
-    },
-    {
-     "end": 98.825,
-     "start": 98.2,
-     "text": "commands"
-    },
-    {
-     "end": 99.125,
-     "start": 98.825,
+     "end": 9.075,
+     "start": 8.95,
      "text": "have"
     },
     {
-     "end": 99.838,
-     "start": 99.125,
-     "text": "source-level"
+     "end": 9.275,
+     "start": 9.075,
+     "text": "been"
     },
     {
-     "end": 100.6,
-     "start": 99.838,
-     "text": "missing-import"
+     "end": 9.825,
+     "start": 9.275,
+     "text": "removed"
     },
     {
-     "end": 101.25,
-     "start": 100.6,
-     "text": "evidence"
+     "end": 9.975,
+     "start": 9.825,
+     "text": "with"
     },
     {
-     "end": 101.363,
-     "start": 101.25,
+     "end": 10.175,
+     "start": 9.975,
+     "text": "their"
+    },
+    {
+     "end": 10.6,
+     "start": 10.175,
+     "text": "Cabal"
+    },
+    {
+     "end": 11.438,
+     "start": 10.6,
+     "text": "declarations"
+    },
+    {
+     "end": 11.587,
+     "start": 11.438,
+     "text": "and"
+    },
+    {
+     "end": 11.875,
+     "start": 11.587,
+     "text": "flake"
+    },
+    {
+     "end": 13.1,
+     "start": 11.875,
+     "text": "exports"
+    },
+    {
+     "end": 13.3,
+     "start": 13.1,
+     "text": ":"
+    },
+    {
+     "end": 14.45,
+     "start": 13.525,
+     "text": "initialization"
+    },
+    {
+     "end": 14.5,
+     "start": 14.45,
      "text": ","
     },
     {
-     "end": 101.625,
-     "start": 101.363,
-     "text": "not"
+     "end": 14.7,
+     "start": 14.5,
+     "text": "its"
     },
     {
-     "end": 102.062,
-     "start": 101.625,
-     "text": "direct"
+     "end": 15.5,
+     "start": 14.7,
+     "text": "refusals"
     },
     {
-     "end": 102.4,
-     "start": 102.062,
-     "text": "build"
+     "end": 15.587,
+     "start": 15.5,
+     "text": ","
     },
     {
-     "end": 102.875,
-     "start": 102.4,
-     "text": "results"
+     "end": 16.25,
+     "start": 15.587,
+     "text": "maintenance"
     },
     {
-     "end": 103.05,
-     "start": 102.875,
-     "text": "from"
+     "end": 16.3,
+     "start": 16.25,
+     "text": ","
     },
     {
-     "end": 103.3,
-     "start": 103.05,
-     "text": "that"
+     "end": 17.0,
+     "start": 16.3,
+     "text": "recovery"
     },
     {
-     "end": 104.275,
-     "start": 103.3,
-     "text": "run"
+     "end": 17.075,
+     "start": 17.0,
+     "text": ","
     },
     {
-     "end": 104.5,
-     "start": 104.275,
-     "text": "."
+     "end": 17.95,
+     "start": 17.075,
+     "text": "registration"
     },
     {
-     "end": 105.025,
-     "start": 104.7,
-     "text": "Neither"
+     "end": 18.025,
+     "start": 17.95,
+     "text": ","
     },
     {
-     "end": 105.5,
-     "start": 105.025,
-     "text": "Fourmolu"
+     "end": 18.75,
+     "start": 18.025,
+     "text": "retirement"
     },
     {
-     "end": 105.725,
-     "start": 105.5,
-     "text": "nor"
+     "end": 18.825,
+     "start": 18.75,
+     "text": ","
     },
     {
-     "end": 106.275,
-     "start": 105.725,
-     "text": "HLint"
+     "end": 19.487,
+     "start": 18.825,
+     "text": "repair"
     },
     {
-     "end": 106.475,
-     "start": 106.275,
-     "text": "has"
-    },
-    {
-     "end": 107.025,
-     "start": 106.475,
-     "text": "directory"
-    },
-    {
-     "end": 108.225,
-     "start": 107.025,
-     "text": "exclusions"
-    },
-    {
-     "end": 108.425,
-     "start": 108.225,
-     "text": "."
-    },
-    {
-     "end": 108.7,
-     "start": 108.625,
-     "text": "A"
-    },
-    {
-     "end": 109.213,
-     "start": 108.7,
-     "text": "retained"
-    },
-    {
-     "end": 109.6,
-     "start": 109.213,
-     "text": "journey"
-    },
-    {
-     "end": 109.713,
-     "start": 109.6,
-     "text": "that"
-    },
-    {
-     "end": 109.875,
-     "start": 109.713,
-     "text": "does"
-    },
-    {
-     "end": 110.1,
-     "start": 109.875,
-     "text": "not"
-    },
-    {
-     "end": 110.738,
-     "start": 110.1,
-     "text": "compile"
-    },
-    {
-     "end": 110.875,
-     "start": 110.738,
-     "text": "is"
-    },
-    {
-     "end": 111.162,
-     "start": 110.875,
-     "text": "still"
-    },
-    {
-     "end": 111.775,
-     "start": 111.162,
-     "text": "formatted"
-    },
-    {
-     "end": 111.9,
-     "start": 111.775,
+     "end": 19.612,
+     "start": 19.487,
      "text": "and"
     },
     {
-     "end": 113.3,
-     "start": 111.9,
-     "text": "HLint-checked"
+     "end": 19.712,
+     "start": 19.612,
+     "text": "the"
     },
     {
-     "end": 113.5,
-     "start": 113.3,
+     "end": 19.925,
+     "start": 19.712,
+     "text": "two"
+    },
+    {
+     "end": 20.675,
+     "start": 19.925,
+     "text": "verification"
+    },
+    {
+     "end": 21.8,
+     "start": 20.675,
+     "text": "tools"
+    },
+    {
+     "end": 22.025,
+     "start": 21.8,
+     "text": "."
+    },
+    {
+     "end": 22.375,
+     "start": 22.2,
+     "text": "Their"
+    },
+    {
+     "end": 22.675,
+     "start": 22.375,
+     "text": "old"
+    },
+    {
+     "end": 23.4,
+     "start": 22.675,
+     "text": "unverified"
+    },
+    {
+     "end": 23.95,
+     "start": 23.4,
+     "text": "inventory"
+    },
+    {
+     "end": 24.513,
+     "start": 23.95,
+     "text": "entries"
+    },
+    {
+     "end": 24.675,
+     "start": 24.513,
+     "text": "are"
+    },
+    {
+     "end": 25.125,
+     "start": 24.675,
+     "text": "removed"
+    },
+    {
+     "end": 25.275,
+     "start": 25.125,
+     "text": "as"
+    },
+    {
+     "end": 26.075,
+     "start": 25.275,
+     "text": "well"
+    },
+    {
+     "end": 26.275,
+     "start": 26.075,
      "text": ";"
     },
     {
-     "end": 113.9,
-     "start": 113.675,
-     "text": "those"
+     "end": 26.638,
+     "start": 26.5,
+     "text": "an"
     },
     {
-     "end": 114.2,
-     "start": 113.9,
-     "text": "checks"
+     "end": 27.075,
+     "start": 26.638,
+     "text": "absent"
     },
     {
-     "end": 114.475,
-     "start": 114.2,
-     "text": "parse"
+     "end": 27.688,
+     "start": 27.075,
+     "text": "component"
     },
     {
-     "end": 114.938,
-     "start": 114.475,
-     "text": "source"
+     "end": 27.862,
+     "start": 27.688,
+     "text": "is"
     },
     {
-     "end": 115.075,
-     "start": 114.938,
+     "end": 28.15,
+     "start": 27.862,
+     "text": "not"
+    },
+    {
+     "end": 28.263,
+     "start": 28.15,
+     "text": "a"
+    },
+    {
+     "end": 28.888,
+     "start": 28.263,
+     "text": "successful"
+    },
+    {
+     "end": 29.475,
+     "start": 28.888,
+     "text": "build"
+    },
+    {
+     "end": 29.6,
+     "start": 29.475,
+     "text": "."
+    },
+    {
+     "end": 29.737,
+     "start": 29.6,
+     "text": "The"
+    },
+    {
+     "end": 30.2,
+     "start": 29.737,
+     "text": "naming"
+    },
+    {
+     "end": 30.325,
+     "start": 30.2,
      "text": "and"
     },
     {
-     "end": 115.287,
-     "start": 115.075,
-     "text": "say"
+     "end": 30.825,
+     "start": 30.325,
+     "text": "registry"
     },
     {
-     "end": 115.637,
-     "start": 115.287,
-     "text": "nothing"
+     "end": 31.45,
+     "start": 30.825,
+     "text": "libraries"
     },
     {
-     "end": 115.9,
-     "start": 115.637,
-     "text": "about"
+     "end": 31.95,
+     "start": 31.45,
+     "text": "remain"
     },
     {
-     "end": 116.162,
-     "start": 115.9,
-     "text": "whether"
+     "end": 32.075,
+     "start": 31.95,
+     "text": "for"
     },
     {
-     "end": 116.25,
-     "start": 116.162,
+     "end": 32.3,
+     "start": 32.075,
+     "text": "their"
+    },
+    {
+     "end": 32.75,
+     "start": 32.3,
+     "text": "separate"
+    },
+    {
+     "end": 33.225,
+     "start": 32.75,
+     "text": "removal"
+    },
+    {
+     "end": 34.275,
+     "start": 33.225,
+     "text": "layer"
+    },
+    {
+     "end": 34.525,
+     "start": 34.275,
+     "text": "."
+    },
+    {
+     "end": 35.338,
+     "start": 34.75,
+     "text": "Fourmolu"
+    },
+    {
+     "end": 35.487,
+     "start": 35.338,
+     "text": "and"
+    },
+    {
+     "end": 36.05,
+     "start": 35.487,
+     "text": "HLint"
+    },
+    {
+     "end": 36.625,
+     "start": 36.05,
+     "text": "continue"
+    },
+    {
+     "end": 36.725,
+     "start": 36.625,
+     "text": "to"
+    },
+    {
+     "end": 37.25,
+     "start": 36.725,
+     "text": "discover"
+    },
+    {
+     "end": 37.45,
+     "start": 37.25,
+     "text": "their"
+    },
+    {
+     "end": 37.95,
+     "start": 37.45,
+     "text": "complete"
+    },
+    {
+     "end": 38.463,
+     "start": 37.95,
+     "text": "remaining"
+    },
+    {
+     "end": 38.8,
+     "start": 38.463,
+     "text": "source"
+    },
+    {
+     "end": 39.4,
+     "start": 38.8,
+     "text": "extents"
+    },
+    {
+     "end": 39.8,
+     "start": 39.4,
+     "text": "without"
+    },
+    {
+     "end": 40.4,
+     "start": 39.8,
+     "text": "directory"
+    },
+    {
+     "end": 41.8,
+     "start": 40.4,
+     "text": "exclusions"
+    },
+    {
+     "end": 42.025,
+     "start": 41.8,
+     "text": "."
+    },
+    {
+     "end": 42.3,
+     "start": 42.225,
+     "text": "The"
+    },
+    {
+     "end": 42.838,
+     "start": 42.3,
+     "text": "component"
+    },
+    {
+     "end": 43.325,
+     "start": 42.838,
+     "text": "carrier"
+    },
+    {
+     "end": 43.8,
+     "start": 43.325,
+     "text": "reports"
+    },
+    {
+     "end": 43.9,
+     "start": 43.8,
+     "text": "the"
+    },
+    {
+     "end": 44.45,
+     "start": 43.9,
+     "text": "components"
+    },
+    {
+     "end": 44.588,
+     "start": 44.45,
      "text": "it"
     },
     {
-     "end": 117.15,
-     "start": 116.25,
+     "end": 45.025,
+     "start": 44.588,
+     "text": "actually"
+    },
+    {
+     "end": 45.55,
+     "start": 45.025,
      "text": "builds"
     },
     {
-     "end": 117.35,
-     "start": 117.15,
+     "end": 45.625,
+     "start": 45.55,
+     "text": ","
+    },
+    {
+     "end": 45.75,
+     "start": 45.625,
+     "text": "and"
+    },
+    {
+     "end": 46.088,
+     "start": 45.75,
+     "text": "runs"
+    },
+    {
+     "end": 46.362,
+     "start": 46.088,
+     "text": "no"
+    },
+    {
+     "end": 46.825,
+     "start": 46.362,
+     "text": "tests"
+    },
+    {
+     "end": 46.975,
+     "start": 46.825,
+     "text": "or"
+    },
+    {
+     "end": 48.2,
+     "start": 46.975,
+     "text": "commands"
+    },
+    {
+     "end": 48.425,
+     "start": 48.2,
+     "text": "."
+    },
+    {
+     "end": 49.25,
+     "start": 48.625,
+     "text": "Historical"
+    },
+    {
+     "end": 49.862,
+     "start": 49.25,
+     "text": "receipts"
+    },
+    {
+     "end": 49.987,
+     "start": 49.862,
+     "text": "and"
+    },
+    {
+     "end": 50.088,
+     "start": 49.987,
+     "text": "the"
+    },
+    {
+     "end": 50.35,
+     "start": 50.088,
+     "text": "run"
+    },
+    {
+     "end": 50.8,
+     "start": 50.35,
+     "text": "pages"
+    },
+    {
+     "end": 50.888,
+     "start": 50.8,
+     "text": "in"
+    },
+    {
+     "end": 51.0,
+     "start": 50.888,
+     "text": "the"
+    },
+    {
+     "end": 51.275,
+     "start": 51.0,
+     "text": "old"
+    },
+    {
+     "end": 51.65,
+     "start": 51.275,
+     "text": "release"
+    },
+    {
+     "end": 52.237,
+     "start": 51.65,
+     "text": "archive"
+    },
+    {
+     "end": 52.8,
+     "start": 52.237,
+     "text": "describe"
+    },
+    {
+     "end": 53.0,
+     "start": 52.8,
+     "text": "their"
+    },
+    {
+     "end": 53.225,
+     "start": 53.0,
+     "text": "own"
+    },
+    {
+     "end": 54.45,
+     "start": 53.225,
+     "text": "revisions"
+    },
+    {
+     "end": 54.675,
+     "start": 54.45,
+     "text": ","
+    },
+    {
+     "end": 54.987,
+     "start": 54.85,
+     "text": "not"
+    },
+    {
+     "end": 55.075,
+     "start": 54.987,
+     "text": "the"
+    },
+    {
+     "end": 55.35,
+     "start": 55.075,
+     "text": "current"
+    },
+    {
+     "end": 55.725,
+     "start": 55.35,
+     "text": "command"
+    },
+    {
+     "end": 56.675,
+     "start": 55.725,
+     "text": "surface"
+    },
+    {
+     "end": 56.875,
+     "start": 56.675,
      "text": "."
     }
    ]
@@ -278126,17 +277491,17 @@
    ]
   },
   "docs-preprod/reproduce-it-yourself-02": {
-   "audio_sha256": "a9992dd295adaf579e08bce1a29bcf7674d6e2d9599417806d39d0d92a0b52d2",
-   "characters": 598,
-   "cost": 0.00037076000000000003,
-   "duration": 42.5,
+   "audio_sha256": "a3d022648b6428556119b37cfdd15c7d350e61ed6ea51c57155278712353ef48",
+   "characters": 555,
+   "cost": 0.0005494499999999999,
+   "duration": 38.125,
    "index": 2,
-   "key": "b5e34abb1b07380a2e69d35c0bd973dfbbbc7e8cc40673163da18300323694ce",
+   "key": "c3b95281de479d76719cb2b85fe1929380a74aaa81523720302098a7b202ad89",
    "page": "docs/preprod.md",
    "pause_ms": 400,
    "section": "reproduce-it-yourself",
-   "sent_text": "Two availability facts to read this reproduction with. The deployment tool builds from the current source, but no required workflow exercises it on every candidate — the verifier output above is a historical run of 2026-09-15 against release main-c 2 7 c 3 d d 8…, and the manifest's own claims are what you would re-check. The attached claim command names register-rows, a retained legacy command that is not currently buildable or verified against the released source, with its repair owned by #283; until that repair lands the attached claim is this record's history, not a runnable instruction.",
-   "text": "Two availability facts to read this reproduction with. The deployment tool builds from the current source, but no required workflow exercises it on every candidate — the verifier output above is a historical run of 2026-09-15 against release main-c27c3dd8…, and the manifest's own claims are what you would re-check. The attached claim command names register-rows, a retained legacy command that is not currently buildable or verified against the released source, with its repair owned by #283; until that repair lands the attached claim is this record's history, not a runnable instruction.",
+   "sent_text": "Two availability facts to read this reproduction with. The deployment tool builds from the current source, but no required workflow exercises it on every candidate — the verifier output above is a historical run of 2026-09-15 against release main-c 2 7 c 3 d d 8…, and the manifest's own claims are what you would re-check. The attached claim command names register-rows, which has been removed from the current source along with its flake export. The attached claim remains part of this record's history; it is not a runnable instruction for this source.",
+   "text": "Two availability facts to read this reproduction with. The deployment tool builds from the current source, but no required workflow exercises it on every candidate — the verifier output above is a historical run of 2026-09-15 against release main-c27c3dd8…, and the manifest's own claims are what you would re-check. The attached claim command names register-rows, which has been removed from the current source along with its flake export. The attached claim remains part of this record's history; it is not a runnable instruction for this source.",
    "words": [
     {
      "end": 0.475,
@@ -278444,238 +277809,208 @@
      "text": "."
     },
     {
-     "end": 24.175,
-     "start": 24.05,
+     "end": 24.2,
+     "start": 24.075,
      "text": "The"
     },
     {
-     "end": 24.55,
-     "start": 24.175,
+     "end": 24.7,
+     "start": 24.2,
      "text": "attached"
     },
     {
-     "end": 24.8,
-     "start": 24.55,
+     "end": 25.05,
+     "start": 24.7,
      "text": "claim"
     },
     {
-     "end": 25.175,
-     "start": 24.8,
+     "end": 25.575,
+     "start": 25.05,
      "text": "command"
     },
     {
-     "end": 25.425,
-     "start": 25.175,
+     "end": 25.95,
+     "start": 25.575,
      "text": "names"
     },
     {
-     "end": 26.65,
-     "start": 25.425,
+     "end": 26.825,
+     "start": 25.95,
      "text": "register-rows"
     },
     {
-     "end": 26.85,
-     "start": 26.65,
+     "end": 26.875,
+     "start": 26.825,
      "text": ","
     },
     {
-     "end": 27.125,
-     "start": 27.05,
-     "text": "a"
+     "end": 27.062,
+     "start": 26.875,
+     "text": "which"
     },
     {
-     "end": 27.625,
-     "start": 27.125,
-     "text": "retained"
+     "end": 27.25,
+     "start": 27.062,
+     "text": "has"
     },
     {
-     "end": 28.025,
-     "start": 27.625,
-     "text": "legacy"
+     "end": 27.45,
+     "start": 27.25,
+     "text": "been"
     },
     {
-     "end": 28.525,
-     "start": 28.025,
-     "text": "command"
+     "end": 28.0,
+     "start": 27.45,
+     "text": "removed"
     },
     {
-     "end": 28.675,
-     "start": 28.525,
-     "text": "that"
+     "end": 28.163,
+     "start": 28.0,
+     "text": "from"
     },
     {
-     "end": 28.825,
-     "start": 28.675,
-     "text": "is"
-    },
-    {
-     "end": 29.112,
-     "start": 28.825,
-     "text": "not"
-    },
-    {
-     "end": 29.562,
-     "start": 29.112,
-     "text": "currently"
-    },
-    {
-     "end": 30.163,
-     "start": 29.562,
-     "text": "buildable"
-    },
-    {
-     "end": 30.337,
-     "start": 30.163,
-     "text": "or"
-    },
-    {
-     "end": 31.025,
-     "start": 30.337,
-     "text": "verified"
-    },
-    {
-     "end": 31.388,
-     "start": 31.025,
-     "text": "against"
-    },
-    {
-     "end": 31.475,
-     "start": 31.388,
+     "end": 28.25,
+     "start": 28.163,
      "text": "the"
     },
     {
-     "end": 31.938,
-     "start": 31.475,
-     "text": "released"
+     "end": 28.612,
+     "start": 28.25,
+     "text": "current"
     },
     {
-     "end": 32.975,
-     "start": 31.938,
+     "end": 29.038,
+     "start": 28.612,
      "text": "source"
     },
     {
-     "end": 33.175,
-     "start": 32.975,
-     "text": ","
+     "end": 29.425,
+     "start": 29.038,
+     "text": "along"
     },
     {
-     "end": 33.487,
-     "start": 33.35,
+     "end": 29.562,
+     "start": 29.425,
      "text": "with"
     },
     {
-     "end": 33.588,
-     "start": 33.487,
+     "end": 29.763,
+     "start": 29.562,
      "text": "its"
     },
     {
-     "end": 33.95,
-     "start": 33.588,
-     "text": "repair"
+     "end": 30.05,
+     "start": 29.763,
+     "text": "flake"
     },
     {
-     "end": 34.175,
-     "start": 33.95,
-     "text": "owned"
+     "end": 31.25,
+     "start": 30.05,
+     "text": "export"
     },
     {
-     "end": 34.362,
-     "start": 34.175,
-     "text": "by"
+     "end": 31.475,
+     "start": 31.25,
+     "text": "."
     },
     {
-     "end": 35.875,
-     "start": 34.362,
-     "text": "283"
+     "end": 31.775,
+     "start": 31.65,
+     "text": "The"
     },
     {
-     "end": 36.075,
-     "start": 35.875,
-     "text": ";"
-    },
-    {
-     "end": 36.55,
-     "start": 36.25,
-     "text": "until"
-    },
-    {
-     "end": 36.775,
-     "start": 36.55,
-     "text": "that"
-    },
-    {
-     "end": 37.15,
-     "start": 36.775,
-     "text": "repair"
-    },
-    {
-     "end": 37.575,
-     "start": 37.15,
-     "text": "lands"
-    },
-    {
-     "end": 37.725,
-     "start": 37.575,
-     "text": "the"
-    },
-    {
-     "end": 38.2,
-     "start": 37.725,
+     "end": 32.175,
+     "start": 31.775,
      "text": "attached"
     },
     {
-     "end": 38.625,
-     "start": 38.2,
+     "end": 32.525,
+     "start": 32.175,
      "text": "claim"
     },
     {
-     "end": 38.775,
-     "start": 38.625,
-     "text": "is"
+     "end": 32.95,
+     "start": 32.525,
+     "text": "remains"
     },
     {
-     "end": 39.013,
-     "start": 38.775,
+     "end": 33.188,
+     "start": 32.95,
+     "text": "part"
+    },
+    {
+     "end": 33.263,
+     "start": 33.188,
+     "text": "of"
+    },
+    {
+     "end": 33.45,
+     "start": 33.263,
      "text": "this"
     },
     {
-     "end": 39.45,
-     "start": 39.013,
+     "end": 33.875,
+     "start": 33.45,
      "text": "record's"
     },
     {
-     "end": 40.1,
-     "start": 39.45,
+     "end": 34.825,
+     "start": 33.875,
      "text": "history"
     },
     {
-     "end": 40.225,
-     "start": 40.1,
-     "text": ","
+     "end": 35.025,
+     "start": 34.825,
+     "text": ";"
     },
     {
-     "end": 40.475,
-     "start": 40.225,
+     "end": 35.325,
+     "start": 35.225,
+     "text": "it"
+    },
+    {
+     "end": 35.475,
+     "start": 35.325,
+     "text": "is"
+    },
+    {
+     "end": 35.713,
+     "start": 35.475,
      "text": "not"
     },
     {
-     "end": 40.588,
-     "start": 40.475,
+     "end": 35.812,
+     "start": 35.713,
      "text": "a"
     },
     {
-     "end": 41.05,
-     "start": 40.588,
+     "end": 36.213,
+     "start": 35.812,
      "text": "runnable"
     },
     {
-     "end": 42.3,
-     "start": 41.05,
+     "end": 36.8,
+     "start": 36.213,
      "text": "instruction"
     },
     {
-     "end": 42.5,
-     "start": 42.3,
+     "end": 36.912,
+     "start": 36.8,
+     "text": "for"
+    },
+    {
+     "end": 37.075,
+     "start": 36.912,
+     "text": "this"
+    },
+    {
+     "end": 37.925,
+     "start": 37.075,
+     "text": "source"
+    },
+    {
+     "end": 38.125,
+     "start": 37.925,
      "text": "."
     }
    ]
@@ -306536,367 +305871,182 @@
    ]
   },
   "docs-recovery-retirement/how-retirement-ends-a-name-02": {
-   "audio_sha256": "ca74d9662b12672319b6b97a2c20161660eacd1bdbb50b5cc355a9a3471516a5",
-   "characters": 366,
-   "cost": 0.00022692,
-   "duration": 25.8,
+   "audio_sha256": "881bc0434851db296122e1772d5a861e3a74e78ce2fb9577499c138a994bc720",
+   "characters": 199,
+   "cost": 0.00019700999999999999,
+   "duration": 12.975,
    "index": 2,
-   "key": "753c79be0f766bc50e5e7260e6d57b5b05115607bcfa846ef4f85f8e6c740916",
+   "key": "2c3b639c0b1696b5052faba780d1ff52b340126d194544371010148dd317ddb1",
    "page": "docs/recovery-retirement.md",
    "pause_ms": 400,
    "section": "how-retirement-ends-a-name",
-   "sent_text": "Run the ending rows against a real devnet node from offchain/ — the same retained-legacy status applies here as above: the retirement row runner stays declared and shipped, is not currently buildable or verified against the released source, and its re-cut is owned by #172. The usage is kept so the ending route stays documented, not as a claim you can run it today:",
-   "text": "Run the ending rows against a real devnet node from offchain/ — the same retained-legacy status applies here as above: the retirement row runner stays declared and shipped, is not currently buildable or verified against the released source, and its re-cut is owned by #172. The usage is kept so the ending route stays documented, not as a claim you can run it today:",
+   "sent_text": "The retirement row runner has also been removed from the current source. These historical invocations describe the archived ending rows and their controls; the current source exports no such command.",
+   "text": "The retirement row runner has also been removed from the current source. These historical invocations describe the archived ending rows and their controls; the current source exports no such command.",
    "words": [
     {
-     "end": 0.475,
-     "start": 0.25,
-     "text": "Run"
-    },
-    {
-     "end": 0.637,
-     "start": 0.475,
-     "text": "the"
-    },
-    {
-     "end": 1.062,
-     "start": 0.637,
-     "text": "ending"
-    },
-    {
-     "end": 1.475,
-     "start": 1.062,
-     "text": "rows"
-    },
-    {
-     "end": 1.85,
-     "start": 1.475,
-     "text": "against"
-    },
-    {
-     "end": 1.962,
-     "start": 1.85,
-     "text": "a"
-    },
-    {
-     "end": 2.287,
-     "start": 1.962,
-     "text": "real"
-    },
-    {
-     "end": 2.75,
-     "start": 2.287,
-     "text": "devnet"
-    },
-    {
-     "end": 3.15,
-     "start": 2.75,
-     "text": "node"
-    },
-    {
-     "end": 3.362,
-     "start": 3.15,
-     "text": "from"
-    },
-    {
-     "end": 4.662,
-     "start": 3.362,
-     "text": "offchain/"
-    },
-    {
-     "end": 4.75,
-     "start": 4.662,
-     "text": "—"
-    },
-    {
-     "end": 4.887,
-     "start": 4.75,
-     "text": "the"
-    },
-    {
-     "end": 5.225,
-     "start": 4.887,
-     "text": "same"
-    },
-    {
-     "end": 6.125,
-     "start": 5.225,
-     "text": "retained-legacy"
-    },
-    {
-     "end": 6.625,
-     "start": 6.125,
-     "text": "status"
-    },
-    {
-     "end": 7.125,
-     "start": 6.625,
-     "text": "applies"
-    },
-    {
-     "end": 7.35,
-     "start": 7.125,
-     "text": "here"
-    },
-    {
-     "end": 7.5,
-     "start": 7.35,
-     "text": "as"
-    },
-    {
-     "end": 8.6,
-     "start": 7.5,
-     "text": "above"
-    },
-    {
-     "end": 8.825,
-     "start": 8.6,
-     "text": ":"
-    },
-    {
-     "end": 9.075,
-     "start": 9.0,
-     "text": "the"
-    },
-    {
-     "end": 9.625,
-     "start": 9.075,
-     "text": "retirement"
-    },
-    {
-     "end": 9.825,
-     "start": 9.625,
-     "text": "row"
-    },
-    {
-     "end": 10.15,
-     "start": 9.825,
-     "text": "runner"
-    },
-    {
-     "end": 10.525,
-     "start": 10.15,
-     "text": "stays"
-    },
-    {
-     "end": 10.95,
-     "start": 10.525,
-     "text": "declared"
-    },
-    {
-     "end": 11.1,
-     "start": 10.95,
-     "text": "and"
-    },
-    {
-     "end": 11.9,
-     "start": 11.1,
-     "text": "shipped"
-    },
-    {
-     "end": 12.1,
-     "start": 11.9,
-     "text": ","
-    },
-    {
-     "end": 12.425,
-     "start": 12.3,
-     "text": "is"
-    },
-    {
-     "end": 12.65,
-     "start": 12.425,
-     "text": "not"
-    },
-    {
-     "end": 13.05,
-     "start": 12.65,
-     "text": "currently"
-    },
-    {
-     "end": 13.587,
-     "start": 13.05,
-     "text": "buildable"
-    },
-    {
-     "end": 13.75,
-     "start": 13.587,
-     "text": "or"
-    },
-    {
-     "end": 14.375,
-     "start": 13.75,
-     "text": "verified"
-    },
-    {
-     "end": 14.712,
-     "start": 14.375,
-     "text": "against"
-    },
-    {
-     "end": 14.8,
-     "start": 14.712,
-     "text": "the"
-    },
-    {
-     "end": 15.15,
-     "start": 14.8,
-     "text": "released"
-    },
-    {
-     "end": 16.05,
-     "start": 15.15,
-     "text": "source"
-    },
-    {
-     "end": 16.25,
-     "start": 16.05,
-     "text": ","
-    },
-    {
-     "end": 16.538,
-     "start": 16.45,
-     "text": "and"
-    },
-    {
-     "end": 16.675,
-     "start": 16.538,
-     "text": "its"
-    },
-    {
-     "end": 17.125,
-     "start": 16.675,
-     "text": "re-cut"
-    },
-    {
-     "end": 17.288,
-     "start": 17.125,
-     "text": "is"
-    },
-    {
-     "end": 17.65,
-     "start": 17.288,
-     "text": "owned"
-    },
-    {
-     "end": 17.825,
-     "start": 17.65,
-     "text": "by"
-    },
-    {
-     "end": 19.375,
-     "start": 17.825,
-     "text": "172"
-    },
-    {
-     "end": 19.6,
-     "start": 19.375,
-     "text": "."
-    },
-    {
-     "end": 19.9,
-     "start": 19.8,
+     "end": 0.25,
+     "start": 0.175,
      "text": "The"
     },
     {
-     "end": 20.375,
-     "start": 19.9,
-     "text": "usage"
+     "end": 0.85,
+     "start": 0.25,
+     "text": "retirement"
     },
     {
-     "end": 20.538,
-     "start": 20.375,
-     "text": "is"
+     "end": 1.075,
+     "start": 0.85,
+     "text": "row"
     },
     {
-     "end": 20.875,
-     "start": 20.538,
-     "text": "kept"
+     "end": 1.5,
+     "start": 1.075,
+     "text": "runner"
     },
     {
-     "end": 21.013,
-     "start": 20.875,
-     "text": "so"
+     "end": 1.7,
+     "start": 1.5,
+     "text": "has"
     },
     {
-     "end": 21.163,
-     "start": 21.013,
+     "end": 2.05,
+     "start": 1.7,
+     "text": "also"
+    },
+    {
+     "end": 2.225,
+     "start": 2.05,
+     "text": "been"
+    },
+    {
+     "end": 2.75,
+     "start": 2.225,
+     "text": "removed"
+    },
+    {
+     "end": 2.888,
+     "start": 2.75,
+     "text": "from"
+    },
+    {
+     "end": 2.975,
+     "start": 2.888,
      "text": "the"
     },
     {
-     "end": 21.525,
-     "start": 21.163,
+     "end": 3.325,
+     "start": 2.975,
+     "text": "current"
+    },
+    {
+     "end": 4.25,
+     "start": 3.325,
+     "text": "source"
+    },
+    {
+     "end": 4.45,
+     "start": 4.25,
+     "text": "."
+    },
+    {
+     "end": 4.85,
+     "start": 4.65,
+     "text": "These"
+    },
+    {
+     "end": 5.438,
+     "start": 4.85,
+     "text": "historical"
+    },
+    {
+     "end": 6.225,
+     "start": 5.438,
+     "text": "invocations"
+    },
+    {
+     "end": 6.738,
+     "start": 6.225,
+     "text": "describe"
+    },
+    {
+     "end": 6.887,
+     "start": 6.738,
+     "text": "the"
+    },
+    {
+     "end": 7.475,
+     "start": 6.887,
+     "text": "archived"
+    },
+    {
+     "end": 7.825,
+     "start": 7.475,
      "text": "ending"
     },
     {
-     "end": 21.825,
-     "start": 21.525,
-     "text": "route"
+     "end": 8.288,
+     "start": 7.825,
+     "text": "rows"
     },
     {
-     "end": 22.2,
-     "start": 21.825,
-     "text": "stays"
+     "end": 8.413,
+     "start": 8.288,
+     "text": "and"
     },
     {
-     "end": 23.025,
-     "start": 22.2,
-     "text": "documented"
+     "end": 8.575,
+     "start": 8.413,
+     "text": "their"
     },
     {
-     "end": 23.125,
-     "start": 23.025,
-     "text": ","
+     "end": 9.875,
+     "start": 8.575,
+     "text": "controls"
     },
     {
-     "end": 23.35,
-     "start": 23.125,
-     "text": "not"
+     "end": 10.075,
+     "start": 9.875,
+     "text": ";"
     },
     {
-     "end": 23.462,
-     "start": 23.35,
-     "text": "as"
+     "end": 10.325,
+     "start": 10.25,
+     "text": "the"
     },
     {
-     "end": 23.55,
-     "start": 23.462,
-     "text": "a"
+     "end": 10.625,
+     "start": 10.325,
+     "text": "current"
     },
     {
-     "end": 23.925,
-     "start": 23.55,
-     "text": "claim"
+     "end": 10.925,
+     "start": 10.625,
+     "text": "source"
     },
     {
-     "end": 24.05,
-     "start": 23.925,
-     "text": "you"
+     "end": 11.45,
+     "start": 10.925,
+     "text": "exports"
     },
     {
-     "end": 24.25,
-     "start": 24.05,
-     "text": "can"
+     "end": 11.625,
+     "start": 11.45,
+     "text": "no"
     },
     {
-     "end": 24.45,
-     "start": 24.25,
-     "text": "run"
+     "end": 11.875,
+     "start": 11.625,
+     "text": "such"
     },
     {
-     "end": 24.575,
-     "start": 24.45,
-     "text": "it"
+     "end": 12.775,
+     "start": 11.875,
+     "text": "command"
     },
     {
-     "end": 25.525,
-     "start": 24.575,
-     "text": "today"
-    },
-    {
-     "end": 25.8,
-     "start": 25.525,
-     "text": ":"
+     "end": 12.975,
+     "start": 12.775,
+     "text": "."
     }
    ]
   },
@@ -313066,472 +312216,312 @@
    ]
   },
   "docs-recovery-retirement/what-you-can-do-01": {
-   "audio_sha256": "8fb482105f2970bdaa548e5e7cc711bced000806b71460ec92d62ff82357c8b5",
-   "characters": 458,
-   "cost": 0.00028396,
-   "duration": 31.125,
+   "audio_sha256": "b9714c5812a95dcb37f6c0a99d639bec14c1edb22bde07a42f12c7ada64c0649",
+   "characters": 333,
+   "cost": 0.00032966999999999995,
+   "duration": 22.275,
    "index": 1,
-   "key": "d8af616be8354bccd1e2699d5571d7ee42543258387043ac5efbf4a78abff4d5",
+   "key": "5c39714581b84b60ce0c1f86f3c86146ab18f938b810b5e2cf380e385afe7c8e",
    "page": "docs/recovery-retirement.md",
    "pause_ms": 400,
    "section": "what-you-can-do",
-   "sent_text": "The recovery row runner is a retained legacy command of the current release: it stays declared and shipped, but it is not currently buildable or verified against the released source, and its re-cut against the current registry mode is owned by #172. Its usage is kept below so the page stays faithful to what these rows did — not as a claim you can run it today. When it was current, it ran the eleven recovery rows against a real devnet node from offchain/:",
-   "text": "The recovery row runner is a retained legacy command of the current release: it stays declared and shipped, but it is not currently buildable or verified against the released source, and its re-cut against the current registry mode is owned by #172. Its usage is kept below so the page stays faithful to what these rows did — not as a claim you can run it today. When it was current, it ran the eleven recovery rows against a real devnet node from offchain/:",
+   "sent_text": "The recovery row runner has been removed from the current source, including its executable declaration and flake export. The historical invocation below records how the archived eleven recovery rows ran against a real devnet node; it is not a runnable instruction for the current source. Naming has no command port to the new design.",
+   "text": "The recovery row runner has been removed from the current source, including its executable declaration and flake export. The historical invocation below records how the archived eleven recovery rows ran against a real devnet node; it is not a runnable instruction for the current source. Naming has no command port to the new design.",
    "words": [
     {
-     "end": 0.25,
-     "start": 0.175,
+     "end": 0.3,
+     "start": 0.2,
      "text": "The"
     },
     {
-     "end": 0.8,
-     "start": 0.25,
+     "end": 0.887,
+     "start": 0.3,
      "text": "recovery"
     },
     {
-     "end": 1.05,
-     "start": 0.8,
+     "end": 1.163,
+     "start": 0.887,
      "text": "row"
     },
     {
      "end": 1.55,
-     "start": 1.05,
+     "start": 1.163,
      "text": "runner"
     },
     {
-     "end": 1.7,
+     "end": 1.75,
      "start": 1.55,
-     "text": "is"
+     "text": "has"
     },
     {
-     "end": 1.8,
-     "start": 1.7,
-     "text": "a"
+     "end": 1.95,
+     "start": 1.75,
+     "text": "been"
     },
     {
-     "end": 2.35,
-     "start": 1.8,
-     "text": "retained"
+     "end": 2.5,
+     "start": 1.95,
+     "text": "removed"
     },
     {
-     "end": 2.75,
-     "start": 2.35,
-     "text": "legacy"
-    },
-    {
-     "end": 3.25,
-     "start": 2.75,
-     "text": "command"
-    },
-    {
-     "end": 3.338,
-     "start": 3.25,
-     "text": "of"
-    },
-    {
-     "end": 3.425,
-     "start": 3.338,
-     "text": "the"
-    },
-    {
-     "end": 3.737,
-     "start": 3.425,
-     "text": "current"
-    },
-    {
-     "end": 4.725,
-     "start": 3.737,
-     "text": "release"
-    },
-    {
-     "end": 4.925,
-     "start": 4.725,
-     "text": ":"
-    },
-    {
-     "end": 5.213,
-     "start": 5.125,
-     "text": "it"
-    },
-    {
-     "end": 5.488,
-     "start": 5.213,
-     "text": "stays"
-    },
-    {
-     "end": 5.812,
-     "start": 5.488,
-     "text": "declared"
-    },
-    {
-     "end": 5.938,
-     "start": 5.812,
-     "text": "and"
-    },
-    {
-     "end": 6.65,
-     "start": 5.938,
-     "text": "shipped"
-    },
-    {
-     "end": 6.85,
-     "start": 6.65,
-     "text": ","
-    },
-    {
-     "end": 7.137,
-     "start": 7.025,
-     "text": "but"
-    },
-    {
-     "end": 7.225,
-     "start": 7.137,
-     "text": "it"
-    },
-    {
-     "end": 7.375,
-     "start": 7.225,
-     "text": "is"
-    },
-    {
-     "end": 7.65,
-     "start": 7.375,
-     "text": "not"
-    },
-    {
-     "end": 8.062,
-     "start": 7.65,
-     "text": "currently"
-    },
-    {
-     "end": 8.637,
-     "start": 8.062,
-     "text": "buildable"
-    },
-    {
-     "end": 8.8,
-     "start": 8.637,
-     "text": "or"
-    },
-    {
-     "end": 9.425,
-     "start": 8.8,
-     "text": "verified"
-    },
-    {
-     "end": 9.762,
-     "start": 9.425,
-     "text": "against"
-    },
-    {
-     "end": 9.85,
-     "start": 9.762,
-     "text": "the"
-    },
-    {
-     "end": 10.225,
-     "start": 9.85,
-     "text": "released"
-    },
-    {
-     "end": 11.15,
-     "start": 10.225,
-     "text": "source"
-    },
-    {
-     "end": 11.35,
-     "start": 11.15,
-     "text": ","
-    },
-    {
-     "end": 11.663,
-     "start": 11.55,
-     "text": "and"
-    },
-    {
-     "end": 11.863,
-     "start": 11.663,
-     "text": "its"
-    },
-    {
-     "end": 12.375,
-     "start": 11.863,
-     "text": "re-cut"
-    },
-    {
-     "end": 12.738,
-     "start": 12.375,
-     "text": "against"
-    },
-    {
-     "end": 12.825,
-     "start": 12.738,
-     "text": "the"
-    },
-    {
-     "end": 13.15,
-     "start": 12.825,
-     "text": "current"
-    },
-    {
-     "end": 13.625,
-     "start": 13.15,
-     "text": "registry"
-    },
-    {
-     "end": 14.012,
-     "start": 13.625,
-     "text": "mode"
-    },
-    {
-     "end": 14.2,
-     "start": 14.012,
-     "text": "is"
-    },
-    {
-     "end": 14.625,
-     "start": 14.2,
-     "text": "owned"
-    },
-    {
-     "end": 14.825,
-     "start": 14.625,
-     "text": "by"
-    },
-    {
-     "end": 16.575,
-     "start": 14.825,
-     "text": "172"
-    },
-    {
-     "end": 16.825,
-     "start": 16.575,
-     "text": "."
-    },
-    {
-     "end": 17.2,
-     "start": 17.0,
-     "text": "Its"
-    },
-    {
-     "end": 17.625,
-     "start": 17.2,
-     "text": "usage"
-    },
-    {
-     "end": 17.775,
-     "start": 17.625,
-     "text": "is"
-    },
-    {
-     "end": 18.05,
-     "start": 17.775,
-     "text": "kept"
-    },
-    {
-     "end": 18.513,
-     "start": 18.05,
-     "text": "below"
-    },
-    {
-     "end": 18.7,
-     "start": 18.513,
-     "text": "so"
-    },
-    {
-     "end": 18.837,
-     "start": 18.7,
-     "text": "the"
-    },
-    {
-     "end": 19.3,
-     "start": 18.837,
-     "text": "page"
-    },
-    {
-     "end": 19.712,
-     "start": 19.3,
-     "text": "stays"
-    },
-    {
-     "end": 20.2,
-     "start": 19.712,
-     "text": "faithful"
-    },
-    {
-     "end": 20.325,
-     "start": 20.2,
-     "text": "to"
-    },
-    {
-     "end": 20.525,
-     "start": 20.325,
-     "text": "what"
-    },
-    {
-     "end": 20.763,
-     "start": 20.525,
-     "text": "these"
-    },
-    {
-     "end": 21.138,
-     "start": 20.763,
-     "text": "rows"
-    },
-    {
-     "end": 21.638,
-     "start": 21.138,
-     "text": "did"
-    },
-    {
-     "end": 21.725,
-     "start": 21.638,
-     "text": "—"
-    },
-    {
-     "end": 21.95,
-     "start": 21.725,
-     "text": "not"
-    },
-    {
-     "end": 22.062,
-     "start": 21.95,
-     "text": "as"
-    },
-    {
-     "end": 22.15,
-     "start": 22.062,
-     "text": "a"
-    },
-    {
-     "end": 22.525,
-     "start": 22.15,
-     "text": "claim"
-    },
-    {
-     "end": 22.65,
-     "start": 22.525,
-     "text": "you"
-    },
-    {
-     "end": 22.85,
-     "start": 22.65,
-     "text": "can"
-    },
-    {
-     "end": 23.05,
-     "start": 22.85,
-     "text": "run"
-    },
-    {
-     "end": 23.175,
-     "start": 23.05,
-     "text": "it"
-    },
-    {
-     "end": 24.2,
-     "start": 23.175,
-     "text": "today"
-    },
-    {
-     "end": 24.5,
-     "start": 24.2,
-     "text": "."
-    },
-    {
-     "end": 24.812,
-     "start": 24.7,
-     "text": "When"
-    },
-    {
-     "end": 24.888,
-     "start": 24.812,
-     "text": "it"
-    },
-    {
-     "end": 25.062,
-     "start": 24.888,
-     "text": "was"
-    },
-    {
-     "end": 25.525,
-     "start": 25.062,
-     "text": "current"
-    },
-    {
-     "end": 25.6,
-     "start": 25.525,
-     "text": ","
-    },
-    {
-     "end": 25.725,
-     "start": 25.6,
-     "text": "it"
-    },
-    {
-     "end": 25.987,
-     "start": 25.725,
-     "text": "ran"
-    },
-    {
-     "end": 26.125,
-     "start": 25.987,
-     "text": "the"
-    },
-    {
-     "end": 26.55,
-     "start": 26.125,
-     "text": "eleven"
-    },
-    {
-     "end": 27.138,
-     "start": 26.55,
-     "text": "recovery"
-    },
-    {
-     "end": 27.55,
-     "start": 27.138,
-     "text": "rows"
-    },
-    {
-     "end": 27.9,
-     "start": 27.55,
-     "text": "against"
-    },
-    {
-     "end": 28.013,
-     "start": 27.9,
-     "text": "a"
-    },
-    {
-     "end": 28.312,
-     "start": 28.013,
-     "text": "real"
-    },
-    {
-     "end": 28.725,
-     "start": 28.312,
-     "text": "devnet"
-    },
-    {
-     "end": 29.125,
-     "start": 28.725,
-     "text": "node"
-    },
-    {
-     "end": 29.337,
-     "start": 29.125,
+     "end": 2.662,
+     "start": 2.5,
      "text": "from"
     },
     {
-     "end": 30.9,
-     "start": 29.337,
-     "text": "offchain/"
+     "end": 2.75,
+     "start": 2.662,
+     "text": "the"
     },
     {
-     "end": 31.125,
-     "start": 30.9,
-     "text": ":"
+     "end": 3.138,
+     "start": 2.75,
+     "text": "current"
+    },
+    {
+     "end": 3.65,
+     "start": 3.138,
+     "text": "source"
+    },
+    {
+     "end": 3.75,
+     "start": 3.65,
+     "text": ","
+    },
+    {
+     "end": 4.3,
+     "start": 3.75,
+     "text": "including"
+    },
+    {
+     "end": 4.512,
+     "start": 4.3,
+     "text": "its"
+    },
+    {
+     "end": 5.25,
+     "start": 4.512,
+     "text": "executable"
+    },
+    {
+     "end": 6.062,
+     "start": 5.25,
+     "text": "declaration"
+    },
+    {
+     "end": 6.213,
+     "start": 6.062,
+     "text": "and"
+    },
+    {
+     "end": 6.525,
+     "start": 6.213,
+     "text": "flake"
+    },
+    {
+     "end": 7.75,
+     "start": 6.525,
+     "text": "export"
+    },
+    {
+     "end": 7.975,
+     "start": 7.75,
+     "text": "."
+    },
+    {
+     "end": 8.25,
+     "start": 8.175,
+     "text": "The"
+    },
+    {
+     "end": 8.875,
+     "start": 8.25,
+     "text": "historical"
+    },
+    {
+     "end": 9.625,
+     "start": 8.875,
+     "text": "invocation"
+    },
+    {
+     "end": 10.038,
+     "start": 9.625,
+     "text": "below"
+    },
+    {
+     "end": 10.6,
+     "start": 10.038,
+     "text": "records"
+    },
+    {
+     "end": 10.775,
+     "start": 10.6,
+     "text": "how"
+    },
+    {
+     "end": 10.938,
+     "start": 10.775,
+     "text": "the"
+    },
+    {
+     "end": 11.575,
+     "start": 10.938,
+     "text": "archived"
+    },
+    {
+     "end": 12.0,
+     "start": 11.575,
+     "text": "eleven"
+    },
+    {
+     "end": 12.575,
+     "start": 12.0,
+     "text": "recovery"
+    },
+    {
+     "end": 12.988,
+     "start": 12.575,
+     "text": "rows"
+    },
+    {
+     "end": 13.35,
+     "start": 12.988,
+     "text": "ran"
+    },
+    {
+     "end": 13.75,
+     "start": 13.35,
+     "text": "against"
+    },
+    {
+     "end": 13.863,
+     "start": 13.75,
+     "text": "a"
+    },
+    {
+     "end": 14.188,
+     "start": 13.863,
+     "text": "real"
+    },
+    {
+     "end": 14.575,
+     "start": 14.188,
+     "text": "devnet"
+    },
+    {
+     "end": 15.6,
+     "start": 14.575,
+     "text": "node"
+    },
+    {
+     "end": 15.825,
+     "start": 15.6,
+     "text": ";"
+    },
+    {
+     "end": 16.125,
+     "start": 16.025,
+     "text": "it"
+    },
+    {
+     "end": 16.275,
+     "start": 16.125,
+     "text": "is"
+    },
+    {
+     "end": 16.513,
+     "start": 16.275,
+     "text": "not"
+    },
+    {
+     "end": 16.612,
+     "start": 16.513,
+     "text": "a"
+    },
+    {
+     "end": 17.013,
+     "start": 16.612,
+     "text": "runnable"
+    },
+    {
+     "end": 17.625,
+     "start": 17.013,
+     "text": "instruction"
+    },
+    {
+     "end": 17.737,
+     "start": 17.625,
+     "text": "for"
+    },
+    {
+     "end": 17.825,
+     "start": 17.737,
+     "text": "the"
+    },
+    {
+     "end": 18.15,
+     "start": 17.825,
+     "text": "current"
+    },
+    {
+     "end": 19.025,
+     "start": 18.15,
+     "text": "source"
+    },
+    {
+     "end": 19.225,
+     "start": 19.025,
+     "text": "."
+    },
+    {
+     "end": 19.725,
+     "start": 19.425,
+     "text": "Naming"
+    },
+    {
+     "end": 19.925,
+     "start": 19.725,
+     "text": "has"
+    },
+    {
+     "end": 20.125,
+     "start": 19.925,
+     "text": "no"
+    },
+    {
+     "end": 20.5,
+     "start": 20.125,
+     "text": "command"
+    },
+    {
+     "end": 20.775,
+     "start": 20.5,
+     "text": "port"
+    },
+    {
+     "end": 20.862,
+     "start": 20.775,
+     "text": "to"
+    },
+    {
+     "end": 20.95,
+     "start": 20.862,
+     "text": "the"
+    },
+    {
+     "end": 21.125,
+     "start": 20.95,
+     "text": "new"
+    },
+    {
+     "end": 22.075,
+     "start": 21.125,
+     "text": "design"
+    },
+    {
+     "end": 22.275,
+     "start": 22.075,
+     "text": "."
     }
    ]
   },

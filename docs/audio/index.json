@@ -5884,8 +5884,8 @@
     "index": 1,
     "name": "docs-offchain-api-reference/appendix-discovered-adapter-consumers-01",
     "pause_ms": 400,
-    "text": "This source inventory explains ownership, not ledger coverage. Each retained owner below uses serial access for the stated lifetime. Test producers stay independent of the pure computation being compared. No public interface or retained journey is removed.",
-    "v": "df70b8a0d4de"
+    "text": "This source inventory explains ownership, not ledger coverage. Each retained owner below uses serial access for the stated lifetime. Test producers stay independent of the pure computation being compared. The retired naming runner sources have been removed.",
+    "v": "3081f5fcd039"
    }
   ],
   "how-the-reference-stays-honest": [
@@ -6577,8 +6577,8 @@
     "index": 1,
     "name": "docs-offchain-development/current-boundaries-01",
     "pause_ms": 400,
-    "text": "The source inventory, formatter extent, HLint extent and component build extent are different claims. The two independent verifier sources left the #264 source fence in #278: they are formatted and HLint-checked like every other Haskell source. connected-verifier remains declared and exported, but its build failure on record at an earlier revision is tracked by #282. The retained journeys recovery-rows, retirement-rows and repair-rows are unverified under #172, subject to a check that current commands do not depend on them. register-rows is outside that journey retirement record and remains separately unverified under #283. All five Cabal components and flake apps remain declared; this ticket does not claim their commands work. Under the 2026-09-25 release-instruction correction, the archive README and consumer guides say the same thing to their readers: the verified journey and checks are presented as runnable, and all nine unverified declarations are disclosed as retained, not currently buildable or verified, with their owning issues. offchain/deployment-attach-check.sh is a local gate whose three row-runner dependencies are among the retained commands; no active workflow or carrier command consumes it, and its guide discloses that it cannot currently run. The carrier's earlier run directly failed at recovery-rows; the other retained commands have source-level missing-import evidence, not direct build results from that run. Neither Fourmolu nor HLint has directory exclusions. A retained journey that does not compile is still formatted and HLint-checked; those checks parse source and say nothing about whether it builds.",
-    "v": "e0d03f6a3429"
+    "text": "The source inventory, formatter extent, HLint extent and component build extent are different claims. The nine retired naming runners have been removed with their Cabal declarations and flake exports: initialization, its refusals, maintenance, recovery, registration, retirement, repair and the two verification tools. Their old unverified inventory entries are removed as well; an absent component is not a successful build. The naming and registry libraries remain for their separate removal layer. Fourmolu and HLint continue to discover their complete remaining source extents without directory exclusions. The component carrier reports the components it actually builds, and runs no tests or commands. Historical receipts and the run pages in the old release archive describe their own revisions, not the current command surface.",
+    "v": "4f2efb1076f6"
    }
   ],
   "module-ownership-maps": [
@@ -8287,8 +8287,8 @@
     "index": 2,
     "name": "docs-preprod/reproduce-it-yourself-02",
     "pause_ms": 400,
-    "text": "Two availability facts to read this reproduction with. The deployment tool builds from the current source, but no required workflow exercises it on every candidate — the verifier output above is a historical run of 2026-09-15 against release main-c27c3dd8…, and the manifest's own claims are what you would re-check. The attached claim command names register-rows, a retained legacy command that is not currently buildable or verified against the released source, with its repair owned by #283; until that repair lands the attached claim is this record's history, not a runnable instruction.",
-    "v": "a9992dd295ad"
+    "text": "Two availability facts to read this reproduction with. The deployment tool builds from the current source, but no required workflow exercises it on every candidate — the verifier output above is a historical run of 2026-09-15 against release main-c27c3dd8…, and the manifest's own claims are what you would re-check. The attached claim command names register-rows, which has been removed from the current source along with its flake export. The attached claim remains part of this record's history; it is not a runnable instruction for this source.",
+    "v": "a3d022648b64"
    },
    {
     "index": 3,
@@ -8839,8 +8839,8 @@
     "index": 2,
     "name": "docs-recovery-retirement/how-retirement-ends-a-name-02",
     "pause_ms": 400,
-    "text": "Run the ending rows against a real devnet node from offchain/ — the same retained-legacy status applies here as above: the retirement row runner stays declared and shipped, is not currently buildable or verified against the released source, and its re-cut is owned by #172. The usage is kept so the ending route stays documented, not as a claim you can run it today:",
-    "v": "ca74d9662b12"
+    "text": "The retirement row runner has also been removed from the current source. These historical invocations describe the archived ending rows and their controls; the current source exports no such command.",
+    "v": "881bc0434851"
    },
    {
     "index": 3,
@@ -9003,8 +9003,8 @@
     "index": 1,
     "name": "docs-recovery-retirement/what-you-can-do-01",
     "pause_ms": 400,
-    "text": "The recovery row runner is a retained legacy command of the current release: it stays declared and shipped, but it is not currently buildable or verified against the released source, and its re-cut against the current registry mode is owned by #172. Its usage is kept below so the page stays faithful to what these rows did — not as a claim you can run it today. When it was current, it ran the eleven recovery rows against a real devnet node from offchain/:",
-    "v": "8fb482105f29"
+    "text": "The recovery row runner has been removed from the current source, including its executable declaration and flake export. The historical invocation below records how the archived eleven recovery rows ran against a real devnet node; it is not a runnable instruction for the current source. Naming has no command port to the new design.",
+    "v": "b9714c5812a9"
    },
    {
     "index": 2,
