@@ -391,7 +391,7 @@ data Command
       line asked for it, so nothing else runs
       -}
       Help String
-    | -- | Internal value used by the retained OpenDatum fold helper to select references; no public parser route
+    | -- | Internal value used by the retained application fold helper to select references; no public parser route
       Fold FoldArgs
     | StateCreate StateCreateArgs
     | WalletCreate WalletArgs

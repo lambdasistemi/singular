@@ -7,7 +7,7 @@ License     : Apache-2.0
 
 The retained submit command is exercised against its real composition and a
 chain fixture. A legacy registry is prepared through the shared create helper
-still used by OpenDatum; no retired Singular parser route is invoked. This
+still used by application commands; no retired Singular parser route is invoked. This
 establishes submit's pin and pre-send refusals over the exercised fixtures,
 not a new-line registry reader or ledger acceptance.
 -}
