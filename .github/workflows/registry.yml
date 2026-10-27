@@ -1088,8 +1088,8 @@ jobs:
       # whole-request allocation are read from transaction bytes and outputs.
       - name: Run registration, update and termination against a development network
         run: |
-          printf 'NO_PIN_JOURNEY_RESULTS=%s\n' "$RUNNER_TEMP/no-pin-journey-results" >> "$GITHUB_ENV"
-          NO_PIN_JOURNEY_RESULTS="$RUNNER_TEMP/no-pin-journey-results" nix run --quiet .#no-pin-registration-journey
+          printf 'NO_PIN_JOURNEY_RESULTS=%s\n' "$RUNNER_TEMP/no-pin-journey-results-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
+          NO_PIN_JOURNEY_RESULTS="$RUNNER_TEMP/no-pin-journey-results-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" nix run --quiet .#no-pin-registration-journey
       - name: Preserve the journey's verdicts, measurement and receipts
         if: always() && env.NO_PIN_JOURNEY_RESULTS != ''
         uses: actions/upload-artifact@v7
@@ -1126,8 +1126,8 @@ jobs:
       # verdict table and the receipt are uploaded whatever the outcome.
       - name: Submit the wrong folds to a development network
         run: |
-          printf 'NO_PIN_REFUSALS_RESULTS=%s\n' "$RUNNER_TEMP/no-pin-refusals-results" >> "$GITHUB_ENV"
-          NO_PIN_REFUSALS_RESULTS="$RUNNER_TEMP/no-pin-refusals-results" nix run --quiet .#no-pin-registration-refusals
+          printf 'NO_PIN_REFUSALS_RESULTS=%s\n' "$RUNNER_TEMP/no-pin-refusals-results-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
+          NO_PIN_REFUSALS_RESULTS="$RUNNER_TEMP/no-pin-refusals-results-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" nix run --quiet .#no-pin-registration-refusals
       - name: Preserve the refusals' verdicts, receipt and answers
         if: always() && env.NO_PIN_REFUSALS_RESULTS != ''
         uses: actions/upload-artifact@v7
@@ -1155,8 +1155,8 @@ jobs:
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       - name: Submit malformed terminations beside their packaged passing controls
         run: |
-          printf 'NO_PIN_TERMINATION_REFUSALS_RESULTS=%s\n' "$RUNNER_TEMP/no-pin-termination-refusals-results" >> "$GITHUB_ENV"
-          NO_PIN_TERMINATION_REFUSALS_RESULTS="$RUNNER_TEMP/no-pin-termination-refusals-results" nix run --quiet .#no-pin-termination-refusals
+          printf 'NO_PIN_TERMINATION_REFUSALS_RESULTS=%s\n' "$RUNNER_TEMP/no-pin-termination-refusals-results-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
+          NO_PIN_TERMINATION_REFUSALS_RESULTS="$RUNNER_TEMP/no-pin-termination-refusals-results-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" nix run --quiet .#no-pin-termination-refusals
       - name: Preserve the refusals, chain observations and controls
         if: always() && env.NO_PIN_TERMINATION_REFUSALS_RESULTS != ''
         uses: actions/upload-artifact@v7
