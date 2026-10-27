@@ -517,7 +517,9 @@ The command reads the registry and builds the whole run as one bundle, saves it 
 sequenceDiagram
     participant W as Fold command
     participant N as Node
-    W->>N: Read registry and build bundle
+    W->>N: Read registry
+    N-->>W: Registry data
+    W->>W: Build the whole bundle
     W->>W: Save bundle and waiting lines
     W->>W: Sign each transaction
     W->>N: Send in bundle order
