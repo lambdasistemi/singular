@@ -1,3 +1,5 @@
+Not for mainnet. Do not deploy Singular or open datum on mainnet until on-chain verification and an independent audit are complete.
+
 Singular is a registry of unique keys on Cardano that applications can use with
 their own rules. This release carries ready-built commands for Linux and macOS,
 the compiled smart contracts and the sources they are built from. Demo 1 creates

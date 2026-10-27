@@ -185,13 +185,20 @@
    {
     "index": 0,
     "name": "README/singular-00",
+    "pause_ms": 400,
+    "text": "Not for mainnet. Do not deploy Singular or open datum on mainnet until on-chain verification and an independent audit are complete.",
+    "v": "17b2832e1c02"
+   },
+   {
+    "index": 1,
+    "name": "README/singular-01",
     "pause_ms": 500,
     "text": "Singular.",
     "v": "03dc7deb5027"
    },
    {
-    "index": 1,
-    "name": "README/singular-01",
+    "index": 2,
+    "name": "README/singular-02",
     "pause_ms": 400,
     "text": "A permissionless registry on Cardano for unique identities and independent application state.",
     "v": "c56a93b8deb5"

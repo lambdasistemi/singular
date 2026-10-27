@@ -1,6 +1,10 @@
 {
   "singular": [
     {
+      "text": "Not for mainnet. Do not deploy Singular or open datum on mainnet until on-chain verification and an independent audit are complete.",
+      "pause": 400
+    },
+    {
       "text": "Singular.",
       "pause": 500
     },
@@ -161,6 +165,6 @@
   ],
   "_source": {
     "file": "README.md",
-    "sha256": "51792913665e919836a1234e849f1d49a49dd9738640f45cb6d52d5d6fae031d"
+    "sha256": "490faad74c0e9eefb3cad4e78bce1f831fbc747034181fa687d36972b76fe8e2"
   }
 }
