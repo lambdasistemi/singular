@@ -172,6 +172,10 @@ test-suite open-datum-tests
     Singular.Application.OpenDatum.TraceSpec
     Singular.Application.OpenDatum.WriteSpec
     Singular.Application.OpenDatum.CLISpec
+    Singular.Application.OpenDatum.LibraryStateSpec
+    Singular.Application.OpenDatum.WalletAdmissionSpec
+    Singular.Application.OpenDatum.PartitionLibrarySpec
+    Singular.Application.OpenDatum.PublicationFundingSpec
     Singular.Application.OpenDatum.ParserCorpusSpec
     Singular.Application.OpenDatum.SaveStateTokenSpec
     Singular.Application.OpenDatum.SourcesSpec

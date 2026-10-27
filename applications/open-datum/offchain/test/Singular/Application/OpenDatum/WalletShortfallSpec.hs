@@ -24,54 +24,6 @@ in the pure rows of @OutlaySpec@.
 -}
 module Singular.Application.OpenDatum.WalletShortfallSpec (spec) where
 
-import Control.Applicative ((<|>))
-import Control.Exception (SomeException, bracket, try)
-import Control.Monad (forM_, when)
-import Control.Tracer (Tracer (..), nullTracer)
-import Data.Aeson qualified as Aeson
-import Data.Aeson.Key qualified as Key
-import Data.Aeson.KeyMap qualified as KeyMap
-import Data.ByteString qualified as BS
-import Data.ByteString.Base16 qualified as B16
-import Data.ByteString.Char8 qualified as BC
-import Data.ByteString.Lazy qualified as BL
-import Data.ByteString.Short qualified as SBS
-import Data.Foldable (toList)
-import Data.IORef
-    ( IORef
-    , modifyIORef'
-    , newIORef
-    , readIORef
-    , writeIORef
-    )
-import Data.List (isInfixOf, nub, sort, sortOn)
-import Data.Map.Strict qualified as Map
-import Data.Maybe (isJust, listToMaybe)
-import Data.Ord (Down (..))
-import Data.Set qualified as Set
-import Data.Text (Text)
-import Data.Text qualified as T
-import Data.Text.Encoding qualified as TE
-import Lens.Micro ((^.))
-import System.Directory (doesDirectoryExist, listDirectory)
-import System.Exit (ExitCode (..))
-import System.FilePath (makeRelative, (</>))
-import System.IO (hFlush, stderr, stdout)
-import System.IO.Temp (withSystemTempDirectory)
-import System.Posix.IO
-    ( OpenFileFlags (..)
-    , OpenMode (..)
-    , closeFd
-    , defaultFileFlags
-    , dup
-    , dupTo
-    , openFd
-    , stdError
-    , stdOutput
-    )
-import System.Posix.Types (Fd)
-import Test.Hspec
-
 import Cardano.Ledger.Address (Addr)
 import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx)
 import Cardano.Ledger.Api.Tx.Body
@@ -96,24 +48,92 @@ import Cardano.Ledger.Mary.Value
     , PolicyID
     )
 import Cardano.Ledger.TxIn (TxIn (..))
-
+import Control.Applicative ((<|>))
+import Control.Exception (bracket)
+import Control.Monad (forM_, when)
+import Control.Tracer (Tracer (Tracer))
 import Data.Aeson ((.=))
-import Singular.Application.OpenDatum.Command (parseOpenDatumCommand)
+import Data.Aeson qualified as Aeson
+    ( Key
+    , Object
+    , Value (Array, Number, Object, String)
+    , decodeStrict
+    , eitherDecodeFileStrict'
+    , encode
+    , object
+    )
+import Data.Aeson.Key qualified as Key (fromText)
+import Data.Aeson.KeyMap qualified as KeyMap
+    ( elems
+    , lookup
+    , member
+    )
+import Data.ByteString qualified as BS
+    ( ByteString
+    , isInfixOf
+    , readFile
+    , writeFile
+    )
+import Data.ByteString.Base16 qualified as B16 (encode)
+import Data.ByteString.Char8 qualified as BC (pack, replicate)
+import Data.ByteString.Lazy qualified as BL (toStrict, writeFile)
+import Data.ByteString.Short qualified as SBS
+    ( ShortByteString
+    , fromShort
+    , toShort
+    )
+import Data.Foldable (toList)
+import Data.IORef
+    ( IORef
+    , modifyIORef'
+    , newIORef
+    , readIORef
+    , writeIORef
+    )
+import Data.List (isInfixOf, nub, sort, sortOn)
+import Data.Map.Strict qualified as Map
+    ( Map
+    , delete
+    , elems
+    , filter
+    , fromList
+    , insert
+    , null
+    , singleton
+    , union
+    , unionWith
+    )
+import Data.Maybe (isJust, listToMaybe)
+import Data.Ord (Down (..))
+import Data.Set qualified as Set (empty, toList)
+import Data.Text (Text)
+import Data.Text qualified as T
+    ( isPrefixOf
+    , length
+    , pack
+    , unpack
+    )
+import Data.Text.Encoding qualified as TE (decodeUtf8)
+import Lens.Micro ((^.))
+import Singular.Application.OpenDatum.Command
+    ( parseOpenDatumCommand
+    )
 import Singular.Application.OpenDatum.Run (runOpenDatum)
 import Singular.CLI.Live (txInText)
-import Singular.CLI.Outlay (walletShortfall)
-import Singular.CLI.Plan
-    ( refuseUnderfunded
-    , retainedFaucetStep
-    )
+import Singular.CLI.Plan (retainedFaucetStep)
 import Singular.CLI.Receipt
-    ( JournalEntry (..)
-    , OutcomeClass (..)
+    ( JournalEntry
+        ( journalBody
+        , journalEvent
+        , journalExpect
+        , journalInputs
+        , journalTxId
+        )
     , readJournal
     )
 import Singular.CLI.ReceiptBody (boundBody)
 import Singular.CLI.Registry (loadReleaseCodes)
-import Singular.CLI.Session (CommandFailure (..), Env (..))
+import Singular.CLI.Session (Env (..))
 import Singular.CLI.Trace
     ( Event (..)
     , How (..)
@@ -121,15 +141,14 @@ import Singular.CLI.Trace
     , TxEvent (..)
     , What (EdgeStarted)
     )
-import Singular.Provider.Koios.FakeServer qualified as Fake
-import Singular.Provider.Koios.Recorded (loadFixtureSet)
 import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.Deployment (parseOutRef, renderOutRef)
 import Singular.Registry.Evidence (NoWitness, unverifiedVerifier)
 import Singular.Registry.Ledger (Coin (..), ConwayEra)
 import Singular.Registry.LedgerProvider qualified as Cage
+    ( SubmitResult (SubmitAccepted)
+    )
 import Singular.Registry.Lifecycle (protocolFeeReserve)
-import Singular.Registry.ProviderSettings (ProviderSettings (..))
 import Singular.Registry.RawChainFixture
     ( ChainFacts (..)
     , RawChain
@@ -140,6 +159,10 @@ import Singular.Registry.RawChainFixture
     )
 import Singular.Registry.SessionEvidence (observeProvider)
 import Singular.Registry.SessionIO qualified as SessionIO
+    ( outputsAt
+    , parameters
+    , withLatest
+    )
 import Singular.Registry.Signing (signedTx)
 import Singular.Registry.StateToken (parseStateToken)
 import Singular.Registry.SyntheticLedger
@@ -147,12 +170,11 @@ import Singular.Registry.SyntheticLedger
     , withSyntheticCosts
     )
 import Singular.Registry.SyntheticTime (syntheticTime)
-import Singular.Registry.Terminal (withWritesObserved)
-import Singular.Registry.TxBuilder.BookingFixture
-    ( payer
-    , preprodParams
+import Singular.Registry.TxBuilder.BookingFixture (preprodParams)
+import Singular.Registry.TxBuilder.Edges
+    ( adaOnlyOut
+    , selectFunding
     )
-import Singular.Registry.TxBuilder.Edges (adaOnlyOut, selectFunding)
 import Singular.Registry.TxBuilder.Internal
     ( computeScriptHash
     , scriptHashBytes
@@ -166,6 +188,37 @@ import Singular.Registry.Wallet
     ( Wallet (..)
     , bech32Address
     , loadWallet
+    )
+import System.Directory (doesDirectoryExist, listDirectory)
+import System.Exit (ExitCode (..))
+import System.FilePath (makeRelative, (</>))
+import System.IO (hFlush, stderr, stdout)
+import System.IO.Temp (withSystemTempDirectory)
+import System.Posix.IO
+    ( OpenFileFlags (..)
+    , OpenMode (..)
+    , closeFd
+    , defaultFileFlags
+    , dup
+    , dupTo
+    , openFd
+    , stdError
+    , stdOutput
+    )
+import System.Posix.Types (Fd)
+import Test.Hspec
+    ( Expectation
+    , Spec
+    , anyException
+    , describe
+    , it
+    , shouldBe
+    , shouldContain
+    , shouldNotBe
+    , shouldNotContain
+    , shouldReturn
+    , shouldSatisfy
+    , shouldThrow
     )
 
 spec :: Spec
@@ -207,32 +260,6 @@ spec = describe "a write asks the wallet for what it costs (#526)" $ do
                     <> tokenArgs t
                 )
         outcomeOf (runReceipt inserted) `shouldBe` Just "success"
-    it "refuses a wallet under the fold reserve before building" $ do
-        let outs =
-                [ (fundOutput 11, mkBasicTxOut payer (MaryValue (Coin 500_000) mempty))
-                , (fundOutput 12, mkBasicTxOut payer (MaryValue (Coin 500_000) mempty))
-                ]
-            Coin reserve = protocolFeeReserve preprodParams []
-            held = 500_000 + 500_000
-        held `shouldSatisfy` (< reserve)
-        walletShortfall outs reserve `shouldBe` Just (held, reserve - held)
-        reached <- newIORef False
-        result <-
-            try $ do
-                refuseUnderfunded
-                    payer
-                    outs
-                    reserve
-                    "fold reserve"
-                writeIORef reached True
-        case result of
-            Left (CommandFailure ClientRefusal why _) ->
-                why `shouldSatisfy` ("(client policy)" `isSuffixOf`)
-            Left other ->
-                expectationFailure ("wrong refusal: " <> show other)
-            Right _ ->
-                expectationFailure "a wallet under the reserve reached the builder"
-        readIORef reached `shouldReturn` False
     it "refuses a wallet between the reserve and the measured total" $ withBetweenRig $ \rig -> do
         seed <- fundSeed rig
         create <- run rig "create" ["open-datum", "create", "--seed", seed]
@@ -1474,25 +1501,6 @@ spec = describe "a write asks the wallet for what it costs (#526)" $ do
             floorPreview <- requireNumberOf "remainderMin" previewed
             floorWritten <- requireNumberOf "remainderMin" written
             floorPreview `shouldBe` floorWritten
-    it "opens a write session for 20 ada in two outputs with no threshold" $ do
-        withSystemTempDirectory "wallet-floor-open" $ \dir -> do
-            let keyPath = dir </> "payment.skey"
-            BS.writeFile keyPath (B16.encode (BC.replicate 32 'w'))
-            _ <- loadWallet 1 keyPath
-            set <- loadFixtureSet "test/fixtures/koios/preprod" >>= requireRight
-            Fake.withFakeKoios (Fake.replayFixtures set) $ \url _ -> do
-                let settings = ProviderSettings (T.unpack url) 1 Nothing Nothing
-                ran <- newIORef False
-                _ <-
-                    try @SomeException
-                        $ withWritesObserved
-                            nullTracer
-                            nullTracer
-                            (const (pure ()))
-                            settings
-                        $ \_ ->
-                            writeIORef ran True
-                readIORef ran `shouldReturn` True
     updatePreparationRows
     splitApprovalsRows
     approvalsAboveOneRows
@@ -2206,9 +2214,6 @@ isSuffixOf suffix whole = reverse suffix `isPrefixOf` reverse whole
     isPrefixOf [] _ = True
     isPrefixOf _ [] = False
     isPrefixOf (x : xs) (y : ys) = x == y && isPrefixOf xs ys
-
-requireRight :: (Show e) => Either e a -> IO a
-requireRight = either (fail . show) pure
 
 isLeftWithEmpty :: Either String a -> Bool
 isLeftWithEmpty = \case
