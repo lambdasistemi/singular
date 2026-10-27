@@ -858,73 +858,12 @@
           cli-recovery-partitions = cliRecoveryPartitionsApp;
           cli-recovery-partition-check = cliRecoveryPartitionCheckApp;
         };
-      # #299: the Demo 1 journey from the extracted release archive, run as
-      # separate `singular` and `open-datum` processes on one development
-      # node. Run from the repository root: `nix run --quiet .#demo1-cli-check`.
-      demo1 =
+      # Release checks remain available independently of the command journeys.
+      releaseVerification =
         system:
         let
           pkgs = import nixpkgs { inherit system; };
           managedScripts = commandScripts system;
-          # #707: the ordinary tools the bundle journey runs on, and nothing
-          # else: the PATH of a user who has no Nix
-          bundleJourneyTools = pkgs.buildEnv {
-            name = "demo1-bundle-journey-tools";
-            paths =
-              with pkgs;
-              [
-                bash
-                coreutils
-                curl
-                diffutils
-                findutils
-                gawk
-                gnugrep
-                gnused
-                gnutar
-                gzip
-                jq
-                procps
-              ]
-              # the journey watches which files a command opens and locks its state
-              ++ pkgs.lib.optionals pkgs.stdenv.isLinux [
-                pkgs.strace
-                pkgs.util-linux
-              ];
-          };
-          # #449: the recovery controls as one app per part, each on its own
-          # development node, so CI runs the parts as parallel jobs. An empty
-          # part list runs them all.
-          # #300/#449: the demonstration's four refusals on one existing
-          # registry, run as `open-datum` and `singular` processes (open verbs
-          # through `open-datum`, takes through `cli-controls` with
-          # `--singular`); an empty part list runs every part.
-          attachApp = name: parts: {
-            type = "app";
-            program = pkgs.lib.getExe (
-              pkgs.writeShellApplication {
-                inherit name;
-                runtimeInputs = with pkgs; [
-                  bash
-                  python3
-                  curl
-                  xxd
-                  coreutils
-                  diffutils
-                  findutils
-                  git
-                  gnugrep
-                  gnused
-                  gnutar
-                  gzip
-                  jq
-                  procps
-                  nix
-                ];
-                text = ''CLI_ATTACH_PARTS="${parts}" bash ${./tools/demo1_cli_attach_check.sh} "$PWD"'';
-              }
-            );
-          };
           # #326: verify a published release from its downloaded bytes —
           # sums, the stated model revision against the one the
           # conformance evidence is compiled against, archive members, and
@@ -979,51 +918,122 @@
             };
         in
         {
-          verify-release = {
-            type = "app";
-            program = pkgs.lib.getExe (verifyRelease "demo1_cli_journey.sh");
+          inherit verifyRelease;
+          apps = {
+            verify-release = {
+              type = "app";
+              program = pkgs.lib.getExe (verifyRelease "demo1_cli_journey.sh");
+            };
+            # #326: every refusal of verify-release by name — the published
+            # v0.7.0 and mutated copies of an assembled release:
+            # `nix run .#verify-release-controls -- RELEASE-DIR`.
+            verify-release-controls = {
+              type = "app";
+              program = pkgs.lib.getExe (
+                pkgs.writeShellApplication {
+                  name = "verify-release-controls";
+                  runtimeInputs = with pkgs; [
+                    coreutils
+                    findutils
+                    gnugrep
+                    gnused
+                    gnutar
+                    gzip
+                  ];
+                  text = ''VERIFY_RELEASE=${pkgs.lib.getExe (verifyRelease "demo1_cli_journey.sh")} bash ${./tools/verify_release_controls.sh} "$@"'';
+                }
+              );
+            };
+            # The control needs the Nix daemon and real output derivations.
+            release-build-control = {
+              type = "app";
+              program = pkgs.lib.getExe (
+                pkgs.writeShellApplication {
+                  name = "release-build-control";
+                  runtimeInputs = with pkgs; [
+                    bash
+                    binutils
+                    coreutils
+                    gnugrep
+                    nix
+                    python3
+                  ];
+                  text = ''
+                    export RELEASE_BINARY_CHECK=${./tools/check_release_binary.py}
+                    bash ${./tools/release_build_control.sh} "$PWD"
+                  '';
+                }
+              );
+            };
           };
-          # #326: every refusal of verify-release by name — the published
-          # v0.7.0 and mutated copies of an assembled release:
-          # `nix run .#verify-release-controls -- RELEASE-DIR`.
-          verify-release-controls = {
+        };
+      # #299: the Demo 1 journey from the extracted release archive, run as
+      # separate `singular` and `open-datum` processes on one development
+      # node. Run from the repository root: `nix run --quiet .#demo1-cli-check`.
+      demo1 =
+        system:
+        let
+          pkgs = import nixpkgs { inherit system; };
+          managedScripts = commandScripts system;
+          # #707: the ordinary tools the bundle journey runs on, and nothing
+          # else: the PATH of a user who has no Nix
+          bundleJourneyTools = pkgs.buildEnv {
+            name = "demo1-bundle-journey-tools";
+            paths =
+              with pkgs;
+              [
+                bash
+                coreutils
+                curl
+                diffutils
+                findutils
+                gawk
+                gnugrep
+                gnused
+                gnutar
+                gzip
+                jq
+                procps
+              ]
+              # the journey watches which files a command opens and locks its state
+              ++ pkgs.lib.optionals pkgs.stdenv.isLinux [
+                pkgs.strace
+                pkgs.util-linux
+              ];
+          };
+          # #300/#449: the demonstration's four refusals on one existing
+          # registry, run as `open-datum` and `singular` processes (open verbs
+          # through `open-datum`, takes through `cli-controls` with
+          # `--singular`); an empty part list runs every part.
+          attachApp = name: parts: {
             type = "app";
             program = pkgs.lib.getExe (
               pkgs.writeShellApplication {
-                name = "verify-release-controls";
+                inherit name;
                 runtimeInputs = with pkgs; [
+                  bash
+                  python3
+                  curl
+                  xxd
                   coreutils
+                  diffutils
                   findutils
+                  git
                   gnugrep
                   gnused
                   gnutar
                   gzip
-                ];
-                text = ''VERIFY_RELEASE=${pkgs.lib.getExe (verifyRelease "demo1_cli_journey.sh")} bash ${./tools/verify_release_controls.sh} "$@"'';
-              }
-            );
-          };
-          # The control needs the Nix daemon and real output derivations.
-          release-build-control = {
-            type = "app";
-            program = pkgs.lib.getExe (
-              pkgs.writeShellApplication {
-                name = "release-build-control";
-                runtimeInputs = with pkgs; [
-                  bash
-                  binutils
-                  coreutils
-                  gnugrep
+                  jq
+                  procps
                   nix
-                  python3
                 ];
-                text = ''
-                  export RELEASE_BINARY_CHECK=${./tools/check_release_binary.py}
-                  bash ${./tools/release_build_control.sh} "$PWD"
-                '';
+                text = ''CLI_ATTACH_PARTS="${parts}" bash ${./tools/demo1_cli_attach_check.sh} "$PWD"'';
               }
             );
           };
+          inherit (releaseVerification system) verifyRelease;
+        in
+        {
           # This mandatory carrier retains every original injected journey
           # assertion and independent trie observation on explicit test builds.
           demo1-cli-test-harness = {
@@ -1525,6 +1535,7 @@
           // (inventory system).apps
           // (demo1 system)
           // (commandControls system)
+          // (releaseVerification system).apps
           // (import ./nix/ci-apps.nix {
             pkgs = import nixpkgs { inherit system; };
             inherit offchain onchain system;
