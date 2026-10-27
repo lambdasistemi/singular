@@ -98,6 +98,47 @@ table="$scratch/t/docs/singular-node.md"
 fresh
 expect clean-tree 0 '^PASS cli-flags'
 
+# Page discovery excludes exactly the two historical root classes and still
+# reaches current pages outside navigation, even a nested directory named specs.
+fresh
+mkdir -p "$scratch/t/specs/history" "$scratch/t/onchain-release/history" "$scratch/t/docs/specs"
+for page in specs/history/page.md onchain-release/history/page.md docs/unlisted.md docs/specs/current.md; do
+  printf '\n```sh\nsingular registry describe\n```\n' >"$scratch/t/$page"
+done
+bash "$check" --pages "$scratch/t" >"$scratch/pages"
+for page in README.md docs/singular-node.md docs/unlisted.md docs/specs/current.md; do
+  grep -Fxq "$scratch/t/$page" "$scratch/pages" || {
+    echo "FAIL cli-flags discovery omitted current page $page" >&2
+    exit 1
+  }
+done
+for page in specs/history/page.md onchain-release/history/page.md; do
+  if grep -Fxq "$scratch/t/$page" "$scratch/pages"; then
+    echo "FAIL cli-flags discovery included historical page $page" >&2
+    exit 1
+  fi
+done
+controls=$((controls + 1))
+echo 'control historical-page-discovery: current pages retained, both exact historical classes excluded'
+
+fresh
+mkdir -p "$scratch/t/specs/history" "$scratch/t/onchain-release/history"
+for page in specs/history/page.md onchain-release/history/page.md; do
+  printf '\n```sh\nsingular registry describe\n```\n' >"$scratch/t/$page"
+done
+expect historical-pages 0 '^PASS cli-flags'
+
+# Both the README and unlisted current documentation remain checked for
+# removed commands and flags absent from a retained command's help.
+for page in README.md docs/unlisted.md; do
+  fresh
+  printf '\n```sh\nsingular registry describe\n```\n' >>"$scratch/t/$page"
+  expect "removed-page-command-${page//\//-}" 1 "$page:[0-9]+: singular registry describe .*not a command singular supports"
+  fresh
+  printf '\n```sh\nsingular registry fold --made-up-flag 1\n```\n' >>"$scratch/t/$page"
+  expect "unknown-current-flag-${page//\//-}" 1 "$page:[0-9]+: singular registry fold --made-up-flag"
+done
+
 # The singular binary takes a flag the documentation never mentions.
 fresh
 stand_in_singular 'registry create' "$(plant --planted-flag)"

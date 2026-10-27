@@ -55,11 +55,14 @@
 #        tools/cli_flags_check.sh --pages [repo-root] prints the pages read.
 set -euo pipefail
 
-# Every Markdown page in the tree — the docs site, the README, the release
-# archive's run pages, the specifications — discovered, never listed;
-# build and dependency directories are not pages.
+# Every current Markdown page is discovered, including pages outside navigation.
+# specs/ records each plan's historical command surface. onchain-release/ holds
+# the old release run pages; its exclusion leaves when that archive is rewritten.
+# Only those two root-level classes are historical. A docs/specs/ page is current.
 markdown_pages() {
-  find "$1" \( -name .git -o -name dist-newstyle -o -name node_modules \
+  local page_root=${1%/}
+  find "$page_root" \( -path "$page_root/specs" -o -path "$page_root/onchain-release" \
+    -o -name .git -o -name dist-newstyle -o -name node_modules \
     -o -name .lake -o -name result -o -name 'result-*' \) -prune \
     -o -name '*.md' -type f -print | sort
 }
