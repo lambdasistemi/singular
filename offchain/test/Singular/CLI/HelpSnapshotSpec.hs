@@ -18,14 +18,11 @@ module Singular.CLI.HelpSnapshotSpec (spec) where
 
 import Control.Monad (forM_, unless)
 import Data.List (isInfixOf, isPrefixOf)
-import Data.Text qualified as T
+import Data.Text qualified as T (pack, replace, unpack)
 import Data.Version (showVersion)
-import System.Directory (createDirectoryIfMissing)
-import System.Environment (lookupEnv)
-import Test.Hspec
-
 import Singular.CLI.Command
-    ( Command (..)
+    ( CLIError (..)
+    , Command (..)
     , parseCommand
     , parseInvocation
     , singularHint
@@ -40,6 +37,17 @@ import Singular.CLI.Options
     , completionsFor
     , lintDeclaration
     , resolvePath
+    )
+import System.Directory (createDirectoryIfMissing)
+import System.Environment (lookupEnv)
+import Test.Hspec
+    ( Spec
+    , describe
+    , it
+    , shouldBe
+    , shouldNotSatisfy
+    , shouldReturn
+    , shouldSatisfy
     )
 
 program :: Program
@@ -70,11 +78,18 @@ spec = describe "the help pages" $ do
         commandPaths program
             `shouldSatisfy` \paths ->
                 [] `elem` paths
-                    && ["registry", "fold"] `elem` paths
+                    && ["state", "create"] `elem` paths
                     && ["wallet", "sign"] `elem` paths
                     && ["submit"] `elem` paths
-                    && ["registry", "address"] `elem` paths
-                    && length paths == 14
+                    && ["state"] `elem` paths
+                    && ["state", "create"] `elem` paths
+                    && length paths == 8
+    it "refuses the removed registry address command" $
+        parseCommand ["registry", "address"]
+            `shouldBe` Left (UnknownCommand ["registry", "address"])
+    it "refuses the removed registry page command" $
+        parseCommand ["registry", "describe"]
+            `shouldBe` Left (UnknownCommand ["registry", "describe"])
     it "are a well-formed declaration for the library" $
         lintDeclaration program `shouldBe` True
     forM_ (commandPaths program) $ \path ->
@@ -128,27 +143,24 @@ spec = describe "the help pages" $ do
                     <> showVersion singularVersion
                     <> " (commit 0123abc)"
                 ]
+    forM_ ["create", "fold", "reject", "reclaim", "inspect"] $ \verb ->
+        it ("refuses the removed registry " <> verb <> " command") $
+            parseCommand ["registry", verb]
+                `shouldBe` Left (UnknownCommand ["registry", verb])
     it "refuse with the usage of the command and where its help is" $ do
-        let hint = singularHint ["registry", "fold", "--bogus"]
-        hint
-            `shouldSatisfy` any ("Usage: singular registry fold" `isPrefixOf`)
+        let hint = singularHint ["state", "create", "--bogus"]
+        hint `shouldSatisfy` any ("Usage: singular state create" `isPrefixOf`)
         drop (length hint - 1) hint
-            `shouldBe` ["Try 'singular registry fold --help'."]
-        length hint `shouldSatisfy` (<= 12)
-    it "name the nearest command for a mistyped one" $ do
-        singularHint ["registry", "fld"]
-            `shouldSatisfy` elem "Did you mean `singular registry fold`?"
+            `shouldBe` ["Try 'singular state create --help'."]
+    it "name the nearest command for a mistyped one" $
         singularHint ["walet", "create"]
             `shouldSatisfy` elem "Did you mean `singular wallet`?"
-    it "stop a command line at the commands it names" $ do
-        resolvePath program ["registry", "fold", "extra"]
-            `shouldBe` (["registry", "fold"], ["extra"])
-        resolvePath program ["registry", "fld"]
-            `shouldBe` (["registry"], ["fld"])
+    it "stop a command line at the commands it names" $
+        resolvePath program ["state", "create", "extra"]
+            `shouldBe` (["state", "create"], ["extra"])
     it "complete command and flag names" $ do
-        completionsFor program ["registry", "f"] 1
-            `shouldReturn` ["fold"]
-        completionsFor program ["registry", "fold", "--bl"] 2
+        completionsFor program ["state", "c"] 1 `shouldReturn` ["create"]
+        completionsFor program ["state", "create", "--bl"] 2
             `shouldReturn` ["--blueprint"]
         completionsFor program ["w"] 0 `shouldReturn` ["wallet"]
     it "complete only the flags of the command asked about" $ do
@@ -161,10 +173,7 @@ spec = describe "the help pages" $ do
         Runs leaf -> [(prefix <> [leafName leaf], leaf)]
         Group name _ _ kids -> concatMap (collect (prefix <> [name])) kids
     writes =
-        [ ["registry", "create"]
-        , ["registry", "fold"]
-        , ["registry", "reject"]
-        , ["registry", "reclaim"]
+        [ ["state", "create"]
         , ["wallet", "create"]
         , ["wallet", "sign"]
         , ["submit"]

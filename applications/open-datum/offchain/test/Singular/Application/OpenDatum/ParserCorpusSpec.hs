@@ -116,6 +116,13 @@ spec = describe "the command lines in use" $ do
                 , "OpenHelp"
                 , "OpenInsert"
                 , "OpenInspect"
+                , "OpenHoldingUpdate"
+                , "OpenHoldingTerminate"
+                , "OpenRegistrationBook"
+                , "OpenRegistrationCleanup"
+                , "OpenRegistrationReclaim"
+                , "OpenStateCreate"
+                , "OpenStateFold"
                 , "OpenTerminate"
                 , "OpenUpdate"
                 ]

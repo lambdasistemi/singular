@@ -8,13 +8,17 @@
 #   * the binaries: the commands `singular --help` and `open-datum --help`
 #     name in their "All commands" table, and for each the settings its own
 #     help lists (`singular registry COMMAND --help`, `singular submit
-#     --help`, `singular wallet VERB --help`; `open-datum COMMAND --help`).
-#     A command's flags are the `option:` and `switch:` entries of its
-#     "Available settings"; the help and version switches belong to no
-#     command. The write commands are those whose help lists --wallet-skey.
+#     --help`, `singular wallet VERB --help`, `singular state create
+#     --help`; `open-datum COMMAND --help`, `open-datum state VERB --help`,
+#     `open-datum registration VERB --help`). A command's flags are the
+#     `option:` and `switch:` entries of its "Available settings"; the help
+#     and version switches belong to no command. The write commands are those
+#     whose help lists --wallet-skey.
 #   * the documentation: the settings table of docs/singular-node.md, one
 #     row per flag naming the commands that take it, and every
-#     `singular registry WORD ...` and every `open-datum WORD ...`
+#     `singular registry WORD ...`, `singular wallet WORD ...`, `singular
+#     state WORD ...`, `singular submit ...`, `open-datum WORD ...`,
+#     `open-datum state WORD ...` and `open-datum registration WORD ...`
 #     invocation on any Markdown page of the tree (docs, README, the release
 #     archive's run pages), however the binary is named: `singular`,
 #     `"$singular"`, a path ending in `/singular`; `open-datum`,
@@ -29,11 +33,12 @@
 #
 # The table names commands plainly (`create`, `fold`, ...) meaning every
 # binary that has the command, or qualified (`singular create`,
-# `open-datum insert`) meaning one binary only. `all five` is singular's
-# five commands, `all six` is open-datum's six; a cell naming both covers
-# all eleven pairs. `the four singular writes` and `the five open-datum
-# writes` cover the writes of each binary; a cell naming both covers all
-# nine write pairs.
+# `open-datum insert`, `singular state create`, `open-datum registration
+# book`) meaning one binary only. `all five` and `all six` are counts of a
+# binary's commands, refused when its help names another number. `the five
+# singular writes` and `the ten open-datum writes` cover the writes of each
+# binary, counted from the help; a cell naming both covers both sets, and a
+# count the help does not give is refused.
 #
 # Refused, each by name: a (binary, flag, command) triple --help prints and
 # the table does not, or the table states and --help does not; an invocation
@@ -50,11 +55,14 @@
 #        tools/cli_flags_check.sh --pages [repo-root] prints the pages read.
 set -euo pipefail
 
-# Every Markdown page in the tree — the docs site, the README, the release
-# archive's run pages, the specifications — discovered, never listed;
-# build and dependency directories are not pages.
+# Every current Markdown page is discovered, including pages outside navigation.
+# specs/ records each plan's historical command surface. onchain-release/ holds
+# the old release run pages; its exclusion leaves when that archive is rewritten.
+# Only those two root-level classes are historical. A docs/specs/ page is current.
 markdown_pages() {
-  find "$1" \( -name .git -o -name dist-newstyle -o -name node_modules \
+  local page_root=${1%/}
+  find "$page_root" \( -path "$page_root/specs" -o -path "$page_root/onchain-release" \
+    -o -name .git -o -name dist-newstyle -o -name node_modules \
     -o -name .lake -o -name result -o -name 'result-*' \) -prune \
     -o -name '*.md' -type f -print | sort
 }
@@ -80,15 +88,17 @@ fi
 
 # The commands a program's overview names, one per line: the "All commands:"
 # table lists `PROGRAM WORDS  summary` rows. singular's registry commands are
-# named plainly (`create`), its wallet verbs `wallet VERB`, and `submit` as
-# itself, so the settings table can name them; open-datum's are its verbs.
+# named plainly (`create`), its wallet and state verbs `wallet VERB` and
+# `state VERB`, and `submit` as itself, so the settings table can name them;
+# open-datum's are its verbs, `state VERB` and `registration VERB`.
 overview_commands() {
   awk -v prog="$1" '
     /^All commands:/ { t = 1; next }
     t && /^$/ { exit }
     t && $1 == prog {
       if (prog == "singular" && $2 == "registry") print $3
-      else if (prog == "singular" && $2 == "wallet") print "wallet " $3
+      else if (prog == "singular" && ($2 == "wallet" || $2 == "state")) print $2 " " $3
+      else if (prog == "open-datum" && ($2 == "state" || $2 == "registration" || $2 == "holding")) print $2 " " $3
       else print $2
     }
   '
@@ -113,7 +123,7 @@ page_flags() {
 # Print the command-line words that reach one command's own help.
 help_words() { # help_words PROGRAM COMMAND
   case "$1:$2" in
-    singular:"wallet "*) echo "${2}" ;;
+    singular:"wallet "* | singular:"state "*) echo "${2}" ;;
     singular:submit) echo submit ;;
     singular:*) echo "registry $2" ;;
     *) echo "$2" ;;
@@ -128,7 +138,7 @@ status=0
 }
 mapfile -t singular_commands < <(overview_commands singular <"$scratch/help.singular")
 if [ ${#singular_commands[@]} -eq 0 ]; then
-  echo "EMPTY EXTENT: singular --help names no registry command" >&2
+  echo "EMPTY EXTENT: singular --help names no command" >&2
   exit 2
 fi
 : >"$scratch/singular.pairs"
@@ -142,7 +152,7 @@ for c in "${singular_commands[@]}"; do
   fi
 done
 sort -u -o "$scratch/singular.pairs" "$scratch/singular.pairs"
-mapfile -t singular_writes < <(grep ' --wallet-skey$' "$scratch/singular.pairs" | cut -d' ' -f1 | sort -u)
+mapfile -t singular_writes < <(grep ' --wallet-skey$' "$scratch/singular.pairs" | sed 's/ --wallet-skey$//' | sort -u)
 
 "$open_datum" --help >"$scratch/help.opendatum" 2>&1 || {
   echo "SETUP-FAIL: '$open_datum --help' exited non-zero" >&2
@@ -155,7 +165,8 @@ if [ ${#od_commands[@]} -eq 0 ]; then
 fi
 : >"$scratch/opendatum.pairs"
 for c in "${od_commands[@]}"; do
-  if "$open_datum" "$c" --help >"$scratch/help.opendatum.$c" 2>&1; then
+  read -r -a words <<<"$c"
+  if "$open_datum" "${words[@]}" --help >"$scratch/help.opendatum.$c" 2>&1; then
     page_flags <"$scratch/help.opendatum.$c" | sed "s/^/$c /" >>"$scratch/opendatum.pairs"
   else
     echo "open-datum $c --help exited non-zero" >&2
@@ -163,12 +174,12 @@ for c in "${od_commands[@]}"; do
   fi
 done
 sort -u -o "$scratch/opendatum.pairs" "$scratch/opendatum.pairs"
-mapfile -t od_writes < <(grep ' --wallet-skey$' "$scratch/opendatum.pairs" | cut -d' ' -f1 | sort -u)
+mapfile -t od_writes < <(grep ' --wallet-skey$' "$scratch/opendatum.pairs" | sed 's/ --wallet-skey$//' | sort -u)
 
 # Namespaced triples "BIN CMD FLAG" for the comparison.
 : >"$scratch/help.pairs"
 sed 's/^/singular /' "$scratch/singular.pairs" >>"$scratch/help.pairs"
-while read -r c f; do echo "open-datum $c $f"; done <"$scratch/opendatum.pairs" >>"$scratch/help.pairs"
+sed 's/^/open-datum /' "$scratch/opendatum.pairs" >>"$scratch/help.pairs"
 sort -u -o "$scratch/help.pairs" "$scratch/help.pairs"
 
 # The settings table: "| `--flag ...` [or `--flag`] | COMMANDS | why |".
@@ -180,6 +191,7 @@ number_word() {
   case "$1" in
     one) echo 1 ;; two) echo 2 ;; three) echo 3 ;; four) echo 4 ;;
     five) echo 5 ;; six) echo 6 ;; seven) echo 7 ;; eight) echo 8 ;;
+    nine) echo 9 ;; ten) echo 10 ;; eleven) echo 11 ;; twelve) echo 12 ;;
     *) echo "?" ;;
   esac
 }
@@ -242,29 +254,23 @@ while IFS= read -r row; do
       status=1
     }
     for c in "${od_commands[@]}"; do applies+=("open-datum $c"); done
-  elif [[ "$cmdcell" == *"four"* && "$cmdcell" == *"five"* && "$cmdcell" == *"writes"* ]]; then
-    [ "${#singular_writes[@]}" = 4 ] || {
-      echo "settings table: '${rowflags[*]}' applies to \"$cmdcell\", but singular --help names ${#singular_writes[@]} write commands (wanted four)" >&2
-      status=1
-    }
-    [ "${#od_writes[@]}" = 5 ] || {
-      echo "settings table: '${rowflags[*]}' applies to \"$cmdcell\", but open-datum --help names ${#od_writes[@]} write commands (wanted five)" >&2
-      status=1
-    }
-    for c in "${singular_writes[@]}"; do applies+=("singular $c"); done
-    for c in "${od_writes[@]}"; do applies+=("open-datum $c"); done
-  elif [[ "$cmdcell" == *"four"* && "$cmdcell" == *"writes"* ]]; then
-    [ "${#singular_writes[@]}" = 4 ] || {
-      echo "settings table: '${rowflags[*]}' applies to \"$cmdcell\", but singular --help names ${#singular_writes[@]} write commands (wanted four)" >&2
-      status=1
-    }
-    for c in "${singular_writes[@]}"; do applies+=("singular $c"); done
-  elif [[ "$cmdcell" == *"five"* && "$cmdcell" == *"writes"* ]]; then
-    [ "${#od_writes[@]}" = 5 ] || {
-      echo "settings table: '${rowflags[*]}' applies to \"$cmdcell\", but open-datum --help names ${#od_writes[@]} write commands (wanted five)" >&2
-      status=1
-    }
-    for c in "${od_writes[@]}"; do applies+=("open-datum $c"); done
+  elif [[ "$cmdcell" == *"singular write"* || "$cmdcell" == *"open-datum writes"* ]]; then
+    if [[ $cmdcell =~ the\ ([a-z]+)\ singular\ writes? ]]; then
+      word=${BASH_REMATCH[1]}
+      [ "${#singular_writes[@]}" = "$(number_word "$word")" ] || {
+        echo "settings table: '${rowflags[*]}' applies to \"$cmdcell\", but singular --help names ${#singular_writes[@]} write commands (wanted $word)" >&2
+        status=1
+      }
+      for c in "${singular_writes[@]}"; do applies+=("singular $c"); done
+    fi
+    if [[ $cmdcell =~ the\ ([a-z]+)\ open-datum\ writes ]]; then
+      word=${BASH_REMATCH[1]}
+      [ "${#od_writes[@]}" = "$(number_word "$word")" ] || {
+        echo "settings table: '${rowflags[*]}' applies to \"$cmdcell\", but open-datum --help names ${#od_writes[@]} write commands (wanted $word)" >&2
+        status=1
+      }
+      for c in "${od_writes[@]}"; do applies+=("open-datum $c"); done
+    fi
   elif [[ $cmdcell =~ ^all\ ([a-z]+)$ ]]; then
     n=$(number_word "${BASH_REMATCH[1]}")
     echo "settings table: '${rowflags[*]}' applies to \"$cmdcell\", but singular --help names ${#singular_commands[@]} commands and open-datum --help names ${#od_commands[@]} commands" >&2
@@ -331,39 +337,20 @@ while IFS= read -r row; do
 done <"$scratch/rows"
 sort -u -o "$scratch/doc.pairs" "$scratch/doc.pairs"
 
-comm -23 "$scratch/help.pairs" "$scratch/doc.pairs" | while read -r b c1 rest; do
-  cmd=$c1
-  f=$rest
-  case $c1 in wallet)
-    read -r verb f <<<"$rest"
-    cmd="wallet $verb"
-    ;;
-  esac
-  if [ "$b" = singular ]; then
-    case $cmd in
-      wallet* | submit) echo "undocumented: singular $cmd takes $f (--help) but the settings table does not say so" >&2 ;;
-      *) echo "undocumented: singular registry $cmd takes $f (--help) but the settings table does not say so" >&2 ;;
-    esac
+# The words a person types to reach a command: a pair line is
+# "BINARY COMMAND... FLAG", so the command is everything between the two.
+spoken() { # spoken BINARY COMMAND
+  if [ "$1" = singular ]; then
+    echo "singular $(help_words singular "$2")"
   else
-    echo "undocumented: open-datum $cmd takes $f (--help) but the settings table does not say so" >&2
+    echo "open-datum $2"
   fi
+}
+comm -23 "$scratch/help.pairs" "$scratch/doc.pairs" | while read -r b rest; do
+  echo "undocumented: $(spoken "$b" "${rest% *}") takes ${rest##* } (--help) but the settings table does not say so" >&2
 done
-comm -13 "$scratch/help.pairs" "$scratch/doc.pairs" | while read -r b c1 rest; do
-  cmd=$c1
-  f=$rest
-  case $c1 in wallet)
-    read -r verb f <<<"$rest"
-    cmd="wallet $verb"
-    ;;
-  esac
-  if [ "$b" = singular ]; then
-    case $cmd in
-      wallet* | submit) echo "documented, not in --help: the settings table gives $f to singular $cmd" >&2 ;;
-      *) echo "documented, not in --help: the settings table gives $f to singular registry $cmd" >&2 ;;
-    esac
-  else
-    echo "documented, not in --help: the settings table gives $f to open-datum $cmd" >&2
-  fi
+comm -13 "$scratch/help.pairs" "$scratch/doc.pairs" | while read -r b rest; do
+  echo "documented, not in --help: the settings table gives ${rest##* } to $(spoken "$b" "${rest% *}")" >&2
 done
 if ! cmp -s "$scratch/help.pairs" "$scratch/doc.pairs"; then status=1; fi
 
@@ -395,22 +382,14 @@ for page in "${pages[@]}"; do
         continue
       fi
       invocations=$((invocations + 1))
-      if [ "$b" = singular ]; then
-        echo "$rel:$line: singular registry $c — $c is not a command singular supports" >&2
-      else
-        echo "$rel:$line: open-datum $c — $c is not a command open-datum supports" >&2
-      fi
+      echo "$rel:$line: $(spoken "$b" "$c") — $c is not a command $b supports" >&2
       status=1
       continue
     fi
     invocations=$((invocations + 1))
     for f in $flags; do
       grep -qx "$b $c $f" "$scratch/help.pairs" || {
-        if [ "$b" = singular ]; then
-          echo "$rel:$line: singular registry $c $f — $c's --help prints no $f" >&2
-        else
-          echo "$rel:$line: open-datum $c $f — $c's --help prints no $f" >&2
-        fi
+        echo "$rel:$line: $(spoken "$b" "$c") $f — $c's --help prints no $f" >&2
         status=1
       }
     done
@@ -430,11 +409,11 @@ for page in "${pages[@]}"; do
       }
       {
         if (cmd != "") { acc = acc " " $0; if ($0 !~ /\\[[:space:]]*$/) flush(); next }
-        if (match($0, /(^|[^A-Za-z0-9_-])("?[$][{]?singular[}]?"?|[A-Za-z0-9_.~\/-]*singular)[ \t]+((registry|wallet)[ \t]+[a-z][a-z-]*|submit)/) && substr($0, RSTART + RLENGTH, 1) !~ /[a-z-]/) {
+        if (match($0, /(^|[^A-Za-z0-9_-])("?[$][{]?singular[}]?"?|[A-Za-z0-9_.~\/-]*singular)[ \t]+((registry|wallet|state)[ \t]+[a-z][a-z-]*|submit)/) && substr($0, RSTART + RLENGTH, 1) !~ /[a-z-]/) {
           m = substr($0, RSTART, RLENGTH)
           n = split(m, w, /[ \t]+/)
           verb = w[n]
-          if (w[n-1] == "wallet") verb = "wallet " verb
+          if (w[n-1] == "wallet" || w[n-1] == "state") verb = w[n-1] " " verb
           vstart = RSTART + RLENGTH - length(verb)
           pre = substr($0, 1, vstart-1)
           tmp = pre
@@ -468,10 +447,11 @@ for page in "${pages[@]}"; do
       }
       {
         if (cmd != "") { acc = acc " " $0; if ($0 !~ /\\[[:space:]]*$/) flush(); next }
-        if (match($0, /(^|[^A-Za-z0-9_-])("?[$][{]?open[-_]datum[}]?"?|[A-Za-z0-9_.~\/-]*open[-_]datum)[ \t]+[a-z][a-z-]*/)) {
+        if (match($0, /(^|[^A-Za-z0-9_-])("?[$][{]?open[-_]datum[}]?"?|[A-Za-z0-9_.~\/-]*open[-_]datum)[ \t]+((state|registration|holding)[ \t]+[a-z][a-z-]*|[a-z][a-z-]*)/)) {
           m = substr($0, RSTART, RLENGTH)
           n = split(m, w, /[ \t]+/)
           verb = w[n]
+          if (w[n-1] == "state" || w[n-1] == "registration" || w[n-1] == "holding") verb = w[n-1] " " verb
           vstart = RSTART + RLENGTH - length(verb)
           pre = substr($0, 1, vstart-1)
           tmp = pre

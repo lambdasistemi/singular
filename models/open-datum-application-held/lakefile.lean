@@ -14,4 +14,5 @@ lean_lib OpenDatumApplicationHeld where
 
 @[default_target]
 lean_lib MoneyStatementEvidence where
-  roots := #[`OpenDatumApplicationHeld.MoneyHoldingEvidence, `OpenDatumApplicationHeld.MoneyUpdateEvidence]
+  roots := #[`OpenDatumApplicationHeld.MoneyHoldingEvidence, `OpenDatumApplicationHeld.MoneyUpdateEvidence,
+    `OpenDatumApplicationHeld.ConfigurationOnceEvidence]

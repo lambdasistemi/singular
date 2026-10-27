@@ -14,7 +14,6 @@ import Singular.Application.OpenDatum.HelpSnapshotSpec qualified
 import Singular.Application.OpenDatum.IndependentActorsSpec qualified
 import Singular.Application.OpenDatum.InsertEnvelopeSpec qualified
 import Singular.Application.OpenDatum.ManagedStateSpec qualified
-import Singular.Application.OpenDatum.NegativeParseSpec qualified
 import Singular.Application.OpenDatum.NeutralValueSpec qualified
 import Singular.Application.OpenDatum.OutlaySpec qualified
 import Singular.Application.OpenDatum.ParserCorpusSpec qualified
@@ -22,6 +21,17 @@ import Singular.Application.OpenDatum.PinGateSpec qualified
 import Singular.Application.OpenDatum.RecoverySpec qualified
 import Singular.Application.OpenDatum.RegistryAddressSpec qualified
 import Singular.Application.OpenDatum.RegistryStateTokenSpec qualified
+import Singular.Application.OpenDatum.RequestBookingSpec qualified
+import Singular.Application.OpenDatum.RequestCommandSpec qualified
+import Singular.Application.OpenDatum.RequestConfigurationSpec qualified
+import Singular.Application.OpenDatum.RequestCreationSpec qualified
+import Singular.Application.OpenDatum.RequestFoldSpec qualified
+import Singular.Application.OpenDatum.RequestHoldingSpec qualified
+import Singular.Application.OpenDatum.RequestPendingSpec qualified
+import Singular.Application.OpenDatum.RequestPublicationSpec qualified
+import Singular.Application.OpenDatum.RequestRecordsSpec qualified
+import Singular.Application.OpenDatum.RequestScriptSpec qualified
+import Singular.Application.OpenDatum.RequestTerminationFoldSpec qualified
 import Singular.Application.OpenDatum.SaveStateTokenSpec qualified
 import Singular.Application.OpenDatum.SourcesSpec qualified
 import Singular.Application.OpenDatum.StateTokenSpec qualified
@@ -66,6 +76,66 @@ main = hspec $ do
     describe
         (tagged "Singular.Application.OpenDatum.Build" [Application, Builders])
         Singular.Application.OpenDatum.BuildSpec.spec
+    describe
+        ( tagged
+            "Singular.Application.OpenDatum.RequestRecords"
+            [Application, Builders]
+        )
+        Singular.Application.OpenDatum.RequestRecordsSpec.spec
+    describe
+        ( tagged
+            "Singular.Application.OpenDatum.RequestBooking"
+            [Application, Builders, Evaluation]
+        )
+        Singular.Application.OpenDatum.RequestBookingSpec.spec
+    describe
+        ( tagged
+            "Singular.Application.OpenDatum.RequestConfiguration"
+            [Application, Builders, Evaluation]
+        )
+        Singular.Application.OpenDatum.RequestConfigurationSpec.spec
+    describe
+        ( tagged
+            "Singular.Application.OpenDatum.RequestCreation"
+            [Application, Builders, Evaluation]
+        )
+        Singular.Application.OpenDatum.RequestCreationSpec.spec
+    describe
+        ( tagged
+            "Singular.Application.OpenDatum.RequestFold"
+            [Application, Builders, Evaluation, Trie]
+        )
+        Singular.Application.OpenDatum.RequestFoldSpec.spec
+    describe
+        ( tagged
+            "Singular.Application.OpenDatum.RequestHolding"
+            [Application, Builders, Evaluation]
+        )
+        Singular.Application.OpenDatum.RequestHoldingSpec.spec
+    describe
+        ( tagged
+            "Singular.Application.OpenDatum.RequestTerminationFold"
+            [Application, Builders, Evaluation, Trie]
+        )
+        Singular.Application.OpenDatum.RequestTerminationFoldSpec.spec
+    describe
+        ( tagged
+            "Singular.Application.OpenDatum.RequestPublication"
+            [Application, Builders, Evaluation]
+        )
+        Singular.Application.OpenDatum.RequestPublicationSpec.spec
+    describe
+        ( tagged
+            "Singular.Application.OpenDatum.RequestPending"
+            [Application, Builders, Evaluation]
+        )
+        Singular.Application.OpenDatum.RequestPendingSpec.spec
+    describe
+        ( tagged
+            "Singular.Application.OpenDatum.RequestScript"
+            [Application, Builders, Evaluation]
+        )
+        Singular.Application.OpenDatum.RequestScriptSpec.spec
     describe
         (tagged "Singular.Application.OpenDatum.InsertEnvelope" [Cli])
         Singular.Application.OpenDatum.InsertEnvelopeSpec.spec
@@ -112,6 +182,12 @@ main = hspec $ do
         (tagged "Singular.Application.OpenDatum.CommandRun" [Cli])
         Singular.Application.OpenDatum.CommandRunSpec.spec
     describe
+        ( tagged
+            "Singular.Application.OpenDatum.RequestCommand"
+            [Cli, Recovery, Evaluation]
+        )
+        Singular.Application.OpenDatum.RequestCommandSpec.spec
+    describe
         (tagged "Singular.Application.OpenDatum.ClosedMode" [Cli])
         Singular.Application.OpenDatum.ClosedModeSpec.spec
     describe
@@ -120,9 +196,6 @@ main = hspec $ do
     describe
         (tagged "Singular.Application.OpenDatum.Trace" [Cli])
         Singular.Application.OpenDatum.TraceSpec.spec
-    describe
-        (tagged "Singular.Application.OpenDatum.NegativeParse" [Cli])
-        Singular.Application.OpenDatum.NegativeParseSpec.spec
     describe
         (tagged "Singular.Application.OpenDatum.FlagGroupExtent" [Cli])
         Singular.Application.OpenDatum.FlagGroupExtentSpec.spec

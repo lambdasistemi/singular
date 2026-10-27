@@ -109,7 +109,8 @@ def configurationCreateConditions (hash : Hash) (code : Codec)
     (output : ObservedOutput) (observation : ApplicationObservation) : Bool :=
   configurationShapeConditions  hash code release registry output &&
   (registry.name == hash (code (.state seed)) && observation.assets.spent.count seed == 1 &&
-      observation.assets.invoked.contains registry.policy && SingularApplicationHeld.Assets.mintQty observation.assets registry == 1) &&
+      observation.assets.invoked.contains registry.policy && SingularApplicationHeld.Assets.mintQty observation.assets registry == 1 &&
+      SingularApplicationHeld.Assets.mintQty observation.assets (configurationAsset hash code release registry) == 1) &&
   freshAssetConditions  hash code decode release observation (configurationAsset hash code release registry)
 
 def registrationBookConditions (hash : Hash) (code : Codec)

@@ -88,17 +88,17 @@ for root in "${roots[@]}"; do
 done
 
 # A retired component's sources drop out of the scan, and only through
-# its inventory row: the same planted journey fails without the row.
+# its inventory row: the same planted component fails without the row.
 fresh
-mkdir -p "$scratch/t/offchain/journey/planted-retired"
-printf 'module Main where\n\nrawSend = submitTx\n' >"$scratch/t/offchain/journey/planted-retired/Main.hs"
-expect unretired-journey 1 '^offchain/journey/planted-retired/Main.hs:[0-9]+:rawSend = submitTx'
-retire planted-retired journey/planted-retired
-expect retired-journey 0 '^excluded offchain/journey/planted-retired: planted-retired, retired \(#0\)'
+mkdir -p "$scratch/t/offchain/devnet/planted-retired"
+printf 'module Main where\n\nrawSend = submitTx\n' >"$scratch/t/offchain/devnet/planted-retired/Main.hs"
+expect unretired-component 1 '^offchain/devnet/planted-retired/Main.hs:[0-9]+:rawSend = submitTx'
+retire planted-retired devnet/planted-retired
+expect retired-component 0 '^excluded offchain/devnet/planted-retired: planted-retired, retired \(#0\)'
 
 fresh
-retire planted-built journey
-expect retired-holds-built 1 "^retired: offchain/journey holds the sources of built component 'journey'"
+retire planted-built devnet
+expect retired-holds-built 1 "^retired: offchain/devnet holds the sources of built component 'devnet'"
 
 fresh
 sed -i "0,/^  unverified = \\[/s//  unverified = [\\n    { kind = \"exe\"; name = \"no-such-component\"; issue = \"#0\"; reason = \"control\"; }/" \
@@ -116,13 +116,13 @@ own_test() {
   printf '%s: own test of %s — control\n' "$spec" "$subject" >>"$scratch/t/tools/node-confinement.allow"
   expect "$name" 1 "^allowlist: '$spec' $pattern"
 }
-own_test own-test-of-consumer offchain/journey/Journey/Chain.hs \
+own_test own-test-of-consumer offchain/lib/Singular/Registry/Lifecycle.hs \
   offchain/lib/Singular/Registry/Lifecycle.hs \
   "is an own test of 'offchain/lib/Singular/Registry/Lifecycle.hs', which is not a backend session or adapter module"
 own_test own-test-of-fixture offchain/e2e-test/Singular/Registry/E2E/CageSpec.hs \
   offchain/e2e-test/Singular/Registry/E2E/Fixture.hs \
   "is an own test of 'offchain/e2e-test/Singular/Registry/E2E/Fixture.hs', which is not a backend session or adapter module"
-own_test own-test-of-facade offchain/journey/Journey/Chain.hs \
+own_test own-test-of-facade offchain/lib/Singular/Registry/Lifecycle.hs \
   offchain/lib/Singular/Registry/Capabilities.hs \
   "is an own test of 'offchain/lib/Singular/Registry/Capabilities.hs', which is not a backend session or adapter module"
 own_test own-test-unlinked offchain/e2e-test/Singular/Registry/E2E/CageSpec.hs \

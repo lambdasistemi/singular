@@ -219,31 +219,44 @@ def preflight(statement_stage=False):
             digest(row["investigationType"].encode()) == row["statementSha256"],
             f"recorded type digest differs: {row['investigationName']}; printer={PRINTER}",
         )
+    added = record["added"]
+    added_names = [row["name"] for row in added]
+    require(
+        len(set(added_names)) == len(added_names)
+        and not set(added_names) & {row["name"] for row in rows},
+        "duplicate added statement",
+    )
+    for row in added:
+        require(
+            digest(row["type"].encode()) == row["typeSha256"],
+            f"recorded type digest differs: {row['name']}; printer={PRINTER}",
+        )
+        require(
+            row["definitions"], f"added statement without definitions: {row['name']}"
+        )
     print(
-        f"PASS source binding: {len(rows)} distinct compiled types; escape scan {len(sources)} files"
+        f"PASS source binding: {len(rows)} distinct compiled types and {len(added)} added; escape scan {len(sources)} files"
     )
     import money_check
 
     money_check.preflight()
-    return rows
+    return rows, added
 
 
 def compiled(report, statement_stage=False):
-    rows = preflight(statement_stage)
+    rows, added = preflight(statement_stage)
+    total = len(rows) + len(added)
     text = report.read_text()
-    statements = []
-    for line in text.splitlines():
-        if line.startswith("{"):
-            record = json.loads(line)
-            if "statement" in record:
-                statements.append(record)
+    records = [json.loads(line) for line in text.splitlines() if line.startswith("{")]
+    statements = [record for record in records if "statement" in record]
     require(
-        len(statements) == 19, "compiled statement report must contain nineteen records"
+        len(statements) == total,
+        f"compiled statement report must contain {total} records",
     )
     observed = {row["statement"]: row["type"] for row in statements}
-    require(len(observed) == 19, "duplicate compiled statement")
+    require(len(observed) == total, "duplicate compiled statement")
     require(
-        set(observed) == {row["name"] for row in rows},
+        set(observed) == {row["name"] for row in rows} | {row["name"] for row in added},
         "compiled statement extent differs",
     )
     for row in rows:
@@ -251,6 +264,23 @@ def compiled(report, statement_stage=False):
             observed[row["name"]] == row["investigationType"],
             f"compiled statement differs: {row['name']}; printer={PRINTER}",
         )
+    definitions = {
+        entry["currentName"]: entry
+        for record in records
+        for entry in record.get("definitionClosure", [])
+    }
+    for row in added:
+        require(
+            observed[row["name"]] == row["type"],
+            f"compiled statement differs: {row['name']}; printer={PRINTER}",
+        )
+        for name, expected in row["definitions"].items():
+            entry = definitions.get(name)
+            require(entry is not None, f"added statement definition missing: {name}")
+            require(
+                digest((entry["value"] or "").encode()) == expected,
+                f"added statement definition changed: {name}",
+            )
     axioms = {}
     for name, dependencies in re.findall(
         r"'([^']+)' depends on axioms: \[([^\]]*)\]", text
@@ -266,13 +296,12 @@ def compiled(report, statement_stage=False):
             dependencies <= STANDARD,
             f"untrusted axioms for {name}: {sorted(dependencies)}",
         )
-    print("PASS compiled correspondence and standard-axiom audit: nineteen statements")
+    print(
+        f"PASS compiled correspondence and standard-axiom audit: {total} statements ({len(rows)} from the investigation, {len(added)} added)"
+    )
     import money_check
 
-    money_check.compiled(
-        [json.loads(line) for line in text.splitlines() if line.startswith("{")],
-        statement_stage,
-    )
+    money_check.compiled(records, statement_stage)
 
 
 def controls():
@@ -315,6 +344,7 @@ def controls():
             ("recorded-type", "recorded type digest differs"),
             ("unreferenced-hole", "library escape"),
             ("money-definition", "frozen money closure changed"),
+            ("dropped-genesis-mint", "omega could not prove the goal"),
         ):
             scratch = Path(temporary) / label
             shutil.copytree(baseline, scratch)
@@ -351,6 +381,25 @@ def controls():
                 require(text.count(before) == 1, "money control edit extent differs")
                 path.write_text(text.replace(before, before + " id"))
                 require(path.read_text() != text, "money control not applied")
+            elif label == "dropped-genesis-mint":
+                guard = (
+                    " &&\n      SingularApplicationHeld.Assets.mintQty observation.assets "
+                    "(configurationAsset hash code release registry) == 1"
+                )
+                for name, spelling in (
+                    ("Application.lean", guard),
+                    ("RefundLifecycleConditions.lean", guard),
+                ):
+                    path = project / "lean/OpenDatumApplicationHeld" / name
+                    text = path.read_text()
+                    require(
+                        text.count(spelling) == 1,
+                        "genesis mint control did not identify its edit",
+                    )
+                    path.write_text(text.replace(spelling, ""))
+                    require(
+                        path.read_text() != text, "genesis mint control not applied"
+                    )
             else:
                 path = project / "lean/Unreferenced.lean"
                 path.write_text("theorem unreferenced : True := by sorry\n")
@@ -368,6 +417,11 @@ def controls():
                 result.returncode != 0 and diagnostic in result.stdout,
                 f"control {label} failed for another reason or survived:\n{result.stdout}",
             )
+            if label == "dropped-genesis-mint":
+                require(
+                    "RefundLifecycleProofs.lean" in result.stdout,
+                    "genesis mint control failed outside the statement proof",
+                )
             if label in {"dropped-premise", "money-definition"}:
                 require(
                     "error: Lean exited" not in result.stdout,

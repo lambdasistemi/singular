@@ -29,6 +29,7 @@ module Singular.CLI.FlagGroup
     , Signer (..)
     , OpenedVault (..)
     , signerAddress
+    , anyAddress
     , tokenizeWith
     , tokenizeFor
     , splitTracingFor
@@ -99,6 +100,19 @@ instance Eq OpenedVault where
 decoded, and refused unless its payment part is a payment key — an address
 that pays a script, or a bootstrap address, cannot sign a bundle. Pure.
 -}
+
+{- | An address of any kind, as the ledger reads it: bech32, decoded. A word
+that is not an address is refused naming it. Pure.
+-}
+anyAddress :: Text -> Either String Addr
+anyAddress given = do
+    (_, dataPart) <- first (const notBech32) (Bech32.decode given)
+    bytes <-
+        maybe (Left notBech32) Right (Bech32.dataPartToBytes dataPart)
+    first (const notBech32) (decodeAddrEither bytes)
+  where
+    notBech32 = Text.unpack given <> " is not a bech32 address"
+
 signerAddress :: Text -> Either String Addr
 signerAddress given = do
     (_, dataPart) <- first (const notBech32) (Bech32.decode given)

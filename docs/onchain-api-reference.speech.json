@@ -109,6 +109,26 @@
       "pause": 300
     },
     {
+      "text": "The Singular state validator of the new line, beside the current one:",
+      "pause": 400
+    },
+    {
+      "text": "singular_state/fold — folding registrations into a registry state: one function per guard of the fold, and their conjunction",
+      "pause": 300
+    },
+    {
+      "text": "singular_state/genesis — creating a registry state: one function per genesis guard, and their conjunction",
+      "pause": 300
+    },
+    {
+      "text": "singular_state/preimage — the structured values hashed into token names, and the name of the state token, of a registered key's token, of a configuration record's token and of a registration approval",
+      "pause": 300
+    },
+    {
+      "text": "singular_state/state — the root-only state datum, recognising a state from its seed, and comparing the whole mint of a policy",
+      "pause": 300
+    },
+    {
       "text": "Test support, documented because it is public to the test modules:",
       "pause": 400
     },
@@ -118,6 +138,26 @@
     },
     {
       "text": "registry_fixtures",
+      "pause": 300
+    },
+    {
+      "text": "singular_state_fixtures",
+      "pause": 300
+    },
+    {
+      "text": "singular_state_fold_fixtures",
+      "pause": 300
+    },
+    {
+      "text": "singular_state_termination_fixtures",
+      "pause": 300
+    },
+    {
+      "text": "singular_state_proof_builder",
+      "pause": 300
+    },
+    {
+      "text": "singular_state_history",
       "pause": 300
     }
   ],
@@ -137,6 +177,6 @@
   ],
   "_source": {
     "file": "onchain-api-reference.md",
-    "sha256": "4ec5ae2f79c626b82defd0265f963277ac2231aa8943db829a195d1c3a13ac60"
+    "sha256": "e767d503673f341708bd172d2bba728ae80782686184b3e3d9e68b8602f27bdf"
   }
 }

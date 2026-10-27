@@ -36,17 +36,12 @@ nix build ./applications/open-datum/offchain#open-datum
 nix build ./offchain#singular-test-harness
 nix build ./applications/open-datum/offchain#open-datum-test-harness
 nix run .#release-build-control
-nix run .#demo1-cli-test-harness
 ```
 
 The build control strips and inspects both ordinary compiled executables,
 reads the actual resolved registry CLI flag, and deliberately rejects the
-hook-bearing test artifacts and opposite flag polarity. CI runs the ordinary
-extracted-release journey separately from the test journey's unchanged
-recovery, race, node-loss and trie-observation assertions. CLI recovery and
-conformance backend controls select the explicit test composition. The
-separate replay-fault project remains a deliberately altered test build;
-its named refusal proof retains its published pending cases. Test outputs
+hook-bearing test artifacts and opposite flag polarity. CLI recovery and
+conformance backend controls select the explicit test composition. Test outputs
 are never substituted into the ordinary release verifier or published as
 ordinary release artifacts.
 

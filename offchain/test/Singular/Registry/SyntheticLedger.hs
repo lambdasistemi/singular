@@ -6,12 +6,14 @@ module Singular.Registry.SyntheticLedger
     , withCostCoefficients
     , unitProgram
     , errorProgram
+    , paddedProgram
     ) where
 
 import Cardano.Ledger.Alonzo.Scripts (mkCostModel, mkCostModels)
 import Cardano.Ledger.Api.PParams (ppCostModelsL)
 import Cardano.Ledger.Core (PParams)
 import Cardano.Ledger.Plutus (ExUnits (..), Language (PlutusV3))
+import Data.ByteString qualified as BS
 import Data.ByteString.Short qualified as SBS
 import Data.Int (Int64)
 import Data.Map.Strict qualified as Map
@@ -82,3 +84,20 @@ errorProgram parameters =
         UPLC.Program () plcVersion110 $
             iterate (UPLC.LamAbs () (UPLC.DeBruijn 0)) (UPLC.Error ())
                 !! parameters
+
+{- | A synthetic V3 witness that returns unit after its actual parameters and
+carries this many bytes of data it never reads, so that its script is as large
+as a compiled validator.
+-}
+paddedProgram :: Int -> Int -> SBS.ShortByteString
+paddedProgram parameters padding =
+    PLC.serialiseUPLC $
+        UPLC.Program () plcVersion110 $
+            iterate (UPLC.LamAbs () (UPLC.DeBruijn 0)) body
+                !! parameters
+  where
+    body =
+        UPLC.Apply
+            ()
+            (UPLC.LamAbs () (UPLC.DeBruijn 0) (mkConstant () ()))
+            (mkConstant () (BS.replicate padding 0))

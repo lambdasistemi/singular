@@ -71,6 +71,7 @@ generate-vectors:
     chmod u+w ../onchain/validators/cage_vectors.ak
     nix develop ../onchain#aiken --command aiken fmt ../onchain/validators/cage_vectors.ak
     echo "generate-vectors: wrote onchain/validators/cage_vectors.ak"
+    (cd .. && nix run --quiet .#preimage-vectors -- generate)
 
 # Check that committed vectors are up to date. READ-ONLY (D-006): the
 # generator's output lands in a temp dir, is formatted there with the

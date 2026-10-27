@@ -59,7 +59,7 @@ printed in:
 ```
 
 `update` takes the same file and the same setting, and so do the previews of
-both, `keri-stub register`, and the negative host's insert and update: every
+both: every
 command that reads a payload file reads it one way.
 
 ## How ordinary JSON becomes data

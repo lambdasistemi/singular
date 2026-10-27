@@ -39,31 +39,11 @@ import Control.Exception
     , try
     )
 import Control.Monad (void)
-import Data.Either (fromRight)
-import System.Exit (ExitCode (..))
-import System.IO
-    ( Handle
-    , hIsTerminalDevice
-    , hPutStrLn
-    , stderr
-    )
-import System.IO.Error (ioeGetFileName)
-import System.Posix.Files
-    ( getFdStatus
-    , isCharacterDevice
-    , isNamedPipe
-    , isRegularFile
-    , isSocket
-    )
-import System.Posix.Types (Fd (..))
-
 import Control.Tracer (Tracer)
-
+import Data.Either (fromRight)
 import Singular.CLI (runCommand)
 import Singular.CLI.Command
-    ( Command (..)
-    , CreateArgs (..)
-    , loadInvocationSources
+    ( loadInvocationSources
     , parseInvocationFrom
     , refusalHint
     , renderCLIError
@@ -73,10 +53,20 @@ import Singular.CLI.Command
 import Singular.CLI.Help (singularProgram)
 import Singular.CLI.Options (builtinCommand)
 import Singular.CLI.Session (Env, koiosEnv)
-import Singular.CLI.SettingsFile (settingsFileRefusal)
 import Singular.CLI.Trace (Trace, withTracing)
 import Singular.CLI.Vault (ioReason)
 import Singular.Registry.Application (Application)
+import System.Exit (ExitCode (..))
+import System.IO (Handle, hIsTerminalDevice, hPutStrLn, stderr)
+import System.IO.Error (ioeGetFileName)
+import System.Posix.Files
+    ( getFdStatus
+    , isCharacterDevice
+    , isNamedPipe
+    , isRegularFile
+    , isSocket
+    )
+import System.Posix.Types (Fd (..))
 
 -- | Run one command line, with this environment and standard error.
 runSingular
@@ -107,24 +97,16 @@ runSingularVia provider app errors environment args =
                             mapM_ (quietly . hPutStrLn h) (refusalHint err <> singularHint args)
                         Nothing -> pure ()
                     pure (ExitFailure 2)
-                Right (command, request) ->
-                    savingRefusal command >>= \case
-                        Just sentence -> do
-                            mapM_
-                                (\h -> quietly (hPutStrLn h ("singular: " <> sentence)))
-                                errors
-                            pure (ExitFailure 2)
-                        Nothing -> do
-                            terminal <- case errors of
-                                Nothing -> pure False
-                                Just h ->
-                                    fromRight False <$> attempt (hIsTerminalDevice h)
-                            withTracing
-                                errors
-                                terminal
-                                (phaseLog environment)
-                                request
-                                (\tracer -> runCommand app (provider tracer) command)
+                Right (command, request) -> do
+                    terminal <- case errors of
+                        Nothing -> pure False
+                        Just h -> fromRight False <$> attempt (hIsTerminalDevice h)
+                    withTracing
+                        errors
+                        terminal
+                        (phaseLog environment)
+                        request
+                        (\tracer -> runCommand app (provider tracer) command)
   where
     phaseLog env = case lookup "SINGULAR_LOG" env of
         Just path | not (null path) -> Just path
@@ -215,12 +197,3 @@ failureSentence e = unwords (words (takeWhile (/= '\n') said))
         Just (io :: IOException) ->
             maybe "" (<> ": ") (ioeGetFileName io) <> ioReason io
         Nothing -> displayException e
-
-{- | Why a command cannot run before it has begun: a create asked to keep the
-registry's name in a settings file that cannot be written is refused here, with
-exit status 2, before a wallet is opened or the chain is read.
--}
-savingRefusal :: Command -> IO (Maybe String)
-savingRefusal = \case
-    Create a _ -> settingsFileRefusal (createSaveStateTokenTo a)
-    _ -> pure Nothing

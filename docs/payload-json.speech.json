@@ -31,7 +31,7 @@
       "pause": 400
     },
     {
-      "text": "update takes the same file and the same setting, and so do the previews of both, keri-stub register, and the negative host's insert and update: every command that reads a payload file reads it one way.",
+      "text": "update takes the same file and the same setting, and so do the previews of both: every command that reads a payload file reads it one way.",
       "pause": 400
     }
   ],
@@ -179,6 +179,6 @@
   ],
   "_source": {
     "file": "payload-json.md",
-    "sha256": "ac63d05bc3dbad033625615a7aafe0975a9b54eaabab65c39efe3768413b468d"
+    "sha256": "39893e4dcf1c2d7cced928f8d95c70af2373664596965191654ac1f03d1d94c6"
   }
 }

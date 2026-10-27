@@ -5,7 +5,7 @@
       "pause": 500
     },
     {
-      "text": "You run singular registry create, open-datum insert, open-datum update, open-datum terminate or inspect (singular registry inspect or open-datum inspect), and something goes wrong between your machine and the chain: the node's answer to a submission never arrives, the process is killed, the machine stops halfway through saving its files, or a transaction the chain had included is rolled back. You want to know which of those happened, you want the next command to pick up from where the last one stopped without sending anything twice, and you want to be told plainly when it cannot.",
+      "text": "You run singular state create, open-datum insert, open-datum update, open-datum terminate or open-datum inspect, and something goes wrong between your machine and the chain: the node's answer to a submission never arrives, the process is killed, the machine stops halfway through saving its files, or a transaction the chain had included is rolled back. You want to know which of those happened, you want the next command to pick up from where the last one stopped without sending anything twice, and you want to be told plainly when it cannot.",
       "pause": 400
     },
     {
@@ -19,7 +19,7 @@
       "pause": 500
     },
     {
-      "text": "As a requester recovering after an interruption, you read processTime and retractTime from registry inspect to see the windows stored in the live state datum. They were chosen once at registry create with --process-time and --retract-time, or defaulted to 600 000 and 300 000 milliseconds (ten and five minutes). Both are fixed for the life of the registry; restarting a command or reconciling its journal does not restart or extend a request's windows. A booking's fold deadline remains its submission time plus the registry's processing window, followed by the owner's retract window.",
+      "text": "As a requester recovering after an interruption, you read processTime and retractTime from open-datum inspect to see the windows stored in the live state datum. They were chosen once at open-datum create with --process-time and --retract-time, or defaulted to 600 000 and 300 000 milliseconds (ten and five minutes). Both are fixed for the life of the registry; restarting a command or reconciling its journal does not restart or extend a request's windows. A booking's fold deadline remains its submission time plus the registry's processing window, followed by the owner's retract window.",
       "pause": 400
     }
   ],
@@ -79,7 +79,7 @@
       "pause": 400
     },
     {
-      "text": "What the excluded transaction leaves on chain depends on the command. An excluded update leaves nothing: run it again. The fold of an insert or a terminate is the second of two transactions, and the first, its booking, is on chain: its request stays pending, holding its deposit. Use registry fold while its processing window allows it, registry reclaim with the owner's wallet in its retract window, or registry reject after both windows expire. An insertion's request carries its envelope on chain. A folder reads it publicly and reconstructs proofs from history; neither an insertion fold nor a termination fold needs the booker's files.",
+      "text": "What the excluded transaction leaves on chain depends on the command. An excluded update leaves nothing: run it again. The fold of an insert or a terminate is the second of two transactions, and the first, its booking, is on chain: its request stays pending, holding its deposit. Use open-datum fold while its processing window allows it. The former generic retraction and rejection commands have been retired. A folder reads it publicly and reconstructs proofs from history; neither an insertion fold nor a termination fold needs the booker's files.",
       "pause": 400
     },
     {
@@ -147,26 +147,56 @@
       "pause": 400
     }
   ],
+  "the-commands-that-create-a-registry-and-register-keys": [
+    {
+      "text": "The commands that create a registry and register keys.",
+      "pause": 500
+    },
+    {
+      "text": "As Carol, Alice or Bob running one of the commands of create a registry and register keys on the proved design, you are interrupted in the same ways as above and promised the same thing: the transaction keeps its identity, the next write settles it, and nothing is sent a second time.",
+      "pause": 400
+    },
+    {
+      "text": "Each transaction is journalled as prepared before it is sent, under the step that names it: publish-state-script, publish-application-script and create for open datum's first creation, publish-scripts and create for Singular's, then book, fold, reclaim and cleanup. The journal also records what the first output of the transaction must hold once it is on the chain: a reference script for a publication, the state token for a creation and for a fold, the approval token for a booking, a payment to the refund address for a reclaim and a cleanup. A creation is journalled under the application and the wallet, because the name of the registry it makes is known only once its seed is chosen. The other commands are journalled under the registry and the wallet.",
+      "pause": 400
+    },
+    {
+      "text": "Before it builds anything, the next write of the same wallet reads its journal against the chain. The table shows what it does with an earlier transaction in each case.",
+      "pause": 400
+    },
+    {
+      "text": "A transaction the chain does not show cannot be told from one the network has not yet delivered, and these commands never declare it excluded: the next write keeps naming it and stops. Wait for the network and run the command again; a transaction that lands is reconciled. When it can never land, the way out is --state-dir naming another state directory, which starts a fresh journal for that registry and wallet, or for a creation, for that application and wallet; the old journal stays as a record.",
+      "pause": 400
+    }
+  ],
   "what-the-checks-show": [
     {
       "text": "What the checks show.",
       "pause": 500
     },
     {
-      "text": "The recovery controls run each hosted partition as separate singular processes against its own generated development node, and judge every clause from the receipts the processes printed, the registry's journal, its saved bodies and its files, and — for exclusion and rollback — from the node's own answers, read with devnet probe and its block adoption trace, never through the command under test. The partitions are listed in one place in the root flake; the discovery command prints them for the workflow matrix, and each partition runs by key:",
+      "text": "The recovery controls run the commands of the proved design as separate singular and open-datum processes against one generated development node per partition. Each sending command is interrupted three ways: the node takes its transaction but the answer is lost, the process is killed after sending, and the command prepares a transaction without sending it. The checks read the process receipts, managed journals and saved signed bodies. The node's own devnet probe confirms the outputs used to reach each holding.",
       "pause": 400
     },
     {
-      "text": "The combined .#cli-recovery-controls command is retired: it serialised every part on one node and exceeded the receipt cap of 52428800 bytes before reaching never-sent and rollback. The per-partition commands above are generated from the same partition list the workflow matrix uses.",
+      "text": "The root flake declares the four retained partitions. Discovery prints their complete list for the workflow matrix; the census refuses empty discovery, unknown parts, duplicate parts and missing parts. Each partition runs by key:",
       "pause": 400
     },
     {
-      "text": "The rolled-back control is a mechanism of the generated development node — its database restored to an earlier copy — and not a fork of a public chain: it shows what the commands do when the chain they read no longer holds a transaction, not how often or how deeply a public network rolls back. Across every control, each journalled transaction has exactly one prepared line, the journal is only ever appended to, and no saved body changes. These controls do not establish durability across a power loss, only across a killed process.",
+      "text": "Each interrupted transaction keeps exactly one prepared identity and a saved body whose hash matches its journal entry. A later write by the same wallet observes an included transaction exactly once. While an unsent transaction remains unresolved, the next write stops with that identity and case; its journal does not move and it builds or sends nothing. No command automatically resubmits the interrupted transaction.",
+      "pause": 400
+    },
+    {
+      "text": "Every partition retains its original receipts, journals and signed bodies under their source-relative paths, with a manifest binding the candidate, run, partition and file hashes. The workflow verifies those hashes and records from both wallets before uploading each partition separately. The receipt guard refuses more than 52428800 bytes and accepts that boundary.",
+      "pause": 400
+    },
+    {
+      "text": "The current line's history, rollback, two-request and cross-wallet recovery scenarios have been retired with their old bootstrap. Their trie observations are not evidence for the retained commands. The separate facade lifecycle controls continue to exercise fatal failure, restart, cancellation and joined cleanup on their generated node. These checks establish process interruption and recovery over the exercised cases, not durability across a power loss.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "cli-recovery.md",
-    "sha256": "462b7cd1e98754c1d8ff28c1ec0d933ed3647631f41eaed1882879d80f878557"
+    "sha256": "5c615849bcf6f8408a8cd5958a5297b646c2fa29895cf8b56f859d0f409d4f38"
   }
 }

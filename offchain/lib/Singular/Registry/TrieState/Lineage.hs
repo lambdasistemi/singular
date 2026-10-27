@@ -6,6 +6,7 @@
 module Singular.Registry.TrieState.Lineage
     ( lineageTrieState
     , lineageTrieStateObserved
+    , publicHistory
     ) where
 
 import Cardano.Crypto.Hash (hashFromBytes)
@@ -60,40 +61,34 @@ lineageTrieStateObserved session emit = TrieState select accept
         | pointSession point /= LP.sessionId session
             || pointBinding point /= LP.sessionBinding session =
             pure (Left (StaleState who Nothing NoSelection))
-        | otherwise = case assetOf who of
-            Nothing -> pure (Left (WrongRegistry who Nothing UnknownRegistry))
-            Just asset -> do
-                supplied <- LP.history session asset (LP.HistoryRange Nothing Nothing)
-                material <- case supplied of
-                    Left failure -> pure (Left (providerRefusal who failure))
-                    Right stream -> drain who stream
-                case material >>= checkBlocks who asset of
-                    Left why -> pure (Left why)
-                    Right (resolved, transactions) -> do
-                        let (answer, nodes) =
-                                runState
-                                    ( replayLineage
-                                        stateTrie
-                                        who
-                                        (pointOutput point)
-                                        (trieSelectionRoot chosen)
-                                        resolved
-                                        transactions
+        | otherwise =
+            publicHistory session who >>= \case
+                Left why -> pure (Left why)
+                Right (resolved, transactions) -> do
+                    let (answer, nodes) =
+                            runState
+                                ( replayLineage
+                                    stateTrie
+                                    who
+                                    (pointOutput point)
+                                    (trieSelectionRoot chosen)
+                                    resolved
+                                    transactions
+                                )
+                                emptyMPFInMemoryDB
+                    case answer of
+                        Left why -> pure (Left why)
+                        Right replayed@Replayed{replayedFolds} -> do
+                            emit (Selected chosen)
+                            Right
+                                <$> use
+                                    ( snapshotObserved
+                                        emit
+                                        chosen
+                                        nodes
+                                        (CompleteFromCreate (length replayedFolds))
+                                        (Just (replayedLineage replayed))
                                     )
-                                    emptyMPFInMemoryDB
-                        case answer of
-                            Left why -> pure (Left why)
-                            Right replayed@Replayed{replayedFolds} -> do
-                                emit (Selected chosen)
-                                Right
-                                    <$> use
-                                        ( snapshotObserved
-                                            emit
-                                            chosen
-                                            nodes
-                                            (CompleteFromCreate (length replayedFolds))
-                                            (Just (replayedLineage replayed))
-                                        )
       where
         who = trieSelectionIdentity chosen
         point = trieSelectionPoint chosen
@@ -102,6 +97,24 @@ lineageTrieStateObserved session emit = TrieState select accept
     accept (ObservedFold from to _) = do
         emit (FoldAccepted from to)
         pure (Right ())
+
+{- | The public history of a registry's state token, read from a session: the
+outputs it resolves and the transactions in chain order, checked against what
+the provider claims of them. The replay of either line starts from it.
+-}
+publicHistory
+    :: (Monad m)
+    => LP.Session w m
+    -> RegistryIdentity
+    -> m (Either TrieFailure (Map TxIn (TxOut ConwayEra), [ConwayTx]))
+publicHistory session who = case assetOf who of
+    Nothing -> pure (Left (WrongRegistry who Nothing UnknownRegistry))
+    Just asset -> do
+        supplied <- LP.history session asset (LP.HistoryRange Nothing Nothing)
+        material <- case supplied of
+            Left failure -> pure (Left (providerRefusal who failure))
+            Right stream -> drain who stream
+        pure (material >>= checkBlocks who asset)
 
 assetOf :: RegistryIdentity -> Maybe LP.Asset
 assetOf (RegistryIdentity (StatePolicyId policy) name) =

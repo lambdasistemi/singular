@@ -203,22 +203,12 @@ if onchain_present:
             "MODEL-REVISION",
             "SHA256SUMS",
             "verify-identities.sh",
-            # #173 A173-COMMAND: the packaged verb's run page. Required, so
-            # the archive cannot ship the command without its authority.
-            "INSERT-ACTIVE.md",
-            "offchain/insert-active/Main.hs",
-            # #177 I177-COMMAND: the second packaged verb's run page and its
-            # tracked source. Required, so the archive cannot ship the
-            # retirement command without the page that documents it.
-            "UPDATE-TERMINAL.md",
-            "offchain/update-terminal/Main.hs",
             # #299: the ordinary commands' entry point. Required, so the
             # archive cannot ship `singular registry` without its source.
             "offchain/cli/Main.hs",
             # #528 slice 4: the release ships both executables. Required, so
             # the archive cannot ship `singular` without `open-datum`, nor
-            # either without its flake and entry point; the negative-host
-            # pair's host is built from the application's tree now.
+            # either without its flake and entry point.
             "applications/open-datum/offchain/flake.nix",
             "applications/open-datum/offchain/flake.lock",
             "applications/open-datum/offchain/open-datum.cabal",
@@ -226,17 +216,10 @@ if onchain_present:
             # #695: the commit `open-datum --version` states in a build of
             # this archive, the same one the archive's root states.
             "applications/open-datum/offchain/RELEASE-COMMIT",
-            "applications/open-datum/negative/singular-negative.cabal",
-            "applications/open-datum/negative/app/Main.hs",
-            # #300: the refusal controls and the indexer readback replay from
-            # the archive: the runner, its take, the readback, the statement
-            # ledger and specification it binds, and the flake inputs it reads.
+            # The retained conformance runner, ledger, specification and flake
+            # inputs remain archive members until their layer is removed.
             "conformance/app-cli/Main.hs",
             "conformance/flake.nix",
-            "tools/demo1_cli_attach.sh",
-            "tools/demo1_readback.sh",
-            "tools/demo1_mock_indexer.py",
-            "tools/demo1_readback_tamper.sh",
             "applications/open-datum/ledgers.json",
             "specs/299-singular-cli/spec.md",
             "lean-toolchain",
@@ -256,11 +239,6 @@ if onchain_present:
             "naming-onchain/flake.lock",
             "offchain/flake.nix",
             "offchain/flake.lock",
-            "offchain/journey/README.md",
-            "offchain/journey/Main.hs",
-            "offchain/journey/li01/Main.hs",
-            "offchain/journey/li-refusals/Main.hs",
-            "offchain/journey/lmlc/Main.hs",
             "offchain/naming/src/Naming/Wire/Vectors.hs",
             "fixtures/Naming-Wire-Vectors.hs",
             "fixtures/README.md",

@@ -15,6 +15,7 @@ open Lean Elab Command
 #print axioms OpenDatumApplicationHeld.RefundLifecycle.Statements.booking_authority_and_parameters
 #print axioms OpenDatumApplicationHeld.RefundLifecycle.Statements.burning_grants_nothing
 #print axioms OpenDatumApplicationHeld.RefundLifecycle.Statements.configurationCreate_inversion
+#print axioms OpenDatumApplicationHeld.RefundLifecycle.Statements.configuration_created_once
 #print axioms OpenDatumApplicationHeld.RefundLifecycle.Statements.configuration_immutable
 #print axioms OpenDatumApplicationHeld.RefundLifecycle.Statements.expiredCleanup_inversion
 #print axioms OpenDatumApplicationHeld.RefundLifecycle.Statements.folder_protection

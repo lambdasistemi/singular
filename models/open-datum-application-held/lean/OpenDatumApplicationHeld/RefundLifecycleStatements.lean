@@ -215,4 +215,11 @@ theorem configuration_immutable (h : Hash) (c : Codec) (t : TrieCommit) (decode 
     rwa [Proofs.step_eq]
   · exact And.left
 
+theorem configuration_created_once (h : Hash) (c : Codec) (t : TrieCommit) (decode : DecodeApplication)
+    (release : PublishedRelease) (q : Input)
+    (_premises : configuration_created_once_premise .none h c t decode release q) :
+    configuration_created_once_claim .none h c t decode release q := by
+  intro accepted registry seed index member
+  exact Proofs.configuration_minted_once h c decode release q.observation accepted registry seed index member
+
 end OpenDatumApplicationHeld.RefundLifecycle.Statements

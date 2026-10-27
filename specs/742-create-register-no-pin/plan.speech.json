@@ -1,0 +1,148 @@
+{
+  "plan-for-creating-a-registry-and-registering-a-key-on-the-proved-design": [
+    {
+      "text": "Plan for creating a registry and registering a key on the proved design.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 742. This page is for the people who implement and review the four pull requests. It binds the model, the rulings, the commands, the pull requests and their slices, and the seats. The story and the requirements are in the specification; the checks are in the gate.",
+      "pause": 400
+    }
+  ],
+  "lane": [
+    {
+      "text": "Lane.",
+      "pause": 500
+    }
+  ],
+  "lean-binding": [
+    {
+      "text": "Lean binding.",
+      "pause": 500
+    },
+    {
+      "text": "Lean is the authority. Issue 741 lands its aligned models on the epic branch beside the current lean/Singular models, and each family is bound to the landed revision before the first slice that implements it is released.",
+      "pause": 400
+    },
+    {
+      "text": "The Singular family is bound to the Lake project models/singular-application-held (library SingularApplicationHeld, recipe just application-held-model) at epic-branch commit b1be26a6, statements in SingularApplicationHeld.Statements, all proved with the standard axioms. The model's vocabulary (Preimage.state, Preimage.active, Preimage.registrationApproval, PublishedRelease, FoldObservation, genesis, recognizeState, fold) names the code. The open-datum families are bound to the Lake project models/open-datum-application-held (library OpenDatumApplicationHeld, recipe just open-datum-application-held-model) at epic-branch commit 2d2a8fc2, statements in OpenDatumApplicationHeld.RefundLifecycle.Statements and OpenDatumApplicationHeld.Money.Statements, all proved.",
+      "pause": 400
+    },
+    {
+      "text": "Correspondence premise (the epic owner's ruling): the model's datum category of an output is read from its role in the fold. The output carrying the state token is the root; every other output, including the holding a change points at, is an application output. No address and no payload shape is excluded.",
+      "pause": 400
+    },
+    {
+      "text": "The registration fold's absence check (the trie proof shows the key absent) stays on the current trie library (operator, 2026-10-25); its slice is open in pull request 1.",
+      "pause": 400
+    },
+    {
+      "text": "Pull request 2 adds one statement to OpenDatumApplicationHeld.RefundLifecycle.Statements, proved: a registry's genesis mints its configuration asset exactly once. Its Lean change consumers (the model recipe just open-datum-application-held-model and its hosted step) are listed in the gate as row G16.",
+      "pause": 400
+    },
+    {
+      "text": "termination_inversion, termination_effects, and the termination, update and history statements belong to issue 743. A statement the aligned models rename or restate is rebound by name; one they drop, or one whose meaning the code cannot meet, is a question to the epic owner, never a quiet change of the check.",
+      "pause": 400
+    }
+  ],
+  "rulings-in-force": [
+    {
+      "text": "Rulings in force.",
+      "pause": 500
+    },
+    {
+      "text": "The operator's words, from the epic runtime root's ruling records and issue 741's specs/741-no-pin-model/decisions.md:",
+      "pause": 400
+    },
+    {
+      "text": "Staffing, 2026-10-24: \"Team is opus to. Sol ca. Sonnet co\" and \"High high xhigh\": Claude Opus 5.5 high ticket owner, Claude Sonnet 5.5 xhigh commit owner, Codex gpt-6.1-sol high auditor. No other seats.",
+      "pause": 300
+    },
+    {
+      "text": "The lifecycle belongs to the application: \"the idea that we can demand [delegate] the request lifecycle to the application is just great, because it makes Singular much easier to prove.\" Singular is one validator per application, the state applied to the application policy; it acts only at the fold, has no request script and no witness scripts, and mints no request tags. The protected-rejection request tag of issue 529 does not apply to this line.",
+      "pause": 300
+    },
+    {
+      "text": "Money: \"singular has to be unforgiving about the rest of the Ada ... the folder decides if to fold based on whatever he can take.\" And: \"the tip is everything for the termination request, everything minus the deposit for the registration, the deposit is committed in the aproval\". Singular routes no money; its datum is the root.",
+      "pause": 300
+    },
+    {
+      "text": "Delivery: \"the deposit has to get through the fold btw, so the singular will have to validate the registration.\" At a registration fold Singular checks the committed address, the committed datum hash, exactly one new token and at least the committed deposit; the continuing state output holds only ADA and its state token.",
+      "pause": 300
+    },
+    {
+      "text": "No rejection: \"the full epic of rejection protection is gone for good ... You can only fold what's good.\" A pending registration has three timed phases; the refund address signs a reclaim; a cleanup returns the deposit.",
+      "pause": 300
+    },
+    {
+      "text": "Parameters: \"yes, parameters are per seed\": the five request parameters live in a configuration record per registry.",
+      "pause": 300
+    },
+    {
+      "text": "Encoding: \"I would use a Seaboard and that's it ... They just use Seaboard CDDL.\" Preimages are CBOR in the Plutus Data serialisation, pinned by byte vectors.",
+      "pause": 300
+    },
+    {
+      "text": "Inline request datum (planning rule): the pending registration's datum is inline, with no size cap beyond the ledger's.",
+      "pause": 300
+    },
+    {
+      "text": "Command line split (issue 528): commands build against the library's request and fold, not the open-datum envelope.",
+      "pause": 300
+    },
+    {
+      "text": "Placement (answer A-001): the new line goes beside the current one; issue 743 removes the current line.",
+      "pause": 300
+    },
+    {
+      "text": "Configuration record (operator, 2026-10-25): exactly one per registry. The open-datum model gains that statement, proved, and the validator refuses a second configuration record and a configuration mint other than one.",
+      "pause": 300
+    },
+    {
+      "text": "Trie (operator, 2026-10-25): the new line keeps the current trie library, on cost.",
+      "pause": 300
+    },
+    {
+      "text": "Not in this line: the application policy doubling as its address.",
+      "pause": 300
+    }
+  ],
+  "commands": [
+    {
+      "text": "Commands.",
+      "pause": 500
+    },
+    {
+      "text": "Epic-scoped names from the model's vocabulary (answer A-001); issue 743 moves them onto the established names.",
+      "pause": 400
+    },
+    {
+      "text": "Every command keeps today's recovery promise: cancellation and uncertain submission preserve the transaction identity, and nothing is resubmitted on its own. Placement is in the modules model, records in the data model, signatures in the functions model, and every place a slice can break in the consumers page.",
+      "pause": 400
+    }
+  ],
+  "pull-requests-and-slices": [
+    {
+      "text": "Pull requests and slices.",
+      "pause": 500
+    },
+    {
+      "text": "Four pull requests into the epic branch, merged in order; the ticket closes with the fourth. Each slice finishes in well under two hours with its own RED evidence and checkpoints; the commit owner may cut a slice smaller, never merge two.",
+      "pause": 400
+    }
+  ],
+  "seats-and-briefs": [
+    {
+      "text": "Seats and briefs.",
+      "pause": 500
+    },
+    {
+      "text": "The commit owner and the auditor are seated together, with the first slice of pull request 1, in panes of this window. The auditor stays for the ticket, mute toward the commit owner; every message between them goes through the ticket owner. Each commit-owner brief is one whole slice with its terminal condition: green (every checkpoint requested), blocked (a question filed), or at capacity (a handoff written). No run counting and no nudges. The push of each pull request waits for every checkpoint of its slices to be approved.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "28be848ae136df66d8bf7ac9704091ad703ae74bcddf9d49589413f81fa0251a"
+  }
+}

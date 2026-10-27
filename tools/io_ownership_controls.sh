@@ -51,7 +51,7 @@ if ! bash "$check" "$root" >"$work/baseline.log" 2>&1; then
   cat "$work/baseline.log" >&2
   exit 1
 fi
-echo "controls: baseline PASS — the tree's 95 gated sites are allowlisted, B1-B5 hold"
+echo "controls: baseline PASS — the tree's gated sites are allowlisted, B1-B5 hold"
 
 # One baseline copy; each control derives its own scratch from it.
 # Hardlinks are read-only sharing: EVERY plant step below removes its target
@@ -147,8 +147,8 @@ expect_reject c2-unsafe-escape \
 
 # c3 — a forkIO site added to a tool file.
 scratch c3-fork-site
-c3target="$work/c3-fork-site/offchain/deployment/Deployment/Node.hs"
-plant_target c3-fork-site offchain/deployment/Deployment/Node.hs
+c3target="$work/c3-fork-site/offchain/devnet/Main.hs"
+plant_target c3-fork-site offchain/devnet/Main.hs
 cp "$c3target" "$c3target.plant" && rm "$c3target" && mv "$c3target.plant" "$c3target"
 printf '\nimport Control.Concurrent (forkIO)\n' >>"$c3target"
 printf '\norphanThread :: IO ()\norphanThread = forkIO (pure ()) >> pure ()\n' >>"$c3target"

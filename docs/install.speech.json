@@ -115,7 +115,7 @@
       "pause": 400
     },
     {
-      "text": "The folder share also holds the deployment blueprint, plutus.json, that the commands take as --blueprint, with version.txt beside it naming the release: singular registry describe reads its version label from that file and refuses a blueprint without one.",
+      "text": "The folder share also holds the deployment blueprint, plutus.json, that the commands take as --blueprint, with version.txt beside it naming the release: the on-chain archive carries the same blueprint and adjacent version label.",
       "pause": 400
     },
     {
@@ -181,6 +181,6 @@
   ],
   "_source": {
     "file": "install.md",
-    "sha256": "4c37bd8efb50ab86ba8eec307fae8f0a068935d10439e616c556dacb461879bc"
+    "sha256": "4d8afe13c8b82e336896edb1ef208a7ad9397f2ef11c79570b3cc66b7aa76980"
   }
 }

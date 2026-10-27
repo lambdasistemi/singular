@@ -1,7 +1,7 @@
 # Recovering a registry command
 
-You run `singular registry create`, `open-datum insert`, `open-datum update`, `open-datum terminate` or
-`inspect` (`singular registry inspect` or `open-datum inspect`), and something goes wrong between your machine and the chain:
+You run `singular state create`, `open-datum insert`, `open-datum update`, `open-datum terminate` or
+`open-datum inspect`, and something goes wrong between your machine and the chain:
 the node's answer to a submission never arrives, the process is killed,
 the machine stops halfway through saving its files, or a transaction the
 chain had included is rolled back. You want to know which of those
@@ -22,8 +22,8 @@ journal is only ever appended to; saved bodies are never rewritten.
 ## The request keeps its registry's windows
 
 As a requester recovering after an interruption, you read `processTime` and
-`retractTime` from `registry inspect` to see the windows stored in the live
-state datum. They were chosen once at `registry create` with `--process-time`
+`retractTime` from `open-datum inspect` to see the windows stored in the live
+state datum. They were chosen once at `open-datum create` with `--process-time`
 and `--retract-time`, or defaulted to 600 000 and 300 000 milliseconds (ten
 and five minutes). Both are fixed for the life of the registry; restarting a
 command or reconciling its journal does not restart or extend a request's
@@ -127,10 +127,8 @@ What the excluded transaction leaves on chain depends on the command.
 An excluded `update` leaves nothing: run it again. The fold of an
 `insert` or a `terminate` is the second of two transactions, and the
 first, its booking, is on chain: its request stays pending, holding its
-deposit. Use `registry fold` while its processing window allows it, `registry reclaim`
-with the owner's wallet in its retract window, or `registry reject` after both
-windows expire. An insertion's request carries its envelope on chain. A folder
-reads it publicly and reconstructs proofs from history; neither an insertion
+deposit. Use `open-datum fold` while its processing window allows it. The former generic retraction and rejection commands have been retired.
+A folder reads it publicly and reconstructs proofs from history; neither an insertion
 fold nor a termination fold needs the booker's files.
 
 A fold carries an upper bound on its validity window. A booking, and the
@@ -194,47 +192,89 @@ last journalled phase and its case; the journal does not move.
 `inspect` names the same unresolved transaction and its case, with the
 outcome `partial`, alongside the root and chain point it read.
 
+## The commands that create a registry and register keys
+
+As Carol, Alice or Bob running one of the commands of
+[create a registry and register keys on the proved design](registry-commands.md),
+you are interrupted in the same ways as above and promised the same thing: the
+transaction keeps its identity, the next write settles it, and nothing is sent a
+second time.
+
+Each transaction is journalled as `prepared` before it is sent, under the step
+that names it: `publish-state-script`, `publish-application-script` and `create`
+for open datum's first creation, `publish-scripts` and `create` for Singular's,
+then `book`,
+`fold`, `reclaim` and `cleanup`. The journal also records what the first output of
+the transaction must hold once it is on the chain: a reference script for a
+publication, the state token for a creation and for a fold, the approval token for
+a booking, a payment to the refund address for a reclaim and a cleanup. A creation
+is journalled under the application and the wallet, because the name of the
+registry it makes is known only once its seed is chosen. The other commands are
+journalled under the registry and the wallet.
+
+Before it builds anything, the next write of the same wallet reads its journal
+against the chain. The table shows what it does with an earlier transaction in each
+case.
+
+| what happened to the earlier transaction | what the next write does |
+| --- | --- |
+| the node took it and the answer was lost | finds the first output on the chain, records the transaction as observed once, names it under `reconciled` and goes on |
+| the process was killed after the send | the same |
+| it never reached the node | stops with status 15, names the transaction under `unresolved` with the case `unknown`, builds nothing, sends nothing, and leaves the journal as it was |
+
+A transaction the chain does not show cannot be told from one the network has not
+yet delivered, and these commands never declare it excluded: the next write keeps
+naming it and stops. Wait for the network and run the command again; a transaction
+that lands is reconciled. When it can never land, the way out is `--state-dir`
+naming another state directory, which starts a fresh journal for that registry and
+wallet, or for a creation, for that application and wallet; the old journal stays
+as a record.
+
 ## What the checks show
 
-The recovery controls run each hosted partition as separate `singular`
-processes against its own generated development node, and judge every
-clause from the receipts the processes printed, the registry's journal,
-its saved bodies and its files, and — for exclusion and rollback — from
-the node's own answers, read with `devnet probe` and its block adoption
-trace, never through the command under test. The partitions are listed in
-one place in the root flake; the discovery command prints them for the
-workflow matrix, and each partition runs by key:
+The recovery controls run the commands of the proved design as separate
+`singular` and `open-datum` processes against one generated development node
+per partition. Each sending command is interrupted three ways: the node takes
+its transaction but the answer is lost, the process is killed after sending,
+and the command prepares a transaction without sending it. The checks read the
+process receipts, managed journals and saved signed bodies. The node's own
+`devnet probe` confirms the outputs used to reach each holding.
+
+The root flake declares the four retained partitions. Discovery prints their
+complete list for the workflow matrix; the census refuses empty discovery,
+unknown parts, duplicate parts and missing parts. Each partition runs by key:
 
 ```sh
 nix run --quiet .#cli-recovery-partitions
-nix run --quiet .#cli-recovery-partition -- history
-nix run --quiet .#cli-recovery-partition -- two-requests
-nix run --quiet .#cli-recovery-partition -- rollback
-nix run --quiet .#cli-recovery-partition -- 'cross-wallet:SINGULAR_HARNESS_HOLD_AFTER_SEND'
+nix run --quiet .#cli-recovery-partition -- state-line
+nix run --quiet .#cli-recovery-partition -- holding-update
+nix run --quiet .#cli-recovery-partition -- holding-terminate
+nix run --quiet .#cli-recovery-partition -- termination-fold
 ```
 
-The combined `.#cli-recovery-controls` command is retired: it serialised
-every part on one node and exceeded the receipt cap of 52428800 bytes
-before reaching never-sent and rollback. The per-partition commands above
-are generated from the same partition list the workflow matrix uses.
+| Partition | Commands exercised |
+|---|---|
+| Registry creation and registration | Application and Singular registry creation, registration booking, reclaim, registration fold and cleanup |
+| Holding update | A registered holding is updated by its controller |
+| Termination booking | The controller books a registered holding's permanent termination |
+| Termination fold | A second wallet folds a booked termination from chain data |
 
-| control | what happens | what the next command does |
-|---|---|---|
-| accepting | an insert and fold complete | both submissions are named included and observed once; inspect reconstructs the fold's root from public history |
-| lost answer | the node accepts a fold but its answer is lost | the prepared line and saved body predate the send; the next command reconstructs public state, observes the fold once and proceeds |
-| killed before the commit | a fold confirms, then its process is killed before fresh replay | the next command reconstructs public state, observes the fold once and proceeds |
-| killed before the observation | a fold's replay is checked, then its process is killed before observed | the next command reconstructs public state, observes the fold once and proceeds |
-| two requests | two bookings, a fold of both interrupted by a lost answer and by a kill before the observation | each time the next ordinary command recovers the fold, both keys reconciled once, nothing sent twice |
-| never sent, past its upper bound | a fold never reaches the node, and the tip passes its upper bound | the next write journals excluded with the chain point and live inputs, then proceeds from fresh public replay |
-| never sent, without an upper bound | a booking never reaches the node | the next write stops naming the booking and unknown; it neither resubmits nor invents its inclusion |
-| rolled back | the generated node restores a database copy from before an observed booking and fold | public reads show their inputs live again; the journal appends rolled-back, writes stop naming the booking and no transaction is resent |
+Each interrupted transaction keeps exactly one prepared identity and a saved
+body whose hash matches its journal entry. A later write by the same wallet
+observes an included transaction exactly once. While an unsent transaction
+remains unresolved, the next write stops with that identity and case; its
+journal does not move and it builds or sends nothing. No command automatically
+resubmits the interrupted transaction.
 
+Every partition retains its original receipts, journals and signed bodies
+under their source-relative paths, with a manifest binding the candidate, run,
+partition and file hashes. The workflow verifies those hashes and records from
+both wallets before uploading each partition separately. The receipt guard
+refuses more than 52428800 bytes and accepts that boundary.
 
-The rolled-back control is a mechanism of the generated development
-node — its database restored to an earlier copy — and not a fork of a
-public chain: it shows what the commands do when the chain they read no
-longer holds a transaction, not how often or how deeply a public network
-rolls back. Across every control, each journalled transaction has
-exactly one `prepared` line, the journal is only ever appended to, and
-no saved body changes. These controls do not establish durability
-across a power loss, only across a killed process.
+The current line's history, rollback, two-request and cross-wallet recovery
+scenarios have been retired with their old bootstrap. Their trie observations
+are not evidence for the retained commands. The separate facade lifecycle
+controls continue to exercise fatal failure, restart, cancellation and joined
+cleanup on their generated node. These checks establish process interruption
+and recovery over the exercised cases, not durability across a power loss.

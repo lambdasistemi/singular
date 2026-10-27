@@ -75,6 +75,16 @@ spec = describe "the help pages" $ do
                        , ["terminate"]
                        , ["fold"]
                        , ["inspect"]
+                       , ["state"]
+                       , ["state", "create"]
+                       , ["state", "fold"]
+                       , ["registration"]
+                       , ["registration", "book"]
+                       , ["registration", "reclaim"]
+                       , ["registration", "cleanup"]
+                       , ["holding"]
+                       , ["holding", "update"]
+                       , ["holding", "terminate"]
                        ]
     it "are a well-formed declaration for the library" $
         lintDeclaration program `shouldBe` True
@@ -99,8 +109,11 @@ spec = describe "the help pages" $ do
                 pageOf path `shouldNotSatisfy` isInfixOf "undocumented"
     it "fit one screen as an overview" $
         length (lines (pageOf [])) `shouldSatisfy` (<= 45)
-    it "never name a verb that lives in singular alone" $
-        pageOf [] `shouldNotSatisfy` isInfixOf "reclaim"
+    it
+        "never name a verb that lives in singular alone as a verb of its own"
+        $ forM_ ["reclaim", "reject"]
+        $ \verb ->
+            pageOf [] `shouldNotSatisfy` isInfixOf ("open-datum " <> verb)
     it
         "give every command that runs the way it ends, and every writer an example"
         $ forM_ (leaves (programNodes program))

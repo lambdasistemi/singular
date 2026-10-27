@@ -1,0 +1,210 @@
+open-datum VERSION (commit unknown)
+
+Usage: open-datum state create [--config FILE] [--state-dir DIR] --blueprint
+       FILE [--seed TXID#IX] [--process-time MS] [--reclaim-time MS]
+       [--booking-width MS] [--registration-cost LOVELACE] [--minimum-tip
+       LOVELACE] --koios-url URL --network-magic N [--koios-token-file FILE]
+       [--network-time DIR] [--vault FILE [--passphrase-fd N] |
+       --wallet-address ADDR --bundle FILE | --wallet-skey FILE]
+       [--confirm-timeout SECONDS] [--receipt FILE] [--trace LEVEL]
+       [--trace-to SINK] [--trace-format FORMAT]
+
+Create a registry
+
+Creates one registry by spending a seed output of your wallet and prints its
+address, its state token and the transactions it sent. The registry's five
+parameters are fixed here for its life: the processing time and the reclaim
+time of a booked registration, the width of a booking's validity interval, and
+the registration cost and the minimum tip, which are carried and enforce
+nothing. The first registry of open datum publishes the state validator and
+the request validator as reference scripts, each in its own transaction,
+waiting for both before creating the registry. A rerun publishes only what is
+missing; a later registry finds the live copies and sends one transaction.
+
+A write is signed by exactly one signer: --vault (the normal route),
+--wallet-address with --bundle (written for an external signer, ending as
+waiting-for-signatures), or --wallet-skey (a key file, legacy). Naming two is
+refused.
+
+Available settings:
+  Show this help text
+  switch: -h|--help
+
+  A JSON file giving the settings the command line and the environment leave
+  out.
+  option: --config FILE
+  env: SINGULAR_CONFIG FILE
+  default: singular.json in the working directory, if there is one
+
+  Keep the journal and submissions under DIR.
+  option: --state-dir DIR
+  env: SINGULAR_STATE_DIR DIR
+  config:
+    state-dir: # or null
+      <string>
+  default: the per-user state directory
+
+  The compiled validators (plutus.json) of the release.
+  option: --blueprint FILE
+  env: SINGULAR_BLUEPRINT FILE
+  config:
+    blueprint: # or null
+      <string>
+
+  The wallet output the registry is booted from; it fixes the registry's
+  identity.
+  option: --seed TXID#IX
+  default: your largest ada-only output
+
+  How long a booked request may wait for its fold, in milliseconds; fixed for
+  the life of the registry.
+  option: --process-time MS
+  default: 600000, ten minutes
+
+  How long the refund address may reclaim a registration after its processing
+  deadline, in milliseconds; fixed for the life of the registry.
+  option: --reclaim-time MS
+  default: 300000, five minutes
+
+  The widest validity interval a booking may declare, in milliseconds; fixed
+  for the life of the registry.
+  option: --booking-width MS
+  default: 300000, five minutes
+
+  The registration cost the registry carries; it enforces nothing; fixed for
+  the life of the registry.
+  option: --registration-cost LOVELACE
+  default: 0
+
+  The minimum tip the registry carries; it enforces nothing; fixed for the
+  life of the registry.
+  option: --minimum-tip LOVELACE
+  default: 0
+
+  Base URL of the Koios API used to read the chain and to submit.
+  option: --koios-url URL
+  env: SINGULAR_KOIOS_URL URL
+  config:
+    koios-url: # or null
+      <string>
+
+  The network: 1 for preprod, 42 for the generated development network.
+  option: --network-magic N
+  env: SINGULAR_NETWORK_MAGIC N
+  config:
+    network-magic: # or null
+      <string>
+
+  File holding a Koios bearer token; its contents are never printed.
+  option: --koios-token-file FILE
+  env: SINGULAR_KOIOS_TOKEN_FILE FILE
+  config:
+    koios-token-file: # or null
+      <string>
+
+  Directory with the pinned time-manifest.json, shelley-genesis.json and
+  era-history.cbor.
+  option: --network-time DIR
+  env: SINGULAR_NETWORK_TIME DIR
+  config:
+    network-time: # or null
+      <string>
+  default: the preprod recording packaged with the program
+
+  Signer, normal route: sign from this encrypted wallet vault.
+  option: --vault FILE
+  env: SINGULAR_VAULT FILE
+  config:
+    vault: # or null
+      <string>
+
+  Read the vault passphrase, one line, from this inherited file descriptor; it
+  wins over SINGULAR_PASSPHRASE.
+  option: --passphrase-fd N
+  default: SINGULAR_PASSPHRASE on a development network, else ask on the
+  terminal with the echo off
+
+  Signer, external route: stage the run for a signer at this address; goes
+  with --bundle.
+  option: --wallet-address ADDR
+
+  Signer, external route: the new file the unsigned transactions are written
+  to; goes with --wallet-address.
+  option: --bundle FILE
+
+  Signer, legacy route: sign with this payment key file. Prefer the vault.
+  option: --wallet-skey FILE
+
+  How long each submission may take to confirm; past it the command stops,
+  journalled, and never resubmits.
+  option: --confirm-timeout SECONDS
+  default: 600
+
+  Also write the JSON receipt to FILE.
+  option: --receipt FILE
+
+  How much to narrate: off, what (protocol steps) or how (also their
+  mechanics).
+  option: --trace LEVEL
+  env: SINGULAR_TRACE LEVEL
+  config:
+    trace: # or null
+      <string>
+  default: what on a terminal, otherwise off
+
+  Where the narration goes: stderr or file:PATH; repeat for several.
+  option: --trace-to SINK
+  env: SINGULAR_TRACE_TO SINK
+  config:
+    trace-to: # or null
+      <string>
+  default: stderr
+
+  The format of the narration: text for a person, json for a program.
+  option: --trace-format FORMAT
+  env: SINGULAR_TRACE_FORMAT FORMAT
+  config:
+    trace-format: # or null
+      <string>
+  default: text on standard error, json in a file
+
+Where settings come from:
+  A setting with an env and a config line above is given in any of three ways,
+  and the first that is present wins: the flag, then the variable, then the
+  key in the config file, then the default.
+
+  The file is one JSON object whose keys are the setting names without their
+  dashes, text or numbers, for example
+
+    {"koios-url": "https://preprod.koios.rest/api/v1", "network-magic": 1}
+
+  It is singular.json in the working directory, or the file named by --config
+  or SINGULAR_CONFIG. A path in it means what it means on the command line,
+  from where the command runs. A passphrase is never read from the file; the
+  environment gives one only on a development network, as SINGULAR_PASSPHRASE.
+
+Environment:
+  SINGULAR_LOG         A file the protocol phases are appended to, one line
+                       each.
+  XDG_STATE_HOME       Where the per-user state directory lives (else
+                       $HOME/.local/state), under singular/.
+  SINGULAR_PASSPHRASE  The vault passphrase, for a development network only: a
+                       command on mainnet (764824073), preprod (1) or preview
+                       (2) refuses it. --passphrase-fd wins over it, and a
+                       value that is empty is refused.
+
+Example:
+  open-datum state create --blueprint plutus.json \
+      --koios-url https://preprod.koios.rest/api/v1 --network-magic 1 \
+      --vault alice.vault
+
+  With those settings in singular.json instead:
+  open-datum state create --vault alice.vault
+
+Output and exit status:
+  Prints one JSON receipt on standard output (--receipt also writes it).
+  Exit status 0 on success, 2 for a command line it refused, otherwise the
+  outcome class the receipt names: 10 refused before anything was sent,
+  11 refused by the ledger, 12 node unavailable, 13 timeout, 14 stale state,
+  15 partial, 16 another writer, 17 proof missing, 18 proof inconsistent,
+  19 waiting for signatures.

@@ -1,0 +1,80 @@
+{
+  "gate-for-creating-a-registry-and-registering-a-key-on-the-proved-design": [
+    {
+      "text": "Gate for creating a registry and registering a key on the proved design.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 742. This page is for the commit owner, the auditor and the reviewers: each acceptance item, the hosted job and the verbatim command that proves it, and what each pull request must show. The requirements are in the specification and the pull requests in the plan.",
+      "pause": 400
+    }
+  ],
+  "rows": [
+    {
+      "text": "Rows.",
+      "pause": 500
+    },
+    {
+      "text": "The ticket owner's table, written before the auditor's. The auditor writes its own table independently when it is seated; the ticket owner synthesizes the two once, records both input hashes and freezes the result in the runtime root before the commit owner starts. Every command is an existing hosted command, or one this ticket adds to a hosted job and marks \"CI change in this ticket\".",
+      "pause": 400
+    },
+    {
+      "text": "Rows run scoped to what each slice can break. just ci runs once on the final candidate of each pull request, then the push; hosted checks on the pull request head are the net. Every build or test runs in a named, memory-capped scope: systemd-run --user --scope --unit=t742-<what>-<n> -p MemoryMax=24G timeout 3600 <command>.",
+      "pause": 400
+    }
+  ],
+  "rows-per-pull-request": [
+    {
+      "text": "Rows per pull request.",
+      "pause": 500
+    }
+  ],
+  "evidence-the-pull-requests-will-carry": [
+    {
+      "text": "Evidence the pull requests will carry.",
+      "pause": 500
+    },
+    {
+      "text": "per statement: the validator test that executes it and the RED run that showed it fail;",
+      "pause": 300
+    },
+    {
+      "text": "the byte vectors and the two encoders that reproduce them;",
+      "pause": 300
+    },
+    {
+      "text": "a later registry's create that publishes no script and references the live copies, and a control showing a reference script with another hash is not reused;",
+      "pause": 300
+    },
+    {
+      "text": "the journey job's receipt: the transactions, the holding's token, payload and deposit, the fold built by a second wallet from chain data only, the reclaim and cleanup payouts, and the creation measurement for a first and a later registry;",
+      "pause": 300
+    },
+    {
+      "text": "the refusals job's receipt: each of the five refusals and its control;",
+      "pause": 300
+    },
+    {
+      "text": "the conformance statement of each registration journey, old against new;",
+      "pause": 300
+    },
+    {
+      "text": "left uncovered, stated in the pull requests: update and termination (issue 743), the reader (issue 744), batch limits (issue 746), release of the new titles (issue 747).",
+      "pause": 300
+    }
+  ],
+  "synthesis": [
+    {
+      "text": "Synthesis.",
+      "pause": 500
+    },
+    {
+      "text": "The ticket owner's table and the auditor's independent table were joined once on 24 October 2026. Rows G12 to G15 came from the auditor's inventory or from its missing-job findings. A green existing command proves nothing about the new line until the new checks are in what it selects: each slice names, in its decision record, the test that executes each statement and the hosted step that runs it. \"Hosted checks green on each pull request\" is not a gate row; the ticket owner records it from the required checks at the pull request head before handing the pull request to the epic owner.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "gate.md",
+    "sha256": "6c88f57a079ac7a48efaedaa24ff1c616e6bd5f42932596732124501f9b85d33"
+  }
+}

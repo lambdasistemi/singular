@@ -94,27 +94,14 @@ def assemble(
             "flake.lock",
             "fourmolu.yaml",
             "applications/open-datum/ledgers.json",
-            # #528 slice 4: the release ships both executables. The
-            # application's flake and the negative-host pair's host sources
-            # ride as their own tracked partitions, so the extracted archive
-            # builds `open-datum` and `singular-negative` from the
-            # application's tree now, beside `singular` from the registry.
             "applications/open-datum/offchain",
-            "applications/open-datum/negative",
             "specs/299-singular-cli/spec.md",
         ),
     )
-    # #173 A173-COMMAND / #177 I177-COMMAND: each packaged verb has its
-    # own page — the authority a reviewer with no checkout reads before
-    # running it. They ship beside README and RELEASE.
     for relative in (
         "README.md",
         "RELEASE.md",
         "verify-identities.sh",
-        "INSERT-ACTIVE.md",
-        # #177 I177-COMMAND: the retirement verb's own authority page,
-        # beside the insert verb's.
-        "UPDATE-TERMINAL.md",
     ):
         shutil.copyfile(root / "onchain-release" / relative, farm / relative)
     (farm / "fixtures").mkdir()
@@ -132,7 +119,7 @@ def assemble(
     # repository version file beside the blueprint it describes.
     shutil.copyfile(root / "version.txt", farm / "onchain" / "version.txt")
     # S5.2: the archive's onchain/plutus.json is the merged deployment
-    # document (17 validators), so its script-identity.json is the merged
+    # document, so its script-identity.json is the merged
     # manifest (union of the two committed manifests, same schema/compiler).
     # The farm already carries the registry manifest via tracked partitions;
     # overwrite it with the union so verify-identities.sh passes from the
@@ -156,8 +143,11 @@ def assemble(
         _reg_man["validators"] + _app_man["validators"],
         key=lambda v: v["title"],
     )
-    assert len(_merged_validators) == 17, (
-        f"merged manifest has {len(_merged_validators)} validators, not 17"
+    _deployed = len(_json.loads(onchain_bp.read_text())["validators"])
+    _pinned = len(_reg_man["validators"]) + len(_app_man["validators"])
+    assert _deployed == _pinned, (
+        f"deployment blueprint has {_deployed} validators, "
+        f"the two manifests pin {_pinned}"
     )
     (farm / "onchain" / "script-identity.json").write_text(
         _json.dumps(

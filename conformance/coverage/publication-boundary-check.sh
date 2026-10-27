@@ -93,7 +93,8 @@ for req in SUFFICIENT_HEAD MISSING_HEAD FULLCLONE_HEAD; do
     || setup_fail "fixture $req missing or malformed in the fixture build log"
 done
 UNMARKED="$OUTDIR/unmarked"
-git clone -q "$OUTDIR/fixtures/sufficient" "$UNMARKED" 2>/dev/null || setup_fail "cloning the sufficient fixture"
+git clone -q "$OUTDIR/fixtures/sufficient" "$UNMARKED" 2>"$OUTDIR/unmarked-clone.err" \
+  || setup_fail "cloning the sufficient fixture: $(cat "$OUTDIR/unmarked-clone.err")"
 rm "$UNMARKED/conformance/coverage/release-required" || setup_fail "deleting the release marker in the unmarked fixture"
 git -C "$UNMARKED" add -A || setup_fail "staging the unmarked fixture"
 git -C "$UNMARKED" -c user.email=pub@t -c user.name=pub commit -qm "unmarked candidate" || setup_fail "committing the unmarked fixture"

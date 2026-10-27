@@ -1,78 +1,94 @@
 module Main (main) where
 
-import Naming.CompleteVerifySpec qualified
-import Naming.RecordValueSpec qualified
-import Naming.RegisterSpec qualified
-import Naming.RetireVerifySpec qualified
-import Singular.CLI.BookingRefusalSpec qualified
-import Singular.CLI.CommandRunSpec qualified
-import Singular.CLI.CreateFundingSpec qualified
-import Singular.CLI.DescribeSpec qualified
-import Singular.CLI.FailureSentenceSpec qualified
-import Singular.CLI.FlagGroupSpec qualified
-import Singular.CLI.FoldRulesSpec qualified
-import Singular.CLI.HelpSnapshotSpec qualified
-import Singular.CLI.JournalTransitionsSpec qualified
-import Singular.CLI.OneOutputCreateSpec qualified
-import Singular.CLI.ParserCorpusSpec qualified
-import Singular.CLI.PayloadSpec qualified
-import Singular.CLI.PinGateSpec qualified
-import Singular.CLI.PrepareSpec qualified
-import Singular.CLI.PrintedPayloadSpec qualified
-import Singular.CLI.ReclaimSpec qualified
-import Singular.CLI.RegistryAddressSpec qualified
-import Singular.CLI.RejectSpec qualified
-import Singular.CLI.SaveStateTokenSpec qualified
-import Singular.CLI.SettingsFileSpec qualified
-import Singular.CLI.SignSpec qualified
-import Singular.CLI.SourcesSpec qualified
-import Singular.CLI.SubmitSpec qualified
-import Singular.CLI.TrieRefusalSpec qualified
-import Singular.CLI.VaultSpec qualified
-import Singular.CLI.VersionSpec qualified
-import Singular.CLI.WitnessReachSpec qualified
-import Singular.Provider.Koios.ClientSpec qualified
-import Singular.Provider.Koios.HttpSpec qualified
-import Singular.Provider.Koios.ProviderSpec qualified
-import Singular.Provider.Koios.RecordedSpec qualified
-import Singular.Provider.Koios.RecorderSpec qualified
+import Naming.CompleteVerifySpec qualified (spec)
+import Naming.RecordValueSpec qualified (spec)
+import Naming.RegisterSpec qualified (spec)
+import Naming.RetireVerifySpec qualified (spec)
+import Singular.CLI.BookingRefusalSpec qualified (spec)
+import Singular.CLI.CommandRunSpec qualified (spec)
+import Singular.CLI.CreateFundingSpec qualified (spec)
+import Singular.CLI.FailureSentenceSpec qualified (spec)
+import Singular.CLI.FlagGroupSpec qualified (spec)
+import Singular.CLI.FoldRulesSpec qualified (spec)
+import Singular.CLI.HelpSnapshotSpec qualified (spec)
+import Singular.CLI.JournalTransitionsSpec qualified (spec)
+import Singular.CLI.OneOutputCreateSpec qualified (spec)
+import Singular.CLI.ParserCorpusSpec qualified (spec)
+import Singular.CLI.PayloadSpec qualified (spec)
+import Singular.CLI.PinGateSpec qualified (spec)
+import Singular.CLI.PrepareSpec qualified (spec)
+import Singular.CLI.PrintedPayloadSpec qualified (spec)
+import Singular.CLI.ReclaimSpec qualified (spec)
+import Singular.CLI.RejectSpec qualified (spec)
+import Singular.CLI.SettingsFileSpec qualified (spec)
+import Singular.CLI.SignSpec qualified (spec)
+import Singular.CLI.SourcesSpec qualified (spec)
+import Singular.CLI.StateCommandSpec qualified (spec)
+import Singular.CLI.SubmitSpec qualified (spec)
+import Singular.CLI.TrieRefusalSpec qualified (spec)
+import Singular.CLI.VaultSpec qualified (spec)
+import Singular.CLI.VersionSpec qualified (spec)
+import Singular.CLI.WitnessReachSpec qualified (spec)
+import Singular.Provider.Koios.ClientSpec qualified (spec)
+import Singular.Provider.Koios.HttpSpec qualified (spec)
+import Singular.Provider.Koios.ProviderSpec qualified (spec)
+import Singular.Provider.Koios.RecordedSpec qualified (spec)
+import Singular.Provider.Koios.RecorderSpec qualified (spec)
 import Singular.Provider.Koios.ReferenceScriptsSpec qualified
-import Singular.Registry.AddressSpec qualified
-import Singular.Registry.BlueprintParametersSpec qualified
-import Singular.Registry.BundleSpec qualified
-import Singular.Registry.CandidateSpec qualified
-import Singular.Registry.ChainedViewSpec qualified
-import Singular.Registry.ContractTableSpec qualified
-import Singular.Registry.DeploymentSpec qualified
-import Singular.Registry.FailureMatchSpec qualified
-import Singular.Registry.FoldAdmissionSpec qualified
-import Singular.Registry.FoldSelectionSpec qualified
-import Singular.Registry.LifecycleSpec qualified
-import Singular.Registry.LineageSpec qualified
-import Singular.Registry.LocalEvaluationSpec qualified
-import Singular.Registry.LocalServicesCallerSpec qualified
-import Singular.Registry.NetworkTimeSpec qualified
-import Singular.Registry.OneViewSpec qualified
-import Singular.Registry.PageSpec qualified
-import Singular.Registry.PhaseLogSpec qualified
-import Singular.Registry.PlainJsonSpec qualified
-import Singular.Registry.Private.ArchiveSpec qualified
-import Singular.Registry.ProviderSpec qualified
-import Singular.Registry.SessionServicesSpec qualified
-import Singular.Registry.SubmitSpec qualified
-import Singular.Registry.TrieStateContractSpec qualified
-import Singular.Registry.TrieStateSpec qualified
-import Singular.Registry.TxBuilder.BookEdgeSpec qualified
-import Singular.Registry.TxBuilder.BootSpec qualified
+    ( spec
+    )
+import Singular.Registry.AddressSpec qualified (spec)
+import Singular.Registry.BlueprintParametersSpec qualified (spec)
+import Singular.Registry.BundleSpec qualified (spec)
+import Singular.Registry.CandidateSpec qualified (spec)
+import Singular.Registry.ChainedViewSpec qualified (spec)
+import Singular.Registry.ContractTableSpec qualified (spec)
+import Singular.Registry.DeploymentSpec qualified (spec)
+import Singular.Registry.FailureMatchSpec qualified (spec)
+import Singular.Registry.FoldAdmissionSpec qualified (spec)
+import Singular.Registry.FoldSelectionSpec qualified (spec)
+import Singular.Registry.LifecycleSpec qualified (spec)
+import Singular.Registry.LineageSpec qualified (spec)
+import Singular.Registry.LocalEvaluationSpec qualified (spec)
+import Singular.Registry.LocalServicesCallerSpec qualified (spec)
+import Singular.Registry.NetworkTimeSpec qualified (spec)
+import Singular.Registry.OneViewSpec qualified (spec)
+import Singular.Registry.PageSpec qualified (spec)
+import Singular.Registry.PhaseLogSpec qualified (spec)
+import Singular.Registry.PlainJsonSpec qualified (spec)
+import Singular.Registry.Private.ArchiveSpec qualified (spec)
+import Singular.Registry.ProviderSpec qualified (spec)
+import Singular.Registry.SessionServicesSpec qualified (spec)
+import Singular.Registry.SubmitSpec qualified (spec)
+import Singular.Registry.TrieStateContractSpec qualified (spec)
+import Singular.Registry.TrieStateSpec qualified (spec)
+import Singular.Registry.TxBuilder.BookEdgeSpec qualified (spec)
+import Singular.Registry.TxBuilder.BootSpec qualified (spec)
 import Singular.Registry.TxBuilder.MeasuredBookingSpec qualified
-import Singular.Registry.TxBuilder.PrepareSpec qualified
+    ( spec
+    )
+import Singular.Registry.TxBuilder.PrepareSpec qualified (spec)
 import Singular.Registry.TxBuilder.PublicationFundingSpec qualified
+    ( spec
+    )
 import Singular.Registry.TxBuilder.RetractFundingSpec qualified
+    ( spec
+    )
 import Singular.Registry.TxBuilder.SelectedFoldSpec qualified
+    ( spec
+    )
 import Singular.Registry.TxBuilder.SkipEvalUnitsSpec qualified
-import Singular.Registry.TxBuilder.UpperSlotSpec qualified
-import Singular.Registry.TypesSpec qualified
-import Singular.Registry.WaitSpec qualified
+    ( spec
+    )
+import Singular.Registry.TxBuilder.UpperSlotSpec qualified (spec)
+import Singular.Registry.TypesSpec qualified (spec)
+import Singular.Registry.WaitSpec qualified (spec)
+import Singular.State.PreimageSpec qualified (spec)
+import Singular.State.StateFoldSpec qualified (spec)
+import Singular.State.StateGenesisSpec qualified (spec)
+import Singular.State.StateLineageSpec qualified (spec)
+import Singular.State.StatePublicationSpec qualified (spec)
+import Singular.State.StateRecordsSpec qualified (spec)
 import Test.Hspec (describe, hspec)
 import Test.Tags (Area (..), tagged)
 
@@ -220,9 +236,6 @@ main = hspec $ do
         (tagged "Singular.CLI.FoldRules" [Cli])
         Singular.CLI.FoldRulesSpec.spec
     describe
-        (tagged "Singular.CLI.Describe" [Cli])
-        Singular.CLI.DescribeSpec.spec
-    describe
         (tagged "Singular.CLI.JournalTransitions" [Cli])
         Singular.CLI.JournalTransitionsSpec.spec
     describe
@@ -262,14 +275,11 @@ main = hspec $ do
         (tagged "Singular.CLI.Sources" [Cli])
         Singular.CLI.SourcesSpec.spec
     describe
-        (tagged "Singular.CLI.SaveStateToken" [Cli])
-        Singular.CLI.SaveStateTokenSpec.spec
+        (tagged "Singular.CLI.StateCommand" [Cli, Recovery])
+        Singular.CLI.StateCommandSpec.spec
     describe
         (tagged "Singular.CLI.SettingsFile" [Cli])
         Singular.CLI.SettingsFileSpec.spec
-    describe
-        (tagged "Singular.CLI.RegistryAddress" [Cli])
-        Singular.CLI.RegistryAddressSpec.spec
     describe
         (tagged "Singular.CLI.WitnessReach" [Cli, Provider])
         Singular.CLI.WitnessReachSpec.spec
@@ -309,3 +319,21 @@ main = hspec $ do
     describe
         (tagged "Singular.Provider.Koios.ReferenceScripts" [Provider])
         Singular.Provider.Koios.ReferenceScriptsSpec.spec
+    describe
+        (tagged "Singular.State.Preimage" [Builders])
+        Singular.State.PreimageSpec.spec
+    describe
+        (tagged "Singular.State.StateRecords" [Builders])
+        Singular.State.StateRecordsSpec.spec
+    describe
+        (tagged "Singular.State.StateGenesis" [Builders, Evaluation])
+        Singular.State.StateGenesisSpec.spec
+    describe
+        (tagged "Singular.State.StatePublication" [Builders])
+        Singular.State.StatePublicationSpec.spec
+    describe
+        (tagged "Singular.State.StateLineage" [Builders, Trie, History])
+        Singular.State.StateLineageSpec.spec
+    describe
+        (tagged "Singular.State.StateFold" [Builders, Trie, Evaluation])
+        Singular.State.StateFoldSpec.spec

@@ -1,0 +1,94 @@
+{
+  "update-a-holding-and-permanently-terminate-its-key-on-the-proved-design": [
+    {
+      "text": "Update a holding and permanently terminate its key on the proved design.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 743, part of epic 731. This page is for an open-datum user, for an author of another application, and for the people who review the pull requests. It records the story, the requirements, the refusals and the checks that prove them. It continues the registration ticket.",
+      "pause": 400
+    }
+  ],
+  "story": [
+    {
+      "text": "Story.",
+      "pause": 500
+    },
+    {
+      "text": "As an open-datum user, I update my registered key's payload without any registry fold, then book its permanent termination. My deposit goes to the treasury at booking. Any folder burns the key's token in a fold and is paid the request's whole value, and the key can never be registered again in that registry. The current contract line is gone from the epic branch, and the new commands carry the established names.",
+      "pause": 400
+    }
+  ],
+  "what-the-two-validators-promise": [
+    {
+      "text": "What the two validators promise.",
+      "pause": 500
+    },
+    {
+      "text": "The binding Lean statements are listed in the plan; they come from the aligned models of issue 741.",
+      "pause": 400
+    }
+  ],
+  "requirements": [
+    {
+      "text": "Requirements.",
+      "pause": 500
+    },
+    {
+      "text": "validators-follow-the-model: the two validators implement the aligned Lean statements for the holding update, the termination booking, the termination request, the termination fold and supply and history; each statement has an executable check that has been seen to fail.",
+      "pause": 300
+    },
+    {
+      "text": "devnet-update-termination-journey: through the packaged commands on a development network, continuing the registration journey: update the payload; book the termination, and the deposit reaches the treasury; a second wallet folds it from chain data alone, the token is burned and the folder is paid the request's value; a new registration of the same key is refused.",
+      "pause": 300
+    },
+    {
+      "text": "fold-from-public-data: the termination fold is built and signed by a wallet that is not the controller's, from chain data alone: no file, key or record from the controller.",
+      "pause": 300
+    },
+    {
+      "text": "devnet-termination-refusals: on a development network, each of these is refused, each beside a passing control: a burn without a fold of that registry; a fold moving another key; a termination fold without the approval; spending the termination request without burning its token.",
+      "pause": 300
+    },
+    {
+      "text": "conformance-old-versus-new: the conformance suite states the old and new outcome of the update and termination journeys in requirement language, with the decided differences: the deposit goes to the treasury at booking and the folder takes the termination request's whole value.",
+      "pause": 300
+    },
+    {
+      "text": "current-line-removed: the current contract line leaves the epic branch in this change set: its validators, builders, commands, hosted jobs and Lean models; the new commands move onto the established singular registry and open-datum command names; the documentation follows.",
+      "pause": 300
+    },
+    {
+      "text": "preimage-bytes-pinned: the termination approval preimage has byte vectors reproduced by the on-chain and off-chain encoders.",
+      "pause": 300
+    },
+    {
+      "text": "interrupted-commands-keep-identity: cancellation and uncertain submission preserve the transaction identity; no command resubmits on its own.",
+      "pause": 300
+    },
+    {
+      "text": "hosted-checks-green: hosted checks are green on each pull request into the epic branch.",
+      "pause": 300
+    }
+  ],
+  "refusals": [
+    {
+      "text": "Refusals.",
+      "pause": 500
+    }
+  ],
+  "out-of-scope": [
+    {
+      "text": "Out of scope.",
+      "pause": 500
+    },
+    {
+      "text": "The reader (issue 744), the preimage specification command (issue 745), batch folding limits (issue 746), integration into main and release (issue 747), the trie library itself, and the paused protected-rejection work (issues 498 and 529). Registration, its builders, commands and journey are issue 742's; this ticket continues them.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "ed0f2d721b86b25219debdf7cef9cce61ad88b2acbcf935fa6656b9bbfcf41f2"
+  }
+}

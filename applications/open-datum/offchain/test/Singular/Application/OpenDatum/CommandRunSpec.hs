@@ -26,102 +26,22 @@ One contradicting event is a failure, whatever other events agree.
 The commands run are the 'Command' constructors, read from the type, not
 listed here; a constructor no run exercises fails the extent row.
 -}
-module Singular.Application.OpenDatum.CommandRunSpec (spec) where
-
-import Control.Applicative ((<|>))
-import Control.Exception
-    ( SomeException
-    , bracket
-    , finally
-    , fromException
-    , throwIO
-    , try
-    )
-import Control.Monad (forM, unless, void, when)
-import Control.Tracer (Tracer (..))
-import Data.Aeson (toJSON, (.=))
-import Data.Aeson qualified as Aeson
-import Data.Aeson.Key qualified as AesonKey
-import Data.Aeson.KeyMap qualified as KeyMap
-import Data.ByteString qualified as BS
-import Data.ByteString.Base16 qualified as B16
-import Data.ByteString.Char8 qualified as BC
-import Data.ByteString.Lazy qualified as BL
-import Data.ByteString.Short qualified as SBS
-import Data.Either (fromLeft)
-import Data.Foldable (forM_, toList)
-import Data.Function ((&))
-import Data.IORef
-    ( IORef
-    , modifyIORef'
-    , newIORef
-    , readIORef
-    , writeIORef
-    )
-import Data.List (isInfixOf, nub, partition, sort)
-import Data.Map.Strict qualified as Map
-import Data.Maybe
-    ( fromMaybe
-    , isJust
-    , isNothing
-    , listToMaybe
-    , mapMaybe
-    )
-import Data.Proxy (Proxy (..))
-import Data.Set qualified as Set
-import Data.Text (Text)
-import Data.Text qualified as T
-import Data.Text.Encoding qualified as TE
-import Data.Time (UTCTime)
-import Data.Time.Clock.POSIX (getPOSIXTime)
-import Data.Time.Format.ISO8601 (iso8601ParseM)
-import Data.Word (Word64)
-import GHC.Generics
-    ( C1
-    , Constructor
-    , D1
-    , Generic (..)
-    , conName
-    , (:+:)
-    )
-import Lens.Micro ((%~), (.~), (^.))
-import System.Directory
-    ( createDirectory
-    , doesDirectoryExist
-    , doesFileExist
-    , doesPathExist
-    , listDirectory
-    , removeFile
-    , removePathForcibly
-    , renameFile
-    )
-import System.Exit (ExitCode (..))
-import System.FilePath (takeFileName, (</>))
-import System.IO
-    ( IOMode (..)
-    , hClose
-    , hFlush
-    , hPrint
-    , openFile
-    , openTempFile
-    , stderr
-    , stdout
-    )
-import System.IO.Temp (withSystemTempDirectory)
-import System.Posix.Files (setFileMode)
-import System.Posix.IO
-    ( OpenFileFlags (..)
-    , OpenMode (..)
-    , closeFd
-    , defaultFileFlags
-    , dup
-    , dupTo
-    , openFd
-    , stdError
-    , stdOutput
-    )
-import System.Posix.Types (Fd (..))
-import Test.Hspec
+module Singular.Application.OpenDatum.CommandRunSpec
+    ( spec
+    , Rig (..)
+    , Run (..)
+    , capabilities
+    , envOf
+    , fundOutput
+    , magic
+    , outcomeOf
+    , runAt
+    , runVia
+    , runWithKey
+    , submissionsOf
+    , textAt
+    , withRigOf
+    ) where
 
 import Cardano.Crypto.DSIGN
     ( Ed25519DSIGN
@@ -143,7 +63,12 @@ import Cardano.Ledger.Alonzo.Tx
     , hashScriptIntegrity
     )
 import Cardano.Ledger.Alonzo.TxWits (Redeemers (..), TxDats (..))
-import Cardano.Ledger.Api.Tx (addrTxWitsL, bodyTxL, txIdTx, witsTxL)
+import Cardano.Ledger.Api.Tx
+    ( addrTxWitsL
+    , bodyTxL
+    , txIdTx
+    , witsTxL
+    )
 import Cardano.Ledger.Api.Tx.Body
     ( collateralInputsTxBodyL
     , inputsTxBodyL
@@ -181,18 +106,137 @@ import Cardano.Ledger.Plutus.Language (Language (PlutusV3))
 import Cardano.Ledger.TxIn (TxId (..), TxIn (..))
 import Cardano.Slotting.Slot (SlotNo (..))
 import Cardano.Tx.Ledger (ConwayTx)
-
+import Control.Applicative ((<|>))
+import Control.Exception (bracket, finally, throwIO)
+import Control.Monad (forM, unless, when)
+import Control.Tracer (Tracer (..))
+import Data.Aeson (toJSON, (.=))
+import Data.Aeson qualified as Aeson
+    ( Key
+    , Object
+    , Result (Success)
+    , ToJSON (toJSON)
+    , Value (..)
+    , decodeStrict
+    , eitherDecode
+    , eitherDecodeStrict'
+    , encode
+    , fromJSON
+    , object
+    )
+import Data.Aeson.Key qualified as AesonKey (toText)
+import Data.Aeson.KeyMap qualified as KeyMap
+    ( delete
+    , elems
+    , empty
+    , insert
+    , keys
+    , lookup
+    , null
+    , toList
+    )
+import Data.ByteString qualified as BS
+    ( ByteString
+    , empty
+    , isInfixOf
+    , readFile
+    , replicate
+    , writeFile
+    )
+import Data.ByteString.Base16 qualified as B16 (decode, encode)
+import Data.ByteString.Char8 qualified as BC
+    ( filter
+    , lines
+    , pack
+    , replicate
+    , unpack
+    , writeFile
+    )
+import Data.ByteString.Lazy qualified as BL
+    ( ByteString
+    , toStrict
+    , writeFile
+    )
+import Data.ByteString.Short qualified as SBS
+    ( ShortByteString
+    , fromShort
+    , toShort
+    )
+import Data.Either (fromLeft)
+import Data.Foldable (forM_, toList)
+import Data.Function ((&))
+import Data.IORef
+    ( IORef
+    , modifyIORef'
+    , newIORef
+    , readIORef
+    , writeIORef
+    )
+import Data.List (isInfixOf, nub, partition, sort)
+import Data.Map.Strict qualified as Map
+    ( Map
+    , delete
+    , fromList
+    , insert
+    , isSubmapOfBy
+    , member
+    , null
+    , singleton
+    , toList
+    , union
+    , unionWith
+    )
+import Data.Maybe
+    ( fromMaybe
+    , isJust
+    , isNothing
+    , listToMaybe
+    , mapMaybe
+    )
+import Data.Proxy (Proxy (..))
+import Data.Set qualified as Set
+    ( delete
+    , empty
+    , insert
+    , map
+    , member
+    , singleton
+    , toList
+    )
+import Data.Text (Text)
+import Data.Text qualified as T
+    ( drop
+    , isInfixOf
+    , isPrefixOf
+    , isSuffixOf
+    , pack
+    , splitOn
+    , take
+    , takeWhile
+    , toLower
+    , unpack
+    )
+import Data.Text.Encoding qualified as TE
+    ( decodeUtf8
+    , encodeUtf8
+    )
+import Data.Time (UTCTime)
+import Data.Time.Clock.POSIX (getPOSIXTime)
+import Data.Time.Format.ISO8601 (iso8601ParseM)
+import Data.Word (Word64)
+import GHC.Generics
+    ( C1
+    , Constructor
+    , D1
+    , Generic (..)
+    , conName
+    , (:+:)
+    )
+import Lens.Micro ((%~), (.~), (^.))
+import PlutusCore.Data qualified as PD (Data (I))
 import PlutusCore.MkPlc (mkConstant)
 import PlutusCore.Version (plcVersion110)
-import PlutusLedgerApi.V3 qualified as PLC
-import UntypedPlutusCore qualified as UPLC
-
-import Negative.Parse
-    ( NegativeInvocation (..)
-    , parseNegativeInvocation
-    )
-import Negative.Run (runNegativeInsert, runNegativeUpdate)
-import PlutusCore.Data qualified as PD
+import PlutusLedgerApi.V3 qualified as PLC (serialiseUPLC)
 import Singular.Application.OpenDatum.Command
     ( OpenDatumCommand (..)
     , parseOpenDatumCommand
@@ -208,12 +252,17 @@ import Singular.Application.OpenDatum.Root
     , runPackagedOpenDatumVia
     )
 import Singular.Application.OpenDatum.Run (runOpenDatum)
-import Singular.Application.OpenDatum.Value (openDatumApplication)
-import Singular.CLI (runCommand)
+import Singular.Application.OpenDatum.Value
+    ( openDatumApplication
+    )
 import Singular.CLI.Booking (BookingVerb (..), bookingEdgeName)
-import Singular.CLI.Command (parseCommand)
+import Singular.CLI.Finish (finish)
+import Singular.CLI.Inspect (runInspect)
 import Singular.CLI.ManagedState (addressPartition, managedDir)
-import Singular.CLI.Passphrase (PassphraseSource (..), mkPassphrase)
+import Singular.CLI.Passphrase
+    ( PassphraseSource (..)
+    , mkPassphrase
+    )
 import Singular.CLI.Proof (Leaf (..), leafName)
 import Singular.CLI.Receipt
     ( JournalEntry (..)
@@ -227,10 +276,66 @@ import Singular.CLI.Registry
     , loadReleaseCodes
     , pendingPath
     )
-import Singular.CLI.Session (CommandFailure (..), Env (..), txIdHex)
+import Singular.CLI.Session (Env (..), txIdHex)
 import Singular.CLI.Sign (signBundle)
 import Singular.CLI.Submit (submitBundle)
 import Singular.CLI.Trace
+    ( ConfirmVerdict
+        ( ConfirmFailed
+        , ConfirmThrew
+        , ConfirmTimedOut
+        , Confirmed
+        )
+    , EdgeAction
+        ( Booking
+        , Booting
+        , Folding
+        , Reclaiming
+        , Rejecting
+        , Updating
+        )
+    , Ended (Done, FailedWith)
+    , Event (How, What)
+    , Fetch (fetchElapsed, fetchEnd, fetchSource, fetchWhat)
+    , How (Fetched, Read, Tx)
+    , RefusalKind (..)
+    , Scope (InEdge, InKey, InRequest, InTransaction)
+    , SubmitVerdict
+        ( Accepted
+        , LedgerRefusedIt
+        , ProviderFailed
+        , SubmitThrew
+        , WrongNetwork
+        )
+    , Trace (Trace)
+    , TxEvent
+        ( TxBuilt
+        , TxConfirmed
+        , TxObserved
+        , TxSigned
+        , TxSubmitted
+        , submitStep
+        , submitTxId
+        , submitVerdict
+        )
+    , What
+        ( Booked
+        , CommandEnded
+        , Created
+        , EdgeStarted
+        , Folded
+        , KeySeen
+        , Reclaimed
+        , Refused
+        , RegistrySeen
+        , Rejected
+        , RequestSeen
+        , RootSeen
+        , Updated
+        )
+    , fanOut
+    , renderText
+    )
 import Singular.CLI.Vault
     ( createVaultFile
     , sealVault
@@ -272,6 +377,13 @@ import Singular.Registry.Evidence
     )
 import Singular.Registry.Ledger (Addr, Coin (..), ConwayEra)
 import Singular.Registry.LedgerProvider qualified as Cage
+    ( LedgerProvider (acquire)
+    , OutputQuery (AtAddress, AtTxIn, HoldingAsset)
+    , Outputs
+    , ReadFailure (BackendReadFailure, MissingOutput)
+    , Session (outputs)
+    , SubmitResult (SubmitAccepted, SubmitFailed, SubmitRefused)
+    )
 import Singular.Registry.PlainJson
     ( PayloadSchema (..)
     , payloadFromJson
@@ -288,6 +400,11 @@ import Singular.Registry.RawChainFixture
     )
 import Singular.Registry.SessionEvidence (observeProvider)
 import Singular.Registry.SessionIO qualified as SessionIO
+    ( ceilingSlot
+    , outputsAt
+    , parameters
+    , withLatest
+    )
 import Singular.Registry.Signing (detachedWitness, signedTx)
 import Singular.Registry.StateToken (parseStateToken)
 import Singular.Registry.SyntheticLedger
@@ -325,6 +442,67 @@ import Singular.Registry.Wallet
     , bech32Address
     , loadWallet
     )
+import System.Directory
+    ( createDirectory
+    , doesDirectoryExist
+    , doesFileExist
+    , doesPathExist
+    , listDirectory
+    , removeFile
+    , removePathForcibly
+    , renameFile
+    )
+import System.Exit (ExitCode (..))
+import System.FilePath (takeFileName, (</>))
+import System.IO
+    ( IOMode (..)
+    , hClose
+    , hFlush
+    , hPrint
+    , openFile
+    , openTempFile
+    , stderr
+    , stdout
+    )
+import System.IO.Temp (withSystemTempDirectory)
+import System.Posix.Files (setFileMode)
+import System.Posix.IO
+    ( OpenFileFlags (..)
+    , OpenMode (..)
+    , closeFd
+    , defaultFileFlags
+    , dup
+    , dupTo
+    , openFd
+    , stdError
+    , stdOutput
+    )
+import System.Posix.Types (Fd (..))
+import Test.Hspec
+    ( Expectation
+    , Spec
+    , SpecWith
+    , anyException
+    , around
+    , aroundAll
+    , describe
+    , expectationFailure
+    , it
+    , shouldBe
+    , shouldContain
+    , shouldMatchList
+    , shouldNotBe
+    , shouldNotContain
+    , shouldNotSatisfy
+    , shouldReturn
+    , shouldSatisfy
+    , shouldThrow
+    )
+import UntypedPlutusCore qualified as UPLC
+    ( DeBruijn (DeBruijn)
+    , Program (Program)
+    , Term (Apply, LamAbs)
+    )
 
 spec :: Spec
 spec =
@@ -334,7 +512,6 @@ spec =
         >> bookingRefusalRows
         >> permanentRecognition
         >> settledListSingletonRow
-        >> openDatumDescribeCommandRows
         >> externalWriteRows
         >> vaultWriteRows
         >> saveStateTokenRows
@@ -343,82 +520,6 @@ spec =
         >> registryAddressRows
         >> witnessReachRows
         >> witnessKeptRows
-
-{- | The open datum create receipt carries the working describe line. The
-application owns no describe verb, so the line always names the registry
-binary. Two registries give two tokens, so a fixed line cannot pass.
-Values the test checks against are read from the run itself, never typed.
--}
-openDatumDescribeCommandRows :: Spec
-openDatumDescribeCommandRows = describe "Open datum create prints the describe command" $ do
-    it
-        "carries the registry describe line in each open datum create receipt"
-        $ withRig
-        $ \rig -> do
-            firstSeed <- fundSeed rig
-            firstRun <-
-                run
-                    rig
-                    "first open datum create"
-                    ["open-datum", "create", "--seed", firstSeed]
-            outcomeOf (runReceipt firstRun) `shouldBe` Just "success"
-            firstToken <- tokenOf firstRun
-            firstLine <- case valueAt "describeCommand" (runReceipt firstRun) of
-                Just (Aeson.String line) -> pure line
-                other ->
-                    expectationFailure
-                        ("the first open datum create carries no describe line: " <> show other)
-                        >> pure ""
-            checkPrinted rig firstToken firstLine
-            secondSeed <- fundSeed2 rig
-            secondRun <-
-                run
-                    rig
-                    "second open datum create"
-                    ["open-datum", "create", "--seed", secondSeed]
-            outcomeOf (runReceipt secondRun) `shouldBe` Just "success"
-            secondToken <- tokenOf secondRun
-            secondLine <- case valueAt "describeCommand" (runReceipt secondRun) of
-                Just (Aeson.String line) -> pure line
-                other ->
-                    expectationFailure
-                        ( "the second open datum create carries no describe line: "
-                            <> show other
-                        )
-                        >> pure ""
-            secondToken `shouldSatisfy` (/= firstToken)
-            secondLine `shouldSatisfy` (/= firstLine)
-            checkPrinted rig secondToken secondLine
-            case parseOpenDatumCommand
-                ["open-datum", "describe", "--blueprint", rigBlueprint rig] of
-                Left _ -> pure ()
-                Right command ->
-                    expectationFailure
-                        ("open datum names a describe verb: " <> show command)
-  where
-    allowedFlags =
-        [ "--blueprint"
-        , "--state-token"
-        , "--koios-url"
-        , "--network-magic"
-        , "--network-time"
-        ]
-    requiredFlags = ["--blueprint", "--state-token", "--koios-url", "--network-magic"]
-    checkPrinted rig token line = do
-        let parts = words (T.unpack line)
-        take 3 parts `shouldBe` ["singular", "registry", "describe"]
-        let flags = [word | word <- parts, take 2 word == "--"]
-        all (`elem` allowedFlags) flags `shouldBe` True
-        all (`elem` flags) requiredFlags `shouldBe` True
-        ("--json" `elem` flags) `shouldBe` False
-        ("--wallet-skey" `elem` flags) `shouldBe` False
-        ("--wallet-address" `elem` flags) `shouldBe` False
-        ("--koios-token-file" `elem` flags) `shouldBe` False
-        ("--state-dir" `elem` flags) `shouldBe` False
-        ("--receipt" `elem` flags) `shouldBe` False
-        T.isInfixOf (T.pack (rigBlueprint rig)) line `shouldBe` True
-        T.isInfixOf (T.pack token) line `shouldBe` True
-        T.isInfixOf (T.pack (rigKey rig)) line `shouldBe` False
 
 permanentRecognition :: Spec
 permanentRecognition = describe "Permanent contract recognition"
@@ -729,6 +830,13 @@ constructorOf = \case
     OpenTerminate _ -> "OpenTerminate"
     OpenFold _ -> "OpenFold"
     OpenInspect _ -> "OpenInspect"
+    OpenStateCreate _ _ -> "OpenStateCreate"
+    OpenStateFold _ -> "OpenStateFold"
+    OpenHoldingUpdate{} -> "OpenHoldingUpdate"
+    OpenHoldingTerminate{} -> "OpenHoldingTerminate"
+    OpenRegistrationBook _ -> "OpenRegistrationBook"
+    OpenRegistrationReclaim _ -> "OpenRegistrationReclaim"
+    OpenRegistrationCleanup _ -> "OpenRegistrationCleanup"
 
 -- ---------------------------------------------------------
 -- Tracing setup re-cut: a trace file that cannot be written
@@ -1417,6 +1525,8 @@ blueprintWith further program =
                  , validator "open_datum.open_datum" 2
                  , validator "witness.witness" 3
                  , validator "witness.witness" 3
+                 , validator "singular_state.singular_state.spend" 2
+                 , validator "open_datum_requests.open_datum_requests.spend" 1
                  ]
                     <> [validator title arity | (title, arity) <- further]
                )
@@ -1813,7 +1923,10 @@ lifecycle rig = do
             ( ["open-datum", "insert", "--key", "alice-6", "--payload", payload]
                 <> tokenArgs t1
             )
-    pure
+    -- The new line: a registry of open datum on the proved design, a booking
+    -- folded, a booking reclaimed inside its window, a booking cleaned up after it.
+    registrationRuns <- registrationLifecycle rig
+    pure $
         [ create
         , insert
         , fold1
@@ -1846,10 +1959,135 @@ lifecycle rig = do
         , rejected
         , unanswered
         ]
+            <> registrationRuns
   where
     payload = rigDir rig </> "payload.json"
     payload2 = rigDir rig </> "payload-2.json"
     previewAddr = bech32Address (walletAddr (rigWallet rig))
+
+{- | The commands of the proved design, each run once on a registry of its own:
+the creation, a booking folded, a booking reclaimed inside its window and a
+booking cleaned up after it. The validators of the rig accept everything, so
+these runs read what the commands build, send and print; the rows over the
+compiled validators are the registration command spec's.
+-}
+registrationLifecycle :: Rig -> IO [Run]
+registrationLifecycle rig = do
+    created <- runAt rig "proved" "state create" ["state", "create"]
+    token <- tokenOf created
+    booked <- runAt rig "proved" "registration book" (book token "fold")
+    folded <-
+        runAt
+            rig
+            "proved"
+            "state fold"
+            (["state", "fold", "--state-token", token] <> pendingOf booked)
+    foldedTx <- last <$> readIORef (rigSubmitted rig)
+    let holding = renderOutRef (TxIn (txIdTx foldedTx) (TxIx 1))
+    updated <-
+        runAt
+            rig
+            "proved"
+            "holding update"
+            [ "holding"
+            , "update"
+            , "--state-token"
+            , token
+            , "--holding"
+            , T.unpack holding
+            , "--payload"
+            , rigDir rig </> "payload.json"
+            ]
+    nextHolding <-
+        maybe
+            (fail "the update prints no holding")
+            pure
+            (textAt "holding" (runReceipt updated))
+    terminated <-
+        runAt
+            rig
+            "proved"
+            "holding terminate"
+            [ "holding"
+            , "terminate"
+            , "--state-token"
+            , token
+            , "--holding"
+            , T.unpack nextHolding
+            ]
+    terminationFold <-
+        runAt
+            rig
+            "proved"
+            "termination fold"
+            (["state", "fold", "--state-token", token] <> pendingOf terminated)
+    toReclaim <-
+        runAt
+            rig
+            "proved"
+            "registration book to reclaim"
+            (book token "reclaim")
+    reachMs (milliseconds "processDeadline" toReclaim)
+    reclaimed <-
+        runAt
+            rig
+            "proved"
+            "registration reclaim"
+            ( ["registration", "reclaim", "--state-token", token]
+                <> pendingOf toReclaim
+            )
+    toClean <-
+        runAt
+            rig
+            "proved"
+            "registration book to clean up"
+            (book token "cleanup")
+    reachMs (milliseconds "reclaimEnd" toClean)
+    cleaned <-
+        runAt
+            rig
+            "proved"
+            "registration cleanup"
+            ( ["registration", "cleanup", "--state-token", token]
+                <> pendingOf toClean
+            )
+    pure
+        [ created
+        , booked
+        , folded
+        , updated
+        , terminated
+        , terminationFold
+        , toReclaim
+        , reclaimed
+        , toClean
+        , cleaned
+        ]
+  where
+    book token key =
+        [ "registration"
+        , "book"
+        , "--state-token"
+        , token
+        , "--key"
+        , key
+        , "--payload"
+        , rigDir rig </> "payload.json"
+        ]
+    pendingOf r =
+        maybe
+            []
+            (\p -> ["--pending", T.unpack p])
+            (textAt "pending" (runReceipt r))
+    milliseconds field r = case valueAt field (runReceipt r) of
+        Just (Aeson.Number n) -> truncate n :: Integer
+        _ -> 0
+    reachMs ms = do
+        slot <-
+            SessionIO.withLatest
+                (rawChainProvider (rigChain rig))
+                (`SessionIO.ceilingSlot` ms)
+        jumpChainTo (rigChain rig) (SlotNo (unSlotNo slot + 1))
 
 -- | A wallet output the create can consume as its seed.
 fundSeed :: Rig -> IO String
@@ -5276,19 +5514,6 @@ payloadSchemaRunRows = describe "a payload written as plain JSON (#719)" $ do
                         path <- payloadFile rig "refused.json" file
                         outcome <- attempt rig path setting
                         outcome `shouldBe` Just ("client-refusal", sentence path)
-    describe "the negative host reads the payload as the commands do" $
-        forM_ ["insert", "update"] $ \word -> do
-            it ("accepts a plain file on " <> word <> " past the payload") $ withRig $ \rig -> do
-                path <- payloadFile rig "plain.json" "{\"answer\": 42}"
-                outcome <- negativeAttempt word rig path []
-                fmap snd outcome
-                    `shouldSatisfy` maybe False (isInfixOf "was read")
-            it ("accepts a detailed file on " <> word <> " with the setting") $ withRig $ \rig -> do
-                path <- payloadFile rig "detailed.json" answerDetailed
-                outcome <-
-                    negativeAttempt word rig path ["--payload-schema", "detailed"]
-                fmap snd outcome
-                    `shouldSatisfy` maybe False (isInfixOf "was read")
   where
     storedRows =
         [
@@ -5437,14 +5662,6 @@ payloadSchemaRunRows = describe "a payload written as plain JSON (#719)" $ do
                     )
                     setting
             )
-        ,
-            ( "the negative host's insert"
-            , negativeAttempt "insert"
-            )
-        ,
-            ( "the negative host's update"
-            , negativeAttempt "update"
-            )
         ]
 
 -- | A rig with a registry created, and the state-token argument of its commands.
@@ -5557,38 +5774,6 @@ viaCommand rig command setting = do
             <$> outcomeOf (runReceipt r)
             <*> fmap T.unpack (textAt "reason" (runReceipt r))
         )
-
-{- | The negative host's insert or update on a payload file, in the blind
-environment: the refusal it ends in, when it ends in one.
--}
-negativeAttempt
-    :: String -> Rig -> FilePath -> [String] -> IO (Maybe (Text, String))
-negativeAttempt word rig path setting = do
-    let token = phantomToken
-        line =
-            ["registry", word, "--key", "k9", "--payload", path]
-                <> setting
-                <> ["--state-dir", rigDir rig </> "negative"]
-                <> ["--blueprint", rigBlueprint rig]
-                <> [ "--koios-url"
-                   , "http://fixture.invalid"
-                   , "--network-magic"
-                   , show magic
-                   ]
-                <> ["--wallet-skey", rigKey rig]
-                <> tokenArgs token
-    invocation <-
-        either (fail . show) pure (parseNegativeInvocation [] line)
-    outcome <-
-        try $ case invocation of
-            Ordinary (OpenInsert a) -> void (runNegativeInsert (blindEnv rig) a)
-            NegativeUpdate a tamper -> void (runNegativeUpdate (blindEnv rig) a tamper)
-            other -> fail ("not an insert or update: " <> show other)
-    pure $ case outcome of
-        Left (e :: SomeException) -> case fromException e of
-            Just (CommandFailure _ why _) -> Just ("client-refusal", why)
-            Nothing -> Just ("failed", show e)
-        Right () -> Nothing
 
 -- | A well-formed state token no registry minted; the blind environment never looks it up.
 phantomToken :: String
@@ -6274,61 +6459,6 @@ witnessKeptRows = describe "what the witness read leaves as it was" $ do
                 code `shouldBe` ExitSuccess
                 outcomeOf receipt `shouldBe` Just "success"
                 valueAt "leaf" receipt `shouldBe` Just (Aeson.String "active")
-    describe "the neutral program" $ do
-        it
-            "prints every output at the application's address, as before, and names the witness of an active key"
-            $ withRegistry
-            $ \rig token -> do
-                activeKey rig token "alice-1"
-                activeKey rig token "alice-2"
-                output <- inspectedOutput rig token "alice-1"
-                (_, address) <- holdingOf rig output "alice-1"
-                atAddress <-
-                    SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v ->
-                        SessionIO.outputsAt v address
-                length atAddress `shouldBe` 2
-                receipt <- neutralInspect rig token "alice-1"
-                outcomeOf receipt `shouldBe` Just "success"
-                topLevelKeys receipt
-                    `shouldBe` sort (neverRegisteredFields <> ["witness"])
-                let listed = valueAt "applicationOutput" receipt >>= valueAt "rawDatums"
-                fmap (sort . listedOutputs) listed
-                    `shouldBe` Just (sort [renderOutRef ref | (ref, _) <- atAddress])
-                fmap (nub . map objectKeys . listedObjects) listed
-                    `shouldBe` Just
-                        [["datum", "datumCbor", "datumHash", "lovelace", "output"]]
-                (valueAt "applicationOutput" receipt >>= valueAt "holdings")
-                    `shouldBe` Just (Aeson.toJSON ([] :: [Text]))
-                (valueAt "witness" receipt >>= valueAt "active" >>= valueAt "holders")
-                    `shouldBe` Just (Aeson.toJSON [output])
-        it
-            "answers a key never registered with the same listing and no witness field"
-            $ withRegistry
-            $ \rig token -> do
-                activeKey rig token "alice-1"
-                output <- inspectedOutput rig token "alice-1"
-                (_, address) <- holdingOf rig output "alice-1"
-                atAddress <-
-                    SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v ->
-                        SessionIO.outputsAt v address
-                receipt <- neutralInspect rig token "nobody"
-                outcomeOf receipt `shouldBe` Just "success"
-                topLevelKeys receipt `shouldBe` neverRegisteredFields
-                valueAt "witness" receipt `shouldBe` Nothing
-                fmap
-                    (sort . listedOutputs)
-                    (valueAt "applicationOutput" receipt >>= valueAt "rawDatums")
-                    `shouldBe` Just (sort [renderOutRef ref | (ref, _) <- atAddress])
-  where
-    listedObjects = \case
-        Aeson.Array items -> [o | Aeson.Object o <- toList items]
-        _ -> []
-    listedOutputs value =
-        [ t
-        | o <- listedObjects value
-        , Just (Aeson.String t) <- [KeyMap.lookup "output" o]
-        ]
-    objectKeys o = sort (map AesonKey.toText (KeyMap.keys o))
 
 -- | The address of a state token on the rig's network.
 addressOfToken :: String -> IO String
@@ -6503,7 +6633,7 @@ refusedWith rig token expected = do
 -- | The words of the neutral program's inspect of a key, from an empty directory.
 neutralLine :: Rig -> String -> String -> [String]
 neutralLine rig token key =
-    ["registry", "inspect", "--key", key]
+    ["open-datum", "inspect", "--key", key]
         <> tokenArgs token
         <> [ "--state-dir"
            , rigDir rig </> "empty-actor"
@@ -6534,8 +6664,13 @@ inspectWith app rig token key = do
                 }
     writeIORef (rigEvents rig) []
     command <-
-        either (fail . show) pure (parseCommand (neutralLine rig token key))
-    (code, out, _) <- captured (runCommand app env command)
+        either
+            (fail . show)
+            pure
+            (parseOpenDatumCommand (neutralLine rig token key))
+    (code, out, _) <- captured $ case command of
+        OpenInspect args -> finish (envTracer env) "inspect" Nothing (runInspect app env args)
+        _ -> fail "the retained open-datum inspect fixture did not parse"
     receipt <-
         maybe
             (fail ("no receipt: " <> show out))
@@ -6582,20 +6717,6 @@ plantedTokenless rig token = do
         SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v ->
             SessionIO.outputsAt v address
     pure (address, length atAddress == 2)
-
--- | The neutral program's inspect of a key, over the open-datum registry.
-neutralInspect :: Rig -> String -> String -> IO Aeson.Value
-neutralInspect rig token key = do
-    writeIORef (rigEvents rig) []
-    command <-
-        either (fail . show) pure (parseCommand (neutralLine rig token key))
-    (code, out, _) <-
-        captured (runCommand neutralApplication (envOf rig) command)
-    code `shouldBe` ExitSuccess
-    maybe
-        (fail ("no receipt: " <> show out))
-        pure
-        (Aeson.decodeStrict out)
 
 -- | A receipt without the identifier of the session that read it, which counts runs.
 withoutSessionId :: Aeson.Value -> Aeson.Value

@@ -408,6 +408,76 @@
       "expected": "accept registration and termination; refuse unknown termination, excluded encodings and Terminal reinsertion",
       "state": "uncovered",
       "note": "This separate current requirement does not credit the original broader retirement row, unreachable Absent prefix, deletion refunds or the full permanent-contract consumer row."
+    },
+    {
+      "id": "registration-fold-outcome",
+      "group": "registration-journeys",
+      "requirement": "A booked registration is folded, before its processing deadline, by any wallet that holds only public chain data. The key's token reaches a new holding at the committed address that carries the registration's payload and exactly its deposit, and the folder receives the booked value above the deposit; no treasury is paid. Under the previous design the same fold gave the folder only the booking's tip and paid the registration cost to the treasury.",
+      "source": "OpenDatumApplicationHeld.Money.oldAllocation and OpenDatumApplicationHeld.Money.newAllocation for the registration fold, with the ruling noTreasuryAtFold",
+      "expected": "The fold is accepted and pays out as stated. Uncovered: no executable comparison with the application-held model exists yet",
+      "state": "uncovered",
+      "note": "Statement only. The outcomes are the declarations named in the source, not numbers copied into this row. The previous design's fold requirements stay published as they are.",
+      "evidence": "Separate evidence boundary, not a comparison with the model: the hosted jobs no-pin-registration-journey and no-pin-registration-refusals run the packaged commands on a development network and read the chain's own record. They establish what they run and nothing about agreement with the model."
+    },
+    {
+      "id": "registration-reclaim-outcome",
+      "group": "registration-journeys",
+      "requirement": "A booked registration is reclaimed by its controller, signing alone, between its processing deadline and the end of its reclaim window. Everything the booking held returns to the refund address and no folder is paid. Under the previous design the owner's retraction returned the same whole value; the window is now the one the booking itself records, from its processing deadline to its reclaim end.",
+      "source": "OpenDatumApplicationHeld.Money.oldAllocation and OpenDatumApplicationHeld.Money.newAllocation for the reclaim, with the phase conditions of OpenDatumApplicationHeld.RefundLifecycle",
+      "expected": "The reclaim is accepted and pays out as stated. Uncovered: no executable comparison with the application-held model exists yet",
+      "state": "uncovered",
+      "note": "Statement only. The outcomes are the declarations named in the source, not numbers copied into this row. The previous design's retraction requirements stay published as they are.",
+      "evidence": "Separate evidence boundary, not a comparison with the model: the hosted jobs no-pin-registration-journey and no-pin-registration-refusals run the packaged commands on a development network and read the chain's own record. They establish what they run and nothing about agreement with the model."
+    },
+    {
+      "id": "registration-cleanup-outcome",
+      "group": "registration-journeys",
+      "requirement": "After the reclaim window of a booked registration has closed, any wallet may clean it up. The deposit returns to the refund address and the cleaner receives the booked value above the deposit. Under the previous design a folder rejected such a request after its retraction window, refunded the owner everything but the tip and kept the tip.",
+      "source": "OpenDatumApplicationHeld.Money.oldAllocation and OpenDatumApplicationHeld.Money.newAllocation for the cleanup, with the phase conditions of OpenDatumApplicationHeld.RefundLifecycle",
+      "expected": "The cleanup is accepted and pays out as stated. Uncovered: no executable comparison with the application-held model exists yet",
+      "state": "uncovered",
+      "note": "Statement only. The outcomes are the declarations named in the source, not numbers copied into this row. The previous design's rejection requirements stay published as they are.",
+      "evidence": "Separate evidence boundary, not a comparison with the model: the hosted jobs no-pin-registration-journey and no-pin-registration-refusals run the packaged commands on a development network and read the chain's own record. They establish what they run and nothing about agreement with the model."
+    },
+    {
+      "id": "unfoldable-registration-waits-for-reclaim",
+      "group": "registration-journeys",
+      "requirement": "A booked registration that can never be folded, because its key is already registered or for any other reason, is not rejected early. It stays pending until its refund address reclaims it inside the reclaim window, or until anyone cleans it up after that window and the deposit returns to the refund address. Under the previous design a folder could reject such a request at once, with evidence of the mismatch, while it could still be folded or retracted; the previous design's early-rejection requirements stay published as they are.",
+      "source": "OpenDatumApplicationHeld.Money.oldAllocation for the early rejection, which OpenDatumApplicationHeld.Money.newAllocation leaves empty, with the ruling threePhases",
+      "expected": "No early rejection exists: the registration waits for its reclaim window. Uncovered: no executable comparison with the application-held model exists yet",
+      "state": "uncovered",
+      "note": "Decided difference. Statement only. The early-rejection requirements of the previous design are not edited; this row states what now holds.",
+      "evidence": "Separate evidence boundary, not a comparison with the model: the hosted jobs no-pin-registration-journey and no-pin-registration-refusals run the packaged commands on a development network and read the chain's own record. They establish what they run and nothing about agreement with the model."
+    },
+    {
+      "id": "holding-update-outcome",
+      "group": "holding-journeys",
+      "requirement": "The controller signs an update of a live holding. Its payload may change, while the protected control and all tokens remain the same and the holding keeps at least its protected deposit at the application address. No registry fold takes part and no treasury is paid. Under the previous design an accepted controller-signed payload update preserved the same control, assets and deposit floor without changing the registry.",
+      "source": "OpenDatumApplicationHeld.Money.oldAllocation and OpenDatumApplicationHeld.Money.newAllocation for the update; OpenDatumApplicationHeld.Money.Statements.update_journey, update_both_models and accepted_update_authority",
+      "expected": "The controller-signed update is accepted and preserves the holding as stated. Uncovered: no executable comparison with the application-held model exists yet",
+      "state": "uncovered",
+      "note": "Statement only. The outcomes are the declarations named in the source, not numbers copied into this row. Existing requirements and their receipt-derived standings are preserved.",
+      "evidence": "Separate evidence boundary, not a comparison with the model: the hosted jobs no-pin-registration-journey and no-pin-termination-refusals run the packaged commands on a development network and read the chain's own record and the node's refusal answers. They establish what they run and nothing about agreement with the model."
+    },
+    {
+      "id": "termination-booking-outcome",
+      "group": "holding-journeys",
+      "requirement": "The controller signs a termination booking that moves the holding's active token into a datumless request at the application address with exactly one termination approval. The holding's protected deposit goes to the treasury at booking; no registry fold takes part. Under the previous design termination booking paid nothing to the treasury, and the request's carrier value went to the treasury later, at the termination fold.",
+      "source": "OpenDatumApplicationHeld.Money.oldAllocation and OpenDatumApplicationHeld.Money.newAllocation for the termination booking, with the ruling treasuryAtTerminationBooking; OpenDatumApplicationHeld.Money.Statements.termination_booking_journey and journey_allocations",
+      "expected": "The controller-signed booking is accepted and pays the deposit to the treasury at booking. Uncovered: no executable comparison with the application-held model exists yet",
+      "state": "uncovered",
+      "note": "Decided difference. Statement only. The deposit donation is a booking obligation; it is not deferred to the fold, and the old carrier allocation is not renamed a deposit.",
+      "evidence": "Separate evidence boundary, not a comparison with the model: the hosted jobs no-pin-registration-journey and no-pin-termination-refusals run the packaged commands on a development network and read the chain's own record and the node's refusal answers. They establish what they run and nothing about agreement with the model."
+    },
+    {
+      "id": "termination-fold-outcome",
+      "group": "holding-journeys",
+      "requirement": "Any folder, using public chain data alone with no controller file, key or record, folds the booked termination. Its active token and matching approval are consumed and burned, the key becomes permanently terminal and cannot register again, and the folder receives the request's whole value before its separately funded ledger fee; the fold pays no treasury. Under the previous design the folder received only the declared tip and the request's carrier value went to the treasury at the fold.",
+      "source": "OpenDatumApplicationHeld.Money.oldAllocation and OpenDatumApplicationHeld.Money.newAllocation for the termination fold, with the rulings valueIsBid and noTreasuryAtFold; OpenDatumApplicationHeld.Money.Statements.termination_fold_journey and journey_allocations",
+      "expected": "The public-data fold is accepted, burns both tokens and pays the whole value to the folder; a new registration of the terminal key is refused. Uncovered: no executable comparison with the application-held model exists yet",
+      "state": "uncovered",
+      "note": "Decided difference. Statement only. Whole request value is the gross folder allocation, separated from ordinary wallet funding and the ledger fee, and is not a declared-tip-only payment.",
+      "evidence": "Separate evidence boundary, not a comparison with the model: the hosted jobs no-pin-registration-journey and no-pin-termination-refusals run the packaged commands on a development network and read the chain's own record and the node's refusal answers. They establish what they run and nothing about agreement with the model."
     }
   ]
 }

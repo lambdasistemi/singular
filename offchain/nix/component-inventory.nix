@@ -20,43 +20,14 @@
 let
   inherit (pkgs) lib;
 
-  # Derived at intake 2026-09-24 from the live workflow commands (see the
-  # table in the ticket evidence; every consumer is cited there):
-  #   cage-test-vectors  registry.yml:194 just vectors-check -> .#test-vectors
-  #   journey            registry.yml:347 nix run .#journey
-  #   insert-active      registry.yml:379 release-archive nix run .#insert-active
-  #   update-terminal    registry.yml:439 release-archive nix run .#update-terminal
-  #   record-value-tests registry.yml:84  nix run .#record-value-tests
-  #   cage-tests         registry.yml:414 nix run .#cage-tests
-  #   e2e-tests          registry.yml:309 nix run .#cage-tests-e2e
-  # plus the supported shipped packages devnet and deployment (issue #102
-  # tooling; no D6 record, flake packages). The library is consumed by every
-  # component and, across the flake boundary, by the required conformance
-  # jobs (conformance/conformance.cabal depends on singular-registry).
-  #
-  # The seven Naming Your Assets journey surfaces named in the D6 retirement record
-  # (registry.yml:258-269 — li01, li-refusals, lmlc/naming-rows, recovery,
-  # retirement with its retained retire-verify exhibit, repair) are
-  # classified by CURRENT REQUIRED USE, not compile success (operator note
-  # via ticket NOTE-010/011, applying A-008): none has a live required
-  # workflow consumer or a flake-closure builder (transitive check in the
-  # ticket evidence), so all seven are retained retired journeys under #172,
-  # wherever their sources happen to compile today. Under the
-  # 2026-09-25 release-instruction correction, the archive README and
-  # consumer guides disclose all nine rows the same way to readers: only
-  # the verified journey is presented as runnable; every row here is
-  # named as retained, not currently buildable or verified, with its
-  # owning issue.
+  # Retained commands, shared libraries and test suites are built here.
+  # Every declared component must still have exactly one classification.
   builtHere = {
     library = [ "singular-registry" ];
     exes = [
       "local-services-record"
       "cage-test-vectors"
-      "journey"
-      "insert-active"
-      "update-terminal"
       "devnet"
-      "deployment"
       # #299: the packaged `singular registry` commands the release
       # archive documents and the demo1-cli-check CI step runs.
       "singular"
@@ -92,75 +63,7 @@ let
   # so it cannot borrow builtHere's kind lookup.
   coveredElsewhere = [ ];
 
-  # Declared and exported, not built here. The seven D6 journeys are
-  # retained retired surfaces under #172 (registry.yml:258-269; re-cut owned
-  # by #172 under Naming Your Assets epic #174); register-rows is NOT D6 and is owned by
-  # #283; connected-verifier is owned by #282. Every row keeps its Cabal
-  # stanza and flake app; the final epic #278 still lints and formats their
-  # source. Evidence class per row: "boundary" names an actual carrier-run
-  # component receipt; "source-level" means the single carrier exit is NOT
-  # attributed to that component. The local developer gate
-  # offchain/deployment-attach-check.sh runs three of these runners and is
-  # broken by them — classified 2026-09-25: no active required workflow,
-  # carrier command or flake-closure builder consumes it or them, so its
-  # guide (offchain/LIFECYCLE.md) discloses it as a currently unrunnable
-  # local gate and its bytes are unchanged; not a required consumer.
-  unverified = [
-    {
-      kind = "exe";
-      name = "recovery-rows";
-      issue = "#172";
-      reason = "D6-retired NYA journey (registry.yml:258-269); journey/recovery/Main.hs imports registerConsumerImpl, removed by 9cba521 (#157); direct carrier-build RED on record at an earlier pre-rebase revision (exact receipt retained in ticket evidence)";
-    }
-    {
-      kind = "exe";
-      name = "li01";
-      issue = "#172";
-      reason = "D6-retired Naming Your Assets journey (registry.yml:258-269); journey/li01/Main.hs sets removed CageConfig fields cfgRepPolicy/cfgConsumerPin (#157); direct carrier-build RED on record at an earlier pre-rebase revision (exact receipt retained in ticket evidence)";
-    }
-    {
-      kind = "exe";
-      name = "li-refusals";
-      issue = "#172";
-      reason = "D6-retired Naming Your Assets journey (registry.yml:258-269); journey/li-refusals/Main.hs references identifiers removed by #157 (cfgRepPolicy/cfgConsumerPin class) — source-level evidence, no individual carrier receipt";
-    }
-    {
-      kind = "exe";
-      name = "naming-rows";
-      issue = "#172";
-      reason = "D6-retired Naming Your Assets journey (lmlc; registry.yml:258-269); source inspection finds none of the four removed #157 identifiers in use and there is no individual build receipt either way — retired by the current-required-use criterion, unverified for current behavior; no required consumer";
-    }
-    {
-      kind = "exe";
-      name = "retirement-rows";
-      issue = "#172";
-      reason = "D6-retired NYA journey (registry.yml:258-269); journey/retirement/Main.hs imports registerConsumerImpl, removed by 9cba521 (#157) — source-level evidence, no individual carrier receipt";
-    }
-    {
-      kind = "exe";
-      name = "retirement-verify";
-      issue = "#172";
-      reason = "D6-retired retained exhibit of the retirement journey (registry.yml:258-269); source inspection finds none of the four removed #157 identifiers in use and there is no individual build receipt either way — retired by the current-required-use criterion, unverified for current behavior; no required consumer";
-    }
-    {
-      kind = "exe";
-      name = "repair-rows";
-      issue = "#172";
-      reason = "D6-retired NYA journey (registry.yml:258-269); journey/repair/Main.hs imports registerConsumerImpl, removed by 9cba521 (#157) — source-level evidence, no individual carrier receipt";
-    }
-    {
-      kind = "exe";
-      name = "register-rows";
-      issue = "#283";
-      reason = "not on the D6 retired list; #283 owns its migration or retirement; journey/register/Main.hs imports registerConsumerImpl, removed by 9cba521 (#157) — source-level evidence, no individual carrier receipt";
-    }
-    {
-      kind = "exe";
-      name = "connected-verifier";
-      issue = "#282";
-      reason = "imports the removed stateRepPolicyBytes accessor and expects the removed representative-policy blueprint (both still absent from the library at this head — source-level lead, not a build); direct build failures on record from earlier pre-rebase revisions (exact receipts retained in ticket evidence); no passing build evidence at this head; repair owned by #282, no required workflow consumes it";
-    }
-  ];
+  unverified = [ ];
 
   kindOf =
     set: name:

@@ -73,16 +73,14 @@
         # drift from it (no hand-copied index-state or pins).
         offchainSrc = ../offchain;
         openDatumSrc = ../applications/open-datum/offchain;
-        negativeSrc = ../applications/open-datum/negative;
         src = pkgs.runCommand "conformance-src" { } ''
           mkdir -p $out
           cp -r ${offchainSrc}/. $out/offchain
           cp -r ${./.}/. $out/conformance
           mkdir -p $out/applications/open-datum
           cp -r ${openDatumSrc}/. $out/applications/open-datum/offchain
-          cp -r ${negativeSrc}/. $out/applications/open-datum/negative
           # derive the merged cabal.project from offchain's own, so it cannot drift
-          sed 's|^  \.$|  offchain\n  conformance\n  applications/open-datum/offchain\n  applications/open-datum/negative|' ${offchainSrc}/cabal.project > $out/cabal.project
+          sed 's|^  \.$|  offchain\n  conformance\n  applications/open-datum/offchain|' ${offchainSrc}/cabal.project > $out/cabal.project
         '';
 
         # -------------------------------------------------------

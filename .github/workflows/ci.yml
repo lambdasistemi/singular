@@ -31,18 +31,6 @@ jobs:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       - run: nix build --quiet .#build-gate
-      # #269 (R269-05): the deployment script-identity boundary rides the
-      # required Build Gate context rather than a separate job, so its
-      # failure — a refusal or a setup failure — fails Build Gate itself.
-      # The script boots a devnet, deploys a registry, verifies the intact
-      # manifest reaches completed node verification, then tampers the
-      # recorded representative policy and requires the real
-      # `deployment verify` refusal with its intended diagnostic. Guarded
-      # to pull-request events to keep the identity extent PR-only; the
-      # retired three-runner attach check stays outside (#172/#283).
-      - name: Deployment identity
-        if: github.event_name == 'pull_request' && github.event.action != 'closed'
-        run: nix shell --quiet nixpkgs#jq nixpkgs#diffutils -c bash offchain/deployment-identity-check.sh
   offchain-lint:
     if: github.event_name == 'pull_request' && github.event.action != 'closed'
     name: Off-chain lint
@@ -577,9 +565,11 @@ jobs:
       # model-revision-missing; mutated copies of the assets just assembled
       # are refused as sum-mismatch, model-revision-missing,
       # model-revision-mismatch, member-missing and command-failed. The
-      # accepting run of the same verifier over the unmutated assets is the
-      # Registry workflow's Demo 1 job.
+      # accepting run below uses the archive-built ordinary binaries and the
+      # existing registration, update and termination journey.
       - run: nix run --quiet .#verify-release-controls -- "$RUNNER_TEMP/release"
+      - name: Verify the connected journey from the assembled release
+        run: nix run --quiet .#verify-release -- --assets "$RUNNER_TEMP/release" --without-bundles "v$(cat version.txt)"
   release-review-reproduction:
     if: github.event.action != 'closed'
     needs: build-gate
