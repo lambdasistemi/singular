@@ -162,7 +162,7 @@ grep -q 'ghost-flag' "$table" || {
   echo "SETUP-FAIL: the ghost row did not apply" >&2
   exit 2
 }
-expect documented-missing 1 '^documented, not in --help: the settings table gives --ghost-flag to singular registry'
+expect documented-missing 1 '^documented, not in --help: the settings table gives --ghost-flag to singular state create'
 # The documentation names a flag neither binary takes (six singular commands).
 fresh
 sed -i '/^| `--receipt FILE`/a | `--ghost-flag X` | all six singular commands | A flag the binary does not take. |' "$table"
@@ -170,7 +170,7 @@ grep -q 'all six singular commands' "$table" || {
   echo "SETUP-FAIL: the six-command ghost row did not apply" >&2
   exit 2
 }
-expect documented-missing-six 1 '^documented, not in --help: the settings table gives --ghost-flag to singular registry'
+expect documented-missing-six 1 '^documented, not in --help: the settings table gives --ghost-flag to singular state create'
 
 # The documentation names a flag neither binary takes (open-datum side).
 fresh
@@ -242,8 +242,8 @@ expect command-help-fails-od 1 '^open-datum update --help exited non-zero'
 
 # A quotation of a program's help that the program no longer prints.
 fresh
-sed -i 's/Boot a registry, or preview its identity/Boot a register, or preview its identity/' "$table"
-grep -q 'Boot a register, or preview its identity' "$table" || {
+sed -i 's/Create a Singular registry on Cardano/Create a Singular register on Cardano/' "$table"
+grep -q 'Create a Singular register on Cardano' "$table" || {
   echo "SETUP-FAIL: the quotation did not change" >&2
   exit 2
 }

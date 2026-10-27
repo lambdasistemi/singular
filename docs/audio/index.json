@@ -9945,8 +9945,22 @@
     "index": 4,
     "name": "docs-singular-node/signing-a-write-elsewhere-or-from-your-vault-04",
     "pause_ms": 400,
+    "text": "Alice starts open-datum fold naming her vault. Before any other read, the command opens it once and receives the signing key in memory only.",
+    "v": "0e265ba7cd4e"
+   },
+   {
+    "index": 5,
+    "name": "docs-singular-node/signing-a-write-elsewhere-or-from-your-vault-05",
+    "pause_ms": 400,
+    "text": "The command reads the registry and builds the whole run as one bundle, saves it and journals one waiting line per transaction, then signs every transaction from the vault. It sends them in order as singular submit does. Each member found on chain is journalled landed, and Alice receives the receipt read from the chain.",
+    "v": "76abcdd822ca"
+   },
+   {
+    "index": 6,
+    "name": "docs-singular-node/signing-a-write-elsewhere-or-from-your-vault-06",
+    "pause_ms": 400,
     "text": "The address must pay a key: a script address is refused, naming it. A vault, an address and a key file are three signers, and naming two of them is refused. A passphrase descriptor without a vault is refused too. A wrong passphrase or an unreadable vault is refused, naming the vault, before anything else is read or written. No receipt, journal line, trace or error carries the passphrase or a key byte.",
-    "v": "0d16fcbc0567"
+    "v": "6d6e3b058a7c"
    }
   ],
   "submitting-a-signed-bundle": [

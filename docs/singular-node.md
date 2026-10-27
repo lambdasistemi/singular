@@ -499,22 +499,29 @@ A write takes exactly one signer:
 | an address, signing elsewhere | `--wallet-address ADDR --bundle FILE` | builds the run as one bundle, writes the file and saves it beside the journal | `waiting-for-signatures`, status 19 |
 | a key file, being retired ([issue 672](https://github.com/lambdasistemi/singular/issues/672)) | `--wallet-skey FILE` | signs and sends each transaction as it builds it | the command's own outcome |
 
+Alice starts `open-datum fold` naming her vault. Before any other read, the command opens it once and receives the signing key in memory only.
+
 ```mermaid
-%%{init: {'sequence': {'actorMargin': 20, 'width': 120, 'wrap': true, 'mirrorActors': false}}}%%
+%%{init: {'sequence': {'actorMargin': 20, 'width': 110, 'wrap': true, 'mirrorActors': false}}}%%
 sequenceDiagram
-    participant A as Alice
-    participant W as open-datum fold
+    participant W as Fold command
     participant V as alice.vault
+    W->>V: Open once before other reads
+    V-->>W: Key in memory only
+```
+
+The command reads the registry and builds the whole run as one bundle, saves it and journals one waiting line per transaction, then signs every transaction from the vault. It sends them in order as `singular submit` does. Each member found on chain is journalled landed, and Alice receives the receipt read from the chain.
+
+```mermaid
+%%{init: {'sequence': {'actorMargin': 20, 'width': 110, 'wrap': true, 'mirrorActors': false}}}%%
+sequenceDiagram
+    participant W as Fold command
     participant N as Node
-    A->>W: Run the fold, naming the vault
-    W->>V: Open it once, before anything else is read
-    V-->>W: The signing key, in memory only
-    W->>N: Read the registry and build the whole run as one bundle
-    W->>W: Save the bundle and journal one waiting line per transaction
-    W->>W: Sign every transaction from the vault
-    W->>N: Send them in order, as singular submit does
-    N-->>W: Each transaction found on chain
-    W-->>A: Every member journalled landed, the receipt read from the chain
+    W->>N: Read registry and build bundle
+    W->>W: Save bundle and waiting lines
+    W->>W: Sign each transaction
+    W->>N: Send in bundle order
+    N-->>W: Each transaction on chain
 ```
 
 The address must pay a key: a script address is refused, naming it. A vault, an address and a key file are three signers, and naming two of them is refused. A passphrase descriptor without a vault is refused too. A wrong passphrase or an unreadable vault is refused, naming the vault, before anything else is read or written. No receipt, journal line, trace or error carries the passphrase or a key byte.

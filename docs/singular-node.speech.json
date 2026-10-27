@@ -285,6 +285,14 @@
       "pause": 400
     },
     {
+      "text": "Alice starts open-datum fold naming her vault. Before any other read, the command opens it once and receives the signing key in memory only.",
+      "pause": 400
+    },
+    {
+      "text": "The command reads the registry and builds the whole run as one bundle, saves it and journals one waiting line per transaction, then signs every transaction from the vault. It sends them in order as singular submit does. Each member found on chain is journalled landed, and Alice receives the receipt read from the chain.",
+      "pause": 400
+    },
+    {
       "text": "The address must pay a key: a script address is refused, naming it. A vault, an address and a key file are three signers, and naming two of them is refused. A passphrase descriptor without a vault is refused too. A wrong passphrase or an unreadable vault is refused, naming the vault, before anything else is read or written. No receipt, journal line, trace or error carries the passphrase or a key byte.",
       "pause": 400
     }
@@ -535,6 +543,6 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "ddec38e761926910fefda486cbdcbc6714250f8a66d4d9e8d28debfba7635b95"
+    "sha256": "b4d7b89f43bf1d7bfb4e5604520cad8c070714f71386b8fd3e6a221c5c62814d"
   }
 }

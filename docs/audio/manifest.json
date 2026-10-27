@@ -351786,11 +351786,481 @@
    ]
   },
   "docs-singular-node/signing-a-write-elsewhere-or-from-your-vault-04": {
-   "audio_sha256": "0d16fcbc0567412895e3e9ddf697ae0eb30e0f51fe1873204bc05cf33fce13c8",
+   "audio_sha256": "0e265ba7cd4e90eb0d9becb14ffe00b65f88e2e237e772252433ea1e7bf90d69",
+   "characters": 140,
+   "cost": 0.00013859999999999998,
+   "duration": 9.35,
+   "index": 4,
+   "key": "8d3992f213adec619defa89d6fcd10ff017b2b0cb593286cda22a177a4b6fefe",
+   "page": "docs/singular-node.md",
+   "pause_ms": 400,
+   "section": "signing-a-write-elsewhere-or-from-your-vault",
+   "sent_text": "Alice starts open-datum fold naming her vault. Before any other read, the command opens it once and receives the signing key in memory only.",
+   "text": "Alice starts open-datum fold naming her vault. Before any other read, the command opens it once and receives the signing key in memory only.",
+   "words": [
+    {
+     "end": 0.438,
+     "start": 0.2,
+     "text": "Alice"
+    },
+    {
+     "end": 0.688,
+     "start": 0.438,
+     "text": "starts"
+    },
+    {
+     "end": 1.312,
+     "start": 0.688,
+     "text": "open-datum"
+    },
+    {
+     "end": 1.688,
+     "start": 1.312,
+     "text": "fold"
+    },
+    {
+     "end": 2.013,
+     "start": 1.688,
+     "text": "naming"
+    },
+    {
+     "end": 2.125,
+     "start": 2.013,
+     "text": "her"
+    },
+    {
+     "end": 2.95,
+     "start": 2.125,
+     "text": "vault"
+    },
+    {
+     "end": 3.15,
+     "start": 2.95,
+     "text": "."
+    },
+    {
+     "end": 3.688,
+     "start": 3.35,
+     "text": "Before"
+    },
+    {
+     "end": 3.862,
+     "start": 3.688,
+     "text": "any"
+    },
+    {
+     "end": 4.1,
+     "start": 3.862,
+     "text": "other"
+    },
+    {
+     "end": 4.425,
+     "start": 4.1,
+     "text": "read"
+    },
+    {
+     "end": 4.463,
+     "start": 4.425,
+     "text": ","
+    },
+    {
+     "end": 4.55,
+     "start": 4.463,
+     "text": "the"
+    },
+    {
+     "end": 5.037,
+     "start": 4.55,
+     "text": "command"
+    },
+    {
+     "end": 5.45,
+     "start": 5.037,
+     "text": "opens"
+    },
+    {
+     "end": 5.6,
+     "start": 5.45,
+     "text": "it"
+    },
+    {
+     "end": 6.037,
+     "start": 5.6,
+     "text": "once"
+    },
+    {
+     "end": 6.175,
+     "start": 6.037,
+     "text": "and"
+    },
+    {
+     "end": 6.675,
+     "start": 6.175,
+     "text": "receives"
+    },
+    {
+     "end": 6.812,
+     "start": 6.675,
+     "text": "the"
+    },
+    {
+     "end": 7.213,
+     "start": 6.812,
+     "text": "signing"
+    },
+    {
+     "end": 7.525,
+     "start": 7.213,
+     "text": "key"
+    },
+    {
+     "end": 7.675,
+     "start": 7.525,
+     "text": "in"
+    },
+    {
+     "end": 8.113,
+     "start": 7.675,
+     "text": "memory"
+    },
+    {
+     "end": 9.125,
+     "start": 8.113,
+     "text": "only"
+    },
+    {
+     "end": 9.35,
+     "start": 9.125,
+     "text": "."
+    }
+   ]
+  },
+  "docs-singular-node/signing-a-write-elsewhere-or-from-your-vault-05": {
+   "audio_sha256": "76abcdd822ca081ee88e8f20d78cca7c018adda70bc9af6b9e9aae28f91b9c82",
+   "characters": 320,
+   "cost": 0.0003168,
+   "duration": 21.1,
+   "index": 5,
+   "key": "d118420b10a5de3dc5e78edd3041a58eb07c7c0602da21258b2c1ca5d0b88384",
+   "page": "docs/singular-node.md",
+   "pause_ms": 400,
+   "section": "signing-a-write-elsewhere-or-from-your-vault",
+   "sent_text": "The command reads the registry and builds the whole run as one bundle, saves it and journals one waiting line per transaction, then signs every transaction from the vault. It sends them in order as singular submit does. Each member found on chain is journalled landed, and Alice receives the receipt read from the chain.",
+   "text": "The command reads the registry and builds the whole run as one bundle, saves it and journals one waiting line per transaction, then signs every transaction from the vault. It sends them in order as singular submit does. Each member found on chain is journalled landed, and Alice receives the receipt read from the chain.",
+   "words": [
+    {
+     "end": 0.3,
+     "start": 0.225,
+     "text": "The"
+    },
+    {
+     "end": 0.837,
+     "start": 0.3,
+     "text": "command"
+    },
+    {
+     "end": 1.175,
+     "start": 0.837,
+     "text": "reads"
+    },
+    {
+     "end": 1.3,
+     "start": 1.175,
+     "text": "the"
+    },
+    {
+     "end": 1.925,
+     "start": 1.3,
+     "text": "registry"
+    },
+    {
+     "end": 2.062,
+     "start": 1.925,
+     "text": "and"
+    },
+    {
+     "end": 2.45,
+     "start": 2.062,
+     "text": "builds"
+    },
+    {
+     "end": 2.588,
+     "start": 2.45,
+     "text": "the"
+    },
+    {
+     "end": 2.912,
+     "start": 2.588,
+     "text": "whole"
+    },
+    {
+     "end": 3.287,
+     "start": 2.912,
+     "text": "run"
+    },
+    {
+     "end": 3.463,
+     "start": 3.287,
+     "text": "as"
+    },
+    {
+     "end": 3.725,
+     "start": 3.463,
+     "text": "one"
+    },
+    {
+     "end": 4.25,
+     "start": 3.725,
+     "text": "bundle"
+    },
+    {
+     "end": 4.375,
+     "start": 4.25,
+     "text": ","
+    },
+    {
+     "end": 4.8,
+     "start": 4.375,
+     "text": "saves"
+    },
+    {
+     "end": 4.988,
+     "start": 4.8,
+     "text": "it"
+    },
+    {
+     "end": 5.137,
+     "start": 4.988,
+     "text": "and"
+    },
+    {
+     "end": 5.613,
+     "start": 5.137,
+     "text": "journals"
+    },
+    {
+     "end": 5.912,
+     "start": 5.613,
+     "text": "one"
+    },
+    {
+     "end": 6.325,
+     "start": 5.912,
+     "text": "waiting"
+    },
+    {
+     "end": 6.675,
+     "start": 6.325,
+     "text": "line"
+    },
+    {
+     "end": 6.825,
+     "start": 6.675,
+     "text": "per"
+    },
+    {
+     "end": 7.775,
+     "start": 6.825,
+     "text": "transaction"
+    },
+    {
+     "end": 7.875,
+     "start": 7.775,
+     "text": ","
+    },
+    {
+     "end": 8.113,
+     "start": 7.875,
+     "text": "then"
+    },
+    {
+     "end": 8.562,
+     "start": 8.113,
+     "text": "signs"
+    },
+    {
+     "end": 8.9,
+     "start": 8.562,
+     "text": "every"
+    },
+    {
+     "end": 9.65,
+     "start": 8.9,
+     "text": "transaction"
+    },
+    {
+     "end": 9.812,
+     "start": 9.65,
+     "text": "from"
+    },
+    {
+     "end": 9.9,
+     "start": 9.812,
+     "text": "the"
+    },
+    {
+     "end": 10.975,
+     "start": 9.9,
+     "text": "vault"
+    },
+    {
+     "end": 11.2,
+     "start": 10.975,
+     "text": "."
+    },
+    {
+     "end": 11.5,
+     "start": 11.375,
+     "text": "It"
+    },
+    {
+     "end": 11.762,
+     "start": 11.5,
+     "text": "sends"
+    },
+    {
+     "end": 11.887,
+     "start": 11.762,
+     "text": "them"
+    },
+    {
+     "end": 12.0,
+     "start": 11.887,
+     "text": "in"
+    },
+    {
+     "end": 12.475,
+     "start": 12.0,
+     "text": "order"
+    },
+    {
+     "end": 12.675,
+     "start": 12.475,
+     "text": "as"
+    },
+    {
+     "end": 13.175,
+     "start": 12.675,
+     "text": "singular"
+    },
+    {
+     "end": 13.575,
+     "start": 13.175,
+     "text": "submit"
+    },
+    {
+     "end": 14.375,
+     "start": 13.575,
+     "text": "does"
+    },
+    {
+     "end": 14.575,
+     "start": 14.375,
+     "text": "."
+    },
+    {
+     "end": 15.0,
+     "start": 14.775,
+     "text": "Each"
+    },
+    {
+     "end": 15.387,
+     "start": 15.0,
+     "text": "member"
+    },
+    {
+     "end": 15.712,
+     "start": 15.387,
+     "text": "found"
+    },
+    {
+     "end": 15.913,
+     "start": 15.712,
+     "text": "on"
+    },
+    {
+     "end": 16.388,
+     "start": 15.913,
+     "text": "chain"
+    },
+    {
+     "end": 16.562,
+     "start": 16.388,
+     "text": "is"
+    },
+    {
+     "end": 17.025,
+     "start": 16.562,
+     "text": "journalled"
+    },
+    {
+     "end": 17.625,
+     "start": 17.025,
+     "text": "landed"
+    },
+    {
+     "end": 17.725,
+     "start": 17.625,
+     "text": ","
+    },
+    {
+     "end": 17.888,
+     "start": 17.725,
+     "text": "and"
+    },
+    {
+     "end": 18.25,
+     "start": 17.888,
+     "text": "Alice"
+    },
+    {
+     "end": 18.775,
+     "start": 18.25,
+     "text": "receives"
+    },
+    {
+     "end": 18.875,
+     "start": 18.775,
+     "text": "the"
+    },
+    {
+     "end": 19.337,
+     "start": 18.875,
+     "text": "receipt"
+    },
+    {
+     "end": 19.6,
+     "start": 19.337,
+     "text": "read"
+    },
+    {
+     "end": 19.763,
+     "start": 19.6,
+     "text": "from"
+    },
+    {
+     "end": 19.862,
+     "start": 19.763,
+     "text": "the"
+    },
+    {
+     "end": 20.9,
+     "start": 19.862,
+     "text": "chain"
+    },
+    {
+     "end": 21.1,
+     "start": 20.9,
+     "text": "."
+    }
+   ]
+  },
+  "docs-singular-node/signing-a-write-elsewhere-or-from-your-vault-06": {
+   "audio_sha256": "6d6e3b058a7c0df8d8c39d8b78dd0c9c5f15d46a565f8c57a8373d1f91d7d74b",
    "characters": 404,
    "cost": 0.00039996,
    "duration": 26.85,
-   "index": 4,
+   "index": 6,
    "key": "34f4240f68710d4675cad77bb70be4a2fdf3cd7f82d15010daf793346783bc85",
    "page": "docs/singular-node.md",
    "pause_ms": 400,
