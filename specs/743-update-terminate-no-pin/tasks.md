@@ -6,7 +6,7 @@ the ticket owner accepts its slice.
 ## Binding
 
 - [x] gate-synthesized: the ticket owner's and the auditor's gate tables synthesized once and frozen with both input hashes.
-- [ ] removal-decisions-ruled: each removal decision of the plan ruled, and pull request 4's gate rows written.
+- [x] removal-decisions-ruled: each removal decision of the plan ruled, and pull request 4's gate rows written.
 
 ## Pull request 1: Singular
 
@@ -22,15 +22,15 @@ the ticket owner accepts its slice.
 
 ## Pull request 2: builders and commands
 
-- [ ] update-and-booking-builders: update and termination booking transactions.
-- [ ] termination-fold-builder: the shared fold builder over termination requests, from chain data alone.
-- [ ] commands-and-documentation: the commands with help snapshots, parser rows, recovery partitions and the command reference.
+- [x] update-and-booking-builders: update and termination booking transactions.
+- [x] termination-fold-builder: the shared fold builder over termination requests, from chain data alone.
+- [x] commands-and-documentation: the commands with help snapshots, parser rows, recovery partitions and the command reference.
 
 ## Pull request 3: journey and conformance
 
-- [ ] devnet-journey-continuation: update, booking with the deposit at the treasury, the fold by a second wallet, the refused re-registration.
-- [ ] devnet-termination-refusals: the four refusals, each with its control.
-- [ ] conformance-old-versus-new: the update and termination journeys old against new, with the two decided differences.
+- [x] devnet-journey-continuation: update, booking with the deposit at the treasury, the fold by a second wallet, the refused re-registration.
+- [x] devnet-termination-refusals: the four refusals, each with its control.
+- [x] conformance-old-versus-new: the update and termination journeys old against new, with the two decided differences.
 
 ## Pull request 4: the current line removed
 

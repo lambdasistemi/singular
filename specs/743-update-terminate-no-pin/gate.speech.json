@@ -15,7 +15,7 @@
       "pause": 500
     },
     {
-      "text": "The ticket owner's table, written before the auditor's. The auditor writes its own table independently when it is seated; the ticket owner synthesizes the two once, records both input hashes and freezes the result in the runtime root before the commit owner starts. Every command is an existing hosted command, or one this ticket adds to a hosted job and marks \"CI change in this ticket\". Pull request 4's rows are written when its removal decisions are ruled.",
+      "text": "The ticket owner's table, written before the auditor's. The auditor writes its own table independently when it is seated; the ticket owner synthesizes the two once, records both input hashes and freezes the result in the runtime root before the commit owner starts. Every command is an existing hosted command, or one this ticket adds to a hosted job and marks \"CI change in this ticket\". Pull request 4 follows the rows below.",
       "pause": 400
     },
     {
@@ -63,18 +63,82 @@
       "pause": 300
     }
   ],
-  "_source": {
-    "file": "gate.md",
-    "sha256": "ee79dd7c26eb8f7ab2fef94846908d65e0acca0dfef22413398b7a6c89f4023b"
-  },
   "synthesis": [
     {
       "text": "Synthesis.",
       "pause": 500
     },
     {
-      "text": "The ticket owner's table and the auditor's independent table were joined once on 25 October 2026. The auditor's table added the merged open-datum blueprint and confirmed every other row of pull request 1. RED evidence is lane evidence; the history statements are checked by property tests inside the Aiken suites, or by a check wired into a hosted job in the same change; the off-chain encoder runs in the off-chain suite. The link from a test to the Lean statement it executes is recorded in each slice's decision record.",
+      "text": "The ticket owner's table and the auditor's independent table were joined once on 25 October 2026. The auditor's table added the merged open-datum blueprint to G13 and confirmed every other row of pull request 1 by its workflow line. Its rows for the current Lean models (model-check, application-model) are left out: no slice of pull requests 1 to 3 touches them. Three of its findings bind the slices:",
+      "pause": 400
+    },
+    {
+      "text": "RED evidence is lane evidence: each checkpoint record names the defective candidate or fault and the run that failed; no hosted job runs it.",
+      "pause": 300
+    },
+    {
+      "text": "The history statements are checked by property tests inside the Aiken suites (G1, G3), or by a check this ticket wires into a hosted job in the same diff; a generator no hosted job runs is not evidence.",
+      "pause": 300
+    },
+    {
+      "text": "The off-chain encoder's reproduction of the termination vectors runs in the off-chain suite (G5), which the journey job runs.",
+      "pause": 300
+    },
+    {
+      "text": "The link from a test to the Lean statement it executes is recorded in each slice's decision record and in the pull request's correspondence, not in a gate row.",
       "pause": 400
     }
-  ]
+  ],
+  "rows-for-pull-request-4-gate-version-2": [
+    {
+      "text": "Rows for pull request 4 (gate version 2).",
+      "pause": 500
+    },
+    {
+      "text": "Appended on 27 October 2026 once the removal decisions were ruled (plan, \"Removal decisions\"; the operator's ruling on naming and the KERI stub). Rows G1 to G16 above are unchanged. Pull request 4 is four pull requests, each removing one layer with its consumers and its hosted jobs, merged in order.",
+      "pause": 400
+    },
+    {
+      "text": "Binding for every part of pull request 4:",
+      "pause": 400
+    },
+    {
+      "text": "A hosted job that exercises only the current line leaves in the same commit as the code it runs, and the part's removal record names it with the new-line job that replaces it, or \"none\" with the reason. A job that still runs is kept green; a job is never disabled, skipped or marked allowed to fail.",
+      "pause": 300
+    },
+    {
+      "text": "Each part opens with a census of its layer's consumers (the consumers page, \"Pull request 4\"), extended by grep over the repository, and the removal record lists every removed path, job and flake output.",
+      "pause": 300
+    },
+    {
+      "text": "Naming and the KERI stub leave with the current line and are listed in the removal record (operator ruling).",
+      "pause": 300
+    },
+    {
+      "text": "Rows G1 to G16 that a part can break bind that part as before.",
+      "pause": 300
+    }
+  ],
+  "rows-added-by-the-synthesis": [
+    {
+      "text": "Rows added by the synthesis.",
+      "pause": 500
+    },
+    {
+      "text": "The auditor's independent table (27 October 2026) confirmed G17 to G26 by their workflow lines and added four commands of existing hosted jobs; they are appended as rows of their own.",
+      "pause": 400
+    },
+    {
+      "text": "Rows per part after the synthesis: 4a adds G27 G28 G29; 4b adds G27 G28 G29 and G30 when the conformance package moves; 4c adds G28; 4d adds G30.",
+      "pause": 400
+    },
+    {
+      "text": "What no hosted job can carry, stated in each part's pull request: a removal has no failing run of its own (its evidence is the removal record, the diff and every kept row green); the census of consumers is a review record, with G17 and G19 as its hosted leads; that the old side of each old-versus-new statement is computed from the retained old model is a review claim of part 4d.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "gate.md",
+    "sha256": "1e8381f4d97da752c319b9123bb20ee8b8e34e7bd0c373eda873c094747ee089"
+  }
 }

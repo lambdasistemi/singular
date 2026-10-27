@@ -19,7 +19,7 @@
       "pause": 300
     },
     {
-      "text": "[ ] removal-decisions-ruled: each removal decision of the plan ruled, and pull request 4's gate rows written.",
+      "text": "[x] removal-decisions-ruled: each removal decision of the plan ruled, and pull request 4's gate rows written.",
       "pause": 300
     }
   ],
@@ -65,15 +65,15 @@
       "pause": 500
     },
     {
-      "text": "[ ] update-and-booking-builders: update and termination booking transactions.",
+      "text": "[x] update-and-booking-builders: update and termination booking transactions.",
       "pause": 300
     },
     {
-      "text": "[ ] termination-fold-builder: the shared fold builder over termination requests, from chain data alone.",
+      "text": "[x] termination-fold-builder: the shared fold builder over termination requests, from chain data alone.",
       "pause": 300
     },
     {
-      "text": "[ ] commands-and-documentation: the commands with help snapshots, parser rows, recovery partitions and the command reference.",
+      "text": "[x] commands-and-documentation: the commands with help snapshots, parser rows, recovery partitions and the command reference.",
       "pause": 300
     }
   ],
@@ -83,15 +83,15 @@
       "pause": 500
     },
     {
-      "text": "[ ] devnet-journey-continuation: update, booking with the deposit at the treasury, the fold by a second wallet, the refused re-registration.",
+      "text": "[x] devnet-journey-continuation: update, booking with the deposit at the treasury, the fold by a second wallet, the refused re-registration.",
       "pause": 300
     },
     {
-      "text": "[ ] devnet-termination-refusals: the four refusals, each with its control.",
+      "text": "[x] devnet-termination-refusals: the four refusals, each with its control.",
       "pause": 300
     },
     {
-      "text": "[ ] conformance-old-versus-new: the update and termination journeys old against new, with the two decided differences.",
+      "text": "[x] conformance-old-versus-new: the update and termination journeys old against new, with the two decided differences.",
       "pause": 300
     }
   ],
@@ -115,6 +115,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "a49edfa8710f2826a9ac8fb45ef041c2a4e9ffb11c53ebfeec8c2b4382dde8ba"
+    "sha256": "4997152b39df6d313058e12d4a6ddf6c51c8d4d65978f0a2d2552dd294508a4d"
   }
 }
