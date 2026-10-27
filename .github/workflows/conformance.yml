@@ -146,8 +146,10 @@ jobs:
       # log conformance/coverage/publication-boundary-evidence.log is never
       # written and the tree stays clean. Ten minutes from the measured
       # 400 seconds.
-      - run: >-
-          OUTDIR="$RUNNER_TEMP/publication-boundary" EVIDENCE="$RUNNER_TEMP/publication-boundary-evidence.log" nix run --quiet .#publication-boundary-controls
+      # Each invocation retains its evidence in fresh, run-specific scratch.
+      - run: |
+          run_dir="$(mktemp -d "$RUNNER_TEMP/publication-boundary-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT.XXXXXX")"
+          OUTDIR="$run_dir" EVIDENCE="$run_dir/evidence.log" nix run --quiet .#publication-boundary-controls
   conformance-checks:
     name: Conformance checks without a devnet
     runs-on: nixos
