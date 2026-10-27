@@ -45,14 +45,11 @@ module Singular.Application.OpenDatum.CommandRunSpec
 
 import Control.Applicative ((<|>))
 import Control.Exception
-    ( SomeException
-    , bracket
+    ( bracket
     , finally
-    , fromException
     , throwIO
-    , try
     )
-import Control.Monad (forM, unless, void, when)
+import Control.Monad (forM, unless, when)
 import Control.Tracer (Tracer (..))
 import Data.Aeson (toJSON, (.=))
 import Data.Aeson qualified as Aeson
@@ -237,7 +234,7 @@ import Singular.CLI.Registry
     , loadReleaseCodes
     , pendingPath
     )
-import Singular.CLI.Session (CommandFailure (..), Env (..), txIdHex)
+import Singular.CLI.Session (Env (..), txIdHex)
 import Singular.CLI.Sign (signBundle)
 import Singular.CLI.Submit (submitBundle)
 import Singular.CLI.Trace
