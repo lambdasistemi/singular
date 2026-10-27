@@ -1,11 +1,10 @@
 # The open-datum application's classified component inventory.
 #
-# Every Cabal component the open-datum package (and the negative host it
-# carries) declares is classified here against the live required workflow
-# commands:
+# Every Cabal component the open-datum package declares is classified here
+# against the live required workflow commands:
 #
 #   built-here       the carrier builds it (the application's library,
-#                    executable, tests and the negative host)
+#                    executables and tests)
 #   covered-elsewhere
 #                    another required CI job builds it (none today)
 #   unverified       declared and exported but not buildable here; the row
@@ -23,7 +22,6 @@ let
     library = [ "open-datum" ];
     exes = [
       "open-datum"
-      "singular-negative"
       # #730: the test-only harness of the forged-pins journey; no release
       # archive carries it.
       "forged-registry"
@@ -52,12 +50,6 @@ let
       class = "built-here";
       kind = "exe";
       name = "open-datum";
-      detail = "";
-    }
-    {
-      class = "built-here";
-      kind = "exe";
-      name = "singular-negative";
       detail = "";
     }
     {
@@ -114,9 +106,9 @@ let
       diffutils
     ];
     text = ''
-      usage() { echo "usage: open-datum-component-inventory-check <open-datum.cabal> <singular-negative.cabal> <manifest>" >&2; exit 2; }
-      [ "$#" -eq 3 ] || usage
-      cabalFile="$1"; negativeCabal="$2"; manifestFile="$3"
+      usage() { echo "usage: open-datum-component-inventory-check <open-datum.cabal> <manifest>" >&2; exit 2; }
+      [ "$#" -eq 2 ] || usage
+      cabalFile="$1"; manifestFile="$2"
 
       declared_of() {
         awk '
@@ -148,7 +140,7 @@ let
         ' "$1" | sort
       }
 
-      declared="$( { declared_of "$cabalFile"; declared_of "$negativeCabal"; } | sort -u)"
+      declared="$(declared_of "$cabalFile" | sort -u)"
       if printf '%s\n' "$declared" | grep -q "^UNRECOGNIZED-STANZA"; then
         echo "component-inventory: unrecognized column-0 stanza header(s) — extend the recognition set or classify them:" >&2
         printf '%s\n' "$declared" | grep "^UNRECOGNIZED-STANZA" >&2
@@ -181,7 +173,7 @@ let
   };
 
   inventoryGate = pkgs.runCommand "open-datum-component-inventory-gate" { } ''
-    ${lib.getExe checker} ${../open-datum.cabal} ${../../negative/singular-negative.cabal} ${manifest}
+    ${lib.getExe checker} ${../open-datum.cabal} ${manifest}
     mkdir -p "$out/share"
     install -m 0444 ${manifest} "$out/share/open-datum-component-build-manifest"
   '';

@@ -31,15 +31,10 @@ let
       ''
         ${pkgs.lib.getExe app} > "$out" 2>&1 || { cat "$out"; exit 1; }
       '';
-  # The linted extent reaches the sibling negative tree (the test suite
-  # names ../negative/src), so the linted copy carries it beside the
-  # offchain tree, as the build assembly does in flake.nix.
   lintSrc = pkgs.runCommand "open-datum-lint-src" { } ''
-    mkdir -p $out/offchain $out/negative
+    mkdir -p $out/offchain
     cp -r ${../.}/. $out/offchain
     rm -rf $out/offchain/dist-newstyle $out/offchain/result $out/offchain/.git
-    cp -r ${../../negative/app} $out/negative/app
-    cp -r ${../../negative/src} $out/negative/src
   '';
 in
 {

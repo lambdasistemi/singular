@@ -243,27 +243,6 @@ POLICIES: dict[str, dict] = {
         "offchain's, so both checks resolve the same pinned "
         "Fourmolu.",
     },
-    "hlint-negative-host": {
-        "kind": "lint",
-        "tool": "hlint",
-        "status": "enforced",
-        "carrier": "root `nix run .#negative-host-lint` — CI job "
-        "'Negative host sources: format and lint' (negative-host.yml)",
-        "note": "the adversarial host package lives outside the offchain "
-        "checker's manifest-discovered extent by design, so its lint runs "
-        "in its own app with the same pinned HLint, over every Haskell "
-        "source under applications/open-datum/negative/ with no exclusions.",
-    },
-    "fourmolu-negative-host": {
-        "kind": "format",
-        "tool": "fourmolu",
-        "status": "enforced",
-        "carrier": "root `nix run .#negative-host-lint` — CI job "
-        "'Negative host sources: format and lint' (negative-host.yml), "
-        "and the whole-tree `just format-check` inside `just ci`",
-        "note": "the same committed house fourmolu.yaml, over every "
-        "Haskell source under applications/open-datum/negative/ with no exclusions.",
-    },
     "hlint-open-datum": {
         "kind": "lint",
         "tool": "hlint",
@@ -526,19 +505,6 @@ CODE_RULES: list[dict] = [
         "generated": False,
         "note": VENDOR_NOTE,
     },
-    # The adversarial host's own sources: outside the offchain checker's
-    # manifest-discovered extent by design, linted and formatted by the
-    # host's own app instead. Moved to applications/open-datum/negative.
-    {
-        "id": "hs-negative-host",
-        "family": "haskell",
-        "pattern": "applications/open-datum/negative/**/*.hs",
-        "lint": "hlint-negative-host",
-        "format": "fourmolu-negative-host",
-        "generated": False,
-        "note": "the singular-negative package, linted by "
-        "negative-host-lint and never by the offchain checker.",
-    },
     # The open-datum application: restricted like offchain to the checker's
     # own manifest-discovered extent — the Cabal hs-source-dirs of
     # open-datum.cabal plus test, visited recursively exactly as
@@ -578,7 +544,7 @@ CODE_RULES: list[dict] = [
         "reject": "haskell source outside every checker-visited component "
         "directory (the application lint discovers its extent from "
         "open-datum.cabal and keri-stub.cabal hs-source-dirs plus test, "
-        "and the negative host from its own package; add the component "
+        "add the component "
         "to the Cabal manifest)",
     },
     # A reject rule: an offchain Haskell source NO checker-visited component
@@ -1155,7 +1121,6 @@ def parse_manifests(root: Path) -> Manifests:
         "conformance/conformance.cabal",
         "conformance/coverage/evaluation/spike.cabal",
         "applications/open-datum/offchain/open-datum.cabal",
-        "applications/open-datum/negative/singular-negative.cabal",
         "applications/keri-stub/offchain/keri-stub.cabal",
     ]
     for rel in cabal_files:
@@ -1173,7 +1138,7 @@ def parse_manifests(root: Path) -> Manifests:
                         base = str(PurePosixPath(rel).parent)
                         full = f"{base}/{d}" if base != "." else d
                         # Normalise parent-relative segments (the application
-                        # test suite names ../negative/src): the walk compares
+                        # manifest can name a sibling source): the walk compares
                         # plain prefixes, so an unnormalised .. would never match.
                         full = os.path.normpath(full)
                         m.haskell_dirs.add(str(PurePosixPath(full)))

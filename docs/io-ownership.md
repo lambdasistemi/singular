@@ -30,7 +30,9 @@ The counts and old-runner diagram below record the earlier census. The
 standalone registry journey, archive runners and deployment command have
 since been removed, together with their ownership entries. Run
 `just io-inventory` for the current extent; those removed runners provide
-no current evidence.
+no current evidence. The adversarial host and its dedicated tests have also
+been removed; its category and diagram node below belong to that same
+historical snapshot.
 
 The census discovers every Haskell source by walking the tree — no per-file
 list — and puts each in exactly one structural category. Anything it cannot

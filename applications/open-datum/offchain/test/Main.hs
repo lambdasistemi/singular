@@ -14,7 +14,6 @@ import Singular.Application.OpenDatum.HelpSnapshotSpec qualified
 import Singular.Application.OpenDatum.IndependentActorsSpec qualified
 import Singular.Application.OpenDatum.InsertEnvelopeSpec qualified
 import Singular.Application.OpenDatum.ManagedStateSpec qualified
-import Singular.Application.OpenDatum.NegativeParseSpec qualified
 import Singular.Application.OpenDatum.NeutralValueSpec qualified
 import Singular.Application.OpenDatum.OutlaySpec qualified
 import Singular.Application.OpenDatum.ParserCorpusSpec qualified
@@ -197,9 +196,6 @@ main = hspec $ do
     describe
         (tagged "Singular.Application.OpenDatum.Trace" [Cli])
         Singular.Application.OpenDatum.TraceSpec.spec
-    describe
-        (tagged "Singular.Application.OpenDatum.NegativeParse" [Cli])
-        Singular.Application.OpenDatum.NegativeParseSpec.spec
     describe
         (tagged "Singular.Application.OpenDatum.FlagGroupExtent" [Cli])
         Singular.Application.OpenDatum.FlagGroupExtentSpec.spec

@@ -459,11 +459,10 @@ the key, the verb, and the leaves found and required. Every ordinary verb
 of an application calls it in planning, in preview and live, so a taken
 key, a terminal key, and an unknown key for update and terminate are
 refused before any signing key is read. A cardano-keri application gets
-the same refusal by calling the exported function in its own planning. The negative host lives beside the
-application in `applications/open-datum/negative/`, with its sources under
-`applications/open-datum/negative/src/Negative/` and its entry point in
-`applications/open-datum/negative/app/`.
-Their generated pages are not in this main-library reference either: only
+the same refusal by calling the exported function in its own planning.
+The current-line adversarial host and its dedicated workflow have been
+removed with that line's commands under issue 743.
+The command layers' generated pages are not in this main-library reference either: only
 the main library has a generated reference. This coverage gap stays visible; wider
 generated coverage is a separate decision for the epic's owner, not a
 claim this page makes. Nothing on

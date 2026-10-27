@@ -34,7 +34,6 @@
 #                                      path of that file).
 .|default|app|tool: the local documentation site server (the same wrapper as docs-serve)|nix/docs.nix
 .|demo1-cli-attach|app|hosted under another name: the demo1-attach-part matrix job runs each part this composite serialises (demo1-cli-attach-takes through demo1-cli-attach-over-allowance), each with its own registry and node
-.|demo1-rehearsal|app|tool: one command records the whole Demo 1 play (release build, fresh devnet, one cast per scene, cast gate, chain assertions) for the presenter's rehearsal, never as evidence|nix/demo1-rehearsal.nix
 .|docs-serve|app|tool: the local documentation site server for reviewing the built site without publishing it|nix/docs.nix
 .|preimage-vectors|app|tool: writes the Aiken rows of the preimage byte vectors from the shared table; their freshness is enforced by the vectors-check job|nix/ci-apps.nix
 .|publish-docs-boundary-test|app|hosted under another name: the publication-boundary job runs the publication-boundary-controls app, which exercises this same recorded publisher (the unchanged nix/release.nix definition with gh replaced by a recorder) through its positive and mutated cases
@@ -60,7 +59,6 @@ conformance|coverage-gate-tests|check|hosted under another name: the coverage-ga
 conformance|format-check|check|hosted under another name: the format-check job runs the format-check app, the same body this check's sandbox executes
 conformance|hlint-check|check|hosted under another name: the format-check job's hlint step runs the hlint-check app, the same body this check's sandbox executes
 applications/open-datum/offchain|open-datum|app|hosted under another name: the registry-two-actors-replay-fault job builds and drives this application CLI (nix build of applications/open-datum/offchain#open-datum is the control's setup)
-applications/open-datum/offchain|singular-negative|app|hosted under another name: the negative-host-ordinary, negative-host-mutant and negative-host-node-free-controls jobs exercise this instrumented host binary, built from this flake by the negative-host apps
 applications/open-datum/offchain|lint|check|hosted under another name: the open-datum-component-build job runs .#lint, this same writeShellApplication derivation (apps.lint is checks.lint)
 applications/open-datum/offchain|open-datum-tests|check|hosted under another name: the open-datum-tests job runs the open-datum-tests app, the same fixture-staged runner this check executes in its sandbox
 applications/keri-stub/offchain|keri-stub|app|hosted under another name: the keri-stub job builds this application CLI (keri-stub-check builds applications/keri-stub/offchain#keri-stub and drives it on a devnet)

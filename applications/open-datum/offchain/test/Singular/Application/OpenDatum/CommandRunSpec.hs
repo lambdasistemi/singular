@@ -202,11 +202,6 @@ import PlutusCore.Version (plcVersion110)
 import PlutusLedgerApi.V3 qualified as PLC
 import UntypedPlutusCore qualified as UPLC
 
-import Negative.Parse
-    ( NegativeInvocation (..)
-    , parseNegativeInvocation
-    )
-import Negative.Run (runNegativeInsert, runNegativeUpdate)
 import PlutusCore.Data qualified as PD
 import Singular.Application.OpenDatum.Command
     ( OpenDatumCommand (..)
@@ -5428,19 +5423,6 @@ payloadSchemaRunRows = describe "a payload written as plain JSON (#719)" $ do
                         path <- payloadFile rig "refused.json" file
                         outcome <- attempt rig path setting
                         outcome `shouldBe` Just ("client-refusal", sentence path)
-    describe "the negative host reads the payload as the commands do" $
-        forM_ ["insert", "update"] $ \word -> do
-            it ("accepts a plain file on " <> word <> " past the payload") $ withRig $ \rig -> do
-                path <- payloadFile rig "plain.json" "{\"answer\": 42}"
-                outcome <- negativeAttempt word rig path []
-                fmap snd outcome
-                    `shouldSatisfy` maybe False (isInfixOf "was read")
-            it ("accepts a detailed file on " <> word <> " with the setting") $ withRig $ \rig -> do
-                path <- payloadFile rig "detailed.json" answerDetailed
-                outcome <-
-                    negativeAttempt word rig path ["--payload-schema", "detailed"]
-                fmap snd outcome
-                    `shouldSatisfy` maybe False (isInfixOf "was read")
   where
     storedRows =
         [
@@ -5589,14 +5571,6 @@ payloadSchemaRunRows = describe "a payload written as plain JSON (#719)" $ do
                     )
                     setting
             )
-        ,
-            ( "the negative host's insert"
-            , negativeAttempt "insert"
-            )
-        ,
-            ( "the negative host's update"
-            , negativeAttempt "update"
-            )
         ]
 
 -- | A rig with a registry created, and the state-token argument of its commands.
@@ -5709,38 +5683,6 @@ viaCommand rig command setting = do
             <$> outcomeOf (runReceipt r)
             <*> fmap T.unpack (textAt "reason" (runReceipt r))
         )
-
-{- | The negative host's insert or update on a payload file, in the blind
-environment: the refusal it ends in, when it ends in one.
--}
-negativeAttempt
-    :: String -> Rig -> FilePath -> [String] -> IO (Maybe (Text, String))
-negativeAttempt word rig path setting = do
-    let token = phantomToken
-        line =
-            ["registry", word, "--key", "k9", "--payload", path]
-                <> setting
-                <> ["--state-dir", rigDir rig </> "negative"]
-                <> ["--blueprint", rigBlueprint rig]
-                <> [ "--koios-url"
-                   , "http://fixture.invalid"
-                   , "--network-magic"
-                   , show magic
-                   ]
-                <> ["--wallet-skey", rigKey rig]
-                <> tokenArgs token
-    invocation <-
-        either (fail . show) pure (parseNegativeInvocation [] line)
-    outcome <-
-        try $ case invocation of
-            Ordinary (OpenInsert a) -> void (runNegativeInsert (blindEnv rig) a)
-            NegativeUpdate a tamper -> void (runNegativeUpdate (blindEnv rig) a tamper)
-            other -> fail ("not an insert or update: " <> show other)
-    pure $ case outcome of
-        Left (e :: SomeException) -> case fromException e of
-            Just (CommandFailure _ why _) -> Just ("client-refusal", why)
-            Nothing -> Just ("failed", show e)
-        Right () -> Nothing
 
 -- | A well-formed state token no registry minted; the blind environment never looks it up.
 phantomToken :: String

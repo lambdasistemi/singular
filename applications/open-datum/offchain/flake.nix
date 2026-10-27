@@ -55,7 +55,6 @@
 
         registrySrc = ../../../offchain;
         appSrc = ./.;
-        negativeSrc = ../negative;
 
         src = pkgs.runCommand "open-datum-src" { } ''
           mkdir -p $out
@@ -77,12 +76,7 @@
           if [ -d ${appSrc}/test-tags ]; then cp -r ${appSrc}/test-tags $out/open-datum/test-tags; fi
           cp ${appSrc}/open-datum.cabal $out/open-datum/open-datum.cabal
           cp ${appSrc}/LICENSE $out/open-datum/LICENSE
-          mkdir -p $out/negative
-          cp -r ${negativeSrc}/app $out/negative/app
-          cp -r ${negativeSrc}/src $out/negative/src
-          cp ${negativeSrc}/singular-negative.cabal $out/negative/singular-negative.cabal
-          cp ${registrySrc}/LICENSE $out/negative/LICENSE 2>/dev/null || cp ${appSrc}/LICENSE $out/negative/LICENSE
-          sed 's|^  \.$|  registry\n  open-datum\n  negative|' ${registrySrc}/cabal.project > $out/cabal.project
+          sed 's|^  \.$|  registry\n  open-datum|' ${registrySrc}/cabal.project > $out/cabal.project
         '';
 
         project = import ./nix/project.nix {
@@ -117,7 +111,6 @@
           program = "open-datum";
           inherit commit;
         };
-        negativeComponents = project.project.hsPkgs.singular-negative.components;
         registryComponents = project.project.hsPkgs.singular-registry.components;
 
         inventory = import ./nix/component-inventory.nix {
@@ -129,7 +122,6 @@
               # The same executable before the commit is stamped into a copy of
               # it: the cached Haskell build, for consumers that stamp their own.
               open-datum-unstamped = openDatumComponents.exes.open-datum;
-              inherit (negativeComponents.exes) singular-negative;
               inherit (openDatumComponents.exes) forged-registry;
               inherit (openDatumComponents.exes) no-pin-refusals;
             };
@@ -236,7 +228,6 @@
           open-datum-unstamped = openDatumComponents.exes.open-datum;
           open-datum-test-harness = harnessOpenDatumComponents.exes.open-datum;
           singular-test-harness = harnessRegistryComponents.exes.singular;
-          inherit (negativeComponents.exes) singular-negative;
           # #730: the test-only harness of the forged-pins journey.
           inherit (openDatumComponents.exes) forged-registry;
           # #742: the test-only harness of the refusals journey.
@@ -251,10 +242,6 @@
           open-datum = {
             type = "app";
             program = pkgs.lib.getExe open-datum;
-          };
-          singular-negative = {
-            type = "app";
-            program = pkgs.lib.getExe negativeComponents.exes.singular-negative;
           };
           singular = {
             type = "app";

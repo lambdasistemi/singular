@@ -46,8 +46,6 @@ conformance/app/Conformance/Run/Temporary.hs: mvar — owner=process composition
 conformance/app/Conformance/Run/Wallet.hs: ioref — owner=one row session; lifetime=single session; serial; wallet observation accumulators for the row
 conformance/coverage/evaluation/spike-app/Main.hs: ioref — owner=one evaluation-spike run; lifetime=single run; serial; fixture refs for the spike harness
 
-# ---- application host: adversarial, never linked by ordinary executables ----
-applications/open-datum/negative/src/Negative/Craft.hs: ioref — owner=one adversarial crafting run; lifetime=single run; serial; the hostile builder accumulates its own mutations; no ordinary executable links a host module
 
 # ---- tests and harness: owned by the test run, joined before the example ends ----
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/ApplicationSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; fixture refs accumulated for assertions

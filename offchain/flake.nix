@@ -430,10 +430,6 @@
           # devnet keys with; never evidence of anything.
           inherit (components.exes) vault-seal;
           singular-test-harness = harnessComponents.exes.singular;
-          # #528 slice 4: the negative host moved to the application's
-          # own tree with the application; this
-          # flake no longer builds it (see the application's flake for
-          # .#singular-negative).
           # #326 R4: a SignedTx is constructible only through signTx.
           inherit (haskellChecks) signed-tx-control;
           # #278 terminal-attestation-permanent: the pinned house formatter, for the root format

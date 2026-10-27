@@ -108,7 +108,6 @@ copy_tree() {
   rm -rf "$work/$1/naming-onchain-tmp"
   mkdir -p "$work/$1/applications/open-datum"
   cp -r "$root/applications/open-datum/offchain" "$work/$1/applications/open-datum/offchain"
-  cp -r "$root/applications/open-datum/negative" "$work/$1/applications/open-datum/negative"
   mkdir -p "$work/$1/applications/open-datum/onchain"
   cp "$root/applications/open-datum/onchain/permanent-contract.json" "$work/$1/applications/open-datum/onchain/permanent-contract.json"
   mkdir -p "$work/$1/applications/keri-stub"

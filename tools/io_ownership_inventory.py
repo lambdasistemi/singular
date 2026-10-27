@@ -110,12 +110,6 @@ CATEGORIES: list[tuple[str, str, tuple[str, ...]]] = [
         ),
     ),
     (
-        "application-host",
-        "the adversarial host: ordinary sources shared by directory, host "
-        "modules linked by no ordinary executable",
-        ("applications/open-datum/negative/",),
-    ),
-    (
         "test",
         "suites, fixtures and harness libraries owned by the test run",
         (

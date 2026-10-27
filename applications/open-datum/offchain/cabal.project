@@ -6,7 +6,6 @@ index-state:
 
 packages:
   .
-  ../negative
   ../../../offchain
 
 repository cardano-haskell-packages

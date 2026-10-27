@@ -3,10 +3,6 @@
 # Each line binds one token's occurrences in one top-level function over
 # comment/string-stripped source (imports and export lists excluded). A new
 # site of any class changes a count with imports untouched (NOTE-001); a
-applications/open-datum/negative/src/Negative/Craft.hs hostPublicFoldTrie newIORef 1
-applications/open-datum/negative/src/Negative/Craft.hs hostPublicFoldTrie readIORef 1
-applications/open-datum/negative/src/Negative/Craft.hs hostRecordKeys IORef 1
-applications/open-datum/negative/src/Negative/Craft.hs hostRecordKeys modifyIORef' 1
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/ApplicationSpec.hs neutralResolution newIORef 1
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/BuildersSpec.hs updates atomicModifyIORef' 1
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/BuildersSpec.hs updates newIORef 1

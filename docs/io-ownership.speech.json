@@ -33,7 +33,7 @@
       "pause": 500
     },
     {
-      "text": "The counts and old-runner diagram below record the earlier census. The standalone registry journey, archive runners and deployment command have since been removed, together with their ownership entries. Run just io-inventory for the current extent; those removed runners provide no current evidence.",
+      "text": "The counts and old-runner diagram below record the earlier census. The standalone registry journey, archive runners and deployment command have since been removed, together with their ownership entries. Run just io-inventory for the current extent; those removed runners provide no current evidence. The adversarial host and its dedicated tests have also been removed; its category and diagram node below belong to that same historical snapshot.",
       "pause": 400
     },
     {
@@ -177,6 +177,6 @@
   ],
   "_source": {
     "file": "io-ownership.md",
-    "sha256": "9ed14c66271207a7dd9409ea0cf1403ca5d067aefaa09de0884a12c11d688ca3"
+    "sha256": "ab4b00d597f43fde28c2fa05f370f5a67ce2965ee64d2000a9f03ee0ab094a24"
   }
 }

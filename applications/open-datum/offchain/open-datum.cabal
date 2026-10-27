@@ -175,14 +175,9 @@ test-suite open-datum-tests
   import:           warnings
   type:             exitcode-stdio-1.0
   default-language: GHC2021
-  hs-source-dirs:   test test-tags ../negative/src
+  hs-source-dirs:   test test-tags
   main-is:          Main.hs
   other-modules:
-    Negative.Craft
-    Negative.Parse
-    Negative.Read
-    Negative.Run
-    Negative.Submit
     Singular.Application.OpenDatum.BuildersSpec
     Singular.Application.OpenDatum.BuildSpec
     Singular.Application.OpenDatum.CreationWorld
@@ -218,7 +213,6 @@ test-suite open-datum-tests
     Singular.Application.OpenDatum.PinGateSpec
     Singular.Application.OpenDatum.ApplicationSpec
     Singular.Application.OpenDatum.NeutralValueSpec
-    Singular.Application.OpenDatum.NegativeParseSpec
     Singular.Application.OpenDatum.StateTokenFixture
     Singular.Application.OpenDatum.RegistryStateTokenSpec
     Singular.Application.OpenDatum.RegistryAddressSpec
