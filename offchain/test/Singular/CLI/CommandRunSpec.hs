@@ -815,7 +815,6 @@ constructorOf :: Command -> String
 constructorOf = \case
     Help _ -> "Help"
     Create _ _ -> "Create"
-    RegistryAddress _ -> "RegistryAddress"
     Fold _ -> "Fold"
     Reject _ -> "Reject"
     Reclaim _ -> "Reclaim"
@@ -2768,8 +2767,6 @@ lifecycle rig = do
     -- The registry of an application on the proved design, made by the state line.
     stateCreate <-
         runAt rig "state" "state create" (["state", "create"] <> policyArgs)
-    -- The address of the registry the create made: no node, blueprint or key.
-    address <- runAddress rig "address from the state token" t1
     -- A signed bundle of one self-payment from the wallet, sent by submit:
     -- no registry, no key file, the witness written by the signing planner.
     held <- readWallet rig
@@ -2792,47 +2789,9 @@ lifecycle rig = do
         , reject
         , nothingPending
         , emptyDir
-        , address
         , submitted
         , stateCreate
         ]
-
-{- | @registry address@ over the rig: it reads no chain and takes no node,
-blueprint or key, so its line is its own and not the rig's.
--}
-runAddress :: Rig -> String -> String -> IO Run
-runAddress rig label token = do
-    writeIORef (rigEvents rig) []
-    command <-
-        either
-            (fail . renderCLIError)
-            pure
-            ( parseCommand
-                [ "registry"
-                , "address"
-                , "--state-token"
-                , token
-                , "--network-magic"
-                , show magic
-                ]
-            )
-    (code, out, _) <-
-        captured (runCommand neutralApplication (envOf rig) command)
-    receipt <-
-        maybe
-            (fail ("no receipt for " <> label <> ": " <> show out))
-            pure
-            (Aeson.decodeStrict out)
-    events <- readIORef (rigEvents rig)
-    pure
-        Run
-            { runName = constructorOf command
-            , runLabel = label
-            , runExit = code
-            , runReceipt = receipt
-            , runEvents = events
-            , runKey = Nothing
-            }
 
 -- | The state token's name as a 'TokenId'.
 parseTokenId :: String -> IO TokenId
@@ -5525,7 +5484,6 @@ signerFlagRefusalRows =
                 [ "--wallet-skey"
                 , "key.skey"
                 , "--wallet-address"
-                , address
                 , "--bundle"
                 , "run.bundle"
                 ]

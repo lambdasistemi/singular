@@ -9359,29 +9359,6 @@
   ]
  },
  "docs/singular-node.md": {
-  "a-registry-made-before-addresses-were-printed": [
-   {
-    "index": 0,
-    "name": "docs-singular-node/a-registry-made-before-addresses-were-printed-00",
-    "pause_ms": 500,
-    "text": "A registry made before addresses were printed.",
-    "v": "fa3024d3428c"
-   },
-   {
-    "index": 1,
-    "name": "docs-singular-node/a-registry-made-before-addresses-were-printed-01",
-    "pause_ms": 400,
-    "text": "A registry made earlier has a state token and a network, and no address was printed for it. singular registry address makes one from those two. It reads no chain and needs no provider.",
-    "v": "ece5262de312"
-   },
-   {
-    "index": 2,
-    "name": "docs-singular-node/a-registry-made-before-addresses-were-printed-02",
-    "pause_ms": 400,
-    "text": "It prints one receipt with the address, the state token, the fingerprint and the network magic. Given an address, singular registry address --registry ADDRESS shows what the address holds. A state token that is not one, a state token with no network magic and a network magic that has no prefix are each refused in one sentence, with exit status 2.",
-    "v": "5a2fd21ad38c"
-   }
-  ],
   "a-registry-of-other-contracts": [
    {
     "index": 0,

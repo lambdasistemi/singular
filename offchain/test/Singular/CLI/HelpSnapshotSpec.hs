@@ -74,10 +74,12 @@ spec = describe "the help pages" $ do
                     && ["registry", "fold"] `elem` paths
                     && ["wallet", "sign"] `elem` paths
                     && ["submit"] `elem` paths
-                    && ["registry", "address"] `elem` paths
                     && ["state"] `elem` paths
                     && ["state", "create"] `elem` paths
-                    && length paths == 15
+                    && length paths == 14
+    it "refuses the removed registry address command" $
+        parseCommand ["registry", "address"]
+            `shouldBe` Left (UnknownCommand ["registry", "address"])
     it "refuses the removed registry page command" $
         parseCommand ["registry", "describe"]
             `shouldBe` Left (UnknownCommand ["registry", "describe"])

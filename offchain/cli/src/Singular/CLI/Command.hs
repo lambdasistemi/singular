@@ -30,7 +30,6 @@ socket settings are refused on every command, including --backend koios.
 module Singular.CLI.Command
     ( -- * Commands
       Command (..)
-    , AddressArgs (..)
     , CreateArgs (..)
     , EntryArgs (..)
     , EntryMode (..)
@@ -85,7 +84,7 @@ import Data.Char
     , generalCategory
     , isDigit
     )
-import Data.List (intercalate, partition)
+import Data.List (partition)
 import Data.Maybe (fromMaybe, isJust, isNothing)
 import Data.Set (Set)
 import Data.Set qualified as Set
@@ -141,7 +140,6 @@ import Singular.CLI.Registry (economics)
 import Singular.CLI.RegistryReading
     ( RegistryRefusal (..)
     , completeRegistry
-    , registryGiven
     )
 import Singular.CLI.Sign (signBundle)
 import Singular.CLI.Sources
@@ -166,7 +164,6 @@ import Singular.CLI.Vault
     , vaultWorkFactor
     )
 import Singular.CLI.Version (releaseVersion)
-import Singular.Registry.Address (addressPrefix, addressPrefixes)
 import Singular.Registry.Config.Application (RegistryEconomics (..))
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.LedgerProvider (Asset)
@@ -216,17 +213,6 @@ data WriteSettings = WriteSettings
 -}
 newtype RegistryAccess = RegistryAccess
     { accessToken :: Asset
-    }
-    deriving stock (Eq, Show)
-
-{- | @registry address@: the registry, named by the address it is given or by its
-state token and its network. It reads no chain.
--}
-data AddressArgs = AddressArgs
-    { addressMagic :: Word32
-    -- ^ The network magic the registry is on
-    , addressToken :: Asset
-    -- ^ The registry's state token
     }
     deriving stock (Eq, Show)
 
@@ -466,7 +452,6 @@ data Command
       -}
       Help String
     | Create CreateArgs (Maybe ApplicationPolicy)
-    | RegistryAddress AddressArgs
     | Fold FoldArgs
     | Reject RejectArgs
     | Reclaim ReclaimArgs
@@ -592,9 +577,6 @@ commandFrom environment (Raw ws allFlags) = do
                                     >> refuseRequest flags
                                     >> refuseFold flags
                                     >> (Create <$> createArgs flags <*> applicationPolicyFrom flags)
-                            ["registry", "address"] ->
-                                refuseAddressSettings flags
-                                    >> (RegistryAddress <$> addressArgs flags)
                             ["registry", "fold"] ->
                                 refuseApplicationPolicy flags
                                     >> (Fold <$> (registryFlags flags >>= foldArgs environment))
@@ -1046,43 +1028,6 @@ commandFrom environment (Raw ws allFlags) = do
     -- network, so the rest of the reading is the one it always was.
     registryFlags flags =
         first registryRefused (completeRegistry environment flags)
-    -- @registry address@ reads no chain: it takes the registry, and nothing else.
-    refuseAddressSettings flags =
-        forM_ (commonFlagGroup <> extraValuedFlags) $ \flag ->
-            unless
-                (flag `elem` ["--registry", "--state-token", "--network-magic"])
-                $ when (isJust (lookup flag flags))
-                $ Left
-                    ( BadValue
-                        flag
-                        "is not accepted by registry address: it reads no chain, so it takes the registry (--registry, or --state-token with --network-magic) and nothing else"
-                    )
-    addressArgs flags =
-        first registryRefused (registryGiven environment flags) >>= \case
-            Just (magic, token) ->
-                Right AddressArgs{addressMagic = magic, addressToken = token}
-            Nothing
-                | isNothing (optional "--state-token" flags)
-                    && isNothing (lookup "SINGULAR_STATE_TOKEN" environment) ->
-                    Left
-                        (MissingFlag "--registry (or --state-token with --network-magic)")
-                | otherwise -> do
-                    access <- registryAccess environment flags
-                    magic <- case optional "--network-magic" flags of
-                        Nothing -> Left (MissingFlag "--network-magic")
-                        Just spelling -> case readMaybe spelling of
-                            Just m -> Right m
-                            Nothing -> Left (BadValue "--network-magic" "is not a number")
-                    when (isNothing (addressPrefix magic)) $
-                        Left (BadValue "--network-magic" (noPrefix magic))
-                    Right
-                        AddressArgs{addressMagic = magic, addressToken = accessToken access}
-    noPrefix magic =
-        show magic
-            <> " has no address prefix: the networks that have one are "
-            <> intercalate
-                ", "
-                [show m <> " (" <> T.unpack p <> ")" | (p, m) <- addressPrefixes]
     fundFrom flags = case optional "--fund-input" flags of
         Nothing -> Right Nothing
         Just s -> case parseOutRef (T.pack s) of
@@ -1362,7 +1307,6 @@ references it looks up.
 neededRoles :: Command -> Set ReferenceRole
 neededRoles = \case
     Create _ _ -> Set.singleton RoleState
-    RegistryAddress _ -> Set.empty
     Fold _ -> everything
     Reject _ -> Set.fromList [RoleState, RoleRequest]
     Reclaim _ -> Set.empty

@@ -68,7 +68,6 @@ registryGroup =
           \they must agree."
         ]
         [ createLeaf
-        , addressLeaf
         , foldLeaf
         , rejectLeaf
         , reclaimLeaf
@@ -187,43 +186,6 @@ createLeaf =
                 , "    --vault alice.vault"
                 ]
             , leafNotes = exitStatuses
-            }
-
-addressLeaf :: Node
-addressLeaf =
-    Runs
-        Leaf
-            { leafName = "address"
-            , leafSummary = "Show or make a registry's address"
-            , leafDescription =
-                [ "Prints one receipt about a registry: its address, its state \
-                  \token, its fingerprint and its network magic. Given the address \
-                  \(--registry) it shows what the address holds; given a state \
-                  \token and a network magic it makes the address, for a registry \
-                  \created before addresses were printed. It reads no chain and \
-                  \needs no provider."
-                , "The prefix of an address names the network: singular for \
-                  \mainnet, singular_preprod for preprod, singular_preview for \
-                  \preview and singular_devnet for the generated development \
-                  \network. A network magic that has no prefix is refused."
-                ]
-            , leafShape =
-                Each
-                    [ Takes registry
-                    , Takes stateToken
-                    , Takes networkMagic
-                    , tracingShape
-                    ]
-            , leafWord = Nothing
-            , leafEnvironment = [environmentLog]
-            , leafExamples =
-                [ "singular registry address \\"
-                , "    --state-token <policy>.<name> --network-magic 1"
-                ]
-            , leafNotes =
-                [ "Prints the receipt alone and writes no file."
-                , "Exit status 0 on success, 2 for a command line it refused."
-                ]
             }
 
 foldLeaf :: Node

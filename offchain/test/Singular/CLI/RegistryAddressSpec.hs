@@ -3,7 +3,7 @@
 
 {- |
 Module      : Singular.CLI.RegistryAddressSpec
-Description : A registry named by one address, and the command that makes the address
+Description : A registry named by one address through retained commands
 License     : Apache-2.0
 
 A registry has an address, one bech32 word that holds its state token and
@@ -11,9 +11,6 @@ names its network. These cases hold what a person is promised through the
 command line alone, as the parser reads it ('parseInvocationFrom') and as the
 packaged command runs it ('runSingular'):
 
-* @singular registry address@ turns a state token and a network magic into the
-  address, and an address back into what it holds, for the four networks and
-  in lower case or upper case, with no chain and no provider;
 * a word that is not the address of a registry is refused in one sentence that
   says which of four causes it is, in a fixed order, before anything else is
   read, with the exit status of a bad value;
@@ -33,16 +30,11 @@ module Singular.CLI.RegistryAddressSpec (spec) where
 
 import Control.Monad (forM_, when)
 import Data.Aeson (Value (..), object, (.=))
-import Data.Aeson qualified as Aeson
-import Data.Aeson.Key qualified as Key
-import Data.Aeson.KeyMap qualified as KeyMap
 import Data.Char (toUpper)
 import Data.List (isInfixOf)
 import Data.Text qualified as T
 import Data.Word (Word32)
 import System.Exit (ExitCode (..))
-import System.FilePath ((</>))
-import System.IO.Temp (withSystemTempDirectory)
 import Test.Hspec
 
 import Singular.CLI.Command
@@ -223,7 +215,6 @@ toldPlaced base placed =
 
 spec :: Spec
 spec = describe "a registry has an address" $ do
-    addressCommandRows
     readingRefusalRows
     registryGivenRows
     agreementRows
@@ -232,153 +223,6 @@ spec = describe "a registry has an address" $ do
     commandsThatTakeNoRegistryRows
     helpRows
     settingsFileRows
-
--- | @singular registry address@: from a state token and a network, and from an address.
-addressCommandRows :: Spec
-addressCommandRows = describe "the command registry address" $ do
-    describe "from a state token and a network magic" $
-        forM_ vectors $ \v ->
-            it
-                ( "makes the "
-                    <> vPrefix v
-                    <> " address of "
-                    <> take 12 (vPolicy v)
-                    <> "..."
-                )
-                $ do
-                    (code, out, err) <-
-                        ran
-                            []
-                            [ "registry"
-                            , "address"
-                            , "--state-token"
-                            , tokenOf v
-                            , "--network-magic"
-                            , show (vMagic v)
-                            ]
-                    code `shouldBe` ExitSuccess
-                    err `shouldBe` ""
-                    receiptOf out `shouldBe` holding v
-    describe "from an address" $
-        forM_ vectors $ \v -> do
-            it ("shows what the " <> vPrefix v <> " address holds") $ do
-                (code, out, _) <-
-                    ran [] ["registry", "address", "--registry", vAddress v]
-                code `shouldBe` ExitSuccess
-                receiptOf out `shouldBe` holding v
-            it ("reads the same " <> vPrefix v <> " address in upper case") $ do
-                (code, out, _) <-
-                    ran
-                        []
-                        ["registry", "address", "--registry", map toUpper (vAddress v)]
-                code `shouldBe` ExitSuccess
-                receiptOf out `shouldBe` holding v
-    describe "in each of the three forms of the registry" $ do
-        let v = vectorAt 1 0
-        it "the flag" $ do
-            (code, out, _) <-
-                ran [] ["registry", "address", "--registry", vAddress v]
-            code `shouldBe` ExitSuccess
-            receiptOf out `shouldBe` holding v
-        it "the variable SINGULAR_REGISTRY" $ do
-            (code, out, _) <-
-                ran [("SINGULAR_REGISTRY", vAddress v)] ["registry", "address"]
-            code `shouldBe` ExitSuccess
-            receiptOf out `shouldBe` holding v
-        it "the key registry of the settings file" $
-            withSystemTempDirectory "registry-address" $ \dir -> do
-                let file = dir </> "singular.json"
-                writeFile file ("{\"registry\": \"" <> vAddress v <> "\"}")
-                (code, out, _) <-
-                    ran [] ["registry", "address", "--config", file]
-                code `shouldBe` ExitSuccess
-                receiptOf out `shouldBe` holding v
-        it "a state token and a network magic from the variables" $ do
-            (code, out, _) <-
-                ran
-                    [ ("SINGULAR_STATE_TOKEN", tokenOf v)
-                    , ("SINGULAR_NETWORK_MAGIC", "1")
-                    ]
-                    ["registry", "address"]
-            code `shouldBe` ExitSuccess
-            receiptOf out `shouldBe` holding v
-    describe "a network magic that has no prefix" $ do
-        let v = vectorAt 42 0
-        forM_ [0, 3, 100, 764824074 :: Word32] $ \magic ->
-            it ("is refused for " <> show magic <> ", with no address printed") $ do
-                (code, out, err) <-
-                    ran
-                        []
-                        [ "registry"
-                        , "address"
-                        , "--state-token"
-                        , tokenOf v
-                        , "--network-magic"
-                        , show magic
-                        ]
-                code `shouldBe` ExitFailure 2
-                out `shouldBe` ""
-                said err `shouldSatisfy` isInfixOf (show magic)
-                said err `shouldSatisfy` isInfixOf "prefix"
-        it "is no refusal on a network that has one" $ do
-            (code, _, _) <-
-                ran
-                    []
-                    [ "registry"
-                    , "address"
-                    , "--state-token"
-                    , tokenOf v
-                    , "--network-magic"
-                    , "42"
-                    ]
-            code `shouldBe` ExitSuccess
-    describe "input that cannot be turned into an address" $ do
-        let v = vectorAt 1 0
-        it "is a state token that is not one" $ do
-            (code, out, err) <-
-                ran
-                    []
-                    [ "registry"
-                    , "address"
-                    , "--state-token"
-                    , "xyz"
-                    , "--network-magic"
-                    , "1"
-                    ]
-            code `shouldBe` ExitFailure 2
-            out `shouldBe` ""
-            said err `shouldSatisfy` isInfixOf "--state-token"
-        it "is a state token with no network magic" $ do
-            (code, out, err) <-
-                ran [] ["registry", "address", "--state-token", tokenOf v]
-            code `shouldBe` ExitFailure 2
-            out `shouldBe` ""
-            said err `shouldSatisfy` isInfixOf "--network-magic"
-        it "is nothing at all" $ do
-            (code, out, err) <- ran [] ["registry", "address"]
-            code `shouldBe` ExitFailure 2
-            out `shouldBe` ""
-            said err `shouldSatisfy` isInfixOf "--registry"
-        it "is a registry that is not an address" $ do
-            (code, out, err) <-
-                ran [] ["registry", "address", "--registry", "not-an-address"]
-            code `shouldBe` ExitFailure 2
-            out `shouldBe` ""
-            said err `shouldSatisfy` isInfixOf "not an address"
-  where
-    holding v =
-        [ ("registry", String (T.pack (vAddress v)))
-        , ("stateToken", String (T.pack (tokenOf v)))
-        , ("fingerprint", String (T.pack (vFingerprint v)))
-        , ("networkMagic", Number (fromIntegral (vMagic v)))
-        ]
-    receiptOf out = case Aeson.decodeStrict out of
-        Just (Object o) ->
-            [ (Key.fromText k, v)
-            | k <- ["registry", "stateToken", "fingerprint", "networkMagic"]
-            , Just v <- [KeyMap.lookup (Key.fromText k) o]
-            ]
-        _ -> []
 
 -- | Each word that is not a registry's address, told which cause it is.
 readingRefusalRows :: Spec
@@ -758,25 +602,6 @@ helpRows = describe "the help" $ do
     it "of registry create does not list --registry" $
         singularHelp singularVersion [] ["registry", "create"]
             `shouldSatisfy` (not . isInfixOf "--registry")
-    it "of the overview lists the command that makes an address" $
-        singularHelp singularVersion [] []
-            `shouldSatisfy` isInfixOf "singular registry address"
-    describe "of registry address" $ do
-        let page = singularHelp singularVersion [] ["registry", "address"]
-        it "lists the three settings that name a registry" $
-            forM_ ["--registry", "--state-token", "--network-magic"] $ \flag ->
-                page `shouldSatisfy` isInfixOf flag
-        it "says it reads no chain" $
-            page `shouldSatisfy` isInfixOf "chain"
-        it "gives an example and says how it ends" $ do
-            page `shouldSatisfy` isInfixOf "Example"
-            page `shouldSatisfy` isInfixOf "Exit status"
-    it "names the program's own prefixes" $
-        singularHelp singularVersion [] ["registry", "address"]
-            `shouldSatisfy` \page ->
-                all
-                    (`isInfixOf` page)
-                    ["singular_preprod", "singular_preview", "singular_devnet"]
 
 -- | The settings file may give the registry.
 settingsFileRows :: Spec

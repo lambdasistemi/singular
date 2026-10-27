@@ -448,8 +448,6 @@ offchain/test/Singular/CLI/CommandRunSpec.hs foreignContractsRows modifyIORef' 2
 offchain/test/Singular/CLI/CommandRunSpec.hs foreignContractsRows newIORef 1
 offchain/test/Singular/CLI/CommandRunSpec.hs foreignContractsRows readIORef 1
 offchain/test/Singular/CLI/CommandRunSpec.hs previewFundingRows readIORef 10
-offchain/test/Singular/CLI/CommandRunSpec.hs runAddress readIORef 1
-offchain/test/Singular/CLI/CommandRunSpec.hs runAddress writeIORef 1
 offchain/test/Singular/CLI/CommandRunSpec.hs runFoldAtBoundApp readIORef 1
 offchain/test/Singular/CLI/CommandRunSpec.hs runFoldAtBoundApp writeIORef 1
 offchain/test/Singular/CLI/CommandRunSpec.hs runViaApp readIORef 1

@@ -199,21 +199,6 @@ grep -q '^| `--payload FILE` | `insert`, `update`, `fold`' "$table" || {
 }
 expect wrong-command-od 1 '^documented, not in --help: the settings table gives --payload to open-datum fold'
 
-# The command that makes a registry's address takes a flag the documentation
-# never mentions (#728).
-fresh
-stand_in_singular 'registry address' "$(plant --planted-flag)"
-expect undocumented-flag-address 1 '^undocumented: singular registry address takes --planted-flag'
-
-# The settings table forgets that the address command takes the registry's address.
-fresh
-sed -i 's/^\(| `--registry ADDRESS` | .*\), `address` |/\1 |/' "$table"
-grep -q '^| `--registry ADDRESS` | .*`inspect` |' "$table" || {
-  echo "SETUP-FAIL: the registry row did not change" >&2
-  exit 2
-}
-expect undocumented-registry-address 1 '^undocumented: singular registry address takes --registry'
-
 # The address of a registry is documented for create, which makes the registry
 # and refuses the flag.
 fresh
@@ -334,11 +319,11 @@ fresh
 printf '\n```sh\nsingular registry insert --state-dir ./refusal --made-up-flag 1\n```\n' >>"$scratch/t/docs/cli-recovery.md"
 expect removed-verb-refusal-value 1 'docs/cli-recovery.md:[0-9]+: singular registry insert .*not a command singular supports'
 
-# The three removed verbs are refused as unknown commands (slice 4).
+# Removed verbs are refused as unknown commands.
 # Each invocation omits --help so it reaches dispatch: at the base the verb
 # parses and is refused for a missing flag, never as unknown, so this
 # control fails there; after the split it is refused as unknown.
-for verb in insert update terminate; do
+for verb in insert update terminate address; do
   fresh
   got=0
   "$binary_singular" registry "$verb" >"$scratch/out-$verb" 2>"$scratch/err-$verb" || got=$?

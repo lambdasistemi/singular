@@ -17,7 +17,6 @@ Available settings:
 
 Available commands:
   create    Boot a registry, or preview its identity      
-  address   Show or make a registry's address             
   fold      Fold the pending requests into the registry   
   reject    Reject all pending requests past their windows
   reclaim   Take back your own pending request            
