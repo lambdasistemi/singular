@@ -858,6 +858,21 @@
           cli-recovery-partitions = cliRecoveryPartitionsApp;
           cli-recovery-partition-check = cliRecoveryPartitionCheckApp;
         };
+      # The registration journey and release verifier share the same helper closure.
+      noPinScripts =
+        system:
+        let
+          pkgs = import nixpkgs { inherit system; };
+        in
+        pkgs.runCommand "no-pin-scripts" { } ''
+          mkdir -p $out
+          cp ${./tools/no_pin_rig.sh} $out/no_pin_rig.sh
+          cp ${./tools/no_pin_registration_journey.sh} $out/no_pin_registration_journey.sh
+          cp ${./tools/no_pin_registration_refusals.sh} $out/no_pin_registration_refusals.sh
+          cp ${./tools/no_pin_termination_refusals.sh} $out/no_pin_termination_refusals.sh
+          cp ${./tools/no_pin_chain_view.py} $out/no_pin_chain_view.py
+          cp ${./tools/no_pin_termination_observations.py} $out/no_pin_termination_observations.py
+        '';
       # Release checks remain available independently of the command journeys.
       releaseVerification =
         system:
@@ -867,7 +882,7 @@
           # #326: verify a published release from its downloaded bytes —
           # sums, the stated model revision against the one the
           # conformance evidence is compiled against, archive members, and
-          # the Demo 1 journey built from the archive's own flakes:
+          # the registration journey built from the archive's own flakes:
           # `nix run .#verify-release -- vX.Y.Z`.
           verifyRelease =
             journey:
@@ -903,7 +918,15 @@
                 strace
               ];
               text = ''
-                export VERIFY_RELEASE_JOURNEY=${managedScripts}/${journey}
+                export VERIFY_RELEASE_JOURNEY=${
+                  if journey == "no_pin_registration_journey.sh" then noPinScripts system else managedScripts
+                }/${journey}
+                export VERIFY_RELEASE_CHAIN_VIEW=${
+                  if journey == "no_pin_registration_journey.sh" then
+                    "${noPinScripts system}/no_pin_chain_view.py"
+                  else
+                    ""
+                }
                 export VERIFY_RELEASE_BINARY_CHECK=${./tools/check_release_binary.py}
                 export DEMO1_CREATE_RACE=${managedScripts}/demo1_cli_create_race.sh
                 export VERIFY_RELEASE_MODEL_REVISION=${./conformance/model-revision}
@@ -922,7 +945,7 @@
           apps = {
             verify-release = {
               type = "app";
-              program = pkgs.lib.getExe (verifyRelease "demo1_cli_journey.sh");
+              program = pkgs.lib.getExe (verifyRelease "no_pin_registration_journey.sh");
             };
             # #326: every refusal of verify-release by name — the published
             # v0.7.0 and mutated copies of an assembled release:
@@ -939,8 +962,9 @@
                     gnused
                     gnutar
                     gzip
+                    jq
                   ];
-                  text = ''VERIFY_RELEASE=${pkgs.lib.getExe (verifyRelease "demo1_cli_journey.sh")} bash ${./tools/verify_release_controls.sh} "$@"'';
+                  text = ''VERIFY_RELEASE=${pkgs.lib.getExe (verifyRelease "no_pin_registration_journey.sh")} bash ${./tools/verify_release_controls.sh} "$@"'';
                 }
               );
             };
@@ -1666,15 +1690,6 @@
               # genesis from E2E_GENESIS_DIR explicitly, never from the working
               # directory. The scripts sit in one directory because the journeys
               # source the rig they share from beside themselves.
-              noPinScripts = pkgs.runCommand "no-pin-scripts" { } ''
-                mkdir -p $out
-                cp ${./tools/no_pin_rig.sh} $out/no_pin_rig.sh
-                cp ${./tools/no_pin_registration_journey.sh} $out/no_pin_registration_journey.sh
-                cp ${./tools/no_pin_registration_refusals.sh} $out/no_pin_registration_refusals.sh
-                cp ${./tools/no_pin_termination_refusals.sh} $out/no_pin_termination_refusals.sh
-                cp ${./tools/no_pin_chain_view.py} $out/no_pin_chain_view.py
-                cp ${./tools/no_pin_termination_observations.py} $out/no_pin_termination_observations.py
-              '';
               noPinRuntime = [
                 pkgs.bash
                 pkgs.coreutils
@@ -1707,11 +1722,11 @@
                     work="''${${results}:-$(mktemp -d "$base/${name}.XXXXXX")/results}"
                     echo "${name}: receipts in $work"
                     export E2E_GENESIS_DIR=${./offchain/e2e-test/genesis}
-                    bash ${noPinScripts}/${script} \
+                    bash ${noPinScripts system}/${script} \
                       ${pkgs.lib.concatStringsSep " " programs} \
                       ${pkgs.lib.getExe offchain.packages.${system}.devnet} \
                       ${open-datum-onchain.packages.${system}.open-datum-blueprint} \
-                      ${noPinScripts}/no_pin_chain_view.py \
+                      ${noPinScripts system}/no_pin_chain_view.py \
                       ${pkgs.lib.concatStringsSep " " extra} \
                       "$work"
                   '';

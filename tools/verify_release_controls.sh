@@ -27,8 +27,9 @@
 #   command-failed, two ways the archive's offchain flake made unevaluable
 #                            (the build fails, nothing runs); and the
 #                            archive's compiled blueprint replaced by an
-#                            empty one, so the build passes and the first
-#                            `singular registry` command of the journey fails
+#                            empty code, retaining titles and hashes for rig
+#                            setup, so the build passes and the journey's
+#                            first creation command itself refuses
 #   bundles, three ways      a release of a version that ships bundles, read
 #                            without them and not said to have none, refused as
 #                            download-failed naming the first bundle; the same
@@ -146,7 +147,10 @@ no_open_datum() { rm "$1/applications/open-datum/offchain/app/Main.hs"; }
 no_singular() { rm "$1/offchain/cli/Main.hs"; }
 changed_readme() { printf '\n' >>"$1/README.md"; }
 broken_flake() { printf '\n}\n' >>"$1/offchain/flake.nix"; }
-empty_blueprint() { printf '{}\n' >"$1/onchain/plutus.json"; }
+empty_blueprint() {
+  jq '.validators |= map(.compiledCode = "")' "$1/onchain/plutus.json" >"$1/onchain/empty.json"
+  mv "$1/onchain/empty.json" "$1/onchain/plutus.json"
+}
 # This deliberately builds ordinary-named outputs with the real test flag
 # enabled. The same compiled checker must reject that hook-bearing artifact.
 test_build_enabled() {
@@ -186,6 +190,8 @@ check broken-flake command-failed "nix build .#singular" "sums model_revision me
 
 variant empty-blueprint empty_blueprint
 check empty-blueprint command-failed "the journey exited" "sums model_revision members build" "journey"
+grep -F 'journey: create-first: client-refusal/' "$scratch/empty-blueprint.log" >/dev/null \
+  || fail "empty-blueprint: the first creation command did not report its own refusal: $(tail -n 8 "$scratch/empty-blueprint.log" | tr '\n' ' ')"
 
 variant test-build-enabled test_build_enabled
 check test-build-enabled harness-code-present "release-binary: REFUSED" "sums model_revision members build" "release_build journey"
