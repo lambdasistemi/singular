@@ -92,6 +92,7 @@ version="${BASH_REMATCH[1]}"
 repo="${VERIFY_RELEASE_REPOSITORY:-lambdasistemi/singular}"
 journey="${VERIFY_RELEASE_JOURNEY:?verify-release needs VERIFY_RELEASE_JOURNEY}"
 binary_check="${VERIFY_RELEASE_BINARY_CHECK:?verify-release needs VERIFY_RELEASE_BINARY_CHECK}"
+chain_view="${VERIFY_RELEASE_CHAIN_VIEW:?verify-release needs VERIFY_RELEASE_CHAIN_VIEW}"
 expected_revision="$(cat "${VERIFY_RELEASE_MODEL_REVISION:?verify-release needs VERIFY_RELEASE_MODEL_REVISION}")"
 bundle_conf="${VERIFY_RELEASE_BUNDLE_CONF:?verify-release needs VERIFY_RELEASE_BUNDLE_CONF}"
 bundle_verifier="${VERIFY_RELEASE_BUNDLE_VERIFIER:?verify-release needs VERIFY_RELEASE_BUNDLE_VERIFIER}"
@@ -287,25 +288,17 @@ done
 # node starts regardless of the caller's directory.
 export E2E_GENESIS_DIR="$extracted/offchain/e2e-test/genesis"
 status=0
-# Demo callers retain their original contract until their command layer leaves.
-if [ -n "${VERIFY_RELEASE_CHAIN_VIEW:-}" ]; then
-  bash "$journey" "$work/bin/singular" "$work/bin/open-datum" "$devnet/bin/devnet" "$extracted/onchain/plutus.json" "$VERIFY_RELEASE_CHAIN_VIEW" "$work/journey" \
-    || status=$?
-else
-  bash "$journey" "$work/bin/singular" "$work/bin/open-datum" "$devnet/bin/devnet" "$extracted/onchain/plutus.json" "$work/journey" ordinary \
-    || status=$?
-fi
+bash "$journey" "$work/bin/singular" "$work/bin/open-datum" "$devnet/bin/devnet" "$extracted/onchain/plutus.json" "$chain_view" "$work/journey" \
+  || status=$?
 [ "$status" -eq 0 ] || refuse command-failed "the journey exited $status$kept"
 pass journey "the connected journey as separate processes"
 
-# The journey uses only the ordinary extracted binaries. Recovery injection
-# and independent trie-capability diagnostics have their own required test
-# carrier; they are not evidence from these release bytes.
-if [ -n "${VERIFY_RELEASE_CHAIN_VIEW:-}" ]; then
-  while IFS= read -r route; do
-    awk -F'\t' -v c="$route" '$1 == c && $2 == ""' "$invocations" | grep -q . \
-      || refuse harness-code-present "no ordinary $route invocation was recorded"
-  done <<'ROUTES'
+# The journey uses only the ordinary extracted binaries. Recovery controls
+# run in their separate explicit test composition.
+while IFS= read -r route; do
+  awk -F'\t' -v c="$route" '$1 == c && $2 == ""' "$invocations" | grep -q . \
+    || refuse harness-code-present "no ordinary $route invocation was recorded"
+done <<'ROUTES'
 singular state create
 open-datum state create
 open-datum state fold
@@ -315,12 +308,6 @@ open-datum registration cleanup
 open-datum holding update
 open-datum holding terminate
 ROUTES
-else
-  for command in create insert update terminate inspect; do
-    awk -F'\t' -v c="open-datum $command" 'index($1, c) == 1 && $2 == ""' "$invocations" | grep -q . \
-      || refuse harness-code-present "no ordinary $command invocation was recorded"
-  done
-fi
 if awk -F'\t' '$2 != "" || $3 != ""' "$invocations" | grep -q .; then
   refuse harness-code-present "ordinary journey received a hidden test input"
 fi

@@ -631,11 +631,7 @@
           cp ${./tools/facade_lifecycle_controls.py} $out/facade_lifecycle_controls.py
           cp ${./tools/managed_state.sh} $out/managed_state.sh
           cp ${./tools/demo1_cli_journey.sh} $out/demo1_cli_journey.sh
-          cp ${./tools/demo1_closed_journey.sh} $out/demo1_closed_journey.sh
           cp ${./tools/demo1_cli_create_race.sh} $out/demo1_cli_create_race.sh
-          cp ${./tools/demo1_cli_one_output_create.sh} $out/demo1_cli_one_output_create.sh
-          cp ${./tools/registry_bundle_control.sh} $out/registry_bundle_control.sh
-          cp ${./tools/demo1_cli_prepare_funding.sh} $out/demo1_cli_prepare_funding.sh
           cp ${./tools/cli_recovery_receipt_cap.test.sh} $out/cli_recovery_receipt_cap.test.sh
         '';
       commandControls =
@@ -878,74 +874,56 @@
         system:
         let
           pkgs = import nixpkgs { inherit system; };
-          managedScripts = commandScripts system;
           # #326: verify a published release from its downloaded bytes —
           # sums, the stated model revision against the one the
           # conformance evidence is compiled against, archive members, and
           # the registration journey built from the archive's own flakes:
           # `nix run .#verify-release -- vX.Y.Z`.
-          verifyRelease =
-            journey:
-            pkgs.writeShellApplication {
-              name = "verify-release";
-              runtimeInputs = with pkgs; [
-                bash
-                python3
-                # the bundle checks stamp a wrong commit with perl and, where
-                # the runner allows it, run the bundle alone in a sandbox
-                perl
-                bubblewrap
-                binutils
-                coreutils
-                curl
-                diffutils
-                findutils
-                gawk
-                git
-                gnugrep
-                gnused
-                gnutar
-                gzip
-                jq
-                nix
-                # the journey's concurrent-writer control holds the
-                # registry's lock with flock, and it finds and stops
-                # its own development node with pgrep and pkill
-                procps
-                util-linux
-                # the two-actor run traces every file access of the folding
-                # process, so one under the booker's directory fails it
-                strace
-              ];
-              text = ''
-                export VERIFY_RELEASE_JOURNEY=${
-                  if journey == "no_pin_registration_journey.sh" then noPinScripts system else managedScripts
-                }/${journey}
-                export VERIFY_RELEASE_CHAIN_VIEW=${
-                  if journey == "no_pin_registration_journey.sh" then
-                    "${noPinScripts system}/no_pin_chain_view.py"
-                  else
-                    ""
-                }
-                export VERIFY_RELEASE_BINARY_CHECK=${./tools/check_release_binary.py}
-                export DEMO1_CREATE_RACE=${managedScripts}/demo1_cli_create_race.sh
-                export VERIFY_RELEASE_MODEL_REVISION=${./conformance/model-revision}
-                # #695: the platform bundles of a release that ships them
-                export VERIFY_RELEASE_BUNDLE_CONF=${./tools/release_bundles.sh}
-                export VERIFY_RELEASE_BUNDLE_VERIFIER=${./tools/verify_release_bundles.sh}
-                export VERIFY_RELEASE_BUNDLE_SMOKE=${./tools/release_bundle_smoke.sh}
-                export VERIFY_RELEASE_BUNDLE_CONTROLS=${./tools/release_bundle_smoke_controls.sh}
-                export RELEASE_BUNDLE_SMOKE=${./tools/release_bundle_smoke.sh}
-                bash ${./tools/verify_release.sh} "$@"
-              '';
-            };
+          verifyRelease = pkgs.writeShellApplication {
+            name = "verify-release";
+            runtimeInputs = with pkgs; [
+              bash
+              python3
+              # the bundle checks stamp a wrong commit with perl and, where
+              # the runner allows it, run the bundle alone in a sandbox
+              perl
+              bubblewrap
+              binutils
+              coreutils
+              curl
+              diffutils
+              findutils
+              gawk
+              git
+              gnugrep
+              gnused
+              gnutar
+              gzip
+              jq
+              nix
+              # the journey finds and stops its own development node
+              procps
+            ];
+            text = ''
+              export VERIFY_RELEASE_JOURNEY=${noPinScripts system}/no_pin_registration_journey.sh
+              export VERIFY_RELEASE_CHAIN_VIEW=${noPinScripts system}/no_pin_chain_view.py
+              export VERIFY_RELEASE_BINARY_CHECK=${./tools/check_release_binary.py}
+              export VERIFY_RELEASE_MODEL_REVISION=${./conformance/model-revision}
+              # #695: the platform bundles of a release that ships them
+              export VERIFY_RELEASE_BUNDLE_CONF=${./tools/release_bundles.sh}
+              export VERIFY_RELEASE_BUNDLE_VERIFIER=${./tools/verify_release_bundles.sh}
+              export VERIFY_RELEASE_BUNDLE_SMOKE=${./tools/release_bundle_smoke.sh}
+              export VERIFY_RELEASE_BUNDLE_CONTROLS=${./tools/release_bundle_smoke_controls.sh}
+              export RELEASE_BUNDLE_SMOKE=${./tools/release_bundle_smoke.sh}
+              bash ${./tools/verify_release.sh} "$@"
+            '';
+          };
         in
         {
-          inherit verifyRelease;
           apps = {
             verify-release = {
               type = "app";
-              program = pkgs.lib.getExe (verifyRelease "no_pin_registration_journey.sh");
+              program = pkgs.lib.getExe verifyRelease;
             };
             # #326: every refusal of verify-release by name — the published
             # v0.7.0 and mutated copies of an assembled release:
@@ -964,7 +942,7 @@
                     gzip
                     jq
                   ];
-                  text = ''VERIFY_RELEASE=${pkgs.lib.getExe (verifyRelease "no_pin_registration_journey.sh")} bash ${./tools/verify_release_controls.sh} "$@"'';
+                  text = ''VERIFY_RELEASE=${pkgs.lib.getExe verifyRelease} bash ${./tools/verify_release_controls.sh} "$@"'';
                 }
               );
             };
@@ -991,549 +969,7 @@
             };
           };
         };
-      # #299: the Demo 1 journey from the extracted release archive, run as
-      # separate `singular` and `open-datum` processes on one development
-      # node. Run from the repository root: `nix run --quiet .#demo1-cli-check`.
-      demo1 =
-        system:
-        let
-          pkgs = import nixpkgs { inherit system; };
-          managedScripts = commandScripts system;
-          # #707: the ordinary tools the bundle journey runs on, and nothing
-          # else: the PATH of a user who has no Nix
-          bundleJourneyTools = pkgs.buildEnv {
-            name = "demo1-bundle-journey-tools";
-            paths =
-              with pkgs;
-              [
-                bash
-                coreutils
-                curl
-                diffutils
-                findutils
-                gawk
-                gnugrep
-                gnused
-                gnutar
-                gzip
-                jq
-                procps
-              ]
-              # the journey watches which files a command opens and locks its state
-              ++ pkgs.lib.optionals pkgs.stdenv.isLinux [
-                pkgs.strace
-                pkgs.util-linux
-              ];
-          };
-          # #300/#449: the demonstration's four refusals on one existing
-          # registry, run as `open-datum` and `singular` processes (open verbs
-          # through `open-datum`, takes through `cli-controls` with
-          # `--singular`); an empty part list runs every part.
-          attachApp = name: parts: {
-            type = "app";
-            program = pkgs.lib.getExe (
-              pkgs.writeShellApplication {
-                inherit name;
-                runtimeInputs = with pkgs; [
-                  bash
-                  python3
-                  curl
-                  xxd
-                  coreutils
-                  diffutils
-                  findutils
-                  git
-                  gnugrep
-                  gnused
-                  gnutar
-                  gzip
-                  jq
-                  procps
-                  nix
-                ];
-                text = ''CLI_ATTACH_PARTS="${parts}" bash ${./tools/demo1_cli_attach_check.sh} "$PWD"'';
-              }
-            );
-          };
-          inherit (releaseVerification system) verifyRelease;
-        in
-        {
-          # This mandatory carrier retains every original injected journey
-          # assertion and independent trie observation on explicit test builds.
-          demo1-cli-test-harness = {
-            type = "app";
-            program = pkgs.lib.getExe (
-              pkgs.writeShellApplication {
-                name = "demo1-cli-test-harness";
-                runtimeInputs = with pkgs; [
-                  bash
-                  coreutils
-                  diffutils
-                  findutils
-                  gawk
-                  git
-                  gnugrep
-                  gnused
-                  jq
-                  nix
-                  procps
-                  strace
-                  util-linux
-                ];
-                text = ''
-                  export DEMO1_TEST_JOURNEY=${managedScripts}/demo1_cli_journey.sh
-                  export DEMO1_CREATE_RACE=${managedScripts}/demo1_cli_create_race.sh
-                  bash ${./tools/demo1_cli_test_harness_check.sh} "$PWD"
-                '';
-              }
-            );
-          };
-          demo1-cli-check = {
-            type = "app";
-            program = pkgs.lib.getExe (
-              pkgs.writeShellApplication {
-                name = "demo1-cli-check";
-                runtimeInputs = with pkgs; [
-                  bash
-                  coreutils
-                  gnugrep
-                  gnused
-                  gnutar
-                  gzip
-                  jq
-                  nix
-                  # the check stops a node that outlives the journey
-                  procps
-                ];
-                text = ''
-                  env -u DEMO1_KEEP_SCRATCH bash ${./tools/demo1_scratch_removal.test.sh} \
-                    ${./tools/demo1_two_actor_control.sh} \
-                    ${./tools/demo1_cli_controls_check.sh} \
-                    ${./tools/demo1_cli_check.sh} \
-                    ${./tools/demo1_cli_attach_check.sh}
-                  DEMO1_VERIFY_RELEASE=${pkgs.lib.getExe (verifyRelease "demo1_cli_journey.sh")} bash ${./tools/demo1_cli_check.sh} "$PWD"
-                '';
-              }
-            );
-          };
-          # #707: the Demo 1 journey from the unpacked Linux release bundle
-          # alone: `singular`, `open-datum` and the development node come out
-          # of the tarball, on a PATH that holds ordinary tools and no Nix.
-          # Nix only builds the bundle beforehand; the blueprint is the bundle's.
-          # Run from the repository root: `nix run --quiet .#demo1-bundle-journey`.
-          demo1-bundle-journey = {
-            type = "app";
-            program = pkgs.lib.getExe (
-              pkgs.writeShellApplication {
-                name = "demo1-bundle-journey";
-                runtimeInputs = [
-                  pkgs.coreutils
-                  pkgs.nix
-                ];
-                text = ''
-                  bundle="$(nix build --quiet --no-link --print-out-paths .#release-bundle)"
-                  tarball="$(ls "$bundle"/singular-*-${system}.tar.gz)"
-                  DEMO1_JOURNEY=${managedScripts}/demo1_cli_journey.sh \
-                    DEMO1_BUNDLE_TOOLS=${bundleJourneyTools}/bin \
-                    bash ${./tools/demo1_bundle_journey.sh} "$tarball"
-                '';
-              }
-            );
-          };
-          # #660: the closed-datum journey from the extracted release archive,
-          # run as separate `singular` and `open-datum` processes on one
-          # development node. Run from the repository root:
-          # `nix run --quiet .#demo1-closed-check`.
-          demo1-closed-check = {
-            type = "app";
-            program = pkgs.lib.getExe (
-              pkgs.writeShellApplication {
-                name = "demo1-closed-check";
-                runtimeInputs = with pkgs; [
-                  bash
-                  coreutils
-                  gnugrep
-                  gnused
-                  gnutar
-                  gzip
-                  jq
-                  nix
-                  # the check stops a node that outlives the journey
-                  procps
-                ];
-                text = ''
-                  DEMO1_VERIFY_RELEASE=${pkgs.lib.getExe (verifyRelease "demo1_closed_journey.sh")} bash ${./tools/demo1_closed_check.sh} "$PWD"
-                '';
-              }
-            );
-          };
-          # #419: the two-actor access check shown failing a complete Demo 1
-          # run — Bob's fold process opens Alice's journal and the run
-          # must fail exactly there: `nix run --quiet .#demo1-two-actor-control`.
-          demo1-two-actor-control = {
-            type = "app";
-            program = pkgs.lib.getExe (
-              pkgs.writeShellApplication {
-                name = "demo1-two-actor-control";
-                runtimeInputs = with pkgs; [
-                  bash
-                  coreutils
-                  gnugrep
-                  gnused
-                  jq
-                  nix
-                  # the packaged check stops a node that outlives the journey
-                  procps
-                ];
-                text = ''
-                  bash ${./tools/demo1_scratch_removal.test.sh} \
-                    ${./tools/demo1_two_actor_control.sh} \
-                    ${./tools/demo1_cli_controls_check.sh} \
-                    ${./tools/demo1_cli_check.sh} \
-                    ${./tools/demo1_cli_attach_check.sh}
-                  bash ${./tools/demo1_two_actor_control.test.sh} ${./tools/demo1_two_actor_control.sh}
-                  DEMO1_CLI_CHECK=${./tools/demo1_cli_check.sh} \
-                    DEMO1_VERIFY_RELEASE=${pkgs.lib.getExe (verifyRelease "demo1_cli_journey.sh")} \
-                    bash ${./tools/demo1_two_actor_control.sh} "$PWD"
-                '';
-              }
-            );
-          };
-          registry-two-actors = {
-            type = "app";
-            program = pkgs.lib.getExe (
-              pkgs.writeShellApplication {
-                name = "registry-two-actors";
-                runtimeInputs = [
-                  pkgs.coreutils
-                  pkgs.strace
-                  pkgs.python3
-                  # the journey builds open-datum from its own flake at start
-                  pkgs.nix
-                  # the stop path verifies no surviving node with pkill/pgrep
-                  pkgs.procps
-                ];
-                text = ''
-                  base="''${REGISTRY_JOURNEY_ROOT:-''${XDG_CACHE_HOME:-$HOME/.cache}/singular-two-actors}"
-                  mkdir -p "$base"
-                  work="$(mktemp -d "$base/run.XXXXXX")/journey"
-                  echo "two actors: receipts in $work"
-                  export E2E_GENESIS_DIR=${./offchain/e2e-test/genesis}
-                  # #528: insert, update, terminate and the termination fold
-                  # run on the open-datum executable, built here from its own
-                  # flake; without it the journey cannot start (setup).
-                  root="$PWD"
-                  [ -f "$root/applications/open-datum/offchain/flake.nix" ] || {
-                    echo "registry-two-actors: run from the repository root" >&2
-                    exit 3
-                  }
-                  open_datum_out="$(nix build --quiet --no-link --print-out-paths "$root/applications/open-datum/offchain#open-datum")" || exit 3
-                  open_datum="$open_datum_out/bin/open-datum"
-                  [ -x "$open_datum" ] || {
-                    echo "registry-two-actors: no open-datum binary in $open_datum_out" >&2
-                    exit 3
-                  }
-                  # The deployment blueprint unions the application and the
-                  # witnesses in one build (the document both CLIs get as
-                  # --blueprint); the registry-only blueprint carries no
-                  # open_datum validator.
-                  deployment_bp="$(nix build --quiet --no-link --print-out-paths "$root/applications/open-datum/onchain#open-datum-blueprint")" || exit 3
-                  [ -f "$deployment_bp" ] || {
-                    echo "registry-two-actors: no deployment blueprint" >&2
-                    exit 3
-                  }
-                  # #381: the altered journey leg inspects with the control
-                  # build; without it the leg is skipped and its row pending.
-                  SINGULAR_REPLAY_FAULT=${pkgs.lib.getExe self.packages.${system}.singular-replay-fault} \
-                    python3 ${./tools/registry_two_actors.py} \
-                    ${pkgs.lib.getExe (stampedSingular system)} \
-                    "$open_datum" \
-                    ${pkgs.lib.getExe offchain.packages.${system}.devnet} \
-                    "$deployment_bp" "$work"
-                '';
-              }
-            );
-          };
-          # #381: the foreign-open access check over the two-actor journey —
-          # one real booking with --state-dir at the other actor's state root
-          # must fail at the guard: `nix run --quiet .#registry-two-actors-control`.
-          registry-two-actors-control = {
-            type = "app";
-            program = pkgs.lib.getExe (
-              pkgs.writeShellApplication {
-                name = "registry-two-actors-control";
-                runtimeInputs = with pkgs; [
-                  bash
-                  coreutils
-                  gnugrep
-                  nix
-                  procps
-                  python3
-                  strace
-                ];
-                text = ''
-                  base="''${REGISTRY_JOURNEY_ROOT:-''${XDG_CACHE_HOME:-$HOME/.cache}/singular-two-actors}"
-                  mkdir -p "$base"
-                  work="$(mktemp -d "$base/control.XXXXXX")"
-                  echo "two-actor control: receipts in $work"
-                  export E2E_GENESIS_DIR=${./offchain/e2e-test/genesis}
-                  # #528: the journey's open verbs run on the open-datum
-                  # executable, built here from its own flake (setup).
-                  root="$PWD"
-                  [ -f "$root/applications/open-datum/offchain/flake.nix" ] || {
-                    echo "registry-two-actors-control: run from the repository root" >&2
-                    exit 3
-                  }
-                  open_datum_out="$(nix build --quiet --no-link --print-out-paths "$root/applications/open-datum/offchain#open-datum")" || exit 3
-                  open_datum="$open_datum_out/bin/open-datum"
-                  [ -x "$open_datum" ] || {
-                    echo "registry-two-actors-control: no open-datum binary in $open_datum_out" >&2
-                    exit 3
-                  }
-                  # The deployment blueprint unions the application and the
-                  # witnesses in one build (the document both CLIs get as
-                  # --blueprint).
-                  deployment_bp="$(nix build --quiet --no-link --print-out-paths "$root/applications/open-datum/onchain#open-datum-blueprint")" || exit 3
-                  [ -f "$deployment_bp" ] || {
-                    echo "registry-two-actors-control: no deployment blueprint" >&2
-                    exit 3
-                  }
-                  # #381: the shipped harness's status taxonomy needs no
-                  # development network, so it runs before anything starts one.
-                  python3 ${./tools/registry_two_actors_status.test.py} ${./tools/registry_two_actors.py}
-                  bash ${./tools/registry_two_actors_control.test.sh} ${./tools/registry_two_actors_control.sh}
-                  bash ${./tools/registry_two_actors_control.sh} "$work" \
-                    python3 ${./tools/registry_two_actors.py} \
-                    ${pkgs.lib.getExe (stampedSingular system)} \
-                    "$open_datum" \
-                    ${pkgs.lib.getExe offchain.packages.${system}.devnet} \
-                    "$deployment_bp"
-                '';
-              }
-            );
-          };
-          # #299: the ordinary CLI's refusal controls, judged from their
-          # receipts: `nix run --quiet .#demo1-cli-controls`.
-          demo1-cli-controls = {
-            type = "app";
-            program = pkgs.lib.getExe (
-              pkgs.writeShellApplication {
-                name = "demo1-cli-controls";
-                runtimeInputs = with pkgs; [
-                  bash
-                  coreutils
-                  diffutils
-                  findutils
-                  gawk
-                  gnugrep
-                  jq
-                  procps
-                  nix
-                ];
-                text = ''
-                  bash ${./tools/demo1_scratch_removal.test.sh} \
-                    ${./tools/demo1_two_actor_control.sh} \
-                    ${./tools/demo1_cli_controls_check.sh} \
-                    ${./tools/demo1_cli_check.sh} \
-                    ${./tools/demo1_cli_attach_check.sh}
-                  bash ${./tools/demo1_cli_controls_ran.test.sh} ${./tools/demo1_cli_controls_ran.sh}
-                  bash ${./tools/demo1_cli_controls_composition.test.sh} ${./tools/demo1_cli_controls_composition.sh}
-                  DEMO1_CONTROLS=${./tools/demo1_cli_controls.sh} \
-                    DEMO1_CONTROLS_RAN=${./tools/demo1_cli_controls_ran.sh} \
-                    DEMO1_CONTROLS_COMPOSITION=${./tools/demo1_cli_controls_composition.sh} \
-                    bash ${./tools/demo1_cli_controls_check.sh} "$PWD"
-                '';
-              }
-            );
-          };
-          # #406 slice 2: Carol funds a fresh wallet with one ada-only output
-          # and runs create on its own fresh devnet with no state carrier
-          # anywhere: `nix run --quiet .#demo1-cli-one-output-create`.
-          demo1-cli-one-output-create = {
-            type = "app";
-            program = pkgs.lib.getExe (
-              pkgs.writeShellApplication {
-                name = "demo1-cli-one-output-create";
-                runtimeInputs = with pkgs; [
-                  bash
-                  coreutils
-                  diffutils
-                  findutils
-                  gawk
-                  git
-                  gnugrep
-                  gnused
-                  jq
-                  nix
-                  procps
-                  util-linux
-                ];
-                text = ''
-                  base="''${REGISTRY_JOURNEY_ROOT:-''${TMPDIR:-/tmp}/singular-one-output}"
-                  mkdir -p "$base"
-                  work="$(mktemp -d "$base/run.XXXXXX")/one-output"
-                  echo "one-output create: receipts in $work"
-                  export E2E_GENESIS_DIR=${./offchain/e2e-test/genesis}
-                  root="$PWD"
-                  [ -f "$root/applications/open-datum/offchain/flake.nix" ] || {
-                    echo "demo1-cli-one-output-create: run from the repository root" >&2
-                    exit 3
-                  }
-                  open_datum_out="$(nix build --quiet --no-link --print-out-paths "$root/applications/open-datum/offchain#open-datum")" || exit 3
-                  open_datum="$open_datum_out/bin/open-datum"
-                  singular_out="$(nix build --quiet --no-link --print-out-paths "$root/offchain#singular")" || exit 3
-                  singular="$singular_out/bin/singular"
-                  devnet_out="$(nix build --quiet --no-link --print-out-paths "$root/offchain#devnet")" || exit 3
-                  devnet="$devnet_out/bin/devnet"
-                  deployment_bp="$(nix build --quiet --no-link --print-out-paths "$root/applications/open-datum/onchain#open-datum-blueprint")" || exit 3
-                  [ -f "$deployment_bp" ] || {
-                    echo "demo1-cli-one-output-create: no deployment blueprint" >&2
-                    exit 3
-                  }
-                  bash ${managedScripts}/demo1_cli_one_output_create.sh "$singular" "$open_datum" "$devnet" "$deployment_bp" "$work"
-                '';
-              }
-            );
-          };
-          # #641: the registry writes' staged signers on a fresh devnet, by
-          # the packaged commands: a create signed elsewhere, a fold from
-          # the vault, a pending bundle stopping a second create, and an
-          # unsent fold bundle reported dead past its deadline:
-          # `nix run --quiet .#registry-bundle-control`.
-          registry-bundle-control = {
-            type = "app";
-            program = pkgs.lib.getExe (
-              pkgs.writeShellApplication {
-                name = "registry-bundle-control";
-                runtimeInputs = with pkgs; [
-                  bash
-                  coreutils
-                  diffutils
-                  findutils
-                  gawk
-                  git
-                  gnugrep
-                  gnused
-                  jq
-                  nix
-                  procps
-                  util-linux
-                ];
-                text = ''
-                  base="''${REGISTRY_JOURNEY_ROOT:-''${TMPDIR:-/tmp}/singular-bundles}"
-                  mkdir -p "$base"
-                  work="$(mktemp -d "$base/run.XXXXXX")/bundles"
-                  echo "bundle control: receipts in $work"
-                  export E2E_GENESIS_DIR=${./offchain/e2e-test/genesis}
-                  root="$PWD"
-                  [ -f "$root/applications/open-datum/offchain/flake.nix" ] || {
-                    echo "registry-bundle-control: run from the repository root" >&2
-                    exit 3
-                  }
-                  open_datum_out="$(nix build --quiet --no-link --print-out-paths "$root/applications/open-datum/offchain#open-datum")" || exit 3
-                  open_datum="$open_datum_out/bin/open-datum"
-                  singular_out="$(nix build --quiet --no-link --print-out-paths "$root/offchain#singular")" || exit 3
-                  singular="$singular_out/bin/singular"
-                  devnet_out="$(nix build --quiet --no-link --print-out-paths "$root/offchain#devnet")" || exit 3
-                  devnet="$devnet_out/bin/devnet"
-                  # a test-harness tool: it seals the devnet keys into vaults
-                  vault_seal_out="$(nix build --quiet --no-link --print-out-paths "$root/offchain#vault-seal")" || exit 3
-                  vault_seal="$vault_seal_out/bin/vault-seal"
-                  deployment_bp="$(nix build --quiet --no-link --print-out-paths "$root/applications/open-datum/onchain#open-datum-blueprint")" || exit 3
-                  [ -f "$deployment_bp" ] || {
-                    echo "registry-bundle-control: no deployment blueprint" >&2
-                    exit 3
-                  }
-                  bash ${managedScripts}/registry_bundle_control.sh "$singular" "$open_datum" "$devnet" "$vault_seal" "$deployment_bp" "$root/version.txt" "$work"
-                '';
-              }
-            );
-          };
-          # #491 remainder pull request 1: Carol prepares a funding output when
-          # none suits, on its own fresh devnet from a one-output wallet:
-          # `nix run --quiet .#demo1-cli-prepare-funding`.
-          demo1-cli-prepare-funding = {
-            type = "app";
-            program = pkgs.lib.getExe (
-              pkgs.writeShellApplication {
-                name = "demo1-cli-prepare-funding";
-                runtimeInputs = with pkgs; [
-                  bash
-                  coreutils
-                  curl
-                  diffutils
-                  findutils
-                  gawk
-                  git
-                  gnugrep
-                  gnused
-                  jq
-                  nix
-                  procps
-                  util-linux
-                ];
-                text = ''
-                  base="''${REGISTRY_JOURNEY_ROOT:-''${TMPDIR:-/tmp}/singular-prepare-funding}"
-                  mkdir -p "$base"
-                  work="$(mktemp -d "$base/run.XXXXXX")/prepare-funding"
-                  echo "prepare funding: receipts in $work"
-                  export E2E_GENESIS_DIR=${./offchain/e2e-test/genesis}
-                  root="$PWD"
-                  [ -f "$root/applications/open-datum/offchain/flake.nix" ] || {
-                    echo "demo1-cli-prepare-funding: run from the repository root" >&2
-                    exit 3
-                  }
-                  open_datum_out="$(nix build --quiet --no-link --print-out-paths "$root/applications/open-datum/offchain#open-datum")" || exit 3
-                  open_datum="$open_datum_out/bin/open-datum"
-                  singular_out="$(nix build --quiet --no-link --print-out-paths "$root/offchain#singular")" || exit 3
-                  singular="$singular_out/bin/singular"
-                  devnet_out="$(nix build --quiet --no-link --print-out-paths "$root/offchain#devnet")" || exit 3
-                  devnet="$devnet_out/bin/devnet"
-                  deployment_bp="$(nix build --quiet --no-link --print-out-paths "$root/applications/open-datum/onchain#open-datum-blueprint")" || exit 3
-                  [ -f "$deployment_bp" ] || {
-                    echo "demo1-cli-prepare-funding: no deployment blueprint" >&2
-                    exit 3
-                  }
-                  bash ${managedScripts}/demo1_cli_prepare_funding.sh "$singular" "$open_datum" "$devnet" "$deployment_bp" "$work"
-                '';
-              }
-            );
-          };
-          # #300: the demonstration's four refusals on one existing registry and
-          # two fresh keys, run as `open-datum` and `singular` processes:
-          # `nix run --quiet .#demo1-cli-attach`.
-          demo1-cli-attach = attachApp "demo1-cli-attach" "";
-          # #449: one app per part, each with its own registry and node, so CI
-          # runs the parts as parallel jobs.
-          demo1-cli-attach-takes = attachApp "demo1-cli-attach-takes" "takes";
-          demo1-cli-attach-indexer-reads = attachApp "demo1-cli-attach-indexer-reads" "indexer-reads";
-          demo1-cli-attach-tampered-a = attachApp "demo1-cli-attach-tampered-a" "tampered-a";
-          demo1-cli-attach-tampered-b = attachApp "demo1-cli-attach-tampered-b" "tampered-b";
-          demo1-cli-attach-over-allowance = attachApp "demo1-cli-attach-over-allowance" "over-allowance";
-          # #300: the public-indexer readback (`open-datum inspect` receipts)
-          # against a local indexer that answers
-          # with the shapes the public services return:
-          # `nix run --quiet .#demo1-readback-check`.
-          demo1-readback-check = {
-            type = "app";
-            program = pkgs.lib.getExe (
-              pkgs.writeShellApplication {
-                name = "demo1-readback-check";
-                runtimeInputs = with pkgs; [
-                  bash
-                  coreutils
-                  curl
-                  gnugrep
-                  jq
-                  python3
-                  xxd
-                ];
-                text = "bash ${./tools/demo1_readback_check.sh} ${./tools/demo1_readback.sh}";
-              }
-            );
-          };
 
-        };
     in
     {
       packages = nixpkgs.lib.recursiveUpdate (each (
@@ -1557,77 +993,12 @@
           // (browser system).apps
           // (coverage system).apps
           // (inventory system).apps
-          // (demo1 system)
           // (commandControls system)
           // (releaseVerification system).apps
           // (import ./nix/ci-apps.nix {
             pkgs = import nixpkgs { inherit system; };
             inherit offchain onchain system;
           })
-          // {
-            # #381: the replay-fault control — one genuine insertion booked
-            # and folded, then a real actor inspect with the control build
-            # whose replay maps one edge to another. The job passes only on
-            # exit 0, which the harness returns only for RootDoesNotChain
-            # naming the registry and the fold, with no root:
-            # `nix run --quiet .#registry-two-actors-replay-fault`.
-            registry-two-actors-replay-fault = {
-              type = "app";
-              program =
-                let
-                  pkgs = import nixpkgs { inherit system; };
-                in
-                pkgs.lib.getExe (
-                  pkgs.writeShellApplication {
-                    name = "registry-two-actors-replay-fault";
-                    runtimeInputs = with pkgs; [
-                      bash
-                      coreutils
-                      gnugrep
-                      nix
-                      procps
-                      python3
-                      strace
-                    ];
-                    text = ''
-                      base="''${REGISTRY_JOURNEY_ROOT:-''${XDG_CACHE_HOME:-$HOME/.cache}/singular-two-actors}"
-                      mkdir -p "$base"
-                      work="$(mktemp -d "$base/replay-fault.XXXXXX")"
-                      echo "replay-fault control: receipts in $work"
-                      export E2E_GENESIS_DIR=${./offchain/e2e-test/genesis}
-                      # #528: the journey's open verbs run on the open-datum
-                      # executable, built here from its own flake (setup).
-                      root="$PWD"
-                      [ -f "$root/applications/open-datum/offchain/flake.nix" ] || {
-                        echo "registry-two-actors-replay-fault: run from the repository root" >&2
-                        exit 3
-                      }
-                      open_datum_out="$(nix build --quiet --no-link --print-out-paths "$root/applications/open-datum/offchain#open-datum")" || exit 3
-                      open_datum="$open_datum_out/bin/open-datum"
-                      [ -x "$open_datum" ] || {
-                        echo "registry-two-actors-replay-fault: no open-datum binary in $open_datum_out" >&2
-                        exit 3
-                      }
-                      # The deployment blueprint unions the application and the
-                      # witnesses in one build (the document both CLIs get as
-                      # --blueprint).
-                      deployment_bp="$(nix build --quiet --no-link --print-out-paths "$root/applications/open-datum/onchain#open-datum-blueprint")" || exit 3
-                      [ -f "$deployment_bp" ] || {
-                        echo "registry-two-actors-replay-fault: no deployment blueprint" >&2
-                        exit 3
-                      }
-                      SINGULAR_UNFAULTED=${pkgs.lib.getExe (stampedSingular system)} \
-                      SINGULAR_TWO_ACTOR_CONTROL=replay-fault \
-                        python3 ${./tools/registry_two_actors.py} \
-                        ${pkgs.lib.getExe self.packages.${system}.singular-replay-fault} \
-                        "$open_datum" \
-                        ${pkgs.lib.getExe offchain.packages.${system}.devnet} \
-                        "$deployment_bp" "$work/journey"
-                    '';
-                  }
-                );
-            };
-          }
           // (
             let
               pkgs = import nixpkgs { inherit system; };
