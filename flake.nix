@@ -228,66 +228,7 @@
         # #451 re-cut R1: the collector as a buildable package; the app below
         # refers to this same writeShellApplication derivation.
         cli-recovery-cross-wallet-evidence = (recoveryTools system).evidence;
-        # #381: the replay-fault control build — the packaged singular rebuilt
-        # with the committed replay-fault patch applied at package level over
-        # the existing source. Package level because the fault lives in the
-        # registry library, which the executable links: patching the
-        # executable derivation alone rebuilds it unpatched (proven by the
-        # first control run refusing nothing). Reuses the offchain lock's own
-        # inputs and project shape; adds no input, edits no offchain file.
-        # Never the packaged product: the journey apps keep the unpatched
-        # binary; only the replay-fault control app runs this one.
-        singular-replay-fault =
-          let
-            pkgs = import offchain.inputs.nixpkgs {
-              overlays = [
-                offchain.inputs.iohkNix.overlays.crypto
-                offchain.inputs.haskellNix.overlay
-                offchain.inputs.iohkNix.overlays.haskell-nix-crypto
-                offchain.inputs.iohkNix.overlays.cardano-lib
-              ];
-              inherit system;
-            };
-            patchedSrc = pkgs.applyPatches {
-              src = ./offchain;
-              patches = [ ./tools/replay-fault.patch ];
-            };
-            fix-libs =
-              { lib, pkgs, ... }:
-              {
-                packages.cardano-crypto-praos.components.library.pkgconfig = lib.mkForce [ [ pkgs.libsodium-vrf ] ];
-                packages.cardano-crypto-class.components.library.pkgconfig = lib.mkForce [
-                  [
-                    pkgs.libsodium-vrf
-                    pkgs.secp256k1
-                    pkgs.libblst
-                  ]
-                ];
-              };
-            faultProject = pkgs.haskell-nix.cabalProject' (_: {
-              name = "singular-registry-replay-fault";
-              src = patchedSrc;
-              compiler-nix-name = "ghc9123";
-              # No extra packages: the negative host moved to the
-              # application's own tree, and the fault build needs only
-              # the registry executable (main's offchain project lists
-              # no cabalProjectLocal either).
-              # The replay alteration is its own package build, with no
-              # hold/drop/trace harness code linked into this variant.
-              cabalProjectLocal = ''
-                package singular-registry
-                  flags: -test-harness
-              '';
-              modules = [
-                fix-libs
-                { packages.singular-registry.flags.test-harness = false; }
-              ];
-              inputMap = {
-                "https://chap.intersectmbo.org/" = offchain.inputs.CHaP;
-              };
-            });
-          in
-          faultProject.hsPkgs.singular-registry.components.exes.singular;
+
       };
       # #695: the relocatable `singular` and `open-datum` bundle of one
       # platform (nix/release-bundle.nix). The release version is the one
