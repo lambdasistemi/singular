@@ -125,7 +125,6 @@ CATEGORIES: list[tuple[str, str, tuple[str, ...]]] = [
             "conformance/test/",
             "applications/open-datum/offchain/test/",
             "applications/open-datum/offchain/test-tags/",
-            "applications/open-datum/offchain/forged-registry/",
             "applications/open-datum/offchain/refusals/",
         ),
     ),

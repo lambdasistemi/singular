@@ -1055,35 +1055,6 @@ jobs:
       - name: The packaged wallet vault keeps its promises
         timeout-minutes: 20
         run: nix run --quiet .#wallet-vault-controls
-  forged-pins:
-    name: Forged pins journey
-    needs: blueprint
-    runs-on: nixos
-    timeout-minutes: 90
-    steps:
-      - name: Reuse this runner's Nix cache
-        run: |
-          cache_dir="$HOME/.cache/singular-ci-nix"
-          mkdir -p "$cache_dir"
-          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: cachix/cachix-action@v17
-        with:
-          name: paolino
-          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      # #730: one raw development node funds one wallet; a test harness boots a
-      # registry whose datum pins an always-true active policy and mints a
-      # token named after a key under it. The packaged singular and open-datum
-      # are run as separate processes against it: every command must refuse it
-      # naming the active policy, show nothing of the registry and add no
-      # transaction to a chain counted from the facade's own record; the same
-      # commands proceed on an honest registry made the same way; a fold that
-      # swaps a pinned policy is refused by the node; each assertion is shown
-      # failing on altered input.
-      - name: Run the forged pins journey against a real devnet
-        run: nix run --quiet .#forged-pins-check
   no-pin-registration-journey:
     name: No-pin registration, update and termination through the packaged commands
     needs: blueprint

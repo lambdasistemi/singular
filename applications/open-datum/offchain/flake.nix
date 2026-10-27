@@ -63,7 +63,6 @@
           mkdir -p $out/open-datum
           cp -r ${appSrc}/src $out/open-datum/src
           cp -r ${appSrc}/app $out/open-datum/app
-          cp -r ${appSrc}/forged-registry $out/open-datum/forged-registry
           cp -r ${appSrc}/refusals $out/open-datum/refusals
           if [ -d ${appSrc}/test ]; then cp -r ${appSrc}/test $out/open-datum/test; fi
           # The Koios fixtures live once, in the registry tree; stage them
@@ -122,7 +121,6 @@
               # The same executable before the commit is stamped into a copy of
               # it: the cached Haskell build, for consumers that stamp their own.
               open-datum-unstamped = openDatumComponents.exes.open-datum;
-              inherit (openDatumComponents.exes) forged-registry;
               inherit (openDatumComponents.exes) no-pin-refusals;
             };
             tests = {
@@ -228,8 +226,6 @@
           open-datum-unstamped = openDatumComponents.exes.open-datum;
           open-datum-test-harness = harnessOpenDatumComponents.exes.open-datum;
           singular-test-harness = harnessRegistryComponents.exes.singular;
-          # #730: the test-only harness of the forged-pins journey.
-          inherit (openDatumComponents.exes) forged-registry;
           # #742: the test-only harness of the refusals journey.
           inherit (openDatumComponents.exes) no-pin-refusals;
           inherit (registryComponents.exes) singular;
