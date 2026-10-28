@@ -86,6 +86,7 @@ library
     , unix
 
   exposed-modules:
+    Singular.Reader
     Singular.Provider.Koios.Client
     Singular.Provider.Koios.Evidence
     Singular.Provider.Koios.History

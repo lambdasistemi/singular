@@ -78,9 +78,9 @@ spec :: Spec
 spec = describe "reading a key from complete or unavailable evidence" $ do
     rows <- runIO $ do
         path <-
-            fromMaybe "../models/open-datum-application-held/reader-corpus.json"
+            fromMaybe "../models/singular-application-held/reader-corpus.json"
                 <$> lookupEnv "SINGULAR_READER_CORPUS"
-        decoded <- eitherDecodeFileStrict' path
+        decoded <- eitherDecodeFileStrict' path :: IO (Either String [Value])
         either fail pure (decoded >>= parseEither (traverse rowOf))
     it "has more than one independently exported observation" $
         length rows `shouldSatisfy` (> 1)

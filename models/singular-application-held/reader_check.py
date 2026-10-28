@@ -262,6 +262,11 @@ def corpus(report, driver, neutral_driver):
         "reader corpus extent differs",
     )
     require(observed == expected, "reader corpus is stale")
+    require(
+        neutral_projection(observed)
+        == json.loads((PROJECT / "reader-corpus.json").read_text()),
+        "neutral corpus is stale",
+    )
     for row in observed:
         result = invoke(driver, json.dumps(row["query"]))
         require(result.returncode == 0, "reader replay failed: " + row["name"])
@@ -277,9 +282,37 @@ def corpus(report, driver, neutral_driver):
         )
     driver_probe(driver)
     driver_probe(neutral_driver)
+    neutral_corpus(neutral_driver)
     print(
         f"PASS reader definition-computed corpus freshness and transport replay: {len(observed)} rows"
     )
+
+
+def neutral_projection(rows):
+    """The neutral oracle takes no application decoding or refined answers."""
+    result = []
+    for row in rows:
+        query = copy.deepcopy(row["query"])
+        query["decoding"] = []
+        result.append(
+            {"name": row["name"], "query": query, "neutralAnswer": row["neutralAnswer"]}
+        )
+    return result
+
+
+def neutral_corpus(driver):
+    rows = json.loads((PROJECT / "reader-corpus.json").read_text())
+    require(len(rows) > 1, "neutral corpus is empty or singleton")
+    require(len({row["name"] for row in rows}) == len(rows), "duplicate neutral row")
+    for row in rows:
+        require(row["query"]["decoding"] == [], "neutral corpus has application decoding")
+        result = invoke(driver, json.dumps(row["query"]))
+        require(result.returncode == 0, "neutral corpus replay failed: " + row["name"])
+        require(
+            json.loads(result.stdout) == row["neutralAnswer"],
+            "neutral corpus replay differs: " + row["name"],
+        )
+    print(f"PASS neutral corpus without application decoding: {len(rows)} rows")
 
 
 def generate_corpus(report):
@@ -292,6 +325,9 @@ def generate_corpus(report):
     require(len(rows) == 37, "reader generated corpus extent differs")
     target = APPLICATION / "reader-corpus.json"
     target.write_text(json.dumps(rows, indent=2, ensure_ascii=False) + "\n")
+    (PROJECT / "reader-corpus.json").write_text(
+        json.dumps(neutral_projection(rows), indent=2, ensure_ascii=False) + "\n"
+    )
     print(f"WROTE definition-computed reader corpus: {len(rows)} rows")
 
 
@@ -322,6 +358,7 @@ def main():
         driver_probe(args.driver)
         if args.neutral_driver:
             driver_probe(args.neutral_driver)
+            neutral_corpus(args.neutral_driver)
 
 
 if __name__ == "__main__":
