@@ -59,6 +59,7 @@ import Singular.Registry.Trace
     , HorizonWait (..)
     , Query (..)
     , QueryEnd (..)
+    , QueryWork (..)
     , ReadEvent (..)
     , ValiditySelection (..)
     , ViewOpening (..)
@@ -147,6 +148,15 @@ queryFields q =
     ["query" .= queryName q]
         <> maybe [] (\s -> ["session" .= s]) (querySession q)
         <> ["duration_ms" .= queryElapsed q]
+        <> maybe
+            []
+            ( \work ->
+                [ "calls" .= workCalls work
+                , "rows" .= workRows work
+                , "bytes" .= workBytes work
+                ]
+            )
+            (queryWork q)
         <> case queryEnd q of
             Answered size ->
                 ("outcome" .= ("ok" :: Text))

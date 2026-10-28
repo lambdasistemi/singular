@@ -76,6 +76,8 @@ tracedLedgerProvider source tracer inner =
             , tipObservation = call s "tip" none (tipObservation s)
             , networkTime = call s "networkTime" none (networkTime s)
             , scriptRegistered = call s "scriptRegistered" none . scriptRegistered s
+            , mintRecord = call s "mintRecord" none . mintRecord s
+            , inclusion = call s "inclusion" (Just . length . value) . inclusion s
             , history = \asset range -> call s "history" none (history s asset range)
             }
     none = const Nothing

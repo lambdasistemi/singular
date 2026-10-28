@@ -51,6 +51,14 @@ module Singular.Registry.Trace
 import Cardano.Ledger.Plutus (ExUnits (..))
 import Control.Exception (SomeException (..), throwIO, try)
 import Control.Tracer (Tracer, traceWith)
+import Data.Aeson
+    ( FromJSON (..)
+    , ToJSON (..)
+    , object
+    , withObject
+    , (.:)
+    , (.=)
+    )
 import Data.Data (Data)
 import Data.Either (rights)
 import Data.Map.Strict (Map)
@@ -126,6 +134,21 @@ instance Semigroup QueryWork where
 
 instance Monoid QueryWork where
     mempty = QueryWork 0 0 0
+
+instance ToJSON QueryWork where
+    toJSON work =
+        object
+            [ "calls" .= workCalls work
+            , "rows" .= workRows work
+            , "bytes" .= workBytes work
+            ]
+
+instance FromJSON QueryWork where
+    parseJSON = withObject "query work" $ \o -> do
+        work <- QueryWork <$> o .: "calls" <*> o .: "rows" <*> o .: "bytes"
+        if all (>= 0) [workCalls work, workRows work, workBytes work]
+            then pure work
+            else fail "query work cannot be negative"
 
 -- | Per-read work and its total, computed from one acquisition's events.
 data QuerySummary = QuerySummary

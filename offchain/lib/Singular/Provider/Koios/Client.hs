@@ -41,6 +41,8 @@ module Singular.Provider.Koios.Client
     , Answer (..)
     , NoAnswer (..)
     , Exchange (..)
+    , answerWork
+    , singleExchange
     , rawRequest
 
       -- * Client
@@ -77,9 +79,10 @@ module Singular.Provider.Koios.Client
     , assetInfo
     ) where
 
-import Data.Aeson (Value)
+import Data.Aeson (Value (..), decodeStrict')
 import Data.Bifunctor (first)
 import Data.ByteString (ByteString)
+import Data.ByteString qualified as BS
 import Data.Foldable (toList)
 import Data.List (find)
 import Data.List.NonEmpty (NonEmpty)
@@ -146,6 +149,7 @@ import Singular.Provider.Koios.Wire
     , utxoInfoRequest
     )
 import Singular.Registry.Signing (SignedTx, signedTx)
+import Singular.Registry.Trace (QueryWork (..))
 
 -- | How a transport may retry a request.
 data Retry
@@ -219,8 +223,32 @@ data NoAnswer
 data Exchange = Exchange
     { exchangeAttempts :: Int
     , exchangeResult :: Either NoAnswer Answer
+    , exchangeWork :: QueryWork
+    -- ^ Complete response bodies measured at each attempt, before redaction.
     }
     deriving stock (Eq, Show)
+
+-- | One attempt with its complete answer or named failure.
+singleExchange :: Either NoAnswer Answer -> Exchange
+singleExchange result = Exchange 1 result (answerWork result)
+
+{- | One transport attempt's received work. Bytes count complete response
+bodies, without headers; rows count JSON array entries, or one JSON object
+or scalar. A malformed body retains its bytes and has zero decoded rows.
+No complete answer has zero rows and bytes, but still counts its call.
+-}
+answerWork :: Either NoAnswer Answer -> QueryWork
+answerWork result = QueryWork 1 rows bytes
+  where
+    (rows, bytes) = case result of
+        Left _ -> (0, 0)
+        Right response ->
+            let body = answerBody response
+                count = case decodeStrict' body of
+                    Just (Array entries) -> toInteger (length entries)
+                    Just _ -> 1
+                    Nothing -> 0
+            in  (count, toInteger (BS.length body))
 
 -- | One request to one raw answer, in any monad.
 newtype Transport m = Transport

@@ -40,10 +40,11 @@ import Cardano.Ledger.TxIn (TxId (..))
 import Singular.Provider.Koios.Client
     ( Answer (..)
     , ClientConfig (..)
-    , Exchange (..)
+    , Exchange
     , Koios (..)
     , RawRequest (..)
     , Transport (..)
+    , singleExchange
     )
 import Singular.Registry.Signing (SignedTx, signTx)
 
@@ -78,16 +79,13 @@ koiosWith size ceiling' =
 -- | A one-attempt 200 answer with a JSON body and these headers.
 okJson :: [(Text, Text)] -> ByteString -> Exchange
 okJson headers body =
-    Exchange
-        { exchangeAttempts = 1
-        , exchangeResult =
-            Right
-                Answer
-                    { answerStatus = 200
-                    , answerHeaders = ("content-type", "application/json") : headers
-                    , answerBody = body
-                    }
-        }
+    singleExchange $
+        Right
+            Answer
+                { answerStatus = 200
+                , answerHeaders = ("content-type", "application/json") : headers
+                , answerBody = body
+                }
 
 {- | The honest page of these rows at an offset and limit, with the
 exact-count range header Koios sends.

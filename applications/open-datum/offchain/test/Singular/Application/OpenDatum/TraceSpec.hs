@@ -150,6 +150,7 @@ import Singular.Registry.Trace
     , HorizonWait (HorizonWait)
     , Query (Query)
     , QueryEnd (Answered, Lagged, QueryFailed)
+    , QueryWork (..)
     , ReadEvent (..)
     , ValiditySelection (ValiditySelection)
     , ViewOpening (NodeViewFailed, NodeViewOpened, SessionViewOpened)
@@ -671,7 +672,12 @@ genQuery =
             , pure Lagged
             , QueryFailed <$> genClass
             ]
-        <*> pure Nothing
+        <*> genMaybe
+            ( QueryWork
+                <$> chooseInteger (0, 10)
+                <*> chooseInteger (0, 100)
+                <*> chooseInteger (0, 10000)
+            )
 
 genOpening :: Gen ViewOpening
 genOpening =

@@ -155,89 +155,92 @@ import Test.Hspec
 spec :: Spec
 spec = describe "Koios ledger provider constructor" $ do
     it
-        "reads the network even when local time material is unavailable, and refuses after release" $ do
-        let client =
-                Client.Koios
-                    recordedConfig
-                    ( Client.Transport
-                        (const (pure (okJson [] "[{\"networkmagic\":\"42\"}]")))
-                    )
-            provider =
-                koiosProvider
-                    stateRuntime
-                    (Network 1)
-                    (pure (Left (BackendReadFailure "time source unavailable")))
-                    client
-            (result, closed) =
-                runState
-                    ( acquire provider (Latest (Network 1)) $ \session -> do
-                        actual <- servedNetwork session
-                        pure (actual, servedNetwork session)
-                    )
-                    initialProviderState
-        case result of
-            Right (actual, afterRelease) -> do
-                fmap value actual `shouldBe` Right (Network 42)
-                let (released, final) = runState afterRelease closed
-                case released of
-                    Left (ReleasedSession _) -> pure ()
-                    _ -> expectationFailure "a released network read was not refused"
-                length [() | RawExchange{} <- providerEvents final] `shouldBe` 1
-            Left failure -> expectationFailure (show failure)
+        "reads the network even when local time material is unavailable, and refuses after release"
+        $ do
+            let client =
+                    Client.Koios
+                        recordedConfig
+                        ( Client.Transport
+                            (const (pure (okJson [] "[{\"networkmagic\":\"42\"}]")))
+                        )
+                provider =
+                    koiosProvider
+                        stateRuntime
+                        (Network 1)
+                        (pure (Left (BackendReadFailure "time source unavailable")))
+                        client
+                (result, closed) =
+                    runState
+                        ( acquire provider (Latest (Network 1)) $ \session -> do
+                            actual <- servedNetwork session
+                            pure (actual, servedNetwork session)
+                        )
+                        initialProviderState
+            case result of
+                Right (actual, afterRelease) -> do
+                    fmap value actual `shouldBe` Right (Network 42)
+                    let (released, final) = runState afterRelease closed
+                    case released of
+                        Left (ReleasedSession _) -> pure ()
+                        _ -> expectationFailure "a released network read was not refused"
+                    length [() | RawExchange{} <- providerEvents final] `shouldBe` 1
+                Left failure -> expectationFailure (show failure)
     it
-        "reads the served network from genesis rather than its configured network" $ do
-        source <- timeSource
-        let client =
-                Client.Koios
-                    recordedConfig
-                    ( Client.Transport
-                        (const (pure (okJson [] "[{\"networkmagic\":\"42\"}]")))
-                    )
-            provider = koiosProvider stateRuntime (Network 1) (pure (Right source)) client
-            (result, state) =
-                runState
-                    ( acquire
-                        provider
-                        (Latest (Network 1))
-                        (fmap (fmap value) . servedNetwork)
-                    )
-                    initialProviderState
-        result `shouldBe` Right (Right (Network 42))
-        [ Wire.callName (Client.rawCall request)
-          | RawExchange _ request _ <- providerEvents state
-          ]
-            `shouldBe` ["genesis"]
+        "reads the served network from genesis rather than its configured network"
+        $ do
+            source <- timeSource
+            let client =
+                    Client.Koios
+                        recordedConfig
+                        ( Client.Transport
+                            (const (pure (okJson [] "[{\"networkmagic\":\"42\"}]")))
+                        )
+                provider = koiosProvider stateRuntime (Network 1) (pure (Right source)) client
+                (result, state) =
+                    runState
+                        ( acquire
+                            provider
+                            (Latest (Network 1))
+                            (fmap (fmap value) . servedNetwork)
+                        )
+                        initialProviderState
+            result `shouldBe` Right (Right (Network 42))
+            [ Wire.callName (Client.rawCall request)
+              | RawExchange _ request _ <- providerEvents state
+              ]
+                `shouldBe` ["genesis"]
     it
-        "keeps failed, timed-out and malformed network answers as named read failures" $ do
-        source <- timeSource
-        forM_
-            [ Client.Exchange 1 (Left Client.NoAnswerInTime)
-            , Client.Exchange 1 (Left (Client.NoConnection "offline"))
-            , okJson [] "[]"
-            , okJson [] "[{}]"
-            , okJson [] "[{\"networkmagic\":\"-1\"}]"
-            , okJson [] "[{\"networkmagic\":\"4294967296\"}]"
-            , okJson [] "[{\"networkmagic\":1.5}]"
-            , okJson [] "[{\"networkmagic\":1},{\"networkmagic\":42}]"
-            , okJson [] "[{"
-            ]
-            $ \response -> do
-                let client =
-                        Client.Koios recordedConfig (Client.Transport (const (pure response)))
-                    provider = koiosProvider stateRuntime (Network 1) (pure (Right source)) client
-                    (result, _) =
-                        runState
-                            ( acquire
-                                provider
-                                (Latest (Network 1))
-                                (fmap (fmap value) . servedNetwork)
-                            )
-                            initialProviderState
-                case result of
-                    Right (Left (BackendReadFailure reason)) -> reason `shouldSatisfy` Text.isInfixOf "CallGenesis"
-                    _ ->
-                        expectationFailure
-                            ("network answer was not a named failure: " <> show result)
+        "keeps failed, timed-out and malformed network answers as named read failures"
+        $ do
+            source <- timeSource
+            forM_
+                [ Client.singleExchange (Left Client.NoAnswerInTime)
+                , Client.singleExchange (Left (Client.NoConnection "offline"))
+                , okJson [] "[]"
+                , okJson [] "[{}]"
+                , okJson [] "[{\"networkmagic\":\"-1\"}]"
+                , okJson [] "[{\"networkmagic\":\"4294967296\"}]"
+                , okJson [] "[{\"networkmagic\":1.5}]"
+                , okJson [] "[{\"networkmagic\":1},{\"networkmagic\":42}]"
+                , okJson [] "[{"
+                ]
+                $ \response -> do
+                    let client =
+                            Client.Koios recordedConfig (Client.Transport (const (pure response)))
+                        provider = koiosProvider stateRuntime (Network 1) (pure (Right source)) client
+                        (result, _) =
+                            runState
+                                ( acquire
+                                    provider
+                                    (Latest (Network 1))
+                                    (fmap (fmap value) . servedNetwork)
+                                )
+                                initialProviderState
+                    case result of
+                        Right (Left (BackendReadFailure reason)) -> reason `shouldSatisfy` Text.isInfixOf "CallGenesis"
+                        _ ->
+                            expectationFailure
+                                ("network answer was not a named failure: " <> show result)
     it "counts every page of a provider read from its actual answers" $
         withSystemTempDirectory "provider-query-work" $ \directory -> do
             source <- timeSource
@@ -891,7 +894,9 @@ spec = describe "Koios ledger provider constructor" $ do
                     Client.Koios
                         recordedConfig
                         ( Client.Transport
-                            (const (pure (Client.Exchange 1 (Left (Client.NoRecording "unused")))))
+                            ( const
+                                (pure (Client.singleExchange (Left (Client.NoRecording "unused"))))
+                            )
                         )
                 provider = koiosProvider stateRuntime (Network 1) (pure (Left failure)) client
                 action = do
@@ -1358,8 +1363,10 @@ spec = describe "Koios ledger provider constructor" $ do
             source <- timeSource
             let expectedId = keyOf (signedTx signedTransaction)
                 accepted = okJson [] (LBS.toStrict (encode (Wire.txIdHex expectedId)))
-                refused = Client.Exchange 1 (Right (Client.Answer 400 [] "BadInputsUTxO"))
-                unavailable = Client.Exchange 1 (Left (Client.NoRecording "unavailable submit"))
+                refused =
+                    Client.singleExchange (Right (Client.Answer 400 [] "BadInputsUTxO"))
+                unavailable =
+                    Client.singleExchange (Left (Client.NoRecording "unavailable submit"))
                 run response =
                     let client = Client.Koios recordedConfig $ Client.Transport $ \request -> do
                             modify' (\(state, requests) -> (state, requests <> [request]))
@@ -1422,7 +1429,7 @@ spec = describe "Koios ledger provider constructor" $ do
             let client = Client.Koios recordedConfig $ Client.Transport $ \request -> do
                     modifyIORef' requests (<> [request])
                     ( threadDelay 60000000
-                            >> pure (Client.Exchange 1 (Left (Client.NoRecording "stalled tip")))
+                            >> pure (Client.singleExchange (Left (Client.NoRecording "stalled tip")))
                         )
                         `finally` writeIORef released True
                 provider = koiosProvider runtime (Network 1) (pure (Right source)) client
@@ -1625,7 +1632,8 @@ spec = describe "Koios ledger provider constructor" $ do
                         recordedConfig
                         ( Client.Transport
                             ( \_ ->
-                                pure (Client.Exchange 1 (Left (Client.NoRecording "missing-query")))
+                                pure
+                                    (Client.singleExchange (Left (Client.NoRecording "missing-query")))
                             )
                         )
             forM_ [False, True] $ \enabled -> withSystemTempDirectory "provider-refusal" $ \directory -> do
@@ -1969,7 +1977,7 @@ syntheticAt heights transactions listed =
             permutations
             (filter (not . null) (subsequences (map (keyOf . fst) transactions)))
     recorded request = case answer request of
-        Client.Exchange _ (Right response) ->
+        Client.Exchange _ (Right response) _ ->
             Fixture
                 (fixtureRequestOf request)
                 "synthetic Koios 1.4.2 control"
@@ -2018,8 +2026,7 @@ syntheticAt heights transactions listed =
                     ]
                 )
         _ ->
-            Client.Exchange
-                1
+            Client.singleExchange
                 ( Left
                     (Client.NoRecording "synthetic history has no unrelated endpoint")
                 )
@@ -2077,7 +2084,7 @@ outputClient addressOutputs assetOutputs producers =
             (UTCTime (fromGregorian 2026 10 5) 0)
             (bodySha256 (Client.answerBody answer))
             answer
-        | (request, Client.Exchange _ (Right answer)) <- answers
+        | (request, Client.Exchange _ (Right answer) _) <- answers
         ]
 
 type PollState = (ProviderState, Integer, [Int])
@@ -2164,8 +2171,7 @@ pollingClient target visibleAt genesisMs = Client.Koios recordedConfig (Client.T
                     0
                     20
             _ ->
-                Client.Exchange
-                    1
+                Client.singleExchange
                     (Left (Client.NoRecording "unexpected polling endpoint"))
 
 asked :: Client.RawRequest -> [Text]

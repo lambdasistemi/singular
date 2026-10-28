@@ -69,6 +69,7 @@ import Singular.Provider.Koios.Scripted
     )
 import Singular.Provider.Koios.Wire (tipRequest)
 import Singular.Registry.Signing (signedTx)
+import Singular.Registry.Trace (QueryWork (..))
 
 -- | Fast bounds: three attempts, short delays, a short timeout.
 fast :: Text -> HttpConfig
@@ -108,6 +109,25 @@ reasonOf =
 
 spec :: Spec
 spec = describe "Koios HTTP transport" $ do
+    it "counts rows and bytes of every answer across retries"
+        $ withFakeKoios
+            ( \_ n ->
+                if n == 0
+                    then respond 503 [] "[{\"busy\":true},{\"retry\":true}]"
+                    else respond 200 [] tipBody
+            )
+        $ \base logOf -> do
+            transport <- transportFor (fast base)
+            result <- exchange transport (rawRequest tipRequest)
+            calls <- countAt "/tip" <$> logOf
+            exchangeWork result
+                `shouldBe` QueryWork
+                    (toInteger calls)
+                    3
+                    ( toInteger
+                        (BS.length "[{\"busy\":true},{\"retry\":true}]" + BS.length tipBody)
+                    )
+            calls `shouldBe` 2
     retrySpec
     pageSpec
     tokenSpec

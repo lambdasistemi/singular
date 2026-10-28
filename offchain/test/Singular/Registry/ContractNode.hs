@@ -84,7 +84,7 @@ import Data.Map.Strict qualified as Map
 import Data.Ord (Down (..))
 import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
-import Data.Text.Encoding (decodeUtf8)
+import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Data.Unique (hashUnique, newUnique)
 import Lens.Micro ((&), (.~), (^.))
 import Ouroboros.Consensus.Cardano.Block
@@ -527,7 +527,16 @@ phaseLogOnDevnet =
             Just (String "raw-time") -> pure "network-time"
             Just (String "raw-exchange") -> requiredText "call" row
             _ -> fail "the trace row is not an actual successful raw read"
-        -- Koios.Runtime measures raw reads as Answered Nothing: the public
-        -- phase log has no raw answer size or body-byte count. Reconcile the
-        -- fields it actually supplies, including the absent answer_size.
-        pure (Just identity, Just query, Nothing)
+        size <- case KeyMap.lookup "kind" row of
+            Just (String "raw-time") -> pure Nothing
+            _ -> case KeyMap.lookup "result" row of
+                Just (Object result) -> do
+                    body <- requiredText "bodyHex" result
+                    bytes <- either fail pure (B16.decode (encodeUtf8 body))
+                    value <- either fail pure (eitherDecodeStrict' bytes)
+                    pure
+                        ( Just
+                            (case value of Array entries -> fromIntegral (length entries); _ -> 1)
+                        )
+                _ -> fail "raw exchange lacks its answer"
+        pure (Just identity, Just query, size)

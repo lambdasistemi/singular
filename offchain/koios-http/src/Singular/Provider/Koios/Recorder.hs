@@ -89,6 +89,7 @@ import Singular.Provider.Koios.Client
     , assetUtxos
     , cliProtocolParams
     , epochParams
+    , networkMagic
     , referenceScriptUtxos
     , tip
     , txCbor
@@ -130,6 +131,7 @@ import Singular.Provider.Koios.Wire
 -- | Every call a read request can make. There is no submission.
 data ReadCall
     = ReadTip
+    | ReadGenesis
     | ReadAddressUtxos
     | ReadAssetUtxos
     | ReadAssetTxs
@@ -152,6 +154,7 @@ readCallName = callName . readCallCall
 readCallCall :: ReadCall -> Call
 readCallCall = \case
     ReadTip -> CallTip
+    ReadGenesis -> CallGenesis
     ReadAddressUtxos -> CallAddressUtxos
     ReadAssetUtxos -> CallAssetUtxos
     ReadAssetTxs -> CallAssetTxs
@@ -168,6 +171,7 @@ readCallCall = \case
 -- | One read request with its arguments.
 data ReadRequest
     = TipOf
+    | GenesisOf
     | AddressUtxosOf Addr
     | AssetUtxosOf PolicyID AssetName
     | AssetTxsOf PolicyID AssetName
@@ -186,6 +190,7 @@ data ReadRequest
 readRequestCall :: ReadRequest -> ReadCall
 readRequestCall = \case
     TipOf -> ReadTip
+    GenesisOf -> ReadGenesis
     AddressUtxosOf _ -> ReadAddressUtxos
     AssetUtxosOf _ _ -> ReadAssetUtxos
     AssetTxsOf _ _ -> ReadAssetTxs
@@ -218,6 +223,7 @@ parseReadRequest text = do
                     <> ")"
     case call of
         ReadTip -> none argument TipOf
+        ReadGenesis -> none argument GenesisOf
         ReadCliProtocolParams -> none argument CliProtocolParamsOf
         ReadAddressUtxos -> AddressUtxosOf <$> parseAddress argument
         ReadAssetUtxos -> uncurry AssetUtxosOf <$> asset argument
@@ -278,6 +284,7 @@ parseReadRequest text = do
 -- | Run one read request and render its decoded facts, one per line.
 probe :: Koios IO -> ReadRequest -> IO (Either ClientFailure [Text])
 probe k = \case
+    GenesisOf -> fmap (\magic -> [tshow magic]) <$> networkMagic k
     TipOf ->
         fmap (\t -> [tipLine t]) <$> tip k
     AddressUtxosOf a -> fmap (map outputLine) <$> addressUtxos k [a]
@@ -475,7 +482,8 @@ recordFixtures cfg requests =
                     then
                         pure
                             Exchange
-                                { exchangeAttempts = 0
+                                { exchangeWork = mempty
+                                , exchangeAttempts = 0
                                 , exchangeResult =
                                     Left (NoConnection "the recorder does not submit")
                                 }

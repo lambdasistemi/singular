@@ -10,6 +10,7 @@ import Control.Tracer (Tracer, traceWith)
 import Data.IORef (atomicModifyIORef', newIORef, readIORef)
 import Data.Set qualified as Set
 import Data.Text qualified as Text
+import Singular.Provider.Koios.Client qualified as Client
 import Singular.Provider.Koios.Provider
     ( ProviderEvent (..)
     , ProviderRuntime (..)
@@ -17,10 +18,13 @@ import Singular.Provider.Koios.Provider
 import Singular.Registry.Evidence (SessionId (..))
 import Singular.Registry.Trace
     ( BackendEvent (..)
+    , ErrorClass (..)
     , Query (..)
     , QueryEnd (..)
+    , QueryWork (..)
     , ViewOpening (..)
     , ViewRelease (..)
+    , failureTag
     , isoNow
     , timedTrace
     )
@@ -65,19 +69,38 @@ newIORuntime tracer sink = do
                               )
             , sessionOpen = \identity -> Set.member identity . snd <$> readIORef state
             , recordEvent = observe
-            , measureRead = \identity name event action ->
-                timedTrace
-                    tracer
-                    ( \ms end ->
-                        Exchanged
-                            Query
-                                { queryName = name
-                                , querySource = koiosSource
-                                , querySession = Just (identityText identity)
-                                , queryElapsed = ms
-                                , queryEnd = either QueryFailed (const (Answered Nothing)) end
-                                , queryWork = Nothing
-                                }
-                    )
-                    (do result <- action; sink (event result); pure result)
+            , measureRead = \identity name event action -> do
+                (result, _) <-
+                    timedTrace
+                        tracer
+                        ( \ms end ->
+                            Exchanged
+                                Query
+                                    { queryName = name
+                                    , querySource = koiosSource
+                                    , querySession = Just (identityText identity)
+                                    , queryElapsed = ms
+                                    , queryEnd = either QueryFailed (endOf . snd) end
+                                    , queryWork = either (const Nothing) (workOf . snd) end
+                                    }
+                        )
+                        ( do
+                            result <- action
+                            let observed = event result
+                            sink observed
+                            pure (result, observed)
+                        )
+                pure result
             }
+  where
+    workOf (RawExchange _ _ response) = Just (Client.exchangeWork response)
+    workOf _ = Nothing
+    endOf (RawExchange _ _ response) = case Client.exchangeResult response of
+        Left failure -> QueryFailed (failureTag failure)
+        Right answer
+            | Client.answerStatus answer >= 200 && Client.answerStatus answer < 300 ->
+                Answered
+                    (Just (fromInteger (workRows (Client.exchangeWork response))))
+            | otherwise -> QueryFailed (ErrorClass "HttpStatusFailure")
+    endOf (RawTimeFailure _ failure) = QueryFailed (failureTag failure)
+    endOf _ = Answered Nothing

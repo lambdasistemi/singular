@@ -286,6 +286,7 @@ answered :: Int -> Int -> [(Text, Text)] -> BS.ByteString -> Exchange
 answered attempts status headers body =
     Exchange
         { exchangeAttempts = attempts
+        , exchangeWork = answerWork (Right (Answer status headers body))
         , exchangeResult =
             Right
                 Answer
@@ -297,7 +298,11 @@ answered attempts status headers body =
 
 unanswered :: Int -> NoAnswer -> Exchange
 unanswered attempts reason =
-    Exchange{exchangeAttempts = attempts, exchangeResult = Left reason}
+    Exchange
+        { exchangeAttempts = attempts
+        , exchangeResult = Left reason
+        , exchangeWork = answerWork (Left reason)
+        }
 
 tipWith :: Exchange -> IO (Either ClientFailure ())
 tipWith ex = do
