@@ -134,20 +134,21 @@ spec :: Spec
 spec = do
     describe "the compiled validator the rows judge with" $ do
         it
-            "has the current build's applied state policy in the packaged release table" $ do
-            application <- compiledScript
-            path <-
-                lookupEnv "SINGULAR_STATE_BLUEPRINT"
-                    >>= maybe (fail "state blueprint is not set") pure
-            blueprint <- loadBlueprint path >>= either fail pure
-            state <-
-                either
-                    fail
-                    pure
-                    (stateScriptFromBlueprint blueprint (PolicyID (hashScript application)))
-            table <- loadContractTable >>= either (fail . show) pure
-            contractsOf table (scriptHashBytes (hashScript state))
-                `shouldSatisfy` (/= NoKnownRelease)
+            "has the current build's applied state policy in the packaged release table"
+            $ do
+                application <- compiledScript
+                path <-
+                    lookupEnv "SINGULAR_STATE_BLUEPRINT"
+                        >>= maybe (fail "state blueprint is not set") pure
+                blueprint <- loadBlueprint path >>= either fail pure
+                state <-
+                    either
+                        fail
+                        pure
+                        (stateScriptFromBlueprint blueprint (PolicyID (hashScript application)))
+                table <- loadContractTable >>= either (fail . show) pure
+                contractsOf table (scriptHashBytes (hashScript state))
+                    `shouldSatisfy` (/= NoKnownRelease)
         it "identifies the current application from the applied state policy" $ do
             (state, application) <- currentIdentity
             table <- loadContractTable >>= either (fail . show) pure
