@@ -38,7 +38,6 @@ let
       "vault-seal"
     ];
     tests = [
-      "record-value-tests"
       "cage-tests"
       "e2e-tests"
       # #326: the backend contract suite; registry.yml job `contract` runs

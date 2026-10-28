@@ -56,12 +56,6 @@ agree.
 
 MkDocs environment ready!
 Run: mkdocs serve
-- <a href="../offchain/naming/src/Naming/Datum.hs" data-api="module">Naming.Datum</a> — <a href="../offchain/naming/src/Naming/Datum.hs" data-api="source">source</a>
-- <a href="../offchain/naming/src/Naming/Register.hs" data-api="module">Naming.Register</a> — <a href="../offchain/naming/src/Naming/Register.hs" data-api="source">source</a>
-- <a href="../offchain/naming/src/Naming/Request.hs" data-api="module">Naming.Request</a> — <a href="../offchain/naming/src/Naming/Request.hs" data-api="source">source</a>
-- <a href="../offchain/naming/src/Naming/Verify.hs" data-api="module">Naming.Verify</a> — <a href="../offchain/naming/src/Naming/Verify.hs" data-api="source">source</a>
-- <a href="../offchain/naming/src/Naming/Wire.hs" data-api="module">Naming.Wire</a> — <a href="../offchain/naming/src/Naming/Wire.hs" data-api="source">source</a>
-- <a href="../offchain/naming/src/Naming/Wire/Vectors.hs" data-api="module">Naming.Wire.Vectors</a> — <a href="../offchain/naming/src/Naming/Wire/Vectors.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Provider/Koios/Client.hs" data-api="module">Singular.Provider.Koios.Client</a> — <a href="../offchain/lib/Singular/Provider/Koios/Client.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Provider/Koios/Evidence.hs" data-api="module">Singular.Provider.Koios.Evidence</a> — <a href="../offchain/lib/Singular/Provider/Koios/Evidence.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Provider/Koios/History.hs" data-api="module">Singular.Provider.Koios.History</a> — <a href="../offchain/lib/Singular/Provider/Koios/History.hs" data-api="source">source</a>
@@ -77,7 +71,6 @@ Run: mkdocs serve
 - <a href="../offchain/lib/Singular/Registry/Blueprint/Load.hs" data-api="module">Singular.Registry.Blueprint.Load</a> — <a href="../offchain/lib/Singular/Registry/Blueprint/Load.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Blueprint/Params.hs" data-api="module">Singular.Registry.Blueprint.Params</a> — <a href="../offchain/lib/Singular/Registry/Blueprint/Params.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Blueprint/Schema.hs" data-api="module">Singular.Registry.Blueprint.Schema</a> — <a href="../offchain/lib/Singular/Registry/Blueprint/Schema.hs" data-api="source">source</a>
-- <a href="../offchain/lib/Singular/Registry/Candidate.hs" data-api="module">Singular.Registry.Candidate</a> — <a href="../offchain/lib/Singular/Registry/Candidate.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Capabilities.hs" data-api="module">Singular.Registry.Capabilities</a> — <a href="../offchain/lib/Singular/Registry/Capabilities.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Config.hs" data-api="module">Singular.Registry.Config</a> — <a href="../offchain/lib/Singular/Registry/Config.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Config/Application.hs" data-api="module">Singular.Registry.Config.Application</a> — <a href="../offchain/lib/Singular/Registry/Config/Application.hs" data-api="source">source</a>
@@ -94,7 +87,6 @@ Run: mkdocs serve
 - <a href="../offchain/local-services/Singular/Registry/Ledger.hs" data-api="module">Singular.Registry.Ledger</a> — <a href="../offchain/local-services/Singular/Registry/Ledger.hs" data-api="source">source</a>
 - <a href="../offchain/local-services/Singular/Registry/LedgerProvider.hs" data-api="module">Singular.Registry.LedgerProvider</a> — <a href="../offchain/local-services/Singular/Registry/LedgerProvider.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Lifecycle.hs" data-api="module">Singular.Registry.Lifecycle</a> — <a href="../offchain/lib/Singular/Registry/Lifecycle.hs" data-api="source">source</a>
-- <a href="../offchain/lib/Singular/Registry/Page.hs" data-api="module">Singular.Registry.Page</a> — <a href="../offchain/lib/Singular/Registry/Page.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/PlainJson.hs" data-api="module">Singular.Registry.PlainJson</a> — <a href="../offchain/lib/Singular/Registry/PlainJson.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Proof.hs" data-api="module">Singular.Registry.Proof</a> — <a href="../offchain/lib/Singular/Registry/Proof.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Replay.hs" data-api="module">Singular.Registry.Replay</a> — <a href="../offchain/lib/Singular/Registry/Replay.hs" data-api="source">source</a>
@@ -116,7 +108,6 @@ Run: mkdocs serve
 - <a href="../offchain/lib/Singular/Registry/TxBuilder/Internal/Identity.hs" data-api="module">Singular.Registry.TxBuilder.Internal.Identity</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Internal/Identity.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/TxBuilder/Internal/Lookup.hs" data-api="module">Singular.Registry.TxBuilder.Internal.Lookup</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Internal/Lookup.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/TxBuilder/Prepare.hs" data-api="module">Singular.Registry.TxBuilder.Prepare</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Prepare.hs" data-api="source">source</a>
-- <a href="../offchain/lib/Singular/Registry/TxBuilder/Register.hs" data-api="module">Singular.Registry.TxBuilder.Register</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Register.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/TxBuilder/Reject.hs" data-api="module">Singular.Registry.TxBuilder.Reject</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Reject.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/TxBuilder/Request.hs" data-api="module">Singular.Registry.TxBuilder.Request</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Request.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/TxBuilder/Retract.hs" data-api="module">Singular.Registry.TxBuilder.Retract</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Retract.hs" data-api="source">source</a>
@@ -319,8 +310,6 @@ independent of the pure computation being compared. The retired naming runner so
 | `Journey.Proofs` | The journey owns the shared mirror reference; `stepVerifyPresent` advances it before verifying against chain readback. |
 | `Journey.Scenario` | The `withRunner` callback owns the evolving registry manager for the whole bounded journey. |
 | `E2E.CageSpec` | `withE2ETimed` owns its builder manager for one devnet fixture. |
-| `E2E.Fork81Spec` | One test owns an independent evolving proof fixture until its chain-root comparison ends. |
-| `E2E.ReplaySpec` | One replay test owns its evolving reference; exclusion controls own a disposable copied reference for their speculative proof. |
 | `Registry.TrieStateSpec` | Each example owns the unchanged IO producer and speculative manager; the frozen old leaf wrapper owns its short-lived reference only as a compatibility oracle. Computation assertions use the pure API. |
 | `Conformance.Support.CliProof` | `savedTrie` owns the independent evolving producer until it yields database/root values for observation tests. |
 | `Conformance.Support.FoldHistory` | Each example owns independent producer and reconstructed builder managers until their root/proof comparisons end. |
@@ -411,10 +400,6 @@ that create a registry and book, reclaim and clean up a registration:
 `Singular.Application.OpenDatum.Build`,
 `Singular.Application.OpenDatum.Command`,
 `Singular.Application.OpenDatum.Envelope`,
-`Singular.Application.OpenDatum.InsertEnvelope`,
-`Singular.Application.OpenDatum.Permanent`,
-`Singular.Application.OpenDatum.Plan`,
-`Singular.Application.OpenDatum.Preview`,
 `Singular.Application.OpenDatum.Registration`,
 `Singular.Application.OpenDatum.Release`,
 `Singular.Application.OpenDatum.Requests.Booking`,
@@ -434,33 +419,23 @@ and the executable's entry point lives in
 `applications/open-datum/offchain/app/`.
 The public `registry-cli` component (`offchain/cli/`) carries the registry
 command line the two binaries link — session, journal and receipts, the
-flag group, the retained OpenDatum `create`, `fold` and `inspect` helpers, reconcile,
-recovery, the booking call and the creation of a registry on the proved design
-with the fold into it: `Singular.CLI`, `Singular.CLI.Attached`,
-`Singular.CLI.Command`, `Singular.CLI.Create`,
-`Singular.CLI.Finish`, `Singular.CLI.Fold`, `Singular.CLI.FoldRules`,
-`Singular.CLI.Inspect`, `Singular.CLI.Key`, `Singular.CLI.Live`,
+flag group, shared creation helpers, reconciliation,
+recovery and the creation of a registry on the proved design
+with the fold into it: `Singular.CLI`, `Singular.CLI.Command`, `Singular.CLI.Create`,
+`Singular.CLI.Finish`, `Singular.CLI.FoldRules`,
+`Singular.CLI.Key`, `Singular.CLI.Live`,
 `Singular.CLI.ManagedState`, `Singular.CLI.Outlay`, `Singular.CLI.Payload`, `Singular.CLI.Permanent`,
 `Singular.CLI.Plan`, `Singular.CLI.Promise`, `Singular.CLI.Proof`,
 `Singular.CLI.Receipt`, `Singular.CLI.ReceiptBody`,
-`Singular.CLI.ReclaimRules`, `Singular.CLI.Reconcile`,
+`Singular.CLI.Reconcile`,
 `Singular.CLI.Recovery`, `Singular.CLI.Registry`,
-`Singular.CLI.RejectRules`, `Singular.CLI.RequestWindow`,
 `Singular.CLI.Root`, `Singular.CLI.Session`, `Singular.CLI.State`,
 `Singular.CLI.Steps`, `Singular.CLI.Trace`,
-`Singular.CLI.TrieHistory` and `Singular.CLI.TrieTrace`; their sources live
+`Singular.CLI.TrieTrace`; their sources live
 under `offchain/cli/src/Singular/CLI/`.
 
-The registry packages export the booking check every ordinary verb runs
-before signing: `bookingRefusal` in `Singular.CLI.Booking` decides, from
-the key's current entry, whether the entry rules out the booking, naming
-the key, the verb, and the leaves found and required. Every ordinary verb
-of an application calls it in planning, in preview and live, so a taken
-key, a terminal key, and an unknown key for update and terminate are
-refused before any signing key is read. A cardano-keri application gets
-the same refusal by calling the exported function in its own planning.
-The current-line adversarial host and its dedicated workflow have been
-removed with that line's commands under issue 743.
+The application request commands check their admission before signing. Their
+request builders and refusals are listed under the application modules above.
 The command layers' generated pages are not in this main-library reference either: only
 the main library has a generated reference. This coverage gap stays visible; wider
 generated coverage is a separate decision for the epic's owner, not a

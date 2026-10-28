@@ -187,14 +187,14 @@ set -e
 git -C "$scratch" rm -q -f -- "$binary"
 
 echo "control: stray MPFS_BLUEPRINT in a .sh must fail the gate"
-planted="$scratch/offchain/naming/run-suite.sh"
+planted="$scratch/offchain/nix/registry-cli-build-graph-check.sh"
 printf 'export MPFS_BLUEPRINT=/tmp/mpfs-blueprint.json\n' >>"$planted"
 set +e
 gate_out="$(run_rename --gate-only 2>&1)"
 gate_rc=$?
 set -e
 [ "$gate_rc" -ne 0 ] || fail "gate passed despite the planted stray"
-echo "$gate_out" | grep -q 'offchain/naming/run-suite.sh' \
+echo "$gate_out" | grep -q 'offchain/nix/registry-cli-build-graph-check.sh' \
   || fail "gate failure does not name the stray file"
 
 echo "rename-registry.test.sh: all assertions passed"

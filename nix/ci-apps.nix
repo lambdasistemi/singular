@@ -14,12 +14,6 @@ let
       p: (p.pname or "") == "aiken"
     ) onchain.devShells.${system}.default.nativeBuildInputs
   );
-  namingGhc = pkgs.haskellPackages.ghcWithPackages (p: [
-    p.bytestring
-    p.crypton
-    p.directory
-    p.memory
-  ]);
   app = drv: {
     type = "app";
     meta.description = drv.meta.description or "Run ${drv.name}";
@@ -102,14 +96,6 @@ in
     }
   );
 
-  naming-wire-suite = app (
-    pkgs.writeShellApplication {
-      name = "naming-wire-suite";
-      runtimeInputs = [ namingGhc ];
-      text = ''bash offchain/naming/run-suite.sh "$@"'';
-    }
-  );
-
   e2e-lanes-proof = app (
     pkgs.writeShellApplication {
       name = "e2e-lanes-proof";
@@ -120,14 +106,6 @@ in
         pkgs.nix
       ];
       text = builtins.readFile ../tools/e2e_parts_proof.sh;
-    }
-  );
-
-  naming-drift-check = app (
-    pkgs.writeShellApplication {
-      name = "naming-drift-check";
-      runtimeInputs = [ namingGhc ];
-      text = ''bash offchain/naming/run-drift-check.sh "$@"'';
     }
   );
 
@@ -214,7 +192,7 @@ in
         pkgs.gnugrep
         pkgs.gnused
       ];
-      text = ''bash tools/format_controls.sh'';
+      text = "bash tools/format_controls.sh";
     }
   );
 
@@ -250,7 +228,7 @@ in
         jq
         nix
       ];
-      text = ''bash tools/declared_checks_classify_controls.sh'';
+      text = "bash tools/declared_checks_classify_controls.sh";
     }
   );
 

@@ -49,7 +49,6 @@ offchain|cage-tests|check|hosted under another name: the cage-tests job's off-ch
 offchain|cage-tests-e2e|check|hosted under another name: the e2e-part matrix jobs run .#cage-tests-e2e, this same wrapped derivation, one lane per job
 offchain|library|check|hosted under another name: the offchain-component-build job builds .#component-build, whose member paths include this library derivation (build only: no test executes)
 offchain|lint|check|hosted under another name: the offchain-lint job runs .#lint, this same writeShellApplication derivation (apps.lint is checks.lint)
-offchain|record-value-tests|check|hosted under another name: the naming-validators job runs the record-value-tests app, the same test binary this check executes with the naming blueprint pinned in its sandbox
 conformance|conformance-tests|app|hosted under another name: the conformance-checks, conformance-budget, conformance-batch and conformance-book jobs each run one chapter of this harness (appendix tests, fold budget regression, batch instructions, the book) through the conformance and fold-budget-regression apps
 conformance|conformance-exe|check|hosted under another name: every conformance job that runs the conformance app builds this executable inside its wrapper's closure; the check itself builds the executable only (build only: no test executes)
 conformance|conformance-tests|check|hosted under another name: the conformance-checks job's unit-test step runs the conformance-appendix-tests app, the same test binary this check executes in its sandbox

@@ -1,10 +1,5 @@
 module Main (main) where
 
-import Naming.CompleteVerifySpec qualified (spec)
-import Naming.RecordValueSpec qualified (spec)
-import Naming.RegisterSpec qualified (spec)
-import Naming.RetireVerifySpec qualified (spec)
-import Singular.CLI.BookingRefusalSpec qualified (spec)
 import Singular.CLI.CommandRunSpec qualified (spec)
 import Singular.CLI.CreateFundingSpec qualified (spec)
 import Singular.CLI.FailureSentenceSpec qualified (spec)
@@ -18,8 +13,6 @@ import Singular.CLI.PayloadSpec qualified (spec)
 import Singular.CLI.PinGateSpec qualified (spec)
 import Singular.CLI.PrepareSpec qualified (spec)
 import Singular.CLI.PrintedPayloadSpec qualified (spec)
-import Singular.CLI.ReclaimSpec qualified (spec)
-import Singular.CLI.RejectSpec qualified (spec)
 import Singular.CLI.SettingsFileSpec qualified (spec)
 import Singular.CLI.SignSpec qualified (spec)
 import Singular.CLI.SourcesSpec qualified (spec)
@@ -40,7 +33,6 @@ import Singular.Provider.Koios.ReferenceScriptsSpec qualified
 import Singular.Registry.AddressSpec qualified (spec)
 import Singular.Registry.BlueprintParametersSpec qualified (spec)
 import Singular.Registry.BundleSpec qualified (spec)
-import Singular.Registry.CandidateSpec qualified (spec)
 import Singular.Registry.ChainedViewSpec qualified (spec)
 import Singular.Registry.ContractTableSpec qualified (spec)
 import Singular.Registry.DeploymentSpec qualified (spec)
@@ -53,7 +45,6 @@ import Singular.Registry.LocalEvaluationSpec qualified (spec)
 import Singular.Registry.LocalServicesCallerSpec qualified (spec)
 import Singular.Registry.NetworkTimeSpec qualified (spec)
 import Singular.Registry.OneViewSpec qualified (spec)
-import Singular.Registry.PageSpec qualified (spec)
 import Singular.Registry.PhaseLogSpec qualified (spec)
 import Singular.Registry.PlainJsonSpec qualified (spec)
 import Singular.Registry.Private.ArchiveSpec qualified (spec)
@@ -146,9 +137,6 @@ main = hspec $ do
         )
         Singular.Registry.TxBuilder.UpperSlotSpec.spec
     describe
-        (tagged "Singular.Registry.Candidate" [Validity, Builders])
-        Singular.Registry.CandidateSpec.spec
-    describe
         (tagged "Singular.Registry.Deployment" [Builders])
         Singular.Registry.DeploymentSpec.spec
     describe
@@ -179,9 +167,6 @@ main = hspec $ do
         (tagged "Singular.Registry.OneView" [Provider])
         Singular.Registry.OneViewSpec.spec
     describe
-        (tagged "Singular.Registry.Page" [Trie])
-        Singular.Registry.PageSpec.spec
-    describe
         (tagged "Singular.Registry.PhaseLog" [Provider, History, Recovery])
         Singular.Registry.PhaseLogSpec.spec
     describe
@@ -209,29 +194,8 @@ main = hspec $ do
         (tagged "Singular.Registry.TrieStateContract" [Trie])
         Singular.Registry.TrieStateContractSpec.spec
     describe
-        (tagged "Naming.CompleteVerify" [Naming, Application])
-        Naming.CompleteVerifySpec.spec
-    describe
-        (tagged "Naming.Register" [Naming, Application])
-        Naming.RegisterSpec.spec
-    describe
-        (tagged "Naming.RetireVerify" [Naming, Application])
-        Naming.RetireVerifySpec.spec
-    describe
-        (tagged "Naming.RecordValue" [Naming, Application])
-        Naming.RecordValueSpec.spec
-    describe
         (tagged "Singular.CLI.TrieRefusal" [Cli])
         Singular.CLI.TrieRefusalSpec.spec
-    describe
-        (tagged "Singular.CLI.Reject" [Cli])
-        Singular.CLI.RejectSpec.spec
-    describe
-        (tagged "Singular.CLI.Reclaim" [Cli, Recovery])
-        Singular.CLI.ReclaimSpec.spec
-    describe
-        (tagged "Singular.CLI.BookingRefusal" [Cli])
-        Singular.CLI.BookingRefusalSpec.spec
     describe
         (tagged "Singular.CLI.FoldRules" [Cli])
         Singular.CLI.FoldRulesSpec.spec

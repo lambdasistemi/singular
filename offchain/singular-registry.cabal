@@ -47,7 +47,7 @@ common warnings
 library
   import:             warnings
   default-language:   GHC2021
-  hs-source-dirs:     lib naming/src
+  hs-source-dirs:     lib
   build-depends:
     , aeson                             >=2.1  && <2.3
     , aeson-pretty
@@ -78,7 +78,6 @@ library
     , plutus-core
     , plutus-ledger-api
     , plutus-tx
-    , process
     , scientific
     , serialise
     , singular-registry:local-services
@@ -87,12 +86,6 @@ library
     , unix
 
   exposed-modules:
-    Naming.Datum
-    Naming.Register
-    Naming.Request
-    Naming.Verify
-    Naming.Wire
-    Naming.Wire.Vectors
     Singular.Provider.Koios.Client
     Singular.Provider.Koios.Evidence
     Singular.Provider.Koios.History
@@ -108,7 +101,6 @@ library
     Singular.Registry.Blueprint.Load
     Singular.Registry.Blueprint.Params
     Singular.Registry.Blueprint.Schema
-    Singular.Registry.Candidate
     Singular.Registry.Capabilities
     Singular.Registry.Config
     Singular.Registry.Config.Application
@@ -119,7 +111,6 @@ library
     Singular.Registry.FoldSelection
     Singular.Registry.Funding
     Singular.Registry.Lifecycle
-    Singular.Registry.Page
     Singular.Registry.PlainJson
     Singular.Registry.Proof
     Singular.Registry.Replay
@@ -138,7 +129,6 @@ library
     Singular.Registry.TxBuilder.Internal.Identity
     Singular.Registry.TxBuilder.Internal.Lookup
     Singular.Registry.TxBuilder.Prepare
-    Singular.Registry.TxBuilder.Register
     Singular.Registry.TxBuilder.Reject
     Singular.Registry.TxBuilder.Request
     Singular.Registry.TxBuilder.Retract
@@ -207,18 +197,14 @@ library registry-cli
 
   exposed-modules:
     Singular.CLI
-    Singular.CLI.Attached
-    Singular.CLI.Booking
     Singular.CLI.Command
     Singular.CLI.Create
     Singular.CLI.Declared
     Singular.CLI.Failure
     Singular.CLI.Finish
     Singular.CLI.FlagGroup
-    Singular.CLI.Fold
     Singular.CLI.FoldRules
     Singular.CLI.Help
-    Singular.CLI.Inspect
     Singular.CLI.Key
     Singular.CLI.Live
     Singular.CLI.ManagedState
@@ -233,13 +219,10 @@ library registry-cli
     Singular.CLI.Proof
     Singular.CLI.Receipt
     Singular.CLI.ReceiptBody
-    Singular.CLI.ReclaimRules
     Singular.CLI.Reconcile
     Singular.CLI.Recovery
     Singular.CLI.Registry
     Singular.CLI.RegistryReading
-    Singular.CLI.RejectRules
-    Singular.CLI.RequestWindow
     Singular.CLI.Root
     Singular.CLI.Session
     Singular.CLI.Sign
@@ -249,7 +232,6 @@ library registry-cli
     Singular.CLI.Steps
     Singular.CLI.Submit
     Singular.CLI.Trace
-    Singular.CLI.TrieHistory
     Singular.CLI.TrieTrace
     Singular.CLI.Vault
     Singular.CLI.Version
@@ -558,21 +540,6 @@ executable devnet
 
   ghc-options:      -threaded -with-rtsopts=-N
 
-test-suite record-value-tests
-  import:           warnings
-  type:             exitcode-stdio-1.0
-  default-language: GHC2021
-  hs-source-dirs:   record-value-test test-tags
-  main-is:          Main.hs
-  other-modules:    Test.Tags
-  build-depends:
-    , base               >=4.14 && <5
-    , bytestring
-    , hspec
-    , plutus-core
-    , plutus-ledger-api
-    , singular-registry
-
 test-suite cage-tests
   import:           warnings
   type:             exitcode-stdio-1.0
@@ -581,12 +548,7 @@ test-suite cage-tests
   main-is:          Main.hs
   autogen-modules:  Paths_singular_registry
   other-modules:
-    Naming.CompleteVerifySpec
-    Naming.RecordValueSpec
-    Naming.RegisterSpec
-    Naming.RetireVerifySpec
     Paths_singular_registry
-    Singular.CLI.BookingRefusalSpec
     Singular.CLI.CommandRunSpec
     Singular.CLI.CreateFundingSpec
     Singular.CLI.OneOutputCreateSpec
@@ -603,8 +565,6 @@ test-suite cage-tests
     Singular.CLI.StateCommandSpec
     Singular.CLI.FoldRulesSpec
     Singular.CLI.JournalTransitionsSpec
-    Singular.CLI.ReclaimSpec
-    Singular.CLI.RejectSpec
     Singular.CLI.SignSpec
     Singular.CLI.SubmitSpec
     Singular.CLI.TrieRefusalSpec
@@ -627,7 +587,6 @@ test-suite cage-tests
     Singular.Registry.ContractTableSpec
     Singular.Registry.BundleSpec
     Singular.Registry.SubmitSpec
-    Singular.Registry.CandidateSpec
     Singular.Registry.ChainedViewSpec
     Singular.Registry.ContractMemory
     Singular.Registry.ContractSuite
@@ -641,7 +600,6 @@ test-suite cage-tests
     Singular.Registry.LocalServicesCallerSpec
     Singular.Registry.NetworkTimeSpec
     Singular.Registry.OneViewSpec
-    Singular.Registry.PageSpec
     Singular.Registry.PhaseLogSpec
     Singular.Registry.PlainJsonSpec
     Singular.Registry.Private.Archive
@@ -821,18 +779,9 @@ test-suite e2e-tests
     Singular.Registry.E2E.CageSpec
     Singular.Registry.E2E.Config
     Singular.Registry.E2E.ConfigSpec
-    Singular.Registry.E2E.Criterion3Spec
-    Singular.Registry.E2E.DriverSpec
     Singular.Registry.E2E.Fixture
-    Singular.Registry.E2E.Fork81Spec
-    Singular.Registry.E2E.InsertActiveSpec
-    Singular.Registry.E2E.MixedFold
     Singular.Registry.E2E.NodeSpec
-    Singular.Registry.E2E.OpenBootSpec
-    Singular.Registry.E2E.ReplayHistory
-    Singular.Registry.E2E.ReplaySpec
     Singular.Registry.E2E.SubmitSpec
-    Singular.Registry.E2E.UpdateTerminalSpec
     Singular.Registry.Private.Archive
     Singular.Registry.Private.EpochParameters
     Singular.Registry.Private.Facade
@@ -872,7 +821,6 @@ test-suite e2e-tests
     , http-types
     , memory
     , microlens
-    , mts:mpf-write
     , ouroboros-consensus
     , ouroboros-consensus:cardano
     , ouroboros-consensus:protocol

@@ -40,10 +40,6 @@ library
     Singular.Application.OpenDatum.Command
     Singular.Application.OpenDatum.Envelope
     Singular.Application.OpenDatum.Help
-    Singular.Application.OpenDatum.InsertEnvelope
-    Singular.Application.OpenDatum.Permanent
-    Singular.Application.OpenDatum.Plan
-    Singular.Application.OpenDatum.Preview
     Singular.Application.OpenDatum.Registration
     Singular.Application.OpenDatum.Release
     Singular.Application.OpenDatum.Requests.Booking
@@ -163,8 +159,6 @@ test-suite open-datum-tests
     Singular.Application.OpenDatum.FlagGroupExtentSpec
     Singular.Application.OpenDatum.FoldSpec
     Singular.Application.OpenDatum.HelpSnapshotSpec
-    Singular.Application.OpenDatum.IndependentActorsSpec
-    Singular.Application.OpenDatum.InsertEnvelopeSpec
     Singular.Application.OpenDatum.ManagedStateSpec
     Singular.Application.OpenDatum.RecoverySpec
     Singular.Application.OpenDatum.StateTokenSpec

@@ -12,8 +12,7 @@ retired command routes. Identity partitioning is checked by PartitionLibrarySpec
 -}
 module Singular.Application.OpenDatum.ManagedStateSpec (spec) where
 
-import Control.Exception (SomeException, try)
-import Control.Tracer (Tracer (..))
+import Control.Exception (try)
 import Data.ByteString qualified as BS
     ( readFile
     , replicate
@@ -22,28 +21,21 @@ import Data.ByteString qualified as BS
 import Data.List (isInfixOf)
 import Data.Text qualified as T (pack)
 import Singular.Application.OpenDatum.Command
-    ( FoldArgs (..)
-    , ProviderSettings (..)
-    , RegistryAccess (..)
+    ( ProviderSettings (..)
     , Signer (..)
     , WriteSettings (..)
     )
 import Singular.Application.OpenDatum.StateTokenFixture
-    ( release
-    , token
-    )
-import Singular.Application.OpenDatum.Value
-    ( openDatumApplication
+    ( token
     )
 import Singular.CLI.FlagGroup (signerAddress)
-import Singular.CLI.Fold (runFold)
 import Singular.CLI.ManagedState
     ( addressPartition
     , managedDir
     , resolveSignerDir
     )
 import Singular.CLI.Receipt (OutcomeClass (..))
-import Singular.CLI.Session (CommandFailure (..), Env (..))
+import Singular.CLI.Session (CommandFailure (..))
 import Singular.Registry.Wallet
     ( Wallet (..)
     , bech32Address
@@ -73,37 +65,6 @@ spec = describe "external signer admission at the library boundary" $ do
             stopped `shouldSatisfy` namesTheTakenBundle bundlePath
             BS.readFile bundlePath `shouldReturn` "sentinel bytes"
             noJournal root addr
-    it
-        "a fold onto an existing bundle stops before the provider is contacted"
-        $ withExternalDir
-        $ \root addr bundlePath -> do
-            BS.writeFile bundlePath "sentinel bytes"
-            stopped <-
-                try
-                    ( runFold
-                        openDatumApplication
-                        notListening
-                        (foldArgs root addr bundlePath)
-                    )
-            stopped `shouldSatisfy` namesTheTakenBundle bundlePath
-            BS.readFile bundlePath `shouldReturn` "sentinel bytes"
-            noJournal root addr
-    it
-        "a complete library fold against a provider that is not listening writes nothing"
-        $ withExternalDir
-        $ \root addr bundlePath -> do
-            stopped <-
-                try
-                    ( runFold
-                        openDatumApplication
-                        notListening
-                        (foldArgs root addr bundlePath)
-                    )
-            stopped `shouldSatisfy` \case
-                Left (_ :: SomeException) -> True
-                Right _ -> False
-            doesFileExist bundlePath `shouldReturn` False
-            noJournal root addr
   where
     settings addr bundlePath =
         WriteSettings
@@ -111,17 +72,6 @@ spec = describe "external signer admission at the library boundary" $ do
                 ProviderSettings "http://127.0.0.1:1" 42 Nothing Nothing
             , writeSigner = SignerExternal (T.pack addr) bundlePath
             , writeConfirmTimeout = Nothing
-            }
-    foldArgs root addr bundlePath =
-        FoldArgs
-            { foldStateDir = Just root
-            , foldAccess = RegistryAccess token
-            , foldBlueprint = "b.json"
-            , foldWrite = settings addr bundlePath
-            , foldRequest = Nothing
-            , foldFund = Nothing
-            , foldMaxOutlay = Nothing
-            , foldReceipt = Nothing
             }
     namesTheTakenBundle bundle = \case
         Left (CommandFailure ClientRefusal why _) -> bundle `isInfixOf` why && "already exists" `isInfixOf` why
@@ -144,11 +94,3 @@ spec = describe "external signer admission at the library boundary" $ do
         BS.writeFile path (BS.replicate 32 0xa5)
         signing <- loadWallet 42 path
         use root (bech32Address (walletAddr signing)) (root </> "run.bundle")
-    notListening =
-        Env
-            { envTracer = Tracer (\_ -> pure ())
-            , envSource = "test"
-            , envLoadRelease = \_ _ -> pure (Right release)
-            , envReads = \_ _ -> fail "the provider is not listening: no chain read"
-            , envWrites = \_ _ -> fail "the provider is not listening: no chain write"
-            }

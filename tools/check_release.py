@@ -239,9 +239,6 @@ if onchain_present:
             "naming-onchain/flake.lock",
             "offchain/flake.nix",
             "offchain/flake.lock",
-            "offchain/naming/src/Naming/Wire/Vectors.hs",
-            "fixtures/Naming-Wire-Vectors.hs",
-            "fixtures/README.md",
         ):
             assert required in names, f"on-chain release archive misses {required}"
         root_commit = bundle.extractfile(members["RELEASE-COMMIT"]).read()
@@ -257,15 +254,6 @@ if onchain_present:
             and not m.issym()
             and not m.islnk()
             for m in bundle.getmembers()
-        )
-        fixtures_copy = bundle.extractfile(
-            members["fixtures/Naming-Wire-Vectors.hs"]
-        ).read()
-        canonical = bundle.extractfile(
-            members["offchain/naming/src/Naming/Wire/Vectors.hs"]
-        ).read()
-        assert fixtures_copy == canonical, (
-            "vendored fixture copy drifted from the offchain module"
         )
         covered = {}
         for line in (
@@ -310,13 +298,12 @@ if onchain_present:
         # already published archives. Each row is checked as a unit
         # (name, unavailable status, issue together); duplicates, rows
         # lacking their status or issue, and rows claiming availability are
-        # all refusals. Identity and fixture assertions are unchanged.
+        # all refusals. Identity assertions remain required.
         for phrase in (
             "verify-identities.sh",
             "plutus.json",
             "script-identity.json",
-            "nix run .#journey",
-            "run-suite.sh",
+            "tools/no_pin_registration_journey.sh",
             "SHA256SUMS",
         ):
             assert phrase in readme_text, f"artifact README does not document: {phrase}"

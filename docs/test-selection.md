@@ -39,11 +39,11 @@ For example, network-time examples start under `Singular.Registry.NetworkTime [t
 
 ## Suite commands and evidence limits
 
-The Cabal manifests declare five Hspec suites: `cage-tests`, `e2e-tests` exposed as `cage-tests-e2e`, `contract-tests`, `record-value-tests`, and `conformance-tests` exposed for filtering as `conformance-appendix-tests`. The record-value entrypoint defines its examples inline, under the module name `Main`. Contract checks include repeated runs of the same case list against different adapters, each wrapped under its defining module. Development-node evidence descriptions and conformance appendix markers remain inside the module groups.
+The registry and conformance Cabal manifests declare four Hspec suites: `cage-tests`, `e2e-tests` exposed as `cage-tests-e2e`, `contract-tests`, and `conformance-tests` exposed for filtering as `conformance-appendix-tests`. The application separately declares `open-datum-tests`. Contract checks include repeated runs of the same case list against different adapters, each wrapped under its defining module. Development-node evidence descriptions and conformance appendix markers remain inside the module groups.
 
 The public conformance command `nix run .#conformance-tests`, run from `conformance/`, executes the live product book as well as its appendix. Use `nix run .#conformance-appendix-tests -- --match "[conformance]"` to filter the Hspec appendix alone. The published book's requirement text and receipt-computed coverage are unchanged by these harness labels.
 
-The evaluation spike's `cleanup-control` uses Tasty, so it is outside this Hspec vocabulary. Naming's direct-GHC codec and drift programs are not Hspec suites either. The Cabal-declared `Conformance.Support.Authenticate` module was already absent from the Hspec entrypoint; it remains inactive so tagging changes neither suite membership nor example counts. No new exclusion is introduced.
+The evaluation spike's `cleanup-control` uses Tasty, so it is outside this Hspec vocabulary. The Cabal-declared `Conformance.Support.Authenticate` module was already absent from the Hspec entrypoint; it remains inactive so tagging changes neither suite membership nor example counts. No new exclusion is introduced.
 
 ## Checks execute unit binaries
 
@@ -51,11 +51,10 @@ From `offchain/`, build the unit checks directly:
 
 ```sh
 nix build .#checks.x86_64-linux.cage-tests
-nix build .#checks.x86_64-linux.record-value-tests
 nix build .#checks.x86_64-linux.cage-test-vectors
 ```
 
-From `conformance/`, `nix build .#checks.x86_64-linux.conformance-tests` executes the Hspec appendix. Each check runs its existing app or binary during the Nix build, fails when that execution fails and retains the output at the check's store path. A cached result represents an earlier successful execution on the same inputs. The vector command generates vectors; it is not an Hspec suite. Record-value checks receive the naming validator blueprint compiled from the current source. Apps and supported package exports remain available.
+From `conformance/`, `nix build .#checks.x86_64-linux.conformance-tests` executes the Hspec appendix. Each check runs its existing app or binary during the Nix build, fails when that execution fails and retains the output at the check's store path. A cached result represents an earlier successful execution on the same inputs. The vector command generates vectors; it is not an Hspec suite. Apps and supported package exports remain available.
 
 The development-node suites and the live conformance book stay executable apps. Compiling or listing their examples does not establish live ledger behavior. The inventory discovers the Hspec entrypoints from Cabal, rejects unwrapped spec calls and unknown tag constructors, and exercises removal and unknown-tag controls. It is a source inventory; compiled paths and before-and-after example counts supply the separate runtime evidence.
 
@@ -69,4 +68,4 @@ On 6 October 2026, the three selections above executed 69, 18 and 341 examples r
 | Network-time module prefix | 18 | 0 |
 | Provider area, skipping history | 341 | 0 |
 
-The full off-chain suite has 1,037 examples, the conformance appendix 573, the end-to-end suite 69, the contract suite 48 and the compiled record-value suite four. Tagging preserves their example counts. A dry run establishes the census of development-node examples, not execution of their scenarios.
+At that measurement the full off-chain suite had 1,037 examples, the conformance appendix 573, the end-to-end suite 69 and the contract suite 48. These are historical counts; removal of an old subject changes its suite membership. A dry run establishes the census of development-node examples, not execution of their scenarios.

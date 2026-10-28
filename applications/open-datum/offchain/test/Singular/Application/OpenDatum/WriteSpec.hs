@@ -131,10 +131,6 @@ import Singular.Registry.AssetName (deriveAssetName)
 
 import Control.Tracer (Tracer (..), nullTracer)
 import Data.Aeson.KeyMap qualified as KeyMap
-import Singular.Application.OpenDatum.Plan (planTerminate, planUpdate)
-import Singular.Application.OpenDatum.Value (openDatumApplication)
-import Singular.CLI.Attached (Attached (..))
-import Singular.CLI.Fold (FoldOrigin (..), FoldSpec (..), foldPending)
 import Singular.CLI.Live
     ( Live (..)
     , Saved (..)
@@ -142,7 +138,6 @@ import Singular.CLI.Live
     , requireTrieSelection
     , selectTrie
     , selectedTrieRoot
-    , txInText
     )
 import Singular.CLI.Receipt
     ( JournalEntry (..)
@@ -152,8 +147,6 @@ import Singular.CLI.Receipt
     , readJournal
     , unresolved
     )
-import Singular.CLI.RejectRules (rejectGate, renderRejectRefusal)
-import Singular.CLI.RequestWindow (retractEnds, windowOf)
 import Singular.CLI.Session
     ( CommandFailure (..)
     , ConfirmedSubmission
@@ -167,7 +160,6 @@ import Singular.CLI.Session
     )
 import Singular.CLI.Trace
     ( ConfirmVerdict (..)
-    , EdgeAction (..)
     , Ended (..)
     , Event (..)
     , How (..)
@@ -192,7 +184,7 @@ import Singular.Registry.Capabilities
     ( Capabilities (..)
     , sessionReceipt
     )
-import Singular.Registry.Config (CageConfig (..), bootStateFromCfg)
+import Singular.Registry.Config (bootStateFromCfg)
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.Evidence (NoWitness, unverifiedVerifier)
 import Singular.Registry.Ledger
@@ -215,11 +207,6 @@ import Singular.Registry.Signing
     ( signTx
     , signedTx
     )
-import Singular.Registry.StubSession
-    ( servingSession
-    , stubSession
-    , withAddressOutputs
-    )
 import Singular.Registry.Trace
     ( ErrorClass (..)
     , Evaluation (..)
@@ -233,8 +220,6 @@ import Singular.Registry.TxBuilder.Internal
     ( cageAddrFromCfg
     , cagePolicyIdFromCfg
     , mkInlineDatum
-    , mkRequestDatumWith
-    , requestAddrFromCfg
     , toPlcData
     , txInToRef
     )
@@ -242,7 +227,6 @@ import Singular.Registry.Types
     ( CageDatum (..)
     , MintRedeemer (..)
     , OnChainRoot (..)
-    , edgeName
     )
 import Singular.Registry.Wallet (Wallet (..), loadWallet)
 
@@ -398,105 +382,6 @@ inputRows = describe "TrieState command input refusals on injected capabilities"
             BS.writeFile
                 (fxDir fx </> "journal.jsonl")
                 (BL.toStrict (foldMap (\e -> Aeson.encode e <> "\n") entries))
-    forM_ [0, 2, 4, 5, 6, 7, 42] $ \edge ->
-        forM_ [False, True] $ \combined ->
-            it
-                ( "names pending "
-                    <> edgeName edge
-                    <> " before speculation, combined="
-                    <> show combined
-                )
-                $ withInputFixture
-                $ \fx saved live mirror boot -> do
-                    let request = TxIn (txIdTx boot) (TxIx 0)
-                        requestAddr = requestAddrFromCfg (savedCfg saved) (savedToken saved) Testnet
-                        requestOut =
-                            mkBasicTxOut requestAddr (MaryValue (Coin 3_000_000) mempty)
-                                & datumTxOutL
-                                    .~ mkInlineDatum
-                                        ( mkRequestDatumWith
-                                            (savedToken saved)
-                                            (walletAddr (fxWallet fx))
-                                            "missing-key"
-                                            edge
-                                            2_000_000
-                                            0
-                                            ("", Nothing)
-                                        )
-                        ctx =
-                            (writeContext fx)
-                                { wcCommand = "fold"
-                                , wcCapabilities =
-                                    (wcCapabilities (writeContext fx))
-                                        { capReads =
-                                            servingSession $
-                                                withAddressOutputs
-                                                    ( \addr ->
-                                                        if addr == requestAddr
-                                                            then pure [(request, requestOut)]
-                                                            else fail "an inadmissible request reached a later provider read"
-                                                    )
-                                                    stubSession
-                                        }
-                                }
-                        action =
-                            foldPending
-                                openDatumApplication
-                                (Attached ctx live mirror)
-                                FoldSpec
-                                    { fsOrigin = if combined then Combined boot else Standalone
-                                    , fsRequest = Just request
-                                    , fsFund = Nothing
-                                    , fsAllowance = Nothing
-                                    }
-                    journalBefore <- readJournal (fxDir fx)
-                    sentBefore <- readIORef (fxSent fx)
-                    confirmedBefore <- readIORef (fxConfirmed fx)
-                    result <- try @CommandFailure action
-                    case result of
-                        Left (CommandFailure cls why fields) -> do
-                            cls `shouldBe` if combined then Partial else ClientRefusal
-                            why `shouldSatisfy` isInfixOf (edgeName edge)
-                            why `shouldSatisfy` isInfixOf "registry fold does not fold"
-                            lookup "pendingRequest" fields
-                                `shouldBe` Just (Aeson.toJSON (txInText request))
-                        Right _ -> expectationFailure "an unsupported pending edge folded"
-                    readJournal (fxDir fx) `shouldReturn` journalBefore
-                    readIORef (fxSent fx) `shouldReturn` sentBefore
-                    readIORef (fxConfirmed fx) `shouldReturn` confirmedBefore
-                    let bounds =
-                            windowOf
-                                0
-                                (defaultProcessTime (savedCfg saved))
-                                (defaultRetractTime (savedCfg saved))
-                        deadline = retractEnds bounds
-                        booked = [(request, bounds, Just deadline)]
-                    -- Reject's unchanged shared gate depends on the windows,
-                    -- not on whether this edge has a fold route. It still
-                    -- names this retained request early and takes it later.
-                    case rejectGate 0 booked of
-                        Left why ->
-                            renderRejectRefusal why
-                                `shouldSatisfy` isInfixOf (T.unpack (txInText request))
-                        Right _ -> expectationFailure "an open request was rejected"
-                    rejectGate deadline booked `shouldBe` Right [(request, bounds)]
-    it
-        "refuses an absent source holding in the shared write/preview update and termination plans"
-        $ withInputFixture
-        $ \fx _ live _ _ -> do
-            let key = "missing-key"
-                controller = BS.replicate 28 0x5a
-                check action = do
-                    result <- try @CommandFailure action
-                    case result of
-                        Left (CommandFailure cls why _) -> do
-                            cls `shouldBe` ClientRefusal
-                            why `shouldBe` "no live output holds key 0x6d697373696e672d6b6579"
-                        Right _ -> expectationFailure "an absent holding produced a plan"
-            entries <- readJournal (fxDir fx)
-            check (planUpdate live controller key [])
-            check (planTerminate live controller key [])
-            readJournal (fxDir fx) `shouldReturn` entries
 
 withInputFixture
     :: (Fixture -> Saved -> Live -> SelectedTrie -> ConwayTx -> IO a) -> IO a
@@ -1404,80 +1289,6 @@ narrationRows = describe "the narration of a write (#416)" $ do
                 when (name == "the build fails") $
                     [() | Trace _ (How (Tx (TxBuilt _ _ (FailedWith _)))) <- events]
                         `shouldBe` [()]
-    forM_ [(2, "key-two"), (5, "key-five")] $ \(edge, key) ->
-        it
-            ( "a fold names the request, its key and its edge before it refuses "
-                <> edgeName edge
-                <> ", as its receipt does"
-            )
-            $ withInputFixture
-            $ \fx saved live mirror boot -> do
-                (seen, collect) <- traceCollector
-                let request = TxIn (txIdTx boot) (TxIx 0)
-                    requestAddr = requestAddrFromCfg (savedCfg saved) (savedToken saved) Testnet
-                    requestOut =
-                        mkBasicTxOut requestAddr (MaryValue (Coin 3_000_000) mempty)
-                            & datumTxOutL
-                                .~ mkInlineDatum
-                                    ( mkRequestDatumWith
-                                        (savedToken saved)
-                                        (walletAddr (fxWallet fx))
-                                        key
-                                        edge
-                                        2_000_000
-                                        0
-                                        ("", Nothing)
-                                    )
-                    ctx =
-                        (writeContext fx)
-                            { wcCommand = "fold"
-                            , wcTracer = collect
-                            , wcCapabilities =
-                                (wcCapabilities (writeContext fx))
-                                    { capReads =
-                                        servingSession $
-                                            withAddressOutputs
-                                                ( \addr ->
-                                                    if addr == requestAddr
-                                                        then pure [(request, requestOut)]
-                                                        else fail "an inadmissible request reached a later provider read"
-                                                )
-                                                stubSession
-                                    }
-                            }
-                result <-
-                    try @CommandFailure $
-                        foldPending
-                            openDatumApplication
-                            (Attached ctx live mirror)
-                            FoldSpec
-                                { fsOrigin = Standalone
-                                , fsRequest = Just request
-                                , fsFund = Nothing
-                                , fsAllowance = Nothing
-                                }
-                events <- readIORef seen
-                fields <- case result of
-                    Left (CommandFailure _ _ fs) -> pure fs
-                    Right _ -> fail "an unsupported pending edge folded"
-                let named = lookup "pendingRequest" fields
-                    seenRequests =
-                        [ (r, e, k)
-                        | Trace _ (What (RequestSeen r e k _ _)) <- events
-                        ]
-                named `shouldBe` Just (Aeson.toJSON (txInText request))
-                seenRequests
-                    `shouldBe` [(txInText request, T.pack (edgeName edge), key)]
-                [k | Trace _ (What (Refused k _)) <- events]
-                    `shouldBe` [ClientRefused]
-                -- every event inside a request is inside this one
-                [ r
-                  | Trace scope _ <- events
-                  , InRequest r <- scope
-                  ]
-                    `shouldSatisfy` all (== txInText request)
-                [() | Trace scope _ <- events, InEdge (Folding _) <- scope]
-                    `shouldBe` []
 
 -- | A tracer collecting every event, in order.
 traceCollector :: IO (IORef [Trace], Tracer IO Trace)

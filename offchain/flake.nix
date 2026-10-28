@@ -127,10 +127,6 @@
           inherit (project.project) shell;
           inherit cardanoNode;
           ghc = project.project.pkg-set.config.ghc.package;
-          namingBlueprint =
-            ((import ../naming-onchain/flake.nix).outputs {
-              inherit nixpkgs flake-utils;
-            }).packages.${system}.plutus-blueprint;
           # The Singular state validator the builder rows judge their
           # transactions with: the blueprint built by the on-chain tree, and
           # the pinned identity manifest its hash is checked against.

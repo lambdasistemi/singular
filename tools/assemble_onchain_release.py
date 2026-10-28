@@ -104,15 +104,6 @@ def assemble(
         "verify-identities.sh",
     ):
         shutil.copyfile(root / "onchain-release" / relative, farm / relative)
-    (farm / "fixtures").mkdir()
-    shutil.copyfile(
-        root / "onchain-release" / "fixtures" / "README.md",
-        farm / "fixtures" / "README.md",
-    )
-    shutil.copyfile(
-        root / "offchain/naming/src/Naming/Wire/Vectors.hs",
-        farm / "fixtures" / "Naming-Wire-Vectors.hs",
-    )
     shutil.copyfile(onchain_bp, farm / "onchain" / "plutus.json")
     shutil.copyfile(naming_bp, farm / "naming-onchain" / "plutus.json")
     # The release label the page reads from the extracted archive: the

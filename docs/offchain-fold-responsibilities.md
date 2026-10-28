@@ -34,25 +34,11 @@ hand `registryDuties` already-ordered lists, and the built-body row
 folds one request); the quantities of every mint except the active
 burn; a custody refund's output address and amount; a delivering
 edge's destination; and an approval returned by a delivering or
-inadmissible edge. The fresh-blueprint `Criterion3Spec` tests the
-accepted-edge portion of that gap. It books two real
-requests and presents their real outputs in descending TxIn order to
-one public fold, then runs connected stages for all seven admissible
-edges. Its comparisons derive expected mints, approval assets, holder inputs,
-destinations, custody refunds and signers from observed pre-state and
-the accepted Lean row. They inspect the unsigned body and the landed
-destination, refund and state outputs through the real provider. Each
-of the seven named effect comparisons has a one-field mutant required
-to fail in the same run. The local submitted devnet run passed 23 examples
-with no failures. Its receipts record the two booked request TxIns, the
-real and reversed provider orders, canonical TxIn order, fold transaction
-IDs and roots across all connected stages. The terminal witness leaves
-the root unchanged, as Lean requires; the other six edges change it.
-On `ae4fe9a`, the exact-head final gate, independent receipt audit and
-pushed-head CI completed. Those receipts bind that commit. This
-finite representative devnet case does not cover arbitrary request
-sets, inadmissible-edge refusals, the delivering approval's ADA
-minimum, or proof correctness beyond live cage acceptance.
+inadmissible edge. The former connected multi-edge scenario has left
+with its retired E2E subject. The library remains for the retained
+conformance implementation; its focused checks establish only the
+assertions described above. The new command line's connected journey
+has its own registration, update and permanent-termination evidence.
 
 ## One owner per fold concern
 
@@ -139,12 +125,9 @@ the active burn's net `-1` with its held input and no carrier output;
 the exact holder and custody input selections; the per-owner grouping
 of deposit returns and a deletion's approval inside its deposit
 output; and the built body's empty required-signer set through the
-public entry. The new fresh-blueprint end-to-end case directly compares the
-previously unpinned accepted-edge effects on finite connected stages,
-with in-run mutants and real post-state observations. Its two-request
-ordering witness controls the provider's enumeration of real outputs;
-it does not claim every possible input order. Refused edges and the
-delivering approval's ADA minimum remain outside these comparisons.
+public entry. These component checks do not establish a connected ledger
+history or every possible input order. Refused edges and the delivering
+approval's ADA minimum remain outside these comparisons.
 A contributor who needs any pinned
 behavior to change is not refactoring; that is a behavior change and
 belongs to the design flow, not to this structure.

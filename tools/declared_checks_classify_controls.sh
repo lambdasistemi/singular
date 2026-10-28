@@ -628,7 +628,7 @@ jobs:
     steps:
       - name: Run the vectors check
         working-directory: offchain
-        run: nix run --quiet .#record-value-tests
+        run: nix run --quiet .#contract-tests
       - name: Compare the manifest
         working-directory: onchain
         run: nix build --quiet --no-link --print-out-paths .#script-identity
@@ -638,7 +638,7 @@ jobs:
       - name: Move into the flake first
         run: cd offchain && nix run --quiet .#lint
       - name: Dynamic scratch directory
-        run: cd "$RUNNER_TEMP/extracted" && nix run --quiet .#record-value-tests
+        run: cd "$RUNNER_TEMP/extracted" && nix run --quiet .#contract-tests
 EOF
 if bash "$resolver" --emit-references "$work/root" "$work/root/.github/workflows/fixture.yml" >"$work/emit.out" 2>"$work/emit.err"; then
   classify_status=0
@@ -649,7 +649,7 @@ if [ "$classify_status" -ne 0 ]; then
   echo "CONTROL FAIL: emit mode exits $classify_status on the fixture, want 0" >&2
   cat "$work/emit.out" "$work/emit.err" >&2
   broken=$((broken + 1))
-elif grep -F -q -- "run offchain record-value-tests" "$work/emit.out" \
+elif grep -F -q -- "run offchain contract-tests" "$work/emit.out" \
   && grep -F -q -- "build onchain script-identity" "$work/emit.out" \
   && grep -F -q -- "flake-check onchain -" "$work/emit.out" \
   && grep -F -q -- "run offchain lint" "$work/emit.out"; then
