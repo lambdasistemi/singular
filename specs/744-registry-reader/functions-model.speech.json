@@ -1,0 +1,16 @@
+{
+  "functions-for-reading-a-key-from-the-registry-address": [
+    {
+      "text": "Functions for reading a key from the registry address.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 744. New and changed signatures only, as proposals the commit owner may rename to the Lean vocabulary before the slice that creates them. Records are in the data model.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "c140ebb9303476754402e4f93bcf339ec87ab59a84c125ee5148514be0a6b88e"
+  }
+}
