@@ -28,4 +28,4 @@ Shell completion (bash): source <(open-datum --bash-completion-script "$(which o
   zsh and fish: --zsh-completion-script and --fish-completion-script instead.
 
 Every command takes --trace, --trace-to and --trace-format to narrate
-what it does; standard output carries the receipt alone.
+what it does; standard output carries only the command's result.

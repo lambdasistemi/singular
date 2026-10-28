@@ -7,11 +7,12 @@ Description : Run one parsed @singular@ command
 License     : Apache-2.0
 
 'runCommand' dispatches the registry commands and help. Each
-command prints one receipt as JSON on standard output (and to
+write prints one receipt as JSON on standard output (and to
 @--receipt FILE@ when given) and ends with the exit status of its
 outcome class ("Singular.CLI.Finish"). A command that stops early
 prints a receipt naming its outcome class and why; no secret is ever
-printed.
+printed. Read-only inspection prints human text by default or one JSON answer
+when requested, with its reader-specific exit statuses.
 -}
 module Singular.CLI
     ( runCommand

@@ -66,7 +66,7 @@ openDatumProgram version =
         , programFooter =
             [ ""
             , "Every command takes --trace, --trace-to and --trace-format to narrate"
-            , "what it does; standard output carries the receipt alone."
+            , "what it does; standard output carries only the command's result."
             ]
         }
 

@@ -59,7 +59,7 @@ singularProgram version =
         , programFooter =
             [ ""
             , "Every command takes --trace, --trace-to and --trace-format to narrate"
-            , "what it does; standard output carries the receipt alone."
+            , "what it does; standard output carries only the command's result."
             ]
         }
 
@@ -76,12 +76,12 @@ registryGroup =
     Group
         "registry"
         "Create a registry and read its keys"
-        [ "The registry commands make the registry of an application: its state, a single \
+        [ "Creation makes the registry of an application: its state, a single \
           \output that holds the registry's token and the root of its keys. The \
           \registry is named by its seed, an output of your wallet, and by the \
-          \application whose policy the state validator is made for. The commands \
-          \take the compiled validators of the release (--blueprint) and a single \
-          \signer."
+          \application whose policy the state validator is made for. Creation \
+          \takes the compiled validators of the release (--blueprint) and a single \
+          \signer. Inspect reads a registry address and a key without either."
         ]
         [stateCreateLeaf, inspectLeaf]
 

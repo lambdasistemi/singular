@@ -335,7 +335,7 @@
       "pause": 500
     },
     {
-      "text": "As a registry operator, you can watch a command's progress while it runs and keep its typed event stream as data. The retained commands emit command and transaction events. Protocol-fact narration is unavailable on these commands. Standard output carries the receipt alone, so narration does not change a script's receipt input.",
+      "text": "As a registry operator, you can watch a command's progress while it runs and keep its typed event stream as data. The retained commands emit command and transaction events. Protocol-fact narration is unavailable on these commands. Standard output carries only the result: inspect prints human text unless --json is selected, and writes print JSON receipts. Narration does not change either result.",
       "pause": 400
     },
     {
@@ -397,6 +397,6 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "5a514f42134edb823ffcc268b6dbf52b1747bce5f805138f716b684ea3f3e7c5"
+    "sha256": "8193aa1b8c53ad78cd4fefd6c182ceccad476f5199c35c61f94622bad955fb92"
   }
 }

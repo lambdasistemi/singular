@@ -56,7 +56,7 @@ Shell completion (bash): source <(singular --bash-completion-script "$(which sin
   zsh and fish: --zsh-completion-script and --fish-completion-script instead.
 
 Every command takes --trace, --trace-to and --trace-format to narrate
-what it does; standard output carries the receipt alone.
+what it does; standard output carries only the command's result.
 ```
 
 <!-- quoted-help: open-datum -->
@@ -89,7 +89,7 @@ Shell completion (bash): source <(open-datum --bash-completion-script "$(which o
   zsh and fish: --zsh-completion-script and --fish-completion-script instead.
 
 Every command takes --trace, --trace-to and --trace-format to narrate
-what it does; standard output carries the receipt alone.
+what it does; standard output carries only the command's result.
 ```
 
 ## The settings you give
@@ -108,7 +108,7 @@ what it does; standard output carries the receipt alone.
 | `--application-policy HEX` | `singular registry create` | The application policy pinned at creation, as hex, for an application whose script does not depend on the registry identity. `open-datum create` carries its own from its application value and refuses this flag. `singular registry create` requires it: it is the one parameter of the state validator, and the registry it creates is the registry of that application. |
 | `--confirm-timeout SECONDS` | the one singular write and the seven open-datum writes | How long each submission may take to appear on chain; ten minutes when not given. Past it the command stops with the submission journalled as unconfirmed and never resubmits it. |
 | `--state-dir DIR` | `singular registry create`, `open-datum create`, `open-datum fold`, `open-datum insert`, `open-datum reclaim`, `open-datum cleanup`, `open-datum update`, `open-datum terminate` | Optional state root override. Absent, each command resolves its own managed state directory under the platform per-user state location (`XDG_STATE_HOME`, falling back to `$HOME/.local/state`, namespace `singular`), partitioned by network, complete state token and the caller's stable wallet payment identity: the same identity reuses its journal and lock across invocations and key-file relocation, and different wallets and tokens never share one. A configured root keeps the same partitioning; it is never a per-registry directory. The journal of your submissions, their saved bodies and, while `create` runs, its pending identity live under that partition. When the flag is absent, `SINGULAR_STATE_DIR` or the key `state-dir` of the config file gives it. |
-| `--state-token POLICY.NAME` | `open-datum fold`, `open-datum insert`, `open-datum reclaim`, `open-datum cleanup`, `open-datum update`, `open-datum terminate`, `singular registry inspect`, `open-datum inspect` | The registry, by its state token: the policy and the name in hex, as `create` prints it. When the flag is absent, `SINGULAR_STATE_TOKEN` or the key `state-token` of the config file gives it; the flag wins. The command derives everything else from the token, the blueprint and the chain before it builds anything, and refuses by name when they disagree. `create` refuses it: it makes one. Beside `--registry` it must name the registry that address holds, or the command is refused naming both. |
+| `--state-token POLICY.NAME` | `open-datum fold`, `open-datum insert`, `open-datum reclaim`, `open-datum cleanup`, `open-datum update`, `open-datum terminate`, `singular registry inspect`, `open-datum inspect` | The registry, by its state token: the policy and the name in hex, as `create` prints it. When the flag is absent, `SINGULAR_STATE_TOKEN` or the key `state-token` of the config file gives it; the flag wins. A write derives its contracts and inputs from the token, blueprint and chain before building. Inspect reads without a blueprint and identifies the application from the release table. Disagreeing identities are refused by name. `create` refuses it: it makes one. Beside `--registry` it must name the registry that address holds, or the command is refused naming both. |
 | `--registry ADDRESS` | `open-datum fold`, `open-datum insert`, `open-datum reclaim`, `open-datum cleanup`, `open-datum update`, `open-datum terminate`, `singular registry inspect`, `open-datum inspect` | The registry address printed by `open-datum create`, carrying its state token and network. It supplies both when their separate settings are absent; a disagreement is refused naming both. |
 | `--config FILE` | `singular submit`, `singular wallet create`, `singular wallet address`, `singular wallet sign`, `singular registry create`, `open-datum create`, `open-datum fold`, `open-datum insert`, `open-datum reclaim`, `open-datum cleanup`, `open-datum update`, `open-datum terminate`, `singular registry inspect`, `open-datum inspect` | The JSON file that gives the settings above that have a key when neither the command line nor the environment does; the variable `SINGULAR_CONFIG` names it too. When neither is given the file is `singular.json` in the folder the command runs from, if there is one. See [the three forms](#giving-the-chain-the-contracts-and-the-registry-once). |
 | `--blueprint FILE` | `singular registry create`, `open-datum create`, `open-datum fold`, `open-datum insert`, `open-datum reclaim`, `open-datum cleanup`, `open-datum update`, `open-datum terminate` | The registry partition's compiled blueprint, the `onchain/plutus.json` a release archive carries. When the flag is absent, `SINGULAR_BLUEPRINT` or the key `blueprint` of the config file gives it. |
@@ -540,8 +540,9 @@ work. These counts describe this read, not a coherent chain snapshot.
 As a registry operator, you can watch a command's progress while it runs and
 keep its typed event stream as data. The retained commands emit command and
 transaction events. Protocol-fact narration is unavailable on these commands.
-Standard output carries the receipt alone, so narration does not change a
-script's receipt input.
+Standard output carries only the result: inspect prints human text unless
+`--json` is selected, and writes print JSON receipts. Narration does not change
+either result.
 
 On a terminal a command narrates `what` to standard error unless told otherwise.
 

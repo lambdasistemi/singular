@@ -312281,17 +312281,17 @@
    ]
   },
   "docs-singular-node/following-what-a-command-does-01": {
-   "audio_sha256": "024af21073a4f37d31e16fa22aaf625c2096cbae63f79d9e3c381445401a7b7a",
-   "characters": 328,
-   "cost": 0.00032472,
-   "duration": 21.35,
+   "audio_sha256": "8ce03e13cf76c9a4776b24861b0dfc9eecdcef5477d4ae30a7f984450bfc326c",
+   "characters": 397,
+   "cost": 0.00039303,
+   "duration": 26.725,
    "index": 1,
-   "key": "62eaef4e9f543aa92d4ee988cf69bc51946fff11493e69f71ee414b5fed8f182",
+   "key": "d282ec02f35ce990882f8b8f06154d977ff5295fb69b36d54de36b8e839a2e49",
    "page": "docs/singular-node.md",
    "pause_ms": 400,
    "section": "following-what-a-command-does",
-   "sent_text": "As a registry operator, you can watch a command's progress while it runs and keep its typed event stream as data. The retained commands emit command and transaction events. Protocol-fact narration is unavailable on these commands. Standard output carries the receipt alone, so narration does not change a script's receipt input.",
-   "text": "As a registry operator, you can watch a command's progress while it runs and keep its typed event stream as data. The retained commands emit command and transaction events. Protocol-fact narration is unavailable on these commands. Standard output carries the receipt alone, so narration does not change a script's receipt input.",
+   "sent_text": "As a registry operator, you can watch a command's progress while it runs and keep its typed event stream as data. The retained commands emit command and transaction events. Protocol-fact narration is unavailable on these commands. Standard output carries only the result: inspect prints human text unless --json is selected, and writes print JSON receipts. Narration does not change either result.",
+   "text": "As a registry operator, you can watch a command's progress while it runs and keep its typed event stream as data. The retained commands emit command and transaction events. Protocol-fact narration is unavailable on these commands. Standard output carries only the result: inspect prints human text unless --json is selected, and writes print JSON receipts. Narration does not change either result.",
    "words": [
     {
      "end": 0.363,
@@ -312494,88 +312494,148 @@
      "text": "."
     },
     {
-     "end": 15.6,
-     "start": 15.225,
+     "end": 15.65,
+     "start": 15.25,
      "text": "Standard"
     },
     {
-     "end": 16.087,
-     "start": 15.6,
+     "end": 16.125,
+     "start": 15.65,
      "text": "output"
     },
     {
-     "end": 16.525,
-     "start": 16.087,
+     "end": 16.538,
+     "start": 16.125,
      "text": "carries"
     },
     {
-     "end": 16.625,
-     "start": 16.525,
-     "text": "the"
+     "end": 16.9,
+     "start": 16.538,
+     "text": "only"
     },
     {
      "end": 17.0,
-     "start": 16.625,
-     "text": "receipt"
+     "start": 16.9,
+     "text": "the"
     },
     {
-     "end": 17.575,
+     "end": 17.6,
      "start": 17.0,
-     "text": "alone"
+     "text": "result"
     },
     {
-     "end": 17.675,
-     "start": 17.575,
+     "end": 17.712,
+     "start": 17.6,
+     "text": ":"
+    },
+    {
+     "end": 18.25,
+     "start": 17.712,
+     "text": "inspect"
+    },
+    {
+     "end": 18.5,
+     "start": 18.25,
+     "text": "prints"
+    },
+    {
+     "end": 18.862,
+     "start": 18.5,
+     "text": "human"
+    },
+    {
+     "end": 19.25,
+     "start": 18.862,
+     "text": "text"
+    },
+    {
+     "end": 19.638,
+     "start": 19.25,
+     "text": "unless"
+    },
+    {
+     "end": 20.275,
+     "start": 19.638,
+     "text": "--json"
+    },
+    {
+     "end": 20.4,
+     "start": 20.275,
+     "text": "is"
+    },
+    {
+     "end": 20.975,
+     "start": 20.4,
+     "text": "selected"
+    },
+    {
+     "end": 21.05,
+     "start": 20.975,
      "text": ","
     },
     {
-     "end": 17.85,
-     "start": 17.675,
-     "text": "so"
+     "end": 21.175,
+     "start": 21.05,
+     "text": "and"
     },
     {
-     "end": 18.4,
-     "start": 17.85,
-     "text": "narration"
+     "end": 21.487,
+     "start": 21.175,
+     "text": "writes"
     },
     {
-     "end": 18.575,
-     "start": 18.4,
+     "end": 21.812,
+     "start": 21.487,
+     "text": "print"
+    },
+    {
+     "end": 22.625,
+     "start": 21.812,
+     "text": "JSON"
+    },
+    {
+     "end": 23.875,
+     "start": 22.625,
+     "text": "receipts"
+    },
+    {
+     "end": 24.1,
+     "start": 23.875,
+     "text": "."
+    },
+    {
+     "end": 24.763,
+     "start": 24.3,
+     "text": "Narration"
+    },
+    {
+     "end": 24.888,
+     "start": 24.763,
      "text": "does"
     },
     {
-     "end": 18.837,
-     "start": 18.575,
+     "end": 25.075,
+     "start": 24.888,
      "text": "not"
     },
     {
-     "end": 19.188,
-     "start": 18.837,
+     "end": 25.375,
+     "start": 25.075,
      "text": "change"
     },
     {
-     "end": 19.263,
-     "start": 19.188,
-     "text": "a"
+     "end": 25.65,
+     "start": 25.375,
+     "text": "either"
     },
     {
-     "end": 19.725,
-     "start": 19.263,
-     "text": "script's"
+     "end": 26.525,
+     "start": 25.65,
+     "text": "result"
     },
     {
-     "end": 20.125,
-     "start": 19.725,
-     "text": "receipt"
-    },
-    {
-     "end": 21.125,
-     "start": 20.125,
-     "text": "input"
-    },
-    {
-     "end": 21.35,
-     "start": 21.125,
+     "end": 26.725,
+     "start": 26.525,
      "text": "."
     }
    ]

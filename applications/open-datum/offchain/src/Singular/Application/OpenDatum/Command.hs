@@ -15,7 +15,7 @@ The public writers are @create@, @fold@, @insert@,
 
 Write commands name the Koios URL, network and wallet key. Partial settings
 and mainnet are refused before file reads or provider effects. Read commands
-carry a public wallet address instead of a signing key. Obsolete backend and
+carry the provider, registry and key without any signing setting. Obsolete backend and
 socket settings are refused on every command, including --backend koios.
 -}
 module Singular.Application.OpenDatum.Command
