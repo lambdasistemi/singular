@@ -2,7 +2,7 @@ singular VERSION (commit unknown)
 
 Usage: singular registry COMMAND
 
-Create a registry on the proved design
+Create a registry and read its keys
 
 The registry commands make the registry of an application: its state, a single
 output that holds the registry's token and the root of its keys. The registry
@@ -15,4 +15,5 @@ Available settings:
   switch: -h|--help
 
 Available commands:
-  create   Create the registry of an application
+  create    Create the registry of an application  
+  inspect   Read a key and identify its application

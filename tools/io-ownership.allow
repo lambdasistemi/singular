@@ -106,3 +106,5 @@ offchain/test/local-services-record/ConfirmationProbe.hs: ioref — harness; own
 offchain/test/local-services-record/ConfirmationSmoke.hs: async,ioref — harness; owner=one smoke run; lifetime=single run; HTTP confirmation driven under link withAsync, joined before the run ends; smoke refs for assertions
 offchain/test/local-services-record/Main.hs: async — harness; owner=one record run; lifetime=single run; node clients run together under withAsync, joined before the run ends
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/WalletAdmissionSpec.hs: ioref — harness; owner=the wallet admission examples in this file; lifetime=single example; serial; the admission and session-entry refs are observed before the example ends
+
+offchain/test/Singular/CLI/InspectSpec.hs: ioref — harness; owner=one withReader command example; lifetime=one callback; serial on the example thread; records only the reader's actual network and asset queries for assertions

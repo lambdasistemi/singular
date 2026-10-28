@@ -119,15 +119,16 @@ spec = describe "the command lines in use" $ do
         accepted
             `shouldBe` sort
                 [ "Help"
+                , "RegistryInspect"
                 , "StateCreate"
                 , "SubmitBundle"
                 , "WalletAddress"
                 , "WalletCreate"
                 , "WalletSign"
                 ]
-        length entries `shouldBe` 645
+        length entries `shouldBe` 668
         length [() | e <- entries, "refused" `isPrefix` expectedResult e]
-            `shouldBe` 513
+            `shouldBe` 529
   where
     isPrefix p s = take (length p) s == p
     acceptedKind entry = case parseEntry entry of

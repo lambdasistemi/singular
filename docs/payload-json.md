@@ -118,7 +118,7 @@ setting is `detailed`; none is stored as a different datum.
 
 ## What inspect prints
 
-`inspect` prints the key's payload under `payload` in the application output, with
+`open-datum inspect` prints a live key's payload under `payload` in the application output, with
 the field `payloadSchema` beside it, and the update receipt prints the two fields
 the same way. A payload has a plain reading when it is one that the rules above
 could have produced:
@@ -138,8 +138,18 @@ past the limit of a thousand digits.
 
 The reading is a property of the data, not of how it was stored. The detailed
 `{"int":42}` and the plain `42` store the same data, so both read back as `42`.
-The envelope, with its control and its payload in the detailed schema, is printed
-as before under `envelope`, and it is the way to read the exact data.
+The current live envelope, with its protected control and payload in the detailed
+schema, is printed under `envelope` and `datum`, so the exact data is retained.
+The decoded `control` names its registry, key, controller, active asset and
+protected deposit; `deposit` also prints that amount in lovelace. Pending
+termination has no payload. Terminal and never registered describe the
+authenticated leaf; unavailable reads and refusals print their reasons.
+
+`singular registry inspect` reports neutral active custody and prints the datum
+as data under `datum`, with its inline, hash or none form under `datumKind`.
+It does not decode a payload. Both commands default to human text; use `--json`
+for these fields and `--query-work` for measured provider work. See
+[reading a key](singular-node.md#reading-a-key) for output and exit statuses.
 
 ## Limits
 

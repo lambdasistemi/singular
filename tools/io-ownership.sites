@@ -364,6 +364,10 @@ offchain/test/Singular/CLI/CommandRunSpec.hs runViaApp readIORef 1
 offchain/test/Singular/CLI/CommandRunSpec.hs runViaApp writeIORef 1
 offchain/test/Singular/CLI/CommandRunSpec.hs withRigIn modifyIORef' 1
 offchain/test/Singular/CLI/CommandRunSpec.hs withRigIn newIORef 2
+offchain/test/Singular/CLI/InspectSpec.hs spec readIORef 1
+offchain/test/Singular/CLI/InspectSpec.hs withReader IORef 1
+offchain/test/Singular/CLI/InspectSpec.hs withReader modifyIORef' 1
+offchain/test/Singular/CLI/InspectSpec.hs withReader newIORef 1
 offchain/test/Singular/CLI/StateCommandSpec.hs answeringWith modifyIORef' 2
 offchain/test/Singular/CLI/StateCommandSpec.hs answeringWith newIORef 2
 offchain/test/Singular/CLI/StateCommandSpec.hs answeringWith readIORef 2

@@ -123,6 +123,7 @@ spec = describe "the command lines in use" $ do
         accepted
             `shouldBe` sort
                 [ "OpenHelp"
+                , "OpenInspect"
                 , "OpenHoldingUpdate"
                 , "OpenHoldingTerminate"
                 , "OpenRegistrationBook"

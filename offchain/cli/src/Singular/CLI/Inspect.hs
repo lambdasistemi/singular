@@ -181,7 +181,7 @@ runReader env args present = do
         address =
             registryAsset (R.readerRegistry request)
                 >>= renderRegistryAddress magic
-        measured = if readerQueryWork args then ["queryWork" .= workJson work] else []
+        measured = ["queryWork" .= workJson work | readerQueryWork args]
         document =
             object
                 ( [ "answer" .= inspectionAnswer result
@@ -221,22 +221,26 @@ runReader env args present = do
                     )
             Right table ->
                 let published = applicationOf table policy
-                in  ( envReads env (readerProvider args) $ \caps -> do
-                        acquired <- LP.acquire
-                            (snd (capReads caps))
-                            (LP.Latest (R.requestedNetwork request)) $ \session -> do
-                            answer <- R.readNeutralKeyFromSession session table request
-                            pure (LP.sessionId session, answer)
-                        sources <- capTrace caps
-                        let (answer, work) = case acquired of
-                                Right (identity, value) -> (value, summaryOf identity sources)
-                                Left (LP.WrongNetwork served requested) -> (R.Refused (R.WrongNetwork requested served), noWork)
-                                Left failure ->
-                                    ( R.Unavailable R.NetworkRead (R.Failed (T.pack (show failure)))
-                                    , noWork
-                                    )
-                        pure (present request published answer, work)
-                    )
+                in  envReads
+                        env
+                        (readerProvider args)
+                        ( \caps -> do
+                            acquired <- LP.acquire
+                                (snd (capReads caps))
+                                (LP.Latest (R.requestedNetwork request))
+                                $ \session -> do
+                                    answer <- R.readNeutralKeyFromSession session table request
+                                    pure (LP.sessionId session, answer)
+                            sources <- capTrace caps
+                            let (answer, work) = case acquired of
+                                    Right (identity, value) -> (value, summaryOf identity sources)
+                                    Left (LP.WrongNetwork served requested) -> (R.Refused (R.WrongNetwork requested served), noWork)
+                                    Left failure ->
+                                        ( R.Unavailable R.NetworkRead (R.Failed (T.pack (show failure)))
+                                        , noWork
+                                        )
+                            pure (present request published answer, work)
+                        )
                         `catch` unavailable published
     unavailable published (failure :: SomeException)
         | Just (_ :: SomeAsyncException) <- fromException failure =
@@ -318,12 +322,11 @@ neutralInspection _ published answer =
                 , "Singular releases: " <> releases (singularReleases identity)
                 , "Application releases: " <> releases (applicationReleases identity)
                 ]
-        base label fields said code =
+        base label fields said =
             Inspection
                 label
                 (identityFields <> fields)
                 (identityLines <> said)
-                code
     in  case answer of
             R.Active pair@(_, output) ->
                 base

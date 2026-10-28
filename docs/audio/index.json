@@ -7578,8 +7578,8 @@
     "index": 1,
     "name": "docs-payload-json/what-inspect-prints-01",
     "pause_ms": 400,
-    "text": "inspect prints the key's payload under payload in the application output, with the field payloadSchema beside it, and the update receipt prints the two fields the same way. A payload has a plain reading when it is one that the rules above could have produced:",
-    "v": "bf31b6a64e24"
+    "text": "open-datum inspect prints a live key's payload under payload in the application output, with the field payloadSchema beside it, and the update receipt prints the two fields the same way. A payload has a plain reading when it is one that the rules above could have produced:",
+    "v": "943932349d9d"
    },
    {
     "index": 2,
@@ -7627,8 +7627,15 @@
     "index": 8,
     "name": "docs-payload-json/what-inspect-prints-08",
     "pause_ms": 400,
-    "text": "The reading is a property of the data, not of how it was stored. The detailed {\"int\":42} and the plain 42 store the same data, so both read back as 42. The envelope, with its control and its payload in the detailed schema, is printed as before under envelope, and it is the way to read the exact data.",
-    "v": "9b8850b5167e"
+    "text": "The reading is a property of the data, not of how it was stored. The detailed {\"int\":42} and the plain 42 store the same data, so both read back as 42. The current live envelope, with its protected control and payload in the detailed schema, is printed under envelope and datum, so the exact data is retained. The decoded control names its registry, key, controller, active asset and protected deposit; deposit also prints that amount in lovelace. Pending termination has no payload. Terminal and never registered describe the authenticated leaf; unavailable reads and refusals print their reasons.",
+    "v": "b6395799a41c"
+   },
+   {
+    "index": 9,
+    "name": "docs-payload-json/what-inspect-prints-09",
+    "pause_ms": 400,
+    "text": "singular registry inspect reports neutral active custody and prints the datum as data under datum, with its inline, hash or none form under datumKind. It does not decode a payload. Both commands default to human text; use --json for these fields and --query-work for measured provider work. See reading a key for output and exit statuses.",
+    "v": "bb4a0a1a6c98"
    }
   ],
   "what-is-refused": [
@@ -8601,8 +8608,8 @@
     "index": 3,
     "name": "docs-registry-commands/create-a-registry-and-manage-its-keys-on-the-proved-design-03",
     "pause_ms": 400,
-    "text": "This page describes eight commands: singular registry create, open-datum create, open-datum fold, open-datum insert, open-datum reclaim and open-datum cleanup, open-datum update and open-datum terminate. Every flag they take is listed with its description and its default in the settings table, and each command prints the same information with --help.",
-    "v": "0a2dc92bc687"
+    "text": "This page describes ten commands: singular registry create, open-datum create, open-datum fold, open-datum insert, open-datum reclaim and open-datum cleanup, open-datum update and open-datum terminate, singular registry inspect and open-datum inspect. Every flag they take is listed with its description and its default in the settings table, and each command prints the same information with --help.",
+    "v": "cd93c6a3696c"
    }
   ],
   "fold-registrations-and-terminations-into-the-registry": [
@@ -8633,6 +8640,36 @@
     "pause_ms": 400,
     "text": "The receipt names the registry's new root, the output that holds the state, and each registration folded with its key.",
     "v": "768bc87d9a51"
+   }
+  ],
+  "read-a-key": [
+   {
+    "index": 0,
+    "name": "docs-registry-commands/read-a-key-00",
+    "pause_ms": 500,
+    "text": "Read a key.",
+    "v": "8a0af64f1fca"
+   },
+   {
+    "index": 1,
+    "name": "docs-registry-commands/read-a-key-01",
+    "pause_ms": 400,
+    "text": "As a reader, give the registry address and a key to either inspect command. No signer, blueprint or local state directory is needed.",
+    "v": "2297da5ef58b"
+   },
+   {
+    "index": 2,
+    "name": "docs-registry-commands/read-a-key-02",
+    "pause_ms": 400,
+    "text": "The neutral command identifies the application from the packaged release table and answers active, terminal or never registered, or reports an unavailable read or a refusal with its reason. Active custody includes its datum as data. The application command decodes a live holding's protected control, deposit and payload, or identifies pending termination. Both retain the authenticated state requirement for absence and every neutral refusal.",
+    "v": "141ea56939ee"
+   },
+   {
+    "index": 3,
+    "name": "docs-registry-commands/read-a-key-03",
+    "pause_ms": 400,
+    "text": "Human text is the default; --json selects one JSON object. --query-work adds measured calls, rows and bytes per provider read and in total. Answers exit 0, unavailable reads exit 1, and refused evidence or invalid command lines exit 2. See reading a key for settings, classification order, refusal reasons and measurement limits.",
+    "v": "874998cf924f"
    }
   ],
   "take-a-registration-back-or-clean-it-up": [
@@ -9477,8 +9514,50 @@
     "index": 1,
     "name": "docs-singular-node/reading-a-key-01",
     "pause_ms": 400,
-    "text": "The removed reader has replacement: none, issue 744.",
-    "v": "c3971ac62ea7"
+    "text": "As a reader, give the registry address and a key to learn its status and application without a signing key, a blueprint or a local registry directory:",
+    "v": "a81ec53e0989"
+   },
+   {
+    "index": 2,
+    "name": "docs-singular-node/reading-a-key-02",
+    "pause_ms": 400,
+    "text": "The address supplies the network and the state token. Give it as --registry, SINGULAR_REGISTRY, or the registry key of the settings file, in that order of precedence. The provider URL follows the same flag, environment, file order. The established --state-token with --network-magic spelling also works; settings beside an address must agree with it. Use --key-hex for binary keys.",
+    "v": "3e899b3c579e"
+   },
+   {
+    "index": 3,
+    "name": "docs-singular-node/reading-a-key-03",
+    "pause_ms": 400,
+    "text": "The neutral command answers active, terminal, never-registered, unavailable or refused. Its application identity contains the policy, script and known releases from the packaged release table; an empty release list means not released yet. For active custody, datum is the exact detailed Plutus data, datumKind distinguishes inline, hash and none, and a hash is printed as datumHash. The command interprets no application envelope.",
+    "v": "e6c8a76b5487"
+   },
+   {
+    "index": 4,
+    "name": "docs-singular-node/reading-a-key-04",
+    "pause_ms": 400,
+    "text": "The application command refines active into live, with control, deposit in lovelace, payload and payloadSchema, or pending-termination. It retains every neutral refusal and state-backed absence. The full live datum remains under envelope; see what inspect prints.",
+    "v": "df11842584be"
+   },
+   {
+    "index": 5,
+    "name": "docs-singular-node/reading-a-key-05",
+    "pause_ms": 400,
+    "text": "A live read uses exactly one active-asset lookup after checking the provider's network. A missing active token alone proves nothing: terminal and never registered require the recognised registry state and its authenticated trie leaf, reconstructed from public history. Unknown policies, wrong networks, conflicting tokens and tokens outside application custody are refused. Failed or incomplete reads stay unavailable, with their reason.",
+    "v": "ea88de0be1b4"
+   },
+   {
+    "index": 6,
+    "name": "docs-singular-node/reading-a-key-06",
+    "pause_ms": 400,
+    "text": "Both commands print human text by default. --json prints one object for a script. Exit status 0 means an answer, including terminal and never registered; 1 means unavailable; 2 means refused evidence or an invalid command line. Neither command accepts signing settings.",
+    "v": "7e49f4d8f301"
+   },
+   {
+    "index": 7,
+    "name": "docs-singular-node/reading-a-key-07",
+    "pause_ms": 400,
+    "text": "--query-work adds calls, rows and response bytes for each provider read and the total. JSON carries them in queryWork.reads and queryWork.total; human text shows the same counts. Measurements include each transport page and exclude provider startup and other sessions. When measured trace evidence is missing, queryWork.unavailable explains that limit instead of inventing zero work. These counts describe this read, not a coherent chain snapshot.",
+    "v": "8122db61b745"
    }
   ],
   "reading-through-an-index": [

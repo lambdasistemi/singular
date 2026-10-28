@@ -3,7 +3,8 @@ open-datum VERSION (commit unknown)
 Usage: open-datum COMMAND
 
 Keep payloads under keys in a registry on Cardano: create a registry, book
-registrations, update and terminate holdings, and fold pending requests.
+registrations, update and terminate holdings, fold pending requests and
+inspect keys.
 
 Available settings:
   Show this help text
@@ -20,6 +21,7 @@ All commands:
   open-datum cleanup          Clean up an expired registration
   open-datum update           Replace the payload of a live holding
   open-datum terminate        Book permanent termination of a live holding
+  open-datum inspect          Read a key's holding, termination or authenticated absence
 
 Help on one command: open-datum COMMAND --help
 Shell completion (bash): source <(open-datum --bash-completion-script "$(which open-datum)")

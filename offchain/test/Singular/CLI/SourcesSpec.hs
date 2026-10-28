@@ -94,6 +94,13 @@ settings =
     , ("--trace-format", "SINGULAR_TRACE_FORMAT", "trace-format", "json")
     ]
 
+-- | Registry settings used by the reader rather than the create command.
+readerSettings :: [(String, String, String, String)]
+readerSettings =
+    [ ("--state-token", "SINGULAR_STATE_TOKEN", "state-token", token)
+    , ("--registry", "SINGULAR_REGISTRY", "registry", registryAddress)
+    ]
+
 flagOf :: (String, String, String, String) -> String
 flagOf (f, _, _, _) = f
 
@@ -143,6 +150,22 @@ spec = describe "the settings given by the environment and a config file" $ do
                                     [flag, variable, "\"" <> key <> "\""]
                             )
                             ls
+    describe "registry settings for inspection" $
+        forM_ readerSettings $ \(flag, variable, key, value) -> do
+            let line =
+                    [ "registry"
+                    , "inspect"
+                    , "--key"
+                    , "reader-key"
+                    , "--koios-url"
+                    , "http://koios.example"
+                    ]
+                        <> (if flag == "--state-token" then ["--network-magic", "42"] else [])
+                complete = line <> [flag, value]
+            it (flag <> " is read from its variable") $
+                withEnvironment [(variable, value)] line `shouldBe` meaning complete
+            it (flag <> " is read from its settings key") $
+                withFile [(key, value)] line `shouldBe` meaning complete
     describe "precedence" $ do
         let at url =
                 [ if f == "--koios-url" then (f, v, k, url) else s
@@ -392,7 +415,7 @@ spec = describe "the settings given by the environment and a config file" $ do
             standing = [f | f <- everyFlag, isJust (flagEnvironment f)]
         it "gives exactly these twelve settings three forms" $
             sort (nub (map flagName standing))
-                `shouldBe` sort ("--vault" : map flagOf settings)
+                `shouldBe` sort ("--vault" : map flagOf (settings <> readerSettings))
         it "names each variable and key after its flag" $
             forM_ standing $ \f -> do
                 let name = drop 2 (flagName f)
@@ -413,7 +436,7 @@ spec = describe "the settings given by the environment and a config file" $ do
                 it (leafName leaf <> " means the example with every setting typed") $ do
                     let pairs =
                             [ (key, placeholder value)
-                            | (flag, _, key, _) <- settings
+                            | (flag, _, key, _) <- settings <> readerSettings
                             , (name, value) <- adjacent full
                             , name == flag
                             ]

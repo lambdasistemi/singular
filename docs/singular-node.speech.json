@@ -301,7 +301,31 @@
       "pause": 500
     },
     {
-      "text": "The removed reader has replacement: none, issue 744.",
+      "text": "As a reader, give the registry address and a key to learn its status and application without a signing key, a blueprint or a local registry directory:",
+      "pause": 400
+    },
+    {
+      "text": "The address supplies the network and the state token. Give it as --registry, SINGULAR_REGISTRY, or the registry key of the settings file, in that order of precedence. The provider URL follows the same flag, environment, file order. The established --state-token with --network-magic spelling also works; settings beside an address must agree with it. Use --key-hex for binary keys.",
+      "pause": 400
+    },
+    {
+      "text": "The neutral command answers active, terminal, never-registered, unavailable or refused. Its application identity contains the policy, script and known releases from the packaged release table; an empty release list means not released yet. For active custody, datum is the exact detailed Plutus data, datumKind distinguishes inline, hash and none, and a hash is printed as datumHash. The command interprets no application envelope.",
+      "pause": 400
+    },
+    {
+      "text": "The application command refines active into live, with control, deposit in lovelace, payload and payloadSchema, or pending-termination. It retains every neutral refusal and state-backed absence. The full live datum remains under envelope; see what inspect prints.",
+      "pause": 400
+    },
+    {
+      "text": "A live read uses exactly one active-asset lookup after checking the provider's network. A missing active token alone proves nothing: terminal and never registered require the recognised registry state and its authenticated trie leaf, reconstructed from public history. Unknown policies, wrong networks, conflicting tokens and tokens outside application custody are refused. Failed or incomplete reads stay unavailable, with their reason.",
+      "pause": 400
+    },
+    {
+      "text": "Both commands print human text by default. --json prints one object for a script. Exit status 0 means an answer, including terminal and never registered; 1 means unavailable; 2 means refused evidence or an invalid command line. Neither command accepts signing settings.",
+      "pause": 400
+    },
+    {
+      "text": "--query-work adds calls, rows and response bytes for each provider read and the total. JSON carries them in queryWork.reads and queryWork.total; human text shows the same counts. Measurements include each transport page and exclude provider startup and other sessions. When measured trace evidence is missing, queryWork.unavailable explains that limit instead of inventing zero work. These counts describe this read, not a coherent chain snapshot.",
       "pause": 400
     }
   ],
@@ -373,6 +397,6 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "ebb027bda6d4a30f81d12eb7a47e67a4f21c0b3ec60c7eaf55b04432bc3de0de"
+    "sha256": "5a514f42134edb823ffcc268b6dbf52b1747bce5f805138f716b684ea3f3e7c5"
   }
 }

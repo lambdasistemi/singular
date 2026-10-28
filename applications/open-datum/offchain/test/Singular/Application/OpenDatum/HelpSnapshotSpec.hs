@@ -155,7 +155,7 @@ spec = describe "the help pages" $ do
         openDatumHint ["inser", "--key", "k"]
             `shouldSatisfy` elem "Did you mean `open-datum insert`?"
     it "complete command and flag names" $ do
-        completionsFor program ["ins"] 0 `shouldReturn` ["insert"]
+        completionsFor program ["ins"] 0 `shouldReturn` ["insert", "inspect"]
         completionsFor program ["insert", "--pay"] 1
             `shouldReturn` ["--payload", "--payload-schema"]
     it "complete only the flags of the command asked about" $ do
