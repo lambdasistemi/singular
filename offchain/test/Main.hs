@@ -49,6 +49,7 @@ import Singular.Registry.PhaseLogSpec qualified (spec)
 import Singular.Registry.PlainJsonSpec qualified (spec)
 import Singular.Registry.Private.ArchiveSpec qualified (spec)
 import Singular.Registry.ProviderSpec qualified (spec)
+import Singular.Registry.ReaderSpec qualified (spec)
 import Singular.Registry.SessionServicesSpec qualified (spec)
 import Singular.Registry.SubmitSpec qualified (spec)
 import Singular.Registry.TrieStateContractSpec qualified (spec)
@@ -253,6 +254,9 @@ main = hspec $ do
     describe
         (tagged "Singular.Registry.ContractTable" [Cli])
         Singular.Registry.ContractTableSpec.spec
+    describe
+        (tagged "the application-neutral reader" [Provider])
+        Singular.Registry.ReaderSpec.spec
     describe
         (tagged "Singular.CLI.Sign" [Cli, Wallet])
         Singular.CLI.SignSpec.spec
