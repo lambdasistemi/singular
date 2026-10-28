@@ -17,8 +17,9 @@ flowchart LR
     N -->|yes| P{State policy in the release table?}
     P -->|no| RP[Refused: unknown state policy]
     P -->|yes| L[One asset query: the key's active token under the state policy]
-    L -->|at the application's script, live datum| LIVE[Live: application, holding datum]
-    L -->|at the application's script, termination request| PEND[Pending termination]
+    L -->|one output at the application's script| ACT[Active: application, holding datum as data]
+    ACT -->|open datum's command decodes a live holding| LIVE[Live holding: control, deposit, payload]
+    ACT -->|open datum's command decodes a termination request| PEND[Pending termination]
     L -->|anywhere else, the state address included| RS[Refused: token outside application custody]
     L -->|no token| T[Authenticated state and the key's leaf in the registry's trie]
     T -->|leaf terminal| TERM[Terminal]
@@ -29,16 +30,20 @@ flowchart LR
 
 ## What the reader answers
 
-The five conclusions are those of [issue 741's specification](../741-no-pin-model/spec.md#understand-what-a-reader-can-conclude-priority-p1);
-the evidence each needs follows [the observation contract](../741-no-pin-model/contracts/model-observations.md).
+The conclusions are those of [issue 741's specification](../741-no-pin-model/spec.md#understand-what-a-reader-can-conclude-priority-p1);
+the evidence each needs follows [the observation contract](../741-no-pin-model/contracts/model-observations.md). They come
+in two layers. The application-neutral reader, `singular registry inspect`, concludes what Singular alone guarantees and
+needs no application code. The application's reader, `open-datum inspect`, runs the same reader and refines an active key
+with open datum's decoding of the holding.
 
-| Answer | Evidence the reader requires | Never concluded from |
-| --- | --- | --- |
-| Live | the key's active token, named by the reader from the registry identity and the key, under the state policy, held by one output at the application's script whose datum is a live holding of that registry and key | a token of another name, another policy, or a datum alone |
-| Pending termination | the same token held by a termination request at the application's script | the token having left the holding |
-| Terminal | no live token, and the registry's state, recognised under the state policy, whose trie holds the key's leaf as terminal | a missing token alone |
-| Never registered | no live token, and the registry's authenticated trie holds no leaf for the key | a missing token alone |
-| Unavailable | a provider read failed or returned an incomplete answer | — it is never reported as an absence |
+| Answer | Layer | Evidence the reader requires | Never concluded from |
+| --- | --- | --- | --- |
+| Active | neutral | the key's active token, named by the reader from the registry identity and the key, under the state policy, held by exactly one output at the application's script; a live token exists exactly when the key's leaf is active | a token of another name or another policy, or a datum alone |
+| Live holding | application | an active key whose holding datum decodes as a live holding of that registry and key, with its deposit | the token at the application's script alone |
+| Pending termination | application | an active key whose token is held by that key's termination request | the token having left the holding |
+| Terminal | neutral | no live token, and the registry's state, recognised under the state policy, whose trie holds the key's leaf as terminal | a missing token alone |
+| Never registered | neutral | no live token, and the registry's authenticated trie holds no leaf for the key | a missing token alone |
+| Unavailable | both | a provider read failed or returned an incomplete answer | — it is never reported as an absence |
 
 The application is identified by the state policy: the state validator is applied to the application's policy, so each
 state policy belongs to one application, and the release table names it with its releases. The holding's datum is read
@@ -59,8 +64,9 @@ and printed as plain data by `singular registry inspect`; `open-datum inspect` d
   included) and provider failure each produce a named refusal, never an absence and never a conclusion.
 - query-work-measured: the calls, rows and bytes of a known-key lookup are recorded on a development network where the
   application's address holds other registries' holdings, and published.
-- devnet-reading-journey: on a development network, through the packaged command, the reader answers live, pending
-  termination, terminal and never registered for keys of the journey, from the registry address alone.
+- devnet-reading-journey: on a development network, through the packaged commands and from the registry address alone,
+  `singular registry inspect` answers active, terminal and never registered, and `open-datum inspect` answers live
+  holding, pending termination, terminal and never registered, for keys of the journey.
 - devnet-reading-refusals: on a development network, wrong network, unknown state policy and provider failure, each beside a
   passing control; the custody refusals are unit tests, since no accepted transaction moves the token out of custody.
 - conformance-and-documentation: the conformance suite carries the reading rows in requirement language, and the user

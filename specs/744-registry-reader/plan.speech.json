@@ -25,7 +25,7 @@
       "pause": 400
     },
     {
-      "text": "No Lean declaration stated what a reader may conclude from an observation, and issue 741 left its observation tasks to this ticket. By the first answer this ticket adds them to the application-held models: one reader definition over the observed evidence, returning live holding, pending termination, terminal, never registered, unavailable, or refused (token outside application custody, foreign state policy), with statements that each answer implies its leaf and custody in every reachable world, that an empty or failed read never yields never registered or terminal, and that those two need the authenticated leaf, read as the trie lookup it is. The statements are reviewed at a checkpoint before their proofs; the reader's classification code binds to them by name.",
+      "text": "No Lean declaration stated what a reader may conclude from an observation, and issue 741 left its observation tasks to this ticket. By the answers this ticket adds them to the application-held models in two layers: a neutral reader over the observed evidence, returning active, terminal, never registered, unavailable, or refused (token outside application custody, foreign state policy, conflicting evidence), and an application refinement that turns active into live holding or pending termination with open datum's decoding; with statements that each answer implies its leaf and custody in every reachable world, that an empty or failed read never yields never registered or terminal, and that those two need the authenticated leaf, read as the trie lookup it is. The statements are reviewed at a checkpoint before their proofs; the reader's classification code binds to them by name.",
       "pause": 400
     }
   ],
@@ -109,6 +109,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "b5bb73570dbe4e4c41b2d7fb079adec5353e6aad006e4ab37b9e148ebe4058bb"
+    "sha256": "1d9015a49b055513ebd9f809c4c70306fdb8c105ded02df12afa12f26e4cee37"
   }
 }

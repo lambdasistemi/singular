@@ -28,9 +28,10 @@ and its termination request shape.
 | Custody | `models/open-datum-application-held`, `just open-datum-application-held-model` | `liveShape`, `liveUpdate_inversion` (a live holding stays at the application's script with the same control and tokens), the termination request shape, `termination_burn` |
 
 No Lean declaration stated what a reader may conclude from an observation, and issue 741 left its observation tasks to
-this ticket. By [the first answer](#answered-questions) this ticket adds them to the application-held models: one reader
-definition over the observed evidence, returning live holding, pending termination, terminal, never registered,
-unavailable, or refused (token outside application custody, foreign state policy), with statements that each answer
+this ticket. By [the answers](#answered-questions) this ticket adds them to the application-held models in two layers: a
+neutral reader over the observed evidence, returning active, terminal, never registered, unavailable, or refused (token
+outside application custody, foreign state policy, conflicting evidence), and an application refinement that turns
+active into live holding or pending termination with open datum's decoding; with statements that each answer
 implies its leaf and custody in every reachable world, that an empty or failed read never yields never registered or
 terminal, and that those two need the authenticated leaf, read as the trie lookup it is. The statements are reviewed at
 a checkpoint before their proofs; the reader's classification code binds to them by name.
@@ -69,7 +70,7 @@ flowchart LR
 | --- | --- | --- | --- |
 | 1 | provider-network-and-query-work | the session reads the provider's network; the provider trace records rows and bytes per call so a command can report its query work | refusals-never-absence, query-work-measured |
 | 1 | application-from-state-policy | the release table gains rows from an applied state policy to its application's policy and script and their releases; the current build's row is checked present, with a control | application-from-state-policy |
-| 2 | reader-statements | one reader definition over the observed evidence and its statements: each answer implies its leaf and custody in every reachable world; a failed or empty read never yields terminal or never registered; terminal and never registered need the recognised state; statements reviewed at a checkpoint before their proofs; the models' statement inventories and their consumers updated | reader-follows-the-model |
+| 2 | reader-statements | the neutral reader and the application refinement over the observed evidence, and their statements: each answer implies its leaf and custody in every reachable world; a failed or empty read never yields terminal or never registered; terminal and never registered need the recognised state; statements reviewed at a checkpoint before their proofs; the models' statement inventories and their consumers updated | reader-follows-the-model |
 | 2 | reader-library | the application-neutral reader: address and key to a conclusion or a refusal, one asset query when live, the recognised state and the key's leaf otherwise | reader-follows-the-model, one-asset-query-when-live, full-classification-when-absent, refusals-never-absence |
 | 2 | reading-commands | `singular registry inspect` (classification, application identity, the holding's datum as plain data) and `open-datum inspect` (the same library, plus the decoded control, deposit and payload by name), each with help snapshots, parser rows, documented flags | reader-follows-the-model |
 | 2 | devnet-reading-journey-and-refusals | reading steps in the journey job (live, pending termination, terminal, never registered, the measured lookup with a second registry's holdings at the same address) and the refusals with controls | devnet-reading-journey, devnet-reading-refusals, query-work-measured |
@@ -91,6 +92,7 @@ smaller, never merge two. Pull request 1 carries the two slices that needed no a
 | --- | --- |
 | Does this ticket add the reader's Lean statements first? | yes: in the application-held models, before the classification code; the auditor's checkpoint on the statements before their proofs is the review issue 741's task asked for |
 | Which command hosts the reader, and who decodes the holding? | both: `singular registry inspect` prints the holding's datum as plain data; `open-datum inspect` hosts the same library and prints the decoded control, deposit and payload; the library names no application |
+| What may the neutral reader conclude without the application's decoder? | Singular's facts only: active, terminal, never registered, unavailable, refused; the application layer refines active into live holding or pending termination; a declared application-neutral codec (issue 767) may later replace the application layer without changing the neutral statements |
 
 ## Seats
 
