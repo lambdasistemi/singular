@@ -27,6 +27,7 @@ import Singular.CLI.Command
     , walletSignCommand
     )
 import Singular.CLI.Finish (finish)
+import Singular.CLI.Inspect (neutralInspection, runReader)
 import Singular.CLI.Session (Env (..), openWriteSigner)
 import Singular.CLI.State (neutralHost, runStateCreate)
 import Singular.CLI.Submit (submitBundle)
@@ -42,6 +43,7 @@ runRegistryCommand :: Application -> Env -> Command -> IO ExitCode
 runRegistryCommand _app env = \case
     Help text -> putStr text >> pure ExitSuccess
     Fold _ -> pure (ExitFailure 2)
+    RegistryInspect a -> runReader env a neutralInspection
     StateCreate a ->
         finish
             (envTracer env)

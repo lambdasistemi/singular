@@ -415,6 +415,7 @@ constructorOf :: Command -> String
 constructorOf = \case
     Help _ -> "Help"
     Fold _ -> "Fold"
+    RegistryInspect _ -> "RegistryInspect"
     StateCreate _ -> "StateCreate"
     WalletCreate _ -> "WalletCreate"
     WalletAddress _ -> "WalletAddress"

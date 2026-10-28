@@ -76,8 +76,9 @@ import Test.Hspec
 spec :: Spec
 spec = describe "inspect a registry key without a signer" $ do
     it
-        "describes machine output, query work and exit statuses in the command's own help" $
-        withReader $ \_ provider _ _ -> do
+        "describes machine output, query work and exit statuses in the command's own help"
+        $ withReader
+        $ \_ provider _ _ -> do
             (code, out, _) <-
                 captured
                     ( runPackagedVia
@@ -91,8 +92,9 @@ spec = describe "inspect a registry key without a signer" $ do
             BC.unpack out `shouldContain` "--json"
             BC.unpack out `shouldContain` "--query-work"
     it
-        "runs the neutral reader and prints its active datum and published application as JSON" $
-        withReader $ \line provider identity seen -> do
+        "runs the neutral reader and prints its active datum and published application as JSON"
+        $ withReader
+        $ \line provider identity seen -> do
             parseCommand (line <> ["--json"])
                 `shouldSatisfy` either (const False) (const True)
             (code, out, _) <-
@@ -122,8 +124,9 @@ spec = describe "inspect a registry key without a signer" $ do
             (eitherDecodeStrict' out :: Either String Value)
                 `shouldSatisfy` either (const True) (const False)
     it
-        "reports per-read work and totals from multiple provider trace pages, excluding other sessions" $
-        withReader $ \line provider _ _ -> do
+        "reports per-read work and totals from multiple provider trace pages, excluding other sessions"
+        $ withReader
+        $ \line provider _ _ -> do
             (code, out, _) <-
                 captured
                     ( runPackagedVia
@@ -143,8 +146,9 @@ spec = describe "inspect a registry key without a signer" $ do
                         ]
                     )
     it
-        "returns an unavailable answer rather than a parse refusal when a provider read fails" $
-        withReader $ \line provider _ _ -> do
+        "returns an unavailable answer rather than a parse refusal when a provider read fails"
+        $ withReader
+        $ \line provider _ _ -> do
             let failed tracer =
                     (provider tracer)
                         { envReads = \_ _ -> ioError (userError "provider disconnected")
@@ -193,7 +197,8 @@ withReader use = withRig $ \rig -> do
     identity <- case applicationRows table of
         one : _ -> pure one
         [] -> fail "packaged release table has no application"
-    reference <- either fail pure (parseOutRef (T.replicate 64 "a" <> "#0"))
+    reference <-
+        either fail pure (parseOutRef (T.replicate 64 "a" <> "#0"))
     let registry =
             RegistryIdentity
                 (StatePolicyId (appliedStatePolicy identity))

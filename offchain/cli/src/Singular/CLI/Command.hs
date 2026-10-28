@@ -93,6 +93,7 @@ import Singular.CLI.FlagGroup
     , traceRequestFrom
     )
 import Singular.CLI.Help (singularHelp, singularProgram)
+import Singular.CLI.Inspect (ReaderArgs, readerArgs)
 import Singular.CLI.Key (KeyRefusal (..), keyFlags, maxKeyBytes)
 import Singular.CLI.Options
     ( Accepted
@@ -389,6 +390,7 @@ data Command
       Help String
     | -- | Internal value used by the retained application fold helper to select references; no public parser route
       Fold FoldArgs
+    | RegistryInspect ReaderArgs
     | StateCreate StateCreateArgs
     | WalletCreate WalletArgs
     | WalletAddress WalletArgs
@@ -448,7 +450,7 @@ readFlags group =
                 { acceptedValued = group <> ["--witnesses", "--config"]
                 , acceptedEarly = []
                 , acceptedSwitches =
-                    commonSwitches <> ["--version", flagName saveStateToken]
+                    commonSwitches <> ["--version", "--json", flagName saveStateToken]
                 }
 
 {- | What a command line read flat asks for. The switches and the repeated
@@ -481,7 +483,8 @@ commandFrom environment (Raw ws allFlags) = do
                             (identityLine (singularProgram singularVersion) environment <> "\n")
                         )
                 else
-                    refuseWindows ws flags
+                    refuseReadSwitches ws flags
+                        >> refuseWindows ws flags
                         >> refuseSaveStateToken ws flags
                         >> refuseWitnesses ws witnesses
                         >> refuseWalletSettings ws flags
@@ -504,11 +507,18 @@ commandFrom environment (Raw ws allFlags) = do
                             ["submit"] ->
                                 Left (MissingFlag "BUNDLE")
                             ["registry"] -> Right askedFor
+                            ["registry", "inspect"] ->
+                                RegistryInspect
+                                    <$> readerArgs MissingFlag BadValue KeyRefused environment flags
                             ["registry", "create"] ->
                                 refuseOutside "registry create" stateCreateAllowed flags
                                     >> (StateCreate <$> stateCreateArgs flags)
                             _ -> Left (UnknownCommand ws)
   where
+    refuseReadSwitches words' flags =
+        unless (words' == ["registry", "inspect"]) $
+            when (isJust (lookup "--json" flags)) $
+                Left (BadValue "--json" "is an inspect flag")
     -- @--witnesses@ names what @submit@ sends; any other command refuses
     -- it by name rather than ignore it.
     refuseWitnesses words' witnesses =
@@ -877,6 +887,7 @@ references it looks up.
 neededRoles :: Command -> Set ReferenceRole
 neededRoles = \case
     Fold _ -> Set.fromList [minBound .. maxBound]
+    RegistryInspect _ -> Set.empty
     StateCreate _ -> Set.empty
     WalletCreate _ -> Set.empty
     WalletAddress _ -> Set.empty

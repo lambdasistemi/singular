@@ -206,6 +206,7 @@ library registry-cli
     Singular.CLI.FlagGroup
     Singular.CLI.FoldRules
     Singular.CLI.Help
+    Singular.CLI.Inspect
     Singular.CLI.Key
     Singular.CLI.Live
     Singular.CLI.ManagedState

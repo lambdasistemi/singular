@@ -83,7 +83,7 @@ spec = describe "the help pages" $ do
                     && ["submit"] `elem` paths
                     && ["registry"] `elem` paths
                     && ["registry", "create"] `elem` paths
-                    && length paths == 8
+                    && length paths == 9
     it "refuses the removed registry address command" $
         parseCommand ["registry", "address"]
             `shouldBe` Left (UnknownCommand ["registry", "address"])
@@ -143,7 +143,7 @@ spec = describe "the help pages" $ do
                     <> showVersion singularVersion
                     <> " (commit 0123abc)"
                 ]
-    forM_ ["fold", "reject", "reclaim", "inspect"] $ \verb ->
+    forM_ ["fold", "reject", "reclaim"] $ \verb ->
         it ("refuses the removed registry " <> verb <> " command") $
             parseCommand ["registry", verb]
                 `shouldBe` Left (UnknownCommand ["registry", verb])
