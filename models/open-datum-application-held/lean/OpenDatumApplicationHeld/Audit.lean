@@ -1,6 +1,8 @@
 import OpenDatumApplicationHeld.MoneyStatements
 import OpenDatumApplicationHeld.RefundLifecycleStatements
 import Lean
+import ReaderAuditCore
+import OpenDatumApplicationHeld.ReaderFixtures
 
 /-! The application-held open-datum model beside the current one.
 Compiled correspondence and definition-closure observations. -/
@@ -110,3 +112,5 @@ elab "#money_types" : command => do
       ("axioms", toJson ((← collectAxioms name).toList.map toString)),
       ("closure", toJson (reached env info.type.getUsedConstants.toList true))]).compress
 #money_types
+
+#reader_audit_all

@@ -7,6 +7,7 @@ from pathlib import Path
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 
 PROJECT = Path(__file__).resolve().parent
@@ -240,6 +241,10 @@ def preflight(statement_stage=False):
     import money_check
 
     money_check.preflight()
+    sys.path.insert(0, str(PROJECT.parent / "singular-application-held"))
+    import reader_check
+
+    reader_check.preflight("all")
     return rows, added
 
 
@@ -302,6 +307,9 @@ def compiled(report, statement_stage=False):
     import money_check
 
     money_check.compiled(records, statement_stage)
+    import reader_check
+
+    reader_check.compiled(report, "all")
 
 
 def controls():

@@ -1,5 +1,6 @@
 import SingularApplicationHeld.HistoryClaims
 import SingularApplicationHeld.Statements
+import ReaderAuditCore
 import Lean
 
 /-! The application-held Singular model beside the current one, to be removed
@@ -121,3 +122,5 @@ elab "#history_types" : command => do
       ("axioms", toJson ((← collectAxioms name).toList.map toString)),
       ("closure", toJson (reached env info.type.getUsedConstants.toList true))]).compress
 #history_types
+
+#reader_audit_shared

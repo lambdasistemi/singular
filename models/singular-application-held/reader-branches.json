@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "stage": "STATEMENTS",
+  "stage": "PROOFS",
   "accepted": false,
   "scope": "Authored branch inventory for independent review; not a coverage certificate.",
   "definition": "SingularApplicationHeld.readKey",
@@ -9,127 +9,127 @@
       "branch": "network missing, failed or incomplete",
       "theorem": "SingularApplicationHeld.ReaderStatements.network_unavailable",
       "answer": "unavailable network with the same reason",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     },
     {
       "branch": "served network differs",
       "theorem": "SingularApplicationHeld.ReaderStatements.wrong_network_first",
       "answer": "refused wrong network",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     },
     {
       "branch": "no published release",
       "theorem": "SingularApplicationHeld.ReaderStatements.unknown_state_policy",
       "answer": "refused unknown state policy",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     },
     {
       "branch": "release names another state policy",
       "theorem": "SingularApplicationHeld.ReaderStatements.foreign_state_policy",
       "answer": "refused foreign state policy",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     },
     {
       "branch": "asset answer missing, failed or incomplete",
       "theorem": "SingularApplicationHeld.ReaderStatements.active_outputs_unavailable",
       "answer": "unavailable active outputs with the same reason",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     },
     {
       "branch": "multiple asset outputs",
       "theorem": "SingularApplicationHeld.ReaderStatements.conflicting_outputs",
       "answer": "refused conflicting evidence",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     },
     {
       "branch": "one output with non-unit quantity",
       "theorem": "SingularApplicationHeld.ReaderStatements.conflicting_quantity",
       "answer": "refused conflicting evidence",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     },
     {
       "branch": "unit token outside application custody, including the state address",
       "theorem": "SingularApplicationHeld.ReaderStatements.token_outside_custody",
       "answer": "refused token outside application custody",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     },
     {
       "branch": "unit token in the exact termination request",
       "theorem": "SingularApplicationHeld.ReaderStatements.pending_termination_inversion",
       "answer": "pending termination",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     },
     {
       "branch": "unit token with valid live control",
       "theorem": "SingularApplicationHeld.ReaderStatements.live_inversion",
       "answer": "live",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     },
     {
       "branch": "unit token in custody with no decodable holding or termination request",
       "theorem": "SingularApplicationHeld.ReaderStatements.undecodable_holding",
       "answer": "refused conflicting evidence",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     },
     {
       "branch": "unit token in custody with registration datum",
       "theorem": "SingularApplicationHeld.ReaderStatements.registration_is_not_a_holding",
       "answer": "refused conflicting evidence",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     },
     {
       "branch": "unit token in custody with invalid live control",
       "theorem": "SingularApplicationHeld.ReaderStatements.invalid_live_control",
       "answer": "refused conflicting evidence",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     },
     {
       "branch": "no token; state read missing, failed or incomplete",
       "theorem": "SingularApplicationHeld.ReaderStatements.state_unavailable",
       "answer": "unavailable state with the same reason",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     },
     {
       "branch": "no token; complete state read has no output",
       "theorem": "SingularApplicationHeld.ReaderStatements.state_not_found",
       "answer": "unavailable state not found",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     },
     {
       "branch": "no token; state output not recognised",
       "theorem": "SingularApplicationHeld.ReaderStatements.state_not_recognized",
       "answer": "unavailable state not recognised",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     },
     {
       "branch": "no token; recognised state; trie read missing, failed or incomplete",
       "theorem": "SingularApplicationHeld.ReaderStatements.trie_unavailable",
       "answer": "unavailable trie with the same reason",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     },
     {
       "branch": "no token; recognised state; trie root differs",
       "theorem": "SingularApplicationHeld.ReaderStatements.trie_root_mismatch",
       "answer": "unavailable trie root mismatch",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     },
     {
       "branch": "no token; recognised state and matching trie; unknown leaf",
       "theorem": "SingularApplicationHeld.ReaderStatements.never_registered_inversion",
       "answer": "never registered",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     },
     {
       "branch": "no token; recognised state and matching trie; terminal leaf",
       "theorem": "SingularApplicationHeld.ReaderStatements.terminal_inversion",
       "answer": "terminal",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     },
     {
       "branch": "no token; recognised state and matching trie; known active or absent leaf",
       "theorem": "SingularApplicationHeld.ReaderStatements.known_nonterminal_leaf_without_token",
       "answer": "refused conflicting evidence",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     }
   ]
 }

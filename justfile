@@ -64,19 +64,25 @@ application-held-model:
     lean --version | grep -q "version $(sed 's/.*:v//' lean-toolchain),"
     python3 models/singular-application-held/check.py
     lake -d models/singular-application-held --keep-toolchain build
+    lake -d models/singular-application-held --keep-toolchain build reader
     lake -d models/singular-application-held --keep-toolchain env lean models/singular-application-held/lean/SingularApplicationHeld/Audit.lean > models/singular-application-held/.lake/audit-report.txt
     python3 models/singular-application-held/check.py --report models/singular-application-held/.lake/audit-report.txt
+    python3 models/singular-application-held/reader_check.py --driver models/singular-application-held/.lake/build/bin/reader
     python3 models/singular-application-held/check.py --controls
 
 # The application-held open-datum model beside the current application.
 open-datum-application-held-model:
     lean --version | grep -q "version $(sed 's/.*:v//' lean-toolchain),"
     python3 models/open-datum-application-held/check.py
+    lake -d models/singular-application-held --keep-toolchain build ReaderAuditSupport reader
     lake -d models/open-datum-application-held --keep-toolchain build
+    lake -d models/open-datum-application-held --keep-toolchain build readerCorpus
     lake -d models/open-datum-application-held --keep-toolchain env lean models/open-datum-application-held/lean/OpenDatumApplicationHeld/Audit.lean > models/open-datum-application-held/.lake/audit-report.txt
     python3 models/open-datum-application-held/check.py --report models/open-datum-application-held/.lake/audit-report.txt
     lake -d models/open-datum-application-held --keep-toolchain env lean models/open-datum-application-held/lean/MoneyEvidenceAudit.lean > models/open-datum-application-held/.lake/money-evidence-report.txt
     python3 models/open-datum-application-held/check.py --evidence models/open-datum-application-held/.lake/money-evidence-report.txt
+    models/open-datum-application-held/.lake/build/bin/readerCorpus > models/open-datum-application-held/.lake/reader-corpus.jsonl
+    python3 models/singular-application-held/reader_check.py --scope all --corpus models/open-datum-application-held/.lake/reader-corpus.jsonl --driver models/singular-application-held/.lake/build/bin/reader
     python3 models/open-datum-application-held/check.py --controls
 
 simulator:

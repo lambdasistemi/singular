@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "stage": "STATEMENTS",
+  "stage": "PROOFS",
   "accepted": false,
   "scope": "Finite proposed evidence-binding and refusal atoms for the reader only; no coverage is certified before independent review and proof-stage mutations.",
   "atoms": [
@@ -9,203 +9,203 @@
       "theorem": "SingularApplicationHeld.ReaderStatements.wrong_network_first",
       "proposedWitness": "wrong network",
       "mutantStatus": "NOT-RUN",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     },
     {
       "requirement": "failed reads retain the read and reason",
       "theorem": "SingularApplicationHeld.ReaderStatements.network_unavailable",
       "proposedWitness": "failed network read",
       "mutantStatus": "NOT-RUN",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     },
     {
       "requirement": "incomplete answers are unavailable",
       "theorem": "SingularApplicationHeld.ReaderStatements.active_outputs_unavailable",
       "proposedWitness": "incomplete asset answer",
       "mutantStatus": "NOT-RUN",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     },
     {
       "requirement": "the state policy has a published application",
       "theorem": "SingularApplicationHeld.ReaderStatements.unknown_state_policy",
       "proposedWitness": "unknown state policy",
       "mutantStatus": "NOT-RUN",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     },
     {
       "requirement": "the row belongs to the requested state policy",
       "theorem": "SingularApplicationHeld.ReaderStatements.foreign_state_policy",
       "proposedWitness": "foreign state policy",
       "mutantStatus": "NOT-RUN",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     },
     {
       "requirement": "the queried asset binds the registry and key",
       "theorem": "SingularApplicationHeld.ReaderStatements.live_inversion",
       "proposedWitness": "live",
       "mutantStatus": "NOT-RUN",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     },
     {
       "requirement": "one token output only",
       "theorem": "SingularApplicationHeld.ReaderStatements.conflicting_outputs",
       "proposedWitness": "two outputs",
       "mutantStatus": "NOT-RUN",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     },
     {
       "requirement": "unit token quantity",
       "theorem": "SingularApplicationHeld.ReaderStatements.conflicting_quantity",
       "proposedWitness": "non-unit quantity",
       "mutantStatus": "NOT-RUN",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     },
     {
       "requirement": "application custody excludes the state address",
       "theorem": "SingularApplicationHeld.ReaderStatements.token_outside_custody",
       "proposedWitness": "token at state address",
       "mutantStatus": "NOT-RUN",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     },
     {
       "requirement": "application custody excludes other addresses",
       "theorem": "SingularApplicationHeld.ReaderStatements.token_outside_custody",
       "proposedWitness": "token at another address",
       "mutantStatus": "NOT-RUN",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     },
     {
       "requirement": "live control binds registry key asset and deposit",
       "theorem": "SingularApplicationHeld.ReaderStatements.live_inversion",
       "proposedWitness": "live",
       "mutantStatus": "NOT-RUN",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     },
     {
       "requirement": "pending request keeps the active token",
       "theorem": "SingularApplicationHeld.ReaderStatements.pending_termination_inversion",
       "proposedWitness": "pending termination",
       "mutantStatus": "NOT-RUN",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     },
     {
       "requirement": "state recognition checks the complete state output",
       "theorem": "SingularApplicationHeld.ReaderStatements.state_recognition",
       "proposedWitness": "unrecognised state",
       "mutantStatus": "NOT-RUN",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     },
     {
       "requirement": "the trie belongs to the recognised root",
       "theorem": "SingularApplicationHeld.ReaderStatements.terminal_inversion",
       "proposedWitness": "trie root mismatch",
       "mutantStatus": "NOT-RUN",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     },
     {
       "requirement": "terminal is the terminal leaf lookup",
       "theorem": "SingularApplicationHeld.ReaderStatements.terminal_sound",
       "proposedWitness": "terminal",
       "mutantStatus": "NOT-RUN",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     },
     {
       "requirement": "never registered is the unknown leaf lookup",
       "theorem": "SingularApplicationHeld.ReaderStatements.never_registered_sound",
       "proposedWitness": "never registered",
       "mutantStatus": "NOT-RUN",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     },
     {
       "requirement": "missing token without state proves no absence",
       "theorem": "SingularApplicationHeld.ReaderStatements.no_absence_from_missing_evidence",
       "proposedWitness": "empty asset answer without state",
       "mutantStatus": "NOT-RUN",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     },
     {
       "requirement": "unavailable trie proves no absence",
       "theorem": "SingularApplicationHeld.ReaderStatements.trie_unavailable",
       "proposedWitness": "failed trie read",
       "mutantStatus": "NOT-RUN",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     },
     {
       "requirement": "reachable supply binds a holding to the active leaf",
       "theorem": "SingularApplicationHeld.ReaderStatements.live_sound",
       "proposedWitness": "live",
       "mutantStatus": "NOT-RUN",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     },
     {
       "requirement": "holding branches need no state or trie read",
       "theorem": "SingularApplicationHeld.ReaderStatements.holding_answer_ignores_state",
       "proposedWitness": "live",
       "mutantStatus": "NOT-RUN",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     },
     {
       "requirement": "the application model agrees with shared custody",
       "theorem": "OpenDatumApplicationHeld.ReaderStatements.live_custody",
       "proposedWitness": "live",
       "mutantStatus": "NOT-RUN",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     },
     {
       "requirement": "the pending application shape is exact",
       "theorem": "OpenDatumApplicationHeld.ReaderStatements.pending_custody",
       "proposedWitness": "pending termination",
       "mutantStatus": "NOT-RUN",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     },
     {
       "requirement": "a complete empty state answer remains unavailable",
       "theorem": "SingularApplicationHeld.ReaderStatements.state_not_found",
       "proposedWitness": "state not found",
       "mutantStatus": "NOT-RUN",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     },
     {
       "requirement": "only a recognised state may support a conclusion",
       "theorem": "SingularApplicationHeld.ReaderStatements.state_not_recognized",
       "proposedWitness": "unrecognised state; state with extra assets",
       "mutantStatus": "NOT-RUN",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     },
     {
       "requirement": "the trie root must match the recognised state",
       "theorem": "SingularApplicationHeld.ReaderStatements.trie_root_mismatch",
       "proposedWitness": "trie root mismatch",
       "mutantStatus": "NOT-RUN",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     },
     {
       "requirement": "an undecodable holding datum is conflicting evidence",
       "theorem": "SingularApplicationHeld.ReaderStatements.undecodable_holding",
       "proposedWitness": "unknown holding datum",
       "mutantStatus": "NOT-RUN",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     },
     {
       "requirement": "a registration datum cannot identify a live holding",
       "theorem": "SingularApplicationHeld.ReaderStatements.registration_is_not_a_holding",
       "proposedWitness": "registration datum with active token",
       "mutantStatus": "NOT-RUN",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     },
     {
       "requirement": "live controls must bind registry key asset and deposit",
       "theorem": "SingularApplicationHeld.ReaderStatements.invalid_live_control",
       "proposedWitness": "uncovered live deposit",
       "mutantStatus": "NOT-RUN",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     },
     {
       "requirement": "a known nonterminal leaf without its token is conflicting evidence",
       "theorem": "SingularApplicationHeld.ReaderStatements.known_nonterminal_leaf_without_token",
       "proposedWitness": "active leaf without token; known absent leaf without token",
       "mutantStatus": "NOT-RUN",
-      "proofStatus": "OPEN"
+      "proofStatus": "PROVED"
     }
   ]
 }
