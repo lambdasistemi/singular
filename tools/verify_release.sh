@@ -32,9 +32,9 @@
 #                   bundle can be wrong is refused (tools/verify_release_bundles.sh)
 #   build           `singular`, `open-datum` and the development node are built
 #                   from the archive's own flakes
-#   journey         create, insert, update, terminate and inspect run as
-#                   separate processes on one generated development network
-#                   (demo1_cli_journey.sh)
+#   journey         the existing registration, update and termination journey
+#                   runs as separate processes on one development network
+#                   (no_pin_registration_journey.sh)
 #   release build   the stripped compiled executables contain no harness inputs,
 #                   and their actual resolved registry-cli flags disable them
 #   ordinary run    every command invocation is free of hidden harness inputs;
@@ -92,6 +92,7 @@ version="${BASH_REMATCH[1]}"
 repo="${VERIFY_RELEASE_REPOSITORY:-lambdasistemi/singular}"
 journey="${VERIFY_RELEASE_JOURNEY:?verify-release needs VERIFY_RELEASE_JOURNEY}"
 binary_check="${VERIFY_RELEASE_BINARY_CHECK:?verify-release needs VERIFY_RELEASE_BINARY_CHECK}"
+chain_view="${VERIFY_RELEASE_CHAIN_VIEW:?verify-release needs VERIFY_RELEASE_CHAIN_VIEW}"
 expected_revision="$(cat "${VERIFY_RELEASE_MODEL_REVISION:?verify-release needs VERIFY_RELEASE_MODEL_REVISION}")"
 bundle_conf="${VERIFY_RELEASE_BUNDLE_CONF:?verify-release needs VERIFY_RELEASE_BUNDLE_CONF}"
 bundle_verifier="${VERIFY_RELEASE_BUNDLE_VERIFIER:?verify-release needs VERIFY_RELEASE_BUNDLE_VERIFIER}"
@@ -262,22 +263,22 @@ pass "release build" "stripped singular/open-datum bytes and actual flags exclud
 invocations="$work/invocations.tsv"
 : >"$invocations"
 mkdir -p "$work/bin"
-cat >"$work/bin/singular" <<WRAPPER
-#!/usr/bin/env bash
-harness="\$(env | grep -o '^SINGULAR_HARNESS_[A-Z_]*' | LC_ALL=C sort | paste -sd, - || true)"
-holds="\$(env | grep '^SINGULAR_HARNESS_HOLD_' | grep -v '^SINGULAR_HARNESS_HOLD_STEP=' | cut -d= -f2- | paste -sd'|' - || true)"
-printf '%s\t%s\t%s\n' "singular \${1:-} \${2:-}" "\$harness" "\$holds" >>$(printf '%q' "$invocations")
-exec $(printf '%q' "$singular/bin/singular") "\$@"
+# The rig passes PATH=/nonexistent to each command. Resolve the observer's
+# tools here, without changing the environment passed to the release binary.
+for program in singular open-datum; do
+  case "$program" in
+    singular) binary="$singular/bin/singular" ;;
+    *) binary="$open_datum/bin/open-datum" ;;
+  esac
+  cat >"$work/bin/$program" <<WRAPPER
+#!$(command -v bash)
+harness="\$($(command -v env) | $(command -v grep) -o '^SINGULAR_HARNESS_[A-Z_]*' | LC_ALL=C $(command -v sort) | $(command -v paste) -sd, - || true)"
+holds="\$($(command -v env) | $(command -v grep) '^SINGULAR_HARNESS_HOLD_' | $(command -v grep) -v '^SINGULAR_HARNESS_HOLD_STEP=' | $(command -v cut) -d= -f2- | $(command -v paste) -sd'|' - || true)"
+printf '%s\t%s\t%s\n' "$program \${1:-} \${2:-}" "\$harness" "\$holds" >>$(printf '%q' "$invocations")
+exec $(printf '%q' "$binary") "\$@"
 WRAPPER
-chmod +x "$work/bin/singular"
-cat >"$work/bin/open-datum" <<WRAPPER
-#!/usr/bin/env bash
-harness="\$(env | grep -o '^SINGULAR_HARNESS_[A-Z_]*' | LC_ALL=C sort | paste -sd, - || true)"
-holds="\$(env | grep '^SINGULAR_HARNESS_HOLD_' | grep -v '^SINGULAR_HARNESS_HOLD_STEP=' | cut -d= -f2- | paste -sd'|' - || true)"
-printf '%s\t%s\t%s\n' "open-datum \${1:-} \${2:-}" "\$harness" "\$holds" >>$(printf '%q' "$invocations")
-exec $(printf '%q' "$open_datum/bin/open-datum") "\$@"
-WRAPPER
-chmod +x "$work/bin/open-datum"
+  chmod +x "$work/bin/$program"
+done
 # #528 slice 4: the development node reads its genesis from E2E_GENESIS_DIR,
 # falling back to a relative `e2e-test/genesis` that only resolves when the
 # caller happens to run from the registry tree. The archive build leaves the
@@ -287,18 +288,26 @@ chmod +x "$work/bin/open-datum"
 # node starts regardless of the caller's directory.
 export E2E_GENESIS_DIR="$extracted/offchain/e2e-test/genesis"
 status=0
-bash "$journey" "$work/bin/singular" "$work/bin/open-datum" "$devnet/bin/devnet" "$extracted/onchain/plutus.json" "$work/journey" ordinary \
+bash "$journey" "$work/bin/singular" "$work/bin/open-datum" "$devnet/bin/devnet" "$extracted/onchain/plutus.json" "$chain_view" "$work/journey" \
   || status=$?
 [ "$status" -eq 0 ] || refuse command-failed "the journey exited $status$kept"
-pass journey "create, insert, update, terminate and inspect as separate processes"
+pass journey "the connected journey as separate processes"
 
-# The journey uses only the ordinary extracted binaries. Recovery injection
-# and independent trie-capability diagnostics have their own required test
-# carrier; they are not evidence from these release bytes.
-for command in create insert update terminate inspect; do
-  awk -F'\t' -v c="open-datum $command" 'index($1, c) == 1 && $2 == ""' "$invocations" | grep -q . \
-    || refuse harness-code-present "no ordinary $command invocation was recorded"
-done
+# The journey uses only the ordinary extracted binaries. Recovery controls
+# run in their separate explicit test composition.
+while IFS= read -r route; do
+  awk -F'\t' -v c="$route" '$1 == c && $2 == ""' "$invocations" | grep -q . \
+    || refuse harness-code-present "no ordinary $route invocation was recorded"
+done <<'ROUTES'
+singular state create
+open-datum state create
+open-datum state fold
+open-datum registration book
+open-datum registration reclaim
+open-datum registration cleanup
+open-datum holding update
+open-datum holding terminate
+ROUTES
 if awk -F'\t' '$2 != "" || $3 != ""' "$invocations" | grep -q .; then
   refuse harness-code-present "ordinary journey received a hidden test input"
 fi

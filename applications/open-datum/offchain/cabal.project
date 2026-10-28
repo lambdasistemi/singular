@@ -6,7 +6,6 @@ index-state:
 
 packages:
   .
-  ../negative
   ../../../offchain
 
 repository cardano-haskell-packages
@@ -78,8 +77,8 @@ source-repository-package
 source-repository-package
   type: git
   location: https://github.com/lambdasistemi/cardano-tx-tools
-  tag: 7bfe95bf5ef3bfa846e62bcae94cf377b66ad0d0
-  --sha256: 139l4f43b3r6ybkihg2n6h1qxcijwbx1s5lni85api05480x7lxc
+  tag: 0fb591ca593957bfde58685e469ce8bda5f31ffa
+  --sha256: 1sq7ydpy7nbl1br4s8lskpw9c3nn338jlx2lqbzjxv769l795jp7
 
 source-repository-package
   type: git

@@ -717,7 +717,7 @@ overview :: Program -> [String]
 overview program =
     concat
         [ ["", "All commands:"]
-        , concatMap (flatten []) (programNodes program)
+        , ["  " <> pad width words' <> summary | (words', summary) <- entries]
         , [""]
         , ["Help on one command: " <> name <> " COMMAND --help"]
         ,
@@ -734,11 +734,13 @@ overview program =
         ]
   where
     name = programName program
+    entries = concatMap (flatten []) (programNodes program)
+    -- The column of command names is as wide as the longest name needs, and
+    -- never narrower than the programs have always printed it.
+    width = maximum (28 : [length words' + 2 | (words', _) <- entries])
     flatten prefix = \case
-        Runs leaf -> [line (prefix <> [leafName leaf]) (leafSummary leaf)]
+        Runs leaf -> [(unwords (name : prefix <> [leafName leaf]), leafSummary leaf)]
         Group group _ _ kids -> concatMap (flatten (prefix <> [group])) kids
-    line path summary =
-        "  " <> pad 28 (unwords (name : path)) <> summary
     pad n s = s <> replicate (n - length s) ' '
 
 leafExtras :: Leaf -> [String]

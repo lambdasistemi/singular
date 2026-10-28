@@ -2,8 +2,8 @@ singular VERSION (commit unknown)
 
 Usage: singular COMMAND
 
-Create a Singular registry on Cardano, fold requests into it, reject or
-reclaim requests, read it back, and sign and submit transaction bundles.
+Create a Singular registry on Cardano, and sign and submit transaction
+bundles.
 
 Available settings:
   Show this help text
@@ -13,13 +13,7 @@ Available settings:
   switch: --version
 
 All commands:
-  singular registry create    Boot a registry, or preview its identity
-  singular registry address   Show or make a registry's address
-  singular registry fold      Fold the pending requests into the registry
-  singular registry reject    Reject all pending requests past their windows
-  singular registry reclaim   Take back your own pending request
-  singular registry inspect   Read the registry and a key back
-  singular registry describe  Print the registry page
+  singular state create       Create the registry of an application
   singular wallet create      Create a vault with a fresh key
   singular wallet address     Print the address of a vault's key
   singular wallet sign        Sign a bundle of transactions offline

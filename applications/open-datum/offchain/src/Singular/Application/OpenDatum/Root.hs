@@ -10,8 +10,7 @@ The composition root of the command: the command line parsed, the tracing
 controls resolved against the process's standard error, @SINGULAR_LOG@ read,
 the tracer built and the command run.
 
-Mirrors 'Singular.CLI.Root' for the application's six verbs
-(create, insert, update, terminate, fold, inspect). Nothing tracing does
+Mirrors 'Singular.CLI.Root' for the application's commands. Nothing tracing does
 here can change the command's receipt, journal, outcome class or exit
 status: every setup step runs inside the same containment as emission.
 -}
@@ -30,19 +29,10 @@ import Control.Exception
     , try
     )
 import Control.Monad (void)
-import Data.Either (fromRight)
-import System.Exit (ExitCode (..))
-import System.IO
-    ( Handle
-    , hIsTerminalDevice
-    , hPutStrLn
-    )
-
 import Control.Tracer (Tracer)
-
+import Data.Either (fromRight)
 import Singular.Application.OpenDatum.Command
-    ( OpenDatumCommand (..)
-    , loadOpenDatumSources
+    ( loadOpenDatumSources
     , openDatumHint
     , openDatumRefusalHint
     , openDatumVersion
@@ -51,13 +41,13 @@ import Singular.Application.OpenDatum.Command
     )
 import Singular.Application.OpenDatum.Help (openDatumProgram)
 import Singular.Application.OpenDatum.Run (runOpenDatum)
-import Singular.CLI.Command (CreateArgs (..))
 import Singular.CLI.Options (builtinCommand)
 import Singular.CLI.Root (containFailure, standardError)
 import Singular.CLI.Session (Env, koiosEnv)
-import Singular.CLI.SettingsFile (settingsFileRefusal)
 import Singular.CLI.Trace (Trace, withTracing)
 import Singular.Registry.Application (Application)
+import System.Exit (ExitCode (..))
+import System.IO (Handle, hIsTerminalDevice, hPutStrLn)
 
 -- | Run one open-datum command line, with this environment and standard error.
 runOpenDatumSingular
@@ -90,24 +80,17 @@ runOpenDatumSingularVia provider _app errors environment args =
                                 (openDatumRefusalHint err <> openDatumHint args)
                         Nothing -> pure ()
                     pure (ExitFailure 2)
-                Right (command, request) ->
-                    savingRefusal command >>= \case
-                        Just sentence -> do
-                            mapM_
-                                (\h -> quietly (hPutStrLn h ("open-datum: " <> sentence)))
-                                errors
-                            pure (ExitFailure 2)
-                        Nothing -> do
-                            terminal <- case errors of
-                                Nothing -> pure False
-                                Just h ->
-                                    fromRight False <$> attempt (hIsTerminalDevice h)
-                            withTracing
-                                errors
-                                terminal
-                                (phaseLog environment)
-                                request
-                                (\tracer -> runOpenDatum (provider tracer) command)
+                Right (command, request) -> do
+                    terminal <- case errors of
+                        Nothing -> pure False
+                        Just h ->
+                            fromRight False <$> attempt (hIsTerminalDevice h)
+                    withTracing
+                        errors
+                        terminal
+                        (phaseLog environment)
+                        request
+                        (\tracer -> runOpenDatum (provider tracer) command)
   where
     phaseLog env = case lookup "SINGULAR_LOG" env of
         Just path | not (null path) -> Just path
@@ -155,12 +138,3 @@ runPackagedOpenDatumVia provider app getErrors args environment =
 runPackagedOpenDatum
     :: Application -> [String] -> [(String, String)] -> IO ExitCode
 runPackagedOpenDatum app = runPackagedOpenDatumWith app standardError
-
-{- | Why a command cannot run before it has begun: a create asked to keep the
-registry's name in a settings file that cannot be written is refused here, with
-exit status 2, before a wallet is opened or the chain is read.
--}
-savingRefusal :: OpenDatumCommand -> IO (Maybe String)
-savingRefusal = \case
-    OpenCreate _ a -> settingsFileRefusal (createSaveStateTokenTo a)
-    _ -> pure Nothing

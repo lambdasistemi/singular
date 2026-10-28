@@ -1,8 +1,7 @@
 # Store ordinary JSON as a key's payload
 
-As a reader with a registry and a key, you store the document `{"answer": 42}`
-under the key by writing that file and nothing else. You read the key back and
-the page shows `{"answer": 42}`. You did not have to learn first how Plutus
+As a controller with a registry and a key, you store the document `{"answer": 42}`
+under the key by writing that file and nothing else. The holding carries the payload on chain. A reader has replacement: none, issue 744. You did not have to learn first how Plutus
 data is written in JSON. As an integrator who needs exact control of the bytes
 on chain, you keep writing the detailed schema, `{"constructor": 0, "fields":
 [{"int": 42}]}`, and say so on the command, so nothing is guessed. As someone
@@ -25,42 +24,20 @@ setting is `plain` or absent, and by the detailed schema, as before, when it
 is `detailed`. Either way the result is the same kind of value, Plutus data in the
 key's output on chain.
 
-```mermaid
-flowchart TB
-    data[Plutus data<br/>on chain] --> view{what inspect<br/>prints}
-    view -->|has a plain reading| plainout[the payload as plain JSON<br/>payloadSchema plain]
-    view -->|has none| detailedout[the payload in the<br/>detailed schema<br/>payloadSchema detailed]
-```
-
-The second diagram shows how a key is read back. The data is printed as plain
-JSON if it has a plain reading and in the detailed schema if it has none, and the
-print always says which.
-
 ## Store a document
 
-Write the file and give it to `insert`, with no other setting:
+Write the file and give it to `registration book`, with no schema setting:
 
 ```sh
 echo '{"answer": 42}' > payload.json
-open-datum insert --key alice --payload payload.json --vault alice.vault --fold
-open-datum inspect --key alice | jq '.applicationOutput | {payload, payloadSchema}'
+open-datum registration book --key alice --payload payload.json --vault alice.vault
 ```
 
-The second command prints the payload you wrote and the name of the schema it is
-printed in:
-
-```json
-{
-  "payload": {
-    "answer": 42
-  },
-  "payloadSchema": "plain"
-}
-```
-
-`update` takes the same file and the same setting, and so do the previews of
-both, `keri-stub register`, and the negative host's insert and update: every
-command that reads a payload file reads it one way.
+Supply the registry, blueprint and provider settings as described in the
+[registry command guide](registry-commands.md). Fold the pending reference the
+booking prints with `open-datum state fold --pending TXID#IX`.
+`holding update` takes the same payload file and schema setting. Reading a key
+has replacement: none, issue 744.
 
 ## How ordinary JSON becomes data
 

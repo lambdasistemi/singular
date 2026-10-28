@@ -1,0 +1,18 @@
+open-datum VERSION (commit unknown)
+
+Usage: open-datum holding COMMAND
+
+Update a live payload or book permanent termination
+
+The controller chooses one live holding by its output reference. An update
+replaces only its payload. Termination donates its protected deposit
+immediately and leaves a request for any wallet to fold; the termination
+cannot be reclaimed.
+
+Available settings:
+  Show this help text
+  switch: -h|--help
+
+Available commands:
+  update      Replace the payload of a live holding       
+  terminate   Book permanent termination of a live holding

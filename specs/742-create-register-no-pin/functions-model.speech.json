@@ -1,0 +1,32 @@
+{
+  "functions-for-creating-a-registry-and-registering-a-key-on-the-proved-design": [
+    {
+      "text": "Functions for creating a registry and registering a key on the proved design.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 742. This page lists only new signatures, with explicit argument names and types. Bodies are the commit owner's. Types refer to the data model.",
+      "pause": 400
+    }
+  ],
+  "on-chain": [
+    {
+      "text": "On-chain.",
+      "pause": 500
+    }
+  ],
+  "off-chain": [
+    {
+      "text": "Off-chain.",
+      "pause": 500
+    },
+    {
+      "text": "Where the aligned Lean models or the existing builders fix a different argument set, the mandate is versioned before the slice that implements the function starts.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "112ab7950751c7b46d57dd8d567809f8fe0bc96ebd61c3b360eec75af05eeb03"
+  }
+}

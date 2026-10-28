@@ -13,7 +13,7 @@ name: Release bundles
 # formula).
 on:
   pull_request:
-    branches: [main]
+    branches: [main, 'epic/**']
     types: [opened, synchronize, reopened]
   push:
     branches: [main]
@@ -54,7 +54,7 @@ jobs:
           fi
           files="$(git diff --name-only "origin/${BASE}...HEAD")"
           printf 'Changed files:\n%s\n' "$files"
-          pattern='^(\.github/workflows/(release|release-bundles|sync-cabal-version)\.yml|flake\.(nix|lock)|nix/|version\.txt|tools/(release_bundle|verify_release_bundles|cabal_versions|demo1_bundle_journey)|offchain/(flake\.(nix|lock)|nix/|[^/]*\.cabal)|applications/open-datum/offchain/(flake\.(nix|lock)|nix/|[^/]*\.cabal))'
+          pattern='^(\.github/workflows/(release|release-bundles|sync-cabal-version)\.yml|flake\.(nix|lock)|nix/|version\.txt|tools/(release_bundle|verify_release_bundles|cabal_versions)|offchain/(flake\.(nix|lock)|nix/|[^/]*\.cabal)|applications/open-datum/offchain/(flake\.(nix|lock)|nix/|[^/]*\.cabal))'
           if printf '%s\n' "$files" | grep -Eq "$pattern"; then
             echo "bundles=true" >> "$GITHUB_OUTPUT"
           else
@@ -227,30 +227,6 @@ jobs:
   # bundle beforehand; the journey then runs the bundle's `singular`,
   # `open-datum` and development node with the bundle's blueprint, on a PATH
   # that holds ordinary tools and no Nix, as a user without Nix would.
-  journey:
-    needs: changes
-    if: needs.changes.outputs.bundles == 'true'
-    name: Demo 1 journey from the Linux bundle
-    runs-on: nixos
-    timeout-minutes: 90
-    steps:
-      - name: Isolate Nix cache
-        run: |
-          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-journey"
-          mkdir -p "$cache_dir"
-          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: cachix/cachix-action@v17
-        with:
-          name: paolino
-          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      - name: Play Demo 1 from the unpacked bundle
-        run: nix run --quiet .#demo1-bundle-journey
-  # #707: the dev channels, on a manual run that asks for them: the dev-linux
-  # release assets, downloaded back and smoked, and the singular-dev formula in
-  # the tap, installed from it and tested, by the shared actions.
   dev-channels:
     needs: changes
     if: github.event_name == 'workflow_dispatch' && inputs.dev_channels == 'yes'
@@ -335,7 +311,7 @@ jobs:
           tap-token: ${{ steps.tap-token.outputs.token }}
   bundles:
     name: Release bundles
-    needs: [changes, bundle, journey, install]
+    needs: [changes, bundle, install]
     if: always()
     runs-on: ubuntu-24.04
     steps:
@@ -343,27 +319,24 @@ jobs:
         env:
           SCOPE: ${{ needs.changes.result }}
           BUNDLES: ${{ needs.bundle.result }}
-          JOURNEY: ${{ needs.journey.result }}
           INSTALL: ${{ needs.install.result }}
           EVENT: ${{ github.event_name }}
         run: |
-          echo "scope=$SCOPE bundles=$BUNDLES journey=$JOURNEY install=$INSTALL event=$EVENT"
+          echo "scope=$SCOPE bundles=$BUNDLES install=$INSTALL event=$EVENT"
           [ "$SCOPE" = success ] || { echo "the scope decision did not succeed"; exit 1; }
-          for result in "$BUNDLES" "$JOURNEY" "$INSTALL"; do
+          for result in "$BUNDLES" "$INSTALL"; do
             case "$result" in
               success | skipped) ;;
               *) echo "a bundle check did not pass: $result"; exit 1 ;;
             esac
           done
-          # the bundles and the journey are both run or both skipped; the install
-          # test runs with them, except on a manual run, which builds no packages
-          [ "$BUNDLES" = "$JOURNEY" ] \
-            || { echo "the bundle checks disagree: $BUNDLES $JOURNEY"; exit 1; }
+          # The install test runs with the bundles, except on a manual run,
+          # which builds no packages.
           if [ "$EVENT" != workflow_dispatch ]; then
             [ "$BUNDLES" = "$INSTALL" ] \
               || { echo "the install test disagrees: $BUNDLES $INSTALL"; exit 1; }
           fi
           case "$BUNDLES" in
-            success) echo "every bundle and package was built and tested, the journey played" ;;
+            success) echo "every bundle and package was built and tested" ;;
             skipped) echo "no release or packaging file changed" ;;
           esac

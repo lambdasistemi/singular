@@ -1,0 +1,186 @@
+{
+  "requests-belong-to-the-application": [
+    {
+      "text": "Requests belong to the application.",
+      "pause": 500
+    },
+    {
+      "text": "As a requester, I want the approved deposit and initial datum protected while anyone can fold an acceptable request. As a folder, I want the public request value to show the available bid. As an application author, I want lifecycle rules and treasury funding explicit.",
+      "pause": 400
+    }
+  ],
+  "status-and-reading-route": [
+    {
+      "text": "Status and reading route.",
+      "pause": 500
+    },
+    {
+      "text": "This is a hypothetical surface candidate. No accepted law, validator behavior, ledger result or journey acceptance is claimed. Source facts bind revision 00771d77af996605845cf062285263909a049cf8; the candidate starts at d4593f146ea5442c0ccec47f89684bb7cca2c836. Parent NOTE-010 delivers the operator's latest Tip and Treasury rulings. They supersede the fixed termination tip, treasury at fold and deposit return to the controller at booking. Earlier candidate surfaces and receipts are historical evidence only. Read the journey differences here and the current records and callables.",
+      "pause": 400
+    },
+    {
+      "text": "Every future general theorem remains a hypothesis with a sorry body; finite witnesses and mutation falsifications must be separately kernel-checked. A source inventory is not proof of behavioral completeness. Accepted root, application and implementation sources remain unchanged.",
+      "pause": 400
+    }
+  ],
+  "responsibilities-and-trust-boundaries": [
+    {
+      "text": "Responsibilities and trust boundaries.",
+      "pause": 500
+    },
+    {
+      "text": "The application owns booking, custody, the timed request exits and treasury funding. Singular authenticates consumed approvals, state lineage, trie changes and active-token mint/burn, including delivery of at least the deposit committed in a registration approval. Open datum separately requires its exact deposit and its own genuine-token check. Singular neither routes request ADA nor funds a treasury. Public genesis/proofs, authentic complete observations, real funding and willing processing remain explicit premises; public data is not a promise of inclusion.",
+      "pause": 400
+    }
+  ],
+  "the-singular-surface": [
+    {
+      "text": "The Singular surface.",
+      "pause": 500
+    },
+    {
+      "text": "The application minting policy and payment script credential are distinct published inputs. The publisher applies the state program to the application policy once per release. Singular authenticates operation approvals under that policy; application outputs authenticate their credential separately. No application-policy/address equality or derivation is assumed.",
+      "pause": 400
+    },
+    {
+      "text": "Genesis consumes its public seed once, invokes the published state policy and mints only one state-role asset into one state output at that script, with an empty-trie commitment. The output holds exactly ADA and its own state token. Public once-only seed provenance, actual script/hash correspondence and ledger conservation remain upstream premises.",
+      "pause": 400
+    },
+    {
+      "text": "A fold supplies the public genesis seed and authenticates the spent state token's full policy/name against its structured state-role preimage. Address, copied root datum or policy alone are insufficient. Separate finite serialization and collision premises distinguish the occurring state and active-role preimages. A provider must expose the genesis and trie-proof data; the seed is not recovered by hash inversion.",
+      "pause": 400
+    },
+    {
+      "text": "The batch is nonempty. Each change pairs once with one consumed, burned approval for its operation, complete registry and key; input references are distinct and no action or consumed approval is missing or surplus. Registration changes unknown to active and mints exactly one genuine active token into the approval-committed holding address with its committed datum hash and at least its committed deposit ADA. Its structured approval includes that deposit, supplied explicitly in the registration change witness. Open datum separately enforces its exact deposit. Termination consumes the matching approval and its held genuine active token, burns both, and changes active to terminal. A holding created by this batch cannot be consumed by its termination. Every other mint or burn under the state policy is zero, including the state token. Complete observations and conservation bind actual placement, not list membership alone.",
+      "pause": 400
+    },
+    {
+      "text": "One bare state continuation stays at the same script with one same state token, exactly the computed root and no decrease in its own ADA. Singular routes no money; its value checks are the state ADA integrity floor and at least the committed deposit at the new holding. It reads no request ADA, tip, cost, refund, treasury allocation or clock. The approved deposit is an explicit registration witness, not inferred from the amount actually received. The application keeps its own genuine-token delivery check because freely burning an approval does not establish a fold. Actual unspent-token census and genuine reachable histories support supply/permanence statements. Accepted permanent-key statements are reused by name only through an explicit logical projection satisfying their real premises; accepted FNV commitments never name candidate assets.",
+      "pause": 400
+    }
+  ],
+  "application-request-and-value-surfaces": [
+    {
+      "text": "Application request and value surfaces.",
+      "pause": 500
+    },
+    {
+      "text": "A registration output at the application holds one approval and immutable booked data: complete registry, key, controller/refund address, holding address, initial datum, deposit and booked deadlines. Its approval preimage commits registration, complete registry, key, holding address, initial datum and deposit. Its actual ADA is the public bid-bearing value; it must cover the deposit. There is no declared tip, carrier allocation, registration cost payment or fixed reward.",
+      "pause": 400
+    },
+    {
+      "text": "A termination output at the application has an empty datum, one matching termination approval, one genuine active token and its actual ADA bid. Its preimage commits termination, complete registry and key. The controller authorizes booking from the genuine live holding. At booking the protected deposit goes to the treasury, the token moves into this pending request, and Singular does nothing. The request spends without a signature or deadline only when that exact held token burns in the same approved terminal fold. No live update, withdrawal or cancellation releases it.",
+      "pause": 400
+    },
+    {
+      "text": "The registration folder's gross available request value is held ADA minus the committed deposit; the holding receives exactly that deposit, datum and token. The termination folder's gross available request value is all held ADA. There is no fixed or declared tip and no treasury share at either fold. Actual balance, distinct indexed payments and ordinary fee funding distinguish a gross available bid from a net payout; ordinary change, coincident addresses, gifts and fees cannot be distinguished by a typed purpose label. Public-fold witnesses must construct and check the actual transaction paying the chosen processor address, rather than type a successful receipt.",
+      "pause": 400
+    },
+    {
+      "text": "Open datum retains the five per-seed configuration fields: registrationCost, minimumTip, processTime, retractTime and bookingWidth. The first two are now unused metadata: no registration charge or bid floor follows from their old values. The immutable authenticated application configuration record still contains them; registration booking uses only the processing/reclaim durations and booking width to fix the clock. The deposit is authenticated through approved control and the registration approval, rather than inferred from a cost or tip field.",
+      "pause": 400
+    },
+    {
+      "text": "The three time phases stay. Processing-fold intervals end by the booked deadline; signed full owner-reclaim intervals start there and end by reclaim end; permissionless cleanup intervals start at reclaim end. Nonempty intervals make these phases disjoint. Owner reclaim returns the entire request ADA, deposit included. Cleanup returns exactly the committed deposit to the refund address and makes everything above it available to the cleaner; it does not return the old held-minus-declared-tip amount. Both exits burn the approval, donate nothing and read or spend no registry state. Fees require separate ordinary funding as declared by their balance premises.",
+      "pause": 400
+    },
+    {
+      "text": "A doomed registration has no early mismatch exit; it waits for these booked phases. Open datum never reads a registry root or verifies a trie proof. Singular independently checks whether a fold's key transition is allowed. Termination has no clock and only its exact-token-burn exit. No top-up path is introduced: willingness, actual fee funding and ledger output minimums remain explicit liveness limits, rather than consequences of a positive bid.",
+      "pause": 400
+    }
+  ],
+  "every-application-journey": [
+    {
+      "text": "Every application journey.",
+      "pause": 500
+    },
+    {
+      "text": "The constructor inventory is derived from accepted AppAction, including refused operations; create is its separate accepted genesis function. Current money flows follow NOTE-010. Comparisons name the accepted economic baseline and prior candidate directions separately. Changed outcomes are decided differences, never hidden behind narrowed equivalence premises.",
+      "pause": 400
+    },
+    {
+      "text": "Create retains an empty permanent registry and the immutable five-field per-seed application record, with no new treasury payment. Register with held twenty-three and deposit seven now puts seven in the holding and makes sixteen available to the folder, with no treasury donation; an old cost-thirteen/tip-three/carrier-seven request allocated thirteen to treasury and three to the folder. Update retains the same protected control/assets and deposit floor. At termination booking, deposit seven now goes to treasury, not the controller; a pending termination holding ten then makes all ten available at fold, rather than the old tip-two/treasury-eight split. Full owner reclaim still returns twenty-three. After expiry the new cleanup returns seven and makes sixteen available, rather than the old twenty/three split. These are explicit future producer/witness obligations; this prose is not executed behavior evidence.",
+      "pause": 400
+    }
+  ],
+  "every-rejection-ground-and-request-kind": [
+    {
+      "text": "Every rejection ground and request kind.",
+      "pause": 500
+    },
+    {
+      "text": "The tool derives both RejectReason constructors and both EconomicRequest constructors, checks each ground-function branch and reconciles their four-cell matrix. Every rejection-family field/refusal row must agree with this replacement. This is source/text consistency evidence only; compiled journey witnesses remain owed.",
+      "pause": 400
+    },
+    {
+      "text": "The operator withdrew rejection entirely (NOTE-008), then changed cleanup money (NOTE-010). A registration whose key is already active or terminal cannot fold, and there is no early state-reference cleanup. It waits for signed full reclaim or later deposit-only cleanup. Admission, signing and payouts deliberately differ from early mismatch rejection. The application never reads the root or a trie proof.",
+      "pause": 400
+    },
+    {
+      "text": "For a doomed registration booked at zero, processing/reclaim durations one hundred, actual ADA twenty-three and deposit seven: old mismatch rejection at [ten, eleven) could return twenty and allocate three without the owner signing. The replacement has no early exit. At [one hundred, one hundred one), signed reclaim returns twenty-three; at [two hundred, two hundred one), cleanup returns seven and makes sixteen available to its cleaner. There is no treasury donation. Both late time admission and the changed payout are stated, with ordinary fee funding separate. No early mismatch spend races a fold because no such path exists; the remaining time tests are disjoint.",
+      "pause": 400
+    }
+  ],
+  "state-fields-and-their-replacement-owners": [
+    {
+      "text": "State fields and their replacement owners.",
+      "pause": 500
+    },
+    {
+      "text": "The instrument derives every Config field, conservative lexical/whole-record use triple, transitive fold/exit refusal label and application action at the accepted source revision. Each source use has a candidate disposition and reason below; a matching table is textual inventory, not behavioral proof. Root remains authenticated in Singular. Application policy and full registry/active identities survive in parameters, structured preimages and observations. Unused absent/terminal witness kinds have no new mint path. Request tags and Singular pending pools retire.",
+      "pause": 400
+    },
+    {
+      "text": "The five per-seed parameters remain in an immutable application configuration output created with genuine registry genesis and authenticated by a distinct application-policy configuration-role asset. Its exact inline fields bind to that same output and complete registry. Registration booking references it, using processTime, retractTime and bookingWidth only. minimumTip and registrationCost are retained unused metadata: neither constrains a bid or imposes a cost. The approval commits the separate deposit; its exact amount reaches the new holding. The application never reads a registry root or trie proof.",
+      "pause": 400
+    }
+  ],
+  "fold-and-exit-checks": [
+    {
+      "text": "Fold and exit checks.",
+      "pause": 500
+    },
+    {
+      "text": "The tool takes the transitive definition-name closure of the accepted state/modify/admission/fold handlers and Lean fold, rejection and retraction judgements, including helpers that construct their reasons. Short-name ambiguity is conservatively retained. These 128 source-label rows classify the old mechanism; they do not assert that the new candidate executes it. Unlabelled Aiken expect/fail paths also matter: inline datum decoding, actual spent-input lookup, script credential, token selection, genesis-only minting, and refusal of destruction/migration/unrecognized redeemers are explicit state/authentication prerequisites in the new surface. Passing an old refusal string is no implementation proof.",
+      "pause": 400
+    },
+    {
+      "text": "Ledger conservation, complete observation and input-presence checks retain a shared external correspondence owner even where the table's application column records their request-side use. The new Singular law still checks its own observed exact assets, input/action pairing and continuation. A label covering both token placement and ADA splits those responsibilities: token and committed datum in Singular, deposit/payment in the application. No protected-rejection law in another lane is edited; composition must reconcile the changed guarantee explicitly.",
+      "pause": 400
+    }
+  ],
+  "reconcile-earlier-statements-without-rewriting-them": [
+    {
+      "text": "Reconcile earlier statements without rewriting them.",
+      "pause": 500
+    },
+    {
+      "text": "All earlier declaration text, statement digests and ledger rows remain unchanged. The disposition below is an overlay on those historical rows; future restatements use new names and new digests. Superseded means the new design stops relying on that statement, not that the old hypothetical proposition has been disproved. Neither the original identity family nor the held family is silently promoted to accepted law.",
+      "pause": 400
+    }
+  ],
+  "revision-bound-source-register": [
+    {
+      "text": "Revision-bound source register.",
+      "pause": 500
+    },
+    {
+      "text": "Each quote is the exact trimmed line at the accepted revision. The independent citation census and source-line comparison establish citation identity only. The use/check tables above are local source-register paths, not unverified web quotations.",
+      "pause": 400
+    }
+  ],
+  "evidence-and-limits": [
+    {
+      "text": "Evidence and limits.",
+      "pause": 500
+    },
+    {
+      "text": "The source inventory is a local tool; it makes no behavioral or hosted-CI claim. Its removal, quote and line-number controls must fail before it is cited as a complete textual classification. The statements checkpoint still owes compiled type digests, non-vacuous reachable antecedents, same-input single-guard falsifications, source-derived inversions, generic oracle replay, clean committed-head receipts and the packaged root/application/documentation checks. Exact CBOR/Plutus Data bytes, CDDL constructor numbers, real hashing, authenticated release/history observations, application inclusion and client implementation remain separate obligations.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "application-requests.md",
+    "sha256": "3d81bce7152f23b751db5540893ecf7f1d91c57e561d059be7bc13ddf5f69138"
+  }
+}

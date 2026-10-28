@@ -1,0 +1,146 @@
+{
+  "acceptedLaw": false,
+  "allocationSites": [
+    {
+      "site": "oldRegistrationTip",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.Money.Evidence.site_oldRegistrationTip_positive",
+      "mutant": "NoPin.ApplicationRequests.Money.Evidence.site_oldRegistrationTip_mutant"
+    },
+    {
+      "site": "oldRegistrationCarrier",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.Money.Evidence.site_oldRegistrationCarrier_positive",
+      "mutant": "NoPin.ApplicationRequests.Money.Evidence.site_oldRegistrationCarrier_mutant"
+    },
+    {
+      "site": "registrationResidual",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.Money.Evidence.site_registrationResidual_positive",
+      "mutant": "NoPin.ApplicationRequests.Money.Evidence.site_registrationResidual_mutant"
+    },
+    {
+      "site": "terminationResidual",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.Money.Evidence.site_terminationResidual_positive",
+      "mutant": "NoPin.ApplicationRequests.Money.Evidence.site_terminationResidual_mutant"
+    },
+    {
+      "site": "bookingTreasury",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.Money.Evidence.site_bookingTreasury_positive",
+      "mutant": "NoPin.ApplicationRequests.Money.Evidence.site_bookingTreasury_mutant"
+    },
+    {
+      "site": "cleanupRefund",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.Money.Evidence.site_cleanupRefund_positive",
+      "mutant": "NoPin.ApplicationRequests.Money.Evidence.site_cleanupRefund_mutant"
+    },
+    {
+      "site": "oldRefund",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.Money.Evidence.site_oldRefund_positive",
+      "mutant": "NoPin.ApplicationRequests.Money.Evidence.site_oldRefund_mutant"
+    },
+    {
+      "site": "oldUpdateSigner",
+      "siteCount": 1,
+      "positive": "NoPin.ApplicationRequests.Money.Evidence.site_oldUpdateSigner_positive",
+      "mutant": "NoPin.ApplicationRequests.Money.Evidence.site_oldUpdateSigner_mutant"
+    }
+  ],
+  "statements": [
+    {
+      "theorem": "NoPin.ApplicationRequests.Money.Statements.create_journey",
+      "selector": {
+        "application": "configurationShape"
+      },
+      "mutant": "NoPin.ApplicationRequests.Money.Evidence.create_journey_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Money.Statements.registration_booking_journey",
+      "selector": {
+        "application": "bookingSignature"
+      },
+      "mutant": "NoPin.ApplicationRequests.Money.Evidence.registration_booking_journey_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Money.Statements.registration_fold_journey",
+      "selector": {
+        "application": "registrationDelivery"
+      },
+      "mutant": "NoPin.ApplicationRequests.Money.Evidence.registration_fold_journey_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Money.Statements.update_journey",
+      "selector": {
+        "application": "updateControl"
+      },
+      "mutant": "NoPin.ApplicationRequests.Money.Evidence.update_journey_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Money.Statements.termination_booking_journey",
+      "selector": {
+        "application": "moneyTreasury"
+      },
+      "mutant": "NoPin.ApplicationRequests.Money.Evidence.termination_booking_journey_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Money.Statements.termination_fold_journey",
+      "selector": {
+        "application": "terminationActiveBurn"
+      },
+      "mutant": "NoPin.ApplicationRequests.Money.Evidence.termination_fold_journey_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Money.Statements.reclaim_journey",
+      "selector": {
+        "application": "moneyOutputs"
+      },
+      "mutant": "NoPin.ApplicationRequests.Money.Evidence.reclaim_journey_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Money.Statements.cleanup_journey",
+      "selector": {
+        "application": "moneyOutputs"
+      },
+      "mutant": "NoPin.ApplicationRequests.Money.Evidence.cleanup_journey_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Money.Statements.accepted_economic_allocations",
+      "selector": {
+        "allocation": "oldRegistrationTip"
+      },
+      "mutant": "NoPin.ApplicationRequests.Money.Evidence.accepted_economic_allocations_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Money.Statements.journey_allocations",
+      "selector": {
+        "allocation": "registrationResidual"
+      },
+      "mutant": "NoPin.ApplicationRequests.Money.Evidence.journey_allocations_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Money.Statements.accepted_update_authority",
+      "selector": {
+        "allocation": "oldUpdateSigner"
+      },
+      "mutant": "NoPin.ApplicationRequests.Money.Evidence.accepted_update_authority_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Money.Statements.update_both_models",
+      "selector": {
+        "application": "updateControl"
+      },
+      "mutant": "NoPin.ApplicationRequests.Money.Evidence.update_both_models_mutant"
+    },
+    {
+      "theorem": "NoPin.ApplicationRequests.Money.Statements.registration_fold_journey_holding_separated",
+      "selector": {
+        "holdingPayment": "includeHolding"
+      },
+      "mutant": "NoPin.ApplicationRequests.Money.Evidence.registration_fold_journey_holding_separated_mutant"
+    }
+  ]
+}

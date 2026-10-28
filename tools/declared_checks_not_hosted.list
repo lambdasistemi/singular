@@ -33,9 +33,8 @@
 #                                      command form `.#<attribute>` or the
 #                                      path of that file).
 .|default|app|tool: the local documentation site server (the same wrapper as docs-serve)|nix/docs.nix
-.|demo1-cli-attach|app|hosted under another name: the demo1-attach-part matrix job runs each part this composite serialises (demo1-cli-attach-takes through demo1-cli-attach-over-allowance), each with its own registry and node
-.|demo1-rehearsal|app|tool: one command records the whole Demo 1 play (release build, fresh devnet, one cast per scene, cast gate, chain assertions) for the presenter's rehearsal, never as evidence|nix/demo1-rehearsal.nix
 .|docs-serve|app|tool: the local documentation site server for reviewing the built site without publishing it|nix/docs.nix
+.|preimage-vectors|app|tool: writes the Aiken rows of the preimage byte vectors from the shared table; their freshness is enforced by the vectors-check job|nix/ci-apps.nix
 .|publish-docs-boundary-test|app|hosted under another name: the publication-boundary job runs the publication-boundary-controls app, which exercises this same recorded publisher (the unchanged nix/release.nix definition with gh replaced by a recorder) through its positive and mutated cases
 .|browser|check|hosted under another name: the browser job runs the browser-check app, the same checker body this check's sandbox executes
 .|coverage|check|hosted under another name: the coverage job runs the coverage-check app, the same checker body this check's sandbox executes
@@ -45,17 +44,8 @@
 .|release|check|hosted under another name: the release-check job runs the release-check app, the same checker body this check's sandbox executes
 .|simulator|check|hosted under another name: the simulator job runs the simulator-check app, the same checker body this check's sandbox executes
 offchain|cage-test-vectors|app|hosted under another name: the registry-test-vectors job builds checks.x86_64-linux.cage-test-vectors, whose sandbox executes this app's binary in its JSON mode
-offchain|connected-verifier|app|retired: classified unverified in offchain/nix/component-inventory.nix under #282 (imports the removed stateRepPolicyBytes accessor and expects the removed representative-policy blueprint; repair owned by #282, no required workflow consumes it)
-offchain|li01|app|retired: classified unverified in offchain/nix/component-inventory.nix under #172 (D6-retired Naming Your Assets journey; journey/li01/Main.hs sets removed CageConfig fields cfgRepPolicy/cfgConsumerPin)
-offchain|li-refusals|app|retired: classified unverified in offchain/nix/component-inventory.nix under #172 (D6-retired Naming Your Assets journey; journey/li-refusals/Main.hs references identifiers removed by #157)
-offchain|naming-rows|app|retired: classified unverified in offchain/nix/component-inventory.nix under #172 (D6-retired Naming Your Assets journey, the lmlc runner; retired by the current-required-use criterion, no required consumer)
-offchain|recovery-rows|app|retired: classified unverified in offchain/nix/component-inventory.nix under #172 (D6-retired Naming Your Assets journey; journey/recovery/Main.hs imports registerConsumerImpl, removed by 9cba521)
-offchain|register-rows|app|retired: classified unverified in offchain/nix/component-inventory.nix under #283 (not on the D6 retired list; #283 owns its migration or retirement; journey/register/Main.hs imports registerConsumerImpl, removed by 9cba521)
-offchain|repair-rows|app|retired: classified unverified in offchain/nix/component-inventory.nix under #172 (D6-retired Naming Your Assets journey; journey/repair/Main.hs imports registerConsumerImpl, removed by 9cba521)
-offchain|retirement-rows|app|retired: classified unverified in offchain/nix/component-inventory.nix under #172 (D6-retired Naming Your Assets journey; journey/retirement/Main.hs imports registerConsumerImpl, removed by 9cba521)
-offchain|retirement-verify|app|retired: classified unverified in offchain/nix/component-inventory.nix under #172 (D6-retired retained exhibit of the retirement journey; retired by the current-required-use criterion, no required consumer)
-offchain|singular|app|hosted under another name: the demo1-archive job runs this packaged command line from the extracted release archive (the archive assembly builds ./offchain#singular, this app's program, and the journey drives it as separate singular processes)
-offchain|cage-tests|check|hosted under another name: the journey job's focused off-chain suite step runs the cage-tests app, the same wrapped test binary this check executes in its sandbox
+offchain|singular|app|hosted under another name: the release-artifacts job builds this ordinary command from the release archive and the accepting verify-release step drives it; the no-pin-registration-journey job also drives the ordinary command through the root flake
+offchain|cage-tests|check|hosted under another name: the cage-tests job's off-chain suite step runs the cage-tests app, the same wrapped test binary this check executes in its sandbox
 offchain|cage-tests-e2e|check|hosted under another name: the e2e-part matrix jobs run .#cage-tests-e2e, this same wrapped derivation, one lane per job
 offchain|library|check|hosted under another name: the offchain-component-build job builds .#component-build, whose member paths include this library derivation (build only: no test executes)
 offchain|lint|check|hosted under another name: the offchain-lint job runs .#lint, this same writeShellApplication derivation (apps.lint is checks.lint)
@@ -67,12 +57,8 @@ conformance|coverage-gate-snapshot|check|hosted under another name: the coverage
 conformance|coverage-gate-tests|check|hosted under another name: the coverage-gate job's gate-test-suite step builds packages.coverageGateTests, this same derivation
 conformance|format-check|check|hosted under another name: the format-check job runs the format-check app, the same body this check's sandbox executes
 conformance|hlint-check|check|hosted under another name: the format-check job's hlint step runs the hlint-check app, the same body this check's sandbox executes
-applications/open-datum/offchain|open-datum|app|hosted under another name: the registry-two-actors-replay-fault job builds and drives this application CLI (nix build of applications/open-datum/offchain#open-datum is the control's setup)
-applications/open-datum/offchain|singular-negative|app|hosted under another name: the negative-host-ordinary, negative-host-mutant and negative-host-node-free-controls jobs exercise this instrumented host binary, built from this flake by the negative-host apps
+applications/open-datum/offchain|open-datum|app|hosted under another name: the release-artifacts job builds this ordinary command from the release archive and the accepting verify-release step drives it; the no-pin-registration-journey job also drives the ordinary command through the root flake
 applications/open-datum/offchain|lint|check|hosted under another name: the open-datum-component-build job runs .#lint, this same writeShellApplication derivation (apps.lint is checks.lint)
 applications/open-datum/offchain|open-datum-tests|check|hosted under another name: the open-datum-tests job runs the open-datum-tests app, the same fixture-staged runner this check executes in its sandbox
-applications/keri-stub/offchain|keri-stub|app|hosted under another name: the keri-stub job builds this application CLI (keri-stub-check builds applications/keri-stub/offchain#keri-stub and drives it on a devnet)
-applications/keri-stub/offchain|keri-stub-tests|check|hosted under another name: the keri-stub-tests job runs the keri-stub-tests app, the same runner this check executes in its sandbox
-applications/keri-stub/offchain|lint|check|hosted under another name: the keri-stub-component-build job runs .#lint, this same derivation (apps.lint is checks.lint)
 applications/open-datum/onchain|open-datum-aiken-tests|app|hosted under another name: the application-aiken-suite job's nix flake check builds checks.open-datum-aiken-tests, which executes this app's runner inside the check derivation
 .|linux-artifact-smoke|app|hosted under another name: the bundle job (its Linux leg) and the linux-packages job run it through the dev-assets linux-release action, which calls nix run .#linux-artifact-smoke on the packages it builds

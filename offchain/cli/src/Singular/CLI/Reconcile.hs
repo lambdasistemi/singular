@@ -90,6 +90,11 @@ import Singular.CLI.Live
     , trieLeaf
     , txInText
     )
+import Singular.CLI.Promise
+    ( describePromise
+    , parsePromise
+    , promiseKept
+    )
 import Singular.CLI.Proof (AuthError, Leaf (..))
 import Singular.CLI.Receipt
     ( BundleState (..)
@@ -694,6 +699,10 @@ observeVerdicts command p out0 readKey = case foldTransitions p of
                             <> ": the funding output is live, ada only, at the payer's address"
                         )
                     )
+        Just (tag, rest)
+            | Just promise <- parsePromise tag rest
+            , promiseKept promise out ->
+                pure (Just (command <> ": " <> describePromise promise))
         Just _
             | Just expect <- journalExpect entry ->
                 withKey entry expect keyHolds

@@ -1,0 +1,32 @@
+{
+  "functions-for-updating-a-holding-and-terminating-its-key-on-the-proved-design": [
+    {
+      "text": "Functions for updating a holding and terminating its key on the proved design.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 743. This page lists only new and changed signatures, with explicit argument names and types. Bodies are the commit owner's. Types refer to the data model and to issue 742's data model.",
+      "pause": 400
+    }
+  ],
+  "on-chain": [
+    {
+      "text": "On-chain.",
+      "pause": 500
+    }
+  ],
+  "off-chain": [
+    {
+      "text": "Off-chain.",
+      "pause": 500
+    },
+    {
+      "text": "Where the aligned Lean models or issue 742's builders fix a different argument set, the mandate is versioned before the slice that implements the function starts.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "4eea0870dd8012ee7bfdf8c6f12ce1bc99e532be2aaeaef2b46955f9f015a217"
+  }
+}

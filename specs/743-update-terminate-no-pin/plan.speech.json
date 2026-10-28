@@ -1,0 +1,126 @@
+{
+  "plan-for-updating-a-holding-and-terminating-its-key-on-the-proved-design": [
+    {
+      "text": "Plan for updating a holding and terminating its key on the proved design.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 743. This page is for the people who implement and review the pull requests. It binds the model, the rulings, the order against issue 742, the pull requests and their slices, and the seats. The story and the requirements are in the specification; the checks are in the gate; every place a slice can break is in the consumers page.",
+      "pause": 400
+    }
+  ],
+  "lane": [
+    {
+      "text": "Lane.",
+      "pause": 500
+    }
+  ],
+  "lean-binding": [
+    {
+      "text": "Lean binding.",
+      "pause": 500
+    },
+    {
+      "text": "Lean is the authority. The code takes the models' vocabulary: Preimage.terminationApproval, Change.terminate, bookTermination, liveUpdate, terminationFold, terminationShape, liveShape, requiredTreasury.",
+      "pause": 400
+    },
+    {
+      "text": "A history statement quantifies over every reachable world, so its executable check is a generated sequence of accepted transactions against the real validators, not one example; the check states the inputs it covers. A statement the aligned models rename or restate is rebound by name; one whose meaning the code cannot meet is a question to the epic owner, never a quiet change of the check. The open-datum binding moves to the epic branch revision when issue 742's validator pull request lands there, with no change of statement.",
+      "pause": 400
+    }
+  ],
+  "rulings-in-force": [
+    {
+      "text": "Rulings in force.",
+      "pause": 500
+    },
+    {
+      "text": "From the epic runtime root's ruling records and issue 741's decisions page, as they bear on this ticket:",
+      "pause": 400
+    },
+    {
+      "text": "Application-held termination (2026-10-23): the termination request and the token stay at the application's script; the application does not need to know Singular's addresses; the request is released by the exact burn of its token.",
+      "pause": 300
+    },
+    {
+      "text": "Termination request shape (2026-10-23): one output holding the active token and one termination approval, with an empty datum; the approval burn is open; booking is an application operation only, Singular mints nothing and checks nothing then; Singular's only moment is the fold.",
+      "pause": 300
+    },
+    {
+      "text": "Money (2026-10-23): the whole value of a termination request is the folder's; the deposit is open datum's treasury share and goes to the treasury when the holding is released, at termination booking; Singular has no treasury and routes no money.",
+      "pause": 300
+    },
+    {
+      "text": "Lifecycle in the application (2026-10-23): Singular has no request script and no witness scripts.",
+      "pause": 300
+    },
+    {
+      "text": "Trie (operator, 2026-10-25): the new line keeps the current trie library; the termination proof uses it.",
+      "pause": 300
+    },
+    {
+      "text": "Placement (issue 742, answer A-001): the new line was added beside the current one; this ticket removes the current line and moves the new commands onto the established names.",
+      "pause": 300
+    },
+    {
+      "text": "Fold command (issue 742, commands answer A-001): the fold is shared library command code hosted by open-datum as its state fold command; this ticket extends it to termination requests.",
+      "pause": 300
+    },
+    {
+      "text": "Publication (operator, 2026-10-26): with the termination actions the request script no longer fits beside the state script in one transaction under the ledger maximum; the first registry's create publishes the two scripts in two transactions, then creates the registry; a rerun publishes only what is missing.",
+      "pause": 300
+    },
+    {
+      "text": "Staffing (operator, 2026-10-25): as issue 742's team: Claude Opus 5.5 high ticket owner, Claude Sonnet 5.5 xhigh commit owner, Muse xhigh auditor. No other seats.",
+      "pause": 300
+    }
+  ],
+  "order-against-issue-742": [
+    {
+      "text": "Order against issue 742.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 742's team still changes the Singular fold (the registration absence check, pull request 1), builds the commands (pull request 3) and the registration journey (pull request 4). Each file below has one owner at a time.",
+      "pause": 400
+    }
+  ],
+  "pull-requests-and-slices": [
+    {
+      "text": "Pull requests and slices.",
+      "pause": 500
+    },
+    {
+      "text": "Four pull requests in singular, merged in order. Each slice finishes in well under two hours with its own RED evidence and checkpoints; the commit owner may cut a slice smaller, never merge two.",
+      "pause": 400
+    },
+    {
+      "text": "Pull request 1 is opened as two pull requests, so each merges into the epic branch as soon as it is complete: the Singular chain first, then the open-datum chain stacked on it.",
+      "pause": 400
+    }
+  ],
+  "seats-and-briefs": [
+    {
+      "text": "Seats and briefs.",
+      "pause": 500
+    },
+    {
+      "text": "The commit owner and the auditor are seated together, with the first slice of pull request 1, in panes of this window. The auditor stays for the ticket, mute toward the commit owner; every message between them goes through the ticket owner. Each commit-owner brief is one whole slice with its terminal condition: green (every checkpoint requested), blocked (a question filed), or at capacity (a handoff written). The push of each pull request waits for every checkpoint of its slices to be approved.",
+      "pause": 400
+    }
+  ],
+  "removal-decisions": [
+    {
+      "text": "Removal decisions.",
+      "pause": 500
+    },
+    {
+      "text": "The census in the consumers page shows the current line in every layer, with three places where the new line still stands on it. Pull request 4 starts only after these are ruled; pull requests 1 to 3 do not depend on them. Each is a proposal with its reason.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "98f26946f43e847bcab4dc388a524fd582f6381584078daa5fb2f41b244c456c"
+  }
+}

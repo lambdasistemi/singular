@@ -9,7 +9,7 @@
       "pause": 400
     },
     {
-      "text": "As a registry operator, you want to use create, fold, reclaim, reject, inspect and describe through singular registry, and create, insert, update, terminate, fold and inspect through open-datum, with a Koios API on your chosen network. You supply the API settings and pinned time material; each write is signed from your vault, or by a signer elsewhere through a bundle file (see Signing a write elsewhere, or from your vault). Commands read raw facts through one logical session, build and evaluate locally, submit signed transactions, and preserve recovery evidence in the registry journal.",
+      "text": "As a registry operator, you create a registry through singular state create and sign and submit bundles through singular wallet and singular submit. You use the state, registration and holding command groups through open-datum, with a Koios API on your chosen network. The commands that create a registry and book, fold, reclaim and clean up a registration are described in create a registry and register keys on the proved design. You supply the API settings and pinned time material; each write is signed from your vault, or by a signer elsewhere through a bundle file (see Signing a write elsewhere, or from your vault). Commands read raw facts through one logical session, build and evaluate locally, submit signed transactions, and preserve recovery evidence in the registry journal.",
       "pause": 400
     },
     {
@@ -45,7 +45,7 @@
       "pause": 500
     },
     {
-      "text": "The URL, network magic and one signer (the signing key, the vault, or on singular create, singular fold, singular reclaim, singular reject, open-datum create, open-datum insert, open-datum update, open-datum terminate and open-datum fold an address with its bundle file) travel together on a write: naming only some of them is refused as partially configured, and so is a write that names none, because singular never starts a node of its own — a registry booted on a chain that dies with the process could not be attached to again. The refusal says which part is missing and, for the signer, the three ways to name one: the vault first, then an address with its bundle file, and last the key file, which is legacy. The settings that do not change from one command to the next (the node, the contracts, the registry, the token file, the narration and the vault) can be given once, as the next section says; the key file, an external signer and everything else a command does are typed on the command. Public environment configuration lists the variables and the phase-log path.",
+      "text": "The URL, network magic and one signer (a key file, a vault, or an address with its bundle file) travel together on a write: naming only some of them is refused as partially configured, and so is a write that names none, because singular never starts a node of its own — a registry booted on a chain that dies with the process could not be attached to again. The refusal says which part is missing and, for the signer, the three ways to name one: the vault first, then an address with its bundle file, and last the key file, which is legacy. The settings that do not change from one command to the next (the node, the contracts, the registry, the token file, the narration and the vault) can be given once, as the next section says; the key file, an external signer and everything else a command does are typed on the command. Public environment configuration lists the variables and the phase-log path.",
       "pause": 400
     },
     {
@@ -67,7 +67,7 @@
       "pause": 400
     },
     {
-      "text": "The config file is one JSON object. Both programs read the same file: it is singular.json in the folder you run the command from, or the file named by --config FILE or by the variable SINGULAR_CONFIG. With a file like this in your demo folder, open-datum insert --key alice --payload payload.json --vault alice.vault is a whole command, and it does exactly what the same command with the six flags does:",
+      "text": "The config file is one JSON object. Both programs read the same file: it is singular.json in the folder you run the command from, or the file named by --config FILE or by the variable SINGULAR_CONFIG. With a file like this in your demo folder, open-datum registration book --key alice --payload payload.json --vault alice.vault is a whole command, and it does exactly what the same command with the six flags does:",
       "pause": 400
     },
     {
@@ -99,55 +99,13 @@
       "pause": 400
     }
   ],
-  "the-registrys-name-kept-by-create": [
-    {
-      "text": "The registry's name kept by create.",
-      "pause": 500
-    },
-    {
-      "text": "As Alice, I create a registry and act on it next, and I do not want to copy its state token out of the receipt. I add the switch --save-state-token to create, and the command keeps the name for me. The example below creates a registry on the development network and asks for its name to be kept.",
-      "pause": 400
-    },
-    {
-      "text": "When the create succeeds, the command writes the new registry's state token into the settings file as the key state-token, and says on standard error which file now holds it. open-datum create takes the same switch. The next commands find the state token there, and the other settings in the same file when it already holds them, as in the section above. With a file that holds the chain and the contracts, singular registry fold --vault alice.vault and open-datum insert --key alice --payload payload.json --vault alice.vault name no registry on their line.",
-      "pause": 400
-    },
-    {
-      "text": "The file is the one the other commands read: the file named by --config, else the one named by SINGULAR_CONFIG, else singular.json in the folder the command runs from. When none of the three exists as a file, create makes singular.json there, holding the one key. Every other key keeps its value and its kind, text or number, and an existing state-token is replaced. The file is rewritten as one indented JSON object, so its key order and spacing may change. The new file replaces the old one in a single step and keeps the old file's permissions, so a failure leaves the old file or the new one and never half of each. The receipt is the same with the switch and without it.",
-      "pause": 400
-    },
-    {
-      "text": "What you see when something is wrong:",
-      "pause": 400
-    },
-    {
-      "text": "A preview creates nothing, and an external signer's registry does not exist until its bundle is submitted, so neither has a name to keep. With --preview, or with --wallet-address and --bundle, the switch is refused in one sentence, with exit status 2, before a wallet is opened or the chain is read.",
-      "pause": 300
-    },
-    {
-      "text": "A settings file that exists and cannot be written, or a missing one in a folder that cannot be written, is refused with exit status 2, naming the file and the cause, before a wallet is opened or the chain is read. Nothing is spent.",
-      "pause": 300
-    },
-    {
-      "text": "A create whose outcome is not success writes nothing: its receipt names whatever state there is.",
-      "pause": 300
-    },
-    {
-      "text": "If the write fails after the registry exists, one sentence on standard error says so, names the file and the cause, and says the state token is in the receipt. The exit status stays the create's own.",
-      "pause": 300
-    },
-    {
-      "text": "The switch has no variable and no key of the config file, because it is an action of one command and not a setting that stands. Every other command refuses it by name.",
-      "pause": 300
-    }
-  ],
   "the-vault-from-the-environment-or-the-file": [
     {
       "text": "The vault from the environment or the file.",
       "pause": 500
     },
     {
-      "text": "As an operator who signs with a vault, you can name it once: SINGULAR_VAULT=alice.vault, or \"vault\": \"alice.vault\" in the config file, and open-datum insert --key alice --payload payload.json signs from it. The passphrase is not part of this: it stays on the terminal prompt, or on the descriptor --passphrase-fd names on the command, with a vault from either source just as with a typed one. A development network can also take it from the environment, as the next section says.",
+      "text": "As an operator who signs with a vault, you can name it once: SINGULAR_VAULT=alice.vault, or \"vault\": \"alice.vault\" in the config file, and open-datum registration book --key alice --payload payload.json signs from it. The passphrase is not part of this: it stays on the terminal prompt, or on the descriptor --passphrase-fd names on the command, with a vault from either source just as with a typed one. A development network can also take it from the environment, as the next section says.",
       "pause": 400
     },
     {
@@ -155,7 +113,7 @@
       "pause": 400
     },
     {
-      "text": "For a vault from the file, the sentence names the key and the file (the \"vault\" key of singular.json) and says to remove the key. A preview signs nothing, so it takes no vault from the environment or the file, and --preview --wallet-address ADDR means the same with or without one. The wallet commands wallet create, wallet address and wallet sign take the vault from either source too: wallet create still refuses a path that is taken before it asks for a passphrase.",
+      "text": "For a vault from the file, the sentence names the key and the file (the \"vault\" key of singular.json) and says to remove the key. The wallet commands wallet create, wallet address and wallet sign take the vault from either source too: wallet create still refuses a path that is taken before it asks for a passphrase.",
       "pause": 400
     }
   ],
@@ -225,7 +183,7 @@
       "pause": 400
     },
     {
-      "text": "The writer's side is a singular registry create, fold, reject or reclaim run, or an open-datum create, insert, update, terminate or fold run, that names --wallet-address and --bundle in place of the signing key: it builds its whole run as one bundle in build order, signs and sends nothing, states its own fields under expected in its receipt, and exits with status 19, waiting-for-signatures.",
+      "text": "The writer's side is a singular state create run, or an open-datum state create, insert, update, terminate or fold run, that names --wallet-address and --bundle in place of the signing key: it builds its whole run as one bundle in build order, signs and sends nothing, states its own fields under expected in its receipt, and exits with status 19, waiting-for-signatures.",
       "pause": 400
     },
     {
@@ -267,245 +225,23 @@
       "pause": 400
     }
   ],
-  "signing-a-write-elsewhere-or-from-your-vault": [
+  "booking-and-folding": [
     {
-      "text": "Signing a write elsewhere, or from your vault.",
+      "text": "Booking and folding.",
       "pause": 500
     },
     {
-      "text": "As Bob, I keep my key away from the machine that talks to the node. I run a write — singular registry create, fold, reject or reclaim — naming my address and a new bundle file in place of the signing key. The command builds its whole run as one bundle of unsigned transactions, signs and sends nothing, and exits with status 19, waiting-for-signatures. I sign the bundle with singular wallet sign and send it with singular submit.",
-      "pause": 400
-    },
-    {
-      "text": "As Alice, I name my vault instead. I type my passphrase once, or hand it over through a descriptor in a script. The command builds the same bundle, signs every transaction from the vault, and sends them in order as singular submit does. Its receipt reads what the chain shows.",
-      "pause": 400
-    },
-    {
-      "text": "A write takes exactly one signer:",
-      "pause": 400
-    },
-    {
-      "text": "The address must pay a key: a script address is refused, naming it. A vault, an address and a key file are three signers, and naming two of them is refused. A passphrase descriptor without a vault is refused too. A wrong passphrase or an unreadable vault is refused, naming the vault, before anything else is read or written. No receipt, journal line, trace or error carries the passphrase or a key byte.",
+      "text": "As a controller, use the registry command guide to book registrations, update holdings and book permanent termination. The fold takes explicit pending references and can be run by another wallet from public chain inputs. Its command is open-datum state fold.",
       "pause": 400
     }
   ],
-  "what-each-receipt-says": [
+  "naming-the-registry": [
     {
-      "text": "What each receipt says.",
+      "text": "Naming the registry.",
       "pause": 500
     },
     {
-      "text": "Your vault: the outcome of the submission, the bundle, and per transaction the submit core's chain facts under submissions. When every transaction has landed, the command's fields are stated as fact. Otherwise they stay under expected. When the node refuses a transaction, the run ends as a ledger refusal, and wentThrough names the transactions that landed before it.",
-      "pause": 300
-    },
-    {
-      "text": "Signing elsewhere: the outcome waiting-for-signatures and the bundle. That is its hash, the written and the saved path, the signer, and per transaction its step, identity, deadline and effect lines. The command's own fields sit under expected, because nothing has landed yet.",
-      "pause": 300
-    },
-    {
-      "text": "A key file (being retired): the receipt it has always printed.",
-      "pause": 300
-    },
-    {
-      "text": "Status 19 also ends any write that a pending bundle stops before it builds anything. Its receipt names that bundle under pendingBundle: its hash, its saved path, and the transactions still awaited with their deadlines. Recovering a registry command follows a bundle from there.",
-      "pause": 400
-    },
-    {
-      "text": "A pending bundle stops the next write of the same registry by the same wallet only. A write in another registry, a create of a new registry included, is not stopped, and it may spend a wallet output that the pending bundle needs.",
-      "pause": 400
-    },
-    {
-      "text": "A bundle whose transactions carry a deadline then dies by expiry, and running the command again rebuilds it. A bundle signed elsewhere whose transactions carry none, an open-datum insert, update or terminate without --fold and a create, never expires: if it can never land, it keeps stopping the next write of that registry by that wallet at status 19. The way out today is, for a create, a create that names another output with --seed, as When a bundle waits for signatures says; for the others, --state-dir naming another state directory, which starts a fresh journal for that registry and wallet.",
-      "pause": 400
-    }
-  ],
-  "how-long-a-bundle-can-wait": [
-    {
-      "text": "How long a bundle can wait.",
-      "pause": 500
-    },
-    {
-      "text": "A bundle can be sent until the first deadline of its transactions. The builders' validity bounds are unchanged by signing elsewhere. Each command's builder may choose at most this deadline:",
-      "pause": 400
-    },
-    {
-      "text": "A builder can choose an earlier bound. It takes a near one when the end of a window cannot be translated to a slot yet, and it never goes past the ledger's horizon. So the deadline a transaction actually carries is the one the receipt prints for it, deadline per transaction, and it can be only seconds or minutes after the build: sign and send before that printed deadline.",
-      "pause": 400
-    },
-    {
-      "text": "A pending create bundle blocks its own state directory only, which is keyed by the network, the token it will mint and the wallet. A second create from the same wallet and seed waits for it. So does one without --seed while the same output is unspent, because it picks that output again. A create naming another output with --seed makes a different registry, which nothing blocks, and the pending create's journal stays as a record.",
-      "pause": 400
-    }
-  ],
-  "naming-the-registry-by-its-address": [
-    {
-      "text": "Naming the registry by its address.",
-      "pause": 500
-    },
-    {
-      "text": "As Bob, I am told about a registry in one message, and I want to act on it without asking for a state token, a network or any file. Carol, who created the registry, copies the registry line of her create receipt into the message: a word that starts with singular_preprod1. I give that word to --registry, or to the variable SINGULAR_REGISTRY, or to the key registry of my settings file, and every command that takes a registry finds it from that word alone. The word says which network the registry is on and which registry it is, so I type no --state-token and no --network-magic.",
-      "pause": 400
-    },
-    {
-      "text": "The diagram follows the address from the creator to the reader. The command reads the word before it does anything else, so a word that is wrong never reaches the chain, a wallet or a file.",
-      "pause": 400
-    }
-  ],
-  "what-the-address-is": [
-    {
-      "text": "What the address is.",
-      "pause": 500
-    },
-    {
-      "text": "The address is the registry's NFT, the one asset that is the registry on chain, written as one bech32 word. The word has four parts, and its body is the state token and nothing else:",
-      "pause": 400
-    },
-    {
-      "text": "The body of the word is the 28 bytes of the policy followed by the 32 bytes of the name, which is exactly the state token that POLICY.NAME spells in hex; the address is that token with its network and a checksum. The checksum is the original bech32 one, and the word is printed in lower case. It is read in all lower case or all upper case, never in a mixture. The receipt of create prints the address as registry, the state token as stateToken, unchanged, and the CIP-14 fingerprint of the same asset as fingerprint: the short name that wallets and explorers show for it. On success one line on standard error says the three.",
-      "pause": 400
-    },
-    {
-      "text": "The prefix names the network. Four networks have one:",
-      "pause": 400
-    },
-    {
-      "text": "On any other network a create still works, prints null as registry, keeps the fingerprint and says on standard error that the network has no prefix. The address says which network to use, and nothing else about it: the Koios URL and the pinned time directory are still given, and the network the address names is the network every later step uses, exactly as --network-magic would be.",
-      "pause": 400
-    },
-    {
-      "text": "The address does not say what the registry is for. The blueprint does. singular registry describe --blueprint plutus.json --registry ADDRESS with a Koios URL prints the page, and its release section names the blueprint's title and the application script the registry pins, which is the application that decides what its keys hold. The same page and the receipt of inspect carry the address, the state token and the fingerprint of the registry they read.",
-      "pause": 400
-    }
-  ],
-  "reading-an-address": [
-    {
-      "text": "Reading an address.",
-      "pause": 500
-    },
-    {
-      "text": "A command checks the word in a fixed order and says which cause it is, with exit status 2, before it reads the chain, opens a vault or reads any file but the settings. A word that fails an earlier check is never told a later cause.",
-      "pause": 400
-    },
-    {
-      "text": "The diagram reads from the top: each question is asked only when the one before it passed. A value that is not an address is told so with one more clause: --registry once named the state directory, which is --state-dir now.",
-      "pause": 400
-    },
-    {
-      "text": "A --state-token or a --network-magic beside the address is checked against it, from wherever each came: the flag, the variable or the key of the settings file. Values that agree are accepted. A state token that names another registry, or a network magic that names another network, is refused in one sentence naming both, so a stale state-token key of the settings file next to a new registry key is refused and the sentence says what disagrees. A command given neither a registry nor a state token is refused as it always was.",
-      "pause": 400
-    }
-  ],
-  "a-registry-made-before-addresses-were-printed": [
-    {
-      "text": "A registry made before addresses were printed.",
-      "pause": 500
-    },
-    {
-      "text": "A registry made earlier has a state token and a network, and no address was printed for it. singular registry address makes one from those two. It reads no chain and needs no provider.",
-      "pause": 400
-    },
-    {
-      "text": "It prints one receipt with the address, the state token, the fingerprint and the network magic. Given an address, singular registry address --registry ADDRESS shows what the address holds. A state token that is not one, a state token with no network magic and a network magic that has no prefix are each refused in one sentence, with exit status 2.",
-      "pause": 400
-    }
-  ],
-  "a-registry-of-other-contracts": [
-    {
-      "text": "A registry of other contracts.",
-      "pause": 500
-    },
-    {
-      "text": "A command is given one blueprint, and a blueprint has one state contract. The policy of the registry is the hash of the state contract that made it, so a registry whose policy is another hash was made by other contracts, which this program cannot run against. That has always been refused as state-token-foreign-release, before any chain read. The refusal now says which contracts made the registry.",
-      "pause": 400
-    },
-    {
-      "text": "Every release ships a table from the hash of Singular's state contract to the releases that carry it, one committed file, data/contracts/state-contracts.json, packaged with the program and shipped in every release bundle. It was filled from the on-chain archive each release published, by the script tools/fill_contract_table.sh, which takes the hash from the blueprint the way the programs do and checks it against the hash the blueprint states. The file names every release it leaves out, with the reason; the first release has no on-chain archive. What the refusal says depends on the table:",
-      "pause": 400
-    },
-    {
-      "text": "A pull request that changes the contracts adds their row with no release yet, and the release that first carries them adds its tag to that row. A check of the repository fails when the table lacks the hash of the blueprint being built, so the table cannot fall behind the contracts.",
-      "pause": 400
-    }
-  ],
-  "what-i-do-with-the-address": [
-    {
-      "text": "What I do with the address.",
-      "pause": 500
-    },
-    {
-      "text": "I keep the address with the registry's name, I send it to whoever should act on it, and I give it to --registry instead of the state token and the network. --save-state-token still keeps the state token in the settings file as the key state-token, and the commands after a create find it there as before. A registry named by the state token and the network works exactly as it did.",
-      "pause": 400
-    }
-  ],
-  "reading-one-key-from-the-address": [
-    {
-      "text": "Reading one key from the address.",
-      "pause": 500
-    },
-    {
-      "text": "As Bob, I have the address and the name of a key, and I want to know whether the key is active and which output holds it, from an empty directory, without a file from anyone. I run inspect --key KEY --registry ADDRESS and the answer comes from the chain: the command asks the provider who holds the key's witness token and prints what it found.",
-      "pause": 400
-    },
-    {
-      "text": "The diagram shows the proof first and the question to the provider after it, so a registry whose history does not chain to its root is refused before the provider is asked who holds a token. A key that is active has a witness token: an asset of the registry's active witness policy whose name is the key's bytes. A registration mints it and a termination burns it. The policy belongs to this registry. The command works out the asset to ask for from the registry the address names and from the key, and asks for it by asset, so it does not list every output at the application's address to find the key's output. One function in the library makes that asset from the registry and the key, and it is the only place that does so for this read.",
-      "pause": 400
-    },
-    {
-      "text": "For a key the registry has recorded, active or terminal, the receipt of inspect carries a field witness with one entry, active. It has policy, the policy as hex; assetName, the key's bytes as hex; and holders, the references of the outputs that hold the asset.",
-      "pause": 400
-    },
-    {
-      "text": "For a key the registry never recorded the receipt has no witness field and is what it always was.",
-      "pause": 400
-    },
-    {
-      "text": "The witness finds the key's output; it does not say whether the key is active. That is still proved: the leaf is checked against the registry's root by replaying the registry's public history, as before, and a witness that disagrees with the proof is refused as proof-inconsistent, as a holding that disagreed with the proof was. The replay is the cost of the proof and it is not made to find the output. A directory that holds nothing reads the same as any other, because inspect without --wallet-address keeps no state.",
-      "pause": 400
-    },
-    {
-      "text": "One reader still lists the application's outputs. singular registry inspect prints every output at the application's address in its rawDatums, because the program knows no application and shows them all, so it reads that listing and the witness. open-datum inspect prints only the key's output and reads no listing. keri-stub status reads the listing too, because its rule counts an output that carries the key's datum whether or not it holds the key's token, and an output without the token has to be seen to be counted.",
-      "pause": 400
-    }
-  ],
-  "naming-the-registry-by-its-state-token": [
-    {
-      "text": "Naming the registry by its state token.",
-      "pause": 500
-    },
-    {
-      "text": "A registry can also be named by its state token, with its network, as it always could; its address holds the same token, and says the network too.",
-      "pause": 400
-    },
-    {
-      "text": "As Carol, the creator, I run create from an empty directory. Its receipt names stateToken, the registry's state token as POLICY.NAME in hex, and describeCommand, the working singular registry describe line built from the arguments the create ran with: the blueprint as given, the new state token, the provider and network settings, and the network time directory when given. It names no wallet key and no credential file. Run it as printed to read the registry page. I publish nothing else and keep no file anyone else needs: create writes no identity file, and the pending identity it records before its first submission is removed once it finishes. When I add --save-state-token, a create that succeeds also keeps the state token in my settings file, as the registry's name kept by create says.",
-      "pause": 400
-    },
-    {
-      "text": "As Bob, I start from an empty directory with the release, my wallet and a Koios URL, and give every command the state token. The command derives the registry from the token and the blueprint and checks it against the chain before it builds anything, refusing by name, in this order:",
-      "pause": 400
-    },
-    {
-      "text": "As Bob, handed the address of a registry that Mallory created with a policy of her own pinned as its active policy, I am refused before anything about the registry is shown or built, and the refusal names the pinned policy that differs. Every command that names a registry runs this comparison first, the reads included: inspect and describe do, and so does the report of an interrupted create, which resolves the state token before it prints the identity the create recorded. A registry that fails the comparison is refused and the report is not printed; the report goes on for a registry that passes and for a token the chain has no record of, where no registry exists to be shown. singular submit runs it for the registry a bundle names, as submitting a signed bundle says.",
-      "pause": 400
-    },
-    {
-      "text": "The comparison is total for the application that runs it. singular is told the registry and the release and not the application, so it cannot derive the application policy: it takes it from the datum, compares the other three, and says so, once, in every receipt that shows registry content: the field applicationPin reads not-checked-against-any-blueprint. open-datum knows its own script, so it derives the application policy too and compares all four; its receipts read compared. It derives two application policies, the open one and the closed one, and learns which kind of registry it has only from the comparison: the registry's application policy must be one of the two, and a registry whose application policy is neither is refused naming application, before the command says anything about the registry, even that it is closed. A create reads back the state datum its boot made and compares its two pins with the ones it built, and reports a partial outcome naming the field when they differ.",
-      "pause": 400
-    },
-    {
-      "text": "The pins are compared when the command resolves its registry, and not again inside the same run. That is enough because every fold preserves them on chain: the state contract refuses a fold that alters a pinned policy, so the state output the command reads again later in its run carries the pins already accepted. open-datum makes one extra comparison before the command's own resolution, to choose between its two derivations.",
-      "pause": 400
-    },
-    {
-      "text": "A program that is not one of ours must run the same comparison before it shows what a registry holds: Singular.Registry.StateToken.resolveRegistry does it, with a worked example in the off-chain API reference, and the protocol page says why.",
-      "pause": 400
-    },
-    {
-      "text": "Each command then looks up only the reference scripts its own transactions run, by hash: the provider's answer first, then your own wallet's outputs, which are read only when the provider has none for some script, taking the lowest output reference among the outputs that carry the right script. A command that runs no reference script, such as inspect, looks up none. The hash is computed from the script each output carries, never taken from the provider. When neither has one the command refuses reference-missing ROLE HASH: not found by this provider or wallet, naming singular registry publish-references as the remedy. An empty provider answer means only that this provider found none.",
-      "pause": 400
-    },
-    {
-      "text": "The provider's answers are unverified, and the token is not signed by anyone: a genuine registry of the same release made by someone else passes every check. The ledger revalidates every reference input of a write, so a stale or wrong carrier can fail a submission but never run another script. A registry made by an earlier release is refused by name here and stays operable with the release that made it.",
+      "text": "Use the state token or the registry address printed by creation. The registry command guide describes the retained forms.",
       "pause": 400
     }
   ],
@@ -515,121 +251,7 @@
       "pause": 500
     },
     {
-      "text": "As a registry creator, you choose the processing and retract windows when you run registry create, through --process-time MS and --retract-time MS. Each must be a positive integer number of milliseconds; any other value is refused before the command builds or signs anything. When omitted, they are 600 000 and 300 000 milliseconds: ten minutes to fold a booked request, then five minutes for its owner to reclaim it.",
-      "pause": 400
-    },
-    {
-      "text": "Both windows are written into the state datum and fixed for the life of the registry. A later command cannot change them. The successful create receipt and inspect report processTime and retractTime read from that datum; booking deadlines follow the registry's actual windows, including those of a registry created before these defaults changed. The defaults give public network reads and folds more time; development-network CI explicitly creates its throwaway registries with shorter windows.",
-      "pause": 400
-    }
-  ],
-  "booking-and-folding": [
-    {
-      "text": "Booking and folding.",
-      "pause": 500
-    },
-    {
-      "text": "An insert or a terminate books a request and stops. The request waits at the registry; the command's receipt names it, the booking's transaction, and the fold deadline — the request's submission time plus the registry's processing time — as a POSIX time, and as a slot when pinned time converts it. Nothing is folded, and the registry's root, its mirror and its saved state do not move.",
-      "pause": 400
-    },
-    {
-      "text": "Before anything is signed, insert, update and terminate check the key's current entry: a booking the entry rules out is refused with the key and a named reason. An insert of a key that is already registered, or already retired, is refused; an update or a terminate of a key that is not registered, or already retired, is refused. The refusal is labelled client policy in the receipt, and it runs the same way in planning, in preview and live. The fold still validates every booking it folds, so a booking made through the permissive builders can still reach the chain's own refusal at the fold.",
-      "pause": 400
-    },
-    {
-      "text": "registry fold folds pending requests. It is an ordinary command: it signs and funds with the wallet it is given, journals its own transactions, and may be run by any wallet, not only the one that booked. An insertion's request carries the envelope its fold delivers, so the folder reads it from the pending request on the chain; nothing the booking wrote to its own state directory is needed.",
-      "pause": 400
-    },
-    {
-      "text": "The requester books with its wallet. The folder reads that pending request, then builds, signs and funds the fold with the folder's wallet; the saved registry journal, mirror and state follow the observed fold:",
-      "pause": 400
-    },
-    {
-      "text": "As Carol, I fold with whatever wallet I have. fold, reject and reclaim fund and collateralise from an ada-only output of my wallet that carries no reference script. When my wallet holds none it can use — every output I may spend carries tokens, or is too small — the command first spends one transaction of its own to prepare a funding output: ada only, made as the transaction's first output, with everything else the spent outputs held returned to me in a remainder, tokens included, and no reference script ever spent. An output that publishes a script is never spent, so it never funds a preparation: a wallet holding only such outputs has nothing to spend and is refused for that. The preparation is journalled under the command's name like any other transaction, and the receipt names it; a wallet that already holds a usable output gets no preparation at all. insert, terminate and update of the open-datum application do the same from the same wallet: their --preview shows the preparation (its transaction, the lovelace of its funding output and its fee) or says that none is needed, and submits and journals nothing, and their receipt carries a preparation entry only when one was made. When my wallet cannot pay for both the preparation and the command, the command refuses before signing anything, naming what is needed and what I hold, and submits nothing. The allowance --max-outlay is judged against the command and the fee of the preparation before anything is signed, and once more after the preparation is confirmed, on the command rebuilt from a fresh read of the wallet: when that outlay passes the allowance, the preparation stands confirmed, the command is not signed, and the refusal says so. Naming an output with --fund-input is final: it is used as it is when it suits, and refused with today's text when it does not.",
-      "pause": 400
-    },
-    {
-      "text": "registry fold judges each pending request on its own — against the registry's live state, the host clock and the application's rules — and settles every request that passes, up to the capacity bound, in ledger input order, at most one per key. Two users who book at the same moment are settled by one fold. The receipt's capacity field states the bound, 9, with its provenance: an estimate, not a measurement, of how many requests fit in a fold. A request past the bound is named capacity and is for the next fold. A fold is never refused because several requests are pending. The fold folds insertActive and updateTerminal; any other edge is refused edge-inadmissible in the model's words.",
-      "pause": 400
-    },
-    {
-      "text": "Every request the fold leaves out is named in the receipt with its reason and where the reason comes from. Nine reasons are the model's own refusal words, reported verbatim; five are the processor's own selection policy, which the model has no counterpart for. The table lists all fourteen names by source.",
-      "pause": 400
-    },
-    {
-      "text": "A request refused in the model's words failed the model's own check — its edge, its window, its approval, or its leaf against the live state — and stays refused while the state still rules it out. The window check asks the model's admission at the probe bound the folder would build under, the clock plus the thirty seconds a fold needs to be included: a bound past the request's deadline is refused not-phase1, and a bound equal to the deadline admits, as the chain admits it. A request left out by selection policy failed the processor's own rule: it does not decode as a request; its carried datum does not read, or, for a termination under the neutral value, the value carries no holding rules and the detail names the application's own executable; an earlier included request already names its key; or the fold is at its capacity bound. A request named capacity is for the next fold. A request refused not-phase1 stays pending — it cannot become settleable, because its deadline is fixed by its booking and the remaining time only shortens; its owner can take it back with registry reclaim after its processing deadline, while its retract window remains open, and registry reject clears requests past both their windows.",
-      "pause": 400
-    },
-    {
-      "text": "The receipt no longer carries the single-request fields it once printed at the top level: request, key, edge, liveOutput, envelope, released and deposit, and the datum hash and datum bytes of a datum delivery, are gone. Each fact about a settled request is read from its entry in settled: its request, key, edge, owner, settlement and deadline, where the settlement carries the live output and the envelope, or the datum hash and bytes, or the released output and the deposit. What stays at the top level are the facts of the transaction: the folder, the fold transaction, the root, the fold deadline, the validity bound slot, the post-build verdict, the host clock and the time remaining, then the three lists. settled names each settled request in ledger order; excluded names each left-out request with its request, reason, source and detail, in ledger order; capacity states the bound with its provenance. The example shows the lists with two pending requests of which one is left out: the first settles, the second is named with its reason and source, and the capacity states the bound of 9 with its provenance.",
-      "pause": 400
-    },
-    {
-      "text": "--request R is an expectation: the command is refused unless R is among the settled requests. The refusal names why R is not settled: R's own reason and source when R is pending but left out, or that R is not pending — folded, retracted or never booked. With pending requests but nothing settleable, the command is refused nothing-to-fold, naming every exclusion with its reason and source. With nothing pending it says so: nothing is pending and there is no request to fold. Past its window means past the processing deadline as the probe bound reads it: the bound the folder would build under, the clock plus the thirty seconds a fold needs to be included, past the request's deadline.",
-      "pause": 400
-    },
-    {
-      "text": "insert --fold and terminate --fold, which run through the open-datum executable since the command-line split, take the same selection and print the same lists as registry fold. The fold-derived facts are no longer printed beside them: the live output, the envelope, the released output and the deposit are read from the entry for the request they just booked in settled. What the combined forms keep of their own is the booking's key fields, the booking transaction, the fold transaction and the root. If the request the command just booked is left out, the command stops partial: the booking is confirmed and its request stays pending, named with the reason.",
-      "pause": 400
-    },
-    {
-      "text": "Before anything is signed the command still refuses the outlay past --max-outlay and a funding output that is not the wallet's. When a preparation is needed, the outlay counts its fee; once the preparation is confirmed the outlay of the command, rebuilt from a fresh read of the wallet, is judged again, and a command past the allowance is not signed: the refusal says that the preparation stands confirmed.",
-      "pause": 400
-    },
-    {
-      "text": "A booking wallet is judged on what the booking costs. Opening a write session applies no wallet threshold. Before anything is built, a wallet holding less than the fold reserve (from the network parameters and the reference scripts the fold reads) is refused, and a wallet that holds nothing it may spend at all, or whose --fund-input is not among its ada-only outputs, is refused. A wallet whose spendable outputs all carry tokens is not refused for that: the command prepares the funding output it needs, as above. Outputs that publish a script are never spent, so a wallet holding only those holds nothing it may spend and is refused as such. After the booking is built and before it is signed, a wallet holding less than the measured outlay (its fee, the bond its request locks, the bound on the fold that follows and, when a preparation was needed, the fee of the preparation) is refused. The shortfall refusal is client-refusal and carries the wallet address, what it holds, what is required, the shortfall, the UTxO count and that the policy is the client's; requiredIs says what is required: the fold reserve, the measured outlay, or the preparation. For the fold reserve and the measured outlay the reason ends (client policy). For the preparation, reached when the wallet cannot pay for the command and the preparation it needs, the reason begins preparation-unfunded, names what the command needs, the fee of the preparation and its remainder floor, and ends (client policy); nothing was submitted; that refusal also carries the fee, the remainder floor and the largest output the wallet may spend. An empty wallet or a foreign funding output is refused as client-refusal with (client policy), carrying the wallet address, the UTxO count, what it holds and the client policy, and no required or shortfall. The empty-wallet refusal ends with the faucet step — Fund this address, then rerun. On preprod the faucet is https://docs.cardano.org/cardano-testnets/tools/faucet. One funded output is enough: nothing is split by hand, and every write spends the wallet's largest ada-only output and returns its change, or first prepares one from what the wallet holds. The foreign funding choice does not end with the faucet step. Preview and write judge the same wallet at the same points in the same order. update is judged the same way with its own fee as the outlay: it has no fold to pay for, so no fold reserve is asked of it, and a wallet that cannot pay for the update and its preparation is refused before anything is signed, naming what is needed and what the wallet holds; --max-outlay below the update's outlay plus the preparation's fee is refused before anything is signed, naming both amounts and ending (client policy); nothing was submitted; the same allowance is judged again once the preparation is confirmed, and a command past it is not signed, the reason then ending (client policy); the preparation, the output it made, stands confirmed and the command was not signed. reject, reclaim, fold and create get no further measured judgement: a build that succeeds proves the wallet pays the fee, and a wallet that needs a preparation it cannot pay for is refused with the same shortfall.",
-      "pause": 400
-    },
-    {
-      "text": "That check is the fast refusal, not the proof. After the fold is built and before it is signed, its validity upper bound is judged again from the built body and the host clock: the bound must be at or before the slot of the deadline when pinned time converts it, or, when it does not, must begin at or before the deadline time; a bound pinned time cannot convert, or a clock that has meanwhile come within the margin, is refused unsigned, with the bound, the clock and the deadline in the receipt.",
-      "pause": 400
-    },
-    {
-      "text": "The deadline the fold is judged against is the earliest among the settled requests, each as its booking's receipt states. A fold refused for it submitted nothing, and pending requests stay pending.",
-      "pause": 400
-    },
-    {
-      "text": "What this page still does not claim, stated plainly: the capacity of 9 is an estimate, not measured on a real network, and this page claims no preprod number; measuring it belongs to #530. Recovery of a fold of several requests is proved by unit-level checks, and the interruption of such a fold on a development network is not executed yet. One fold's batch is compared by the state, mint and payments it reaches, never by a model transaction it does not build; folding requests together is not shown equal to folding them apart, and two orders are not shown to give equal roots. For a batch with two different defects the model names the edge set, then the window, then the law, while the chain checks each request's window beside its law, so the first reason can differ and no live row compares such a batch. A retraction still carries its own submission time until its admission moves onto the request's.",
-      "pause": 400
-    }
-  ],
-  "reclaiming-your-pending-request": [
-    {
-      "text": "Reclaiming your pending request.",
-      "pause": 500
-    },
-    {
-      "text": "As a requester, you can take back your pending insertion or terminal-witness request after its processing deadline, while its retract window remains open. registry reclaim requires --request TXID#IX and signs with the wallet you give it. It refuses before building when that request is not pending, belongs to another wallet, or names an update or deletion edge that Lean cannot retract.",
-      "pause": 400
-    },
-    {
-      "text": "The command judges the window from the actual tip observed through its session and converted processing deadline: that deadline must convert, and the tip must reach it. The retract deadline stays open while its converted slot is ahead of the tip, or when a conversion refusal cannot establish its closing slot, exactly as reject judges it. An unconverted processing deadline does not prove opening and is refused before the window, naming the opening time. A known, reached retract deadline is closed; the refusal names registry reject as the way to clear expired requests. No host clock or estimated slot decides admission. Conversions extend the pinned final era. A moving ledger horizon separately caps the built upper bound, and a short usable interval refuses before signing; a build failure is no evidence of a successful reclaim.",
-      "pause": 400
-    },
-    {
-      "text": "Inside the window, the existing retract builder pays the owner all the request's locked lovelace in one output whose inline datum is that request's reference. The command checks that output and the built validity interval before signing. When the retract deadline has no slot, the built upper bound must still be placed in time by that same session's pinned time and be no later than the deadline. The receipt names the request, retract transaction, actual locked value, owner, return address and output, returned value and any minimum-output top-up. It does not assume a protected holding deposit ever reached the request. After confirmation, it reads back the consumed request, exact return output and unchanged registry root before journalling observed. The mirror and state.json do not move. The next request can be booked and folded normally.",
-      "pause": 400
-    }
-  ],
-  "rejecting-expired-requests": [
-    {
-      "text": "Rejecting expired requests.",
-      "pause": 500
-    },
-    {
-      "text": "A request that no fold settles and whose owner does not take it back stays pending, and registry reject clears it. It is an ordinary command: it signs and funds with the wallet it is given and journals its own transactions. It rejects every pending request in one transaction, using the registry's published reference scripts, and the registry's root, its mirror and its saved state do not move.",
-      "pause": 400
-    },
-    {
-      "text": "A request is rejected only once it is past both its windows: the processing window, in which the registry's fold may take it, and the retract window after it, in which its owner may take it back. That is judged from the ledger, not from the host's clock. The command converts the retract deadline — the request's submission time plus the registry's processing time and retract time — to a slot using the pinned time consumed by its build session, and builds only when that session's observed tip is at or past it. A deadline pinned time cannot place in a slot is taken as still open. Before anything is signed the command refuses, naming the reason: nothing pending; any pending request still inside a window, each named with when its retract window closes, as a time, as a slot when pinned time converts it, and the provider's observed tip slot; the outlay past --max-outlay; a funding output that is not the wallet's; and a built reject that does not carry each owner's whole refund in one designated output.",
-      "pause": 400
-    },
-    {
-      "text": "Each owner is refunded the request's value less the tip, in the one output designated for that request; the wallet that runs the reject keeps the tip. The receipt names every rejected request, the value it actually locked (its lovelace and any other assets: a request holds only what was put into it, and one whose deposit never landed holds no deposit), the tip, and where the refund went: the output, its recipient and its amount, with the top-up when the minimum output required one. After the reject confirms the command reads back that every rejected request output is gone, that the root is where it was, and that each refund is live at its owner as built, before it journals the reject observed.",
-      "pause": 400
-    },
-    {
-      "text": "The check is exact on one shape. The chain pays a refund only when the designated output covers the owed amount by itself; a refund split across several outputs to the same owner is accepted by the model and refused by the chain (issue #361), and reject never builds it. A reject that succeeds is that shape on this chain, not general reject-refund conformance.",
+      "text": "Use open-datum state create --process-time MS --reclaim-time MS to choose the processing and reclaim windows once. The guide describes their defaults and the booking-width parameter.",
       "pause": 400
     }
   ],
@@ -639,33 +261,47 @@
       "pause": 500
     },
     {
-      "text": "As a registry operator, you can identify the session and raw facts used for a prepared transaction, and distinguish them from its submission and later confirmation. Shared HTTP sessions are Unbound: several reads in one session may observe different chain states. Every supplied fact is explicitly Unverified with NoVerifierConfigured; no witness verifies it.",
-      "pause": 400
-    },
-    {
-      "text": "A prepared receipt carries the actual acquisition identity, fact/verdict extent and raw-source records. Its chain-point field is empty for an Unbound session. An inspect or confirmation tip is a separate observation, not proof that the prepared reads belonged to that block. A provider's facts also cannot override the ledger's refusal of a transaction.",
-      "pause": 400
-    },
-    {
-      "text": "Confirmation waits for the exact transaction output, rather than a status flag alone. With an upper validity bound, its provider deadline is the POSIX start of that slot plus 120 seconds; with no upper bound, it is now plus 300 seconds. The CLI's --confirm-timeout also bounds its wait. The latest observed block can establish expiry. An unresolved submission remains journalled and is not sent again by recovery.",
+      "text": "The recovery guide describes the retained commands' journals, transaction identities and refusal to resubmit an uncertain transaction.",
       "pause": 400
     }
   ],
-  "choosing-a-usable-validity-interval": [
+  "signing-a-write-elsewhere-or-from-your-vault": [
     {
-      "text": "Choosing a usable validity interval.",
+      "text": "Signing a write elsewhere, or from your vault.",
       "pause": 500
     },
     {
-      "text": "As a caller building under load, you want a usable interval before construction starts. The builder selects bounds only when at least ten seconds of usable slots remain at its observed tip. Build duration and later provider observations can consume that interval; this selection does not guarantee ledger acceptance. Floor, ceiling and slot-start conversions use the pinned genesis/history, with only the final era's end opened. A time before genesis refuses TimeBeforeHistory; a fresh protocol major that differs from the pin refuses EraBeyondPinned before construction.",
+      "text": "Use --vault FILE for a local vault, or --wallet-address ADDR --bundle FILE for an external signer. The retained writers use the same signer options. See offline signing and submission.",
       "pause": 400
+    }
+  ],
+  "what-each-receipt-says": [
+    {
+      "text": "What each receipt says.",
+      "pause": 500
     },
     {
-      "text": "The moving ledger horizon is the first epoch boundary at or after the observed tip plus the authenticated consensus buffer. The selected upper is the smaller of the registry's original upper and the horizon minus one. The usable lower is the larger of the actual finite lower and tip plus one; an omitted body lower stays omitted.",
+      "text": "The registry command guide describes the receipt for each retained operation.",
       "pause": 400
+    }
+  ],
+  "how-long-a-bundle-can-wait": [
+    {
+      "text": "How long a bundle can wait.",
+      "pause": 500
     },
     {
-      "text": "An empty interval refuses WindowPastLedgerHorizon. A nonempty registry-limited interval shorter than ten seconds refuses WindowTooShort without waiting. If the horizon alone shortens an otherwise longer window, the builder waits once for a later horizon before constructing the body. The wait is bounded by ten seconds of slots and 20 seconds of wall time; a stalled horizon refuses HorizonWaitTimedOut with the last observed tip and horizon. The wait is logged and neither signs nor submits anything. These observations remain Unbound.",
+      "text": "The recovery guide describes unresolved submissions. No automatic resubmission follows an interrupted or uncertain send.",
+      "pause": 400
+    }
+  ],
+  "reading-a-key": [
+    {
+      "text": "Reading a key.",
+      "pause": 500
+    },
+    {
+      "text": "The removed reader has replacement: none, issue 744.",
       "pause": 400
     }
   ],
@@ -675,19 +311,19 @@
       "pause": 500
     },
     {
-      "text": "As a registry operator, you can watch a command take its protocol steps while it runs, and keep the same account as data. Every command narrates one stream of events: at --trace what, the registry it attached, each key and request it read, the edge action it takes on them and its result; at --trace how, also the mechanics under each step, each with its time. Standard output still carries the receipt alone, so a script reading the receipt is unaffected by any narration.",
+      "text": "As a registry operator, you can watch a command's progress while it runs and keep its typed event stream as data. The retained commands emit command and transaction events. Protocol-fact narration is unavailable on these commands. Standard output carries the receipt alone, so narration does not change a script's receipt input.",
       "pause": 400
     },
     {
-      "text": "On a terminal a command narrates what to standard error unless told otherwise. A fold, narrated at how:",
+      "text": "On a terminal a command narrates what to standard error unless told otherwise.",
       "pause": 400
     },
     {
-      "text": "Each line is indented by where it happened: the registry, then the key or request, then the edge action, with each mechanic under the action it belongs to. Identifiers are shortened in text; amounts are in tADA. A failure says where it happened, and the four places are distinct: refused by the client before anything was submitted, refused by local script evaluation before anything was submitted, rejected by the ledger, or refused by the provider, so that no ledger judged the transaction.",
+      "text": "Indentation reflects the event's scope. Transaction mechanics retain their identifiers and elapsed times. A failure says where it happened, and the four places are distinct: refused by the client before anything was submitted, refused by local script evaluation before anything was submitted, rejected by the ledger, or refused by the provider, so that no ledger judged the transaction.",
       "pause": 400
     },
     {
-      "text": "With --trace-format json, or a file:PATH sink, each event is one JSON object on its own line, written as it happens: its level (what or how), its scope (the registry, key, request, edge action and transaction it happened in, outermost first) and its event with that event's fields, in full. The last line of every stream is command-ended, naming the command, the outcome class of its receipt and its elapsed time. Keys are written in base16, and no event carries a signing key or the text of a failure: a failure names only its type.",
+      "text": "With --trace-format json, or a file:PATH sink, each event is one JSON object on its own line, written as it happens: its level (what or how), its scope (outermost first) and its event with that event's fields, in full. The last line of every stream is command-ended, naming the command, the outcome class of its receipt and its elapsed time. No event carries a signing key or the text of a failure: a failure names only its type.",
       "pause": 400
     },
     {
@@ -737,6 +373,6 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "93989f4ed0291440f220bc49b01dba1a9c3cd03521ef937e9d463187e228f80b"
+    "sha256": "47367b16491859e05272a2da37cc6884c04d3e7b9cf826cc1bf4add4d8a8039e"
   }
 }

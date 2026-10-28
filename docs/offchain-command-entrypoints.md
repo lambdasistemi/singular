@@ -1,5 +1,10 @@
 # Who owns a registry command
 
+These four standalone runners have been removed from the command layer.
+This page records their former structure; its commands and evidence below
+are historical. Use the [application command journey](registry-commands.md)
+for the retained implementation.
+
 A contributor changing what one of the registry commands does — a flag,
 a narrated step, a field of the observation JSON, a deliberate refusal —
 wants to open the one module that owns that concern and have the review
@@ -31,10 +36,10 @@ command's evidence.
 
 | Command | Entry file | Real caller | What the caller reads |
 | --- | --- | --- | --- |
-| `journey` | [`offchain/journey/Main.hs`](https://github.com/lambdasistemi/singular/blob/main/offchain/journey/Main.hs) | the registry workflow's journey job: a fresh `plutus-blueprint` build, then `nix run .#journey` from the checkout | the `[journey]` narration and exit status |
-| `insert-active` | [`offchain/insert-active/Main.hs`](https://github.com/lambdasistemi/singular/blob/main/offchain/insert-active/Main.hs) | the registry workflow's release-archive job, and the archive's `INSERT-ACTIVE.md` run page | `--observed` JSON asserted with `jq`, narration, exit status |
-| `update-terminal` | [`offchain/update-terminal/Main.hs`](https://github.com/lambdasistemi/singular/blob/main/offchain/update-terminal/Main.hs) | the registry workflow's release-archive job, and the archive's `UPDATE-TERMINAL.md` run page | `--observed` JSON asserted with `jq`, narration, exit status |
-| `deployment` | [`offchain/deployment/Main.hs`](https://github.com/lambdasistemi/singular/blob/main/offchain/deployment/Main.hs) | the supported identity check `offchain/deployment-identity-check.sh`, which CI runs; operators deploying and verifying a persistent registry | narration, the manifest file, a count on standard output, refusals |
+| `journey` | ``offchain/journey/Main.hs`` | the registry workflow's journey job: a fresh `plutus-blueprint` build, then `nix run .#journey` from the checkout | the `[journey]` narration and exit status |
+| `insert-active` | ``offchain/insert-active/Main.hs`` | the registry workflow's release-archive job, and the archive's `INSERT-ACTIVE.md` run page | `--observed` JSON asserted with `jq`, narration, exit status |
+| `update-terminal` | ``offchain/update-terminal/Main.hs`` | the registry workflow's release-archive job, and the archive's `UPDATE-TERMINAL.md` run page | `--observed` JSON asserted with `jq`, narration, exit status |
+| `deployment` | ``offchain/deployment/Main.hs`` | the supported identity check `offchain/deployment-identity-check.sh`, which CI runs; operators deploying and verifying a persistent registry | narration, the manifest file, a count on standard output, refusals |
 
 The release check requires both archive commands' `Main.hs` paths in the
 on-chain archive, and the archive carries every tracked file under
@@ -89,13 +94,13 @@ sequenceDiagram
 
 | Module | Owns |
 | --- | --- |
-| [`Journey.Options`](https://github.com/lambdasistemi/singular/blob/main/offchain/journey/Journey/Options.hs) | `REGISTRY_BLUEPRINT` (required) and `REGISTRY_SCRIPT_IDENTITY` (default `../onchain/script-identity.json`) |
-| [`Journey.Identity`](https://github.com/lambdasistemi/singular/blob/main/offchain/journey/Journey/Identity.hs) | the identity manifest, the identity header, and the derived-applied-identity check between pinned and carried scripts |
-| [`Journey.Steps`](https://github.com/lambdasistemi/singular/blob/main/offchain/journey/Journey/Steps.hs) | boot; booking (narrated `request`) and folding (narrated `apply`) as separate steps; read-back |
-| [`Journey.Proofs`](https://github.com/lambdasistemi/singular/blob/main/offchain/journey/Journey/Proofs.hs) | proofs built from the in-memory mirror and compared with roots read from chain; the false-claim rejection |
-| [`Journey.Controls`](https://github.com/lambdasistemi/singular/blob/main/offchain/journey/Journey/Controls.hs) | the negative section: each single-defect transaction must be refused in phase 2 by the named validator, then the state must be unchanged |
-| [`Journey.Malformations`](https://github.com/lambdasistemi/singular/blob/main/offchain/journey/Journey/Malformations.hs) | the pure rewrites: forged state reference, tampered state root, dropped proof witness |
-| [`Journey.Chain`](https://github.com/lambdasistemi/singular/blob/main/offchain/journey/Journey/Chain.hs) and [`Journey.Narration`](https://github.com/lambdasistemi/singular/blob/main/offchain/journey/Journey/Narration.hs) | wallet, configuration, submission, the chain state read; the `[journey]` lines and the `journey:` failure prefix |
+| ``Journey.Options`` | `REGISTRY_BLUEPRINT` (required) and `REGISTRY_SCRIPT_IDENTITY` (default `../onchain/script-identity.json`) |
+| ``Journey.Identity`` | the identity manifest, the identity header, and the derived-applied-identity check between pinned and carried scripts |
+| ``Journey.Steps`` | boot; booking (narrated `request`) and folding (narrated `apply`) as separate steps; read-back |
+| ``Journey.Proofs`` | proofs built from the in-memory mirror and compared with roots read from chain; the false-claim rejection |
+| ``Journey.Controls`` | the negative section: each single-defect transaction must be refused in phase 2 by the named validator, then the state must be unchanged |
+| ``Journey.Malformations`` | the pure rewrites: forged state reference, tampered state root, dropped proof witness |
+| ``Journey.Chain`` and ``Journey.Narration`` | wallet, configuration, submission, the chain state read; the `[journey]` lines and the `journey:` failure prefix |
 
 Booking and folding stay two narrated steps. This division introduces
 no narration hook and does not move the journey onto the driver; that
@@ -123,12 +128,12 @@ exactly one active token there, folds a fresh key as the accepting
 control, then requires a second booking of the same key to be refused.
 The control runs first because a refused request is never consumed and
 would poison the fold after it. Its owners are
-[`InsertActive.Options`](https://github.com/lambdasistemi/singular/blob/main/offchain/insert-active/InsertActive/Options.hs),
-[`InsertActive.Steps`](https://github.com/lambdasistemi/singular/blob/main/offchain/insert-active/InsertActive/Steps.hs),
-[`InsertActive.Controls`](https://github.com/lambdasistemi/singular/blob/main/offchain/insert-active/InsertActive/Controls.hs),
-[`InsertActive.Observation`](https://github.com/lambdasistemi/singular/blob/main/offchain/insert-active/InsertActive/Observation.hs)
+``InsertActive.Options``,
+``InsertActive.Steps``,
+``InsertActive.Controls``,
+``InsertActive.Observation``
 and
-[`InsertActive.Scenario`](https://github.com/lambdasistemi/singular/blob/main/offchain/insert-active/InsertActive/Scenario.hs).
+``InsertActive.Scenario``.
 
 `update-terminal` boots two registries in one session before any fold.
 In the first it inserts the story's key, retires it — burning the
@@ -138,13 +143,13 @@ the story's retirement being that refusal's control. In the second it
 retires an active control key, then requires a key the trie never bound
 to be refused. Each refusal needs a registry of its own because a
 refused fold leaves its request pending. Its owners are
-[`UpdateTerminal.Registry`](https://github.com/lambdasistemi/singular/blob/main/offchain/update-terminal/UpdateTerminal/Registry.hs)
+``UpdateTerminal.Registry``
 (session, boots, bookings, mirrored and deliberately inadmissible folds,
 roots),
-[`UpdateTerminal.Steps`](https://github.com/lambdasistemi/singular/blob/main/offchain/update-terminal/UpdateTerminal/Steps.hs),
-[`UpdateTerminal.Controls`](https://github.com/lambdasistemi/singular/blob/main/offchain/update-terminal/UpdateTerminal/Controls.hs),
-[`UpdateTerminal.Observation`](https://github.com/lambdasistemi/singular/blob/main/offchain/update-terminal/UpdateTerminal/Observation.hs),
-[`UpdateTerminal.Scenario`](https://github.com/lambdasistemi/singular/blob/main/offchain/update-terminal/UpdateTerminal/Scenario.hs)
+``UpdateTerminal.Steps``,
+``UpdateTerminal.Controls``,
+``UpdateTerminal.Observation``,
+``UpdateTerminal.Scenario``
 and the matching `Options` and `Narration`.
 
 Every value in both observation documents is passed in from what the
@@ -170,15 +175,15 @@ flowchart LR
 
 `Main` keeps the outer handler and the router. Every verb reads its
 flags through
-[`Deployment.Options`](https://github.com/lambdasistemi/singular/blob/main/offchain/deployment/Deployment/Options.hs),
+``Deployment.Options``,
 which accepts `--name value` and `--name=value` alike and refuses each
 verb's missing required flag by name. The release's compiled halves and
 the one pin derivation are
-[`Deployment.Compiled`](https://github.com/lambdasistemi/singular/blob/main/offchain/deployment/Deployment/Compiled.hs);
+``Deployment.Compiled``;
 node operations are
-[`Deployment.Node`](https://github.com/lambdasistemi/singular/blob/main/offchain/deployment/Deployment/Node.hs);
+``Deployment.Node``;
 each verb is its own module under
-[`offchain/deployment/Deployment/`](https://github.com/lambdasistemi/singular/blob/main/offchain/deployment/Deployment/Deploy.hs).
+``offchain/deployment/Deployment/``.
 The usage text still names `deploy` and `verify` only, as it always
 did; the router accepts all four verbs. The manifest itself stays with
 the library facade described in

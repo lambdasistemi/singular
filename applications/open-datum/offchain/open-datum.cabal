@@ -38,14 +38,22 @@ library
     Singular.Application.OpenDatum.Book
     Singular.Application.OpenDatum.Build
     Singular.Application.OpenDatum.Command
-    Singular.Application.OpenDatum.Entry
     Singular.Application.OpenDatum.Envelope
     Singular.Application.OpenDatum.Help
     Singular.Application.OpenDatum.InsertEnvelope
     Singular.Application.OpenDatum.Permanent
     Singular.Application.OpenDatum.Plan
     Singular.Application.OpenDatum.Preview
+    Singular.Application.OpenDatum.Registration
     Singular.Application.OpenDatum.Release
+    Singular.Application.OpenDatum.Requests.Booking
+    Singular.Application.OpenDatum.Requests.Configuration
+    Singular.Application.OpenDatum.Requests.Fold
+    Singular.Application.OpenDatum.Requests.Holding
+    Singular.Application.OpenDatum.Requests.Pending
+    Singular.Application.OpenDatum.Requests.Records
+    Singular.Application.OpenDatum.Requests.Refusal
+    Singular.Application.OpenDatum.Requests.Script
     Singular.Application.OpenDatum.Root
     Singular.Application.OpenDatum.Run
     Singular.Application.OpenDatum.Script
@@ -53,7 +61,9 @@ library
     Singular.Application.OpenDatum.Value
 
   autogen-modules: Paths_open_datum
-  other-modules: Paths_open_datum
+  other-modules:
+    Paths_open_datum
+    Singular.Application.OpenDatum.Requests.Assemble
 
   build-depends:
     , aeson                              >=2.1  && <2.3
@@ -69,13 +79,18 @@ library
     , cardano-tx-tools:tx-build
     , containers                         >=0.6  && <0.8
     , contra-tracer
+    , crypton
+    , memory
     , microlens
     , plutus-core
+    , plutus-ledger-api
     , plutus-tx
+    , serialise
     , singular-registry
     , singular-registry:local-services
     , singular-registry:registry-cli
     , text                               >=2.0  && <2.2
+    , transformers
 
 executable open-datum
   import:           warnings
@@ -88,16 +103,15 @@ executable open-datum
     , singular-registry:registry-cli
   ghc-options: -threaded -with-rtsopts=-N
 
--- #730: a test harness for the forged-pins journey, never evidence and never
--- a product command: it boots a registry whose datum pins an always-true
--- active policy through the real boot, mints a token under it, books through
--- this application's own booking, and submits the folds the journey records
--- the node's answer to. A registry's own tree names no application, so the
--- harness lives with the application it exercises.
-executable forged-registry
+-- #742: a test harness for the refusals journey, never evidence and never a
+-- product command: it builds the fold of a pending registration with one fact
+-- made wrong and submits it, so that the node judges what the packaged commands
+-- decline before they send. It lives with the application whose request
+-- validator it exercises.
+executable no-pin-refusals
   import:           warnings
   default-language: GHC2021
-  hs-source-dirs:   forged-registry
+  hs-source-dirs:   refusals
   main-is:          Main.hs
   build-depends:
     , aeson                              >=2.1  && <2.3
@@ -106,7 +120,6 @@ executable forged-registry
     , cardano-ledger-api
     , cardano-ledger-core
     , cardano-ledger-mary
-    , cardano-strict-containers
     , cardano-tx-tools:tx-build
     , containers                         >=0.6  && <0.8
     , contra-tracer
@@ -114,6 +127,7 @@ executable forged-registry
     , open-datum
     , plutus-core
     , plutus-tx
+    , serialise
     , singular-registry
     , singular-registry:koios-http
     , singular-registry:local-services
@@ -126,16 +140,24 @@ test-suite open-datum-tests
   import:           warnings
   type:             exitcode-stdio-1.0
   default-language: GHC2021
-  hs-source-dirs:   test test-tags ../negative/src
+  hs-source-dirs:   test test-tags
   main-is:          Main.hs
   other-modules:
-    Negative.Craft
-    Negative.Parse
-    Negative.Read
-    Negative.Run
-    Negative.Submit
     Singular.Application.OpenDatum.BuildersSpec
     Singular.Application.OpenDatum.BuildSpec
+    Singular.Application.OpenDatum.CreationWorld
+    Singular.Application.OpenDatum.RequestBookingSpec
+    Singular.Application.OpenDatum.RequestCommandSpec
+    Singular.Application.OpenDatum.RequestConfigurationSpec
+    Singular.Application.OpenDatum.RequestCreationSpec
+    Singular.Application.OpenDatum.RequestFoldSpec
+    Singular.Application.OpenDatum.RequestHoldingSpec
+    Singular.Application.OpenDatum.RequestTerminationFoldSpec
+    Singular.Application.OpenDatum.RequestPublicationSpec
+    Singular.Application.OpenDatum.RequestPendingSpec
+    Singular.Application.OpenDatum.RequestRecordsSpec
+    Singular.Application.OpenDatum.RequestScriptSpec
+    Singular.Application.OpenDatum.RequestWorld
     Singular.Application.OpenDatum.EnvelopeSpec
     Singular.Application.OpenDatum.CommandRunSpec
     Singular.Application.OpenDatum.FlagGroupExtentSpec
@@ -149,20 +171,21 @@ test-suite open-datum-tests
     Singular.Application.OpenDatum.TraceSpec
     Singular.Application.OpenDatum.WriteSpec
     Singular.Application.OpenDatum.CLISpec
+    Singular.Application.OpenDatum.LibraryStateSpec
+    Singular.Application.OpenDatum.WalletAdmissionSpec
+    Singular.Application.OpenDatum.PartitionLibrarySpec
+    Singular.Application.OpenDatum.PublicationFundingSpec
     Singular.Application.OpenDatum.ParserCorpusSpec
-    Singular.Application.OpenDatum.SaveStateTokenSpec
     Singular.Application.OpenDatum.SourcesSpec
     Singular.Application.OpenDatum.ClosedModeSpec
     Singular.Application.OpenDatum.PinGateSpec
     Singular.Application.OpenDatum.ApplicationSpec
     Singular.Application.OpenDatum.NeutralValueSpec
-    Singular.Application.OpenDatum.NegativeParseSpec
     Singular.Application.OpenDatum.StateTokenFixture
     Singular.Application.OpenDatum.RegistryStateTokenSpec
     Singular.Application.OpenDatum.RegistryAddressSpec
     Singular.Application.OpenDatum.BurnSourceSpec
     Singular.Application.OpenDatum.OutlaySpec
-    Singular.Application.OpenDatum.WalletShortfallSpec
     Singular.Registry.AddressOracle
     Singular.PhaseLogFixture
     Singular.Provider.Koios.FakeServer

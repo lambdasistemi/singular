@@ -1,0 +1,11 @@
+{
+  "changed": [
+    "singular_state.singular_state.mint",
+    "singular_state.singular_state.spend",
+    "singular_state.singular_state.else",
+    "open_datum_requests.open_datum_requests.mint",
+    "open_datum_requests.open_datum_requests.spend",
+    "open_datum_requests.open_datum_requests.else"
+  ],
+  "added": []
+}

@@ -27,17 +27,91 @@ parser, and the plan records a manual transcript for the human path.
 -}
 module Singular.CLI.VaultSpec (spec) where
 
+import Cardano.Crypto.DSIGN
+    ( Ed25519DSIGN
+    , SignKeyDSIGN
+    , rawDeserialiseSignKeyDSIGN
+    , rawSerialiseSignKeyDSIGN
+    )
 import Control.Exception (SomeException, finally, try)
-import Control.Exception qualified
+import Control.Exception qualified (catch)
 import Control.Monad (forM_)
+import Crypto.Age.Scrypt (WorkFactor, mkWorkFactor)
 import Data.Bits (xor, (.&.))
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
-import Data.ByteString.Base16 qualified as B16
-import Data.ByteString.Char8 qualified as BC
+    ( concat
+    , drop
+    , hPut
+    , index
+    , init
+    , isInfixOf
+    , isPrefixOf
+    , pack
+    , readFile
+    , singleton
+    , take
+    , writeFile
+    )
+import Data.ByteString.Base16 qualified as B16 (decode, encode)
+import Data.ByteString.Char8 qualified as BC (pack, unpack)
 import Data.List (isInfixOf)
 import Data.Maybe (fromMaybe)
 import Data.Word (Word32, Word8)
+import Singular.CLI.Command
+    ( CLIError (..)
+    , Command (..)
+    , StateCreateArgs (..)
+    , WalletArgs (..)
+    , WriteSettings (..)
+    , parseCommand
+    , walletCreateCommand
+    )
+import Singular.CLI.FlagGroup (Signer (..))
+import Singular.CLI.Passphrase
+    ( Confirmation (AskOnce, AskTwice)
+    , Passphrase
+    , PassphraseRefusal
+        ( PassphraseConfirmationDiffers
+        , PassphraseDescriptorUnreadable
+        , PassphraseEmpty
+        , PassphraseVariableEmpty
+        , PassphraseVariablePublic
+        )
+    , PassphraseSource
+        ( PassphraseDescriptor
+        , PassphraseTerminal
+        , PassphraseVariable
+        )
+    , confirmPassphrase
+    , mkPassphrase
+    , namedSource
+    , networkAllows
+    , passphraseVariable
+    , publicNetworks
+    , readPassphrase
+    , renderPassphraseRefusal
+    , sourceFor
+    , withHiddenEcho
+    )
+import Singular.CLI.Vault
+    ( VaultRefusal (VaultNotOpened, VaultNotWritten, VaultPathExists)
+    , createVaultFile
+    , freshSignKey
+    , openVault
+    , sealVault
+    , signKeyEnvelope
+    , vaultPathTaken
+    , vaultWorkFactor
+    , withVaultFile
+    )
+import Singular.Registry.Wallet
+    ( Wallet (..)
+    , bech32Address
+    , loadWallet
+    , parseSignKey
+    , walletFromSignKey
+    )
 import System.Directory (doesFileExist)
 import System.Exit (ExitCode (..))
 import System.IO
@@ -51,6 +125,10 @@ import System.IO
     )
 import System.IO.Temp (withSystemTempDirectory)
 import System.Posix.Env.ByteString qualified as PosixEnv
+    ( getEnv
+    , setEnv
+    , unsetEnv
+    )
 import System.Posix.Files
     ( createSymbolicLink
     , fileMode
@@ -79,33 +157,17 @@ import System.Posix.Terminal
 import System.Posix.Types (Fd (..))
 import System.Timeout (timeout)
 import Test.Hspec
-
-import Cardano.Crypto.DSIGN
-    ( Ed25519DSIGN
-    , SignKeyDSIGN
-    , rawDeserialiseSignKeyDSIGN
-    , rawSerialiseSignKeyDSIGN
-    )
-import Crypto.Age.Scrypt (WorkFactor, mkWorkFactor)
-
-import Singular.CLI.Command
-    ( CLIError (..)
-    , Command (..)
-    , FoldArgs (..)
-    , WalletArgs (..)
-    , WriteSettings (..)
-    , parseCommand
-    , walletCreateCommand
-    )
-import Singular.CLI.FlagGroup (Signer (..))
-import Singular.CLI.Passphrase
-import Singular.CLI.Vault
-import Singular.Registry.Wallet
-    ( Wallet (..)
-    , bech32Address
-    , loadWallet
-    , parseSignKey
-    , walletFromSignKey
+    ( Spec
+    , anyIOException
+    , describe
+    , expectationFailure
+    , it
+    , shouldBe
+    , shouldNotBe
+    , shouldNotSatisfy
+    , shouldReturn
+    , shouldSatisfy
+    , shouldThrow
     )
 
 spec :: Spec
@@ -753,11 +815,11 @@ walletVerbs = describe "the wallet verbs on the command line" $ do
                     "is not accepted by wallet create: a wallet command takes only its vault, network magic and passphrase descriptor"
                 )
     it
-        "takes the vault and its passphrase descriptor on a registry write, as its signer"
+        "takes the vault and its passphrase descriptor on a state create, as its signer"
         $ case parseCommand
             (registryFoldLine <> ["--vault", "x", "--passphrase-fd", "3"]) of
-            Right (Fold a) ->
-                writeSigner (foldWrite a) `shouldBe` SignerVault "x" (Just 3)
+            Right (StateCreate a) ->
+                writeSigner (stateCreateWrite a) `shouldBe` SignerVault "x" (Just 3)
             other -> expectationFailure ("the vault was not taken: " <> show other)
     it "takes a bare wallet word as help" $
         case parseCommand ["wallet"] of
@@ -765,15 +827,15 @@ walletVerbs = describe "the wallet verbs on the command line" $ do
                 page `shouldSatisfy` isInfixOf "Usage: singular wallet COMMAND"
             other -> expectationFailure ("not help: " <> show other)
 
--- | A registry fold line complete but for its signer.
+-- | A state create line complete but for its signer.
 registryFoldLine :: [String]
 registryFoldLine =
-    [ "registry"
-    , "fold"
+    [ "state"
+    , "create"
     , "--blueprint"
     , "blueprint.json"
-    , "--state-token"
-    , replicate 56 'a' <> "." <> replicate 64 'b'
+    , "--application-policy"
+    , replicate 56 'a'
     , "--koios-url"
     , "https://koios.example"
     , "--network-magic"

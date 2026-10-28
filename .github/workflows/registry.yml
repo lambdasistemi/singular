@@ -38,7 +38,7 @@ on:
       - 'lean/**'
       - '.github/workflows/registry.yml'
   pull_request:
-    branches: [main]
+    branches: [main, 'epic/**']
 permissions:
   contents: read
 concurrency:
@@ -489,11 +489,10 @@ jobs:
           name: contract-results
           path: ${{ env.CONTRACT_RESULTS_DIR }}
           if-no-files-found: error
-  journey:
-    name: The bounded registry journey, narrated end to end
-    needs: blueprint
+  cage-tests:
+    name: Off-chain registry and command tests
     runs-on: nixos
-    timeout-minutes: 45
+    timeout-minutes: 20
     steps:
       - name: Reuse this runner's Nix cache
         run: |
@@ -507,485 +506,9 @@ jobs:
         with:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      # Issue #37: the epic's runnable artifact. One command boots a
-      # cage, submits a request, applies it and reads the resulting
-      # state back on a real devnet, printing one line per step plus
-      # the pinned unapplied script identities (read from
-      # onchain/script-identity.json) and the applied hashes this run
-      # derived from them and carried on chain — the
-      # derived-applied-identity assertion fails the job when the
-      # derivation does not reproduce an applied hash. It is the
-      # same library code
-      # path as the e2e suite — no mocks, no stubbed node — and it is
-      # hermetic (D-011): the Nix-built binary brings the locked
-      # cardano-node on its own PATH; no cabal, no package index, no
-      # warm developer state. It covers the cage protocol surface
-      # only — it does not demonstrate Singular naming-claim or
-      # maintenance behaviour.
-      - name: Run the bounded registry journey against a real devnet
-        working-directory: offchain
-        run: |
-          blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
-          REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#journey
-      # #173 A173-COMMAND (NOTE-014 ruling): the day-0 artifact rule made
-      # concrete. A documented command that does not exist in CI is the
-      # same defect as an unrun check, so the release archive the
-      # publishing pipeline builds is built HERE, extracted OUTSIDE the
-      # checkout, and its documented `insert-active` invocation is run
-      # against this job's devnet with no checkout and no naming
-      # blueprint in sight. The step asserts exit 0 and the active token
-      # at the wallet the command named.
-      #
-      # Falsification: on any ancestor where the verb is absent from the
-      # archive this step fails at the invocation itself — that is the
-      # RED this row was frozen with, and it is the reason the step
-      # extracts rather than running the verb from the worktree.
-      - name: Run insert-active from the extracted release archive
-        run: |
-          set -e
-          release_dir="$(mktemp -d "$RUNNER_TEMP/release.XXXXXX")"
-          nix run --quiet .#release-artifacts -- "$release_dir"
-          version="$(cat version.txt)"
-          # Extracted OUTSIDE the checkout: a reviewer with the archive
-          # and nothing else must reach the same place.
-          extracted="$(mktemp -d "$RUNNER_TEMP/extracted.XXXXXX")"
-          tar -C "$extracted" -xzf "$release_dir/singular-onchain-$version.tar.gz"
-          test ! -e "$extracted/.git" || { echo 'FAIL: the archive carries a git checkout'; exit 1; }
-          # The archive's own run page is the authority for the command;
-          # the step runs exactly what the page documents.
-          test -f "$extracted/INSERT-ACTIVE.md" || { echo 'FAIL: the archive carries no insert-active run page'; exit 1; }
-          observed="$(mktemp "$RUNNER_TEMP/insert-active.XXXXXX.json")"
-          (
-            cd "$extracted/offchain"
-            REGISTRY_BLUEPRINT="$extracted/onchain/plutus.json" \
-              nix run --quiet .#insert-active -- --observed "$observed"
-          )
-          # The observation, not the exit code: exactly one active token,
-          # at the key the command inserted, in the output at the wallet
-          # the command named.
-          #
-          # The duplicate is asserted by its OUTCOME and its accepting
-          # control, not by a trace name. The ledger's EvalFailure carries
-          # an EMPTY Plutus log list, so the cage's `key-exists` trace is
-          # not recoverable from it and the command emits null rather than
-          # a guess. The NAME is asserted at the Aiken layer, through
-          # `lib.occupiedRefusal`, the construction site the validator
-          # reads. Asserting it here would be asserting a literal the
-          # command wrote to make this step pass.
-          nix run --quiet nixpkgs#jq -- -e '
-            .edge == "insertActive"
-            and (.fold.txid | test("^[0-9a-f]{64}$"))
-            and .wallet.address == .requested.address
-            and .wallet.assets == [{"policy": .active.policy, "name": .key, "quantity": 1}]
-            and ."key-exists".outcome == "refused"
-            and (."key-exists".control.outcome == "accepted")
-            and (."key-exists".detail | type == "string" and length > 0)
-          ' "$observed" > /dev/null || { echo 'FAIL: insert-active did not observe one active token at the named wallet'; exit 1; }
-          echo "ARCHIVE = insert-active ran from $extracted with no checkout and observed the active token at the named wallet."
-      # #177 A-002 row S03, CI change in this ticket: the focused
-      # off-chain suite carries the retirement's holder-selection,
-      # wrong-key and no-sweep controls. They are pure decisions of
-      # `registryDuties` — the one place the off-chain side decides what
-      # an edge owes — so they belong on the cheap job beside the
-      # devnet one, not inside it.
-      #
-      # Falsification: on any ancestor where `registryDuties` returns
-      # `mempty` for edge 3, the burn-without-source row fails here.
-      - name: Run the focused off-chain suite
+      - name: Run the off-chain suite
         working-directory: offchain
         run: nix run --quiet .#cage-tests
-      # #177 I177-COMMAND (A-002 ruling), the sibling of the
-      # insert-active step above: the release archive is built HERE,
-      # extracted OUTSIDE the checkout, and its documented
-      # `update-terminal` invocation is run against this job's devnet
-      # with no checkout in sight. The step asserts the OBSERVATION, not
-      # the exit code.
-      #
-      # Falsification: on any ancestor where the verb or its page is
-      # absent from the archive this step fails at the required page or
-      # at the invocation itself.
-      - name: Run update-terminal from the extracted release archive
-        run: |
-          set -e
-          release_dir="$(mktemp -d "$RUNNER_TEMP/release.XXXXXX")"
-          nix run --quiet .#release-artifacts -- "$release_dir"
-          version="$(cat version.txt)"
-          extracted="$(mktemp -d "$RUNNER_TEMP/extracted.XXXXXX")"
-          tar -C "$extracted" -xzf "$release_dir/singular-onchain-$version.tar.gz"
-          test ! -e "$extracted/.git" || { echo 'FAIL: the archive carries a git checkout'; exit 1; }
-          test -f "$extracted/UPDATE-TERMINAL.md" || { echo 'FAIL: the archive carries no update-terminal run page'; exit 1; }
-          observed="$(mktemp "$RUNNER_TEMP/update-terminal.XXXXXX.json")"
-          (
-            cd "$extracted/offchain"
-            REGISTRY_BLUEPRINT="$extracted/onchain/plutus.json" \
-              nix run --quiet .#update-terminal -- --observed "$observed"
-          )
-          # The observation, not the exit code: the active quantity goes
-          # 1 -> 0, the exact keyed `-1` mint is burned from a
-          # token-bearing source input, the three roots are distinct and
-          # the committed leaf reads Terminal. The two refusals are
-          # asserted by OUTCOME and by their accepting controls; a trace
-          # name is accepted only when the ledger actually surfaced it,
-          # because an EvalFailure carries an empty Plutus log list and
-          # the exact names are enforced at the Aiken layer.
-          # The jq program below is single-quoted ON PURPOSE: every `$`
-          # in it is a JQ variable, not a shell one, and the body is
-          # byte-identical to the frozen gate.sh. shellcheck cannot tell
-          # the two languages apart.
-          # shellcheck disable=SC2016
-          nix run --quiet nixpkgs#jq -- -e '
-            def txid: type == "string" and test("^[0-9a-f]{64}$");
-            def text: type == "string" and length > 0;
-            .edge == "updateTerminal"
-            and (.retirement != null)
-            and (.retirement as $r |
-              ($r.activePolicy | text) and ($r.key | text)
-              and ($r.insertTxid | txid) and ($r.retireTxid | txid)
-              and $r.insertTxid != $r.retireTxid
-              and ([$r.roots.beforeInsert, $r.roots.active, $r.roots.terminal]
-                | all(.[]; text) and (unique | length == 3))
-              and $r.quantities == {"before": 1, "after": 0}
-              and $r.mint == [{"policy": $r.activePolicy, "name": $r.key, "quantity": -1}]
-              and ($r.source.outref | text)
-              and $r.source.policy == $r.activePolicy
-              and $r.source.name == $r.key
-              and $r.source.quantity == 1
-              and $r.leaf == "Terminal"
-              and ($r.unknown.detail | text)
-              and ($r.unknown.trace == null or $r.unknown.trace == "key-unknown")
-              and ($r.unknown.controlTxid | txid)
-              and ($r.terminal.detail | text)
-              and ($r.terminal.trace == null or $r.terminal.trace == "terminal-immutable")
-              and ($r.terminal.controlTxid | txid)
-            )
-          ' "$observed" > /dev/null || { echo 'FAIL: update-terminal observation moved'; exit 1; }
-          echo "ARCHIVE = update-terminal ran from $extracted with no checkout and observed the keyed burn and the Terminal leaf."
-  demo1-archive:
-    name: Demo 1 journey from the release archive
-    needs: blueprint
-    runs-on: nixos
-    timeout-minutes: 90
-    steps:
-      - name: Reuse this runner's Nix cache
-        run: |
-          cache_dir="$HOME/.cache/singular-ci-nix"
-          mkdir -p "$cache_dir"
-          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: cachix/cachix-action@v17
-        with:
-          name: paolino
-          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      # #299: the release archive is built and, #326, verified by
-      # verify-release exactly as a published release is, the assembled
-      # assets presented as its download input: sums, the stated model
-      # revision, members, then the archive extracted OUTSIDE the checkout
-      # and its Demo 1 journey run as separate `singular` processes —
-      # create, insert, inspect, update, inspect, terminate, inspect —
-      # against ONE development node, asserting the receipts' identity
-      # continuity and ledger reads and every refusal control at its
-      # boundary; the retained insert-active and update-terminal archive
-      # controls run from the same extraction.
-      #
-      # Falsification: on any ancestor without the command this step fails at
-      # the first invocation.
-      - name: Run the Demo 1 singular journey from the extracted release archive
-        run: nix run --quiet .#demo1-cli-check
-      - name: Retain recovery, race and independent trie assertions on the explicit test build
-        run: nix run --quiet .#demo1-cli-test-harness
-  demo1-closed-archive:
-    name: Closed-datum journey from the release archive
-    needs: blueprint
-    runs-on: nixos
-    timeout-minutes: 60
-    steps:
-      - name: Reuse this runner's Nix cache
-        run: |
-          cache_dir="$HOME/.cache/singular-ci-nix"
-          mkdir -p "$cache_dir"
-          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: cachix/cachix-action@v17
-        with:
-          name: paolino
-          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      # #660: the release archive is built and, #326, verified by
-      # verify-release exactly as a published release is, the assembled
-      # assets presented as its download input: sums, the stated model
-      # revision, members, then the archive extracted OUTSIDE the checkout
-      # and its closed-datum journey run as separate `singular` and
-      # `open-datum` processes against ONE development node: create with
-      # the closed switch, the page reading, insert, fold, inspect, the
-      # refused update with its no-transaction reads, terminate, fold,
-      # inspect and the deposit read, with the archive's own blueprint.
-      #
-      # Falsification: on any ancestor without the closed mode this step
-      # fails at the first `create --closed`, and the journey's own
-      # controls (the reads must differ across a submitting step) go red
-      # if the reads cannot see a submission.
-      - name: Run the closed-datum journey from the extracted release archive
-        run: nix run --quiet .#demo1-closed-check
-  demo1-one-output-create:
-    name: Demo 1 one-output create from a fresh wallet
-    needs: blueprint
-    runs-on: nixos
-    timeout-minutes: 90
-    steps:
-      - name: Reuse this runner's Nix cache
-        run: |
-          cache_dir="$HOME/.cache/singular-ci-nix"
-          mkdir -p "$cache_dir"
-          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: cachix/cachix-action@v17
-        with:
-          name: paolino
-          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      # #406 slice 2: Carol funds a fresh wallet with one ada-only output
-      # and runs create on its own fresh devnet with no state carrier
-      # anywhere. Fails on base with the NoFundingBesideSeed refusal;
-      # passes when the chained seed (the first publication's change)
-      # boots the registry.
-      - name: Run the one-output create on its own fresh devnet
-        run: nix run --quiet .#demo1-cli-one-output-create
-  registry-bundle-control:
-    name: Registry bundles signed elsewhere and from the vault, stopped while pending, dead past their deadline
-    needs: blueprint
-    runs-on: nixos
-    timeout-minutes: 90
-    steps:
-      - name: Reuse this runner's Nix cache
-        run: |
-          cache_dir="$HOME/.cache/singular-ci-nix"
-          mkdir -p "$cache_dir"
-          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: cachix/cachix-action@v17
-        with:
-          name: paolino
-          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      # #641: on one fresh devnet, by the packaged commands, Bob creates
-      # with an external signer (exit 19, a second create stopped by his
-      # pending bundle), signs with `wallet sign` and sends with `submit`;
-      # Alice folds a booked request from her vault; an unsent fold bundle
-      # is reported dead past its deadline and the next fold builds.
-      # Falsification: with the bundle expiry disabled the dead-bundle step
-      # fails, the next fold staying stopped at 19.
-      - name: Run the bundle signers on their own fresh devnet
-        run: nix run --quiet .#registry-bundle-control
-  demo1-prepare-funding:
-    name: Demo 1 prepare a funding output when none suits
-    needs: blueprint
-    runs-on: nixos
-    timeout-minutes: 90
-    steps:
-      - name: Reuse this runner's Nix cache
-        run: |
-          cache_dir="$HOME/.cache/singular-ci-nix"
-          mkdir -p "$cache_dir"
-          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: cachix/cachix-action@v17
-        with:
-          name: paolino
-          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      # #491 remainder pull request 1: from a one-output wallet, by the real
-      # commands, reach the rehearsal wallet (create, a booking by another
-      # actor, reject) and fold the termination. Fails on base with the
-      # exit-10 "no ada-only UTxO" refusal; passes with one preparation
-      # transaction, tokens exact after, references live, journalled.
-      - name: Run the prepare-funding rehearsal on its own fresh devnet
-        run: nix run --quiet .#demo1-cli-prepare-funding
-  demo1-two-actor-control:
-    name: Demo 1 two actors — Bob opening Alice's file fails the journey
-    needs: blueprint
-    runs-on: nixos
-    timeout-minutes: 90
-    steps:
-      - name: Reuse this runner's Nix cache
-        run: |
-          cache_dir="$HOME/.cache/singular-ci-nix"
-          mkdir -p "$cache_dir"
-          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: cachix/cachix-action@v17
-        with:
-          name: paolino
-          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      # #419: the same Demo 1 run as the journey job, with Bob's fold
-      # process opening Alice's journal before it folds. The run must
-      # fail at the two-actor access check and nowhere else: this step
-      # passes only on exit 1 with that one failure, after the control was
-      # on and Bob's fold succeeded, and names a pass, a setup failure or
-      # any other failure as its own failure. The raw run is in the log.
-      # Its classification is first checked against stand-in runs.
-      - name: Run the Demo 1 journey with Bob's process opening Alice's file
-        run: nix run --quiet .#demo1-two-actor-control
-  registry-two-actors:
-    name: Two actors insert and fold from the state token alone
-    needs: blueprint
-    runs-on: nixos
-    timeout-minutes: 90
-    steps:
-      - name: Reuse this runner's Nix cache
-        run: |
-          cache_dir="$HOME/.cache/singular-ci-nix"
-          mkdir -p "$cache_dir"
-          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: cachix/cachix-action@v17
-        with:
-          name: paolino
-          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      # #381: Alice and Bob each start from a fresh home with the state
-      # token, their own wallet key and the development network's provider
-      # settings. Every command carries --state-token and no directory
-      # option; every party process is traced, and a traced path under
-      # another party's home fails the journey at the guard. The report's
-      # rows are computed from the commands' receipts; in run one the two
-      # insert-and-fold rows pass and the status is 1.
-      - name: Run the two-actor token-only registry journey
-        run: nix run --quiet .#registry-two-actors
-  registry-two-actors-control:
-    name: Two actors — a booking at another actor's state root fails the guard
-    needs: blueprint
-    runs-on: nixos
-    timeout-minutes: 90
-    steps:
-      - name: Reuse this runner's Nix cache
-        run: |
-          cache_dir="$HOME/.cache/singular-ci-nix"
-          mkdir -p "$cache_dir"
-          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: cachix/cachix-action@v17
-        with:
-          name: paolino
-          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      # #381: one real booking with --state-dir aimed at the other actor's
-      # state root must fail at the access guard with status 2 and the
-      # single guard diagnostic naming the path, after the positive run
-      # did not fire the guard. The wrapper first proves itself against
-      # stand-in runs that tell a guard failure from a setup failure and
-      # from a pass, then judges the real legs.
-      - name: Run the two-actor foreign-open control
-        run: nix run --quiet .#registry-two-actors-control
-  registry-two-actors-replay-fault:
-    name: Two actors — a faulted replay refuses RootDoesNotChain without a trie
-    needs: blueprint
-    runs-on: nixos
-    timeout-minutes: 90
-    steps:
-      - name: Reuse this runner's Nix cache
-        run: |
-          cache_dir="$HOME/.cache/singular-ci-nix"
-          mkdir -p "$cache_dir"
-          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: cachix/cachix-action@v17
-        with:
-          name: paolino
-          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      # #381: one genuine insertion booked and folded, then a real actor
-      # inspect with the control build whose replay maps one edge to
-      # another. The job passes only on exit 0, which the harness returns
-      # only for RootDoesNotChain naming the registry and the fold, with
-      # no root; any other refusal, a pass, a setup failure or a guard
-      # failure is the job's own failure.
-      - name: Run the replay-fault control
-        run: nix run --quiet .#registry-two-actors-replay-fault
-  demo1-refusals:
-    name: Demo 1 ordinary CLI refusal controls
-    needs: blueprint
-    runs-on: nixos
-    timeout-minutes: 90
-    steps:
-      - name: Reuse this runner's Nix cache
-        run: |
-          cache_dir="$HOME/.cache/singular-ci-nix"
-          mkdir -p "$cache_dir"
-          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: cachix/cachix-action@v17
-        with:
-          name: paolino
-          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      # #299: the registry refuses an insertion the application books for a
-      # key that is Active or already Terminal. The ordinary `insert` stops
-      # partial naming its pending request; that request's fold, submitted
-      # without local evaluation, is refused by the state validator; each
-      # refusal sits beside an accepting control; every verdict is computed
-      # from the run's receipts, on the job's own development node.
-      #
-      # #419: the run's exit is trusted only after it judged at least one
-      # clause; the clause summary and every clause that does not hold or is
-      # uncovered are printed, and the verdict section and receipts are
-      # uploaded whatever the outcome.
-      - name: Run the ordinary CLI's refusal controls
-        run: |
-          printf 'DEMO1_CONTROLS_RESULTS=%s\n' "$RUNNER_TEMP/demo1-controls-results" >> "$GITHUB_ENV"
-          DEMO1_CONTROLS_RESULTS="$RUNNER_TEMP/demo1-controls-results" nix run --quiet .#demo1-cli-controls
-      # One archive lets zstd share repeated journal and receipt bytes across
-      # files. Keep every evidence file; extract with tar --zstd -xf FILE.
-      - name: Compress the refusal controls' verdicts and receipts
-        if: always() && env.DEMO1_CONTROLS_RESULTS != ''
-        run: |
-          nix shell --quiet --inputs-from . nixpkgs#gnutar nixpkgs#zstd --command \
-            tar -I 'zstd -T1 -3 --long=27' \
-              -cf "$DEMO1_CONTROLS_RESULTS.tar.zst" \
-              -C "$DEMO1_CONTROLS_RESULTS" .
-      - name: Preserve the refusal controls' verdicts and receipts
-        if: always() && env.DEMO1_CONTROLS_RESULTS != ''
-        uses: actions/upload-artifact@v7
-        with:
-          name: demo1-refusal-controls
-          path: ${{ env.DEMO1_CONTROLS_RESULTS }}.tar.zst
-          compression-level: 0
-          if-no-files-found: error
-  demo1-readback:
-    name: Demo 1 public-indexer readback
-    needs: blueprint
-    runs-on: nixos
-    timeout-minutes: 90
-    steps:
-      - name: Reuse this runner's Nix cache
-        run: |
-          cache_dir="$HOME/.cache/singular-ci-nix"
-          mkdir -p "$cache_dir"
-          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: cachix/cachix-action@v17
-        with:
-          name: paolino
-          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      # #300: the readback of a key's token output from a public indexer, from
-      # policy id and asset name alone, against a local indexer answering with
-      # the public services' shapes: each alteration fails for its own reason, and
-      # the credential reaches the indexer and appears nowhere else.
-      - name: Run the public-indexer readback against a local indexer
-        run: nix run --quiet .#demo1-readback-check
   cli-recovery-partitions:
     name: CLI recovery — discover the hosted partitions
     needs: blueprint
@@ -1006,10 +529,13 @@ jobs:
         with:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # Holding updates, termination bookings and public termination folds each
+      # have their own partition in the root flake. The discovered matrix runs
+      # every one through the same journal and no-resubmission predicates.
       # The hosted recovery partitions live in one place in the root flake.
       # This step prints them (no node) for the matrix below and judges the
-      # census: every scenario part in exactly one partition, every
-      # command-running partition closed by the trie-capability observation.
+      # census: every retained scenario part in exactly one partition,
+      # with nonempty discovery and no retired command dependencies.
       - name: Discover the hosted partitions and check the census
         id: partitions
         run: |
@@ -1043,18 +569,9 @@ jobs:
         with:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      # Each hosted partition runs its parts in order on its own fresh node
-      # and registry: history (accepting, lost answer, killed, never sent,
-      # whole journal) and rollback, each closed by the trie-capability
-      # observation over its own run, and each discovered cross-wallet case
-      # closed the same way. A part that needs earlier state follows it
-      # inside the same partition, so nothing runs twice as a predecessor.
-      # Its measured node-backed invocation time lands in
-      # node-execution-time.json at the run root.
-      #
-      # Falsification: without the partition's own prerequisite the next
-      # write refuses with its receipt naming the missing live key, and the
-      # verdict table fails.
+      # Every retained partition runs on its own fresh node. Its commands
+      # are interrupted with lost answers, kills and unsent transactions;
+      # the journal and signed-body checks judge recovery without resubmission.
       - name: Run the partition's parts
         run: DEMO1_KEEP_SCRATCH=1 nix run --quiet .#cli-recovery-partition -- '${{ matrix.partition.key }}'
       # Collect through the packaged collector app — explicit runtime tools,
@@ -1083,23 +600,11 @@ jobs:
           # The partition kept its scratch so this step could copy it. A reused
           # runner would otherwise retain the node database.
           rm -rf "$RUNNER_TEMP"/cli-recovery.*
-      # #543: verify the collected bundle before it is uploaded — producer
-      # identity present, every manifest pin re-hashes, nothing unpinned,
-      # managed journals + signed bodies present from at least two wallet
-      # partitions. Cross-wallet-only: history/rollback run a single wallet,
-      # so the two-partition obligation cannot apply there; their bundles
-      # keep the existing collect-and-retain path unchanged.
+      # Every retained run uses both wallets; verify their original journals,
+      # signed bodies and producer-bound manifest before retaining the bundle.
       - name: Verify the collected evidence bundle
         if: always()
-        env:
-          RECOVERY_PARTITION: ${{ matrix.partition.key }}
-        run: |
-          case "$RECOVERY_PARTITION" in
-            cross-wallet:*)
-              bash tools/cli_recovery_evidence_check.sh "${{ runner.temp }}/recovery-evidence" ;;
-            *)
-              echo "evidence: SKIP two-wallet check on single-wallet partition $RECOVERY_PARTITION" ;;
-          esac
+        run: bash tools/cli_recovery_evidence_check.sh "${{ runner.temp }}/recovery-evidence"
       - name: Retain the partition's recorded evidence
         if: always()
         uses: actions/upload-artifact@v7
@@ -1131,43 +636,6 @@ jobs:
         run: nix run --quiet .#facade-lifecycle-controls
   # #449: the demonstration's refusals on one existing registry, as parallel
   # parts; each part creates its own registry on its own node.
-  demo1-attach-part:
-    name: "Demo 1 refusals on one existing registry — ${{ matrix.part }}"
-    needs: blueprint
-    runs-on: nixos
-    timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        part: [takes, indexer-reads, tampered-a, tampered-b, over-allowance]
-    steps:
-      - name: Reuse this runner's Nix cache
-        run: |
-          cache_dir="$HOME/.cache/singular-ci-nix"
-          mkdir -p "$cache_dir"
-          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: cachix/cachix-action@v17
-        with:
-          name: paolino
-          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      - name: Run this part of the demonstration's refusals
-        run: nix run --quiet .#demo1-cli-attach-${{ matrix.part }}
-  demo1-attach:
-    name: Demo 1 refusals on one existing registry
-    needs: demo1-attach-part
-    if: ${{ !cancelled() }}
-    runs-on: nixos
-    timeout-minutes: 5
-    steps:
-      - name: Every part passed
-        env:
-          PARTS: ${{ needs.demo1-attach-part.result }}
-        run: |
-          echo "Demo 1 attach parts: $PARTS"
-          [ "$PARTS" = success ]
   cli-flags:
     name: Documented CLI flags and refusal controls
     needs: blueprint
@@ -1203,52 +671,11 @@ jobs:
       - name: The packaged wallet vault keeps its promises
         timeout-minutes: 20
         run: nix run --quiet .#wallet-vault-controls
-  keri-stub-component-build:
-    name: Keri-stub component build
-    runs-on: nixos
-    timeout-minutes: 30
-    steps:
-      - name: Reuse this runner's Nix cache
-        run: |
-          cache_dir="$HOME/.cache/singular-ci-nix"
-          mkdir -p "$cache_dir"
-          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: cachix/cachix-action@v17
-        with:
-          name: paolino
-          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      # #528 slice 7 brief 1: the stub application's own component build
-      # and lint, from the application's tree, mirroring the open-datum
-      # pair in ci.yml.
-      - run: cd applications/keri-stub/offchain && nix build --quiet --no-link .#component-build
-      - run: cd applications/keri-stub/offchain && nix run --quiet .#lint
-  keri-stub-tests:
-    name: Keri-stub tests
-    runs-on: nixos
-    timeout-minutes: 30
-    steps:
-      - name: Reuse this runner's Nix cache
-        run: |
-          cache_dir="$HOME/.cache/singular-ci-nix"
-          mkdir -p "$cache_dir"
-          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: cachix/cachix-action@v17
-        with:
-          name: paolino
-          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      # #528 slice 7 brief 1: the stub application's whole suite.
-      - run: cd applications/keri-stub/offchain && nix run --quiet .#keri-stub-tests
-  keri-stub:
-    name: Keri-stub journey
+  no-pin-registration-journey:
+    name: No-pin registration, update and termination through the packaged commands
     needs: blueprint
     runs-on: nixos
-    timeout-minutes: 90
+    timeout-minutes: 45
     steps:
       - name: Reuse this runner's Nix cache
         run: |
@@ -1262,21 +689,35 @@ jobs:
         with:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      # #528 slice 7 brief 4: the stub's devnet journey. One raw
-      # development node funds one wallet; the keri-stub executable,
-      # built from its own flake, boots a registry for the stub's own
-      # always-succeeding policy, registers one key, folds it active,
-      # refuses a second register at booking, convicts the key with its
-      # evidence and folds it terminal with its holding released to its
-      # controller and the deposit back — the same shape as the Demo 1
-      # journey job above, names changed.
-      - name: Run the keri-stub journey against a real devnet
-        run: nix run --quiet .#keri-stub-check
-  forged-pins:
-    name: Forged pins journey
+      # #742: one development network funds four wallets. The release's packaged
+      # singular and open-datum create a registry, book three keys, fold one
+      # (by a second wallet that holds nothing of the booker's), take one back
+      # inside its window and clean one up after it (by a wallet that is not
+      # the refund address), then create a second registry and one made by
+      # singular, which publish no script. Every verdict is read from the
+      # network's own record of the chain, never from a command's receipt, and
+      # each assertion is shown failing on altered input. The verdict table and
+      # the creation measurement are uploaded whatever the outcome.
+      # The live holding also continues through a controller-signed update
+      # and termination booking. A fresh process directory of the second
+      # wallet folds from public data; the deposit donation and the folder's
+      # whole-request allocation are read from transaction bytes and outputs.
+      - name: Run registration, update and termination against a development network
+        run: |
+          printf 'NO_PIN_JOURNEY_RESULTS=%s\n' "$RUNNER_TEMP/no-pin-journey-results-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
+          NO_PIN_JOURNEY_RESULTS="$RUNNER_TEMP/no-pin-journey-results-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" nix run --quiet .#no-pin-registration-journey
+      - name: Preserve the journey's verdicts, measurement and receipts
+        if: always() && env.NO_PIN_JOURNEY_RESULTS != ''
+        uses: actions/upload-artifact@v7
+        with:
+          name: no-pin-registration-journey
+          path: ${{ env.NO_PIN_JOURNEY_RESULTS }}
+          if-no-files-found: error
+  no-pin-registration-refusals:
+    name: No-pin registration refusals on a development network
     needs: blueprint
     runs-on: nixos
-    timeout-minutes: 90
+    timeout-minutes: 45
     steps:
       - name: Reuse this runner's Nix cache
         run: |
@@ -1290,15 +731,52 @@ jobs:
         with:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      # #730: one raw development node funds one wallet; a test harness boots a
-      # registry whose datum pins an always-true active policy and mints a
-      # token named after a key under it. The packaged singular and open-datum
-      # are run as separate processes against it: every command must refuse it
-      # naming the active policy, show nothing of the registry and add no
-      # transaction to a chain counted from the facade's own record; the same
-      # commands proceed on an honest registry made the same way; a fold that
-      # swaps a pinned policy is refused by the node; each assertion is shown
-      # failing on altered input. The same shape as the keri-stub journey job
-      # above, names changed.
-      - name: Run the forged pins journey against a real devnet
-        run: nix run --quiet .#forged-pins-check
+      # #742: one development network, one registry. Each wrong fold is the
+      # honest fold of a booked registration with a single fact changed (no
+      # approval, a token delivered elsewhere or with less than the deposit,
+      # a second registration of an active key, an extra token in the state
+      # output, a parked token presented as the registry state), submitted
+      # to the node, which refuses it by the failure of a validator's own
+      # script. Beside each refusal runs a control: the same fold with that
+      # fact restored, which the node accepts and the chain records. The
+      # verdict table and the receipt are uploaded whatever the outcome.
+      - name: Submit the wrong folds to a development network
+        run: |
+          printf 'NO_PIN_REFUSALS_RESULTS=%s\n' "$RUNNER_TEMP/no-pin-refusals-results-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
+          NO_PIN_REFUSALS_RESULTS="$RUNNER_TEMP/no-pin-refusals-results-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" nix run --quiet .#no-pin-registration-refusals
+      - name: Preserve the refusals' verdicts, receipt and answers
+        if: always() && env.NO_PIN_REFUSALS_RESULTS != ''
+        uses: actions/upload-artifact@v7
+        with:
+          name: no-pin-registration-refusals
+          path: ${{ env.NO_PIN_REFUSALS_RESULTS }}
+          if-no-files-found: error
+  no-pin-termination-refusals:
+    name: No-pin termination refusals on a development network
+    needs: blueprint
+    runs-on: nixos
+    timeout-minutes: 45
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: Submit malformed terminations beside their packaged passing controls
+        run: |
+          printf 'NO_PIN_TERMINATION_REFUSALS_RESULTS=%s\n' "$RUNNER_TEMP/no-pin-termination-refusals-results-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
+          NO_PIN_TERMINATION_REFUSALS_RESULTS="$RUNNER_TEMP/no-pin-termination-refusals-results-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" nix run --quiet .#no-pin-termination-refusals
+      - name: Preserve the refusals, chain observations and controls
+        if: always() && env.NO_PIN_TERMINATION_REFUSALS_RESULTS != ''
+        uses: actions/upload-artifact@v7
+        with:
+          name: no-pin-termination-refusals
+          path: ${{ env.NO_PIN_TERMINATION_REFUSALS_RESULTS }}
+          if-no-files-found: error

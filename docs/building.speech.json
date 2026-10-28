@@ -41,7 +41,7 @@
       "pause": 400
     },
     {
-      "text": "The build control strips and inspects both ordinary compiled executables, reads the actual resolved registry CLI flag, and deliberately rejects the hook-bearing test artifacts and opposite flag polarity. CI runs the ordinary extracted-release journey separately from the test journey's unchanged recovery, race, node-loss and trie-observation assertions. CLI recovery and conformance backend controls select the explicit test composition. The separate replay-fault project remains a deliberately altered test build; its named refusal proof retains its published pending cases. Test outputs are never substituted into the ordinary release verifier or published as ordinary release artifacts.",
+      "text": "The build control strips and inspects both ordinary compiled executables, reads the actual resolved registry CLI flag, and deliberately rejects the hook-bearing test artifacts and opposite flag polarity. CLI recovery and conformance backend controls select the explicit test composition. Test outputs are never substituted into the ordinary release verifier or published as ordinary release artifacts.",
       "pause": 400
     }
   ],
@@ -169,6 +169,6 @@
   ],
   "_source": {
     "file": "building.md",
-    "sha256": "65066db2662ed00ef3992cbb8ae743967ad9939cd5e4a473b373279b6b6189fd"
+    "sha256": "dffd643498ee75dc93098a4af717df752bac88e0b9440e07b32853d4a237a9a3"
   }
 }

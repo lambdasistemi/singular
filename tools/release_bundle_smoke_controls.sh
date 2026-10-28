@@ -121,12 +121,6 @@ if [[ "$listing" == *data/contracts/state-contracts.json* ]]; then
   rm -r "$work/tree/$top/share/singular-registry/data/contracts"
   repack
   refused_for "a bundle without its table of releases" members bash "$smoke" "$work/changed.tar.gz" "$version" "$commit"
-  # a table that does not know the contracts of v0.4.1: the program cannot name a release
-  unpack
-  perl -pi -e 's/8ac9562f5fb6be9b9b913ae2ad2cc1d9e038f7f7039256f1ac9f7a62/ffffffffffffffffffffffffffffffffffffffffffffffffffffffff/' \
-    "$work/tree/$top/share/singular-registry/data/contracts/state-contracts.json"
-  repack
-  refused_for "a bundle whose table lacks a release it names" contracts bash "$smoke" "$work/changed.tar.gz" "$version" "$commit"
   # the release published without the table is accepted without it, and one after it is not:
   # the rule is read from a copy of the bundle rules with the last release moved
   unpack

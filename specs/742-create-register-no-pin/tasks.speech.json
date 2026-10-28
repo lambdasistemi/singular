@@ -1,0 +1,188 @@
+{
+  "tasks-for-creating-a-registry-and-registering-a-key-on-the-proved-design": [
+    {
+      "text": "Tasks for creating a registry and registering a key on the proved design.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 742. Grouped by pull request and slice of the plan. A task is checked only after the ticket owner accepts its slice.",
+      "pause": 400
+    }
+  ],
+  "binding": [
+    {
+      "text": "Binding.",
+      "pause": 500
+    },
+    {
+      "text": "[x] lean-binding-rebound: the plan's Lean binding rebound to the aligned models landed on the epic branch, statement by statement.",
+      "pause": 300
+    },
+    {
+      "text": "[x] gate-synthesized: the ticket owner's and the auditor's gate tables synthesized once and frozen with both input hashes.",
+      "pause": 300
+    }
+  ],
+  "pull-request-1-state-genesis": [
+    {
+      "text": "Pull request 1: state genesis.",
+      "pause": 500
+    },
+    {
+      "text": "[x] genesis-and-recognition: genesis, recognition from the supplied seed and state output integrity, each statement with a check seen to fail.",
+      "pause": 300
+    },
+    {
+      "text": "[x] state-titles-declared: the new blueprint titles in the identity manifest and the declared-additions record; current hashes unmoved.",
+      "pause": 300
+    }
+  ],
+  "pull-request-1-state-registration-fold": [
+    {
+      "text": "Pull request 1: state registration fold.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] registration-fold: approval consumed for exactly the change, key absent, one token into the committed address and datum with at least the deposit, nothing else under the state policy; each statement with a check seen to fail.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] absence-check: the registration fold's absence check on the current trie library, with its refusal rows.",
+      "pause": 300
+    }
+  ],
+  "pull-request-1-preimage-vectors": [
+    {
+      "text": "Pull request 1: preimage vectors.",
+      "pause": 500
+    },
+    {
+      "text": "[x] preimage-vectors-shared: byte vectors for the state, active and registration-approval preimages, reproduced on-chain and off-chain, including a definite and an indefinite list and a byte string longer than 64 bytes.",
+      "pause": 300
+    }
+  ],
+  "pull-request-2-approvals-and-configuration": [
+    {
+      "text": "Pull request 2: approvals and configuration.",
+      "pause": 500
+    },
+    {
+      "text": "[x] configuration-record: the configuration record at creation, immutable, read by reference.",
+      "pause": 300
+    },
+    {
+      "text": "[x] registration-approval: the approval mint committing its fields; the open burn.",
+      "pause": 300
+    }
+  ],
+  "pull-request-2-pending-registration": [
+    {
+      "text": "Pull request 2: pending registration.",
+      "pause": 500
+    },
+    {
+      "text": "[x] three-phases: fold only before the deadline, refund-address reclaim of everything in the window, cleanup returning the deposit after it.",
+      "pause": 300
+    },
+    {
+      "text": "[x] fold-path-genuine-token: the fold path checks the genuine token reaches the new holding.",
+      "pause": 300
+    }
+  ],
+  "pull-request-2-one-configuration-record": [
+    {
+      "text": "Pull request 2: one configuration record.",
+      "pause": 500
+    },
+    {
+      "text": "[x] one-configuration-record-model: the statement that a registry's genesis mints its configuration asset exactly once, proved, the other proofs kept.",
+      "pause": 300
+    },
+    {
+      "text": "[x] one-configuration-record-validator: the validator refuses a second configuration record and a configuration mint other than one, a refusal row each.",
+      "pause": 300
+    }
+  ],
+  "pull-request-3-library-create-and-fold": [
+    {
+      "text": "Pull request 3: library create and fold.",
+      "pause": 500
+    },
+    {
+      "text": "[x] genesis-builder: the genesis transaction against the new validator.",
+      "pause": 300
+    },
+    {
+      "text": "[x] registration-fold-builder: the registration fold transaction against the new validator, from chain data alone.",
+      "pause": 300
+    },
+    {
+      "text": "[x] scripts-published-once: publication of both reference scripts when no live copy exists, reuse otherwise, and the control that a reference script with another hash is not reused.",
+      "pause": 300
+    }
+  ],
+  "pull-request-3-open-datum-builders": [
+    {
+      "text": "Pull request 3: open-datum builders.",
+      "pause": 500
+    },
+    {
+      "text": "[x] request-builders: configuration create, book, reclaim and cleanup.",
+      "pause": 300
+    }
+  ],
+  "pull-request-3-commands-and-documentation": [
+    {
+      "text": "Pull request 3: commands and documentation.",
+      "pause": 500
+    },
+    {
+      "text": "[x] six-commands: the commands of the plan with help snapshots and parser rows.",
+      "pause": 300
+    },
+    {
+      "text": "[x] recovery-kept: cancellation and uncertain submission keep the transaction identity; nothing is resubmitted.",
+      "pause": 300
+    },
+    {
+      "text": "[x] command-reference: the user documentation of the commands with its speech.",
+      "pause": 300
+    }
+  ],
+  "pull-request-4-devnet-journey-and-refusals": [
+    {
+      "text": "Pull request 4: devnet journey and refusals.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] journey-job: the hosted job no-pin-registration-journey runs create, book, fold, reclaim and cleanup through the packaged commands.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] fold-by-a-second-wallet: the journey's fold is built and signed by a wallet other than the booker's, from chain data only.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] refusals-on-devnet: the hosted job no-pin-registration-refusals shows the five refusals of the specification, each with its control.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] creation-measured: transactions and locked ADA for a first and a later registry, as a receipt; the later one publishes no script.",
+      "pause": 300
+    }
+  ],
+  "pull-request-4-conformance-old-versus-new": [
+    {
+      "text": "Pull request 4: conformance old versus new.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] old-versus-new-statement: folded, reclaimed and cleaned-up journeys, old against new, in requirement language, with the decided difference.",
+      "pause": 300
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "d25c6327f45467df7e56afa12f1a7053f53054a7612ea54d00b61ec0cdc2f599"
+  }
+}

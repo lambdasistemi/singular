@@ -100,8 +100,7 @@ copy_genesis() {
 
 # The deployment blueprint the commands take as --blueprint, the same file the
 # on-chain archive ships as onchain/plutus.json, with the release number beside
-# it: `singular registry describe` reads its version label from version.txt
-# next to the blueprint and refuses a blueprint without one.
+# it, matching the blueprint and adjacent version label in the on-chain archive.
 copy_blueprint() {
   [ -f "$BLUEPRINT" ] || fail "no blueprint at $BLUEPRINT"
   grep -q '"validators"' "$BLUEPRINT" || fail "$BLUEPRINT names no validators"

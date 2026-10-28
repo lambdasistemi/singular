@@ -73,13 +73,10 @@ trace cannot be recovered from the ledger's error text, the field is
 
 ## Two limits, stated plainly
 
-**The refusal name covers more than occupancy.** The registry decides
-"is this key free?" with the Merkle-Patricia-Forestry library's total
-exclusion check, which answers *no* both for a key that is already bound
-and for a malformed exclusion proof. The two are indistinguishable to
-the validator, and both are refused as `key-exists`. Nothing the model
-refuses is admitted — the guard errs toward refusing — but a
-`key-exists` refusal on its own does not prove the key was occupied.
+**The refusal name covers more than occupancy.** The registry reports
+`key-exists` when the exclusion check does not establish absence. This
+refusal alone does not establish occupancy. The trie library's proofs
+are assumed sound.
 
 **This command ships on the pre-#183 request wire.** Issue #183 re-cuts
 the request encoding for every edge: the edge tag replaces the operation

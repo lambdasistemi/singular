@@ -25,8 +25,8 @@ viewing.
 
 The module extent is the public library of the off-chain Cabal file — every
 exposed module, every internal module, and every module the library
-re-exports under its own name. That complete extent is 75 modules in
-three kinds: 58 explicitly exposed modules and 4 re-exported modules
+re-exports under its own name. That complete extent is 77 modules in
+three kinds: 60 explicitly exposed modules and 4 re-exported modules
 are what a caller imports; the two trie capability owners behind the
 `TrieState` facade (`Singular.Registry.TrieState.Core` and `.Types`),
 the three fold owners behind the `Update`
@@ -132,6 +132,15 @@ Run: mkdocs serve
 - <a href="../offchain/lib/Singular/Registry/Wire/Request.hs" data-api="module">Singular.Registry.Wire.Request</a> — <a href="../offchain/lib/Singular/Registry/Wire/Request.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Wire/State.hs" data-api="module">Singular.Registry.Wire.State</a> — <a href="../offchain/lib/Singular/Registry/Wire/State.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Witness.hs" data-api="module">Singular.Registry.Witness</a> — <a href="../offchain/lib/Singular/Registry/Witness.hs" data-api="source">source</a>
+- <a href="../offchain/lib/Singular/State/Assemble.hs" data-api="module">Singular.State.Assemble</a> — <a href="../offchain/lib/Singular/State/Assemble.hs" data-api="source">source</a> — the payer, the reads of the chain and the assembly of a transaction that the builders of the Singular state share
+- <a href="../offchain/lib/Singular/State/Fold.hs" data-api="module">Singular.State.Fold</a> — <a href="../offchain/lib/Singular/State/Fold.hs" data-api="source">source</a> — the fold of pending registrations into a registry from public data alone, with the application's part handed in
+- <a href="../offchain/lib/Singular/State/Genesis.hs" data-api="module">Singular.State.Genesis</a> — <a href="../offchain/lib/Singular/State/Genesis.hs" data-api="source">source</a> — the creation of a registry from a seed, with the application's steps in the same transaction
+- <a href="../offchain/lib/Singular/State/Lineage.hs" data-api="module">Singular.State.Lineage</a> — <a href="../offchain/lib/Singular/State/Lineage.hs" data-api="source">source</a> — a registry's trie rebuilt from the public history of its state token, every root checked against the chain
+- <a href="../offchain/lib/Singular/State/Preimage.hs" data-api="module">Singular.State.Preimage</a> — <a href="../offchain/lib/Singular/State/Preimage.hs" data-api="source">source</a> — the off-chain encoder of the Singular state, active, configuration and registration-approval preimages, byte for byte equal to the on-chain one
+- <a href="../offchain/lib/Singular/State/Publication.hs" data-api="module">Singular.State.Publication</a> — <a href="../offchain/lib/Singular/State/Publication.hs" data-api="source">source</a> — the state script and the application's script published as reference scripts once and reused by later registries
+- <a href="../offchain/lib/Singular/State/Records.hs" data-api="module">Singular.State.Records</a> — <a href="../offchain/lib/Singular/State/Records.hs" data-api="source">source</a> — the datum and the actions of the state validator, as Plutus Data in the layout it decodes
+- <a href="../offchain/lib/Singular/State/Refusal.hs" data-api="module">Singular.State.Refusal</a> — <a href="../offchain/lib/Singular/State/Refusal.hs" data-api="source">source</a> — why a builder of the Singular state declines to build
+- <a href="../offchain/lib/Singular/State/Script.hs" data-api="module">Singular.State.Script</a> — <a href="../offchain/lib/Singular/State/Script.hs" data-api="source">source</a> — the state validator of an application as the builders carry it, attached or by reference
 
 The facades and owners of the registry builder and blueprint extraction
 are described module by module in the
@@ -290,8 +299,7 @@ session ownership changed.
 
 This source inventory explains ownership, not ledger coverage. Each retained
 owner below uses serial access for the stated lifetime. Test producers stay
-independent of the pure computation being compared. No public interface or
-retained journey is removed.
+independent of the pure computation being compared. The retired naming runner sources have been removed.
 
 | Source module or executable | Disposition, owner and lifetime |
 | --- | --- |
@@ -310,10 +318,6 @@ retained journey is removed.
 | `UpdateTerminal.Registry` | `openSession` transfers its evolving manager to the one retirement session; that session owns it until the run ends. |
 | `Journey.Proofs` | The journey owns the shared mirror reference; `stepVerifyPresent` advances it before verifying against chain readback. |
 | `Journey.Scenario` | The `withRunner` callback owns the evolving registry manager for the whole bounded journey. |
-| `journey/register/Main` | The runner owns its loaded mirror manager and independent fresh-control manager; the second-registry control owns its separate manager for that control. Dumped values persist between runs, not IO handles. |
-| `journey/recovery/Main` | The runner owns the loaded mirror manager for the recovery journey and dumps values for the next run. |
-| `journey/retirement/Main` | The runner owns the loaded mirror manager for the retirement journey and dumps values for the next run. |
-| `journey/repair/Main` | The runner owns separate evolving and fresh-control managers for the repair run. |
 | `E2E.CageSpec` | `withE2ETimed` owns its builder manager for one devnet fixture. |
 | `E2E.Fork81Spec` | One test owns an independent evolving proof fixture until its chain-root comparison ends. |
 | `E2E.ReplaySpec` | One replay test owns its evolving reference; exclusion controls own a disposable copied reference for their speculative proof. |
@@ -394,19 +398,32 @@ generated references. The public `local-services` component also exposes
 `offchain/local-services/Singular/Registry/`. Their generated pages are not
 in this main-library reference. The public `open-datum-application`
 component (`applications/open-datum/offchain/`) carries the open-datum
-application the command line composes — entry commands, envelope, booking
+application the command line composes — command groups, envelope, booking
 approval and destination, payload update, release rules, script, and the
-application value:
+application value — and the request builders of the registry on the proved
+design: the booking of a registration, its reclaim by the refund address and
+its cleanup after the window, the configuration record added to the creation
+of a registry, the records and actions of the request validator in the layout
+it decodes, the validator as a transaction carries it, the reasons a
+builder declines, what open datum hands the fold of a registry, and the commands
+that create a registry and book, reclaim and clean up a registration:
 `Singular.Application.OpenDatum.Book`,
 `Singular.Application.OpenDatum.Build`,
 `Singular.Application.OpenDatum.Command`,
-`Singular.Application.OpenDatum.Entry`,
 `Singular.Application.OpenDatum.Envelope`,
 `Singular.Application.OpenDatum.InsertEnvelope`,
 `Singular.Application.OpenDatum.Permanent`,
 `Singular.Application.OpenDatum.Plan`,
 `Singular.Application.OpenDatum.Preview`,
+`Singular.Application.OpenDatum.Registration`,
 `Singular.Application.OpenDatum.Release`,
+`Singular.Application.OpenDatum.Requests.Booking`,
+`Singular.Application.OpenDatum.Requests.Configuration`,
+`Singular.Application.OpenDatum.Requests.Fold`,
+`Singular.Application.OpenDatum.Requests.Pending`,
+`Singular.Application.OpenDatum.Requests.Records`,
+`Singular.Application.OpenDatum.Requests.Refusal`,
+`Singular.Application.OpenDatum.Requests.Script`,
 `Singular.Application.OpenDatum.Root`,
 `Singular.Application.OpenDatum.Run`,
 `Singular.Application.OpenDatum.Script`,
@@ -417,18 +434,20 @@ and the executable's entry point lives in
 `applications/open-datum/offchain/app/`.
 The public `registry-cli` component (`offchain/cli/`) carries the registry
 command line the two binaries link — session, journal and receipts, the
-flag group, `create`, `fold`, `reject`, `reclaim`, `inspect`, reconcile,
-recovery and the booking call: `Singular.CLI`, `Singular.CLI.Attached`,
+flag group, the retained OpenDatum `create`, `fold` and `inspect` helpers, reconcile,
+recovery, the booking call and the creation of a registry on the proved design
+with the fold into it: `Singular.CLI`, `Singular.CLI.Attached`,
 `Singular.CLI.Command`, `Singular.CLI.Create`,
 `Singular.CLI.Finish`, `Singular.CLI.Fold`, `Singular.CLI.FoldRules`,
 `Singular.CLI.Inspect`, `Singular.CLI.Key`, `Singular.CLI.Live`,
 `Singular.CLI.ManagedState`, `Singular.CLI.Outlay`, `Singular.CLI.Payload`, `Singular.CLI.Permanent`,
-`Singular.CLI.Plan`, `Singular.CLI.Proof`,
-`Singular.CLI.Receipt`, `Singular.CLI.ReceiptBody`, `Singular.CLI.Reclaim`,
+`Singular.CLI.Plan`, `Singular.CLI.Promise`, `Singular.CLI.Proof`,
+`Singular.CLI.Receipt`, `Singular.CLI.ReceiptBody`,
 `Singular.CLI.ReclaimRules`, `Singular.CLI.Reconcile`,
-`Singular.CLI.Recovery`, `Singular.CLI.Registry`, `Singular.CLI.Reject`,
+`Singular.CLI.Recovery`, `Singular.CLI.Registry`,
 `Singular.CLI.RejectRules`, `Singular.CLI.RequestWindow`,
-`Singular.CLI.Root`, `Singular.CLI.Session`, `Singular.CLI.Trace`,
+`Singular.CLI.Root`, `Singular.CLI.Session`, `Singular.CLI.State`,
+`Singular.CLI.Steps`, `Singular.CLI.Trace`,
 `Singular.CLI.TrieHistory` and `Singular.CLI.TrieTrace`; their sources live
 under `offchain/cli/src/Singular/CLI/`.
 
@@ -439,11 +458,10 @@ the key, the verb, and the leaves found and required. Every ordinary verb
 of an application calls it in planning, in preview and live, so a taken
 key, a terminal key, and an unknown key for update and terminate are
 refused before any signing key is read. A cardano-keri application gets
-the same refusal by calling the exported function in its own planning. The negative host lives beside the
-application in `applications/open-datum/negative/`, with its sources under
-`applications/open-datum/negative/src/Negative/` and its entry point in
-`applications/open-datum/negative/app/`.
-Their generated pages are not in this main-library reference either: only
+the same refusal by calling the exported function in its own planning.
+The current-line adversarial host and its dedicated workflow have been
+removed with that line's commands under issue 743.
+The command layers' generated pages are not in this main-library reference either: only
 the main library has a generated reference. This coverage gap stays visible; wider
 generated coverage is a separate decision for the epic's owner, not a
 claim this page makes. Nothing on

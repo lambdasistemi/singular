@@ -4,7 +4,7 @@
 Every Haskell source the tree holds is discovered by walking it — no
 per-file list anywhere in this tool — classified into exactly one
 structural category (production, tool, conformance library, conformance
-runner, test/harness, old journey, application), and scanned for the
+runner, test/harness, application), and scanned for the
 effect classes below. Anything unclassified fails closed.
 
 Effect classes are import-anchored: a class is reported only when the
@@ -79,22 +79,17 @@ CATEGORIES: list[tuple[str, str, tuple[str, ...]]] = [
             "offchain/koios-http/src/",
             "offchain/cli/src/",
             "applications/open-datum/offchain/src/",
-            "applications/keri-stub/offchain/src/",
         ),
     ),
     (
         "tool",
-        "standalone operator executables (deployment, devnet, recorders)",
+        "standalone operator executables (devnet, recorders)",
         (
-            "offchain/deployment/",
             "offchain/devnet/",
             "offchain/koios-http/app/",
             "offchain/app/",
-            "offchain/insert-active/",
-            "offchain/update-terminal/",
             "offchain/cli/Main.hs",
             "applications/open-datum/offchain/app/",
-            "applications/keri-stub/offchain/app/",
         ),
     ),
     (
@@ -111,12 +106,6 @@ CATEGORIES: list[tuple[str, str, tuple[str, ...]]] = [
             "conformance/app-default/",
             "conformance/coverage/",
         ),
-    ),
-    (
-        "application-host",
-        "the adversarial host: ordinary sources shared by directory, host "
-        "modules linked by no ordinary executable",
-        ("applications/open-datum/negative/",),
     ),
     (
         "test",
@@ -136,15 +125,8 @@ CATEGORIES: list[tuple[str, str, tuple[str, ...]]] = [
             "conformance/test/",
             "applications/open-datum/offchain/test/",
             "applications/open-datum/offchain/test-tags/",
-            "applications/open-datum/offchain/forged-registry/",
-            "applications/keri-stub/offchain/test/",
-            "applications/keri-stub/offchain/test-tags/",
+            "applications/open-datum/offchain/refusals/",
         ),
-    ),
-    (
-        "journey",
-        "old registry journey executables: kept running, never extended",
-        ("offchain/journey/",),
     ),
 ]
 

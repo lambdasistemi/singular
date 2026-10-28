@@ -1,0 +1,565 @@
+{
+  "description": "Byte vectors of the hashed-name preimages of the Singular state: for each role its inputs, the preimage (the Plutus Data serialisation of the role's constructor) and the name (the blake2b-256 hash of the preimage). The on-chain functions and the off-chain codec both reproduce every vector; the generated Aiken tests are made from this file.",
+  "provenance": "Made by an independent reference encoder written from the definition of the Plutus Data serialisation (integers as plain or tagged big numbers, byte strings chunked above 64 bytes, the empty list definite and any other list indefinite, constructors as tag 121 plus the index) with blake2b-256 from Python hashlib. Neither the on-chain nor the off-chain encoder produced a byte of this file. The configuration vectors were added later with the same definition, written again and run apart from both encoders. The termination vectors were added later with the same definition, written again and run apart from both encoders; the new encoder first re-derived every active vector of this table byte for byte.",
+  "inputs": {
+    "state": "seed: transactionId (hex), outputIndex",
+    "active": "registry: policy (hex), name (hex); key (hex)",
+    "registration-approval": "registry; key; holdingAddress: payment [key|script, hash], stake null or [key|script, hash]; datumHash (hex); deposit (decimal string)",
+    "configuration": "registry: policy (hex), name (hex)",
+    "termination-approval": "registry: policy (hex), name (hex); key (hex)"
+  },
+  "edges": {
+    "definite-length-list": "a list written with its length first: the empty list, here the fields of a constructor without fields",
+    "indefinite-length-list": "a list written between a start byte and a break byte: any list with an element",
+    "chunked-byte-string": "a byte string of more than 64 bytes, written as chunks of at most 64 bytes between a start byte and a break byte",
+    "big-number": "an integer beyond 64 bits, written as a tagged byte string"
+  },
+  "vectors": [
+    {
+      "id": "state-output-index-zero",
+      "role": "state",
+      "note": "the output index 0 is the one-byte integer 00",
+      "edges": [
+        "indefinite-length-list"
+      ],
+      "input": {
+        "seed": {
+          "transactionId": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+          "outputIndex": 0
+        }
+      },
+      "preimage": "d8799fd8799f5820000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f00ffff",
+      "name": "f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139daf"
+    },
+    {
+      "id": "state-output-index-24",
+      "role": "state",
+      "note": "24 is the first integer that needs a following byte",
+      "edges": [
+        "indefinite-length-list"
+      ],
+      "input": {
+        "seed": {
+          "transactionId": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+          "outputIndex": 24
+        }
+      },
+      "preimage": "d8799fd8799f5820000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f1818ffff",
+      "name": "9d417daf68fb27a72855350afe1b3720d6f1fe33a72f470a3c6d422e84d2230d"
+    },
+    {
+      "id": "state-output-index-256",
+      "role": "state",
+      "note": "256 is the first integer that needs two following bytes",
+      "edges": [
+        "indefinite-length-list"
+      ],
+      "input": {
+        "seed": {
+          "transactionId": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+          "outputIndex": 256
+        }
+      },
+      "preimage": "d8799fd8799f5820000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f190100ffff",
+      "name": "dc4d6b04df49082c68c31bee1f1c79f1d50bd845678b3db5c311da83a45a38f0"
+    },
+    {
+      "id": "active-key-32-bytes",
+      "role": "active",
+      "note": "a 32-byte key is one definite byte string",
+      "edges": [
+        "indefinite-length-list"
+      ],
+      "input": {
+        "registry": {
+          "policy": "70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f7",
+          "name": "f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139daf"
+        },
+        "key": "0104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e"
+      },
+      "preimage": "d87a9fd8799f581c70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f75820f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139dafff58200104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5eff",
+      "name": "7bb99a3ed884c2143636542734ff8987649b8deb960ba4b787bf1ab40f35fecb"
+    },
+    {
+      "id": "active-key-empty",
+      "role": "active",
+      "note": "the empty key is the empty byte string",
+      "edges": [
+        "indefinite-length-list"
+      ],
+      "input": {
+        "registry": {
+          "policy": "70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f7",
+          "name": "f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139daf"
+        },
+        "key": ""
+      },
+      "preimage": "d87a9fd8799f581c70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f75820f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139dafff40ff",
+      "name": "255fa9d4839d21127407a54e791da515053e3145348eea7330be2509032619f6"
+    },
+    {
+      "id": "active-key-64-bytes",
+      "role": "active",
+      "note": "64 bytes is the longest byte string that is not chunked",
+      "edges": [
+        "indefinite-length-list"
+      ],
+      "input": {
+        "registry": {
+          "policy": "70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f7",
+          "name": "f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139daf"
+        },
+        "key": "0104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e6164676a6d707376797c7f8285888b8e9194979a9da0a3a6a9acafb2b5b8bbbe"
+      },
+      "preimage": "d87a9fd8799f581c70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f75820f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139dafff58400104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e6164676a6d707376797c7f8285888b8e9194979a9da0a3a6a9acafb2b5b8bbbeff",
+      "name": "ef4d54968e89f53065fb10f327baa1d5e53675992a6e140aed21e9eb78715de9"
+    },
+    {
+      "id": "active-key-65-bytes",
+      "role": "active",
+      "note": "65 bytes is chunked: one chunk of 64 bytes and one of 1",
+      "edges": [
+        "chunked-byte-string",
+        "indefinite-length-list"
+      ],
+      "input": {
+        "registry": {
+          "policy": "70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f7",
+          "name": "f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139daf"
+        },
+        "key": "0104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e6164676a6d707376797c7f8285888b8e9194979a9da0a3a6a9acafb2b5b8bbbec1"
+      },
+      "preimage": "d87a9fd8799f581c70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f75820f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139dafff5f58400104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e6164676a6d707376797c7f8285888b8e9194979a9da0a3a6a9acafb2b5b8bbbe41c1ffff",
+      "name": "4252db9d9c2dc7a8229e2b857b05271e1f4dbcc27407dc4facbcae88ef170cb3"
+    },
+    {
+      "id": "active-key-128-bytes",
+      "role": "active",
+      "note": "128 bytes is chunked: two chunks of 64 bytes and no remainder",
+      "edges": [
+        "chunked-byte-string",
+        "indefinite-length-list"
+      ],
+      "input": {
+        "registry": {
+          "policy": "70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f7",
+          "name": "f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139daf"
+        },
+        "key": "0104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e6164676a6d707376797c7f8285888b8e9194979a9da0a3a6a9acafb2b5b8bbbec1c4c7cacdd0d3d6d9dcdfe2e5e8ebeef1f4f7fafd000306090c0f1215181b1e2124272a2d303336393c3f4245484b4e5154575a5d606366696c6f7275787b7e"
+      },
+      "preimage": "d87a9fd8799f581c70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f75820f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139dafff5f58400104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e6164676a6d707376797c7f8285888b8e9194979a9da0a3a6a9acafb2b5b8bbbe5840c1c4c7cacdd0d3d6d9dcdfe2e5e8ebeef1f4f7fafd000306090c0f1215181b1e2124272a2d303336393c3f4245484b4e5154575a5d606366696c6f7275787b7effff",
+      "name": "29b734ce2e398ebdb0d547ba071511fd4ceb86d3a322231afef443f59dd8a7f3"
+    },
+    {
+      "id": "active-key-129-bytes",
+      "role": "active",
+      "note": "129 bytes is chunked: two chunks of 64 bytes and one of 1",
+      "edges": [
+        "chunked-byte-string",
+        "indefinite-length-list"
+      ],
+      "input": {
+        "registry": {
+          "policy": "70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f7",
+          "name": "f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139daf"
+        },
+        "key": "0104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e6164676a6d707376797c7f8285888b8e9194979a9da0a3a6a9acafb2b5b8bbbec1c4c7cacdd0d3d6d9dcdfe2e5e8ebeef1f4f7fafd000306090c0f1215181b1e2124272a2d303336393c3f4245484b4e5154575a5d606366696c6f7275787b7e81"
+      },
+      "preimage": "d87a9fd8799f581c70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f75820f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139dafff5f58400104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e6164676a6d707376797c7f8285888b8e9194979a9da0a3a6a9acafb2b5b8bbbe5840c1c4c7cacdd0d3d6d9dcdfe2e5e8ebeef1f4f7fafd000306090c0f1215181b1e2124272a2d303336393c3f4245484b4e5154575a5d606366696c6f7275787b7e4181ffff",
+      "name": "5bddc0632226e255d6cf4330511bd4f1873c66eb04870e7f96f1fe29ff91b6aa"
+    },
+    {
+      "id": "approval-script-payment-key-stake",
+      "role": "registration-approval",
+      "note": "a script payment credential with an inline stake key credential",
+      "edges": [
+        "indefinite-length-list"
+      ],
+      "input": {
+        "registry": {
+          "policy": "70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f7",
+          "name": "f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139daf"
+        },
+        "key": "0104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e",
+        "holdingAddress": {
+          "payment": [
+            "script",
+            "20272e353c434a51585f666d747b828990979ea5acb3bac1c8cfd6dd"
+          ],
+          "stake": [
+            "key",
+            "3039424b545d666f78818a939ca5aeb7c0c9d2dbe4edf6ff08111a23"
+          ]
+        },
+        "datumHash": "404b56616c77828d98a3aeb9c4cfdae5f0fb06111c27323d48535e69747f8a95",
+        "deposit": "2000000"
+      },
+      "preimage": "d87c9fd8799f581c70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f75820f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139dafff58200104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5ed8799fd87a9f581c20272e353c434a51585f666d747b828990979ea5acb3bac1c8cfd6ddffd8799fd8799fd8799f581c3039424b545d666f78818a939ca5aeb7c0c9d2dbe4edf6ff08111a23ffffffff5820404b56616c77828d98a3aeb9c4cfdae5f0fb06111c27323d48535e69747f8a951a001e8480ff",
+      "name": "7650779196dc13c7237489239331d09eda883fbfa15c8768f3e284228e8fdaa1"
+    },
+    {
+      "id": "approval-key-payment-without-stake",
+      "role": "registration-approval",
+      "note": "an address with no stake credential carries the empty field list of None, and the deposit 2000000 is a four-byte integer",
+      "edges": [
+        "definite-length-list",
+        "indefinite-length-list"
+      ],
+      "input": {
+        "registry": {
+          "policy": "70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f7",
+          "name": "f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139daf"
+        },
+        "key": "0104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e",
+        "holdingAddress": {
+          "payment": [
+            "key",
+            "101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e61"
+          ],
+          "stake": null
+        },
+        "datumHash": "404b56616c77828d98a3aeb9c4cfdae5f0fb06111c27323d48535e69747f8a95",
+        "deposit": "2000000"
+      },
+      "preimage": "d87c9fd8799f581c70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f75820f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139dafff58200104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5ed8799fd8799f581c101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e61ffd87a80ff5820404b56616c77828d98a3aeb9c4cfdae5f0fb06111c27323d48535e69747f8a951a001e8480ff",
+      "name": "df2da01e7b5fda9bed6efd6f958659b295b59a2e428c74eec7d7f8a83aa40eee"
+    },
+    {
+      "id": "approval-script-payment-script-stake",
+      "role": "registration-approval",
+      "note": "a script payment credential with an inline stake script credential",
+      "edges": [
+        "indefinite-length-list"
+      ],
+      "input": {
+        "registry": {
+          "policy": "70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f7",
+          "name": "f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139daf"
+        },
+        "key": "0104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e",
+        "holdingAddress": {
+          "payment": [
+            "script",
+            "20272e353c434a51585f666d747b828990979ea5acb3bac1c8cfd6dd"
+          ],
+          "stake": [
+            "script",
+            "505d6a7784919eabb8c5d2dfecf90613202d3a4754616e7b8895a2af"
+          ]
+        },
+        "datumHash": "404b56616c77828d98a3aeb9c4cfdae5f0fb06111c27323d48535e69747f8a95",
+        "deposit": "2000000"
+      },
+      "preimage": "d87c9fd8799f581c70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f75820f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139dafff58200104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5ed8799fd87a9f581c20272e353c434a51585f666d747b828990979ea5acb3bac1c8cfd6ddffd8799fd8799fd87a9f581c505d6a7784919eabb8c5d2dfecf90613202d3a4754616e7b8895a2afffffffff5820404b56616c77828d98a3aeb9c4cfdae5f0fb06111c27323d48535e69747f8a951a001e8480ff",
+      "name": "c91d6fe3bbddb1d60e2bb6164e8ab00f379baa9f23b59926f3aa1e4525196469"
+    },
+    {
+      "id": "approval-key-65-bytes",
+      "role": "registration-approval",
+      "note": "a chunked key inside the approval",
+      "edges": [
+        "chunked-byte-string",
+        "indefinite-length-list"
+      ],
+      "input": {
+        "registry": {
+          "policy": "70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f7",
+          "name": "f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139daf"
+        },
+        "key": "0104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e6164676a6d707376797c7f8285888b8e9194979a9da0a3a6a9acafb2b5b8bbbec1",
+        "holdingAddress": {
+          "payment": [
+            "script",
+            "20272e353c434a51585f666d747b828990979ea5acb3bac1c8cfd6dd"
+          ],
+          "stake": [
+            "key",
+            "3039424b545d666f78818a939ca5aeb7c0c9d2dbe4edf6ff08111a23"
+          ]
+        },
+        "datumHash": "404b56616c77828d98a3aeb9c4cfdae5f0fb06111c27323d48535e69747f8a95",
+        "deposit": "2000000"
+      },
+      "preimage": "d87c9fd8799f581c70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f75820f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139dafff5f58400104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e6164676a6d707376797c7f8285888b8e9194979a9da0a3a6a9acafb2b5b8bbbe41c1ffd8799fd87a9f581c20272e353c434a51585f666d747b828990979ea5acb3bac1c8cfd6ddffd8799fd8799fd8799f581c3039424b545d666f78818a939ca5aeb7c0c9d2dbe4edf6ff08111a23ffffffff5820404b56616c77828d98a3aeb9c4cfdae5f0fb06111c27323d48535e69747f8a951a001e8480ff",
+      "name": "bfa6de27728a4c5f2e1b38e7a3683a6b04c612b87a130b40dc3ddcab5771c7c5"
+    },
+    {
+      "id": "approval-deposit-zero",
+      "role": "registration-approval",
+      "note": "a zero deposit is the one-byte integer 00",
+      "edges": [
+        "definite-length-list",
+        "indefinite-length-list"
+      ],
+      "input": {
+        "registry": {
+          "policy": "70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f7",
+          "name": "f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139daf"
+        },
+        "key": "0104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e",
+        "holdingAddress": {
+          "payment": [
+            "key",
+            "101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e61"
+          ],
+          "stake": null
+        },
+        "datumHash": "404b56616c77828d98a3aeb9c4cfdae5f0fb06111c27323d48535e69747f8a95",
+        "deposit": "0"
+      },
+      "preimage": "d87c9fd8799f581c70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f75820f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139dafff58200104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5ed8799fd8799f581c101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e61ffd87a80ff5820404b56616c77828d98a3aeb9c4cfdae5f0fb06111c27323d48535e69747f8a9500ff",
+      "name": "dca1e9a91dc4bcfd25d9aa58b46e20a9abd11bbb15df71afeafb3e3420e3b0ed"
+    },
+    {
+      "id": "approval-deposit-eight-byte-integer",
+      "role": "registration-approval",
+      "note": "2^32 is the first eight-byte integer",
+      "edges": [
+        "definite-length-list",
+        "indefinite-length-list"
+      ],
+      "input": {
+        "registry": {
+          "policy": "70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f7",
+          "name": "f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139daf"
+        },
+        "key": "0104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e",
+        "holdingAddress": {
+          "payment": [
+            "key",
+            "101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e61"
+          ],
+          "stake": null
+        },
+        "datumHash": "404b56616c77828d98a3aeb9c4cfdae5f0fb06111c27323d48535e69747f8a95",
+        "deposit": "4294967296"
+      },
+      "preimage": "d87c9fd8799f581c70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f75820f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139dafff58200104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5ed8799fd8799f581c101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e61ffd87a80ff5820404b56616c77828d98a3aeb9c4cfdae5f0fb06111c27323d48535e69747f8a951b0000000100000000ff",
+      "name": "9a28bf920f35654564e4fd2f13200d7b5b56a20b839e36f89e87c1e5f2cda662"
+    },
+    {
+      "id": "approval-deposit-largest-unsigned-64",
+      "role": "registration-approval",
+      "note": "2^64-1 is the largest integer that is not a big number",
+      "edges": [
+        "definite-length-list",
+        "indefinite-length-list"
+      ],
+      "input": {
+        "registry": {
+          "policy": "70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f7",
+          "name": "f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139daf"
+        },
+        "key": "0104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e",
+        "holdingAddress": {
+          "payment": [
+            "key",
+            "101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e61"
+          ],
+          "stake": null
+        },
+        "datumHash": "404b56616c77828d98a3aeb9c4cfdae5f0fb06111c27323d48535e69747f8a95",
+        "deposit": "18446744073709551615"
+      },
+      "preimage": "d87c9fd8799f581c70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f75820f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139dafff58200104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5ed8799fd8799f581c101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e61ffd87a80ff5820404b56616c77828d98a3aeb9c4cfdae5f0fb06111c27323d48535e69747f8a951bffffffffffffffffff",
+      "name": "21aa1b08626025ed1b736a15563b90a97873900963022cbb282017b9680b8e20"
+    },
+    {
+      "id": "approval-deposit-bignum",
+      "role": "registration-approval",
+      "note": "2^64 is a big number: tag 2 and a byte string",
+      "edges": [
+        "big-number",
+        "definite-length-list",
+        "indefinite-length-list"
+      ],
+      "input": {
+        "registry": {
+          "policy": "70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f7",
+          "name": "f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139daf"
+        },
+        "key": "0104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e",
+        "holdingAddress": {
+          "payment": [
+            "key",
+            "101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e61"
+          ],
+          "stake": null
+        },
+        "datumHash": "404b56616c77828d98a3aeb9c4cfdae5f0fb06111c27323d48535e69747f8a95",
+        "deposit": "18446744073709551616"
+      },
+      "preimage": "d87c9fd8799f581c70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f75820f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139dafff58200104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5ed8799fd8799f581c101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e61ffd87a80ff5820404b56616c77828d98a3aeb9c4cfdae5f0fb06111c27323d48535e69747f8a95c249010000000000000000ff",
+      "name": "819d2964fe9a619ed544936d1f25d5af74b045d7b875bda4ae77e42de534865f"
+    },
+    {
+      "id": "configuration-registry-of-the-other-roles",
+      "role": "configuration",
+      "note": "the registry the active vectors use: the registry is a nested constructor inside the role constructor",
+      "edges": [
+        "indefinite-length-list"
+      ],
+      "input": {
+        "registry": {
+          "policy": "70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f7",
+          "name": "f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139daf"
+        }
+      },
+      "preimage": "d87b9fd8799f581c70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f75820f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139dafffff",
+      "name": "bbb895f9594c6a51a81fae044cfbc4549f82e213e22808b7f5bcf557260d535c"
+    },
+    {
+      "id": "configuration-registry-of-ff-bytes",
+      "role": "configuration",
+      "note": "a policy and a name of nothing but ff bytes: the longest name a token can have",
+      "edges": [
+        "indefinite-length-list"
+      ],
+      "input": {
+        "registry": {
+          "policy": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "name": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+        }
+      },
+      "preimage": "d87b9fd8799f581cffffffffffffffffffffffffffffffffffffffffffffffffffffffff5820ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "name": "a3b06acde4dec83cbfed1516298e5546944b94aeb2b27007df4deb9b2d089fdc"
+    },
+    {
+      "id": "configuration-registry-with-an-empty-name",
+      "role": "configuration",
+      "note": "the empty name is the empty byte string",
+      "edges": [
+        "indefinite-length-list"
+      ],
+      "input": {
+        "registry": {
+          "policy": "00000000000000000000000000000000000000000000000000000000",
+          "name": ""
+        }
+      },
+      "preimage": "d87b9fd8799f581c0000000000000000000000000000000000000000000000000000000040ffff",
+      "name": "b458fd3658b3cbe2d4d70d6d53d9107c3e18c1dabf55f1b35426e8aa5fc005bf"
+    },
+    {
+      "id": "termination-key-32-bytes",
+      "role": "termination-approval",
+      "note": "the registry and key of the active and registration vectors, to be told apart from them",
+      "edges": [
+        "indefinite-length-list"
+      ],
+      "input": {
+        "registry": {
+          "policy": "70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f7",
+          "name": "f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139daf"
+        },
+        "key": "0104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e"
+      },
+      "preimage": "d87d9fd8799f581c70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f75820f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139dafff58200104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5eff",
+      "name": "81493ea777908b204b6455a18d98c91663198e1c0093081e9b5ac76f0a4502be"
+    },
+    {
+      "id": "termination-key-empty",
+      "role": "termination-approval",
+      "note": "the empty key is the empty byte string",
+      "edges": [
+        "indefinite-length-list"
+      ],
+      "input": {
+        "registry": {
+          "policy": "70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f7",
+          "name": "f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139daf"
+        },
+        "key": ""
+      },
+      "preimage": "d87d9fd8799f581c70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f75820f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139dafff40ff",
+      "name": "1da94304f13b7b38378aa5ccc64f089e7e5c755dca0f2fbe8a17cc1205dd3627"
+    },
+    {
+      "id": "termination-key-64-bytes",
+      "role": "termination-approval",
+      "note": "64 bytes is the longest key written as one byte string",
+      "edges": [
+        "indefinite-length-list"
+      ],
+      "input": {
+        "registry": {
+          "policy": "70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f7",
+          "name": "f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139daf"
+        },
+        "key": "0104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e6164676a6d707376797c7f8285888b8e9194979a9da0a3a6a9acafb2b5b8bbbe"
+      },
+      "preimage": "d87d9fd8799f581c70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f75820f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139dafff58400104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e6164676a6d707376797c7f8285888b8e9194979a9da0a3a6a9acafb2b5b8bbbeff",
+      "name": "a9787e729863f0bb50dbc404714eddf8aadd4877d755fdfa4d4fa429400fd956"
+    },
+    {
+      "id": "termination-key-65-bytes",
+      "role": "termination-approval",
+      "note": "65 bytes is the shortest key written in chunks",
+      "edges": [
+        "chunked-byte-string",
+        "indefinite-length-list"
+      ],
+      "input": {
+        "registry": {
+          "policy": "70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f7",
+          "name": "f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139daf"
+        },
+        "key": "0104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e6164676a6d707376797c7f8285888b8e9194979a9da0a3a6a9acafb2b5b8bbbec1"
+      },
+      "preimage": "d87d9fd8799f581c70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f75820f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139dafff5f58400104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e6164676a6d707376797c7f8285888b8e9194979a9da0a3a6a9acafb2b5b8bbbe41c1ffff",
+      "name": "9d8c4c47d67bda58be1e27fc58aeaa80649b6434a2d653f23095c15034369a9c"
+    },
+    {
+      "id": "termination-key-129-bytes",
+      "role": "termination-approval",
+      "note": "129 bytes are three chunks, the last of one byte",
+      "edges": [
+        "chunked-byte-string",
+        "indefinite-length-list"
+      ],
+      "input": {
+        "registry": {
+          "policy": "70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f7",
+          "name": "f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139daf"
+        },
+        "key": "0104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e6164676a6d707376797c7f8285888b8e9194979a9da0a3a6a9acafb2b5b8bbbec1c4c7cacdd0d3d6d9dcdfe2e5e8ebeef1f4f7fafd000306090c0f1215181b1e2124272a2d303336393c3f4245484b4e5154575a5d606366696c6f7275787b7e81"
+      },
+      "preimage": "d87d9fd8799f581c70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f75820f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139dafff5f58400104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e6164676a6d707376797c7f8285888b8e9194979a9da0a3a6a9acafb2b5b8bbbe5840c1c4c7cacdd0d3d6d9dcdfe2e5e8ebeef1f4f7fafd000306090c0f1215181b1e2124272a2d303336393c3f4245484b4e5154575a5d606366696c6f7275787b7e4181ffff",
+      "name": "af470aef0d3ceb3df6ecd1fdcd4f399fe9e43b9be4b34879694dd85b13dc401e"
+    },
+    {
+      "id": "termination-registry-differing-only-in-policy",
+      "role": "termination-approval",
+      "note": "the registry of the 32-byte key with the last bit of its policy flipped",
+      "edges": [
+        "indefinite-length-list"
+      ],
+      "input": {
+        "registry": {
+          "policy": "70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f6",
+          "name": "f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139daf"
+        },
+        "key": "0104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e"
+      },
+      "preimage": "d87d9fd8799f581c70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f65820f89522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139dafff58200104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5eff",
+      "name": "10d4af76a83606b336243396aabd907b353756a124684654aa2de8f69704502e"
+    },
+    {
+      "id": "termination-registry-differing-only-in-name",
+      "role": "termination-approval",
+      "note": "the registry of the 32-byte key with the first bit of its name flipped",
+      "edges": [
+        "indefinite-length-list"
+      ],
+      "input": {
+        "registry": {
+          "policy": "70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f7",
+          "name": "f99522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139daf"
+        },
+        "key": "0104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e"
+      },
+      "preimage": "d87d9fd8799f581c70757a7f84898e93989da2a7acb1b6bbc0c5cacfd4d9dee3e8edf2f75820f99522d53ec5d471859825a00c59836263130e8cc4a59015a944371049139dafff58200104070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5eff",
+      "name": "d4d93933baa26f8e29f8f53ab62777345a2b7cd22651d8fd407608c6c1f91d02"
+    }
+  ]
+}
