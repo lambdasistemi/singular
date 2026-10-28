@@ -2,6 +2,24 @@
 
 Snapshot 2026-10-12T13:01Z (main 6d2de3a5; #528 closed with the keri stub; #518 PR 2 merged; queue 575 > 578 > 577 > 585; release 574 held). Desk: Claude Opus 5.5 at pane %0 (relaunched after the host crash; was Claude Fable 5.1 at %2706), window singular-ms1-m1-owner, session z-singular-M1, runtime root /home/paolino/.orch-runtime/singular/m1 (journal STATUS.md there). The operator moved the seat here on 2026-10-09; the previous desk journal at /tmp/projects/singular/milestone-1/STATUS.md is history.
 
+## State at 2026-10-28 17:00 UTC (supersedes the sections below where they differ)
+
+M1 is the registry without pinned policies. Decided 22 October (epic #731) and narrowed on 26 October: Singular is the state of one application's keys and acts only at the fold; the request lifecycle, deposits, reclaim, cleanup, termination and money belong to the application, with open datum the shipped application. Closed as not planned on 26 October: protected rejection and request tags (#498, #495–#497, #529, #532, #668, #487, #488, #500, #519), the policy-pin checks (#678, #681), the bounded-contract and earlier-line epics (#507, #506, #396, #371, #310, #484) and #671. The ledger-level proofs moved to the assurance milestone; the M1 release states the ledger assumption as a limit instead (#747).
+
+Main: the epic merged on 2026-10-28 (PR 763, d69ab005). Release **0.17.0** published on 2026-10-28 as a pre-release (tag v0.17.0 at deb4b5c9, 11 assets, the on-chain archive's identity check passes for 30 validators); its release page was rewritten for users. Earlier releases since the last snapshot: 0.12.0 (18 October, the vault), 0.13.0 and 0.13.1 (19–20 October, executables without Nix, readable release pages), 0.14.0 (21 October, Linux packages and Homebrew with the development node), 0.15.0 (21 October, payloads as plain JSON), 0.16.0 (22 October, the registry address; last release of the earlier contract).
+
+Commands in 0.17.0: `singular registry create`, `singular wallet create`, `wallet address`, `wallet sign`, `singular submit`; `open-datum create`, `insert`, `fold`, `reclaim`, `cleanup`, `update`, `terminate`. Removed with the earlier line: `registry fold`, `reclaim`, `reject`, `address`, `describe`, `inspect`, and `open-datum inspect`. No key reader until #744.
+
+Children of #731: #741 closed 24 October (model stated and proved). #742 on main and in 0.17.0, open for its acceptance walk. #743 in progress (removal of the old line from main, CI warnings PR 766). #744 started, Lean reader first. #745, #746 not started. #747 in progress; its body still names protected rejection and needs rewriting for the 26 October scope. #764 opened: port the end-to-end checks retired with the old command line, the negative host first.
+
+Demo 1 still plays 0.16.0; singular-demo PR 34 moves it to 0.17.0. The review card #261 (22 October) is still open.
+
+cardano-keri has its own milestone lane since 2026-10-28 and pins its Lean to the merged Singular main (cardano-keri PR 484); it adopts the new contract on a local test chain only.
+
+Open M1 issues, each mapped to a story in the wiki register (Milestone-1-Stories.json): 764 747 746 745 744 743 742 731 729 717 682 672 624 623 503 490 486 359 335 334 301 300 261.
+
+Not ready for mainnet until on-chain verification and an independent audit are complete; the documentation and the release page say so.
+
 
 
 
