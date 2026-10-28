@@ -116,6 +116,31 @@ theorem never_registered_inversion (h : Hash) (c : Codec) (t : TrieCommit)
   · rintro ⟨release, network, published, policy, outputs, seen, trie, recognised, root, leaf⟩
     simp [readKey, network, published, policy, outputs, seen, trie, recognised, root, leaf]
 
+private theorem token_implies_active (h : Hash) (c : Codec) (t : TrieCommit)
+    (release : PublishedRelease) (world : CandidateWorld) (registry : PublicRegistry)
+    (key : Key) (observed : ReaderObservation) (output : ObservedOutput)
+    (history : HistoryPremises h c t release world registry key)
+    (evidence : ReaderEvidenceCorrespondence h c world registry key observed)
+    (outputs : observed.activeOutputs = .complete [output])
+    (one : quantity output (activeAsset h c registry.identity key) = 1) :
+    trieGet registry.trie key = .known .active ∧ output ∈ world.unspent := by
+  have complete := evidence.1 [output] outputs
+  have filtered : output ∈ world.unspent.filter
+      (fun candidate => quantity candidate (activeAsset h c registry.identity key) > 0) := by
+    rw [← complete]
+    simp
+  have member := (List.mem_filter.mp filtered).1
+  have positive : 0 < liveActiveCount h c registry.identity key world.unspent := by
+    apply Nat.sum_pos_iff_exists_pos.mpr
+    exact ⟨1, List.mem_map.mpr ⟨output, member, one⟩, by decide⟩
+  have supply := HistoryStatements.supply_in_step h c t release world registry key history
+  have active : trieGet registry.trie key = .known .active := by
+    by_cases present : trieGet registry.trie key = .known .active
+    · exact present
+    · simp only [SupplyAt, present, ↓reduceIte] at supply
+      omega
+  exact ⟨active, member⟩
+
 /-- In every reachable world a live answer has an active leaf and genuine custody. -/
 theorem live_sound (h : Hash) (c : Codec) (t : TrieCommit) (decode : DecodeApplication)
     (release : PublishedRelease) (world : CandidateWorld) (registry : PublicRegistry)
@@ -130,7 +155,15 @@ theorem live_sound (h : Hash) (c : Codec) (t : TrieCommit) (decode : DecodeAppli
     ∃ control payload, decoded decode output = some (.live control payload) ∧
       control.registry = registry.identity ∧ control.key = key ∧
       control.activeAsset = activeAsset h c registry.identity key ∧
-      control.deposit ≤ output.lovelace := by sorry
+      control.deposit ≤ output.lovelace := by
+  obtain ⟨actual, control, payload, networkSeen, published, policy, outputs, one,
+    custody, notState, pending, decoding, registryBinding, keyBinding, assetBinding, deposit⟩ :=
+      (live_inversion h c t decode ⟨network, registry.identity, key⟩ observed output).mp _answer
+  have same : actual = release := Option.some.inj (published.symm.trans _release)
+  subst actual
+  have result := token_implies_active h c t release world registry key observed output _history _evidence outputs one
+  exact ⟨result.1, result.2, custody, one, control, payload, decoding,
+    registryBinding, keyBinding, assetBinding, deposit⟩
 
 /-- Booking does not turn the leaf terminal; its token stays in this key's request. -/
 theorem pending_termination_sound (h : Hash) (c : Codec) (t : TrieCommit)
@@ -142,7 +175,13 @@ theorem pending_termination_sound (h : Hash) (c : Codec) (t : TrieCommit)
     (_release : observed.release = some release)
     (_answer : readKey h c t decode ⟨network, registry.identity, key⟩ observed = .pendingTermination output) :
     trieGet registry.trie key = .known .active ∧ output ∈ world.unspent ∧
-    terminationShape .none h c release output registry.identity key = true := by sorry
+    terminationShape .none h c release output registry.identity key = true := by
+  obtain ⟨actual, networkSeen, published, policy, outputs, one, custody, notState, pending⟩ :=
+    (pending_termination_inversion h c t decode ⟨network, registry.identity, key⟩ observed output).mp _answer
+  have same : actual = release := Option.some.inj (published.symm.trans _release)
+  subst actual
+  have result := token_implies_active h c t release world registry key observed output _history _evidence outputs one
+  exact ⟨result.1, result.2, pending⟩
 
 /-- State and lookup correspondence bind the returned terminal leaf to the reachable world. -/
 theorem terminal_sound (h : Hash) (c : Codec) (t : TrieCommit) (decode : DecodeApplication)
@@ -152,7 +191,12 @@ theorem terminal_sound (h : Hash) (c : Codec) (t : TrieCommit) (decode : DecodeA
     (_evidence : ReaderEvidenceCorrespondence h c world registry key observed)
     (_answer : readKey h c t decode ⟨network, registry.identity, key⟩ observed = .terminal state) :
     state.output = registry.state ∧ state.trie = registry.trie ∧
-    trieGet registry.trie key = .known .terminal := by sorry
+    trieGet registry.trie key = .known .terminal := by
+  obtain ⟨actual, networkSeen, published, policy, outputs, stateSeen, trieSeen, recognised, root, leaf⟩ :=
+    (terminal_inversion h c t decode ⟨network, registry.identity, key⟩ observed state).mp _answer
+  have stateEqual := _evidence.2.1 state.output stateSeen
+  have trieEqual := _evidence.2.2 state.trie trieSeen
+  exact ⟨stateEqual, trieEqual, by simpa [trieEqual] using leaf⟩
 
 /-- A never-registered conclusion means this key is unknown in the reachable trie. -/
 theorem never_registered_sound (h : Hash) (c : Codec) (t : TrieCommit) (decode : DecodeApplication)
@@ -161,7 +205,12 @@ theorem never_registered_sound (h : Hash) (c : Codec) (t : TrieCommit) (decode :
     (_history : HistoryPremises h c t release world registry key)
     (_evidence : ReaderEvidenceCorrespondence h c world registry key observed)
     (_answer : readKey h c t decode ⟨network, registry.identity, key⟩ observed = .neverRegistered state) :
-    state.output = registry.state ∧ state.trie = registry.trie ∧ trieGet registry.trie key = .unknown := by sorry
+    state.output = registry.state ∧ state.trie = registry.trie ∧ trieGet registry.trie key = .unknown := by
+  obtain ⟨actual, networkSeen, published, policy, outputs, stateSeen, trieSeen, recognised, root, leaf⟩ :=
+    (never_registered_inversion h c t decode ⟨network, registry.identity, key⟩ observed state).mp _answer
+  have stateEqual := _evidence.2.1 state.output stateSeen
+  have trieEqual := _evidence.2.2 state.trie trieSeen
+  exact ⟨stateEqual, trieEqual, by simpa [trieEqual] using leaf⟩
 
 /-- Missing or failed observations never supply either negative conclusion. -/
 theorem no_absence_from_missing_evidence (h : Hash) (c : Codec) (t : TrieCommit)
