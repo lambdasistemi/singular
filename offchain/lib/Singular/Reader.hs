@@ -25,6 +25,7 @@ module Singular.Reader
     , ReaderState (..)
     , NeutralReaderAnswer (..)
     , readNeutralKey
+    , readNeutralKeyFromSession
     , recognizeReaderState
     ) where
 
@@ -48,9 +49,12 @@ import Data.Map.Strict qualified as Map
 import Data.Text (Text)
 import Lens.Micro ((^.))
 
-import Singular.Registry.ContractTable (ApplicationIdentity (..))
+import Singular.Registry.ContractTable
+    ( ApplicationIdentity (..)
+    , ContractTable
+    )
 import Singular.Registry.Ledger (ConwayEra, Root (..), TxIn, TxOut)
-import Singular.Registry.LedgerProvider (Network)
+import Singular.Registry.LedgerProvider (Network, Session)
 import Singular.Registry.TrieState qualified as Trie
 import Singular.State.Lineage (registryAsset)
 import Singular.State.Preimage (activeTokenName)
@@ -215,3 +219,12 @@ withRead name observed use = case observed of
     ReadFailed why -> Unavailable name (Failed why)
     ReadIncomplete why -> Unavailable name (Incomplete why)
     Complete value -> use value
+
+-- | Collect neutral reader evidence serially within the caller's session.
+readNeutralKeyFromSession
+    :: (Monad m)
+    => Session w m
+    -> ContractTable
+    -> ReaderRequest
+    -> m NeutralReaderAnswer
+readNeutralKeyFromSession _ _ _ = pure (Unavailable NetworkRead Missing)

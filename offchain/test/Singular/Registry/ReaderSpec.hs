@@ -12,7 +12,7 @@ bridge gives abstract identities concrete ledger bytes, using the existing
 preimage producer for the two hashed roles. It does not decide an answer.
 These observations test classification, not a connected ledger lifecycle.
 -}
-module Singular.Registry.ReaderSpec (spec) where
+module Singular.Registry.ReaderSpec (spec, readerRows) where
 
 import Control.Monad (forM_, (>=>))
 import Data.Aeson
@@ -76,17 +76,23 @@ import Singular.State.Records (stateDatum)
 
 spec :: Spec
 spec = describe "reading a key from complete or unavailable evidence" $ do
-    rows <- runIO $ do
-        path <-
-            fromMaybe "../models/singular-application-held/reader-corpus.json"
-                <$> lookupEnv "SINGULAR_READER_CORPUS"
-        decoded <- eitherDecodeFileStrict' path :: IO (Either String [Value])
-        either fail pure (decoded >>= parseEither (traverse rowOf))
+    rows <- runIO readerRows
     it "has more than one independently exported observation" $
         length rows `shouldSatisfy` (> 1)
     forM_ rows $ \(name, request, observed, expected) ->
         it (T.unpack name) $
             R.readNeutralKey request observed `shouldBe` expected
+
+-- | Native Lean observations translated to ledger identities, with native answers.
+readerRows
+    :: IO
+        [(Text, R.ReaderRequest, R.ReaderObservation, R.NeutralReaderAnswer)]
+readerRows = do
+    path <-
+        fromMaybe "../models/singular-application-held/reader-corpus.json"
+            <$> lookupEnv "SINGULAR_READER_CORPUS"
+    decoded <- eitherDecodeFileStrict' path :: IO (Either String [Value])
+    either fail pure (decoded >>= parseEither (traverse rowOf))
 
 type ModelAsset = (Integer, Integer)
 type Bridge = Map.Map ModelAsset LP.Asset
