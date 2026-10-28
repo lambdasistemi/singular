@@ -1,4 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 {- |
 Module      : Singular.Registry.ContractTable
@@ -13,9 +14,10 @@ the program cannot run against.
 Every release ships a table from each state-contract hash to the releases whose
 blueprint carries it, so a refusal can say which contracts the registry was
 made by and where to get them. The table is one committed data file of this
-package, packaged and found like the preprod network-time data, from the
-program's own release. Its rows are filled from the published release assets
-by @tools/fill_contract_table.sh@; the file names every release it leaves out.
+package, embedded in the executable from the program's own release. The
+applied-policy rows also identify the application's policy and script and their
+releases. @tools/fill_contract_table.sh@ derives those rows from compiled
+blueprints; the retained legacy rows and exclusions remain separate.
 
 A hash that appears in no row is a registry made by contracts of no known
 release; a row with no release is a registry made by contracts that are not
@@ -43,7 +45,6 @@ module Singular.Registry.ContractTable
     ) where
 
 import Control.Applicative ((<|>))
-import Control.Exception (IOException, try)
 import Control.Monad (unless, when)
 import Data.Aeson
     ( FromJSON (..)
@@ -59,6 +60,7 @@ import Data.Aeson.Types (Parser)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
+import Data.FileEmbed (embedFileRelative)
 import Data.List (sort)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.List.NonEmpty qualified as NE
@@ -68,7 +70,6 @@ import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
-import Paths_singular_registry (getDataFileName)
 import Text.Read (readMaybe)
 
 {- | The table: the releases of each state-contract hash, oldest first, and the
@@ -146,20 +147,13 @@ contractsOf table hash = case Map.lookup hash (rows table)
     Just [] -> NotReleasedYet
     Just (oldest : newer) -> Released (oldest :| newer)
 
--- | The table of this program's own release, read from its packaged data.
+-- | The table embedded in this program's release; no runtime file is read.
 loadContractTable :: IO (Either Text ContractTable)
-loadContractTable = do
-    path <- getDataFileName tableFile
-    read' <- try (BS.readFile path) :: IO (Either IOException ByteString)
-    pure $ case read' of
-        Left why ->
-            Left
-                ( "the table of releases at "
-                    <> T.pack path
-                    <> " cannot be read: "
-                    <> T.pack (show why)
-                )
-        Right bytes -> parseContractTable bytes
+loadContractTable =
+    pure
+        ( parseContractTable
+            $(embedFileRelative "data/contracts/state-contracts.json")
+        )
 
 {- | Read the table's text: one object with its rows and the releases left out.
 A hash appears in one row and the releases of a row are oldest first.
