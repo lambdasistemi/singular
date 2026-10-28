@@ -209,7 +209,7 @@ spec = describe "Koios ledger provider constructor" $ do
                             modifyIORef' seen (<> [rawRequest])
                             pure $ case Client.rawCall rawRequest of
                                 Wire.CallGenesis -> genesis
-                                Wire.CallAssetUtxos | fault == Nothing -> pageAnswer [row] 0 1
+                                Wire.CallAssetUtxos | isNothing fault -> pageAnswer [row] 0 1
                                 Wire.CallAssetUtxos | queryParam "offset" rawRequest == Just "0" -> firstPage
                                 Wire.CallAssetUtxos -> maybe (okJson [] "[]") (Client.singleExchange . Left) fault
                                 _ ->
@@ -237,7 +237,7 @@ spec = describe "Koios ledger provider constructor" $ do
                                 Reader.Unavailable Reader.ActiveOutputsRead (Reader.Failed why) -> Text.isInfixOf "CallAssetUtxos" why
                                 _ -> False
                     map Client.rawCall <$> readIORef seen
-                        `shouldReturn` ( if fault == Nothing
+                        `shouldReturn` ( if isNothing fault
                                             then [Wire.CallGenesis, Wire.CallAssetUtxos]
                                             else [Wire.CallGenesis, Wire.CallAssetUtxos, Wire.CallAssetUtxos]
                                        )

@@ -14,7 +14,7 @@ These observations test classification, not a connected ledger lifecycle.
 -}
 module Singular.Registry.ReaderSpec (spec, readerRows) where
 
-import Control.Monad (forM_, (>=>))
+import Control.Monad (forM_, when, (>=>))
 import Data.Aeson
     ( FromJSON
     , Object
@@ -93,9 +93,8 @@ spec = describe "reading a key from complete or unavailable evidence" $ do
         it (T.unpack name) $
             R.readNeutralKey request observed `shouldBe` expected
     describe "provider refusals" $ do
-        forM_ rows $ \(name, request, observed, expected) -> case expected of
-            R.Refused R.ForeignStatePolicy{} -> pure ()
-            R.Refused _ | R.observedState observed == R.ReadMissing ->
+        forM_ rows $ \(name, request, observed, expected) ->
+            when (sessionRefusal observed expected) $
                 it ("preserves " <> T.unpack name <> " through the session adapter") $ do
                     table <-
                         either (fail . T.unpack) pure $
@@ -109,47 +108,75 @@ spec = describe "reading a key from complete or unavailable evidence" $ do
                     let session =
                             stubSession
                                 { LP.servedNetwork = pure (providerAnswer (R.observedNetwork observed))
-                                , LP.outputs = \case
-                                    LP.HoldingAsset _ -> pure (providerAnswer (R.observedActiveOutputs observed))
-                                    _ -> fail "reader scanned an address for a refusal"
+                                , LP.outputs = \query ->
+                                    if precedesOutputs expected
+                                        then
+                                            fail "reader queried outputs before its network and release checks"
+                                        else case registryAsset (R.readerRegistry request) of
+                                            Just stateAsset
+                                                | query == LP.HoldingAsset stateAsset ->
+                                                    pure
+                                                        ( fmap
+                                                            (\fact -> Evidenced (maybe [] pure (value fact)) (witness fact))
+                                                            (providerAnswer (R.observedState observed))
+                                                        )
+                                            _ -> case query of
+                                                LP.HoldingAsset _ -> pure (providerAnswer (R.observedActiveOutputs observed))
+                                                _ -> fail "reader scanned an address for a refusal"
                                 , LP.history = \_ _ -> fail "reader read history for a custody refusal"
                                 }
                     R.readNeutralKeyFromSession session table request
                         `shouldReturn` expected
-            _ -> pure ()
         forM_ [R.NetworkRead, R.ActiveOutputsRead, R.StateRead] $ \readName ->
             it
-                ("names a failed " <> show readName <> " without concluding absence") $ do
-                (_, request, observed, _) <- case rows of
-                    first : _ -> pure first
-                    [] -> fail "empty native corpus"
-                table <-
-                    either (fail . T.unpack) pure $
-                        parseContractTable $
-                            BL.toStrict $
-                                encode $
-                                    object
-                                        [ "rows" .= ([] :: [Value])
-                                        , "applications" .= maybe [] pure (R.observedRelease observed)
-                                        ]
-                let failed = Left (LP.BackendReadFailure "read unavailable")
-                    session =
-                        stubSession
-                            { LP.servedNetwork =
-                                pure $
-                                    if readName == R.NetworkRead
-                                        then failed
-                                        else providerAnswer (R.observedNetwork observed)
-                            , LP.outputs = \query -> case registryAsset (R.readerRegistry request) of
-                                Just stateAsset | query == LP.HoldingAsset stateAsset -> pure failed
-                                _ ->
+                ("names a failed " <> show readName <> " without concluding absence")
+                $ do
+                    (_, request, observed, _) <- case rows of
+                        first : _ -> pure first
+                        [] -> fail "empty native corpus"
+                    table <-
+                        either (fail . T.unpack) pure $
+                            parseContractTable $
+                                BL.toStrict $
+                                    encode $
+                                        object
+                                            [ "rows" .= ([] :: [Value])
+                                            , "applications" .= maybe [] pure (R.observedRelease observed)
+                                            ]
+                    let failed = Left (LP.BackendReadFailure "read unavailable")
+                        session =
+                            stubSession
+                                { LP.servedNetwork =
                                     pure $
-                                        if readName == R.StateRead
-                                            then Right (Evidenced [] Nothing)
-                                            else failed
-                            }
-                R.readNeutralKeyFromSession session table request
-                    `shouldReturn` R.Unavailable readName (R.Failed "read unavailable")
+                                        if readName == R.NetworkRead
+                                            then failed
+                                            else providerAnswer (R.observedNetwork observed)
+                                , LP.outputs = \query -> case registryAsset (R.readerRegistry request) of
+                                    Just stateAsset | query == LP.HoldingAsset stateAsset -> pure failed
+                                    _ ->
+                                        pure $
+                                            if readName == R.StateRead
+                                                then Right (Evidenced [] Nothing)
+                                                else failed
+                                }
+                    R.readNeutralKeyFromSession session table request
+                        `shouldReturn` R.Unavailable readName (R.Failed "read unavailable")
+
+sessionRefusal :: R.ReaderObservation -> R.NeutralReaderAnswer -> Bool
+sessionRefusal observed = \case
+    R.Refused R.ForeignStatePolicy{} -> False
+    R.Refused _ -> R.observedState observed == R.ReadMissing
+    R.Unavailable _ R.Failed{} -> R.observedTrie observed == R.ReadMissing
+    R.Unavailable R.StateRead R.StateNotFound -> True
+    R.Unavailable R.StateRead R.StateNotRecognized -> True
+    _ -> False
+
+precedesOutputs :: R.NeutralReaderAnswer -> Bool
+precedesOutputs = \case
+    R.Refused R.WrongNetwork{} -> True
+    R.Refused R.UnknownStatePolicy{} -> True
+    R.Unavailable R.NetworkRead _ -> True
+    _ -> False
 
 -- | A provider failure remains a failure; this fixture cannot manufacture a missing read.
 providerAnswer
