@@ -25,6 +25,7 @@ import Singular.Application.OpenDatum.Command
     , StateCreateArgs (..)
     , StateFoldArgs (..)
     )
+import Singular.Application.OpenDatum.Inspect (openDatumInspection)
 import Singular.Application.OpenDatum.Registration
     ( openDatumHost
     , runBook
@@ -37,6 +38,7 @@ import Singular.Application.OpenDatum.Requests.Records
     ( RequestParameters (..)
     )
 import Singular.CLI.Finish (finish)
+import Singular.CLI.Inspect (runReader)
 import Singular.CLI.Receipt (OutcomeClass (ClientRefusal))
 import Singular.CLI.Session (Env (..), failWith, openWriteSigner)
 import Singular.CLI.State (runStateCreate, runStateFold)
@@ -45,6 +47,7 @@ import System.Exit (ExitCode (..))
 -- | Run one open-datum command in the environment the entry point composed.
 runOpenDatum :: Env -> OpenDatumCommand -> IO ExitCode
 runOpenDatum env = \case
+    OpenInspect a -> runReader env a openDatumInspection
     OpenHelp text -> putStr text >> pure ExitSuccess
     OpenInsert _ ->
         failWith

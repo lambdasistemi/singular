@@ -42,6 +42,7 @@ library
     Singular.Application.OpenDatum.Help
     Singular.Application.OpenDatum.Registration
     Singular.Application.OpenDatum.Reader
+    Singular.Application.OpenDatum.Inspect
     Singular.Application.OpenDatum.Release
     Singular.Application.OpenDatum.Requests.Booking
     Singular.Application.OpenDatum.Requests.Configuration

@@ -20,43 +20,44 @@ spec :: Spec
 spec = do
     describe "reading a key without a signer" $ do
         it
-            "runs inspect and reports an unavailable provider as structured data" $ do
-            let provider _ =
-                    Env
-                        { envTracer = nullTracer
-                        , envSource = "fixture"
-                        , envLoadRelease = \_ _ -> fail "inspect read a blueprint"
-                        , envReads = \_ _ -> ioError (userError "provider disconnected")
-                        , envWrites = \_ _ -> fail "inspect opened a writer"
-                        }
-                line =
-                    [ "inspect"
-                    , "--state-token"
-                    , replicate 56 'a' <> ".01"
-                    , "--network-magic"
-                    , "42"
-                    , "--koios-url"
-                    , "http://fixture.invalid"
-                    , "--key"
-                    , "a-key"
-                    , "--json"
-                    ]
-            (code, out, _) <-
-                captured
-                    ( runPackagedOpenDatumVia
-                        provider
-                        openDatumApplication
-                        (pure Nothing)
-                        line
-                        []
-                    )
-            code `shouldBe` ExitFailure 1
-            (Aeson.eitherDecodeStrict' out :: Either String Aeson.Value)
-                `shouldSatisfy` either (const False) (const True)
-            BC.unpack out
-                `shouldSatisfy` (\s -> "unavailable" `Data.List.isInfixOf` s)
+            "runs inspect and reports an unavailable provider as structured data"
+            $ do
+                let provider _ =
+                        Env
+                            { envTracer = nullTracer
+                            , envSource = "fixture"
+                            , envLoadRelease = \_ _ -> fail "inspect read a blueprint"
+                            , envReads = \_ _ -> ioError (userError "provider disconnected")
+                            , envWrites = \_ _ -> fail "inspect opened a writer"
+                            }
+                    line =
+                        [ "inspect"
+                        , "--state-token"
+                        , replicate 56 'a' <> "." <> replicate 64 '1'
+                        , "--network-magic"
+                        , "42"
+                        , "--koios-url"
+                        , "http://fixture.invalid"
+                        , "--key"
+                        , "a-key"
+                        , "--json"
+                        ]
+                (code, out, _) <-
+                    captured
+                        ( runPackagedOpenDatumVia
+                            provider
+                            openDatumApplication
+                            (pure Nothing)
+                            line
+                            []
+                        )
+                code `shouldBe` ExitFailure 1
+                (Aeson.eitherDecodeStrict' out :: Either String Aeson.Value)
+                    `shouldSatisfy` either (const False) (const True)
+                BC.unpack out
+                    `shouldSatisfy` (\s -> "unavailable" `Data.List.isInfixOf` s)
     describe "unsupported public routes" $
         forM_ ["create", "insert", "update", "terminate", "fold", "inspect"] $ \verb ->
-            forM_ ([[verb] | verb == "inspect"] <> [["open-datum", verb]]) $ \line ->
+            forM_ [["open-datum", verb]] $ \line ->
                 it ("refuses " <> unwords line <> " without an alias") $
                     parseOpenDatumCommand line `shouldBe` Left (UnknownCommand line)

@@ -414,8 +414,9 @@ lovelace output = let MaryValue (Coin amount) _ = output ^. valueTxOutL in amoun
 commandSpec :: Spec
 commandSpec = describe "inspect through the packaged application command" $ do
     it
-        "shows the control, protected deposit and plain payload of a produced live holding" $
-        withHoldingIn newCreation $ \world registry _ output -> do
+        "shows the control, protected deposit and plain payload of a produced live holding"
+        $ withHoldingIn newCreation
+        $ \world registry _ output -> do
             let protected = inlineDatum output >>= decodeLiveDatum
             (_, payload) <-
                 maybe (fail "builder produced no live datum") pure protected
@@ -432,8 +433,9 @@ commandSpec = describe "inspect through the packaged application command" $ do
             documentField "control" document
                 `shouldSatisfy` maybe False (\case Object _ -> True; _ -> False)
     it
-        "shows pending termination after booking, while the neutral command still answers active" $
-        withHoldingIn newCreation $ \world registry reference _ -> do
+        "shows pending termination after booking, while the neutral command still answers active"
+        $ withHoldingIn newCreation
+        $ \world registry reference _ -> do
             booking <- withSession world $ \session ->
                 expectBuilt
                     =<< buildBookTermination
@@ -478,7 +480,7 @@ commandRead application world registry key extra = do
                     use
                         Capabilities
                             { capReads =
-                                ( network
+                                ( LP.Network 42
                                 , LP.LedgerProvider
                                     { LP.acquire = \_ action -> Right <$> withSession world action
                                     , LP.submitTx = \_ _ -> fail "inspect submitted"
@@ -503,7 +505,8 @@ commandRead application world registry key extra = do
                 <> extra
         run = if application then runPackagedOpenDatumVia else runPackagedVia
     (code, out, err) <-
-        captured (run provider Host.openDatumApplication (pure Nothing) line [])
+        captured
+            (run provider Host.openDatumApplication (pure Nothing) line [])
     document <-
         either
             (fail . (<> "; stdout=" <> show out <> "; stderr=" <> show err))

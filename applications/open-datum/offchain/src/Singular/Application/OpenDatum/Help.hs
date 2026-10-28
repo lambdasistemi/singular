@@ -40,6 +40,7 @@ import Singular.CLI.Options
     , Node (..)
     , Program (..)
     , Shape (..)
+    , switch'
     , valued
     )
 
@@ -50,7 +51,7 @@ openDatumProgram version =
         { programName = "open-datum"
         , programSummary =
             "Keep payloads under keys in a registry on Cardano: create a registry, \
-            \book registrations, update and terminate holdings, and fold pending requests."
+            \book registrations, update and terminate holdings, fold pending requests and inspect keys."
         , programVersion = version
         , programNodes =
             [ stateCreateLeaf
@@ -60,6 +61,7 @@ openDatumProgram version =
             , cleanupLeaf
             , holdingLeaf False
             , holdingLeaf True
+            , inspectLeaf
             ]
         , programFooter =
             [ ""
@@ -385,3 +387,38 @@ refundAddress =
     )
         { flagDefault = Just "your own address"
         }
+
+inspectLeaf :: Node
+inspectLeaf =
+    Runs
+        Leaf
+            { leafName = "inspect"
+            , leafSummary =
+                "Read a key's holding, termination or authenticated absence"
+            , leafDescription =
+                [ "Reads the registry address and a key without a signer, blueprint or local state. The neutral reader identifies the application and active custody; open datum refines active into a live holding with its control, protected deposit and payload, or pending termination. Terminal, never registered, unavailable and every neutral refusal retain their meanings."
+                , "Active custody needs one asset lookup. With no active token the reader authenticates the state and replays its public history to read the key's leaf. An empty or failed read never proves absence."
+                ]
+            , leafShape =
+                Each
+                    [ registryShape
+                    , keyShape
+                    , registryNodeShape
+                    , Takes
+                        (switch' "--json" "Print the answer as JSON instead of human text.")
+                    , Takes
+                        ( switch'
+                            "--query-work"
+                            "Report provider calls, rows and bytes per read and in total."
+                        )
+                    , tracingShape
+                    ]
+            , leafWord = Nothing
+            , leafEnvironment = [environmentLog]
+            , leafExamples =
+                [ "open-datum inspect --registry <address> --key my-key --koios-url https://preprod.koios.rest/api/v1"
+                ]
+            , leafNotes =
+                [ "Human text by default; --json prints one object. Exit 0: an answer (live, pending termination, terminal or never registered). Exit 1: unavailable read. Exit 2: refused evidence or invalid command line. See docs/singular-node.md#reading-a-key."
+                ]
+            }

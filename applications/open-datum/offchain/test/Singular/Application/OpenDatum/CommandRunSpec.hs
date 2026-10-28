@@ -464,6 +464,7 @@ commandNames =
 -- | The constructor a parsed command is.
 constructorOf :: OpenDatumCommand -> String
 constructorOf = \case
+    OpenInspect _ -> "OpenInspect"
     OpenHelp _ -> "OpenHelp"
     OpenInsert _ -> "OpenInsert"
     OpenUpdate _ -> "OpenUpdate"
