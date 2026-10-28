@@ -676,7 +676,7 @@ genQuery =
             ( QueryWork
                 <$> chooseInteger (0, 10)
                 <*> chooseInteger (0, 100)
-                <*> chooseInteger (0, 10000)
+                <*> chooseInteger (0, 10_000)
             )
 
 genOpening :: Gen ViewOpening
