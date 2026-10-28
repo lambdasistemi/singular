@@ -12,14 +12,34 @@ history through its provider session; no terminal trie is supplied to it.
 module Singular.Application.OpenDatum.ReaderSpec (spec) where
 
 import Control.Monad (forM_)
-import Data.Aeson (Value, encode, object, (.=))
+import Control.Tracer (nullTracer)
+import Data.Aeson
+    ( Key
+    , Value (..)
+    , eitherDecodeStrict'
+    , encode
+    , object
+    , toJSON
+    , (.=)
+    )
+import Data.Aeson.KeyMap qualified as KM
 import Data.ByteString qualified as BS
+import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Lazy qualified as BL
 import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.Maybe (fromMaybe)
 import Data.Text qualified as T
+import Data.Text.Encoding qualified as TE
 import Lens.Micro ((&), (.~), (^.))
 import PlutusCore.Data qualified as PLC
+import Singular.Application.OpenDatum.CommandRunSpec (captured)
+import Singular.Application.OpenDatum.Root (runPackagedOpenDatumVia)
+import Singular.Application.OpenDatum.Value (openDatumApplication)
+import Singular.CLI.Root (runPackagedVia)
+import Singular.CLI.Session (Env (..))
+import Singular.Registry.Address (renderRegistryAddress)
+import Singular.Registry.Capabilities (Capabilities (..))
+import System.Exit (ExitCode (..))
 import Test.Hspec
 
 import Cardano.Crypto.Hash (hashToBytes)
@@ -47,6 +67,7 @@ import Singular.Application.OpenDatum.Requests.Holding
     )
 import Singular.Application.OpenDatum.Requests.Records
     ( ProtectedControl (..)
+    , decodeLiveDatum
     )
 import Singular.Application.OpenDatum.Requests.Script
     ( requestPolicy
@@ -62,6 +83,7 @@ import Singular.Registry.ContractTable
 import Singular.Registry.Evidence (Evidenced (..))
 import Singular.Registry.Ledger (ConwayEra, Root (..), TxOut)
 import Singular.Registry.LedgerProvider qualified as LP
+import Singular.Registry.PlainJson (PayloadView (..), payloadView)
 import Singular.Registry.TrieState
     ( RegistryIdentity (..)
     , StatePolicyId (..)
@@ -76,6 +98,7 @@ spec :: Spec
 spec = do
     historySpec
     refinementSpec
+    commandSpec
 
 historySpec :: Spec
 historySpec = describe "reader absence follows the public history" $ do
@@ -115,6 +138,18 @@ historySpec = describe "reader absence follows the public history" $ do
                                 (crFolder world)
                     judge world foldTx >>= (`shouldSatisfy` everyScriptAccepts)
                     applyTx world foldTx
+                    (code, document) <- commandRead False world registry key ["--json"]
+                    code `shouldBe` ExitSuccess
+                    documentField "answer" document
+                        `shouldBe` Just
+                            ( String
+                                (if label == "terminal" then "terminal" else "never-registered")
+                            )
+                    (appCode, appDocument) <-
+                        commandRead True world registry key ["--json"]
+                    appCode `shouldBe` ExitSuccess
+                    documentField "answer" appDocument
+                        `shouldBe` documentField "answer" document
                     table <- tableFor world registry
                     withSession world $ \session -> do
                         state <- selectedState session registry
@@ -375,3 +410,107 @@ refinementSpec = describe "application reader refinement" $ do
 
 lovelace :: TxOut ConwayEra -> Integer
 lovelace output = let MaryValue (Coin amount) _ = output ^. valueTxOutL in amount
+
+commandSpec :: Spec
+commandSpec = describe "inspect through the packaged application command" $ do
+    it
+        "shows the control, protected deposit and plain payload of a produced live holding" $
+        withHoldingIn newCreation $ \world registry _ output -> do
+            let protected = inlineDatum output >>= decodeLiveDatum
+            (_, payload) <-
+                maybe (fail "builder produced no live datum") pure protected
+            (code, document) <-
+                commandRead True world registry "a live key" ["--json"]
+            code `shouldBe` ExitSuccess
+            documentField "answer" document `shouldBe` Just (String "live")
+            documentField "payload" document
+                `shouldBe` Just (viewJson (payloadView payload))
+            documentField "payloadSchema" document
+                `shouldBe` Just (String "plain")
+            documentField "deposit" document
+                `shouldBe` fmap (toJSON . controlDeposit . fst) protected
+            documentField "control" document
+                `shouldSatisfy` maybe False (\case Object _ -> True; _ -> False)
+    it
+        "shows pending termination after booking, while the neutral command still answers active" $
+        withHoldingIn newCreation $ \world registry reference _ -> do
+            booking <- withSession world $ \session ->
+                expectBuilt
+                    =<< buildBookTermination
+                        session
+                        (crRequest world)
+                        reference
+                        (crBooker world)
+            judge world booking >>= (`shouldSatisfy` everyScriptAccepts)
+            applyTx world booking
+            (code, document) <-
+                commandRead True world registry "a live key" ["--json"]
+            code `shouldBe` ExitSuccess
+            documentField "answer" document
+                `shouldBe` Just (String "pending-termination")
+            (neutralCode, neutralDocument) <-
+                commandRead False world registry "a live key" ["--json"]
+            neutralCode `shouldBe` ExitSuccess
+            documentField "answer" neutralDocument
+                `shouldBe` Just (String "active")
+            documentField "datum" neutralDocument `shouldBe` Just Null
+
+-- | The command uses the history the builders produced; no conclusion is injected.
+commandRead
+    :: Bool
+    -> Creation
+    -> RegistryIdentity
+    -> BS.ByteString
+    -> [String]
+    -> IO (ExitCode, Value)
+commandRead application world registry key extra = do
+    address <-
+        maybe
+            (fail "registry has no address")
+            pure
+            (renderRegistryAddress 42 (requiredAsset registry))
+    let provider _ =
+            Env
+                { envTracer = nullTracer
+                , envSource = "builder fixture"
+                , envLoadRelease = \_ _ -> fail "inspect read a blueprint"
+                , envReads = \_ use ->
+                    use
+                        Capabilities
+                            { capReads =
+                                ( network
+                                , LP.LedgerProvider
+                                    { LP.acquire = \_ action -> Right <$> withSession world action
+                                    , LP.submitTx = \_ _ -> fail "inspect submitted"
+                                    }
+                                )
+                            , capSubmit = \_ -> fail "inspect submitted"
+                            , capConfirm = \_ -> fail "inspect confirmed"
+                            , capFacts = pure []
+                            , capTrace = pure []
+                            }
+                , envWrites = \_ _ -> fail "inspect opened a writer"
+                }
+        line =
+            (if application then ["inspect"] else ["registry", "inspect"])
+                <> [ "--registry"
+                   , T.unpack address
+                   , "--koios-url"
+                   , "http://fixture.invalid"
+                   , "--key-hex"
+                   , T.unpack (TE.decodeUtf8 (B16.encode key))
+                   ]
+                <> extra
+        run = if application then runPackagedOpenDatumVia else runPackagedVia
+    (code, out, err) <-
+        captured (run provider openDatumApplication (pure Nothing) line [])
+    document <-
+        either
+            (fail . (<> "; stdout=" <> show out <> "; stderr=" <> show err))
+            pure
+            (eitherDecodeStrict' out)
+    pure (code, document)
+
+documentField :: Key -> Value -> Maybe Value
+documentField key (Object fields) = KM.lookup key fields
+documentField _ _ = Nothing

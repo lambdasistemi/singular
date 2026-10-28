@@ -33,6 +33,7 @@ module Singular.Application.OpenDatum.CommandRunSpec
     , Rig (..)
     , Run (..)
     , capabilities
+    , captured
     , envOf
     , fundOutput
     , magic

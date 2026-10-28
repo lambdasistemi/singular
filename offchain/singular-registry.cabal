@@ -560,6 +560,7 @@ test-suite cage-tests
     Singular.CLI.PrintedPayloadSpec
     Singular.CLI.FailureSentenceSpec
     Singular.CLI.FlagGroupSpec
+    Singular.CLI.InspectSpec
     Singular.CLI.HelpSnapshotSpec
     Singular.CLI.ParserCorpusSpec
     Singular.CLI.SettingsFileSpec
