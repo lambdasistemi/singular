@@ -37,6 +37,7 @@ import Data.ByteString.Lazy qualified as BL
 import Data.ByteString.Short qualified as SBS
 import Data.Map.Strict qualified as Map
 import Data.Maybe (catMaybes, fromMaybe)
+import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
 import Lens.Micro ((&), (.~))
@@ -93,6 +94,18 @@ spec = describe "reading a key from complete or unavailable evidence" $ do
         it (T.unpack name) $
             R.readNeutralKey request observed `shouldBe` expected
     describe "provider refusals" $ do
+        let kinds cohort =
+                Set.fromList
+                    [ kind
+                    | (_, _, _, answer) <- cohort
+                    , Just kind <- [providerRefusalKind answer]
+                    ]
+            selected =
+                filter
+                    (\(_, _, observation, answer) -> sessionRefusal observation answer)
+                    rows
+        it "keeps every native refusal class that precedes trie replay" $
+            kinds selected `shouldBe` kinds rows
         forM_ rows $ \(name, request, observed, expected) ->
             when (sessionRefusal observed expected) $
                 it ("preserves " <> T.unpack name <> " through the session adapter") $ do
@@ -163,13 +176,29 @@ spec = describe "reading a key from complete or unavailable evidence" $ do
                         `shouldReturn` R.Unavailable readName (R.Failed "read unavailable")
 
 sessionRefusal :: R.ReaderObservation -> R.NeutralReaderAnswer -> Bool
-sessionRefusal observed = \case
+sessionRefusal observed answer = case answer of
     R.Refused R.ForeignStatePolicy{} -> False
-    R.Refused _ -> R.observedState observed == R.ReadMissing
-    R.Unavailable _ R.Failed{} -> R.observedTrie observed == R.ReadMissing
+    R.Refused _ ->
+        precedesOutputs answer || case R.observedActiveOutputs observed of
+            R.Complete (_ : _) -> True
+            _ -> False
+    R.Unavailable readName R.Failed{} -> readName /= R.TrieRead
     R.Unavailable R.StateRead R.StateNotFound -> True
     R.Unavailable R.StateRead R.StateNotRecognized -> True
     _ -> False
+
+providerRefusalKind :: R.NeutralReaderAnswer -> Maybe Text
+providerRefusalKind = \case
+    R.Refused R.WrongNetwork{} -> Just "wrong network"
+    R.Refused R.UnknownStatePolicy{} -> Just "unknown state policy"
+    R.Refused R.TokenOutsideApplicationCustody{} -> Just "token outside application custody"
+    R.Refused R.ConflictingEvidence -> Just "conflicting evidence"
+    R.Unavailable R.NetworkRead R.Failed{} -> Just "failed network read"
+    R.Unavailable R.ActiveOutputsRead R.Failed{} -> Just "failed active read"
+    R.Unavailable R.StateRead R.Failed{} -> Just "failed state read"
+    R.Unavailable R.StateRead R.StateNotFound -> Just "state not found"
+    R.Unavailable R.StateRead R.StateNotRecognized -> Just "unrecognised state"
+    _ -> Nothing
 
 precedesOutputs :: R.NeutralReaderAnswer -> Bool
 precedesOutputs = \case
