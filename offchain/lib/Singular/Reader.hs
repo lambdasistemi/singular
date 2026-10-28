@@ -64,7 +64,7 @@ import Singular.Registry.LedgerProvider
     , Session (..)
     )
 import Singular.Registry.TrieState qualified as Trie
-import Singular.State.Lineage (registryAsset)
+import Singular.State.Lineage (registryAsset, registryTrieState)
 import Singular.State.Preimage (activeTokenName)
 import Singular.State.Records (decodeStateDatum)
 
@@ -248,11 +248,49 @@ readNeutralKeyFromSession session table request = do
                         <$> outputs
                             session
                             (HoldingAsset (policy, activeTokenName registry (readerKey request)))
-                pure (readNeutralKey request observed{observedActiveOutputs = active})
+                readStateEvidence observed{observedActiveOutputs = active}
         answer -> pure answer
   where
     registry@(Trie.RegistryIdentity (Trie.StatePolicyId policyBytes) _) = readerRegistry request
     release = applicationOf table policyBytes
+    readStateEvidence observed = case readNeutralKey request observed of
+        Unavailable StateRead Missing -> case registryAsset registry of
+            Nothing -> pure (Refused ConflictingEvidence)
+            Just asset -> do
+                states <- providerRead <$> outputs session (HoldingAsset asset)
+                case states of
+                    Complete [] ->
+                        pure
+                            (readNeutralKey request observed{observedState = Complete Nothing})
+                    Complete [pair] ->
+                        readTrieEvidence observed{observedState = Complete (Just pair)} pair
+                    Complete _ -> pure (Refused ConflictingEvidence)
+                    ReadFailed why -> pure (Unavailable StateRead (Failed why))
+                    ReadIncomplete why -> pure (Unavailable StateRead (Incomplete why))
+                    ReadMissing -> pure (Unavailable StateRead Missing)
+        answer -> pure answer
+    readTrieEvidence observed pair = case readNeutralKey request observed of
+        Unavailable TrieRead Missing -> case release
+            >>= (\published -> recognizeReaderState published registry pair) of
+            Nothing -> pure (Unavailable StateRead StateNotRecognized)
+            Just root -> do
+                let selection =
+                        Trie.TrieSelection
+                            registry
+                            ( Trie.StatePoint
+                                (sessionId session)
+                                (sessionBinding session)
+                                (fst pair)
+                            )
+                            root
+                replayed <- Trie.withTrieState (registryTrieState session) selection $ \snapshot -> do
+                    leaf <- Trie.leafAt snapshot (readerKey request)
+                    pure ((Trie.trieRoot snapshot,) <$> leaf)
+                pure $ case replayed of
+                    Left failure -> Unavailable TrieRead (Failed (T.pack (show failure)))
+                    Right (Left failure) -> Unavailable TrieRead (Failed (T.pack (show failure)))
+                    Right (Right evidence) -> readNeutralKey request observed{observedTrie = Complete evidence}
+        answer -> pure answer
 
 providerRead :: Either ReadFailure (Evidenced w a) -> ReaderRead a
 providerRead = either (ReadFailed . reason) (Complete . value)
