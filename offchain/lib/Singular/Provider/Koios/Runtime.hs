@@ -100,7 +100,7 @@ newIORuntime tracer sink = do
         Right answer
             | Client.answerStatus answer >= 200 && Client.answerStatus answer < 300 ->
                 Answered
-                    (Just (fromInteger (workRows (Client.exchangeWork response))))
+                    (Just (fromInteger (workRows (Client.answerWork (Right answer)))))
             | otherwise -> QueryFailed (ErrorClass "HttpStatusFailure")
     endOf (RawTimeFailure _ failure) = QueryFailed (failureTag failure)
     endOf _ = Answered Nothing

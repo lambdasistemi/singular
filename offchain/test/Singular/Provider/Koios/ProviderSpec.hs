@@ -154,6 +154,44 @@ import Test.Hspec
 
 spec :: Spec
 spec = describe "Koios ledger provider constructor" $ do
+    it "keeps final answer size separate from all retry work" $ do
+        source <- timeSource
+        set <- recordedSet
+        final <-
+            Client.exchange
+                (recordedTransport set)
+                (Client.rawRequest Wire.tipRequest)
+        let earlier = okJson [] "[{},{}]"
+            combined =
+                final
+                    { Client.exchangeAttempts = 2
+                    , Client.exchangeWork =
+                        Client.exchangeWork earlier <> Client.exchangeWork final
+                    }
+            finalRows = case Client.exchangeResult final of
+                Right response -> case decodeStrict' (Client.answerBody response) of
+                    Just (Array rows) -> length rows
+                    _ -> error "recorded tip is not an array"
+                Left _ -> error "recorded tip has no answer"
+            client =
+                Client.Koios recordedConfig (Client.Transport (const (pure combined)))
+        events <- newIORef []
+        runtime <-
+            newIORuntime
+                (Tracer (\event -> modifyIORef' events (<> [event])))
+                (const (pure ()))
+        let provider = koiosProvider runtime (Network 1) (pure (Right source)) client
+        result <- acquire provider (Latest (Network 1)) tipObservation
+        case result of
+            Right (Right _) -> pure ()
+            Right (Left failure) -> expectationFailure (show failure)
+            Left failure -> expectationFailure (show failure)
+        observed <- readIORef events
+        let queries = [q | Exchanged q <- observed, queryName q == "tip"]
+        finalRows `shouldSatisfy` (> 0)
+        map queryEnd queries `shouldBe` [Answered (Just finalRows)]
+        map (fmap workRows . queryWork) queries
+            `shouldBe` [Just (toInteger finalRows + 2)]
     it
         "reads the network even when local time material is unavailable, and refuses after release"
         $ do
