@@ -16,6 +16,9 @@ applications/open-datum/offchain/test/Singular/Application/OpenDatum/CommandRunS
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/CommandRunSpec.hs withRigIn newIORef 3
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/PinGateSpec.hs refusalOver newIORef 1
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/PublicationFundingSpec.hs directories newIORef 1
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/ReaderSpec.hs historySpec modifyIORef' 1
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/ReaderSpec.hs historySpec newIORef 1
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/ReaderSpec.hs historySpec readIORef 1
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/RecoverySpec.hs countedRecordedTransport modifyIORef' 1
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/RecoverySpec.hs countedRecordedTransport newIORef 1
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/RecoverySpec.hs countedRecordedTransport readIORef 1
@@ -394,11 +397,11 @@ offchain/test/Singular/Provider/Koios/FakeServer.hs app IORef 1
 offchain/test/Singular/Provider/Koios/FakeServer.hs app atomicModifyIORef' 1
 offchain/test/Singular/Provider/Koios/FakeServer.hs withFakeKoios newIORef 1
 offchain/test/Singular/Provider/Koios/FakeServer.hs withFakeKoios readIORef 1
-offchain/test/Singular/Provider/Koios/ProviderSpec.hs spec modifyIORef' 5
+offchain/test/Singular/Provider/Koios/ProviderSpec.hs spec modifyIORef' 8
 offchain/test/Singular/Provider/Koios/ProviderSpec.hs spec newEmptyMVar 3
-offchain/test/Singular/Provider/Koios/ProviderSpec.hs spec newIORef 7
+offchain/test/Singular/Provider/Koios/ProviderSpec.hs spec newIORef 10
 offchain/test/Singular/Provider/Koios/ProviderSpec.hs spec putMVar 2
-offchain/test/Singular/Provider/Koios/ProviderSpec.hs spec readIORef 7
+offchain/test/Singular/Provider/Koios/ProviderSpec.hs spec readIORef 10
 offchain/test/Singular/Provider/Koios/ProviderSpec.hs spec readMVar 3
 offchain/test/Singular/Provider/Koios/ProviderSpec.hs spec tryPutMVar 1
 offchain/test/Singular/Provider/Koios/ProviderSpec.hs spec writeIORef 2

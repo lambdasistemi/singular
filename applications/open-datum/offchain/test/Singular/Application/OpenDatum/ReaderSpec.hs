@@ -268,31 +268,31 @@ refinementSpec = describe "application reader refinement" $ do
                 bindings <- case inlineDatum output of
                     Just
                         (PLC.Constr 2 [PLC.Constr 0 [reg, asset, _, controller, amount], body]) -> do
-                        let live fields = PLC.Constr 2 [PLC.Constr 0 fields, body]
-                        pure
-                            [ live [reg, asset, PLC.B "different key", controller, amount]
-                            , live [reg, asset, PLC.B "a live key", controller, PLC.I (-1)]
-                            , case reg of
-                                PLC.Constr 0 [policyData, _] ->
-                                    live
-                                        [ PLC.Constr 0 [policyData, PLC.B "another registry"]
-                                        , asset
-                                        , PLC.B "a live key"
-                                        , controller
-                                        , amount
-                                        ]
-                                _ -> error "invalid produced registry"
-                            , case asset of
-                                PLC.Constr 0 [policyData, _] ->
-                                    live
-                                        [ reg
-                                        , PLC.Constr 0 [policyData, PLC.B "another asset"]
-                                        , PLC.B "a live key"
-                                        , controller
-                                        , amount
-                                        ]
-                                _ -> error "invalid produced asset"
-                            ]
+                            let live fields = PLC.Constr 2 [PLC.Constr 0 fields, body]
+                            pure
+                                [ live [reg, asset, PLC.B "different key", controller, amount]
+                                , live [reg, asset, PLC.B "a live key", controller, PLC.I (-1)]
+                                , case reg of
+                                    PLC.Constr 0 [policyData, _] ->
+                                        live
+                                            [ PLC.Constr 0 [policyData, PLC.B "another registry"]
+                                            , asset
+                                            , PLC.B "a live key"
+                                            , controller
+                                            , amount
+                                            ]
+                                    _ -> error "invalid produced registry"
+                                , case asset of
+                                    PLC.Constr 0 [policyData, _] ->
+                                        live
+                                            [ reg
+                                            , PLC.Constr 0 [policyData, PLC.B "another asset"]
+                                            , PLC.B "a live key"
+                                            , controller
+                                            , amount
+                                            ]
+                                    _ -> error "invalid produced asset"
+                                ]
                     _ -> fail "no current live datum"
                 forM_ bindings $ \datum ->
                     App.refineReaderAnswer

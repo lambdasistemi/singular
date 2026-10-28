@@ -38,19 +38,20 @@ spec = describe
     $ do
         contractSuite memoryHarness
         it
-            "the raw network read retains source loss and released-session failures" $ do
-            chain <- newRawChain genesis
-            advanceChain chain id
-            escaped <- Services.withLatest (rawChainProvider chain) $ \session -> do
-                fmap (fmap value) (servedNetwork session)
-                    `shouldReturn` Right (Network (csNetwork genesis))
-                pure session
-            fmap (fmap value) (servedNetwork escaped)
-                `shouldReturn` Left (ReleasedSession (sessionId escaped))
-            Services.withLatest (rawChainProvider chain) $ \session -> do
-                loseConnection chain
-                fmap (fmap value) (servedNetwork session)
-                    `shouldReturn` Left (BackendReadFailure "ViewConnectionLost")
+            "the raw network read retains source loss and released-session failures"
+            $ do
+                chain <- newRawChain genesis
+                advanceChain chain id
+                escaped <- Services.withLatest (rawChainProvider chain) $ \session -> do
+                    fmap (fmap value) (servedNetwork session)
+                        `shouldReturn` Right (Network (csNetwork genesis))
+                    pure session
+                fmap (fmap value) (servedNetwork escaped)
+                    `shouldReturn` Left (ReleasedSession (sessionId escaped))
+                Services.withLatest (rawChainProvider chain) $ \session -> do
+                    loseConnection chain
+                    fmap (fmap value) (servedNetwork session)
+                        `shouldReturn` Left (BackendReadFailure "ViewConnectionLost")
         it
             "each raw fixture mutation advances its observed tip without establishing binding"
             $ do
