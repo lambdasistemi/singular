@@ -8,17 +8,15 @@
 #   * the binaries: the commands `singular --help` and `open-datum --help`
 #     name in their "All commands" table, and for each the settings its own
 #     help lists (`singular registry COMMAND --help`, `singular submit
-#     --help`, `singular wallet VERB --help`, `singular state create
-#     --help`; `open-datum COMMAND --help`, `open-datum state VERB --help`,
-#     `open-datum registration VERB --help`). A command's flags are the
+#     --help`, `singular wallet VERB --help`, `singular registry create
+#     --help`; `open-datum COMMAND --help`). A command's flags are the
 #     `option:` and `switch:` entries of its "Available settings"; the help
 #     and version switches belong to no command. The write commands are those
 #     whose help lists --wallet-skey.
 #   * the documentation: the settings table of docs/singular-node.md, one
 #     row per flag naming the commands that take it, and every
-#     `singular registry WORD ...`, `singular wallet WORD ...`, `singular
-#     state WORD ...`, `singular submit ...`, `open-datum WORD ...`,
-#     `open-datum state WORD ...` and `open-datum registration WORD ...`
+#     `singular registry WORD ...`, `singular wallet WORD ...`,
+#     `singular submit ...` and `open-datum WORD ...`
 #     invocation on any Markdown page of the tree (docs, README, the release
 #     archive's run pages), however the binary is named: `singular`,
 #     `"$singular"`, a path ending in `/singular`; `open-datum`,
@@ -32,9 +30,8 @@
 #     clause), never by a substring in an argument value.
 #
 # The table names commands plainly (`create`, `fold`, ...) meaning every
-# binary that has the command, or qualified (`singular create`,
-# `open-datum registration book`, `singular state create`, `open-datum registration
-# book`) meaning one binary only. `all five` and `all six` are counts of a
+# binary that has the command, or qualified (`singular registry create`,
+# `open-datum insert`, `open-datum reclaim`) meaning one binary only. `all five` and `all six` are counts of a
 # binary's commands, refused when its help names another number. `the five
 # singular writes` and `the ten open-datum writes` cover the writes of each
 # binary, counted from the help; a cell naming both covers both sets, and a
@@ -88,17 +85,14 @@ fi
 
 # The commands a program's overview names, one per line: the "All commands:"
 # table lists `PROGRAM WORDS  summary` rows. singular's registry commands are
-# named plainly (`create`), its wallet and state verbs `wallet VERB` and
-# `state VERB`, and `submit` as itself, so the settings table can name them;
-# open-datum's are its verbs, `state VERB` and `registration VERB`.
+# named `registry create`, its wallet verbs `wallet VERB`, and `submit`
+# as itself; open-datum lists its seven flat verbs.
 overview_commands() {
   awk -v prog="$1" '
     /^All commands:/ { t = 1; next }
     t && /^$/ { exit }
     t && $1 == prog {
-      if (prog == "singular" && $2 == "registry") print $3
-      else if (prog == "singular" && ($2 == "wallet" || $2 == "state")) print $2 " " $3
-      else if (prog == "open-datum" && ($2 == "state" || $2 == "registration" || $2 == "holding")) print $2 " " $3
+      if (prog == "singular" && ($2 == "registry" || $2 == "wallet")) print $2 " " $3
       else print $2
     }
   '
@@ -122,12 +116,7 @@ page_flags() {
 
 # Print the command-line words that reach one command's own help.
 help_words() { # help_words PROGRAM COMMAND
-  case "$1:$2" in
-    singular:"wallet "* | singular:"state "*) echo "${2}" ;;
-    singular:submit) echo submit ;;
-    singular:*) echo "registry $2" ;;
-    *) echo "$2" ;;
-  esac
+  echo "$2"
 }
 
 status=0
@@ -295,7 +284,7 @@ while IFS= read -r row; do
       [ -n "$ticked" ] || continue
       inner=${ticked#\`}
       inner=${inner%\`}
-      # qualified `singular create` or `open-datum registration book`, else plain `create`;
+      # qualified `singular registry create` or `open-datum insert`, else plain `create`;
       # every word after the binary is the command's name, so the wallet
       # verbs `singular wallet create` keep their group word
       if [[ "$inner" == *" "* ]]; then
@@ -413,7 +402,7 @@ for page in "${pages[@]}"; do
           m = substr($0, RSTART, RLENGTH)
           n = split(m, w, /[ \t]+/)
           verb = w[n]
-          if (w[n-1] == "wallet" || w[n-1] == "state") verb = w[n-1] " " verb
+          if (w[n-1] == "registry" || w[n-1] == "wallet" || w[n-1] == "state") verb = w[n-1] " " verb
           vstart = RSTART + RLENGTH - length(verb)
           pre = substr($0, 1, vstart-1)
           tmp = pre

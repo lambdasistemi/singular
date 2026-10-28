@@ -9,7 +9,7 @@ The chain (@koios-url@, @network-time@, @network-magic@), the compiled
 contracts (@blueprint@), the registry (@state-dir@, @state-token@), the Koios
 token file, the tracing and the vault are typed on every command today. Each
 has three forms: the flag, the variable @SINGULAR_<NAME>@ and the key @<name>@
-of one JSON file. With the first six in the file, @open-datum registration book --key
+of one JSON file. With the first six in the file, @open-datum insert --key
 alice --payload payload.json --vault alice.vault@ is a whole command and
 means what the same command with the six flags means. A vault from the
 environment or the file is never joined to a key file or an external signer on
@@ -90,10 +90,10 @@ flagOf (f, _, _, _) = f
 -- | Each command with what it needs beside the standing settings.
 commands :: [(String, [String])]
 commands =
-    [ ("state create", ["--vault", "alice.vault"])
-    , ("state fold", ["--pending", pending, "--vault", "alice.vault"])
+    [ ("create", ["--vault", "alice.vault"])
+    , ("fold", ["--pending", pending, "--vault", "alice.vault"])
     ,
-        ( "registration book"
+        ( "insert"
         ,
             [ "--key"
             , "alice"
@@ -104,15 +104,15 @@ commands =
             ]
         )
     ,
-        ( "registration reclaim"
+        ( "reclaim"
         , ["--pending", pending, "--vault", "alice.vault"]
         )
     ,
-        ( "registration cleanup"
+        ( "cleanup"
         , ["--pending", pending, "--vault", "alice.vault"]
         )
     ,
-        ( "holding update"
+        ( "update"
         ,
             [ "--holding"
             , pending
@@ -123,7 +123,7 @@ commands =
             ]
         )
     ,
-        ( "holding terminate"
+        ( "terminate"
         , ["--holding", pending, "--vault", "alice.vault"]
         )
     ]
@@ -172,11 +172,11 @@ spec = describe "the settings given by the environment and a config file" $ do
     -- The command of the Demo 1 runbook: insert --key alice
     -- --payload payload.json --vault alice.vault, with the settings in the file.
     it "needs only its own options once the settings are in the file" $ do
-        let whole = line "registration book" (takenBy "registration book")
+        let whole = line "insert" (takenBy "insert")
         meaning whole `shouldSatisfy` isRight
         withFile
-            [(k, v) | (_, _, k, v) <- takenBy "registration book"]
-            (line "registration book" [])
+            [(k, v) | (_, _, k, v) <- takenBy "insert"]
+            (line "insert" [])
             `shouldBe` meaning whole
     forM_ (map fst commands) $ \name ->
         describe ("open-datum " <> name) $ do
@@ -198,8 +198,8 @@ spec = describe "the settings given by the environment and a config file" $ do
                             all (`isInfixOf` page) [flag, "env: " <> variable, key <> ": "]
     describe "the vault" $ do
         let bare =
-                words "registration book"
-                    <> concat [[f, v] | (f, _, _, v) <- takenBy "registration book"]
+                words "insert"
+                    <> concat [[f, v] | (f, _, _, v) <- takenBy "insert"]
                     <> ["--key", "alice", "--payload", "payload.json"]
             signed = meaning (bare <> ["--vault", "alice.vault"])
         it "left out is read from SINGULAR_VAULT and from the key vault" $ do
@@ -208,7 +208,7 @@ spec = describe "the settings given by the environment and a config file" $ do
                 `shouldBe` signed
             withFile [("vault", "alice.vault")] bare `shouldBe` signed
         it "is shown with its variable and its key on the help page" $
-            helpText program [] ["registration", "book"]
+            helpText program [] ["insert"]
                 `shouldSatisfy` \page ->
                     all (`isInfixOf` page) ["env: SINGULAR_VAULT", "vault: "]
         forM_
@@ -285,11 +285,11 @@ spec = describe "the settings given by the environment and a config file" $ do
                 fst
                 ( parseOpenDatumInvocationFrom
                     (Sources [] (Left "the config file x.json is not JSON"))
-                    ["state", "fold"]
+                    ["fold"]
                 )
                 `shouldBe` Left (ConfigRefused "the config file x.json is not JSON")
         it "is ignored for help" $
             parseOpenDatumInvocationFrom
                 (Sources [] (Left "the config file x.json is not JSON"))
-                ["registration", "book", "--help"]
+                ["insert", "--help"]
                 `shouldSatisfy` isRight

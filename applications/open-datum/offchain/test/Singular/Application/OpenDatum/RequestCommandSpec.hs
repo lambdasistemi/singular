@@ -223,21 +223,21 @@ aboutRefusal = \case
 commandLines :: [(String, [String], String)]
 commandLines =
     [
-        ( "state create"
-        , ["state", "create"] <> node <> keyFile
+        ( "create"
+        , ["create"] <> node <> keyFile
         , "OpenStateCreate"
         )
     ,
-        ( "state fold"
-        , ["state", "fold"]
+        ( "fold"
+        , ["fold"]
             <> node
             <> ["--state-token", aToken, "--pending", aRef]
             <> keyFile
         , "OpenStateFold"
         )
     ,
-        ( "registration book"
-        , ["registration", "book"]
+        ( "insert"
+        , ["insert"]
             <> node
             <> [ "--state-token"
                , aToken
@@ -250,24 +250,24 @@ commandLines =
         , "OpenRegistrationBook"
         )
     ,
-        ( "registration reclaim"
-        , ["registration", "reclaim"]
+        ( "reclaim"
+        , ["reclaim"]
             <> node
             <> ["--state-token", aToken, "--pending", aRef]
             <> keyFile
         , "OpenRegistrationReclaim"
         )
     ,
-        ( "registration cleanup"
-        , ["registration", "cleanup"]
+        ( "cleanup"
+        , ["cleanup"]
             <> node
             <> ["--state-token", aToken, "--pending", aRef]
             <> keyFile
         , "OpenRegistrationCleanup"
         )
     ,
-        ( "holding update"
-        , ["holding", "update"]
+        ( "update"
+        , ["update"]
             <> node
             <> [ "--state-token"
                , aToken
@@ -280,8 +280,8 @@ commandLines =
         , "OpenHoldingUpdate"
         )
     ,
-        ( "holding terminate"
-        , ["holding", "terminate"]
+        ( "terminate"
+        , ["terminate"]
             <> node
             <> ["--state-token", aToken, "--holding", aRef]
             <> keyFile
@@ -305,7 +305,7 @@ parserRows = describe "the command line" $ do
             reading line `shouldBe` Right constructor
     it
         "names the pending registration when fold, reclaim or cleanup lack it"
-        $ forM_ ["state fold", "registration reclaim", "registration cleanup"]
+        $ forM_ ["fold", "reclaim", "cleanup"]
         $ \name ->
             aboutRefusal (reading (dropFlag "--pending" (lineOf name)))
                 `shouldBe` Just ("MissingFlag", "--pending")
@@ -313,19 +313,19 @@ parserRows = describe "the command line" $ do
         fmap
             snd
             ( aboutRefusal
-                (reading (dropFlag "--payload" (lineOf "registration book")))
+                (reading (dropFlag "--payload" (lineOf "insert")))
             )
             `shouldBe` Just "--payload"
         fmap
             snd
-            (aboutRefusal (reading (dropFlag "--key" (lineOf "registration book"))))
+            (aboutRefusal (reading (dropFlag "--key" (lineOf "insert"))))
             `shouldSatisfy` (`elem` [Just "--key", Just "--key-hex"])
     it
         "reads a pending registration that is no output reference as a bad value of a flag the command takes"
         $ do
             let refused =
                     reading
-                        ( ["registration", "reclaim"]
+                        ( ["reclaim"]
                             <> node
                             <> ["--state-token", aToken, "--pending", "alice"]
                             <> keyFile
@@ -341,21 +341,21 @@ parserRows = describe "the command line" $ do
                 (name, fmap snd (aboutRefusal (reading (line <> extra))))
                     `shouldBe` (name, Just (concat (take 1 extra)))
     it "requires the holding reference for both holding commands" $
-        forM_ ["holding update", "holding terminate"] $ \name ->
+        forM_ ["update", "terminate"] $ \name ->
             aboutRefusal (reading (dropFlag "--holding" (lineOf name)))
                 `shouldBe` Just ("MissingFlag", "--holding")
-    it "requires the new payload only for holding update" $ do
+    it "requires the new payload only for update" $ do
         aboutRefusal
-            (reading (dropFlag "--payload" (lineOf "holding update")))
+            (reading (dropFlag "--payload" (lineOf "update")))
             `shouldBe` Just ("MissingFlag", "--payload")
         aboutRefusal
-            (reading (lineOf "holding terminate" <> ["--payload", "payload.json"]))
+            (reading (lineOf "terminate" <> ["--payload", "payload.json"]))
             `shouldBe` Just ("BadValue", "--payload")
     it
         "reads the five parameters of a registry's configuration, and refuses one that is not a number"
         $ do
             reading
-                ( ["state", "create"]
+                ( ["create"]
                     <> node
                     <> keyFile
                     <> [ "--process-time"
@@ -375,34 +375,40 @@ parserRows = describe "the command line" $ do
                 snd
                 ( aboutRefusal
                     ( reading
-                        (["state", "create"] <> node <> keyFile <> ["--booking-width", "wide"])
+                        (["create"] <> node <> keyFile <> ["--booking-width", "wide"])
                     )
                 )
                 `shouldBe` Just "--booking-width"
-    it
-        "is two groups of the program, and no other command is read in them"
-        $ do
-            reading ["state"] `shouldBe` Right "OpenHelp"
-            reading ["registration"] `shouldBe` Right "OpenHelp"
-            fmap fst (aboutRefusal (reading ["registration", "insert"]))
+    it "refuses every retired command group and grouped command"
+        $ forM_
+            [ ["state"]
+            , ["state", "create"]
+            , ["state", "fold"]
+            , ["registration"]
+            , ["registration", "book"]
+            , ["registration", "reclaim"]
+            , ["registration", "cleanup"]
+            , ["holding"]
+            , ["holding", "update"]
+            , ["holding", "terminate"]
+            ]
+        $ \line ->
+            fmap fst (aboutRefusal (reading line))
                 `shouldBe` Just "UnknownCommand"
 
--- | Every command of the two groups the program declares has a line above.
+-- | Every command the program declares has a line above.
 commandExtentRow :: Spec
 commandExtentRow =
-    it
-        "has a documented line for every command of the two groups the program declares"
-        $ do
-            let declared =
-                    [ unwords path
-                    | path <- commandPaths (openDatumProgram singularVersion)
-                    , take 1 path `elem` [["state"], ["registration"], ["holding"]]
-                    , length path == 2
-                    ]
-                covered = [name | (name, _, _) <- commandLines]
-            declared `shouldNotBe` []
-            filter (`notElem` covered) declared `shouldBe` []
-            filter (`notElem` declared) covered `shouldBe` []
+    it "has a documented line for every command the program declares" $ do
+        let declared =
+                [ unwords path
+                | path <- commandPaths (openDatumProgram singularVersion)
+                , not (null path)
+                ]
+            covered = [name | (name, _, _) <- commandLines]
+        declared `shouldNotBe` []
+        filter (`notElem` covered) declared `shouldBe` []
+        filter (`notElem` declared) covered `shouldBe` []
 
 -- ---------------------------------------------------------
 -- The rig, with the compiled validators
@@ -521,7 +527,7 @@ run' rig = runAt rig "registry"
 -- | The registry the first command of a lifecycle creates, as a person passes it on.
 createdRegistry :: Rig -> IO (Run, String)
 createdRegistry rig = do
-    r <- run' rig "create" (["state", "create"] <> parameterFlags)
+    r <- run' rig "create" (["create"] <> parameterFlags)
     outcomeOf (runReceipt r) `shouldBe` Just "success"
     token <-
         maybe
@@ -533,8 +539,7 @@ createdRegistry rig = do
 -- | The booking line of a key.
 bookLine :: Rig -> String -> String -> [String]
 bookLine rig token key =
-    [ "registration"
-    , "book"
+    [ "insert"
     , "--state-token"
     , token
     , "--key"
@@ -624,7 +629,7 @@ lifecycleRows = describe "from a registry to a cleanup" $ do
                     env
                     (rigKey rig)
                     "chosen seed"
-                    ( ["state", "create"]
+                    ( ["create"]
                         <> parameterFlags
                         <> ["--seed", T.unpack (renderOutRef seed)]
                     )
@@ -649,7 +654,7 @@ lifecycleRows = describe "from a registry to a cleanup" $ do
         $ \rig -> do
             scripts <- scriptsOf rig
             (r, token) <- createdRegistry rig
-            textAt "command" (runReceipt r) `shouldBe` Just "state create"
+            textAt "command" (runReceipt r) `shouldBe` Just "create"
             [step | (step, _, _, _) <- submissionsOf (runReceipt r)]
                 `shouldBe` ["publish-state-script", "publish-application-script", "create"]
             registry <- registryOf token
@@ -664,7 +669,7 @@ lifecycleRows = describe "from a registry to a cleanup" $ do
             mapMaybe (\(_, o) -> inlineDatumOf o >>= decodeConfiguration) records
                 `shouldBe` [parametersGiven]
             fst registry `shouldBe` statePolicy (scState scripts)
-            r2 <- run' rig "second create" (["state", "create"] <> parameterFlags)
+            r2 <- run' rig "second create" (["create"] <> parameterFlags)
             outcomeOf (runReceipt r2) `shouldBe` Just "success"
             [step | (step, _, _, _) <- submissionsOf (runReceipt r2)]
                 `shouldBe` ["create"]
@@ -680,7 +685,7 @@ lifecycleRows = describe "from a registry to a cleanup" $ do
             r <- run' rig "book" (bookLine rig token "alpha")
             runExit r `shouldBe` ExitSuccess
             outcomeOf (runReceipt r) `shouldBe` Just "success"
-            textAt "command" (runReceipt r) `shouldBe` Just "registration book"
+            textAt "command" (runReceipt r) `shouldBe` Just "insert"
             [step | (step, _, _, _) <- submissionsOf (runReceipt r)]
                 `shouldBe` ["book"]
             ref <- pendingOf r
@@ -719,10 +724,10 @@ lifecycleRows = describe "from a registry to a cleanup" $ do
                     keyPath
                     rig
                     "fold"
-                    (["state", "fold"] <> pendingFlags token ref)
+                    (["fold"] <> pendingFlags token ref)
             runExit r `shouldBe` ExitSuccess
             outcomeOf (runReceipt r) `shouldBe` Just "success"
-            textAt "command" (runReceipt r) `shouldBe` Just "state fold"
+            textAt "command" (runReceipt r) `shouldBe` Just "fold"
             transactions <- readIORef (rigSubmitted rig)
             length transactions - already `shouldBe` 1
             -- built from the chain alone by the second wallet: it spends nothing of the booker's
@@ -777,10 +782,10 @@ lifecycleRows = describe "from a registry to a cleanup" $ do
                 run'
                     rig
                     "reclaim"
-                    (["registration", "reclaim"] <> pendingFlags token ref)
+                    (["reclaim"] <> pendingFlags token ref)
             runExit r `shouldBe` ExitSuccess
             outcomeOf (runReceipt r) `shouldBe` Just "success"
-            textAt "command" (runReceipt r) `shouldBe` Just "registration reclaim"
+            textAt "command" (runReceipt r) `shouldBe` Just "reclaim"
             isLive rig ref `shouldReturn` False
             alice <- liveAt rig (walletAddr (rigWallet rig))
             let Coin request = out ^. coinTxOutL
@@ -803,10 +808,10 @@ lifecycleRows = describe "from a registry to a cleanup" $ do
                     keyPath
                     rig
                     "cleanup"
-                    (["registration", "cleanup"] <> pendingFlags token ref)
+                    (["cleanup"] <> pendingFlags token ref)
             runExit r `shouldBe` ExitSuccess
             outcomeOf (runReceipt r) `shouldBe` Just "success"
-            textAt "command" (runReceipt r) `shouldBe` Just "registration cleanup"
+            textAt "command" (runReceipt r) `shouldBe` Just "cleanup"
             isLive rig ref `shouldReturn` False
             -- the refund address received exactly the deposit, in an output of its own
             aliceAfter <- liveAt rig (walletAddr (rigWallet rig))
@@ -835,7 +840,7 @@ reachedHolding rig = do
         run'
             rig
             "registration fold"
-            (["state", "fold"] <> pendingFlags token pending)
+            (["fold"] <> pendingFlags token pending)
     outcomeOf (runReceipt folded) `shouldBe` Just "success"
     registry <- registryOf token
     held <-
@@ -863,13 +868,13 @@ holdingLifecycleRows = describe "the holding commands" $ do
             result <-
                 run'
                     rig
-                    "holding update"
-                    ( ["holding", "update"]
+                    "update"
+                    ( ["update"]
                         <> holdingFlags token ref
                         <> ["--payload", rigDir rig </> "payload.json"]
                     )
             runExit result `shouldBe` ExitSuccess
-            textAt "command" (runReceipt result) `shouldBe` Just "holding update"
+            textAt "command" (runReceipt result) `shouldBe` Just "update"
             next <-
                 maybe
                     (fail "no holding in receipt")
@@ -907,7 +912,7 @@ holdingLifecycleRows = describe "the holding commands" $ do
                 run'
                     rig
                     "wrong registry"
-                    (["holding", "terminate"] <> holdingFlags other ref)
+                    (["terminate"] <> holdingFlags other ref)
             outcomeOf (runReceipt result) `shouldBe` Just "client-refusal"
             length <$> readIORef (rigSubmitted rig) `shouldReturn` already
     it
@@ -922,8 +927,8 @@ holdingLifecycleRows = describe "the holding commands" $ do
             result <-
                 run'
                     rig
-                    "holding terminate"
-                    (["holding", "terminate"] <> holdingFlags token ref)
+                    "terminate"
+                    (["terminate"] <> holdingFlags token ref)
             runExit result `shouldBe` ExitSuccess
             pending <- pendingOf result
             transactions <- readIORef (rigSubmitted rig)
@@ -952,7 +957,7 @@ holdingLifecycleRows = describe "the holding commands" $ do
                     keyPath
                     rig
                     "termination fold"
-                    (["state", "fold"] <> pendingFlags token pending)
+                    (["fold"] <> pendingFlags token pending)
             runExit folded `shouldBe` ExitSuccess
             isLive rig pending `shouldReturn` False
             sent <- last <$> readIORef (rigSubmitted rig)
@@ -1000,9 +1005,9 @@ registryJournal rig registry wallet =
 
 scenarios :: [Scenario]
 scenarios =
-    [ Scenario "state create" 3 creationSetup
+    [ Scenario "create" 3 creationSetup
     , Scenario "second script publication" 2 creationSetup
-    , Scenario "registration book" 1 $ \rig -> do
+    , Scenario "insert" 1 $ \rig -> do
         (_, token) <- createdRegistry rig
         registry <- registryOf token
         pure
@@ -1010,7 +1015,7 @@ scenarios =
             , bookLine rig token "alpha"
             , registryJournal rig registry (rigWallet rig)
             )
-    , Scenario "state fold" 1 $ \rig -> do
+    , Scenario "fold" 1 $ \rig -> do
         (_, token) <- createdRegistry rig
         booked <- run' rig "book" (bookLine rig token "alpha")
         ref <- pendingOf booked
@@ -1018,25 +1023,25 @@ scenarios =
         registry <- registryOf token
         pure
             ( keyPath
-            , ["state", "fold"] <> pendingFlags token ref
+            , ["fold"] <> pendingFlags token ref
             , registryJournal rig registry bob
             )
-    , Scenario "holding update" 1 $ \rig -> do
+    , Scenario "update" 1 $ \rig -> do
         (token, ref) <- reachedHolding rig
         registry <- registryOf token
         pure
             ( rigKey rig
-            , ["holding", "update"]
+            , ["update"]
                 <> holdingFlags token ref
                 <> ["--payload", rigDir rig </> "payload.json"]
             , registryJournal rig registry (rigWallet rig)
             )
-    , Scenario "holding terminate" 1 $ \rig -> do
+    , Scenario "terminate" 1 $ \rig -> do
         (token, ref) <- reachedHolding rig
         registry <- registryOf token
         pure
             ( rigKey rig
-            , ["holding", "terminate"] <> holdingFlags token ref
+            , ["terminate"] <> holdingFlags token ref
             , registryJournal rig registry (rigWallet rig)
             )
     , Scenario "termination fold" 1 $ \rig -> do
@@ -1045,16 +1050,16 @@ scenarios =
             run'
                 rig
                 "termination book"
-                (["holding", "terminate"] <> holdingFlags token ref)
+                (["terminate"] <> holdingFlags token ref)
         pending <- pendingOf booked
         (keyPath, bob) <- secondWallet rig
         registry <- registryOf token
         pure
             ( keyPath
-            , ["state", "fold"] <> pendingFlags token pending
+            , ["fold"] <> pendingFlags token pending
             , registryJournal rig registry bob
             )
-    , Scenario "registration reclaim" 1 $ \rig -> do
+    , Scenario "reclaim" 1 $ \rig -> do
         (_, token) <- createdRegistry rig
         booked <- run' rig "book" (bookLine rig token "alpha")
         ref <- pendingOf booked
@@ -1063,10 +1068,10 @@ scenarios =
         registry <- registryOf token
         pure
             ( rigKey rig
-            , ["registration", "reclaim"] <> pendingFlags token ref
+            , ["reclaim"] <> pendingFlags token ref
             , registryJournal rig registry (rigWallet rig)
             )
-    , Scenario "registration cleanup" 1 $ \rig -> do
+    , Scenario "cleanup" 1 $ \rig -> do
         (_, token) <- createdRegistry rig
         booked <- run' rig "book" (bookLine rig token "alpha")
         ref <- pendingOf booked
@@ -1076,7 +1081,7 @@ scenarios =
         registry <- registryOf token
         pure
             ( keyPath
-            , ["registration", "cleanup"] <> pendingFlags token ref
+            , ["cleanup"] <> pendingFlags token ref
             , registryJournal rig registry bob
             )
     ]
@@ -1086,7 +1091,7 @@ creationSetup rig = do
     scripts <- scriptsOf rig
     pure
         ( rigKey rig
-        , ["state", "create"] <> parameterFlags
+        , ["create"] <> parameterFlags
         , registryJournal
             rig
             (statePolicy (scState scripts), AssetName mempty)

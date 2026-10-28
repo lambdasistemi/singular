@@ -61,16 +61,20 @@ runOpenDatum env = \case
     OpenStateCreate a parameters ->
         finish
             (envTracer env)
-            "state create"
+            "create"
             (stateCreateReceipt a)
             ( openWriteSigner (stateCreateWrite a)
                 >>= \ws ->
-                    runStateCreate env (openDatumHost parameters) a{stateCreateWrite = ws}
+                    runStateCreate
+                        "create"
+                        env
+                        (openDatumHost parameters)
+                        a{stateCreateWrite = ws}
             )
     OpenStateFold a ->
         finish
             (envTracer env)
-            "state fold"
+            "fold"
             (stateFoldReceipt a)
             ( openWriteSigner (stateFoldWrite a)
                 >>= \ws ->
@@ -79,21 +83,21 @@ runOpenDatum env = \case
     OpenHoldingUpdate a path schema ->
         finish
             (envTracer env)
-            "holding update"
+            "update"
             (holdingArgsReceipt a)
             ( openWriteSigner (holdingArgsWrite a) >>= \ws -> runHoldingUpdate env a{holdingArgsWrite = ws} path schema
             )
     OpenHoldingTerminate a ->
         finish
             (envTracer env)
-            "holding terminate"
+            "terminate"
             (holdingArgsReceipt a)
             ( openWriteSigner (holdingArgsWrite a) >>= \ws -> runHoldingTerminate env a{holdingArgsWrite = ws}
             )
     OpenRegistrationBook a ->
         finish
             (envTracer env)
-            "registration book"
+            "insert"
             (bookArgsReceipt a)
             ( openWriteSigner (bookArgsWrite a)
                 >>= \ws -> runBook env a{bookArgsWrite = ws}
@@ -101,7 +105,7 @@ runOpenDatum env = \case
     OpenRegistrationReclaim a ->
         finish
             (envTracer env)
-            "registration reclaim"
+            "reclaim"
             (pendingArgsReceipt a)
             ( openWriteSigner (pendingArgsWrite a)
                 >>= \ws -> runReclaim env a{pendingArgsWrite = ws}
@@ -109,7 +113,7 @@ runOpenDatum env = \case
     OpenRegistrationCleanup a ->
         finish
             (envTracer env)
-            "registration cleanup"
+            "cleanup"
             (pendingArgsReceipt a)
             ( openWriteSigner (pendingArgsWrite a)
                 >>= \ws -> runCleanup env a{pendingArgsWrite = ws}

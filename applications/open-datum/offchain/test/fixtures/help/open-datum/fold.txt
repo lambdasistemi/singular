@@ -1,29 +1,23 @@
 open-datum VERSION (commit unknown)
 
-Usage: open-datum holding terminate [--config FILE] [--state-dir DIR]
-       --blueprint FILE [--registry ADDRESS] [--state-token POLICY.NAME]
-       --holding TXID#IX --koios-url URL [--network-magic N]
-       [--koios-token-file FILE] [--network-time DIR] [--vault FILE
-       [--passphrase-fd N] | --wallet-address ADDR --bundle FILE |
-       --wallet-skey FILE] [--confirm-timeout SECONDS] [--receipt FILE]
-       [--trace LEVEL] [--trace-to SINK] [--trace-format FORMAT]
+Usage: open-datum fold [--config FILE] [--state-dir DIR] --blueprint FILE
+       [--registry ADDRESS] [--state-token POLICY.NAME] --pending TXID#IX
+       --koios-url URL [--network-magic N] [--koios-token-file FILE]
+       [--network-time DIR] [--vault FILE [--passphrase-fd N] |
+       --wallet-address ADDR --bundle FILE | --wallet-skey FILE]
+       [--confirm-timeout SECONDS] [--receipt FILE] [--trace LEVEL]
+       [--trace-to SINK] [--trace-format FORMAT]
 
-Book permanent termination of a live holding
+Fold the registrations and terminations you name
 
-Spends the chosen holding, donates exactly its protected deposit to the
-treasury, and creates a datumless request holding the active token and one
-termination approval. The active token remains until state fold burns both
-tokens. The folder receives the whole request value; its wallet may be
-different from the controller's. This booking is permanent and has no reclaim
-window.
-
-The named registry must be the registry in the holding's protected control.
-The signing wallet must control the holding; a missing holding or another
-controller is refused before signing.
-
-An interrupted send keeps its transaction identity in the journal. The next
-write checks that transaction on the chain and refuses while it remains
-unresolved. No command resubmits it automatically.
+Folds the named pending registrations and terminations into the registry in
+one transaction. A registration burns its approval and creates its committed
+holding with the new active token and deposit. A termination burns its
+approval and active token, creates no holding, and pays its whole request
+value to the folder. Mixed batches use distinct keys. The transaction is built
+from public chain data and signed by the wallet running the command; no
+controller file, key or local record is needed. Name each request with
+--pending.
 
 A write is signed by exactly one signer: --vault (the normal route),
 --wallet-address with --bundle (written for an external signer, ending as
@@ -71,9 +65,9 @@ Available settings:
     state-token: # or null
       <string>
 
-  The live holding to update or terminate, as its transaction printed it; none
-  is chosen for you.
-  option: --holding TXID#IX
+  The pending request to act on, as the booking printed it; none is chosen for
+  you.
+  option: --pending TXID#IX
 
   Base URL of the Koios API used to read the chain and to submit.
   option: --koios-url URL
@@ -188,13 +182,13 @@ Environment:
                        value that is empty is refused.
 
 Example:
-  open-datum holding terminate --blueprint plutus.json \
-      --state-token POLICY.NAME --holding TXID#IX \
-      --koios-url https://preprod.koios.rest/api/v1 --network-magic 1 \
-      --vault alice.vault
+  open-datum fold --blueprint plutus.json \
+      --registry <address> --pending <txid>#<ix> \
+      --koios-url https://preprod.koios.rest/api/v1 \
+      --vault bob.vault
 
   With those settings in singular.json instead:
-  open-datum holding terminate --holding TXID#IX --vault alice.vault
+  open-datum fold --pending <txid>#<ix> --vault bob.vault
 
 Output and exit status:
   Prints one JSON receipt on standard output (--receipt also writes it).

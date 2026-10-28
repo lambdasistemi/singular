@@ -8,8 +8,8 @@ import Singular.Application.OpenDatum.Command
 import Test.Hspec (Spec, describe, it, shouldBe)
 
 spec :: Spec
-spec = describe "retired public routes" $
+spec = describe "unsupported public routes" $
     forM_ ["create", "insert", "update", "terminate", "fold", "inspect"] $ \verb ->
-        forM_ [[verb], ["open-datum", verb]] $ \line ->
+        forM_ ([[verb] | verb == "inspect"] <> [["open-datum", verb]]) $ \line ->
             it ("refuses " <> unwords line <> " without an alias") $
                 parseOpenDatumCommand line `shouldBe` Left (UnknownCommand line)

@@ -13,7 +13,7 @@ Available settings:
   switch: --version
 
 All commands:
-  singular state create       Create the registry of an application
+  singular registry create    Create the registry of an application
   singular wallet create      Create a vault with a fresh key
   singular wallet address     Print the address of a vault's key
   singular wallet sign        Sign a bundle of transactions offline

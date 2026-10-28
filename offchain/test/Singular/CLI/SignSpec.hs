@@ -248,7 +248,7 @@ theCommandLine = describe "the command line" $ do
             ] of
             Left (BadValue "--network-magic" _) -> pure ()
             other -> expectationFailure ("--network-magic was taken: " <> show other)
-    it "takes the wallet vault flag on a state create, as its signer" $
+    it "takes the wallet vault flag on a registry create, as its signer" $
         case parseCommand (vaultFoldLine ["--vault", "x"]) of
             Right (StateCreate a) ->
                 writeSigner (stateCreateWrite a) `shouldBe` SignerVault "x" Nothing
@@ -751,10 +751,10 @@ secretSpellings key =
   where
     raw = rawSerialiseSignKeyDSIGN key
 
--- | A state create line complete but for its signer, which the probe names.
+-- | A registry create line complete but for its signer, which the probe names.
 vaultFoldLine :: [String] -> [String]
 vaultFoldLine signer =
-    [ "state"
+    [ "registry"
     , "create"
     , "--blueprint"
     , "blueprint.json"

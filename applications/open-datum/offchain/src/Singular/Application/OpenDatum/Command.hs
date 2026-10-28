@@ -9,9 +9,9 @@ The open-datum commands and help, read from the command line alone:
 no file, node, key or environment is touched here, so every refusal
 below happens before anything is read or submitted.
 
-The public writers are @state create@, @state fold@, @registration book@,
-@registration reclaim@, @registration cleanup@, @holding update@ and
-@holding terminate@. Internal entry values remain for preparation and preview.
+The public writers are @create@, @fold@, @insert@,
+@reclaim@, @cleanup@, @update@ and
+@terminate@. Internal entry values remain for preparation and preview.
 
 Write commands name the Koios URL, network and wallet key. Partial settings
 and mainnet are refused before file reads or provider effects. Read commands
@@ -165,7 +165,7 @@ data OpenDatumCommand
     | OpenHoldingTerminate HoldingArgs
     deriving stock (Eq, Show, Generic)
 
-{- | @registration book@: a registration of a key, with its payload and deposit,
+{- | @insert@: a registration of a key, with its payload and deposit,
 booked in a registry of open datum.
 -}
 data BookArgs = BookArgs
@@ -186,7 +186,7 @@ data BookArgs = BookArgs
     }
     deriving stock (Eq, Show)
 
-{- | @registration reclaim@ and @registration cleanup@: a pending registration
+{- | @reclaim@ and @cleanup@: a pending registration
 taken back inside its window, or cleaned up after it.
 -}
 data PendingArgs = PendingArgs
@@ -308,17 +308,15 @@ commandFrom environment (Raw ws allFlags) = do
                 else case ws of
                     [] -> Right askedFor
                     ["open-datum"] -> Right askedFor
-                    ["state"] -> Right askedFor
-                    ["state", "create"] ->
-                        refuseOutside "state create" stateCreateAllowed flags
+                    ["create"] ->
+                        refuseOutside "create" stateCreateAllowed flags
                             >> (OpenStateCreate <$> stateCreateArgs flags <*> parametersFrom flags)
-                    ["state", "fold"] ->
-                        refuseOutside "state fold" stateFoldAllowed flags
+                    ["fold"] ->
+                        refuseOutside "fold" stateFoldAllowed flags
                             >> (OpenStateFold <$> (registryFlags flags >>= stateFoldArgs environment))
-                    ["holding"] -> Right askedFor
-                    ["holding", "update"] ->
+                    ["update"] ->
                         refuseOutside
-                            "holding update"
+                            "update"
                             (holdingAllowed <> ["--payload", "--payload-schema"])
                             flags
                             >> ( OpenHoldingUpdate
@@ -326,24 +324,23 @@ commandFrom environment (Raw ws allFlags) = do
                                     <*> required "--payload" flags
                                     <*> payloadSchemaFrom BadValue flags
                                )
-                    ["holding", "terminate"] ->
-                        refuseOutside "holding terminate" holdingAllowed flags
+                    ["terminate"] ->
+                        refuseOutside "terminate" holdingAllowed flags
                             >> ( OpenHoldingTerminate
                                     <$> (registryFlags flags >>= holdingArgs environment)
                                )
-                    ["registration"] -> Right askedFor
-                    ["registration", "book"] ->
-                        refuseOutside "registration book" bookAllowed flags
+                    ["insert"] ->
+                        refuseOutside "insert" bookAllowed flags
                             >> ( OpenRegistrationBook
                                     <$> (registryFlags flags >>= bookArgs environment)
                                )
-                    ["registration", "reclaim"] ->
-                        refuseOutside "registration reclaim" pendingAllowed flags
+                    ["reclaim"] ->
+                        refuseOutside "reclaim" pendingAllowed flags
                             >> ( OpenRegistrationReclaim
                                     <$> (registryFlags flags >>= pendingArgs environment)
                                )
-                    ["registration", "cleanup"] ->
-                        refuseOutside "registration cleanup" pendingAllowed flags
+                    ["cleanup"] ->
+                        refuseOutside "cleanup" pendingAllowed flags
                             >> ( OpenRegistrationCleanup
                                     <$> (registryFlags flags >>= pendingArgs environment)
                                )
@@ -353,7 +350,7 @@ commandFrom environment (Raw ws allFlags) = do
     -- network, so the rest of the reading is the one it always was.
     registryFlags flags =
         first registryRefused (completeRegistry environment flags)
-    -- The commands of the two new groups name what they take, and refuse the
+    -- The commands name what they take, and refuse the
     -- rest by name: the builders choose the funding, so there is no funding
     -- choice and no spending limit to give.
     stateWriteFlags =
@@ -685,7 +682,7 @@ loadOpenDatumSources environment args =
 invocationFlags :: [String]
 invocationFlags = commonFlagGroup <> extraValuedFlags <> traceFlags
 
--- | The valued flags this binary owns beyond the common group: the registration commands'.
+-- | The valued flags this binary owns beyond the common group: the request commands'.
 extraValuedFlags :: [String]
 extraValuedFlags =
     [ "--holding"

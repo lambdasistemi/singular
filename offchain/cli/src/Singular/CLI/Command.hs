@@ -5,11 +5,11 @@ Module      : Singular.CLI.Command
 Description : What a @singular@ command line asks for, parsed without effects
 License     : Apache-2.0
 
-The state, wallet and submit commands, read from the command line alone:
+The registry, wallet and submit commands, read from the command line alone:
 no file, node, key or environment is touched here, so every refusal
 below happens before anything is read or submitted.
 
-* @state create@ creates the registry of an application;
+* @registry create@ creates the registry of an application;
 * @submit@ sends a bundle its signers witnessed, taking the witness
   files, the bundle and the node settings, and no wallet key or vault.
 
@@ -276,7 +276,7 @@ data FoldArgs = FoldArgs
     }
     deriving stock (Eq, Show)
 
-{- | @state create@: the registry of an application, made by spending a seed
+{- | @registry create@: the registry of an application, made by spending a seed
 of the wallet. The state validator is the one the release carries, applied to
 the application's policy; the program that hosts the command may fix that
 policy itself, as open datum does.
@@ -294,7 +294,7 @@ data StateCreateArgs = StateCreateArgs
     }
     deriving stock (Eq, Show)
 
--- | @state fold@: the pending registrations of a registry, folded by this wallet.
+-- | @fold@: the pending registrations of a registry, folded by this wallet.
 data StateFoldArgs = StateFoldArgs
     { stateFoldStateDir :: Maybe FilePath
     , stateFoldAccess :: RegistryAccess
@@ -507,9 +507,9 @@ commandFrom environment (Raw ws allFlags) = do
                                 SubmitBundle <$> submitArgs bundle witnesses flags
                             ["submit"] ->
                                 Left (MissingFlag "BUNDLE")
-                            ["state"] -> Right askedFor
-                            ["state", "create"] ->
-                                refuseOutside "state create" stateCreateAllowed flags
+                            ["registry"] -> Right askedFor
+                            ["registry", "create"] ->
+                                refuseOutside "registry create" stateCreateAllowed flags
                                     >> (StateCreate <$> stateCreateArgs flags)
                             _ -> Left (UnknownCommand ws)
   where
@@ -566,7 +566,7 @@ commandFrom environment (Raw ws allFlags) = do
                                 flag
                                 "is a signer flag: only the wallet commands and the registry writes read it"
                             )
-    registryWrites = [["state", "create"]]
+    registryWrites = [["registry", "create"]]
     -- A wallet command takes its own flags and nothing else from
     -- the shared group: every other setting is refused by name rather
     -- than ignored.

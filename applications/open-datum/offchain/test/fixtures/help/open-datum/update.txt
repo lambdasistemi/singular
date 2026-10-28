@@ -1,7 +1,7 @@
 open-datum VERSION (commit unknown)
 
-Usage: open-datum holding update [--config FILE] [--state-dir DIR] --blueprint
-       FILE [--registry ADDRESS] [--state-token POLICY.NAME] --holding TXID#IX
+Usage: open-datum update [--config FILE] [--state-dir DIR] --blueprint FILE
+       [--registry ADDRESS] [--state-token POLICY.NAME] --holding TXID#IX
        --payload FILE [--payload-schema plain|detailed] --koios-url URL
        [--network-magic N] [--koios-token-file FILE] [--network-time DIR]
        [--vault FILE [--passphrase-fd N] | --wallet-address ADDR --bundle FILE
@@ -196,13 +196,13 @@ Environment:
                        value that is empty is refused.
 
 Example:
-  open-datum holding update --blueprint plutus.json \
+  open-datum update --blueprint plutus.json \
       --state-token POLICY.NAME --holding TXID#IX \
       --koios-url https://preprod.koios.rest/api/v1 --network-magic 1 \
       --vault alice.vault --payload new.json
 
   With those settings in singular.json instead:
-  open-datum holding update --holding TXID#IX --vault alice.vault \
+  open-datum update --holding TXID#IX --vault alice.vault \
       --payload new.json
 
 Output and exit status:

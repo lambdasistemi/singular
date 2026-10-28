@@ -3,7 +3,7 @@ Module      : Main
 Description : The packaged @singular@ command
 License     : Apache-2.0
 
-@singular state create@, @singular wallet@ and @singular submit@:
+@singular registry create@, @singular wallet@ and @singular submit@:
 one ordinary process per command over your state directory. See
 "Singular.CLI.Command" for the command line, "Singular.CLI" for what each
 command does and "Singular.CLI.Root" for the composition this runs.

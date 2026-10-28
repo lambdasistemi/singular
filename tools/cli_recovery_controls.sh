@@ -366,7 +366,7 @@ if part state-line || part holding-update || part holding-terminate || part term
   }
   # --- the first registry of the application: both scripts published, then the registry ---
   sl_main="$sl_root/main"
-  sl_run sl-create state create "${sl_params[@]}" --state-dir "$sl_main" "${sl_base[@]}" "${alice[@]}"
+  sl_run sl-create create "${sl_params[@]}" --state-dir "$sl_main" "${sl_base[@]}" "${alice[@]}"
   clause "the first creation succeeds" outcome_is sl-create success
   clause "it publishes each script in its own transaction, then creates the registry" \
     is_equal "$(field sl-create '[.submissions[].step] | tojson')" '["publish-state-script","publish-application-script","create"]'
@@ -379,7 +379,7 @@ if part state-line || part holding-update || part holding-terminate || part term
   clause "the node holds the registry's state output unspent" \
     jq -e --arg o "$(field sl-create .stateOutput)" '.live | index($o) != null' <(probe_ins "$(field sl-create .stateOutput)")
   # A later registry of the application, made by singular, reuses the live copy of the state script.
-  sl_run sl-singular-create singular state create --application-policy "$sl_app_policy" \
+  sl_run sl-singular-create singular registry create --application-policy "$sl_app_policy" \
     --state-dir "$sl_root/singular" "${sl_base[@]}" "${bob[@]}"
   clause "singular creates a registry of the same application" outcome_is sl-singular-create success
   clause "from the live copy of the state script: one transaction" \
@@ -388,13 +388,13 @@ if part state-line || part holding-update || part holding-terminate || part term
 
   bobkey="$(sl_wallet_identity "$sl_root/singular")"
 
-  # --- state create, interrupted ---
-  sl_create_line=(state create "${sl_params[@]}")
+  # --- create, interrupted ---
+  sl_create_line=(create "${sl_params[@]}")
   # --- the booking line, and the bookings the cleanups need, made now so that their windows run beside the cases ---
   sl_book_line() { # KEY DIR WALLET...: the line that books KEY from DIR
     local key="$1" dir="$2"
     shift 2
-    printf '%s\n' registration book --state-token "$sl_token" --key "$key" --payload "$work/payload.json" \
+    printf '%s\n' insert --state-token "$sl_token" --key "$key" --payload "$work/payload.json" \
       --payload-schema detailed --deposit 3000000 --tip 1000000 --state-dir "$dir" "${sl_base[@]}" "$@"
   }
   sl_book() { # NAME: a clean booking by alice in the main directory, of the key that bears the name
@@ -492,7 +492,7 @@ if part state-line || part holding-update || part holding-terminate || part term
   }
 
   if part state-line; then
-    # --- state create, three ways (the creation journal of the application and the wallet) ---
+    # --- create, three ways (the creation journal of the application and the wallet) ---
     for sl_mode in lost-answer killed never-sent; do
       sl_dir="$sl_root/create-$sl_mode"
       case_line=("${sl_create_line[@]}" --state-dir "$sl_dir" "${sl_base[@]}" "${alice[@]}")
@@ -500,7 +500,7 @@ if part state-line || part holding-update || part holding-terminate || part term
       sl_case state-create create "$sl_mode" "$(managed_journal "$sl_dir" "$sl_state_policy." "$alicekey")" case_line case_next
     done
 
-    # --- registration book, three ways ---
+    # --- insert, three ways ---
     for sl_mode in lost-answer killed never-sent; do
       sl_dir="$sl_root/book-$sl_mode"
       mapfile -t case_line < <(sl_book_line "sl-book-$sl_mode" "$sl_dir" "${alice[@]}")
@@ -509,7 +509,7 @@ if part state-line || part holding-update || part holding-terminate || part term
       sl_case registration-book book "$sl_mode" "$(managed_journal "$sl_dir" "$sl_token" "$alicekey")" case_line case_next
     done
 
-    # --- registration reclaim, three ways, inside the window of pendings booked now ---
+    # --- reclaim, three ways, inside the window of pendings booked now ---
     for sl_mode in lost-answer killed never-sent; do
       sl_book "sl-reclaim-pending-$sl_mode"
     done
@@ -517,29 +517,29 @@ if part state-line || part holding-update || part holding-terminate || part term
     for sl_mode in lost-answer killed never-sent; do
       sl_dir="$sl_root/reclaim-$sl_mode"
       sl_pending="$(field "sl-reclaim-pending-$sl_mode" .pending)"
-      case_line=(registration reclaim --state-token "$sl_token" --pending "$sl_pending" --state-dir "$sl_dir" "${sl_base[@]}" "${alice[@]}")
+      case_line=(reclaim --state-token "$sl_token" --pending "$sl_pending" --state-dir "$sl_dir" "${sl_base[@]}" "${alice[@]}")
       sl_next_of "$sl_dir" "${alice[@]}"
       case_next=("${sl_next_line[@]}")
       sl_case registration-reclaim reclaim "$sl_mode" "$(managed_journal "$sl_dir" "$sl_token" "$alicekey")" case_line case_next
     done
 
-    # --- state fold, three ways, by the second wallet, each over a booking made just before ---
+    # --- fold, three ways, by the second wallet, each over a booking made just before ---
     for sl_mode in lost-answer killed never-sent; do
       sl_book "sl-fold-pending-$sl_mode"
       sl_dir="$sl_root/fold-$sl_mode"
       sl_pending="$(field "sl-fold-pending-$sl_mode" .pending)"
-      case_line=(state fold --state-token "$sl_token" --pending "$sl_pending" --state-dir "$sl_dir" "${sl_base[@]}" "${bob[@]}")
+      case_line=(fold --state-token "$sl_token" --pending "$sl_pending" --state-dir "$sl_dir" "${sl_base[@]}" "${bob[@]}")
       sl_next_of "$sl_dir" "${bob[@]}"
       case_next=("${sl_next_line[@]}")
       sl_case state-fold fold "$sl_mode" "$(managed_journal "$sl_dir" "$sl_token" "$bobkey")" case_line case_next
     done
 
-    # --- registration cleanup, three ways, by the second wallet, once the windows of the pendings have run out ---
+    # --- cleanup, three ways, by the second wallet, once the windows of the pendings have run out ---
     sl_wait_until_ms "$sl_first_cleanup_ms"
     for sl_mode in lost-answer killed never-sent; do
       sl_dir="$sl_root/cleanup-$sl_mode"
       sl_pending="$(field "sl-cleanup-pending-$sl_mode" .pending)"
-      case_line=(registration cleanup --state-token "$sl_token" --pending "$sl_pending" --state-dir "$sl_dir" "${sl_base[@]}" "${bob[@]}")
+      case_line=(cleanup --state-token "$sl_token" --pending "$sl_pending" --state-dir "$sl_dir" "${sl_base[@]}" "${bob[@]}")
       sl_next_of "$sl_dir" "${bob[@]}"
       case_next=("${sl_next_line[@]}")
       sl_case registration-cleanup cleanup "$sl_mode" "$(managed_journal "$sl_dir" "$sl_token" "$bobkey")" case_line case_next
@@ -556,7 +556,7 @@ if part state-line || part holding-update || part holding-terminate || part term
         sl_label="sl-$sl_part-$sl_mode"
         sl_book "$sl_label-book" "$sl_part-$sl_mode"
         sl_pending="$(field "$sl_label-book" .pending)"
-        sl_run "$sl_label-reach" state fold --state-token "$sl_token" --pending "$sl_pending" \
+        sl_run "$sl_label-reach" fold --state-token "$sl_token" --pending "$sl_pending" \
           --state-dir "$sl_main" "${sl_base[@]}" "${bob[@]}"
         clause "$sl_part, $sl_mode: a successful registration fold reaches the live holding" outcome_is "$sl_label-reach" success
         sl_holding="$(submission_tx "$sl_label-reach" fold)#1"
@@ -565,22 +565,22 @@ if part state-line || part holding-update || part holding-terminate || part term
         sl_dir="$sl_root/$sl_part-$sl_mode"
         case "$sl_part" in
           holding-update)
-            case_line=(holding update --state-token "$sl_token" --holding "$sl_holding" --payload "$work/payload.json" --payload-schema detailed --state-dir "$sl_dir" "${sl_base[@]}" "${alice[@]}")
+            case_line=(update --state-token "$sl_token" --holding "$sl_holding" --payload "$work/payload.json" --payload-schema detailed --state-dir "$sl_dir" "${sl_base[@]}" "${alice[@]}")
             sl_step=update
             sl_walletkey="$alicekey"
             sl_next_of "$sl_dir" "${alice[@]}"
             ;;
           holding-terminate)
-            case_line=(holding terminate --state-token "$sl_token" --holding "$sl_holding" --state-dir "$sl_dir" "${sl_base[@]}" "${alice[@]}")
+            case_line=(terminate --state-token "$sl_token" --holding "$sl_holding" --state-dir "$sl_dir" "${sl_base[@]}" "${alice[@]}")
             sl_step=terminate
             sl_walletkey="$alicekey"
             sl_next_of "$sl_dir" "${alice[@]}"
             ;;
           termination-fold)
-            sl_run "$sl_label-terminate" holding terminate --state-token "$sl_token" --holding "$sl_holding" --state-dir "$sl_main" "${sl_base[@]}" "${alice[@]}"
+            sl_run "$sl_label-terminate" terminate --state-token "$sl_token" --holding "$sl_holding" --state-dir "$sl_main" "${sl_base[@]}" "${alice[@]}"
             clause "$sl_part, $sl_mode: termination booking succeeds" outcome_is "$sl_label-terminate" success
             sl_pending="$(field "$sl_label-terminate" .pending)"
-            case_line=(state fold --state-token "$sl_token" --pending "$sl_pending" --state-dir "$sl_dir" "${sl_base[@]}" "${bob[@]}")
+            case_line=(fold --state-token "$sl_token" --pending "$sl_pending" --state-dir "$sl_dir" "${sl_base[@]}" "${bob[@]}")
             sl_step="fold"
             sl_walletkey="$bobkey"
             sl_next_of "$sl_dir" "${bob[@]}"

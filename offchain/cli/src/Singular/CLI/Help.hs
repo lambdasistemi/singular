@@ -51,7 +51,7 @@ singularProgram version =
         , programSummary =
             "Create a Singular registry on Cardano, and sign and submit transaction bundles."
         , programVersion = version
-        , programNodes = [stateGroup, walletGroup, submitLeaf]
+        , programNodes = [registryGroup, walletGroup, submitLeaf]
         , programFooter =
             [ ""
             , "Every command takes --trace, --trace-to and --trace-format to narrate"
@@ -67,12 +67,12 @@ singularHelp version = helpText (singularProgram version)
 singularUsageLine :: Version -> [String] -> [String]
 singularUsageLine version = usageText (singularProgram version)
 
-stateGroup :: Node
-stateGroup =
+registryGroup :: Node
+registryGroup =
     Group
-        "state"
+        "registry"
         "Create a registry on the proved design"
-        [ "The state commands make the registry of an application: its state, a single \
+        [ "The registry commands make the registry of an application: its state, a single \
           \output that holds the registry's token and the root of its keys. The \
           \registry is named by its seed, an output of your wallet, and by the \
           \application whose policy the state validator is made for. The commands \
@@ -130,7 +130,7 @@ stateCreateLeaf =
             , leafEnvironment =
                 [environmentLog, environmentState, environmentPassphrase]
             , leafExamples =
-                [ "singular state create --blueprint plutus.json \\"
+                [ "singular registry create --blueprint plutus.json \\"
                 , "    --application-policy <policy> \\"
                 , "    " <> preprodExample <> " \\"
                 , "    --vault alice.vault"

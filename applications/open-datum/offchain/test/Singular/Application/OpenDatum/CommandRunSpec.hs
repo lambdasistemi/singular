@@ -586,14 +586,14 @@ packagedWrites at flags = do
                 rig
                 "registry"
                 "create"
-                ["state", "create", "--seed", first]
+                ["create", "--seed", first]
         second <- fundSeed2 rig
         two <-
             packaged
                 rig
                 "registry-2"
                 "create two"
-                ["state", "create", "--seed", second]
+                ["create", "--seed", second]
         registries <-
             mapM (registryFiles . (rigDir rig </>)) ["registry", "registry-2"]
         let files = concatMap fst registries
@@ -878,29 +878,28 @@ tokenOf r = case textAt "stateToken" (runReceipt r) of
 lifecycle :: Rig -> IO [Run]
 lifecycle rig = do
     runs <- registrationLifecycle rig
-    extra <- runAt rig "second" "second state create" ["state", "create"]
+    extra <- runAt rig "second" "second create" ["create"]
     pure (runs <> [extra])
 
 registrationLifecycle :: Rig -> IO [Run]
 registrationLifecycle rig = do
-    created <- runAt rig "proved" "state create" ["state", "create"]
+    created <- runAt rig "proved" "create" ["create"]
     token <- tokenOf created
-    booked <- runAt rig "proved" "registration book" (book token "fold")
+    booked <- runAt rig "proved" "insert" (book token "fold")
     folded <-
         runAt
             rig
             "proved"
-            "state fold"
-            (["state", "fold", "--state-token", token] <> pendingOf booked)
+            "fold"
+            (["fold", "--state-token", token] <> pendingOf booked)
     foldedTx <- last <$> readIORef (rigSubmitted rig)
     let holding = renderOutRef (TxIn (txIdTx foldedTx) (TxIx 1))
     updated <-
         runAt
             rig
             "proved"
-            "holding update"
-            [ "holding"
-            , "update"
+            "update"
+            [ "update"
             , "--state-token"
             , token
             , "--holding"
@@ -917,9 +916,8 @@ registrationLifecycle rig = do
         runAt
             rig
             "proved"
-            "holding terminate"
-            [ "holding"
-            , "terminate"
+            "terminate"
+            [ "terminate"
             , "--state-token"
             , token
             , "--holding"
@@ -930,35 +928,35 @@ registrationLifecycle rig = do
             rig
             "proved"
             "termination fold"
-            (["state", "fold", "--state-token", token] <> pendingOf terminated)
+            (["fold", "--state-token", token] <> pendingOf terminated)
     toReclaim <-
         runAt
             rig
             "proved"
-            "registration book to reclaim"
+            "insert to reclaim"
             (book token "reclaim")
     reachMs (milliseconds "processDeadline" toReclaim)
     reclaimed <-
         runAt
             rig
             "proved"
-            "registration reclaim"
-            ( ["registration", "reclaim", "--state-token", token]
+            "reclaim"
+            ( ["reclaim", "--state-token", token]
                 <> pendingOf toReclaim
             )
     toClean <-
         runAt
             rig
             "proved"
-            "registration book to clean up"
+            "insert to clean up"
             (book token "cleanup")
     reachMs (milliseconds "reclaimEnd" toClean)
     cleaned <-
         runAt
             rig
             "proved"
-            "registration cleanup"
-            ( ["registration", "cleanup", "--state-token", token]
+            "cleanup"
+            ( ["cleanup", "--state-token", token]
                 <> pendingOf toClean
             )
     missing <-
@@ -966,8 +964,7 @@ registrationLifecycle rig = do
             rig
             "proved"
             "update a missing holding"
-            [ "holding"
-            , "update"
+            [ "update"
             , "--state-token"
             , token
             , "--holding"
@@ -990,8 +987,7 @@ registrationLifecycle rig = do
         ]
   where
     book token key =
-        [ "registration"
-        , "book"
+        [ "insert"
         , "--state-token"
         , token
         , "--key"
@@ -1135,7 +1131,7 @@ foldSuccesses :: [Run] -> [Run]
 foldSuccesses =
     filter
         ( \r ->
-            textAt "command" (runReceipt r) == Just "state fold"
+            textAt "command" (runReceipt r) == Just "fold"
                 && outcomeOf (runReceipt r) == Just "success"
         )
 

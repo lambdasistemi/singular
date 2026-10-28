@@ -146,7 +146,7 @@ pendings_hold() { # UNSPENT TOTAL REF...
 # 1. The first registry of the application
 # ------------------------------------------------------------------
 leg="creation"
-as carol create-first "$open_datum" state create --blueprint plutus.json \
+as carol create-first "$open_datum" create --blueprint plutus.json \
   --process-time 60000 --reclaim-time 180000 --booking-width 60000
 token="$(field create-first .stateToken)"
 [[ "$token" =~ ^[0-9a-f]{56}\.[0-9a-f]{64}$ ]] || setup_fail "the first creation printed no state token"
@@ -194,7 +194,7 @@ printf '%s\n' '{"name":"alice"}' >"$work/actors/alice/cwd/payload.json"
 payload_data='{"map":[[{"bytes":"6e616d65"},{"bytes":"616c696365"}]]}'
 hex_of() { printf '%s' "$1" | od -An -tx1 | tr -d ' \n'; }
 for kind in fold reclaim cleanup; do
-  as alice "book-$kind" "$open_datum" registration book --blueprint plutus.json \
+  as alice "book-$kind" "$open_datum" insert --blueprint plutus.json \
     --state-token "$token" --key "journey-$kind" --payload payload.json \
     --deposit "$deposit" --tip "$tip"
 done
@@ -240,7 +240,7 @@ check "before the fold Bob's directories hold his key and the release and nothin
 } >"$scratch/bob-listing-with-a-journal.txt"
 control "a booker's journal in Bob's home would be seen" \
   listing_is "$scratch/bob-listing-with-a-journal.txt" cwd/bob.skey cwd/plutus.json
-as bob fold "$open_datum" state fold --blueprint plutus.json --state-token "$token" --pending "$bob_pending"
+as bob fold "$open_datum" fold --blueprint plutus.json --state-token "$token" --pending "$bob_pending"
 (cd "$work/actors/bob" && find cwd home -mindepth 1 | LC_ALL=C sort) >"$listings/bob-after-fold.txt"
 fold_tx="$(tx_of fold fold)"
 view_tx fold "$fold_tx"
@@ -272,14 +272,14 @@ cat "$listings/bob-before-fold.txt"
 # independent observer below follows input references, not command receipts.
 leg="update and termination"
 printf '%s\n' '{"name":"updated"}' >"$work/actors/alice/cwd/updated.json"
-as alice update "$open_datum" holding update --blueprint plutus.json \
+as alice update "$open_datum" update --blueprint plutus.json \
   --state-token "$token" --holding "$holding" --payload updated.json
 view_tx update "$(tx_of update update)"
 updated_holding="$(field update .holding)"
 check "the updated holding carries the chosen payload with the same protected deposit" \
   holding_is "$chain_dir/update.tx.json" "$state_policy" "$state_name" "$key_hex" "$controller" "$deposit" \
   '{"map":[[{"bytes":"6e616d65"},{"bytes":"75706461746564"}]]}'
-as alice terminate "$open_datum" holding terminate --blueprint plutus.json \
+as alice terminate "$open_datum" terminate --blueprint plutus.json \
   --state-token "$token" --holding "$updated_holding"
 view_tx terminate "$(tx_of terminate terminate)"
 view_unspent after-termination-booking
@@ -297,7 +297,7 @@ mkdir -p "$work/actors/bob-public/cwd" "$work/actors/bob-public/home"
 cp "$work/actors/bob/cwd/bob.skey" "$work/actors/bob-public/cwd/bob-public.skey"
 cp "$work/release/plutus.json" "$work/actors/bob-public/cwd/plutus.json"
 (cd "$work/actors/bob-public" && find cwd home -mindepth 1 | LC_ALL=C sort) >"$listings/bob-before-termination-fold.txt"
-as bob-public termination-fold "$open_datum" state fold --blueprint plutus.json \
+as bob-public termination-fold "$open_datum" fold --blueprint plutus.json \
   --state-token "$token" --pending "$public_pending"
 view_tx termination-fold "$(tx_of termination-fold fold)"
 view_unspent after-termination-fold
@@ -305,9 +305,9 @@ check "no unspent output carries the terminated key's active token" \
   none_unspent_with "$chain_dir/after-termination-fold.unspent.json" "$state_policy" "$active_name"
 control "the live state token is not a burned active token" \
   none_unspent_with "$chain_dir/after-termination-fold.unspent.json" "$state_policy" "$state_name"
-as alice book-terminal "$open_datum" registration book --blueprint plutus.json \
+as alice book-terminal "$open_datum" insert --blueprint plutus.json \
   --state-token "$token" --key journey-fold --payload payload.json --deposit "$deposit" --tip "$tip"
-run_as bob-public reregister "$open_datum" state fold --blueprint plutus.json \
+run_as bob-public reregister "$open_datum" fold --blueprint plutus.json \
   --state-token "$token" --pending "$(field book-terminal .pending)"
 
 # ------------------------------------------------------------------
@@ -315,7 +315,7 @@ run_as bob-public reregister "$open_datum" state fold --blueprint plutus.json \
 # ------------------------------------------------------------------
 leg="reclaim"
 wait_until_ms "$(field book-reclaim .processDeadline)"
-as alice reclaim "$open_datum" registration reclaim --blueprint plutus.json --state-token "$token" --pending "$reclaim_pending"
+as alice reclaim "$open_datum" reclaim --blueprint plutus.json --state-token "$token" --pending "$reclaim_pending"
 reclaim_tx="$(tx_of reclaim reclaim)"
 view_tx reclaim "$reclaim_tx"
 reclaim_approval="$(field book-reclaim .approval)"
@@ -330,7 +330,7 @@ check "the reclaim burns the approval" mints "$chain_dir/reclaim.tx.json" "${rec
 # ------------------------------------------------------------------
 leg="cleanup"
 wait_until_ms "$(field book-cleanup .reclaimEnd)"
-as dave cleanup "$open_datum" registration cleanup --blueprint plutus.json --state-token "$token" --pending "$cleanup_pending"
+as dave cleanup "$open_datum" cleanup --blueprint plutus.json --state-token "$token" --pending "$cleanup_pending"
 cleanup_tx="$(tx_of cleanup cleanup)"
 view_tx cleanup "$cleanup_tx"
 cleanup_approval="$(field book-cleanup .approval)"
@@ -350,9 +350,9 @@ control "an unspent approval would be seen: the state token is unspent once" \
 # 6. A later registry of the application, and one made by singular
 # ------------------------------------------------------------------
 leg="scripts published once"
-as carol create-later "$open_datum" state create --blueprint plutus.json \
+as carol create-later "$open_datum" create --blueprint plutus.json \
   --process-time 60000 --reclaim-time 180000 --booking-width 60000
-as carol create-singular "$singular" state create --blueprint plutus.json --application-policy "$application_hash"
+as carol create-singular "$singular" registry create --blueprint plutus.json --application-policy "$application_hash"
 later_create_tx="$(tx_of create-later create)"
 singular_create_tx="$(tx_of create-singular create)"
 view_tx later-create "$later_create_tx"
@@ -399,9 +399,9 @@ jq -n \
   --arg app "$application_hash" --arg release "$release_hash" \
   '{application: $app, release: $release,
     registries: [
-      ($first + {registry: "the first registry of the application", command: "open-datum state create"}),
-      ($later + {registry: "a later registry of the application", command: "open-datum state create"}),
-      ($singular + {registry: "a registry made by singular from the same state script", command: "singular state create"})]}' \
+      ($first + {registry: "the first registry of the application", command: "open-datum create"}),
+      ($later + {registry: "a later registry of the application", command: "open-datum create"}),
+      ($singular + {registry: "a registry made by singular from the same state script", command: "singular registry create"})]}' \
   >"$work/creation-measurement.json"
 say "creation measurement: $(jq -c '[.registries[] | {registry, transactions: .transactionCount, locked: .lockedLovelace.total}]' "$work/creation-measurement.json")"
 check "the measurement counts three transactions for the first registry and one for a later one" \

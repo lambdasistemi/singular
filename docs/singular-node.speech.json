@@ -9,7 +9,7 @@
       "pause": 400
     },
     {
-      "text": "As a registry operator, you create a registry through singular state create and sign and submit bundles through singular wallet and singular submit. You use the state, registration and holding command groups through open-datum, with a Koios API on your chosen network. The commands that create a registry and book, fold, reclaim and clean up a registration are described in create a registry and register keys on the proved design. You supply the API settings and pinned time material; each write is signed from your vault, or by a signer elsewhere through a bundle file (see Signing a write elsewhere, or from your vault). Commands read raw facts through one logical session, build and evaluate locally, submit signed transactions, and preserve recovery evidence in the registry journal.",
+      "text": "As a registry operator, you create a registry through singular registry create and sign and submit bundles through singular wallet and singular submit. You use the state, registration and holding command groups through open-datum, with a Koios API on your chosen network. The commands that create a registry and book, fold, reclaim and clean up a registration are described in create a registry and register keys on the proved design. You supply the API settings and pinned time material; each write is signed from your vault, or by a signer elsewhere through a bundle file (see Signing a write elsewhere, or from your vault). Commands read raw facts through one logical session, build and evaluate locally, submit signed transactions, and preserve recovery evidence in the registry journal.",
       "pause": 400
     },
     {
@@ -67,7 +67,7 @@
       "pause": 400
     },
     {
-      "text": "The config file is one JSON object. Both programs read the same file: it is singular.json in the folder you run the command from, or the file named by --config FILE or by the variable SINGULAR_CONFIG. With a file like this in your demo folder, open-datum registration book --key alice --payload payload.json --vault alice.vault is a whole command, and it does exactly what the same command with the six flags does:",
+      "text": "The config file is one JSON object. Both programs read the same file: it is singular.json in the folder you run the command from, or the file named by --config FILE or by the variable SINGULAR_CONFIG. With a file like this in your demo folder, open-datum insert --key alice --payload payload.json --vault alice.vault is a whole command, and it does exactly what the same command with the six flags does:",
       "pause": 400
     },
     {
@@ -105,7 +105,7 @@
       "pause": 500
     },
     {
-      "text": "As an operator who signs with a vault, you can name it once: SINGULAR_VAULT=alice.vault, or \"vault\": \"alice.vault\" in the config file, and open-datum registration book --key alice --payload payload.json signs from it. The passphrase is not part of this: it stays on the terminal prompt, or on the descriptor --passphrase-fd names on the command, with a vault from either source just as with a typed one. A development network can also take it from the environment, as the next section says.",
+      "text": "As an operator who signs with a vault, you can name it once: SINGULAR_VAULT=alice.vault, or \"vault\": \"alice.vault\" in the config file, and open-datum insert --key alice --payload payload.json signs from it. The passphrase is not part of this: it stays on the terminal prompt, or on the descriptor --passphrase-fd names on the command, with a vault from either source just as with a typed one. A development network can also take it from the environment, as the next section says.",
       "pause": 400
     },
     {
@@ -183,7 +183,7 @@
       "pause": 400
     },
     {
-      "text": "The writer's side is a singular state create run, or an open-datum state create, insert, update, terminate or fold run, that names --wallet-address and --bundle in place of the signing key: it builds its whole run as one bundle in build order, signs and sends nothing, states its own fields under expected in its receipt, and exits with status 19, waiting-for-signatures.",
+      "text": "The writer's side is a singular registry create run, or an open-datum create, insert, update, terminate or fold run, that names --wallet-address and --bundle in place of the signing key: it builds its whole run as one bundle in build order, signs and sends nothing, states its own fields under expected in its receipt, and exits with status 19, waiting-for-signatures.",
       "pause": 400
     },
     {
@@ -231,7 +231,7 @@
       "pause": 500
     },
     {
-      "text": "As a controller, use the registry command guide to book registrations, update holdings and book permanent termination. The fold takes explicit pending references and can be run by another wallet from public chain inputs. Its command is open-datum state fold.",
+      "text": "As a controller, use the registry command guide to book registrations, update holdings and book permanent termination. The fold takes explicit pending references and can be run by another wallet from public chain inputs. Its command is open-datum fold.",
       "pause": 400
     }
   ],
@@ -251,7 +251,7 @@
       "pause": 500
     },
     {
-      "text": "Use open-datum state create --process-time MS --reclaim-time MS to choose the processing and reclaim windows once. The guide describes their defaults and the booking-width parameter.",
+      "text": "Use open-datum create --process-time MS --reclaim-time MS to choose the processing and reclaim windows once. The guide describes their defaults and the booking-width parameter.",
       "pause": 400
     }
   ],
@@ -373,6 +373,6 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "47367b16491859e05272a2da37cc6884c04d3e7b9cf826cc1bf4add4d8a8039e"
+    "sha256": "0ba5bd6941c9a8c964cb11816aafc6a55736a5b1224c34cfa78b513fa24ef21f"
   }
 }

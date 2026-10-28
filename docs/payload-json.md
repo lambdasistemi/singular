@@ -26,17 +26,17 @@ key's output on chain.
 
 ## Store a document
 
-Write the file and give it to `registration book`, with no schema setting:
+Write the file and give it to `insert`, with no schema setting:
 
 ```sh
 echo '{"answer": 42}' > payload.json
-open-datum registration book --key alice --payload payload.json --vault alice.vault
+open-datum insert --key alice --payload payload.json --vault alice.vault
 ```
 
 Supply the registry, blueprint and provider settings as described in the
 [registry command guide](registry-commands.md). Fold the pending reference the
-booking prints with `open-datum state fold --pending TXID#IX`.
-`holding update` takes the same payload file and schema setting. Reading a key
+booking prints with `open-datum fold --pending TXID#IX`.
+`update` takes the same payload file and schema setting. Reading a key
 has replacement: none, issue 744.
 
 ## How ordinary JSON becomes data

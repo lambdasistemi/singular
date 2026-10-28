@@ -125,9 +125,9 @@ spec = describe "the command lines in use" $ do
                 , "WalletCreate"
                 , "WalletSign"
                 ]
-        length entries `shouldBe` 586
+        length entries `shouldBe` 645
         length [() | e <- entries, "refused" `isPrefix` expectedResult e]
-            `shouldBe` 451
+            `shouldBe` 508
   where
     isPrefix p s = take (length p) s == p
     acceptedKind entry = case parseEntry entry of

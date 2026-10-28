@@ -13,10 +13,10 @@ and nothing is ever sent a second time.
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Pending: registration book
-    Pending --> Folded: state fold, before the processing deadline
-    Pending --> TakenBack: registration reclaim, inside the reclaim window
-    Pending --> CleanedUp: registration cleanup, after the reclaim window
+    [*] --> Pending: insert
+    Pending --> Folded: fold, before the processing deadline
+    Pending --> TakenBack: reclaim, inside the reclaim window
+    Pending --> CleanedUp: cleanup, after the reclaim window
     Folded --> [*]
     TakenBack --> [*]
     CleanedUp --> [*]
@@ -27,11 +27,11 @@ pending. Until its processing deadline only a fold can spend it. After the
 deadline, and until the reclaim window ends, only the refund address can take it
 back. After the window anyone can clean it up.
 
-This page describes eight commands: `singular state create`,
-`open-datum state create`, `open-datum state fold`,
-`open-datum registration book`, `open-datum registration reclaim` and
-`open-datum registration cleanup`, `open-datum holding update` and
-`open-datum holding terminate`. Every flag they take is listed with its
+This page describes eight commands: `singular registry create`,
+`open-datum create`, `open-datum fold`,
+`open-datum insert`, `open-datum reclaim` and
+`open-datum cleanup`, `open-datum update` and
+`open-datum terminate`. Every flag they take is listed with its
 description and its default in [the settings table](singular-node.md#the-settings-you-give),
 and each command prints the same information with `--help`.
 
@@ -67,12 +67,12 @@ registry's state token appears on the first output of the creation, and the
 command reads it back before it prints the receipt.
 
 ```sh
-open-datum state create --blueprint plutus.json \
+open-datum create --blueprint plutus.json \
   --koios-url https://preprod.koios.rest/api/v1 --network-magic 1 \
   --vault alice.vault
 ```
 
-`open-datum state create` makes a registry of open datum. Five parameters are
+`open-datum create` makes a registry of open datum. Five parameters are
 fixed here for the life of the registry: the processing time and the reclaim
 time of a booked registration (`--process-time` and `--reclaim-time`), the
 widest validity interval a booking may declare (`--booking-width`), and the
@@ -80,13 +80,13 @@ registration cost and the minimum tip (`--registration-cost` and
 `--minimum-tip`), which the registry carries and nothing enforces.
 
 ```sh
-singular state create --blueprint plutus.json \
+singular registry create --blueprint plutus.json \
   --application-policy "$policy" \
   --koios-url https://preprod.koios.rest/api/v1 --network-magic 1 \
   --vault alice.vault
 ```
 
-`singular state create` makes the registry of any application whose policy you
+`singular registry create` makes the registry of any application whose policy you
 give with `--application-policy`: the policy is the one parameter of the state
 validator. The command publishes the state validator when no live copy of it
 exists, and creates the registry whose state token that validator guards.
@@ -110,7 +110,7 @@ As Alice, you book a key with its payload and a deposit under a registry you nam
 by its address, and the registry's configuration decides the deadlines.
 
 ```sh
-open-datum registration book --blueprint plutus.json \
+open-datum insert --blueprint plutus.json \
   --registry "$registry" --key my-key --payload payload.json \
   --koios-url https://preprod.koios.rest/api/v1 \
   --vault alice.vault
@@ -137,7 +137,7 @@ As Bob, you fold the registrations you name into the registry in one
 transaction, and you need nothing from anyone who booked them.
 
 ```sh
-open-datum state fold --blueprint plutus.json \
+open-datum fold --blueprint plutus.json \
   --registry "$registry" --pending "$first" --pending "$second" \
   --koios-url https://preprod.koios.rest/api/v1 \
   --vault bob.vault
@@ -155,7 +155,7 @@ each registration folded with its key.
 ### Where the key's token goes
 
 A registration commits, when it is booked, to the address that will hold its
-key's token once it is folded. `open-datum registration book` commits the request
+key's token once it is folded. `open-datum insert` commits the request
 address of open datum. The fold accepts any address a registration committed to,
 the address of the state validator itself included. A token folded into a holding
 at the state validator's own address stays where only the state validator can
@@ -171,7 +171,7 @@ least the deposit. If the larger datum needs more minimum ADA, your wallet
 supplies it. No registry state is spent by the update.
 
 ```sh
-open-datum holding update --blueprint plutus.json \
+open-datum update --blueprint plutus.json \
     --state-token POLICY.NAME --holding TXID#IX \
     --koios-url https://preprod.koios.rest/api/v1 --network-magic 1 \
     --vault alice.vault --payload new.json
@@ -191,7 +191,7 @@ The active token moves into this request and is not burned at booking.
 There is no reclaim or cancellation window for this booking.
 
 ```sh
-open-datum holding terminate --blueprint plutus.json \
+open-datum terminate --blueprint plutus.json \
     --state-token POLICY.NAME --holding TXID#IX \
     --koios-url https://preprod.koios.rest/api/v1 --network-magic 1 \
     --vault alice.vault
@@ -206,7 +206,7 @@ stateDiagram-v2
 ```
 
 The receipt names the `pending` output and the `treasuryDonation` in lovelace.
-As Bob, you fold that pending output with `open-datum state fold`, using
+As Bob, you fold that pending output with `open-datum fold`, using
 `--pending TXID#IX` and your own vault. You need the public chain and your wallet;
 Alice's key, local directory and records are unnecessary. The fold burns the
 active token and the approval, creates no replacement holding, and leaves the
@@ -219,7 +219,7 @@ registrations of other keys. A termination has no processing deadline.
 As Alice, you take back a registration you booked while its reclaim window is open.
 
 ```sh
-open-datum registration reclaim --blueprint plutus.json \
+open-datum reclaim --blueprint plutus.json \
   --registry "$registry" --pending "$pending" \
   --koios-url https://preprod.koios.rest/api/v1 \
   --vault alice.vault
@@ -232,7 +232,7 @@ opens or after it closes the command is refused, saying when.
 As anyone, you clean up an expired registration once its reclaim window has ended.
 
 ```sh
-open-datum registration cleanup --blueprint plutus.json \
+open-datum cleanup --blueprint plutus.json \
   --registry "$registry" --pending "$pending" \
   --koios-url https://preprod.koios.rest/api/v1 \
   --vault carol.vault

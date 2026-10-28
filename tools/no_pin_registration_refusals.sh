@@ -86,7 +86,7 @@ tx_id_of() { jq -r .transaction "$receipts/$1.json"; }
 leg="creation"
 # A processing window long enough to run every case inside, a reclaim window
 # that is never used.
-as carol create "$open_datum" state create --blueprint plutus.json \
+as carol create "$open_datum" create --blueprint plutus.json \
   --process-time 900000 --reclaim-time 60000 --booking-width 60000
 token="$(field create .stateToken)"
 [[ "$token" =~ ^[0-9a-f]{56}\.[0-9a-f]{64}$ ]] || setup_fail "the creation printed no state token"
@@ -96,7 +96,7 @@ printf '%s\n' '{"name":"alice"}' >"$work/actors/alice/cwd/payload.json"
 
 # book NAME KEY [DEPOSIT]: Alice books a key; the pending registration is printed.
 book() {
-  as alice "book-$1" "$open_datum" registration book --blueprint plutus.json \
+  as alice "book-$1" "$open_datum" insert --blueprint plutus.json \
     --state-token "$token" --key "$2" --payload payload.json --deposit "${3:-3000000}" --tip 1000000
   field "book-$1" .pending
 }

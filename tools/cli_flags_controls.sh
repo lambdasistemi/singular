@@ -135,14 +135,14 @@ for page in README.md docs/unlisted.md; do
   printf '\n```sh\nsingular registry describe\n```\n' >>"$scratch/t/$page"
   expect "removed-page-command-${page//\//-}" 1 "$page:[0-9]+: singular registry describe .*not a command singular supports"
   fresh
-  printf '\n```sh\nsingular state create --made-up-flag 1\n```\n' >>"$scratch/t/$page"
-  expect "unknown-current-flag-${page//\//-}" 1 "$page:[0-9]+: singular state create --made-up-flag"
+  printf '\n```sh\nsingular registry create --made-up-flag 1\n```\n' >>"$scratch/t/$page"
+  expect "unknown-current-flag-${page//\//-}" 1 "$page:[0-9]+: singular registry create --made-up-flag"
 done
 
 # The singular binary takes a flag the documentation never mentions.
 fresh
-stand_in_singular 'state create' "$(plant --planted-flag)"
-expect undocumented-flag 1 '^undocumented: singular state create takes --planted-flag'
+stand_in_singular 'registry create' "$(plant --planted-flag)"
+expect undocumented-flag 1 '^undocumented: singular registry create takes --planted-flag'
 
 # The submit verb takes a flag the documentation never mentions: the
 # check reads submit's own usage line, not only the registry group.
@@ -152,8 +152,8 @@ expect undocumented-flag-submit 1 '^undocumented: singular submit takes --plante
 
 # The open-datum binary takes a flag the documentation never mentions.
 fresh
-stand_in_od 'registration book' "$(plant --planted-flag)"
-expect undocumented-flag-od 1 '^undocumented: open-datum registration book takes --planted-flag'
+stand_in_od 'insert' "$(plant --planted-flag)"
+expect undocumented-flag-od 1 '^undocumented: open-datum insert takes --planted-flag'
 
 # The documentation names a flag neither binary takes (singular side).
 fresh
@@ -162,7 +162,7 @@ grep -q 'ghost-flag' "$table" || {
   echo "SETUP-FAIL: the ghost row did not apply" >&2
   exit 2
 }
-expect documented-missing 1 '^documented, not in --help: the settings table gives --ghost-flag to singular state create'
+expect documented-missing 1 '^documented, not in --help: the settings table gives --ghost-flag to singular registry create'
 # The documentation names a flag neither binary takes (six singular commands).
 fresh
 sed -i '/^| `--receipt FILE`/a | `--ghost-flag X` | all six singular commands | A flag the binary does not take. |' "$table"
@@ -170,7 +170,7 @@ grep -q 'all six singular commands' "$table" || {
   echo "SETUP-FAIL: the six-command ghost row did not apply" >&2
   exit 2
 }
-expect documented-missing-six 1 '^documented, not in --help: the settings table gives --ghost-flag to singular state create'
+expect documented-missing-six 1 '^documented, not in --help: the settings table gives --ghost-flag to singular registry create'
 
 # The documentation names a flag neither binary takes (open-datum side).
 fresh
@@ -183,59 +183,59 @@ expect documented-missing-od 1 '^documented, not in --help: the settings table g
 
 # A documented flag is assigned to a retained command that does not take it.
 fresh
-sed -i 's/^| `--key KEY` | /| `--key KEY` | `open-datum state create`, /' "$table"
-grep -q '^| `--key KEY` | `open-datum state create`' "$table" || {
-  echo "SETUP-FAIL: the key row did not gain state create" >&2
+sed -i 's/^| `--key KEY` | /| `--key KEY` | `open-datum create`, /' "$table"
+grep -q '^| `--key KEY` | `open-datum create`' "$table" || {
+  echo "SETUP-FAIL: the key row did not gain create" >&2
   exit 2
 }
-expect wrong-command 1 '^documented, not in --help: the settings table gives --key to open-datum state create'
+expect wrong-command 1 '^documented, not in --help: the settings table gives --key to open-datum create'
 
 fresh
-sed -i 's/^| `--payload FILE` | /| `--payload FILE` | `open-datum state fold`, /' "$table"
-grep -q '^| `--payload FILE` | `open-datum state fold`' "$table" || {
-  echo "SETUP-FAIL: the payload row did not gain state fold" >&2
+sed -i 's/^| `--payload FILE` | /| `--payload FILE` | `open-datum fold`, /' "$table"
+grep -q '^| `--payload FILE` | `open-datum fold`' "$table" || {
+  echo "SETUP-FAIL: the payload row did not gain fold" >&2
   exit 2
 }
-expect wrong-command-od 1 '^documented, not in --help: the settings table gives --payload to open-datum state fold'
+expect wrong-command-od 1 '^documented, not in --help: the settings table gives --payload to open-datum fold'
 
 fresh
-sed -i 's/^| `--registry ADDRESS` | /| `--registry ADDRESS` | `open-datum state create`, /' "$table"
-grep -q '^| `--registry ADDRESS` | `open-datum state create`' "$table" || {
-  echo "SETUP-FAIL: the registry row did not gain state create" >&2
+sed -i 's/^| `--registry ADDRESS` | /| `--registry ADDRESS` | `open-datum create`, /' "$table"
+grep -q '^| `--registry ADDRESS` | `open-datum create`' "$table" || {
+  echo "SETUP-FAIL: the registry row did not gain create" >&2
   exit 2
 }
-expect wrong-command-registry 1 '^documented, not in --help: the settings table gives --registry to open-datum state create'
+expect wrong-command-registry 1 '^documented, not in --help: the settings table gives --registry to open-datum create'
 
 # A documented singular invocation uses a flag its command does not print.
 fresh
-printf '\n```sh\nsingular state create --state-dir ./reg \\\n  --made-up-flag 1\n```\n' >>"$scratch/t/docs/cli-recovery.md"
-expect invocation-unknown 1 'docs/cli-recovery.md:[0-9]+: singular state create --made-up-flag'
+printf '\n```sh\nsingular registry create --state-dir ./reg \\\n  --made-up-flag 1\n```\n' >>"$scratch/t/docs/cli-recovery.md"
+expect invocation-unknown 1 'docs/cli-recovery.md:[0-9]+: singular registry create --made-up-flag'
 
 # A documented open-datum invocation uses a flag its command does not print.
 fresh
-printf '\n```sh\nopen-datum registration book --state-dir ./reg \\\n  --made-up-flag 1\n```\n' >>"$scratch/t/docs/cli-recovery.md"
-expect invocation-unknown-od 1 'docs/cli-recovery.md:[0-9]+: open-datum registration book --made-up-flag'
+printf '\n```sh\nopen-datum insert --state-dir ./reg \\\n  --made-up-flag 1\n```\n' >>"$scratch/t/docs/cli-recovery.md"
+expect invocation-unknown-od 1 'docs/cli-recovery.md:[0-9]+: open-datum insert --made-up-flag'
 
 # A command the overview names has no help of its own: its --help fails.
 fresh
 cat >"$scratch/singular" <<EOF
 #!/usr/bin/env bash
-if [ "\$*" = "state create --help" ]; then exit 3; fi
+if [ "\$*" = "registry create --help" ]; then exit 3; fi
 exec "$real_singular" "\$@"
 EOF
 chmod +x "$scratch/singular"
 binary_singular="$scratch/singular"
-expect command-help-fails 1 '^singular state create --help exited non-zero'
+expect command-help-fails 1 '^singular registry create --help exited non-zero'
 
 fresh
 cat >"$scratch/open-datum" <<EOF
 #!/usr/bin/env bash
-if [ "\$*" = "holding update --help" ]; then exit 3; fi
+if [ "\$*" = "update --help" ]; then exit 3; fi
 exec "$real_od" "\$@"
 EOF
 chmod +x "$scratch/open-datum"
 binary_od="$scratch/open-datum"
-expect command-help-fails-od 1 '^open-datum holding update --help exited non-zero'
+expect command-help-fails-od 1 '^open-datum update --help exited non-zero'
 
 # A quotation of a program's help that the program no longer prints.
 fresh
@@ -285,12 +285,12 @@ expect unknown-verb-od 1 'docs/cli-recovery.md:[0-9]+: open-datum reject .*not a
 # on verbs the committed controls do not cover (`fold` here; the committed
 # `inspect`/`insert` controls stay as they are).
 fresh
-printf '\n```sh\nsingular state create --state-dir ./reg \\\n  --made-up-flag 1\n```\n' >>"$scratch/t/docs/cli-recovery.md"
-expect invocation-known-bad-flag 1 'docs/cli-recovery.md:[0-9]+: singular state create --made-up-flag'
+printf '\n```sh\nsingular registry create --state-dir ./reg \\\n  --made-up-flag 1\n```\n' >>"$scratch/t/docs/cli-recovery.md"
+expect invocation-known-bad-flag 1 'docs/cli-recovery.md:[0-9]+: singular registry create --made-up-flag'
 
 fresh
-printf '\n```sh\nopen-datum state fold --state-dir ./reg \\\n  --made-up-flag 1\n```\n' >>"$scratch/t/docs/cli-recovery.md"
-expect invocation-known-bad-flag-od 1 'docs/cli-recovery.md:[0-9]+: open-datum state fold --made-up-flag'
+printf '\n```sh\nopen-datum fold --state-dir ./reg \\\n  --made-up-flag 1\n```\n' >>"$scratch/t/docs/cli-recovery.md"
+expect invocation-known-bad-flag-od 1 'docs/cli-recovery.md:[0-9]+: open-datum fold --made-up-flag'
 
 # A real invocation of a removed verb under singular is still caught: the
 # documented-refusals rule is narrow and does not swallow invocations
@@ -320,7 +320,7 @@ expect removed-verb-refusal-value 1 'docs/cli-recovery.md:[0-9]+: singular regis
 # Each invocation omits --help so it reaches dispatch: at the base the verb
 # parses and is refused for a missing flag, never as unknown, so this
 # control fails there; after the split it is refused as unknown.
-for verb in insert update terminate address create fold reject reclaim inspect; do
+for verb in insert update terminate address fold reject reclaim inspect; do
   fresh
   got=0
   "$binary_singular" registry "$verb" >"$scratch/out-$verb" 2>"$scratch/err-$verb" || got=$?
@@ -334,17 +334,31 @@ for verb in insert update terminate address create fold reject reclaim inspect; 
 done
 
 # Public application routes have no compatibility aliases.
-for verb in create insert update terminate fold inspect; do
-  fresh
+verb=inspect
+fresh
+got=0
+"$binary_od" "$verb" >"$scratch/out-od-$verb" 2>"$scratch/err-od-$verb" || got=$?
+if [ "$got" -ne 2 ] || ! grep -q -- "not a command singular supports: $verb" "$scratch/err-od-$verb"; then
+  cat "$scratch/err-od-$verb" >&2
+  echo "FAIL cli-flags control 'removed-od-$verb': exit $got, expected unknown-command refusal" >&2
+  exit 1
+fi
+controls=$((controls + 1))
+echo "control removed-od-$verb: exit $got, refused as unknown"
+
+# Retired command groups and their leaves have no compatibility aliases.
+for invocation in 'singular state' 'singular state create' 'open-datum state' 'open-datum state create' 'open-datum state fold' 'open-datum registration' 'open-datum registration book' 'open-datum registration reclaim' 'open-datum registration cleanup' 'open-datum holding' 'open-datum holding update' 'open-datum holding terminate'; do
+  read -r -a words <<<"$invocation"
+  binary="$binary_singular"
+  [ "${words[0]}" = singular ] || binary="$binary_od"
   got=0
-  "$binary_od" "$verb" >"$scratch/out-od-$verb" 2>"$scratch/err-od-$verb" || got=$?
-  if [ "$got" -ne 2 ] || ! grep -q -- "not a command singular supports: $verb" "$scratch/err-od-$verb"; then
-    cat "$scratch/err-od-$verb" >&2
-    echo "FAIL cli-flags control 'removed-od-$verb': exit $got, expected unknown-command refusal" >&2
+  "$binary" "${words[@]:1}" >"$scratch/retired.out" 2>"$scratch/retired.err" || got=$?
+  if [ "$got" -ne 2 ] || ! grep -q -- "not a command singular supports: ${words[*]:1}" "$scratch/retired.err"; then
+    cat "$scratch/retired.err" >&2
+    echo "FAIL cli-flags control: $invocation did not refuse as unknown" >&2
     exit 1
   fi
   controls=$((controls + 1))
-  echo "control removed-od-$verb: exit $got, refused as unknown"
 done
 
 # The wallet verbs, both directions (#638): a flag the wallet usage lines
@@ -366,35 +380,35 @@ expect documented-missing-wallet 1 '^documented, not in --help: the settings tab
 # command's help prints that the settings table never mentions, and a table
 # row giving a flag a group command's --help does not print.
 fresh
-stand_in_singular 'state create' "$(plant --planted-flag)"
-expect undocumented-flag-state-create 1 '^undocumented: singular state create takes --planted-flag'
+stand_in_singular 'registry create' "$(plant --planted-flag)"
+expect undocumented-flag-state-create 1 '^undocumented: singular registry create takes --planted-flag'
 
-for command in 'state create' 'state fold' 'registration book' 'registration reclaim' 'registration cleanup' 'holding update' 'holding terminate'; do
+for command in 'create' 'fold' 'insert' 'reclaim' 'cleanup' 'update' 'terminate'; do
   fresh
   stand_in_od "$command" "$(plant --planted-flag)"
   expect "undocumented-flag-od-${command// /-}" 1 "^undocumented: open-datum $command takes --planted-flag"
 done
 
 fresh
-sed -i '/^| `--receipt FILE`/a | `--ghost-flag X` | `singular state create`, `open-datum registration book` | A flag the binary does not take. |' "$table"
+sed -i '/^| `--receipt FILE`/a | `--ghost-flag X` | `singular registry create`, `open-datum insert` | A flag the binary does not take. |' "$table"
 grep -q 'ghost-flag' "$table" || {
   echo "SETUP-FAIL: the ghost group row did not apply" >&2
   exit 2
 }
-expect documented-missing-state-create 1 '^documented, not in --help: the settings table gives --ghost-flag to singular state create'
-expect documented-missing-registration-book 1 '^documented, not in --help: the settings table gives --ghost-flag to open-datum registration book'
+expect documented-missing-state-create 1 '^documented, not in --help: the settings table gives --ghost-flag to singular registry create'
+expect documented-missing-registration-book 1 '^documented, not in --help: the settings table gives --ghost-flag to open-datum insert'
 
 # A flag documented for a group command whose --help does not give it.
 fresh
-sed -i 's/^| `--pending TXID#IX` | \(.*\)`open-datum state fold`/| `--pending TXID#IX` | \1`open-datum state fold`, `open-datum registration book`/' "$table"
-grep -q '`open-datum state fold`, `open-datum registration book`' "$table" || {
+sed -i 's/^| `--pending TXID#IX` | \(.*\)`open-datum fold`/| `--pending TXID#IX` | \1`open-datum fold`, `open-datum insert`/' "$table"
+grep -q '`open-datum fold`, `open-datum insert`' "$table" || {
   echo "SETUP-FAIL: the pending row did not gain book" >&2
   exit 2
 }
-expect wrong-command-registration 1 '^documented, not in --help: the settings table gives --pending to open-datum registration book'
+expect wrong-command-registration 1 '^documented, not in --help: the settings table gives --pending to open-datum insert'
 
 # A documented invocation of a group command uses a flag it does not print.
-for invocation in 'singular state create' 'open-datum state create' 'open-datum state fold' 'open-datum registration book' 'open-datum registration reclaim' 'open-datum registration cleanup' 'open-datum holding update' 'open-datum holding terminate'; do
+for invocation in 'singular registry create' 'open-datum create' 'open-datum fold' 'open-datum insert' 'open-datum reclaim' 'open-datum cleanup' 'open-datum update' 'open-datum terminate'; do
   fresh
   printf '\n```sh\n%s --state-dir ./reg \\\n  --made-up-flag 1\n```\n' "$invocation" >>"$scratch/t/docs/cli-recovery.md"
   expect "invocation-unknown-${invocation// /-}" 1 "docs/cli-recovery.md:[0-9]+: $invocation --made-up-flag"

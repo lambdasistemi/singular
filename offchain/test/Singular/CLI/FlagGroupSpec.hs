@@ -534,10 +534,10 @@ scriptSpelling =
 applicationPolicySpelling :: String
 applicationPolicySpelling = replicate 56 'a'
 
--- | A valid state create command line; probes append one flag to it.
+-- | A valid registry create command line; probes append one flag to it.
 validStateCreate :: [String]
 validStateCreate =
-    [ "state"
+    [ "registry"
     , "create"
     , "--blueprint"
     , "blueprint.json"
@@ -558,7 +558,7 @@ unknownRefusal flag = BadValue flag "is not a flag singular reads"
 registryCommand :: Spec
 registryCommand = describe "registry command" $ do
     it "refuses an unknown flag by name" $
-        parseCommand ["state", "create", "--frobnicate", "x"]
+        parseCommand ["registry", "create", "--frobnicate", "x"]
             `shouldBe` Left (unknownRefusal "--frobnicate")
     forM_ (pinnedCommonValued <> registryExtras) $ \flag ->
         it ("owns " <> flag) $

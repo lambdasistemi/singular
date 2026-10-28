@@ -1,6 +1,6 @@
 singular VERSION (commit unknown)
 
-Usage: singular state create [--config FILE] [--state-dir DIR] --blueprint
+Usage: singular registry create [--config FILE] [--state-dir DIR] --blueprint
        FILE --application-policy HEX [--seed TXID#IX] --koios-url URL
        --network-magic N [--koios-token-file FILE] [--network-time DIR]
        [--vault FILE [--passphrase-fd N] | --wallet-address ADDR --bundle FILE
@@ -171,13 +171,13 @@ Environment:
                        value that is empty is refused.
 
 Example:
-  singular state create --blueprint plutus.json \
+  singular registry create --blueprint plutus.json \
       --application-policy <policy> \
       --koios-url https://preprod.koios.rest/api/v1 --network-magic 1 \
       --vault alice.vault
 
   With those settings in singular.json instead:
-  singular state create --application-policy <policy> \
+  singular registry create --application-policy <policy> \
       --vault alice.vault
 
 Output and exit status:

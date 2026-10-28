@@ -7,7 +7,7 @@ Module      : Singular.CLI.StateCommandSpec
 Description : As the creator of a registry I create it with one command, and an interrupted command keeps its transaction
 License     : Apache-2.0
 
-As the owner of an application I run @singular state create@ with the policy of
+As the owner of an application I run @singular registry create@ with the policy of
 my application and a wallet of mine. The first registry of the application
 publishes the state script as a reference script and creates the registry's
 state in a second transaction; a later registry finds the live copy and
@@ -165,7 +165,7 @@ import Test.Hspec
     )
 
 spec :: Spec
-spec = describe "singular state create" $ do
+spec = describe "singular registry create" $ do
     parserRows
     creationRows
     interruptionRows
@@ -192,7 +192,7 @@ vaultFile :: [String]
 vaultFile = ["--vault", "alice.vault"]
 
 stateCreate :: [String] -> [String]
-stateCreate rest = ["state", "create"] <> node <> policyArgs <> rest
+stateCreate rest = ["registry", "create"] <> node <> policyArgs <> rest
 
 -- | The constructor a command line is read as, or why it is refused.
 reading :: [String] -> Either CLIError String
@@ -232,11 +232,11 @@ parserRows = describe "the command line" $ do
     it
         "names the policy of the application when it is missing or is no 28-byte hash"
         $ do
-            aboutRefusal (reading (["state", "create"] <> node <> keyFile))
+            aboutRefusal (reading (["registry", "create"] <> node <> keyFile))
                 `shouldBe` Just ("missing", "--application-policy")
             aboutRefusal
                 ( reading
-                    ( ["state", "create"]
+                    ( ["registry", "create"]
                         <> node
                         <> ["--application-policy", "abcd"]
                         <> keyFile
@@ -246,7 +246,7 @@ parserRows = describe "the command line" $ do
     it "names the blueprint when it is missing" $
         aboutRefusal
             ( reading
-                ( ["state", "create"]
+                ( ["registry", "create"]
                     <> [ "--koios-url"
                        , "http://koios.example"
                        , "--network-magic"
@@ -276,12 +276,17 @@ parserRows = describe "the command line" $ do
         $ \(setting, flag) ->
             fmap snd (aboutRefusal (reading (stateCreate (keyFile <> setting))))
                 `shouldBe` Just flag
+    it "refuses the retired state group and command" $
+        map
+            (fmap fst . aboutRefusal . reading)
+            [["state"], ["state", "create"]]
+            `shouldBe` replicate 2 (Just "UnknownCommand")
     it
         "is a group of the program: the group page, and no command of another group"
         $ do
-            reading ["state"] `shouldBe` Right "Help"
-            reading ["state", "create", "--help"] `shouldBe` Right "Help"
-            aboutRefusal (reading ["state", "fold"])
+            reading ["registry"] `shouldBe` Right "Help"
+            reading ["registry", "create", "--help"] `shouldBe` Right "Help"
+            aboutRefusal (reading ["fold"])
                 `shouldBe` Just ("UnknownCommand", "")
 
 -- ---------------------------------------------------------
@@ -385,7 +390,12 @@ answeringWith rig rule = do
 
 runState :: Rig -> Env -> FilePath -> String -> [String] -> IO Run
 runState rig env dir label extra =
-    runVia rig env dir label (["state", "create"] <> policyArgs <> extra)
+    runVia
+        rig
+        env
+        dir
+        label
+        (["registry", "create"] <> policyArgs <> extra)
 
 -- | Outputs of the wallet other than the one its funding takes.
 spareSeeds :: Rig -> IO [TxIn]
@@ -473,7 +483,7 @@ creationRows = describe "creating a registry" $ do
                     ["--seed", T.unpack (renderOutRef seed)]
             runExit r `shouldBe` ExitSuccess
             outcomeOf (runReceipt r) `shouldBe` Just "success"
-            textAt "command" (runReceipt r) `shouldBe` Just "state create"
+            textAt "command" (runReceipt r) `shouldBe` Just "registry create"
             let token = tokenOfSeed script seed
             textAt "stateToken" (runReceipt r) `shouldBe` Just (spellToken token)
             textAt "seed" (runReceipt r) `shouldBe` Just (renderOutRef seed)
@@ -639,7 +649,7 @@ creationRows = describe "creating a registry" $ do
             bytes <- BS.readFile bundlePath
             case decodeBundle bytes of
                 Right bundle -> do
-                    bundleCommand bundle `shouldBe` "state create"
+                    bundleCommand bundle `shouldBe` "registry create"
                     length (bundleTransactions bundle) `shouldBe` 2
                 Left refusal -> expectationFailure (show refusal)
             -- nothing of the registry is on the chain
