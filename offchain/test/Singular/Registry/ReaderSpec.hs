@@ -32,7 +32,7 @@ import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Short qualified as SBS
 import Data.Map.Strict qualified as Map
-import Data.Maybe (fromMaybe)
+import Data.Maybe (catMaybes, fromMaybe)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Lens.Micro ((&), (.~))
@@ -115,15 +115,15 @@ rowOf = withObject "exported reader story" $ \row -> do
 
 requestOf :: Value -> Parser R.ReaderRequest
 requestOf = withObject "reader request" $ \o ->
-    R.ReaderRequest
-        <$> (LP.Network <$> o .: "network")
+    R.ReaderRequest . LP.Network
+        <$> o .: "network"
         <*> (o .: "registry" >>= registryOf)
         <*> (bytes 8 <$> o .: "key")
 
 registryOf :: Value -> Parser Trie.RegistryIdentity
 registryOf = withObject "registry" $ \o ->
-    Trie.RegistryIdentity
-        <$> (Trie.StatePolicyId . bytes 28 <$> o .: "policy")
+    Trie.RegistryIdentity . Trie.StatePolicyId . bytes 28
+        <$> o .: "policy"
         <*> (AssetName . SBS.toShort . bytes 32 <$> o .: "name")
 
 modelAsset :: Value -> Parser ModelAsset
@@ -140,12 +140,12 @@ bridgeOf :: Data.Aeson.Object -> Parser Bridge
 bridgeOf q = do
     codes <- q .: "codes"
     hashes <- q .: "hashes"
-    fmap Map.fromList $ traverse (entry hashes) codes
+    Map.fromList <$> traverse (entry hashes) codes
   where
     entry hashes = withObject "encoding entry" $ \o -> do
         encoded <- o .: "encoded"
         matches <- traverse (hashEntry encoded) hashes
-        let name = case [n | Just n <- matches] of
+        let name = case catMaybes matches of
                 n : _ -> n
                 [] -> 0
         preimage <- o .: "preimage"
@@ -218,8 +218,8 @@ observationOf bridge request q = withObject "reader observation" $ \o ->
 
 releaseOf :: Value -> Parser ApplicationIdentity
 releaseOf = withObject "published release" $ \o ->
-    ApplicationIdentity
-        <$> (bytes 28 <$> o .: "statePolicy")
+    ApplicationIdentity . bytes 28
+        <$> o .: "statePolicy"
         <*> (bytes 28 <$> o .: "applicationPolicy")
         <*> (bytes 28 <$> o .: "applicationCredential")
         <*> pure []
@@ -344,13 +344,13 @@ answerOf bridge request q v = do
         (kind, fields) <- tagged raw
         case kind of
             "wrongNetwork" ->
-                R.WrongNetwork
-                    <$> (LP.Network <$> field "requested" fields)
+                R.WrongNetwork . LP.Network
+                    <$> field "requested" fields
                     <*> (LP.Network <$> field "served" fields)
             "unknownStatePolicy" -> R.UnknownStatePolicy . bytes 28 <$> field "policy" fields
             "foreignStatePolicy" ->
-                R.ForeignStatePolicy
-                    <$> (bytes 28 <$> field "requested" fields)
+                R.ForeignStatePolicy . bytes 28
+                    <$> field "requested" fields
                     <*> (bytes 28 <$> field "published" fields)
             "tokenOutsideApplicationCustody" ->
                 R.TokenOutsideApplicationCustody

@@ -135,26 +135,25 @@ name is derived from the registry identity and key, never accepted as input.
 readNeutralKey
     :: ReaderRequest -> ReaderObservation -> NeutralReaderAnswer
 readNeutralKey request observed =
-    const (Unavailable NetworkRead Missing) $
-        withRead NetworkRead (observedNetwork observed) $ \served ->
-            if served /= requestedNetwork request
-                then Refused (WrongNetwork (requestedNetwork request) served)
-                else case observedRelease observed of
-                    Nothing -> Refused (UnknownStatePolicy policyBytes)
-                    Just release
-                        | policyBytes /= appliedStatePolicy release ->
-                            Refused (ForeignStatePolicy policyBytes (appliedStatePolicy release))
-                        | otherwise ->
-                            withRead ActiveOutputsRead (observedActiveOutputs observed) $ \case
-                                [pair@(reference, output)]
-                                    | activeQuantity output /= 1 -> Refused ConflictingEvidence
-                                    | credential output /= Just (applicationScript release)
-                                        || credential output == Just policyBytes ->
-                                        Refused
-                                            (TokenOutsideApplicationCustody reference (output ^. addrTxOutL))
-                                    | otherwise -> Active pair
-                                [] -> readState release
-                                _ -> Refused ConflictingEvidence
+    withRead NetworkRead (observedNetwork observed) $ \served ->
+        if served /= requestedNetwork request
+            then Refused (WrongNetwork (requestedNetwork request) served)
+            else case observedRelease observed of
+                Nothing -> Refused (UnknownStatePolicy policyBytes)
+                Just release
+                    | policyBytes /= appliedStatePolicy release ->
+                        Refused (ForeignStatePolicy policyBytes (appliedStatePolicy release))
+                    | otherwise ->
+                        withRead ActiveOutputsRead (observedActiveOutputs observed) $ \case
+                            [pair@(reference, output)]
+                                | activeQuantity output /= 1 -> Refused ConflictingEvidence
+                                | credential output /= Just (applicationScript release)
+                                    || credential output == Just policyBytes ->
+                                    Refused
+                                        (TokenOutsideApplicationCustody reference (output ^. addrTxOutL))
+                                | otherwise -> Active pair
+                            [] -> readState release
+                            _ -> Refused ConflictingEvidence
   where
     registry@(Trie.RegistryIdentity (Trie.StatePolicyId policyBytes) _) = readerRegistry request
     activeQuantity output = case registryAsset registry of
