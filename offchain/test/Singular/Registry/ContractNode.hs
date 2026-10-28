@@ -115,11 +115,11 @@ import Singular.Registry.ContractSuite
     , EvidenceClass (..)
     )
 import Singular.Registry.Evidence
-    ( Evidenced (..)
-    , NoWitness
+    ( NoWitness
     , SessionBinding (..)
     , SessionId (..)
     )
+import Singular.Registry.Evidence qualified as Evidence
 import Singular.Registry.Ledger (Coin (..), ConwayEra)
 import Singular.Registry.LedgerProvider (Outputs, SubmitResult (..))
 import Singular.Registry.LedgerProvider qualified as LP
@@ -396,7 +396,7 @@ phaseLogOnDevnet =
                                 keepEvidence caps $ do
                                     answer <- Services.withLatest (capReads caps) $ \session -> do
                                         network <- LP.servedNetwork session
-                                        fmap value network
+                                        fmap Evidence.value network
                                             `shouldBe` Right (LP.Network (providerMagic settings))
                                         actual <- Services.outputsAt session (walletAddr wallet)
                                         expected <- independentOutputs oracle (walletAddr wallet)
@@ -416,7 +416,7 @@ phaseLogOnDevnet =
                         (trace, facts) <- withReads (backendPhaseLog path) mempty settings $ \caps -> keepEvidence caps $ do
                             Services.withLatest (capReads caps) $ \session -> do
                                 network <- LP.servedNetwork session
-                                fmap value network
+                                fmap Evidence.value network
                                     `shouldBe` Right (LP.Network (providerMagic settings))
                                 start <- Services.slotStart session 0
                                 converted <- Services.floorSlot session start
