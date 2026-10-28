@@ -211,4 +211,88 @@ theorem conflicting_quantity (h : Hash) (c : Codec) (t : TrieCommit)
     (_quantity : quantity output (activeAsset h c request.registry request.key) ≠ 1) :
     readKey h c t decode request observed = .refused .conflictingEvidence := by sorry
 
+/-- A complete empty state answer is unavailable, not an unknown key. -/
+theorem state_not_found (h : Hash) (c : Codec) (t : TrieCommit)
+    (decode : DecodeApplication) (request : ReaderRequest) (observed : ReaderObservation)
+    (release : PublishedRelease)
+    (_network : observed.network = .complete request.network) (_release : observed.release = some release)
+    (_policy : request.registry.policy = release.statePolicy) (_outputs : observed.activeOutputs = .complete [])
+    (_state : observed.state = .complete none) :
+    readKey h c t decode request observed = .unavailable .state .stateNotFound := by sorry
+
+/-- Extra assets, a non-root datum or any other failed state recognition cannot
+supply a conclusion; the exact answer is a named unavailable state read. -/
+theorem state_not_recognized (h : Hash) (c : Codec) (t : TrieCommit)
+    (decode : DecodeApplication) (request : ReaderRequest) (observed : ReaderObservation)
+    (release : PublishedRelease) (output : ObservedOutput)
+    (_network : observed.network = .complete request.network) (_release : observed.release = some release)
+    (_policy : request.registry.policy = release.statePolicy) (_outputs : observed.activeOutputs = .complete [])
+    (_state : observed.state = .complete (some output))
+    (_unrecognised : recognizeReaderState release request.registry output = false) :
+    readKey h c t decode request observed = .unavailable .state .stateNotRecognized := by sorry
+
+/-- The recognised state does not authenticate trie content with another root. -/
+theorem trie_root_mismatch (h : Hash) (c : Codec) (t : TrieCommit)
+    (decode : DecodeApplication) (request : ReaderRequest) (observed : ReaderObservation)
+    (release : PublishedRelease) (output : ObservedOutput) (trie : Trie)
+    (_network : observed.network = .complete request.network) (_release : observed.release = some release)
+    (_policy : request.registry.policy = release.statePolicy) (_outputs : observed.activeOutputs = .complete [])
+    (_state : observed.state = .complete (some output))
+    (_recognised : recognizeReaderState release request.registry output = true)
+    (_trie : observed.trie = .complete trie) (_mismatch : output.datum ≠ .root (t trie)) :
+    readKey h c t decode request observed = .unavailable .trie .trieRootMismatch := by sorry
+
+/-- A unit token in custody with a datum that decodes as neither holding nor
+termination request is conflicting evidence. -/
+theorem undecodable_holding (h : Hash) (c : Codec) (t : TrieCommit)
+    (decode : DecodeApplication) (request : ReaderRequest) (observed : ReaderObservation)
+    (release : PublishedRelease) (output : ObservedOutput)
+    (_network : observed.network = .complete request.network) (_release : observed.release = some release)
+    (_policy : request.registry.policy = release.statePolicy) (_outputs : observed.activeOutputs = .complete [output])
+    (_quantity : quantity output (activeAsset h c request.registry request.key) = 1)
+    (_custody : output.credential = release.applicationCredential ∧ output.credential ≠ request.registry.policy)
+    (_notPending : terminationShape .none h c release output request.registry request.key = false)
+    (_decode : decoded decode output = none) :
+    readKey h c t decode request observed = .refused .conflictingEvidence := by sorry
+
+/-- A pending registration datum is not a live holding of an existing token. -/
+theorem registration_is_not_a_holding (h : Hash) (c : Codec) (t : TrieCommit)
+    (decode : DecodeApplication) (request : ReaderRequest) (observed : ReaderObservation)
+    (release : PublishedRelease) (output : ObservedOutput) (data : RegistrationData)
+    (_network : observed.network = .complete request.network) (_release : observed.release = some release)
+    (_policy : request.registry.policy = release.statePolicy) (_outputs : observed.activeOutputs = .complete [output])
+    (_quantity : quantity output (activeAsset h c request.registry request.key) = 1)
+    (_custody : output.credential = release.applicationCredential ∧ output.credential ≠ request.registry.policy)
+    (_notPending : terminationShape .none h c release output request.registry request.key = false)
+    (_decode : decoded decode output = some (.registration data)) :
+    readKey h c t decode request observed = .refused .conflictingEvidence := by sorry
+
+/-- Any wrong registry, key, active asset or uncovered deposit in a decoded live
+control is conflicting evidence, even when the token itself is correct. -/
+theorem invalid_live_control (h : Hash) (c : Codec) (t : TrieCommit)
+    (decode : DecodeApplication) (request : ReaderRequest) (observed : ReaderObservation)
+    (release : PublishedRelease) (output : ObservedOutput) (control : ProtectedControl) (payload : Nat)
+    (_network : observed.network = .complete request.network) (_release : observed.release = some release)
+    (_policy : request.registry.policy = release.statePolicy) (_outputs : observed.activeOutputs = .complete [output])
+    (_quantity : quantity output (activeAsset h c request.registry request.key) = 1)
+    (_custody : output.credential = release.applicationCredential ∧ output.credential ≠ request.registry.policy)
+    (_notPending : terminationShape .none h c release output request.registry request.key = false)
+    (_decode : decoded decode output = some (.live control payload))
+    (_invalid : control.registry ≠ request.registry ∨ control.key ≠ request.key ∨
+      control.activeAsset ≠ activeAsset h c request.registry request.key ∨ output.lovelace < control.deposit) :
+    readKey h c t decode request observed = .refused .conflictingEvidence := by sorry
+
+/-- With no token, an active leaf is a conflict, not an absence. The same exact
+answer covers the legacy known-absent leaf; only unknown and terminal conclude. -/
+theorem known_nonterminal_leaf_without_token (h : Hash) (c : Codec) (t : TrieCommit)
+    (decode : DecodeApplication) (request : ReaderRequest) (observed : ReaderObservation)
+    (release : PublishedRelease) (output : ObservedOutput) (trie : Trie) (leaf : State)
+    (_network : observed.network = .complete request.network) (_release : observed.release = some release)
+    (_policy : request.registry.policy = release.statePolicy) (_outputs : observed.activeOutputs = .complete [])
+    (_state : observed.state = .complete (some output))
+    (_recognised : recognizeReaderState release request.registry output = true)
+    (_trie : observed.trie = .complete trie) (_root : output.datum = .root (t trie))
+    (_leaf : trieGet trie request.key = .known leaf) (_notTerminal : leaf ≠ .terminal) :
+    readKey h c t decode request observed = .refused .conflictingEvidence := by sorry
+
 end SingularApplicationHeld.ReaderStatements

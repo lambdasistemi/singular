@@ -157,6 +157,55 @@
       "proposedWitness": "pending termination",
       "mutantStatus": "NOT-RUN",
       "proofStatus": "OPEN"
+    },
+    {
+      "requirement": "a complete empty state answer remains unavailable",
+      "theorem": "SingularApplicationHeld.ReaderStatements.state_not_found",
+      "proposedWitness": "state not found",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "requirement": "only a recognised state may support a conclusion",
+      "theorem": "SingularApplicationHeld.ReaderStatements.state_not_recognized",
+      "proposedWitness": "unrecognised state; state with extra assets",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "requirement": "the trie root must match the recognised state",
+      "theorem": "SingularApplicationHeld.ReaderStatements.trie_root_mismatch",
+      "proposedWitness": "trie root mismatch",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "requirement": "an undecodable holding datum is conflicting evidence",
+      "theorem": "SingularApplicationHeld.ReaderStatements.undecodable_holding",
+      "proposedWitness": "unknown holding datum",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "requirement": "a registration datum cannot identify a live holding",
+      "theorem": "SingularApplicationHeld.ReaderStatements.registration_is_not_a_holding",
+      "proposedWitness": "registration datum with active token",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "requirement": "live controls must bind registry key asset and deposit",
+      "theorem": "SingularApplicationHeld.ReaderStatements.invalid_live_control",
+      "proposedWitness": "uncovered live deposit",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "requirement": "a known nonterminal leaf without its token is conflicting evidence",
+      "theorem": "SingularApplicationHeld.ReaderStatements.known_nonterminal_leaf_without_token",
+      "proposedWitness": "active leaf without token; known absent leaf without token",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
     }
   ]
 }

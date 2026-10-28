@@ -98,7 +98,8 @@ def queryFor (request : ReaderRequest) (observed : ReaderObservation) : ReaderQu
     | .complete trie => [RootEntry.mk trie (commit trie)]
     | _ => []
   ⟨request, observed, codes, codes.map (fun entry => ⟨entry.encoded, hash entry.encoded⟩), roots,
-    [(1007, .live (OpenDatumApplicationHeld.Fixtures.control 7) 123)]⟩
+    [(1007, .live (OpenDatumApplicationHeld.Fixtures.control 7) 123),
+      (2007, .registration OpenDatumApplicationHeld.Fixtures.registrationData)]⟩
 
 /-- Positive observations and single-atom evidence defects. Results are computed
 by runReaderQuery, not entered into this corpus. -/
@@ -112,6 +113,7 @@ def corpus : List (String × ReaderQuery) :=
    ("incomplete asset answer", queryFor request {live with activeOutputs := .incomplete "truncated page"}),
    ("failed asset read", queryFor request {live with activeOutputs := .failed "provider unavailable"}),
    ("failed state read", queryFor request {terminal with state := .failed "provider unavailable"}),
+   ("state not found", queryFor request {terminal with state := .complete none}),
    ("failed trie read", queryFor request {terminal with trie := .failed "provider unavailable"}),
    ("wrong network", queryFor request {live with network := .complete 43}),
    ("unknown state policy", queryFor request {live with release := none}),
@@ -121,8 +123,14 @@ def corpus : List (String × ReaderQuery) :=
    ("two outputs", queryFor request {live with activeOutputs := .complete [liveOutput, {liveOutput with reference := ⟨40, 0⟩}]}),
    ("non-unit quantity", queryFor request {live with activeOutputs := .complete [{liveOutput with assets := [(activeAsset hash code registryId 7, 2)]}]}),
    ("unrecognised state", queryFor request {terminal with state := .complete (some {terminalFold.after.state with datum := .empty})}),
+   ("state with extra assets", queryFor request {terminal with state := .complete (some {terminalFold.after.state with assets := terminalFold.after.state.assets ++ [(⟨90, 91⟩, 1)]})}),
    ("trie root mismatch", queryFor request {terminal with state := .complete (some {terminalFold.after.state with datum := .root 0})}),
    ("unknown holding datum", queryFor request {live with activeOutputs := .complete [{liveOutput with datum := .application 9999}]}),
-   ("active leaf without token", queryFor request {live with activeOutputs := .complete []})]
+   ("registration datum with active token", queryFor request {live with activeOutputs := .complete [{liveOutput with datum := .application 2007}]}),
+   ("uncovered live deposit", queryFor request {live with activeOutputs := .complete [{liveOutput with lovelace := 6}]}),
+   ("active leaf without token", queryFor request {live with activeOutputs := .complete []}),
+   ("known absent leaf without token", queryFor request {terminal with
+     state := .complete (some {terminalFold.after.state with datum := .root (commit [(7, .known .absent)])}),
+     trie := .complete [(7, .known .absent)]})]
 
 end OpenDatumApplicationHeld.ReaderFixtures

@@ -85,6 +85,28 @@
               "payload": 123
             }
           }
+        ],
+        [
+          2007,
+          {
+            "registration": {
+              "data": {
+                "bookedAt": 1,
+                "controller": 42,
+                "deposit": 7,
+                "holdingAddress": 99,
+                "initialDatum": 1007,
+                "key": 7,
+                "processDeadline": 20,
+                "reclaimEnd": 30,
+                "refundAddress": 50,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              }
+            }
+          }
         ]
       ],
       "hashes": [
@@ -248,6 +270,28 @@
                 }
               },
               "payload": 123
+            }
+          }
+        ],
+        [
+          2007,
+          {
+            "registration": {
+              "data": {
+                "bookedAt": 1,
+                "controller": 42,
+                "deposit": 7,
+                "holdingAddress": 99,
+                "initialDatum": 1007,
+                "key": 7,
+                "processDeadline": 20,
+                "reclaimEnd": 30,
+                "refundAddress": 50,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              }
             }
           }
         ]
@@ -479,6 +523,28 @@
               "payload": 123
             }
           }
+        ],
+        [
+          2007,
+          {
+            "registration": {
+              "data": {
+                "bookedAt": 1,
+                "controller": 42,
+                "deposit": 7,
+                "holdingAddress": 99,
+                "initialDatum": 1007,
+                "key": 7,
+                "processDeadline": 20,
+                "reclaimEnd": 30,
+                "refundAddress": 50,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              }
+            }
+          }
         ]
       ],
       "hashes": [
@@ -682,6 +748,28 @@
               "payload": 123
             }
           }
+        ],
+        [
+          2007,
+          {
+            "registration": {
+              "data": {
+                "bookedAt": 1,
+                "controller": 42,
+                "deposit": 7,
+                "holdingAddress": 99,
+                "initialDatum": 1007,
+                "key": 7,
+                "processDeadline": 20,
+                "reclaimEnd": 30,
+                "refundAddress": 50,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              }
+            }
+          }
         ]
       ],
       "hashes": [
@@ -853,6 +941,28 @@
               "payload": 123
             }
           }
+        ],
+        [
+          2007,
+          {
+            "registration": {
+              "data": {
+                "bookedAt": 1,
+                "controller": 42,
+                "deposit": 7,
+                "holdingAddress": 99,
+                "initialDatum": 1007,
+                "key": 7,
+                "processDeadline": 20,
+                "reclaimEnd": 30,
+                "refundAddress": 50,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              }
+            }
+          }
         ]
       ],
       "hashes": [
@@ -974,6 +1084,28 @@
                 }
               },
               "payload": 123
+            }
+          }
+        ],
+        [
+          2007,
+          {
+            "registration": {
+              "data": {
+                "bookedAt": 1,
+                "controller": 42,
+                "deposit": 7,
+                "holdingAddress": 99,
+                "initialDatum": 1007,
+                "key": 7,
+                "processDeadline": 20,
+                "reclaimEnd": 30,
+                "refundAddress": 50,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              }
             }
           }
         ]
@@ -1174,6 +1306,28 @@
               "payload": 123
             }
           }
+        ],
+        [
+          2007,
+          {
+            "registration": {
+              "data": {
+                "bookedAt": 1,
+                "controller": 42,
+                "deposit": 7,
+                "holdingAddress": 99,
+                "initialDatum": 1007,
+                "key": 7,
+                "processDeadline": 20,
+                "reclaimEnd": 30,
+                "refundAddress": 50,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              }
+            }
+          }
         ]
       ],
       "hashes": [
@@ -1347,6 +1501,28 @@
                 }
               },
               "payload": 123
+            }
+          }
+        ],
+        [
+          2007,
+          {
+            "registration": {
+              "data": {
+                "bookedAt": 1,
+                "controller": 42,
+                "deposit": 7,
+                "holdingAddress": 99,
+                "initialDatum": 1007,
+                "key": 7,
+                "processDeadline": 20,
+                "reclaimEnd": 30,
+                "refundAddress": 50,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              }
             }
           }
         ]
@@ -1524,6 +1700,28 @@
               "payload": 123
             }
           }
+        ],
+        [
+          2007,
+          {
+            "registration": {
+              "data": {
+                "bookedAt": 1,
+                "controller": 42,
+                "deposit": 7,
+                "holdingAddress": 99,
+                "initialDatum": 1007,
+                "key": 7,
+                "processDeadline": 20,
+                "reclaimEnd": 30,
+                "refundAddress": 50,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              }
+            }
+          }
         ]
       ],
       "hashes": [
@@ -1566,6 +1764,178 @@
         "state": {
           "failed": {
             "reason": "provider unavailable"
+          }
+        },
+        "trie": {
+          "complete": {
+            "value": [
+              [
+                7,
+                {
+                  "known": {
+                    "s": "terminal"
+                  }
+                }
+              ]
+            ]
+          }
+        }
+      },
+      "request": {
+        "key": 7,
+        "network": 42,
+        "registry": {
+          "name": 68887433291,
+          "policy": 10
+        }
+      },
+      "roots": [
+        {
+          "commitment": 9,
+          "trie": [
+            [
+              7,
+              {
+                "known": {
+                  "s": "terminal"
+                }
+              }
+            ]
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "answer": {
+      "unavailable": {
+        "read": "state",
+        "reason": "stateNotFound"
+      }
+    },
+    "name": "state not found",
+    "query": {
+      "codes": [
+        {
+          "encoded": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "active": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        },
+        {
+          "encoded": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "terminationApproval": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        }
+      ],
+      "decoding": [
+        [
+          1007,
+          {
+            "live": {
+              "control": {
+                "activeAsset": {
+                  "name": 564808031891926,
+                  "policy": 10
+                },
+                "controller": 42,
+                "deposit": 7,
+                "key": 7,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              },
+              "payload": 123
+            }
+          }
+        ],
+        [
+          2007,
+          {
+            "registration": {
+              "data": {
+                "bookedAt": 1,
+                "controller": 42,
+                "deposit": 7,
+                "holdingAddress": 99,
+                "initialDatum": 1007,
+                "key": 7,
+                "processDeadline": 20,
+                "reclaimEnd": 30,
+                "refundAddress": 50,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              }
+            }
+          }
+        ]
+      ],
+      "hashes": [
+        {
+          "input": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 564808031891926
+        },
+        {
+          "input": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 565014643638823
+        }
+      ],
+      "observation": {
+        "activeOutputs": {
+          "complete": {
+            "value": []
+          }
+        },
+        "network": {
+          "complete": {
+            "value": 42
+          }
+        },
+        "release": {
+          "applicationCredential": 99,
+          "applicationPolicy": 5,
+          "statePolicy": 10,
+          "stateProgram": 70
+        },
+        "state": {
+          "complete": {
+            "value": null
           }
         },
         "trie": {
@@ -1676,6 +2046,28 @@
                 }
               },
               "payload": 123
+            }
+          }
+        ],
+        [
+          2007,
+          {
+            "registration": {
+              "data": {
+                "bookedAt": 1,
+                "controller": 42,
+                "deposit": 7,
+                "holdingAddress": 99,
+                "initialDatum": 1007,
+                "key": 7,
+                "processDeadline": 20,
+                "reclaimEnd": 30,
+                "refundAddress": 50,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              }
             }
           }
         ]
@@ -1828,6 +2220,28 @@
                 }
               },
               "payload": 123
+            }
+          }
+        ],
+        [
+          2007,
+          {
+            "registration": {
+              "data": {
+                "bookedAt": 1,
+                "controller": 42,
+                "deposit": 7,
+                "holdingAddress": 99,
+                "initialDatum": 1007,
+                "key": 7,
+                "processDeadline": 20,
+                "reclaimEnd": 30,
+                "refundAddress": 50,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              }
             }
           }
         ]
@@ -2027,6 +2441,28 @@
               "payload": 123
             }
           }
+        ],
+        [
+          2007,
+          {
+            "registration": {
+              "data": {
+                "bookedAt": 1,
+                "controller": 42,
+                "deposit": 7,
+                "holdingAddress": 99,
+                "initialDatum": 1007,
+                "key": 7,
+                "processDeadline": 20,
+                "reclaimEnd": 30,
+                "refundAddress": 50,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              }
+            }
+          }
         ]
       ],
       "hashes": [
@@ -2218,6 +2654,28 @@
                 }
               },
               "payload": 123
+            }
+          }
+        ],
+        [
+          2007,
+          {
+            "registration": {
+              "data": {
+                "bookedAt": 1,
+                "controller": 42,
+                "deposit": 7,
+                "holdingAddress": 99,
+                "initialDatum": 1007,
+                "key": 7,
+                "processDeadline": 20,
+                "reclaimEnd": 30,
+                "refundAddress": 50,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              }
             }
           }
         ]
@@ -2421,6 +2879,28 @@
               "payload": 123
             }
           }
+        ],
+        [
+          2007,
+          {
+            "registration": {
+              "data": {
+                "bookedAt": 1,
+                "controller": 42,
+                "deposit": 7,
+                "holdingAddress": 99,
+                "initialDatum": 1007,
+                "key": 7,
+                "processDeadline": 20,
+                "reclaimEnd": 30,
+                "refundAddress": 50,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              }
+            }
+          }
         ]
       ],
       "hashes": [
@@ -2622,6 +3102,28 @@
               "payload": 123
             }
           }
+        ],
+        [
+          2007,
+          {
+            "registration": {
+              "data": {
+                "bookedAt": 1,
+                "controller": 42,
+                "deposit": 7,
+                "holdingAddress": 99,
+                "initialDatum": 1007,
+                "key": 7,
+                "processDeadline": 20,
+                "reclaimEnd": 30,
+                "refundAddress": 50,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              }
+            }
+          }
         ]
       ],
       "hashes": [
@@ -2813,6 +3315,28 @@
                 }
               },
               "payload": 123
+            }
+          }
+        ],
+        [
+          2007,
+          {
+            "registration": {
+              "data": {
+                "bookedAt": 1,
+                "controller": 42,
+                "deposit": 7,
+                "holdingAddress": 99,
+                "initialDatum": 1007,
+                "key": 7,
+                "processDeadline": 20,
+                "reclaimEnd": 30,
+                "refundAddress": 50,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              }
             }
           }
         ]
@@ -3030,6 +3554,28 @@
               "payload": 123
             }
           }
+        ],
+        [
+          2007,
+          {
+            "registration": {
+              "data": {
+                "bookedAt": 1,
+                "controller": 42,
+                "deposit": 7,
+                "holdingAddress": 99,
+                "initialDatum": 1007,
+                "key": 7,
+                "processDeadline": 20,
+                "reclaimEnd": 30,
+                "refundAddress": 50,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              }
+            }
+          }
         ]
       ],
       "hashes": [
@@ -3224,6 +3770,28 @@
               "payload": 123
             }
           }
+        ],
+        [
+          2007,
+          {
+            "registration": {
+              "data": {
+                "bookedAt": 1,
+                "controller": 42,
+                "deposit": 7,
+                "holdingAddress": 99,
+                "initialDatum": 1007,
+                "key": 7,
+                "processDeadline": 20,
+                "reclaimEnd": 30,
+                "refundAddress": 50,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              }
+            }
+          }
         ]
       ],
       "hashes": [
@@ -3277,6 +3845,206 @@
               ],
               "credential": 10,
               "datum": "empty",
+              "lovelace": 2,
+              "reference": {
+                "index": 0,
+                "tx": 32
+              }
+            }
+          }
+        },
+        "trie": {
+          "complete": {
+            "value": [
+              [
+                7,
+                {
+                  "known": {
+                    "s": "terminal"
+                  }
+                }
+              ]
+            ]
+          }
+        }
+      },
+      "request": {
+        "key": 7,
+        "network": 42,
+        "registry": {
+          "name": 68887433291,
+          "policy": 10
+        }
+      },
+      "roots": [
+        {
+          "commitment": 9,
+          "trie": [
+            [
+              7,
+              {
+                "known": {
+                  "s": "terminal"
+                }
+              }
+            ]
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "answer": {
+      "unavailable": {
+        "read": "state",
+        "reason": "stateNotRecognized"
+      }
+    },
+    "name": "state with extra assets",
+    "query": {
+      "codes": [
+        {
+          "encoded": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "active": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        },
+        {
+          "encoded": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "terminationApproval": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        }
+      ],
+      "decoding": [
+        [
+          1007,
+          {
+            "live": {
+              "control": {
+                "activeAsset": {
+                  "name": 564808031891926,
+                  "policy": 10
+                },
+                "controller": 42,
+                "deposit": 7,
+                "key": 7,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              },
+              "payload": 123
+            }
+          }
+        ],
+        [
+          2007,
+          {
+            "registration": {
+              "data": {
+                "bookedAt": 1,
+                "controller": 42,
+                "deposit": 7,
+                "holdingAddress": 99,
+                "initialDatum": 1007,
+                "key": 7,
+                "processDeadline": 20,
+                "reclaimEnd": 30,
+                "refundAddress": 50,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              }
+            }
+          }
+        ]
+      ],
+      "hashes": [
+        {
+          "input": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 564808031891926
+        },
+        {
+          "input": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 565014643638823
+        }
+      ],
+      "observation": {
+        "activeOutputs": {
+          "complete": {
+            "value": []
+          }
+        },
+        "network": {
+          "complete": {
+            "value": 42
+          }
+        },
+        "release": {
+          "applicationCredential": 99,
+          "applicationPolicy": 5,
+          "statePolicy": 10,
+          "stateProgram": 70
+        },
+        "state": {
+          "complete": {
+            "value": {
+              "assets": [
+                [
+                  {
+                    "name": 68887433291,
+                    "policy": 10
+                  },
+                  1
+                ],
+                [
+                  {
+                    "name": 91,
+                    "policy": 90
+                  },
+                  1
+                ]
+              ],
+              "credential": 10,
+              "datum": {
+                "root": {
+                  "commitment": 9
+                }
+              },
               "lovelace": 2,
               "reference": {
                 "index": 0,
@@ -3389,6 +4157,28 @@
                 }
               },
               "payload": 123
+            }
+          }
+        ],
+        [
+          2007,
+          {
+            "registration": {
+              "data": {
+                "bookedAt": 1,
+                "controller": 42,
+                "deposit": 7,
+                "holdingAddress": 99,
+                "initialDatum": 1007,
+                "key": 7,
+                "processDeadline": 20,
+                "reclaimEnd": 30,
+                "refundAddress": 50,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              }
             }
           }
         ]
@@ -3561,6 +4351,28 @@
               "payload": 123
             }
           }
+        ],
+        [
+          2007,
+          {
+            "registration": {
+              "data": {
+                "bookedAt": 1,
+                "controller": 42,
+                "deposit": 7,
+                "holdingAddress": 99,
+                "initialDatum": 1007,
+                "key": 7,
+                "processDeadline": 20,
+                "reclaimEnd": 30,
+                "refundAddress": 50,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              }
+            }
+          }
         ]
       ],
       "hashes": [
@@ -3604,6 +4416,436 @@
                   }
                 },
                 "lovelace": 7,
+                "reference": {
+                  "index": 1,
+                  "tx": 30
+                }
+              }
+            ]
+          }
+        },
+        "network": {
+          "complete": {
+            "value": 42
+          }
+        },
+        "release": {
+          "applicationCredential": 99,
+          "applicationPolicy": 5,
+          "statePolicy": 10,
+          "stateProgram": 70
+        },
+        "state": {
+          "complete": {
+            "value": {
+              "assets": [
+                [
+                  {
+                    "name": 68887433291,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ],
+              "credential": 10,
+              "datum": {
+                "root": {
+                  "commitment": 8
+                }
+              },
+              "lovelace": 2,
+              "reference": {
+                "index": 0,
+                "tx": 30
+              }
+            }
+          }
+        },
+        "trie": {
+          "complete": {
+            "value": [
+              [
+                7,
+                {
+                  "known": {
+                    "s": "active"
+                  }
+                }
+              ]
+            ]
+          }
+        }
+      },
+      "request": {
+        "key": 7,
+        "network": 42,
+        "registry": {
+          "name": 68887433291,
+          "policy": 10
+        }
+      },
+      "roots": [
+        {
+          "commitment": 8,
+          "trie": [
+            [
+              7,
+              {
+                "known": {
+                  "s": "active"
+                }
+              }
+            ]
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "answer": {
+      "refused": {
+        "reason": "conflictingEvidence"
+      }
+    },
+    "name": "registration datum with active token",
+    "query": {
+      "codes": [
+        {
+          "encoded": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "active": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        },
+        {
+          "encoded": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "terminationApproval": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        }
+      ],
+      "decoding": [
+        [
+          1007,
+          {
+            "live": {
+              "control": {
+                "activeAsset": {
+                  "name": 564808031891926,
+                  "policy": 10
+                },
+                "controller": 42,
+                "deposit": 7,
+                "key": 7,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              },
+              "payload": 123
+            }
+          }
+        ],
+        [
+          2007,
+          {
+            "registration": {
+              "data": {
+                "bookedAt": 1,
+                "controller": 42,
+                "deposit": 7,
+                "holdingAddress": 99,
+                "initialDatum": 1007,
+                "key": 7,
+                "processDeadline": 20,
+                "reclaimEnd": 30,
+                "refundAddress": 50,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              }
+            }
+          }
+        ]
+      ],
+      "hashes": [
+        {
+          "input": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 564808031891926
+        },
+        {
+          "input": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 565014643638823
+        }
+      ],
+      "observation": {
+        "activeOutputs": {
+          "complete": {
+            "value": [
+              {
+                "assets": [
+                  [
+                    {
+                      "name": 564808031891926,
+                      "policy": 10
+                    },
+                    1
+                  ]
+                ],
+                "credential": 99,
+                "datum": {
+                  "application": {
+                    "data": 2007
+                  }
+                },
+                "lovelace": 7,
+                "reference": {
+                  "index": 1,
+                  "tx": 30
+                }
+              }
+            ]
+          }
+        },
+        "network": {
+          "complete": {
+            "value": 42
+          }
+        },
+        "release": {
+          "applicationCredential": 99,
+          "applicationPolicy": 5,
+          "statePolicy": 10,
+          "stateProgram": 70
+        },
+        "state": {
+          "complete": {
+            "value": {
+              "assets": [
+                [
+                  {
+                    "name": 68887433291,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ],
+              "credential": 10,
+              "datum": {
+                "root": {
+                  "commitment": 8
+                }
+              },
+              "lovelace": 2,
+              "reference": {
+                "index": 0,
+                "tx": 30
+              }
+            }
+          }
+        },
+        "trie": {
+          "complete": {
+            "value": [
+              [
+                7,
+                {
+                  "known": {
+                    "s": "active"
+                  }
+                }
+              ]
+            ]
+          }
+        }
+      },
+      "request": {
+        "key": 7,
+        "network": 42,
+        "registry": {
+          "name": 68887433291,
+          "policy": 10
+        }
+      },
+      "roots": [
+        {
+          "commitment": 8,
+          "trie": [
+            [
+              7,
+              {
+                "known": {
+                  "s": "active"
+                }
+              }
+            ]
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "answer": {
+      "refused": {
+        "reason": "conflictingEvidence"
+      }
+    },
+    "name": "uncovered live deposit",
+    "query": {
+      "codes": [
+        {
+          "encoded": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "active": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        },
+        {
+          "encoded": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "terminationApproval": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        }
+      ],
+      "decoding": [
+        [
+          1007,
+          {
+            "live": {
+              "control": {
+                "activeAsset": {
+                  "name": 564808031891926,
+                  "policy": 10
+                },
+                "controller": 42,
+                "deposit": 7,
+                "key": 7,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              },
+              "payload": 123
+            }
+          }
+        ],
+        [
+          2007,
+          {
+            "registration": {
+              "data": {
+                "bookedAt": 1,
+                "controller": 42,
+                "deposit": 7,
+                "holdingAddress": 99,
+                "initialDatum": 1007,
+                "key": 7,
+                "processDeadline": 20,
+                "reclaimEnd": 30,
+                "refundAddress": 50,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              }
+            }
+          }
+        ]
+      ],
+      "hashes": [
+        {
+          "input": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 564808031891926
+        },
+        {
+          "input": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 565014643638823
+        }
+      ],
+      "observation": {
+        "activeOutputs": {
+          "complete": {
+            "value": [
+              {
+                "assets": [
+                  [
+                    {
+                      "name": 564808031891926,
+                      "policy": 10
+                    },
+                    1
+                  ]
+                ],
+                "credential": 99,
+                "datum": {
+                  "application": {
+                    "data": 1007
+                  }
+                },
+                "lovelace": 6,
                 "reference": {
                   "index": 1,
                   "tx": 30
@@ -3754,6 +4996,28 @@
               "payload": 123
             }
           }
+        ],
+        [
+          2007,
+          {
+            "registration": {
+              "data": {
+                "bookedAt": 1,
+                "controller": 42,
+                "deposit": 7,
+                "holdingAddress": 99,
+                "initialDatum": 1007,
+                "key": 7,
+                "processDeadline": 20,
+                "reclaimEnd": 30,
+                "refundAddress": 50,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              }
+            }
+          }
         ]
       ],
       "hashes": [
@@ -3851,6 +5115,198 @@
               {
                 "known": {
                   "s": "active"
+                }
+              }
+            ]
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "answer": {
+      "refused": {
+        "reason": "conflictingEvidence"
+      }
+    },
+    "name": "known absent leaf without token",
+    "query": {
+      "codes": [
+        {
+          "encoded": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "active": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        },
+        {
+          "encoded": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "terminationApproval": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        }
+      ],
+      "decoding": [
+        [
+          1007,
+          {
+            "live": {
+              "control": {
+                "activeAsset": {
+                  "name": 564808031891926,
+                  "policy": 10
+                },
+                "controller": 42,
+                "deposit": 7,
+                "key": 7,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              },
+              "payload": 123
+            }
+          }
+        ],
+        [
+          2007,
+          {
+            "registration": {
+              "data": {
+                "bookedAt": 1,
+                "controller": 42,
+                "deposit": 7,
+                "holdingAddress": 99,
+                "initialDatum": 1007,
+                "key": 7,
+                "processDeadline": 20,
+                "reclaimEnd": 30,
+                "refundAddress": 50,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              }
+            }
+          }
+        ]
+      ],
+      "hashes": [
+        {
+          "input": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 564808031891926
+        },
+        {
+          "input": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 565014643638823
+        }
+      ],
+      "observation": {
+        "activeOutputs": {
+          "complete": {
+            "value": []
+          }
+        },
+        "network": {
+          "complete": {
+            "value": 42
+          }
+        },
+        "release": {
+          "applicationCredential": 99,
+          "applicationPolicy": 5,
+          "statePolicy": 10,
+          "stateProgram": 70
+        },
+        "state": {
+          "complete": {
+            "value": {
+              "assets": [
+                [
+                  {
+                    "name": 68887433291,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ],
+              "credential": 10,
+              "datum": {
+                "root": {
+                  "commitment": 10
+                }
+              },
+              "lovelace": 2,
+              "reference": {
+                "index": 0,
+                "tx": 32
+              }
+            }
+          }
+        },
+        "trie": {
+          "complete": {
+            "value": [
+              [
+                7,
+                {
+                  "known": {
+                    "s": "absent"
+                  }
+                }
+              ]
+            ]
+          }
+        }
+      },
+      "request": {
+        "key": 7,
+        "network": 42,
+        "registry": {
+          "name": 68887433291,
+          "policy": 10
+        }
+      },
+      "roots": [
+        {
+          "commitment": 10,
+          "trie": [
+            [
+              7,
+              {
+                "known": {
+                  "s": "absent"
                 }
               }
             ]

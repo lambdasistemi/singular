@@ -7,7 +7,7 @@
   "surface": "SingularApplicationHeld.readKey",
   "driver": "models/singular-application-held/.lake/build/bin/reader",
   "corpus": "models/open-datum-application-held/reader-corpus.json",
-  "corpusSha256": "f95b026f489e73aaa5d8fc8daca7727a675f394cdee65d72f0356b3e68985116",
+  "corpusSha256": "c6a9b9c21ef49349fe0812ff0234b150767c60b876a012a677c441c6b12fa149",
   "definitions": {
     "SingularApplicationHeld.readKey": {
       "typeSha256": "9d6a68d5e5aafcb8c4baca13bfcddacd9cb0e9bfa2b926dbbaa6df06e9b8206d",
@@ -90,6 +90,32 @@
       "proposedWitness": "live",
       "witnessCertification": "OPEN; concrete values in OpenDatumApplicationHeld.ReaderFixtures",
       "proposedMutant": "require state evidence before a live answer",
+      "mutantStatus": "NOT-RUN"
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.invalid_live_control",
+      "typeSha256": "cde76f7cd9d6999ee22855cf349c76156804ab33d1df51ad8c52b080ee9fedad",
+      "observedAxioms": [
+        "propext",
+        "sorryAx"
+      ],
+      "proofStatus": "OPEN",
+      "proposedWitness": "uncovered live deposit",
+      "witnessCertification": "OPEN; concrete observations in OpenDatumApplicationHeld.ReaderFixtures.corpus",
+      "proposedMutant": "accept an uncovered live deposit",
+      "mutantStatus": "NOT-RUN"
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.known_nonterminal_leaf_without_token",
+      "typeSha256": "3cbc7b079358fb20f0a7d033b7794d10ccc987fa31db16f07164b4b00a195d00",
+      "observedAxioms": [
+        "propext",
+        "sorryAx"
+      ],
+      "proofStatus": "OPEN",
+      "proposedWitness": "active leaf without token; known absent leaf without token",
+      "witnessCertification": "OPEN; concrete observations in OpenDatumApplicationHeld.ReaderFixtures.corpus",
+      "proposedMutant": "classify a known nonterminal leaf as an absence",
       "mutantStatus": "NOT-RUN"
     },
     {
@@ -197,6 +223,45 @@
       "mutantStatus": "NOT-RUN"
     },
     {
+      "name": "SingularApplicationHeld.ReaderStatements.registration_is_not_a_holding",
+      "typeSha256": "f81b0a25d7e67c54fb3204c3cf6dcc3759f95d1b64b2daca1ddab0b3144a9764",
+      "observedAxioms": [
+        "propext",
+        "sorryAx"
+      ],
+      "proofStatus": "OPEN",
+      "proposedWitness": "registration datum with active token",
+      "witnessCertification": "OPEN; concrete observations in OpenDatumApplicationHeld.ReaderFixtures.corpus",
+      "proposedMutant": "classify a registration datum as a live holding",
+      "mutantStatus": "NOT-RUN"
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.state_not_found",
+      "typeSha256": "ab7108e74995c61a40db8766ea0b045902fa7ec3e158c684b44520668de49bf3",
+      "observedAxioms": [
+        "propext",
+        "sorryAx"
+      ],
+      "proofStatus": "OPEN",
+      "proposedWitness": "state not found",
+      "witnessCertification": "OPEN; concrete observations in OpenDatumApplicationHeld.ReaderFixtures.corpus",
+      "proposedMutant": "turn a complete empty state answer into never registered",
+      "mutantStatus": "NOT-RUN"
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.state_not_recognized",
+      "typeSha256": "3465f6408df33f3f44a964d2582f26be6d7a3fcc2e3a140d3ded81ea2c715602",
+      "observedAxioms": [
+        "propext",
+        "sorryAx"
+      ],
+      "proofStatus": "OPEN",
+      "proposedWitness": "unrecognised state; state with extra assets",
+      "witnessCertification": "OPEN; concrete observations in OpenDatumApplicationHeld.ReaderFixtures.corpus",
+      "proposedMutant": "accept an unrecognised state output",
+      "mutantStatus": "NOT-RUN"
+    },
+    {
       "name": "SingularApplicationHeld.ReaderStatements.state_recognition",
       "typeSha256": "cf3f630cc3700a67800278c081c22c823ad74c28160442cf5c26abd40ddf9a72",
       "observedAxioms": [
@@ -262,6 +327,19 @@
       "mutantStatus": "NOT-RUN"
     },
     {
+      "name": "SingularApplicationHeld.ReaderStatements.trie_root_mismatch",
+      "typeSha256": "c99f581269fdecfce6d1c318375ba41d185859dee4bf2d14a4b5d796461f2292",
+      "observedAxioms": [
+        "propext",
+        "sorryAx"
+      ],
+      "proofStatus": "OPEN",
+      "proposedWitness": "trie root mismatch",
+      "witnessCertification": "OPEN; concrete observations in OpenDatumApplicationHeld.ReaderFixtures.corpus",
+      "proposedMutant": "omit the state root and trie root equality",
+      "mutantStatus": "NOT-RUN"
+    },
+    {
       "name": "SingularApplicationHeld.ReaderStatements.trie_unavailable",
       "typeSha256": "78ec4357c2cae44ec21337b13d8d13fce189c97b788ffca9134336c54c589441",
       "observedAxioms": [
@@ -272,6 +350,19 @@
       "proposedWitness": "failed trie read",
       "witnessCertification": "OPEN; concrete values in OpenDatumApplicationHeld.ReaderFixtures",
       "proposedMutant": "substitute unknown for a failed trie read",
+      "mutantStatus": "NOT-RUN"
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.undecodable_holding",
+      "typeSha256": "08cbe665608bdfd0f3eaa62deee2f21385b310a830c16bdfce7ee6d46cdcdb15",
+      "observedAxioms": [
+        "propext",
+        "sorryAx"
+      ],
+      "proofStatus": "OPEN",
+      "proposedWitness": "unknown holding datum",
+      "witnessCertification": "OPEN; concrete observations in OpenDatumApplicationHeld.ReaderFixtures.corpus",
+      "proposedMutant": "accept an undecodable holding datum",
       "mutantStatus": "NOT-RUN"
     },
     {
@@ -300,5 +391,11 @@
       "proposedMutant": "move network rejection after the active-token branch",
       "mutantStatus": "NOT-RUN"
     }
+  ],
+  "generated": true,
+  "doNotEdit": "Regenerate statement types and axioms from ReaderAudit and corpus answers from readerCorpus; witness and mutant plans are author proposals.",
+  "generatedFrom": [
+    "models/open-datum-application-held/lean/ReaderAudit.lean",
+    "models/open-datum-application-held/lean/ReaderCorpusMain.lean"
   ]
 }

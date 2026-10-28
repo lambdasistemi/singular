@@ -7,7 +7,7 @@
   "surface": "SingularApplicationHeld.readKey",
   "driver": "models/singular-application-held/.lake/build/bin/reader",
   "corpus": "models/open-datum-application-held/reader-corpus.json",
-  "corpusSha256": "f95b026f489e73aaa5d8fc8daca7727a675f394cdee65d72f0356b3e68985116",
+  "corpusSha256": "c6a9b9c21ef49349fe0812ff0234b150767c60b876a012a677c441c6b12fa149",
   "definitions": {
     "SingularApplicationHeld.readKey": {
       "typeSha256": "9d6a68d5e5aafcb8c4baca13bfcddacd9cb0e9bfa2b926dbbaa6df06e9b8206d",
@@ -92,5 +92,11 @@
       "proposedMutant": "drop the termination request asset check",
       "mutantStatus": "NOT-RUN"
     }
+  ],
+  "generated": true,
+  "doNotEdit": "Regenerate statement types and axioms from ReaderAudit and corpus answers from readerCorpus; witness and mutant plans are author proposals.",
+  "generatedFrom": [
+    "models/open-datum-application-held/lean/ReaderAudit.lean",
+    "models/open-datum-application-held/lean/ReaderCorpusMain.lean"
   ]
 }
