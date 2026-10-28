@@ -49,7 +49,7 @@ openDatumInspection request published neutral =
                         , "deposit" .= controlDeposit control
                         ]
             in  base
-                    { inspectionAnswer = "live"
+                    { inspectionAnswer = "pending-termination"
                     , inspectionFields =
                         inspectionFields base
                             <> [ "control" .= protected
