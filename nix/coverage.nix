@@ -37,14 +37,17 @@ in
   apps = {
     coverage-check = {
       type = "app";
+      meta.description = "Check the declared theorem coverage standing";
       program = pkgs.lib.getExe checker;
     };
     coverage-gate = {
       type = "app";
+      meta.description = "Run the theorem coverage gate";
       program = pkgs.lib.getExe gate;
     };
     coverage-tests = {
       type = "app";
+      meta.description = "Run theorem coverage gate tests";
       program = pkgs.lib.getExe tests;
     };
   };

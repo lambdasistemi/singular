@@ -211,38 +211,47 @@ in
   apps = {
     release-check = {
       type = "app";
+      meta.description = "Check the documentation release archive";
       program = pkgs.lib.getExe releaseCheck;
     };
     release-artifacts = {
       type = "app";
+      meta.description = "Build the documentation release artifacts";
       program = pkgs.lib.getExe release.releaseArtifacts;
     };
     release-review-check = {
       type = "app";
+      meta.description = "Check the release archive review surface";
       program = pkgs.lib.getExe release.releaseReviewCheck;
     };
     publish-docs = {
       type = "app";
+      meta.description = "Publish the documentation release";
       program = pkgs.lib.getExe release.publisher;
     };
     publish-docs-boundary-test = {
       type = "app";
+      meta.description = "Exercise the documentation publication boundary";
       program = pkgs.lib.getExe releaseTest.publisher;
     };
     docs-check = {
       type = "app";
+      meta.description = "Check documentation and generated references";
       program = pkgs.lib.getExe checker;
     };
     preview-check = {
       type = "app";
+      meta.description = "Check the documentation preview";
       program = pkgs.lib.getExe previewCheck;
     };
     docs-serve = {
       type = "app";
+      meta.description = "Serve the documentation preview";
       program = pkgs.lib.getExe serve;
     };
     default = {
       type = "app";
+      meta.description = "Serve the documentation preview";
       program = pkgs.lib.getExe serve;
     };
   };

@@ -404,10 +404,12 @@
         {
           singular = {
             type = "app";
+            meta.description = "Run the Singular registry command line";
             program = pkgs.lib.getExe (stampedSingular system);
           };
           open-datum = {
             type = "app";
+            meta.description = "Run the open-datum application command line";
             program = pkgs.lib.getExe (stampedOpenDatum system);
           };
           # #695: the bundles of a published release, downloaded without
@@ -416,6 +418,7 @@
           # variable names a directory of already downloaded assets instead.
           verify-release-bundles = {
             type = "app";
+            meta.description = "Download and verify published release bundles";
             program = pkgs.lib.getExe (
               pkgs.writeShellApplication {
                 name = "verify-release-bundles";
@@ -475,6 +478,7 @@
           # runner: `nix run .#release-bundle-checks -- TARBALL VERSION COMMIT`.
           release-bundle-checks = {
             type = "app";
+            meta.description = "Check release bundle contents and identities";
             program = pkgs.lib.getExe (
               pkgs.writeShellApplication {
                 name = "release-bundle-checks";
@@ -522,6 +526,7 @@
           # linux-release action runs it as `nix run .#linux-artifact-smoke`.
           linux-artifact-smoke = {
             type = "app";
+            meta.description = "Check Linux distribution packages";
             program = pkgs.lib.getExe (
               dev-assets.lib.mkLinuxArtifactSmoke {
                 inherit pkgs system;
@@ -606,6 +611,7 @@
           # cap and check wrapper. Unknown keys fail before any node starts.
           cliRecoveryPartitionApp = {
             type = "app";
+            meta.description = "Run one command recovery partition";
             program = pkgs.lib.getExe (
               pkgs.writeShellApplication {
                 name = "cli-recovery-partition";
@@ -626,6 +632,7 @@
           # hosted name. No node; both the workflow matrix and check read it.
           cliRecoveryPartitionsApp = {
             type = "app";
+            meta.description = "List command recovery partitions";
             program = pkgs.lib.getExe (
               pkgs.writeShellApplication {
                 name = "cli-recovery-partitions";
@@ -651,6 +658,7 @@
           # overrides it for the dummy-part plant.
           cliRecoveryPartitionCheckApp = {
             type = "app";
+            meta.description = "Check command recovery partition evidence";
             program = pkgs.lib.getExe (
               pkgs.writeShellApplication {
                 name = "cli-recovery-partition-check";
@@ -687,6 +695,7 @@
           # refused: `nix run --quiet .#cli-flags-check`.
           cli-flags-check = {
             type = "app";
+            meta.description = "Check command line flag coverage";
             program = pkgs.lib.getExe (
               pkgs.writeShellApplication {
                 name = "cli-flags-check";
@@ -698,6 +707,7 @@
           # Its controls: `nix run --quiet .#cli-flags-controls`.
           cli-flags-controls = {
             type = "app";
+            meta.description = "Run command line flag coverage controls";
             program = pkgs.lib.getExe (
               pkgs.writeShellApplication {
                 name = "cli-flags-controls";
@@ -716,6 +726,7 @@
           # `nix run --quiet .#wallet-vault-controls`.
           wallet-vault-controls = {
             type = "app";
+            meta.description = "Run wallet vault controls";
             program = pkgs.lib.getExe (
               pkgs.writeShellApplication {
                 name = "wallet-vault-controls";
@@ -735,6 +746,7 @@
           # `nix run --quiet .#facade-lifecycle-controls`.
           facade-lifecycle-controls = {
             type = "app";
+            meta.description = "Run command facade lifecycle controls";
             program = pkgs.lib.getExe (
               pkgs.writeShellApplication {
                 name = "facade-lifecycle-controls";
@@ -752,6 +764,7 @@
           # per-partition matrix and the collector app per matrix job.
           cli-recovery-cross-wallet-evidence = {
             type = "app";
+            meta.description = "Check recovery evidence across wallets";
             program = pkgs.lib.getExe cliRecoveryEvidence;
           };
           # The hosted partitions, derived from the single list above:
@@ -829,6 +842,7 @@
           apps = {
             verify-release = {
               type = "app";
+              meta.description = "Verify the release archive";
               program = pkgs.lib.getExe verifyRelease;
             };
             # #326: every refusal of verify-release by name — the published
@@ -836,6 +850,7 @@
             # `nix run .#verify-release-controls -- RELEASE-DIR`.
             verify-release-controls = {
               type = "app";
+              meta.description = "Run release archive verification controls";
               program = pkgs.lib.getExe (
                 pkgs.writeShellApplication {
                   name = "verify-release-controls";
@@ -855,6 +870,7 @@
             # The control needs the Nix daemon and real output derivations.
             release-build-control = {
               type = "app";
+              meta.description = "Check release builds exclude development controls";
               program = pkgs.lib.getExe (
                 pkgs.writeShellApplication {
                   name = "release-build-control";
@@ -928,10 +944,12 @@
             {
               application-separation-check = {
                 type = "app";
+                meta.description = "Check registry and application separation";
                 program = pkgs.lib.getExe separationCheck;
               };
               application-separation-controls = {
                 type = "app";
+                meta.description = "Run registry and application separation controls";
                 program = pkgs.lib.getExe (
                   pkgs.writeShellApplication {
                     name = "application-separation-controls";
@@ -1035,14 +1053,17 @@
             {
               no-pin-registration-journey = {
                 type = "app";
+                meta.description = "Run the registration journey on a development network";
                 program = pkgs.lib.getExe noPinRegistrationJourney;
               };
               no-pin-registration-refusals = {
                 type = "app";
+                meta.description = "Check registration refusals on a development network";
                 program = pkgs.lib.getExe noPinRegistrationRefusals;
               };
               no-pin-termination-refusals = {
                 type = "app";
+                meta.description = "Check termination refusals on a development network";
                 program = pkgs.lib.getExe noPinTerminationRefusals;
               };
             }
@@ -1694,6 +1715,7 @@
             {
               script-hash-comparison = {
                 type = "app";
+                meta.description = "Compare registry and application script identities";
                 program = pkgs.lib.getExe scriptHashComparison;
               };
             }

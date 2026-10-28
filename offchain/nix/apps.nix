@@ -12,7 +12,8 @@ let
       ;
   };
 in
-builtins.mapAttrs (_: check: {
+builtins.mapAttrs (name: check: {
   type = "app";
+  meta.description = check.meta.description or "Run ${name}";
   program = pkgs.lib.getExe check;
 }) runnable

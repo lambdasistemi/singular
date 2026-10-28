@@ -48,19 +48,10 @@ import Data.Maybe (fromMaybe, mapMaybe)
 import Data.Word (Word8)
 
 import Naming.Datum
-    ( DatumAttachment (..)
-    , DatumShape (..)
+    ( DatumShape (..)
     , NamingDatum (..)
     , PaymentDestination (..)
     , RetirementQuorum (..)
-    )
-import Naming.Request
-    ( InitialOutput (..)
-    , InsertProposal (..)
-    , InsertRequestShape (..)
-    , RefundComparison (..)
-    , Representative (..)
-    , refundReasonText
     )
 import Naming.Wire
     ( Address (..)
@@ -72,21 +63,11 @@ import Naming.Wire.Vectors
     ( wd01ExpectedBytes
     , wd01Fixture
     , wd01Id
-    , wd01MalformedBytes
     , wd01Shape
-    , wd02Attachment
     , wd02Id
     , wd03Encoded
     , wd03Id
-    , wr01ComparisonResult
-    , wr01ExpectedBytes
     , wr01Id
-    , wr01MalformedBytes
-    , wr01PresentedRefundAddress
-    , wr01RedirectedBytes
-    , wr01Shape
-    , wr01StoredProposal
-    , wr01StoredRefundAddress
     )
 import System.Directory (doesFileExist)
 import System.Environment (getArgs)
@@ -306,52 +287,6 @@ wireDataJson = \case
     WInt n -> JObj [("integer", JNum n)]
     WList fs -> JObj [("list", JArr (map wireDataJson fs))]
 
-proposalJson :: InsertProposal -> JValue
-proposalJson p =
-    JObj
-        [ ("applicationPolicy", JNum (applicationPolicy p))
-        , ("initial", initialJson (initial p))
-        , ("key", JNum (key p))
-        , ("refundAddress", JNum (refundAddress p))
-        , ("registry", JNum (registry p))
-        , ("scope", JArr (map JNum (scope p)))
-        ]
-
-initialJson :: InitialOutput -> JValue
-initialJson o =
-    JObj
-        [ ("datum", JNum (initialDatum o))
-        , ("destination", JNum (initialDestination o))
-        , ("quantity", JNum (initialQuantity o))
-        , ("representative", repJson (initialRepresentative o))
-        , ("value", JNum (initialValue o))
-        ]
-
-repJson :: Representative -> JValue
-repJson r =
-    JObj
-        [ ("assetScope", JNum (representativeAssetScope r))
-        , ("key", JNum (representativeKey r))
-        , ("policy", JNum (representativePolicy r))
-        , ("registry", JNum (representativeRegistry r))
-        ]
-
-requestShapeJson :: InsertRequestShape -> JValue
-requestShapeJson s =
-    JObj
-        [ ("commitmentArity", JNum (fromIntegral (commitmentArity s)))
-        , ("commitmentIndex", JNum (fromIntegral (commitmentIndex s)))
-        , ("proposalArity", JNum (fromIntegral (proposalArity s)))
-        , ("proposalIndex", JNum (fromIntegral (proposalIndex s)))
-        ]
-
-comparisonJson :: RefundComparison -> JValue
-comparisonJson = \case
-    RefundAccepted -> JObj [("accepted", JBool True)]
-    RefundRefused r ->
-        JObj
-            [("accepted", JBool False), ("reason", JStr (refundReasonText r))]
-
 --------------------------------------------------------------------------------
 -- The comparison: every pinned value against its corresponding row field
 --------------------------------------------------------------------------------
@@ -390,15 +325,6 @@ vendoredPairs =
     , pair wd01Id "shape" (datumShapeJson wd01Shape)
     , pair wd03Id "encoded" (wireDataJson wd03Encoded)
     ]
-
-{- | Retained with 'wd02Id': the vector is still vendored and still exercised by
-the byte-exact suite, it is simply no longer compared against a live row.
--}
-attachmentHash :: DatumAttachment -> JValue
-attachmentHash (AttachedDatumHash h) = byteArr h
-attachmentHash (InlineDatum _) =
-    error
-        "Vectors.wd02Attachment changed shape: WD02 is pinned as a datum hash"
 
 pairsFor :: String -> [Pair]
 pairsFor v = filter ((== v) . pairVector) vendoredPairs

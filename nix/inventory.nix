@@ -18,6 +18,7 @@ in
 {
   apps.inventory-check = {
     type = "app";
+    meta.description = "Check the repository code inventory";
     program = pkgs.lib.getExe checker;
   };
   # #562 item 5a: the inventory orphan controls only. The test-tag controls
@@ -26,6 +27,7 @@ in
   # bounded to the run, no process stopped) and never touches the tree.
   apps.inventory-controls = {
     type = "app";
+    meta.description = "Run repository code inventory controls";
     program = pkgs.lib.getExe (
       pkgs.writeShellApplication {
         name = "inventory-controls";

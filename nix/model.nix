@@ -67,6 +67,7 @@ in
   inherit package;
   apps.model-check = {
     type = "app";
+    meta.description = "Check the Lean model and exported corpora";
     program = pkgs.lib.getExe checker;
   };
   check = pkgs.runCommand "singular-model-check" { } ''

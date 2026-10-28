@@ -18,6 +18,7 @@ in
 {
   apps.simulator-check = {
     type = "app";
+    meta.description = "Check the simulator against the exported model";
     program = pkgs.lib.getExe checker;
   };
   check = pkgs.runCommand "singular-simulator-check" { } ''
