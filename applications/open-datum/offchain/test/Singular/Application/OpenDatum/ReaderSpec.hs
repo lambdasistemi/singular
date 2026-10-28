@@ -34,7 +34,7 @@ import Lens.Micro ((&), (.~), (^.))
 import PlutusCore.Data qualified as PLC
 import Singular.Application.OpenDatum.CommandRunSpec (captured)
 import Singular.Application.OpenDatum.Root (runPackagedOpenDatumVia)
-import Singular.Application.OpenDatum.Value (openDatumApplication)
+import Singular.Application.OpenDatum.Value qualified as Host
 import Singular.CLI.Root (runPackagedVia)
 import Singular.CLI.Session (Env (..))
 import Singular.Registry.Address (renderRegistryAddress)
@@ -503,7 +503,7 @@ commandRead application world registry key extra = do
                 <> extra
         run = if application then runPackagedOpenDatumVia else runPackagedVia
     (code, out, err) <-
-        captured (run provider openDatumApplication (pure Nothing) line [])
+        captured (run provider Host.openDatumApplication (pure Nothing) line [])
     document <-
         either
             (fail . (<> "; stdout=" <> show out <> "; stderr=" <> show err))

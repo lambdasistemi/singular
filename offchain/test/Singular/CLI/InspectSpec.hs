@@ -21,8 +21,7 @@ import Cardano.Ledger.Credential
     )
 import Cardano.Ledger.Hashes (ScriptHash (..))
 import Cardano.Ledger.Mary.Value
-    ( AssetName (..)
-    , MaryValue (..)
+    ( MaryValue (..)
     , MultiAsset (..)
     )
 import Control.Monad (forM_)
@@ -70,7 +69,7 @@ import Singular.Registry.TrieState
     )
 import Singular.Registry.TxBuilder.Internal (mkInlineDatum)
 import Singular.State.Lineage (registryAsset)
-import Singular.State.Preimage (activeTokenName)
+import Singular.State.Preimage (activeTokenName, stateTokenName)
 import System.Exit (ExitCode (..))
 import Test.Hspec
 
@@ -94,6 +93,8 @@ spec = describe "inspect a registry key without a signer" $ do
     it
         "runs the neutral reader and prints its active datum and published application as JSON" $
         withReader $ \line provider identity seen -> do
+            parseCommand (line <> ["--json"])
+                `shouldSatisfy` either (const False) (const True)
             (code, out, _) <-
                 captured
                     ( runPackagedVia
@@ -192,10 +193,11 @@ withReader use = withRig $ \rig -> do
     identity <- case applicationRows table of
         one : _ -> pure one
         [] -> fail "packaged release table has no application"
+    reference <- either fail pure (parseOutRef (T.replicate 64 "a" <> "#0"))
     let registry =
             RegistryIdentity
                 (StatePolicyId (appliedStatePolicy identity))
-                (AssetName "reader-registry")
+                (stateTokenName reference)
     asset <-
         maybe
             (fail "registry asset is malformed")
@@ -206,8 +208,6 @@ withReader use = withRig $ \rig -> do
             (fail "application script is malformed")
             pure
             (hashFromBytes (applicationScript identity))
-    reference <-
-        either fail pure (parseOutRef (T.replicate 64 "a" <> "#0"))
     address <-
         maybe
             (fail "registry address cannot be rendered")
