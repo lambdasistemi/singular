@@ -1,5 +1,5 @@
 {
-  "note": "From the hash of the state contract to the releases that carry it, oldest first. Made by tools/fill_contract_table.sh from the on-chain archive each release of lambdasistemi/singular published (singular-onchain-<version>.tar.gz); the hash is the one a built singular computes from that blueprint, and it was checked against the one the blueprint states. The sha256 of each archive is under archives, so a later fill can be compared with this one. A release that is left out is named under left-out with its reason.",
+  "note": "From the hash of the state contract to the releases that carry it, oldest first. Made by tools/fill_contract_table.sh from the on-chain archive each release of lambdasistemi/singular published (singular-onchain-<version>.tar.gz); the hash is the one a built singular computes from that blueprint, and it was checked against the one the blueprint states. The sha256 of each archive is under archives, so a later fill can be compared with this one. A release that is left out is named under left-out with its reason. Applied state-policy rows are derived by applying the archived application policy to the archived state program. Application release tags are checked against the package manifest carried in that archive.",
   "archives": {
     "v0.3.0": "cce0cdb8e4035d6da6284def64c7a270f8541d1a126ff4c1b582e5341e5e463b",
     "v0.4.0": "a6fb5e1dbeed5bb1a1537795834b1c661715df4ea10731d108435a3e3a8f4f44",
@@ -17,7 +17,8 @@
     "v0.13.0": "3afb0e992cfe87a5d543cef3dd6a48766e7bdb0281e42704f7ccbd6ca2843067",
     "v0.13.1": "477f6ee702beae78f32c5023342137c34a5e484f3cf4b4b594fac4f1d9432fa9",
     "v0.14.0": "939960fd81b4e4ef2e1978c2e6cded79121370bf880a8620c85abe74ebcfcb1c",
-    "v0.15.0": "f5b03395a233f48835747d4b9e434646faa6774492e52ddcf9d12d1e1d24680d"
+    "v0.15.0": "f5b03395a233f48835747d4b9e434646faa6774492e52ddcf9d12d1e1d24680d",
+    "v0.17.0": "dc616f6e8361be3ff4c9ab6df8a4d8cd4a8842085326a4c03e341ac4b4250e86"
   },
   "left-out": [
     {
@@ -76,6 +77,19 @@
     {
       "state-contract": "9a84eabb747716a3092996049b5003a97954fa272902f0bf8f744a98",
       "releases": []
+    }
+  ],
+  "applications": [
+    {
+      "state-policy": "499291dbc77fb84b590e4f2d728788aa06191627a2c5c95b6bc4d679",
+      "application-policy": "67bb50e5aab678b9955e1d8981050a14e0f93da912b3a8b4a7161ca7",
+      "application-script": "67bb50e5aab678b9955e1d8981050a14e0f93da912b3a8b4a7161ca7",
+      "singular-releases": [
+        "v0.17.0"
+      ],
+      "application-releases": [
+        "v0.17.0"
+      ]
     }
   ]
 }

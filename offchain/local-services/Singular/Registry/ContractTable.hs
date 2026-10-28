@@ -29,6 +29,9 @@ module Singular.Registry.ContractTable
     , parseContractTable
     , loadContractTable
     , tableFile
+    , ApplicationIdentity (..)
+    , applicationRows
+    , applicationOf
 
       -- * What it says of a hash
     , Contracts (..)
@@ -39,14 +42,18 @@ module Singular.Registry.ContractTable
     , releaseUrl
     ) where
 
+import Control.Applicative ((<|>))
 import Control.Exception (IOException, try)
 import Control.Monad (unless, when)
 import Data.Aeson
     ( FromJSON (..)
+    , ToJSON (..)
     , eitherDecodeStrict'
+    , object
     , withObject
     , (.:)
     , (.:?)
+    , (.=)
     )
 import Data.Aeson.Types (Parser)
 import Data.ByteString (ByteString)
@@ -70,8 +77,42 @@ releases the filling left out with the reason each is left out.
 data ContractTable = ContractTable
     { rows :: Map ByteString [Text]
     , leftOut :: [(Text, Text)]
+    , applications :: Map ByteString ApplicationIdentity
     }
     deriving stock (Eq, Show)
+
+{- | The published identity of an application under one applied state policy.
+An empty release list means this build has no known release yet.
+-}
+data ApplicationIdentity = ApplicationIdentity
+    { appliedStatePolicy :: ByteString
+    , applicationPolicy :: ByteString
+    , applicationScript :: ByteString
+    , singularReleases :: [Text]
+    , applicationReleases :: [Text]
+    }
+    deriving stock (Eq, Show)
+
+instance ToJSON ApplicationIdentity where
+    toJSON identity =
+        object
+            [ "state-policy" .= hex (appliedStatePolicy identity)
+            , "application-policy" .= hex (applicationPolicy identity)
+            , "application-script" .= hex (applicationScript identity)
+            , "singular-releases" .= singularReleases identity
+            , "application-releases" .= applicationReleases identity
+            ]
+      where
+        hex = TE.decodeUtf8 . B16.encode
+
+-- | All known applied state policies, in hash order.
+applicationRows :: ContractTable -> [ApplicationIdentity]
+applicationRows = Map.elems . applications
+
+-- | Exact lookup only. An unknown applied state policy identifies no application.
+applicationOf
+    :: ContractTable -> ByteString -> Maybe ApplicationIdentity
+applicationOf table policy = Map.lookup policy (applications table)
 
 -- | The rows: a 28-byte state-contract hash and the tags of the releases that carry it.
 tableRows :: ContractTable -> [(ByteString, [Text])]
@@ -99,7 +140,8 @@ tableFile = "data/contracts/state-contracts.json"
 
 -- | What the table says of a hash of 28 bytes.
 contractsOf :: ContractTable -> ByteString -> Contracts
-contractsOf table hash = case Map.lookup hash (rows table) of
+contractsOf table hash = case Map.lookup hash (rows table)
+    <|> (singularReleases <$> applicationOf table hash) of
     Nothing -> NoKnownRelease
     Just [] -> NotReleasedYet
     Just (oldest : newer) -> Released (oldest :| newer)
@@ -126,6 +168,11 @@ parseContractTable :: ByteString -> Either Text ContractTable
 parseContractTable bytes = do
     file <- either (Left . T.pack) Right (eitherDecodeStrict' bytes)
     listed <- traverse readRow (fileRows file)
+    appRows <- traverse readApplication (fileApplications file)
+    let applied = [(appliedStatePolicy row, row) | row <- appRows]
+    when
+        (length applied /= Map.size (Map.fromList applied))
+        (Left "an applied state policy appears in two application rows")
     let hashes = map fst listed
     when
         (length hashes /= Map.size (Map.fromList listed))
@@ -135,9 +182,21 @@ parseContractTable bytes = do
             { rows = Map.fromList listed
             , leftOut =
                 [(release, reason) | LeftOut release reason <- fileLeftOut file]
+            , applications = Map.fromList applied
             }
   where
+    readApplication (ApplicationRow state policy script singular app) =
+        ApplicationIdentity
+            <$> readHash state
+            <*> readHash policy
+            <*> readHash script
+            <*> readTags state singular
+            <*> readTags state app
     readRow (Row hex tags) = do
+        hash <- readHash hex
+        checked <- readTags hex tags
+        pure (hash, checked)
+    readHash hex = do
         hash <-
             either
                 (const (Left ("the hash " <> hex <> " is not hex")))
@@ -146,11 +205,13 @@ parseContractTable bytes = do
         unless
             (BS.length hash == 28)
             (Left ("the hash " <> hex <> " is not 28 bytes"))
+        pure hash
+    readTags hex tags = do
         versions <- traverse tagVersion tags
         unless
             (versions == sort versions)
             (Left ("the releases of the hash " <> hex <> " are not oldest first"))
-        pure (hash, tags)
+        pure tags
     tagVersion tag = case T.stripPrefix "v" tag of
         Just rest
             | [Just a, Just b, Just c] <-
@@ -161,15 +222,30 @@ parseContractTable bytes = do
 data File = File
     { fileRows :: [Row]
     , fileLeftOut :: [LeftOut]
+    , fileApplications :: [ApplicationRow]
     }
 
 data Row = Row Text [Text]
+
+data ApplicationRow = ApplicationRow Text Text Text [Text] [Text]
 
 data LeftOut = LeftOut Text Text
 
 instance FromJSON File where
     parseJSON = withObject "the table of releases" $ \o ->
-        File <$> o .: "rows" <*> (fromMaybe [] <$> o .:? "left-out")
+        File
+            <$> o .: "rows"
+            <*> (fromMaybe [] <$> o .:? "left-out")
+            <*> (fromMaybe [] <$> o .:? "applications")
+
+instance FromJSON ApplicationRow where
+    parseJSON = withObject "an application identity" $ \o ->
+        ApplicationRow
+            <$> o .: "state-policy"
+            <*> o .: "application-policy"
+            <*> o .: "application-script"
+            <*> o .: "singular-releases"
+            <*> o .: "application-releases"
 
 instance FromJSON Row where
     parseJSON = withObject "a row of the table" $ \o ->

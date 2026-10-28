@@ -24,9 +24,9 @@ import Data.Aeson qualified as Aeson
 import Data.ByteString (ByteString)
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Lazy qualified as BL
-import Data.Text.Encoding (decodeUtf8)
 import Data.List (isPrefixOf)
 import Data.Map.Strict qualified as Map
+import Data.Text.Encoding (decodeUtf8)
 import Lens.Micro ((&), (.~), (^.))
 import PlutusCore.Data qualified as PLC
 import Test.Hspec
@@ -93,12 +93,21 @@ import Singular.Application.OpenDatum.Requests.Script
     )
 import Singular.Registry.Blueprint (Blueprint, loadBlueprint)
 import Singular.Registry.ContractTable
-    ( Contracts (..), ApplicationIdentity (..), applicationOf, applicationRows
-    , contractsOf, loadContractTable, parseContractTable, tableRows
+    ( ApplicationIdentity (..)
+    , Contracts (..)
+    , applicationOf
+    , applicationRows
+    , contractsOf
+    , loadContractTable
+    , parseContractTable
+    , tableRows
+    )
+import Singular.Registry.SyntheticLedger (unitProgram)
+import Singular.Registry.TxBuilder.Internal
+    ( scriptFromBytes
+    , scriptHashBytes
     )
 import Singular.State.Script (stateScriptFromBlueprint)
-import Singular.Registry.SyntheticLedger (unitProgram)
-import Singular.Registry.TxBuilder.Internal (scriptFromBytes, scriptHashBytes)
 import System.Environment (lookupEnv)
 
 tipSlot :: SlotNo
@@ -107,21 +116,38 @@ tipSlot = SlotNo 10_000
 currentIdentity :: IO (ByteString, ByteString)
 currentIdentity = do
     application <- compiledScript
-    path <- lookupEnv "SINGULAR_STATE_BLUEPRINT" >>= maybe (fail "state blueprint is not set") pure
+    path <-
+        lookupEnv "SINGULAR_STATE_BLUEPRINT"
+            >>= maybe (fail "state blueprint is not set") pure
     blueprint <- loadBlueprint path >>= either fail pure
-    state <- either fail pure (stateScriptFromBlueprint blueprint (PolicyID (hashScript application)))
-    pure (scriptHashBytes (hashScript state), scriptHashBytes (hashScript application))
+    state <-
+        either
+            fail
+            pure
+            (stateScriptFromBlueprint blueprint (PolicyID (hashScript application)))
+    pure
+        ( scriptHashBytes (hashScript state)
+        , scriptHashBytes (hashScript application)
+        )
 
 spec :: Spec
 spec = do
     describe "the compiled validator the rows judge with" $ do
-        it "has the current build's applied state policy in the packaged release table" $ do
+        it
+            "has the current build's applied state policy in the packaged release table" $ do
             application <- compiledScript
-            path <- lookupEnv "SINGULAR_STATE_BLUEPRINT" >>= maybe (fail "state blueprint is not set") pure
+            path <-
+                lookupEnv "SINGULAR_STATE_BLUEPRINT"
+                    >>= maybe (fail "state blueprint is not set") pure
             blueprint <- loadBlueprint path >>= either fail pure
-            state <- either fail pure (stateScriptFromBlueprint blueprint (PolicyID (hashScript application)))
+            state <-
+                either
+                    fail
+                    pure
+                    (stateScriptFromBlueprint blueprint (PolicyID (hashScript application)))
             table <- loadContractTable >>= either (fail . show) pure
-            contractsOf table (scriptHashBytes (hashScript state)) `shouldSatisfy` (/= NoKnownRelease)
+            contractsOf table (scriptHashBytes (hashScript state))
+                `shouldSatisfy` (/= NoKnownRelease)
         it "identifies the current application from the applied state policy" $ do
             (state, application) <- currentIdentity
             table <- loadContractTable >>= either (fail . show) pure
@@ -135,10 +161,22 @@ spec = do
             (state, _) <- currentIdentity
             table <- loadContractTable >>= either (fail . show) pure
             let present candidate = contractsOf candidate state /= NoKnownRelease
-                bytes = BL.toStrict (Aeson.encode (Aeson.object
-                    [ "rows" Aeson..= [ Aeson.object ["state-contract" Aeson..= decodeUtf8 (B16.encode hash), "releases" Aeson..= releases] | (hash, releases) <- tableRows table ]
-                    , "applications" Aeson..= filter ((/= state) . appliedStatePolicy) (applicationRows table)
-                    ]))
+                bytes =
+                    BL.toStrict
+                        ( Aeson.encode
+                            ( Aeson.object
+                                [ "rows"
+                                    Aeson..= [ Aeson.object
+                                                [ "state-contract" Aeson..= decodeUtf8 (B16.encode hash)
+                                                , "releases" Aeson..= releases
+                                                ]
+                                             | (hash, releases) <- tableRows table
+                                             ]
+                                , "applications"
+                                    Aeson..= filter ((/= state) . appliedStatePolicy) (applicationRows table)
+                                ]
+                            )
+                        )
             without <- either (fail . show) pure (parseContractTable bytes)
             present table `shouldBe` True
             present without `shouldBe` False

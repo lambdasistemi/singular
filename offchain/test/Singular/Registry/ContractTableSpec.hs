@@ -20,8 +20,8 @@ These cases hold what a refusal says from it, and what keeps it complete:
 -}
 module Singular.Registry.ContractTableSpec (spec) where
 
-import Data.Aeson qualified as Aeson
 import Control.Exception (bracket_)
+import Data.Aeson qualified as Aeson
 import Data.ByteString (ByteString)
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
@@ -31,17 +31,17 @@ import Data.List (nub)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Text (Text)
 import Data.Text qualified as T
-import Test.Hspec
 import System.Environment (lookupEnv, setEnv, unsetEnv)
 import System.IO.Temp (withSystemTempDirectory)
+import Test.Hspec
 
 import Singular.CLI.Permanent (knownScripts)
 import Singular.Registry.ContractTable
-    ( ContractTable
-    , ApplicationIdentity (..)
+    ( ApplicationIdentity (..)
+    , ContractTable
+    , Contracts (..)
     , applicationOf
     , applicationRows
-    , Contracts (..)
     , contractsOf
     , loadContractTable
     , parseContractTable
@@ -63,20 +63,42 @@ applicationLookupRows :: Spec
 applicationLookupRows = describe "an applied state policy" $ do
     it "names exactly its application, script and the releases of each" $ do
         let rows =
-                [ ApplicationIdentity (hashOf 'a') (hashOf 'b') (hashOf 'c') ["v0.17.0"] ["v0.17.0"]
+                [ ApplicationIdentity
+                    (hashOf 'a')
+                    (hashOf 'b')
+                    (hashOf 'c')
+                    ["v0.17.0"]
+                    ["v0.17.0"]
                 , ApplicationIdentity (hashOf 'd') (hashOf 'e') (hashOf 'f') [] []
                 ]
-            bytes = BL.toStrict (Aeson.encode (Aeson.object ["rows" Aeson..= ([] :: [Aeson.Value]), "applications" Aeson..= rows]))
+            bytes =
+                BL.toStrict
+                    ( Aeson.encode
+                        ( Aeson.object
+                            ["rows" Aeson..= ([] :: [Aeson.Value]), "applications" Aeson..= rows]
+                        )
+                    )
         table <- either (fail . T.unpack) pure (parseContractTable bytes)
         applicationRows table `shouldBe` rows
-        map (applicationOf table . appliedStatePolicy) rows `shouldBe` map Just rows
+        map (applicationOf table . appliedStatePolicy) rows
+            `shouldBe` map Just rows
         applicationOf table (hashOf '0') `shouldBe` Nothing
     it "refuses an invalid hash and releases out of order" $ do
         let row = ApplicationIdentity (hashOf 'a') (hashOf 'b') (hashOf 'c') [] []
-            parse rows = parseContractTable (BL.toStrict (Aeson.encode (Aeson.object ["rows" Aeson..= ([] :: [Aeson.Value]), "applications" Aeson..= rows])))
+            parse rows =
+                parseContractTable
+                    ( BL.toStrict
+                        ( Aeson.encode
+                            ( Aeson.object
+                                ["rows" Aeson..= ([] :: [Aeson.Value]), "applications" Aeson..= rows]
+                            )
+                        )
+                    )
         parse [row{applicationPolicy = "short"}] `shouldSatisfy` isLeft
-        parse [row{singularReleases = ["v0.17.0", "v0.16.0"]}] `shouldSatisfy` isLeft
-        parse [row{applicationReleases = ["not-a-release"]}] `shouldSatisfy` isLeft
+        parse [row{singularReleases = ["v0.17.0", "v0.16.0"]}]
+            `shouldSatisfy` isLeft
+        parse [row{applicationReleases = ["not-a-release"]}]
+            `shouldSatisfy` isLeft
 
 -- | A hash of 28 bytes, all this byte.
 hashOf :: Char -> ByteString
@@ -206,22 +228,40 @@ fileRows = describe "a table file" $ do
 packagedRows :: Spec
 packagedRows = describe "the packaged table" $ do
     it "refuses duplicate applied state policies in application rows" $ do
-        let row = Aeson.object
-                [ "state-policy" Aeson..= T.replicate 56 "a"
-                , "application-policy" Aeson..= T.replicate 56 "b"
-                , "application-script" Aeson..= T.replicate 56 "c"
-                , "singular-releases" Aeson..= ([] :: [Text])
-                , "application-releases" Aeson..= ([] :: [Text])
-                ]
-        parseContractTable (BL.toStrict (Aeson.encode (Aeson.object ["rows" Aeson..= ([] :: [Aeson.Value]), "applications" Aeson..= [row, row]])))
+        let row =
+                Aeson.object
+                    [ "state-policy" Aeson..= T.replicate 56 "a"
+                    , "application-policy" Aeson..= T.replicate 56 "b"
+                    , "application-script" Aeson..= T.replicate 56 "c"
+                    , "singular-releases" Aeson..= ([] :: [Text])
+                    , "application-releases" Aeson..= ([] :: [Text])
+                    ]
+        parseContractTable
+            ( BL.toStrict
+                ( Aeson.encode
+                    ( Aeson.object
+                        [ "rows" Aeson..= ([] :: [Aeson.Value])
+                        , "applications" Aeson..= [row, row]
+                        ]
+                    )
+                )
+            )
             `shouldSatisfy` isLeft
     it "is available when no external package data file is installed" $
         withSystemTempDirectory "table-without-data" $ \directory -> do
             previous <- lookupEnv "singular_registry_datadir"
             bracket_
                 (setEnv "singular_registry_datadir" directory)
-                (maybe (unsetEnv "singular_registry_datadir") (setEnv "singular_registry_datadir") previous)
-                (loadContractTable >>= either (expectationFailure . T.unpack) (\table -> tableRows table `shouldSatisfy` (not . null)))
+                ( maybe
+                    (unsetEnv "singular_registry_datadir")
+                    (setEnv "singular_registry_datadir")
+                    previous
+                )
+                ( loadContractTable
+                    >>= either
+                        (expectationFailure . T.unpack)
+                        (\table -> tableRows table `shouldSatisfy` (not . null))
+                )
     it "is found from the package's own data and read" $
         loadContractTable >>= \case
             Left why -> expectationFailure (T.unpack why)
