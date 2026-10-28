@@ -29,7 +29,7 @@
       "pause": 400
     },
     {
-      "text": "The application is identified by the state policy: the state validator is applied to the application's policy, so each state policy belongs to one application, and the release table names it with its releases. The holding's datum is read and printed; how far it is decoded by application rules is an open question.",
+      "text": "The application is identified by the state policy: the state validator is applied to the application's policy, so each state policy belongs to one application, and the release table names it with its releases. The holding's datum is read and printed as plain data by singular registry inspect; open-datum inspect decodes it under open datum's rules (the plan).",
       "pause": 400
     }
   ],
@@ -97,6 +97,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "56678aed55949b08dc3c55f074865692c6359c51deebf2e157cf77b5e90a2f4c"
+    "sha256": "7c3e62c101186c01c507b06d070bef8fe4e4aa3e353e1bf24748fb2d1c8ba751"
   }
 }

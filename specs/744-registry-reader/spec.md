@@ -42,7 +42,8 @@ the evidence each needs follows [the observation contract](../741-no-pin-model/c
 
 The application is identified by the state policy: the state validator is applied to the application's policy, so each
 state policy belongs to one application, and the release table names it with its releases. The holding's datum is read
-and printed; how far it is decoded by application rules is [an open question](plan.md#open-questions).
+and printed as plain data by `singular registry inspect`; `open-datum inspect` decodes it under open datum's rules
+([the plan](plan.md#answered-questions)).
 
 ## Requirements
 

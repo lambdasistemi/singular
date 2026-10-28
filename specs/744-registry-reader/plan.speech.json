@@ -5,7 +5,7 @@
       "pause": 500
     },
     {
-      "text": "Issue 744. This page is for the people who implement and review the pull requests. It binds the model, the rulings, the pull requests and their slices, the open questions and the seats. The story and the requirements are in the specification; the checks are in the gate.",
+      "text": "Issue 744. This page is for the people who implement and review the pull requests. It binds the model, the rulings, the pull requests and their slices, the answered questions and the seats. The story and the requirements are in the specification; the checks are in the gate.",
       "pause": 400
     }
   ],
@@ -25,7 +25,7 @@
       "pause": 400
     },
     {
-      "text": "No Lean declaration states what a reader may conclude from an observation, and issue 741 left its observation tasks to this ticket. Whether this ticket adds those statements is the first open question. If it does, the first pull request adds them; the reader's classification code then binds to them by name.",
+      "text": "No Lean declaration stated what a reader may conclude from an observation, and issue 741 left its observation tasks to this ticket. By the first answer this ticket adds them to the application-held models: one reader definition over the observed evidence, returning live holding, pending termination, terminal, never registered, unavailable, or refused (token outside application custody, foreign state policy), with statements that each answer implies its leaf and custody in every reachable world, that an empty or failed read never yields never registered or terminal, and that those two need the authenticated leaf, read as the trie lookup it is. The statements are reviewed at a checkpoint before their proofs; the reader's classification code binds to them by name.",
       "pause": 400
     }
   ],
@@ -39,7 +39,7 @@
       "pause": 300
     },
     {
-      "text": "Reader starting point (epic owner, answer A-001 to the essay rewrite, 2026-10-24): the reader starts from the registry identity as the registry address spells it; absence of a token is not proof the key is unused.",
+      "text": "Reader starting point (epic owner, 2026-10-24): the reader starts from the registry identity as the registry address spells it; absence of a token is not proof the key is unused.",
       "pause": 300
     },
     {
@@ -65,7 +65,7 @@
       "pause": 500
     },
     {
-      "text": "Each slice finishes in well under two hours with its own RED evidence and checkpoints; the commit owner may cut a slice smaller, never merge two. Pull request 2's first two slices do not depend on either open question and start first.",
+      "text": "Each slice finishes in well under two hours with its own RED evidence and checkpoints; the commit owner may cut a slice smaller, never merge two. Pull request 1 carries the two slices that needed no answer; pull request 2 starts from its head.",
       "pause": 400
     }
   ],
@@ -91,9 +91,9 @@
       "pause": 300
     }
   ],
-  "open-questions": [
+  "answered-questions": [
     {
-      "text": "Open questions.",
+      "text": "Answered questions.",
       "pause": 500
     }
   ],
@@ -109,6 +109,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "575742ed3f968d62f2b359221a0338424c93a21573a18ab6b4bb613c8ca58ac5"
+    "sha256": "b5bb73570dbe4e4c41b2d7fb079adec5353e6aad006e4ab37b9e148ebe4058bb"
   }
 }

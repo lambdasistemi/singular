@@ -15,21 +15,25 @@
       "pause": 500
     },
     {
-      "text": "[ ] questions-answered: the two open questions answered and the plan versioned.",
+      "text": "[x] questions-answered: the two open questions answered and the plan versioned.",
       "pause": 300
     },
     {
-      "text": "[ ] gate-synthesized: the ticket owner's and the auditor's gate tables joined once and frozen with both input hashes.",
+      "text": "[x] gate-synthesized: the ticket owner's and the auditor's gate tables joined once and frozen with both input hashes.",
       "pause": 300
     }
   ],
-  "pull-request-1-reader-statements": [
+  "pull-request-1-provider-and-release-table": [
     {
-      "text": "Pull request 1: reader statements.",
+      "text": "Pull request 1: provider and release table.",
       "pause": 500
     },
     {
-      "text": "[ ] reader-statements: the reader definition and its statements, reviewed before proofs, proved, in the inventories.",
+      "text": "[x] provider-network-and-query-work: the network read and rows and bytes per call.",
+      "pause": 300
+    },
+    {
+      "text": "[x] application-from-state-policy: the applied state policy rows and the current build's row checked present.",
       "pause": 300
     }
   ],
@@ -39,11 +43,7 @@
       "pause": 500
     },
     {
-      "text": "[ ] provider-network-and-query-work: the network read and rows and bytes per call.",
-      "pause": 300
-    },
-    {
-      "text": "[ ] application-from-state-policy: the applied state policy rows and the current build's row checked present.",
+      "text": "[ ] reader-statements: the reader definition and its statements, reviewed before proofs, proved, in the inventories.",
       "pause": 300
     },
     {
@@ -51,7 +51,7 @@
       "pause": 300
     },
     {
-      "text": "[ ] reading-command: the command, help snapshots, parser rows, documented flags.",
+      "text": "[ ] reading-commands: both commands, help snapshots, parser rows, documented flags.",
       "pause": 300
     },
     {
@@ -65,6 +65,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "0a6a293d9d80429db804d674631ab3983056de97d8f825e10afafafb0ee53aa1"
+    "sha256": "8f9b8fe99716dbeddf8bcc6df9bfaa98def206561f369d207fd2ff94daaf776e"
   }
 }

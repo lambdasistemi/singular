@@ -39,7 +39,7 @@
       "pause": 300
     },
     {
-      "text": "if pull request 1 is ruled: each reader statement, the checkpoint that reviewed it before its proof, and its proof;",
+      "text": "each reader statement, the checkpoint that reviewed it before its proof, and its proof;",
       "pause": 300
     },
     {
@@ -61,12 +61,12 @@
       "pause": 500
     },
     {
-      "text": "The ticket owner's table and the auditor's independent table (auditor-1, handoffs/gate-table.md, written without reading this page) were joined once on 28 October 2026. The auditor's table added the provider contract suites (G13), the root model check (G14), the presentation check (G8) and the packaged-executable smoke (G15). It marked the devnet reading steps and refusals as needing new jobs; they are carried by extending the existing no-pin journey and refusals jobs, or by a new job of the same shape, as a CI change in this ticket. The refusal of a token at the state address is a unit test: no accepted transaction places the token there, so no devnet run can show it. The frozen table and both input hashes are in the ticket's runtime root.",
+      "text": "The ticket owner's table and the auditor's independent table, written without reading this page, were joined once on 28 October 2026. The auditor's table added the provider contract suites (G13), the root model check (G14), the presentation check (G8) and the packaged-executable smoke (G15). It marked the devnet reading steps and refusals as needing new jobs; they are carried by extending the existing no-pin journey and refusals jobs, or by a new job of the same shape, as a CI change in this ticket. The refusal of a token at the state address is a unit test: no accepted transaction places the token there, so no devnet run can show it. The frozen table and both input hashes are kept with the ticket's working records.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "gate.md",
-    "sha256": "e6e1340a689f80ded7089d29468bd3bb3186601b55235972554de2ff898e7b05"
+    "sha256": "fe780ffc7b69102fcf689ac50742c56473a2e1de50a17163141cc0ed5f3ca094"
   }
 }

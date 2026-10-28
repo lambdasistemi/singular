@@ -13,9 +13,9 @@ commit owner starts. Every command is an existing hosted command, or one this ti
 
 | Row | Acceptance it proves | Hosted job | Verbatim command | Expected exit |
 | --- | --- | --- | --- | --- |
-| G1 | the reader statements, if added, proved and in the models' inventories; the models the reader stands on still build | ci.yml `dev-shell-checks` | `nix develop --quiet -c just application-held-model`; `nix develop --quiet -c just open-datum-application-held-model` | 0 |
+| G1 | the reader statements proved and in the models' inventories; the models the reader stands on still build | ci.yml `dev-shell-checks` | `nix develop --quiet -c just application-held-model`; `nix develop --quiet -c just open-datum-application-held-model` | 0 |
 | G2 | the reader library (each conclusion and refusal), the network read, rows and bytes per call, the release table rows and the current build's row, singular help and parser rows | registry.yml `cage-tests` | `nix run --quiet .#cage-tests` in `offchain/` | 0 |
-| G3 | open datum still builds and passes over the changed session; its reading host, if ruled, with help and parser rows | ci.yml `open-datum-tests` | `nix run --quiet .#open-datum-tests` in `applications/open-datum/offchain/` | 0 |
+| G3 | open datum still builds and passes over the changed session; `open-datum inspect` with help and parser rows | ci.yml `open-datum-tests` | `nix run --quiet .#open-datum-tests` in `applications/open-datum/offchain/` | 0 |
 | G4 | the packages build | ci.yml `offchain-component-build`, `open-datum-component-build` | `nix build --quiet .#component-build` in `offchain/` and in `applications/open-datum/offchain/` | 0 |
 | G5 | the Singular package names no application | ci.yml `offchain-component-build` | `nix run --quiet .#application-separation-check`; `nix run --quiet .#application-separation-controls` | 0 |
 | G6 | the provider change stays inside the provider layer | ci.yml `dev-shell-checks` | `nix develop --quiet -c just node-confinement`; `nix develop --quiet -c just node-confinement-controls`; `nix develop --quiet -c just io-ownership-check`; `nix develop --quiet -c just io-ownership-controls` | 0 |
@@ -37,14 +37,14 @@ push; hosted checks on the pull request head are the net. Every build or test ru
 
 ```mermaid
 flowchart LR
-    P1[Pull request 1: reader statements] --> R1[G1 G8 G9 G10 G14]
-    P2[Pull request 2: the reader] --> R2[G2 G3 G4 G5 G6 G7 G8 G9 G10 G11 G12 G13 G15]
+    P1[Pull request 1: provider and release table] --> R1[G2 G3 G4 G5 G6 G8 G9 G13]
+    P2[Pull request 2: the reader] --> R2[G1 G2 G3 G4 G5 G6 G7 G8 G9 G10 G11 G12 G13 G14 G15]
 ```
 
 ## Evidence the pull requests will carry
 
 - per conclusion and refusal: the test that executes it, the hosted step that runs it, and the RED run that showed it fail;
-- if pull request 1 is ruled: each reader statement, the checkpoint that reviewed it before its proof, and its proof;
+- each reader statement, the checkpoint that reviewed it before its proof, and its proof;
 - the journey job's receipt: the four answers with their keys and the registry address, and the measured lookup (calls,
   rows, bytes) with the number of other holdings at the application's address;
 - the refusals job's receipt: each refusal and its control;
@@ -53,10 +53,9 @@ flowchart LR
 
 ## Synthesis
 
-The ticket owner's table and the auditor's independent table (auditor-1, `handoffs/gate-table.md`, written without
-reading this page) were joined once on 28 October 2026. The auditor's table added the provider contract suites (G13),
+The ticket owner's table and the auditor's independent table, written without reading this page, were joined once on 28 October 2026. The auditor's table added the provider contract suites (G13),
 the root model check (G14), the presentation check (G8) and the packaged-executable smoke (G15). It marked the devnet
 reading steps and refusals as needing new jobs; they are carried by extending the existing no-pin journey and refusals
 jobs, or by a new job of the same shape, as a CI change in this ticket. The refusal of a token at the state address is a
 unit test: no accepted transaction places the token there, so no devnet run can show it. The frozen table and both input
-hashes are in the ticket's runtime root.
+hashes are kept with the ticket's working records.
