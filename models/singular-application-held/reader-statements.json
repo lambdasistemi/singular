@@ -7,7 +7,7 @@
   "surface": "SingularApplicationHeld.readKey",
   "driver": "models/singular-application-held/.lake/build/bin/reader",
   "corpus": "models/open-datum-application-held/reader-corpus.json",
-  "corpusSha256": "c6a9b9c21ef49349fe0812ff0234b150767c60b876a012a677c441c6b12fa149",
+  "corpusSha256": "468fb036df5427d7791a9d0924579f2640ec015c04141293cbd55d370d2659f1",
   "definitions": {
     "SingularApplicationHeld.readKey": {
       "typeSha256": "9d6a68d5e5aafcb8c4baca13bfcddacd9cb0e9bfa2b926dbbaa6df06e9b8206d",
@@ -2206,9 +2206,9 @@
   },
   "closureMode": "shared",
   "proofSourceHashes": {
-    "models/singular-application-held/lean/SingularApplicationHeld/Reader.lean": "010b9f11cfcdf3d24f9dd98abddbd27f035ed500859482a7fad70b7094a97773",
+    "models/singular-application-held/lean/SingularApplicationHeld/Reader.lean": "a069a0c7e4d7f21acbaa571012a19aa53d64feef9f17e4a2ed4ff31f384369d4",
     "models/singular-application-held/lean/SingularApplicationHeld/ReaderQuery.lean": "361e1bda084ffcaabfb9dd76ee9874885e1967f40d11d4946c4f1eb12b191c3a",
-    "models/singular-application-held/lean/SingularApplicationHeld/ReaderStatements.lean": "6a6deab260d756186ec1e536a18ad14d513542fcea1d8885aff19319c8b62215",
+    "models/singular-application-held/lean/SingularApplicationHeld/ReaderStatements.lean": "8f93b0d16f24f730f22e5271413f97bc1edefa3758b0929a909f5adc59014fe8",
     "models/singular-application-held/lean/ReaderMain.lean": "8e4a04874fe5a4e8953d61f54a1ee1df66c5c10fb1eb52eb8805d82bdcfecd69"
   }
 }

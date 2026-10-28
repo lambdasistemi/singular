@@ -258,7 +258,7 @@ def corpus(report, driver):
         json.loads(line) for line in report.read_text().splitlines() if line.strip()
     ]
     require(
-        len(expected) == 26 and len({row["name"] for row in expected}) == 26,
+        len(expected) == 37 and len({row["name"] for row in expected}) == 37,
         "reader corpus extent differs",
     )
     require(observed == expected, "reader corpus is stale")
@@ -275,13 +275,30 @@ def corpus(report, driver):
     )
 
 
+def generate_corpus(report):
+    """Regenerate the snapshot without passing integers through floating point."""
+    rows = [
+        json.loads(line)
+        for line in report.read_text().splitlines()
+        if line.startswith("{")
+    ]
+    require(len(rows) == 37, "reader generated corpus extent differs")
+    target = APPLICATION / "reader-corpus.json"
+    target.write_text(json.dumps(rows, indent=2, ensure_ascii=False) + "\n")
+    print(f"WROTE definition-computed reader corpus: {len(rows)} rows")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--scope", choices=("shared", "all"), default="shared")
     parser.add_argument("--report", type=Path)
     parser.add_argument("--corpus", type=Path)
     parser.add_argument("--driver", type=Path)
+    parser.add_argument("--generate-corpus", type=Path)
     args = parser.parse_args()
+    if args.generate_corpus:
+        generate_corpus(args.generate_corpus)
+        return
     if args.report:
         compiled(args.report, args.scope)
     else:

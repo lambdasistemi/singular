@@ -1,4 +1,5 @@
 import SingularApplicationHeld.Reader
+import SingularApplicationHeld.HistoryClaims
 
 /-! Reader guarantees over observed evidence. -/
 namespace SingularApplicationHeld.ReaderStatements

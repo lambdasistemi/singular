@@ -181,7 +181,10 @@ def queryFor (request : ReaderRequest) (observed : ReaderObservation) : ReaderQu
     | _ => []
   ⟨request, observed, codes, codes.map (fun entry => ⟨entry.encoded, hash entry.encoded⟩), roots,
     [(1007, .live (OpenDatumApplicationHeld.Fixtures.control 7) 123),
-      (2007, .registration OpenDatumApplicationHeld.Fixtures.registrationData)]⟩
+      (2007, .registration OpenDatumApplicationHeld.Fixtures.registrationData),
+      (3007, .live {OpenDatumApplicationHeld.Fixtures.control 7 with registry := ⟨registryId.policy + 1, registryId.name⟩} 123),
+      (3008, .live {OpenDatumApplicationHeld.Fixtures.control 7 with key := 8} 123),
+      (3009, .live {OpenDatumApplicationHeld.Fixtures.control 7 with activeAsset := ⟨registryId.policy + 1, (activeAsset hash code registryId 7).name⟩} 123)]⟩
 
 /-- Positive observations and single-atom evidence defects. Results are computed
 by runReaderQuery, not entered into this corpus. -/
@@ -201,7 +204,9 @@ def corpus : List (String × ReaderQuery) :=
    ("unknown state policy", queryFor request {live with release := none}),
    ("foreign state policy", queryFor request {live with release := some {release with statePolicy := 11}}),
    ("token at state address", queryFor request {live with activeOutputs := .complete [{liveOutput with credential := registryId.policy}]}),
+   ("application credential equals the state policy", queryFor request {live with release := some {release with applicationCredential := registryId.policy}, activeOutputs := .complete [{liveOutput with credential := registryId.policy}]}),
    ("token at another address", queryFor request {live with activeOutputs := .complete [{liveOutput with credential := 60}]}),
+   ("token at the application policy credential", queryFor request {live with activeOutputs := .complete [{liveOutput with credential := release.applicationPolicy}]}),
    ("two outputs", queryFor request {live with activeOutputs := .complete [liveOutput, {liveOutput with reference := ⟨40, 0⟩}]}),
    ("non-unit quantity", queryFor request {live with activeOutputs := .complete [{liveOutput with assets := [(activeAsset hash code registryId 7, 2)]}]}),
    ("unrecognised state", queryFor request {terminal with state := .complete (some {terminalFold.after.state with datum := .empty})}),
@@ -210,6 +215,15 @@ def corpus : List (String × ReaderQuery) :=
    ("unknown holding datum", queryFor request {live with activeOutputs := .complete [{liveOutput with datum := .application 9999}]}),
    ("registration datum with active token", queryFor request {live with activeOutputs := .complete [{liveOutput with datum := .application 2007}]}),
    ("uncovered live deposit", queryFor request {live with activeOutputs := .complete [{liveOutput with lovelace := 6}]}),
+   ("live control for another registry", queryFor request {live with activeOutputs := .complete [{liveOutput with datum := .application 3007}]}),
+   ("live control for another key", queryFor request {live with activeOutputs := .complete [{liveOutput with datum := .application 3008}]}),
+   ("live control names another asset", queryFor request {live with activeOutputs := .complete [{liveOutput with datum := .application 3009}]}),
+   ("state at another credential", queryFor request {terminal with state := .complete (some {terminalFold.after.state with credential := 60})}),
+   ("state asset under another policy", queryFor request {terminal with state := .complete (some {terminalFold.after.state with assets := [(⟨registryId.policy + 1, registryId.name⟩, 1)]})}),
+   ("state asset with another name", queryFor request {terminal with state := .complete (some {terminalFold.after.state with assets := [(⟨registryId.policy, registryId.name + 1⟩, 1)]})}),
+   ("non-unit state asset", queryFor request {terminal with state := .complete (some {terminalFold.after.state with assets := [(registryId, 2)]})}),
+   ("termination without approval", queryFor request {pending with activeOutputs := .complete [{pendingOutput with assets := [(activeAsset hash code registryId 7, 1)]}]}),
+   ("live datum beside a termination approval", queryFor request {pending with activeOutputs := .complete [{pendingOutput with lovelace := 7, datum := .application 1007}]}),
    ("active leaf without token", queryFor request {live with activeOutputs := .complete []}),
    ("known absent leaf without token", queryFor request {terminal with
      state := .complete (some {terminalFold.after.state with datum := .root (commit [(7, .known .absent)])}),
