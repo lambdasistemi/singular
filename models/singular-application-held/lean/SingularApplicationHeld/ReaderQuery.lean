@@ -27,4 +27,15 @@ def runReaderQuery (query : ReaderQuery) : ReaderAnswer :=
     (query.decoding.find? fun entry => entry.1 == datum).map (·.2)
   readKey hash code commit decode query.request query.observation
 
+/-- The neutral reader uses the same finite evidence interpretation and never
+consults the application-decoding table. -/
+def runNeutralReaderQuery (query : ReaderQuery) : NeutralReaderAnswer :=
+  let code : Codec := fun preimage =>
+    ((query.codes.find? fun entry => entry.preimage == preimage).map (·.encoded)).getD []
+  let hash : Hash := fun bytes =>
+    ((query.hashes.find? fun entry => entry.input == bytes).map (·.output)).getD 0
+  let commit : TrieCommit := fun trie =>
+    ((query.roots.find? fun entry => entry.trie == trie).map (·.commitment)).getD 0
+  readNeutralKey hash code commit query.request query.observation
+
 end SingularApplicationHeld

@@ -27,6 +27,32 @@
       }
     },
     "name": "live",
+    "neutralAnswer": {
+      "active": {
+        "output": {
+          "assets": [
+            [
+              {
+                "name": 564808031891926,
+                "policy": 10
+              },
+              1
+            ]
+          ],
+          "credential": 99,
+          "datum": {
+            "application": {
+              "data": 1007
+            }
+          },
+          "lovelace": 7,
+          "reference": {
+            "index": 1,
+            "tx": 30
+          }
+        }
+      }
+    },
     "query": {
       "codes": [
         {
@@ -277,6 +303,35 @@
       }
     },
     "name": "pending termination",
+    "neutralAnswer": {
+      "active": {
+        "output": {
+          "assets": [
+            [
+              {
+                "name": 564808031891926,
+                "policy": 10
+              },
+              1
+            ],
+            [
+              {
+                "name": 565014643638823,
+                "policy": 5
+              },
+              1
+            ]
+          ],
+          "credential": 99,
+          "datum": "empty",
+          "lovelace": 1,
+          "reference": {
+            "index": 0,
+            "tx": 31
+          }
+        }
+      }
+    },
     "query": {
       "codes": [
         {
@@ -591,6 +646,44 @@
       }
     },
     "name": "terminal",
+    "neutralAnswer": {
+      "terminal": {
+        "state": {
+          "output": {
+            "assets": [
+              [
+                {
+                  "name": 68887433291,
+                  "policy": 10
+                },
+                1
+              ]
+            ],
+            "credential": 10,
+            "datum": {
+              "root": {
+                "commitment": 9
+              }
+            },
+            "lovelace": 2,
+            "reference": {
+              "index": 0,
+              "tx": 32
+            }
+          },
+          "trie": [
+            [
+              7,
+              {
+                "known": {
+                  "s": "terminal"
+                }
+              }
+            ]
+          ]
+        }
+      }
+    },
     "query": {
       "codes": [
         {
@@ -879,6 +972,44 @@
       }
     },
     "name": "never registered",
+    "neutralAnswer": {
+      "neverRegistered": {
+        "state": {
+          "output": {
+            "assets": [
+              [
+                {
+                  "name": 68887433291,
+                  "policy": 10
+                },
+                1
+              ]
+            ],
+            "credential": 10,
+            "datum": {
+              "root": {
+                "commitment": 9
+              }
+            },
+            "lovelace": 2,
+            "reference": {
+              "index": 0,
+              "tx": 32
+            }
+          },
+          "trie": [
+            [
+              7,
+              {
+                "known": {
+                  "s": "terminal"
+                }
+              }
+            ]
+          ]
+        }
+      }
+    },
     "query": {
       "codes": [
         {
@@ -1135,6 +1266,12 @@
       }
     },
     "name": "empty asset answer without state",
+    "neutralAnswer": {
+      "unavailable": {
+        "read": "state",
+        "reason": "missing"
+      }
+    },
     "query": {
       "codes": [
         {
@@ -1343,6 +1480,16 @@
       }
     },
     "name": "failed network read",
+    "neutralAnswer": {
+      "unavailable": {
+        "read": "network",
+        "reason": {
+          "failed": {
+            "reason": "provider unavailable"
+          }
+        }
+      }
+    },
     "query": {
       "codes": [
         {
@@ -1626,6 +1773,16 @@
       }
     },
     "name": "incomplete asset answer",
+    "neutralAnswer": {
+      "unavailable": {
+        "read": "activeOutputs",
+        "reason": {
+          "incomplete": {
+            "reason": "truncated page"
+          }
+        }
+      }
+    },
     "query": {
       "codes": [
         {
@@ -1886,6 +2043,16 @@
       }
     },
     "name": "failed asset read",
+    "neutralAnswer": {
+      "unavailable": {
+        "read": "activeOutputs",
+        "reason": {
+          "failed": {
+            "reason": "provider unavailable"
+          }
+        }
+      }
+    },
     "query": {
       "codes": [
         {
@@ -2146,6 +2313,16 @@
       }
     },
     "name": "failed state read",
+    "neutralAnswer": {
+      "unavailable": {
+        "read": "state",
+        "reason": {
+          "failed": {
+            "reason": "provider unavailable"
+          }
+        }
+      }
+    },
     "query": {
       "codes": [
         {
@@ -2381,6 +2558,12 @@
       }
     },
     "name": "state not found",
+    "neutralAnswer": {
+      "unavailable": {
+        "read": "state",
+        "reason": "stateNotFound"
+      }
+    },
     "query": {
       "codes": [
         {
@@ -2620,6 +2803,16 @@
       }
     },
     "name": "failed trie read",
+    "neutralAnswer": {
+      "unavailable": {
+        "read": "trie",
+        "reason": {
+          "failed": {
+            "reason": "provider unavailable"
+          }
+        }
+      }
+    },
     "query": {
       "codes": [
         {
@@ -2857,6 +3050,16 @@
       }
     },
     "name": "wrong network",
+    "neutralAnswer": {
+      "refused": {
+        "reason": {
+          "wrongNetwork": {
+            "requested": 42,
+            "served": 43
+          }
+        }
+      }
+    },
     "query": {
       "codes": [
         {
@@ -3139,6 +3342,15 @@
       }
     },
     "name": "unknown state policy",
+    "neutralAnswer": {
+      "refused": {
+        "reason": {
+          "unknownStatePolicy": {
+            "policy": 10
+          }
+        }
+      }
+    },
     "query": {
       "codes": [
         {
@@ -3417,6 +3629,16 @@
       }
     },
     "name": "foreign state policy",
+    "neutralAnswer": {
+      "refused": {
+        "reason": {
+          "foreignStatePolicy": {
+            "published": 11,
+            "requested": 10
+          }
+        }
+      }
+    },
     "query": {
       "codes": [
         {
@@ -3703,6 +3925,19 @@
       }
     },
     "name": "token at state address",
+    "neutralAnswer": {
+      "refused": {
+        "reason": {
+          "tokenOutsideApplicationCustody": {
+            "credential": 10,
+            "reference": {
+              "index": 1,
+              "tx": 30
+            }
+          }
+        }
+      }
+    },
     "query": {
       "codes": [
         {
@@ -3989,6 +4224,19 @@
       }
     },
     "name": "application credential equals the state policy",
+    "neutralAnswer": {
+      "refused": {
+        "reason": {
+          "tokenOutsideApplicationCustody": {
+            "credential": 10,
+            "reference": {
+              "index": 1,
+              "tx": 30
+            }
+          }
+        }
+      }
+    },
     "query": {
       "codes": [
         {
@@ -4275,6 +4523,19 @@
       }
     },
     "name": "token at another address",
+    "neutralAnswer": {
+      "refused": {
+        "reason": {
+          "tokenOutsideApplicationCustody": {
+            "credential": 60,
+            "reference": {
+              "index": 1,
+              "tx": 30
+            }
+          }
+        }
+      }
+    },
     "query": {
       "codes": [
         {
@@ -4561,6 +4822,19 @@
       }
     },
     "name": "token at the application policy credential",
+    "neutralAnswer": {
+      "refused": {
+        "reason": {
+          "tokenOutsideApplicationCustody": {
+            "credential": 5,
+            "reference": {
+              "index": 1,
+              "tx": 30
+            }
+          }
+        }
+      }
+    },
     "query": {
       "codes": [
         {
@@ -4839,6 +5113,11 @@
       }
     },
     "name": "two outputs",
+    "neutralAnswer": {
+      "refused": {
+        "reason": "conflictingEvidence"
+      }
+    },
     "query": {
       "codes": [
         {
@@ -5139,6 +5418,11 @@
       }
     },
     "name": "non-unit quantity",
+    "neutralAnswer": {
+      "refused": {
+        "reason": "conflictingEvidence"
+      }
+    },
     "query": {
       "codes": [
         {
@@ -5418,6 +5702,12 @@
       }
     },
     "name": "unrecognised state",
+    "neutralAnswer": {
+      "unavailable": {
+        "read": "state",
+        "reason": "stateNotRecognized"
+      }
+    },
     "query": {
       "codes": [
         {
@@ -5670,6 +5960,12 @@
       }
     },
     "name": "state with extra assets",
+    "neutralAnswer": {
+      "unavailable": {
+        "read": "state",
+        "reason": "stateNotRecognized"
+      }
+    },
     "query": {
       "codes": [
         {
@@ -5933,6 +6229,12 @@
       }
     },
     "name": "trie root mismatch",
+    "neutralAnswer": {
+      "unavailable": {
+        "read": "trie",
+        "reason": "trieRootMismatch"
+      }
+    },
     "query": {
       "codes": [
         {
@@ -6188,6 +6490,32 @@
       }
     },
     "name": "unknown holding datum",
+    "neutralAnswer": {
+      "active": {
+        "output": {
+          "assets": [
+            [
+              {
+                "name": 564808031891926,
+                "policy": 10
+              },
+              1
+            ]
+          ],
+          "credential": 99,
+          "datum": {
+            "application": {
+              "data": 9999
+            }
+          },
+          "lovelace": 7,
+          "reference": {
+            "index": 1,
+            "tx": 30
+          }
+        }
+      }
+    },
     "query": {
       "codes": [
         {
@@ -6466,6 +6794,32 @@
       }
     },
     "name": "registration datum with active token",
+    "neutralAnswer": {
+      "active": {
+        "output": {
+          "assets": [
+            [
+              {
+                "name": 564808031891926,
+                "policy": 10
+              },
+              1
+            ]
+          ],
+          "credential": 99,
+          "datum": {
+            "application": {
+              "data": 2007
+            }
+          },
+          "lovelace": 7,
+          "reference": {
+            "index": 1,
+            "tx": 30
+          }
+        }
+      }
+    },
     "query": {
       "codes": [
         {
@@ -6744,6 +7098,32 @@
       }
     },
     "name": "uncovered live deposit",
+    "neutralAnswer": {
+      "active": {
+        "output": {
+          "assets": [
+            [
+              {
+                "name": 564808031891926,
+                "policy": 10
+              },
+              1
+            ]
+          ],
+          "credential": 99,
+          "datum": {
+            "application": {
+              "data": 1007
+            }
+          },
+          "lovelace": 6,
+          "reference": {
+            "index": 1,
+            "tx": 30
+          }
+        }
+      }
+    },
     "query": {
       "codes": [
         {
@@ -7022,6 +7402,32 @@
       }
     },
     "name": "live control for another registry",
+    "neutralAnswer": {
+      "active": {
+        "output": {
+          "assets": [
+            [
+              {
+                "name": 564808031891926,
+                "policy": 10
+              },
+              1
+            ]
+          ],
+          "credential": 99,
+          "datum": {
+            "application": {
+              "data": 3007
+            }
+          },
+          "lovelace": 7,
+          "reference": {
+            "index": 1,
+            "tx": 30
+          }
+        }
+      }
+    },
     "query": {
       "codes": [
         {
@@ -7300,6 +7706,32 @@
       }
     },
     "name": "live control for another key",
+    "neutralAnswer": {
+      "active": {
+        "output": {
+          "assets": [
+            [
+              {
+                "name": 564808031891926,
+                "policy": 10
+              },
+              1
+            ]
+          ],
+          "credential": 99,
+          "datum": {
+            "application": {
+              "data": 3008
+            }
+          },
+          "lovelace": 7,
+          "reference": {
+            "index": 1,
+            "tx": 30
+          }
+        }
+      }
+    },
     "query": {
       "codes": [
         {
@@ -7578,6 +8010,32 @@
       }
     },
     "name": "live control names another asset",
+    "neutralAnswer": {
+      "active": {
+        "output": {
+          "assets": [
+            [
+              {
+                "name": 564808031891926,
+                "policy": 10
+              },
+              1
+            ]
+          ],
+          "credential": 99,
+          "datum": {
+            "application": {
+              "data": 3009
+            }
+          },
+          "lovelace": 7,
+          "reference": {
+            "index": 1,
+            "tx": 30
+          }
+        }
+      }
+    },
     "query": {
       "codes": [
         {
@@ -7857,6 +8315,12 @@
       }
     },
     "name": "state at another credential",
+    "neutralAnswer": {
+      "unavailable": {
+        "read": "state",
+        "reason": "stateNotRecognized"
+      }
+    },
     "query": {
       "codes": [
         {
@@ -8113,6 +8577,12 @@
       }
     },
     "name": "state asset under another policy",
+    "neutralAnswer": {
+      "unavailable": {
+        "read": "state",
+        "reason": "stateNotRecognized"
+      }
+    },
     "query": {
       "codes": [
         {
@@ -8369,6 +8839,12 @@
       }
     },
     "name": "state asset with another name",
+    "neutralAnswer": {
+      "unavailable": {
+        "read": "state",
+        "reason": "stateNotRecognized"
+      }
+    },
     "query": {
       "codes": [
         {
@@ -8625,6 +9101,12 @@
       }
     },
     "name": "non-unit state asset",
+    "neutralAnswer": {
+      "unavailable": {
+        "read": "state",
+        "reason": "stateNotRecognized"
+      }
+    },
     "query": {
       "codes": [
         {
@@ -8880,6 +9362,28 @@
       }
     },
     "name": "termination without approval",
+    "neutralAnswer": {
+      "active": {
+        "output": {
+          "assets": [
+            [
+              {
+                "name": 564808031891926,
+                "policy": 10
+              },
+              1
+            ]
+          ],
+          "credential": 99,
+          "datum": "empty",
+          "lovelace": 1,
+          "reference": {
+            "index": 0,
+            "tx": 31
+          }
+        }
+      }
+    },
     "query": {
       "codes": [
         {
@@ -9182,6 +9686,39 @@
       }
     },
     "name": "live datum beside a termination approval",
+    "neutralAnswer": {
+      "active": {
+        "output": {
+          "assets": [
+            [
+              {
+                "name": 564808031891926,
+                "policy": 10
+              },
+              1
+            ],
+            [
+              {
+                "name": 565014643638823,
+                "policy": 5
+              },
+              1
+            ]
+          ],
+          "credential": 99,
+          "datum": {
+            "application": {
+              "data": 1007
+            }
+          },
+          "lovelace": 7,
+          "reference": {
+            "index": 0,
+            "tx": 31
+          }
+        }
+      }
+    },
     "query": {
       "codes": [
         {
@@ -9467,6 +10004,11 @@
       }
     },
     "name": "active leaf without token",
+    "neutralAnswer": {
+      "refused": {
+        "reason": "conflictingEvidence"
+      }
+    },
     "query": {
       "codes": [
         {
@@ -9722,6 +10264,11 @@
       }
     },
     "name": "known absent leaf without token",
+    "neutralAnswer": {
+      "refused": {
+        "reason": "conflictingEvidence"
+      }
+    },
     "query": {
       "codes": [
         {

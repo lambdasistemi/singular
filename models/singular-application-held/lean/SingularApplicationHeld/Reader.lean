@@ -82,10 +82,23 @@ def recognizeReaderState (release : PublishedRelease) (registry : TokenId)
   output.assets == [(registry, 1)] &&
   (match output.datum with | .root _ => true | _ => false)
 
-/-- One authoritative decision over the evidence. The lookup is trieGet on
-the content authenticated by the recognised state's root. -/
-def readKey (h : Hash) (c : Codec) (t : TrieCommit) (decode : DecodeApplication)
-    (request : ReaderRequest) (observed : ReaderObservation) : ReaderAnswer := Id.run do
+/-- Singular's neutral conclusion, before application interpretation. -/
+inductive NeutralReaderAnswer where
+  | active (output : ObservedOutput)
+  | terminal (state : ReaderState)
+  | neverRegistered (state : ReaderState)
+  | unavailable (read : ReaderReadName) (reason : ReaderUnavailable)
+  | refused (reason : ReaderRefusal)
+  deriving Repr, BEq, DecidableEq, ToJson, FromJson
+
+def NeutralReaderAnswer.isAbsence : NeutralReaderAnswer → Bool
+  | .terminal _ | .neverRegistered _ => true
+  | _ => false
+
+/-- Application-neutral evidence classification. An active answer establishes
+only genuine unit-token custody, without interpreting the application datum. -/
+def readNeutralKey (h : Hash) (c : Codec) (t : TrieCommit)
+    (request : ReaderRequest) (observed : ReaderObservation) : NeutralReaderAnswer := Id.run do
   match observed.network with
     | .missing => return .unavailable .network .missing
     | .failed why => return .unavailable .network (.failed why)
@@ -108,16 +121,7 @@ def readKey (h : Hash) (c : Codec) (t : TrieCommit) (decode : DecodeApplication)
               return .refused .conflictingEvidence
             if output.credential != release.applicationCredential || output.credential == request.registry.policy then
               return .refused (.tokenOutsideApplicationCustody output.reference output.credential)
-            if terminationShape .none h c release output request.registry request.key then
-              return .pendingTermination output
-            match decoded decode output with
-            | some (.live control _) =>
-              if control.registry == request.registry && control.key == request.key &&
-                  control.activeAsset == activeAsset h c request.registry request.key &&
-                  control.deposit ≤ output.lovelace then
-                return .live output
-              return .refused .conflictingEvidence
-            | _ => return .refused .conflictingEvidence
+            return .active output
           | [] =>
             match observed.state with
             | .missing => return .unavailable .state .missing
@@ -140,6 +144,35 @@ def readKey (h : Hash) (c : Codec) (t : TrieCommit) (decode : DecodeApplication)
                 | .known .terminal => return .terminal state
                 | _ => return .refused .conflictingEvidence
           | _ => return .refused .conflictingEvidence
+
+/-- The application interprets only an active custody result. Every neutral
+refusal, unavailable read and state-backed conclusion is retained exactly. -/
+def refineReaderAnswer (h : Hash) (c : Codec) (decode : DecodeApplication)
+    (request : ReaderRequest) (published : Option PublishedRelease) :
+    NeutralReaderAnswer → ReaderAnswer
+  | .active output => Id.run do
+    let some release := published
+      | return .refused (.unknownStatePolicy request.registry.policy)
+    if terminationShape .none h c release output request.registry request.key then
+      return .pendingTermination output
+    match decoded decode output with
+    | some (.live control _) =>
+      if control.registry == request.registry && control.key == request.key &&
+          control.activeAsset == activeAsset h c request.registry request.key &&
+          control.deposit ≤ output.lovelace then
+        return .live output
+      return .refused .conflictingEvidence
+    | _ => return .refused .conflictingEvidence
+  | .terminal state => .terminal state
+  | .neverRegistered state => .neverRegistered state
+  | .unavailable read reason => .unavailable read reason
+  | .refused reason => .refused reason
+
+/-- The application reader refines the neutral reader; it makes no further
+provider observation and never reclassifies a neutral refusal as a conclusion. -/
+def readKey (h : Hash) (c : Codec) (t : TrieCommit) (decode : DecodeApplication)
+    (request : ReaderRequest) (observed : ReaderObservation) : ReaderAnswer :=
+  refineReaderAnswer h c decode request observed.release (readNeutralKey h c t request observed)
 
 /-- Provider observation correspondence, separate from the executable reader.
 Successful answers are complete observations of the same reachable world.

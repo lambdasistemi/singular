@@ -1,4 +1,5 @@
 import SingularApplicationHeld.ReaderStatements
+import SingularApplicationHeld.NeutralReaderStatements
 import SingularApplicationHeld.ReaderQuery
 import Lean
 
@@ -42,7 +43,9 @@ private def emit (namespaces : Array Name) : CommandElabM Unit := do
       ("type", toJson (reprStr info.type)),
       ("axioms", toJson ((← collectAxioms name).toList.map toString))]).compress
     if field == "readerStatement" then roots := info.type.getUsedConstants.toList ++ roots
-  for name in [`SingularApplicationHeld.readKey, `SingularApplicationHeld.recognizeReaderState,
+  for name in [`SingularApplicationHeld.readKey, `SingularApplicationHeld.readNeutralKey,
+      `SingularApplicationHeld.refineReaderAnswer, `SingularApplicationHeld.runNeutralReaderQuery,
+      `SingularApplicationHeld.recognizeReaderState,
       `SingularApplicationHeld.ReaderEvidenceCorrespondence, `SingularApplicationHeld.runReaderQuery] do
     let some info := env.find? name | throwError "missing reader definition {name}"
     IO.println (Json.mkObj [("readerDefinition", toJson name.toString),
@@ -52,10 +55,11 @@ private def emit (namespaces : Array Name) : CommandElabM Unit := do
   IO.println (Json.mkObj [("readerClosure", toJson (reached env roots))]).compress
 
 elab "#reader_audit_shared" : command =>
-  emit #[`SingularApplicationHeld.ReaderStatements]
+  emit #[`SingularApplicationHeld.ReaderStatements, `SingularApplicationHeld.NeutralReaderStatements]
 
 elab "#reader_audit_all" : command =>
-  emit #[`SingularApplicationHeld.ReaderStatements, `OpenDatumApplicationHeld.ReaderStatements,
+  emit #[`SingularApplicationHeld.ReaderStatements, `SingularApplicationHeld.NeutralReaderStatements,
+    `OpenDatumApplicationHeld.ReaderStatements,
     `OpenDatumApplicationHeld.ReaderFixtures]
 
 end ReaderAuditSupport

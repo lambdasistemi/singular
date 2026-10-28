@@ -1,0 +1,204 @@
+{
+  "schemaVersion": 1,
+  "stage": "STATEMENTS-SPLIT",
+  "accepted": false,
+  "scope": "Finite creator-proposed faults for the added neutral and refinement statements. Premise faults and witness controls are not executable classification coverage. Not yet run or independently accepted.",
+  "atoms": [
+    {
+      "theorem": "OpenDatumApplicationHeld.ReaderFixtures.neutral_story_answers",
+      "proposedFault": "change the story request key",
+      "proposedWitness": "reachable live and pending stories",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "theorem": "SingularApplicationHeld.NeutralReaderStatements.active_inversion",
+      "proposedFault": "omit unit-token check",
+      "proposedWitness": "non-unit quantity",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "theorem": "SingularApplicationHeld.NeutralReaderStatements.active_outputs_unavailable",
+      "proposedFault": "change incomplete asset reason",
+      "proposedWitness": "incomplete asset answer",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "theorem": "SingularApplicationHeld.NeutralReaderStatements.active_sound",
+      "proposedFault": "weaken output observation correspondence",
+      "proposedWitness": "reachable live world plus unrelated observation",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "theorem": "SingularApplicationHeld.NeutralReaderStatements.application_keeps_never_registered",
+      "proposedFault": "replace never registered by terminal",
+      "proposedWitness": "never registered",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "theorem": "SingularApplicationHeld.NeutralReaderStatements.application_keeps_refusal",
+      "proposedFault": "replace a neutral refusal by a fabricated holding",
+      "proposedWitness": "wrong network",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "theorem": "SingularApplicationHeld.NeutralReaderStatements.application_keeps_terminal",
+      "proposedFault": "replace terminal by never registered",
+      "proposedWitness": "terminal",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "theorem": "SingularApplicationHeld.NeutralReaderStatements.application_keeps_unavailable",
+      "proposedFault": "replace unavailable by fabricated absence",
+      "proposedWitness": "failed network read",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "theorem": "SingularApplicationHeld.NeutralReaderStatements.application_refines_neutral",
+      "proposedFault": "bypass application refinement",
+      "proposedWitness": "pending termination",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "theorem": "SingularApplicationHeld.NeutralReaderStatements.conflicting_outputs",
+      "proposedFault": "truncate asset answers to their first output",
+      "proposedWitness": "two outputs",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "theorem": "SingularApplicationHeld.NeutralReaderStatements.conflicting_quantity",
+      "proposedFault": "admit non-unit quantity",
+      "proposedWitness": "non-unit quantity",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "theorem": "SingularApplicationHeld.NeutralReaderStatements.foreign_state_policy",
+      "proposedFault": "skip policy equality",
+      "proposedWitness": "foreign state policy",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "theorem": "SingularApplicationHeld.NeutralReaderStatements.holding_answer_ignores_state",
+      "proposedFault": "require an available state for active custody",
+      "proposedWitness": "live",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "theorem": "SingularApplicationHeld.NeutralReaderStatements.known_nonterminal_leaf_without_token",
+      "proposedFault": "answer never registered for a known nonterminal leaf",
+      "proposedWitness": "active leaf without token",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "theorem": "SingularApplicationHeld.NeutralReaderStatements.network_unavailable",
+      "proposedFault": "change failed network read name",
+      "proposedWitness": "failed network read",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "theorem": "SingularApplicationHeld.NeutralReaderStatements.never_registered_inversion",
+      "proposedFault": "answer never registered for a terminal leaf",
+      "proposedWitness": "terminal",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "theorem": "SingularApplicationHeld.NeutralReaderStatements.never_registered_sound",
+      "proposedFault": "weaken trie observation correspondence",
+      "proposedWitness": "reachable world with another observation",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "theorem": "SingularApplicationHeld.NeutralReaderStatements.no_absence_from_missing_evidence",
+      "proposedFault": "answer never registered for missing state",
+      "proposedWitness": "empty asset answer without state",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "theorem": "SingularApplicationHeld.NeutralReaderStatements.state_not_found",
+      "proposedFault": "change state-not-found to conflict",
+      "proposedWitness": "state not found",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "theorem": "SingularApplicationHeld.NeutralReaderStatements.state_not_recognized",
+      "proposedFault": "ignore state recognition result",
+      "proposedWitness": "unrecognised state",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "theorem": "SingularApplicationHeld.NeutralReaderStatements.state_unavailable",
+      "proposedFault": "change failed state read name",
+      "proposedWitness": "failed state read",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "theorem": "SingularApplicationHeld.NeutralReaderStatements.terminal_inversion",
+      "proposedFault": "answer terminal for an unknown leaf",
+      "proposedWitness": "never registered",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "theorem": "SingularApplicationHeld.NeutralReaderStatements.terminal_sound",
+      "proposedFault": "weaken trie observation correspondence",
+      "proposedWitness": "reachable terminal world with another observation",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "theorem": "SingularApplicationHeld.NeutralReaderStatements.token_outside_custody",
+      "proposedFault": "admit the state credential",
+      "proposedWitness": "application credential equals the state policy",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "theorem": "SingularApplicationHeld.NeutralReaderStatements.trie_root_mismatch",
+      "proposedFault": "ignore root equality",
+      "proposedWitness": "trie root mismatch",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "theorem": "SingularApplicationHeld.NeutralReaderStatements.trie_unavailable",
+      "proposedFault": "change failed trie read name",
+      "proposedWitness": "failed trie read",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "theorem": "SingularApplicationHeld.NeutralReaderStatements.unknown_state_policy",
+      "proposedFault": "guess an unpublished release",
+      "proposedWitness": "unknown state policy",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "theorem": "SingularApplicationHeld.NeutralReaderStatements.wrong_network_first",
+      "proposedFault": "skip network comparison",
+      "proposedWitness": "wrong network",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    }
+  ]
+}

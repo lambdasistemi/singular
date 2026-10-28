@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "stage": "PROOFS",
+  "stage": "STATEMENTS-SPLIT",
   "accepted": false,
   "compiler": "Lean 4.27.0",
   "printer": "Lean.reprStr ConstantInfo.type; default Repr options",
@@ -2210,5 +2210,8 @@
     "models/singular-application-held/lean/SingularApplicationHeld/ReaderQuery.lean": "361e1bda084ffcaabfb9dd76ee9874885e1967f40d11d4946c4f1eb12b191c3a",
     "models/singular-application-held/lean/SingularApplicationHeld/ReaderStatements.lean": "8f93b0d16f24f730f22e5271413f97bc1edefa3758b0929a909f5adc59014fe8",
     "models/singular-application-held/lean/ReaderMain.lean": "8e4a04874fe5a4e8953d61f54a1ee1df66c5c10fb1eb52eb8805d82bdcfecd69"
-  }
+  },
+  "priorProofSnapshotRevision": "d03147a7cebc1f7264bd3fb4433cda3ca696edc1",
+  "currentInventory": "models/singular-application-held/reader-split-statements.json",
+  "downstreamStatus": "REOPENED: the previous proof snapshot is retained, and current split statements await independent statement review and subsequent proof-stage inventory integration"
 }

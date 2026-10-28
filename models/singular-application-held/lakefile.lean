@@ -15,3 +15,6 @@ lean_lib ReaderAuditSupport where
 
 lean_exe reader where
   root := `ReaderMain
+
+lean_exe neutralReader where
+  root := `NeutralReaderMain

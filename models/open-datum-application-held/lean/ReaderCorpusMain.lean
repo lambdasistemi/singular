@@ -7,4 +7,5 @@ def main : IO Unit := do
     stdout.putStrLn (Lean.Json.mkObj [
       ("name", Lean.toJson name),
       ("query", Lean.toJson query),
+      ("neutralAnswer", Lean.toJson (SingularApplicationHeld.runNeutralReaderQuery query)),
       ("answer", Lean.toJson (SingularApplicationHeld.runReaderQuery query))]).compress

@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 1,
+  "stage": "STATEMENTS-SPLIT",
+  "accepted": false,
+  "scope": "Authored neutral decision inventory for independent review; no branch coverage certified.",
+  "definition": "SingularApplicationHeld.readNeutralKey",
+  "branches": [
+    {
+      "branch": "network missing, failed or incomplete",
+      "theorem": "SingularApplicationHeld.NeutralReaderStatements.network_unavailable",
+      "answer": "unavailable network with the same reason",
+      "proofStatus": "OPEN"
+    },
+    {
+      "branch": "served network differs",
+      "theorem": "SingularApplicationHeld.NeutralReaderStatements.wrong_network_first",
+      "answer": "refused wrong network",
+      "proofStatus": "OPEN"
+    },
+    {
+      "branch": "no published release",
+      "theorem": "SingularApplicationHeld.NeutralReaderStatements.unknown_state_policy",
+      "answer": "refused unknown state policy",
+      "proofStatus": "OPEN"
+    },
+    {
+      "branch": "release names another state policy",
+      "theorem": "SingularApplicationHeld.NeutralReaderStatements.foreign_state_policy",
+      "answer": "refused foreign state policy",
+      "proofStatus": "OPEN"
+    },
+    {
+      "branch": "asset answer missing, failed or incomplete",
+      "theorem": "SingularApplicationHeld.NeutralReaderStatements.active_outputs_unavailable",
+      "answer": "unavailable active outputs with the same reason",
+      "proofStatus": "OPEN"
+    },
+    {
+      "branch": "multiple asset outputs",
+      "theorem": "SingularApplicationHeld.NeutralReaderStatements.conflicting_outputs",
+      "answer": "refused conflicting evidence",
+      "proofStatus": "OPEN"
+    },
+    {
+      "branch": "one output with non-unit quantity",
+      "theorem": "SingularApplicationHeld.NeutralReaderStatements.conflicting_quantity",
+      "answer": "refused conflicting evidence",
+      "proofStatus": "OPEN"
+    },
+    {
+      "branch": "unit token outside application custody, including the state address",
+      "theorem": "SingularApplicationHeld.NeutralReaderStatements.token_outside_custody",
+      "answer": "refused token outside application custody",
+      "proofStatus": "OPEN"
+    },
+    {
+      "branch": "one unit active token in application custody, regardless of application datum",
+      "theorem": "SingularApplicationHeld.NeutralReaderStatements.active_inversion",
+      "answer": "active custody",
+      "proofStatus": "OPEN"
+    },
+    {
+      "branch": "no token; state read missing, failed or incomplete",
+      "theorem": "SingularApplicationHeld.NeutralReaderStatements.state_unavailable",
+      "answer": "unavailable state with the same reason",
+      "proofStatus": "OPEN"
+    },
+    {
+      "branch": "no token; complete state read has no output",
+      "theorem": "SingularApplicationHeld.NeutralReaderStatements.state_not_found",
+      "answer": "unavailable state not found",
+      "proofStatus": "OPEN"
+    },
+    {
+      "branch": "no token; state output not recognised",
+      "theorem": "SingularApplicationHeld.NeutralReaderStatements.state_not_recognized",
+      "answer": "unavailable state not recognised",
+      "proofStatus": "OPEN"
+    },
+    {
+      "branch": "no token; recognised state; trie read missing, failed or incomplete",
+      "theorem": "SingularApplicationHeld.NeutralReaderStatements.trie_unavailable",
+      "answer": "unavailable trie with the same reason",
+      "proofStatus": "OPEN"
+    },
+    {
+      "branch": "no token; recognised state; trie root differs",
+      "theorem": "SingularApplicationHeld.NeutralReaderStatements.trie_root_mismatch",
+      "answer": "unavailable trie root mismatch",
+      "proofStatus": "OPEN"
+    },
+    {
+      "branch": "no token; recognised state and matching trie; unknown leaf",
+      "theorem": "SingularApplicationHeld.NeutralReaderStatements.never_registered_inversion",
+      "answer": "never registered",
+      "proofStatus": "OPEN"
+    },
+    {
+      "branch": "no token; recognised state and matching trie; terminal leaf",
+      "theorem": "SingularApplicationHeld.NeutralReaderStatements.terminal_inversion",
+      "answer": "terminal",
+      "proofStatus": "OPEN"
+    },
+    {
+      "branch": "no token; recognised state and matching trie; known active or absent leaf",
+      "theorem": "SingularApplicationHeld.NeutralReaderStatements.known_nonterminal_leaf_without_token",
+      "answer": "refused conflicting evidence",
+      "proofStatus": "OPEN"
+    }
+  ]
+}

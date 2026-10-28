@@ -229,4 +229,13 @@ def corpus : List (String × ReaderQuery) :=
      state := .complete (some {terminalFold.after.state with datum := .root (commit [(7, .known .absent)])}),
      trie := .complete [(7, .known .absent)]})]
 
+/-- The neutral reader classifies both application stories as active custody. -/
+theorem neutral_story_answers :
+    readNeutralKey hash code commit request live = .active liveOutput ∧
+    readNeutralKey hash code commit request pending = .active pendingOutput ∧
+    readNeutralKey hash code commit request terminal = .terminal ⟨terminalFold.after.state, terminalFold.after.trie⟩ ∧
+    readNeutralKey hash code commit {request with key := 9} neverRegistered =
+      .neverRegistered ⟨terminalFold.after.state, terminalFold.after.trie⟩ := by
+  sorry
+
 end OpenDatumApplicationHeld.ReaderFixtures
