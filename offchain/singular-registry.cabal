@@ -107,10 +107,8 @@ library
     Singular.Registry.Config.Application
     Singular.Registry.Confirmation
     Singular.Registry.Deployment
-    Singular.Registry.Driver
     Singular.Registry.FoldAdmission
     Singular.Registry.FoldSelection
-    Singular.Registry.Funding
     Singular.Registry.Lifecycle
     Singular.Registry.PlainJson
     Singular.Registry.Proof
@@ -781,7 +779,6 @@ test-suite e2e-tests
   hs-source-dirs:   e2e-test private-facade test-tags
   main-is:          main.hs
   other-modules:
-    Singular.Registry.E2E.CageSpec
     Singular.Registry.E2E.Config
     Singular.Registry.E2E.ConfigSpec
     Singular.Registry.E2E.Fixture
@@ -831,7 +828,6 @@ test-suite e2e-tests
     , ouroboros-consensus:protocol
     , ouroboros-network:api
     , ouroboros-network:framework
-    , plutus-tx
     , process
     , random
     , serialise

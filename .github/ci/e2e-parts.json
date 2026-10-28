@@ -2,9 +2,5 @@
   {
     "name": "Generic node, wallet and submission checks",
     "lane": "node-boot"
-  },
-  {
-    "name": "Registry evidence retained by conformance",
-    "lane": "cage"
   }
 ]

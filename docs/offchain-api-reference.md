@@ -25,9 +25,9 @@ viewing.
 
 The module extent is the public library of the off-chain Cabal file — every
 exposed module, every internal module, and every module the library
-re-exports under its own name. That complete extent is 77 modules in
-three kinds: 60 explicitly exposed modules and 4 re-exported modules
-are what a caller imports; the two trie capability owners behind the
+re-exports under its own name. The module extent is discovered from the Cabal
+manifest. Explicitly exposed and re-exported modules are what a caller imports;
+the two trie capability owners behind the
 `TrieState` facade (`Singular.Registry.TrieState.Core` and `.Types`),
 the three fold owners behind the `Update`
 facade — `Singular.Registry.TxBuilder.Update.Build`, `.Context` and
@@ -80,11 +80,9 @@ Run: mkdocs serve
 - <a href="../offchain/lib/Singular/Registry/Deployment/Attach.hs" data-api="module">Singular.Registry.Deployment.Attach</a> — <a href="../offchain/lib/Singular/Registry/Deployment/Attach.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Deployment/Manifest.hs" data-api="module">Singular.Registry.Deployment.Manifest</a> — <a href="../offchain/lib/Singular/Registry/Deployment/Manifest.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Deployment/Mirror.hs" data-api="module">Singular.Registry.Deployment.Mirror</a> — <a href="../offchain/lib/Singular/Registry/Deployment/Mirror.hs" data-api="source">source</a>
-- <a href="../offchain/lib/Singular/Registry/Driver.hs" data-api="module">Singular.Registry.Driver</a> — <a href="../offchain/lib/Singular/Registry/Driver.hs" data-api="source">source</a>
 - <a href="../offchain/local-services/Singular/Registry/Evidence.hs" data-api="module">Singular.Registry.Evidence</a> — <a href="../offchain/local-services/Singular/Registry/Evidence.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/FoldAdmission.hs" data-api="module">Singular.Registry.FoldAdmission</a> — <a href="../offchain/lib/Singular/Registry/FoldAdmission.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/FoldSelection.hs" data-api="module">Singular.Registry.FoldSelection</a> — <a href="../offchain/lib/Singular/Registry/FoldSelection.hs" data-api="source">source</a>
-- <a href="../offchain/lib/Singular/Registry/Funding.hs" data-api="module">Singular.Registry.Funding</a> — <a href="../offchain/lib/Singular/Registry/Funding.hs" data-api="source">source</a>
 - <a href="../offchain/local-services/Singular/Registry/Ledger.hs" data-api="module">Singular.Registry.Ledger</a> — <a href="../offchain/local-services/Singular/Registry/Ledger.hs" data-api="source">source</a>
 - <a href="../offchain/local-services/Singular/Registry/LedgerProvider.hs" data-api="module">Singular.Registry.LedgerProvider</a> — <a href="../offchain/local-services/Singular/Registry/LedgerProvider.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Lifecycle.hs" data-api="module">Singular.Registry.Lifecycle</a> — <a href="../offchain/lib/Singular/Registry/Lifecycle.hs" data-api="source">source</a>
@@ -265,7 +263,6 @@ exception boundary.
 | `provesMember`, `provesAbsent`, `verifyExclusion` | Pure verification against the caller's trusted root. |
 | `Singular.CLI.Proof.rootOfDbPure`, `authenticatedLeafPure` | Pure root bytes and `Either AuthError Leaf`; explicit root mismatch or inconsistent-proof refusal. These receive a concrete snapshot, so there is no missing or hidden registry lookup. |
 | `rootOfDb`, `authenticatedLeaf` | Retained IO compatibility exports, with no manager allocation. The root wrapper forces the snapshot constructor inside IO while leaving the computed root lazy. The leaf wrapper still compares roots during the IO action; decode failures remain inside a caller's handler at that stage. Neither catches exceptions or forces the later leaf result. |
-| `Conformance.Cli.Proof.provenLeaf` | Independent observed-leaf computation using the same MPF primitives, with its own `try`/`evaluate` boundary: synchronous decode damage refuses an answer and asynchronous exceptions propagate. It does not call the builder's expected-leaf function. |
 
 The legacy names `mkPureTrie`, `mkPureTrieFromRef`, `mkPureTrieManager` and
 `mkPureTrieManagerFrom` identify the in-memory backend. Their IO adapters
@@ -296,25 +293,13 @@ independent of the pure computation being compared. The retired naming runner so
 | Source module or executable | Disposition, owner and lifetime |
 | --- | --- |
 | `Singular.CLI.Proof` | Snapshot computation migrated to the pure API; old IO exports remain allocation-free wrappers. |
-| `Conformance.Cli.Proof` | Snapshot observation migrated; the caller owns evaluation and cancellation. |
-| `Conformance.ForkKeys` | Offline proof-shape computations migrated to local `State`; its separate evolving mirror is owned by `runCheckForkExclusion` for that call. |
-| `Conformance.Run.Live.classifyLeaves` | Disposable assignment-root computations migrated to local `State`; the observation still selects against the chain-read root. |
 | `Singular.Registry.Trie.Pure` | Retains public mutable single-trie adapters for caller-owned evolving databases; pure snapshot operations allocate none. |
 | `Singular.Registry.Trie.PureManager` | Retains public mutable per-registry adapter and dump action for the owning serial run; speculative computation uses local `State` over its snapshot without a mutable copy. |
-| `Conformance.Cli.FoldHistory` | `publicFoldTrie`/`materializeFoldTrie` owns reconstruction; the returned mutable manager belongs to the one adversarial fold-builder call. Authenticated leaves and root agreement precede building. |
-| `Conformance.Mirror` | The conformance environment owns an evolving chain-operation mirror for its run; each insertion updates that mirror. |
-| `Conformance.Run` | The environment callback owns a manager for the run's boot/fold actions, separately from its proof mirror. |
-| `Conformance.Run.CsRows` | Each constructor-witness runner owns its boot/fold manager for that one row execution. |
-| `Conformance.Run.ForkProbe` | The probe session owns its manager for the connected boot/fold sequence. |
 | `InsertActive.Steps` | The bounded tool session owns its boot/fold manager until the tool run ends. |
 | `UpdateTerminal.Registry` | `openSession` transfers its evolving manager to the one retirement session; that session owns it until the run ends. |
 | `Journey.Proofs` | The journey owns the shared mirror reference; `stepVerifyPresent` advances it before verifying against chain readback. |
 | `Journey.Scenario` | The `withRunner` callback owns the evolving registry manager for the whole bounded journey. |
-| `E2E.CageSpec` | `withE2ETimed` owns its builder manager for one devnet fixture. |
 | `Registry.TrieStateSpec` | Each example owns the unchanged IO producer and speculative manager; the frozen old leaf wrapper owns its short-lived reference only as a compatibility oracle. Computation assertions use the pure API. |
-| `Conformance.Support.CliProof` | `savedTrie` owns the independent evolving producer until it yields database/root values for observation tests. |
-| `Conformance.Support.FoldHistory` | Each example owns independent producer and reconstructed builder managers until their root/proof comparisons end. |
-| `Conformance.Support.RunReplay` | Each example owns a builder-control manager; speculative callbacks discard their changes. |
 | `OpenDatum.BurnSourceSpec` | Each fold-builder example owns its evolving fixture manager for the tested builder invocation. |
 | `OpenDatum.CLISpec` | `walked` owns the independent lifecycle producer until it returns the saved snapshot and root. |
 
@@ -388,8 +373,7 @@ generated references. The public `local-services` component also exposes
 `offchain/local-services/Singular/Registry/`. Their generated pages are not
 in this main-library reference. The public `open-datum-application`
 component (`applications/open-datum/offchain/`) carries the open-datum
-application the command line composes — command groups, envelope, booking
-approval and destination, payload update, release rules, script, and the
+application the command line composes — command groups, envelope, release rules and the
 application value — and the request builders of the registry on the proved
 design: the booking of a registration, its reclaim by the refund address and
 its cleanup after the window, the configuration record added to the creation
@@ -397,7 +381,6 @@ of a registry, the records and actions of the request validator in the layout
 it decodes, the validator as a transaction carries it, the reasons a
 builder declines, what open datum hands the fold of a registry, and the commands
 that create a registry and book, reclaim and clean up a registration:
-`Singular.Application.OpenDatum.Book`,
 `Singular.Application.OpenDatum.Build`,
 `Singular.Application.OpenDatum.Command`,
 `Singular.Application.OpenDatum.Envelope`,
@@ -412,8 +395,6 @@ that create a registry and book, reclaim and clean up a registration:
 `Singular.Application.OpenDatum.Requests.Script`,
 `Singular.Application.OpenDatum.Root`,
 `Singular.Application.OpenDatum.Run`,
-`Singular.Application.OpenDatum.Script`,
-`Singular.Application.OpenDatum.Update` and
 `Singular.Application.OpenDatum.Value`; their sources live under
 `applications/open-datum/offchain/src/Singular/Application/OpenDatum/`,
 and the executable's entry point lives in

@@ -7,7 +7,7 @@
 #   - skipping every lane selects nothing: no example is untagged.
 # Dry runs only: no node starts.
 #
-# usage: e2e_parts_proof.sh PARTS-JSON   (run from offchain/, REGISTRY_BLUEPRINT set)
+# usage: e2e_parts_proof.sh PARTS-JSON   (run from offchain/)
 set -euo pipefail
 parts="$1"
 count() {

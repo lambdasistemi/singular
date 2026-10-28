@@ -47,11 +47,11 @@
       "pause": 400
     },
     {
-      "text": "The public conformance command nix run .#conformance-tests, run from conformance/, executes the live product book as well as its appendix. Use nix run .#conformance-appendix-tests -- --match \"[conformance]\" to filter the Hspec appendix alone. The published book's requirement text and receipt-computed coverage are unchanged by these harness labels.",
+      "text": "From conformance/, use nix run .#conformance-appendix-tests -- --match \"[conformance]\" to filter the Hspec reader appendix.",
       "pause": 400
     },
     {
-      "text": "The evaluation spike's cleanup-control uses Tasty, so it is outside this Hspec vocabulary. The Cabal-declared Conformance.Support.Authenticate module was already absent from the Hspec entrypoint; it remains inactive so tagging changes neither suite membership nor example counts. No new exclusion is introduced.",
+      "text": "The evaluation spike's cleanup-control uses Tasty, so it is outside this Hspec vocabulary.",
       "pause": 400
     }
   ],
@@ -69,7 +69,7 @@
       "pause": 400
     },
     {
-      "text": "The development-node suites and the live conformance book stay executable apps. Compiling or listing their examples does not establish live ledger behavior. The inventory discovers the Hspec entrypoints from Cabal, rejects unwrapped spec calls and unknown tag constructors, and exercises removal and unknown-tag controls. It is a source inventory; compiled paths and before-and-after example counts supply the separate runtime evidence.",
+      "text": "The development-node suites stay executable apps. Compiling or listing their examples does not establish live ledger behavior. The inventory discovers the Hspec entrypoints from Cabal, rejects unwrapped spec calls and unknown tag constructors, and exercises removal and unknown-tag controls. It is a source inventory; compiled paths and before-and-after example counts supply the separate runtime evidence.",
       "pause": 400
     }
   ],
@@ -89,6 +89,6 @@
   ],
   "_source": {
     "file": "test-selection.md",
-    "sha256": "91c74916b00364dfc781888e4e590118834a385d7221506825db7e4c6ba39936"
+    "sha256": "61108e0a95c12c7a65aeeb744cba63b119fd1f3a7bcb4bcc04e11cbdf3b6be5f"
   }
 }

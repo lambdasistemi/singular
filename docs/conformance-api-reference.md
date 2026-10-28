@@ -1,93 +1,23 @@
 # Conformance API reference
 
-A contributor changing the conformance library — a story program, a model
-binding, a comparison, a receipt check, a rendering — wants to click a
-module and land on its real interface: signatures, documentation, and the
-highlighted source, for exactly the code this repository ships. This page
-is the entry point of that reference for the Conformance library: a
-generated Haddock reference, rebuilt with the documentation site from this
-same source tree, so what you read here documents exactly the code this
-candidate was built from. One boundary on that promise is named below:
-identifiers and modules that belong to other packages are visible in the
-generated pages but are not clickable, because their documentation is not
-bundled with this site.
-
-## Which contract a story describes
-
-`Conformance.Edge.Permanent` describes the first milestone's registration and
-permanent termination, refusal of the five other encoded registry actions, and
-refusal of a mixed batch containing an excluded action. Its public requirement
-remains uncovered until a bounded live consumer comparison receipt establishes
-it. Compiled refusal tests passing does not assign that product status.
-Other seven-edge story modules retain the broader contract's descriptions;
-their historical successes do not establish support in the permanent contract.
-The [consumer record](consumer-conformance.md) keeps that distinction and the
-uncovered rows visible.
+As a contributor changing the evidence reader, I can open each module's
+interface and highlighted source at the same revision as this site.
+The generated Haddock reference covers the receipt validation, replay
+classification, requirement inventory and computed evidence page.
 
 ## What this reference contains
 
-Every module of the Conformance library is listed below. Each entry links
-two pages of the generated reference: the module page — exports, types,
-and documented declarations — and the hyperlinked source page with the
-rendered, highlighted Haskell this candidate was built from. The
-reference's own <a href="../conformance/" data-api="index">full-page
-index</a> and <a href="../conformance/" data-api="symbols">symbol
-index</a> are linked here too. On this site the links open the generated
-pages; read from the repository, the module links open the source files
-themselves at the revision you are viewing.
+Every module declared by the public Conformance library is listed below.
+The site derives the extent from its Cabal manifest and checks both each
+module page and its source page against that extent. The reference's own
+<a href="../conformance/" data-api="index">full-page index</a> and
+<a href="../conformance/" data-api="symbols">symbol index</a> provide the
+same entry points across the complete library.
 
-The module extent is the public library of the Conformance Cabal file —
-every exposed module and the one package-internal owner. That complete
-extent is 31 modules. The 30 exposed modules are what a caller imports:
-the story programs, the registry rows as programs with their
-classification, the stories' binding and identity, the ordinary CLI's
-refusal controls and their receipt-computed verdicts, the model transport
-and the Lean oracle, the registration and perturbation comparisons, the
-receipt record and its validation, the refusal attribution, the row
-inventory, the purpose-unit arithmetic, the node-refusal rendering, the payment
-observation, the traced replay's classification of a live refusal and the
-extent of a run's refusals against the model. The one package-internal module,
-`Conformance.Evidence.Asset`, owns the asset-movement shape of edge
-evidence — one movement named by its policy, asset name and quantity,
-with the JSON encoding that carries those three fields. It is documented
-here for the contributor reading the facade's implementation;
-`Conformance.Receipt` re-exports its type, so no caller import path
-changes. The extent below is the complete documented module surface, and
-the site check fails until it and this list agree.
-
-- <a href="../conformance/lib/Conformance/Authenticate.hs" data-api="module">Conformance.Authenticate</a> — <a href="../conformance/lib/Conformance/Authenticate.hs" data-api="source">source</a>
-- <a href="../conformance/lib/Conformance/Book.hs" data-api="module">Conformance.Book</a> — <a href="../conformance/lib/Conformance/Book.hs" data-api="source">source</a>
-- <a href="../conformance/lib/Conformance/Cli/Controls.hs" data-api="module">Conformance.Cli.Controls</a> — <a href="../conformance/lib/Conformance/Cli/Controls.hs" data-api="source">source</a>
-- <a href="../conformance/lib/Conformance/Compare/Perturbation.hs" data-api="module">Conformance.Compare.Perturbation</a> — <a href="../conformance/lib/Conformance/Compare/Perturbation.hs" data-api="source">source</a>
-- <a href="../conformance/lib/Conformance/Compare/Registration.hs" data-api="module">Conformance.Compare.Registration</a> — <a href="../conformance/lib/Conformance/Compare/Registration.hs" data-api="source">source</a>
-- <a href="../conformance/lib/Conformance/Edge/EarlyReject.hs" data-api="module">Conformance.Edge.EarlyReject</a> — <a href="../conformance/lib/Conformance/Edge/EarlyReject.hs" data-api="source">source</a>
-- <a href="../conformance/lib/Conformance/Edge/Exit.hs" data-api="module">Conformance.Edge.Exit</a> — <a href="../conformance/lib/Conformance/Edge/Exit.hs" data-api="source">source</a>
-- <a href="../conformance/lib/Conformance/Edge/Occupied.hs" data-api="module">Conformance.Edge.Occupied</a> — <a href="../conformance/lib/Conformance/Edge/Occupied.hs" data-api="source">source</a>
-- <a href="../conformance/lib/Conformance/Edge/Permanent.hs" data-api="module">Conformance.Edge.Permanent</a> — <a href="../conformance/lib/Conformance/Edge/Permanent.hs" data-api="source">source</a>
-- <a href="../conformance/lib/Conformance/Edge/Programs.hs" data-api="module">Conformance.Edge.Programs</a> — <a href="../conformance/lib/Conformance/Edge/Programs.hs" data-api="source">source</a>
-- <a href="../conformance/lib/Conformance/Edge/Register.hs" data-api="module">Conformance.Edge.Register</a> — <a href="../conformance/lib/Conformance/Edge/Register.hs" data-api="source">source</a>
-- <a href="../conformance/lib/Conformance/Edge/Retire.hs" data-api="module">Conformance.Edge.Retire</a> — <a href="../conformance/lib/Conformance/Edge/Retire.hs" data-api="source">source</a>
-- <a href="../conformance/lib/Conformance/Edge/RetractionWindow.hs" data-api="module">Conformance.Edge.RetractionWindow</a> — <a href="../conformance/lib/Conformance/Edge/RetractionWindow.hs" data-api="source">source</a>
-- <a href="../conformance/lib/Conformance/Edge/Sequence.hs" data-api="module">Conformance.Edge.Sequence</a> — <a href="../conformance/lib/Conformance/Edge/Sequence.hs" data-api="source">source</a>
-- <a href="../conformance/lib/Conformance/Evidence/Asset.hs" data-api="module">Conformance.Evidence.Asset</a> — <a href="../conformance/lib/Conformance/Evidence/Asset.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/EvidencePage.hs" data-api="module">Conformance.EvidencePage</a> — <a href="../conformance/lib/Conformance/EvidencePage.hs" data-api="source">source</a>
-- <a href="../conformance/lib/Conformance/Extent.hs" data-api="module">Conformance.Extent</a> — <a href="../conformance/lib/Conformance/Extent.hs" data-api="source">source</a>
-- <a href="../conformance/lib/Conformance/Fold/KeyedMint.hs" data-api="module">Conformance.Fold.KeyedMint</a> — <a href="../conformance/lib/Conformance/Fold/KeyedMint.hs" data-api="source">source</a>
-- <a href="../conformance/lib/Conformance/Lean/Oracle.hs" data-api="module">Conformance.Lean.Oracle</a> — <a href="../conformance/lib/Conformance/Lean/Oracle.hs" data-api="source">source</a>
-- <a href="../conformance/lib/Conformance/Lean/Registration.hs" data-api="module">Conformance.Lean.Registration</a> — <a href="../conformance/lib/Conformance/Lean/Registration.hs" data-api="source">source</a>
-- <a href="../conformance/lib/Conformance/Lean/Retirement.hs" data-api="module">Conformance.Lean.Retirement</a> — <a href="../conformance/lib/Conformance/Lean/Retirement.hs" data-api="source">source</a>
-- <a href="../conformance/lib/Conformance/NodeRejection.hs" data-api="module">Conformance.NodeRejection</a> — <a href="../conformance/lib/Conformance/NodeRejection.hs" data-api="source">source</a>
-- <a href="../conformance/lib/Conformance/Observe/Payments.hs" data-api="module">Conformance.Observe.Payments</a> — <a href="../conformance/lib/Conformance/Observe/Payments.hs" data-api="source">source</a>
-- <a href="../conformance/lib/Conformance/PurposeUnits.hs" data-api="module">Conformance.PurposeUnits</a> — <a href="../conformance/lib/Conformance/PurposeUnits.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Receipt.hs" data-api="module">Conformance.Receipt</a> — <a href="../conformance/lib/Conformance/Receipt.hs" data-api="source">source</a>
-- <a href="../conformance/lib/Conformance/Refusal.hs" data-api="module">Conformance.Refusal</a> — <a href="../conformance/lib/Conformance/Refusal.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Replay.hs" data-api="module">Conformance.Replay</a> — <a href="../conformance/lib/Conformance/Replay.hs" data-api="source">source</a>
-- <a href="../conformance/lib/Conformance/RowNames.hs" data-api="module">Conformance.RowNames</a> — <a href="../conformance/lib/Conformance/RowNames.hs" data-api="source">source</a> — associates historical receipt keys with descriptive requirement names
 - <a href="../conformance/lib/Conformance/Rows.hs" data-api="module">Conformance.Rows</a> — <a href="../conformance/lib/Conformance/Rows.hs" data-api="source">source</a>
-- <a href="../conformance/lib/Conformance/Story/Binding.hs" data-api="module">Conformance.Story.Binding</a> — <a href="../conformance/lib/Conformance/Story/Binding.hs" data-api="source">source</a>
-- <a href="../conformance/lib/Conformance/Story/Identity.hs" data-api="module">Conformance.Story.Identity</a> — <a href="../conformance/lib/Conformance/Story/Identity.hs" data-api="source">source</a>
-- <a href="../conformance/lib/Conformance/Story/Live.hs" data-api="module">Conformance.Story.Live</a> — <a href="../conformance/lib/Conformance/Story/Live.hs" data-api="source">source</a>
-- <a href="../conformance/lib/Conformance/Story/Specification.hs" data-api="module">Conformance.Story.Specification</a> — <a href="../conformance/lib/Conformance/Story/Specification.hs" data-api="source">source</a>
 
 ## How the reference stays honest
 
@@ -138,14 +68,9 @@ off-chain registry library's, before the ordinary release checks run.
 
 ## What the reference does not claim
 
-This reference covers the Conformance library only. The live runner that
-executes rows against a devnet is an executable, not a library module:
-its application modules — the run control, the row runners, the wallet,
-the cage and the observation code — are outside this reference, and the
-evidence they produce is the published
-[consumer conformance](consumer-conformance.md) record, not an API claim.
-Nothing on this page is a publication or release claim — the reference
-ships with the candidate site and its future archives, and no version is
-tagged or published by existing here. The behavioral evidence for the
-library lives in the check commands the documentation records, not in the
-existence of these pages.
+API documentation does not establish product conformance. The seven
+application-held comparison requirements remain uncovered in
+[the consumer record](consumer-conformance.md) and
+[the generated evidence page](conformance-evidence.md). The appendix tests
+check the reader; development-network journeys are a separate evidence
+boundary and do not establish model agreement.

@@ -5,20 +5,19 @@ Module      : Conformance.Replay
 Description : What a traced replay of a live refusal admits as its reason
 License     : Apache-2.0
 
-A live phase-2 refusal carries no reason: the deployed validators are built
-without traces. The runner replays the refused transaction's failing script
-twice on the arguments the ledger built for it — the deployed bytes under the
-transaction's declared units, then the traced bytes of the same source with
-the same parameters under the protocol maximum — and this module decides what
-those two runs establish.
+These pure helpers classify replay data for a phase-2 refusal, which carries
+no observed reason by itself. Callers supply two runs of the failing script:
+the deployed bytes under the transaction's declared units, and traced bytes
+of the same source with the same parameters under the protocol maximum.
+This module decides what those two supplied runs establish.
 
 A reason is admitted only when both runs fail as a validator and the traced
 run leaves exactly one user-defined trace; that line, verbatim, is the reason.
 Every other result is an unobserved reason with its cause, and every cause is
 its own value. A reason is compared with the model's only once admitted.
 
-Pure: the runs arrive as data. Capturing and evaluating belong to the
-runner's replay module, @Conformance.Run.Replay@.
+Pure: the runs arrive as data. Capturing and evaluating those runs is
+outside this module.
 -}
 module Conformance.Replay
     ( -- * Runs

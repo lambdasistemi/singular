@@ -1,115 +1,50 @@
 {-# LANGUAGE LambdaCase #-}
 
-{- |
-Module      : Conformance.Receipt
-Description : Run receipts: the only way a row becomes executed
-License     : Apache-2.0
-
-A receipt is written by a @run@ that actually executed a row,
-recording the row id, the outcome, the transaction ids the chain
-accepted or the refusal attribution, the measured execution units
-and size, the base commit, and the node and blueprint identities.
-@list@ prints a row as executed iff a receipt for it exists and its
-base matches the current tree; otherwise it prints the declared
-plan. Receipts live under the run's own output directory — never in
-the tracked tree — and @list@ takes the directory as @--receipts@
-or @CONFORMANCE_RECEIPTS@, defaulting to none.
-
-Two venues need no node. blueprint-encoding-round-trip checks Haskell encodings against the
-compiled blueprint's declared schemas read at run time
-(@blueprint-check@); script-parameter-application checks parameter application in Haskell
-(@param-check@). Both record @mem@/@cpu@ zero — no script executed
-— and @txSize@ the measured serialized bytes, with no transactions.
-Every other accepted row is a @node-submit@ observation with
-transactions and units from the running node.
-
-One shape here is owned elsewhere and re-exported: the asset-movement
-form of edge evidence — a policy, a name and a quantity with their JSON
-encoding — lives in @Conformance.Evidence.Asset@ and is re-exported by
-this module unchanged, so the public import path a caller already uses
-does not move.
--}
+-- | Validated run receipts are the only source of execution credit.
 module Conformance.Receipt
     ( Outcome (..)
     , Verdict (..)
-    , UnmetRuling (..)
-    , unmetRuling
-    , unmetReading
     , RefusalInfo (..)
-    , ReplayEvidence (..)
-    , ReplayCorrespondence (..)
-    , stepReplay
-    , storyCorrespondence
-    , ConstructorStanding (..)
-    , ConstructorEvidence (..)
-    , PartialInfo (..)
-    , DerivationOutcome (..)
-    , AssetEntry (..)
-    , DerivationEvidence (..)
-    , derivationMatches
     , Receipt (..)
-    , declaredConstructors
-    , derivationVenue
     , maxReceiptBytes
-    , maxLiveStepReasonChars
     , checkReceiptSize
     , loadReceipts
     , writeReceiptFile
     , currentBase
     ) where
 
-import Conformance.Edge.Programs (programFor)
-import Conformance.Evidence.Asset (AssetEntry (..))
-import Conformance.NodeRejection (boundedNodeReason)
 import Conformance.Replay
     ( ReplayCorrespondence (..)
     , ReplayEvidence (..)
     , causeName
     )
-import Conformance.RowNames (canonicalRowName)
-import Conformance.Story.Live
-    ( BatchTamper (..)
-    , Edge (..)
-    , RefundTamper (..)
-    , Tamper (..)
-    , batchTamperName
-    , edgeName
-    , refundTamperName
-    , tamperName
-    )
 import Control.Exception (ErrorCall (..), throwIO)
-
+import Control.Monad (forM_, unless, when)
 import Data.Aeson
     ( FromJSON (..)
-    , Result (..)
     , ToJSON (..)
     , Value (..)
     , eitherDecode
     , encode
-    , fromJSON
     , object
     , withObject
     , withText
-    , (.!=)
     , (.:)
     , (.:?)
     , (.=)
     )
-import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KM
 import Data.ByteString.Lazy qualified as BSL
-import Data.List (isPrefixOf, isSuffixOf, sort)
+import Data.List (isPrefixOf, isSuffixOf, nub, sort)
 import Data.Maybe (fromMaybe, isJust, isNothing)
 import Data.Text (Text)
 import Data.Text qualified as T
-import Data.Vector qualified as Vector
 import System.Directory (doesDirectoryExist, listDirectory)
 import System.Exit (ExitCode (..))
 import System.FilePath ((</>))
 import System.IO (hPutStrLn, stderr)
 import System.Process (readProcessWithExitCode)
 
--- | A row's observed outcome on the ledger.
 data Outcome
     = Accepted
     | Refused
@@ -174,53 +109,13 @@ instance ToJSON RefusalInfo where
             , "replay" .= refusalReplay r
             ]
 
-{- | How a completed row stands against the behavioral models. The
-chain outcome ('Outcome') is a fact; the verdict compares it with
-what the models require. Q-002 (story 2, escalated to the user)
-decides which model is the behavioral authority where Singular's
-Lean and the consumer's theorems disagree; a row whose observation
-contradicts the consumer's theorem while Singular's Lean permits
-it is 'HeldQ002' — recorded, published, and never read as a pass:
-the run exits non-zero while any row is held.
--}
 data Verdict
-    = {- | the observation is what the behavioral model requires (or
-      the model constrains nothing here)
-      -}
-      AgreesWithModel
-    | {- | Singular's Lean and the consumer's theorem disagree and
-      the chain sided with Singular's Lean: held pending the user
-      ruling (Q-002, story 2)
-      -}
-      HeldQ002
-    | -- | the chain contradicts Singular's Lean itself
-      DivergesFromLean
-    | {- | a user ruling resolved the row's question; the observation
-      is retained (as history or defect evidence) under the ruling,
-      never read as a pass and never as conformance credit (A-001:
-      historical-owner-change is resolved-by-ruling, not a fourth unresolved hold)
-      -}
-      ResolvedByRuling
-    | {- | an unmet consumer requirement, kept by operator ruling
-      2026-10-01 ("Keep as unmet requirement"): the consumer's
-      theorem (cardano-keri @R9_reject_needs_rejectable@ at
-      @0e638fad@, @RegistryGoals.lean@ blob @d38e81c0@) requires
-      what the registry deliberately does not do
-      (lambdasistemi/singular#320); alignment is
-      lambdasistemi/cardano-keri#468. Also, by operator ruling 2026-10-02
-      (narrowed #287), a row with no model counterpart: fold-against-superseded-root, surplus-fold-actions and wrong-redeemer-constructor-index,
-      whose follow-ups are lambdasistemi/singular#346, #345 and #347.
-      Recorded, published, never read as a pass: the run exits non-zero
-      while any row is unmet.
-      -}
-      UnmetByRuling
-    | {- | the row executed its available legs but named constructors
-      stay unexercised, enumerated in 'receiptPartial' (E18 §3:
-      explicit named residual, never green). A partial row is not
-      fulfilled conformance: the session ends partial and the
-      inventory overlay renders it partial, never executed.
-      -}
-      Partial
+    = AgreesWithModel
+    | HeldQ002
+    | DivergesFromLean
+    | ResolvedByRuling
+    | UnmetByRuling
+    | Partial
     deriving stock (Show, Eq, Enum, Bounded)
 
 instance FromJSON Verdict where
@@ -241,190 +136,6 @@ instance ToJSON Verdict where
     toJSON UnmetByRuling = toJSON ("unmet-by-ruling" :: Text)
     toJSON Partial = toJSON ("partial" :: Text)
 
-{- | Per-constructor standing inside a partial row's receipt (E18
-§3/§4, NOTE-052): every constructor the row names is accounted —
-exercised accepts with transaction evidence, named residuals with
-reason and limit, pre-existing gaps with their gap evidence. No
-general framework: the declared constructor set per row is fixed
-below and the loader requires it exactly. StandingRefused exists
-for E18's future refusal witnesses; this bounded schema admits
-none — any refused entry fails closed (NOTE-055).
--}
-data ConstructorStanding
-    = StandingAccepted
-    | StandingRefused
-    | StandingResidual
-    | StandingGap
-    deriving stock (Show, Eq)
-
-instance FromJSON ConstructorStanding where
-    parseJSON = withText "ConstructorStanding" $ \t -> case t of
-        "accepted" -> pure StandingAccepted
-        "refused" -> pure StandingRefused
-        "residual" -> pure StandingResidual
-        "gap" -> pure StandingGap
-        _ -> fail ("unknown constructor standing: " <> T.unpack t)
-
-instance ToJSON ConstructorStanding where
-    toJSON StandingAccepted = toJSON ("accepted" :: Text)
-    toJSON StandingRefused = toJSON ("refused" :: Text)
-    toJSON StandingResidual = toJSON ("residual" :: Text)
-    toJSON StandingGap = toJSON ("gap" :: Text)
-
-data ConstructorEvidence = ConstructorEvidence
-    { ceConstructor :: !Text
-    , ceIndex :: !Integer
-    , ceStanding :: !ConstructorStanding
-    , ceEvidence :: !Text
-    }
-    deriving stock (Show, Eq)
-
-instance FromJSON ConstructorEvidence where
-    parseJSON = withObject "ConstructorEvidence" $ \o ->
-        ConstructorEvidence
-            <$> o .: "constructor"
-            <*> o .: "index"
-            <*> o .: "standing"
-            <*> o .: "evidence"
-
-instance ToJSON ConstructorEvidence where
-    toJSON c =
-        object
-            [ "constructor" .= ceConstructor c
-            , "index" .= ceIndex c
-            , "standing" .= ceStanding c
-            , "evidence" .= ceEvidence c
-            ]
-
-newtype PartialInfo = PartialInfo
-    { partialConstructors :: [ConstructorEvidence]
-    }
-    deriving stock (Show, Eq)
-
-instance FromJSON PartialInfo where
-    parseJSON = withObject "PartialInfo" $ \o ->
-        PartialInfo <$> o .: "constructors"
-
-instance ToJSON PartialInfo where
-    toJSON p =
-        object ["constructors" .= partialConstructors p]
-
-{- | The complete declared constructor set per partial-capable row
-(constructor name, wire index). The loader requires EVERY receipt
-for these rows to carry exactly this accounting: a receipt written
-before the schema has no accounting and resolves unknown or
-incomplete — never covered. Silence must not mean success.
-Per-constructor data determines full/partial truth, not the
-caller's verdict: green requires every entry accepted-or-refused;
-any residual or gap forces partial.
--}
-declaredConstructors :: Text -> Maybe [(Text, Integer)]
-declaredConstructors "update-redeemer-constructor-witnesses" =
-    Just
-        [ ("Contribute", 1)
-        , ("Modify", 2)
-        , ("Retract", 3)
-        , ("End", 0)
-        , ("Sweep", 4)
-        ]
-declaredConstructors "request-and-mint-constructor-witnesses" =
-    Just
-        [ ("Update", 0)
-        , ("Rejected", 1)
-        , ("Minting", 0)
-        , ("Burning", 2)
-        , ("Migrating", 1)
-        ]
-declaredConstructors _ = Nothing
-
-{- | Off-chain identity-derivation evidence (applied-validator-identity, E18 venue): the
-deployed address derived through the PRODUCTION path against the
-ACTUAL observed chain address, per validator by declared arity.
-This is explicitly NOT phase-2 ledger evidence — the venue string
-is fixed and loader-enforced so no later reader can mistake it.
--}
-data DerivationOutcome
-    = DerivMatch
-    | DerivDistinct
-    | DerivRefused
-    deriving stock (Show, Eq, Ord)
-
-instance FromJSON DerivationOutcome where
-    parseJSON = withText "DerivationOutcome" $ \t -> case t of
-        "match" -> pure DerivMatch
-        "distinct" -> pure DerivDistinct
-        "refused" -> pure DerivRefused
-        _ -> fail ("unknown derivation outcome: " <> T.unpack t)
-
-instance ToJSON DerivationOutcome where
-    toJSON DerivMatch = toJSON ("match" :: Text)
-    toJSON DerivDistinct = toJSON ("distinct" :: Text)
-    toJSON DerivRefused = toJSON ("refused" :: Text)
-
-data DerivationEvidence = DerivationEvidence
-    { deValidator :: !Text
-    -- ^ e.g. state.state / request.request
-    , deArity :: !Integer
-    -- ^ declared parameter count (0 / 2)
-    , deComputed :: !Text
-    -- ^ address derived through the production path
-    , deReference :: !Text
-    {- ^ comparison side: the observed chain address for match and
-    refused outcomes; the UNAPPLIED address for distinct outcomes
-    (request arity 2) — labelled by the outcome, never conflated.
-    -}
-    , deReferenceSource :: !Text
-    {- ^ provenance of the reference side: chain-observed with the
-    UTxO outref (match/refused outcomes) or pinned-unapplied
-    (distinct outcomes). Loader-enforced per outcome.
-    -}
-    , deOutcome :: !DerivationOutcome
-    , deVenue :: !Text
-    -- ^ always derivationVenue (loader-enforced)
-    }
-    deriving stock (Show, Eq)
-
-instance FromJSON DerivationEvidence where
-    parseJSON = withObject "DerivationEvidence" $ \o ->
-        DerivationEvidence
-            <$> o .: "validator"
-            <*> o .: "arity"
-            <*> o .: "computed"
-            <*> o .: "reference"
-            <*> o .:? "referenceSource" .!= ""
-            <*> o .: "outcome"
-            <*> o .: "venue"
-
-instance ToJSON DerivationEvidence where
-    toJSON d =
-        object
-            [ "validator" .= deValidator d
-            , "arity" .= deArity d
-            , "computed" .= deComputed d
-            , "reference" .= deReference d
-            , "referenceSource" .= deReferenceSource d
-            , "outcome" .= deOutcome d
-            , "venue" .= deVenue d
-            ]
-
-{- | The fixed venue string for derivation evidence. The loader
-rejects any other venue: an identity check must not be readable
-as ledger evidence.
--}
-derivationVenue :: Text
-derivationVenue = "off-chain-identity (not phase-2)"
-
-{- | Evidence that a row executed. Accepted rows name the chain's
-transaction ids and carry measurements; refused rows carry the
-attribution and the submitted transaction's id under @rejected@
-(empty @transactions@: nothing was accepted). @receiptVenue@
-records where the refusal was observed: @node-submit@ (a node
-ruling on a submitted transaction) or @ledger-eval@ (local ledger
-evaluation only — never described as ledger execution).
-@receiptDirty@ records whether the running tree had uncommitted
-changes: a receipt from a dirty tree is honest working evidence,
-but only a clean-tree receipt names a commit that reproduces it.
--}
 data Receipt = Receipt
     { receiptRow :: !Text
     , receiptOutcome :: !Outcome
@@ -440,16 +151,6 @@ data Receipt = Receipt
     , receiptVenue :: !Text
     , receiptRejected :: !(Maybe Text)
     , receiptDirty :: !Bool
-    , receiptPartial :: !(Maybe PartialInfo)
-    {- ^ per-constructor accounting for partial rows (Nothing for
-    every complete row; JSON-compatible: absent on old receipts).
-    -}
-    , receiptDerivation :: !(Maybe [DerivationEvidence])
-    {- ^ off-chain identity-derivation evidence (applied-validator-identity only; Nothing
-    elsewhere; JSON-compatible).
-    -}
-    , receiptSteps :: !(Maybe [Value])
-    -- ^ generic live steps, each written after model and chain comparison.
     , receiptReplayCorrespondence :: !(Maybe ReplayCorrespondence)
     {- ^ the traced build every replay reason in the receipt relies on (absent
     on receipts written before it)
@@ -458,8 +159,13 @@ data Receipt = Receipt
     deriving stock (Show, Eq)
 
 instance FromJSON Receipt where
-    parseJSON = withObject "Receipt" $ \o ->
-        Receipt . canonicalRowName
+    parseJSON = withObject "Receipt" $ \o -> do
+        -- The removed runners' evidence forms cannot be silently ignored.
+        forM_ ["steps", "partial", "derivation"] $ \name ->
+            unless
+                (maybe True (== Null) (KM.lookup name o))
+                (fail ("unsupported receipt field: " <> show name))
+        Receipt
             <$> o .: "row"
             <*> o .: "outcome"
             <*> o .: "verdict"
@@ -474,9 +180,6 @@ instance FromJSON Receipt where
             <*> o .: "venue"
             <*> o .:? "rejected"
             <*> o .: "dirty"
-            <*> o .:? "partial"
-            <*> o .:? "derivation"
-            <*> o .:? "steps"
             <*> o .:? "replayCorrespondence"
 
 instance ToJSON Receipt where
@@ -496,170 +199,147 @@ instance ToJSON Receipt where
             , "node" .= receiptNode r
             , "blueprint" .= receiptBlueprint r
             , "venue" .= receiptVenue r
-            , "partial" .= receiptPartial r
-            , "derivation" .= receiptDerivation r
-            , "steps" .= receiptSteps r
             , "replayCorrespondence" .= receiptReplayCorrespondence r
             ]
 
-{- | Write one @receipt-<ROW>.json@ under the run's output directory.
-Receipts over 'maxReceiptBytes' fail the run: a receipt nobody
-can open is weak evidence, and a size convention would quietly
-break on a later row.
--}
-writeReceiptFile :: FilePath -> Receipt -> IO ()
-writeReceiptFile dir r = case checkReceiptSize bounded of
-    Left err -> throwIO (ErrorCall err)
-    Right () ->
-        BSL.writeFile
-            (dir </> ("receipt-" <> T.unpack (receiptRow bounded) <> ".json"))
-            (encode bounded)
-  where
-    bounded = r{receiptSteps = fmap (map boundStepReason) (receiptSteps r)}
-    boundStepReason = updateField "chain" $ updateField "refusal" $ updateField "rejection" $ \case
-        String reason -> String (boundedNodeReason maxLiveStepReasonChars reason)
-        other -> other
-    updateField name f value@(Object fields) =
-        case KM.lookup (Key.fromText name) fields of
-            Just existing -> Object (KM.insert (Key.fromText name) (f existing) fields)
-            Nothing -> value
-    updateField _ _ value = value
-
-{- | Receipts stay readable: the insert-occupied-key refusal once embedded the whole
-compiled validator (~30KB of base64) because @show@ on the
-evaluation context prints every script and cost model.
-
-The bound is measured (#287): the largest live receipt, reject-and-retract-refund-controls's, is 12 563
-bytes, and 15 214 with the traced replay of each of its nine failing
-purposes and the correspondence its reasons rely on; 18 432 leaves it a
-fifth of headroom.
--}
+-- | The public receipt bound remains unchanged.
 maxReceiptBytes :: Int
 maxReceiptBytes = 18432
 
-{- | How many observations an accepted agreement accounts for. The model now
-declares eight; the receipts retained on the evidence page were recorded
-under the earlier surface, which also declared the custody of an absent
-token, so those carry nine. A current run reports exactly what the model
-declares, and the hosted rows require eight of their own receipts.
--}
-declaredObservationCounts :: [Int]
-declaredObservationCounts = [8, 9]
+checkReceiptSize :: Receipt -> Either String ()
+checkReceiptSize r
+    | BSL.length (encode r) <= fromIntegral maxReceiptBytes = Right ()
+    | otherwise =
+        Left
+            ( "receipt for row "
+                <> T.unpack (receiptRow r)
+                <> " is "
+                <> show (BSL.length (encode r))
+                <> " bytes, over the "
+                <> show maxReceiptBytes
+                <> " limit"
+            )
 
--- | The tampers that alter the payment an exit owes, as a step record names them.
-paymentTampers :: [Text]
-paymentTampers =
-    map
-        (T.pack . tamperName)
-        [OtherAddress, ShortByOne, OtherReference, StateSpent]
+-- | The caller owns the receipt directory and its lifetime.
+writeReceiptFile :: FilePath -> Receipt -> IO ()
+writeReceiptFile dir r = case checkReceiptSize r of
+    Left problem -> throwIO (ErrorCall problem)
+    Right () ->
+        BSL.writeFile
+            (dir </> ("receipt-" <> T.unpack (receiptRow r) <> ".json"))
+            (encode r)
 
-{- | The tampers only a retraction has: its return bound to another request, and
-a state input spent beside it, or a validity interval outside phase 2.
--}
-retractionTampers :: [Text]
-retractionTampers =
-    map
-        (T.pack . tamperName)
-        [OtherReference, StateSpent, BeforePhase2, AfterPhase2]
-
--- | The requests a retraction is admitted for on chain: insertions and reads.
-retractableEdges :: [Text]
-retractableEdges =
-    map (T.pack . edgeName) [InsertAbsent, InsertActive, WitnessTerminal]
-
--- | Keep live node text readable inside each refusal step.
-maxLiveStepReasonChars :: Int
-maxLiveStepReasonChars = 300
-
-{- | A refused step's chain refusal with the replay of its failing purposes;
-unchanged when the replay recorded none.
--}
-stepReplay :: [ReplayEvidence] -> Value -> Value
-stepReplay [] refusal = refusal
-stepReplay replay (Object fields) =
-    Object (KM.insert "replay" (toJSON replay) fields)
-stepReplay _ refusal = refusal
-
-{- | The correspondence a story receipt carries: the session's, exactly when
-one of its steps carries a replay.
--}
-storyCorrespondence
-    :: Maybe ReplayCorrespondence -> [Value] -> Maybe ReplayCorrespondence
-storyCorrespondence correspondence steps
-    | any carriesReplay steps = correspondence
-    | otherwise = Nothing
-  where
-    carriesReplay step = case jsonField "refusal" =<< jsonField "chain" step of
-        Just (Object refusal) -> case KM.lookup "replay" refusal of
-            Just (Array entries) -> not (Vector.null entries)
-            _ -> False
-        _ -> False
-
-{- | A receipt's replay evidence, complete and agreeing with what the receipt
-claims: a step's @trace@ and an attribution's @branch@ are reasons a replay
-admitted, so either needs the replay that admitted it.
--}
-checkReplay :: FilePath -> Receipt -> Either String Receipt
-checkReplay path receipt = do
-    steps <-
-        traverse
-            stepClaim
-            (zip [0 :: Int ..] (fromMaybe [] (receiptSteps receipt)))
-    let attribution =
-            [ ("refusal", refusalBranch info, refusalReplay info)
-            | Just info <- [receiptRefusal receipt]
-            ]
-        claims = concat steps <> attribution
-    mapM_
-        ( \(place, claim, replay) ->
-            either
-                (\problem -> Left (path <> ": " <> place <> ": " <> problem))
-                Right
-                (replayProblem claim replay)
-        )
-        claims
-    let reasons =
-            [ reason
-            | (_, _, Just entries) <- claims
-            , entry <- entries
-            , Just reason <- [replayReason entry]
-            ]
-    case (reasons, receiptReplayCorrespondence receipt) of
-        ([], _) -> Right receipt
-        (_, Just c)
-            | not
-                ( any
-                    T.null
-                    [ correspondenceSource c
-                    , correspondenceCompiler c
-                    , correspondenceFlags c
-                    , correspondenceDigest c
+-- | Read and validate every receipt; missing directories and duplicate rows fail closed.
+loadReceipts :: FilePath -> IO (Either String [Receipt])
+loadReceipts dir = do
+    exists <- doesDirectoryExist dir
+    if not exists
+        then pure (Left ("receipt directory does not exist: " <> dir))
+        else do
+            names <- listDirectory dir
+            parsed <-
+                mapM
+                    loadOne
+                    [ dir </> n
+                    | n <- sort names
+                    , "receipt-" `isPrefixOf` n
+                    , ".json" `isSuffixOf` n
                     ]
-                ) ->
-                Right receipt
-        _ ->
-            Left
-                (path <> ": replay reasons without the traced build they rely on")
+            pure $ do
+                receipts <- sequence parsed
+                unless
+                    (length (nub (map receiptRow receipts)) == length receipts)
+                    (Left "two receipts for one row")
+                pure receipts
   where
-    stepClaim (i, step) = case jsonField "refusal" =<< jsonField "chain" step of
-        Just (Object refusal) -> do
-            replay <- case KM.lookup "replay" refusal of
-                Nothing -> Right Nothing
-                Just Null -> Right Nothing
-                Just value -> case fromJSON value of
-                    Success entries -> Right (Just entries)
-                    Error err ->
-                        Left
-                            (path <> ": step " <> show i <> ": unreadable replay: " <> err)
-            let claim = case KM.lookup "trace" refusal of
-                    Just (String reason) -> Just reason
-                    _ -> Nothing
-            Right [("step " <> show i, claim, replay)]
-        _ -> Right []
+    loadOne path = do
+        content <- BSL.readFile path
+        pure $ do
+            r <-
+                either
+                    (Left . ((path <> " does not parse: ") <>))
+                    Right
+                    (eitherDecode content)
+            either (Left . ((path <> ": ") <>)) Right (validateReceipt r)
+            pure r
 
-{- | What is wrong with one refusal's replay against the reason the receipt
-claims for it, if anything.
--}
+validateReceipt :: Receipt -> Either String ()
+validateReceipt r = do
+    checkReceiptSize r
+    when
+        (receiptVerdict r == Partial)
+        (Left "partial receipt has no supported constructor accounting")
+    when
+        ( any
+            T.null
+            [receiptRow r, receiptBase r, receiptNode r, receiptBlueprint r]
+        )
+        (Left "receipt has an empty identity")
+    when
+        (receiptDirty r)
+        (Left "receipt was recorded on a dirty tree")
+    case receiptOutcome r of
+        Accepted -> do
+            unless
+                (receiptVenue r == "node-submit")
+                (Left "accepted receipt must use node-submit")
+            when
+                (null (receiptTransactions r) || any T.null (receiptTransactions r))
+                (Left "accepted receipt names no transaction")
+            unless
+                (all (maybe False (>= 0)) [receiptMem r, receiptCpu r, receiptTxSize r])
+                (Left "accepted receipt misses measurements")
+            unless
+                (isNothing (receiptRefusal r) && isNothing (receiptRejected r))
+                (Left "accepted receipt carries a refusal or rejected transaction")
+        Refused -> do
+            unless
+                (null (receiptTransactions r))
+                (Left "refused receipt names accepted transactions")
+            unless
+                ( ( receiptVenue r == "node-submit"
+                        && maybe False (not . T.null) (receiptRejected r)
+                  )
+                    || (receiptVenue r == "ledger-eval" && isNothing (receiptRejected r))
+                )
+                (Left "refused receipt needs a rejected id exactly for node-submit")
+            case receiptRefusal r of
+                Nothing -> Left "refused receipt has no attribution"
+                Just info -> do
+                    unless
+                        (refusalPhase info == "phase-2")
+                        (Left "refusal phase is not phase-2")
+                    when
+                        (null (refusalHashes info) || any T.null (refusalHashes info))
+                        (Left "refusal names no extracted failure hashes")
+                    when
+                        (any T.null [refusalScript info, refusalReason info])
+                        (Left "refusal has an empty script or reason")
+                    unless
+                        ( any isJust [refusalBranch info, refusalLimit info]
+                            && all
+                                (maybe True (not . T.null))
+                                [refusalBranch info, refusalLimit info]
+                        )
+                        (Left "refusal states neither a branch nor its limit")
+                    replayProblem (refusalBranch info) (refusalReplay info)
+                    let reasons =
+                            [ reason
+                            | entry <- fromMaybe [] (refusalReplay info)
+                            , Just reason <- [replayReason entry]
+                            ]
+                    case (reasons, receiptReplayCorrespondence r) of
+                        ([], _) -> Right ()
+                        (_, Just c)
+                            | not . any T.null $
+                                [ correspondenceSource c
+                                , correspondenceCompiler c
+                                , correspondenceFlags c
+                                , correspondenceDigest c
+                                ] ->
+                                Right ()
+                        _ -> Left "replay reasons without the traced build they rely on"
+
 replayProblem
     :: Maybe Text -> Maybe [ReplayEvidence] -> Either String ()
 replayProblem claim = \case
@@ -698,737 +378,6 @@ replayProblem claim = \case
                 | cause `elem` map causeName [minBound .. maxBound] -> Right ()
                 | otherwise -> Left ("replay names an unknown cause " <> show cause)
 
-jsonField :: Key.Key -> Value -> Maybe Value
-jsonField name = \case
-    Object fields -> KM.lookup name fields
-    _ -> Nothing
-
-{- | Validate the generic evidence body independently of the runner. The
-runner computes its values; the loader refuses missing comparisons and
-fabricated agreement shapes before a book can count the receipt.
--}
-stepsComplete
-    :: FilePath -> Receipt -> [Value] -> Either String Receipt
-stepsComplete path receipt steps
-    | null steps = Left (path <> ": live receipt has no steps")
-    | otherwise = do
-        mapM_ checkStep steps
-        -- A lawful receipt may not record a disagreement: agreement is what its
-        -- verdict claims. An unmet row records its divergences; a lawful row meeting
-        -- one fails here, so recording instead of throwing in the runner does not
-        -- weaken the suite (decision B tripwire: the day the chain refuses the
-        -- untampered in-window reject, the unmet row's expected divergences stop
-        -- matching and the lawful rows still require agreement).
-        case receiptVerdict receipt of
-            AgreesWithModel
-                | not (all isAgrees steps) ->
-                    Left
-                        ( path
-                            <> ": lawful receipt records a disagreement with the model"
-                        )
-            _ -> Right ()
-        let landed =
-                [ txid
-                | step <- steps
-                , Just (String "accepted") <- [at "outcome" =<< at "chain" step]
-                , Just (String txid) <- [at "txid" =<< at "chain" step]
-                ]
-        if landed == receiptTransactions receipt
-            then Right receipt
-            else
-                Left
-                    ( path
-                        <> ": accepted step transactions differ from the receipt envelope"
-                    )
-  where
-    at name (Object fields) = KM.lookup name fields
-    at _ _ = Nothing
-    isAgrees step = at "comparison" step == Just (String "agrees")
-    failure reason = Left (path <> ": invalid live step: " <> reason)
-    checkStep step = case at "batch" step of
-        Just _ -> batchRecordProblem path step
-        Nothing -> checkEdgeStep step
-    checkEdgeStep step = do
-        edge <- case (at "registry" step, at "edge" step, at "request" step) of
-            (Just (Number _), Just (String edge), Just (Object _))
-                | edge `elem` map (T.pack . edgeName) [minBound .. maxBound] ->
-                    Right edge
-            _ -> failure "missing registry, edge or model request"
-        -- A step names the exit its request left by; a receipt written before
-        -- steps carried the field records folds only.
-        exit <- case at "exit" step of
-            Nothing -> Right edge
-            Just (String name)
-                | name `elem` ["reject", "retract"] -> Right name
-                | name == edge -> Right name
-                | name `elem` map (T.pack . edgeName) [minBound .. maxBound] ->
-                    failure "a fold exit names another edge than its request"
-            _ -> failure "unknown exit"
-        let tamper = at "tamper" step
-            model = at "outcome" =<< at "model" step
-            chain = at "outcome" =<< at "chain" step
-            comparison = at "comparison" step
-            -- Where the comparison found the observation to differ. A receipt
-            -- written before steps carried the field reports none.
-            differences = fromMaybe (Array Vector.empty) (at "differences" step)
-            signerDifference =
-                Array
-                    ( Vector.singleton
-                        ( Object
-                            ( KM.fromList
-                                [("observation", String "tx"), ("path", String "signers")]
-                            )
-                        )
-                    )
-            admissionReason
-                | exit == "retract"
-                , edge `notElem` retractableEdges =
-                    Just "withdraw-insert-only"
-                | tamper == Just (String "unsigned") = Just "retract-owner"
-                | tamper
-                    `elem` map (Just . String . T.pack . tamperName) [BeforePhase2, AfterPhase2] =
-                    Just "not-phase2"
-                | otherwise = Nothing
-        case admissionReason of
-            Nothing -> Right ()
-            Just reason -> do
-                if exit == "retract"
-                    && model == Just (String "refused")
-                    && chain == Just (String "refused")
-                    && (at "reason" =<< at "model" step) == Just (String reason)
-                    then Right ()
-                    else
-                        failure
-                            "retraction admission refusal has the wrong exit, outcome or model reason"
-                case (at "requestScript" step, at "refusal" =<< at "chain" step) of
-                    (Just (String marker), Just refusal)
-                        | not (T.null marker)
-                        , Just (Array hashes) <- at "hashes" refusal
-                        , String marker `Vector.elem` hashes
-                        , Just (Array scripts) <- at "scripts" refusal
-                        , String "request" `Vector.elem` scripts ->
-                            Right ()
-                    _ ->
-                        failure
-                            "retraction admission refusal lacks request-script attribution"
-        case (model, chain, comparison) of
-            (Just (String m), Just (String c), Just (String verdict))
-                | m `elem` ["accepted", "refused", "unsupported"]
-                , c `elem` ["accepted", "refused", "unsupported"]
-                , verdict `elem` ["agrees", "disagrees", "unsupported"] ->
-                    Right ()
-            _ -> failure "missing or unknown model, chain or comparison outcome"
-        case chain of
-            Just (String "unsupported") -> case at "reason" =<< at "chain" step of
-                Just (String reason) | not (T.null reason) -> Right ()
-                _ -> failure "unsupported chain outcome has no observed reason"
-            Just (String "refused") -> case at "refusal" =<< at "chain" step of
-                Just (Object refusal) -> case refusalComplete refusal of
-                    Right () -> Right ()
-                    Left reason -> failure reason
-                _ -> failure "refused live step has no node refusal details"
-            _ -> Right ()
-        case (tamper, comparison, model, chain) of
-            (Just Null, Just (String "agrees"), m, c)
-                | m /= c -> failure "untampered agreement changes the outcome class"
-                | differences /= Array Vector.empty ->
-                    failure "untampered agreement reports differences"
-                | otherwise -> Right ()
-            (Just (String name), _, _, _)
-                | name `elem` retractionTampers
-                , exit /= "retract" ->
-                    failure
-                        "only a retraction is bound to its request or refused for what it spends"
-            -- A payment sent elsewhere or short is refused by both sides: the
-            -- ledger by an attributed script, the model for the reason its
-            -- judgement names.
-            ( Just (String name)
-                , Just (String "agrees")
-                , Just (String "refused")
-                , Just (String "refused")
-                )
-                    | name `elem` paymentTampers -> do
-                        case at "hashes" =<< (at "refusal" =<< at "chain" step) of
-                            Just (Array hashes) | not (Vector.null hashes) -> Right ()
-                            _ -> failure "tamper refusal has no attributed script hashes"
-                        case at "reason" =<< at "model" step of
-                            Just (String why) | not (T.null why) -> Right ()
-                            _ -> failure "payment tamper refusal names no model reason"
-            (Just (String name), Just (String "agrees"), _, _)
-                | name `elem` paymentTampers ->
-                    failure
-                        "payment tamper agreement does not have model and chain refusal"
-            -- An extra required signer is accepted by the ledger; its agreement
-            -- is the comparison reporting exactly that signer difference.
-            ( Just (String "extra-signer")
-                , Just (String "agrees")
-                , Just (String "accepted")
-                , Just (String "accepted")
-                )
-                    | differences == signerDifference -> Right ()
-                    | otherwise ->
-                        failure
-                            "extra-signer agreement does not report exactly the signer difference"
-            (Just (String "extra-signer"), Just (String "agrees"), _, _) ->
-                failure
-                    "extra-signer agreement does not have model and chain acceptance"
-            (Just Null, _, _, _) -> Right ()
-            (Just (String name), _, _, _) | name `elem` paymentTampers -> Right ()
-            (Just (String "extra-signer"), _, _, _) -> Right ()
-            (Just (String name), _, _, _)
-                | name
-                    `elem` map (T.pack . tamperName) [Unsigned, BeforePhase2, AfterPhase2] ->
-                    Right ()
-            _ -> failure "unknown tamper"
-        case (at "compared" step, at "unobserved" step) of
-            (Just (Array names), Just (Array _))
-                | comparison == Just (String "agrees")
-                , model == Just (String "accepted")
-                , chain == Just (String "accepted")
-                , Vector.length names `elem` declaredObservationCounts ->
-                    Right ()
-                | Vector.null names -> Right ()
-                | otherwise ->
-                    failure
-                        "accepted agreement does not account for every declared observation"
-            _ -> failure "missing compared or unobserved arrays"
-        case (tamper, model, chain, comparison, at "perturbation" step) of
-            ( Just Null
-                , Just (String "accepted")
-                , Just (String "accepted")
-                , Just (String "agrees")
-                , Just (Object evidence)
-                )
-                    | Just (Number count) <- KM.lookup "refused" evidence
-                    , count > 0
-                    , Just (Object _) <- KM.lookup "byObservation" evidence
-                    , Just (Array _) <- KM.lookup "exempt" evidence ->
-                        Right ()
-            ( Just Null
-                , Just (String "accepted")
-                , Just (String "accepted")
-                , Just (String "agrees")
-                , _
-                ) -> failure "accepted agreement has no perturbation evidence"
-            (_, _, _, _, Just Null) -> Right ()
-            _ -> failure "unexpected perturbation evidence"
-    refusalComplete refusal = case ( KM.lookup "rejection" refusal
-                                   , KM.lookup "measured" refusal
-                                   , KM.lookup "declared" refusal
-                                   , KM.lookup "budgetPurposes" refusal
-                                   , KM.lookup "kind" refusal
-                                   ) of
-        ( Just (String reason)
-            , Just (Object measured)
-            , Just (Object declared)
-            , Just (Array budgetNames)
-            , Just (String kind)
-            )
-                | T.null reason -> Left "refusal has an empty node reason"
-                | T.length reason > maxLiveStepReasonChars ->
-                    Left "refusal node reason exceeds its bound"
-                | null (KM.toList measured) ->
-                    Left "refusal has no per-purpose measurements"
-                | not (all validMeasurement (KM.elems measured)) ->
-                    Left "refusal has an invalid per-purpose measurement"
-                | not (all validDeclaredUnits (KM.elems declared)) ->
-                    Left "refusal has invalid per-purpose declarations"
-                | sort (KM.keys measured) /= sort (KM.keys declared) ->
-                    Left "refusal measurements and declarations name different purposes"
-                | otherwise -> do
-                    names <- traverse budgetName (Vector.toList budgetNames)
-                    let actual = sort names
-                        expectedKind = if null actual then "validator" else "budget"
-                    if any (`notElem` KM.keys measured) actual
-                        then Left "budget refusal names an unmeasured purpose"
-                        else
-                            if not (all (validSource measured) (KM.toList declared))
-                                then Left "failed evaluation is not marked probe-allowance"
-                                else
-                                    if kind /= expectedKind
-                                        then
-                                            Left "refusal kind does not match its per-purpose unit comparisons"
-                                        else Right ()
-        _ ->
-            Left
-                "refused live step lacks bounded reason, per-purpose measurements, declarations or budget names"
-    budgetName (String name)
-        | not (T.null name) = Right (Key.fromText name)
-    budgetName _ = Left "budget refusal names an invalid script purpose"
-    validMeasurement (Object fields) =
-        isJust (unitPair (Object fields))
-            || case KM.lookup "error" fields of
-                Just (String message) -> not (T.null message)
-                _ -> False
-    validMeasurement _ = False
-    validDeclaredUnits value = isJust (unitPair value)
-    validSource measured (purpose, Object declaration) = case KM.lookup purpose measured of
-        Just (Object result)
-            | KM.member "error" result ->
-                KM.lookup "source" declaration == Just (String "probe-allowance")
-        _ -> True
-    validSource _ _ = False
-    unitPair (Object fields) = case (KM.lookup "mem" fields, KM.lookup "cpu" fields) of
-        (Just (Number mem), Just (Number cpu)) -> Just (mem, cpu)
-        _ -> Nothing
-    unitPair _ = Nothing
-
-{- | The size bound, purely: oversized receipts are an error naming
-the row and the byte count.
--}
-checkReceiptSize :: Receipt -> Either String ()
-checkReceiptSize r
-    | BSL.length (encode r) <= fromIntegral maxReceiptBytes = Right ()
-    | otherwise =
-        Left
-            ( "receipt for row "
-                <> T.unpack (receiptRow r)
-                <> " is "
-                <> show (BSL.length (encode r))
-                <> " bytes, over the "
-                <> show maxReceiptBytes
-                <> " limit"
-            )
-
-{- | The derivation decision (NOTE-067): compare the produced
-address against the reference and return both. Pure so the
-wiring is unit-testable and mutation-provable: replacing the
-comparison with True must make an observed-negative fail.
--}
-derivationMatches :: (Eq a) => a -> a -> (a, Bool)
-derivationMatches actual expected = (actual, actual == expected)
-
-{- | Reference provenance labelling (NOTE-086): match and refused
-outcomes must cite chain observation (with outref); distinct
-outcomes must cite pinned-unapplied blueprint identity.
--}
-mislabelled :: DerivationEvidence -> Bool
-mislabelled d = case deOutcome d of
-    DerivMatch -> not (chainObservedWithOutref (deReferenceSource d))
-    DerivRefused -> not (chainObservedWithOutref (deReferenceSource d))
-    DerivDistinct -> deReferenceSource d /= "pinned-unapplied"
-
-{- | chain-observed with a nonempty actual outref suffix (NOTE-089:
-bare chain-observed with no identity proves no observation).
--}
-chainObservedWithOutref :: Text -> Bool
-chainObservedWithOutref t = case T.stripPrefix "chain-observed " t of
-    Just rest -> not (T.null (T.strip rest))
-    Nothing -> False
-
-{- | applied-validator-identity completeness: exactly the state match, the request
-distinct and the corrupted refusal — a missing negative is an
-incomplete receipt, never a pass.
--}
-completeAppliedValidatorIdentity :: [DerivationEvidence] -> Bool
-completeAppliedValidatorIdentity ds =
-    sort [(deValidator d, deOutcome d) | d <- ds]
-        == sort
-            [ ("request.request", DerivDistinct)
-            , ("state.state", DerivMatch)
-            , ("state.state", DerivRefused)
-            ]
-
-{- | Load every @receipt-*.json@ in a directory. A malformed receipt,
-an accepted row with no transactions or measurements, a refused row
-with no attribution, a partial verdict without its constructor
-accounting, a success verdict carrying partial constructors, or
-two receipts for one row is an error naming the file: evidence
-that does not parse is not evidence, and a guard that cannot fail
-is not a guard.
--}
-loadReceipts :: FilePath -> IO (Either String [Receipt])
-loadReceipts dir = do
-    exists <- doesDirectoryExist dir
-    if not exists
-        then
-            pure
-                ( Left
-                    ("receipt directory does not exist: " <> dir)
-                )
-        else do
-            names <- listDirectory dir
-            let files =
-                    [ dir </> n
-                    | n <- names
-                    , "receipt-" `isPrefixOf` n
-                    , ".json" `isSuffixOf` n
-                    ]
-            parsed <- mapM loadOne files
-            pure (sequence parsed >>= checkReceipts)
-  where
-    loadOne path = do
-        content <- BSL.readFile path
-        pure $ case eitherDecode content of
-            Left err ->
-                Left (path <> " does not parse: " <> err)
-            Right r ->
-                checkOne path r
-                    >>= checkPartial path
-                    >>= checkDerivation path
-                    >>= checkEdge path
-                    >>= checkReplay path
-    checkDerivation path r = case receiptDerivation r of
-        Nothing ->
-            if receiptRow r == "applied-validator-identity"
-                then
-                    Left
-                        ( path
-                            <> ": applied-validator-identity receipt names no derivation evidence — unknown or incomplete, never covered"
-                        )
-                else Right r
-        Just ds
-            | receiptRow r /= "applied-validator-identity" ->
-                Left
-                    ( path
-                        <> ": only applied-validator-identity carries derivation evidence"
-                    )
-            | not (completeAppliedValidatorIdentity ds) ->
-                Left
-                    ( path
-                        <> ": applied-validator-identity derivation evidence is incomplete — want state match, request distinct and corrupted refused"
-                    )
-            | null ds ->
-                Left (path <> ": derivation evidence is empty")
-            | any (T.null . deValidator) ds
-                || any (T.null . deComputed) ds
-                || any (T.null . deReference) ds ->
-                Left
-                    (path <> ": derivation evidence names empty validator or address")
-            | any ((/= derivationVenue) . deVenue) ds ->
-                Left
-                    ( path
-                        <> ": derivation venue must be "
-                        <> T.unpack derivationVenue
-                    )
-            | any (T.null . deReferenceSource) ds ->
-                Left (path <> ": derivation evidence names no reference provenance")
-            | any mislabelled ds ->
-                Left
-                    ( path
-                        <> ": derivation reference provenance mislabelled (match/refused want chain-observed plus outref, distinct wants pinned-unapplied)"
-                    )
-            | otherwise -> Right r
-    checkEdge path r = case (receiptRow r, receiptSteps r) of
-        ("retract-outside-window", Just steps) -> do
-            checked <- stepsComplete path r steps
-            let field name (Object fields) = KM.lookup name fields
-                field _ _ = Nothing
-                outcome name step = field "outcome" =<< field name step
-            if map (field "tamper") steps
-                == map Just [String "before-phase-2", Null, String "after-phase-2"]
-                && all ((== Just (String "retract")) . field "exit") steps
-                && all ((== Just (String "agrees")) . field "comparison") steps
-                && all
-                    ( \name ->
-                        map (outcome name) steps
-                            == map (Just . String) ["refused", "accepted", "refused"]
-                    )
-                    ["model", "chain"]
-                then Right checked
-                else
-                    Left
-                        (path <> ": retraction window requires before, accepted control, after")
-        (row, Just steps)
-            | isNothing (programFor (T.unpack row))
-            , row `notElem` historicalStepRows ->
-                Left (path <> ": only a program's receipt carries steps")
-            -- #287: an attribution receipt carrying, beside its own outcome,
-            -- the batch comparisons none of which landed, as the conformance
-            -- session wrote them before its rows were programs.
-            | all isBatchStep steps
-            , not (any landed steps) ->
-                batchSteps path r steps
-            -- Every program's receipt: one record per compared request or batch.
-            | otherwise -> stepsComplete path r steps
-        ("register-active-key", Nothing) -> Left (path <> ": registration names no live steps")
-        ("retire-active-key", Nothing) -> Left (path <> ": retirement names no live steps")
-        ("permanent-retire-active-key", Nothing) -> Left (path <> ": retirement names no live steps")
-        ("retract-outside-window", Nothing) -> Left (path <> ": retraction window names no live steps")
-        ("reject-and-retract-refund-controls", Nothing) -> Left (path <> ": exit chapter names no live steps")
-        ("reject-inside-processing-and-retraction-windows", Nothing) -> Left (path <> ": early rejection names no live steps")
-        ("sequence", Nothing) -> Left (path <> ": sequence names no live steps")
-        (_, Nothing) -> Right r
-    -- Archived programs remain readable with the same structural evidence
-    -- checks. This does not restore a runner: effectiveState separately binds
-    -- every receipt to its recorded code revision before giving it credit.
-    historicalStepRows =
-        [ "update-existing-key"
-        , "delete-existing-key"
-        , "reinsert-deleted-key"
-        , "retire-active-key"
-        ]
-    isBatchStep step = case step of
-        Object fields -> KM.member "batch" fields
-        _ -> False
-    landed step = case step of
-        Object fields
-            | Just (Object chain) <- KM.lookup "chain" fields ->
-                KM.lookup "outcome" chain == Just (String "accepted")
-        _ -> False
-
-    checkPartial path r = case (receiptVerdict r, receiptPartial r) of
-        (_, Nothing) -> case declaredConstructors (receiptRow r) of
-            Nothing -> Right r
-            Just _ ->
-                Left
-                    ( path
-                        <> ": row "
-                        <> T.unpack (receiptRow r)
-                        <> " names no constructor accounting — unknown or incomplete, never covered"
-                    )
-        (Partial, Just pinfo) -> checkPartialConstructors path r pinfo
-        (v, Just _) ->
-            Left
-                ( path
-                    <> ": receipt claims "
-                    <> show v
-                    <> " while carrying partial constructors"
-                )
-    checkPartialConstructors path r pinfo =
-        case declaredConstructors (receiptRow r) of
-            Nothing ->
-                Left
-                    ( path
-                        <> ": partial row "
-                        <> T.unpack (receiptRow r)
-                        <> " declares no constructor set"
-                    )
-            Just declared
-                | sortPairs have /= sortPairs declared ->
-                    Left
-                        ( path
-                            <> ": partial row "
-                            <> T.unpack (receiptRow r)
-                            <> " accounts "
-                            <> show have
-                            <> ", declared "
-                            <> show declared
-                        )
-                | any refusedStanding ces ->
-                    Left
-                        ( path
-                            <> ": partial row "
-                            <> T.unpack (receiptRow r)
-                            <> " carries a refused constructor witness — this bounded schema admits none (NOTE-055 fail-closed; no production row exercises a refusal witness)"
-                        )
-                | null residuals ->
-                    Left
-                        ( path
-                            <> ": partial row "
-                            <> T.unpack (receiptRow r)
-                            <> " verdict partial lists no residual or gap constructor"
-                        )
-                | not (all boundAccepts accepts) ->
-                    Left
-                        ( path
-                            <> ": partial row "
-                            <> T.unpack (receiptRow r)
-                            <> " names accepted-constructor evidence outside its transactions"
-                        )
-                | any (T.null . ceEvidence) ces ->
-                    Left
-                        ( path
-                            <> ": partial row "
-                            <> T.unpack (receiptRow r)
-                            <> " carries empty constructor evidence"
-                        )
-                | otherwise -> Right r
-      where
-        ces = partialConstructors pinfo
-        have = [(ceConstructor c, ceIndex c) | c <- ces]
-        sortPairs = sort
-        residuals =
-            [ c
-            | c <- ces
-            , ceStanding c == StandingResidual || ceStanding c == StandingGap
-            ]
-        refusedStanding c = ceStanding c == StandingRefused
-        accepts = [c | c <- ces, ceStanding c == StandingAccepted]
-        boundAccepts c = ceEvidence c `elem` receiptTransactions r
-    checkOne path r = case receiptOutcome r of
-        Accepted -> checkAccepted path r
-        Refused
-            | null (receiptTransactions r)
-            , Just info <- receiptRefusal r
-            , receiptVenue r == "node-submit"
-            , Just _ <- receiptRejected r ->
-                checkRefused path r info
-            | null (receiptTransactions r)
-            , Just info <- receiptRefusal r
-            , receiptVenue r == "ledger-eval"
-            , Nothing <- receiptRejected r ->
-                checkRefused path r info
-            | otherwise ->
-                Left
-                    ( path
-                        <> ": refused row "
-                        <> T.unpack (receiptRow r)
-                        <> " must carry a refusal, no transactions, and "
-                        <> "a rejected id exactly for node-submit"
-                    )
-    -- Structural refusal fields (NOTE-071): observed phase,
-    -- extracted hashes, and an explicit branch-or-limit. Legacy
-    -- absence cannot claim the new attributed observation.
-    checkRefused path r info = checkPhase
-      where
-        rowName = T.unpack (receiptRow r)
-        checkPhase =
-            if refusalPhase info /= "phase-2"
-                then
-                    Left (path <> ": refused row " <> rowName <> " phase is not phase-2")
-                else checkHashes
-        checkHashes
-            | null (refusalHashes info) =
-                Left
-                    ( path
-                        <> ": refused row "
-                        <> rowName
-                        <> " names no extracted failure hashes"
-                    )
-            | any T.null (refusalHashes info) =
-                Left
-                    (path <> ": refused row " <> rowName <> " names an empty failure hash")
-            | otherwise = checkBranch
-        checkBranch
-            | isNothing (refusalBranch info) && isNothing (refusalLimit info) =
-                Left
-                    ( path
-                        <> ": refused row "
-                        <> rowName
-                        <> " states neither a named branch nor its limit"
-                    )
-            | any emptyJust [refusalBranch info, refusalLimit info] =
-                Left
-                    ( path
-                        <> ": refused row "
-                        <> rowName
-                        <> " carries an empty branch or limit"
-                    )
-            | otherwise = Right r
-        emptyJust (Just t) = T.null t
-        emptyJust Nothing = False
-    checkAccepted p x
-        | receiptRow x == "applied-validator-identity"
-        , receiptVenue x == derivationVenue =
-            checkAppliedValidatorIdentityAccepted p x
-        | receiptRow x == "applied-validator-identity" =
-            Left
-                ( p
-                    <> ": applied-validator-identity venue must be "
-                    <> T.unpack derivationVenue
-                )
-        | receiptVenue x == "node-submit" = checkNodeAccepted p x
-        | receiptVenue x == "blueprint-check"
-        , receiptRow x == "blueprint-encoding-round-trip" =
-            checkLocalAccepted p x
-        | receiptVenue x == "param-check"
-        , receiptRow x == "script-parameter-application" =
-            checkLocalAccepted p x
-        | otherwise =
-            Left
-                ( p
-                    <> ": accepted row "
-                    <> T.unpack (receiptRow x)
-                    <> " has venue "
-                    <> T.unpack (receiptVenue x)
-                    <> ", want node-submit or its own local venue"
-                )
-    checkAppliedValidatorIdentityAccepted p x
-        | null (receiptTransactions x) =
-            Left
-                ( p
-                    <> ": applied-validator-identity row names no provenance boot transaction"
-                )
-        | any isNothing [receiptMem x, receiptCpu x, receiptTxSize x] =
-            Left
-                ( p
-                    <> ": applied-validator-identity row misses measurements"
-                )
-        | isJust (receiptRejected x) =
-            Left
-                ( p
-                    <> ": applied-validator-identity row must not name a rejected transaction"
-                )
-        | isJust (receiptRefusal x) =
-            Left
-                ( p
-                    <> ": applied-validator-identity row must not carry a refusal"
-                )
-        | otherwise = Right x
-    checkNodeAccepted p x
-        | null (receiptTransactions x) =
-            Left
-                ( p
-                    <> ": accepted row "
-                    <> T.unpack (receiptRow x)
-                    <> " names no transaction"
-                )
-        | any isNothing [receiptMem x, receiptCpu x, receiptTxSize x] =
-            Left
-                ( p
-                    <> ": accepted row "
-                    <> T.unpack (receiptRow x)
-                    <> " misses measurements"
-                )
-        | isJust (receiptRejected x) =
-            Left
-                ( p
-                    <> ": accepted row "
-                    <> T.unpack (receiptRow x)
-                    <> " must not name a rejected transaction"
-                )
-        | otherwise = Right x
-    checkLocalAccepted p x
-        | not (null (receiptTransactions x)) =
-            Left
-                ( p
-                    <> ": accepted row "
-                    <> T.unpack (receiptRow x)
-                    <> " is local and must name no transaction"
-                )
-        | receiptMem x /= Just 0 || receiptCpu x /= Just 0 =
-            Left
-                ( p
-                    <> ": accepted row "
-                    <> T.unpack (receiptRow x)
-                    <> " is local and must record zero units"
-                )
-        | Nothing <- receiptTxSize x =
-            Left
-                ( p
-                    <> ": accepted row "
-                    <> T.unpack (receiptRow x)
-                    <> " misses measurements"
-                )
-        | isJust (receiptRejected x) =
-            Left
-                ( p
-                    <> ": accepted row "
-                    <> T.unpack (receiptRow x)
-                    <> " must not name a rejected transaction"
-                )
-        | isJust (receiptRefusal x) =
-            Left
-                ( p
-                    <> ": accepted row "
-                    <> T.unpack (receiptRow x)
-                    <> " must not carry a refusal"
-                )
-        | otherwise = Right x
-    checkReceipts rs
-        | length rows /= length (nub rows) =
-            Left "two receipts for one row"
-        | otherwise = Right rs
-      where
-        rows = map receiptRow rs
-        nub [] = []
-        nub (x : xs) = x : nub (filter (/= x) xs)
-
-{- | The current tree's base commit. 'Nothing' when git cannot say
-(no checkout, no git): receipts then match nothing and @list@
-prints the declared plan with a warning.
--}
 currentBase :: IO (Maybe Text)
 currentBase = do
     (code, out, _) <-
@@ -1442,141 +391,3 @@ currentBase = do
                 "conformance list: git base unknown; \
                 \printing the declared plan"
             pure Nothing
-
-{- | A batch record, as the runner writes one for a batch submitted in one
-transaction and asked of the model's matching batch question: its registry, the
-question and the requests asked, a known tamper or none, the model's and the
-chain's outcomes and their comparison. A refusal names the scripts its hashes
-are; an agreement has one outcome on both sides, and a tampered batch agrees
-only by both refusing.
--}
-batchRecordProblem :: FilePath -> Value -> Either String ()
-batchRecordProblem path step = do
-    case (at "registry", at "batch", at "requests") of
-        (Just (Number _), Just (String name), Just (Array _))
-            | name `elem` ["foldBatch", "rejectBatch"] -> Right ()
-        _ -> failure "missing registry, batch question or requests"
-    case at "tamper" of
-        Nothing -> Right ()
-        Just Null -> Right ()
-        Just (String name)
-            | name
-                `elem` ( map (T.pack . batchTamperName) [minBound .. maxBound :: BatchTamper]
-                            <> map
-                                (T.pack . refundTamperName)
-                                [CrossedRefunds, ShortFirstRefund 1, SplitFirstRefund 1]
-                       ) ->
-                Right ()
-        _ -> failure "unknown batch tamper"
-    let model = within "model" "outcome"
-        chain = within "chain" "outcome"
-    case (model, chain, at "comparison") of
-        (Just (String m), Just (String c), Just (String verdict))
-            | m `elem` ["accepted", "refused", "unsupported"]
-            , c `elem` ["accepted", "refused", "unsupported"]
-            , verdict `elem` ["agrees", "disagrees"] ->
-                Right ()
-        _ -> failure "missing or unknown model, chain or comparison outcome"
-    case chain of
-        Just (String "accepted") -> case within "chain" "txid" of
-            Just (String _) -> Right ()
-            _ -> failure "accepted batch names no transaction"
-        Just (String "refused") -> case at "chain" >>= field "refusal" of
-            Just (Object refusal)
-                | Just (Array hashes) <- KM.lookup "hashes" refusal
-                , not (Vector.null hashes) ->
-                    Right ()
-            _ -> failure "refused batch names no refusing script"
-        _ -> Right ()
-    case at "comparison" of
-        Just (String "agrees")
-            | model /= chain -> failure "batch agreement changes the outcome"
-            | at "tamper" `notElem` [Nothing, Just Null]
-            , chain /= Just (String "refused") ->
-                failure
-                    "tampered batch agreement does not have model and chain refusal"
-        _ -> Right ()
-  where
-    at name = field name step
-    within outer inner = at outer >>= field inner
-    field name = \case
-        Object fields -> KM.lookup name fields
-        _ -> Nothing
-    failure reason = Left (path <> ": invalid batch record: " <> reason)
-
--- | A row's batch records beside its attributed refusal: every one valid.
-batchSteps :: FilePath -> Receipt -> [Value] -> Either String Receipt
-batchSteps path receipt steps
-    | null steps = Left (path <> ": batch steps name no batch")
-    | otherwise = do
-        mapM_ (batchRecordProblem path) steps
-        -- A lawful receipt may not record a disagreement, batch or edge.
-        case receiptVerdict receipt of
-            AgreesWithModel
-                | not (all isAgrees steps) ->
-                    Left
-                        ( path
-                            <> ": lawful receipt records a disagreement with the model"
-                        )
-            _ -> Right ()
-        Right receipt
-  where
-    isAgrees step = case step of
-        Object fields -> KM.lookup "comparison" fields == Just (String "agrees")
-        _ -> False
-
-{- | Why a row stands @unmet-by-ruling@: the two meanings the operator's
-rulings give that one verdict, each with the issue that would close it.
--}
-data UnmetRuling
-    = {- | the registry deliberately does not do what the consumer's theorem
-      requires (ruling 2026-10-01); the alignment issue
-      -}
-      ConsumerRequirementUnmet Text
-    | -- | the deployed implementation still follows the superseded rejection
-      SupersededRejection (Maybe UnmetRuling)
-    | -- | the earlier refund-routing consumer requirement remains unresolved
-      RefundRoutingUnresolved
-    | {- | the chain refuses and Lean has no counterpart to compare with
-      (ruling 2026-10-02, "Narrow #287"); the model follow-up
-      -}
-      NoModelCounterpart Text
-    deriving stock (Show, Eq)
-
-{- | The ruling that keeps each unmet row unmet. A row recorded
-@unmet-by-ruling@ that is not listed has no stated meaning, and a reader
-surface refuses to render it.
--}
-unmetRuling :: Text -> Maybe UnmetRuling
-unmetRuling = \case
-    "reject-before-deadline-consumer-requirement" ->
-        Just
-            ( SupersededRejection
-                (Just (ConsumerRequirementUnmet "lambdasistemi/cardano-keri#468"))
-            )
-    "request-value-and-refund-routing" -> Just (SupersededRejection (Just RefundRoutingUnresolved))
-    "reject-after-window" -> Just (SupersededRejection Nothing)
-    "reject-and-retract-refund-controls" -> Just (SupersededRejection Nothing)
-    "reject-inside-processing-and-retraction-windows" -> Just (SupersededRejection Nothing)
-    "fold-against-superseded-root" -> Just (NoModelCounterpart "lambdasistemi/singular#346")
-    "surplus-fold-actions" -> Just (NoModelCounterpart "lambdasistemi/singular#345")
-    "wrong-redeemer-constructor-index" -> Just (NoModelCounterpart "lambdasistemi/singular#347")
-    _ -> Nothing
-
--- | An unmet ruling in plain words, naming the issue that would close it.
-unmetReading :: UnmetRuling -> Text
-unmetReading = \case
-    SupersededRejection earlier ->
-        "unmet by ruling 2026-10-15: implementation follows the superseded rule; the ruled rule is not implemented (lambdasistemi/singular#495 and #496)"
-            <> maybe "" (("; " <>) . unmetReading) earlier
-    RefundRoutingUnresolved ->
-        "the earlier consumer requirement remains unresolved: processed value follows its destination and rejected requests receive the per-owner refund floor (cardano-mpfs-onchain#101)"
-    ConsumerRequirementUnmet issue ->
-        "unmet by a ruling: the registry deliberately does not do what the \
-        \consumer requirement states (operator ruling 2026-10-01; "
-            <> issue
-            <> ")"
-    NoModelCounterpart issue ->
-        "unmet by a ruling: the chain refuses, Lean has no counterpart to \
-        \compare with (operator ruling 2026-10-02 \"Narrow #287\"); follow-up "
-            <> issue

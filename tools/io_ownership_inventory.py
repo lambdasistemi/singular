@@ -101,8 +101,6 @@ CATEGORIES: list[tuple[str, str, tuple[str, ...]]] = [
         "the live runner and its CLIs: effects live here, never in the library",
         (
             "conformance/app/",
-            "conformance/app-cli/",
-            "conformance/app-default/",
             "conformance/coverage/",
         ),
     ),

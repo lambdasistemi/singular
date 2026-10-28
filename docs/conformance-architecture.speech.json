@@ -1,116 +1,50 @@
 {
-  "who-owns-the-conformance-suite": [
+  "reading-conformance-evidence": [
     {
-      "text": "Who owns the conformance suite.",
+      "text": "Reading conformance evidence.",
       "pause": 500
     },
     {
-      "text": "Dated qualification, 2026-10-15: rejection after the window, rejection before the deadline, request value and refund routing, rejection and retraction refund controls, and rejection inside the processing and retraction windows are all unmet by ruling: implementation follows the superseded rule; the ruled rule is not implemented. The live comparisons still exercise the legacy rejection that spends the registry state output. The ruled rejection reads that output by reference and never spends it. Agreement with the legacy path is not acceptance of the ruled design. The earlier processing-window consumer requirement and the unresolved refund-routing requirement remain open. Historical results below retain their original revision and evidence binding; they do not establish current acceptance.",
-      "pause": 400
-    },
-    {
-      "text": "A contributor changing the conformance suite — adding a row's story, re-binding a theorem, adjusting a comparison, tightening the receipt record, re-rendering the published evidence — wants to open the one module that owns that concern and know which way the dependencies run, before touching a two-thousand-line live interpreter. This page is that map for the suite's library: what each concern's owner is, where the live runner's boundary sits, what may never change while the code moves, where to make a common change, and what the evidence does and does not show. The library's generated interface is the Conformance API reference; this page explains the responsibilities behind it.",
+      "text": "As an integrator, I want every published comparison requirement to stay visible when its evidence is missing, and every reported result to name the revision it checked. The reader separates the inventory's coverage plan from the receipts that can change a requirement's standing.",
       "pause": 400
     }
   ],
-  "the-story-this-serves": [
+  "inputs-and-responsibilities": [
     {
-      "text": "The story this serves.",
+      "text": "Inputs and responsibilities.",
       "pause": 500
     },
     {
-      "text": "As a contributor, I add or change a conformance row's program, its model binding or its comparison in one focused module, and the executed cases, receipts and published evidence stay exactly what they were — so a reviewer asks one question, and the public record a consuming project reads does not move under them.",
-      "pause": 400
-    },
-    {
-      "text": "As an integrator reading the consumer conformance record, I need the suite's own structure to keep its promise: rows become executed only through receipts, uncovered rows stay published, and the description language says what each case asserts — whatever module a change lands in.",
+      "text": "The receipt loader checks report identities, outcomes, measurements, refusal attribution, replay provenance, duplicate requirements and the size bound. The overlay matches a report to its requirement and code revision. Without such a report the reader publishes the coverage plan. The page refuses a snapshot whose reports or contract results name another revision or a dirty tree, and refuses inconsistent contract-case lists across adapters.",
       "pause": 400
     }
   ],
-  "what-the-library-owns": [
+  "ownership-and-limits": [
     {
-      "text": "What the library owns.",
-      "pause": 500
-    }
-  ],
-  "which-way-dependencies-run": [
-    {
-      "text": "Which way dependencies run.",
+      "text": "Ownership and limits.",
       "pause": 500
     },
     {
-      "text": "The library never imports the app: the arrow runs one way, from the live runner into the library. The app modules — the command router and the row runners, the wallet, cage and submission owners, and Conformance.Run.Live, the interpreter that gives the story programs their live effects — are executables, outside the generated reference and documented here only by their boundary. The runner's own internal division is deferred work owned by the conformance epic, not delivered by the review this page came from; what this map promises is the library side of that boundary.",
+      "text": "The caller supplies the receipt directory. Each command reads its inventory and inputs for its own invocation; the reader starts no node or background worker. Tests own their temporary report directories for one example and remove them when the example finishes.",
       "pause": 400
     },
     {
-      "text": "One owner inside the evidence group is new and deliberately small: Conformance.Evidence.Asset owns the asset-movement shape of edge evidence — one movement named by its policy, asset name and quantity, with the JSON encoding that carries those three fields. It used to be the last declaration of Conformance.Receipt that is not a receipt concern. Conformance.Receipt re-exports it unchanged, so the one real caller, the live runner's keyed-mint expectation and observation, imports it through exactly the path it used before; the runner is not edited by that move.",
+      "text": "The seven application-held comparisons remain uncovered. Their development- network journeys are separate observations and supply no model-comparison credit. The backend-contract snapshot retains its own revision and source provenance in the appendix. Neither reader tests nor a green coverage ratchet establish the missing comparisons.",
       "pause": 400
     }
   ],
-  "a-rows-journey-step-by-step": [
+  "design-choices": [
     {
-      "text": "A row's journey, step by step.",
+      "text": "Design choices.",
       "pause": 500
     },
     {
-      "text": "The expected side and the observed side stay independently derived: the model transport answers from the frozen model, the comparisons read the chain's outputs as the chain paid them, and neither consults the other's assumptions. The rendering then computes every row's state from the receipts that exist — an uncovered row stays uncovered in the published record, and no row's state is typed by hand.",
-      "pause": 400
-    }
-  ],
-  "what-may-not-change": [
-    {
-      "text": "What may not change.",
-      "pause": 500
-    },
-    {
-      "text": "These are the suite's public promises, and a structural change that breaks one of them is not an improvement:",
-      "pause": 400
-    },
-    {
-      "text": "A row becomes executed only through a receipt written by a run that actually executed it; row states are computed from receipts and never typed.",
-      "pause": 300
-    },
-    {
-      "text": "Uncovered rows are published, not hidden; a green step is never presented as a fulfilled consumer promise.",
-      "pause": 300
-    },
-    {
-      "text": "Every product claim is expressed in the suite's description language, and execution and rendering of that language are total over the same instruction set.",
-      "pause": 300
-    },
-    {
-      "text": "Surfaces a reader navigates carry requirement text, not internal identifiers; harness evidence stays in its marked appendix.",
-      "pause": 300
-    },
-    {
-      "text": "No case predicate, expected outcome, verdict classification, instruction, receipt field, theorem binding or evidence claim moves by a restructure.",
-      "pause": 300
-    }
-  ],
-  "where-to-make-a-change": [
-    {
-      "text": "Where to make a change.",
-      "pause": 500
-    }
-  ],
-  "decisions": [
-    {
-      "text": "Decisions.",
-      "pause": 500
-    }
-  ],
-  "evidence-and-limits": [
-    {
-      "text": "Evidence and limits.",
-      "pause": 500
-    },
-    {
-      "text": "This page is a map, not evidence. The executed evidence for the suite is the receipts the runs write and the row states computed from them, published in the consumer conformance record; the reference's freshness is proven by its manifest digests, not by this prose. The structural review this page came from preserved behavior by moving one declaration byte-for-byte with its caller unchanged, and its matched base/head runs are the ticket owner's comparison to read, not a claim made here. The runner's own internal division into owners remains deferred to the conformance epic's owner after the active semantic work lands; this page does not claim it delivered. No local build, test or documentation run backs this page's claims — the exact-head CI of the candidate that carries it is the verifier, and until that evidence exists these are design statements, not verified facts.",
+      "text": "Read the consumer record for commands and the generated evidence page for the complete requirements and their computed standings.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "conformance-architecture.md",
-    "sha256": "8dc748f0582383aac24012f27feac7846177b5495b9c882c1642fe4ffe46cae3"
+    "sha256": "aa4de7a83630f5131c6e0f01cfad3e34ba107878f872a8add52b67154b137dd3"
   }
 }

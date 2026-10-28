@@ -35,7 +35,6 @@ library
   default-language: GHC2021
   hs-source-dirs:   src
   exposed-modules:
-    Singular.Application.OpenDatum.Book
     Singular.Application.OpenDatum.Build
     Singular.Application.OpenDatum.Command
     Singular.Application.OpenDatum.Envelope
@@ -54,8 +53,6 @@ library
     Singular.Application.OpenDatum.Requests.Script
     Singular.Application.OpenDatum.Root
     Singular.Application.OpenDatum.Run
-    Singular.Application.OpenDatum.Script
-    Singular.Application.OpenDatum.Update
     Singular.Application.OpenDatum.Value
 
   autogen-modules: Paths_open_datum

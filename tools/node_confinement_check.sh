@@ -29,7 +29,7 @@ set -euo pipefail
 scanned=(
   offchain/cli offchain/lib
   offchain/devnet offchain/e2e-test
-  conformance/app conformance/app-cli conformance/app-default conformance/lib
+  conformance/app conformance/lib
 )
 if [ "${1:-}" = --roots ]; then
   printf '%s\n' "${scanned[@]}"

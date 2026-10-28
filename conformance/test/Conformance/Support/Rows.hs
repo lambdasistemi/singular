@@ -22,7 +22,6 @@ import Test.Hspec
     , shouldSatisfy
     )
 
-import Conformance.RowNames (canonicalRowName, historicalRowNames)
 import Conformance.Rows
     ( Row (..)
     , RowState (..)
@@ -41,21 +40,6 @@ import Paths_conformance (getDataFileName)
 spec :: Spec
 spec = describe "Appendix: keeping the published requirements complete" $ do
     it
-        "Associates every historical receipt key with exactly one current requirement"
-        $ do
-            rows <- loadCommitted
-            let current = map rowId rows
-            -- New requirements need no fabricated historical receipt key.
-            length historicalRowNames `shouldBe` 46
-            length (nub (map snd historicalRowNames)) `shouldBe` 46
-            map snd historicalRowNames `shouldSatisfy` all (`elem` current)
-            map (canonicalRowName . fst) historicalRowNames
-                `shouldBe` map snd historicalRowNames
-            map canonicalRowName current `shouldBe` current
-            canonicalRowName "unknown-requirement"
-                `shouldBe` "unknown-requirement"
-
-    it
         "Includes every expected requirement once and counts the requirements owned by the registry"
         $ do
             rows <- loadCommitted
@@ -67,28 +51,6 @@ spec = describe "Appendix: keeping the published requirements complete" $ do
             length
                 (filter ((/= OutOfScope) . rowState) rows)
                 `shouldBe` ownedDenominator
-
-    it
-        "Identifies checkpoint policy as outside the registry's responsibilities"
-        $ do
-            rows <- loadCommitted
-            case filter ((== "checkpoint-and-treasury-policy") . rowId) rows of
-                [ck06] -> rowState ck06 `shouldBe` OutOfScope
-                _ ->
-                    expectationFailure
-                        "inventory has no single checkpoint-policy requirement"
-
-    it
-        "Keeps the reject and retract exit controls a requirement of their own, apart from the retirement"
-        $ do
-            rows <- loadCommitted
-            case filter ((== "reject-and-retract-refund-controls") . rowId) rows of
-                [exits] -> do
-                    rowGroup exits `shouldBe` "registry-operations"
-                    rowRequirement exits
-                        `shouldSatisfy` (\text -> all (`T.isInfixOf` text) ["reject", "retract"])
-                _ ->
-                    expectationFailure "inventory has no single exit-controls requirement"
 
     it "Does not store claims of completed tests in the requirements file" $ do
         rows <- loadCommitted

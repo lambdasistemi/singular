@@ -216,9 +216,9 @@ if onchain_present:
             # #695: the commit `open-datum --version` states in a build of
             # this archive, the same one the archive's root states.
             "applications/open-datum/offchain/RELEASE-COMMIT",
-            # The retained conformance runner, ledger, specification and flake
+            # The retained conformance reader, ledger, specification and flake
             # inputs remain archive members until their layer is removed.
-            "conformance/app-cli/Main.hs",
+            "conformance/app/Main.hs",
             "conformance/flake.nix",
             "applications/open-datum/ledgers.json",
             "specs/299-singular-cli/spec.md",

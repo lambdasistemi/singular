@@ -46,46 +46,15 @@ refused() {
   echo "control $label: refused ($reason)"
 }
 
-# One receipt the snapshot shows as demonstrated: its verdict agrees.
-agreeing() {
-  for f in "$snapshot"/receipts/receipt-*.json; do
-    if [ "$(jq -r '.verdict' "$f")" = agrees-with-model ]; then
-      echo "$f"
-      return
-    fi
-  done
-  echo "CONTROL BROKEN: no agreeing receipt in the snapshot" >&2
-  exit 1
-}
-
-retouch() {
-  local f="$1" program="$2"
-  cp "$f" "$work/before"
-  jq -c "$program" "$work/before" >"$f"
-  applied "$work/before" "$f" "$program"
-}
-
 fresh
 conformance evidence-page --root "$copy"
 echo 'control untampered: accepted'
 
 fresh
 cp "$page" "$work/before"
-sed -i '0,/| demonstrated |/s//| uncovered |/' "$page"
+sed -i '0,/| uncovered |/s//| demonstrated |/' "$page"
 applied "$work/before" "$page" 'page state'
 refused 'tampered page' 'disagrees with the receipts it is computed from'
-
-fresh
-retouch "$(agreeing)" '.verdict = "held-q002"'
-refused 'receipt verdict flipped' 'disagrees with the receipts it is computed from'
-
-fresh
-retouch "$(agreeing)" '.base = "0000000000000000000000000000000000000000"'
-refused 'receipt from another revision' 'not the stated base'
-
-fresh
-retouch "$(agreeing)" '.dirty = true'
-refused 'receipt from a dirty tree' 'dirty tree'
 
 fresh
 results="$(find "$snapshot/contract" -name '*.jsonl' | sort | head -n1)"
@@ -103,5 +72,19 @@ sed -n "${line}p" "$work/before" | jq -c '.outcome = "failed" | .reason = "tampe
 } >"$results"
 applied "$work/before" "$results" 'contract result'
 refused 'contract result flipped' 'disagrees with the receipts it is computed from'
+
+fresh
+results="$(find "$snapshot/contract" -name '*.jsonl' | sort | head -n1)"
+cp "$results" "$work/before"
+jq -c '.base = "other-base"' "$work/before" >"$results"
+applied "$work/before" "$results" 'contract revision'
+refused 'contract from another revision' 'not the stated base'
+
+fresh
+results="$(find "$snapshot/contract" -name '*.jsonl' | sort | head -n1)"
+cp "$results" "$work/before"
+jq -c '.dirty = true' "$work/before" >"$results"
+applied "$work/before" "$results" 'contract dirty state'
+refused 'contract from a dirty tree' 'dirty tree'
 
 echo 'evidence page controls: every tampering refused'
