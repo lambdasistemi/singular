@@ -20,11 +20,14 @@ commit owner starts. Every command is an existing hosted command, or one this ti
 | G5 | the Singular package names no application | ci.yml `offchain-component-build` | `nix run --quiet .#application-separation-check`; `nix run --quiet .#application-separation-controls` | 0 |
 | G6 | the provider change stays inside the provider layer | ci.yml `dev-shell-checks` | `nix develop --quiet -c just node-confinement`; `nix develop --quiet -c just node-confinement-controls`; `nix develop --quiet -c just io-ownership-check`; `nix develop --quiet -c just io-ownership-controls` | 0 |
 | G7 | documented flags of the new command | registry.yml `cli-flags` | `nix run --quiet .#cli-flags-check`; `nix run --quiet .#cli-flags-controls` | 0 |
-| G8 | pages, diagrams and speech | ci.yml `rendered-docs` | `nix run --quiet .#docs-check` | 0 |
+| G8 | pages, diagrams and speech | ci.yml `rendered-docs`, `dev-shell-checks` | `nix run --quiet .#docs-check`; `nix develop --quiet -c just check-presentation` | 0 |
 | G9 | lint and format of touched paths | ci.yml `dev-shell`, `offchain-lint`; conformance.yml `format-check` | `nix develop --quiet -c just lint`; `(cd offchain && nix run --quiet .#lint)`; `nix run --quiet .#format-check` | 0 |
 | G10 | the reading rows and the coverage ratchet | conformance.yml `conformance-checks`, `coverage-gate` | `nix run --quiet .#conformance-appendix-tests`; `nix run --quiet ./conformance#coverage-gate -- --root . ratchet` | 0 |
 | G11 | live, pending termination, terminal and never registered through the packaged command, the measured lookup with a second registry's holdings at the same address | registry.yml `no-pin-registration-journey`, extended (CI change in this ticket) | `nix run --quiet .#no-pin-registration-journey` | 0 |
-| G12 | wrong network, unknown state policy, token at the state address and provider failure refused on a development network, each beside its passing control | a registry.yml job, extended or new (CI change in this ticket) | `nix run --quiet .#no-pin-registration-refusals`, or the new job's app | 0 |
+| G12 | wrong network, unknown state policy and provider failure refused on a development network, each beside its passing control | registry.yml `no-pin-registration-refusals`, extended, or a new job of the same shape (CI change in this ticket) | `nix run --quiet .#no-pin-registration-refusals`, or the new job's app | 0 |
+| G13 | the provider change keeps the provider contract | registry.yml `contract` | `nix run --quiet .#contract-tests` and `nix run --quiet .#contract-external` in `offchain/`, each with its `CONTRACT_RESULTS` file as the job sets it | 0 |
+| G14 | the root model, if a reader statement touches it | ci.yml `model` | `nix run --quiet .#model-check` | 0 |
+| G15 | the new command is in the packaged executable | ci.yml `open-datum-singular-smoke` | `nix run --quiet .#singular -- --help` in `applications/open-datum/offchain/` | 0 |
 
 Rows run scoped to what each slice can break. `just ci` runs once on the final candidate of each pull request, then the
 push; hosted checks on the pull request head are the net. Every build or test runs in a named, memory-capped scope:
@@ -34,8 +37,8 @@ push; hosted checks on the pull request head are the net. Every build or test ru
 
 ```mermaid
 flowchart LR
-    P1[Pull request 1: reader statements] --> R1[G1 G8 G9 G10]
-    P2[Pull request 2: the reader] --> R2[G2 G3 G4 G5 G6 G7 G8 G9 G10 G11 G12]
+    P1[Pull request 1: reader statements] --> R1[G1 G8 G9 G10 G14]
+    P2[Pull request 2: the reader] --> R2[G2 G3 G4 G5 G6 G7 G8 G9 G10 G11 G12 G13 G15]
 ```
 
 ## Evidence the pull requests will carry
@@ -47,3 +50,13 @@ flowchart LR
 - the refusals job's receipt: each refusal and its control;
 - left uncovered, stated in the pull requests: member enumeration, browser delivery, batch limits (issue 746), release
   (issue 747), the network read of the other chain commands (issue 729).
+
+## Synthesis
+
+The ticket owner's table and the auditor's independent table (auditor-1, `handoffs/gate-table.md`, written without
+reading this page) were joined once on 28 October 2026. The auditor's table added the provider contract suites (G13),
+the root model check (G14), the presentation check (G8) and the packaged-executable smoke (G15). It marked the devnet
+reading steps and refusals as needing new jobs; they are carried by extending the existing no-pin journey and refusals
+jobs, or by a new job of the same shape, as a CI change in this ticket. The refusal of a token at the state address is a
+unit test: no accepted transaction places the token there, so no devnet run can show it. The frozen table and both input
+hashes are in the ticket's runtime root.

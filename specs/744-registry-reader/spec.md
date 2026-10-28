@@ -60,7 +60,8 @@ and printed; how far it is decoded by application rules is [an open question](pl
   application's address holds other registries' holdings, and published.
 - devnet-reading-journey: on a development network, through the packaged command, the reader answers live, pending
   termination, terminal and never registered for keys of the journey, from the registry address alone.
-- devnet-reading-refusals: on a development network, each refusal above beside a passing control.
+- devnet-reading-refusals: on a development network, wrong network, unknown state policy and provider failure, each beside a
+  passing control; the custody refusals are unit tests, since no accepted transaction moves the token out of custody.
 - conformance-and-documentation: the conformance suite carries the reading rows in requirement language, and the user
   documentation describes the command, in the same change.
 - hosted-checks-green: hosted checks green on each pull request into `main`.
@@ -71,7 +72,7 @@ and printed; how far it is decoded by application rules is [an open question](pl
 | --- | --- | --- |
 | The address names one network and the provider serves another | refused, naming both networks and the provider | unit test and devnet |
 | The address's state policy has no row in the release table | refused, naming the policy | unit test and devnet |
-| The key's active token is held at the state address | refused: token outside application custody | unit test and devnet |
+| The key's active token is held at the state address | refused: token outside application custody | unit test (no accepted transaction places it there, so no devnet run can) |
 | The key's active token is held anywhere else than the application's script | refused: token outside application custody | unit test |
 | Two outputs, or a quantity other than one, of the key's active token | refused: conflicting evidence | unit test |
 | A provider read fails, times out or returns an incomplete page | unavailable, naming the read | unit test and devnet |

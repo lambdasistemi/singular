@@ -67,7 +67,7 @@
       "pause": 300
     },
     {
-      "text": "devnet-reading-refusals: on a development network, each refusal above beside a passing control.",
+      "text": "devnet-reading-refusals: on a development network, wrong network, unknown state policy and provider failure, each beside a passing control; the custody refusals are unit tests, since no accepted transaction moves the token out of custody.",
       "pause": 300
     },
     {
@@ -97,6 +97,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "6fb61cffed578346ffef3397496ab3e69519f75d76f044abef2ff0d9a06a908c"
+    "sha256": "56678aed55949b08dc3c55f074865692c6359c51deebf2e157cf77b5e90a2f4c"
   }
 }
