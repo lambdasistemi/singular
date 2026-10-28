@@ -1,0 +1,304 @@
+{
+  "schemaVersion": 1,
+  "stage": "STATEMENTS",
+  "accepted": false,
+  "compiler": "Lean 4.27.0",
+  "printer": "Lean.reprStr ConstantInfo.type; default Repr options",
+  "surface": "SingularApplicationHeld.readKey",
+  "driver": "models/singular-application-held/.lake/build/bin/reader",
+  "corpus": "models/open-datum-application-held/reader-corpus.json",
+  "corpusSha256": "f95b026f489e73aaa5d8fc8daca7727a675f394cdee65d72f0356b3e68985116",
+  "definitions": {
+    "SingularApplicationHeld.readKey": {
+      "typeSha256": "9d6a68d5e5aafcb8c4baca13bfcddacd9cb0e9bfa2b926dbbaa6df06e9b8206d",
+      "valueSha256": "1d3e5e223b0df145ef1c5c7d5f3d41200b829fdee4a7ed96f0df3834f8f9daf8"
+    },
+    "SingularApplicationHeld.recognizeReaderState": {
+      "typeSha256": "6b8939e121fd2e48441ecc1c0748b2696a25851c024cd18261591a1ee4125ffb",
+      "valueSha256": "e6fa4a20fa19cdfb4aa7fc4c747cdd6d5a3a8463054bb441e487e19b501b0aa5"
+    },
+    "SingularApplicationHeld.ReaderEvidenceCorrespondence": {
+      "typeSha256": "a43ec88b60c6d5e399cca51546c0bc878901d4131923e287baa2c7616d0f65ac",
+      "valueSha256": "c401d7e56e449adbe3a7173b336f8747fd7cfb8aaeec6627eb49fdd45d36bc72"
+    },
+    "SingularApplicationHeld.runReaderQuery": {
+      "typeSha256": "d88735b29db05adec9e53b859d96ed4c90fcc9bd21e8b703177470ce3c7166ec",
+      "valueSha256": "c19c97c4b8f66e15222710eb84189287bace68ddf7a899d8bac78b6db45cebd8"
+    }
+  },
+  "statements": [
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.active_outputs_unavailable",
+      "typeSha256": "e5889e7ad2299eca0d47441c907c3f55efb51a7c5f50583b4d81e97e50bd322d",
+      "observedAxioms": [
+        "propext",
+        "sorryAx"
+      ],
+      "proofStatus": "OPEN",
+      "proposedWitness": "failed asset read",
+      "witnessCertification": "OPEN; concrete values in OpenDatumApplicationHeld.ReaderFixtures",
+      "proposedMutant": "substitute an empty answer for a failed asset read",
+      "mutantStatus": "NOT-RUN"
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.conflicting_outputs",
+      "typeSha256": "b857250e22f098ec6ab756d9709d9c93f821004b4145daa325b9276126753710",
+      "observedAxioms": [
+        "propext",
+        "sorryAx"
+      ],
+      "proofStatus": "OPEN",
+      "proposedWitness": "two outputs",
+      "witnessCertification": "OPEN; concrete values in OpenDatumApplicationHeld.ReaderFixtures",
+      "proposedMutant": "select the first of multiple token outputs",
+      "mutantStatus": "NOT-RUN"
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.conflicting_quantity",
+      "typeSha256": "21144f4c90a378bb5c29f4795313eaabe0c513828926f6d30eb20453b7416745",
+      "observedAxioms": [
+        "propext",
+        "sorryAx"
+      ],
+      "proofStatus": "OPEN",
+      "proposedWitness": "non-unit quantity",
+      "witnessCertification": "OPEN; concrete values in OpenDatumApplicationHeld.ReaderFixtures",
+      "proposedMutant": "accept any positive quantity",
+      "mutantStatus": "NOT-RUN"
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.foreign_state_policy",
+      "typeSha256": "fa6d5e4bb0b5724175a3dfec632ac5e5804cb81efa32590fa584e2a5beb3d4e6",
+      "observedAxioms": [
+        "propext",
+        "sorryAx"
+      ],
+      "proofStatus": "OPEN",
+      "proposedWitness": "foreign state policy",
+      "witnessCertification": "OPEN; concrete values in OpenDatumApplicationHeld.ReaderFixtures",
+      "proposedMutant": "drop the state-policy equality check",
+      "mutantStatus": "NOT-RUN"
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.holding_answer_ignores_state",
+      "typeSha256": "39320feb05a82a3828ce00896db7c0d956774560bc195c662528522585135e8a",
+      "observedAxioms": [
+        "propext",
+        "sorryAx"
+      ],
+      "proofStatus": "OPEN",
+      "proposedWitness": "live",
+      "witnessCertification": "OPEN; concrete values in OpenDatumApplicationHeld.ReaderFixtures",
+      "proposedMutant": "require state evidence before a live answer",
+      "mutantStatus": "NOT-RUN"
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.live_inversion",
+      "typeSha256": "c0ebb185d046ab3c380ad9477c8371edd444f4a334884305932cbcc4398306f0",
+      "observedAxioms": [
+        "propext",
+        "sorryAx"
+      ],
+      "proofStatus": "OPEN",
+      "proposedWitness": "live",
+      "witnessCertification": "OPEN; concrete values in OpenDatumApplicationHeld.ReaderFixtures",
+      "proposedMutant": "drop the live deposit guard",
+      "mutantStatus": "NOT-RUN"
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.live_sound",
+      "typeSha256": "58487f11141631fbcccd19371e810730a3d19eee4c6198245144a28c4902863c",
+      "observedAxioms": [
+        "propext",
+        "sorryAx"
+      ],
+      "proofStatus": "OPEN",
+      "proposedWitness": "live",
+      "witnessCertification": "OPEN; concrete values in OpenDatumApplicationHeld.ReaderFixtures",
+      "proposedMutant": "remove complete active-output correspondence to the reachable world",
+      "mutantStatus": "NOT-RUN"
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.network_unavailable",
+      "typeSha256": "4852e8b3dd68bb66084440123f3d20713f36b41fb57434a2b4ecfaacf4ad21c8",
+      "observedAxioms": [
+        "propext",
+        "sorryAx"
+      ],
+      "proofStatus": "OPEN",
+      "proposedWitness": "failed network read",
+      "witnessCertification": "OPEN; concrete values in OpenDatumApplicationHeld.ReaderFixtures",
+      "proposedMutant": "substitute a successful network answer for a failed read",
+      "mutantStatus": "NOT-RUN"
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.never_registered_inversion",
+      "typeSha256": "e4f3e4ec9f22e7bcdadf00e8db4ffa371ee42ab5fee643ee3c5007a17d8fb3f6",
+      "observedAxioms": [
+        "propext",
+        "sorryAx"
+      ],
+      "proofStatus": "OPEN",
+      "proposedWitness": "never registered",
+      "witnessCertification": "OPEN; concrete values in OpenDatumApplicationHeld.ReaderFixtures",
+      "proposedMutant": "classify a terminal leaf as unknown",
+      "mutantStatus": "NOT-RUN"
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.never_registered_sound",
+      "typeSha256": "ba53160e9a6c7d995a08988467e30cece4e9934ebbec614b6b86f030e1dd1a43",
+      "observedAxioms": [
+        "propext",
+        "sorryAx"
+      ],
+      "proofStatus": "OPEN",
+      "proposedWitness": "never registered",
+      "witnessCertification": "OPEN; concrete values in OpenDatumApplicationHeld.ReaderFixtures",
+      "proposedMutant": "remove trie correspondence to the reachable world",
+      "mutantStatus": "NOT-RUN"
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.no_absence_from_missing_evidence",
+      "typeSha256": "ed6019985108944391cc0ffe223dacc68f7160c33f5382e3a96e663be780ad59",
+      "observedAxioms": [
+        "propext",
+        "sorryAx"
+      ],
+      "proofStatus": "OPEN",
+      "proposedWitness": "empty asset answer without state",
+      "witnessCertification": "OPEN; concrete values in OpenDatumApplicationHeld.ReaderFixtures",
+      "proposedMutant": "return never registered on missing state evidence",
+      "mutantStatus": "NOT-RUN"
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.pending_termination_inversion",
+      "typeSha256": "071f7f79a8ce75f3e3d48137ef95c201b760fa13e1dce0ea09641bfef60e9313",
+      "observedAxioms": [
+        "propext",
+        "sorryAx"
+      ],
+      "proofStatus": "OPEN",
+      "proposedWitness": "pending termination",
+      "witnessCertification": "OPEN; concrete values in OpenDatumApplicationHeld.ReaderFixtures",
+      "proposedMutant": "accept a live holding as a termination request",
+      "mutantStatus": "NOT-RUN"
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.pending_termination_sound",
+      "typeSha256": "346d626f380252247e76642e1268f2707bd4e3b637075ddfc0ca9fd5ea1e1e7e",
+      "observedAxioms": [
+        "propext",
+        "sorryAx"
+      ],
+      "proofStatus": "OPEN",
+      "proposedWitness": "pending termination",
+      "witnessCertification": "OPEN; concrete values in OpenDatumApplicationHeld.ReaderFixtures",
+      "proposedMutant": "remove complete active-output correspondence to the reachable world",
+      "mutantStatus": "NOT-RUN"
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.state_recognition",
+      "typeSha256": "cf3f630cc3700a67800278c081c22c823ad74c28160442cf5c26abd40ddf9a72",
+      "observedAxioms": [
+        "propext",
+        "sorryAx"
+      ],
+      "proofStatus": "OPEN",
+      "proposedWitness": "terminal",
+      "witnessCertification": "OPEN; concrete values in OpenDatumApplicationHeld.ReaderFixtures",
+      "proposedMutant": "replace the single exact state asset check with a policy-only check",
+      "mutantStatus": "NOT-RUN"
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.state_unavailable",
+      "typeSha256": "c665d6fe18d6e4f9d08dac10c32789584bfa715eceb7e01e205409e871a11302",
+      "observedAxioms": [
+        "propext",
+        "sorryAx"
+      ],
+      "proofStatus": "OPEN",
+      "proposedWitness": "failed state read",
+      "witnessCertification": "OPEN; concrete values in OpenDatumApplicationHeld.ReaderFixtures",
+      "proposedMutant": "substitute a successful state answer for a failed read",
+      "mutantStatus": "NOT-RUN"
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.terminal_inversion",
+      "typeSha256": "5291e7ccd48d4617c17ab69f19d51842aca16b51d7f33a2d39c7e7c79d7db661",
+      "observedAxioms": [
+        "propext",
+        "sorryAx"
+      ],
+      "proofStatus": "OPEN",
+      "proposedWitness": "terminal",
+      "witnessCertification": "OPEN; concrete values in OpenDatumApplicationHeld.ReaderFixtures",
+      "proposedMutant": "classify a nonterminal leaf as terminal",
+      "mutantStatus": "NOT-RUN"
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.terminal_sound",
+      "typeSha256": "980537e93b5b797a16451a60baf6517343228ae6b0603368fed22fdc0c9f9ccd",
+      "observedAxioms": [
+        "propext",
+        "sorryAx"
+      ],
+      "proofStatus": "OPEN",
+      "proposedWitness": "terminal",
+      "witnessCertification": "OPEN; concrete values in OpenDatumApplicationHeld.ReaderFixtures",
+      "proposedMutant": "remove trie correspondence to the reachable world",
+      "mutantStatus": "NOT-RUN"
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.token_outside_custody",
+      "typeSha256": "76f9cb6d5353b4144b0baf9238fa7323cdb320c41b85c407662b2677a2288d65",
+      "observedAxioms": [
+        "propext",
+        "sorryAx"
+      ],
+      "proofStatus": "OPEN",
+      "proposedWitness": "token at state address",
+      "witnessCertification": "OPEN; concrete values in OpenDatumApplicationHeld.ReaderFixtures",
+      "proposedMutant": "drop the application-custody guard",
+      "mutantStatus": "NOT-RUN"
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.trie_unavailable",
+      "typeSha256": "78ec4357c2cae44ec21337b13d8d13fce189c97b788ffca9134336c54c589441",
+      "observedAxioms": [
+        "propext",
+        "sorryAx"
+      ],
+      "proofStatus": "OPEN",
+      "proposedWitness": "failed trie read",
+      "witnessCertification": "OPEN; concrete values in OpenDatumApplicationHeld.ReaderFixtures",
+      "proposedMutant": "substitute unknown for a failed trie read",
+      "mutantStatus": "NOT-RUN"
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.unknown_state_policy",
+      "typeSha256": "01d33c0697d6df30c549b2d374aa14002c87158a3fcea8fbbf019974e0df2781",
+      "observedAxioms": [
+        "propext",
+        "sorryAx"
+      ],
+      "proofStatus": "OPEN",
+      "proposedWitness": "unknown state policy",
+      "witnessCertification": "OPEN; concrete values in OpenDatumApplicationHeld.ReaderFixtures",
+      "proposedMutant": "accept an absent release row",
+      "mutantStatus": "NOT-RUN"
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.wrong_network_first",
+      "typeSha256": "f63cc781f919b2bcb7205675f048e4cb9c4a7e5236975233a19bae0f5da4030a",
+      "observedAxioms": [
+        "propext",
+        "sorryAx"
+      ],
+      "proofStatus": "OPEN",
+      "proposedWitness": "wrong network",
+      "witnessCertification": "OPEN; concrete values in OpenDatumApplicationHeld.ReaderFixtures",
+      "proposedMutant": "move network rejection after the active-token branch",
+      "mutantStatus": "NOT-RUN"
+    }
+  ]
+}

@@ -8,3 +8,6 @@ require singular from "../.."
 
 @[default_target]
 lean_lib SingularApplicationHeld where
+
+lean_exe reader where
+  root := `ReaderMain

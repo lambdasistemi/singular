@@ -1,0 +1,162 @@
+{
+  "schemaVersion": 1,
+  "stage": "STATEMENTS",
+  "accepted": false,
+  "scope": "Finite proposed evidence-binding and refusal atoms for the reader only; no coverage is certified before independent review and proof-stage mutations.",
+  "atoms": [
+    {
+      "requirement": "served network precedes other evidence",
+      "theorem": "SingularApplicationHeld.ReaderStatements.wrong_network_first",
+      "proposedWitness": "wrong network",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "requirement": "failed reads retain the read and reason",
+      "theorem": "SingularApplicationHeld.ReaderStatements.network_unavailable",
+      "proposedWitness": "failed network read",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "requirement": "incomplete answers are unavailable",
+      "theorem": "SingularApplicationHeld.ReaderStatements.active_outputs_unavailable",
+      "proposedWitness": "incomplete asset answer",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "requirement": "the state policy has a published application",
+      "theorem": "SingularApplicationHeld.ReaderStatements.unknown_state_policy",
+      "proposedWitness": "unknown state policy",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "requirement": "the row belongs to the requested state policy",
+      "theorem": "SingularApplicationHeld.ReaderStatements.foreign_state_policy",
+      "proposedWitness": "foreign state policy",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "requirement": "the queried asset binds the registry and key",
+      "theorem": "SingularApplicationHeld.ReaderStatements.live_inversion",
+      "proposedWitness": "live",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "requirement": "one token output only",
+      "theorem": "SingularApplicationHeld.ReaderStatements.conflicting_outputs",
+      "proposedWitness": "two outputs",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "requirement": "unit token quantity",
+      "theorem": "SingularApplicationHeld.ReaderStatements.conflicting_quantity",
+      "proposedWitness": "non-unit quantity",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "requirement": "application custody excludes the state address",
+      "theorem": "SingularApplicationHeld.ReaderStatements.token_outside_custody",
+      "proposedWitness": "token at state address",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "requirement": "application custody excludes other addresses",
+      "theorem": "SingularApplicationHeld.ReaderStatements.token_outside_custody",
+      "proposedWitness": "token at another address",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "requirement": "live control binds registry key asset and deposit",
+      "theorem": "SingularApplicationHeld.ReaderStatements.live_inversion",
+      "proposedWitness": "live",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "requirement": "pending request keeps the active token",
+      "theorem": "SingularApplicationHeld.ReaderStatements.pending_termination_inversion",
+      "proposedWitness": "pending termination",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "requirement": "state recognition checks the complete state output",
+      "theorem": "SingularApplicationHeld.ReaderStatements.state_recognition",
+      "proposedWitness": "unrecognised state",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "requirement": "the trie belongs to the recognised root",
+      "theorem": "SingularApplicationHeld.ReaderStatements.terminal_inversion",
+      "proposedWitness": "trie root mismatch",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "requirement": "terminal is the terminal leaf lookup",
+      "theorem": "SingularApplicationHeld.ReaderStatements.terminal_sound",
+      "proposedWitness": "terminal",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "requirement": "never registered is the unknown leaf lookup",
+      "theorem": "SingularApplicationHeld.ReaderStatements.never_registered_sound",
+      "proposedWitness": "never registered",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "requirement": "missing token without state proves no absence",
+      "theorem": "SingularApplicationHeld.ReaderStatements.no_absence_from_missing_evidence",
+      "proposedWitness": "empty asset answer without state",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "requirement": "unavailable trie proves no absence",
+      "theorem": "SingularApplicationHeld.ReaderStatements.trie_unavailable",
+      "proposedWitness": "failed trie read",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "requirement": "reachable supply binds a holding to the active leaf",
+      "theorem": "SingularApplicationHeld.ReaderStatements.live_sound",
+      "proposedWitness": "live",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "requirement": "holding branches need no state or trie read",
+      "theorem": "SingularApplicationHeld.ReaderStatements.holding_answer_ignores_state",
+      "proposedWitness": "live",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "requirement": "the application model agrees with shared custody",
+      "theorem": "OpenDatumApplicationHeld.ReaderStatements.live_custody",
+      "proposedWitness": "live",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    },
+    {
+      "requirement": "the pending application shape is exact",
+      "theorem": "OpenDatumApplicationHeld.ReaderStatements.pending_custody",
+      "proposedWitness": "pending termination",
+      "mutantStatus": "NOT-RUN",
+      "proofStatus": "OPEN"
+    }
+  ]
+}

@@ -12,6 +12,9 @@ require «singular-application-held» from "../singular-application-held"
 @[default_target]
 lean_lib OpenDatumApplicationHeld where
 
+lean_exe readerCorpus where
+  root := `ReaderCorpusMain
+
 @[default_target]
 lean_lib MoneyStatementEvidence where
   roots := #[`OpenDatumApplicationHeld.MoneyHoldingEvidence, `OpenDatumApplicationHeld.MoneyUpdateEvidence,

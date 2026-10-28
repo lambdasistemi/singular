@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "stage": "STATEMENTS",
+  "accepted": false,
+  "compiler": "Lean 4.27.0",
+  "printer": "Lean.reprStr ConstantInfo.type; default Repr options",
+  "surface": "SingularApplicationHeld.readKey",
+  "driver": "models/singular-application-held/.lake/build/bin/reader",
+  "corpus": "models/open-datum-application-held/reader-corpus.json",
+  "corpusSha256": "f95b026f489e73aaa5d8fc8daca7727a675f394cdee65d72f0356b3e68985116",
+  "definitions": {
+    "SingularApplicationHeld.readKey": {
+      "typeSha256": "9d6a68d5e5aafcb8c4baca13bfcddacd9cb0e9bfa2b926dbbaa6df06e9b8206d",
+      "valueSha256": "1d3e5e223b0df145ef1c5c7d5f3d41200b829fdee4a7ed96f0df3834f8f9daf8"
+    },
+    "SingularApplicationHeld.recognizeReaderState": {
+      "typeSha256": "6b8939e121fd2e48441ecc1c0748b2696a25851c024cd18261591a1ee4125ffb",
+      "valueSha256": "e6fa4a20fa19cdfb4aa7fc4c747cdd6d5a3a8463054bb441e487e19b501b0aa5"
+    },
+    "SingularApplicationHeld.ReaderEvidenceCorrespondence": {
+      "typeSha256": "a43ec88b60c6d5e399cca51546c0bc878901d4131923e287baa2c7616d0f65ac",
+      "valueSha256": "c401d7e56e449adbe3a7173b336f8747fd7cfb8aaeec6627eb49fdd45d36bc72"
+    },
+    "SingularApplicationHeld.runReaderQuery": {
+      "typeSha256": "d88735b29db05adec9e53b859d96ed4c90fcc9bd21e8b703177470ce3c7166ec",
+      "valueSha256": "c19c97c4b8f66e15222710eb84189287bace68ddf7a899d8bac78b6db45cebd8"
+    }
+  },
+  "statements": [
+    {
+      "name": "OpenDatumApplicationHeld.ReaderFixtures.stories_reachable",
+      "typeSha256": "7d71e7da568d80ff73f1ac66fd57cfe9f84bdbe612f8dbf33694043105de9ec0",
+      "observedAxioms": [
+        "propext",
+        "sorryAx"
+      ],
+      "proofStatus": "OPEN",
+      "proposedWitness": "live; pending termination; terminal; never registered",
+      "witnessCertification": "OPEN; concrete values in OpenDatumApplicationHeld.ReaderFixtures",
+      "proposedMutant": "break one fold input reference",
+      "mutantStatus": "NOT-RUN"
+    },
+    {
+      "name": "OpenDatumApplicationHeld.ReaderFixtures.story_answers",
+      "typeSha256": "a021323970bbb85922934ade84d00e8ea5d2e19da0112e52ad2221aa432fb4a5",
+      "observedAxioms": [
+        "propext",
+        "sorryAx"
+      ],
+      "proofStatus": "OPEN",
+      "proposedWitness": "live; pending termination; terminal; never registered",
+      "witnessCertification": "OPEN; concrete values in OpenDatumApplicationHeld.ReaderFixtures",
+      "proposedMutant": "exchange the unknown and terminal reader branches",
+      "mutantStatus": "NOT-RUN"
+    },
+    {
+      "name": "OpenDatumApplicationHeld.ReaderFixtures.story_antecedents",
+      "typeSha256": "0391bde2721f42597ac175ce40fc2e52ac43684e67948c6d496bd7be15db882a",
+      "observedAxioms": [
+        "propext",
+        "sorryAx"
+      ],
+      "proofStatus": "OPEN",
+      "proposedWitness": "live; pending termination; terminal; never registered",
+      "witnessCertification": "OPEN; concrete values in OpenDatumApplicationHeld.ReaderFixtures",
+      "proposedMutant": "replace the observed trie with an unrelated trie",
+      "mutantStatus": "NOT-RUN"
+    },
+    {
+      "name": "OpenDatumApplicationHeld.ReaderStatements.live_custody",
+      "typeSha256": "6803a0b34466e6e9547d3d89d7b7b4f23ac58800492c743f690a730d16a0729b",
+      "observedAxioms": [
+        "propext",
+        "sorryAx"
+      ],
+      "proofStatus": "OPEN",
+      "proposedWitness": "live",
+      "witnessCertification": "OPEN; concrete values in OpenDatumApplicationHeld.ReaderFixtures",
+      "proposedMutant": "drop the live active-asset binding",
+      "mutantStatus": "NOT-RUN"
+    },
+    {
+      "name": "OpenDatumApplicationHeld.ReaderStatements.pending_custody",
+      "typeSha256": "73c157e7ad001bb18665e136a1e3da163b37c23f499c2e0137491080ec5190c9",
+      "observedAxioms": [
+        "propext",
+        "sorryAx"
+      ],
+      "proofStatus": "OPEN",
+      "proposedWitness": "pending termination",
+      "witnessCertification": "OPEN; concrete values in OpenDatumApplicationHeld.ReaderFixtures",
+      "proposedMutant": "drop the termination request asset check",
+      "mutantStatus": "NOT-RUN"
+    }
+  ]
+}

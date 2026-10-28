@@ -1,0 +1,3862 @@
+[
+  {
+    "answer": {
+      "live": {
+        "output": {
+          "assets": [
+            [
+              {
+                "name": 564808031891926,
+                "policy": 10
+              },
+              1
+            ]
+          ],
+          "credential": 99,
+          "datum": {
+            "application": {
+              "data": 1007
+            }
+          },
+          "lovelace": 7,
+          "reference": {
+            "index": 1,
+            "tx": 30
+          }
+        }
+      }
+    },
+    "name": "live",
+    "query": {
+      "codes": [
+        {
+          "encoded": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "active": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        },
+        {
+          "encoded": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "terminationApproval": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        }
+      ],
+      "decoding": [
+        [
+          1007,
+          {
+            "live": {
+              "control": {
+                "activeAsset": {
+                  "name": 564808031891926,
+                  "policy": 10
+                },
+                "controller": 42,
+                "deposit": 7,
+                "key": 7,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              },
+              "payload": 123
+            }
+          }
+        ]
+      ],
+      "hashes": [
+        {
+          "input": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 564808031891926
+        },
+        {
+          "input": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 565014643638823
+        }
+      ],
+      "observation": {
+        "activeOutputs": {
+          "complete": {
+            "value": [
+              {
+                "assets": [
+                  [
+                    {
+                      "name": 564808031891926,
+                      "policy": 10
+                    },
+                    1
+                  ]
+                ],
+                "credential": 99,
+                "datum": {
+                  "application": {
+                    "data": 1007
+                  }
+                },
+                "lovelace": 7,
+                "reference": {
+                  "index": 1,
+                  "tx": 30
+                }
+              }
+            ]
+          }
+        },
+        "network": {
+          "complete": {
+            "value": 42
+          }
+        },
+        "release": {
+          "applicationCredential": 99,
+          "applicationPolicy": 5,
+          "statePolicy": 10,
+          "stateProgram": 70
+        },
+        "state": "missing",
+        "trie": "missing"
+      },
+      "request": {
+        "key": 7,
+        "network": 42,
+        "registry": {
+          "name": 68887433291,
+          "policy": 10
+        }
+      },
+      "roots": []
+    }
+  },
+  {
+    "answer": {
+      "pendingTermination": {
+        "output": {
+          "assets": [
+            [
+              {
+                "name": 564808031891926,
+                "policy": 10
+              },
+              1
+            ],
+            [
+              {
+                "name": 565014643638823,
+                "policy": 5
+              },
+              1
+            ]
+          ],
+          "credential": 99,
+          "datum": "empty",
+          "lovelace": 1,
+          "reference": {
+            "index": 0,
+            "tx": 31
+          }
+        }
+      }
+    },
+    "name": "pending termination",
+    "query": {
+      "codes": [
+        {
+          "encoded": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "active": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        },
+        {
+          "encoded": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "terminationApproval": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        }
+      ],
+      "decoding": [
+        [
+          1007,
+          {
+            "live": {
+              "control": {
+                "activeAsset": {
+                  "name": 564808031891926,
+                  "policy": 10
+                },
+                "controller": 42,
+                "deposit": 7,
+                "key": 7,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              },
+              "payload": 123
+            }
+          }
+        ]
+      ],
+      "hashes": [
+        {
+          "input": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 564808031891926
+        },
+        {
+          "input": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 565014643638823
+        }
+      ],
+      "observation": {
+        "activeOutputs": {
+          "complete": {
+            "value": [
+              {
+                "assets": [
+                  [
+                    {
+                      "name": 564808031891926,
+                      "policy": 10
+                    },
+                    1
+                  ],
+                  [
+                    {
+                      "name": 565014643638823,
+                      "policy": 5
+                    },
+                    1
+                  ]
+                ],
+                "credential": 99,
+                "datum": "empty",
+                "lovelace": 1,
+                "reference": {
+                  "index": 0,
+                  "tx": 31
+                }
+              }
+            ]
+          }
+        },
+        "network": {
+          "complete": {
+            "value": 42
+          }
+        },
+        "release": {
+          "applicationCredential": 99,
+          "applicationPolicy": 5,
+          "statePolicy": 10,
+          "stateProgram": 70
+        },
+        "state": {
+          "complete": {
+            "value": {
+              "assets": [
+                [
+                  {
+                    "name": 68887433291,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ],
+              "credential": 10,
+              "datum": {
+                "root": {
+                  "commitment": 8
+                }
+              },
+              "lovelace": 2,
+              "reference": {
+                "index": 0,
+                "tx": 30
+              }
+            }
+          }
+        },
+        "trie": {
+          "complete": {
+            "value": [
+              [
+                7,
+                {
+                  "known": {
+                    "s": "active"
+                  }
+                }
+              ]
+            ]
+          }
+        }
+      },
+      "request": {
+        "key": 7,
+        "network": 42,
+        "registry": {
+          "name": 68887433291,
+          "policy": 10
+        }
+      },
+      "roots": [
+        {
+          "commitment": 8,
+          "trie": [
+            [
+              7,
+              {
+                "known": {
+                  "s": "active"
+                }
+              }
+            ]
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "answer": {
+      "terminal": {
+        "state": {
+          "output": {
+            "assets": [
+              [
+                {
+                  "name": 68887433291,
+                  "policy": 10
+                },
+                1
+              ]
+            ],
+            "credential": 10,
+            "datum": {
+              "root": {
+                "commitment": 9
+              }
+            },
+            "lovelace": 2,
+            "reference": {
+              "index": 0,
+              "tx": 32
+            }
+          },
+          "trie": [
+            [
+              7,
+              {
+                "known": {
+                  "s": "terminal"
+                }
+              }
+            ]
+          ]
+        }
+      }
+    },
+    "name": "terminal",
+    "query": {
+      "codes": [
+        {
+          "encoded": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "active": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        },
+        {
+          "encoded": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "terminationApproval": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        }
+      ],
+      "decoding": [
+        [
+          1007,
+          {
+            "live": {
+              "control": {
+                "activeAsset": {
+                  "name": 564808031891926,
+                  "policy": 10
+                },
+                "controller": 42,
+                "deposit": 7,
+                "key": 7,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              },
+              "payload": 123
+            }
+          }
+        ]
+      ],
+      "hashes": [
+        {
+          "input": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 564808031891926
+        },
+        {
+          "input": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 565014643638823
+        }
+      ],
+      "observation": {
+        "activeOutputs": {
+          "complete": {
+            "value": []
+          }
+        },
+        "network": {
+          "complete": {
+            "value": 42
+          }
+        },
+        "release": {
+          "applicationCredential": 99,
+          "applicationPolicy": 5,
+          "statePolicy": 10,
+          "stateProgram": 70
+        },
+        "state": {
+          "complete": {
+            "value": {
+              "assets": [
+                [
+                  {
+                    "name": 68887433291,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ],
+              "credential": 10,
+              "datum": {
+                "root": {
+                  "commitment": 9
+                }
+              },
+              "lovelace": 2,
+              "reference": {
+                "index": 0,
+                "tx": 32
+              }
+            }
+          }
+        },
+        "trie": {
+          "complete": {
+            "value": [
+              [
+                7,
+                {
+                  "known": {
+                    "s": "terminal"
+                  }
+                }
+              ]
+            ]
+          }
+        }
+      },
+      "request": {
+        "key": 7,
+        "network": 42,
+        "registry": {
+          "name": 68887433291,
+          "policy": 10
+        }
+      },
+      "roots": [
+        {
+          "commitment": 9,
+          "trie": [
+            [
+              7,
+              {
+                "known": {
+                  "s": "terminal"
+                }
+              }
+            ]
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "answer": {
+      "neverRegistered": {
+        "state": {
+          "output": {
+            "assets": [
+              [
+                {
+                  "name": 68887433291,
+                  "policy": 10
+                },
+                1
+              ]
+            ],
+            "credential": 10,
+            "datum": {
+              "root": {
+                "commitment": 9
+              }
+            },
+            "lovelace": 2,
+            "reference": {
+              "index": 0,
+              "tx": 32
+            }
+          },
+          "trie": [
+            [
+              7,
+              {
+                "known": {
+                  "s": "terminal"
+                }
+              }
+            ]
+          ]
+        }
+      }
+    },
+    "name": "never registered",
+    "query": {
+      "codes": [
+        {
+          "encoded": [
+            1,
+            10,
+            68887433291,
+            9
+          ],
+          "preimage": {
+            "active": {
+              "key": 9,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        },
+        {
+          "encoded": [
+            4,
+            10,
+            68887433291,
+            9
+          ],
+          "preimage": {
+            "terminationApproval": {
+              "key": 9,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        }
+      ],
+      "decoding": [
+        [
+          1007,
+          {
+            "live": {
+              "control": {
+                "activeAsset": {
+                  "name": 564808031891926,
+                  "policy": 10
+                },
+                "controller": 42,
+                "deposit": 7,
+                "key": 7,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              },
+              "payload": 123
+            }
+          }
+        ]
+      ],
+      "hashes": [
+        {
+          "input": [
+            1,
+            10,
+            68887433291,
+            9
+          ],
+          "output": 564808031891928
+        },
+        {
+          "input": [
+            4,
+            10,
+            68887433291,
+            9
+          ],
+          "output": 565014643638825
+        }
+      ],
+      "observation": {
+        "activeOutputs": {
+          "complete": {
+            "value": []
+          }
+        },
+        "network": {
+          "complete": {
+            "value": 42
+          }
+        },
+        "release": {
+          "applicationCredential": 99,
+          "applicationPolicy": 5,
+          "statePolicy": 10,
+          "stateProgram": 70
+        },
+        "state": {
+          "complete": {
+            "value": {
+              "assets": [
+                [
+                  {
+                    "name": 68887433291,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ],
+              "credential": 10,
+              "datum": {
+                "root": {
+                  "commitment": 9
+                }
+              },
+              "lovelace": 2,
+              "reference": {
+                "index": 0,
+                "tx": 32
+              }
+            }
+          }
+        },
+        "trie": {
+          "complete": {
+            "value": [
+              [
+                7,
+                {
+                  "known": {
+                    "s": "terminal"
+                  }
+                }
+              ]
+            ]
+          }
+        }
+      },
+      "request": {
+        "key": 9,
+        "network": 42,
+        "registry": {
+          "name": 68887433291,
+          "policy": 10
+        }
+      },
+      "roots": [
+        {
+          "commitment": 9,
+          "trie": [
+            [
+              7,
+              {
+                "known": {
+                  "s": "terminal"
+                }
+              }
+            ]
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "answer": {
+      "unavailable": {
+        "read": "state",
+        "reason": "missing"
+      }
+    },
+    "name": "empty asset answer without state",
+    "query": {
+      "codes": [
+        {
+          "encoded": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "active": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        },
+        {
+          "encoded": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "terminationApproval": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        }
+      ],
+      "decoding": [
+        [
+          1007,
+          {
+            "live": {
+              "control": {
+                "activeAsset": {
+                  "name": 564808031891926,
+                  "policy": 10
+                },
+                "controller": 42,
+                "deposit": 7,
+                "key": 7,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              },
+              "payload": 123
+            }
+          }
+        ]
+      ],
+      "hashes": [
+        {
+          "input": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 564808031891926
+        },
+        {
+          "input": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 565014643638823
+        }
+      ],
+      "observation": {
+        "activeOutputs": {
+          "complete": {
+            "value": []
+          }
+        },
+        "network": {
+          "complete": {
+            "value": 42
+          }
+        },
+        "release": {
+          "applicationCredential": 99,
+          "applicationPolicy": 5,
+          "statePolicy": 10,
+          "stateProgram": 70
+        },
+        "state": "missing",
+        "trie": "missing"
+      },
+      "request": {
+        "key": 7,
+        "network": 42,
+        "registry": {
+          "name": 68887433291,
+          "policy": 10
+        }
+      },
+      "roots": []
+    }
+  },
+  {
+    "answer": {
+      "unavailable": {
+        "read": "network",
+        "reason": {
+          "failed": {
+            "reason": "provider unavailable"
+          }
+        }
+      }
+    },
+    "name": "failed network read",
+    "query": {
+      "codes": [
+        {
+          "encoded": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "active": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        },
+        {
+          "encoded": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "terminationApproval": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        }
+      ],
+      "decoding": [
+        [
+          1007,
+          {
+            "live": {
+              "control": {
+                "activeAsset": {
+                  "name": 564808031891926,
+                  "policy": 10
+                },
+                "controller": 42,
+                "deposit": 7,
+                "key": 7,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              },
+              "payload": 123
+            }
+          }
+        ]
+      ],
+      "hashes": [
+        {
+          "input": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 564808031891926
+        },
+        {
+          "input": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 565014643638823
+        }
+      ],
+      "observation": {
+        "activeOutputs": {
+          "complete": {
+            "value": [
+              {
+                "assets": [
+                  [
+                    {
+                      "name": 564808031891926,
+                      "policy": 10
+                    },
+                    1
+                  ]
+                ],
+                "credential": 99,
+                "datum": {
+                  "application": {
+                    "data": 1007
+                  }
+                },
+                "lovelace": 7,
+                "reference": {
+                  "index": 1,
+                  "tx": 30
+                }
+              }
+            ]
+          }
+        },
+        "network": {
+          "failed": {
+            "reason": "provider unavailable"
+          }
+        },
+        "release": {
+          "applicationCredential": 99,
+          "applicationPolicy": 5,
+          "statePolicy": 10,
+          "stateProgram": 70
+        },
+        "state": {
+          "complete": {
+            "value": {
+              "assets": [
+                [
+                  {
+                    "name": 68887433291,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ],
+              "credential": 10,
+              "datum": {
+                "root": {
+                  "commitment": 8
+                }
+              },
+              "lovelace": 2,
+              "reference": {
+                "index": 0,
+                "tx": 30
+              }
+            }
+          }
+        },
+        "trie": {
+          "complete": {
+            "value": [
+              [
+                7,
+                {
+                  "known": {
+                    "s": "active"
+                  }
+                }
+              ]
+            ]
+          }
+        }
+      },
+      "request": {
+        "key": 7,
+        "network": 42,
+        "registry": {
+          "name": 68887433291,
+          "policy": 10
+        }
+      },
+      "roots": [
+        {
+          "commitment": 8,
+          "trie": [
+            [
+              7,
+              {
+                "known": {
+                  "s": "active"
+                }
+              }
+            ]
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "answer": {
+      "unavailable": {
+        "read": "activeOutputs",
+        "reason": {
+          "incomplete": {
+            "reason": "truncated page"
+          }
+        }
+      }
+    },
+    "name": "incomplete asset answer",
+    "query": {
+      "codes": [
+        {
+          "encoded": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "active": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        },
+        {
+          "encoded": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "terminationApproval": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        }
+      ],
+      "decoding": [
+        [
+          1007,
+          {
+            "live": {
+              "control": {
+                "activeAsset": {
+                  "name": 564808031891926,
+                  "policy": 10
+                },
+                "controller": 42,
+                "deposit": 7,
+                "key": 7,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              },
+              "payload": 123
+            }
+          }
+        ]
+      ],
+      "hashes": [
+        {
+          "input": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 564808031891926
+        },
+        {
+          "input": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 565014643638823
+        }
+      ],
+      "observation": {
+        "activeOutputs": {
+          "incomplete": {
+            "reason": "truncated page"
+          }
+        },
+        "network": {
+          "complete": {
+            "value": 42
+          }
+        },
+        "release": {
+          "applicationCredential": 99,
+          "applicationPolicy": 5,
+          "statePolicy": 10,
+          "stateProgram": 70
+        },
+        "state": {
+          "complete": {
+            "value": {
+              "assets": [
+                [
+                  {
+                    "name": 68887433291,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ],
+              "credential": 10,
+              "datum": {
+                "root": {
+                  "commitment": 8
+                }
+              },
+              "lovelace": 2,
+              "reference": {
+                "index": 0,
+                "tx": 30
+              }
+            }
+          }
+        },
+        "trie": {
+          "complete": {
+            "value": [
+              [
+                7,
+                {
+                  "known": {
+                    "s": "active"
+                  }
+                }
+              ]
+            ]
+          }
+        }
+      },
+      "request": {
+        "key": 7,
+        "network": 42,
+        "registry": {
+          "name": 68887433291,
+          "policy": 10
+        }
+      },
+      "roots": [
+        {
+          "commitment": 8,
+          "trie": [
+            [
+              7,
+              {
+                "known": {
+                  "s": "active"
+                }
+              }
+            ]
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "answer": {
+      "unavailable": {
+        "read": "activeOutputs",
+        "reason": {
+          "failed": {
+            "reason": "provider unavailable"
+          }
+        }
+      }
+    },
+    "name": "failed asset read",
+    "query": {
+      "codes": [
+        {
+          "encoded": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "active": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        },
+        {
+          "encoded": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "terminationApproval": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        }
+      ],
+      "decoding": [
+        [
+          1007,
+          {
+            "live": {
+              "control": {
+                "activeAsset": {
+                  "name": 564808031891926,
+                  "policy": 10
+                },
+                "controller": 42,
+                "deposit": 7,
+                "key": 7,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              },
+              "payload": 123
+            }
+          }
+        ]
+      ],
+      "hashes": [
+        {
+          "input": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 564808031891926
+        },
+        {
+          "input": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 565014643638823
+        }
+      ],
+      "observation": {
+        "activeOutputs": {
+          "failed": {
+            "reason": "provider unavailable"
+          }
+        },
+        "network": {
+          "complete": {
+            "value": 42
+          }
+        },
+        "release": {
+          "applicationCredential": 99,
+          "applicationPolicy": 5,
+          "statePolicy": 10,
+          "stateProgram": 70
+        },
+        "state": {
+          "complete": {
+            "value": {
+              "assets": [
+                [
+                  {
+                    "name": 68887433291,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ],
+              "credential": 10,
+              "datum": {
+                "root": {
+                  "commitment": 8
+                }
+              },
+              "lovelace": 2,
+              "reference": {
+                "index": 0,
+                "tx": 30
+              }
+            }
+          }
+        },
+        "trie": {
+          "complete": {
+            "value": [
+              [
+                7,
+                {
+                  "known": {
+                    "s": "active"
+                  }
+                }
+              ]
+            ]
+          }
+        }
+      },
+      "request": {
+        "key": 7,
+        "network": 42,
+        "registry": {
+          "name": 68887433291,
+          "policy": 10
+        }
+      },
+      "roots": [
+        {
+          "commitment": 8,
+          "trie": [
+            [
+              7,
+              {
+                "known": {
+                  "s": "active"
+                }
+              }
+            ]
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "answer": {
+      "unavailable": {
+        "read": "state",
+        "reason": {
+          "failed": {
+            "reason": "provider unavailable"
+          }
+        }
+      }
+    },
+    "name": "failed state read",
+    "query": {
+      "codes": [
+        {
+          "encoded": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "active": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        },
+        {
+          "encoded": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "terminationApproval": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        }
+      ],
+      "decoding": [
+        [
+          1007,
+          {
+            "live": {
+              "control": {
+                "activeAsset": {
+                  "name": 564808031891926,
+                  "policy": 10
+                },
+                "controller": 42,
+                "deposit": 7,
+                "key": 7,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              },
+              "payload": 123
+            }
+          }
+        ]
+      ],
+      "hashes": [
+        {
+          "input": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 564808031891926
+        },
+        {
+          "input": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 565014643638823
+        }
+      ],
+      "observation": {
+        "activeOutputs": {
+          "complete": {
+            "value": []
+          }
+        },
+        "network": {
+          "complete": {
+            "value": 42
+          }
+        },
+        "release": {
+          "applicationCredential": 99,
+          "applicationPolicy": 5,
+          "statePolicy": 10,
+          "stateProgram": 70
+        },
+        "state": {
+          "failed": {
+            "reason": "provider unavailable"
+          }
+        },
+        "trie": {
+          "complete": {
+            "value": [
+              [
+                7,
+                {
+                  "known": {
+                    "s": "terminal"
+                  }
+                }
+              ]
+            ]
+          }
+        }
+      },
+      "request": {
+        "key": 7,
+        "network": 42,
+        "registry": {
+          "name": 68887433291,
+          "policy": 10
+        }
+      },
+      "roots": [
+        {
+          "commitment": 9,
+          "trie": [
+            [
+              7,
+              {
+                "known": {
+                  "s": "terminal"
+                }
+              }
+            ]
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "answer": {
+      "unavailable": {
+        "read": "trie",
+        "reason": {
+          "failed": {
+            "reason": "provider unavailable"
+          }
+        }
+      }
+    },
+    "name": "failed trie read",
+    "query": {
+      "codes": [
+        {
+          "encoded": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "active": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        },
+        {
+          "encoded": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "terminationApproval": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        }
+      ],
+      "decoding": [
+        [
+          1007,
+          {
+            "live": {
+              "control": {
+                "activeAsset": {
+                  "name": 564808031891926,
+                  "policy": 10
+                },
+                "controller": 42,
+                "deposit": 7,
+                "key": 7,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              },
+              "payload": 123
+            }
+          }
+        ]
+      ],
+      "hashes": [
+        {
+          "input": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 564808031891926
+        },
+        {
+          "input": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 565014643638823
+        }
+      ],
+      "observation": {
+        "activeOutputs": {
+          "complete": {
+            "value": []
+          }
+        },
+        "network": {
+          "complete": {
+            "value": 42
+          }
+        },
+        "release": {
+          "applicationCredential": 99,
+          "applicationPolicy": 5,
+          "statePolicy": 10,
+          "stateProgram": 70
+        },
+        "state": {
+          "complete": {
+            "value": {
+              "assets": [
+                [
+                  {
+                    "name": 68887433291,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ],
+              "credential": 10,
+              "datum": {
+                "root": {
+                  "commitment": 9
+                }
+              },
+              "lovelace": 2,
+              "reference": {
+                "index": 0,
+                "tx": 32
+              }
+            }
+          }
+        },
+        "trie": {
+          "failed": {
+            "reason": "provider unavailable"
+          }
+        }
+      },
+      "request": {
+        "key": 7,
+        "network": 42,
+        "registry": {
+          "name": 68887433291,
+          "policy": 10
+        }
+      },
+      "roots": []
+    }
+  },
+  {
+    "answer": {
+      "refused": {
+        "reason": {
+          "wrongNetwork": {
+            "requested": 42,
+            "served": 43
+          }
+        }
+      }
+    },
+    "name": "wrong network",
+    "query": {
+      "codes": [
+        {
+          "encoded": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "active": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        },
+        {
+          "encoded": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "terminationApproval": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        }
+      ],
+      "decoding": [
+        [
+          1007,
+          {
+            "live": {
+              "control": {
+                "activeAsset": {
+                  "name": 564808031891926,
+                  "policy": 10
+                },
+                "controller": 42,
+                "deposit": 7,
+                "key": 7,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              },
+              "payload": 123
+            }
+          }
+        ]
+      ],
+      "hashes": [
+        {
+          "input": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 564808031891926
+        },
+        {
+          "input": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 565014643638823
+        }
+      ],
+      "observation": {
+        "activeOutputs": {
+          "complete": {
+            "value": [
+              {
+                "assets": [
+                  [
+                    {
+                      "name": 564808031891926,
+                      "policy": 10
+                    },
+                    1
+                  ]
+                ],
+                "credential": 99,
+                "datum": {
+                  "application": {
+                    "data": 1007
+                  }
+                },
+                "lovelace": 7,
+                "reference": {
+                  "index": 1,
+                  "tx": 30
+                }
+              }
+            ]
+          }
+        },
+        "network": {
+          "complete": {
+            "value": 43
+          }
+        },
+        "release": {
+          "applicationCredential": 99,
+          "applicationPolicy": 5,
+          "statePolicy": 10,
+          "stateProgram": 70
+        },
+        "state": {
+          "complete": {
+            "value": {
+              "assets": [
+                [
+                  {
+                    "name": 68887433291,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ],
+              "credential": 10,
+              "datum": {
+                "root": {
+                  "commitment": 8
+                }
+              },
+              "lovelace": 2,
+              "reference": {
+                "index": 0,
+                "tx": 30
+              }
+            }
+          }
+        },
+        "trie": {
+          "complete": {
+            "value": [
+              [
+                7,
+                {
+                  "known": {
+                    "s": "active"
+                  }
+                }
+              ]
+            ]
+          }
+        }
+      },
+      "request": {
+        "key": 7,
+        "network": 42,
+        "registry": {
+          "name": 68887433291,
+          "policy": 10
+        }
+      },
+      "roots": [
+        {
+          "commitment": 8,
+          "trie": [
+            [
+              7,
+              {
+                "known": {
+                  "s": "active"
+                }
+              }
+            ]
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "answer": {
+      "refused": {
+        "reason": {
+          "unknownStatePolicy": {
+            "policy": 10
+          }
+        }
+      }
+    },
+    "name": "unknown state policy",
+    "query": {
+      "codes": [
+        {
+          "encoded": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "active": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        },
+        {
+          "encoded": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "terminationApproval": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        }
+      ],
+      "decoding": [
+        [
+          1007,
+          {
+            "live": {
+              "control": {
+                "activeAsset": {
+                  "name": 564808031891926,
+                  "policy": 10
+                },
+                "controller": 42,
+                "deposit": 7,
+                "key": 7,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              },
+              "payload": 123
+            }
+          }
+        ]
+      ],
+      "hashes": [
+        {
+          "input": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 564808031891926
+        },
+        {
+          "input": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 565014643638823
+        }
+      ],
+      "observation": {
+        "activeOutputs": {
+          "complete": {
+            "value": [
+              {
+                "assets": [
+                  [
+                    {
+                      "name": 564808031891926,
+                      "policy": 10
+                    },
+                    1
+                  ]
+                ],
+                "credential": 99,
+                "datum": {
+                  "application": {
+                    "data": 1007
+                  }
+                },
+                "lovelace": 7,
+                "reference": {
+                  "index": 1,
+                  "tx": 30
+                }
+              }
+            ]
+          }
+        },
+        "network": {
+          "complete": {
+            "value": 42
+          }
+        },
+        "release": null,
+        "state": {
+          "complete": {
+            "value": {
+              "assets": [
+                [
+                  {
+                    "name": 68887433291,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ],
+              "credential": 10,
+              "datum": {
+                "root": {
+                  "commitment": 8
+                }
+              },
+              "lovelace": 2,
+              "reference": {
+                "index": 0,
+                "tx": 30
+              }
+            }
+          }
+        },
+        "trie": {
+          "complete": {
+            "value": [
+              [
+                7,
+                {
+                  "known": {
+                    "s": "active"
+                  }
+                }
+              ]
+            ]
+          }
+        }
+      },
+      "request": {
+        "key": 7,
+        "network": 42,
+        "registry": {
+          "name": 68887433291,
+          "policy": 10
+        }
+      },
+      "roots": [
+        {
+          "commitment": 8,
+          "trie": [
+            [
+              7,
+              {
+                "known": {
+                  "s": "active"
+                }
+              }
+            ]
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "answer": {
+      "refused": {
+        "reason": {
+          "foreignStatePolicy": {
+            "published": 11,
+            "requested": 10
+          }
+        }
+      }
+    },
+    "name": "foreign state policy",
+    "query": {
+      "codes": [
+        {
+          "encoded": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "active": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        },
+        {
+          "encoded": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "terminationApproval": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        }
+      ],
+      "decoding": [
+        [
+          1007,
+          {
+            "live": {
+              "control": {
+                "activeAsset": {
+                  "name": 564808031891926,
+                  "policy": 10
+                },
+                "controller": 42,
+                "deposit": 7,
+                "key": 7,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              },
+              "payload": 123
+            }
+          }
+        ]
+      ],
+      "hashes": [
+        {
+          "input": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 564808031891926
+        },
+        {
+          "input": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 565014643638823
+        }
+      ],
+      "observation": {
+        "activeOutputs": {
+          "complete": {
+            "value": [
+              {
+                "assets": [
+                  [
+                    {
+                      "name": 564808031891926,
+                      "policy": 10
+                    },
+                    1
+                  ]
+                ],
+                "credential": 99,
+                "datum": {
+                  "application": {
+                    "data": 1007
+                  }
+                },
+                "lovelace": 7,
+                "reference": {
+                  "index": 1,
+                  "tx": 30
+                }
+              }
+            ]
+          }
+        },
+        "network": {
+          "complete": {
+            "value": 42
+          }
+        },
+        "release": {
+          "applicationCredential": 99,
+          "applicationPolicy": 5,
+          "statePolicy": 11,
+          "stateProgram": 70
+        },
+        "state": {
+          "complete": {
+            "value": {
+              "assets": [
+                [
+                  {
+                    "name": 68887433291,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ],
+              "credential": 10,
+              "datum": {
+                "root": {
+                  "commitment": 8
+                }
+              },
+              "lovelace": 2,
+              "reference": {
+                "index": 0,
+                "tx": 30
+              }
+            }
+          }
+        },
+        "trie": {
+          "complete": {
+            "value": [
+              [
+                7,
+                {
+                  "known": {
+                    "s": "active"
+                  }
+                }
+              ]
+            ]
+          }
+        }
+      },
+      "request": {
+        "key": 7,
+        "network": 42,
+        "registry": {
+          "name": 68887433291,
+          "policy": 10
+        }
+      },
+      "roots": [
+        {
+          "commitment": 8,
+          "trie": [
+            [
+              7,
+              {
+                "known": {
+                  "s": "active"
+                }
+              }
+            ]
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "answer": {
+      "refused": {
+        "reason": {
+          "tokenOutsideApplicationCustody": {
+            "credential": 10,
+            "reference": {
+              "index": 1,
+              "tx": 30
+            }
+          }
+        }
+      }
+    },
+    "name": "token at state address",
+    "query": {
+      "codes": [
+        {
+          "encoded": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "active": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        },
+        {
+          "encoded": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "terminationApproval": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        }
+      ],
+      "decoding": [
+        [
+          1007,
+          {
+            "live": {
+              "control": {
+                "activeAsset": {
+                  "name": 564808031891926,
+                  "policy": 10
+                },
+                "controller": 42,
+                "deposit": 7,
+                "key": 7,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              },
+              "payload": 123
+            }
+          }
+        ]
+      ],
+      "hashes": [
+        {
+          "input": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 564808031891926
+        },
+        {
+          "input": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 565014643638823
+        }
+      ],
+      "observation": {
+        "activeOutputs": {
+          "complete": {
+            "value": [
+              {
+                "assets": [
+                  [
+                    {
+                      "name": 564808031891926,
+                      "policy": 10
+                    },
+                    1
+                  ]
+                ],
+                "credential": 10,
+                "datum": {
+                  "application": {
+                    "data": 1007
+                  }
+                },
+                "lovelace": 7,
+                "reference": {
+                  "index": 1,
+                  "tx": 30
+                }
+              }
+            ]
+          }
+        },
+        "network": {
+          "complete": {
+            "value": 42
+          }
+        },
+        "release": {
+          "applicationCredential": 99,
+          "applicationPolicy": 5,
+          "statePolicy": 10,
+          "stateProgram": 70
+        },
+        "state": {
+          "complete": {
+            "value": {
+              "assets": [
+                [
+                  {
+                    "name": 68887433291,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ],
+              "credential": 10,
+              "datum": {
+                "root": {
+                  "commitment": 8
+                }
+              },
+              "lovelace": 2,
+              "reference": {
+                "index": 0,
+                "tx": 30
+              }
+            }
+          }
+        },
+        "trie": {
+          "complete": {
+            "value": [
+              [
+                7,
+                {
+                  "known": {
+                    "s": "active"
+                  }
+                }
+              ]
+            ]
+          }
+        }
+      },
+      "request": {
+        "key": 7,
+        "network": 42,
+        "registry": {
+          "name": 68887433291,
+          "policy": 10
+        }
+      },
+      "roots": [
+        {
+          "commitment": 8,
+          "trie": [
+            [
+              7,
+              {
+                "known": {
+                  "s": "active"
+                }
+              }
+            ]
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "answer": {
+      "refused": {
+        "reason": {
+          "tokenOutsideApplicationCustody": {
+            "credential": 60,
+            "reference": {
+              "index": 1,
+              "tx": 30
+            }
+          }
+        }
+      }
+    },
+    "name": "token at another address",
+    "query": {
+      "codes": [
+        {
+          "encoded": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "active": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        },
+        {
+          "encoded": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "terminationApproval": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        }
+      ],
+      "decoding": [
+        [
+          1007,
+          {
+            "live": {
+              "control": {
+                "activeAsset": {
+                  "name": 564808031891926,
+                  "policy": 10
+                },
+                "controller": 42,
+                "deposit": 7,
+                "key": 7,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              },
+              "payload": 123
+            }
+          }
+        ]
+      ],
+      "hashes": [
+        {
+          "input": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 564808031891926
+        },
+        {
+          "input": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 565014643638823
+        }
+      ],
+      "observation": {
+        "activeOutputs": {
+          "complete": {
+            "value": [
+              {
+                "assets": [
+                  [
+                    {
+                      "name": 564808031891926,
+                      "policy": 10
+                    },
+                    1
+                  ]
+                ],
+                "credential": 60,
+                "datum": {
+                  "application": {
+                    "data": 1007
+                  }
+                },
+                "lovelace": 7,
+                "reference": {
+                  "index": 1,
+                  "tx": 30
+                }
+              }
+            ]
+          }
+        },
+        "network": {
+          "complete": {
+            "value": 42
+          }
+        },
+        "release": {
+          "applicationCredential": 99,
+          "applicationPolicy": 5,
+          "statePolicy": 10,
+          "stateProgram": 70
+        },
+        "state": {
+          "complete": {
+            "value": {
+              "assets": [
+                [
+                  {
+                    "name": 68887433291,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ],
+              "credential": 10,
+              "datum": {
+                "root": {
+                  "commitment": 8
+                }
+              },
+              "lovelace": 2,
+              "reference": {
+                "index": 0,
+                "tx": 30
+              }
+            }
+          }
+        },
+        "trie": {
+          "complete": {
+            "value": [
+              [
+                7,
+                {
+                  "known": {
+                    "s": "active"
+                  }
+                }
+              ]
+            ]
+          }
+        }
+      },
+      "request": {
+        "key": 7,
+        "network": 42,
+        "registry": {
+          "name": 68887433291,
+          "policy": 10
+        }
+      },
+      "roots": [
+        {
+          "commitment": 8,
+          "trie": [
+            [
+              7,
+              {
+                "known": {
+                  "s": "active"
+                }
+              }
+            ]
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "answer": {
+      "refused": {
+        "reason": "conflictingEvidence"
+      }
+    },
+    "name": "two outputs",
+    "query": {
+      "codes": [
+        {
+          "encoded": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "active": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        },
+        {
+          "encoded": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "terminationApproval": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        }
+      ],
+      "decoding": [
+        [
+          1007,
+          {
+            "live": {
+              "control": {
+                "activeAsset": {
+                  "name": 564808031891926,
+                  "policy": 10
+                },
+                "controller": 42,
+                "deposit": 7,
+                "key": 7,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              },
+              "payload": 123
+            }
+          }
+        ]
+      ],
+      "hashes": [
+        {
+          "input": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 564808031891926
+        },
+        {
+          "input": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 565014643638823
+        }
+      ],
+      "observation": {
+        "activeOutputs": {
+          "complete": {
+            "value": [
+              {
+                "assets": [
+                  [
+                    {
+                      "name": 564808031891926,
+                      "policy": 10
+                    },
+                    1
+                  ]
+                ],
+                "credential": 99,
+                "datum": {
+                  "application": {
+                    "data": 1007
+                  }
+                },
+                "lovelace": 7,
+                "reference": {
+                  "index": 1,
+                  "tx": 30
+                }
+              },
+              {
+                "assets": [
+                  [
+                    {
+                      "name": 564808031891926,
+                      "policy": 10
+                    },
+                    1
+                  ]
+                ],
+                "credential": 99,
+                "datum": {
+                  "application": {
+                    "data": 1007
+                  }
+                },
+                "lovelace": 7,
+                "reference": {
+                  "index": 0,
+                  "tx": 40
+                }
+              }
+            ]
+          }
+        },
+        "network": {
+          "complete": {
+            "value": 42
+          }
+        },
+        "release": {
+          "applicationCredential": 99,
+          "applicationPolicy": 5,
+          "statePolicy": 10,
+          "stateProgram": 70
+        },
+        "state": {
+          "complete": {
+            "value": {
+              "assets": [
+                [
+                  {
+                    "name": 68887433291,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ],
+              "credential": 10,
+              "datum": {
+                "root": {
+                  "commitment": 8
+                }
+              },
+              "lovelace": 2,
+              "reference": {
+                "index": 0,
+                "tx": 30
+              }
+            }
+          }
+        },
+        "trie": {
+          "complete": {
+            "value": [
+              [
+                7,
+                {
+                  "known": {
+                    "s": "active"
+                  }
+                }
+              ]
+            ]
+          }
+        }
+      },
+      "request": {
+        "key": 7,
+        "network": 42,
+        "registry": {
+          "name": 68887433291,
+          "policy": 10
+        }
+      },
+      "roots": [
+        {
+          "commitment": 8,
+          "trie": [
+            [
+              7,
+              {
+                "known": {
+                  "s": "active"
+                }
+              }
+            ]
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "answer": {
+      "refused": {
+        "reason": "conflictingEvidence"
+      }
+    },
+    "name": "non-unit quantity",
+    "query": {
+      "codes": [
+        {
+          "encoded": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "active": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        },
+        {
+          "encoded": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "terminationApproval": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        }
+      ],
+      "decoding": [
+        [
+          1007,
+          {
+            "live": {
+              "control": {
+                "activeAsset": {
+                  "name": 564808031891926,
+                  "policy": 10
+                },
+                "controller": 42,
+                "deposit": 7,
+                "key": 7,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              },
+              "payload": 123
+            }
+          }
+        ]
+      ],
+      "hashes": [
+        {
+          "input": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 564808031891926
+        },
+        {
+          "input": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 565014643638823
+        }
+      ],
+      "observation": {
+        "activeOutputs": {
+          "complete": {
+            "value": [
+              {
+                "assets": [
+                  [
+                    {
+                      "name": 564808031891926,
+                      "policy": 10
+                    },
+                    2
+                  ]
+                ],
+                "credential": 99,
+                "datum": {
+                  "application": {
+                    "data": 1007
+                  }
+                },
+                "lovelace": 7,
+                "reference": {
+                  "index": 1,
+                  "tx": 30
+                }
+              }
+            ]
+          }
+        },
+        "network": {
+          "complete": {
+            "value": 42
+          }
+        },
+        "release": {
+          "applicationCredential": 99,
+          "applicationPolicy": 5,
+          "statePolicy": 10,
+          "stateProgram": 70
+        },
+        "state": {
+          "complete": {
+            "value": {
+              "assets": [
+                [
+                  {
+                    "name": 68887433291,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ],
+              "credential": 10,
+              "datum": {
+                "root": {
+                  "commitment": 8
+                }
+              },
+              "lovelace": 2,
+              "reference": {
+                "index": 0,
+                "tx": 30
+              }
+            }
+          }
+        },
+        "trie": {
+          "complete": {
+            "value": [
+              [
+                7,
+                {
+                  "known": {
+                    "s": "active"
+                  }
+                }
+              ]
+            ]
+          }
+        }
+      },
+      "request": {
+        "key": 7,
+        "network": 42,
+        "registry": {
+          "name": 68887433291,
+          "policy": 10
+        }
+      },
+      "roots": [
+        {
+          "commitment": 8,
+          "trie": [
+            [
+              7,
+              {
+                "known": {
+                  "s": "active"
+                }
+              }
+            ]
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "answer": {
+      "unavailable": {
+        "read": "state",
+        "reason": "stateNotRecognized"
+      }
+    },
+    "name": "unrecognised state",
+    "query": {
+      "codes": [
+        {
+          "encoded": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "active": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        },
+        {
+          "encoded": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "terminationApproval": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        }
+      ],
+      "decoding": [
+        [
+          1007,
+          {
+            "live": {
+              "control": {
+                "activeAsset": {
+                  "name": 564808031891926,
+                  "policy": 10
+                },
+                "controller": 42,
+                "deposit": 7,
+                "key": 7,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              },
+              "payload": 123
+            }
+          }
+        ]
+      ],
+      "hashes": [
+        {
+          "input": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 564808031891926
+        },
+        {
+          "input": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 565014643638823
+        }
+      ],
+      "observation": {
+        "activeOutputs": {
+          "complete": {
+            "value": []
+          }
+        },
+        "network": {
+          "complete": {
+            "value": 42
+          }
+        },
+        "release": {
+          "applicationCredential": 99,
+          "applicationPolicy": 5,
+          "statePolicy": 10,
+          "stateProgram": 70
+        },
+        "state": {
+          "complete": {
+            "value": {
+              "assets": [
+                [
+                  {
+                    "name": 68887433291,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ],
+              "credential": 10,
+              "datum": "empty",
+              "lovelace": 2,
+              "reference": {
+                "index": 0,
+                "tx": 32
+              }
+            }
+          }
+        },
+        "trie": {
+          "complete": {
+            "value": [
+              [
+                7,
+                {
+                  "known": {
+                    "s": "terminal"
+                  }
+                }
+              ]
+            ]
+          }
+        }
+      },
+      "request": {
+        "key": 7,
+        "network": 42,
+        "registry": {
+          "name": 68887433291,
+          "policy": 10
+        }
+      },
+      "roots": [
+        {
+          "commitment": 9,
+          "trie": [
+            [
+              7,
+              {
+                "known": {
+                  "s": "terminal"
+                }
+              }
+            ]
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "answer": {
+      "unavailable": {
+        "read": "trie",
+        "reason": "trieRootMismatch"
+      }
+    },
+    "name": "trie root mismatch",
+    "query": {
+      "codes": [
+        {
+          "encoded": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "active": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        },
+        {
+          "encoded": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "terminationApproval": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        }
+      ],
+      "decoding": [
+        [
+          1007,
+          {
+            "live": {
+              "control": {
+                "activeAsset": {
+                  "name": 564808031891926,
+                  "policy": 10
+                },
+                "controller": 42,
+                "deposit": 7,
+                "key": 7,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              },
+              "payload": 123
+            }
+          }
+        ]
+      ],
+      "hashes": [
+        {
+          "input": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 564808031891926
+        },
+        {
+          "input": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 565014643638823
+        }
+      ],
+      "observation": {
+        "activeOutputs": {
+          "complete": {
+            "value": []
+          }
+        },
+        "network": {
+          "complete": {
+            "value": 42
+          }
+        },
+        "release": {
+          "applicationCredential": 99,
+          "applicationPolicy": 5,
+          "statePolicy": 10,
+          "stateProgram": 70
+        },
+        "state": {
+          "complete": {
+            "value": {
+              "assets": [
+                [
+                  {
+                    "name": 68887433291,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ],
+              "credential": 10,
+              "datum": {
+                "root": {
+                  "commitment": 0
+                }
+              },
+              "lovelace": 2,
+              "reference": {
+                "index": 0,
+                "tx": 32
+              }
+            }
+          }
+        },
+        "trie": {
+          "complete": {
+            "value": [
+              [
+                7,
+                {
+                  "known": {
+                    "s": "terminal"
+                  }
+                }
+              ]
+            ]
+          }
+        }
+      },
+      "request": {
+        "key": 7,
+        "network": 42,
+        "registry": {
+          "name": 68887433291,
+          "policy": 10
+        }
+      },
+      "roots": [
+        {
+          "commitment": 9,
+          "trie": [
+            [
+              7,
+              {
+                "known": {
+                  "s": "terminal"
+                }
+              }
+            ]
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "answer": {
+      "refused": {
+        "reason": "conflictingEvidence"
+      }
+    },
+    "name": "unknown holding datum",
+    "query": {
+      "codes": [
+        {
+          "encoded": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "active": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        },
+        {
+          "encoded": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "terminationApproval": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        }
+      ],
+      "decoding": [
+        [
+          1007,
+          {
+            "live": {
+              "control": {
+                "activeAsset": {
+                  "name": 564808031891926,
+                  "policy": 10
+                },
+                "controller": 42,
+                "deposit": 7,
+                "key": 7,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              },
+              "payload": 123
+            }
+          }
+        ]
+      ],
+      "hashes": [
+        {
+          "input": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 564808031891926
+        },
+        {
+          "input": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 565014643638823
+        }
+      ],
+      "observation": {
+        "activeOutputs": {
+          "complete": {
+            "value": [
+              {
+                "assets": [
+                  [
+                    {
+                      "name": 564808031891926,
+                      "policy": 10
+                    },
+                    1
+                  ]
+                ],
+                "credential": 99,
+                "datum": {
+                  "application": {
+                    "data": 9999
+                  }
+                },
+                "lovelace": 7,
+                "reference": {
+                  "index": 1,
+                  "tx": 30
+                }
+              }
+            ]
+          }
+        },
+        "network": {
+          "complete": {
+            "value": 42
+          }
+        },
+        "release": {
+          "applicationCredential": 99,
+          "applicationPolicy": 5,
+          "statePolicy": 10,
+          "stateProgram": 70
+        },
+        "state": {
+          "complete": {
+            "value": {
+              "assets": [
+                [
+                  {
+                    "name": 68887433291,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ],
+              "credential": 10,
+              "datum": {
+                "root": {
+                  "commitment": 8
+                }
+              },
+              "lovelace": 2,
+              "reference": {
+                "index": 0,
+                "tx": 30
+              }
+            }
+          }
+        },
+        "trie": {
+          "complete": {
+            "value": [
+              [
+                7,
+                {
+                  "known": {
+                    "s": "active"
+                  }
+                }
+              ]
+            ]
+          }
+        }
+      },
+      "request": {
+        "key": 7,
+        "network": 42,
+        "registry": {
+          "name": 68887433291,
+          "policy": 10
+        }
+      },
+      "roots": [
+        {
+          "commitment": 8,
+          "trie": [
+            [
+              7,
+              {
+                "known": {
+                  "s": "active"
+                }
+              }
+            ]
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "answer": {
+      "refused": {
+        "reason": "conflictingEvidence"
+      }
+    },
+    "name": "active leaf without token",
+    "query": {
+      "codes": [
+        {
+          "encoded": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "active": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        },
+        {
+          "encoded": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "preimage": {
+            "terminationApproval": {
+              "key": 7,
+              "registry": {
+                "name": 68887433291,
+                "policy": 10
+              }
+            }
+          }
+        }
+      ],
+      "decoding": [
+        [
+          1007,
+          {
+            "live": {
+              "control": {
+                "activeAsset": {
+                  "name": 564808031891926,
+                  "policy": 10
+                },
+                "controller": 42,
+                "deposit": 7,
+                "key": 7,
+                "registry": {
+                  "name": 68887433291,
+                  "policy": 10
+                }
+              },
+              "payload": 123
+            }
+          }
+        ]
+      ],
+      "hashes": [
+        {
+          "input": [
+            1,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 564808031891926
+        },
+        {
+          "input": [
+            4,
+            10,
+            68887433291,
+            7
+          ],
+          "output": 565014643638823
+        }
+      ],
+      "observation": {
+        "activeOutputs": {
+          "complete": {
+            "value": []
+          }
+        },
+        "network": {
+          "complete": {
+            "value": 42
+          }
+        },
+        "release": {
+          "applicationCredential": 99,
+          "applicationPolicy": 5,
+          "statePolicy": 10,
+          "stateProgram": 70
+        },
+        "state": {
+          "complete": {
+            "value": {
+              "assets": [
+                [
+                  {
+                    "name": 68887433291,
+                    "policy": 10
+                  },
+                  1
+                ]
+              ],
+              "credential": 10,
+              "datum": {
+                "root": {
+                  "commitment": 8
+                }
+              },
+              "lovelace": 2,
+              "reference": {
+                "index": 0,
+                "tx": 30
+              }
+            }
+          }
+        },
+        "trie": {
+          "complete": {
+            "value": [
+              [
+                7,
+                {
+                  "known": {
+                    "s": "active"
+                  }
+                }
+              ]
+            ]
+          }
+        }
+      },
+      "request": {
+        "key": 7,
+        "network": 42,
+        "registry": {
+          "name": 68887433291,
+          "policy": 10
+        }
+      },
+      "roots": [
+        {
+          "commitment": 8,
+          "trie": [
+            [
+              7,
+              {
+                "known": {
+                  "s": "active"
+                }
+              }
+            ]
+          ]
+        }
+      ]
+    }
+  }
+]
