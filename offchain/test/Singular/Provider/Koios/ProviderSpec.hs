@@ -62,7 +62,7 @@ import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BS8
 import Data.ByteString.Lazy qualified as LBS
-import Data.Foldable (toList)
+import Data.Foldable (fold, toList)
 import Data.IORef (modifyIORef', newIORef, readIORef, writeIORef)
 import Data.List (permutations, sort, sortOn, subsequences)
 import Data.List.NonEmpty qualified as NE
@@ -300,7 +300,7 @@ spec = describe "Koios ledger provider constructor" $ do
                     workBytes (totalWork summary)
                         `shouldBe` toInteger (sum (map bodySize [0, 2]))
                     Map.keys (perReadWork summary) `shouldBe` ["address_utxos"]
-                    totalWork summary `shouldBe` foldMap id (perReadWork summary)
+                    totalWork summary `shouldBe` fold (perReadWork summary)
                 [] -> expectationFailure "paged exchanges have no session identity"
     it "names an unknown transaction as the missing requested output" $ do
         source <- timeSource

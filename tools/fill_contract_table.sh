@@ -21,17 +21,17 @@ archive_file=''
 while [ "$#" -gt 0 ]; do
   [ "$#" -ge 2 ] || usage
   case "$1" in
-  --table) table_file=$2 ;;
-  --state-blueprint) state_blueprint=$2 ;;
-  --application-blueprint) application_blueprint=$2 ;;
-  --state-title) state_title=$2 ;;
-  --policy-title) policy_title=$2 ;;
-  --script-title) script_title=$2 ;;
-  --project) project_dir=$2 ;;
-  --singular-release) singular_release=$2 ;;
-  --application-release) application_release=$2 ;;
-  --archive) archive_file=$2 ;;
-  *) usage ;;
+    --table) table_file=$2 ;;
+    --state-blueprint) state_blueprint=$2 ;;
+    --application-blueprint) application_blueprint=$2 ;;
+    --state-title) state_title=$2 ;;
+    --policy-title) policy_title=$2 ;;
+    --script-title) script_title=$2 ;;
+    --project) project_dir=$2 ;;
+    --singular-release) singular_release=$2 ;;
+    --application-release) application_release=$2 ;;
+    --archive) archive_file=$2 ;;
+    *) usage ;;
   esac
   shift 2
 done

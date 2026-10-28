@@ -235,7 +235,8 @@ singleExchange result = Exchange 1 result (answerWork result)
 {- | One transport attempt's received work. Bytes count complete response
 bodies, without headers; rows count JSON array entries, or one JSON object
 or scalar. A malformed body retains its bytes and has zero decoded rows.
-No complete answer has zero rows and bytes, but still counts its call.
+An attempt without a complete answer has zero rows and bytes and still counts
+its call.
 -}
 answerWork :: Either NoAnswer Answer -> QueryWork
 answerWork result = QueryWork 1 rows bytes

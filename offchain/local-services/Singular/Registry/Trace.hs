@@ -61,6 +61,7 @@ import Data.Aeson
     )
 import Data.Data (Data)
 import Data.Either (rights)
+import Data.Foldable (fold)
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
 import Data.Text (Text)
@@ -159,7 +160,7 @@ data QuerySummary = QuerySummary
 
 -- | Ignore other sessions and local events; every transport page contributes.
 sessionQueryWork :: Text -> [BackendEvent] -> QuerySummary
-sessionQueryWork identity events = QuerySummary perRead (foldMap id perRead)
+sessionQueryWork identity events = QuerySummary perRead (fold perRead)
   where
     perRead =
         Map.fromListWith
