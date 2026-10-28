@@ -252,14 +252,6 @@ submitLeaf =
                   \for no transaction or for a key no transaction needs, a missing \
                   \witness, an input found nowhere and a body the tip has expired \
                   \(rebuild the bundle) are refused by name."
-                , "A bundle that names a registry is checked against it before the \
-                  \first send: give the release it was created under with --blueprint, \
-                  \and the registry's pinned policies must be the ones that release \
-                  \derives, or the bundle is refused naming the policy that differs. \
-                  \A bundle that names no registry is refused, unless it is a create \
-                  \bundle, which needs no release. The registry name in a bundle is its \
-                  \writer's statement: this checks the registry it names, not that the \
-                  \transactions act on it."
                 , "The transactions the chain does not hold are sent in the bundle's \
                   \order, each confirmed before the next; an uncertain answer stops \
                   \the run as partial and nothing is sent again, so running it again \
@@ -270,7 +262,6 @@ submitLeaf =
                 Each
                     [ Needs witnesses
                     , nodeShape
-                    , Takes blueprint
                     , Takes receipt
                     , tracingShape
                     ]
@@ -278,7 +269,6 @@ submitLeaf =
             , leafEnvironment = [environmentLog]
             , leafExamples =
                 [ "singular submit bundle.json --witnesses witnesses \\"
-                , "    --blueprint plutus.json \\"
                 , "    " <> preprodExample
                 ]
             , leafNotes =

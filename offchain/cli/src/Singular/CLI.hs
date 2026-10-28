@@ -39,7 +39,7 @@ runCommand = runRegistryCommand
 
 -- | Run one registry command (was runCommand): registry create, wallet, submit and help.
 runRegistryCommand :: Application -> Env -> Command -> IO ExitCode
-runRegistryCommand app env = \case
+runRegistryCommand _app env = \case
     Help text -> putStr text >> pure ExitSuccess
     Fold _ -> pure (ExitFailure 2)
     StateCreate a ->
@@ -60,9 +60,7 @@ runRegistryCommand app env = \case
     SubmitBundle a ->
         submitBundle
             env
-            app
             (submitProvider a)
-            (submitBlueprint a)
             (submitBundlePath a)
             (submitWitnessPaths a)
             (submitReceipt a)

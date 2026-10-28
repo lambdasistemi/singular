@@ -34,7 +34,6 @@ command itself makes.
 -}
 module Singular.CLI.SubmitSpec
     ( spec
-    , selfPaymentFiles
     ) where
 
 import Control.Exception (finally)
@@ -165,6 +164,7 @@ spec :: Spec
 spec = describe "submitting a signed bundle" $ do
     theCommandLine
     theSends
+    theRegistryName
     theCore
     theRefusals
     theRerun
@@ -201,7 +201,6 @@ theCommandLine = describe "the command line" $ do
                                 , providerTokenFile = Nothing
                                 , providerTimeDirectory = Nothing
                                 }
-                        , submitBlueprint = Nothing
                         , submitReceipt = Just "receipt.json"
                         }
                 )
@@ -226,6 +225,22 @@ theCommandLine = describe "the command line" $ do
                 ) of
                 Right parsed -> expectationFailure (flag <> " was accepted: " <> show parsed)
                 Left refusal -> renderCLIError refusal `shouldContain` flag
+    it "refuses the retired submit blueprint setting by name" $
+        parseCommand
+            ( [ "submit"
+              , "--witnesses"
+              , "w"
+              , "--blueprint"
+              , "old.json"
+              , "bundle.json"
+              ]
+                <> nodeSettings
+            )
+            `shouldBe` Left
+                ( BadValue
+                    "--blueprint"
+                    "is not accepted by submit: it takes the witnesses, the bundle, the node settings and a receipt file"
+                )
     it "refuses witness files on any other command" $
         case parseCommand
             ( ["registry", "inspect", "--key", "k", "--witnesses", "w"]
@@ -299,6 +314,36 @@ theSends = describe "the sends and the receipt" $ do
                 `shouldBe` False
             acquisitions <- readIORef (rigAcquisitions rig)
             acquisitions `shouldSatisfy` (> 0)
+
+theRegistryName :: Spec
+theRegistryName = describe "the optional registry name" $ do
+    it
+        "sends a named bundle without resolving retired pins or loading a release"
+        $ withRig
+        $ \rig -> do
+            tip <- tipSlot rig
+            let bodies = chained (tip + 1000)
+                bundle =
+                    (bundleOf bodies)
+                        { bundleStateToken =
+                            Just (T.replicate 56 "0" <> "." <> T.replicate 64 "0")
+                        }
+            path <- writeBundle rig "named.json" bundle
+            ws <- writeWitnesses (rigDir rig </> "named") walletKey bundle
+            (code, receipt, _) <- runSubmit rig (witnessArgs ws <> [path])
+            code `shouldBe` ExitSuccess
+            expectChainFacts rig (map bodyIdentity bodies) (submissionsOf receipt)
+    it "still refuses an invalid registry name before reading the chain" $ withRig $ \rig -> do
+        tip <- tipSlot rig
+        let bundle =
+                (bundleOf (chained (tip + 1000)))
+                    { bundleStateToken = Just "not-a-state-token"
+                    }
+        path <- writeBundle rig "invalid.json" bundle
+        ws <- writeWitnesses (rigDir rig </> "invalid") walletKey bundle
+        (code, receipt, _) <- runSubmit rig (witnessArgs ws <> [path])
+        expectRefused rig code receipt "bundle-state-token-unreadable"
+        readIORef (rigAcquisitions rig) `shouldReturn` 0
 
 -- ---------------------------------------------------------
 -- The refusals
@@ -900,7 +945,7 @@ paymentBody spent bound =
 bundleOf :: [ConwayTx] -> Bundle
 bundleOf bodies =
     Bundle
-        { bundleCommand = "create"
+        { bundleCommand = "insert"
         , bundleNetworkMagic = magic
         , bundleStateToken = Nothing
         , bundleSigners = walletSigner :| []
@@ -940,36 +985,6 @@ writeWitnesses dir key bundle = do
         let path = dir </> plannedPath witness
         BS.writeFile path (plannedBytes witness)
         pure path
-
-{- | A one-transaction bundle paying the key's own address from the
-output given, and the key's witness for it, written into the
-directory: the bundle path and the witness path.
--}
-selfPaymentFiles
-    :: FilePath
-    -> SignKeyDSIGN Ed25519DSIGN
-    -> (TxIn, TxOut ConwayEra)
-    -> IO (FilePath, FilePath)
-selfPaymentFiles dir key (spent, held) = do
-    let address = walletAddr (walletFromSignKey magic key)
-        body =
-            mkBasicTx
-                ( mkBasicTxBody
-                    & inputsTxBodyL .~ Set.singleton spent
-                    & outputsTxBodyL
-                        .~ StrictSeq.singleton
-                            (mkBasicTxOut address (inject (held ^. coinTxOutL)))
-                    & feeTxBodyL .~ Coin 0
-                )
-        bundle =
-            (bundleOf [body])
-                { bundleSigners = T.pack (bech32Address address) :| []
-                }
-        path = dir </> "submit-bundle.json"
-    createDirectoryIfMissing True dir
-    BS.writeFile path (encodeBundle bundle)
-    [witness] <- writeWitnesses (dir </> "submit-witnesses") key bundle
-    pure (path, witness)
 
 -- ---------------------------------------------------------
 -- Keys, addresses and spellings

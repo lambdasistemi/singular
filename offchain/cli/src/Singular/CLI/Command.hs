@@ -376,10 +376,6 @@ data SubmitArgs = SubmitArgs
     -- ^ @--witnesses@, repeated: witness files or directories, in order
     , submitProvider :: ProviderSettings
     -- ^ The node settings, read exactly as the registry commands read them
-    , submitBlueprint :: Maybe FilePath
-    {- ^ @--blueprint FILE@: the release a bundle's registry is resolved with;
-    none is needed for a create bundle, which names no registry
-    -}
     , submitReceipt :: Maybe FilePath
     -- ^ @--receipt FILE@: also write the receipt here
     }
@@ -721,7 +717,7 @@ commandFrom environment (Raw ws allFlags) = do
                                 then
                                     "is not accepted by submit: it takes no wallet key and no vault, the witnesses carry every signature"
                                 else
-                                    "is not accepted by submit: it takes the witnesses, the bundle, the node settings, the blueprint and a receipt file"
+                                    "is not accepted by submit: it takes the witnesses, the bundle, the node settings and a receipt file"
                             )
                         )
         when (null witnesses) $ Left (MissingFlag "--witnesses")
@@ -733,12 +729,10 @@ commandFrom environment (Raw ws allFlags) = do
                 { submitBundlePath = bundle
                 , submitWitnessPaths = witnesses
                 , submitProvider = settings
-                , submitBlueprint = optional "--blueprint" flags
                 , submitReceipt = optional "--receipt" flags
                 }
     submitTakes =
-        [ "--blueprint"
-        , "--koios-url"
+        [ "--koios-url"
         , "--koios-token-file"
         , "--network-time"
         , "--network-magic"

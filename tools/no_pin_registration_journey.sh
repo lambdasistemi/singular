@@ -59,6 +59,14 @@ blueprint_source="$4"
 chain_view="$5"
 work="$6"
 rig_name=journey
+# The bundle signer keeps its key in a vault. Fund only the public address the
+# packaged wallet command prints; no key is exported for the devnet harness.
+prepare_extra_funding() {
+  bundle_address="$(env -i HOME="$work/actors/alice/home" PATH=/nonexistent LC_ALL=C.UTF-8 \
+    "$singular" wallet create --vault "$work/actors/alice/cwd/bundle.vault" \
+    --network-magic 42 --passphrase-fd 3 3<<<'journey bundle signer')"
+  fund+=(--fund-address "$bundle_address:3:2000000000")
+}
 # shellcheck source=tools/no_pin_rig.sh
 # shellcheck disable=SC1091 # resolved from this script's own directory at runtime
 source "$(dirname "$0")/no_pin_rig.sh"
@@ -183,6 +191,38 @@ control "a creation that sent the creation alone is not the first registry's" \
   receipt_steps_are "$receipts/create-first.json" '["create"]'
 control "a first registry that published nothing is not this one" scripts_published_are "$receipts/create-first.json" '[false,false]'
 control "other live copies are not the ones the creation read" reads_refs "$chain_dir/first-create.tx.json" '["0000000000000000000000000000000000000000000000000000000000000000#0"]'
+
+# ------------------------------------------------------------------
+# A registration built as a bundle, signed offline and submitted separately
+# ------------------------------------------------------------------
+leg="bundle submission"
+(
+  cd "$work/actors/alice/cwd"
+  printf '%s\n' '{"name":"bundle"}' >bundle-payload.json
+  build_status=0
+  env -i HOME="$work/actors/alice/home" PATH=/nonexistent LC_ALL=C.UTF-8 \
+    "$timeout_bin" 900 "$open_datum" insert --blueprint plutus.json \
+    --state-token "$token" --key journey-bundle --payload bundle-payload.json --deposit 2100000 \
+    --wallet-address "$bundle_address" --bundle booking.json "${node[@]}" \
+    >"$receipts/bundle-build.json" 2>"$receipts/bundle-build.err" || build_status=$?
+  [ "$build_status" = 19 ]
+  jq -e '.outcome == "waiting-for-signatures"' "$receipts/bundle-build.json" >/dev/null
+  env -i HOME="$work/actors/alice/home" PATH=/nonexistent LC_ALL=C.UTF-8 \
+    "$timeout_bin" 900 "$singular" wallet sign booking.json --vault bundle.vault \
+    --out bundle-witnesses --passphrase-fd 3 3<<<'journey bundle signer' \
+    >"$receipts/bundle-sign.out" 2>"$receipts/bundle-sign.err"
+  env -i HOME="$work/actors/alice/home" PATH=/nonexistent LC_ALL=C.UTF-8 \
+    "$timeout_bin" 900 "$singular" submit booking.json --witnesses bundle-witnesses "${node[@]}" \
+    >"$receipts/bundle-submit.json" 2>"$receipts/bundle-submit.err"
+)
+bundle_tx="$(jq -er '.transactions[0].identity' "$work/actors/alice/cwd/booking.json")"
+view_tx bundle-submit "$bundle_tx"
+check "submit sends and observes the transaction built by insert and signed by wallet sign" \
+  jq -e --arg tx "$bundle_tx" '.outcome == "success" and (.submissions | length) == 1 and .submissions[0].identity == $tx and .submissions[0].how == "sent" and .submissions[0].chainPoint != null and .submissions[0].confirmations > 0' "$receipts/bundle-submit.json"
+check "the chain independently holds that same transaction" \
+  jq -e --arg tx "$bundle_tx" '.id == $tx' "$chain_dir/bundle-submit.tx.json"
+control "a different transaction is not the submitted booking" \
+  jq -e --arg tx "$(printf '%064d' 0)" '.id == $tx' "$chain_dir/bundle-submit.tx.json"
 
 # ------------------------------------------------------------------
 # 2. Alice books three keys

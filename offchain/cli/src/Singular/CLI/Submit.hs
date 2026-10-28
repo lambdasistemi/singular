@@ -15,13 +15,8 @@ order is part of its promise:
 1. read the bundle and check it as the signing step does, read every
    witness file — a directory stands for its @.witness@ files — and
    pair each witness with the body it verifies against, refusing one
-   that verifies against none. A bundle that names no registry is
-   refused unless it is a create bundle, and one that names a registry
-   is refused when no release is given. None of this reads the chain.
-1b. resolve the registry the bundle names with the release the user
-   gave, comparing every pinned policy the release derives: a registry
-   whose pins differ is refused naming the field, before anything else
-   is read or sent.
+   that verifies against none. A registry name, when present, must be a
+   state token. None of this reads the chain.
 2. open the node's capabilities, which takes no wallet, and in one view
    read where each transaction sits, the tip once, and the inputs of
    the transactions not yet on chain: an input an earlier body of the
@@ -49,7 +44,7 @@ module Singular.CLI.Submit
     ) where
 
 import Control.Exception (IOException, fromException, throwIO, try)
-import Control.Monad (forM, unless)
+import Control.Monad (forM, forM_, unless)
 import Data.Aeson (Value (..), object, toJSON, (.=))
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
@@ -103,17 +98,14 @@ import Singular.CLI.Live
     ( assetsOf
     , coinOf
     , receipt
-    , standingFields
     , txInText
     )
 import Singular.CLI.Receipt (OutcomeClass (..))
-import Singular.Registry.Application (Application)
 import Singular.Registry.Bundle
 import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.Evidence (Evidenced (..), NoWitness)
 import Singular.Registry.LedgerProvider
-    ( Asset
-    , ChainPoint (..)
+    ( ChainPoint (..)
     , InclusionStatus (..)
     , OutputQuery (..)
     , ReadFailure (..)
@@ -124,13 +116,7 @@ import Singular.Registry.LedgerProvider
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
 import Singular.Registry.SessionIO qualified as SessionIO
 import Singular.Registry.Signing (assembleSigned, signedTx)
-import Singular.Registry.StateToken
-    ( IdentityRefusal (..)
-    , ResolvedRegistry (..)
-    , parseStateToken
-    , renderIdentityRefusal
-    , resolveRegistry
-    )
+import Singular.Registry.StateToken (parseStateToken)
 import Singular.Registry.Submit
     ( PlanStep (..)
     , SubmitRefusal (..)
@@ -148,12 +134,7 @@ named. The exit status is the receipt's outcome class.
 -}
 submitBundle
     :: Env
-    -> Application
     -> ProviderSettings
-    -> Maybe FilePath
-    {- ^ the blueprint of the release a named registry is resolved with
-    (none for a create bundle)
-    -}
     -> FilePath
     -- ^ the bundle file
     -> [FilePath]
@@ -161,7 +142,7 @@ submitBundle
     -> Maybe FilePath
     -- ^ where the receipt is also written
     -> IO ExitCode
-submitBundle env app settings blueprint bundlePath witnessPaths receiptPath =
+submitBundle env settings bundlePath witnessPaths receiptPath =
     finish (envTracer env) "submit" receiptPath $ do
         bytes <-
             try @IOException (BS.readFile bundlePath)
@@ -178,13 +159,17 @@ submitBundle env app settings blueprint bundlePath witnessPaths receiptPath =
         either (refusedBy . SubmitBundleRefused) pure (checkBundle bundle)
         -- an undecodable body is refused before any witness file is read
         mapM_ decoded (toList (bundleTransactions bundle))
-        named <- namedRegistry bundle blueprint
+        forM_ (bundleStateToken bundle) $ \spelled ->
+            either
+                ( refused "bundle-state-token-unreadable"
+                    . (("the bundle's registry name is not a state token: " <>) . T.unpack)
+                )
+                (const (pure ()))
+                (parseStateToken spelled)
         witnesses <- concat <$> mapM readWitnesses witnessPaths
         -- a witness for no body of the bundle is refused before the chain is read
         either refusedBy (const (pure ())) (matchWitnesses bundle witnesses)
-        standing <-
-            maybe (pure []) (uncurry (gateNamedRegistry env app settings)) named
-        receipt "submit" Success . (<> standing)
+        receipt "submit" Success
             <$> submitInMemory env settings bundle bytes witnesses
 
 {- | The core of @singular submit@ over a bundle and its witnesses held in
@@ -237,90 +222,6 @@ submitInMemory env settings bundle bytes witnesses = do
         Left failure -> case fromException failure of
             Just (_ :: CommandFailure) -> throwIO failure
             Nothing -> unavailable settings (show failure)
-
--- ---------------------------------------------------------
--- The registry the bundle names
--- ---------------------------------------------------------
-
-{- | Which registry the bundle names and the release to resolve it with, from
-the bundle and the command line alone: nothing is read from the chain. A
-bundle that names none is refused unless it is a create bundle, whose
-registry does not exist until it is sent; a bundle that names one is
-refused when no release is given, because the registry cannot be compared
-with nothing.
--}
-namedRegistry
-    :: Bundle -> Maybe FilePath -> IO (Maybe (Asset, FilePath))
-namedRegistry bundle blueprint = case bundleStateToken bundle of
-    Nothing
-        | bundleCommand bundle == "create" -> pure Nothing
-        | otherwise ->
-            refused
-                "bundle-names-no-registry"
-                "the bundle names no registry and is not a create bundle: a bundle \
-                \that names none would skip the check of a registry's pinned \
-                \policies, so it is refused; only a create bundle names none, \
-                \because its registry does not exist until it is sent"
-    Just spelled -> do
-        token <-
-            either
-                ( refused "bundle-state-token-unreadable"
-                    . (("the bundle's registry name is not a state token: " <>) . T.unpack)
-                )
-                pure
-                (parseStateToken spelled)
-        path <-
-            maybe
-                ( refused
-                    "release-not-given"
-                    ( "the bundle names the registry "
-                        <> T.unpack spelled
-                        <> " and no release was given: give the release it was \
-                           \created under with --blueprint, so the registry's pinned \
-                           \policies can be checked before anything is sent"
-                    )
-                )
-                pure
-                blueprint
-        pure (Just (token, path))
-
-{- | Resolve the registry the bundle names with the release the user gave, in
-one view of the chain, before the first send. A registry whose pins differ
-from the ones the release derives is refused naming the field. The standing
-of the application pin joins the receipt.
--}
-gateNamedRegistry
-    :: Env
-    -> Application
-    -> ProviderSettings
-    -> Asset
-    -> FilePath
-    -> IO [(Text, Value)]
-gateNamedRegistry env app settings token blueprintPath = do
-    release <-
-        envLoadRelease env app blueprintPath
-            >>= either
-                (refused "release-unreadable" . ("the release cannot be read: " <>))
-                pure
-    reached <- Wait.tryOutcome $ envReads env settings $ \caps ->
-        SessionIO.withLatest
-            (capReads caps)
-            (resolveRegistry app release token)
-    case reached of
-        Left failure -> case fromException failure of
-            Just (_ :: CommandFailure) -> throwIO failure
-            Nothing -> unavailable settings (show failure)
-        Right (Left refusal@(IdentityUnreadable _)) ->
-            unavailable settings (T.unpack (renderIdentityRefusal refusal))
-        Right (Left refusal) ->
-            refused
-                ( T.takeWhile
-                    (\c -> c /= ' ' && c /= ':')
-                    (renderIdentityRefusal refusal)
-                )
-                (T.unpack (renderIdentityRefusal refusal))
-        Right (Right registry) ->
-            pure (standingFields (resolvedApplicationPin registry))
 
 -- ---------------------------------------------------------
 -- Offline: the witness files
