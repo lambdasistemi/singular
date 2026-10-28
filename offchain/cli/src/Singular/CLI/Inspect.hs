@@ -42,11 +42,14 @@ import Control.Exception
     )
 import Control.Monad (forM_, unless)
 import Data.Aeson (Value (..), encode, object, (.=))
-import Data.Aeson.Types (Pair)
+import Data.Aeson.KeyMap qualified as KM
+import Data.Aeson.Types (Pair, parseEither, (.:))
 import Data.Bifunctor (first)
 import Data.ByteString (ByteString)
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Lazy.Char8 qualified as BL
+import Data.Foldable (fold)
+import Data.Map.Strict qualified as Map
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
@@ -68,10 +71,12 @@ import Singular.Registry.ContractTable
     , loadContractTable
     )
 import Singular.Registry.Deployment (renderOutRef)
+import Singular.Registry.Evidence (SessionId (..))
 import Singular.Registry.Ledger (ConwayEra, Root (..), TxIn, TxOut)
 import Singular.Registry.LedgerProvider qualified as LP
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
 import Singular.Registry.StateToken (parseStateToken)
+import Singular.Registry.Trace (QuerySummary (..), QueryWork (..))
 import Singular.Registry.TrieState
     ( RegistryIdentity (..)
     , StatePolicyId (..)
@@ -85,6 +90,7 @@ data ReaderArgs = ReaderArgs
     { readerRequest :: R.ReaderRequest
     , readerProvider :: ProviderSettings
     , readerJson :: Bool
+    , readerQueryWork :: Bool
     }
     deriving stock (Eq, Show)
 
@@ -135,6 +141,7 @@ readerArgs missing bad keyBad environment given = do
                     key
             , readerProvider = provider
             , readerJson = any ((== "--json") . fst) flags
+            , readerQueryWork = any ((== "--query-work") . fst) flags
             }
   where
     allowed =
@@ -147,6 +154,7 @@ readerArgs missing bad keyBad environment given = do
         , "--key"
         , "--key-hex"
         , "--json"
+        , "--query-work"
         , "--trace"
         , "--trace-to"
         , "--trace-format"
@@ -168,11 +176,12 @@ runReader
        )
     -> IO ExitCode
 runReader env args present = do
-    result <- readAnswer `catch` unavailable
+    (result, work) <- readAnswer `catch` unavailable Nothing
     let LP.Network magic = R.requestedNetwork request
         address =
             registryAsset (R.readerRegistry request)
                 >>= renderRegistryAddress magic
+        measured = if readerQueryWork args then ["queryWork" .= workJson work] else []
         document =
             object
                 ( [ "answer" .= inspectionAnswer result
@@ -181,6 +190,7 @@ runReader env args present = do
                   , "provider" .= providerUrl (readerProvider args)
                   ]
                     <> inspectionFields result
+                    <> measured
                 )
     if readerJson args
         then BL.putStrLn (encode document)
@@ -191,11 +201,14 @@ runReader env args present = do
                   , "Provider: " <> T.pack (providerUrl (readerProvider args))
                   ]
                     <> inspectionLines result
+                    <> if readerQueryWork args then workLines work else []
                 )
     pure (inspectionExit result)
   where
     request = readerRequest args
     RegistryIdentity (StatePolicyId policy) _ = R.readerRegistry request
+    noWork =
+        Left "the provider supplied no measured transport trace for this read"
     readAnswer =
         loadContractTable >>= \case
             Left why ->
@@ -204,31 +217,90 @@ runReader env args present = do
                         request
                         Nothing
                         (R.Unavailable R.NetworkRead (R.Failed ("release table: " <> why)))
+                    , noWork
                     )
-            Right table -> envReads env (readerProvider args) $ \caps -> do
-                acquired <- LP.acquire
-                    (snd (capReads caps))
-                    (LP.Latest (R.requestedNetwork request))
-                    $ \session ->
-                        R.readNeutralKeyFromSession session table request
-                let answer = case acquired of
-                        Right value -> value
-                        Left (LP.WrongNetwork served requested) -> R.Refused (R.WrongNetwork requested served)
-                        Left failure -> R.Unavailable R.NetworkRead (R.Failed (T.pack (show failure)))
-                pure (present request (applicationOf table policy) answer)
-    unavailable (failure :: SomeException)
+            Right table ->
+                let published = applicationOf table policy
+                in  ( envReads env (readerProvider args) $ \caps -> do
+                        acquired <- LP.acquire
+                            (snd (capReads caps))
+                            (LP.Latest (R.requestedNetwork request)) $ \session -> do
+                            answer <- R.readNeutralKeyFromSession session table request
+                            pure (LP.sessionId session, answer)
+                        sources <- capTrace caps
+                        let (answer, work) = case acquired of
+                                Right (identity, value) -> (value, summaryOf identity sources)
+                                Left (LP.WrongNetwork served requested) -> (R.Refused (R.WrongNetwork requested served), noWork)
+                                Left failure ->
+                                    ( R.Unavailable R.NetworkRead (R.Failed (T.pack (show failure)))
+                                    , noWork
+                                    )
+                        pure (present request published answer, work)
+                    )
+                        `catch` unavailable published
+    unavailable published (failure :: SomeException)
         | Just (_ :: SomeAsyncException) <- fromException failure =
             throwIO failure
         | otherwise =
             pure
                 ( present
                     request
-                    Nothing
+                    published
                     ( R.Unavailable
                         R.NetworkRead
                         (R.Failed (T.pack (displayException failure)))
                     )
+                , noWork
                 )
+
+-- The provider owns these measurements; the command only groups records of
+-- this exact acquisition. Startup and other sessions never enter the total.
+summaryOf :: SessionId -> [Value] -> Either Text QuerySummary
+summaryOf (SessionId identity) sources = do
+    records <-
+        traverse
+            measured
+            [ fields
+            | Object fields <- sources
+            , KM.lookup "kind" fields == Just (String "raw-exchange")
+            , KM.lookup "session" fields == Just (String identity)
+            ]
+    if null records
+        then
+            Left "the provider supplied no measured transport trace for this read"
+        else
+            let measuredReads = Map.fromListWith (<>) records
+            in  Right (QuerySummary measuredReads (fold measuredReads))
+  where
+    measured fields =
+        first
+            T.pack
+            (parseEither (\o -> (,) <$> o .: "call" <*> o .: "work") fields)
+
+workJson :: Either Text QuerySummary -> Value
+workJson = \case
+    Left why -> object ["unavailable" .= why]
+    Right summary ->
+        object ["reads" .= perReadWork summary, "total" .= totalWork summary]
+
+workLines :: Either Text QuerySummary -> [Text]
+workLines = \case
+    Left why -> ["Query work unavailable: " <> why]
+    Right summary ->
+        ["Query work:"]
+            <> [ "  " <> name <> ": " <> counts work
+               | (name, work) <- Map.toAscList (perReadWork summary)
+               ]
+            <> ["  Total: " <> counts (totalWork summary)]
+  where
+    counts work =
+        "calls="
+            <> number (workCalls work)
+            <> " rows="
+            <> number (workRows work)
+            <> " bytes="
+            <> number (workBytes work)
+    number = T.pack . show
 
 -- | Present every neutral answer, retaining its exact refusal or unavailable reason.
 neutralInspection

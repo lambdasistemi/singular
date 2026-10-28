@@ -336,6 +336,11 @@ inspectLeaf =
                     , registryNodeShape
                     , Takes
                         (switch' "--json" "Print the answer as JSON instead of human text.")
+                    , Takes
+                        ( switch'
+                            "--query-work"
+                            "Report provider calls, rows and bytes per read and in total."
+                        )
                     , tracingShape
                     ]
             , leafWord = Nothing

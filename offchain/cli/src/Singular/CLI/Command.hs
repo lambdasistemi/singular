@@ -450,7 +450,8 @@ readFlags group =
                 { acceptedValued = group <> ["--witnesses", "--config"]
                 , acceptedEarly = []
                 , acceptedSwitches =
-                    commonSwitches <> ["--version", "--json", flagName saveStateToken]
+                    commonSwitches
+                        <> ["--version", "--json", "--query-work", flagName saveStateToken]
                 }
 
 {- | What a command line read flat asks for. The switches and the repeated
@@ -517,8 +518,9 @@ commandFrom environment (Raw ws allFlags) = do
   where
     refuseReadSwitches words' flags =
         unless (words' == ["registry", "inspect"]) $
-            when (isJust (lookup "--json" flags)) $
-                Left (BadValue "--json" "is an inspect flag")
+            forM_ ["--json", "--query-work"] $ \flag ->
+                when (isJust (lookup flag flags)) $
+                    Left (BadValue flag "is an inspect flag")
     -- @--witnesses@ names what @submit@ sends; any other command refuses
     -- it by name rather than ignore it.
     refuseWitnesses words' witnesses =
