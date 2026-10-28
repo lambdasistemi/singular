@@ -167,8 +167,8 @@ neutralHost =
 {- | Create a registry: publish the scripts no live copy carries, then spend
 the seed.
 -}
-runStateCreate :: Env -> Host -> StateCreateArgs -> IO Value
-runStateCreate env host a = do
+runStateCreate :: Text -> Env -> Host -> StateCreateArgs -> IO Value
+runStateCreate command env host a = do
     blueprint <- loadReleaseBlueprint (stateCreateBlueprint a)
     (application, own) <-
         either (failWith ClientRefusal) pure $
@@ -183,7 +183,7 @@ runStateCreate env host a = do
         env
         (stateCreateStateDir a)
         (creationToken (hashScript stateScript))
-        "state create"
+        command
         ws
         $ \wc reconciled -> do
             let payer = wcCaller wc
@@ -223,7 +223,7 @@ runStateCreate env host a = do
                 token = (PolicyID (hashScript stateScript), name)
             (output, out) <-
                 observeOutput wc "create" confirmed 0 (HoldsToken (fst token) name)
-            pure . receipt "state create" Success $
+            pure . receipt command Success $
                 registryFields magic token
                     <> [ ("stateToken", toJSON (renderStateToken token))
                        , ("seed", toJSON (txInText seed))
@@ -363,7 +363,7 @@ runStateFold env host a = do
             ( "the registry's state policy is not the one the release's state validator has for this application: "
                 <> "this blueprint is not the registry's release"
             )
-    stateWrite env (stateFoldStateDir a) token "state fold" ws $ \wc reconciled -> do
+    stateWrite env (stateFoldStateDir a) token "fold" ws $ \wc reconciled -> do
         let payer = wcCaller wc
         (confirmed, folded) <-
             sendStep
@@ -391,7 +391,7 @@ runStateFold env host a = do
                     pure (tx, keys)
         (output, out) <-
             observeOutput wc "fold" confirmed 0 (HoldsToken policy name)
-        pure . receipt "state fold" Success $
+        pure . receipt "fold" Success $
             registryFields magic token
                 <> [ ("stateToken", toJSON (renderStateToken token))
                    , ("stateOutput", toJSON (txInText output))

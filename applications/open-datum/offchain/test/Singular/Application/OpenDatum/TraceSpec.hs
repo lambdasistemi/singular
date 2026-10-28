@@ -226,29 +226,29 @@ spelledToken = replicate 56 'a' <> "." <> replicate 64 'b'
 -- | Each retained public command, spelled with what it needs to parse.
 commands :: [(String, [String])]
 commands =
-    [ ("state create", ["state", "create"] <> base <> wallet)
-    , ("state fold", ["state", "fold", "--pending", ref] <> rest)
+    [ ("create", ["create"] <> base <> wallet)
+    , ("fold", ["fold", "--pending", ref] <> rest)
     ,
-        ( "registration book"
-        , ["registration", "book", "--key", "alice-1", "--payload", "/p.json"]
+        ( "insert"
+        , ["insert", "--key", "alice-1", "--payload", "/p.json"]
             <> rest
         )
     ,
-        ( "registration reclaim"
-        , ["registration", "reclaim", "--pending", ref] <> rest
+        ( "reclaim"
+        , ["reclaim", "--pending", ref] <> rest
         )
     ,
-        ( "registration cleanup"
-        , ["registration", "cleanup", "--pending", ref] <> rest
+        ( "cleanup"
+        , ["cleanup", "--pending", ref] <> rest
         )
     ,
-        ( "holding update"
-        , ["holding", "update", "--holding", ref, "--payload", "/p.json"]
+        ( "update"
+        , ["update", "--holding", ref, "--payload", "/p.json"]
             <> rest
         )
     ,
-        ( "holding terminate"
-        , ["holding", "terminate", "--holding", ref] <> rest
+        ( "terminate"
+        , ["terminate", "--holding", ref] <> rest
         )
     ]
   where
@@ -894,8 +894,7 @@ entryPoint = describe "the receipt under every tracing setting" $ do
         $ withSystemTempDirectory "trace-closed-stderr"
         $ \dir -> do
             let command =
-                    [ "state"
-                    , "fold"
+                    [ "fold"
                     , "--pending"
                     , replicate 64 'a' <> "#0"
                     , "--wallet-skey"
@@ -940,8 +939,7 @@ entryPoint = describe "the receipt under every tracing setting" $ do
         $ withSystemTempDirectory "trace-packaged-setup"
         $ \dir -> do
             let refused =
-                    [ "state"
-                    , "fold"
+                    [ "fold"
                     , "--pending"
                     , replicate 64 'a' <> "#0"
                     , "--wallet-skey"
@@ -1099,8 +1097,7 @@ setupRecut = describe "(#416) tracing setup re-cut" $ do
                 asked = ["--trace", "what", "--trace-to", "file:" <> target]
                 help = ["open-datum", "--help"]
                 refused =
-                    [ "state"
-                    , "fold"
+                    [ "fold"
                     , "--pending"
                     , replicate 64 'a' <> "#0"
                     , "--wallet-skey"

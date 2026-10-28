@@ -774,7 +774,7 @@ data Pending = Pending
     -- ^ Booked at, processing deadline, reclaim end (milliseconds)
     }
 
-{- | A pending registration booked at slot 10060, with the deadlines of the
+{- | A pending inserted at slot 10060, with the deadlines of the
 configuration the rows use: 600 seconds to process, 600 to reclaim.
 -}
 defaultPending :: RegistryIdentity -> Pending

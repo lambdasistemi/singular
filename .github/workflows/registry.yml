@@ -705,6 +705,7 @@ jobs:
       - name: Run registration, update and termination against a development network
         run: |
           printf 'NO_PIN_JOURNEY_RESULTS=%s\n' "$RUNNER_TEMP/no-pin-journey-results-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
+          # Includes insert bundle -> wallet sign -> submit, confirmed by the chain.
           NO_PIN_JOURNEY_RESULTS="$RUNNER_TEMP/no-pin-journey-results-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" nix run --quiet .#no-pin-registration-journey
       - name: Preserve the journey's verdicts, measurement and receipts
         if: always() && env.NO_PIN_JOURNEY_RESULTS != ''

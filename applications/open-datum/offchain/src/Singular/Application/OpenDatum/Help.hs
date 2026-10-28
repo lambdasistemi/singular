@@ -53,9 +53,13 @@ openDatumProgram version =
             \book registrations, update and terminate holdings, and fold pending requests."
         , programVersion = version
         , programNodes =
-            [ stateGroup
-            , registrationGroup
-            , holdingGroup
+            [ stateCreateLeaf
+            , stateFoldLeaf
+            , bookLeaf
+            , reclaimLeaf
+            , cleanupLeaf
+            , holdingLeaf False
+            , holdingLeaf True
             ]
         , programFooter =
             [ ""
@@ -66,42 +70,6 @@ openDatumProgram version =
 
 -- ---------------------------------------------------------------------------
 -- state
-
-stateGroup :: Node
-stateGroup =
-    Group
-        "state"
-        "Create a registry on the proved design and fold into it"
-        [ "A registry of open datum on the proved design is made by spending a \
-          \seed output of your wallet: one state output that holds the registry's \
-          \token and the root of its keys, and one configuration record that \
-          \fixes the registry's five parameters for its life. Registrations are \
-          \booked with the registration commands and folded into the registry \
-          \here by whichever wallet runs the fold, from the chain alone."
-        ]
-        [stateCreateLeaf, stateFoldLeaf]
-
-registrationGroup :: Node
-registrationGroup =
-    Group
-        "registration"
-        "Book a registration, take it back, or clean it up"
-        [ "A registration is booked with a key, its payload and a deposit. Until \
-          \its processing deadline only a fold spends it; in the window that \
-          \follows, the refund address takes everything back; after the window \
-          \anyone cleans it up, the deposit returning to the refund address."
-        ]
-        [bookLeaf, reclaimLeaf, cleanupLeaf]
-
--- | The controller's actions on a live holding.
-holdingGroup :: Node
-holdingGroup =
-    Group
-        "holding"
-        "Update a live payload or book permanent termination"
-        [ "The controller chooses one live holding by its output reference. An update replaces only its payload. Termination donates its protected deposit immediately and leaves a request for any wallet to fold; the termination cannot be reclaimed."
-        ]
-        [holdingLeaf False, holdingLeaf True]
 
 holdingLeaf :: Bool -> Node
 holdingLeaf terminating =
@@ -115,7 +83,7 @@ holdingLeaf terminating =
             , leafDescription =
                 [ if terminating
                     then
-                        "Spends the chosen holding, donates exactly its protected deposit to the treasury, and creates a datumless request holding the active token and one termination approval. The active token remains until state fold burns both tokens. The folder receives the whole request value; its wallet may be different from the controller's. This booking is permanent and has no reclaim window."
+                        "Spends the chosen holding, donates exactly its protected deposit to the treasury, and creates a datumless request holding the active token and one termination approval. The active token remains until fold burns both tokens. The folder receives the whole request value; its wallet may be different from the controller's. This booking is permanent and has no reclaim window."
                     else
                         "Spends the chosen holding and recreates it at the same address with the new payload, the same protected control and the complete token value, keeping at least its protected deposit. No registry state is spent. Only the controller can sign this update."
                 , "The named registry must be the registry in the holding's protected control. The signing wallet must control the holding; a missing holding or another controller is refused before signing."
@@ -132,7 +100,7 @@ holdingLeaf terminating =
             , leafEnvironment =
                 [environmentLog, environmentState, environmentPassphrase]
             , leafExamples =
-                [ "open-datum holding "
+                [ "open-datum "
                     <> (if terminating then "terminate" else "update")
                     <> " --blueprint plutus.json \\"
                 , "    --state-token POLICY.NAME --holding TXID#IX \\"
@@ -181,7 +149,7 @@ stateCreateLeaf =
             , leafEnvironment =
                 [environmentLog, environmentState, environmentPassphrase]
             , leafExamples =
-                [ "open-datum state create --blueprint plutus.json \\"
+                [ "open-datum create --blueprint plutus.json \\"
                 , "    " <> preprodExample <> " \\"
                 , "    --vault alice.vault"
                 ]
@@ -213,7 +181,7 @@ stateFoldLeaf =
             , leafEnvironment =
                 [environmentLog, environmentState, environmentPassphrase]
             , leafExamples =
-                [ "open-datum state fold --blueprint plutus.json \\"
+                [ "open-datum fold --blueprint plutus.json \\"
                 , "    --registry <address> --pending <txid>#<ix> \\"
                 , "    " <> preprodUrlExample <> " \\"
                 , "    --vault bob.vault"
@@ -225,7 +193,7 @@ bookLeaf :: Node
 bookLeaf =
     Runs
         Leaf
-            { leafName = "book"
+            { leafName = "insert"
             , leafSummary = "Book the registration of a key"
             , leafDescription =
                 [ "Books the registration of a key with its payload and a deposit: \
@@ -255,7 +223,7 @@ bookLeaf =
             , leafEnvironment =
                 [environmentLog, environmentState, environmentPassphrase]
             , leafExamples =
-                [ "open-datum registration book --blueprint plutus.json \\"
+                [ "open-datum insert --blueprint plutus.json \\"
                 , "    --registry <address> --key my-key --payload payload.json \\"
                 , "    " <> preprodUrlExample <> " \\"
                 , "    --vault alice.vault"
@@ -291,7 +259,7 @@ reclaimLeaf =
             , leafEnvironment =
                 [environmentLog, environmentState, environmentPassphrase]
             , leafExamples =
-                [ "open-datum registration reclaim --blueprint plutus.json \\"
+                [ "open-datum reclaim --blueprint plutus.json \\"
                 , "    --registry <address> --pending <txid>#<ix> \\"
                 , "    " <> preprodUrlExample <> " \\"
                 , "    --vault alice.vault"
@@ -326,7 +294,7 @@ cleanupLeaf =
             , leafEnvironment =
                 [environmentLog, environmentState, environmentPassphrase]
             , leafExamples =
-                [ "open-datum registration cleanup --blueprint plutus.json \\"
+                [ "open-datum cleanup --blueprint plutus.json \\"
                 , "    --registry <address> --pending <txid>#<ix> \\"
                 , "    " <> preprodUrlExample <> " \\"
                 , "    --vault bob.vault"

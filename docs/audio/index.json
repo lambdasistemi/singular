@@ -7532,15 +7532,15 @@
     "index": 1,
     "name": "docs-payload-json/store-a-document-01",
     "pause_ms": 400,
-    "text": "Write the file and give it to registration book, with no schema setting:",
-    "v": "04179e1b140a"
+    "text": "Write the file and give it to insert, with no schema setting:",
+    "v": "93123fac3023"
    },
    {
     "index": 2,
     "name": "docs-payload-json/store-a-document-02",
     "pause_ms": 400,
-    "text": "Supply the registry, blueprint and provider settings as described in the registry command guide. Fold the pending reference the booking prints with open-datum state fold --pending TXID#IX. holding update takes the same payload file and schema setting. Reading a key has replacement: none, issue 744.",
-    "v": "0bd697bfc816"
+    "text": "Supply the registry, blueprint and provider settings as described in the registry command guide. Fold the pending reference the booking prints with open-datum fold --pending TXID#IX. update takes the same payload file and schema setting. Reading a key has replacement: none, issue 744.",
+    "v": "36ed30ebd7fd"
    }
   ],
   "store-ordinary-json-as-a-keys-payload": [
@@ -8520,8 +8520,8 @@
     "index": 2,
     "name": "docs-registry-commands/book-permanent-termination-then-fold-it-02",
     "pause_ms": 400,
-    "text": "The receipt names the pending output and the treasuryDonation in lovelace. As Bob, you fold that pending output with open-datum state fold, using --pending TXID#IX and your own vault. You need the public chain and your wallet; Alice's key, local directory and records are unnecessary. The fold burns the active token and the approval, creates no replacement holding, and leaves the key terminal permanently. You receive the request's whole value; your ordinary wallet input pays the transaction fee. A batch may mix terminations with registrations of other keys. A termination has no processing deadline.",
-    "v": "63b8e82e9f0d"
+    "text": "The receipt names the pending output and the treasuryDonation in lovelace. As Bob, you fold that pending output with open-datum fold, using --pending TXID#IX and your own vault. You need the public chain and your wallet; Alice's key, local directory and records are unnecessary. The fold burns the active token and the approval, creates no replacement holding, and leaves the key terminal permanently. You receive the request's whole value; your ordinary wallet input pays the transaction fee. A batch may mix terminations with registrations of other keys. A termination has no processing deadline.",
+    "v": "3ab871fb0349"
    }
   ],
   "create-a-registry": [
@@ -8550,15 +8550,15 @@
     "index": 3,
     "name": "docs-registry-commands/create-a-registry-03",
     "pause_ms": 400,
-    "text": "open-datum state create makes a registry of open datum. Five parameters are fixed here for the life of the registry: the processing time and the reclaim time of a booked registration (--process-time and --reclaim-time), the widest validity interval a booking may declare (--booking-width), and the registration cost and the minimum tip (--registration-cost and --minimum-tip), which the registry carries and nothing enforces.",
-    "v": "e3d03b2b3c90"
+    "text": "open-datum create makes a registry of open datum. Five parameters are fixed here for the life of the registry: the processing time and the reclaim time of a booked registration (--process-time and --reclaim-time), the widest validity interval a booking may declare (--booking-width), and the registration cost and the minimum tip (--registration-cost and --minimum-tip), which the registry carries and nothing enforces.",
+    "v": "d0ff36466427"
    },
    {
     "index": 4,
     "name": "docs-registry-commands/create-a-registry-04",
     "pause_ms": 400,
-    "text": "singular state create makes the registry of any application whose policy you give with --application-policy: the policy is the one parameter of the state validator. The command publishes the state validator when no live copy of it exists, and creates the registry whose state token that validator guards.",
-    "v": "1f6f014b5690"
+    "text": "singular registry create makes the registry of any application whose policy you give with --application-policy: the policy is the one parameter of the state validator. The command publishes the state validator when no live copy of it exists, and creates the registry whose state token that validator guards.",
+    "v": "abda8ed46e45"
    },
    {
     "index": 5,
@@ -8601,8 +8601,8 @@
     "index": 3,
     "name": "docs-registry-commands/create-a-registry-and-manage-its-keys-on-the-proved-design-03",
     "pause_ms": 400,
-    "text": "This page describes eight commands: singular state create, open-datum state create, open-datum state fold, open-datum registration book, open-datum registration reclaim and open-datum registration cleanup, open-datum holding update and open-datum holding terminate. Every flag they take is listed with its description and its default in the settings table, and each command prints the same information with --help.",
-    "v": "01854b0cf361"
+    "text": "This page describes eight commands: singular registry create, open-datum create, open-datum fold, open-datum insert, open-datum reclaim and open-datum cleanup, open-datum update and open-datum terminate. Every flag they take is listed with its description and its default in the settings table, and each command prints the same information with --help.",
+    "v": "0a2dc92bc687"
    }
   ],
   "fold-registrations-and-terminations-into-the-registry": [
@@ -8737,8 +8737,8 @@
     "index": 1,
     "name": "docs-registry-commands/where-the-keys-token-goes-01",
     "pause_ms": 400,
-    "text": "A registration commits, when it is booked, to the address that will hold its key's token once it is folded. open-datum registration book commits the request address of open datum. The fold accepts any address a registration committed to, the address of the state validator itself included. A token folded into a holding at the state validator's own address stays where only the state validator can spend it. That is the choice of whoever booked the registration, and the fold does not refuse it.",
-    "v": "a6e8dafcfe90"
+    "text": "A registration commits, when it is booked, to the address that will hold its key's token once it is folded. open-datum insert commits the request address of open datum. The fold accepts any address a registration committed to, the address of the state validator itself included. A token folded into a holding at the state validator's own address stays where only the state validator can spend it. That is the choice of whoever booked the registration, and the fold does not refuse it.",
+    "v": "14c457752602"
    }
   ]
  },
@@ -9170,8 +9170,8 @@
     "index": 1,
     "name": "docs-singular-node/booking-and-folding-01",
     "pause_ms": 400,
-    "text": "As a controller, use the registry command guide to book registrations, update holdings and book permanent termination. The fold takes explicit pending references and can be run by another wallet from public chain inputs. Its command is open-datum state fold.",
-    "v": "42099d2c650c"
+    "text": "As a controller, use the registry command guide to book registrations, update holdings and book permanent termination. The fold takes explicit pending references and can be run by another wallet from public chain inputs. Its command is open-datum fold.",
+    "v": "7a7b5a8b51ab"
    }
   ],
   "choosing-a-registrys-windows": [
@@ -9186,8 +9186,8 @@
     "index": 1,
     "name": "docs-singular-node/choosing-a-registrys-windows-01",
     "pause_ms": 400,
-    "text": "Use open-datum state create --process-time MS --reclaim-time MS to choose the processing and reclaim windows once. The guide describes their defaults and the booking-width parameter.",
-    "v": "8c39a6dacc7b"
+    "text": "Use open-datum create --process-time MS --reclaim-time MS to choose the processing and reclaim windows once. The guide describes their defaults and the booking-width parameter.",
+    "v": "1f439694f87c"
    }
   ],
   "connecting-singular-to-a-ledger-provider": [
@@ -9209,8 +9209,8 @@
     "index": 2,
     "name": "docs-singular-node/connecting-singular-to-a-ledger-provider-02",
     "pause_ms": 400,
-    "text": "As a registry operator, you create a registry through singular state create and sign and submit bundles through singular wallet and singular submit. You use the state, registration and holding command groups through open-datum, with a Koios API on your chosen network. The commands that create a registry and book, fold, reclaim and clean up a registration are described in create a registry and register keys on the proved design. You supply the API settings and pinned time material; each write is signed from your vault, or by a signer elsewhere through a bundle file (see Signing a write elsewhere, or from your vault). Commands read raw facts through one logical session, build and evaluate locally, submit signed transactions, and preserve recovery evidence in the registry journal.",
-    "v": "8c1518b1f8da"
+    "text": "As a registry operator, you create a registry through singular registry create and sign and submit bundles through singular wallet and singular submit. You create, insert, fold, update, terminate, reclaim and clean up through open-datum, with a Koios API on your chosen network. The commands that create a registry and book, fold, reclaim and clean up a registration are described in create a registry and register keys on the proved design. You supply the API settings and pinned time material; each write is signed from your vault, or by a signer elsewhere through a bundle file (see Signing a write elsewhere, or from your vault). Commands read raw facts through one logical session, build and evaluate locally, submit signed transactions, and preserve recovery evidence in the registry journal.",
+    "v": "d98c234e236b"
    },
    {
     "index": 3,
@@ -9297,8 +9297,8 @@
     "index": 3,
     "name": "docs-singular-node/giving-the-chain-the-contracts-and-the-registry-once-03",
     "pause_ms": 400,
-    "text": "The config file is one JSON object. Both programs read the same file: it is singular.json in the folder you run the command from, or the file named by --config FILE or by the variable SINGULAR_CONFIG. With a file like this in your demo folder, open-datum registration book --key alice --payload payload.json --vault alice.vault is a whole command, and it does exactly what the same command with the six flags does:",
-    "v": "b45aee602472"
+    "text": "The config file is one JSON object. Both programs read the same file: it is singular.json in the folder you run the command from, or the file named by --config FILE or by the variable SINGULAR_CONFIG. With a file like this in your demo folder, open-datum insert --key alice --payload payload.json --vault alice.vault is a whole command, and it does exactly what the same command with the six flags does:",
+    "v": "69021e49ffc6"
    },
    {
     "index": 4,
@@ -9523,8 +9523,8 @@
     "index": 2,
     "name": "docs-singular-node/signing-a-bundle-of-unsigned-transactions-offline-02",
     "pause_ms": 400,
-    "text": "The writer's side is a singular state create run, or an open-datum state create, insert, update, terminate or fold run, that names --wallet-address and --bundle in place of the signing key: it builds its whole run as one bundle in build order, signs and sends nothing, states its own fields under expected in its receipt, and exits with status 19, waiting-for-signatures.",
-    "v": "6142abfab455"
+    "text": "The writer's side is a singular registry create run, or an open-datum create, insert, update, terminate or fold run, that names --wallet-address and --bundle in place of the signing key: it builds its whole run as one bundle in build order, signs and sends nothing, states its own fields under expected in its receipt, and exits with status 19, waiting-for-signatures.",
+    "v": "012f016f3108"
    },
    {
     "index": 3,
@@ -9569,22 +9569,22 @@
     "index": 1,
     "name": "docs-singular-node/submitting-a-signed-bundle-01",
     "pause_ms": 400,
-    "text": "As Bob, I hand back the witnesses for a bundle and run singular submit with the node settings and, when the bundle names a registry, the release that registry was created under. The transactions are sent in the bundle's order, and the receipt says what the chain shows. If the run is cut short, I run the same command again: it sends only the transactions the chain does not hold yet. If a body has expired, it says to rebuild the bundle and sends nothing. It needs no wallet key and keeps no state.",
-    "v": "50d9f625811a"
+    "text": "As Bob, I hand back the witnesses for a bundle and run singular submit with the node settings. The transactions are sent in the bundle's order, and the receipt says what the chain shows. If the run is cut short, I run the same command again: it sends only the transactions the chain does not hold yet. If a body has expired, it says to rebuild the bundle and sends nothing. It needs no wallet key and keeps no state.",
+    "v": "882490a8388c"
    },
    {
     "index": 2,
     "name": "docs-singular-node/submitting-a-signed-bundle-02",
     "pause_ms": 400,
-    "text": "A bundle that names a registry is checked against it before anything else is read from the chain. The command resolves that registry with the release the bundle was created under, the blueprint I give, and compares its pinned policies exactly as every other command does: a registry whose pins differ is refused naming the field, the refusal is a client refusal with the cause registry-pin-mismatch and an empty list of submissions, and nothing is sent. The older bundles still submit, because the bundle format is unchanged and the release I give is the one the registry was created under. A bundle that names a registry and comes with no release is refused, cause release-not-given, before the chain is read. A bundle that names no registry is refused, cause bundle-names-no-registry, unless it is a create bundle: a create bundle names none because its registry does not exist until it is sent, and it needs no release. Without this refusal a writer could drop the name from a bundle to skip the comparison. The registry name in a bundle is its writer's statement, and wallet sign says so in its summary: submit checks the registry the bundle names, not that its transactions act on it. The receipt carries the standing of the application pin, applicationPin, once.",
-    "v": "67347d7c5f51"
+    "text": "Bundles from the application commands need no registry name and no release to submit. An optional registry name remains the writer's statement; it is checked for state-token syntax, and does not establish what the transactions act on. Transaction identities, required signatures, resolved inputs and the chain's readback determine submission and its receipt.",
+    "v": "8e02c0efeb6b"
    },
    {
     "index": 3,
     "name": "docs-singular-node/submitting-a-signed-bundle-03",
     "pause_ms": 400,
-    "text": "The witness files are the ones singular wallet sign writes; a directory stands for the .witness files it holds, and each witness is matched to a transaction by its signature, never by its file name. The command checks everything it can before it sends anything, in this order. Without touching the chain, it refuses a bundle the signing step would refuse, a bundle that names no registry and is not a create bundle, a bundle that names a registry when no release is given, a witness file it cannot read, and a witness whose signature verifies against no transaction of the bundle. Then it resolves the registry the bundle names and compares its pinned policies. Then it reads the chain once: where each transaction sits, the tip, and the inputs of each transaction not on chain yet — an input an earlier transaction of the bundle produces is taken from that transaction, every other from the chain. Witnesses are required for the transactions this run will send, and for those alone. It refuses a witness for a key none of them needs, a transaction left without a witness for a key it needs (its required signers and the payment keys of what it spends), an input found nowhere, and a transaction not on chain whose validity upper bound the tip has reached, with the word rebuild. A refusal exits as a client refusal, naming its cause, with an empty list of submissions.",
-    "v": "01f7be6d236c"
+    "text": "The witness files are the ones singular wallet sign writes; a directory stands for the .witness files it holds, and each witness is matched to a transaction by its signature, never by its file name. The command checks everything it can before it sends anything, in this order. Without touching the chain, it refuses a bundle the signing step would refuse, an optional registry name that is not a state token, a witness file it cannot read, and a witness whose signature verifies against no transaction of the bundle. Then it reads the chain once: where each transaction sits, the tip, and the inputs of each transaction not on chain yet — an input an earlier transaction of the bundle produces is taken from that transaction, every other from the chain. Witnesses are required for the transactions this run will send, and for those alone. It refuses a witness for a key none of them needs, a transaction left without a witness for a key it needs (its required signers and the payment keys of what it spends), an input found nowhere, and a transaction not on chain whose validity upper bound the tip has reached, with the word rebuild. A refusal exits as a client refusal, naming its cause, with an empty list of submissions.",
+    "v": "cee2b88682bc"
    },
    {
     "index": 4,
@@ -9687,8 +9687,8 @@
     "index": 1,
     "name": "docs-singular-node/the-vault-from-the-environment-or-the-file-01",
     "pause_ms": 400,
-    "text": "As an operator who signs with a vault, you can name it once: SINGULAR_VAULT=alice.vault, or \"vault\": \"alice.vault\" in the config file, and open-datum registration book --key alice --payload payload.json signs from it. The passphrase is not part of this: it stays on the terminal prompt, or on the descriptor --passphrase-fd names on the command, with a vault from either source just as with a typed one. A development network can also take it from the environment, as the next section says.",
-    "v": "5f01eb699e85"
+    "text": "As an operator who signs with a vault, you can name it once: SINGULAR_VAULT=alice.vault, or \"vault\": \"alice.vault\" in the config file, and open-datum insert --key alice --payload payload.json signs from it. The passphrase is not part of this: it stays on the terminal prompt, or on the descriptor --passphrase-fd names on the command, with a vault from either source just as with a typed one. A development network can also take it from the environment, as the next section says.",
+    "v": "39371018f376"
    },
    {
     "index": 2,

@@ -28,7 +28,7 @@ chain_lacks_tx() { [[ "$1" =~ ^[0-9a-f]{64}$ ]] && ! chain_holds_tx "$1"; }
 tx_id_of() { field "$1" .transaction; }
 
 leg=creation
-as carol create "$open_datum" state create --blueprint plutus.json \
+as carol create "$open_datum" create --blueprint plutus.json \
   --process-time 900000 --reclaim-time 60000 --booking-width 60000
 token="$(field create .stateToken)"
 [[ "$token" =~ ^[0-9a-f]{56}\.[0-9a-f]{64}$ ]] || setup_fail "the creation printed no state token"
@@ -39,9 +39,9 @@ printf '%s\n' '{"name":"alice"}' >"$work/actors/alice/cwd/payload.json"
 # active key makes a different-key change a real alternative, not an unknown key.
 register() {
   local name="$1" key="$2"
-  as alice "book-$name" "$open_datum" registration book --blueprint plutus.json \
+  as alice "book-$name" "$open_datum" insert --blueprint plutus.json \
     --state-token "$token" --key "$key" --payload payload.json --deposit 3000000 --tip 1000000
-  as bob "register-$name" "$open_datum" state fold --blueprint plutus.json \
+  as bob "register-$name" "$open_datum" fold --blueprint plutus.json \
     --state-token "$token" --pending "$(field "book-$name" .pending)"
   view_tx "register-$name" "$(tx_of "register-$name" fold)"
   jq -er --arg sp "$state_policy" --arg sn "${token##*.}" \
@@ -54,7 +54,7 @@ register other other-active-key >"$work/other-holding.txt"
 for case in burn-without-fold other-key no-approval spend-without-burn; do
   leg="$case"
   holding="$(register "$case" "termination-$case")"
-  as alice "terminate-$case" "$open_datum" holding terminate --blueprint plutus.json \
+  as alice "terminate-$case" "$open_datum" terminate --blueprint plutus.json \
     --state-token "$token" --holding "$holding"
   pending="$(field "terminate-$case" .pending)"
   refuser="$state_policy"
@@ -73,7 +73,7 @@ for case in burn-without-fold other-key no-approval spend-without-burn; do
   check "$case: the refused transaction is absent from the chain" chain_lacks_tx "$(tx_id_of "attempt-$case")"
   # The control restores the omitted fact and uses the same request. The
   # packaged builder supplies the accepted transaction, with no test hook.
-  as bob "control-$case" "$open_datum" state fold --blueprint plutus.json --state-token "$token" --pending "$pending"
+  as bob "control-$case" "$open_datum" fold --blueprint plutus.json --state-token "$token" --pending "$pending"
   control_tx="$(tx_of "control-$case" fold)"
   view_tx "control-$case" "$control_tx"
   check "$case: the passing control is included" chain_holds_tx "$control_tx"
@@ -87,7 +87,7 @@ done
 # packaged fold declines its new registration; here the node also judges
 # a registration that carries the current state's own presence proof.
 leg="registration after termination"
-as alice book-terminal "$open_datum" registration book --blueprint plutus.json \
+as alice book-terminal "$open_datum" insert --blueprint plutus.json \
   --state-token "$token" --key termination-spend-without-burn --payload payload.json --deposit 3000000 --tip 1000000
 run_as bob attempt-terminal "$harness" fold --case second-registration \
   --pending "$(field book-terminal .pending)" --blueprint plutus.json --state-token "$token"

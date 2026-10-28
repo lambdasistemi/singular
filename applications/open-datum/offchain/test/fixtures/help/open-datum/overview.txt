@@ -13,13 +13,13 @@ Available settings:
   switch: --version
 
 All commands:
-  open-datum state create          Create a registry
-  open-datum state fold            Fold the registrations and terminations you name
-  open-datum registration book     Book the registration of a key
-  open-datum registration reclaim  Take back a registration you booked
-  open-datum registration cleanup  Clean up an expired registration
-  open-datum holding update        Replace the payload of a live holding
-  open-datum holding terminate     Book permanent termination of a live holding
+  open-datum create           Create a registry
+  open-datum fold             Fold the registrations and terminations you name
+  open-datum insert           Book the registration of a key
+  open-datum reclaim          Take back a registration you booked
+  open-datum cleanup          Clean up an expired registration
+  open-datum update           Replace the payload of a live holding
+  open-datum terminate        Book permanent termination of a live holding
 
 Help on one command: open-datum COMMAND --help
 Shell completion (bash): source <(open-datum --bash-completion-script "$(which open-datum)")

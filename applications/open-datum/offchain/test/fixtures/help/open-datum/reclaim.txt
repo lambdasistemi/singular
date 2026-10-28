@@ -1,19 +1,19 @@
 open-datum VERSION (commit unknown)
 
-Usage: open-datum registration cleanup [--config FILE] [--state-dir DIR]
-       --blueprint FILE [--registry ADDRESS] [--state-token POLICY.NAME]
-       --pending TXID#IX --koios-url URL [--network-magic N]
-       [--koios-token-file FILE] [--network-time DIR] [--vault FILE
-       [--passphrase-fd N] | --wallet-address ADDR --bundle FILE |
-       --wallet-skey FILE] [--confirm-timeout SECONDS] [--receipt FILE]
-       [--trace LEVEL] [--trace-to SINK] [--trace-format FORMAT]
+Usage: open-datum reclaim [--config FILE] [--state-dir DIR] --blueprint FILE
+       [--registry ADDRESS] [--state-token POLICY.NAME] --pending TXID#IX
+       --koios-url URL [--network-magic N] [--koios-token-file FILE]
+       [--network-time DIR] [--vault FILE [--passphrase-fd N] |
+       --wallet-address ADDR --bundle FILE | --wallet-skey FILE]
+       [--confirm-timeout SECONDS] [--receipt FILE] [--trace LEVEL]
+       [--trace-to SINK] [--trace-format FORMAT]
 
-Clean up an expired registration
+Take back a registration you booked
 
-Cleans up the named pending registration once its reclaim window has ended:
-its deposit returns to its refund address, the wallet that runs the command
-keeps what the request holds above the deposit, and the approval is burned.
-Anyone may run it.
+Takes the named pending registration back inside its reclaim window:
+everything it holds returns to its refund address, which must be the wallet
+that runs the command, and its approval is burned. Before the window opens or
+after it closes the command is refused, saying when.
 
 A write is signed by exactly one signer: --vault (the normal route),
 --wallet-address with --bundle (written for an external signer, ending as
@@ -178,14 +178,13 @@ Environment:
                        value that is empty is refused.
 
 Example:
-  open-datum registration cleanup --blueprint plutus.json \
+  open-datum reclaim --blueprint plutus.json \
       --registry <address> --pending <txid>#<ix> \
       --koios-url https://preprod.koios.rest/api/v1 \
-      --vault bob.vault
+      --vault alice.vault
 
   With those settings in singular.json instead:
-  open-datum registration cleanup --pending <txid>#<ix> \
-      --vault bob.vault
+  open-datum reclaim --pending <txid>#<ix> --vault alice.vault
 
 Output and exit status:
   Prints one JSON receipt on standard output (--receipt also writes it).

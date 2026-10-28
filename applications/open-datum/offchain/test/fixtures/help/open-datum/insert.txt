@@ -1,25 +1,21 @@
 open-datum VERSION (commit unknown)
 
-Usage: open-datum state create [--config FILE] [--state-dir DIR] --blueprint
-       FILE [--seed TXID#IX] [--process-time MS] [--reclaim-time MS]
-       [--booking-width MS] [--registration-cost LOVELACE] [--minimum-tip
-       LOVELACE] --koios-url URL --network-magic N [--koios-token-file FILE]
-       [--network-time DIR] [--vault FILE [--passphrase-fd N] |
-       --wallet-address ADDR --bundle FILE | --wallet-skey FILE]
-       [--confirm-timeout SECONDS] [--receipt FILE] [--trace LEVEL]
-       [--trace-to SINK] [--trace-format FORMAT]
+Usage: open-datum insert [--config FILE] [--state-dir DIR] --blueprint FILE
+       [--registry ADDRESS] [--state-token POLICY.NAME] [--key KEY | --key-hex
+       HEX] --payload FILE [--payload-schema plain|detailed] [--deposit
+       LOVELACE] [--tip LOVELACE] [--refund-address ADDR] --koios-url URL
+       [--network-magic N] [--koios-token-file FILE] [--network-time DIR]
+       [--vault FILE [--passphrase-fd N] | --wallet-address ADDR --bundle FILE
+       | --wallet-skey FILE] [--confirm-timeout SECONDS] [--receipt FILE]
+       [--trace LEVEL] [--trace-to SINK] [--trace-format FORMAT]
 
-Create a registry
+Book the registration of a key
 
-Creates one registry by spending a seed output of your wallet and prints its
-address, its state token and the transactions it sent. The registry's five
-parameters are fixed here for its life: the processing time and the reclaim
-time of a booked registration, the width of a booking's validity interval, and
-the registration cost and the minimum tip, which are carried and enforce
-nothing. The first registry of open datum publishes the state validator and
-the request validator as reference scripts, each in its own transaction,
-waiting for both before creating the registry. A rerun publishes only what is
-missing; a later registry finds the live copies and sends one transaction.
+Books the registration of a key with its payload and a deposit: a pending
+registration holding its approval is put at the request address, its deadlines
+fixed by the registry's configuration. The receipt names the pending
+registration and the times of its phases. Whoever folds it, or you reclaiming
+it, names it with --pending.
 
 A write is signed by exactly one signer: --vault (the normal route),
 --wallet-address with --bundle (written for an external signer, ending as
@@ -51,35 +47,52 @@ Available settings:
     blueprint: # or null
       <string>
 
-  The wallet output the registry is booted from; it fixes the registry's
-  identity.
-  option: --seed TXID#IX
-  default: your largest ada-only output
+  The registry to act on: its address, as create prints it. The address holds
+  the state token and the network, so a command given it needs neither.
+  option: --registry ADDRESS
+  env: SINGULAR_REGISTRY ADDRESS
+  config:
+    registry: # or null
+      <string>
 
-  How long a booked request may wait for its fold, in milliseconds; fixed for
-  the life of the registry.
-  option: --process-time MS
-  default: 600000, ten minutes
+  The registry to act on: its state token, policy and name in hex, as create
+  prints it.
+  option: --state-token POLICY.NAME
+  env: SINGULAR_STATE_TOKEN POLICY.NAME
+  config:
+    state-token: # or null
+      <string>
 
-  How long the refund address may reclaim a registration after its processing
-  deadline, in milliseconds; fixed for the life of the registry.
-  option: --reclaim-time MS
-  default: 300000, five minutes
+  The registry key as text, its UTF-8 bytes (1 to 32); give this or --key-hex.
+  option: --key KEY
 
-  The widest validity interval a booking may declare, in milliseconds; fixed
-  for the life of the registry.
-  option: --booking-width MS
-  default: 300000, five minutes
+  The registry key as base16 bytes (1 to 32), for a key that is not text; give
+  this or --key.
+  option: --key-hex HEX
 
-  The registration cost the registry carries; it enforces nothing; fixed for
-  the life of the registry.
-  option: --registration-cost LOVELACE
+  The key's payload: a JSON file, stored as plain JSON unless --payload-schema
+  says otherwise.
+  option: --payload FILE
+
+  The form the payload file is written in. plain: ordinary JSON, mapped to
+  Plutus data by the table in the documentation. detailed: the schema that
+  writes any Plutus data exactly.
+  option: --payload-schema plain|detailed
+  default: plain
+
+  The deposit the key's envelope protects, in whole lovelace; not below the
+  minimum.
+  option: --deposit LOVELACE
+  default: 2000000, the minimum
+
+  What the request holds above the deposit for the wallet that folds it, in
+  whole lovelace.
+  option: --tip LOVELACE
   default: 0
 
-  The minimum tip the registry carries; it enforces nothing; fixed for the
-  life of the registry.
-  option: --minimum-tip LOVELACE
-  default: 0
+  Where a reclaim or a cleanup returns the value: a bech32 address.
+  option: --refund-address ADDR
+  default: your own address
 
   Base URL of the Koios API used to read the chain and to submit.
   option: --koios-url URL
@@ -194,12 +207,14 @@ Environment:
                        value that is empty is refused.
 
 Example:
-  open-datum state create --blueprint plutus.json \
-      --koios-url https://preprod.koios.rest/api/v1 --network-magic 1 \
+  open-datum insert --blueprint plutus.json \
+      --registry <address> --key my-key --payload payload.json \
+      --koios-url https://preprod.koios.rest/api/v1 \
       --vault alice.vault
 
   With those settings in singular.json instead:
-  open-datum state create --vault alice.vault
+  open-datum insert --key my-key --payload payload.json \
+      --vault alice.vault
 
 Output and exit status:
   Prints one JSON receipt on standard output (--receipt also writes it).

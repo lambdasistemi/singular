@@ -70,6 +70,8 @@ for actor in "${actors[@]}"; do
 done
 fund=()
 for actor in "${actors[@]}"; do fund+=(--fund-skey "$work/actors/$actor/cwd/$actor.skey"); done
+# A journey may add a public address for a signer whose key stays in a vault.
+if declare -F prepare_extra_funding >/dev/null; then prepare_extra_funding; fi
 "$devnet" "${fund[@]}" --fund-outputs 8 --fund-lovelace 2000000000 \
   >"$scratch/devnet.out" 2>"$scratch/devnet.err" &
 devnet_pid=$!

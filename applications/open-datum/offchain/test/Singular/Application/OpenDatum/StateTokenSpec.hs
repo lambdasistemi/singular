@@ -93,26 +93,26 @@ request = replicate 64 '7' <> "#0"
 commands :: [(String, [String])]
 commands =
     [
-        ( "registration book"
-        , ["registration", "book", "--key", "k", "--payload", "/p.json"] <> rest
+        ( "insert"
+        , ["insert", "--key", "k", "--payload", "/p.json"] <> rest
         )
-    , ("state fold", ["state", "fold", "--pending", request] <> rest)
+    , ("fold", ["fold", "--pending", request] <> rest)
     ,
-        ( "registration reclaim"
-        , ["registration", "reclaim", "--pending", request] <> rest
-        )
-    ,
-        ( "registration cleanup"
-        , ["registration", "cleanup", "--pending", request] <> rest
+        ( "reclaim"
+        , ["reclaim", "--pending", request] <> rest
         )
     ,
-        ( "holding update"
-        , ["holding", "update", "--holding", request, "--payload", "/p.json"]
+        ( "cleanup"
+        , ["cleanup", "--pending", request] <> rest
+        )
+    ,
+        ( "update"
+        , ["update", "--holding", request, "--payload", "/p.json"]
             <> rest
         )
     ,
-        ( "holding terminate"
-        , ["holding", "terminate", "--holding", request] <> rest
+        ( "terminate"
+        , ["terminate", "--holding", request] <> rest
         )
     ]
   where
@@ -172,7 +172,7 @@ tokenOnEveryCommand = describe "the state token" $ do
                         `shouldSatisfy` badValueOf "--state-token"
     it "is refused on create, which makes one" $
         parseOpenDatumCommand
-            ( ["state", "create", "--seed", request]
+            ( ["create", "--seed", request]
                 <> dirAndRelease
                 <> provider
                 <> wallet
@@ -209,7 +209,7 @@ tokenOnEveryCommand = describe "the state token" $ do
   where
     environment t = ("SINGULAR_STATE_TOKEN", spelled t)
     createLine =
-        ["state", "create", "--seed", request]
+        ["create", "--seed", request]
             <> dirAndRelease
             <> provider
             <> wallet

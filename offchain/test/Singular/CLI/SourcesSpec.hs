@@ -97,10 +97,10 @@ settings =
 flagOf :: (String, String, String, String) -> String
 flagOf (f, _, _, _) = f
 
--- | A state create with the named settings on its command line and no signer.
+-- | A registry create with the named settings on its command line and no signer.
 foldBase :: [(String, String, String, String)] -> [String]
 foldBase kept =
-    ["state", "create", "--application-policy", replicate 56 'a']
+    ["registry", "create", "--application-policy", replicate 56 'a']
         <> concat [[f, v] | (f, _, _, v) <- kept]
 
 -- | The same with a vault.
@@ -291,13 +291,13 @@ spec = describe "the settings given by the environment and a config file" $ do
                 fst
                 ( parseInvocationFrom
                     (Sources [] (Left "the config file x.json does not exist"))
-                    ["state", "create", "--application-policy", replicate 56 'a']
+                    ["registry", "create", "--application-policy", replicate 56 'a']
                 )
                 `shouldBe` Left (ConfigRefused "the config file x.json does not exist")
         it "is ignored for a request for help" $
             parseInvocationFrom
                 (Sources [] (Left "the config file x.json does not exist"))
-                ["state", "create", "--help"]
+                ["registry", "create", "--help"]
                 `shouldSatisfy` isRight
     describe "the keys of a file" $ do
         let read' = configFromValue program "demo.json"

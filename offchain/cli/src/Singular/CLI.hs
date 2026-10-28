@@ -37,17 +37,22 @@ import System.Exit (ExitCode (..))
 runCommand :: Application -> Env -> Command -> IO ExitCode
 runCommand = runRegistryCommand
 
--- | Run one registry command (was runCommand): state create, wallet, submit and help.
+-- | Run one registry command (was runCommand): registry create, wallet, submit and help.
 runRegistryCommand :: Application -> Env -> Command -> IO ExitCode
-runRegistryCommand app env = \case
+runRegistryCommand _app env = \case
     Help text -> putStr text >> pure ExitSuccess
     Fold _ -> pure (ExitFailure 2)
     StateCreate a ->
         finish
             (envTracer env)
-            "state create"
+            "registry create"
             (stateCreateReceipt a)
-            ( openWriteSigner (stateCreateWrite a) >>= \ws -> runStateCreate env neutralHost a{stateCreateWrite = ws}
+            ( openWriteSigner (stateCreateWrite a) >>= \ws ->
+                runStateCreate
+                    "registry create"
+                    env
+                    neutralHost
+                    a{stateCreateWrite = ws}
             )
     WalletCreate a -> walletCreateCommand a
     WalletAddress a -> walletAddressCommand a
@@ -55,9 +60,7 @@ runRegistryCommand app env = \case
     SubmitBundle a ->
         submitBundle
             env
-            app
             (submitProvider a)
-            (submitBlueprint a)
             (submitBundlePath a)
             (submitWitnessPaths a)
             (submitReceipt a)

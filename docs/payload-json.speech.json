@@ -19,11 +19,11 @@
       "pause": 500
     },
     {
-      "text": "Write the file and give it to registration book, with no schema setting:",
+      "text": "Write the file and give it to insert, with no schema setting:",
       "pause": 400
     },
     {
-      "text": "Supply the registry, blueprint and provider settings as described in the registry command guide. Fold the pending reference the booking prints with open-datum state fold --pending TXID#IX. holding update takes the same payload file and schema setting. Reading a key has replacement: none, issue 744.",
+      "text": "Supply the registry, blueprint and provider settings as described in the registry command guide. Fold the pending reference the booking prints with open-datum fold --pending TXID#IX. update takes the same payload file and schema setting. Reading a key has replacement: none, issue 744.",
       "pause": 400
     }
   ],
@@ -171,6 +171,6 @@
   ],
   "_source": {
     "file": "payload-json.md",
-    "sha256": "2627d4083add5ed4a29ff974c203b4c20b40e05fe8d5a24f57578af7b6984d25"
+    "sha256": "c7e4746b1b99895fca242e5b81376b22e99bffe214340e9ccf090127ce412b0f"
   }
 }

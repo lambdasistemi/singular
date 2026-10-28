@@ -274,7 +274,11 @@ for program in singular open-datum; do
 #!$(command -v bash)
 harness="\$($(command -v env) | $(command -v grep) -o '^SINGULAR_HARNESS_[A-Z_]*' | LC_ALL=C $(command -v sort) | $(command -v paste) -sd, - || true)"
 holds="\$($(command -v env) | $(command -v grep) '^SINGULAR_HARNESS_HOLD_' | $(command -v grep) -v '^SINGULAR_HARNESS_HOLD_STEP=' | $(command -v cut) -d= -f2- | $(command -v paste) -sd'|' - || true)"
-printf '%s\t%s\t%s\n' "$program \${1:-} \${2:-}" "\$harness" "\$holds" >>$(printf '%q' "$invocations")
+route="$program \${1:-}"
+case "\$route" in
+  'singular registry'|'singular wallet') route="\$route \${2:-}" ;;
+esac
+printf '%s\t%s\t%s\n' "\$route" "\$harness" "\$holds" >>$(printf '%q' "$invocations")
 exec $(printf '%q' "$binary") "\$@"
 WRAPPER
   chmod +x "$work/bin/$program"
@@ -299,14 +303,14 @@ while IFS= read -r route; do
   awk -F'\t' -v c="$route" '$1 == c && $2 == ""' "$invocations" | grep -q . \
     || refuse harness-code-present "no ordinary $route invocation was recorded"
 done <<'ROUTES'
-singular state create
-open-datum state create
-open-datum state fold
-open-datum registration book
-open-datum registration reclaim
-open-datum registration cleanup
-open-datum holding update
-open-datum holding terminate
+singular registry create
+open-datum create
+open-datum fold
+open-datum insert
+open-datum reclaim
+open-datum cleanup
+open-datum update
+open-datum terminate
 ROUTES
 if awk -F'\t' '$2 != "" || $3 != ""' "$invocations" | grep -q .; then
   refuse harness-code-present "ordinary journey received a hidden test input"

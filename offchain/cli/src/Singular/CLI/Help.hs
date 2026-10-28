@@ -51,7 +51,7 @@ singularProgram version =
         , programSummary =
             "Create a Singular registry on Cardano, and sign and submit transaction bundles."
         , programVersion = version
-        , programNodes = [stateGroup, walletGroup, submitLeaf]
+        , programNodes = [registryGroup, walletGroup, submitLeaf]
         , programFooter =
             [ ""
             , "Every command takes --trace, --trace-to and --trace-format to narrate"
@@ -67,12 +67,12 @@ singularHelp version = helpText (singularProgram version)
 singularUsageLine :: Version -> [String] -> [String]
 singularUsageLine version = usageText (singularProgram version)
 
-stateGroup :: Node
-stateGroup =
+registryGroup :: Node
+registryGroup =
     Group
-        "state"
+        "registry"
         "Create a registry on the proved design"
-        [ "The state commands make the registry of an application: its state, a single \
+        [ "The registry commands make the registry of an application: its state, a single \
           \output that holds the registry's token and the root of its keys. The \
           \registry is named by its seed, an output of your wallet, and by the \
           \application whose policy the state validator is made for. The commands \
@@ -130,7 +130,7 @@ stateCreateLeaf =
             , leafEnvironment =
                 [environmentLog, environmentState, environmentPassphrase]
             , leafExamples =
-                [ "singular state create --blueprint plutus.json \\"
+                [ "singular registry create --blueprint plutus.json \\"
                 , "    --application-policy <policy> \\"
                 , "    " <> preprodExample <> " \\"
                 , "    --vault alice.vault"
@@ -252,14 +252,6 @@ submitLeaf =
                   \for no transaction or for a key no transaction needs, a missing \
                   \witness, an input found nowhere and a body the tip has expired \
                   \(rebuild the bundle) are refused by name."
-                , "A bundle that names a registry is checked against it before the \
-                  \first send: give the release it was created under with --blueprint, \
-                  \and the registry's pinned policies must be the ones that release \
-                  \derives, or the bundle is refused naming the policy that differs. \
-                  \A bundle that names no registry is refused, unless it is a create \
-                  \bundle, which needs no release. The registry name in a bundle is its \
-                  \writer's statement: this checks the registry it names, not that the \
-                  \transactions act on it."
                 , "The transactions the chain does not hold are sent in the bundle's \
                   \order, each confirmed before the next; an uncertain answer stops \
                   \the run as partial and nothing is sent again, so running it again \
@@ -270,7 +262,6 @@ submitLeaf =
                 Each
                     [ Needs witnesses
                     , nodeShape
-                    , Takes blueprint
                     , Takes receipt
                     , tracingShape
                     ]
@@ -278,7 +269,6 @@ submitLeaf =
             , leafEnvironment = [environmentLog]
             , leafExamples =
                 [ "singular submit bundle.json --witnesses witnesses \\"
-                , "    --blueprint plutus.json \\"
                 , "    " <> preprodExample
                 ]
             , leafNotes =

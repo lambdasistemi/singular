@@ -815,7 +815,7 @@ walletVerbs = describe "the wallet verbs on the command line" $ do
                     "is not accepted by wallet create: a wallet command takes only its vault, network magic and passphrase descriptor"
                 )
     it
-        "takes the vault and its passphrase descriptor on a state create, as its signer"
+        "takes the vault and its passphrase descriptor on a registry create, as its signer"
         $ case parseCommand
             (registryFoldLine <> ["--vault", "x", "--passphrase-fd", "3"]) of
             Right (StateCreate a) ->
@@ -827,10 +827,10 @@ walletVerbs = describe "the wallet verbs on the command line" $ do
                 page `shouldSatisfy` isInfixOf "Usage: singular wallet COMMAND"
             other -> expectationFailure ("not help: " <> show other)
 
--- | A state create line complete but for its signer.
+-- | A registry create line complete but for its signer.
 registryFoldLine :: [String]
 registryFoldLine =
-    [ "state"
+    [ "registry"
     , "create"
     , "--blueprint"
     , "blueprint.json"

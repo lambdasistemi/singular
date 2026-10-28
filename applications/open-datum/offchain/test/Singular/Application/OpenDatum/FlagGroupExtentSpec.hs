@@ -61,7 +61,7 @@ registryExtras = ["--application-policy"]
 registryFull :: [String]
 registryFull = commonFlagGroup <> registryExtras
 
--- | The shared valued group and the pending-reference flag of state fold.
+-- | The shared valued group and the pending-reference flag of fold.
 siblingFull :: [String]
 siblingFull = commonFlagGroup <> ["--pending"]
 
@@ -80,7 +80,7 @@ extentToken = replicate 56 'a' <> "." <> replicate 64 'b'
 -- | A valid registry fold; probes append one flag to it.
 registryFold :: [String]
 registryFold =
-    [ "state"
+    [ "registry"
     , "create"
     , "--blueprint"
     , "blueprint.json"
@@ -97,8 +97,7 @@ registryFold =
 -- | A valid sibling fold; probes append one flag to it.
 siblingFold :: [String]
 siblingFold =
-    [ "state"
-    , "fold"
+    [ "fold"
     , "--pending"
     , replicate 64 'c' <> "#0"
     , "--blueprint"
@@ -116,7 +115,7 @@ siblingFold =
 -- | A valid registry fold without its token, for the token variant.
 registryFoldBare :: [String]
 registryFoldBare =
-    [ "state"
+    [ "registry"
     , "create"
     , "--blueprint"
     , "b"
@@ -131,7 +130,7 @@ registryFoldBare =
 -- | A valid registry fold without its url, for the url variant.
 registryFoldNoKoios :: [String]
 registryFoldNoKoios =
-    [ "state"
+    [ "registry"
     , "create"
     , "--blueprint"
     , "b"
@@ -146,8 +145,7 @@ registryFoldNoKoios =
 -- | A valid sibling fold without its token, for the token variant.
 siblingFoldBare :: [String]
 siblingFoldBare =
-    [ "state"
-    , "fold"
+    [ "fold"
     , "--pending"
     , replicate 64 'c' <> "#0"
     , "--blueprint"
@@ -163,8 +161,7 @@ siblingFoldBare =
 -- | A valid sibling fold without its url, for the url variant.
 siblingFoldNoKoios :: [String]
 siblingFoldNoKoios =
-    [ "state"
-    , "fold"
+    [ "fold"
     , "--pending"
     , replicate 64 'c' <> "#0"
     , "--blueprint"
@@ -209,7 +206,7 @@ bothRefuseOutside = describe "both parsers refuse outside the group" $ do
     it "both parsers refuse a flag outside the group" $ do
         parseCommand ["registry", "fold", "--frobnicate", "x"]
             `shouldBe` Left (registryUnknown "--frobnicate")
-        parseOpenDatumCommand ["state", "fold", "--frobnicate", "x"]
+        parseOpenDatumCommand ["fold", "--frobnicate", "x"]
             `shouldBe` Left (siblingUnknown "--frobnicate")
 
 extrasAsymmetry :: Spec

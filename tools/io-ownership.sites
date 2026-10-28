@@ -391,9 +391,6 @@ offchain/test/Singular/CLI/CommandRunSpec.hs runViaApp readIORef 1
 offchain/test/Singular/CLI/CommandRunSpec.hs runViaApp writeIORef 1
 offchain/test/Singular/CLI/CommandRunSpec.hs withRigIn modifyIORef' 1
 offchain/test/Singular/CLI/CommandRunSpec.hs withRigIn newIORef 2
-offchain/test/Singular/CLI/PinGateSpec.hs probedEnv modifyIORef' 3
-offchain/test/Singular/CLI/PinGateSpec.hs probedEnv newIORef 3
-offchain/test/Singular/CLI/PinGateSpec.hs probedEnv readIORef 3
 offchain/test/Singular/CLI/StateCommandSpec.hs answeringWith modifyIORef' 2
 offchain/test/Singular/CLI/StateCommandSpec.hs answeringWith newIORef 2
 offchain/test/Singular/CLI/StateCommandSpec.hs answeringWith readIORef 2
@@ -416,6 +413,7 @@ offchain/test/Singular/CLI/SubmitSpec.hs land modifyIORef' 2
 offchain/test/Singular/CLI/SubmitSpec.hs theCore readIORef 2
 offchain/test/Singular/CLI/SubmitSpec.hs theFoundWitnesses readIORef 4
 offchain/test/Singular/CLI/SubmitSpec.hs theRefusals readIORef 3
+offchain/test/Singular/CLI/SubmitSpec.hs theRegistryName readIORef 1
 offchain/test/Singular/CLI/SubmitSpec.hs theRerun readIORef 6
 offchain/test/Singular/CLI/SubmitSpec.hs theRerun writeIORef 2
 offchain/test/Singular/CLI/SubmitSpec.hs theSends readIORef 3

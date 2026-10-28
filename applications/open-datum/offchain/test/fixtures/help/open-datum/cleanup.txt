@@ -1,22 +1,19 @@
 open-datum VERSION (commit unknown)
 
-Usage: open-datum registration book [--config FILE] [--state-dir DIR]
-       --blueprint FILE [--registry ADDRESS] [--state-token POLICY.NAME]
-       [--key KEY | --key-hex HEX] --payload FILE [--payload-schema
-       plain|detailed] [--deposit LOVELACE] [--tip LOVELACE] [--refund-address
-       ADDR] --koios-url URL [--network-magic N] [--koios-token-file FILE]
+Usage: open-datum cleanup [--config FILE] [--state-dir DIR] --blueprint FILE
+       [--registry ADDRESS] [--state-token POLICY.NAME] --pending TXID#IX
+       --koios-url URL [--network-magic N] [--koios-token-file FILE]
        [--network-time DIR] [--vault FILE [--passphrase-fd N] |
        --wallet-address ADDR --bundle FILE | --wallet-skey FILE]
        [--confirm-timeout SECONDS] [--receipt FILE] [--trace LEVEL]
        [--trace-to SINK] [--trace-format FORMAT]
 
-Book the registration of a key
+Clean up an expired registration
 
-Books the registration of a key with its payload and a deposit: a pending
-registration holding its approval is put at the request address, its deadlines
-fixed by the registry's configuration. The receipt names the pending
-registration and the times of its phases. Whoever folds it, or you reclaiming
-it, names it with --pending.
+Cleans up the named pending registration once its reclaim window has ended:
+its deposit returns to its refund address, the wallet that runs the command
+keeps what the request holds above the deposit, and the approval is burned.
+Anyone may run it.
 
 A write is signed by exactly one signer: --vault (the normal route),
 --wallet-address with --bundle (written for an external signer, ending as
@@ -64,36 +61,9 @@ Available settings:
     state-token: # or null
       <string>
 
-  The registry key as text, its UTF-8 bytes (1 to 32); give this or --key-hex.
-  option: --key KEY
-
-  The registry key as base16 bytes (1 to 32), for a key that is not text; give
-  this or --key.
-  option: --key-hex HEX
-
-  The key's payload: a JSON file, stored as plain JSON unless --payload-schema
-  says otherwise.
-  option: --payload FILE
-
-  The form the payload file is written in. plain: ordinary JSON, mapped to
-  Plutus data by the table in the documentation. detailed: the schema that
-  writes any Plutus data exactly.
-  option: --payload-schema plain|detailed
-  default: plain
-
-  The deposit the key's envelope protects, in whole lovelace; not below the
-  minimum.
-  option: --deposit LOVELACE
-  default: 2000000, the minimum
-
-  What the request holds above the deposit for the wallet that folds it, in
-  whole lovelace.
-  option: --tip LOVELACE
-  default: 0
-
-  Where a reclaim or a cleanup returns the value: a bech32 address.
-  option: --refund-address ADDR
-  default: your own address
+  The pending request to act on, as the booking printed it; none is chosen for
+  you.
+  option: --pending TXID#IX
 
   Base URL of the Koios API used to read the chain and to submit.
   option: --koios-url URL
@@ -208,14 +178,13 @@ Environment:
                        value that is empty is refused.
 
 Example:
-  open-datum registration book --blueprint plutus.json \
-      --registry <address> --key my-key --payload payload.json \
+  open-datum cleanup --blueprint plutus.json \
+      --registry <address> --pending <txid>#<ix> \
       --koios-url https://preprod.koios.rest/api/v1 \
-      --vault alice.vault
+      --vault bob.vault
 
   With those settings in singular.json instead:
-  open-datum registration book --key my-key --payload payload.json \
-      --vault alice.vault
+  open-datum cleanup --pending <txid>#<ix> --vault bob.vault
 
 Output and exit status:
   Prints one JSON receipt on standard output (--receipt also writes it).

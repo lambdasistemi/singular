@@ -174,27 +174,27 @@ spec = describe "a registry given by its address" $ do
     wallet = ["--wallet-skey", "/keys/payment.skey"]
     verbs =
         [
-            ( "registration book"
-            , ["registration", "book", "--key", "key", "--payload", "/p.json"]
+            ( "insert"
+            , ["insert", "--key", "key", "--payload", "/p.json"]
                 <> rest
             )
-        , ("state fold", ["state", "fold", "--pending", ref] <> rest)
+        , ("fold", ["fold", "--pending", ref] <> rest)
         ,
-            ( "registration reclaim"
-            , ["registration", "reclaim", "--pending", ref] <> rest
+            ( "reclaim"
+            , ["reclaim", "--pending", ref] <> rest
             )
         ,
-            ( "registration cleanup"
-            , ["registration", "cleanup", "--pending", ref] <> rest
+            ( "cleanup"
+            , ["cleanup", "--pending", ref] <> rest
             )
         ,
-            ( "holding update"
-            , ["holding", "update", "--holding", ref, "--payload", "/p.json"]
+            ( "update"
+            , ["update", "--holding", ref, "--payload", "/p.json"]
                 <> rest
             )
         ,
-            ( "holding terminate"
-            , ["holding", "terminate", "--holding", ref] <> rest
+            ( "terminate"
+            , ["terminate", "--holding", ref] <> rest
             )
         ]
     rest = createReg <> node <> wallet

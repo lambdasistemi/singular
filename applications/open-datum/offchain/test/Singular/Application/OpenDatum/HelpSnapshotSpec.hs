@@ -76,16 +76,13 @@ spec = describe "the help pages" $ do
     it "name every command the program declares" $
         commandPaths program
             `shouldBe` [ []
-                       , ["state"]
-                       , ["state", "create"]
-                       , ["state", "fold"]
-                       , ["registration"]
-                       , ["registration", "book"]
-                       , ["registration", "reclaim"]
-                       , ["registration", "cleanup"]
-                       , ["holding"]
-                       , ["holding", "update"]
-                       , ["holding", "terminate"]
+                       , ["create"]
+                       , ["fold"]
+                       , ["insert"]
+                       , ["reclaim"]
+                       , ["cleanup"]
+                       , ["update"]
+                       , ["terminate"]
                        ]
     it "are a well-formed declaration for the library" $
         lintDeclaration program `shouldBe` True
@@ -112,7 +109,7 @@ spec = describe "the help pages" $ do
         length (lines (pageOf [])) `shouldSatisfy` (<= 45)
     it
         "never name a verb that lives in singular alone as a verb of its own"
-        $ forM_ ["reclaim", "reject"]
+        $ forM_ ["reject", "inspect"]
         $ \verb ->
             pageOf [] `shouldNotSatisfy` isInfixOf ("open-datum " <> verb)
     it
@@ -147,21 +144,21 @@ spec = describe "the help pages" $ do
                     <> " (commit 0123abc)"
                 ]
     it "refuse with the usage of the command and where its help is" $ do
-        let hint = openDatumHint ["registration", "book", "--bogus"]
+        let hint = openDatumHint ["insert", "--bogus"]
         hint
-            `shouldSatisfy` any ("Usage: open-datum registration book" `isPrefixOf`)
+            `shouldSatisfy` any ("Usage: open-datum insert" `isPrefixOf`)
         drop (length hint - 1) hint
-            `shouldBe` ["Try 'open-datum registration book --help'."]
+            `shouldBe` ["Try 'open-datum insert --help'."]
         length hint `shouldSatisfy` (<= 14)
     it "name the nearest command for a mistyped one" $
-        openDatumHint ["registraton", "--key", "k"]
-            `shouldSatisfy` elem "Did you mean `open-datum registration`?"
+        openDatumHint ["inser", "--key", "k"]
+            `shouldSatisfy` elem "Did you mean `open-datum insert`?"
     it "complete command and flag names" $ do
-        completionsFor program ["regis"] 0 `shouldReturn` ["registration"]
-        completionsFor program ["registration", "book", "--pay"] 2
+        completionsFor program ["ins"] 0 `shouldReturn` ["insert"]
+        completionsFor program ["insert", "--pay"] 1
             `shouldReturn` ["--payload", "--payload-schema"]
     it "complete only the flags of the command asked about" $ do
-        flagsOfFold <- completionsFor program ["state", "fold", "--"] 2
+        flagsOfFold <- completionsFor program ["fold", "--"] 1
         flagsOfFold `shouldSatisfy` elem "--pending"
         flagsOfFold `shouldSatisfy` notElem "--payload"
         flagsOfFold `shouldSatisfy` notElem "--payload-schema"

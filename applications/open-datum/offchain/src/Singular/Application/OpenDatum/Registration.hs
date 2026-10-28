@@ -8,9 +8,9 @@ License     : Apache-2.0
 
 The five commands of open datum on the proved design are written against the
 library's builders and the request builders of this package, not against the
-open-datum envelope. @state create@ and @state fold@ are the library's commands
+open-datum envelope. @create@ and @fold@ are the library's commands
 hosted with open datum's request validator; this module hands them that host
-('openDatumHost'). @registration book@, @reclaim@ and @cleanup@ are open datum's
+('openDatumHost'). @insert@, @reclaim@ and @cleanup@ are open datum's
 own: each builds its transaction, signs and sends it through the journalled
 submission every write of the program uses, and reads back the output the
 transaction made.
@@ -177,7 +177,7 @@ runBook env a = do
         registry = RegistryIdentity (StatePolicyId (scriptHashBytes statePolicy)) name
         key = unKey (bookArgsKey a)
         policy = PolicyID (hashScript script)
-    stateWrite env (bookArgsStateDir a) token "registration book" ws $ \wc reconciled -> do
+    stateWrite env (bookArgsStateDir a) token "insert" ws $ \wc reconciled -> do
         let payer = wcCaller wc
         refund <-
             maybe
@@ -218,7 +218,7 @@ runBook env a = do
                 )
                 pure
                 (inlineDatumOf out >>= decodeRegistration Testnet)
-        pure . receipt "registration book" Success $
+        pure . receipt "insert" Success $
             registryFields magic token
                 <> [ ("stateToken", toJSON (renderStateToken token))
                    , ("pending", toJSON (txInText pending))
@@ -240,11 +240,11 @@ runBook env a = do
 
 -- | Take a pending registration back inside its reclaim window.
 runReclaim :: Env -> PendingArgs -> IO Value
-runReclaim = runPending "registration reclaim" "reclaim" buildReclaim
+runReclaim = runPending "reclaim" "reclaim" buildReclaim
 
 -- | Clean up a pending registration after its reclaim window.
 runCleanup :: Env -> PendingArgs -> IO Value
-runCleanup = runPending "registration cleanup" "cleanup" buildCleanup
+runCleanup = runPending "cleanup" "cleanup" buildCleanup
 
 runPending
     :: Text
@@ -315,7 +315,7 @@ runHoldingUpdate
 runHoldingUpdate env a path schema = do
     payload <- readPayloadFile schema path
     runHolding
-        "holding update"
+        "update"
         "update"
         "holding"
         (\view script ref payer -> buildUpdate view script ref payload payer)
@@ -326,7 +326,7 @@ runHoldingUpdate env a path schema = do
 runHoldingTerminate :: Env -> HoldingArgs -> IO Value
 runHoldingTerminate =
     runHolding
-        "holding terminate"
+        "terminate"
         "terminate"
         "pending"
         buildBookTermination
