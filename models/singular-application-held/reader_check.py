@@ -305,7 +305,9 @@ def neutral_corpus(driver):
     require(len(rows) > 1, "neutral corpus is empty or singleton")
     require(len({row["name"] for row in rows}) == len(rows), "duplicate neutral row")
     for row in rows:
-        require(row["query"]["decoding"] == [], "neutral corpus has application decoding")
+        require(
+            row["query"]["decoding"] == [], "neutral corpus has application decoding"
+        )
         result = invoke(driver, json.dumps(row["query"]))
         require(result.returncode == 0, "neutral corpus replay failed: " + row["name"])
         require(
