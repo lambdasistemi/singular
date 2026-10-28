@@ -46,7 +46,7 @@ import Control.Concurrent
 import Control.Exception (finally, try)
 import Control.Monad (forM_, void)
 import Control.Monad.State.Strict (State, gets, modify', runState)
-import Control.Tracer (nullTracer)
+import Control.Tracer (Tracer (..), nullTracer, traceWith)
 import Data.Aeson
     ( Value (..)
     , decodeStrict'
@@ -134,6 +134,7 @@ import Singular.Registry.SessionEvidence
 import Singular.Registry.Signing (signedTx)
 import Singular.Registry.Terminal (newCapabilities)
 import Singular.Registry.TimeSource (loadPinnedSource)
+import Singular.Registry.Trace (BackendEvent (..), Query (..), QueryEnd (..), QueryWork (..), QuerySummary (..), sessionQueryWork)
 import Singular.Registry.TraceRender (backendPhaseLog)
 import Singular.Registry.TxBuilder.BookingFixture (payer)
 import Singular.Registry.Wait (WaitFailure (..), WaitStage (..))
@@ -146,6 +147,80 @@ import Test.Hspec
 
 spec :: Spec
 spec = describe "Koios ledger provider constructor" $ do
+    it "reads the served network from genesis rather than its configured network" $ do
+        source <- timeSource
+        let client = Client.Koios recordedConfig (Client.Transport (const (pure (okJson [] "[{\"networkmagic\":\"42\"}]"))))
+            provider = koiosProvider stateRuntime (Network 1) (pure (Right source)) client
+            (result, state) = runState
+                (acquire provider (Latest (Network 1)) (fmap (fmap value) . servedNetwork))
+                initialProviderState
+        result `shouldBe` Right (Right (Network 42))
+        [Wire.callName (Client.rawCall request) | RawExchange _ request _ <- providerEvents state]
+            `shouldBe` ["genesis"]
+    it "keeps failed, timed-out and malformed network answers as named read failures" $ do
+        source <- timeSource
+        forM_
+            [ Client.Exchange 1 (Left Client.NoAnswerInTime)
+            , Client.Exchange 1 (Left (Client.NoConnection "offline"))
+            , okJson [] "[]"
+            , okJson [] "[{}]"
+            , okJson [] "[{\"networkmagic\":\"-1\"}]"
+            , okJson [] "[{\"networkmagic\":\"4294967296\"}]"
+            , okJson [] "[{\"networkmagic\":1.5}]"
+            , okJson [] "[{\"networkmagic\":1},{\"networkmagic\":42}]"
+            , okJson [] "[{"
+            ] $ \response -> do
+                let client = Client.Koios recordedConfig (Client.Transport (const (pure response)))
+                    provider = koiosProvider stateRuntime (Network 1) (pure (Right source)) client
+                    (result, _) = runState
+                        (acquire provider (Latest (Network 1)) (fmap (fmap value) . servedNetwork))
+                        initialProviderState
+                case result of
+                    Right (Left (BackendReadFailure reason)) -> reason `shouldSatisfy` Text.isInfixOf "CallGenesis"
+                    _ -> expectationFailure ("network answer was not a named failure: " <> show result)
+    it "counts every page of a provider read from its actual answers" $
+        withSystemTempDirectory "provider-query-work" $ \directory -> do
+            source <- timeSource
+            events <- newIORef []
+            let path = directory </> "phase.log"
+                tracer = Tracer $ \event -> do
+                    modifyIORef' events (<> [event])
+                    traceWith (backendPhaseLog path) event
+                (parent, _, output) = dependentPair True
+                rows =
+                    [ case outputRow (TxIn (keyOf parent) (TxIx index), output) of
+                        Object fields -> Object (KM.insert "address" (String (Wire.renderAddress payer)) fields)
+                        _ -> error "output row is not an object"
+                    | index <- [0, 1, 2]
+                    ]
+                answer request = pageAnswer rows (maybe 0 (read . Text.unpack) (queryParam "offset" request)) 2
+                client = Client.Koios (Client.ClientConfig 2 10) (Client.Transport (pure . answer))
+            runtime <- newIORuntime tracer (const (pure ()))
+            let provider = koiosProvider runtime (Network 1) (pure (Right source)) client
+            result <- acquire provider (Latest (Network 1)) $ \session ->
+                fmap (fmap (length . value)) (outputs session (AtAddress payer))
+            result `shouldBe` Right (Right 3)
+            observed <- readIORef events
+            let pages = [q | Exchanged q <- observed, queryName q == "address_utxos"]
+            map queryEnd pages `shouldBe` [Answered (Just 2), Answered (Just 1)]
+            logged <- mapM (either fail pure . eitherDecode' . LBS.fromStrict) . BS8.lines =<< BS.readFile path
+            let measured = [fields | Object fields <- logged, KM.lookup "query" fields == Just (String "address_utxos")]
+                bodySize offset = case Client.exchangeResult (pageAnswer rows offset 2) of
+                    Right response -> BS.length (Client.answerBody response)
+                    Left _ -> error "page fixture has no answer"
+            map (KM.lookup "bytes") measured `shouldBe` map (Just . toJSON . bodySize) [0, 2]
+            map (KM.lookup "calls") measured `shouldBe` replicate 2 (Just (toJSON (1 :: Int)))
+            let identities = [identity | q <- pages, Just identity <- [querySession q]]
+            case identities of
+                identity : _ -> do
+                    let unrelated = [Exchanged q{querySession = Just "another-session"} | q <- pages]
+                        summary = sessionQueryWork identity (observed <> unrelated)
+                    workCalls (totalWork summary) `shouldBe` 2
+                    workRows (totalWork summary) `shouldBe` 3
+                    workBytes (totalWork summary) `shouldBe` toInteger (sum (map bodySize [0, 2]))
+                    Map.keys (perReadWork summary) `shouldBe` ["address_utxos"]
+                    totalWork summary `shouldBe` foldMap id (perReadWork summary)
+                [] -> expectationFailure "paged exchanges have no session identity"
     it "names an unknown transaction as the missing requested output" $ do
         source <- timeSource
         let (target, _, _) = dependentPair True
