@@ -21,10 +21,24 @@ import Control.Exception (bracket, throwIO)
 import Control.Monad (forM_, replicateM)
 import Control.Tracer (Tracer (..), nullTracer, traceWith)
 import Data.Aeson qualified as Aeson
-import Data.Aeson.Key qualified as Key
-import Data.Aeson.KeyMap qualified as KeyMap
+    ( Object
+    , Value (Object)
+    , decodeStrict
+    )
+import Data.Aeson.Key qualified as Key (toText)
+import Data.Aeson.KeyMap qualified as KeyMap (keys)
 import Data.ByteString qualified as BS
+    ( ByteString
+    , null
+    , pack
+    , readFile
+    )
 import Data.ByteString.Char8 qualified as BC
+    ( count
+    , init
+    , last
+    , lines
+    )
 import Data.Data
     ( Data
     , dataTypeConstrs
@@ -34,13 +48,113 @@ import Data.Data
     , showConstr
     , toConstr
     )
-import Data.IORef (IORef, atomicModifyIORef', newIORef, readIORef)
+import Data.IORef
+    ( IORef
+    , atomicModifyIORef'
+    , newIORef
+    , readIORef
+    )
 import Data.List (isInfixOf, isPrefixOf, nub, sort)
 import Data.Map.Strict qualified as Map
+    ( fromList
+    , fromListWith
+    , keys
+    , lookup
+    , size
+    , toList
+    )
 import Data.Maybe (isJust, mapMaybe)
-import Data.Set qualified as Set
+import Data.Set qualified as Set (fromList, singleton, union)
 import Data.Text (Text)
-import Data.Text qualified as T
+import Data.Text qualified as T (pack, replicate)
+import Singular.Application.OpenDatum.Command
+    ( CLIError (..)
+    , OpenDatumCommand (..)
+    , parseOpenDatumCommand
+    , parseOpenDatumInvocation
+    )
+import Singular.Application.OpenDatum.Root
+    ( runOpenDatumSingular
+    , runPackagedOpenDatumWith
+    )
+import Singular.Application.OpenDatum.Value
+    ( openDatumApplication
+    )
+import Singular.CLI.Finish (finish)
+import Singular.CLI.Receipt (OutcomeClass (..))
+import Singular.CLI.Root (standardError)
+import Singular.CLI.Session (failWith)
+import Singular.CLI.Trace
+    ( ConfirmVerdict
+        ( ConfirmFailed
+        , ConfirmThrew
+        , ConfirmTimedOut
+        , Confirmed
+        )
+    , EdgeAction (..)
+    , Ended (..)
+    , Event (How, What)
+    , Fetch (Fetch)
+    , How (..)
+    , Output (Output)
+    , Scope (..)
+    , SubmitVerdict
+        ( Accepted
+        , LedgerRefusedIt
+        , ProviderFailed
+        , SubmitThrew
+        , WrongNetwork
+        )
+    , TipAt (TipSlot, TipUnreadable)
+    , Trace (Trace, traceEvent)
+    , TraceFormat (JsonFormat, TextFormat)
+    , TraceLevel (TraceHow, TraceOff, TraceWhat)
+    , TraceRequest (TraceRequest)
+    , TraceSink (ToFile, ToStderr)
+    , TxEvent (TxBuilt, TxConfirmed, TxObserved, TxSigned, TxSubmitted)
+    , What
+        ( Booked
+        , CommandEnded
+        , CommandStarted
+        , Created
+        , EdgeStarted
+        , Folded
+        , KeySeen
+        , Reclaimed
+        , Refused
+        , RegistrySeen
+        , Rejected
+        , RequestSeen
+        , RootSeen
+        , Updated
+        )
+    , atLevel
+    , decodeJsonLine
+    , fanOut
+    , levelOf
+    , noTraceRequest
+    , outputSink
+    , phaseLogSink
+    , renderJsonLine
+    , renderText
+    , resolveOutputs
+    , withTracing
+    )
+import Singular.Registry.Trace
+    ( BackendEvent (..)
+    , BodyBuild (BodyBuild)
+    , BodyEnd (BodyFailed, BodyReady, BodyRefused)
+    , ErrorClass (..)
+    , Evaluation (Evaluation)
+    , HorizonEnd (HorizonFailed, HorizonMoved)
+    , HorizonWait (HorizonWait)
+    , Query (Query)
+    , QueryEnd (Answered, Lagged, QueryFailed)
+    , ReadEvent (..)
+    , ValiditySelection (ValiditySelection)
+    , ViewOpening (NodeViewFailed, NodeViewOpened, SessionViewOpened)
+    , ViewRelease (..)
+    )
 import System.Directory (doesFileExist, removeFile)
 import System.Exit (ExitCode (..))
 import System.FilePath ((</>))
@@ -67,6 +181,13 @@ import System.Posix.IO
     )
 import System.Posix.Types (Fd)
 import Test.Hspec
+    ( Spec
+    , describe
+    , it
+    , shouldBe
+    , shouldReturn
+    , shouldSatisfy
+    )
 import Test.QuickCheck
     ( Gen
     , chooseInt
@@ -79,24 +200,6 @@ import Test.QuickCheck
     , vectorOf
     , (===)
     )
-
-import Singular.Application.OpenDatum.Command
-    ( CLIError (..)
-    , OpenDatumCommand (..)
-    , parseOpenDatumCommand
-    , parseOpenDatumInvocation
-    )
-import Singular.Application.OpenDatum.Root
-    ( runOpenDatumSingular
-    , runPackagedOpenDatumWith
-    )
-import Singular.Application.OpenDatum.Value (openDatumApplication)
-import Singular.CLI.Finish (finish)
-import Singular.CLI.Receipt (OutcomeClass (..))
-import Singular.CLI.Root (standardError)
-import Singular.CLI.Session (failWith)
-import Singular.CLI.Trace
-import Singular.Registry.Trace
 
 spec :: Spec
 spec = describe "protocol narration (#416)" $ do
@@ -120,40 +223,37 @@ the provider with it.
 spelledToken :: String
 spelledToken = replicate 56 'a' <> "." <> replicate 64 'b'
 
--- | Each of the six commands, spelled with what it needs to parse.
+-- | Each retained public command, spelled with what it needs to parse.
 commands :: [(String, [String])]
 commands =
-    [ ("create", ["open-datum", "create", "--seed", seed] <> base <> wallet)
+    [ ("state create", ["state", "create"] <> base <> wallet)
+    , ("state fold", ["state", "fold", "--pending", ref] <> rest)
     ,
-        ( "insert"
-        , ["open-datum", "insert", "--key", "alice-1", "--payload", "/p.json"]
-            <> base
-            <> wallet
-            <> tokenFlag
+        ( "registration book"
+        , ["registration", "book", "--key", "alice-1", "--payload", "/p.json"]
+            <> rest
         )
     ,
-        ( "update"
-        , ["open-datum", "update", "--key", "alice-1", "--payload", "/p.json"]
-            <> base
-            <> wallet
-            <> tokenFlag
+        ( "registration reclaim"
+        , ["registration", "reclaim", "--pending", ref] <> rest
         )
     ,
-        ( "terminate"
-        , ["open-datum", "terminate", "--key", "alice-1"]
-            <> base
-            <> wallet
-            <> tokenFlag
+        ( "registration cleanup"
+        , ["registration", "cleanup", "--pending", ref] <> rest
         )
-    , ("fold", ["open-datum", "fold"] <> base <> wallet <> tokenFlag)
     ,
-        ( "inspect"
-        , ["open-datum", "inspect", "--key", "alice-1"] <> base <> tokenFlag
+        ( "holding update"
+        , ["holding", "update", "--holding", ref, "--payload", "/p.json"]
+            <> rest
+        )
+    ,
+        ( "holding terminate"
+        , ["holding", "terminate", "--holding", ref] <> rest
         )
     ]
   where
-    seed = replicate 64 'a' <> "#0"
-    tokenFlag = ["--state-token", spelledToken]
+    ref = replicate 64 'a' <> "#0"
+    rest = base <> wallet <> ["--state-token", spelledToken]
     base =
         [ "--state-dir"
         , "/srv/reg"
@@ -794,10 +894,12 @@ entryPoint = describe "the receipt under every tracing setting" $ do
         $ withSystemTempDirectory "trace-closed-stderr"
         $ \dir -> do
             let command =
-                    [ "open-datum"
-                    , "inspect"
-                    , "--key"
-                    , "alice-1"
+                    [ "state"
+                    , "fold"
+                    , "--pending"
+                    , replicate 64 'a' <> "#0"
+                    , "--wallet-skey"
+                    , dir </> "none.skey"
                     , "--state-token"
                     , spelledToken
                     , "--state-dir"
@@ -838,10 +940,12 @@ entryPoint = describe "the receipt under every tracing setting" $ do
         $ withSystemTempDirectory "trace-packaged-setup"
         $ \dir -> do
             let refused =
-                    [ "open-datum"
-                    , "inspect"
-                    , "--key"
-                    , "alice-1"
+                    [ "state"
+                    , "fold"
+                    , "--pending"
+                    , replicate 64 'a' <> "#0"
+                    , "--wallet-skey"
+                    , dir </> "none.skey"
                     , "--state-token"
                     , spelledToken
                     , "--state-dir"
@@ -995,10 +1099,12 @@ setupRecut = describe "(#416) tracing setup re-cut" $ do
                 asked = ["--trace", "what", "--trace-to", "file:" <> target]
                 help = ["open-datum", "--help"]
                 refused =
-                    [ "open-datum"
-                    , "inspect"
-                    , "--key"
-                    , "alice-1"
+                    [ "state"
+                    , "fold"
+                    , "--pending"
+                    , replicate 64 'a' <> "#0"
+                    , "--wallet-skey"
+                    , dir </> "none.skey"
                     , "--state-token"
                     , spelledToken
                     , "--state-dir"

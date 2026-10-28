@@ -18,12 +18,8 @@ module Singular.Application.OpenDatum.HelpSnapshotSpec (spec) where
 
 import Control.Monad (forM_, unless)
 import Data.List (isInfixOf, isPrefixOf)
-import Data.Text qualified as T
+import Data.Text qualified as T (pack, replace, unpack)
 import Data.Version (showVersion)
-import System.Directory (createDirectoryIfMissing)
-import System.Environment (lookupEnv)
-import Test.Hspec
-
 import Singular.Application.OpenDatum.Command
     ( OpenDatumCommand (..)
     , openDatumHelp
@@ -40,6 +36,17 @@ import Singular.CLI.Options
     , commandPaths
     , completionsFor
     , lintDeclaration
+    )
+import System.Directory (createDirectoryIfMissing)
+import System.Environment (lookupEnv)
+import Test.Hspec
+    ( Spec
+    , describe
+    , it
+    , shouldBe
+    , shouldNotSatisfy
+    , shouldReturn
+    , shouldSatisfy
     )
 
 program :: Program
@@ -69,12 +76,6 @@ spec = describe "the help pages" $ do
     it "name every command the program declares" $
         commandPaths program
             `shouldBe` [ []
-                       , ["create"]
-                       , ["insert"]
-                       , ["update"]
-                       , ["terminate"]
-                       , ["fold"]
-                       , ["inspect"]
                        , ["state"]
                        , ["state", "create"]
                        , ["state", "fold"]
@@ -146,21 +147,22 @@ spec = describe "the help pages" $ do
                     <> " (commit 0123abc)"
                 ]
     it "refuse with the usage of the command and where its help is" $ do
-        let hint = openDatumHint ["insert", "--bogus"]
-        hint `shouldSatisfy` any ("Usage: open-datum insert" `isPrefixOf`)
+        let hint = openDatumHint ["registration", "book", "--bogus"]
+        hint
+            `shouldSatisfy` any ("Usage: open-datum registration book" `isPrefixOf`)
         drop (length hint - 1) hint
-            `shouldBe` ["Try 'open-datum insert --help'."]
+            `shouldBe` ["Try 'open-datum registration book --help'."]
         length hint `shouldSatisfy` (<= 14)
     it "name the nearest command for a mistyped one" $
-        openDatumHint ["insrt", "--key", "k"]
-            `shouldSatisfy` elem "Did you mean `open-datum insert`?"
+        openDatumHint ["registraton", "--key", "k"]
+            `shouldSatisfy` elem "Did you mean `open-datum registration`?"
     it "complete command and flag names" $ do
-        completionsFor program ["inse"] 0 `shouldReturn` ["insert"]
-        completionsFor program ["insert", "--pay"] 1
+        completionsFor program ["regis"] 0 `shouldReturn` ["registration"]
+        completionsFor program ["registration", "book", "--pay"] 2
             `shouldReturn` ["--payload", "--payload-schema"]
     it "complete only the flags of the command asked about" $ do
-        flagsOfFold <- completionsFor program ["fold", "--"] 1
-        flagsOfFold `shouldSatisfy` elem "--request"
+        flagsOfFold <- completionsFor program ["state", "fold", "--"] 2
+        flagsOfFold `shouldSatisfy` elem "--pending"
         flagsOfFold `shouldSatisfy` notElem "--payload"
         flagsOfFold `shouldSatisfy` notElem "--payload-schema"
   where

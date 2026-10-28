@@ -152,8 +152,8 @@ expect undocumented-flag-submit 1 '^undocumented: singular submit takes --plante
 
 # The open-datum binary takes a flag the documentation never mentions.
 fresh
-stand_in_od 'insert' "$(plant --planted-flag)"
-expect undocumented-flag-od 1 '^undocumented: open-datum insert takes --planted-flag'
+stand_in_od 'registration book' "$(plant --planted-flag)"
+expect undocumented-flag-od 1 '^undocumented: open-datum registration book takes --planted-flag'
 
 # The documentation names a flag neither binary takes (singular side).
 fresh
@@ -181,33 +181,30 @@ grep -q 'ghost-flag' "$table" || {
 }
 expect documented-missing-od 1 '^documented, not in --help: the settings table gives --ghost-flag to open-datum'
 
-# A flag documented for a command whose --help does not give it (singular side).
+# A documented flag is assigned to a retained command that does not take it.
 fresh
-sed -i 's/^| `--key KEY` | `insert`, `update`, `terminate`, `inspect` |/| `--key KEY` | `create`, `insert`, `update`, `terminate`, `inspect` |/' "$table"
-grep -q '^| `--key KEY` | `create`' "$table" || {
-  echo "SETUP-FAIL: the key row did not change" >&2
+sed -i 's/^| `--key KEY` | /| `--key KEY` | `open-datum state create`, /' "$table"
+grep -q '^| `--key KEY` | `open-datum state create`' "$table" || {
+  echo "SETUP-FAIL: the key row did not gain state create" >&2
   exit 2
 }
-expect wrong-command 1 '^documented, not in --help: the settings table gives --key to open-datum create'
+expect wrong-command 1 '^documented, not in --help: the settings table gives --key to open-datum state create'
 
-# A flag documented for a command whose --help does not give it (open-datum side).
 fresh
-sed -i 's/^| `--payload FILE` | `insert`, `update` |/| `--payload FILE` | `insert`, `update`, `fold` |/' "$table"
-grep -q '^| `--payload FILE` | `insert`, `update`, `fold`' "$table" || {
-  echo "SETUP-FAIL: the payload row did not change" >&2
+sed -i 's/^| `--payload FILE` | /| `--payload FILE` | `open-datum state fold`, /' "$table"
+grep -q '^| `--payload FILE` | `open-datum state fold`' "$table" || {
+  echo "SETUP-FAIL: the payload row did not gain state fold" >&2
   exit 2
 }
-expect wrong-command-od 1 '^documented, not in --help: the settings table gives --payload to open-datum fold'
+expect wrong-command-od 1 '^documented, not in --help: the settings table gives --payload to open-datum state fold'
 
-# The address of a registry is documented for create, which makes the registry
-# and refuses the flag.
 fresh
-sed -i 's/^| `--registry ADDRESS` | `insert`/| `--registry ADDRESS` | `create`, `insert`/' "$table"
-grep -q '^| `--registry ADDRESS` | `create`' "$table" || {
-  echo "SETUP-FAIL: the registry row did not gain create" >&2
+sed -i 's/^| `--registry ADDRESS` | /| `--registry ADDRESS` | `open-datum state create`, /' "$table"
+grep -q '^| `--registry ADDRESS` | `open-datum state create`' "$table" || {
+  echo "SETUP-FAIL: the registry row did not gain state create" >&2
   exit 2
 }
-expect wrong-command-registry 1 '^documented, not in --help: the settings table gives --registry to open-datum create'
+expect wrong-command-registry 1 '^documented, not in --help: the settings table gives --registry to open-datum state create'
 
 # A documented singular invocation uses a flag its command does not print.
 fresh
@@ -216,8 +213,8 @@ expect invocation-unknown 1 'docs/cli-recovery.md:[0-9]+: singular state create 
 
 # A documented open-datum invocation uses a flag its command does not print.
 fresh
-printf '\n```sh\nopen-datum insert --state-dir ./reg \\\n  --made-up-flag 1\n```\n' >>"$scratch/t/docs/cli-recovery.md"
-expect invocation-unknown-od 1 'docs/cli-recovery.md:[0-9]+: open-datum insert --made-up-flag'
+printf '\n```sh\nopen-datum registration book --state-dir ./reg \\\n  --made-up-flag 1\n```\n' >>"$scratch/t/docs/cli-recovery.md"
+expect invocation-unknown-od 1 'docs/cli-recovery.md:[0-9]+: open-datum registration book --made-up-flag'
 
 # A command the overview names has no help of its own: its --help fails.
 fresh
@@ -233,12 +230,12 @@ expect command-help-fails 1 '^singular state create --help exited non-zero'
 fresh
 cat >"$scratch/open-datum" <<EOF
 #!/usr/bin/env bash
-if [ "\$*" = "update --help" ]; then exit 3; fi
+if [ "\$*" = "holding update --help" ]; then exit 3; fi
 exec "$real_od" "\$@"
 EOF
 chmod +x "$scratch/open-datum"
 binary_od="$scratch/open-datum"
-expect command-help-fails-od 1 '^open-datum update --help exited non-zero'
+expect command-help-fails-od 1 '^open-datum holding update --help exited non-zero'
 
 # A quotation of a program's help that the program no longer prints.
 fresh
@@ -292,8 +289,8 @@ printf '\n```sh\nsingular state create --state-dir ./reg \\\n  --made-up-flag 1\
 expect invocation-known-bad-flag 1 'docs/cli-recovery.md:[0-9]+: singular state create --made-up-flag'
 
 fresh
-printf '\n```sh\nopen-datum fold --state-dir ./reg \\\n  --made-up-flag 1\n```\n' >>"$scratch/t/docs/cli-recovery.md"
-expect invocation-known-bad-flag-od 1 'docs/cli-recovery.md:[0-9]+: open-datum fold --made-up-flag'
+printf '\n```sh\nopen-datum state fold --state-dir ./reg \\\n  --made-up-flag 1\n```\n' >>"$scratch/t/docs/cli-recovery.md"
+expect invocation-known-bad-flag-od 1 'docs/cli-recovery.md:[0-9]+: open-datum state fold --made-up-flag'
 
 # A real invocation of a removed verb under singular is still caught: the
 # documented-refusals rule is narrow and does not swallow invocations
@@ -334,6 +331,20 @@ for verb in insert update terminate address create fold reject reclaim inspect; 
   fi
   controls=$((controls + 1))
   echo "control removed-$verb: exit $got, refused as unknown"
+done
+
+# Public application routes have no compatibility aliases.
+for verb in create insert update terminate fold inspect; do
+  fresh
+  got=0
+  "$binary_od" "$verb" >"$scratch/out-od-$verb" 2>"$scratch/err-od-$verb" || got=$?
+  if [ "$got" -ne 2 ] || ! grep -q -- "not a command singular supports: $verb" "$scratch/err-od-$verb"; then
+    cat "$scratch/err-od-$verb" >&2
+    echo "FAIL cli-flags control 'removed-od-$verb': exit $got, expected unknown-command refusal" >&2
+    exit 1
+  fi
+  controls=$((controls + 1))
+  echo "control removed-od-$verb: exit $got, refused as unknown"
 done
 
 # The wallet verbs, both directions (#638): a flag the wallet usage lines

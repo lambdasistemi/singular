@@ -1,98 +1,62 @@
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 {- |
 Module      : Singular.Application.OpenDatum.StateTokenSpec
-Description : Commands run on the state token, from any directory
+Description : State-token parsing and reference-role declarations
 License     : Apache-2.0
 
-Every registry command except create names the registry by its state
-token, on the command line or in the environment, and may suggest
-carriers of its reference scripts. Each command declares the reference
-roles its transactions run, and looks up no other. A create checks that
-the wallet funds every publication before it submits anything. An actor
-whose directory is empty, or holds files from elsewhere, resolves the
-same registry from the token alone.
+These rows check state-token arguments and the reference roles requested
+by command values. Publication funding and directory resolution are checked
+in "Singular.Application.OpenDatum.PublicationFundingSpec".
 -}
 module Singular.Application.OpenDatum.StateTokenSpec (spec) where
 
-import Control.Applicative ((<|>))
-import Control.Exception
-    ( ErrorCall (..)
-    , SomeException
-    , evaluate
-    , try
-    )
-import Control.Monad (foldM, forM_)
-import Data.ByteString.Base16 qualified as B16
-import Data.ByteString.Char8 qualified as BC
-import Data.ByteString.Short qualified as SBS
-import Data.IORef (newIORef)
-import Data.List (isInfixOf)
-import Data.Map.Strict qualified as Map
-import Data.Maybe (fromMaybe)
-import Data.Set qualified as Set
-import Data.Text (Text)
-import Data.Text qualified as T
-import Lens.Micro ((^.))
-import System.Directory (listDirectory)
-import System.FilePath ((</>))
-import System.IO.Temp (withSystemTempDirectory)
-import Test.Hspec
-
-import Cardano.Ledger.Address (Addr)
-import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx)
-import Cardano.Ledger.Api.Tx.Body (inputsTxBodyL, outputsTxBodyL)
-import Cardano.Ledger.Api.Tx.Out (TxOut, addrTxOutL, mkBasicTxOut)
-import Cardano.Ledger.BaseTypes (Network (Testnet), TxIx (..))
-import Cardano.Ledger.Coin (Coin (..))
-import Cardano.Ledger.Core (Script, hashScript)
 import Cardano.Ledger.Mary.Value
-    ( AssetName (..)
-    , MaryValue (..)
-    , PolicyID (..)
+    ( AssetName (AssetName)
+    , PolicyID (PolicyID)
     )
-import Cardano.Ledger.TxIn (TxIn (..))
-import Data.Foldable (toList)
-
+import Control.Monad (forM_)
+import Data.ByteString.Base16 qualified as B16 (encode)
+import Data.ByteString.Char8 qualified as BC (unpack)
+import Data.ByteString.Short qualified as SBS (fromShort)
+import Data.List (isInfixOf)
+import Data.Set qualified as Set (empty, fromList, singleton)
+import Data.Text qualified as T (isInfixOf, replicate)
 import Singular.Application.OpenDatum.Command
+    ( BookArgs (..)
+    , CLIError (BadValue, MissingFlag)
+    , EntryArgs (..)
+    , EntryMode (..)
+    , HoldingArgs (..)
+    , Key (..)
+    , OpenDatumCommand (..)
+    , PendingArgs (..)
+    , ProviderSettings (..)
+    , RegistryAccess (..)
+    , Signer (..)
+    , StateFoldArgs (..)
+    , WriteSettings (..)
+    , neededRoles
+    , parseOpenDatumCommand
+    , parseOpenDatumCommandWithEnvironment
+    )
 import Singular.Application.OpenDatum.StateTokenFixture
-import Singular.Application.OpenDatum.Value (openDatumApplication)
-import Singular.CLI.Live (Saved (..), resolveSaved)
-import Singular.CLI.Registry
-    ( IdentityError (..)
-    , checkPendingToken
-    , publicationFunding
-    , refuseExisting
+    ( refOf
+    , token
+    , tokenOf
     )
-import Singular.Registry.Config (CageConfig (..))
-import Singular.Registry.Ledger (ConwayEra, TokenId (..))
-import Singular.Registry.LedgerProvider qualified as LP
+import Singular.CLI.Registry (checkPendingToken)
+import Singular.Registry.LedgerProvider qualified as LP (Asset)
+import Singular.Registry.PlainJson (PayloadSchema (PlainSchema))
 import Singular.Registry.StateToken (ReferenceRole (..))
-import Singular.Registry.StubSession
-    ( stubSession
-    , withAddressOutputs
-    , withParameters
-    , withResolvedOutputs
-    , withTime
-    )
-import Singular.Registry.SyntheticLedger (withSyntheticCosts)
-import Singular.Registry.SyntheticTime (syntheticTime)
-import Singular.Registry.TxBuilder.BookingFixture (preprodParams)
-import Singular.Registry.TxBuilder.Boot (bootCostBound, bootTokenFrom)
-import Singular.Registry.TxBuilder.Edges (publishRefScriptTx)
-import Singular.Registry.TxBuilder.Internal
-    ( addrFromKeyHashBytes
-    , scriptHashBytes
-    )
+import Singular.Registry.TxBuilder.Internal (scriptHashBytes)
+import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
 
 spec :: Spec
 spec = do
     tokenOnEveryCommand
     rolesPerCommand
-    funding
-    directories
 
 -- ---------------------------------------------------------------------------
 -- The token on the command line
@@ -129,28 +93,39 @@ request = replicate 64 '7' <> "#0"
 commands :: [(String, [String])]
 commands =
     [
-        ( "insert"
-        , ["open-datum", "insert", "--key", "k", "--payload", "/p.json"] <> rest
+        ( "registration book"
+        , ["registration", "book", "--key", "k", "--payload", "/p.json"] <> rest
+        )
+    , ("state fold", ["state", "fold", "--pending", request] <> rest)
+    ,
+        ( "registration reclaim"
+        , ["registration", "reclaim", "--pending", request] <> rest
         )
     ,
-        ( "update"
-        , ["open-datum", "update", "--key", "k", "--payload", "/p.json"] <> rest
+        ( "registration cleanup"
+        , ["registration", "cleanup", "--pending", request] <> rest
         )
-    , ("terminate", ["open-datum", "terminate", "--key", "k"] <> rest)
-    , ("fold", ["open-datum", "fold"] <> rest)
-    , ("inspect", ["open-datum", "inspect", "--key", "k"] <> restInspect)
+    ,
+        ( "holding update"
+        , ["holding", "update", "--holding", request, "--payload", "/p.json"]
+            <> rest
+        )
+    ,
+        ( "holding terminate"
+        , ["holding", "terminate", "--holding", request] <> rest
+        )
     ]
   where
     rest = dirAndRelease <> provider <> wallet
-    restInspect = dirAndRelease <> provider
 
 accessOf :: OpenDatumCommand -> Maybe RegistryAccess
 accessOf = \case
-    OpenInsert a -> Just (entryAccess a)
-    OpenUpdate a -> Just (entryAccess a)
-    OpenTerminate a -> Just (entryAccess a)
-    OpenFold a -> Just (foldAccess a)
-    OpenInspect a -> Just (inspectAccess a)
+    OpenRegistrationBook a -> Just (bookArgsAccess a)
+    OpenStateFold a -> Just (stateFoldAccess a)
+    OpenRegistrationReclaim a -> Just (pendingArgsAccess a)
+    OpenRegistrationCleanup a -> Just (pendingArgsAccess a)
+    OpenHoldingUpdate a _ _ -> Just (holdingArgsAccess a)
+    OpenHoldingTerminate a -> Just (holdingArgsAccess a)
     _ -> Nothing
 
 ours :: RegistryAccess
@@ -197,7 +172,7 @@ tokenOnEveryCommand = describe "the state token" $ do
                         `shouldSatisfy` badValueOf "--state-token"
     it "is refused on create, which makes one" $
         parseOpenDatumCommand
-            ( ["open-datum", "create", "--seed", request]
+            ( ["state", "create", "--seed", request]
                 <> dirAndRelease
                 <> provider
                 <> wallet
@@ -234,7 +209,7 @@ tokenOnEveryCommand = describe "the state token" $ do
   where
     environment t = ("SINGULAR_STATE_TOKEN", spelled t)
     createLine =
-        ["open-datum", "create", "--seed", request]
+        ["state", "create", "--seed", request]
             <> dirAndRelease
             <> provider
             <> wallet
@@ -258,266 +233,42 @@ badValueOf flag = \case
 -- ---------------------------------------------------------------------------
 
 rolesPerCommand :: Spec
-rolesPerCommand = describe "the reference roles each command's transactions run"
-    $ it
-        "are the application for a booking, every script for a fold, none for an inspect"
-    $ do
-        let roles args = fmap neededRoles (parseOpenDatumCommand (args <> tokenFlag))
-            everything = Set.fromList [minBound .. maxBound]
-            line name = fromMaybe (error name) (lookup name commands)
-        roles (line "insert") `shouldBe` Right (Set.singleton RoleApplication)
-        roles (line "update") `shouldBe` Right (Set.singleton RoleApplication)
-        roles (line "terminate")
-            `shouldBe` Right (Set.singleton RoleApplication)
-        roles (line "insert" <> ["--fold"]) `shouldBe` Right everything
-        roles (line "terminate" <> ["--fold"]) `shouldBe` Right everything
-        roles (line "fold") `shouldBe` Right everything
-        roles (line "inspect") `shouldBe` Right Set.empty
-        fmap
-            neededRoles
-            ( parseOpenDatumCommand
-                ( ["open-datum", "create", "--seed", request]
-                    <> dirAndRelease
-                    <> provider
-                    <> wallet
-                )
-            )
-            `shouldBe` Right (Set.singleton RoleState)
-
--- ---------------------------------------------------------------------------
--- Publication funding before the boot
--- ---------------------------------------------------------------------------
-
-funding :: Spec
-funding = describe "a create's publication funding" $ do
-    let beforeBoot = take 1 bootScripts
-        laterScripts = drop 1 bootScripts
-        walletOf amounts =
-            (seedIn, adaOnly 10_000_000)
-                : [ (refOf (T.pack (replicate 63 'c' <> show i) <> "#0"), adaOnly a)
-                  | (i, a) <- zip [0 :: Int ..] amounts
-                  ]
-        preflight =
-            publicationFunding
-                preprodParams
-                seedIn
-                (bootCostBound preprodParams reusedCarrier)
-    it "is accepted when the real create can fund every publication" $ do
-        let funded = walletOf [400_000_000]
-        createAll Nothing beforeBoot laterScripts funded
-            `shouldReturn` Nothing
-        preflight beforeBoot laterScripts funded `shouldBe` Right ()
-    it
-        "is refused before anything is submitted, naming the first publication the real create would fail"
-        $ do
-            -- Probe a tiny wallet for the first publication's need, then build an
-            -- eight-output wallet just short of it in permitted total (amounts
-            -- from the producer, never typed; seed withheld for publications).
-            -- Several-input funding still cannot cover the first step, so both
-            -- sides name it without reaching the boot bound conservatism.
-            stateNeed <- case preflight beforeBoot laterScripts (walletOf [1_000_000]) of
-                Left (PublicationUnfunded _ need _) -> pure need
-                other -> expectationFailure ("probe not refused: " <> show other) >> pure 0
-            let shortEach = (stateNeed - 1) `div` 8
-                short = walletOf (replicate 8 shortEach)
-            failed <- createAll Nothing beforeBoot laterScripts short
-            case preflight beforeBoot laterScripts short of
-                Left (PublicationUnfunded role _ _) -> Just role `shouldBe` failed
-                other -> expectationFailure ("not refused: " <> show other)
-    it
-        "accepts the eight-output wallet that single-output funding refused"
-        $ do
-            let accepted = walletOf (replicate 8 30_000_000)
-            createAll Nothing beforeBoot laterScripts accepted
-                `shouldReturn` Nothing
-            preflight beforeBoot laterScripts accepted `shouldBe` Right ()
-    it "never counts the seed toward a publication" $ do
-        let onlySeedIsLarge = (seedIn, adaOnly 400_000_000) : drop 1 (walletOf [3_000_000])
-        createAll Nothing beforeBoot laterScripts onlySeedIsLarge
-            `shouldReturn` Just "state"
-        preflight beforeBoot laterScripts onlySeedIsLarge
-            `shouldSatisfy` \case
-                Left (PublicationUnfunded "state" _ _) -> True
-                _ -> False
-    it
-        "never accepts a wallet the real create cannot fund, when the state script is published first"
-        $ do
-            let walletWith x = [(seedIn, adaOnly 2_000_000), (fundIn, adaOnly x)]
-                accepted x = preflight beforeBoot laterScripts (walletWith x) == Right ()
-                lowest = smallest accepted 1_000_000 1_000_000_000
-            createAll Nothing beforeBoot laterScripts (walletWith lowest)
-                `shouldReturn` Nothing
-    it
-        "never accepts a wallet the real create cannot fund, when a live state carrier is reused"
-        $ do
-            let walletWith x = [(seedIn, adaOnly 2_000_000), (fundIn, adaOnly x)]
-                accepted x = preflight [] laterScripts (walletWith x) == Right ()
-                lowest = smallest accepted 1_000_000 1_000_000_000
-            createAll (Just reusedCarrier) [] laterScripts (walletWith lowest)
-                `shouldReturn` Nothing
-    it
-        "counts what the boot returns of the seed toward the publications after it"
-        $ do
-            let seedRich = [(seedIn, adaOnly 400_000_000), (fundIn, adaOnly 3_000_000)]
-            createAll (Just reusedCarrier) [] laterScripts seedRich
-                `shouldReturn` Nothing
-            preflight [] laterScripts seedRich `shouldBe` Right ()
-  where
-    fundIn = refOf (T.replicate 64 "c" <> "#9")
-    -- A live carrier of the state script, published by someone else.
-    reusedCarrier = case bootScripts of
-        (_, stateScript) : _ ->
-            (refOf (T.replicate 64 "e" <> "#7"), carrierOf stateScript)
-        [] -> error "the fixture publishes no state script"
-
--- | The smallest value in the range satisfying a monotone predicate.
-smallest :: (Integer -> Bool) -> Integer -> Integer -> Integer
-smallest holds low high
-    | low >= high = high
-    | holds middle = smallest holds low middle
-    | otherwise = smallest holds (middle + 1) high
-  where
-    middle = (low + high) `div` 2
-
-{- | Run a create's transactions with the real builders, in order: the
-publications before the boot, the seed reserved; the boot, from the state
-carrier; the publications after it. Each runs against the wallet the ones
-before it left: the inputs it spent removed and its outputs to the
-publisher added, so a boot's own spending reaches the publications after
-it. The role whose transaction a builder refuses first, @boot@ for the
-boot, or nothing.
--}
-createAll
-    :: Maybe (TxIn, TxOut ConwayEra)
-    -- ^ A live state carrier the create reuses, or none
-    -> [(Text, Script ConwayEra)]
-    -> [(Text, Script ConwayEra)]
-    -> [(TxIn, TxOut ConwayEra)]
-    -> IO (Maybe Text)
-createAll reused earlier later wallet0 = do
-    first <- publishing (Set.singleton seedIn) earlier wallet0
-    case first of
-        Left role -> pure (Just role)
-        Right (wallet1, carriers) -> case reused <|> lookup "state" carriers of
-            Nothing -> pure (Just "state")
-            Just stateRef -> do
-                booted <-
-                    try
-                        ( bootTokenFrom
-                            bootCfg
-                            stateRef
-                            (sessionOver (stateRef : wallet1) wallet1)
-                            publisher
-                            >>= evaluate
+rolesPerCommand = describe "the reference roles each internal preparation value needs" $ do
+    let args =
+            EntryArgs
+                { entryStateDir = Nothing
+                , entryAccess = ours
+                , entryBlueprint = "/srv/plutus.json"
+                , entryMode =
+                    Submit
+                        ( WriteSettings
+                            (ProviderSettings "http://127.0.0.1:8080/api/v1" 42 Nothing Nothing)
+                            (SignerKeyFile "/keys/payment.skey")
+                            Nothing
                         )
-                case booted of
-                    Left (_ :: SomeException) -> pure (Just "boot")
-                    Right tx -> do
-                        rest <- publishing Set.empty later (applied tx wallet1)
-                        pure (either Just (const Nothing) rest)
-  where
-    publishing reserved scripts held = foldM step (Right (held, [])) scripts
-      where
-        step (Left role) _ = pure (Left role)
-        step (Right (w, made)) (role, script) = do
-            built <-
-                try
-                    ( publishRefScriptTx reserved (sessionOver w w) publisher script
-                        >>= evaluate
-                    )
-            pure $ case built of
-                Left (ErrorCall _) -> Left role
-                Right (tx, refOut) ->
-                    Right
-                        (applied tx w, (role, (TxIn (txIdTx tx) (TxIx 0), refOut)) : made)
-    sessionOver known held =
-        withParameters (withSyntheticCosts preprodParams) $
-            withTime (pure syntheticTime) $
-                withAddressOutputs (const (pure held)) $
-                    withResolvedOutputs
-                        (\wanted -> pure [u | u@(i, _) <- known, i `Set.member` wanted])
-                        stubSession
-    applied tx held =
-        [ u | u@(i, _) <- held, Set.notMember i (tx ^. bodyTxL . inputsTxBodyL)
-        ]
-            <> [ (TxIn (txIdTx tx) (TxIx ix), o)
-               | (ix, o) <- zip [0 ..] (toList (tx ^. bodyTxL . outputsTxBodyL))
-               , o ^. addrTxOutL == publisher
-               ]
-
-publisher :: Addr
-publisher = addrFromKeyHashBytes Testnet (BC.replicate 28 'p')
-
-adaOnly :: Integer -> TxOut ConwayEra
-adaOnly n = mkBasicTxOut publisher (MaryValue (Coin n) mempty)
-
--- ---------------------------------------------------------------------------
--- Directories
--- ---------------------------------------------------------------------------
-
-directories :: Spec
-directories = describe "the actor's directory" $ do
+                , entryKey = Key "k"
+                , entryDocument = Just "/p.json"
+                , entryPayloadSchema = PlainSchema
+                , entryDeposit = Nothing
+                , entryFund = Nothing
+                , entryMaxOutlay = Nothing
+                , entryReceipt = Nothing
+                , entryFold = False
+                }
+        everything = Set.fromList [minBound .. maxBound]
     it
-        "may be empty: the registry resolves from the token, and nothing is written"
-        $ withSystemTempDirectory "actor"
-        $ \dir -> do
-            saved <- resolveIn dir
-            savedToken saved `shouldBe` tokenId
-            pinsOf (savedCfg saved) `shouldBe` pinsOf bootCfg
-            map fst (savedRefs saved) `shouldBe` [carrierIn RoleApplication]
-            listDirectory dir `shouldReturn` []
+        "uses the application for each entry and all roles for a combined booking and fold"
+        $ do
+            neededRoles (OpenInsert args) `shouldBe` Set.singleton RoleApplication
+            neededRoles (OpenUpdate args) `shouldBe` Set.singleton RoleApplication
+            neededRoles (OpenTerminate args)
+                `shouldBe` Set.singleton RoleApplication
+            neededRoles (OpenInsert args{entryFold = True}) `shouldBe` everything
+            neededRoles (OpenTerminate args{entryFold = True})
+                `shouldBe` everything
     it
-        "is never an input: a registry.json from another registry changes nothing"
-        $ withSystemTempDirectory "actor"
-        $ \dir -> do
-            writeFile
-                (dir </> "registry.json")
-                "{\"confDeployment\":{\"depCageToken\":\"00\"}}"
-            saved <- resolveIn dir
-            savedToken saved `shouldBe` tokenId
-            pinsOf (savedCfg saved) `shouldBe` pinsOf bootCfg
-            map fst (savedRefs saved) `shouldBe` [carrierIn RoleApplication]
-    it
-        "may hold a registry.json and still start a create; a journal or a pending identity refuse it"
-        $ withSystemTempDirectory "actor"
-        $ \dir -> do
-            writeFile (dir </> "registry.json") "{}"
-            refuseExisting dir `shouldReturn` Right ()
-            writeFile (dir </> "journal.jsonl") ""
-            refuseExisting dir
-                >>= (`shouldSatisfy` either (const True) (const False))
-  where
-    tokenId = let (_, name) = token in TokenId name
-    pinsOf c =
-        [ cfgApplicationPolicy c
-        , cfgActivePolicy c
-        ]
-    resolveIn dir = do
-        logRef <- newIORef []
-        let chain =
-                honestChain
-                    { chainOutputs =
-                        Map.fromList
-                            [(carrierIn role, carrierOf script) | (role, script) <- published]
-                            <> chainOutputs honestChain
-                    , chainCarriers = \h ->
-                        [ (carrierIn role, carrierOf script)
-                        | (role, script) <- published
-                        , hashScript script == h
-                        ]
-                    }
-        resolveSaved
-            openDatumApplication
-            dir
-            release
-            ours
-            (Set.singleton RoleApplication)
-            Nothing
-            (chainSession logRef chain)
-
--- | The six published scripts by role.
-published :: [(ReferenceRole, Script ConwayEra)]
-published = zip [minBound .. maxBound] (map snd bootScripts)
-
-carrierIn :: ReferenceRole -> TxIn
-carrierIn role = refOf (T.pack (replicate 63 'e' <> show (fromEnum role)) <> "#0")
+        "keeps the request-contract commands independent of the old reference roles"
+        $ forM_ commands
+        $ \(_, line) ->
+            fmap neededRoles (parseOpenDatumCommand (line <> tokenFlag))
+                `shouldBe` Right Set.empty

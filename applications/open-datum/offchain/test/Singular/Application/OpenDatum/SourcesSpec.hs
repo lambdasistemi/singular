@@ -9,7 +9,7 @@ The chain (@koios-url@, @network-time@, @network-magic@), the compiled
 contracts (@blueprint@), the registry (@state-dir@, @state-token@), the Koios
 token file, the tracing and the vault are typed on every command today. Each
 has three forms: the flag, the variable @SINGULAR_<NAME>@ and the key @<name>@
-of one JSON file. With the first six in the file, @open-datum insert --key
+of one JSON file. With the first six in the file, @open-datum registration book --key
 alice --payload payload.json --vault alice.vault@ is a whole command and
 means what the same command with the six flags means. A vault from the
 environment or the file is never joined to a key file or an external signer on
@@ -21,8 +21,6 @@ import Control.Monad (forM_)
 import Data.Either (isRight)
 import Data.List (isInfixOf, nub, sort)
 import Data.Maybe (fromMaybe, isJust)
-import Test.Hspec
-
 import Singular.Application.OpenDatum.Command
     ( CLIError (..)
     , openDatumRefusalHint
@@ -42,6 +40,7 @@ import Singular.CLI.Options
     )
 import Singular.CLI.Sources (Sources (..))
 import Singular.Registry.AddressOracle (addressOf)
+import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
 
 program :: Program
 program = openDatumProgram openDatumVersion
@@ -91,9 +90,10 @@ flagOf (f, _, _, _) = f
 -- | Each command with what it needs beside the standing settings.
 commands :: [(String, [String])]
 commands =
-    [ ("create", ["--vault", "alice.vault"])
+    [ ("state create", ["--vault", "alice.vault"])
+    , ("state fold", ["--pending", pending, "--vault", "alice.vault"])
     ,
-        ( "insert"
+        ( "registration book"
         ,
             [ "--key"
             , "alice"
@@ -104,20 +104,31 @@ commands =
             ]
         )
     ,
-        ( "update"
+        ( "registration reclaim"
+        , ["--pending", pending, "--vault", "alice.vault"]
+        )
+    ,
+        ( "registration cleanup"
+        , ["--pending", pending, "--vault", "alice.vault"]
+        )
+    ,
+        ( "holding update"
         ,
-            [ "--key"
-            , "alice"
+            [ "--holding"
+            , pending
             , "--payload"
             , "payload.json"
             , "--vault"
             , "alice.vault"
             ]
         )
-    , ("terminate", ["--key", "alice", "--vault", "alice.vault"])
-    , ("fold", ["--vault", "alice.vault"])
-    , ("inspect", ["--key", "alice"])
+    ,
+        ( "holding terminate"
+        , ["--holding", pending, "--vault", "alice.vault"]
+        )
     ]
+  where
+    pending = replicate 64 'a' <> "#0"
 
 -- | The standing settings a command declares, but the vault.
 takenBy :: String -> [(String, String, String, String)]
@@ -125,15 +136,18 @@ takenBy name =
     [ s
     | s <- settings
     , Just leaf <-
-        [lookup name [(leafName l, l) | l <- programLeaves program]]
+        [ lookup
+            (last (words name))
+            [(leafName l, l) | l <- programLeaves program]
+        ]
     , flagOf s `elem` map flagName (shapeFlags (leafShape leaf))
     ]
 
 line :: String -> [(String, String, String, String)] -> [String]
 line name kept =
-    name
-        : concat [[f, v] | (f, _, _, v) <- kept]
-            <> fromMaybe [] (lookup name commands)
+    words name
+        <> concat [[f, v] | (f, _, _, v) <- kept]
+        <> fromMaybe [] (lookup name commands)
 
 meaning :: [String] -> Either CLIError String
 meaning = fmap show . parseOpenDatumInvocation []
@@ -158,11 +172,11 @@ spec = describe "the settings given by the environment and a config file" $ do
     -- The command of the Demo 1 runbook: insert --key alice
     -- --payload payload.json --vault alice.vault, with the settings in the file.
     it "needs only its own options once the settings are in the file" $ do
-        let whole = line "insert" (takenBy "insert")
+        let whole = line "registration book" (takenBy "registration book")
         meaning whole `shouldSatisfy` isRight
         withFile
-            [(k, v) | (_, _, k, v) <- takenBy "insert"]
-            (line "insert" [])
+            [(k, v) | (_, _, k, v) <- takenBy "registration book"]
+            (line "registration book" [])
             `shouldBe` meaning whole
     forM_ (map fst commands) $ \name ->
         describe ("open-datum " <> name) $ do
@@ -179,14 +193,14 @@ spec = describe "the settings given by the environment and a config file" $ do
                 meaning (line name taken) `shouldSatisfy` isRight
             it "lists the three forms of each on its help page" $
                 forM_ taken $ \(flag, variable, key, _) ->
-                    helpText program [] [name]
+                    helpText program [] (words name)
                         `shouldSatisfy` \page ->
                             all (`isInfixOf` page) [flag, "env: " <> variable, key <> ": "]
     describe "the vault" $ do
         let bare =
-                "insert"
-                    : concat [[f, v] | (f, _, _, v) <- takenBy "insert"]
-                        <> ["--key", "alice", "--payload", "payload.json"]
+                words "registration book"
+                    <> concat [[f, v] | (f, _, _, v) <- takenBy "registration book"]
+                    <> ["--key", "alice", "--payload", "payload.json"]
             signed = meaning (bare <> ["--vault", "alice.vault"])
         it "left out is read from SINGULAR_VAULT and from the key vault" $ do
             signed `shouldSatisfy` isRight
@@ -194,7 +208,7 @@ spec = describe "the settings given by the environment and a config file" $ do
                 `shouldBe` signed
             withFile [("vault", "alice.vault")] bare `shouldBe` signed
         it "is shown with its variable and its key on the help page" $
-            helpText program [] ["insert"]
+            helpText program [] ["registration", "book"]
                 `shouldSatisfy` \page ->
                     all (`isInfixOf` page) ["env: SINGULAR_VAULT", "vault: "]
         forM_
@@ -239,9 +253,9 @@ spec = describe "the settings given by the environment and a config file" $ do
                     `shouldBe` meaning (line name (takenBy name))
         it
             "is listed for development networks only on the help of every command that opens a vault"
-            $ forM_ ["create", "insert", "update", "terminate", "fold"]
+            $ forM_ (map fst commands)
             $ \name ->
-                unwords (words (helpText program [] [name]))
+                unwords (words (helpText program [] (words name)))
                     `shouldSatisfy` \page ->
                         all
                             (`isInfixOf` page)
@@ -251,9 +265,6 @@ spec = describe "the settings given by the environment and a config file" $ do
                             , "preprod (1)"
                             , "preview (2)"
                             ]
-        it "has no environment entry on a command that opens no vault" $
-            unwords (words (helpText program [] ["inspect"]))
-                `shouldNotSatisfy` (environmentEntry `isInfixOf`)
     describe "the declaration" $ do
         let everyFlag = nub (concatMap (shapeFlags . leafShape) (programLeaves program))
         it "gives the same twelve settings three forms as singular" $
@@ -274,11 +285,11 @@ spec = describe "the settings given by the environment and a config file" $ do
                 fst
                 ( parseOpenDatumInvocationFrom
                     (Sources [] (Left "the config file x.json is not JSON"))
-                    ["fold"]
+                    ["state", "fold"]
                 )
                 `shouldBe` Left (ConfigRefused "the config file x.json is not JSON")
         it "is ignored for help" $
             parseOpenDatumInvocationFrom
                 (Sources [] (Left "the config file x.json is not JSON"))
-                ["insert", "--help"]
+                ["registration", "book", "--help"]
                 `shouldSatisfy` isRight

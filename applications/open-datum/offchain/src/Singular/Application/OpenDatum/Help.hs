@@ -13,15 +13,33 @@ module Singular.Application.OpenDatum.Help
     ) where
 
 import Data.Version (Version)
-
 import Singular.CLI.Declared
+    ( blueprint
+    , environmentLog
+    , environmentPassphrase
+    , environmentState
+    , exitStatuses
+    , holding
+    , keyShape
+    , nodeShape
+    , payloadSchema
+    , preprodExample
+    , preprodUrlExample
+    , processTime
+    , registryNodeShape
+    , registryShape
+    , seed
+    , signerParagraph
+    , stateDir
+    , tracingShape
+    , writeShape
+    )
 import Singular.CLI.Options
     ( Flag (..)
     , Leaf (..)
     , Node (..)
     , Program (..)
     , Shape (..)
-    , switch'
     , valued
     )
 
@@ -31,18 +49,11 @@ openDatumProgram version =
     Program
         { programName = "open-datum"
         , programSummary =
-            "Keep payloads under keys in a registry on Cardano: create the registry, \
-            \insert, update and terminate keys, fold the pending requests, and read \
-            \a key back."
+            "Keep payloads under keys in a registry on Cardano: create a registry, \
+            \book registrations, update and terminate holdings, and fold pending requests."
         , programVersion = version
         , programNodes =
-            [ createLeaf
-            , insertLeaf
-            , updateLeaf
-            , terminateLeaf
-            , foldLeaf
-            , inspectLeaf
-            , stateGroup
+            [ stateGroup
             , registrationGroup
             , holdingGroup
             ]
@@ -323,273 +334,6 @@ cleanupLeaf =
             , leafNotes = exitStatuses
             }
 
-createLeaf :: Node
-createLeaf =
-    Runs
-        Leaf
-            { leafName = "create"
-            , leafSummary = "Boot a registry, or preview its identity"
-            , leafDescription =
-                [ "Boots one registry from a seed output of your wallet and prints \
-                  \its address, which every other command names the registry by, \
-                  \with its state token and its fingerprint. The processing \
-                  \window and the retract window are fixed here for the life of \
-                  \the registry."
-                , "With --closed the registry is a closed-datum registry whose \
-                  \payload is written once; every later command follows the \
-                  \registry's mode with no further flag, and an update on a closed \
-                  \registry stops before anything is built or signed."
-                , signerParagraph
-                , previewParagraph
-                ]
-            , leafShape =
-                Each
-                    [ Takes closed
-                    , Takes stateDir
-                    , Needs blueprint
-                    , Takes seed
-                    , Takes processTime
-                    , Takes retractTime
-                    , nodeShape
-                    , OneOf
-                        [ Each [writeShape, Takes saveStateToken]
-                        , Each [Needs preview, Needs previewAddress]
-                        ]
-                    , tracingShape
-                    ]
-            , leafWord = Nothing
-            , leafEnvironment =
-                [environmentLog, environmentState, environmentPassphrase]
-            , leafExamples =
-                [ "open-datum create --blueprint plutus.json \\"
-                , "    " <> preprodExample <> " \\"
-                , "    --vault alice.vault"
-                ]
-            , leafNotes = exitStatuses
-            }
-
-insertLeaf :: Node
-insertLeaf =
-    Runs
-        Leaf
-            { leafName = "insert"
-            , leafSummary = "Book a new key with its payload"
-            , leafDescription =
-                [ "Books one insertion of a key with its payload and a deposit and \
-                  \stops: its request waits at the registry for the fold, which is \
-                  \its own command, open-datum fold, run by whichever wallet folds \
-                  \before the processing deadline the booking's receipt names. With \
-                  \--fold the command also folds, once its booking confirms."
-                , signerParagraph
-                , previewParagraph
-                ]
-            , leafShape =
-                Each
-                    [ Takes stateDir
-                    , Needs blueprint
-                    , registryShape
-                    , keyShape
-                    , Needs payload
-                    , Takes payloadSchema
-                    , Takes deposit
-                    , registryNodeShape
-                    , OneOf
-                        [ Each
-                            [ writeShape
-                            , spendingShape
-                            , Takes foldAlso
-                            ]
-                        , Each
-                            [ Needs preview
-                            , Needs previewAddress
-                            , spendingShape
-                            ]
-                        ]
-                    , tracingShape
-                    ]
-            , leafWord = Nothing
-            , leafEnvironment =
-                [environmentLog, environmentState, environmentPassphrase]
-            , leafExamples =
-                [ "open-datum insert --blueprint plutus.json \\"
-                , "    --registry <address> --key my-key --payload payload.json \\"
-                , "    " <> preprodUrlExample <> " \\"
-                , "    --vault alice.vault"
-                ]
-            , leafNotes = exitStatuses
-            }
-
-updateLeaf :: Node
-updateLeaf =
-    Runs
-        Leaf
-            { leafName = "update"
-            , leafSummary = "Replace the payload of a key"
-            , leafDescription =
-                [ "Replaces only the payload of an active key; the protected control \
-                  \stays as it was. On a closed registry it stops before anything is \
-                  \built or signed, saying the registry is closed."
-                , signerParagraph
-                , previewParagraph
-                ]
-            , leafShape =
-                Each
-                    [ Takes stateDir
-                    , Needs blueprint
-                    , registryShape
-                    , keyShape
-                    , Needs payload
-                    , Takes payloadSchema
-                    , registryNodeShape
-                    , OneOf
-                        [ Each [writeShape, spendingShape]
-                        , Each
-                            [ Needs preview
-                            , Needs previewAddress
-                            , spendingShape
-                            ]
-                        ]
-                    , tracingShape
-                    ]
-            , leafWord = Nothing
-            , leafEnvironment =
-                [environmentLog, environmentState, environmentPassphrase]
-            , leafExamples =
-                [ "open-datum update --blueprint plutus.json \\"
-                , "    --registry <address> --key my-key --payload payload.json \\"
-                , "    " <> preprodUrlExample <> " \\"
-                , "    --vault alice.vault"
-                ]
-            , leafNotes = exitStatuses
-            }
-
-terminateLeaf :: Node
-terminateLeaf =
-    Runs
-        Leaf
-            { leafName = "terminate"
-            , leafSummary = "Book the termination of a key"
-            , leafDescription =
-                [ "Books the termination of an active key and stops: its request \
-                  \waits at the registry for the fold. With --fold the command also \
-                  \folds, once its booking confirms, and the protected deposit is paid \
-                  \back to the controller."
-                , signerParagraph
-                , previewParagraph
-                ]
-            , leafShape =
-                Each
-                    [ Takes stateDir
-                    , Needs blueprint
-                    , registryShape
-                    , keyShape
-                    , registryNodeShape
-                    , OneOf
-                        [ Each
-                            [ writeShape
-                            , spendingShape
-                            , Takes foldAlso
-                            ]
-                        , Each
-                            [ Needs preview
-                            , Needs previewAddress
-                            , spendingShape
-                            ]
-                        ]
-                    , tracingShape
-                    ]
-            , leafWord = Nothing
-            , leafEnvironment =
-                [environmentLog, environmentState, environmentPassphrase]
-            , leafExamples =
-                [ "open-datum terminate --blueprint plutus.json \\"
-                , "    --registry <address> --key my-key \\"
-                , "    " <> preprodUrlExample <> " \\"
-                , "    --vault alice.vault"
-                ]
-            , leafNotes = exitStatuses
-            }
-
-foldLeaf :: Node
-foldLeaf =
-    Runs
-        Leaf
-            { leafName = "fold"
-            , leafSummary = "Fold the pending requests into the registry"
-            , leafDescription =
-                [ "Folds the pending requests the registry can settle, up to the \
-                  \capacity of one transaction, signed and funded by the wallet that \
-                  \runs it, which need not be the wallet that booked them. It names \
-                  \every request it leaves out. With --request, the command is \
-                  \refused unless that request is among those folded."
-                , signerParagraph
-                ]
-            , leafShape =
-                Each
-                    [ Takes stateDir
-                    , Needs blueprint
-                    , registryShape
-                    , registryNodeShape
-                    , writeShape
-                    , Takes foldRequest
-                    , spendingShape
-                    , tracingShape
-                    ]
-            , leafWord = Nothing
-            , leafEnvironment =
-                [environmentLog, environmentState, environmentPassphrase]
-            , leafExamples =
-                [ "open-datum fold --blueprint plutus.json \\"
-                , "    --registry <address> \\"
-                , "    " <> preprodUrlExample <> " \\"
-                , "    --vault alice.vault"
-                ]
-            , leafNotes = exitStatuses
-            }
-
-inspectLeaf :: Node
-inspectLeaf =
-    Runs
-        Leaf
-            { leafName = "inspect"
-            , leafSummary = "Read a key back, with its payload"
-            , leafDescription =
-                [ "Reads the registry and one key back from the chain: whether the \
-                  \key is active or terminal, its holding, its envelope and payload, \
-                  \the pending requests with what each actually locks, and the \
-                  \registry's root. It reads only: it takes no signing key and \
-                  \submits nothing."
-                , "With --wallet-address it reconciles that wallet's managed journal \
-                  \as a write would; without it the read is stateless and creates no \
-                  \state."
-                ]
-            , leafShape =
-                Each
-                    [ Takes stateDir
-                    , Needs blueprint
-                    , registryShape
-                    , keyShape
-                    , registryNodeShape
-                    , Takes outputsAt
-                    , Takes reconcileAddress
-                    , Takes receipt
-                    , tracingShape
-                    ]
-            , leafWord = Nothing
-            , leafEnvironment = [environmentLog, environmentState]
-            , leafExamples = []
-            , leafNotes = exitStatuses
-            }
-
--- ---------------------------------------------------------------------------
--- settings only this program reads
-
-closed :: Flag
-closed =
-    switch'
-        "--closed"
-        "Boot a closed-datum registry whose payload is written once."
-
 payload :: Flag
 payload =
     valued
@@ -673,16 +417,3 @@ refundAddress =
     )
         { flagDefault = Just "your own address"
         }
-
-foldAlso :: Flag
-foldAlso =
-    switch'
-        "--fold"
-        "Also fold pending requests, this one included, once the booking confirms."
-
-foldRequest :: Flag
-foldRequest =
-    valued
-        "--request"
-        "TXID#IX"
-        "Expect this pending request to be folded; refused if it is not among those settled."

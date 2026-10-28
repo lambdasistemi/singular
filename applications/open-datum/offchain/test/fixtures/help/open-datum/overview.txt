@@ -2,9 +2,8 @@ open-datum VERSION (commit unknown)
 
 Usage: open-datum COMMAND
 
-Keep payloads under keys in a registry on Cardano: create the registry,
-insert, update and terminate keys, fold the pending requests, and read a key
-back.
+Keep payloads under keys in a registry on Cardano: create a registry, book
+registrations, update and terminate holdings, and fold pending requests.
 
 Available settings:
   Show this help text
@@ -14,12 +13,6 @@ Available settings:
   switch: --version
 
 All commands:
-  open-datum create                Boot a registry, or preview its identity
-  open-datum insert                Book a new key with its payload
-  open-datum update                Replace the payload of a key
-  open-datum terminate             Book the termination of a key
-  open-datum fold                  Fold the pending requests into the registry
-  open-datum inspect               Read a key back, with its payload
   open-datum state create          Create a registry
   open-datum state fold            Fold the registrations and terminations you name
   open-datum registration book     Book the registration of a key

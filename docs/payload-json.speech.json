@@ -5,15 +5,11 @@
       "pause": 500
     },
     {
-      "text": "As a reader with a registry and a key, you store the document {\"answer\": 42} under the key by writing that file and nothing else. You read the key back and the page shows {\"answer\": 42}. You did not have to learn first how Plutus data is written in JSON. As an integrator who needs exact control of the bytes on chain, you keep writing the detailed schema, {\"constructor\": 0, \"fields\": [{\"int\": 42}]}, and say so on the command, so nothing is guessed. As someone with a script from the previous release, you find that your payload file in the detailed schema is refused with a sentence that tells you to say so, and is never stored as something else.",
+      "text": "As a controller with a registry and a key, you store the document {\"answer\": 42} under the key by writing that file and nothing else. The holding carries the payload on chain. A reader has replacement: none, issue 744. You did not have to learn first how Plutus data is written in JSON. As an integrator who needs exact control of the bytes on chain, you keep writing the detailed schema, {\"constructor\": 0, \"fields\": [{\"int\": 42}]}, and say so on the command, so nothing is guessed. As someone with a script from the previous release, you find that your payload file in the detailed schema is refused with a sentence that tells you to say so, and is never stored as something else.",
       "pause": 400
     },
     {
       "text": "The first diagram shows how a file is read. The setting --payload-schema decides how the file becomes Plutus data: by the plain mapping of this page when the setting is plain or absent, and by the detailed schema, as before, when it is detailed. Either way the result is the same kind of value, Plutus data in the key's output on chain.",
-      "pause": 400
-    },
-    {
-      "text": "The second diagram shows how a key is read back. The data is printed as plain JSON if it has a plain reading and in the detailed schema if it has none, and the print always says which.",
       "pause": 400
     }
   ],
@@ -23,15 +19,11 @@
       "pause": 500
     },
     {
-      "text": "Write the file and give it to insert, with no other setting:",
+      "text": "Write the file and give it to registration book, with no schema setting:",
       "pause": 400
     },
     {
-      "text": "The second command prints the payload you wrote and the name of the schema it is printed in:",
-      "pause": 400
-    },
-    {
-      "text": "update takes the same file and the same setting, and so do the previews of both: every command that reads a payload file reads it one way.",
+      "text": "Supply the registry, blueprint and provider settings as described in the registry command guide. Fold the pending reference the booking prints with open-datum state fold --pending TXID#IX. holding update takes the same payload file and schema setting. Reading a key has replacement: none, issue 744.",
       "pause": 400
     }
   ],
@@ -179,6 +171,6 @@
   ],
   "_source": {
     "file": "payload-json.md",
-    "sha256": "39893e4dcf1c2d7cced928f8d95c70af2373664596965191654ac1f03d1d94c6"
+    "sha256": "2627d4083add5ed4a29ff974c203b4c20b40e05fe8d5a24f57578af7b6984d25"
   }
 }

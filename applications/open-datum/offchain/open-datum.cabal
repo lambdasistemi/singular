@@ -38,7 +38,6 @@ library
     Singular.Application.OpenDatum.Book
     Singular.Application.OpenDatum.Build
     Singular.Application.OpenDatum.Command
-    Singular.Application.OpenDatum.Entry
     Singular.Application.OpenDatum.Envelope
     Singular.Application.OpenDatum.Help
     Singular.Application.OpenDatum.InsertEnvelope
@@ -172,8 +171,11 @@ test-suite open-datum-tests
     Singular.Application.OpenDatum.TraceSpec
     Singular.Application.OpenDatum.WriteSpec
     Singular.Application.OpenDatum.CLISpec
+    Singular.Application.OpenDatum.LibraryStateSpec
+    Singular.Application.OpenDatum.WalletAdmissionSpec
+    Singular.Application.OpenDatum.PartitionLibrarySpec
+    Singular.Application.OpenDatum.PublicationFundingSpec
     Singular.Application.OpenDatum.ParserCorpusSpec
-    Singular.Application.OpenDatum.SaveStateTokenSpec
     Singular.Application.OpenDatum.SourcesSpec
     Singular.Application.OpenDatum.ClosedModeSpec
     Singular.Application.OpenDatum.PinGateSpec
@@ -184,7 +186,6 @@ test-suite open-datum-tests
     Singular.Application.OpenDatum.RegistryAddressSpec
     Singular.Application.OpenDatum.BurnSourceSpec
     Singular.Application.OpenDatum.OutlaySpec
-    Singular.Application.OpenDatum.WalletShortfallSpec
     Singular.Registry.AddressOracle
     Singular.PhaseLogFixture
     Singular.Provider.Koios.FakeServer

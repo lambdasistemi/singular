@@ -33,7 +33,7 @@
 #
 # The table names commands plainly (`create`, `fold`, ...) meaning every
 # binary that has the command, or qualified (`singular create`,
-# `open-datum insert`, `singular state create`, `open-datum registration
+# `open-datum registration book`, `singular state create`, `open-datum registration
 # book`) meaning one binary only. `all five` and `all six` are counts of a
 # binary's commands, refused when its help names another number. `the five
 # singular writes` and `the ten open-datum writes` cover the writes of each
@@ -295,7 +295,7 @@ while IFS= read -r row; do
       [ -n "$ticked" ] || continue
       inner=${ticked#\`}
       inner=${inner%\`}
-      # qualified `singular create` or `open-datum insert`, else plain `create`;
+      # qualified `singular create` or `open-datum registration book`, else plain `create`;
       # every word after the binary is the command's name, so the wallet
       # verbs `singular wallet create` keep their group word
       if [[ "$inner" == *" "* ]]; then
