@@ -1,6 +1,6 @@
 import SingularApplicationHeld.Reader
 
-/-! Reader guarantees, submitted for statement review before proof work. -/
+/-! Reader guarantees over observed evidence. -/
 namespace SingularApplicationHeld.ReaderStatements
 open Singular SingularApplicationHeld
 

@@ -29,7 +29,7 @@ theorem live_custody (h : Hash) (c : Codec) (t : TrieCommit) (decode : DecodeApp
       SingularApplicationHeld.ReaderStatements.live_sound h c t decode release world registry network key observed output
         _history _evidence _release _answer
   refine ⟨active, member, control, payload, decoding, registryBinding, keyBinding, ?_⟩
-  simp [liveShape, app_guard_none, custody, one, registryBinding, keyBinding, assetBinding, deposit]
+  simp [liveShape, custody, one, registryBinding, keyBinding, assetBinding, deposit]
 
 /-- A pending answer implies the exact termination request shape, not token absence. -/
 theorem pending_custody (h : Hash) (c : Codec) (t : TrieCommit) (decode : DecodeApplication)

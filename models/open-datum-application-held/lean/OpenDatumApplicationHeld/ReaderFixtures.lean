@@ -2,8 +2,7 @@ import OpenDatumApplicationHeld.MoneyBaseFixtures
 import OpenDatumApplicationHeld.ReaderStatements
 import SingularApplicationHeld.ReaderQuery
 
-/-! Concrete proposed reader stories. Reachability certificates remain open
-at the statement checkpoint, independently of the executable classifications. -/
+/-! Concrete reachable reader stories and their executable observations. -/
 namespace OpenDatumApplicationHeld.ReaderFixtures
 open Singular SingularApplicationHeld
 open OpenDatumApplicationHeld.Fixtures (hash code commit release seed registryId decode registration)
@@ -62,12 +61,90 @@ def pending := observedAt pendingWorld liveFold.after 7
 def terminal := observedAt terminalWorld terminalFold.after 7
 def neverRegistered := observedAt terminalWorld terminalFold.after 9
 
+set_option maxRecDepth 8192
+set_option maxHeartbeats 4000000
+
+local instance : LawfulBEq OutRef where
+  eq_of_beq := by intro a b same; cases a; cases b; simp_all [reduceBEq]
+  rfl := by intro a; cases a; simp [reduceBEq]
+local instance : LawfulBEq TokenId where
+  eq_of_beq := SingularApplicationHeld.Proofs.token_eq _ _
+  rfl := by intro a; cases a; simp
+local instance : LawfulBEq State where
+  eq_of_beq := by intro a b same; cases a <;> cases b <;> simp_all [reduceBEq, State.ctorIdx]
+  rfl := by intro a; cases a <;> rfl
+local instance : LawfulBEq Leaf where
+  eq_of_beq := by intro a b same; cases a <;> cases b <;> simp_all [reduceBEq]
+  rfl := by intro a; cases a <;> simp
+local instance : LawfulBEq ApplicationParameters where
+  eq_of_beq := by intro a b same; cases a; cases b; simp_all [reduceBEq]
+  rfl := by intro a; cases a; simp [reduceBEq]
+local instance : LawfulBEq OutputDatum where
+  eq_of_beq := by intro a b same; cases a <;> cases b <;> simp_all [reduceBEq]
+  rfl := by intro a; cases a <;> simp [reduceBEq]
+local instance : LawfulBEq ObservedOutput where
+  eq_of_beq := by intro a b same; cases a; cases b; simp_all [reduceBEq]
+  rfl := by intro a; cases a; simp [reduceBEq]
+local instance : LawfulBEq PublicRegistry where
+  eq_of_beq := by intro a b same; cases a; cases b; simp_all [reduceBEq]
+  rfl := by intro a; cases a; simp [reduceBEq]
+
+private theorem initial_reachable : CandidateReachable hash code commit release initialWorld := by
+  apply CandidateReachable.initial
+  · decide
+  · decide
+
+private theorem genesis_reachable : CandidateReachable hash code commit release genesisWorld := by
+  refine CandidateReachable.genesis initial_reachable seed genesisAssets [seedInput]
+    [genesisState, genesisChange] genesisRegistry 0 0 ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
+  · constructor <;> decide
+  all_goals decide
+
+private theorem live_reachable : CandidateReachable hash code commit release liveWorld := by
+  refine CandidateReachable.fold genesis_reachable liveFold ?_ ?_ ?_ ?_ ?_
+  · constructor <;> decide
+  all_goals decide
+
+private theorem pending_reachable : CandidateReachable hash code commit release pendingWorld := by
+  refine CandidateReachable.neutral live_reachable bookingAssets [liveOutput, bookingFunding]
+    [pendingOutput] 0 7 ?_ ?_ ?_ ?_ ?_
+  · constructor <;> decide
+  all_goals decide
+
+private theorem terminal_reachable : CandidateReachable hash code commit release terminalWorld := by
+  refine CandidateReachable.fold pending_reachable terminalFold ?_ ?_ ?_ ?_ ?_
+  · constructor <;> decide
+  all_goals decide
+
+private theorem observed_correspondence (world : CandidateWorld) (registry : PublicRegistry) (key : Key)
+    (identity : registry.identity = registryId) :
+    ReaderEvidenceCorrespondence hash code world registry key (observedAt world registry key) := by
+  refine ⟨?_, ?_, ?_⟩
+  · intro outputs answer
+    have same : world.unspent.filter (fun output => quantity output (activeAsset hash code registryId key) > 0) = outputs :=
+      ReaderRead.complete.inj answer
+    simpa [identity] using same.symm
+  · intro output answer
+    exact (Option.some.inj (ReaderRead.complete.inj answer)).symm
+  · intro trie answer
+    exact (ReaderRead.complete.inj answer).symm
+
+private theorem live_history : HistoryPremises hash code commit release liveWorld liveFold.after 7 :=
+  ⟨live_reachable, by decide, by unfold FiniteEncoding; decide, by unfold FiniteCollisionFree; decide⟩
+private theorem pending_history : HistoryPremises hash code commit release pendingWorld liveFold.after 7 :=
+  ⟨pending_reachable, by decide, by unfold FiniteEncoding; decide, by unfold FiniteCollisionFree; decide⟩
+private theorem terminal_history : HistoryPremises hash code commit release terminalWorld terminalFold.after 7 :=
+  ⟨terminal_reachable, by decide, by unfold FiniteEncoding; decide, by unfold FiniteCollisionFree; decide⟩
+private theorem unknown_history : HistoryPremises hash code commit release terminalWorld terminalFold.after 9 :=
+  ⟨terminal_reachable, by decide, by unfold FiniteEncoding; decide, by unfold FiniteCollisionFree; decide⟩
+
 /-- Every positive story is attached to the original reachable-world relation. -/
 theorem stories_reachable :
     CandidateReachable hash code commit release genesisWorld ∧
     CandidateReachable hash code commit release liveWorld ∧
     CandidateReachable hash code commit release pendingWorld ∧
-    CandidateReachable hash code commit release terminalWorld := by sorry
+    CandidateReachable hash code commit release terminalWorld := by
+  exact ⟨genesis_reachable, live_reachable, pending_reachable, terminal_reachable⟩
 
 /-- The concrete stories meet the soundness statements' complete antecedents. -/
 theorem story_antecedents :
@@ -79,7 +156,11 @@ theorem story_antecedents :
     ReaderEvidenceCorrespondence hash code terminalWorld terminalFold.after 7 terminal ∧
     HistoryPremises hash code commit release terminalWorld terminalFold.after 9 ∧
     ReaderEvidenceCorrespondence hash code terminalWorld terminalFold.after 9 neverRegistered ∧
-    applicationAction .none hash code decode release booking (.bookTermination liveOutput.reference 0) = true := by sorry
+    applicationAction .none hash code decode release booking (.bookTermination liveOutput.reference 0) = true := by
+  exact ⟨live_history, observed_correspondence liveWorld liveFold.after 7 (by decide),
+    pending_history, observed_correspondence pendingWorld liveFold.after 7 (by decide),
+    terminal_history, observed_correspondence terminalWorld terminalFold.after 7 (by decide),
+    unknown_history, observed_correspondence terminalWorld terminalFold.after 9 (by decide), by decide⟩
 
 /-- Four distinct answers from those exact reachable stories. -/
 theorem story_answers :
@@ -87,7 +168,8 @@ theorem story_answers :
     readKey hash code commit decode request pending = .pendingTermination pendingOutput ∧
     readKey hash code commit decode request terminal = .terminal ⟨terminalFold.after.state, terminalFold.after.trie⟩ ∧
     readKey hash code commit decode {request with key := 9} neverRegistered =
-      .neverRegistered ⟨terminalFold.after.state, terminalFold.after.trie⟩ := by sorry
+      .neverRegistered ⟨terminalFold.after.state, terminalFold.after.trie⟩ := by
+  decide
 
 /-- Encode the very same observations for the generic reader executable. -/
 def queryFor (request : ReaderRequest) (observed : ReaderObservation) : ReaderQuery :=
