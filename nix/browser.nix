@@ -20,6 +20,7 @@ in
   inherit checker environment;
   apps.browser-check = {
     type = "app";
+    meta.description = "Check the documentation in a browser";
     program = pkgs.lib.getExe checker;
   };
   check =

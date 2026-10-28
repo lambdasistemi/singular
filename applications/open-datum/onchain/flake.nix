@@ -605,6 +605,7 @@
         apps = {
           open-datum-aiken-tests = {
             type = "app";
+            meta.description = "Run the open-datum Aiken unit and property suite";
             program = pkgs.lib.getExe open-datum-aiken-tests-runner;
           };
         };

@@ -87,10 +87,12 @@
       apps = nixpkgs.lib.genAttrs systems (system: {
         default = {
           type = "app";
+          meta.description = "Check the standalone release archive";
           program = "${self.packages.${system}.runner}/bin/singular-archive-check";
         };
         check = {
           type = "app";
+          meta.description = "Check the standalone release archive";
           program = "${self.packages.${system}.runner}/bin/singular-archive-check";
         };
       });

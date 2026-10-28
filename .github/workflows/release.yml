@@ -79,7 +79,7 @@ jobs:
         id: app-token
         uses: actions/create-github-app-token@v3
         with:
-          app-id: ${{ vars.CI_APP_ID }}
+          client-id: ${{ vars.CI_APP_CLIENT_ID }}
           private-key: ${{ secrets.CI_APP_PRIVATE_KEY }}
           owner: lambdasistemi
           repositories: singular
@@ -127,7 +127,7 @@ jobs:
         id: app-token
         uses: actions/create-github-app-token@v3
         with:
-          app-id: ${{ vars.CI_APP_ID }}
+          client-id: ${{ vars.CI_APP_CLIENT_ID }}
           private-key: ${{ secrets.CI_APP_PRIVATE_KEY }}
           owner: lambdasistemi
           repositories: singular
@@ -231,7 +231,7 @@ jobs:
         id: app-token
         uses: actions/create-github-app-token@v3
         with:
-          app-id: ${{ vars.CI_APP_ID }}
+          client-id: ${{ vars.CI_APP_CLIENT_ID }}
           private-key: ${{ secrets.CI_APP_PRIVATE_KEY }}
           owner: lambdasistemi
           repositories: singular
@@ -274,7 +274,7 @@ jobs:
         id: tap-token
         uses: actions/create-github-app-token@v3
         with:
-          app-id: ${{ vars.CI_APP_ID }}
+          client-id: ${{ vars.CI_APP_CLIENT_ID }}
           private-key: ${{ secrets.CI_APP_PRIVATE_KEY }}
           owner: lambdasistemi
           repositories: homebrew-tap

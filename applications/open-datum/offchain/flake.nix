@@ -237,10 +237,12 @@
         apps = haskellApps // {
           open-datum = {
             type = "app";
+            meta.description = "Run the open-datum application command line";
             program = pkgs.lib.getExe open-datum;
           };
           singular = {
             type = "app";
+            meta.description = "Run the Singular registry command line";
             program = pkgs.lib.getExe registryComponents.exes.singular;
           };
         };

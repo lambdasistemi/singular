@@ -22,6 +22,7 @@ let
   ]);
   app = drv: {
     type = "app";
+    meta.description = drv.meta.description or "Run ${drv.name}";
     program = pkgs.lib.getExe drv;
   };
   # The Aiken tests that read the preimage byte vectors are made from the one

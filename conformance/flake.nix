@@ -972,35 +972,43 @@
         apps = {
           format-check = {
             type = "app";
+            meta.description = "Check Conformance Haskell formatting";
             program = pkgs.lib.getExe formatCheck;
           };
           hlint-check = {
             type = "app";
+            meta.description = "Lint Conformance Haskell sources";
             program = pkgs.lib.getExe hlintCheck;
           };
           fold-budget-regression = {
             type = "app";
+            meta.description = "Check fold execution budget regressions";
             program = pkgs.lib.getExe foldBudgetRegression;
           };
           # #287: the extent check over the receipts of every live run.
           conformance-extent = {
             type = "app";
+            meta.description = "Check live conformance receipt coverage";
             program = "${components.exes.conformance-extent}/bin/conformance-extent";
           };
           conformance = {
             type = "app";
+            meta.description = "Run the conformance suite";
             program = pkgs.lib.getExe conformance;
           };
           conformance-tests = {
             type = "app";
+            meta.description = "Run conformance description language tests";
             program = pkgs.lib.getExe runningBook;
           };
           conformance-appendix-tests = {
             type = "app";
+            meta.description = "Run conformance harness appendix tests";
             program = pkgs.lib.getExe appendixTests;
           };
           coverage-gate = {
             type = "app";
+            meta.description = "Run the theorem coverage gate";
             program = "${coverageGate}/bin/coverage-gate";
           };
           # #562 item 4 (slice S1): the evaluation cleanup-control suite,
@@ -1008,6 +1016,7 @@
           # under the pinned toolchain, scratch owned.
           evaluation-cleanup-controls = {
             type = "app";
+            meta.description = "Run evaluation cleanup controls";
             program = pkgs.lib.getExe evaluationCleanupControls;
           };
         };

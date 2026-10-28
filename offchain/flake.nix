@@ -450,24 +450,29 @@
           # #326.
           contract-tests = {
             type = "app";
+            meta.description = "Run the command contract tests";
             program = pkgs.lib.getExe contract-tests;
           };
           contract-external = {
             type = "app";
+            meta.description = "Run external command contract checks";
             program = pkgs.lib.getExe contract-external;
           };
           # #299.
           singular = {
             type = "app";
+            meta.description = "Run the Singular registry command line";
             program = pkgs.lib.getExe singular;
           };
           # #562 item 2: the registry CLI build-graph check and its controls.
           registry-cli-build-graph-check = {
             type = "app";
+            meta.description = "Check the registry command build graph";
             program = pkgs.lib.getExe registryCliBuildGraphCheckApp;
           };
           registry-cli-build-graph-controls = {
             type = "app";
+            meta.description = "Run registry command build graph controls";
             program = pkgs.lib.getExe registryCliBuildGraphControlsApp;
           };
         };
