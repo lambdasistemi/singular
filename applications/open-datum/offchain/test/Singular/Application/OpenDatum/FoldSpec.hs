@@ -55,31 +55,21 @@ import Singular.Application.OpenDatum.Envelope
     , envelopeToData
     , envelopeVersion
     )
-import Singular.Application.OpenDatum.StateTokenFixture
-    ( bootEconomics
-    , release
-    , seedIn
-    )
 import Singular.Application.OpenDatum.Value (openDatumApplication)
-import Singular.CLI.Fold (neutralTerminationRefusal)
 import Singular.CLI.FoldRules
 import Singular.Registry.Application
     ( Application (..)
-    , ApplicationPin (..)
     , datumFromJson
     , datumHash
     , datumToJson
     , neutralApplication
     )
-import Singular.Registry.Config.Application (configForApplication)
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.SessionIO (outputsAt)
-import Singular.Registry.StateToken (Release (..))
 import Singular.Registry.StubSession
 import Singular.Registry.TxBuilder.Internal
     ( addrFromKeyHashBytes
     , policyIdFromPin
-    , txInToRef
     )
 import Singular.Registry.Types
     ( OnChainRequest (..)
@@ -396,35 +386,6 @@ neutralFold = describe "the fold through the application value" $ do
             forAll genPayload $ \p ->
                 let e = envelopeWith p
                 in  datumHash (envelopeToData e) === envelopeHash e
-    it
-        "refuses a neutral termination naming the pinned policy and the application's own executable"
-        $ do
-            let policy = SBS.toShort (BS.replicate 28 7)
-                (cfg, _) =
-                    configForApplication
-                        (PinByHash policy)
-                        (releaseCodes release)
-                        (releaseState release)
-                        (releaseRequest release)
-                        bootEconomics
-                        Testnet
-                        (txInToRef seedIn)
-                why = neutralTerminationRefusal neutralApplication cfg
-            why `shouldSatisfy` isInfixOf "application policy"
-            why `shouldSatisfy` isInfixOf "own executable"
-    it "names the value's executable when present (failing control)" $ do
-        let policy = SBS.toShort (BS.replicate 28 7)
-            (cfg, _) =
-                configForApplication
-                    (PinByHash policy)
-                    (releaseCodes release)
-                    (releaseState release)
-                    (releaseRequest release)
-                    bootEconomics
-                    Testnet
-                    (txInToRef seedIn)
-            why = neutralTerminationRefusal openDatumApplication cfg
-        why `shouldSatisfy` isInfixOf "open-datum"
     it
         "decodes only through the value's decoder (open datum has one, neutral has none)"
         $ do

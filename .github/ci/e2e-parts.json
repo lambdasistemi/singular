@@ -1,8 +1,10 @@
 [
-  {"name": "node, boot, insert and config", "lane": "node-boot"},
-  {"name": "fork recovery", "lane": "fork-recovery"},
-  {"name": "update to terminal", "lane": "update-terminal"},
-  {"name": "criterion 3", "lane": "criterion3"},
-  {"name": "cage", "lane": "cage"},
-  {"name": "driver and replay", "lane": "driver-replay"}
+  {
+    "name": "Generic node, wallet and submission checks",
+    "lane": "node-boot"
+  },
+  {
+    "name": "Registry evidence retained by conformance",
+    "lane": "cage"
+  }
 ]

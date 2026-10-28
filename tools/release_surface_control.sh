@@ -9,8 +9,8 @@
 # discloses every retained unverified command as not currently buildable or
 # verified, with the published-archive limit):
 #
-#   A. missing-verified-command: removes the `nix run .#journey` lines from
-#      the archived README. The checker must refuse naming that phrase.
+#   A. missing-verified-command: removes the packaged journey entrypoint
+#      from the archived README. The checker must refuse naming that phrase.
 #   B. removed-disclosure: removes the whole retained-command availability
 #      table and the disclosure sentences (the seven advertised commands,
 #      repair-rows, connected-verifier, the not-currently-buildable-or-
@@ -114,8 +114,17 @@ EOF
 
 # Variant A: remove the verified lifecycle command the README promises.
 mutate_missing_verified_command() {
-  grep -v "nix run .#journey" "$1/README.md" >"$1/README.md.new"
+  grep -F -q "tools/no_pin_registration_journey.sh" "$1/README.md" \
+    || {
+      echo "FAIL: the verified-command plant has no target" >&2
+      exit 1
+    }
+  grep -F -v "tools/no_pin_registration_journey.sh" "$1/README.md" >"$1/README.md.new"
   mv "$1/README.md.new" "$1/README.md"
+  if grep -F -q "tools/no_pin_registration_journey.sh" "$1/README.md"; then
+    echo "FAIL: the verified-command plant did not apply" >&2
+    exit 1
+  fi
 }
 
 # Variant B: remove the retained-command availability disclosure the README
@@ -290,7 +299,7 @@ run_version_unchecksummed_variant() {
 }
 
 run_variant "missing-verified-command" mutate_missing_verified_command \
-  "does not document: nix run .#journey"
+  "does not document: tools/no_pin_registration_journey.sh"
 run_variant "removed-disclosure" mutate_removed_disclosure \
   "does not disclose retained legacy commands"
 run_variant "status-flip" mutate_status_flip \

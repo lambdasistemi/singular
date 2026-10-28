@@ -15,7 +15,7 @@
       "pause": 500
     },
     {
-      "text": "record-value-preservation means a maintain or recover continuation changed its non-ADA value, or reduced its ADA. Keep wallet change in a separate output. record-single-asset means recovery or retirement encountered an input with zero or multiple non-ADA assets, or an insert fold tried to create a record without exactly its representative. These names are retained in compiled validator traces. The recovery and retirement runners also inspect all asset policies when reading a record, so they cannot hide an unrelated token.",
+      "text": "record-value-preservation means a maintain or recover continuation changed its non-ADA value, or reduced its ADA. Keep wallet change in a separate output. record-single-asset means recovery or retirement encountered an input with zero or multiple non-ADA assets, or an insert fold tried to create a record without exactly its representative. These names are retained in compiled validator traces. The retained naming validator checks every non-ADA asset in the record.",
       "pause": 400
     },
     {
@@ -43,7 +43,7 @@
       "pause": 500
     },
     {
-      "text": "Run just record-value-test from offchain/ to execute the production blueprint against an accepted maintain and named extra-asset refusals. The contexts are component fixtures, not submitted ledger transactions or a connected lifecycle. The same check runs in the naming validator CI job. The Aiken suite has the three issue reproductions and controls for added, removed, replaced and increased assets, ADA top-up, and insert-fold pollution.",
+      "text": "Naming is outside the current command line. Its on-chain sources remain while the retained conformance suite consumes them. The Aiken suite checks added, removed, replaced and increased assets, ADA top-up, and insert-fold pollution. These component checks do not establish a submitted ledger transaction or a connected lifecycle.",
       "pause": 400
     },
     {
@@ -57,6 +57,6 @@
   ],
   "_source": {
     "file": "record-value.md",
-    "sha256": "341d8a4b5855441e294cfe700aaf895204faa9c95fff3a820bc5c696ce266755"
+    "sha256": "11e566ad0184dbb87b1f2588cd9eb013e63bd9b00bf6937f671560053b32e517"
   }
 }

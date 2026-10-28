@@ -61,12 +61,12 @@ copy_tree() {
 }
 
 # Plant 1: a cli/src source directory in a suite that must never list it.
-# record-value-tests is clean at every head, so the plant is genuine and
+# contract-tests is clean at every head, so the plant is genuine and
 # distinctly named: catching it proves the check quantifies over every
 # stanza instead of looking only at cage-tests.
 copy_tree plant-suite-dirs
-sed -i 's|record-value-test test-tags|record-value-test test-tags cli/src|' "$work/plant-suite-dirs/singular-registry.cabal"
-grep -q 'record-value-test test-tags cli/src' "$work/plant-suite-dirs/singular-registry.cabal" \
+sed -i 's|contract-test test private-facade test-tags|contract-test test private-facade test-tags cli/src|' "$work/plant-suite-dirs/singular-registry.cabal"
+grep -q 'contract-test test private-facade test-tags cli/src' "$work/plant-suite-dirs/singular-registry.cabal" \
   || {
     echo "registry-cli-build-graph-controls: suite-dirs plant did not apply" >&2
     exit 2
@@ -82,7 +82,7 @@ if [ "$code" -ne 1 ]; then
   printf '%s\n' "$out" >&2
   exit 2
 fi
-printf '%s\n' "$out" | grep -q 'test:record-value-tests' \
+printf '%s\n' "$out" | grep -q 'test:contract-tests' \
   || {
     echo "registry-cli-build-graph-controls: check failed but did not name the planted suite:" >&2
     printf '%s\n' "$out" >&2

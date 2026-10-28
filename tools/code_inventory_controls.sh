@@ -148,7 +148,7 @@ fi
 # c7 — a new offchain Haskell source outside every checker-visited component
 # directory must fail closed: no enforced policy may be claimed for a file
 # the offchain lint never visits (its extent is the Cabal hs-source-dirs
-# plus naming/test and naming/drift — audit finding F-001).
+# with their declared helpers — audit finding F-001).
 scratch c7-offchain-outside-component
 mkdir -p "$work/c7-offchain-outside-component/offchain/unbuilt-component"
 printf 'module Unvisited () where\n' \

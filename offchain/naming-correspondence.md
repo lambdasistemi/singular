@@ -52,11 +52,10 @@ identities below are bound together at initialization or not at all.
 
 ## Where the encoding itself lives
 
-The datum bytes these witnesses will carry are already fixed by the
-contract, not by this record: the four-field codec and its vendored
-vectors live in `naming/` (`naming/src/Naming/Datum.hs`, provably
-byte-exact against v0.2.0's `wire` vectors). The vectors are the
-contract's; the realisation table above is this epic's design.
+This is the historical correspondence used by the retained conformance rows.
+The datum bytes are fixed by the accepted four-field contract. The naming
+off-chain implementation has been retired; the retained validator sources
+and model describe the old side of that correspondence.
 
 ## What run #47 settled (2026-09-10)
 
@@ -80,7 +79,7 @@ application validator address carrying the four-field naming datum
 inline (control address, payment destination, next-control commitment,
 retirement quorum). The frozen validator constrains only output 0 (the
 registry state UTxO); the checkpoint's well-formedness is enforced
-off-chain by the `Naming.Datum` codec, on chain by nothing. First
+by the retired off-chain codec, on chain by nothing. First
 consumer: the claim rows.
 
 **Finding — `representativePolicy` has no realisation in the frozen
@@ -108,7 +107,7 @@ enforces the `LM` rows.** Its spend purpose takes the four-field naming
 datum in the accepted encoding (double `constr(0)` wrap, option-encoded
 payment destination, 32-byte commitment, 28-byte quorum members,
 threshold 1..distinct members — mirrored function for function from the
-`Naming.Datum` codec; a fifth field refuses). Maintenance (`Maintain`)
+accepted four-field codec; a fifth field refuses). Maintenance (`Maintain`)
 requires the control address's payment key hash among the transaction
 signatories and preserves control address, next-control commitment and
 retirement quorum exactly; only the payment destination is maintainable
@@ -419,4 +418,4 @@ The binding is repository revision `41861a66b72a840042f2e633ce33a607e817d6c6`.
 
 | Lean abstraction | Implementation invariant and enforcement | Executing evidence and limits |
 | --- | --- | --- |
-| `Singular.Output` (`Model.lean:34-40`), with one representative and scalar value; `NamingLifecycle.maintainDestination`, `recoverController` and `beginRetirement` | A record's value is exactly ADA plus its representative. The genuine insert branch of `application.fold` establishes this with exact non-ADA triples; `value_preserved` in maintain and recover preserves those triples and permits only ADA top-up. Recover/retire handle invalid asset cardinality as `record-single-asset` before extraction. `Naming.Verify.singleNamingToken` checks the full non-ADA value in Haskell recovery/retirement readbacks. | Permanent `t146_*` Aiken tests cover the issue reproductions, additions, removal, replacement and quantity increase. The Haskell `record-value-tests` suite executes the production blueprint and checks named refusals; `Naming.RecordValueSpec` rejects a hidden foreign-policy asset. These are component checks. Existing polluted records remain maintain-only when their non-ADA value is unchanged; arbitrary deposits and the legacy empty-representatives fold fixture are outside the genuine insert-record invariant. Old deployed scripts are unchanged. |
+| `Singular.Output` (`Model.lean:34-40`), with one representative and scalar value; `NamingLifecycle.maintainDestination`, `recoverController` and `beginRetirement` | A record's value is exactly ADA plus its representative. The genuine insert branch of `application.fold` establishes this with exact non-ADA triples; `value_preserved` in maintain and recover preserves those triples and permits only ADA top-up. Recover/retire handle invalid asset cardinality as `record-single-asset` before extraction. | Permanent `t146_*` Aiken tests cover the issue reproductions, additions, removal, replacement and quantity increase. The naming off-chain checks are retired with their implementation. These are component checks. Existing polluted records remain maintain-only when their non-ADA value is unchanged; arbitrary deposits and the legacy empty-representatives fold fixture are outside the genuine insert-record invariant. Old deployed scripts are unchanged. |

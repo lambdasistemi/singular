@@ -9,7 +9,7 @@ The decisions of @registry fold@ that need no node and no wallet: which
 pending request a fold takes, which edges it folds, the envelope an
 insertion's request carries, and whether the request's processing window
 still leaves time to build one. The command
-("Singular.CLI.Fold") reads the chain and asks these; the booking's
+library callers read the chain and ask these; the booking's
 receipt ("Singular.CLI.Entry") states the same deadline from the same
 function, so a requester and a folder never disagree about it.
 -}
@@ -456,7 +456,7 @@ the view's conversion of a time to a slot. When the deadline has no slot the
 bound is placed in time first, by 'boundStartTime', and a bound the view
 cannot place gives the verdict that refuses it. It returns the time the bound
 begins at, when it was placed, beside the verdict. This is the one decision
-the fold takes before signing; "Singular.CLI.Fold" refuses unsigned on a
+the fold takes before signing; a caller refuses unsigned on a
 refusal.
 -}
 postBuildDecision
@@ -999,7 +999,7 @@ data KeptReceipt = KeptReceipt
 
 {- | The kept top-level receipt fields in the order a reader meets them,
 projected from simple components. The production 'foldedFields' in
-"Singular.CLI.Fold" builds the record and calls this function, so rows over
+A caller builds the record and calls this function, so rows over
 it pin the production projection: every kept pair unchanged and in order,
 none of the removed fields present, the three lists following.
 -}

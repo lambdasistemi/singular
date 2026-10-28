@@ -29,8 +29,7 @@ it is history, the naming lifecycle of earlier releases.
 | `onchain/` | the imported registry partition: Aiken validators, its own `flake.nix`/`flake.lock`, and `plutus.json` — the **compiled** blueprint |
 | `naming-onchain/` | Singular's own naming partition: the same shape, with its compiled `plutus.json` |
 | `onchain/script-identity.json`, `naming-onchain/script-identity.json` | the **pinned unapplied identities**: every validator's compiled hash and parameter count, plus the compiler string |
-| `offchain/` | the verified bounded journey, the retained row runners (`offchain/journey/`), their library, and the vendored fixtures module (`offchain/naming/src/Naming/Wire/Vectors.hs`) |
-| `fixtures/` | the contract fixtures — the vendored v0.2.0 wire vectors — with their provenance (`fixtures/README.md`) |
+| `offchain/` | the command sources, shared library, generic adapters and retained tests |
 | `RELEASE.md` | an introduction to Singular and instructions for using the release archive |
 | `RELEASE-COMMIT` | the commit this archive publishes; the row runners read it as their candidate revision when no git checkout is present |
 | `MODEL-REVISION` | the application model commit this release maps to: the revision of the formal model the conformance evidence reads its statements at |
@@ -79,77 +78,42 @@ nix build ./onchain#script-identity --no-link
 nix flake check ./naming-onchain
 ```
 
-## 3. The contract fixtures
+## 3. The packaged command journey
 
-The four vendored v0.2.0 wire vectors and their provenance are in
-`fixtures/`. The codec suite that checks the naming datum encoding
-against them runs with:
+The release verifier builds `singular`, `open-datum` and the development node
+from this archive's own flakes. It runs creation, registration, payload update
+and permanent termination through those ordinary binaries, using the compiled
+`onchain/plutus.json` that the archive carries. Separate wallets book and fold;
+the chain is read independently of their receipts. Retraction, cleanup and
+refused re-registration are part of the same development-network journey.
 
-```sh
-nix develop ./offchain --quiet --command bash offchain/naming/run-suite.sh
-```
-
-## 4. The signers and the bounded registry journey
-
-The one lifecycle command this archive ships verified is the bounded
-registry journey: the release pipeline runs it against a real devnet on
-every candidate and asserts what it observes on chain — boot, request,
-apply, read back, with the pinned and applied script identities. It
-covers the registry protocol, not the naming lifecycle of the retained
-rows below.
-
-The packaged journey defaults to a private generated devnet behind the Koios
-HTTP facade. The journey is a harness and keeps a key file: to point it at a test-network
-API and a wallet of your own, pass `--koios-url URL --network-magic N --wallet-skey FILE`;
-the matching environment variables are `SINGULAR_KOIOS_URL`, `SINGULAR_NETWORK_MAGIC` and
-`SINGULAR_WALLET_SKEY`. Demo 1 itself does not use it. `--network-time DIR` (or `SINGULAR_NETWORK_TIME`) supplies
-pinned genesis/history material; preprod otherwise uses the reviewed packaged
-recording. The launcher checks configuration before spawning its private
-fixture. Old ordinary socket and backend settings refuse before provider
-acquisition. This route remains an obligation of the unchanged journey gate;
-its command description alone is not a current release or hosted pass. The
-[command reference](https://lambdasistemi.github.io/singular/docs/singular-node/)
-explains the API, time and wallet settings. The legacy naming commands below
-retain their stated unverified status.
-
-The write commands (`singular registry create`, `fold`, `reject` and `reclaim`,
-and `open-datum create`, `insert`, `update`, `terminate` and `fold`) take exactly
-one signer, which is one of three. The first two are the ones to use. A vault,
-`--vault FILE` (with `--passphrase-fd N` for a script, otherwise the passphrase is
-typed at a prompt), makes the command sign, send and land its run in one step. An
-address with a bundle file, `--wallet-address ADDR --bundle FILE`, makes the
-command build its whole run as that bundle, sign and send nothing and exit with
-status 19; `singular wallet sign --vault FILE` signs the bundle and `singular
-submit` sends it. The third, a key file, `--wallet-skey FILE`, is being retired
-([issue 672](https://github.com/lambdasistemi/singular/issues/672)) and is not a way
-to start. `singular wallet create` makes a vault and prints its address; it asks for the
-passphrase twice, and every later command that opens the vault asks once. The
-Demo 1 page of singular-demo shows the vault and the external way from the first
-command to the last.
-
-Build the two compiled blueprints from this archive's own flakes, then run
-the journey from `offchain/` (it reads the pinned identity manifests from
-`../onchain/` and `../naming-onchain/` by default). Use a shallow private
-`TMPDIR` (the node socket path length is limited):
+To run that harness from the extracted archive, build its three programs and
+provide the small command-line tools it uses. Choose a short private scratch
+path for the node's Unix socket. The results directory must not already exist;
+the harness preserves its receipts there and removes its generated node on exit.
 
 ```sh
-blueprint="$(nix build --no-link --print-out-paths ./onchain#plutus-blueprint)"
-naming="$(nix build --no-link --print-out-paths ./naming-onchain#plutus-blueprint)"
-export TMPDIR=/tmp/singular-journey REGISTRY_BLUEPRINT="$blueprint" NAMING_BLUEPRINT="$naming"
+singular="$(nix build --quiet --no-link --print-out-paths ./offchain#singular)"
+open_datum="$(nix build --quiet --no-link --print-out-paths ./applications/open-datum/offchain#open-datum)"
+devnet="$(nix build --quiet --no-link --print-out-paths ./offchain#devnet)"
+mkdir -p "$HOME/.cache/singular-journey"
+export TMPDIR="$HOME/.cache/singular-journey"
+export E2E_GENESIS_DIR="$PWD/offchain/e2e-test/genesis"
+results="$(mktemp -d "$TMPDIR/run.XXXXXX")/results"
+nix shell nixpkgs#bash nixpkgs#coreutils nixpkgs#diffutils \
+  nixpkgs#findutils nixpkgs#gawk nixpkgs#gnugrep nixpkgs#gnused \
+  nixpkgs#jq nixpkgs#procps nixpkgs#python3 -c bash \
+  tools/no_pin_registration_journey.sh \
+  "$singular/bin/singular" "$open_datum/bin/open-datum" "$devnet/bin/devnet" \
+  "$PWD/onchain/plutus.json" "$PWD/tools/no_pin_chain_view.py" "$results"
 ```
 
-Then, from `offchain/`:
-
-```sh
-# the bounded registry journey (boot, request, apply, read back),
-# printing the pinned and applied identities it verifies
-nix run .#journey
-```
-
-The journey exits non-zero on any mismatch; a zero exit is the run's
-claim. What each step does is documented in `offchain/journey/README.md`.
-It retains every submitted transaction (`S77_EVIDENCE_DIR` overrides the
-default evidence directory).
+The harness refuses setup failures separately from a failed assertion. Its
+verdict table, story receipts and chain readbacks describe what that run
+establishes; a command description alone is not release acceptance. This
+development-network harness does not establish mainnet suitability or the
+historical naming lifecycles below. The [command reference](https://lambdasistemi.github.io/singular/docs/singular-node/)
+describes ordinary command and wallet use.
 
 ## Appendix: the retained naming-lifecycle material
 

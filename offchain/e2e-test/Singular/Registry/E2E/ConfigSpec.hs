@@ -62,7 +62,7 @@ checkConfiguration configuration blueprint defect = do
         readCreateProcessWithExitCode
             ( proc
                 executable
-                ["--match", "updateTerminal", "--format=specdoc", "--no-color"]
+                ["--match", "Live node checks", "--format=specdoc", "--no-color"]
             )
                 { env = Just environment
                 }

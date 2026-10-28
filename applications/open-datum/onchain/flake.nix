@@ -323,7 +323,7 @@
         # manifest and a manifest entry with no counterpart all fail,
         # naming the validator and both hashes. A manifest or blueprint
         # with zero validators is a failure rather than a vacuous pass.
-        # S5.3: the application's permanent record and module are derived
+        # The application's permanent record is derived
         # here from the application's blueprint alone (never the registry's
         # record); the registry side is derived separately in onchain/.
         script-identity =
@@ -372,7 +372,7 @@
                 exit 1
               fi
               python3 ${../../../tools/m1_identity.py} --root ${../../../.} --application-blueprint "$blueprint" --check
-              echo "script-identity: OK — $(jq '.validators | length' "$manifest") open-datum validators pinned, manifest matches the built blueprint (compiler $(jq -r '.compiler' "$manifest")); application Permanent module fresh"
+              echo "script-identity: OK — $(jq '.validators | length' "$manifest") open-datum validators pinned, manifest matches the built blueprint (compiler $(jq -r '.compiler' "$manifest")); application permanent contract fresh"
               touch $out
             '';
 

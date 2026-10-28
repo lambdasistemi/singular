@@ -4,7 +4,6 @@
   shell,
   cardanoNode,
   ghc,
-  namingBlueprint,
   stateBlueprint,
   stateScriptIdentity,
 }:
@@ -111,21 +110,9 @@ in
   signed-tx-control = signedTxControl;
   apps = {
     cage-tests = cageTestsWrapped;
-    inherit (components.tests) record-value-tests;
     inherit (components.exes) cage-test-vectors;
   };
   cage-tests = unitCheck "cage-tests" cageTestsWrapped;
-  record-value-tests =
-    pkgs.runCommand "record-value-tests-check"
-      {
-        nativeBuildInputs = [ pkgs.glibcLocales ];
-        LANG = "C.UTF-8";
-        LC_ALL = "C.UTF-8";
-        NAMING_BLUEPRINT = namingBlueprint;
-      }
-      ''
-        ${pkgs.lib.getExe components.tests.record-value-tests} > "$out" 2>&1 || { cat "$out"; exit 1; }
-      '';
   cage-tests-e2e = e2eTestsWrapped;
   cage-test-vectors = unitCheck "cage-test-vectors" components.exes.cage-test-vectors;
   lint = pkgs.writeShellApplication {
@@ -152,19 +139,17 @@ in
     text = ''
       cd "${../. + "/"}"
       # Active Haskell source extent, discovered at run time: every
-      # hs-source-dirs the Cabal package declares, plus the two direct-GHC
-      # naming check sources (naming/run-suite.sh and
-      # naming/run-drift-check.sh compile naming/test and naming/drift with
-      # the dev-shell GHC outside any Cabal stanza). A new Cabal component
-      # or naming source is therefore linted without editing this app.
+      # hs-source-dirs the Cabal package declares, plus the SignedTx controls
+      # compiled outside a Cabal stanza. New Cabal components join the extent
+      # without editing this app.
       # P2 (finding 024, verdict 025): the discovery step's own failure must
       # end the run here, with a discovery-specific reason. The assignment
       # carries awk's exit status, so a missing or unreadable Cabal file or a
       # broken awk program can no longer be swallowed by the trailing printf
-      # of the naming dirs and resurface later as an incidental
-      # Fourmolu/HLint exclusion failure over a partial naming-only extent.
+      # of the control directory and resurface as an incidental
+      # Fourmolu/HLint exclusion failure over a partial extent.
       # Empty discovery is refused directly too: a Cabal parse miss must not
-      # degrade to the two literal naming dirs.
+      # degrade to the literal control directory.
       cabal_dirs=$(
         awk '/^[ \t]*hs-source-dirs:/ {
           sub(/^[ \t]*hs-source-dirs:[ \t]*/, "")
@@ -173,7 +158,7 @@ in
       ) || { echo "lint: source discovery failed: cannot read singular-registry.cabal (awk exit $?)" >&2; exit 1; }
       [ -n "$cabal_dirs" ] || { echo "lint: source discovery found no hs-source-dirs in singular-registry.cabal" >&2; exit 1; }
       dirs=$(
-        printf '%s\n' "$cabal_dirs" naming/test naming/drift signed-tx-control
+        printf '%s\n' "$cabal_dirs" signed-tx-control
       )
       # Deduplicate nested declarations (journey contains journey/li01 and
       # friends, so every file must be listed once), then fail closed: a
@@ -195,12 +180,12 @@ in
       # #278 terminal-attestation-permanent: every discovered Haskell source is formatted and checked,
       # with no directory exclusions.
       # The GHC option only lets fourmolu parse the postpositive-qualified
-      # imports of the two direct-GHC naming sources; sources without that
+      # imports of standalone control sources; sources without that
       # syntax format exactly as before (ruling A-002, configuration only).
       fourmolu --config ${../../fourmolu.yaml} --ghc-opt=-XImportQualifiedPost -m check $files
       # #278 supply-matches-leaf-state: HLint runs over the SAME discovered extent as Fourmolu,
       # with no directory exclusions: the #264 baseline hint debt in the
-      # journey, naming/test, naming/drift and update-terminal trees is
+      # retained source trees is
       # resolved at the source. A newly added directory joins HLint
       # automatically through the Cabal manifest.
       echo "lint inventory: $(printf '%s\n' $files | wc -l) files in $(printf '%s\n' $dirs | wc -l) dirs; fourmolu and hlint over the same files, house fourmolu.yaml, no exclusions" >&2

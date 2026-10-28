@@ -72,11 +72,11 @@ POLICIES: dict[str, dict] = {
         "carrier": "offchain `nix run .#lint` — CI job 'Off-chain lint'",
         "note": "bound to the checker's own discovered extent: every Cabal "
         "hs-source-dirs stanza of singular-registry.cabal (visited "
-        "recursively, as the checker's find does) plus the two "
-        "direct-GHC naming sources — the same discovery "
+        "recursively, as the checker's find does) plus the standalone "
+        "signing controls — the same discovery "
         "offchain/nix/checks.nix performs — with no exclusions: the 13 "
         "directories #264 excluded (journey and its sub-stanzas, "
-        "naming/test, naming/drift, update-terminal) had their baseline "
+        "retained standalone checks) had their baseline "
         "hints resolved at the source by #278 S3. An offchain source "
         "outside that visited extent fails the inventory instead of "
         "being claimed as enforced.",
@@ -224,8 +224,8 @@ POLICIES: dict[str, dict] = {
         "root (issue #278 S2), passed explicitly so a missing "
         "configuration fails loudly; the extent is the checker's own "
         "manifest-discovered set — every Cabal hs-source-dirs "
-        "stanza of singular-registry.cabal plus the two direct-GHC "
-        "naming sources — with no directory exclusions. An offchain "
+        "stanza of singular-registry.cabal plus the standalone signing "
+        "controls — with no directory exclusions. An offchain "
         "source outside that visited extent fails the inventory "
         "instead of being claimed as enforced.",
     },
@@ -466,7 +466,7 @@ CODE_RULES: list[dict] = [
     },
     # Haskell. Every offchain rule is restricted ("where":
     # "haskell-checker-extent") to the checker's own manifest-discovered
-    # extent — the Cabal hs-source-dirs plus naming/test and naming/drift,
+    # extent — the Cabal hs-source-dirs with their declared helpers,
     # visited recursively exactly as offchain/nix/checks.nix does — so an
     # enforced policy is never claimed for a file the checker does not
     # visit; anything else under offchain/ hits the reject rule below and
@@ -519,8 +519,8 @@ CODE_RULES: list[dict] = [
         "pattern": "offchain/**/*.hs",
         "reject": "haskell source outside every checker-visited component "
         "directory (the offchain lint discovers its extent from "
-        "singular-registry.cabal hs-source-dirs plus naming/test and "
-        "naming/drift; add the component to the Cabal manifest)",
+        "singular-registry.cabal hs-source-dirs; "
+        "add the component to the Cabal manifest)",
     },
     {
         "id": "hs-conformance",
@@ -1074,10 +1074,8 @@ def _read(root: Path, rel: str) -> str:
 
 def parse_manifests(root: Path) -> Manifests:
     m = Manifests()
-    # Cabal: every hs-source-dirs field of every stanza, plus the two
-    # direct-GHC naming sources the offchain lint also adds literally
-    # (naming/test and naming/drift compile with the dev-shell GHC outside
-    # any Cabal stanza — offchain/nix/checks.nix documents the same pair).
+    # Cabal: every hs-source-dirs field of every stanza, plus the signing
+    # controls compiled outside a Cabal stanza by the offchain checks.
     cabal_files = [
         "offchain/singular-registry.cabal",
         "conformance/conformance.cabal",
@@ -1108,8 +1106,6 @@ def parse_manifests(root: Path) -> Manifests:
                 f"manifest failure: no hs-source-dirs parsed from {rel}"
             )
     m.haskell_dirs |= {
-        "offchain/naming/test",
-        "offchain/naming/drift",
         # #326: the SignedTx forgery fixtures, type-checked by
         # tools/signed_tx_control.sh outside any Cabal stanza.
         "offchain/signed-tx-control",

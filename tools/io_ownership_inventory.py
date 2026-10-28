@@ -74,7 +74,6 @@ CATEGORIES: list[tuple[str, str, tuple[str, ...]]] = [
         "library code shipped in release builds",
         (
             "offchain/lib/",
-            "offchain/naming/src/",
             "offchain/local-services/",
             "offchain/koios-http/src/",
             "offchain/cli/src/",
@@ -115,9 +114,6 @@ CATEGORIES: list[tuple[str, str, tuple[str, ...]]] = [
             "offchain/test-tags/",
             "offchain/contract-test/",
             "offchain/e2e-test/",
-            "offchain/record-value-test/",
-            "offchain/naming/test/",
-            "offchain/naming/drift/",
             "offchain/signed-tx-control/",
             "offchain/private-facade/",
             "offchain/cli/test-harness/",

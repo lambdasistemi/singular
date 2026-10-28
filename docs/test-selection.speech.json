@@ -43,7 +43,7 @@
       "pause": 500
     },
     {
-      "text": "The Cabal manifests declare five Hspec suites: cage-tests, e2e-tests exposed as cage-tests-e2e, contract-tests, record-value-tests, and conformance-tests exposed for filtering as conformance-appendix-tests. The record-value entrypoint defines its examples inline, under the module name Main. Contract checks include repeated runs of the same case list against different adapters, each wrapped under its defining module. Development-node evidence descriptions and conformance appendix markers remain inside the module groups.",
+      "text": "The registry and conformance Cabal manifests declare four Hspec suites: cage-tests, e2e-tests exposed as cage-tests-e2e, contract-tests, and conformance-tests exposed for filtering as conformance-appendix-tests. The application separately declares open-datum-tests. Contract checks include repeated runs of the same case list against different adapters, each wrapped under its defining module. Development-node evidence descriptions and conformance appendix markers remain inside the module groups.",
       "pause": 400
     },
     {
@@ -51,7 +51,7 @@
       "pause": 400
     },
     {
-      "text": "The evaluation spike's cleanup-control uses Tasty, so it is outside this Hspec vocabulary. Naming's direct-GHC codec and drift programs are not Hspec suites either. The Cabal-declared Conformance.Support.Authenticate module was already absent from the Hspec entrypoint; it remains inactive so tagging changes neither suite membership nor example counts. No new exclusion is introduced.",
+      "text": "The evaluation spike's cleanup-control uses Tasty, so it is outside this Hspec vocabulary. The Cabal-declared Conformance.Support.Authenticate module was already absent from the Hspec entrypoint; it remains inactive so tagging changes neither suite membership nor example counts. No new exclusion is introduced.",
       "pause": 400
     }
   ],
@@ -65,7 +65,7 @@
       "pause": 400
     },
     {
-      "text": "From conformance/, nix build .#checks.x86_64-linux.conformance-tests executes the Hspec appendix. Each check runs its existing app or binary during the Nix build, fails when that execution fails and retains the output at the check's store path. A cached result represents an earlier successful execution on the same inputs. The vector command generates vectors; it is not an Hspec suite. Record-value checks receive the naming validator blueprint compiled from the current source. Apps and supported package exports remain available.",
+      "text": "From conformance/, nix build .#checks.x86_64-linux.conformance-tests executes the Hspec appendix. Each check runs its existing app or binary during the Nix build, fails when that execution fails and retains the output at the check's store path. A cached result represents an earlier successful execution on the same inputs. The vector command generates vectors; it is not an Hspec suite. Apps and supported package exports remain available.",
       "pause": 400
     },
     {
@@ -83,12 +83,12 @@
       "pause": 400
     },
     {
-      "text": "The full off-chain suite has 1,037 examples, the conformance appendix 573, the end-to-end suite 69, the contract suite 48 and the compiled record-value suite four. Tagging preserves their example counts. A dry run establishes the census of development-node examples, not execution of their scenarios.",
+      "text": "At that measurement the full off-chain suite had 1,037 examples, the conformance appendix 573, the end-to-end suite 69 and the contract suite 48. These are historical counts; removal of an old subject changes its suite membership. A dry run establishes the census of development-node examples, not execution of their scenarios.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "test-selection.md",
-    "sha256": "8c9acd8a9c108d5021bfb82b7bd848178f846658608145392d71ca66991a402c"
+    "sha256": "91c74916b00364dfc781888e4e590118834a385d7221506825db7e4c6ba39936"
   }
 }

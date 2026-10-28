@@ -22,8 +22,7 @@ non-ADA value, or reduced its ADA. Keep wallet change in a separate output.
 `record-single-asset` means recovery or retirement encountered an input with
 zero or multiple non-ADA assets, or an insert fold tried to create a record
 without exactly its representative. These names are retained in compiled
-validator traces. The recovery and retirement runners also inspect all asset
-policies when reading a record, so they cannot hide an unrelated token.
+validator traces. The retained naming validator checks every non-ADA asset in the record.
 
 An already polluted record can still be maintained if its entire non-ADA value
 is preserved. It cannot be repaired, recovered or retired under this rule.
@@ -46,12 +45,11 @@ change an existing deployment manifest, or deploy to preprod.
 
 ## Checks and model boundary
 
-Run `just record-value-test` from `offchain/` to execute the production blueprint
-against an accepted maintain and named extra-asset refusals. The contexts are
-component fixtures, not submitted ledger transactions or a connected lifecycle.
-The same check runs in the naming validator CI job. The Aiken suite has the three
-issue reproductions and controls for added, removed, replaced and increased
-assets, ADA top-up, and insert-fold pollution.
+Naming is outside the current command line. Its on-chain sources remain while
+the retained conformance suite consumes them. The Aiken suite checks added,
+removed, replaced and increased assets, ADA top-up, and insert-fold pollution.
+These component checks do not establish a submitted ledger transaction or a
+connected lifecycle.
 
 Run `nix flake check` from `naming-onchain/` for the Aiken suite and compiled
 identity checks. Root `nix develop --quiet -c just ci` covers the model,

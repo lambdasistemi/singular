@@ -7,9 +7,8 @@ use cardano/assets.{PolicyId}
 /// application validator enforces.
 ///
 /// Everything here is transcribed from the accepted epic-15 contract's
-/// codec (`offchain/naming/src/Naming/Datum.hs` and `Naming/Wire.hs`,
-/// themselves mirrors of v0.2.0's `naming-wire.mjs`, commit
-/// `13231f58833b8feb57f4b0f9b1117bfcfba0c07d`). The datum has exactly
+/// codec in v0.2.0's `naming-wire.mjs`, commit
+/// `13231f58833b8feb57f4b0f9b1117bfcfba0c07d`. The datum has exactly
 /// four fields, in this order: control address; payment destination as
 /// an option; the next-control commitment digest; the retirement
 /// quorum. There is no fifth field and none may be added. Where this

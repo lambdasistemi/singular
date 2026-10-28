@@ -52,7 +52,6 @@ import Singular.CLI.Proof
     )
 import Singular.CLI.Receipt (exitCodeOf, outcomeName)
 import Singular.CLI.Session (CommandFailure (..))
-import Singular.CLI.TrieHistory (journalRoot)
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.Ledger (AssetName (..), Root (..))
 import Singular.Registry.TrieState
@@ -326,35 +325,3 @@ spec = describe "A trie refusal, as a command prints it" $ do
                 want = expected f
             (show f, renderAuthError err, authErrorFields err)
                 `shouldBe` (show f, printedReason want, printedFields want)
-
-    describe "a journal root an accepted fold records" $ do
-        it "reads a hex root" $
-            journalRoot registryA Nothing (Just (rootHex rootA))
-                `shouldBe` Right rootA
-
-        it
-            "refuses a root that is not hex as a root that does not chain, stale state, exit 14"
-            $ do
-                refusal <-
-                    either pure (fail . ("a non-hex root was read: " <>) . show) $
-                        journalRoot registryA Nothing (Just "not-a-hex-root")
-                classOf refusal `shouldBe` ClassRootDoesNotChain
-                printed <- stopped refusal
-                fmap
-                    (\p -> (printedReason p, printedOutcome p, printedExit p))
-                    printed
-                    `shouldBe` Right ("TrieState RootDoesNotChain", "stale-state", ExitFailure 14)
-                printed `shouldBe` Right (expected refusal)
-
-        it
-            "refuses a missing root as an incomplete history, stale state, exit 14"
-            $ do
-                refusal <-
-                    either pure (fail . ("a missing root was read: " <>) . show) $
-                        journalRoot registryA Nothing Nothing
-                classOf refusal `shouldBe` ClassHistoryIncomplete
-                printed <- stopped refusal
-                fmap
-                    (\p -> (printedReason p, printedOutcome p, printedExit p))
-                    printed
-                    `shouldBe` Right ("TrieState HistoryIncomplete", "stale-state", ExitFailure 14)

@@ -11,8 +11,6 @@ import Singular.Application.OpenDatum.EnvelopeSpec qualified
 import Singular.Application.OpenDatum.FlagGroupExtentSpec qualified
 import Singular.Application.OpenDatum.FoldSpec qualified
 import Singular.Application.OpenDatum.HelpSnapshotSpec qualified
-import Singular.Application.OpenDatum.IndependentActorsSpec qualified
-import Singular.Application.OpenDatum.InsertEnvelopeSpec qualified
 import Singular.Application.OpenDatum.LibraryStateSpec qualified
 import Singular.Application.OpenDatum.ManagedStateSpec qualified
 import Singular.Application.OpenDatum.NeutralValueSpec qualified
@@ -136,9 +134,6 @@ main = hspec $ do
         )
         Singular.Application.OpenDatum.RequestScriptSpec.spec
     describe
-        (tagged "Singular.Application.OpenDatum.InsertEnvelope" [Cli])
-        Singular.Application.OpenDatum.InsertEnvelopeSpec.spec
-    describe
         (tagged "Singular.Application.OpenDatum.CLI" [Cli])
         Singular.Application.OpenDatum.CLISpec.spec
     describe
@@ -171,12 +166,6 @@ main = hspec $ do
     describe
         (tagged "Singular.Application.OpenDatum.Fold" [Cli])
         Singular.Application.OpenDatum.FoldSpec.spec
-    describe
-        ( tagged
-            "Singular.Application.OpenDatum.IndependentActors"
-            [Cli, Provider, History, Trie]
-        )
-        Singular.Application.OpenDatum.IndependentActorsSpec.spec
     describe
         (tagged "Singular.Application.OpenDatum.ManagedState" [Cli])
         Singular.Application.OpenDatum.ManagedStateSpec.spec
