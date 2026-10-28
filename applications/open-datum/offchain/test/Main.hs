@@ -1,5 +1,7 @@
 module Main (main) where
 
+import Singular.Application.OpenDatum.ReaderSpec qualified (spec)
+
 import Singular.Application.OpenDatum.ApplicationSpec qualified
 import Singular.Application.OpenDatum.BuildSpec qualified
 import Singular.Application.OpenDatum.BuildersSpec qualified
@@ -109,6 +111,12 @@ main = hspec $ do
             [Application, Builders, Evaluation]
         )
         Singular.Application.OpenDatum.RequestHoldingSpec.spec
+    describe
+        ( tagged
+            "Singular.Application.OpenDatum.Reader"
+            [Application, Builders, Trie]
+        )
+        Singular.Application.OpenDatum.ReaderSpec.spec
     describe
         ( tagged
             "Singular.Application.OpenDatum.RequestTerminationFold"

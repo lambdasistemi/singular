@@ -181,6 +181,7 @@ servingSessionWithId allocate supplied = (configured, provider)
                         acquired =
                             supplied
                                 { sessionId = identity
+                                , servedNetwork = guarded (servedNetwork supplied)
                                 , outputs = guarded . outputs supplied
                                 , protocolParameters = guarded (protocolParameters supplied)
                                 , tipObservation = guarded (tipObservation supplied)

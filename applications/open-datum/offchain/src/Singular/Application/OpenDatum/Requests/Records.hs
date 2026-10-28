@@ -19,6 +19,7 @@ Singular state, never re-derived.
 module Singular.Application.OpenDatum.Requests.Records
     ( -- * Records
       RequestParameters (..)
+    , ProtectedControl (..)
     , RegistrationData (..)
     , configurationDatum
     , decodeConfiguration
@@ -62,7 +63,7 @@ import Cardano.Ledger.Credential
     )
 import Cardano.Ledger.Hashes (ScriptHash (..), extractHash)
 import Cardano.Ledger.Keys (KeyHash (..))
-import Cardano.Ledger.Mary.Value (AssetName (..))
+import Cardano.Ledger.Mary.Value (AssetName (..), PolicyID)
 import Cardano.Ledger.Plutus.TxInfo (transAddr)
 import Cardano.Ledger.TxIn (TxId (..), TxIn (..))
 
@@ -90,6 +91,16 @@ data RequestParameters = RequestParameters
     -- ^ How long after that the refund address may reclaim it
     , rpBookingWidth :: Integer
     -- ^ The widest validity interval a booking may declare
+    }
+    deriving stock (Eq, Show)
+
+-- | The immutable control of a live holding in the current datum wire.
+data ProtectedControl = ProtectedControl
+    { controlRegistry :: RegistryIdentity
+    , controlActiveAsset :: (PolicyID, AssetName)
+    , controlKey :: ByteString
+    , controlController :: ByteString
+    , controlDeposit :: Integer
     }
     deriving stock (Eq, Show)
 
