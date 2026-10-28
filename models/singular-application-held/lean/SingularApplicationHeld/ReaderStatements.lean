@@ -220,7 +220,30 @@ theorem no_absence_from_missing_evidence (h : Hash) (c : Codec) (t : TrieCommit)
       (∀ outputs, observed.activeOutputs ≠ .complete outputs) ∨
       (((∀ output, observed.state ≠ .complete (some output)) ∨
         (∀ trie, observed.trie ≠ .complete trie)) ∧ observed.activeOutputs = .complete [])) :
-    (readKey h c t decode request observed).isAbsence = false := by sorry
+    (readKey h c t decode request observed).isAbsence = false := by
+  cases answer : readKey h c t decode request observed with
+  | live output => rfl
+  | pendingTermination output => rfl
+  | unavailable read reason => rfl
+  | refused reason => rfl
+  | terminal state =>
+    obtain ⟨release, networkSeen, published, policy, outputs, stateSeen, trieSeen, recognised, root, leaf⟩ :=
+      (terminal_inversion h c t decode request observed state).mp answer
+    rcases _missing with missing | noNetwork | noOutputs | ⟨noState | noTrie, empty⟩
+    · simp_all
+    · exact False.elim (noNetwork request.network networkSeen)
+    · exact False.elim (noOutputs [] outputs)
+    · exact False.elim (noState state.output stateSeen)
+    · exact False.elim (noTrie state.trie trieSeen)
+  | neverRegistered state =>
+    obtain ⟨release, networkSeen, published, policy, outputs, stateSeen, trieSeen, recognised, root, leaf⟩ :=
+      (never_registered_inversion h c t decode request observed state).mp answer
+    rcases _missing with missing | noNetwork | noOutputs | ⟨noState | noTrie, empty⟩
+    · simp_all
+    · exact False.elim (noNetwork request.network networkSeen)
+    · exact False.elim (noOutputs [] outputs)
+    · exact False.elim (noState state.output stateSeen)
+    · exact False.elim (noTrie state.trie trieSeen)
 
 /-- Failed, missing and incomplete network answers retain their read name and reason. -/
 theorem network_unavailable (h : Hash) (c : Codec) (t : TrieCommit)
@@ -268,7 +291,14 @@ theorem holding_answer_ignores_state (h : Hash) (c : Codec) (t : TrieCommit)
     (_holding : ∃ output, readKey h c t decode request observed = .live output ∨
       readKey h c t decode request observed = .pendingTermination output) :
     readKey h c t decode request {observed with state, trie} =
-      readKey h c t decode request observed := by sorry
+      readKey h c t decode request observed := by
+  obtain ⟨output, live | pending⟩ := _holding
+  · rw [live]
+    apply (live_inversion h c t decode request {observed with state, trie} output).mpr
+    exact (live_inversion h c t decode request observed output).mp live
+  · rw [pending]
+    apply (pending_termination_inversion h c t decode request {observed with state, trie} output).mpr
+    exact (pending_termination_inversion h c t decode request observed output).mp pending
 
 /-- The network answer has precedence over every later observation. -/
 theorem wrong_network_first (h : Hash) (c : Codec) (t : TrieCommit)
