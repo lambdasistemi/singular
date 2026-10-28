@@ -84,7 +84,7 @@ import Data.Map.Strict qualified as Map
 import Data.Ord (Down (..))
 import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
-import Data.Text.Encoding (decodeUtf8)
+import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Data.Unique (hashUnique, newUnique)
 import Lens.Micro ((&), (.~), (^.))
 import Ouroboros.Consensus.Cardano.Block
@@ -119,8 +119,10 @@ import Singular.Registry.Evidence
     , SessionBinding (..)
     , SessionId (..)
     )
+import Singular.Registry.Evidence qualified as Evidence
 import Singular.Registry.Ledger (Coin (..), ConwayEra)
 import Singular.Registry.LedgerProvider (Outputs, SubmitResult (..))
+import Singular.Registry.LedgerProvider qualified as LP
 import Singular.Registry.Private.Facade
     ( Facade (..)
     , GenesisFunding (..)
@@ -393,6 +395,9 @@ phaseLogOnDevnet =
                             (answer, trace, facts) <- withWrites (backendPhaseLog path) mempty settings $ \caps ->
                                 keepEvidence caps $ do
                                     answer <- Services.withLatest (capReads caps) $ \session -> do
+                                        network <- LP.servedNetwork session
+                                        fmap Evidence.value network
+                                            `shouldBe` Right (LP.Network (providerMagic settings))
                                         actual <- Services.outputsAt session (walletAddr wallet)
                                         expected <- independentOutputs oracle (walletAddr wallet)
                                         shouldBe actual expected
@@ -410,6 +415,9 @@ phaseLogOnDevnet =
                     withLogFile $ \path -> do
                         (trace, facts) <- withReads (backendPhaseLog path) mempty settings $ \caps -> keepEvidence caps $ do
                             Services.withLatest (capReads caps) $ \session -> do
+                                network <- LP.servedNetwork session
+                                fmap Evidence.value network
+                                    `shouldBe` Right (LP.Network (providerMagic settings))
                                 start <- Services.slotStart session 0
                                 converted <- Services.floorSlot session start
                                 shouldBe converted 0
@@ -519,7 +527,16 @@ phaseLogOnDevnet =
             Just (String "raw-time") -> pure "network-time"
             Just (String "raw-exchange") -> requiredText "call" row
             _ -> fail "the trace row is not an actual successful raw read"
-        -- Koios.Runtime measures raw reads as Answered Nothing: the public
-        -- phase log has no raw answer size or body-byte count. Reconcile the
-        -- fields it actually supplies, including the absent answer_size.
-        pure (Just identity, Just query, Nothing)
+        size <- case KeyMap.lookup "kind" row of
+            Just (String "raw-time") -> pure Nothing
+            _ -> case KeyMap.lookup "result" row of
+                Just (Object result) -> do
+                    body <- requiredText "bodyHex" result
+                    bytes <- either fail pure (B16.decode (encodeUtf8 body))
+                    value <- either fail pure (eitherDecodeStrict' bytes)
+                    pure
+                        ( Just
+                            (case value of Array entries -> fromIntegral (length entries); _ -> 1)
+                        )
+                _ -> fail "raw exchange lacks its answer"
+        pure (Just identity, Just query, size)

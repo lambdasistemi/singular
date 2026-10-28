@@ -126,7 +126,7 @@ forward transport request = do
                     "the forwarder knows no Koios call at this path"
                 )
         Just call -> do
-            Exchange _ result <-
+            Exchange{exchangeResult = result} <-
                 exchange transport (rawOf call request (BL.toStrict body))
             pure (answered result)
 

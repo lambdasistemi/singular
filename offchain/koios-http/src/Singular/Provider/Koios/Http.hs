@@ -95,6 +95,7 @@ import Singular.Provider.Koios.Client
     , RawRequest (..)
     , Retry (..)
     , Transport (..)
+    , answerWork
     )
 import Singular.Provider.Koios.Wire (Body (..), Method (..))
 
@@ -234,13 +235,19 @@ retrying
 retrying client retry action = do
     start <- getCurrentTime
     let cfg = clientConfig client
-        loop n = do
+        loop n prior = do
             now <- getCurrentTime
             let remaining = httpCallCeiling cfg - diffUTCTime now start
-            result <-
-                redact (clientBearer client)
-                    <$> action (min (httpTimeout cfg) remaining)
-            let done = pure Exchange{exchangeAttempts = n, exchangeResult = result}
+            raw <- action (min (httpTimeout cfg) remaining)
+            let work = prior <> answerWork raw
+                result = redact (clientBearer client) raw
+                done =
+                    pure
+                        Exchange
+                            { exchangeAttempts = n
+                            , exchangeResult = result
+                            , exchangeWork = work
+                            }
             case next cfg retry result of
                 Done -> done
                 step
@@ -254,8 +261,8 @@ retrying client retry action = do
                             then done
                             else do
                                 sleep delay
-                                loop (n + 1)
-    loop 1
+                                loop (n + 1) work
+    loop 1 mempty
 
 -- | Whether an attempt's result may be retried, and after which wait.
 next :: HttpConfig -> Retry -> Either NoAnswer Answer -> Next

@@ -65,10 +65,10 @@ import System.FilePath ((</>))
 
 import Singular.Provider.Koios.Client
     ( Answer (..)
-    , Exchange (..)
     , NoAnswer (..)
     , RawRequest (..)
     , Transport (..)
+    , singleExchange
     )
 import Singular.Provider.Koios.Wire
     ( Body (..)
@@ -280,14 +280,10 @@ loadFixtureSet dir =
 recordedTransport :: (Applicative m) => FixtureSet -> Transport m
 recordedTransport set = Transport $ \raw ->
     let key = fixtureRequestOf raw
-    in  pure
-            Exchange
-                { exchangeAttempts = 1
-                , exchangeResult =
-                    case find ((== key) . fixtureRequest) (setFixtures set) of
-                        Just f -> Right (fixtureAnswer f)
-                        Nothing -> Left (NoRecording (describe key))
-                }
+    in  pure . singleExchange $
+            case find ((== key) . fixtureRequest) (setFixtures set) of
+                Just f -> Right (fixtureAnswer f)
+                Nothing -> Left (NoRecording (describe key))
   where
     describe r =
         methodName (fixtureMethod r)

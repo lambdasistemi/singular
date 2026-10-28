@@ -327,6 +327,7 @@ library local-services
     , contra-tracer
     , crypton
     , directory
+    , file-embed                  >=0.0.16.0 && <0.1
     , filepath
     , memory
     , microlens

@@ -1,0 +1,70 @@
+{
+  "tasks-for-reading-a-key-from-the-registry-address": [
+    {
+      "text": "Tasks for reading a key from the registry address.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 744. Grouped by pull request and slice of the plan. A task is checked only after the ticket owner accepts its slice.",
+      "pause": 400
+    }
+  ],
+  "binding": [
+    {
+      "text": "Binding.",
+      "pause": 500
+    },
+    {
+      "text": "[x] questions-answered: the two open questions answered and the plan versioned.",
+      "pause": 300
+    },
+    {
+      "text": "[x] gate-synthesized: the ticket owner's and the auditor's gate tables joined once and frozen with both input hashes.",
+      "pause": 300
+    }
+  ],
+  "pull-request-1-provider-and-release-table": [
+    {
+      "text": "Pull request 1: provider and release table.",
+      "pause": 500
+    },
+    {
+      "text": "[x] provider-network-and-query-work: the network read and rows and bytes per call.",
+      "pause": 300
+    },
+    {
+      "text": "[x] application-from-state-policy: the applied state policy rows and the current build's row checked present.",
+      "pause": 300
+    }
+  ],
+  "pull-request-2-the-reader": [
+    {
+      "text": "Pull request 2: the reader.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] reader-statements: the reader definition and its statements, reviewed before proofs, proved, in the inventories.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] reader-library: live with one asset query, terminal and never registered from the trie, every refusal.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] reading-commands: both commands, help snapshots, parser rows, documented flags.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] devnet-reading-journey-and-refusals: the four answers, the measured lookup and the refusals with controls on devnet.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] conformance-and-documentation: the reading rows and the user pages.",
+      "pause": 300
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "8f9b8fe99716dbeddf8bcc6df9bfaa98def206561f369d207fd2ff94daaf776e"
+  }
+}

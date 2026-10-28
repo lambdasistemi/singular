@@ -67,6 +67,7 @@ providerEventJson = \case
             , "headers" .= Client.rawHeaders request
             , "body" .= bodyJson (Client.rawBody request)
             , "attempts" .= Client.exchangeAttempts exchange
+            , "work" .= Client.exchangeWork exchange
             , "result" .= case Client.exchangeResult exchange of
                 Left refusal -> object ["noAnswer" .= show refusal]
                 Right answer ->

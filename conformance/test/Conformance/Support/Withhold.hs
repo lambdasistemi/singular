@@ -85,7 +85,7 @@ ask w call verb path query body = do
     transport <-
         newHttpTransport (defaultHttpConfig (T.pack (withholdingUrl w)))
             >>= either (fail . show) pure
-    Exchange _ result <-
+    Exchange{exchangeResult = result} <-
         exchange
             transport
             RawRequest

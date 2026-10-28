@@ -41,6 +41,8 @@ module Singular.Provider.Koios.Client
     , Answer (..)
     , NoAnswer (..)
     , Exchange (..)
+    , answerWork
+    , singleExchange
     , rawRequest
 
       -- * Client
@@ -56,6 +58,7 @@ module Singular.Provider.Koios.Client
 
       -- * Calls
     , tip
+    , networkMagic
     , addressUtxos
     , assetUtxos
     , assetTxs
@@ -76,9 +79,10 @@ module Singular.Provider.Koios.Client
     , assetInfo
     ) where
 
-import Data.Aeson (Value)
+import Data.Aeson (Value (..), decodeStrict')
 import Data.Bifunctor (first)
 import Data.ByteString (ByteString)
+import Data.ByteString qualified as BS
 import Data.Foldable (toList)
 import Data.List (find)
 import Data.List.NonEmpty (NonEmpty)
@@ -97,6 +101,7 @@ import Cardano.Ledger.Hashes (ScriptHash)
 import Cardano.Ledger.Mary.Value (AssetName, PolicyID)
 import Cardano.Ledger.TxIn (TxId, TxIn)
 
+import Data.Word (Word32)
 import Singular.Provider.Koios.Wire
     ( AccountStatus (..)
     , AssetInfo
@@ -122,6 +127,7 @@ import Singular.Provider.Koios.Wire
     , decodeAssetTxs
     , decodeCliProtocolParams
     , decodeEpochParams
+    , decodeNetworkMagic
     , decodeReferenceScriptUtxos
     , decodeSubmitted
     , decodeTip
@@ -131,6 +137,7 @@ import Singular.Provider.Koios.Wire
     , decodeUtxoInfos
     , decodeUtxos
     , epochParamsRequest
+    , genesisRequest
     , parseBody
     , referenceScriptUtxosRequest
     , renderRewardAccount
@@ -142,6 +149,7 @@ import Singular.Provider.Koios.Wire
     , utxoInfoRequest
     )
 import Singular.Registry.Signing (SignedTx, signedTx)
+import Singular.Registry.Trace (QueryWork (..))
 
 -- | How a transport may retry a request.
 data Retry
@@ -215,8 +223,33 @@ data NoAnswer
 data Exchange = Exchange
     { exchangeAttempts :: Int
     , exchangeResult :: Either NoAnswer Answer
+    , exchangeWork :: QueryWork
+    -- ^ Complete response bodies measured at each attempt, before redaction.
     }
     deriving stock (Eq, Show)
+
+-- | One attempt with its complete answer or named failure.
+singleExchange :: Either NoAnswer Answer -> Exchange
+singleExchange result = Exchange 1 result (answerWork result)
+
+{- | One transport attempt's received work. Bytes count complete response
+bodies, without headers; rows count JSON array entries, or one JSON object
+or scalar. A malformed body retains its bytes and has zero decoded rows.
+An attempt without a complete answer has zero rows and bytes and still counts
+its call.
+-}
+answerWork :: Either NoAnswer Answer -> QueryWork
+answerWork result = QueryWork 1 rows bytes
+  where
+    (rows, bytes) = case result of
+        Left _ -> (0, 0)
+        Right response ->
+            let body = answerBody response
+                count = case decodeStrict' body of
+                    Just (Array entries) -> toInteger (length entries)
+                    Just _ -> 1
+                    Nothing -> 0
+            in  (count, toInteger (BS.length body))
 
 -- | One request to one raw answer, in any monad.
 newtype Transport m = Transport
@@ -535,6 +568,11 @@ eachAsked failure key ids result = do
 tip :: (Monad m) => Koios m -> m (Either ClientFailure Tip)
 tip k =
     firstOr (failing CallTip) UnknownTip <$> single k tipRequest decodeTip
+
+-- | The network magic read from the service's own genesis, never configuration.
+networkMagic
+    :: (Monad m) => Koios m -> m (Either ClientFailure Word32)
+networkMagic k = fmap snd <$> single k genesisRequest decodeNetworkMagic
 
 -- | Every output at the addresses, read page by page.
 addressUtxos

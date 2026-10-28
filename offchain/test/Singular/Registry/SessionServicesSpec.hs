@@ -55,6 +55,8 @@ rawSession
 rawSession context resolved =
     Session
         { sessionNetwork = Network 1
+        , servedNetwork =
+            pure (Left (BackendReadFailure "fixture supplies no served network"))
         , sessionId = SessionId "local-service-fixture"
         , sessionBinding = Unbound
         , sessionTracer = nullTracer

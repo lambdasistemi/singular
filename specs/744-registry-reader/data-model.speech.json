@@ -1,0 +1,40 @@
+{
+  "data-for-reading-a-key-from-the-registry-address": [
+    {
+      "text": "Data for reading a key from the registry address.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 744. Records the reader introduces or changes, their fields and their rules. Placement is in the modules model.",
+      "pause": 400
+    }
+  ],
+  "records": [
+    {
+      "text": "Records.",
+      "pause": 500
+    }
+  ],
+  "state-rules": [
+    {
+      "text": "State rules.",
+      "pause": 500
+    },
+    {
+      "text": "The active token's name is computed by the reader from the registry identity and the key; a token under another name or policy is not evidence about the key.",
+      "pause": 300
+    },
+    {
+      "text": "Live and pending require exactly one output holding exactly one active token, at the application's script; anything else is a refusal.",
+      "pause": 300
+    },
+    {
+      "text": "Terminal and never registered require the registry's state recognised under the state policy and the key's leaf read against that state's root; a missing token alone decides neither.",
+      "pause": 300
+    }
+  ],
+  "_source": {
+    "file": "data-model.md",
+    "sha256": "a09ad8af5d51a42b175d86bb5c468488eef63b827a5ecef1f60da1759c01b925"
+  }
+}

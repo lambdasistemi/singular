@@ -58,6 +58,8 @@ viewOf :: [(TxIn, TxOut ConwayEra)] -> Session NoWitness IO
 viewOf utxos =
     Session
         { sessionNetwork = Network 42
+        , servedNetwork =
+            pure (Left (BackendReadFailure "fixture supplies no served network"))
         , sessionId = SessionId "held-input-control"
         , sessionBinding = Unbound
         , sessionTracer = mempty

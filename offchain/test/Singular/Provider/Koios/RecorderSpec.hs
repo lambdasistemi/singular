@@ -79,6 +79,7 @@ requestSpec = describe "read requests" $ do
     isLeft' = either (const True) (const False)
     callNameOf = \case
         CallTip -> "tip"
+        CallGenesis -> "genesis"
         CallAddressUtxos -> "address_utxos"
         CallAssetUtxos -> "asset_utxos"
         CallAssetTxs -> "asset_txs"
@@ -97,6 +98,7 @@ requestSpec = describe "read requests" $ do
 samples :: [(Text, ReadCall)]
 samples =
     [ ("tip", ReadTip)
+    , ("genesis", ReadGenesis)
     ,
         ( "address_utxos:addr_test1vrm7e5nmgm9yul7dsl7l6v6ate6lpjjjnq6wqvkz0tpcweghrtrk6"
         , ReadAddressUtxos

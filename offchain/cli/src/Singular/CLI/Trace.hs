@@ -895,6 +895,7 @@ queryJson Query{..} =
     , "session" .= querySession
     , "elapsedMs" .= queryElapsed
     ]
+        <> maybe [] (\work -> ["work" .= work]) queryWork
         <> case queryEnd of
             Answered size -> ["outcome" .= ("answered" :: Text), "size" .= size]
             Lagged -> ["outcome" .= ("lagged" :: Text)]
@@ -1125,6 +1126,7 @@ howParser name o = case name of
             <*> o .:? "session"
             <*> o .: "elapsedMs"
             <*> pure end
+            <*> o .:? "work"
     openingParser = do
         view <- o .: "view"
         case view :: Text of

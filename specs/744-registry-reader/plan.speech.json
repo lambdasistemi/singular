@@ -1,0 +1,114 @@
+{
+  "plan-for-reading-a-key-from-the-registry-address": [
+    {
+      "text": "Plan for reading a key from the registry address.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 744. This page is for the people who implement and review the pull requests. It binds the model, the rulings, the pull requests and their slices, the answered questions and the seats. The story and the requirements are in the specification; the checks are in the gate.",
+      "pause": 400
+    }
+  ],
+  "lane": [
+    {
+      "text": "Lane.",
+      "pause": 500
+    }
+  ],
+  "lean-binding": [
+    {
+      "text": "Lean binding.",
+      "pause": 500
+    },
+    {
+      "text": "Lean is the authority. The code takes the models' vocabulary: PublishedRelease, Preimage.active, activeAsset, stateAsset, recognizeState, trieGet, Leaf.unknown, State.active, State.terminal, open datum's liveShape and its termination request shape.",
+      "pause": 400
+    },
+    {
+      "text": "No Lean declaration stated what a reader may conclude from an observation, and issue 741 left its observation tasks to this ticket. By the first answer this ticket adds them to the application-held models: one reader definition over the observed evidence, returning live holding, pending termination, terminal, never registered, unavailable, or refused (token outside application custody, foreign state policy), with statements that each answer implies its leaf and custody in every reachable world, that an empty or failed read never yields never registered or terminal, and that those two need the authenticated leaf, read as the trie lookup it is. The statements are reviewed at a checkpoint before their proofs; the reader's classification code binds to them by name.",
+      "pause": 400
+    }
+  ],
+  "rulings-in-force": [
+    {
+      "text": "Rulings in force.",
+      "pause": 500
+    },
+    {
+      "text": "Registry identity (issue 741 decisions, approvals bind the complete registry asset identity): a registry is its state policy and its state token name; the registry address of issue 728 spells exactly these two with the network.",
+      "pause": 300
+    },
+    {
+      "text": "Reader starting point (epic owner, 2026-10-24): the reader starts from the registry identity as the registry address spells it; absence of a token is not proof the key is unused.",
+      "pause": 300
+    },
+    {
+      "text": "Hashed names (ruling 2026-10-23, CBOR preimages): the active token's name is the hash of the CBOR preimage of the active role, the registry identity and the key; the reader computes it with the shared preimage codec.",
+      "pause": 300
+    },
+    {
+      "text": "Application-held termination (2026-10-23): a pending termination's request and token stay at the application's script.",
+      "pause": 300
+    },
+    {
+      "text": "The provider is the chain entry point (2026-10-20): every chain read goes through the session; a reader works from a web page, Koios and a wallet, with no local file.",
+      "pause": 300
+    },
+    {
+      "text": "The trie library's proofs are assumed sound.",
+      "pause": 300
+    }
+  ],
+  "pull-requests-and-slices": [
+    {
+      "text": "Pull requests and slices.",
+      "pause": 500
+    },
+    {
+      "text": "Each slice finishes in well under two hours with its own RED evidence and checkpoints; the commit owner may cut a slice smaller, never merge two. Pull request 1 carries the two slices that needed no answer; pull request 2 starts from its head.",
+      "pause": 400
+    }
+  ],
+  "consumers-to-run-before-the-first-push": [
+    {
+      "text": "Consumers to run before the first push.",
+      "pause": 500
+    },
+    {
+      "text": "a provider-layer change reaches open datum, conformance and node confinement: their tests run in the gate;",
+      "pause": 300
+    },
+    {
+      "text": "a new command reaches help snapshots, parser corpora, the documented flags check and the command reference;",
+      "pause": 300
+    },
+    {
+      "text": "a release table change reaches the table's freshness check and its control;",
+      "pause": 300
+    },
+    {
+      "text": "a Lean change reaches the models' check inventories, audits and their recipes.",
+      "pause": 300
+    }
+  ],
+  "answered-questions": [
+    {
+      "text": "Answered questions.",
+      "pause": 500
+    }
+  ],
+  "seats": [
+    {
+      "text": "Seats.",
+      "pause": 500
+    },
+    {
+      "text": "Operator, 2026-10-28, as issue 743's team: Claude Opus 5.5 high ticket owner; commit owner Codex gpt-6.1-sol high; commit auditor Muse xhigh, mute and persistent, in a read-only audit worktree. No other seats. The auditor writes its own gate table when seated; the ticket owner joins the two once and freezes the result before the commit owner starts.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "b5bb73570dbe4e4c41b2d7fb079adec5353e6aad006e4ab37b9e148ebe4058bb"
+  }
+}

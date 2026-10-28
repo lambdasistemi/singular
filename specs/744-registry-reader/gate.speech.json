@@ -1,0 +1,72 @@
+{
+  "gate-for-reading-a-key-from-the-registry-address": [
+    {
+      "text": "Gate for reading a key from the registry address.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 744. This page is for the commit owner, the auditor and the reviewers: each acceptance item, the hosted job and the verbatim command that proves it, and what each pull request must show. The requirements are in the specification and the pull requests in the plan.",
+      "pause": 400
+    }
+  ],
+  "rows": [
+    {
+      "text": "Rows.",
+      "pause": 500
+    },
+    {
+      "text": "The ticket owner's table, written before the auditor's. The auditor writes its own table independently when it is seated; the ticket owner joins the two once, records both input hashes and freezes the result in the runtime root before the commit owner starts. Every command is an existing hosted command, or one this ticket adds to a hosted job and marks \"CI change in this ticket\".",
+      "pause": 400
+    },
+    {
+      "text": "Rows run scoped to what each slice can break. just ci runs once on the final candidate of each pull request, then the push; hosted checks on the pull request head are the net. Every build or test runs in a named, memory-capped scope: systemd-run --user --scope --unit=t744-<what>-<n> -p MemoryMax=24G timeout 3600 <command>.",
+      "pause": 400
+    }
+  ],
+  "rows-per-pull-request": [
+    {
+      "text": "Rows per pull request.",
+      "pause": 500
+    }
+  ],
+  "evidence-the-pull-requests-will-carry": [
+    {
+      "text": "Evidence the pull requests will carry.",
+      "pause": 500
+    },
+    {
+      "text": "per conclusion and refusal: the test that executes it, the hosted step that runs it, and the RED run that showed it fail;",
+      "pause": 300
+    },
+    {
+      "text": "each reader statement, the checkpoint that reviewed it before its proof, and its proof;",
+      "pause": 300
+    },
+    {
+      "text": "the journey job's receipt: the four answers with their keys and the registry address, and the measured lookup (calls, rows, bytes) with the number of other holdings at the application's address;",
+      "pause": 300
+    },
+    {
+      "text": "the refusals job's receipt: each refusal and its control;",
+      "pause": 300
+    },
+    {
+      "text": "left uncovered, stated in the pull requests: member enumeration, browser delivery, batch limits (issue 746), release (issue 747), the network read of the other chain commands (issue 729).",
+      "pause": 300
+    }
+  ],
+  "synthesis": [
+    {
+      "text": "Synthesis.",
+      "pause": 500
+    },
+    {
+      "text": "The ticket owner's table and the auditor's independent table, written without reading this page, were joined once on 28 October 2026. The auditor's table added the provider contract suites (G13), the root model check (G14), the presentation check (G8) and the packaged-executable smoke (G15). It marked the devnet reading steps and refusals as needing new jobs; they are carried by extending the existing no-pin journey and refusals jobs, or by a new job of the same shape, as a CI change in this ticket. The refusal of a token at the state address is a unit test: no accepted transaction places the token there, so no devnet run can show it. The frozen table and both input hashes are kept with the ticket's working records.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "gate.md",
+    "sha256": "fe780ffc7b69102fcf689ac50742c56473a2e1de50a17163141cc0ed5f3ca094"
+  }
+}

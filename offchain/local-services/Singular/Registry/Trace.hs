@@ -23,6 +23,9 @@ module Singular.Registry.Trace
     , BackendEvent (..)
     , Query (..)
     , QueryEnd (..)
+    , QueryWork (..)
+    , QuerySummary (..)
+    , sessionQueryWork
     , ViewOpening (..)
     , ViewRelease (..)
     , Evaluation (..)
@@ -48,8 +51,17 @@ module Singular.Registry.Trace
 import Cardano.Ledger.Plutus (ExUnits (..))
 import Control.Exception (SomeException (..), throwIO, try)
 import Control.Tracer (Tracer, traceWith)
+import Data.Aeson
+    ( FromJSON (..)
+    , ToJSON (..)
+    , object
+    , withObject
+    , (.:)
+    , (.=)
+    )
 import Data.Data (Data)
 import Data.Either (rights)
+import Data.Foldable (fold)
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
 import Data.Text (Text)
@@ -105,8 +117,59 @@ data Query = Query
     , queryElapsed :: Double
     -- ^ Milliseconds
     , queryEnd :: QueryEnd
+    , queryWork :: Maybe QueryWork
+    -- ^ Transport answer measurements; absent for purely local computations.
     }
     deriving stock (Eq, Show, Data)
+
+-- | Work actually observed at the provider transport, including each page.
+data QueryWork = QueryWork
+    { workCalls :: Integer
+    , workRows :: Integer
+    , workBytes :: Integer
+    }
+    deriving stock (Eq, Show, Data)
+
+instance Semigroup QueryWork where
+    QueryWork ac ar ab <> QueryWork bc br bb = QueryWork (ac + bc) (ar + br) (ab + bb)
+
+instance Monoid QueryWork where
+    mempty = QueryWork 0 0 0
+
+instance ToJSON QueryWork where
+    toJSON work =
+        object
+            [ "calls" .= workCalls work
+            , "rows" .= workRows work
+            , "bytes" .= workBytes work
+            ]
+
+instance FromJSON QueryWork where
+    parseJSON = withObject "query work" $ \o -> do
+        work <- QueryWork <$> o .: "calls" <*> o .: "rows" <*> o .: "bytes"
+        if all (>= 0) [workCalls work, workRows work, workBytes work]
+            then pure work
+            else fail "query work cannot be negative"
+
+-- | Per-read work and its total, computed from one acquisition's events.
+data QuerySummary = QuerySummary
+    { perReadWork :: Map Text QueryWork
+    , totalWork :: QueryWork
+    }
+    deriving stock (Eq, Show)
+
+-- | Ignore other sessions and local events; every transport page contributes.
+sessionQueryWork :: Text -> [BackendEvent] -> QuerySummary
+sessionQueryWork identity events = QuerySummary perRead (fold perRead)
+  where
+    perRead =
+        Map.fromListWith
+            (<>)
+            [ (queryName q, work)
+            | Exchanged q <- events
+            , querySession q == Just identity
+            , Just work <- [queryWork q]
+            ]
 
 -- | How a read ended.
 data QueryEnd
@@ -263,6 +326,7 @@ tracedQuery tracer source session name size =
                 , querySession = session
                 , queryElapsed = ms
                 , queryEnd = either QueryFailed (Answered . size) end
+                , queryWork = Nothing
                 }
 
 -- | The current time, ISO-8601 UTC, to the millisecond.

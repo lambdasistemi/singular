@@ -1,0 +1,102 @@
+{
+  "read-a-key-and-identify-its-application-from-the-registry-address": [
+    {
+      "text": "Read a key and identify its application from the registry address.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 744, part of epic 731. This page is for a reader of a registry (an integrator such as Cardano KERI, an open-datum user) and for the people who review the pull requests. It records the story, the requirements, the refusals and the checks that prove them. It follows the update and termination ticket.",
+      "pause": 400
+    }
+  ],
+  "story": [
+    {
+      "text": "Story.",
+      "pause": 500
+    },
+    {
+      "text": "As a reader, I give a registry's address and a key, and I learn whether the key is live in that registry, which application it belongs to, and what its holding says, with one asset lookup and without trusting anything a creator wrote.",
+      "pause": 400
+    }
+  ],
+  "what-the-reader-answers": [
+    {
+      "text": "What the reader answers.",
+      "pause": 500
+    },
+    {
+      "text": "The five conclusions are those of issue 741's specification; the evidence each needs follows the observation contract.",
+      "pause": 400
+    },
+    {
+      "text": "The application is identified by the state policy: the state validator is applied to the application's policy, so each state policy belongs to one application, and the release table names it with its releases. The holding's datum is read and printed as plain data by singular registry inspect; open-datum inspect decodes it under open datum's rules (the plan).",
+      "pause": 400
+    }
+  ],
+  "requirements": [
+    {
+      "text": "Requirements.",
+      "pause": 500
+    },
+    {
+      "text": "reader-follows-the-model: the reader's conclusions implement the Lean statements this ticket binds (the plan); each conclusion and each refusal has an executable check seen to fail.",
+      "pause": 300
+    },
+    {
+      "text": "one-asset-query-when-live: a live key is answered with exactly one asset query to the provider, with no scan of the application's address and no read of the registry's history.",
+      "pause": 300
+    },
+    {
+      "text": "full-classification-when-absent: with no live token, the reader recognises the registry's state under the state policy and reads the key's leaf in its trie; terminal and never registered are distinguished there and nowhere else.",
+      "pause": 300
+    },
+    {
+      "text": "application-from-state-policy: the application and its releases are named from the state policy through the release table; the current build's applied state policy has its row.",
+      "pause": 300
+    },
+    {
+      "text": "refusals-never-absence: wrong network, unknown state policy, a token outside application custody (the state address included) and provider failure each produce a named refusal, never an absence and never a conclusion.",
+      "pause": 300
+    },
+    {
+      "text": "query-work-measured: the calls, rows and bytes of a known-key lookup are recorded on a development network where the application's address holds other registries' holdings, and published.",
+      "pause": 300
+    },
+    {
+      "text": "devnet-reading-journey: on a development network, through the packaged command, the reader answers live, pending termination, terminal and never registered for keys of the journey, from the registry address alone.",
+      "pause": 300
+    },
+    {
+      "text": "devnet-reading-refusals: on a development network, wrong network, unknown state policy and provider failure, each beside a passing control; the custody refusals are unit tests, since no accepted transaction moves the token out of custody.",
+      "pause": 300
+    },
+    {
+      "text": "conformance-and-documentation: the conformance suite carries the reading rows in requirement language, and the user documentation describes the command, in the same change.",
+      "pause": 300
+    },
+    {
+      "text": "hosted-checks-green: hosted checks green on each pull request into main.",
+      "pause": 300
+    }
+  ],
+  "refusals": [
+    {
+      "text": "Refusals.",
+      "pause": 500
+    }
+  ],
+  "out-of-scope": [
+    {
+      "text": "Out of scope.",
+      "pause": 500
+    },
+    {
+      "text": "Registry member enumeration, browser delivery (issues 580, 738), general reference discovery (issues 355, 473), batch limits (issue 746), integration and release (issue 747). The network read for every other chain command stays with issue 729; this ticket reads it for the reader.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "7c3e62c101186c01c507b06d070bef8fe4e4aa3e353e1bf24748fb2d1c8ba751"
+  }
+}
