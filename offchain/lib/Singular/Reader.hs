@@ -47,14 +47,22 @@ import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
 import Data.ByteString (ByteString)
 import Data.Map.Strict qualified as Map
 import Data.Text (Text)
+import Data.Text qualified as T
 import Lens.Micro ((^.))
 
 import Singular.Registry.ContractTable
     ( ApplicationIdentity (..)
     , ContractTable
+    , applicationOf
     )
+import Singular.Registry.Evidence (Evidenced (..))
 import Singular.Registry.Ledger (ConwayEra, Root (..), TxIn, TxOut)
-import Singular.Registry.LedgerProvider (Network, Session)
+import Singular.Registry.LedgerProvider
+    ( Network
+    , OutputQuery (..)
+    , ReadFailure (..)
+    , Session (..)
+    )
 import Singular.Registry.TrieState qualified as Trie
 import Singular.State.Lineage (registryAsset)
 import Singular.State.Preimage (activeTokenName)
@@ -227,4 +235,27 @@ readNeutralKeyFromSession
     -> ContractTable
     -> ReaderRequest
     -> m NeutralReaderAnswer
-readNeutralKeyFromSession _ _ _ = pure (Unavailable NetworkRead Missing)
+readNeutralKeyFromSession session table request = do
+    network <- providerRead <$> servedNetwork session
+    let observed =
+            ReaderObservation network release ReadMissing ReadMissing ReadMissing
+    case readNeutralKey request observed of
+        Unavailable ActiveOutputsRead Missing -> case registryAsset registry of
+            Nothing -> pure (Refused ConflictingEvidence)
+            Just (policy, _) -> do
+                active <-
+                    providerRead
+                        <$> outputs
+                            session
+                            (HoldingAsset (policy, activeTokenName registry (readerKey request)))
+                pure (readNeutralKey request observed{observedActiveOutputs = active})
+        answer -> pure answer
+  where
+    registry@(Trie.RegistryIdentity (Trie.StatePolicyId policyBytes) _) = readerRegistry request
+    release = applicationOf table policyBytes
+
+providerRead :: Either ReadFailure (Evidenced w a) -> ReaderRead a
+providerRead = either (ReadFailed . reason) (Complete . value)
+  where
+    reason (BackendReadFailure why) = why
+    reason failure = T.pack (show failure)
