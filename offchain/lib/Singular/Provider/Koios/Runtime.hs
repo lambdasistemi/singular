@@ -76,6 +76,7 @@ newIORuntime tracer sink = do
                                 , querySession = Just (identityText identity)
                                 , queryElapsed = ms
                                 , queryEnd = either QueryFailed (const (Answered Nothing)) end
+                                , queryWork = Nothing
                                 }
                     )
                     (do result <- action; sink (event result); pure result)

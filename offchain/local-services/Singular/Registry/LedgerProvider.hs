@@ -202,6 +202,8 @@ data Session w m = Session
     this session, typed: the build that owns the session reads it to say
     whether its scripts failed. Not a tracer: nothing renders it.
     -}
+    , servedNetwork :: m (Either ReadFailure (Evidenced w Network))
+    -- ^ Read the network the provider serves, independently of acquisition settings.
     , outputs :: OutputQuery -> m (Either ReadFailure (Evidenced w Outputs))
     , protocolParameters
         :: m (Either ReadFailure (Evidenced w (PParams ConwayEra)))

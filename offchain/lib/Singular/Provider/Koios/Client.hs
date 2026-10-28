@@ -56,6 +56,7 @@ module Singular.Provider.Koios.Client
 
       -- * Calls
     , tip
+    , networkMagic
     , addressUtxos
     , assetUtxos
     , assetTxs
@@ -97,6 +98,7 @@ import Cardano.Ledger.Hashes (ScriptHash)
 import Cardano.Ledger.Mary.Value (AssetName, PolicyID)
 import Cardano.Ledger.TxIn (TxId, TxIn)
 
+import Data.Word (Word32)
 import Singular.Provider.Koios.Wire
     ( AccountStatus (..)
     , AssetInfo
@@ -122,6 +124,7 @@ import Singular.Provider.Koios.Wire
     , decodeAssetTxs
     , decodeCliProtocolParams
     , decodeEpochParams
+    , decodeNetworkMagic
     , decodeReferenceScriptUtxos
     , decodeSubmitted
     , decodeTip
@@ -131,6 +134,7 @@ import Singular.Provider.Koios.Wire
     , decodeUtxoInfos
     , decodeUtxos
     , epochParamsRequest
+    , genesisRequest
     , parseBody
     , referenceScriptUtxosRequest
     , renderRewardAccount
@@ -535,6 +539,11 @@ eachAsked failure key ids result = do
 tip :: (Monad m) => Koios m -> m (Either ClientFailure Tip)
 tip k =
     firstOr (failing CallTip) UnknownTip <$> single k tipRequest decodeTip
+
+-- | The network magic read from the service's own genesis, never configuration.
+networkMagic
+    :: (Monad m) => Koios m -> m (Either ClientFailure Word32)
+networkMagic k = fmap snd <$> single k genesisRequest decodeNetworkMagic
 
 -- | Every output at the addresses, read page by page.
 addressUtxos

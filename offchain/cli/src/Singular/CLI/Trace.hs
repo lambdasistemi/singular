@@ -1125,6 +1125,7 @@ howParser name o = case name of
             <*> o .:? "session"
             <*> o .: "elapsedMs"
             <*> pure end
+            <*> pure Nothing
     openingParser = do
         view <- o .: "view"
         case view :: Text of

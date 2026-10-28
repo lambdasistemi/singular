@@ -157,6 +157,8 @@ koiosProvider runtime configured loadSource client =
                 , sessionBinding = Unbound
                 , sessionTracer = nullTracer
                 , sessionEvaluated = \_ -> pure ()
+                , servedNetwork =
+                    readFact (fmap (fmap Network) (Client.networkMagic scopedClient))
                 , outputs =
                     guarded
                         identity

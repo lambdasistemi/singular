@@ -123,7 +123,12 @@ observeSession
     => Verifier w m -> (FactRecord -> m ()) -> Session w m -> Session w m
 observeSession verifier sink session =
     session
-        { outputs = \query ->
+        { servedNetwork =
+            observed
+                "Served network"
+                (\(Network magic) -> toJSON magic)
+                (servedNetwork session)
+        , outputs = \query ->
             observed (Text.pack (show query)) outputsJson (outputs session query)
         , protocolParameters =
             observed "Protocol parameters" toJSON (protocolParameters session)

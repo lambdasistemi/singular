@@ -122,6 +122,8 @@ probeConfirmation output magic snapshot (SystemStart start) history horizon pp =
                             session =
                                 Session
                                     { sessionNetwork = Network magic
+                                    , servedNetwork =
+                                        pure (Left (BackendReadFailure "fixture supplies no served network"))
                                     , sessionId = identity
                                     , sessionBinding = Unbound
                                     , sessionTracer = nullTracer

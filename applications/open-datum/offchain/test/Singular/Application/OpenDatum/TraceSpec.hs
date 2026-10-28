@@ -411,6 +411,7 @@ foldStory =
                         (Just "koios-1")
                         401.0
                         (Answered Nothing)
+                        Nothing
                     )
                 )
             )
@@ -420,7 +421,14 @@ foldStory =
         ( How
             ( Read
                 ( Queried
-                    (Query "outputs" "Koios" (Just "koios-1") 402.5 (Answered (Just 3)))
+                    ( Query
+                        "outputs"
+                        "Koios"
+                        (Just "koios-1")
+                        402.5
+                        (Answered (Just 3))
+                        Nothing
+                    )
                 )
             )
         )
@@ -663,6 +671,7 @@ genQuery =
             , pure Lagged
             , QueryFailed <$> genClass
             ]
+        <*> pure Nothing
 
 genOpening :: Gen ViewOpening
 genOpening =
@@ -1192,22 +1201,33 @@ lineKinds :: [(Trace, Maybe [Text])]
 lineKinds =
     [ query
         ( Read
-            (Queried (Query "utxosAt" "node" Nothing 1.5 (Answered (Just 3))))
+            ( Queried
+                (Query "utxosAt" "node" Nothing 1.5 (Answered (Just 3)) Nothing)
+            )
         )
         answered
     , query
         ( Read
-            (Queried (Query "evaluateTx" "local" Nothing 1.5 (QueryFailed failure)))
+            ( Queried
+                (Query "evaluateTx" "local" Nothing 1.5 (QueryFailed failure) Nothing)
+            )
         )
         failedQuery
     , query
-        (Read (Queried (Query "indexAdmit" "node" Nothing 1.5 Lagged)))
+        (Read (Queried (Query "indexAdmit" "node" Nothing 1.5 Lagged Nothing)))
         answered
     ,
         ( how'
             ( Read
                 ( Queried
-                    (Query "outputs" "Koios" (Just "koios-1") 1.5 (Answered (Just 2)))
+                    ( Query
+                        "outputs"
+                        "Koios"
+                        (Just "koios-1")
+                        1.5
+                        (Answered (Just 2))
+                        Nothing
+                    )
                 )
             )
         , Nothing
@@ -1215,14 +1235,28 @@ lineKinds =
     , query
         ( Backend
             ( Exchanged
-                (Query "address_utxos" "Koios" (Just "koios-1") 1.5 (Answered Nothing))
+                ( Query
+                    "address_utxos"
+                    "Koios"
+                    (Just "koios-1")
+                    1.5
+                    (Answered Nothing)
+                    Nothing
+                )
             )
         )
         exchanged
     , query
         ( Backend
             ( Exchanged
-                (Query "tx_info" "Koios" (Just "koios-1") 1.5 (QueryFailed failure))
+                ( Query
+                    "tx_info"
+                    "Koios"
+                    (Just "koios-1")
+                    1.5
+                    (QueryFailed failure)
+                    Nothing
+                )
             )
         )
         (exchanged <> ["error_class"])

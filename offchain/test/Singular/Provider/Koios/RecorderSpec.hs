@@ -79,6 +79,7 @@ requestSpec = describe "read requests" $ do
     isLeft' = either (const True) (const False)
     callNameOf = \case
         CallTip -> "tip"
+        CallGenesis -> "genesis"
         CallAddressUtxos -> "address_utxos"
         CallAssetUtxos -> "asset_utxos"
         CallAssetTxs -> "asset_txs"

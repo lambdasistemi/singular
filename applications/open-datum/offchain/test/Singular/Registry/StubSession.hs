@@ -41,6 +41,8 @@ stubSession :: Session NoWitness IO
 stubSession =
     Session
         { sessionNetwork = Network 42
+        , servedNetwork =
+            pure (Left (BackendReadFailure "fixture supplies no served network"))
         , sessionId = SessionId "raw-builder-fixture"
         , sessionBinding = Unbound
         , sessionTracer = nullTracer

@@ -69,6 +69,7 @@ tracedLedgerProvider source tracer inner =
     traced s =
         s
             { sessionTracer = tracer
+            , servedNetwork = call s "servedNetwork" none (servedNetwork s)
             , outputs = call s "outputs" (Just . length . value) . outputs s
             , protocolParameters =
                 call s "protocolParameters" none (protocolParameters s)
@@ -96,6 +97,7 @@ tracedLedgerProvider source tracer inner =
                 , querySession = session
                 , queryElapsed = ms
                 , queryEnd = ended size end
+                , queryWork = Nothing
                 }
 
 -- | How a read that answers with a value or a failure ended.

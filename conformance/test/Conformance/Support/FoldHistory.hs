@@ -107,6 +107,9 @@ refusingSession :: IORef Int -> LP.Session () IO
 refusingSession calls =
     LP.Session
         { LP.sessionNetwork = LP.Network 42
+        , LP.servedNetwork =
+            pure
+                (Left (LP.BackendReadFailure "fixture supplies no served network"))
         , LP.sessionId = TS.SessionId "component"
         , LP.sessionBinding = TS.Unbound
         , LP.sessionTracer = mempty

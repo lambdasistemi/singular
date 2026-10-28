@@ -50,6 +50,7 @@ module Singular.Provider.Koios.Wire
     , Body (..)
     , Request (..)
     , tipRequest
+    , genesisRequest
     , addressUtxosRequest
     , assetUtxosRequest
     , assetTxsRequest
@@ -78,6 +79,7 @@ module Singular.Provider.Koios.Wire
     , DecodeFailure (..)
     , parseBody
     , decodeTip
+    , decodeNetworkMagic
     , decodeUtxos
     , decodeAssetTxs
     , decodeTxInfos
@@ -257,6 +259,7 @@ import Cardano.Tx.Ledger (ConwayTx)
 -- | The Koios calls this client makes.
 data Call
     = CallTip
+    | CallGenesis
     | CallAddressUtxos
     | CallAssetUtxos
     | CallAssetTxs
@@ -276,6 +279,7 @@ data Call
 callName :: Call -> Text
 callName = \case
     CallTip -> "tip"
+    CallGenesis -> "genesis"
     CallAddressUtxos -> "address_utxos"
     CallAssetUtxos -> "asset_utxos"
     CallAssetTxs -> "asset_txs"
@@ -342,6 +346,10 @@ byOutputReference = Just "tx_hash.asc,tx_index.asc"
 -- | @tip@: the chain tip.
 tipRequest :: Request 'Read
 tipRequest = request CallTip Get [] NoBody Nothing
+
+-- | The genesis of the network this service indexes.
+genesisRequest :: Request 'Read
+genesisRequest = request CallGenesis Get [] NoBody Nothing
 
 -- | @address_utxos@, extended, ordered by output reference.
 addressUtxosRequest :: [Addr] -> Request 'Read
@@ -629,6 +637,16 @@ rows p = withArray "rows" $ \arr ->
         (\i v -> withObject "row" p v <?> Index i)
         [0 ..]
         (toList arr)
+
+-- | Exactly one genesis row, with an unsigned 32-bit network magic.
+decodeNetworkMagic :: Value -> Either DecodeFailure Word32
+decodeNetworkMagic = runParser $ \v -> do
+    found <- rows (\o -> o .: "networkmagic" >>= integral) v
+    case found of
+        [magic]
+            | magic >= 0 && magic <= toInteger (maxBound :: Word32) ->
+                pure (fromInteger magic)
+        _ -> fail "genesis must name exactly one unsigned 32-bit network magic"
 
 {- | Decode a @tip@ answer: empty when Koios returned no row.
 Koios API 1.4.2, cardano-community/koios-artifacts revision

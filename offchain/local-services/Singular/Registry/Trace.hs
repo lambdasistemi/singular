@@ -23,6 +23,9 @@ module Singular.Registry.Trace
     , BackendEvent (..)
     , Query (..)
     , QueryEnd (..)
+    , QueryWork (..)
+    , QuerySummary (..)
+    , sessionQueryWork
     , ViewOpening (..)
     , ViewRelease (..)
     , Evaluation (..)
@@ -105,8 +108,44 @@ data Query = Query
     , queryElapsed :: Double
     -- ^ Milliseconds
     , queryEnd :: QueryEnd
+    , queryWork :: Maybe QueryWork
+    -- ^ Transport answer measurements; absent for purely local computations.
     }
     deriving stock (Eq, Show, Data)
+
+-- | Work actually observed at the provider transport, including each page.
+data QueryWork = QueryWork
+    { workCalls :: Integer
+    , workRows :: Integer
+    , workBytes :: Integer
+    }
+    deriving stock (Eq, Show, Data)
+
+instance Semigroup QueryWork where
+    QueryWork ac ar ab <> QueryWork bc br bb = QueryWork (ac + bc) (ar + br) (ab + bb)
+
+instance Monoid QueryWork where
+    mempty = QueryWork 0 0 0
+
+-- | Per-read work and its total, computed from one acquisition's events.
+data QuerySummary = QuerySummary
+    { perReadWork :: Map Text QueryWork
+    , totalWork :: QueryWork
+    }
+    deriving stock (Eq, Show)
+
+-- | Ignore other sessions and local events; every transport page contributes.
+sessionQueryWork :: Text -> [BackendEvent] -> QuerySummary
+sessionQueryWork identity events = QuerySummary perRead (foldMap id perRead)
+  where
+    perRead =
+        Map.fromListWith
+            (<>)
+            [ (queryName q, work)
+            | Exchanged q <- events
+            , querySession q == Just identity
+            , Just work <- [queryWork q]
+            ]
 
 -- | How a read ended.
 data QueryEnd
@@ -263,6 +302,7 @@ tracedQuery tracer source session name size =
                 , querySession = session
                 , queryElapsed = ms
                 , queryEnd = either QueryFailed (Answered . size) end
+                , queryWork = Nothing
                 }
 
 -- | The current time, ISO-8601 UTC, to the millisecond.

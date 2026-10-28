@@ -642,6 +642,14 @@ answer
     -> ByteString
     -> IO (Status, [(HeaderName, ByteString)], LBS.ByteString, Value)
 answer server request body
+    | rawPathInfo request == "/api/v1/genesis"
+    , requestMethod request == "GET" = do
+        genesis <-
+            either fail pure (eitherDecodeStrict' (serverGenesis server))
+        magic <-
+            parsed (withObject "generated genesis" (.: "networkMagic")) genesis
+        let value = [object ["networkmagic" .= (magic :: Word64)]]
+        pure (status200, [], encode value, genesis)
     | rawPathInfo request == "/api/v1/submittx"
     , requestMethod request == "POST" = do
         transaction <-
