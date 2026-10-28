@@ -404,7 +404,7 @@ layout model rows snap =
         , Section
             2
             "Permanent registration and termination"
-            [ "This bounded story targets the new permanent contract. Its evidence state is computed with the inventory below; historical broader receipts do not execute it. Exported script evaluation and the packaged ordinary CLI journey remain separate boundaries. The new release abandons earlier deployed registries; protected rejection follows this carve before the first milestone can close."
+            [ "This bounded story targets the new permanent contract. Its evidence state is computed with the inventory below; historical broader receipts do not execute it. Exported script evaluation and the packaged ordinary CLI journey remain separate boundaries. The new release abandons earlier deployed registries; requesters are protected by the application's signed reclaim and permissionless cleanup after expiry, with the same refunds."
             , ""
             , T.pack Permanent.description
             ]
