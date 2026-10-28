@@ -396,7 +396,8 @@ phaseLogOnDevnet =
                                 keepEvidence caps $ do
                                     answer <- Services.withLatest (capReads caps) $ \session -> do
                                         network <- LP.servedNetwork session
-                                        fmap value network `shouldBe` Right (LP.Network (providerMagic settings))
+                                        fmap value network
+                                            `shouldBe` Right (LP.Network (providerMagic settings))
                                         actual <- Services.outputsAt session (walletAddr wallet)
                                         expected <- independentOutputs oracle (walletAddr wallet)
                                         shouldBe actual expected
@@ -415,7 +416,8 @@ phaseLogOnDevnet =
                         (trace, facts) <- withReads (backendPhaseLog path) mempty settings $ \caps -> keepEvidence caps $ do
                             Services.withLatest (capReads caps) $ \session -> do
                                 network <- LP.servedNetwork session
-                                fmap value network `shouldBe` Right (LP.Network (providerMagic settings))
+                                fmap value network
+                                    `shouldBe` Right (LP.Network (providerMagic settings))
                                 start <- Services.slotStart session 0
                                 converted <- Services.floorSlot session start
                                 shouldBe converted 0
