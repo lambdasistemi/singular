@@ -1,17 +1,29 @@
 {
   "schemaVersion": 1,
-  "stage": "STATEMENTS-SPLIT",
+  "stage": "PROOFS",
   "accepted": false,
   "compiler": "Lean 4.27.0",
   "printer": "Lean.reprStr ConstantInfo.type; default Repr options",
   "surface": "SingularApplicationHeld.readKey",
   "driver": "models/singular-application-held/.lake/build/bin/reader",
   "corpus": "models/open-datum-application-held/reader-corpus.json",
-  "corpusSha256": "468fb036df5427d7791a9d0924579f2640ec015c04141293cbd55d370d2659f1",
+  "corpusSha256": "a9626b4ab6b4d5b2e3c000f350ed09976876319b69e33c045f24bee1005ad80f",
   "definitions": {
     "SingularApplicationHeld.readKey": {
       "typeSha256": "9d6a68d5e5aafcb8c4baca13bfcddacd9cb0e9bfa2b926dbbaa6df06e9b8206d",
-      "valueSha256": "1d3e5e223b0df145ef1c5c7d5f3d41200b829fdee4a7ed96f0df3834f8f9daf8"
+      "valueSha256": "9322f48db37b5972937511d7544e0bb5074288fa5271d42f54e8975b25ba2497"
+    },
+    "SingularApplicationHeld.readNeutralKey": {
+      "typeSha256": "a747586260cce3f6e3fac5d18a7b2f327764930c3a84d223d435c71e7f08a170",
+      "valueSha256": "20f5bd93c75f61c51022bcd5afe6b0fe37f2b7af3e88586d5933c9ed8a498cc9"
+    },
+    "SingularApplicationHeld.refineReaderAnswer": {
+      "typeSha256": "35e2a86d2327726fefb4c2d4726755028d798faa8a202e41a985701bb98027a4",
+      "valueSha256": "daf71d14d658e49038d6eb05fef34fdbc139b0a7e45d7281147bbdd7c100715b"
+    },
+    "SingularApplicationHeld.runNeutralReaderQuery": {
+      "typeSha256": "b78a36af3dee288d9f618db1a1500a6b9605f787a9285e96ca32d5f1a98bfa23",
+      "valueSha256": "6d894881436db354c7a82d0db4f82cbefc271dd0a170f6c27b127cb701ef4e18"
     },
     "SingularApplicationHeld.recognizeReaderState": {
       "typeSha256": "6b8939e121fd2e48441ecc1c0748b2696a25851c024cd18261591a1ee4125ffb",
@@ -28,384 +40,524 @@
   },
   "statements": [
     {
-      "name": "SingularApplicationHeld.ReaderStatements.active_outputs_unavailable",
-      "typeSha256": "e5889e7ad2299eca0d47441c907c3f55efb51a7c5f50583b4d81e97e50bd322d",
-      "observedAxioms": [
-        "propext",
-        "Quot.sound"
-      ],
+      "name": "SingularApplicationHeld.NeutralReaderStatements.trie_root_mismatch",
+      "typeSha256": "dd1ef06e9950cdc875df2300ed3f140dcc45b1dfe8aaf8e608cbf1e3499b7d62",
       "proofStatus": "PROVED",
-      "proposedWitness": "failed asset read",
-      "witnessCertification": "EXECUTED observation corpus case; no reachable-world certificate is claimed for refusal inputs",
-      "proposedMutant": "substitute an empty answer for a failed asset read",
-      "mutantStatus": "NOT-RUN"
-    },
-    {
-      "name": "SingularApplicationHeld.ReaderStatements.conflicting_outputs",
-      "typeSha256": "b857250e22f098ec6ab756d9709d9c93f821004b4145daa325b9276126753710",
-      "observedAxioms": [
-        "propext",
-        "Quot.sound"
-      ],
-      "proofStatus": "PROVED",
-      "proposedWitness": "two outputs",
-      "witnessCertification": "EXECUTED observation corpus case; no reachable-world certificate is claimed for refusal inputs",
-      "proposedMutant": "select the first of multiple token outputs",
-      "mutantStatus": "NOT-RUN"
-    },
-    {
-      "name": "SingularApplicationHeld.ReaderStatements.conflicting_quantity",
-      "typeSha256": "21144f4c90a378bb5c29f4795313eaabe0c513828926f6d30eb20453b7416745",
-      "observedAxioms": [
-        "propext",
-        "Quot.sound"
-      ],
-      "proofStatus": "PROVED",
-      "proposedWitness": "non-unit quantity",
-      "witnessCertification": "EXECUTED observation corpus case; no reachable-world certificate is claimed for refusal inputs",
-      "proposedMutant": "accept any positive quantity",
-      "mutantStatus": "NOT-RUN"
-    },
-    {
-      "name": "SingularApplicationHeld.ReaderStatements.foreign_state_policy",
-      "typeSha256": "fa6d5e4bb0b5724175a3dfec632ac5e5804cb81efa32590fa584e2a5beb3d4e6",
-      "observedAxioms": [
-        "propext",
-        "Quot.sound"
-      ],
-      "proofStatus": "PROVED",
-      "proposedWitness": "foreign state policy",
-      "witnessCertification": "EXECUTED observation corpus case; no reachable-world certificate is claimed for refusal inputs",
-      "proposedMutant": "drop the state-policy equality check",
-      "mutantStatus": "NOT-RUN"
-    },
-    {
-      "name": "SingularApplicationHeld.ReaderStatements.holding_answer_ignores_state",
-      "typeSha256": "39320feb05a82a3828ce00896db7c0d956774560bc195c662528522585135e8a",
       "observedAxioms": [
         "propext",
         "Quot.sound",
         "Classical.choice"
-      ],
-      "proofStatus": "PROVED",
-      "proposedWitness": "live",
-      "witnessCertification": "PROVED positive lifecycle witness; see the three concrete story certificates",
-      "proposedMutant": "require state evidence before a live answer",
-      "mutantStatus": "NOT-RUN"
+      ]
     },
     {
-      "name": "SingularApplicationHeld.ReaderStatements.invalid_live_control",
-      "typeSha256": "cde76f7cd9d6999ee22855cf349c76156804ab33d1df51ad8c52b080ee9fedad",
+      "name": "SingularApplicationHeld.NeutralReaderStatements.known_nonterminal_leaf_without_token",
+      "typeSha256": "ec7b53e033e1880013374a3913a8ecf5b00e588c8e633aca57b04baeb93a355a",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext",
+        "Quot.sound",
+        "Classical.choice"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.NeutralReaderStatements.foreign_state_policy",
+      "typeSha256": "1bfe11f6d12729bbd269e8c39d496863448a11bb53ca0cd6219d5cf09a57110b",
+      "proofStatus": "PROVED",
       "observedAxioms": [
         "propext",
         "Quot.sound"
-      ],
-      "proofStatus": "PROVED",
-      "proposedWitness": "uncovered live deposit",
-      "witnessCertification": "EXECUTED observation corpus case; no reachable-world certificate is claimed for refusal inputs",
-      "proposedMutant": "accept an uncovered live deposit",
-      "mutantStatus": "NOT-RUN"
+      ]
     },
     {
-      "name": "SingularApplicationHeld.ReaderStatements.known_nonterminal_leaf_without_token",
-      "typeSha256": "3cbc7b079358fb20f0a7d033b7794d10ccc987fa31db16f07164b4b00a195d00",
+      "name": "SingularApplicationHeld.NeutralReaderStatements.conflicting_quantity",
+      "typeSha256": "0f0139c7fe19009fb22b54a0c96e137cd4b9e99d6874b768dea84225c6d2d6d1",
+      "proofStatus": "PROVED",
       "observedAxioms": [
         "propext",
-        "Quot.sound",
-        "Classical.choice"
-      ],
-      "proofStatus": "PROVED",
-      "proposedWitness": "active leaf without token; known absent leaf without token",
-      "witnessCertification": "EXECUTED observation corpus case; no reachable-world certificate is claimed for refusal inputs",
-      "proposedMutant": "classify a known nonterminal leaf as an absence",
-      "mutantStatus": "NOT-RUN"
-    },
-    {
-      "name": "SingularApplicationHeld.ReaderStatements.live_inversion",
-      "typeSha256": "c0ebb185d046ab3c380ad9477c8371edd444f4a334884305932cbcc4398306f0",
-      "observedAxioms": [
-        "propext",
-        "Quot.sound",
-        "Classical.choice"
-      ],
-      "proofStatus": "PROVED",
-      "proposedWitness": "live",
-      "witnessCertification": "PROVED positive lifecycle witness; see the three concrete story certificates",
-      "proposedMutant": "drop the live deposit guard",
-      "mutantStatus": "NOT-RUN"
-    },
-    {
-      "name": "SingularApplicationHeld.ReaderStatements.live_sound",
-      "typeSha256": "58487f11141631fbcccd19371e810730a3d19eee4c6198245144a28c4902863c",
-      "observedAxioms": [
-        "propext",
-        "Quot.sound",
-        "Classical.choice"
-      ],
-      "proofStatus": "PROVED",
-      "proposedWitness": "live",
-      "witnessCertification": "PROVED positive lifecycle witness; see the three concrete story certificates",
-      "proposedMutant": "remove complete active-output correspondence to the reachable world",
-      "mutantStatus": "NOT-RUN"
-    },
-    {
-      "name": "SingularApplicationHeld.ReaderStatements.network_unavailable",
-      "typeSha256": "4852e8b3dd68bb66084440123f3d20713f36b41fb57434a2b4ecfaacf4ad21c8",
-      "observedAxioms": [
-        "propext"
-      ],
-      "proofStatus": "PROVED",
-      "proposedWitness": "failed network read",
-      "witnessCertification": "EXECUTED observation corpus case; no reachable-world certificate is claimed for refusal inputs",
-      "proposedMutant": "substitute a successful network answer for a failed read",
-      "mutantStatus": "NOT-RUN"
-    },
-    {
-      "name": "SingularApplicationHeld.ReaderStatements.never_registered_inversion",
-      "typeSha256": "e4f3e4ec9f22e7bcdadf00e8db4ffa371ee42ab5fee643ee3c5007a17d8fb3f6",
-      "observedAxioms": [
-        "propext",
-        "Quot.sound",
-        "Classical.choice"
-      ],
-      "proofStatus": "PROVED",
-      "proposedWitness": "never registered",
-      "witnessCertification": "PROVED positive lifecycle witness; see the three concrete story certificates",
-      "proposedMutant": "classify a terminal leaf as unknown",
-      "mutantStatus": "NOT-RUN"
+        "Quot.sound"
+      ]
     },
     {
       "name": "SingularApplicationHeld.ReaderStatements.never_registered_sound",
       "typeSha256": "ba53160e9a6c7d995a08988467e30cece4e9934ebbec614b6b86f030e1dd1a43",
+      "proofStatus": "PROVED",
       "observedAxioms": [
         "propext",
         "Quot.sound",
         "Classical.choice"
-      ],
-      "proofStatus": "PROVED",
-      "proposedWitness": "never registered",
-      "witnessCertification": "PROVED positive lifecycle witness; see the three concrete story certificates",
-      "proposedMutant": "remove trie correspondence to the reachable world",
-      "mutantStatus": "NOT-RUN"
-    },
-    {
-      "name": "SingularApplicationHeld.ReaderStatements.no_absence_from_missing_evidence",
-      "typeSha256": "ed6019985108944391cc0ffe223dacc68f7160c33f5382e3a96e663be780ad59",
-      "observedAxioms": [
-        "propext",
-        "Quot.sound",
-        "Classical.choice"
-      ],
-      "proofStatus": "PROVED",
-      "proposedWitness": "empty asset answer without state",
-      "witnessCertification": "EXECUTED observation corpus case; no reachable-world certificate is claimed for refusal inputs",
-      "proposedMutant": "return never registered on missing state evidence",
-      "mutantStatus": "NOT-RUN"
-    },
-    {
-      "name": "SingularApplicationHeld.ReaderStatements.pending_termination_inversion",
-      "typeSha256": "071f7f79a8ce75f3e3d48137ef95c201b760fa13e1dce0ea09641bfef60e9313",
-      "observedAxioms": [
-        "propext",
-        "Quot.sound",
-        "Classical.choice"
-      ],
-      "proofStatus": "PROVED",
-      "proposedWitness": "pending termination",
-      "witnessCertification": "PROVED positive lifecycle witness; see the three concrete story certificates",
-      "proposedMutant": "accept a live holding as a termination request",
-      "mutantStatus": "NOT-RUN"
-    },
-    {
-      "name": "SingularApplicationHeld.ReaderStatements.pending_termination_sound",
-      "typeSha256": "346d626f380252247e76642e1268f2707bd4e3b637075ddfc0ca9fd5ea1e1e7e",
-      "observedAxioms": [
-        "propext",
-        "Quot.sound",
-        "Classical.choice"
-      ],
-      "proofStatus": "PROVED",
-      "proposedWitness": "pending termination",
-      "witnessCertification": "PROVED positive lifecycle witness; see the three concrete story certificates",
-      "proposedMutant": "remove complete active-output correspondence to the reachable world",
-      "mutantStatus": "NOT-RUN"
-    },
-    {
-      "name": "SingularApplicationHeld.ReaderStatements.registration_is_not_a_holding",
-      "typeSha256": "f81b0a25d7e67c54fb3204c3cf6dcc3759f95d1b64b2daca1ddab0b3144a9764",
-      "observedAxioms": [
-        "propext",
-        "Quot.sound"
-      ],
-      "proofStatus": "PROVED",
-      "proposedWitness": "registration datum with active token",
-      "witnessCertification": "EXECUTED observation corpus case; no reachable-world certificate is claimed for refusal inputs",
-      "proposedMutant": "classify a registration datum as a live holding",
-      "mutantStatus": "NOT-RUN"
-    },
-    {
-      "name": "SingularApplicationHeld.ReaderStatements.state_not_found",
-      "typeSha256": "ab7108e74995c61a40db8766ea0b045902fa7ec3e158c684b44520668de49bf3",
-      "observedAxioms": [
-        "propext",
-        "Quot.sound"
-      ],
-      "proofStatus": "PROVED",
-      "proposedWitness": "state not found",
-      "witnessCertification": "EXECUTED observation corpus case; no reachable-world certificate is claimed for refusal inputs",
-      "proposedMutant": "turn a complete empty state answer into never registered",
-      "mutantStatus": "NOT-RUN"
-    },
-    {
-      "name": "SingularApplicationHeld.ReaderStatements.state_not_recognized",
-      "typeSha256": "3465f6408df33f3f44a964d2582f26be6d7a3fcc2e3a140d3ded81ea2c715602",
-      "observedAxioms": [
-        "propext",
-        "Quot.sound"
-      ],
-      "proofStatus": "PROVED",
-      "proposedWitness": "unrecognised state; state with extra assets",
-      "witnessCertification": "EXECUTED observation corpus case; no reachable-world certificate is claimed for refusal inputs",
-      "proposedMutant": "accept an unrecognised state output",
-      "mutantStatus": "NOT-RUN"
-    },
-    {
-      "name": "SingularApplicationHeld.ReaderStatements.state_recognition",
-      "typeSha256": "cf3f630cc3700a67800278c081c22c823ad74c28160442cf5c26abd40ddf9a72",
-      "observedAxioms": [
-        "propext",
-        "Quot.sound",
-        "Classical.choice"
-      ],
-      "proofStatus": "PROVED",
-      "proposedWitness": "terminal",
-      "witnessCertification": "PROVED positive lifecycle witness; see the three concrete story certificates",
-      "proposedMutant": "replace the single exact state asset check with a policy-only check",
-      "mutantStatus": "NOT-RUN"
-    },
-    {
-      "name": "SingularApplicationHeld.ReaderStatements.state_unavailable",
-      "typeSha256": "c665d6fe18d6e4f9d08dac10c32789584bfa715eceb7e01e205409e871a11302",
-      "observedAxioms": [
-        "propext",
-        "Quot.sound"
-      ],
-      "proofStatus": "PROVED",
-      "proposedWitness": "failed state read",
-      "witnessCertification": "EXECUTED observation corpus case; no reachable-world certificate is claimed for refusal inputs",
-      "proposedMutant": "substitute a successful state answer for a failed read",
-      "mutantStatus": "NOT-RUN"
-    },
-    {
-      "name": "SingularApplicationHeld.ReaderStatements.terminal_inversion",
-      "typeSha256": "5291e7ccd48d4617c17ab69f19d51842aca16b51d7f33a2d39c7e7c79d7db661",
-      "observedAxioms": [
-        "propext",
-        "Quot.sound",
-        "Classical.choice"
-      ],
-      "proofStatus": "PROVED",
-      "proposedWitness": "terminal",
-      "witnessCertification": "PROVED positive lifecycle witness; see the three concrete story certificates",
-      "proposedMutant": "classify a nonterminal leaf as terminal",
-      "mutantStatus": "NOT-RUN"
-    },
-    {
-      "name": "SingularApplicationHeld.ReaderStatements.terminal_sound",
-      "typeSha256": "980537e93b5b797a16451a60baf6517343228ae6b0603368fed22fdc0c9f9ccd",
-      "observedAxioms": [
-        "propext",
-        "Quot.sound",
-        "Classical.choice"
-      ],
-      "proofStatus": "PROVED",
-      "proposedWitness": "terminal",
-      "witnessCertification": "PROVED positive lifecycle witness; see the three concrete story certificates",
-      "proposedMutant": "remove trie correspondence to the reachable world",
-      "mutantStatus": "NOT-RUN"
-    },
-    {
-      "name": "SingularApplicationHeld.ReaderStatements.token_outside_custody",
-      "typeSha256": "76f9cb6d5353b4144b0baf9238fa7323cdb320c41b85c407662b2677a2288d65",
-      "observedAxioms": [
-        "propext",
-        "Quot.sound",
-        "Classical.choice"
-      ],
-      "proofStatus": "PROVED",
-      "proposedWitness": "token at state address",
-      "witnessCertification": "EXECUTED observation corpus case; no reachable-world certificate is claimed for refusal inputs",
-      "proposedMutant": "drop the application-custody guard",
-      "mutantStatus": "NOT-RUN"
-    },
-    {
-      "name": "SingularApplicationHeld.ReaderStatements.trie_root_mismatch",
-      "typeSha256": "c99f581269fdecfce6d1c318375ba41d185859dee4bf2d14a4b5d796461f2292",
-      "observedAxioms": [
-        "propext",
-        "Quot.sound",
-        "Classical.choice"
-      ],
-      "proofStatus": "PROVED",
-      "proposedWitness": "trie root mismatch",
-      "witnessCertification": "EXECUTED observation corpus case; no reachable-world certificate is claimed for refusal inputs",
-      "proposedMutant": "omit the state root and trie root equality",
-      "mutantStatus": "NOT-RUN"
-    },
-    {
-      "name": "SingularApplicationHeld.ReaderStatements.trie_unavailable",
-      "typeSha256": "78ec4357c2cae44ec21337b13d8d13fce189c97b788ffca9134336c54c589441",
-      "observedAxioms": [
-        "propext",
-        "Quot.sound"
-      ],
-      "proofStatus": "PROVED",
-      "proposedWitness": "failed trie read",
-      "witnessCertification": "EXECUTED observation corpus case; no reachable-world certificate is claimed for refusal inputs",
-      "proposedMutant": "substitute unknown for a failed trie read",
-      "mutantStatus": "NOT-RUN"
-    },
-    {
-      "name": "SingularApplicationHeld.ReaderStatements.undecodable_holding",
-      "typeSha256": "08cbe665608bdfd0f3eaa62deee2f21385b310a830c16bdfce7ee6d46cdcdb15",
-      "observedAxioms": [
-        "propext",
-        "Quot.sound"
-      ],
-      "proofStatus": "PROVED",
-      "proposedWitness": "unknown holding datum",
-      "witnessCertification": "EXECUTED observation corpus case; no reachable-world certificate is claimed for refusal inputs",
-      "proposedMutant": "accept an undecodable holding datum",
-      "mutantStatus": "NOT-RUN"
+      ]
     },
     {
       "name": "SingularApplicationHeld.ReaderStatements.unknown_state_policy",
       "typeSha256": "01d33c0697d6df30c549b2d374aa14002c87158a3fcea8fbbf019974e0df2781",
+      "proofStatus": "PROVED",
       "observedAxioms": [
         "propext",
         "Quot.sound"
-      ],
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.NeutralReaderStatements.application_keeps_unavailable",
+      "typeSha256": "d9f214db6a06249531ec71fd1e25a31b9eadfe07e322bb4319d77a6c7a7f8d1f",
       "proofStatus": "PROVED",
-      "proposedWitness": "unknown state policy",
-      "witnessCertification": "EXECUTED observation corpus case; no reachable-world certificate is claimed for refusal inputs",
-      "proposedMutant": "accept an absent release row",
-      "mutantStatus": "NOT-RUN"
+      "observedAxioms": [
+        "propext"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.no_absence_from_missing_evidence",
+      "typeSha256": "ed6019985108944391cc0ffe223dacc68f7160c33f5382e3a96e663be780ad59",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext",
+        "Quot.sound",
+        "Classical.choice"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.live_inversion",
+      "typeSha256": "c0ebb185d046ab3c380ad9477c8371edd444f4a334884305932cbcc4398306f0",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext",
+        "Quot.sound",
+        "Classical.choice"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.foreign_state_policy",
+      "typeSha256": "fa6d5e4bb0b5724175a3dfec632ac5e5804cb81efa32590fa584e2a5beb3d4e6",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.never_registered_inversion",
+      "typeSha256": "e4f3e4ec9f22e7bcdadf00e8db4ffa371ee42ab5fee643ee3c5007a17d8fb3f6",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext",
+        "Quot.sound",
+        "Classical.choice"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.known_nonterminal_leaf_without_token",
+      "typeSha256": "3cbc7b079358fb20f0a7d033b7794d10ccc987fa31db16f07164b4b00a195d00",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext",
+        "Quot.sound",
+        "Classical.choice"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.NeutralReaderStatements.never_registered_sound",
+      "typeSha256": "def29fc2b517c38a21cf8271669588ad1820103bdddc4941c8573228c7c46c7e",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext",
+        "Quot.sound",
+        "Classical.choice"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.NeutralReaderStatements.application_refines_neutral",
+      "typeSha256": "9489399179056f32311582463ed7de0e4b91f5dcc34f6fbc351e11ecbd467a79",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.invalid_live_control",
+      "typeSha256": "cde76f7cd9d6999ee22855cf349c76156804ab33d1df51ad8c52b080ee9fedad",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.token_outside_custody",
+      "typeSha256": "76f9cb6d5353b4144b0baf9238fa7323cdb320c41b85c407662b2677a2288d65",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext",
+        "Quot.sound",
+        "Classical.choice"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.state_not_recognized",
+      "typeSha256": "3465f6408df33f3f44a964d2582f26be6d7a3fcc2e3a140d3ded81ea2c715602",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.NeutralReaderStatements.conflicting_outputs",
+      "typeSha256": "3b5becb575a8ac08f9be287d703794f37617a537f1ba22268f80ebbe3b058c58",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.NeutralReaderStatements.active_inversion",
+      "typeSha256": "27ff286d67fb0e7c57d38a151e0474551b35b88594be0d9c09adc16f2ef07b50",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext",
+        "Quot.sound",
+        "Classical.choice"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.state_unavailable",
+      "typeSha256": "c665d6fe18d6e4f9d08dac10c32789584bfa715eceb7e01e205409e871a11302",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.terminal_inversion",
+      "typeSha256": "5291e7ccd48d4617c17ab69f19d51842aca16b51d7f33a2d39c7e7c79d7db661",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext",
+        "Quot.sound",
+        "Classical.choice"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.pending_termination_sound",
+      "typeSha256": "346d626f380252247e76642e1268f2707bd4e3b637075ddfc0ca9fd5ea1e1e7e",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext",
+        "Quot.sound",
+        "Classical.choice"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.holding_answer_ignores_state",
+      "typeSha256": "39320feb05a82a3828ce00896db7c0d956774560bc195c662528522585135e8a",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext",
+        "Quot.sound",
+        "Classical.choice"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.NeutralReaderStatements.no_absence_from_missing_evidence",
+      "typeSha256": "083254f1075dc12132d7ecb76bb949a815a84a8344ce3cc1af90bc05d6375364",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext",
+        "Quot.sound",
+        "Classical.choice"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.NeutralReaderStatements.active_outputs_unavailable",
+      "typeSha256": "978ebe9900759ffe75d51bdf68d9985347be8d5c0ffc314c822b325af1cdea4c",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.NeutralReaderStatements.wrong_network_first",
+      "typeSha256": "a176986b8ec21665a0b6fe698269615d9b2b59ffd74b6ccb125b932aca09790c",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.NeutralReaderStatements.holding_answer_ignores_state",
+      "typeSha256": "cd880233b2c8e6029f69f99402c8732f4b3717ae6e8953b38faa54e88bdbf577",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext",
+        "Quot.sound",
+        "Classical.choice"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.state_not_found",
+      "typeSha256": "ab7108e74995c61a40db8766ea0b045902fa7ec3e158c684b44520668de49bf3",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.state_recognition",
+      "typeSha256": "cf3f630cc3700a67800278c081c22c823ad74c28160442cf5c26abd40ddf9a72",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext",
+        "Quot.sound",
+        "Classical.choice"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.NeutralReaderStatements.network_unavailable",
+      "typeSha256": "1d1e43c0f232dddb18c1bf2aec5cd13927201a0fb90383e328c37bc4629363e7",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext"
+      ]
     },
     {
       "name": "SingularApplicationHeld.ReaderStatements.wrong_network_first",
       "typeSha256": "f63cc781f919b2bcb7205675f048e4cb9c4a7e5236975233a19bae0f5da4030a",
+      "proofStatus": "PROVED",
       "observedAxioms": [
         "propext",
         "Quot.sound"
-      ],
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.NeutralReaderStatements.state_not_recognized",
+      "typeSha256": "eed3a8554551f199e70e50558aeec7dd090ccc1da32db569f989754ab018ff34",
       "proofStatus": "PROVED",
-      "proposedWitness": "wrong network",
-      "witnessCertification": "EXECUTED observation corpus case; no reachable-world certificate is claimed for refusal inputs",
-      "proposedMutant": "move network rejection after the active-token branch",
-      "mutantStatus": "NOT-RUN"
+      "observedAxioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.NeutralReaderStatements.trie_unavailable",
+      "typeSha256": "79f889de18268bd8ff2e011a0f2a797fbcb98fbb5dbdc6abb9a934f682be8ae7",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.registration_is_not_a_holding",
+      "typeSha256": "f81b0a25d7e67c54fb3204c3cf6dcc3759f95d1b64b2daca1ddab0b3144a9764",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.conflicting_outputs",
+      "typeSha256": "b857250e22f098ec6ab756d9709d9c93f821004b4145daa325b9276126753710",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.NeutralReaderStatements.active_sound",
+      "typeSha256": "cb4928706ce8f790dbc8fe9adf1c1e313230a18aca94c50e5af23507a9db25c7",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext",
+        "Quot.sound",
+        "Classical.choice"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.NeutralReaderStatements.token_outside_custody",
+      "typeSha256": "1c04c2f4dad4dcd8acc32008a17593ddfdbed168e3d7fec5a39e29704806f2ed",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext",
+        "Quot.sound",
+        "Classical.choice"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.live_sound",
+      "typeSha256": "58487f11141631fbcccd19371e810730a3d19eee4c6198245144a28c4902863c",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext",
+        "Quot.sound",
+        "Classical.choice"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.trie_unavailable",
+      "typeSha256": "78ec4357c2cae44ec21337b13d8d13fce189c97b788ffca9134336c54c589441",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.NeutralReaderStatements.application_keeps_refusal",
+      "typeSha256": "9dac68be17232c46b96961b215e3aeebcf3e24c9617e4da5a25fa214f6ea0ed2",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.trie_root_mismatch",
+      "typeSha256": "c99f581269fdecfce6d1c318375ba41d185859dee4bf2d14a4b5d796461f2292",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext",
+        "Quot.sound",
+        "Classical.choice"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.NeutralReaderStatements.terminal_sound",
+      "typeSha256": "4fa10bf4294509db56ae47760e6c49a80fce7d7acfe97eb4392a6cf3ce3edcd1",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext",
+        "Quot.sound",
+        "Classical.choice"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.NeutralReaderStatements.terminal_inversion",
+      "typeSha256": "4a2d3bca38e486ae11163fc48e3b3d7c88e270abac625887c26f3c2aff9a066e",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext",
+        "Quot.sound",
+        "Classical.choice"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.NeutralReaderStatements.application_keeps_terminal",
+      "typeSha256": "7eb57378eed8ea582de1598d47a2741cfd7248bbdf0cf335fa8c774cf8c5471d",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.pending_termination_inversion",
+      "typeSha256": "071f7f79a8ce75f3e3d48137ef95c201b760fa13e1dce0ea09641bfef60e9313",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext",
+        "Quot.sound",
+        "Classical.choice"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.NeutralReaderStatements.unknown_state_policy",
+      "typeSha256": "9dfb69ce2d9195ebcee994c7ddf70a652d97a1eb575cd2ac8ab122d15d6fa9e3",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.NeutralReaderStatements.state_unavailable",
+      "typeSha256": "d2c7de22a8b6017b0e9e8f5c55bce7d2760c0b2c0b2aff5e1a1e467ed06dc6f4",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.network_unavailable",
+      "typeSha256": "4852e8b3dd68bb66084440123f3d20713f36b41fb57434a2b4ecfaacf4ad21c8",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.NeutralReaderStatements.application_keeps_never_registered",
+      "typeSha256": "bf1def602c10cab6975f3a6195b3f3b2074a91a5565382a329e9c5858ae0f931",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.terminal_sound",
+      "typeSha256": "980537e93b5b797a16451a60baf6517343228ae6b0603368fed22fdc0c9f9ccd",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext",
+        "Quot.sound",
+        "Classical.choice"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.NeutralReaderStatements.state_not_found",
+      "typeSha256": "16db68665f0f1abc106a6bd2a5883ec1ac7f9576da217319e4c3fb4c18fa825a",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.active_outputs_unavailable",
+      "typeSha256": "e5889e7ad2299eca0d47441c907c3f55efb51a7c5f50583b4d81e97e50bd322d",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.NeutralReaderStatements.never_registered_inversion",
+      "typeSha256": "6b3d10081b15d7a19559db42b2047346b04ca5aa42a1b41a6e9cf2a2826f86c6",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext",
+        "Quot.sound",
+        "Classical.choice"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.conflicting_quantity",
+      "typeSha256": "21144f4c90a378bb5c29f4795313eaabe0c513828926f6d30eb20453b7416745",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.ReaderStatements.undecodable_holding",
+      "typeSha256": "08cbe665608bdfd0f3eaa62deee2f21385b310a830c16bdfce7ee6d46cdcdb15",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext",
+        "Quot.sound"
+      ]
     }
   ],
-  "generated": true,
+  "generated": {
+    "method": "Native Lean environment types, standard axioms and walked definitions",
+    "reportSha256": "b6dd7f2acdab5db76e0722bc7ead045182e58cdbd0ef50876581d93a36f18a96",
+    "approvedStatementRevision": "a7d4f1b6fbc3e972ef29d0fa695dc1df5131d5d7"
+  },
   "doNotEdit": "Regenerate statement types and axioms from ReaderAudit and corpus answers from readerCorpus; witness and mutant plans are author proposals.",
   "generatedFrom": [
     "models/singular-application-held/lean/ReaderAuditCore.lean",
@@ -413,10 +565,35 @@
   ],
   "support": [
     {
+      "name": "SingularApplicationHeld.NeutralReaderStatements.instLawfulBEqTokenId_singularApplicationHeld",
+      "typeSha256": "e6faa9735ef127b4c9d901199be678eb16821b02e43eb41d5562b9e7af5fe53b",
+      "observedAxioms": [
+        "propext"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.NeutralReaderStatements.instLawfulBEqApplicationParameters",
+      "typeSha256": "d0d7d6728b0ab7b17d8747e37d0f4fa93baf264ee4678f8f1da1f2def014ff77",
+      "observedAxioms": [
+        "propext",
+        "Quot.sound",
+        "Classical.choice"
+      ]
+    },
+    {
       "name": "SingularApplicationHeld.ReaderStatements.instLawfulBEqTokenId_singularApplicationHeld",
       "typeSha256": "e6faa9735ef127b4c9d901199be678eb16821b02e43eb41d5562b9e7af5fe53b",
       "observedAxioms": [
         "propext"
+      ]
+    },
+    {
+      "name": "SingularApplicationHeld.NeutralReaderStatements.instLawfulBEqOutputDatum",
+      "typeSha256": "d33e3a6a8fb373399373d1d1175084b355cd6bb7b33679bbb3a4a5173c936175",
+      "observedAxioms": [
+        "propext",
+        "Quot.sound",
+        "Classical.choice"
       ]
     },
     {
@@ -1141,47 +1318,63 @@
     },
     "SingularApplicationHeld.readKey": {
       "typeSha256": "9d6a68d5e5aafcb8c4baca13bfcddacd9cb0e9bfa2b926dbbaa6df06e9b8206d",
-      "valueSha256": "1d3e5e223b0df145ef1c5c7d5f3d41200b829fdee4a7ed96f0df3834f8f9daf8"
+      "valueSha256": "9322f48db37b5972937511d7544e0bb5074288fa5271d42f54e8975b25ba2497"
     },
-    "SingularApplicationHeld.readKey.match_19": {
-      "typeSha256": "f0540bfb0f852eef88772ee69f3a9fcb8fb29ef761aa2f258c227bb4b5f1715a",
-      "valueSha256": "0b71f65454e9b10a3d65f44bb700fdaae0fe1e66778fd3e584780d4ae3fd064e"
+    "SingularApplicationHeld.refineReaderAnswer": {
+      "typeSha256": "35e2a86d2327726fefb4c2d4726755028d798faa8a202e41a985701bb98027a4",
+      "valueSha256": "daf71d14d658e49038d6eb05fef34fdbc139b0a7e45d7281147bbdd7c100715b"
     },
-    "SingularApplicationHeld.ReaderRead.casesOn": {
-      "typeSha256": "13daaa06e63d1884ea9063cd3910ca43193fa1af8d53507ab7f3eedeaf44db1f",
-      "valueSha256": "4af226f414160f9f446e7a01682750cb089e9b1be3bd30a42bc05150f149b0db"
-    },
-    "SingularApplicationHeld.ReaderRead.rec": {
-      "typeSha256": "4a67bed04c56192caf09d870841cbdc2964458221f8ae3037bbc796071124a3c",
+    "SingularApplicationHeld.NeutralReaderAnswer": {
+      "typeSha256": "b4611575b2b62eb57ff8b514cf96bf01666158b035ac2fcc89065136260d1e05",
       "valueSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
-    "SingularApplicationHeld.readKey.match_17": {
-      "typeSha256": "1a7d37ac1e607ff2a1e61804404526c58ca59005c2a91718648a73feb9ed79cd",
-      "valueSha256": "e9fbf72a7372bb21b64b9086ff24febc150fcf1148b7f05cc5620f50a36a7a43"
+    "SingularApplicationHeld.NeutralReaderAnswer.active": {
+      "typeSha256": "0537276005d76d45ced4340a18ae85a3a51aa0f6e4df52f56998d4a7771c8773",
+      "valueSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
-    "SingularApplicationHeld.readKey._sparseCasesOn_1": {
-      "typeSha256": "1cd32dc91f170fcf646e144d8af0fb1ba103a8c923c89477cd481b0999b080a2",
-      "valueSha256": "76424acce2c6635479ea81a1b4376c5be789caac2f33ea7c85450ee95fdf06a7"
+    "SingularApplicationHeld.NeutralReaderAnswer.terminal": {
+      "typeSha256": "84607abb7c0159ea8088c2307d81b910b1b403a4c130c59c6b51034fade4ec08",
+      "valueSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
-    "SingularApplicationHeld.readKey.match_15": {
-      "typeSha256": "37513f765d44dedf6e3860952fb05c10a2981cae145ba3caab69244200b32279",
-      "valueSha256": "e1a7e368ae72fd477325ab4270231f563f69c2bdedd556585b89c79947f5f347"
+    "SingularApplicationHeld.NeutralReaderAnswer.neverRegistered": {
+      "typeSha256": "84607abb7c0159ea8088c2307d81b910b1b403a4c130c59c6b51034fade4ec08",
+      "valueSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
-    "SingularApplicationHeld.readKey.match_12": {
-      "typeSha256": "0c6851a79acfb9907a60e60c1a0863f2d56917bb2fedf7ec61ebc3494d2fb9bc",
-      "valueSha256": "95812e9cec8c4a39fdb5172a0708ea5095b3b5f42ca2aa35805467586944ed8f"
+    "SingularApplicationHeld.NeutralReaderAnswer.unavailable": {
+      "typeSha256": "33713a328e91f7595431a58e22b0ef4a7c80d744805839387e2a45b5081a8c59",
+      "valueSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
-    "SingularApplicationHeld.readKey._sparseCasesOn_12": {
-      "typeSha256": "814a30a30753a82a2290617ad1535175514a7e5e35ae8695310bac22da002379",
-      "valueSha256": "76edfd06ce558ccab14fc2fac927b7455139bfe10f29ad94bd2e222b3984ba89"
+    "SingularApplicationHeld.NeutralReaderAnswer.refused": {
+      "typeSha256": "668b4444be26086901d8ed7eeb85b25acb5c30c3085d179824311387fb42a54b",
+      "valueSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
-    "SingularApplicationHeld.readKey.match_1": {
-      "typeSha256": "73ab8edd5b06384bd218720cb008479ad2b80f9f4b1e75789933182267a2c03f",
-      "valueSha256": "577602f4b3ec0a90ec808ad941e43aa68f022165664c79aed6fe9147a72fc5c5"
+    "SingularApplicationHeld.instReprNeutralReaderAnswer.repr.match_1": {
+      "typeSha256": "56ce30acffd575e458ece5066bc6f6d301651daa3001879e681d9fbcd83f54d4",
+      "valueSha256": "af8bee5de7c3a5fa78548b86d22b852ca0f701d36be9bb2a62fe6ac78e6718dc"
     },
-    "SingularApplicationHeld.readKey._sparseCasesOn_2": {
-      "typeSha256": "6c4ef088cdb9616eb08422a2eaa53f9e2be7e198c60f7b5538baaa982cab6d72",
-      "valueSha256": "845dc04774211c3491c08ce74c9467c1c1b6e0a93281e5a4774c386bfdc53abd"
+    "SingularApplicationHeld.NeutralReaderAnswer.casesOn": {
+      "typeSha256": "7466e95cd79efb49cdb45efba26f3007a33fa671d907b5760c82cd6cf4af566f",
+      "valueSha256": "28d007293dcb351548d1289efbbe83f370759b3bab7e4807b464d16e6936e068"
+    },
+    "SingularApplicationHeld.NeutralReaderAnswer.rec": {
+      "typeSha256": "3d8ada627501bc69600ae4c7c12e45b175feaca049fefdf4a289740540e4c5a6",
+      "valueSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "SingularApplicationHeld.readNeutralKey.match_13": {
+      "typeSha256": "706052ffd0755c1aad810eb90fdbf6cef92aca47406153422e9c513d39d23d39",
+      "valueSha256": "7c20a44ffad8165c3372f2486b6341a8911ae6c01cdfd98004762db2b0e93546"
+    },
+    "SingularApplicationHeld.readNeutralKey._sparseCasesOn_13": {
+      "typeSha256": "2baad50fc6fdf94812b95a64c9d52b11660b365610b7f5bb40c18dd2d9ba64be",
+      "valueSha256": "3d05e7c1eacd0ba6d758dc6ccd89a08c538b04d73dbb81e5e9d8167383030a4b"
+    },
+    "SingularApplicationHeld.refineReaderAnswer.match_1": {
+      "typeSha256": "cf878c7d0a9da66602983d7ad449649fa623172da4a6734ac1033c20b43aa6b2",
+      "valueSha256": "5a3a67a21e6c765c88bad887c47cb759cef0f13b601984cd490a26e8b5fd4370"
+    },
+    "SingularApplicationHeld.refineReaderAnswer._sparseCasesOn_1": {
+      "typeSha256": "8bb1373265accf1d9bee87c3b7dedd01b06ba35a6c1f7ba23d8d1c1d798a2ab6",
+      "valueSha256": "fc44c63ae57c26c4fd1273328ac339d5aa6fb9ff6cfb05487bc71669949028d6"
     },
     "SingularApplicationHeld.ApplicationDatum.ctorIdx": {
       "typeSha256": "0e238132e84b65009c8b8d9fce388cc14cfcda8f86c90f7d42092a798cb00d36",
@@ -1471,21 +1664,49 @@
       "typeSha256": "bb6668c43ce46b417024738be3159bfa412c5086f70f597cc514335a0377b2c0",
       "valueSha256": "5622d35f18f0d891411ebe3dfc000fe6c769e26579bc374e0f1a901d09ec78cb"
     },
-    "SingularApplicationHeld.readKey.match_10": {
-      "typeSha256": "e6b6346ba436aa88472b57e5a9b6de5aa9cfa8ee5722c3162af9a429f4d2eab1",
-      "valueSha256": "65ee26ff096299ac590e5e69df6f8ad161ee250f7ce8d1af6f39eb320c3e65bb"
+    "SingularApplicationHeld.readNeutralKey": {
+      "typeSha256": "a747586260cce3f6e3fac5d18a7b2f327764930c3a84d223d435c71e7f08a170",
+      "valueSha256": "20f5bd93c75f61c51022bcd5afe6b0fe37f2b7af3e88586d5933c9ed8a498cc9"
     },
-    "SingularApplicationHeld.readKey.match_8": {
-      "typeSha256": "634d68637eff649384af722b2bb25e7cbc87e5d097dacfd0217cb08262a0bd4d",
-      "valueSha256": "87148266567fc55755929f18455b6f469c5e3374b05db0be96d65e1e6f466967"
+    "SingularApplicationHeld.readNeutralKey.match_16": {
+      "typeSha256": "e49947595ae7abacafa578fa9f768587ee9aefac741fcb6a2379f14ea1e59422",
+      "valueSha256": "1c4bace7654a2328b81aeaef87684ec76fb8e676f5bb9b1a321c8467749f800f"
     },
-    "SingularApplicationHeld.readKey.match_5": {
-      "typeSha256": "d9c9345eaa5b48f01f29d90412aece47df0d9748c241edef28f2685b9843c151",
-      "valueSha256": "6639257f0bdefe6e3769f2aef01533d627f49e322c8b09481f64c23fd1367a4b"
+    "SingularApplicationHeld.ReaderRead.casesOn": {
+      "typeSha256": "13daaa06e63d1884ea9063cd3910ca43193fa1af8d53507ab7f3eedeaf44db1f",
+      "valueSha256": "4af226f414160f9f446e7a01682750cb089e9b1be3bd30a42bc05150f149b0db"
     },
-    "SingularApplicationHeld.readKey._sparseCasesOn_5": {
-      "typeSha256": "60c87640e688d157f90c5970106d7b2edf4e06b7e1e7b89eea7cd78b2175ea30",
-      "valueSha256": "b89ba898ac54696b49d7066910cfb31d219303182bd19e93d02ab7796d164885"
+    "SingularApplicationHeld.ReaderRead.rec": {
+      "typeSha256": "4a67bed04c56192caf09d870841cbdc2964458221f8ae3037bbc796071124a3c",
+      "valueSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "SingularApplicationHeld.readNeutralKey.match_11": {
+      "typeSha256": "1b03dcd092caaf5b610b1f9877de8bb334e89f932dbc6c4735fb4013ca3cc87b",
+      "valueSha256": "7f66ee7eafab31f830fd007fceecc1754cfb54a09e220448c7795eac95b053d2"
+    },
+    "SingularApplicationHeld.readNeutralKey.match_8": {
+      "typeSha256": "b3e9260290d321d489d1e88148d448acc9dc1399892663257ad00677fbca1f19",
+      "valueSha256": "4698ee154f058bf7501319d2ebdff5c6c2b9d9e5eb1c37fabc0a32b45429d272"
+    },
+    "SingularApplicationHeld.readNeutralKey._sparseCasesOn_8": {
+      "typeSha256": "cbc8bf24f1c69fe99fae018490e1d807b38ee4cb9d63dd442df3699628b51214",
+      "valueSha256": "499b19bd04a7997b29cc9134cb2cf4328a9692f6f24ff4564888a4802f1ef7ce"
+    },
+    "SingularApplicationHeld.readNeutralKey.match_6": {
+      "typeSha256": "d47f2daabc70ea92ad58f5a4e30cef21d498b3feb31e537009e9df4fce1b5e95",
+      "valueSha256": "bbe6667d95ecf4bf5dca69e6737b78c6897d9c369630a35a3654bef80d974feb"
+    },
+    "SingularApplicationHeld.readNeutralKey.match_4": {
+      "typeSha256": "b67afd11f34dea3fb0434b69d67505d918d94417c313974a197face5f0e58671",
+      "valueSha256": "fbde78dcf3595bcfe92f55890444cb2c3d3cd5861860164e5d1e50f91ec9d537"
+    },
+    "SingularApplicationHeld.readNeutralKey.match_1": {
+      "typeSha256": "7ceb8878e7e2e4c591dfe4b4d5af30ff9a4b50f285e7d90a55cf6070464fc803",
+      "valueSha256": "97eb186f80c9c405c9e4c5dddfad216ddacd62c558a2682a6c0d648f798c52e6"
+    },
+    "SingularApplicationHeld.readNeutralKey._sparseCasesOn_1": {
+      "typeSha256": "02d7e89c372a916a5ccd2bdd86628c5bdd91c9d5f868f5d4b18834b2f9c2d06b",
+      "valueSha256": "e69f6c2f875ada11a91e42289ada34bf736fc0468a1f097f75c7da924dfa2a47"
     },
     "Singular.trieGet": {
       "typeSha256": "cdce4174f9485320f4c52a45adde9ea48afb4c7077ad61da86f3a41ba5b102b3",
@@ -1554,6 +1775,10 @@
     "SingularApplicationHeld.CandidateWorld.spentReferences": {
       "typeSha256": "706b36004b2d38eb7f925dee8bcb50c904445b9abd0a3e7fa7a6fcd6f9fc38b6",
       "valueSha256": "3f41421dac7b7b3cae917aae5c15c669fd99922241824281646bab00d8661476"
+    },
+    "SingularApplicationHeld.runNeutralReaderQuery": {
+      "typeSha256": "b78a36af3dee288d9f618db1a1500a6b9605f787a9285e96ca32d5f1a98bfa23",
+      "valueSha256": "6d894881436db354c7a82d0db4f82cbefc271dd0a170f6c27b127cb701ef4e18"
     },
     "SingularApplicationHeld.ReaderRead.unavailableReason": {
       "typeSha256": "426784e7706bb2b84aa95d70cca9aab65f726ea625737e23051fb94eb7da1856",
@@ -2179,6 +2404,22 @@
       "typeSha256": "447c9c7375b7de3e07b79698a5c5ef05f4e0948d2877e81940a949561e1dc500",
       "valueSha256": "2d7cb1e19f1fa9de3a1a93f9ae055afdf536514a278ce0effa7d29b19ed9bf5f"
     },
+    "SingularApplicationHeld.NeutralReaderAnswer.isAbsence": {
+      "typeSha256": "e477968590977496bc8c97a0b811b82b118228386c203ff6bfbcf15ada7d8a98",
+      "valueSha256": "b6a3e69ddd764500334a780e81ec483c92006916ff62071a8dcad5840faab1de"
+    },
+    "SingularApplicationHeld.NeutralReaderAnswer.isAbsence.match_1": {
+      "typeSha256": "112c1b99cc1fdfd8d43a309cdccdf99ca85b83f60373c778484adca5e98cae06",
+      "valueSha256": "a1b1b69c91c4adb06144c7feae11b73041f898b677a712dfe41e2c6534aaf19d"
+    },
+    "SingularApplicationHeld.NeutralReaderAnswer.isAbsence._sparseCasesOn_1": {
+      "typeSha256": "0208caa8790a74e8b1109797dfba94a108207a770d27d3baf3035a7d01ca5ef5",
+      "valueSha256": "ef92307002228aca7a6bd1be6484602d625cfc2d1924a547cb99d50b5fea51fa"
+    },
+    "SingularApplicationHeld.NeutralReaderAnswer.ctorIdx": {
+      "typeSha256": "d805a451f0f19dae41184ed01bc8eae41ac2aec87fa4e062233fd7585c2dc322",
+      "valueSha256": "4210a388e10c1bfe33c48b1a205a945770a27d1bc40569d70af837b3d936edd6"
+    },
     "SingularApplicationHeld.ReaderAnswer.isAbsence": {
       "typeSha256": "a1fa1502e446f4f781295a0393e93513afa2cce328ddc0c67f3318c071e2e318",
       "valueSha256": "e2c50298f814f6b70a9d0c9e562ab941c43a9f421c14c1aa3aa43783d3a62505"
@@ -2206,12 +2447,16 @@
   },
   "closureMode": "shared",
   "proofSourceHashes": {
-    "models/singular-application-held/lean/SingularApplicationHeld/Reader.lean": "a069a0c7e4d7f21acbaa571012a19aa53d64feef9f17e4a2ed4ff31f384369d4",
-    "models/singular-application-held/lean/SingularApplicationHeld/ReaderQuery.lean": "361e1bda084ffcaabfb9dd76ee9874885e1967f40d11d4946c4f1eb12b191c3a",
-    "models/singular-application-held/lean/SingularApplicationHeld/ReaderStatements.lean": "8f93b0d16f24f730f22e5271413f97bc1edefa3758b0929a909f5adc59014fe8",
-    "models/singular-application-held/lean/ReaderMain.lean": "8e4a04874fe5a4e8953d61f54a1ee1df66c5c10fb1eb52eb8805d82bdcfecd69"
+    "models/singular-application-held/lean/SingularApplicationHeld/Reader.lean": "7face73c07f98bfdc1451bdb4fc522c95bda168a39168025837f8d143d055ab5",
+    "models/singular-application-held/lean/SingularApplicationHeld/ReaderQuery.lean": "af038eea4f499a12a39b91ed0ea37df8298e5777afd1470aff802b4d8fc2c7a6",
+    "models/singular-application-held/lean/SingularApplicationHeld/ReaderStatements.lean": "42589684bf8b98b82b2d20957a1c73416be0cca59fee703b6278d189c8cbca7d",
+    "models/singular-application-held/lean/ReaderMain.lean": "8e4a04874fe5a4e8953d61f54a1ee1df66c5c10fb1eb52eb8805d82bdcfecd69",
+    "models/singular-application-held/lean/SingularApplicationHeld/NeutralReaderStatements.lean": "24dc9ef606b4028a28a9663ff7515b5ebf9c7f1368ed919f29c61a91133d4f90"
   },
-  "priorProofSnapshotRevision": "d03147a7cebc1f7264bd3fb4433cda3ca696edc1",
-  "currentInventory": "models/singular-application-held/reader-split-statements.json",
-  "downstreamStatus": "REOPENED: the previous proof snapshot is retained, and current split statements await independent statement review and subsequent proof-stage inventory integration"
+  "surfaces": {
+    "neutral": "SingularApplicationHeld.readNeutralKey",
+    "application": "SingularApplicationHeld.readKey",
+    "refinement": "SingularApplicationHeld.refineReaderAnswer"
+  },
+  "neutralDriver": "models/singular-application-held/.lake/build/bin/neutralReader"
 }

@@ -236,6 +236,6 @@ theorem neutral_story_answers :
     readNeutralKey hash code commit request terminal = .terminal ⟨terminalFold.after.state, terminalFold.after.trie⟩ ∧
     readNeutralKey hash code commit {request with key := 9} neverRegistered =
       .neverRegistered ⟨terminalFold.after.state, terminalFold.after.trie⟩ := by
-  sorry
+  decide
 
 end OpenDatumApplicationHeld.ReaderFixtures

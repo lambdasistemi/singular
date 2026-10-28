@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "stage": "STATEMENTS-SPLIT",
+  "stage": "PROOFS",
   "accepted": false,
   "compiler": "Lean 4.27.0",
   "against": "9d51ddf9917100eda4238a9e3937f9b758d2da9f",
@@ -10,24 +10,23 @@
     "added": 28,
     "removed": 0
   },
-  "scope": "Neutral active custody plus application refinement. Kept means identical compiled theorem type and standard-axiom proof; readKey is definitionally composed from the neutral reader and refinement, and its existing proofs were repaired only by unfolding those definitions. Added statements intentionally retain sorryAx pending statement review. The behavioral definition closure changes under the two-layer ruling.",
+  "scope": "Neutral active custody and application refinement at the independently reviewed statement split. All 61 compiled types retain their approved hashes; all proofs have standard axioms. This creator candidate does not grant independent proof or implementation acceptance.",
   "sources": {
     "models/singular-application-held/lean/SingularApplicationHeld/Reader.lean": "7face73c07f98bfdc1451bdb4fc522c95bda168a39168025837f8d143d055ab5",
     "models/singular-application-held/lean/SingularApplicationHeld/ReaderStatements.lean": "42589684bf8b98b82b2d20957a1c73416be0cca59fee703b6278d189c8cbca7d",
-    "models/singular-application-held/lean/SingularApplicationHeld/NeutralReaderStatements.lean": "d69e44d043dbf483b5f46ca68263b8a9462696435a5b4edc079a516133879fb6",
+    "models/singular-application-held/lean/SingularApplicationHeld/NeutralReaderStatements.lean": "24dc9ef606b4028a28a9663ff7515b5ebf9c7f1368ed919f29c61a91133d4f90",
     "models/singular-application-held/lean/SingularApplicationHeld/ReaderQuery.lean": "af038eea4f499a12a39b91ed0ea37df8298e5777afd1470aff802b4d8fc2c7a6",
     "models/open-datum-application-held/lean/OpenDatumApplicationHeld/ReaderStatements.lean": "6f36d3741f8005895088ff70667b4c62e42c4b52fe702556be22b33fe371fd2b",
-    "models/open-datum-application-held/lean/OpenDatumApplicationHeld/ReaderFixtures.lean": "3e852a8384ae4bf05e48425b7344e008eac444705dc67d8349a533ecfc796708"
+    "models/open-datum-application-held/lean/OpenDatumApplicationHeld/ReaderFixtures.lean": "c1435698060d4cb30d4a6840ccc1141d6581fbc1b4b3bb71704ab228978a14ec"
   },
   "statements": [
     {
       "name": "OpenDatumApplicationHeld.ReaderFixtures.neutral_story_answers",
       "classification": "added",
       "typeSha256": "2ca1499417437d53c582f9e78889dc160d952fb4a801653a76f84909b2f28649",
-      "proofStatus": "OPEN",
+      "proofStatus": "PROVED",
       "observedAxioms": [
-        "propext",
-        "sorryAx"
+        "propext"
       ]
     },
     {
@@ -87,270 +86,275 @@
       "name": "SingularApplicationHeld.NeutralReaderStatements.active_inversion",
       "classification": "added",
       "typeSha256": "27ff286d67fb0e7c57d38a151e0474551b35b88594be0d9c09adc16f2ef07b50",
-      "proofStatus": "OPEN",
+      "proofStatus": "PROVED",
       "observedAxioms": [
         "propext",
-        "sorryAx"
+        "Quot.sound",
+        "Classical.choice"
       ]
     },
     {
       "name": "SingularApplicationHeld.NeutralReaderStatements.active_outputs_unavailable",
       "classification": "added",
       "typeSha256": "978ebe9900759ffe75d51bdf68d9985347be8d5c0ffc314c822b325af1cdea4c",
-      "proofStatus": "OPEN",
+      "proofStatus": "PROVED",
       "observedAxioms": [
         "propext",
-        "sorryAx"
+        "Quot.sound"
       ]
     },
     {
       "name": "SingularApplicationHeld.NeutralReaderStatements.active_sound",
       "classification": "added",
       "typeSha256": "cb4928706ce8f790dbc8fe9adf1c1e313230a18aca94c50e5af23507a9db25c7",
-      "proofStatus": "OPEN",
+      "proofStatus": "PROVED",
       "observedAxioms": [
         "propext",
-        "sorryAx"
+        "Quot.sound",
+        "Classical.choice"
       ]
     },
     {
       "name": "SingularApplicationHeld.NeutralReaderStatements.application_keeps_never_registered",
       "classification": "added",
       "typeSha256": "bf1def602c10cab6975f3a6195b3f3b2074a91a5565382a329e9c5858ae0f931",
-      "proofStatus": "OPEN",
+      "proofStatus": "PROVED",
       "observedAxioms": [
-        "propext",
-        "sorryAx"
+        "propext"
       ]
     },
     {
       "name": "SingularApplicationHeld.NeutralReaderStatements.application_keeps_refusal",
       "classification": "added",
       "typeSha256": "9dac68be17232c46b96961b215e3aeebcf3e24c9617e4da5a25fa214f6ea0ed2",
-      "proofStatus": "OPEN",
+      "proofStatus": "PROVED",
       "observedAxioms": [
-        "propext",
-        "sorryAx"
+        "propext"
       ]
     },
     {
       "name": "SingularApplicationHeld.NeutralReaderStatements.application_keeps_terminal",
       "classification": "added",
       "typeSha256": "7eb57378eed8ea582de1598d47a2741cfd7248bbdf0cf335fa8c774cf8c5471d",
-      "proofStatus": "OPEN",
+      "proofStatus": "PROVED",
       "observedAxioms": [
-        "propext",
-        "sorryAx"
+        "propext"
       ]
     },
     {
       "name": "SingularApplicationHeld.NeutralReaderStatements.application_keeps_unavailable",
       "classification": "added",
       "typeSha256": "d9f214db6a06249531ec71fd1e25a31b9eadfe07e322bb4319d77a6c7a7f8d1f",
-      "proofStatus": "OPEN",
+      "proofStatus": "PROVED",
       "observedAxioms": [
-        "propext",
-        "sorryAx"
+        "propext"
       ]
     },
     {
       "name": "SingularApplicationHeld.NeutralReaderStatements.application_refines_neutral",
       "classification": "added",
       "typeSha256": "9489399179056f32311582463ed7de0e4b91f5dcc34f6fbc351e11ecbd467a79",
-      "proofStatus": "OPEN",
+      "proofStatus": "PROVED",
       "observedAxioms": [
-        "propext",
-        "sorryAx"
+        "propext"
       ]
     },
     {
       "name": "SingularApplicationHeld.NeutralReaderStatements.conflicting_outputs",
       "classification": "added",
       "typeSha256": "3b5becb575a8ac08f9be287d703794f37617a537f1ba22268f80ebbe3b058c58",
-      "proofStatus": "OPEN",
+      "proofStatus": "PROVED",
       "observedAxioms": [
         "propext",
-        "sorryAx"
+        "Quot.sound"
       ]
     },
     {
       "name": "SingularApplicationHeld.NeutralReaderStatements.conflicting_quantity",
       "classification": "added",
       "typeSha256": "0f0139c7fe19009fb22b54a0c96e137cd4b9e99d6874b768dea84225c6d2d6d1",
-      "proofStatus": "OPEN",
+      "proofStatus": "PROVED",
       "observedAxioms": [
         "propext",
-        "sorryAx"
+        "Quot.sound"
       ]
     },
     {
       "name": "SingularApplicationHeld.NeutralReaderStatements.foreign_state_policy",
       "classification": "added",
       "typeSha256": "1bfe11f6d12729bbd269e8c39d496863448a11bb53ca0cd6219d5cf09a57110b",
-      "proofStatus": "OPEN",
+      "proofStatus": "PROVED",
       "observedAxioms": [
         "propext",
-        "sorryAx"
+        "Quot.sound"
       ]
     },
     {
       "name": "SingularApplicationHeld.NeutralReaderStatements.holding_answer_ignores_state",
       "classification": "added",
       "typeSha256": "cd880233b2c8e6029f69f99402c8732f4b3717ae6e8953b38faa54e88bdbf577",
-      "proofStatus": "OPEN",
+      "proofStatus": "PROVED",
       "observedAxioms": [
         "propext",
-        "sorryAx"
+        "Quot.sound",
+        "Classical.choice"
       ]
     },
     {
       "name": "SingularApplicationHeld.NeutralReaderStatements.known_nonterminal_leaf_without_token",
       "classification": "added",
       "typeSha256": "ec7b53e033e1880013374a3913a8ecf5b00e588c8e633aca57b04baeb93a355a",
-      "proofStatus": "OPEN",
+      "proofStatus": "PROVED",
       "observedAxioms": [
         "propext",
-        "sorryAx"
+        "Quot.sound",
+        "Classical.choice"
       ]
     },
     {
       "name": "SingularApplicationHeld.NeutralReaderStatements.network_unavailable",
       "classification": "added",
       "typeSha256": "1d1e43c0f232dddb18c1bf2aec5cd13927201a0fb90383e328c37bc4629363e7",
-      "proofStatus": "OPEN",
+      "proofStatus": "PROVED",
       "observedAxioms": [
-        "propext",
-        "sorryAx"
+        "propext"
       ]
     },
     {
       "name": "SingularApplicationHeld.NeutralReaderStatements.never_registered_inversion",
       "classification": "added",
       "typeSha256": "6b3d10081b15d7a19559db42b2047346b04ca5aa42a1b41a6e9cf2a2826f86c6",
-      "proofStatus": "OPEN",
+      "proofStatus": "PROVED",
       "observedAxioms": [
         "propext",
-        "sorryAx"
+        "Quot.sound",
+        "Classical.choice"
       ]
     },
     {
       "name": "SingularApplicationHeld.NeutralReaderStatements.never_registered_sound",
       "classification": "added",
       "typeSha256": "def29fc2b517c38a21cf8271669588ad1820103bdddc4941c8573228c7c46c7e",
-      "proofStatus": "OPEN",
+      "proofStatus": "PROVED",
       "observedAxioms": [
         "propext",
-        "sorryAx"
+        "Quot.sound",
+        "Classical.choice"
       ]
     },
     {
       "name": "SingularApplicationHeld.NeutralReaderStatements.no_absence_from_missing_evidence",
       "classification": "added",
       "typeSha256": "083254f1075dc12132d7ecb76bb949a815a84a8344ce3cc1af90bc05d6375364",
-      "proofStatus": "OPEN",
+      "proofStatus": "PROVED",
       "observedAxioms": [
         "propext",
-        "sorryAx"
+        "Quot.sound",
+        "Classical.choice"
       ]
     },
     {
       "name": "SingularApplicationHeld.NeutralReaderStatements.state_not_found",
       "classification": "added",
       "typeSha256": "16db68665f0f1abc106a6bd2a5883ec1ac7f9576da217319e4c3fb4c18fa825a",
-      "proofStatus": "OPEN",
+      "proofStatus": "PROVED",
       "observedAxioms": [
         "propext",
-        "sorryAx"
+        "Quot.sound"
       ]
     },
     {
       "name": "SingularApplicationHeld.NeutralReaderStatements.state_not_recognized",
       "classification": "added",
       "typeSha256": "eed3a8554551f199e70e50558aeec7dd090ccc1da32db569f989754ab018ff34",
-      "proofStatus": "OPEN",
+      "proofStatus": "PROVED",
       "observedAxioms": [
         "propext",
-        "sorryAx"
+        "Quot.sound"
       ]
     },
     {
       "name": "SingularApplicationHeld.NeutralReaderStatements.state_unavailable",
       "classification": "added",
       "typeSha256": "d2c7de22a8b6017b0e9e8f5c55bce7d2760c0b2c0b2aff5e1a1e467ed06dc6f4",
-      "proofStatus": "OPEN",
+      "proofStatus": "PROVED",
       "observedAxioms": [
         "propext",
-        "sorryAx"
+        "Quot.sound"
       ]
     },
     {
       "name": "SingularApplicationHeld.NeutralReaderStatements.terminal_inversion",
       "classification": "added",
       "typeSha256": "4a2d3bca38e486ae11163fc48e3b3d7c88e270abac625887c26f3c2aff9a066e",
-      "proofStatus": "OPEN",
+      "proofStatus": "PROVED",
       "observedAxioms": [
         "propext",
-        "sorryAx"
+        "Quot.sound",
+        "Classical.choice"
       ]
     },
     {
       "name": "SingularApplicationHeld.NeutralReaderStatements.terminal_sound",
       "classification": "added",
       "typeSha256": "4fa10bf4294509db56ae47760e6c49a80fce7d7acfe97eb4392a6cf3ce3edcd1",
-      "proofStatus": "OPEN",
+      "proofStatus": "PROVED",
       "observedAxioms": [
         "propext",
-        "sorryAx"
+        "Quot.sound",
+        "Classical.choice"
       ]
     },
     {
       "name": "SingularApplicationHeld.NeutralReaderStatements.token_outside_custody",
       "classification": "added",
       "typeSha256": "1c04c2f4dad4dcd8acc32008a17593ddfdbed168e3d7fec5a39e29704806f2ed",
-      "proofStatus": "OPEN",
+      "proofStatus": "PROVED",
       "observedAxioms": [
         "propext",
-        "sorryAx"
+        "Quot.sound",
+        "Classical.choice"
       ]
     },
     {
       "name": "SingularApplicationHeld.NeutralReaderStatements.trie_root_mismatch",
       "classification": "added",
       "typeSha256": "dd1ef06e9950cdc875df2300ed3f140dcc45b1dfe8aaf8e608cbf1e3499b7d62",
-      "proofStatus": "OPEN",
+      "proofStatus": "PROVED",
       "observedAxioms": [
         "propext",
-        "sorryAx"
+        "Quot.sound",
+        "Classical.choice"
       ]
     },
     {
       "name": "SingularApplicationHeld.NeutralReaderStatements.trie_unavailable",
       "classification": "added",
       "typeSha256": "79f889de18268bd8ff2e011a0f2a797fbcb98fbb5dbdc6abb9a934f682be8ae7",
-      "proofStatus": "OPEN",
+      "proofStatus": "PROVED",
       "observedAxioms": [
         "propext",
-        "sorryAx"
+        "Quot.sound"
       ]
     },
     {
       "name": "SingularApplicationHeld.NeutralReaderStatements.unknown_state_policy",
       "classification": "added",
       "typeSha256": "9dfb69ce2d9195ebcee994c7ddf70a652d97a1eb575cd2ac8ab122d15d6fa9e3",
-      "proofStatus": "OPEN",
+      "proofStatus": "PROVED",
       "observedAxioms": [
         "propext",
-        "sorryAx"
+        "Quot.sound"
       ]
     },
     {
       "name": "SingularApplicationHeld.NeutralReaderStatements.wrong_network_first",
       "classification": "added",
       "typeSha256": "a176986b8ec21665a0b6fe698269615d9b2b59ffd74b6ccb125b932aca09790c",
-      "proofStatus": "OPEN",
+      "proofStatus": "PROVED",
       "observedAxioms": [
         "propext",
-        "sorryAx"
+        "Quot.sound"
       ]
     },
     {
@@ -3093,7 +3097,7 @@
   },
   "generated": {
     "method": "Native Lean environment types, axioms and walked definitions",
-    "reportSha256": "c50ea17984b95377c2c0f5f562862a68c497c3b92b07dd3588fddd04cdadec01"
+    "reportSha256": "3460b54fc87271995a3269317a3136b155fde70f16d5128e1bd74fa6b29c17f9"
   },
   "corpus": "models/open-datum-application-held/reader-corpus.json",
   "corpusSha256": "a9626b4ab6b4d5b2e3c000f350ed09976876319b69e33c045f24bee1005ad80f",

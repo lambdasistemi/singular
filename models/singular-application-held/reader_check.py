@@ -12,8 +12,8 @@ REPOSITORY = PROJECT.parent.parent
 APPLICATION = REPOSITORY / "models/open-datum-application-held"
 STANDARD = {"propext", "Classical.choice", "Quot.sound"}
 FROZEN_TYPES = {
-    "shared": "68b5fcfd90dd14f64cc0a887f7f8d6107763db0550baf9f3abed4138e159c5c5",
-    "application": "a06d299bf89b469bbdded682ac0098e220b2cb602bfd7f5aaa2f9dae96464987",
+    "shared": "91fa63dfab2f9ce28ce8882a8679700e6fcc2cf8167bf16194708ec894aa2a16",
+    "application": "53a6816d6995b73784703cc1641ffe94eacbe3b2e9036ca2c933576ad0c63ca7",
 }
 
 
@@ -42,7 +42,7 @@ def manifests(scope):
 def preflight(scope="shared"):
     for (kind, project), ledger in zip(projects(scope), manifests(scope), strict=True):
         rows = ledger["statements"]
-        count = 28 if kind == "shared" else 5
+        count = 55 if kind == "shared" else 6
         require(len(rows) == count, f"expected {count} reader statements in {kind}")
         types = {row["name"]: row["typeSha256"] for row in rows}
         require(len(types) == count, "duplicate reader statement")
@@ -246,7 +246,7 @@ def driver_probe(driver):
     )
 
 
-def corpus(report, driver):
+def corpus(report, driver, neutral_driver):
     ledger = json.loads((APPLICATION / "reader-statements.json").read_text())
     path = REPOSITORY / ledger["corpus"]
     require(
@@ -269,7 +269,14 @@ def corpus(report, driver):
             json.loads(result.stdout) == row["answer"],
             "reader replay differs: " + row["name"],
         )
+        neutral = invoke(neutral_driver, json.dumps(row["query"]))
+        require(neutral.returncode == 0, "neutral reader replay failed: " + row["name"])
+        require(
+            json.loads(neutral.stdout) == row["neutralAnswer"],
+            "neutral reader replay differs: " + row["name"],
+        )
     driver_probe(driver)
+    driver_probe(neutral_driver)
     print(
         f"PASS reader definition-computed corpus freshness and transport replay: {len(observed)} rows"
     )
@@ -294,6 +301,7 @@ def main():
     parser.add_argument("--report", type=Path)
     parser.add_argument("--corpus", type=Path)
     parser.add_argument("--driver", type=Path)
+    parser.add_argument("--neutral-driver", type=Path)
     parser.add_argument("--generate-corpus", type=Path)
     args = parser.parse_args()
     if args.generate_corpus:
@@ -305,9 +313,15 @@ def main():
         preflight(args.scope)
     if args.corpus:
         require(args.driver is not None, "reader corpus needs the compiled driver")
-        corpus(args.corpus, args.driver)
+        require(
+            args.neutral_driver is not None,
+            "reader corpus needs the compiled neutral driver",
+        )
+        corpus(args.corpus, args.driver, args.neutral_driver)
     elif args.driver:
         driver_probe(args.driver)
+        if args.neutral_driver:
+            driver_probe(args.neutral_driver)
 
 
 if __name__ == "__main__":

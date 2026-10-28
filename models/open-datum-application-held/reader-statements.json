@@ -1,17 +1,29 @@
 {
   "schemaVersion": 1,
-  "stage": "STATEMENTS-SPLIT",
+  "stage": "PROOFS",
   "accepted": false,
   "compiler": "Lean 4.27.0",
   "printer": "Lean.reprStr ConstantInfo.type; default Repr options",
   "surface": "SingularApplicationHeld.readKey",
   "driver": "models/singular-application-held/.lake/build/bin/reader",
   "corpus": "models/open-datum-application-held/reader-corpus.json",
-  "corpusSha256": "468fb036df5427d7791a9d0924579f2640ec015c04141293cbd55d370d2659f1",
+  "corpusSha256": "a9626b4ab6b4d5b2e3c000f350ed09976876319b69e33c045f24bee1005ad80f",
   "definitions": {
     "SingularApplicationHeld.readKey": {
       "typeSha256": "9d6a68d5e5aafcb8c4baca13bfcddacd9cb0e9bfa2b926dbbaa6df06e9b8206d",
-      "valueSha256": "1d3e5e223b0df145ef1c5c7d5f3d41200b829fdee4a7ed96f0df3834f8f9daf8"
+      "valueSha256": "9322f48db37b5972937511d7544e0bb5074288fa5271d42f54e8975b25ba2497"
+    },
+    "SingularApplicationHeld.readNeutralKey": {
+      "typeSha256": "a747586260cce3f6e3fac5d18a7b2f327764930c3a84d223d435c71e7f08a170",
+      "valueSha256": "20f5bd93c75f61c51022bcd5afe6b0fe37f2b7af3e88586d5933c9ed8a498cc9"
+    },
+    "SingularApplicationHeld.refineReaderAnswer": {
+      "typeSha256": "35e2a86d2327726fefb4c2d4726755028d798faa8a202e41a985701bb98027a4",
+      "valueSha256": "daf71d14d658e49038d6eb05fef34fdbc139b0a7e45d7281147bbdd7c100715b"
+    },
+    "SingularApplicationHeld.runNeutralReaderQuery": {
+      "typeSha256": "b78a36af3dee288d9f618db1a1500a6b9605f787a9285e96ca32d5f1a98bfa23",
+      "valueSha256": "6d894881436db354c7a82d0db4f82cbefc271dd0a170f6c27b127cb701ef4e18"
     },
     "SingularApplicationHeld.recognizeReaderState": {
       "typeSha256": "6b8939e121fd2e48441ecc1c0748b2696a25851c024cd18261591a1ee4125ffb",
@@ -28,75 +40,67 @@
   },
   "statements": [
     {
-      "name": "OpenDatumApplicationHeld.ReaderFixtures.stories_reachable",
-      "typeSha256": "7d71e7da568d80ff73f1ac66fd57cfe9f84bdbe612f8dbf33694043105de9ec0",
-      "observedAxioms": [
-        "propext",
-        "Quot.sound",
-        "Classical.choice"
-      ],
+      "name": "OpenDatumApplicationHeld.ReaderFixtures.neutral_story_answers",
+      "typeSha256": "2ca1499417437d53c582f9e78889dc160d952fb4a801653a76f84909b2f28649",
       "proofStatus": "PROVED",
-      "proposedWitness": "live; pending termination; terminal; never registered",
-      "witnessCertification": "PROVED positive lifecycle witness; see the three concrete story certificates",
-      "proposedMutant": "break one fold input reference",
-      "mutantStatus": "NOT-RUN"
-    },
-    {
-      "name": "OpenDatumApplicationHeld.ReaderFixtures.story_answers",
-      "typeSha256": "a021323970bbb85922934ade84d00e8ea5d2e19da0112e52ad2221aa432fb4a5",
       "observedAxioms": [
         "propext"
-      ],
-      "proofStatus": "PROVED",
-      "proposedWitness": "live; pending termination; terminal; never registered",
-      "witnessCertification": "PROVED positive lifecycle witness; see the three concrete story certificates",
-      "proposedMutant": "exchange the unknown and terminal reader branches",
-      "mutantStatus": "NOT-RUN"
+      ]
     },
     {
       "name": "OpenDatumApplicationHeld.ReaderFixtures.story_antecedents",
       "typeSha256": "0391bde2721f42597ac175ce40fc2e52ac43684e67948c6d496bd7be15db882a",
+      "proofStatus": "PROVED",
       "observedAxioms": [
         "propext",
         "Quot.sound",
         "Classical.choice"
-      ],
-      "proofStatus": "PROVED",
-      "proposedWitness": "live; pending termination; terminal; never registered",
-      "witnessCertification": "PROVED positive lifecycle witness; see the three concrete story certificates",
-      "proposedMutant": "replace the observed trie with an unrelated trie",
-      "mutantStatus": "NOT-RUN"
-    },
-    {
-      "name": "OpenDatumApplicationHeld.ReaderStatements.live_custody",
-      "typeSha256": "6803a0b34466e6e9547d3d89d7b7b4f23ac58800492c743f690a730d16a0729b",
-      "observedAxioms": [
-        "propext",
-        "Quot.sound",
-        "Classical.choice"
-      ],
-      "proofStatus": "PROVED",
-      "proposedWitness": "live",
-      "witnessCertification": "PROVED positive lifecycle witness; see the three concrete story certificates",
-      "proposedMutant": "drop the live active-asset binding",
-      "mutantStatus": "NOT-RUN"
+      ]
     },
     {
       "name": "OpenDatumApplicationHeld.ReaderStatements.pending_custody",
       "typeSha256": "73c157e7ad001bb18665e136a1e3da163b37c23f499c2e0137491080ec5190c9",
+      "proofStatus": "PROVED",
       "observedAxioms": [
         "propext",
         "Quot.sound",
         "Classical.choice"
-      ],
+      ]
+    },
+    {
+      "name": "OpenDatumApplicationHeld.ReaderFixtures.story_answers",
+      "typeSha256": "a021323970bbb85922934ade84d00e8ea5d2e19da0112e52ad2221aa432fb4a5",
       "proofStatus": "PROVED",
-      "proposedWitness": "pending termination",
-      "witnessCertification": "PROVED positive lifecycle witness; see the three concrete story certificates",
-      "proposedMutant": "drop the termination request asset check",
-      "mutantStatus": "NOT-RUN"
+      "observedAxioms": [
+        "propext"
+      ]
+    },
+    {
+      "name": "OpenDatumApplicationHeld.ReaderFixtures.stories_reachable",
+      "typeSha256": "7d71e7da568d80ff73f1ac66fd57cfe9f84bdbe612f8dbf33694043105de9ec0",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext",
+        "Quot.sound",
+        "Classical.choice"
+      ]
+    },
+    {
+      "name": "OpenDatumApplicationHeld.ReaderStatements.live_custody",
+      "typeSha256": "6803a0b34466e6e9547d3d89d7b7b4f23ac58800492c743f690a730d16a0729b",
+      "proofStatus": "PROVED",
+      "observedAxioms": [
+        "propext",
+        "Quot.sound",
+        "Classical.choice"
+      ]
     }
   ],
-  "generated": true,
+  "generated": {
+    "method": "Native Lean environment types, standard axioms and walked definitions",
+    "reportSha256": "3460b54fc87271995a3269317a3136b155fde70f16d5128e1bd74fa6b29c17f9",
+    "approvedStatementRevision": "a7d4f1b6fbc3e972ef29d0fa695dc1df5131d5d7"
+  },
   "doNotEdit": "Regenerate statement types and axioms from ReaderAudit and corpus answers from readerCorpus; witness and mutant plans are author proposals.",
   "generatedFrom": [
     "models/singular-application-held/lean/ReaderAuditCore.lean",
@@ -759,10 +763,13 @@
   "closureMode": "delta-to-shared",
   "proofSourceHashes": {
     "models/open-datum-application-held/lean/OpenDatumApplicationHeld/ReaderStatements.lean": "6f36d3741f8005895088ff70667b4c62e42c4b52fe702556be22b33fe371fd2b",
-    "models/open-datum-application-held/lean/OpenDatumApplicationHeld/ReaderFixtures.lean": "7fff03468c47e7efda85f94adc4e2705c413143beeee0178af5c5c71e9385f3e",
-    "models/open-datum-application-held/lean/ReaderCorpusMain.lean": "4c581782030b9654f8abda256a5269694dc82c8cc94578141036378a174d4e1d"
+    "models/open-datum-application-held/lean/OpenDatumApplicationHeld/ReaderFixtures.lean": "c1435698060d4cb30d4a6840ccc1141d6581fbc1b4b3bb71704ab228978a14ec",
+    "models/open-datum-application-held/lean/ReaderCorpusMain.lean": "e8436baa3b23e94ddcb1114454435e88ede5b49fbbeb2b8fea11b446007a3970"
   },
-  "priorProofSnapshotRevision": "d03147a7cebc1f7264bd3fb4433cda3ca696edc1",
-  "currentInventory": "models/singular-application-held/reader-split-statements.json",
-  "downstreamStatus": "REOPENED: the previous proof snapshot is retained, and current split statements await independent statement review and subsequent proof-stage inventory integration"
+  "surfaces": {
+    "neutral": "SingularApplicationHeld.readNeutralKey",
+    "application": "SingularApplicationHeld.readKey",
+    "refinement": "SingularApplicationHeld.refineReaderAnswer"
+  },
+  "neutralDriver": "models/singular-application-held/.lake/build/bin/neutralReader"
 }
