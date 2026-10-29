@@ -991,6 +991,8 @@
                   script,
                   programs,
                   extra ? [ ],
+                  forwardArguments ? false,
+                  finalizeResults ? false,
                 }:
                 pkgs.writeShellApplication {
                   inherit name;
@@ -1002,13 +1004,20 @@
                     work="''${${results}:-$(mktemp -d "$base/${name}.XXXXXX")/results}"
                     echo "${name}: receipts in $work"
                     export E2E_GENESIS_DIR=${./offchain/e2e-test/genesis}
+                    ${pkgs.lib.optionalString finalizeResults "measurement_exit=0"}
                     bash ${noPinScripts system}/${script} \
                       ${pkgs.lib.concatStringsSep " " programs} \
                       ${pkgs.lib.getExe offchain.packages.${system}.devnet} \
                       ${open-datum-onchain.packages.${system}.open-datum-blueprint} \
                       ${noPinScripts system}/no_pin_chain_view.py \
                       ${pkgs.lib.concatStringsSep " " extra} \
-                      "$work"
+                      "$work" ${pkgs.lib.optionalString forwardArguments ''"$@"''} ${pkgs.lib.optionalString finalizeResults "|| measurement_exit=$?"}
+                    ${pkgs.lib.optionalString finalizeResults ''
+                      if [ "''${1-}" != --help ]; then
+                        python3 -I ${noPinScripts system}/no_pin_batch_measurement.py run-result "$work" "$measurement_exit"
+                      fi
+                      exit "$measurement_exit"
+                    ''}
                   '';
                 };
               noPinRegistrationJourney = noPinJourney {
@@ -1038,9 +1047,15 @@
                 name = "no-pin-batch-measurement";
                 results = "NO_PIN_BATCH_MEASUREMENT_RESULTS";
                 script = "no_pin_batch_measurement.sh";
+                forwardArguments = true;
+                finalizeResults = true;
                 programs = [ (pkgs.lib.getExe (stampedOpenDatum system)) ];
                 extra = [
+                  "${open-datum.packages.${system}.no-pin-refusals}/bin/no-pin-refusals"
                   "${./offchain/test/fixtures/koios/preprod/cli_protocol_params-b777448425778d13.json}"
+                  "${./offchain/data/network/preprod/evaluation/protocol-parameters.cbor}"
+                  "${self}/test/fixtures/batch-measurement"
+                  (pkgs.lib.getExe offchain.packages.${system}.cardano-node)
                 ];
               };
             in

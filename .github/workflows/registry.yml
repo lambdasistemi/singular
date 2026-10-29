@@ -609,7 +609,7 @@ jobs:
         with:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      - name: Revalidate the kept batch measurement
+      - name: Re-evaluate kept batches and corroborate with a fresh development node
         run: |
           printf 'NO_PIN_BATCH_MEASUREMENT_RESULTS=%s\n' "$RUNNER_TEMP/no-pin-batch-measurement-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
           NO_PIN_BATCH_MEASUREMENT_RESULTS="$RUNNER_TEMP/no-pin-batch-measurement-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" nix run --quiet .#no-pin-batch-measurement

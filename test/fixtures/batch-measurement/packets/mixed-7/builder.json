@@ -1,0 +1,7 @@
+{
+  "command": "fold",
+  "folded": [],
+  "left": 7,
+  "outcome": "client-refusal",
+  "reason": "the execution memory 23847815 exceeds the limit 17500000"
+}

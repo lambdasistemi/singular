@@ -1,0 +1,158 @@
+[
+  {
+    "command": "insert",
+    "outcome": "success",
+    "pending": "e6b68c880ec1ff38da52246ee01610ac5ce5a9e5de3f549b193c28ac65da788e#0",
+    "submissions": [
+      {
+        "case": "included",
+        "observed": true,
+        "step": "book",
+        "tx": "e6b68c880ec1ff38da52246ee01610ac5ce5a9e5de3f549b193c28ac65da788e"
+      }
+    ]
+  },
+  {
+    "command": "insert",
+    "outcome": "success",
+    "pending": "50e74954fb7151933689434acfdfc683ca991cbe7415f7e60c9e48bdc5420c09#0",
+    "submissions": [
+      {
+        "case": "included",
+        "observed": true,
+        "step": "book",
+        "tx": "50e74954fb7151933689434acfdfc683ca991cbe7415f7e60c9e48bdc5420c09"
+      }
+    ]
+  },
+  {
+    "command": "insert",
+    "outcome": "success",
+    "pending": "8156e6e7cef386667ffada58e31d8e31f65f208e44999e8b9e573cf23bcb5bb1#0",
+    "submissions": [
+      {
+        "case": "included",
+        "observed": true,
+        "step": "book",
+        "tx": "8156e6e7cef386667ffada58e31d8e31f65f208e44999e8b9e573cf23bcb5bb1"
+      }
+    ]
+  },
+  {
+    "command": "insert",
+    "outcome": "success",
+    "pending": "ad5df4a470d1eda3807617e7ef9473944c7f74c16737ae576a8d7dfc24ad888f#0",
+    "submissions": [
+      {
+        "case": "included",
+        "observed": true,
+        "step": "book",
+        "tx": "ad5df4a470d1eda3807617e7ef9473944c7f74c16737ae576a8d7dfc24ad888f"
+      }
+    ]
+  },
+  {
+    "command": "insert",
+    "outcome": "success",
+    "pending": "6a15dd3275f3b3be70d71530f3b785b394e17972313e0b183964c2aca3087048#0",
+    "submissions": [
+      {
+        "case": "included",
+        "observed": true,
+        "step": "book",
+        "tx": "6a15dd3275f3b3be70d71530f3b785b394e17972313e0b183964c2aca3087048"
+      }
+    ]
+  },
+  {
+    "command": "insert",
+    "outcome": "success",
+    "pending": "77ca6effe1c9312050f9127efdc36b60bc081bd716139379ccdce1fc7afe27c1#0",
+    "submissions": [
+      {
+        "case": "included",
+        "observed": true,
+        "step": "book",
+        "tx": "77ca6effe1c9312050f9127efdc36b60bc081bd716139379ccdce1fc7afe27c1"
+      }
+    ]
+  },
+  {
+    "command": "insert",
+    "outcome": "success",
+    "pending": "2f0a55eb5f29e0ca43e1bcafff019a022c14ebe8d72f4cf0d81d21cae1d69d99#0",
+    "submissions": [
+      {
+        "case": "included",
+        "observed": true,
+        "step": "book",
+        "tx": "2f0a55eb5f29e0ca43e1bcafff019a022c14ebe8d72f4cf0d81d21cae1d69d99"
+      }
+    ]
+  },
+  {
+    "command": "insert",
+    "outcome": "success",
+    "pending": "2ec4584e33810cdb52f530d96e1b5cd206772875b2c8f8535ffab947bfe0dd98#0",
+    "submissions": [
+      {
+        "case": "included",
+        "observed": true,
+        "step": "book",
+        "tx": "2ec4584e33810cdb52f530d96e1b5cd206772875b2c8f8535ffab947bfe0dd98"
+      }
+    ]
+  },
+  {
+    "command": "insert",
+    "outcome": "success",
+    "pending": "f38108ac1ecee0fea2e14f634266f1e4379b91c036504028126efa101888d945#0",
+    "submissions": [
+      {
+        "case": "included",
+        "observed": true,
+        "step": "book",
+        "tx": "f38108ac1ecee0fea2e14f634266f1e4379b91c036504028126efa101888d945"
+      }
+    ]
+  },
+  {
+    "command": "insert",
+    "outcome": "success",
+    "pending": "575a5d7e118776ca7b42be0aad4bc1ea2b5be1828e1ecb16f9e8be88dbe10855#0",
+    "submissions": [
+      {
+        "case": "included",
+        "observed": true,
+        "step": "book",
+        "tx": "575a5d7e118776ca7b42be0aad4bc1ea2b5be1828e1ecb16f9e8be88dbe10855"
+      }
+    ]
+  },
+  {
+    "command": "insert",
+    "outcome": "success",
+    "pending": "3285705f5565a21650516b723fd75163645dd84075d7f7a3abc156a225c8ff6f#0",
+    "submissions": [
+      {
+        "case": "included",
+        "observed": true,
+        "step": "book",
+        "tx": "3285705f5565a21650516b723fd75163645dd84075d7f7a3abc156a225c8ff6f"
+      }
+    ]
+  },
+  {
+    "command": "insert",
+    "outcome": "success",
+    "pending": "96d6ae403e33fa4abece7c146bf36582268d73d6d2df2199a48de2c2858aa4a8#0",
+    "submissions": [
+      {
+        "case": "included",
+        "observed": true,
+        "step": "book",
+        "tx": "96d6ae403e33fa4abece7c146bf36582268d73d6d2df2199a48de2c2858aa4a8"
+      }
+    ]
+  }
+]

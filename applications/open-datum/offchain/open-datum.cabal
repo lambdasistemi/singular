@@ -107,18 +107,22 @@ executable no-pin-refusals
   default-language: GHC2021
   hs-source-dirs:   refusals
   main-is:          Main.hs
-  other-modules:    CreationCarrying
+  other-modules:    CreationCarrying BatchMeasurement
   build-depends:
     , aeson                              >=2.1  && <2.3
     , base                               >=4.14 && <5
     , bytestring                         >=0.11 && <0.13
     , cardano-binary
+    , cardano-ledger-alonzo
+    , cardano-ledger-binary
     , cardano-ledger-api
     , cardano-ledger-core
     , cardano-ledger-mary
     , cardano-tx-tools:tx-build
     , containers                         >=0.6  && <0.8
     , contra-tracer
+    , directory
+    , filepath
     , microlens
     , open-datum
     , plutus-core

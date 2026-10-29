@@ -44,6 +44,7 @@ fact of the honest fold; the output names it.
 -}
 module Main (main) where
 
+import BatchMeasurement qualified
 import Codec.Serialise (deserialiseOrFail)
 import Control.Monad (forM, forM_, unless, void, when)
 import CreationCarrying qualified
@@ -58,6 +59,7 @@ import Data.ByteString.Short qualified as SBS
 import Data.List.NonEmpty qualified as NE
 import Data.Map.Strict qualified as Map
 import Data.Maybe (mapMaybe)
+import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
 import GHC.IO.Handle (hDuplicate, hDuplicateTo)
@@ -71,6 +73,7 @@ import System.IO (Handle, hFlush, stderr, stdout)
 import Text.Read (readMaybe)
 
 import Cardano.Ledger.Address (Addr)
+import Cardano.Ledger.Api.PParams (ppMaxTxExUnitsL, ppMaxTxSizeL)
 import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx)
 import Cardano.Ledger.Api.Tx.Body (mintTxBodyL)
 import Cardano.Ledger.Api.Tx.Out
@@ -115,9 +118,16 @@ import Singular.Application.OpenDatum.Requests.Script
 import Singular.Application.OpenDatum.Requests.Script qualified as Request
 import Singular.CLI.Steps (renderRefusal, scriptSource)
 import Singular.Registry.Blueprint (loadBlueprint)
+import Singular.Registry.Bundle
+    ( Bundle (..)
+    , BundleTransaction (..)
+    , checkBundle
+    , decodeBundle
+    , decodeTransactionEnvelope
+    )
 import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.Deployment (parseOutRef, renderOutRef)
-import Singular.Registry.Evidence (NoWitness)
+import Singular.Registry.Evidence (Evidenced (..), NoWitness)
 import Singular.Registry.Ledger (ConwayEra, Root (..), TxOut)
 import Singular.Registry.LedgerProvider
     ( Asset
@@ -127,6 +137,7 @@ import Singular.Registry.LedgerProvider
     , Session (..)
     , SubmitResult (..)
     )
+import Singular.Registry.LocalEvaluation (evaluationInputs)
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
 import Singular.Registry.SessionIO qualified as Services
 import Singular.Registry.Signing (signTx, signedTx)
@@ -159,7 +170,11 @@ import Singular.Registry.Types
     , edgeInsertActive
     , edgeUpdateTerminal
     )
-import Singular.Registry.Wallet (Wallet (..), loadWallet)
+import Singular.Registry.Wallet
+    ( Wallet (..)
+    , bech32Address
+    , loadWallet
+    )
 import Singular.State.Assemble
     ( NoQuery
     , Payer (..)
@@ -176,6 +191,7 @@ import Singular.State.Fold
     , Registration (..)
     , Request (..)
     )
+import Singular.State.Fold qualified as Fold
 import Singular.State.Lineage
     ( Replayed (..)
     , registryTrieState
@@ -226,6 +242,28 @@ main = do
     out <- hDuplicate stdout
     hDuplicateTo stderr stdout
     case args of
+        ("evaluate-batch" : flags) -> BatchMeasurement.run out flags
+        ["batch-release", path] -> do
+            blueprint <- loadBlueprint path >>= either die pure
+            request <- either die pure (requestScriptFromBlueprint blueprint)
+            state <-
+                either
+                    die
+                    pure
+                    (stateScriptFromBlueprint blueprint (PolicyID (hashScript request)))
+            emit out $
+                object
+                    [ "state" .= show (hashScript state)
+                    , "request" .= show (hashScript request)
+                    ]
+        ["wallet-address", magicText, key] -> do
+            magic <-
+                maybe (die "invalid network magic") pure (readMaybe magicText)
+            wallet <- loadWallet magic key
+            emit out (object ["address" .= bech32Address (walletAddr wallet)])
+        ("keep-batch" : flags) -> withEnv flags (keepBatchCommand out)
+        ("build-beyond-capacity" : flags) -> withEnv flags (beyondCommand out)
+        ("send-batch" : flags) -> withEnv flags (sendBatchCommand out)
         ("creation" : flags) -> CreationCarrying.run out flags
         ("spares" : flags) -> withEnv flags (sparesCommand out)
         ("plain-copy" : flags) -> withEnv flags (plainCopyCommand out)
@@ -704,6 +742,93 @@ answerJson = \case
 
 txIdText :: TxId -> Text
 txIdText txid = T.takeWhile (/= '#') (renderOutRef (TxIn txid (toEnum 0)))
+
+-- | Retain an ordinary packaged fold's bundle before any input is spent.
+keepBatchCommand :: Handle -> Env -> IO ()
+keepBatchCommand out env = do
+    path <- measurementFlag env "--bundle"
+    bundle <- BC.readFile path >>= either (die . show) pure . decodeBundle
+    either (die . show) pure (checkBundle bundle)
+    tx <- case NE.toList (bundleTransactions bundle) of
+        [one] ->
+            either
+                (die . show)
+                pure
+                (decodeTransactionEnvelope (bundleTxEnvelope one))
+        _ ->
+            die "the measured fold bundle must contain exactly one transaction"
+    Services.withLatest (provider env) $ \session -> keepBatch out env session tx
+
+{- | Test-only: use the ordinary fold construction with raised capacity guards.
+No node, provider or product parameter is changed. The original target and
+node parameters still judge the resulting transaction independently.
+-}
+beyondCommand :: Handle -> Env -> IO ()
+beyondCommand out env = Services.withLatest (provider env) $ \session -> do
+    (stateScript, requestScript) <- sourcesOf env session
+    application <-
+        openDatumApplication session requestScript Ledger.Testnet
+            >>= either (die . show) pure
+    refs <-
+        traverse
+            (either die pure . parseOutRef . T.pack)
+            (flagValues "--pending" (envFlags env))
+    when (null refs) (die "a capacity probe needs named pending requests")
+    let raised =
+            session
+                { protocolParameters = fmap (fmap raise) (protocolParameters session)
+                }
+        raise fact =
+            fact
+                { value =
+                    value fact
+                        & ppMaxTxExUnitsL .~ ExUnits 1_000_000_000 1_000_000_000_000
+                        & ppMaxTxSizeL .~ 1_000_000
+                }
+    built <-
+        Fold.buildFold
+            raised
+            stateScript
+            application
+            (registryOf env)
+            refs
+            (payerOf env)
+            Nothing
+            >>= either (die . show) pure
+    keepBatch out env session (Fold.foldTransaction built)
+
+keepBatch
+    :: Handle -> Env -> Session NoWitness IO -> ConwayTx -> IO ()
+keepBatch out env session tx = do
+    destination <- measurementFlag env "--output"
+    timeDirectory <- measurementFlag env "--network-time"
+    inputs <- forM (Set.toAscList (evaluationInputs tx)) $ \reference ->
+        (,) reference <$> outputAt session reference
+    let signed = signedTx (signTx (walletSignKey (envWallet env)) tx)
+    BatchMeasurement.keep destination timeDirectory signed inputs
+    (stateIn, _, root) <- findState env session
+    replayed <- seedOf env session stateIn root
+    emit out $
+        object
+            [ "outcome" .= ("kept" :: Text)
+            , "transaction" .= txIdText (txIdTx signed)
+            , "registrySizeBefore" .= length (replayedKeys replayed)
+            , "foldedCount" .= length (Fold.foldedRequests signed)
+            ]
+
+sendBatchCommand :: Handle -> Env -> IO ()
+sendBatchCommand out env = do
+    path <- measurementFlag env "--transaction"
+    tx <- BatchMeasurement.readTransaction path
+    answer <- answerTo env tx
+    emit out (object (answerJson answer))
+
+measurementFlag :: Env -> String -> IO String
+measurementFlag env name =
+    maybe
+        (die ("missing " <> name))
+        pure
+        (flagValue name (envFlags env))
 
 -- ---------------------------------------------------------
 -- fold
