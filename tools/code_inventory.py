@@ -755,6 +755,12 @@ NONCODE_CLASSES: list[dict] = [
         "(issue #326)",
     },
     {
+        "id": "creation-chain-records",
+        "pattern": "specs/745-shared-publications/evidence/*-chain.jsonl",
+        "note": "recorded genesis, protocol parameters and full chain transactions; "
+        "the creation cost check recomputes the committed receipts from these observations",
+    },
+    {
         "id": "contract-results",
         "pattern": "conformance/evidence/page/contract/*.jsonl",
         "note": "the backend contract suite's per-case results copied from "
