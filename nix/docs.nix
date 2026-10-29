@@ -129,7 +129,7 @@ let
   checker = pkgs.writeShellApplication {
     name = "docs-check";
     runtimeInputs = [
-      pkgs.python3
+      (pkgs.python3.withPackages (ps: [ ps.markdown ]))
       pkgs.bash
       evidencePage
       pkgs.jq
@@ -152,6 +152,7 @@ let
       python3 tools/narrate.py --check
       python3 tools/batch_limits.py --check
       python3 test/ci/batch-limits.py
+      python3 test/ci/batch-user-documentation.py
       conformance evidence-page --root .
       bash tools/evidence_page_controls.sh .
     '';

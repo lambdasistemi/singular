@@ -5,6 +5,122 @@ file from anyone who booked them. You fold as many as fit, keep each request's
 value above what the application requires, and can read the measured limit
 before deciding what to fold.
 
+```mermaid
+flowchart TB
+    public[Public approval holders] -->|discover| skips[Name holders and requests skipped]
+    skips -->|keep foldable requests| order[Order by greatest take]
+    order -->|try prefixes| fit[Largest fitting batch]
+    fit -->|build and send| receipt[Receipt: folded, skipped, left]
+    classDef chain fill:transparent,stroke:#3b82f6,stroke-width:2px
+    classDef selection fill:transparent,stroke:#22c55e,stroke-width:2px
+    classDef result fill:transparent,stroke:#a855f7,stroke-width:2px
+    class public chain
+    class skips,order,fit selection
+    class receipt result
+```
+
+The flow starts with public holders of the application's approvals. Discovery
+names the holders and requests it skips, orders the foldable requests by your
+take, and tries prefixes until it finds the largest fitting batch. The receipt
+accounts for what folded, what was skipped and what is left.
+
+## Discover and fold
+
+Give the registry's address, the release blueprint, your provider and your own
+wallet. Your wallet need not have booked any request. Registrations and
+terminations of this registry can share a transaction when their keys differ.
+
+```sh
+open-datum fold --blueprint plutus.json \
+  --registry "$registry" \
+  --koios-url https://preprod.koios.rest/api/v1 \
+  --vault bob.vault
+```
+
+Requests are ordered by your take, greatest first, with output references
+breaking ties. A registration's take is the request's held ADA above the
+deposit its holding must keep. A termination's take is the request's whole
+held ADA. Your wallet receives the transaction's change and pays its fee;
+the gross take is not the same as profit after that fee.
+
+To cap discovery, give the maximum number you want in `--limit`. The cap does
+not promise that many will fit.
+
+```sh
+open-datum fold --blueprint plutus.json \
+  --registry "$registry" --limit "$cap" \
+  --koios-url https://preprod.koios.rest/api/v1 \
+  --vault bob.vault
+```
+
+Only exceeding a transaction size, memory or steps limit permits a shorter
+prefix. A failed public read, failed registry replay or another construction
+error stops with its own reason. It never becomes an empty or shorter answer.
+The current network decides what fits; the measured workload below is not a
+fixed cap built into this command.
+
+## Choose a named batch
+
+Repeat `--pending` to choose the entire ordered batch yourself. It is built as
+named or refused, never trimmed, even if you also give `--limit`.
+
+```sh
+open-datum fold --blueprint plutus.json \
+  --registry "$registry" --pending "$first" --pending "$second" \
+  --koios-url https://preprod.koios.rest/api/v1 \
+  --vault bob.vault
+```
+
+| Attempt | Result |
+|---|---|
+| A request of another registry in a named batch | Refused, naming the request and registry |
+| Requests with the same key, or the same pending reference repeated | Refused, naming the key or request |
+| A named batch exceeds a network limit | Refused with that limit; no request is silently dropped |
+| No request can fold | Nothing to fold; discovered skips are still named |
+| A public read fails or is incomplete | Unavailable, naming the read; no empty answer is claimed |
+| A constructed transaction moves anything else under the state policy | Rejected by the state script |
+
+## Read the fold receipt
+
+The receipt names the registry's new root and state output. Its `folded` list
+names the key, request kind and pending output reference of every folded
+request. Its `skipped` list names each omitted holder's reference and reason.
+Its `left` count is the foldable requests beyond the chosen prefix. A skipped
+request is never counted as left.
+
+Automatic discovery skips these kinds of holder or request and keeps folding
+the rest. A named batch instead refuses a bad request.
+
+| Kind of skip | Meaning |
+|---|---|
+| Held at a key address | The approval's holder is a wallet output, not an application request |
+| Decoded for another registry | The request belongs to a different state policy or state token name |
+| Not accepted by the application's decode | The holder is not a request the application accepts |
+| Individually unfoldable | Its key is already registered, its termination key is not live, its deposit is too small, its processing window is closed, or a preceding foldable request already kept its key |
+
+The first individually foldable request for a key keeps it in take order. An
+earlier unfoldable request never reserves the key. If every discovered holder
+is skipped, nothing to fold still carries every skipped reference and reason.
+
+## What has been exercised
+
+The packaged development-network registration journey starts a folder in fresh
+directories with none of the booker's files. It discovers and folds a mixed
+batch, checks the folder's change from the chain, and accounts separately for
+folded, skipped and left requests. It skips another registry's request, the
+application's configuration holder that its request decoding does not accept,
+and an unfoldable duplicate. A duplicate-free control and a later fold of what
+was left accompany it.
+
+An approval at a key address and a malformed request datum are unit-tested
+only; the packaged journey does not construct accepted transactions creating
+those holders. Unit tests also exercise the other individually unfoldable
+reasons beside passing controls. Development-network refusals exercise a
+foreign named request, a duplicate key, an oversized named batch and a
+transaction moving another state-policy asset, each beside an accepted control.
+These observations do not establish an executable comparison with the model.
+The [conformance record](consumer-conformance.md) keeps those gaps visible.
+
 ## Read the measured limits
 
 These are evaluations of kept transactions under the preprod parameters
@@ -82,9 +198,15 @@ registry size, trie depth, scripts, key or payload shapes, or parameters. The
 mixed figure does not cover every ordering or every ratio of registrations to
 terminations. The trie library's proofs are assumed sound.
 
+The [command reference](registry-commands.md#fold-registrations-and-terminations-into-the-registry)
+gives the surrounding registration and termination commands. The
+[provider and wallet settings](singular-node.md#the-settings-you-give) describe
+the options shared by the examples above.
+
+## Appendix: regenerate this page
+
 The measurement job re-evaluates the kept transactions and captures a fresh
 boundary for each kind. The documentation check regenerates the marked block
 and refuses differences in either the page or the receipt. To refresh the
 block explicitly, run `python3 tools/batch_limits.py --write`, then regenerate
-the page's speech and changed narration. The [command reference](registry-commands.md#fold-registrations-and-terminations-into-the-registry)
-describes discovery, explicit batches and receipts.
+the page's speech and changed narration.
