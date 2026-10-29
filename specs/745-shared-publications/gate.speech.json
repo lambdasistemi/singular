@@ -1,0 +1,88 @@
+{
+  "gate-for-creating-registries-on-shared-script-publications": [
+    {
+      "text": "Gate for creating registries on shared script publications.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 745. This page is for the commit owner, the auditor and the reviewers: each acceptance item, the hosted job and the verbatim command that proves it, and what each pull request must show. The requirements are in the specification and the pull requests in the plan.",
+      "pause": 400
+    }
+  ],
+  "rows": [
+    {
+      "text": "Rows.",
+      "pause": 500
+    },
+    {
+      "text": "The ticket owner's table, written before the auditor's. The auditor writes its own table independently when it is seated; the ticket owner joins the two once, records both input hashes and freezes the result in the runtime root before the commit owner starts. Every command is an existing hosted command, or one this ticket adds to a hosted job and marks \"CI change in this ticket\".",
+      "pause": 400
+    },
+    {
+      "text": "Rows run scoped to what each slice can break. just ci runs once on the final candidate of each pull request, then the push; hosted checks on the pull request head are the net. Every build or test runs in a named, memory-capped scope: systemd-run --user --scope --unit=t745-<what>-<n> -p MemoryMax=24G timeout 3600 <command>.",
+      "pause": 400
+    }
+  ],
+  "rows-per-pull-request": [
+    {
+      "text": "Rows per pull request.",
+      "pause": 500
+    }
+  ],
+  "evidence-the-pull-requests-will-carry": [
+    {
+      "text": "Evidence the pull requests will carry.",
+      "pause": 500
+    },
+    {
+      "text": "per outcome of the specification: the test that executes it, the hosted step that runs it, and the run in which it.",
+      "pause": 400
+    },
+    {
+      "text": "failed before the change;.",
+      "pause": 400
+    },
+    {
+      "text": "the measurement receipts of both designs with revision, parameters and every transaction, and the page that is read.",
+      "pause": 400
+    },
+    {
+      "text": "from them;.",
+      "pause": 400
+    },
+    {
+      "text": "the carrying attempt's receipt: script sizes, transaction sizes and limits, and the outcome;.",
+      "pause": 400
+    },
+    {
+      "text": "the journey's receipts: the independent creator's creation and the registration on a registry created from live.",
+      "pause": 400
+    },
+    {
+      "text": "copies;.",
+      "pause": 400
+    },
+    {
+      "text": "left uncovered, stated in the pull requests: public discovery of references for everyone (issues 355 and 473), batch.",
+      "pause": 400
+    },
+    {
+      "text": "limits (issue 746), release (issue 747).",
+      "pause": 400
+    }
+  ],
+  "synthesis": [
+    {
+      "text": "Synthesis.",
+      "pause": 500
+    },
+    {
+      "text": "Pending: the auditor's independent table, written without reading this page, is joined to this one before the commit owner starts. Both input hashes and the frozen table are kept with the ticket's working records.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "gate.md",
+    "sha256": "9493ff85c51b4b4a53ae07855c11587548ea119693547e8792eda5ab8f2be2a9"
+  }
+}

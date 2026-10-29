@@ -1,0 +1,36 @@
+{
+  "modules-for-creating-registries-on-shared-script-publications": [
+    {
+      "text": "Modules for creating registries on shared script publications.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 745. This page places the new and changed code and fixes its dependency direction. Records are in the data model and signatures in the functions model.",
+      "pause": 400
+    }
+  ],
+  "changed-components": [
+    {
+      "text": "Changed components.",
+      "pause": 500
+    },
+    {
+      "text": "Paths are proposals. When the Lean models name a component differently, the code takes the model's name.",
+      "pause": 400
+    }
+  ],
+  "dependency-direction": [
+    {
+      "text": "Dependency direction.",
+      "pause": 500
+    },
+    {
+      "text": "The Singular package names no application: the creation command receives the application's scripts from the program that hosts it, as it does today.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "modules-model.md",
+    "sha256": "8dd73fcb43097c450c7127561ad3dc13e855377c56f51ea906c0139e58ed64b1"
+  }
+}
