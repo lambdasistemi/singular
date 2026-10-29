@@ -54,6 +54,7 @@ import Singular.Registry.SyntheticLedger (unitProgram)
 import Singular.State.Assemble (assembleTransaction)
 import Singular.State.Publication
     ( Publication (..)
+    , ReferenceDiscovery (..)
     , References (..)
     , planReferences
     )
@@ -253,9 +254,18 @@ spec = do
                             _ -> outputs session query
                         }
             addLive (scWorld sc) candidates
-            References{referencesLive = live, referencesPublication = publication} <-
+            References{referencesLive = live, referencesPublication = publication, referencesDiscovery = inspected} <-
                 planned sc answering
             map (fst . snd) live `shouldBe` [low]
+            [(discoveryHash entry, sort (discoveryCandidates entry)) | entry <- inspected]
+                `shouldBe`
+                    [ (stateHash sc, [])
+                    , (standInHash, sort
+                        [ (high, Just standInHash)
+                        , (wrong, Just (hashScript otherScript))
+                        , (low, Just standInHash)
+                        ])
+                    ]
             Publication _ located <- expectPublication publication
             map fst located `shouldBe` [stateHash sc]
 
