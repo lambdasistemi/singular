@@ -15,7 +15,7 @@
       "pause": 500
     },
     {
-      "text": "[x] gate-synthesized: the ticket owner's and the auditor's gate tables joined once and frozen with both input hashes.",
+      "text": "gate-synthesized: the ticket owner's and the auditor's gate tables joined once and frozen with both input hashes.",
       "pause": 400
     }
   ],
@@ -25,11 +25,11 @@
       "pause": 500
     },
     {
-      "text": "[ ] creation-cost-baseline-and-candidate: matched first and later creations for the previous design and the candidate, with receipts and the page.",
+      "text": "creation-cost-baseline-and-candidate: matched first and later creations for the previous design and the candidate, with receipts and the page.",
       "pause": 400
     },
     {
-      "text": "[ ] boot-carrying-attempt: script and transaction sizes against the frozen limits, the outcome and its limiting evidence.",
+      "text": "boot-carrying-attempt: script and transaction sizes against the frozen limits, the outcome and its limiting evidence.",
       "pause": 400
     }
   ],
@@ -39,11 +39,11 @@
       "pause": 500
     },
     {
-      "text": "[ ] reference-verification-outcomes: reused, published, missing, spent and wrong script outcomes, each with its control.",
+      "text": "reference-verification-outcomes: reused, published, missing, spent and wrong script outcomes, each with its control.",
       "pause": 400
     },
     {
-      "text": "[ ] independent-creator-and-recovery: a creator that never published reuses both copies; recovery and repeat invocation over shared publications.",
+      "text": "independent-creator-and-recovery: a creator that never published reuses both copies; recovery and repeat invocation over shared publications.",
       "pause": 400
     }
   ],
@@ -53,16 +53,16 @@
       "pause": 500
     },
     {
-      "text": "[ ] shared-registry-registers: a registry created on live copies is booked and folded with the same commands.",
+      "text": "shared-registry-registers: a registry created on live copies is booked and folded with the same commands.",
       "pause": 400
     },
     {
-      "text": "[ ] reuse-conformance-and-documentation: the reuse rows computed from receipts, the instructions and the speech.",
+      "text": "reuse-conformance-and-documentation: the reuse rows computed from receipts, the instructions and the speech.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "fd88ede6e42d14f5b7fbf1f6cd8ae7d48488bb488d83d048f0c3cece3388a4f3"
+    "sha256": "f22d2e1d0302819a75a0c673c9848ee71f902f95aa95316b9d1996a39f7379ef"
   }
 }

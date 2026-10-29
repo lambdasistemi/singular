@@ -9,7 +9,7 @@ the ticket owner accepts its slice.
 
 ## Pull request 1: measured creation
 
-- [ ] creation-cost-baseline-and-candidate: matched first and later creations for the previous design and the candidate, with receipts and the page.
+- [x] creation-cost-baseline-and-candidate: matched first and later creations for the previous design and the candidate, with receipts and the page.
 - [ ] boot-carrying-attempt: script and transaction sizes against the frozen limits, the outcome and its limiting evidence.
 
 ## Pull request 2: references and independent reuse
