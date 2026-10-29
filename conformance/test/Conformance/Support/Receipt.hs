@@ -71,7 +71,9 @@ spec = describe "Appendix: deciding whether a report counts as evidence" $ do
         $ do
             rows <- getDataFileName "rows.json" >>= loadRows >>= either fail pure
             reports <- fixtures
-            forM_ (zip rows reports) $ \(row, report) -> do
+            rows `shouldSatisfy` (not . null)
+            reports `shouldSatisfy` (not . null)
+            forM_ [(row, report) | row <- rows, report <- reports] $ \(row, report) -> do
                 effectiveState "fixture-base" [] row
                     `shouldBe` ShownPlanned (rowState row)
                 let bound = report{receiptRow = rowId row}

@@ -75,6 +75,8 @@ with tarfile.open(archive / filename) as bundle:
         "docs/naming-demo.speech.json",
         "docs/naming-lifecycle/index.html",
         "docs/naming-lifecycle.speech.json",
+        "docs/shared-publications/index.html",
+        "docs/shared-publications.speech.json",
         "specs/protocol/spec/index.html",
         "index.speech.json",
     ):

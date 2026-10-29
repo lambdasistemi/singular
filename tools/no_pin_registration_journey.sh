@@ -594,6 +594,13 @@ check "the packaged readers classify live custody, pending termination and authe
   reading_evidence journey
 
 chain transactions >"$chain_dir/all-transactions.json"
+leg="registration on shared publications"
+observe_shared_registration() {
+  python3 -I "$(dirname "$chain_view")/shared_registration_observations.py" "$work" \
+    >"$work/shared-registration.json" 2>"$work/shared-registration.err"
+}
+check "the independent creator's registry registers a key through a public-data fold; another registry and a missing deposit fail" \
+  observe_shared_registration
 leg="no witness publication"
 check "no journey transaction publishes a witness policy or configures a witness pin" \
   check_shared_no_witness_publication "$chain_dir/all-transactions.json" "$state_policy" "$application_hash"
