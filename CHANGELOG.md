@@ -1,5 +1,74 @@
 # Changelog
 
+## [0.18.0](https://github.com/lambdasistemi/singular/compare/v0.17.0...v0.18.0) (2026-10-29)
+
+
+### Features
+
+* inspect connected registry states on a development network ([32a2c46](https://github.com/lambdasistemi/singular/commit/32a2c464352a9dca001e354c938bda4dc81c21fc))
+* inspect open datum holdings and pending termination ([5a06938](https://github.com/lambdasistemi/singular/commit/5a069385780e84c1b79711a7f301b7e9680a6f5e))
+* inspect registry keys from their address ([41440e0](https://github.com/lambdasistemi/singular/commit/41440e030f8e787f2996d5f17459cea311c3ef69))
+* inspect registry keys without an application decoder ([72e47af](https://github.com/lambdasistemi/singular/commit/72e47af3156b683549ca4d1f85679932e6a085b1))
+* measure creation carrying against the development node ([d9de64c](https://github.com/lambdasistemi/singular/commit/d9de64c0fa83eb2dcdc9c68230702fdc3273cdb0))
+* measure creation transactions from chain bytes ([a676f46](https://github.com/lambdasistemi/singular/commit/a676f464e2d87fb8c8fe78a0ef85c2afa7535af1))
+* **model:** prove missing evidence never establishes absence ([fe39771](https://github.com/lambdasistemi/singular/commit/fe39771ba25ea6be7eb5d86db0b7df51afb27e5c))
+* **model:** prove neutral custody and application refinement ([5f8ad94](https://github.com/lambdasistemi/singular/commit/5f8ad94264775fdd5320e24570bb751d67229f77))
+* **model:** prove reader answers imply leaf state and custody ([6169983](https://github.com/lambdasistemi/singular/commit/61699833fae83449466c6549c5e1803a10718cca))
+* **model:** prove the reader branch answers ([782ade1](https://github.com/lambdasistemi/singular/commit/782ade17d6d6fe9a3e8d2f1f5852db5df04bcb56))
+* **model:** separate neutral custody from application reading ([d1e9ed3](https://github.com/lambdasistemi/singular/commit/d1e9ed3a273893cb1d5e457c9d3a7729236bcc27))
+* **model:** state the evidence required to read a registry key ([248d0da](https://github.com/lambdasistemi/singular/commit/248d0da28b48585c3fd558c4b4792d0400246fa5))
+* **open-datum:** refine active custody with the current holding wire ([4b8ae55](https://github.com/lambdasistemi/singular/commit/4b8ae556b0962fc32104fc1dffe0b7abaef09af6))
+* **provider:** measure calls rows and bytes from every answer ([bce37ff](https://github.com/lambdasistemi/singular/commit/bce37ff5db009b04676f60fd15f8ddda9608fba9))
+* **provider:** query live holdings by policy ([3417b03](https://github.com/lambdasistemi/singular/commit/3417b03e820774cc19ed12bc3a384fc3383012a1))
+* **provider:** query live holdings by policy ([c032353](https://github.com/lambdasistemi/singular/commit/c032353e0876a952ad5569f32494bd45ee50c1cf))
+* **provider:** read the served network from genesis ([d40d724](https://github.com/lambdasistemi/singular/commit/d40d724e0664c6c0f0d3750da0808d123e3c7e15))
+* publish measured creation costs for shared script publications ([7154a41](https://github.com/lambdasistemi/singular/commit/7154a41634c62d2fbbc1640c8875cd594cd3988e))
+* publish uncovered registry reading requirements ([9a65cfc](https://github.com/lambdasistemi/singular/commit/9a65cfc8c4365b738f3843e74d9b9af638ee867e))
+* **reader:** classify absence from the replayed state root ([2982e74](https://github.com/lambdasistemi/singular/commit/2982e74bf2ad9897b6da61b09211383fe37206c9))
+* **reader:** classify application-neutral registry evidence ([0de8e1b](https://github.com/lambdasistemi/singular/commit/0de8e1bd0bd48792e8fcaf4271428e835351d839))
+* **reader:** query the served network and active asset ([2bfcfc1](https://github.com/lambdasistemi/singular/commit/2bfcfc199d026c563a6e1785d7e279bb783ef05f))
+* **registry:** embed the release table in the executable ([15c6285](https://github.com/lambdasistemi/singular/commit/15c62859f5416dd77e0f8b07175be8f347ee7794))
+* **registry:** identify applications by their applied state policy ([1bb981e](https://github.com/lambdasistemi/singular/commit/1bb981e65b9fac1ed13b4695dde7757b3615a31d))
+* **registry:** read the served network, measure query work and name applications by state policy ([a5bde20](https://github.com/lambdasistemi/singular/commit/a5bde203af6c999c061f8124832164fc3ff4f170))
+* report inspect query work from the provider trace ([78f9966](https://github.com/lambdasistemi/singular/commit/78f9966924543c2d45eeb38140446dbea21434d3))
+
+
+### Fixes
+
+* check the complete creation run independently of receipts ([a422ecc](https://github.com/lambdasistemi/singular/commit/a422ecc896194163734e1ad3eed9b27e8053fe79))
+* **conformance:** read the provider exchange result by name ([0cde4ef](https://github.com/lambdasistemi/singular/commit/0cde4ef58fb5647f2ff706faf05d5966469ac58f))
+* include inspection in command lifecycle evidence ([3d44ebf](https://github.com/lambdasistemi/singular/commit/3d44ebfe3ccc92afaaf66ba515052de789f3c74c))
+* present decoded live holdings as live ([4dbae41](https://github.com/lambdasistemi/singular/commit/4dbae41e6f6fd0d7f5973a2a739b8bb94f0c3849))
+* **provider:** record policy asset listings ([bbc4744](https://github.com/lambdasistemi/singular/commit/bbc474478564e35a2c099e9c165445ab92547da4))
+* **provider:** separate final answer size from retry work ([0871fb4](https://github.com/lambdasistemi/singular/commit/0871fb4465c9bc18ac5a4952fc0f1a5b0e52fc7a))
+* read the provider network before builder startup ([8c5a7af](https://github.com/lambdasistemi/singular/commit/8c5a7afff5cf943f558fad0daed4421da04aaff0))
+
+
+### Documentation
+
+* describe registry inspection and its query work ([4ef9a4d](https://github.com/lambdasistemi/singular/commit/4ef9a4d3690db34fb402fa37831c2799a27a1d80))
+* distinguish inspection answers from write receipts ([cd2964e](https://github.com/lambdasistemi/singular/commit/cd2964eafae362caa0415b10cde5871670a3c286))
+* explain measured creation carrying limits ([d3e014a](https://github.com/lambdasistemi/singular/commit/d3e014abccfe22c55dc6851206de71c7fbf1c899))
+* narrate measured creation carrying outcomes ([ae1f317](https://github.com/lambdasistemi/singular/commit/ae1f317e03aeccbc82b1441d6a69356a1c5f9113))
+* publish measured registry creation costs ([f266b9c](https://github.com/lambdasistemi/singular/commit/f266b9c61d8796e4c60b4852f87f84e49e6d01df))
+* **specs:** describe the reader in two layers ([08582df](https://github.com/lambdasistemi/singular/commit/08582dfe1f5d74e747df6d9e6ea6de99d03ead8f))
+* **specs:** join the gate tables of issue 745 ([860e755](https://github.com/lambdasistemi/singular/commit/860e75568a1aa9224ffffd4e127aaea80710e307))
+* **specs:** join the reader gate tables ([357861c](https://github.com/lambdasistemi/singular/commit/357861cb7103291edc5f4462b2f6f102ae46a9f0))
+* **specs:** plan shared script publications of issue 745 ([0074782](https://github.com/lambdasistemi/singular/commit/00747821a4efdf8400f2a6100fdafcfce0164339))
+* **specs:** plan the batch fold within measured limits ([cd61303](https://github.com/lambdasistemi/singular/commit/cd61303f47934433fc89c4c0a8b03dcdcd41b7e2))
+* **specs:** plan the registry reader of issue 744 ([9630b14](https://github.com/lambdasistemi/singular/commit/9630b14d64305717b46411ac731a80b075e24e75))
+* **specs:** record the accepted measurement slice of issue 745 ([0e261e2](https://github.com/lambdasistemi/singular/commit/0e261e2e9892feec18b5bb21d61b20ac127d5d1a))
+* **specs:** record the carrying slice and the hosted-check census of issue 745 ([4be830e](https://github.com/lambdasistemi/singular/commit/4be830ef6d45d7f5165407a1233e76f4f3f71fc8))
+* **specs:** record the provider query slice as done ([1d65097](https://github.com/lambdasistemi/singular/commit/1d650974474d4909587281899cf5bcd673e1f31d))
+* **specs:** record the reader answers and accept the provider slices ([f0faf80](https://github.com/lambdasistemi/singular/commit/f0faf808ae8b5115d7e6317df87f47215655b4a1))
+* **specs:** stamp the reader tasks ([5f06d15](https://github.com/lambdasistemi/singular/commit/5f06d1547b10d3609314466744d5f3055140ed35))
+
+
+### Automation
+
+* keep the creation measurement in its hosted app ([672fc0e](https://github.com/lambdasistemi/singular/commit/672fc0e98510d67055010ba5ad369c0488822b19))
+* move setup-nix to the Node 24 cachix action ([e167244](https://github.com/lambdasistemi/singular/commit/e167244d9edeeaba5b5ae70c1f41b9b5bc63affd))
+
 ## [0.17.0](https://github.com/lambdasistemi/singular/compare/v0.16.0...v0.17.0) (2026-10-28)
 
 
