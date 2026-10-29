@@ -74,3 +74,14 @@ largest fitting batch is decided by a search whose cost law is checked at its bo
 refusal that names a capacity limit counts as "does not fit". Both input hashes and the frozen hash are recorded in the
 runtime root. A row with no existing hosted command is a missing job and is escalated, never replaced by an invented
 local check.
+
+## Gate version 2
+
+Appended on 29 October 2026; every row above is unchanged. A pull request that adds a flake app or check carries this row, because
+the census reads every app and check a flake declares and fails on one that no workflow step names.
+
+| Row | Acceptance it proves | Hosted job | Verbatim command | Expected exit |
+| --- | --- | --- | --- | --- |
+| G21 | every flake app or check the pull request adds is named by a workflow step | ci.yml `declared-checks-hosted` | `nix run --quiet .#declared-checks-classify-controls`; `nix run --quiet .#declared-checks-issue-states <file>` with a read-only `GH_TOKEN`; `nix run --quiet .#declared-checks-hosted <file>` | 0 |
+
+Pull requests 3 and 4 carry G21 whenever they add an app or a check; one execution is added, never a wrapper plus an app.

@@ -19,7 +19,9 @@ flowchart LR
     H -->|a key address or other holder| S1[Skipped, named]
     H -->|yes| X{Decoded as a request of this registry?}
     X -->|another registry or undecodable| S2[Skipped, named]
-    X -->|yes| O[Order: most valuable to the folder first]
+    X -->|yes| U{Foldable in the observed state?}
+    U -->|no: key taken, key not live, deposit too small, window closed| S3[Skipped, named]
+    U -->|yes| O[Order: most valuable to the folder first]
     O --> F[Largest batch that builds under the network's limits]
     F --> T[One transaction: state spent, requests spent, approvals burned]
     F --> L[Left for the next fold, counted]
@@ -31,7 +33,7 @@ flowchart LR
 | Step | Rule |
 | --- | --- |
 | Find | every output that holds an approval of the application's policy is read from the provider; only an output at the application's script that decodes as a request of this registry is a pending request |
-| Skip | an approval held at a key address, a request of another registry, and an output that does not decode are skipped and named in the receipt; none of them refuses the fold |
+| Skip | an approval held at a key address, a request of another registry, an output that does not decode, and a request that cannot be folded in the observed state (its key already registered, a termination of a key that is not live, the later of two requests for one key, a deposit below what its holding must keep, a closed processing window) are skipped and named in the receipt; none of them refuses the fold, and a request that cannot be folded never keeps its key from a foldable one |
 | Take | a registration request gives the folder its held ADA above the deposit the holding must keep; a termination request gives the folder its whole ADA; both are the transaction's change |
 | Fit | the folder builds the largest prefix of the ordered requests that the network's limits accept; the rest are counted as left |
 | Explicit | a folder may name the requests instead; a named batch is refused, never trimmed, when it cannot be built |
@@ -44,6 +46,10 @@ flowchart LR
   under the application policy and their holders; a wallet that booked none of them finds the same set as the booker.
 - foreign-holders-skipped: a request held at a key address, a request of another registry and an undecodable output are
   skipped and named, each beside a control that folds the same shape when it is held correctly.
+- unfoldable-requests-skipped: in automatic selection a request the builder would refuse on its own account is skipped and
+  named, never handed to the builder; the first individually foldable request for a key in the order keeps it; every
+  discovered request is folded, skipped with its reason or counted as left, and a skipped one is never counted as left;
+  each class has a control that folds the same shape when it is foldable.
 - mixed-batch: one transaction folds registrations and terminations of one registry together.
 - folder-takes-the-surplus: the transaction's change carries each request's value above what the application requires
   to stay, read from the chain and not from a command's receipt.
@@ -72,6 +78,8 @@ flowchart LR
 | A transaction spends the state and moves anything else under the state policy | rejected by the state script | devnet, from a deliberately malformed transaction |
 | A named batch is too large for the network's limits | refused, naming the limit that failed; never trimmed | unit test and devnet |
 | Nothing pending | refused: nothing to fold | unit test and devnet |
+| Every discovered request is unfoldable or skipped | refused: nothing to fold, with each skipped request and its reason in the receipt | unit test and devnet |
+| An automatic selection holds a request that cannot be folded in the observed state | that request is skipped and named; the rest folds | unit test and devnet |
 | The provider fails or answers incompletely while finding requests | unavailable, naming the read; never an empty batch | unit test |
 | A provider read of the state or of a named request fails | unavailable, naming the read | unit test |
 

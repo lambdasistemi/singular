@@ -35,15 +35,15 @@
       "pause": 500
     },
     {
-      "text": "[ ] discover-pending: pending requests of one registry found from the approvals; skipped holders named; failure is unavailable.",
+      "text": "[x] discover-pending: pending requests of one registry found from the approvals; skipped holders named; failure is unavailable.",
       "pause": 300
     },
     {
-      "text": "[ ] fit-largest-batch: the order by the folder's take, the largest prefix that builds, the count left, the named-batch refusals.",
+      "text": "[x] fit-largest-batch: the order by the folder's take, the largest prefix that builds, the count left, the named-batch refusals.",
       "pause": 300
     },
     {
-      "text": "[ ] fold-command-discovers: the fold command discovers, takes an optional limit, reports folded, skipped and left; help, parser rows, flags and recovery partition.",
+      "text": "[x] fold-command-discovers: the fold command discovers, takes an optional limit, reports folded, skipped and left; help, parser rows, flags and recovery partition.",
       "pause": 300
     }
   ],
@@ -83,6 +83,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "5b77fe721f0ef977adc5de15c544a2f36bba71c1d7d0723be3699d5ec4d008ba"
+    "sha256": "bbe28194ae8968f2759a53597dec35f7caca09dec5ef74ce44ab4b57881e70a0"
   }
 }
