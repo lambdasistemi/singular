@@ -525,6 +525,40 @@ control "a creation that adds a reference output is refused by the reuse check" 
   check_shared_independent_creation "$receipts/create-independent.json" "$scratch/independent-publication.json" \
   "$chain_dir/first-publish-state.tx.json" "$live_copies"
 
+# The registry identity and pending reference given to the new folder are
+# public chain facts. It starts without even its own earlier command records.
+leg="registration on shared publications"
+independent_token="$(jq -er --arg p "$state_policy" '.mint[] | select(.policy == $p and .quantity == 1) | "\(.policy).\(.name)"' "$chain_dir/independent-create.tx.json")"
+printf '%s\n' '{"name":"shared"}' >"$work/actors/alice/cwd/shared-payload.json"
+as alice book-independent "$open_datum" insert --blueprint plutus.json \
+  --state-token "$independent_token" --key journey-shared-registry --payload shared-payload.json \
+  --deposit 3000000 --tip "$tip"
+view_tx book-independent "$(field book-independent '.pending | split("#")[0]')"
+view_unspent before-independent-fold
+shared_pending="$(jq -er --arg app "$application_hash" --arg sp "${independent_token%%.*}" \
+  --arg sn "${independent_token##*.}" --arg key "$(hex_of journey-shared-registry)" '
+  [.outputs[] | select(.credential == {type:"script",hash:$app} and .datum.constructor == 1)
+    | select(.datum.fields[0].fields[0].fields == [{bytes:$sp},{bytes:$sn}]
+             and .datum.fields[0].fields[1] == {bytes:$key})]
+  | if length == 1 then .[0].ref else error("no unique public registration for the independent registry") end' \
+  "$chain_dir/before-independent-fold.unspent.json")"
+mkdir -p "$work/actors/bob-shared/cwd" "$work/actors/bob-shared/home"
+cp "$work/actors/bob/cwd/bob.skey" "$work/actors/bob-shared/cwd/bob-shared.skey"
+cp "$work/release/plutus.json" "$work/actors/bob-shared/cwd/plutus.json"
+(cd "$work/actors/bob-shared" && find cwd home -mindepth 1 | LC_ALL=C sort) >"$listings/bob-before-independent-fold.txt"
+check "the independent registry's folder holds only its own key and the release" \
+  listing_is "$listings/bob-before-independent-fold.txt" cwd/bob-shared.skey cwd/plutus.json
+{
+  cat "$listings/bob-before-independent-fold.txt"
+  echo home/booker-journal.jsonl
+} >"$scratch/shared-folder-with-booker-record.txt"
+control "a booker's record in the independent registry's folder would be seen" \
+  listing_is "$scratch/shared-folder-with-booker-record.txt" cwd/bob-shared.skey cwd/plutus.json
+as bob-shared fold-independent "$open_datum" fold --blueprint plutus.json \
+  --state-token "$independent_token" --pending "$shared_pending"
+view_tx fold-independent "$(tx_of fold-independent fold)"
+view_unspent after-independent-fold
+
 # A fixture transaction spends the key-owned application reference output.
 # The ledger prices its carried script even though it is spent, not read.
 # The next application creation
@@ -660,6 +694,10 @@ check "removing the temporary control restores predicate coverage" shared_public
   cat "$listings/erin-before-creation.txt"
   printf '\n```\n\nIts creation receipt reports the shared sources:\n\n```json\n'
   cat "$receipts/create-independent.json"
+  printf '\n```\n\n## Registration in that independent registry\n\nThe folder started with these files:\n\n```\n'
+  cat "$listings/bob-before-independent-fold.txt"
+  printf '\n```\n\nThe included transactions and altered-observation controls show:\n\n```json\n'
+  cat "$work/shared-registration.json"
   printf '\n```\n\n## Verdicts\n\n'
   cat "$verdicts"
 } >"$work/receipt.md"
