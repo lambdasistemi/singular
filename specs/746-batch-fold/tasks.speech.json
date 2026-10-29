@@ -15,7 +15,7 @@
       "pause": 500
     },
     {
-      "text": "[ ] gate-synthesized: the ticket owner's and the auditor's gate tables joined once and frozen with both input hashes.",
+      "text": "[x] gate-synthesized: the ticket owner's and the auditor's gate tables joined once and frozen with both input hashes.",
       "pause": 300
     }
   ],
@@ -25,7 +25,7 @@
       "pause": 500
     },
     {
-      "text": "[ ] policy-holdings-query: the policy query answered by the Koios provider, the devnet facade and the test providers, with rows and bytes and the contract rows.",
+      "text": "[x] policy-holdings-query: the policy query answered by the Koios provider, the devnet facade and the test providers, with rows and bytes and the contract rows.",
       "pause": 300
     }
   ],
@@ -83,6 +83,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "569d116e085a19f37143837b061833b0c6b85095e4403aee36816ec5c8d9eef9"
+    "sha256": "5b77fe721f0ef977adc5de15c544a2f36bba71c1d7d0723be3699d5ec4d008ba"
   }
 }

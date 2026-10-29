@@ -5,11 +5,11 @@ the ticket owner accepts its slice.
 
 ## Binding
 
-- [ ] gate-synthesized: the ticket owner's and the auditor's gate tables joined once and frozen with both input hashes.
+- [x] gate-synthesized: the ticket owner's and the auditor's gate tables joined once and frozen with both input hashes.
 
 ## Pull request 1: provider
 
-- [ ] policy-holdings-query: the policy query answered by the Koios provider, the devnet facade and the test providers, with rows and bytes and the contract rows.
+- [x] policy-holdings-query: the policy query answered by the Koios provider, the devnet facade and the test providers, with rows and bytes and the contract rows.
 
 ## Pull request 2: discovery and fit
 
