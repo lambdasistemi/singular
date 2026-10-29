@@ -1,6 +1,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeApplications #-}
 
 {- |
 Module      : Singular.State.StateFoldSpec
@@ -21,6 +22,8 @@ module Singular.State.StateFoldSpec
 
 import Control.Monad (forM_)
 import Data.ByteString (ByteString)
+import Data.ByteString.Lazy qualified as LBS
+import Data.Either (isLeft)
 import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.Map.Strict qualified as Map
 import Data.Text qualified as Text
@@ -29,14 +32,17 @@ import PlutusCore.Data qualified as PLC
 import Test.Hspec
 
 import Cardano.Ledger.Address (Addr)
+import Cardano.Ledger.Api.PParams (ppMaxTxSizeL)
 import Cardano.Ledger.Api.Tx.Out
     ( addrTxOutL
     , coinTxOutL
     , datumTxOutL
     , valueTxOutL
     )
+import Cardano.Ledger.Binary (serialize)
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
+import Cardano.Ledger.Core (eraProtVerHigh)
 import Cardano.Ledger.Mary.Value
     ( AssetName
     , MaryValue (..)
@@ -46,11 +52,16 @@ import Cardano.Ledger.TxIn (TxIn)
 import Cardano.Slotting.Slot (SlotNo (..))
 import Cardano.Tx.Ledger (ConwayTx)
 
+import Singular.Registry.Evidence (value)
 import Singular.Registry.Ledger (ConwayEra, TxOut)
 import Singular.Registry.LedgerProvider
     ( OutputQuery (..)
     , ReadFailure (..)
     , Session (..)
+    )
+import Singular.Registry.RawChainFixture
+    ( ChainFacts (..)
+    , advanceChain
     )
 import Singular.Registry.TrieState (RegistryIdentity (..))
 import Singular.Registry.TxBuilder.Internal (mkInlineDatum)
@@ -78,6 +89,74 @@ import Singular.State.StateWorld
 
 spec :: Spec
 spec = do
+    describe "the largest fitting public batch" $ do
+        it "orders by the folder's take, independently of provider order" $ do
+            rg <- newRegistered
+            [low, high, middle] <-
+                book
+                    rg
+                    'p'
+                    [ (bookedKey "low" processingDeadline){bkTip = 1_000_000}
+                    , (bookedKey "high" processingDeadline){bkTip = 3_000_000}
+                    , (bookedKey "middle" processingDeadline){bkTip = 2_000_000}
+                    ]
+            forM_ [False, True] $ \backwards -> do
+                tx <- discoverWithOrder rg backwards
+                map fst (foldedRequests tx) `shouldBe` [high, middle, low]
+
+        it
+            "breaks equal takes by output reference, even when served backwards" $ do
+            rg <- newRegistered
+            refs <-
+                book
+                    rg
+                    'p'
+                    [ bookedKey "one" processingDeadline
+                    , bookedKey "two" processingDeadline
+                    ]
+            tx <- discoverWithOrder rg True
+            map fst (foldedRequests tx) `shouldBe` refs
+
+        it "folds the greatest prefix that builds at a measured byte boundary" $ do
+            (rg, [high, middle, _], _) <- prepareByteBoundary
+            tx <- discoverFold rg (rgFolder rg)
+            map fst (foldedRequests tx) `shouldBe` [high, middle]
+            judge (rgWorld rg) tx >>= (`shouldSatisfy` everyScriptAccepts)
+
+        it
+            "refuses an oversized named batch without trimming and names the byte limit" $ do
+            (rg, refs, limit) <- prepareByteBoundary
+            namedOutcome <- foldNow rg refs
+            namedOutcome `shouldSatisfy` isLeft
+            show namedOutcome
+                `shouldSatisfy` (Text.isInfixOf "size" . Text.toLower . Text.pack)
+            show namedOutcome
+                `shouldSatisfy` (Text.isInfixOf (Text.pack (show limit)) . Text.pack)
+
+        it "keeps a deadline refusal instead of treating it as capacity" $ do
+            rg <- newRegistered
+            [current, _] <-
+                book
+                    rg
+                    'p'
+                    [ (bookedKey "current" processingDeadline){bkTip = 2_000_000}
+                    , (bookedKey "expired" 1){bkTip = 1_000_000}
+                    ]
+            control <- expectBuilt =<< foldNow rg [current]
+            judge (rgWorld rg) control >>= (`shouldSatisfy` everyScriptAccepts)
+            withSession
+                (rgWorld rg)
+                ( \session ->
+                    buildRegistrationFold
+                        session
+                        (rgScript rg)
+                        standInApplication
+                        (rgRegistry rg)
+                        []
+                        (rgFolder rg)
+                )
+                `shouldReturn` Left ProcessingWindowClosed
+
     describe "discovery from public approval holders" $ do
         it "finds the registry's requests without naming their references" $ do
             rg <- newRegistered
@@ -640,6 +719,56 @@ firstOf :: [TxIn] -> TxIn
 firstOf = \case
     ref : _ -> ref
     [] -> error "nothing was booked"
+
+{- | Measure two actual builds, then set the protocol limit strictly between
+them. The shorter named batch is independently rebuilt and evaluated as the
+accepted boundary control before either selection assertion runs.
+-}
+prepareByteBoundary :: IO (Registered, [TxIn], Integer)
+prepareByteBoundary = do
+    rg <- newRegistered
+    refs@[high, middle, _] <-
+        book
+            rg
+            'p'
+            [ (bookedKey "high" processingDeadline){bkTip = 3_000_000}
+            , (bookedKey "middle" processingDeadline){bkTip = 2_000_000}
+            , (bookedKey "low" processingDeadline){bkTip = 1_000_000}
+            ]
+    two <- expectBuilt =<< foldNow rg [high, middle]
+    three <- expectBuilt =<< foldNow rg refs
+    let bytes tx = toInteger (LBS.length (serialize (eraProtVerHigh @ConwayEra) tx))
+        limit = (bytes two + bytes three) `div` 2
+    bytes two `shouldSatisfy` (< bytes three)
+    advanceChain (worldChain (rgWorld rg)) $ \facts ->
+        facts
+            { csPParams = csPParams facts & ppMaxTxSizeL .~ fromIntegral limit
+            }
+    control <- expectBuilt =<< foldNow rg [high, middle]
+    judge (rgWorld rg) control >>= (`shouldSatisfy` everyScriptAccepts)
+    pure (rg, refs, limit)
+
+-- | Change only the served order, preserving the exact outputs and evidence.
+discoverWithOrder :: Registered -> Bool -> IO ConwayTx
+discoverWithOrder rg backwards = withSession (rgWorld rg) $ \session -> do
+    let reordered =
+            session
+                { outputs = \query -> do
+                    result <- outputs session query
+                    pure $ case query of
+                        HoldingPolicy{}
+                            | backwards ->
+                                fmap (\answer -> answer{value = reverse (value answer)}) result
+                        _ -> result
+                }
+    expectBuilt
+        =<< buildRegistrationFold
+            reordered
+            (rgScript rg)
+            standInApplication
+            (rgRegistry rg)
+            []
+            (rgFolder rg)
 
 discoverFold :: Registered -> Addr -> IO ConwayTx
 discoverFold rg payer =
