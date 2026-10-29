@@ -3,48 +3,33 @@
 
 {- |
 Module      : Singular.Application.OpenDatum.ApplicationSpec
-Description : The registry's application value, pinned like the enumeration pins it
+Description : Generic neutral and hash-pinned application values
 License     : Apache-2.0
 
-The pin-equivalence proof derives every pin and code twice at run time,
-once through the application value and once through the enumeration
-composition the base runs, over two seeds and two economics, and asserts
-byte-identity; it types no expected value. The neutral value names
+The neutral value names
 nothing, the hash-pinned form pins its given hash with no application
 script, and the neutral value resolves a registry reading the pin from
 its state datum.
 -}
 module Singular.Application.OpenDatum.ApplicationSpec (spec) where
 
-import Control.Monad (forM_)
-import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Short qualified as SBS
 import Data.IORef (newIORef)
 import Data.Maybe (isNothing)
-import Data.Text (Text)
-import Data.Text qualified as T
-import Data.Text.Encoding qualified as TE
 import Test.Hspec
-
-import Data.ByteString.Base16 qualified as B16
 
 import Cardano.Ledger.BaseTypes (Network (Testnet))
 import Cardano.Ledger.Coin (Coin (..))
-import Cardano.Ledger.TxIn (TxIn)
 
-import Singular.Application.OpenDatum.Script qualified as Script
 import Singular.Application.OpenDatum.StateTokenFixture
-    ( bootEconomics
-    , bootState
+    ( bootState
     , chainSession
     , honestChain
-    , refOf
     , release
     , seedIn
     , token
     )
-import Singular.Application.OpenDatum.Value (openDatumApplication)
 import Singular.Registry.Application
     ( Application (..)
     , ApplicationPin (..)
@@ -56,31 +41,22 @@ import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Config.Application
     ( RegistryEconomics (..)
     , configForApplication
-    , registryIdentity
     )
 import Singular.Registry.StateToken
     ( Release (..)
     , ResolvedRegistry (..)
     , resolveRegistry
     )
-import Singular.Registry.TxBuilder.Edges (namingPins)
 import Singular.Registry.TxBuilder.Internal
-    ( computeScriptHash
-    , scriptHashBytes
-    , txInToRef
+    ( txInToRef
     )
 import Singular.Registry.Types (stateAppPolicyBytes)
 
 spec :: Spec
 spec = do
-    pinEquivalence
     neutralValue
     hashPinned
     neutralResolution
-
--- | Two seeds and two economics: process time, retract time and tip vary.
-seedB :: TxIn
-seedB = refOf (T.replicate 64 "9" <> "#0")
 
 econA :: RegistryEconomics
 econA =
@@ -89,62 +65,6 @@ econA =
         , reRetractTime = 300_000
         , reTip = Coin 1_000_000
         }
-
-runs :: [(Text, TxIn, RegistryEconomics)]
-runs =
-    [ ("seedIn/cli", seedIn, econA)
-    , ("second/fixture", seedB, bootEconomics)
-    ]
-
-hex :: ByteString -> Text
-hex = TE.decodeUtf8 . B16.encode
-
-{- | The open-datum value derives byte-identical pins and codes to the
-enumeration composition the base runs.
--}
-pinEquivalence :: Spec
-pinEquivalence =
-    it
-        "derives the open-datum value's pins, codes and identity like the enumeration"
-        $ forM_ runs
-        $ \(label, seed, econ) -> do
-            let rel = release
-                seedRef = txInToRef seed
-                ident = registryIdentity (releaseState rel) seedRef
-                pinnedOld =
-                    Script.applicationCodes
-                        Script.OpenDatumApplication
-                        ident
-                        (releaseCodes rel)
-                (appOld, actOld) = namingPins pinnedOld ident
-                (cfgNew, codesNew) =
-                    configForApplication
-                        (appPin openDatumApplication)
-                        (releaseCodes rel)
-                        (releaseState rel)
-                        (releaseRequest rel)
-                        econ
-                        Testnet
-                        seedRef
-            putStrLn
-                ( T.unpack label
-                    <> " identity="
-                    <> T.unpack (hex ident)
-                    <> " application="
-                    <> T.unpack (hex (SBS.fromShort (cfgApplicationPolicy cfgNew)))
-                    <> " active="
-                    <> T.unpack (hex (SBS.fromShort (cfgActivePolicy cfgNew)))
-                    <> " application-code="
-                    <> T.unpack
-                        (hex (scriptHashBytes (computeScriptHash (ncApplication codesNew))))
-                    <> " witness-code="
-                    <> T.unpack
-                        (hex (scriptHashBytes (computeScriptHash (ncWitness codesNew))))
-                )
-            cfgApplicationPolicy cfgNew `shouldBe` appOld
-            cfgActivePolicy cfgNew `shouldBe` actOld
-            ncApplication codesNew `shouldBe` ncApplication pinnedOld
-            ncWitness codesNew `shouldBe` ncWitness pinnedOld
 
 -- | The neutral value names nothing.
 neutralValue :: Spec

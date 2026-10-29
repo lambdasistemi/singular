@@ -1,1 +1,0 @@
-{"base": "fixture-base", "blueprint": "fixture-blueprint", "cpu": null, "mem": null, "node": "fixture-node", "outcome": "refused", "verdict": "agrees-with-model", "refusal": null, "row": "CG05", "transactions": [], "txSize": null, "venue": "node-submit", "dirty": false, "rejected": null}

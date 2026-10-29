@@ -190,7 +190,7 @@ check_boundary() { # check_boundary <rule-id> <path-prefix-or-EMPTY> <import-re>
 }
 
 echo "boundary B1: the conformance library never imports the runner"
-check_boundary "B1" EMPTY '^import[[:space:]]+(qualified[[:space:]]+)?Conformance\.(Run|Cli)\b' conformance/app conformance/app-cli conformance/app-default conformance/test
+check_boundary "B1" EMPTY '^import[[:space:]]+(qualified[[:space:]]+)?Conformance\.(Run|Cli)\b' conformance/app conformance/test
 echo "boundary B2: the offchain libraries never import the command layer"
 check_boundary "B2" EMPTY '^import[[:space:]]+(qualified[[:space:]]+)?Singular\.CLI\b' offchain/cli offchain/test offchain/e2e-test applications conformance
 echo "boundary B3: journey executables keep their local modules"

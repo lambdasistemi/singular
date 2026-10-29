@@ -1,12 +1,12 @@
 {- |
 Module      : Conformance.Rows
-Description : The 59-row consumer inventory and its validation
+Description : The comparison inventory and its validation
 License     : Apache-2.0
 
 The complete consumer-row inventory from @rows.json@: id, group,
 requirement, source, expected outcome and declared plan. @list@
-prints it; @validateInventory@ enforces the denominator — 59 rows,
-58 owned — so a truncated inventory fails loudly instead of printing
+prints it; @validateInventory@ enforces the denominator — eleven rows,
+all owned — so a truncated inventory fails loudly instead of printing
 a smaller-but-plausible table.
 
 @executed@ is not a value @rows.json@ can carry: the declared field
@@ -43,31 +43,13 @@ import Data.Text qualified as T
 
 import Conformance.Receipt (Receipt (..), Verdict (..))
 
-{- | Total rows in @rows.json@: the 47 owned consumer rows (including
-historical-permissionless-fold, the F-002 permissionless-folder regression, register-active-key, #173's
-insertActive fold and its two refusal fixtures, retire-active-key, #177's
-updateTerminal retirement and its two refusal fixtures, reject-and-retract-refund-controls,
-issue #258's reject and retract with their tampered refunds, and reject-inside-processing-and-retraction-windows,
-issue #320's early rejection in two windows), the four owned rows that state
-the folded, reclaimed and cleaned-up registration journeys and the decided
-difference of the no-pin design against the previous design
-(registration-fold-outcome, registration-reclaim-outcome,
-registration-cleanup-outcome, unfoldable-registration-waits-for-reclaim),
-the three owned statements of the payload update, termination booking and
-termination fold under the previous and no-pin designs,
-the four owned registry reading requirements,
-plus checkpoint-and-treasury-policy, cardano-keri's checkpoint policy,
-recorded as out-of-scope so the boundary is visible instead of forgotten. The original broader retirement
-requirement stays present; permanent-retire-active-key is a separate requirement.
--}
+-- | The seven comparison requirements and four registry reading requirements.
 expectedRowCount :: Int
-expectedRowCount = 59
+expectedRowCount = 11
 
-{- | Rows Singular owns and must eventually evidence. Out-of-scope
-rows (checkpoint-and-treasury-policy) are carried for the boundary, never counted.
--}
+-- | Every retained requirement belongs to Singular.
 ownedDenominator :: Int
-ownedDenominator = 58
+ownedDenominator = 11
 
 {- | A row's declared coverage plan. @executed@ is unrepresentable
 here by construction: only a run receipt can establish it.

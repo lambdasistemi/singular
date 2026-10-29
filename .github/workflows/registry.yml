@@ -344,7 +344,7 @@ jobs:
         with:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      - name: Run this part of the devnet E2E against a fresh blueprint
+      - name: Run this part of the generic devnet E2E
         working-directory: offchain
         env:
           LANE: ${{ matrix.part.lane }}

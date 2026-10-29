@@ -48,7 +48,6 @@
                 --root . > model-check.txt
               lake env lean tools/m1_axioms.lean > m1-axioms-report.txt
               python3 tools/check_m1.py --axioms-report m1-axioms-report.txt --root . > m1-check.txt
-              python3 tools/check_m1_transport.py --root . >> m1-check.txt
               node simulator/build.mjs --check > page-build-check.txt
               node simulator/gate.mjs > replay-check.txt
               node simulator/gate.mjs --selftest > replay-selftest.txt

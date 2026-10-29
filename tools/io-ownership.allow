@@ -25,32 +25,12 @@ offchain/devnet/Main.hs: mvar — owner=one devnet command; lifetime=single comm
 offchain/koios-http/app/Main.hs: ioref — owner=one recorder probe run; lifetime=single command; serial failure flag folded into the exit status
 
 # ---- conformance runner: the live effects, never the library ----
-conformance/app-cli/Conformance/Cli/Admission.hs: ioref — owner=one cli-controls run; lifetime=single run; serial; admission-step accumulator for the control under test
-conformance/app-cli/Conformance/Cli/Backend.hs: async,ioref — owner=one CLI-backend control run; lifetime=single run; step counter and journals serial on the runner thread; one bounded confirmation waiter via async, observed through waitCatch with an explicit cancel and joined before the run ends
-conformance/app-cli/Conformance/Cli/FoldHistory.hs: ioref — owner=one cli-controls run; lifetime=single run; serial; fold-history accumulator for the control under test
-conformance/app-cli/Conformance/Cli/Withhold.hs: ioref — owner=one cli-controls run; lifetime=single run; serial; withhold-flag accumulator for the control under test
-conformance/app/Conformance/ForkKeys.hs: ioref — owner=one fork-keys run; lifetime=single run; serial; mirror root read back from the run-owned ref for the comparison
-conformance/app/Conformance/Mirror.hs: ioref — owner=one mirror run; lifetime=single run; serial; run-owned refs carry the mirrored state between steps
-conformance/app/Conformance/Run.hs: ioref — owner=one row run; lifetime=single run; serial; run-owned refs carry the row state between steps
-conformance/app/Conformance/Run/CaRows.hs: ioref — owner=one row run; lifetime=single run; serial; observation accumulators for the row's comparisons
-conformance/app/Conformance/Run/Cage.hs: ioref — owner=one cage run; lifetime=single run; serial; observation accumulators for the cage vectors
-conformance/app/Conformance/Run/CgRows.hs: ioref — owner=one row run; lifetime=single run; serial; observation accumulators for the row's comparisons
-conformance/app/Conformance/Run/CsRows.hs: ioref — owner=one row run; lifetime=single run; serial; observation accumulators for the row's comparisons
-conformance/app/Conformance/Run/Environment.hs: ioref — owner=one row session; lifetime=single session; serial; the session record carries refs for keys, worlds, holdings and failures between steps
-conformance/app/Conformance/Run/Fold.hs: ioref — owner=one fold run; lifetime=single run; serial; observation accumulators for the fold comparisons
-conformance/app/Conformance/Run/Live.hs: ioref — owner=one live run; lifetime=single run; serial; pending-comparison and start-state refs for the row under execution
-conformance/app/Conformance/Run/Node.hs: async — owner=one row session needing a node; lifetime=single session; link withAsync over the node-to-client thread, joined before the session ends; the harness must run node and client together
-conformance/app/Conformance/Run/Receipts.hs: ioref — owner=one receipt run; lifetime=single run; serial; receipt accumulators validated before rendering
-conformance/app/Conformance/Run/Replay.hs: ioref — owner=one replay run; lifetime=single run; serial; row identity and entry accumulators for the replayed evidence
-conformance/app/Conformance/Run/Temporary.hs: mvar — owner=process composition (TmpDirOwner); lifetime=process; MVar occupancy forbids nested or overlapping TMPDIR mutation; acquisition and cleanup masked
-conformance/app/Conformance/Run/Wallet.hs: ioref — owner=one row session; lifetime=single session; serial; wallet observation accumulators for the row
 conformance/coverage/evaluation/spike-app/Main.hs: ioref — owner=one evaluation-spike run; lifetime=single run; serial; fixture refs for the spike harness
 
 
 # ---- tests and harness: owned by the test run, joined before the example ends ----
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/ApplicationSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; fixture refs accumulated for assertions
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/PinGateSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; direct registry-resolution fixture observations accumulated for application-pin assertions
-applications/open-datum/offchain/test/Singular/Application/OpenDatum/BuildersSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; fixture refs accumulated for assertions
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/BurnSourceSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; fixture refs accumulated for assertions
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/CommandRunSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; fixture refs accumulated for assertions
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/RecoverySpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; fixture refs accumulated for assertions
@@ -66,15 +46,6 @@ applications/open-datum/offchain/test/Singular/Provider/Koios/FakeServer.hs: ior
 applications/open-datum/offchain/test/Singular/Provider/Koios/Scripted.hs: ioref — harness; owner=one scripted session; lifetime=single example; serial; scripted-answer refs for the fake transport
 applications/open-datum/offchain/test/Singular/Registry/RawChainFixture.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; raw-chain fixture refs for assertions
 applications/open-datum/offchain/test/Singular/Registry/StubSession.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; stub-session refs for assertions
-conformance/test/Conformance/Support/CliControls.hs: ioref — harness; owner=the control examples in this file; lifetime=single example; serial; control-state refs for assertions
-conformance/test/Conformance/Support/Fixture.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; fixture refs accumulated for assertions
-conformance/test/Conformance/Support/FoldHistory.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; fold-history refs for assertions
-conformance/test/Conformance/Support/FoldSelection.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; selection refs for assertions
-conformance/test/Conformance/Support/ObservedTx.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; observed-tx refs for assertions
-conformance/test/Conformance/Support/RunReplay.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; replay refs for assertions
-conformance/test/Conformance/Support/Temporary.hs: async,ioref,mvar — harness; owner=the TMPDIR examples in this file; lifetime=single example; entered/blocked coordination via MVars with the worker joined by withAsync and waitCatch; environment restored and owner released before the example ends
-conformance/test/Conformance/Support/Withhold.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; withhold refs for assertions
-conformance/test/fold-budget/Conformance/FoldFixture.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; fold-budget fixture refs for assertions
 offchain/e2e-test/Singular/Registry/E2E/Fixture.hs: ioref,mvar — harness; owner=one e2e fixture session; lifetime=single example; serial registry lock via MVar with withMVar release; fixture refs for assertions
 offchain/e2e-test/Singular/Registry/E2E/NodeSpec.hs: async — harness; owner=the examples in this file; lifetime=single example; node and client run together under link withAsync, joined before the example ends
 offchain/e2e-test/Singular/Registry/E2E/SubmitSpec.hs: ioref — harness; owner=the submit examples in this file; lifetime=single example; serial on the calling thread; the sends that reach the wrapped submission, its scripted answers and the archive heights seen at each acquisition, kept for assertions

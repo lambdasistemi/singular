@@ -41,9 +41,9 @@ For example, network-time examples start under `Singular.Registry.NetworkTime [t
 
 The registry and conformance Cabal manifests declare four Hspec suites: `cage-tests`, `e2e-tests` exposed as `cage-tests-e2e`, `contract-tests`, and `conformance-tests` exposed for filtering as `conformance-appendix-tests`. The application separately declares `open-datum-tests`. Contract checks include repeated runs of the same case list against different adapters, each wrapped under its defining module. Development-node evidence descriptions and conformance appendix markers remain inside the module groups.
 
-The public conformance command `nix run .#conformance-tests`, run from `conformance/`, executes the live product book as well as its appendix. Use `nix run .#conformance-appendix-tests -- --match "[conformance]"` to filter the Hspec appendix alone. The published book's requirement text and receipt-computed coverage are unchanged by these harness labels.
+From `conformance/`, use `nix run .#conformance-appendix-tests -- --match "[conformance]"` to filter the Hspec reader appendix.
 
-The evaluation spike's `cleanup-control` uses Tasty, so it is outside this Hspec vocabulary. The Cabal-declared `Conformance.Support.Authenticate` module was already absent from the Hspec entrypoint; it remains inactive so tagging changes neither suite membership nor example counts. No new exclusion is introduced.
+The evaluation spike's `cleanup-control` uses Tasty, so it is outside this Hspec vocabulary.
 
 ## Checks execute unit binaries
 
@@ -56,7 +56,7 @@ nix build .#checks.x86_64-linux.cage-test-vectors
 
 From `conformance/`, `nix build .#checks.x86_64-linux.conformance-tests` executes the Hspec appendix. Each check runs its existing app or binary during the Nix build, fails when that execution fails and retains the output at the check's store path. A cached result represents an earlier successful execution on the same inputs. The vector command generates vectors; it is not an Hspec suite. Apps and supported package exports remain available.
 
-The development-node suites and the live conformance book stay executable apps. Compiling or listing their examples does not establish live ledger behavior. The inventory discovers the Hspec entrypoints from Cabal, rejects unwrapped spec calls and unknown tag constructors, and exercises removal and unknown-tag controls. It is a source inventory; compiled paths and before-and-after example counts supply the separate runtime evidence.
+The development-node suites stay executable apps. Compiling or listing their examples does not establish live ledger behavior. The inventory discovers the Hspec entrypoints from Cabal, rejects unwrapped spec calls and unknown tag constructors, and exercises removal and unknown-tag controls. It is a source inventory; compiled paths and before-and-after example counts supply the separate runtime evidence.
 
 ## Observed selections
 

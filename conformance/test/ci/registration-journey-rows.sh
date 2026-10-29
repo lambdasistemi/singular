@@ -1,14 +1,13 @@
 #!/usr/bin/env bash
 # The registration journeys of the no-pin design (folded, reclaimed, cleaned up and the decided
-# difference) are published beside the previous design's early-rejection requirements, which stay
-# exactly as they were. Their state comes from the inventory the runner prints (receipts decide it),
+# difference) remain published with the holding journeys. Their state comes from the inventory the runner prints (receipts decide it),
 # never from this script: with no executing comparison against the application-held model they read
 # uncovered, with that reason, and the hosted jobs are named as a separate evidence boundary.
 #
 # usage: registration-journey-rows.sh INVENTORY.tsv ROWS.json FROZEN.txt
 #   INVENTORY.tsv   the output of `conformance list`
 #   ROWS.json       the committed requirement inventory
-#   FROZEN.txt      `sha256  row-id` of each previous-design row, as canonical compact JSON
+#   FROZEN.txt      `sha256  row-id` of each retained comparison row, as canonical compact JSON
 set -euo pipefail
 
 inventory="$1" rows="$2" frozen="$3"
@@ -54,16 +53,15 @@ for id in $ids; do
   judged=$((judged + 1))
 done
 
-# The previous design's rows are kept as they were: present, listed, and byte-identical as
-# canonical JSON. A deletion or a quiet retirement changes the hash.
+# All seven complete comparison rows are frozen as canonical JSON.
 kept=0
 while read -r hash id; do
   [ -n "$id" ] || continue
   actual="$(jq -S -c --arg id "$id" '.rows[] | select(.id == $id)' "$rows" | sha256sum | cut -d' ' -f1)"
-  [ -n "$(column "$id" 1)" ] || fail "the previous design's row $id is no longer listed"
-  [ "$actual" = "$hash" ] || fail "the previous design's row $id was edited or removed"
+  [ -n "$(column "$id" 1)" ] || fail "the comparison row $id is no longer listed"
+  [ "$actual" = "$hash" ] || fail "the comparison row $id was edited or removed"
   kept=$((kept + 1))
 done <"$frozen"
-[ "$kept" -gt 0 ] || fail "no previous-design row is frozen: a check over no rows proves nothing"
+[ "$kept" -eq 7 ] || fail "no comparison row is frozen: a check over no rows proves nothing"
 
-echo "registration-journey rows: $judged statements uncovered with their reason, $kept previous-design rows unchanged"
+echo "registration-journey rows: $judged statements uncovered with their reason, $kept comparison rows unchanged"

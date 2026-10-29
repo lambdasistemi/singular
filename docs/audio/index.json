@@ -1117,8 +1117,8 @@
     "index": 1,
     "name": "docs-conformance-api-reference/conformance-api-reference-01",
     "pause_ms": 400,
-    "text": "A contributor changing the conformance library — a story program, a model binding, a comparison, a receipt check, a rendering — wants to click a module and land on its real interface: signatures, documentation, and the highlighted source, for exactly the code this repository ships. This page is the entry point of that reference for the Conformance library: a generated Haddock reference, rebuilt with the documentation site from this same source tree, so what you read here documents exactly the code this candidate was built from. One boundary on that promise is named below: identifiers and modules that belong to other packages are visible in the generated pages but are not clickable, because their documentation is not bundled with this site.",
-    "v": "a5165ca9ff28"
+    "text": "As a contributor changing the evidence reader, I can open each module's interface and highlighted source at the same revision as this site. The generated Haddock reference covers the receipt validation, replay classification, requirement inventory and computed evidence page.",
+    "v": "b67dc203bac6"
    }
   ],
   "how-the-reference-stays-honest": [
@@ -1177,8 +1177,8 @@
     "index": 1,
     "name": "docs-conformance-api-reference/what-the-reference-does-not-claim-01",
     "pause_ms": 400,
-    "text": "This reference covers the Conformance library only. The live runner that executes rows against a devnet is an executable, not a library module: its application modules — the run control, the row runners, the wallet, the cage and the observation code — are outside this reference, and the evidence they produce is the published consumer conformance record, not an API claim. Nothing on this page is a publication or release claim — the reference ships with the candidate site and its future archives, and no version is tagged or published by existing here. The behavioral evidence for the library lives in the check commands the documentation records, not in the existence of these pages.",
-    "v": "970832d053a9"
+    "text": "API documentation does not establish product conformance. The seven application-held comparison requirements remain uncovered in the consumer record and the generated evidence page. The appendix tests check the reader; development-network journeys are a separate evidence boundary and do not establish model agreement.",
+    "v": "80c4aad09441"
    }
   ],
   "what-this-reference-contains": [
@@ -1193,477 +1193,127 @@
     "index": 1,
     "name": "docs-conformance-api-reference/what-this-reference-contains-01",
     "pause_ms": 400,
-    "text": "Every module of the Conformance library is listed below. Each entry links two pages of the generated reference: the module page — exports, types, and documented declarations — and the hyperlinked source page with the rendered, highlighted Haskell this candidate was built from. The reference's own full-page index and symbol index are linked here too. On this site the links open the generated pages; read from the repository, the module links open the source files themselves at the revision you are viewing.",
-    "v": "ed7168b33d35"
+    "text": "Every module declared by the public Conformance library is listed below. The site derives the extent from its Cabal manifest and checks both each module page and its source page against that extent. The reference's own full-page index and symbol index provide the same entry points across the complete library.",
+    "v": "53239ae9609b"
    },
    {
     "index": 2,
     "name": "docs-conformance-api-reference/what-this-reference-contains-02",
-    "pause_ms": 400,
-    "text": "The module extent is the public library of the Conformance Cabal file — every exposed module and the one package-internal owner. That complete extent is 31 modules. The 30 exposed modules are what a caller imports: the story programs, the registry rows as programs with their classification, the stories' binding and identity, the ordinary CLI's refusal controls and their receipt-computed verdicts, the model transport and the Lean oracle, the registration and perturbation comparisons, the receipt record and its validation, the refusal attribution, the row inventory, the purpose-unit arithmetic, the node-refusal rendering, the payment observation, the traced replay's classification of a live refusal and the extent of a run's refusals against the model. The one package-internal module, Conformance.Evidence.Asset, owns the asset-movement shape of edge evidence — one movement named by its policy, asset name and quantity, with the JSON encoding that carries those three fields. It is documented here for the contributor reading the facade's implementation; Conformance.Receipt re-exports its type, so no caller import path changes. The extent below is the complete documented module surface, and the site check fails until it and this list agree.",
-    "v": "39700f41883b"
+    "pause_ms": 300,
+    "text": "Conformance.EvidencePage — source",
+    "v": "fd6dfe39a33f"
    },
    {
     "index": 3,
     "name": "docs-conformance-api-reference/what-this-reference-contains-03",
     "pause_ms": 300,
-    "text": "Conformance.Authenticate — source",
-    "v": "3bad25d51c1d"
+    "text": "Conformance.Receipt — source",
+    "v": "31e9b5b23736"
    },
    {
     "index": 4,
     "name": "docs-conformance-api-reference/what-this-reference-contains-04",
     "pause_ms": 300,
-    "text": "Conformance.Book — source",
-    "v": "82b02a06c881"
+    "text": "Conformance.Replay — source",
+    "v": "e8a7b07c751e"
    },
    {
     "index": 5,
     "name": "docs-conformance-api-reference/what-this-reference-contains-05",
     "pause_ms": 300,
-    "text": "Conformance.Cli.Controls — source",
-    "v": "c11e7a4ff488"
-   },
-   {
-    "index": 6,
-    "name": "docs-conformance-api-reference/what-this-reference-contains-06",
-    "pause_ms": 300,
-    "text": "Conformance.Compare.Perturbation — source",
-    "v": "07809933a962"
-   },
-   {
-    "index": 7,
-    "name": "docs-conformance-api-reference/what-this-reference-contains-07",
-    "pause_ms": 300,
-    "text": "Conformance.Compare.Registration — source",
-    "v": "d6be4f9b53be"
-   },
-   {
-    "index": 8,
-    "name": "docs-conformance-api-reference/what-this-reference-contains-08",
-    "pause_ms": 300,
-    "text": "Conformance.Edge.EarlyReject — source",
-    "v": "2e0f58611fb3"
-   },
-   {
-    "index": 9,
-    "name": "docs-conformance-api-reference/what-this-reference-contains-09",
-    "pause_ms": 300,
-    "text": "Conformance.Edge.Exit — source",
-    "v": "97a7f52e7efa"
-   },
-   {
-    "index": 10,
-    "name": "docs-conformance-api-reference/what-this-reference-contains-10",
-    "pause_ms": 300,
-    "text": "Conformance.Edge.Occupied — source",
-    "v": "1d0f2ef54dba"
-   },
-   {
-    "index": 11,
-    "name": "docs-conformance-api-reference/what-this-reference-contains-11",
-    "pause_ms": 300,
-    "text": "Conformance.Edge.Permanent — source",
-    "v": "0e9ae17fd2c3"
-   },
-   {
-    "index": 12,
-    "name": "docs-conformance-api-reference/what-this-reference-contains-12",
-    "pause_ms": 300,
-    "text": "Conformance.Edge.Programs — source",
-    "v": "fc05bfc1a0b7"
-   },
-   {
-    "index": 13,
-    "name": "docs-conformance-api-reference/what-this-reference-contains-13",
-    "pause_ms": 300,
-    "text": "Conformance.Edge.Register — source",
-    "v": "3acc1a8fd99a"
-   },
-   {
-    "index": 14,
-    "name": "docs-conformance-api-reference/what-this-reference-contains-14",
-    "pause_ms": 300,
-    "text": "Conformance.Edge.Retire — source",
-    "v": "78398f92d849"
-   },
-   {
-    "index": 15,
-    "name": "docs-conformance-api-reference/what-this-reference-contains-15",
-    "pause_ms": 300,
-    "text": "Conformance.Edge.RetractionWindow — source",
-    "v": "a65c8aa5edd0"
-   },
-   {
-    "index": 16,
-    "name": "docs-conformance-api-reference/what-this-reference-contains-16",
-    "pause_ms": 300,
-    "text": "Conformance.Edge.Sequence — source",
-    "v": "e71e12c5d052"
-   },
-   {
-    "index": 17,
-    "name": "docs-conformance-api-reference/what-this-reference-contains-17",
-    "pause_ms": 300,
-    "text": "Conformance.Evidence.Asset — source",
-    "v": "5c58ef761f5d"
-   },
-   {
-    "index": 18,
-    "name": "docs-conformance-api-reference/what-this-reference-contains-18",
-    "pause_ms": 300,
-    "text": "Conformance.EvidencePage — source",
-    "v": "edcbb3bedc76"
-   },
-   {
-    "index": 19,
-    "name": "docs-conformance-api-reference/what-this-reference-contains-19",
-    "pause_ms": 300,
-    "text": "Conformance.Extent — source",
-    "v": "09d8dc06baae"
-   },
-   {
-    "index": 20,
-    "name": "docs-conformance-api-reference/what-this-reference-contains-20",
-    "pause_ms": 300,
-    "text": "Conformance.Fold.KeyedMint — source",
-    "v": "5bc680bed8aa"
-   },
-   {
-    "index": 21,
-    "name": "docs-conformance-api-reference/what-this-reference-contains-21",
-    "pause_ms": 300,
-    "text": "Conformance.Lean.Oracle — source",
-    "v": "907fb07dbf6f"
-   },
-   {
-    "index": 22,
-    "name": "docs-conformance-api-reference/what-this-reference-contains-22",
-    "pause_ms": 300,
-    "text": "Conformance.Lean.Registration — source",
-    "v": "3eadb51f858e"
-   },
-   {
-    "index": 23,
-    "name": "docs-conformance-api-reference/what-this-reference-contains-23",
-    "pause_ms": 300,
-    "text": "Conformance.Lean.Retirement — source",
-    "v": "2e3f6d85ee23"
-   },
-   {
-    "index": 24,
-    "name": "docs-conformance-api-reference/what-this-reference-contains-24",
-    "pause_ms": 300,
-    "text": "Conformance.NodeRejection — source",
-    "v": "e05ab593e87f"
-   },
-   {
-    "index": 25,
-    "name": "docs-conformance-api-reference/what-this-reference-contains-25",
-    "pause_ms": 300,
-    "text": "Conformance.Observe.Payments — source",
-    "v": "3b58b0d55f95"
-   },
-   {
-    "index": 26,
-    "name": "docs-conformance-api-reference/what-this-reference-contains-26",
-    "pause_ms": 300,
-    "text": "Conformance.PurposeUnits — source",
-    "v": "7b13820d13de"
-   },
-   {
-    "index": 27,
-    "name": "docs-conformance-api-reference/what-this-reference-contains-27",
-    "pause_ms": 300,
-    "text": "Conformance.Receipt — source",
-    "v": "889d24bc3d0b"
-   },
-   {
-    "index": 28,
-    "name": "docs-conformance-api-reference/what-this-reference-contains-28",
-    "pause_ms": 300,
-    "text": "Conformance.Refusal — source",
-    "v": "b768235dce13"
-   },
-   {
-    "index": 29,
-    "name": "docs-conformance-api-reference/what-this-reference-contains-29",
-    "pause_ms": 300,
-    "text": "Conformance.Replay — source",
-    "v": "5205379367bf"
-   },
-   {
-    "index": 30,
-    "name": "docs-conformance-api-reference/what-this-reference-contains-30",
-    "pause_ms": 300,
-    "text": "Conformance.RowNames — source — associates historical receipt keys with descriptive requirement names",
-    "v": "9b178ab633ca"
-   },
-   {
-    "index": 31,
-    "name": "docs-conformance-api-reference/what-this-reference-contains-31",
-    "pause_ms": 300,
     "text": "Conformance.Rows — source",
-    "v": "8f53a7b67746"
-   },
-   {
-    "index": 32,
-    "name": "docs-conformance-api-reference/what-this-reference-contains-32",
-    "pause_ms": 300,
-    "text": "Conformance.Story.Binding — source",
-    "v": "b6bf6241e6c7"
-   },
-   {
-    "index": 33,
-    "name": "docs-conformance-api-reference/what-this-reference-contains-33",
-    "pause_ms": 300,
-    "text": "Conformance.Story.Identity — source",
-    "v": "02fd51e57e6f"
-   },
-   {
-    "index": 34,
-    "name": "docs-conformance-api-reference/what-this-reference-contains-34",
-    "pause_ms": 300,
-    "text": "Conformance.Story.Live — source",
-    "v": "834642061d8f"
-   },
-   {
-    "index": 35,
-    "name": "docs-conformance-api-reference/what-this-reference-contains-35",
-    "pause_ms": 300,
-    "text": "Conformance.Story.Specification — source",
-    "v": "0d6007a0f99f"
-   }
-  ],
-  "which-contract-a-story-describes": [
-   {
-    "index": 0,
-    "name": "docs-conformance-api-reference/which-contract-a-story-describes-00",
-    "pause_ms": 500,
-    "text": "Which contract a story describes.",
-    "v": "2e9f5d7f7fe1"
-   },
-   {
-    "index": 1,
-    "name": "docs-conformance-api-reference/which-contract-a-story-describes-01",
-    "pause_ms": 400,
-    "text": "Conformance.Edge.Permanent describes the first milestone's registration and permanent termination, refusal of the five other encoded registry actions, and refusal of a mixed batch containing an excluded action. Its public requirement remains uncovered until a bounded live consumer comparison receipt establishes it. Compiled refusal tests passing does not assign that product status. Other seven-edge story modules retain the broader contract's descriptions; their historical successes do not establish support in the permanent contract. The consumer record keeps that distinction and the uncovered rows visible.",
-    "v": "312e1832221d"
+    "v": "d802ec0b6eee"
    }
   ]
  },
  "docs/conformance-architecture.md": {
-  "a-rows-journey-step-by-step": [
+  "design-choices": [
    {
     "index": 0,
-    "name": "docs-conformance-architecture/a-rows-journey-step-by-step-00",
+    "name": "docs-conformance-architecture/design-choices-00",
     "pause_ms": 500,
-    "text": "A row's journey, step by step.",
-    "v": "d7078fb82b1b"
+    "text": "Design choices.",
+    "v": "2f5e058aa158"
    },
    {
     "index": 1,
-    "name": "docs-conformance-architecture/a-rows-journey-step-by-step-01",
+    "name": "docs-conformance-architecture/design-choices-01",
     "pause_ms": 400,
-    "text": "The expected side and the observed side stay independently derived: the model transport answers from the frozen model, the comparisons read the chain's outputs as the chain paid them, and neither consults the other's assumptions. The rendering then computes every row's state from the receipts that exist — an uncovered row stays uncovered in the published record, and no row's state is typed by hand.",
-    "v": "b82bbdf7da4d"
+    "text": "Read the consumer record for commands and the generated evidence page for the complete requirements and their computed standings.",
+    "v": "908b371767dd"
    }
   ],
-  "decisions": [
+  "inputs-and-responsibilities": [
    {
     "index": 0,
-    "name": "docs-conformance-architecture/decisions-00",
+    "name": "docs-conformance-architecture/inputs-and-responsibilities-00",
     "pause_ms": 500,
-    "text": "Decisions.",
-    "v": "b366885e1f0e"
-   }
-  ],
-  "evidence-and-limits": [
-   {
-    "index": 0,
-    "name": "docs-conformance-architecture/evidence-and-limits-00",
-    "pause_ms": 500,
-    "text": "Evidence and limits.",
-    "v": "3a166499af91"
+    "text": "Inputs and responsibilities.",
+    "v": "836fffcb0767"
    },
    {
     "index": 1,
-    "name": "docs-conformance-architecture/evidence-and-limits-01",
+    "name": "docs-conformance-architecture/inputs-and-responsibilities-01",
     "pause_ms": 400,
-    "text": "This page is a map, not evidence. The executed evidence for the suite is the receipts the runs write and the row states computed from them, published in the consumer conformance record; the reference's freshness is proven by its manifest digests, not by this prose. The structural review this page came from preserved behavior by moving one declaration byte-for-byte with its caller unchanged, and its matched base/head runs are the ticket owner's comparison to read, not a claim made here. The runner's own internal division into owners remains deferred to the conformance epic's owner after the active semantic work lands; this page does not claim it delivered. No local build, test or documentation run backs this page's claims — the exact-head CI of the candidate that carries it is the verifier, and until that evidence exists these are design statements, not verified facts.",
-    "v": "1474c811bcb5"
+    "text": "The receipt loader checks report identities, outcomes, measurements, refusal attribution, replay provenance, duplicate requirements and the size bound. The overlay matches a report to its requirement and code revision. Without such a report the reader publishes the coverage plan. The page refuses a snapshot whose reports or contract results name another revision or a dirty tree, and refuses inconsistent contract-case lists across adapters.",
+    "v": "f6714fb8e7ef"
    }
   ],
-  "the-story-this-serves": [
+  "ownership-and-limits": [
    {
     "index": 0,
-    "name": "docs-conformance-architecture/the-story-this-serves-00",
+    "name": "docs-conformance-architecture/ownership-and-limits-00",
     "pause_ms": 500,
-    "text": "The story this serves.",
-    "v": "4eefa2331923"
+    "text": "Ownership and limits.",
+    "v": "8eb4ce1bfc25"
    },
    {
     "index": 1,
-    "name": "docs-conformance-architecture/the-story-this-serves-01",
+    "name": "docs-conformance-architecture/ownership-and-limits-01",
     "pause_ms": 400,
-    "text": "As a contributor, I add or change a conformance row's program, its model binding or its comparison in one focused module, and the executed cases, receipts and published evidence stay exactly what they were — so a reviewer asks one question, and the public record a consuming project reads does not move under them.",
-    "v": "5d841e5c4b6a"
+    "text": "The caller supplies the receipt directory. Each command reads its inventory and inputs for its own invocation; the reader starts no node or background worker. Tests own their temporary report directories for one example and remove them when the example finishes.",
+    "v": "38a08557f846"
    },
    {
     "index": 2,
-    "name": "docs-conformance-architecture/the-story-this-serves-02",
+    "name": "docs-conformance-architecture/ownership-and-limits-02",
     "pause_ms": 400,
-    "text": "As an integrator reading the consumer conformance record, I need the suite's own structure to keep its promise: rows become executed only through receipts, uncovered rows stay published, and the description language says what each case asserts — whatever module a change lands in.",
-    "v": "3db94f059a5a"
+    "text": "The seven application-held comparisons remain uncovered. Their development- network journeys are separate observations and supply no model-comparison credit. The backend-contract snapshot retains its own revision and source provenance in the appendix. Neither reader tests nor a green coverage ratchet establish the missing comparisons.",
+    "v": "5e2a1620d687"
    }
   ],
-  "what-may-not-change": [
+  "reading-conformance-evidence": [
    {
     "index": 0,
-    "name": "docs-conformance-architecture/what-may-not-change-00",
+    "name": "docs-conformance-architecture/reading-conformance-evidence-00",
     "pause_ms": 500,
-    "text": "What may not change.",
-    "v": "e37d3051c241"
+    "text": "Reading conformance evidence.",
+    "v": "2fdedff5aa6b"
    },
    {
     "index": 1,
-    "name": "docs-conformance-architecture/what-may-not-change-01",
+    "name": "docs-conformance-architecture/reading-conformance-evidence-01",
     "pause_ms": 400,
-    "text": "These are the suite's public promises, and a structural change that breaks one of them is not an improvement:",
-    "v": "40f748dfeb97"
-   },
-   {
-    "index": 2,
-    "name": "docs-conformance-architecture/what-may-not-change-02",
-    "pause_ms": 300,
-    "text": "A row becomes executed only through a receipt written by a run that actually executed it; row states are computed from receipts and never typed.",
-    "v": "7a21c1b09fc7"
-   },
-   {
-    "index": 3,
-    "name": "docs-conformance-architecture/what-may-not-change-03",
-    "pause_ms": 300,
-    "text": "Uncovered rows are published, not hidden; a green step is never presented as a fulfilled consumer promise.",
-    "v": "374a38f2c057"
-   },
-   {
-    "index": 4,
-    "name": "docs-conformance-architecture/what-may-not-change-04",
-    "pause_ms": 300,
-    "text": "Every product claim is expressed in the suite's description language, and execution and rendering of that language are total over the same instruction set.",
-    "v": "74799d2145e7"
-   },
-   {
-    "index": 5,
-    "name": "docs-conformance-architecture/what-may-not-change-05",
-    "pause_ms": 300,
-    "text": "Surfaces a reader navigates carry requirement text, not internal identifiers; harness evidence stays in its marked appendix.",
-    "v": "bbfe366b0d58"
-   },
-   {
-    "index": 6,
-    "name": "docs-conformance-architecture/what-may-not-change-06",
-    "pause_ms": 300,
-    "text": "No case predicate, expected outcome, verdict classification, instruction, receipt field, theorem binding or evidence claim moves by a restructure.",
-    "v": "733c6feb7262"
-   }
-  ],
-  "what-the-library-owns": [
-   {
-    "index": 0,
-    "name": "docs-conformance-architecture/what-the-library-owns-00",
-    "pause_ms": 500,
-    "text": "What the library owns.",
-    "v": "f54b0a2ab796"
-   }
-  ],
-  "where-to-make-a-change": [
-   {
-    "index": 0,
-    "name": "docs-conformance-architecture/where-to-make-a-change-00",
-    "pause_ms": 500,
-    "text": "Where to make a change.",
-    "v": "c887669fbf0c"
-   }
-  ],
-  "which-way-dependencies-run": [
-   {
-    "index": 0,
-    "name": "docs-conformance-architecture/which-way-dependencies-run-00",
-    "pause_ms": 500,
-    "text": "Which way dependencies run.",
-    "v": "8851177985af"
-   },
-   {
-    "index": 1,
-    "name": "docs-conformance-architecture/which-way-dependencies-run-01",
-    "pause_ms": 400,
-    "text": "The library never imports the app: the arrow runs one way, from the live runner into the library. The app modules — the command router and the row runners, the wallet, cage and submission owners, and Conformance.Run.Live, the interpreter that gives the story programs their live effects — are executables, outside the generated reference and documented here only by their boundary. The runner's own internal division is deferred work owned by the conformance epic, not delivered by the review this page came from; what this map promises is the library side of that boundary.",
-    "v": "9cbb6e671a63"
-   },
-   {
-    "index": 2,
-    "name": "docs-conformance-architecture/which-way-dependencies-run-02",
-    "pause_ms": 400,
-    "text": "One owner inside the evidence group is new and deliberately small: Conformance.Evidence.Asset owns the asset-movement shape of edge evidence — one movement named by its policy, asset name and quantity, with the JSON encoding that carries those three fields. It used to be the last declaration of Conformance.Receipt that is not a receipt concern. Conformance.Receipt re-exports it unchanged, so the one real caller, the live runner's keyed-mint expectation and observation, imports it through exactly the path it used before; the runner is not edited by that move.",
-    "v": "2ccdc73c1f9d"
-   }
-  ],
-  "who-owns-the-conformance-suite": [
-   {
-    "index": 0,
-    "name": "docs-conformance-architecture/who-owns-the-conformance-suite-00",
-    "pause_ms": 500,
-    "text": "Who owns the conformance suite.",
-    "v": "488fd7a28e7c"
-   },
-   {
-    "index": 1,
-    "name": "docs-conformance-architecture/who-owns-the-conformance-suite-01",
-    "pause_ms": 400,
-    "text": "Dated qualification, 2026-10-15: rejection after the window, rejection before the deadline, request value and refund routing, rejection and retraction refund controls, and rejection inside the processing and retraction windows are all unmet by ruling: implementation follows the superseded rule; the ruled rule is not implemented. The live comparisons still exercise the legacy rejection that spends the registry state output. The ruled rejection reads that output by reference and never spends it. Agreement with the legacy path is not acceptance of the ruled design. The earlier processing-window consumer requirement and the unresolved refund-routing requirement remain open. Historical results below retain their original revision and evidence binding; they do not establish current acceptance.",
-    "v": "b033bceb0ffb"
-   },
-   {
-    "index": 2,
-    "name": "docs-conformance-architecture/who-owns-the-conformance-suite-02",
-    "pause_ms": 400,
-    "text": "A contributor changing the conformance suite — adding a row's story, re-binding a theorem, adjusting a comparison, tightening the receipt record, re-rendering the published evidence — wants to open the one module that owns that concern and know which way the dependencies run, before touching a two-thousand-line live interpreter. This page is that map for the suite's library: what each concern's owner is, where the live runner's boundary sits, what may never change while the code moves, where to make a common change, and what the evidence does and does not show. The library's generated interface is the Conformance API reference; this page explains the responsibilities behind it.",
-    "v": "a11c43aeb8a0"
+    "text": "As an integrator, I want every published comparison requirement to stay visible when its evidence is missing, and every reported result to name the revision it checked. The reader separates the inventory's coverage plan from the receipts that can change a requirement's standing.",
+    "v": "ab1218d84a64"
    }
   ]
  },
  "docs/consumer-conformance.md": {
-  "appendix-checking-the-published-comparisons": [
+  "check-the-reader": [
    {
     "index": 0,
-    "name": "docs-consumer-conformance/appendix-checking-the-published-comparisons-00",
+    "name": "docs-consumer-conformance/check-the-reader-00",
     "pause_ms": 500,
-    "text": "Appendix: checking the published comparisons.",
-    "v": "43fd5d6a2f75"
+    "text": "Check the reader.",
+    "v": "0083490123ce"
    },
    {
     "index": 1,
-    "name": "docs-consumer-conformance/appendix-checking-the-published-comparisons-01",
+    "name": "docs-consumer-conformance/check-the-reader-01",
     "pause_ms": 400,
-    "text": "The appendix loads the actual requirement inventory, discovers every holding journey statement, and checks its previous-design outcome, model declaration binding, uncovered classification without comparison receipts, and stated evidence boundary. It also checks that the reader renders each requirement's text. These publication checks establish no application-held model comparison.",
-    "v": "b436ad8c6803"
-   }
-  ],
-  "appendix-how-the-statements-are-checked": [
-   {
-    "index": 0,
-    "name": "docs-consumer-conformance/appendix-how-the-statements-are-checked-00",
-    "pause_ms": 500,
-    "text": "Appendix: how the statements are checked.",
-    "v": "4e2d687e44d6"
-   },
-   {
-    "index": 1,
-    "name": "docs-consumer-conformance/appendix-how-the-statements-are-checked-01",
-    "pause_ms": 400,
-    "text": "This appendix is harness evidence and says nothing more about the product. The hosted conformance checks list the inventory with the runner, then require of every row in the group that it reads uncovered, gives its reason, states the previous design's outcome, names its declarations and both hosted jobs, retypes no number and names no internal identifier, and that the five early-rejection rows are unchanged. The same script then runs thirteen times against scratch copies with one wrong fact planted each, and must refuse every one.",
-    "v": "8a510b1dc202"
+    "text": "The appendix tests check the evidence reader. The coverage ratchet reports regressions against its protected base. Neither command supplies the missing model comparisons. The aligned models remain at the application-held model and the open-datum model.",
+    "v": "98f72bb61f35"
    }
   ],
   "consumer-conformance-record": [
@@ -1678,320 +1328,31 @@
     "index": 1,
     "name": "docs-consumer-conformance/consumer-conformance-record-01",
     "pause_ms": 400,
-    "text": "Dated qualification, 2026-10-15: rejection after the window, rejection before the deadline, request value and refund routing, rejection and retraction refund controls, and rejection inside the processing and retraction windows are all unmet by ruling: implementation follows the superseded rule; the ruled rule is not implemented. The live comparisons still exercise the legacy rejection that spends the registry state output. The ruled rejection reads that output by reference and never spends it. Agreement with the legacy path is not acceptance of the ruled design. The earlier processing-window consumer requirement and the unresolved refund-routing requirement remain open. Historical results below retain their original revision and evidence binding; they do not establish current acceptance.",
-    "v": "014420be1371"
+    "text": "As an integrator, I can read the registration, holding update, termination and reading requirements and see which comparisons have evidence. The eleven requirements are published in the generated evidence page. Every requirement is uncovered: no executable comparison with the application-held model exists yet.",
+    "v": "f3dba7b3ced9"
    },
    {
     "index": 2,
     "name": "docs-consumer-conformance/consumer-conformance-record-02",
     "pause_ms": 400,
-    "text": "As a Singular integrator, I can replay the current conformance interface, distinguish partial evidence from completed coverage, and trace older observations to the candidate that produced them. The connected naming release journey is documented separately in recovery and permanent retirement.",
-    "v": "74a21053eb02"
+    "text": "Seven requirements compare the previous and application-held designs. Their old side is computed from the retained Lean model. The development-network journey and refusal jobs are separate observations; they establish the transactions they run and do not establish agreement with the model.",
+    "v": "448f32acd266"
    }
   ],
-  "current-registry-mode-integration": [
+  "read-the-evidence": [
    {
     "index": 0,
-    "name": "docs-consumer-conformance/current-registry-mode-integration-00",
+    "name": "docs-consumer-conformance/read-the-evidence-00",
     "pause_ms": 500,
-    "text": "Current registry-mode integration.",
-    "v": "7751529443c1"
+    "text": "Read the evidence.",
+    "v": "55e0d7fa9863"
    },
    {
     "index": 1,
-    "name": "docs-consumer-conformance/current-registry-mode-integration-01",
+    "name": "docs-consumer-conformance/read-the-evidence-01",
     "pause_ms": 400,
-    "text": "The released interface follows the six-field registry-mode state contract above. The historical reports below retain their original transaction identities, measurements and limitations; they are not current execution claims. Coverage requires fresh receipts bound to the source and blueprint being replayed. A build or a green check of expected debt grants no coverage.",
-    "v": "87fbc18d707e"
-   }
-  ],
-  "current-replay-commands": [
-   {
-    "index": 0,
-    "name": "docs-consumer-conformance/current-replay-commands-00",
-    "pause_ms": 500,
-    "text": "Current replay commands.",
-    "v": "91effad8cf9c"
-   },
-   {
-    "index": 1,
-    "name": "docs-consumer-conformance/current-replay-commands-01",
-    "pause_ms": 400,
-    "text": "Run from the repository or extracted source root with Nix available. Use a fresh directory outside the tracked tree for each family. The generic session runs ten rows and may also emit its execution-units-and-transaction-size measurement receipt; the serialization session runs five devnet rows and two local checks. Superseded rows remain listed and are not runtime commands.",
-    "v": "ed6c715f4f34"
-   },
-   {
-    "index": 2,
-    "name": "docs-consumer-conformance/current-replay-commands-02",
-    "pause_ms": 400,
-    "text": "These are expected result contracts, not claims that an arbitrary nonzero exit is acceptable. Check the terminal row counts, exact receipt IDs, source/blueprint binding, per-row verdicts and named residuals. A crash, missing receipt or failed control fails the replay. The CI workflow checks those details against the actual output; partial and held rows remain debt even when that regression check is green.",
-    "v": "adbef0b02d6b"
-   },
-   {
-    "index": 3,
-    "name": "docs-consumer-conformance/current-replay-commands-03",
-    "pause_ms": 400,
-    "text": "Armed controls use a separate fresh receipt directory. Their nonzero exit must name the intended failed assertion: the wrong refusal reason, forged value or datum, weak authenticator, corrupted state derivation (legacy flag unapplied-address), wrong constructor index, wrong parameter count or deliberately missing witness. The normal partial exit alone does not prove an armed control fired. See conformance.yml for the executable session and receipt checks.",
-    "v": "f835fbe44010"
-   },
-   {
-    "index": 4,
-    "name": "docs-consumer-conformance/current-replay-commands-04",
-    "pause_ms": 400,
-    "text": "The Fork oracle and its probes remain available without a node or blueprint; their output is local proof evidence, not proof-step-constructor-witnesses completion:",
-    "v": "02219bcc11c9"
-   },
-   {
-    "index": 5,
-    "name": "docs-consumer-conformance/current-replay-commands-05",
-    "pause_ms": 400,
-    "text": "The runner gives each node a unique temporary directory. Receipts are written under the selected output directory and are never inherited as current merely because an older run succeeded.",
-    "v": "c4a267194acc"
-   }
-  ],
-  "historical-execution-reports": [
-   {
-    "index": 0,
-    "name": "docs-consumer-conformance/historical-execution-reports-00",
-    "pause_ms": 500,
-    "text": "Historical execution reports.",
-    "v": "42bf03b75d2c"
-   },
-   {
-    "index": 1,
-    "name": "docs-consumer-conformance/historical-execution-reports-01",
-    "pause_ms": 400,
-    "text": "Historical scope: every report from here through “Historical limits” describes the earlier source revisions named in its provenance. Present-tense wording in those retained reports belongs to those revisions. The current contract above supersedes their owner fields, state arity, accepting-path expectations and pending-E17 descriptions. Do not use their measurements or receipts as evidence for the current candidate.",
-    "v": "45c78c3bc48e"
-   },
-   {
-    "index": 2,
-    "name": "docs-consumer-conformance/historical-execution-reports-02",
-    "pause_ms": 400,
-    "text": "Devnet sessions run in order, each on an isolated node with its own published world: the generic registry rows first — the four issue-#63 rows plus the issue-#70 rows below — then the canonical identity rows, then the serialization boundary rows. Two further checks, blueprint-encoding-round-trip and script-parameter-application, never start a node at all: they compare Haskell values against the compiled blueprint read at run time, so a reader totalling \"rows executed on a real devnet\" counts the thirteen generic, five canonical-identity and five serialization rows below — never the local checks. The counts are kept visibly separate for exactly that reason.",
-    "v": "4bd36d943b5b"
-   }
-  ],
-  "historical-limits": [
-   {
-    "index": 0,
-    "name": "docs-consumer-conformance/historical-limits-00",
-    "pause_ms": 500,
-    "text": "Historical limits.",
-    "v": "637b52052e4c"
-   },
-   {
-    "index": 1,
-    "name": "docs-consumer-conformance/historical-limits-01",
-    "pause_ms": 300,
-    "text": "Programs with end-to-end references: insert-key, retract-inside-window and reject-after-window run as programs in the registry session, their state computed from those receipts; the epic-16 CageSpec examples they cite remain supporting references. historical-owner-signed-sweep and historical-registry-termination cite none: the examples they cited were removed on 2026-09-12 (f3a68b1b), nothing runs either row, and both are superseded by the ownerless-registry ruling (no sweep, no termination) — history earns no conformance credit.",
-    "v": "ee143b1018db"
-   },
-   {
-    "index": 2,
-    "name": "docs-consumer-conformance/historical-limits-02",
-    "pause_ms": 300,
-    "text": "Executed, unmet by ruling, not a pass: reject-before-deadline-consumer-requirement records the early rejection the consumer forbids and the chain accepts, kept unmet by operator ruling 2026-10-01 (unmet-by-ruling). fold-against-superseded-root, surplus-fold-actions and wrong-redeemer-constructor-index: the chain refuses, Lean has no counterpart to compare with, kept unmet by operator ruling 2026-10-02 (\"Narrow #287\") (lambdasistemi/singular#346, lambdasistemi/singular#345, lambdasistemi/singular#347).",
-    "v": "87f680a654ac"
-   },
-   {
-    "index": 3,
-    "name": "docs-consumer-conformance/historical-limits-03",
-    "pause_ms": 300,
-    "text": "Executed holds, not passes: empty-fold and request-value-and-refund-routing remain held by execution. empty-fold records the pre-revision empty-fold conflict with R8_empty_fold_refused; request-value-and-refund-routing violates the consumer's required operation-specific fold value routing (Registry.processBody, Registry.stepFn, Cage.delegated_is_registry). R11_contribute_value states the deposit amount and is not that fold requirement. Upstream #100/#101 are referenced proposals, not a delivered partition fix: #101 is open, and Singular owns the required local repair. R5_plugin_pinned concerns the plugin, not a registry owner. The consumer requirements stay unmet; a held row is never a pass, and the verdicts move only by execution. historical-owner-change's owner change is retained as defect evidence of the outstanding owner gate, resolved-by-ruling, with its defect owned by epic 17.",
-    "v": "9dad32d8e3f0"
-   },
-   {
-    "index": 4,
-    "name": "docs-consumer-conformance/historical-limits-04",
-    "pause_ms": 300,
-    "text": "Superseded, never pending: historical-owner-signed-sweep, historical-non-owner-sweep and historical-registry-termination asserted registry-owner authority, a sweep or a termination that does not exist — observations preserved, claims withdrawn, no execution credit for changed applicability. retired-stake-hook-with-withdrawal/retired-stake-hook-without-withdrawal are retired: the registry interface has no stake_script hook, so nothing runs them.",
-    "v": "9675ff4dabc9"
-   },
-   {
-    "index": 5,
-    "name": "docs-consumer-conformance/historical-limits-05",
-    "pause_ms": 300,
-    "text": "Uncovered: proof-step-constructor-witnesses, the five consumer-resolution requirements and fold-batch-size-boundary–observed-toolchain-and-environment print uncovered (as do retired-stake-hook-with-withdrawal/retired-stake-hook-without-withdrawal, retired, and historical-owner-signed-sweep/historical-registry-termination, superseded — no receipts). proof-step-constructor-witnesses is not merely uncovered: its Fork finding is filed for a user story and the row stays unmarked until that story resolves — an unmarked row with a finding, never a gap and never a pass. request-and-mint-constructor-witnesses's Migrating gap is of the recorded kind, with its validator-read reason beside the receipts.",
-    "v": "97d2d42047cc"
-   },
-   {
-    "index": 6,
-    "name": "docs-consumer-conformance/historical-limits-06",
-    "pause_ms": 300,
-    "text": "Schema pending (epic 17): blueprint-encoding-round-trip, submitted-datum-byte-round-trip and state-fields-chain-round-trip describe the six-field owner-bearing OnChainTokenState. The ownerless schema repair is pending; their expectations are superseded at that repair, their receipts stay valid as history, and the rows will be re-executed with fresh receipts against the repaired blueprint — coverage is not inherited across a wire-format change. Epic 17's antecedent ownerless repair exists locally (f3a68b1) but is not accepted and not merged; nothing here cherry-picks it, and the affected runtime checks follow the definitive schema artifacts when the explicit handoff arrives — integration stays serialized behind it.",
-    "v": "297af6d1077b"
-   },
-   {
-    "index": 7,
-    "name": "docs-consumer-conformance/historical-limits-07",
-    "pause_ms": 300,
-    "text": "Green expected-debt CI grants no conformance credit: the workflow's generic-rows step asserts declared debt — exact receipt set, exact verdict per receipt, held set exactly empty-fold request-value-and-refund-routing, unmet set exactly reject-before-deadline-consumer-requirement fold-against-superseded-root surplus-fold-actions, nothing failing — and nothing more. It pays neither the held rows nor a full execution-units-and-transaction-size, and strict completion and release stay RED on that debt.",
-    "v": "8453042cd065"
-   },
-   {
-    "index": 8,
-    "name": "docs-consumer-conformance/historical-limits-08",
-    "pause_ms": 300,
-    "text": "Out of scope: checkpoint-and-treasury-policy (cardano-keri), the naming rows (epic 16 demonstration, not consumer evidence), LR/LT rows (epic 17).",
-    "v": "ef5bb361ed1a"
-   },
-   {
-    "index": 9,
-    "name": "docs-consumer-conformance/historical-limits-09",
-    "pause_ms": 300,
-    "text": "The registry-identity rows authenticate the canonical registry as the consumer derives it from the published seed. They do not evidence the serialization boundary (serialization), the constructor coverage (update-redeemer-constructor-witnesses–request-and-mint-constructor-witnesses) or the batch limits (fold-batch-size-boundary).",
-    "v": "b7e8428ddbd0"
-   },
-   {
-    "index": 10,
-    "name": "docs-consumer-conformance/historical-limits-10",
-    "pause_ms": 300,
-    "text": "The measurements above are devnet folds of single requests. They say nothing about batch limits (fold-batch-size-boundary) or any other environment (observed-toolchain-and-environment records the observed one below).",
-    "v": "2cd1f2ca4e65"
-   }
-  ],
-  "historical-observed-environment": [
-   {
-    "index": 0,
-    "name": "docs-consumer-conformance/historical-observed-environment-00",
-    "pause_ms": 500,
-    "text": "Historical observed environment.",
-    "v": "bec256851aaf"
-   },
-   {
-    "index": 1,
-    "name": "docs-consumer-conformance/historical-observed-environment-01",
-    "pause_ms": 400,
-    "text": "cardano-node 10.7.0, GHC 9.12.3, Aiken compiler v1.1.21 (blueprint hal/mpf 0.0.0), unapplied state script pinned d42860fa972c8a325daae773adc372795c48cf365d0a72b137c749d3 with one declared parameter, applied state script ce7615f6ba4de80dfa9b9c6aef680666472ba4ed7e640ff55aad7c6e, unapplied request script hash 8970c286… (re-pinned from 64d1afbfe585…/874e476d7408…/6b5ce7… by the issue-#79 imported-validator repair; onchain/REPAIR.patch records the change, PROVENANCE.md the authority). The issue-#70 rows were executed against blueprint state:ce7615f6ba4de80dfa9b9c6aef680666472ba4ed7e640ff55aad7c6e request:8970c286…; the pre-#79 executions (historical-permissionless-fold's refusal, the former bespoke retraction and the stale-request/proof refusals) are history at the earlier hashes. Environments other than this devnet shape are explicitly not covered.",
-    "v": "9879d1fd8d5c"
-   }
-  ],
-  "measurements": [
-   {
-    "index": 0,
-    "name": "docs-consumer-conformance/measurements-00",
-    "pause_ms": 500,
-    "text": "Measurements.",
-    "v": "1278d7deec72"
-   },
-   {
-    "index": 1,
-    "name": "docs-consumer-conformance/measurements-01",
-    "pause_ms": 400,
-    "text": "Ship run: base b3f4b5a, clean tree, cardano-node 10.7.0. The issue-#70 generic session's ship run: base 1d98d51, clean tree, cardano-node 10.7.0 — every generic receipt below names that base with dirty: false, and the held rows carry their acceptances with transaction ids and measurements because their controls write none.",
-    "v": "6fee042461a9"
-   },
-   {
-    "index": 2,
-    "name": "docs-consumer-conformance/measurements-02",
-    "pause_ms": 400,
-    "text": "Serialization ship run: base b2201c3, clean tree, cardano-node 10.7.0 — every receipt below names that base with dirty: false. Each invocation observes the tree before creating its output, and ships from a fresh output directory, so no run ever measures the previous run's receipts. The defect this guards against reported dirty: true on clean trees; its direction is conservative — it can block a valid ship, it can never let a dirty tree pass as clean — and no merged receipt ever claimed clean while dirty.",
-    "v": "1ddc9d72596f"
-   },
-   {
-    "index": 3,
-    "name": "docs-consumer-conformance/measurements-03",
-    "pause_ms": 400,
-    "text": "Maxima queried from the running node, never hardcoded: maxTxExUnits 140000000 mem / 10000000000 cpu, maxTxSize 16384 bytes.",
-    "v": "d3e32b273a09"
-   },
-   {
-    "index": 4,
-    "name": "docs-consumer-conformance/measurements-04",
-    "pause_ms": 400,
-    "text": "Execution units stay under 3.8% of the maxima for every row (worst: request-value-and-refund-routing's crossed-refunds fold at 3.77% cpu, still ~26× headroom; tokenless-output-authentication reports zeros honestly: no script purpose exists to evaluate). Serialized size is the tight dimension at ~71% of maxTxSize for folds and ~52% for boots; larger batches (fold-batch-size-boundary) may press against it first. The canonical session's worst case is recorded in its execution-units-and-transaction-size receipt; the registry session's execution-units-and-transaction-size reads the worst accepting folds of update-existing-key, delete-existing-key and reinsert-deleted-key off their receipts' steps, and its other rows' worst cases live in their own receipts; the serialization rows carry theirs in the row receipts, and no serialization execution-units-and-transaction-size is claimed yet. Refusal reasons keep every failing script hash in ledger order — a tampered fold can fail two scripts, and trimming volume never trims identities — under the same run-enforced 16KB bound.",
-    "v": "6723e3449e4d"
-   }
-  ],
-  "model-compared-registration-and-retirement-candidate-229": [
-   {
-    "index": 0,
-    "name": "docs-consumer-conformance/model-compared-registration-and-retirement-candidate-229-00",
-    "pause_ms": 500,
-    "text": "Model-compared registration and retirement candidate (#229).",
-    "v": "b62c5307e9cd"
-   },
-   {
-    "index": 1,
-    "name": "docs-consumer-conformance/model-compared-registration-and-retirement-candidate-229-01",
-    "pause_ms": 400,
-    "text": "A local clean candidate at 9b42458ffc1fab6bf9b7cf88ef44884e24333b8b ran the registration and retirement chapters on a Cardano devnet. Its retained receipts carry five and seven model-and-chain step records respectively. The executable driver supplies the model outcome and all nine declared observations for each accepted step; the reader-facing book renders the story programs from those receipts. This is candidate evidence, not merge, release or independent acceptance.",
-    "v": "e06579a2a27a"
-   },
-   {
-    "index": 2,
-    "name": "docs-consumer-conformance/model-compared-registration-and-retirement-candidate-229-02",
-    "pause_ms": 400,
-    "text": "The node did not supply a Plutus trace name for the refused folds. The receipts retain the script hash and the empty trace rather than inferring a branch name. An accepting control establishes that the builder can fold a valid request in the same run.",
-    "v": "70b1f6c2b348"
-   },
-   {
-    "index": 3,
-    "name": "docs-consumer-conformance/model-compared-registration-and-retirement-candidate-229-03",
-    "pause_ms": 400,
-    "text": "The former two-request batch allocation check is no longer a current conformance claim. The driver evaluates one request per transaction, so the specified per-kind-and-key batch mint rule has no executable consumer in these chapters. The old batch evidence remains historical to its own revision. The former receipt-field appendix examples were removed with their schema; new appendix checks validate the generic step records.",
-    "v": "721ba41b1173"
-   },
-   {
-    "index": 4,
-    "name": "docs-consumer-conformance/model-compared-registration-and-retirement-candidate-229-04",
-    "pause_ms": 500,
-    "text": "The wire these rows and the archive verb speak.",
-    "v": "45c148cbeb45"
-   },
-   {
-    "index": 5,
-    "name": "docs-consumer-conformance/model-compared-registration-and-retirement-candidate-229-05",
-    "pause_ms": 400,
-    "text": "Everything on this page, and the release archive's packaged insert-active command, runs on the final request encoding: the edge index at field 3 and the deposit at field 4, as set out above.",
-    "v": "975c7bf79782"
-   },
-   {
-    "index": 6,
-    "name": "docs-consumer-conformance/model-compared-registration-and-retirement-candidate-229-06",
-    "pause_ms": 400,
-    "text": "The re-cut carried its own enforcing check rather than being asserted. For exactly one commit the cage compiled BOTH encodings, and every other-edge fixture was folded under each of them and required to give the same verdict with the same refusal reason, receipted per fixture. The commit after it removed the old codec. That pair — the receipt at the dual-codec commit, the removal at its successor — is the evidence a one-commit rewrite cannot produce, and it is what stands behind the side-by-side table above.",
-    "v": "7d80fe150a49"
-   }
-  ],
-  "permanent-contract-and-preserved-consumer-evidence": [
-   {
-    "index": 0,
-    "name": "docs-consumer-conformance/permanent-contract-and-preserved-consumer-evidence-00",
-    "pause_ms": 500,
-    "text": "Permanent contract and preserved consumer evidence.",
-    "v": "9af4fcdec2f5"
-   },
-   {
-    "index": 1,
-    "name": "docs-consumer-conformance/permanent-contract-and-preserved-consumer-evidence-01",
-    "pause_ms": 400,
-    "text": "The first milestone's fixed contract admits registration (insertActive) and permanent termination (updateTerminal). All seven edge values remain encodable in request datums and fold redeemers, but witnessTerminal, insertAbsent, updateActive, deleteAbsent and deleteActive fail at the permanent state validator, including independently constructed requests and mixed batches. Application payload updates leave the registry leaf unchanged; they are not the excluded updateActive registry transition.",
-    "v": "bcd76d293c24"
-   },
-   {
-    "index": 2,
-    "name": "docs-consumer-conformance/permanent-contract-and-preserved-consumer-evidence-02",
-    "pause_ms": 400,
-    "text": "The seven-edge interface and older receipts below describe the preserved broader consumer contract. They do not establish current permanent-contract successes. Its generic consumer expectations remain recorded, and the new permanent requirement remains uncovered without a bounded live consumer comparison receipt. The candidate evidence separates compiled refusal tests, connected CLI execution and their limits. Defined redeemers, missing CLI commands and setup failures are not evidence of behavioral refusal.",
-    "v": "c663501b95ae"
-   }
-  ],
-  "proof-step-constructor-witnesses-unmarked-and-escalated": [
-   {
-    "index": 0,
-    "name": "docs-consumer-conformance/proof-step-constructor-witnesses-unmarked-and-escalated-00",
-    "pause_ms": 500,
-    "text": "proof-step-constructor-witnesses: unmarked and escalated.",
-    "v": "0f40896288f8"
-   },
-   {
-    "index": 1,
-    "name": "docs-consumer-conformance/proof-step-constructor-witnesses-unmarked-and-escalated-01",
-    "pause_ms": 400,
-    "text": "proof-step-constructor-witnesses carries no receipt and prints uncovered: Branch and Leaf are witnessed on chain across many accepted folds, but no accepted fold has ever carried a Fork, and two independently ground lone-Fork absence proofs — each verified by the mts Haskell stack against its own root — are refused by the compiled validator with a bare CekError at build-time evaluation. The full bundle (keys, trie shape, both verdicts, the refusal bytes, what could not be determined, and the bounded consumer consequence) is filed as a user story escalation; the offline oracle (find-fork-keys, check-fork-exclusion) and shape probes (show-nibbles, show-d-proof, show-all-proofs) reproduce every offline claim. This is a finding held open, not a gap and not a pass.",
-    "v": "4c1fb075e25c"
+    "text": "The inventory carries a coverage plan. Only validated receipts for the stated revision can establish execution. The generated page leaves requirements without those receipts visible as uncovered. Its marked appendix preserves the generic backend-contract snapshot with its original code revision and source provenance; those results do not cover the comparison requirements.",
+    "v": "425ed436d63a"
    }
   ],
   "reading-from-a-registry-address": [
@@ -2015,499 +1376,6 @@
     "pause_ms": 400,
     "text": "The registration journey runs both packaged readers at connected live, pending and terminal checkpoints and reads an unused key. Its artifact includes the answers and a known-key query measurement. The registration refusals job runs wrong-network, unknown-policy and failed-provider reads beside passing controls. These are separate command observations, with controls that reject altered answers; they establish nothing about agreement with the model. See reading a key for the commands and settings, and the generated evidence page for receipt-derived standings.",
     "v": "23397c08bb5e"
-   }
-  ],
-  "redeemers-that-are-gone": [
-   {
-    "index": 0,
-    "name": "docs-consumer-conformance/redeemers-that-are-gone-00",
-    "pause_ms": 500,
-    "text": "Redeemers that are gone.",
-    "v": "d5121d376241"
-   },
-   {
-    "index": 1,
-    "name": "docs-consumer-conformance/redeemers-that-are-gone-01",
-    "pause_ms": 400,
-    "text": "The naming application's spend redeemer becomes Maintain, Retire, Recover; Fold and Cancel are removed with the pending-claim lifecycle they served. Its mint redeemer becomes the single Approve { edge, key, owner, destination }; WithdrawApproval and InsertApproval are removed. The representative policy is retired in favour of the one parametrised witness policy, instantiated three times.",
-    "v": "caf41652589d"
-   }
-  ],
-  "registration-journeys-the-previous-design-against-the-no-pin-design": [
-   {
-    "index": 0,
-    "name": "docs-consumer-conformance/registration-journeys-the-previous-design-against-the-no-pin-design-00",
-    "pause_ms": 500,
-    "text": "Registration journeys: the previous design against the no-pin design.",
-    "v": "60f1ce37cc18"
-   },
-   {
-    "index": 1,
-    "name": "docs-consumer-conformance/registration-journeys-the-previous-design-against-the-no-pin-design-01",
-    "pause_ms": 400,
-    "text": "As an integrator, I read what happens to a booked registration that is folded, reclaimed or cleaned up, under the previous design and under the no-pin design, and I see that these statements are published uncovered: no executable comparison with the application-held model backs them yet.",
-    "v": "f9cfcb901731"
-   },
-   {
-    "index": 2,
-    "name": "docs-consumer-conformance/registration-journeys-the-previous-design-against-the-no-pin-design-02",
-    "pause_ms": 400,
-    "text": "Four rows in the group registration-journeys state the outcomes. The outcomes are those the declarations OpenDatumApplicationHeld.Money.oldAllocation and OpenDatumApplicationHeld.Money.newAllocation state; the rows name the declarations and retype no number.",
-    "v": "2787b3d1c186"
-   }
-  ],
-  "the-cage-datum-a-third-constructor": [
-   {
-    "index": 0,
-    "name": "docs-consumer-conformance/the-cage-datum-a-third-constructor-00",
-    "pause_ms": 500,
-    "text": "The cage datum: a third constructor.",
-    "v": "abbd6319d634"
-   },
-   {
-    "index": 1,
-    "name": "docs-consumer-conformance/the-cage-datum-a-third-constructor-01",
-    "pause_ms": 400,
-    "text": "The absent custody key is the identity of the output's sole non-ADA asset, which must have quantity one. It is not duplicated in the datum. The retired two-field constructor-2 wire is therefore incompatible and must not decode as AbsentCustody.",
-    "v": "6f0efc58c1b4"
-   }
-  ],
-  "the-canonical-identity-rows": [
-   {
-    "index": 0,
-    "name": "docs-consumer-conformance/the-canonical-identity-rows-00",
-    "pause_ms": 500,
-    "text": "The canonical identity rows.",
-    "v": "733a87c7dce6"
-   },
-   {
-    "index": 1,
-    "name": "docs-consumer-conformance/the-canonical-identity-rows-01",
-    "pause_ms": 400,
-    "text": "A designation split publishes the canonical seed; canonical-seed-identity boots the canonical registry from it; rival-seed-authentication initializes a rival from a second seed through the same bootstrap path; a second split publishes the rival seed, so no boot can ever consume the wrong UTxO as its funder.",
-    "v": "9c13d44de228"
-   },
-   {
-    "index": 2,
-    "name": "docs-consumer-conformance/the-canonical-identity-rows-02",
-    "pause_ms": 400,
-    "text": "rival-seed-authentication asserts an acceptance: the ledger takes the rival, and the consumer's authentication is what excludes it. The receipt records the ledger's verdict (accepted, with the rival's txid and measurements); the rejection is asserted on chain-read assets and named in the run — never relabelled as a refusal, never skipped because the outcome reads oddly. The acceptance is the finding, and it is the accepted design. policy-address-only-authentication-control is what makes rival-seed-authentication worth anything: a check that cannot fail proves nothing, so the weak authenticator's acceptance of the rival is itself executed and required.",
-    "v": "dbaf20b1783f"
-   }
-  ],
-  "the-contract-and-its-binding": [
-   {
-    "index": 0,
-    "name": "docs-consumer-conformance/the-contract-and-its-binding-00",
-    "pause_ms": 500,
-    "text": "The contract and its binding.",
-    "v": "001dac063168"
-   },
-   {
-    "index": 1,
-    "name": "docs-consumer-conformance/the-contract-and-its-binding-01",
-    "pause_ms": 400,
-    "text": "The rows answer to the consumer contract source-bound to lambdasistemi/cardano-keri@14a64a4681d3e429fab5877062b5c476c2a4bfe2: the registry design rulings (eleven operator rulings and fourteen registry theorems) and docs/user/consumer-checklist.md. cardano-keri consumes the generic registry — Insert, Update, Delete — not the naming application, whose restriction refuses Delete and reuse by design. No naming evidence can establish any row here, and none is claimed.",
-    "v": "20ec48c2b414"
-   },
-   {
-    "index": 2,
-    "name": "docs-consumer-conformance/the-contract-and-its-binding-02",
-    "pause_ms": 400,
-    "text": "The canonical identity rows (#69) carry the correction epic 16 executed: cardano-keri's ruling is that the registry provides identity uniqueness, but a permissionless ledger cannot prohibit a rival registry — a consistent initialization from a second seed passes every frozen check and the node accepts it (offchain/naming-correspondence.md, \"What t50 settled\"). Canonical identity is therefore a derivation the consumer authenticates, not a refusal the chain performs: the canonical registry token's name is SHA-256 of the canonical seed's outRef, that seed can never be spent twice, and a rival from another seed can never carry that name.",
-    "v": "92052f9db934"
-   }
-  ],
-  "the-decided-difference": [
-   {
-    "index": 0,
-    "name": "docs-consumer-conformance/the-decided-difference-00",
-    "pause_ms": 500,
-    "text": "The decided difference.",
-    "v": "b4febb6241d5"
-   },
-   {
-    "index": 1,
-    "name": "docs-consumer-conformance/the-decided-difference-01",
-    "pause_ms": 400,
-    "text": "A booked registration that can never be folded, because its key is already registered or for any other reason, is not rejected early. It stays pending until its refund address reclaims it inside the reclaim window, or until anyone cleans it up after that window and the deposit returns to the refund address. Under the previous design a folder could reject such a request at once, with evidence of the mismatch, while it could still be folded or retracted. The previous design's requirements for rejection after the window, rejection before the deadline, request value and refund routing, the rejection and retraction refund controls, and rejection inside the processing and retraction windows stay published exactly as they were, with the dated qualification at the top of this page.",
-    "v": "6b2d683608f3"
-   }
-  ],
-  "the-denominator": [
-   {
-    "index": 0,
-    "name": "docs-consumer-conformance/the-denominator-00",
-    "pause_ms": 500,
-    "text": "The denominator.",
-    "v": "0a28372b9c8c"
-   },
-   {
-    "index": 1,
-    "name": "docs-consumer-conformance/the-denominator-01",
-    "pause_ms": 400,
-    "text": "conformance/rows.json carries 59 rows, 58 owned: one permanent contract requirement, five registry identity requirements, twenty-five registry operation requirements, eight serialization requirements, five consumer resolution requirements, three execution-limit requirements, four registration journey requirements and three update and termination journey requirements (stated below), four registry reading requirements, plus the checkpoint and treasury policy (bonds, poison, the juvenility window W, the signature threshold) recorded as out of scope — it belongs to cardano-keri's checkpoint machine and treasury, explicitly never claimed by Singular. list prints the owned denominator separately so the boundary stays visible. Superseded and held rows stay in the denominator and visible to completeness accounting: relabelling a row pays no coverage and shrinks no board.",
-    "v": "93dd0f0408eb"
-   },
-   {
-    "index": 2,
-    "name": "docs-consumer-conformance/the-denominator-02",
-    "pause_ms": 400,
-    "text": "rows.json never carries executed: the declared field is the coverage plan and the parser rejects the string. A row prints as executed only when a run receipt for it exists and matches the current base (--receipts DIR or CONFORMANCE_RECEIPTS).",
-    "v": "24056781701b"
-   }
-  ],
-  "the-generic-registry-rows": [
-   {
-    "index": 0,
-    "name": "docs-consumer-conformance/the-generic-registry-rows-00",
-    "pause_ms": 500,
-    "text": "The generic registry rows.",
-    "v": "8a6a8fc6a7cf"
-   },
-   {
-    "index": 1,
-    "name": "docs-consumer-conformance/the-generic-registry-rows-01",
-    "pause_ms": 400,
-    "text": "Against a real devnet, one cage, one key, in order:",
-    "v": "fc5cb96c815e"
-   },
-   {
-    "index": 2,
-    "name": "docs-consumer-conformance/the-generic-registry-rows-02",
-    "pause_ms": 400,
-    "text": "insert-occupied-key's refusal is a node verdict on a submitted transaction, the li-refusals bar: the fold is hand-built (the library builder cannot emit a transaction whose scripts do not evaluate) and calibrated against the library builder on every valid fold — same inputs, state output, refund destinations and Modify proofs — so the refused shape differs from a library fold only in the operation under test. The eval-time refusal the builder reports first is kept as a log line, never as the verdict. Each receipt records where its refusal was observed (venue: node-submit for every row here), and refusal reasons are trimmed to their attribution (failure class, script hash, machine error) — receipts stay under a run-enforced 16KB bound, because a receipt nobody can open is weak evidence.",
-    "v": "b06796839c77"
-   },
-   {
-    "index": 3,
-    "name": "docs-consumer-conformance/the-generic-registry-rows-03",
-    "pause_ms": 400,
-    "text": "Had the chain accepted the occupied insert, that would be a finding reported with the accepted transaction — never relabelled as a refusal.",
-    "v": "f714d4b5fef8"
-   }
-  ],
-  "the-issue-70-generic-rows": [
-   {
-    "index": 0,
-    "name": "docs-consumer-conformance/the-issue-70-generic-rows-00",
-    "pause_ms": 500,
-    "text": "The issue-70 generic rows.",
-    "v": "b16fdb878a09"
-   },
-   {
-    "index": 1,
-    "name": "docs-consumer-conformance/the-issue-70-generic-rows-01",
-    "pause_ms": 400,
-    "text": "The table preserves the eleven requirements and their historical observations. The current generic session runs ten rows, followed by its session receipt; the retraction-window requirement now runs separately as a three-step story compared with the model. The remaining bespoke refusal rows attribute the refusal to the script that failed and retain their accepting controls.",
-    "v": "72b540618e3f"
-   },
-   {
-    "index": 2,
-    "name": "docs-consumer-conformance/the-issue-70-generic-rows-02",
-    "pause_ms": 400,
-    "text": "The retraction story gives the registry thirty seconds for processing and thirty more for retraction. Its waits follow the submission times read from the booked requests and those registry durations. The model reads the witness from each built transaction; the ledger refusal is attributed by the applied request script hash, without claiming an observable live refusal name. Open validity intervals remain a named gap: the model represents finite bounds only, while the Aiken tests establish the open-interval not-phase2 refusal.",
-    "v": "b85a0f646553"
-   },
-   {
-    "index": 3,
-    "name": "docs-consumer-conformance/the-issue-70-generic-rows-03",
-    "pause_ms": 400,
-    "text": "Four dispositions, never to be mistaken for one another.",
-    "v": "79834b8f593d"
-   },
-   {
-    "index": 4,
-    "name": "docs-consumer-conformance/the-issue-70-generic-rows-04",
-    "pause_ms": 400,
-    "text": "Unmet by ruling (unmet-by-ruling; reject-before-deadline-consumer-requirement, fold-against-superseded-root, surplus-fold-actions, wrong-redeemer-constructor-index): executed, and kept unmet by an operator ruling. The one verdict carries two meanings, and every row states which. reject-before-deadline-consumer-requirement: the registry deliberately does not do what the consumer requirement states, kept unmet by operator ruling 2026-10-01. The consumer requires that a folder must not reject a request during its processing window (cardano-keri R9_reject_needs_rejectable, 0e638fad, blob d38e81c0); Singular's model lets a folder reject a request with no timing admission, and the chain accepts that reject (#320). Alignment is cardano-keri#468. fold-against-superseded-root, surplus-fold-actions and wrong-redeemer-constructor-index: the chain refuses, Lean has no counterpart to compare with, kept unmet by operator ruling 2026-10-02 (\"Narrow #287\"); follow-ups: fold-against-superseded-root lambdasistemi/singular#346, surplus-fold-actions lambdasistemi/singular#345, wrong-redeemer-constructor-index lambdasistemi/singular#347. The session ends non-zero while any row is unmet; it is never a pass.",
-    "v": "94f4b3418bbc"
-   },
-   {
-    "index": 5,
-    "name": "docs-consumer-conformance/the-issue-70-generic-rows-05",
-    "pause_ms": 400,
-    "text": "Dated note, 2026-10-13 (decision B, ticket 494 slice three, ahead of validators 495): the dedicated in-window row is now a lawful lifecycle-mismatch rejection (a second insertActive for a key already Active, with bound mismatch evidence, both sides accepting, owner refunded) and stays green; the generic standing row now books a foldable insertActive for a fresh key with expiry evidence in-window, refused by the model for reject-not-expired and accepted by the chain (tampered refunds refused by both for different reasons), published as unmet with a tripwire for lambdasistemi/singular#495 (the validators ticket that must flip the row by refusing the untampered in-window reject). Ticket 320's early-rejection history above is not edited. Held (held-q002; empty-fold, request-value-and-refund-routing): executed, with the consumer requirements still unmet. empty-fold recorded a conflict with the pre-revision Singular model; rejecting empty batches is now approved. request-value-and-refund-routing requires the operation-specific value-routing repair. The rows move only after the required implementation and execution evidence is accepted. Resolved-by-ruling (historical-owner-change): a ruling settled the row's question; the observation is retained as defect evidence of the outstanding owner gate — never a pass, never an owner-semantics claim. Superseded (historical-owner-signed-sweep, historical-non-owner-sweep, historical-registry-termination): the expectation asserted authority, a sweep or a termination that does not exist at this commit; observations are preserved, claims are withdrawn, and no execution credit attaches. Retired (retired-stake-hook-with-withdrawal, retired-stake-hook-without-withdrawal): the registry interface has no stake_script hook, so nothing runs them.",
-    "v": "4c54f59dc9a8"
-   },
-   {
-    "index": 6,
-    "name": "docs-consumer-conformance/the-issue-70-generic-rows-06",
-    "pause_ms": 400,
-    "text": "Evidence provenance. The receipts cited in this section are the generic session's ship run, taken fresh at clean tip 1d98d51 after the receipt-overwrite repair (blueprint state:ce7615f6… request:8970c286…, cardano-node 10.7.0, every receipt dirty: false, every held row carrying its acceptance with transaction id and measurements). historical-permissionless-fold's first post-repair execution was at clean tip 748c4a9 (txid fe54d3a6…); its ship-run repetition at 1d98d51 is 4142f7d6…. The overwritten pre-repair receipts are retained only as evidence of that defect.",
-    "v": "dc86e4258b87"
-   },
-   {
-    "index": 7,
-    "name": "docs-consumer-conformance/the-issue-70-generic-rows-07",
-    "pause_ms": 400,
-    "text": "Held rows (operator question (Q-002), story 2). empty-fold and request-value-and-refund-routing are executed holds, never passes; surplus-fold-actions, held when this history was written, is now unmet by ruling (above). Only empty-fold was established as a direct conflict between the two model results. In the pinned pre-revision contract, Singular's Lean permits the empty fold (foldItems, | s, [] => .ok — Model.lean 188–189) and pairs each request with exactly one action in its FoldItem, so a surplus tail is unmodelled; State carries no owner field and Action.fold routes no refunds. Singular.Statements.fold_iff (Model.lean 250–256) makes its five conjuncts sufficient — native spend, fold items, net-mint match, representative-mint and application-mint witnesses — and no owner is among them: folding is permissionless. The consumer's theorems require the empty batch refused (R8_empty_fold_refused) and the 1:1 accounting. Its fold value routing is not R11_contribute_value — that states the deposit amount, and R11_retract_value states bond+tip on retract; fold routing lives in the consumer's Registry.processBody, Registry.stepFn and the Cage.delegated_is_registry equality, and it is operation-specific: register/revive lock the deposit into a checkpoint, goDormant/goConvicted/convict refund to the recorded owner, rejection returns the operation bond — guarded by rejectable and userPostable, not on demand — and the fold tip goes to the folder. A blanket exact-refund repair would preserve the wrong value mode and prevent checkpoint funding. Upstream #100/#101 are referenced proposals, not a delivered partition fix: #101 is open, and Singular owns the required local repair. R5_plugin_pinned needs a distinction this page previously collapsed. It is about the plugin, not a registry owner: the bound Registry.Sys carries plugin, and the consumer's fold checks pl = s.plugin. So registry-owner privileges and fields are superseded — the operator ruled Singular has no registry-owner role, and there is no owner to pin — but the application/plugin identity correspondence is not waived by that. The required application and native-witness bindings and the policy bindings remain required, and must be established through the actual ownerless representation; this is not a reason to reintroduce stake_script or to assert its old mechanism is the required one. The remaining requirements stay unmet; the receipts carry verdict held-q002 and the session ends non-zero while anything is held — a hold can never read as a pass, and a verdict moves only by execution. historical-owner-change is resolved-by-ruling, not a fourth unresolved hold: its receipt carries resolved-by-ruling, its acceptance stays defect evidence, and it is outside the held-set.",
-    "v": "8c77aaa8588f"
-   },
-   {
-    "index": 8,
-    "name": "docs-consumer-conformance/the-issue-70-generic-rows-08",
-    "pause_ms": 400,
-    "text": "A repair this slice had to make to keep that sentence true: a refused control used to submit through the same path as a refusal ROW and wrote its refusal under the row's id, so empty-fold/surplus-fold-actions/request-value-and-refund-routing's held receipts were being replaced by their controls' refusals in every earlier receipts directory — receipts asserting the opposite of the executed finding (historical-owner-change's survived only because its control was retired, which is what isolated the cause). The control now writes nothing: its outcome is run-log evidence under its own identity, it cannot silently pass (an accepted control fails the run as a FINDING; a refusal that does not attribute fails the run naming the mismatch), and the receipt policy is unit-tested to discriminate — a control never overwrites a held receipt, a refusal row always writes, a non-attributing refusal writes nothing. The overwritten historical receipts in /tmp/t70-receipts* are kept untouched as evidence of the defect, never relabelled as fresh proof; the receipts cited by this page are the ones taken fresh at the clean tip after the repair.",
-    "v": "0d468834bea0"
-   },
-   {
-    "index": 9,
-    "name": "docs-consumer-conformance/the-issue-70-generic-rows-09",
-    "pause_ms": 400,
-    "text": "historical-permissionless-fold and F-002, both halves by execution. An independent audit found that the runner itself always supplied the state owner's signature, so no fold row in the suite could have observed the owner gate; historical-permissionless-fold was built as the exact regression property. Executed against the pre-#79 candidate it was REFUSED, attributed to the state script, and recorded diverges-from-lean (receipt retained as history). After epic 17's #79 repair it was executed again: the fold with no owner signer is accepted (agrees-with-model, txid 4142f7d6… at the ship run, fe54d3a6… at the first post-repair execution, blueprint state:ce7615f6… request:8970c286… both times), and the same fold with the owner signer is accepted in-run. Both acceptances are the post-repair evidence, not a weakened test: the two transactions differ in the signer set alone, so the acceptance is attributable to the removed gate. The expectation was always accept; what moved is the candidate, and the verdict moved by execution only — never by editing a row or flipping a stored receipt.",
-    "v": "794d2bec2f2d"
-   },
-   {
-    "index": 10,
-    "name": "docs-consumer-conformance/the-issue-70-generic-rows-10",
-    "pause_ms": 400,
-    "text": "The owner-dependency extent. Before #79, every fold-based row flowed through validateOwnership: update-existing-key–insert-occupied-key, reject-before-deadline-consumer-requirement–retired-stake-hook-without-withdrawal, historical-non-owner-sweep and request-value-and-refund-routing depended on the state owner's signature, while retract-outside-window's retract never did (it depends only on the request owner). #79 removed the gate from Modify folding, and the 2026-09-12 operator ruling settles more: the registry has no owner role whatsoever — not latent, not transferable, not gating End or migration. state.ak's End and validateMigration still call validateOwnership; those calls are outstanding conformance defects owned by epic 17, and historical-owner-change's accepted owner change is their executed evidence.",
-    "v": "ca303093ec09"
-   },
-   {
-    "index": 11,
-    "name": "docs-consumer-conformance/the-issue-70-generic-rows-11",
-    "pause_ms": 400,
-    "text": "Superseded rows, observations preserved. historical-owner-change is resolved-by-ruling: the owner-pinning question has no premise left to be pending on, the acceptance is defect evidence, and the retired control (previous-owner End refused, new-owner accepted) tested behaviour that must not exist — it was never landed. historical-non-owner-sweep's refusal and its owner-signed control stay in the record with the conformance claim withdrawn: a gate that tests authority that does not exist discriminates nothing Singular owes. historical-owner-signed-sweep and historical-registry-termination are superseded the same way: the registry has no sweep and no termination, the end-to-end examples they cited were removed on 2026-09-12 (f3a68b1b), nothing runs either row, and list prints both uncovered. retired-stake-hook-with-withdrawal/retired-stake-hook-without-withdrawal are retired: the registry interface has no stake_script hook, so nothing runs them. The imported partition's State.stake_script hook supplies registry-owner authority by another name, which is exactly why epic 17 removes the field; the pinned staking credential cannot register anyway (the cause above), so the hook never reached a ledger. Preserved history stays unchanged, and changing applicability earns no execution credit.",
-    "v": "9618e668db38"
-   },
-   {
-    "index": 12,
-    "name": "docs-consumer-conformance/the-issue-70-generic-rows-12",
-    "pause_ms": 400,
-    "text": "execution-units-and-transaction-size for this session is written from the accepting folds of update-existing-key, delete-existing-key and reinsert-deleted-key, each read off the step that folded it in its row's receipt; the other rows' worst cases live in their own receipts.",
-    "v": "e242da316bf8"
-   }
-  ],
-  "the-operation-a-fourth-constructor": [
-   {
-    "index": 0,
-    "name": "docs-consumer-conformance/the-operation-a-fourth-constructor-00",
-    "pause_ms": 500,
-    "text": "The operation: a fourth constructor.",
-    "v": "4f1c144f04f4"
-   },
-   {
-    "index": 1,
-    "name": "docs-consumer-conformance/the-operation-a-fourth-constructor-01",
-    "pause_ms": 400,
-    "text": "The three published indices do not move. A read leaves its key exactly where it is, and on chain only the terminal codec byte is admitted for it.",
-    "v": "e9c5add54494"
-   }
-  ],
-  "the-registry-mode-contract-change": [
-   {
-    "index": 0,
-    "name": "docs-consumer-conformance/the-registry-mode-contract-change-00",
-    "pause_ms": 500,
-    "text": "The registry-mode contract change.",
-    "v": "f3e3367ca2a5"
-   },
-   {
-    "index": 1,
-    "name": "docs-consumer-conformance/the-registry-mode-contract-change-01",
-    "pause_ms": 400,
-    "text": "This is a contract change, declared here rather than discovered by a consumer through a failing decode. Anything that reads Singular's datums or builds its redeemers changes with it.",
-    "v": "62c459f37fff"
-   }
-  ],
-  "the-request-a-destination-then-an-edge-index": [
-   {
-    "index": 0,
-    "name": "docs-consumer-conformance/the-request-a-destination-then-an-edge-index-00",
-    "pause_ms": 500,
-    "text": "The request: a destination, then an edge index.",
-    "v": "e1037b03c1f7"
-   },
-   {
-    "index": 1,
-    "name": "docs-consumer-conformance/the-request-a-destination-then-an-edge-index-01",
-    "pause_ms": 400,
-    "text": "Request gained one field, appended last: destination, a pair of the binary address bytes the minted token must land at and the inline datum that output must carry, as an Option: Some carries the datum itself, None means a datum-less output. The request carries the datum rather than its hash (#419), so anyone can build the fold from the chain alone; an approval still binds the datum by its BLAKE2b-256 hash, empty for none. A request that mints nothing names no destination.",
-    "v": "c11678c2fa20"
-   },
-   {
-    "index": 2,
-    "name": "docs-consumer-conformance/the-request-a-destination-then-an-edge-index-02",
-    "pause_ms": 400,
-    "text": "Issue #183 then re-cut the request itself. Field for field, old wire beside new:",
-    "v": "948194c297d0"
-   },
-   {
-    "index": 3,
-    "name": "docs-consumer-conformance/the-request-a-destination-then-an-edge-index-03",
-    "pause_ms": 400,
-    "text": "The constructor index does not move: RequestDatum is 0 before and after, and the four unchanged fields keep their positions. What changes is what fields 3 and 4 mean.",
-    "v": "5b8e9e26f59e"
-   },
-   {
-    "index": 4,
-    "name": "docs-consumer-conformance/the-request-a-destination-then-an-edge-index-04",
-    "pause_ms": 400,
-    "text": "The seven edges, with the trie move each names and the value bytes that used to carry it:",
-    "v": "a628d7f3262d"
-   },
-   {
-    "index": 5,
-    "name": "docs-consumer-conformance/the-request-a-destination-then-an-edge-index-05",
-    "pause_ms": 400,
-    "text": "What a consumer has to change. Write the edge index where the operation payload used to go, and the deposit — the lovelace the request output holds, less the state's tip — where the tip used to go. An edge names its own leaf bytes, so a consumer no longer chooses them and can no longer get them wrong.",
-    "v": "376f2c58a8c9"
-   },
-   {
-    "index": 6,
-    "name": "docs-consumer-conformance/the-request-a-destination-then-an-edge-index-06",
-    "pause_ms": 400,
-    "text": "Refusals that go away, because no request can express them. leaf-codec (a value byte outside the three-byte codec), insert-terminal, tip-mismatch, update-to-absent, update-absent-to-terminal and update-active-to-active are all faults of value bytes that the edge wire does not carry.",
-    "v": "2a55ad08df11"
-   },
-   {
-    "index": 7,
-    "name": "docs-consumer-conformance/the-request-a-destination-then-an-edge-index-07",
-    "pause_ms": 400,
-    "text": "Refusals that remain, and the two that are new. A read whose key does not bind 0x02 is refused read-absent, read-non-terminal or key-unknown, and a tree-changing edge whose key binds 0x02 is refused edge-from-terminal — all read off the trie rather than off the request. New with this wire: edge-inadmissible for a tag outside 0-6, and deposit-mismatch for a deposit that is not the holding less the tip.",
-    "v": "05097af0bb37"
-   }
-  ],
-  "the-serialization-boundary-rows-devnet-session": [
-   {
-    "index": 0,
-    "name": "docs-consumer-conformance/the-serialization-boundary-rows-devnet-session-00",
-    "pause_ms": 500,
-    "text": "The serialization boundary rows (devnet session).",
-    "v": "888f3704c88e"
-   },
-   {
-    "index": 1,
-    "name": "docs-consumer-conformance/the-serialization-boundary-rows-devnet-session-01",
-    "pause_ms": 400,
-    "text": "One fresh cage per row (two where a row needs two phases), each cage booted, exercised and — except where the row says otherwise — closed on the same isolated node, in canonical order:",
-    "v": "984129e49b4c"
-   }
-  ],
-  "the-serialization-checks-that-need-no-node": [
-   {
-    "index": 0,
-    "name": "docs-consumer-conformance/the-serialization-checks-that-need-no-node-00",
-    "pause_ms": 500,
-    "text": "The serialization checks that need no node.",
-    "v": "86d5fec90ae4"
-   },
-   {
-    "index": 1,
-    "name": "docs-consumer-conformance/the-serialization-checks-that-need-no-node-01",
-    "pause_ms": 400,
-    "text": "No transaction, no node, no execution units — hence mem/cpu zero and no transactions named. What is measured is stated per row, and these rows never appear in a devnet-executed count.",
-    "v": "579bf24ac41d"
-   }
-  ],
-  "the-state-datum-six-fields-become-eight": [
-   {
-    "index": 0,
-    "name": "docs-consumer-conformance/the-state-datum-six-fields-become-eight-00",
-    "pause_ms": 500,
-    "text": "The state datum: six fields become eight.",
-    "v": "5a3984a45cd9"
-   },
-   {
-    "index": 1,
-    "name": "docs-consumer-conformance/the-state-datum-six-fields-become-eight-01",
-    "pause_ms": 400,
-    "text": "consumerPin is deleted with the pinned consumer script it named; the mandatory withdrawal that script required is deleted with it. repPolicy is renamed activePolicy and keeps its meaning — the policy that mints the token standing for a live registration. Three pins are new: the application policy that certifies requests, and the absent and terminal token policies.",
-    "v": "3cadedeb2d13"
-   },
-   {
-    "index": 2,
-    "name": "docs-consumer-conformance/the-state-datum-six-fields-become-eight-02",
-    "pause_ms": 400,
-    "text": "A decoder that reads field 4 as the representative policy now reads the application policy, and a decoder that reads six fields refuses an eight-field datum. Both are the intended consequence, and both are exercised: the state round-trip row round-trips all four derived pins through a boot datum, and its armed control demands the old six-field encoding and fails.",
-    "v": "883f7b10a498"
-   },
-   {
-    "index": 3,
-    "name": "docs-consumer-conformance/the-state-datum-six-fields-become-eight-03",
-    "pause_ms": 400,
-    "text": "None of the four is a literal. Each is derived, for the registry identity a boot creates, from the two partitions' script-identity.json: the application policy is the naming application script's applied hash, and the three token policies are the one parametrised witness script applied at kinds 0, 1 and 2.",
-    "v": "5347a032546f"
-   }
-  ],
-  "the-state-datum-two-pins-leave": [
-   {
-    "index": 0,
-    "name": "docs-consumer-conformance/the-state-datum-two-pins-leave-00",
-    "pause_ms": 500,
-    "text": "The state datum: two pins leave.",
-    "v": "4e31e35bbb6b"
-   },
-   {
-    "index": 1,
-    "name": "docs-consumer-conformance/the-state-datum-two-pins-leave-01",
-    "pause_ms": 400,
-    "text": "Milestone one admits only registration and permanent termination, so nothing is ever minted under the absent or the terminal token policy. The datum drops fields 6 and 7, absentPolicy and terminalPolicy, and keeps the first six fields in the order of the table above. The fold no longer preserves or checks a mint under either policy, and the witness script admits the active kind only. A registry made under the eight-field contract has another state script hash and is served by the releases that made it. A decoder that reads eight fields refuses a six-field datum.",
-    "v": "585551bff788"
-   }
-  ],
-  "update-and-termination-journeys-the-previous-design-against-the-no-pin-design": [
-   {
-    "index": 0,
-    "name": "docs-consumer-conformance/update-and-termination-journeys-the-previous-design-against-the-no-pin-design-00",
-    "pause_ms": 500,
-    "text": "Update and termination journeys: the previous design against the no-pin design.",
-    "v": "a94b54dfa0e8"
-   },
-   {
-    "index": 1,
-    "name": "docs-consumer-conformance/update-and-termination-journeys-the-previous-design-against-the-no-pin-design-01",
-    "pause_ms": 400,
-    "text": "As an integrator, I can follow the controller's payload update, termination booking and the fold by any wallet, and compare what each allocates under the previous design and the no-pin design. These are three owned statements in the suite's description language. They remain published uncovered because no executable comparison with the application-held model exists yet.",
-    "v": "d1b81c6326e1"
-   },
-   {
-    "index": 2,
-    "name": "docs-consumer-conformance/update-and-termination-journeys-the-previous-design-against-the-no-pin-design-02",
-    "pause_ms": 400,
-    "text": "The two money changes are explicit: the protected deposit goes to the treasury when termination is booked, and the folder receives the termination request's whole value at the fold. The whole value is the gross allocation; ordinary wallet funding and the ledger fee are accounted for separately. The old carrier payment is not renamed a deposit, and the new folder payment is not limited to a declared tip.",
-    "v": "f46fa14a5381"
-   },
-   {
-    "index": 3,
-    "name": "docs-consumer-conformance/update-and-termination-journeys-the-previous-design-against-the-no-pin-design-03",
-    "pause_ms": 400,
-    "text": "The rows name OpenDatumApplicationHeld.Money.oldAllocation and OpenDatumApplicationHeld.Money.newAllocation, the update and termination journey statements, and journey_allocations. Their published state still comes from the suite's receipts. The hosted registration journey now continues through the update and termination, and the termination refusal job submits malformed attempts beside passing packaged controls. They read the development network's chain record and the node's answers. This is a separate evidence boundary: those runs establish what they execute and nothing about agreement with the model.",
-    "v": "3ca096cd9805"
-   }
-  ],
-  "what-a-reader-should-do": [
-   {
-    "index": 0,
-    "name": "docs-consumer-conformance/what-a-reader-should-do-00",
-    "pause_ms": 500,
-    "text": "What a reader should do.",
-    "v": "12c35ba44300"
-   },
-   {
-    "index": 1,
-    "name": "docs-consumer-conformance/what-a-reader-should-do-01",
-    "pause_ms": 400,
-    "text": "Read tokens, never the root. The presence of an active witness under the active policy, at the asset name equal to the registry key, is a live registration; a name that is over is a leaf proved terminal against the root. The asset name is the key itself — there is no hashed representative name any more.",
-    "v": "67199b6cefc5"
-   }
-  ],
-  "what-backs-these-statements": [
-   {
-    "index": 0,
-    "name": "docs-consumer-conformance/what-backs-these-statements-00",
-    "pause_ms": 500,
-    "text": "What backs these statements.",
-    "v": "7472929f5760"
-   },
-   {
-    "index": 1,
-    "name": "docs-consumer-conformance/what-backs-these-statements-01",
-    "pause_ms": 400,
-    "text": "Each of the four rows reads uncovered, with the reason that no executable comparison with the application-held model exists yet. Two hosted jobs, the registration journey and the registration refusals, run the packaged commands on a development network and read the chain's own record. They are a separate evidence boundary: they establish what they run and nothing about agreement with the model. A row changes state only when a run receipt for it exists.",
-    "v": "9ff1d4a0d24f"
    }
   ]
  },
@@ -5461,8 +4329,8 @@
     "index": 1,
     "name": "docs-offchain-api-reference/what-the-reference-does-not-claim-01",
     "pause_ms": 400,
-    "text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the runtime service modules staying outside it in Runtime service ownership, and the conformance reference's extent is the conformance library's. The executables and the on-chain Aiken validators remain outside the generated references. The public local-services component also exposes LocalEvaluation, NetworkTime, ProviderSettings, ProviderTrace, SessionEvidence, SessionIO, SessionServices, TimeMaterial, TimeSource, Trace, TraceRender, WaitTypes and Wallet; their sources live under offchain/local-services/Singular/Registry/. Their generated pages are not in this main-library reference. The public open-datum-application component (applications/open-datum/offchain/) carries the open-datum application the command line composes — command groups, envelope, booking approval and destination, payload update, release rules, script, and the application value — and the request builders of the registry on the proved design: the booking of a registration, its reclaim by the refund address and its cleanup after the window, the configuration record added to the creation of a registry, the records and actions of the request validator in the layout it decodes, the validator as a transaction carries it, the reasons a builder declines, what open datum hands the fold of a registry, and the commands that create a registry and book, reclaim and clean up a registration: Singular.Application.OpenDatum.Book, Singular.Application.OpenDatum.Build, Singular.Application.OpenDatum.Command, Singular.Application.OpenDatum.Envelope, Singular.Application.OpenDatum.Registration, Singular.Application.OpenDatum.Release, Singular.Application.OpenDatum.Requests.Booking, Singular.Application.OpenDatum.Requests.Configuration, Singular.Application.OpenDatum.Requests.Fold, Singular.Application.OpenDatum.Requests.Pending, Singular.Application.OpenDatum.Requests.Records, Singular.Application.OpenDatum.Requests.Refusal, Singular.Application.OpenDatum.Requests.Script, Singular.Application.OpenDatum.Root, Singular.Application.OpenDatum.Run, Singular.Application.OpenDatum.Script, Singular.Application.OpenDatum.Update and Singular.Application.OpenDatum.Value; their sources live under applications/open-datum/offchain/src/Singular/Application/OpenDatum/, and the executable's entry point lives in applications/open-datum/offchain/app/. The public registry-cli component (offchain/cli/) carries the registry command line the two binaries link — session, journal and receipts, the flag group, shared creation helpers, reconciliation, recovery and the creation of a registry on the proved design with the fold into it: Singular.CLI, Singular.CLI.Command, Singular.CLI.Create, Singular.CLI.Finish, Singular.CLI.FoldRules, Singular.CLI.Key, Singular.CLI.Live, Singular.CLI.ManagedState, Singular.CLI.Outlay, Singular.CLI.Payload, Singular.CLI.Permanent, Singular.CLI.Plan, Singular.CLI.Promise, Singular.CLI.Proof, Singular.CLI.Receipt, Singular.CLI.ReceiptBody, Singular.CLI.Reconcile, Singular.CLI.Recovery, Singular.CLI.Registry, Singular.CLI.Root, Singular.CLI.Session, Singular.CLI.State, Singular.CLI.Steps, Singular.CLI.Trace, Singular.CLI.TrieTrace; their sources live under offchain/cli/src/Singular/CLI/.",
-    "v": "8bc04df52bd1"
+    "text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the runtime service modules staying outside it in Runtime service ownership, and the conformance reference's extent is the conformance library's. The executables and the on-chain Aiken validators remain outside the generated references. The public local-services component also exposes LocalEvaluation, NetworkTime, ProviderSettings, ProviderTrace, SessionEvidence, SessionIO, SessionServices, TimeMaterial, TimeSource, Trace, TraceRender, WaitTypes and Wallet; their sources live under offchain/local-services/Singular/Registry/. Their generated pages are not in this main-library reference. The public open-datum-application component (applications/open-datum/offchain/) carries the open-datum application the command line composes — command groups, envelope, release rules and the application value — and the request builders of the registry on the proved design: the booking of a registration, its reclaim by the refund address and its cleanup after the window, the configuration record added to the creation of a registry, the records and actions of the request validator in the layout it decodes, the validator as a transaction carries it, the reasons a builder declines, what open datum hands the fold of a registry, and the commands that create a registry and book, reclaim and clean up a registration: Singular.Application.OpenDatum.Build, Singular.Application.OpenDatum.Command, Singular.Application.OpenDatum.Envelope, Singular.Application.OpenDatum.Registration, Singular.Application.OpenDatum.Release, Singular.Application.OpenDatum.Requests.Booking, Singular.Application.OpenDatum.Requests.Configuration, Singular.Application.OpenDatum.Requests.Fold, Singular.Application.OpenDatum.Requests.Pending, Singular.Application.OpenDatum.Requests.Records, Singular.Application.OpenDatum.Requests.Refusal, Singular.Application.OpenDatum.Requests.Script, Singular.Application.OpenDatum.Root, Singular.Application.OpenDatum.Run, Singular.Application.OpenDatum.Value; their sources live under applications/open-datum/offchain/src/Singular/Application/OpenDatum/, and the executable's entry point lives in applications/open-datum/offchain/app/. The public registry-cli component (offchain/cli/) carries the registry command line the two binaries link — session, journal and receipts, the flag group, shared creation helpers, reconciliation, recovery and the creation of a registry on the proved design with the fold into it: Singular.CLI, Singular.CLI.Command, Singular.CLI.Create, Singular.CLI.Finish, Singular.CLI.FoldRules, Singular.CLI.Key, Singular.CLI.Live, Singular.CLI.ManagedState, Singular.CLI.Outlay, Singular.CLI.Payload, Singular.CLI.Permanent, Singular.CLI.Plan, Singular.CLI.Promise, Singular.CLI.Proof, Singular.CLI.Receipt, Singular.CLI.ReceiptBody, Singular.CLI.Reconcile, Singular.CLI.Recovery, Singular.CLI.Registry, Singular.CLI.Root, Singular.CLI.Session, Singular.CLI.State, Singular.CLI.Steps, Singular.CLI.Trace, Singular.CLI.TrieTrace; their sources live under offchain/cli/src/Singular/CLI/.",
+    "v": "fb7cda6bdebb"
    },
    {
     "index": 2,
@@ -5491,15 +4359,15 @@
     "index": 2,
     "name": "docs-offchain-api-reference/what-this-reference-contains-02",
     "pause_ms": 400,
-    "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 77 modules in three kinds: 60 explicitly exposed modules and 4 re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger, Singular.Registry.LedgerProvider, Singular.Registry.Evidence and Singular.Registry.Signing are the re-exports: their implementations are owned by the public local-services component (offchain/local-services/) and the main library exposes their stable import paths. The generic provider interface and evidence types let a caller supply capabilities without selecting a node runtime; the Koios constructor supplies unbound, unverified HTTP facts through that interface. The runtime service modules outside this extent — the terminal composition and its transport in koios-http, and the remaining service modules of local-services — are documented with source links in Runtime service ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
-    "v": "6a26423e627b"
+    "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. The module extent is discovered from the Cabal manifest. Explicitly exposed and re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger, Singular.Registry.LedgerProvider, Singular.Registry.Evidence and Singular.Registry.Signing are the re-exports: their implementations are owned by the public local-services component (offchain/local-services/) and the main library exposes their stable import paths. The generic provider interface and evidence types let a caller supply capabilities without selecting a node runtime; the Koios constructor supplies unbound, unverified HTTP facts through that interface. The runtime service modules outside this extent — the terminal composition and its transport in koios-http, and the remaining service modules of local-services — are documented with source links in Runtime service ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
+    "v": "f2ac6ed65bc8"
    },
    {
     "index": 3,
     "name": "docs-offchain-api-reference/what-this-reference-contains-03",
     "pause_ms": 400,
-    "text": "MkDocs environment ready! Run: mkdocs serve - Singular.Reader — source - Singular.Provider.Koios.Client — source - Singular.Provider.Koios.Evidence — source - Singular.Provider.Koios.History — source - Singular.Provider.Koios.Provider — source - Singular.Provider.Koios.Recorded — source - Singular.Provider.Koios.Runtime — source - Singular.Provider.Koios.State — source - Singular.Provider.Koios.Wire — source - Singular.Registry.Address — source - Singular.Registry.Application — source - Singular.Registry.AssetName — source - Singular.Registry.Blueprint — source - Singular.Registry.Blueprint.Load — source - Singular.Registry.Blueprint.Params — source - Singular.Registry.Blueprint.Schema — source - Singular.Registry.Capabilities — source - Singular.Registry.Config — source - Singular.Registry.Config.Application — source - Singular.Registry.Confirmation — source - Singular.Registry.Deployment — source - Singular.Registry.Deployment.Attach — source - Singular.Registry.Deployment.Manifest — source - Singular.Registry.Deployment.Mirror — source - Singular.Registry.Driver — source - Singular.Registry.Evidence — source - Singular.Registry.FoldAdmission — source - Singular.Registry.FoldSelection — source - Singular.Registry.Funding — source - Singular.Registry.Ledger — source - Singular.Registry.LedgerProvider — source - Singular.Registry.Lifecycle — source - Singular.Registry.PlainJson — source - Singular.Registry.Proof — source - Singular.Registry.Replay — source - Singular.Registry.Signing — source - Singular.Registry.StateToken — source - Singular.Registry.Trie — source - Singular.Registry.Trie.Pure — source - Singular.Registry.Trie.PureManager — source - Singular.Registry.TrieState — source - Singular.Registry.TrieState.Core — source - Singular.Registry.TrieState.Fixture — source - Singular.Registry.TrieState.Lineage — source - Singular.Registry.TrieState.Types — source - Singular.Registry.TxBuilder.Boot — source - Singular.Registry.TxBuilder.ConnectedFold — source - Singular.Registry.TxBuilder.Edges — source - Singular.Registry.TxBuilder.Internal — source - Singular.Registry.TxBuilder.Internal.Edges — source - Singular.Registry.TxBuilder.Internal.Identity — source - Singular.Registry.TxBuilder.Internal.Lookup — source - Singular.Registry.TxBuilder.Prepare — source - Singular.Registry.TxBuilder.Reject — source - Singular.Registry.TxBuilder.Request — source - Singular.Registry.TxBuilder.Retract — source - Singular.Registry.TxBuilder.Update — source - Singular.Registry.TxBuilder.Update.Build — source - Singular.Registry.TxBuilder.Update.Context — source - Singular.Registry.TxBuilder.Update.Duties — source - Singular.Registry.Types — source - Singular.Registry.Wait — source - Singular.Registry.Wire.Primitive — source - Singular.Registry.Wire.Proof — source - Singular.Registry.Wire.Redeemer — source - Singular.Registry.Wire.Request — source - Singular.Registry.Wire.State — source - Singular.Registry.Witness — source - Singular.State.Assemble — source — the payer, the reads of the chain and the assembly of a transaction that the builders of the Singular state share - Singular.State.Fold — source — the fold of pending registrations into a registry from public data alone, with the application's part handed in - Singular.State.Genesis — source — the creation of a registry from a seed, with the application's steps in the same transaction - Singular.State.Lineage — source — a registry's trie rebuilt from the public history of its state token, every root checked against the chain - Singular.State.Preimage — source — the off-chain encoder of the Singular state, active, configuration and registration-approval preimages, byte for byte equal to the on-chain one - Singular.State.Publication — source — the state script and the application's script published as reference scripts once and reused by later registries - Singular.State.Records — source — the datum and the actions of the state validator, as Plutus Data in the layout it decodes - Singular.State.Refusal — source — why a builder of the Singular state declines to build - Singular.State.Script — source — the state validator of an application as the builders carry it, attached or by reference",
-    "v": "c1e154939e7a"
+    "text": "MkDocs environment ready! Run: mkdocs serve - Singular.Reader — source - Singular.Provider.Koios.Client — source - Singular.Provider.Koios.Evidence — source - Singular.Provider.Koios.History — source - Singular.Provider.Koios.Provider — source - Singular.Provider.Koios.Recorded — source - Singular.Provider.Koios.Runtime — source - Singular.Provider.Koios.State — source - Singular.Provider.Koios.Wire — source - Singular.Registry.Address — source - Singular.Registry.Application — source - Singular.Registry.AssetName — source - Singular.Registry.Blueprint — source - Singular.Registry.Blueprint.Load — source - Singular.Registry.Blueprint.Params — source - Singular.Registry.Blueprint.Schema — source - Singular.Registry.Capabilities — source - Singular.Registry.Config — source - Singular.Registry.Config.Application — source - Singular.Registry.Confirmation — source - Singular.Registry.Deployment — source - Singular.Registry.Deployment.Attach — source - Singular.Registry.Deployment.Manifest — source - Singular.Registry.Deployment.Mirror — source - Singular.Registry.Evidence — source - Singular.Registry.FoldAdmission — source - Singular.Registry.FoldSelection — source - Singular.Registry.Ledger — source - Singular.Registry.LedgerProvider — source - Singular.Registry.Lifecycle — source - Singular.Registry.PlainJson — source - Singular.Registry.Proof — source - Singular.Registry.Replay — source - Singular.Registry.Signing — source - Singular.Registry.StateToken — source - Singular.Registry.Trie — source - Singular.Registry.Trie.Pure — source - Singular.Registry.Trie.PureManager — source - Singular.Registry.TrieState — source - Singular.Registry.TrieState.Core — source - Singular.Registry.TrieState.Fixture — source - Singular.Registry.TrieState.Lineage — source - Singular.Registry.TrieState.Types — source - Singular.Registry.TxBuilder.Boot — source - Singular.Registry.TxBuilder.ConnectedFold — source - Singular.Registry.TxBuilder.Edges — source - Singular.Registry.TxBuilder.Internal — source - Singular.Registry.TxBuilder.Internal.Edges — source - Singular.Registry.TxBuilder.Internal.Identity — source - Singular.Registry.TxBuilder.Internal.Lookup — source - Singular.Registry.TxBuilder.Prepare — source - Singular.Registry.TxBuilder.Reject — source - Singular.Registry.TxBuilder.Request — source - Singular.Registry.TxBuilder.Retract — source - Singular.Registry.TxBuilder.Update — source - Singular.Registry.TxBuilder.Update.Build — source - Singular.Registry.TxBuilder.Update.Context — source - Singular.Registry.TxBuilder.Update.Duties — source - Singular.Registry.Types — source - Singular.Registry.Wait — source - Singular.Registry.Wire.Primitive — source - Singular.Registry.Wire.Proof — source - Singular.Registry.Wire.Redeemer — source - Singular.Registry.Wire.Request — source - Singular.Registry.Wire.State — source - Singular.Registry.Witness — source - Singular.State.Assemble — source — the payer, the reads of the chain and the assembly of a transaction that the builders of the Singular state share - Singular.State.Fold — source — the fold of pending registrations into a registry from public data alone, with the application's part handed in - Singular.State.Genesis — source — the creation of a registry from a seed, with the application's steps in the same transaction - Singular.State.Lineage — source — a registry's trie rebuilt from the public history of its state token, every root checked against the chain - Singular.State.Preimage — source — the off-chain encoder of the Singular state, active, configuration and registration-approval preimages, byte for byte equal to the on-chain one - Singular.State.Publication — source — the state script and the application's script published as reference scripts once and reused by later registries - Singular.State.Records — source — the datum and the actions of the state validator, as Plutus Data in the layout it decodes - Singular.State.Refusal — source — why a builder of the Singular state declines to build - Singular.State.Script — source — the state validator of an application as the builders carry it, attached or by reference",
+    "v": "9e6efd85e6e2"
    },
    {
     "index": 4,
@@ -6574,8 +5442,8 @@
     "index": 2,
     "name": "docs-offchain-node-ownership/one-owner-per-runtime-concern-02",
     "pause_ms": 400,
-    "text": "The first twelve rows live in local-services, the next four in the main library, the following three in koios-http, and the last in the command line. The trie's own owners — TrieState and its instances — are a separate capability documented with the library's modules in the off-chain API reference; the main library's re-exports of Ledger, LedgerProvider, Evidence and Signing keep their stable import paths, and their generated pages come from local-services' own Haddock tree.",
-    "v": "607edc6e2151"
+    "text": "The first twelve rows live in local-services, the next three in the main library, the following three in koios-http, and the last in the command line. The trie's own owners — TrieState and its instances — are a separate capability documented with the library's modules in the off-chain API reference; the main library's re-exports of Ledger, LedgerProvider, Evidence and Signing keep their stable import paths, and their generated pages come from local-services' own Haddock tree.",
+    "v": "afb0bce877bc"
    }
   ],
   "runtime-service-ownership": [
@@ -9899,8 +8767,8 @@
     "index": 3,
     "name": "docs-test-selection/checks-execute-unit-binaries-03",
     "pause_ms": 400,
-    "text": "The development-node suites and the live conformance book stay executable apps. Compiling or listing their examples does not establish live ledger behavior. The inventory discovers the Hspec entrypoints from Cabal, rejects unwrapped spec calls and unknown tag constructors, and exercises removal and unknown-tag controls. It is a source inventory; compiled paths and before-and-after example counts supply the separate runtime evidence.",
-    "v": "048a64ea0963"
+    "text": "The development-node suites stay executable apps. Compiling or listing their examples does not establish live ledger behavior. The inventory discovers the Hspec entrypoints from Cabal, rejects unwrapped spec calls and unknown tag constructors, and exercises removal and unknown-tag controls. It is a source inventory; compiled paths and before-and-after example counts supply the separate runtime evidence.",
+    "v": "7093c3fb3d29"
    }
   ],
   "observed-selections": [
@@ -9984,15 +8852,15 @@
     "index": 2,
     "name": "docs-test-selection/suite-commands-and-evidence-limits-02",
     "pause_ms": 400,
-    "text": "The public conformance command nix run .#conformance-tests, run from conformance/, executes the live product book as well as its appendix. Use nix run .#conformance-appendix-tests -- --match \"[conformance]\" to filter the Hspec appendix alone. The published book's requirement text and receipt-computed coverage are unchanged by these harness labels.",
-    "v": "f1678d6e189a"
+    "text": "From conformance/, use nix run .#conformance-appendix-tests -- --match \"[conformance]\" to filter the Hspec reader appendix.",
+    "v": "e698e151bc7e"
    },
    {
     "index": 3,
     "name": "docs-test-selection/suite-commands-and-evidence-limits-03",
     "pause_ms": 400,
-    "text": "The evaluation spike's cleanup-control uses Tasty, so it is outside this Hspec vocabulary. The Cabal-declared Conformance.Support.Authenticate module was already absent from the Hspec entrypoint; it remains inactive so tagging changes neither suite membership nor example counts. No new exclusion is introduced.",
-    "v": "b7cb37a17776"
+    "text": "The evaluation spike's cleanup-control uses Tasty, so it is outside this Hspec vocabulary.",
+    "v": "974e170a78c3"
    }
   ]
  },

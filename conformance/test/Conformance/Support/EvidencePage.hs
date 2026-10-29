@@ -10,9 +10,6 @@ read back by its rendered text.
 module Conformance.Support.EvidencePage (spec) where
 
 import Control.Monad (forM_)
-import Data.Aeson (Value (..), decode)
-import Data.Aeson.Key qualified as Key
-import Data.Aeson.KeyMap qualified as KeyMap
 import Data.ByteString.Lazy qualified as BSL
 import Data.Char (isAlphaNum)
 import Data.List (isInfixOf, sort)
@@ -113,9 +110,14 @@ spec = describe "Appendix: computing the published evidence page" $ do
                     (snapshotOf "fixture-base" tampered)
                     "unknown requirement"
 
-    it "Refuses a snapshot with no receipt" $ do
-        (rows, _) <- fixtures
-        refusal rows (snapshotOf "fixture-base" []) "no conformance receipt"
+    it
+        "Publishes every uncovered requirement when no comparison receipt exists"
+        $ do
+            (rows, _) <- fixtures
+            page <- rendered rows (snapshotOf "fixture-base" [])
+            tableIds
+                (sectionTree "Requirements not demonstrated" (renderedPage page))
+                `shouldBe` sort (map rowId rows)
 
     it
         "Never shows a run that did not pass as demonstrated, whatever its verdict and wherever it stands"
@@ -147,64 +149,14 @@ spec = describe "Appendix: computing the published evidence page" $ do
                                 "the fixture's requirement is not in the inventory once"
 
     it
-        "Shows each unmet row with the ruling that keeps it, and refuses one no ruling states"
-        $ do
-            (rows, receipts) <- fixtures
-            let unmetAs row = case receipts of
-                    r0 : rest ->
-                        r0{receiptRow = row, receiptVerdict = UnmetByRuling}
-                            : filter ((/= row) . receiptRow) rest
-                    [] -> []
-                lineOf row page =
-                    rowLineById row (section "Requirements a run did not pass" page)
-            stale <-
-                renderedPage
-                    <$> rendered
-                        rows
-                        (snapshotOf "fixture-base" (unmetAs "fold-against-superseded-root"))
-            lineOf "fold-against-superseded-root" stale
-                `shouldSatisfy` T.isInfixOf
-                    "the chain refuses, Lean has no counterpart to compare with (operator ruling 2026-10-02"
-            lineOf "fold-against-superseded-root" stale
-                `shouldSatisfy` T.isInfixOf "lambdasistemi/singular#346"
-            early <-
-                renderedPage
-                    <$> rendered
-                        rows
-                        ( snapshotOf
-                            "fixture-base"
-                            (unmetAs "reject-before-deadline-consumer-requirement")
-                        )
-            lineOf "reject-before-deadline-consumer-requirement" early
-                `shouldSatisfy` T.isInfixOf
-                    "does not do what the consumer requirement states (operator ruling 2026-10-01"
-            lineOf "reject-before-deadline-consumer-requirement" early
-                `shouldSatisfy` T.isInfixOf "lambdasistemi/cardano-keri#468"
-            case receipts of
-                r0 : _ ->
-                    refusal
-                        rows
-                        ( snapshotOf
-                            "fixture-base"
-                            (r0{receiptVerdict = UnmetByRuling} : drop 1 receipts)
-                        )
-                        "no reader surface states"
-                [] -> expectationFailure "the fixture holds no receipt"
-
-    it "Shows a partial run as partly demonstrated" $ do
-        rows <- committedRows
-        partial <- loadFixture "test/fixtures/partial-valid"
-        page <- rendered rows (snapshotOf "fixture-base" partial)
-        let demonstrated = section "Requirements a run demonstrated" (renderedPage page)
-        tableIds demonstrated `shouldBe` map receiptRow partial
-        demonstrated `shouldSatisfy` T.isInfixOf "partly demonstrated"
-
-    it
         "Counts contract results per adapter and never counts a not-supported case as passed"
         $ do
             (rows, receipts) <- fixtures
             page <- rendered rows (snapshotOf "fixture-base" receipts)
-            let summary = section "Backend contract across adapters" (renderedPage page)
+            let summary =
+                    section
+                        "Appendix: backend contract across adapters"
+                        (renderedPage page)
             summary
                 `shouldSatisfy` T.isInfixOf "| memory | test-adapter | 1 | 0 | 1 |"
             summary
@@ -247,20 +199,19 @@ spec = describe "Appendix: computing the published evidence page" $ do
         (Aeson.eitherDecode publicChainLine :: Either String ContractResult)
             `shouldSatisfy` either ("not one the contract suite runs" `isInfixOf`) (const False)
 
-    it "Gives every section of the page a speech section and nothing else" $ do
-        (rows, receipts) <- fixtures
-        page <- rendered rows (snapshotOf "fixture-base" receipts)
-        case decode (renderedSpeech page) of
-            Just (Object o) ->
-                sort (map Key.toText (KeyMap.keys o))
-                    `shouldBe` sort (headingIds (renderedPage page))
-            _ -> expectationFailure "the speech companion is not a JSON object"
-
 model :: Text
 model = "0123456789abcdef0123456789abcdef01234567"
 
 fixtures :: IO ([Row], [Receipt])
-fixtures = (,) <$> committedRows <*> loadFixture "test/fixtures/receipts"
+fixtures = do
+    rows <- committedRows
+    receipts <- loadFixture "test/fixtures/reader"
+    -- Bind synthetic appendix reports to the discovered inventory. These
+    -- reports test rendering and are never published as product evidence.
+    pure
+        ( rows
+        , zipWith (\row report -> report{receiptRow = rowId row}) rows receipts
+        )
 
 committedRows :: IO [Row]
 committedRows = do
@@ -389,22 +340,6 @@ rowLine r page =
     T.unlines
         [l | l <- T.lines page, T.isPrefixOf ("| " <> rowId r <> " |") l]
 
-headingIds :: Text -> [Text]
-headingIds page =
-    [ slugify (T.strip (T.dropWhile (== '#') l))
-    | l <- T.lines page
-    , let level = T.length (T.takeWhile (== '#') l)
-    , level == 2 || level == 3
-    , T.isPrefixOf " " (T.drop level l)
-    ]
-  where
-    slugify =
-        T.dropAround (== '-')
-            . T.intercalate "-"
-            . T.words
-            . T.filter (\c -> isAlphaNum c || c `elem` ("-_ " :: String))
-            . T.toLower
-
 {- | Run a property once per position, with exactly that one item tampered:
 a check that looks at only some items cannot pass it. Refuses a list too
 short to tell positions apart.
@@ -425,9 +360,3 @@ everyPositionAt items tamper property
                     [if j == i then tamper x else x | (j, x) <- zip [0 ..] items]
             )
             [0 .. length items - 1]
-
--- | The table lines of the page naming the requirement with this id.
-rowLineById :: Text -> Text -> Text
-rowLineById rid page =
-    T.unlines
-        [l | l <- T.lines page, T.isPrefixOf ("| " <> rid <> " |") l]

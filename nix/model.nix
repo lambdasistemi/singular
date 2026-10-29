@@ -27,7 +27,6 @@ let
       lake build
       lake env lean tools/axioms.lean > axioms-report.txt
       lake env lean tools/m1_axioms.lean > m1-axioms-report.txt
-      python3 tools/check_m1_transport.py --root . --report m1-transport-report.json
     '';
     installPhase = ''
       mkdir -p "$out/bin" "$out/share"
@@ -42,7 +41,6 @@ let
         lean/wire-theorem-debt.json lean/driver-corpus.json \
         axioms-report.txt "$out/share/"
       cp lean/m1-corpus.json lean/m1-theorem-debt.json m1-axioms-report.txt "$out/share/"
-      cp m1-transport-report.json "$out/share/"
     '';
   };
   checker = pkgs.writeShellApplication {

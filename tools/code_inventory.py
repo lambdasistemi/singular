@@ -553,8 +553,7 @@ CODE_RULES: list[dict] = [
         "lint": "lean-static",
         "format": "lean-fmt",
         "generated": False,
-        "note": "lean/ (lakefile.toml srcDir), conformance/lean/DriverTransport "
-        "(compiled into the Conformance driver transport), and "
+        "note": "lean/ (lakefile.toml srcDir), the aligned model projects, and "
         "tools/axioms.lean (compiled by the model build)",
     },
     {

@@ -2,13 +2,9 @@
 # No process-wide mutable state under conformance/.
 #
 # Supporting evidence, not proof. This reads source text, so it establishes a
-# source fact and nothing about behaviour: what a temporary directory actually
-# does when an example throws, or when a second process runs the same example,
-# is settled by the controls in Conformance.Support.Fixture and by nothing here.
-#
-# What it does add is extent. Those controls exercise one fixture; this refuses
-# the whole tree, so moving a global counter into another module does not escape
-# them quietly.
+# source fact and nothing about behaviour. It does not establish resource
+# teardown or isolation between examples running in different processes.
+# The scan covers the whole discovered Haskell source extent.
 #
 # Two shapes are forbidden:
 #   * unsafePerformIO anywhere — there is no use for it in a test tree;

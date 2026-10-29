@@ -49,8 +49,7 @@ offchain|cage-tests|check|hosted under another name: the cage-tests job's off-ch
 offchain|cage-tests-e2e|check|hosted under another name: the e2e-part matrix jobs run .#cage-tests-e2e, this same wrapped derivation, one lane per job
 offchain|library|check|hosted under another name: the offchain-component-build job builds .#component-build, whose member paths include this library derivation (build only: no test executes)
 offchain|lint|check|hosted under another name: the offchain-lint job runs .#lint, this same writeShellApplication derivation (apps.lint is checks.lint)
-conformance|conformance-tests|app|hosted under another name: the conformance-checks, conformance-budget, conformance-batch and conformance-book jobs each run one chapter of this harness (appendix tests, fold budget regression, batch instructions, the book) through the conformance and fold-budget-regression apps
-conformance|conformance-exe|check|hosted under another name: every conformance job that runs the conformance app builds this executable inside its wrapper's closure; the check itself builds the executable only (build only: no test executes)
+conformance|conformance-exe|check|hosted under another name: the conformance-checks job runs the conformance app to list the inventory, building this executable inside its wrapper's closure; the check itself builds the executable only (build only: no test executes)
 conformance|conformance-tests|check|hosted under another name: the conformance-checks job's unit-test step runs the conformance-appendix-tests app, the same test binary this check executes in its sandbox
 conformance|coverage-gate-snapshot|check|hosted under another name: the coverage-gate job's frozen-snapshot step builds packages.coverageGateSnapshot, this same derivation
 conformance|coverage-gate-tests|check|hosted under another name: the coverage-gate job's gate-test-suite step builds packages.coverageGateTests, this same derivation

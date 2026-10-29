@@ -76,18 +76,18 @@ alter_rows x '.rows |= map(select(.group != "registration-journeys"))'
 plant "a group with no row" "a check over no rows proves nothing" "$inventory" "$scratch/rows.json"
 
 # shellcheck disable=SC2016
-alter_rows reject-after-window '(.rows[] | select(.id == $id) | .state) = "out-of-scope"'
-plant "an early-rejection row quietly retired" "was edited or removed" "$inventory" "$scratch/rows.json"
+alter_rows holding-update-outcome '(.rows[] | select(.id == $id) | .note) += " Edited."'
+plant "a retained row edited by one field" "was edited or removed" "$inventory" "$scratch/rows.json"
 
 # shellcheck disable=SC2016
-alter_rows reject-before-deadline-consumer-requirement '.rows |= map(select(.id != $id))'
-grep -v '^reject-before-deadline-consumer-requirement'$'\t' "$inventory" >"$scratch/inventory.tsv"
-plant "an early-rejection row deleted" "is no longer listed" "$scratch/inventory.tsv" "$scratch/rows.json"
+alter_rows termination-fold-outcome '.rows |= map(select(.id != $id))'
+grep -v '^termination-fold-outcome'$'\t' "$inventory" >"$scratch/inventory.tsv"
+plant "a retained row deleted" "is no longer listed" "$scratch/inventory.tsv" "$scratch/rows.json"
 
 : >"$scratch/empty-frozen.txt"
 if bash "$check" "$inventory" "$rows" "$scratch/empty-frozen.txt" >/dev/null 2>&1; then
   fail "an empty list of frozen rows was accepted"
 fi
-echo "refused as it must: no frozen previous-design row"
+echo "refused as it must: no frozen comparison row"
 
 echo "registration-journey rows: the check refuses each planted wrong fact"

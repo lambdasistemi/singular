@@ -35,14 +35,8 @@ for name in (
     "check_model.py",
     "m1_axioms.lean",
     "check_m1.py",
-    "check_m1_transport.py",
 ):
     shutil.copyfile(root / "tools" / name, review / "tools" / name)
-(review / "conformance/lean").mkdir(parents=True)
-shutil.copyfile(
-    root / "conformance/lean/DriverTransport.lean",
-    review / "conformance/lean/DriverTransport.lean",
-)
 for name in ("lakefile.toml", "lean-toolchain"):
     shutil.copyfile(root / name, review / name)
 
