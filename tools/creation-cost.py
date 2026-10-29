@@ -610,6 +610,11 @@ def load_pair():
     ]
 
 
+def load_carrying(receipts):
+    checker = runpy.run_path(str(Path(__file__).with_name("creation-carrying.py")))
+    return checker, checker["load"](EVIDENCE, receipts[1], globals())
+
+
 def page_matches(text, receipts):
     require(text == page(receipts), "page differs from receipt-derived figures")
 
@@ -839,10 +844,12 @@ def main():
         print("creation-cost: candidate transaction counts and script hashes agree")
     else:
         receipts = pair(load_pair(), EVIDENCE)
+        carrying_checker, carrying = load_carrying(receipts)
         if arguments.command == "render":
             print(page(receipts), end="")
         elif arguments.command == "controls":
             controls(receipts)
+            carrying_checker["controls"](carrying, EVIDENCE, receipts[1], globals())
         elif arguments.command == "receipts":
             print("creation-cost: all receipt figures were recomputed from chain bytes")
         else:
