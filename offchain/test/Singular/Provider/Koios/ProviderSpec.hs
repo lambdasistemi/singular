@@ -2231,17 +2231,18 @@ policyHoldingsSpec = describe "policy holdings" $ do
                     _ ->
                         expectationFailure ("foreign output was accepted: " <> show result)
     it
-        "refuses duplicate names rather than accepting a shortened policy extent" $ do
-        let amend request answer
-                | Client.rawPath request == "/policy_asset_list" =
-                    pageAnswer (replicate 2 (object ["asset_name" .= ("" :: Text)])) 0 2
-                | otherwise = answer
-        (result, _, _) <- readPolicyHoldings amend (HoldingPolicy (fst asset))
-        case result of
-            Right (Left (BackendReadFailure _)) -> pure ()
-            _ ->
-                expectationFailure
-                    ("duplicate policy names were accepted: " <> show result)
+        "refuses duplicate names rather than accepting a shortened policy extent"
+        $ do
+            let amend request answer
+                    | Client.rawPath request == "/policy_asset_list" =
+                        pageAnswer (replicate 2 (object ["asset_name" .= ("" :: Text)])) 0 2
+                    | otherwise = answer
+            (result, _, _) <- readPolicyHoldings amend (HoldingPolicy (fst asset))
+            case result of
+                Right (Left (BackendReadFailure _)) -> pure ()
+                _ ->
+                    expectationFailure
+                        ("duplicate policy names were accepted: " <> show result)
     it "refuses conflicting full outputs repeated across asset batches" $ do
         let amend request answer
                 | Client.rawPath request == "/asset_utxos"

@@ -127,7 +127,7 @@ koios-fixtures:
     koios record --out "$out" \
         tip "epoch_params:$epoch" cli_protocol_params \
         "address_utxos:$reference" "address_utxos:$hashed" "address_utxos:$empty" \
-        "asset_utxos:$cage" "asset_txs:$cage" "asset_txs:$unknown" \
+        "asset_utxos:$cage" "policy_asset_list:${cage%%.*}" "asset_txs:$cage" "asset_txs:$unknown" \
         "tx_info:$fold" "tx_info:$fold,$absent" "tx_info:$native" "tx_cbor:$absent" \
         "tx_status:$fold,$absent" \
         account_info:stake_test17zy7ujlley7twgsnlqmpkue5338vgkqucz2uky864020czgktxcpl \

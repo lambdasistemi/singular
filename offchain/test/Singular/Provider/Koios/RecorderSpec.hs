@@ -58,6 +58,12 @@ requestSpec = describe "read requests" $ do
         parseReadRequest "submittx" `shouldSatisfy` isLeft'
         parseReadRequest "submittx:84a400" `shouldSatisfy` isLeft'
 
+    it "accepts a policy asset listing as a read-only request" $
+        fmap
+            (readCallName . readRequestCall)
+            (parseReadRequest ("policy_asset_list:" <> T.replicate 56 "1"))
+            `shouldBe` Right "policy_asset_list"
+
     it "every read call is named by its Koios endpoint" $
         forM_ [minBound .. maxBound] $ \rc ->
             readCallName rc `shouldBe` callNameOf (readCallCall rc)
@@ -105,6 +111,7 @@ samples =
         , ReadAddressUtxos
         )
     , ("asset_utxos:" <> policyHex <> "." <> "ab", ReadAssetUtxos)
+    , ("policy_asset_list:" <> policyHex, ReadPolicyAssetList)
     , ("asset_txs:" <> policyHex <> ".", ReadAssetTxs)
     , ("tx_info:" <> txHex <> "," <> txHex, ReadTxInfo)
     , ("tx_cbor:" <> txHex, ReadTxCbor)

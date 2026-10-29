@@ -258,6 +258,40 @@ setSpec = describe "the fixture set" $ do
         sort calls
             `shouldBe` filter (/= CallSubmitTx) [minBound .. maxBound]
 
+    it "reads every recorded policy asset name through the client" $ do
+        set <- loadSet
+        actual <-
+            policyAssetNames
+                (Koios recordedConfig (recordedTransport set))
+                (fst cageAsset)
+        actual `shouldSatisfy` either (const False) (not . null)
+        let pages =
+                [ fixtureAnswer f
+                | f <- setFixtures set
+                , fixtureCall (fixtureRequest f) == CallPolicyAssetList
+                , lookup "_asset_policy" (fixtureQuery (fixtureRequest f))
+                    == Just (policyHex (fst cageAsset))
+                ]
+        pages `shouldSatisfy` (not . null)
+        expected <-
+            fmap concat $
+                mapM
+                    ( \answer -> case decodeStrict' (answerBody answer) of
+                        Just (Array rows) ->
+                            mapM
+                                ( \row -> case row of
+                                    Object fields
+                                        | Just (String name) <- KM.lookup "asset_name" fields ->
+                                            pure (AssetName (SBS.toShort (hexBytes name)))
+                                    _ -> fail "recorded policy row has no asset name"
+                                )
+                                (toList rows)
+                        _ -> fail "recorded policy answer is not an array"
+                    )
+                    pages
+        expected `shouldSatisfy` (not . null)
+        fmap sort actual `shouldBe` Right (sort expected)
+
     it "asks for the whole history on every recorded asset_txs request" $ do
         set <- loadSet
         let histories =
@@ -715,6 +749,7 @@ everyCall k = do
         , show <$> addressUtxos k [addr datumHashAddress]
         , show <$> addressUtxos k [addr emptyAddress]
         , show <$> assetUtxos k [cageAsset]
+        , show <$> policyAssetNames k (fst cageAsset)
         , show <$> uncurry (assetTxs k) cageAsset
         , show <$> assetTxs k unknownPolicy (AssetName "")
         , show <$> txInfo k [foldTx]
@@ -743,7 +778,7 @@ seamSpec = describe "one decoder for recorded and live answers"
                         Right t -> pure t
                         Left r -> fail (show r)
                 everyCall (Koios recordedConfig transport)
-        length fromRecorded `shouldBe` 14
+        length fromRecorded `shouldBe` 15
         fromHttp `shouldBe` fromRecorded
 
 -- ---------------------------------------------------------------------------

@@ -73,6 +73,7 @@ import Singular.Registry.LedgerProvider qualified as LP
         , AtTxIn
         , CarryingReferenceScript
         , HoldingAsset
+        , HoldingPolicy
         )
     , ReadFailure (MissingOutput)
     , Session (mintRecord, networkTime, outputs, sessionNetwork)
