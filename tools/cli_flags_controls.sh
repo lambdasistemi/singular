@@ -239,8 +239,8 @@ expect command-help-fails-od 1 '^open-datum update --help exited non-zero'
 
 # A quotation of a program's help that the program no longer prints.
 fresh
-sed -i 's/Create a Singular registry on Cardano/Create a Singular register on Cardano/' "$table"
-grep -q 'Create a Singular register on Cardano' "$table" || {
+sed -i 's/Create and read a Singular registry on Cardano/Create and read a Singular register on Cardano/' "$table"
+grep -q 'Create and read a Singular register on Cardano' "$table" || {
   echo "SETUP-FAIL: the quotation did not change" >&2
   exit 2
 }
@@ -283,7 +283,7 @@ expect unknown-verb-od 1 'docs/cli-recovery.md:[0-9]+: open-datum reject .*not a
 
 # An invocation of a known verb with an unprinted flag fails, for each binary,
 # on verbs the committed controls do not cover (`fold` here; the committed
-# `inspect`/`insert` controls stay as they are).
+# `create`/`insert` controls stay as they are).
 fresh
 printf '\n```sh\nsingular registry create --state-dir ./reg \\\n  --made-up-flag 1\n```\n' >>"$scratch/t/docs/cli-recovery.md"
 expect invocation-known-bad-flag 1 'docs/cli-recovery.md:[0-9]+: singular registry create --made-up-flag'
@@ -320,7 +320,7 @@ expect removed-verb-refusal-value 1 'docs/cli-recovery.md:[0-9]+: singular regis
 # Each invocation omits --help so it reaches dispatch: at the base the verb
 # parses and is refused for a missing flag, never as unknown, so this
 # control fails there; after the split it is refused as unknown.
-for verb in insert update terminate address fold reject reclaim inspect; do
+for verb in insert update terminate address fold reject reclaim; do
   fresh
   got=0
   "$binary_singular" registry "$verb" >"$scratch/out-$verb" 2>"$scratch/err-$verb" || got=$?
@@ -333,18 +333,32 @@ for verb in insert update terminate address fold reject reclaim inspect; do
   echo "control removed-$verb: exit $got, refused as unknown"
 done
 
-# Public application routes have no compatibility aliases.
-verb=inspect
-fresh
-got=0
-"$binary_od" "$verb" >"$scratch/out-od-$verb" 2>"$scratch/err-od-$verb" || got=$?
-if [ "$got" -ne 2 ] || ! grep -q -- "not a command singular supports: $verb" "$scratch/err-od-$verb"; then
-  cat "$scratch/err-od-$verb" >&2
-  echo "FAIL cli-flags control 'removed-od-$verb': exit $got, expected unknown-command refusal" >&2
-  exit 1
-fi
-controls=$((controls + 1))
-echo "control removed-od-$verb: exit $got, refused as unknown"
+# The reading commands introduced by the reader are public, with their own help.
+# Their existence does not restore the other spelling or a grouped application alias.
+for invocation in 'singular registry inspect' 'open-datum inspect'; do
+  read -r -a words <<<"$invocation"
+  binary="$binary_singular"
+  [ "${words[0]}" = singular ] || binary="$binary_od"
+  "$binary" "${words[@]:1}" --help >"$scratch/reader-help"
+  grep -q -- '--registry ADDRESS' "$scratch/reader-help"
+  grep -q -- '--key KEY' "$scratch/reader-help"
+  controls=$((controls + 1))
+  echo "control reader-help-${invocation// /-}: the public command prints its reader settings"
+done
+for invocation in 'singular inspect' 'open-datum registry inspect'; do
+  read -r -a words <<<"$invocation"
+  binary="$binary_singular"
+  [ "${words[0]}" = singular ] || binary="$binary_od"
+  got=0
+  "$binary" "${words[@]:1}" >"$scratch/reader-alias.out" 2>"$scratch/reader-alias.err" || got=$?
+  if [ "$got" -ne 2 ] || ! grep -q -- "not a command singular supports: ${words[*]:1}" "$scratch/reader-alias.err"; then
+    cat "$scratch/reader-alias.err" >&2
+    echo "FAIL cli-flags control: $invocation did not refuse as unknown" >&2
+    exit 1
+  fi
+  controls=$((controls + 1))
+  echo "control reader-alias-${invocation// /-}: exit $got, refused as unknown"
+done
 
 # Retired command groups and their leaves have no compatibility aliases.
 for invocation in 'singular state' 'singular state create' 'open-datum state' 'open-datum state create' 'open-datum state fold' 'open-datum registration' 'open-datum registration book' 'open-datum registration reclaim' 'open-datum registration cleanup' 'open-datum holding' 'open-datum holding update' 'open-datum holding terminate'; do
@@ -383,7 +397,11 @@ fresh
 stand_in_singular 'registry create' "$(plant --planted-flag)"
 expect undocumented-flag-state-create 1 '^undocumented: singular registry create takes --planted-flag'
 
-for command in 'create' 'fold' 'insert' 'reclaim' 'cleanup' 'update' 'terminate'; do
+fresh
+stand_in_singular 'registry inspect' "$(plant --planted-reader)"
+expect undocumented-flag-reader 1 '^undocumented: singular registry inspect takes --planted-reader'
+
+for command in 'create' 'fold' 'insert' 'reclaim' 'cleanup' 'update' 'terminate' 'inspect'; do
   fresh
   stand_in_od "$command" "$(plant --planted-flag)"
   expect "undocumented-flag-od-${command// /-}" 1 "^undocumented: open-datum $command takes --planted-flag"
@@ -398,6 +416,17 @@ grep -q 'ghost-flag' "$table" || {
 expect documented-missing-state-create 1 '^documented, not in --help: the settings table gives --ghost-flag to singular registry create'
 expect documented-missing-registration-book 1 '^documented, not in --help: the settings table gives --ghost-flag to open-datum insert'
 
+# Both readers are checked in the other direction too: a documented flag missing
+# from either real reader's help must be found, with that reader named.
+fresh
+sed -i '/^| `--receipt FILE`/a | `--ghost-reader X` | `singular registry inspect`, `open-datum inspect` | A flag the binary does not take. |' "$table"
+grep -q 'ghost-reader' "$table" || {
+  echo "SETUP-FAIL: the reader ghost row did not apply" >&2
+  exit 2
+}
+expect documented-missing-reader 1 '^documented, not in --help: the settings table gives --ghost-reader to singular registry inspect'
+expect documented-missing-od-reader 1 '^documented, not in --help: the settings table gives --ghost-reader to open-datum inspect'
+
 # A flag documented for a group command whose --help does not give it.
 fresh
 sed -i 's/^| `--pending TXID#IX` | \(.*\)`open-datum fold`/| `--pending TXID#IX` | \1`open-datum fold`, `open-datum insert`/' "$table"
@@ -408,7 +437,7 @@ grep -q '`open-datum fold`, `open-datum insert`' "$table" || {
 expect wrong-command-registration 1 '^documented, not in --help: the settings table gives --pending to open-datum insert'
 
 # A documented invocation of a group command uses a flag it does not print.
-for invocation in 'singular registry create' 'open-datum create' 'open-datum fold' 'open-datum insert' 'open-datum reclaim' 'open-datum cleanup' 'open-datum update' 'open-datum terminate'; do
+for invocation in 'singular registry create' 'singular registry inspect' 'open-datum inspect' 'open-datum create' 'open-datum fold' 'open-datum insert' 'open-datum reclaim' 'open-datum cleanup' 'open-datum update' 'open-datum terminate'; do
   fresh
   printf '\n```sh\n%s --state-dir ./reg \\\n  --made-up-flag 1\n```\n' "$invocation" >>"$scratch/t/docs/cli-recovery.md"
   expect "invocation-unknown-${invocation// /-}" 1 "docs/cli-recovery.md:[0-9]+: $invocation --made-up-flag"
