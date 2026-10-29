@@ -2274,6 +2274,234 @@
    }
   ]
  },
+ "docs/folding-requests.md": {
+  "appendix-regenerate-this-page": [
+   {
+    "index": 0,
+    "name": "docs-folding-requests/appendix-regenerate-this-page-00",
+    "pause_ms": 500,
+    "text": "Appendix: regenerate this page.",
+    "v": "ba21142d2dfd"
+   },
+   {
+    "index": 1,
+    "name": "docs-folding-requests/appendix-regenerate-this-page-01",
+    "pause_ms": 400,
+    "text": "The measurement job re-evaluates the kept transactions and captures a fresh boundary for each kind. The documentation check regenerates the marked block and refuses differences in either the page or the receipt. To refresh the block explicitly, run python3 tools/batch_limits.py --write, then regenerate the page's speech and changed narration.",
+    "v": "8e79886716f7"
+   }
+  ],
+  "choose-a-named-batch": [
+   {
+    "index": 0,
+    "name": "docs-folding-requests/choose-a-named-batch-00",
+    "pause_ms": 500,
+    "text": "Choose a named batch.",
+    "v": "95eda952d01e"
+   },
+   {
+    "index": 1,
+    "name": "docs-folding-requests/choose-a-named-batch-01",
+    "pause_ms": 400,
+    "text": "Repeat --pending to choose the entire ordered batch yourself. It is built as named or refused, never trimmed, even if you also give --limit.",
+    "v": "1ccf498c84ff"
+   }
+  ],
+  "discover-and-fold": [
+   {
+    "index": 0,
+    "name": "docs-folding-requests/discover-and-fold-00",
+    "pause_ms": 500,
+    "text": "Discover and fold.",
+    "v": "89ff1db11954"
+   },
+   {
+    "index": 1,
+    "name": "docs-folding-requests/discover-and-fold-01",
+    "pause_ms": 400,
+    "text": "Give the registry's address, the release blueprint, your provider and your own wallet. Your wallet need not have booked any request. Registrations and terminations of this registry can share a transaction when their keys differ.",
+    "v": "74899db066d8"
+   },
+   {
+    "index": 2,
+    "name": "docs-folding-requests/discover-and-fold-02",
+    "pause_ms": 400,
+    "text": "Requests are ordered by your take, greatest first, with output references breaking ties. A registration's take is the request's held ADA above the deposit its holding must keep. A termination's take is the request's whole held ADA. Your wallet receives the transaction's change and pays its fee; the gross take is not the same as profit after that fee.",
+    "v": "251a40df252c"
+   },
+   {
+    "index": 3,
+    "name": "docs-folding-requests/discover-and-fold-03",
+    "pause_ms": 400,
+    "text": "To cap discovery, give the maximum number you want in --limit. The cap does not promise that many will fit.",
+    "v": "9fb3cd472b9b"
+   },
+   {
+    "index": 4,
+    "name": "docs-folding-requests/discover-and-fold-04",
+    "pause_ms": 400,
+    "text": "Only exceeding a transaction size, memory or steps limit permits a shorter prefix. A failed public read, failed registry replay or another construction error stops with its own reason. It never becomes an empty or shorter answer. The current network decides what fits; the measured workload below is not a fixed cap built into this command.",
+    "v": "f9959c6d673c"
+   }
+  ],
+  "fold-pending-requests-from-public-data": [
+   {
+    "index": 0,
+    "name": "docs-folding-requests/fold-pending-requests-from-public-data-00",
+    "pause_ms": 500,
+    "text": "Fold pending requests from public data.",
+    "v": "d265a7ba72c8"
+   },
+   {
+    "index": 1,
+    "name": "docs-folding-requests/fold-pending-requests-from-public-data-01",
+    "pause_ms": 400,
+    "text": "As a folder, you find a registry's pending requests from public data without a file from anyone who booked them. You fold as many as fit, keep each request's value above what the application requires, and can read the measured limit before deciding what to fold.",
+    "v": "b1415c43a063"
+   },
+   {
+    "index": 2,
+    "name": "docs-folding-requests/fold-pending-requests-from-public-data-02",
+    "pause_ms": 400,
+    "text": "The flow starts with public holders of the application's approvals. Discovery names the holders and requests it skips, orders the foldable requests by your take, and tries prefixes until it finds the largest fitting batch. The receipt accounts for what folded, what was skipped and what is left.",
+    "v": "498e61fd5d38"
+   }
+  ],
+  "read-the-fold-receipt": [
+   {
+    "index": 0,
+    "name": "docs-folding-requests/read-the-fold-receipt-00",
+    "pause_ms": 500,
+    "text": "Read the fold receipt.",
+    "v": "8c34c208fb89"
+   },
+   {
+    "index": 1,
+    "name": "docs-folding-requests/read-the-fold-receipt-01",
+    "pause_ms": 400,
+    "text": "The receipt names the registry's new root and state output. Its folded list names the key, request kind and pending output reference of every folded request. Its skipped list names each omitted holder's reference and reason. Its left count is the foldable requests beyond the chosen prefix. A skipped request is never counted as left.",
+    "v": "7a0aebfe1eac"
+   },
+   {
+    "index": 2,
+    "name": "docs-folding-requests/read-the-fold-receipt-02",
+    "pause_ms": 400,
+    "text": "Automatic discovery skips these kinds of holder or request and keeps folding the rest. A named batch instead refuses a bad request.",
+    "v": "bfe2d3e03672"
+   },
+   {
+    "index": 3,
+    "name": "docs-folding-requests/read-the-fold-receipt-03",
+    "pause_ms": 400,
+    "text": "The first individually foldable request for a key keeps it in take order. An earlier unfoldable request never reserves the key. If every discovered holder is skipped, nothing to fold still carries every skipped reference and reason.",
+    "v": "9f4bdf6c185f"
+   }
+  ],
+  "read-the-measured-limits": [
+   {
+    "index": 0,
+    "name": "docs-folding-requests/read-the-measured-limits-00",
+    "pause_ms": 500,
+    "text": "Read the measured limits.",
+    "v": "6073c4469d0f"
+   },
+   {
+    "index": 1,
+    "name": "docs-folding-requests/read-the-measured-limits-01",
+    "pause_ms": 400,
+    "text": "These are evaluations of kept transactions under the preprod parameters recorded on 4 October 2026 in offchain/test/fixtures/koios/preprod/cli_protocol_params-b777448425778d13.json. A development node given the same limits, prices and fees corroborates the accepted size and refusal of the next. This is not a submission to preprod. The packaged node cannot run preprod's current execution model; the ledger evaluator uses the recorded target model separately. Protocol parameters can change by governance.",
+    "v": "46cd560e7dcd"
+   },
+   {
+    "index": 2,
+    "name": "docs-folding-requests/read-the-measured-limits-02",
+    "pause_ms": 400,
+    "text": "The transaction slots use the captured development network's time. The result is script evaluation under the recorded parameters, not preprod transaction validation or inclusion. The fees are those of the kept node-balanced bodies, not a quote for another network. Re-evaluating the same kept bytes reproduces the figures; fresh captures may vary and publish their differences separately.",
+    "v": "5b5792e40fd4"
+   },
+   {
+    "index": 3,
+    "name": "docs-folding-requests/read-the-measured-limits-03",
+    "pause_ms": 400,
+    "text": "These figures are generated from the kept measurement receipt.",
+    "v": "71fb061e692b"
+   },
+   {
+    "index": 4,
+    "name": "docs-folding-requests/read-the-measured-limits-04",
+    "pause_ms": 400,
+    "text": "The largest accepted named prefix and the next refused size follow. Bytes are the complete signed transaction length; ledger-counted bytes are listed separately. Fees are lovelace from the development-node-balanced transaction body.",
+    "v": "1562d3f2b972"
+   },
+   {
+    "index": 5,
+    "name": "docs-folding-requests/read-the-measured-limits-05",
+    "pause_ms": 400,
+    "text": "Per-request figures are exact total divided by accepted count, including transaction overhead. A fraction is exact, not a rounded price.",
+    "v": "4e0cecbf1b42"
+   },
+   {
+    "index": 6,
+    "name": "docs-folding-requests/read-the-measured-limits-06",
+    "pause_ms": 400,
+    "text": "The marginal last request is the difference from the preceding kept prefix. It is an observation for this ordered workload, not a constant cost per request.",
+    "v": "046334520d44"
+   },
+   {
+    "index": 7,
+    "name": "docs-folding-requests/read-the-measured-limits-07",
+    "pause_ms": 400,
+    "text": "The workload starts from the registry sizes below. The listed sequence is the accepted named prefix; the mixed result concerns that alternating order only. The digest binds the full initial datum shapes in the receipt, alongside the kept trie inputs.",
+    "v": "12b02e9e7695"
+   }
+  ],
+  "what-has-been-exercised": [
+   {
+    "index": 0,
+    "name": "docs-folding-requests/what-has-been-exercised-00",
+    "pause_ms": 500,
+    "text": "What has been exercised.",
+    "v": "507349d916ba"
+   },
+   {
+    "index": 1,
+    "name": "docs-folding-requests/what-has-been-exercised-01",
+    "pause_ms": 400,
+    "text": "The packaged development-network registration journey starts a folder in fresh directories with none of the booker's files. It discovers and folds a mixed batch, checks the folder's change from the chain, and accounts separately for folded, skipped and left requests. It skips another registry's request, the application's configuration holder that its request decoding does not accept, and an unfoldable duplicate. A duplicate-free control and a later fold of what was left accompany it.",
+    "v": "9646a4260d40"
+   },
+   {
+    "index": 2,
+    "name": "docs-folding-requests/what-has-been-exercised-02",
+    "pause_ms": 400,
+    "text": "An approval at a key address and a malformed request datum are unit-tested only; the packaged journey does not construct accepted transactions creating those holders. Unit tests also exercise the other individually unfoldable reasons beside passing controls. Development-network refusals exercise a foreign named request, a duplicate key, an oversized named batch and a transaction moving another state-policy asset, each beside an accepted control. These observations do not establish an executable comparison with the model. The conformance record keeps those gaps visible.",
+    "v": "4cabb7dd9dc8"
+   }
+  ],
+  "what-the-measurement-does-not-cover": [
+   {
+    "index": 0,
+    "name": "docs-folding-requests/what-the-measurement-does-not-cover-00",
+    "pause_ms": 500,
+    "text": "What the measurement does not cover.",
+    "v": "237e75ba2c8d"
+   },
+   {
+    "index": 1,
+    "name": "docs-folding-requests/what-the-measurement-does-not-cover-01",
+    "pause_ms": 400,
+    "text": "The figures concern exactly the registry sizes, trie inputs, scripts, keys, payload shapes and parameters in the receipt. They say nothing about another registry size, trie depth, scripts, key or payload shapes, or parameters. The mixed figure does not cover every ordering or every ratio of registrations to terminations. The trie library's proofs are assumed sound.",
+    "v": "3a36b2d49634"
+   },
+   {
+    "index": 2,
+    "name": "docs-folding-requests/what-the-measurement-does-not-cover-02",
+    "pause_ms": 400,
+    "text": "The command reference gives the surrounding registration and termination commands. The provider and wallet settings describe the options shared by the examples above.",
+    "v": "34b50e773880"
+   }
+  ]
+ },
  "docs/install.md": {
   "how-a-release-gets-its-bundles": [
    {
