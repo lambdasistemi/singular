@@ -203,7 +203,7 @@ spec = do
                             ( \out ->
                                 out
                                     & valueTxOutL
-                                    %~ \(MaryValue coin assets) -> MaryValue coin (assets <> assets)
+                                        %~ \(MaryValue coin assets) -> MaryValue coin (assets <> assets)
                             )
                             tx
                         , mapOutput index (\out -> out & coinTxOutL .~ Coin 4_999_999) tx
@@ -274,7 +274,7 @@ spec = do
                             ( \out ->
                                 out
                                     & valueTxOutL
-                                    %~ \(MaryValue coin assets) -> MaryValue coin (assets <> assets)
+                                        %~ \(MaryValue coin assets) -> MaryValue coin (assets <> assets)
                             )
                             tx
                         , withSigners [] tx

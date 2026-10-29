@@ -120,27 +120,28 @@ spec = do
 
     describe "a batch of six registrations" $ do
         it
-            "refuses the oversized named batch and folds all six through fitting public batches" $ do
-            (world, registry, pendings) <-
-                booked ["key " <> BS.singleton n | n <- [1 .. 6]]
-            named <- foldOutcome world registry pendings
-            case named of
-                Left (State.CapacityExceeded (State.ExecutionMemory used limit)) -> used `shouldSatisfy` (> limit)
-                other -> expectationFailure (show other)
-            let finish [] = pure []
-                finish remaining = do
-                    tx <- folding world registry []
-                    let chosen = map fst (foldedRequests tx)
-                    chosen `shouldSatisfy` (not . null)
-                    chosen `shouldSatisfy` all (`elem` remaining)
-                    judged <- judge world tx
-                    everyScriptAccepts judged `shouldBe` True
-                    purposesRun judged `shouldBe` [(Mint, 2), (Spend, length chosen + 1)]
-                    soundnessProblems world tx `shouldReturn` []
-                    applyTx world tx
-                    later <- finish (filter (`notElem` chosen) remaining)
-                    pure (chosen <> later)
-            finish pendings >>= (`shouldMatchList` pendings)
+            "refuses the oversized named batch and folds all six through fitting public batches"
+            $ do
+                (world, registry, pendings) <-
+                    booked ["key " <> BS.singleton n | n <- [1 .. 6]]
+                named <- foldOutcome world registry pendings
+                case named of
+                    Left (State.CapacityExceeded (State.ExecutionMemory used limit)) -> used `shouldSatisfy` (> limit)
+                    other -> expectationFailure (show other)
+                let finish [] = pure []
+                    finish remaining = do
+                        tx <- folding world registry []
+                        let chosen = map fst (foldedRequests tx)
+                        chosen `shouldSatisfy` (not . null)
+                        chosen `shouldSatisfy` all (`elem` remaining)
+                        judged <- judge world tx
+                        everyScriptAccepts judged `shouldBe` True
+                        purposesRun judged `shouldBe` [(Mint, 2), (Spend, length chosen + 1)]
+                        soundnessProblems world tx `shouldReturn` []
+                        applyTx world tx
+                        later <- finish (filter (`notElem` chosen) remaining)
+                        pure (chosen <> later)
+                finish pendings >>= (`shouldMatchList` pendings)
 
     describe "each validator refuses what the other would accept" $ do
         it

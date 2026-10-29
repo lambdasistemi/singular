@@ -61,9 +61,10 @@ spec = do
                 parseOpenDatumCommand
                     ( (verb : drop 1 line)
                         <> ["--pending", replicate 64 'b' <> "#0", "--limit", "1"]
-                    ) `shouldSatisfy` \case
-                    Left (BadValue "--limit" _) -> True
-                    _ -> False
+                    )
+                    `shouldSatisfy` \case
+                        Left (BadValue "--limit" _) -> True
+                        _ -> False
 
     describe "reading a key without a signer" $ do
         it

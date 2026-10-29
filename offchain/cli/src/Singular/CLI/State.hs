@@ -456,8 +456,8 @@ runStateFold env host a = do
     coinOf out = let Coin c = out ^. coinTxOutL in c
     foldRefused failure = failWithFields
         ClientRefusal
-        (renderRefusal (Fold.foldFailureReason failure)) $
-        case Fold.foldFailureObserved failure of
+        (renderRefusal (Fold.foldFailureReason failure))
+        $ case Fold.foldFailureObserved failure of
             Nothing -> []
             Just (holders, left) ->
                 [ ("folded", toJSON ([] :: [Value]))

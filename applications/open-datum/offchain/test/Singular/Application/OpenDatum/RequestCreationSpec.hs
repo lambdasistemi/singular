@@ -60,16 +60,17 @@ spec = do
         "the creation of a registry, built with its configuration record"
         $ do
             it
-                "refuses attaching both scripts and accepts their public references under the same byte limit" $ do
-                raw <- newCreation
-                attached <- createRegistry raw
-                case attached of
-                    Left (CapacityExceeded (TransactionSize bytes limit)) -> bytes `shouldSatisfy` (> limit)
-                    other -> expectationFailure (show other)
-                world <- withPublicScripts raw
-                (tx, _) <- createRegistry world >>= either (fail . show) pure
-                judge world tx >>= (`shouldSatisfy` everyScriptAccepts)
-                soundnessProblems world tx `shouldReturn` []
+                "refuses attaching both scripts and accepts their public references under the same byte limit"
+                $ do
+                    raw <- newCreation
+                    attached <- createRegistry raw
+                    case attached of
+                        Left (CapacityExceeded (TransactionSize bytes limit)) -> bytes `shouldSatisfy` (> limit)
+                        other -> expectationFailure (show other)
+                    world <- withPublicScripts raw
+                    (tx, _) <- createRegistry world >>= either (fail . show) pure
+                    judge world tx >>= (`shouldSatisfy` everyScriptAccepts)
+                    soundnessProblems world tx `shouldReturn` []
 
             it "is accepted by both compiled validators" $ do
                 world <- newCreation >>= withPublicScripts
