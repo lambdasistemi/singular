@@ -1,0 +1,76 @@
+{
+  "gate-for-folding-a-batch-of-registry-requests": [
+    {
+      "text": "Gate for folding a batch of registry requests.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 746. This page is for the commit owner, the auditor and the reviewers: each acceptance item, the hosted job and the verbatim command that proves it, and what each pull request must show. The requirements are in the specification and the pull requests in the plan.",
+      "pause": 400
+    }
+  ],
+  "rows": [
+    {
+      "text": "Rows.",
+      "pause": 500
+    },
+    {
+      "text": "The ticket owner's table, written before the auditor's. The auditor writes its own table independently when it is seated; the ticket owner joins the two once, records both input hashes and freezes the result in the runtime root before the commit owner starts. Every command is an existing hosted command, or one this ticket adds to a hosted job and marks \"CI change in this ticket\". No Lean model is touched: the model rows join the gate only if a statement is added, and then the mandate is versioned first.",
+      "pause": 400
+    },
+    {
+      "text": "Rows run scoped to what each slice can break. just ci runs once on the final candidate of each pull request, then the push; hosted checks on the pull request head are the net. Every build or test runs in a named, memory-capped scope: systemd-run --user --scope --unit=t746-<what>-<n> -p MemoryMax=24G timeout 3600 <command>.",
+      "pause": 400
+    }
+  ],
+  "rows-per-pull-request": [
+    {
+      "text": "Rows per pull request.",
+      "pause": 500
+    }
+  ],
+  "evidence-the-pull-requests-will-carry": [
+    {
+      "text": "Evidence the pull requests will carry.",
+      "pause": 500
+    },
+    {
+      "text": "per requirement and refusal: the test that executes it, the hosted step that runs it, and the RED run that showed it fail;",
+      "pause": 300
+    },
+    {
+      "text": "each skip reason and its control, the order by the folder's take with a tie, the fit search on a pending set larger than what fits and on one that fits entirely;",
+      "pause": 300
+    },
+    {
+      "text": "the journey job's receipt: the discovered set, the skipped holders, the folded batch by kind, and the folder's change read from the transaction's outputs;",
+      "pause": 300
+    },
+    {
+      "text": "the refusals job's receipt: each refusal and its control;",
+      "pause": 300
+    },
+    {
+      "text": "the measurement receipt: scripts, protocol parameters, workload and the largest accepted batch per kind, with the first refused size and its reason;",
+      "pause": 300
+    },
+    {
+      "text": "left uncovered, stated in the pull requests: several registries in one transaction, other trie depths and registry sizes than the workload names, networks whose parameters differ from the receipt's.",
+      "pause": 300
+    }
+  ],
+  "synthesis": [
+    {
+      "text": "Synthesis.",
+      "pause": 500
+    },
+    {
+      "text": "The ticket owner's table and the auditor's independent table, written without reading this page, were joined once on 29 October 2026. The auditor's table added the fixture and inventory checks (G16, G17), the recovery partitions (G18), the existing termination refusals job over the changed fold command (G19) and the models as a conditional row (G20). It marked the measurement job and the check that published limits equal the receipt as missing jobs, carried by G14 as a CI change in this ticket, and the devnet journey and refusals as extensions of existing jobs (G12, G13). Two cautions are binding: the largest fitting batch is decided by a search whose cost law is checked at its boundary and not assumed, and only a refusal that names a capacity limit counts as \"does not fit\". Both input hashes and the frozen hash are recorded in the runtime root. A row with no existing hosted command is a missing job and is escalated, never replaced by an invented local check.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "gate.md",
+    "sha256": "48b2afcbd9c7036a95e54e547179ef59bb11d4726b20d8f6a27c98508b4a21e2"
+  }
+}

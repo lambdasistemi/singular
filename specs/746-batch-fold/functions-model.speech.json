@@ -1,0 +1,16 @@
+{
+  "functions-for-folding-a-batch-of-registry-requests": [
+    {
+      "text": "Functions for folding a batch of registry requests.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 746. New and changed signatures only, as proposals the commit owner may rename to the Lean vocabulary before the slice that creates them. Records are in the data model.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "2e808b9ef5c29895294a178c66ac73d88a23befa19a272af6bbbf1c08c2245a0"
+  }
+}
