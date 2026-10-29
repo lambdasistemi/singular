@@ -206,9 +206,31 @@ presented="$(book parked-state key-for-a-parked-state)"
 refusers=("$state_policy")
 attempt_and_control parked-state parked-state "$presented" "$presented" --parked "$parked"
 
+# The malformed-batch refusal needs a genuine multi-request accepted control.
+# Execute the current harness with both inputs and judge what the node actually
+# included, rather than treating a repeated flag or a receipt as a batch.
+leg="an accepted batch control"
+batch_first="$(book batch-first batch-first-key)"
+batch_second="$(book batch-second batch-second-key)"
+fold batch-control honest "$batch_first" --pending "$batch_second"
+view_tx batch-control "$(tx_id_of batch-control)"
+batch_spends() { # CHAIN-TX FIRST SECOND
+  jq -e --arg first "$2" --arg second "$3" '
+    [.inputs[].ref] as $inputs
+    | ($inputs | index($first)) != null and ($inputs | index($second)) != null' "$1"
+}
+check "the batch control is accepted by the node and included" chain_holds_tx "$(tx_id_of batch-control)"
+check "the included batch control consumes both named requests" \
+  batch_spends "$chain_dir/batch-control.tx.json" "$batch_first" "$batch_second"
+control "an altered request reference is refused by the chain-input check" \
+  batch_spends "$chain_dir/batch-control.tx.json" "$batch_first" "$(printf '%064d' 0)#0"
+
 # ------------------------------------------------------------------
 # The receipt
 # ------------------------------------------------------------------
+# shellcheck source=tools/no_pin_batch_refusals.sh
+# shellcheck disable=SC1091
+source "$(dirname "$0")/no_pin_batch_refusals.sh"
 leg="reading refusals"
 check "wrong network, unknown state policy and failed provider reads are named beside passing controls; altered answers fail" \
   reading_evidence refusals
@@ -224,10 +246,11 @@ check "wrong network, unknown state policy and failed provider reads are named b
       "$(jq -r .alteredFact "$receipts/attempt-$name.json")" "$(blamed "$receipts/attempt-$name.json")" \
       "$(tx_id_of "control-$name")"
   done
-  printf '\n## Verdicts\n\n'
-  printf '## Reading refusals and their controls\n\n```json\n'
+  printf '\n## Reading refusals and their controls\n\n```json\n'
   cat "$work/reading-refusals.json"
   printf '\n```\n\n'
+  cat "$work/batch-refusals.md"
+  printf '\n## Verdicts\n\n'
   cat "$verdicts"
 } >"$work/receipt.md"
 

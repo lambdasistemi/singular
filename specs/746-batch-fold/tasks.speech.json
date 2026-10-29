@@ -53,11 +53,11 @@
       "pause": 500
     },
     {
-      "text": "[ ] devnet-mixed-batch-journey: a wallet that booked none of the requests folds a discovered mixed batch; the change read from the chain.",
+      "text": "[x] devnet-mixed-batch-journey: a wallet that booked none of the requests folds a discovered mixed batch; the change read from the chain.",
       "pause": 300
     },
     {
-      "text": "[ ] devnet-batch-refusals: other registry, duplicate key and state-policy movement, each with its control.",
+      "text": "[x] devnet-batch-refusals: other registry, duplicate key and state-policy movement, each with its control.",
       "pause": 300
     }
   ],
@@ -83,6 +83,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "bbe28194ae8968f2759a53597dec35f7caca09dec5ef74ce44ab4b57881e70a0"
+    "sha256": "6a523c6084e9be32d2905628f7008bbf7ac13085db135a9f551561f5c97045cb"
   }
 }

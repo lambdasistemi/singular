@@ -630,11 +630,35 @@ fi
 # ------------------------------------------------------------------
 # The receipt
 # ------------------------------------------------------------------
+# Keep the earlier connected lifecycle and reading evidence intact; the batch
+# scenarios use new registries after those measurements have finished.
+# shellcheck source=tools/no_pin_batch_journey.sh
+# shellcheck disable=SC1091
+source "$(dirname "$0")/no_pin_batch_journey.sh"
 leg="reading a key"
 check "the packaged readers classify live custody, pending termination and authenticated absence; altered answers fail" \
   reading_evidence journey
 
 chain transactions >"$chain_dir/all-transactions.json"
+leg="a mixed batch found on chain"
+# Count the request kinds from the chain's input datums and credentials, not
+# from a command's folded list. The existing single-request route is a passing
+# control for the registration classifier and cannot satisfy the mixed batch.
+chain_batch_has_kinds() { # CHAIN-TRANSACTIONS MIN-REGISTRATIONS MIN-TERMINATIONS
+  jq -e --arg app "$application_hash" --argjson registrations "$2" --argjson terminations "$3" '
+    any(.transactions[];
+      ([.inputs[] | select(.credential == {type:"script",hash:$app}
+         and .datum.constructor == 1)] | length) >= $registrations
+      and ([.inputs[] | select(.credential == {type:"script",hash:$app}
+         and .datum == null and any(.assets[]; .policy == $app and .quantity == 1))]
+         | length) >= $terminations)' "$1"
+}
+check "the chain's request classifier sees an included registration fold" \
+  chain_batch_has_kinds "$chain_dir/all-transactions.json" 1 0
+control "an altered registration count is refused by the same classifier" \
+  chain_batch_has_kinds "$chain_dir/all-transactions.json" 1000000 0
+check "one included transaction folds at least three registrations and one termination" \
+  chain_batch_has_kinds "$chain_dir/all-transactions.json" 3 1
 leg="registration on shared publications"
 observe_shared_registration() {
   python3 -I "$(dirname "$chain_view")/shared_registration_observations.py" "$work" \
@@ -705,7 +729,10 @@ check "removing the temporary control restores predicate coverage" shared_public
   cat "$listings/bob-before-independent-fold.txt"
   printf '\n```\n\nThe included transactions and altered-observation controls show:\n\n```json\n'
   cat "$work/shared-registration.json"
-  printf '\n```\n\n## Verdicts\n\n'
+  printf '\n```\n\n## Public mixed batches, read from the chain\n\n```json\n'
+  cat "$work/batch-journey.json"
+  printf '\n```\n\nKey-address approval holders and malformed request datums remain unit-tested skips, not development-network claims. Valid configuration outputs are observed on this chain, named as not accepted by the application decode, and checked to remain unspent.\n\n'
+  printf '## Verdicts\n\n'
   cat "$verdicts"
 } >"$work/receipt.md"
 

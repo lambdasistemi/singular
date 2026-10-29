@@ -575,7 +575,11 @@ jobs:
       # and termination booking. A fresh process directory of the second
       # wallet folds from public data; the deposit donation and the folder's
       # whole-request allocation are read from transaction bytes and outputs.
-      - name: Run registration, update, termination and reading against a development network
+      # The fresh nonbooker also discovers a mixed batch, with a duplicate-free
+      # reachable control, a count cap and a foreign registry at the same
+      # application. Transaction inputs/outputs/fee decide the surplus and all
+      # lifecycle verdicts; each check rejects altered observations.
+      - name: Run registration, mixed batches, termination and reading against a development network
         run: |
           printf 'NO_PIN_JOURNEY_RESULTS=%s\n' "$RUNNER_TEMP/no-pin-journey-results-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
           # Includes insert bundle -> wallet sign -> submit, confirmed by the chain.
@@ -614,7 +618,10 @@ jobs:
       # script. Beside each refusal runs a control: the same fold with that
       # fact restored, which the node accepts and the chain records. The
       # verdict table and the receipt are uploaded whatever the outcome.
-      - name: Check reading refusals and submit wrong folds to a development network
+      # Named foreign/duplicate/oversize and empty batches are checked beside
+      # included controls. A multi-request malformed fold must be rejected by
+      # the state script for additional movement under its own policy.
+      - name: Check reading and named batch refusals and submit malformed folds
         run: |
           printf 'NO_PIN_REFUSALS_RESULTS=%s\n' "$RUNNER_TEMP/no-pin-refusals-results-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
           NO_PIN_REFUSALS_RESULTS="$RUNNER_TEMP/no-pin-refusals-results-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" nix run --quiet .#no-pin-registration-refusals
