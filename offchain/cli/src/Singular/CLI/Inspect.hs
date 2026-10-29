@@ -244,7 +244,7 @@ runReader command env args present = do
                     )
             Right table ->
                 let published = applicationOf table policy
-                in  envReads
+                in  envReaderReads
                         env
                         (readerProvider args)
                         ( \caps -> do

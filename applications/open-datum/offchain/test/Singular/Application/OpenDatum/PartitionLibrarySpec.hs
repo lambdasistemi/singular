@@ -200,6 +200,7 @@ existingPartitionRefusal = do
                 \_ _ ->
                     fail
                         "the early existing-state refusal must fire before any chain read"
+            , envReaderReads = \_ _ -> fail "the early existing-state refusal opened a reader"
             , envWrites =
                 \_ _ ->
                     fail

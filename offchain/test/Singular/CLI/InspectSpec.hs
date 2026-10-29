@@ -151,7 +151,7 @@ spec = describe "inspect a registry key without a signer" $ do
         $ \line provider _ _ -> do
             let failed tracer =
                     (provider tracer)
-                        { envReads = \_ _ -> ioError (userError "provider disconnected")
+                        { envReaderReads = \_ _ -> ioError (userError "provider disconnected")
                         }
             (code, out, _) <-
                 captured
@@ -242,7 +242,8 @@ withReader use = withRig $ \rig -> do
                 }
         provider _ =
             (envOf rig)
-                { envReads = \_ k ->
+                { envReads = \_ _ -> fail "inspect opened builder startup"
+                , envReaderReads = \_ k ->
                     k
                         ( (capabilities rig)
                             { capReads =

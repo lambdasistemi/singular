@@ -476,7 +476,7 @@ commandRead application world registry key extra = do
                 { envTracer = nullTracer
                 , envSource = "builder fixture"
                 , envLoadRelease = \_ _ -> fail "inspect read a blueprint"
-                , envReads = \_ use ->
+                , envReaderReads = \_ use ->
                     use
                         Capabilities
                             { capReads =
@@ -491,6 +491,7 @@ commandRead application world registry key extra = do
                             , capFacts = pure []
                             , capTrace = pure []
                             }
+                , envReads = \_ _ -> fail "inspect opened builder startup"
                 , envWrites = \_ _ -> fail "inspect opened a writer"
                 }
         line =

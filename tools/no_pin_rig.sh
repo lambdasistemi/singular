@@ -157,7 +157,7 @@ read_command() {
   (
     cd "$work/readers/$name/cwd"
     env -i HOME="$work/readers/$name/home" PATH=/nonexistent LC_ALL=C.UTF-8 \
-      "$timeout_bin" 120 "$program" "$@" --json --query-work --network-time "$time_directory" \
+      "$timeout_bin" 120 "$program" "$@" --json --query-work \
       >"$receipts/$name.json" 2>"$receipts/$name.err" </dev/null
   ) || status=$?
   printf '%s\n' "$status" >"$receipts/$name.status"

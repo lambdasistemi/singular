@@ -562,6 +562,7 @@ envOf rig =
         , envSource = "fixture"
         , envLoadRelease = loadReleaseCodes
         , envReads = \_ k -> k (capabilities rig)
+        , envReaderReads = \_ k -> k (capabilities rig)
         , envWrites = \_ k -> k (capabilities rig)
         }
 

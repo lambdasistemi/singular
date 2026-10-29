@@ -104,6 +104,12 @@ data Env = Env
          . ProviderSettings
         -> (Capabilities Cage.NoWitness IO -> IO a)
         -> IO a
+    , envReaderReads
+        :: forall a
+         . ProviderSettings
+        -> (Capabilities Cage.NoWitness IO -> IO a)
+        -> IO a
+    -- ^ Reader acquisition without builder parameter or network-time startup.
     , envWrites
         :: forall a
          . ProviderSettings
