@@ -23,6 +23,10 @@ module Singular.State.Fold
     , requestKey
     , Folded (..)
     , Application (..)
+    , PendingRequest (..)
+    , SkippedHolder (..)
+    , SkipReason (..)
+    , discoverPending
     , buildRegistrationFold
     , foldedRequests
     ) where
@@ -33,6 +37,7 @@ import Control.Monad.Except (ExceptT (..), runExceptT, throwError)
 import Control.Monad.IO.Class (liftIO)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
+import Data.Either (partitionEithers)
 import Data.List.NonEmpty qualified as NE
 import Data.Map.Strict qualified as Map
 import Data.Maybe (mapMaybe)
@@ -178,7 +183,7 @@ data Application = Application
     -- ^ The policy of the approvals
     , appDecode
         :: RegistryIdentity -> [ByteString] -> TxOut ConwayEra -> Maybe Request
-    -- ^ The public decoding of a pending registration
+    -- ^ The public decoding of a pending request at the application's script
     , appReferences :: [(TxIn, TxOut ConwayEra)]
     -- ^ The outputs that carry its code, already checked, when it is referenced
     , appFold :: [Folded] -> Program ()
@@ -187,17 +192,62 @@ data Application = Application
     -}
     }
 
--- | A pending registration read from the chain.
-data Pending = Pending
+-- | A request and its exact output, authenticated from public chain data.
+data PendingRequest = PendingRequest
     { pendingRef :: TxIn
+    -- ^ The output the fold must spend, once.
     , pendingOutput :: TxOut ConwayEra
+    -- ^ Its complete value and datum as served by the provider.
     , pendingRequest :: Request
+    -- ^ Its decoded registry, key, kind and registration holding requirements.
     , pendingApproval :: AssetName
+    -- ^ The authenticated approval held by that same output.
     }
+    deriving stock (Eq, Show)
 
-{- | Build the fold of these pending registrations into the registry. The
-payer funds the transaction and keeps what the pending registrations hold
-above their deposits.
+-- | Why an approval holder does not describe a request of this registry.
+data SkipReason
+    = HeldAtKeyAddress
+    | DecodedForAnotherRegistry
+    | NotAcceptedByApplication
+    deriving stock (Eq, Show)
+
+-- | A holder omitted from discovery, with its public reference and reason.
+data SkippedHolder = SkippedHolder
+    { skippedRef :: TxIn
+    -- ^ The holder that remains unspent by this discovery result.
+    , skippedReason :: SkipReason
+    -- ^ The reason it was not selected as this registry's request.
+    }
+    deriving stock (Eq, Show)
+
+{- | Find requests using one complete policy query. The caller supplies keys
+from the registry's public replay; neither a wallet nor a local booking record
+participates. A failed read is thrown with its provider evidence intact.
+-}
+discoverPending
+    :: Session NoWitness IO
+    -> Application
+    -> RegistryIdentity
+    -> [ByteString]
+    -> IO ([PendingRequest], [SkippedHolder])
+discoverPending session application registry candidates = do
+    holders <-
+        readOutputs session (HoldingPolicy (appPolicy application))
+            >>= either throwIO pure
+    let (skipped, pending) = partitionEithers (map classify holders)
+    pure (pending, skipped)
+  where
+    classify (ref, output) = case output ^. addrTxOutL of
+        Addr _ KeyHashObj{} _ -> Left (SkippedHolder ref HeldAtKeyAddress)
+        _ -> case pendingFromOutput application registry candidates ref output of
+            Right pending -> Right pending
+            Left PendingOfAnotherRegistry{} -> Left (SkippedHolder ref DecodedForAnotherRegistry)
+            Left _ -> Left (SkippedHolder ref NotAcceptedByApplication)
+
+{- | Fold named requests, or discover them from approvals when none is named.
+The payer funds the transaction and keeps what each registration holds above
+its deposit and what each termination holds in full.
 -}
 buildRegistrationFold
     :: Session NoWitness IO
@@ -211,7 +261,6 @@ buildRegistrationFold
     -> IO (Either Refusal ConwayTx)
 buildRegistrationFold session script application registry requests payerAddress =
     runExceptT $ do
-        when (null requests) $ throwError NothingToFold
         forM_ (duplicates requests) (throwError . DuplicateRequest)
         payer <- ExceptT (resolvePayer session payerAddress)
         (stateIn, stateOut, root) <-
@@ -234,11 +283,18 @@ buildRegistrationFold session script application registry requests payerAddress 
                     (CompleteFromCreate 0)
                     Nothing
         pendings <-
-            forM
-                requests
-                ( ExceptT
-                    . readPending session application registry (replayedKeys replayed)
-                )
+            if null requests
+                then
+                    fst
+                        <$> liftIO
+                            (discoverPending session application registry (replayedKeys replayed))
+                else
+                    forM
+                        requests
+                        ( ExceptT
+                            . readPending session application registry (replayedKeys replayed)
+                        )
+        when (null pendings) $ throwError NothingToFold
         let keys = map (requestKey . pendingRequest) pendings
         forM_ (duplicates keys) (throwError . DuplicateKey)
         protocol <- liftIO (parameters session)
@@ -427,40 +483,51 @@ readPending
     -> RegistryIdentity
     -> [ByteString]
     -> TxIn
-    -> IO (Either Refusal Pending)
+    -> IO (Either Refusal PendingRequest)
 readPending session application registry candidates ref =
     readOutputs session (AtTxIn ref) >>= \case
         Left (MissingOutput _) -> pure (Left (PendingNotFound ref))
         Left failure -> throwIO failure
-        Right [(_, output)] -> pure (shaped output)
+        Right [(_, output)] ->
+            pure (pendingFromOutput application registry candidates ref output)
         Right _ -> pure (Left (PendingNotFound ref))
+
+-- | The same request authentication for discovered and explicitly named outputs.
+pendingFromOutput
+    :: Application
+    -> RegistryIdentity
+    -> [ByteString]
+    -> TxIn
+    -> TxOut ConwayEra
+    -> Either Refusal PendingRequest
+pendingFromOutput application registry candidates ref output = do
+    request <-
+        maybe
+            declined
+            Right
+            (appDecode application registry candidates output)
+    when (requestRegistry request /= registry) $
+        Left (PendingOfAnotherRegistry ref)
+    approval <- maybe declined Right (approvalOf request)
+    case request of
+        RegistrationRequest registration -> do
+            unless (holdsOnly (appPolicy application) approval output) declined
+            unless (regDeposit registration <= output ^. coinTxOutL) declined
+        TerminationRequest _ key -> do
+            (policy, _) <- maybe declined Right (registryAsset registry)
+            let expected =
+                    MultiAsset
+                        ( Map.fromListWith
+                            (Map.unionWith (+))
+                            [ (policy, Map.singleton (activeTokenName registry key) 1)
+                            , (appPolicy application, Map.singleton approval 1)
+                            ]
+                        )
+                MaryValue _ actual = output ^. valueTxOutL
+            unless (actual == expected) declined
+    pure (PendingRequest ref output request approval)
   where
     declined = Left (NotAPendingRegistration ref)
-    shaped output = do
-        request <-
-            maybe
-                declined
-                Right
-                (appDecode application registry candidates output)
-        when (requestRegistry request /= registry) $
-            Left (PendingOfAnotherRegistry ref)
-        approval <- maybe declined Right (approvalOf request)
-        case request of
-            RegistrationRequest{} ->
-                unless (holdsOnly (appPolicy application) approval output) declined
-            TerminationRequest _ key -> do
-                (policy, _) <- maybe declined Right (registryAsset registry)
-                let expected =
-                        MultiAsset
-                            ( Map.fromListWith
-                                (Map.unionWith (+))
-                                [ (policy, Map.singleton (activeTokenName registry key) 1)
-                                , (appPolicy application, Map.singleton approval 1)
-                                ]
-                            )
-                    MaryValue _ actual = output ^. valueTxOutL
-                unless (actual == expected) declined
-        pure (Pending ref output request approval)
 
 edgeFor :: Request -> Int
 edgeFor RegistrationRequest{} = fromIntegral edgeInsertActive

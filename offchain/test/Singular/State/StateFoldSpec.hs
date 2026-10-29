@@ -21,6 +21,7 @@ module Singular.State.StateFoldSpec
 
 import Control.Monad (forM_)
 import Data.ByteString (ByteString)
+import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.Map.Strict qualified as Map
 import Data.Text qualified as Text
 import Lens.Micro ((&), (.~), (^.))
@@ -28,7 +29,12 @@ import PlutusCore.Data qualified as PLC
 import Test.Hspec
 
 import Cardano.Ledger.Address (Addr)
-import Cardano.Ledger.Api.Tx.Out (addrTxOutL, coinTxOutL, datumTxOutL, valueTxOutL)
+import Cardano.Ledger.Api.Tx.Out
+    ( addrTxOutL
+    , coinTxOutL
+    , datumTxOutL
+    , valueTxOutL
+    )
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
 import Cardano.Ledger.Mary.Value
@@ -41,10 +47,21 @@ import Cardano.Slotting.Slot (SlotNo (..))
 import Cardano.Tx.Ledger (ConwayTx)
 
 import Singular.Registry.Ledger (ConwayEra, TxOut)
-import Singular.Registry.LedgerProvider (OutputQuery (..), ReadFailure (..), Session (..))
+import Singular.Registry.LedgerProvider
+    ( OutputQuery (..)
+    , ReadFailure (..)
+    , Session (..)
+    )
 import Singular.Registry.TrieState (RegistryIdentity (..))
 import Singular.Registry.TxBuilder.Internal (mkInlineDatum)
-import Singular.State.Fold (buildRegistrationFold, foldedRequests)
+import Singular.State.Fold
+    ( PendingRequest (..)
+    , SkipReason (..)
+    , SkippedHolder (..)
+    , buildRegistrationFold
+    , discoverPending
+    , foldedRequests
+    )
 import Singular.State.Preimage (activeTokenName)
 import Singular.State.Records
     ( Change (..)
@@ -64,17 +81,45 @@ spec = do
     describe "discovery from public approval holders" $ do
         it "finds the registry's requests without naming their references" $ do
             rg <- newRegistered
-            refs <- book rg 'p' [bookedKey "one" processingDeadline, bookedKey "two" processingDeadline]
-            tx <- discoverFold rg (rgFolder rg)
+            refs <-
+                book
+                    rg
+                    'p'
+                    [ bookedKey "one" processingDeadline
+                    , bookedKey "two" processingDeadline
+                    ]
+            -- Owned by this example, serial, released with its session; no worker escapes.
+            queries <- newIORef []
+            tx <- withSession (rgWorld rg) $ \session -> do
+                let counted =
+                        session
+                            { outputs = \query -> do
+                                modifyIORef' queries (<> [query])
+                                outputs session query
+                            }
+                expectBuilt
+                    =<< buildRegistrationFold
+                        counted
+                        (rgScript rg)
+                        standInApplication
+                        (rgRegistry rg)
+                        []
+                        (rgFolder rg)
             map fst (foldedRequests tx) `shouldMatchList` refs
+            seen <- readIORef queries
+            [policy | HoldingPolicy policy <- seen] `shouldBe` [standInPolicy]
             judge (rgWorld rg) tx >>= (`shouldSatisfy` everyScriptAccepts)
 
         forM_ ["key address", "another registry", "undecodable"] $ \shape ->
-            it ("skips " <> shape <> " beside an accepted holder of the same request") $ do
+            it
+                ("skips " <> shape <> " beside an accepted holder of the same request") $ do
                 rg <- newRegistered
                 let booked = bookedKey "one" processingDeadline
                     RegistryIdentity policy _ = rgRegistry rg
-                    foreignRegistry = RegistryIdentity policy (snd' (registryOf (rgScript rg) (txInOf 'x' 0)))
+                    foreignRegistry =
+                        RegistryIdentity
+                            policy
+                            (snd' (registryOf (rgScript rg) (txInOf 'x' 0)))
                     correct = pendingOutput (rgRegistry rg) booked
                     foreignHolder = case shape of
                         "key address" -> correct & addrTxOutL .~ rgBooker rg
@@ -87,8 +132,54 @@ spec = do
                 map fst (foldedRequests tx) `shouldBe` refs
                 inputsOf tx `shouldSatisfy` (skipped `notElem`)
                 judge (rgWorld rg) tx >>= (`shouldSatisfy` everyScriptAccepts)
+                (found, omitted) <- withSession (rgWorld rg) $ \session -> discoverPending session standInApplication (rgRegistry rg) []
+                map pendingRef found `shouldBe` refs
+                omitted
+                    `shouldBe` [ SkippedHolder
+                                    skipped
+                                    ( case shape of
+                                        "key address" -> HeldAtKeyAddress
+                                        "another registry" -> DecodedForAnotherRegistry
+                                        _ -> NotAcceptedByApplication
+                                    )
+                               ]
 
-        it "finds the same requests through the booker's and a fresh folder's sessions" $ do
+        it "replays earlier folds before discovering a later registration" $ do
+            rg <- newRegistered
+            (first, _) <- folded rg [bookedKey "earlier" processingDeadline]
+            applyTx (rgWorld rg) first
+            refs <- book rg 'q' [bookedKey "later" processingDeadline]
+            tx <- discoverFold rg (rgFolder rg)
+            map fst (foldedRequests tx) `shouldBe` refs
+            judge (rgWorld rg) tx >>= (`shouldSatisfy` everyScriptAccepts)
+
+        it
+            "does not accept a registration whose held value cannot cover its deposit" $ do
+            rg <- newRegistered
+            let booked = bookedKey "one" processingDeadline
+                ref = txInOf 's' 0
+                output =
+                    pendingOutput (rgRegistry rg) booked
+                        & coinTxOutL .~ Coin (bkDeposit booked - 1)
+            addLive (rgWorld rg) [(ref, output)]
+            (found, skipped) <- withSession (rgWorld rg) $ \session -> discoverPending session standInApplication (rgRegistry rg) []
+            found `shouldBe` []
+            skipped `shouldBe` [SkippedHolder ref NotAcceptedByApplication]
+            withSession
+                (rgWorld rg)
+                ( \session ->
+                    buildRegistrationFold
+                        session
+                        (rgScript rg)
+                        standInApplication
+                        (rgRegistry rg)
+                        [ref]
+                        (rgFolder rg)
+                )
+                `shouldReturn` Left (NotAPendingRegistration ref)
+
+        it
+            "finds the same requests through the booker's and a fresh folder's sessions" $ do
             rg <- newRegistered
             refs <- book rg 'p' [bookedKey "one" processingDeadline]
             booker <- discoverFold rg (rgBooker rg)
@@ -97,15 +188,48 @@ spec = do
             foldedRequests folder `shouldBe` foldedRequests booker
 
         forM_ ["failed", "truncated", "timed out"] $ \problem ->
-            it ("preserves a " <> problem <> " policy read instead of returning nothing pending") $ do
+            it
+                ( "preserves a "
+                    <> problem
+                    <> " policy read instead of returning nothing pending"
+                ) $ do
                 rg <- newRegistered
                 let failure = BackendReadFailure ("policy holdings " <> Text.pack problem)
-                withSession (rgWorld rg) (\session ->
-                    let unavailable = session{outputs = \query -> case query of
-                            HoldingPolicy{} -> pure (Left failure)
-                            _ -> outputs session query}
-                    in buildRegistrationFold unavailable (rgScript rg) standInApplication (rgRegistry rg) [] (rgFolder rg))
+                withSession
+                    (rgWorld rg)
+                    ( \session ->
+                        let unavailable =
+                                session
+                                    { outputs = \query -> case query of
+                                        HoldingPolicy{} -> pure (Left failure)
+                                        _ -> outputs session query
+                                    }
+                        in  buildRegistrationFold
+                                unavailable
+                                (rgScript rg)
+                                standInApplication
+                                (rgRegistry rg)
+                                []
+                                (rgFolder rg)
+                    )
                     `shouldThrow` (== failure)
+
+        it "preserves a failed parameter read after discovery" $ do
+            rg <- newRegistered
+            _ <- book rg 'p' [bookedKey "one" processingDeadline]
+            let failure = BackendReadFailure "protocol parameters after discovery"
+            withSession
+                (rgWorld rg)
+                ( \session ->
+                    buildRegistrationFold
+                        session{protocolParameters = pure (Left failure)}
+                        (rgScript rg)
+                        standInApplication
+                        (rgRegistry rg)
+                        []
+                        (rgFolder rg)
+                )
+                `shouldThrow` (== failure)
 
     describe
         "the fold of one pending registration, built by a second wallet from the chain"
@@ -516,4 +640,11 @@ firstOf = \case
 discoverFold :: Registered -> Addr -> IO ConwayTx
 discoverFold rg payer =
     withSession (rgWorld rg) $ \session ->
-        expectBuilt =<< buildRegistrationFold session (rgScript rg) standInApplication (rgRegistry rg) [] payer
+        expectBuilt
+            =<< buildRegistrationFold
+                session
+                (rgScript rg)
+                standInApplication
+                (rgRegistry rg)
+                []
+                payer

@@ -121,7 +121,7 @@ import Singular.Registry.SessionIO qualified as Session
 import Singular.Registry.Signing (signTx, signedTx)
 import Singular.Registry.TrieState (RegistryIdentity)
 import Singular.State.Assemble (Payer (..), resolvePayer)
-import Singular.State.Fold (buildRegistrationFold)
+import Singular.State.Fold (buildRegistrationFold, foldedRequests)
 import Singular.State.Preimage
     ( activeTokenName
     , approvalName
@@ -258,6 +258,14 @@ folding world registry requests = withSession world $ \session -> do
 
 spec :: Spec
 spec = describe "termination folds from public data" $ do
+    it
+        "discovers the termination from approvals and the replayed live keys without reading the booker's wallet" $
+        withTermination $ \world registry request _ -> do
+            tx <- folding world registry []
+            foldedRequests tx `shouldBe` [(request, "a live key")]
+            judge world tx >>= (`shouldSatisfy` everyScriptAccepts)
+            soundnessProblems world tx `shouldReturn` []
+
     it
         "burns both tokens, pays the whole request to a second wallet and is signed only by that wallet"
         $ withTermination
