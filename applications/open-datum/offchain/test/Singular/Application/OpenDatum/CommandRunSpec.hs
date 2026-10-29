@@ -255,7 +255,80 @@ import Test.Hspec
 import UntypedPlutusCore qualified as UPLC ()
 
 spec :: Spec
-spec = handlerRows >> setupRecut >> permanentRecognition
+spec =
+    handlerRows
+        >> setupRecut
+        >> permanentRecognition
+        >> batchDiscoveryRows
+
+batchDiscoveryRows :: Spec
+batchDiscoveryRows = describe "fold receipts from public discovery" $ do
+    forM_ ["kind", "skipped", "left"] $ \field ->
+        it ("prints the named batch's " <> field <> " in its receipt") $
+            withBatch ["receipt key"] $ \rig token booked -> do
+                pending <- case booked of
+                    [entry] ->
+                        maybe
+                            (fail ("no pending reference in " <> show (runReceipt entry)))
+                            pure
+                            (textAt "pending" (runReceipt entry))
+                    _ -> fail "the receipt control needs one booked request"
+                folded <-
+                    runAt
+                        rig
+                        "batch"
+                        "named fold"
+                        ["fold", "--state-token", token, "--pending", T.unpack pending]
+                runExit folded `shouldBe` ExitSuccess
+                case field of
+                    "kind" -> case elementsAt "folded" (runReceipt folded) of
+                        Just [request] -> textAt "kind" request `shouldBe` Just "registration"
+                        other -> expectationFailure (show other)
+                    "skipped" ->
+                        valueAt "skipped" (runReceipt folded)
+                            `shouldBe` Just (Aeson.toJSON ([] :: [Aeson.Value]))
+                    _ ->
+                        valueAt "left" (runReceipt folded) `shouldBe` Just (Aeson.Number 0)
+    it
+        "discovers without naming requests and applies the limit to the submitted batch"
+        $ withBatch ["first key", "second key"]
+        $ \rig token _ -> do
+            folded <-
+                runAt
+                    rig
+                    "batch"
+                    "discovered fold"
+                    ["fold", "--state-token", token, "--limit", "1"]
+            runExit folded `shouldBe` ExitSuccess
+            length (runFolded folded) `shouldBe` 1
+            valueAt "left" (runReceipt folded) `shouldBe` Just (Aeson.Number 1)
+  where
+    withBatch keys action = withRig $ \rig -> do
+        created <- runAt rig "batch" "create" ["create"]
+        token <- tokenOf created
+        booked <-
+            mapM
+                ( \key ->
+                    runAt
+                        rig
+                        "batch"
+                        "insert"
+                        [ "insert"
+                        , "--state-token"
+                        , token
+                        , "--key"
+                        , key
+                        , "--payload"
+                        , rigDir rig </> "payload.json"
+                        , "--deposit"
+                        , "5000000"
+                        , "--tip"
+                        , "1000000"
+                        ]
+                )
+                keys
+        forM_ booked $ \entry -> runExit entry `shouldBe` ExitSuccess
+        action rig token booked
 
 permanentRecognition :: Spec
 permanentRecognition = describe "Permanent contract recognition"

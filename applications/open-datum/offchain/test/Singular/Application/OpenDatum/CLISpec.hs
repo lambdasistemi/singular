@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 module Singular.Application.OpenDatum.CLISpec (spec) where
 
 import Control.Monad (forM_)
@@ -7,6 +9,8 @@ import Data.ByteString.Char8 qualified as BC
 import Data.List qualified
 import Singular.Application.OpenDatum.Command
     ( CLIError (UnknownCommand)
+    , OpenDatumCommand (OpenStateFold)
+    , StateFoldArgs (..)
     , parseOpenDatumCommand
     )
 import Singular.Application.OpenDatum.CommandRunSpec (captured)
@@ -18,6 +22,33 @@ import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
 
 spec :: Spec
 spec = do
+    describe "discovering a fold's public requests" $ do
+        let line =
+                [ "fold"
+                , "--state-token"
+                , replicate 56 'a' <> "." <> replicate 64 '1'
+                , "--blueprint"
+                , "blueprint.json"
+                , "--wallet-skey"
+                , "folder.skey"
+                , "--koios-url"
+                , "http://fixture.invalid"
+                , "--network-magic"
+                , "42"
+                ]
+            accepts count = \case
+                Right (OpenStateFold args) -> length (stateFoldPending args) == count
+                _ -> False
+        it "keeps the explicit pending batch as a passing parser control" $
+            parseOpenDatumCommand
+                (line <> ["--pending", replicate 64 'b' <> "#0"])
+                `shouldSatisfy` accepts 1
+        it "accepts a fold with no pending reference" $
+            parseOpenDatumCommand line `shouldSatisfy` accepts 0
+        it "accepts an optional discovery limit" $
+            parseOpenDatumCommand (line <> ["--limit", "2"])
+                `shouldSatisfy` accepts 0
+
     describe "reading a key without a signer" $ do
         it
             "runs inspect and reports an unavailable provider as structured data"
