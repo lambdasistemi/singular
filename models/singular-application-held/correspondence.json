@@ -386,10 +386,27 @@
         "Singular.trieSet"
       ],
       "investigationClosureSha256": "7334a3b84027e5aa585e88e35876be1d3daaec4315fd93e67f4f372f7a58f7ec",
-      "classification": "verbatim",
-      "changedConstants": [],
+      "classification": "restated",
+      "changedConstants": [
+        "NoPin.ApplicationRequests.Address",
+        "NoPin.ApplicationRequests.Address.mk",
+        "NoPin.ApplicationRequests.Address.paymentCredential",
+        "NoPin.ApplicationRequests.Address.stakingCredential",
+        "NoPin.ApplicationRequests.ObservedOutput",
+        "NoPin.ApplicationRequests.ObservedOutput.address",
+        "NoPin.ApplicationRequests.ObservedOutput.casesOn",
+        "NoPin.ApplicationRequests.ObservedOutput.mk",
+        "NoPin.ApplicationRequests.ObservedOutput.rec",
+        "NoPin.ApplicationRequests.ObservedOutput.stakingCredential",
+        "NoPin.ApplicationRequests.Preimage.registrationApproval",
+        "NoPin.ApplicationRequests.approvalFor",
+        "NoPin.ApplicationRequests.changePreimages",
+        "NoPin.ApplicationRequests.instBEqObservedOutput.beq",
+        "NoPin.ApplicationRequests.instBEqObservedOutput.beq.match_1",
+        "NoPin.ApplicationRequests.registrationApproval"
+      ],
       "compiledTypeSha256": "50ebc0b169d1a6f9905d6fea2d8d9fab24ee0dc80a9007346302b5b44479a2cf",
-      "walkedClosureSha256": "0ec5692be524d60df19f982aa4ac04a2339b42b04560ec0065181bb1dd3935b4"
+      "walkedClosureSha256": "c3f491732a6fd25647350ed7396488f9a3685669cb7607f8c5ed166a4e972ad3"
     },
     {
       "investigationName": "NoPin.ApplicationRequests.HistoryStatements.no_remint_after_terminal",
@@ -666,10 +683,27 @@
         "Singular.trieSet"
       ],
       "investigationClosureSha256": "2bd95c31d109f6f0ed96a92e6d9582eae27e51986297297969098d74d122c8d4",
-      "classification": "verbatim",
-      "changedConstants": [],
+      "classification": "restated",
+      "changedConstants": [
+        "NoPin.ApplicationRequests.Address",
+        "NoPin.ApplicationRequests.Address.mk",
+        "NoPin.ApplicationRequests.Address.paymentCredential",
+        "NoPin.ApplicationRequests.Address.stakingCredential",
+        "NoPin.ApplicationRequests.ObservedOutput",
+        "NoPin.ApplicationRequests.ObservedOutput.address",
+        "NoPin.ApplicationRequests.ObservedOutput.casesOn",
+        "NoPin.ApplicationRequests.ObservedOutput.mk",
+        "NoPin.ApplicationRequests.ObservedOutput.rec",
+        "NoPin.ApplicationRequests.ObservedOutput.stakingCredential",
+        "NoPin.ApplicationRequests.Preimage.registrationApproval",
+        "NoPin.ApplicationRequests.approvalFor",
+        "NoPin.ApplicationRequests.changePreimages",
+        "NoPin.ApplicationRequests.instBEqObservedOutput.beq",
+        "NoPin.ApplicationRequests.instBEqObservedOutput.beq.match_1",
+        "NoPin.ApplicationRequests.registrationApproval"
+      ],
       "compiledTypeSha256": "d564277a3c067ab674741b66d03956bca91077658abe6dee195c0ad934629970",
-      "walkedClosureSha256": "75057c688704d56e1c74c8fd9fcab322f4a5fccad4ad4dea18b11264c0003afc"
+      "walkedClosureSha256": "e1097bd0273367db8427e213a7bd252ce26183273556780060fd99a9b1c1ed3e"
     },
     {
       "investigationName": "NoPin.ApplicationRequests.HistoryStatements.one_live_token",
@@ -939,10 +973,27 @@
         "Singular.trieSet"
       ],
       "investigationClosureSha256": "960bb8054f908e1904a42763a34b7d53e5735ef3c73536d666edc2feabd25b60",
-      "classification": "verbatim",
-      "changedConstants": [],
+      "classification": "restated",
+      "changedConstants": [
+        "NoPin.ApplicationRequests.Address",
+        "NoPin.ApplicationRequests.Address.mk",
+        "NoPin.ApplicationRequests.Address.paymentCredential",
+        "NoPin.ApplicationRequests.Address.stakingCredential",
+        "NoPin.ApplicationRequests.ObservedOutput",
+        "NoPin.ApplicationRequests.ObservedOutput.address",
+        "NoPin.ApplicationRequests.ObservedOutput.casesOn",
+        "NoPin.ApplicationRequests.ObservedOutput.mk",
+        "NoPin.ApplicationRequests.ObservedOutput.rec",
+        "NoPin.ApplicationRequests.ObservedOutput.stakingCredential",
+        "NoPin.ApplicationRequests.Preimage.registrationApproval",
+        "NoPin.ApplicationRequests.approvalFor",
+        "NoPin.ApplicationRequests.changePreimages",
+        "NoPin.ApplicationRequests.instBEqObservedOutput.beq",
+        "NoPin.ApplicationRequests.instBEqObservedOutput.beq.match_1",
+        "NoPin.ApplicationRequests.registrationApproval"
+      ],
       "compiledTypeSha256": "0357924e0054c26927ba4bf2de210200042c69603fed65119531f2624eadac89",
-      "walkedClosureSha256": "5476fba3a8c3fc5ff47de8ebc2e43a9b639ada0c9c59a47942a0e4d413a8f78b"
+      "walkedClosureSha256": "ec1298bdc8f34200d3bbd45f799404624999a62ef4c6b78ba8357d0ff0ab2220"
     },
     {
       "investigationName": "NoPin.ApplicationRequests.HistoryStatements.supply_in_step",
@@ -1228,10 +1279,27 @@
         "Singular.trieSet"
       ],
       "investigationClosureSha256": "1c8f0a2270f760f676c341b94231b4af241c8878d4789cd35cb390544a82be66",
-      "classification": "verbatim",
-      "changedConstants": [],
+      "classification": "restated",
+      "changedConstants": [
+        "NoPin.ApplicationRequests.Address",
+        "NoPin.ApplicationRequests.Address.mk",
+        "NoPin.ApplicationRequests.Address.paymentCredential",
+        "NoPin.ApplicationRequests.Address.stakingCredential",
+        "NoPin.ApplicationRequests.ObservedOutput",
+        "NoPin.ApplicationRequests.ObservedOutput.address",
+        "NoPin.ApplicationRequests.ObservedOutput.casesOn",
+        "NoPin.ApplicationRequests.ObservedOutput.mk",
+        "NoPin.ApplicationRequests.ObservedOutput.rec",
+        "NoPin.ApplicationRequests.ObservedOutput.stakingCredential",
+        "NoPin.ApplicationRequests.Preimage.registrationApproval",
+        "NoPin.ApplicationRequests.approvalFor",
+        "NoPin.ApplicationRequests.changePreimages",
+        "NoPin.ApplicationRequests.instBEqObservedOutput.beq",
+        "NoPin.ApplicationRequests.instBEqObservedOutput.beq.match_1",
+        "NoPin.ApplicationRequests.registrationApproval"
+      ],
       "compiledTypeSha256": "7cb01df26f1284b31f47fa98eaf2e740e49dcbf061eefa7bc1824d380f3d7007",
-      "walkedClosureSha256": "fa9377c54bab13d05e1e8cc7c2a84b53335cc782a3b20347fb4dbb4fe440e147"
+      "walkedClosureSha256": "cf678e5720d4cde1ecfafd44703718f4839f7c0966c0763ba3d156e35d1abdb0"
     }
   ],
   "comparison": "Rename port Expr.const names to investigation names before reprStr; compare exact text without whitespace or binder normalization.",
@@ -3389,6 +3457,19 @@
       "alphaType": "416378cec448e58d5175c42c9152e3b767f20901065a484ab88f0dff2d143d4c",
       "alphaValue": "f21aab2c04c6f4feb580e5e0d6605721420ad62f3d75c5ec8422cec587a791d8",
       "members": []
+    }
+  },
+  "addressCorrection": {
+    "authority": "https://github.com/lambdasistemi/singular/issues/743",
+    "reason": "The approval commits the whole holding address so a folder cannot redirect its staking.",
+    "model": "SingularApplicationHeld.approvalFor reads ObservedOutput.address; registrationApproval commits Address, including its staking reference.",
+    "validator": "onchain/lib/singular_state/preimage.ak: registration_preimage, RegistrationApproval.holding_address",
+    "consumer": "Open-datum registration delivery compares full addresses; application custody and money accounting continue to compare payment credentials.",
+    "sources": {
+      "models/singular-application-held/lean/SingularApplicationHeld/AddressStatements.lean": "93af0dfb917a4faf7ae4bd99b7733b4424cb8007f9896d0e9180ac97b6876e03",
+      "models/singular-application-held/lean/SingularApplicationHeld/Client.lean": "3ceb71f76c561e064681f683a02dd1dd8c3d2e2ed5e0fefc45d036071615e7c2",
+      "models/singular-application-held/lean/SingularApplicationHeld/Core.lean": "7286c81da71e8069c3bd68fcf6d778334b8e91137bb84766a3a015901961f0c9",
+      "models/singular-application-held/lean/SingularApplicationHeld/RequestShapes.lean": "cb0f85498da121c4ccce2b8112d53709793b4e411c0c6f632a37b6ad11512465"
     }
   }
 }

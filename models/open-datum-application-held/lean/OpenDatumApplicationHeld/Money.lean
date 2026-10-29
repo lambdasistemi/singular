@@ -114,7 +114,7 @@ abbrev Correspondence (q : Input) : Prop :=
    | .registration _ data => data.deposit = q.deposit ∧
        data.refundAddress = q.baseline.registration.request.refundAddress ∧
        data.key = q.baseline.registration.request.key ∧
-       data.holdingAddress = q.baseline.registration.request.destination ∧
+       data.holdingAddress.paymentCredential = q.baseline.registration.request.destination ∧
        q.baseline.registration.request.datum = some data.initialDatum ∧
        data.bookedAt = q.baseline.registration.request.submittedAt ∧
        data.processDeadline = data.bookedAt + q.baseline.configuration.processTime ∧

@@ -129,7 +129,7 @@ def registrationBook (mutation : AppMutation) (hash : Hash) (code : Codec)
     (data : RegistrationData) (observation : ApplicationObservation) : Bool :=
   registrationShape mutation hash code release output data &&
   appGuard mutation .registrationControl
-    (data.holdingAddress == release.applicationCredential && initialControl hash code decode data) &&
+    (data.holdingAddress.paymentCredential == release.applicationCredential && initialControl hash code decode data) &&
   appGuard mutation .bookingSignature (observation.signers.contains data.controller) &&
   observation.referenceOutputs.any (fun configuration =>
     configurationRead mutation hash code release data.registry observation configuration &&
@@ -156,7 +156,7 @@ def registrationSpend (mutation : AppMutation) (hash : Hash) (code : Codec)
   | .registrationFold _ index =>
     appGuard mutation .processingPhase (classifyPhase data observation.interval == .processing) &&
     appGuard mutation .registrationDelivery (match observation.outputs[index]? with
-      | some holding => holding.credential == data.holdingAddress &&
+      | some holding => holding.address == data.holdingAddress &&
           holding.datum == .application data.initialDatum && holding.lovelace == data.deposit &&
           quantity holding (activeAsset hash code data.registry data.key) == 1 &&
           SingularApplicationHeld.Assets.mintQty observation.assets (activeAsset hash code data.registry data.key) == 1
@@ -227,7 +227,7 @@ def requiredPayments (decode : DecodeApplication) (observation : ApplicationObse
     let input ← observation.inputs.find? (fun output => output.reference == reference)
     let .registration data ← decoded decode input | none
     match action with
-    | .registrationFold .. => return (data.holdingAddress, data.deposit)
+    | .registrationFold .. => return (data.holdingAddress.paymentCredential, data.deposit)
     | .ownerReclaim .. => return (data.refundAddress, input.lovelace)
     | .expiredCleanup .. => return (data.refundAddress, data.deposit)
     | _ => none

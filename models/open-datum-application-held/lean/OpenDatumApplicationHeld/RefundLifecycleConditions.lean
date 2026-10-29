@@ -117,7 +117,7 @@ def registrationBookConditions (hash : Hash) (code : Codec)
     (decode : DecodeApplication) (release : PublishedRelease) (output : ObservedOutput)
     (data : RegistrationData) (observation : ApplicationObservation) : Bool :=
   registrationShapeConditions  hash code release output data &&
-  (data.holdingAddress == release.applicationCredential && initialControlConditions hash code decode data) &&
+  (data.holdingAddress.paymentCredential == release.applicationCredential && initialControlConditions hash code decode data) &&
   (observation.signers.contains data.controller) &&
   observation.referenceOutputs.any (fun configuration =>
     configurationReadConditions  hash code release data.registry observation configuration &&
@@ -144,7 +144,7 @@ def registrationSpendConditions (hash : Hash) (code : Codec)
   | .registrationFold _ index =>
     (phaseConditions data observation.interval == .processing) &&
     (match observation.outputs[index]? with
-      | some holding => holding.credential == data.holdingAddress &&
+      | some holding => holding.address == data.holdingAddress &&
           holding.datum == .application data.initialDatum && holding.lovelace == data.deposit &&
           quantity holding (activeAsset hash code data.registry data.key) == 1 &&
           SingularApplicationHeld.Assets.mintQty observation.assets (activeAsset hash code data.registry data.key) == 1
@@ -213,7 +213,7 @@ def requiredPaymentsConditions (decode : DecodeApplication) (observation : Appli
     let input ← observation.inputs.find? (fun output => output.reference == reference)
     let .registration data ← decoded decode input | none
     match action with
-    | .registrationFold .. => return (data.holdingAddress, data.deposit)
+    | .registrationFold .. => return (data.holdingAddress.paymentCredential, data.deposit)
     | .ownerReclaim .. => return (data.refundAddress, input.lovelace)
     | .expiredCleanup .. => return (data.refundAddress, data.deposit)
     | _ => none

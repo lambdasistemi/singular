@@ -35,14 +35,14 @@ local instance : ReflBEq Leaf where
 /-- Proof helper: a physical output compares equal to itself. -/
 theorem public_output_refl (output : ObservedOutput) : (output == output) = true := by
   cases output with
-  | mk reference credential lovelace datum assets =>
+  | mk reference credential lovelace datum assets stakingCredential =>
     have rr : instBEqOutRef.beq reference reference = true := by
       change (reference == reference) = true
       simp
     have aa : assets.beq assets = true := by
       change (assets == assets) = true
       simp
-    cases datum <;> simp [BEq.beq, instBEqObservedOutput.beq, instBEqOutputDatum.beq,
+    cases stakingCredential <;> cases datum <;> simp [BEq.beq, Option.instBEq.beq, instBEqObservedOutput.beq, instBEqOutputDatum.beq,
       instBEqApplicationParameters.beq, rr, aa]
 
 local instance : ReflBEq ObservedOutput where
@@ -53,8 +53,8 @@ local instance : ReflBEq ObservedOutput where
 
 /-- Proof helper: a request's allocated new holding. -/
 def publicHolding (h : Hash) (c : Codec) (d : RegistrationData) : ObservedOutput :=
-  ⟨⟨0, 0⟩, d.holdingAddress, d.deposit, .application d.initialDatum,
-    [(activeAsset h c d.registry d.key, 1)]⟩
+  ⟨⟨0, 0⟩, d.holdingAddress.paymentCredential, d.deposit, .application d.initialDatum,
+    [(activeAsset h c d.registry d.key, 1)], d.holdingAddress.stakingCredential⟩
 
 /-- Proof helper: the builder's order with an explicit holding offset. -/
 def publicPlan (h : Hash) (c : Codec) : Nat → List PendingRequest → List Change × List ObservedOutput
@@ -1061,7 +1061,7 @@ theorem public_build_outputs (h : Hash) (c : Codec) (t : TrieCommit) (r : Publis
     o.outputs = o.after.state ::
       ((((publicPlan h c 0 requests).2 ++
         [ObservedOutput.mk ⟨0, 0⟩ funding.processorAddress
-          ((requests.map PendingRequest.bid).sum + funding.ordinaryInput.lovelace - funding.fee) .empty []]).zipIdx 1).map
+          ((requests.map PendingRequest.bid).sum + funding.ordinaryInput.lovelace - funding.fee) .empty [] none]).zipIdx 1).map
         fun (output, index) => { output with reference := ⟨funding.transactionId, index⟩ }) := by
   simp [buildFold, numbered, List.zipIdx_cons, public_prepare]
 
@@ -1342,7 +1342,7 @@ def publicRaw (hash : Hash) (code : Codec) (_commit : TrieCommit) (release : Pub
     (registry : PublicRegistry) (requests : List PendingRequest) (funding : FoldFunding) : FoldObservation := Id.run do
   let (changes, holdings) := prepareChanges hash code requests
   let processorValue := (requests.map PendingRequest.bid).sum + funding.ordinaryInput.lovelace - funding.fee
-  let processor : ObservedOutput := ⟨⟨0, 0⟩, funding.processorAddress, processorValue, .empty, []⟩
+  let processor : ObservedOutput := ⟨⟨0, 0⟩, funding.processorAddress, processorValue, .empty, [], none⟩
   let outputs := numbered funding.transactionId ([registry.state] ++ holdings ++ [processor])
   let state := outputs.head?.getD registry.state
   let inputs := [registry.state] ++ requests.map PendingRequest.output ++ [funding.ordinaryInput]

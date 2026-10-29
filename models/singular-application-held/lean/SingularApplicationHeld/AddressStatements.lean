@@ -47,7 +47,7 @@ def holding (stake : Option Nat) : ObservedOutput :=
 def booked (stake : Option Nat) : FoldObservation :=
   let output := holding stake
   let approval := registrationApproval hash code release registry 7 output.address 11 7
-  let input : ObservedOutput := ⟨action.reference, 99, 9, .empty, [(approval, 1)]⟩
+  let input : ObservedOutput := ⟨action.reference, 99, 9, .empty, [(approval, 1)], none⟩
   let before : PublicRegistry := ⟨registry, ⟨1, 0⟩, input, []⟩
   { before, after := before,
     assets := ⟨[action.reference], [⟨output.assets⟩],
@@ -66,7 +66,7 @@ theorem approved_addresses_accepted :
     change .none hash code release [] action (booked none) =
       .ok (trieSet [] 7 (.known .active)) ∧
     change .none hash code release [] action (booked (some 20)) =
-      .ok (trieSet [] 7 (.known .active)) := by decide
+      .ok (trieSet [] 7 (.known .active)) := by exact ⟨rfl, rfl⟩
 
 /-- Keeping payment fixed cannot redirect either an unstaked or a staked holding. -/
 theorem staking_redirection_refused :
@@ -75,6 +75,6 @@ theorem staking_redirection_refused :
     change .none hash code release [] action (redirected none (some 20)) =
       .error "operation-approval" ∧
     change .none hash code release [] action (redirected (some 20) (some 21)) =
-      .error "operation-approval" := by decide
+      .error "operation-approval" := by exact ⟨rfl, rfl, rfl, rfl⟩
 
 end SingularApplicationHeld.AddressStatements

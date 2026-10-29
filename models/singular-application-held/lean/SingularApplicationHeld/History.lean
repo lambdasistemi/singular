@@ -50,7 +50,7 @@ def changePreimages (observation : FoldObservation) (action : Change) : List Pre
   | .terminate _ key => [.terminationApproval observation.before.identity key]
   | .register _ key index deposit => match observation.outputs[index]? with
     | some output => match output.datum with
-      | .application datum => [.registrationApproval observation.before.identity key output.credential datum deposit]
+      | .application datum => [.registrationApproval observation.before.identity key output.address datum deposit]
       | _ => []
     | _ => []
 /-- all registry histories under the single shared S. -/

@@ -255,5 +255,18 @@
         "OpenDatumApplicationHeld.RefundLifecycle.configurationCreations": "da7d35ff77c2c5866c839ea4742aac396d2364bee59f594cce363039e5c6b1b0"
       }
     }
-  ]
+  ],
+  "addressCorrection": {
+    "authority": "https://github.com/lambdasistemi/singular/issues/743",
+    "reason": "The approval commits the whole holding address so a folder cannot redirect its staking.",
+    "model": "SingularApplicationHeld.approvalFor reads ObservedOutput.address; registrationApproval commits Address, including its staking reference.",
+    "validator": "onchain/lib/singular_state/preimage.ak: registration_preimage, RegistrationApproval.holding_address",
+    "consumer": "Open-datum registration delivery compares full addresses; application custody and money accounting continue to compare payment credentials.",
+    "sources": {
+      "models/singular-application-held/lean/SingularApplicationHeld/AddressStatements.lean": "93af0dfb917a4faf7ae4bd99b7733b4424cb8007f9896d0e9180ac97b6876e03",
+      "models/singular-application-held/lean/SingularApplicationHeld/Client.lean": "3ceb71f76c561e064681f683a02dd1dd8c3d2e2ed5e0fefc45d036071615e7c2",
+      "models/singular-application-held/lean/SingularApplicationHeld/Core.lean": "7286c81da71e8069c3bd68fcf6d778334b8e91137bb84766a3a015901961f0c9",
+      "models/singular-application-held/lean/SingularApplicationHeld/RequestShapes.lean": "cb0f85498da121c4ccce2b8112d53709793b4e411c0c6f632a37b6ad11512465"
+    }
+  }
 }
