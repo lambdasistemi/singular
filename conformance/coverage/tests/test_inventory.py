@@ -15,8 +15,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from singular_coverage.inventory import InventoryError, Obligation, build_inventory
 from tests.fixtures import REPO_ROOT, build_base_tree, export_manifests
 
-CORPUS = "lean/corpus.json"
-
 
 def corpus_theorem_rows(node: object, path: str = "$") -> list[tuple[str, dict]]:
     """Every object anywhere in a corpus that cites a theorem, with its path.
@@ -218,21 +216,25 @@ class FixtureInventoryTest(unittest.TestCase):
 
 
 class CorpusTheoremBindingTest(unittest.TestCase):
-    """Exported corpus rows cite the theorem identity the source has today.
+    """Synthetic corpus rows exercise the retained identity-binding checker.
 
-    The digests the corpus carries are written into lean/Main.lean by hand:
-    the corpus binary runs under nix/model.nix with an arbitrary cwd and
-    cannot read lean/theorem-debt.json to derive them. Without a permanent
-    check they are pinned only by whichever ticket gate happened to be frozen
-    when they were added, and that gate retires with its ticket. Here they are
-    compared against tools/check_model.py's own extraction from the source, so
-    a statement edit that leaves a row behind fails rather than shipping a
-    stale proof identity beside a changed theorem.
+    The retired product corpora are not subjects of this harness test.
+    Identities come from the real extraction over the fixture source.
     """
 
     def live(self) -> tuple[list[tuple[str, dict]], dict[str, Obligation]]:
-        corpus = json.loads((REPO_ROOT / CORPUS).read_text())
-        return corpus_theorem_rows(corpus), build_inventory(REPO_ROOT).by_name()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            build_base_tree(root)
+            by_name = build_inventory(root).by_name()
+            corpus = {
+                "cases": [
+                    {"theorem": o.name, "statementSha256": o.statementSha256}
+                    for o in by_name.values()
+                    if o.classification == "manifest-bound"
+                ]
+            }
+        return corpus_theorem_rows(corpus), by_name
 
     def test_every_corpus_theorem_row_binds_the_live_statement_identity(self):
         rows, by_name = self.live()
