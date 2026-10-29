@@ -571,6 +571,12 @@ if part state-line || part holding-update || part holding-terminate || part term
     sp_steps() { is_equal "$(field "$1" '[.submissions[].step] | tojson')" "$2"; }
     sp_scripts() { is_equal "$(field "$1" '[.scripts[].outcome] | tojson')" "$2"; }
     sp_refuses() { if "$@" >/dev/null 2>&1; then return 1; else return 0; fi; }
+    sp_prepared_unchanged() {
+      jq -s -e --slurpfile before "$1" --arg tx "$2" '
+        [.[] | select(.journalTxId == $tx and .journalEvent == "prepared")] as $now
+        | [$before[] | select(.journalTxId == $tx and .journalEvent == "prepared")] as $old
+        | ($now | length) == 1 and ($old | length) == 1 and $now == $old' "$journal"
+    }
 
     sl_run shared-independent create "${sl_params[@]}" --state-dir "$sl_root/shared-independent" "${sl_base[@]}" "${bob[@]}"
     sp_view shared-independent "$(submission_tx shared-independent create)"
@@ -611,6 +617,10 @@ if part state-line || part holding-update || part holding-terminate || part term
       sp_steps sl-shared-publication-killed-next '["create"]'
     clause "after publication: both shared scripts are reused" \
       sp_scripts sl-shared-publication-killed-next '["reused","reused"]'
+    sp_publication_tx="$(sl_prepared "$journal" publish-application-script)"
+    clause "after publication: the original prepared identity and body hash remain unchanged" \
+      sp_prepared_unchanged "$work/sl-shared-publication-killed.before-next.jsonl" "$sp_publication_tx"
+    clause "after publication: the saved signed body still matches that original hash" body_bound "$sp_publication_tx"
 
     # The command is deliberately not idempotent: the saved creation is
     # observed, never resubmitted, and a new invocation makes a new registry.
@@ -620,6 +630,13 @@ if part state-line || part holding-update || part holding-terminate || part term
     sl_case shared-create create lost-answer \
       "$(managed_journal "$sp_unknown" "$sl_state_policy." "$bobkey")" case_line case_next
     sp_lost="$(submission_tx sl-shared-create-lost-answer create)"
+    clause "uncertain creation: the original prepared identity and body hash remain unchanged" \
+      sp_prepared_unchanged "$work/sl-shared-create-lost-answer.before-next.jsonl" "$sp_lost"
+    clause "uncertain creation: the saved signed body still matches that original hash" body_bound "$sp_lost"
+    jq --arg tx "$sp_lost" 'if .journalTxId == $tx and .journalEvent == "prepared" then .journalBodyHash += "changed" else . end' \
+      "$work/sl-shared-create-lost-answer.before-next.jsonl" >"$receipts/shared-prepared-tampered.json"
+    clause "an altered saved creation body hash is refused" \
+      sp_refuses sp_prepared_unchanged "$receipts/shared-prepared-tampered.json" "$sp_lost"
     sp_view shared-original-create "$sp_lost"
     sp_next="$(submission_tx sl-shared-create-lost-answer-next create)"
     sp_view shared-next-create "$sp_next"
@@ -637,6 +654,10 @@ if part state-line || part holding-update || part holding-terminate || part term
     clause "uncertain creation: the seed of the original transaction is not spent a second time" \
       jq -e --slurpfile old "$receipts/shared-original-create.chain.json" \
       'all(.inputs[]; .ref as $ref | all($old[0].inputs[]; .ref != $ref))' "$receipts/shared-next-create.chain.json"
+    sp_old_seed="$(jq -er 'if (.inputs | length) == 1 then .inputs[0].ref else error("creation has no unique seed input") end' "$receipts/shared-original-create.chain.json")"
+    sl_run shared-repeated-seed create "${sl_params[@]}" --seed "$sp_old_seed" --state-dir "$sp_unknown" "${sl_base[@]}" "${bob[@]}"
+    clause "an explicitly repeated spent seed is refused without another submission" \
+      jq -e '.outcome == "client-refusal" and (.reason | contains("is not an unspent output")) and (.submissions | length) == 0' "$receipts/shared-repeated-seed.json"
 
     python3 -I "$sp_chain" transactions <"$sp_source" >"$receipts/shared-all-transactions.chain.json"
     clause "funding is conserved on chain and no reserved input is spent twice" \
