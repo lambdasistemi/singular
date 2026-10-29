@@ -592,7 +592,7 @@ jobs:
           path: ${{ env.NO_PIN_JOURNEY_RESULTS }}
           if-no-files-found: error
   no-pin-registration-refusals:
-    name: No-pin registration and reading refusals on a development network
+    name: No-pin registration, batch and reading refusals on a development network
     needs: blueprint
     runs-on: nixos
     timeout-minutes: 45
@@ -618,7 +618,10 @@ jobs:
       # script. Beside each refusal runs a control: the same fold with that
       # fact restored, which the node accepts and the chain records. The
       # verdict table and the receipt are uploaded whatever the outcome.
-      - name: Check reading refusals and submit wrong folds to a development network
+      # Named foreign/duplicate/oversize and empty batches are checked beside
+      # included controls. A multi-request malformed fold must be rejected by
+      # the state script for additional movement under its own policy.
+      - name: Check reading and named batch refusals and submit malformed folds
         run: |
           printf 'NO_PIN_REFUSALS_RESULTS=%s\n' "$RUNNER_TEMP/no-pin-refusals-results-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
           NO_PIN_REFUSALS_RESULTS="$RUNNER_TEMP/no-pin-refusals-results-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" nix run --quiet .#no-pin-registration-refusals

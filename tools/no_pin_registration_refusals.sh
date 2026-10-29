@@ -228,6 +228,9 @@ control "an altered request reference is refused by the chain-input check" \
 # ------------------------------------------------------------------
 # The receipt
 # ------------------------------------------------------------------
+# shellcheck source=tools/no_pin_batch_refusals.sh
+# shellcheck disable=SC1091
+source "$(dirname "$0")/no_pin_batch_refusals.sh"
 leg="reading refusals"
 check "wrong network, unknown state policy and failed provider reads are named beside passing controls; altered answers fail" \
   reading_evidence refusals
@@ -243,10 +246,11 @@ check "wrong network, unknown state policy and failed provider reads are named b
       "$(jq -r .alteredFact "$receipts/attempt-$name.json")" "$(blamed "$receipts/attempt-$name.json")" \
       "$(tx_id_of "control-$name")"
   done
-  printf '\n## Verdicts\n\n'
-  printf '## Reading refusals and their controls\n\n```json\n'
+  printf '\n## Reading refusals and their controls\n\n```json\n'
   cat "$work/reading-refusals.json"
   printf '\n```\n\n'
+  cat "$work/batch-refusals.md"
+  printf '\n## Verdicts\n\n'
   cat "$verdicts"
 } >"$work/receipt.md"
 

@@ -17,7 +17,7 @@ development network, and prints one JSON object on standard output.
 
 > no-pin-refusals spares
 > no-pin-refusals plain-copy --pending TXID#IX
-> no-pin-refusals fold --case CASE --pending TXID#IX [--parked TXID#IX] [--spare TXID#IX]
+> no-pin-refusals fold --case CASE --pending TXID#IX [--pending TXID#IX ...] [--parked TXID#IX] [--spare TXID#IX]
 
 The shared flags are @--koios-url@, @--network-time@, @--network-magic@,
 @--wallet-skey@, @--blueprint@ (the release's validators) and @--state-token@
@@ -30,21 +30,22 @@ paid to the wallet.
 @plain-copy@ pays the value of a pending registration, without its approval, to
 the request address with the same datum: a registration that nothing approved.
 
-@fold@ folds the pending registration it is given as the wallet, from the chain
-alone, and submits it. The cases are the honest fold and the five facts that make
+@fold@ folds the pending registrations it is given as the wallet, from the chain
+alone, and submits one batch. The cases are the honest fold and the facts that make
 it wrong: @no-approval@ (the registration carries no approval), @other-address@
 (the key's token is delivered to the folder's address), @less-than-deposit@ (the
 holding keeps less than the deposit), @second-registration@ (the key is already
 in the registry, shown by the proof the registry itself gives for it),
 @extra-token@ (the continuing state output also holds a token the folder took
 from another output) and @parked-state@ (a token parked at the state address is
-spent as a state beside the registry's own). Each alteration changes exactly one
+spent as a state beside the registry's own), and @state-policy-movement@ (the
+batch also mints and moves another token under the state policy). Each alteration changes exactly one
 fact of the honest fold; the output names it.
 -}
 module Main (main) where
 
 import Codec.Serialise (deserialiseOrFail)
-import Control.Monad (forM_, void, when)
+import Control.Monad (forM, forM_, unless, void, when)
 import CreationCarrying qualified
 import Data.Aeson (Value, encode, object, (.=))
 import Data.Aeson.Types (Pair)
@@ -56,6 +57,7 @@ import Data.ByteString.Lazy.Char8 qualified as LBS
 import Data.ByteString.Short qualified as SBS
 import Data.List.NonEmpty qualified as NE
 import Data.Map.Strict qualified as Map
+import Data.Maybe (mapMaybe)
 import Data.Text (Text)
 import Data.Text qualified as T
 import GHC.IO.Handle (hDuplicate, hDuplicateTo)
@@ -69,7 +71,8 @@ import System.IO (Handle, hFlush, stderr, stdout)
 import Text.Read (readMaybe)
 
 import Cardano.Ledger.Address (Addr)
-import Cardano.Ledger.Api.Tx (txIdTx)
+import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx)
+import Cardano.Ledger.Api.Tx.Body (mintTxBodyL)
 import Cardano.Ledger.Api.Tx.Out
     ( addrTxOutL
     , coinTxOutL
@@ -283,6 +286,13 @@ flagValue name = \case
         | otherwise -> flagValue name (v : rest)
     _ -> Nothing
 
+flagValues :: String -> [String] -> [String]
+flagValues name = \case
+    (a : v : rest)
+        | a == name -> v : flagValues name rest
+        | otherwise -> flagValues name (v : rest)
+    _ -> []
+
 outRefFlag :: Env -> String -> IO TxIn
 outRefFlag env name = case flagValue name (envFlags env) of
     Nothing -> die ("missing " <> name)
@@ -400,6 +410,8 @@ data Facts = Facts
     -- ^ A token taken from another output into the continuing state output
     , fParked :: Maybe TxIn
     -- ^ A token parked at the state address, spent as a state
+    , fMintState :: Bool
+    -- ^ The fold also mints a token of the existing registry state
     }
 
 -- | The fold of the registry the library's builder makes, as facts.
@@ -407,11 +419,11 @@ honestFacts
     :: Env
     -> Session NoWitness IO
     -> Application
-    -> (TxIn, TxOut ConwayEra)
+    -> NE.NonEmpty (TxIn, TxOut ConwayEra)
     -> (TxIn, TxOut ConwayEra, ByteString)
-    -> IO Facts
-honestFacts env session application pending (stateIn, _, root) = do
-    registration <-
+    -> IO (NE.NonEmpty Facts)
+honestFacts env session application pendings (stateIn, _, root) = do
+    registrations <- forM pendings $ \pending ->
         maybe
             (die "the pending registration is not a registration of open datum")
             pure
@@ -423,25 +435,35 @@ honestFacts env session application pending (stateIn, _, root) = do
         withTrie env session stateIn root $ \snapshot ->
             speculateEdges
                 snapshot
-                (NE.singleton (regKey registration, toInteger edgeInsertActive))
+                ( fmap
+                    (\registration -> (regKey registration, toInteger edgeInsertActive))
+                    registrations
+                )
                 >>= either
                     (die . trieRefusal)
                     (\walked -> pure (walkProofs walked, unRoot (walkRoot walked)))
-    proof <- case proofs of
-        [one] -> pure one
-        _ -> die "the registry gave no single answer for the key"
-    pure
-        Facts
-            { fPending = pending
-            , fRegistration = registration
-            , fApproval = approvalOfPending pending application
-            , fBurn = True
-            , fProof = proof
-            , fNewRoot = newRoot
-            , fHolding = (regHolding registration, regDeposit registration)
-            , fStateExtra = Nothing
-            , fParked = Nothing
-            }
+    nonemptyProofs <-
+        maybe (die "the registry gave no proofs") pure (NE.nonEmpty proofs)
+    when (length proofs /= length registrations) $
+        die "the registry's proof count differs from the pending count"
+    pure $
+        NE.zipWith
+            ( \(pending, registration) proof ->
+                Facts
+                    { fPending = pending
+                    , fRegistration = registration
+                    , fApproval = approvalOfPending pending application
+                    , fBurn = True
+                    , fProof = proof
+                    , fNewRoot = newRoot
+                    , fHolding = (regHolding registration, regDeposit registration)
+                    , fStateExtra = Nothing
+                    , fParked = Nothing
+                    , fMintState = False
+                    }
+            )
+            (NE.zip pendings registrations)
+            nonemptyProofs
 
 {- | The approval the pending registration holds: the one token of the
 application's policy in its value.
@@ -462,71 +484,85 @@ foldProgram
     -> RequestScript
     -> (TxIn, TxOut ConwayEra, ByteString)
     -> TxIn
-    -> Facts
+    -> NE.NonEmpty Facts
     -> Payer
     -> Program ()
 foldProgram env stateScript requestScript (stateIn, stateOut, _) seed facts payer = do
-    let registration = fRegistration facts
-        registry = registryOf env
+    let registry = registryOf env
         policy = statePolicy stateScript
         (_, stateName) = envToken env
-        key = regKey registration
-        (holdingAddress, holdingCoin) = fHolding facts
-        (pendingRef, _) = fPending facts
         stateValue =
             MaryValue
                 (stateOut ^. coinTxOutL)
                 (MultiAsset (Map.singleton policy (Map.singleton stateName 1)))
-                <> maybe mempty snd (fStateExtra facts)
-        holding =
-            mkBasicTxOut
-                holdingAddress
-                ( MaryValue
-                    holdingCoin
-                    ( MultiAsset
-                        ( Map.singleton
-                            policy
-                            (Map.singleton (activeTokenName registry key) 1)
-                        )
-                    )
-                )
-                & datumTxOutL .~ mkInlineDatum (regDatum registration)
+                <> foldMap (maybe mempty snd . fStateExtra) facts
     _ <-
         Tx.payTo'
             (stateAddress (payerNetwork payer) stateScript)
             stateValue
-            (BuiltinData (stateDatum (fNewRoot facts)))
-    holdingIndex <- Tx.output holding
-    let Coin deposit = regDeposit registration
-        redeemer =
-            BuiltinData
-                ( foldRedeemer
-                    seed
-                    [ Register
-                        { changeRequest = pendingRef
-                        , changeKey = key
-                        , changeHolding = toInteger holdingIndex
-                        , changeDeposit = deposit
-                        , changeProof = fProof facts
-                        }
-                    ]
+            (BuiltinData (stateDatum (fNewRoot (NE.last facts))))
+    holdingIndices <- forM facts $ \fact -> do
+        let registration = fRegistration fact
+            key = regKey registration
+            (holdingAddress, holdingCoin) = fHolding fact
+            holding =
+                mkBasicTxOut
+                    holdingAddress
+                    ( MaryValue
+                        holdingCoin
+                        ( MultiAsset
+                            ( Map.singleton
+                                policy
+                                (Map.singleton (activeTokenName registry key) 1)
+                            )
+                        )
+                    )
+                    & datumTxOutL .~ mkInlineDatum (regDatum registration)
+        Tx.output holding
+    let changes =
+            NE.zipWith
+                ( \fact holdingIndex ->
+                    let registration = fRegistration fact
+                        Coin deposit = regDeposit registration
+                    in  Register
+                            { changeRequest = fst (fPending fact)
+                            , changeKey = regKey registration
+                            , changeHolding = toInteger holdingIndex
+                            , changeDeposit = deposit
+                            , changeProof = fProof fact
+                            }
                 )
+                facts
+                holdingIndices
+        redeemer = BuiltinData (foldRedeemer seed (NE.toList changes))
     _ <- Tx.spendScript stateIn redeemer
-    forM_ (fParked facts) $ \parked -> Tx.spendScript parked redeemer
-    forM_ (fStateExtra facts) $ \(extra, _) -> Tx.spend extra
+    forM_ facts $ \fact -> do
+        forM_ (fParked fact) $ \parked -> Tx.spendScript parked redeemer
+        forM_ (fStateExtra fact) $ \(extra, _) -> Tx.spend extra
     Tx.mint
         policy
-        (Map.singleton (activeTokenName registry key) 1)
+        ( Map.fromListWith
+            (+)
+            ( [ (activeTokenName registry (regKey (fRegistration fact)), 1)
+              | fact <- NE.toList facts
+              ]
+                <> [(stateName, 1) | any fMintState facts]
+            )
+        )
         (BuiltinData foldedRedeemer)
     useScript (ssScript stateScript) (ssSource stateScript)
-    _ <-
+    forM_ (NE.zip facts holdingIndices) $ \(fact, holdingIndex) ->
         Tx.spendScript
-            pendingRef
+            (fst (fPending fact))
             (AsData (spendRedeemer (RegistrationFold (toInteger holdingIndex))))
-    when (fBurn facts) $
+    let burns =
+            Map.fromListWith
+                (+)
+                [(fApproval fact, -1) | fact <- NE.toList facts, fBurn fact]
+    unless (Map.null burns) $
         Tx.mint
             (requestPolicy requestScript)
-            (Map.singleton (fApproval facts) (-1))
+            burns
             (AsData (mintRedeemer [ApprovalBurn]))
     Request.useScript requestScript
     Tx.collateral (fst (payerFunding payer))
@@ -541,7 +577,7 @@ buildFold
     -> RequestScript
     -> Application
     -> (TxIn, TxOut ConwayEra, ByteString)
-    -> Facts
+    -> NE.NonEmpty Facts
     -> IO ConwayTx
 buildFold env session stateScript requestScript application state@(stateIn, stateOut, root) facts = do
     payer <-
@@ -552,21 +588,30 @@ buildFold env session stateScript requestScript application state@(stateIn, stat
             >>= either (die . renderRefusal) pure
     now <- tipSlot session
     deadline <-
-        Services.floorSlot session (regDeadline (fRegistration facts))
+        Services.floorSlot
+            session
+            ( foldl'
+                min
+                (regDeadline (fRegistration (NE.head facts)))
+                (map (regDeadline . fRegistration) (NE.tail facts))
+            )
     upper <-
         validityFromTip session now deadline
             >>= maybe (die "the processing window of the registration is closed") pure
     parkedOutput <-
-        traverse (\ref -> (,) ref <$> outputAt session ref) (fParked facts)
+        traverse
+            (\ref -> (,) ref <$> outputAt session ref)
+            (mapMaybe fParked (NE.toList facts))
     extraOutput <-
         traverse
             (\(ref, _) -> (,) ref <$> outputAt session ref)
-            (fStateExtra facts)
+            (mapMaybe fStateExtra (NE.toList facts))
     let funding = payerFunding payer
         spent =
-            [funding, (stateIn, stateOut), fPending facts]
-                <> maybe [] pure parkedOutput
-                <> maybe [] pure extraOutput
+            [funding, (stateIn, stateOut)]
+                <> map fPending (NE.toList facts)
+                <> parkedOutput
+                <> extraOutput
     assembleLenient
         session
         spent
@@ -668,57 +713,71 @@ foldCommand :: Handle -> Env -> IO ()
 foldCommand out env = do
     caseName <-
         maybe (die "missing --case") pure (flagValue "--case" (envFlags env))
-    pendingRef <- outRefFlag env "--pending"
+    refs <-
+        traverse
+            (either die pure . parseOutRef . T.pack)
+            (flagValues "--pending" (envFlags env))
+    pendingRefs <- maybe (die "missing --pending") pure (NE.nonEmpty refs)
     Services.withLatest (provider env) $ \session -> do
         (stateScript, requestScript) <- sourcesOf env session
         application <-
             openDatumApplication session requestScript Ledger.Testnet
                 >>= either (die . show) pure
         state@(stateIn, _, root) <- findState env session
-        pendingOutput <- outputAt session pendingRef
+        pendings <-
+            traverse (\ref -> (,) ref <$> outputAt session ref) pendingRefs
         honest <-
-            honestFacts env session application (pendingRef, pendingOutput) state
+            honestFacts env session application pendings state
+        let first = NE.head honest
+            replaceFirst fact = fact NE.:| NE.tail honest
         (facts, fact) <- case caseName of
             "honest" -> pure (honest, "none: the fold as the library builds it" :: Text)
             "no-approval" ->
                 pure
-                    ( honest{fBurn = False, fApproval = AssetName mempty}
+                    ( replaceFirst first{fBurn = False, fApproval = AssetName mempty}
                     , "the pending registration holds no approval"
                     )
             "other-address" ->
                 pure
-                    ( honest{fHolding = (payerOf env, snd (fHolding honest))}
+                    ( replaceFirst first{fHolding = (payerOf env, snd (fHolding first))}
                     , "the key's token is delivered to the folder's address, not the committed one"
                     )
             "less-than-deposit" ->
                 pure
-                    ( honest
-                        { fHolding =
-                            second (lessBy 100_000) (fHolding honest)
-                        }
+                    ( replaceFirst
+                        first
+                            { fHolding =
+                                second (lessBy 100_000) (fHolding first)
+                            }
                     , "the holding keeps 100000 lovelace less than the deposit"
                     )
             "second-registration" -> do
                 present <-
-                    presenceProof env session state (regKey (fRegistration honest))
+                    presenceProof env session state (regKey (fRegistration first))
                 pure
-                    ( honest{fProof = present, fNewRoot = root}
+                    ( replaceFirst first{fProof = present, fNewRoot = root}
                     , "the key is already in the registry: the proof carried is the registry's own proof of it"
                     )
             "extra-token" -> do
                 spare <- outRefFlag env "--spare"
                 spareOutput <- outputAt session spare
                 pure
-                    ( honest
-                        { fStateExtra = Just (spare, spareOutput ^. valueTxOutL & withoutAda)
-                        }
+                    ( replaceFirst
+                        first
+                            { fStateExtra = Just (spare, spareOutput ^. valueTxOutL & withoutAda)
+                            }
                     , "the continuing state output also holds a token taken from another output"
                     )
             "parked-state" -> do
                 parked <- outRefFlag env "--parked"
                 pure
-                    ( honest{fParked = Just parked}
+                    ( replaceFirst first{fParked = Just parked}
                     , "a token parked at the state address is spent as a state beside the registry's own"
+                    )
+            "state-policy-movement" ->
+                pure
+                    ( replaceFirst first{fMintState = True}
+                    , "the batch also mints and moves another token under the state policy"
                     )
             other -> die ("--case is not one of the cases: " <> other)
         tx <-
@@ -731,11 +790,20 @@ foldCommand out env = do
                 state
                 facts
         answer <- answerTo env tx
+        let MultiAsset minted = tx ^. bodyTxL . mintTxBodyL
+            (policy, name) = envToken env
+            mintedRegistryToken =
+                Map.findWithDefault
+                    0
+                    name
+                    (Map.findWithDefault Map.empty policy minted)
         emit out $
             object
                 ( [ "case" .= caseName
                   , "alteredFact" .= fact
-                  , "pending" .= renderOutRef pendingRef
+                  , "pending" .= renderOutRef (NE.head pendingRefs)
+                  , "pendings" .= map renderOutRef (NE.toList pendingRefs)
+                  , "mintedRegistryToken" .= mintedRegistryToken
                   , "state" .= renderOutRef stateIn
                   ]
                     <> answerJson answer

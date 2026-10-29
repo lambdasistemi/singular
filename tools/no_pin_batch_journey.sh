@@ -3,6 +3,8 @@
 # registration journey after its original lifecycle. The shared rig owns all
 # wallets, processes and chain observations. No request reference is passed to
 # either automatic fold; receipts are checked against the chain afterwards.
+# SC2016: single-quoted jq programs use jq variables. SC2034/SC2154: the
+# sourcing journey and rig supply and consume the shared scenario variables.
 # shellcheck disable=SC2016,SC2034,SC2154
 
 batch_as() {
