@@ -40,7 +40,8 @@ import Control.Exception
     , fromException
     , throwIO
     )
-import Control.Monad (forM_, unless)
+import Control.Monad (forM_, unless, when)
+import Control.Tracer (traceWith)
 import Data.Aeson (Value (..), encode, object, (.=))
 import Data.Aeson.KeyMap qualified as KM
 import Data.Aeson.Types (Pair, parseEither, (.:))
@@ -61,6 +62,12 @@ import Singular.CLI.RegistryReading
     ( RegistryRefusal (..)
     , completeRegistry
     )
+import Singular.CLI.Trace
+    ( Event (What)
+    , RefusalKind (ClientRefused)
+    , Trace (Trace)
+    , What (CommandEnded, CommandStarted, Refused)
+    )
 import Singular.Reader qualified as R
 import Singular.Registry.Address (renderRegistryAddress)
 import Singular.Registry.Application (datumToJson)
@@ -76,7 +83,11 @@ import Singular.Registry.Ledger (ConwayEra, Root (..), TxIn, TxOut)
 import Singular.Registry.LedgerProvider qualified as LP
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
 import Singular.Registry.StateToken (parseStateToken)
-import Singular.Registry.Trace (QuerySummary (..), QueryWork (..))
+import Singular.Registry.Trace
+    ( QuerySummary (..)
+    , QueryWork (..)
+    , startTimer
+    )
 import Singular.Registry.TrieState
     ( RegistryIdentity (..)
     , StatePolicyId (..)
@@ -167,7 +178,8 @@ readerArgs missing bad keyBad environment given = do
 
 -- | Run the neutral reader once and let its host render or refine the answer.
 runReader
-    :: Env
+    :: Text
+    -> Env
     -> ReaderArgs
     -> ( R.ReaderRequest
          -> Maybe ApplicationIdentity
@@ -175,8 +187,18 @@ runReader
          -> Inspection
        )
     -> IO ExitCode
-runReader env args present = do
+runReader command env args present = do
+    traceWith (envTracer env) (Trace [] (What (CommandStarted command)))
+    elapsed <- startTimer
     (result, work) <- readAnswer `catch` unavailable Nothing
+    when (inspectionAnswer result == "refused") $
+        traceWith
+            (envTracer env)
+            (Trace [] (What (Refused ClientRefused Nothing)))
+    ms <- elapsed
+    traceWith
+        (envTracer env)
+        (Trace [] (What (CommandEnded command (inspectionAnswer result) ms)))
     let LP.Network magic = R.requestedNetwork request
         address =
             registryAsset (R.readerRegistry request)
@@ -184,7 +206,8 @@ runReader env args present = do
         measured = ["queryWork" .= workJson work | readerQueryWork args]
         document =
             object
-                ( [ "answer" .= inspectionAnswer result
+                ( [ "command" .= command
+                  , "answer" .= inspectionAnswer result
                   , "registry" .= address
                   , "keyHex" .= hex (R.readerKey request)
                   , "provider" .= providerUrl (readerProvider args)

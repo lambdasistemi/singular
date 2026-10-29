@@ -49,7 +49,7 @@ import System.Exit (ExitCode (..))
 -- | Run one open-datum command in the environment the entry point composed.
 runOpenDatum :: Env -> OpenDatumCommand -> IO ExitCode
 runOpenDatum env = \case
-    OpenInspect a -> runReader env a openDatumInspection
+    OpenInspect a -> runReader "inspect" env a openDatumInspection
     OpenHelp text -> putStr text >> pure ExitSuccess
     OpenInsert _ ->
         failWith

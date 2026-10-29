@@ -56,6 +56,7 @@ agree.
 
 MkDocs environment ready!
 Run: mkdocs serve
+- <a href="../offchain/lib/Singular/Reader.hs" data-api="module">Singular.Reader</a> — <a href="../offchain/lib/Singular/Reader.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Provider/Koios/Client.hs" data-api="module">Singular.Provider.Koios.Client</a> — <a href="../offchain/lib/Singular/Provider/Koios/Client.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Provider/Koios/Evidence.hs" data-api="module">Singular.Provider.Koios.Evidence</a> — <a href="../offchain/lib/Singular/Provider/Koios/Evidence.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Provider/Koios/History.hs" data-api="module">Singular.Provider.Koios.History</a> — <a href="../offchain/lib/Singular/Provider/Koios/History.hs" data-api="source">source</a>

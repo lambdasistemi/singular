@@ -44,7 +44,7 @@ runRegistryCommand :: Application -> Env -> Command -> IO ExitCode
 runRegistryCommand _app env = \case
     Help text -> putStr text >> pure ExitSuccess
     Fold _ -> pure (ExitFailure 2)
-    RegistryInspect a -> runReader env a neutralInspection
+    RegistryInspect a -> runReader "registry inspect" env a neutralInspection
     StateCreate a ->
         finish
             (envTracer env)
