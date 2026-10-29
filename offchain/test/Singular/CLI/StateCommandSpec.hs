@@ -660,7 +660,7 @@ creationRows = describe "creating a registry" $ do
         $ \rig -> do
             script <- stateScriptOf rig
             seed : _ <- spareSeeds rig
-            [(ref, out)] <- pure . take 1 =<< readWallet rig
+            [(ref, out)] <- take 1 <$> readWallet rig
             let caps = lyingAbout rig (hashScript (ssScript script)) (ref, out)
                 env = (envOf rig){envWrites = \_ k -> k caps, envReads = \_ k -> k caps}
                 expected = hexOf (scriptHashBytes (hashScript (ssScript script)))

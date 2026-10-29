@@ -524,7 +524,7 @@ spendReference args = withRunner $ \wallet caps -> do
         priced <- price 10 originalFee
         pure (built, priced, bytes, minimumFee built)
     let supplied = original ^. bodyTxL . feeTxBodyL
-        signed tx = signTx (walletSignKey wallet) tx
+        signed = signTx (walletSignKey wallet)
         transaction tx =
             object
                 [ "output" .= renderOutRef (TxIn (txIdTx tx) (TxIx 0))
