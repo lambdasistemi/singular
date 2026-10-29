@@ -67,7 +67,7 @@
       "pause": 500
     },
     {
-      "text": "[ ] batch-measurement: the receipt with the largest accepted batch for registrations, terminations and mixed batches.",
+      "text": "[x] batch-measurement: the receipt with the largest accepted batch for registrations, terminations and mixed batches.",
       "pause": 300
     }
   ],
@@ -83,6 +83,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "6a523c6084e9be32d2905628f7008bbf7ac13085db135a9f551561f5c97045cb"
+    "sha256": "7731d75d1c9e5ab79767636339ef78fbad123807af4303f053d957a792cb10b6"
   }
 }

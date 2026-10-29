@@ -62,10 +62,13 @@ address and a malformed request datum are shown by unit tests, since no accepted
   capacity limit is never read as "does not fit".
 - batch-refusals: a named batch with a request of another registry, a named batch with a duplicate key, and a batch that
   moves anything else under the state policy are each refused, beside an accepted control.
-- limits-measured: a measurement receipt binds the exact scripts, the workload and the protocol parameters, and states the
-  largest accepted batch for registrations, terminations and mixed batches, with memory, steps, bytes and fee per request.
+- limits-measured: a measurement receipt binds the exact scripts, the workload and the recorded protocol parameters of the target
+  network, and states for registrations, terminations and mixed batches the largest batch that the ledger's evaluator accepts
+  under those parameters and the refusal of the next, with memory, steps, bytes and fee per request, kept as transactions;
+  a development node given the same limits, prices and fees corroborates.
 - limits-stated-as-measured: every published limit names the receipt it comes from and the workload it was measured on;
-  none is typed.
+  none is typed, and it is said plainly to be an evaluation under recorded parameters on a stated date, not a submission to the
+  target network.
 - devnet-batch-journey: on a development network, through the packaged commands, a wallet that booked none of the
   requests discovers and folds a mixed batch of one registry.
 - documentation-and-conformance: the user documentation describes folding and its limits, and the conformance suite
@@ -89,7 +92,10 @@ address and a malformed request datum are shown by unit tests, since no accepted
 
 ## What the receipt and the documentation claim
 
-The measurement shows what one network accepted for one workload under one set of protocol parameters. It claims nothing
+The measurement shows what the ledger's evaluator accepts for one workload under one recorded set of preprod parameters, with a
+development node corroborating under the same limits, prices and fees. The packaged node cannot run preprod's current execution
+model, so the figure is an evaluation of kept transactions, not a submission to preprod, and parameters can change by
+governance. It claims nothing
 about a larger registry, a different trie depth, other scripts or other parameters; the receipt names each, and the
 documentation repeats the numbers from the receipt. The trie library's proofs are assumed sound.
 

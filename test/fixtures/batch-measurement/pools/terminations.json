@@ -1,0 +1,170 @@
+[
+  {
+    "command": "terminate",
+    "outcome": "success",
+    "pending": "875018991e80e3cdbe226ab685d368b7a007ba4aeeb9721922a0552d5ea4719c#0",
+    "submissions": [
+      {
+        "case": "included",
+        "observed": true,
+        "step": "terminate",
+        "tx": "875018991e80e3cdbe226ab685d368b7a007ba4aeeb9721922a0552d5ea4719c"
+      }
+    ],
+    "treasuryDonation": 3000000
+  },
+  {
+    "command": "terminate",
+    "outcome": "success",
+    "pending": "d587f282c62ffab3d814927ccd60c81bb0d58c11f6907785c641a359ab78a285#0",
+    "submissions": [
+      {
+        "case": "included",
+        "observed": true,
+        "step": "terminate",
+        "tx": "d587f282c62ffab3d814927ccd60c81bb0d58c11f6907785c641a359ab78a285"
+      }
+    ],
+    "treasuryDonation": 3000000
+  },
+  {
+    "command": "terminate",
+    "outcome": "success",
+    "pending": "7b989749b853d93c6b03a978979c7a44734fbb07f16db1cde89018f29c9ac9be#0",
+    "submissions": [
+      {
+        "case": "included",
+        "observed": true,
+        "step": "terminate",
+        "tx": "7b989749b853d93c6b03a978979c7a44734fbb07f16db1cde89018f29c9ac9be"
+      }
+    ],
+    "treasuryDonation": 3000000
+  },
+  {
+    "command": "terminate",
+    "outcome": "success",
+    "pending": "cbe3b5cae2ea893d8e564ecd5ce64c777b9bddb78a791f6cae0eb27e3995b92a#0",
+    "submissions": [
+      {
+        "case": "included",
+        "observed": true,
+        "step": "terminate",
+        "tx": "cbe3b5cae2ea893d8e564ecd5ce64c777b9bddb78a791f6cae0eb27e3995b92a"
+      }
+    ],
+    "treasuryDonation": 3000000
+  },
+  {
+    "command": "terminate",
+    "outcome": "success",
+    "pending": "018c45e4cbc0747c2d1149d09f820a728bbe337f16daa07ae01baa0f749ffd19#0",
+    "submissions": [
+      {
+        "case": "included",
+        "observed": true,
+        "step": "terminate",
+        "tx": "018c45e4cbc0747c2d1149d09f820a728bbe337f16daa07ae01baa0f749ffd19"
+      }
+    ],
+    "treasuryDonation": 3000000
+  },
+  {
+    "command": "terminate",
+    "outcome": "success",
+    "pending": "6be67317071b8dfc8fbc9086cd0deaca451e45620832b422120f9bec5902bbbe#0",
+    "submissions": [
+      {
+        "case": "included",
+        "observed": true,
+        "step": "terminate",
+        "tx": "6be67317071b8dfc8fbc9086cd0deaca451e45620832b422120f9bec5902bbbe"
+      }
+    ],
+    "treasuryDonation": 3000000
+  },
+  {
+    "command": "terminate",
+    "outcome": "success",
+    "pending": "338898ffaeb3f30c4215587bd831850874ad7bdb9b27e3bc5bc7fa710adef7da#0",
+    "submissions": [
+      {
+        "case": "included",
+        "observed": true,
+        "step": "terminate",
+        "tx": "338898ffaeb3f30c4215587bd831850874ad7bdb9b27e3bc5bc7fa710adef7da"
+      }
+    ],
+    "treasuryDonation": 3000000
+  },
+  {
+    "command": "terminate",
+    "outcome": "success",
+    "pending": "7796c0072707a19b8c2dad1aca8153df8e6292ef8f3e5735d3a4d7f984316c45#0",
+    "submissions": [
+      {
+        "case": "included",
+        "observed": true,
+        "step": "terminate",
+        "tx": "7796c0072707a19b8c2dad1aca8153df8e6292ef8f3e5735d3a4d7f984316c45"
+      }
+    ],
+    "treasuryDonation": 3000000
+  },
+  {
+    "command": "terminate",
+    "outcome": "success",
+    "pending": "2a85e205b99a47f455358fdd02c2f8d7cbaaf0b75ae38d20669b5d7399ebf273#0",
+    "submissions": [
+      {
+        "case": "included",
+        "observed": true,
+        "step": "terminate",
+        "tx": "2a85e205b99a47f455358fdd02c2f8d7cbaaf0b75ae38d20669b5d7399ebf273"
+      }
+    ],
+    "treasuryDonation": 3000000
+  },
+  {
+    "command": "terminate",
+    "outcome": "success",
+    "pending": "bed79894cdaeee39740791f54739cd94a825ddbecdc0ad2ac3a15585423dc10f#0",
+    "submissions": [
+      {
+        "case": "included",
+        "observed": true,
+        "step": "terminate",
+        "tx": "bed79894cdaeee39740791f54739cd94a825ddbecdc0ad2ac3a15585423dc10f"
+      }
+    ],
+    "treasuryDonation": 3000000
+  },
+  {
+    "command": "terminate",
+    "outcome": "success",
+    "pending": "107a9ea24fcc266cb715be314c2e5ef2644f1ae5b5da73e484afc94cae3f45a9#0",
+    "submissions": [
+      {
+        "case": "included",
+        "observed": true,
+        "step": "terminate",
+        "tx": "107a9ea24fcc266cb715be314c2e5ef2644f1ae5b5da73e484afc94cae3f45a9"
+      }
+    ],
+    "treasuryDonation": 3000000
+  },
+  {
+    "command": "terminate",
+    "outcome": "success",
+    "pending": "18a72821d0975dcf5cc8c7c0a7331e11eba19b5a5732f7848d023f10b9d23519#0",
+    "submissions": [
+      {
+        "case": "included",
+        "observed": true,
+        "step": "terminate",
+        "tx": "18a72821d0975dcf5cc8c7c0a7331e11eba19b5a5732f7848d023f10b9d23519"
+      }
+    ],
+    "treasuryDonation": 3000000
+  }
+]

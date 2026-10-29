@@ -556,6 +556,13 @@ CODE_RULES: list[dict] = [
 
 NONCODE_CLASSES: list[dict] = [
     {
+        "id": "batch-measurement-cbor-recordings",
+        "pattern": "test/fixtures/batch-measurement/packets/**/*.cbor",
+        "note": "kept transactions, resolved inputs and captured era histories; "
+        "script and parameter bindings and exact evaluations are checked by "
+        "the hosted no-pin-batch-measurement app",
+    },
+    {
         "id": "local-services-cbor-recordings",
         "pattern": "offchain/data/network/**/*.cbor",
         "note": "immutable network, transaction and input recordings; "

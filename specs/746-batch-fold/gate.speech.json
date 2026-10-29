@@ -83,8 +83,18 @@
       "pause": 400
     }
   ],
+  "gate-version-3": [
+    {
+      "text": "Gate version 3.",
+      "pause": 500
+    },
+    {
+      "text": "Appended on 29 October 2026; every row above is unchanged. Row G14 keeps its command and is clarified by what the hosted app does: the committed receipt is bound to the current scripts (their hashes), its kept transactions are re-evaluated under the recorded preprod parameters and reproduce the committed figures byte for byte, and a fresh capture on a development network finds the same largest batch per kind and the refusal of the next, with the figure differences reported as observations and not compared. A control with an altered script hash, an altered figure and an off-by-one largest size each fails.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "gate.md",
-    "sha256": "9ae72e96f9e86c7bc53390b46c0de44f9f6e0158e149ef7d9bcde375467e82ff"
+    "sha256": "143eee3a2654b38ebb65bd06d27046d12309fd12334a5ae981afa5c64f7839bf"
   }
 }

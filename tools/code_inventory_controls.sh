@@ -33,6 +33,8 @@
 #       export (store-like context)                 -> must NOT vanish; it
 #                                                    fails as unmapped
 #                                                    (audit F-002)
+#   c10 CBOR outside the recorded measurement      -> unclassified file
+#       extent remains unmapped
 #   c9  force-added (tracked) source in a Git
 #       checkout whose path matches .gitignore      -> must NOT vanish; it
 #                                                    fails as unmapped
@@ -46,6 +48,7 @@ work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
 
 failures=0
+controls_run=0
 
 # Baseline: the real tree must pass before any control can mean anything.
 if ! python3 "$tool" --root "$root" >"$work/baseline.log" 2>&1; then
@@ -66,6 +69,7 @@ scratch() { # scratch <name> — fresh exported copy of the classified tree
 }
 
 expect_reject() { # expect_reject <name> <required-substring> [more…]
+  controls_run=$((controls_run + 1))
   local name=$1
   shift
   local log="$work/$name.log"
@@ -136,6 +140,7 @@ expect_reject c5-unknown-extension \
 scratch c6-covered-new-source
 printf 'module PositivelyNewModule () where\n' \
   >"$work/c6-covered-new-source/offchain/lib/PositivelyNewModule.hs"
+controls_run=$((controls_run + 1))
 if python3 "$tool" --root "$work/c6-covered-new-source" \
   >"$work/c6-covered-new-source.log" 2>&1; then
   echo "control c6-covered-new-source PASS: new covered source mapped automatically"
@@ -186,8 +191,17 @@ git -C "$work/c9-tracked-ignored-checkout" add -f ignored-lane/Hidden.hs
 expect_reject c9-tracked-ignored-checkout \
   "unmapped haskell source: ignored-lane/Hidden.hs"
 
+# The artifact class is confined to its actual consumer's recorded extent;
+# it cannot turn arbitrary CBOR elsewhere in the repository into mapped data.
+scratch c10-cbor-outside-measurement
+mkdir -p "$work/c10-cbor-outside-measurement/orphan-lane"
+cp "$root/test/fixtures/batch-measurement/packets/registrations-1/transaction.cbor" \
+  "$work/c10-cbor-outside-measurement/orphan-lane/transaction.cbor"
+expect_reject c10-cbor-outside-measurement \
+  "unclassified file (unknown extension .cbor): orphan-lane/transaction.cbor"
+
 if ((failures > 0)); then
   echo "controls: FAILED — $failures control(s) did not produce their intended outcome" >&2
   exit 1
 fi
-echo "controls: PASS — 9/9 controls produced their intended outcome"
+echo "controls: PASS — $controls_run controls produced their intended outcome"
