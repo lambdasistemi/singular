@@ -475,7 +475,6 @@ commandRead application world registry key extra = do
             Env
                 { envTracer = nullTracer
                 , envSource = "builder fixture"
-                , envLoadRelease = \_ _ -> fail "inspect read a blueprint"
                 , envReaderReads = \_ use ->
                     use
                         Capabilities

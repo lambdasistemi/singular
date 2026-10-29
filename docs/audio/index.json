@@ -126,8 +126,8 @@
     "index": 12,
     "name": "README/how-the-parts-fit-12",
     "pause_ms": 300,
-    "text": "Ending a name and recovering control on a real ledger",
-    "v": "a26f4cc50675"
+    "text": "Ending a name",
+    "v": "6930cb67366d"
    },
    {
     "index": 13,
@@ -758,8 +758,8 @@
     "index": 2,
     "name": "docs-building/other-languages-02",
     "pause_ms": 400,
-    "text": "Lean and HTML have no general formatter here, so the explicit style rules are the policy: no tab, no carriage return, no trailing whitespace, and exactly one final newline. Aiken sources are checked by aiken fmt --check inside the onchain/ and naming-onchain/ flake checks, with the Aiken each flake pins; formatting leaves every compiled validator and its hash unchanged. Generated files — the shipped simulator page, the Lean mirror and the cage vectors — are regenerated from their formatted sources, and their freshness checks stay the policy. A code family nobody checks fails just lint instead of passing silently.",
-    "v": "8ff9e44e869c"
+    "text": "Lean and HTML have no general formatter here, so the explicit style rules are the policy: no tab, no carriage return, no trailing whitespace, and exactly one final newline. Aiken sources are checked by aiken fmt --check inside the onchain/ and application on-chain flake checks, with the Aiken each flake pins; formatting leaves every compiled validator and its hash unchanged. Generated files — the shipped simulator page, the Lean mirror and the cage vectors — are regenerated from their formatted sources, and their freshness checks stay the policy. A code family nobody checks fails just lint instead of passing silently.",
+    "v": "2af0c83a5f3a"
    }
   ],
   "publication-and-accessibility": [
@@ -4379,6 +4379,22 @@
     "v": "8b715f203639"
    }
   ],
+  "historical-model-reference": [
+   {
+    "index": 0,
+    "name": "docs-naming-lifecycle/historical-model-reference-00",
+    "pause_ms": 500,
+    "text": "Historical model reference.",
+    "v": "cb1876c9e2f0"
+   },
+   {
+    "index": 1,
+    "name": "docs-naming-lifecycle/historical-model-reference-01",
+    "pause_ms": 400,
+    "text": "The naming application has been retired from this release. This page describes the retained earlier Lean model and simulator; it is not a guide to the current commands or validators.",
+    "v": "1687d189013b"
+   }
+  ],
   "how-a-name-moves-in-the-registry": [
    {
     "index": 0,
@@ -4398,8 +4414,8 @@
     "index": 2,
     "name": "docs-naming-lifecycle/how-a-name-moves-in-the-registry-02",
     "pause_ms": 400,
-    "text": "The current registry contract has a fixed compiled admission boundary. Naming certifies each supported edge in advance by minting an approval binding the edge, key, owner and destination. The registry recomputes that binding. Folding is permissionless; approval prevents the folder from substituting another destination. Naming's separate application validator governs maintenance, recovery and authorization to retire.",
-    "v": "9c5b88baafb3"
+    "text": "The earlier registry contract has a fixed compiled admission boundary. Naming certifies each supported edge in advance by minting an approval binding the edge, key, owner and destination. The registry recomputes that binding. Folding is permissionless; approval prevents the folder from substituting another destination. Naming's separate application validator governs maintenance, recovery and authorization to retire.",
+    "v": "9b2409b7121d"
    }
   ],
   "recover-with-the-committed-next-controller": [
@@ -4681,8 +4697,8 @@
     "index": 1,
     "name": "docs-offchain-api-reference/what-the-reference-does-not-claim-01",
     "pause_ms": 400,
-    "text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the runtime service modules staying outside it in Runtime service ownership, and the conformance reference's extent is the conformance library's. The executables and the on-chain Aiken validators remain outside the generated references. The public local-services component also exposes LocalEvaluation, NetworkTime, ProviderSettings, ProviderTrace, SessionEvidence, SessionIO, SessionServices, TimeSource, Trace, TraceRender, WaitTypes and Wallet; their sources live under offchain/local-services/Singular/Registry/. Their generated pages are not in this main-library reference. The public open-datum-application component (applications/open-datum/offchain/) carries the open-datum application the command line composes — command groups, envelope, release rules and the application value — and the request builders of the registry on the proved design: the booking of a registration, its reclaim by the refund address and its cleanup after the window, the configuration record added to the creation of a registry, the records and actions of the request validator in the layout it decodes, the validator as a transaction carries it, the reasons a builder declines, what open datum hands the fold of a registry, and the commands that create a registry and book, reclaim and clean up a registration: Singular.Application.OpenDatum.Build, Singular.Application.OpenDatum.Command, Singular.Application.OpenDatum.Envelope, Singular.Application.OpenDatum.Registration, Singular.Application.OpenDatum.Release, Singular.Application.OpenDatum.Requests.Booking, Singular.Application.OpenDatum.Requests.Configuration, Singular.Application.OpenDatum.Requests.Fold, Singular.Application.OpenDatum.Requests.Pending, Singular.Application.OpenDatum.Requests.Records, Singular.Application.OpenDatum.Requests.Refusal, Singular.Application.OpenDatum.Requests.Script, Singular.Application.OpenDatum.Root, Singular.Application.OpenDatum.Run, Singular.Application.OpenDatum.Value; their sources live under applications/open-datum/offchain/src/Singular/Application/OpenDatum/, and the executable's entry point lives in applications/open-datum/offchain/app/. The public registry-cli component (offchain/cli/) carries the registry command line the two binaries link — session, journal and receipts, the flag group, registry helpers, reconciliation, recovery and the creation of a registry on the proved design with the fold into it: Singular.CLI, Singular.CLI.Command, Singular.CLI.Finish, Singular.CLI.Key, Singular.CLI.Live, Singular.CLI.ManagedState, Singular.CLI.Outlay, Singular.CLI.Payload, Singular.CLI.Permanent, Singular.CLI.Plan, Singular.CLI.Promise, Singular.CLI.Proof, Singular.CLI.Receipt, Singular.CLI.ReceiptBody, Singular.CLI.Reconcile, Singular.CLI.Recovery, Singular.CLI.Registry, Singular.CLI.Root, Singular.CLI.Session, Singular.CLI.State, Singular.CLI.Steps, Singular.CLI.Trace, Singular.CLI.TrieTrace; their sources live under offchain/cli/src/Singular/CLI/.",
-    "v": "ed3fc682a8c8"
+    "text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the runtime service modules staying outside it in Runtime service ownership, and the conformance reference's extent is the conformance library's. The executables and the on-chain Aiken validators remain outside the generated references. The public local-services component also exposes LocalEvaluation, NetworkTime, ProviderSettings, ProviderTrace, SessionEvidence, SessionIO, SessionServices, TimeSource, Trace, TraceRender, WaitTypes and Wallet; their sources live under offchain/local-services/Singular/Registry/. Their generated pages are not in this main-library reference. The public open-datum-application component (applications/open-datum/offchain/) carries the open-datum application the command line composes — command groups, envelope and release rules — and the request builders of the registry on the proved design: the booking of a registration, its reclaim by the refund address and its cleanup after the window, the configuration record added to the creation of a registry, the records and actions of the request validator in the layout it decodes, the validator as a transaction carries it, the reasons a builder declines, what open datum hands the fold of a registry, and the commands that create a registry and book, reclaim and clean up a registration: Singular.Application.OpenDatum.Build, Singular.Application.OpenDatum.Command, Singular.Application.OpenDatum.Envelope, Singular.Application.OpenDatum.Registration, Singular.Application.OpenDatum.Release, Singular.Application.OpenDatum.Requests.Booking, Singular.Application.OpenDatum.Requests.Configuration, Singular.Application.OpenDatum.Requests.Fold, Singular.Application.OpenDatum.Requests.Pending, Singular.Application.OpenDatum.Requests.Records, Singular.Application.OpenDatum.Requests.Refusal, Singular.Application.OpenDatum.Requests.Script, Singular.Application.OpenDatum.Root, Singular.Application.OpenDatum.Run; their sources live under applications/open-datum/offchain/src/Singular/Application/OpenDatum/, and the executable's entry point lives in applications/open-datum/offchain/app/. The public registry-cli component (offchain/cli/) carries the registry command line the two binaries link — session, journal and receipts, the flag group, registry helpers, reconciliation, recovery and the creation of a registry on the proved design with the fold into it: Singular.CLI, Singular.CLI.Command, Singular.CLI.Finish, Singular.CLI.Key, Singular.CLI.Live, Singular.CLI.ManagedState, Singular.CLI.Outlay, Singular.CLI.Payload, Singular.CLI.Plan, Singular.CLI.Promise, Singular.CLI.Proof, Singular.CLI.Receipt, Singular.CLI.ReceiptBody, Singular.CLI.Reconcile, Singular.CLI.Recovery, Singular.CLI.Registry, Singular.CLI.Root, Singular.CLI.Session, Singular.CLI.State, Singular.CLI.Steps, Singular.CLI.Trace, Singular.CLI.TrieTrace; their sources live under offchain/cli/src/Singular/CLI/.",
+    "v": "f8858aa04b1a"
    },
    {
     "index": 2,
@@ -6141,27 +6157,129 @@
   ]
  },
  "docs/onchain-api-reference.md": {
-  "encoded-requests-and-supported-operations": [
+  "coverage-limits": [
    {
     "index": 0,
-    "name": "docs-onchain-api-reference/encoded-requests-and-supported-operations-00",
+    "name": "docs-onchain-api-reference/coverage-limits-00",
     "pause_ms": 500,
-    "text": "Encoded requests and supported operations.",
-    "v": "39aed4097c02"
+    "text": "Coverage limits.",
+    "v": "186799fdfa57"
    },
    {
     "index": 1,
-    "name": "docs-onchain-api-reference/encoded-requests-and-supported-operations-01",
+    "name": "docs-onchain-api-reference/coverage-limits-01",
     "pause_ms": 400,
-    "text": "The permanent first-milestone contract accepts insertActive (registration) and updateTerminal (permanent termination). The shared request datum and redeemer types still encode all seven edges. Encoding an action does not make it supported: witnessTerminal, insertAbsent, updateActive, deleteAbsent and deleteActive are rejected by the permanent state validator, including independently constructed requests and an excluded member of a mixed batch.",
-    "v": "51f01a1fa0e0"
+    "text": "A module has a generated page when it declares a public definition. Test cases and a validator with no public declarations remain available in the source tree. The application's separate on-chain project has no generated reference on this site; that coverage gap remains explicit. Compilation and generated documentation do not establish validator behavior or ledger acceptance.",
+    "v": "9f66c40e70fe"
+   }
+  ],
+  "follow-a-rule": [
+   {
+    "index": 0,
+    "name": "docs-onchain-api-reference/follow-a-rule-00",
+    "pause_ms": 500,
+    "text": "Follow a rule.",
+    "v": "3c08bc448c17"
+   },
+   {
+    "index": 1,
+    "name": "docs-onchain-api-reference/follow-a-rule-01",
+    "pause_ms": 400,
+    "text": "The state validator owners page maps creation, request handling, state recognition and token naming to their source owners. Test support appears in the reference because its helpers are public to test modules; it is not an additional product interface.",
+    "v": "94ba53f31271"
    },
    {
     "index": 2,
-    "name": "docs-onchain-api-reference/encoded-requests-and-supported-operations-02",
+    "name": "docs-onchain-api-reference/follow-a-rule-02",
     "pause_ms": 400,
-    "text": "The canonical state, witness, registry/admission, registry/modify and registry/fold modules implement this one active contract. The earlier broader implementations and success evidence are archived on preserve/m2/pre-m1-source-removal; they are not current permanent contract support. The witness policy checks state-validator co-presence, so transaction admission also requires the state validator. The witness policy admits the active kind only. The candidate evidence records compiled refusal controls and their setup, reachability and live-comparison limits.",
-    "v": "870250548c09"
+    "text": "The documentation build generates the interface and binds its pages to source digests. Its checks reject a missing page, changed source or a source link to another revision.",
+    "v": "bff4140f9402"
+   }
+  ],
+  "open-a-module": [
+   {
+    "index": 0,
+    "name": "docs-onchain-api-reference/open-a-module-00",
+    "pause_ms": 500,
+    "text": "Open a module.",
+    "v": "b07453f5164b"
+   },
+   {
+    "index": 1,
+    "name": "docs-onchain-api-reference/open-a-module-01",
+    "pause_ms": 400,
+    "text": "The reference's index lists every documented module and searches its public members. These links open the generated pages on the site and the source files when read in the repository.",
+    "v": "2b42758cec24"
+   },
+   {
+    "index": 2,
+    "name": "docs-onchain-api-reference/open-a-module-02",
+    "pause_ms": 300,
+    "text": "singular_state/fold",
+    "v": "2ed68f75463d"
+   },
+   {
+    "index": 3,
+    "name": "docs-onchain-api-reference/open-a-module-03",
+    "pause_ms": 300,
+    "text": "singular_state/genesis",
+    "v": "8d65b1dd7f04"
+   },
+   {
+    "index": 4,
+    "name": "docs-onchain-api-reference/open-a-module-04",
+    "pause_ms": 300,
+    "text": "singular_state/preimage",
+    "v": "513125e0b634"
+   },
+   {
+    "index": 5,
+    "name": "docs-onchain-api-reference/open-a-module-05",
+    "pause_ms": 300,
+    "text": "singular_state/state",
+    "v": "b29b1cd7f0cc"
+   },
+   {
+    "index": 6,
+    "name": "docs-onchain-api-reference/open-a-module-06",
+    "pause_ms": 300,
+    "text": "singular_state_fixtures",
+    "v": "28a90113c248"
+   },
+   {
+    "index": 7,
+    "name": "docs-onchain-api-reference/open-a-module-07",
+    "pause_ms": 300,
+    "text": "singular_state_fold_fixtures",
+    "v": "1fd63fc0d02b"
+   },
+   {
+    "index": 8,
+    "name": "docs-onchain-api-reference/open-a-module-08",
+    "pause_ms": 300,
+    "text": "singular_state_history",
+    "v": "4d902bf0ec65"
+   },
+   {
+    "index": 9,
+    "name": "docs-onchain-api-reference/open-a-module-09",
+    "pause_ms": 300,
+    "text": "singular_state_proof_builder",
+    "v": "e35222fc845b"
+   },
+   {
+    "index": 10,
+    "name": "docs-onchain-api-reference/open-a-module-10",
+    "pause_ms": 300,
+    "text": "singular_state_proof_fixtures",
+    "v": "29e8af7fbf6d"
+   },
+   {
+    "index": 11,
+    "name": "docs-onchain-api-reference/open-a-module-11",
+    "pause_ms": 300,
+    "text": "singular_state_termination_fixtures",
+    "v": "0c5c991a6c16"
    }
   ],
   "validator-api-reference": [
@@ -6176,319 +6294,49 @@
     "index": 1,
     "name": "docs-onchain-api-reference/validator-api-reference-01",
     "pause_ms": 400,
-    "text": "A contributor changing a registry validator — a refusal in the fold, the request exit, a shared type — wants to click a module and land on its real interface: every public function, type and constant with the documentation its source carries, and a link to the lines that define it, for exactly the validators this repository ships. This page is the entry point of that reference: the pages the pinned aiken docs generates from the onchain/ Aiken project, rebuilt with the documentation site from the same source tree.",
-    "v": "99df99a02325"
-   }
-  ],
-  "what-it-leaves-out": [
-   {
-    "index": 0,
-    "name": "docs-onchain-api-reference/what-it-leaves-out-00",
-    "pause_ms": 500,
-    "text": "What it leaves out.",
-    "v": "dcda73250df4"
-   },
-   {
-    "index": 1,
-    "name": "docs-onchain-api-reference/what-it-leaves-out-01",
-    "pause_ms": 400,
-    "text": "A module gets a page when it declares a public definition. Test and property modules are not documented, and four modules declare nothing public — the open approval policy, the witness and staking validators and the cage_vectors table — so their sources are their reference. The open-datum application's validators under applications/open-datum/onchain/ are a separate Aiken project and have no generated reference on this site. The naming application's validators under naming-onchain/ are a separate Aiken project and have no generated reference on this site. Members that belong to Aiken's standard library link to its own published documentation.",
-    "v": "e7e6720abe41"
-   },
-   {
-    "index": 2,
-    "name": "docs-onchain-api-reference/what-it-leaves-out-02",
-    "pause_ms": 400,
-    "text": "The documentation check fails when this list and the generated extent disagree in either direction, when a generated page or the source it was generated from no longer matches the digest recorded at build time, and when a source link names another repository or revision.",
-    "v": "40ceca6a25ae"
-   }
-  ],
-  "what-this-reference-contains": [
-   {
-    "index": 0,
-    "name": "docs-onchain-api-reference/what-this-reference-contains-00",
-    "pause_ms": 500,
-    "text": "What this reference contains.",
-    "v": "5abb704d34d0"
-   },
-   {
-    "index": 1,
-    "name": "docs-onchain-api-reference/what-this-reference-contains-01",
-    "pause_ms": 400,
-    "text": "Every module listed below has a generated page; the reference's own index links them all and carries a search over their members. On this site each link opens the generated page; read from the repository, it opens the source file at the revision you are viewing. Inside a generated page, each member's \"view source\" link opens the lines it documents at the commit the site was built from.",
-    "v": "4740f35485ce"
-   },
-   {
-    "index": 2,
-    "name": "docs-onchain-api-reference/what-this-reference-contains-02",
-    "pause_ms": 400,
-    "text": "The state validator and its owners — how each rule is divided and which way the dependencies run is on the state validator owners page:",
-    "v": "bc107c4cb2d2"
-   },
-   {
-    "index": 3,
-    "name": "docs-onchain-api-reference/what-this-reference-contains-03",
-    "pause_ms": 300,
-    "text": "state — the validator's dispatch and the one refusal reason the suite asks for",
-    "v": "680b1c5c7d09"
-   },
-   {
-    "index": 4,
-    "name": "docs-onchain-api-reference/what-this-reference-contains-04",
-    "pause_ms": 300,
-    "text": "registry/genesis — minting a registry's state token",
-    "v": "8439e5e6fe0b"
-   },
-   {
-    "index": 5,
-    "name": "docs-onchain-api-reference/what-this-reference-contains-05",
-    "pause_ms": 300,
-    "text": "registry/modify — the Modify decision and the order of its checks",
-    "v": "f86bd5563ad5"
-   },
-   {
-    "index": 6,
-    "name": "docs-onchain-api-reference/what-this-reference-contains-06",
-    "pause_ms": 300,
-    "text": "registry/fold — the per-input step over the transaction's requests",
-    "v": "d14ea63f3626"
-   },
-   {
-    "index": 7,
-    "name": "docs-onchain-api-reference/what-this-reference-contains-07",
-    "pause_ms": 300,
-    "text": "registry/trie — the refusals read off the trie itself",
-    "v": "a5501def9c36"
-   },
-   {
-    "index": 8,
-    "name": "docs-onchain-api-reference/what-this-reference-contains-08",
-    "pause_ms": 300,
-    "text": "registry/duty — what an admitted request still owes the transaction",
-    "v": "29a7ce4d3ddc"
-   },
-   {
-    "index": 9,
-    "name": "docs-onchain-api-reference/what-this-reference-contains-09",
-    "pause_ms": 300,
-    "text": "registry/discharge — checking each duty against the transaction",
-    "v": "95dee0d164ed"
-   },
-   {
-    "index": 10,
-    "name": "docs-onchain-api-reference/what-this-reference-contains-10",
-    "pause_ms": 300,
-    "text": "registry/settlement — settling the lovelace a fold owes its payees",
-    "v": "b33801911f78"
-   },
-   {
-    "index": 11,
-    "name": "docs-onchain-api-reference/what-this-reference-contains-11",
-    "pause_ms": 300,
-    "text": "registry/refusal — how a refusal is reported, and the shared reasons",
-    "v": "7fc6aafa7396"
-   },
-   {
-    "index": 12,
-    "name": "docs-onchain-api-reference/what-this-reference-contains-12",
-    "pause_ms": 400,
-    "text": "The fixed admission boundary:",
-    "v": "e6caa90843c2"
-   },
-   {
-    "index": 13,
-    "name": "docs-onchain-api-reference/what-this-reference-contains-13",
-    "pause_ms": 300,
-    "text": "registry/admission — refusing excluded and malformed request actions before approval",
-    "v": "239048d96485"
-   },
-   {
-    "index": 14,
-    "name": "docs-onchain-api-reference/what-this-reference-contains-14",
-    "pause_ms": 400,
-    "text": "The shared vocabulary and the other validators:",
-    "v": "916d06f6fce1"
-   },
-   {
-    "index": 15,
-    "name": "docs-onchain-api-reference/what-this-reference-contains-15",
-    "pause_ms": 300,
-    "text": "lib — the edge table, the approval name and the named refusal reasons",
-    "v": "65959215bedb"
-   },
-   {
-    "index": 16,
-    "name": "docs-onchain-api-reference/what-this-reference-contains-16",
-    "pause_ms": 300,
-    "text": "types — the datum, redeemer and request types",
-    "v": "6722e627a9c4"
-   },
-   {
-    "index": 17,
-    "name": "docs-onchain-api-reference/what-this-reference-contains-17",
-    "pause_ms": 300,
-    "text": "shared — reading state from inputs and the phase windows",
-    "v": "389f70fed208"
-   },
-   {
-    "index": 18,
-    "name": "docs-onchain-api-reference/what-this-reference-contains-18",
-    "pause_ms": 300,
-    "text": "request — the request validator and its retraction refusal",
-    "v": "1a73cad088d1"
-   },
-   {
-    "index": 19,
-    "name": "docs-onchain-api-reference/what-this-reference-contains-19",
-    "pause_ms": 300,
-    "text": "registry_pin — the pinned state hash shared by the witness and the open-datum application",
-    "v": "31959208bfe8"
-   },
-   {
-    "index": 20,
-    "name": "docs-onchain-api-reference/what-this-reference-contains-20",
-    "pause_ms": 300,
-    "text": "cage — the phase predicates the property tests use",
-    "v": "0f9fde43d2a6"
-   },
-   {
-    "index": 21,
-    "name": "docs-onchain-api-reference/what-this-reference-contains-21",
-    "pause_ms": 400,
-    "text": "The Singular state validator of the new line, beside the current one:",
-    "v": "316599e409fc"
-   },
-   {
-    "index": 22,
-    "name": "docs-onchain-api-reference/what-this-reference-contains-22",
-    "pause_ms": 300,
-    "text": "singular_state/fold — folding registrations into a registry state: one function per guard of the fold, and their conjunction",
-    "v": "39957af9e91f"
-   },
-   {
-    "index": 23,
-    "name": "docs-onchain-api-reference/what-this-reference-contains-23",
-    "pause_ms": 300,
-    "text": "singular_state/genesis — creating a registry state: one function per genesis guard, and their conjunction",
-    "v": "2fc404bec2d8"
-   },
-   {
-    "index": 24,
-    "name": "docs-onchain-api-reference/what-this-reference-contains-24",
-    "pause_ms": 300,
-    "text": "singular_state/preimage — the structured values hashed into token names, and the name of the state token, of a registered key's token, of a configuration record's token and of a registration approval",
-    "v": "66dea78aaf5e"
-   },
-   {
-    "index": 25,
-    "name": "docs-onchain-api-reference/what-this-reference-contains-25",
-    "pause_ms": 300,
-    "text": "singular_state/state — the root-only state datum, recognising a state from its seed, and comparing the whole mint of a policy",
-    "v": "c509f164c8ef"
-   },
-   {
-    "index": 26,
-    "name": "docs-onchain-api-reference/what-this-reference-contains-26",
-    "pause_ms": 400,
-    "text": "Test support, documented because it is public to the test modules:",
-    "v": "f24f4e253b3a"
-   },
-   {
-    "index": 27,
-    "name": "docs-onchain-api-reference/what-this-reference-contains-27",
-    "pause_ms": 300,
-    "text": "cage_fixtures",
-    "v": "d0240dd6a8e9"
-   },
-   {
-    "index": 28,
-    "name": "docs-onchain-api-reference/what-this-reference-contains-28",
-    "pause_ms": 300,
-    "text": "registry_fixtures",
-    "v": "ff7a355966e2"
-   },
-   {
-    "index": 29,
-    "name": "docs-onchain-api-reference/what-this-reference-contains-29",
-    "pause_ms": 300,
-    "text": "singular_state_fixtures",
-    "v": "ee19e1654351"
-   },
-   {
-    "index": 30,
-    "name": "docs-onchain-api-reference/what-this-reference-contains-30",
-    "pause_ms": 300,
-    "text": "singular_state_fold_fixtures",
-    "v": "8771f6a05166"
-   },
-   {
-    "index": 31,
-    "name": "docs-onchain-api-reference/what-this-reference-contains-31",
-    "pause_ms": 300,
-    "text": "singular_state_termination_fixtures",
-    "v": "95a593239740"
-   },
-   {
-    "index": 32,
-    "name": "docs-onchain-api-reference/what-this-reference-contains-32",
-    "pause_ms": 300,
-    "text": "singular_state_proof_builder",
-    "v": "c30739e6b1d3"
-   },
-   {
-    "index": 33,
-    "name": "docs-onchain-api-reference/what-this-reference-contains-33",
-    "pause_ms": 300,
-    "text": "singular_state_history",
-    "v": "a121e9bfc779"
+    "text": "A contributor can open each registry module's generated interface, follow its public declarations and inspect their source at the documentation build's exact revision. The reference is generated by the pinned Aiken compiler from the same source tree as this page.",
+    "v": "535d1922bf30"
    }
   ]
  },
  "docs/onchain-validator-owners.md": {
-  "evidence-and-limits": [
+  "check-a-change": [
    {
     "index": 0,
-    "name": "docs-onchain-validator-owners/evidence-and-limits-00",
+    "name": "docs-onchain-validator-owners/check-a-change-00",
     "pause_ms": 500,
-    "text": "Evidence and limits.",
-    "v": "e66aa9d9b1d1"
+    "text": "Check a change.",
+    "v": "d4bb8c1eeee1"
    },
    {
     "index": 1,
-    "name": "docs-onchain-validator-owners/evidence-and-limits-01",
+    "name": "docs-onchain-validator-owners/check-a-change-01",
     "pause_ms": 400,
-    "text": "The candidate results distinguish Lean proofs, source tests, actual compiled-context evaluation and connected ledger execution. Removing source changes compiled identities, so earlier comparisons and receipts remain historical evidence. No source or build check establishes ledger acceptance or a budget bound.",
-    "v": "f199dc617f41"
+    "text": "Run the registry Aiken tests and identity check from onchain/. The application tests run in a composed assembly so they can call both validators. The root script-hash-comparison command checks both separate builds, their identity manifests and the merged deployment blueprint, with controls that must refuse moved hashes and differing merged script bytes.",
+    "v": "5d7b4fd15e1b"
    },
    {
     "index": 2,
-    "name": "docs-onchain-validator-owners/evidence-and-limits-02",
+    "name": "docs-onchain-validator-owners/check-a-change-02",
     "pause_ms": 400,
-    "text": "The pinned aiken docs reference is generated from the same source as the site. Each owner documents responsibility, dependencies, assumptions and invariants. The existing documentation checks reconcile public declarations with generated members and plant missing-documentation and stale-link faults. They establish presence and correspondence, not the truth of a behavioral claim. Read the validator API reference for every generated module.",
-    "v": "9cef112585a4"
+    "text": "Compilation and Aiken tests do not establish a connected ledger lifecycle or full model correspondence. The development-network journeys and the published conformance record state their separate evidence and gaps.",
+    "v": "4b1eed5e9724"
    }
   ],
-  "the-current-contract": [
+  "registry-owners": [
    {
     "index": 0,
-    "name": "docs-onchain-validator-owners/the-current-contract-00",
+    "name": "docs-onchain-validator-owners/registry-owners-00",
     "pause_ms": 500,
-    "text": "The current contract.",
-    "v": "9f5678b81549"
+    "text": "Registry owners.",
+    "v": "570e1a6e31e2"
    },
    {
     "index": 1,
-    "name": "docs-onchain-validator-owners/the-current-contract-01",
+    "name": "docs-onchain-validator-owners/registry-owners-01",
     "pause_ms": 400,
-    "text": "A registry integrator can register an unknown key and retire an active key permanently. The five other historical encodings are refused before approval or trie effects. The original broader source is archived on preserve/m2/pre-m1-source-removal; its custody and deletion paths are removed from the active source. Old deployed identities are refused, without migration.",
-    "v": "1d059b52098d"
-   },
-   {
-    "index": 2,
-    "name": "docs-onchain-validator-owners/the-current-contract-02",
-    "pause_ms": 400,
-    "text": "The boundary is fixed in the compiled state validator. Application approval alone is insufficient: caller-constructed requests, mint paths and mixed batches also pass through state admission. Witness policies require that state validator in the same transaction. Request rejection and retraction retain their applicable refund obligations; this carve does not settle the separate protected-rejection model question.",
-    "v": "7e490858af44"
+    "text": "The validator dispatches creation and request handling to their owners. Shared state recognition and token names are defined once in the registry library.",
+    "v": "b39bc4f9bec5"
    }
   ],
   "who-owns-a-state-validator-rule": [
@@ -6503,8 +6351,8 @@
     "index": 1,
     "name": "docs-onchain-validator-owners/who-owns-a-state-validator-rule-01",
     "pause_ms": 400,
-    "text": "A contributor changing a registry rule wants one source owner beside the behavior it enforces. The active contract has one admission boundary, one fold, and one settlement path. This page maps those responsibilities and names the verification each change needs.",
-    "v": "16586755344e"
+    "text": "A contributor changing a registry rule can find its source owner and the checks that exercise it here. The registry validator and the application request validator are compiled independently, then combined into the deployment blueprint.",
+    "v": "50e0b8f20c40"
    }
   ]
  },
@@ -7346,363 +7194,6 @@
     "pause_ms": 400,
     "text": "The phase design is worth separating from the verdict. MPFS uses time windows to keep the oracle's fold and the requester's retraction from racing, which is a real solution to a problem Singular shares. It is unavailable here for the same reason the rest is: the windows are exclusive to a named oracle, and Singular has none. In its place, Singular resolves races inside the fold — an Insert is checked against absence in the applicable successive registry state, and admission of a request asserts nothing about the key.",
     "v": "132b45d23c46"
-   }
-  ]
- },
- "docs/record-value.md": {
-  "checks-and-model-boundary": [
-   {
-    "index": 0,
-    "name": "docs-record-value/checks-and-model-boundary-00",
-    "pause_ms": 500,
-    "text": "Checks and model boundary.",
-    "v": "daad89148f73"
-   },
-   {
-    "index": 1,
-    "name": "docs-record-value/checks-and-model-boundary-01",
-    "pause_ms": 400,
-    "text": "Naming is outside the current command line. Its on-chain sources remain while the retained conformance suite consumes them. The Aiken suite checks added, removed, replaced and increased assets, ADA top-up, and insert-fold pollution. These component checks do not establish a submitted ledger transaction or a connected lifecycle.",
-    "v": "187174b22b4c"
-   },
-   {
-    "index": 2,
-    "name": "docs-record-value/checks-and-model-boundary-02",
-    "pause_ms": 400,
-    "text": "Run nix flake check from naming-onchain/ for the Aiken suite and compiled identity checks. Root nix develop --quiet -c just ci covers the model, simulator, browser and documentation; it does not execute the offchain suites.",
-    "v": "019872ad9f43"
-   },
-   {
-    "index": 3,
-    "name": "docs-record-value/checks-and-model-boundary-03",
-    "pause_ms": 400,
-    "text": "Lean is unchanged at repository revision 41861a66b72a840042f2e633ce33a607e817d6c6. Its Singular.Output models one representative plus scalar value. The implementation checks discharge that representation boundary for genuine insert-fold records and their continuations; the mapping is recorded in offchain/naming-correspondence.md.",
-    "v": "d3e93ad31d8f"
-   }
-  ],
-  "deployment-compatibility": [
-   {
-    "index": 0,
-    "name": "docs-record-value/deployment-compatibility-00",
-    "pause_ms": 500,
-    "text": "Deployment compatibility.",
-    "v": "e42397956528"
-   },
-   {
-    "index": 1,
-    "name": "docs-record-value/deployment-compatibility-01",
-    "pause_ms": 400,
-    "text": "With this rule the application validator hash is 1239f396899f80b7ec377fe181e2014b7bc54da0a4c4ab0d9df3fdc5. Before it, the hash was 89409890d5a89debf410d6d31695fc9030fcf2b754b06206d7291370, which is the one the preprod record carries, because that deployment predates the rule. Its spend and mint purposes share that identity. The committed naming-onchain/script-identity.json is regenerated from the pinned Aiken build, which retains user-defined traces. Other unapplied validator hashes stay the same.",
-    "v": "33da0eb23368"
-   },
-   {
-    "index": 2,
-    "name": "docs-record-value/deployment-compatibility-02",
-    "pause_ms": 400,
-    "text": "The next deployment must derive its addresses and applied policies from the new blueprint. The representative policy's application-hash parameter changes with that deployment. The rule does not migrate records at an old script address, change an existing deployment manifest, or deploy to preprod.",
-    "v": "9b99ca1632f0"
-   }
-  ],
-  "for-a-names-controller": [
-   {
-    "index": 0,
-    "name": "docs-record-value/for-a-names-controller-00",
-    "pause_ms": 500,
-    "text": "For a name's controller.",
-    "v": "5b37a644d5c8"
-   },
-   {
-    "index": 1,
-    "name": "docs-record-value/for-a-names-controller-01",
-    "pause_ms": 400,
-    "text": "An unrelated token in wallet change must not disable recovery or retirement. Naming records created by an insert fold contain exactly ADA and their representative. Maintain and recover require identical non-ADA policies, asset names and quantities in the continuation. ADA can increase, but cannot decrease.",
-    "v": "3ba4cc646687"
-   }
-  ],
-  "when-a-value-is-refused": [
-   {
-    "index": 0,
-    "name": "docs-record-value/when-a-value-is-refused-00",
-    "pause_ms": 500,
-    "text": "When a value is refused.",
-    "v": "4a00b588bd5f"
-   },
-   {
-    "index": 1,
-    "name": "docs-record-value/when-a-value-is-refused-01",
-    "pause_ms": 400,
-    "text": "record-value-preservation means a maintain or recover continuation changed its non-ADA value, or reduced its ADA. Keep wallet change in a separate output. record-single-asset means recovery or retirement encountered an input with zero or multiple non-ADA assets, or an insert fold tried to create a record without exactly its representative. These names are retained in compiled validator traces. The retained naming validator checks every non-ADA asset in the record.",
-    "v": "ecd0e33c5d92"
-   },
-   {
-    "index": 2,
-    "name": "docs-record-value/when-a-value-is-refused-02",
-    "pause_ms": 400,
-    "text": "An already polluted record can still be maintained if its entire non-ADA value is preserved. It cannot be repaired, recovered or retired under this rule. An arbitrary transfer to the script address is not a genuine naming registration.",
-    "v": "7bfebac2e35d"
-   }
-  ]
- },
- "docs/recovery-retirement.md": {
-  "how-a-name-moves-in-the-registry": [
-   {
-    "index": 0,
-    "name": "docs-recovery-retirement/how-a-name-moves-in-the-registry-00",
-    "pause_ms": 500,
-    "text": "How a name moves in the registry.",
-    "v": "a242861c6b68"
-   },
-   {
-    "index": 1,
-    "name": "docs-recovery-retirement/how-a-name-moves-in-the-registry-01",
-    "pause_ms": 400,
-    "text": "Naming is an instance of the registry, not a layer bolted beside it: a name is one key whose value is a single byte — Absent, Active or Terminal — and two supported registry requests move a key, each one moving a witness token. The naming walkthrough states the archived state table and witness laws once; this page shows application recovery and registry retirement as historical ledger evidence.",
-    "v": "beddf5db3304"
-   },
-   {
-    "index": 2,
-    "name": "docs-recovery-retirement/how-a-name-moves-in-the-registry-02",
-    "pause_ms": 400,
-    "text": "The rule this page is about is naming's own: ending a name needs the committed recovery key or the retirement quorum, and never the current control key alone. The naming validator enforces it before the request reaches the fold, by certifying the edge in advance; the fold itself asks no application to sign.",
-    "v": "1aab6fce433c"
-   }
-  ],
-  "how-retirement-ends-a-name": [
-   {
-    "index": 0,
-    "name": "docs-recovery-retirement/how-retirement-ends-a-name-00",
-    "pause_ms": 500,
-    "text": "How retirement ends a name.",
-    "v": "8e57c4bf0273"
-   },
-   {
-    "index": 1,
-    "name": "docs-recovery-retirement/how-retirement-ends-a-name-01",
-    "pause_ms": 400,
-    "text": "Ending a name needs the committed recovery key or the retirement quorum — never the current control key alone. A thief holding the everyday control key and the holder themselves are indistinguishable to the chain, so if the current key could end a name, the thief could end it and recovery would arrive too late. The recovery route is the same proof recovery itself uses: reveal the preimage of the stored commitment, and sign with that address's payment key.",
-    "v": "18497e985121"
-   },
-   {
-    "index": 2,
-    "name": "docs-recovery-retirement/how-retirement-ends-a-name-02",
-    "pause_ms": 400,
-    "text": "The retirement row runner has also been removed from the current source. These historical invocations describe the archived ending rows and their controls; the current source exports no such command.",
-    "v": "881bc0434851"
-   },
-   {
-    "index": 3,
-    "name": "docs-recovery-retirement/how-retirement-ends-a-name-03",
-    "pause_ms": 400,
-    "text": "The private shallow TMPDIR keeps the devnet node database away from other work on the same host and keeps its socket inside the address length limit. The blueprint comes from the checked-out commit at run time; no store path is baked in and no dev shell is used.",
-    "v": "3f93bdae11a0"
-   },
-   {
-    "index": 4,
-    "name": "docs-recovery-retirement/how-retirement-ends-a-name-04",
-    "pause_ms": 400,
-    "text": "Two failure controls shipped with the same runner. Making a refused row actually valid must fail the run, and matching refusals against an impossible marker must fail naming what came back:",
-    "v": "92c449034151"
-   },
-   {
-    "index": 5,
-    "name": "docs-recovery-retirement/how-retirement-ends-a-name-05",
-    "pause_ms": 400,
-    "text": "Both exit non-zero by design, after executing rows.",
-    "v": "da35b57b719e"
-   }
-  ],
-  "limits-and-next-steps": [
-   {
-    "index": 0,
-    "name": "docs-recovery-retirement/limits-and-next-steps-00",
-    "pause_ms": 500,
-    "text": "Limits and next steps.",
-    "v": "7c6f97d7aadd"
-   },
-   {
-    "index": 1,
-    "name": "docs-recovery-retirement/limits-and-next-steps-01",
-    "pause_ms": 400,
-    "text": "The active witness is a real token minted under the registry’s pinned active policy by the fold, and burned exactly once at completion; the registry binding on ledger is the state policy and token read from the spent state. Retirement custody is created and filled by authorized retires and spent only by permissionless completion (exact burn plus genuine registry transition) — withdrawal without burn, burn without transition, mismatched request pairings and re-registration after the name is Terminal all refuse, each attributed to its reason. No quorum rotation, no takeover, and no death oracle: the chain verifies authority, not death.",
-    "v": "9c0ebbbe23c9"
-   }
-  ],
-  "what-the-quorum-cannot-fix": [
-   {
-    "index": 0,
-    "name": "docs-recovery-retirement/what-the-quorum-cannot-fix-00",
-    "pause_ms": 500,
-    "text": "What the quorum cannot fix.",
-    "v": "41c2084f40ad"
-   },
-   {
-    "index": 1,
-    "name": "docs-recovery-retirement/what-the-quorum-cannot-fix-01",
-    "pause_ms": 400,
-    "text": "Two weaknesses of the quorum are deliberate in this version, and stated here so that anybody choosing one knows what they are choosing.",
-    "v": "275594626873"
-   },
-   {
-    "index": 2,
-    "name": "docs-recovery-retirement/what-the-quorum-cannot-fix-02",
-    "pause_ms": 400,
-    "text": "The quorum is fixed for the life of the name. No action rewrites it after booking. A member who loses their key, disappears, or turns hostile is a permanent member. The only route to a different quorum is to end the name and book it again — which means the name itself does not survive the change.",
-    "v": "6c17cd91e80b"
-   },
-   {
-    "index": 3,
-    "name": "docs-recovery-retirement/what-the-quorum-cannot-fix-03",
-    "pause_ms": 400,
-    "text": "The quorum can end the name while the controller is present. Nothing checks that the holder is gone, unreachable or in trouble. A threshold of members can end a live name at any moment, and the holder's own key cannot stop them. The quorum is an ending authority, not a death oracle and not an inheritance mechanism: choose its members as people you would accept that from.",
-    "v": "ef3470b8a4a6"
-   },
-   {
-    "index": 4,
-    "name": "docs-recovery-retirement/what-the-quorum-cannot-fix-04",
-    "pause_ms": 400,
-    "text": "Both are known, both are visible, and neither is a defect to be reported — they are the shape of the version you are running.",
-    "v": "5de32a109b14"
-   }
-  ],
-  "what-the-retirement-run-observes": [
-   {
-    "index": 0,
-    "name": "docs-recovery-retirement/what-the-retirement-run-observes-00",
-    "pause_ms": 500,
-    "text": "What the retirement run observes.",
-    "v": "018d1309d612"
-   },
-   {
-    "index": 1,
-    "name": "docs-recovery-retirement/what-the-retirement-run-observes-01",
-    "pause_ms": 400,
-    "text": "The run creates records at the application validator, each carrying the single active witness under the registry's pinned active policy with a quorum of two distinct members at threshold two, then executes each row against the outcome its contract specifies. Every refusal is asserted as a phase-two script failure naming the application validator, except the replay, where the ledger itself refuses the consumed output. One line per row begins with the full row name.",
-    "v": "11674a9c676f"
-   },
-   {
-    "index": 2,
-    "name": "docs-recovery-retirement/what-the-retirement-run-observes-02",
-    "pause_ms": 400,
-    "text": "The accepted rows prove custody from the chain: after a recovery-key ending and after a quorum ending, the active witness is observed at the custody script address in the accepting transaction's own outputs, and the consumed record is observed gone from the application validator. Completion is permissionless: the pending registry update folds with the custody spend and the exact burn, empty required signers, one fresh fee witness outside every route.",
-    "v": "59e4ec56a1f1"
-   },
-   {
-    "index": 3,
-    "name": "docs-recovery-retirement/what-the-retirement-run-observes-03",
-    "pause_ms": 400,
-    "text": "The refusals are single-defect mutants of those accepts. A row authorized by the current control key alone is refused — the row that used to accept, and the one this version deliberately retires. A row one distinct signature short of the threshold is refused, and is otherwise exactly the accepted shape. A sibling row stores a quorum that names one member twice and a second once at threshold two — well-formed by the existing rules — with only the duplicated member signing: counting signatures instead of distinct members would accept it, so the row binds the distinctness the model demands. A reveal that is not the preimage of the stored commitment is refused on the same authorization.",
-    "v": "134da1113912"
-   },
-   {
-    "index": 4,
-    "name": "docs-recovery-retirement/what-the-retirement-run-observes-04",
-    "pause_ms": 400,
-    "text": "Ordinary maintenance carrying both quorum signatures and no controller signature is refused on the controller signature by the existing path, without any new check: the quorum can end a name and cannot steer it. A row authorized properly but sending the active witness anywhere but the custody script is refused on the ending request. The replay replays a real accepted ending against the record the chain no longer has, and the ledger itself refuses the spent output — recorded as exactly that, not dressed up as a validator refusal. After the refusals the surviving record is read back unchanged.",
-    "v": "2ed5e9702045"
-   }
-  ],
-  "what-the-run-observes": [
-   {
-    "index": 0,
-    "name": "docs-recovery-retirement/what-the-run-observes-00",
-    "pause_ms": 500,
-    "text": "What the run observes.",
-    "v": "dfff4a109f5e"
-   },
-   {
-    "index": 1,
-    "name": "docs-recovery-retirement/what-the-run-observes-01",
-    "pause_ms": 400,
-    "text": "The run creates three records at the application validator, each carrying the single active witness, then executes each row against the outcome its contract specifies. Every refusal is asserted as a phase-two script failure naming the application validator. One line per row begins with the full row name.",
-    "v": "e0ee934543c8"
-   },
-   {
-    "index": 2,
-    "name": "docs-recovery-retirement/what-the-run-observes-02",
-    "pause_ms": 400,
-    "text": "The accepted row installs the reveal with a fresh commitment and proves the handover from the chain: the successor is read back and its active witnesses, registry binding, payment destination and quorum are compared field by field against the pre-recovery values, its control address is compared against the reveal, and its commitment is shown fresh and different. Its required signers are exactly the revealed payment key.",
-    "v": "cedc0bb55c4c"
-   },
-   {
-    "index": 3,
-    "name": "docs-recovery-retirement/what-the-run-observes-03",
-    "pause_ms": 400,
-    "text": "The refusals are single-defect mutants of the accepted row. A different reveal signed by its own key, a replay of the consumed reveal against the genuine successor, and a stored digest computed without the domain separation are refused on the commitment. A correct reveal with no signer, and the same reveal signed by the old controller, are refused on the required signer. A successor that re-installs the consumed commitment is refused on the fresh commitment. A record carrying anything but its single active witness, a claim naming a different registry binding, and a successor altering the quorum are refused on the record’s shape, the registry, and field preservation. Successors that change the payment destination or install a controller other than the reveal are refused on field preservation as further sub-cases of the same row. After a real accepted row, the old controller's ordinary maintenance is refused on the controller signature, and maintenance under the recovered controller succeeds, proving the name remains usable. After the refusals the records are read back unchanged.",
-    "v": "64f2c7d1681b"
-   },
-   {
-    "index": 4,
-    "name": "docs-recovery-retirement/what-the-run-observes-04",
-    "pause_ms": 400,
-    "text": "The commitment is BLAKE2b-256(\"singular/naming/next-control/v1\" || 0x00 || canonical-address-bytes) over the whole binary address including header and network. Only canonical base and enterprise addresses with payment-key credentials are supported.",
-    "v": "103af63abfee"
-   }
-  ],
-  "what-you-can-do": [
-   {
-    "index": 0,
-    "name": "docs-recovery-retirement/what-you-can-do-00",
-    "pause_ms": 500,
-    "text": "What you can do.",
-    "v": "254880888e15"
-   },
-   {
-    "index": 1,
-    "name": "docs-recovery-retirement/what-you-can-do-01",
-    "pause_ms": 400,
-    "text": "The recovery row runner has been removed from the current source, including its executable declaration and flake export. The historical invocation below records how the archived eleven recovery rows ran against a real devnet node; it is not a runnable instruction for the current source. Naming has no command port to the new design.",
-    "v": "b9714c5812a9"
-   },
-   {
-    "index": 2,
-    "name": "docs-recovery-retirement/what-you-can-do-02",
-    "pause_ms": 400,
-    "text": "The private shallow TMPDIR keeps the devnet node database away from other work on the same host and keeps its socket inside the address length limit. The blueprint comes from the checked-out commit at run time; no store path is baked in and no dev shell is used.",
-    "v": "02aa11e7e4d4"
-   },
-   {
-    "index": 3,
-    "name": "docs-recovery-retirement/what-you-can-do-03",
-    "pause_ms": 400,
-    "text": "Two failure controls shipped with the same runner. Making a refused row actually valid must fail the run, and matching refusals against an impossible marker must fail naming what came back:",
-    "v": "a9859c97780e"
-   },
-   {
-    "index": 4,
-    "name": "docs-recovery-retirement/what-you-can-do-04",
-    "pause_ms": 400,
-    "text": "Both exit non-zero by design, after executing rows.",
-    "v": "42560f79f013"
-   }
-  ],
-  "who-this-is-for": [
-   {
-    "index": 0,
-    "name": "docs-recovery-retirement/who-this-is-for-00",
-    "pause_ms": 500,
-    "text": "Who this is for.",
-    "v": "cbed3c29c623"
-   },
-   {
-    "index": 1,
-    "name": "docs-recovery-retirement/who-this-is-for-01",
-    "pause_ms": 400,
-    "text": "A holder of an active name who has lost the everyday control key and planned ahead by committing to a next controller in advance. This page shows how that holder spends the record with the address committed to earlier, signs with that address's payment key alone, and sees the chain hand over control — then maintains the name normally under the new key while the old key stops working.",
-    "v": "a6f38ce68407"
-   },
-   {
-    "index": 2,
-    "name": "docs-recovery-retirement/who-this-is-for-02",
-    "pause_ms": 400,
-    "text": "It is also for a holder who wants to end a name permanently, and for the quorum fixed at registration that can end it without the holder. Ending a name needs the committed recovery key or that quorum — the everyday control key alone cannot do it. Either route moves the active witness into completion-only custody, a script with no withdrawal path, and neither route can be turned into a takeover or a payment redirection.",
-    "v": "26b7e937d88a"
-   },
-   {
-    "index": 3,
-    "name": "docs-recovery-retirement/who-this-is-for-03",
-    "pause_ms": 400,
-    "text": "The ledger receipts described below belong to the archived broader source. The current two-edge model retains the applicable application maintenance, recovery and retirement rules, but those historical receipts do not certify the revised compiled candidate. See current candidate results.",
-    "v": "fb3e19ffe993"
    }
   ]
  },
@@ -9308,8 +8799,8 @@
     "index": 2,
     "name": "docs-test-selection/checks-execute-unit-binaries-02",
     "pause_ms": 400,
-    "text": "From conformance/, nix build .#checks.x86_64-linux.conformance-tests executes the Hspec appendix. Each check runs its existing app or binary during the Nix build, fails when that execution fails and retains the output at the check's store path. A cached result represents an earlier successful execution on the same inputs. The vector command generates vectors; it is not an Hspec suite. Apps and supported package exports remain available.",
-    "v": "5ce0c7e8e370"
+    "text": "From conformance/, nix build .#checks.x86_64-linux.conformance-tests executes the Hspec appendix. Each check runs its existing app or binary during the Nix build, fails when that execution fails and retains the output at the check's store path. A cached result represents an earlier successful execution on the same inputs. Apps and supported package exports remain available.",
+    "v": "3cf55133b860"
    },
    {
     "index": 3,

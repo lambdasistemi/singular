@@ -47,9 +47,9 @@ import Singular.CLI.CommandRunSpec
     )
 import Singular.CLI.Registry
     ( economics
-    , loadReleaseCodes
     , registryConfigFor
     )
+import Singular.CLI.SyntheticReleaseSpec (loadReleaseCodes)
 import Singular.Registry.Application
     ( Application (..)
     , ApplicationPin (..)

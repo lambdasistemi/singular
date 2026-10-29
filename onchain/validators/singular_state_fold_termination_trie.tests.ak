@@ -9,7 +9,6 @@ use aiken/merkle_patricia_forestry.{
 }
 use aiken/merkle_patricia_forestry as mpf
 use cardano/transaction.{Transaction}
-use registry_fixtures.{absentLeaf, terminalLeaf}
 use singular_state
 use singular_state/fold.{
   Change, StateSpend, Terminate, apply_change, leaf_active, leaf_terminal,
@@ -20,6 +19,7 @@ use singular_state_fixtures.{application_policy, seed_a, state_policy}
 use singular_state_fold_fixtures.{
   key_a, key_b, key_c, key_d, registry_of, state_reference,
 }
+use singular_state_proof_fixtures.{absentLeaf, terminalLeaf}
 use singular_state_termination_fixtures.{
   Held, Mixed, Terminating, Termination, active, after_termination,
   built_root_of, changes_of_mixed, deep_tries, dense_proof_for, proof_for,

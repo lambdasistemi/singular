@@ -124,7 +124,7 @@ jobs:
   publication-boundary:
     name: Publication boundary controls
     runs-on: nixos
-    timeout-minutes: 20
+    timeout-minutes: 35
     steps:
       - name: Reuse this runner's Nix cache
         run: |

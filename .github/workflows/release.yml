@@ -145,7 +145,7 @@ jobs:
         #   singular-onchain-<version>.tar.gz   — the epic-scoped on-chain release
         #   SHA256SUMS                          — checksums of both archives
         # plus it creates the release with the epic-scope notes
-        # (onchain-release/RELEASE.md). The pipeline publishes; no person
+        # (RELEASE.md). The pipeline publishes; no person
         # uploads by hand.
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}

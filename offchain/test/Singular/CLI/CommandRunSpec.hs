@@ -121,7 +121,6 @@ import Singular.CLI.Passphrase
     , passphraseVariable
     , publicNetworks
     )
-import Singular.CLI.Registry (loadRelease, loadReleaseCodes)
 import Singular.CLI.Session (Env (..))
 import Singular.CLI.Trace (Trace)
 import Singular.CLI.Vault
@@ -223,21 +222,8 @@ import Test.Hspec
 
 spec :: Spec
 spec =
-    permanentRecognition
-        >> inclusionPointRows
+    inclusionPointRows
         >> walletVariableRow
-
-permanentRecognition :: Spec
-permanentRecognition = describe "Permanent contract recognition"
-    $ it
-        "refuses a caller supplied blueprint whose script identities are unknown"
-    $ withRig
-    $ \rig -> do
-        loaded <- loadRelease neutralApplication (rigBlueprint rig)
-        case loaded of
-            Left _ -> pure ()
-            Right _ ->
-                expectationFailure "unknown scripts were recognized as permanent M1"
 
 constructorOf :: Command -> String
 constructorOf = \case
@@ -388,7 +374,6 @@ envOf rig =
     Env
         { envTracer = rigTracer rig
         , envSource = "fixture"
-        , envLoadRelease = loadReleaseCodes
         , envReads = \_ k -> k (capabilities rig)
         , envReaderReads = \_ k -> k (capabilities rig)
         , envWrites = \_ k -> k (capabilities rig)

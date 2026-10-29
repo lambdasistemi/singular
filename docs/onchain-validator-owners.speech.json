@@ -5,40 +5,36 @@
       "pause": 500
     },
     {
-      "text": "A contributor changing a registry rule wants one source owner beside the behavior it enforces. The active contract has one admission boundary, one fold, and one settlement path. This page maps those responsibilities and names the verification each change needs.",
+      "text": "A contributor changing a registry rule can find its source owner and the checks that exercise it here. The registry validator and the application request validator are compiled independently, then combined into the deployment blueprint.",
       "pause": 400
     }
   ],
-  "the-current-contract": [
+  "registry-owners": [
     {
-      "text": "The current contract.",
+      "text": "Registry owners.",
       "pause": 500
     },
     {
-      "text": "A registry integrator can register an unknown key and retire an active key permanently. The five other historical encodings are refused before approval or trie effects. The original broader source is archived on preserve/m2/pre-m1-source-removal; its custody and deletion paths are removed from the active source. Old deployed identities are refused, without migration.",
-      "pause": 400
-    },
-    {
-      "text": "The boundary is fixed in the compiled state validator. Application approval alone is insufficient: caller-constructed requests, mint paths and mixed batches also pass through state admission. Witness policies require that state validator in the same transaction. Request rejection and retraction retain their applicable refund obligations; this carve does not settle the separate protected-rejection model question.",
+      "text": "The validator dispatches creation and request handling to their owners. Shared state recognition and token names are defined once in the registry library.",
       "pause": 400
     }
   ],
-  "evidence-and-limits": [
+  "check-a-change": [
     {
-      "text": "Evidence and limits.",
+      "text": "Check a change.",
       "pause": 500
     },
     {
-      "text": "The candidate results distinguish Lean proofs, source tests, actual compiled-context evaluation and connected ledger execution. Removing source changes compiled identities, so earlier comparisons and receipts remain historical evidence. No source or build check establishes ledger acceptance or a budget bound.",
+      "text": "Run the registry Aiken tests and identity check from onchain/. The application tests run in a composed assembly so they can call both validators. The root script-hash-comparison command checks both separate builds, their identity manifests and the merged deployment blueprint, with controls that must refuse moved hashes and differing merged script bytes.",
       "pause": 400
     },
     {
-      "text": "The pinned aiken docs reference is generated from the same source as the site. Each owner documents responsibility, dependencies, assumptions and invariants. The existing documentation checks reconcile public declarations with generated members and plant missing-documentation and stale-link faults. They establish presence and correspondence, not the truth of a behavioral claim. Read the validator API reference for every generated module.",
+      "text": "Compilation and Aiken tests do not establish a connected ledger lifecycle or full model correspondence. The development-network journeys and the published conformance record state their separate evidence and gaps.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "onchain-validator-owners.md",
-    "sha256": "930b92442d91ccd0cdb7c241e6b042962cae54eca6842fd7b809a73a65baf512"
+    "sha256": "6b64197df8262eba6355fa26c6245b56ebcd78ffe1e1593b1691d63c7d3a2d44"
   }
 }

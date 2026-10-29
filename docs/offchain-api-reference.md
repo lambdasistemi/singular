@@ -370,8 +370,8 @@ generated references. The public `local-services` component also exposes
 `offchain/local-services/Singular/Registry/`. Their generated pages are not
 in this main-library reference. The public `open-datum-application`
 component (`applications/open-datum/offchain/`) carries the open-datum
-application the command line composes — command groups, envelope, release rules and the
-application value — and the request builders of the registry on the proved
+application the command line composes — command groups, envelope and release rules —
+and the request builders of the registry on the proved
 design: the booking of a registration, its reclaim by the refund address and
 its cleanup after the window, the configuration record added to the creation
 of a registry, the records and actions of the request validator in the layout
@@ -391,8 +391,7 @@ that create a registry and book, reclaim and clean up a registration:
 `Singular.Application.OpenDatum.Requests.Refusal`,
 `Singular.Application.OpenDatum.Requests.Script`,
 `Singular.Application.OpenDatum.Root`,
-`Singular.Application.OpenDatum.Run`,
-`Singular.Application.OpenDatum.Value`; their sources live under
+`Singular.Application.OpenDatum.Run`; their sources live under
 `applications/open-datum/offchain/src/Singular/Application/OpenDatum/`,
 and the executable's entry point lives in
 `applications/open-datum/offchain/app/`.
@@ -403,7 +402,7 @@ recovery and the creation of a registry on the proved design
 with the fold into it: `Singular.CLI`, `Singular.CLI.Command`,
 `Singular.CLI.Finish`,
 `Singular.CLI.Key`, `Singular.CLI.Live`,
-`Singular.CLI.ManagedState`, `Singular.CLI.Outlay`, `Singular.CLI.Payload`, `Singular.CLI.Permanent`,
+`Singular.CLI.ManagedState`, `Singular.CLI.Outlay`, `Singular.CLI.Payload`,
 `Singular.CLI.Plan`, `Singular.CLI.Promise`, `Singular.CLI.Proof`,
 `Singular.CLI.Receipt`, `Singular.CLI.ReceiptBody`,
 `Singular.CLI.Reconcile`,

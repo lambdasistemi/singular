@@ -57,7 +57,7 @@ done <<<"$section"
 section="$deduplicated"
 while [[ "$section" == *$'\n' ]]; do section="${section%$'\n'}"; done
 printf '%s\n\n' "$section" >"$download/release-notes.md"
-cat "${RELEASE_NOTES:-onchain-release/RELEASE.md}" >>"$download/release-notes.md"
+cat "${RELEASE_NOTES:-RELEASE.md}" >>"$download/release-notes.md"
 pr="$(gh pr list --repo lambdasistemi/singular --state merged --base main --limit 100 \
   --json number,mergeCommit,headRefName,labels | jq -er --arg sha "$expected_sha" \
   '[.[] | select(.mergeCommit.oid == $sha and (.headRefName | startswith("release-please--")))

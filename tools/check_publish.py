@@ -21,7 +21,7 @@ section = re.search(
 assert section and section.group(1).strip(), (
     f"missing or empty changelog section for {version}"
 )
-stable = (source / "onchain-release/RELEASE.md").read_text()
+stable = (source / "RELEASE.md").read_text()
 for phrase in ("epic", "E18", "obligation", "milestone artifact"):
     assert phrase.casefold() not in stable.casefold(), (
         f"release text contains forbidden wording: {phrase}"
@@ -156,8 +156,7 @@ for name, tag, extra, success in cases:
             fixture = fixture_section.rstrip("\n")
         if name != "missing-changelog":
             (root / "CHANGELOG.md").write_text(fixture)
-        (root / "onchain-release").mkdir()
-        (root / "onchain-release/RELEASE.md").write_text(stable)
+        (root / "RELEASE.md").write_text(stable)
         log = root / "calls.jsonl"
         env = {
             k: v

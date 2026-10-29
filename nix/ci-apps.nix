@@ -85,25 +85,7 @@ in
   vectors-check = app (
     pkgs.writeShellApplication {
       name = "vectors-check";
-      runtimeInputs = [
-        aiken
-        pkgs.coreutils
-        pkgs.diffutils
-      ];
-      text = ''
-        tmp="$(mktemp -d)"
-        trap 'rm -rf "$tmp"' EXIT
-        cp ${offchain.packages.${system}.test-vectors} "$tmp/cage_vectors.ak"
-        chmod u+w "$tmp/cage_vectors.ak"
-        aiken fmt "$tmp/cage_vectors.ak"
-        if diff -u onchain/validators/cage_vectors.ak "$tmp/cage_vectors.ak"; then
-          echo "vectors-check: PASS — committed golden matches the pinned-Aiken-formatted generator output"
-        else
-          echo "ERROR: committed vectors are stale — run 'just generate-vectors' and commit" >&2
-          exit 1
-        fi
-        ${pkgs.lib.getExe preimageVectors} check
-      '';
+      text = ''${pkgs.lib.getExe preimageVectors} check'';
     }
   );
 

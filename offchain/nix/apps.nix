@@ -3,7 +3,6 @@ let
   runnable = {
     inherit (checks.apps)
       cage-tests
-      cage-test-vectors
       ;
     inherit (checks)
       cage-tests-e2e

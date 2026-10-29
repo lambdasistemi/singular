@@ -38,9 +38,6 @@ module Singular.Registry.Blueprint
       -- * The compiled codes the four registry pins derive from
     , NamingCodes (..)
 
-      -- * The registry partition's own compiled code (#173 A173-BOOT)
-    , loadRegistryCodesFromEnv
-
       -- * Validation
     , validateData
 
@@ -64,7 +61,6 @@ import Singular.Registry.Blueprint.Load
     , extractCompiledCode
     , extractScriptHash
     , loadBlueprint
-    , loadRegistryCodesFromEnv
     )
 import Singular.Registry.Blueprint.Params
     ( applyBytesParam

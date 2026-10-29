@@ -111,11 +111,9 @@ in
   signed-tx-control = signedTxControl;
   apps = {
     cage-tests = cageTestsWrapped;
-    inherit (components.exes) cage-test-vectors;
   };
   cage-tests = unitCheck "cage-tests" cageTestsWrapped;
   cage-tests-e2e = e2eTestsWrapped;
-  cage-test-vectors = unitCheck "cage-test-vectors" components.exes.cage-test-vectors;
   lint = pkgs.writeShellApplication {
     name = "lint";
     # Strict runtime closure for every external tool the text execs. The

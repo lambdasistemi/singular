@@ -1,0 +1,98 @@
+{
+  "base": "c1e1fd38924c200f57d832f4e5c3dacb9a4720de",
+  "compiler": "v1.1.21+unknown",
+  "validators": [
+    {
+      "title": "open.open.else",
+      "hash": "7a9e1742831da087e14275f99552ef8cc825ad7f6c30d309abe100f9"
+    },
+    {
+      "title": "open.open.mint",
+      "hash": "7a9e1742831da087e14275f99552ef8cc825ad7f6c30d309abe100f9"
+    },
+    {
+      "title": "open_datum.closed_datum.else",
+      "hash": "d5cc43aad35387f17c86bb3c195cd8cf1fd594f659bd58c1bf2cf8c0"
+    },
+    {
+      "title": "open_datum.closed_datum.mint",
+      "hash": "d5cc43aad35387f17c86bb3c195cd8cf1fd594f659bd58c1bf2cf8c0"
+    },
+    {
+      "title": "open_datum.closed_datum.spend",
+      "hash": "d5cc43aad35387f17c86bb3c195cd8cf1fd594f659bd58c1bf2cf8c0"
+    },
+    {
+      "title": "open_datum.open_datum.else",
+      "hash": "de5dcd41260b3f0e2a8f0965bcea2dfc96877056979273ec6de25609"
+    },
+    {
+      "title": "open_datum.open_datum.mint",
+      "hash": "de5dcd41260b3f0e2a8f0965bcea2dfc96877056979273ec6de25609"
+    },
+    {
+      "title": "open_datum.open_datum.spend",
+      "hash": "de5dcd41260b3f0e2a8f0965bcea2dfc96877056979273ec6de25609"
+    },
+    {
+      "title": "open_datum_requests.open_datum_requests.else",
+      "hash": "67bb50e5aab678b9955e1d8981050a14e0f93da912b3a8b4a7161ca7"
+    },
+    {
+      "title": "open_datum_requests.open_datum_requests.mint",
+      "hash": "67bb50e5aab678b9955e1d8981050a14e0f93da912b3a8b4a7161ca7"
+    },
+    {
+      "title": "open_datum_requests.open_datum_requests.spend",
+      "hash": "67bb50e5aab678b9955e1d8981050a14e0f93da912b3a8b4a7161ca7"
+    },
+    {
+      "title": "request.request.else",
+      "hash": "0b9f5376e0eaa477fca89b34be3fdb36ffa0c7436f405b46023bb944"
+    },
+    {
+      "title": "request.request.spend",
+      "hash": "0b9f5376e0eaa477fca89b34be3fdb36ffa0c7436f405b46023bb944"
+    },
+    {
+      "title": "singular_state.singular_state.else",
+      "hash": "503f97525d523cffcca969d2f3913471050c72c74d03610633d22a6f"
+    },
+    {
+      "title": "singular_state.singular_state.mint",
+      "hash": "503f97525d523cffcca969d2f3913471050c72c74d03610633d22a6f"
+    },
+    {
+      "title": "singular_state.singular_state.spend",
+      "hash": "503f97525d523cffcca969d2f3913471050c72c74d03610633d22a6f"
+    },
+    {
+      "title": "staking.staking.else",
+      "hash": "4ab26c95029067185f709d140300cccb15b0b20bbd62a7e9aa2e2e10"
+    },
+    {
+      "title": "staking.staking.withdraw",
+      "hash": "4ab26c95029067185f709d140300cccb15b0b20bbd62a7e9aa2e2e10"
+    },
+    {
+      "title": "state.state.else",
+      "hash": "9a84eabb747716a3092996049b5003a97954fa272902f0bf8f744a98"
+    },
+    {
+      "title": "state.state.mint",
+      "hash": "9a84eabb747716a3092996049b5003a97954fa272902f0bf8f744a98"
+    },
+    {
+      "title": "state.state.spend",
+      "hash": "9a84eabb747716a3092996049b5003a97954fa272902f0bf8f744a98"
+    },
+    {
+      "title": "witness.witness.else",
+      "hash": "7a486c420c5b4fa1de7574bbf4d5be6032c07cd653c6675eddfd16ec"
+    },
+    {
+      "title": "witness.witness.mint",
+      "hash": "7a486c420c5b4fa1de7574bbf4d5be6032c07cd653c6675eddfd16ec"
+    }
+  ]
+}

@@ -6,36 +6,6 @@
   "compiler": "v1.1.21+unknown",
   "validators": [
     {
-      "title": "open_datum.closed_datum.mint",
-      "hash": "d5cc43aad35387f17c86bb3c195cd8cf1fd594f659bd58c1bf2cf8c0",
-      "parameters": 1
-    },
-    {
-      "title": "open_datum.closed_datum.spend",
-      "hash": "d5cc43aad35387f17c86bb3c195cd8cf1fd594f659bd58c1bf2cf8c0",
-      "parameters": 1
-    },
-    {
-      "title": "open_datum.closed_datum.else",
-      "hash": "d5cc43aad35387f17c86bb3c195cd8cf1fd594f659bd58c1bf2cf8c0",
-      "parameters": 1
-    },
-    {
-      "title": "open_datum.open_datum.mint",
-      "hash": "de5dcd41260b3f0e2a8f0965bcea2dfc96877056979273ec6de25609",
-      "parameters": 1
-    },
-    {
-      "title": "open_datum.open_datum.spend",
-      "hash": "de5dcd41260b3f0e2a8f0965bcea2dfc96877056979273ec6de25609",
-      "parameters": 1
-    },
-    {
-      "title": "open_datum.open_datum.else",
-      "hash": "de5dcd41260b3f0e2a8f0965bcea2dfc96877056979273ec6de25609",
-      "parameters": 1
-    },
-    {
       "title": "open_datum_requests.open_datum_requests.mint",
       "hash": "67bb50e5aab678b9955e1d8981050a14e0f93da912b3a8b4a7161ca7",
       "parameters": 0

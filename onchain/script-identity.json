@@ -6,26 +6,6 @@
   "compiler": "v1.1.21+unknown",
   "validators": [
     {
-      "title": "open.open.mint",
-      "hash": "7a9e1742831da087e14275f99552ef8cc825ad7f6c30d309abe100f9",
-      "parameters": 0
-    },
-    {
-      "title": "open.open.else",
-      "hash": "7a9e1742831da087e14275f99552ef8cc825ad7f6c30d309abe100f9",
-      "parameters": 0
-    },
-    {
-      "title": "request.request.spend",
-      "hash": "0b9f5376e0eaa477fca89b34be3fdb36ffa0c7436f405b46023bb944",
-      "parameters": 2
-    },
-    {
-      "title": "request.request.else",
-      "hash": "0b9f5376e0eaa477fca89b34be3fdb36ffa0c7436f405b46023bb944",
-      "parameters": 2
-    },
-    {
       "title": "singular_state.singular_state.mint",
       "hash": "503f97525d523cffcca969d2f3913471050c72c74d03610633d22a6f",
       "parameters": 1
@@ -39,41 +19,6 @@
       "title": "singular_state.singular_state.else",
       "hash": "503f97525d523cffcca969d2f3913471050c72c74d03610633d22a6f",
       "parameters": 1
-    },
-    {
-      "title": "staking.staking.withdraw",
-      "hash": "4ab26c95029067185f709d140300cccb15b0b20bbd62a7e9aa2e2e10",
-      "parameters": 0
-    },
-    {
-      "title": "staking.staking.else",
-      "hash": "4ab26c95029067185f709d140300cccb15b0b20bbd62a7e9aa2e2e10",
-      "parameters": 0
-    },
-    {
-      "title": "state.state.mint",
-      "hash": "9a84eabb747716a3092996049b5003a97954fa272902f0bf8f744a98",
-      "parameters": 0
-    },
-    {
-      "title": "state.state.spend",
-      "hash": "9a84eabb747716a3092996049b5003a97954fa272902f0bf8f744a98",
-      "parameters": 0
-    },
-    {
-      "title": "state.state.else",
-      "hash": "9a84eabb747716a3092996049b5003a97954fa272902f0bf8f744a98",
-      "parameters": 0
-    },
-    {
-      "title": "witness.witness.mint",
-      "hash": "7a486c420c5b4fa1de7574bbf4d5be6032c07cd653c6675eddfd16ec",
-      "parameters": 2
-    },
-    {
-      "title": "witness.witness.else",
-      "hash": "7a486c420c5b4fa1de7574bbf4d5be6032c07cd653c6675eddfd16ec",
-      "parameters": 2
     }
   ]
 }

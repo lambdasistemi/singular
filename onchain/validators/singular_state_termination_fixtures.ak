@@ -5,7 +5,7 @@
 //// order. The transaction, the redeemer, the proofs and the continuing state
 //// are derived from it: every token name from the role functions of
 //// `singular_state/preimage`, every root and proof from the Merkle Patricia
-//// Forestry library through the proof builders of `registry_fixtures`, as the
+//// Forestry library through the proof builders of `singular_state_proof_fixtures`, as the
 //// earlier changes of the batch advanced the trie. A test changes one part of
 //// a valid fold and nothing else.
 
@@ -18,7 +18,6 @@ use cardano/assets.{AssetName, Value, add, from_lovelace, zero}
 use cardano/transaction.{
   InlineDatum, Input, Output, OutputReference, Transaction,
 }
-use registry_fixtures.{branchStep, leafStep, slotOf, terminalLeaf}
 use singular_state/fold.{
   Change, Fold, Register, StateSpend, Terminate, leaf_active,
 }
@@ -36,6 +35,7 @@ use singular_state_fold_fixtures.{
   state_reference,
 }
 use singular_state_proof_builder.{entry_of, proof_in, root_of_entries}
+use singular_state_proof_fixtures.{branchStep, leafStep, slotOf, terminalLeaf}
 
 // ---------------------------------------------------------------------------
 // Leaves and tries
@@ -70,7 +70,7 @@ pub fn proof_for(held: List<Held>, key: ByteArray) -> Proof {
   )
 }
 
-/// The same proof from the proof builders of `registry_fixtures`, which describe
+/// The same proof from the proof builders of `singular_state_proof_fixtures`, which describe
 /// a trie with one leaf per first nibble and nothing else.
 pub fn dense_proof_for(held: List<Held>, key: ByteArray) -> Proof {
   let others = list.filter(held, fn(each) { each.key != key })

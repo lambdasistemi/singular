@@ -3,6 +3,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
+-- Synthetic title labels in these tests identify no published contract.
+
 {- |
 Module      : Singular.Application.OpenDatum.CommandRunSpec
 Description : #416 — every command handler run in process, its typed events compared with its receipt
@@ -147,7 +149,6 @@ import Singular.Application.OpenDatum.Run (runOpenDatum)
 import Singular.Application.OpenDatum.Value
     ( openDatumApplication
     )
-import Singular.CLI.Registry (loadRelease, loadReleaseCodes)
 import Singular.CLI.Session (Env (..))
 import Singular.CLI.Trace
     ( ConfirmVerdict
@@ -271,7 +272,6 @@ spec :: Spec
 spec =
     handlerRows
         >> setupRecut
-        >> permanentRecognition
         >> batchDiscoveryRows
 
 batchDiscoveryRows :: Spec
@@ -537,18 +537,6 @@ batchDiscoveryRows = describe "fold receipts from public discovery" $ do
         booked <- mapM (bookAt rig token) keys
         forM_ booked $ \entry -> runExit entry `shouldBe` ExitSuccess
         action rig token booked
-
-permanentRecognition :: Spec
-permanentRecognition = describe "Permanent contract recognition"
-    $ it
-        "refuses a caller supplied blueprint whose script identities are unknown"
-    $ withRig
-    $ \rig -> do
-        loaded <- loadRelease openDatumApplication (rigBlueprint rig)
-        case loaded of
-            Left _ -> pure ()
-            Right _ ->
-                expectationFailure "unknown scripts were recognized as permanent M1"
 
 handlerRows :: Spec
 handlerRows = describe
@@ -1110,7 +1098,6 @@ envOf rig =
     Env
         { envTracer = rigTracer rig
         , envSource = "fixture"
-        , envLoadRelease = loadReleaseCodes
         , envReads = \_ k -> k (capabilities rig)
         , envReaderReads = \_ k -> k (capabilities rig)
         , envWrites = \_ k -> k (capabilities rig)

@@ -53,12 +53,11 @@
 set -euo pipefail
 
 # Every current Markdown page is discovered, including pages outside navigation.
-# specs/ records each plan's historical command surface. onchain-release/ holds
-# the old release run pages; its exclusion leaves when that archive is rewritten.
-# Only those two root-level classes are historical. A docs/specs/ page is current.
+# specs/ records each plan's historical command surface and is excluded.
+# A docs/specs/ page is current.
 markdown_pages() {
   local page_root=${1%/}
-  find "$page_root" \( -path "$page_root/specs" -o -path "$page_root/onchain-release" \
+  find "$page_root" \( -path "$page_root/specs" \
     -o -name .git -o -name dist-newstyle -o -name node_modules \
     -o -name .lake -o -name result -o -name 'result-*' \) -prune \
     -o -name '*.md' -type f -print | sort

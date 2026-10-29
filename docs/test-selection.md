@@ -51,10 +51,9 @@ From `offchain/`, build the unit checks directly:
 
 ```sh
 nix build .#checks.x86_64-linux.cage-tests
-nix build .#checks.x86_64-linux.cage-test-vectors
 ```
 
-From `conformance/`, `nix build .#checks.x86_64-linux.conformance-tests` executes the Hspec appendix. Each check runs its existing app or binary during the Nix build, fails when that execution fails and retains the output at the check's store path. A cached result represents an earlier successful execution on the same inputs. The vector command generates vectors; it is not an Hspec suite. Apps and supported package exports remain available.
+From `conformance/`, `nix build .#checks.x86_64-linux.conformance-tests` executes the Hspec appendix. Each check runs its existing app or binary during the Nix build, fails when that execution fails and retains the output at the check's store path. A cached result represents an earlier successful execution on the same inputs. Apps and supported package exports remain available.
 
 The development-node suites stay executable apps. Compiling or listing their examples does not establish live ledger behavior. The inventory discovers the Hspec entrypoints from Cabal, rejects unwrapped spec calls and unknown tag constructors, and exercises removal and unknown-tag controls. It is a source inventory; compiled paths and before-and-after example counts supply the separate runtime evidence.
 

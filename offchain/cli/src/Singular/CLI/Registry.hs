@@ -16,8 +16,6 @@ pure or reads only those files.
 module Singular.CLI.Registry
     ( -- * The release a command brings
       Release (..)
-    , loadRelease
-    , loadReleaseCodes
     , checkRegistryContracts
     , registryFields
     , registryConfigFor
@@ -80,20 +78,14 @@ import Codec.Binary.Bech32 qualified as Bech32
 import Control.Monad (when)
 import PlutusCore.Data qualified as PLC
 
-import Singular.CLI.Permanent (knownScripts)
 import Singular.Registry.Address
     ( registryFingerprint
     , renderRegistryAddress
     )
 import Singular.Registry.Application
     ( Application (..)
-    , ApplicationPin (..)
     )
-import Singular.Registry.Blueprint
-    ( NamingCodes (..)
-    , extractCompiledCode
-    , loadBlueprint
-    )
+import Singular.Registry.Blueprint (NamingCodes)
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Config.Application
     ( RegistryEconomics (..)
@@ -145,62 +137,6 @@ instance FromJSON Pins where
 -- ---------------------------------------------------------
 -- The release a command brings
 -- ---------------------------------------------------------
-
--- | Read the registry blueprint a command was given, for the application it pins.
-loadRelease :: Application -> FilePath -> IO (Either String Release)
-loadRelease app = loadReleaseWith app True
-
-{- | Read code for an explicitly supplied implementation fixture. This makes
-no recognition claim; the shipping environment always uses 'loadRelease'.
--}
-loadReleaseCodes
-    :: Application -> FilePath -> IO (Either String Release)
-loadReleaseCodes app = loadReleaseWith app False
-
-loadReleaseWith
-    :: Application -> Bool -> FilePath -> IO (Either String Release)
-loadReleaseWith app recognize path = do
-    loaded <- loadBlueprint path
-    pure $ do
-        bp <-
-            either (Left . ("the blueprint does not parse: " <>)) Right loaded
-        let code name =
-                maybe
-                    (Left ("the blueprint carries no " <> name))
-                    Right
-                    (extractCompiledCode (T.pack name) bp)
-        when recognize $
-            mapM_
-                ( \(title, expected) -> do
-                    compiled <- code (T.unpack title)
-                    let actual = hexT (scriptHashBytes (computeScriptHash compiled))
-                    when (actual /= expected) $
-                        Left
-                            ( "unknown permanent contract script "
-                                <> T.unpack title
-                                <> ": expected "
-                                <> T.unpack expected
-                                <> ", computed "
-                                <> T.unpack actual
-                            )
-                )
-                knownScripts
-        state <- code "state.state"
-        request <- code "request.request"
-        -- The application code the pin names, or none when the pin is a hash
-        -- or read from state (slice 2: its script bytes do not exist there).
-        application <- case appPin app of
-            PinByHash _ -> pure SBS.empty
-            PinFromState -> pure SBS.empty
-            PinByScript title -> code (T.unpack title)
-            PinAsCompiled title -> code (T.unpack title)
-        witness <- code "witness.witness"
-        pure
-            ( Release
-                state
-                request
-                NamingCodes{ncApplication = application, ncWitness = witness}
-            )
 
 {- | The fields a receipt names a registry by beside its state token: its address,
 null on a network that has no prefix, and its fingerprint.

@@ -1,5 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
+-- Synthetic title labels in these tests identify no published contract.
+
 {- |
 Module      : Singular.Application.OpenDatum.NeutralValueSpec
 Description : Slice 2 RED: the hash-pinned value pins its hash with no application reference

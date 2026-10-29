@@ -17,7 +17,6 @@ use cardano/assets.{add, from_lovelace, zero}
 use cardano/transaction.{
   DatumHash, InlineDatum, Input, NoDatum, Output, OutputReference, Transaction,
 }
-use registry_fixtures.{leafStep}
 use singular_state/fold.{
   Change, Register, Terminate, apply_change, change_batch, change_leaf,
   fold_trie, leaf_active, one_new_token, registration_deposit, registration_mint,
@@ -33,6 +32,7 @@ use singular_state_fold_fixtures.{
   registration_b, registration_c, registry_of, request_input, root_of,
   three_registrations, transaction_of, trie_of,
 }
+use singular_state_proof_fixtures.{leafStep}
 
 fn registry() -> RegistryIdentity {
   registry_of(seed_a)

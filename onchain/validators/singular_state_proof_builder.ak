@@ -1,6 +1,6 @@
 //// The proof of a key in a trie of any shape, built from the leaves.
 ////
-//// The proof builders of `registry_fixtures` describe a root with one leaf per
+//// The proof builders of `singular_state_proof_fixtures` describe a root with one leaf per
 //// first nibble. This builder follows the structure of the Merkle Patricia
 //// Forestry: a node is a leaf, or a branch that shares a prefix of nibbles and
 //// splits on the next one. It computes the digest of every sibling subtree from

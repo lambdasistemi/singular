@@ -94,37 +94,6 @@ jobs:
       - run: nix run --quiet .#application-separation-controls
       - run: >-
           env -i HOME="$HOME" PATH="$(dirname "$(readlink -f "$(command -v nix)")"):$(dirname "$(readlink -f "$(command -v git)")")" nix run --quiet .#application-separation-check && env -i HOME="$HOME" PATH="$(dirname "$(readlink -f "$(command -v nix)")"):$(dirname "$(readlink -f "$(command -v git)")")" nix run --quiet .#application-separation-controls
-  registry-test-vectors:
-    if: github.event_name == 'pull_request' && github.event.action != 'closed'
-    name: Registry test vectors
-    runs-on: nixos
-    timeout-minutes: 30
-    steps:
-      - name: Reuse this runner's Nix cache
-        run: |
-          cache_dir="$HOME/.cache/singular-ci-nix"
-          mkdir -p "$cache_dir"
-          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-          fetch-depth: 0
-      - uses: cachix/cachix-action@v17
-        with:
-          name: paolino
-          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      # #562 item 8: the offchain cage-test-vectors check executes the
-      # registry test-vectors binary (its JSON mode) inside the check
-      # derivation, so building the check is the hosted execution. No
-      # existing job runs that body: the Cage vectors job in registry.yml
-      # runs the --aiken mode through the vectors-check wrapper, a
-      # different invocation of the same binary. The off-chain component
-      # build job above stays build-only by its own contract, which is
-      # why this executing check is its own job. Thirty minutes: the
-      # check body itself runs in seconds (7 s measured warm); the budget
-      # covers a cold compile of the package the binary comes from.
-      - run: nix build --quiet --no-link .#checks.x86_64-linux.cage-test-vectors
-        working-directory: offchain
   open-datum-component-build:
     if: github.event_name == 'pull_request' && github.event.action != 'closed'
     name: Open-datum component build
@@ -499,7 +468,6 @@ jobs:
       - run: nix develop --quiet -c just application-held-model
       - run: nix develop --quiet -c just open-datum-application-held-model
       - run: nix develop --quiet -c just check-presentation
-      - run: nix develop --quiet -c just rename-registry-test
       - run: nix develop --quiet -c bash tools/no-global-fixture-state.sh
       - run: nix develop --quiet -c just node-confinement
       - run: nix develop --quiet -c just node-confinement-controls
@@ -553,8 +521,7 @@ jobs:
       # and the pinned identities verified from the extracted artifact —
       # runs against the assembled bytes. The release surface negative
       # control then proves, on the same bytes, that the corrected
-      # availability promise (verified journey documented, retained
-      # commands disclosed as not currently buildable or verified) can
+      # checksum, version and identity comparisons can
       # fail specifically at this boundary. The same assembler — control
       # included — runs inside the publish job before anything is
       # uploaded; the docs-only release-check job does not carry it.

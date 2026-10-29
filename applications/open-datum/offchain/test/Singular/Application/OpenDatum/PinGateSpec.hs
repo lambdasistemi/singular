@@ -1,5 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
+-- Synthetic title labels in these tests identify no published contract.
+
 {- |
 Module      : Singular.Application.OpenDatum.PinGateSpec
 Description : Library application-pin resolution
