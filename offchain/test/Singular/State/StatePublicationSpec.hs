@@ -72,7 +72,8 @@ spec = do
             "publishes both scripts in one transaction when no live copy exists"
             $ do
                 sc <- publishing
-                References live publication <- planned sc id
+                References{referencesLive = live, referencesPublication = publication} <-
+                    planned sc id
                 live `shouldBe` []
                 Publication tx located <- expectPublication publication
                 sort (map fst located) `shouldBe` sort (wanted sc)
@@ -89,7 +90,8 @@ spec = do
             "pays its way: value is conserved and every output holds its minimum"
             $ do
                 sc <- publishing
-                References _ publication <- planned sc id
+                References{referencesLive = _, referencesPublication = publication} <-
+                    planned sc id
                 Publication tx _ <- expectPublication publication
                 soundnessProblems (scWorld sc) tx `shouldReturn` []
 
@@ -97,7 +99,7 @@ spec = do
             "publishes exactly the scripts, whatever the order or repetition asked"
             $ do
                 sc <- publishing
-                References _ publication <-
+                References{referencesLive = _, referencesPublication = publication} <-
                     withSession (scWorld sc) $ \session ->
                         planReferences
                             session
@@ -110,10 +112,12 @@ spec = do
     describe "a later registry of the same application" $ do
         it "finds the live copies and publishes none" $ do
             sc <- publishing
-            References _ first <- planned sc id
+            References{referencesLive = _, referencesPublication = first} <-
+                planned sc id
             Publication tx located <- expectPublication first
             applyTx (scWorld sc) tx
-            References live later <- planned sc id
+            References{referencesLive = live, referencesPublication = later} <-
+                planned sc id
             fmap publicationTx later `shouldBe` Nothing
             sort (map fst live) `shouldBe` sort (wanted sc)
             sort [ref | (_, (ref, _)) <- live] `shouldBe` sort (map snd located)
@@ -124,7 +128,8 @@ spec = do
             addLive
                 (scWorld sc)
                 [(stateCopy, referenceHolder (scPayer sc) (ssScript (scState sc)))]
-            References live partial <- planned sc id
+            References{referencesLive = live, referencesPublication = partial} <-
+                planned sc id
             map fst live `shouldBe` [stateHash sc]
             map (fst . snd) live `shouldBe` [stateCopy]
             Publication _ located <- expectPublication partial
@@ -134,7 +139,8 @@ spec = do
             "publishes a spent copy again, exactly as when no live copy was found"
             $ do
                 sc <- publishing
-                References _ initial <- planned sc id
+                References{referencesLive = _, referencesPublication = initial} <-
+                    planned sc id
                 Publication published located <- expectPublication initial
                 applyTx (scWorld sc) published
                 ref <-
@@ -158,7 +164,8 @@ spec = do
                     ( \session -> referenceOutputs session (ssScript (scState sc)) (Referenced ref)
                     )
                     `shouldReturn` Left (ReferenceScriptMissing ref)
-                References live later <- planned sc id
+                References{referencesLive = live, referencesPublication = later} <-
+                    planned sc id
                 map fst live `shouldBe` [standInHash]
                 Publication _ replacements <- expectPublication later
                 map fst replacements `shouldBe` [stateHash sc]
@@ -169,14 +176,15 @@ spec = do
             "publishes its own state script for another policy or application release"
             $ do
                 sc <- publishing
-                References _ first <- planned sc id
+                References{referencesLive = _, referencesPublication = first} <-
+                    planned sc id
                 Publication tx old <- expectPublication first
                 applyTx (scWorld sc) tx
                 mapM_
                     ( \policy -> do
                         own <- stateScriptFor policy
                         hashScript (ssScript own) `shouldNotBe` stateHash sc
-                        References live publication <- withSession (scWorld sc) $ \session ->
+                        References{referencesLive = live, referencesPublication = publication} <- withSession (scWorld sc) $ \session ->
                             planReferences session (scPayer sc) [ssScript own, standIn]
                                 >>= expectBuilt
                         map fst live `shouldBe` [standInHash]
@@ -209,7 +217,8 @@ spec = do
                 (\session -> referenceOutputs session standIn (Referenced wrong))
                 `shouldReturn` Left
                     (ReferenceScriptMismatch wrong (Just (hashScript earlier)) standInHash)
-            References live publication <- planned sc lying
+            References{referencesLive = live, referencesPublication = publication} <-
+                planned sc lying
             live `shouldBe` []
             Publication _ located <- expectPublication publication
             sort (map fst located) `shouldBe` sort (wanted sc)
@@ -244,7 +253,8 @@ spec = do
                             _ -> outputs session query
                         }
             addLive (scWorld sc) candidates
-            References live publication <- planned sc answering
+            References{referencesLive = live, referencesPublication = publication} <-
+                planned sc answering
             map (fst . snd) live `shouldBe` [low]
             Publication _ located <- expectPublication publication
             map fst located `shouldBe` [stateHash sc]
@@ -263,7 +273,8 @@ spec = do
             addLive
                 (scWorld sc)
                 [(impostor, referenceHolder (scPayer sc) otherScript)]
-            References live publication <- planned sc lying
+            References{referencesLive = live, referencesPublication = publication} <-
+                planned sc lying
             live `shouldBe` []
             Publication _ located <- expectPublication publication
             sort (map fst located) `shouldBe` sort (wanted sc)
