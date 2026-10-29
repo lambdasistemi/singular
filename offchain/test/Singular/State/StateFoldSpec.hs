@@ -98,16 +98,23 @@ import Singular.State.Batch
     )
 import Singular.State.Fold
     ( Application (..)
+    , FoldFailure (..)
     , FoldResult (..)
+    , Request (..)
     , SkipReason (..)
     , SkippedHolder (..)
+    , attemptFold
     , buildFold
     , buildRegistrationFold
     , discoverPending
     , foldedRequests
     , pendingRef
     )
-import Singular.State.Preimage (activeTokenName)
+import Singular.State.Preimage
+    ( activeTokenName
+    , approvalName
+    , terminationPreimage
+    )
 import Singular.State.Records
     ( Change (..)
     , decodeFoldRedeemer
@@ -123,6 +130,84 @@ import Singular.State.StateWorld
 
 spec :: Spec
 spec = do
+    describe "unfoldable public requests" $ do
+        it "lets a current request take the key after an earlier expired one is skipped" $ do
+            rg <- newRegistered
+            [expired, current] <- book rg 'v'
+                [ (bookedKey "same key" 1){bkTip = 9_000_000}
+                , bookedKey "same key" processingDeadline
+                ]
+            control <- expectBuilt =<< foldNow rg [current]
+            judge (rgWorld rg) control >>= (`shouldSatisfy` everyScriptAccepts)
+            selected <- fitting rg Nothing
+            map pendingRef (foldSelected selected) `shouldBe` [current]
+            map skippedRef (foldSkipped selected) `shouldBe` [expired]
+            show (map skippedReason (foldSkipped selected))
+                `shouldSatisfy` Text.isInfixOf "ProcessingWindowClosed" . Text.pack
+            foldLeft selected `shouldBe` 0
+        it "skips every request-local refusal beside its foldable control" $ do
+            (rg, application, bad, good) <- unfoldablePool
+            forM_ bad $ \(_, named, reason, control) -> do
+                built <- expectBuilt =<< foldWithApplication rg application [control]
+                judge (rgWorld rg) built >>= (`shouldSatisfy` everyScriptAccepts)
+                refusal <- foldWithApplication rg application named
+                show refusal `shouldSatisfy` Text.isInfixOf reason . Text.pack
+                refusal `shouldSatisfy` isLeft
+            selected <- withSession (rgWorld rg) $ \session ->
+                expectBuilt
+                    =<< buildFold
+                        session
+                        (rgScript rg)
+                        application
+                        (rgRegistry rg)
+                        []
+                        (rgFolder rg)
+                        (Just 1)
+            map pendingRef (foldSelected selected) `shouldSatisfy` \refs -> length refs == 1 && all (`elem` good) refs
+            map skippedRef (foldSkipped selected)
+                `shouldMatchList` [last named | (_, named, _, _) <- bad]
+            forM_ bad $ \(_, named, reason, _) ->
+                [ Text.pack (show (skippedReason holder))
+                | holder <- foldSkipped selected
+                , skippedRef holder == last named
+                ]
+                    `shouldSatisfy` \reasons -> length reasons == 1 && all (Text.isInfixOf reason) reasons
+            foldLeft selected `shouldBe` length good - 1
+            length (foldSelected selected)
+                + length (foldSkipped selected)
+                + foldLeft selected
+                `shouldBe` 10
+            judge (rgWorld rg) (foldTransaction selected)
+                >>= (`shouldSatisfy` everyScriptAccepts)
+        it "retains every skipped request when none can fold" $ do
+            (rg, application, bad, _) <- unfoldablePool
+            let rejected = [last named | (label, named, _, _) <- bad, label /= "duplicate"]
+            -- Retain only these four approval holders, leaving state and payer outputs intact.
+            advanceChain (worldChain (rgWorld rg)) $ \facts ->
+                facts
+                    { csUTxO =
+                        Map.filterWithKey
+                            (\ref output -> not (hasApprovals output) || ref `elem` rejected)
+                            (csUTxO facts)
+                    }
+            outcome <- withSession (rgWorld rg) $ \session ->
+                attemptFold
+                    session
+                    (rgScript rg)
+                    application
+                    (rgRegistry rg)
+                    []
+                    (rgFolder rg)
+                    Nothing
+            case outcome of
+                Left failure -> do
+                    foldFailureReason failure `shouldBe` NothingToFold
+                    case foldFailureObserved failure of
+                        Just (skipped, left) -> do
+                            map skippedRef skipped `shouldMatchList` rejected
+                            left `shouldBe` 0
+                        Nothing -> expectationFailure "complete public request accounting was lost"
+                Right result -> expectationFailure (show result)
     describe "submitted batch bytes" $
         forM_ [1, 2, 24] $ \count -> do
             it
@@ -886,6 +971,100 @@ spec = do
     policyOf (RegistryIdentity policy _) = policy
     sort' = Map.toList . Map.fromList . map (\(p, n, q) -> ((p, n), q))
     valueAda' n = n * 1_000_000
+
+-- | One public pool with every request-local failure and its foldable control.
+unfoldablePool
+    :: IO
+        (Registered, Application, [(String, [TxIn], Text.Text, TxIn)], [TxIn])
+unfoldablePool = do
+    rg <- newRegistered
+    (previous, _) <-
+        folded
+            rg
+            [ bookedKey "registered" processingDeadline
+            , bookedKey "termination" processingDeadline
+            ]
+    judge (rgWorld rg) previous >>= (`shouldSatisfy` everyScriptAccepts)
+    applyTx (rgWorld rg) previous
+    -- Move the genuine termination tag from its holding to the public pending fixture.
+    advanceChain (worldChain (rgWorld rg)) $ \facts ->
+        facts
+            { csUTxO =
+                Map.filter
+                    ( \output ->
+                        tokenQuantity
+                            (statePolicy (rgScript rg))
+                            (activeTokenName (rgRegistry rg) "termination")
+                            output
+                            == 0
+                    )
+                    (csUTxO facts)
+            }
+    [registered, fresh, deposit, funded, expired, current, earlier, later] <-
+        book
+            rg
+            'u'
+            [ (bookedKey "registered" processingDeadline){bkTip = 9_000_000}
+            , bookedKey "fresh" processingDeadline
+            , (bookedKey "deposit" processingDeadline)
+                { bkDeposit = 100_000
+                , bkTip = 8_000_000
+                }
+            , bookedKey "funded" processingDeadline
+            , (bookedKey "expired" 1){bkTip = 7_000_000}
+            , bookedKey "current" processingDeadline
+            , (bookedKey "duplicate" processingDeadline){bkTip = 5_000_000}
+            , (bookedKey "duplicate" processingDeadline){bkTip = 4_000_000}
+            ]
+    let missing = txInOf 't' 0
+        active = txInOf 't' 1
+        registry = rgRegistry rg
+        termination key =
+            pendingOutput registry (bookedKey key processingDeadline)
+                & valueTxOutL
+                    .~ MaryValue
+                        (Coin 6_000_000)
+                        ( MultiAsset
+                            ( Map.fromList
+                                [
+                                    ( standInPolicy
+                                    , Map.singleton (approvalName (terminationPreimage key registry)) 1
+                                    )
+                                ,
+                                    ( statePolicy (rgScript rg)
+                                    , Map.singleton (activeTokenName registry key) 1
+                                    )
+                                ]
+                            )
+                        )
+                & datumTxOutL .~ mkInlineDatum (PLC.Constr 1 [PLC.B key])
+        application =
+            standInApplication
+                { appDecode = \identity keys output -> case inlineDatum output of
+                    Just (PLC.Constr 1 [PLC.B key]) -> Just (TerminationRequest identity key)
+                    _ -> appDecode standInApplication identity keys output
+                }
+    addLive
+        (rgWorld rg)
+        [ (missing, termination "inactive")
+        , (active, termination "termination")
+        ]
+    pure
+        ( rg
+        , application
+        ,
+            [ ("registered", [fresh, registered], "KeyAlreadyRegistered", fresh)
+            , ("termination", [active, missing], "KeyNotActive", active)
+            , ("duplicate", [earlier, later], "DuplicateKey", earlier)
+            , ("deposit", [funded, deposit], "DepositBelowHolding", funded)
+            , ("deadline", [current, expired], "ProcessingWindowClosed", current)
+            ]
+        , [fresh, active, earlier, funded, current]
+        )
+
+hasApprovals :: TxOut ConwayEra -> Bool
+hasApprovals output = case output ^. valueTxOutL of
+    MaryValue _ (MultiAsset policies) -> Map.member standInPolicy policies
 
 -- | Book these registrations and build the fold of them as the second wallet.
 folded :: Registered -> [Booked] -> IO (ConwayTx, [TxIn])
