@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 {- |
@@ -31,7 +32,7 @@ import Cardano.Ledger.Mary.Value (PolicyID (..))
 import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import Cardano.Tx.Build qualified as Tx
 import Cardano.Tx.Ledger (ConwayTx)
-import Control.Monad (forM, forM_, unless)
+import Control.Monad (forM, forM_, unless, when)
 import Control.Tracer (nullTracer)
 import Data.Aeson (Value, encode, object, (.=))
 import Data.ByteString qualified as BS
@@ -135,12 +136,10 @@ run out flags = do
                         applicationReferences
                         ( \registry -> do
                             hostCreation host [(application, applicationSource)] seed registry
-                            if carryOutputs
-                                then
-                                    forM_
-                                        [state, application]
-                                        (Tx.output . holder protocol (walletAddr wallet))
-                                else pure ()
+                            when carryOutputs $
+                                forM_
+                                    [state, application]
+                                    (Tx.output . holder protocol (walletAddr wallet))
                         )
                         >>= either (fail . show) pure
                 evaluated <- Services.evaluateTx session tx
@@ -250,7 +249,7 @@ publishMissing caps wallet scripts = do
 submit
     :: Capabilities NoWitness IO -> ConwayTx -> IO SubmitResult -> IO Value
 submit caps tx action =
-    action >>= \answer -> case answer of
+    action >>= \case
         SubmitAccepted identity -> do
             capConfirm caps tx
             pure
