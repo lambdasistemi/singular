@@ -10,7 +10,7 @@ batch_as() {
   shift 3
   python3 -c 'import json,sys; print(json.dumps(sys.argv[1:]))' \
     "$program" "$@" "${node[@]}" --wallet-skey "$actor.skey" \
-    >"$receipts/$name.argv.json"
+    >"$work/invocations/$name.json"
   as "$actor" "$name" "$program" "$@"
   jq -cn --arg name "$name" --argjson status "$(cat "$receipts/$name.status")" \
     '{command:$name,exit:$status}' >>"$work/batch-attempts.jsonl"
@@ -106,6 +106,7 @@ batch_scenario() { # PREFIX WITH-DUPLICATE
   view_unspent "$prefix-after-foreign"
 }
 
+mkdir -p "$work/invocations"
 printf '%s\n' '{"name":"batch"}' >"$work/actors/alice/cwd/batch-payload.json"
 batch_scenario batch-control no
 batch_scenario batch-duplicate yes

@@ -46,7 +46,7 @@ def load_context(work, prefix, policy, application, duplicate):
             for stage in ["first", "rest", "foreign"]
         },
         "argv": {
-            stage: load("receipts", f"{prefix}-{stage}.argv.json")
+            stage: load("invocations", f"{prefix}-{stage}.json")
             for stage in ["first", "rest", "foreign"]
         },
         "listings": {
