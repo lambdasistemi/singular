@@ -514,8 +514,7 @@ funds it. When the seed is an output the wallet holds, the publications
 before the boot leave it alone; when it is the first publication's change
 (#406 slice 2, not held), the first publication spends a prefix of all the
 ada-only outputs (nothing withheld) and its change is the seed. The boot spends
-the seed and the largest ada-only output beside it (or the seed alone), as
-'Singular.Registry.TxBuilder.Boot.bootTokenFrom' does, and returns what is
+the seed and the largest ada-only output beside it (or the seed alone), and returns what is
 left of them after its cost as change, which the publications after it may
 spend. Checked before anything is submitted; the first publication the
 publisher would refuse is named, or @boot@ when the boot itself is not
@@ -527,9 +526,7 @@ publicationFunding
     -> TxIn
     -- ^ The seed: held ("output") or the first publication's change
     -> Integer
-    {- ^ The most the boot takes from its inputs
-    ('Singular.Registry.TxBuilder.Boot.bootCostBound')
-    -}
+    -- ^ The caller-supplied upper bound on what creation takes from its inputs
     -> [(Text, Script ConwayEra)]
     -- ^ Published before the boot, by role
     -> [(Text, Script ConwayEra)]

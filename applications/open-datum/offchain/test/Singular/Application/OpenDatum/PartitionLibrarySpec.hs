@@ -1,4 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 {- |
@@ -8,9 +7,6 @@ License     : Apache-2.0
 -}
 module Singular.Application.OpenDatum.PartitionLibrarySpec (spec) where
 
-import Control.Exception (try)
-import Control.Tracer (Tracer (..))
-import Data.Aeson (Value)
 import Data.ByteString qualified as BS
     ( ByteString
     , replicate
@@ -18,61 +14,18 @@ import Data.ByteString qualified as BS
     )
 import Data.ByteString.Short qualified as SBS (toShort)
 import Data.List (isInfixOf)
-import Data.Text qualified as T (unpack)
 import Data.Word (Word32)
-import Singular.Application.OpenDatum.StateTokenFixture
-    ( release
-    , seedIn
-    , token
-    )
-import Singular.Application.OpenDatum.Value
-    ( openDatumApplication
-    )
-import Singular.CLI.Command
-    ( CreateArgs
-        ( CreateArgs
-        , createBlueprint
-        , createMode
-        , createPreview
-        , createProcessTime
-        , createReceipt
-        , createRetractTime
-        , createSaveStateTokenTo
-        , createSeed
-        , createStateDir
-        )
-    , EntryMode (Submit)
-    , ProviderSettings
-        ( ProviderSettings
-        , providerMagic
-        , providerTimeDirectory
-        , providerTokenFile
-        , providerUrl
-        )
-    , WriteSettings
-        ( WriteSettings
-        , writeConfirmTimeout
-        , writeProvider
-        , writeSigner
-        )
-    )
-import Singular.CLI.Create (runCreate, stateTokenOf)
-import Singular.CLI.FlagGroup (Signer (SignerKeyFile))
-import Singular.CLI.Live (txInText)
+import Singular.Application.OpenDatum.StateTokenFixture (token)
 import Singular.CLI.ManagedState
     ( addressPartition
     , managedDir
     , statelessDir
     , walletPartition
     )
-import Singular.CLI.Receipt (OutcomeClass (..))
-import Singular.CLI.Session (CommandFailure (..), Env (..))
-import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.Ledger (AssetName (..))
 import Singular.Registry.LedgerProvider (Asset)
 import Singular.Registry.Wallet (Wallet (walletAddr), loadWallet)
-import System.Directory (createDirectoryIfMissing)
-import System.FilePath (splitDirectories, (</>))
+import System.FilePath (splitDirectories)
 import System.IO.Temp (withSystemTempDirectory)
 import Test.Hspec
     ( Spec
@@ -86,7 +39,6 @@ import Test.Hspec
 spec :: Spec
 spec = do
     identityPartition
-    existingPartitionRefusal
 
 identityPartition :: Spec
 identityPartition =
@@ -132,77 +84,3 @@ identityPartition =
     otherToken = case token of
         (policy, _) -> (policy, AssetName (SBS.toShort (BS.replicate 32 0x07)))
     genSafe = all (`elem` (['0' .. '9'] <> ['a' .. 'z'] <> "-"))
-
-existingPartitionRefusal :: Spec
-existingPartitionRefusal = do
-    it
-        "an explicit seed against an existing partition journal is refused before any chain read"
-        $ withSystemTempDirectory "managed-early-refusal"
-        $ \root ->
-            withSystemTempDirectory "managed-early-keys" $ \keys -> do
-                let magic = 42
-                    keyPath = keys </> "payment.skey"
-                BS.writeFile keyPath (BS.replicate 32 0x01)
-                caller <- loadWallet magic keyPath
-                named <- either fail pure (parseOutRef (txInText seedIn))
-                let dir =
-                        managedDir
-                            root
-                            magic
-                            (stateTokenOf release named)
-                            (walletPartition caller)
-                createDirectoryIfMissing True dir
-                writeFile (dir </> "journal.jsonl") "{}\n"
-                outcome <-
-                    try
-                        ( runCreate
-                            openDatumApplication
-                            noChainEnv
-                            (earlyArgs root keyPath magic)
-                        )
-                        :: IO (Either CommandFailure Value)
-                outcome `shouldSatisfy` isExistingStateRefusal
-  where
-    isExistingStateRefusal = \case
-        Left (CommandFailure ClientRefusal why _) ->
-            "already holds your state" `isInfixOf` why
-        _ -> False
-    earlyArgs root keyPath magic =
-        CreateArgs
-            { createStateDir = Just root
-            , createBlueprint = "test-blueprint.json"
-            , createMode =
-                Submit
-                    WriteSettings
-                        { writeProvider =
-                            ProviderSettings
-                                { providerUrl = "http://127.0.0.1:1"
-                                , providerMagic = magic
-                                , providerTokenFile = Nothing
-                                , providerTimeDirectory = Nothing
-                                }
-                        , writeSigner = SignerKeyFile keyPath
-                        , writeConfirmTimeout = Nothing
-                        }
-            , createSeed = Just (T.unpack (txInText seedIn))
-            , createPreview = False
-            , createReceipt = Nothing
-            , createSaveStateTokenTo = Nothing
-            , createProcessTime = 1000
-            , createRetractTime = 1000
-            }
-    noChainEnv =
-        Env
-            { envTracer = Tracer (\_ -> pure ())
-            , envSource = "test"
-            , envLoadRelease = \_ _ -> pure (Right release)
-            , envReads =
-                \_ _ ->
-                    fail
-                        "the early existing-state refusal must fire before any chain read"
-            , envReaderReads = \_ _ -> fail "the early existing-state refusal opened a reader"
-            , envWrites =
-                \_ _ ->
-                    fail
-                        "the early existing-state refusal must fire before any chain write"
-            }

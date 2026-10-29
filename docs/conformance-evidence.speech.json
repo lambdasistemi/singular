@@ -159,12 +159,12 @@
       "pause": 400
     },
     {
-      "text": "Regenerate the page with nix run ./conformance#conformance -- evidence-page --write; check it with the same command without --write.",
+      "text": "Regenerate the page with nix run --quiet ./conformance#conformance -- evidence-page --root . --write; check it with the same command without --write.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "conformance-evidence.md",
-    "sha256": "f8038dec93f3453dd044af05d53cd4e646f3aef0ac22d13ae588268bfc1437ad"
+    "sha256": "4d8c212ef776b08091d9ef4fd6f6f978dce2cf2207e9b68f3c4989a9e4caf702"
   }
 }

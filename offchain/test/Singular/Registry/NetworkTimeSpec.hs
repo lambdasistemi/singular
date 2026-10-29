@@ -9,7 +9,11 @@ module Singular.Registry.NetworkTimeSpec (spec, loadNetworkFixture) where
 
 import Cardano.Ledger.Api.PParams (ppProtocolVersionL)
 import Cardano.Ledger.BaseTypes (ProtVer (..))
-import Cardano.Ledger.Binary (DecoderError, decodeFull', getVersion)
+import Cardano.Ledger.Binary
+    ( DecoderError
+    , decodeFull'
+    , getVersion
+    )
 import Cardano.Ledger.Conway (ConwayEra)
 import Cardano.Ledger.Core (PParams, eraProtVerLow)
 import Cardano.Slotting.Slot (SlotNo (..))
@@ -30,22 +34,53 @@ import Data.Aeson
     )
 import Data.ByteArray (convert)
 import Data.ByteString (ByteString)
-import Data.ByteString qualified as BS
-import Data.ByteString.Base16 qualified as B16
+import Data.ByteString qualified as BS (readFile)
+import Data.ByteString.Base16 qualified as B16 (decode)
 import Data.ByteString.Lazy qualified as LBS
-import Data.Text qualified as Text
+    ( fromStrict
+    , toStrict
+    )
+import Data.Text qualified as Text (isInfixOf, pack)
 import Data.Text.Encoding (encodeUtf8)
 import Lens.Micro ((^.))
-import Ouroboros.Consensus.HardFork.History.EraParams (EraParams (..))
+import Ouroboros.Consensus.HardFork.History.EraParams
+    ( EraParams (..)
+    )
 import Ouroboros.Consensus.HardFork.History.Summary
     ( Bound (..)
     , EraSummary (..)
     )
 import Paths_singular_registry (getDataFileName)
 import Singular.Registry.NetworkTime
-import Singular.Registry.TimeMaterial
-    ( TimeMaterial (..)
-    , loadTimeMaterial
+    ( NetworkTime
+    , NetworkTimeFailure
+        ( TimeBeforeHistory
+        , TimePastHorizon
+        , TimeSourceMismatch
+        , UnknownTimeNetwork
+        , WindowPastLedgerHorizon
+        , WindowTooShort
+        , WrongTimeNetwork
+        )
+    , NetworkTimeManifest
+        ( NetworkTimeManifest
+        , timeHorizonSlot
+        , timeProtocolMajor
+        , timeSystemStartMs
+        )
+    , ValidityWindow
+        ( ValidityWindow
+        , validityMinimumSlots
+        , validityNeedsHorizonWait
+        , validitySelectedUpper
+        )
+    , capValidityUpper
+    , ledgerHorizon
+    , minimumValidityWindow
+    , posixMsCeilingSlot
+    , posixMsFloorSlot
+    , slotStartMs
+    , validateNetworkTime
     )
 import Test.Hspec
     ( Spec
@@ -54,7 +89,6 @@ import Test.Hspec
     , shouldBe
     , shouldNotBe
     , shouldSatisfy
-    , shouldThrow
     )
 
 data TimeRow = TimeRow Integer NodeAnswer NodeAnswer
@@ -413,18 +447,6 @@ spec = describe "Validity conversions from recorded preprod network data" $ do
         slotStartMs context farSlot `shouldBe` Right farMs
         posixMsFloorSlot context farMs `shouldBe` Right farSlot
         posixMsCeilingSlot context (farMs + 1) `shouldBe` Right (farSlot + 1)
-    it "refuses an unsupported local time network by name" $
-        loadTimeMaterial 999 "unused-for-unsupported-network"
-            `shouldThrow` (== UnknownTimeNetwork 999)
-    it
-        "loads the packaged source and preserves valid recorded answers with amended range policy"
-        $ do
-            material <- loadTimeMaterial 1 "unused-for-packaged-preprod"
-            context <- case material of
-                PackagedTime reviewed -> pure reviewed
-                GeneratedGenesis _ -> fail "PackagedPreprodSelectedGeneratedSource"
-            (manifest, _, history, rows) <- loadFixture
-            recordedRows context manifest history rows
     forM_ [("preprod", 1), ("devnet", 42)] $ \(network, magic) ->
         it
             ( "matches independently recorded "

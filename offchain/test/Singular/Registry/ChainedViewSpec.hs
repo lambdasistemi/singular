@@ -17,19 +17,23 @@ read the chain's own.
 Every expected answer here comes from the synthetic chain fixture after
 the same transactions are recorded and applied through its own path, the
 way the command-run rows apply a submission — never from the module under
-test. The staged transactions are built with the real builders over the
-view itself: a preparation, the boot publication that mints the registry's
-state token, and a fold for the history and selection rows. Each row has
+test. A real preparation is followed by a synthetic mint transaction built
+from the view's wallet outputs. A retained fold builder supplies the history
+and selection rows. No creation-lifecycle or ledger acceptance is claimed. Each row has
 an accepted answer and a planted defect — a view over the wrong staged
 list — that the same assertion function rejects by its return status.
 -}
 module Singular.Registry.ChainedViewSpec (spec) where
 
 import Cardano.Ledger.Address (Addr, serialiseAddr)
+import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
+import Cardano.Ledger.Alonzo.TxWits (Redeemers (..))
 import Cardano.Ledger.Api.PParams (ppMaxTxSizeL)
-import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx)
+import Cardano.Ledger.Api.Tx (bodyTxL, mkBasicTx, txIdTx, witsTxL)
 import Cardano.Ledger.Api.Tx.Body
     ( inputsTxBodyL
+    , mintTxBodyL
+    , mkBasicTxBody
     , outputsTxBodyL
     , referenceInputsTxBodyL
     )
@@ -42,6 +46,7 @@ import Cardano.Ledger.Api.Tx.Out
     , referenceScriptTxOutL
     , valueTxOutL
     )
+import Cardano.Ledger.Api.Tx.Wits (rdmrsTxWitsL)
 import Cardano.Ledger.BaseTypes
     ( Network (Testnet)
     , StrictMaybe (SJust)
@@ -50,8 +55,10 @@ import Cardano.Ledger.BaseTypes
 import Cardano.Ledger.Binary (serialize)
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Conway (ConwayEra)
+import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
 import Cardano.Ledger.Core (eraProtVerHigh)
 import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
+import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Tx.Ledger (ConwayTx)
 import Control.Monad (forM_)
@@ -65,6 +72,7 @@ import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.List.NonEmpty qualified as NE
 import Data.Map.Strict qualified as Map
+import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -74,7 +82,7 @@ import Test.Hspec
 
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.ChainedView
-import Singular.Registry.Config (CageConfig (..))
+import Singular.Registry.Config (CageConfig (..), bootStateFromCfg)
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.Evidence
     ( Evidenced (..)
@@ -135,7 +143,6 @@ import Singular.Registry.TrieState.Fixture
     )
 import Singular.Registry.TrieState.Lineage (lineageTrieState)
 import Singular.Registry.TxBuilder.BookingFixture qualified as Fixture
-import Singular.Registry.TxBuilder.Boot (bootTokenFrom)
 import Singular.Registry.TxBuilder.Internal.Identity
     ( addrFromKeyHashBytes
     , cageAddrFromCfg
@@ -148,6 +155,8 @@ import Singular.Registry.TxBuilder.Internal.Identity
     , mkRequestDatumWith
     , requestAddrFromCfg
     , scriptHashBytes
+    , toLedgerData
+    , toPlcData
     , txInToRef
     )
 import Singular.Registry.TxBuilder.Prepare
@@ -161,6 +170,7 @@ import Singular.Registry.TxBuilder.Update
     )
 import Singular.Registry.Types
     ( CageDatum (..)
+    , MintRedeemer (..)
     , OnChainRoot (..)
     , stateRoot
     )
@@ -595,7 +605,7 @@ stagedRunWithPublication = do
         modifyIORef' stagedRef (<> [prepStaged])
         afterPrep <- chainedSession viewNow base
         boot <-
-            bootTokenFrom cfg (publicationIn, publicationOutput) afterPrep payer
+            fixtureMint afterPrep
         bootStaged <- stageOver afterPrep boot
         pure (prepStaged, bootStaged)
 
@@ -647,7 +657,7 @@ foldRig :: IO FoldRig
 foldRig = do
     chain <- newChain
     boot <- withLatest (rawChainProvider chain) $ \base ->
-        bootTokenFrom cfg (publicationIn, publicationOutput) base payer
+        fixtureMint base
     applyToChain chain boot
     plantRequest chain
     stagedTx <-
@@ -667,7 +677,7 @@ foldRig = do
     oracle <- newChain
     oracleBoot <-
         withLatest (rawChainProvider oracle) $ \base ->
-            bootTokenFrom cfg (publicationIn, publicationOutput) base payer
+            fixtureMint base
     applyToChain oracle oracleBoot
     plantRequest oracle
     applyStaged oracle staged
@@ -1084,3 +1094,35 @@ spec =
                         view <- chainedSession (pure []) base
                         selectionOver view foldStateIn frNewRoot
                 selectionsAgree defective expected `shouldSatisfy` isLeft
+
+-- | Synthetic mint and state datum shared by the raw-chain comparisons.
+fixtureMint :: Session NoWitness IO -> IO ConwayTx
+fixtureMint session = do
+    wallet <- outputsAt session payer
+    let spendable = [(i, o) | (i, o) <- wallet, i /= publicationIn]
+        held = foldMap ((^. valueTxOutL) . snd) spendable
+        (policy, name) = stateAsset
+        minted = MultiAsset (Map.singleton policy (Map.singleton name 1))
+        stateValue = MaryValue (Coin 2_000_000) minted
+        change = held <> MaryValue (Coin (-2_000_000)) mempty
+    pure $
+        mkBasicTx
+            ( mkBasicTxBody
+                & inputsTxBodyL .~ Set.fromList (map fst spendable)
+                & referenceInputsTxBodyL .~ Set.singleton publicationIn
+                & mintTxBodyL .~ minted
+                & outputsTxBodyL
+                    .~ StrictSeq.fromList
+                        [ mkBasicTxOut stateAddress stateValue
+                            & datumTxOutL
+                                .~ mkInlineDatum
+                                    (toPlcData (StateDatum (bootStateFromCfg cfg (OnChainRoot emptyRoot))))
+                        , mkBasicTxOut payer change
+                        ]
+            )
+            & witsTxL . rdmrsTxWitsL
+                .~ Redeemers
+                    ( Map.singleton
+                        (ConwayMinting (AsIx 0))
+                        (toLedgerData (Minting (txInToRef seedIn)), ExUnits 0 0)
+                    )

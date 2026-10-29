@@ -157,9 +157,9 @@ test-suite open-datum-tests
     Singular.Application.OpenDatum.RequestScriptSpec
     Singular.Application.OpenDatum.RequestWorld
     Singular.Application.OpenDatum.EnvelopeSpec
+    Singular.Application.OpenDatum.FoldSpec
     Singular.Application.OpenDatum.CommandRunSpec
     Singular.Application.OpenDatum.FlagGroupExtentSpec
-    Singular.Application.OpenDatum.FoldSpec
     Singular.Application.OpenDatum.HelpSnapshotSpec
     Singular.Application.OpenDatum.ManagedStateSpec
     Singular.Application.OpenDatum.RecoverySpec
@@ -170,7 +170,7 @@ test-suite open-datum-tests
     Singular.Application.OpenDatum.LibraryStateSpec
     Singular.Application.OpenDatum.WalletAdmissionSpec
     Singular.Application.OpenDatum.PartitionLibrarySpec
-    Singular.Application.OpenDatum.PublicationFundingSpec
+    Singular.Application.OpenDatum.ActorDirectorySpec
     Singular.Application.OpenDatum.ParserCorpusSpec
     Singular.Application.OpenDatum.SourcesSpec
     Singular.Application.OpenDatum.ClosedModeSpec

@@ -491,8 +491,8 @@ layout model rows snap =
                                 <> count (snapContract snap)
                                 <> " results."
                            , ""
-                           , "Regenerate the page with `nix run ./conformance#conformance -- \
-                             \evidence-page --write`; check it with the same command without \
+                           , "Regenerate the page with `nix run --quiet ./conformance#conformance -- \
+                             \evidence-page --root . --write`; check it with the same command without \
                              \`--write`."
                            ]
                     )

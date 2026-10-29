@@ -196,5 +196,5 @@ This appendix is harness evidence: where the files behind this page came from. I
 
 The committed snapshot is `conformance/evidence/page/`: 0 files of the receipt artifacts under `receipts/`, of which 0 are receipts, and 2 contract results files under `contract/` holding 66 results.
 
-Regenerate the page with `nix run ./conformance#conformance -- evidence-page --write`; check it with the same command without `--write`.
+Regenerate the page with `nix run --quiet ./conformance#conformance -- evidence-page --root . --write`; check it with the same command without `--write`.
 
