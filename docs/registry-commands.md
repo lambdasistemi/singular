@@ -145,8 +145,9 @@ can also discover it from public approvals.
 As Bob, give the registry and your wallet to discover its pending registrations
 and terminations from public approvals. You need nothing from anyone who booked
 them. The command orders requests by your take, greatest first, breaking ties by
-output reference, and builds the greatest fitting prefix. Use `--limit` to cap
-the number of automatically selected requests.
+output reference. It skips requests that cannot individually fold in the
+observed state, then builds the greatest fitting prefix of the foldable rest.
+Use `--limit` to cap the number of automatically selected requests.
 
 ```sh
 open-datum fold --blueprint plutus.json \
@@ -157,26 +158,34 @@ open-datum fold --blueprint plutus.json \
 
 This is the path of a successful discovered batch. Holders the application does
 not accept are kept in the accounting as skipped, with their references and
-reasons. Every recognized request is folded or counted as left unconsumed.
+reasons. A recognized request is also skipped when its key is already
+registered, its termination key is not active, its deposit is below the minimum
+the holding must keep, or its processing window has closed. The first
+individually foldable request for a key in take order keeps that key; later
+foldable requests for it are skipped as duplicates. An unfoldable earlier
+request never reserves the key. Every holder is folded, skipped with a reason,
+or left as a foldable request beyond the selected prefix.
 
 ```mermaid
 flowchart TB
     A[Public approvals] -->|classify holders| B[Requests and skips]
     B -->|order requests| C[Greatest take first]
-    C -->|try prefixes| D[Greatest fitting batch]
-    D -->|build transaction| E[Folded, skipped, left]
+    C -->|skip unfoldable| D[First foldable per key]
+    D -->|try prefixes| E[Greatest fitting batch]
+    E -->|build transaction| F[Folded, skipped, left]
     classDef chain fill:transparent,stroke:#3b82f6,stroke-width:2px
     classDef selection fill:transparent,stroke:#22c55e,stroke-width:2px
     classDef receipt fill:transparent,stroke:#a855f7,stroke-width:2px
     class A chain
-    class B,C,D selection
-    class E receipt
+    class B,C,D,E selection
+    class F receipt
 ```
 
 Transaction bytes include all required signing witnesses. Only transaction
 size, memory or steps exceeding the observed network limit permits trying a
-shorter prefix. A provider, state, deadline or balance failure stops the fold
-with its own reason; it never becomes an empty or smaller discovered set.
+shorter prefix. A failed public read, registry replay or other transaction
+construction failure stops the fold with its own reason; it never becomes an
+empty or shorter discovered answer.
 
 Each registration burns its approval and receives its committed holding, active
 token and deposit. Its held value above that deposit is yours. A termination
@@ -190,9 +199,11 @@ them, naming the reason; it never trims an explicit batch, even with `--limit`.
 
 The successful receipt names the registry's new root and state output. Its
 `folded` list gives each key, request kind and pending reference; `skipped` gives
-each unaccepted holder's reference and reason; `left` counts recognized requests
-not included. A fold with nothing eligible still names the skipped holders it
-observed. A failed read remains unavailable and never claims an empty answer.
+each unaccepted or individually unfoldable holder's reference and reason;
+`left` counts foldable requests not included. Skipped requests are never counted
+as left. If nothing can fold, the command refuses with nothing to fold and
+still names every skipped holder. A failed read remains unavailable and never
+claims an empty answer.
 
 ### Where the key's token goes
 

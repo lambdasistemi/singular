@@ -131,20 +131,34 @@ import Singular.State.StateWorld
 spec :: Spec
 spec = do
     describe "unfoldable public requests" $ do
-        it "lets a current request take the key after an earlier expired one is skipped" $ do
-            rg <- newRegistered
-            [expired, current] <- book rg 'v'
-                [ (bookedKey "same key" 1){bkTip = 9_000_000}
-                , bookedKey "same key" processingDeadline
-                ]
-            control <- expectBuilt =<< foldNow rg [current]
-            judge (rgWorld rg) control >>= (`shouldSatisfy` everyScriptAccepts)
-            selected <- fitting rg Nothing
-            map pendingRef (foldSelected selected) `shouldBe` [current]
-            map skippedRef (foldSkipped selected) `shouldBe` [expired]
-            show (map skippedReason (foldSkipped selected))
-                `shouldSatisfy` Text.isInfixOf "ProcessingWindowClosed" . Text.pack
-            foldLeft selected `shouldBe` 0
+        forM_ [True, False] $ \expiredFirst -> it
+            ( if expiredFirst
+                then
+                    "lets a current request take the key after an earlier expired one is skipped"
+                else
+                    "keeps a later expired request's own refusal instead of calling it a duplicate"
+            )
+            $ do
+                rg <- newRegistered
+                [expired, current] <-
+                    book
+                        rg
+                        'v'
+                        [ (bookedKey "same key" 1)
+                            { bkTip = if expiredFirst then 9_000_000 else 1_000_000
+                            }
+                        , (bookedKey "same key" processingDeadline)
+                            { bkTip = if expiredFirst then 1_000_000 else 9_000_000
+                            }
+                        ]
+                control <- expectBuilt =<< foldNow rg [current]
+                judge (rgWorld rg) control >>= (`shouldSatisfy` everyScriptAccepts)
+                selected <- fitting rg Nothing
+                map pendingRef (foldSelected selected) `shouldBe` [current]
+                map skippedRef (foldSkipped selected) `shouldBe` [expired]
+                show (map skippedReason (foldSkipped selected))
+                    `shouldSatisfy` Text.isInfixOf "ProcessingWindowClosed" . Text.pack
+                foldLeft selected `shouldBe` 0
         it "skips every request-local refusal beside its foldable control" $ do
             (rg, application, bad, good) <- unfoldablePool
             forM_ bad $ \(_, named, reason, control) -> do
@@ -178,6 +192,22 @@ spec = do
                 + foldLeft selected
                 `shouldBe` 10
             judge (rgWorld rg) (foldTransaction selected)
+                >>= (`shouldSatisfy` everyScriptAccepts)
+            whole <- withSession (rgWorld rg) $ \session ->
+                expectBuilt
+                    =<< buildFold
+                        session
+                        (rgScript rg)
+                        application
+                        (rgRegistry rg)
+                        []
+                        (rgFolder rg)
+                        Nothing
+            map pendingRef (foldSelected whole) `shouldSatisfy` \refs -> not (null refs) && all (`elem` good) refs
+            map skippedRef (foldSkipped whole)
+                `shouldMatchList` [last named | (_, named, _, _) <- bad]
+            foldLeft whole `shouldBe` length good - length (foldSelected whole)
+            judge (rgWorld rg) (foldTransaction whole)
                 >>= (`shouldSatisfy` everyScriptAccepts)
         it "retains every skipped request when none can fold" $ do
             (rg, application, bad, _) <- unfoldablePool
@@ -493,9 +523,9 @@ spec = do
                 show namedOutcome
                     `shouldSatisfy` (Text.isInfixOf (Text.pack (show limit)) . Text.pack)
 
-        it "keeps a deadline refusal instead of treating it as capacity" $ do
+        it "refuses a named expired request and skips it during discovery" $ do
             rg <- newRegistered
-            [current, _] <-
+            refs@[current, expired] <-
                 book
                     rg
                     'p'
@@ -504,18 +534,12 @@ spec = do
                     ]
             control <- expectBuilt =<< foldNow rg [current]
             judge (rgWorld rg) control >>= (`shouldSatisfy` everyScriptAccepts)
-            withSession
-                (rgWorld rg)
-                ( \session ->
-                    buildRegistrationFold
-                        session
-                        (rgScript rg)
-                        standInApplication
-                        (rgRegistry rg)
-                        []
-                        (rgFolder rg)
-                )
-                `shouldReturn` Left ProcessingWindowClosed
+            foldNow rg refs `shouldReturn` Left ProcessingWindowClosed
+            selected <- fitting rg Nothing
+            map pendingRef (foldSelected selected) `shouldBe` [current]
+            foldSkipped selected
+                `shouldBe` [SkippedHolder expired (UnfoldableRequest ProcessingWindowClosed)]
+            foldLeft selected `shouldBe` 0
 
     describe "discovery from public approval holders" $ do
         it "finds the registry's requests without naming their references" $ do

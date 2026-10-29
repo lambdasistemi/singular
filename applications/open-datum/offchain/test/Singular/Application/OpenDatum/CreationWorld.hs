@@ -216,7 +216,7 @@ composed transaction exceeds the real network's byte limit.
 -}
 withPublicScripts :: Creation -> IO Creation
 withPublicScripts world = do
-    References live publication <- withSession world $ \session ->
+    References{referencesLive = live, referencesPublication = publication} <- withSession world $ \session ->
         planNextReference
             [crSeed world]
             session

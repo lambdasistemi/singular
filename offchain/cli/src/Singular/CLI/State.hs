@@ -110,6 +110,7 @@ import Singular.State.Publication
     , planReferences
     )
 import Singular.State.Records (decodeStateDatum)
+import Singular.State.Refusal (Refusal (DuplicateKey))
 import Singular.State.Script
     ( ScriptSource (..)
     , StateScript (..)
@@ -477,3 +478,6 @@ runStateFold env host a = do
     skipReason Fold.HeldAtKeyAddress = "held at a key address" :: Text
     skipReason Fold.DecodedForAnotherRegistry = "a request of another registry"
     skipReason Fold.NotAcceptedByApplication = "not accepted by the application's decode"
+    skipReason (Fold.UnfoldableRequest (DuplicateKey key)) =
+        "another foldable request has already taken the key " <> hexOf key
+    skipReason (Fold.UnfoldableRequest reason) = T.pack (renderRefusal reason)

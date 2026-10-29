@@ -2,18 +2,18 @@
 
 {- |
 Module      : Singular.State.Fold
-Description : Fold pending registrations into a registry from public data alone
+Description : Discover foldable requests and build a registry batch from public data
 License     : Apache-2.0
 
-Anyone may fold the acceptable pending registrations of a registry. The folder
-reads the registry's state output, rebuilds its trie from the public history of
-the state token, proves each key absent, and builds one transaction that
-spends the state and the pending registrations, burns their approvals, mints
-the token of each key into the holding its approval commits to, and writes the
-new root. The booker contributes nothing but the pending registration on the
-chain: no file, no key, no record.
+Anyone may fold the acceptable pending requests of a registry. The folder reads
+its public state and trie history, skips individually unfoldable requests and
+keeps the first foldable request per key in take order. A registration proves
+its key absent and mints its token into the committed holding; a termination
+proves its key active and burns its token. The batch consumes the requests and
+their approvals, continues the state and writes the new root. The booker
+contributes only the public request: no file, key or local record.
 
-What a pending registration is, how it is spent and how its approval is burned
+What a pending request is, how it is spent and how its approval is burned
 belong to the application. The application hands the builder those three
 things; the builder owns everything the state validator decides.
 -}
@@ -52,6 +52,7 @@ import Data.Either (partitionEithers)
 import Data.List.NonEmpty qualified as NE
 import Data.Map.Strict qualified as Map
 import Data.Maybe (mapMaybe)
+import Data.Set qualified as Set
 import Data.Word (Word32)
 import Lens.Micro ((&), (.~), (^.))
 import PlutusCore.Data qualified as PLC
@@ -81,11 +82,12 @@ import Cardano.Ledger.Mary.Value
     )
 import Cardano.Ledger.Plutus.TxInfo (transAddr)
 import Cardano.Ledger.TxIn (TxIn)
+import Cardano.Slotting.Slot (SlotNo)
 import Cardano.Tx.Build qualified as Tx
 import Cardano.Tx.Ledger (ConwayTx)
 
 import Singular.Registry.Evidence (NoWitness)
-import Singular.Registry.Ledger (ConwayEra, Root (..), TxOut)
+import Singular.Registry.Ledger (ConwayEra, PParams, Root (..), TxOut)
 import Singular.Registry.LedgerProvider
     ( OutputQuery (..)
     , ReadFailure (..)
@@ -222,14 +224,15 @@ data PendingRequest = PendingRequest
     }
     deriving stock (Eq, Show)
 
--- | Why an approval holder does not describe a request of this registry.
+-- | Why an approval holder is omitted from an automatic fold.
 data SkipReason
     = HeldAtKeyAddress
     | DecodedForAnotherRegistry
     | NotAcceptedByApplication
+    | UnfoldableRequest Refusal
     deriving stock (Eq, Show)
 
--- | A holder omitted from discovery, with its public reference and reason.
+-- | A holder omitted from an automatic fold, with its public reference and reason.
 data SkippedHolder = SkippedHolder
     { skippedRef :: TxIn
     -- ^ The holder that remains unspent by this discovery result.
@@ -292,9 +295,9 @@ data FoldResult = FoldResult
     , foldSelected :: [PendingRequest]
     -- ^ The folded requests, in their transaction order.
     , foldSkipped :: [SkippedHolder]
-    -- ^ All unaccepted holders named by discovery.
+    -- ^ All unaccepted or individually unfoldable holders, named with reasons.
     , foldLeft :: Int
-    -- ^ Every discovered request beyond the chosen prefix, including the cap.
+    -- ^ Every foldable request beyond the chosen prefix, including the cap.
     , foldBoundary :: Maybe CapacityLimit
     -- ^ The next prefix's actual capacity refusal, when a boundary was probed.
     }
@@ -311,8 +314,10 @@ pendingTake pending = case pendingRequest pending of
     Coin held = pendingOutput pending ^. coinTxOutL
 
 {- | Discover and build the greatest fitting prefix, optionally capped. A
-nonempty named batch is built as named, without a cap or trimming. Any
-noncapacity refusal stops the build with its own reason.
+nonempty named batch is built as named, without a cap or trimming. Automatic
+selection first skips individually unfoldable requests, then later foldable
+requests for an already selected key. Capacity alone permits a shorter prefix;
+other construction and public-read failures retain their own identity.
 -}
 buildFold
     :: Session NoWitness IO
@@ -338,8 +343,9 @@ buildFold session script application registry requests payerAddress cap =
 data FoldFailure = FoldFailure
     { foldFailureReason :: Refusal
     , foldFailureObserved :: Maybe ([SkippedHolder], Int)
-    {- ^ All skipped holders and all requests left unconsumed. Nothing means
-    no complete request set was read, so no empty set may be claimed.
+    {- ^ All skipped holders and the unconsumed candidate count after automatic
+    filtering. Nothing means classification was incomplete, so no empty set may
+    be claimed.
     -}
     }
     deriving stock (Eq, Show)
@@ -376,6 +382,21 @@ attemptFold session script application registry requests payerAddress cap = runE
                             )
                     pure (named, [])
         pure (payer, observed, pendings, skipped)
+    (foldable, omitted, observation) <-
+        if null requests
+            then withExceptT (`FoldFailure` Nothing) $ do
+                protocol <- liftIO (parameters session)
+                now <- liftIO (tipSlot session)
+                let current = FoldObservation protocol now
+                (accepted, refused) <-
+                    selectFoldable
+                        session
+                        registry
+                        observed
+                        current
+                        (orderByTake pendingTake pendingRef pendings)
+                pure (accepted, skipped <> refused, Just current)
+            else pure (pendings, skipped, Nothing)
     let build =
             buildPendingFold
                 session
@@ -383,27 +404,28 @@ attemptFold session script application registry requests payerAddress cap = runE
                 application
                 registry
                 observed
+                observation
                 payer
                 payerAddress
     selected <-
         withExceptT
-            (\reason -> FoldFailure reason (Just (skipped, length pendings)))
+            (\reason -> FoldFailure reason (Just (omitted, length foldable)))
             $ if null requests
                 then
                     ExceptT
                         ( largestFittingPrefix
                             (runExceptT . build)
                             cap
-                            (orderByTake pendingTake pendingRef pendings)
+                            foldable
                         )
                 else do
-                    tx <- build pendings
-                    pure (BatchSelection pendings 0 tx Nothing)
+                    tx <- build foldable
+                    pure (BatchSelection foldable 0 tx Nothing)
     pure
         FoldResult
             { foldTransaction = selectedBuild selected
             , foldSelected = selectedRequests selected
-            , foldSkipped = skipped
+            , foldSkipped = omitted
             , foldLeft = requestsLeft selected
             , foldBoundary = nextCapacity selected
             }
@@ -411,6 +433,89 @@ attemptFold session script application registry requests payerAddress cap = runE
 -- | Captured public state and replay, shared by all probes of one fold.
 data PublicRegistry
     = PublicRegistry TxIn (TxOut ConwayEra) Replayed (TrieSnapshot IO)
+
+-- | One protocol and clock observation shared by eligibility and capacity probes.
+data FoldObservation = FoldObservation (PParams ConwayEra) SlotNo
+
+selectFoldable
+    :: Session NoWitness IO
+    -> RegistryIdentity
+    -> PublicRegistry
+    -> FoldObservation
+    -> [PendingRequest]
+    -> ExceptT Refusal IO ([PendingRequest], [SkippedHolder])
+selectFoldable session registry (PublicRegistry _ _ _ snapshot) (FoldObservation protocol now) =
+    go Set.empty [] []
+  where
+    go _ accepted omitted [] = pure (reverse accepted, reverse omitted)
+    go keys accepted omitted (pending : rest) = do
+        eligible <- liftIO . runExceptT $ do
+            checkDeposit protocol registry pending
+            checkLeaf snapshot pending
+            case pendingRequest pending of
+                RegistrationRequest registration -> do
+                    _ <- processingWindow session now [registration]
+                    pure ()
+                TerminationRequest{} -> pure ()
+        let key = requestKey (pendingRequest pending)
+            skip reason =
+                go
+                    keys
+                    accepted
+                    ( SkippedHolder (pendingRef pending) (UnfoldableRequest reason)
+                        : omitted
+                    )
+                    rest
+        case eligible of
+            Left reason | individualRefusal reason -> skip reason
+            Left failure -> throwError failure
+            Right ()
+                | Set.member key keys -> skip (DuplicateKey key)
+                | otherwise ->
+                    go (Set.insert key keys) (pending : accepted) omitted rest
+    individualRefusal = \case
+        DepositBelowHolding{} -> True
+        KeyAlreadyRegistered{} -> True
+        KeyNotActive{} -> True
+        ProcessingWindowClosed -> True
+        _ -> False
+
+checkDeposit
+    :: PParams ConwayEra
+    -> RegistryIdentity
+    -> PendingRequest
+    -> ExceptT Refusal IO ()
+checkDeposit protocol registry pending = case pendingRequest pending of
+    RegistrationRequest registration -> do
+        let smallest = getMinCoinTxOut protocol (holdingFor registry registration)
+            deposit = regDeposit registration
+        when (deposit < smallest) $
+            throwError (DepositBelowHolding (pendingRef pending) deposit smallest)
+    TerminationRequest{} -> pure ()
+
+checkLeaf
+    :: TrieSnapshot IO -> PendingRequest -> ExceptT Refusal IO ()
+checkLeaf snapshot pending = do
+    let request = pendingRequest pending
+        key = requestKey request
+    leaf <-
+        ExceptT (either (Left . TrieRefused) Right <$> leafAt snapshot key)
+    case request of
+        RegistrationRequest{} -> unless (leaf == Unknown) (throwError (KeyAlreadyRegistered key))
+        TerminationRequest{} -> unless (leaf == Active) (throwError (KeyNotActive key))
+
+processingWindow
+    :: Session NoWitness IO
+    -> SlotNo
+    -> [Registration]
+    -> ExceptT Refusal IO SlotNo
+processingWindow session now registrations = do
+    fallback <- (+ 3600000) <$> liftIO (slotStart session now)
+    deadline <-
+        liftIO
+            (floorSlot session (minimum (fallback : map regDeadline registrations)))
+    liftIO (validityFromTip session now deadline)
+        >>= maybe (throwError ProcessingWindowClosed) pure
 
 readPublicRegistry
     :: Session NoWitness IO
@@ -445,30 +550,20 @@ buildPendingFold
     -> Application
     -> RegistryIdentity
     -> PublicRegistry
+    -> Maybe FoldObservation
     -> Payer
     -> Addr
     -> [PendingRequest]
     -> ExceptT Refusal IO ConwayTx
-buildPendingFold session script application registry (PublicRegistry stateIn stateOut replayed snapshot) payer payerAddress pendings = do
+buildPendingFold session script application registry (PublicRegistry stateIn stateOut replayed snapshot) observation payer payerAddress pendings = do
     when (null pendings) $ throwError NothingToFold
     let keys = map (requestKey . pendingRequest) pendings
     forM_ (duplicates keys) (throwError . DuplicateKey)
-    protocol <- liftIO (parameters session)
-    forM_ pendings $ \pending -> case pendingRequest pending of
-        RegistrationRequest registration -> do
-            let smallest = getMinCoinTxOut protocol (holdingFor registry registration)
-                deposit = regDeposit registration
-            when (deposit < smallest) $
-                throwError (DepositBelowHolding (pendingRef pending) deposit smallest)
-        TerminationRequest{} -> pure ()
-    forM_ pendings $ \pending -> do
-        let request = pendingRequest pending
-            key = requestKey request
-        leaf <-
-            ExceptT (either (Left . TrieRefused) Right <$> leafAt snapshot key)
-        case request of
-            RegistrationRequest{} -> unless (leaf == Unknown) (throwError (KeyAlreadyRegistered key))
-            TerminationRequest{} -> unless (leaf == Active) (throwError (KeyNotActive key))
+    protocol <- case observation of
+        Just (FoldObservation observedProtocol _) -> pure observedProtocol
+        Nothing -> liftIO (parameters session)
+    forM_ pendings (checkDeposit protocol registry)
+    forM_ pendings (checkLeaf snapshot)
     walked <-
         ExceptT
             ( either (Left . TrieRefused) Right
@@ -481,24 +576,17 @@ buildPendingFold session script application registry (PublicRegistry stateIn sta
                         ]
                     )
             )
-    now <- liftIO (tipSlot session)
-    fallback <- (+ 3600000) <$> liftIO (slotStart session now)
-    deadline <-
-        liftIO
-            ( floorSlot
-                session
-                ( minimum
-                    ( fallback
-                        : [ regDeadline r
-                          | pending <- pendings
-                          , RegistrationRequest r <- [pendingRequest pending]
-                          ]
-                    )
-                )
-            )
+    now <- case observation of
+        Just (FoldObservation _ observedSlot) -> pure observedSlot
+        Nothing -> liftIO (tipSlot session)
     upper <-
-        liftIO (validityFromTip session now deadline)
-            >>= maybe (throwError ProcessingWindowClosed) pure
+        processingWindow
+            session
+            now
+            [ registration
+            | pending <- pendings
+            , RegistrationRequest registration <- [pendingRequest pending]
+            ]
     stateScriptOutputs <-
         ExceptT (referenceOutputs session (ssScript script) (ssSource script))
     let policy = statePolicy script
