@@ -15,7 +15,7 @@
       "pause": 500
     },
     {
-      "text": "[ ] gate-synthesized: the ticket owner's and the auditor's gate tables joined once and frozen with both input hashes.",
+      "text": "[x] gate-synthesized: the ticket owner's and the auditor's gate tables joined once and frozen with both input hashes.",
       "pause": 400
     }
   ],
@@ -63,6 +63,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "e63f209a1186ba692c848f35c4a44f97009b57174c97eac1b012e15c9694f08a"
+    "sha256": "fd88ede6e42d14f5b7fbf1f6cd8ae7d48488bb488d83d048f0c3cece3388a4f3"
   }
 }

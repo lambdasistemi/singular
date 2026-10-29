@@ -15,7 +15,7 @@
       "pause": 500
     },
     {
-      "text": "The ticket owner's table, written before the auditor's. The auditor writes its own table independently when it is seated; the ticket owner joins the two once, records both input hashes and freezes the result in the runtime root before the commit owner starts. Every command is an existing hosted command, or one this ticket adds to a hosted job and marks \"CI change in this ticket\".",
+      "text": "Two tables were written independently and joined once on 29 October 2026 (see the synthesis). Every command is an existing hosted command, or one this ticket adds to a hosted job and marks \"CI change in this ticket\". Every row expects exit 0; a control's inner command must fail on purpose, and the enclosing control command exits 0 only after seeing it fail.",
       "pause": 400
     },
     {
@@ -51,7 +51,11 @@
       "pause": 400
     },
     {
-      "text": "the carrying attempt's receipt: script sizes, transaction sizes and limits, and the outcome;.",
+      "text": "the carrying attempt: the attempted transaction, its size and its execution evaluation against the same frozen limits;.",
+      "pause": 400
+    },
+    {
+      "text": "a size estimate alone does not show that a transaction fits;.",
       "pause": 400
     },
     {
@@ -67,7 +71,7 @@
       "pause": 400
     },
     {
-      "text": "limits (issue 746), release (issue 747).",
+      "text": "limits (issue 746), release (issue 747); and the existing registration rows that stay uncovered for want of a comparison with the application-held model, which this ticket does not turn into coverage.",
       "pause": 400
     }
   ],
@@ -77,12 +81,12 @@
       "pause": 500
     },
     {
-      "text": "Pending: the auditor's independent table, written without reading this page, is joined to this one before the commit owner starts. Both input hashes and the frozen table are kept with the ticket's working records.",
+      "text": "The ticket owner's table and the auditor's independent table, written without reading this page, were joined once on 29 October 2026. The auditor's table added the creation-recovery partitions (G12), the conformance row checks (G10) and the release packaging check (G13), and named seven places where an existing job needs an extension, which are carried by G1, G5, G6, G10 and G12 as changes in this ticket. The frozen table and both input hashes are kept with the ticket's working records. Rows are added to a later version of this table, never edited.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "gate.md",
-    "sha256": "9493ff85c51b4b4a53ae07855c11587548ea119693547e8792eda5ab8f2be2a9"
+    "sha256": "4ed29f69e21e63ebb954c7c2058a2aba75872c8ed22668269ef944ea95f95160"
   }
 }

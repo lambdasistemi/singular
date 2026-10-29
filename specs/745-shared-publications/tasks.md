@@ -5,7 +5,7 @@ the ticket owner accepts its slice.
 
 ## Binding
 
-- [ ] gate-synthesized: the ticket owner's and the auditor's gate tables joined once and frozen with both input hashes.
+- [x] gate-synthesized: the ticket owner's and the auditor's gate tables joined once and frozen with both input hashes.
 
 ## Pull request 1: measured creation
 
