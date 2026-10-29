@@ -268,6 +268,14 @@ def recompute(receipt, directory):
             and configuration[3] == workload["reclaimingMilliseconds"],
             "creation windows differ from chain configuration",
         )
+        for transaction in rebuilt[name]["transactions"]:
+            spent = 0
+            for reference in transaction["inputsSpent"]:
+                identity, _, index = reference.partition("#")
+                require(identity in chain, "creation funding input is absent from the chain record")
+                spent += measure(chain[identity])["outputs"][int(index)]["lovelace"]
+            created = sum(output["lovelace"] for output in transaction["outputs"])
+            require(spent == created + transaction["feeLovelace"], "creation fee does not reconcile spent and created ADA")
     creator_transactions = [
         t["id"]
         for t in measured[start : finish + 1]
@@ -626,6 +634,12 @@ def controls(receipts):
                 altered = copy.deepcopy(receipts)
                 altered[leg][name]["totals"][field] += 1
                 refused(altered, lambda r: pair(r, EVIDENCE), field)
+            altered = copy.deepcopy(receipts)
+            total = altered[leg][name]["totals"]
+            total["feesLovelace"] += total["referenceAdaLockedLovelace"]
+            total["referenceAdaLockedLovelace"] = 0
+            if altered != receipts:
+                refused(altered, lambda r: pair(r, EVIDENCE), "reference capital counted as fees")
             for index, transaction in enumerate(receipts[leg][name]["transactions"]):
                 for field in ("sizeBytes", "feeLovelace"):
                     altered = copy.deepcopy(receipts)
