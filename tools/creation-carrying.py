@@ -251,6 +251,11 @@ def rebuild(receipt, directory, candidate, cost):
             )
         form.update(
             {
+                "stateSource": "witness" if attach_state else "live reference output",
+                "applicationSource": "witness"
+                if attach_application
+                else "live reference output",
+                "createsReferenceOutputs": creates,
                 "sizeBytes": len(raw),
                 "ledgerSizeBytes": ledger_bytes,
                 "feeLovelace": measured["feeLovelace"],
@@ -325,6 +330,9 @@ def controls(receipt, directory, candidate, cost):
             "node",
             "liveReferenceScripts",
             "createdReferenceScripts",
+            "stateSource",
+            "applicationSource",
+            "createsReferenceOutputs",
         ):
             altered = copy.deepcopy(receipt)
             altered["forms"][index][field] = "altered"
@@ -354,6 +362,106 @@ def controls(receipt, directory, candidate, cost):
     print(
         f"creation-carrying: {count} altered figures, missing execution, false fits, limits and form substitutions refused"
     )
+
+
+def page(receipt, candidate):
+    forms = {form["form"]: form for form in receipt["forms"]}
+    limits = receipt["limits"]
+    witnesses = forms["witnesses"]
+    outputs = forms["reference-outputs"]
+    state = forms["state-witness"]
+    application = forms["application-witness"]
+    configuration = receipt["configuration"]
+    require(
+        [form["fits"] for form in receipt["forms"]] == [True, False, False, True, True],
+        "the frozen experiment's outcomes changed; its explanation must be reviewed",
+    )
+    lines = [
+        "## Can creation carry its scripts",
+        "",
+        f"The measuring tool built {len(forms)} registry-creation forms with the real genesis and application configuration builders, on one fresh development network with the same frozen protocol parameters as the comparison above. Each form creates a fresh registry with the same configuration; only script placement changes. The normal referenced form is the reference point. These are experiments, and the production command keeps its shared publications.",
+        "",
+        "Both live copies were available for this controlled experiment. A form carrying a script deliberately ignores that script's live copy. A form creating reference outputs also carries witnesses: a transaction cannot read its own new outputs as reference inputs.",
+        "",
+        f"The state-carried form has {state['sizeBytes']} complete signed bytes and the application-carried form has {application['sizeBytes']}. The node accepted and confirmed both mixed forms. Each still needs the other script's live reference output.",
+        "",
+        f"Carrying both scripts in witnesses has {witnesses['sizeBytes']} complete signed bytes; carrying them in witnesses and new reference outputs has {outputs['sizeBytes']}. The node refused both for maximum transaction size: it counts {witnesses['ledgerSizeBytes']} and {outputs['ledgerSizeBytes']} bytes respectively, against a limit of {limits['transactionBytes']}. The complete signed transaction length and the length the ledger counts are different figures; the ledger count here is one byte less. Both appear below.",
+        "",
+        "| Creation form | Complete signed bytes | Ledger-counted bytes | Fee (lovelace) | Evaluated memory | Evaluated steps | Node outcome | Limiting parameter |",
+        "|---|---:|---:|---:|---:|---:|---|---|",
+    ]
+    for form in receipt["forms"]:
+        lines.append(
+            "| "
+            + " | ".join(
+                [
+                    LABELS[form["form"]],
+                    *[
+                        str(form[field])
+                        for field in (
+                            "sizeBytes",
+                            "ledgerSizeBytes",
+                            "feeLovelace",
+                            "executionMemory",
+                            "executionSteps",
+                        )
+                    ],
+                    form["node"]["outcome"],
+                    ", ".join(form["limitingParameters"]) or "none",
+                ]
+            )
+            + " |"
+        )
+    lines += [
+        "",
+        "A fit requires successful execution, size within the ledger limit, and the development node's acceptance and confirmation. The execution figures are the ledger evaluator's final results on the actual chain inputs and equal the signed execution budgets. The oversized forms were evaluated locally, then refused by the node's size check before its script-execution phase; their execution figures do not claim node execution. A size comparison alone is never reported as a fit.",
+        "",
+        "### Frozen limits and fee parameters",
+        "",
+        f"Every form used maximum transaction size {limits['transactionBytes']}, maximum transaction execution memory {limits['executionMemory']} and maximum transaction execution steps {limits['executionSteps']}. The parameters and their hash are read from the independent chain record, rather than supplied by the measuring command.",
+        "",
+        "| Parameter | Chain-read value |",
+        "|---|---:|",
+        f"| Maximum transaction bytes | {limits['transactionBytes']} |",
+        f"| Maximum transaction execution memory | {limits['executionMemory']} |",
+        f"| Maximum transaction execution steps | {limits['executionSteps']} |",
+        f"| Fee per byte (lovelace) | {limits['feePerByteLovelace']} |",
+        f"| Fixed fee (lovelace) | {limits['fixedFeeLovelace']} |",
+        f"| Execution price per memory unit | {limits['executionPrices']['priceMemory']} |",
+        f"| Execution price per step | {limits['executionPrices']['priceSteps']} |",
+        f"| Initial reference-script fee per byte (lovelace) | {limits['referenceScriptFeePerByteLovelace']} |",
+        "",
+        "The experiment holds the application's configuration fixed across forms. These explicit experimental values do not change command defaults.",
+        "",
+        "| Application configuration | Value |",
+        "|---|---:|",
+    ]
+    for label, value in zip(
+        (
+            "Registration cost (lovelace)",
+            "Minimum tip (lovelace)",
+            "Processing window (milliseconds)",
+            "Reclaiming window (milliseconds)",
+            "Booking width (milliseconds)",
+        ),
+        configuration,
+        strict=True,
+    ):
+        lines.append(f"| {label} | {value} |")
+    lines += [
+        "",
+        "### What the result gives a creator",
+        "",
+        "Each fitting mixed form still needs one prior publication. When a first creation finds no live copy, it cannot skip both publications by carrying: the both-witness form that needs no live reference is refused for size. A fitting mixed form creates no reference output for the script it carries. If a first creation published only the other script, a later registry using the unchanged production command would still have to publish the carried script. Carrying defers that publication; it does not remove it.",
+        "",
+        f"The production workflow remains as measured: the first creation sends {candidate['first']['totals']['transactionCount']} transactions, and the later creation sends {candidate['later']['totals']['transactionCount']} transaction by reusing the shared publications. The measured carrying outcomes are reported without recommending or adopting a mixed form.",
+        "",
+        "### Measurement appendix",
+        "",
+        "The [carrying receipt](https://github.com/lambdasistemi/singular/blob/main/specs/745-shared-publications/evidence/carrying.json) records the test-only producer, its exact source changes and executable hash, the signed transactions, local execution results and independent node answers. The experiment has its own recorded genesis and start time; its protocol parameters match the earlier creation comparison. The receipt checker recomputes lengths, fees, script hashes, placements and execution budgets, binds each transaction to the independent node submission, and requires identical included bytes for every fit. Every refusal must reproduce the node's limiting parameter and figures. Missing forms, missing execution, altered figures and false fits are refused by the hosted documentation check. The test harness is outside the released command's source and changes no production builder or shared receipt.",
+        "",
+    ]
+    return lines
 
 
 def main():

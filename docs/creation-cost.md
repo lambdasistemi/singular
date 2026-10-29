@@ -95,6 +95,61 @@ Release: `open-datum 0.17.0 (commit ede9f7992c4936474d3ed86f890ffa2e6fddf625)`. 
 |---|---|---:|---:|
 | none | none | — | — |
 
+## Can creation carry its scripts
+
+The measuring tool built 5 registry-creation forms with the real genesis and application configuration builders, on one fresh development network with the same frozen protocol parameters as the comparison above. Each form creates a fresh registry with the same configuration; only script placement changes. The normal referenced form is the reference point. These are experiments, and the production command keeps its shared publications.
+
+Both live copies were available for this controlled experiment. A form carrying a script deliberately ignores that script's live copy. A form creating reference outputs also carries witnesses: a transaction cannot read its own new outputs as reference inputs.
+
+The state-carried form has 8764 complete signed bytes and the application-carried form has 10821. The node accepted and confirmed both mixed forms. Each still needs the other script's live reference output.
+
+Carrying both scripts in witnesses has 18567 complete signed bytes; carrying them in witnesses and new reference outputs has 36292. The node refused both for maximum transaction size: it counts 18566 and 36291 bytes respectively, against a limit of 16384. The complete signed transaction length and the length the ledger counts are different figures; the ledger count here is one byte less. Both appear below.
+
+| Creation form | Complete signed bytes | Ledger-counted bytes | Fee (lovelace) | Evaluated memory | Evaluated steps | Node outcome | Limiting parameter |
+|---|---:|---:|---:|---:|---:|---|---|
+| Both scripts read from live reference outputs | 1008 | 1007 | 1028951 | 625441 | 245125425 | accepted and confirmed | none |
+| Both scripts carried in witnesses | 18567 | 18566 | 1026047 | 625441 | 245125425 | refused | maximum transaction size |
+| Both scripts carried in witnesses and new reference outputs | 36292 | 36291 | 1808361 | 656209 | 253987129 | refused | maximum transaction size |
+| State script carried; application script referenced | 8764 | 8763 | 1027719 | 625441 | 245125425 | accepted and confirmed | none |
+| Application script carried; state script referenced | 10821 | 10820 | 1027719 | 625441 | 245125425 | accepted and confirmed | none |
+
+A fit requires successful execution, size within the ledger limit, and the development node's acceptance and confirmation. The execution figures are the ledger evaluator's final results on the actual chain inputs and equal the signed execution budgets. The oversized forms were evaluated locally, then refused by the node's size check before its script-execution phase; their execution figures do not claim node execution. A size comparison alone is never reported as a fit.
+
+### Frozen limits and fee parameters
+
+Every form used maximum transaction size 16384, maximum transaction execution memory 140000000 and maximum transaction execution steps 10000000000. The parameters and their hash are read from the independent chain record, rather than supplied by the measuring command.
+
+| Parameter | Chain-read value |
+|---|---:|
+| Maximum transaction bytes | 16384 |
+| Maximum transaction execution memory | 140000000 |
+| Maximum transaction execution steps | 10000000000 |
+| Fee per byte (lovelace) | 44 |
+| Fixed fee (lovelace) | 155381 |
+| Execution price per memory unit | 0.0577 |
+| Execution price per step | 7.21e-05 |
+| Initial reference-script fee per byte (lovelace) | 44 |
+
+The experiment holds the application's configuration fixed across forms. These explicit experimental values do not change command defaults.
+
+| Application configuration | Value |
+|---|---:|
+| Registration cost (lovelace) | 3000000 |
+| Minimum tip (lovelace) | 1000000 |
+| Processing window (milliseconds) | 60000 |
+| Reclaiming window (milliseconds) | 180000 |
+| Booking width (milliseconds) | 60000 |
+
+### What the result gives a creator
+
+Each fitting mixed form still needs one prior publication. When a first creation finds no live copy, it cannot skip both publications by carrying: the both-witness form that needs no live reference is refused for size. A fitting mixed form creates no reference output for the script it carries. If a first creation published only the other script, a later registry using the unchanged production command would still have to publish the carried script. Carrying defers that publication; it does not remove it.
+
+The production workflow remains as measured: the first creation sends 3 transactions, and the later creation sends 1 transaction by reusing the shared publications. The measured carrying outcomes are reported without recommending or adopting a mixed form.
+
+### Measurement appendix
+
+The [carrying receipt](https://github.com/lambdasistemi/singular/blob/main/specs/745-shared-publications/evidence/carrying.json) records the test-only producer, its exact source changes and executable hash, the signed transactions, local execution results and independent node answers. The experiment has its own recorded genesis and start time; its protocol parameters match the earlier creation comparison. The receipt checker recomputes lengths, fees, script hashes, placements and execution budgets, binds each transaction to the independent node submission, and requires identical included bytes for every fit. Every refusal must reproduce the node's limiting parameter and figures. Missing forms, missing execution, altered figures and false fits are refused by the hosted documentation check. The test harness is outside the released command's source and changes no production builder or shared receipt.
+
 ## Matched conditions and evidence
 
 The legs use separate fresh development networks from the same frozen genesis, the same protocol parameters, the same generated wallet funding and the same processing and reclaim windows. Each network is read independently. The receipts include the complete chain-read protocol parameters and the tool versions.

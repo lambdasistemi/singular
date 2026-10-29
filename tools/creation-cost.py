@@ -571,6 +571,8 @@ def page(receipts):
             if not references:
                 lines.append("| none | none | — | — |")
             lines.append("")
+    carrying_checker, carrying = load_carrying(receipts)
+    lines += carrying_checker["page"](carrying, candidate)
     network = baseline["network"]
     lines += [
         "## Matched conditions and evidence",

@@ -83,6 +83,70 @@
       "pause": 400
     }
   ],
+  "can-creation-carry-its-scripts": [
+    {
+      "text": "Can creation carry its scripts.",
+      "pause": 500
+    },
+    {
+      "text": "The measuring tool built 5 registry-creation forms with the real genesis and application configuration builders, on one fresh development network with the same frozen protocol parameters as the comparison above. Each form creates a fresh registry with the same configuration; only script placement changes. The normal referenced form is the reference point. These are experiments, and the production command keeps its shared publications.",
+      "pause": 400
+    },
+    {
+      "text": "Both live copies were available for this controlled experiment. A form carrying a script deliberately ignores that script's live copy. A form creating reference outputs also carries witnesses: a transaction cannot read its own new outputs as reference inputs.",
+      "pause": 400
+    },
+    {
+      "text": "The state-carried form has 8764 complete signed bytes and the application-carried form has 10821. The node accepted and confirmed both mixed forms. Each still needs the other script's live reference output.",
+      "pause": 400
+    },
+    {
+      "text": "Carrying both scripts in witnesses has 18567 complete signed bytes; carrying them in witnesses and new reference outputs has 36292. The node refused both for maximum transaction size: it counts 18566 and 36291 bytes respectively, against a limit of 16384. The complete signed transaction length and the length the ledger counts are different figures; the ledger count here is one byte less. Both appear below.",
+      "pause": 400
+    },
+    {
+      "text": "A fit requires successful execution, size within the ledger limit, and the development node's acceptance and confirmation. The execution figures are the ledger evaluator's final results on the actual chain inputs and equal the signed execution budgets. The oversized forms were evaluated locally, then refused by the node's size check before its script-execution phase; their execution figures do not claim node execution. A size comparison alone is never reported as a fit.",
+      "pause": 400
+    }
+  ],
+  "frozen-limits-and-fee-parameters": [
+    {
+      "text": "Frozen limits and fee parameters.",
+      "pause": 500
+    },
+    {
+      "text": "Every form used maximum transaction size 16384, maximum transaction execution memory 140000000 and maximum transaction execution steps 10000000000. The parameters and their hash are read from the independent chain record, rather than supplied by the measuring command.",
+      "pause": 400
+    },
+    {
+      "text": "The experiment holds the application's configuration fixed across forms. These explicit experimental values do not change command defaults.",
+      "pause": 400
+    }
+  ],
+  "what-the-result-gives-a-creator": [
+    {
+      "text": "What the result gives a creator.",
+      "pause": 500
+    },
+    {
+      "text": "Each fitting mixed form still needs one prior publication. When a first creation finds no live copy, it cannot skip both publications by carrying: the both-witness form that needs no live reference is refused for size. A fitting mixed form creates no reference output for the script it carries. If a first creation published only the other script, a later registry using the unchanged production command would still have to publish the carried script. Carrying defers that publication; it does not remove it.",
+      "pause": 400
+    },
+    {
+      "text": "The production workflow remains as measured: the first creation sends 3 transactions, and the later creation sends 1 transaction by reusing the shared publications. The measured carrying outcomes are reported without recommending or adopting a mixed form.",
+      "pause": 400
+    }
+  ],
+  "measurement-appendix": [
+    {
+      "text": "Measurement appendix.",
+      "pause": 500
+    },
+    {
+      "text": "The carrying receipt records the test-only producer, its exact source changes and executable hash, the signed transactions, local execution results and independent node answers. The experiment has its own recorded genesis and start time; its protocol parameters match the earlier creation comparison. The receipt checker recomputes lengths, fees, script hashes, placements and execution budgets, binds each transaction to the independent node submission, and requires identical included bytes for every fit. Every refusal must reproduce the node's limiting parameter and figures. Missing forms, missing execution, altered figures and false fits are refused by the hosted documentation check. The test harness is outside the released command's source and changes no production builder or shared receipt.",
+      "pause": 400
+    }
+  ],
   "matched-conditions-and-evidence": [
     {
       "text": "Matched conditions and evidence.",
@@ -113,6 +177,6 @@
   ],
   "_source": {
     "file": "creation-cost.md",
-    "sha256": "7d29f65a76a793f14a1a0b7ace427c80a14fb4be685656396903f6d4762e010b"
+    "sha256": "282bf53c45898303f688ab5f500edbb9ebb9249bcea18805c0f8c83678c0ee51"
   }
 }
