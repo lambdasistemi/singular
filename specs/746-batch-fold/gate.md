@@ -102,3 +102,18 @@ carries this row, because its component build runs the application's own lint an
 | Row | Acceptance it proves | Hosted job | Verbatim command | Expected exit |
 | --- | --- | --- | --- | --- |
 | G22 | lint of the open-datum application's Haskell | ci.yml `open-datum-component-build` | `nix run --quiet .#lint` in `applications/open-datum/offchain/` | 0 |
+
+## Gate version 5
+
+Appended on 29 October 2026; every row above is unchanged. A pull request that adds or changes a documentation control carries this row, because
+the hosted runner has no tool beyond the Nix and Git directories on its PATH, and the documentation check passed locally with tools the runner lacks.
+
+| Row | Acceptance it proves | Hosted job | Verbatim command | Expected exit |
+| --- | --- | --- | --- | --- |
+| G23 | the documentation check and its controls run with the runner's bare PATH | ci.yml `rendered-docs` | `env -i HOME="$HOME" PATH="$(dirname "$(readlink -f "$(command -v nix)")"):$(dirname "$(readlink -f "$(command -v git)")")" nix run --quiet .#docs-check` | 0 |
+
+## Gate version 6
+
+Appended on 29 October 2026; every row above is unchanged. Row G23 keeps the process locale: the command is run with the variables that select the
+UTF-8 locale and its archive (`LANG`, `LC_ALL`, `LOCALE_ARCHIVE`) added to the `env -i` list, because the conformance tool decodes UTF-8 and the
+hosted runner sets the locale; only the PATH is bare.

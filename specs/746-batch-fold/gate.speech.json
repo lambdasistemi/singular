@@ -103,8 +103,28 @@
       "pause": 400
     }
   ],
+  "gate-version-5": [
+    {
+      "text": "Gate version 5.",
+      "pause": 500
+    },
+    {
+      "text": "Appended on 29 October 2026; every row above is unchanged. A pull request that adds or changes a documentation control carries this row, because the hosted runner has no tool beyond the Nix and Git directories on its PATH, and the documentation check passed locally with tools the runner lacks.",
+      "pause": 400
+    }
+  ],
+  "gate-version-6": [
+    {
+      "text": "Gate version 6.",
+      "pause": 500
+    },
+    {
+      "text": "Appended on 29 October 2026; every row above is unchanged. Row G23 keeps the process locale: the command is run with the variables that select the UTF-8 locale and its archive (LANG, LC_ALL, LOCALE_ARCHIVE) added to the env -i list, because the conformance tool decodes UTF-8 and the hosted runner sets the locale; only the PATH is bare.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "gate.md",
-    "sha256": "e871048a7c0754d5089cab695a96ddd31663e459c4cf1ee50b267bc0a5910051"
+    "sha256": "72dcdcdcbc81d8239b50d5ae3425cee870f79d14701c1f66eab7877f78bc7bd8"
   }
 }
