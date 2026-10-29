@@ -2,61 +2,68 @@
 
 {- |
 Module      : Singular.CLI.PinGateSpec
-Description : Retained library pin-form checks
-License     : Apache-2.0
-
-Retained library pin-form checks are exercised against a
-chain fixture. A legacy registry is prepared through the shared create helper
-still used by application commands; no retired Singular parser route is invoked. This
-establishes library identity refusals over the exercised fixtures,
-not a new-line registry reader or ledger acceptance.
+Description : Retained pin-resolution assertions run against a synthetic state datum and
+recorded mint transaction. The fixture establishes neither a creation
+lifecycle nor validator or ledger acceptance.
 -}
 module Singular.CLI.PinGateSpec (spec) where
 
-import Cardano.Ledger.Api.Tx.Out (datumTxOutL)
-import Control.Monad (forM_)
-import Data.ByteString qualified as BS
-    ( ByteString
-    , replicate
+import Cardano.Ledger.Api.Tx (mkBasicTx, txIdTx)
+import Cardano.Ledger.Api.Tx.Body
+    ( inputsTxBodyL
+    , mintTxBodyL
+    , mkBasicTxBody
+    , outputsTxBodyL
     )
+import Cardano.Ledger.Api.Tx.Out (datumTxOutL, mkBasicTxOut)
+import Cardano.Ledger.BaseTypes (Network (Testnet), TxIx (..))
+import Cardano.Ledger.Coin (Coin (..))
+import Cardano.Ledger.Mary.Value
+    ( AssetName (..)
+    , MaryValue (..)
+    , MultiAsset (..)
+    , PolicyID (..)
+    )
+import Cardano.Ledger.TxIn (TxIn (..))
+import Control.Monad (forM_)
+import Data.ByteString qualified as BS (ByteString, replicate)
 import Data.ByteString.Short qualified as SBS (toShort)
-import Data.Map.Strict qualified as Map (map)
+import Data.Map.Strict qualified as Map
+    ( delete
+    , insert
+    , map
+    , singleton
+    )
+import Data.Sequence.Strict qualified as StrictSeq (singleton)
+import Data.Set qualified as Set (singleton)
 import Data.Text qualified as T (pack, unpack)
 import Lens.Micro ((&), (.~))
 import PlutusTx.Builtins.Internal (BuiltinByteString (..))
-import Singular.CLI.Command
-    ( ApplicationPolicy (..)
-    , CreateArgs (..)
-    , EntryMode (..)
-    , ProviderSettings (..)
-    , WriteSettings (..)
-    )
 import Singular.CLI.CommandRunSpec
-    ( Rig (rigBlueprint, rigChain, rigDir, rigKey)
-    , envOf
-    , outcomeOf
+    ( Rig (rigBlueprint, rigChain)
     , readWallet
     , scriptPinned
-    , textAt
     , withRig
     )
-import Singular.CLI.Create (createApplication, runCreate)
-import Singular.CLI.FlagGroup (Signer (..))
-import Singular.CLI.Registry (economics, loadReleaseCodes)
+import Singular.CLI.Registry
+    ( economics
+    , loadReleaseCodes
+    , registryConfigFor
+    )
 import Singular.Registry.Application
     ( Application (..)
     , ApplicationPin (..)
     , hashPinnedApplication
     , neutralApplication
     )
-import Singular.Registry.Config.Application
-    ( RegistryEconomics (..)
-    )
-import Singular.Registry.Deployment (renderOutRef)
+import Singular.Registry.AssetName (deriveAssetName)
+import Singular.Registry.Config (bootStateFromCfg)
+import Singular.Registry.Deployment (parseOutRef, renderOutRef)
 import Singular.Registry.RawChainFixture
     ( ChainFacts (..)
     , advanceChain
     , rawChainProvider
+    , recordTransaction
     )
 import Singular.Registry.SessionIO qualified as SessionIO
     ( withLatest
@@ -64,26 +71,26 @@ import Singular.Registry.SessionIO qualified as SessionIO
 import Singular.Registry.StateToken
     ( IdentityRefusal (..)
     , PinField (..)
+    , Release (..)
     , parseStateToken
+    , renderStateToken
     , resolveRegistry
     )
 import Singular.Registry.TxBuilder.Internal
-    ( extractCageDatum
+    ( cageAddrFromCfg
+    , computeScriptHash
+    , emptyRoot
+    , extractCageDatum
     , mkInlineDatum
     , toPlcData
+    , txInToRef
     )
 import Singular.Registry.Types
     ( CageDatum (..)
+    , OnChainRoot (..)
     , OnChainTokenState (..)
     )
-import System.FilePath ((</>))
-import Test.Hspec
-    ( Spec
-    , describe
-    , it
-    , shouldBe
-    , shouldReturn
-    )
+import Test.Hspec (Spec, describe, it, shouldReturn)
 
 spec :: Spec
 spec = describe "retained pin library" formRows
@@ -100,38 +107,14 @@ seedAt n = replicate 64 'f' <> "#" <> show n
 foreignPolicy :: BS.ByteString
 foreignPolicy = BS.replicate 28 0xee
 
-{- | A registry created by the retained create helper over the neutral value with
-the application policy given as a hash. Its token, as a person passes it.
+{- | Synthetic registry state with the application policy given as a hash.
+Its token is derived from the supplied seed and release.
 -}
 createdByHash :: Rig -> String -> String -> IO String
-createdByHash rig dir seed = do
-    let args =
-            CreateArgs
-                { createStateDir = Just (rigDir rig </> dir)
-                , createBlueprint = rigBlueprint rig
-                , createMode =
-                    Submit
-                        ( WriteSettings
-                            (ProviderSettings "http://fixture.invalid" 42 Nothing Nothing)
-                            (SignerKeyFile (rigKey rig))
-                            Nothing
-                        )
-                , createSeed = Just seed
-                , createPreview = False
-                , createReceipt = Nothing
-                , createSaveStateTokenTo = Nothing
-                , createProcessTime = reProcessTime economics
-                , createRetractTime = reRetractTime economics
-                }
-    effective <-
-        createApplication
-            neutralApplication
-            (Just (ApplicationPolicy (SBS.toShort (BS.replicate 28 7))))
-    receipt <- runCreate effective (envOf rig) args
-    maybe
-        (fail "create fixture has no token")
-        (pure . T.unpack)
-        (textAt "stateToken" receipt)
+createdByHash rig =
+    createdByScript
+        rig
+        (hashPinnedApplication (SBS.toShort givenPolicy))
 
 -- | Rewrite the registry state datum while preserving the fixture transaction history.
 forgeState :: Rig -> (OnChainTokenState -> OnChainTokenState) -> IO ()
@@ -240,33 +223,33 @@ freshSeed rig = do
 givenPolicy :: BS.ByteString
 givenPolicy = BS.replicate 28 7
 
--- | The script-pinned library fixture uses the retained builder directly.
+-- | Synthetic state and mint data for the retained pin-resolution helper.
 createdByScript :: Rig -> Application -> String -> String -> IO String
-createdByScript rig app dir seed = do
-    effective <- createApplication app Nothing
-    receipt <-
-        runCreate
-            effective
-            (envOf rig)
-            CreateArgs
-                { createStateDir = Just (rigDir rig </> dir)
-                , createBlueprint = rigBlueprint rig
-                , createMode =
-                    Submit
-                        ( WriteSettings
-                            (ProviderSettings "http://fixture.invalid" 42 Nothing Nothing)
-                            (SignerKeyFile (rigKey rig))
-                            Nothing
-                        )
-                , createSeed = Just seed
-                , createPreview = False
-                , createReceipt = Nothing
-                , createSaveStateTokenTo = Nothing
-                , createProcessTime = reProcessTime economics
-                , createRetractTime = reRetractTime economics
-                }
-    outcomeOf receipt `shouldBe` Just "success"
-    maybe
-        (fail "script fixture has no token")
-        (pure . T.unpack)
-        (textAt "stateToken" receipt)
+createdByScript rig app _ seed = do
+    release <-
+        loadReleaseCodes app (rigBlueprint rig) >>= either fail pure
+    seedIn <- either fail pure (parseOutRef (T.pack seed))
+    let (cfg, _) = registryConfigFor app release economics (txInToRef seedIn)
+        name = AssetName (SBS.toShort (deriveAssetName (txInToRef seedIn)))
+        policy = PolicyID (computeScriptHash (releaseState release))
+        minted = MultiAsset (Map.singleton policy (Map.singleton name 1))
+        state =
+            mkBasicTxOut
+                (cageAddrFromCfg cfg Testnet)
+                (MaryValue (Coin 2_000_000) minted)
+                & datumTxOutL
+                    .~ mkInlineDatum
+                        (toPlcData (StateDatum (bootStateFromCfg cfg (OnChainRoot emptyRoot))))
+        transaction =
+            mkBasicTx $
+                mkBasicTxBody
+                    & inputsTxBodyL .~ Set.singleton seedIn
+                    & mintTxBodyL .~ minted
+                    & outputsTxBodyL .~ StrictSeq.singleton state
+        stateIn = TxIn (txIdTx transaction) (TxIx 0)
+    recordTransaction (rigChain rig) transaction
+    advanceChain (rigChain rig) $ \facts ->
+        facts
+            { csUTxO = Map.insert stateIn state (Map.delete seedIn (csUTxO facts))
+            }
+    pure (T.unpack (renderStateToken (policy, name)))

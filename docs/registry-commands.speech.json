@@ -9,7 +9,7 @@
       "pause": 400
     },
     {
-      "text": "The first diagram shows the life of one registration. A booking makes it pending. Until its processing deadline only a fold can spend it. After the deadline, and until the reclaim window ends, only the refund address can take it back. After the window anyone can clean it up.",
+      "text": "The first three diagrams show the exits of one registration. A booking makes it pending. Until its processing deadline only a fold can spend it. After the deadline, and until the reclaim window ends, only the refund address can take it back. After the window anyone can clean it up.",
       "pause": 400
     },
     {
@@ -27,7 +27,7 @@
       "pause": 400
     },
     {
-      "text": "The second diagram shows what a creation does. The command reads your wallet and looks for live reference copies of the validators. The first registry of an application publishes each in its own transaction, state first, and waits for both before it creates the registry. If you stop between publications, a rerun finds the live copy and publishes only the missing script. A later registry finds both live copies and sends one transaction. The registry's state token appears on the first output of the creation, and the command reads it back before it prints the receipt.",
+      "text": "The creation diagram shows what the command does. The command reads your wallet and looks for live reference copies of the validators. The first registry of an application publishes each in its own transaction, state first, and waits for both before it creates the registry. If you stop between publications, a rerun finds the live copy and publishes only the missing script. A later registry finds both live copies and sends one transaction. The registry's state token appears on the first output of the creation, and the command reads it back before it prints the receipt.",
       "pause": 400
     },
     {
@@ -153,7 +153,7 @@
       "pause": 400
     },
     {
-      "text": "The third diagram shows what happens to a transaction that was in flight. Every transaction is written to the journal under its identity before it is sent. If the command is interrupted, whatever the moment, the transaction keeps that identity. The next write of the same wallet for the same registry reads its journal before it builds anything. A transaction the chain holds is recorded as landed and named under reconciled in the next receipt, and a transaction the node refused stays recorded as refused. A transaction the chain does not yet show stops the next write, naming it, and nothing is built or sent until it is settled. A creation is journalled under the application and the wallet, because the name of the registry it makes is known only once its seed is chosen; the other commands are journalled under the registry.",
+      "text": "The recovery diagram shows what happens to a transaction that was in flight. Every transaction is written to the journal under its identity before it is sent. If the command is interrupted, whatever the moment, the transaction keeps that identity. The next write of the same wallet for the same registry reads its journal before it builds anything. A transaction the chain holds is recorded as landed and named under reconciled in the next receipt, and a transaction the node refused stays recorded as refused. A transaction the chain does not yet show stops the next write, naming it, and nothing is built or sent until it is settled. A creation is journalled under the application and the wallet, because the name of the registry it makes is known only once its seed is chosen; the other commands are journalled under the registry.",
       "pause": 400
     },
     {
@@ -181,6 +181,6 @@
   ],
   "_source": {
     "file": "registry-commands.md",
-    "sha256": "8f7699754b21a0acc4a7cc56a1883b3cb1ef70802e71e0995c9555a211799df6"
+    "sha256": "b69ae23a250a62179bbc9959ab5d1a22ffbe3b33b53038671b44bd1a91d7b053"
   }
 }

@@ -352,10 +352,10 @@ jobs:
           blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
           # A lane that runs no example fails.
           REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#cage-tests-e2e -- --match "{lane:$LANE}" --fail-on=empty
-  # The required check keeps its name and fails unless every part passed: a
+  # The aggregate fails unless every part passed: a
   # skipped job would otherwise count as passing.
   e2e:
-    name: Devnet E2E on the fresh blueprint
+    name: Generic node, wallet and submission E2E
     needs: [e2e-plan, e2e-part]
     if: ${{ !cancelled() }}
     runs-on: nixos

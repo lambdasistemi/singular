@@ -14,15 +14,23 @@ and nothing is ever sent a second time.
 ```mermaid
 stateDiagram-v2
     [*] --> Pending: insert
-    Pending --> Folded: fold, before the processing deadline
-    Pending --> TakenBack: reclaim, inside the reclaim window
-    Pending --> CleanedUp: cleanup, after the reclaim window
+    Pending --> Folded: fold before deadline
     Folded --> [*]
+```
+
+```mermaid
+stateDiagram-v2
+    Pending --> TakenBack: reclaim inside window
     TakenBack --> [*]
+```
+
+```mermaid
+stateDiagram-v2
+    Pending --> CleanedUp: cleanup after window
     CleanedUp --> [*]
 ```
 
-The first diagram shows the life of one registration. A booking makes it
+The first three diagrams show the exits of one registration. A booking makes it
 pending. Until its processing deadline only a fold can spend it. After the
 deadline, and until the reclaim window ends, only the refund address can take it
 back. After the window anyone can clean it up.
@@ -57,7 +65,7 @@ sequenceDiagram
     Command-->>Carol: receipt<br/>token<br/>address
 ```
 
-The second diagram shows what a creation does. The command reads your wallet
+The creation diagram shows what the command does. The command reads your wallet
 and looks for live reference copies of the validators. The first registry of an
 application publishes each in its own transaction, state first, and waits for
 both before it creates the registry. If you stop between publications, a rerun
@@ -199,9 +207,10 @@ open-datum terminate --blueprint plutus.json \
 
 ```mermaid
 stateDiagram-v2
-    Live --> Live: controller updates the payload
-    Live --> PendingTermination: controller books and donates deposit
-    PendingTermination --> Terminal: any wallet folds and burns both tokens
+    state "Live holding<br/>controller updates payload" as Live
+    state "Pending termination" as PendingTermination
+    Live --> PendingTermination: controller books<br/>donates deposit
+    PendingTermination --> Terminal: any wallet folds<br/>burns both tokens
     Terminal --> [*]
 ```
 
@@ -249,17 +258,19 @@ As any of the three, you may lose the connection, stop the command, or run past
 
 ```mermaid
 flowchart TB
-    run[a command of this page] --> journal[the transaction is journalled<br/>under its identity before it is sent]
-    journal --> cut{interrupted?}
-    cut -->|no| done[confirmed and read back]
-    cut -->|yes| next[the next write of the same wallet<br/>reads the journal first]
-    next --> landed{what does the chain say?}
-    landed -->|it holds the transaction| record[recorded as landed,<br/>named under reconciled]
-    landed -->|the node refused it| refused[stays recorded as refused]
-    landed -->|it does not know it yet| stop[the write stops, naming it,<br/>and sends nothing]
+    run[Run a command] -->|before sending| journal[Journal the transaction<br/>under its identity]
+    journal -->|send once| sent[Transaction sent]
+    sent -->|uninterrupted| done[Confirm and read back]
 ```
 
-The third diagram shows what happens to a transaction that was in flight. Every
+```mermaid
+flowchart TB
+    cut[After an interruption] -->|same wallet| next[Next write:<br/>read the journal first]
+    next -->|query| landed[Read the chain answer]
+    landed -->|resolve| answers[Held: record landed,<br/>name reconciled<br/>Refused: retain the refusal<br/>Unknown: stop, name it,<br/>send nothing]
+```
+
+The recovery diagram shows what happens to a transaction that was in flight. Every
 transaction is written to the journal under its identity before it is sent. If
 the command is interrupted, whatever the moment, the transaction keeps that
 identity. The next write of the same wallet for the same registry reads its

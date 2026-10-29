@@ -145,8 +145,7 @@ retainedFaucetStep =
 {- | Stop before anything is built when the wallet holds nothing it may
 spend: the refusal carries the wallet address, what it holds and the faucet
 step. A wallet with spendable outputs is never refused here, whatever they
-carry: the funding seam ("Singular.CLI.Prepare") chooses among them or
-prepares the output the command needs.
+carry: the caller chooses the funding outputs the command needs.
 -}
 refuseEmptyWallet
     :: Addr

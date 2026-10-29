@@ -82,7 +82,6 @@ Run: mkdocs serve
 - <a href="../offchain/lib/Singular/Registry/Deployment/Mirror.hs" data-api="module">Singular.Registry.Deployment.Mirror</a> — <a href="../offchain/lib/Singular/Registry/Deployment/Mirror.hs" data-api="source">source</a>
 - <a href="../offchain/local-services/Singular/Registry/Evidence.hs" data-api="module">Singular.Registry.Evidence</a> — <a href="../offchain/local-services/Singular/Registry/Evidence.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/FoldAdmission.hs" data-api="module">Singular.Registry.FoldAdmission</a> — <a href="../offchain/lib/Singular/Registry/FoldAdmission.hs" data-api="source">source</a>
-- <a href="../offchain/lib/Singular/Registry/FoldSelection.hs" data-api="module">Singular.Registry.FoldSelection</a> — <a href="../offchain/lib/Singular/Registry/FoldSelection.hs" data-api="source">source</a>
 - <a href="../offchain/local-services/Singular/Registry/Ledger.hs" data-api="module">Singular.Registry.Ledger</a> — <a href="../offchain/local-services/Singular/Registry/Ledger.hs" data-api="source">source</a>
 - <a href="../offchain/local-services/Singular/Registry/LedgerProvider.hs" data-api="module">Singular.Registry.LedgerProvider</a> — <a href="../offchain/local-services/Singular/Registry/LedgerProvider.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Lifecycle.hs" data-api="module">Singular.Registry.Lifecycle</a> — <a href="../offchain/lib/Singular/Registry/Lifecycle.hs" data-api="source">source</a>
@@ -99,7 +98,6 @@ Run: mkdocs serve
 - <a href="../offchain/lib/Singular/Registry/TrieState/Fixture.hs" data-api="module">Singular.Registry.TrieState.Fixture</a> — <a href="../offchain/lib/Singular/Registry/TrieState/Fixture.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/TrieState/Lineage.hs" data-api="module">Singular.Registry.TrieState.Lineage</a> — <a href="../offchain/lib/Singular/Registry/TrieState/Lineage.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/TrieState/Types.hs" data-api="module">Singular.Registry.TrieState.Types</a> — <a href="../offchain/lib/Singular/Registry/TrieState/Types.hs" data-api="source">source</a>
-- <a href="../offchain/lib/Singular/Registry/TxBuilder/Boot.hs" data-api="module">Singular.Registry.TxBuilder.Boot</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Boot.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/TxBuilder/ConnectedFold.hs" data-api="module">Singular.Registry.TxBuilder.ConnectedFold</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/ConnectedFold.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/TxBuilder/Edges.hs" data-api="module">Singular.Registry.TxBuilder.Edges</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Edges.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/TxBuilder/Internal.hs" data-api="module">Singular.Registry.TxBuilder.Internal</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Internal.hs" data-api="source">source</a>
@@ -107,9 +105,7 @@ Run: mkdocs serve
 - <a href="../offchain/lib/Singular/Registry/TxBuilder/Internal/Identity.hs" data-api="module">Singular.Registry.TxBuilder.Internal.Identity</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Internal/Identity.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/TxBuilder/Internal/Lookup.hs" data-api="module">Singular.Registry.TxBuilder.Internal.Lookup</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Internal/Lookup.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/TxBuilder/Prepare.hs" data-api="module">Singular.Registry.TxBuilder.Prepare</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Prepare.hs" data-api="source">source</a>
-- <a href="../offchain/lib/Singular/Registry/TxBuilder/Reject.hs" data-api="module">Singular.Registry.TxBuilder.Reject</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Reject.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/TxBuilder/Request.hs" data-api="module">Singular.Registry.TxBuilder.Request</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Request.hs" data-api="source">source</a>
-- <a href="../offchain/lib/Singular/Registry/TxBuilder/Retract.hs" data-api="module">Singular.Registry.TxBuilder.Retract</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Retract.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/TxBuilder/Update.hs" data-api="module">Singular.Registry.TxBuilder.Update</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Update.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/TxBuilder/Update/Build.hs" data-api="module">Singular.Registry.TxBuilder.Update.Build</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Update/Build.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/TxBuilder/Update/Context.hs" data-api="module">Singular.Registry.TxBuilder.Update.Context</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Update/Context.hs" data-api="source">source</a>
@@ -368,7 +364,7 @@ the conformance reference's extent is the conformance library's. The
 executables and the on-chain Aiken validators remain outside the
 generated references. The public `local-services` component also exposes
 `LocalEvaluation`, `NetworkTime`, `ProviderSettings`, `ProviderTrace`,
-`SessionEvidence`, `SessionIO`, `SessionServices`, `TimeMaterial`,
+`SessionEvidence`, `SessionIO`, `SessionServices`,
 `TimeSource`, `Trace`, `TraceRender`, `WaitTypes` and `Wallet`; their sources live under
 `offchain/local-services/Singular/Registry/`. Their generated pages are not
 in this main-library reference. The public `open-datum-application`
@@ -401,10 +397,10 @@ and the executable's entry point lives in
 `applications/open-datum/offchain/app/`.
 The public `registry-cli` component (`offchain/cli/`) carries the registry
 command line the two binaries link — session, journal and receipts, the
-flag group, shared creation helpers, reconciliation,
+flag group, registry helpers, reconciliation,
 recovery and the creation of a registry on the proved design
-with the fold into it: `Singular.CLI`, `Singular.CLI.Command`, `Singular.CLI.Create`,
-`Singular.CLI.Finish`, `Singular.CLI.FoldRules`,
+with the fold into it: `Singular.CLI`, `Singular.CLI.Command`,
+`Singular.CLI.Finish`,
 `Singular.CLI.Key`, `Singular.CLI.Live`,
 `Singular.CLI.ManagedState`, `Singular.CLI.Outlay`, `Singular.CLI.Payload`, `Singular.CLI.Permanent`,
 `Singular.CLI.Plan`, `Singular.CLI.Promise`, `Singular.CLI.Proof`,

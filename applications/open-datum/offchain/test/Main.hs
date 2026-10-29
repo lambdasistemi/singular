@@ -2,6 +2,7 @@ module Main (main) where
 
 import Singular.Application.OpenDatum.ReaderSpec qualified (spec)
 
+import Singular.Application.OpenDatum.ActorDirectorySpec qualified
 import Singular.Application.OpenDatum.ApplicationSpec qualified
 import Singular.Application.OpenDatum.BuildSpec qualified
 import Singular.Application.OpenDatum.BuildersSpec qualified
@@ -20,7 +21,6 @@ import Singular.Application.OpenDatum.OutlaySpec qualified
 import Singular.Application.OpenDatum.ParserCorpusSpec qualified
 import Singular.Application.OpenDatum.PartitionLibrarySpec qualified
 import Singular.Application.OpenDatum.PinGateSpec qualified
-import Singular.Application.OpenDatum.PublicationFundingSpec qualified
 import Singular.Application.OpenDatum.RecoverySpec qualified
 import Singular.Application.OpenDatum.RegistryAddressSpec qualified
 import Singular.Application.OpenDatum.RegistryStateTokenSpec qualified
@@ -155,10 +155,10 @@ main = hspec $ do
         Singular.Application.OpenDatum.PartitionLibrarySpec.spec
     describe
         ( tagged
-            "Singular.Application.OpenDatum.PublicationFunding"
+            "Singular.Application.OpenDatum.ActorDirectory"
             [Cli, Wallet]
         )
-        Singular.Application.OpenDatum.PublicationFundingSpec.spec
+        Singular.Application.OpenDatum.ActorDirectorySpec.spec
     describe
         (tagged "Singular.Application.OpenDatum.ParserCorpus" [Cli])
         Singular.Application.OpenDatum.ParserCorpusSpec.spec

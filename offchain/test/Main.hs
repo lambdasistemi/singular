@@ -4,7 +4,6 @@ import Singular.CLI.CommandRunSpec qualified (spec)
 import Singular.CLI.CreateFundingSpec qualified (spec)
 import Singular.CLI.FailureSentenceSpec qualified (spec)
 import Singular.CLI.FlagGroupSpec qualified (spec)
-import Singular.CLI.FoldRulesSpec qualified (spec)
 import Singular.CLI.HelpSnapshotSpec qualified (spec)
 import Singular.CLI.InspectSpec qualified (spec)
 import Singular.CLI.JournalTransitionsSpec qualified (spec)
@@ -12,9 +11,7 @@ import Singular.CLI.OneOutputCreateSpec qualified (spec)
 import Singular.CLI.ParserCorpusSpec qualified (spec)
 import Singular.CLI.PayloadSpec qualified (spec)
 import Singular.CLI.PinGateSpec qualified (spec)
-import Singular.CLI.PrepareSpec qualified (spec)
 import Singular.CLI.PrintedPayloadSpec qualified (spec)
-import Singular.CLI.SettingsFileSpec qualified (spec)
 import Singular.CLI.SignSpec qualified (spec)
 import Singular.CLI.SourcesSpec qualified (spec)
 import Singular.CLI.StateCommandSpec qualified (spec)
@@ -39,7 +36,6 @@ import Singular.Registry.ContractTableSpec qualified (spec)
 import Singular.Registry.DeploymentSpec qualified (spec)
 import Singular.Registry.FailureMatchSpec qualified (spec)
 import Singular.Registry.FoldAdmissionSpec qualified (spec)
-import Singular.Registry.FoldSelectionSpec qualified (spec)
 import Singular.Registry.LifecycleSpec qualified (spec)
 import Singular.Registry.LineageSpec qualified (spec)
 import Singular.Registry.LocalEvaluationSpec qualified (spec)
@@ -56,7 +52,6 @@ import Singular.Registry.SubmitSpec qualified (spec)
 import Singular.Registry.TrieStateContractSpec qualified (spec)
 import Singular.Registry.TrieStateSpec qualified (spec)
 import Singular.Registry.TxBuilder.BookEdgeSpec qualified (spec)
-import Singular.Registry.TxBuilder.BootSpec qualified (spec)
 import Singular.Registry.TxBuilder.MeasuredBookingSpec qualified
     ( spec
     )
@@ -64,7 +59,7 @@ import Singular.Registry.TxBuilder.PrepareSpec qualified (spec)
 import Singular.Registry.TxBuilder.PublicationFundingSpec qualified
     ( spec
     )
-import Singular.Registry.TxBuilder.RetractFundingSpec qualified
+import Singular.Registry.TxBuilder.ReferencePublicationSpec qualified
     ( spec
     )
 import Singular.Registry.TxBuilder.SelectedFoldSpec qualified
@@ -109,14 +104,8 @@ main = hspec $ do
         )
         Singular.Registry.TxBuilder.MeasuredBookingSpec.spec
     describe
-        ( tagged
-            "Singular.Registry.TxBuilder.RetractFunding"
-            [Builders, Time, Validity]
-        )
-        Singular.Registry.TxBuilder.RetractFundingSpec.spec
-    describe
-        (tagged "Singular.Registry.TxBuilder.Boot" [Builders])
-        Singular.Registry.TxBuilder.BootSpec.spec
+        (tagged "Singular.Registry.TxBuilder.ReferencePublication" [Builders])
+        Singular.Registry.TxBuilder.ReferencePublicationSpec.spec
     describe
         (tagged "Singular.Registry.TxBuilder.Prepare" [Builders])
         Singular.Registry.TxBuilder.PrepareSpec.spec
@@ -147,9 +136,6 @@ main = hspec $ do
     describe
         (tagged "Singular.Registry.FoldAdmission" [Builders])
         Singular.Registry.FoldAdmissionSpec.spec
-    describe
-        (tagged "Singular.Registry.FoldSelection" [Builders])
-        Singular.Registry.FoldSelectionSpec.spec
     describe
         (tagged "Singular.Registry.NetworkTime" [Time, Provider])
         Singular.Registry.NetworkTimeSpec.spec
@@ -199,9 +185,6 @@ main = hspec $ do
         (tagged "Singular.CLI.TrieRefusal" [Cli])
         Singular.CLI.TrieRefusalSpec.spec
     describe
-        (tagged "Singular.CLI.FoldRules" [Cli])
-        Singular.CLI.FoldRulesSpec.spec
-    describe
         (tagged "Singular.CLI.JournalTransitions" [Cli])
         Singular.CLI.JournalTransitionsSpec.spec
     describe
@@ -213,9 +196,6 @@ main = hspec $ do
     describe
         (tagged "Singular.CLI.OneOutputCreate" [Cli, Builders])
         Singular.CLI.OneOutputCreateSpec.spec
-    describe
-        (tagged "Singular.CLI.Prepare" [Cli, Builders])
-        Singular.CLI.PrepareSpec.spec
     describe
         (tagged "Singular.CLI.FailureSentence" [Cli])
         Singular.CLI.FailureSentenceSpec.spec
@@ -246,9 +226,6 @@ main = hspec $ do
     describe
         (tagged "Singular.CLI.StateCommand" [Cli, Recovery])
         Singular.CLI.StateCommandSpec.spec
-    describe
-        (tagged "Singular.CLI.SettingsFile" [Cli])
-        Singular.CLI.SettingsFileSpec.spec
     describe
         (tagged "Singular.CLI.WitnessReach" [Cli, Provider])
         Singular.CLI.WitnessReachSpec.spec

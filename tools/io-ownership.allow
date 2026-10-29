@@ -39,7 +39,7 @@ applications/open-datum/offchain/test/Singular/Application/OpenDatum/RequestWorl
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/ReaderSpec.hs: ioref — harness; owner=one reader-history example; lifetime=single acquired session inside the example; serial callbacks on the calling thread; records the actual network, asset, state and history read order for assertions and never escapes the example
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/RegistryStateTokenSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; fixture refs accumulated for assertions
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/StateTokenFixture.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; fixture refs accumulated for assertions
-applications/open-datum/offchain/test/Singular/Application/OpenDatum/PublicationFundingSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; fixture refs accumulated for assertions
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/ActorDirectorySpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; fixture refs accumulated for assertions
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/TraceSpec.hs: async,ioref — harness; owner=the examples in this file; lifetime=single example; independent example shards joined by mapConcurrently_; trace refs accumulated for assertions
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/WriteSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; fixture refs accumulated for assertions
 applications/open-datum/offchain/test/Singular/Provider/Koios/FakeServer.hs: ioref — harness; owner=one fake-server session; lifetime=single example; serial; scripted-answer refs for the fake transport
@@ -69,7 +69,7 @@ offchain/test/Singular/Registry/RawChainFixture.hs: ioref — harness; owner=the
 offchain/test/Singular/Registry/StubSession.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; stub-session refs for assertions
 offchain/test/Singular/Registry/TrieStateSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; trie-state refs for assertions
 offchain/test/Singular/Registry/TxBuilder/BookEdgeSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; booking refs for assertions
-offchain/test/Singular/Registry/TxBuilder/BootSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; boot refs for assertions
+offchain/test/Singular/Registry/TxBuilder/ReferencePublicationSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; publication refs for assertions
 offchain/test/Singular/Registry/TxBuilder/MeasuredBookingSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; booking refs for assertions
 offchain/test/Singular/Registry/TxBuilder/UpperSlotSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; booking refs for assertions
 offchain/test/Singular/Registry/WaitSpec.hs: async,ioref — harness; owner=the wait examples in this file; lifetime=single example; the interrupt probe runs under withAsync and is joined before the example ends; wait refs for assertions

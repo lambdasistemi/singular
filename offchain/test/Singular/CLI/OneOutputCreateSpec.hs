@@ -7,22 +7,10 @@ Module      : Singular.CLI.OneOutputCreateSpec
 Description : A create completes from a wallet of one ada-only output
 License     : Apache-2.0
 
-Carol funds a fresh wallet with one ada-only output and runs
-@singular registry create@. The preview names the registry's state token
-and its seed before anything is submitted. The create runs its
-transactions, each paid from the change of the one before, and the last
-change comes back to her wallet. Nothing asks her to fund a second
-output (#406, #491 create part).
-
-These rows prove the seed rule and the chained judgement ((a)): 'selectSeed'
-decides the seed from the wallet view and the carrier (explicit held, explicit
-pinned chained, auto chained with no carrier, auto largest with a carrier);
-a held sole output while the state must be published is refused naming
-omit-`--seed`, never a second output. 'firstPublicationChange' computes the
-chained seed from the body before submission, agreeing with the builder;
-'publicationFunding' judges the chained run. Each expected value is derived
-at run time from the producer, never typed. Preview in both modes is proved
-by the devnet legs (Gina/Hank key and public previews agree).
+The retained pure seed rules distinguish held and publication-change inputs.
+Publication helpers return change to the wallet and refuse unfunded runs.
+These assertions exercise those shared helpers; they make no claim about a
+retired create command or its boot builder.
 -}
 module Singular.CLI.OneOutputCreateSpec (spec) where
 
@@ -57,7 +45,6 @@ import Singular.Registry.TxBuilder.BookingFixture
     , payer
     , preprodParams
     )
-import Singular.Registry.TxBuilder.Boot (bootCostBound)
 import Singular.Registry.TxBuilder.Edges
     ( firstPublicationChange
     , publishRefScriptTx
@@ -70,7 +57,7 @@ spec = do
     autoChainedVersusLargest
     explicitPinnedChained
     firstPublicationIsTheSeed
-    chainedJudgementAcceptsOneOutput
+    publicationFundingBoundary
     movedWalletChangesTheSeed
     shortOneOutputOneVerdict
     severalOutputsUnchanged
@@ -235,25 +222,8 @@ firstPublicationIsTheSeed = describe "the first publication's change" $ do
             Right _ -> expectationFailure "a 1 tADA wallet funded the first publication"
             Left _ -> pure ()
 
-chainedJudgementAcceptsOneOutput :: Spec
-chainedJudgementAcceptsOneOutput = describe "the chained judgement" $ do
-    it "accepts a 200 tADA one-output wallet with no carrier" $ do
-        chained <- case firstPublicationChange
-            preprodParams
-            testPayer
-            applicationScript
-            ginaWallet of
-            Right (seed, _, _, _, _) -> pure seed
-            Left err -> fail ("chained seed not built: " <> show err)
-        let carrier = (chained, adaAt 200_000_000)
-        publicationFunding
-            preprodParams
-            chained
-            (bootCostBound preprodParams carrier)
-            beforeOne
-            []
-            ginaWallet
-            `shouldBe` Right ()
+publicationFundingBoundary :: Spec
+publicationFundingBoundary = describe "publication funding" $
     it "agrees with the builder at the first-publication boundary" $ do
         let covers x = case firstPublicationChange
                 preprodParams
@@ -281,7 +251,6 @@ chainedJudgementAcceptsOneOutput = describe "the chained judgement" $ do
                 expectationFailure "one lovelace less still funded the chained run"
             Left _ -> pure ()
 
--- | The smallest value in the range satisfying a monotone predicate.
 smallest :: (Integer -> Bool) -> Integer -> Integer -> Integer
 smallest holds low high
     | low >= high = high

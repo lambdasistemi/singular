@@ -4681,8 +4681,8 @@
     "index": 1,
     "name": "docs-offchain-api-reference/what-the-reference-does-not-claim-01",
     "pause_ms": 400,
-    "text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the runtime service modules staying outside it in Runtime service ownership, and the conformance reference's extent is the conformance library's. The executables and the on-chain Aiken validators remain outside the generated references. The public local-services component also exposes LocalEvaluation, NetworkTime, ProviderSettings, ProviderTrace, SessionEvidence, SessionIO, SessionServices, TimeMaterial, TimeSource, Trace, TraceRender, WaitTypes and Wallet; their sources live under offchain/local-services/Singular/Registry/. Their generated pages are not in this main-library reference. The public open-datum-application component (applications/open-datum/offchain/) carries the open-datum application the command line composes — command groups, envelope, release rules and the application value — and the request builders of the registry on the proved design: the booking of a registration, its reclaim by the refund address and its cleanup after the window, the configuration record added to the creation of a registry, the records and actions of the request validator in the layout it decodes, the validator as a transaction carries it, the reasons a builder declines, what open datum hands the fold of a registry, and the commands that create a registry and book, reclaim and clean up a registration: Singular.Application.OpenDatum.Build, Singular.Application.OpenDatum.Command, Singular.Application.OpenDatum.Envelope, Singular.Application.OpenDatum.Registration, Singular.Application.OpenDatum.Release, Singular.Application.OpenDatum.Requests.Booking, Singular.Application.OpenDatum.Requests.Configuration, Singular.Application.OpenDatum.Requests.Fold, Singular.Application.OpenDatum.Requests.Pending, Singular.Application.OpenDatum.Requests.Records, Singular.Application.OpenDatum.Requests.Refusal, Singular.Application.OpenDatum.Requests.Script, Singular.Application.OpenDatum.Root, Singular.Application.OpenDatum.Run, Singular.Application.OpenDatum.Value; their sources live under applications/open-datum/offchain/src/Singular/Application/OpenDatum/, and the executable's entry point lives in applications/open-datum/offchain/app/. The public registry-cli component (offchain/cli/) carries the registry command line the two binaries link — session, journal and receipts, the flag group, shared creation helpers, reconciliation, recovery and the creation of a registry on the proved design with the fold into it: Singular.CLI, Singular.CLI.Command, Singular.CLI.Create, Singular.CLI.Finish, Singular.CLI.FoldRules, Singular.CLI.Key, Singular.CLI.Live, Singular.CLI.ManagedState, Singular.CLI.Outlay, Singular.CLI.Payload, Singular.CLI.Permanent, Singular.CLI.Plan, Singular.CLI.Promise, Singular.CLI.Proof, Singular.CLI.Receipt, Singular.CLI.ReceiptBody, Singular.CLI.Reconcile, Singular.CLI.Recovery, Singular.CLI.Registry, Singular.CLI.Root, Singular.CLI.Session, Singular.CLI.State, Singular.CLI.Steps, Singular.CLI.Trace, Singular.CLI.TrieTrace; their sources live under offchain/cli/src/Singular/CLI/.",
-    "v": "fb7cda6bdebb"
+    "text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the runtime service modules staying outside it in Runtime service ownership, and the conformance reference's extent is the conformance library's. The executables and the on-chain Aiken validators remain outside the generated references. The public local-services component also exposes LocalEvaluation, NetworkTime, ProviderSettings, ProviderTrace, SessionEvidence, SessionIO, SessionServices, TimeSource, Trace, TraceRender, WaitTypes and Wallet; their sources live under offchain/local-services/Singular/Registry/. Their generated pages are not in this main-library reference. The public open-datum-application component (applications/open-datum/offchain/) carries the open-datum application the command line composes — command groups, envelope, release rules and the application value — and the request builders of the registry on the proved design: the booking of a registration, its reclaim by the refund address and its cleanup after the window, the configuration record added to the creation of a registry, the records and actions of the request validator in the layout it decodes, the validator as a transaction carries it, the reasons a builder declines, what open datum hands the fold of a registry, and the commands that create a registry and book, reclaim and clean up a registration: Singular.Application.OpenDatum.Build, Singular.Application.OpenDatum.Command, Singular.Application.OpenDatum.Envelope, Singular.Application.OpenDatum.Registration, Singular.Application.OpenDatum.Release, Singular.Application.OpenDatum.Requests.Booking, Singular.Application.OpenDatum.Requests.Configuration, Singular.Application.OpenDatum.Requests.Fold, Singular.Application.OpenDatum.Requests.Pending, Singular.Application.OpenDatum.Requests.Records, Singular.Application.OpenDatum.Requests.Refusal, Singular.Application.OpenDatum.Requests.Script, Singular.Application.OpenDatum.Root, Singular.Application.OpenDatum.Run, Singular.Application.OpenDatum.Value; their sources live under applications/open-datum/offchain/src/Singular/Application/OpenDatum/, and the executable's entry point lives in applications/open-datum/offchain/app/. The public registry-cli component (offchain/cli/) carries the registry command line the two binaries link — session, journal and receipts, the flag group, registry helpers, reconciliation, recovery and the creation of a registry on the proved design with the fold into it: Singular.CLI, Singular.CLI.Command, Singular.CLI.Finish, Singular.CLI.Key, Singular.CLI.Live, Singular.CLI.ManagedState, Singular.CLI.Outlay, Singular.CLI.Payload, Singular.CLI.Permanent, Singular.CLI.Plan, Singular.CLI.Promise, Singular.CLI.Proof, Singular.CLI.Receipt, Singular.CLI.ReceiptBody, Singular.CLI.Reconcile, Singular.CLI.Recovery, Singular.CLI.Registry, Singular.CLI.Root, Singular.CLI.Session, Singular.CLI.State, Singular.CLI.Steps, Singular.CLI.Trace, Singular.CLI.TrieTrace; their sources live under offchain/cli/src/Singular/CLI/.",
+    "v": "ed3fc682a8c8"
    },
    {
     "index": 2,
@@ -4718,8 +4718,8 @@
     "index": 3,
     "name": "docs-offchain-api-reference/what-this-reference-contains-03",
     "pause_ms": 400,
-    "text": "MkDocs environment ready! Run: mkdocs serve - Singular.Reader — source - Singular.Provider.Koios.Client — source - Singular.Provider.Koios.Evidence — source - Singular.Provider.Koios.History — source - Singular.Provider.Koios.Provider — source - Singular.Provider.Koios.Recorded — source - Singular.Provider.Koios.Runtime — source - Singular.Provider.Koios.State — source - Singular.Provider.Koios.Wire — source - Singular.Registry.Address — source - Singular.Registry.Application — source - Singular.Registry.AssetName — source - Singular.Registry.Blueprint — source - Singular.Registry.Blueprint.Load — source - Singular.Registry.Blueprint.Params — source - Singular.Registry.Blueprint.Schema — source - Singular.Registry.Capabilities — source - Singular.Registry.Config — source - Singular.Registry.Config.Application — source - Singular.Registry.Confirmation — source - Singular.Registry.Deployment — source - Singular.Registry.Deployment.Attach — source - Singular.Registry.Deployment.Manifest — source - Singular.Registry.Deployment.Mirror — source - Singular.Registry.Evidence — source - Singular.Registry.FoldAdmission — source - Singular.Registry.FoldSelection — source - Singular.Registry.Ledger — source - Singular.Registry.LedgerProvider — source - Singular.Registry.Lifecycle — source - Singular.Registry.PlainJson — source - Singular.Registry.Proof — source - Singular.Registry.Replay — source - Singular.Registry.Signing — source - Singular.Registry.StateToken — source - Singular.Registry.Trie — source - Singular.Registry.Trie.Pure — source - Singular.Registry.Trie.PureManager — source - Singular.Registry.TrieState — source - Singular.Registry.TrieState.Core — source - Singular.Registry.TrieState.Fixture — source - Singular.Registry.TrieState.Lineage — source - Singular.Registry.TrieState.Types — source - Singular.Registry.TxBuilder.Boot — source - Singular.Registry.TxBuilder.ConnectedFold — source - Singular.Registry.TxBuilder.Edges — source - Singular.Registry.TxBuilder.Internal — source - Singular.Registry.TxBuilder.Internal.Edges — source - Singular.Registry.TxBuilder.Internal.Identity — source - Singular.Registry.TxBuilder.Internal.Lookup — source - Singular.Registry.TxBuilder.Prepare — source - Singular.Registry.TxBuilder.Reject — source - Singular.Registry.TxBuilder.Request — source - Singular.Registry.TxBuilder.Retract — source - Singular.Registry.TxBuilder.Update — source - Singular.Registry.TxBuilder.Update.Build — source - Singular.Registry.TxBuilder.Update.Context — source - Singular.Registry.TxBuilder.Update.Duties — source - Singular.Registry.Types — source - Singular.Registry.Wait — source - Singular.Registry.Wire.Primitive — source - Singular.Registry.Wire.Proof — source - Singular.Registry.Wire.Redeemer — source - Singular.Registry.Wire.Request — source - Singular.Registry.Wire.State — source - Singular.Registry.Witness — source - Singular.State.Assemble — source — the payer, the reads of the chain and the assembly of a transaction that the builders of the Singular state share - Singular.State.Fold — source — the fold of pending registrations into a registry from public data alone, with the application's part handed in - Singular.State.Genesis — source — the creation of a registry from a seed, with the application's steps in the same transaction - Singular.State.Lineage — source — a registry's trie rebuilt from the public history of its state token, every root checked against the chain - Singular.State.Preimage — source — the off-chain encoder of the Singular state, active, configuration and registration-approval preimages, byte for byte equal to the on-chain one - Singular.State.Publication — source — the state script and the application's script published as reference scripts once and reused by later registries - Singular.State.Records — source — the datum and the actions of the state validator, as Plutus Data in the layout it decodes - Singular.State.Refusal — source — why a builder of the Singular state declines to build - Singular.State.Script — source — the state validator of an application as the builders carry it, attached or by reference",
-    "v": "9e6efd85e6e2"
+    "text": "MkDocs environment ready! Run: mkdocs serve - Singular.Reader — source - Singular.Provider.Koios.Client — source - Singular.Provider.Koios.Evidence — source - Singular.Provider.Koios.History — source - Singular.Provider.Koios.Provider — source - Singular.Provider.Koios.Recorded — source - Singular.Provider.Koios.Runtime — source - Singular.Provider.Koios.State — source - Singular.Provider.Koios.Wire — source - Singular.Registry.Address — source - Singular.Registry.Application — source - Singular.Registry.AssetName — source - Singular.Registry.Blueprint — source - Singular.Registry.Blueprint.Load — source - Singular.Registry.Blueprint.Params — source - Singular.Registry.Blueprint.Schema — source - Singular.Registry.Capabilities — source - Singular.Registry.Config — source - Singular.Registry.Config.Application — source - Singular.Registry.Confirmation — source - Singular.Registry.Deployment — source - Singular.Registry.Deployment.Attach — source - Singular.Registry.Deployment.Manifest — source - Singular.Registry.Deployment.Mirror — source - Singular.Registry.Evidence — source - Singular.Registry.FoldAdmission — source - Singular.Registry.Ledger — source - Singular.Registry.LedgerProvider — source - Singular.Registry.Lifecycle — source - Singular.Registry.PlainJson — source - Singular.Registry.Proof — source - Singular.Registry.Replay — source - Singular.Registry.Signing — source - Singular.Registry.StateToken — source - Singular.Registry.Trie — source - Singular.Registry.Trie.Pure — source - Singular.Registry.Trie.PureManager — source - Singular.Registry.TrieState — source - Singular.Registry.TrieState.Core — source - Singular.Registry.TrieState.Fixture — source - Singular.Registry.TrieState.Lineage — source - Singular.Registry.TrieState.Types — source - Singular.Registry.TxBuilder.ConnectedFold — source - Singular.Registry.TxBuilder.Edges — source - Singular.Registry.TxBuilder.Internal — source - Singular.Registry.TxBuilder.Internal.Edges — source - Singular.Registry.TxBuilder.Internal.Identity — source - Singular.Registry.TxBuilder.Internal.Lookup — source - Singular.Registry.TxBuilder.Prepare — source - Singular.Registry.TxBuilder.Request — source - Singular.Registry.TxBuilder.Update — source - Singular.Registry.TxBuilder.Update.Build — source - Singular.Registry.TxBuilder.Update.Context — source - Singular.Registry.TxBuilder.Update.Duties — source - Singular.Registry.Types — source - Singular.Registry.Wait — source - Singular.Registry.Wire.Primitive — source - Singular.Registry.Wire.Proof — source - Singular.Registry.Wire.Redeemer — source - Singular.Registry.Wire.Request — source - Singular.Registry.Wire.State — source - Singular.Registry.Witness — source - Singular.State.Assemble — source — the payer, the reads of the chain and the assembly of a transaction that the builders of the Singular state share - Singular.State.Fold — source — the fold of pending registrations into a registry from public data alone, with the application's part handed in - Singular.State.Genesis — source — the creation of a registry from a seed, with the application's steps in the same transaction - Singular.State.Lineage — source — a registry's trie rebuilt from the public history of its state token, every root checked against the chain - Singular.State.Preimage — source — the off-chain encoder of the Singular state, active, configuration and registration-approval preimages, byte for byte equal to the on-chain one - Singular.State.Publication — source — the state script and the application's script published as reference scripts once and reused by later registries - Singular.State.Records — source — the datum and the actions of the state validator, as Plutus Data in the layout it decodes - Singular.State.Refusal — source — why a builder of the Singular state declines to build - Singular.State.Script — source — the state validator of an application as the builders carry it, attached or by reference",
+    "v": "eae1992e82f9"
    },
    {
     "index": 4,
@@ -5357,8 +5357,8 @@
     "index": 1,
     "name": "docs-offchain-fold-responsibilities/one-owner-per-fold-concern-01",
     "pause_ms": 400,
-    "text": "The facade holds no algorithm. It runs the fold's sequence — query of the chosen requests, proofs, state preparation, context completion, duties, upper slot, program, build — and every decision in that sequence belongs to exactly one of the three owners below it. Which pending requests reach that sequence belongs to Singular.Registry.FoldSelection alone: it judges every pending request on its own, by seven checks in order, and returns each as settled or excluded with a reason, up to a capacity bound of nine requests per fold, an estimate under preprod's execution budget of 14 million memory units, bound by trie-proof verification, not measured on a real network (measuring it belongs to #530). The graph is acyclic and one-way between the fold owners: Context knows nothing of duties or assembly, Duties reads Context but no assembly, Build reads Duties but no facade. Below the fold owners, both Duties and Build also read the older Internal owners directly — the duty derivation shares its edge-to-mint table with the cage through Internal.Edges — and both the facade and the build owner read ConnectedFold for the attached action types.",
-    "v": "feeb1ea4882b"
+    "text": "The facade holds no algorithm. It runs the fold's sequence — query of the chosen requests, proofs, state preparation, context completion, duties, upper slot, program, build — and every decision in that sequence belongs to exactly one of the three owners below it. The graph is acyclic and one-way between the fold owners: Context knows nothing of duties or assembly, Duties reads Context but no assembly, Build reads Duties but no facade. Below the fold owners, both Duties and Build also read the older Internal owners directly — the duty derivation shares its edge-to-mint table with the cage through Internal.Edges — and both the facade and the build owner read ConnectedFold for the attached action types.",
+    "v": "b86c904e4195"
    }
   ],
   "source": [
@@ -5393,16 +5393,9 @@
    {
     "index": 4,
     "name": "docs-offchain-fold-responsibilities/source-04",
-    "pause_ms": 300,
-    "text": "Selection: Singular.Registry.FoldSelection",
-    "v": "1859ff17551f"
-   },
-   {
-    "index": 5,
-    "name": "docs-offchain-fold-responsibilities/source-05",
     "pause_ms": 400,
     "text": "The wider builder map these owners sit in is Builder and blueprint modules; the check commands and their extents are in Checking off-chain code.",
-    "v": "20187171a290"
+    "v": "e0004672e7a4"
    }
   ],
   "the-flow-a-fold-runs": [
@@ -5433,8 +5426,8 @@
     "index": 2,
     "name": "docs-offchain-fold-responsibilities/the-story-this-serves-02",
     "pause_ms": 400,
-    "text": "What no focused row asserts: the query's input-order sorting (the rows hand registryDuties already-ordered lists, and the built-body row folds one request); the quantities of every mint except the active burn; a custody refund's output address and amount; a delivering edge's destination; and an approval returned by a delivering or inadmissible edge. The former connected multi-edge scenario has left with its retired E2E subject. The library remains for the retained conformance implementation; its focused checks establish only the assertions described above. The new command line's connected journey has its own registration, update and permanent-termination evidence.",
-    "v": "cd011bbfbcc4"
+    "text": "What no focused row asserts: the query's input-order sorting (the rows hand registryDuties already-ordered lists, and the built-body row folds one request); the quantities of every mint except the active burn; a custody refund's output address and amount; a delivering edge's destination; and an approval returned by a delivering or inadmissible edge. The former connected multi-edge scenario has left with its retired E2E subject. The library remains for retained callers; its focused checks establish only the assertions described above. The new command line's connected journey has its own registration, update and permanent-termination evidence.",
+    "v": "3ac9896d5752"
    }
   ],
   "what-must-not-change": [
@@ -5472,36 +5465,29 @@
     "index": 2,
     "name": "docs-offchain-fold-responsibilities/where-common-changes-land-02",
     "pause_ms": 300,
-    "text": "Which pending requests a fold takes — the seven checks, the reasons, the capacity bound of nine, an estimate not measured on a real network: Singular.Registry.FoldSelection, and only there.",
-    "v": "0f86668160f9"
+    "text": "An edge's obligations change — what it mints, where it delivers, what custody it spends or returns: Update.Duties, and only there.",
+    "v": "b997e94804f0"
    },
    {
     "index": 3,
     "name": "docs-offchain-fold-responsibilities/where-common-changes-land-03",
     "pause_ms": 300,
-    "text": "An edge's obligations change — what it mints, where it delivers, what custody it spends or returns: Update.Duties, and only there.",
-    "v": "cefa59b0fc82"
+    "text": "The transaction's shape changes — a new input kind, reference scripts, collateral or validity rules: Update.Build.",
+    "v": "16a86b754478"
    },
    {
     "index": 4,
     "name": "docs-offchain-fold-responsibilities/where-common-changes-land-04",
     "pause_ms": 300,
-    "text": "The transaction's shape changes — a new input kind, reference scripts, collateral or validity rules: Update.Build.",
-    "v": "1978cf377b4d"
+    "text": "What an omitted context field defaults to, or which queries the fold runs: Update.Context.",
+    "v": "aa4b4fa9ace3"
    },
    {
     "index": 5,
     "name": "docs-offchain-fold-responsibilities/where-common-changes-land-05",
     "pause_ms": 300,
-    "text": "What an omitted context field defaults to, or which queries the fold runs: Update.Context.",
-    "v": "f97172cc42d8"
-   },
-   {
-    "index": 6,
-    "name": "docs-offchain-fold-responsibilities/where-common-changes-land-06",
-    "pause_ms": 300,
     "text": "The public surface and the fold's sequence: the facade, which must stay a coordinator.",
-    "v": "b94d263c2206"
+    "v": "131800d0c978"
    }
   ],
   "who-owns-a-registry-fold": [
@@ -5516,8 +5502,8 @@
     "index": 1,
     "name": "docs-offchain-fold-responsibilities/who-owns-a-registry-fold-01",
     "pause_ms": 400,
-    "text": "A contributor changing how the registry folds pending requests — which UTxO it spends, what an edge owes, how the transaction is assembled — wants to change one module and have the review ask one question. Before the extraction, all of that lived in one 890-line module; a change to a custody refund and a change to a slot computation were reviewed in the same file with no boundary between them. Now the fold path is three focused owners behind the same public facade, and Singular.Registry.FoldSelection owns which pending requests a fold takes, and this page tells a contributor which owner their change belongs to, what the flow through them is, and what must never change while it moves.",
-    "v": "f01255f7b0b3"
+    "text": "A contributor changing how the registry folds pending requests — which UTxO it spends, what an edge owes, how the transaction is assembled — wants to change one module and have the review ask one question. Before the extraction, all of that lived in one 890-line module; a change to a custody refund and a change to a slot computation were reviewed in the same file with no boundary between them. Now the fold path is three focused owners behind the same public facade. This page tells a contributor which owner their change belongs to, what the flow through them is, and what must never change while it moves.",
+    "v": "7f3d57f1cbd9"
    }
   ]
  },
@@ -7793,8 +7779,8 @@
     "index": 2,
     "name": "docs-registry-commands/create-a-registry-02",
     "pause_ms": 400,
-    "text": "The second diagram shows what a creation does. The command reads your wallet and looks for live reference copies of the validators. The first registry of an application publishes each in its own transaction, state first, and waits for both before it creates the registry. If you stop between publications, a rerun finds the live copy and publishes only the missing script. A later registry finds both live copies and sends one transaction. The registry's state token appears on the first output of the creation, and the command reads it back before it prints the receipt.",
-    "v": "e1b5d40af6db"
+    "text": "The creation diagram shows what the command does. The command reads your wallet and looks for live reference copies of the validators. The first registry of an application publishes each in its own transaction, state first, and waits for both before it creates the registry. If you stop between publications, a rerun finds the live copy and publishes only the missing script. A later registry finds both live copies and sends one transaction. The registry's state token appears on the first output of the creation, and the command reads it back before it prints the receipt.",
+    "v": "37e4e06b4a75"
    },
    {
     "index": 3,
@@ -7844,8 +7830,8 @@
     "index": 2,
     "name": "docs-registry-commands/create-a-registry-and-manage-its-keys-on-the-proved-design-02",
     "pause_ms": 400,
-    "text": "The first diagram shows the life of one registration. A booking makes it pending. Until its processing deadline only a fold can spend it. After the deadline, and until the reclaim window ends, only the refund address can take it back. After the window anyone can clean it up.",
-    "v": "d00a900641c4"
+    "text": "The first three diagrams show the exits of one registration. A booking makes it pending. Until its processing deadline only a fold can spend it. After the deadline, and until the reclaim window ends, only the refund address can take it back. After the window anyone can clean it up.",
+    "v": "7509429fecc7"
    },
    {
     "index": 3,
@@ -7994,8 +7980,8 @@
     "index": 2,
     "name": "docs-registry-commands/when-a-command-is-interrupted-02",
     "pause_ms": 400,
-    "text": "The third diagram shows what happens to a transaction that was in flight. Every transaction is written to the journal under its identity before it is sent. If the command is interrupted, whatever the moment, the transaction keeps that identity. The next write of the same wallet for the same registry reads its journal before it builds anything. A transaction the chain holds is recorded as landed and named under reconciled in the next receipt, and a transaction the node refused stays recorded as refused. A transaction the chain does not yet show stops the next write, naming it, and nothing is built or sent until it is settled. A creation is journalled under the application and the wallet, because the name of the registry it makes is known only once its seed is chosen; the other commands are journalled under the registry.",
-    "v": "25a2cd9c513a"
+    "text": "The recovery diagram shows what happens to a transaction that was in flight. Every transaction is written to the journal under its identity before it is sent. If the command is interrupted, whatever the moment, the transaction keeps that identity. The next write of the same wallet for the same registry reads its journal before it builds anything. A transaction the chain holds is recorded as landed and named under reconciled in the next receipt, and a transaction the node refused stays recorded as refused. A transaction the chain does not yet show stops the next write, naming it, and nothing is built or sent until it is settled. A creation is journalled under the application and the wallet, because the name of the registry it makes is known only once its seed is chosen; the other commands are journalled under the registry.",
+    "v": "7942077b40db"
    },
    {
     "index": 3,

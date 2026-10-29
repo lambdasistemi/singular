@@ -7,8 +7,8 @@ Description : State-token parsing and reference-role declarations
 License     : Apache-2.0
 
 These rows check state-token arguments and the reference roles requested
-by command values. Publication funding and directory resolution are checked
-in "Singular.Application.OpenDatum.PublicationFundingSpec".
+by command values. Directory resolution is checked
+in "Singular.Application.OpenDatum.ActorDirectorySpec".
 -}
 module Singular.Application.OpenDatum.StateTokenSpec (spec) where
 

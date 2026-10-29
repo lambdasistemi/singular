@@ -108,7 +108,6 @@ library
     Singular.Registry.Confirmation
     Singular.Registry.Deployment
     Singular.Registry.FoldAdmission
-    Singular.Registry.FoldSelection
     Singular.Registry.Lifecycle
     Singular.Registry.PlainJson
     Singular.Registry.Proof
@@ -120,7 +119,6 @@ library
     Singular.Registry.TrieState
     Singular.Registry.TrieState.Fixture
     Singular.Registry.TrieState.Lineage
-    Singular.Registry.TxBuilder.Boot
     Singular.Registry.TxBuilder.ConnectedFold
     Singular.Registry.TxBuilder.Edges
     Singular.Registry.TxBuilder.Internal
@@ -128,9 +126,7 @@ library
     Singular.Registry.TxBuilder.Internal.Identity
     Singular.Registry.TxBuilder.Internal.Lookup
     Singular.Registry.TxBuilder.Prepare
-    Singular.Registry.TxBuilder.Reject
     Singular.Registry.TxBuilder.Request
-    Singular.Registry.TxBuilder.Retract
     Singular.Registry.TxBuilder.Update
     Singular.Registry.Types
     Singular.Registry.Wait
@@ -197,12 +193,10 @@ library registry-cli
   exposed-modules:
     Singular.CLI
     Singular.CLI.Command
-    Singular.CLI.Create
     Singular.CLI.Declared
     Singular.CLI.Failure
     Singular.CLI.Finish
     Singular.CLI.FlagGroup
-    Singular.CLI.FoldRules
     Singular.CLI.Help
     Singular.CLI.Inspect
     Singular.CLI.Key
@@ -214,7 +208,6 @@ library registry-cli
     Singular.CLI.Payload
     Singular.CLI.Permanent
     Singular.CLI.Plan
-    Singular.CLI.Prepare
     Singular.CLI.Promise
     Singular.CLI.Proof
     Singular.CLI.Receipt
@@ -226,7 +219,6 @@ library registry-cli
     Singular.CLI.Root
     Singular.CLI.Session
     Singular.CLI.Sign
-    Singular.CLI.SettingsFile
     Singular.CLI.Sources
     Singular.CLI.State
     Singular.CLI.Steps
@@ -301,7 +293,6 @@ library local-services
     Singular.Registry.SessionServices
     Singular.Registry.Signing
     Singular.Registry.Submit
-    Singular.Registry.TimeMaterial
     Singular.Registry.TimeSource
     Singular.Registry.Trace
     Singular.Registry.TraceRender
@@ -554,7 +545,6 @@ test-suite cage-tests
     Singular.CLI.CreateFundingSpec
     Singular.CLI.OneOutputCreateSpec
     Singular.CLI.PayloadSpec
-    Singular.CLI.PrepareSpec
     Singular.CLI.PinGateSpec
     Singular.CLI.PrintedPayloadSpec
     Singular.CLI.FailureSentenceSpec
@@ -562,10 +552,8 @@ test-suite cage-tests
     Singular.CLI.InspectSpec
     Singular.CLI.HelpSnapshotSpec
     Singular.CLI.ParserCorpusSpec
-    Singular.CLI.SettingsFileSpec
     Singular.CLI.SourcesSpec
     Singular.CLI.StateCommandSpec
-    Singular.CLI.FoldRulesSpec
     Singular.CLI.JournalTransitionsSpec
     Singular.CLI.SignSpec
     Singular.CLI.SubmitSpec
@@ -596,7 +584,6 @@ test-suite cage-tests
     Singular.Registry.DeploymentSpec
     Singular.Registry.FailureMatchSpec
     Singular.Registry.FoldAdmissionSpec
-    Singular.Registry.FoldSelectionSpec
     Singular.Registry.LifecycleSpec
     Singular.Registry.LineageSpec
     Singular.Registry.LocalEvaluationSpec
@@ -618,13 +605,12 @@ test-suite cage-tests
     Singular.Registry.TrieStateSpec
     Singular.Registry.TxBuilder.BookEdgeSpec
     Singular.Registry.TxBuilder.BookingFixture
-    Singular.Registry.TxBuilder.BootSpec
+    Singular.Registry.TxBuilder.ReferencePublicationSpec
     Singular.Registry.TxBuilder.PublicationFundingSpec
     Singular.Registry.TxBuilder.CollateralJudgement
     Singular.Registry.TxBuilder.SelectedFoldSpec
     Singular.Registry.TxBuilder.MeasuredBookingSpec
     Singular.Registry.TxBuilder.PrepareSpec
-    Singular.Registry.TxBuilder.RetractFundingSpec
     Singular.Registry.TxBuilder.SkipEvalUnitsSpec
     Singular.Registry.TxBuilder.UpperSlotSpec
     Singular.Registry.TypesSpec
