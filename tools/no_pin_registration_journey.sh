@@ -506,10 +506,16 @@ view_tx create-after-reference-spend "$(tx_of create-after-reference-spend creat
 replacement_reference="$(field create-after-reference-spend '.scripts[] | select(.script == "application") | .reference')"
 check "only the missing application script is published, then the registry is created" \
   receipt_steps_are "$receipts/create-after-reference-spend.json" '["publish-application-script","create"]'
+check "the existing receipt fields say the state copy was reused and the application copy was published" \
+  scripts_published_are "$receipts/create-after-reference-spend.json" '[false,true]'
+control "republishing the live state script would fail the one-missing-script assertion" \
+  scripts_published_are "$receipts/create-after-reference-spend.json" '[true,true]'
 check "the receipt calls the spent script no live copy and says it was published again" \
   jq -e '[.scripts[].outcome] == ["reused","published"] and .scripts[1].discovery == {status:"no live copy",candidates:[]}' "$receipts/create-after-reference-spend.json"
 check "the replacement publication holds only the application script" \
   refs_equal "$(script_outputs_of "$chain_dir/replacement-application-reference.tx.json")" "[\"$replacement_reference\"]"
+check "the replacement script's hash is the application hash, read from the chain" \
+  jq -e --arg app "$application_hash" '[.outputs[] | select(.referenceScript != null) | .referenceScript.hash] == [$app]' "$chain_dir/replacement-application-reference.tx.json"
 check "the creation reads the retained state reference and the new application reference" \
   reads_and_creates_no_script "$chain_dir/create-after-reference-spend.tx.json" "[\"$state_reference\",\"$replacement_reference\"]"
 control "a spent reference is not a live source for the new creation" \

@@ -62,6 +62,7 @@ import Data.Ord (Down (..))
 import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
 import Data.Text qualified as T
+import Data.Text.Encoding qualified as TextEncoding
 import Lens.Micro ((&), (.~), (^.))
 import System.Directory
     ( createDirectoryIfMissing
@@ -119,6 +120,8 @@ import Cardano.Ledger.BaseTypes
     , StrictMaybe (..)
     , TxIx (..)
     )
+import Cardano.Ledger.Binary (serialize')
+import Cardano.Ledger.Core (eraProtVerLow)
 import Cardano.Ledger.Mary.Value (MaryValue (..))
 import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Node.Client.E2E.Setup
@@ -147,7 +150,7 @@ import Singular.Registry.Capabilities
     )
 import Singular.Registry.Deployment (parseOutRef, renderOutRef)
 import Singular.Registry.Evidence (NoWitness)
-import Singular.Registry.Ledger (Coin (..))
+import Singular.Registry.Ledger (Coin (..), ConwayEra)
 import Singular.Registry.LedgerProvider (SubmitResult (..))
 import Singular.Registry.Signing (signTx, signedTx)
 import Singular.Registry.Wallet
@@ -526,7 +529,13 @@ spendReference args = withRunner $ \wallet caps -> do
             object
                 [ "output" .= renderOutRef (TxIn (txIdTx tx) (TxIx 0))
                 , "fee" .= (let Coin fee = tx ^. bodyTxL . feeTxBodyL in fee)
-                , "sizeBytes" .= (tx ^. sizeTxF)
+                , "unsignedSizeBytes" .= (tx ^. sizeTxF)
+                , "sizeBytes" .= (signedTx (signed tx) ^. sizeTxF)
+                , "cborHex"
+                    .= TextEncoding.decodeUtf8
+                        ( B16.encode
+                            (serialize' (eraProtVerLow @ConwayEra) (signedTx (signed tx)))
+                        )
                 ]
     rejection <-
         if supplied < required
