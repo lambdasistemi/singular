@@ -165,9 +165,9 @@ flowchart TB
     B -->|order requests| C[Greatest take first]
     C -->|try prefixes| D[Greatest fitting batch]
     D -->|build transaction| E[Folded, skipped, left]
-    classDef chain fill:#dbeafe,stroke:#1e40af,color:#111827
-    classDef selection fill:#dcfce7,stroke:#166534,color:#111827
-    classDef receipt fill:#f3e8ff,stroke:#6b21a8,color:#111827
+    classDef chain fill:transparent,stroke:#3b82f6,stroke-width:2px
+    classDef selection fill:transparent,stroke:#22c55e,stroke-width:2px
+    classDef receipt fill:transparent,stroke:#a855f7,stroke-width:2px
     class A chain
     class B,C,D selection
     class E receipt
