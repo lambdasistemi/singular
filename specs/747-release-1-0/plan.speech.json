@@ -1,0 +1,132 @@
+{
+  "plan-for-the-10-release-from-its-installed-artifacts": [
+    {
+      "text": "Plan for the 1.0 release from its installed artifacts.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 747, part of epic 731. This plan follows the specification. It orders the pull requests, names the decisions taken and the consumers to run before the first push.",
+      "pause": 400
+    }
+  ],
+  "lane": [
+    {
+      "text": "Lane.",
+      "pause": 500
+    }
+  ],
+  "lean-binding": [
+    {
+      "text": "Lean binding.",
+      "pause": 500
+    },
+    {
+      "text": "Lean is the behavioural authority. This ticket changes no Lean statement, no on-chain script, no script hash and no wire format. Its model position is Below: release plumbing, evidence pages and the wording of an answer that already exists.",
+      "pause": 400
+    },
+    {
+      "text": "Preserved: the reader's classification order of the frozen model (network, release, active token, state) and its recognition of a state output, the registration, update, termination and batch fold statements, and the refusal of a write that the model refuses.",
+      "pause": 300
+    },
+    {
+      "text": "The guidance names a release; it adds no new refusal and no new acceptance. If a pull request finds that guidance needs a different classification, or that a script, hash or wire format must change, the work stops there and goes to the epic owner as a user story with the Lean clauses; nothing is invented.",
+      "pause": 300
+    },
+    {
+      "text": "Conformance and the model mappings are computed again at the release revision by the existing jobs; no row is added, removed or reclassified by this ticket, and uncovered rows stay uncovered.",
+      "pause": 300
+    }
+  ],
+  "rulings-in-force": [
+    {
+      "text": "Rulings in force.",
+      "pause": 500
+    },
+    {
+      "text": "Roles (2026-10-28, issue 767): folders and readers are application-neutral; the guidance reads the packaged release table and names no application in a neutral role.",
+      "pause": 300
+    },
+    {
+      "text": "The provider is the chain entry point (2026-10-20): every chain read goes through the session; users have a web page, Koios and a wallet. A journey that needs a local file from a registry's booker is a failure.",
+      "pause": 300
+    },
+    {
+      "text": "Release standard (2026-10-20): Linux packages and the Homebrew formula come from the distribution helpers and actions; nothing here adds a local packaging script.",
+      "pause": 300
+    },
+    {
+      "text": "Versioning: stay 0.x until this ticket cuts 1.0. Choosing 1.0.0 is the epic owner's.",
+      "pause": 300
+    },
+    {
+      "text": "The trie library's proofs are assumed sound.",
+      "pause": 300
+    },
+    {
+      "text": "Preprod: devnet is the default. A read of the public test network's protocol parameters for the receipt refresh, and any measurement on it, wait for the epic owner's go.",
+      "pause": 300
+    }
+  ],
+  "decisions-taken": [
+    {
+      "text": "Decisions taken.",
+      "pause": 500
+    }
+  ],
+  "pull-requests-and-slices": [
+    {
+      "text": "Pull requests and slices.",
+      "pause": 500
+    },
+    {
+      "text": "Each slice finishes in well under two hours; the commit owner may cut a slice smaller, never merge two. Pull requests merge into main in order, each when its required checks are green at the head. Pull request 1 takes the audited process; pull request 2 takes one writer and one review before its push; pull requests 3 and 4 take one writer, with hosted CI as the gate.",
+      "pause": 400
+    }
+  ],
+  "consumers-to-run-before-the-first-push": [
+    {
+      "text": "Consumers to run before the first push.",
+      "pause": 500
+    },
+    {
+      "text": "a reader or command wording change reaches help snapshots, parser corpora (after rows), the documented flags check, the recovery partitions, the command reference and open datum's printed refusals;",
+      "pause": 300
+    },
+    {
+      "text": "a release table change reaches the packaged table's freshness test, the neutral and application inspect tests, the bundle assembly (the table travels in the bundle) and the verifier's route list;",
+      "pause": 300
+    },
+    {
+      "text": "a release workflow change reaches the release scope pattern, the declared checks that must be hosted, the workflow command resolution check and the job names the ruleset requires; no job is renamed;",
+      "pause": 300
+    },
+    {
+      "text": "a documentation control reaches the rendered documentation job under the runner's bare path (only Nix and Git on PATH), and every external command it calls is declared;",
+      "pause": 300
+    },
+    {
+      "text": "a new reference to shared mutable state in a test fixture needs its entry in the input and output census in the same commit.",
+      "pause": 300
+    }
+  ],
+  "seats": [
+    {
+      "text": "Seats.",
+      "pause": 500
+    },
+    {
+      "text": "A ticket owner, a commit owner and a commit auditor, mute and persistent, in a read-only audit worktree. No other seats. The auditor writes its own gate table when it is seated; the ticket owner joins the two once and freezes the result before the commit owner starts. Every build and test runs in a named, memory-capped scope with a timeout; long gates run in the background.",
+      "pause": 400
+    }
+  ],
+  "open-items-for-the-epic-owner": [
+    {
+      "text": "Open items for the epic owner.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "79c59021517cf9df7ce5de1aee4e340e4827beb0e9205707caa6f004337ad8e5"
+  }
+}

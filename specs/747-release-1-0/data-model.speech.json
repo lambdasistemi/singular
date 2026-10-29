@@ -1,0 +1,48 @@
+{
+  "data-for-the-10-release-from-its-installed-artifacts": [
+    {
+      "text": "Data for the 1.0 release from its installed artifacts.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 747. This page lists the records that change or are added and the rules each keeps. It follows the modules model.",
+      "pause": 400
+    }
+  ],
+  "records": [
+    {
+      "text": "Records.",
+      "pause": 500
+    }
+  ],
+  "state-rules": [
+    {
+      "text": "State rules.",
+      "pause": 500
+    },
+    {
+      "text": "The table is complete up to the release being cut, or the page states which release it stops at; the compatibility page and the neutral reader read the same file.",
+      "pause": 300
+    },
+    {
+      "text": "Guidance is a function of the table and the observation. The same observation yields the same text in every command.",
+      "pause": 300
+    },
+    {
+      "text": "No journey step depends on a file left by another wallet; each wallet has directories and a home of its own.",
+      "pause": 300
+    },
+    {
+      "text": "A write refused for guidance leaves the chain as it was: no transaction is built, signed or sent, shown by the network's record before and after, beside a passing control.",
+      "pause": 300
+    },
+    {
+      "text": "A receipt refresh changes the receipt's recorded parameters and date together, or neither.",
+      "pause": 300
+    }
+  ],
+  "_source": {
+    "file": "data-model.md",
+    "sha256": "6521c39f43465d2d30ae25ffef15d308c5c9c7d8b8275c3aca7830443493abe7"
+  }
+}

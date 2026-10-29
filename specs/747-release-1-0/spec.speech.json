@@ -1,0 +1,102 @@
+{
+  "release-the-no-pin-registry-as-10-from-its-installed-artifacts": [
+    {
+      "text": "Release the no-pin registry as 1.0 from its installed artifacts.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 747, part of epic 731. This page is for an M1 user (anyone who installs the released commands and runs a registry), for the integrators who recommend a release, and for the people who review the pull requests. It records the story, the requirements, the refusals and the checks that prove them. It follows the creation ticket, the update and termination ticket, the reader ticket, the shared publications ticket and the batch fold ticket, all merged.",
+      "pause": 400
+    }
+  ],
+  "story": [
+    {
+      "text": "Story.",
+      "pause": 500
+    },
+    {
+      "text": "As an M1 user, I install the released singular and open-datum from the release's own files and, with nothing but the release, a wallet and public chain data, I create a registry, register, update and terminate a key, read it back and fold a batch of pending requests. A registry made by an earlier release is recognised, and the command tells me which release still serves it.",
+      "pause": 400
+    }
+  ],
+  "what-the-release-has-to-show": [
+    {
+      "text": "What the release has to show.",
+      "pause": 500
+    }
+  ],
+  "requirements": [
+    {
+      "text": "Requirements.",
+      "pause": 500
+    },
+    {
+      "text": "installed-journey: a journey whose commands, blueprint and development node come only from a release's published files, on a path that holds ordinary tools and no Nix, with no checkout of this repository and no credentials, runs create, register, update, terminate, read and a discovered batch fold on a development network; every verdict is computed from the network's record of the chain, and each verdict is shown failing on altered input.",
+      "pause": 300
+    },
+    {
+      "text": "published-release-journey: the same journey runs against the files of the published release, downloaded without credentials, on the tag run.",
+      "pause": 300
+    },
+    {
+      "text": "packages-green-here: the bundle jobs, the release-bundle scope job and the Linux package install job run green on this repository at the candidate, and the tag run's Linux package publication is green on the release.",
+      "pause": 300
+    },
+    {
+      "text": "release-pair-recognised: the installed singular registry inspect and open-datum inspect identify a registry's Singular release and application release from the packaged release table and the derivation of the state policy from the application policy, including a neutral singular registry created with a supplied application policy.",
+      "pause": 300
+    },
+    {
+      "text": "compatible-release-guidance: a registry of a known earlier contract, a registry of a contract no release carries, and a registry whose application release is not the installed one each get an answer that names the release that serves it or says that no release is known; the answer is the same for every command that reads or writes the registry.",
+      "pause": 300
+    },
+    {
+      "text": "no-old-registry-mutated: a write command given such a registry builds, signs and sends nothing; the chain is the same before and after, shown on a development network beside a passing control.",
+      "pause": 300
+    },
+    {
+      "text": "combined-evidence: the conformance report and the model mappings are computed again at the release revision with the uncovered rows kept; one decision table is computed from the creation-cost receipt and the batch-limit receipt, and shows each measurement's parameters, gains, regressions and unmeasured limits.",
+      "pause": 300
+    },
+    {
+      "text": "batch-receipt-current: the batch-limit receipt is measured again against protocol parameters recorded at release time, or the page keeps the date of its recorded parameters and says so.",
+      "pause": 300
+    },
+    {
+      "text": "limits-stated: the release notes and the documentation state that the trie library's proofs are assumed sound, that the history statements assume Cardano's script-execution rule, that the packaged development node cannot run the current public test network's protocol version so batch limits are evaluated under recorded parameters, and which conformance rows remain uncovered; a check fails when any of the four is missing.",
+      "pause": 300
+    },
+    {
+      "text": "compatibility-record: a page names, for each earlier release, whether its registries are served by the 1.0 commands, by an earlier release, or by none, computed from the release table and failing when the table and the page disagree.",
+      "pause": 300
+    },
+    {
+      "text": "version-line-prepared: everything the 1.0 release needs is prepared and its evidence kept; the choice of 1.0.0, the merge of the release pull request and the tag are not part of this ticket.",
+      "pause": 300
+    }
+  ],
+  "refusals": [
+    {
+      "text": "Refusals.",
+      "pause": 500
+    }
+  ],
+  "out-of-scope": [
+    {
+      "text": "Out of scope.",
+      "pause": 500
+    },
+    {
+      "text": "Automatic migration of old state, holdings or pending requests; protected rejection, pins, tags, tip and treasury; proving the history statements (issues 676, 679 and 680); retiring the safeguards for old contracts (issues 730 and 738); claiming KERI integration; choosing 1.0.0, merging the release pull request, pushing the tag and the demo repository's follow-up, which belong to the epic owner and the milestone desk.",
+      "pause": 400
+    },
+    {
+      "text": "The trie library's proofs are assumed sound.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "ba2e6174a900e6aa173befce36207b8cd0f292a2bec8ed4aa86624efbb05257a"
+  }
+}
