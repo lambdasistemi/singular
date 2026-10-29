@@ -313,6 +313,23 @@ registry="$(field create-first .registry)"
 read_command read-neutral-live "$singular" registry inspect --registry "$registry" --key journey-fold --koios-url "$provider_url"
 read_command read-app-live "$open_datum" inspect --registry "$registry" --key journey-fold --koios-url "$provider_url"
 
+# A different registry has a live holding at the same application address
+# while the first key is read. Count that coexistence from the chain, and the
+# lookup's calls, rows and bytes from the provider's measured answer.
+leg="measured reading beside another registry"
+as carol create-later "$open_datum" create --blueprint plutus.json \
+  --process-time 60000 --reclaim-time 180000 --booking-width 60000
+later_token="$(field create-later .stateToken)"
+as alice book-other-registry "$open_datum" insert --blueprint plutus.json \
+  --state-token "$later_token" --key journey-other-registry --payload payload.json \
+  --deposit 3000000 --tip "$tip"
+as bob fold-other-registry "$open_datum" fold --blueprint plutus.json \
+  --state-token "$later_token" --pending "$(field book-other-registry .pending)"
+view_unspent reading-with-other-holdings
+read_command read-neutral-measured "$singular" registry inspect --registry "$registry" --key journey-fold --koios-url "$provider_url"
+check "a known live key uses one measured asset query beside another registry's holdings; altered counts and foreign holdings fail" \
+  reading_evidence measurement
+
 # The live holding continues through the controller's two commands. The
 # independent observer below follows input references, not command receipts.
 leg="update and termination"
@@ -400,8 +417,6 @@ control "an unspent approval would be seen: the state token is unspent once" \
 # 6. A later registry of the application, and one made by singular
 # ------------------------------------------------------------------
 leg="scripts published once"
-as carol create-later "$open_datum" create --blueprint plutus.json \
-  --process-time 60000 --reclaim-time 180000 --booking-width 60000
 as carol create-singular "$singular" registry create --blueprint plutus.json --application-policy "$application_hash"
 later_create_tx="$(tx_of create-later create)"
 singular_create_tx="$(tx_of create-singular create)"
@@ -513,10 +528,12 @@ check "the packaged readers classify live custody, pending termination and authe
   cat "$listings/bob-before-termination-fold.txt"
   printf '```\n\nThe packaged re-registration fold reported:\n\n```json\n'
   cat "$receipts/reregister.json"
-  printf '\n```\n\n## Verdicts\n\n'
+  printf '\n```\n\n'
   printf '## Reading from the registry address alone\n\n```json\n'
   cat "$work/reading-journey.json"
-  printf '\n```\n\n'
+  printf '\n```\n\n## Known-key lookup beside another registry\n\n```json\n'
+  cat "$work/reading-measurement.json"
+  printf '\n```\n\n## Verdicts\n\n'
   cat "$verdicts"
 } >"$work/receipt.md"
 
