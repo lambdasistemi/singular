@@ -81,12 +81,12 @@
       "pause": 500
     },
     {
-      "text": "The ticket owner's table and the auditor's independent table, written without reading this page, were joined once on 29 October 2026. The auditor's table added the creation-recovery partitions (G12), the conformance row checks (G10) and the release packaging check (G13), and named seven places where an existing job needs an extension, which are carried by G1, G5, G6, G10 and G12 as changes in this ticket. The frozen table and both input hashes are kept with the ticket's working records. Rows are added to a later version of this table, never edited.",
+      "text": "The ticket owner's table and the auditor's independent table, written without reading this page, were joined once on 29 October 2026. The auditor's table added the creation-recovery partitions (G12), the conformance row checks (G10) and the release packaging check (G13), and named seven places where an existing job needs an extension, which are carried by G1, G5, G6, G10 and G12 as changes in this ticket. The frozen table and both input hashes are kept with the ticket's working records. Rows are added to a later version of this table, never edited. Version 2 added G14, the census of hosted checks, after a hosted run showed that neither first table had it.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "gate.md",
-    "sha256": "4ed29f69e21e63ebb954c7c2058a2aba75872c8ed22668269ef944ea95f95160"
+    "sha256": "f02b726ba96dd327b2230be4952b3eccaa2672ab0a3a6739765ac95ee6f24d2a"
   }
 }

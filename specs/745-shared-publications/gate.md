@@ -26,6 +26,7 @@ seeing it fail.
 | G11 | the commands stay in the packaged executable | ci.yml `open-datum-singular-smoke` | `nix run --quiet .#singular -- --help` in `applications/open-datum/offchain/` | 0 |
 | G12 | recovery over shared publications: interruption before and after a publication and after an uncertain creation; no automatic resubmission, a stable registry identity, conserved funding; a repeated command publishes only what is no longer live | registry.yml `cli-recovery-partition` ("CLI recovery — partition"), the partitions the slice extends (CI change in this ticket) | `DEMO1_KEEP_SCRATCH=1 nix run --quiet .#cli-recovery-partition -- '<partition key>'` | 0 |
 | G13 | the creation and reuse instructions and the new pages are in the packaged release | ci.yml `release-artifacts` ("On-chain release assembly and artifact checks") | `nix run --quiet .#release-artifacts -- "$RUNNER_TEMP/release"`; `nix run --quiet .#verify-release-controls -- "$RUNNER_TEMP/release"`; `nix run --quiet .#verify-release -- --assets "$RUNNER_TEMP/release" --without-bundles "v$(cat version.txt)"` | 0 |
+| G14 | every app and check the flake declares is named by a hosted step or carries a reasoned entry; this ticket adds no unhosted check | ci.yml `declared-checks-hosted` ("Declared checks are hosted") | `nix run --quiet .#declared-checks-classify-controls`; `nix run --quiet .#declared-checks-issue-states "$RUNNER_TEMP/issue-states.txt"`; `nix run --quiet .#declared-checks-hosted "$RUNNER_TEMP/issue-states.txt"` | 0 |
 
 Rows run scoped to what each slice can break. `just ci` runs once on the final candidate of each pull request, then the
 push; hosted checks on the pull request head are the net. Every build or test runs in a named, memory-capped scope:
@@ -35,9 +36,9 @@ push; hosted checks on the pull request head are the net. Every build or test ru
 
 ```mermaid
 flowchart LR
-    P1[Pull request 1: measured creation] --> R1[G5 G6 G7 G8 G9]
-    P2[Pull request 2: references and independent reuse] --> R2[G1 G2 G3 G4 G5 G9 G11 G12]
-    P3[Pull request 3: registration, conformance and documentation] --> R3[G5 G7 G8 G9 G10 G13]
+    P1[Pull request 1: measured creation] --> R1[G5 G6 G7 G8 G9 G14]
+    P2[Pull request 2: references and independent reuse] --> R2[G1 G2 G3 G4 G5 G9 G11 G12 G14]
+    P3[Pull request 3: registration, conformance and documentation] --> R3[G5 G7 G8 G9 G10 G13 G14]
 ```
 
 ## Evidence the pull requests will carry
@@ -60,4 +61,4 @@ The ticket owner's table and the auditor's independent table, written without re
 29 October 2026. The auditor's table added the creation-recovery partitions (G12), the conformance row checks (G10) and
 the release packaging check (G13), and named seven places where an existing job needs an extension, which are carried by
 G1, G5, G6, G10 and G12 as changes in this ticket. The frozen table and both input hashes are kept with the ticket's
-working records. Rows are added to a later version of this table, never edited.
+working records. Rows are added to a later version of this table, never edited. Version 2 added G14, the census of hosted checks, after a hosted run showed that neither first table had it.
