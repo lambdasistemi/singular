@@ -94,6 +94,18 @@ state_policy="${token%%.*}"
 say "registry $token created"
 printf '%s\n' '{"name":"alice"}' >"$work/actors/alice/cwd/payload.json"
 
+# Restore exactly the changed input beside each refusal. The control reads an
+# unused key through the same packaged application command and live provider.
+registry="$(field create .registry)"
+read_command read-wrong-network-control "$open_datum" inspect --registry "$registry" --key reader-unused --koios-url "$provider_url"
+read_command read-wrong-network "$open_datum" inspect --state-token "$token" --network-magic 1 --key reader-unused --koios-url "$provider_url"
+read_command read-unknown-policy-control "$open_datum" inspect --registry "$registry" --key reader-unused --koios-url "$provider_url"
+read_command read-unknown-policy "$open_datum" inspect --state-token "$(printf '%056d' 0).${token##*.}" --network-magic "$network_magic" --key reader-unused --koios-url "$provider_url"
+read_command read-provider-failure-control "$open_datum" inspect --registry "$registry" --key reader-unused --koios-url "$provider_url"
+# The live facade answers this nonexistent route with a transport error. No
+# fault hook or fake provider enters the packaged command.
+read_command read-provider-failure "$open_datum" inspect --registry "$registry" --key reader-unused --koios-url "$provider_url/reader-unavailable"
+
 # book NAME KEY [DEPOSIT]: Alice books a key; the pending registration is printed.
 book() {
   as alice "book-$1" "$open_datum" insert --blueprint plutus.json \
@@ -197,6 +209,10 @@ attempt_and_control parked-state parked-state "$presented" "$presented" --parked
 # ------------------------------------------------------------------
 # The receipt
 # ------------------------------------------------------------------
+leg="reading refusals"
+check "wrong network, unknown state policy and failed provider reads are named beside passing controls; altered answers fail" \
+  reading_evidence refusals
+
 {
   printf '# Refusals on a development network: receipt\n\n'
   printf 'Release (sha256 of the validators every wallet ran against): `%s`\n' "$release_hash"
@@ -209,6 +225,9 @@ attempt_and_control parked-state parked-state "$presented" "$presented" --parked
       "$(tx_id_of "control-$name")"
   done
   printf '\n## Verdicts\n\n'
+  printf '## Reading refusals and their controls\n\n```json\n'
+  cat "$work/reading-refusals.json"
+  printf '\n```\n\n'
   cat "$verdicts"
 } >"$work/receipt.md"
 

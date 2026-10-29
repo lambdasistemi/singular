@@ -8,6 +8,7 @@ Each accepted observation is also corrupted and must be rejected by its judge.
 import copy
 import json
 from pathlib import Path
+import re
 import sys
 
 
@@ -305,7 +306,11 @@ def refusals(work):
             require(bool(value["reason"]), f"{name}: missing diagnostic")
             if name == "wrong-network":
                 require(
-                    "43" in value["reason"] and "42" in value["reason"],
+                    re.search(
+                        r"registry network 1, provider serves network 42\b",
+                        value["reason"],
+                    )
+                    is not None,
                     "missing network identities",
                 )
 
