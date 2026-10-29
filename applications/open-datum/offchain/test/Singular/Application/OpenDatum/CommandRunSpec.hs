@@ -50,9 +50,14 @@ import Cardano.Ledger.Api.Tx (EraTx (bodyTxL), txIdTx)
 import Cardano.Ledger.Api.Tx.Body
     ( EraTxBody (inputsTxBodyL, outputsTxBodyL)
     )
-import Cardano.Ledger.Api.Tx.Out (EraTxOut (mkBasicTxOut))
+import Cardano.Ledger.Api.Tx.Out
+    ( EraTxOut (addrTxOutL, mkBasicTxOut, valueTxOutL)
+    )
 import Cardano.Ledger.BaseTypes (TxIx (TxIx))
-import Cardano.Ledger.Mary.Value (MaryValue (MaryValue))
+import Cardano.Ledger.Mary.Value
+    ( MaryValue (MaryValue)
+    , MultiAsset (MultiAsset)
+    )
 import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Slotting.Slot (SlotNo (..))
 import Cardano.Tx.Ledger (ConwayTx)
@@ -95,7 +100,13 @@ import Data.IORef
     , writeIORef
     )
 import Data.List (nub, partition, sort)
-import Data.Map.Strict qualified as Map (delete, fromList, union)
+import Data.Map.Strict qualified as Map
+    ( delete
+    , fromList
+    , insert
+    , keys
+    , union
+    )
 import Data.Maybe (isJust, listToMaybe)
 import Data.Proxy (Proxy (..))
 import Data.Set qualified as Set (empty, toList)
@@ -122,7 +133,7 @@ import GHC.Generics
     , conName
     , (:+:)
     )
-import Lens.Micro ((^.))
+import Lens.Micro ((&), (.~), (^.))
 import PlutusCore.Data qualified as PD ()
 import PlutusLedgerApi.V3 qualified as PLC ()
 import Singular.Application.OpenDatum.Command
@@ -177,7 +188,8 @@ import Singular.Registry.Deployment (parseOutRef, renderOutRef)
 import Singular.Registry.Evidence (NoWitness, unverifiedVerifier)
 import Singular.Registry.Ledger (Coin (Coin))
 import Singular.Registry.LedgerProvider qualified as Cage
-    ( SubmitResult (SubmitAccepted)
+    ( OutputQuery (AtTxIn, HoldingPolicy)
+    , SubmitResult (SubmitAccepted)
     )
 import Singular.Registry.RawChainFixture
     ( ChainFacts (..)
@@ -207,6 +219,7 @@ import Singular.Registry.TxBuilder.Internal
     , scriptHashBytes
     )
 import Singular.Registry.Wallet (Wallet (walletAddr), loadWallet)
+import Singular.State.Assemble (readOutputs)
 import Singular.State.Fold qualified as StateFold
     ( foldedRequests
     )
@@ -255,7 +268,275 @@ import Test.Hspec
 import UntypedPlutusCore qualified as UPLC ()
 
 spec :: Spec
-spec = handlerRows >> setupRecut >> permanentRecognition
+spec =
+    handlerRows
+        >> setupRecut
+        >> permanentRecognition
+        >> batchDiscoveryRows
+
+batchDiscoveryRows :: Spec
+batchDiscoveryRows = describe "fold receipts from public discovery" $ do
+    it
+        "names a later foldable request for a key as skipped rather than left"
+        $ withBatch ["duplicate key", "duplicate key"]
+        $ \rig token booked -> do
+            let refs =
+                    [ ref
+                    | entry <- booked
+                    , Just ref <- [textAt "pending" (runReceipt entry)]
+                    ]
+            length refs `shouldBe` 2
+            first <-
+                maybe
+                    (fail "no pending request in the control")
+                    pure
+                    (listToMaybe refs)
+            holders <- approvalHolders rig first
+            discovered <-
+                runAt
+                    rig
+                    "batch"
+                    "duplicate discovery"
+                    ["fold", "--state-token", token]
+            runExit discovered `shouldBe` ExitSuccess
+            length (runFolded discovered) `shouldBe` 1
+            valueAt "left" (runReceipt discovered)
+                `shouldBe` Just (Aeson.Number 0)
+            skipped <- receiptSkips discovered holders
+            [ holder
+              | holder <- skipped
+              , textAt "reference" holder `elem` map Just refs
+              ]
+                `shouldSatisfy` \duplicates ->
+                    length duplicates == 1
+                        && all
+                            (maybe False (T.isInfixOf "already taken the key") . textAt "reason")
+                            duplicates
+    forM_ [True, False] $ \keepControl ->
+        it
+            ( if keepControl
+                then "reports an unfoldable request skipped beside a current one"
+                else "reports every unfoldable request when nothing can fold"
+            )
+            $ withBatch ["occupied key"]
+            $ \rig token booked -> do
+                first <- case booked of
+                    [entry] ->
+                        maybe
+                            (fail "no first pending")
+                            pure
+                            (textAt "pending" (runReceipt entry))
+                    _ -> fail "one initial booking required"
+                registered <-
+                    runAt
+                        rig
+                        "batch"
+                        "register occupied key"
+                        ["fold", "--state-token", token, "--pending", T.unpack first]
+                runExit registered `shouldBe` ExitSuccess
+                stale <- bookAt rig token "occupied key"
+                runExit stale `shouldBe` ExitSuccess
+                pending <-
+                    maybe
+                        (fail "no repeated pending")
+                        pure
+                        (textAt "pending" (runReceipt stale))
+                control <-
+                    if keepControl
+                        then (: []) <$> bookAt rig token "current key"
+                        else pure []
+                forM_ control $ \entry -> runExit entry `shouldBe` ExitSuccess
+                named <-
+                    runAt
+                        rig
+                        "batch"
+                        "named unfoldable request"
+                        ["fold", "--state-token", token, "--pending", T.unpack pending]
+                outcomeOf (runReceipt named) `shouldBe` Just "client-refusal"
+                submissionsOf (runReceipt named) `shouldBe` []
+                holders <- approvalHolders rig pending
+                discovered <-
+                    runAt
+                        rig
+                        "batch"
+                        "skip unfoldable request"
+                        ["fold", "--state-token", token]
+                if keepControl
+                    then do
+                        runExit discovered `shouldBe` ExitSuccess
+                        length (runFolded discovered) `shouldBe` 1
+                    else do
+                        outcomeOf (runReceipt discovered) `shouldBe` Just "client-refusal"
+                        elementsAt "folded" (runReceipt discovered) `shouldBe` Just []
+                        submissionsOf (runReceipt discovered) `shouldBe` []
+                valueAt "left" (runReceipt discovered)
+                    `shouldBe` Just (Aeson.Number 0)
+                skipped <- receiptSkips discovered holders
+                [ holder | holder <- skipped, textAt "reference" holder == Just pending
+                  ]
+                    `shouldSatisfy` \rejected ->
+                        length rejected == 1
+                            && all
+                                (maybe False (T.isInfixOf "already registered") . textAt "reason")
+                                rejected
+    forM_ [True, False] $ \keepCorrect ->
+        it
+            ( if keepCorrect
+                then "names a key-address holder skipped beside a foldable request"
+                else "names skipped holders when no request can be folded"
+            )
+            $ withBatch ["foreign holder"]
+            $ \rig token booked -> do
+                pending <- case booked of
+                    [entry] ->
+                        maybe
+                            (fail "no booking")
+                            (either fail pure . parseOutRef)
+                            (textAt "pending" (runReceipt entry))
+                    _ -> fail "one request control required"
+                [(_, output)] <- SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \session ->
+                    readOutputs session (Cage.AtTxIn pending)
+                        >>= either (fail . show) pure
+                let TxIn txid _ = pending
+                    foreignRef = TxIn txid (TxIx 99)
+                advanceChain (rigChain rig) $ \facts ->
+                    let correct =
+                            if keepCorrect
+                                then csUTxO facts
+                                else Map.delete pending (csUTxO facts)
+                    in  facts
+                            { csUTxO =
+                                Map.insert
+                                    foreignRef
+                                    (output & addrTxOutL .~ walletAddr (rigWallet rig))
+                                    correct
+                            }
+                folded <-
+                    runAt rig "batch" "holder discovery" ["fold", "--state-token", token]
+                if keepCorrect
+                    then do
+                        runExit folded `shouldBe` ExitSuccess
+                        map fst (runFolded folded) `shouldBe` [renderOutRef pending]
+                    else do
+                        outcomeOf (runReceipt folded) `shouldBe` Just "client-refusal"
+                        elementsAt "folded" (runReceipt folded) `shouldBe` Just []
+                        submissionsOf (runReceipt folded) `shouldBe` []
+                valueAt "left" (runReceipt folded) `shouldBe` Just (Aeson.Number 0)
+                skipped <-
+                    maybe
+                        (fail "skipped holders absent")
+                        pure
+                        (elementsAt "skipped" (runReceipt folded))
+                skipped
+                    `shouldSatisfy` any
+                        ( \holder ->
+                            textAt "reference" holder == Just (renderOutRef foreignRef)
+                                && textAt "reason" holder == Just "held at a key address"
+                        )
+    forM_ ["kind", "skipped", "left"] $ \field ->
+        it ("prints the named batch's " <> field <> " in its receipt") $
+            withBatch ["receipt key"] $ \rig token booked -> do
+                pending <- case booked of
+                    [entry] ->
+                        maybe
+                            (fail ("no pending reference in " <> show (runReceipt entry)))
+                            pure
+                            (textAt "pending" (runReceipt entry))
+                    _ -> fail "the receipt control needs one booked request"
+                folded <-
+                    runAt
+                        rig
+                        "batch"
+                        "named fold"
+                        ["fold", "--state-token", token, "--pending", T.unpack pending]
+                runExit folded `shouldBe` ExitSuccess
+                case field of
+                    "kind" -> case elementsAt "folded" (runReceipt folded) of
+                        Just [request] -> textAt "kind" request `shouldBe` Just "registration"
+                        other -> expectationFailure (show other)
+                    "skipped" ->
+                        valueAt "skipped" (runReceipt folded)
+                            `shouldBe` Just (Aeson.toJSON ([] :: [Aeson.Value]))
+                    _ ->
+                        valueAt "left" (runReceipt folded) `shouldBe` Just (Aeson.Number 0)
+    it
+        "discovers without naming requests and applies the limit to the submitted batch"
+        $ withBatch ["first key", "second key"]
+        $ \rig token _ -> do
+            folded <-
+                runAt
+                    rig
+                    "batch"
+                    "discovered fold"
+                    ["fold", "--state-token", token, "--limit", "1"]
+            runExit folded `shouldBe` ExitSuccess
+            length (runFolded folded) `shouldBe` 1
+            valueAt "left" (runReceipt folded) `shouldBe` Just (Aeson.Number 1)
+    it "leaves the complete pending set unconsumed when its cap is zero" $
+        withBatch ["first key", "second key"] $ \rig token _ -> do
+            folded <-
+                runAt
+                    rig
+                    "batch"
+                    "zero cap"
+                    ["fold", "--state-token", token, "--limit", "0"]
+            outcomeOf (runReceipt folded) `shouldBe` Just "client-refusal"
+            elementsAt "folded" (runReceipt folded) `shouldBe` Just []
+            valueAt "left" (runReceipt folded) `shouldBe` Just (Aeson.Number 2)
+            submissionsOf (runReceipt folded) `shouldBe` []
+  where
+    -- Account for every actual policy holder, including non-request holders in the rig.
+    approvalHolders rig text = do
+        pending <- either fail pure (parseOutRef text)
+        SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \session -> do
+            [(_, output)] <-
+                readOutputs session (Cage.AtTxIn pending)
+                    >>= either (fail . show) pure
+            let MaryValue _ (MultiAsset policies) = output ^. valueTxOutL
+            policy <- case Map.keys policies of
+                [found] -> pure found
+                _ -> fail "pending fixture must name one approval policy"
+            map (renderOutRef . fst)
+                <$> ( readOutputs session (Cage.HoldingPolicy policy)
+                        >>= either (fail . show) pure
+                    )
+    receiptSkips discovered holders = do
+        skipped <-
+            maybe
+                (fail "skip accounting absent")
+                pure
+                (elementsAt "skipped" (runReceipt discovered))
+        let folded = map fst (runFolded discovered)
+            refs = [ref | holder <- skipped, Just ref <- [textAt "reference" holder]]
+        sort (folded <> refs) `shouldBe` sort holders
+        length (nub (folded <> refs)) `shouldBe` length holders
+        forM_ skipped $ \holder ->
+            textAt "reason" holder
+                `shouldSatisfy` maybe False (not . null . T.unpack)
+        pure skipped
+    bookAt rig token key =
+        runAt
+            rig
+            "batch"
+            "insert"
+            [ "insert"
+            , "--state-token"
+            , token
+            , "--key"
+            , key
+            , "--payload"
+            , rigDir rig </> "payload.json"
+            , "--deposit"
+            , "5000000"
+            , "--tip"
+            , "1000000"
+            ]
+    withBatch keys action = withRig $ \rig -> do
+        created <- runAt rig "batch" "create" ["create"]
+        token <- tokenOf created
+        booked <- mapM (bookAt rig token) keys
+        forM_ booked $ \entry -> runExit entry `shouldBe` ExitSuccess
+        action rig token booked
 
 permanentRecognition :: Spec
 permanentRecognition = describe "Permanent contract recognition"

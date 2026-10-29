@@ -311,11 +311,14 @@ parserRows = describe "the command line" $ do
         it ("reads the documented line of " <> name) $
             reading line `shouldBe` Right constructor
     it
-        "names the pending registration when fold, reclaim or cleanup lack it"
-        $ forM_ ["fold", "reclaim", "cleanup"]
+        "names the pending registration when reclaim or cleanup lack it"
+        $ forM_ ["reclaim", "cleanup"]
         $ \name ->
             aboutRefusal (reading (dropFlag "--pending" (lineOf name)))
                 `shouldBe` Just ("MissingFlag", "--pending")
+    it "accepts a fold that discovers its pending requests" $
+        reading (dropFlag "--pending" (lineOf "fold"))
+            `shouldBe` Right "OpenStateFold"
     it "names the payload when a booking lacks it, and the key" $ do
         fmap
             snd

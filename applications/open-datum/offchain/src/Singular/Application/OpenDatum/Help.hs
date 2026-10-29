@@ -164,9 +164,12 @@ stateFoldLeaf =
         Leaf
             { leafName = "fold"
             , leafSummary =
-                "Fold the registrations and terminations you name"
+                "Fold requests found from public approvals"
             , leafDescription =
-                [ "Folds the named pending registrations and terminations into the registry in one transaction. A registration burns its approval and creates its committed holding with the new active token and deposit. A termination burns its approval and active token, creates no holding, and pays its whole request value to the folder. Mixed batches use distinct keys. The transaction is built from public chain data and signed by the wallet running the command; no controller file, key or local record is needed. Name each request with --pending."
+                [ "Finds pending registrations and terminations from the application's public approval holders. Requests are ordered by the folder's take, greatest first, with output references breaking ties. Individually unfoldable requests are skipped with reasons: an already registered key, an inactive termination key, a deposit below the holding's minimum or a closed processing window. The first foldable request for each key is kept; later ones are skipped as duplicates."
+                , "The greatest prefix of foldable requests fitting transaction size, memory and steps is built; --limit caps its request count. Skipped requests are never counted as left. If none can fold, the command refuses with nothing to fold and still lists the skipped requests. Failed reads and other construction failures stop the fold with their own reason."
+                , "A registration keeps its committed holding and deposit; its remaining value is the folder's. A termination burns its approval and active token and pays its whole held value to the folder. The folder pays the transaction fee. The receipt lists folded keys, kinds and pending references, skipped holders with reasons, and how many requests remain."
+                , "Repeat --pending to name an explicit batch in its given order. It is built whole or refused, even with --limit. The transaction is built from public chain data and signed by the wallet running the command; no controller file, key or local record is needed."
                 , signerParagraph
                 ]
             , leafShape =
@@ -174,7 +177,8 @@ stateFoldLeaf =
                     [ Takes stateDir
                     , Needs blueprint
                     , registryShape
-                    , Needs pending
+                    , Takes foldPending
+                    , Takes batchLimit
                     , registryNodeShape
                     , writeShape
                     , tracingShape
@@ -327,6 +331,20 @@ pending =
         "--pending"
         "TXID#IX"
         "The pending request to act on, as the booking printed it; none is chosen for you."
+
+foldPending :: Flag
+foldPending =
+    valued
+        "--pending"
+        "TXID#IX"
+        "An explicit request to fold; repeat for the whole named batch. Omit it to discover public requests."
+
+batchLimit :: Flag
+batchLimit =
+    valued
+        "--limit"
+        "N"
+        "At most N requests from automatic discovery. Omit it to try the whole pending set; an explicit batch is never trimmed."
 
 reclaimTime :: Flag
 reclaimTime =

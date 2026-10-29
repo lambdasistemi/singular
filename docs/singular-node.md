@@ -76,7 +76,7 @@ Available settings:
 
 All commands:
   open-datum create           Create a registry
-  open-datum fold             Fold the registrations and terminations you name
+  open-datum fold             Fold requests found from public approvals
   open-datum insert           Book the registration of a key
   open-datum reclaim          Take back a registration you booked
   open-datum cleanup          Clean up an expired registration
@@ -123,7 +123,8 @@ what it does; standard output carries only the command's result.
 | `--tip LOVELACE` | `open-datum insert` | What the pending registration holds above the deposit for the wallet that folds it, in whole lovelace: 0 when omitted. The wallet that runs the fold keeps it, and so does the wallet that runs the cleanup after the reclaim window. |
 | `--refund-address ADDR` | `open-datum insert` | Where a reclaim or a cleanup returns the registration's value, a bech32 address: your own address when omitted. A reclaim must be run by the wallet of that address. |
 | `--holding TXID#IX` | `open-datum update`, `open-datum terminate` | The live holding to spend, by transaction identity and output index. Required; none is chosen automatically. The named registry and signing controller must match its protected control. |
-| `--pending TXID#IX` | `open-datum fold`, `open-datum reclaim`, `open-datum cleanup` | The pending request to act on, as the receipt of `open-datum insert` names it. Nothing is chosen for you. The fold takes the flag once for each registration it folds in its one transaction; a reclaim and a cleanup take exactly one. |
+| `--pending TXID#IX` | `open-datum fold`, `open-datum reclaim`, `open-datum cleanup` | Name an explicit pending request from its booking receipt. Repeat it for a fold's whole named batch, which is built in order or refused. A fold without this flag discovers public requests; reclaim and cleanup require exactly one. |
+| `--limit N` | `open-datum fold` | Cap the number of automatically selected foldable requests. Without a cap, try the whole foldable set. Requests are ordered by the folder's take, greatest first, with output references breaking ties; the greatest fitting prefix is folded. An explicit `--pending` batch is never trimmed. |
 | `--receipt FILE` | `singular submit`, `singular registry create`, `open-datum create`, `open-datum fold`, `open-datum insert`, `open-datum reclaim`, `open-datum cleanup`, `open-datum update`, `open-datum terminate` | Also write the JSON receipt the command prints on standard output to this file. |
 | `--vault FILE` | `singular wallet create`, `singular wallet address`, `singular wallet sign`, `singular registry create`, `open-datum create`, `open-datum fold`, `open-datum insert`, `open-datum reclaim`, `open-datum cleanup`, `open-datum update`, `open-datum terminate` | The encrypted wallet vault. `singular wallet create` creates it, and `singular wallet address` and `singular wallet sign` open it. On a retained writer it selects the signing key in place of a key file or external signer. The command opens it once before running. An unreadable vault or a wrong passphrase is refused. The flag, `SINGULAR_VAULT` and the config key `vault` follow the [settings precedence](#giving-the-chain-the-contracts-and-the-registry-once). |
 | `--passphrase-fd N` | `singular wallet create`, `singular wallet address`, `singular wallet sign`, `singular registry create`, `open-datum create`, `open-datum fold`, `open-datum insert`, `open-datum reclaim`, `open-datum cleanup`, `open-datum update`, `open-datum terminate` | The inherited file descriptor the passphrase is read from, one line: the way a script supplies it. It wins over the variable `SINGULAR_PASSPHRASE`, which gives the passphrase on a development network only (see [the passphrase from the environment](#the-passphrase-from-the-environment-on-a-development-network)). Without either, the passphrase is typed at a prompt on the terminal with the echo off — twice on a creation, once on an opening or a signing — and a differing confirmation is refused. On a write it goes with `--vault`, and alone it is refused. The passphrase itself is never taken as an argument, and no output, refusal, journal line or trace names it. The commands of the proved design take it the same way. |
@@ -159,6 +160,15 @@ open-datum insert --state-dir ./work --blueprint plutus.json \
 The file `alice.json` is the key's payload, ordinary JSON stored as plain JSON unless
 `--payload-schema detailed` says it is written in the detailed Plutus data schema;
 [store ordinary JSON as a key's payload](payload-json.md) gives the rules.
+
+An automatic fold skips each individually unfoldable request with its reason:
+an already registered key, an inactive termination key, a deposit below the
+holding's minimum or a closed processing window. The first individually
+foldable request for a key in take order is kept; later foldable requests for
+it are skipped as duplicates. The receipt lists every skip, and `left` counts
+only foldable requests outside the selected prefix. If none can fold, the
+command refuses with nothing to fold and retains the skip list. Explicit
+`--pending` batches keep their existing refusals and are never shortened.
 
 ## Giving the chain, the contracts and the registry once
 

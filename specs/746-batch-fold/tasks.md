@@ -13,9 +13,9 @@ the ticket owner accepts its slice.
 
 ## Pull request 2: discovery and fit
 
-- [ ] discover-pending: pending requests of one registry found from the approvals; skipped holders named; failure is unavailable.
-- [ ] fit-largest-batch: the order by the folder's take, the largest prefix that builds, the count left, the named-batch refusals.
-- [ ] fold-command-discovers: the fold command discovers, takes an optional limit, reports folded, skipped and left; help, parser rows, flags and recovery partition.
+- [x] discover-pending: pending requests of one registry found from the approvals; skipped holders named; failure is unavailable.
+- [x] fit-largest-batch: the order by the folder's take, the largest prefix that builds, the count left, the named-batch refusals.
+- [x] fold-command-discovers: the fold command discovers, takes an optional limit, reports folded, skipped and left; help, parser rows, flags and recovery partition.
 
 ## Pull request 3: devnet
 

@@ -137,28 +137,73 @@ value, and it is your own address when you do not say.
 The receipt names the pending registration, its approval, the key, the deposit,
 the tip, the refund address and the three times that matter: when it was booked,
 its processing deadline, and the end of its reclaim window. Whoever folds it, or
-you taking it back, names the pending registration with `--pending`.
+you taking it back, can name the pending registration with `--pending`. A folder
+can also discover it from public approvals.
 
 ## Fold registrations and terminations into the registry
 
-As Bob, you fold the registrations you name into the registry in one
-transaction, and you need nothing from anyone who booked them.
+As Bob, give the registry and your wallet to discover its pending registrations
+and terminations from public approvals. You need nothing from anyone who booked
+them. The command orders requests by your take, greatest first, breaking ties by
+output reference. It skips requests that cannot individually fold in the
+observed state, then builds the greatest fitting prefix of the foldable rest.
+Use `--limit` to cap the number of automatically selected requests.
 
 ```sh
 open-datum fold --blueprint plutus.json \
-  --registry "$registry" --pending "$first" --pending "$second" \
+  --registry "$registry" --limit 20 \
   --koios-url https://preprod.koios.rest/api/v1 \
   --vault bob.vault
 ```
 
-Each registration's approval is consumed and the key's token is minted into the
-holding the registration committed to. The fold is built from the chain alone,
-and the wallet that runs it keeps what each request holds above its deposit.
-Nothing is chosen for you: every registration is named with `--pending`, and a
-registration that cannot be folded refuses the command, saying why.
+This is the path of a successful discovered batch. Holders the application does
+not accept are kept in the accounting as skipped, with their references and
+reasons. A recognized request is also skipped when its key is already
+registered, its termination key is not active, its deposit is below the minimum
+the holding must keep, or its processing window has closed. The first
+individually foldable request for a key in take order keeps that key; later
+foldable requests for it are skipped as duplicates. An unfoldable earlier
+request never reserves the key. Every holder is folded, skipped with a reason,
+or left as a foldable request beyond the selected prefix.
 
-The receipt names the registry's new root, the output that holds the state, and
-each registration folded with its key.
+```mermaid
+flowchart TB
+    A[Public approvals] -->|classify holders| B[Requests and skips]
+    B -->|order requests| C[Greatest take first]
+    C -->|skip unfoldable| D[First foldable per key]
+    D -->|try prefixes| E[Greatest fitting batch]
+    E -->|build transaction| F[Folded, skipped, left]
+    classDef chain fill:transparent,stroke:#3b82f6,stroke-width:2px
+    classDef selection fill:transparent,stroke:#22c55e,stroke-width:2px
+    classDef receipt fill:transparent,stroke:#a855f7,stroke-width:2px
+    class A chain
+    class B,C,D,E selection
+    class F receipt
+```
+
+Transaction bytes include all required signing witnesses. Only transaction
+size, memory or steps exceeding the observed network limit permits trying a
+shorter prefix. A failed public read, registry replay or other transaction
+construction failure stops the fold with its own reason; it never becomes an
+empty or shorter discovered answer.
+
+Each registration burns its approval and receives its committed holding, active
+token and deposit. Its held value above that deposit is yours. A termination
+burns its approval and active token and pays its whole held value to you. Your
+wallet pays the transaction fee. Both kinds can share one batch with distinct
+keys.
+
+To choose the entire batch yourself, repeat `--pending "$first" --pending
+"$second"` instead. The command builds those requests in that order or refuses
+them, naming the reason; it never trims an explicit batch, even with `--limit`.
+
+The successful receipt names the registry's new root and state output. Its
+`folded` list gives each key, request kind and pending reference; `skipped` gives
+each unaccepted or individually unfoldable holder's reference and reason;
+`left` counts foldable requests not included. Skipped requests are never counted
+as left. If nothing can fold, the command refuses with nothing to fold and
+still names every skipped holder. A failed read remains unavailable and never
+claims an empty answer.
 
 ### Where the key's token goes
 

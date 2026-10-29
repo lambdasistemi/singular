@@ -51,6 +51,10 @@
     {
       "text": "The file alice.json is the key's payload, ordinary JSON stored as plain JSON unless --payload-schema detailed says it is written in the detailed Plutus data schema; store ordinary JSON as a key's payload gives the rules.",
       "pause": 400
+    },
+    {
+      "text": "An automatic fold skips each individually unfoldable request with its reason: an already registered key, an inactive termination key, a deposit below the holding's minimum or a closed processing window. The first individually foldable request for a key in take order is kept; later foldable requests for it are skipped as duplicates. The receipt lists every skip, and left counts only foldable requests outside the selected prefix. If none can fold, the command refuses with nothing to fold and retains the skip list. Explicit --pending batches keep their existing refusals and are never shortened.",
+      "pause": 400
     }
   ],
   "giving-the-chain-the-contracts-and-the-registry-once": [
@@ -397,6 +401,6 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "8193aa1b8c53ad78cd4fefd6c182ceccad476f5199c35c61f94622bad955fb92"
+    "sha256": "80163323f589fdce167f8d78643a5177f72ede8ea455d119d063f2db685c07e7"
   }
 }

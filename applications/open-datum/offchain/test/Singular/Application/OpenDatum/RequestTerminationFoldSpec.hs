@@ -18,6 +18,7 @@ module Singular.Application.OpenDatum.RequestTerminationFoldSpec (spec) where
 import Control.Monad (forM_)
 import Data.ByteString qualified as BS
 import Data.Map.Strict qualified as Map
+import Data.Maybe (mapMaybe)
 import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
 import Lens.Micro ((&), (.~), (^.))
@@ -44,7 +45,7 @@ import Cardano.Ledger.Address (Addr (..))
 import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
 import Cardano.Ledger.Alonzo.TxBody (scriptIntegrityHashTxBodyL)
 import Cardano.Ledger.Alonzo.TxWits (Redeemers (..), TxDats (..))
-import Cardano.Ledger.Api.Scripts.Data (Data (..))
+import Cardano.Ledger.Api.Scripts.Data (Data (..), getPlutusData)
 import Cardano.Ledger.Api.Tx
     ( addrTxWitsL
     , mkBasicTx
@@ -60,7 +61,7 @@ import Cardano.Ledger.Api.Tx.Body
     , outputsTxBodyL
     , reqSignerHashesTxBodyL
     )
-import Cardano.Ledger.Api.Tx.Out (mkBasicTxOut)
+import Cardano.Ledger.Api.Tx.Out (mkBasicTxOut, valueTxOutL)
 import Cardano.Ledger.Api.Tx.Wits (rdmrsTxWitsL, scriptTxWitsL)
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
@@ -94,10 +95,12 @@ import Singular.Application.OpenDatum.RequestWorld
     ( expectBuilt
     , feeOf
     , inlineDatum
+    , inputsOf
     , keyAddress
     , mintedOf
     , network
     , outputRef
+    , outputsOf
     , signersOf
     , valueAda
     , withMint
@@ -112,6 +115,7 @@ import Singular.Application.OpenDatum.Requests.Script
     , requestPolicy
     , requestScriptHash
     )
+import Singular.Registry.Evidence (value)
 import Singular.Registry.Ledger (ConwayEra, TxOut)
 import Singular.Registry.LedgerProvider
     ( OutputQuery (..)
@@ -121,13 +125,14 @@ import Singular.Registry.SessionIO qualified as Session
 import Singular.Registry.Signing (signTx, signedTx)
 import Singular.Registry.TrieState (RegistryIdentity)
 import Singular.State.Assemble (Payer (..), resolvePayer)
-import Singular.State.Fold (buildRegistrationFold)
+import Singular.State.Fold (buildRegistrationFold, foldedRequests)
 import Singular.State.Preimage
     ( activeTokenName
     , approvalName
     , seedData
     , terminationPreimage
     )
+import Singular.State.Records (Change (..), decodeFoldRedeemer)
 import Singular.State.Script (statePolicy)
 
 folderKey :: SignKeyDSIGN Ed25519DSIGN
@@ -259,6 +264,15 @@ folding world registry requests = withSession world $ \session -> do
 spec :: Spec
 spec = describe "termination folds from public data" $ do
     it
+        "discovers the termination from approvals and the replayed live keys without reading the booker's wallet"
+        $ withTermination
+        $ \world registry request _ -> do
+            tx <- folding world registry []
+            foldedRequests tx `shouldBe` [(request, "a live key")]
+            judge world tx >>= (`shouldSatisfy` everyScriptAccepts)
+            soundnessProblems world tx `shouldReturn` []
+
+    it
         "burns both tokens, pays the whole request to a second wallet and is signed only by that wallet"
         $ withTermination
         $ \world registry request held -> do
@@ -290,43 +304,89 @@ spec = describe "termination folds from public data" $ do
                 _ -> fail "the fold did not have exactly the folder's signature"
             soundnessProblems world signed `shouldReturn` []
 
-    it "mixes a termination with a registration of another key" $
-        withTermination $ \world registry request _ -> do
-            booking <-
-                expectBuilt
-                    =<< bookAs
+    forM_ [False, True] $ \named ->
+        it
+            ( "mixes a termination with a registration of another key, "
+                <> if named then "named" else "discovered"
+            )
+            $ withTermination
+            $ \world registry request _ -> do
+                booking <-
+                    expectBuilt
+                        =<< bookAs
+                            world
+                            ( Booking
+                                registry
+                                "another key"
+                                (PLC.I 7)
+                                (Coin 5_000_000)
+                                (Coin 1_000_000)
+                                (crBooker world)
+                            )
+                judge world booking >>= (`shouldSatisfy` everyScriptAccepts)
+                applyTx world booking
+                tx <-
+                    folding
                         world
-                        ( Booking
-                            registry
-                            "another key"
-                            (PLC.I 7)
-                            (Coin 5_000_000)
-                            (Coin 1_000_000)
-                            (crBooker world)
-                        )
-            judge world booking >>= (`shouldSatisfy` everyScriptAccepts)
-            applyTx world booking
-            tx <- folding world registry [request, pendingOf world booking]
-            judge world tx >>= (`shouldSatisfy` everyScriptAccepts)
-            length (mintedOf tx) `shouldBe` 4
-            soundnessProblems world tx `shouldReturn` []
-            applyTx world tx
-            -- A later fold must replay the termination as part of public history.
-            next <-
-                expectBuilt
-                    =<< bookAs
-                        world
-                        ( Booking
-                            registry
-                            "later key"
-                            (PLC.I 9)
-                            (Coin 5_000_000)
-                            (Coin 1_000_000)
-                            (crBooker world)
-                        )
-            applyTx world next
-            later <- folding world registry [pendingOf world next]
-            judge world later >>= (`shouldSatisfy` everyScriptAccepts)
+                        registry
+                        (if named then [request, pendingOf world booking] else [])
+                judge world tx >>= (`shouldSatisfy` everyScriptAccepts)
+                length (mintedOf tx) `shouldBe` 4
+                let Redeemers redeemers = tx ^. witsTxL . rdmrsTxWitsL
+                    changes =
+                        concatMap
+                            snd
+                            ( mapMaybe
+                                (decodeFoldRedeemer . getPlutusData . fst)
+                                (Map.elems redeemers)
+                            )
+                [(changeRequest c, changeKey c) | c@Register{} <- changes]
+                    `shouldBe` [(pendingOf world booking, "another key")]
+                [(changeRequest c, changeKey c) | c@Terminate{} <- changes]
+                    `shouldBe` [(request, "a live key")]
+                spent <- withSession world $ \session -> do
+                    answers <- mapM (outputs session . AtTxIn) (inputsOf tx)
+                    concatMap value <$> mapM (either (fail . show) pure) answers
+                registration <- case [c | c@Register{} <- changes] of
+                    [found] -> pure found
+                    _ -> fail "the mixed fold must name one registration"
+                let heldAda ref =
+                        maybe
+                            (error "the transaction did not spend this request")
+                            valueAda
+                            (lookup ref spent)
+                    registrationTake = heldAda (changeRequest registration) - changeDeposit registration
+                    terminationTake = heldAda request
+                terminationTake `shouldSatisfy` (> registrationTake)
+                foldedRequests tx
+                    `shouldBe` [(request, "a live key"), (pendingOf world booking, "another key")]
+                let onlyAda output = case output ^. valueTxOutL of MaryValue _ tokens -> tokens == mempty
+                    kept = [output | output <- outputsOf tx, not (onlyAda output)]
+                    change = [output | output <- outputsOf tx, onlyAda output]
+                map outputAddress change `shouldBe` [crFolder world]
+                sum (map valueAda change)
+                    `shouldBe` sum (map (valueAda . snd) spent) - sum (map valueAda kept) - feeOf tx
+                forM_ [c | c@Register{} <- changes] $ \c ->
+                    fmap valueAda (outputAtIndex tx (fromInteger (changeHolding c)))
+                        `shouldBe` Just (changeDeposit c)
+                soundnessProblems world tx `shouldReturn` []
+                applyTx world tx
+                -- A later fold must replay the termination as part of public history.
+                next <-
+                    expectBuilt
+                        =<< bookAs
+                            world
+                            ( Booking
+                                registry
+                                "later key"
+                                (PLC.I 9)
+                                (Coin 5_000_000)
+                                (Coin 1_000_000)
+                                (crBooker world)
+                            )
+                applyTx world next
+                later <- folding world registry [pendingOf world next]
+                judge world later >>= (`shouldSatisfy` everyScriptAccepts)
 
     it "refuses either missing burn beside a passing termination fold" $
         withTermination $ \world registry request _ -> do

@@ -1,4 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE TypeApplications #-}
 
 {- |
 Module      : Singular.State.Assemble
@@ -37,25 +38,47 @@ module Singular.State.Assemble
     , assembleTransaction
     ) where
 
-import Control.Exception (throwIO, try)
+import Control.Exception (Exception, throwIO, try)
 import Data.Bifunctor (first)
+import Data.ByteString.Lazy qualified as LBS
+import Data.Either (lefts)
 import Data.Map.Strict qualified as Map
+import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Void (Void)
 import Lens.Micro ((^.))
 import PlutusCore.Data qualified as PLC
+import PlutusCore.Evaluation.Machine.ExBudget
+    ( ExRestrictingBudget (..)
+    )
+import PlutusCore.Evaluation.Machine.Exception qualified as Machine
+import PlutusLedgerApi.Common qualified as Plutus
+import UntypedPlutusCore.Evaluation.Machine.Cek qualified as Cek
 
 import Cardano.Ledger.Address (Addr (..))
+import Cardano.Ledger.Alonzo.Plutus.Evaluate
+    ( TransactionScriptFailure (..)
+    )
 import Cardano.Ledger.Alonzo.Scripts (AsIx)
+import Cardano.Ledger.Alonzo.TxWits (Redeemers (..))
+import Cardano.Ledger.Api.PParams (ppMaxTxExUnitsL, ppMaxTxSizeL)
 import Cardano.Ledger.Api.Scripts.Data
     ( Data (..)
     , Datum (..)
     , binaryDataToData
     )
+import Cardano.Ledger.Api.Tx (bodyTxL, witsTxL)
+import Cardano.Ledger.Api.Tx.Body
+    ( collateralInputsTxBodyL
+    , inputsTxBodyL
+    )
 import Cardano.Ledger.Api.Tx.Out (datumTxOutL, valueTxOutL)
+import Cardano.Ledger.Api.Tx.Wits (rdmrsTxWitsL)
 import Cardano.Ledger.BaseTypes (Network)
+import Cardano.Ledger.Binary (serialize)
 import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose)
+import Cardano.Ledger.Core (eraProtVerHigh)
 import Cardano.Ledger.Credential (Credential (..))
 import Cardano.Ledger.Keys (KeyHash (..), KeyRole (Guard))
 import Cardano.Ledger.Mary.Value
@@ -64,14 +87,16 @@ import Cardano.Ledger.Mary.Value
     , MultiAsset (..)
     , PolicyID
     )
-import Cardano.Ledger.Plutus.ExUnits (ExUnits)
+import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
+import Cardano.Ledger.Tools (addDummyWitsTx)
 import Cardano.Ledger.TxIn (TxIn)
 import Cardano.Slotting.Slot (SlotNo (..))
 import Cardano.Tx.Build qualified as Tx
 import Cardano.Tx.Ledger (ConwayTx)
+import Cardano.Tx.Witnesses (estimatedKeyWitnessCount)
 
 import Singular.Registry.Evidence (Evidenced (..), NoWitness)
-import Singular.Registry.Ledger (ConwayEra, TxOut)
+import Singular.Registry.Ledger (ConwayEra, PParams, TxOut)
 import Singular.Registry.LedgerProvider
     ( OutputQuery
     , Outputs
@@ -87,7 +112,11 @@ import Singular.Registry.SessionIO
     )
 import Singular.Registry.SessionIO qualified as Services
 import Singular.Registry.TxBuilder.Edges (selectFunding)
-import Singular.State.Refusal (Refusal (..))
+import Singular.State.Refusal
+    ( CapacityLimit (..)
+    , Refusal (..)
+    , capacityMessage
+    )
 
 {- | No queries. A state transaction reads the chain before it is built,
 never while it is.
@@ -212,30 +241,67 @@ assemble
     -- ^ Where the change goes
     -> Program ()
     -> IO (Either Text ConwayTx)
-assemble session spent referenced change program = do
-    protocol <- parameters session
-    built <-
-        Tx.build
-            (Tx.mkPParamsBound protocol)
-            (Tx.InterpretIO noQuery)
-            (evaluate session)
-            spent
-            referenced
-            change
-            program
-    pure (first (Text.pack . show) built)
+assemble session spent referenced change program =
+    first message
+        <$> assembleTransaction session spent referenced change program
   where
-    noQuery :: NoQuery a -> IO b
-    noQuery query = case query of {}
+    message (BuildFailed reason) = reason
+    message (CapacityExceeded limit) = capacityMessage limit
+    message other = Text.pack (show other)
+
+-- The builder's evaluator callback carries strings. A private, narrowly caught
+-- exception preserves typed capacity until the builder returns to our boundary.
+newtype ProbeCapacity = ProbeCapacity CapacityLimit
+    deriving stock (Show)
+
+instance Exception ProbeCapacity
 
 evaluate
-    :: Session NoWitness IO
+    :: PParams ConwayEra
+    -> Session NoWitness IO
     -> ConwayTx
     -> IO
         (Map.Map (ConwayPlutusPurpose AsIx ConwayEra) (Either String ExUnits))
-evaluate session tx =
-    Map.map (either (Left . show) Right)
-        <$> Services.evaluateTx session tx
+evaluate protocol session tx = do
+    results <- Services.evaluateTx session tx
+    let failures = lefts (Map.elems results)
+    case traverse (evaluationCapacity protocol) failures of
+        Just (limit : _) -> throwIO (ProbeCapacity limit)
+        _ -> pure (Map.map (either (Left . show) Right) results)
+
+-- Only actual CEK exhaustion qualifies. A negative remaining budget records
+-- work already attempted, not an estimate of the cost of finishing the script.
+evaluationCapacity
+    :: PParams ConwayEra
+    -> TransactionScriptFailure ConwayEra
+    -> Maybe CapacityLimit
+evaluationCapacity protocol = \case
+    ValidationFailure
+        _
+        ( Plutus.CekError
+                ( Machine.ErrorWithCause
+                        ( Machine.OperationalError
+                                ( Cek.CekOutOfExError
+                                        ( ExRestrictingBudget
+                                                (Plutus.ExBudget (Plutus.ExCPU cpu) (Plutus.ExMemory mem))
+                                            )
+                                    )
+                            )
+                        _
+                    )
+            )
+        _
+        _
+            | mem < 0 ->
+                Just
+                    (ExecutionMemory (memoryLimit - Plutus.fromSatInt mem) memoryLimit)
+            | cpu < 0 ->
+                Just (ExecutionSteps (stepLimit - Plutus.fromSatInt cpu) stepLimit)
+    _ -> Nothing
+  where
+    ExUnits memory steps = protocol ^. ppMaxTxExUnitsL
+    memoryLimit = toInteger memory
+    stepLimit = toInteger steps
 
 -- | The transaction of a program, with the refusal of the state builders.
 assembleTransaction
@@ -245,5 +311,64 @@ assembleTransaction
     -> Addr
     -> Program ()
     -> IO (Either Refusal ConwayTx)
-assembleTransaction session spent referenced change program =
-    first BuildFailed <$> assemble session spent referenced change program
+assembleTransaction session spent referenced change program = do
+    protocol <- parameters session
+    built <-
+        try $
+            Tx.build
+                (Tx.mkPParamsBound protocol)
+                (Tx.InterpretIO noQuery)
+                (evaluate protocol session)
+                spent
+                referenced
+                change
+                program
+    pure $ case built of
+        Left (ProbeCapacity limit) -> Left (CapacityExceeded limit)
+        Right (Left failure) -> Left (BuildFailed (Text.pack (show failure)))
+        Right (Right tx) ->
+            maybe
+                (Right tx)
+                (Left . CapacityExceeded)
+                (capacityOf protocol (spent <> referenced) tx)
+  where
+    noQuery :: NoQuery a -> IO b
+    noQuery query = case query of {}
+
+{- | Compare bytes including the required key witnesses, and declared execution
+units, with the session's parameters. No builder message is interpreted as a
+capacity refusal.
+-}
+capacityOf
+    :: PParams ConwayEra
+    -> [(TxIn, TxOut ConwayEra)]
+    -> ConwayTx
+    -> Maybe CapacityLimit
+capacityOf protocol resolved tx
+    | bytes > byteLimit = Just (TransactionSize bytes byteLimit)
+    | memory > memoryLimit = Just (ExecutionMemory memory memoryLimit)
+    | steps > stepLimit = Just (ExecutionSteps steps stepLimit)
+    | otherwise = Nothing
+  where
+    -- The builder returns no key witnesses. Count the actual distinct keys
+    -- needed by its body and spending/collateral inputs, as the balancer does.
+    -- Ledger padding measures their complete encoding without altering the
+    -- transaction returned to the signer, including witness-array boundaries.
+    body = tx ^. bodyTxL
+    requiredKeys =
+        estimatedKeyWitnessCount
+            body
+            (Set.union (body ^. inputsTxBodyL) (body ^. collateralInputsTxBodyL))
+            resolved
+    submitted = addDummyWitsTx protocol tx requiredKeys []
+    bytes =
+        toInteger
+            (LBS.length (serialize (eraProtVerHigh @ConwayEra) submitted))
+    byteLimit = toInteger (protocol ^. ppMaxTxSizeL)
+    ExUnits maxMemory maxSteps = protocol ^. ppMaxTxExUnitsL
+    memoryLimit = toInteger maxMemory
+    stepLimit = toInteger maxSteps
+    Redeemers redeemers = tx ^. witsTxL . rdmrsTxWitsL
+    budgets = map snd (Map.elems redeemers)
+    memory = sum [toInteger used | ExUnits used _ <- budgets]
+    steps = sum [toInteger used | ExUnits _ used <- budgets]

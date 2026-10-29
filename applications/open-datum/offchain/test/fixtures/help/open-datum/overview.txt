@@ -15,7 +15,7 @@ Available settings:
 
 All commands:
   open-datum create           Create a registry
-  open-datum fold             Fold the registrations and terminations you name
+  open-datum fold             Fold requests found from public approvals
   open-datum insert           Book the registration of a key
   open-datum reclaim          Take back a registration you booked
   open-datum cleanup          Clean up an expired registration

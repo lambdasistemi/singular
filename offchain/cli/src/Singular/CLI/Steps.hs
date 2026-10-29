@@ -86,7 +86,7 @@ import Singular.Registry.LedgerProvider
     )
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
 import Singular.State.Assemble (readOutputs)
-import Singular.State.Refusal (Refusal (..))
+import Singular.State.Refusal (Refusal (..), capacityMessage)
 import Singular.State.Script (ScriptSource (..))
 
 {- | Run the body of a write of the state line. The journal of the registry
@@ -268,6 +268,7 @@ renderRefusal = \case
     ProcessingWindowClosed ->
         "no validity interval at the tip ends before every processing deadline: the window to fold has closed"
     BuildFailed message -> T.unpack message
+    CapacityExceeded limit -> T.unpack (capacityMessage limit)
   where
     showRef = T.unpack . renderOutRef
     showHash = show

@@ -11,16 +11,46 @@ builders' reads do.
 -}
 module Singular.State.Refusal
     ( Refusal (..)
+    , CapacityLimit (..)
+    , capacityMessage
     ) where
 
 import Data.ByteString (ByteString)
 import Data.Text (Text)
+import Data.Text qualified as Text
 
 import Cardano.Ledger.Coin (Coin)
 import Cardano.Ledger.Hashes (ScriptHash)
 import Cardano.Ledger.TxIn (TxIn)
 
 import Singular.Registry.TrieState (RegistryIdentity, TrieFailure)
+
+-- | Actual work or bytes exceeding the observed protocol limit: used, limit.
+data CapacityLimit
+    = TransactionSize Integer Integer
+    | ExecutionMemory Integer Integer
+    | ExecutionSteps Integer Integer
+    deriving stock (Eq, Show)
+
+-- | Name the actual protocol capacity, measured work and limit in plain text.
+capacityMessage :: CapacityLimit -> Text
+capacityMessage limit = Text.pack $ case limit of
+    TransactionSize used allowed ->
+        "the transaction size "
+            <> show used
+            <> " bytes exceeds the limit "
+            <> show allowed
+            <> " bytes"
+    ExecutionMemory used allowed ->
+        "the execution memory "
+            <> show used
+            <> " exceeds the limit "
+            <> show allowed
+    ExecutionSteps used allowed ->
+        "the execution steps "
+            <> show used
+            <> " exceed the limit "
+            <> show allowed
 
 -- | Why a builder declined.
 data Refusal
@@ -71,4 +101,6 @@ data Refusal
       ProcessingWindowClosed
     | -- | The transaction builder itself failed; its message.
       BuildFailed Text
+    | -- | The actual built transaction exceeds this protocol capacity.
+      CapacityExceeded CapacityLimit
     deriving stock (Eq, Show)

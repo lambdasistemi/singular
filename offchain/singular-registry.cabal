@@ -133,6 +133,7 @@ library
     Singular.Registry.Witness
     Singular.State.Assemble
     Singular.State.Fold
+    Singular.State.Batch
     Singular.State.Genesis
     Singular.State.Lineage
     Singular.State.Preimage

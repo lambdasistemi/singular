@@ -43,6 +43,10 @@
       "pause": 300
     },
     {
+      "text": "unfoldable-requests-skipped: in automatic selection a request the builder would refuse on its own account is skipped and named, never handed to the builder; the first individually foldable request for a key in the order keeps it; every discovered request is folded, skipped with its reason or counted as left, and a skipped one is never counted as left; each class has a control that folds the same shape when it is foldable.",
+      "pause": 300
+    },
+    {
       "text": "mixed-batch: one transaction folds registrations and terminations of one registry together.",
       "pause": 300
     },
@@ -107,6 +111,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "8243158241d796b212c5ca3d970b62bd646b75f4221960e209650986aca9868e"
+    "sha256": "bd3aa5d4243d79e1014c629740e66118857122ce209f406b3c7029476fa11112"
   }
 }

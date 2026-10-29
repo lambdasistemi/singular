@@ -70,6 +70,7 @@ import Singular.CLI.Session
     ( Env
     , WriteContext (..)
     , failWith
+    , failWithFields
     , readStep
     )
 import Singular.CLI.Steps
@@ -77,6 +78,7 @@ import Singular.CLI.Steps
     , loadReleaseBlueprint
     , observeOutput
     , refusing
+    , renderRefusal
     , scriptSource
     , sendStep
     , stateWrite
@@ -108,6 +110,7 @@ import Singular.State.Publication
     , planReferences
     )
 import Singular.State.Records (decodeStateDatum)
+import Singular.State.Refusal (Refusal (DuplicateKey))
 import Singular.State.Script
     ( ScriptSource (..)
     , StateScript (..)
@@ -416,17 +419,17 @@ runStateFold env host a = do
                     contributed <-
                         hostFold host view Testnet [(script, sourceOf script) | script <- own]
                             >>= either (failWith ClientRefusal) pure
-                    tx <-
-                        Fold.buildRegistrationFold
+                    selected <-
+                        Fold.attemptFold
                             view
                             (StateScript stateScript (sourceOf stateScript))
                             contributed
                             registry
                             (stateFoldPending a)
                             payer
-                            >>= refusing
-                    let keys = [(pending, Just key) | (pending, key) <- Fold.foldedRequests tx]
-                    pure (tx, keys)
+                            (stateFoldLimit a)
+                            >>= either foldRefused pure
+                    pure (Fold.foldTransaction selected, selected)
         (output, out) <-
             observeOutput wc "fold" confirmed 0 (HoldsToken policy name)
         pure . receipt "fold" Success $
@@ -439,13 +442,42 @@ runStateFold env host a = do
                        ( "folded"
                        , toJSON
                             [ object
-                                [ "pending" .= txInText pending
-                                , "key" .= fmap hexOf key
+                                [ "pending" .= txInText (Fold.pendingRef pending)
+                                , "key" .= hexOf (Fold.requestKey (Fold.pendingRequest pending))
+                                , "kind" .= requestKind (Fold.pendingRequest pending)
                                 ]
-                            | (pending, key) <- folded
+                            | pending <- Fold.foldSelected folded
                             ]
                        )
+                   , ("skipped", skippedValue (Fold.foldSkipped folded))
+                   , ("left", toJSON (Fold.foldLeft folded))
                    , ("reconciled", reconciled)
                    ]
   where
     coinOf out = let Coin c = out ^. coinTxOutL in c
+    foldRefused failure = failWithFields
+        ClientRefusal
+        (renderRefusal (Fold.foldFailureReason failure))
+        $ case Fold.foldFailureObserved failure of
+            Nothing -> []
+            Just (holders, left) ->
+                [ ("folded", toJSON ([] :: [Value]))
+                , ("skipped", skippedValue holders)
+                , ("left", toJSON left)
+                ]
+    skippedValue holders =
+        toJSON
+            [ object
+                [ "reference" .= txInText (Fold.skippedRef holder)
+                , "reason" .= skipReason (Fold.skippedReason holder)
+                ]
+            | holder <- holders
+            ]
+    requestKind Fold.RegistrationRequest{} = "registration" :: Text
+    requestKind Fold.TerminationRequest{} = "termination"
+    skipReason Fold.HeldAtKeyAddress = "held at a key address" :: Text
+    skipReason Fold.DecodedForAnotherRegistry = "a request of another registry"
+    skipReason Fold.NotAcceptedByApplication = "not accepted by the application's decode"
+    skipReason (Fold.UnfoldableRequest (DuplicateKey key)) =
+        "another foldable request has already taken the key " <> hexOf key
+    skipReason (Fold.UnfoldableRequest reason) = T.pack (renderRefusal reason)

@@ -1,6 +1,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeApplications #-}
 
 {- |
 Module      : Singular.State.StateFoldSpec
@@ -21,35 +22,106 @@ module Singular.State.StateFoldSpec
 
 import Control.Monad (forM_)
 import Data.ByteString (ByteString)
+import Data.ByteString qualified as BS
+import Data.ByteString.Lazy qualified as LBS
+import Data.Either (isLeft)
+import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.Map.Strict qualified as Map
+import Data.Set qualified as Set
+import Data.Text qualified as Text
+import Data.Word (Word32)
 import Lens.Micro ((&), (.~), (^.))
 import PlutusCore.Data qualified as PLC
 import Test.Hspec
 
-import Cardano.Ledger.Address (Addr)
-import Cardano.Ledger.Api.Tx.Out (addrTxOutL, coinTxOutL, valueTxOutL)
+import Cardano.Crypto.DSIGN
+    ( Ed25519DSIGN
+    , SignKeyDSIGN
+    , deriveVerKeyDSIGN
+    , genKeyDSIGN
+    )
+import Cardano.Crypto.Seed (mkSeedFromBytes)
+import Cardano.Ledger.Address (Addr (..))
+import Cardano.Ledger.Alonzo.TxWits (Redeemers (..))
+import Cardano.Ledger.Api.PParams (ppMaxTxExUnitsL, ppMaxTxSizeL)
+import Cardano.Ledger.Api.Tx (addrTxWitsL, witsTxL)
+import Cardano.Ledger.Api.Tx.Out
+    ( addrTxOutL
+    , coinTxOutL
+    , datumTxOutL
+    , valueTxOutL
+    )
+import Cardano.Ledger.Api.Tx.Wits (rdmrsTxWitsL)
+import Cardano.Ledger.Binary (serialize)
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
+import Cardano.Ledger.Core (eraProtVerHigh)
+import Cardano.Ledger.Credential
+    ( Credential (..)
+    , StakeReference (..)
+    )
+import Cardano.Ledger.Keys
+    ( KeyHash (..)
+    , KeyRole (Guard)
+    , VKey (..)
+    , hashKey
+    )
 import Cardano.Ledger.Mary.Value
     ( AssetName
     , MaryValue (..)
     , MultiAsset (..)
     )
+import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import Cardano.Ledger.TxIn (TxIn)
 import Cardano.Slotting.Slot (SlotNo (..))
+import Cardano.Tx.Build qualified as Tx
 import Cardano.Tx.Ledger (ConwayTx)
 
+import Singular.Registry.Evidence (value)
 import Singular.Registry.Ledger (ConwayEra, TxOut)
+import Singular.Registry.LedgerProvider
+    ( OutputQuery (..)
+    , ReadFailure (..)
+    , Session (..)
+    )
+import Singular.Registry.RawChainFixture
+    ( ChainFacts (..)
+    , advanceChain
+    )
+import Singular.Registry.Signing (signTx, signedTx)
+import Singular.Registry.Trace (Evaluation (..))
 import Singular.Registry.TrieState (RegistryIdentity (..))
-import Singular.State.Fold (buildRegistrationFold)
-import Singular.State.Preimage (activeTokenName)
+import Singular.Registry.TxBuilder.Internal (mkInlineDatum)
+import Singular.State.Batch
+    ( BatchSelection (..)
+    , largestFittingPrefix
+    )
+import Singular.State.Fold
+    ( Application (..)
+    , FoldFailure (..)
+    , FoldResult (..)
+    , Request (..)
+    , SkipReason (..)
+    , SkippedHolder (..)
+    , attemptFold
+    , buildFold
+    , buildRegistrationFold
+    , discoverPending
+    , foldedRequests
+    , pendingRef
+    )
+import Singular.State.Preimage
+    ( activeTokenName
+    , approvalName
+    , terminationPreimage
+    )
 import Singular.State.Records
     ( Change (..)
     , decodeFoldRedeemer
     , foldRedeemer
     , stateDatum
     )
-import Singular.State.Refusal (Refusal (..))
+import Singular.State.Refusal (CapacityLimit (..), Refusal (..))
 import Singular.State.Script
     ( stateAddress
     , statePolicy
@@ -58,6 +130,574 @@ import Singular.State.StateWorld
 
 spec :: Spec
 spec = do
+    describe "unfoldable public requests" $ do
+        forM_ [True, False] $ \expiredFirst -> it
+            ( if expiredFirst
+                then
+                    "lets a current request take the key after an earlier expired one is skipped"
+                else
+                    "keeps a later expired request's own refusal instead of calling it a duplicate"
+            )
+            $ do
+                rg <- newRegistered
+                [expired, current] <-
+                    book
+                        rg
+                        'v'
+                        [ (bookedKey "same key" 1)
+                            { bkTip = if expiredFirst then 9_000_000 else 1_000_000
+                            }
+                        , (bookedKey "same key" processingDeadline)
+                            { bkTip = if expiredFirst then 1_000_000 else 9_000_000
+                            }
+                        ]
+                control <- expectBuilt =<< foldNow rg [current]
+                judge (rgWorld rg) control >>= (`shouldSatisfy` everyScriptAccepts)
+                selected <- fitting rg Nothing
+                map pendingRef (foldSelected selected) `shouldBe` [current]
+                map skippedRef (foldSkipped selected) `shouldBe` [expired]
+                show (map skippedReason (foldSkipped selected))
+                    `shouldSatisfy` Text.isInfixOf "ProcessingWindowClosed" . Text.pack
+                foldLeft selected `shouldBe` 0
+        it "skips every request-local refusal beside its foldable control" $ do
+            (rg, application, bad, good) <- unfoldablePool
+            forM_ bad $ \(_, named, reason, control) -> do
+                built <- expectBuilt =<< foldWithApplication rg application [control]
+                judge (rgWorld rg) built >>= (`shouldSatisfy` everyScriptAccepts)
+                refusal <- foldWithApplication rg application named
+                show refusal `shouldSatisfy` Text.isInfixOf reason . Text.pack
+                refusal `shouldSatisfy` isLeft
+            selected <- withSession (rgWorld rg) $ \session ->
+                expectBuilt
+                    =<< buildFold
+                        session
+                        (rgScript rg)
+                        application
+                        (rgRegistry rg)
+                        []
+                        (rgFolder rg)
+                        (Just 1)
+            map pendingRef (foldSelected selected) `shouldSatisfy` \refs -> length refs == 1 && all (`elem` good) refs
+            map skippedRef (foldSkipped selected)
+                `shouldMatchList` [last named | (_, named, _, _) <- bad]
+            forM_ bad $ \(_, named, reason, _) ->
+                [ Text.pack (show (skippedReason holder))
+                | holder <- foldSkipped selected
+                , skippedRef holder == last named
+                ]
+                    `shouldSatisfy` \reasons -> length reasons == 1 && all (Text.isInfixOf reason) reasons
+            foldLeft selected `shouldBe` length good - 1
+            length (foldSelected selected)
+                + length (foldSkipped selected)
+                + foldLeft selected
+                `shouldBe` 10
+            judge (rgWorld rg) (foldTransaction selected)
+                >>= (`shouldSatisfy` everyScriptAccepts)
+            whole <- withSession (rgWorld rg) $ \session ->
+                expectBuilt
+                    =<< buildFold
+                        session
+                        (rgScript rg)
+                        application
+                        (rgRegistry rg)
+                        []
+                        (rgFolder rg)
+                        Nothing
+            map pendingRef (foldSelected whole) `shouldSatisfy` \refs -> not (null refs) && all (`elem` good) refs
+            map skippedRef (foldSkipped whole)
+                `shouldMatchList` [last named | (_, named, _, _) <- bad]
+            foldLeft whole `shouldBe` length good - length (foldSelected whole)
+            judge (rgWorld rg) (foldTransaction whole)
+                >>= (`shouldSatisfy` everyScriptAccepts)
+        it "retains every skipped request when none can fold" $ do
+            (rg, application, bad, _) <- unfoldablePool
+            let rejected = [last named | (label, named, _, _) <- bad, label /= "duplicate"]
+            -- Retain only these four approval holders, leaving state and payer outputs intact.
+            advanceChain (worldChain (rgWorld rg)) $ \facts ->
+                facts
+                    { csUTxO =
+                        Map.filterWithKey
+                            (\ref output -> not (hasApprovals output) || ref `elem` rejected)
+                            (csUTxO facts)
+                    }
+            outcome <- withSession (rgWorld rg) $ \session ->
+                attemptFold
+                    session
+                    (rgScript rg)
+                    application
+                    (rgRegistry rg)
+                    []
+                    (rgFolder rg)
+                    Nothing
+            case outcome of
+                Left failure -> do
+                    foldFailureReason failure `shouldBe` NothingToFold
+                    case foldFailureObserved failure of
+                        Just (skipped, left) -> do
+                            map skippedRef skipped `shouldMatchList` rejected
+                            left `shouldBe` 0
+                        Nothing -> expectationFailure "complete public request accounting was lost"
+                Right result -> expectationFailure (show result)
+    describe "submitted batch bytes" $
+        forM_ [1, 2, 24] $ \count -> do
+            it
+                ( "fits the automatic prefix after all "
+                    <> show count
+                    <> " required witnesses"
+                )
+                $ do
+                    (rg, application, keys, [high, _], limit) <-
+                        prepareSubmissionBoundary count
+                    tx <- expectBuilt =<< foldWithApplication rg application []
+                    ( serializedBytes (signedBy keys tx) <= limit
+                        , map fst (foldedRequests tx)
+                        )
+                        `shouldBe` (True, [high])
+                    judge (rgWorld rg) (signedBy keys tx)
+                        >>= (`shouldSatisfy` everyScriptAccepts)
+            it
+                ( "refuses a named batch exceeding bytes with "
+                    <> show count
+                    <> " required witnesses"
+                )
+                $ do
+                    (rg, application, _, refs, limit) <- prepareSubmissionBoundary count
+                    result <- foldWithApplication rg application refs
+                    case result of
+                        Left (CapacityExceeded (TransactionSize used allowed)) -> do
+                            used `shouldSatisfy` (> limit)
+                            allowed `shouldBe` limit
+                        Left other -> expectationFailure (show other)
+                        Right _ -> expectationFailure "the oversized submitted batch was built"
+    describe "the largest fitting public batch" $ do
+        it "counts the evaluated larger probe as well as the selected batch" $ do
+            (rg, [one, two, _], _) <- prepareByteBoundary
+            -- Owned by this example and its serial sessions; no worker escapes.
+            evaluations <- newIORef []
+            let observed session =
+                    session
+                        { sessionEvaluated = \evaluation -> do
+                            modifyIORef' evaluations (<> [evaluation])
+                            sessionEvaluated session evaluation
+                        }
+                run named = withSession (rgWorld rg) $ \session ->
+                    expectBuilt
+                        =<< buildFold
+                            (observed session)
+                            (rgScript rg)
+                            standInApplication
+                            (rgRegistry rg)
+                            named
+                            (rgFolder rg)
+                            Nothing
+            _ <- run [one, two]
+            control <- readIORef evaluations
+            modifyIORef' evaluations (const [])
+            selected <- run []
+            allProbes <- readIORef evaluations
+            length control `shouldSatisfy` (> 0)
+            length allProbes `shouldSatisfy` (> length control)
+            all
+                ( \evaluation ->
+                    evalRedeemers evaluation > 0
+                        && evalFailed evaluation == 0
+                        && evalMemory evaluation > 0
+                        && evalSteps evaluation > 0
+                )
+                allProbes
+                `shouldBe` True
+            length (foldSelected selected) `shouldBe` 2
+
+        it
+            "counts the capped requests left and names the transaction's selection"
+            $ do
+                rg <- newRegistered
+                [low, high, middle] <-
+                    book
+                        rg
+                        'p'
+                        [ (bookedKey "low" processingDeadline){bkTip = 1_000_000}
+                        , (bookedKey "high" processingDeadline){bkTip = 3_000_000}
+                        , (bookedKey "middle" processingDeadline){bkTip = 2_000_000}
+                        ]
+                let skipped = txInOf 's' 0
+                addLive
+                    (rgWorld rg)
+                    [
+                        ( skipped
+                        , pendingOutput
+                            (rgRegistry rg)
+                            (bookedKey "at a key" processingDeadline)
+                            & addrTxOutL .~ rgBooker rg
+                        )
+                    ]
+                selected <- fitting rg (Just 2)
+                map pendingRef (foldSelected selected) `shouldBe` [high, middle]
+                map fst (foldedRequests (foldTransaction selected))
+                    `shouldBe` [high, middle]
+                foldLeft selected `shouldBe` 1
+                foldSkipped selected
+                    `shouldBe` [SkippedHolder skipped HeldAtKeyAddress]
+                length (foldSelected selected)
+                    + length (foldSkipped selected)
+                    + foldLeft selected
+                    `shouldBe` 4
+                foldBoundary selected `shouldBe` Nothing
+                low `shouldSatisfy` (`notElem` map pendingRef (foldSelected selected))
+                whole <- fitting rg Nothing
+                foldLeft whole `shouldBe` 0
+                foldBoundary whole `shouldBe` Nothing
+                length (foldSelected whole) `shouldBe` 3
+                named <- withSession (rgWorld rg) $ \session ->
+                    expectBuilt
+                        =<< buildFold
+                            session
+                            (rgScript rg)
+                            standInApplication
+                            (rgRegistry rg)
+                            [low, high, middle]
+                            (rgFolder rg)
+                            (Just 1)
+                map fst (foldedRequests (foldTransaction named))
+                    `shouldBe` [low, high, middle]
+                foldLeft named `shouldBe` 0
+
+        it "records the measured refusal at the next prefix" $ do
+            (rg, refs, limit) <- prepareByteBoundary
+            named <- foldNow rg refs
+            selected <- fitting rg Nothing
+            case named of
+                Left (CapacityExceeded boundary@(TransactionSize used allowed)) -> do
+                    allowed `shouldBe` limit
+                    used `shouldSatisfy` (> allowed)
+                    foldBoundary selected `shouldBe` Just boundary
+                other -> expectationFailure (show other)
+            foldLeft selected `shouldBe` 1
+            length (foldSelected selected) `shouldBe` 2
+
+        forM_ ["memory", "steps"] $ \dimension ->
+            it
+                ("checks actual aggregate " <> dimension <> " at the fitting boundary")
+                $ do
+                    rg <- newRegistered
+                    refs@[one, two, _] <-
+                        book
+                            rg
+                            'p'
+                            [ (bookedKey "one" processingDeadline){bkTip = 3_000_000}
+                            , (bookedKey "two" processingDeadline){bkTip = 2_000_000}
+                            , (bookedKey "three" processingDeadline){bkTip = 1_000_000}
+                            ]
+                    smaller <- expectBuilt =<< foldNow rg [one, two]
+                    larger <- expectBuilt =<< foldNow rg refs
+                    let units tx =
+                            let Redeemers rs = tx ^. witsTxL . rdmrsTxWitsL
+                            in  sum
+                                    [ if dimension == "memory" then toInteger m else toInteger s
+                                    | (_, ExUnits m s) <- Map.elems rs
+                                    ]
+                        limit = (units smaller + units larger) `div` 2
+                    units smaller `shouldSatisfy` (< units larger)
+                    advanceChain (worldChain (rgWorld rg)) $ \facts ->
+                        let ExUnits memory steps = csPParams facts ^. ppMaxTxExUnitsL
+                            limited =
+                                if dimension == "memory"
+                                    then ExUnits (fromInteger limit) steps
+                                    else ExUnits memory (fromInteger limit)
+                        in  facts{csPParams = csPParams facts & ppMaxTxExUnitsL .~ limited}
+                    control <- expectBuilt =<< foldNow rg [one, two]
+                    judge (rgWorld rg) control >>= (`shouldSatisfy` everyScriptAccepts)
+                    selected <- fitting rg Nothing
+                    map pendingRef (foldSelected selected) `shouldBe` [one, two]
+                    case foldBoundary selected of
+                        Just (ExecutionMemory used allowed)
+                            | dimension == "memory" ->
+                                (used > allowed, allowed) `shouldBe` (True, limit)
+                        Just (ExecutionSteps used allowed)
+                            | dimension == "steps" ->
+                                (used > allowed, allowed) `shouldBe` (True, limit)
+                        other -> expectationFailure (show other)
+
+        forM_ ["memory", "steps"] $ \dimension ->
+            it
+                ( "names genuine CEK "
+                    <> dimension
+                    <> " exhaustion without shortening a named batch"
+                )
+                $ do
+                    rg <- newRegistered
+                    refs <- book rg 'p' [bookedKey "one" processingDeadline]
+                    control <- expectBuilt =<< foldNow rg refs
+                    judge (rgWorld rg) control >>= (`shouldSatisfy` everyScriptAccepts)
+                    advanceChain (worldChain (rgWorld rg)) $ \facts ->
+                        let ExUnits memory steps = csPParams facts ^. ppMaxTxExUnitsL
+                            limited = if dimension == "memory" then ExUnits 1 steps else ExUnits memory 1
+                        in  facts{csPParams = csPParams facts & ppMaxTxExUnitsL .~ limited}
+                    named <- foldNow rg refs
+                    case named of
+                        Left (CapacityExceeded (ExecutionMemory used 1)) | dimension == "memory" -> used `shouldSatisfy` (> 1)
+                        Left (CapacityExceeded (ExecutionSteps used 1)) | dimension == "steps" -> used `shouldSatisfy` (> 1)
+                        other -> expectationFailure (show other)
+
+        it "tries every longer prefix even when build cost is not monotone" $ do
+            let build xs =
+                    pure $
+                        if length xs `elem` [2, 4]
+                            then Right (length xs)
+                            else
+                                Left (CapacityExceeded (TransactionSize (toInteger (length xs)) 0))
+            result <- largestFittingPrefix build Nothing [1 :: Int .. 5]
+            result
+                `shouldBe` Right (BatchSelection [1, 2, 3, 4] 1 4 (Just (TransactionSize 5 0)))
+            capped <- largestFittingPrefix build (Just 3) [1 :: Int .. 5]
+            capped
+                `shouldBe` Right (BatchSelection [1, 2] 3 2 (Just (TransactionSize 3 0)))
+
+        it
+            "refuses an empty selection or exhausted singleton instead of building zero requests"
+            $ do
+                let emptyBuild _ = pure (Right () :: Either Refusal ())
+                    noFit _ =
+                        pure
+                            (Left (CapacityExceeded (ExecutionMemory 2 1)) :: Either Refusal ())
+                largestFittingPrefix emptyBuild Nothing ([] :: [Int])
+                    `shouldReturn` Left NothingToFold
+                largestFittingPrefix emptyBuild (Just 0) [1 :: Int]
+                    `shouldReturn` Left NothingToFold
+                largestFittingPrefix noFit Nothing [1 :: Int]
+                    `shouldReturn` Left (CapacityExceeded (ExecutionMemory 2 1))
+
+        forM_
+            [ ProcessingWindowClosed
+            , BuildFailed "TxSizeExceeded is only message text"
+            , DuplicateKey "same"
+            ]
+            $ \refusal ->
+                it ("preserves a noncapacity refusal: " <> show refusal) $ do
+                    let build xs = pure $ if length xs == 3 then Left refusal else Right ()
+                    result <- largestFittingPrefix build Nothing [1 :: Int .. 3]
+                    result `shouldBe` Left refusal
+
+        it "orders by the folder's take, independently of provider order" $ do
+            rg <- newRegistered
+            [low, high, middle] <-
+                book
+                    rg
+                    'p'
+                    [ (bookedKey "low" processingDeadline){bkTip = 1_000_000}
+                    , (bookedKey "high" processingDeadline){bkTip = 3_000_000}
+                    , (bookedKey "middle" processingDeadline){bkTip = 2_000_000}
+                    ]
+            forM_ [False, True] $ \backwards -> do
+                tx <- discoverWithOrder rg backwards
+                map fst (foldedRequests tx) `shouldBe` [high, middle, low]
+
+        it
+            "breaks equal takes by output reference, even when served backwards"
+            $ do
+                rg <- newRegistered
+                refs <-
+                    book
+                        rg
+                        'p'
+                        [ bookedKey "one" processingDeadline
+                        , bookedKey "two" processingDeadline
+                        ]
+                tx <- discoverWithOrder rg True
+                map fst (foldedRequests tx) `shouldBe` refs
+
+        it "folds the greatest prefix that builds at a measured byte boundary" $ do
+            (rg, [high, middle, _], _) <- prepareByteBoundary
+            tx <- discoverFold rg (rgFolder rg)
+            map fst (foldedRequests tx) `shouldBe` [high, middle]
+            judge (rgWorld rg) tx >>= (`shouldSatisfy` everyScriptAccepts)
+
+        it
+            "refuses an oversized named batch without trimming and names the byte limit"
+            $ do
+                (rg, refs, limit) <- prepareByteBoundary
+                namedOutcome <- foldNow rg refs
+                namedOutcome `shouldSatisfy` isLeft
+                show namedOutcome
+                    `shouldSatisfy` (Text.isInfixOf "size" . Text.toLower . Text.pack)
+                show namedOutcome
+                    `shouldSatisfy` (Text.isInfixOf (Text.pack (show limit)) . Text.pack)
+
+        it "refuses a named expired request and skips it during discovery" $ do
+            rg <- newRegistered
+            refs@[current, expired] <-
+                book
+                    rg
+                    'p'
+                    [ (bookedKey "current" processingDeadline){bkTip = 2_000_000}
+                    , (bookedKey "expired" 1){bkTip = 1_000_000}
+                    ]
+            control <- expectBuilt =<< foldNow rg [current]
+            judge (rgWorld rg) control >>= (`shouldSatisfy` everyScriptAccepts)
+            foldNow rg refs `shouldReturn` Left ProcessingWindowClosed
+            selected <- fitting rg Nothing
+            map pendingRef (foldSelected selected) `shouldBe` [current]
+            foldSkipped selected
+                `shouldBe` [SkippedHolder expired (UnfoldableRequest ProcessingWindowClosed)]
+            foldLeft selected `shouldBe` 0
+
+    describe "discovery from public approval holders" $ do
+        it "finds the registry's requests without naming their references" $ do
+            rg <- newRegistered
+            refs <-
+                book
+                    rg
+                    'p'
+                    [ bookedKey "one" processingDeadline
+                    , bookedKey "two" processingDeadline
+                    ]
+            -- Owned by this example, serial, released with its session; no worker escapes.
+            queries <- newIORef []
+            tx <- withSession (rgWorld rg) $ \session -> do
+                let counted =
+                        session
+                            { outputs = \query -> do
+                                modifyIORef' queries (<> [query])
+                                outputs session query
+                            }
+                expectBuilt
+                    =<< buildRegistrationFold
+                        counted
+                        (rgScript rg)
+                        standInApplication
+                        (rgRegistry rg)
+                        []
+                        (rgFolder rg)
+            map fst (foldedRequests tx) `shouldMatchList` refs
+            seen <- readIORef queries
+            [policy | HoldingPolicy policy <- seen] `shouldBe` [standInPolicy]
+            judge (rgWorld rg) tx >>= (`shouldSatisfy` everyScriptAccepts)
+
+        forM_ ["key address", "another registry", "undecodable"] $ \shape ->
+            it
+                ("skips " <> shape <> " beside an accepted holder of the same request")
+                $ do
+                    rg <- newRegistered
+                    let booked = bookedKey "one" processingDeadline
+                        RegistryIdentity policy _ = rgRegistry rg
+                        foreignRegistry =
+                            RegistryIdentity
+                                policy
+                                (snd' (registryOf (rgScript rg) (txInOf 'x' 0)))
+                        correct = pendingOutput (rgRegistry rg) booked
+                        foreignHolder = case shape of
+                            "key address" -> correct & addrTxOutL .~ rgBooker rg
+                            "another registry" -> pendingOutput foreignRegistry booked
+                            _ -> correct & datumTxOutL .~ mkInlineDatum (PLC.I 0)
+                        skipped = txInOf 's' 0
+                    refs <- book rg 'p' [booked]
+                    addLive (rgWorld rg) [(skipped, foreignHolder)]
+                    tx <- discoverFold rg (rgFolder rg)
+                    map fst (foldedRequests tx) `shouldBe` refs
+                    inputsOf tx `shouldSatisfy` (skipped `notElem`)
+                    judge (rgWorld rg) tx >>= (`shouldSatisfy` everyScriptAccepts)
+                    (found, omitted) <- withSession (rgWorld rg) $ \session -> discoverPending session standInApplication (rgRegistry rg) []
+                    map pendingRef found `shouldBe` refs
+                    omitted
+                        `shouldBe` [ SkippedHolder
+                                        skipped
+                                        ( case shape of
+                                            "key address" -> HeldAtKeyAddress
+                                            "another registry" -> DecodedForAnotherRegistry
+                                            _ -> NotAcceptedByApplication
+                                        )
+                                   ]
+
+        it "replays earlier folds before discovering a later registration" $ do
+            rg <- newRegistered
+            (first, _) <- folded rg [bookedKey "earlier" processingDeadline]
+            applyTx (rgWorld rg) first
+            refs <- book rg 'q' [bookedKey "later" processingDeadline]
+            tx <- discoverFold rg (rgFolder rg)
+            map fst (foldedRequests tx) `shouldBe` refs
+            judge (rgWorld rg) tx >>= (`shouldSatisfy` everyScriptAccepts)
+
+        it
+            "does not accept a registration whose held value cannot cover its deposit"
+            $ do
+                rg <- newRegistered
+                let booked = bookedKey "one" processingDeadline
+                    ref = txInOf 's' 0
+                    output =
+                        pendingOutput (rgRegistry rg) booked
+                            & coinTxOutL .~ Coin (bkDeposit booked - 1)
+                addLive (rgWorld rg) [(ref, output)]
+                (found, skipped) <- withSession (rgWorld rg) $ \session -> discoverPending session standInApplication (rgRegistry rg) []
+                found `shouldBe` []
+                skipped `shouldBe` [SkippedHolder ref NotAcceptedByApplication]
+                withSession
+                    (rgWorld rg)
+                    ( \session ->
+                        buildRegistrationFold
+                            session
+                            (rgScript rg)
+                            standInApplication
+                            (rgRegistry rg)
+                            [ref]
+                            (rgFolder rg)
+                    )
+                    `shouldReturn` Left (NotAPendingRegistration ref)
+
+        it
+            "finds the same requests through the booker's and a fresh folder's sessions"
+            $ do
+                rg <- newRegistered
+                refs <- book rg 'p' [bookedKey "one" processingDeadline]
+                booker <- discoverFold rg (rgBooker rg)
+                folder <- discoverFold rg (rgFolder rg)
+                map fst (foldedRequests booker) `shouldBe` refs
+                foldedRequests folder `shouldBe` foldedRequests booker
+
+        forM_ ["failed", "truncated", "timed out"] $ \problem ->
+            it
+                ( "preserves a "
+                    <> problem
+                    <> " policy read instead of returning nothing pending"
+                )
+                $ do
+                    rg <- newRegistered
+                    let failure = BackendReadFailure ("policy holdings " <> Text.pack problem)
+                    withSession
+                        (rgWorld rg)
+                        ( \session ->
+                            let unavailable =
+                                    session
+                                        { outputs = \query -> case query of
+                                            HoldingPolicy{} -> pure (Left failure)
+                                            _ -> outputs session query
+                                        }
+                            in  buildRegistrationFold
+                                    unavailable
+                                    (rgScript rg)
+                                    standInApplication
+                                    (rgRegistry rg)
+                                    []
+                                    (rgFolder rg)
+                        )
+                        `shouldThrow` (== failure)
+
+        it "preserves a failed parameter read after discovery" $ do
+            rg <- newRegistered
+            _ <- book rg 'p' [bookedKey "one" processingDeadline]
+            let failure = BackendReadFailure "protocol parameters after discovery"
+            withSession
+                (rgWorld rg)
+                ( \session ->
+                    buildRegistrationFold
+                        session{protocolParameters = pure (Left failure)}
+                        (rgScript rg)
+                        standInApplication
+                        (rgRegistry rg)
+                        []
+                        (rgFolder rg)
+                )
+                `shouldThrow` (== failure)
+
     describe
         "the fold of one pending registration, built by a second wallet from the chain"
         $ do
@@ -356,6 +996,100 @@ spec = do
     sort' = Map.toList . Map.fromList . map (\(p, n, q) -> ((p, n), q))
     valueAda' n = n * 1_000_000
 
+-- | One public pool with every request-local failure and its foldable control.
+unfoldablePool
+    :: IO
+        (Registered, Application, [(String, [TxIn], Text.Text, TxIn)], [TxIn])
+unfoldablePool = do
+    rg <- newRegistered
+    (previous, _) <-
+        folded
+            rg
+            [ bookedKey "registered" processingDeadline
+            , bookedKey "termination" processingDeadline
+            ]
+    judge (rgWorld rg) previous >>= (`shouldSatisfy` everyScriptAccepts)
+    applyTx (rgWorld rg) previous
+    -- Move the genuine termination tag from its holding to the public pending fixture.
+    advanceChain (worldChain (rgWorld rg)) $ \facts ->
+        facts
+            { csUTxO =
+                Map.filter
+                    ( \output ->
+                        tokenQuantity
+                            (statePolicy (rgScript rg))
+                            (activeTokenName (rgRegistry rg) "termination")
+                            output
+                            == 0
+                    )
+                    (csUTxO facts)
+            }
+    [registered, fresh, deposit, funded, expired, current, earlier, later] <-
+        book
+            rg
+            'u'
+            [ (bookedKey "registered" processingDeadline){bkTip = 9_000_000}
+            , bookedKey "fresh" processingDeadline
+            , (bookedKey "deposit" processingDeadline)
+                { bkDeposit = 100_000
+                , bkTip = 8_000_000
+                }
+            , bookedKey "funded" processingDeadline
+            , (bookedKey "expired" 1){bkTip = 7_000_000}
+            , bookedKey "current" processingDeadline
+            , (bookedKey "duplicate" processingDeadline){bkTip = 5_000_000}
+            , (bookedKey "duplicate" processingDeadline){bkTip = 4_000_000}
+            ]
+    let missing = txInOf 't' 0
+        active = txInOf 't' 1
+        registry = rgRegistry rg
+        termination key =
+            pendingOutput registry (bookedKey key processingDeadline)
+                & valueTxOutL
+                    .~ MaryValue
+                        (Coin 6_000_000)
+                        ( MultiAsset
+                            ( Map.fromList
+                                [
+                                    ( standInPolicy
+                                    , Map.singleton (approvalName (terminationPreimage key registry)) 1
+                                    )
+                                ,
+                                    ( statePolicy (rgScript rg)
+                                    , Map.singleton (activeTokenName registry key) 1
+                                    )
+                                ]
+                            )
+                        )
+                & datumTxOutL .~ mkInlineDatum (PLC.Constr 1 [PLC.B key])
+        application =
+            standInApplication
+                { appDecode = \identity keys output -> case inlineDatum output of
+                    Just (PLC.Constr 1 [PLC.B key]) -> Just (TerminationRequest identity key)
+                    _ -> appDecode standInApplication identity keys output
+                }
+    addLive
+        (rgWorld rg)
+        [ (missing, termination "inactive")
+        , (active, termination "termination")
+        ]
+    pure
+        ( rg
+        , application
+        ,
+            [ ("registered", [fresh, registered], "KeyAlreadyRegistered", fresh)
+            , ("termination", [active, missing], "KeyNotActive", active)
+            , ("duplicate", [earlier, later], "DuplicateKey", earlier)
+            , ("deposit", [funded, deposit], "DepositBelowHolding", funded)
+            , ("deadline", [current, expired], "ProcessingWindowClosed", current)
+            ]
+        , [fresh, active, earlier, funded, current]
+        )
+
+hasApprovals :: TxOut ConwayEra -> Bool
+hasApprovals output = case output ^. valueTxOutL of
+    MaryValue _ (MultiAsset policies) -> Map.member standInPolicy policies
+
 -- | Book these registrations and build the fold of them as the second wallet.
 folded :: Registered -> [Booked] -> IO (ConwayTx, [TxIn])
 folded rg bookings = do
@@ -463,3 +1197,179 @@ firstOf :: [TxIn] -> TxIn
 firstOf = \case
     ref : _ -> ref
     [] -> error "nothing was booked"
+
+{- | Measure two actual builds, then set the protocol limit strictly between
+them. The shorter named batch is independently rebuilt and evaluated as the
+accepted boundary control before either selection assertion runs.
+-}
+prepareByteBoundary :: IO (Registered, [TxIn], Integer)
+prepareByteBoundary = do
+    let key = signingKey 1
+    rg <- registeredForSigning key
+    refs@[high, middle, _] <-
+        book
+            rg
+            'p'
+            [ (bookedKey "high" processingDeadline){bkTip = 3_000_000}
+            , (bookedKey "middle" processingDeadline){bkTip = 2_000_000}
+            , (bookedKey "low" processingDeadline){bkTip = 1_000_000}
+            ]
+    two <- expectBuilt =<< foldNow rg [high, middle]
+    three <- expectBuilt =<< foldNow rg refs
+    let bytes tx = serializedBytes (signedBy [key] tx)
+        limit = (bytes two + bytes three) `div` 2
+    bytes two `shouldSatisfy` (< bytes three)
+    advanceChain (worldChain (rgWorld rg)) $ \facts ->
+        facts
+            { csPParams = csPParams facts & ppMaxTxSizeL .~ fromIntegral limit
+            }
+    control <- expectBuilt =<< foldNow rg [high, middle]
+    judge (rgWorld rg) control >>= (`shouldSatisfy` everyScriptAccepts)
+    pure (rg, refs, limit)
+
+{- | Actual signatures exercise one key, distinct additional signers and the
+CBOR witness-array length boundary. The payer's key appears in both its
+funding credential and the explicit signer set and must be counted once.
+-}
+prepareSubmissionBoundary
+    :: Int
+    -> IO
+        ( Registered
+        , Application
+        , [SignKeyDSIGN Ed25519DSIGN]
+        , [TxIn]
+        , Integer
+        )
+prepareSubmissionBoundary count = do
+    let keys = map signingKey [1 .. count]
+    payer <- case keys of
+        key : _ -> pure key
+        _ -> fail "a submitted fold needs a payer"
+    rg <- registeredForSigning payer
+    let application =
+            standInApplication
+                { appFold = \requests -> do
+                    appFold standInApplication requests
+                    mapM_ (Tx.requireSignature . signingHash) keys
+                }
+    refs@[high, _] <-
+        book
+            rg
+            'p'
+            [ (bookedKey "high" processingDeadline){bkTip = 3_000_000}
+            , (bookedKey "low" processingDeadline){bkTip = 1_000_000}
+            ]
+    one <- expectBuilt =<< foldWithApplication rg application [high]
+    two <- expectBuilt =<< foldWithApplication rg application refs
+    let signedOne = signedBy keys one
+        signedTwo = signedBy keys two
+        lower = max (serializedBytes two) (serializedBytes signedOne)
+        limit = (lower + serializedBytes signedTwo) `div` 2
+    Set.size (signedTwo ^. witsTxL . addrTxWitsL) `shouldBe` count
+    serializedBytes two `shouldSatisfy` (< limit)
+    limit `shouldSatisfy` (< serializedBytes signedTwo)
+    serializedBytes signedOne `shouldSatisfy` (<= limit)
+    judge (rgWorld rg) signedTwo >>= (`shouldSatisfy` everyScriptAccepts)
+    -- At the exact submitted size the whole named batch must still fit:
+    -- reserving a constant or double-counting the payer is not acceptable.
+    advanceChain (worldChain (rgWorld rg)) $ \facts ->
+        facts
+            { csPParams =
+                csPParams facts
+                    & ppMaxTxSizeL .~ fromInteger (serializedBytes signedTwo)
+            }
+    exact <- expectBuilt =<< foldWithApplication rg application refs
+    serializedBytes (signedBy keys exact)
+        `shouldBe` serializedBytes signedTwo
+    advanceChain (worldChain (rgWorld rg)) $ \facts ->
+        facts{csPParams = csPParams facts & ppMaxTxSizeL .~ fromInteger limit}
+    control <- expectBuilt =<< foldWithApplication rg application [high]
+    serializedBytes (signedBy keys control) `shouldSatisfy` (<= limit)
+    pure (rg, application, keys, refs, limit)
+
+signingKey :: Int -> SignKeyDSIGN Ed25519DSIGN
+signingKey n = genKeyDSIGN (mkSeedFromBytes (BS.replicate 32 (fromIntegral n)))
+
+registeredForSigning :: SignKeyDSIGN Ed25519DSIGN -> IO Registered
+registeredForSigning key = do
+    original <- newRegistered
+    let KeyHash payerHash = signingHash key
+        payerAddress = Addr network (KeyHashObj (KeyHash payerHash)) StakeRefNull
+    advanceChain (worldChain (rgWorld original)) $ \facts ->
+        facts
+            { csUTxO =
+                Map.map
+                    ( \output ->
+                        if output ^. addrTxOutL == rgFolder original
+                            then output & addrTxOutL .~ payerAddress
+                            else output
+                    )
+                    (csUTxO facts)
+            }
+    pure original{rgFolder = payerAddress}
+
+signingHash :: SignKeyDSIGN Ed25519DSIGN -> KeyHash Guard
+signingHash = hashKey . VKey . deriveVerKeyDSIGN
+
+signedBy :: [SignKeyDSIGN Ed25519DSIGN] -> ConwayTx -> ConwayTx
+signedBy keys tx = foldl' (\current key -> signedTx (signTx key current)) tx keys
+
+serializedBytes :: ConwayTx -> Integer
+serializedBytes tx = toInteger (LBS.length (serialize (eraProtVerHigh @ConwayEra) tx))
+
+foldWithApplication
+    :: Registered -> Application -> [TxIn] -> IO (Either Refusal ConwayTx)
+foldWithApplication rg application refs = withSession (rgWorld rg) $ \session ->
+    buildRegistrationFold
+        session
+        (rgScript rg)
+        application
+        (rgRegistry rg)
+        refs
+        (rgFolder rg)
+
+fitting :: Registered -> Maybe Word32 -> IO FoldResult
+fitting rg cap = withSession (rgWorld rg) $ \session ->
+    expectBuilt
+        =<< buildFold
+            session
+            (rgScript rg)
+            standInApplication
+            (rgRegistry rg)
+            []
+            (rgFolder rg)
+            cap
+
+-- | Change only the served order, preserving the exact outputs and evidence.
+discoverWithOrder :: Registered -> Bool -> IO ConwayTx
+discoverWithOrder rg backwards = withSession (rgWorld rg) $ \session -> do
+    let reordered =
+            session
+                { outputs = \query -> do
+                    result <- outputs session query
+                    pure $ case query of
+                        HoldingPolicy{}
+                            | backwards ->
+                                fmap (\answer -> answer{value = reverse (value answer)}) result
+                        _ -> result
+                }
+    expectBuilt
+        =<< buildRegistrationFold
+            reordered
+            (rgScript rg)
+            standInApplication
+            (rgRegistry rg)
+            []
+            (rgFolder rg)
+
+discoverFold :: Registered -> Addr -> IO ConwayTx
+discoverFold rg payer =
+    withSession (rgWorld rg) $ \session ->
+        expectBuilt
+            =<< buildRegistrationFold
+                session
+                (rgScript rg)
+                standInApplication
+                (rgRegistry rg)
+                []
+                payer
