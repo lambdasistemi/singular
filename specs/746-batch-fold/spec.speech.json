@@ -23,6 +23,10 @@
     {
       "text": "What the folder finds and takes.",
       "pause": 500
+    },
+    {
+      "text": "On a development network the packaged job shows three of these skips: a request of another registry, the registry's own configuration holder (an output of the application's policy that its decoding does not accept), and an unfoldable duplicate. A request held at a key address and a malformed request datum are shown by unit tests, since no accepted transaction creates them.",
+      "pause": 400
     }
   ],
   "requirements": [
@@ -111,6 +115,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "bd3aa5d4243d79e1014c629740e66118857122ce209f406b3c7029476fa11112"
+    "sha256": "9dd7b859a1572aead0bb80e719bd5b0826f464c9f63cf8d2ff648221460850cb"
   }
 }

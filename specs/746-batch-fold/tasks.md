@@ -19,8 +19,8 @@ the ticket owner accepts its slice.
 
 ## Pull request 3: devnet
 
-- [ ] devnet-mixed-batch-journey: a wallet that booked none of the requests folds a discovered mixed batch; the change read from the chain.
-- [ ] devnet-batch-refusals: other registry, duplicate key and state-policy movement, each with its control.
+- [x] devnet-mixed-batch-journey: a wallet that booked none of the requests folds a discovered mixed batch; the change read from the chain.
+- [x] devnet-batch-refusals: other registry, duplicate key and state-policy movement, each with its control.
 
 ## Pull request 4: measurement
 

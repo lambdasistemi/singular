@@ -38,6 +38,10 @@ flowchart LR
 | Fit | the folder builds the largest prefix of the ordered requests that the network's limits accept; the rest are counted as left |
 | Explicit | a folder may name the requests instead; a named batch is refused, never trimmed, when it cannot be built |
 
+On a development network the packaged job shows three of these skips: a request of another registry, the registry's own configuration
+holder (an output of the application's policy that its decoding does not accept), and an unfoldable duplicate. A request held at a key
+address and a malformed request datum are shown by unit tests, since no accepted transaction creates them.
+
 ## Requirements
 
 - batch-follows-the-model: the batch fold implements the statements of [the plan's Lean binding](plan.md#lean-binding);
