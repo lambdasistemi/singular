@@ -242,7 +242,7 @@ def recompute(receipt, directory):
     signers = set(rebuilt["first"]["transactions"][0]["signers"])
     require(len(signers) == 1, "creation has no unique creator signer")
     order = list(chain)
-    start, finish = order.index(all_ids[0]), order.index(all_ids[-1])
+    start = order.index(all_ids[0])
     funded = []
     for transaction in list(chain.values())[:start]:
         decoded, _ = decode(bytes.fromhex(transaction["cbor"]))
@@ -276,11 +276,10 @@ def recompute(receipt, directory):
                 spent += measure(chain[identity])["outputs"][int(index)]["lovelace"]
             created = sum(output["lovelace"] for output in transaction["outputs"])
             require(spent == created + transaction["feeLovelace"], "creation fee does not reconcile spent and created ADA")
-    creator_transactions = [
-        t["id"]
-        for t in measured[start : finish + 1]
-        if signers.intersection(t["signers"])
-    ]
+    # The run record bounds the creation workload independently of its receipt.
+    # A live journey captures this prefix before the creator runs another command.
+    # Never shrink this extent to the first/last retained receipt transaction.
+    creator_transactions = [t["id"] for t in measured if signers.intersection(t["signers"])]
     require(
         creator_transactions == all_ids,
         "creation selection omits or adds a creator transaction",
@@ -630,6 +629,16 @@ def controls(receipts):
 
     for leg in range(len(receipts)):
         for name in ("first", "later"):
+            _, chain = read_chain(EVIDENCE / receipts[leg]["chainRecord"])
+            for endpoint in (0, -1):
+                altered = copy.deepcopy(receipts)
+                transactions = altered[leg][name]["transactions"]
+                del transactions[endpoint]
+                if transactions:
+                    selected = [{"id": t["id"], "step": t["step"]} for t in transactions]
+                    release = altered[leg][name]["release"]
+                    altered[leg][name] = dict(creation(selected, chain), release=release)
+                refused(altered, lambda r: pair(r, EVIDENCE), "omitted creation endpoint")
             for field in receipts[leg][name]["totals"]:
                 altered = copy.deepcopy(receipts)
                 altered[leg][name]["totals"][field] += 1

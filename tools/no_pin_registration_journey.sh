@@ -417,10 +417,16 @@ control "an unspent approval would be seen: the state token is unspent once" \
 # 6. A later registry of the application, and one made by singular
 # ------------------------------------------------------------------
 leg="scripts published once"
-as carol create-singular "$singular" registry create --blueprint plutus.json --application-policy "$application_hash"
 later_create_tx="$(tx_of create-later create)"
-singular_create_tx="$(tx_of create-singular create)"
 view_tx later-create "$later_create_tx"
+# This complete source prefix bounds the two open-datum creations before the
+# creator sends any separate Singular transaction. The receipt cannot shrink it.
+python3 -I "$(dirname "$chain_view")/creation-cost.py" journey \
+  --work "$work" --source "$evidence" --program "$open_datum" \
+  --blueprint "$work/release/plutus.json" --devnet "$devnet" \
+  --reference "$(dirname "$chain_view")/creation-candidate.json"
+as carol create-singular "$singular" registry create --blueprint plutus.json --application-policy "$application_hash"
+singular_create_tx="$(tx_of create-singular create)"
 view_tx singular-create "$singular_create_tx"
 view_unspent after-creations
 check "a later registry sends the creation alone" receipt_steps_are "$receipts/create-later.json" '["create"]'
@@ -475,14 +481,6 @@ check "only the first registry locked ADA in reference scripts" \
   jq -e '[.registries[].lockedLovelace.referenceScripts > 0] == [true, false, false]' "$work/creation-measurement.json"
 control "a measurement that gave a later registry two transactions would be seen" \
   jq -e '[.registries[].transactionCount] == [2, 2, 1]' "$work/creation-measurement.json"
-
-# The candidate uses the same chain-derived schema as the committed comparison.
-# Capture is from a complete prefix of the node's independent record; command
-# receipts select transaction identities, never measurement figures.
-python3 -I "$(dirname "$chain_view")/creation-cost.py" journey \
-  --work "$work" --source "$evidence" --program "$open_datum" \
-  --blueprint "$work/release/plutus.json" --devnet "$devnet" \
-  --reference "$(dirname "$chain_view")/creation-candidate.json"
 
 observe_termination() {
   python3 -I "$(dirname "$chain_view")/no_pin_termination_observations.py" "$chain_dir" "$state_policy" "$state_name" "$key_hex" \
