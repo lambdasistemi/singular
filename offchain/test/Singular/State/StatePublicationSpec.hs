@@ -192,6 +192,28 @@ spec = do
                         Publication _ new <- expectPublication publication
                         map fst new `shouldBe` [hashScript (ssScript own)]
                         map snd new `shouldNotContain` map snd old
+                        oldRef <-
+                            maybe
+                                (fail "the old state script has no publication")
+                                pure
+                                (lookup (stateHash sc) old)
+                        let expected = hashScript (ssScript own)
+                            lying session =
+                                session
+                                    { outputs = \query -> case query of
+                                        CarryingReferenceScript asked | asked == expected -> outputs session (AtTxIn oldRef)
+                                        _ -> outputs session query
+                                    }
+                        checked <- withSession (scWorld sc) $ \session ->
+                            planReferences (lying session) (scPayer sc) [ssScript own, standIn]
+                                >>= expectBuilt
+                        map fst (referencesLive checked) `shouldBe` [standInHash]
+                        lookup
+                            expected
+                            [ (discoveryHash entry, discoveryCandidates entry)
+                            | entry <- referencesDiscovery checked
+                            ]
+                            `shouldBe` Just [(oldRef, Just (stateHash sc))]
                     )
                     [ PolicyID (hashScript otherScript)
                     , PolicyID (hashScript applicationCode)
@@ -254,18 +276,26 @@ spec = do
                             _ -> outputs session query
                         }
             addLive (scWorld sc) candidates
-            References{referencesLive = live, referencesPublication = publication, referencesDiscovery = inspected} <-
+            References
+                { referencesLive = live
+                , referencesPublication = publication
+                , referencesDiscovery = inspected
+                } <-
                 planned sc answering
             map (fst . snd) live `shouldBe` [low]
-            [(discoveryHash entry, sort (discoveryCandidates entry)) | entry <- inspected]
-                `shouldBe`
-                    [ (stateHash sc, [])
-                    , (standInHash, sort
-                        [ (high, Just standInHash)
-                        , (wrong, Just (hashScript otherScript))
-                        , (low, Just standInHash)
-                        ])
-                    ]
+            [ (discoveryHash entry, sort (discoveryCandidates entry))
+              | entry <- inspected
+              ]
+                `shouldBe` [ (stateHash sc, [])
+                           ,
+                               ( standInHash
+                               , sort
+                                    [ (high, Just standInHash)
+                                    , (wrong, Just (hashScript otherScript))
+                                    , (low, Just standInHash)
+                                    ]
+                               )
+                           ]
             Publication _ located <- expectPublication publication
             map fst located `shouldBe` [stateHash sc]
 
