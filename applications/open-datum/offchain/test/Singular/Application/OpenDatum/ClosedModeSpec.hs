@@ -53,7 +53,7 @@ import Singular.Application.OpenDatum.Value
 import Singular.CLI.Command qualified as RegistryCLI ()
 import Singular.Registry.Application (Application (appPin))
 import Singular.Registry.Blueprint
-    ( NamingCodes (..)
+    ( ApplicationCodes (..)
     , applyBytesParam
     )
 import Singular.Registry.Config

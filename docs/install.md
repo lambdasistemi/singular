@@ -155,7 +155,7 @@ printf '%s\n' 'a passphrase of your choice' | singular wallet address --vault va
 
 Both commands print the same address, which begins with `addr_test1` on the
 preprod network. From here the commands are the ones of the
-[first demo](first-demo.md).
+[Demo 1](demo1.md).
 
 The development node starts with `devnet` and prints one line of settings once
 its chain is up. It runs until you stop it, and stopping `devnet` stops the Cardano

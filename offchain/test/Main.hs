@@ -19,7 +19,6 @@ import Singular.CLI.SubmitSpec qualified (spec)
 import Singular.CLI.TrieRefusalSpec qualified (spec)
 import Singular.CLI.VaultSpec qualified (spec)
 import Singular.CLI.VersionSpec qualified (spec)
-import Singular.CLI.WitnessReachSpec qualified (spec)
 import Singular.Provider.Koios.ClientSpec qualified (spec)
 import Singular.Provider.Koios.HttpSpec qualified (spec)
 import Singular.Provider.Koios.ProviderSpec qualified (spec)
@@ -51,21 +50,11 @@ import Singular.Registry.SessionServicesSpec qualified (spec)
 import Singular.Registry.SubmitSpec qualified (spec)
 import Singular.Registry.TrieStateContractSpec qualified (spec)
 import Singular.Registry.TrieStateSpec qualified (spec)
-import Singular.Registry.TxBuilder.BookEdgeSpec qualified (spec)
-import Singular.Registry.TxBuilder.MeasuredBookingSpec qualified
-    ( spec
-    )
 import Singular.Registry.TxBuilder.PrepareSpec qualified (spec)
 import Singular.Registry.TxBuilder.PublicationFundingSpec qualified
     ( spec
     )
 import Singular.Registry.TxBuilder.ReferencePublicationSpec qualified
-    ( spec
-    )
-import Singular.Registry.TxBuilder.SelectedFoldSpec qualified
-    ( spec
-    )
-import Singular.Registry.TxBuilder.SkipEvalUnitsSpec qualified
     ( spec
     )
 import Singular.Registry.TxBuilder.UpperSlotSpec qualified (spec)
@@ -95,15 +84,6 @@ main = hspec $ do
         (tagged "Singular.Registry.ChainedView" [Provider, History])
         Singular.Registry.ChainedViewSpec.spec
     describe
-        (tagged "Singular.Registry.TxBuilder.BookEdge" [Builders])
-        Singular.Registry.TxBuilder.BookEdgeSpec.spec
-    describe
-        ( tagged
-            "Singular.Registry.TxBuilder.MeasuredBooking"
-            [Builders, Evaluation]
-        )
-        Singular.Registry.TxBuilder.MeasuredBookingSpec.spec
-    describe
         (tagged "Singular.Registry.TxBuilder.ReferencePublication" [Builders])
         Singular.Registry.TxBuilder.ReferencePublicationSpec.spec
     describe
@@ -112,15 +92,6 @@ main = hspec $ do
     describe
         (tagged "Singular.Registry.TxBuilder.PublicationFunding" [Builders])
         Singular.Registry.TxBuilder.PublicationFundingSpec.spec
-    describe
-        (tagged "Singular.Registry.TxBuilder.SelectedFold" [Builders])
-        Singular.Registry.TxBuilder.SelectedFoldSpec.spec
-    describe
-        ( tagged
-            "Singular.Registry.TxBuilder.SkipEvalUnits"
-            [Builders, Evaluation]
-        )
-        Singular.Registry.TxBuilder.SkipEvalUnitsSpec.spec
     describe
         ( tagged
             "Singular.Registry.TxBuilder.UpperSlot"
@@ -226,9 +197,6 @@ main = hspec $ do
     describe
         (tagged "Singular.CLI.StateCommand" [Cli, Recovery])
         Singular.CLI.StateCommandSpec.spec
-    describe
-        (tagged "Singular.CLI.WitnessReach" [Cli, Provider])
-        Singular.CLI.WitnessReachSpec.spec
     describe
         (tagged "Singular.Registry.Address" [Cli])
         Singular.Registry.AddressSpec.spec

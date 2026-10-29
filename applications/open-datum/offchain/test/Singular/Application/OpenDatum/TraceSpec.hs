@@ -1304,7 +1304,7 @@ lineKinds =
         , "windowUpper"
         ]
     , line
-        (Read (BodyBuilt (BodyBuild "bookEdgeMeasured" 1.5 BodyReady)))
+        (Read (BodyBuilt (BodyBuild "synthetic-booking" 1.5 BodyReady)))
         body
     , line
         (Read (BodyBuilt (BodyBuild "updatePayloadTx" 1.5 BodyRefused)))

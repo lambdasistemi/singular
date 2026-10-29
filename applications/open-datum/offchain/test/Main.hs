@@ -6,7 +6,6 @@ import Singular.Application.OpenDatum.ActorDirectorySpec qualified
 import Singular.Application.OpenDatum.ApplicationSpec qualified
 import Singular.Application.OpenDatum.BuildSpec qualified
 import Singular.Application.OpenDatum.BuildersSpec qualified
-import Singular.Application.OpenDatum.BurnSourceSpec qualified
 import Singular.Application.OpenDatum.CLISpec qualified
 import Singular.Application.OpenDatum.ClosedModeSpec qualified
 import Singular.Application.OpenDatum.CommandRunSpec qualified
@@ -45,9 +44,6 @@ import Test.Tags (Area (..), tagged)
 
 main :: IO ()
 main = hspec $ do
-    describe
-        (tagged "Singular.Application.OpenDatum.BurnSource" [Builders])
-        Singular.Application.OpenDatum.BurnSourceSpec.spec
     describe
         (tagged "Singular.Application.OpenDatum.Outlay" [Cli])
         Singular.Application.OpenDatum.OutlaySpec.spec

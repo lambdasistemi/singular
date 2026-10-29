@@ -44,8 +44,8 @@ import Singular.CLI.Outlay
 import Singular.CLI.Receipt (OutcomeClass (..))
 import Singular.CLI.Session (failWith, failWithFields)
 import Singular.Registry.Ledger (ConwayEra)
-import Singular.Registry.TxBuilder.Edges (selectFunding)
 import Singular.Registry.TxBuilder.Prepare (spendableOuts)
+import Singular.Registry.TxBuilder.Publication (selectFunding)
 import Singular.Registry.Wallet (bech32Address)
 
 -- | A JSON document the caller named, or a client refusal saying why not.

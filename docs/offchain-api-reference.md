@@ -29,9 +29,7 @@ re-exports under its own name. The module extent is discovered from the Cabal
 manifest. Explicitly exposed and re-exported modules are what a caller imports;
 the two trie capability owners behind the
 `TrieState` facade (`Singular.Registry.TrieState.Core` and `.Types`),
-the three fold owners behind the `Update`
-facade — `Singular.Registry.TxBuilder.Update.Build`, `.Context` and
-`.Duties` — the five wire owners behind the `Types` facade —
+the five wire owners behind the `Types` facade —
 `Singular.Registry.Wire.Primitive`, `.Request`, `.State`, `.Proof` and
 `.Redeemer` — and the three deployment owners behind the `Deployment`
 facade — `Singular.Registry.Deployment.Manifest`, `.Mirror` and
@@ -98,18 +96,12 @@ Run: mkdocs serve
 - <a href="../offchain/lib/Singular/Registry/TrieState/Fixture.hs" data-api="module">Singular.Registry.TrieState.Fixture</a> — <a href="../offchain/lib/Singular/Registry/TrieState/Fixture.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/TrieState/Lineage.hs" data-api="module">Singular.Registry.TrieState.Lineage</a> — <a href="../offchain/lib/Singular/Registry/TrieState/Lineage.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/TrieState/Types.hs" data-api="module">Singular.Registry.TrieState.Types</a> — <a href="../offchain/lib/Singular/Registry/TrieState/Types.hs" data-api="source">source</a>
-- <a href="../offchain/lib/Singular/Registry/TxBuilder/ConnectedFold.hs" data-api="module">Singular.Registry.TxBuilder.ConnectedFold</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/ConnectedFold.hs" data-api="source">source</a>
-- <a href="../offchain/lib/Singular/Registry/TxBuilder/Edges.hs" data-api="module">Singular.Registry.TxBuilder.Edges</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Edges.hs" data-api="source">source</a>
+- <a href="../offchain/lib/Singular/Registry/TxBuilder/Publication.hs" data-api="module">Singular.Registry.TxBuilder.Publication</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Publication.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/TxBuilder/Internal.hs" data-api="module">Singular.Registry.TxBuilder.Internal</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Internal.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/TxBuilder/Internal/Edges.hs" data-api="module">Singular.Registry.TxBuilder.Internal.Edges</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Internal/Edges.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/TxBuilder/Internal/Identity.hs" data-api="module">Singular.Registry.TxBuilder.Internal.Identity</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Internal/Identity.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/TxBuilder/Internal/Lookup.hs" data-api="module">Singular.Registry.TxBuilder.Internal.Lookup</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Internal/Lookup.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/TxBuilder/Prepare.hs" data-api="module">Singular.Registry.TxBuilder.Prepare</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Prepare.hs" data-api="source">source</a>
-- <a href="../offchain/lib/Singular/Registry/TxBuilder/Request.hs" data-api="module">Singular.Registry.TxBuilder.Request</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Request.hs" data-api="source">source</a>
-- <a href="../offchain/lib/Singular/Registry/TxBuilder/Update.hs" data-api="module">Singular.Registry.TxBuilder.Update</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Update.hs" data-api="source">source</a>
-- <a href="../offchain/lib/Singular/Registry/TxBuilder/Update/Build.hs" data-api="module">Singular.Registry.TxBuilder.Update.Build</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Update/Build.hs" data-api="source">source</a>
-- <a href="../offchain/lib/Singular/Registry/TxBuilder/Update/Context.hs" data-api="module">Singular.Registry.TxBuilder.Update.Context</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Update/Context.hs" data-api="source">source</a>
-- <a href="../offchain/lib/Singular/Registry/TxBuilder/Update/Duties.hs" data-api="module">Singular.Registry.TxBuilder.Update.Duties</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Update/Duties.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Types.hs" data-api="module">Singular.Registry.Types</a> — <a href="../offchain/lib/Singular/Registry/Types.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Wait.hs" data-api="module">Singular.Registry.Wait</a> — <a href="../offchain/lib/Singular/Registry/Wait.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Wire/Primitive.hs" data-api="module">Singular.Registry.Wire.Primitive</a> — <a href="../offchain/lib/Singular/Registry/Wire/Primitive.hs" data-api="source">source</a>
@@ -117,7 +109,6 @@ Run: mkdocs serve
 - <a href="../offchain/lib/Singular/Registry/Wire/Redeemer.hs" data-api="module">Singular.Registry.Wire.Redeemer</a> — <a href="../offchain/lib/Singular/Registry/Wire/Redeemer.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Wire/Request.hs" data-api="module">Singular.Registry.Wire.Request</a> — <a href="../offchain/lib/Singular/Registry/Wire/Request.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Wire/State.hs" data-api="module">Singular.Registry.Wire.State</a> — <a href="../offchain/lib/Singular/Registry/Wire/State.hs" data-api="source">source</a>
-- <a href="../offchain/lib/Singular/Registry/Witness.hs" data-api="module">Singular.Registry.Witness</a> — <a href="../offchain/lib/Singular/Registry/Witness.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/State/Assemble.hs" data-api="module">Singular.State.Assemble</a> — <a href="../offchain/lib/Singular/State/Assemble.hs" data-api="source">source</a> — the payer, the reads of the chain and the assembly of a transaction that the builders of the Singular state share
 - <a href="../offchain/lib/Singular/State/Batch.hs" data-api="module">Singular.State.Batch</a> — <a href="../offchain/lib/Singular/State/Batch.hs" data-api="source">source</a> — request ordering and the greatest prefix that fits the observed capacity limits
 - <a href="../offchain/lib/Singular/State/Fold.hs" data-api="module">Singular.State.Fold</a> — <a href="../offchain/lib/Singular/State/Fold.hs" data-api="source">source</a> — discovery and folding of pending registrations and terminations from public data, with skipped holders and remaining requests accounted for
@@ -382,7 +373,6 @@ that create a registry and book, reclaim and clean up a registration:
 `Singular.Application.OpenDatum.Command`,
 `Singular.Application.OpenDatum.Envelope`,
 `Singular.Application.OpenDatum.Registration`,
-`Singular.Application.OpenDatum.Release`,
 `Singular.Application.OpenDatum.Requests.Booking`,
 `Singular.Application.OpenDatum.Requests.Configuration`,
 `Singular.Application.OpenDatum.Requests.Fold`,

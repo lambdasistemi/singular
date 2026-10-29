@@ -36,7 +36,7 @@ import Singular.Registry.Application
     , hashPinnedApplication
     , neutralApplication
     )
-import Singular.Registry.Blueprint (NamingCodes (..))
+import Singular.Registry.Blueprint (ApplicationCodes (..))
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Config.Application
     ( RegistryEconomics (..)

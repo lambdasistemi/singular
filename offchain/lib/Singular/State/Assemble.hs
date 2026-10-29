@@ -111,7 +111,7 @@ import Singular.Registry.SessionIO
     , validityUpper
     )
 import Singular.Registry.SessionIO qualified as Services
-import Singular.Registry.TxBuilder.Edges (selectFunding)
+import Singular.Registry.TxBuilder.Publication (selectFunding)
 import Singular.State.Refusal
     ( CapacityLimit (..)
     , Refusal (..)

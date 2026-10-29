@@ -105,7 +105,7 @@ data CageParts = CageParts
     , partsRequestBytes :: SBS.ShortByteString
     , partsApplicationPolicy :: SBS.ShortByteString
     {- ^ The application policy the registry pins (#157 genesis-policy-pins): the
-    naming application script's applied hash for this registry
+    supplied application script's applied hash for this registry
     identity, read from the partitions' `script-identity.json`.
     -}
     , partsActivePolicy :: SBS.ShortByteString

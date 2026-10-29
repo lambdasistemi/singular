@@ -34,6 +34,7 @@ from urllib.request import Request, urlopen
 
 import aiken_reference
 import api_reference
+import model_reference
 
 SITE_URL = "https://lambdasistemi.github.io/singular/"
 PREFIX = urlsplit(SITE_URL).path
@@ -246,7 +247,9 @@ for path, page in pages.items():
 for required in (
     "specs/protocol/spec/index.html",
     "docs/prior-art/index.html",
-    "docs/decisions/index.html",
+    "docs/offchain-builder-blueprint/index.html",
+    "docs/offchain-fold-responsibilities/index.html",
+    "docs/registry-commands/index.html",
     "docs/economics-paper/index.html",
     "docs/economics-paper.pdf",
 ):
@@ -687,18 +690,9 @@ for _, _, resolved in plans:
 assert model_rows, (
     "no staged model/ artifacts reached by the inventory: shipped-model proof found nothing"
 )
-model_mismatch = []
-for url_path, served in sorted(model_rows):
-    source = root / "lean" / url_path[len(PREFIX) + len("model/") :]
-    if (
-        not served.is_file()
-        or not source.is_file()
-        or served.read_bytes() != source.read_bytes()
-    ):
-        model_mismatch.append(url_path)
-assert not model_mismatch, (
-    f"staged model/ bytes differ from lean/ sources: {model_mismatch}"
-)
+model_artifacts = sorted({served.relative_to(site) for _, served in model_rows})
+model_reference.check_artifacts(root, site, model_artifacts)
+model_source_controls = model_reference.controls(root, site, model_artifacts)
 assert not production_alias_rows, (
     f"production model alias is not candidate identity evidence (moving alias): {production_alias_rows}"
 )
@@ -1244,6 +1238,7 @@ print(
             "modelArtifactBytes": {
                 "servedModelPaths": len(model_rows),
                 "mismatches": 0,
+                "alteredAndMissingControls": model_source_controls,
             },
             "servedRoutes": served_report,
         }

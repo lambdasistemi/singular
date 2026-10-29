@@ -93,7 +93,7 @@
       "pause": 400
     },
     {
-      "text": "Both commands print the same address, which begins with addr_test1 on the preprod network. From here the commands are the ones of the first demo.",
+      "text": "Both commands print the same address, which begins with addr_test1 on the preprod network. From here the commands are the ones of the Demo 1.",
       "pause": 400
     },
     {
@@ -181,6 +181,6 @@
   ],
   "_source": {
     "file": "install.md",
-    "sha256": "4d8afe13c8b82e336896edb1ef208a7ad9397f2ef11c79570b3cc66b7aa76980"
+    "sha256": "dfc0e5e5d1723faa6b01df72e4e109570437daf25c6b1c1345287913ccad39fd"
   }
 }

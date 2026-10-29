@@ -34,6 +34,6 @@ the ticket owner accepts its slice.
 
 ## Pull request 4: the current line removed
 
-- [ ] current-line-removal: the current line's validators, builders, commands, hosted jobs and Lean models removed as ruled.
-- [ ] established-names: the new commands on the established names.
-- [ ] documentation-follows: the user documentation describes only the new line.
+- [x] current-line-removal: the current line's validators, builders, commands, hosted jobs and Lean models removed as ruled.
+- [x] established-names: the new commands on the established names.
+- [x] documentation-follows: the user documentation describes only the new line.

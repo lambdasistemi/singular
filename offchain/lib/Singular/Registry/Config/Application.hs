@@ -29,14 +29,14 @@ import Cardano.Ledger.BaseTypes (Network (..))
 
 import Singular.Registry.Application (ApplicationPin, applyPin)
 import Singular.Registry.AssetName (deriveAssetName)
-import Singular.Registry.Blueprint (NamingCodes (..))
+import Singular.Registry.Blueprint (ApplicationCodes (..))
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger (Coin)
-import Singular.Registry.TxBuilder.Edges (namingPins)
 import Singular.Registry.TxBuilder.Internal
     ( computeScriptHash
     , scriptHashBytes
     )
+import Singular.Registry.TxBuilder.Publication (applicationPins)
 import Singular.Registry.Types (OnChainTxOutRef)
 
 -- | The windows and tip a registry is booted with.
@@ -58,7 +58,7 @@ registry runs them (the application applied when it takes the identity).
 -}
 configForApplication
     :: ApplicationPin
-    -> NamingCodes
+    -> ApplicationCodes
     -- ^ The application and witness codes as the blueprint carries them
     -> SBS.ShortByteString
     -- ^ State validator
@@ -68,11 +68,11 @@ configForApplication
     -> Network
     -> OnChainTxOutRef
     -- ^ The seed the boot consumes
-    -> (CageConfig, NamingCodes)
+    -> (CageConfig, ApplicationCodes)
 configForApplication pin codes stateBytes requestBytes econ net seed =
     let registryId = registryIdentity stateBytes seed
         (appPin, pinned) = applyPin pin registryId codes
-        (_, activePin) = namingPins pinned registryId
+        (_, activePin) = applicationPins pinned registryId
     in  ( CageConfig
             { cageScriptBytes = stateBytes
             , requestScriptBytes = requestBytes

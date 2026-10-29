@@ -9,7 +9,7 @@ License     : Apache-2.0
 The #300 review found the ordinary CLI reading protocol parameters for
 its preview (tree-change-requires-approval) and the builder reading them again (P2): a change that
 lands between the two reads enters the built body, so the preview and
-the body disagree. These rows run the real request builder against the in-memory chain
+the body disagree. These rows run the real publication builder against the in-memory chain
 adapter, change the protocol parameters and the wallet between the
 operation's preview and its build, and compare the built body with the
 one the same operation builds when nothing changes. An operation is one
@@ -56,7 +56,7 @@ import Cardano.Ledger.Api.Tx.Body
 import Cardano.Ledger.Api.Tx.Out (TxOut, coinTxOutL, mkBasicTxOut)
 import Cardano.Ledger.BaseTypes (Network (Testnet))
 import Cardano.Ledger.Coin (CompactForm (CompactCoin))
-import Cardano.Ledger.Mary.Value (AssetName (..), MaryValue (..))
+import Cardano.Ledger.Mary.Value (MaryValue (..))
 import Cardano.Ledger.TxIn (TxIn)
 import Cardano.Tx.Ledger (ConwayTx)
 import PlutusCore.Version (plcVersion110)
@@ -71,7 +71,6 @@ import Singular.Registry.Ledger
     ( Coin (..)
     , ConwayEra
     , PParams
-    , TokenId (..)
     )
 import Singular.Registry.LedgerProvider (Session)
 import Singular.Registry.RawChainFixture
@@ -85,9 +84,10 @@ import Singular.Registry.SessionIO (parameters, withLatest)
 import Singular.Registry.TxBuilder.Internal
     ( addrFromKeyHashBytes
     , computeScriptHash
+    , mkCageScript
     , txInToRef
     )
-import Singular.Registry.TxBuilder.Request (requestEdgeImpl)
+import Singular.Registry.TxBuilder.Publication (publishRefScriptTx)
 
 -- | The chain before anything changes: parameters and the payer's wallet.
 initial :: ChainFacts
@@ -127,13 +127,13 @@ chainOf s = do
     advanceChain chain id
     pure chain
 
--- | Build the request from one view.
-request :: Session NoWitness IO -> IO ConwayTx
-request v =
-    requestEdgeImpl cfg v (Coin 1_000_000) tokenId "t323-key" 1 payer
+-- | Build the publication from one view.
+publication :: Session NoWitness IO -> IO ConwayTx
+publication v =
+    fst <$> publishRefScriptTx Set.empty v payer (mkCageScript cfg)
 
 {- | One operation: acquire one view, preview its parameters, let
-@between@ happen, then build the request from the same view. Returns the
+@between@ happen, then build the publication from the same view. Returns the
 preview's parameters and the body.
 -}
 operation :: RawChain -> IO () -> IO (PParams ConwayEra, ConwayTx)
@@ -141,7 +141,7 @@ operation chain between =
     withLatest (rawChainProvider chain) $ \v -> do
         preview <- parameters v
         between
-        tx <- request v
+        tx <- publication v
         pure (preview, tx)
 
 {- | The pre-change shape: the preview reads the chain once and the
@@ -152,7 +152,7 @@ twoReads chain between = do
     let prov = rawChainProvider chain
     preview <- withLatest prov parameters
     between
-    tx <- withLatest prov request
+    tx <- withLatest prov publication
     pure (preview, tx)
 
 -- | What a body commits to that the chain's state decides.
@@ -186,7 +186,7 @@ spec = describe "one operation reads the chain at one point (#323)" $ do
         (_, control) <- chainOf initial >>= (`operation` pure ())
         (preview, fresh) <- chainOf (change initial) >>= (`operation` pure ())
         preview `shouldBe` csPParams (change initial)
-        shapeFee (shape fresh) `shouldNotBe` shapeFee (shape control)
+        shapeLocked (shape fresh) `shouldNotBe` shapeLocked (shape control)
         shapeInputs (shape fresh) `shouldNotBe` shapeInputs (shape control)
     it
         "the pre-change shape, preview and build read apart, lets the change in"
@@ -247,6 +247,3 @@ ada n = mkBasicTxOut payer (MaryValue (Coin n) mempty)
 
 payer :: Addr
 payer = addrFromKeyHashBytes Testnet (BS.replicate 28 0x5a)
-
-tokenId :: TokenId
-tokenId = TokenId (AssetName "t323-registry")

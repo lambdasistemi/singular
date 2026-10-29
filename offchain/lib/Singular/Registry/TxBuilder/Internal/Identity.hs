@@ -235,13 +235,13 @@ scriptHashBytes :: ScriptHash -> ByteString
 scriptHashBytes (ScriptHash h) =
     hashToBytes h
 
--- | Build a 'CageDatum' for a request at one seven-admitted-edges edge (#183).
+-- | Build a request 'CageDatum' for a shared adapter.
 mkRequestDatum
     :: TokenId
     -> Addr
     -> ByteString
     -> Edge
-    -- ^ The seven-admitted-edges row index the request names
+    -- ^ The stable edge ordinal the request names
     -> Integer
     -- ^ The deposit the request rides with, over and above the tip
     -> Integer
@@ -268,7 +268,7 @@ mkRequestDatumWith
     -> Addr
     -> ByteString
     -> Edge
-    -- ^ The seven-admitted-edges row index the request names
+    -- ^ The stable edge ordinal the request names
     -> Integer
     -- ^ The deposit the request rides with, over and above the tip
     -> Integer

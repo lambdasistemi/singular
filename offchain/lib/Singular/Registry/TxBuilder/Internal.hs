@@ -27,7 +27,7 @@ module Singular.Registry.TxBuilder.Internal
     , scriptHashBytes
     , computeScriptHash
 
-      -- * Registry-mode edges (#157 seven-admitted-edges)
+      -- * Stable edge encodings
     , leafAbsent
     , leafActive
     , leafTerminal

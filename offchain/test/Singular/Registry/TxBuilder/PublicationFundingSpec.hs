@@ -31,7 +31,7 @@ import Singular.Registry.TxBuilder.BookingFixture
     , payer
     , preprodParams
     )
-import Singular.Registry.TxBuilder.Edges
+import Singular.Registry.TxBuilder.Publication
     ( PublicationFundingError (..)
     , selectPublicationInputs
     )

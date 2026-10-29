@@ -18,7 +18,7 @@ import Singular.Registry.Application
     , ApplicationPin (..)
     )
 import Singular.Registry.Blueprint
-    ( NamingCodes (..)
+    ( ApplicationCodes (..)
     , extractCompiledCode
     , loadBlueprint
     )
@@ -50,5 +50,5 @@ loadReleaseCodes app path = do
             ( Release
                 state
                 request
-                NamingCodes{ncApplication = application, ncWitness = witness}
+                ApplicationCodes{ncApplication = application, ncWitness = witness}
             )

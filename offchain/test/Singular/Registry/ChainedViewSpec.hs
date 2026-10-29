@@ -126,12 +126,14 @@ import Singular.Registry.TrieState
     , PublicLineage
     , RegistryIdentity (..)
     , SessionBinding (Unbound)
+    , SpeculativeWalk (..)
     , StatePoint (..)
     , StatePolicyId (..)
     , TrieFailure
     , TrieSelection (..)
     , TrieSnapshot
     , leafAt
+    , speculateEdges
     , trieCoverage
     , trieLineage
     , trieRoot
@@ -163,15 +165,12 @@ import Singular.Registry.TxBuilder.Prepare
     ( Preparation (..)
     , planPreparation
     )
-import Singular.Registry.TxBuilder.Update
-    ( RegistryContext (..)
-    , emptyRegistryContext
-    , updateTokenSelected
-    )
 import Singular.Registry.Types
     ( CageDatum (..)
     , MintRedeemer (..)
     , OnChainRoot (..)
+    , RequestAction (..)
+    , UpdateRedeemer (..)
     , stateRoot
     )
 
@@ -649,8 +648,8 @@ data FoldRig = FoldRig
     }
 
 {- | A registry that exists on the chain — the boot publication applied —
-one pending request planted live, and the fold built with the real
-builder over the chained view and staged on it. The oracle chain carries
+one pending request planted live, and a synthetic state transition over the
+chained view, staged on it. The oracle chain carries
 the same registry, the same request and the fold applied.
 -}
 foldRig :: IO FoldRig
@@ -663,15 +662,7 @@ foldRig = do
     stagedTx <-
         withLatest (rawChainProvider chain) $ \base -> do
             view <- chainedSession (pure []) base
-            foldTx <-
-                updateTokenSelected
-                    cfg
-                    view
-                    (foldSnapshot boot)
-                    tokenId
-                    payer
-                    foldContext
-                    (requestIn :| [])
+            foldTx <- fixtureFold view boot
             stageOver view foldTx
     let staged = [stagedTx]
     oracle <- newChain
@@ -717,7 +708,7 @@ foldRig = do
             [single] -> single
             _ -> error "ChainedViewSpec: the fold made no single state output"
 
-{- | The capability snapshot the fold builder proves against: the boot's
+{- | The capability snapshot the synthetic history fixture walks: the boot's
 state output, at the boot root.
 -}
 foldSnapshot :: ConwayTx -> TrieSnapshot IO
@@ -741,12 +732,6 @@ foldSnapshot boot =
             registryIdentity
             (StatePoint (SessionId "chained-view-fold-fixture") Unbound stateIn)
             (Root emptyRoot)
-
-foldContext :: RegistryContext
-foldContext =
-    emptyRegistryContext
-        { rcWitnessScripts = Map.singleton 1 Fixture.applicationScript
-        }
 
 -- ---------------------------------------------------------
 -- The trie selection over a session, and its comparison
@@ -1126,3 +1111,44 @@ fixtureMint session = do
                         (ConwayMinting (AsIx 0))
                         (toLedgerData (Minting (txInToRef seedIn)), ExUnits 0 0)
                     )
+
+{- | A synthetic history event for the session overlay and replay comparison.
+It is not submitted, evaluated or evidence for any validator's acceptance.
+-}
+fixtureFold :: Session NoWitness IO -> ConwayTx -> IO ConwayTx
+fixtureFold view boot = do
+    walked <-
+        speculateEdges (foldSnapshot boot) ((key, 1) :| [])
+            >>= either (fail . show) pure
+    stateOutputs <- outputsAt view stateAddress
+    stateOut <- case lookup stateIn stateOutputs of
+        Just out -> pure out
+        Nothing -> fail "ChainedViewSpec: fixture state is missing"
+    state <- case extractCageDatum stateOut of
+        Just (StateDatum old) -> pure old
+        _ -> fail "ChainedViewSpec: fixture state datum is missing"
+    let next =
+            stateOut
+                & datumTxOutL
+                    .~ mkInlineDatum
+                        ( toPlcData
+                            (StateDatum state{stateRoot = OnChainRoot (unRoot (walkRoot walked))})
+                        )
+        inputs = Set.fromList [stateIn, requestIn]
+        stateIndex =
+            fromIntegral (length (takeWhile (/= stateIn) (Set.toAscList inputs)))
+        redeemer = toLedgerData (Modify (map Update (walkProofs walked)))
+    pure $
+        mkBasicTx
+            ( mkBasicTxBody
+                & inputsTxBodyL .~ inputs
+                & outputsTxBodyL .~ StrictSeq.singleton next
+            )
+            & witsTxL . rdmrsTxWitsL
+                .~ Redeemers
+                    ( Map.singleton
+                        (ConwaySpending (AsIx stateIndex))
+                        (redeemer, ExUnits 0 0)
+                    )
+  where
+    stateIn = stateRefOf boot

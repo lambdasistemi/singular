@@ -130,7 +130,6 @@ import Singular.Registry.SessionIO qualified as SessionIO
     )
 import Singular.Registry.Signing (signedTx)
 import Singular.Registry.SyntheticLedger (unitProgram)
-import Singular.Registry.TxBuilder.Edges (selectFunding)
 import Singular.Registry.TxBuilder.Internal
     ( addrFromKeyHashBytes
     , computeScriptHash
@@ -138,6 +137,7 @@ import Singular.Registry.TxBuilder.Internal
     , scriptFromBytes
     , scriptHashBytes
     )
+import Singular.Registry.TxBuilder.Publication (selectFunding)
 import Singular.Registry.Wallet (Wallet (..), bech32Address)
 import Singular.State.Assemble (inlineDatumOf, readOutputs)
 import Singular.State.Preimage (stateTokenName)

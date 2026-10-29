@@ -7,7 +7,7 @@ Description : One registry, one payer and two keys, for the booking rows
 License     : Apache-2.0
 
 The registry the booking rows share: toy PlutusV3 programs applied the way
-the real pins are, the naming pins those programs give, a payer and the
+the real pins are, the application pins those programs give, a payer and the
 seven edges. Every expected value a row compares against is derived from
 these, never read from a builder's output.
 -}
@@ -60,20 +60,23 @@ import Cardano.Ledger.Mary.Value (AssetName (..), PolicyID)
 import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import Cardano.Ledger.TxIn (TxIn)
 
-import Singular.Registry.Blueprint (NamingCodes (..), applyBytesParam)
+import Singular.Registry.Blueprint
+    ( ApplicationCodes (..)
+    , applyBytesParam
+    )
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.Ledger (ConwayEra, TokenId (..))
-import Singular.Registry.TxBuilder.Edges
-    ( namingPins
-    , registryIdOf
-    )
 import Singular.Registry.TxBuilder.Internal
     ( addrFromKeyHashBytes
     , computeScriptHash
     , policyIdFromPin
     , scriptFromBytes
     , txInToRef
+    )
+import Singular.Registry.TxBuilder.Publication
+    ( applicationPins
+    , registryIdOf
     )
 import Singular.Registry.Types
     ( Edge
@@ -123,9 +126,9 @@ program = serialiseUPLC (UPLC.Program () plcVersion110 term)
             (app (builtin UnBData) (UPLC.Var () (UPLC.DeBruijn 2)))
     digest = app (builtin Sha2_256) bytes
 
-codes :: NamingCodes
+codes :: ApplicationCodes
 codes =
-    NamingCodes
+    ApplicationCodes
         { ncApplication = applyBytesParam (BS.replicate 9_000 0x61) program
         , ncWitness = applyBytesParam "t240-witness" program
         }
@@ -166,7 +169,7 @@ fundIn =
         id
         (parseOutRef (T.pack (replicate 64 '3' <> "#0")))
 
-{- | The registry with the four pins its naming partition derives. The
+{- | The registry with the two pins its supplied application code derives. The
 design pins the application hash, and the rows below assert against the
 same hash — evaluated from the pins, never from builder output.
 -}
@@ -181,15 +184,15 @@ applicationPin
     , activePin
         :: SBS.ShortByteString
 (applicationPin, activePin) =
-    namingPins codes (registryIdOf unpinned)
+    applicationPins codes (registryIdOf unpinned)
 
-{- | The policy the naming application certifies approvals under: the
+{- | The synthetic application approval policy: the
 hash of the applied application script (DM-1 @baAsset@'s policy).
 -}
 applicationPolicy :: PolicyID
 applicationPolicy = policyIdFromPin applicationPin
 
--- | The naming application script, the design's @baScript@.
+-- | The supplied application script, the design's @baScript@.
 applicationScript :: Script ConwayEra
 applicationScript = scriptFromBytes "naming-application" (ncApplication codes)
 
@@ -202,7 +205,7 @@ tokenId = TokenId (AssetName "t240-registry")
 keys :: [ByteString]
 keys = ["t240-key-a", "t240-key-b"]
 
--- | The seven admissible edges, by the name the model gives each.
+-- | The stable edge encodings, including refused operations.
 edges :: [(Edge, String)]
 edges =
     zip

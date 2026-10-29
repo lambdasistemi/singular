@@ -102,7 +102,10 @@ import Singular.Registry.Application
     , applyPin
     )
 import Singular.Registry.AssetName (deriveAssetName)
-import Singular.Registry.Blueprint (NamingCodes, applyRequestParams)
+import Singular.Registry.Blueprint
+    ( ApplicationCodes
+    , applyRequestParams
+    )
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Config.Application
     ( RegistryEconomics (..)
@@ -119,13 +122,13 @@ import Singular.Registry.LedgerProvider
     , ReadFailure (..)
     , Session (..)
     )
-import Singular.Registry.TxBuilder.Edges (namingPins)
 import Singular.Registry.TxBuilder.Internal
     ( computeScriptHash
     , extractCageDatum
     , scriptHashBytes
     , txInToRef
     )
+import Singular.Registry.TxBuilder.Publication (applicationPins)
 import Singular.Registry.Types
     ( CageDatum (..)
     , OnChainTokenId (..)
@@ -138,7 +141,7 @@ import Singular.Registry.Types
 data Release = Release
     { releaseState :: SBS.ShortByteString
     , releaseRequest :: SBS.ShortByteString
-    , releaseCodes :: NamingCodes
+    , releaseCodes :: ApplicationCodes
     {- ^ The application's validator unapplied and its token witness, from the
     same blueprint
     -}
@@ -226,7 +229,7 @@ expectedReferences pinForm release (_, AssetName name) =
     registryId = scriptHashBytes stateHash <> SBS.fromShort name
     (applicationPin, pinned) = applyPin pinForm registryId (releaseCodes release)
     (_, activePin) =
-        namingPins pinned registryId
+        applicationPins pinned registryId
     -- A hash pin (including a pin read from state, which arrives as one)
     -- publishes no application reference; a script or compiled pin does.
     hasApplication = case pinForm of
@@ -266,7 +269,7 @@ data ResolvedRegistry = ResolvedRegistry
     {- ^ The configuration derived from the release and the token, with the
     windows and tip read from the datum
     -}
-    , resolvedCodes :: NamingCodes
+    , resolvedCodes :: ApplicationCodes
     -- ^ The application and witness codes as this registry runs them
     , resolvedExpected :: Map ReferenceRole ScriptHash
     , resolvedNetwork :: Network

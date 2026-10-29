@@ -1,122 +1,44 @@
-# Ending a name
+# Permanently terminate a key
 
-The current contract permits registration and permanent retirement only.
-The retained command now checks an unknown key and an already terminal key
-against real accepting controls. Absent leaves cannot be created from permanent contract
- genesis; their retirement refusal is a synthetic compiled-context check.
-The following broader-model story and receipts are archived evidence, not
-current deployment support. See [current candidate results](../specs/505-permanent-m1/RESULTS.md).
+As a key's controller, you want to end its registration permanently. You first
+book a termination from its live holding. Any wallet can then complete it by
+folding the public request. The protected deposit goes to the treasury when
+you book, and the active token is burned when the request is folded.
 
-## Archived broader-model retirement evidence
-
-## Who this is for
-
-You hold a Singular name. You booked it, the registry handed you a token
-that says so, and now you want it over — permanently, publicly, and in a
-way nobody can undo, including you.
-
-This page is about that one move: **retirement**. It is the edge the
-registry calls `updateTerminal`: it burns the active witness and leaves
-the key where no edge can move it again. This is the registry edge on its
-own; the naming instance puts a rule of its own in front of it, stated
-below.
-
-## What you can do
-
-Retire a name you hold. The registry takes the token back out of your
-wallet and burns it, and the name's entry becomes `Terminal` — the last
-state it will ever have.
+## Book, then complete
 
 ```mermaid
-flowchart LR
-  Unknown[Key nobody has touched] -->|insertActive| Active[Active: you hold the token]
-  Active -->|updateTerminal| Terminal[Terminal: the name is over]
-  Terminal -.->|updateTerminal again| Refused[Refused: terminal-immutable]
-  Unknown -.->|updateTerminal| NoKey[Refused: key-unknown]
-  Absent[Absent: witnessed missing, never booked] -.->|updateTerminal| NotBooked[Refused: not-booked]
+stateDiagram-v2
+    state "Live holding" as Live
+    state "Pending termination" as Pending
+    state "Permanently terminal key" as Terminal
+    Live --> Pending: controller books and donates the deposit
+    Pending --> Terminal: anyone folds and burns both tokens
+    Terminal --> [*]
 ```
 
-What has to be true for it to go through:
+The booking command requires the holding's controller to sign. It donates the
+protected deposit and moves the active token into a pending request with one
+termination approval, no datum and the ADA available to reward its folder.
+The active token is not burned at booking.
 
-- the registry's entry for your key reads **Active**;
-- the transaction carries **your** token — the one the booking delivered
-  — as an input for the burn to destroy;
-- nothing else moves under the registry's active token policy.
+The fold consumes the public request, burns its approval and active token,
+continues the registry with the terminal leaf and pays the request's whole
+held value to the folder. The folder pays the transaction fee and needs no
+file or signature from the controller. A termination cannot be reclaimed or
+cancelled, and the terminal key cannot be registered again.
 
-What comes out:
+Follow [the termination commands](registry-commands.md#book-permanent-termination-then-fold-it)
+for the flags, the pending output reference and the treasury donation reported
+by the booking receipt. Use the holding reference returned by your latest update.
 
-- exactly one token destroyed, the one named by your key, and no output
-  anywhere carries it afterwards;
-- the entry reads `Terminal`;
-- no refund, no new token, and no signature from any application at the
-  fold.
+## Refusals and evidence
 
-The last point is worth stating plainly: **the fold asks no application
-to sign a retirement.** The registry decides, from the entry and the
-token, and nothing else. What an application can do is decide who may
-build the request in the first place. The naming instance does exactly
-that: ending a name needs the committed recovery key or the retirement
-quorum, never the current control key alone, and the naming validator
-refuses any other request before it exists to be folded.
-[Recover control and retire names on a real
-ledger (historical)](https://github.com/lambdasistemi/singular/blob/44de14203a67df7c993f50b05fd26c82dbf5a9e6/docs/naming-lifecycle.md) shows that rule enforced on chain.
+A missing holding, a different controller or another named registry is refused
+before signing. An unavailable provider answer remains unavailable; it does not
+establish absence or a ledger refusal.
 
-## Why it cannot be undone
-
-`Terminal` is the end of the line by construction. A second retirement
-at the same key does not produce a smaller effect or a no-op — it
-produces no transaction at all, refused `terminal-immutable`. There is
-no edge out of `Terminal` in the registry's table, so no sequence of
-folds returns the name to circulation.
-
-That is also why the token is destroyed rather than parked somewhere:
-while a token exists, someone holds it, and "who holds it" is a question
-with consequences. After a retirement there is nothing to hold.
-
-## When it is refused, and why the reason matters
-
-Three different situations look the same from outside — "the retirement
-did not happen" — and the registry keeps them apart, because the repair
-is different in each case:
-
-| what is true | the reason given | what to do |
-|---|---|---|
-| the registry has never heard of this key | `key-unknown` | book it first, or check the key |
-| the key is only witnessed *absent* | `not-booked` | somebody recorded that the name was free; nobody took it |
-| the key is already `Terminal` | `terminal-immutable` | nothing; the name is over |
-| the key is Active but the token is not in the transaction | `token-missing` | send the transaction the token it is supposed to burn |
-
-Each of these is decided against the registry's **own** entry, not
-against what the request claims about it. A request that says "this key
-is active" does not make it so, and a retirement built on that claim is
-refused by name rather than dying inside a proof.
-
-The last row is different from the other three: under the registry's
-laws, an Active entry and exactly one outstanding token are the same
-fact, so a caller cannot actually reach that situation. It stays a guard
-because a guard that is never reached is cheap, and because being wrong
-about it would destroy nothing while claiming to.
-
-## Seeing it happen
-
-The release archive ships a command that performs the whole story
-against a throwaway network, from a fresh extraction with no source
-checkout:
-
-```bash
-cd offchain
-REGISTRY_BLUEPRINT=../onchain/plutus.json \
-  nix run --quiet .#update-terminal -- --observed /tmp/update-terminal.json
-```
-
-It boots a registry, books a name to a wallet, retires it, and writes
-what it saw to the file you name: the two transaction ids, the three
-registry roots, the token count going from one to zero, the exact burn,
-the input it came from, and the final entry. The two refusals are in
-there too, each beside a retirement that *did* work — because "it was
-refused" only means something when you can see the same machinery
-succeed on the next line.
-
-Every value in that file is read back from the network or from the
-compiled contract. None of it is written by the command to make itself
-look right.
+The [consumer conformance record](consumer-conformance.md) publishes the
+requirements and their evidence limits. A local builder check is not a
+connected ledger history. [Demo 1](demo1.md) links the playable application
+journey and the release it runs.

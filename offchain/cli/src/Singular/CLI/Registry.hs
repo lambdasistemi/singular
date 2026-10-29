@@ -85,7 +85,7 @@ import Singular.Registry.Address
 import Singular.Registry.Application
     ( Application (..)
     )
-import Singular.Registry.Blueprint (NamingCodes)
+import Singular.Registry.Blueprint (ApplicationCodes)
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Config.Application
     ( RegistryEconomics (..)
@@ -106,7 +106,11 @@ import Singular.Registry.PlainJson
     , schemaName
     )
 import Singular.Registry.StateToken (Release (..), renderStateToken)
-import Singular.Registry.TxBuilder.Edges
+import Singular.Registry.TxBuilder.Internal
+    ( computeScriptHash
+    , scriptHashBytes
+    )
+import Singular.Registry.TxBuilder.Publication
     ( PublicationFundingError (..)
     , adaOnlyOut
     , firstPublicationChange
@@ -114,10 +118,6 @@ import Singular.Registry.TxBuilder.Edges
     , publicationMinChange
     , publicationRefCoin
     , selectPublicationInputs
-    )
-import Singular.Registry.TxBuilder.Internal
-    ( computeScriptHash
-    , scriptHashBytes
     )
 import Singular.Registry.Types (OnChainTxOutRef)
 
@@ -185,7 +185,7 @@ registryConfigFor
     -> Release
     -> RegistryEconomics
     -> OnChainTxOutRef
-    -> (CageConfig, NamingCodes)
+    -> (CageConfig, ApplicationCodes)
 registryConfigFor app rel chosen =
     configForApplication
         (appPin app)
@@ -445,7 +445,7 @@ parseEnterpriseAddress magic text = do
 {- | Whether the wallet funds every reference publication a create makes,
 with the boot between them, as the real transactions spend it. Each
 publication funds from the shortest largest-first prefix of the ada-only
-outputs, with its change returned, as 'Singular.Registry.TxBuilder.Edges.selectPublicationInputs'
+outputs, with its change returned, as 'Singular.Registry.TxBuilder.Publication.selectPublicationInputs'
 funds it. When the seed is an output the wallet holds, the publications
 before the boot leave it alone; when it is the first publication's change
 (#406 slice 2, not held), the first publication spends a prefix of all the
