@@ -20,6 +20,24 @@ def load(path):
     return json.loads(path.read_text())
 
 
+def chain_data(value):
+    """Preserve data exactly across the two JSON spellings of a Plutus map."""
+    if isinstance(value, list):
+        return [chain_data(item) for item in value]
+    if isinstance(value, dict):
+        if set(value) == {"map"}:
+            return {
+                "map": [
+                    [chain_data(pair["k"]), chain_data(pair["v"])]
+                    if isinstance(pair, dict)
+                    else chain_data(pair)
+                    for pair in value["map"]
+                ]
+            }
+        return {key: chain_data(item) for key, item in value.items()}
+    return value
+
+
 def reader_outputs(work):
     outputs = {}
     for path in (work / "receipts").glob("*.json"):
@@ -123,7 +141,9 @@ def journey(work):
                     value["control"]["registry"] == creation["stateToken"],
                     "wrong control registry",
                 )
-                require(value["datum"] == holding["datum"], "wrong live datum")
+                require(
+                    chain_data(value["datum"]) == holding["datum"], "wrong live datum"
+                )
                 require(
                     value["payload"] == load(work / "actors/alice/cwd/payload.json"),
                     "wrong decoded payload",
@@ -134,7 +154,9 @@ def journey(work):
                     "pending datum is not empty",
                 )
             elif answer == "active":
-                require(value["datum"] == holding["datum"], "wrong raw datum")
+                require(
+                    chain_data(value["datum"]) == holding["datum"], "wrong raw datum"
+                )
 
         judge(document)
         require(
@@ -150,6 +172,8 @@ def journey(work):
         altered_rejected(
             judge, document, "outputRef" if reference else "root", "altered"
         )
+        if answer in ("active", "live"):
+            altered_rejected(judge, document, "datum", {"constructor": 2, "fields": []})
         if answer == "live":
             altered_rejected(judge, document, "deposit", value=document["deposit"] + 1)
             altered_rejected(judge, document, "payload", {"name": "altered"})
@@ -224,11 +248,11 @@ def measurement(work):
         )
         reads = value["queryWork"]["reads"]
         require(
-            set(reads) == {"network", "asset"},
+            set(reads) == {"genesis", "asset_utxos"},
             "the live lookup performed additional reads",
         )
         require(
-            reads["asset"]["calls"] == 1 and reads["asset"]["rows"] == 1,
+            reads["asset_utxos"]["calls"] == 1 and reads["asset_utxos"]["rows"] == 1,
             "the lookup was not one asset query returning one row",
         )
         require(
@@ -248,7 +272,7 @@ def measurement(work):
 
     judge(document)
     bad = copy.deepcopy(document["queryWork"])
-    bad["reads"]["asset"]["calls"] += 1
+    bad["reads"]["asset_utxos"]["calls"] += 1
     altered_rejected(judge, document, "queryWork", bad)
     altered_rejected(judge, document, "outputRef", others[0]["ref"])
     return {

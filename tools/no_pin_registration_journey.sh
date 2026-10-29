@@ -308,6 +308,11 @@ control "an approval that was minted, not burned, is not this one" \
 say "the folder's listing before the fold:"
 cat "$listings/bob-before-fold.txt"
 
+# Both readers start from the address alone in empty, signer-free directories.
+registry="$(field create-first .registry)"
+read_command read-neutral-live "$singular" registry inspect --registry "$registry" --key journey-fold --koios-url "$provider_url"
+read_command read-app-live "$open_datum" inspect --registry "$registry" --key journey-fold --koios-url "$provider_url"
+
 # The live holding continues through the controller's two commands. The
 # independent observer below follows input references, not command receipts.
 leg="update and termination"
@@ -329,6 +334,7 @@ public_pending="$(jq -er --arg sp "$state_policy" --arg active "$active_name" --
     | select(any(.assets[]; .policy == $sp and .name == $active and .quantity == 1))]
   | if length == 1 then .[0].ref else error("no unique public termination request") end' "$chain_dir/after-termination-booking.unspent.json")"
 check "the termination request found on chain is the one the controller booked" equal "$public_pending" "$(field terminate .pending)"
+read_command read-app-pending "$open_datum" inspect --registry "$registry" --key journey-fold --koios-url "$provider_url"
 
 # Bob uses a fresh process home and working directory with only copies of
 # his own key and the public release. Neither Alice's files nor Bob's earlier
@@ -341,6 +347,10 @@ as bob-public termination-fold "$open_datum" fold --blueprint plutus.json \
   --state-token "$token" --pending "$public_pending"
 view_tx termination-fold "$(tx_of termination-fold fold)"
 view_unspent after-termination-fold
+read_command read-neutral-terminal "$singular" registry inspect --registry "$registry" --key journey-fold --koios-url "$provider_url"
+read_command read-app-terminal "$open_datum" inspect --registry "$registry" --key journey-fold --koios-url "$provider_url"
+read_command read-neutral-never "$singular" registry inspect --registry "$registry" --key journey-never-registered --koios-url "$provider_url"
+read_command read-app-never "$open_datum" inspect --registry "$registry" --key journey-never-registered --koios-url "$provider_url"
 check "no unspent output carries the terminated key's active token" \
   none_unspent_with "$chain_dir/after-termination-fold.unspent.json" "$state_policy" "$active_name"
 control "the live state token is not a burned active token" \
@@ -476,6 +486,10 @@ fi
 # ------------------------------------------------------------------
 # The receipt
 # ------------------------------------------------------------------
+leg="reading a key"
+check "the packaged readers classify live custody, pending termination and authenticated absence; altered answers fail" \
+  reading_evidence journey
+
 # What the journey showed, in the words of the story, from the files above.
 {
   printf '# Registration, update and termination journey receipt\n\n'
@@ -500,6 +514,9 @@ fi
   printf '```\n\nThe packaged re-registration fold reported:\n\n```json\n'
   cat "$receipts/reregister.json"
   printf '\n```\n\n## Verdicts\n\n'
+  printf '## Reading from the registry address alone\n\n```json\n'
+  cat "$work/reading-journey.json"
+  printf '\n```\n\n'
   cat "$verdicts"
 } >"$work/receipt.md"
 
