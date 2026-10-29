@@ -1,0 +1,92 @@
+{
+  "gate-for-creating-registries-on-shared-script-publications": [
+    {
+      "text": "Gate for creating registries on shared script publications.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 745. This page is for the commit owner, the auditor and the reviewers: each acceptance item, the hosted job and the verbatim command that proves it, and what each pull request must show. The requirements are in the specification and the pull requests in the plan.",
+      "pause": 400
+    }
+  ],
+  "rows": [
+    {
+      "text": "Rows.",
+      "pause": 500
+    },
+    {
+      "text": "Two tables were written independently and joined once on 29 October 2026 (see the synthesis). Every command is an existing hosted command, or one this ticket adds to a hosted job and marks \"CI change in this ticket\". Every row expects exit 0; a control's inner command must fail on purpose, and the enclosing control command exits 0 only after seeing it fail.",
+      "pause": 400
+    },
+    {
+      "text": "Rows run scoped to what each slice can break. just ci runs once on the final candidate of each pull request, then the push; hosted checks on the pull request head are the net. Every build or test runs in a named, memory-capped scope: systemd-run --user --scope --unit=t745-<what>-<n> -p MemoryMax=24G timeout 3600 <command>.",
+      "pause": 400
+    }
+  ],
+  "rows-per-pull-request": [
+    {
+      "text": "Rows per pull request.",
+      "pause": 500
+    }
+  ],
+  "evidence-the-pull-requests-will-carry": [
+    {
+      "text": "Evidence the pull requests will carry.",
+      "pause": 500
+    },
+    {
+      "text": "per outcome of the specification: the test that executes it, the hosted step that runs it, and the run in which it.",
+      "pause": 400
+    },
+    {
+      "text": "failed before the change;.",
+      "pause": 400
+    },
+    {
+      "text": "the measurement receipts of both designs with revision, parameters and every transaction, and the page that is read.",
+      "pause": 400
+    },
+    {
+      "text": "from them;.",
+      "pause": 400
+    },
+    {
+      "text": "the carrying attempt: the attempted transaction, its size and its execution evaluation against the same frozen limits;.",
+      "pause": 400
+    },
+    {
+      "text": "a size estimate alone does not show that a transaction fits;.",
+      "pause": 400
+    },
+    {
+      "text": "the journey's receipts: the independent creator's creation and the registration on a registry created from live.",
+      "pause": 400
+    },
+    {
+      "text": "copies;.",
+      "pause": 400
+    },
+    {
+      "text": "left uncovered, stated in the pull requests: public discovery of references for everyone (issues 355 and 473), batch.",
+      "pause": 400
+    },
+    {
+      "text": "limits (issue 746), release (issue 747); and the existing registration rows that stay uncovered for want of a comparison with the application-held model, which this ticket does not turn into coverage.",
+      "pause": 400
+    }
+  ],
+  "synthesis": [
+    {
+      "text": "Synthesis.",
+      "pause": 500
+    },
+    {
+      "text": "The ticket owner's table and the auditor's independent table, written without reading this page, were joined once on 29 October 2026. The auditor's table added the creation-recovery partitions (G12), the conformance row checks (G10) and the release packaging check (G13), and named seven places where an existing job needs an extension, which are carried by G1, G5, G6, G10 and G12 as changes in this ticket. The frozen table and both input hashes are kept with the ticket's working records. Rows are added to a later version of this table, never edited. Version 2 added G14, the census of hosted checks, after a hosted run showed that neither first table had it.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "gate.md",
+    "sha256": "f02b726ba96dd327b2230be4952b3eccaa2672ab0a3a6739765ac95ee6f24d2a"
+  }
+}

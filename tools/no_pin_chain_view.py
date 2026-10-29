@@ -163,6 +163,18 @@ def credential(bech32):
 
 def output(raw):
     datum = raw.get("inline_datum")
+    script = raw.get("reference_script")
+    reference = None
+    if script is not None:
+        language = {"plutusV1": 1, "plutusV2": 2, "plutusV3": 3}[script["type"]]
+        carried = bytes.fromhex(script["bytes"])
+        reference = {
+            "language": language,
+            "hash": hashlib.blake2b(
+                bytes([language]) + carried, digest_size=28
+            ).hexdigest(),
+            "sizeBytes": len(carried),
+        }
     return {
         "ref": "%s#%d" % (raw["tx_hash"], raw["tx_index"]),
         "address": raw["payment_addr"]["bech32"],
@@ -178,6 +190,7 @@ def output(raw):
         ],
         "datum": as_data(decode(bytes.fromhex(datum["bytes"]))[0]) if datum else None,
         "script": raw.get("reference_script") is not None,
+        "referenceScript": reference,
     }
 
 
@@ -221,7 +234,8 @@ def transaction(txid):
             material = each["material"]
             if material["tx_hash"] != txid:
                 continue
-            tx, _ = decode(bytes.fromhex(each["cbor"]))
+            encoded = bytes.fromhex(each["cbor"])
+            tx, _ = decode(encoded)
             body, witnesses = tx[0], tx[1]
             signers = []
             for pair in get(witnesses, 0) or []:
@@ -238,6 +252,7 @@ def transaction(txid):
                     )
             return {
                 "id": txid,
+                "sizeBytes": len(encoded),
                 "slot": block["slot"],
                 "inputs": [output(i) for i in material["inputs"]],
                 "referenceInputs": [output(i) for i in material["reference_inputs"]],

@@ -1,0 +1,146 @@
+{
+  "plan-for-creating-registries-on-shared-script-publications": [
+    {
+      "text": "Plan for creating registries on shared script publications.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 745. This page is for the people who implement and review the pull requests. It binds the model, the rulings, the pull requests and their slices, the consumers a slice can break and the seats. The story and the requirements are in the specification; the checks are in the gate.",
+      "pause": 400
+    }
+  ],
+  "lane": [
+    {
+      "text": "Lane.",
+      "pause": 500
+    }
+  ],
+  "what-already-exists-on-main": [
+    {
+      "text": "What already exists on main.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 742 shipped the publication library (Singular.State.Publication): the first registry of an application publishes the state script and the application script, each in a transaction of its own; a later registry finds the live copies by script hash and sends the creation alone. Its devnet journey already records a creation measurement of three transactions for the first registry and one for a later one. This ticket does not rebuild that. It owes what the issue still asks for and the journey does not show:",
+      "pause": 400
+    },
+    {
+      "text": "a matched baseline against the previous design, with every transaction, reference output, script size, fee and locked.",
+      "pause": 400
+    },
+    {
+      "text": "ADA;.",
+      "pause": 400
+    },
+    {
+      "text": "explicit, receipted outcomes for a missing, spent or wrong reference, and for another application policy or release;.",
+      "pause": 400
+    },
+    {
+      "text": "the measured attempt to carry a script in the creation transaction;.",
+      "pause": 400
+    },
+    {
+      "text": "reuse by a creator who never published and holds no file of an earlier creator;.",
+      "pause": 400
+    },
+    {
+      "text": "a registry created on live copies completing a registration;.",
+      "pause": 400
+    },
+    {
+      "text": "the instructions and the receipt-computed conformance rows for all of it.",
+      "pause": 400
+    }
+  ],
+  "lean-binding": [
+    {
+      "text": "Lean binding.",
+      "pause": 500
+    },
+    {
+      "text": "Lean is the authority. This ticket adds no Lean statement and changes no on-chain script, hash or wire format. Creation stays bound to the statements issue 742 implements: genesis_inversion, recognition_inversion and the create_journey money statement of the Singular family, and configurationCreate_inversion and configuration_immutable of the open-datum family (Lake projects models/singular-application-held and models/open-datum-application-held). If a measurement shows a statement cannot be met, or a requirement here needs a statement the models lack, the ticket owner files a question with a user story before work on that line continues.",
+      "pause": 400
+    }
+  ],
+  "rulings-in-force": [
+    {
+      "text": "Rulings in force.",
+      "pause": 500
+    },
+    {
+      "text": "Registry identity is the state policy and the state token name (issue 741 decisions). The state script is the state.",
+      "pause": 400
+    },
+    {
+      "text": "validator applied to the application's policy; the application script takes no registry parameter.",
+      "pause": 400
+    },
+    {
+      "text": "The request lifecycle belongs to the application (23 October 2026): no per-registry request script exists on this line.",
+      "pause": 400
+    },
+    {
+      "text": "Roles (issue 767, 28 October 2026): folders and readers are application-neutral; creators and key holders may use the.",
+      "pause": 400
+    },
+    {
+      "text": "application's program. This ticket adds no per-application code to a neutral role.",
+      "pause": 400
+    },
+    {
+      "text": "The provider is the chain entry point (20 October 2026): every chain read goes through the session; a creator works.",
+      "pause": 400
+    },
+    {
+      "text": "from a web page, Koios and a wallet, with no local file of another creator.",
+      "pause": 400
+    },
+    {
+      "text": "Versioning: stay 0.x; no script hash changes in this ticket.",
+      "pause": 400
+    },
+    {
+      "text": "Wallets for any preprod work live in ~/.local/share/singular-demo/preprod/; the default network is the development.",
+      "pause": 400
+    },
+    {
+      "text": "network.",
+      "pause": 400
+    },
+    {
+      "text": "The trie library's proofs are assumed sound.",
+      "pause": 400
+    }
+  ],
+  "pull-requests-and-slices": [
+    {
+      "text": "Pull requests and slices.",
+      "pause": 500
+    },
+    {
+      "text": "Each slice finishes in well under two hours with its own RED evidence and checkpoints; the commit owner may cut a slice smaller, never merge two. If the carrying attempt fits and is adopted, the change of the creation transaction is a fourth pull request and the ticket owner asks the epic owner first, because the receipt shape is shared with issues 743 to 746.",
+      "pause": 400
+    }
+  ],
+  "consumers-a-slice-can-break": [
+    {
+      "text": "Consumers a slice can break.",
+      "pause": 500
+    }
+  ],
+  "seats": [
+    {
+      "text": "Seats.",
+      "pause": 500
+    },
+    {
+      "text": "A ticket owner, a commit owner and a commit auditor, as the operator agreed on 29 October 2026. The auditor is persistent and mute, and answers each checkpoint through the ticket owner. No other seat. A stalled seat is reported; no other model takes its place.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "8548650390ae3c3850d21ea04a072cf505e380ae329b4075ee53a039ea49b2d3"
+  }
+}

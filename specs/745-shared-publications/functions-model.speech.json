@@ -1,0 +1,16 @@
+{
+  "functions-for-creating-registries-on-shared-script-publications": [
+    {
+      "text": "Functions for creating registries on shared script publications.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 745. New and changed signatures only, as proposals the commit owner may rename to the Lean vocabulary before the slice that creates them. Records are in the data model.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "8e08c34b5407a0841ad1be184ccb92835f5c7b1fd87cf77d5770fecf48fc8759"
+  }
+}

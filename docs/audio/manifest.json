@@ -43300,6 +43300,8296 @@
     }
    ]
   },
+  "docs-creation-cost/can-creation-carry-its-scripts-00": {
+   "audio_sha256": "c2aabaa1ddc945d262518c2d351f1f225fc9f2d6cf550b94e899d00da54fd65f",
+   "characters": 31,
+   "cost": 3.069e-05,
+   "duration": 2.2,
+   "index": 0,
+   "key": "b3408fae752c403617d325163c2d44fe5c388a5def12fd4f4645b4dc5ce58258",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 500,
+   "section": "can-creation-carry-its-scripts",
+   "sent_text": "Can creation carry its scripts.",
+   "text": "Can creation carry its scripts.",
+   "words": [
+    {
+     "end": 0.35,
+     "start": 0.175,
+     "text": "Can"
+    },
+    {
+     "end": 0.775,
+     "start": 0.35,
+     "text": "creation"
+    },
+    {
+     "end": 1.062,
+     "start": 0.775,
+     "text": "carry"
+    },
+    {
+     "end": 1.175,
+     "start": 1.062,
+     "text": "its"
+    },
+    {
+     "end": 2.0,
+     "start": 1.175,
+     "text": "scripts"
+    },
+    {
+     "end": 2.2,
+     "start": 2.0,
+     "text": "."
+    }
+   ]
+  },
+  "docs-creation-cost/can-creation-carry-its-scripts-01": {
+   "audio_sha256": "07548338b5305882eeb38b3b5fdb6a7330e8746497f6aa60a8cd28fd9077de43",
+   "characters": 438,
+   "cost": 0.00043361999999999996,
+   "duration": 28.45,
+   "index": 1,
+   "key": "879ba2bbc2c47dcf5c5bc6445804df4cc0841dc0d7ca208333d9ae61ea3c62b2",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 400,
+   "section": "can-creation-carry-its-scripts",
+   "sent_text": "The measuring tool built 5 registry-creation forms with the real genesis and application configuration builders, on one fresh development network with the same frozen protocol parameters as the comparison above. Each form creates a fresh registry with the same configuration; only script placement changes. The normal referenced form is the reference point. These are experiments, and the production command keeps its shared publications.",
+   "text": "The measuring tool built 5 registry-creation forms with the real genesis and application configuration builders, on one fresh development network with the same frozen protocol parameters as the comparison above. Each form creates a fresh registry with the same configuration; only script placement changes. The normal referenced form is the reference point. These are experiments, and the production command keeps its shared publications.",
+   "words": [
+    {
+     "end": 0.35,
+     "start": 0.25,
+     "text": "The"
+    },
+    {
+     "end": 0.837,
+     "start": 0.35,
+     "text": "measuring"
+    },
+    {
+     "end": 1.225,
+     "start": 0.837,
+     "text": "tool"
+    },
+    {
+     "end": 1.525,
+     "start": 1.225,
+     "text": "built"
+    },
+    {
+     "end": 1.95,
+     "start": 1.525,
+     "text": "5"
+    },
+    {
+     "end": 2.963,
+     "start": 1.95,
+     "text": "registry-creation"
+    },
+    {
+     "end": 3.45,
+     "start": 2.963,
+     "text": "forms"
+    },
+    {
+     "end": 3.6,
+     "start": 3.45,
+     "text": "with"
+    },
+    {
+     "end": 3.737,
+     "start": 3.6,
+     "text": "the"
+    },
+    {
+     "end": 4.088,
+     "start": 3.737,
+     "text": "real"
+    },
+    {
+     "end": 4.7,
+     "start": 4.088,
+     "text": "genesis"
+    },
+    {
+     "end": 4.825,
+     "start": 4.7,
+     "text": "and"
+    },
+    {
+     "end": 5.525,
+     "start": 4.825,
+     "text": "application"
+    },
+    {
+     "end": 6.325,
+     "start": 5.525,
+     "text": "configuration"
+    },
+    {
+     "end": 6.975,
+     "start": 6.325,
+     "text": "builders"
+    },
+    {
+     "end": 7.075,
+     "start": 6.975,
+     "text": ","
+    },
+    {
+     "end": 7.287,
+     "start": 7.075,
+     "text": "on"
+    },
+    {
+     "end": 7.65,
+     "start": 7.287,
+     "text": "one"
+    },
+    {
+     "end": 8.0,
+     "start": 7.65,
+     "text": "fresh"
+    },
+    {
+     "end": 8.575,
+     "start": 8.0,
+     "text": "development"
+    },
+    {
+     "end": 9.025,
+     "start": 8.575,
+     "text": "network"
+    },
+    {
+     "end": 9.163,
+     "start": 9.025,
+     "text": "with"
+    },
+    {
+     "end": 9.3,
+     "start": 9.163,
+     "text": "the"
+    },
+    {
+     "end": 9.7,
+     "start": 9.3,
+     "text": "same"
+    },
+    {
+     "end": 10.225,
+     "start": 9.7,
+     "text": "frozen"
+    },
+    {
+     "end": 10.8,
+     "start": 10.225,
+     "text": "protocol"
+    },
+    {
+     "end": 11.55,
+     "start": 10.8,
+     "text": "parameters"
+    },
+    {
+     "end": 11.75,
+     "start": 11.55,
+     "text": "as"
+    },
+    {
+     "end": 11.85,
+     "start": 11.75,
+     "text": "the"
+    },
+    {
+     "end": 12.525,
+     "start": 11.85,
+     "text": "comparison"
+    },
+    {
+     "end": 13.65,
+     "start": 12.525,
+     "text": "above"
+    },
+    {
+     "end": 13.9,
+     "start": 13.65,
+     "text": "."
+    },
+    {
+     "end": 14.3,
+     "start": 14.1,
+     "text": "Each"
+    },
+    {
+     "end": 14.6,
+     "start": 14.3,
+     "text": "form"
+    },
+    {
+     "end": 14.962,
+     "start": 14.6,
+     "text": "creates"
+    },
+    {
+     "end": 15.062,
+     "start": 14.962,
+     "text": "a"
+    },
+    {
+     "end": 15.35,
+     "start": 15.062,
+     "text": "fresh"
+    },
+    {
+     "end": 15.9,
+     "start": 15.35,
+     "text": "registry"
+    },
+    {
+     "end": 16.013,
+     "start": 15.9,
+     "text": "with"
+    },
+    {
+     "end": 16.138,
+     "start": 16.013,
+     "text": "the"
+    },
+    {
+     "end": 16.45,
+     "start": 16.138,
+     "text": "same"
+    },
+    {
+     "end": 17.875,
+     "start": 16.45,
+     "text": "configuration"
+    },
+    {
+     "end": 18.05,
+     "start": 17.875,
+     "text": ";"
+    },
+    {
+     "end": 18.587,
+     "start": 18.25,
+     "text": "only"
+    },
+    {
+     "end": 19.0,
+     "start": 18.587,
+     "text": "script"
+    },
+    {
+     "end": 19.45,
+     "start": 19.0,
+     "text": "placement"
+    },
+    {
+     "end": 20.15,
+     "start": 19.45,
+     "text": "changes"
+    },
+    {
+     "end": 20.25,
+     "start": 20.15,
+     "text": "."
+    },
+    {
+     "end": 20.388,
+     "start": 20.25,
+     "text": "The"
+    },
+    {
+     "end": 20.775,
+     "start": 20.388,
+     "text": "normal"
+    },
+    {
+     "end": 21.3,
+     "start": 20.775,
+     "text": "referenced"
+    },
+    {
+     "end": 21.712,
+     "start": 21.3,
+     "text": "form"
+    },
+    {
+     "end": 21.875,
+     "start": 21.712,
+     "text": "is"
+    },
+    {
+     "end": 21.975,
+     "start": 21.875,
+     "text": "the"
+    },
+    {
+     "end": 22.45,
+     "start": 21.975,
+     "text": "reference"
+    },
+    {
+     "end": 23.3,
+     "start": 22.45,
+     "text": "point"
+    },
+    {
+     "end": 23.5,
+     "start": 23.3,
+     "text": "."
+    },
+    {
+     "end": 23.95,
+     "start": 23.7,
+     "text": "These"
+    },
+    {
+     "end": 24.075,
+     "start": 23.95,
+     "text": "are"
+    },
+    {
+     "end": 24.85,
+     "start": 24.075,
+     "text": "experiments"
+    },
+    {
+     "end": 24.9,
+     "start": 24.85,
+     "text": ","
+    },
+    {
+     "end": 25.013,
+     "start": 24.9,
+     "text": "and"
+    },
+    {
+     "end": 25.1,
+     "start": 25.013,
+     "text": "the"
+    },
+    {
+     "end": 25.625,
+     "start": 25.1,
+     "text": "production"
+    },
+    {
+     "end": 26.112,
+     "start": 25.625,
+     "text": "command"
+    },
+    {
+     "end": 26.425,
+     "start": 26.112,
+     "text": "keeps"
+    },
+    {
+     "end": 26.612,
+     "start": 26.425,
+     "text": "its"
+    },
+    {
+     "end": 26.9,
+     "start": 26.612,
+     "text": "shared"
+    },
+    {
+     "end": 28.25,
+     "start": 26.9,
+     "text": "publications"
+    },
+    {
+     "end": 28.45,
+     "start": 28.25,
+     "text": "."
+    }
+   ]
+  },
+  "docs-creation-cost/can-creation-carry-its-scripts-02": {
+   "audio_sha256": "593c22ef4212c3f0c9f83e65dcf31a3af52ea20407010e609282177790eeee9e",
+   "characters": 259,
+   "cost": 0.00025641,
+   "duration": 17.3,
+   "index": 2,
+   "key": "69b2e08d37f17921397660238e07502b77605a2968cbb47449d64bc53b0de483",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 400,
+   "section": "can-creation-carry-its-scripts",
+   "sent_text": "Both live copies were available for this controlled experiment. A form carrying a script deliberately ignores that script's live copy. A form creating reference outputs also carries witnesses: a transaction cannot read its own new outputs as reference inputs.",
+   "text": "Both live copies were available for this controlled experiment. A form carrying a script deliberately ignores that script's live copy. A form creating reference outputs also carries witnesses: a transaction cannot read its own new outputs as reference inputs.",
+   "words": [
+    {
+     "end": 0.45,
+     "start": 0.175,
+     "text": "Both"
+    },
+    {
+     "end": 0.725,
+     "start": 0.45,
+     "text": "live"
+    },
+    {
+     "end": 1.2,
+     "start": 0.725,
+     "text": "copies"
+    },
+    {
+     "end": 1.325,
+     "start": 1.2,
+     "text": "were"
+    },
+    {
+     "end": 1.875,
+     "start": 1.325,
+     "text": "available"
+    },
+    {
+     "end": 1.987,
+     "start": 1.875,
+     "text": "for"
+    },
+    {
+     "end": 2.175,
+     "start": 1.987,
+     "text": "this"
+    },
+    {
+     "end": 2.662,
+     "start": 2.175,
+     "text": "controlled"
+    },
+    {
+     "end": 3.775,
+     "start": 2.662,
+     "text": "experiment"
+    },
+    {
+     "end": 3.975,
+     "start": 3.775,
+     "text": "."
+    },
+    {
+     "end": 4.262,
+     "start": 4.175,
+     "text": "A"
+    },
+    {
+     "end": 4.6,
+     "start": 4.262,
+     "text": "form"
+    },
+    {
+     "end": 4.988,
+     "start": 4.6,
+     "text": "carrying"
+    },
+    {
+     "end": 5.05,
+     "start": 4.988,
+     "text": "a"
+    },
+    {
+     "end": 5.488,
+     "start": 5.05,
+     "text": "script"
+    },
+    {
+     "end": 6.125,
+     "start": 5.488,
+     "text": "deliberately"
+    },
+    {
+     "end": 6.625,
+     "start": 6.125,
+     "text": "ignores"
+    },
+    {
+     "end": 6.825,
+     "start": 6.625,
+     "text": "that"
+    },
+    {
+     "end": 7.225,
+     "start": 6.825,
+     "text": "script's"
+    },
+    {
+     "end": 7.5,
+     "start": 7.225,
+     "text": "live"
+    },
+    {
+     "end": 8.425,
+     "start": 7.5,
+     "text": "copy"
+    },
+    {
+     "end": 8.65,
+     "start": 8.425,
+     "text": "."
+    },
+    {
+     "end": 8.938,
+     "start": 8.85,
+     "text": "A"
+    },
+    {
+     "end": 9.25,
+     "start": 8.938,
+     "text": "form"
+    },
+    {
+     "end": 9.675,
+     "start": 9.25,
+     "text": "creating"
+    },
+    {
+     "end": 10.225,
+     "start": 9.675,
+     "text": "reference"
+    },
+    {
+     "end": 10.7,
+     "start": 10.225,
+     "text": "outputs"
+    },
+    {
+     "end": 11.05,
+     "start": 10.7,
+     "text": "also"
+    },
+    {
+     "end": 11.45,
+     "start": 11.05,
+     "text": "carries"
+    },
+    {
+     "end": 12.6,
+     "start": 11.45,
+     "text": "witnesses"
+    },
+    {
+     "end": 12.8,
+     "start": 12.6,
+     "text": ":"
+    },
+    {
+     "end": 13.075,
+     "start": 13.0,
+     "text": "a"
+    },
+    {
+     "end": 13.775,
+     "start": 13.075,
+     "text": "transaction"
+    },
+    {
+     "end": 14.125,
+     "start": 13.775,
+     "text": "cannot"
+    },
+    {
+     "end": 14.312,
+     "start": 14.125,
+     "text": "read"
+    },
+    {
+     "end": 14.475,
+     "start": 14.312,
+     "text": "its"
+    },
+    {
+     "end": 14.725,
+     "start": 14.475,
+     "text": "own"
+    },
+    {
+     "end": 14.9,
+     "start": 14.725,
+     "text": "new"
+    },
+    {
+     "end": 15.462,
+     "start": 14.9,
+     "text": "outputs"
+    },
+    {
+     "end": 15.625,
+     "start": 15.462,
+     "text": "as"
+    },
+    {
+     "end": 16.075,
+     "start": 15.625,
+     "text": "reference"
+    },
+    {
+     "end": 17.1,
+     "start": 16.075,
+     "text": "inputs"
+    },
+    {
+     "end": 17.3,
+     "start": 17.1,
+     "text": "."
+    }
+   ]
+  },
+  "docs-creation-cost/can-creation-carry-its-scripts-03": {
+   "audio_sha256": "11ec0e3828aa34e4417bd12324f623f352bd751e11b55fb97633e4f2ead3856c",
+   "characters": 206,
+   "cost": 0.00020394,
+   "duration": 16.425,
+   "index": 3,
+   "key": "38ce909b4adf5be593f94b6331311302ff12048ab210538837c65c4d5df4d713",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 400,
+   "section": "can-creation-carry-its-scripts",
+   "sent_text": "The state-carried form has 8764 complete signed bytes and the application-carried form has 10821. The node accepted and confirmed both mixed forms. Each still needs the other script's live reference output.",
+   "text": "The state-carried form has 8764 complete signed bytes and the application-carried form has 10821. The node accepted and confirmed both mixed forms. Each still needs the other script's live reference output.",
+   "words": [
+    {
+     "end": 0.325,
+     "start": 0.225,
+     "text": "The"
+    },
+    {
+     "end": 1.013,
+     "start": 0.325,
+     "text": "state-carried"
+    },
+    {
+     "end": 1.375,
+     "start": 1.013,
+     "text": "form"
+    },
+    {
+     "end": 1.612,
+     "start": 1.375,
+     "text": "has"
+    },
+    {
+     "end": 3.1,
+     "start": 1.612,
+     "text": "8764"
+    },
+    {
+     "end": 3.588,
+     "start": 3.1,
+     "text": "complete"
+    },
+    {
+     "end": 3.975,
+     "start": 3.588,
+     "text": "signed"
+    },
+    {
+     "end": 4.463,
+     "start": 3.975,
+     "text": "bytes"
+    },
+    {
+     "end": 4.588,
+     "start": 4.463,
+     "text": "and"
+    },
+    {
+     "end": 4.675,
+     "start": 4.588,
+     "text": "the"
+    },
+    {
+     "end": 5.713,
+     "start": 4.675,
+     "text": "application-carried"
+    },
+    {
+     "end": 6.1,
+     "start": 5.713,
+     "text": "form"
+    },
+    {
+     "end": 6.387,
+     "start": 6.1,
+     "text": "has"
+    },
+    {
+     "end": 8.9,
+     "start": 6.387,
+     "text": "10821"
+    },
+    {
+     "end": 9.125,
+     "start": 8.9,
+     "text": "."
+    },
+    {
+     "end": 9.425,
+     "start": 9.325,
+     "text": "The"
+    },
+    {
+     "end": 9.775,
+     "start": 9.425,
+     "text": "node"
+    },
+    {
+     "end": 10.375,
+     "start": 9.775,
+     "text": "accepted"
+    },
+    {
+     "end": 10.5,
+     "start": 10.375,
+     "text": "and"
+    },
+    {
+     "end": 11.113,
+     "start": 10.5,
+     "text": "confirmed"
+    },
+    {
+     "end": 11.462,
+     "start": 11.113,
+     "text": "both"
+    },
+    {
+     "end": 11.812,
+     "start": 11.462,
+     "text": "mixed"
+    },
+    {
+     "end": 12.5,
+     "start": 11.812,
+     "text": "forms"
+    },
+    {
+     "end": 12.637,
+     "start": 12.5,
+     "text": "."
+    },
+    {
+     "end": 12.9,
+     "start": 12.637,
+     "text": "Each"
+    },
+    {
+     "end": 13.2,
+     "start": 12.9,
+     "text": "still"
+    },
+    {
+     "end": 13.438,
+     "start": 13.2,
+     "text": "needs"
+    },
+    {
+     "end": 13.55,
+     "start": 13.438,
+     "text": "the"
+    },
+    {
+     "end": 13.85,
+     "start": 13.55,
+     "text": "other"
+    },
+    {
+     "end": 14.288,
+     "start": 13.85,
+     "text": "script's"
+    },
+    {
+     "end": 14.625,
+     "start": 14.288,
+     "text": "live"
+    },
+    {
+     "end": 15.1,
+     "start": 14.625,
+     "text": "reference"
+    },
+    {
+     "end": 16.2,
+     "start": 15.1,
+     "text": "output"
+    },
+    {
+     "end": 16.425,
+     "start": 16.2,
+     "text": "."
+    }
+   ]
+  },
+  "docs-creation-cost/can-creation-carry-its-scripts-04": {
+   "audio_sha256": "24342917b1d8a3d177293098ba8e01486e47ea183d48f5929380549dfecd8940",
+   "characters": 409,
+   "cost": 0.00040490999999999997,
+   "duration": 37.325,
+   "index": 4,
+   "key": "a89e65edbed8bfcf8061d0274c5b8689a6ed08d42800d4247cfa54c6fb1c23b3",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 400,
+   "section": "can-creation-carry-its-scripts",
+   "sent_text": "Carrying both scripts in witnesses has 18567 complete signed bytes; carrying them in witnesses and new reference outputs has 36292. The node refused both for maximum transaction size: it counts 18566 and 36291 bytes respectively, against a limit of 16384. The complete signed transaction length and the length the ledger counts are different figures; the ledger count here is one byte less. Both appear below.",
+   "text": "Carrying both scripts in witnesses has 18567 complete signed bytes; carrying them in witnesses and new reference outputs has 36292. The node refused both for maximum transaction size: it counts 18566 and 36291 bytes respectively, against a limit of 16384. The complete signed transaction length and the length the ledger counts are different figures; the ledger count here is one byte less. Both appear below.",
+   "words": [
+    {
+     "end": 0.625,
+     "start": 0.2,
+     "text": "Carrying"
+    },
+    {
+     "end": 0.9,
+     "start": 0.625,
+     "text": "both"
+    },
+    {
+     "end": 1.3,
+     "start": 0.9,
+     "text": "scripts"
+    },
+    {
+     "end": 1.45,
+     "start": 1.3,
+     "text": "in"
+    },
+    {
+     "end": 2.025,
+     "start": 1.45,
+     "text": "witnesses"
+    },
+    {
+     "end": 2.312,
+     "start": 2.025,
+     "text": "has"
+    },
+    {
+     "end": 4.625,
+     "start": 2.312,
+     "text": "18567"
+    },
+    {
+     "end": 5.088,
+     "start": 4.625,
+     "text": "complete"
+    },
+    {
+     "end": 5.4,
+     "start": 5.088,
+     "text": "signed"
+    },
+    {
+     "end": 6.4,
+     "start": 5.4,
+     "text": "bytes"
+    },
+    {
+     "end": 6.6,
+     "start": 6.4,
+     "text": ";"
+    },
+    {
+     "end": 7.225,
+     "start": 6.8,
+     "text": "carrying"
+    },
+    {
+     "end": 7.45,
+     "start": 7.225,
+     "text": "them"
+    },
+    {
+     "end": 7.6,
+     "start": 7.45,
+     "text": "in"
+    },
+    {
+     "end": 8.262,
+     "start": 7.6,
+     "text": "witnesses"
+    },
+    {
+     "end": 8.413,
+     "start": 8.262,
+     "text": "and"
+    },
+    {
+     "end": 8.65,
+     "start": 8.413,
+     "text": "new"
+    },
+    {
+     "end": 9.1,
+     "start": 8.65,
+     "text": "reference"
+    },
+    {
+     "end": 9.65,
+     "start": 9.1,
+     "text": "outputs"
+    },
+    {
+     "end": 9.938,
+     "start": 9.65,
+     "text": "has"
+    },
+    {
+     "end": 12.875,
+     "start": 9.938,
+     "text": "36292"
+    },
+    {
+     "end": 13.15,
+     "start": 12.875,
+     "text": "."
+    },
+    {
+     "end": 13.4,
+     "start": 13.325,
+     "text": "The"
+    },
+    {
+     "end": 13.637,
+     "start": 13.4,
+     "text": "node"
+    },
+    {
+     "end": 14.05,
+     "start": 13.637,
+     "text": "refused"
+    },
+    {
+     "end": 14.375,
+     "start": 14.05,
+     "text": "both"
+    },
+    {
+     "end": 14.5,
+     "start": 14.375,
+     "text": "for"
+    },
+    {
+     "end": 15.0,
+     "start": 14.5,
+     "text": "maximum"
+    },
+    {
+     "end": 15.65,
+     "start": 15.0,
+     "text": "transaction"
+    },
+    {
+     "end": 16.5,
+     "start": 15.65,
+     "text": "size"
+    },
+    {
+     "end": 16.7,
+     "start": 16.5,
+     "text": ":"
+    },
+    {
+     "end": 17.05,
+     "start": 16.95,
+     "text": "it"
+    },
+    {
+     "end": 17.388,
+     "start": 17.05,
+     "text": "counts"
+    },
+    {
+     "end": 19.737,
+     "start": 17.388,
+     "text": "18566"
+    },
+    {
+     "end": 19.925,
+     "start": 19.737,
+     "text": "and"
+    },
+    {
+     "end": 22.337,
+     "start": 19.925,
+     "text": "36291"
+    },
+    {
+     "end": 22.725,
+     "start": 22.337,
+     "text": "bytes"
+    },
+    {
+     "end": 23.625,
+     "start": 22.725,
+     "text": "respectively"
+    },
+    {
+     "end": 23.763,
+     "start": 23.625,
+     "text": ","
+    },
+    {
+     "end": 24.112,
+     "start": 23.763,
+     "text": "against"
+    },
+    {
+     "end": 24.212,
+     "start": 24.112,
+     "text": "a"
+    },
+    {
+     "end": 24.625,
+     "start": 24.212,
+     "text": "limit"
+    },
+    {
+     "end": 24.788,
+     "start": 24.625,
+     "text": "of"
+    },
+    {
+     "end": 27.725,
+     "start": 24.788,
+     "text": "16384"
+    },
+    {
+     "end": 27.975,
+     "start": 27.725,
+     "text": "."
+    },
+    {
+     "end": 28.225,
+     "start": 28.15,
+     "text": "The"
+    },
+    {
+     "end": 28.675,
+     "start": 28.225,
+     "text": "complete"
+    },
+    {
+     "end": 28.975,
+     "start": 28.675,
+     "text": "signed"
+    },
+    {
+     "end": 29.65,
+     "start": 28.975,
+     "text": "transaction"
+    },
+    {
+     "end": 30.1,
+     "start": 29.65,
+     "text": "length"
+    },
+    {
+     "end": 30.237,
+     "start": 30.1,
+     "text": "and"
+    },
+    {
+     "end": 30.35,
+     "start": 30.237,
+     "text": "the"
+    },
+    {
+     "end": 30.725,
+     "start": 30.35,
+     "text": "length"
+    },
+    {
+     "end": 30.85,
+     "start": 30.725,
+     "text": "the"
+    },
+    {
+     "end": 31.175,
+     "start": 30.85,
+     "text": "ledger"
+    },
+    {
+     "end": 31.6,
+     "start": 31.175,
+     "text": "counts"
+    },
+    {
+     "end": 31.725,
+     "start": 31.6,
+     "text": "are"
+    },
+    {
+     "end": 32.025,
+     "start": 31.725,
+     "text": "different"
+    },
+    {
+     "end": 33.075,
+     "start": 32.025,
+     "text": "figures"
+    },
+    {
+     "end": 33.275,
+     "start": 33.075,
+     "text": ";"
+    },
+    {
+     "end": 33.55,
+     "start": 33.45,
+     "text": "the"
+    },
+    {
+     "end": 33.875,
+     "start": 33.55,
+     "text": "ledger"
+    },
+    {
+     "end": 34.15,
+     "start": 33.875,
+     "text": "count"
+    },
+    {
+     "end": 34.375,
+     "start": 34.15,
+     "text": "here"
+    },
+    {
+     "end": 34.525,
+     "start": 34.375,
+     "text": "is"
+    },
+    {
+     "end": 34.775,
+     "start": 34.525,
+     "text": "one"
+    },
+    {
+     "end": 35.05,
+     "start": 34.775,
+     "text": "byte"
+    },
+    {
+     "end": 35.45,
+     "start": 35.05,
+     "text": "less"
+    },
+    {
+     "end": 35.562,
+     "start": 35.45,
+     "text": "."
+    },
+    {
+     "end": 35.875,
+     "start": 35.562,
+     "text": "Both"
+    },
+    {
+     "end": 36.2,
+     "start": 35.875,
+     "text": "appear"
+    },
+    {
+     "end": 37.1,
+     "start": 36.2,
+     "text": "below"
+    },
+    {
+     "end": 37.325,
+     "start": 37.1,
+     "text": "."
+    }
+   ]
+  },
+  "docs-creation-cost/can-creation-carry-its-scripts-05": {
+   "audio_sha256": "f104386b7410aef8c0f77e95be99b21d03cf54e132c7bc3df7507e411035a399",
+   "characters": 474,
+   "cost": 0.00046925999999999994,
+   "duration": 32.8,
+   "index": 5,
+   "key": "3e6f010384b7116d9eaa1d8d22d107cc174c05531aa99de86286791d40690e92",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 400,
+   "section": "can-creation-carry-its-scripts",
+   "sent_text": "A fit requires successful execution, size within the ledger limit, and the development node's acceptance and confirmation. The execution figures are the ledger evaluator's final results on the actual chain inputs and equal the signed execution budgets. The oversized forms were evaluated locally, then refused by the node's size check before its script-execution phase; their execution figures do not claim node execution. A size comparison alone is never reported as a fit.",
+   "text": "A fit requires successful execution, size within the ledger limit, and the development node's acceptance and confirmation. The execution figures are the ledger evaluator's final results on the actual chain inputs and equal the signed execution budgets. The oversized forms were evaluated locally, then refused by the node's size check before its script-execution phase; their execution figures do not claim node execution. A size comparison alone is never reported as a fit.",
+   "words": [
+    {
+     "end": 0.325,
+     "start": 0.225,
+     "text": "A"
+    },
+    {
+     "end": 0.575,
+     "start": 0.325,
+     "text": "fit"
+    },
+    {
+     "end": 1.15,
+     "start": 0.575,
+     "text": "requires"
+    },
+    {
+     "end": 1.775,
+     "start": 1.15,
+     "text": "successful"
+    },
+    {
+     "end": 2.65,
+     "start": 1.775,
+     "text": "execution"
+    },
+    {
+     "end": 2.763,
+     "start": 2.65,
+     "text": ","
+    },
+    {
+     "end": 3.175,
+     "start": 2.763,
+     "text": "size"
+    },
+    {
+     "end": 3.5,
+     "start": 3.175,
+     "text": "within"
+    },
+    {
+     "end": 3.625,
+     "start": 3.5,
+     "text": "the"
+    },
+    {
+     "end": 3.95,
+     "start": 3.625,
+     "text": "ledger"
+    },
+    {
+     "end": 4.375,
+     "start": 3.95,
+     "text": "limit"
+    },
+    {
+     "end": 4.45,
+     "start": 4.375,
+     "text": ","
+    },
+    {
+     "end": 4.562,
+     "start": 4.45,
+     "text": "and"
+    },
+    {
+     "end": 4.65,
+     "start": 4.562,
+     "text": "the"
+    },
+    {
+     "end": 5.275,
+     "start": 4.65,
+     "text": "development"
+    },
+    {
+     "end": 5.65,
+     "start": 5.275,
+     "text": "node's"
+    },
+    {
+     "end": 6.438,
+     "start": 5.65,
+     "text": "acceptance"
+    },
+    {
+     "end": 6.575,
+     "start": 6.438,
+     "text": "and"
+    },
+    {
+     "end": 8.025,
+     "start": 6.575,
+     "text": "confirmation"
+    },
+    {
+     "end": 8.225,
+     "start": 8.025,
+     "text": "."
+    },
+    {
+     "end": 8.55,
+     "start": 8.425,
+     "text": "The"
+    },
+    {
+     "end": 9.25,
+     "start": 8.55,
+     "text": "execution"
+    },
+    {
+     "end": 9.762,
+     "start": 9.25,
+     "text": "figures"
+    },
+    {
+     "end": 9.925,
+     "start": 9.762,
+     "text": "are"
+    },
+    {
+     "end": 10.062,
+     "start": 9.925,
+     "text": "the"
+    },
+    {
+     "end": 10.4,
+     "start": 10.062,
+     "text": "ledger"
+    },
+    {
+     "end": 11.212,
+     "start": 10.4,
+     "text": "evaluator's"
+    },
+    {
+     "end": 11.65,
+     "start": 11.212,
+     "text": "final"
+    },
+    {
+     "end": 12.137,
+     "start": 11.65,
+     "text": "results"
+    },
+    {
+     "end": 12.262,
+     "start": 12.137,
+     "text": "on"
+    },
+    {
+     "end": 12.387,
+     "start": 12.262,
+     "text": "the"
+    },
+    {
+     "end": 12.863,
+     "start": 12.387,
+     "text": "actual"
+    },
+    {
+     "end": 13.2,
+     "start": 12.863,
+     "text": "chain"
+    },
+    {
+     "end": 13.863,
+     "start": 13.2,
+     "text": "inputs"
+    },
+    {
+     "end": 14.038,
+     "start": 13.863,
+     "text": "and"
+    },
+    {
+     "end": 14.4,
+     "start": 14.038,
+     "text": "equal"
+    },
+    {
+     "end": 14.538,
+     "start": 14.4,
+     "text": "the"
+    },
+    {
+     "end": 15.0,
+     "start": 14.538,
+     "text": "signed"
+    },
+    {
+     "end": 15.675,
+     "start": 15.0,
+     "text": "execution"
+    },
+    {
+     "end": 16.8,
+     "start": 15.675,
+     "text": "budgets"
+    },
+    {
+     "end": 17.0,
+     "start": 16.8,
+     "text": "."
+    },
+    {
+     "end": 17.337,
+     "start": 17.2,
+     "text": "The"
+    },
+    {
+     "end": 18.062,
+     "start": 17.337,
+     "text": "oversized"
+    },
+    {
+     "end": 18.55,
+     "start": 18.062,
+     "text": "forms"
+    },
+    {
+     "end": 18.725,
+     "start": 18.55,
+     "text": "were"
+    },
+    {
+     "end": 19.45,
+     "start": 18.725,
+     "text": "evaluated"
+    },
+    {
+     "end": 20.1,
+     "start": 19.45,
+     "text": "locally"
+    },
+    {
+     "end": 20.2,
+     "start": 20.1,
+     "text": ","
+    },
+    {
+     "end": 20.425,
+     "start": 20.2,
+     "text": "then"
+    },
+    {
+     "end": 21.025,
+     "start": 20.425,
+     "text": "refused"
+    },
+    {
+     "end": 21.2,
+     "start": 21.025,
+     "text": "by"
+    },
+    {
+     "end": 21.325,
+     "start": 21.2,
+     "text": "the"
+    },
+    {
+     "end": 21.737,
+     "start": 21.325,
+     "text": "node's"
+    },
+    {
+     "end": 22.125,
+     "start": 21.737,
+     "text": "size"
+    },
+    {
+     "end": 22.45,
+     "start": 22.125,
+     "text": "check"
+    },
+    {
+     "end": 22.825,
+     "start": 22.45,
+     "text": "before"
+    },
+    {
+     "end": 22.975,
+     "start": 22.825,
+     "text": "its"
+    },
+    {
+     "end": 23.925,
+     "start": 22.975,
+     "text": "script-execution"
+    },
+    {
+     "end": 25.025,
+     "start": 23.925,
+     "text": "phase"
+    },
+    {
+     "end": 25.225,
+     "start": 25.025,
+     "text": ";"
+    },
+    {
+     "end": 25.55,
+     "start": 25.4,
+     "text": "their"
+    },
+    {
+     "end": 26.125,
+     "start": 25.55,
+     "text": "execution"
+    },
+    {
+     "end": 26.575,
+     "start": 26.125,
+     "text": "figures"
+    },
+    {
+     "end": 26.688,
+     "start": 26.575,
+     "text": "do"
+    },
+    {
+     "end": 26.9,
+     "start": 26.688,
+     "text": "not"
+    },
+    {
+     "end": 27.25,
+     "start": 26.9,
+     "text": "claim"
+    },
+    {
+     "end": 27.513,
+     "start": 27.25,
+     "text": "node"
+    },
+    {
+     "end": 28.725,
+     "start": 27.513,
+     "text": "execution"
+    },
+    {
+     "end": 28.925,
+     "start": 28.725,
+     "text": "."
+    },
+    {
+     "end": 29.2,
+     "start": 29.125,
+     "text": "A"
+    },
+    {
+     "end": 29.525,
+     "start": 29.2,
+     "text": "size"
+    },
+    {
+     "end": 30.075,
+     "start": 29.525,
+     "text": "comparison"
+    },
+    {
+     "end": 30.55,
+     "start": 30.075,
+     "text": "alone"
+    },
+    {
+     "end": 30.737,
+     "start": 30.55,
+     "text": "is"
+    },
+    {
+     "end": 31.05,
+     "start": 30.737,
+     "text": "never"
+    },
+    {
+     "end": 31.575,
+     "start": 31.05,
+     "text": "reported"
+    },
+    {
+     "end": 31.688,
+     "start": 31.575,
+     "text": "as"
+    },
+    {
+     "end": 31.8,
+     "start": 31.688,
+     "text": "a"
+    },
+    {
+     "end": 32.6,
+     "start": 31.8,
+     "text": "fit"
+    },
+    {
+     "end": 32.8,
+     "start": 32.6,
+     "text": "."
+    }
+   ]
+  },
+  "docs-creation-cost/candidate-design-00": {
+   "audio_sha256": "75d0ba60dd46dd1d9afde2f3baac35d26f55d07508feee08d8dbde9b224739c1",
+   "characters": 17,
+   "cost": 1.683e-05,
+   "duration": 1.575,
+   "index": 0,
+   "key": "20695be7e02c3cbe1fd757847564b0ef0d67fcb339c7e4683e37be5d8bfc658c",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 500,
+   "section": "candidate-design",
+   "sent_text": "Candidate design.",
+   "text": "Candidate design.",
+   "words": [
+    {
+     "end": 0.538,
+     "start": 0.175,
+     "text": "Candidate"
+    },
+    {
+     "end": 1.375,
+     "start": 0.538,
+     "text": "design"
+    },
+    {
+     "end": 1.575,
+     "start": 1.375,
+     "text": "."
+    }
+   ]
+  },
+  "docs-creation-cost/candidate-design-01": {
+   "audio_sha256": "3323fe131fef6d9f47aab79cd2a5283968e7ac0c02bebaddd49a5d85fff753a7",
+   "characters": 366,
+   "cost": 0.00036233999999999995,
+   "duration": 50.275,
+   "index": 1,
+   "key": "ca0c3d8afe2ea0bea83b301d1cdc335c0e42b51a8ada9da311162d1df2d68f80",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 400,
+   "section": "candidate-design",
+   "sent_text": "Release: open-datum 0.17.0 (commit e d e 9 f 7 9 9 2 c 4 9 3 6 4 7 4 d 3 e d 8 6 f 8 9 0 f f a 2 e 6 f d d f 6 2 5). Revision: e d e 9 f 7 9 9 2 c 4 9 3 6 4 7 4 d 3 e d 8 6 f 8 9 0 f f a 2 e 6 f d d f 6 2 5. Deployment blueprint SHA-256: 6 a d 1 6 a 3 1 9 4 c f f 5 1 f 0 6 0 0 e d f e 0 e b 9 5 9 1 7 e d 0 6 7 9 6 9 3 e 1 e 4 b 6 f 3 3 2 a d 1 0 7 2 c 0 7 d 3 d 1.",
+   "text": "Release: open-datum 0.17.0 (commit ede9f7992c4936474d3ed86f890ffa2e6fddf625). Revision: ede9f7992c4936474d3ed86f890ffa2e6fddf625. Deployment blueprint SHA-256: 6ad16a3194cff51f0600edfe0eb95917ed0679693e1e4b6f332ad1072c07d3d1.",
+   "words": [
+    {
+     "end": 1.0,
+     "start": 0.2,
+     "text": "Release"
+    },
+    {
+     "end": 1.225,
+     "start": 1.0,
+     "text": ":"
+    },
+    {
+     "end": 2.138,
+     "start": 1.45,
+     "text": "open-datum"
+    },
+    {
+     "end": 2.213,
+     "start": 2.138,
+     "text": "0.17.0"
+    },
+    {
+     "end": 2.275,
+     "start": 2.213,
+     "text": "("
+    },
+    {
+     "end": 2.625,
+     "start": 2.275,
+     "text": "commit"
+    },
+    {
+     "end": 2.812,
+     "start": 2.625,
+     "text": "e"
+    },
+    {
+     "end": 3.075,
+     "start": 2.812,
+     "text": "d"
+    },
+    {
+     "end": 3.225,
+     "start": 3.075,
+     "text": "e"
+    },
+    {
+     "end": 3.675,
+     "start": 3.225,
+     "text": "9"
+    },
+    {
+     "end": 3.888,
+     "start": 3.675,
+     "text": "f"
+    },
+    {
+     "end": 4.225,
+     "start": 3.888,
+     "text": "7"
+    },
+    {
+     "end": 4.475,
+     "start": 4.225,
+     "text": "9"
+    },
+    {
+     "end": 4.762,
+     "start": 4.475,
+     "text": "9"
+    },
+    {
+     "end": 4.988,
+     "start": 4.762,
+     "text": "2"
+    },
+    {
+     "end": 5.262,
+     "start": 4.988,
+     "text": "c"
+    },
+    {
+     "end": 5.525,
+     "start": 5.262,
+     "text": "4"
+    },
+    {
+     "end": 5.863,
+     "start": 5.525,
+     "text": "9"
+    },
+    {
+     "end": 6.137,
+     "start": 5.863,
+     "text": "3"
+    },
+    {
+     "end": 6.463,
+     "start": 6.137,
+     "text": "6"
+    },
+    {
+     "end": 6.762,
+     "start": 6.463,
+     "text": "4"
+    },
+    {
+     "end": 7.137,
+     "start": 6.762,
+     "text": "7"
+    },
+    {
+     "end": 7.412,
+     "start": 7.137,
+     "text": "4"
+    },
+    {
+     "end": 7.675,
+     "start": 7.412,
+     "text": "d"
+    },
+    {
+     "end": 8.062,
+     "start": 7.675,
+     "text": "3"
+    },
+    {
+     "end": 8.238,
+     "start": 8.062,
+     "text": "e"
+    },
+    {
+     "end": 8.512,
+     "start": 8.238,
+     "text": "d"
+    },
+    {
+     "end": 8.85,
+     "start": 8.512,
+     "text": "8"
+    },
+    {
+     "end": 9.175,
+     "start": 8.85,
+     "text": "6"
+    },
+    {
+     "end": 9.375,
+     "start": 9.175,
+     "text": "f"
+    },
+    {
+     "end": 9.625,
+     "start": 9.375,
+     "text": "8"
+    },
+    {
+     "end": 10.038,
+     "start": 9.625,
+     "text": "9"
+    },
+    {
+     "end": 10.462,
+     "start": 10.038,
+     "text": "0"
+    },
+    {
+     "end": 10.675,
+     "start": 10.462,
+     "text": "f"
+    },
+    {
+     "end": 10.875,
+     "start": 10.675,
+     "text": "f"
+    },
+    {
+     "end": 11.0,
+     "start": 10.875,
+     "text": "a"
+    },
+    {
+     "end": 11.387,
+     "start": 11.0,
+     "text": "2"
+    },
+    {
+     "end": 11.6,
+     "start": 11.387,
+     "text": "e"
+    },
+    {
+     "end": 11.925,
+     "start": 11.6,
+     "text": "6"
+    },
+    {
+     "end": 12.137,
+     "start": 11.925,
+     "text": "f"
+    },
+    {
+     "end": 12.337,
+     "start": 12.137,
+     "text": "d"
+    },
+    {
+     "end": 12.613,
+     "start": 12.337,
+     "text": "d"
+    },
+    {
+     "end": 12.925,
+     "start": 12.613,
+     "text": "f"
+    },
+    {
+     "end": 13.25,
+     "start": 12.925,
+     "text": "6"
+    },
+    {
+     "end": 13.462,
+     "start": 13.25,
+     "text": "2"
+    },
+    {
+     "end": 14.425,
+     "start": 13.462,
+     "text": "5"
+    },
+    {
+     "end": 15.025,
+     "start": 14.425,
+     "text": ")"
+    },
+    {
+     "end": 15.125,
+     "start": 15.025,
+     "text": "."
+    },
+    {
+     "end": 15.9,
+     "start": 15.375,
+     "text": "Revision"
+    },
+    {
+     "end": 15.975,
+     "start": 15.9,
+     "text": ":"
+    },
+    {
+     "end": 16.138,
+     "start": 15.975,
+     "text": "e"
+    },
+    {
+     "end": 16.375,
+     "start": 16.138,
+     "text": "d"
+    },
+    {
+     "end": 16.525,
+     "start": 16.375,
+     "text": "e"
+    },
+    {
+     "end": 16.975,
+     "start": 16.525,
+     "text": "9"
+    },
+    {
+     "end": 17.188,
+     "start": 16.975,
+     "text": "f"
+    },
+    {
+     "end": 17.525,
+     "start": 17.188,
+     "text": "7"
+    },
+    {
+     "end": 17.8,
+     "start": 17.525,
+     "text": "9"
+    },
+    {
+     "end": 18.112,
+     "start": 17.8,
+     "text": "9"
+    },
+    {
+     "end": 18.4,
+     "start": 18.112,
+     "text": "2"
+    },
+    {
+     "end": 18.688,
+     "start": 18.4,
+     "text": "c"
+    },
+    {
+     "end": 18.925,
+     "start": 18.688,
+     "text": "4"
+    },
+    {
+     "end": 19.263,
+     "start": 18.925,
+     "text": "9"
+    },
+    {
+     "end": 19.538,
+     "start": 19.263,
+     "text": "3"
+    },
+    {
+     "end": 19.85,
+     "start": 19.538,
+     "text": "6"
+    },
+    {
+     "end": 20.087,
+     "start": 19.85,
+     "text": "4"
+    },
+    {
+     "end": 20.462,
+     "start": 20.087,
+     "text": "7"
+    },
+    {
+     "end": 20.763,
+     "start": 20.462,
+     "text": "4"
+    },
+    {
+     "end": 21.05,
+     "start": 20.763,
+     "text": "d"
+    },
+    {
+     "end": 21.438,
+     "start": 21.05,
+     "text": "3"
+    },
+    {
+     "end": 21.612,
+     "start": 21.438,
+     "text": "e"
+    },
+    {
+     "end": 21.862,
+     "start": 21.612,
+     "text": "d"
+    },
+    {
+     "end": 22.2,
+     "start": 21.862,
+     "text": "8"
+    },
+    {
+     "end": 22.525,
+     "start": 22.2,
+     "text": "6"
+    },
+    {
+     "end": 22.725,
+     "start": 22.525,
+     "text": "f"
+    },
+    {
+     "end": 22.975,
+     "start": 22.725,
+     "text": "8"
+    },
+    {
+     "end": 23.45,
+     "start": 22.975,
+     "text": "9"
+    },
+    {
+     "end": 23.888,
+     "start": 23.45,
+     "text": "0"
+    },
+    {
+     "end": 24.1,
+     "start": 23.888,
+     "text": "f"
+    },
+    {
+     "end": 24.3,
+     "start": 24.1,
+     "text": "f"
+    },
+    {
+     "end": 24.425,
+     "start": 24.3,
+     "text": "a"
+    },
+    {
+     "end": 24.812,
+     "start": 24.425,
+     "text": "2"
+    },
+    {
+     "end": 25.0,
+     "start": 24.812,
+     "text": "e"
+    },
+    {
+     "end": 25.325,
+     "start": 25.0,
+     "text": "6"
+    },
+    {
+     "end": 25.525,
+     "start": 25.325,
+     "text": "f"
+    },
+    {
+     "end": 25.712,
+     "start": 25.525,
+     "text": "d"
+    },
+    {
+     "end": 25.987,
+     "start": 25.712,
+     "text": "d"
+    },
+    {
+     "end": 26.3,
+     "start": 25.987,
+     "text": "f"
+    },
+    {
+     "end": 26.625,
+     "start": 26.3,
+     "text": "6"
+    },
+    {
+     "end": 26.837,
+     "start": 26.625,
+     "text": "2"
+    },
+    {
+     "end": 27.95,
+     "start": 26.837,
+     "text": "5"
+    },
+    {
+     "end": 28.275,
+     "start": 27.95,
+     "text": "."
+    },
+    {
+     "end": 28.85,
+     "start": 28.45,
+     "text": "Deployment"
+    },
+    {
+     "end": 29.225,
+     "start": 28.85,
+     "text": "blueprint"
+    },
+    {
+     "end": 31.175,
+     "start": 29.225,
+     "text": "SHA-256"
+    },
+    {
+     "end": 31.375,
+     "start": 31.175,
+     "text": ":"
+    },
+    {
+     "end": 31.875,
+     "start": 31.625,
+     "text": "6"
+    },
+    {
+     "end": 31.975,
+     "start": 31.875,
+     "text": "a"
+    },
+    {
+     "end": 32.15,
+     "start": 31.975,
+     "text": "d"
+    },
+    {
+     "end": 32.388,
+     "start": 32.15,
+     "text": "1"
+    },
+    {
+     "end": 32.7,
+     "start": 32.388,
+     "text": "6"
+    },
+    {
+     "end": 32.812,
+     "start": 32.7,
+     "text": "a"
+    },
+    {
+     "end": 33.062,
+     "start": 32.812,
+     "text": "3"
+    },
+    {
+     "end": 33.3,
+     "start": 33.062,
+     "text": "1"
+    },
+    {
+     "end": 33.612,
+     "start": 33.3,
+     "text": "9"
+    },
+    {
+     "end": 33.9,
+     "start": 33.612,
+     "text": "4"
+    },
+    {
+     "end": 34.237,
+     "start": 33.9,
+     "text": "c"
+    },
+    {
+     "end": 34.45,
+     "start": 34.237,
+     "text": "f"
+    },
+    {
+     "end": 34.65,
+     "start": 34.45,
+     "text": "f"
+    },
+    {
+     "end": 34.987,
+     "start": 34.65,
+     "text": "5"
+    },
+    {
+     "end": 35.362,
+     "start": 34.987,
+     "text": "1"
+    },
+    {
+     "end": 35.575,
+     "start": 35.362,
+     "text": "f"
+    },
+    {
+     "end": 36.0,
+     "start": 35.575,
+     "text": "0"
+    },
+    {
+     "end": 36.312,
+     "start": 36.0,
+     "text": "6"
+    },
+    {
+     "end": 36.662,
+     "start": 36.312,
+     "text": "0"
+    },
+    {
+     "end": 37.075,
+     "start": 36.662,
+     "text": "0"
+    },
+    {
+     "end": 37.237,
+     "start": 37.075,
+     "text": "e"
+    },
+    {
+     "end": 37.625,
+     "start": 37.237,
+     "text": "d"
+    },
+    {
+     "end": 37.85,
+     "start": 37.625,
+     "text": "f"
+    },
+    {
+     "end": 38.013,
+     "start": 37.85,
+     "text": "e"
+    },
+    {
+     "end": 38.487,
+     "start": 38.013,
+     "text": "0"
+    },
+    {
+     "end": 38.65,
+     "start": 38.487,
+     "text": "e"
+    },
+    {
+     "end": 38.912,
+     "start": 38.65,
+     "text": "b"
+    },
+    {
+     "end": 39.237,
+     "start": 38.912,
+     "text": "9"
+    },
+    {
+     "end": 39.575,
+     "start": 39.237,
+     "text": "5"
+    },
+    {
+     "end": 39.825,
+     "start": 39.575,
+     "text": "9"
+    },
+    {
+     "end": 40.062,
+     "start": 39.825,
+     "text": "1"
+    },
+    {
+     "end": 40.425,
+     "start": 40.062,
+     "text": "7"
+    },
+    {
+     "end": 40.575,
+     "start": 40.425,
+     "text": "e"
+    },
+    {
+     "end": 40.75,
+     "start": 40.575,
+     "text": "d"
+    },
+    {
+     "end": 41.112,
+     "start": 40.75,
+     "text": "0"
+    },
+    {
+     "end": 41.412,
+     "start": 41.112,
+     "text": "6"
+    },
+    {
+     "end": 41.775,
+     "start": 41.412,
+     "text": "7"
+    },
+    {
+     "end": 42.062,
+     "start": 41.775,
+     "text": "9"
+    },
+    {
+     "end": 42.375,
+     "start": 42.062,
+     "text": "6"
+    },
+    {
+     "end": 42.688,
+     "start": 42.375,
+     "text": "9"
+    },
+    {
+     "end": 42.975,
+     "start": 42.688,
+     "text": "3"
+    },
+    {
+     "end": 43.138,
+     "start": 42.975,
+     "text": "e"
+    },
+    {
+     "end": 43.45,
+     "start": 43.138,
+     "text": "1"
+    },
+    {
+     "end": 43.612,
+     "start": 43.45,
+     "text": "e"
+    },
+    {
+     "end": 43.9,
+     "start": 43.612,
+     "text": "4"
+    },
+    {
+     "end": 44.112,
+     "start": 43.9,
+     "text": "b"
+    },
+    {
+     "end": 44.425,
+     "start": 44.112,
+     "text": "6"
+    },
+    {
+     "end": 44.625,
+     "start": 44.425,
+     "text": "f"
+    },
+    {
+     "end": 44.85,
+     "start": 44.625,
+     "text": "3"
+    },
+    {
+     "end": 45.088,
+     "start": 44.85,
+     "text": "3"
+    },
+    {
+     "end": 45.625,
+     "start": 45.088,
+     "text": "2"
+    },
+    {
+     "end": 45.775,
+     "start": 45.625,
+     "text": "a"
+    },
+    {
+     "end": 45.95,
+     "start": 45.775,
+     "text": "d"
+    },
+    {
+     "end": 46.175,
+     "start": 45.95,
+     "text": "1"
+    },
+    {
+     "end": 46.562,
+     "start": 46.175,
+     "text": "0"
+    },
+    {
+     "end": 46.938,
+     "start": 46.562,
+     "text": "7"
+    },
+    {
+     "end": 47.213,
+     "start": 46.938,
+     "text": "2"
+    },
+    {
+     "end": 47.425,
+     "start": 47.213,
+     "text": "c"
+    },
+    {
+     "end": 47.85,
+     "start": 47.425,
+     "text": "0"
+    },
+    {
+     "end": 48.225,
+     "start": 47.85,
+     "text": "7"
+    },
+    {
+     "end": 48.438,
+     "start": 48.225,
+     "text": "d"
+    },
+    {
+     "end": 48.7,
+     "start": 48.438,
+     "text": "3"
+    },
+    {
+     "end": 48.912,
+     "start": 48.7,
+     "text": "d"
+    },
+    {
+     "end": 49.975,
+     "start": 48.912,
+     "text": "1"
+    },
+    {
+     "end": 50.275,
+     "start": 49.975,
+     "text": "."
+    }
+   ]
+  },
+  "docs-creation-cost/candidate-design-02": {
+   "audio_sha256": "6132c9ef60fc274d4c6cea391fa22950850d2c5323c8d1ff0ce552125560aa46",
+   "characters": 14,
+   "cost": 1.386e-05,
+   "duration": 1.325,
+   "index": 2,
+   "key": "e774fb2632ebe97af0c2a028e6e5139e665c375adfd1764e8efb41bc7be169f8",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 400,
+   "section": "candidate-design",
+   "sent_text": "First creation",
+   "text": "First creation",
+   "words": [
+    {
+     "end": 0.5,
+     "start": 0.2,
+     "text": "First"
+    },
+    {
+     "end": 1.325,
+     "start": 0.5,
+     "text": "creation"
+    }
+   ]
+  },
+  "docs-creation-cost/candidate-design-03": {
+   "audio_sha256": "d06ee1a1ecfa1abb5f73905b1030e64227bf5225aaedf939be0130e39a97c440",
+   "characters": 14,
+   "cost": 1.386e-05,
+   "duration": 1.325,
+   "index": 3,
+   "key": "e5c0ba972126688e0dcf76d5ca88e1f36b6f462439390b17777d63703062ac35",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 400,
+   "section": "candidate-design",
+   "sent_text": "Later creation",
+   "text": "Later creation",
+   "words": [
+    {
+     "end": 0.475,
+     "start": 0.2,
+     "text": "Later"
+    },
+    {
+     "end": 1.325,
+     "start": 0.475,
+     "text": "creation"
+    }
+   ]
+  },
+  "docs-creation-cost/frozen-limits-and-fee-parameters-00": {
+   "audio_sha256": "5b470914c268161eecac45cc68657d04bba1c89bbb0dc954530faf0b52828296",
+   "characters": 33,
+   "cost": 3.267e-05,
+   "duration": 2.55,
+   "index": 0,
+   "key": "0e10f6cbea6e3870666888e5dc4f6e1c0bdfeca1b2764be51db359044d844b59",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 500,
+   "section": "frozen-limits-and-fee-parameters",
+   "sent_text": "Frozen limits and fee parameters.",
+   "text": "Frozen limits and fee parameters.",
+   "words": [
+    {
+     "end": 0.55,
+     "start": 0.175,
+     "text": "Frozen"
+    },
+    {
+     "end": 0.9,
+     "start": 0.55,
+     "text": "limits"
+    },
+    {
+     "end": 1.038,
+     "start": 0.9,
+     "text": "and"
+    },
+    {
+     "end": 1.25,
+     "start": 1.038,
+     "text": "fee"
+    },
+    {
+     "end": 2.35,
+     "start": 1.25,
+     "text": "parameters"
+    },
+    {
+     "end": 2.55,
+     "start": 2.35,
+     "text": "."
+    }
+   ]
+  },
+  "docs-creation-cost/frozen-limits-and-fee-parameters-01": {
+   "audio_sha256": "db8962e7c88de006dbc9163d9f59b1bb4205c854dba9d5026005ee74f34a9465",
+   "characters": 268,
+   "cost": 0.00026532,
+   "duration": 21.125,
+   "index": 1,
+   "key": "3d862f4f511bd8136db1687cb19486971669b446cb9c37691dd626445da0f7f8",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 400,
+   "section": "frozen-limits-and-fee-parameters",
+   "sent_text": "Every form used maximum transaction size 16384, maximum transaction execution memory 140000000 and maximum transaction execution steps 10000000000. The parameters and their hash are read from the independent chain record, rather than supplied by the measuring command.",
+   "text": "Every form used maximum transaction size 16384, maximum transaction execution memory 140000000 and maximum transaction execution steps 10000000000. The parameters and their hash are read from the independent chain record, rather than supplied by the measuring command.",
+   "words": [
+    {
+     "end": 0.562,
+     "start": 0.275,
+     "text": "Every"
+    },
+    {
+     "end": 0.925,
+     "start": 0.562,
+     "text": "form"
+    },
+    {
+     "end": 1.237,
+     "start": 0.925,
+     "text": "used"
+    },
+    {
+     "end": 1.775,
+     "start": 1.237,
+     "text": "maximum"
+    },
+    {
+     "end": 2.612,
+     "start": 1.775,
+     "text": "transaction"
+    },
+    {
+     "end": 3.0,
+     "start": 2.612,
+     "text": "size"
+    },
+    {
+     "end": 5.375,
+     "start": 3.0,
+     "text": "16384"
+    },
+    {
+     "end": 5.488,
+     "start": 5.375,
+     "text": ","
+    },
+    {
+     "end": 6.025,
+     "start": 5.488,
+     "text": "maximum"
+    },
+    {
+     "end": 6.75,
+     "start": 6.025,
+     "text": "transaction"
+    },
+    {
+     "end": 7.475,
+     "start": 6.75,
+     "text": "execution"
+    },
+    {
+     "end": 7.912,
+     "start": 7.475,
+     "text": "memory"
+    },
+    {
+     "end": 9.312,
+     "start": 7.912,
+     "text": "140000000"
+    },
+    {
+     "end": 9.462,
+     "start": 9.312,
+     "text": "and"
+    },
+    {
+     "end": 10.0,
+     "start": 9.462,
+     "text": "maximum"
+    },
+    {
+     "end": 10.725,
+     "start": 10.0,
+     "text": "transaction"
+    },
+    {
+     "end": 11.512,
+     "start": 10.725,
+     "text": "execution"
+    },
+    {
+     "end": 11.938,
+     "start": 11.512,
+     "text": "steps"
+    },
+    {
+     "end": 13.45,
+     "start": 11.938,
+     "text": "10000000000"
+    },
+    {
+     "end": 13.675,
+     "start": 13.45,
+     "text": "."
+    },
+    {
+     "end": 13.95,
+     "start": 13.875,
+     "text": "The"
+    },
+    {
+     "end": 14.675,
+     "start": 13.95,
+     "text": "parameters"
+    },
+    {
+     "end": 14.788,
+     "start": 14.675,
+     "text": "and"
+    },
+    {
+     "end": 14.988,
+     "start": 14.788,
+     "text": "their"
+    },
+    {
+     "end": 15.438,
+     "start": 14.988,
+     "text": "hash"
+    },
+    {
+     "end": 15.613,
+     "start": 15.438,
+     "text": "are"
+    },
+    {
+     "end": 15.9,
+     "start": 15.613,
+     "text": "read"
+    },
+    {
+     "end": 16.062,
+     "start": 15.9,
+     "text": "from"
+    },
+    {
+     "end": 16.188,
+     "start": 16.062,
+     "text": "the"
+    },
+    {
+     "end": 16.888,
+     "start": 16.188,
+     "text": "independent"
+    },
+    {
+     "end": 17.225,
+     "start": 16.888,
+     "text": "chain"
+    },
+    {
+     "end": 17.75,
+     "start": 17.225,
+     "text": "record"
+    },
+    {
+     "end": 17.862,
+     "start": 17.75,
+     "text": ","
+    },
+    {
+     "end": 18.275,
+     "start": 17.862,
+     "text": "rather"
+    },
+    {
+     "end": 18.45,
+     "start": 18.275,
+     "text": "than"
+    },
+    {
+     "end": 19.05,
+     "start": 18.45,
+     "text": "supplied"
+    },
+    {
+     "end": 19.225,
+     "start": 19.05,
+     "text": "by"
+    },
+    {
+     "end": 19.35,
+     "start": 19.225,
+     "text": "the"
+    },
+    {
+     "end": 19.8,
+     "start": 19.35,
+     "text": "measuring"
+    },
+    {
+     "end": 20.9,
+     "start": 19.8,
+     "text": "command"
+    },
+    {
+     "end": 21.125,
+     "start": 20.9,
+     "text": "."
+    }
+   ]
+  },
+  "docs-creation-cost/frozen-limits-and-fee-parameters-02": {
+   "audio_sha256": "787b2671a289d5f58a96ddb86a4f1c38597e581b16040da58f617281111c575f",
+   "characters": 139,
+   "cost": 0.00013760999999999998,
+   "duration": 9.625,
+   "index": 2,
+   "key": "819424b2e445f06f48d4a96664b257deb5f6b93ed8924609f2d14af759d7d73f",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 400,
+   "section": "frozen-limits-and-fee-parameters",
+   "sent_text": "The experiment holds the application's configuration fixed across forms. These explicit experimental values do not change command defaults.",
+   "text": "The experiment holds the application's configuration fixed across forms. These explicit experimental values do not change command defaults.",
+   "words": [
+    {
+     "end": 0.3,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.925,
+     "start": 0.3,
+     "text": "experiment"
+    },
+    {
+     "end": 1.237,
+     "start": 0.925,
+     "text": "holds"
+    },
+    {
+     "end": 1.35,
+     "start": 1.237,
+     "text": "the"
+    },
+    {
+     "end": 2.1,
+     "start": 1.35,
+     "text": "application's"
+    },
+    {
+     "end": 2.975,
+     "start": 2.1,
+     "text": "configuration"
+    },
+    {
+     "end": 3.312,
+     "start": 2.975,
+     "text": "fixed"
+    },
+    {
+     "end": 3.7,
+     "start": 3.312,
+     "text": "across"
+    },
+    {
+     "end": 4.725,
+     "start": 3.7,
+     "text": "forms"
+    },
+    {
+     "end": 4.95,
+     "start": 4.725,
+     "text": "."
+    },
+    {
+     "end": 5.35,
+     "start": 5.125,
+     "text": "These"
+    },
+    {
+     "end": 5.9,
+     "start": 5.35,
+     "text": "explicit"
+    },
+    {
+     "end": 6.675,
+     "start": 5.9,
+     "text": "experimental"
+    },
+    {
+     "end": 7.225,
+     "start": 6.675,
+     "text": "values"
+    },
+    {
+     "end": 7.35,
+     "start": 7.225,
+     "text": "do"
+    },
+    {
+     "end": 7.588,
+     "start": 7.35,
+     "text": "not"
+    },
+    {
+     "end": 7.925,
+     "start": 7.588,
+     "text": "change"
+    },
+    {
+     "end": 8.35,
+     "start": 7.925,
+     "text": "command"
+    },
+    {
+     "end": 9.425,
+     "start": 8.35,
+     "text": "defaults"
+    },
+    {
+     "end": 9.625,
+     "start": 9.425,
+     "text": "."
+    }
+   ]
+  },
+  "docs-creation-cost/limits-00": {
+   "audio_sha256": "5fad969b44f9d90092b098a514ff91b752da92486faa3e2759da6c8d3ae43062",
+   "characters": 7,
+   "cost": 6.93e-06,
+   "duration": 1.125,
+   "index": 0,
+   "key": "f6f6b22c7830bd49663718ae6e23a3fedf4e67f470a97d72847e589b1e4247e6",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 500,
+   "section": "limits",
+   "sent_text": "Limits.",
+   "text": "Limits.",
+   "words": [
+    {
+     "end": 0.9,
+     "start": 0.2,
+     "text": "Limits"
+    },
+    {
+     "end": 1.125,
+     "start": 0.9,
+     "text": "."
+    }
+   ]
+  },
+  "docs-creation-cost/limits-01": {
+   "audio_sha256": "c48cb03c032b5f59fee97268e17fff6aec76622fca7f07961a21b257cacc5499",
+   "characters": 441,
+   "cost": 0.00043658999999999994,
+   "duration": 34.9,
+   "index": 1,
+   "key": "4227b9fbd7d7afbc8f9163e245a70c789ec620425b82e0d192a82edb71756f08",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 400,
+   "section": "limits",
+   "sent_text": "These are development-network measurements, not fee quotes for another network. Reference-output capital is reported separately from fees; this page does not claim it is spent. The measured transactions do not establish public reference discovery for everyone, batch limits or release acceptance. Those remain the work of issues 355 and 473, issue 746 and issue 747 respectively. Existing uncovered registration comparisons remain uncovered.",
+   "text": "These are development-network measurements, not fee quotes for another network. Reference-output capital is reported separately from fees; this page does not claim it is spent. The measured transactions do not establish public reference discovery for everyone, batch limits or release acceptance. Those remain the work of issues 355 and 473, issue 746 and issue 747 respectively. Existing uncovered registration comparisons remain uncovered.",
+   "words": [
+    {
+     "end": 0.5,
+     "start": 0.2,
+     "text": "These"
+    },
+    {
+     "end": 0.65,
+     "start": 0.5,
+     "text": "are"
+    },
+    {
+     "end": 1.65,
+     "start": 0.65,
+     "text": "development-network"
+    },
+    {
+     "end": 2.325,
+     "start": 1.65,
+     "text": "measurements"
+    },
+    {
+     "end": 2.4,
+     "start": 2.325,
+     "text": ","
+    },
+    {
+     "end": 2.688,
+     "start": 2.4,
+     "text": "not"
+    },
+    {
+     "end": 2.925,
+     "start": 2.688,
+     "text": "fee"
+    },
+    {
+     "end": 3.325,
+     "start": 2.925,
+     "text": "quotes"
+    },
+    {
+     "end": 3.438,
+     "start": 3.325,
+     "text": "for"
+    },
+    {
+     "end": 3.775,
+     "start": 3.438,
+     "text": "another"
+    },
+    {
+     "end": 4.75,
+     "start": 3.775,
+     "text": "network"
+    },
+    {
+     "end": 4.975,
+     "start": 4.75,
+     "text": "."
+    },
+    {
+     "end": 5.9,
+     "start": 5.175,
+     "text": "Reference-output"
+    },
+    {
+     "end": 6.5,
+     "start": 5.9,
+     "text": "capital"
+    },
+    {
+     "end": 6.675,
+     "start": 6.5,
+     "text": "is"
+    },
+    {
+     "end": 7.213,
+     "start": 6.675,
+     "text": "reported"
+    },
+    {
+     "end": 7.675,
+     "start": 7.213,
+     "text": "separately"
+    },
+    {
+     "end": 7.887,
+     "start": 7.675,
+     "text": "from"
+    },
+    {
+     "end": 8.8,
+     "start": 7.887,
+     "text": "fees"
+    },
+    {
+     "end": 9.0,
+     "start": 8.8,
+     "text": ";"
+    },
+    {
+     "end": 9.35,
+     "start": 9.175,
+     "text": "this"
+    },
+    {
+     "end": 9.637,
+     "start": 9.35,
+     "text": "page"
+    },
+    {
+     "end": 9.762,
+     "start": 9.637,
+     "text": "does"
+    },
+    {
+     "end": 9.925,
+     "start": 9.762,
+     "text": "not"
+    },
+    {
+     "end": 10.163,
+     "start": 9.925,
+     "text": "claim"
+    },
+    {
+     "end": 10.238,
+     "start": 10.163,
+     "text": "it"
+    },
+    {
+     "end": 10.35,
+     "start": 10.238,
+     "text": "is"
+    },
+    {
+     "end": 11.15,
+     "start": 10.35,
+     "text": "spent"
+    },
+    {
+     "end": 11.35,
+     "start": 11.15,
+     "text": "."
+    },
+    {
+     "end": 11.65,
+     "start": 11.55,
+     "text": "The"
+    },
+    {
+     "end": 12.0,
+     "start": 11.65,
+     "text": "measured"
+    },
+    {
+     "end": 12.9,
+     "start": 12.0,
+     "text": "transactions"
+    },
+    {
+     "end": 13.05,
+     "start": 12.9,
+     "text": "do"
+    },
+    {
+     "end": 13.275,
+     "start": 13.05,
+     "text": "not"
+    },
+    {
+     "end": 13.887,
+     "start": 13.275,
+     "text": "establish"
+    },
+    {
+     "end": 14.3,
+     "start": 13.887,
+     "text": "public"
+    },
+    {
+     "end": 14.775,
+     "start": 14.3,
+     "text": "reference"
+    },
+    {
+     "end": 15.4,
+     "start": 14.775,
+     "text": "discovery"
+    },
+    {
+     "end": 15.562,
+     "start": 15.4,
+     "text": "for"
+    },
+    {
+     "end": 16.25,
+     "start": 15.562,
+     "text": "everyone"
+    },
+    {
+     "end": 16.362,
+     "start": 16.25,
+     "text": ","
+    },
+    {
+     "end": 16.737,
+     "start": 16.362,
+     "text": "batch"
+    },
+    {
+     "end": 17.263,
+     "start": 16.737,
+     "text": "limits"
+    },
+    {
+     "end": 17.425,
+     "start": 17.263,
+     "text": "or"
+    },
+    {
+     "end": 17.825,
+     "start": 17.425,
+     "text": "release"
+    },
+    {
+     "end": 19.175,
+     "start": 17.825,
+     "text": "acceptance"
+    },
+    {
+     "end": 19.4,
+     "start": 19.175,
+     "text": "."
+    },
+    {
+     "end": 19.925,
+     "start": 19.65,
+     "text": "Those"
+    },
+    {
+     "end": 20.375,
+     "start": 19.925,
+     "text": "remain"
+    },
+    {
+     "end": 20.475,
+     "start": 20.375,
+     "text": "the"
+    },
+    {
+     "end": 20.737,
+     "start": 20.475,
+     "text": "work"
+    },
+    {
+     "end": 20.875,
+     "start": 20.737,
+     "text": "of"
+    },
+    {
+     "end": 21.362,
+     "start": 20.875,
+     "text": "issues"
+    },
+    {
+     "end": 22.75,
+     "start": 21.362,
+     "text": "355"
+    },
+    {
+     "end": 22.888,
+     "start": 22.75,
+     "text": "and"
+    },
+    {
+     "end": 24.375,
+     "start": 22.888,
+     "text": "473"
+    },
+    {
+     "end": 24.5,
+     "start": 24.375,
+     "text": ","
+    },
+    {
+     "end": 24.888,
+     "start": 24.5,
+     "text": "issue"
+    },
+    {
+     "end": 26.413,
+     "start": 24.888,
+     "text": "746"
+    },
+    {
+     "end": 26.55,
+     "start": 26.413,
+     "text": "and"
+    },
+    {
+     "end": 26.938,
+     "start": 26.55,
+     "text": "issue"
+    },
+    {
+     "end": 28.487,
+     "start": 26.938,
+     "text": "747"
+    },
+    {
+     "end": 29.95,
+     "start": 28.487,
+     "text": "respectively"
+    },
+    {
+     "end": 30.25,
+     "start": 29.95,
+     "text": "."
+    },
+    {
+     "end": 31.013,
+     "start": 30.45,
+     "text": "Existing"
+    },
+    {
+     "end": 31.65,
+     "start": 31.013,
+     "text": "uncovered"
+    },
+    {
+     "end": 32.325,
+     "start": 31.65,
+     "text": "registration"
+    },
+    {
+     "end": 33.112,
+     "start": 32.325,
+     "text": "comparisons"
+    },
+    {
+     "end": 33.575,
+     "start": 33.112,
+     "text": "remain"
+    },
+    {
+     "end": 34.7,
+     "start": 33.575,
+     "text": "uncovered"
+    },
+    {
+     "end": 34.9,
+     "start": 34.7,
+     "text": "."
+    }
+   ]
+  },
+  "docs-creation-cost/limits-02": {
+   "audio_sha256": "fbe37a07252de2ddfc7362112532ee15c581a4491f8cb6a32bd0aedbf0e26094",
+   "characters": 367,
+   "cost": 0.00036333,
+   "duration": 24.975,
+   "index": 2,
+   "key": "c64561cb70b83134b342a6703ecb6899403cfec34e39879d7ebccac45a44ca4b",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 400,
+   "section": "limits",
+   "sent_text": "Creation behavior remains bound to the application-held model's genesis and recognition inversions, creation money statement, configuration creation inversion and immutable configuration statement. This measuring tool changes no validator, model or wire format, and the measurements do not establish new model conformance. The trie library's proofs are assumed sound.",
+   "text": "Creation behavior remains bound to the application-held model's genesis and recognition inversions, creation money statement, configuration creation inversion and immutable configuration statement. This measuring tool changes no validator, model or wire format, and the measurements do not establish new model conformance. The trie library's proofs are assumed sound.",
+   "words": [
+    {
+     "end": 0.8,
+     "start": 0.25,
+     "text": "Creation"
+    },
+    {
+     "end": 1.375,
+     "start": 0.8,
+     "text": "behavior"
+    },
+    {
+     "end": 1.938,
+     "start": 1.375,
+     "text": "remains"
+    },
+    {
+     "end": 2.375,
+     "start": 1.938,
+     "text": "bound"
+    },
+    {
+     "end": 2.463,
+     "start": 2.375,
+     "text": "to"
+    },
+    {
+     "end": 2.612,
+     "start": 2.463,
+     "text": "the"
+    },
+    {
+     "end": 3.638,
+     "start": 2.612,
+     "text": "application-held"
+    },
+    {
+     "end": 4.088,
+     "start": 3.638,
+     "text": "model's"
+    },
+    {
+     "end": 4.713,
+     "start": 4.088,
+     "text": "genesis"
+    },
+    {
+     "end": 4.85,
+     "start": 4.713,
+     "text": "and"
+    },
+    {
+     "end": 5.55,
+     "start": 4.85,
+     "text": "recognition"
+    },
+    {
+     "end": 6.425,
+     "start": 5.55,
+     "text": "inversions"
+    },
+    {
+     "end": 6.537,
+     "start": 6.425,
+     "text": ","
+    },
+    {
+     "end": 7.125,
+     "start": 6.537,
+     "text": "creation"
+    },
+    {
+     "end": 7.463,
+     "start": 7.125,
+     "text": "money"
+    },
+    {
+     "end": 8.1,
+     "start": 7.463,
+     "text": "statement"
+    },
+    {
+     "end": 8.2,
+     "start": 8.1,
+     "text": ","
+    },
+    {
+     "end": 9.075,
+     "start": 8.2,
+     "text": "configuration"
+    },
+    {
+     "end": 9.65,
+     "start": 9.075,
+     "text": "creation"
+    },
+    {
+     "end": 10.363,
+     "start": 9.65,
+     "text": "inversion"
+    },
+    {
+     "end": 10.5,
+     "start": 10.363,
+     "text": "and"
+    },
+    {
+     "end": 11.15,
+     "start": 10.5,
+     "text": "immutable"
+    },
+    {
+     "end": 12.0,
+     "start": 11.15,
+     "text": "configuration"
+    },
+    {
+     "end": 13.225,
+     "start": 12.0,
+     "text": "statement"
+    },
+    {
+     "end": 13.5,
+     "start": 13.225,
+     "text": "."
+    },
+    {
+     "end": 13.95,
+     "start": 13.725,
+     "text": "This"
+    },
+    {
+     "end": 14.413,
+     "start": 13.95,
+     "text": "measuring"
+    },
+    {
+     "end": 14.762,
+     "start": 14.413,
+     "text": "tool"
+    },
+    {
+     "end": 15.212,
+     "start": 14.762,
+     "text": "changes"
+    },
+    {
+     "end": 15.488,
+     "start": 15.212,
+     "text": "no"
+    },
+    {
+     "end": 16.25,
+     "start": 15.488,
+     "text": "validator"
+    },
+    {
+     "end": 16.362,
+     "start": 16.25,
+     "text": ","
+    },
+    {
+     "end": 16.862,
+     "start": 16.362,
+     "text": "model"
+    },
+    {
+     "end": 17.062,
+     "start": 16.862,
+     "text": "or"
+    },
+    {
+     "end": 17.462,
+     "start": 17.062,
+     "text": "wire"
+    },
+    {
+     "end": 18.1,
+     "start": 17.462,
+     "text": "format"
+    },
+    {
+     "end": 18.175,
+     "start": 18.1,
+     "text": ","
+    },
+    {
+     "end": 18.288,
+     "start": 18.175,
+     "text": "and"
+    },
+    {
+     "end": 18.375,
+     "start": 18.288,
+     "text": "the"
+    },
+    {
+     "end": 18.925,
+     "start": 18.375,
+     "text": "measurements"
+    },
+    {
+     "end": 19.075,
+     "start": 18.925,
+     "text": "do"
+    },
+    {
+     "end": 19.3,
+     "start": 19.075,
+     "text": "not"
+    },
+    {
+     "end": 19.975,
+     "start": 19.3,
+     "text": "establish"
+    },
+    {
+     "end": 20.2,
+     "start": 19.975,
+     "text": "new"
+    },
+    {
+     "end": 20.575,
+     "start": 20.2,
+     "text": "model"
+    },
+    {
+     "end": 21.975,
+     "start": 20.575,
+     "text": "conformance"
+    },
+    {
+     "end": 22.2,
+     "start": 21.975,
+     "text": "."
+    },
+    {
+     "end": 22.45,
+     "start": 22.375,
+     "text": "The"
+    },
+    {
+     "end": 22.688,
+     "start": 22.45,
+     "text": "trie"
+    },
+    {
+     "end": 23.125,
+     "start": 22.688,
+     "text": "library's"
+    },
+    {
+     "end": 23.425,
+     "start": 23.125,
+     "text": "proofs"
+    },
+    {
+     "end": 23.513,
+     "start": 23.425,
+     "text": "are"
+    },
+    {
+     "end": 23.938,
+     "start": 23.513,
+     "text": "assumed"
+    },
+    {
+     "end": 24.775,
+     "start": 23.938,
+     "text": "sound"
+    },
+    {
+     "end": 24.975,
+     "start": 24.775,
+     "text": "."
+    }
+   ]
+  },
+  "docs-creation-cost/matched-conditions-and-evidence-00": {
+   "audio_sha256": "33b0eb7cb2a438263dbcd15f6ba72a63ff44eef188c5dede3ba94b75025b101b",
+   "characters": 32,
+   "cost": 3.1679999999999995e-05,
+   "duration": 2.2,
+   "index": 0,
+   "key": "e196ef8af51fa9e42b8ac0ea4e43e623378dd5ab56452265fbdc59c51071c619",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 500,
+   "section": "matched-conditions-and-evidence",
+   "sent_text": "Matched conditions and evidence.",
+   "text": "Matched conditions and evidence.",
+   "words": [
+    {
+     "end": 0.475,
+     "start": 0.2,
+     "text": "Matched"
+    },
+    {
+     "end": 0.962,
+     "start": 0.475,
+     "text": "conditions"
+    },
+    {
+     "end": 1.075,
+     "start": 0.962,
+     "text": "and"
+    },
+    {
+     "end": 2.0,
+     "start": 1.075,
+     "text": "evidence"
+    },
+    {
+     "end": 2.2,
+     "start": 2.0,
+     "text": "."
+    }
+   ]
+  },
+  "docs-creation-cost/matched-conditions-and-evidence-01": {
+   "audio_sha256": "9b294e49bef06fd9205188180cb67309cb4c753b932c9d32b923a2f54d42a8b5",
+   "characters": 311,
+   "cost": 0.00030788999999999995,
+   "duration": 19.95,
+   "index": 1,
+   "key": "270a5898d1d30ea1dece3b47c9425c24d608fcfa20043f1387353bb45fc6585b",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 400,
+   "section": "matched-conditions-and-evidence",
+   "sent_text": "The legs use separate fresh development networks from the same frozen genesis, the same protocol parameters, the same generated wallet funding and the same processing and reclaim windows. Each network is read independently. The receipts include the complete chain-read protocol parameters and the tool versions.",
+   "text": "The legs use separate fresh development networks from the same frozen genesis, the same protocol parameters, the same generated wallet funding and the same processing and reclaim windows. Each network is read independently. The receipts include the complete chain-read protocol parameters and the tool versions.",
+   "words": [
+    {
+     "end": 0.338,
+     "start": 0.225,
+     "text": "The"
+    },
+    {
+     "end": 0.775,
+     "start": 0.338,
+     "text": "legs"
+    },
+    {
+     "end": 1.05,
+     "start": 0.775,
+     "text": "use"
+    },
+    {
+     "end": 1.513,
+     "start": 1.05,
+     "text": "separate"
+    },
+    {
+     "end": 1.8,
+     "start": 1.513,
+     "text": "fresh"
+    },
+    {
+     "end": 2.35,
+     "start": 1.8,
+     "text": "development"
+    },
+    {
+     "end": 2.85,
+     "start": 2.35,
+     "text": "networks"
+    },
+    {
+     "end": 3.013,
+     "start": 2.85,
+     "text": "from"
+    },
+    {
+     "end": 3.138,
+     "start": 3.013,
+     "text": "the"
+    },
+    {
+     "end": 3.487,
+     "start": 3.138,
+     "text": "same"
+    },
+    {
+     "end": 4.012,
+     "start": 3.487,
+     "text": "frozen"
+    },
+    {
+     "end": 4.675,
+     "start": 4.012,
+     "text": "genesis"
+    },
+    {
+     "end": 4.75,
+     "start": 4.675,
+     "text": ","
+    },
+    {
+     "end": 4.887,
+     "start": 4.75,
+     "text": "the"
+    },
+    {
+     "end": 5.225,
+     "start": 4.887,
+     "text": "same"
+    },
+    {
+     "end": 5.775,
+     "start": 5.225,
+     "text": "protocol"
+    },
+    {
+     "end": 6.525,
+     "start": 5.775,
+     "text": "parameters"
+    },
+    {
+     "end": 6.6,
+     "start": 6.525,
+     "text": ","
+    },
+    {
+     "end": 6.738,
+     "start": 6.6,
+     "text": "the"
+    },
+    {
+     "end": 7.088,
+     "start": 6.738,
+     "text": "same"
+    },
+    {
+     "end": 7.7,
+     "start": 7.088,
+     "text": "generated"
+    },
+    {
+     "end": 8.025,
+     "start": 7.7,
+     "text": "wallet"
+    },
+    {
+     "end": 8.488,
+     "start": 8.025,
+     "text": "funding"
+    },
+    {
+     "end": 8.613,
+     "start": 8.488,
+     "text": "and"
+    },
+    {
+     "end": 8.712,
+     "start": 8.613,
+     "text": "the"
+    },
+    {
+     "end": 9.05,
+     "start": 8.712,
+     "text": "same"
+    },
+    {
+     "end": 9.75,
+     "start": 9.05,
+     "text": "processing"
+    },
+    {
+     "end": 9.875,
+     "start": 9.75,
+     "text": "and"
+    },
+    {
+     "end": 10.4,
+     "start": 9.875,
+     "text": "reclaim"
+    },
+    {
+     "end": 11.675,
+     "start": 10.4,
+     "text": "windows"
+    },
+    {
+     "end": 11.9,
+     "start": 11.675,
+     "text": "."
+    },
+    {
+     "end": 12.4,
+     "start": 12.125,
+     "text": "Each"
+    },
+    {
+     "end": 12.825,
+     "start": 12.4,
+     "text": "network"
+    },
+    {
+     "end": 13.025,
+     "start": 12.825,
+     "text": "is"
+    },
+    {
+     "end": 13.413,
+     "start": 13.025,
+     "text": "read"
+    },
+    {
+     "end": 14.45,
+     "start": 13.413,
+     "text": "independently"
+    },
+    {
+     "end": 14.575,
+     "start": 14.45,
+     "text": "."
+    },
+    {
+     "end": 14.7,
+     "start": 14.575,
+     "text": "The"
+    },
+    {
+     "end": 15.2,
+     "start": 14.7,
+     "text": "receipts"
+    },
+    {
+     "end": 15.562,
+     "start": 15.2,
+     "text": "include"
+    },
+    {
+     "end": 15.65,
+     "start": 15.562,
+     "text": "the"
+    },
+    {
+     "end": 16.163,
+     "start": 15.65,
+     "text": "complete"
+    },
+    {
+     "end": 16.7,
+     "start": 16.163,
+     "text": "chain-read"
+    },
+    {
+     "end": 17.25,
+     "start": 16.7,
+     "text": "protocol"
+    },
+    {
+     "end": 18.013,
+     "start": 17.25,
+     "text": "parameters"
+    },
+    {
+     "end": 18.138,
+     "start": 18.013,
+     "text": "and"
+    },
+    {
+     "end": 18.237,
+     "start": 18.138,
+     "text": "the"
+    },
+    {
+     "end": 18.525,
+     "start": 18.237,
+     "text": "tool"
+    },
+    {
+     "end": 19.725,
+     "start": 18.525,
+     "text": "versions"
+    },
+    {
+     "end": 19.95,
+     "start": 19.725,
+     "text": "."
+    }
+   ]
+  },
+  "docs-creation-cost/matched-conditions-and-evidence-02": {
+   "audio_sha256": "4dcf158118ca04000216d273b3e904dcbaaac7073b2027d95cfadff24fc3fe23",
+   "characters": 472,
+   "cost": 0.00046728,
+   "duration": 30.525,
+   "index": 2,
+   "key": "8505032fa374ab3fa73059d5e1a30cb3d59395fee16252ccb1b28c54f1e6b157",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 400,
+   "section": "matched-conditions-and-evidence",
+   "sent_text": "The committed receipts and chain records preserve the transactions, their complete bytes and the network observations. The documentation check recomputes every figure from those bytes, checks the two workloads and regenerates this entire page for comparison. Altered figures and mismatched legs are refused. The hosted registration journey writes the candidate receipt in the same schema and compares its transaction counts and script hashes; fees may differ between runs.",
+   "text": "The committed receipts and chain records preserve the transactions, their complete bytes and the network observations. The documentation check recomputes every figure from those bytes, checks the two workloads and regenerates this entire page for comparison. Altered figures and mismatched legs are refused. The hosted registration journey writes the candidate receipt in the same schema and compares its transaction counts and script hashes; fees may differ between runs.",
+   "words": [
+    {
+     "end": 0.275,
+     "start": 0.2,
+     "text": "The"
+    },
+    {
+     "end": 0.725,
+     "start": 0.275,
+     "text": "committed"
+    },
+    {
+     "end": 1.275,
+     "start": 0.725,
+     "text": "receipts"
+    },
+    {
+     "end": 1.413,
+     "start": 1.275,
+     "text": "and"
+    },
+    {
+     "end": 1.75,
+     "start": 1.413,
+     "text": "chain"
+    },
+    {
+     "end": 2.225,
+     "start": 1.75,
+     "text": "records"
+    },
+    {
+     "end": 2.725,
+     "start": 2.225,
+     "text": "preserve"
+    },
+    {
+     "end": 2.825,
+     "start": 2.725,
+     "text": "the"
+    },
+    {
+     "end": 3.825,
+     "start": 2.825,
+     "text": "transactions"
+    },
+    {
+     "end": 3.9,
+     "start": 3.825,
+     "text": ","
+    },
+    {
+     "end": 4.1,
+     "start": 3.9,
+     "text": "their"
+    },
+    {
+     "end": 4.55,
+     "start": 4.1,
+     "text": "complete"
+    },
+    {
+     "end": 5.037,
+     "start": 4.55,
+     "text": "bytes"
+    },
+    {
+     "end": 5.162,
+     "start": 5.037,
+     "text": "and"
+    },
+    {
+     "end": 5.25,
+     "start": 5.162,
+     "text": "the"
+    },
+    {
+     "end": 5.65,
+     "start": 5.25,
+     "text": "network"
+    },
+    {
+     "end": 7.2,
+     "start": 5.65,
+     "text": "observations"
+    },
+    {
+     "end": 7.4,
+     "start": 7.2,
+     "text": "."
+    },
+    {
+     "end": 7.65,
+     "start": 7.575,
+     "text": "The"
+    },
+    {
+     "end": 8.538,
+     "start": 7.65,
+     "text": "documentation"
+    },
+    {
+     "end": 8.938,
+     "start": 8.538,
+     "text": "check"
+    },
+    {
+     "end": 9.562,
+     "start": 8.938,
+     "text": "recomputes"
+    },
+    {
+     "end": 9.913,
+     "start": 9.562,
+     "text": "every"
+    },
+    {
+     "end": 10.3,
+     "start": 9.913,
+     "text": "figure"
+    },
+    {
+     "end": 10.45,
+     "start": 10.3,
+     "text": "from"
+    },
+    {
+     "end": 10.7,
+     "start": 10.45,
+     "text": "those"
+    },
+    {
+     "end": 11.6,
+     "start": 10.7,
+     "text": "bytes"
+    },
+    {
+     "end": 11.8,
+     "start": 11.6,
+     "text": ","
+    },
+    {
+     "end": 12.275,
+     "start": 12.0,
+     "text": "checks"
+    },
+    {
+     "end": 12.387,
+     "start": 12.275,
+     "text": "the"
+    },
+    {
+     "end": 12.6,
+     "start": 12.387,
+     "text": "two"
+    },
+    {
+     "end": 13.312,
+     "start": 12.6,
+     "text": "workloads"
+    },
+    {
+     "end": 13.45,
+     "start": 13.312,
+     "text": "and"
+    },
+    {
+     "end": 14.15,
+     "start": 13.45,
+     "text": "regenerates"
+    },
+    {
+     "end": 14.35,
+     "start": 14.15,
+     "text": "this"
+    },
+    {
+     "end": 14.875,
+     "start": 14.35,
+     "text": "entire"
+    },
+    {
+     "end": 15.275,
+     "start": 14.875,
+     "text": "page"
+    },
+    {
+     "end": 15.4,
+     "start": 15.275,
+     "text": "for"
+    },
+    {
+     "end": 16.6,
+     "start": 15.4,
+     "text": "comparison"
+    },
+    {
+     "end": 16.8,
+     "start": 16.6,
+     "text": "."
+    },
+    {
+     "end": 17.35,
+     "start": 16.975,
+     "text": "Altered"
+    },
+    {
+     "end": 17.8,
+     "start": 17.35,
+     "text": "figures"
+    },
+    {
+     "end": 17.925,
+     "start": 17.8,
+     "text": "and"
+    },
+    {
+     "end": 18.4,
+     "start": 17.925,
+     "text": "mismatched"
+    },
+    {
+     "end": 18.688,
+     "start": 18.4,
+     "text": "legs"
+    },
+    {
+     "end": 18.775,
+     "start": 18.688,
+     "text": "are"
+    },
+    {
+     "end": 19.8,
+     "start": 18.775,
+     "text": "refused"
+    },
+    {
+     "end": 20.0,
+     "start": 19.8,
+     "text": "."
+    },
+    {
+     "end": 20.3,
+     "start": 20.2,
+     "text": "The"
+    },
+    {
+     "end": 20.725,
+     "start": 20.3,
+     "text": "hosted"
+    },
+    {
+     "end": 21.525,
+     "start": 20.725,
+     "text": "registration"
+    },
+    {
+     "end": 21.962,
+     "start": 21.525,
+     "text": "journey"
+    },
+    {
+     "end": 22.275,
+     "start": 21.962,
+     "text": "writes"
+    },
+    {
+     "end": 22.388,
+     "start": 22.275,
+     "text": "the"
+    },
+    {
+     "end": 22.975,
+     "start": 22.388,
+     "text": "candidate"
+    },
+    {
+     "end": 23.425,
+     "start": 22.975,
+     "text": "receipt"
+    },
+    {
+     "end": 23.513,
+     "start": 23.425,
+     "text": "in"
+    },
+    {
+     "end": 23.638,
+     "start": 23.513,
+     "text": "the"
+    },
+    {
+     "end": 23.962,
+     "start": 23.638,
+     "text": "same"
+    },
+    {
+     "end": 24.575,
+     "start": 23.962,
+     "text": "schema"
+    },
+    {
+     "end": 24.725,
+     "start": 24.575,
+     "text": "and"
+    },
+    {
+     "end": 25.2,
+     "start": 24.725,
+     "text": "compares"
+    },
+    {
+     "end": 25.375,
+     "start": 25.2,
+     "text": "its"
+    },
+    {
+     "end": 26.062,
+     "start": 25.375,
+     "text": "transaction"
+    },
+    {
+     "end": 26.5,
+     "start": 26.062,
+     "text": "counts"
+    },
+    {
+     "end": 26.638,
+     "start": 26.5,
+     "text": "and"
+    },
+    {
+     "end": 27.0,
+     "start": 26.638,
+     "text": "script"
+    },
+    {
+     "end": 28.2,
+     "start": 27.0,
+     "text": "hashes"
+    },
+    {
+     "end": 28.4,
+     "start": 28.2,
+     "text": ";"
+    },
+    {
+     "end": 28.837,
+     "start": 28.6,
+     "text": "fees"
+    },
+    {
+     "end": 29.0,
+     "start": 28.837,
+     "text": "may"
+    },
+    {
+     "end": 29.237,
+     "start": 29.0,
+     "text": "differ"
+    },
+    {
+     "end": 29.55,
+     "start": 29.237,
+     "text": "between"
+    },
+    {
+     "end": 30.325,
+     "start": 29.55,
+     "text": "runs"
+    },
+    {
+     "end": 30.525,
+     "start": 30.325,
+     "text": "."
+    }
+   ]
+  },
+  "docs-creation-cost/measured-creations-00": {
+   "audio_sha256": "05a253b71eaca44973b86fb6df0cdb4350a72451e7e3a96f004ee83f98f18304",
+   "characters": 19,
+   "cost": 1.8809999999999998e-05,
+   "duration": 1.725,
+   "index": 0,
+   "key": "5f8e582450e18c1235b9e197a5225774a8116d00de457792bbb5416018aeb920",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 500,
+   "section": "measured-creations",
+   "sent_text": "Measured creations.",
+   "text": "Measured creations.",
+   "words": [
+    {
+     "end": 0.5,
+     "start": 0.2,
+     "text": "Measured"
+    },
+    {
+     "end": 1.525,
+     "start": 0.5,
+     "text": "creations"
+    },
+    {
+     "end": 1.725,
+     "start": 1.525,
+     "text": "."
+    }
+   ]
+  },
+  "docs-creation-cost/measured-creations-01": {
+   "audio_sha256": "979ce8642757a025bc8f9d5b0fa0178fd29331c503f8d3f471c323df71da559d",
+   "characters": 217,
+   "cost": 0.00021482999999999997,
+   "duration": 14.875,
+   "index": 1,
+   "key": "afe0311eadbc4eb01657286fb22a2fadaa1a94623a6dbbb1693f0c8aa374cb60",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 400,
+   "section": "measured-creations",
+   "sent_text": "The previous design sent 5 transactions for its first creation and 4 for its later creation. The issue's four-then-two claim does not match these measured counts. The application-held design sent 3 and 1 respectively.",
+   "text": "The previous design sent 5 transactions for its first creation and 4 for its later creation. The issue's four-then-two claim does not match these measured counts. The application-held design sent 3 and 1 respectively.",
+   "words": [
+    {
+     "end": 0.3,
+     "start": 0.2,
+     "text": "The"
+    },
+    {
+     "end": 0.75,
+     "start": 0.3,
+     "text": "previous"
+    },
+    {
+     "end": 1.288,
+     "start": 0.75,
+     "text": "design"
+    },
+    {
+     "end": 1.625,
+     "start": 1.288,
+     "text": "sent"
+    },
+    {
+     "end": 2.0,
+     "start": 1.625,
+     "text": "5"
+    },
+    {
+     "end": 2.825,
+     "start": 2.0,
+     "text": "transactions"
+    },
+    {
+     "end": 2.938,
+     "start": 2.825,
+     "text": "for"
+    },
+    {
+     "end": 3.125,
+     "start": 2.938,
+     "text": "its"
+    },
+    {
+     "end": 3.425,
+     "start": 3.125,
+     "text": "first"
+    },
+    {
+     "end": 4.2,
+     "start": 3.425,
+     "text": "creation"
+    },
+    {
+     "end": 4.412,
+     "start": 4.2,
+     "text": "and"
+    },
+    {
+     "end": 4.85,
+     "start": 4.412,
+     "text": "4"
+    },
+    {
+     "end": 5.0,
+     "start": 4.85,
+     "text": "for"
+    },
+    {
+     "end": 5.2,
+     "start": 5.0,
+     "text": "its"
+    },
+    {
+     "end": 5.525,
+     "start": 5.2,
+     "text": "later"
+    },
+    {
+     "end": 6.7,
+     "start": 5.525,
+     "text": "creation"
+    },
+    {
+     "end": 6.9,
+     "start": 6.7,
+     "text": "."
+    },
+    {
+     "end": 7.2,
+     "start": 7.075,
+     "text": "The"
+    },
+    {
+     "end": 7.55,
+     "start": 7.2,
+     "text": "issue's"
+    },
+    {
+     "end": 8.1,
+     "start": 7.55,
+     "text": "four-then-two"
+    },
+    {
+     "end": 8.55,
+     "start": 8.1,
+     "text": "claim"
+    },
+    {
+     "end": 8.725,
+     "start": 8.55,
+     "text": "does"
+    },
+    {
+     "end": 8.95,
+     "start": 8.725,
+     "text": "not"
+    },
+    {
+     "end": 9.25,
+     "start": 8.95,
+     "text": "match"
+    },
+    {
+     "end": 9.475,
+     "start": 9.25,
+     "text": "these"
+    },
+    {
+     "end": 9.875,
+     "start": 9.475,
+     "text": "measured"
+    },
+    {
+     "end": 10.775,
+     "start": 9.875,
+     "text": "counts"
+    },
+    {
+     "end": 10.975,
+     "start": 10.775,
+     "text": "."
+    },
+    {
+     "end": 11.25,
+     "start": 11.15,
+     "text": "The"
+    },
+    {
+     "end": 12.05,
+     "start": 11.25,
+     "text": "application-held"
+    },
+    {
+     "end": 12.475,
+     "start": 12.05,
+     "text": "design"
+    },
+    {
+     "end": 12.738,
+     "start": 12.475,
+     "text": "sent"
+    },
+    {
+     "end": 13.05,
+     "start": 12.738,
+     "text": "3"
+    },
+    {
+     "end": 13.175,
+     "start": 13.05,
+     "text": "and"
+    },
+    {
+     "end": 13.45,
+     "start": 13.175,
+     "text": "1"
+    },
+    {
+     "end": 14.675,
+     "start": 13.45,
+     "text": "respectively"
+    },
+    {
+     "end": 14.875,
+     "start": 14.675,
+     "text": "."
+    }
+   ]
+  },
+  "docs-creation-cost/measured-creations-02": {
+   "audio_sha256": "38a13f17448379df23c30ea1b3183fd8a9b5d653a672c0ad087685560fffe017",
+   "characters": 336,
+   "cost": 0.00033263999999999993,
+   "duration": 22.05,
+   "index": 2,
+   "key": "64e8953b4028e13e6acaca274d23907fa9d9c77440801108e6bfc3ba3158cda8",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 400,
+   "section": "measured-creations",
+   "sent_text": "The first creation starts without a live copy of any script it needs. Later creations have the earlier shared copies available. Under the previous design only the state script is shared; request, witness and application scripts are specific to the new registry. The application-held design reuses both the state and application scripts.",
+   "text": "The first creation starts without a live copy of any script it needs. Later creations have the earlier shared copies available. Under the previous design only the state script is shared; request, witness and application scripts are specific to the new registry. The application-held design reuses both the state and application scripts.",
+   "words": [
+    {
+     "end": 0.25,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.5,
+     "start": 0.25,
+     "text": "first"
+    },
+    {
+     "end": 1.025,
+     "start": 0.5,
+     "text": "creation"
+    },
+    {
+     "end": 1.413,
+     "start": 1.025,
+     "text": "starts"
+    },
+    {
+     "end": 1.712,
+     "start": 1.413,
+     "text": "without"
+    },
+    {
+     "end": 1.8,
+     "start": 1.712,
+     "text": "a"
+    },
+    {
+     "end": 2.125,
+     "start": 1.8,
+     "text": "live"
+    },
+    {
+     "end": 2.575,
+     "start": 2.125,
+     "text": "copy"
+    },
+    {
+     "end": 2.737,
+     "start": 2.575,
+     "text": "of"
+    },
+    {
+     "end": 3.025,
+     "start": 2.737,
+     "text": "any"
+    },
+    {
+     "end": 3.338,
+     "start": 3.025,
+     "text": "script"
+    },
+    {
+     "end": 3.45,
+     "start": 3.338,
+     "text": "it"
+    },
+    {
+     "end": 4.4,
+     "start": 3.45,
+     "text": "needs"
+    },
+    {
+     "end": 4.6,
+     "start": 4.4,
+     "text": "."
+    },
+    {
+     "end": 5.075,
+     "start": 4.8,
+     "text": "Later"
+    },
+    {
+     "end": 5.725,
+     "start": 5.075,
+     "text": "creations"
+    },
+    {
+     "end": 5.912,
+     "start": 5.725,
+     "text": "have"
+    },
+    {
+     "end": 6.025,
+     "start": 5.912,
+     "text": "the"
+    },
+    {
+     "end": 6.438,
+     "start": 6.025,
+     "text": "earlier"
+    },
+    {
+     "end": 6.75,
+     "start": 6.438,
+     "text": "shared"
+    },
+    {
+     "end": 7.2,
+     "start": 6.75,
+     "text": "copies"
+    },
+    {
+     "end": 8.225,
+     "start": 7.2,
+     "text": "available"
+    },
+    {
+     "end": 8.425,
+     "start": 8.225,
+     "text": "."
+    },
+    {
+     "end": 8.762,
+     "start": 8.6,
+     "text": "Under"
+    },
+    {
+     "end": 8.85,
+     "start": 8.762,
+     "text": "the"
+    },
+    {
+     "end": 9.275,
+     "start": 8.85,
+     "text": "previous"
+    },
+    {
+     "end": 9.812,
+     "start": 9.275,
+     "text": "design"
+    },
+    {
+     "end": 10.113,
+     "start": 9.812,
+     "text": "only"
+    },
+    {
+     "end": 10.2,
+     "start": 10.113,
+     "text": "the"
+    },
+    {
+     "end": 10.5,
+     "start": 10.2,
+     "text": "state"
+    },
+    {
+     "end": 10.837,
+     "start": 10.5,
+     "text": "script"
+    },
+    {
+     "end": 10.962,
+     "start": 10.837,
+     "text": "is"
+    },
+    {
+     "end": 11.8,
+     "start": 10.962,
+     "text": "shared"
+    },
+    {
+     "end": 12.0,
+     "start": 11.8,
+     "text": ";"
+    },
+    {
+     "end": 12.75,
+     "start": 12.2,
+     "text": "request"
+    },
+    {
+     "end": 12.837,
+     "start": 12.75,
+     "text": ","
+    },
+    {
+     "end": 13.3,
+     "start": 12.837,
+     "text": "witness"
+    },
+    {
+     "end": 13.425,
+     "start": 13.3,
+     "text": "and"
+    },
+    {
+     "end": 14.1,
+     "start": 13.425,
+     "text": "application"
+    },
+    {
+     "end": 14.562,
+     "start": 14.1,
+     "text": "scripts"
+    },
+    {
+     "end": 14.725,
+     "start": 14.562,
+     "text": "are"
+    },
+    {
+     "end": 15.3,
+     "start": 14.725,
+     "text": "specific"
+    },
+    {
+     "end": 15.387,
+     "start": 15.3,
+     "text": "to"
+    },
+    {
+     "end": 15.475,
+     "start": 15.387,
+     "text": "the"
+    },
+    {
+     "end": 15.65,
+     "start": 15.475,
+     "text": "new"
+    },
+    {
+     "end": 16.75,
+     "start": 15.65,
+     "text": "registry"
+    },
+    {
+     "end": 16.975,
+     "start": 16.75,
+     "text": "."
+    },
+    {
+     "end": 17.275,
+     "start": 17.15,
+     "text": "The"
+    },
+    {
+     "end": 18.15,
+     "start": 17.275,
+     "text": "application-held"
+    },
+    {
+     "end": 18.712,
+     "start": 18.15,
+     "text": "design"
+    },
+    {
+     "end": 19.25,
+     "start": 18.712,
+     "text": "reuses"
+    },
+    {
+     "end": 19.475,
+     "start": 19.25,
+     "text": "both"
+    },
+    {
+     "end": 19.612,
+     "start": 19.475,
+     "text": "the"
+    },
+    {
+     "end": 20.075,
+     "start": 19.612,
+     "text": "state"
+    },
+    {
+     "end": 20.25,
+     "start": 20.075,
+     "text": "and"
+    },
+    {
+     "end": 20.875,
+     "start": 20.25,
+     "text": "application"
+    },
+    {
+     "end": 21.85,
+     "start": 20.875,
+     "text": "scripts"
+    },
+    {
+     "end": 22.05,
+     "start": 21.85,
+     "text": "."
+    }
+   ]
+  },
+  "docs-creation-cost/measurement-appendix-00": {
+   "audio_sha256": "dded119738e8b27f10e67e6277c2e60bcb5133f3de578ed3b7a08f1d8fba768e",
+   "characters": 21,
+   "cost": 2.0789999999999996e-05,
+   "duration": 1.675,
+   "index": 0,
+   "key": "5fada5fa3753755d406a50e18dbcec556ef11935e99cb317c2bc6ff466680728",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 500,
+   "section": "measurement-appendix",
+   "sent_text": "Measurement appendix.",
+   "text": "Measurement appendix.",
+   "words": [
+    {
+     "end": 0.587,
+     "start": 0.2,
+     "text": "Measurement"
+    },
+    {
+     "end": 1.5,
+     "start": 0.587,
+     "text": "appendix"
+    },
+    {
+     "end": 1.675,
+     "start": 1.5,
+     "text": "."
+    }
+   ]
+  },
+  "docs-creation-cost/measurement-appendix-01": {
+   "audio_sha256": "33292bf3ad5667646b585b2c23d094e896aa2f107ae33f40a55247c2d57d6f13",
+   "characters": 802,
+   "cost": 0.00079398,
+   "duration": 54.7,
+   "index": 1,
+   "key": "48dab121fd87443f88695c6cf13105a8f2fd4a9d312b48830ca95bad6907e57f",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 400,
+   "section": "measurement-appendix",
+   "sent_text": "The carrying receipt records the test-only producer, its exact source changes and executable hash, the signed transactions, local execution results and independent node answers. The experiment has its own recorded genesis and start time; its protocol parameters match the earlier creation comparison. The receipt checker recomputes lengths, fees, script hashes, placements and execution budgets, binds each transaction to the independent node submission, and requires identical included bytes for every fit. Every refusal must reproduce the node's limiting parameter and figures. Missing forms, missing execution, altered figures and false fits are refused by the hosted documentation check. The test harness is outside the released command's source and changes no production builder or shared receipt.",
+   "text": "The carrying receipt records the test-only producer, its exact source changes and executable hash, the signed transactions, local execution results and independent node answers. The experiment has its own recorded genesis and start time; its protocol parameters match the earlier creation comparison. The receipt checker recomputes lengths, fees, script hashes, placements and execution budgets, binds each transaction to the independent node submission, and requires identical included bytes for every fit. Every refusal must reproduce the node's limiting parameter and figures. Missing forms, missing execution, altered figures and false fits are refused by the hosted documentation check. The test harness is outside the released command's source and changes no production builder or shared receipt.",
+   "words": [
+    {
+     "end": 0.338,
+     "start": 0.225,
+     "text": "The"
+    },
+    {
+     "end": 0.8,
+     "start": 0.338,
+     "text": "carrying"
+    },
+    {
+     "end": 1.2,
+     "start": 0.8,
+     "text": "receipt"
+    },
+    {
+     "end": 1.7,
+     "start": 1.2,
+     "text": "records"
+    },
+    {
+     "end": 1.837,
+     "start": 1.7,
+     "text": "the"
+    },
+    {
+     "end": 2.525,
+     "start": 1.837,
+     "text": "test-only"
+    },
+    {
+     "end": 3.175,
+     "start": 2.525,
+     "text": "producer"
+    },
+    {
+     "end": 3.25,
+     "start": 3.175,
+     "text": ","
+    },
+    {
+     "end": 3.425,
+     "start": 3.25,
+     "text": "its"
+    },
+    {
+     "end": 3.963,
+     "start": 3.425,
+     "text": "exact"
+    },
+    {
+     "end": 4.338,
+     "start": 3.963,
+     "text": "source"
+    },
+    {
+     "end": 4.938,
+     "start": 4.338,
+     "text": "changes"
+    },
+    {
+     "end": 5.113,
+     "start": 4.938,
+     "text": "and"
+    },
+    {
+     "end": 5.812,
+     "start": 5.113,
+     "text": "executable"
+    },
+    {
+     "end": 6.4,
+     "start": 5.812,
+     "text": "hash"
+    },
+    {
+     "end": 6.5,
+     "start": 6.4,
+     "text": ","
+    },
+    {
+     "end": 6.637,
+     "start": 6.5,
+     "text": "the"
+    },
+    {
+     "end": 7.0,
+     "start": 6.637,
+     "text": "signed"
+    },
+    {
+     "end": 7.95,
+     "start": 7.0,
+     "text": "transactions"
+    },
+    {
+     "end": 8.038,
+     "start": 7.95,
+     "text": ","
+    },
+    {
+     "end": 8.4,
+     "start": 8.038,
+     "text": "local"
+    },
+    {
+     "end": 9.05,
+     "start": 8.4,
+     "text": "execution"
+    },
+    {
+     "end": 9.637,
+     "start": 9.05,
+     "text": "results"
+    },
+    {
+     "end": 9.8,
+     "start": 9.637,
+     "text": "and"
+    },
+    {
+     "end": 10.45,
+     "start": 9.8,
+     "text": "independent"
+    },
+    {
+     "end": 10.75,
+     "start": 10.45,
+     "text": "node"
+    },
+    {
+     "end": 12.025,
+     "start": 10.75,
+     "text": "answers"
+    },
+    {
+     "end": 12.25,
+     "start": 12.025,
+     "text": "."
+    },
+    {
+     "end": 12.55,
+     "start": 12.425,
+     "text": "The"
+    },
+    {
+     "end": 13.15,
+     "start": 12.55,
+     "text": "experiment"
+    },
+    {
+     "end": 13.312,
+     "start": 13.15,
+     "text": "has"
+    },
+    {
+     "end": 13.5,
+     "start": 13.312,
+     "text": "its"
+    },
+    {
+     "end": 13.75,
+     "start": 13.5,
+     "text": "own"
+    },
+    {
+     "end": 14.238,
+     "start": 13.75,
+     "text": "recorded"
+    },
+    {
+     "end": 14.887,
+     "start": 14.238,
+     "text": "genesis"
+    },
+    {
+     "end": 15.025,
+     "start": 14.887,
+     "text": "and"
+    },
+    {
+     "end": 15.35,
+     "start": 15.025,
+     "text": "start"
+    },
+    {
+     "end": 16.225,
+     "start": 15.35,
+     "text": "time"
+    },
+    {
+     "end": 16.425,
+     "start": 16.225,
+     "text": ";"
+    },
+    {
+     "end": 16.8,
+     "start": 16.625,
+     "text": "its"
+    },
+    {
+     "end": 17.325,
+     "start": 16.8,
+     "text": "protocol"
+    },
+    {
+     "end": 18.1,
+     "start": 17.325,
+     "text": "parameters"
+    },
+    {
+     "end": 18.45,
+     "start": 18.1,
+     "text": "match"
+    },
+    {
+     "end": 18.6,
+     "start": 18.45,
+     "text": "the"
+    },
+    {
+     "end": 19.0,
+     "start": 18.6,
+     "text": "earlier"
+    },
+    {
+     "end": 19.475,
+     "start": 19.0,
+     "text": "creation"
+    },
+    {
+     "end": 20.65,
+     "start": 19.475,
+     "text": "comparison"
+    },
+    {
+     "end": 20.85,
+     "start": 20.65,
+     "text": "."
+    },
+    {
+     "end": 21.1,
+     "start": 21.025,
+     "text": "The"
+    },
+    {
+     "end": 21.45,
+     "start": 21.1,
+     "text": "receipt"
+    },
+    {
+     "end": 21.8,
+     "start": 21.45,
+     "text": "checker"
+    },
+    {
+     "end": 22.375,
+     "start": 21.8,
+     "text": "recomputes"
+    },
+    {
+     "end": 22.725,
+     "start": 22.375,
+     "text": "lengths"
+    },
+    {
+     "end": 22.812,
+     "start": 22.725,
+     "text": ","
+    },
+    {
+     "end": 23.175,
+     "start": 22.812,
+     "text": "fees"
+    },
+    {
+     "end": 23.225,
+     "start": 23.175,
+     "text": ","
+    },
+    {
+     "end": 23.55,
+     "start": 23.225,
+     "text": "script"
+    },
+    {
+     "end": 24.55,
+     "start": 23.55,
+     "text": "hashes"
+    },
+    {
+     "end": 24.75,
+     "start": 24.55,
+     "text": ","
+    },
+    {
+     "end": 25.337,
+     "start": 24.925,
+     "text": "placements"
+    },
+    {
+     "end": 25.438,
+     "start": 25.337,
+     "text": "and"
+    },
+    {
+     "end": 25.975,
+     "start": 25.438,
+     "text": "execution"
+    },
+    {
+     "end": 26.8,
+     "start": 25.975,
+     "text": "budgets"
+    },
+    {
+     "end": 27.0,
+     "start": 26.8,
+     "text": ","
+    },
+    {
+     "end": 27.5,
+     "start": 27.175,
+     "text": "binds"
+    },
+    {
+     "end": 27.725,
+     "start": 27.5,
+     "text": "each"
+    },
+    {
+     "end": 28.425,
+     "start": 27.725,
+     "text": "transaction"
+    },
+    {
+     "end": 28.513,
+     "start": 28.425,
+     "text": "to"
+    },
+    {
+     "end": 28.625,
+     "start": 28.513,
+     "text": "the"
+    },
+    {
+     "end": 29.2,
+     "start": 28.625,
+     "text": "independent"
+    },
+    {
+     "end": 29.5,
+     "start": 29.2,
+     "text": "node"
+    },
+    {
+     "end": 30.575,
+     "start": 29.5,
+     "text": "submission"
+    },
+    {
+     "end": 30.75,
+     "start": 30.575,
+     "text": ","
+    },
+    {
+     "end": 31.038,
+     "start": 30.95,
+     "text": "and"
+    },
+    {
+     "end": 31.612,
+     "start": 31.038,
+     "text": "requires"
+    },
+    {
+     "end": 32.275,
+     "start": 31.612,
+     "text": "identical"
+    },
+    {
+     "end": 32.775,
+     "start": 32.275,
+     "text": "included"
+    },
+    {
+     "end": 33.125,
+     "start": 32.775,
+     "text": "bytes"
+    },
+    {
+     "end": 33.275,
+     "start": 33.125,
+     "text": "for"
+    },
+    {
+     "end": 33.612,
+     "start": 33.275,
+     "text": "every"
+    },
+    {
+     "end": 34.4,
+     "start": 33.612,
+     "text": "fit"
+    },
+    {
+     "end": 34.6,
+     "start": 34.4,
+     "text": "."
+    },
+    {
+     "end": 35.1,
+     "start": 34.8,
+     "text": "Every"
+    },
+    {
+     "end": 35.775,
+     "start": 35.1,
+     "text": "refusal"
+    },
+    {
+     "end": 36.05,
+     "start": 35.775,
+     "text": "must"
+    },
+    {
+     "end": 36.65,
+     "start": 36.05,
+     "text": "reproduce"
+    },
+    {
+     "end": 36.775,
+     "start": 36.65,
+     "text": "the"
+    },
+    {
+     "end": 37.175,
+     "start": 36.775,
+     "text": "node's"
+    },
+    {
+     "end": 37.625,
+     "start": 37.175,
+     "text": "limiting"
+    },
+    {
+     "end": 38.2,
+     "start": 37.625,
+     "text": "parameter"
+    },
+    {
+     "end": 38.338,
+     "start": 38.2,
+     "text": "and"
+    },
+    {
+     "end": 39.4,
+     "start": 38.338,
+     "text": "figures"
+    },
+    {
+     "end": 39.6,
+     "start": 39.4,
+     "text": "."
+    },
+    {
+     "end": 40.162,
+     "start": 39.825,
+     "text": "Missing"
+    },
+    {
+     "end": 40.675,
+     "start": 40.162,
+     "text": "forms"
+    },
+    {
+     "end": 40.75,
+     "start": 40.675,
+     "text": ","
+    },
+    {
+     "end": 41.075,
+     "start": 40.75,
+     "text": "missing"
+    },
+    {
+     "end": 41.95,
+     "start": 41.075,
+     "text": "execution"
+    },
+    {
+     "end": 42.062,
+     "start": 41.95,
+     "text": ","
+    },
+    {
+     "end": 42.513,
+     "start": 42.062,
+     "text": "altered"
+    },
+    {
+     "end": 43.0,
+     "start": 42.513,
+     "text": "figures"
+    },
+    {
+     "end": 43.138,
+     "start": 43.0,
+     "text": "and"
+    },
+    {
+     "end": 43.537,
+     "start": 43.138,
+     "text": "false"
+    },
+    {
+     "end": 43.963,
+     "start": 43.537,
+     "text": "fits"
+    },
+    {
+     "end": 44.125,
+     "start": 43.963,
+     "text": "are"
+    },
+    {
+     "end": 44.8,
+     "start": 44.125,
+     "text": "refused"
+    },
+    {
+     "end": 44.975,
+     "start": 44.8,
+     "text": "by"
+    },
+    {
+     "end": 45.112,
+     "start": 44.975,
+     "text": "the"
+    },
+    {
+     "end": 45.6,
+     "start": 45.112,
+     "text": "hosted"
+    },
+    {
+     "end": 46.513,
+     "start": 45.6,
+     "text": "documentation"
+    },
+    {
+     "end": 47.475,
+     "start": 46.513,
+     "text": "check"
+    },
+    {
+     "end": 47.7,
+     "start": 47.475,
+     "text": "."
+    },
+    {
+     "end": 47.975,
+     "start": 47.9,
+     "text": "The"
+    },
+    {
+     "end": 48.275,
+     "start": 47.975,
+     "text": "test"
+    },
+    {
+     "end": 48.7,
+     "start": 48.275,
+     "text": "harness"
+    },
+    {
+     "end": 48.85,
+     "start": 48.7,
+     "text": "is"
+    },
+    {
+     "end": 49.475,
+     "start": 48.85,
+     "text": "outside"
+    },
+    {
+     "end": 49.575,
+     "start": 49.475,
+     "text": "the"
+    },
+    {
+     "end": 50.05,
+     "start": 49.575,
+     "text": "released"
+    },
+    {
+     "end": 50.487,
+     "start": 50.05,
+     "text": "command's"
+    },
+    {
+     "end": 50.987,
+     "start": 50.487,
+     "text": "source"
+    },
+    {
+     "end": 51.138,
+     "start": 50.987,
+     "text": "and"
+    },
+    {
+     "end": 51.588,
+     "start": 51.138,
+     "text": "changes"
+    },
+    {
+     "end": 51.825,
+     "start": 51.588,
+     "text": "no"
+    },
+    {
+     "end": 52.325,
+     "start": 51.825,
+     "text": "production"
+    },
+    {
+     "end": 52.85,
+     "start": 52.325,
+     "text": "builder"
+    },
+    {
+     "end": 53.075,
+     "start": 52.85,
+     "text": "or"
+    },
+    {
+     "end": 53.4,
+     "start": 53.075,
+     "text": "shared"
+    },
+    {
+     "end": 54.475,
+     "start": 53.4,
+     "text": "receipt"
+    },
+    {
+     "end": 54.7,
+     "start": 54.475,
+     "text": "."
+    }
+   ]
+  },
+  "docs-creation-cost/previous-design-00": {
+   "audio_sha256": "f4e964af49d678d6d9c785a380e3163c075bb76c3a0b17a8bdc21d400649bafd",
+   "characters": 16,
+   "cost": 1.5839999999999997e-05,
+   "duration": 1.625,
+   "index": 0,
+   "key": "a5234239d5e4dc284292196f23424cec76f02c7cc97b16492d2f5bc5565898cc",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 500,
+   "section": "previous-design",
+   "sent_text": "Previous design.",
+   "text": "Previous design.",
+   "words": [
+    {
+     "end": 0.575,
+     "start": 0.175,
+     "text": "Previous"
+    },
+    {
+     "end": 1.425,
+     "start": 0.575,
+     "text": "design"
+    },
+    {
+     "end": 1.625,
+     "start": 1.425,
+     "text": "."
+    }
+   ]
+  },
+  "docs-creation-cost/previous-design-01": {
+   "audio_sha256": "886f406ac31d7090f175edee86680a242f05e4c1552faecdbccf3fe8eea43553",
+   "characters": 366,
+   "cost": 0.00036233999999999995,
+   "duration": 48.6,
+   "index": 1,
+   "key": "901a79093d7af2373b933dac1356d1f85eea32a740d6bd2f4362dd1a1fe9fa69",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 400,
+   "section": "previous-design",
+   "sent_text": "Release: open-datum 0.16.0 (commit 0 c 0 a b 8 8 0 d f 9 8 2 a 7 2 8 b 6 b 8 9 a 1 e 8 0 f c 1 3 0 8 1 4 4 d 6 1 6). Revision: 0 c 0 a b 8 8 0 d f 9 8 2 a 7 2 8 b 6 b 8 9 a 1 e 8 0 f c 1 3 0 8 1 4 4 d 6 1 6. Deployment blueprint SHA-256: a c 4 3 d 7 8 2 1 8 1 1 2 1 d c d e d f d 4 a 9 c 4 8 b 8 9 f b 6 f a 7 7 d d 6 9 e 7 c 9 f 5 6 1 9 1 1 0 c a 8 e f b 0 6 8 8 b.",
+   "text": "Release: open-datum 0.16.0 (commit 0c0ab880df982a728b6b89a1e80fc1308144d616). Revision: 0c0ab880df982a728b6b89a1e80fc1308144d616. Deployment blueprint SHA-256: ac43d782181121dcdedfd4a9c48b89fb6fa77dd69e7c9f5619110ca8efb0688b.",
+   "words": [
+    {
+     "end": 1.0,
+     "start": 0.2,
+     "text": "Release"
+    },
+    {
+     "end": 1.225,
+     "start": 1.0,
+     "text": ":"
+    },
+    {
+     "end": 2.237,
+     "start": 1.475,
+     "text": "open-datum"
+    },
+    {
+     "end": 2.312,
+     "start": 2.237,
+     "text": "0.16.0"
+    },
+    {
+     "end": 2.35,
+     "start": 2.312,
+     "text": "("
+    },
+    {
+     "end": 2.638,
+     "start": 2.35,
+     "text": "commit"
+    },
+    {
+     "end": 3.013,
+     "start": 2.638,
+     "text": "0"
+    },
+    {
+     "end": 3.237,
+     "start": 3.013,
+     "text": "c"
+    },
+    {
+     "end": 3.65,
+     "start": 3.237,
+     "text": "0"
+    },
+    {
+     "end": 3.763,
+     "start": 3.65,
+     "text": "a"
+    },
+    {
+     "end": 4.025,
+     "start": 3.763,
+     "text": "b"
+    },
+    {
+     "end": 4.275,
+     "start": 4.025,
+     "text": "8"
+    },
+    {
+     "end": 4.537,
+     "start": 4.275,
+     "text": "8"
+    },
+    {
+     "end": 4.912,
+     "start": 4.537,
+     "text": "0"
+    },
+    {
+     "end": 5.213,
+     "start": 4.912,
+     "text": "d"
+    },
+    {
+     "end": 5.45,
+     "start": 5.213,
+     "text": "f"
+    },
+    {
+     "end": 5.825,
+     "start": 5.45,
+     "text": "9"
+    },
+    {
+     "end": 6.037,
+     "start": 5.825,
+     "text": "8"
+    },
+    {
+     "end": 6.537,
+     "start": 6.037,
+     "text": "2"
+    },
+    {
+     "end": 6.7,
+     "start": 6.537,
+     "text": "a"
+    },
+    {
+     "end": 7.088,
+     "start": 6.7,
+     "text": "7"
+    },
+    {
+     "end": 7.363,
+     "start": 7.088,
+     "text": "2"
+    },
+    {
+     "end": 7.625,
+     "start": 7.363,
+     "text": "8"
+    },
+    {
+     "end": 7.812,
+     "start": 7.625,
+     "text": "b"
+    },
+    {
+     "end": 8.125,
+     "start": 7.812,
+     "text": "6"
+    },
+    {
+     "end": 8.3,
+     "start": 8.125,
+     "text": "b"
+    },
+    {
+     "end": 8.525,
+     "start": 8.3,
+     "text": "8"
+    },
+    {
+     "end": 8.938,
+     "start": 8.525,
+     "text": "9"
+    },
+    {
+     "end": 9.062,
+     "start": 8.938,
+     "text": "a"
+    },
+    {
+     "end": 9.325,
+     "start": 9.062,
+     "text": "1"
+    },
+    {
+     "end": 9.475,
+     "start": 9.325,
+     "text": "e"
+    },
+    {
+     "end": 9.738,
+     "start": 9.475,
+     "text": "8"
+    },
+    {
+     "end": 10.15,
+     "start": 9.738,
+     "text": "0"
+    },
+    {
+     "end": 10.363,
+     "start": 10.15,
+     "text": "f"
+    },
+    {
+     "end": 10.613,
+     "start": 10.363,
+     "text": "c"
+    },
+    {
+     "end": 10.863,
+     "start": 10.613,
+     "text": "1"
+    },
+    {
+     "end": 11.113,
+     "start": 10.863,
+     "text": "3"
+    },
+    {
+     "end": 11.525,
+     "start": 11.113,
+     "text": "0"
+    },
+    {
+     "end": 11.762,
+     "start": 11.525,
+     "text": "8"
+    },
+    {
+     "end": 12.012,
+     "start": 11.762,
+     "text": "1"
+    },
+    {
+     "end": 12.337,
+     "start": 12.012,
+     "text": "4"
+    },
+    {
+     "end": 12.6,
+     "start": 12.337,
+     "text": "4"
+    },
+    {
+     "end": 12.837,
+     "start": 12.6,
+     "text": "d"
+    },
+    {
+     "end": 13.15,
+     "start": 12.837,
+     "text": "6"
+    },
+    {
+     "end": 13.438,
+     "start": 13.15,
+     "text": "1"
+    },
+    {
+     "end": 14.525,
+     "start": 13.438,
+     "text": "6"
+    },
+    {
+     "end": 14.85,
+     "start": 14.525,
+     "text": ")"
+    },
+    {
+     "end": 14.9,
+     "start": 14.85,
+     "text": "."
+    },
+    {
+     "end": 15.675,
+     "start": 15.175,
+     "text": "Revision"
+    },
+    {
+     "end": 15.762,
+     "start": 15.675,
+     "text": ":"
+    },
+    {
+     "end": 16.138,
+     "start": 15.762,
+     "text": "0"
+    },
+    {
+     "end": 16.362,
+     "start": 16.138,
+     "text": "c"
+    },
+    {
+     "end": 16.75,
+     "start": 16.362,
+     "text": "0"
+    },
+    {
+     "end": 16.85,
+     "start": 16.75,
+     "text": "a"
+    },
+    {
+     "end": 17.075,
+     "start": 16.85,
+     "text": "b"
+    },
+    {
+     "end": 17.325,
+     "start": 17.075,
+     "text": "8"
+    },
+    {
+     "end": 17.587,
+     "start": 17.325,
+     "text": "8"
+    },
+    {
+     "end": 17.962,
+     "start": 17.587,
+     "text": "0"
+    },
+    {
+     "end": 18.288,
+     "start": 17.962,
+     "text": "d"
+    },
+    {
+     "end": 18.55,
+     "start": 18.288,
+     "text": "f"
+    },
+    {
+     "end": 18.962,
+     "start": 18.55,
+     "text": "9"
+    },
+    {
+     "end": 19.212,
+     "start": 18.962,
+     "text": "8"
+    },
+    {
+     "end": 19.663,
+     "start": 19.212,
+     "text": "2"
+    },
+    {
+     "end": 19.812,
+     "start": 19.663,
+     "text": "a"
+    },
+    {
+     "end": 20.188,
+     "start": 19.812,
+     "text": "7"
+    },
+    {
+     "end": 20.462,
+     "start": 20.188,
+     "text": "2"
+    },
+    {
+     "end": 20.725,
+     "start": 20.462,
+     "text": "8"
+    },
+    {
+     "end": 20.913,
+     "start": 20.725,
+     "text": "b"
+    },
+    {
+     "end": 21.225,
+     "start": 20.913,
+     "text": "6"
+    },
+    {
+     "end": 21.4,
+     "start": 21.225,
+     "text": "b"
+    },
+    {
+     "end": 21.625,
+     "start": 21.4,
+     "text": "8"
+    },
+    {
+     "end": 22.038,
+     "start": 21.625,
+     "text": "9"
+    },
+    {
+     "end": 22.163,
+     "start": 22.038,
+     "text": "a"
+    },
+    {
+     "end": 22.45,
+     "start": 22.163,
+     "text": "1"
+    },
+    {
+     "end": 22.625,
+     "start": 22.45,
+     "text": "e"
+    },
+    {
+     "end": 22.888,
+     "start": 22.625,
+     "text": "8"
+    },
+    {
+     "end": 23.3,
+     "start": 22.888,
+     "text": "0"
+    },
+    {
+     "end": 23.5,
+     "start": 23.3,
+     "text": "f"
+    },
+    {
+     "end": 23.737,
+     "start": 23.5,
+     "text": "c"
+    },
+    {
+     "end": 24.013,
+     "start": 23.737,
+     "text": "1"
+    },
+    {
+     "end": 24.375,
+     "start": 24.013,
+     "text": "3"
+    },
+    {
+     "end": 24.8,
+     "start": 24.375,
+     "text": "0"
+    },
+    {
+     "end": 25.038,
+     "start": 24.8,
+     "text": "8"
+    },
+    {
+     "end": 25.288,
+     "start": 25.038,
+     "text": "1"
+    },
+    {
+     "end": 25.587,
+     "start": 25.288,
+     "text": "4"
+    },
+    {
+     "end": 25.85,
+     "start": 25.587,
+     "text": "4"
+    },
+    {
+     "end": 26.087,
+     "start": 25.85,
+     "text": "d"
+    },
+    {
+     "end": 26.4,
+     "start": 26.087,
+     "text": "6"
+    },
+    {
+     "end": 26.688,
+     "start": 26.4,
+     "text": "1"
+    },
+    {
+     "end": 27.8,
+     "start": 26.688,
+     "text": "6"
+    },
+    {
+     "end": 28.075,
+     "start": 27.8,
+     "text": "."
+    },
+    {
+     "end": 28.65,
+     "start": 28.25,
+     "text": "Deployment"
+    },
+    {
+     "end": 29.025,
+     "start": 28.65,
+     "text": "blueprint"
+    },
+    {
+     "end": 30.975,
+     "start": 29.025,
+     "text": "SHA-256"
+    },
+    {
+     "end": 31.175,
+     "start": 30.975,
+     "text": ":"
+    },
+    {
+     "end": 31.5,
+     "start": 31.425,
+     "text": "a"
+    },
+    {
+     "end": 31.688,
+     "start": 31.5,
+     "text": "c"
+    },
+    {
+     "end": 31.938,
+     "start": 31.688,
+     "text": "4"
+    },
+    {
+     "end": 32.175,
+     "start": 31.938,
+     "text": "3"
+    },
+    {
+     "end": 32.475,
+     "start": 32.175,
+     "text": "d"
+    },
+    {
+     "end": 32.8,
+     "start": 32.475,
+     "text": "7"
+    },
+    {
+     "end": 33.013,
+     "start": 32.8,
+     "text": "8"
+    },
+    {
+     "end": 33.263,
+     "start": 33.013,
+     "text": "2"
+    },
+    {
+     "end": 33.5,
+     "start": 33.263,
+     "text": "1"
+    },
+    {
+     "end": 33.725,
+     "start": 33.5,
+     "text": "8"
+    },
+    {
+     "end": 33.95,
+     "start": 33.725,
+     "text": "1"
+    },
+    {
+     "end": 34.188,
+     "start": 33.95,
+     "text": "1"
+    },
+    {
+     "end": 34.463,
+     "start": 34.188,
+     "text": "2"
+    },
+    {
+     "end": 34.7,
+     "start": 34.463,
+     "text": "1"
+    },
+    {
+     "end": 34.925,
+     "start": 34.7,
+     "text": "d"
+    },
+    {
+     "end": 35.188,
+     "start": 34.925,
+     "text": "c"
+    },
+    {
+     "end": 35.537,
+     "start": 35.188,
+     "text": "d"
+    },
+    {
+     "end": 35.713,
+     "start": 35.537,
+     "text": "e"
+    },
+    {
+     "end": 36.062,
+     "start": 35.713,
+     "text": "d"
+    },
+    {
+     "end": 36.287,
+     "start": 36.062,
+     "text": "f"
+    },
+    {
+     "end": 36.763,
+     "start": 36.287,
+     "text": "d"
+    },
+    {
+     "end": 37.0,
+     "start": 36.763,
+     "text": "4"
+    },
+    {
+     "end": 37.1,
+     "start": 37.0,
+     "text": "a"
+    },
+    {
+     "end": 37.412,
+     "start": 37.1,
+     "text": "9"
+    },
+    {
+     "end": 37.688,
+     "start": 37.412,
+     "text": "c"
+    },
+    {
+     "end": 37.963,
+     "start": 37.688,
+     "text": "4"
+    },
+    {
+     "end": 38.225,
+     "start": 37.963,
+     "text": "8"
+    },
+    {
+     "end": 38.45,
+     "start": 38.225,
+     "text": "b"
+    },
+    {
+     "end": 38.7,
+     "start": 38.45,
+     "text": "8"
+    },
+    {
+     "end": 39.075,
+     "start": 38.7,
+     "text": "9"
+    },
+    {
+     "end": 39.275,
+     "start": 39.075,
+     "text": "f"
+    },
+    {
+     "end": 39.5,
+     "start": 39.275,
+     "text": "b"
+    },
+    {
+     "end": 39.825,
+     "start": 39.5,
+     "text": "6"
+    },
+    {
+     "end": 40.025,
+     "start": 39.825,
+     "text": "f"
+    },
+    {
+     "end": 40.138,
+     "start": 40.025,
+     "text": "a"
+    },
+    {
+     "end": 40.513,
+     "start": 40.138,
+     "text": "7"
+    },
+    {
+     "end": 40.875,
+     "start": 40.513,
+     "text": "7"
+    },
+    {
+     "end": 41.112,
+     "start": 40.875,
+     "text": "d"
+    },
+    {
+     "end": 41.362,
+     "start": 41.112,
+     "text": "d"
+    },
+    {
+     "end": 41.688,
+     "start": 41.362,
+     "text": "6"
+    },
+    {
+     "end": 42.025,
+     "start": 41.688,
+     "text": "9"
+    },
+    {
+     "end": 42.175,
+     "start": 42.025,
+     "text": "e"
+    },
+    {
+     "end": 42.537,
+     "start": 42.175,
+     "text": "7"
+    },
+    {
+     "end": 42.75,
+     "start": 42.537,
+     "text": "c"
+    },
+    {
+     "end": 43.1,
+     "start": 42.75,
+     "text": "9"
+    },
+    {
+     "end": 43.3,
+     "start": 43.1,
+     "text": "f"
+    },
+    {
+     "end": 43.625,
+     "start": 43.3,
+     "text": "5"
+    },
+    {
+     "end": 43.9,
+     "start": 43.625,
+     "text": "6"
+    },
+    {
+     "end": 44.125,
+     "start": 43.9,
+     "text": "1"
+    },
+    {
+     "end": 44.375,
+     "start": 44.125,
+     "text": "9"
+    },
+    {
+     "end": 44.6,
+     "start": 44.375,
+     "text": "1"
+    },
+    {
+     "end": 44.838,
+     "start": 44.6,
+     "text": "1"
+    },
+    {
+     "end": 45.263,
+     "start": 44.838,
+     "text": "0"
+    },
+    {
+     "end": 45.475,
+     "start": 45.263,
+     "text": "c"
+    },
+    {
+     "end": 45.588,
+     "start": 45.475,
+     "text": "a"
+    },
+    {
+     "end": 45.925,
+     "start": 45.588,
+     "text": "8"
+    },
+    {
+     "end": 46.075,
+     "start": 45.925,
+     "text": "e"
+    },
+    {
+     "end": 46.275,
+     "start": 46.075,
+     "text": "f"
+    },
+    {
+     "end": 46.463,
+     "start": 46.275,
+     "text": "b"
+    },
+    {
+     "end": 46.862,
+     "start": 46.463,
+     "text": "0"
+    },
+    {
+     "end": 47.175,
+     "start": 46.862,
+     "text": "6"
+    },
+    {
+     "end": 47.4,
+     "start": 47.175,
+     "text": "8"
+    },
+    {
+     "end": 47.65,
+     "start": 47.4,
+     "text": "8"
+    },
+    {
+     "end": 48.6,
+     "start": 47.65,
+     "text": "b."
+    }
+   ]
+  },
+  "docs-creation-cost/previous-design-02": {
+   "audio_sha256": "64fb646331c4a041fc723394bc93483e2fcfe6819d7a398251c2a4a86dcf6fba",
+   "characters": 14,
+   "cost": 1.386e-05,
+   "duration": 1.325,
+   "index": 2,
+   "key": "e774fb2632ebe97af0c2a028e6e5139e665c375adfd1764e8efb41bc7be169f8",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 400,
+   "section": "previous-design",
+   "sent_text": "First creation",
+   "text": "First creation",
+   "words": [
+    {
+     "end": 0.5,
+     "start": 0.2,
+     "text": "First"
+    },
+    {
+     "end": 1.325,
+     "start": 0.5,
+     "text": "creation"
+    }
+   ]
+  },
+  "docs-creation-cost/previous-design-03": {
+   "audio_sha256": "0d14c13b4b8a242f51faf4bb1dd3021de105a08d01f35c768df9e1a059d02686",
+   "characters": 14,
+   "cost": 1.386e-05,
+   "duration": 1.325,
+   "index": 3,
+   "key": "e5c0ba972126688e0dcf76d5ca88e1f36b6f462439390b17777d63703062ac35",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 400,
+   "section": "previous-design",
+   "sent_text": "Later creation",
+   "text": "Later creation",
+   "words": [
+    {
+     "end": 0.475,
+     "start": 0.2,
+     "text": "Later"
+    },
+    {
+     "end": 1.325,
+     "start": 0.475,
+     "text": "creation"
+    }
+   ]
+  },
+  "docs-creation-cost/transactions-and-reference-outputs-00": {
+   "audio_sha256": "8fea97f3af6a125ae977f53c1054dff343bbf508f5806c66e4057e5907b13310",
+   "characters": 35,
+   "cost": 3.4649999999999995e-05,
+   "duration": 2.425,
+   "index": 0,
+   "key": "1265360d12863e1f4a087e82431a8400cf96fc58381b56442aed99759c60704a",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 500,
+   "section": "transactions-and-reference-outputs",
+   "sent_text": "Transactions and reference outputs.",
+   "text": "Transactions and reference outputs.",
+   "words": [
+    {
+     "end": 0.837,
+     "start": 0.175,
+     "text": "Transactions"
+    },
+    {
+     "end": 0.95,
+     "start": 0.837,
+     "text": "and"
+    },
+    {
+     "end": 1.3,
+     "start": 0.95,
+     "text": "reference"
+    },
+    {
+     "end": 2.225,
+     "start": 1.3,
+     "text": "outputs"
+    },
+    {
+     "end": 2.425,
+     "start": 2.225,
+     "text": "."
+    }
+   ]
+  },
+  "docs-creation-cost/transactions-and-reference-outputs-01": {
+   "audio_sha256": "13afe82422b833170cb5115ce3548ea67942ff6b7242430b3b4cd857ffe1c57b",
+   "characters": 253,
+   "cost": 0.00025047,
+   "duration": 16.725,
+   "index": 1,
+   "key": "739a17b8ff5be4f6f5aee57611e94f521751780c85ae224206b1b542964ee989",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 400,
+   "section": "transactions-and-reference-outputs",
+   "sent_text": "Every creation transaction is listed in submission order. Spent and read inputs are output references decoded from that transaction. Each reference output lists the hash computed from its carried script, the script's byte length and its locked lovelace.",
+   "text": "Every creation transaction is listed in submission order. Spent and read inputs are output references decoded from that transaction. Each reference output lists the hash computed from its carried script, the script's byte length and its locked lovelace.",
+   "words": [
+    {
+     "end": 0.475,
+     "start": 0.2,
+     "text": "Every"
+    },
+    {
+     "end": 0.95,
+     "start": 0.475,
+     "text": "creation"
+    },
+    {
+     "end": 1.712,
+     "start": 0.95,
+     "text": "transaction"
+    },
+    {
+     "end": 1.875,
+     "start": 1.712,
+     "text": "is"
+    },
+    {
+     "end": 2.338,
+     "start": 1.875,
+     "text": "listed"
+    },
+    {
+     "end": 2.5,
+     "start": 2.338,
+     "text": "in"
+    },
+    {
+     "end": 3.05,
+     "start": 2.5,
+     "text": "submission"
+    },
+    {
+     "end": 3.875,
+     "start": 3.05,
+     "text": "order"
+    },
+    {
+     "end": 4.1,
+     "start": 3.875,
+     "text": "."
+    },
+    {
+     "end": 4.688,
+     "start": 4.3,
+     "text": "Spent"
+    },
+    {
+     "end": 4.863,
+     "start": 4.688,
+     "text": "and"
+    },
+    {
+     "end": 5.113,
+     "start": 4.863,
+     "text": "read"
+    },
+    {
+     "end": 5.588,
+     "start": 5.113,
+     "text": "inputs"
+    },
+    {
+     "end": 5.762,
+     "start": 5.588,
+     "text": "are"
+    },
+    {
+     "end": 6.25,
+     "start": 5.762,
+     "text": "output"
+    },
+    {
+     "end": 6.887,
+     "start": 6.25,
+     "text": "references"
+    },
+    {
+     "end": 7.4,
+     "start": 6.887,
+     "text": "decoded"
+    },
+    {
+     "end": 7.55,
+     "start": 7.4,
+     "text": "from"
+    },
+    {
+     "end": 7.775,
+     "start": 7.55,
+     "text": "that"
+    },
+    {
+     "end": 9.05,
+     "start": 7.775,
+     "text": "transaction"
+    },
+    {
+     "end": 9.25,
+     "start": 9.05,
+     "text": "."
+    },
+    {
+     "end": 9.725,
+     "start": 9.475,
+     "text": "Each"
+    },
+    {
+     "end": 10.212,
+     "start": 9.725,
+     "text": "reference"
+    },
+    {
+     "end": 10.7,
+     "start": 10.212,
+     "text": "output"
+    },
+    {
+     "end": 11.025,
+     "start": 10.7,
+     "text": "lists"
+    },
+    {
+     "end": 11.125,
+     "start": 11.025,
+     "text": "the"
+    },
+    {
+     "end": 11.475,
+     "start": 11.125,
+     "text": "hash"
+    },
+    {
+     "end": 12.025,
+     "start": 11.475,
+     "text": "computed"
+    },
+    {
+     "end": 12.188,
+     "start": 12.025,
+     "text": "from"
+    },
+    {
+     "end": 12.387,
+     "start": 12.188,
+     "text": "its"
+    },
+    {
+     "end": 12.812,
+     "start": 12.387,
+     "text": "carried"
+    },
+    {
+     "end": 13.35,
+     "start": 12.812,
+     "text": "script"
+    },
+    {
+     "end": 13.425,
+     "start": 13.35,
+     "text": ","
+    },
+    {
+     "end": 13.525,
+     "start": 13.425,
+     "text": "the"
+    },
+    {
+     "end": 13.975,
+     "start": 13.525,
+     "text": "script's"
+    },
+    {
+     "end": 14.25,
+     "start": 13.975,
+     "text": "byte"
+    },
+    {
+     "end": 14.663,
+     "start": 14.25,
+     "text": "length"
+    },
+    {
+     "end": 14.788,
+     "start": 14.663,
+     "text": "and"
+    },
+    {
+     "end": 14.988,
+     "start": 14.788,
+     "text": "its"
+    },
+    {
+     "end": 15.325,
+     "start": 14.988,
+     "text": "locked"
+    },
+    {
+     "end": 16.525,
+     "start": 15.325,
+     "text": "lovelace"
+    },
+    {
+     "end": 16.725,
+     "start": 16.525,
+     "text": "."
+    }
+   ]
+  },
+  "docs-creation-cost/what-creating-a-registry-costs-00": {
+   "audio_sha256": "0f7fbe6ebd7941129b97221d0c116f3939d29470c3c68285e990e170f6b37030",
+   "characters": 31,
+   "cost": 3.069e-05,
+   "duration": 2.25,
+   "index": 0,
+   "key": "1635747844a723ef2318aad6a4f3fbeda9f0273d4f9625c8b814455c61116f79",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 500,
+   "section": "what-creating-a-registry-costs",
+   "sent_text": "What creating a registry costs.",
+   "text": "What creating a registry costs.",
+   "words": [
+    {
+     "end": 0.3,
+     "start": 0.175,
+     "text": "What"
+    },
+    {
+     "end": 0.663,
+     "start": 0.3,
+     "text": "creating"
+    },
+    {
+     "end": 0.725,
+     "start": 0.663,
+     "text": "a"
+    },
+    {
+     "end": 1.2,
+     "start": 0.725,
+     "text": "registry"
+    },
+    {
+     "end": 2.05,
+     "start": 1.2,
+     "text": "costs"
+    },
+    {
+     "end": 2.25,
+     "start": 2.05,
+     "text": "."
+    }
+   ]
+  },
+  "docs-creation-cost/what-creating-a-registry-costs-01": {
+   "audio_sha256": "c64168457cdb185f162f9efce3c64434445757b7717910ef837148d92467c71f",
+   "characters": 306,
+   "cost": 0.00030293999999999997,
+   "duration": 19.95,
+   "index": 1,
+   "key": "2787cb1f810eeefb1f2b89163518c2a851e27170e6cf78d31ab3bcae3728b14a",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 400,
+   "section": "what-creating-a-registry-costs",
+   "sent_text": "As a registry creator, you can compare what the first and a later registry cost under the previous design and the application-held design. The figures below are measured from transactions included on a development network; fees are spent ADA, while ADA locked in reference outputs remains in those outputs.",
+   "text": "As a registry creator, you can compare what the first and a later registry cost under the previous design and the application-held design. The figures below are measured from transactions included on a development network; fees are spent ADA, while ADA locked in reference outputs remains in those outputs.",
+   "words": [
+    {
+     "end": 0.412,
+     "start": 0.225,
+     "text": "As"
+    },
+    {
+     "end": 0.5,
+     "start": 0.412,
+     "text": "a"
+    },
+    {
+     "end": 0.975,
+     "start": 0.5,
+     "text": "registry"
+    },
+    {
+     "end": 1.45,
+     "start": 0.975,
+     "text": "creator"
+    },
+    {
+     "end": 1.5,
+     "start": 1.45,
+     "text": ","
+    },
+    {
+     "end": 1.65,
+     "start": 1.5,
+     "text": "you"
+    },
+    {
+     "end": 1.825,
+     "start": 1.65,
+     "text": "can"
+    },
+    {
+     "end": 2.3,
+     "start": 1.825,
+     "text": "compare"
+    },
+    {
+     "end": 2.45,
+     "start": 2.3,
+     "text": "what"
+    },
+    {
+     "end": 2.612,
+     "start": 2.45,
+     "text": "the"
+    },
+    {
+     "end": 3.1,
+     "start": 2.612,
+     "text": "first"
+    },
+    {
+     "end": 3.225,
+     "start": 3.1,
+     "text": "and"
+    },
+    {
+     "end": 3.338,
+     "start": 3.225,
+     "text": "a"
+    },
+    {
+     "end": 3.75,
+     "start": 3.338,
+     "text": "later"
+    },
+    {
+     "end": 4.287,
+     "start": 3.75,
+     "text": "registry"
+    },
+    {
+     "end": 4.725,
+     "start": 4.287,
+     "text": "cost"
+    },
+    {
+     "end": 4.963,
+     "start": 4.725,
+     "text": "under"
+    },
+    {
+     "end": 5.088,
+     "start": 4.963,
+     "text": "the"
+    },
+    {
+     "end": 5.6,
+     "start": 5.088,
+     "text": "previous"
+    },
+    {
+     "end": 6.275,
+     "start": 5.6,
+     "text": "design"
+    },
+    {
+     "end": 6.412,
+     "start": 6.275,
+     "text": "and"
+    },
+    {
+     "end": 6.525,
+     "start": 6.412,
+     "text": "the"
+    },
+    {
+     "end": 7.5,
+     "start": 6.525,
+     "text": "application-held"
+    },
+    {
+     "end": 8.725,
+     "start": 7.5,
+     "text": "design"
+    },
+    {
+     "end": 8.95,
+     "start": 8.725,
+     "text": "."
+    },
+    {
+     "end": 9.238,
+     "start": 9.125,
+     "text": "The"
+    },
+    {
+     "end": 9.65,
+     "start": 9.238,
+     "text": "figures"
+    },
+    {
+     "end": 10.137,
+     "start": 9.65,
+     "text": "below"
+    },
+    {
+     "end": 10.312,
+     "start": 10.137,
+     "text": "are"
+    },
+    {
+     "end": 10.7,
+     "start": 10.312,
+     "text": "measured"
+    },
+    {
+     "end": 10.9,
+     "start": 10.7,
+     "text": "from"
+    },
+    {
+     "end": 11.825,
+     "start": 10.9,
+     "text": "transactions"
+    },
+    {
+     "end": 12.4,
+     "start": 11.825,
+     "text": "included"
+    },
+    {
+     "end": 12.538,
+     "start": 12.4,
+     "text": "on"
+    },
+    {
+     "end": 12.6,
+     "start": 12.538,
+     "text": "a"
+    },
+    {
+     "end": 13.15,
+     "start": 12.6,
+     "text": "development"
+    },
+    {
+     "end": 14.15,
+     "start": 13.15,
+     "text": "network"
+    },
+    {
+     "end": 14.375,
+     "start": 14.15,
+     "text": ";"
+    },
+    {
+     "end": 14.863,
+     "start": 14.575,
+     "text": "fees"
+    },
+    {
+     "end": 14.95,
+     "start": 14.863,
+     "text": "are"
+    },
+    {
+     "end": 15.25,
+     "start": 14.95,
+     "text": "spent"
+    },
+    {
+     "end": 15.65,
+     "start": 15.25,
+     "text": "ADA"
+    },
+    {
+     "end": 15.725,
+     "start": 15.65,
+     "text": ","
+    },
+    {
+     "end": 15.962,
+     "start": 15.725,
+     "text": "while"
+    },
+    {
+     "end": 16.263,
+     "start": 15.962,
+     "text": "ADA"
+    },
+    {
+     "end": 16.65,
+     "start": 16.263,
+     "text": "locked"
+    },
+    {
+     "end": 16.8,
+     "start": 16.65,
+     "text": "in"
+    },
+    {
+     "end": 17.25,
+     "start": 16.8,
+     "text": "reference"
+    },
+    {
+     "end": 17.75,
+     "start": 17.25,
+     "text": "outputs"
+    },
+    {
+     "end": 18.325,
+     "start": 17.75,
+     "text": "remains"
+    },
+    {
+     "end": 18.413,
+     "start": 18.325,
+     "text": "in"
+    },
+    {
+     "end": 18.625,
+     "start": 18.413,
+     "text": "those"
+    },
+    {
+     "end": 19.75,
+     "start": 18.625,
+     "text": "outputs"
+    },
+    {
+     "end": 19.95,
+     "start": 19.75,
+     "text": "."
+    }
+   ]
+  },
+  "docs-creation-cost/what-creating-a-registry-costs-02": {
+   "audio_sha256": "9cb41462e474a17e6e927ba1bd4ed76ae478bc60db21b8a990cb156ee1739c5c",
+   "characters": 273,
+   "cost": 0.00027026999999999997,
+   "duration": 18.15,
+   "index": 2,
+   "key": "61c2e5cdd0a9ab7eaae5e88811e41d4f80c0c7306aad9c14a10e4753a45231dd",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 400,
+   "section": "what-creating-a-registry-costs",
+   "sent_text": "The two legs run the previous design's last release and this line's release of open datum. Their validators differ: this compares two creation workflows, rather than one release run twice. Within each design, both creations use the same executable and deployment blueprint.",
+   "text": "The two legs run the previous design's last release and this line's release of open datum. Their validators differ: this compares two creation workflows, rather than one release run twice. Within each design, both creations use the same executable and deployment blueprint.",
+   "words": [
+    {
+     "end": 0.287,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.5,
+     "start": 0.287,
+     "text": "two"
+    },
+    {
+     "end": 0.837,
+     "start": 0.5,
+     "text": "legs"
+    },
+    {
+     "end": 1.087,
+     "start": 0.837,
+     "text": "run"
+    },
+    {
+     "end": 1.175,
+     "start": 1.087,
+     "text": "the"
+    },
+    {
+     "end": 1.625,
+     "start": 1.175,
+     "text": "previous"
+    },
+    {
+     "end": 2.237,
+     "start": 1.625,
+     "text": "design's"
+    },
+    {
+     "end": 2.575,
+     "start": 2.237,
+     "text": "last"
+    },
+    {
+     "end": 3.188,
+     "start": 2.575,
+     "text": "release"
+    },
+    {
+     "end": 3.312,
+     "start": 3.188,
+     "text": "and"
+    },
+    {
+     "end": 3.537,
+     "start": 3.312,
+     "text": "this"
+    },
+    {
+     "end": 3.95,
+     "start": 3.537,
+     "text": "line's"
+    },
+    {
+     "end": 4.375,
+     "start": 3.95,
+     "text": "release"
+    },
+    {
+     "end": 4.512,
+     "start": 4.375,
+     "text": "of"
+    },
+    {
+     "end": 4.875,
+     "start": 4.512,
+     "text": "open"
+    },
+    {
+     "end": 5.875,
+     "start": 4.875,
+     "text": "datum"
+    },
+    {
+     "end": 6.075,
+     "start": 5.875,
+     "text": "."
+    },
+    {
+     "end": 6.4,
+     "start": 6.25,
+     "text": "Their"
+    },
+    {
+     "end": 7.088,
+     "start": 6.4,
+     "text": "validators"
+    },
+    {
+     "end": 7.45,
+     "start": 7.088,
+     "text": "differ"
+    },
+    {
+     "end": 7.525,
+     "start": 7.45,
+     "text": ":"
+    },
+    {
+     "end": 7.725,
+     "start": 7.525,
+     "text": "this"
+    },
+    {
+     "end": 8.212,
+     "start": 7.725,
+     "text": "compares"
+    },
+    {
+     "end": 8.425,
+     "start": 8.212,
+     "text": "two"
+    },
+    {
+     "end": 8.925,
+     "start": 8.425,
+     "text": "creation"
+    },
+    {
+     "end": 9.575,
+     "start": 8.925,
+     "text": "workflows"
+    },
+    {
+     "end": 9.65,
+     "start": 9.575,
+     "text": ","
+    },
+    {
+     "end": 10.025,
+     "start": 9.65,
+     "text": "rather"
+    },
+    {
+     "end": 10.212,
+     "start": 10.025,
+     "text": "than"
+    },
+    {
+     "end": 10.475,
+     "start": 10.212,
+     "text": "one"
+    },
+    {
+     "end": 10.925,
+     "start": 10.475,
+     "text": "release"
+    },
+    {
+     "end": 11.15,
+     "start": 10.925,
+     "text": "run"
+    },
+    {
+     "end": 12.25,
+     "start": 11.15,
+     "text": "twice"
+    },
+    {
+     "end": 12.45,
+     "start": 12.25,
+     "text": "."
+    },
+    {
+     "end": 12.95,
+     "start": 12.65,
+     "text": "Within"
+    },
+    {
+     "end": 13.175,
+     "start": 12.95,
+     "text": "each"
+    },
+    {
+     "end": 13.725,
+     "start": 13.175,
+     "text": "design"
+    },
+    {
+     "end": 13.8,
+     "start": 13.725,
+     "text": ","
+    },
+    {
+     "end": 14.1,
+     "start": 13.8,
+     "text": "both"
+    },
+    {
+     "end": 14.738,
+     "start": 14.1,
+     "text": "creations"
+    },
+    {
+     "end": 15.0,
+     "start": 14.738,
+     "text": "use"
+    },
+    {
+     "end": 15.137,
+     "start": 15.0,
+     "text": "the"
+    },
+    {
+     "end": 15.488,
+     "start": 15.137,
+     "text": "same"
+    },
+    {
+     "end": 16.312,
+     "start": 15.488,
+     "text": "executable"
+    },
+    {
+     "end": 16.438,
+     "start": 16.312,
+     "text": "and"
+    },
+    {
+     "end": 16.875,
+     "start": 16.438,
+     "text": "deployment"
+    },
+    {
+     "end": 17.95,
+     "start": 16.875,
+     "text": "blueprint"
+    },
+    {
+     "end": 18.15,
+     "start": 17.95,
+     "text": "."
+    }
+   ]
+  },
+  "docs-creation-cost/what-the-result-gives-a-creator-00": {
+   "audio_sha256": "64e8051ac25d40b1635fadb66cc181ed8365bad693b03761fc86ec74d65d0484",
+   "characters": 32,
+   "cost": 3.1679999999999995e-05,
+   "duration": 2.125,
+   "index": 0,
+   "key": "c66ff0f0d055490b0dc41bd789b6dd46bda64512dcd094d416243d86341e6255",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 500,
+   "section": "what-the-result-gives-a-creator",
+   "sent_text": "What the result gives a creator.",
+   "text": "What the result gives a creator.",
+   "words": [
+    {
+     "end": 0.287,
+     "start": 0.175,
+     "text": "What"
+    },
+    {
+     "end": 0.375,
+     "start": 0.287,
+     "text": "the"
+    },
+    {
+     "end": 0.75,
+     "start": 0.375,
+     "text": "result"
+    },
+    {
+     "end": 0.938,
+     "start": 0.75,
+     "text": "gives"
+    },
+    {
+     "end": 1.0,
+     "start": 0.938,
+     "text": "a"
+    },
+    {
+     "end": 1.925,
+     "start": 1.0,
+     "text": "creator"
+    },
+    {
+     "end": 2.125,
+     "start": 1.925,
+     "text": "."
+    }
+   ]
+  },
+  "docs-creation-cost/what-the-result-gives-a-creator-01": {
+   "audio_sha256": "8c5bf5e0f409987bbeb09aa33bb945cfec24a5984c1cb74cfe66aff20d767fba",
+   "characters": 508,
+   "cost": 0.00050292,
+   "duration": 33.375,
+   "index": 1,
+   "key": "c8acff818bf9132345590fe082ff35d43365254e44d62b0712c55220ec7981fa",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 400,
+   "section": "what-the-result-gives-a-creator",
+   "sent_text": "Each fitting mixed form still needs one prior publication. When a first creation finds no live copy, it cannot skip both publications by carrying: the both-witness form that needs no live reference is refused for size. A fitting mixed form creates no reference output for the script it carries. If a first creation published only the other script, a later registry using the unchanged production command would still have to publish the carried script. Carrying defers that publication; it does not remove it.",
+   "text": "Each fitting mixed form still needs one prior publication. When a first creation finds no live copy, it cannot skip both publications by carrying: the both-witness form that needs no live reference is refused for size. A fitting mixed form creates no reference output for the script it carries. If a first creation published only the other script, a later registry using the unchanged production command would still have to publish the carried script. Carrying defers that publication; it does not remove it.",
+   "words": [
+    {
+     "end": 0.4,
+     "start": 0.2,
+     "text": "Each"
+    },
+    {
+     "end": 0.7,
+     "start": 0.4,
+     "text": "fitting"
+    },
+    {
+     "end": 0.975,
+     "start": 0.7,
+     "text": "mixed"
+    },
+    {
+     "end": 1.362,
+     "start": 0.975,
+     "text": "form"
+    },
+    {
+     "end": 1.65,
+     "start": 1.362,
+     "text": "still"
+    },
+    {
+     "end": 1.925,
+     "start": 1.65,
+     "text": "needs"
+    },
+    {
+     "end": 2.175,
+     "start": 1.925,
+     "text": "one"
+    },
+    {
+     "end": 2.475,
+     "start": 2.175,
+     "text": "prior"
+    },
+    {
+     "end": 3.7,
+     "start": 2.475,
+     "text": "publication"
+    },
+    {
+     "end": 3.9,
+     "start": 3.7,
+     "text": "."
+    },
+    {
+     "end": 4.188,
+     "start": 4.075,
+     "text": "When"
+    },
+    {
+     "end": 4.287,
+     "start": 4.188,
+     "text": "a"
+    },
+    {
+     "end": 4.6,
+     "start": 4.287,
+     "text": "first"
+    },
+    {
+     "end": 5.137,
+     "start": 4.6,
+     "text": "creation"
+    },
+    {
+     "end": 5.5,
+     "start": 5.137,
+     "text": "finds"
+    },
+    {
+     "end": 5.675,
+     "start": 5.5,
+     "text": "no"
+    },
+    {
+     "end": 6.0,
+     "start": 5.675,
+     "text": "live"
+    },
+    {
+     "end": 6.525,
+     "start": 6.0,
+     "text": "copy"
+    },
+    {
+     "end": 6.637,
+     "start": 6.525,
+     "text": ","
+    },
+    {
+     "end": 6.775,
+     "start": 6.637,
+     "text": "it"
+    },
+    {
+     "end": 7.15,
+     "start": 6.775,
+     "text": "cannot"
+    },
+    {
+     "end": 7.45,
+     "start": 7.15,
+     "text": "skip"
+    },
+    {
+     "end": 7.75,
+     "start": 7.45,
+     "text": "both"
+    },
+    {
+     "end": 8.525,
+     "start": 7.75,
+     "text": "publications"
+    },
+    {
+     "end": 8.712,
+     "start": 8.525,
+     "text": "by"
+    },
+    {
+     "end": 9.775,
+     "start": 8.712,
+     "text": "carrying"
+    },
+    {
+     "end": 9.975,
+     "start": 9.775,
+     "text": ":"
+    },
+    {
+     "end": 10.225,
+     "start": 10.15,
+     "text": "the"
+    },
+    {
+     "end": 10.863,
+     "start": 10.225,
+     "text": "both-witness"
+    },
+    {
+     "end": 11.25,
+     "start": 10.863,
+     "text": "form"
+    },
+    {
+     "end": 11.4,
+     "start": 11.25,
+     "text": "that"
+    },
+    {
+     "end": 11.688,
+     "start": 11.4,
+     "text": "needs"
+    },
+    {
+     "end": 11.925,
+     "start": 11.688,
+     "text": "no"
+    },
+    {
+     "end": 12.25,
+     "start": 11.925,
+     "text": "live"
+    },
+    {
+     "end": 12.75,
+     "start": 12.25,
+     "text": "reference"
+    },
+    {
+     "end": 12.9,
+     "start": 12.75,
+     "text": "is"
+    },
+    {
+     "end": 13.45,
+     "start": 12.9,
+     "text": "refused"
+    },
+    {
+     "end": 13.613,
+     "start": 13.45,
+     "text": "for"
+    },
+    {
+     "end": 14.6,
+     "start": 13.613,
+     "text": "size"
+    },
+    {
+     "end": 14.8,
+     "start": 14.6,
+     "text": "."
+    },
+    {
+     "end": 15.087,
+     "start": 15.0,
+     "text": "A"
+    },
+    {
+     "end": 15.4,
+     "start": 15.087,
+     "text": "fitting"
+    },
+    {
+     "end": 15.725,
+     "start": 15.4,
+     "text": "mixed"
+    },
+    {
+     "end": 16.112,
+     "start": 15.725,
+     "text": "form"
+    },
+    {
+     "end": 16.538,
+     "start": 16.112,
+     "text": "creates"
+    },
+    {
+     "end": 16.775,
+     "start": 16.538,
+     "text": "no"
+    },
+    {
+     "end": 17.225,
+     "start": 16.775,
+     "text": "reference"
+    },
+    {
+     "end": 17.675,
+     "start": 17.225,
+     "text": "output"
+    },
+    {
+     "end": 17.788,
+     "start": 17.675,
+     "text": "for"
+    },
+    {
+     "end": 17.875,
+     "start": 17.788,
+     "text": "the"
+    },
+    {
+     "end": 18.188,
+     "start": 17.875,
+     "text": "script"
+    },
+    {
+     "end": 18.275,
+     "start": 18.188,
+     "text": "it"
+    },
+    {
+     "end": 19.325,
+     "start": 18.275,
+     "text": "carries"
+    },
+    {
+     "end": 19.525,
+     "start": 19.325,
+     "text": "."
+    },
+    {
+     "end": 19.812,
+     "start": 19.7,
+     "text": "If"
+    },
+    {
+     "end": 19.9,
+     "start": 19.812,
+     "text": "a"
+    },
+    {
+     "end": 20.15,
+     "start": 19.9,
+     "text": "first"
+    },
+    {
+     "end": 20.675,
+     "start": 20.15,
+     "text": "creation"
+    },
+    {
+     "end": 21.125,
+     "start": 20.675,
+     "text": "published"
+    },
+    {
+     "end": 21.413,
+     "start": 21.125,
+     "text": "only"
+    },
+    {
+     "end": 21.513,
+     "start": 21.413,
+     "text": "the"
+    },
+    {
+     "end": 21.75,
+     "start": 21.513,
+     "text": "other"
+    },
+    {
+     "end": 22.65,
+     "start": 21.75,
+     "text": "script"
+    },
+    {
+     "end": 22.85,
+     "start": 22.65,
+     "text": ","
+    },
+    {
+     "end": 23.138,
+     "start": 23.05,
+     "text": "a"
+    },
+    {
+     "end": 23.525,
+     "start": 23.138,
+     "text": "later"
+    },
+    {
+     "end": 24.163,
+     "start": 23.525,
+     "text": "registry"
+    },
+    {
+     "end": 24.513,
+     "start": 24.163,
+     "text": "using"
+    },
+    {
+     "end": 24.663,
+     "start": 24.513,
+     "text": "the"
+    },
+    {
+     "end": 25.4,
+     "start": 24.663,
+     "text": "unchanged"
+    },
+    {
+     "end": 25.925,
+     "start": 25.4,
+     "text": "production"
+    },
+    {
+     "end": 26.487,
+     "start": 25.925,
+     "text": "command"
+    },
+    {
+     "end": 26.675,
+     "start": 26.487,
+     "text": "would"
+    },
+    {
+     "end": 26.975,
+     "start": 26.675,
+     "text": "still"
+    },
+    {
+     "end": 27.2,
+     "start": 26.975,
+     "text": "have"
+    },
+    {
+     "end": 27.325,
+     "start": 27.2,
+     "text": "to"
+    },
+    {
+     "end": 27.725,
+     "start": 27.325,
+     "text": "publish"
+    },
+    {
+     "end": 27.85,
+     "start": 27.725,
+     "text": "the"
+    },
+    {
+     "end": 28.25,
+     "start": 27.85,
+     "text": "carried"
+    },
+    {
+     "end": 29.275,
+     "start": 28.25,
+     "text": "script"
+    },
+    {
+     "end": 29.475,
+     "start": 29.275,
+     "text": "."
+    },
+    {
+     "end": 30.1,
+     "start": 29.675,
+     "text": "Carrying"
+    },
+    {
+     "end": 30.55,
+     "start": 30.1,
+     "text": "defers"
+    },
+    {
+     "end": 30.775,
+     "start": 30.55,
+     "text": "that"
+    },
+    {
+     "end": 31.6,
+     "start": 30.775,
+     "text": "publication"
+    },
+    {
+     "end": 31.675,
+     "start": 31.6,
+     "text": ";"
+    },
+    {
+     "end": 31.763,
+     "start": 31.675,
+     "text": "it"
+    },
+    {
+     "end": 31.9,
+     "start": 31.763,
+     "text": "does"
+    },
+    {
+     "end": 32.125,
+     "start": 31.9,
+     "text": "not"
+    },
+    {
+     "end": 32.562,
+     "start": 32.125,
+     "text": "remove"
+    },
+    {
+     "end": 33.175,
+     "start": 32.562,
+     "text": "it"
+    },
+    {
+     "end": 33.375,
+     "start": 33.175,
+     "text": "."
+    }
+   ]
+  },
+  "docs-creation-cost/what-the-result-gives-a-creator-02": {
+   "audio_sha256": "a29ec8af5fa6e47843d6fc736d81aa838879c1c0e0b28f2907cec293fe6c6563",
+   "characters": 255,
+   "cost": 0.00025245,
+   "duration": 17.175,
+   "index": 2,
+   "key": "f6a0a5a0f3c1c26cf0fb44fa81cc210502923e6d55d2594c7b8432ab729dde37",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 400,
+   "section": "what-the-result-gives-a-creator",
+   "sent_text": "The production workflow remains as measured: the first creation sends 3 transactions, and the later creation sends 1 transaction by reusing the shared publications. The measured carrying outcomes are reported without recommending or adopting a mixed form.",
+   "text": "The production workflow remains as measured: the first creation sends 3 transactions, and the later creation sends 1 transaction by reusing the shared publications. The measured carrying outcomes are reported without recommending or adopting a mixed form.",
+   "words": [
+    {
+     "end": 0.25,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.688,
+     "start": 0.25,
+     "text": "production"
+    },
+    {
+     "end": 1.15,
+     "start": 0.688,
+     "text": "workflow"
+    },
+    {
+     "end": 1.6,
+     "start": 1.15,
+     "text": "remains"
+    },
+    {
+     "end": 1.75,
+     "start": 1.6,
+     "text": "as"
+    },
+    {
+     "end": 2.65,
+     "start": 1.75,
+     "text": "measured"
+    },
+    {
+     "end": 2.85,
+     "start": 2.65,
+     "text": ":"
+    },
+    {
+     "end": 3.162,
+     "start": 3.05,
+     "text": "the"
+    },
+    {
+     "end": 3.475,
+     "start": 3.162,
+     "text": "first"
+    },
+    {
+     "end": 4.037,
+     "start": 3.475,
+     "text": "creation"
+    },
+    {
+     "end": 4.438,
+     "start": 4.037,
+     "text": "sends"
+    },
+    {
+     "end": 4.75,
+     "start": 4.438,
+     "text": "3"
+    },
+    {
+     "end": 5.725,
+     "start": 4.75,
+     "text": "transactions"
+    },
+    {
+     "end": 5.8,
+     "start": 5.725,
+     "text": ","
+    },
+    {
+     "end": 5.912,
+     "start": 5.8,
+     "text": "and"
+    },
+    {
+     "end": 6.0,
+     "start": 5.912,
+     "text": "the"
+    },
+    {
+     "end": 6.35,
+     "start": 6.0,
+     "text": "later"
+    },
+    {
+     "end": 6.938,
+     "start": 6.35,
+     "text": "creation"
+    },
+    {
+     "end": 7.312,
+     "start": 6.938,
+     "text": "sends"
+    },
+    {
+     "end": 7.575,
+     "start": 7.312,
+     "text": "1"
+    },
+    {
+     "end": 8.4,
+     "start": 7.575,
+     "text": "transaction"
+    },
+    {
+     "end": 8.613,
+     "start": 8.4,
+     "text": "by"
+    },
+    {
+     "end": 9.175,
+     "start": 8.613,
+     "text": "reusing"
+    },
+    {
+     "end": 9.312,
+     "start": 9.175,
+     "text": "the"
+    },
+    {
+     "end": 9.625,
+     "start": 9.312,
+     "text": "shared"
+    },
+    {
+     "end": 11.15,
+     "start": 9.625,
+     "text": "publications"
+    },
+    {
+     "end": 11.375,
+     "start": 11.15,
+     "text": "."
+    },
+    {
+     "end": 11.65,
+     "start": 11.55,
+     "text": "The"
+    },
+    {
+     "end": 12.05,
+     "start": 11.65,
+     "text": "measured"
+    },
+    {
+     "end": 12.5,
+     "start": 12.05,
+     "text": "carrying"
+    },
+    {
+     "end": 13.113,
+     "start": 12.5,
+     "text": "outcomes"
+    },
+    {
+     "end": 13.275,
+     "start": 13.113,
+     "text": "are"
+    },
+    {
+     "end": 13.8,
+     "start": 13.275,
+     "text": "reported"
+    },
+    {
+     "end": 14.15,
+     "start": 13.8,
+     "text": "without"
+    },
+    {
+     "end": 14.95,
+     "start": 14.15,
+     "text": "recommending"
+    },
+    {
+     "end": 15.125,
+     "start": 14.95,
+     "text": "or"
+    },
+    {
+     "end": 15.6,
+     "start": 15.125,
+     "text": "adopting"
+    },
+    {
+     "end": 15.7,
+     "start": 15.6,
+     "text": "a"
+    },
+    {
+     "end": 16.025,
+     "start": 15.7,
+     "text": "mixed"
+    },
+    {
+     "end": 16.975,
+     "start": 16.025,
+     "text": "form"
+    },
+    {
+     "end": 17.175,
+     "start": 16.975,
+     "text": "."
+    }
+   ]
+  },
+  "docs-creation-cost/witness-publication-overhead-00": {
+   "audio_sha256": "082234e518a8b38edda7a962f01f37513bed0afe797daac77ba4e34b30659121",
+   "characters": 29,
+   "cost": 2.8709999999999998e-05,
+   "duration": 2.2,
+   "index": 0,
+   "key": "2b96c6919a8cdbd33db1d8bb1760c01823f5a770983272d1fb09e4aa2cd425c8",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 500,
+   "section": "witness-publication-overhead",
+   "sent_text": "Witness publication overhead.",
+   "text": "Witness publication overhead.",
+   "words": [
+    {
+     "end": 0.475,
+     "start": 0.175,
+     "text": "Witness"
+    },
+    {
+     "end": 1.075,
+     "start": 0.475,
+     "text": "publication"
+    },
+    {
+     "end": 2.0,
+     "start": 1.075,
+     "text": "overhead"
+    },
+    {
+     "end": 2.2,
+     "start": 2.0,
+     "text": "."
+    }
+   ]
+  },
+  "docs-creation-cost/witness-publication-overhead-01": {
+   "audio_sha256": "2f67cd9c78d4753faeea742470be49a9a666ead29111ece18106aa83e68eaac1",
+   "characters": 304,
+   "cost": 0.00030095999999999996,
+   "duration": 20.775,
+   "index": 1,
+   "key": "f2591f68f71d7f0e602d91fa9688443760a11e411a7dff08f63242ec5fe8760c",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 400,
+   "section": "witness-publication-overhead",
+   "sent_text": "The previous design publishes an active witness policy for each registry. That publication is unused by the permanent two-edge contract. Its fee and its reference-output capital are included above and separated below; they must not be added twice. The application-held design publishes no witness policy.",
+   "text": "The previous design publishes an active witness policy for each registry. That publication is unused by the permanent two-edge contract. Its fee and its reference-output capital are included above and separated below; they must not be added twice. The application-held design publishes no witness policy.",
+   "words": [
+    {
+     "end": 0.25,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.675,
+     "start": 0.25,
+     "text": "previous"
+    },
+    {
+     "end": 1.225,
+     "start": 0.675,
+     "text": "design"
+    },
+    {
+     "end": 1.8,
+     "start": 1.225,
+     "text": "publishes"
+    },
+    {
+     "end": 1.95,
+     "start": 1.8,
+     "text": "an"
+    },
+    {
+     "end": 2.4,
+     "start": 1.95,
+     "text": "active"
+    },
+    {
+     "end": 2.75,
+     "start": 2.4,
+     "text": "witness"
+    },
+    {
+     "end": 3.3,
+     "start": 2.75,
+     "text": "policy"
+    },
+    {
+     "end": 3.463,
+     "start": 3.3,
+     "text": "for"
+    },
+    {
+     "end": 3.7,
+     "start": 3.463,
+     "text": "each"
+    },
+    {
+     "end": 4.775,
+     "start": 3.7,
+     "text": "registry"
+    },
+    {
+     "end": 5.0,
+     "start": 4.775,
+     "text": "."
+    },
+    {
+     "end": 5.425,
+     "start": 5.2,
+     "text": "That"
+    },
+    {
+     "end": 6.125,
+     "start": 5.425,
+     "text": "publication"
+    },
+    {
+     "end": 6.275,
+     "start": 6.125,
+     "text": "is"
+    },
+    {
+     "end": 6.85,
+     "start": 6.275,
+     "text": "unused"
+    },
+    {
+     "end": 6.988,
+     "start": 6.85,
+     "text": "by"
+    },
+    {
+     "end": 7.075,
+     "start": 6.988,
+     "text": "the"
+    },
+    {
+     "end": 7.512,
+     "start": 7.075,
+     "text": "permanent"
+    },
+    {
+     "end": 7.925,
+     "start": 7.512,
+     "text": "two-edge"
+    },
+    {
+     "end": 9.025,
+     "start": 7.925,
+     "text": "contract"
+    },
+    {
+     "end": 9.225,
+     "start": 9.025,
+     "text": "."
+    },
+    {
+     "end": 9.637,
+     "start": 9.4,
+     "text": "Its"
+    },
+    {
+     "end": 10.012,
+     "start": 9.637,
+     "text": "fee"
+    },
+    {
+     "end": 10.137,
+     "start": 10.012,
+     "text": "and"
+    },
+    {
+     "end": 10.275,
+     "start": 10.137,
+     "text": "its"
+    },
+    {
+     "end": 11.025,
+     "start": 10.275,
+     "text": "reference-output"
+    },
+    {
+     "end": 11.587,
+     "start": 11.025,
+     "text": "capital"
+    },
+    {
+     "end": 11.712,
+     "start": 11.587,
+     "text": "are"
+    },
+    {
+     "end": 12.2,
+     "start": 11.712,
+     "text": "included"
+    },
+    {
+     "end": 12.712,
+     "start": 12.2,
+     "text": "above"
+    },
+    {
+     "end": 12.863,
+     "start": 12.712,
+     "text": "and"
+    },
+    {
+     "end": 13.425,
+     "start": 12.863,
+     "text": "separated"
+    },
+    {
+     "end": 14.425,
+     "start": 13.425,
+     "text": "below"
+    },
+    {
+     "end": 14.65,
+     "start": 14.425,
+     "text": ";"
+    },
+    {
+     "end": 14.975,
+     "start": 14.85,
+     "text": "they"
+    },
+    {
+     "end": 15.225,
+     "start": 14.975,
+     "text": "must"
+    },
+    {
+     "end": 15.45,
+     "start": 15.225,
+     "text": "not"
+    },
+    {
+     "end": 15.613,
+     "start": 15.45,
+     "text": "be"
+    },
+    {
+     "end": 15.962,
+     "start": 15.613,
+     "text": "added"
+    },
+    {
+     "end": 16.6,
+     "start": 15.962,
+     "text": "twice"
+    },
+    {
+     "end": 16.7,
+     "start": 16.6,
+     "text": "."
+    },
+    {
+     "end": 16.85,
+     "start": 16.7,
+     "text": "The"
+    },
+    {
+     "end": 17.75,
+     "start": 16.85,
+     "text": "application-held"
+    },
+    {
+     "end": 18.275,
+     "start": 17.75,
+     "text": "design"
+    },
+    {
+     "end": 18.862,
+     "start": 18.275,
+     "text": "publishes"
+    },
+    {
+     "end": 19.1,
+     "start": 18.862,
+     "text": "no"
+    },
+    {
+     "end": 19.45,
+     "start": 19.1,
+     "text": "witness"
+    },
+    {
+     "end": 20.575,
+     "start": 19.45,
+     "text": "policy"
+    },
+    {
+     "end": 20.775,
+     "start": 20.575,
+     "text": "."
+    }
+   ]
+  },
   "docs-decisions/adopted-behavior-00": {
    "audio_sha256": "724e4859b6e73eaa9acb084a2e4cf295711c407c2dcec949ed5bda7dd88c582d",
    "characters": 17,

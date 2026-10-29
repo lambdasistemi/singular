@@ -439,6 +439,8 @@ jobs:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       - run: nix run --quiet .#docs-check
+      - name: Recompute creation receipts and page, including alteration controls
+        run: nix run --quiet .#creation-cost-check
   dev-shell:
     if: github.event.action != 'closed'
     needs: build-gate

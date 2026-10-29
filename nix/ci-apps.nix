@@ -61,6 +61,17 @@ let
   };
 in
 {
+  creation-cost-check = app (
+    pkgs.writeShellApplication {
+      name = "creation-cost-check";
+      runtimeInputs = [
+        pkgs.bash
+        pkgs.python3
+      ];
+      text = ''bash test/ci/creation-cost.sh'';
+    }
+  );
+
   preimage-vectors = app preimageVectors;
 
   presentation-check = app (

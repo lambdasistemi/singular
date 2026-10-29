@@ -788,6 +788,8 @@
           cp ${./tools/no_pin_chain_view.py} $out/no_pin_chain_view.py
           cp ${./tools/no_pin_termination_observations.py} $out/no_pin_termination_observations.py
           cp ${./tools/no_pin_reading_checks.py} $out/no_pin_reading_checks.py
+          cp ${./tools/creation-cost.py} $out/creation-cost.py
+          cp ${./specs/745-shared-publications/evidence/candidate.json} $out/creation-candidate.json
         '';
       # Release checks remain available independently of the command journeys.
       releaseVerification =

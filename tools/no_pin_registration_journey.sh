@@ -417,10 +417,16 @@ control "an unspent approval would be seen: the state token is unspent once" \
 # 6. A later registry of the application, and one made by singular
 # ------------------------------------------------------------------
 leg="scripts published once"
-as carol create-singular "$singular" registry create --blueprint plutus.json --application-policy "$application_hash"
 later_create_tx="$(tx_of create-later create)"
-singular_create_tx="$(tx_of create-singular create)"
 view_tx later-create "$later_create_tx"
+# This complete source prefix bounds the two open-datum creations before the
+# creator sends any separate Singular transaction. The receipt cannot shrink it.
+python3 -I "$(dirname "$chain_view")/creation-cost.py" journey \
+  --work "$work" --source "$evidence" --program "$open_datum" \
+  --blueprint "$work/release/plutus.json" --devnet "$devnet" \
+  --reference "$(dirname "$chain_view")/creation-candidate.json"
+as carol create-singular "$singular" registry create --blueprint plutus.json --application-policy "$application_hash"
+singular_create_tx="$(tx_of create-singular create)"
 view_tx singular-create "$singular_create_tx"
 view_unspent after-creations
 check "a later registry sends the creation alone" receipt_steps_are "$receipts/create-later.json" '["create"]'

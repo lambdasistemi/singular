@@ -45,6 +45,7 @@ module Main (main) where
 
 import Codec.Serialise (deserialiseOrFail)
 import Control.Monad (forM_, void, when)
+import CreationCarrying qualified
 import Data.Aeson (Value, encode, object, (.=))
 import Data.Aeson.Types (Pair)
 import Data.Bifunctor (second)
@@ -222,6 +223,7 @@ main = do
     out <- hDuplicate stdout
     hDuplicateTo stderr stdout
     case args of
+        ("creation" : flags) -> CreationCarrying.run out flags
         ("spares" : flags) -> withEnv flags (sparesCommand out)
         ("plain-copy" : flags) -> withEnv flags (plainCopyCommand out)
         ("fold" : flags) -> withEnv flags (foldCommand out)

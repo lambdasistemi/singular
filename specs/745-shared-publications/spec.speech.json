@@ -1,0 +1,122 @@
+{
+  "create-registries-on-shared-application-and-state-script-publications": [
+    {
+      "text": "Create registries on shared application and state script publications.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 745, part of epic 731. This page is for a registry creator, for an author of another application, and for the people who review the pull requests. It records the story, the requirements, the refusals and the checks that prove them. It follows the registry creation ticket.",
+      "pause": 400
+    }
+  ],
+  "story": [
+    {
+      "text": "Story.",
+      "pause": 500
+    },
+    {
+      "text": "As a registry creator, I create another registry for the same application release, and I see the shared application and state scripts reused from their live reference outputs: I pay only for what is specific to my registry.",
+      "pause": 400
+    }
+  ],
+  "what-is-shared-and-what-is-not": [
+    {
+      "text": "What is shared and what is not.",
+      "pause": 500
+    },
+    {
+      "text": "On this line no script is specific to one registry. The issue was written before the request lifecycle moved to the application (the 23 October 2026 ruling): it speaks of a per-registry request script. That script no longer exists, so the measured claim of the issue, four transactions for the first registry and two for a later one, is reported as measured against the baseline that has it, and the candidate's counts are reported as they are.",
+      "pause": 400
+    }
+  ],
+  "requirements": [
+    {
+      "text": "Requirements.",
+      "pause": 500
+    },
+    {
+      "text": "creation-cost-measured: matched baseline and candidate runs of a first and a later creation for the same application.",
+      "pause": 400
+    },
+    {
+      "text": "release, on the same frozen protocol parameters; every transaction, reference output, script size in bytes, fee and locked ADA is recorded, with locked capital kept apart from fees and the baseline's unused witness-publication overhead named. The four-then-two claim is reported as measured, never as an estimate.",
+      "pause": 400
+    },
+    {
+      "text": "references-verified-before-use: a reference output is reused only when the script it carries has the expected hash,.",
+      "pause": 400
+    },
+    {
+      "text": "computed from the script itself, which covers its bytes, its language and its applied parameters. A different application policy or release never reuses a previous state script. A missing, spent or wrong reference has its own outcome and its own receipt.",
+      "pause": 400
+    },
+    {
+      "text": "boot-carrying-measured: the attempt to carry a registry's reference script in the creation transaction is measured.",
+      "pause": 400
+    },
+    {
+      "text": "against the frozen transaction size and execution limits. If it fits and is adopted, the one-transaction later create is shown; otherwise the limiting evidence is published and the valid path stays.",
+      "pause": 400
+    },
+    {
+      "text": "independent-creator-reuse: a creator with a wallet that never published, and no local file from any earlier creator,.",
+      "pause": 400
+    },
+    {
+      "text": "reuses the live copies. The page states whether discovery exists: the provider finds a live copy by script hash; the general public-reference discovery program of issues 355 and 473 is not part of this ticket.",
+      "pause": 400
+    },
+    {
+      "text": "create-recovery-kept: an uncertain submission, a repeated invocation, the saved registry identity and the funding.",
+      "pause": 400
+    },
+    {
+      "text": "accounting behave as before, with shared publications.",
+      "pause": 400
+    },
+    {
+      "text": "no-witness-publication: no witness-policy publication and no witness-pin configuration is required to create or use a.",
+      "pause": 400
+    },
+    {
+      "text": "registry on this line.",
+      "pause": 400
+    },
+    {
+      "text": "shared-registry-registers: a registry created on shared publications completes a real registration with the same.",
+      "pause": 400
+    },
+    {
+      "text": "commands as the first registry: book, then fold by a second wallet from chain data alone.",
+      "pause": 400
+    },
+    {
+      "text": "reuse-documented-and-conformance-computed: the creation and reuse instructions ship with the pull request that.",
+      "pause": 400
+    },
+    {
+      "text": "changes the behaviour; the conformance suite states each reuse claim from the journey receipts and keeps what is not covered visible.",
+      "pause": 400
+    }
+  ],
+  "refusals-and-outcomes": [
+    {
+      "text": "Refusals and outcomes.",
+      "pause": 500
+    }
+  ],
+  "out-of-scope": [
+    {
+      "text": "Out of scope.",
+      "pause": 500
+    },
+    {
+      "text": "Public discovery and publication of references for everyone (issues 355 and 473), batch folding limits (issue 746), integration into main and release (issue 747), any change to an on-chain script or its hash, and a change to a registry that already exists.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "b6c03e35f0d09d9ebd8d0550e14a0e073a471347ad2b6fbd07e2bf060ba6293f"
+  }
+}
