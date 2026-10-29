@@ -6,7 +6,10 @@ inventory="$1" rows="$2" frozen="$3"
 check="$(dirname "$0")/batch-fold-rows.sh"
 scratch="$(mktemp -d)"
 trap 'rm -rf "$scratch"' EXIT
-fail() { echo "FAIL: $*" >&2; exit 1; }
+fail() {
+  echo "FAIL: $*" >&2
+  exit 1
+}
 bash "$check" "$inventory" "$rows" "$frozen"
 plant() {
   local name="$1" reason="$2" inv="$3" rws="$4" out

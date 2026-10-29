@@ -95,4 +95,11 @@ sed -i '0,/[Uu]ncovered/s//demonstrated/' "$consumer"
 applied "$work/before" "$consumer" 'consumer standing'
 refused 'tampered consumer standing' 'consumer-conformance.md disagrees with the receipts it is computed from'
 
+fresh
+consumer="$copy/docs/consumer-conformance.md"
+cp "$consumer" "$work/before"
+awk -F'|' -v OFS='|' '$2 == " Total requirements " { $3 = " " ($3 + 1) " " } { print }' "$work/before" >"$consumer"
+applied "$work/before" "$consumer" 'consumer total'
+refused 'tampered consumer total' 'consumer-conformance.md disagrees with the receipts it is computed from'
+
 echo 'evidence page controls: every tampering refused'

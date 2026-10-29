@@ -49,10 +49,11 @@ def main():
             accepted = workload["samples"][workload["largestAccepted"] - 1]
             for metric in ("memory", "steps", "serializedBytes", "fee"):
                 actual = str(accepted["measurement"][metric])
-                assert actual in page.read_text(), f"{kind} {metric} is not published"
+                cell = f"| {actual} |"
+                assert cell in page.read_text(), f"{kind} {metric} is not published"
                 changed_page = scratch / "page.md"
                 changed_page.write_text(
-                    page.read_text().replace(actual, str(int(actual) + 1), 1)
+                    page.read_text().replace(cell, f"| {int(actual) + 1} |", 1)
                 )
                 result = check(changed_page, receipt)
                 assert result.returncode != 0 and "differs" in result.stderr, (

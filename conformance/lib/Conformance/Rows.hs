@@ -5,7 +5,7 @@ License     : Apache-2.0
 
 The complete consumer-row inventory from @rows.json@: id, group,
 requirement, source, expected outcome and declared plan. @list@
-prints it; @validateInventory@ enforces the denominator — sixteen rows,
+prints it; @validateInventory@ enforces the pinned complete denominator,
 all owned — so a truncated inventory fails loudly instead of printing
 a smaller-but-plausible table.
 
@@ -43,13 +43,13 @@ import Data.Text qualified as T
 
 import Conformance.Receipt (Receipt (..), Verdict (..))
 
--- | Comparison, registry reading and shared-publication requirements.
+-- | Comparison, reading, shared-publication and batch-folding requirements.
 expectedRowCount :: Int
-expectedRowCount = 16
+expectedRowCount = 22
 
 -- | Every retained requirement belongs to Singular.
 ownedDenominator :: Int
-ownedDenominator = 16
+ownedDenominator = 22
 
 {- | A row's declared coverage plan. @executed@ is unrepresentable
 here by construction: only a run receipt can establish it.

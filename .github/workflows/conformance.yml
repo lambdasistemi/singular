@@ -181,6 +181,8 @@ jobs:
           nix shell --quiet nixpkgs#jq nixpkgs#coreutils nixpkgs#gawk nixpkgs#gnugrep -c bash test/ci/registration-journey-rows-control.sh "$RUNNER_TEMP/registration-journey-inventory.tsv" rows.json test/ci/registration-journey-frozen-rows.txt
           nix shell --quiet nixpkgs#jq nixpkgs#coreutils nixpkgs#gawk nixpkgs#gnugrep -c bash test/ci/shared-publication-rows.sh "$RUNNER_TEMP/registration-journey-inventory.tsv" rows.json test/ci/shared-publication-frozen-rows.txt
           nix shell --quiet nixpkgs#jq nixpkgs#coreutils nixpkgs#gawk nixpkgs#gnugrep -c bash test/ci/shared-publication-rows-control.sh "$RUNNER_TEMP/registration-journey-inventory.tsv" rows.json test/ci/shared-publication-frozen-rows.txt
+          nix shell --quiet nixpkgs#jq nixpkgs#coreutils nixpkgs#gawk nixpkgs#gnugrep -c bash test/ci/batch-fold-rows.sh "$RUNNER_TEMP/registration-journey-inventory.tsv" rows.json test/ci/batch-fold-frozen-rows.txt
+          nix shell --quiet nixpkgs#jq nixpkgs#coreutils nixpkgs#gawk nixpkgs#gnugrep -c bash test/ci/batch-fold-rows-control.sh "$RUNNER_TEMP/registration-journey-inventory.tsv" rows.json test/ci/batch-fold-frozen-rows.txt
   coverage-gate:
     name: Theorem coverage gate — inventory, ratchet and completion as distinct results
     runs-on: nixos

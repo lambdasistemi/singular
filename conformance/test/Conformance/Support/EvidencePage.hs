@@ -30,6 +30,7 @@ import Conformance.EvidencePage
     , RenderedPage (..)
     , Snapshot (..)
     , Source (..)
+    , renderConsumerSummary
     , renderEvidencePage
     )
 import Conformance.Receipt
@@ -95,6 +96,41 @@ spec = describe "Appendix: computing the published evidence page" $ do
         page <- rendered rows (snapshotOf "fixture-base" receipts)
         renderedPage page `shouldSatisfy` T.isInfixOf model
         renderedPage page `shouldSatisfy` T.isInfixOf "fixture-base"
+
+    it
+        "Computes the consumer totals and changes standings only with receipts" $ do
+        (rows, receipts) <- fixtures
+        length receipts `shouldSatisfy` (> 1)
+        let cell label n = "| " <> label <> " | " <> T.pack (show n) <> " |"
+            summary reports =
+                either
+                    fail
+                    pure
+                    (renderConsumerSummary rows (snapshotOf "fixture-base" reports))
+        without <- summary []
+        without
+            `shouldSatisfy` T.isInfixOf (cell "Total requirements" (length rows))
+        without `shouldSatisfy` T.isInfixOf (cell "Uncovered" (length rows))
+        with <- summary receipts
+        with
+            `shouldSatisfy` T.isInfixOf (cell "Demonstrated by a run" (length receipts))
+        with
+            `shouldSatisfy` T.isInfixOf (cell "Uncovered" (length rows - length receipts))
+        let groups = sort (map rowGroup rows)
+        forM_ groups $ \group ->
+            with
+                `shouldSatisfy` T.isInfixOf
+                    ( cell
+                        (T.toTitle (T.replace "-" " " group))
+                        (length (filter (== group) groups))
+                    )
+        forM_ rows $ \row -> with `shouldSatisfy` (not . T.isInfixOf (rowId row))
+        let failed = map (\r -> r{receiptVerdict = DivergesFromLean}) receipts
+        refusedSummary <- summary failed
+        refusedSummary
+            `shouldSatisfy` T.isInfixOf (cell "Run, result not a pass" (length failed))
+        refusedSummary
+            `shouldSatisfy` T.isInfixOf (cell "Demonstrated by a run" (0 :: Int))
 
     it "Refuses a receipt for another code revision, wherever it stands" $ do
         (rows, receipts) <- fixtures

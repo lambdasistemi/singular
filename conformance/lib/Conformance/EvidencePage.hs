@@ -35,6 +35,7 @@ module Conformance.EvidencePage
       -- * Rendering
     , RenderedPage (..)
     , renderEvidencePage
+    , renderConsumerSummary
 
       -- * The command
     , runEvidencePage
@@ -557,6 +558,64 @@ verdictText _ = \case
     UnmetByRuling -> "unmet by a ruling"
     Partial -> "partial"
 
+{- | The consumer page shares the evidence reader's validated inputs and
+receipt-derived standings. Requirement families are discovered, not listed
+in a second catalogue. Machine group keys are rendered as ordinary words.
+-}
+renderConsumerSummary :: [Row] -> Snapshot -> Either String Text
+renderConsumerSummary rows snap = do
+    validateSnapshot rows snap
+    pure $
+        T.unlines $
+            [ "<!-- consumer-summary:start -->"
+            , ""
+            , "This summary is computed from the same inventory and validated receipts as the \
+              \[evidence page](conformance-evidence.md), for code revision `"
+                <> snapBase snap
+                <> "`. Separate command journeys and measurements do not grant model-comparison credit."
+            , ""
+            , "| Standing | Requirements |"
+            , "|---|---:|"
+            , line "Total requirements" (length rows)
+            , line "Demonstrated by a run" (count (== ShownExecuted))
+            , line "Partly demonstrated by a run" (count (== ShownPartial))
+            , line "Run, result not a pass" (count recorded)
+            , line
+                "Bound to evidence elsewhere"
+                (count (== ShownPlanned BoundElsewhere))
+            , line "Uncovered" (count (== ShownPlanned Uncovered))
+            , line "Out of scope" (count (== ShownPlanned OutOfScope))
+            , ""
+            , "| Requirement family | Requirements |"
+            , "|---|---:|"
+            ]
+                <> [ line
+                        (T.toTitle (T.replace "-" " " group))
+                        (length (filter ((== group) . rowGroup) rows))
+                   | group <- sort (nub (map rowGroup rows))
+                   ]
+                <> ["", "<!-- consumer-summary:end -->"]
+  where
+    states = map (effectiveState (snapBase snap) (snapReceipts snap)) rows
+    count p = length (filter p states)
+    recorded ShownRecorded{} = True
+    recorded _ = False
+    line label value = "| " <> label <> " | " <> T.pack (show value) <> " |"
+
+-- | Replace exactly one generated section while preserving the page's prose.
+consumerPage :: Text -> Text -> Either String Text
+consumerPage summary page = do
+    whenL
+        (T.count start page /= 1 || T.count end page /= 1)
+        "the consumer page needs exactly one marked summary"
+    let (before, rest) = T.breakOn start page
+        (_, after) = T.breakOn end rest
+    whenL (T.null after) "the consumer summary's end precedes its start"
+    pure (before <> T.stripEnd summary <> T.drop (T.length end) after)
+  where
+    start = "<!-- consumer-summary:start -->"
+    end = "<!-- consumer-summary:end -->"
+
 runEvidencePage :: FilePath -> Bool -> IO ()
 runEvidencePage root write = do
     rows <-
@@ -567,15 +626,28 @@ runEvidencePage root write = do
         loadSnapshot (root </> "conformance/evidence/page")
             >>= either refuse pure
     page <- either refuse pure (renderEvidencePage model rows snap)
+    summary <- either refuse pure (renderConsumerSummary rows snap)
+    consumer <-
+        TIO.readFile consumerPath
+            >>= either refuse pure . consumerPage summary
+    mapM_
+        (publish write)
+        [(pagePath, renderedPage page), (consumerPath, consumer)]
+  where
+    pagePath = root </> "docs/conformance-evidence.md"
+    consumerPath = root </> "docs/consumer-conformance.md"
+
+publish :: Bool -> (FilePath, Text) -> IO ()
+publish write (pagePath, page) =
     if write
         then do
-            TIO.writeFile pagePath (renderedPage page)
+            TIO.writeFile pagePath page
             putStrLn ("wrote " <> pagePath)
         else do
             exists <- doesFileExist pagePath
             unless exists (refuse (pagePath <> " is missing"))
             committed <- TIO.readFile pagePath
-            case firstDifference (T.lines (renderedPage page)) (T.lines committed) of
+            case firstDifference (T.lines page) (T.lines committed) of
                 Just (n, want, got) ->
                     refuse
                         ( pagePath
@@ -587,11 +659,9 @@ runEvidencePage root write = do
                             <> show got
                         )
                 Nothing
-                    | committed /= renderedPage page ->
+                    | committed /= page ->
                         refuse (pagePath <> " differs from its rendering in line endings")
                     | otherwise -> pure ()
-  where
-    pagePath = root </> "docs/conformance-evidence.md"
 
 refuse :: String -> IO a
 refuse msg = do

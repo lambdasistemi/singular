@@ -6,7 +6,10 @@ inventory="$1" rows="$2" frozen="$3"
 group=batch-folding
 required='public-mixed-batch-fold skipped-batch-holders folder-keeps-batch-surplus largest-fitting-batch named-batch-and-state-policy measured-batch-limits'
 reason='no executable comparison with the application-held model exists yet'
-fail() { echo "FAIL: $*" >&2; exit 1; }
+fail() {
+  echo "FAIL: $*" >&2
+  exit 1
+}
 column() { awk -F'\t' -v id="$1" -v n="$2" '$1 == id { print $n }' "$inventory"; }
 ids="$(jq -r --arg group "$group" '.rows[] | select(.group == $group) | .id' "$rows")"
 [ -n "$ids" ] || fail 'no batch-folding requirements: an empty group proves nothing'
