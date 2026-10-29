@@ -14,8 +14,8 @@ the ticket owner accepts its slice.
 
 ## Pull request 2: references and independent reuse
 
-- [ ] reference-verification-outcomes: reused, published, missing, spent and wrong script outcomes, each with its control.
-- [ ] independent-creator-and-recovery: a creator that never published reuses both copies; recovery and repeat invocation over shared publications.
+- [x] reference-verification-outcomes: reused, published, missing, spent and wrong script outcomes, each with its control.
+- [x] independent-creator-and-recovery: a creator that never published reuses both copies; recovery and repeat invocation over shared publications.
 
 ## Pull request 3: registration, conformance and documentation
 
