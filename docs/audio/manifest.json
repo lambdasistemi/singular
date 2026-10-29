@@ -29461,17 +29461,17 @@
    ]
   },
   "docs-consumer-conformance/consumer-conformance-record-01": {
-   "audio_sha256": "99c53ab544de4cc88e8b47f0824a83123d1e151bf534ff2f48977e1c63d5344e",
-   "characters": 332,
-   "cost": 0.00032868000000000003,
-   "duration": 22.175,
+   "audio_sha256": "eda6ab756a8fdab2c02d217aceae13e39c20458238cd4c1d7ddaa229d763d8a4",
+   "characters": 273,
+   "cost": 0.00027026999999999997,
+   "duration": 18.2,
    "index": 1,
-   "key": "eb2d98ad8768ca94f18362ec5ca59c657196262048377e22341c5da03619856b",
+   "key": "65cadb119799d9546ab710857b3582450a8da94497593b9b89b1c75e5d8068ef",
    "page": "docs/consumer-conformance.md",
    "pause_ms": 400,
    "section": "consumer-conformance-record",
-   "sent_text": "As an integrator, I can read the registration, holding update, termination, reading and shared-publication requirements and see which comparisons have evidence. The sixteen requirements are published in the generated evidence page. Every requirement is uncovered: no executable comparison with the application-held model exists yet.",
-   "text": "As an integrator, I can read the registration, holding update, termination, reading and shared-publication requirements and see which comparisons have evidence. The sixteen requirements are published in the generated evidence page. Every requirement is uncovered: no executable comparison with the application-held model exists yet.",
+   "sent_text": "As an integrator, I can read the registration, holding update, termination, reading, shared-publication and batch-fold requirements and see which comparisons have evidence. The generated evidence page publishes every requirement, including the ones no run has demonstrated.",
+   "text": "As an integrator, I can read the registration, holding update, termination, reading, shared-publication and batch-fold requirements and see which comparisons have evidence. The generated evidence page publishes every requirement, including the ones no run has demonstrated.",
    "words": [
     {
      "end": 0.363,
@@ -29484,493 +29484,838 @@
      "text": "an"
     },
     {
-     "end": 1.025,
+     "end": 1.0,
      "start": 0.45,
      "text": "integrator"
     },
     {
-     "end": 1.075,
-     "start": 1.025,
+     "end": 1.05,
+     "start": 1.0,
      "text": ","
     },
     {
-     "end": 1.225,
-     "start": 1.075,
+     "end": 1.2,
+     "start": 1.05,
      "text": "I"
     },
     {
-     "end": 1.425,
-     "start": 1.225,
+     "end": 1.4,
+     "start": 1.2,
      "text": "can"
     },
     {
-     "end": 1.7,
-     "start": 1.425,
+     "end": 1.675,
+     "start": 1.4,
      "text": "read"
     },
     {
-     "end": 1.825,
-     "start": 1.7,
+     "end": 1.775,
+     "start": 1.675,
      "text": "the"
     },
     {
-     "end": 2.675,
-     "start": 1.825,
+     "end": 2.625,
+     "start": 1.775,
      "text": "registration"
     },
     {
-     "end": 2.75,
-     "start": 2.675,
+     "end": 2.7,
+     "start": 2.625,
      "text": ","
     },
     {
-     "end": 3.188,
-     "start": 2.75,
+     "end": 3.112,
+     "start": 2.7,
      "text": "holding"
     },
     {
-     "end": 3.775,
-     "start": 3.188,
+     "end": 3.675,
+     "start": 3.112,
      "text": "update"
     },
     {
-     "end": 3.862,
-     "start": 3.775,
+     "end": 3.763,
+     "start": 3.675,
      "text": ","
     },
     {
-     "end": 4.7,
-     "start": 3.862,
+     "end": 4.625,
+     "start": 3.763,
      "text": "termination"
     },
     {
-     "end": 4.787,
-     "start": 4.7,
+     "end": 4.738,
+     "start": 4.625,
      "text": ","
     },
     {
      "end": 5.25,
-     "start": 4.787,
+     "start": 4.738,
      "text": "reading"
     },
     {
-     "end": 5.387,
+     "end": 5.363,
      "start": 5.25,
-     "text": "and"
+     "text": ","
     },
     {
-     "end": 6.35,
-     "start": 5.387,
+     "end": 6.45,
+     "start": 5.363,
      "text": "shared-publication"
     },
     {
-     "end": 7.113,
-     "start": 6.35,
-     "text": "requirements"
-    },
-    {
-     "end": 7.262,
-     "start": 7.113,
+     "end": 6.575,
+     "start": 6.45,
      "text": "and"
     },
     {
-     "end": 7.475,
-     "start": 7.262,
-     "text": "see"
+     "end": 7.25,
+     "start": 6.575,
+     "text": "batch-fold"
     },
     {
-     "end": 7.675,
-     "start": 7.475,
-     "text": "which"
-    },
-    {
-     "end": 8.425,
-     "start": 7.675,
-     "text": "comparisons"
-    },
-    {
-     "end": 8.663,
-     "start": 8.425,
-     "text": "have"
-    },
-    {
-     "end": 9.925,
-     "start": 8.663,
-     "text": "evidence"
-    },
-    {
-     "end": 10.15,
-     "start": 9.925,
-     "text": "."
-    },
-    {
-     "end": 10.438,
-     "start": 10.325,
-     "text": "The"
-    },
-    {
-     "end": 10.95,
-     "start": 10.438,
-     "text": "sixteen"
-    },
-    {
-     "end": 11.625,
-     "start": 10.95,
+     "end": 8.038,
+     "start": 7.25,
      "text": "requirements"
     },
     {
-     "end": 11.75,
-     "start": 11.625,
-     "text": "are"
+     "end": 8.188,
+     "start": 8.038,
+     "text": "and"
     },
     {
-     "end": 12.3,
-     "start": 11.75,
-     "text": "published"
+     "end": 8.4,
+     "start": 8.188,
+     "text": "see"
     },
     {
-     "end": 12.387,
-     "start": 12.3,
-     "text": "in"
+     "end": 8.6,
+     "start": 8.4,
+     "text": "which"
     },
     {
-     "end": 12.512,
-     "start": 12.387,
-     "text": "the"
+     "end": 9.35,
+     "start": 8.6,
+     "text": "comparisons"
     },
     {
-     "end": 13.125,
-     "start": 12.512,
-     "text": "generated"
+     "end": 9.587,
+     "start": 9.35,
+     "text": "have"
     },
     {
-     "end": 13.575,
-     "start": 13.125,
+     "end": 10.85,
+     "start": 9.587,
      "text": "evidence"
     },
     {
-     "end": 14.5,
-     "start": 13.575,
-     "text": "page"
-    },
-    {
-     "end": 14.725,
-     "start": 14.5,
+     "end": 11.075,
+     "start": 10.85,
      "text": "."
     },
     {
-     "end": 15.25,
-     "start": 14.95,
-     "text": "Every"
+     "end": 11.387,
+     "start": 11.275,
+     "text": "The"
     },
     {
-     "end": 15.962,
-     "start": 15.25,
+     "end": 12.025,
+     "start": 11.387,
+     "text": "generated"
+    },
+    {
+     "end": 12.488,
+     "start": 12.025,
+     "text": "evidence"
+    },
+    {
+     "end": 12.913,
+     "start": 12.488,
+     "text": "page"
+    },
+    {
+     "end": 13.538,
+     "start": 12.913,
+     "text": "publishes"
+    },
+    {
+     "end": 13.875,
+     "start": 13.538,
+     "text": "every"
+    },
+    {
+     "end": 14.675,
+     "start": 13.875,
      "text": "requirement"
     },
     {
-     "end": 16.125,
-     "start": 15.962,
-     "text": "is"
+     "end": 14.75,
+     "start": 14.675,
+     "text": ","
     },
     {
-     "end": 16.925,
-     "start": 16.125,
-     "text": "uncovered"
+     "end": 15.275,
+     "start": 14.75,
+     "text": "including"
     },
     {
-     "end": 17.038,
-     "start": 16.925,
-     "text": ":"
-    },
-    {
-     "end": 17.312,
-     "start": 17.038,
-     "text": "no"
-    },
-    {
-     "end": 18.025,
-     "start": 17.312,
-     "text": "executable"
-    },
-    {
-     "end": 18.725,
-     "start": 18.025,
-     "text": "comparison"
-    },
-    {
-     "end": 18.862,
-     "start": 18.725,
-     "text": "with"
-    },
-    {
-     "end": 19.013,
-     "start": 18.862,
+     "end": 15.375,
+     "start": 15.275,
      "text": "the"
     },
     {
-     "end": 19.95,
-     "start": 19.013,
-     "text": "application-held"
+     "end": 15.75,
+     "start": 15.375,
+     "text": "ones"
     },
     {
-     "end": 20.45,
-     "start": 19.95,
-     "text": "model"
+     "end": 16.038,
+     "start": 15.75,
+     "text": "no"
     },
     {
-     "end": 21.038,
-     "start": 20.45,
-     "text": "exists"
+     "end": 16.4,
+     "start": 16.038,
+     "text": "run"
     },
     {
-     "end": 21.95,
-     "start": 21.038,
-     "text": "yet"
+     "end": 16.6,
+     "start": 16.4,
+     "text": "has"
     },
     {
-     "end": 22.175,
-     "start": 21.95,
+     "end": 17.975,
+     "start": 16.6,
+     "text": "demonstrated"
+    },
+    {
+     "end": 18.2,
+     "start": 17.975,
      "text": "."
     }
    ]
   },
   "docs-consumer-conformance/consumer-conformance-record-02": {
-   "audio_sha256": "448f32acd26678b3469f59b0af6fda1c3383ec29f75fdc3caf317796d899a8f2",
-   "characters": 290,
-   "cost": 0.0002871,
-   "duration": 18.725,
+   "audio_sha256": "0974fd2a4a2e818e5beb78fb50febc31d25c2418037f173219652cd249b91851",
+   "characters": 273,
+   "cost": 0.00027026999999999997,
+   "duration": 24.6,
    "index": 2,
-   "key": "0fdd7846efc16f90920ef4f1f3b0866fc7cc940ded9526f1cc4c988ad70ba958",
+   "key": "11ea18806c09343cd4bb4bbb26d7d6f29a1a3898d05b0d119a66b5fa2185dafb",
    "page": "docs/consumer-conformance.md",
    "pause_ms": 400,
    "section": "consumer-conformance-record",
-   "sent_text": "Seven requirements compare the previous and application-held designs. Their old side is computed from the retained Lean model. The development-network journey and refusal jobs are separate observations; they establish the transactions they run and do not establish agreement with the model.",
-   "text": "Seven requirements compare the previous and application-held designs. Their old side is computed from the retained Lean model. The development-network journey and refusal jobs are separate observations; they establish the transactions they run and do not establish agreement with the model.",
+   "sent_text": "This summary is computed from the same inventory and validated receipts as the evidence page, for code revision c 1 7 3 0 9 e e 6 0 7 3 6 8 6 1 5 b 9 6 f 2 3 e a 4 f 9 6 4 0 1 4 6 7 1 9 5 f 5. Separate command journeys and measurements do not grant model-comparison credit.",
+   "text": "This summary is computed from the same inventory and validated receipts as the evidence page, for code revision c17309ee607368615b96f23ea4f96401467195f5. Separate command journeys and measurements do not grant model-comparison credit.",
    "words": [
     {
-     "end": 0.525,
-     "start": 0.2,
-     "text": "Seven"
+     "end": 0.387,
+     "start": 0.225,
+     "text": "This"
     },
     {
-     "end": 1.2,
-     "start": 0.525,
-     "text": "requirements"
+     "end": 0.85,
+     "start": 0.387,
+     "text": "summary"
     },
     {
-     "end": 1.562,
-     "start": 1.2,
-     "text": "compare"
-    },
-    {
-     "end": 1.65,
-     "start": 1.562,
-     "text": "the"
-    },
-    {
-     "end": 2.237,
-     "start": 1.65,
-     "text": "previous"
-    },
-    {
-     "end": 2.375,
-     "start": 2.237,
-     "text": "and"
-    },
-    {
-     "end": 3.25,
-     "start": 2.375,
-     "text": "application-held"
-    },
-    {
-     "end": 4.425,
-     "start": 3.25,
-     "text": "designs"
-    },
-    {
-     "end": 4.625,
-     "start": 4.425,
-     "text": "."
-    },
-    {
-     "end": 4.975,
-     "start": 4.8,
-     "text": "Their"
-    },
-    {
-     "end": 5.25,
-     "start": 4.975,
-     "text": "old"
-    },
-    {
-     "end": 5.575,
-     "start": 5.25,
-     "text": "side"
-    },
-    {
-     "end": 5.725,
-     "start": 5.575,
+     "end": 1.0,
+     "start": 0.85,
      "text": "is"
     },
     {
-     "end": 6.325,
-     "start": 5.725,
+     "end": 1.5,
+     "start": 1.0,
      "text": "computed"
     },
     {
-     "end": 6.463,
-     "start": 6.325,
+     "end": 1.638,
+     "start": 1.5,
      "text": "from"
     },
     {
-     "end": 6.55,
-     "start": 6.463,
+     "end": 1.737,
+     "start": 1.638,
      "text": "the"
     },
     {
-     "end": 7.0,
-     "start": 6.55,
-     "text": "retained"
+     "end": 2.075,
+     "start": 1.737,
+     "text": "same"
     },
     {
-     "end": 7.225,
-     "start": 7.0,
-     "text": "Lean"
+     "end": 2.775,
+     "start": 2.075,
+     "text": "inventory"
     },
     {
-     "end": 8.075,
-     "start": 7.225,
-     "text": "model"
+     "end": 2.912,
+     "start": 2.775,
+     "text": "and"
     },
     {
-     "end": 8.275,
-     "start": 8.075,
+     "end": 3.55,
+     "start": 2.912,
+     "text": "validated"
+    },
+    {
+     "end": 4.062,
+     "start": 3.55,
+     "text": "receipts"
+    },
+    {
+     "end": 4.213,
+     "start": 4.062,
+     "text": "as"
+    },
+    {
+     "end": 4.35,
+     "start": 4.213,
+     "text": "the"
+    },
+    {
+     "end": 4.812,
+     "start": 4.35,
+     "text": "evidence"
+    },
+    {
+     "end": 5.45,
+     "start": 4.812,
+     "text": "page"
+    },
+    {
+     "end": 5.575,
+     "start": 5.45,
+     "text": ","
+    },
+    {
+     "end": 5.738,
+     "start": 5.575,
+     "text": "for"
+    },
+    {
+     "end": 6.037,
+     "start": 5.738,
+     "text": "code"
+    },
+    {
+     "end": 6.463,
+     "start": 6.037,
+     "text": "revision"
+    },
+    {
+     "end": 6.713,
+     "start": 6.463,
+     "text": "c"
+    },
+    {
+     "end": 7.062,
+     "start": 6.713,
+     "text": "1"
+    },
+    {
+     "end": 7.438,
+     "start": 7.062,
+     "text": "7"
+    },
+    {
+     "end": 7.713,
+     "start": 7.438,
+     "text": "3"
+    },
+    {
+     "end": 8.087,
+     "start": 7.713,
+     "text": "0"
+    },
+    {
+     "end": 8.512,
+     "start": 8.087,
+     "text": "9"
+    },
+    {
+     "end": 8.788,
+     "start": 8.512,
+     "text": "e"
+    },
+    {
+     "end": 9.0,
+     "start": 8.788,
+     "text": "e"
+    },
+    {
+     "end": 9.312,
+     "start": 9.0,
+     "text": "6"
+    },
+    {
+     "end": 9.75,
+     "start": 9.312,
+     "text": "0"
+    },
+    {
+     "end": 10.125,
+     "start": 9.75,
+     "text": "7"
+    },
+    {
+     "end": 10.363,
+     "start": 10.125,
+     "text": "3"
+    },
+    {
+     "end": 10.625,
+     "start": 10.363,
+     "text": "6"
+    },
+    {
+     "end": 10.887,
+     "start": 10.625,
+     "text": "8"
+    },
+    {
+     "end": 11.212,
+     "start": 10.887,
+     "text": "6"
+    },
+    {
+     "end": 11.462,
+     "start": 11.212,
+     "text": "1"
+    },
+    {
+     "end": 11.825,
+     "start": 11.462,
+     "text": "5"
+    },
+    {
+     "end": 12.0,
+     "start": 11.825,
+     "text": "b"
+    },
+    {
+     "end": 12.337,
+     "start": 12.0,
+     "text": "9"
+    },
+    {
+     "end": 12.625,
+     "start": 12.337,
+     "text": "6"
+    },
+    {
+     "end": 12.837,
+     "start": 12.625,
+     "text": "f"
+    },
+    {
+     "end": 13.087,
+     "start": 12.837,
+     "text": "2"
+    },
+    {
+     "end": 13.525,
+     "start": 13.087,
+     "text": "3"
+    },
+    {
+     "end": 13.9,
+     "start": 13.525,
+     "text": "e"
+    },
+    {
+     "end": 14.038,
+     "start": 13.9,
+     "text": "a"
+    },
+    {
+     "end": 14.35,
+     "start": 14.038,
+     "text": "4"
+    },
+    {
+     "end": 14.55,
+     "start": 14.35,
+     "text": "f"
+    },
+    {
+     "end": 14.812,
+     "start": 14.55,
+     "text": "9"
+    },
+    {
+     "end": 15.137,
+     "start": 14.812,
+     "text": "6"
+    },
+    {
+     "end": 15.375,
+     "start": 15.137,
+     "text": "4"
+    },
+    {
+     "end": 15.788,
+     "start": 15.375,
+     "text": "0"
+    },
+    {
+     "end": 16.062,
+     "start": 15.788,
+     "text": "1"
+    },
+    {
+     "end": 16.312,
+     "start": 16.062,
+     "text": "4"
+    },
+    {
+     "end": 16.6,
+     "start": 16.312,
+     "text": "6"
+    },
+    {
+     "end": 16.95,
+     "start": 16.6,
+     "text": "7"
+    },
+    {
+     "end": 17.175,
+     "start": 16.95,
+     "text": "1"
+    },
+    {
+     "end": 17.487,
+     "start": 17.175,
+     "text": "9"
+    },
+    {
+     "end": 17.85,
+     "start": 17.487,
+     "text": "5"
+    },
+    {
+     "end": 18.062,
+     "start": 17.85,
+     "text": "f"
+    },
+    {
+     "end": 19.15,
+     "start": 18.062,
+     "text": "5"
+    },
+    {
+     "end": 19.425,
+     "start": 19.15,
      "text": "."
     },
     {
-     "end": 8.525,
-     "start": 8.45,
-     "text": "The"
+     "end": 20.05,
+     "start": 19.65,
+     "text": "Separate"
     },
     {
-     "end": 9.413,
-     "start": 8.525,
-     "text": "development-network"
+     "end": 20.487,
+     "start": 20.05,
+     "text": "command"
     },
     {
-     "end": 9.887,
-     "start": 9.413,
-     "text": "journey"
+     "end": 20.975,
+     "start": 20.487,
+     "text": "journeys"
     },
     {
-     "end": 10.025,
-     "start": 9.887,
+     "end": 21.1,
+     "start": 20.975,
      "text": "and"
     },
     {
-     "end": 10.587,
-     "start": 10.025,
-     "text": "refusal"
+     "end": 21.737,
+     "start": 21.1,
+     "text": "measurements"
     },
     {
-     "end": 11.113,
-     "start": 10.587,
-     "text": "jobs"
-    },
-    {
-     "end": 11.3,
-     "start": 11.113,
-     "text": "are"
-    },
-    {
-     "end": 11.675,
-     "start": 11.3,
-     "text": "separate"
-    },
-    {
-     "end": 13.075,
-     "start": 11.675,
-     "text": "observations"
-    },
-    {
-     "end": 13.275,
-     "start": 13.075,
-     "text": ";"
-    },
-    {
-     "end": 13.575,
-     "start": 13.45,
-     "text": "they"
-    },
-    {
-     "end": 14.15,
-     "start": 13.575,
-     "text": "establish"
-    },
-    {
-     "end": 14.25,
-     "start": 14.15,
-     "text": "the"
-    },
-    {
-     "end": 15.1,
-     "start": 14.25,
-     "text": "transactions"
-    },
-    {
-     "end": 15.312,
-     "start": 15.1,
-     "text": "they"
-    },
-    {
-     "end": 15.825,
-     "start": 15.312,
-     "text": "run"
-    },
-    {
-     "end": 15.975,
-     "start": 15.825,
-     "text": "and"
-    },
-    {
-     "end": 16.125,
-     "start": 15.975,
+     "end": 21.875,
+     "start": 21.737,
      "text": "do"
     },
     {
-     "end": 16.337,
-     "start": 16.125,
+     "end": 22.125,
+     "start": 21.875,
      "text": "not"
     },
     {
-     "end": 16.875,
-     "start": 16.337,
-     "text": "establish"
+     "end": 22.487,
+     "start": 22.125,
+     "text": "grant"
     },
     {
-     "end": 17.375,
-     "start": 16.875,
-     "text": "agreement"
+     "end": 23.425,
+     "start": 22.487,
+     "text": "model-comparison"
     },
     {
-     "end": 17.513,
-     "start": 17.375,
-     "text": "with"
+     "end": 24.375,
+     "start": 23.425,
+     "text": "credit"
     },
     {
-     "end": 17.6,
-     "start": 17.513,
+     "end": 24.6,
+     "start": 24.375,
+     "text": "."
+    }
+   ]
+  },
+  "docs-consumer-conformance/consumer-conformance-record-03": {
+   "audio_sha256": "4888f540d0c6af1ce6c1839cbb940ab443d1b2f2f7b0ca52e060b6184873d836",
+   "characters": 313,
+   "cost": 0.00030986999999999996,
+   "duration": 20.225,
+   "index": 3,
+   "key": "c059d07696f60a5a3a48e82be69c67086bd36b5c15c1bf174b2fce23d3495495",
+   "page": "docs/consumer-conformance.md",
+   "pause_ms": 400,
+   "section": "consumer-conformance-record",
+   "sent_text": "The registration and holding requirements compare the previous and application-held designs. Their old side is computed from the retained Lean model. The development-network journey and refusal jobs are separate observations; they establish the transactions they run and do not establish agreement with the model.",
+   "text": "The registration and holding requirements compare the previous and application-held designs. Their old side is computed from the retained Lean model. The development-network journey and refusal jobs are separate observations; they establish the transactions they run and do not establish agreement with the model.",
+   "words": [
+    {
+     "end": 0.3,
+     "start": 0.2,
+     "text": "The"
+    },
+    {
+     "end": 1.175,
+     "start": 0.3,
+     "text": "registration"
+    },
+    {
+     "end": 1.3,
+     "start": 1.175,
+     "text": "and"
+    },
+    {
+     "end": 1.65,
+     "start": 1.3,
+     "text": "holding"
+    },
+    {
+     "end": 2.4,
+     "start": 1.65,
+     "text": "requirements"
+    },
+    {
+     "end": 2.825,
+     "start": 2.4,
+     "text": "compare"
+    },
+    {
+     "end": 2.963,
+     "start": 2.825,
      "text": "the"
     },
     {
-     "end": 18.525,
-     "start": 17.6,
+     "end": 3.588,
+     "start": 2.963,
+     "text": "previous"
+    },
+    {
+     "end": 3.725,
+     "start": 3.588,
+     "text": "and"
+    },
+    {
+     "end": 4.65,
+     "start": 3.725,
+     "text": "application-held"
+    },
+    {
+     "end": 5.9,
+     "start": 4.65,
+     "text": "designs"
+    },
+    {
+     "end": 6.125,
+     "start": 5.9,
+     "text": "."
+    },
+    {
+     "end": 6.475,
+     "start": 6.3,
+     "text": "Their"
+    },
+    {
+     "end": 6.75,
+     "start": 6.475,
+     "text": "old"
+    },
+    {
+     "end": 7.075,
+     "start": 6.75,
+     "text": "side"
+    },
+    {
+     "end": 7.225,
+     "start": 7.075,
+     "text": "is"
+    },
+    {
+     "end": 7.825,
+     "start": 7.225,
+     "text": "computed"
+    },
+    {
+     "end": 7.963,
+     "start": 7.825,
+     "text": "from"
+    },
+    {
+     "end": 8.05,
+     "start": 7.963,
+     "text": "the"
+    },
+    {
+     "end": 8.5,
+     "start": 8.05,
+     "text": "retained"
+    },
+    {
+     "end": 8.725,
+     "start": 8.5,
+     "text": "Lean"
+    },
+    {
+     "end": 9.575,
+     "start": 8.725,
      "text": "model"
     },
     {
-     "end": 18.725,
-     "start": 18.525,
+     "end": 9.775,
+     "start": 9.575,
+     "text": "."
+    },
+    {
+     "end": 10.025,
+     "start": 9.95,
+     "text": "The"
+    },
+    {
+     "end": 10.913,
+     "start": 10.025,
+     "text": "development-network"
+    },
+    {
+     "end": 11.387,
+     "start": 10.913,
+     "text": "journey"
+    },
+    {
+     "end": 11.525,
+     "start": 11.387,
+     "text": "and"
+    },
+    {
+     "end": 12.087,
+     "start": 11.525,
+     "text": "refusal"
+    },
+    {
+     "end": 12.613,
+     "start": 12.087,
+     "text": "jobs"
+    },
+    {
+     "end": 12.8,
+     "start": 12.613,
+     "text": "are"
+    },
+    {
+     "end": 13.175,
+     "start": 12.8,
+     "text": "separate"
+    },
+    {
+     "end": 14.575,
+     "start": 13.175,
+     "text": "observations"
+    },
+    {
+     "end": 14.775,
+     "start": 14.575,
+     "text": ";"
+    },
+    {
+     "end": 15.075,
+     "start": 14.95,
+     "text": "they"
+    },
+    {
+     "end": 15.65,
+     "start": 15.075,
+     "text": "establish"
+    },
+    {
+     "end": 15.75,
+     "start": 15.65,
+     "text": "the"
+    },
+    {
+     "end": 16.6,
+     "start": 15.75,
+     "text": "transactions"
+    },
+    {
+     "end": 16.812,
+     "start": 16.6,
+     "text": "they"
+    },
+    {
+     "end": 17.325,
+     "start": 16.812,
+     "text": "run"
+    },
+    {
+     "end": 17.475,
+     "start": 17.325,
+     "text": "and"
+    },
+    {
+     "end": 17.625,
+     "start": 17.475,
+     "text": "do"
+    },
+    {
+     "end": 17.837,
+     "start": 17.625,
+     "text": "not"
+    },
+    {
+     "end": 18.375,
+     "start": 17.837,
+     "text": "establish"
+    },
+    {
+     "end": 18.875,
+     "start": 18.375,
+     "text": "agreement"
+    },
+    {
+     "end": 19.013,
+     "start": 18.875,
+     "text": "with"
+    },
+    {
+     "end": 19.1,
+     "start": 19.013,
+     "text": "the"
+    },
+    {
+     "end": 20.025,
+     "start": 19.1,
+     "text": "model"
+    },
+    {
+     "end": 20.225,
+     "start": 20.025,
      "text": "."
     }
    ]
@@ -30016,416 +30361,371 @@
    ]
   },
   "docs-consumer-conformance/creating-on-shared-publications-01": {
-   "audio_sha256": "a68cefe6de4efdfc10a38fb8a38fc85b4ecf5942ea8e3f3b75de333cc899d28d",
-   "characters": 515,
-   "cost": 0.00050985,
-   "duration": 34.35,
+   "audio_sha256": "4a5198a07e1d735b0a434ed5e8cb843bee9f38c9522c1e16971709532755aa61",
+   "characters": 508,
+   "cost": 0.00050292,
+   "duration": 32.45,
    "index": 1,
-   "key": "d2c9e9ca5a8f2b1f08007ddd4708849a8ab2bb6c0f141905dfeeab032bcf5e5a",
+   "key": "b059ef0b4b03b8348c82921ffb5c7da2897c6f73682479b4543e01b02fa29561",
    "page": "docs/consumer-conformance.md",
    "pause_ms": 400,
    "section": "creating-on-shared-publications",
-   "sent_text": "Five requirements describe a later creation reusing both scripts, an independent creator reusing them from the chain, separation between application releases, registration in a registry created on shared copies and measured creation costs. They use the existing inventory convention and remain uncovered for the same reason as the preceding requirements: no executable comparison with the application-held model exists yet. The seven comparison rows and four reading rows keep their previous contents and standings.",
-   "text": "Five requirements describe a later creation reusing both scripts, an independent creator reusing them from the chain, separation between application releases, registration in a registry created on shared copies and measured creation costs. They use the existing inventory convention and remain uncovered for the same reason as the preceding requirements: no executable comparison with the application-held model exists yet. The seven comparison rows and four reading rows keep their previous contents and standings.",
+   "sent_text": "The shared-publication requirements describe a later creation reusing both scripts, an independent creator reusing them from the chain, separation between application releases, registration in a registry created on shared copies and measured creation costs. Their standings are computed from matching receipts, alongside the preceding requirements. Publication measurements supply no model-comparison credit. The comparison and reading requirements keep their previous contents and receipt-derived standings.",
+   "text": "The shared-publication requirements describe a later creation reusing both scripts, an independent creator reusing them from the chain, separation between application releases, registration in a registry created on shared copies and measured creation costs. Their standings are computed from matching receipts, alongside the preceding requirements. Publication measurements supply no model-comparison credit. The comparison and reading requirements keep their previous contents and receipt-derived standings.",
    "words": [
     {
-     "end": 0.6,
-     "start": 0.3,
-     "text": "Five"
-    },
-    {
-     "end": 1.275,
-     "start": 0.6,
-     "text": "requirements"
-    },
-    {
-     "end": 1.85,
-     "start": 1.275,
-     "text": "describe"
-    },
-    {
-     "end": 1.962,
-     "start": 1.85,
-     "text": "a"
-    },
-    {
-     "end": 2.338,
-     "start": 1.962,
-     "text": "later"
-    },
-    {
-     "end": 2.987,
-     "start": 2.338,
-     "text": "creation"
-    },
-    {
-     "end": 3.525,
-     "start": 2.987,
-     "text": "reusing"
-    },
-    {
-     "end": 3.812,
-     "start": 3.525,
-     "text": "both"
-    },
-    {
-     "end": 4.425,
-     "start": 3.812,
-     "text": "scripts"
-    },
-    {
-     "end": 4.5,
-     "start": 4.425,
-     "text": ","
-    },
-    {
-     "end": 4.65,
-     "start": 4.5,
-     "text": "an"
-    },
-    {
-     "end": 5.25,
-     "start": 4.65,
-     "text": "independent"
-    },
-    {
-     "end": 5.762,
-     "start": 5.25,
-     "text": "creator"
-    },
-    {
-     "end": 6.275,
-     "start": 5.762,
-     "text": "reusing"
-    },
-    {
-     "end": 6.5,
-     "start": 6.275,
-     "text": "them"
-    },
-    {
-     "end": 6.662,
-     "start": 6.5,
-     "text": "from"
-    },
-    {
-     "end": 6.8,
-     "start": 6.662,
-     "text": "the"
-    },
-    {
-     "end": 7.325,
-     "start": 6.8,
-     "text": "chain"
-    },
-    {
-     "end": 7.438,
-     "start": 7.325,
-     "text": ","
-    },
-    {
-     "end": 8.125,
-     "start": 7.438,
-     "text": "separation"
-    },
-    {
-     "end": 8.475,
-     "start": 8.125,
-     "text": "between"
-    },
-    {
-     "end": 9.15,
-     "start": 8.475,
-     "text": "application"
-    },
-    {
-     "end": 9.95,
-     "start": 9.15,
-     "text": "releases"
-    },
-    {
-     "end": 10.062,
-     "start": 9.95,
-     "text": ","
-    },
-    {
-     "end": 10.875,
-     "start": 10.062,
-     "text": "registration"
-    },
-    {
-     "end": 10.975,
-     "start": 10.875,
-     "text": "in"
-    },
-    {
-     "end": 11.075,
-     "start": 10.975,
-     "text": "a"
-    },
-    {
-     "end": 11.663,
-     "start": 11.075,
-     "text": "registry"
-    },
-    {
-     "end": 12.125,
-     "start": 11.663,
-     "text": "created"
-    },
-    {
-     "end": 12.35,
-     "start": 12.125,
-     "text": "on"
-    },
-    {
-     "end": 12.675,
-     "start": 12.35,
-     "text": "shared"
-    },
-    {
-     "end": 13.15,
-     "start": 12.675,
-     "text": "copies"
-    },
-    {
-     "end": 13.275,
-     "start": 13.15,
-     "text": "and"
-    },
-    {
-     "end": 13.65,
-     "start": 13.275,
-     "text": "measured"
-    },
-    {
-     "end": 14.15,
-     "start": 13.65,
-     "text": "creation"
-    },
-    {
-     "end": 15.375,
-     "start": 14.15,
-     "text": "costs"
-    },
-    {
-     "end": 15.625,
-     "start": 15.375,
-     "text": "."
-    },
-    {
-     "end": 15.988,
-     "start": 15.825,
-     "text": "They"
-    },
-    {
-     "end": 16.275,
-     "start": 15.988,
-     "text": "use"
-    },
-    {
-     "end": 16.425,
-     "start": 16.275,
-     "text": "the"
-    },
-    {
-     "end": 17.013,
-     "start": 16.425,
-     "text": "existing"
-    },
-    {
-     "end": 17.65,
-     "start": 17.013,
-     "text": "inventory"
-    },
-    {
-     "end": 18.487,
-     "start": 17.65,
-     "text": "convention"
-    },
-    {
-     "end": 18.625,
-     "start": 18.487,
-     "text": "and"
-    },
-    {
-     "end": 19.138,
-     "start": 18.625,
-     "text": "remain"
-    },
-    {
-     "end": 19.8,
-     "start": 19.138,
-     "text": "uncovered"
-    },
-    {
-     "end": 19.913,
-     "start": 19.8,
-     "text": "for"
-    },
-    {
-     "end": 20.05,
-     "start": 19.913,
-     "text": "the"
-    },
-    {
-     "end": 20.4,
-     "start": 20.05,
-     "text": "same"
-    },
-    {
-     "end": 20.888,
-     "start": 20.4,
-     "text": "reason"
-    },
-    {
-     "end": 21.05,
-     "start": 20.888,
-     "text": "as"
-    },
-    {
-     "end": 21.15,
-     "start": 21.05,
-     "text": "the"
-    },
-    {
-     "end": 21.75,
-     "start": 21.15,
-     "text": "preceding"
-    },
-    {
-     "end": 23.125,
-     "start": 21.75,
-     "text": "requirements"
-    },
-    {
-     "end": 23.325,
-     "start": 23.125,
-     "text": ":"
-    },
-    {
-     "end": 23.812,
-     "start": 23.55,
-     "text": "no"
-    },
-    {
-     "end": 24.525,
-     "start": 23.812,
-     "text": "executable"
-    },
-    {
-     "end": 25.2,
-     "start": 24.525,
-     "text": "comparison"
-    },
-    {
-     "end": 25.337,
-     "start": 25.2,
-     "text": "with"
-    },
-    {
-     "end": 25.475,
-     "start": 25.337,
-     "text": "the"
-    },
-    {
-     "end": 26.375,
-     "start": 25.475,
-     "text": "application-held"
-    },
-    {
-     "end": 26.9,
-     "start": 26.375,
-     "text": "model"
-    },
-    {
-     "end": 27.413,
-     "start": 26.9,
-     "text": "exists"
-    },
-    {
-     "end": 28.225,
-     "start": 27.413,
-     "text": "yet"
-    },
-    {
-     "end": 28.425,
-     "start": 28.225,
-     "text": "."
-    },
-    {
-     "end": 28.712,
-     "start": 28.6,
+     "end": 0.338,
+     "start": 0.225,
      "text": "The"
     },
     {
-     "end": 29.075,
-     "start": 28.712,
-     "text": "seven"
+     "end": 1.325,
+     "start": 0.338,
+     "text": "shared-publication"
     },
     {
-     "end": 29.7,
-     "start": 29.075,
-     "text": "comparison"
+     "end": 2.075,
+     "start": 1.325,
+     "text": "requirements"
     },
     {
-     "end": 30.188,
-     "start": 29.7,
-     "text": "rows"
+     "end": 2.675,
+     "start": 2.075,
+     "text": "describe"
     },
     {
-     "end": 30.35,
-     "start": 30.188,
+     "end": 2.787,
+     "start": 2.675,
+     "text": "a"
+    },
+    {
+     "end": 3.175,
+     "start": 2.787,
+     "text": "later"
+    },
+    {
+     "end": 3.787,
+     "start": 3.175,
+     "text": "creation"
+    },
+    {
+     "end": 4.325,
+     "start": 3.787,
+     "text": "reusing"
+    },
+    {
+     "end": 4.613,
+     "start": 4.325,
+     "text": "both"
+    },
+    {
+     "end": 5.275,
+     "start": 4.613,
+     "text": "scripts"
+    },
+    {
+     "end": 5.375,
+     "start": 5.275,
+     "text": ","
+    },
+    {
+     "end": 5.525,
+     "start": 5.375,
+     "text": "an"
+    },
+    {
+     "end": 6.1,
+     "start": 5.525,
+     "text": "independent"
+    },
+    {
+     "end": 6.613,
+     "start": 6.1,
+     "text": "creator"
+    },
+    {
+     "end": 7.15,
+     "start": 6.613,
+     "text": "reusing"
+    },
+    {
+     "end": 7.375,
+     "start": 7.15,
+     "text": "them"
+    },
+    {
+     "end": 7.537,
+     "start": 7.375,
+     "text": "from"
+    },
+    {
+     "end": 7.675,
+     "start": 7.537,
+     "text": "the"
+    },
+    {
+     "end": 8.2,
+     "start": 7.675,
+     "text": "chain"
+    },
+    {
+     "end": 8.312,
+     "start": 8.2,
+     "text": ","
+    },
+    {
+     "end": 9.0,
+     "start": 8.312,
+     "text": "separation"
+    },
+    {
+     "end": 9.35,
+     "start": 9.0,
+     "text": "between"
+    },
+    {
+     "end": 10.025,
+     "start": 9.35,
+     "text": "application"
+    },
+    {
+     "end": 10.875,
+     "start": 10.025,
+     "text": "releases"
+    },
+    {
+     "end": 10.988,
+     "start": 10.875,
+     "text": ","
+    },
+    {
+     "end": 11.8,
+     "start": 10.988,
+     "text": "registration"
+    },
+    {
+     "end": 11.9,
+     "start": 11.8,
+     "text": "in"
+    },
+    {
+     "end": 12.0,
+     "start": 11.9,
+     "text": "a"
+    },
+    {
+     "end": 12.587,
+     "start": 12.0,
+     "text": "registry"
+    },
+    {
+     "end": 13.05,
+     "start": 12.587,
+     "text": "created"
+    },
+    {
+     "end": 13.275,
+     "start": 13.05,
+     "text": "on"
+    },
+    {
+     "end": 13.6,
+     "start": 13.275,
+     "text": "shared"
+    },
+    {
+     "end": 14.1,
+     "start": 13.6,
+     "text": "copies"
+    },
+    {
+     "end": 14.225,
+     "start": 14.1,
      "text": "and"
     },
     {
-     "end": 30.65,
-     "start": 30.35,
-     "text": "four"
+     "end": 14.6,
+     "start": 14.225,
+     "text": "measured"
     },
     {
-     "end": 30.975,
-     "start": 30.65,
-     "text": "reading"
+     "end": 15.1,
+     "start": 14.6,
+     "text": "creation"
     },
     {
-     "end": 31.388,
-     "start": 30.975,
-     "text": "rows"
+     "end": 16.325,
+     "start": 15.1,
+     "text": "costs"
     },
     {
-     "end": 31.638,
-     "start": 31.388,
-     "text": "keep"
+     "end": 16.575,
+     "start": 16.325,
+     "text": "."
     },
     {
-     "end": 31.812,
-     "start": 31.638,
-     "text": "their"
+     "end": 16.95,
+     "start": 16.75,
+     "text": "Their"
     },
     {
-     "end": 32.25,
-     "start": 31.812,
-     "text": "previous"
-    },
-    {
-     "end": 32.8,
-     "start": 32.25,
-     "text": "contents"
-    },
-    {
-     "end": 32.925,
-     "start": 32.8,
-     "text": "and"
-    },
-    {
-     "end": 34.125,
-     "start": 32.925,
+     "end": 17.525,
+     "start": 16.95,
      "text": "standings"
     },
     {
-     "end": 34.35,
-     "start": 34.125,
+     "end": 17.625,
+     "start": 17.525,
+     "text": "are"
+    },
+    {
+     "end": 18.175,
+     "start": 17.625,
+     "text": "computed"
+    },
+    {
+     "end": 18.375,
+     "start": 18.175,
+     "text": "from"
+    },
+    {
+     "end": 18.825,
+     "start": 18.375,
+     "text": "matching"
+    },
+    {
+     "end": 19.475,
+     "start": 18.825,
+     "text": "receipts"
+    },
+    {
+     "end": 19.587,
+     "start": 19.475,
+     "text": ","
+    },
+    {
+     "end": 20.237,
+     "start": 19.587,
+     "text": "alongside"
+    },
+    {
+     "end": 20.325,
+     "start": 20.237,
+     "text": "the"
+    },
+    {
+     "end": 20.825,
+     "start": 20.325,
+     "text": "preceding"
+    },
+    {
+     "end": 22.05,
+     "start": 20.825,
+     "text": "requirements"
+    },
+    {
+     "end": 22.25,
+     "start": 22.05,
+     "text": "."
+    },
+    {
+     "end": 23.125,
+     "start": 22.425,
+     "text": "Publication"
+    },
+    {
+     "end": 23.625,
+     "start": 23.125,
+     "text": "measurements"
+    },
+    {
+     "end": 24.175,
+     "start": 23.625,
+     "text": "supply"
+    },
+    {
+     "end": 24.425,
+     "start": 24.175,
+     "text": "no"
+    },
+    {
+     "end": 25.325,
+     "start": 24.425,
+     "text": "model-comparison"
+    },
+    {
+     "end": 26.225,
+     "start": 25.325,
+     "text": "credit"
+    },
+    {
+     "end": 26.425,
+     "start": 26.225,
+     "text": "."
+    },
+    {
+     "end": 26.7,
+     "start": 26.625,
+     "text": "The"
+    },
+    {
+     "end": 27.35,
+     "start": 26.7,
+     "text": "comparison"
+    },
+    {
+     "end": 27.475,
+     "start": 27.35,
+     "text": "and"
+    },
+    {
+     "end": 27.775,
+     "start": 27.475,
+     "text": "reading"
+    },
+    {
+     "end": 28.462,
+     "start": 27.775,
+     "text": "requirements"
+    },
+    {
+     "end": 28.75,
+     "start": 28.462,
+     "text": "keep"
+    },
+    {
+     "end": 28.962,
+     "start": 28.75,
+     "text": "their"
+    },
+    {
+     "end": 29.4,
+     "start": 28.962,
+     "text": "previous"
+    },
+    {
+     "end": 30.087,
+     "start": 29.4,
+     "text": "contents"
+    },
+    {
+     "end": 30.225,
+     "start": 30.087,
+     "text": "and"
+    },
+    {
+     "end": 31.0,
+     "start": 30.225,
+     "text": "receipt-derived"
+    },
+    {
+     "end": 32.225,
+     "start": 31.0,
+     "text": "standings"
+    },
+    {
+     "end": 32.45,
+     "start": 32.225,
      "text": "."
     }
    ]
@@ -30766,6 +31066,801 @@
     {
      "end": 26.575,
      "start": 26.375,
+     "text": "."
+    }
+   ]
+  },
+  "docs-consumer-conformance/folding-a-batch-from-public-data-00": {
+   "audio_sha256": "f30e90762cf1e3adcafff58bf616f6ab209c7e7a3aa4f87cbe8a95dd5bf12c1a",
+   "characters": 33,
+   "cost": 3.267e-05,
+   "duration": 2.325,
+   "index": 0,
+   "key": "bd5b4041c2f44eb1decc43a9b1e6592c46f722bb60bcd54d0a2d944ca36365fc",
+   "page": "docs/consumer-conformance.md",
+   "pause_ms": 500,
+   "section": "folding-a-batch-from-public-data",
+   "sent_text": "Folding a batch from public data.",
+   "text": "Folding a batch from public data.",
+   "words": [
+    {
+     "end": 0.463,
+     "start": 0.175,
+     "text": "Folding"
+    },
+    {
+     "end": 0.525,
+     "start": 0.463,
+     "text": "a"
+    },
+    {
+     "end": 0.8,
+     "start": 0.525,
+     "text": "batch"
+    },
+    {
+     "end": 0.95,
+     "start": 0.8,
+     "text": "from"
+    },
+    {
+     "end": 1.35,
+     "start": 0.95,
+     "text": "public"
+    },
+    {
+     "end": 2.1,
+     "start": 1.35,
+     "text": "data"
+    },
+    {
+     "end": 2.325,
+     "start": 2.1,
+     "text": "."
+    }
+   ]
+  },
+  "docs-consumer-conformance/folding-a-batch-from-public-data-01": {
+   "audio_sha256": "0b5ebc75e1955c9987683cf419b08382fe476a06c9ce1e169e379cb5ce4edecc",
+   "characters": 464,
+   "cost": 0.00045935999999999997,
+   "duration": 31.6,
+   "index": 1,
+   "key": "30f871529fb589e9fbbe13024a3e0165ac5948094e2e2da0f6d2616f5d73ad8c",
+   "page": "docs/consumer-conformance.md",
+   "pause_ms": 400,
+   "section": "folding-a-batch-from-public-data",
+   "sent_text": "As a folder, I find and fold registrations and terminations of a registry without any file from their booker. The batch requirements describe public discovery, named skips, the folder's surplus, the largest fitting prefix and what remains, explicit batches and state-policy refusals, and measured limits. The summary computes their standings from model-comparison receipts. Selection order and capacity are operational facts; the model states no network-size rule.",
+   "text": "As a folder, I find and fold registrations and terminations of a registry without any file from their booker. The batch requirements describe public discovery, named skips, the folder's surplus, the largest fitting prefix and what remains, explicit batches and state-policy refusals, and measured limits. The summary computes their standings from model-comparison receipts. Selection order and capacity are operational facts; the model states no network-size rule.",
+   "words": [
+    {
+     "end": 0.363,
+     "start": 0.2,
+     "text": "As"
+    },
+    {
+     "end": 0.463,
+     "start": 0.363,
+     "text": "a"
+    },
+    {
+     "end": 0.95,
+     "start": 0.463,
+     "text": "folder"
+    },
+    {
+     "end": 1.025,
+     "start": 0.95,
+     "text": ","
+    },
+    {
+     "end": 1.188,
+     "start": 1.025,
+     "text": "I"
+    },
+    {
+     "end": 1.6,
+     "start": 1.188,
+     "text": "find"
+    },
+    {
+     "end": 1.737,
+     "start": 1.6,
+     "text": "and"
+    },
+    {
+     "end": 2.125,
+     "start": 1.737,
+     "text": "fold"
+    },
+    {
+     "end": 3.075,
+     "start": 2.125,
+     "text": "registrations"
+    },
+    {
+     "end": 3.2,
+     "start": 3.075,
+     "text": "and"
+    },
+    {
+     "end": 4.05,
+     "start": 3.2,
+     "text": "terminations"
+    },
+    {
+     "end": 4.137,
+     "start": 4.05,
+     "text": "of"
+    },
+    {
+     "end": 4.225,
+     "start": 4.137,
+     "text": "a"
+    },
+    {
+     "end": 4.938,
+     "start": 4.225,
+     "text": "registry"
+    },
+    {
+     "end": 5.312,
+     "start": 4.938,
+     "text": "without"
+    },
+    {
+     "end": 5.637,
+     "start": 5.312,
+     "text": "any"
+    },
+    {
+     "end": 6.025,
+     "start": 5.637,
+     "text": "file"
+    },
+    {
+     "end": 6.188,
+     "start": 6.025,
+     "text": "from"
+    },
+    {
+     "end": 6.35,
+     "start": 6.188,
+     "text": "their"
+    },
+    {
+     "end": 7.35,
+     "start": 6.35,
+     "text": "booker"
+    },
+    {
+     "end": 7.575,
+     "start": 7.35,
+     "text": "."
+    },
+    {
+     "end": 7.825,
+     "start": 7.75,
+     "text": "The"
+    },
+    {
+     "end": 8.125,
+     "start": 7.825,
+     "text": "batch"
+    },
+    {
+     "end": 8.75,
+     "start": 8.125,
+     "text": "requirements"
+    },
+    {
+     "end": 9.275,
+     "start": 8.75,
+     "text": "describe"
+    },
+    {
+     "end": 9.65,
+     "start": 9.275,
+     "text": "public"
+    },
+    {
+     "end": 10.375,
+     "start": 9.65,
+     "text": "discovery"
+    },
+    {
+     "end": 10.488,
+     "start": 10.375,
+     "text": ","
+    },
+    {
+     "end": 10.887,
+     "start": 10.488,
+     "text": "named"
+    },
+    {
+     "end": 11.35,
+     "start": 10.887,
+     "text": "skips"
+    },
+    {
+     "end": 11.4,
+     "start": 11.35,
+     "text": ","
+    },
+    {
+     "end": 11.538,
+     "start": 11.4,
+     "text": "the"
+    },
+    {
+     "end": 11.988,
+     "start": 11.538,
+     "text": "folder's"
+    },
+    {
+     "end": 13.15,
+     "start": 11.988,
+     "text": "surplus"
+    },
+    {
+     "end": 13.375,
+     "start": 13.15,
+     "text": ","
+    },
+    {
+     "end": 13.65,
+     "start": 13.55,
+     "text": "the"
+    },
+    {
+     "end": 14.05,
+     "start": 13.65,
+     "text": "largest"
+    },
+    {
+     "end": 14.3,
+     "start": 14.05,
+     "text": "fitting"
+    },
+    {
+     "end": 14.8,
+     "start": 14.3,
+     "text": "prefix"
+    },
+    {
+     "end": 14.913,
+     "start": 14.8,
+     "text": "and"
+    },
+    {
+     "end": 15.038,
+     "start": 14.913,
+     "text": "what"
+    },
+    {
+     "end": 16.025,
+     "start": 15.038,
+     "text": "remains"
+    },
+    {
+     "end": 16.225,
+     "start": 16.025,
+     "text": ","
+    },
+    {
+     "end": 16.925,
+     "start": 16.425,
+     "text": "explicit"
+    },
+    {
+     "end": 17.45,
+     "start": 16.925,
+     "text": "batches"
+    },
+    {
+     "end": 17.575,
+     "start": 17.45,
+     "text": "and"
+    },
+    {
+     "end": 18.275,
+     "start": 17.575,
+     "text": "state-policy"
+    },
+    {
+     "end": 18.975,
+     "start": 18.275,
+     "text": "refusals"
+    },
+    {
+     "end": 19.05,
+     "start": 18.975,
+     "text": ","
+    },
+    {
+     "end": 19.175,
+     "start": 19.05,
+     "text": "and"
+    },
+    {
+     "end": 19.575,
+     "start": 19.175,
+     "text": "measured"
+    },
+    {
+     "end": 20.5,
+     "start": 19.575,
+     "text": "limits"
+    },
+    {
+     "end": 20.7,
+     "start": 20.5,
+     "text": "."
+    },
+    {
+     "end": 20.987,
+     "start": 20.875,
+     "text": "The"
+    },
+    {
+     "end": 21.425,
+     "start": 20.987,
+     "text": "summary"
+    },
+    {
+     "end": 21.875,
+     "start": 21.425,
+     "text": "computes"
+    },
+    {
+     "end": 22.075,
+     "start": 21.875,
+     "text": "their"
+    },
+    {
+     "end": 22.725,
+     "start": 22.075,
+     "text": "standings"
+    },
+    {
+     "end": 22.925,
+     "start": 22.725,
+     "text": "from"
+    },
+    {
+     "end": 23.875,
+     "start": 22.925,
+     "text": "model-comparison"
+    },
+    {
+     "end": 24.95,
+     "start": 23.875,
+     "text": "receipts"
+    },
+    {
+     "end": 25.15,
+     "start": 24.95,
+     "text": "."
+    },
+    {
+     "end": 25.825,
+     "start": 25.35,
+     "text": "Selection"
+    },
+    {
+     "end": 26.112,
+     "start": 25.825,
+     "text": "order"
+    },
+    {
+     "end": 26.225,
+     "start": 26.112,
+     "text": "and"
+    },
+    {
+     "end": 26.962,
+     "start": 26.225,
+     "text": "capacity"
+    },
+    {
+     "end": 27.125,
+     "start": 26.962,
+     "text": "are"
+    },
+    {
+     "end": 27.763,
+     "start": 27.125,
+     "text": "operational"
+    },
+    {
+     "end": 28.675,
+     "start": 27.763,
+     "text": "facts"
+    },
+    {
+     "end": 28.85,
+     "start": 28.675,
+     "text": ";"
+    },
+    {
+     "end": 29.1,
+     "start": 29.025,
+     "text": "the"
+    },
+    {
+     "end": 29.475,
+     "start": 29.1,
+     "text": "model"
+    },
+    {
+     "end": 29.825,
+     "start": 29.475,
+     "text": "states"
+    },
+    {
+     "end": 30.025,
+     "start": 29.825,
+     "text": "no"
+    },
+    {
+     "end": 30.625,
+     "start": 30.025,
+     "text": "network-size"
+    },
+    {
+     "end": 31.4,
+     "start": 30.625,
+     "text": "rule"
+    },
+    {
+     "end": 31.6,
+     "start": 31.4,
+     "text": "."
+    }
+   ]
+  },
+  "docs-consumer-conformance/folding-a-batch-from-public-data-02": {
+   "audio_sha256": "5eaefd9a4232206509707dd696239d47e6a5556a09bd93b9aa2c61a51a526b05",
+   "characters": 433,
+   "cost": 0.00042867,
+   "duration": 27.375,
+   "index": 2,
+   "key": "ed0839d776b15ff8a76cec773294338e5ded82797a74caa183480d2faf64aea0",
+   "page": "docs/consumer-conformance.md",
+   "pause_ms": 400,
+   "section": "folding-a-batch-from-public-data",
+   "sent_text": "The packaged registration journey, batch refusals and batch measurement are separate evidence boundaries. They show the commands and transactions they execute, and evaluation of kept transactions under recorded parameters, with development-node corroboration. They establish nothing about agreement with the model. The folder guide describes the commands, receipt and limits; its figures are generated from the committed measurement.",
+   "text": "The packaged registration journey, batch refusals and batch measurement are separate evidence boundaries. They show the commands and transactions they execute, and evaluation of kept transactions under recorded parameters, with development-node corroboration. They establish nothing about agreement with the model. The folder guide describes the commands, receipt and limits; its figures are generated from the committed measurement.",
+   "words": [
+    {
+     "end": 0.287,
+     "start": 0.2,
+     "text": "The"
+    },
+    {
+     "end": 0.8,
+     "start": 0.287,
+     "text": "packaged"
+    },
+    {
+     "end": 1.562,
+     "start": 0.8,
+     "text": "registration"
+    },
+    {
+     "end": 2.075,
+     "start": 1.562,
+     "text": "journey"
+    },
+    {
+     "end": 2.175,
+     "start": 2.075,
+     "text": ","
+    },
+    {
+     "end": 2.5,
+     "start": 2.175,
+     "text": "batch"
+    },
+    {
+     "end": 3.175,
+     "start": 2.5,
+     "text": "refusals"
+    },
+    {
+     "end": 3.3,
+     "start": 3.175,
+     "text": "and"
+    },
+    {
+     "end": 3.65,
+     "start": 3.3,
+     "text": "batch"
+    },
+    {
+     "end": 4.162,
+     "start": 3.65,
+     "text": "measurement"
+    },
+    {
+     "end": 4.35,
+     "start": 4.162,
+     "text": "are"
+    },
+    {
+     "end": 4.8,
+     "start": 4.35,
+     "text": "separate"
+    },
+    {
+     "end": 5.25,
+     "start": 4.8,
+     "text": "evidence"
+    },
+    {
+     "end": 6.475,
+     "start": 5.25,
+     "text": "boundaries"
+    },
+    {
+     "end": 6.675,
+     "start": 6.475,
+     "text": "."
+    },
+    {
+     "end": 7.0,
+     "start": 6.85,
+     "text": "They"
+    },
+    {
+     "end": 7.188,
+     "start": 7.0,
+     "text": "show"
+    },
+    {
+     "end": 7.275,
+     "start": 7.188,
+     "text": "the"
+    },
+    {
+     "end": 7.688,
+     "start": 7.275,
+     "text": "commands"
+    },
+    {
+     "end": 7.787,
+     "start": 7.688,
+     "text": "and"
+    },
+    {
+     "end": 8.5,
+     "start": 7.787,
+     "text": "transactions"
+    },
+    {
+     "end": 8.65,
+     "start": 8.5,
+     "text": "they"
+    },
+    {
+     "end": 9.725,
+     "start": 8.65,
+     "text": "execute"
+    },
+    {
+     "end": 9.925,
+     "start": 9.725,
+     "text": ","
+    },
+    {
+     "end": 10.212,
+     "start": 10.125,
+     "text": "and"
+    },
+    {
+     "end": 10.975,
+     "start": 10.212,
+     "text": "evaluation"
+    },
+    {
+     "end": 11.113,
+     "start": 10.975,
+     "text": "of"
+    },
+    {
+     "end": 11.4,
+     "start": 11.113,
+     "text": "kept"
+    },
+    {
+     "end": 12.2,
+     "start": 11.4,
+     "text": "transactions"
+    },
+    {
+     "end": 12.425,
+     "start": 12.2,
+     "text": "under"
+    },
+    {
+     "end": 12.925,
+     "start": 12.425,
+     "text": "recorded"
+    },
+    {
+     "end": 14.125,
+     "start": 12.925,
+     "text": "parameters"
+    },
+    {
+     "end": 14.325,
+     "start": 14.125,
+     "text": ","
+    },
+    {
+     "end": 14.65,
+     "start": 14.5,
+     "text": "with"
+    },
+    {
+     "end": 15.35,
+     "start": 14.65,
+     "text": "development-node"
+    },
+    {
+     "end": 16.625,
+     "start": 15.35,
+     "text": "corroboration"
+    },
+    {
+     "end": 16.825,
+     "start": 16.625,
+     "text": "."
+    },
+    {
+     "end": 17.15,
+     "start": 17.0,
+     "text": "They"
+    },
+    {
+     "end": 17.775,
+     "start": 17.15,
+     "text": "establish"
+    },
+    {
+     "end": 18.163,
+     "start": 17.775,
+     "text": "nothing"
+    },
+    {
+     "end": 18.388,
+     "start": 18.163,
+     "text": "about"
+    },
+    {
+     "end": 18.837,
+     "start": 18.388,
+     "text": "agreement"
+    },
+    {
+     "end": 18.962,
+     "start": 18.837,
+     "text": "with"
+    },
+    {
+     "end": 19.05,
+     "start": 18.962,
+     "text": "the"
+    },
+    {
+     "end": 19.9,
+     "start": 19.05,
+     "text": "model"
+    },
+    {
+     "end": 20.1,
+     "start": 19.9,
+     "text": "."
+    },
+    {
+     "end": 20.375,
+     "start": 20.275,
+     "text": "The"
+    },
+    {
+     "end": 20.75,
+     "start": 20.375,
+     "text": "folder"
+    },
+    {
+     "end": 21.0,
+     "start": 20.75,
+     "text": "guide"
+    },
+    {
+     "end": 21.513,
+     "start": 21.0,
+     "text": "describes"
+    },
+    {
+     "end": 21.6,
+     "start": 21.513,
+     "text": "the"
+    },
+    {
+     "end": 22.15,
+     "start": 21.6,
+     "text": "commands"
+    },
+    {
+     "end": 22.225,
+     "start": 22.15,
+     "text": ","
+    },
+    {
+     "end": 22.675,
+     "start": 22.225,
+     "text": "receipt"
+    },
+    {
+     "end": 22.8,
+     "start": 22.675,
+     "text": "and"
+    },
+    {
+     "end": 23.7,
+     "start": 22.8,
+     "text": "limits"
+    },
+    {
+     "end": 23.875,
+     "start": 23.7,
+     "text": ";"
+    },
+    {
+     "end": 24.25,
+     "start": 24.075,
+     "text": "its"
+    },
+    {
+     "end": 24.7,
+     "start": 24.25,
+     "text": "figures"
+    },
+    {
+     "end": 24.862,
+     "start": 24.7,
+     "text": "are"
+    },
+    {
+     "end": 25.5,
+     "start": 24.862,
+     "text": "generated"
+    },
+    {
+     "end": 25.638,
+     "start": 25.5,
+     "text": "from"
+    },
+    {
+     "end": 25.725,
+     "start": 25.638,
+     "text": "the"
+    },
+    {
+     "end": 26.175,
+     "start": 25.725,
+     "text": "committed"
+    },
+    {
+     "end": 27.175,
+     "start": 26.175,
+     "text": "measurement"
+    },
+    {
+     "end": 27.375,
+     "start": 27.175,
      "text": "."
     }
    ]
@@ -31146,17 +32241,17 @@
    ]
   },
   "docs-consumer-conformance/reading-from-a-registry-address-01": {
-   "audio_sha256": "1f81c2e1042f020ac3b6c187c070dcefd822966a3446f2121a912a6c4a9d7e1c",
-   "characters": 440,
-   "cost": 0.00043559999999999996,
-   "duration": 29.275,
+   "audio_sha256": "41af95c8500c3f924d1a988863a89cd08ceb1604de3971cac17e340b70323ddc",
+   "characters": 469,
+   "cost": 0.00046431,
+   "duration": 31.525,
    "index": 1,
-   "key": "ebf7086f39c6bafaa0ff50c4e14ede183101ea8027cf4d596ace61ad7f12c156",
+   "key": "9a59845dd1305b6ec40f67225d71b50d6a8f0dc1486d56a387c3d99c20a56178",
    "page": "docs/consumer-conformance.md",
    "pause_ms": 400,
    "section": "reading-from-a-registry-address",
-   "sent_text": "As a reader, I give a registry address and key without a signer, blueprint or local registry state. Four requirements describe the neutral key status, open datum's live holding and pending termination, measured provider calls, rows and bytes with another registry's holdings at the same address, and named refusals. They are published uncovered: no executable comparison with the application-held model backs these reading requirements yet.",
-   "text": "As a reader, I give a registry address and key without a signer, blueprint or local registry state. Four requirements describe the neutral key status, open datum's live holding and pending termination, measured provider calls, rows and bytes with another registry's holdings at the same address, and named refusals. They are published uncovered: no executable comparison with the application-held model backs these reading requirements yet.",
+   "sent_text": "As a reader, I give a registry address and key without a signer, blueprint or local registry state. The reading requirements describe the neutral key status, open datum's live holding and pending termination, measured provider calls, rows and bytes with another registry's holdings at the same address, and named refusals. Their standings are computed in the summary above. The command observations below supply no executable comparison with the application-held model.",
+   "text": "As a reader, I give a registry address and key without a signer, blueprint or local registry state. The reading requirements describe the neutral key status, open datum's live holding and pending termination, measured provider calls, rows and bytes with another registry's holdings at the same address, and named refusals. Their standings are computed in the summary above. The command observations below supply no executable comparison with the application-held model.",
    "words": [
     {
      "end": 0.338,
@@ -31264,273 +32359,298 @@
      "text": "."
     },
     {
-     "end": 6.9,
-     "start": 6.7,
-     "text": "Four"
+     "end": 6.75,
+     "start": 6.675,
+     "text": "The"
     },
     {
-     "end": 7.425,
-     "start": 6.9,
-     "text": "requirements"
-    },
-    {
-     "end": 7.887,
-     "start": 7.425,
-     "text": "describe"
-    },
-    {
-     "end": 7.975,
-     "start": 7.887,
-     "text": "the"
-    },
-    {
-     "end": 8.35,
-     "start": 7.975,
-     "text": "neutral"
-    },
-    {
-     "end": 8.55,
-     "start": 8.35,
-     "text": "key"
-    },
-    {
-     "end": 9.5,
-     "start": 8.55,
-     "text": "status"
-    },
-    {
-     "end": 9.7,
-     "start": 9.5,
-     "text": ","
-    },
-    {
-     "end": 10.2,
-     "start": 9.9,
-     "text": "open"
-    },
-    {
-     "end": 10.75,
-     "start": 10.2,
-     "text": "datum's"
-    },
-    {
-     "end": 11.025,
-     "start": 10.75,
-     "text": "live"
-    },
-    {
-     "end": 11.5,
-     "start": 11.025,
-     "text": "holding"
-    },
-    {
-     "end": 11.625,
-     "start": 11.5,
-     "text": "and"
-    },
-    {
-     "end": 12.025,
-     "start": 11.625,
-     "text": "pending"
-    },
-    {
-     "end": 12.825,
-     "start": 12.025,
-     "text": "termination"
-    },
-    {
-     "end": 12.938,
-     "start": 12.825,
-     "text": ","
-    },
-    {
-     "end": 13.325,
-     "start": 12.938,
-     "text": "measured"
-    },
-    {
-     "end": 13.825,
-     "start": 13.325,
-     "text": "provider"
-    },
-    {
-     "end": 14.825,
-     "start": 13.825,
-     "text": "calls"
-    },
-    {
-     "end": 15.025,
-     "start": 14.825,
-     "text": ","
-    },
-    {
-     "end": 15.65,
-     "start": 15.25,
-     "text": "rows"
-    },
-    {
-     "end": 15.775,
-     "start": 15.65,
-     "text": "and"
-    },
-    {
-     "end": 16.15,
-     "start": 15.775,
-     "text": "bytes"
-    },
-    {
-     "end": 16.288,
-     "start": 16.15,
-     "text": "with"
-    },
-    {
-     "end": 16.625,
-     "start": 16.288,
-     "text": "another"
-    },
-    {
-     "end": 17.15,
-     "start": 16.625,
-     "text": "registry's"
-    },
-    {
-     "end": 17.663,
-     "start": 17.15,
-     "text": "holdings"
-    },
-    {
-     "end": 17.763,
-     "start": 17.663,
-     "text": "at"
-    },
-    {
-     "end": 17.85,
-     "start": 17.763,
-     "text": "the"
-    },
-    {
-     "end": 18.087,
-     "start": 17.85,
-     "text": "same"
-    },
-    {
-     "end": 19.025,
-     "start": 18.087,
-     "text": "address"
-    },
-    {
-     "end": 19.225,
-     "start": 19.025,
-     "text": ","
-    },
-    {
-     "end": 19.513,
-     "start": 19.425,
-     "text": "and"
-    },
-    {
-     "end": 19.763,
-     "start": 19.513,
-     "text": "named"
-    },
-    {
-     "end": 20.85,
-     "start": 19.763,
-     "text": "refusals"
-    },
-    {
-     "end": 21.05,
-     "start": 20.85,
-     "text": "."
-    },
-    {
-     "end": 21.4,
-     "start": 21.25,
-     "text": "They"
-    },
-    {
-     "end": 21.562,
-     "start": 21.4,
-     "text": "are"
-    },
-    {
-     "end": 22.125,
-     "start": 21.562,
-     "text": "published"
-    },
-    {
-     "end": 22.9,
-     "start": 22.125,
-     "text": "uncovered"
-    },
-    {
-     "end": 23.013,
-     "start": 22.9,
-     "text": ":"
-    },
-    {
-     "end": 23.288,
-     "start": 23.013,
-     "text": "no"
-    },
-    {
-     "end": 23.95,
-     "start": 23.288,
-     "text": "executable"
-    },
-    {
-     "end": 24.675,
-     "start": 23.95,
-     "text": "comparison"
-    },
-    {
-     "end": 24.812,
-     "start": 24.675,
-     "text": "with"
-    },
-    {
-     "end": 24.962,
-     "start": 24.812,
-     "text": "the"
-    },
-    {
-     "end": 25.913,
-     "start": 24.962,
-     "text": "application-held"
-    },
-    {
-     "end": 26.312,
-     "start": 25.913,
-     "text": "model"
-    },
-    {
-     "end": 26.775,
-     "start": 26.312,
-     "text": "backs"
-    },
-    {
-     "end": 27.013,
-     "start": 26.775,
-     "text": "these"
-    },
-    {
-     "end": 27.375,
-     "start": 27.013,
+     "end": 7.062,
+     "start": 6.75,
      "text": "reading"
     },
     {
-     "end": 28.1,
-     "start": 27.375,
+     "end": 7.625,
+     "start": 7.062,
      "text": "requirements"
     },
     {
-     "end": 29.05,
-     "start": 28.1,
-     "text": "yet"
+     "end": 8.175,
+     "start": 7.625,
+     "text": "describe"
     },
     {
-     "end": 29.275,
-     "start": 29.05,
+     "end": 8.3,
+     "start": 8.175,
+     "text": "the"
+    },
+    {
+     "end": 8.7,
+     "start": 8.3,
+     "text": "neutral"
+    },
+    {
+     "end": 8.925,
+     "start": 8.7,
+     "text": "key"
+    },
+    {
+     "end": 9.9,
+     "start": 8.925,
+     "text": "status"
+    },
+    {
+     "end": 10.1,
+     "start": 9.9,
+     "text": ","
+    },
+    {
+     "end": 10.6,
+     "start": 10.3,
+     "text": "open"
+    },
+    {
+     "end": 11.15,
+     "start": 10.6,
+     "text": "datum's"
+    },
+    {
+     "end": 11.425,
+     "start": 11.15,
+     "text": "live"
+    },
+    {
+     "end": 11.9,
+     "start": 11.425,
+     "text": "holding"
+    },
+    {
+     "end": 12.025,
+     "start": 11.9,
+     "text": "and"
+    },
+    {
+     "end": 12.425,
+     "start": 12.025,
+     "text": "pending"
+    },
+    {
+     "end": 13.225,
+     "start": 12.425,
+     "text": "termination"
+    },
+    {
+     "end": 13.337,
+     "start": 13.225,
+     "text": ","
+    },
+    {
+     "end": 13.725,
+     "start": 13.337,
+     "text": "measured"
+    },
+    {
+     "end": 14.225,
+     "start": 13.725,
+     "text": "provider"
+    },
+    {
+     "end": 15.225,
+     "start": 14.225,
+     "text": "calls"
+    },
+    {
+     "end": 15.425,
+     "start": 15.225,
+     "text": ","
+    },
+    {
+     "end": 16.05,
+     "start": 15.65,
+     "text": "rows"
+    },
+    {
+     "end": 16.175,
+     "start": 16.05,
+     "text": "and"
+    },
+    {
+     "end": 16.55,
+     "start": 16.175,
+     "text": "bytes"
+    },
+    {
+     "end": 16.688,
+     "start": 16.55,
+     "text": "with"
+    },
+    {
+     "end": 17.025,
+     "start": 16.688,
+     "text": "another"
+    },
+    {
+     "end": 17.55,
+     "start": 17.025,
+     "text": "registry's"
+    },
+    {
+     "end": 18.062,
+     "start": 17.55,
+     "text": "holdings"
+    },
+    {
+     "end": 18.163,
+     "start": 18.062,
+     "text": "at"
+    },
+    {
+     "end": 18.25,
+     "start": 18.163,
+     "text": "the"
+    },
+    {
+     "end": 18.487,
+     "start": 18.25,
+     "text": "same"
+    },
+    {
+     "end": 19.425,
+     "start": 18.487,
+     "text": "address"
+    },
+    {
+     "end": 19.625,
+     "start": 19.425,
+     "text": ","
+    },
+    {
+     "end": 19.913,
+     "start": 19.825,
+     "text": "and"
+    },
+    {
+     "end": 20.163,
+     "start": 19.913,
+     "text": "named"
+    },
+    {
+     "end": 21.25,
+     "start": 20.163,
+     "text": "refusals"
+    },
+    {
+     "end": 21.45,
+     "start": 21.25,
+     "text": "."
+    },
+    {
+     "end": 21.775,
+     "start": 21.625,
+     "text": "Their"
+    },
+    {
+     "end": 22.275,
+     "start": 21.775,
+     "text": "standings"
+    },
+    {
+     "end": 22.375,
+     "start": 22.275,
+     "text": "are"
+    },
+    {
+     "end": 22.925,
+     "start": 22.375,
+     "text": "computed"
+    },
+    {
+     "end": 23.013,
+     "start": 22.925,
+     "text": "in"
+    },
+    {
+     "end": 23.112,
+     "start": 23.013,
+     "text": "the"
+    },
+    {
+     "end": 23.55,
+     "start": 23.112,
+     "text": "summary"
+    },
+    {
+     "end": 24.4,
+     "start": 23.55,
+     "text": "above"
+    },
+    {
+     "end": 24.6,
+     "start": 24.4,
+     "text": "."
+    },
+    {
+     "end": 24.875,
+     "start": 24.8,
+     "text": "The"
+    },
+    {
+     "end": 25.325,
+     "start": 24.875,
+     "text": "command"
+    },
+    {
+     "end": 26.2,
+     "start": 25.325,
+     "text": "observations"
+    },
+    {
+     "end": 26.6,
+     "start": 26.2,
+     "text": "below"
+    },
+    {
+     "end": 27.188,
+     "start": 26.6,
+     "text": "supply"
+    },
+    {
+     "end": 27.587,
+     "start": 27.188,
+     "text": "no"
+    },
+    {
+     "end": 28.25,
+     "start": 27.587,
+     "text": "executable"
+    },
+    {
+     "end": 29.087,
+     "start": 28.25,
+     "text": "comparison"
+    },
+    {
+     "end": 29.237,
+     "start": 29.087,
+     "text": "with"
+    },
+    {
+     "end": 29.388,
+     "start": 29.237,
+     "text": "the"
+    },
+    {
+     "end": 30.325,
+     "start": 29.388,
+     "text": "application-held"
+    },
+    {
+     "end": 31.3,
+     "start": 30.325,
+     "text": "model"
+    },
+    {
+     "end": 31.525,
+     "start": 31.3,
      "text": "."
     }
    ]

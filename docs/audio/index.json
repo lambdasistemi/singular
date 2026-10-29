@@ -981,15 +981,22 @@
     "index": 1,
     "name": "docs-consumer-conformance/consumer-conformance-record-01",
     "pause_ms": 400,
-    "text": "As an integrator, I can read the registration, holding update, termination, reading and shared-publication requirements and see which comparisons have evidence. The sixteen requirements are published in the generated evidence page. Every requirement is uncovered: no executable comparison with the application-held model exists yet.",
-    "v": "99c53ab544de"
+    "text": "As an integrator, I can read the registration, holding update, termination, reading, shared-publication and batch-fold requirements and see which comparisons have evidence. The generated evidence page publishes every requirement, including the ones no run has demonstrated.",
+    "v": "eda6ab756a8f"
    },
    {
     "index": 2,
     "name": "docs-consumer-conformance/consumer-conformance-record-02",
     "pause_ms": 400,
-    "text": "Seven requirements compare the previous and application-held designs. Their old side is computed from the retained Lean model. The development-network journey and refusal jobs are separate observations; they establish the transactions they run and do not establish agreement with the model.",
-    "v": "448f32acd266"
+    "text": "This summary is computed from the same inventory and validated receipts as the evidence page, for code revision c17309ee607368615b96f23ea4f96401467195f5. Separate command journeys and measurements do not grant model-comparison credit.",
+    "v": "0974fd2a4a2e"
+   },
+   {
+    "index": 3,
+    "name": "docs-consumer-conformance/consumer-conformance-record-03",
+    "pause_ms": 400,
+    "text": "The registration and holding requirements compare the previous and application-held designs. Their old side is computed from the retained Lean model. The development-network journey and refusal jobs are separate observations; they establish the transactions they run and do not establish agreement with the model.",
+    "v": "4888f540d0c6"
    }
   ],
   "creating-on-shared-publications": [
@@ -1004,8 +1011,8 @@
     "index": 1,
     "name": "docs-consumer-conformance/creating-on-shared-publications-01",
     "pause_ms": 400,
-    "text": "Five requirements describe a later creation reusing both scripts, an independent creator reusing them from the chain, separation between application releases, registration in a registry created on shared copies and measured creation costs. They use the existing inventory convention and remain uncovered for the same reason as the preceding requirements: no executable comparison with the application-held model exists yet. The seven comparison rows and four reading rows keep their previous contents and standings.",
-    "v": "a68cefe6de4e"
+    "text": "The shared-publication requirements describe a later creation reusing both scripts, an independent creator reusing them from the chain, separation between application releases, registration in a registry created on shared copies and measured creation costs. Their standings are computed from matching receipts, alongside the preceding requirements. Publication measurements supply no model-comparison credit. The comparison and reading requirements keep their previous contents and receipt-derived standings.",
+    "v": "4a5198a07e1d"
    },
    {
     "index": 2,
@@ -1013,6 +1020,29 @@
     "pause_ms": 400,
     "text": "The registration journey, recovery partitions and checked measurement receipts are separate evidence boundaries. They show the packaged commands and measured transactions they run and nothing about agreement with the model. An executable conformance language for creation claims is outside this change. The reuse guide shows the commands and discovery receipt fields; the cost comparison reads its figures from receipts.",
     "v": "b7288442bce2"
+   }
+  ],
+  "folding-a-batch-from-public-data": [
+   {
+    "index": 0,
+    "name": "docs-consumer-conformance/folding-a-batch-from-public-data-00",
+    "pause_ms": 500,
+    "text": "Folding a batch from public data.",
+    "v": "f30e90762cf1"
+   },
+   {
+    "index": 1,
+    "name": "docs-consumer-conformance/folding-a-batch-from-public-data-01",
+    "pause_ms": 400,
+    "text": "As a folder, I find and fold registrations and terminations of a registry without any file from their booker. The batch requirements describe public discovery, named skips, the folder's surplus, the largest fitting prefix and what remains, explicit batches and state-policy refusals, and measured limits. The summary computes their standings from model-comparison receipts. Selection order and capacity are operational facts; the model states no network-size rule.",
+    "v": "0b5ebc75e195"
+   },
+   {
+    "index": 2,
+    "name": "docs-consumer-conformance/folding-a-batch-from-public-data-02",
+    "pause_ms": 400,
+    "text": "The packaged registration journey, batch refusals and batch measurement are separate evidence boundaries. They show the commands and transactions they execute, and evaluation of kept transactions under recorded parameters, with development-node corroboration. They establish nothing about agreement with the model. The folder guide describes the commands, receipt and limits; its figures are generated from the committed measurement.",
+    "v": "5eaefd9a4232"
    }
   ],
   "read-the-evidence": [
@@ -1043,8 +1073,8 @@
     "index": 1,
     "name": "docs-consumer-conformance/reading-from-a-registry-address-01",
     "pause_ms": 400,
-    "text": "As a reader, I give a registry address and key without a signer, blueprint or local registry state. Four requirements describe the neutral key status, open datum's live holding and pending termination, measured provider calls, rows and bytes with another registry's holdings at the same address, and named refusals. They are published uncovered: no executable comparison with the application-held model backs these reading requirements yet.",
-    "v": "1f81c2e1042f"
+    "text": "As a reader, I give a registry address and key without a signer, blueprint or local registry state. The reading requirements describe the neutral key status, open datum's live holding and pending termination, measured provider calls, rows and bytes with another registry's holdings at the same address, and named refusals. Their standings are computed in the summary above. The command observations below supply no executable comparison with the application-held model.",
+    "v": "41af95c8500c"
    },
    {
     "index": 2,
