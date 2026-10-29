@@ -22,20 +22,29 @@ module Singular.State.StateFoldSpec
 
 import Control.Monad (forM_)
 import Data.ByteString (ByteString)
+import Data.ByteString qualified as BS
 import Data.ByteString.Lazy qualified as LBS
 import Data.Either (isLeft)
 import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.Map.Strict qualified as Map
+import Data.Set qualified as Set
 import Data.Text qualified as Text
 import Data.Word (Word32)
 import Lens.Micro ((&), (.~), (^.))
 import PlutusCore.Data qualified as PLC
 import Test.Hspec
 
-import Cardano.Ledger.Address (Addr)
+import Cardano.Crypto.DSIGN
+    ( Ed25519DSIGN
+    , SignKeyDSIGN
+    , deriveVerKeyDSIGN
+    , genKeyDSIGN
+    )
+import Cardano.Crypto.Seed (mkSeedFromBytes)
+import Cardano.Ledger.Address (Addr (..))
 import Cardano.Ledger.Alonzo.TxWits (Redeemers (..))
 import Cardano.Ledger.Api.PParams (ppMaxTxExUnitsL, ppMaxTxSizeL)
-import Cardano.Ledger.Api.Tx (witsTxL)
+import Cardano.Ledger.Api.Tx (addrTxWitsL, witsTxL)
 import Cardano.Ledger.Api.Tx.Out
     ( addrTxOutL
     , coinTxOutL
@@ -47,6 +56,16 @@ import Cardano.Ledger.Binary (serialize)
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
 import Cardano.Ledger.Core (eraProtVerHigh)
+import Cardano.Ledger.Credential
+    ( Credential (..)
+    , StakeReference (..)
+    )
+import Cardano.Ledger.Keys
+    ( KeyHash (..)
+    , KeyRole (Guard)
+    , VKey (..)
+    , hashKey
+    )
 import Cardano.Ledger.Mary.Value
     ( AssetName
     , MaryValue (..)
@@ -55,6 +74,7 @@ import Cardano.Ledger.Mary.Value
 import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import Cardano.Ledger.TxIn (TxIn)
 import Cardano.Slotting.Slot (SlotNo (..))
+import Cardano.Tx.Build qualified as Tx
 import Cardano.Tx.Ledger (ConwayTx)
 
 import Singular.Registry.Evidence (value)
@@ -68,6 +88,7 @@ import Singular.Registry.RawChainFixture
     ( ChainFacts (..)
     , advanceChain
     )
+import Singular.Registry.Signing (signTx, signedTx)
 import Singular.Registry.Trace (Evaluation (..))
 import Singular.Registry.TrieState (RegistryIdentity (..))
 import Singular.Registry.TxBuilder.Internal (mkInlineDatum)
@@ -76,7 +97,8 @@ import Singular.State.Batch
     , largestFittingPrefix
     )
 import Singular.State.Fold
-    ( FoldResult (..)
+    ( Application (..)
+    , FoldResult (..)
     , SkipReason (..)
     , SkippedHolder (..)
     , buildFold
@@ -101,6 +123,37 @@ import Singular.State.StateWorld
 
 spec :: Spec
 spec = do
+    describe "submitted batch bytes" $
+        forM_ [1, 2, 24] $ \count -> do
+            it
+                ( "fits the automatic prefix after all "
+                    <> show count
+                    <> " required witnesses"
+                )
+                $ do
+                    (rg, application, keys, [high, _], limit) <-
+                        prepareSubmissionBoundary count
+                    tx <- expectBuilt =<< foldWithApplication rg application []
+                    ( serializedBytes (signedBy keys tx) <= limit
+                        , map fst (foldedRequests tx)
+                        )
+                        `shouldBe` (True, [high])
+                    judge (rgWorld rg) (signedBy keys tx)
+                        >>= (`shouldSatisfy` everyScriptAccepts)
+            it
+                ( "refuses a named batch exceeding bytes with "
+                    <> show count
+                    <> " required witnesses"
+                )
+                $ do
+                    (rg, application, _, refs, limit) <- prepareSubmissionBoundary count
+                    result <- foldWithApplication rg application refs
+                    case result of
+                        Left (CapacityExceeded (TransactionSize used allowed)) -> do
+                            used `shouldSatisfy` (> limit)
+                            allowed `shouldBe` limit
+                        Left other -> expectationFailure (show other)
+                        Right _ -> expectationFailure "the oversized submitted batch was built"
     describe "the largest fitting public batch" $ do
         it "counts the evaluated larger probe as well as the selected batch" $ do
             (rg, [one, two, _], _) <- prepareByteBoundary
@@ -969,6 +1022,92 @@ prepareByteBoundary = do
     control <- expectBuilt =<< foldNow rg [high, middle]
     judge (rgWorld rg) control >>= (`shouldSatisfy` everyScriptAccepts)
     pure (rg, refs, limit)
+
+{- | Actual signatures exercise one key, distinct additional signers and the
+CBOR witness-array length boundary. The payer's key appears in both its
+funding credential and the explicit signer set and must be counted once.
+-}
+prepareSubmissionBoundary
+    :: Int
+    -> IO
+        ( Registered
+        , Application
+        , [SignKeyDSIGN Ed25519DSIGN]
+        , [TxIn]
+        , Integer
+        )
+prepareSubmissionBoundary count = do
+    original <- newRegistered
+    let keys =
+            [ genKeyDSIGN (mkSeedFromBytes (BS.replicate 32 (fromIntegral n)))
+            | n <- [1 .. count]
+            ]
+    payer <- case keys of
+        key : _ -> pure key
+        _ -> fail "a submitted fold needs a payer"
+    let KeyHash payerHash = signingHash payer
+        payerAddress = Addr network (KeyHashObj (KeyHash payerHash)) StakeRefNull
+        rg = original{rgFolder = payerAddress}
+        application =
+            standInApplication
+                { appFold = \requests -> do
+                    appFold standInApplication requests
+                    mapM_ (Tx.requireSignature . signingHash) keys
+                }
+    advanceChain (worldChain (rgWorld rg)) $ \facts ->
+        facts
+            { csUTxO =
+                Map.map
+                    ( \output ->
+                        if output ^. addrTxOutL == rgFolder original
+                            then output & addrTxOutL .~ payerAddress
+                            else output
+                    )
+                    (csUTxO facts)
+            }
+    refs@[high, _] <-
+        book
+            rg
+            'p'
+            [ (bookedKey "high" processingDeadline){bkTip = 3_000_000}
+            , (bookedKey "low" processingDeadline){bkTip = 1_000_000}
+            ]
+    one <- expectBuilt =<< foldWithApplication rg application [high]
+    two <- expectBuilt =<< foldWithApplication rg application refs
+    let signedOne = signedBy keys one
+        signedTwo = signedBy keys two
+        lower = max (serializedBytes two) (serializedBytes signedOne)
+        limit = (lower + serializedBytes signedTwo) `div` 2
+    Set.size (signedTwo ^. witsTxL . addrTxWitsL) `shouldBe` count
+    serializedBytes two `shouldSatisfy` (< limit)
+    limit `shouldSatisfy` (< serializedBytes signedTwo)
+    serializedBytes signedOne `shouldSatisfy` (<= limit)
+    judge (rgWorld rg) signedTwo >>= (`shouldSatisfy` everyScriptAccepts)
+    advanceChain (worldChain (rgWorld rg)) $ \facts ->
+        facts{csPParams = csPParams facts & ppMaxTxSizeL .~ fromInteger limit}
+    control <- expectBuilt =<< foldWithApplication rg application [high]
+    serializedBytes (signedBy keys control) `shouldSatisfy` (<= limit)
+    pure (rg, application, keys, refs, limit)
+
+signingHash :: SignKeyDSIGN Ed25519DSIGN -> KeyHash Guard
+signingHash = hashKey . VKey . deriveVerKeyDSIGN
+
+signedBy :: [SignKeyDSIGN Ed25519DSIGN] -> ConwayTx -> ConwayTx
+signedBy keys tx = foldl' (\current key -> signedTx (signTx key current)) tx keys
+
+serializedBytes :: ConwayTx -> Integer
+serializedBytes tx = toInteger (LBS.length (serialize (eraProtVerHigh @ConwayEra) tx))
+
+foldWithApplication
+    :: Registered -> Application -> [TxIn] -> IO (Either Refusal ConwayTx)
+foldWithApplication rg application refs = withSession (rgWorld rg) $ \session ->
+    buildRegistrationFold
+        session
+        (rgScript rg)
+        application
+        (rgRegistry rg)
+        refs
+        (rgFolder rg)
 
 fitting :: Registered -> Maybe Word32 -> IO FoldResult
 fitting rg cap = withSession (rgWorld rg) $ \session ->
