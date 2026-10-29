@@ -82,6 +82,7 @@ requestSpec = describe "read requests" $ do
         CallGenesis -> "genesis"
         CallAddressUtxos -> "address_utxos"
         CallAssetUtxos -> "asset_utxos"
+        CallPolicyAssetList -> "policy_asset_list"
         CallAssetTxs -> "asset_txs"
         CallTxInfo -> "tx_info"
         CallTxCbor -> "tx_cbor"

@@ -14,10 +14,11 @@ module Singular.Provider.Koios.Provider
 import Cardano.Ledger.Address (AccountAddress (..), AccountId (..))
 import Cardano.Ledger.Api.Tx (bodyTxL)
 import Cardano.Ledger.Api.Tx.Body (outputsTxBodyL)
-import Cardano.Ledger.Api.Tx.Out (addrTxOutL)
+import Cardano.Ledger.Api.Tx.Out (addrTxOutL, valueTxOutL)
 import Cardano.Ledger.BaseTypes (TxIx (..))
 import Cardano.Ledger.BaseTypes qualified as Ledger
 import Cardano.Ledger.Credential (Credential (ScriptHashObj))
+import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
 import Cardano.Ledger.TxIn (TxId, TxIn (..))
 import Cardano.Slotting.Slot (SlotNo (..))
 import Control.Monad.Except (ExceptT (..), runExceptT, throwError)
@@ -66,6 +67,18 @@ data ProviderRuntime m = ProviderRuntime
         :: forall a. SessionId -> Text -> (a -> ProviderEvent) -> m a -> m a
     }
 
+{- | Acquire unbound raw sessions over the shared Koios client.
+
+A 'HoldingPolicy' query pages through @policy_asset_list@, then reads
+@asset_utxos@ in batches of at most the configured page size or 1000 names,
+whichever is smaller. For positive page size @s@ and page ceiling @p@,
+with batch width @b = min(s, 1000)@, it makes at most
+@p + ceiling(s*p/b)*p@ exchanges, each subject to the transport's bounded
+retry policy. Every exchange uses the session's normal measurement path;
+duplicate output references are merged only when their full outputs agree.
+Any incomplete read fails the whole query. Separate reads do not establish
+an atomic chain point.
+-}
 koiosProvider
     :: (Monad m)
     => ProviderRuntime m
@@ -222,8 +235,36 @@ queryOutputs
 queryOutputs client = \case
     AtAddress address -> fetch (Client.addressUtxos client [address]) >>= mergeOutputs
     HoldingAsset asset -> fetch (Client.assetUtxos client [asset]) >>= mergeOutputs
-    HoldingPolicy _ ->
-        throwError (BackendReadFailure "policy holdings query is unavailable")
+    HoldingPolicy policy -> do
+        names <- fetch (Client.policyAssetNames client policy)
+        if length names /= Set.size (Set.fromList names)
+            then
+                throwError
+                    (BackendReadFailure "policy_asset_list returned duplicate asset names")
+            else do
+                found <-
+                    fmap
+                        concat
+                        ( traverse
+                            (fetch . Client.assetUtxos client . map (policy,))
+                            (batches names)
+                        )
+                if all (holdsPolicy . snd) found
+                    then mergeOutputs found
+                    else
+                        throwError
+                            ( BackendReadFailure
+                                "asset_utxos returned an output without the requested policy"
+                            )
+      where
+        holdsPolicy output = case output ^. valueTxOutL of
+            MaryValue _ (MultiAsset assets) -> maybe False (any (/= 0)) (Map.lookup policy assets)
+        -- At most pageSize * pageCeiling names are listed. Each batch has
+        -- at most min(pageSize, 1000) names and at most pageCeiling pages.
+        -- The common scoped transport measures every page's actual work.
+        width = max 1 (min 1000 (Client.pageSize (Client.koiosConfig client)))
+        batches [] = []
+        batches remaining = let (batch, rest) = splitAt width remaining in batch : batches rest
     AtTxIn reference@(TxIn key _) -> do
         -- tx_info includes spent outputs: current visibility requires the
         -- shared UTxO endpoint at the resolved output's address as well.

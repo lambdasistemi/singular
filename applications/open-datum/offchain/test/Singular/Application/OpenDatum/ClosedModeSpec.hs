@@ -267,8 +267,13 @@ stubSessionFor chain =
     select = \case
         LP.AtAddress addr ->
             Right [u | u@(_, o) <- Map.toAscList live, o ^. addrTxOutL == addr]
-        LP.HoldingPolicy _ ->
-            Left (LP.BackendReadFailure "policy holdings query is unavailable")
+        LP.HoldingPolicy policy ->
+            Right
+                [ u
+                | u@(_, o) <- Map.toAscList live
+                , let MaryValue _ (MultiAsset assets) = o ^. valueTxOutL
+                , maybe False (any (/= 0)) (Map.lookup policy assets)
+                ]
         LP.HoldingAsset (pol, nm) ->
             Right [u | u@(_, o) <- Map.toAscList live, holds pol nm o]
         LP.AtTxIn ref -> case Map.lookup ref live of
