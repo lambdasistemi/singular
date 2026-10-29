@@ -93,3 +93,12 @@ committed receipt is bound to the current scripts (their hashes), its kept trans
 parameters and reproduce the committed figures byte for byte, and a fresh capture on a development network finds the same largest
 batch per kind and the refusal of the next, with the figure differences reported as observations and not compared. A control with an
 altered script hash, an altered figure and an off-by-one largest size each fails.
+
+## Gate version 4
+
+Appended on 29 October 2026; every row above is unchanged. A pull request that changes Haskell under `applications/open-datum/offchain`
+carries this row, because its component build runs the application's own lint and the root and off-chain lint rows do not reach it.
+
+| Row | Acceptance it proves | Hosted job | Verbatim command | Expected exit |
+| --- | --- | --- | --- | --- |
+| G22 | lint of the open-datum application's Haskell | ci.yml `open-datum-component-build` | `nix run --quiet .#lint` in `applications/open-datum/offchain/` | 0 |

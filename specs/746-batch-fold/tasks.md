@@ -28,4 +28,4 @@ the ticket owner accepts its slice.
 
 ## Pull request 5: evidence and words
 
-- [ ] conformance-and-documentation: the batch rows and the user page, limits generated from the receipt.
+- [x] conformance-and-documentation: the batch rows and the user page, limits generated from the receipt.

@@ -93,8 +93,18 @@
       "pause": 400
     }
   ],
+  "gate-version-4": [
+    {
+      "text": "Gate version 4.",
+      "pause": 500
+    },
+    {
+      "text": "Appended on 29 October 2026; every row above is unchanged. A pull request that changes Haskell under applications/open-datum/offchain carries this row, because its component build runs the application's own lint and the root and off-chain lint rows do not reach it.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "gate.md",
-    "sha256": "143eee3a2654b38ebb65bd06d27046d12309fd12334a5ae981afa5c64f7839bf"
+    "sha256": "e871048a7c0754d5089cab695a96ddd31663e459c4cf1ee50b267bc0a5910051"
   }
 }
