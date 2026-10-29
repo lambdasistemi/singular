@@ -94,29 +94,47 @@ import System.Process
 import Text.Read (readMaybe)
 
 import Cardano.Ledger.Address (Addr (..))
-import Cardano.Ledger.Api.Tx (mkBasicTx)
+import Cardano.Ledger.Api.Tx
+    ( bodyTxL
+    , estimateMinFeeTx
+    , mkBasicTx
+    , sizeTxF
+    , txIdTx
+    )
 import Cardano.Ledger.Api.Tx.Body
     ( feeTxBodyL
     , inputsTxBodyL
     , mkBasicTxBody
     , outputsTxBodyL
     )
-import Cardano.Ledger.Api.Tx.Out (coinTxOutL, mkBasicTxOut)
-import Cardano.Ledger.BaseTypes (Network (..))
+import Cardano.Ledger.Api.Tx.Out
+    ( addrTxOutL
+    , coinTxOutL
+    , mkBasicTxOut
+    , referenceScriptTxOutL
+    , valueTxOutL
+    )
+import Cardano.Ledger.BaseTypes
+    ( Network (..)
+    , StrictMaybe (..)
+    , TxIx (..)
+    )
 import Cardano.Ledger.Mary.Value (MaryValue (..))
+import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Node.Client.E2E.Setup
     ( genesisAddr
     , genesisDir
     , genesisSignKey
     , rawSerialiseSignKeyDSIGN
     )
+import Cardano.Tx.Balance (refScriptsSize)
 import Control.Tracer (nullTracer)
 import Devnet.Probe qualified as Probe
 import Singular.Provider.Koios.Wire (parseAddress)
 import Singular.Registry.Private.Facade
 import Singular.Registry.Private.Smoke (runFacadeSmoke)
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
-import Singular.Registry.Runner (runnerSettings)
+import Singular.Registry.Runner (runnerSettings, withRunner)
 import Singular.Registry.SessionIO qualified as Session
 import Singular.Registry.Terminal (withReads)
 
@@ -127,7 +145,7 @@ import Data.ByteString.Lazy.Char8 qualified as LBS
 import Singular.Registry.Capabilities
     ( Capabilities (..)
     )
-import Singular.Registry.Deployment (parseOutRef)
+import Singular.Registry.Deployment (parseOutRef, renderOutRef)
 import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger (Coin (..))
 import Singular.Registry.LedgerProvider (SubmitResult (..))
@@ -137,6 +155,7 @@ import Singular.Registry.Wallet
     , bech32Address
     , loadWallet
     )
+import Singular.State.Assemble (assembleTransaction)
 
 -- | Who a funding pays: a key file's wallet, or an address as given.
 data Target
@@ -181,6 +200,7 @@ dispatch = do
                     (flag "--evidence-dir" rest)
             runFacadeSmoke gDir output
         ("probe" : rest) -> probe rest
+        ("spend-reference" : rest) -> spendReference rest
         _ -> spawn args
 
 -- | Spawn the private facade, fund through shared HTTP, print settings, wait.
@@ -435,6 +455,103 @@ probe args = do
         either (die . ("devnet probe: " <>)) pure $
             traverse (parseOutRef . T.pack) (every "--tx-in" args)
     Probe.probe sock magicWord txIns
+
+{- | A development-network control: spend a key-owned reference output and
+return its value minus the ledger fee to its owner. This is fixture code,
+outside the product commands. If the builder underprices the spend, record
+its node rejection before submitting the same spend with the ledger's fee.
+No uncertain submission is retried.
+-}
+spendReference :: [String] -> IO ()
+spendReference args = withRunner $ \wallet caps -> do
+    ref <-
+        either die pure . parseOutRef . T.pack
+            =<< maybe (die "spend-reference needs --tx-in") pure (flag "--tx-in" args)
+    (original, corrected, bytes, required) <- Session.withLatest (capReads caps) $ \session -> do
+        known <- Session.outputsAt session (walletAddr wallet)
+        out <-
+            maybe
+                (fail "reference output is not owned by this wallet")
+                pure
+                (lookup ref known)
+        unless
+            (out ^. addrTxOutL == walletAddr wallet)
+            (fail "foreign reference owner")
+        let MaryValue _ assets = out ^. valueTxOutL
+        unless
+            (assets == mempty)
+            (fail "the reference spend control takes no tokens")
+        case out ^. referenceScriptTxOutL of
+            SNothing -> fail "the output carries no reference script"
+            SJust _ -> pure ()
+        built <-
+            assembleTransaction
+                session
+                [(ref, out)]
+                []
+                (walletAddr wallet)
+                (pure ())
+                >>= either (fail . show) pure
+        protocol <- Session.parameters session
+        let bytes = refScriptsSize (Set.singleton ref) [(ref, out)]
+            minimumFee tx = estimateMinFeeTx protocol tx 1 0 bytes
+            originalFee = built ^. bodyTxL . feeTxBodyL
+            -- Changing only fee and change preserves the spent output and
+            -- its owner. Iterate because the fee's encoding changes size.
+            price remaining fee
+                | remaining == (0 :: Int) =
+                    fail "reference spend fee did not converge"
+                | otherwise = do
+                    let Coin held = out ^. coinTxOutL
+                        Coin cost = fee
+                        tx =
+                            built
+                                & bodyTxL . feeTxBodyL .~ fee
+                                & bodyTxL . outputsTxBodyL
+                                    .~ StrictSeq.singleton
+                                        ( mkBasicTxOut
+                                            (walletAddr wallet)
+                                            (MaryValue (Coin (held - cost)) mempty)
+                                        )
+                        needed = minimumFee tx
+                    unless
+                        (held > cost)
+                        (fail "reference output cannot pay its spending fee")
+                    if fee >= needed then pure tx else price (remaining - 1) needed
+        priced <- price 10 originalFee
+        pure (built, priced, bytes, minimumFee built)
+    let supplied = original ^. bodyTxL . feeTxBodyL
+        signed tx = signTx (walletSignKey wallet) tx
+        transaction tx =
+            object
+                [ "output" .= renderOutRef (TxIn (txIdTx tx) (TxIx 0))
+                , "fee" .= (let Coin fee = tx ^. bodyTxL . feeTxBodyL in fee)
+                , "sizeBytes" .= (tx ^. sizeTxF)
+                ]
+    rejection <-
+        if supplied < required
+            then
+                capSubmit caps (signed original) >>= \case
+                    SubmitRefused why -> pure (Just why)
+                    other ->
+                        fail
+                            ( "the underpriced control did not produce a ledger refusal: "
+                                <> show other
+                            )
+            else pure Nothing
+    result <- capSubmit caps (signed corrected)
+    case result of
+        SubmitAccepted _ -> capConfirm caps (signedTx (signed corrected))
+        other -> fail ("reference spend control was not accepted: " <> show other)
+    LBS.putStrLn . encode $
+        object
+            [ "input" .= renderOutRef ref
+            , "scriptBytes" .= bytes
+            , "builder" .= transaction original
+            , "requiredFee" .= (let Coin fee = required in fee)
+            , "builderRefusal" .= rejection
+            , "control" .= transaction corrected
+            ]
 
 {- | Pay the requested outputs from the genesis key and wait for them,
 through the shipping shared HTTP constructor and exact-output confirmation.

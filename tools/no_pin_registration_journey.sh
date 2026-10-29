@@ -482,6 +482,39 @@ check "only the first registry locked ADA in reference scripts" \
 control "a measurement that gave a later registry two transactions would be seen" \
   jq -e '[.registries[].transactionCount] == [2, 2, 1]' "$work/creation-measurement.json"
 
+# A fixture transaction spends the key-owned application reference output.
+# The ledger prices its carried script even though it is spent, not read.
+# The next application creation
+# must publish the application script again, without republishing the state.
+leg="a spent reference has no live copy"
+run_as carol spend-application-reference "$devnet" spend-reference --tx-in "$application_reference"
+[ "$(cat "$receipts/spend-application-reference.status")" = 0 ] || {
+  cat "$receipts/spend-application-reference.err" >&2
+  setup_fail "the reference spending control did not reach the chain"
+}
+spent_control_output="$(field spend-application-reference .control.output)"
+view_tx spend-application-reference "${spent_control_output%#*}"
+view_unspent after-reference-spend
+check "the reference output was spent on chain" \
+  spends_ref "$chain_dir/spend-application-reference.tx.json" "$application_reference"
+check "the spent reference is no longer unspent" \
+  jq -e --arg r "$application_reference" 'all(.outputs[]; .ref != $r)' "$chain_dir/after-reference-spend.unspent.json"
+as carol create-after-reference-spend "$open_datum" create --blueprint plutus.json \
+  --process-time 60000 --reclaim-time 180000 --booking-width 60000
+view_tx replacement-application-reference "$(tx_of create-after-reference-spend publish-application-script)"
+view_tx create-after-reference-spend "$(tx_of create-after-reference-spend create)"
+replacement_reference="$(field create-after-reference-spend '.scripts[] | select(.script == "application") | .reference')"
+check "only the missing application script is published, then the registry is created" \
+  receipt_steps_are "$receipts/create-after-reference-spend.json" '["publish-application-script","create"]'
+check "the receipt calls the spent script no live copy and says it was published again" \
+  jq -e '[.scripts[].outcome] == ["reused","published"] and .scripts[1].discovery == {status:"no live copy",candidates:[]}' "$receipts/create-after-reference-spend.json"
+check "the replacement publication holds only the application script" \
+  refs_equal "$(script_outputs_of "$chain_dir/replacement-application-reference.tx.json")" "[\"$replacement_reference\"]"
+check "the creation reads the retained state reference and the new application reference" \
+  reads_and_creates_no_script "$chain_dir/create-after-reference-spend.tx.json" "[\"$state_reference\",\"$replacement_reference\"]"
+control "a spent reference is not a live source for the new creation" \
+  reads_and_creates_no_script "$chain_dir/create-after-reference-spend.tx.json" "$live_copies"
+
 observe_termination() {
   python3 -I "$(dirname "$chain_view")/no_pin_termination_observations.py" "$chain_dir" "$state_policy" "$state_name" "$key_hex" \
     >"$work/termination-measurement.json" 2>"$work/termination-measurement.err"
