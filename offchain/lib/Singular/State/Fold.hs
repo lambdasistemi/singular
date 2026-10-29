@@ -28,16 +28,24 @@ module Singular.State.Fold
     , SkipReason (..)
     , discoverPending
     , FoldResult (..)
+    , FoldFailure (..)
     , pendingTake
     , buildFold
+    , attemptFold
     , buildRegistrationFold
     , foldedRequests
     ) where
 
 import Control.Exception (throwIO)
 import Control.Monad (forM, forM_, unless, when)
-import Control.Monad.Except (ExceptT (..), runExceptT, throwError)
+import Control.Monad.Except
+    ( ExceptT (..)
+    , runExceptT
+    , throwError
+    , withExceptT
+    )
 import Control.Monad.IO.Class (liftIO)
+import Data.Bifunctor (first)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.Either (partitionEithers)
@@ -315,24 +323,59 @@ buildFold
     -> Addr
     -> Maybe Word32
     -> IO (Either Refusal FoldResult)
-buildFold session script application registry requests payerAddress cap = runExceptT $ do
-    forM_ (duplicates requests) (throwError . DuplicateRequest)
-    payer <- ExceptT (resolvePayer session payerAddress)
-    observed@(PublicRegistry _ _ replayed _) <-
-        readPublicRegistry session script registry
-    (pendings, skipped) <-
-        if null requests
-            then
-                liftIO
-                    (discoverPending session application registry (replayedKeys replayed))
-            else do
-                named <-
-                    forM
-                        requests
-                        ( ExceptT
-                            . readPending session application registry (replayedKeys replayed)
-                        )
-                pure (named, [])
+buildFold session script application registry requests payerAddress cap =
+    first foldFailureReason
+        <$> attemptFold
+            session
+            script
+            application
+            registry
+            requests
+            payerAddress
+            cap
+
+-- | A refusal, retaining complete discovery accounting when it was observed.
+data FoldFailure = FoldFailure
+    { foldFailureReason :: Refusal
+    , foldFailureObserved :: Maybe ([SkippedHolder], Int)
+    {- ^ All skipped holders and all requests left unconsumed. Nothing means
+    no complete request set was read, so no empty set may be claimed.
+    -}
+    }
+    deriving stock (Eq, Show)
+
+{- | Build with the same rules as 'buildFold', retaining observed holders even
+when nothing is eligible or a later build refuses. Failed reads still throw.
+-}
+attemptFold
+    :: Session NoWitness IO
+    -> StateScript
+    -> Application
+    -> RegistryIdentity
+    -> [TxIn]
+    -> Addr
+    -> Maybe Word32
+    -> IO (Either FoldFailure FoldResult)
+attemptFold session script application registry requests payerAddress cap = runExceptT $ do
+    (payer, observed, pendings, skipped) <- withExceptT (`FoldFailure` Nothing) $ do
+        forM_ (duplicates requests) (throwError . DuplicateRequest)
+        payer <- ExceptT (resolvePayer session payerAddress)
+        observed@(PublicRegistry _ _ replayed _) <-
+            readPublicRegistry session script registry
+        (pendings, skipped) <-
+            if null requests
+                then
+                    liftIO
+                        (discoverPending session application registry (replayedKeys replayed))
+                else do
+                    named <-
+                        forM
+                            requests
+                            ( ExceptT
+                                . readPending session application registry (replayedKeys replayed)
+                            )
+                    pure (named, [])
+        pure (payer, observed, pendings, skipped)
     let build =
             buildPendingFold
                 session
@@ -343,17 +386,19 @@ buildFold session script application registry requests payerAddress cap = runExc
                 payer
                 payerAddress
     selected <-
-        if null requests
-            then
-                ExceptT
-                    ( largestFittingPrefix
-                        (runExceptT . build)
-                        cap
-                        (orderByTake pendingTake pendingRef pendings)
-                    )
-            else do
-                tx <- build pendings
-                pure (BatchSelection pendings 0 tx Nothing)
+        withExceptT
+            (\reason -> FoldFailure reason (Just (skipped, length pendings)))
+            $ if null requests
+                then
+                    ExceptT
+                        ( largestFittingPrefix
+                            (runExceptT . build)
+                            cap
+                            (orderByTake pendingTake pendingRef pendings)
+                        )
+                else do
+                    tx <- build pendings
+                    pure (BatchSelection pendings 0 tx Nothing)
     pure
         FoldResult
             { foldTransaction = selectedBuild selected

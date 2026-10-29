@@ -302,7 +302,9 @@ data StateFoldArgs = StateFoldArgs
     , stateFoldBlueprint :: FilePath
     , stateFoldWrite :: WriteSettings
     , stateFoldPending :: [TxIn]
-    -- ^ The pending registrations to fold, as named; none is chosen implicitly
+    -- ^ An explicit batch; empty discovers requests from public approvals.
+    , stateFoldLimit :: Maybe Word32
+    -- ^ A cap on the automatic prefix; an explicit batch is never trimmed.
     , stateFoldReceipt :: Maybe FilePath
     }
     deriving stock (Eq, Show)

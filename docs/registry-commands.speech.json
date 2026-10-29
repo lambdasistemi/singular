@@ -61,7 +61,7 @@
       "pause": 400
     },
     {
-      "text": "The receipt names the pending registration, its approval, the key, the deposit, the tip, the refund address and the three times that matter: when it was booked, its processing deadline, and the end of its reclaim window. Whoever folds it, or you taking it back, names the pending registration with --pending.",
+      "text": "The receipt names the pending registration, its approval, the key, the deposit, the tip, the refund address and the three times that matter: when it was booked, its processing deadline, and the end of its reclaim window. Whoever folds it, or you taking it back, can name the pending registration with --pending. A folder can also discover it from public approvals.",
       "pause": 400
     }
   ],
@@ -71,15 +71,27 @@
       "pause": 500
     },
     {
-      "text": "As Bob, you fold the registrations you name into the registry in one transaction, and you need nothing from anyone who booked them.",
+      "text": "As Bob, give the registry and your wallet to discover its pending registrations and terminations from public approvals. You need nothing from anyone who booked them. The command orders requests by your take, greatest first, breaking ties by output reference, and builds the greatest fitting prefix. Use --limit to cap the number of automatically selected requests.",
       "pause": 400
     },
     {
-      "text": "Each registration's approval is consumed and the key's token is minted into the holding the registration committed to. The fold is built from the chain alone, and the wallet that runs it keeps what each request holds above its deposit. Nothing is chosen for you: every registration is named with --pending, and a registration that cannot be folded refuses the command, saying why.",
+      "text": "This is the path of a successful discovered batch. Holders the application does not accept are kept in the accounting as skipped, with their references and reasons. Every recognized request is folded or counted as left unconsumed.",
       "pause": 400
     },
     {
-      "text": "The receipt names the registry's new root, the output that holds the state, and each registration folded with its key.",
+      "text": "Transaction bytes include all required signing witnesses. Only transaction size, memory or steps exceeding the observed network limit permits trying a shorter prefix. A provider, state, deadline or balance failure stops the fold with its own reason; it never becomes an empty or smaller discovered set.",
+      "pause": 400
+    },
+    {
+      "text": "Each registration burns its approval and receives its committed holding, active token and deposit. Its held value above that deposit is yours. A termination burns its approval and active token and pays its whole held value to you. Your wallet pays the transaction fee. Both kinds can share one batch with distinct keys.",
+      "pause": 400
+    },
+    {
+      "text": "To choose the entire batch yourself, repeat --pending \"$first\" --pending \"$second\" instead. The command builds those requests in that order or refuses them, naming the reason; it never trims an explicit batch, even with --limit.",
+      "pause": 400
+    },
+    {
+      "text": "The successful receipt names the registry's new root and state output. Its folded list gives each key, request kind and pending reference; skipped gives each unaccepted holder's reference and reason; left counts recognized requests not included. A fold with nothing eligible still names the skipped holders it observed. A failed read remains unavailable and never claims an empty answer.",
       "pause": 400
     }
   ],
@@ -181,6 +193,6 @@
   ],
   "_source": {
     "file": "registry-commands.md",
-    "sha256": "b69ae23a250a62179bbc9959ab5d1a22ffbe3b33b53038671b44bd1a91d7b053"
+    "sha256": "1605da33d3988b1437b349c4ea78fbf90e301a9631532a2e36d1b11a9a2ece01"
   }
 }

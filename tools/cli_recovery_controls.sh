@@ -391,15 +391,15 @@ if part state-line || part holding-update || part holding-terminate || part term
   # --- create, interrupted ---
   sl_create_line=(create "${sl_params[@]}")
   # --- the booking line, and the bookings the cleanups need, made now so that their windows run beside the cases ---
-  sl_book_line() { # KEY DIR WALLET...: the line that books KEY from DIR
-    local key="$1" dir="$2"
-    shift 2
+  sl_book_line() { # KEY DIR TIP WALLET...: the line that books KEY from DIR
+    local key="$1" dir="$2" tip="$3"
+    shift 3
     printf '%s\n' insert --state-token "$sl_token" --key "$key" --payload "$work/payload.json" \
-      --payload-schema detailed --deposit 3000000 --tip 1000000 --state-dir "$dir" "${sl_base[@]}" "$@"
+      --payload-schema detailed --deposit 3000000 --tip "$tip" --state-dir "$dir" "${sl_base[@]}" "$@"
   }
   sl_book() { # NAME: a clean booking by alice in the main directory, of the key that bears the name
-    local name="$1" key="${2:-$1}" line
-    mapfile -t line < <(sl_book_line "$key" "$sl_main" "${alice[@]}")
+    local name="$1" key="${2:-$1}" tip="${3:-1000000}" line
+    mapfile -t line < <(sl_book_line "$key" "$sl_main" "$tip" "${alice[@]}")
     sl_run "$name" "${line[@]}"
     clause "$name: the booking succeeds" outcome_is "$name" success
   }
@@ -488,7 +488,7 @@ if part state-line || part holding-update || part holding-terminate || part term
     local key
     key="sl-next-$(basename "$dir")"
     if [ "${#key}" -gt 32 ]; then key="n-$(basename "$dir")"; fi
-    mapfile -t sl_next_line < <(sl_book_line "$key" "$dir" "$@")
+    mapfile -t sl_next_line < <(sl_book_line "$key" "$dir" 1000000 "$@")
   }
 
   if part state-line; then
@@ -503,7 +503,7 @@ if part state-line || part holding-update || part holding-terminate || part term
     # --- insert, three ways ---
     for sl_mode in lost-answer killed never-sent; do
       sl_dir="$sl_root/book-$sl_mode"
-      mapfile -t case_line < <(sl_book_line "sl-book-$sl_mode" "$sl_dir" "${alice[@]}")
+      mapfile -t case_line < <(sl_book_line "sl-book-$sl_mode" "$sl_dir" 1000000 "${alice[@]}")
       sl_next_of "$sl_dir" "${alice[@]}"
       case_next=("${sl_next_line[@]}")
       sl_case registration-book book "$sl_mode" "$(managed_journal "$sl_dir" "$sl_token" "$alicekey")" case_line case_next
@@ -525,10 +525,10 @@ if part state-line || part holding-update || part holding-terminate || part term
 
     # --- fold, three ways, by the second wallet, each over a booking made just before ---
     for sl_mode in lost-answer killed never-sent; do
-      sl_book "sl-fold-pending-$sl_mode"
+      # The current request precedes expired cleanup fixtures by its greater take.
+      sl_book "sl-fold-pending-$sl_mode" "sl-fold-pending-$sl_mode" 2000000
       sl_dir="$sl_root/fold-$sl_mode"
-      sl_pending="$(field "sl-fold-pending-$sl_mode" .pending)"
-      case_line=(fold --state-token "$sl_token" --pending "$sl_pending" --state-dir "$sl_dir" "${sl_base[@]}" "${bob[@]}")
+      case_line=(fold --state-token "$sl_token" --limit 1 --state-dir "$sl_dir" "${sl_base[@]}" "${bob[@]}")
       sl_next_of "$sl_dir" "${bob[@]}"
       case_next=("${sl_next_line[@]}")
       sl_case state-fold fold "$sl_mode" "$(managed_journal "$sl_dir" "$sl_token" "$bobkey")" case_line case_next
@@ -726,8 +726,7 @@ if part state-line || part holding-update || part holding-terminate || part term
           termination-fold)
             sl_run "$sl_label-terminate" terminate --state-token "$sl_token" --holding "$sl_holding" --state-dir "$sl_main" "${sl_base[@]}" "${alice[@]}"
             clause "$sl_part, $sl_mode: termination booking succeeds" outcome_is "$sl_label-terminate" success
-            sl_pending="$(field "$sl_label-terminate" .pending)"
-            case_line=(fold --state-token "$sl_token" --pending "$sl_pending" --state-dir "$sl_dir" "${sl_base[@]}" "${bob[@]}")
+            case_line=(fold --state-token "$sl_token" --limit 1 --state-dir "$sl_dir" "${sl_base[@]}" "${bob[@]}")
             sl_step="fold"
             sl_walletkey="$bobkey"
             sl_next_of "$sl_dir" "${bob[@]}"

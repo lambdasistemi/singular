@@ -70,6 +70,7 @@ import Data.Set (Set)
 import Data.Set qualified as Set (empty, fromList, singleton)
 import Data.Text qualified as T (pack, unpack)
 import Data.Version (Version)
+import Data.Word (Word32)
 import GHC.Generics (Generic)
 import Paths_open_datum qualified as Paths (version)
 import Singular.Application.OpenDatum.Build
@@ -387,7 +388,7 @@ commandFrom environment (Raw ws allFlags) = do
         ]
             <> stateWriteFlags
     stateFoldAllowed =
-        ["--state-dir", "--blueprint", "--pending", "--receipt"]
+        ["--state-dir", "--blueprint", "--pending", "--limit", "--receipt"]
             <> registryNaming
             <> stateWriteFlags
     bookAllowed =
@@ -408,7 +409,7 @@ commandFrom environment (Raw ws allFlags) = do
         ["--state-dir", "--blueprint", "--holding", "--receipt"]
             <> registryNaming
             <> stateWriteFlags
-    pendingAllowed = stateFoldAllowed
+    pendingAllowed = filter (/= "--limit") stateFoldAllowed
     refuseOutside command allowed flags =
         forM_ flags $ \(flag, _) ->
             unless (flag `elem` allowed) $
@@ -467,13 +468,24 @@ commandFrom environment (Raw ws allFlags) = do
             | not (null value) && all isDigit value -> Right (read value)
             | otherwise ->
                 Left (BadValue name "needs a whole number of lovelace")
+    namedRefs flags =
+        traverse
+            (first (BadValue "--pending") . parseOutRef . T.pack)
+            [value | ("--pending", Just value) <- flags]
     pendingRefs flags =
         case [value | ("--pending", Just value) <- flags] of
             [] -> Left (MissingFlag "--pending")
-            values ->
-                traverse
-                    (first (BadValue "--pending") . parseOutRef . T.pack)
-                    values
+            _ -> namedRefs flags
+    discoveryLimit flags = case optional "--limit" flags of
+        Nothing -> Right Nothing
+        Just value -> case readMaybe value :: Maybe Integer of
+            Just count
+                | not (null value)
+                    && all isDigit value
+                    && count <= toInteger (maxBound :: Word32) ->
+                    Right (Just (fromInteger count))
+            _ ->
+                Left (BadValue "--limit" "needs a whole number from 0 to 4294967295")
     stateFoldArgs env flags = do
         let dir = optional "--state-dir" flags
         bp <- required "--blueprint" flags
@@ -484,7 +496,8 @@ commandFrom environment (Raw ws allFlags) = do
                 UnsafeSettings
                 WriteSettings
                 flags
-        pending <- pendingRefs flags
+        pending <- namedRefs flags
+        limit <- discoveryLimit flags
         access <- registryAccess env flags
         pure
             StateFoldArgs
@@ -493,6 +506,7 @@ commandFrom environment (Raw ws allFlags) = do
                 , stateFoldBlueprint = bp
                 , stateFoldWrite = settings
                 , stateFoldPending = pending
+                , stateFoldLimit = limit
                 , stateFoldReceipt = optional "--receipt" flags
                 }
     holdingArgs env flags = do
@@ -692,6 +706,7 @@ extraValuedFlags :: [String]
 extraValuedFlags =
     [ "--holding"
     , "--pending"
+    , "--limit"
     , "--reclaim-time"
     , "--booking-width"
     , "--registration-cost"

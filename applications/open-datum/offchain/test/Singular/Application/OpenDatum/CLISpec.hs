@@ -8,7 +8,7 @@ import Data.Aeson qualified as Aeson
 import Data.ByteString.Char8 qualified as BC
 import Data.List qualified
 import Singular.Application.OpenDatum.Command
-    ( CLIError (UnknownCommand)
+    ( CLIError (BadValue, MissingFlag, UnknownCommand)
     , OpenDatumCommand (OpenStateFold)
     , StateFoldArgs (..)
     , parseOpenDatumCommand
@@ -48,6 +48,22 @@ spec = do
         it "accepts an optional discovery limit" $
             parseOpenDatumCommand (line <> ["--limit", "2"])
                 `shouldSatisfy` accepts 0
+        forM_ ["-1", "1.5", "4294967296"] $ \value ->
+            it ("refuses an invalid request-count limit: " <> value) $
+                parseOpenDatumCommand (line <> ["--limit", value]) `shouldSatisfy` \case
+                    Left (BadValue "--limit" _) -> True
+                    _ -> False
+        forM_ ["reclaim", "cleanup"] $ \verb -> do
+            it (verb <> " still requires one explicit pending reference") $
+                parseOpenDatumCommand (verb : drop 1 line)
+                    `shouldBe` Left (MissingFlag "--pending")
+            it (verb <> " refuses a discovery limit") $
+                parseOpenDatumCommand
+                    ( (verb : drop 1 line)
+                        <> ["--pending", replicate 64 'b' <> "#0", "--limit", "1"]
+                    ) `shouldSatisfy` \case
+                    Left (BadValue "--limit" _) -> True
+                    _ -> False
 
     describe "reading a key without a signer" $ do
         it

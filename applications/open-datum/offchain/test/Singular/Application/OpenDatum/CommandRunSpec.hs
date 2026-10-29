@@ -50,7 +50,7 @@ import Cardano.Ledger.Api.Tx (EraTx (bodyTxL), txIdTx)
 import Cardano.Ledger.Api.Tx.Body
     ( EraTxBody (inputsTxBodyL, outputsTxBodyL)
     )
-import Cardano.Ledger.Api.Tx.Out (EraTxOut (mkBasicTxOut))
+import Cardano.Ledger.Api.Tx.Out (EraTxOut (addrTxOutL, mkBasicTxOut))
 import Cardano.Ledger.BaseTypes (TxIx (TxIx))
 import Cardano.Ledger.Mary.Value (MaryValue (MaryValue))
 import Cardano.Ledger.TxIn (TxIn (..))
@@ -95,7 +95,12 @@ import Data.IORef
     , writeIORef
     )
 import Data.List (nub, partition, sort)
-import Data.Map.Strict qualified as Map (delete, fromList, union)
+import Data.Map.Strict qualified as Map
+    ( delete
+    , fromList
+    , insert
+    , union
+    )
 import Data.Maybe (isJust, listToMaybe)
 import Data.Proxy (Proxy (..))
 import Data.Set qualified as Set (empty, toList)
@@ -122,7 +127,7 @@ import GHC.Generics
     , conName
     , (:+:)
     )
-import Lens.Micro ((^.))
+import Lens.Micro ((&), (.~), (^.))
 import PlutusCore.Data qualified as PD ()
 import PlutusLedgerApi.V3 qualified as PLC ()
 import Singular.Application.OpenDatum.Command
@@ -177,7 +182,8 @@ import Singular.Registry.Deployment (parseOutRef, renderOutRef)
 import Singular.Registry.Evidence (NoWitness, unverifiedVerifier)
 import Singular.Registry.Ledger (Coin (Coin))
 import Singular.Registry.LedgerProvider qualified as Cage
-    ( SubmitResult (SubmitAccepted)
+    ( OutputQuery (AtTxIn)
+    , SubmitResult (SubmitAccepted)
     )
 import Singular.Registry.RawChainFixture
     ( ChainFacts (..)
@@ -207,6 +213,7 @@ import Singular.Registry.TxBuilder.Internal
     , scriptHashBytes
     )
 import Singular.Registry.Wallet (Wallet (walletAddr), loadWallet)
+import Singular.State.Assemble (readOutputs)
 import Singular.State.Fold qualified as StateFold
     ( foldedRequests
     )
@@ -263,6 +270,60 @@ spec =
 
 batchDiscoveryRows :: Spec
 batchDiscoveryRows = describe "fold receipts from public discovery" $ do
+    forM_ [True, False] $ \keepCorrect ->
+        it
+            ( if keepCorrect
+                then "names a key-address holder skipped beside a foldable request"
+                else "names skipped holders when no request can be folded"
+            )
+            $ withBatch ["foreign holder"]
+            $ \rig token booked -> do
+                pending <- case booked of
+                    [entry] ->
+                        maybe
+                            (fail "no booking")
+                            (either fail pure . parseOutRef)
+                            (textAt "pending" (runReceipt entry))
+                    _ -> fail "one request control required"
+                [(_, output)] <- SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \session ->
+                    readOutputs session (Cage.AtTxIn pending)
+                        >>= either (fail . show) pure
+                let TxIn txid _ = pending
+                    foreignRef = TxIn txid (TxIx 99)
+                advanceChain (rigChain rig) $ \facts ->
+                    let correct =
+                            if keepCorrect
+                                then csUTxO facts
+                                else Map.delete pending (csUTxO facts)
+                    in  facts
+                            { csUTxO =
+                                Map.insert
+                                    foreignRef
+                                    (output & addrTxOutL .~ walletAddr (rigWallet rig))
+                                    correct
+                            }
+                folded <-
+                    runAt rig "batch" "holder discovery" ["fold", "--state-token", token]
+                if keepCorrect
+                    then do
+                        runExit folded `shouldBe` ExitSuccess
+                        map fst (runFolded folded) `shouldBe` [renderOutRef pending]
+                    else do
+                        outcomeOf (runReceipt folded) `shouldBe` Just "client-refusal"
+                        elementsAt "folded" (runReceipt folded) `shouldBe` Just []
+                        submissionsOf (runReceipt folded) `shouldBe` []
+                valueAt "left" (runReceipt folded) `shouldBe` Just (Aeson.Number 0)
+                skipped <-
+                    maybe
+                        (fail "skipped holders absent")
+                        pure
+                        (elementsAt "skipped" (runReceipt folded))
+                skipped
+                    `shouldSatisfy` any
+                        ( \holder ->
+                            textAt "reference" holder == Just (renderOutRef foreignRef)
+                                && textAt "reason" holder == Just "held at a key address"
+                        )
     forM_ ["kind", "skipped", "left"] $ \field ->
         it ("prints the named batch's " <> field <> " in its receipt") $
             withBatch ["receipt key"] $ \rig token booked -> do
@@ -302,6 +363,18 @@ batchDiscoveryRows = describe "fold receipts from public discovery" $ do
             runExit folded `shouldBe` ExitSuccess
             length (runFolded folded) `shouldBe` 1
             valueAt "left" (runReceipt folded) `shouldBe` Just (Aeson.Number 1)
+    it "leaves the complete pending set unconsumed when its cap is zero" $
+        withBatch ["first key", "second key"] $ \rig token _ -> do
+            folded <-
+                runAt
+                    rig
+                    "batch"
+                    "zero cap"
+                    ["fold", "--state-token", token, "--limit", "0"]
+            outcomeOf (runReceipt folded) `shouldBe` Just "client-refusal"
+            elementsAt "folded" (runReceipt folded) `shouldBe` Just []
+            valueAt "left" (runReceipt folded) `shouldBe` Just (Aeson.Number 2)
+            submissionsOf (runReceipt folded) `shouldBe` []
   where
     withBatch keys action = withRig $ \rig -> do
         created <- runAt rig "batch" "create" ["create"]
