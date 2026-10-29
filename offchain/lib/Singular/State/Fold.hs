@@ -27,6 +27,9 @@ module Singular.State.Fold
     , SkippedHolder (..)
     , SkipReason (..)
     , discoverPending
+    , FoldResult (..)
+    , pendingTake
+    , buildFold
     , buildRegistrationFold
     , foldedRequests
     ) where
@@ -87,6 +90,7 @@ import Singular.Registry.TrieState
     , SpeculativeWalk (..)
     , StatePoint (..)
     , TrieSelection (..)
+    , TrieSnapshot
     , leafAt
     , speculateEdges
     )
@@ -104,6 +108,11 @@ import Singular.State.Assemble
     , resolvePayer
     , tipSlot
     , validityFromTip
+    )
+import Singular.State.Batch
+    ( BatchSelection (..)
+    , largestFittingPrefix
+    , orderByTake
     )
 import Singular.State.Lineage
     ( Replayed (..)
@@ -125,7 +134,7 @@ import Singular.State.Records
     , foldedRedeemer
     , stateDatum
     )
-import Singular.State.Refusal (Refusal (..))
+import Singular.State.Refusal (CapacityLimit, Refusal (..))
 import Singular.State.Script
     ( StateScript (..)
     , referenceOutputs
@@ -255,166 +264,268 @@ buildRegistrationFold
     -> Application
     -> RegistryIdentity
     -> [TxIn]
-    -- ^ The pending registrations
     -> Addr
-    -- ^ The payer
     -> IO (Either Refusal ConwayTx)
 buildRegistrationFold session script application registry requests payerAddress =
-    runExceptT $ do
-        forM_ (duplicates requests) (throwError . DuplicateRequest)
-        payer <- ExceptT (resolvePayer session payerAddress)
-        (stateIn, stateOut, root) <-
-            ExceptT (findState session script registry)
-        let selection =
-                TrieSelection
-                    { trieSelectionIdentity = registry
-                    , trieSelectionPoint =
-                        StatePoint (sessionId session) (sessionBinding session) stateIn
-                    , trieSelectionRoot = Root root
-                    }
-        (replayed, nodes) <-
-            ExceptT
-                (either (Left . TrieRefused) Right <$> replayRegistry session selection)
-        let snapshot =
-                snapshotObserved
-                    (const (pure ()))
-                    selection
-                    nodes
-                    (CompleteFromCreate 0)
-                    Nothing
-        pendings <-
-            if null requests
-                then
-                    fst
-                        <$> liftIO
-                            (discoverPending session application registry (replayedKeys replayed))
-                else
+    fmap foldTransaction
+        <$> buildFold
+            session
+            script
+            application
+            registry
+            requests
+            payerAddress
+            Nothing
+
+-- | The actual built batch and the complete discovery accounting.
+data FoldResult = FoldResult
+    { foldTransaction :: ConwayTx
+    -- ^ The successful probe's transaction.
+    , foldSelected :: [PendingRequest]
+    -- ^ The folded requests, in their transaction order.
+    , foldSkipped :: [SkippedHolder]
+    -- ^ All unaccepted holders named by discovery.
+    , foldLeft :: Int
+    -- ^ Every discovered request beyond the chosen prefix, including the cap.
+    , foldBoundary :: Maybe CapacityLimit
+    -- ^ The next prefix's actual capacity refusal, when a boundary was probed.
+    }
+    deriving stock (Eq, Show)
+
+-- | The folder's take from the observed request, matching natural subtraction.
+pendingTake :: PendingRequest -> Coin
+pendingTake pending = case pendingRequest pending of
+    RegistrationRequest registration ->
+        let Coin deposit = regDeposit registration
+        in  Coin (max 0 (held - deposit))
+    TerminationRequest{} -> Coin held
+  where
+    Coin held = pendingOutput pending ^. coinTxOutL
+
+{- | Discover and build the greatest fitting prefix, optionally capped. A
+nonempty named batch is built as named, without a cap or trimming. Any
+noncapacity refusal stops the build with its own reason.
+-}
+buildFold
+    :: Session NoWitness IO
+    -> StateScript
+    -> Application
+    -> RegistryIdentity
+    -> [TxIn]
+    -> Addr
+    -> Maybe Word32
+    -> IO (Either Refusal FoldResult)
+buildFold session script application registry requests payerAddress cap = runExceptT $ do
+    forM_ (duplicates requests) (throwError . DuplicateRequest)
+    payer <- ExceptT (resolvePayer session payerAddress)
+    observed@(PublicRegistry _ _ replayed _) <-
+        readPublicRegistry session script registry
+    (pendings, skipped) <-
+        if null requests
+            then
+                liftIO
+                    (discoverPending session application registry (replayedKeys replayed))
+            else do
+                named <-
                     forM
                         requests
                         ( ExceptT
                             . readPending session application registry (replayedKeys replayed)
                         )
-        when (null pendings) $ throwError NothingToFold
-        let keys = map (requestKey . pendingRequest) pendings
-        forM_ (duplicates keys) (throwError . DuplicateKey)
-        protocol <- liftIO (parameters session)
-        forM_ pendings $ \pending -> case pendingRequest pending of
-            RegistrationRequest registration -> do
-                let smallest = getMinCoinTxOut protocol (holdingFor registry registration)
-                    deposit = regDeposit registration
-                when (deposit < smallest) $
-                    throwError (DepositBelowHolding (pendingRef pending) deposit smallest)
-            TerminationRequest{} -> pure ()
-        forM_ pendings $ \pending -> do
-            let request = pendingRequest pending
-                key = requestKey request
-            leaf <-
-                ExceptT (either (Left . TrieRefused) Right <$> leafAt snapshot key)
-            case request of
-                RegistrationRequest{} -> unless (leaf == Unknown) (throwError (KeyAlreadyRegistered key))
-                TerminationRequest{} -> unless (leaf == Active) (throwError (KeyNotActive key))
-        walked <-
-            ExceptT
-                ( either (Left . TrieRefused) Right
-                    <$> speculateEdges
-                        snapshot
-                        ( NE.fromList
-                            [ (requestKey request, toInteger (edgeFor request))
-                            | pending <- pendings
-                            , let request = pendingRequest pending
-                            ]
-                        )
-                )
-        now <- liftIO (tipSlot session)
-        fallback <- (+ 3600000) <$> liftIO (slotStart session now)
-        deadline <-
-            liftIO
-                ( floorSlot
-                    session
-                    ( minimum
-                        ( fallback
-                            : [ regDeadline r
-                              | pending <- pendings
-                              , RegistrationRequest r <- [pendingRequest pending]
-                              ]
-                        )
+                pure (named, [])
+    let build =
+            buildPendingFold
+                session
+                script
+                application
+                registry
+                observed
+                payer
+                payerAddress
+    selected <-
+        if null requests
+            then
+                ExceptT
+                    ( largestFittingPrefix
+                        (runExceptT . build)
+                        cap
+                        (orderByTake pendingTake pendingRef pendings)
+                    )
+            else do
+                tx <- build pendings
+                pure (BatchSelection pendings 0 tx Nothing)
+    pure
+        FoldResult
+            { foldTransaction = selectedBuild selected
+            , foldSelected = selectedRequests selected
+            , foldSkipped = skipped
+            , foldLeft = requestsLeft selected
+            , foldBoundary = nextCapacity selected
+            }
+
+-- | Captured public state and replay, shared by all probes of one fold.
+data PublicRegistry
+    = PublicRegistry TxIn (TxOut ConwayEra) Replayed (TrieSnapshot IO)
+
+readPublicRegistry
+    :: Session NoWitness IO
+    -> StateScript
+    -> RegistryIdentity
+    -> ExceptT Refusal IO PublicRegistry
+readPublicRegistry session script registry = do
+    (stateIn, stateOut, root) <-
+        ExceptT (findState session script registry)
+    let selection =
+            TrieSelection
+                { trieSelectionIdentity = registry
+                , trieSelectionPoint =
+                    StatePoint (sessionId session) (sessionBinding session) stateIn
+                , trieSelectionRoot = Root root
+                }
+    (replayed, nodes) <-
+        ExceptT
+            (either (Left . TrieRefused) Right <$> replayRegistry session selection)
+    let snapshot =
+            snapshotObserved
+                (const (pure ()))
+                selection
+                nodes
+                (CompleteFromCreate 0)
+                Nothing
+    pure (PublicRegistry stateIn stateOut replayed snapshot)
+
+buildPendingFold
+    :: Session NoWitness IO
+    -> StateScript
+    -> Application
+    -> RegistryIdentity
+    -> PublicRegistry
+    -> Payer
+    -> Addr
+    -> [PendingRequest]
+    -> ExceptT Refusal IO ConwayTx
+buildPendingFold session script application registry (PublicRegistry stateIn stateOut replayed snapshot) payer payerAddress pendings = do
+    when (null pendings) $ throwError NothingToFold
+    let keys = map (requestKey . pendingRequest) pendings
+    forM_ (duplicates keys) (throwError . DuplicateKey)
+    protocol <- liftIO (parameters session)
+    forM_ pendings $ \pending -> case pendingRequest pending of
+        RegistrationRequest registration -> do
+            let smallest = getMinCoinTxOut protocol (holdingFor registry registration)
+                deposit = regDeposit registration
+            when (deposit < smallest) $
+                throwError (DepositBelowHolding (pendingRef pending) deposit smallest)
+        TerminationRequest{} -> pure ()
+    forM_ pendings $ \pending -> do
+        let request = pendingRequest pending
+            key = requestKey request
+        leaf <-
+            ExceptT (either (Left . TrieRefused) Right <$> leafAt snapshot key)
+        case request of
+            RegistrationRequest{} -> unless (leaf == Unknown) (throwError (KeyAlreadyRegistered key))
+            TerminationRequest{} -> unless (leaf == Active) (throwError (KeyNotActive key))
+    walked <-
+        ExceptT
+            ( either (Left . TrieRefused) Right
+                <$> speculateEdges
+                    snapshot
+                    ( NE.fromList
+                        [ (requestKey request, toInteger (edgeFor request))
+                        | pending <- pendings
+                        , let request = pendingRequest pending
+                        ]
+                    )
+            )
+    now <- liftIO (tipSlot session)
+    fallback <- (+ 3600000) <$> liftIO (slotStart session now)
+    deadline <-
+        liftIO
+            ( floorSlot
+                session
+                ( minimum
+                    ( fallback
+                        : [ regDeadline r
+                          | pending <- pendings
+                          , RegistrationRequest r <- [pendingRequest pending]
+                          ]
                     )
                 )
-        upper <-
-            liftIO (validityFromTip session now deadline)
-                >>= maybe (throwError ProcessingWindowClosed) pure
-        stateScriptOutputs <-
-            ExceptT (referenceOutputs session (ssScript script) (ssSource script))
-        let policy = statePolicy script
-            RegistryIdentity _ name = registry
-            funding = payerFunding payer
-            Root newRoot = walkRoot walked
-            stateValue =
-                MaryValue
-                    (stateOut ^. coinTxOutL)
-                    (MultiAsset (Map.singleton policy (Map.singleton name 1)))
-            spent =
-                funding
-                    : (stateIn, stateOut)
-                    : [(pendingRef p, pendingOutput p) | p <- pendings]
-        ExceptT $
-            assembleTransaction
-                session
-                spent
-                (stateScriptOutputs <> appReferences application)
-                payerAddress
-                ( do
-                    _ <-
-                        Tx.payTo'
-                            (stateAddress (payerNetwork payer) script)
-                            stateValue
-                            (BuiltinData (stateDatum newRoot))
-                    changed <- forM (zip pendings (walkProofs walked)) $ \(pending, proof) -> do
-                        let request = pendingRequest pending
-                            folded =
-                                Folded
+            )
+    upper <-
+        liftIO (validityFromTip session now deadline)
+            >>= maybe (throwError ProcessingWindowClosed) pure
+    stateScriptOutputs <-
+        ExceptT (referenceOutputs session (ssScript script) (ssSource script))
+    let policy = statePolicy script
+        RegistryIdentity _ name = registry
+        funding = payerFunding payer
+        Root newRoot = walkRoot walked
+        stateValue =
+            MaryValue
+                (stateOut ^. coinTxOutL)
+                (MultiAsset (Map.singleton policy (Map.singleton name 1)))
+        spent =
+            funding
+                : (stateIn, stateOut)
+                : [(pendingRef p, pendingOutput p) | p <- pendings]
+    ExceptT $
+        assembleTransaction
+            session
+            spent
+            (stateScriptOutputs <> appReferences application)
+            payerAddress
+            ( do
+                _ <-
+                    Tx.payTo'
+                        (stateAddress (payerNetwork payer) script)
+                        stateValue
+                        (BuiltinData (stateDatum newRoot))
+                changed <- forM (zip pendings (walkProofs walked)) $ \(pending, proof) -> do
+                    let request = pendingRequest pending
+                        folded =
+                            Folded
+                                (pendingRef pending)
+                                (pendingApproval pending)
+                                registry
+                                (requestKey request)
+                    case request of
+                        RegistrationRequest registration -> do
+                            holding <- Tx.output (holdingFor registry registration)
+                            let Coin deposit = regDeposit registration
+                            pure
+                                ( Register
                                     (pendingRef pending)
-                                    (pendingApproval pending)
-                                    registry
-                                    (requestKey request)
-                        case request of
-                            RegistrationRequest registration -> do
-                                holding <- Tx.output (holdingFor registry registration)
-                                let Coin deposit = regDeposit registration
-                                pure
-                                    ( Register
-                                        (pendingRef pending)
-                                        (regKey registration)
-                                        (toInteger holding)
-                                        deposit
-                                        proof
-                                    , folded (Just holding)
-                                    )
-                            TerminationRequest _ key ->
-                                pure (Terminate (pendingRef pending) key proof, folded Nothing)
-                    let changes = map fst changed
-                    _ <-
-                        Tx.spendScript
-                            stateIn
-                            (BuiltinData (foldRedeemer (replayedSeed replayed) changes))
-                    Tx.mint
-                        policy
-                        ( Map.fromListWith
-                            (+)
-                            [ ( activeTokenName registry (requestKey request)
-                              , case request of RegistrationRequest{} -> 1; TerminationRequest{} -> -1
-                              )
-                            | p <- pendings
-                            , let request = pendingRequest p
-                            ]
-                        )
-                        (BuiltinData foldedRedeemer)
-                    useScript (ssScript script) (ssSource script)
-                    appFold application (map snd changed)
-                    Tx.collateral (fst funding)
-                    Tx.validFrom now
-                    Tx.validTo upper
-                )
+                                    (regKey registration)
+                                    (toInteger holding)
+                                    deposit
+                                    proof
+                                , folded (Just holding)
+                                )
+                        TerminationRequest _ key ->
+                            pure (Terminate (pendingRef pending) key proof, folded Nothing)
+                let changes = map fst changed
+                _ <-
+                    Tx.spendScript
+                        stateIn
+                        (BuiltinData (foldRedeemer (replayedSeed replayed) changes))
+                Tx.mint
+                    policy
+                    ( Map.fromListWith
+                        (+)
+                        [ ( activeTokenName registry (requestKey request)
+                          , case request of RegistrationRequest{} -> 1; TerminationRequest{} -> -1
+                          )
+                        | p <- pendings
+                        , let request = pendingRequest p
+                        ]
+                    )
+                    (BuiltinData foldedRedeemer)
+                useScript (ssScript script) (ssSource script)
+                appFold application (map snd changed)
+                Tx.collateral (fst funding)
+                Tx.validFrom now
+                Tx.validTo upper
+            )
 
 -- | The first element that appears more than once.
 duplicates :: (Eq a) => [a] -> [a]

@@ -164,7 +164,7 @@ spec = do
 -- | Create a registry and book these keys, as the booker; the pending registrations in order.
 booked :: [ByteString] -> IO (Creation, RegistryIdentity, [TxIn])
 booked keys = do
-    world <- newCreation
+    world <- newCreation >>= withPublicScripts
     registry <- created world
     pendings <- forM keys $ \key -> do
         tx <-

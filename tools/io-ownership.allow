@@ -29,7 +29,7 @@ conformance/coverage/evaluation/spike-app/Main.hs: ioref — owner=one evaluatio
 
 
 # ---- tests and harness: owned by the test run, joined before the example ends ----
-offchain/test/Singular/State/StateFoldSpec.hs: ioref — harness; owner=one discovery example; lifetime=single example and its acquired session; serial on the calling thread; records actual output queries to assert one policy query, no worker or retained reference
+offchain/test/Singular/State/StateFoldSpec.hs: ioref — harness; owner=the discovery and fitting examples; lifetime=single example and its acquired sessions; serial on the calling thread; records actual queries and evaluations to count policy discovery and every fitting probe, no worker or retained reference
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/ApplicationSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; fixture refs accumulated for assertions
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/PinGateSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; direct registry-resolution fixture observations accumulated for application-pin assertions
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/BurnSourceSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; fixture refs accumulated for assertions

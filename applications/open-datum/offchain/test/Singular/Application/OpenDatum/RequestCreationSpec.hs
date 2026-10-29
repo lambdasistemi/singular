@@ -51,7 +51,7 @@ import Singular.Application.OpenDatum.Requests.Script
 import Singular.Registry.TrieState (RegistryIdentity (..))
 import Singular.State.Genesis (buildGenesis)
 import Singular.State.Preimage (configurationTokenName, seedData)
-import Singular.State.Refusal (Refusal (..))
+import Singular.State.Refusal (CapacityLimit (..), Refusal (..))
 import Singular.State.Script (statePolicy)
 
 spec :: Spec
@@ -59,8 +59,20 @@ spec = do
     describe
         "the creation of a registry, built with its configuration record"
         $ do
+            it
+                "refuses attaching both scripts and accepts their public references under the same byte limit" $ do
+                raw <- newCreation
+                attached <- createRegistry raw
+                case attached of
+                    Left (CapacityExceeded (TransactionSize bytes limit)) -> bytes `shouldSatisfy` (> limit)
+                    other -> expectationFailure (show other)
+                world <- withPublicScripts raw
+                (tx, _) <- createRegistry world >>= either (fail . show) pure
+                judge world tx >>= (`shouldSatisfy` everyScriptAccepts)
+                soundnessProblems world tx `shouldReturn` []
+
             it "is accepted by both compiled validators" $ do
-                world <- newCreation
+                world <- newCreation >>= withPublicScripts
                 (tx, _) <- createRegistry world >>= either (fail . show) pure
                 judged <- judge world tx
                 everyScriptAccepts judged `shouldBe` True
@@ -69,7 +81,7 @@ spec = do
             it
                 "mints the state token and the configuration token once each, and nothing else"
                 $ do
-                    world <- newCreation
+                    world <- newCreation >>= withPublicScripts
                     (tx, registry@(RegistryIdentity _ stateName)) <-
                         createRegistry world >>= either (fail . show) pure
                     mintedOf tx
@@ -80,7 +92,7 @@ spec = do
             it
                 "creates one configuration record at the request address, holding its token alone, with the parameters inline"
                 $ do
-                    world <- newCreation
+                    world <- newCreation >>= withPublicScripts
                     (tx, registry) <- createRegistry world >>= either (fail . show) pure
                     let policy = requestPolicy (crRequest world)
                         name = configurationTokenName registry
@@ -95,7 +107,7 @@ spec = do
             it
                 "pays its way: value is conserved, outputs hold their minimum, collateral is declared"
                 $ do
-                    world <- newCreation
+                    world <- newCreation >>= withPublicScripts
                     (tx, _) <- createRegistry world >>= either (fail . show) pure
                     soundnessProblems world tx `shouldReturn` []
 
@@ -103,14 +115,14 @@ spec = do
         it
             "the request validator refuses once the record sits at another address"
             $ do
-                world <- newCreation
+                world <- newCreation >>= withPublicScripts
                 (tx, registry) <- createRegistry world >>= either (fail . show) pure
                 refused world (moveRecord world registry tx)
 
         it
             "the request validator refuses once its redeemer names another seed"
             $ do
-                world <- newCreation
+                world <- newCreation >>= withPublicScripts
                 (tx, _) <- createRegistry world >>= either (fail . show) pure
                 refused world (mapRedeemers (otherSeed (txInOf '9' 9)) tx)
 
@@ -118,7 +130,7 @@ spec = do
         it
             "stops the build: the request validator refuses the creation, which one record passes"
             $ do
-                world <- newCreation
+                world <- newCreation >>= withPublicScripts
                 single <- createRegistry world
                 void single `shouldBe` Right ()
                 references <- requestReferences world

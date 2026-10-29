@@ -27,18 +27,22 @@ import Data.Either (isLeft)
 import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.Map.Strict qualified as Map
 import Data.Text qualified as Text
+import Data.Word (Word32)
 import Lens.Micro ((&), (.~), (^.))
 import PlutusCore.Data qualified as PLC
 import Test.Hspec
 
 import Cardano.Ledger.Address (Addr)
-import Cardano.Ledger.Api.PParams (ppMaxTxSizeL)
+import Cardano.Ledger.Alonzo.TxWits (Redeemers (..))
+import Cardano.Ledger.Api.PParams (ppMaxTxExUnitsL, ppMaxTxSizeL)
+import Cardano.Ledger.Api.Tx (witsTxL)
 import Cardano.Ledger.Api.Tx.Out
     ( addrTxOutL
     , coinTxOutL
     , datumTxOutL
     , valueTxOutL
     )
+import Cardano.Ledger.Api.Tx.Wits (rdmrsTxWitsL)
 import Cardano.Ledger.Binary (serialize)
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
@@ -48,6 +52,7 @@ import Cardano.Ledger.Mary.Value
     , MaryValue (..)
     , MultiAsset (..)
     )
+import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import Cardano.Ledger.TxIn (TxIn)
 import Cardano.Slotting.Slot (SlotNo (..))
 import Cardano.Tx.Ledger (ConwayTx)
@@ -63,11 +68,18 @@ import Singular.Registry.RawChainFixture
     ( ChainFacts (..)
     , advanceChain
     )
+import Singular.Registry.Trace (Evaluation (..))
 import Singular.Registry.TrieState (RegistryIdentity (..))
 import Singular.Registry.TxBuilder.Internal (mkInlineDatum)
+import Singular.State.Batch
+    ( BatchSelection (..)
+    , largestFittingPrefix
+    )
 import Singular.State.Fold
-    ( SkipReason (..)
+    ( FoldResult (..)
+    , SkipReason (..)
     , SkippedHolder (..)
+    , buildFold
     , buildRegistrationFold
     , discoverPending
     , foldedRequests
@@ -80,7 +92,7 @@ import Singular.State.Records
     , foldRedeemer
     , stateDatum
     )
-import Singular.State.Refusal (Refusal (..))
+import Singular.State.Refusal (CapacityLimit (..), Refusal (..))
 import Singular.State.Script
     ( stateAddress
     , statePolicy
@@ -90,6 +102,214 @@ import Singular.State.StateWorld
 spec :: Spec
 spec = do
     describe "the largest fitting public batch" $ do
+        it "counts the evaluated larger probe as well as the selected batch" $ do
+            (rg, [one, two, _], _) <- prepareByteBoundary
+            -- Owned by this example and its serial sessions; no worker escapes.
+            evaluations <- newIORef []
+            let observed session =
+                    session
+                        { sessionEvaluated = \evaluation -> do
+                            modifyIORef' evaluations (<> [evaluation])
+                            sessionEvaluated session evaluation
+                        }
+                run named = withSession (rgWorld rg) $ \session ->
+                    expectBuilt
+                        =<< buildFold
+                            (observed session)
+                            (rgScript rg)
+                            standInApplication
+                            (rgRegistry rg)
+                            named
+                            (rgFolder rg)
+                            Nothing
+            _ <- run [one, two]
+            control <- readIORef evaluations
+            modifyIORef' evaluations (const [])
+            selected <- run []
+            allProbes <- readIORef evaluations
+            length control `shouldSatisfy` (> 0)
+            length allProbes `shouldSatisfy` (> length control)
+            all
+                ( \evaluation ->
+                    evalRedeemers evaluation > 0
+                        && evalFailed evaluation == 0
+                        && evalMemory evaluation > 0
+                        && evalSteps evaluation > 0
+                )
+                allProbes
+                `shouldBe` True
+            length (foldSelected selected) `shouldBe` 2
+
+        it
+            "counts the capped requests left and names the transaction's selection"
+            $ do
+                rg <- newRegistered
+                [low, high, middle] <-
+                    book
+                        rg
+                        'p'
+                        [ (bookedKey "low" processingDeadline){bkTip = 1_000_000}
+                        , (bookedKey "high" processingDeadline){bkTip = 3_000_000}
+                        , (bookedKey "middle" processingDeadline){bkTip = 2_000_000}
+                        ]
+                let skipped = txInOf 's' 0
+                addLive
+                    (rgWorld rg)
+                    [
+                        ( skipped
+                        , pendingOutput
+                            (rgRegistry rg)
+                            (bookedKey "at a key" processingDeadline)
+                            & addrTxOutL .~ rgBooker rg
+                        )
+                    ]
+                selected <- fitting rg (Just 2)
+                map pendingRef (foldSelected selected) `shouldBe` [high, middle]
+                map fst (foldedRequests (foldTransaction selected))
+                    `shouldBe` [high, middle]
+                foldLeft selected `shouldBe` 1
+                foldSkipped selected
+                    `shouldBe` [SkippedHolder skipped HeldAtKeyAddress]
+                length (foldSelected selected)
+                    + length (foldSkipped selected)
+                    + foldLeft selected
+                    `shouldBe` 4
+                foldBoundary selected `shouldBe` Nothing
+                low `shouldSatisfy` (`notElem` map pendingRef (foldSelected selected))
+                whole <- fitting rg Nothing
+                foldLeft whole `shouldBe` 0
+                foldBoundary whole `shouldBe` Nothing
+                length (foldSelected whole) `shouldBe` 3
+                named <- withSession (rgWorld rg) $ \session ->
+                    expectBuilt
+                        =<< buildFold
+                            session
+                            (rgScript rg)
+                            standInApplication
+                            (rgRegistry rg)
+                            [low, high, middle]
+                            (rgFolder rg)
+                            (Just 1)
+                map fst (foldedRequests (foldTransaction named))
+                    `shouldBe` [low, high, middle]
+                foldLeft named `shouldBe` 0
+
+        it "records the measured refusal at the next prefix" $ do
+            (rg, refs, limit) <- prepareByteBoundary
+            named <- foldNow rg refs
+            selected <- fitting rg Nothing
+            case named of
+                Left (CapacityExceeded boundary@(TransactionSize used allowed)) -> do
+                    allowed `shouldBe` limit
+                    used `shouldSatisfy` (> allowed)
+                    foldBoundary selected `shouldBe` Just boundary
+                other -> expectationFailure (show other)
+            foldLeft selected `shouldBe` 1
+            length (foldSelected selected) `shouldBe` 2
+
+        forM_ ["memory", "steps"] $ \dimension ->
+            it
+                ("checks actual aggregate " <> dimension <> " at the fitting boundary")
+                $ do
+                    rg <- newRegistered
+                    refs@[one, two, _] <-
+                        book
+                            rg
+                            'p'
+                            [ (bookedKey "one" processingDeadline){bkTip = 3_000_000}
+                            , (bookedKey "two" processingDeadline){bkTip = 2_000_000}
+                            , (bookedKey "three" processingDeadline){bkTip = 1_000_000}
+                            ]
+                    smaller <- expectBuilt =<< foldNow rg [one, two]
+                    larger <- expectBuilt =<< foldNow rg refs
+                    let units tx =
+                            let Redeemers rs = tx ^. witsTxL . rdmrsTxWitsL
+                            in  sum
+                                    [ if dimension == "memory" then toInteger m else toInteger s
+                                    | (_, ExUnits m s) <- Map.elems rs
+                                    ]
+                        limit = (units smaller + units larger) `div` 2
+                    units smaller `shouldSatisfy` (< units larger)
+                    advanceChain (worldChain (rgWorld rg)) $ \facts ->
+                        let ExUnits memory steps = csPParams facts ^. ppMaxTxExUnitsL
+                            limited =
+                                if dimension == "memory"
+                                    then ExUnits (fromInteger limit) steps
+                                    else ExUnits memory (fromInteger limit)
+                        in  facts{csPParams = csPParams facts & ppMaxTxExUnitsL .~ limited}
+                    control <- expectBuilt =<< foldNow rg [one, two]
+                    judge (rgWorld rg) control >>= (`shouldSatisfy` everyScriptAccepts)
+                    selected <- fitting rg Nothing
+                    map pendingRef (foldSelected selected) `shouldBe` [one, two]
+                    case foldBoundary selected of
+                        Just (ExecutionMemory used allowed)
+                            | dimension == "memory" ->
+                                (used > allowed, allowed) `shouldBe` (True, limit)
+                        Just (ExecutionSteps used allowed)
+                            | dimension == "steps" ->
+                                (used > allowed, allowed) `shouldBe` (True, limit)
+                        other -> expectationFailure (show other)
+
+        forM_ ["memory", "steps"] $ \dimension ->
+            it
+                ( "names genuine CEK "
+                    <> dimension
+                    <> " exhaustion without shortening a named batch"
+                )
+                $ do
+                    rg <- newRegistered
+                    refs <- book rg 'p' [bookedKey "one" processingDeadline]
+                    control <- expectBuilt =<< foldNow rg refs
+                    judge (rgWorld rg) control >>= (`shouldSatisfy` everyScriptAccepts)
+                    advanceChain (worldChain (rgWorld rg)) $ \facts ->
+                        let ExUnits memory steps = csPParams facts ^. ppMaxTxExUnitsL
+                            limited = if dimension == "memory" then ExUnits 1 steps else ExUnits memory 1
+                        in  facts{csPParams = csPParams facts & ppMaxTxExUnitsL .~ limited}
+                    named <- foldNow rg refs
+                    case named of
+                        Left (CapacityExceeded (ExecutionMemory used 1)) | dimension == "memory" -> used `shouldSatisfy` (> 1)
+                        Left (CapacityExceeded (ExecutionSteps used 1)) | dimension == "steps" -> used `shouldSatisfy` (> 1)
+                        other -> expectationFailure (show other)
+
+        it "tries every longer prefix even when build cost is not monotone" $ do
+            let build xs =
+                    pure $
+                        if length xs `elem` [2, 4]
+                            then Right (length xs)
+                            else
+                                Left (CapacityExceeded (TransactionSize (toInteger (length xs)) 0))
+            result <- largestFittingPrefix build Nothing [1 :: Int .. 5]
+            result
+                `shouldBe` Right (BatchSelection [1, 2, 3, 4] 1 4 (Just (TransactionSize 5 0)))
+            capped <- largestFittingPrefix build (Just 3) [1 :: Int .. 5]
+            capped
+                `shouldBe` Right (BatchSelection [1, 2] 3 2 (Just (TransactionSize 3 0)))
+
+        it
+            "refuses an empty selection or exhausted singleton instead of building zero requests"
+            $ do
+                let emptyBuild _ = pure (Right () :: Either Refusal ())
+                    noFit _ =
+                        pure
+                            (Left (CapacityExceeded (ExecutionMemory 2 1)) :: Either Refusal ())
+                largestFittingPrefix emptyBuild Nothing ([] :: [Int])
+                    `shouldReturn` Left NothingToFold
+                largestFittingPrefix emptyBuild (Just 0) [1 :: Int]
+                    `shouldReturn` Left NothingToFold
+                largestFittingPrefix noFit Nothing [1 :: Int]
+                    `shouldReturn` Left (CapacityExceeded (ExecutionMemory 2 1))
+
+        forM_
+            [ ProcessingWindowClosed
+            , BuildFailed "TxSizeExceeded is only message text"
+            , DuplicateKey "same"
+            ]
+            $ \refusal ->
+                it ("preserves a noncapacity refusal: " <> show refusal) $ do
+                    let build xs = pure $ if length xs == 3 then Left refusal else Right ()
+                    result <- largestFittingPrefix build Nothing [1 :: Int .. 3]
+                    result `shouldBe` Left refusal
+
         it "orders by the folder's take, independently of provider order" $ do
             rg <- newRegistered
             [low, high, middle] <-
@@ -105,17 +325,18 @@ spec = do
                 map fst (foldedRequests tx) `shouldBe` [high, middle, low]
 
         it
-            "breaks equal takes by output reference, even when served backwards" $ do
-            rg <- newRegistered
-            refs <-
-                book
-                    rg
-                    'p'
-                    [ bookedKey "one" processingDeadline
-                    , bookedKey "two" processingDeadline
-                    ]
-            tx <- discoverWithOrder rg True
-            map fst (foldedRequests tx) `shouldBe` refs
+            "breaks equal takes by output reference, even when served backwards"
+            $ do
+                rg <- newRegistered
+                refs <-
+                    book
+                        rg
+                        'p'
+                        [ bookedKey "one" processingDeadline
+                        , bookedKey "two" processingDeadline
+                        ]
+                tx <- discoverWithOrder rg True
+                map fst (foldedRequests tx) `shouldBe` refs
 
         it "folds the greatest prefix that builds at a measured byte boundary" $ do
             (rg, [high, middle, _], _) <- prepareByteBoundary
@@ -124,14 +345,15 @@ spec = do
             judge (rgWorld rg) tx >>= (`shouldSatisfy` everyScriptAccepts)
 
         it
-            "refuses an oversized named batch without trimming and names the byte limit" $ do
-            (rg, refs, limit) <- prepareByteBoundary
-            namedOutcome <- foldNow rg refs
-            namedOutcome `shouldSatisfy` isLeft
-            show namedOutcome
-                `shouldSatisfy` (Text.isInfixOf "size" . Text.toLower . Text.pack)
-            show namedOutcome
-                `shouldSatisfy` (Text.isInfixOf (Text.pack (show limit)) . Text.pack)
+            "refuses an oversized named batch without trimming and names the byte limit"
+            $ do
+                (rg, refs, limit) <- prepareByteBoundary
+                namedOutcome <- foldNow rg refs
+                namedOutcome `shouldSatisfy` isLeft
+                show namedOutcome
+                    `shouldSatisfy` (Text.isInfixOf "size" . Text.toLower . Text.pack)
+                show namedOutcome
+                    `shouldSatisfy` (Text.isInfixOf (Text.pack (show limit)) . Text.pack)
 
         it "keeps a deadline refusal instead of treating it as capacity" $ do
             rg <- newRegistered
@@ -747,6 +969,18 @@ prepareByteBoundary = do
     control <- expectBuilt =<< foldNow rg [high, middle]
     judge (rgWorld rg) control >>= (`shouldSatisfy` everyScriptAccepts)
     pure (rg, refs, limit)
+
+fitting :: Registered -> Maybe Word32 -> IO FoldResult
+fitting rg cap = withSession (rgWorld rg) $ \session ->
+    expectBuilt
+        =<< buildFold
+            session
+            (rgScript rg)
+            standInApplication
+            (rgRegistry rg)
+            []
+            (rgFolder rg)
+            cap
 
 -- | Change only the served order, preserving the exact outputs and evidence.
 discoverWithOrder :: Registered -> Bool -> IO ConwayTx

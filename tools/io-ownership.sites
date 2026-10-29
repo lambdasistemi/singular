@@ -322,9 +322,9 @@ offchain/test/Singular/Registry/WaitSpec.hs spec newIORef 2
 offchain/test/Singular/Registry/WaitSpec.hs spec readIORef 2
 offchain/test/Singular/Registry/WaitSpec.hs spec withAsync 1
 offchain/test/Singular/Registry/WaitSpec.hs spec writeIORef 2
-offchain/test/Singular/State/StateFoldSpec.hs spec modifyIORef' 1
-offchain/test/Singular/State/StateFoldSpec.hs spec newIORef 1
-offchain/test/Singular/State/StateFoldSpec.hs spec readIORef 1
+offchain/test/Singular/State/StateFoldSpec.hs spec modifyIORef' 3
+offchain/test/Singular/State/StateFoldSpec.hs spec newIORef 2
+offchain/test/Singular/State/StateFoldSpec.hs spec readIORef 3
 offchain/test/local-services-record/ConfirmationProbe.hs probeConfirmation modifyIORef' 1
 offchain/test/local-services-record/ConfirmationProbe.hs probeConfirmation newIORef 2
 offchain/test/local-services-record/ConfirmationProbe.hs probeConfirmation readIORef 2

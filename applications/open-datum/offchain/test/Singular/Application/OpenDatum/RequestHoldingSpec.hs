@@ -86,7 +86,7 @@ withHoldingIn
     -> (Creation -> RegistryIdentity -> TxIn -> TxOut ConwayEra -> IO ())
     -> IO ()
 withHoldingIn makeWorld action = do
-    world <- makeWorld
+    world <- makeWorld >>= withPublicScripts
     registry <- created world
     booking <-
         expectBuilt

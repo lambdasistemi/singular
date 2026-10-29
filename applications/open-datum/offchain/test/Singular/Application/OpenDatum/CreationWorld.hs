@@ -19,6 +19,7 @@ module Singular.Application.OpenDatum.CreationWorld
       Creation (..)
     , newCreation
     , newCreationFor
+    , withPublicScripts
     , withSession
     , applyTx
     , setSlot
@@ -76,6 +77,7 @@ import Cardano.Ledger.BaseTypes (Inject (..), TxIx (..))
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
 import Cardano.Ledger.Conway.TxBody (treasuryDonationTxBodyL)
+import Cardano.Ledger.Core (hashScript)
 import Cardano.Ledger.Credential (Credential (..))
 import Cardano.Ledger.Keys (KeyHash (..))
 import Cardano.Ledger.Mary.Value (AssetName, MaryValue (..), PolicyID)
@@ -137,6 +139,11 @@ import Singular.Registry.SyntheticTime (syntheticTime)
 import Singular.Registry.TrieState (RegistryIdentity)
 import Singular.Registry.TxBuilder.BookingFixture (preprodParams)
 import Singular.State.Genesis (buildGenesis)
+import Singular.State.Publication
+    ( Publication (..)
+    , References (..)
+    , planNextReference
+    )
 import Singular.State.Refusal qualified as State
 import Singular.State.Script
     ( ScriptSource (..)
@@ -202,6 +209,39 @@ newCreationFor booker folder = do
             , crFolder = folder
             , crSeed = seedIn
             }
+
+{- | Publish the two scripts in separate bounded transactions, preserving the
+creation seed, then use the observed live copies. Attaching both scripts to a
+composed transaction exceeds the real network's byte limit.
+-}
+withPublicScripts :: Creation -> IO Creation
+withPublicScripts world = do
+    References live publication <- withSession world $ \session ->
+        planNextReference
+            [crSeed world]
+            session
+            (crBooker world)
+            [ssScript (crState world), rsScript (crRequest world)]
+            >>= either (fail . show) pure
+    case publication of
+        Just planned -> do
+            problems <- soundnessProblems world (publicationTx planned)
+            if null problems then pure () else fail (show problems)
+            applyTx world (publicationTx planned)
+            withPublicScripts world
+        Nothing -> do
+            let reference script =
+                    maybe
+                        (fail "no public script copy")
+                        (pure . Referenced . fst)
+                        (lookup (hashScript script) live)
+            stateSource <- reference (ssScript (crState world))
+            requestSource <- reference (rsScript (crRequest world))
+            pure
+                world
+                    { crState = (crState world){ssSource = stateSource}
+                    , crRequest = (crRequest world){rsSource = requestSource}
+                    }
 
 -- | Acquire one session of the chain and use it.
 withSession :: Creation -> (Session NoWitness IO -> IO a) -> IO a
