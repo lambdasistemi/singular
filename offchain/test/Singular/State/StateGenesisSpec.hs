@@ -45,6 +45,7 @@ import Cardano.Tx.Ledger (ConwayTx)
 
 import Singular.Registry.TrieState (RegistryIdentity (..))
 import Singular.Registry.TxBuilder.Internal (mkInlineDatum)
+import Singular.State.Assemble (assembleTransaction)
 import Singular.State.Genesis (buildGenesis)
 import Singular.State.Records (genesisRedeemer, stateDatum)
 import Singular.State.Refusal (Refusal (..))
@@ -208,6 +209,19 @@ spec = do
                             >>= expectBuilt
                 needed <- ledgerMinimumFee (scWorld sc) tx
                 (needed, feeOf tx) `shouldSatisfy` uncurry (<=)
+
+        it "covers the reference script carried by an ordinary spent input" $ do
+            sc <- creation
+            let ref = txInOf '8' 0
+                holder = referenceHolder (scPayer sc) applicationCode
+            addLive (scWorld sc) [(ref, holder)]
+            tx <- withSession (scWorld sc) $ \session ->
+                assembleTransaction session [(ref, holder)] [] (scPayer sc) (pure ())
+                    >>= expectBuilt
+            inputsOf tx `shouldContain` [ref]
+            needed <- ledgerMinimumFee (scWorld sc) tx
+            needed `shouldSatisfy` (> 0)
+            (needed, feeOf tx) `shouldSatisfy` uncurry (<=)
 
     describe "the builder declines before it builds" $ do
         it "a seed that the payer does not hold" $ do

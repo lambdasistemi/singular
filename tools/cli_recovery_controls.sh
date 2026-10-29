@@ -567,6 +567,13 @@ if part state-line || part holding-update || part holding-terminate || part term
       "$devnet" spend-reference --tx-in "$ref" --wallet-skey "$key" "${node[@]}" >"$receipts/$name.json"
       output="$(field "$name" .control.output)"
       sp_view "$name" "${output%#*}"
+      clause "the ordinary reference spend covers the script fee and is included unchanged" \
+        check_shared_spent_reference_fee "$receipts/$name.json" "$receipts/$name.chain.json"
+      jq '.builder.fee = (.requiredFee - 1) | .control.fee = .builder.fee' "$receipts/$name.json" >"$receipts/$name.low-fee.json"
+      jq --argjson fee "$(jq '.builder.fee' "$receipts/$name.low-fee.json")" '.fee = $fee' \
+        "$receipts/$name.chain.json" >"$receipts/$name.low-fee.chain.json"
+      clause "a reference spend below the ledger minimum is refused by the same check" \
+        sp_refuses check_shared_spent_reference_fee "$receipts/$name.low-fee.json" "$receipts/$name.low-fee.chain.json"
     }
     sp_steps() { is_equal "$(field "$1" '[.submissions[].step] | tojson')" "$2"; }
     sp_scripts() { is_equal "$(field "$1" '[.scripts[].outcome] | tojson')" "$2"; }

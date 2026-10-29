@@ -82,3 +82,22 @@ for tx in transactions:
 print(f"funding conserved: {len(transactions)} transactions, {len(spent)} distinct inputs")
 PY
 }
+
+check_shared_spent_reference_fee() { # SPEND-RECEIPT INCLUDED-TRANSACTION
+  shared_check_result "${FUNCNAME[0]}" jq -e -n --slurpfile receipt "$1" --slurpfile chain "$2" '
+    $receipt[0] as $r | $chain[0] as $t
+    | ($r.scriptBytes | type) == "number" and $r.scriptBytes > 0
+    and ($r.requiredFee | type) == "number" and $r.requiredFee > 0
+    and ($r.builder.fee | type) == "number" and $r.builder.fee >= $r.requiredFee
+    and $r.builderRefusal == null and $r.control == $r.builder
+    and ($r.builder.output | type) == "string"
+    and ($r.builder.output | split("#")[0]) == $t.id
+    and $r.builder.fee == $t.fee
+    and any($t.inputs[]; .ref == $r.input)
+    and ([$t.inputs[] | select(.ref == $r.input) | .referenceScript.sizeBytes] | add) == $r.scriptBytes
+    and ($r.underpriced.fee | type) == "number"
+    and ($r.underpricedRequiredFee | type) == "number"
+    and $r.underpriced.fee < $r.underpricedRequiredFee
+    and ($r.underpricedRefusal | type) == "string"
+    and ($r.underpricedRefusal | contains("FeeTooSmallUTxO"))'
+}

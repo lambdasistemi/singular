@@ -571,6 +571,13 @@ run_as carol spend-application-reference "$devnet" spend-reference --tx-in "$app
 }
 spent_control_output="$(field spend-application-reference .control.output)"
 view_tx spend-application-reference "${spent_control_output%#*}"
+check "the ordinary builder prices the script carried by the spent input and the node accepts that exact transaction" \
+  check_shared_spent_reference_fee "$receipts/spend-application-reference.json" "$chain_dir/spend-application-reference.tx.json"
+jq '.builder.fee = (.requiredFee - 1) | .control.fee = .builder.fee' "$receipts/spend-application-reference.json" >"$scratch/underpriced-reference-spend.json"
+jq --argjson fee "$(jq '.builder.fee' "$scratch/underpriced-reference-spend.json")" '.fee = $fee' \
+  "$chain_dir/spend-application-reference.tx.json" >"$scratch/underpriced-reference-chain.json"
+control "a spent-reference fee below the ledger minimum is refused by the same check" \
+  check_shared_spent_reference_fee "$scratch/underpriced-reference-spend.json" "$scratch/underpriced-reference-chain.json"
 view_unspent after-reference-spend
 check "the reference output was spent on chain" \
   spends_ref "$chain_dir/spend-application-reference.tx.json" "$application_reference"
