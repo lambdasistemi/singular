@@ -152,7 +152,7 @@
         };
 
         # The state validator's owners document themselves (#271): every
-        # module under validators/registry/ and state.ak carries the four
+        # module under lib/singular_state/ and singular_state.ak carries the four
         # module-doc sections, and every public declaration and validator a
         # doc comment. Checked twice — on the source, and on the reference
         # the pinned `aiken docs` generates from it — over an extent
@@ -192,10 +192,6 @@
           '';
         };
 
-        # (Haskell block deleted: project, components, haskellChecks,
-        #  haskellApps, test-vectors, test-vectors-json all move to
-        #  offchain/flake.nix. Breaks 2-4.)
-
         # Aiken-side checks. Exposed so CI can build them via
         # `.#checks.<sys>.<name>` like the Haskell checks, instead
         # of falling back to `nix develop .#aiken --command aiken …`.
@@ -223,13 +219,6 @@
         # validator set, so a validator added or removed cannot pass
         # silently, and a manifest or blueprint with zero validators is
         # a failure rather than a vacuous pass.
-        # Slice 5 split (#528 S5.3): the permanent contract's registry
-        # record holds three scripts with unchanged hashes, derived here
-        # from the registry blueprint alone. tools/m1_identity.py with
-        # --blueprint regenerates and compares only the registry record
-        # and the registry Permanent module, which names only registry
-        # scripts. The application's own record and module are derived
-        # separately in its own flake from its own blueprint alone.
         script-identity =
           pkgs.runCommand "mpf-script-identity-check"
             {
@@ -239,7 +228,6 @@
               ];
               blueprint = plutus-blueprint;
               manifest = scriptIdentityManifest;
-              witnessSource = ./lib/registry_pin.ak;
             }
             ''
               set -euo pipefail
@@ -276,40 +264,7 @@
                 printf '%s\n' "$problems" >&2
                 exit 1
               fi
-              # #177 I177-COPIES: the registry pin, enforced here
-              # rather than left to whichever devnet row next moves a token.
-              #
-              # `registry_pin.ak` names the state script's hash as a CONSTANT —
-              # Aiken cannot name a validator's own hash, and deriving it
-              # from the `registry` parameter would admit a witness
-              # parametrised against a fabricated script. A stale constant
-              # is silent at compile time and costs a whole devnet run to
-              # discover (muse finding F1).
-              #
-              # So the source pin is read out of the file and required to
-              # EQUAL the `state.state.spend` hash of the blueprint this
-              # derivation just built. Both sides fail closed: a pin that
-              # cannot be read at all, and a blueprint with no
-              # `state.state.spend`, are failures rather than a vacuous
-              # match.
-              pin="$(sed -n 's/^  #"\([0-9a-f]\{56\}\)"$/\1/p' "$witnessSource" | head -n1)"
-              if [ -z "$pin" ]; then
-                echo "FAIL: no registryStateHash pin found in registry_pin.ak" >&2
-                exit 1
-              fi
-              built="$(jq -r '.validators[] | select(.title == "state.state.spend") | .hash' "$blueprint")"
-              if [ -z "$built" ] || [ "$built" = "null" ]; then
-                echo "FAIL: the built blueprint carries no state.state.spend validator" >&2
-                exit 1
-              fi
-              if [ "$pin" != "$built" ]; then
-                echo "script-identity check FAILED:" >&2
-                echo "FAIL: registry_pin.ak pins the registry state hash at $pin, the built state.state.spend is $built" >&2
-                exit 1
-              fi
-              echo "script-identity: registry_pin.ak pin $pin equals the built state.state.spend"
-              python3 ${../tools/m1_identity.py} --root ${../.} --blueprint "$blueprint" --check
-              echo "script-identity: OK — $(jq '.validators | length' "$manifest") registry validators pinned, manifest matches the built blueprint (compiler $(jq -r '.compiler' "$manifest")); registry Permanent module fresh"
+              echo "script-identity: OK — $(jq '.validators | length' "$manifest") registry validators pinned, manifest matches the built blueprint (compiler $(jq -r '.compiler' "$manifest"))"
               touch $out
             '';
 
@@ -381,7 +336,7 @@
               padded="$(mktemp)"
               jq --argjson limit "$limit" '
                 .validators |= map(
-                  if .title == "state.state.spend" then
+                  if .title == "singular_state.singular_state.spend" then
                     .compiledCode += ("00" * ([$limit + 1 - (.compiledCode | length / 2), 1] | max))
                   else . end)
               ' "$blueprint" > "$padded"
@@ -393,41 +348,8 @@
               touch $out
             '';
 
-        # #528 S5.1 split, A-005 (S5-1d-r1): the full permanent M1 boundary
-        # evaluated registry and split-suite contexts together (the checker
-        # with both context files). The split-suite contexts moved with the
-        # S5.1 file moves to the split tree, so the full evaluation cannot
-        # run here until S5.2 reinstates it over the merged deployment
-        # blueprint (same script, same context generation, nothing
-        # weakened, nothing dropped — S5.2 proof row). The registry's
-        # contexts (still in this tree) run on the registry blueprint
-        # alone, so they stay in this flake's check set now as
-        # `permanent-boundary-registry` (`--registry-only`); until S5.2 no
-        # run counts this reduced set as equal coverage of the original
-        # full boundary.
-        permanent-boundary-registry = pkgs.stdenv.mkDerivation {
-          pname = "permanent-m1-compiled-boundary-registry";
-          version = "0.1.0";
-          src = pkgs.lib.cleanSource ./.;
-          nativeBuildInputs = [
-            pkgs.aiken
-            pkgs.python3
-          ];
-          buildPhase = ''
-            ${aikenPrelude}
-            aiken check -m 'permanent_boundary.{..}' --seed 505 > contexts.json
-            python3 ${../tools/m1_boundary.py} \
-              --blueprint ${plutus-blueprint} --contexts contexts.json \
-              --registry-only \
-              --aiken ${pkgs.aiken}/bin/aiken --receipts-dir receipts
-          '';
-          installPhase = ''
-            mkdir -p "$out"
-            cp -r receipts contexts.json "$out/"
-          '';
-        };
         scriptIdentityChecks = {
-          inherit script-identity reference-publication-size permanent-boundary-registry;
+          inherit script-identity reference-publication-size;
         };
 
         # The Aiken dev shell, bound once so `default` and the

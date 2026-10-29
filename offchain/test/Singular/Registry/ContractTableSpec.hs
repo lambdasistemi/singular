@@ -15,8 +15,6 @@ These cases hold what a refusal says from it, and what keeps it complete:
   the URL of the newest, or says what is not known;
 * a table that lists a hash twice, a release out of order or a hash that is not
   28 bytes is refused as a file;
-* the packaged table holds the state-contract hash of the blueprint being
-  built, and the same check, run on the table with that row removed, fails.
 -}
 module Singular.Registry.ContractTableSpec (spec) where
 
@@ -35,7 +33,6 @@ import System.Environment (lookupEnv, setEnv, unsetEnv)
 import System.IO.Temp (withSystemTempDirectory)
 import Test.Hspec
 
-import Singular.CLI.Permanent (knownScripts)
 import Singular.Registry.ContractTable
     ( ApplicationIdentity (..)
     , ContractTable
@@ -266,22 +263,6 @@ packagedRows = describe "the packaged table" $ do
         loadContractTable >>= \case
             Left why -> expectationFailure (T.unpack why)
             Right table -> tableRows table `shouldSatisfy` (not . null)
-    it "holds the state-contract hash of the blueprint being built" $
-        withPackaged $ \table ->
-            holdsPinned table `shouldBe` True
-    it
-        "fails the same check when the row of that hash is removed, the control"
-        $ withPackaged
-        $ \table ->
-            case parseContractTable
-                ( tableTextHex
-                    [ (hexOf hash, tags)
-                    | (hash, tags) <- tableRows table
-                    , hash /= pinnedHash
-                    ]
-                ) of
-                Left why -> expectationFailure (T.unpack why)
-                Right without -> holdsPinned without `shouldBe` False
     it "lists every release once, under the one hash that carries it" $
         withPackaged $ \table -> do
             let tags = concatMap snd (tableRows table)
@@ -293,16 +274,3 @@ packagedRows = describe "the packaged table" $ do
   where
     withPackaged use =
         loadContractTable >>= either (expectationFailure . T.unpack) use
-    hexOf = T.pack . BC.unpack . B16.encode
-    holdsPinned table =
-        contractsOf table pinnedHash /= NoKnownRelease
-
--- | The state-contract hash the programs pin: the one the blueprint being built has.
-pinnedHex :: Text
-pinnedHex = case lookup "state.state" knownScripts of
-    Just hex -> hex
-    Nothing -> error "ContractTableSpec: the programs pin no state contract"
-
-pinnedHash :: ByteString
-pinnedHash =
-    fromRight mempty (B16.decode (BC.pack (T.unpack pinnedHex)))

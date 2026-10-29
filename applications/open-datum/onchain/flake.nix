@@ -157,13 +157,12 @@
           # The blueprint build reads every module `aiken build`
           # type-checks, and `aiken build` type-checks the whole project
           # including its tests — but the composed
-          # `validators/open_datum.tests.ak` and
           # `validators/open_datum_requests_termination_composed.tests.ak`
-          # call the registry's state validators, which no dependent project
+          # calls the registry's state validator, which no dependent project
           # can import (a dependent sees only the dependency's lib/ modules).
-          # The production build filters exactly these two non-validator
-          # files out of its source; the committed tree keeps them,
-          # `aiken fmt` still visits them, and their tests run only in the
+          # The production build filters this non-validator
+          # file out of its source; the committed tree keeps it,
+          # `aiken fmt` still visits it, and its tests run in the
           # composed assembly below. The
           # blueprint still holds the application's validators only.
           # (Consequence: a bare `aiken build` in a dev shell, over the
@@ -178,7 +177,6 @@
               && !(
                 type == "regular"
                 && builtins.elem (baseNameOf (toString path)) [
-                  "open_datum.tests.ak"
                   "open_datum_requests_termination_composed.tests.ak"
                 ]
               );
@@ -242,7 +240,8 @@
         # and sorted by title for a deterministic document; definitions
         # merged with `*` after refusing any overlapping definition that
         # differs (today the 4 shared primitives are byte-identical) and
-        # refusing duplicate validator titles — a merge that cannot fail
+        # Generated display titles may differ; other schema fields must agree.
+        # Duplicate validator titles are refused — a merge that cannot fail
         # guards nothing.
         open-datum-blueprint =
           pkgs.runCommand "open-datum-deployment-blueprint"
@@ -253,12 +252,15 @@
             }
             ''
               set -euo pipefail
-              overlap_diff="$(jq -r -n --slurpfile r "$registryBlueprint" --slurpfile a "$appBlueprint" '
+              overlap_differences() {
+                jq -r -n --slurpfile r "$1" --slurpfile a "$2" '
                 ($r[0].definitions | keys[]) as $k
                 | select($a[0].definitions | has($k))
-                | select($r[0].definitions[$k] != $a[0].definitions[$k])
+                | select(($r[0].definitions[$k] | del(.title)) != ($a[0].definitions[$k] | del(.title)))
                 | "DIFFER: \($k)"
-              ')" || {
+                '
+              }
+              overlap_diff="$(overlap_differences "$registryBlueprint" "$appBlueprint")" || {
                 echo "open-datum-blueprint: jq could not compare definitions" >&2
                 exit 1
               }
@@ -267,6 +269,16 @@
                 printf '%s\n' "$overlap_diff" >&2
                 exit 1
               fi
+              # A generated display title may differ; the schema must agree.
+              work=$(mktemp -d)
+              trap 'rm -rf "$work"' EXIT
+              jq -e '.definitions.ByteArray.dataType == "bytes"' "$appBlueprint" >/dev/null
+              jq '.definitions.ByteArray.dataType = "integer"' "$appBlueprint" > "$work/changed.json"
+              changed="$(overlap_differences "$registryBlueprint" "$work/changed.json")"
+              [ "$changed" = "DIFFER: ByteArray" ] || {
+                echo "open-datum-blueprint: schema difference control was missed" >&2
+                exit 1
+              }
               dup_titles="$(jq -r -s '
                 (.[0].validators + .[1].validators) | map(.title) | group_by(.) | map(select(length > 1) | .[0]) | .[]
               ' "$registryBlueprint" "$appBlueprint")" || {
@@ -323,9 +335,6 @@
         # manifest and a manifest entry with no counterpart all fail,
         # naming the validator and both hashes. A manifest or blueprint
         # with zero validators is a failure rather than a vacuous pass.
-        # The application's permanent record is derived
-        # here from the application's blueprint alone (never the registry's
-        # record); the registry side is derived separately in onchain/.
         script-identity =
           pkgs.runCommand "open-datum-script-identity-check"
             {
@@ -371,8 +380,7 @@
                 printf '%s\n' "$problems" >&2
                 exit 1
               fi
-              python3 ${../../../tools/m1_identity.py} --root ${../../../.} --application-blueprint "$blueprint" --check
-              echo "script-identity: OK — $(jq '.validators | length' "$manifest") open-datum validators pinned, manifest matches the built blueprint (compiler $(jq -r '.compiler' "$manifest")); application permanent contract fresh"
+              echo "script-identity: OK — $(jq '.validators | length' "$manifest") open-datum validators pinned, manifest matches the built blueprint (compiler $(jq -r '.compiler' "$manifest"))"
               touch $out
             '';
 
@@ -380,20 +388,8 @@
         # Open-datum Aiken tests, composed assembly (A-002)
         # -------------------------------------------------------
 
-        # The application's tests call the registry's state validator
-        # (`state.state.spend`), which a dependent Aiken project cannot
-        # import (a dependent sees only the dependency's lib/ modules).
-        # So the tests run neither as `aiken check` over this project
-        # alone nor as a second copy in the repository: the runner below
-        # assembles, in a scratch directory that is never committed, the
-        # registry Aiken project (validators/ and lib/ as committed) plus
-        # this application's whole validators/ directory as committed
-        # (open_datum.ak, application/envelope.ak, open_datum.tests.ak, text
-        # verbatim — the five `state.*` call sites stay as they are — and
-        # the request validator with its modules, fixtures and tests, which
-        # import only the registry's lib/ modules), and runs `aiken check`
-        # there. The assembly is read from the two trees at build time; no
-        # copy of either side lives in the repository.
+        # Compose the registry and application test sources once so tests can
+        # call both validators; dependencies remain staged from pinned inputs.
         open-datum-aiken-tests-runner = pkgs.writeShellApplication {
           name = "open-datum-aiken-tests";
           runtimeInputs = [
@@ -422,16 +418,8 @@
           '';
         };
 
-        # The check runs the runner and requires its log to name the
-        # application's suite (a run that never executed the moved tests
-        # is a failure, not a pass) and to name a closed refusal row (a run
-        # that never executed the closed rows is a failure, not a pass) and
-        # to name each suite of the request validator (a run that never
-        # executed one is a failure, not a pass);
-        # then a control run over a scratch copy with one expected digest
-        # mutated must fail, and a second control run with the closed Update
-        # arm planted to accept must fail naming a closed refusal row — a
-        # checker that cannot fail does not guard anything.
+        # Every discovered application test suite must execute. The control
+        # changes a real configuration assertion and requires that test to fail.
         open-datum-aiken-tests =
           pkgs.runCommand "open-datum-aiken-tests"
             {
@@ -445,34 +433,29 @@
             ''
               set -euo pipefail
               ${pkgs.lib.getExe open-datum-aiken-tests-runner} >"$out" 2>&1 || { cat "$out"; exit 1; }
-              grep -q 'envelope_a_hashes_to_the_shared_digest' "$out" || {
-                echo "FAIL: the test assembly never executed the moved open-datum suite" >&2
-                exit 1
-              }
-              grep -q 'closed_update_refuses_every_payload' "$out" || {
-                echo "FAIL: the test assembly never executed the closed refusal rows" >&2
-                exit 1
-              }
-              for suite in configuration registration mint phases fold reclaim cleanup payments; do
-                grep -q "open_datum_requests_$suite.tests" "$out" || {
-                  echo "FAIL: the test assembly never executed the request validator suite $suite" >&2
+              count=0
+              for suite in ${appSrc}/validators/*.tests.ak; do
+                name="$(basename "$suite" .ak)"
+                grep -Fq "$name" "$out" || {
+                  echo "FAIL: the test assembly never executed $name" >&2
                   exit 1
                 }
+                count=$((count + 1))
               done
+              [ "$count" -gt 0 ] || { echo "FAIL: no application test suites" >&2; exit 1; }
               work="$(mktemp -d)"
               trap 'rm -rf "$work"' EXIT
-              mkdir -p "$work/mutant/validators/application" "$work/mutant/lib"
+              mkdir -p "$work/mutant/validators" "$work/mutant/lib"
               cp -r ${registrySrc}/validators/. "$work/mutant/validators/"
               cp -r ${registrySrc}/lib/. "$work/mutant/lib/"
               cp ${registrySrc}/aiken.toml "$work/mutant/aiken.toml"
               cp ${registrySrc}/aiken.lock "$work/mutant/aiken.lock"
-              cp ${appSrc}/validators/open_datum.ak "$work/mutant/validators/open_datum.ak"
-              cp ${appSrc}/validators/open_datum.tests.ak "$work/mutant/validators/open_datum.tests.ak"
-              cp ${appSrc}/validators/application/envelope.ak "$work/mutant/validators/application/envelope.ak"
+              cp -r ${appSrc}/validators/. "$work/mutant/validators/"
               chmod -R u+w "$work/mutant"
-              sed -i 's|04594ee38435664066a45633a4b4c0963e9922cc70ce7ba221f8805187220f91|04594ee38435664066a45633a4b4c0963e9922cc70ce7ba221f8805187220f92|' "$work/mutant/validators/open_datum.tests.ak"
-              grep -q '0f92' "$work/mutant/validators/open_datum.tests.ak" || {
-                echo "FAIL: the mutant plant did not apply" >&2
+              test_file="$work/mutant/validators/open_datum_requests_configuration.tests.ak"
+              sed -i 's/\.policy == application_policy/.policy != application_policy/' "$test_file"
+              grep -q '\.policy != application_policy' "$test_file" || {
+                echo "FAIL: the configuration assertion plant did not apply" >&2
                 exit 2
               }
               mkdir -p "$work/mutant/build/packages"
@@ -481,108 +464,16 @@
               cp -r ${fuzz} "$work/mutant/build/packages/aiken-lang-fuzz"
               cp -r ${merkle-patricia-forestry} "$work/mutant/build/packages/aiken-lang-merkle-patricia-forestry"
               chmod -R u+w "$work/mutant/build/packages"
-              if (cd "$work/mutant" && aiken check >mutant.log 2>&1); then
-                echo "FAIL: the test assembly accepted a mutant with a wrong expected digest" >&2
+              if (cd "$work/mutant" && aiken check -m 'open_datum_requests_configuration.the_token_of_a_registry_is_under_the_application_policy' >mutant.log 2>&1); then
+                echo "FAIL: the test assembly accepted a wrong configuration assertion" >&2
                 exit 1
               fi
-              grep -q 'envelope_a_hashes_to_the_shared_digest' "$work/mutant/mutant.log" || {
-                echo "FAIL: the mutant run failed without executing the mutated test" >&2
+              grep -q 'the_token_of_a_registry_is_under_the_application_policy' "$work/mutant/mutant.log" || {
+                echo "FAIL: the mutant run did not name the changed configuration test" >&2
                 cat "$work/mutant/mutant.log" >&2
                 exit 1
               }
-              echo "open-datum-aiken-tests: control refused the mutant" >&2
-              mkdir -p "$work/closed-mutant/validators/application" "$work/closed-mutant/lib"
-              cp -r ${registrySrc}/validators/. "$work/closed-mutant/validators/"
-              cp -r ${registrySrc}/lib/. "$work/closed-mutant/lib/"
-              cp ${registrySrc}/aiken.toml "$work/closed-mutant/aiken.toml"
-              cp ${registrySrc}/aiken.lock "$work/closed-mutant/aiken.lock"
-              cp ${appSrc}/validators/open_datum.ak "$work/closed-mutant/validators/open_datum.ak"
-              cp ${appSrc}/validators/open_datum.tests.ak "$work/closed-mutant/validators/open_datum.tests.ak"
-              cp ${appSrc}/validators/application/envelope.ak "$work/closed-mutant/validators/application/envelope.ak"
-              chmod -R u+w "$work/closed-mutant"
-              sed -i 's|traceFalse(@"closed-datum-update")|open_datum.spend(registry, datum, Update, own, tx)|' "$work/closed-mutant/validators/open_datum.ak"
-              grep -q 'open_datum.spend(registry, datum, Update, own, tx)' "$work/closed-mutant/validators/open_datum.ak" || {
-                echo "FAIL: the closed mutant plant did not apply" >&2
-                exit 2
-              }
-              mkdir -p "$work/closed-mutant/build/packages"
-              cp ${assemblyPackagesToml} "$work/closed-mutant/build/packages/packages.toml"
-              cp -r ${stdlib} "$work/closed-mutant/build/packages/aiken-lang-stdlib"
-              cp -r ${fuzz} "$work/closed-mutant/build/packages/aiken-lang-fuzz"
-              cp -r ${merkle-patricia-forestry} "$work/closed-mutant/build/packages/aiken-lang-merkle-patricia-forestry"
-              chmod -R u+w "$work/closed-mutant/build/packages"
-              if (cd "$work/closed-mutant" && aiken check >closed-mutant.log 2>&1); then
-                echo "FAIL: the test assembly accepted a mutant whose closed Update arm accepts" >&2
-                exit 1
-              fi
-              grep -q 'closed_update_refuses_every_payload' "$work/closed-mutant/closed-mutant.log" || {
-                echo "FAIL: the closed mutant run failed without naming a closed refusal test" >&2
-                cat "$work/closed-mutant/closed-mutant.log" >&2
-                exit 1
-              }
-              echo "open-datum-aiken-tests: control refused the closed mutant" >&2
-            '';
-
-        # -------------------------------------------------------
-        # Full M1 boundary over the merged blueprint (A-005 S5.2)
-        # -------------------------------------------------------
-
-        # The temporary registry-only boundary in onchain/flake.nix returns
-        # here to full coverage: registry contexts from the registry tree
-        # plus application contexts from the composed assembly (same seed,
-        # same suites as the split), evaluated together by the same
-        # tools/m1_boundary.py in default full mode against the merged
-        # deployment blueprint. Nothing weakened, nothing dropped; the
-        # fault control (excluded-admission artifact) runs as before.
-        permanent-boundary =
-          pkgs.runCommand "permanent-m1-compiled-boundary-full"
-            {
-              nativeBuildInputs = [
-                pkgs.aiken
-                pkgs.python3
-              ];
-              blueprint = open-datum-blueprint;
-            }
-            ''
-              set -euo pipefail
-              work="$(mktemp -d)"
-              trap 'rm -rf "$work"' EXIT
-              mkdir -p "$work/registry"
-              cp -r ${registrySrc}/validators "$work/registry/validators"
-              cp -r ${registrySrc}/lib "$work/registry/lib"
-              cp ${registrySrc}/aiken.toml "$work/registry/aiken.toml"
-              cp ${registrySrc}/aiken.lock "$work/registry/aiken.lock"
-              chmod -R u+w "$work/registry"
-              mkdir -p "$work/registry/build/packages"
-              cp ${assemblyPackagesToml} "$work/registry/build/packages/packages.toml"
-              cp -r ${stdlib} "$work/registry/build/packages/aiken-lang-stdlib"
-              cp -r ${fuzz} "$work/registry/build/packages/aiken-lang-fuzz"
-              cp -r ${merkle-patricia-forestry} "$work/registry/build/packages/aiken-lang-merkle-patricia-forestry"
-              chmod -R u+w "$work/registry/build/packages"
-              (cd "$work/registry" && aiken check -m 'permanent_boundary.{..}' --seed 505 > "$work/contexts.json")
-              mkdir -p "$work/assembly/validators/application" "$work/assembly/lib"
-              cp -r ${registrySrc}/validators/. "$work/assembly/validators/"
-              cp -r ${registrySrc}/lib/. "$work/assembly/lib/"
-              cp ${registrySrc}/aiken.toml "$work/assembly/aiken.toml"
-              cp ${registrySrc}/aiken.lock "$work/assembly/aiken.lock"
-              cp ${appSrc}/validators/open_datum.ak "$work/assembly/validators/open_datum.ak"
-              cp ${appSrc}/validators/open_datum.tests.ak "$work/assembly/validators/open_datum.tests.ak"
-              cp ${appSrc}/validators/application/envelope.ak "$work/assembly/validators/application/envelope.ak"
-              chmod -R u+w "$work/assembly"
-              mkdir -p "$work/assembly/build/packages"
-              cp ${assemblyPackagesToml} "$work/assembly/build/packages/packages.toml"
-              cp -r ${stdlib} "$work/assembly/build/packages/aiken-lang-stdlib"
-              cp -r ${fuzz} "$work/assembly/build/packages/aiken-lang-fuzz"
-              cp -r ${merkle-patricia-forestry} "$work/assembly/build/packages/aiken-lang-merkle-patricia-forestry"
-              chmod -R u+w "$work/assembly/build/packages"
-              (cd "$work/assembly" && aiken check -m 'open_datum.{..}' --seed 505 > "$work/application-contexts.json")
-              python3 ${../../../tools/m1_boundary.py} \
-                --blueprint "$blueprint" --contexts "$work/contexts.json" \
-                --application-contexts "$work/application-contexts.json" \
-                --aiken ${pkgs.aiken}/bin/aiken --receipts-dir receipts
-              mkdir -p "$out"
-              cp -r receipts "$out/receipts"
-              cp "$work/contexts.json" "$work/application-contexts.json" "$out/"
+              echo "open-datum-aiken-tests: changed configuration assertion refused" >&2
             '';
 
       in
@@ -590,7 +481,7 @@
         packages = {
           default = plutus-blueprint;
           inherit plutus-blueprint registry-blueprint open-datum-blueprint;
-          inherit script-identity permanent-boundary;
+          inherit script-identity;
         };
 
         checks = {
@@ -598,7 +489,6 @@
             aiken-fmt
             script-identity
             open-datum-aiken-tests
-            permanent-boundary
             ;
         };
 

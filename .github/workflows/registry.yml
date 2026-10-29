@@ -1,29 +1,5 @@
-# Registry cross-tree gates (A-002, D-005).
-#
-# This workflow enforces the two cross-tree relationships that neither
-# isolated flake can see (the trees are two self-contained flakes since
-# the two-flake split; a green `nix flake check` on either asserts
-# nothing about vector freshness, and nothing builds the blueprint
-# before the Haskell side consumes it):
-#
-#   1. the real vector comparison — the Haskell generator's output,
-#      formatted by the pinned Aiken, diffed against the committed
-#      golden `onchain/validators/cage_vectors.ak` (D-003/D-006);
-#   2. an explicit order — the Aiken blueprint build is a job of its
-#      own and the devnet end-to-end job runs only after it (`needs:`): if the
-#      blueprint cannot build, the expensive devnet job is skipped
-#      instead of failing later for the same reason. Freshness itself is
-#      NOT carried by the ordering edge: the e2e recipe builds
-#      ../onchain#plutus-blueprint itself and points REGISTRY_BLUEPRINT at
-#      that exact store path, so what the suite consumes is always the
-#      artifact built from the checked-out commit. `needs:` is the
-#      ordering and fail-fast; the recipe is the freshness guarantee.
-#
-# Every command below was executed on the worker host before this file
-# was written, with receipts (t31-recipes-ci handoffs/recipes-ci-report.md):
-#   - nix build --quiet --no-link --print-out-paths .#plutus-blueprint  (exit 0)
-#   - nix develop --quiet --command just vectors-check                  (exit 0, PASS)
-#   - nix develop --quiet --command just haskell-e2e                    (exit 0, 6/6)
+# Build the registry and application blueprints before their consumers.
+# Compare shared preimage vectors with their generated, pinned-Aiken form.
 name: Registry
 on:
   workflow_dispatch:
@@ -31,7 +7,6 @@ on:
     branches: [main]
     paths:
       - 'onchain/**'
-      - 'naming-onchain/**'
       - 'offchain/**'
       - 'applications/**'
       # The drift check also watches epic 15's live corpus.
@@ -45,39 +20,6 @@ concurrency:
   group: blueprint-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 jobs:
-  naming-validators:
-    name: Naming validators build, refuse, and match their pinned identity
-    runs-on: nixos
-    timeout-minutes: 20
-    steps:
-      - name: Reuse this runner's Nix cache
-        run: |
-          cache_dir="$HOME/.cache/singular-ci-nix"
-          mkdir -p "$cache_dir"
-          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: cachix/cachix-action@v17
-        with:
-          name: paolino
-          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      # Issue #52: Singular's own naming validators (naming-onchain/,
-      # a separate Aiken tree whose flake.lock is a byte-for-byte copy
-      # of onchain's — the two-flake split pattern of D-018). One
-      # command runs the whole slice gate: `nix flake check` builds
-      # checks.aiken-check (the hermetic Aiken suite — every enforced
-      # condition paired with a refusal, fixtures taken from the
-      # accepted v0.2.0 corpus rows LM01..LM04/LC01..LC06) and
-      # checks.script-identity (the compiled blueprint compared
-      # two-directionally against the committed script-identity.json,
-      # quantified over the validator set, with parameter counts — the
-      # onchain #34 pattern). The copied lock pins the same nixpkgs as
-      # the imported partition, so the Aiken compiler — and therefore
-      # every pinned hash — is directly comparable with onchain's.
-      - name: Run the naming validator suite and identity check
-        working-directory: naming-onchain
-        run: nix flake check
   blueprint:
     name: Aiken blueprint builds first
     runs-on: nixos
@@ -224,7 +166,7 @@ jobs:
       # contract's identity, as the registry's is. Rebuilds the
       # application blueprint and compares every validator against the
       # committed applications/open-datum/onchain/script-identity.json,
-      # then regenerates the application permanent record and module from
+      # with every entry derived from
       # the same blueprint alone. Same derivation as
       # checks.script-identity in the application's flake.
       - name: Compare the committed application manifest with a fresh build
@@ -249,13 +191,13 @@ jobs:
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       # #528 S5.3: the application's Aiken suite as its own hosted job
       # (counterpart of the registry aiken-suite): formatter, identity,
-      # composed assembly and full boundary over the merged blueprint,
+      # and composed validator tests,
       # with the pinned toolchain from the application's own lock.
       - name: Run the application Aiken suite as a flake check
         working-directory: applications/open-datum/onchain
         run: nix flake check
   vectors-fresh:
-    name: Cage vectors match the generator
+    name: Preimage vectors match the generator
     runs-on: nixos
     timeout-minutes: 45
     steps:
@@ -295,7 +237,6 @@ jobs:
   # whole suite, and no example is outside every lane.
   e2e-plan:
     name: Devnet E2E lanes select the whole suite
-    needs: blueprint
     runs-on: nixos
     timeout-minutes: 30
     outputs:
@@ -316,8 +257,7 @@ jobs:
       - name: Prove the lanes select the whole suite (dry runs, no node)
         working-directory: offchain
         run: |
-          blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
-          REGISTRY_BLUEPRINT="$blueprint" nix run --quiet ..#e2e-lanes-proof -- ../.github/ci/e2e-parts.json
+          nix run --quiet ..#e2e-lanes-proof -- ../.github/ci/e2e-parts.json
       - id: parts
         name: Publish the parts
         run: |
@@ -349,9 +289,8 @@ jobs:
         env:
           LANE: ${{ matrix.part.lane }}
         run: |
-          blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
           # A lane that runs no example fails.
-          REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#cage-tests-e2e -- --match "{lane:$LANE}" --fail-on=empty
+          nix run --quiet .#cage-tests-e2e -- --match "{lane:$LANE}" --fail-on=empty
   # The aggregate fails unless every part passed: a
   # skipped job would otherwise count as passing.
   e2e:

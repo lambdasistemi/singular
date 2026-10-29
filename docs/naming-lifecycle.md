@@ -1,5 +1,11 @@
 # Keep control of a name through its lifecycle
 
+## Historical model reference
+
+The naming application has been retired from this release. This page describes
+the retained earlier Lean model and simulator; it is not a guide to the current
+commands or validators.
+
 ## Who this is for
 
 A name holder wants to change where a live name receives payments, recover after
@@ -26,7 +32,7 @@ Termination burns that witness and changes the key to Terminal permanently.
 The legacy Absent byte remains a raw encoding for invalid-context controls;
 registration cannot create it. The five excluded operations are refused.
 
-The [current registry contract](onchain-validator-owners.md) has a fixed compiled
+The earlier registry contract has a fixed compiled
 admission boundary. Naming certifies each supported edge in advance by minting an
 approval binding the edge, key, owner and destination. The registry recomputes
 that binding. Folding is permissionless; approval prevents the folder from

@@ -35,7 +35,6 @@ module Singular.CLI.Session
     , reportedOf
     , failWith
     , failWithFields
-    , loadReleaseFor
     , admitSubmissions
 
       -- * The environment
@@ -170,7 +169,6 @@ import Singular.CLI.Failure
     , Reported (..)
     , failWith
     , failWithFields
-    , loadReleaseFor
     , markedLike
     , reportedOf
     )
@@ -206,7 +204,6 @@ import Singular.CLI.Receipt
     , submissionCase
     )
 import Singular.CLI.Reconcile (reconcileBundles, renderPoint)
-import Singular.CLI.Registry (loadRelease)
 import Singular.CLI.Sign
     ( SignRefusal (..)
     , bundleWitnesses
@@ -282,7 +279,6 @@ koiosEnv tracer =
     Env
         { envTracer = tracer
         , envSource = koiosSource
-        , envLoadRelease = loadRelease
         , envReads = withReads (backendUnder tracer) (readsUnder tracer)
         , envReaderReads = withReaderReads (backendUnder tracer)
         , envWrites = withWrites (backendUnder tracer) (readsUnder tracer)

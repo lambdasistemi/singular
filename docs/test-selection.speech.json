@@ -65,7 +65,7 @@
       "pause": 400
     },
     {
-      "text": "From conformance/, nix build .#checks.x86_64-linux.conformance-tests executes the Hspec appendix. Each check runs its existing app or binary during the Nix build, fails when that execution fails and retains the output at the check's store path. A cached result represents an earlier successful execution on the same inputs. The vector command generates vectors; it is not an Hspec suite. Apps and supported package exports remain available.",
+      "text": "From conformance/, nix build .#checks.x86_64-linux.conformance-tests executes the Hspec appendix. Each check runs its existing app or binary during the Nix build, fails when that execution fails and retains the output at the check's store path. A cached result represents an earlier successful execution on the same inputs. Apps and supported package exports remain available.",
       "pause": 400
     },
     {
@@ -89,6 +89,6 @@
   ],
   "_source": {
     "file": "test-selection.md",
-    "sha256": "61108e0a95c12c7a65aeeb744cba63b119fd1f3a7bcb4bcc04e11cbdf3b6be5f"
+    "sha256": "c1986a88e1d0822fd10192cf75a29531878d9cc4753d3e97eda9a22610a80377"
   }
 }

@@ -101,7 +101,6 @@ ci:
     just build-docs
     nix run --quiet .#docs-check
     just check-presentation
-    just rename-registry-test
     bash tools/no-global-fixture-state.sh
     just node-confinement
     just node-confinement-controls
@@ -116,7 +115,7 @@ ci:
 
 # Local bundle for fast local runs (`just ci` stays the local aggregate).
 # Hosted: the Development shell checks job runs application-model,
-# check-presentation, rename-registry-test, no-global-fixture-state,
+# check-presentation, no-global-fixture-state,
 # node-confinement, node-confinement-controls, io-ownership-check,
 # io-ownership-controls and lint-controls;
 # whole-repository `just lint` runs in the Development shell build job; `just
@@ -132,7 +131,6 @@ ci:
 ci-shell:
     just application-model
     just check-presentation
-    just rename-registry-test
     bash tools/no-global-fixture-state.sh
     just node-confinement
     just node-confinement-controls
@@ -143,13 +141,6 @@ ci-shell:
     just format-check
     just format-controls
     just lint-controls
-
-# #108: the rename tool must re-run cleanly on a pre-rename tree, be a no-op
-# on the second run, and its gate must catch strays planted in .sh files.
-
-# Run the rename tool's re-run, no-op and gate tests.
-rename-registry-test:
-    bash tools/rename-registry.test.sh
 
 # #278: machine-checked inventory mapping every file the tree holds to its
 # lint and format policy — or to a named non-code class — discovered from

@@ -72,7 +72,6 @@ has one, and what stands in for it where there is none:
 | The registry validators under `onchain/` | `aiken docs` from the onchain flake's pinned compiler: the [validator API reference](onchain-api-reference.md) |
 | The runtime service modules outside the library's extent | None generated; the [Runtime service ownership](offchain-node-ownership.md) page records which module owns which concern |
 | The off-chain and Conformance executables and test suites | None generated; the [registry command owners](offchain-command-entrypoints.md) and [Conformance suite owners](conformance-architecture.md) pages link their sources |
-| The naming validators under `naming-onchain/` | None generated; a separate Aiken project, documented by [record value and recovery](record-value.md) |
 
 Executables, test suites and the runtime service modules outside the
 library's extent have no generated pages here. That coverage gap stays
@@ -163,7 +162,7 @@ nix develop --quiet -c just lint-controls  # planted defects must fail it
 Lean and HTML have no general formatter here, so the explicit style rules
 are the policy: no tab, no carriage return, no trailing whitespace, and
 exactly one final newline. Aiken sources are checked by `aiken fmt --check`
-inside the `onchain/` and `naming-onchain/` flake checks, with the Aiken
+inside the `onchain/` and application on-chain flake checks, with the Aiken
 each flake pins; formatting leaves every compiled validator and its hash
 unchanged. Generated files — the shipped simulator page, the Lean mirror
 and the cage vectors — are regenerated from their formatted sources, and

@@ -43,7 +43,6 @@
 .|model|check|hosted under another name: the model job runs the model-check app, the same checker body this check's sandbox executes
 .|release|check|hosted under another name: the release-check job runs the release-check app, the same checker body this check's sandbox executes
 .|simulator|check|hosted under another name: the simulator job runs the simulator-check app, the same checker body this check's sandbox executes
-offchain|cage-test-vectors|app|hosted under another name: the registry-test-vectors job builds checks.x86_64-linux.cage-test-vectors, whose sandbox executes this app's binary in its JSON mode
 offchain|singular|app|hosted under another name: the release-artifacts job builds this ordinary command from the release archive and the accepting verify-release step drives it; the no-pin-registration-journey job also drives the ordinary command through the root flake
 offchain|cage-tests|check|hosted under another name: the cage-tests job's off-chain suite step runs the cage-tests app, the same wrapped test binary this check executes in its sandbox
 offchain|cage-tests-e2e|check|hosted under another name: the e2e-part matrix jobs run .#cage-tests-e2e, this same wrapped derivation, one lane per job

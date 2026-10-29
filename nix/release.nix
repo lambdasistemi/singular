@@ -19,7 +19,7 @@ let
   # eval time — no builtins.getFlake, no path inputs, no lock edit. The two
   # compiled blueprints the on-chain release carries are built as their own
   # steps by the assembler below (`nix build ./onchain#plutus-blueprint` and
-  # `./naming-onchain#plutus-blueprint`), exactly as the journey and row jobs
+  # the application deployment blueprint), exactly as the journey and row jobs
   # already do, so each partition evaluates against its own committed lock.
   # The resulting store paths are passed into staging as arguments — a step
   # passing a store path is pure. The check afterwards verifies the carried
@@ -27,7 +27,7 @@ let
   # directions (hashes, parameter counts, compiler string), from the archive
   # itself, so any divergence from the identity CI enforces fails loudly.
   assembler = pkgs.writeShellApplication {
-    name = "assemble-onchain-release";
+    name = "assemble-release";
     runtimeInputs = [
       pkgs.bash
       pkgs.coreutils
@@ -42,7 +42,7 @@ let
       python
     ];
     text = ''
-      usage() { echo "usage: assemble-onchain-release <repo-root> <docs-dir> <out-dir>" >&2; exit 2; }
+      usage() { echo "usage: assemble-release <repo-root> <docs-dir> <out-dir>" >&2; exit 2; }
       [ "$#" -eq 3 ] || usage
       root="$1"; docs="$2"; out="$3"
       # Each blueprint: built from this checkout's own partition flake, its
@@ -53,18 +53,17 @@ let
       # from the same two trees the comparison verifies.
       cd "$root"
       deployment_bp="$(nix build --quiet --no-link --print-out-paths ./applications/open-datum/onchain#open-datum-blueprint)"
-      naming_bp="$(nix build --quiet --no-link --print-out-paths ./naming-onchain#plutus-blueprint)"
       open_datum_store="$(nix build --quiet --no-link --print-out-paths ./applications/open-datum/offchain#open-datum)"
       registry_store="$(nix build --quiet --no-link --print-out-paths ./offchain#singular)"
-      [ -x "$open_datum_store/bin/open-datum" ] || { echo "assemble-onchain-release: open-datum binary missing at $open_datum_store" >&2; exit 1; }
-      [ -x "$registry_store/bin/singular" ] || { echo "assemble-onchain-release: singular binary missing at $registry_store" >&2; exit 1; }
+      [ -x "$open_datum_store/bin/open-datum" ] || { echo "assemble-release: open-datum binary missing at $open_datum_store" >&2; exit 1; }
+      [ -x "$registry_store/bin/singular" ] || { echo "assemble-release: singular binary missing at $registry_store" >&2; exit 1; }
       # Issue #91: the archive carries the commit it publishes (see
-      # releaseCommit above); assemble_onchain_release.py writes it into
+      # releaseCommit above); assemble_release.py writes it into
       # the archive root as RELEASE-COMMIT.
       RELEASE_COMMIT="''${TAG_COMMIT:-${releaseCommit}}"
       export RELEASE_COMMIT
-      python3 "$root/tools/assemble_onchain_release.py" \
-        "$root" "$docs" "$deployment_bp" "$naming_bp" "$out"
+      python3 "$root/tools/assemble_release.py" \
+        "$root" "$docs" "$deployment_bp" "$out"
       # The full release check — version agreement, archive members, both
       # checksum manifests, release text, and identity verification run from
       # the extracted artifact — against the exact bytes to be published.
@@ -80,7 +79,7 @@ let
       # docs-only `release-check` pass can never stand in for an on-chain
       # surface pass, and nothing uploads or publishes without it. It calls
       # the checker directly, never this assembler, so it cannot recurse.
-      bash "$root/tools/release_surface_control.sh" "$root" "$out"
+      python3 "$root/tools/release_archive_controls.py" "$root" "$out"
     '';
   };
 
@@ -231,7 +230,7 @@ let
     ];
     text = ''
       export DOCS_VERSION=${version}
-      export RELEASE_NOTES=${src}/onchain-release/RELEASE.md
+      export RELEASE_NOTES=${src}/RELEASE.md
       # #695: the step that adds the platform bundles to the release
       export BUNDLES_MERGE=${src}/tools/merge_release_bundles.sh
       export BUNDLES_CONF=${src}/tools/release_bundles.sh

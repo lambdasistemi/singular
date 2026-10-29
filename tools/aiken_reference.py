@@ -127,7 +127,7 @@ def publish(
         path.chmod(path.stat().st_mode | stat.S_IWUSR)
     version = package_version(onchain_root)
     generated_prefix = f"{REPOSITORY}/blob/{version}/"
-    removed_assets = rewritten = 0
+    removed_assets = rewritten = navigation_links = 0
     for page in sorted(api_root.rglob("*.html")):
         text = page.read_text(encoding="utf-8")
         text, n_js = EXTERNAL_SCRIPT.subn("", text)
@@ -137,6 +137,26 @@ def publish(
         text = text.replace(
             f'href="{generated_prefix}', f'href="{REPOSITORY}/blob/{ref}/onchain/'
         )
+
+        # Aiken's navigation groups a module whose underscore prefix is also
+        # a directory under that directory, while its page keeps the module
+        # name. Repair only local links whose corrected page actually exists.
+        def module_link(match):
+            nonlocal navigation_links
+            href = match[1]
+            parts = urlsplit(href)
+            if parts.scheme or parts.netloc or not parts.path.endswith(".html"):
+                return match[0]
+            target = page.parent / parts.path
+            corrected = parts.path.replace("/_", "_")
+            if target.is_file() or corrected == parts.path:
+                return match[0]
+            if not (page.parent / corrected).is_file():
+                return match[0]
+            navigation_links += 1
+            return f'href="{href.replace(parts.path, corrected, 1)}"'
+
+        text = re.sub(r'href="([^"]+)"', module_link, text)
         page.write_text(text, encoding="utf-8")
     if rewritten == 0:
         raise SystemExit(
@@ -168,6 +188,7 @@ def publish(
         "index_sha256": sha256_file(api_root / "index.html"),
         "source_links": rewritten,
         "external_assets_removed": removed_assets,
+        "navigation_links_repaired": navigation_links,
     }
     (api_root / MANIFEST_NAME).write_text(
         json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
@@ -383,13 +404,13 @@ def controls(site: Path, onchain_root: Path, candidate_ref: str) -> None:
             print(f"aiken-reference control {name}: accepted")
 
     def state_page(api_root):
-        return api_root / "state.html"
+        return api_root / "singular_state" / "state.html"
 
     def missing_manifest(_s, api_root, _r):
         (api_root / MANIFEST_NAME).unlink()
 
     def edited_source(_s, _a, root):
-        with (root / "validators" / "state.ak").open("a") as handle:
+        with (root / "lib" / "singular_state" / "state.ak").open("a") as handle:
             handle.write("\n// planted\n")
 
     def edited_page(_s, api_root, _r):
@@ -411,7 +432,7 @@ def controls(site: Path, onchain_root: Path, candidate_ref: str) -> None:
         page = state_page(api_root)
         page.write_text(
             re.sub(
-                r"(/onchain/validators/state\.ak)#L\d+-L\d+",
+                r"(/onchain/lib/singular_state/state\.ak)#L\d+-L\d+",
                 r"\1#L1-L999999",
                 page.read_text(),
                 count=1,
@@ -420,10 +441,10 @@ def controls(site: Path, onchain_root: Path, candidate_ref: str) -> None:
         _rebind(api_root, page)
 
     def dropped_module(_s, api_root, _r):
-        (api_root / "registry" / "fold.html").unlink()
+        (api_root / "singular_state" / "fold.html").unlink()
         manifest = json.loads((api_root / MANIFEST_NAME).read_text())
         manifest["modules"] = [
-            r for r in manifest["modules"] if r["module"] != "registry/fold"
+            r for r in manifest["modules"] if r["module"] != "singular_state/fold"
         ]
         (api_root / MANIFEST_NAME).write_text(json.dumps(manifest))
 
@@ -442,10 +463,21 @@ def controls(site: Path, onchain_root: Path, candidate_ref: str) -> None:
         guide = scratch_site / INDEX_PAGE
         guide.write_text(
             guide.read_text().replace(
-                'href="../../api/onchain/registry/fold.html"',
+                'href="../../api/onchain/singular_state/fold.html"',
                 'href="../../api/onchain/"',
             )
         )
+
+    def broken_navigation(_s, api_root, _r):
+        index = api_root / "index.html"
+        before = index.read_text()
+        after = before.replace(
+            'href="./singular_state_fixtures.html"',
+            'href="./singular_state/_fixtures.html"',
+        )
+        assert before != after, "navigation control did not move a module link"
+        index.write_text(after)
+        _rebind(api_root, index)
 
     def other_revision(_s, api_root, _r):
         manifest = json.loads((api_root / MANIFEST_NAME).read_text())
@@ -464,6 +496,7 @@ def controls(site: Path, onchain_root: Path, candidate_ref: str) -> None:
     plant("dropped-module", "AIKEN_EXTENT_MISMATCH", dropped_module)
     plant("cdn-script", "AIKEN_EXTERNAL_ASSET", cdn_script)
     plant("unlinked-guide", "AIKEN_NAVIGABLE", unlinked_guide)
+    plant("broken-module-navigation", "AIKEN_NAVIGABLE", broken_navigation)
 
 
 def main(argv: list[str]) -> None:

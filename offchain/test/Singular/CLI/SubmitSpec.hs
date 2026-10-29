@@ -790,7 +790,6 @@ envOf rig =
     Env
         { envTracer = nullTracer
         , envSource = "fixture"
-        , envLoadRelease = \_ _ -> pure (Left "submit loads no release")
         , envReads = \_ k -> k (capabilitiesOf rig)
         , envReaderReads = \_ k -> k (capabilitiesOf rig)
         , envWrites = \_ _ -> fail "submit opened the write side"

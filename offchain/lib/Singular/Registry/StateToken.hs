@@ -139,7 +139,7 @@ data Release = Release
     { releaseState :: SBS.ShortByteString
     , releaseRequest :: SBS.ShortByteString
     , releaseCodes :: NamingCodes
-    {- ^ The application's validator unapplied and @witness.witness@, from the
+    {- ^ The application's validator unapplied and its token witness, from the
     same blueprint
     -}
     }

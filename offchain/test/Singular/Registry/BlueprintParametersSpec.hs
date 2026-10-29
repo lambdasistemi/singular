@@ -1,5 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
+-- Synthetic title labels in these tests identify no published contract.
+
 {- |
 Module      : Singular.Registry.BlueprintParametersSpec
 Description : a validator's parameter count is read, never assumed

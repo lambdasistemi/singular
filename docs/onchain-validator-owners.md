@@ -1,60 +1,40 @@
 # Who owns a state validator rule
 
-A contributor changing a registry rule wants one source owner beside the
-behavior it enforces. The active contract has one admission boundary, one fold,
-and one settlement path. This page maps those responsibilities and names the
-verification each change needs.
+A contributor changing a registry rule can find its source owner and the checks
+that exercise it here. The registry validator and the application request
+validator are compiled independently, then combined into the deployment blueprint.
 
-## The current contract
-
-A registry integrator can register an unknown key and retire an active key
-permanently. The five other historical encodings are refused before approval or
-trie effects. The original broader source is archived on
-`preserve/m2/pre-m1-source-removal`; its custody and deletion paths are removed
-from the active source. Old deployed identities are refused, without migration.
+## Registry owners
 
 ```mermaid
 flowchart TD
-    S["State validator"] --> A["Fixed admission boundary<br/>Refuse excluded actions"]
-    A -->|"Supported"| M["Continuation and pins"]
-    M -->|"Ordered requests"| F["Fold and trie"]
-    F -->|"Collect obligations"| D["Token duties"]
-    D -->|"Check"| C["Discharge<br/>Carrier and burn source"]
-    C -->|"Pay request owners"| P["Settlement"]
-    P -->|"All checks hold"| OK["Accept"]
+    Validator[Registry validator] -->|Creation| Genesis[Genesis guards]
+    Validator -->|Requests| Fold[Fold guards]
+    Genesis -->|Recognize output| State[State representation]
+    Fold -->|Recognize continuation| State
+    State -->|Derive names| Preimage[Token preimages]
+    Fold -->|Derive names| Preimage
 ```
 
-The boundary is fixed in the compiled state validator. Application approval
-alone is insufficient: caller-constructed requests, mint paths and mixed batches
-also pass through state admission. Witness policies require that state validator
-in the same transaction. Request rejection and retraction retain their applicable
-refund obligations; this carve does not settle the separate protected-rejection
-model question.
+The validator dispatches creation and request handling to their owners. Shared
+state recognition and token names are defined once in the registry library.
 
-| Rule | Source owner |
+| Responsibility | Source owner |
 | --- | --- |
-| Dispatch, state identity and named fold refusal | <a href="../onchain/validators/state.ak" data-api="module">state</a> |
-| Two admitted tags and action well-formedness | <a href="../onchain/lib/registry/admission.ak" data-api="module">registry/admission</a> |
-| State token genesis | <a href="../onchain/lib/registry/genesis.ak" data-api="module">registry/genesis</a> |
-| Continuation, pins, batch checks and check order | <a href="../onchain/lib/registry/modify.ak" data-api="module">registry/modify</a> |
-| Request carriage, phase, approval and supported trie move | <a href="../onchain/lib/registry/fold.ak" data-api="module">registry/fold</a> |
-| Retirement leaf refusals | <a href="../onchain/lib/registry/trie.ak" data-api="module">registry/trie</a> |
-| Active-token delivery, retirement burn and returned deposit | <a href="../onchain/lib/registry/duty.ak" data-api="module">registry/duty</a> |
-| Named carrier and single burn-source checks | <a href="../onchain/lib/registry/discharge.ak" data-api="module">registry/discharge</a> |
-| Positional reject refunds and per-payee deposit sums | <a href="../onchain/lib/registry/settlement.ak" data-api="module">registry/settlement</a> |
-| One traced reason and false result | <a href="../onchain/lib/registry/refusal.ak" data-api="module">registry/refusal</a> |
+| Validator handlers | `onchain/validators/singular_state.ak` |
+| Creation guards | <a href="../onchain/lib/singular_state/genesis.ak" data-api="module">singular_state/genesis</a> |
+| Request fold guards | <a href="../onchain/lib/singular_state/fold.ak" data-api="module">singular_state/fold</a> |
+| State recognition and policy mint comparison | <a href="../onchain/lib/singular_state/state.ak" data-api="module">singular_state/state</a> |
+| Token and approval preimages | <a href="../onchain/lib/singular_state/preimage.ak" data-api="module">singular_state/preimage</a> |
 
-## Evidence and limits
+## Check a change
 
-The [candidate results](../specs/505-permanent-m1/RESULTS.md) distinguish Lean
-proofs, source tests, actual compiled-context evaluation and connected ledger
-execution. Removing source changes compiled identities, so earlier comparisons
-and receipts remain historical evidence. No source or build check establishes
-ledger acceptance or a budget bound.
+Run the registry Aiken tests and identity check from `onchain/`. The application
+tests run in a composed assembly so they can call both validators. The root
+`script-hash-comparison` command checks both separate builds, their identity
+manifests and the merged deployment blueprint, with controls that must refuse
+moved hashes and differing merged script bytes.
 
-The pinned `aiken docs` reference is generated from the same source as the site.
-Each owner documents responsibility, dependencies, assumptions and invariants.
-The existing documentation checks reconcile public declarations with generated
-members and plant missing-documentation and stale-link faults. They establish
-presence and correspondence, not the truth of a behavioral claim. Read the
-[validator API reference](onchain-api-reference.md) for every generated module.
+Compilation and Aiken tests do not establish a connected ledger lifecycle or
+full model correspondence. The development-network journeys and the published
+conformance record state their separate evidence and gaps.

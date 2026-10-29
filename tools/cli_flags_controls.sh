@@ -98,11 +98,11 @@ table="$scratch/t/docs/singular-node.md"
 fresh
 expect clean-tree 0 '^PASS cli-flags'
 
-# Page discovery excludes exactly the two historical root classes and still
+# Page discovery excludes historical specifications and still
 # reaches current pages outside navigation, even a nested directory named specs.
 fresh
-mkdir -p "$scratch/t/specs/history" "$scratch/t/onchain-release/history" "$scratch/t/docs/specs"
-for page in specs/history/page.md onchain-release/history/page.md docs/unlisted.md docs/specs/current.md; do
+mkdir -p "$scratch/t/specs/history" "$scratch/t/docs/specs"
+for page in specs/history/page.md specs/history/other.md docs/unlisted.md docs/specs/current.md; do
   printf '\n```sh\nsingular registry describe\n```\n' >"$scratch/t/$page"
 done
 bash "$check" --pages "$scratch/t" >"$scratch/pages"
@@ -112,18 +112,18 @@ for page in README.md docs/singular-node.md docs/unlisted.md docs/specs/current.
     exit 1
   }
 done
-for page in specs/history/page.md onchain-release/history/page.md; do
+for page in specs/history/page.md specs/history/other.md; do
   if grep -Fxq "$scratch/t/$page" "$scratch/pages"; then
     echo "FAIL cli-flags discovery included historical page $page" >&2
     exit 1
   fi
 done
 controls=$((controls + 1))
-echo 'control historical-page-discovery: current pages retained, both exact historical classes excluded'
+echo 'control historical-page-discovery: current pages retained, historical specifications excluded'
 
 fresh
-mkdir -p "$scratch/t/specs/history" "$scratch/t/onchain-release/history"
-for page in specs/history/page.md onchain-release/history/page.md; do
+mkdir -p "$scratch/t/specs/history"
+for page in specs/history/page.md specs/history/other.md; do
   printf '\n```sh\nsingular registry describe\n```\n' >"$scratch/t/$page"
 done
 expect historical-pages 0 '^PASS cli-flags'

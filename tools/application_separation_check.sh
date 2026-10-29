@@ -7,10 +7,12 @@
 # the module prefix Singular.Application.OpenDatum, the path
 # applications/, the validator title open_datum, the words open-datum and
 # OpenDatum (comments and documentation included), nor the open-datum
-# script hash, read from the open_datum.open_datum entry of
-# applications/open-datum/onchain/permanent-contract.json at run time and
+# script hash, read from the open_datum_requests.open_datum_requests.mint entry of
+# applications/open-datum/onchain/script-identity.json at run time and
 # never typed here. No
 # registry component lists an application package in build-depends either.
+# Existing generic release-table identity fields have the parsed allowance
+# stated below; the allowance covers no implementation code or free text.
 #
 # Application side: for each application tree, a cabal file, cabal.project,
 # flake or script naming a path outside its own tree — other than the
@@ -30,27 +32,27 @@ root=$(realpath -m "$root")
 
 # The registry trees this checkpoint covers, in one place: since the
 # S5.1 Aiken slice the onchain tree holds the registry only, so it is
-# covered here too, along with naming-onchain.
-registry_trees="offchain onchain naming-onchain"
+# covered here too.
+registry_trees="offchain onchain"
 # The application trees covered by the reach rule, in one place.
 application_trees="applications/open-datum"
 # The registry packages an application may reach (paths relative to root).
 registry_packages="offchain onchain"
 
-contract="$root/applications/open-datum/onchain/permanent-contract.json"
+contract="$root/applications/open-datum/onchain/script-identity.json"
 [ -f "$contract" ] || {
-  echo "application-separation-check: no applications/open-datum/onchain/permanent-contract.json under $root" >&2
+  echo "application-separation-check: no applications/open-datum/onchain/script-identity.json under $root" >&2
   exit 2
 }
 
 # The open-datum hash, read at run time, never typed. Fail closed on an
 # empty or misshapen answer: without the hash the scan proves nothing.
-if ! app_hash=$(jq -r '.scripts[] | select(.title == "open_datum.open_datum") | .hash' "$contract"); then
+if ! app_hash=$(jq -r '.validators[] | select(.title == "open_datum_requests.open_datum_requests.mint") | .hash' "$contract"); then
   echo "application-separation-check: cannot read the open-datum hash from $contract" >&2
   exit 2
 fi
 [[ "$app_hash" =~ ^[0-9a-f]{56}$ ]] || {
-  echo "application-separation-check: no open_datum.open_datum hash in $contract" >&2
+  echo "application-separation-check: no open_datum_requests.open_datum_requests.mint hash in $contract" >&2
   exit 2
 }
 
@@ -109,7 +111,40 @@ scan_token "word OpenDatum" "OpenDatum"
 # tokens above matches that spelling alone (open_datum needs an underscore,
 # applications/ needs the plural), so it gets its own token and plant.
 scan_token "Aiken module application/envelope" "application/envelope"
-scan_token "open-datum script hash" "$app_hash"
+# Existing release metadata is generic data, with a narrow parsed allowance.
+release_table="$root/offchain/data/contracts/state-contracts.json"
+if [ -f "$release_table" ]; then
+  if ! invalid=$(jq -r --arg hash "$app_hash" '
+    paths(scalars) as $path | getpath($path) as $value
+    | select($value | type == "string")
+    | select($value | contains($hash))
+    | select((
+        $value == $hash and ($path | length) == 3
+        and $path[0] == "applications" and ($path[1] | type) == "number"
+        and ($path[2] == "application-policy" or $path[2] == "application-script")
+      ) | not)
+    | $path | tojson
+  ' "$release_table"); then
+    echo "application-separation-check: cannot parse release table $release_table" >&2
+    exit 2
+  fi
+  if [ -n "$invalid" ]; then
+    echo "application-separation-check: application hash in unapproved release-table field: $release_table $invalid" >&2
+    fail=1
+  fi
+  echo "application-separation-check: existing release data allows exact application-policy and application-script scalars at applications[index] in $release_table"
+fi
+hash_hits=$(xargs -0 -r -a <(tr '\n' '\0' <"$registry_list") grep -nI -F -e "$app_hash" | while IFS= read -r hit; do
+  case "$hit" in
+    "$release_table":*) ;;
+    *) printf '%s\n' "$hit" ;;
+  esac
+done || true)
+if [ -n "$hash_hits" ]; then
+  echo "application-separation-check: registry tree names an application [open-datum script hash]:" >&2
+  printf '%s\n' "$hash_hits" >&2
+  fail=1
+fi
 # --- registry side: build-depends --------------------------------------
 # The case the retired boundary apps covered: no registry component lists
 # the application package in build-depends. Parsed per stanza, so the

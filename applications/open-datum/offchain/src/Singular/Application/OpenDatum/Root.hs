@@ -45,7 +45,7 @@ import Singular.CLI.Options (builtinCommand)
 import Singular.CLI.Root (containFailure, standardError)
 import Singular.CLI.Session (Env, koiosEnv)
 import Singular.CLI.Trace (Trace, withTracing)
-import Singular.Registry.Application (Application)
+import Singular.Registry.Application (Application, neutralApplication)
 import System.Exit (ExitCode (..))
 import System.IO (Handle, hIsTerminalDevice, hPutStrLn)
 
@@ -136,5 +136,5 @@ runPackagedOpenDatumVia provider app getErrors args environment =
 
 -- | The packaged open-datum command with the process's own standard error.
 runPackagedOpenDatum
-    :: Application -> [String] -> [(String, String)] -> IO ExitCode
-runPackagedOpenDatum app = runPackagedOpenDatumWith app standardError
+    :: [String] -> [(String, String)] -> IO ExitCode
+runPackagedOpenDatum = runPackagedOpenDatumWith neutralApplication standardError

@@ -19,7 +19,6 @@ module Singular.CLI.Failure
     , markedLike
     , failWith
     , failWithFields
-    , loadReleaseFor
     , Env (..)
     ) where
 
@@ -34,11 +33,8 @@ import Data.Text (Text)
 import Data.Typeable (cast)
 
 import Singular.CLI.Receipt (OutcomeClass (..))
-import Singular.CLI.Registry (Release, checkRegistryContracts)
 import Singular.CLI.Trace (Trace)
-import Singular.Registry.Application (Application)
 import Singular.Registry.Evidence qualified as Cage
-import Singular.Registry.LedgerProvider (Asset)
 import Singular.Registry.ProviderSettings (ProviderSettings)
 import Singular.Registry.Terminal (Capabilities)
 
@@ -96,9 +92,6 @@ data Env = Env
     { envTracer :: Tracer IO Trace
     , envSource :: Text
     -- ^ The name the provider's reads report as
-    , envLoadRelease
-        :: Application -> FilePath -> IO (Either String Release)
-    -- ^ Recognition is fixed by the shipping composition; tests supply code fixtures.
     , envReads
         :: forall a
          . ProviderSettings
@@ -116,17 +109,3 @@ data Env = Env
         -> (Capabilities Cage.NoWitness IO -> IO a)
         -> IO a
     }
-
-{- | The release a command brings, for the registry it names: the blueprint is
-read, and a registry made by other contracts than the blueprint's is refused by
-name before anything is read from the chain.
--}
-loadReleaseFor
-    :: Env -> Application -> FilePath -> Asset -> IO Release
-loadReleaseFor env app blueprint token = do
-    release <-
-        envLoadRelease env app blueprint
-            >>= either (failWith ClientRefusal) pure
-    checkRegistryContracts release token
-        >>= either (failWith ClientRefusal) pure
-    pure release

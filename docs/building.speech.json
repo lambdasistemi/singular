@@ -101,7 +101,7 @@
       "pause": 400
     },
     {
-      "text": "Lean and HTML have no general formatter here, so the explicit style rules are the policy: no tab, no carriage return, no trailing whitespace, and exactly one final newline. Aiken sources are checked by aiken fmt --check inside the onchain/ and naming-onchain/ flake checks, with the Aiken each flake pins; formatting leaves every compiled validator and its hash unchanged. Generated files — the shipped simulator page, the Lean mirror and the cage vectors — are regenerated from their formatted sources, and their freshness checks stay the policy. A code family nobody checks fails just lint instead of passing silently.",
+      "text": "Lean and HTML have no general formatter here, so the explicit style rules are the policy: no tab, no carriage return, no trailing whitespace, and exactly one final newline. Aiken sources are checked by aiken fmt --check inside the onchain/ and application on-chain flake checks, with the Aiken each flake pins; formatting leaves every compiled validator and its hash unchanged. Generated files — the shipped simulator page, the Lean mirror and the cage vectors — are regenerated from their formatted sources, and their freshness checks stay the policy. A code family nobody checks fails just lint instead of passing silently.",
       "pause": 400
     }
   ],
@@ -169,6 +169,6 @@
   ],
   "_source": {
     "file": "building.md",
-    "sha256": "dffd643498ee75dc93098a4af717df752bac88e0b9440e07b32853d4a237a9a3"
+    "sha256": "1246483a524d612eaf7fcb3654fff62afb39718dee574a87b99fa164201882be"
   }
 }

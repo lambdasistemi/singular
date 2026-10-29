@@ -74,7 +74,6 @@ spec = do
                         Env
                             { envTracer = nullTracer
                             , envSource = "fixture"
-                            , envLoadRelease = \_ _ -> fail "inspect read a blueprint"
                             , envReaderReads = \_ _ -> ioError (userError "provider disconnected")
                             , envReads = \_ _ -> fail "inspect opened builder startup"
                             , envWrites = \_ _ -> fail "inspect opened a writer"

@@ -59,7 +59,7 @@ that: ending a name needs the committed recovery key or the retirement
 quorum, never the current control key alone, and the naming validator
 refuses any other request before it exists to be folded.
 [Recover control and retire names on a real
-ledger](recovery-retirement.md) shows that rule enforced on chain.
+ledger](naming-lifecycle.md) shows that rule enforced on chain.
 
 ## Why it cannot be undone
 

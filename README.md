@@ -79,7 +79,7 @@ Read the design in order. The first three pages and the protocol specification r
 3. [Certification and identity binding](docs/certification.md)
 4. [Naming: book a name, retire it, attest it](docs/naming-demo.md)
 5. [Naming lifecycle: maintain, recover, retire](docs/naming-lifecycle.md)
-6. [Ending a name](docs/retirement.md) and [recovering control on a real ledger](docs/recovery-retirement.md)
+6. [Ending a name](docs/retirement.md)
 7. [Play and reproduce the simulation](docs/simulation.md)
 8. [Prior art and reuse candidates](docs/prior-art.md)
 9. [Draft protocol specification and acceptance scenarios](specs/protocol/spec.md)

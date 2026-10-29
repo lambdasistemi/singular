@@ -3,7 +3,7 @@
 //// Every token name a transaction carries, every proof and every root is
 //// obtained from the producers at run time: the role names from
 //// `singular_state/preimage`, the roots and proofs from the Merkle Patricia
-//// Forestry library through the proof builders of `registry_fixtures`. A fold
+//// Forestry library through the proof builders of `singular_state_proof_fixtures`. A fold
 //// scenario names the registry's seed, the keys already registered and the
 //// registrations folded now; the transaction, the redeemer and the proofs
 //// are derived from it, so a test changes one part of a valid fold and
@@ -22,7 +22,6 @@ use cardano/assets.{AssetName, Value, add, from_lovelace, zero}
 use cardano/transaction.{
   InlineDatum, Input, Output, OutputReference, Transaction, TransactionId,
 }
-use registry_fixtures.{branchStep, leafStep, slotOf}
 use singular_state/fold.{Change, Fold, Register, StateSpend, leaf_active}
 use singular_state/preimage.{
   RegistryIdentity, active_token_name, approval_name, initial_datum_hash,
@@ -31,6 +30,7 @@ use singular_state/preimage.{
 use singular_state_fixtures.{
   application_policy, ordinary_output, root_datum, seed_a, spent, state_policy,
 }
+use singular_state_proof_fixtures.{branchStep, leafStep, slotOf}
 
 // ---------------------------------------------------------------------------
 // Keys and tries

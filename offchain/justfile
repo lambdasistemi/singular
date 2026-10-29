@@ -10,86 +10,24 @@ haskell-build:
 provider-tests:
     nix develop --quiet --command cabal test -O0 cage-tests --test-option=--match=Koios
 
-# Run the devnet E2E (drives a real cardano-node subprocess). The recipe
-# builds the Aiken blueprint FIRST, from the onchain flake:
-# onchain/plutus.json is not a committed file, so the recipe must produce
-# the artifact it consumes and point REGISTRY_BLUEPRINT at the store path.
-# Pinned toolchains only (D-006): cabal from this tree's dev shell, and
-# cardano-node from .#cardano-node — the input this flake already locks,
-# exposed as a package output so the recipe consumes the locked identity
-# (D-008); it is the same derivation offchain/nix/checks.nix wraps the
-# `cage-tests-e2e` check with.
-#
-# This recipe needs WARM CABAL STATE (the CHaP package index in your
-# ~/.cabal and a populated cabal store). It is the iterative developer
-# loop only; it is NOT the gate, and it fails on a clean machine (D-011:
-# on CI it died in 96s fetching the CHaP index over HTTPS). The gate is
-# the hermetic `e2e` recipe below.
-
-# Run the devnet E2E with cabal (developer loop).
+# Run the generic node, wallet and submission suite with the pinned node.
 haskell-e2e:
     #!/usr/bin/env bash
     set -euo pipefail
-    blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
     node="$(nix build --quiet --no-link --print-out-paths .#cardano-node)"
-    echo "REGISTRY_BLUEPRINT=$blueprint"
-    REGISTRY_BLUEPRINT="$blueprint" PATH="$node/bin:$PATH" \
-        nix develop --command cabal test e2e-tests -O0
+    PATH="$node/bin:$PATH" nix develop --command cabal test e2e-tests -O0
 
-# Hermetic devnet E2E (D-011). Builds the blueprint from the onchain
-# flake, then runs the Nix-built, cardano-node-wrapped test binary.
-# No cabal, no package index, no dev-shell state: this is the form CI
-# runs and the one that works on a clean machine.
-
-# Run the hermetic devnet E2E.
+# Run the packaged generic suite; it brings its own pinned node.
 e2e:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
-    echo "REGISTRY_BLUEPRINT=$blueprint"
-    REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#cage-tests-e2e
+    nix run --quiet .#cage-tests-e2e
 
-# Regenerate the ONCHAIN golden from the OFFCHAIN generator. This is the
-# ONLY recipe that writes onchain/validators/cage_vectors.ak — an
-# explicit, developer-requested regeneration (D-003, D-006). The result
-# is formatted with the pinned Aiken, never an ambient one, and the
-# build leaves no `result` symlink behind.
-
-# Regenerate the Aiken cage vectors.
+# Regenerate the shared preimage vectors with the pinned Aiken formatter.
 generate-vectors:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    out="$(nix build --quiet --no-link --print-out-paths .#test-vectors)"
-    cp "$out" ../onchain/validators/cage_vectors.ak
-    chmod u+w ../onchain/validators/cage_vectors.ak
-    nix develop ../onchain#aiken --command aiken fmt ../onchain/validators/cage_vectors.ak
-    echo "generate-vectors: wrote onchain/validators/cage_vectors.ak"
-    (cd .. && nix run --quiet .#preimage-vectors -- generate)
+    cd .. && nix run --quiet .#preimage-vectors -- generate
 
-# Check that committed vectors are up to date. READ-ONLY (D-006): the
-# generator's output lands in a temp dir, is formatted there with the
-# pinned Aiken, and is diffed against the committed golden. Nothing in
-# either tree is written. This procedure — not `nix flake check` — is
-# the only freshness gate: a green `nix flake check` on either flake
-# asserts NOTHING about vector freshness (D-003). Enforced in CI by
-# .github/workflows/registry.yml (A-002).
-
-# Check the committed cage vectors against the generator.
+# Compare the producer-derived preimage vectors with the committed table.
 vectors-check:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    tmp="$(mktemp -d)"
-    trap 'rm -rf "$tmp"' EXIT
-    out="$(nix build --quiet --no-link --print-out-paths .#test-vectors)"
-    cp "$out" "$tmp/cage_vectors.ak"
-    chmod u+w "$tmp/cage_vectors.ak"
-    nix develop ../onchain#aiken --command aiken fmt "$tmp/cage_vectors.ak"
-    if diff -u ../onchain/validators/cage_vectors.ak "$tmp/cage_vectors.ak"; then
-        echo "vectors-check: PASS — committed golden matches the pinned-Aiken-formatted generator output"
-    else
-        echo "ERROR: committed vectors are stale — run 'just generate-vectors' and commit" >&2
-        exit 1
-    fi
+    cd .. && nix run --quiet .#preimage-vectors -- check
 
 # #389: record the public preprod Koios fixtures the recorded-answer tests
 # replay, with read calls only (the recorder cannot submit). The arguments

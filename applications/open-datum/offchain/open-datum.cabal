@@ -53,7 +53,6 @@ library
     Singular.Application.OpenDatum.Requests.Script
     Singular.Application.OpenDatum.Root
     Singular.Application.OpenDatum.Run
-    Singular.Application.OpenDatum.Value
 
   autogen-modules: Paths_open_datum
   other-modules:
@@ -141,6 +140,7 @@ test-suite open-datum-tests
   main-is:          Main.hs
   other-modules:
     Singular.Application.OpenDatum.BuildersSpec
+    Singular.Application.OpenDatum.Value
     Singular.Application.OpenDatum.BuildSpec
     Singular.Application.OpenDatum.CreationWorld
     Singular.Application.OpenDatum.RequestBookingSpec

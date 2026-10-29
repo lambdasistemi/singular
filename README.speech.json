@@ -121,7 +121,7 @@
       "pause": 300
     },
     {
-      "text": "Ending a name and recovering control on a real ledger",
+      "text": "Ending a name",
       "pause": 300
     },
     {
@@ -165,6 +165,6 @@
   ],
   "_source": {
     "file": "README.md",
-    "sha256": "490faad74c0e9eefb3cad4e78bce1f831fbc747034181fa687d36972b76fe8e2"
+    "sha256": "c48abd75dd1aef1dd29f288d943a2bf9f7163c99c7afddae1a839281532abeab"
   }
 }

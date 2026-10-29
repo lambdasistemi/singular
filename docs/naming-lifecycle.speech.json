@@ -1,4 +1,14 @@
 {
+  "historical-model-reference": [
+    {
+      "text": "Historical model reference.",
+      "pause": 500
+    },
+    {
+      "text": "The naming application has been retired from this release. This page describes the retained earlier Lean model and simulator; it is not a guide to the current commands or validators.",
+      "pause": 400
+    }
+  ],
   "who-this-is-for": [
     {
       "text": "Who this is for.",
@@ -23,7 +33,7 @@
       "pause": 400
     },
     {
-      "text": "The current registry contract has a fixed compiled admission boundary. Naming certifies each supported edge in advance by minting an approval binding the edge, key, owner and destination. The registry recomputes that binding. Folding is permissionless; approval prevents the folder from substituting another destination. Naming's separate application validator governs maintenance, recovery and authorization to retire.",
+      "text": "The earlier registry contract has a fixed compiled admission boundary. Naming certifies each supported edge in advance by minting an approval binding the edge, key, owner and destination. The registry recomputes that binding. Folding is permissionless; approval prevents the folder from substituting another destination. Naming's separate application validator governs maintenance, recovery and authorization to retire.",
       "pause": 400
     }
   ],
@@ -119,6 +129,6 @@
   ],
   "_source": {
     "file": "naming-lifecycle.md",
-    "sha256": "e3380bb22c9c3461fb2f78a3367daabe55a3f70d8fab38772d4a24481d206cdd"
+    "sha256": "f96acb22212f23205209727d66bd0482b55d209fc30cfe466ed75e74437af748"
   }
 }

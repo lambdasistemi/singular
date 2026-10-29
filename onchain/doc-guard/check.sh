@@ -4,10 +4,10 @@
 #   check.sh VALIDATORS_DIR [--reference DOCS_DIR [--reference-only]]
 #   check.sh --list VALIDATORS_DIR
 #
-# The extent is discovered, never listed: `state.ak` plus every `.ak` module
-# found under `registry/`, at any depth. After the S5.1 split the registry
-# owners live under `lib/registry/` while `state.ak` stays in `validators/`;
-# invoked with `validators`, the guard also reads the sibling `../lib/registry`. Two layers, each able to fail alone:
+# The extent is discovered, never listed: `singular_state.ak` plus every `.ak` module
+# found under `singular_state/`, at any depth. After the S5.1 split the registry
+# owners live under `lib/singular_state/` while `singular_state.ak` stays in `validators/`;
+# invoked with `validators`, the guard also reads the sibling `../lib/singular_state`. Two layers, each able to fail alone:
 #
 # Source layer (always). For each module:
 # - a module doc (`////` lines) carries the four sections `## Responsibility`,
@@ -30,7 +30,7 @@
 # `--reference-only` reports this layer alone, so its negative controls show
 # it refuses a gap by itself.
 #
-# An extent with no registry module, no `state.ak` or no public declaration
+# An extent with no registry module, no `singular_state.ak` or no public declaration
 # fails: an empty inventory is a failure, not a vacuous pass.
 #
 # Presence is all this establishes. Whether a doc comment is TRUE of the
@@ -51,15 +51,15 @@ if [ "${1:-}" = "--reference" ]; then reference=${2:?--reference needs a directo
 if [ "${3:-}" = "--reference-only" ]; then source_layer=0; fi
 
 modules=()
-[ -f "$dir/state.ak" ] && modules+=("$dir/state.ak")
-# S5.1 split: registry owners moved from `$dir/registry` to the sibling
-# `../lib/registry`; accept either layout so the guard follows the move.
+[ -f "$dir/singular_state.ak" ] && modules+=("$dir/singular_state.ak")
+# S5.1 split: registry owners moved from `$dir/singular_state` to the sibling
+# `../lib/singular_state`; accept either layout so the guard follows the move.
 # (Note: keep any literal `..` out of a `${var#...}` removal — this shell
 # misparses it — so the sibling is named once in `$libdir`.)
 libdir="$dir/../lib"
 regdirs=()
-[ -d "$dir/registry" ] && regdirs+=("$dir/registry")
-[ -d "$libdir/registry" ] && regdirs+=("$libdir/registry")
+[ -d "$dir/singular_state" ] && regdirs+=("$dir/singular_state")
+[ -d "$libdir/singular_state" ] && regdirs+=("$libdir/singular_state")
 for regdir in ${regdirs[@]+"${regdirs[@]}"}; do
   while IFS= read -r m; do modules+=("$m"); done \
     < <(find "$regdir" -type f -name '*.ak' | LC_ALL=C sort)
@@ -105,10 +105,10 @@ sections_check() {
     }'
 }
 
-[ -f "$dir/state.ak" ] || report "no state.ak under $dir"
+[ -f "$dir/singular_state.ak" ] || report "no singular_state.ak under $dir"
 registry=0
-for m in ${modules[@]+"${modules[@]}"}; do case "$m" in "$dir/registry/"* | "$libdir/registry/"*) registry=$((registry + 1)) ;; esac done
-[ "$registry" -gt 0 ] || report "no registry module under $dir/registry or $libdir/registry"
+for m in ${modules[@]+"${modules[@]}"}; do case "$m" in "$dir/singular_state/"* | "$libdir/singular_state/"*) registry=$((registry + 1)) ;; esac done
+[ "$registry" -gt 0 ] || report "no registry module under $dir/singular_state or $libdir/singular_state"
 
 total=0
 checked=0
@@ -144,6 +144,10 @@ for m in ${modules[@]+"${modules[@]}"}; do
 
   [ -n "$reference" ] || continue
 
+  # A validator without public definitions has no generated page.
+  in_source="$(sed -n 's/^.*:\(pub [a-z ]*\) \([A-Za-z_][A-Za-z0-9_]*\)$/\2/p' <<<"$entries" | LC_ALL=C sort)"
+  [ -n "$in_source" ] || continue
+
   # Reference layer: the generated page for this module.
   page="$reference/$rel.html"
   if [ ! -f "$page" ]; then
@@ -162,7 +166,6 @@ for m in ${modules[@]+"${modules[@]}"}; do
   # The page's own member extent, reconciled with the source inventory.
   on_page="$(awk '/<section class="module-members">/ { on = 1 } /<\/section>/ { on = 0 }
                   on && match($0, /<h2 id="[^"]+">/) { print substr($0, RSTART + 8, RLENGTH - 10) }' "$page" | LC_ALL=C sort)"
-  in_source="$(sed -n 's/^.*:\(pub [a-z ]*\) \([A-Za-z_][A-Za-z0-9_]*\)$/\2/p' <<<"$entries" | LC_ALL=C sort)"
   while IFS= read -r extra; do
     [ -n "$extra" ] && report "$page: member '$extra' is on the generated page but not in the source inventory"
   done < <(LC_ALL=C comm -23 <(printf '%s\n' "$on_page" | sed '/^$/d') <(printf '%s\n' "$in_source" | sed '/^$/d'))

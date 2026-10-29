@@ -63,10 +63,6 @@ root="${1:-$PWD}"
   echo "application-separation-controls: no applications/open-datum/offchain/cabal.project under $root" >&2
   exit 2
 }
-[ -f "$root/naming-onchain/validators/naming.ak" ] || {
-  echo "application-separation-controls: no naming-onchain/validators/naming.ak under $root" >&2
-  exit 2
-}
 
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
@@ -80,15 +76,10 @@ copy_tree() {
   rm -rf "$work/$1/onchain-tmp/build" "$work/$1/onchain-tmp/result" "$work/$1/onchain-tmp/.git"
   cp -r "$work/$1/onchain-tmp/." "$work/$1/onchain/"
   rm -rf "$work/$1/onchain-tmp"
-  mkdir -p "$work/$1/naming-onchain"
-  cp -r "$root/naming-onchain" "$work/$1/naming-onchain-tmp"
-  rm -rf "$work/$1/naming-onchain-tmp/result" "$work/$1/naming-onchain-tmp/.git"
-  cp -r "$work/$1/naming-onchain-tmp/." "$work/$1/naming-onchain/"
-  rm -rf "$work/$1/naming-onchain-tmp"
   mkdir -p "$work/$1/applications/open-datum"
   cp -r "$root/applications/open-datum/offchain" "$work/$1/applications/open-datum/offchain"
   mkdir -p "$work/$1/applications/open-datum/onchain"
-  cp "$root/applications/open-datum/onchain/permanent-contract.json" "$work/$1/applications/open-datum/onchain/permanent-contract.json"
+  cp "$root/applications/open-datum/onchain/script-identity.json" "$work/$1/applications/open-datum/onchain/script-identity.json"
 }
 
 # Plant (a): a registry-side naming — the application module prefix in a
@@ -168,7 +159,7 @@ echo "application-separation-controls: planted build-depends entry caught" >&2
 # Plant (d): the open-datum script hash itself in an offchain/ source
 # file. Read from the contract at run time, never typed.
 copy_tree plant-hash
-app_hash=$(jq -r '.scripts[] | select(.title == "open_datum.open_datum") | .hash' "$root/applications/open-datum/onchain/permanent-contract.json")
+app_hash=$(jq -r '.validators[] | select(.title == "open_datum_requests.open_datum_requests.mint") | .hash' "$root/applications/open-datum/onchain/script-identity.json")
 [ -n "$app_hash" ] || {
   echo "application-separation-controls: cannot read the open-datum hash" >&2
   exit 2
@@ -190,6 +181,36 @@ printf '%s\n' "$out" | grep -q "$app_hash" \
     exit 1
   }
 echo "application-separation-controls: planted script hash caught" >&2
+
+copy_tree plant-release-table-field
+table="$work/plant-release-table-field/offchain/data/contracts/state-contracts.json"
+jq --arg hash "$app_hash" '.applications[0].unapproved = $hash' "$table" >"$work/table.json"
+mv "$work/table.json" "$table"
+jq -e --arg hash "$app_hash" '.applications[0].unapproved == $hash' "$table" >/dev/null
+if out=$("$check" "$work/plant-release-table-field" 2>&1); then
+  echo "application-separation-controls: check MISSED the hash in an unapproved release-table field" >&2
+  exit 1
+fi
+printf '%s\n' "$out" | grep -q 'unapproved release-table field' || {
+  echo "application-separation-controls: table-field plant failed for another reason: $out" >&2
+  exit 1
+}
+echo "application-separation-controls: hash in unapproved release-table field caught" >&2
+
+copy_tree plant-release-table-substring
+table="$work/plant-release-table-substring/offchain/data/contracts/state-contracts.json"
+jq --arg hash "$app_hash" '.applications[0]["application-script"] = ("prefix-" + $hash)' "$table" >"$work/table.json"
+mv "$work/table.json" "$table"
+jq -e --arg hash "$app_hash" '.applications[0]["application-script"] == ("prefix-" + $hash)' "$table" >/dev/null
+if out=$("$check" "$work/plant-release-table-substring" 2>&1); then
+  echo "application-separation-controls: check MISSED the hash substring in an allowed field" >&2
+  exit 1
+fi
+printf '%s\n' "$out" | grep -q 'unapproved release-table field' || {
+  echo "application-separation-controls: substring plant failed for another reason: $out" >&2
+  exit 1
+}
+echo "application-separation-controls: hash substring in release data caught" >&2
 
 # Plant (e): an application-side absolute reach — the scratch copy's own
 # absolute path to conformance in the application's cabal.project.
@@ -354,8 +375,8 @@ echo "application-separation-controls: planted cd-root reach caught" >&2
 # S5.1 extension's case. The check must refuse an onchain naming with
 # the file, the line and the name.
 copy_tree plant-onchain-naming
-printf '%s\n' "-- probe: Singular.Application.OpenDatum.Envelope" >>"$work/plant-onchain-naming/onchain/lib/registry_pin.ak"
-grep -q 'Singular.Application.OpenDatum.Envelope' "$work/plant-onchain-naming/onchain/lib/registry_pin.ak" \
+printf '%s\n' "-- probe: Singular.Application.OpenDatum.Envelope" >>"$work/plant-onchain-naming/onchain/lib/singular_state/state.ak"
+grep -q 'Singular.Application.OpenDatum.Envelope' "$work/plant-onchain-naming/onchain/lib/singular_state/state.ak" \
   || {
     echo "application-separation-controls: onchain-naming plant did not apply" >&2
     exit 2
@@ -370,7 +391,7 @@ printf '%s\n' "$out" | grep -q 'Singular.Application.OpenDatum' \
     printf '%s\n' "$out" >&2
     exit 1
   }
-printf '%s\n' "$out" | grep -q 'registry_pin.ak' \
+printf '%s\n' "$out" | grep -q 'singular_state/state.ak' \
   || {
     echo "application-separation-controls: check failed but did not name the planted file:" >&2
     printf '%s\n' "$out" >&2
@@ -383,8 +404,8 @@ echo "application-separation-controls: planted onchain naming caught" >&2
 # this spelling, so the planted line names only it. The check must refuse
 # with the file and the token.
 copy_tree plant-onchain-envelope
-printf '%s\n' "-- probe: application/envelope" >>"$work/plant-onchain-envelope/onchain/lib/registry_pin.ak"
-grep -q 'application/envelope' "$work/plant-onchain-envelope/onchain/lib/registry_pin.ak" \
+printf '%s\n' "-- probe: application/envelope" >>"$work/plant-onchain-envelope/onchain/lib/singular_state/state.ak"
+grep -q 'application/envelope' "$work/plant-onchain-envelope/onchain/lib/singular_state/state.ak" \
   || {
     echo "application-separation-controls: onchain-envelope plant did not apply" >&2
     exit 2
@@ -399,7 +420,7 @@ printf '%s\n' "$out" | grep -q 'application/envelope' \
     printf '%s\n' "$out" >&2
     exit 1
   }
-printf '%s\n' "$out" | grep -q 'registry_pin.ak' \
+printf '%s\n' "$out" | grep -q 'singular_state/state.ak' \
   || {
     echo "application-separation-controls: check failed but did not name the planted file:" >&2
     printf '%s\n' "$out" >&2

@@ -46,11 +46,11 @@ script-identity:
 # of silently dropping the counts (issue #43).
 
 # Regenerate the committed identity manifest.
-script-identity-regen:
+script-identity-regen project="." manifest="script-identity.json":
     #!/usr/bin/env bash
     set -euo pipefail
     command -v jq >/dev/null || { echo "error: jq is required" >&2; exit 1; }
-    blueprint="$(nix build --quiet --no-link --print-out-paths .#plutus-blueprint)"
+    blueprint="$(nix build --quiet --no-link --print-out-paths "{{ project }}#plutus-blueprint")"
     root="$(git rev-parse --show-toplevel)"
     rev="$(awk -F'|' '/frozen revision/ {gsub(/[ `]/, "", $3); print $3; exit}' "$root/PROVENANCE.md")"
     if [[ ! "$rev" =~ ^[0-9a-f]{40}$ ]]; then
@@ -65,6 +65,6 @@ script-identity-regen:
            upstream: {source_revision: $rev},
            compiler: $bp[0].preamble.compiler.version,
            validators: [$bp[0].validators[] | {title: .title, hash: .hash, parameters: ((.parameters // []) | length)}]
-         }' > script-identity.json
-    echo "wrote onchain/script-identity.json: $(jq '.validators | length' script-identity.json) validators, compiler $(jq -r '.compiler' script-identity.json), upstream $rev"
+         }' > "{{ manifest }}"
+    echo "wrote {{ manifest }}: $(jq '.validators | length' "{{ manifest }}") validators, compiler $(jq -r '.compiler' "{{ manifest }}"), upstream $rev"
     echo "review the diff: git diff -- onchain/script-identity.json"

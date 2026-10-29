@@ -339,18 +339,6 @@
           text = builtins.readFile ./contract-test/external.sh;
         };
 
-        # -------------------------------------------------------
-        # Test vectors (from local Haskell package)
-        # -------------------------------------------------------
-
-        test-vectors = pkgs.runCommand "cage-vectors.ak" { } ''
-          ${pkgs.lib.getExe components.exes.cage-test-vectors} --aiken > $out
-        '';
-
-        test-vectors-json = pkgs.runCommand "cage-vectors.json" { } ''
-          ${pkgs.lib.getExe components.exes.cage-test-vectors} > $out
-        '';
-
       in
       {
         packages = {
@@ -406,7 +394,6 @@
           # The root reference takes only Ledger/Provider page pairs from
           # their public local-services owner; private Node pages stay out.
           local-services-haddock = components.sublibs.local-services.haddock;
-          inherit test-vectors test-vectors-json;
           # The generic development node remains available to command journeys.
           inherit devnet;
           # #326: the contract suite and its external leg.

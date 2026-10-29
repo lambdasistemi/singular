@@ -14,12 +14,11 @@ import System.Environment (getArgs, getEnvironment)
 import System.Exit (exitWith)
 
 import Singular.Application.OpenDatum.Root (runPackagedOpenDatum)
-import Singular.Application.OpenDatum.Value (openDatumApplication)
 import Singular.CLI.Version (builtCommit, stampedEnvironment)
 
 main :: IO ()
 main = do
     args <- getArgs
     environment <- stampedEnvironment builtCommit <$> getEnvironment
-    runPackagedOpenDatum openDatumApplication args environment
+    runPackagedOpenDatum args environment
         >>= exitWith

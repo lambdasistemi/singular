@@ -22,7 +22,7 @@ Families and their checkers (pinned by the root development shell):
 
 Carried elsewhere: haskell (Fourmolu and HLint: `just format-check`, the
 offchain lint app and the Conformance format and HLint apps) and aiken
-(`aiken fmt --check` and `aiken check` in the onchain and naming-onchain
+(`aiken fmt --check` and `aiken check` in the registry and application onchain
 flake checks). Generated rows are held by their generators' freshness checks
 and are skipped here, except that generated Lean mirrors must still meet the
 Lean style rules.
@@ -53,7 +53,7 @@ ELSEWHERE = {
     "haskell": "Fourmolu and HLint carriers (just format-check, offchain "
     "nix run .#lint, conformance nix run .#format-check / .#hlint-check)",
     "aiken": "aiken fmt --check and aiken check in the onchain and "
-    "naming-onchain flake checks",
+    "application onchain flake checks",
 }
 
 SHFMT = ["shfmt", "-i", "2", "-ci", "-bn"]

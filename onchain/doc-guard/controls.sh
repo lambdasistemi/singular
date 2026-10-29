@@ -14,8 +14,8 @@
 #   1. the module doc of a real registry module deleted;
 #   2. the doc comment above a real export of that module deleted;
 #   3. an undocumented public function added to that module;
-#   4. an undocumented module added under registry/;
-#   5. an empty extent (no state.ak, no registry/);
+#   4. an undocumented module added under singular_state/;
+#   5. an empty extent (no singular_state.ak, no singular_state/);
 #   6. an undocumented public function added to that module INDENTED — legal
 #      Aiken the compiler puts on the generated page like any other.
 #
@@ -117,7 +117,7 @@ if [ -n "$aiken" ]; then
   }
 fi
 
-first_export="$(bash "$check" --list "$work/p/validators" | grep '/registry/' | head -n1)"
+first_export="$(bash "$check" --list "$work/p/validators" | grep '/singular_state/' | sed -n '1p')"
 [ -n "$first_export" ] || {
   echo "CONTROL FAIL: no registry export to plant a gap in"
   exit 1
@@ -149,13 +149,13 @@ planted "undocumented export added to $rel" "'pub fn undocumentedControl' has no
 
 # 4. An undocumented module added.
 fresh
-printf 'pub fn undocumentedModuleControl() -> Bool {\n  True\n}\n' >"$work/p/lib/registry/undocumented_control.ak"
+printf 'pub fn undocumentedModuleControl() -> Bool {\n  True\n}\n' >"$work/p/lib/singular_state/undocumented_control.ak"
 planted "undocumented module added" "undocumented_control.ak: module doc lacks" "undocumented_control.html: module doc lacks"
 
 # 5. Empty extent.
 rm -rf "$work/empty"
 mkdir -p "$work/empty/validators" "$work/empty/docs"
-refused source "empty extent" "no state.ak" "$work/empty/validators"
+refused source "empty extent" "no singular_state.ak" "$work/empty/validators"
 if [ -n "$aiken" ]; then
   refused reference "empty extent" "no generated reference page checked" "$work/empty/validators" --reference "$work/empty/docs" --reference-only
 fi

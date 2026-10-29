@@ -207,7 +207,6 @@ library registry-cli
     Singular.CLI.Outlay
     Singular.CLI.Passphrase
     Singular.CLI.Payload
-    Singular.CLI.Permanent
     Singular.CLI.Plan
     Singular.CLI.Promise
     Singular.CLI.Proof
@@ -451,27 +450,6 @@ library koios-http
     , text
     , time
 
-executable cage-test-vectors
-  import:           warnings
-  default-language: GHC2021
-  hs-source-dirs:   app/test-vectors
-  main-is:          Main.hs
-  build-depends:
-    , aeson
-    , aeson-pretty
-    , aiken-codegen
-    , base               >=4.14 && <5
-    , base16-bytestring
-    , bytestring
-    , crypton
-    , lens
-    , memory
-    , mts:mpf-write
-    , plutus-core
-    , plutus-tx
-    , singular-registry
-    , text
-
 executable devnet
   import:           warnings
   default-language: GHC2021
@@ -543,6 +521,7 @@ test-suite cage-tests
   other-modules:
     Paths_singular_registry
     Singular.CLI.CommandRunSpec
+    Singular.CLI.SyntheticReleaseSpec
     Singular.CLI.CreateFundingSpec
     Singular.CLI.OneOutputCreateSpec
     Singular.CLI.PayloadSpec
@@ -768,8 +747,6 @@ test-suite e2e-tests
   hs-source-dirs:   e2e-test private-facade test-tags
   main-is:          main.hs
   other-modules:
-    Singular.Registry.E2E.Config
-    Singular.Registry.E2E.ConfigSpec
     Singular.Registry.E2E.Fixture
     Singular.Registry.E2E.NodeSpec
     Singular.Registry.E2E.SubmitSpec
@@ -817,7 +794,6 @@ test-suite e2e-tests
     , ouroboros-consensus:protocol
     , ouroboros-network:api
     , ouroboros-network:framework
-    , process
     , random
     , serialise
     , singular-registry

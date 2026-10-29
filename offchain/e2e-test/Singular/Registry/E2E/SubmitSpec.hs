@@ -595,7 +595,6 @@ runSubmit devnet sends label witnesses bundle = do
             Env
                 { envTracer = nullTracer
                 , envSource = "devnet"
-                , envLoadRelease = \_ _ -> pure (Left "submit loads no release")
                 , envReads = \_ k -> k (recording devnet sends (contextCapabilities devnet))
                 , envReaderReads = \_ k -> k (recording devnet sends (contextCapabilities devnet))
                 , envWrites = \_ _ -> fail "submit opened the write side"
