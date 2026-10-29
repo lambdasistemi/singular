@@ -1,0 +1,827 @@
+{
+  "design": "previous",
+  "revision": "0c0ab880df982a728b6b89a1e80fc1308144d616",
+  "application": "open datum",
+  "tools": {
+    "cardanoNode": "cardano-node 10.7.0 - linux-x86_64 - ghc-9.6\ngit rev 1e6d8228693ab2aa4e1d7305e7bdcc57cdd278e4",
+    "devnetSha256": "b4ab6e0af453496805d7aec1d716f823472fca7fe29cb91c6334213053dfc740",
+    "python": "Python 3.13.9",
+    "jq": "jq-1.8.1"
+  },
+  "workload": {
+    "creations": [
+      "first",
+      "later"
+    ],
+    "fundingOutputs": 8,
+    "fundingLovelacePerOutput": 2000000000,
+    "processingMilliseconds": 60000,
+    "reclaimingMilliseconds": 180000
+  },
+  "first": {
+    "transactions": [
+      {
+        "id": "f6a3dd2366f5831f89aba7b6b0ab1656a2953dde74fe066e6f091aba9c68e959",
+        "sizeBytes": 11511,
+        "feeLovelace": 1000000,
+        "outputs": [
+          {
+            "reference": "f6a3dd2366f5831f89aba7b6b0ab1656a2953dde74fe066e6f091aba9c68e959#0",
+            "lovelace": 50435700,
+            "referenceScript": {
+              "hash": "9a84eabb747716a3092996049b5003a97954fa272902f0bf8f744a98",
+              "sizeBytes": 11264,
+              "language": 3
+            }
+          },
+          {
+            "reference": "f6a3dd2366f5831f89aba7b6b0ab1656a2953dde74fe066e6f091aba9c68e959#1",
+            "lovelace": 1948564300,
+            "referenceScript": null
+          }
+        ],
+        "inputsSpent": [
+          "eaf23b6df2aaf1c004154f759502547774c7be4aa85e66402bfe02f986c12eda#0"
+        ],
+        "inputsRead": [],
+        "signers": [
+          "02bed62eaca962ce1bf4d0d1901e9102ce6f692d1240d2514295733d"
+        ],
+        "step": "publish-state"
+      },
+      {
+        "id": "d6bb9a2c52f192407789855b1d3fd2dac31e51e5da851946741f0b02b76267e6",
+        "sizeBytes": 751,
+        "feeLovelace": 695626,
+        "outputs": [
+          {
+            "reference": "d6bb9a2c52f192407789855b1d3fd2dac31e51e5da851946741f0b02b76267e6#0",
+            "lovelace": 2000000,
+            "referenceScript": null
+          },
+          {
+            "reference": "d6bb9a2c52f192407789855b1d3fd2dac31e51e5da851946741f0b02b76267e6#1",
+            "lovelace": 3945868674,
+            "referenceScript": null
+          }
+        ],
+        "inputsSpent": [
+          "eaf23b6df2aaf1c004154f759502547774c7be4aa85e66402bfe02f986c12eda#1",
+          "f6a3dd2366f5831f89aba7b6b0ab1656a2953dde74fe066e6f091aba9c68e959#1"
+        ],
+        "inputsRead": [
+          "f6a3dd2366f5831f89aba7b6b0ab1656a2953dde74fe066e6f091aba9c68e959#0"
+        ],
+        "signers": [
+          "02bed62eaca962ce1bf4d0d1901e9102ce6f692d1240d2514295733d"
+        ],
+        "step": "boot"
+      },
+      {
+        "id": "cc1dc74a34bcf41b14e22b8ca8273f74bcb80afe4890efc4ff074bd422896605",
+        "sizeBytes": 3955,
+        "feeLovelace": 1000000,
+        "outputs": [
+          {
+            "reference": "cc1dc74a34bcf41b14e22b8ca8273f74bcb80afe4890efc4ff074bd422896605#0",
+            "lovelace": 17869340,
+            "referenceScript": {
+              "hash": "8f7c44a26696c225c8e692875083de8082ec8ac6bcd72514caacb4f9",
+              "sizeBytes": 3708,
+              "language": 3
+            }
+          },
+          {
+            "reference": "cc1dc74a34bcf41b14e22b8ca8273f74bcb80afe4890efc4ff074bd422896605#1",
+            "lovelace": 3926999334,
+            "referenceScript": null
+          }
+        ],
+        "inputsSpent": [
+          "d6bb9a2c52f192407789855b1d3fd2dac31e51e5da851946741f0b02b76267e6#1"
+        ],
+        "inputsRead": [],
+        "signers": [
+          "02bed62eaca962ce1bf4d0d1901e9102ce6f692d1240d2514295733d"
+        ],
+        "step": "publish-request"
+      },
+      {
+        "id": "e8aaceac35b3a97a5b1f0791f6635571ce06668b15df129ab0c4be82e163ffbd",
+        "sizeBytes": 1906,
+        "feeLovelace": 1000000,
+        "outputs": [
+          {
+            "reference": "e8aaceac35b3a97a5b1f0791f6635571ce06668b15df129ab0c4be82e163ffbd#0",
+            "lovelace": 9038150,
+            "referenceScript": {
+              "hash": "3f4b0f8405beaf9865ad93d01f18fa2a7709fab2ca23dd59ae849831",
+              "sizeBytes": 1659,
+              "language": 3
+            }
+          },
+          {
+            "reference": "e8aaceac35b3a97a5b1f0791f6635571ce06668b15df129ab0c4be82e163ffbd#1",
+            "lovelace": 3916961184,
+            "referenceScript": null
+          }
+        ],
+        "inputsSpent": [
+          "cc1dc74a34bcf41b14e22b8ca8273f74bcb80afe4890efc4ff074bd422896605#1"
+        ],
+        "inputsRead": [],
+        "signers": [
+          "02bed62eaca962ce1bf4d0d1901e9102ce6f692d1240d2514295733d"
+        ],
+        "step": "publish-witness-active"
+      },
+      {
+        "id": "d5e743cf06b0c4502a8a24fc367f83f24db162886afb5880cfec983a169e8387",
+        "sizeBytes": 10173,
+        "feeLovelace": 1000000,
+        "outputs": [
+          {
+            "reference": "d5e743cf06b0c4502a8a24fc367f83f24db162886afb5880cfec983a169e8387#0",
+            "lovelace": 44668920,
+            "referenceScript": {
+              "hash": "4c76918bbbbb1b99331ee670f1a20ca4c00e0311c88c04c3272f36f1",
+              "sizeBytes": 9926,
+              "language": 3
+            }
+          },
+          {
+            "reference": "d5e743cf06b0c4502a8a24fc367f83f24db162886afb5880cfec983a169e8387#1",
+            "lovelace": 3871292264,
+            "referenceScript": null
+          }
+        ],
+        "inputsSpent": [
+          "e8aaceac35b3a97a5b1f0791f6635571ce06668b15df129ab0c4be82e163ffbd#1"
+        ],
+        "inputsRead": [],
+        "signers": [
+          "02bed62eaca962ce1bf4d0d1901e9102ce6f692d1240d2514295733d"
+        ],
+        "step": "publish-application"
+      }
+    ],
+    "liveReferenceScriptsBefore": [],
+    "totals": {
+      "transactionCount": 5,
+      "transactionBytes": 28296,
+      "outputsCreated": 10,
+      "feesLovelace": 4695626,
+      "referenceOutputsCreated": 4,
+      "referenceScriptsBytes": 26557,
+      "referenceAdaLockedLovelace": 122012110,
+      "witnessPublicationTransactions": 1,
+      "witnessPublicationFeesLovelace": 1000000,
+      "witnessPublicationAdaLockedLovelace": 9038150
+    },
+    "release": {
+      "version": "open-datum 0.16.0 (commit 0c0ab880df982a728b6b89a1e80fc1308144d616)",
+      "blueprintSha256": "ac43d782181121dcdedfd4a9c48b89fb6fa77dd69e7c9f5619110ca8efb0688b",
+      "programSha256": "ba36e25f9e9a19c89d8bf4f2e90153b6b09960091c5fc857fe7ef4096c636812"
+    }
+  },
+  "later": {
+    "transactions": [
+      {
+        "id": "1a656e2dabf600c722453c949097f87b8188e02d1eb432271f3ad7b37adba171",
+        "sizeBytes": 755,
+        "feeLovelace": 695371,
+        "outputs": [
+          {
+            "reference": "1a656e2dabf600c722453c949097f87b8188e02d1eb432271f3ad7b37adba171#0",
+            "lovelace": 2000000,
+            "referenceScript": null
+          },
+          {
+            "reference": "1a656e2dabf600c722453c949097f87b8188e02d1eb432271f3ad7b37adba171#1",
+            "lovelace": 5868596893,
+            "referenceScript": null
+          }
+        ],
+        "inputsSpent": [
+          "d5e743cf06b0c4502a8a24fc367f83f24db162886afb5880cfec983a169e8387#1",
+          "eaf23b6df2aaf1c004154f759502547774c7be4aa85e66402bfe02f986c12eda#2"
+        ],
+        "inputsRead": [
+          "f6a3dd2366f5831f89aba7b6b0ab1656a2953dde74fe066e6f091aba9c68e959#0"
+        ],
+        "signers": [
+          "02bed62eaca962ce1bf4d0d1901e9102ce6f692d1240d2514295733d"
+        ],
+        "step": "boot"
+      },
+      {
+        "id": "d9ff76efb3d132ca4ca30b5f7998e57a8bebe28b6ccf593a0ea6861eb647481e",
+        "sizeBytes": 3959,
+        "feeLovelace": 1000000,
+        "outputs": [
+          {
+            "reference": "d9ff76efb3d132ca4ca30b5f7998e57a8bebe28b6ccf593a0ea6861eb647481e#0",
+            "lovelace": 17869340,
+            "referenceScript": {
+              "hash": "b1c8f3537b0de68bb38f37064458404badb7e030b888f59f2f70bb6f",
+              "sizeBytes": 3708,
+              "language": 3
+            }
+          },
+          {
+            "reference": "d9ff76efb3d132ca4ca30b5f7998e57a8bebe28b6ccf593a0ea6861eb647481e#1",
+            "lovelace": 5849727553,
+            "referenceScript": null
+          }
+        ],
+        "inputsSpent": [
+          "1a656e2dabf600c722453c949097f87b8188e02d1eb432271f3ad7b37adba171#1"
+        ],
+        "inputsRead": [],
+        "signers": [
+          "02bed62eaca962ce1bf4d0d1901e9102ce6f692d1240d2514295733d"
+        ],
+        "step": "publish-request"
+      },
+      {
+        "id": "26cb61f8b0447ecce8395c14245eba5c9750b1dbe0314b42d15982b072971858",
+        "sizeBytes": 1910,
+        "feeLovelace": 1000000,
+        "outputs": [
+          {
+            "reference": "26cb61f8b0447ecce8395c14245eba5c9750b1dbe0314b42d15982b072971858#0",
+            "lovelace": 9038150,
+            "referenceScript": {
+              "hash": "fe69e0430375e06e3e34f3791e57bef024e393a06c938f795b80f8c2",
+              "sizeBytes": 1659,
+              "language": 3
+            }
+          },
+          {
+            "reference": "26cb61f8b0447ecce8395c14245eba5c9750b1dbe0314b42d15982b072971858#1",
+            "lovelace": 5839689403,
+            "referenceScript": null
+          }
+        ],
+        "inputsSpent": [
+          "d9ff76efb3d132ca4ca30b5f7998e57a8bebe28b6ccf593a0ea6861eb647481e#1"
+        ],
+        "inputsRead": [],
+        "signers": [
+          "02bed62eaca962ce1bf4d0d1901e9102ce6f692d1240d2514295733d"
+        ],
+        "step": "publish-witness-active"
+      },
+      {
+        "id": "f70d808a828ea2c4dd479ad2ac30fe01c0d8171f9784106b877515919ca77670",
+        "sizeBytes": 10177,
+        "feeLovelace": 1000000,
+        "outputs": [
+          {
+            "reference": "f70d808a828ea2c4dd479ad2ac30fe01c0d8171f9784106b877515919ca77670#0",
+            "lovelace": 44668920,
+            "referenceScript": {
+              "hash": "5657c576b7c9d57d27482d024af225de93a8e11e75bc6c8ef37092f7",
+              "sizeBytes": 9926,
+              "language": 3
+            }
+          },
+          {
+            "reference": "f70d808a828ea2c4dd479ad2ac30fe01c0d8171f9784106b877515919ca77670#1",
+            "lovelace": 5794020483,
+            "referenceScript": null
+          }
+        ],
+        "inputsSpent": [
+          "26cb61f8b0447ecce8395c14245eba5c9750b1dbe0314b42d15982b072971858#1"
+        ],
+        "inputsRead": [],
+        "signers": [
+          "02bed62eaca962ce1bf4d0d1901e9102ce6f692d1240d2514295733d"
+        ],
+        "step": "publish-application"
+      }
+    ],
+    "liveReferenceScriptsBefore": [
+      {
+        "reference": "f6a3dd2366f5831f89aba7b6b0ab1656a2953dde74fe066e6f091aba9c68e959#0",
+        "lovelace": 50435700,
+        "referenceScript": {
+          "hash": "9a84eabb747716a3092996049b5003a97954fa272902f0bf8f744a98",
+          "sizeBytes": 11264,
+          "language": 3
+        }
+      }
+    ],
+    "totals": {
+      "transactionCount": 4,
+      "transactionBytes": 16801,
+      "outputsCreated": 8,
+      "feesLovelace": 3695371,
+      "referenceOutputsCreated": 3,
+      "referenceScriptsBytes": 15293,
+      "referenceAdaLockedLovelace": 71576410,
+      "witnessPublicationTransactions": 1,
+      "witnessPublicationFeesLovelace": 1000000,
+      "witnessPublicationAdaLockedLovelace": 9038150
+    },
+    "release": {
+      "version": "open-datum 0.16.0 (commit 0c0ab880df982a728b6b89a1e80fc1308144d616)",
+      "blueprintSha256": "ac43d782181121dcdedfd4a9c48b89fb6fa77dd69e7c9f5619110ca8efb0688b",
+      "programSha256": "ba36e25f9e9a19c89d8bf4f2e90153b6b09960091c5fc857fe7ef4096c636812"
+    }
+  },
+  "schema": "creation-cost-v1",
+  "network": {
+    "shelleyGenesisSha256": "fe73bc3cbe2fdda6252a502907910a417a6940dd436c320e56b0e30f034ecaf2",
+    "byronGenesisSha256": "7ce284b6929a13c51de05453b6b81942f99daffe3d9b00be43b38adfd24580b8",
+    "protocolParametersCborSha256": "9f9a1e07d4db2441bed128d468ebab7c2ee4e271c5ba358a0afc3271e42bdeb8",
+    "protocolParameters": {
+      "collateralPercentage": 150,
+      "committeeMaxTermLength": 73,
+      "committeeMinSize": 7,
+      "costModels": {
+        "PlutusV1": [
+          205665,
+          812,
+          1,
+          1,
+          1000,
+          571,
+          0,
+          1,
+          1000,
+          24177,
+          4,
+          1,
+          1000,
+          32,
+          117366,
+          10475,
+          4,
+          23000,
+          100,
+          23000,
+          100,
+          23000,
+          100,
+          23000,
+          100,
+          23000,
+          100,
+          23000,
+          100,
+          100,
+          100,
+          23000,
+          100,
+          19537,
+          32,
+          175354,
+          32,
+          46417,
+          4,
+          221973,
+          511,
+          0,
+          1,
+          89141,
+          32,
+          497525,
+          14068,
+          4,
+          2,
+          196500,
+          453240,
+          220,
+          0,
+          1,
+          1,
+          1000,
+          28662,
+          4,
+          2,
+          245000,
+          216773,
+          62,
+          1,
+          1060367,
+          12586,
+          1,
+          208512,
+          421,
+          1,
+          187000,
+          1000,
+          52998,
+          1,
+          80436,
+          32,
+          43249,
+          32,
+          1000,
+          32,
+          80556,
+          1,
+          57667,
+          4,
+          1000,
+          10,
+          197145,
+          156,
+          1,
+          197145,
+          156,
+          1,
+          204924,
+          473,
+          1,
+          208896,
+          511,
+          1,
+          52467,
+          32,
+          64832,
+          32,
+          65493,
+          32,
+          22558,
+          32,
+          16563,
+          32,
+          76511,
+          32,
+          196500,
+          453240,
+          220,
+          0,
+          1,
+          1,
+          69522,
+          11687,
+          0,
+          1,
+          60091,
+          32,
+          196500,
+          453240,
+          220,
+          0,
+          1,
+          1,
+          196500,
+          453240,
+          220,
+          0,
+          1,
+          1,
+          806990,
+          30482,
+          4,
+          1927926,
+          82523,
+          4,
+          265318,
+          0,
+          4,
+          0,
+          85931,
+          32,
+          205665,
+          812,
+          1,
+          1,
+          41182,
+          32,
+          212342,
+          32,
+          31220,
+          32,
+          32696,
+          32,
+          43357,
+          32,
+          32247,
+          32,
+          38314,
+          32,
+          57996947,
+          18975,
+          10
+        ],
+        "PlutusV3": [
+          100788,
+          420,
+          1,
+          1,
+          1000,
+          173,
+          0,
+          1,
+          1000,
+          59957,
+          4,
+          1,
+          11183,
+          32,
+          201305,
+          8356,
+          4,
+          16000,
+          100,
+          16000,
+          100,
+          16000,
+          100,
+          16000,
+          100,
+          16000,
+          100,
+          16000,
+          100,
+          100,
+          100,
+          16000,
+          100,
+          94375,
+          32,
+          132994,
+          32,
+          61462,
+          4,
+          72010,
+          178,
+          0,
+          1,
+          22151,
+          32,
+          91189,
+          769,
+          4,
+          2,
+          85848,
+          123203,
+          7305,
+          -900,
+          1716,
+          549,
+          57,
+          85848,
+          0,
+          1,
+          1,
+          1000,
+          42921,
+          4,
+          2,
+          24548,
+          29498,
+          38,
+          1,
+          898148,
+          27279,
+          1,
+          51775,
+          558,
+          1,
+          39184,
+          1000,
+          60594,
+          1,
+          141895,
+          32,
+          83150,
+          32,
+          15299,
+          32,
+          76049,
+          1,
+          13169,
+          4,
+          22100,
+          10,
+          28999,
+          74,
+          1,
+          28999,
+          74,
+          1,
+          43285,
+          552,
+          1,
+          44749,
+          541,
+          1,
+          33852,
+          32,
+          68246,
+          32,
+          72362,
+          32,
+          7243,
+          32,
+          7391,
+          32,
+          11546,
+          32,
+          85848,
+          123203,
+          7305,
+          -900,
+          1716,
+          549,
+          57,
+          85848,
+          0,
+          1,
+          90434,
+          519,
+          0,
+          1,
+          74433,
+          32,
+          85848,
+          123203,
+          7305,
+          -900,
+          1716,
+          549,
+          57,
+          85848,
+          0,
+          1,
+          1,
+          85848,
+          123203,
+          7305,
+          -900,
+          1716,
+          549,
+          57,
+          85848,
+          0,
+          1,
+          955506,
+          213312,
+          0,
+          2,
+          270652,
+          22588,
+          4,
+          1457325,
+          64566,
+          4,
+          20467,
+          1,
+          4,
+          0,
+          141992,
+          32,
+          100788,
+          420,
+          1,
+          1,
+          81663,
+          32,
+          59498,
+          32,
+          20142,
+          32,
+          24588,
+          32,
+          20744,
+          32,
+          25933,
+          32,
+          24623,
+          32,
+          43053543,
+          10,
+          53384111,
+          14333,
+          10,
+          43574283,
+          26308,
+          10,
+          16000,
+          100,
+          16000,
+          100,
+          962335,
+          18,
+          2780678,
+          6,
+          442008,
+          1,
+          52538055,
+          3756,
+          18,
+          267929,
+          18,
+          76433006,
+          8868,
+          18,
+          52948122,
+          18,
+          1995836,
+          36,
+          3227919,
+          12,
+          901022,
+          1,
+          166917843,
+          4307,
+          36,
+          284546,
+          36,
+          158221314,
+          26549,
+          36,
+          74698472,
+          36,
+          333849714,
+          1,
+          254006273,
+          72,
+          2174038,
+          72,
+          2261318,
+          64571,
+          4,
+          207616,
+          8310,
+          4,
+          1293828,
+          28716,
+          63,
+          0,
+          1,
+          1006041,
+          43623,
+          251,
+          0,
+          1
+        ]
+      },
+      "dRepActivity": 20,
+      "dRepDeposit": 500000000,
+      "dRepVotingThresholds": {
+        "committeeNoConfidence": 0.6,
+        "committeeNormal": 0.67,
+        "hardForkInitiation": 0.6,
+        "motionNoConfidence": 0.67,
+        "ppEconomicGroup": 0.67,
+        "ppGovGroup": 0.75,
+        "ppNetworkGroup": 0.67,
+        "ppTechnicalGroup": 0.67,
+        "treasuryWithdrawal": 0.67,
+        "updateToConstitution": 0.75
+      },
+      "executionUnitPrices": {
+        "priceMemory": 0.0577,
+        "priceSteps": 7.21e-05
+      },
+      "govActionDeposit": 50000000000,
+      "govActionLifetime": 6,
+      "maxBlockBodySize": 65536,
+      "maxBlockExecutionUnits": {
+        "memory": 62000000,
+        "steps": 20000000000
+      },
+      "maxBlockHeaderSize": 1100,
+      "maxCollateralInputs": 3,
+      "maxTxExecutionUnits": {
+        "memory": 140000000,
+        "steps": 10000000000
+      },
+      "maxTxSize": 16384,
+      "maxValueSize": 5000,
+      "minFeeRefScriptCostPerByte": 44,
+      "minPoolCost": 0,
+      "monetaryExpansion": 0.1,
+      "poolPledgeInfluence": 0,
+      "poolRetireMaxEpoch": 18,
+      "poolVotingThresholds": {
+        "committeeNoConfidence": 0.51,
+        "committeeNormal": 0.6,
+        "hardForkInitiation": 0.51,
+        "motionNoConfidence": 0.6,
+        "ppSecurityGroup": 0.6
+      },
+      "protocolVersion": {
+        "major": 10,
+        "minor": 0
+      },
+      "stakeAddressDeposit": 400000,
+      "stakePoolDeposit": 0,
+      "stakePoolTargetNum": 100,
+      "treasuryCut": 0.1,
+      "txFeeFixed": 155381,
+      "txFeePerByte": 44,
+      "utxoCostPerByte": 4310
+    },
+    "protocolParametersSha256": "135d40e7b1461697bb6690105bf71aedf638696cbced6f0b53a1ccb8a87bf5d7"
+  },
+  "chainRecord": "previous-chain.jsonl",
+  "chainRecordSha256": "4e51e550f5e5ecb10cdbf6ba0425abb0faa94384eaf609006a80c4cc9be76e49"
+}

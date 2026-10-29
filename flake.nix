@@ -788,6 +788,8 @@
           cp ${./tools/no_pin_chain_view.py} $out/no_pin_chain_view.py
           cp ${./tools/no_pin_termination_observations.py} $out/no_pin_termination_observations.py
           cp ${./tools/no_pin_reading_checks.py} $out/no_pin_reading_checks.py
+          cp ${./tools/creation-cost.py} $out/creation-cost.py
+          cp ${./specs/745-shared-publications/evidence/candidate.json} $out/creation-candidate.json
         '';
       # Release checks remain available independently of the command journeys.
       releaseVerification =
@@ -899,6 +901,24 @@
         system: packages system // { build-gate = buildGate system; }
       )) bundles;
       checks = each (system: {
+        creation-cost =
+          let
+            pkgs = import nixpkgs { inherit system; };
+            checkApp =
+              (import ./nix/ci-apps.nix {
+                inherit
+                  pkgs
+                  offchain
+                  onchain
+                  system
+                  ;
+              }).creation-cost-check;
+          in
+          pkgs.runCommand "creation-cost" { LANG = "C.UTF-8"; } ''
+            cd ${self}
+            ${checkApp.program}
+            touch "$out"
+          '';
         docs = (project system).check;
         release = (project system).releaseCheck;
         model = (model system).check;

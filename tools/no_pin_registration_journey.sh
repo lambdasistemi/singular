@@ -476,6 +476,14 @@ check "only the first registry locked ADA in reference scripts" \
 control "a measurement that gave a later registry two transactions would be seen" \
   jq -e '[.registries[].transactionCount] == [2, 2, 1]' "$work/creation-measurement.json"
 
+# The candidate uses the same chain-derived schema as the committed comparison.
+# Capture is from a complete prefix of the node's independent record; command
+# receipts select transaction identities, never measurement figures.
+python3 -I "$(dirname "$chain_view")/creation-cost.py" journey \
+  --work "$work" --source "$evidence" --program "$open_datum" \
+  --blueprint "$work/release/plutus.json" --devnet "$devnet" \
+  --reference "$(dirname "$chain_view")/creation-candidate.json"
+
 observe_termination() {
   python3 -I "$(dirname "$chain_view")/no_pin_termination_observations.py" "$chain_dir" "$state_policy" "$state_name" "$key_hex" \
     >"$work/termination-measurement.json" 2>"$work/termination-measurement.err"

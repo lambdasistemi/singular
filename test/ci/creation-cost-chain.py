@@ -23,7 +23,9 @@ def main():
     measured = scripts = 0
 
     def reference_script(output):
-        return get(output, 3) if isinstance(output, tuple) and output[0] == "map" else None
+        return (
+            get(output, 3) if isinstance(output, tuple) and output[0] == "map" else None
+        )
 
     for transaction in transactions:
         raw = bytes.fromhex(transaction["cbor"])
@@ -33,7 +35,13 @@ def main():
         if not any(reference_script(output) for output in outputs):
             continue
         result = subprocess.run(
-            [sys.executable, "-I", str(reader), "tx", transaction["material"]["tx_hash"]],
+            [
+                sys.executable,
+                "-I",
+                str(reader),
+                "tx",
+                transaction["material"]["tx_hash"],
+            ],
             input=source,
             text=True,
             capture_output=True,
@@ -52,14 +60,20 @@ def main():
             (language, script), script_end = decode(embedded)
             assert script_end == len(embedded)
             assert actual.get("referenceScript") == {
-                "hash": hashlib.blake2b(bytes([language]) + script, digest_size=28).hexdigest(),
+                "hash": hashlib.blake2b(
+                    bytes([language]) + script, digest_size=28
+                ).hexdigest(),
                 "sizeBytes": len(script),
                 "language": language,
-            }, "the reference script's identity and size must come from its carried bytes"
+            }, (
+                "the reference script's identity and size must come from its carried bytes"
+            )
             scripts += 1
         measured += 1
     assert measured > 1 and scripts > 1, "the chain-reader check exercised too little"
-    print(f"creation-cost-chain: {measured} transactions and {scripts} scripts agree with chain bytes")
+    print(
+        f"creation-cost-chain: {measured} transactions and {scripts} scripts agree with chain bytes"
+    )
 
 
 if __name__ == "__main__":
