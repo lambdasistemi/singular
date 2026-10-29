@@ -1001,7 +1001,8 @@ accepted boundary control before either selection assertion runs.
 -}
 prepareByteBoundary :: IO (Registered, [TxIn], Integer)
 prepareByteBoundary = do
-    rg <- newRegistered
+    let key = signingKey 1
+    rg <- registeredForSigning key
     refs@[high, middle, _] <-
         book
             rg
@@ -1012,7 +1013,7 @@ prepareByteBoundary = do
             ]
     two <- expectBuilt =<< foldNow rg [high, middle]
     three <- expectBuilt =<< foldNow rg refs
-    let bytes tx = toInteger (LBS.length (serialize (eraProtVerHigh @ConwayEra) tx))
+    let bytes tx = serializedBytes (signedBy [key] tx)
         limit = (bytes two + bytes three) `div` 2
     bytes two `shouldSatisfy` (< bytes three)
     advanceChain (worldChain (rgWorld rg)) $ \facts ->
@@ -1037,34 +1038,17 @@ prepareSubmissionBoundary
         , Integer
         )
 prepareSubmissionBoundary count = do
-    original <- newRegistered
-    let keys =
-            [ genKeyDSIGN (mkSeedFromBytes (BS.replicate 32 (fromIntegral n)))
-            | n <- [1 .. count]
-            ]
+    let keys = map signingKey [1 .. count]
     payer <- case keys of
         key : _ -> pure key
         _ -> fail "a submitted fold needs a payer"
-    let KeyHash payerHash = signingHash payer
-        payerAddress = Addr network (KeyHashObj (KeyHash payerHash)) StakeRefNull
-        rg = original{rgFolder = payerAddress}
-        application =
+    rg <- registeredForSigning payer
+    let application =
             standInApplication
                 { appFold = \requests -> do
                     appFold standInApplication requests
                     mapM_ (Tx.requireSignature . signingHash) keys
                 }
-    advanceChain (worldChain (rgWorld rg)) $ \facts ->
-        facts
-            { csUTxO =
-                Map.map
-                    ( \output ->
-                        if output ^. addrTxOutL == rgFolder original
-                            then output & addrTxOutL .~ payerAddress
-                            else output
-                    )
-                    (csUTxO facts)
-            }
     refs@[high, _] <-
         book
             rg
@@ -1083,11 +1067,43 @@ prepareSubmissionBoundary count = do
     limit `shouldSatisfy` (< serializedBytes signedTwo)
     serializedBytes signedOne `shouldSatisfy` (<= limit)
     judge (rgWorld rg) signedTwo >>= (`shouldSatisfy` everyScriptAccepts)
+    -- At the exact submitted size the whole named batch must still fit:
+    -- reserving a constant or double-counting the payer is not acceptable.
+    advanceChain (worldChain (rgWorld rg)) $ \facts ->
+        facts
+            { csPParams =
+                csPParams facts
+                    & ppMaxTxSizeL .~ fromInteger (serializedBytes signedTwo)
+            }
+    exact <- expectBuilt =<< foldWithApplication rg application refs
+    serializedBytes (signedBy keys exact)
+        `shouldBe` serializedBytes signedTwo
     advanceChain (worldChain (rgWorld rg)) $ \facts ->
         facts{csPParams = csPParams facts & ppMaxTxSizeL .~ fromInteger limit}
     control <- expectBuilt =<< foldWithApplication rg application [high]
     serializedBytes (signedBy keys control) `shouldSatisfy` (<= limit)
     pure (rg, application, keys, refs, limit)
+
+signingKey :: Int -> SignKeyDSIGN Ed25519DSIGN
+signingKey n = genKeyDSIGN (mkSeedFromBytes (BS.replicate 32 (fromIntegral n)))
+
+registeredForSigning :: SignKeyDSIGN Ed25519DSIGN -> IO Registered
+registeredForSigning key = do
+    original <- newRegistered
+    let KeyHash payerHash = signingHash key
+        payerAddress = Addr network (KeyHashObj (KeyHash payerHash)) StakeRefNull
+    advanceChain (worldChain (rgWorld original)) $ \facts ->
+        facts
+            { csUTxO =
+                Map.map
+                    ( \output ->
+                        if output ^. addrTxOutL == rgFolder original
+                            then output & addrTxOutL .~ payerAddress
+                            else output
+                    )
+                    (csUTxO facts)
+            }
+    pure original{rgFolder = payerAddress}
 
 signingHash :: SignKeyDSIGN Ed25519DSIGN -> KeyHash Guard
 signingHash = hashKey . VKey . deriveVerKeyDSIGN

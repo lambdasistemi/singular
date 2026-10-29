@@ -43,6 +43,7 @@ import Data.Bifunctor (first)
 import Data.ByteString.Lazy qualified as LBS
 import Data.Either (lefts)
 import Data.Map.Strict qualified as Map
+import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Void (Void)
@@ -67,7 +68,11 @@ import Cardano.Ledger.Api.Scripts.Data
     , Datum (..)
     , binaryDataToData
     )
-import Cardano.Ledger.Api.Tx (witsTxL)
+import Cardano.Ledger.Api.Tx (bodyTxL, witsTxL)
+import Cardano.Ledger.Api.Tx.Body
+    ( collateralInputsTxBodyL
+    , inputsTxBodyL
+    )
 import Cardano.Ledger.Api.Tx.Out (datumTxOutL, valueTxOutL)
 import Cardano.Ledger.Api.Tx.Wits (rdmrsTxWitsL)
 import Cardano.Ledger.BaseTypes (Network)
@@ -83,10 +88,12 @@ import Cardano.Ledger.Mary.Value
     , PolicyID
     )
 import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
+import Cardano.Ledger.Tools (addDummyWitsTx)
 import Cardano.Ledger.TxIn (TxIn)
 import Cardano.Slotting.Slot (SlotNo (..))
 import Cardano.Tx.Build qualified as Tx
 import Cardano.Tx.Ledger (ConwayTx)
+import Cardano.Tx.Witnesses (estimatedKeyWitnessCount)
 
 import Singular.Registry.Evidence (Evidenced (..), NoWitness)
 import Singular.Registry.Ledger (ConwayEra, PParams, TxOut)
@@ -320,22 +327,43 @@ assembleTransaction session spent referenced change program = do
         Left (ProbeCapacity limit) -> Left (CapacityExceeded limit)
         Right (Left failure) -> Left (BuildFailed (Text.pack (show failure)))
         Right (Right tx) ->
-            maybe (Right tx) (Left . CapacityExceeded) (capacityOf protocol tx)
+            maybe
+                (Right tx)
+                (Left . CapacityExceeded)
+                (capacityOf protocol (spent <> referenced) tx)
   where
     noQuery :: NoQuery a -> IO b
     noQuery query = case query of {}
 
-{- | Compare actual final bytes and declared execution units with the session's
-parameters. No builder message is interpreted as a capacity refusal.
+{- | Compare bytes including the required key witnesses, and declared execution
+units, with the session's parameters. No builder message is interpreted as a
+capacity refusal.
 -}
-capacityOf :: PParams ConwayEra -> ConwayTx -> Maybe CapacityLimit
-capacityOf protocol tx
+capacityOf
+    :: PParams ConwayEra
+    -> [(TxIn, TxOut ConwayEra)]
+    -> ConwayTx
+    -> Maybe CapacityLimit
+capacityOf protocol resolved tx
     | bytes > byteLimit = Just (TransactionSize bytes byteLimit)
     | memory > memoryLimit = Just (ExecutionMemory memory memoryLimit)
     | steps > stepLimit = Just (ExecutionSteps steps stepLimit)
     | otherwise = Nothing
   where
-    bytes = toInteger (LBS.length (serialize (eraProtVerHigh @ConwayEra) tx))
+    -- The builder returns no key witnesses. Count the actual distinct keys
+    -- needed by its body and spending/collateral inputs, as the balancer does.
+    -- Ledger padding measures their complete encoding without altering the
+    -- transaction returned to the signer, including witness-array boundaries.
+    body = tx ^. bodyTxL
+    requiredKeys =
+        estimatedKeyWitnessCount
+            body
+            (Set.union (body ^. inputsTxBodyL) (body ^. collateralInputsTxBodyL))
+            resolved
+    submitted = addDummyWitsTx protocol tx requiredKeys []
+    bytes =
+        toInteger
+            (LBS.length (serialize (eraProtVerHigh @ConwayEra) submitted))
     byteLimit = toInteger (protocol ^. ppMaxTxSizeL)
     ExUnits maxMemory maxSteps = protocol ^. ppMaxTxExUnitsL
     memoryLimit = toInteger maxMemory
