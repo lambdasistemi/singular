@@ -43,28 +43,28 @@
       "pause": 500
     },
     {
-      "text": "[ ] reader-statements: the reader definition and its statements, reviewed before proofs, proved, in the inventories.",
+      "text": "[x] reader-statements: the reader definition and its statements, reviewed before proofs, proved, in the inventories.",
       "pause": 300
     },
     {
-      "text": "[ ] reader-library: live with one asset query, terminal and never registered from the trie, every refusal.",
+      "text": "[x] reader-library: live with one asset query, terminal and never registered from the trie, every refusal.",
       "pause": 300
     },
     {
-      "text": "[ ] reading-commands: both commands, help snapshots, parser rows, documented flags.",
+      "text": "[x] reading-commands: both commands, help snapshots, parser rows, documented flags.",
       "pause": 300
     },
     {
-      "text": "[ ] devnet-reading-journey-and-refusals: the four answers, the measured lookup and the refusals with controls on devnet.",
+      "text": "[x] devnet-reading-journey-and-refusals: the four answers, the measured lookup and the refusals with controls on devnet.",
       "pause": 300
     },
     {
-      "text": "[ ] conformance-and-documentation: the reading rows and the user pages.",
+      "text": "[x] conformance-and-documentation: the reading rows and the user pages.",
       "pause": 300
     }
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "8f9b8fe99716dbeddf8bcc6df9bfaa98def206561f369d207fd2ff94daaf776e"
+    "sha256": "9a241f77aca0f13cd94ff28e747d5b846c0d3fd01352b4ce88cfbe5827f23f4e"
   }
 }
