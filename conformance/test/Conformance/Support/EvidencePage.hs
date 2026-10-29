@@ -11,7 +11,6 @@ module Conformance.Support.EvidencePage (spec) where
 
 import Control.Monad (forM_)
 import Data.ByteString.Lazy qualified as BSL
-import Data.Char (isAlphaNum)
 import Data.List (isInfixOf, sort)
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -59,15 +58,15 @@ spec = describe "Appendix: computing the published evidence page" $ do
             let demonstrated = section "Requirements a run demonstrated" page
                 missing = sectionTree "Requirements not demonstrated" page
             mapM_
-                (\r -> tableIds demonstrated `shouldSatisfy` elem (receiptRow r))
+                (\r -> tableIds rows demonstrated `shouldSatisfy` elem (receiptRow r))
                 receipts
-            tableIds demonstrated `shouldBe` sort (map receiptRow receipts)
+            tableIds rows demonstrated `shouldBe` sort (map receiptRow receipts)
             -- every other requirement is listed by name, requirement text and plan
             let others = [r | r <- rows, rowId r `notElem` map receiptRow receipts]
             length others `shouldSatisfy` (> 1)
             mapM_
                 ( \r -> do
-                    tableIds missing `shouldSatisfy` elem (rowId r)
+                    tableIds rows missing `shouldSatisfy` elem (rowId r)
                     rowLine r missing
                         `shouldSatisfy` T.isInfixOf (cellText (rowRequirement r))
                     rowLine r missing `shouldSatisfy` T.isInfixOf (planName (rowState r))
@@ -77,9 +76,19 @@ spec = describe "Appendix: computing the published evidence page" $ do
     it "Lists every requirement exactly once" $ do
         (rows, receipts) <- fixtures
         page <- rendered rows (snapshotOf "fixture-base" receipts)
-        let ids = tableIds (renderedPage page)
+        let ids = tableIds rows (renderedPage page)
         mapM_ (\r -> length (filter (== rowId r) ids) `shouldBe` 1) rows
         length ids `shouldBe` length rows
+
+    it
+        "Names published requirements by their text without internal row identifiers"
+        $ do
+            (rows, receipts) <- fixtures
+            page <- rendered rows (snapshotOf "fixture-base" receipts)
+            forM_ rows $ \row -> do
+                renderedPage page
+                    `shouldSatisfy` T.isInfixOf (cellText (rowRequirement row))
+                renderedPage page `shouldSatisfy` (not . T.isInfixOf (rowId row))
 
     it "Names the model revision it was given and the stated revision" $ do
         (rows, receipts) <- fixtures
@@ -116,6 +125,7 @@ spec = describe "Appendix: computing the published evidence page" $ do
             (rows, _) <- fixtures
             page <- rendered rows (snapshotOf "fixture-base" [])
             tableIds
+                rows
                 (sectionTree "Requirements not demonstrated" (renderedPage page))
                 `shouldBe` sort (map rowId rows)
 
@@ -135,9 +145,11 @@ spec = describe "Appendix: computing the published evidence page" $ do
                     let heldId = maybe "" receiptRow (lookup i (zip [0 ..] held))
                         others = [receiptRow r | (j, r) <- zip [0 ..] held, j /= i]
                     tableIds
+                        rows
                         (section "Requirements a run demonstrated" (renderedPage page))
                         `shouldBe` sort others
                     tableIds
+                        rows
                         (section "Requirements a run did not pass" (renderedPage page))
                         `shouldBe` [heldId]
                     case filter ((== heldId) . rowId) rows of
@@ -320,25 +332,23 @@ sectionTree title page =
   where
     isHeading l = T.isPrefixOf "#" l && T.strip (T.dropWhile (== '#') l) == title
 
--- | The first cell of every table row whose first cell is a requirement name.
-tableIds :: Text -> [Text]
-tableIds page =
-    [ T.strip c
-    | l <- T.lines page
-    , Just rest <- [T.stripPrefix "| " l]
-    , let c = T.takeWhile (/= '|') rest
-    , isName (T.strip c)
-    ]
-  where
-    isName c =
-        T.any isAlphaNum c
-            && T.any (== '-') c
-            && T.all (\x -> isAlphaNum x || x == '-') c
+-- | Resolve rendered requirement text back to machine identities in the test.
+tableIds :: [Row] -> Text -> [Text]
+tableIds rows page =
+    sort
+        [ rowId row
+        | l <- T.lines page
+        , row <- rows
+        , T.isPrefixOf ("| " <> cellText (rowRequirement row) <> " |") l
+        ]
 
 rowLine :: Row -> Text -> Text
 rowLine r page =
     T.unlines
-        [l | l <- T.lines page, T.isPrefixOf ("| " <> rowId r <> " |") l]
+        [ l
+        | l <- T.lines page
+        , T.isPrefixOf ("| " <> cellText (rowRequirement r) <> " |") l
+        ]
 
 {- | Run a property once per position, with exactly that one item tampered:
 a check that looks at only some items cannot pass it. Refuses a list too

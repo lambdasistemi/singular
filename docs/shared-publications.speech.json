@@ -1,0 +1,114 @@
+{
+  "create-another-registry-on-shared-publications": [
+    {
+      "text": "Create another registry on shared publications.",
+      "pause": 500
+    },
+    {
+      "text": "As a registry creator, you can create your own registry using the live state and application scripts another wallet published for the same application release. You supply your own funded wallet, the release blueprint and provider settings. You need no file, key, registry state or publication address from that creator. Your registry has its own state token, configuration and root.",
+      "pause": 400
+    },
+    {
+      "text": "Install the commands and obtain the matching plutus.json from the verified release. The registry command guide describes booking, folding and recovery. The example below follows the development-network journey; its wallet keys are generated for that run. Use your own provider URL and network-time directory for the network your wallet uses.",
+      "pause": 400
+    },
+    {
+      "text": "The provider proposes live reference outputs. The command hashes the scripts those outputs actually carry before reusing them. Creation spends a fresh seed and reads the verified scripts by reference. A missing copy is published first. The new registry then uses the same booking and folding commands as the first registry.",
+      "pause": 400
+    }
+  ],
+  "create-with-your-own-wallet": [
+    {
+      "text": "Create with your own wallet.",
+      "pause": 500
+    },
+    {
+      "text": "Erin's fresh working directory contains only her own key and the release blueprint. Her home and state directory contain no earlier creator's records. The journey runs this command with its generated provider settings:",
+      "pause": 400
+    },
+    {
+      "text": "Keep the receipt's stateToken and registry address as public identifiers for your registry. When both copies remain live, submissions contains the creation alone; neither script entry reports a publication. If a copy has been spent or is absent, the command publishes only that missing copy before creating the registry.",
+      "pause": 400
+    }
+  ],
+  "read-reuse-and-discovery-from-the-receipt": [
+    {
+      "text": "Read reuse and discovery from the receipt.",
+      "pause": 500
+    },
+    {
+      "text": "Read these fields from your actual receipt:",
+      "pause": 400
+    },
+    {
+      "text": "A foreign candidate stays visible even when another candidate is genuine and reused. If no genuine copy exists, the command skips foreign candidates and publishes the expected script. The provider's live-output query cannot distinguish a spent copy from one that never existed. An explicit reference location supplied to a command is still checked for a missing or mismatched script.",
+      "pause": 400
+    },
+    {
+      "text": "Discovery here means lookup by script hash through your configured provider. A different application policy or release has a different applied state script and cannot reuse the earlier application's state copy. Publishing references for everyone and a general public discovery service remain outside this workflow. No witness-policy publication or witness-pin configuration is required.",
+      "pause": 400
+    }
+  ],
+  "register-a-key-in-the-new-registry": [
+    {
+      "text": "Register a key in the new registry.",
+      "pause": 500
+    },
+    {
+      "text": "Alice books a key, an initial payload and a deposit in Erin's registry. The journey supplies the new registry's public state token as state_token:",
+      "pause": 400
+    },
+    {
+      "text": "Bob starts a new working directory and home containing only his own key and the public release. He finds the pending registration through the chain provider, matching the registry identity and key. He supplies that public output reference as pending; Alice's payload file, key and command journal are not inputs:",
+      "pause": 400
+    },
+    {
+      "text": "The journey reads the included transactions independently: the fold consumes that registration's approval, burns it, mints the key's token into a holding carrying the booked payload and exact deposit, and spends and continues Erin's own state with a changed root. Altering the observation to name the first registry's state or to remove the holding's deposit fails the same check. The complete journey also checks that no transaction publishes a witness policy or adds a witness pin.",
+      "pause": 400
+    }
+  ],
+  "read-the-measured-costs": [
+    {
+      "text": "Read the measured costs.",
+      "pause": 500
+    },
+    {
+      "text": "The creation-cost comparison is generated from the committed measurement receipts and checked against the included transaction bytes. Its table separates transaction fees from ADA locked in reference outputs. The later application-held creation reuses both scripts and creates no reference output; your own registry's state and configuration still lock their own ADA. Fees are measurements on the frozen development-network parameters, not a quote for another network or release.",
+      "pause": 400
+    },
+    {
+      "text": "The candidate receipt contains first.totals and later.totals, with the transactions beneath each creation. From a repository checkout, read the measured figures directly:",
+      "pause": 400
+    },
+    {
+      "text": "The carrying experiment records the actual sizes, evaluation and node outcomes of alternative creation forms. The shipped command keeps the shared-publication path.",
+      "pause": 400
+    }
+  ],
+  "recovery-and-evidence-limits": [
+    {
+      "text": "Recovery and evidence limits.",
+      "pause": 500
+    },
+    {
+      "text": "After an interruption around publication, rerunning reuses every live copy and publishes only what is missing. An uncertain submission preserves its saved transaction identity and signed body; a later invocation reconciles it without automatically resubmitting it. Create is not idempotent: a further invocation can create another registry from a new seed. Repeating a spent explicit seed keeps the existing refusal. See command recovery.",
+      "pause": 400
+    },
+    {
+      "text": "Run the same packaged-command journey and retain its receipts:",
+      "pause": 400
+    },
+    {
+      "text": "The results directory must not already exist. It contains the creation receipts, discovery records, independent chain views, creation measurements, the shared-registration observation and its rejected controls, folder directory listings and a readable receipt. Throwaway wallet keys are removed when the run exits; partial diagnostics remain if a command fails.",
+      "pause": 400
+    },
+    {
+      "text": "The conformance inventory publishes the reuse requirements beside the existing requirements. Its runner computes their standings from receipts. These rows remain uncovered because no executable comparison with the application-held model exists yet. The registration journey, recovery partitions and measurement receipts are separate evidence boundaries and establish nothing about agreement with the model. An executable conformance language for creation claims is outside this change. Public discovery for everyone, batch limits and release acceptance remain separate work.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "shared-publications.md",
+    "sha256": "785c0af53c45308da267a7efe1660d2f3f3f687a05013ddbb016c21614c520a6"
+  }
+}
