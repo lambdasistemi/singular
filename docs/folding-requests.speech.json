@@ -1,0 +1,64 @@
+{
+  "fold-pending-requests-from-public-data": [
+    {
+      "text": "Fold pending requests from public data.",
+      "pause": 500
+    },
+    {
+      "text": "As a folder, you find a registry's pending requests from public data without a file from anyone who booked them. You fold as many as fit, keep each request's value above what the application requires, and can read the measured limit before deciding what to fold.",
+      "pause": 400
+    }
+  ],
+  "read-the-measured-limits": [
+    {
+      "text": "Read the measured limits.",
+      "pause": 500
+    },
+    {
+      "text": "These are evaluations of kept transactions under the preprod parameters recorded on 4 October 2026 in offchain/test/fixtures/koios/preprod/cli_protocol_params-b777448425778d13.json. A development node given the same limits, prices and fees corroborates the accepted size and refusal of the next. This is not a submission to preprod. The packaged node cannot run preprod's current execution model; the ledger evaluator uses the recorded target model separately. Protocol parameters can change by governance.",
+      "pause": 400
+    },
+    {
+      "text": "The transaction slots use the captured development network's time. The result is script evaluation under the recorded parameters, not preprod transaction validation or inclusion. The fees are those of the kept node-balanced bodies, not a quote for another network. Re-evaluating the same kept bytes reproduces the figures; fresh captures may vary and publish their differences separately.",
+      "pause": 400
+    },
+    {
+      "text": "These figures are generated from the kept measurement receipt.",
+      "pause": 400
+    },
+    {
+      "text": "The largest accepted named prefix and the next refused size follow. Bytes are the complete signed transaction length; ledger-counted bytes are listed separately. Fees are lovelace from the development-node-balanced transaction body.",
+      "pause": 400
+    },
+    {
+      "text": "Per-request figures are exact total divided by accepted count, including transaction overhead. A fraction is exact, not a rounded price.",
+      "pause": 400
+    },
+    {
+      "text": "The marginal last request is the difference from the preceding kept prefix. It is an observation for this ordered workload, not a constant cost per request.",
+      "pause": 400
+    },
+    {
+      "text": "The workload starts from the registry sizes below. The listed sequence is the accepted named prefix; the mixed result concerns that alternating order only. The digest binds the full initial datum shapes in the receipt, alongside the kept trie inputs.",
+      "pause": 400
+    }
+  ],
+  "what-the-measurement-does-not-cover": [
+    {
+      "text": "What the measurement does not cover.",
+      "pause": 500
+    },
+    {
+      "text": "The figures concern exactly the registry sizes, trie inputs, scripts, keys, payload shapes and parameters in the receipt. They say nothing about another registry size, trie depth, scripts, key or payload shapes, or parameters. The mixed figure does not cover every ordering or every ratio of registrations to terminations. The trie library's proofs are assumed sound.",
+      "pause": 400
+    },
+    {
+      "text": "The measurement job re-evaluates the kept transactions and captures a fresh boundary for each kind. The documentation check regenerates the marked block and refuses differences in either the page or the receipt. To refresh the block explicitly, run python3 tools/batch_limits.py --write, then regenerate the page's speech and changed narration. The command reference describes discovery, explicit batches and receipts.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "folding-requests.md",
+    "sha256": "57f212c0863c77a6bbf696e3fc5d15faf2069c0aba297dd92924b9e7af98b00c"
+  }
+}
