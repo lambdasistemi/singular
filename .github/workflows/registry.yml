@@ -591,6 +591,35 @@ jobs:
           name: no-pin-registration-journey
           path: ${{ env.NO_PIN_JOURNEY_RESULTS }}
           if-no-files-found: error
+  no-pin-batch-measurement:
+    name: Batch limits evaluated under recorded preprod parameters
+    needs: blueprint
+    runs-on: nixos
+    timeout-minutes: 45
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: Revalidate the kept batch measurement
+        run: |
+          printf 'NO_PIN_BATCH_MEASUREMENT_RESULTS=%s\n' "$RUNNER_TEMP/no-pin-batch-measurement-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
+          NO_PIN_BATCH_MEASUREMENT_RESULTS="$RUNNER_TEMP/no-pin-batch-measurement-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" nix run --quiet .#no-pin-batch-measurement
+      - name: Preserve the measurement and its evidence
+        if: always() && env.NO_PIN_BATCH_MEASUREMENT_RESULTS != ''
+        uses: actions/upload-artifact@v7
+        with:
+          name: no-pin-batch-measurement
+          path: ${{ env.NO_PIN_BATCH_MEASUREMENT_RESULTS }}
+          if-no-files-found: error
   no-pin-registration-refusals:
     name: No-pin registration and reading refusals on a development network
     needs: blueprint

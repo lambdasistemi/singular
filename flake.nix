@@ -766,6 +766,8 @@
           cp ${./tools/no_pin_registration_journey.sh} $out/no_pin_registration_journey.sh
           cp ${./tools/no_pin_batch_journey.sh} $out/no_pin_batch_journey.sh
           cp ${./tools/no_pin_batch_observations.py} $out/no_pin_batch_observations.py
+          cp ${./tools/no_pin_batch_measurement.sh} $out/no_pin_batch_measurement.sh
+          cp ${./tools/no_pin_batch_measurement.py} $out/no_pin_batch_measurement.py
           cp ${./tools/no_pin_registration_refusals.sh} $out/no_pin_registration_refusals.sh
           cp ${./tools/no_pin_batch_refusals.sh} $out/no_pin_batch_refusals.sh
           cp ${./tools/no_pin_termination_refusals.sh} $out/no_pin_termination_refusals.sh
@@ -1032,6 +1034,15 @@
                 programs = [ (pkgs.lib.getExe (stampedOpenDatum system)) ];
                 extra = [ "${open-datum.packages.${system}.no-pin-refusals}/bin/no-pin-refusals" ];
               };
+              noPinBatchMeasurement = noPinJourney {
+                name = "no-pin-batch-measurement";
+                results = "NO_PIN_BATCH_MEASUREMENT_RESULTS";
+                script = "no_pin_batch_measurement.sh";
+                programs = [ (pkgs.lib.getExe (stampedOpenDatum system)) ];
+                extra = [
+                  "${./offchain/test/fixtures/koios/preprod/cli_protocol_params-b777448425778d13.json}"
+                ];
+              };
             in
             {
               no-pin-registration-journey = {
@@ -1048,6 +1059,11 @@
                 type = "app";
                 meta.description = "Check termination refusals on a development network";
                 program = pkgs.lib.getExe noPinTerminationRefusals;
+              };
+              no-pin-batch-measurement = {
+                type = "app";
+                meta.description = "Measure batches under recorded preprod parameters";
+                program = pkgs.lib.getExe noPinBatchMeasurement;
               };
             }
           )
