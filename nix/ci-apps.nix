@@ -191,7 +191,7 @@ in
 
   # #562 item 20: the declared-checks-hosted census. The classifier is a
   # pure function over three plain files (declared entries, hosted
-  # references, the exception list with the handed issue states): it reads
+  # references and the exception list): it reads
   # no flake, no git tree, no network and no clock. The controls feed its
   # table fixtures with no evaluation and drive the integration layer over
   # one offline fixture flake (no network); the whole command costs about
@@ -222,28 +222,6 @@ in
         nix
       ];
       text = "bash tools/declared_checks_classify_controls.sh";
-    }
-  );
-
-  # #562 item 20: the read-only issue-state query. Reads the pending
-  # issue numbers from the declared-not-hosted list and writes
-  # `<number> <open|closed>` lines to the caller's output file through a
-  # read-only query of the repository's issues. Authentication travels
-  # only through the environment (gh reads GH_TOKEN); the script binds,
-  # stores and reads no credential itself. A failed query is a setup
-  # failure, never a verdict. The wrapper owns a scratch directory created
-  # and removed on every exit; the output file is the caller's
-  # deliverable, not scratch. No process is stopped.
-  declared-checks-issue-states = app (
-    pkgs.writeShellApplication {
-      name = "declared-checks-issue-states";
-      runtimeInputs = with pkgs; [
-        bash
-        coreutils
-        gh
-        gnused
-      ];
-      text = ''bash tools/declared_checks_issue_states.sh "$PWD" "$@"'';
     }
   );
 

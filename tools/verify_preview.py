@@ -13,30 +13,17 @@ assert revision == expected, (revision, expected)
 verified = {}
 names = [
     "index.html",
-    "docs/naming-demo/index.html",
-    "docs/naming-demo.speech.json",
-    "docs/naming-lifecycle/index.html",
-    "docs/naming-lifecycle.speech.json",
     "specs/protocol/spec/index.html",
     "docs/building/index.html",
     "docs/building.speech.json",
     "assets/mermaid.min.js",
-    "docs/design/index.html",
     "docs/decisions/index.html",
-    "docs/model-ledger/index.html",
-    "docs/theorems/index.html",
-    "docs/simulation/index.html",
     "docs/first-demo/index.html",
     "css/asciinema-player.css",
     "js/asciinema-player.min.js",
-    "artifacts/contracts/naming-lifecycle-contract.txt",
-    "artifacts/review/README.md",
-    "artifacts/review/REPRODUCE.md",
-    "artifacts/review/flake.nix",
-    "artifacts/review/flake.lock",
     "artifacts/SHA256SUMS",
 ]
-for directory in ("model", "simulator"):
+for directory in ("model", "artifacts/lean"):
     names.extend(
         str(path.relative_to(source))
         for path in sorted((source / directory).rglob("*"))

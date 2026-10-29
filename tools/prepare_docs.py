@@ -212,7 +212,7 @@ if options.api_site is not None:
     shutil.copytree(generated, overlay)
     for path in [overlay, *overlay.rglob("*")]:
         path.chmod(path.stat().st_mode | 0o200)
-# Ship the actual candidate sources and static simulator with the same site.
+# Ship the retained candidate model sources with the same site.
 # Generated build trees never become part of the publication.
 model = root / "lean"
 if model.is_dir():
@@ -223,15 +223,6 @@ if model.is_dir():
             ".lake", "node_modules", "__pycache__", "*.olean", "*.ilean", "*.c", "*.o"
         ),
     )
-# The simulator is self-contained. Its development snapshots and test evidence
-# stay in Git; publishing another copy of the formal corpus also creates archive
-# hardlinks after Nix store deduplication.
-simulator = root / "simulator"
-if (simulator / "index.html").is_file():
-    (stage / "simulator").mkdir()
-    # The page embeds its engines and corpora; only it and its identity ship.
-    for name in ("index.html", "identity.json"):
-        shutil.copyfile(simulator / name, stage / "simulator" / name)
 shutil.copyfile(root / "README.md", stage / "index.md")
 shutil.copyfile(root / "README.speech.json", stage / "index.speech.json")
 assets = stage / "assets"

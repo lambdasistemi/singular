@@ -45,7 +45,13 @@ from pathlib import Path
 
 from .completion import completion
 from .debt import PopulationError, UnknownRowError, compute_debt
-from .inventory import InventoryError, STATEMENT_MODULES, build_inventory
+from .inventory import (
+    InventoryError,
+    RETIRED_SURFACES,
+    STATEMENT_MODULES,
+    build_inventory,
+    retired_surfaces,
+)
 from .record import RecordError, load_record, parse_record_text
 from .report import (
     completion_json,
@@ -224,9 +230,23 @@ def prepare_release_tree(root: Path, candidate: str) -> tuple[Path, str]:
         record_text = _cat_file(root, candidate, RECORD_REL)
         # Fixed verdict inputs: manifests, statement sources, extraction tool.
         fixed = [TOOL_REL]
-        for source_rel, _prefix, manifest_rel in STATEMENT_MODULES:
-            fixed.extend([source_rel, manifest_rel])
         wanted: dict[str, str] = {}
+        retirement_entries = _ls_wrap(
+            root, candidate, RETIRED_SURFACES, "reviewed retirements"
+        )
+        if retirement_entries:
+            _require_regular(retirement_entries, RETIRED_SURFACES, candidate)
+            wanted[RETIRED_SURFACES] = _cat_file(root, candidate, RETIRED_SURFACES)
+            retirement_path = scratch / RETIRED_SURFACES
+            retirement_path.parent.mkdir(parents=True, exist_ok=True)
+            retirement_path.write_text(wanted[RETIRED_SURFACES])
+        retired = retired_surfaces(scratch)
+        for source_rel, _prefix, manifest_rel in STATEMENT_MODULES:
+            source_entries = _ls_wrap(root, candidate, source_rel, source_rel)
+            manifest_entries = _ls_wrap(root, candidate, manifest_rel, manifest_rel)
+            if not source_entries and not manifest_entries and source_rel in retired:
+                continue
+            fixed.extend([source_rel, manifest_rel])
         for rel in fixed:
             entries = _ls_wrap(root, candidate, rel, f"candidate input {rel}")
             _require_regular(entries, rel, candidate)

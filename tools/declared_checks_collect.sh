@@ -1,12 +1,6 @@
 #!/usr/bin/env bash
 # declared-checks-collect: the one impure layer of the census.
 #
-# Usage: declared_checks_collect.sh [ROOT] [ISSUE-STATES]
-#   ROOT defaults to the working tree. ISSUE-STATES is a file of
-#   `<number> <open|closed>` lines for the `pending wiring` entries, as read
-#   by a read-only query of the repository's issues (the hosted job hands
-#   it; a local run hands a file or omits it when no pending entry needs it).
-#
 # The layer evaluates the declared app and check names of every tracked
 # flake once (a new flake directory joins without editing this check; an
 # empty extent is exit 2), runs the resolver's shared extraction over the
@@ -56,11 +50,6 @@ set -euo pipefail
 SYSTEM="x86_64-linux"
 
 root="${1:-$PWD}"
-issue_states="${2:-}"
-if [ ! -d "$root" ]; then
-  root="$PWD"
-  issue_states="${1:-}"
-fi
 root=$(realpath -m "$root")
 
 tools="$(cd "$(dirname "$0")" && pwd)"
@@ -347,18 +336,10 @@ if [ "${#tool_file_of[@]}" -gt 0 ]; then
   done
 fi
 
-if [ -n "$issue_states" ]; then
-  if bash "$classify" "$work/declared.txt" "$work/hosted.txt" "$list" "$work/jobs.txt" "$issue_states" "$work/toolmarkers" "$work/citations" >"$work/classify.out" 2>"$work/classify.err"; then
-    status=0
-  else
-    status=$?
-  fi
+if bash "$classify" "$work/declared.txt" "$work/hosted.txt" "$list" "$work/jobs.txt" "$work/toolmarkers" "$work/citations" >"$work/classify.out" 2>"$work/classify.err"; then
+  status=0
 else
-  if bash "$classify" "$work/declared.txt" "$work/hosted.txt" "$list" "$work/jobs.txt" "" "$work/toolmarkers" "$work/citations" >"$work/classify.out" 2>"$work/classify.err"; then
-    status=0
-  else
-    status=$?
-  fi
+  status=$?
 fi
 cat "$work/classify.out"
 cat "$work/classify.err" >&2

@@ -35,30 +35,7 @@ narrate:
 stamp-speech +pages:
     python3 tools/stamp_speech.py {{ pages }}
 
-model:
-    lake build
-    python3 tools/check_model.py
-    python3 tools/check_m1.py
-
-# #310: the open-datum application, an isolated Lake project over the unchanged
-# root model. The selected compiler must be the root pin. `check` regenerates the
-# corpus and ledgers from the model surface against the committed ones, replays
-# every committed scenario from its own JSON, and runs its own controls: a
-# controlled alteration each comparison must notice and definition mutants each
-# of which must move at least one scenario. The ledger's proof status is compiled
-# into the executable from the statements the build elaborated; the saved axiom
-# report is then cross-checked against the ledger and the statement source by an
-# independent bridge.
-
-# Build, check and cross-check the open-datum application model.
-application-model:
-    lean --version | grep -q "version $(sed 's/.*:v//' lean-toolchain),"
-    lake -d applications/open-datum --keep-toolchain build
-    lake -d applications/open-datum --keep-toolchain exe open-datum-application check applications/open-datum
-    lake -d applications/open-datum --keep-toolchain env lean applications/open-datum/lean/AuditReport.lean > applications/open-datum/.lake/axioms-report.txt
-    python3 tools/check_application_model.py --axioms-report applications/open-datum/.lake/axioms-report.txt
-
-# The application-held model is isolated from the current model's corpus extent.
+# Build the aligned registry model and its reader controls.
 application-held-model:
     lean --version | grep -q "version $(sed 's/.*:v//' lean-toolchain),"
     python3 models/singular-application-held/check.py
@@ -84,20 +61,9 @@ open-datum-application-held-model:
     python3 models/singular-application-held/reader_check.py --scope all --corpus models/open-datum-application-held/.lake/reader-corpus.jsonl --driver models/singular-application-held/.lake/build/bin/reader --neutral-driver models/singular-application-held/.lake/build/bin/neutralReader
     python3 models/open-datum-application-held/check.py --controls
 
-simulator:
-    node simulator/mirror-check.mjs
-    node simulator/build.mjs --check
-    node simulator/gate.mjs
-    node simulator/gate.mjs --selftest
-
-browser:
-    node tools/browser-check.mjs
-
 ci:
-    just model
-    just application-model
-    just simulator
-    just browser
+    just application-held-model
+    just open-datum-application-held-model
     just build-docs
     nix run --quiet .#docs-check
     just check-presentation
@@ -114,7 +80,7 @@ ci:
     just lint-controls
 
 # Local bundle for fast local runs (`just ci` stays the local aggregate).
-# Hosted: the Development shell checks job runs application-model,
+# Hosted: the Development shell checks job runs the aligned model builds,
 # check-presentation, no-global-fixture-state,
 # node-confinement, node-confinement-controls, io-ownership-check,
 # io-ownership-controls and lint-controls;
@@ -129,7 +95,6 @@ ci:
 
 # `just ci`; `just format-controls` runs in that format-controls step.
 ci-shell:
-    just application-model
     just check-presentation
     bash tools/no-global-fixture-state.sh
     just node-confinement

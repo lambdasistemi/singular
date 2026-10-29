@@ -1,8 +1,8 @@
 # Singular protocol specification — draft
 
-**Status.** This page records the original three-operation design: Insert, Update and Delete requests, an application-minted Withdraw, and the states Absent, `Active` and `Over`. The registry-mode model that the Lean proves, the simulator replays and the conformance suite compares against the deployed validators moves a key through seven edges and calls the terminal state `Terminal`; where the two differ, registry mode is current. [How a name moves in the registry](../../docs/naming-demo.md#how-a-name-moves-in-the-registry) shows the seven edges, and the [model ledger](../../docs/model-ledger.md#the-retirement-map) records what replaced each part of this design.
+**Status.** This page records the original three-operation design: Insert, Update and Delete requests, an application-minted Withdraw, and the states Absent, `Active` and `Over`. The registry-mode model that the Lean proves, the simulator replays and the conformance suite compares against the deployed validators moves a key through seven edges and calls the terminal state `Terminal`; where the two differ, registry mode is current. [How a name moves in the registry](https://github.com/lambdasistemi/singular/blob/44de14203a67df7c993f50b05fd26c82dbf5a9e6/docs/naming-demo.md#how-a-name-moves-in-the-registry) shows the seven edges, and the [model ledger](https://github.com/lambdasistemi/singular/blob/44de14203a67df7c993f50b05fd26c82dbf5a9e6/docs/model-ledger.md#the-retirement-map) records what replaced each part of this design.
 
-This specification derives from the [overview](../../docs/overview.md), [lifecycle](../../docs/lifecycle.md) and [certification design](../../docs/certification.md), with a bounded [prior-art comparison](../../docs/prior-art.md) and an illustrative [naming walkthrough](../../docs/naming-demo.md). It records required behavior, not an implemented wire protocol. **MUST** and **MUST NOT** express requirements of the intended protocol. The open decisions at the end prevent treating this as a complete implementation contract.
+This specification derives from the [overview](../../docs/overview.md), [lifecycle](../../docs/lifecycle.md) and [certification design](../../docs/certification.md), with a bounded [prior-art comparison](../../docs/prior-art.md) and an illustrative [naming walkthrough](https://github.com/lambdasistemi/singular/blob/44de14203a67df7c993f50b05fd26c82dbf5a9e6/docs/naming-demo.md). It records required behavior, not an implemented wire protocol. **MUST** and **MUST NOT** express requirements of the intended protocol. The open decisions at the end prevent treating this as a complete implementation contract.
 
 ## Purpose and scope
 
@@ -237,7 +237,7 @@ A concrete protocol must also demonstrate conservation of representative supply 
 
 ## Illustrative naming-demo obligations
 
-These obligations derive from the proposed [naming walkthrough](../../docs/naming-demo.md). They make the minimal demo recognizable; they are not new Singular application-authorization or naming-schema rules. The demo is not implemented, and its application choices require the naming-profile decision before executable conformance can be assessed.
+These obligations derive from the proposed [naming walkthrough](https://github.com/lambdasistemi/singular/blob/44de14203a67df7c993f50b05fd26c82dbf5a9e6/docs/naming-demo.md). They make the minimal demo recognizable; they are not new Singular application-authorization or naming-schema rules. The demo is not implemented, and its application choices require the naming-profile decision before executable conformance can be assessed.
 
 | Demo action | Intended observable behavior | Governing sections |
 | --- | --- | --- |

@@ -1,10 +1,10 @@
 # Decisions and executable abstractions
 
-**Historical design.** This page records the earlier Insert/Update/Delete design and its broader broader model successor. The active permanent permanent contract model supports only `insertActive` and `updateTerminal`. Historical tags 0, 2, 4, 5 and 6 encode refused actions, not available features. [Current supported behavior](naming-demo.md) describes permanent contract; archived source and evidence remain on `preserve/m2/pre-m1-source-removal`.
+**Historical design.** This page records the earlier Insert/Update/Delete design and its broader broader model successor. The active permanent permanent contract model supports only `insertActive` and `updateTerminal`. Historical tags 0, 2, 4, 5 and 6 encode refused actions, not available features. [Current supported behavior (historical)](https://github.com/lambdasistemi/singular/blob/44de14203a67df7c993f50b05fd26c82dbf5a9e6/docs/naming-demo.md) describes permanent contract; archived source and evidence remain on `preserve/m2/pre-m1-source-removal`.
 
 As an application designer, use these decisions to distinguish behavior you can explore from construction choices you still need to settle. A successful modeled transition satisfies the selected logical checks; a refusal exposes a failed obligation. Neither result chooses your deployed scripts or proves your application policy.
 
-The reviewed behavioral baseline is the [protocol specification](../specs/protocol/spec.md), [responsibilities](overview.md), [lifecycle](lifecycle.md), [certification boundary](certification.md) and [naming walkthrough](naming-demo.md). The executable candidate adds an executable interpretation for review. It does not close the construction decisions below.
+The reviewed behavioral baseline is the [protocol specification](../specs/protocol/spec.md), [responsibilities](overview.md), [lifecycle](lifecycle.md), [certification boundary](certification.md) and [naming walkthrough (historical)](https://github.com/lambdasistemi/singular/blob/44de14203a67df7c993f50b05fd26c82dbf5a9e6/docs/naming-demo.md). The executable candidate adds an executable interpretation for review. It does not close the construction decisions below.
 
 ## Adopted behavior
 
@@ -32,7 +32,7 @@ These requirements incorporate the later action-asset and executing-witness corr
 
 ## Proposed abstraction boundary
 
-An executable logical map may stand for authenticated MPF state, a tagged structured value may stand for an unambiguous action commitment, and an explicit witness or contract parameter may stand for a ledger validator's authenticated result. These abstractions make the intended transition law inspectable without choosing a serialization, hash function, script deployment or application policy. Their exact use and limitations are recorded beside the Lean definitions and in the [model ledger](model-ledger.md).
+An executable logical map may stand for authenticated MPF state, a tagged structured value may stand for an unambiguous action commitment, and an explicit witness or contract parameter may stand for a ledger validator's authenticated result. These abstractions make the intended transition law inspectable without choosing a serialization, hash function, script deployment or application policy. Their exact use and limitations are recorded beside the Lean definitions and in the [model ledger (historical)](https://github.com/lambdasistemi/singular/blob/44de14203a67df7c993f50b05fd26c82dbf5a9e6/docs/model-ledger.md).
 
 Required native output parameters remain explicit fields such as representative identity and quantity, datum, destination and supported value requirements. The model is not authority to introduce a universal transaction-predicate language. Example names, addresses and policy identities are illustrative values, not production schemas or a global allowlist.
 

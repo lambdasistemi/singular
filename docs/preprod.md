@@ -138,7 +138,7 @@ printf %s alice | b2sum -l 256
 
 Find the live UTxO on preprod with the [Koios Asset
 UTxOs](https://api.koios.rest/#post-/asset_utxos) query from the [naming
-walkthrough](naming-demo.md#finding-alice):
+walkthrough (historical)](https://github.com/lambdasistemi/singular/blob/44de14203a67df7c993f50b05fd26c82dbf5a9e6/docs/naming-demo.md#finding-alice):
 
 ```sh
 policy_id='64adbd9cd944738680f670cbd0456294951b20ac12eb1f3ebeb0dc88'

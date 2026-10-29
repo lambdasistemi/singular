@@ -5,6 +5,8 @@
 
 -- Synthetic title labels in these tests identify no published contract.
 
+-- Validator titles in these fixtures are synthetic identity labels; no released script is loaded.
+
 {- |
 Module      : Singular.Application.OpenDatum.CommandRunSpec
 Description : #416 — every command handler run in process, its typed events compared with its receipt

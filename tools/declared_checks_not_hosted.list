@@ -11,13 +11,6 @@
 #   hosted under another name: ...     names a declared job identifier
 #                                      (one whitespace-separated token
 #                                      equal to a workflow job id)
-#   pending wiring: #<issue>, ...      a real test that cannot be wired
-#                                      yet; valid only while the named
-#                                      issue is open (the census reads the
-#                                      state from the file handed to it).
-#                                      Closed membership: only the
-#                                      release-review check and default apps
-#                                      with issue #565 are admitted.
 #   tool: ...|<file>                   a runnable check marked as a tool:
 #                                      never cited as evidence, allowed to
 #                                      stay local (operator ruling of
@@ -36,13 +29,10 @@
 .|docs-serve|app|tool: the local documentation site server for reviewing the built site without publishing it|nix/docs.nix
 .|preimage-vectors|app|tool: writes the Aiken rows of the preimage byte vectors from the shared table; their freshness is enforced by the vectors-check job|nix/ci-apps.nix
 .|publish-docs-boundary-test|app|hosted under another name: the publication-boundary job runs the publication-boundary-controls app, which exercises this same recorded publisher (the unchanged nix/release.nix definition with gh replaced by a recorder) through its positive and mutated cases
-.|browser|check|hosted under another name: the browser job runs the browser-check app, the same checker body this check's sandbox executes
 .|coverage|check|hosted under another name: the coverage job runs the coverage-check app, the same checker body this check's sandbox executes
 .|docs|check|hosted under another name: the rendered-docs job runs the docs-check app, the same checker body this check's sandbox executes (a bare nix build of .#docs reaches the site package, not this check)
 .|inventory|check|hosted under another name: the inventory job runs the inventory-check app, the same checker body this check's sandbox executes
-.|model|check|hosted under another name: the model job runs the model-check app, the same checker body this check's sandbox executes
 .|release|check|hosted under another name: the release-check job runs the release-check app, the same checker body this check's sandbox executes
-.|simulator|check|hosted under another name: the simulator job runs the simulator-check app, the same checker body this check's sandbox executes
 offchain|singular|app|hosted under another name: the release-artifacts job builds this ordinary command from the release archive and the accepting verify-release step drives it; the no-pin-registration-journey job also drives the ordinary command through the root flake
 offchain|cage-tests|check|hosted under another name: the cage-tests job's off-chain suite step runs the cage-tests app, the same wrapped test binary this check executes in its sandbox
 offchain|cage-tests-e2e|check|hosted under another name: the e2e-part matrix jobs run .#cage-tests-e2e, this same wrapped derivation, one lane per job

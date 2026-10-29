@@ -1,37 +1,8 @@
 name = "singular"
 version = "0.1.0"
 srcDir = "lean"
-defaultTargets = ["Singular", "singular-corpus", "naming-corpus", "lifecycle-corpus", "singular-driver", "singular-m1"]
+defaultTargets = ["Singular"]
 
 [[lean_lib]]
 name = "Singular"
-
-[[lean_lib]]
-name = "MainFixtures"
-roots = ["Main"]
-globs = ["Main.+"]
-
-[[lean_lib]]
-name = "DriverFixtures"
-roots = ["DriverMain"]
-globs = ["DriverMain.+"]
-
-[[lean_exe]]
-name = "singular-corpus"
-root = "Main"
-
-[[lean_exe]]
-name = "naming-corpus"
-root = "NamingMain"
-
-[[lean_exe]]
-name = "lifecycle-corpus"
-root = "LifecycleMain"
-
-[[lean_exe]]
-name = "singular-driver"
-root = "DriverMain"
-
-[[lean_exe]]
-name = "singular-m1"
-root = "M1Main"
+roots = ["Singular.Model", "Singular.Economics", "Singular.Lemmas", "Singular.Driver"]

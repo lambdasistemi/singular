@@ -2,6 +2,8 @@
 
 -- Synthetic title labels in these tests identify no published contract.
 
+-- Validator titles in these fixtures are synthetic identity labels; no released script is loaded.
+
 {- |
 Module      : Singular.Application.OpenDatum.PinGateSpec
 Description : Library application-pin resolution

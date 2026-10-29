@@ -21,10 +21,6 @@
     {
       "text": "As a Cardano developer who knows cardano-cli, wallets, faucets and Koios but not Singular, you can play Demo 1, a registry from creation to termination in sixteen steps, and watch every step either succeed or be refused where the page says it will. The Demo 1 page says what the play shows and where to play it: the step-by-step page of singular-demo, with a copy button on every block; its Nix shell, which holds singular, open-datum and a private development chain; and its Ubuntu kit for a machine without Nix. To play it in a browser with nothing installed, open the Killercoda scenario; to watch it without running anything, open the recorded run.",
       "pause": 400
-    },
-    {
-      "text": "Try the simulation — register a name, terminate it permanently, and inspect refusals for the five historical edge encodings. Switch the profile picker to the naming instance for the Over witness and the lifecycle replay. The simulation guide says what the page establishes and what it does not.",
-      "pause": 400
     }
   ],
   "install": [
@@ -55,10 +51,6 @@
       "pause": 400
     },
     {
-      "text": "A holder of an active name wants to keep payment routing current, recover through a committed next controller, or retire the name permanently. The naming lifecycle covers destination maintenance, recovery through the committed key, and retirement by that key or by a distinct-member quorum — never by the current control key alone. Twenty-one lifecycle rows are replayed in the simulator against the Lean that computed them. It remains an unaccepted design candidate, not an observed ledger execution.",
-      "pause": 400
-    },
-    {
       "text": "A folder — anyone at all — collects pending requests and applies them to the registry in one transaction. There is no owner to sign, no privileged actor, and no way to fold a request that does not satisfy the protocol.",
       "pause": 400
     },
@@ -77,7 +69,7 @@
       "pause": 500
     },
     {
-      "text": "The diagram and table in this section record the original three-operation design: Insert, Update and Delete requests, an application-minted Withdraw, and the states Absent, Active and Over. The registry-mode model that the Lean proves, the simulator replays and the conformance suite compares against the deployed validators supports registration and permanent termination, and calls the terminal state Terminal. The original design below is historical; the active permanent contract contract rejects the other five edge encodings: how a name moves in the registry shows the encoded edges and permanent contract admission, and the model ledger records what replaced each part of the original design.",
+      "text": "The diagram and table below record the original three-operation design. The current commands support registration and permanent termination; the five other historical edge encodings are refused. Application payload updates remain local to the application output. The original design is retained here as historical context.",
       "pause": 400
     },
     {
@@ -97,48 +89,8 @@
       "pause": 400
     },
     {
-      "text": "Read the design in order. The first three pages and the protocol specification record the original design; the naming pages and the simulation describe the registry-mode model that supersedes it where they differ.",
+      "text": "Read the original responsibilities, request lifecycle and certification rules as historical design context. To run the current commands, start with Demo 1, then read the registry command guide and consumer conformance record.",
       "pause": 400
-    },
-    {
-      "text": "Responsibilities and terminology",
-      "pause": 300
-    },
-    {
-      "text": "Requests, folding and NFT custody",
-      "pause": 300
-    },
-    {
-      "text": "Certification and identity binding",
-      "pause": 300
-    },
-    {
-      "text": "Naming: book a name, retire it, attest it",
-      "pause": 300
-    },
-    {
-      "text": "Naming lifecycle: maintain, recover, retire",
-      "pause": 300
-    },
-    {
-      "text": "Ending a name",
-      "pause": 300
-    },
-    {
-      "text": "Play and reproduce the simulation",
-      "pause": 300
-    },
-    {
-      "text": "Prior art and reuse candidates",
-      "pause": 300
-    },
-    {
-      "text": "Draft protocol specification and acceptance scenarios",
-      "pause": 300
-    },
-    {
-      "text": "Demo 1: play a registry from creation to termination and the preprod record",
-      "pause": 300
     }
   ],
   "design-status": [
@@ -147,15 +99,11 @@
       "pause": 500
     },
     {
-      "text": "These documents record the adopted design and name the decisions still needed for a concrete protocol. The executable design candidate has 105 proved declarations — 84 for the registry, 7 for the naming instance, 9 for its lifecycle and 5 for its wire encoding, counts that the model check derives from the theorem manifests — plus a playable simulation transcribed from them. The focused checks replay 29 registry rows, 15 naming rows and 21 lifecycle rows; they test correspondence on those finite inputs rather than proving browser behaviour generally. No independent audit acceptance is claimed. The compiled validators and a registry deployed on the public preprod network are recorded in the preprod record, and the conformance evidence states which consumer requirements a named code revision demonstrated against them. The coverage ledger distinguishes finite executable evidence from conditions, abstractions and omissions, and the clarity record states plainly how much independence that evidence has.",
+      "text": "The current command journeys and their observed evidence are described in the conformance record. The seven comparison requirements remain published as uncovered: command execution alone does not establish model correspondence. The aligned models and their retained reference definitions build with the pinned Lean compiler; their proofs establish their stated model propositions.",
       "pause": 400
     },
     {
-      "text": "The Nix-built documentation archive is a review bundle, not a released protocol artifact. It contains the rendered site and a runnable, locked workspace with raw model and corpus files, the naming contract, scenarios, simulator and replay sources, checkers, and exact identities. Reproduction starts from a fresh extraction, verifies artifacts/SHA256SUMS, and runs the archive's own flake; a checkout pass does not substitute. Build and release details give the exact commands and describe the release pipeline that publishes the archive from a tag on main.",
-      "pause": 400
-    },
-    {
-      "text": "Singular uses MPF as its authenticated registry data structure. The product it was imported from is a separate application with potentially reusable mechanics. The implementation stack and shared-library boundaries remain unselected; extracting a shared library is future work.",
+      "text": "The old executable corpora and playable simulator have been retired. The documentation archive carries the retained model source and its checksums. The economics paper keeps its historical model revision and proof references; those references do not describe the current library's theorem inventory.",
       "pause": 400
     },
     {
@@ -165,6 +113,6 @@
   ],
   "_source": {
     "file": "README.md",
-    "sha256": "c48abd75dd1aef1dd29f288d943a2bf9f7163c99c7afddae1a839281532abeab"
+    "sha256": "cffe2495f07f49048426f60f33b855d96bf3c9779b9c445ee4074fc26109c496"
   }
 }

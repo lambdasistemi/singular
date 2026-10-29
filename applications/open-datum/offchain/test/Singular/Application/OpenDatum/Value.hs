@@ -1,5 +1,7 @@
 {-# LANGUAGE LambdaCase #-}
 
+-- Validator titles in these fixtures are synthetic identity labels; no released script is loaded.
+
 {- |
 Module      : Singular.Application.OpenDatum.Value
 Description : The open-datum application value the command line composes

@@ -1,8 +1,7 @@
 {
-  description = "Singular executable model, statement debt and documentation";
+  description = "Singular retained models, coverage and documentation";
   inputs = {
     dev-assets-mkdocs.url = "github:paolino/dev-assets/a9d7371c1118de4026ba6ee3a9c3b54614924b82?dir=mkdocs";
-    dev-assets-playwright.url = "github:paolino/dev-assets/a8f2ff7603bc793794d3e4459b2d5510a57e72a2?dir=playwright";
     # This repository's own off-chain tree, as a relative in-tree input: the
     # generated API reference's Haddock build and its manifest source digests
     # come from exactly this source. Its dependencies keep their own locked
@@ -54,7 +53,6 @@
       nixpkgs,
       nixpkgs-lean,
       dev-assets-mkdocs,
-      dev-assets-playwright,
       dev-assets,
       offchain,
       conformance,
@@ -83,13 +81,6 @@
           mermaidJs = dev-assets-mkdocs.packages.${system}.mermaid-js;
           inherit offchain conformance onchain;
         };
-      model =
-        system:
-        import ./nix/model.nix {
-          pkgs = import nixpkgs { inherit system; };
-          leanPkgs = import nixpkgs-lean { inherit system; };
-          src = self;
-        };
       coverage =
         system:
         import ./nix/coverage.nix {
@@ -100,19 +91,6 @@
         system:
         import ./nix/inventory.nix {
           pkgs = import nixpkgs { inherit system; };
-          src = self;
-        };
-      simulator =
-        system:
-        import ./nix/simulator.nix {
-          pkgs = import nixpkgs { inherit system; };
-          src = self;
-        };
-      browser =
-        system:
-        import ./nix/browser.nix {
-          pkgs = import nixpkgs { inherit system; };
-          browserPkgs = import dev-assets-playwright.inputs.nixpkgs { inherit system; };
           src = self;
         };
       # #451 re-cut R1/R2: the recovery evidence collector and the pure case
@@ -213,7 +191,6 @@
         default = (project system).docs;
         inherit (project system) docs;
         docs-release = (project system).releaseArchive;
-        model = (model system).package;
         # #451 re-cut R1: the collector as a buildable package; the app below
         # refers to this same writeShellApplication derivation.
         cli-recovery-cross-wallet-evidence = (recoveryTools system).evidence;
@@ -909,9 +886,6 @@
       checks = each (system: {
         docs = (project system).check;
         release = (project system).releaseCheck;
-        model = (model system).check;
-        simulator = (simulator system).check;
-        browser = (browser system).check;
         coverage = (coverage system).check;
         inventory = (inventory system).check;
       });
@@ -919,9 +893,6 @@
         system:
         (
           (project system).apps
-          // (model system).apps
-          // (simulator system).apps
-          // (browser system).apps
           // (coverage system).apps
           // (inventory system).apps
           // (commandControls system)
@@ -1126,30 +1097,26 @@
       # #278: it also carries the pinned lint and format tools `just lint`
       # runs over every other code family (tools/lint_code.py).
       devShells = each (system: {
-        default = (project system).shell.overrideAttrs (
-          old:
-          (browser system).environment
-          // {
-            nativeBuildInputs =
-              (old.nativeBuildInputs or [ ])
-              ++ [
-                offchain.packages.${system}.fourmolu
-                (import nixpkgs-lean { inherit system; }).lean4
-              ]
-              ++ (with import nixpkgs { inherit system; }; [
-                nodejs
-                nixfmt
-                statix
-                deadnix
-                ruff
-                shellcheck
-                shfmt
-                biome
-                actionlint
-                yamlfmt
-              ]);
-          }
-        );
+        default = (project system).shell.overrideAttrs (old: {
+          nativeBuildInputs =
+            (old.nativeBuildInputs or [ ])
+            ++ [
+              offchain.packages.${system}.fourmolu
+              (import nixpkgs-lean { inherit system; }).lean4
+            ]
+            ++ (with import nixpkgs { inherit system; }; [
+              nodejs
+              nixfmt
+              statix
+              deadnix
+              ruff
+              shellcheck
+              shfmt
+              biome
+              actionlint
+              yamlfmt
+            ]);
+        });
       });
     };
 }

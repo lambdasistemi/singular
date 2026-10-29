@@ -3,13 +3,11 @@
 
 {- |
 Module      : Singular.Registry.ContractSuite
-Description : The shipping raw-session contract and uncovered legacy requirements
+Description : The shipping raw-session contract
 License     : Apache-2.0
 
-The eleven original node/indexer requirements keep their exact wording.
-Their retired atomic-view and named-node promises are published as unsupported,
-never passed under weaker session semantics. Separate cases exercise the
-generic provider through this existing harness.
+The raw-session requirements exercise the generic provider against independent
+source observations. They make no atomic-view or named-node promise.
 
 Outputs are compared in full against an independent source at run time.
 Acquisition identities and raw no-witness facts do not establish a snapshot.
@@ -26,9 +24,7 @@ module Singular.Registry.ContractSuite
     , CaseKind (..)
     , caseKind
     , caseText
-    , retiredCases
     , contractSuite
-    , unsupportedControl
     ) where
 
 import Control.Exception
@@ -91,20 +87,9 @@ renderEvidence = \case
 data CaseKind = Success | Refusal | Consistency
     deriving stock (Eq, Show)
 
--- | Original cases retain their identifiers and wording; generic cases are distinct.
+-- | Requirements for raw-session providers.
 data Case
-    = ViewNamesPoint
-    | ReadsAnswer
-    | OnePoint
-    | ChangeUnseen
-    | OutOfScope
-    | ConnectionLost
-    | AtOrigin
-    | IndexLag
-    | IndexFork
-    | IndexRestoring
-    | IndexDisconnected
-    | SessionNamesNetwork
+    = SessionNamesNetwork
     | SessionReadsAnswer
     | SessionChangeObserved
     | SessionReleased
@@ -115,10 +100,6 @@ data Case
 
 caseKind :: Case -> CaseKind
 caseKind = \case
-    ViewNamesPoint -> Success
-    ReadsAnswer -> Success
-    OnePoint -> Consistency
-    ChangeUnseen -> Consistency
     SessionNamesNetwork -> Success
     SessionReadsAnswer -> Success
     SessionChangeObserved -> Consistency
@@ -127,30 +108,6 @@ caseKind = \case
 
 caseText :: Case -> String
 caseText = \case
-    ViewNamesPoint ->
-        "a view names the network, era, slot and block hash it was acquired at"
-    ReadsAnswer ->
-        "a view answers its reads: outputs at an address, script \
-        \registration, time to slot"
-    OnePoint ->
-        "every read inside one view is answered at the view's chain point \
-        \(slot and block hash) while the chain moves on"
-    ChangeUnseen ->
-        "a chain change between two reads is not observed inside the view; \
-        \a fresh view sees it"
-    OutOfScope -> "a view used after its scope fails as ViewOutOfScope"
-    ConnectionLost ->
-        "a connection lost inside a view fails its next read and the next \
-        \acquisition as ViewConnectionLost"
-    AtOrigin -> "acquiring at the chain origin fails as AcquiredAtOrigin"
-    IndexLag -> "an index behind the node's point refuses the view as lag"
-    IndexFork ->
-        "an index holding another block at the node's slot refuses the view \
-        \as fork"
-    IndexRestoring -> "an index still restoring refuses the view as restoring"
-    IndexDisconnected ->
-        "an index whose upstream is disconnected refuses the view as \
-        \disconnected"
     SessionNamesNetwork ->
         "a fresh session names its requested network and a distinct opaque identity, with Unbound evidence"
     SessionReadsAnswer ->
@@ -165,31 +122,6 @@ caseText = \case
         "an exact-point acquisition refuses as PointNotSupported before the session action"
     SessionPolicyHoldings ->
         "a policy query returns every full live output once across asset names and policies, against an independent source"
-
--- | Mandatory uncovered rows for the removed API, independent of harness support.
-retiredCases :: Map Case String
-retiredCases =
-    Map.fromList
-        [ (requirement, reason requirement)
-        | requirement <- [ViewNamesPoint .. IndexDisconnected]
-        ]
-  where
-    reason = \case
-        ViewNamesPoint -> unbound
-        ReadsAnswer ->
-            "The old view API is retired. Generic raw-session reads are exercised separately; no view or atomic-point promise is inherited."
-        OnePoint -> unbound
-        ChangeUnseen -> unbound
-        OutOfScope ->
-            "ViewOutOfScope is retired with the view API. ReleasedSession is a distinct generic requirement."
-        ConnectionLost ->
-            "ViewConnectionLost is retired with the node connection. HTTP and raw-read failures retain their own outcomes."
-        AtOrigin ->
-            "AcquiredAtOrigin is retired with the node adapter; the HTTP route makes no node-origin promise."
-        _ ->
-            "The node/indexer adapter and its named index admission outcomes are retired; there is no replacement index."
-    unbound =
-        "This provider supplies Unbound raw sessions, not an atomic network/era/slot/block-hash view."
 
 -- | Fresh source and independent observation for each executable case.
 data Chain = Chain
@@ -212,11 +144,6 @@ data AdapterHarness = AdapterHarness
     , ahChain :: forall a. (Chain -> IO a) -> IO a
     }
 
-unsupportedControl :: String -> IO a
-unsupportedControl what =
-    throwIO . ErrorCall $
-        "contract suite: " <> what <> " is not supported by this harness"
-
 -- | The existing case list computes every supported/unsupported/failed result.
 contractSuite :: AdapterHarness -> Spec
 contractSuite h =
@@ -230,7 +157,7 @@ contractSuite h =
   where
     one c =
         it (show (caseKind c) <> ": " <> caseText c) $
-            case Map.lookup c (Map.union retiredCases (ahNotSupported h)) of
+            case Map.lookup c (ahNotSupported h) of
                 Just reason -> do
                     record h c "not-supported" (Just reason)
                     pendingWith
@@ -403,7 +330,6 @@ run c ch = case c of
                 (\_ -> writeIORef ran True)
         result `shouldBe` Left (PointNotSupported Genesis)
         readIORef ran `shouldReturn` False
-    _ -> unsupportedControl (caseText c)
 
 inScope :: Chain -> (Session NoWitness IO -> IO a) -> IO a
 inScope ch = Services.withLatest (chNetwork ch, chProvider ch)

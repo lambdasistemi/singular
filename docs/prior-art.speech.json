@@ -145,12 +145,12 @@
       "pause": 500
     },
     {
-      "text": "These candidates warrant component-level evaluation once a reuse target is concrete. License compatibility, toolchain fit and correctness require their own checks; this comparison grants none of them. Reading a validator establishes what its source says, not what a deployment does. Singular remains a design with unimplemented conformance obligations. Continue with the naming walkthrough or protocol specification.",
+      "text": "These candidates warrant component-level evaluation once a reuse target is concrete. License compatibility, toolchain fit and correctness require their own checks; this comparison grants none of them. Reading a validator establishes what its source says, not what a deployment does. Singular remains a design with unimplemented conformance obligations. Continue with the naming walkthrough (historical) or protocol specification.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "prior-art.md",
-    "sha256": "4a85153d4ceb7c937556096fc1828b2368c64645d0d150ab7c8914dfd2cc9cee"
+    "sha256": "7731274cead8a61525c9f071b391e266c201da0049fb3b02c0e2911f0286d782"
   }
 }

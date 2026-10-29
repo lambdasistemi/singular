@@ -109,39 +109,14 @@ class TrickyNameGrammarTest(unittest.TestCase):
 
 
 class RealTreeDiscoveryTest(unittest.TestCase):
-    """The current tree: 160 = 96 manifest-bound + 64 unclassified.
-
-    The permanent M1 surface adds ten audited statements to the preserved
-    broader tree. They stay in the denominator even without live coverage.
-
-    The registry's 46 statements include the three of public fold inputs
-    (#419) — a delivered output carries exactly the request's datum, a fold is
-    built from the public view, a foreign datum is refused — the two of the batch questions
-    (#344) — a batch fold of one request folds as its step, and a batch of one
-    reject judges as the reject — the three of the destination-row
-    ruling (#304) that remain — a fold describes a destination output only
-    when it delivers, a spent witness carries the datum its holding records —
-    and the absent-insertion
-    transaction row, the statement that no fold requires a signer, the four
-    statements of where every exit's deposit goes, the statement that every
-    transaction an exit builds settles what it owes, the statement that
-    a retract pays exactly its obligations and the four statements of
-    retraction admission; naming contributes 7, lifecycle 9 and wire
-    encoding 5. Five helpers were added: the two spellings of the fold's
-    transaction from its step and the three lemmas settling one payment;
-    three more read a retraction's bound return as its largest output, and
-    two read retraction admission's edge and window checks as propositions;
-    six state keyed mint sums pointwise, which a batch of one rests on.
-    The predecessor populations were 124 = 65 + 59, 116 = 63 + 53, 113 = 60 + 53,
-    107 = 56 + 51 and 104 = 56 + 48.
-    """
+    """The retained reference library: 58 unclassified declarations."""
 
     def test_population_at_base(self):
         inv_root = REPO_ROOT
         decls = scan_tree_strict(inv_root / "lean")
         self.assertEqual(
             len(decls),
-            289,
+            58,
             "base population drifted; the denominator must be re-examined",
         )
         statement_namespaces = (
@@ -151,15 +126,11 @@ class RealTreeDiscoveryTest(unittest.TestCase):
             "Singular.NamingWireStatements.",
         )
         statements = [d for d in decls if d.name.startswith(statement_namespaces)]
-        self.assertEqual(len(statements), 105)
-        self.assertEqual(
-            len([d for d in decls if d.source == "lean/Singular/M1.lean"]), 10
-        )
+        self.assertEqual(len(statements), 0)
 
     def test_attributed_count_at_base(self):
-        # The fourth is the @[simp] on trieGet_erase_eq.
         decls = scan_tree_strict(REPO_ROOT / "lean")
-        self.assertEqual(sum(1 for d in decls if d.attributed), 4)
+        self.assertEqual(sum(1 for d in decls if d.attributed), 2)
 
 
 if __name__ == "__main__":

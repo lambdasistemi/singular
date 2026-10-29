@@ -1,6 +1,6 @@
 # Requests, folding and NFT custody
 
-**Historical design.** This page records the earlier Insert/Update/Delete design and its broader broader model successor. The active permanent permanent contract model supports only `insertActive` and `updateTerminal`. Historical tags 0, 2, 4, 5 and 6 encode refused actions, not available features. [Current supported behavior](naming-demo.md) describes permanent contract; archived source and evidence remain on `preserve/m2/pre-m1-source-removal`.
+**Historical design.** This page records the earlier Insert/Update/Delete design and its broader broader model successor. The active permanent permanent contract model supports only `insertActive` and `updateTerminal`. Historical tags 0, 2, 4, 5 and 6 encode refused actions, not available features. [Current supported behavior (historical)](https://github.com/lambdasistemi/singular/blob/44de14203a67df7c993f50b05fd26c82dbf5a9e6/docs/naming-demo.md) describes permanent contract; archived source and evidence remain on `preserve/m2/pre-m1-source-removal`.
 
 Request creation and folding are separate transactions. Each has its own atomic effects; there is an explicit pending interval between them. Creating a valid request does not guarantee that someone will fold it.
 

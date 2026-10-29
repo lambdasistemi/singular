@@ -5,7 +5,7 @@
       "pause": 500
     },
     {
-      "text": "Historical design. This page records the earlier Insert/Update/Delete design and its broader broader model successor. The active permanent permanent contract model supports only insertActive and updateTerminal. Historical tags 0, 2, 4, 5 and 6 encode refused actions, not available features. Current supported behavior describes permanent contract; archived source and evidence remain on preserve/m2/pre-m1-source-removal.",
+      "text": "Historical design. This page records the earlier Insert/Update/Delete design and its broader broader model successor. The active permanent permanent contract model supports only insertActive and updateTerminal. Historical tags 0, 2, 4, 5 and 6 encode refused actions, not available features. Current supported behavior (historical) describes permanent contract; archived source and evidence remain on preserve/m2/pre-m1-source-removal.",
       "pause": 400
     },
     {
@@ -13,7 +13,7 @@
       "pause": 400
     },
     {
-      "text": "The reviewed behavioral baseline is the protocol specification, responsibilities, lifecycle, certification boundary and naming walkthrough. The executable candidate adds an executable interpretation for review. It does not close the construction decisions below.",
+      "text": "The reviewed behavioral baseline is the protocol specification, responsibilities, lifecycle, certification boundary and naming walkthrough (historical). The executable candidate adds an executable interpretation for review. It does not close the construction decisions below.",
       "pause": 400
     }
   ],
@@ -39,7 +39,7 @@
       "pause": 500
     },
     {
-      "text": "An executable logical map may stand for authenticated MPF state, a tagged structured value may stand for an unambiguous action commitment, and an explicit witness or contract parameter may stand for a ledger validator's authenticated result. These abstractions make the intended transition law inspectable without choosing a serialization, hash function, script deployment or application policy. Their exact use and limitations are recorded beside the Lean definitions and in the model ledger.",
+      "text": "An executable logical map may stand for authenticated MPF state, a tagged structured value may stand for an unambiguous action commitment, and an explicit witness or contract parameter may stand for a ledger validator's authenticated result. These abstractions make the intended transition law inspectable without choosing a serialization, hash function, script deployment or application policy. Their exact use and limitations are recorded beside the Lean definitions and in the model ledger (historical).",
       "pause": 400
     },
     {
@@ -73,6 +73,6 @@
   ],
   "_source": {
     "file": "decisions.md",
-    "sha256": "95ca9d9c00d5daf32b3dee0e939399750616ec8c9d3a24ad496bc0c2cd956443"
+    "sha256": "18187e05ca52582488ee1da1390302e176778701f78ecf1486a14ff3b3bbab1e"
   }
 }

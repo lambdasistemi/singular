@@ -750,15 +750,6 @@ for file in "${files[@]}"; do
       fi
       rel=$(resolve_dir "$base" "$flake")
       [ -n "$rel" ] || rel="."
-      # The docs archive's review flake ships at artifacts/review: it is
-      # the repository's release-review directory plus the shipped inputs,
-      # so a step that runs the extracted archive's app hosts
-      # release-review (the offchain archive steps map the same way onto
-      # their same-named directory; only the review path needs this alias
-      # because the archive nests it under artifacts/).
-      if [ "$rel" = "artifacts/review" ]; then
-        rel="release-review"
-      fi
       if has_dollar "$rel" || has_matrix "$rel" || [ "$rel" = ".." ] || [[ "$rel" == "../"* ]] || [[ "$rel" == /* ]]; then
         report_unresolved "$where: dynamic directory $token in $base (skipped)"
         continue
