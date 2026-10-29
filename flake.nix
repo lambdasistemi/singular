@@ -787,6 +787,8 @@
           mkdir -p $out
           cp ${./tools/no_pin_rig.sh} $out/no_pin_rig.sh
           cp ${./tools/no_pin_registration_journey.sh} $out/no_pin_registration_journey.sh
+          cp ${./tools/no_pin_batch_journey.sh} $out/no_pin_batch_journey.sh
+          cp ${./tools/no_pin_batch_observations.py} $out/no_pin_batch_observations.py
           cp ${./tools/no_pin_registration_refusals.sh} $out/no_pin_registration_refusals.sh
           cp ${./tools/no_pin_termination_refusals.sh} $out/no_pin_termination_refusals.sh
           cp ${./tools/no_pin_chain_view.py} $out/no_pin_chain_view.py

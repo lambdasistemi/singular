@@ -545,7 +545,7 @@ jobs:
         timeout-minutes: 20
         run: nix run --quiet .#wallet-vault-controls
   no-pin-registration-journey:
-    name: No-pin registration, update, termination and reading through the packaged commands
+    name: No-pin registration, mixed batches, termination and reading through the packaged commands
     needs: blueprint
     runs-on: nixos
     timeout-minutes: 45
@@ -575,7 +575,11 @@ jobs:
       # and termination booking. A fresh process directory of the second
       # wallet folds from public data; the deposit donation and the folder's
       # whole-request allocation are read from transaction bytes and outputs.
-      - name: Run registration, update, termination and reading against a development network
+      # The fresh nonbooker also discovers a mixed batch, with a duplicate-free
+      # reachable control, a count cap and a foreign registry at the same
+      # application. Transaction inputs/outputs/fee decide the surplus and all
+      # lifecycle verdicts; each check rejects altered observations.
+      - name: Run registration, mixed batches, termination and reading against a development network
         run: |
           printf 'NO_PIN_JOURNEY_RESULTS=%s\n' "$RUNNER_TEMP/no-pin-journey-results-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
           # Includes insert bundle -> wallet sign -> submit, confirmed by the chain.

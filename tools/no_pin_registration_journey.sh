@@ -630,6 +630,11 @@ fi
 # ------------------------------------------------------------------
 # The receipt
 # ------------------------------------------------------------------
+# Keep the earlier connected lifecycle and reading evidence intact; the batch
+# scenarios use new registries after those measurements have finished.
+# shellcheck source=tools/no_pin_batch_journey.sh
+# shellcheck disable=SC1091
+source "$(dirname "$0")/no_pin_batch_journey.sh"
 leg="reading a key"
 check "the packaged readers classify live custody, pending termination and authenticated absence; altered answers fail" \
   reading_evidence journey
@@ -724,7 +729,10 @@ check "removing the temporary control restores predicate coverage" shared_public
   cat "$listings/bob-before-independent-fold.txt"
   printf '\n```\n\nThe included transactions and altered-observation controls show:\n\n```json\n'
   cat "$work/shared-registration.json"
-  printf '\n```\n\n## Verdicts\n\n'
+  printf '\n```\n\n## Public mixed batches, read from the chain\n\n```json\n'
+  cat "$work/batch-journey.json"
+  printf '\n```\n\nKey-address approval holders and malformed request datums remain unit-tested skips, not development-network claims. Valid configuration outputs are observed on this chain, named as not accepted by the application decode, and checked to remain unspent.\n\n'
+  printf '## Verdicts\n\n'
   cat "$verdicts"
 } >"$work/receipt.md"
 
