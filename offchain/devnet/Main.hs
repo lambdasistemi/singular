@@ -530,7 +530,9 @@ spendReference args = withRunner $ \wallet caps -> do
                 [ "output" .= renderOutRef (TxIn (txIdTx tx) (TxIx 0))
                 , "fee" .= (let Coin fee = tx ^. bodyTxL . feeTxBodyL in fee)
                 , "unsignedSizeBytes" .= (tx ^. sizeTxF)
-                , "sizeBytes" .= BS.length (serialize' (eraProtVerLow @ConwayEra) (signedTx (signed tx)))
+                , "sizeBytes"
+                    .= BS.length
+                        (serialize' (eraProtVerLow @ConwayEra) (signedTx (signed tx)))
                 , "cborHex"
                     .= TextEncoding.decodeUtf8
                         ( B16.encode
