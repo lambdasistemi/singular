@@ -103,7 +103,7 @@
       "pause": 500
     },
     {
-      "text": "inspect prints the key's payload under payload in the application output, with the field payloadSchema beside it, and the update receipt prints the two fields the same way. A payload has a plain reading when it is one that the rules above could have produced:",
+      "text": "open-datum inspect prints a live key's payload under payload in the application output, with the field payloadSchema beside it, and the update receipt prints the two fields the same way. A payload has a plain reading when it is one that the rules above could have produced:",
       "pause": 400
     },
     {
@@ -131,7 +131,11 @@
       "pause": 400
     },
     {
-      "text": "The reading is a property of the data, not of how it was stored. The detailed {\"int\":42} and the plain 42 store the same data, so both read back as 42. The envelope, with its control and its payload in the detailed schema, is printed as before under envelope, and it is the way to read the exact data.",
+      "text": "The reading is a property of the data, not of how it was stored. The detailed {\"int\":42} and the plain 42 store the same data, so both read back as 42. The current live envelope, with its protected control and payload in the detailed schema, is printed under envelope and datum, so the exact data is retained. The decoded control names its registry, key, controller, active asset and protected deposit; deposit also prints that amount in lovelace. Pending termination has no payload. Terminal and never registered describe the authenticated leaf; unavailable reads and refusals print their reasons.",
+      "pause": 400
+    },
+    {
+      "text": "singular registry inspect reports neutral active custody and prints the datum as data under datum, with its inline, hash or none form under datumKind. It does not decode a payload. Both commands default to human text; use --json for these fields and --query-work for measured provider work. See reading a key for output and exit statuses.",
       "pause": 400
     }
   ],
@@ -171,6 +175,6 @@
   ],
   "_source": {
     "file": "payload-json.md",
-    "sha256": "c7e4746b1b99895fca242e5b81376b22e99bffe214340e9ccf090127ce412b0f"
+    "sha256": "a64f89cb231445d7edc05ca0adc44b354a22b71ffe3fa53187405f16fb205d7d"
   }
 }

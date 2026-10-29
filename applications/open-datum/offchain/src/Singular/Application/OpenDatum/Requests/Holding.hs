@@ -19,7 +19,6 @@ import Control.Exception (throwIO)
 import Control.Monad (unless)
 import Control.Monad.Trans.Except (ExceptT (..), runExceptT, throwE)
 import Data.ByteString (ByteString)
-import Data.ByteString.Short qualified as SBS
 import Data.Map.Strict qualified as Map
 import Lens.Micro ((^.))
 import PlutusCore.Data qualified as PLC
@@ -31,8 +30,7 @@ import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Credential (Credential (..))
 import Cardano.Ledger.Keys (KeyHash (..))
 import Cardano.Ledger.Mary.Value
-    ( AssetName (..)
-    , MaryValue (..)
+    ( MaryValue (..)
     , MultiAsset (..)
     )
 import Cardano.Ledger.TxIn (TxIn)
@@ -49,7 +47,9 @@ import Singular.Application.OpenDatum.Requests.Assemble
 import Singular.Application.OpenDatum.Requests.Records
     ( AsData (..)
     , MintAction (..)
+    , ProtectedControl (..)
     , SpendAction (..)
+    , decodeLiveDatum
     , mintRedeemer
     , spendRedeemer
     )
@@ -69,8 +69,7 @@ import Singular.Registry.LedgerProvider
     , Session
     )
 import Singular.Registry.TrieState
-    ( RegistryIdentity (..)
-    , StatePolicyId (..)
+    ( RegistryIdentity
     )
 import Singular.State.Lineage (registryAsset)
 import Singular.State.Preimage
@@ -203,26 +202,27 @@ readHolding session script reference =
         case output ^. addrTxOutL of
             Addr _ (ScriptHashObj hash) _ | hash == requestScriptHash script -> Just ()
             _ -> Nothing
-        PLC.Constr 2 [control, _] <- inlineDatumOf output
-        PLC.Constr
-            0
-            [ PLC.Constr 0 [PLC.B policy, PLC.B name]
-                , PLC.Constr 0 [PLC.B activePolicy, PLC.B activeName]
-                , PLC.B key
-                , PLC.B controller
-                , PLC.I deposit
-                ] <-
-            pure control
-        let registry =
-                RegistryIdentity (StatePolicyId policy) (AssetName (SBS.toShort name))
-            expected@(AssetName expectedBytes) = activeTokenName registry key
+        datum@(PLC.Constr 2 [control, _]) <- inlineDatumOf output
+        (protected, _) <- decodeLiveDatum datum
+        let registry = controlRegistry protected
+            key = controlKey protected
+            deposit = controlDeposit protected
+            expected = activeTokenName registry key
             MaryValue (Coin lovelace) (MultiAsset assets) = output ^. valueTxOutL
         (statePolicy, _) <- registryAsset registry
         unless
-            (activePolicy == policy && activeName == SBS.fromShort expectedBytes)
+            (controlActiveAsset protected == (statePolicy, expected))
             Nothing
-        unless (deposit >= 0 && lovelace >= deposit) Nothing
+        unless (lovelace >= deposit) Nothing
         unless
             ((Map.lookup statePolicy assets >>= Map.lookup expected) == Just 1)
             Nothing
-        pure (Holding output control controller registry key deposit)
+        pure
+            ( Holding
+                output
+                control
+                (controlController protected)
+                registry
+                key
+                deposit
+            )

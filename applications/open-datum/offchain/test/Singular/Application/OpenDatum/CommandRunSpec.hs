@@ -23,7 +23,7 @@ and what the journal says it met, the root, the token, the refusal's kind.
 One contradicting event is a failure, whatever other events agree.
 
 The public constructors are read from the command type; the three internal
-preparation values are excluded. Every public writer is exercised. Folded-list
+preparation values are excluded. Every public writer and the reader are exercised. Folded-list
 entries are bound to the actual submitted transaction's request redeemers.
 The retained writers provide command and transaction events; protocol-fact
 narration is outside these controls.
@@ -33,6 +33,7 @@ module Singular.Application.OpenDatum.CommandRunSpec
     , Rig (..)
     , Run (..)
     , capabilities
+    , captured
     , envOf
     , fundOutput
     , magic
@@ -463,6 +464,7 @@ commandNames =
 -- | The constructor a parsed command is.
 constructorOf :: OpenDatumCommand -> String
 constructorOf = \case
+    OpenInspect _ -> "OpenInspect"
     OpenHelp _ -> "OpenHelp"
     OpenInsert _ -> "OpenInsert"
     OpenUpdate _ -> "OpenUpdate"
@@ -829,6 +831,7 @@ envOf rig =
         , envSource = "fixture"
         , envLoadRelease = loadReleaseCodes
         , envReads = \_ k -> k (capabilities rig)
+        , envReaderReads = \_ k -> k (capabilities rig)
         , envWrites = \_ k -> k (capabilities rig)
         }
 
@@ -878,8 +881,23 @@ tokenOf r = case textAt "stateToken" (runReceipt r) of
 lifecycle :: Rig -> IO [Run]
 lifecycle rig = do
     runs <- registrationLifecycle rig
+    token <- case runs of
+        created : _ -> tokenOf created
+        [] -> fail "the registration lifecycle produced no registry"
+    inspected <-
+        runAt
+            rig
+            "proved"
+            "inspect"
+            ["inspect", "--state-token", token, "--key", "fold", "--json"]
+    -- The accept-all scripts are deliberately not a recognized release. This
+    -- reaches the real reader and must retain its unknown-policy refusal.
+    runExit inspected `shouldBe` ExitFailure 2
+    textAt "answer" (runReceipt inspected) `shouldBe` Just "refused"
+    textAt "refusal" (runReceipt inspected)
+        `shouldBe` Just "unknown-state-policy"
     extra <- runAt rig "second" "second create" ["create"]
-    pure (runs <> [extra])
+    pure (runs <> [inspected, extra])
 
 registrationLifecycle :: Rig -> IO [Run]
 registrationLifecycle rig = do
@@ -1066,6 +1084,13 @@ read as a typed failure, or a successful empty answer — the read-back
 a create must make of a reference it just published.
 -}
 commandLine :: Rig -> FilePath -> [String] -> [String]
+commandLine _ _ args@("inspect" : _) =
+    args
+        <> [ "--koios-url"
+           , "http://fixture.invalid"
+           , "--network-magic"
+           , show magic
+           ]
 commandLine rig registry args =
     args
         <> [ "--state-dir"
@@ -1098,9 +1123,11 @@ runWithKey keyPath rig label args =
 -- The comparison
 -- ---------------------------------------------------------
 
--- | The receipt's outcome.
+-- | The write receipt's outcome or the reader's answer.
 outcomeOf :: Aeson.Value -> Maybe Text
-outcomeOf = textAt "outcome"
+outcomeOf value = case textAt "answer" value of
+    Just answer -> Just answer
+    Nothing -> textAt "outcome" value
 
 textAt :: Aeson.Key -> Aeson.Value -> Maybe Text
 textAt k = \case
@@ -1220,7 +1247,12 @@ refusalFits k o = case k of
         o
             `elem` map
                 Just
-                ["client-refusal", "partial", "concurrent-writer", "stale-state"]
+                [ "client-refusal"
+                , "partial"
+                , "concurrent-writer"
+                , "stale-state"
+                , "refused"
+                ]
     EvaluationRefused -> o `elem` map Just ["client-refusal", "partial"]
 
 {- | Every way the typed events contradict the receipt; empty when every event
@@ -1285,7 +1317,7 @@ disagreements _invokedKey receipt events =
           ]
         ]
   where
-    outcome = textAt "outcome" receipt
+    outcome = outcomeOf receipt
     command = textAt "command" receipt
     subs = submissionsOf receipt
     -- a reference the command found already published: read back, not submitted
@@ -1392,7 +1424,7 @@ alterations receipt events =
            | (n, Trace _ (What (Refused{}))) <- zip [0 ..] events
            ]
   where
-    outcome = textAt "outcome" receipt
+    outcome = outcomeOf receipt
     flipText t = if T.take 1 t == "0" then "1" <> T.drop 1 t else "0" <> T.drop 1 t
     alter (Trace scope event) = case event of
         What (CommandEnded c o ms) ->
@@ -1500,7 +1532,7 @@ mechanicOfItsTransaction = \case
 
 -- | Whether a receipt's outcome is a refusal: its stream carries exactly one refusal event.
 refusalOutcome :: Maybe Text -> Bool
-refusalOutcome = (`elem` map Just ["client-refusal", "ledger-refusal"])
+refusalOutcome = (`elem` map Just ["client-refusal", "ledger-refusal", "refused"])
 
 -- | An unspent wallet output for another registry.
 fundSeed2 :: Rig -> IO String

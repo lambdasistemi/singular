@@ -6,6 +6,7 @@ import Singular.CLI.FailureSentenceSpec qualified (spec)
 import Singular.CLI.FlagGroupSpec qualified (spec)
 import Singular.CLI.FoldRulesSpec qualified (spec)
 import Singular.CLI.HelpSnapshotSpec qualified (spec)
+import Singular.CLI.InspectSpec qualified (spec)
 import Singular.CLI.JournalTransitionsSpec qualified (spec)
 import Singular.CLI.OneOutputCreateSpec qualified (spec)
 import Singular.CLI.ParserCorpusSpec qualified (spec)
@@ -49,6 +50,7 @@ import Singular.Registry.PhaseLogSpec qualified (spec)
 import Singular.Registry.PlainJsonSpec qualified (spec)
 import Singular.Registry.Private.ArchiveSpec qualified (spec)
 import Singular.Registry.ProviderSpec qualified (spec)
+import Singular.Registry.ReaderSpec qualified (spec)
 import Singular.Registry.SessionServicesSpec qualified (spec)
 import Singular.Registry.SubmitSpec qualified (spec)
 import Singular.Registry.TrieStateContractSpec qualified (spec)
@@ -233,6 +235,9 @@ main = hspec $ do
         (tagged "Singular.CLI.PrintedPayload" [Cli])
         Singular.CLI.PrintedPayloadSpec.spec
     describe
+        (tagged "Singular.CLI.Inspect" [Cli])
+        Singular.CLI.InspectSpec.spec
+    describe
         (tagged "Singular.CLI.HelpSnapshot" [Cli])
         Singular.CLI.HelpSnapshotSpec.spec
     describe
@@ -253,6 +258,9 @@ main = hspec $ do
     describe
         (tagged "Singular.Registry.ContractTable" [Cli])
         Singular.Registry.ContractTableSpec.spec
+    describe
+        (tagged "Singular.Registry.Reader" [Provider])
+        Singular.Registry.ReaderSpec.spec
     describe
         (tagged "Singular.CLI.Sign" [Cli, Wallet])
         Singular.CLI.SignSpec.spec

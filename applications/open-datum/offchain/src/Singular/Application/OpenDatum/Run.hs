@@ -8,10 +8,12 @@ Description : Run one parsed @open-datum@ command
 License     : Apache-2.0
 
 'runOpenDatum' dispatches the open-datum commands and help. Each
-command prints one receipt as JSON on standard output (and to
+write prints one receipt as JSON on standard output (and to
 @--receipt FILE@ when given) and ends with the exit status of its
 outcome class ("Singular.CLI.Finish"). The state, registration and holding
 commands use the request contract and open their explicit signer before running.
+Inspection uses no signer and prints human text by default or one JSON answer
+when requested, with its reader-specific exit statuses.
 -}
 module Singular.Application.OpenDatum.Run
     ( runOpenDatum
@@ -25,6 +27,7 @@ import Singular.Application.OpenDatum.Command
     , StateCreateArgs (..)
     , StateFoldArgs (..)
     )
+import Singular.Application.OpenDatum.Inspect (openDatumInspection)
 import Singular.Application.OpenDatum.Registration
     ( openDatumHost
     , runBook
@@ -37,6 +40,7 @@ import Singular.Application.OpenDatum.Requests.Records
     ( RequestParameters (..)
     )
 import Singular.CLI.Finish (finish)
+import Singular.CLI.Inspect (runReader)
 import Singular.CLI.Receipt (OutcomeClass (ClientRefusal))
 import Singular.CLI.Session (Env (..), failWith, openWriteSigner)
 import Singular.CLI.State (runStateCreate, runStateFold)
@@ -45,6 +49,7 @@ import System.Exit (ExitCode (..))
 -- | Run one open-datum command in the environment the entry point composed.
 runOpenDatum :: Env -> OpenDatumCommand -> IO ExitCode
 runOpenDatum env = \case
+    OpenInspect a -> runReader "inspect" env a openDatumInspection
     OpenHelp text -> putStr text >> pure ExitSuccess
     OpenInsert _ ->
         failWith

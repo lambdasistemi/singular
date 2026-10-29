@@ -27,11 +27,11 @@ pending. Until its processing deadline only a fold can spend it. After the
 deadline, and until the reclaim window ends, only the refund address can take it
 back. After the window anyone can clean it up.
 
-This page describes eight commands: `singular registry create`,
+This page describes ten commands: `singular registry create`,
 `open-datum create`, `open-datum fold`,
 `open-datum insert`, `open-datum reclaim` and
 `open-datum cleanup`, `open-datum update` and
-`open-datum terminate`. Every flag they take is listed with its
+`open-datum terminate`, `singular registry inspect` and `open-datum inspect`. Every flag they take is listed with its
 description and its default in [the settings table](singular-node.md#the-settings-you-give),
 and each command prints the same information with `--help`.
 
@@ -274,3 +274,27 @@ is chosen; the other commands are journalled under the registry.
 `--state-dir` names the root of the journals, and the default is the per-user
 state directory. [Recovering a registry command](cli-recovery.md) shows each of
 these interruptions on a development network.
+
+
+## Read a key
+
+As a reader, give the registry address and a key to either inspect command.
+No signer, blueprint or local state directory is needed.
+
+```sh
+singular registry inspect --registry "$registry" --key my-key --koios-url "$koios"
+open-datum inspect --registry "$registry" --key my-key --koios-url "$koios" --json --query-work
+```
+
+The neutral command identifies the application from the packaged release table
+and answers active, terminal or never registered, or reports an unavailable
+read or a refusal with its reason. Active custody includes its datum as data.
+The application command decodes a live holding's protected control, deposit
+and payload, or identifies pending termination. Both retain the authenticated
+state requirement for absence and every neutral refusal.
+
+Human text is the default; `--json` selects one JSON object. `--query-work`
+adds measured calls, rows and bytes per provider read and in total. Answers
+exit 0, unavailable reads exit 1, and refused evidence or invalid command lines
+exit 2. See [reading a key](singular-node.md#reading-a-key) for settings,
+classification order, refusal reasons and measurement limits.

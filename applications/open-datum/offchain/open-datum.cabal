@@ -41,6 +41,8 @@ library
     Singular.Application.OpenDatum.Envelope
     Singular.Application.OpenDatum.Help
     Singular.Application.OpenDatum.Registration
+    Singular.Application.OpenDatum.Reader
+    Singular.Application.OpenDatum.Inspect
     Singular.Application.OpenDatum.Release
     Singular.Application.OpenDatum.Requests.Booking
     Singular.Application.OpenDatum.Requests.Configuration
@@ -148,6 +150,7 @@ test-suite open-datum-tests
     Singular.Application.OpenDatum.RequestCreationSpec
     Singular.Application.OpenDatum.RequestFoldSpec
     Singular.Application.OpenDatum.RequestHoldingSpec
+    Singular.Application.OpenDatum.ReaderSpec
     Singular.Application.OpenDatum.RequestTerminationFoldSpec
     Singular.Application.OpenDatum.RequestPublicationSpec
     Singular.Application.OpenDatum.RequestPendingSpec

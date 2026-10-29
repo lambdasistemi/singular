@@ -6,6 +6,7 @@ import Cardano.Crypto.Hash (hashFromBytes)
 import Cardano.Ledger.Address (AccountAddress (..), AccountId (..))
 import Cardano.Ledger.Allegra.Scripts (ValidityInterval (..))
 import Cardano.Ledger.Alonzo.Tx (IsValid (..))
+import Cardano.Ledger.Api.Scripts.Data (Datum (..), binaryDataToData)
 import Cardano.Ledger.Api.Tx (bodyTxL, isValidTxL, vldtTxBodyL)
 import Cardano.Ledger.Api.Tx.Body
     ( feeTxBodyL
@@ -14,6 +15,7 @@ import Cardano.Ledger.Api.Tx.Body
     , referenceInputsTxBodyL
     )
 import Cardano.Ledger.Api.Tx.Out (TxOut, mkBasicTxOut, valueTxOutL)
+import Cardano.Ledger.Api.Tx.Out qualified as Out
 import Cardano.Ledger.BaseTypes (StrictMaybe (..), TxIx (..))
 import Cardano.Ledger.BaseTypes qualified as Ledger
 import Cardano.Ledger.Binary (serialize')
@@ -111,8 +113,10 @@ import Singular.Provider.Koios.Scripted
     )
 import Singular.Provider.Koios.State
 import Singular.Provider.Koios.Wire qualified as Wire
+import Singular.Reader qualified as Reader
 import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.Confirmation qualified as Confirmation
+import Singular.Registry.ContractTable (parseContractTable)
 import Singular.Registry.Evidence
     ( Evidenced (..)
     , SessionBinding (..)
@@ -127,6 +131,7 @@ import Singular.Registry.NetworkTime
     )
 import Singular.Registry.NetworkTimeSpec (loadNetworkFixture)
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
+import Singular.Registry.ReaderSpec (readerRows)
 import Singular.Registry.SessionEvidence
     ( FactRecord (..)
     , observeProvider
@@ -145,6 +150,8 @@ import Singular.Registry.Trace
 import Singular.Registry.TraceRender (backendPhaseLog)
 import Singular.Registry.TxBuilder.BookingFixture (payer)
 import Singular.Registry.Wait (WaitFailure (..), WaitStage (..))
+import Singular.State.Lineage (registryAsset)
+import Singular.State.Preimage (activeTokenName)
 import System.Directory (createDirectoryIfMissing, doesFileExist)
 import System.Environment (lookupEnv)
 import System.FilePath ((</>))
@@ -154,6 +161,192 @@ import Test.Hspec
 
 spec :: Spec
 spec = describe "Koios ledger provider constructor" $ do
+    it
+        "reader refuses a failed later asset page beside a complete live control"
+        $ do
+            corpus <- readerRows
+            (readerRequest, observed, pair@(_, output)) <- case [ (request, obs, held) | (_, request, obs, Reader.Active held) <- corpus
+                                                                ] of
+                first : _ -> pure first
+                [] -> fail "no native active observation"
+            table <-
+                either (fail . Text.unpack) pure $
+                    parseContractTable $
+                        LBS.toStrict $
+                            encode $
+                                object
+                                    [ "rows" .= ([] :: [Value])
+                                    , "applications" .= maybe [] pure (Reader.observedRelease observed)
+                                    ]
+            let row = case outputRow pair of
+                    Object fields ->
+                        Object
+                            ( KM.insert
+                                "address"
+                                (String (Wire.renderAddress (output ^. Out.addrTxOutL)))
+                                fields
+                            )
+                    _ -> error "output row is not an object"
+                firstPage = pageAnswer [row, row] 0 1
+                genesis =
+                    okJson
+                        []
+                        ( jsonBytes
+                            [ object
+                                [ "networkmagic" .= case Reader.requestedNetwork readerRequest of Network n -> n
+                                ]
+                            ]
+                        )
+            forM_
+                [ Nothing
+                , Just Client.NoAnswerInTime
+                , Just (Client.NoConnection "offline after the first page")
+                ]
+                $ \fault -> do
+                    seen <- newIORef []
+                    runtime <- newIORuntime nullTracer (const (pure ()))
+                    let transport = Client.Transport $ \rawRequest -> do
+                            modifyIORef' seen (<> [rawRequest])
+                            pure $ case Client.rawCall rawRequest of
+                                Wire.CallGenesis -> genesis
+                                Wire.CallAssetUtxos | isNothing fault -> pageAnswer [row] 0 1
+                                Wire.CallAssetUtxos | queryParam "offset" rawRequest == Just "0" -> firstPage
+                                Wire.CallAssetUtxos -> maybe (okJson [] "[]") (Client.singleExchange . Left) fault
+                                _ ->
+                                    Client.singleExchange
+                                        (Left (Client.NoRecording "unexpected read after partial answer"))
+                        provider =
+                            koiosProvider
+                                runtime
+                                (Reader.requestedNetwork readerRequest)
+                                (pure (Left (BackendReadFailure "no time read")))
+                                (Client.Koios (Client.ClientConfig 1 10) transport)
+                    answer <-
+                        acquire
+                            provider
+                            (Latest (Reader.requestedNetwork readerRequest))
+                            ( \session -> Reader.readNeutralKeyFromSession session table readerRequest
+                            )
+                            >>= either (fail . show) pure
+                    case fault of
+                        Nothing ->
+                            answer
+                                `shouldBe` Reader.Active (fst pair, output & Out.datumTxOutL .~ NoDatum)
+                        Just _ ->
+                            answer `shouldSatisfy` \case
+                                Reader.Unavailable Reader.ActiveOutputsRead (Reader.Failed why) -> Text.isInfixOf "CallAssetUtxos" why
+                                _ -> False
+                    map Client.rawCall <$> readIORef seen
+                        `shouldReturn` ( if isNothing fault
+                                            then [Wire.CallGenesis, Wire.CallAssetUtxos]
+                                            else [Wire.CallGenesis, Wire.CallAssetUtxos, Wire.CallAssetUtxos]
+                                       )
+    it
+        "reader live custody uses only the served network and the exact active asset, with measured work"
+        $ do
+            corpus <- readerRows
+            let live =
+                    [ (request, observed, expected)
+                    | (_, request, observed, expected@Reader.Active{}) <- corpus
+                    ]
+            length live `shouldSatisfy` (> 1)
+            forM_ live $ \(request, observed, expected) -> do
+                table <-
+                    either (fail . Text.unpack) pure $
+                        parseContractTable $
+                            LBS.toStrict $
+                                encode $
+                                    object
+                                        [ "rows" .= ([] :: [Value])
+                                        , "applications" .= maybe [] pure (Reader.observedRelease observed)
+                                        ]
+                pair@(_, output) <- case expected of
+                    Reader.Active held -> pure held
+                    _ -> fail "not an active corpus answer"
+                let row = case outputRow pair of
+                        Object fields -> Object
+                            $ KM.insert
+                                "address"
+                                (String (Wire.renderAddress (output ^. Out.addrTxOutL)))
+                            $ case output ^. Out.datumTxOutL of
+                                Datum binary ->
+                                    KM.insert
+                                        "inline_datum"
+                                        ( object
+                                            [ "bytes"
+                                                .= TE.decodeUtf8
+                                                    ( B16.encode
+                                                        (serialize' (eraProtVerHigh @ConwayEra) (binaryDataToData binary))
+                                                    )
+                                            ]
+                                        )
+                                        fields
+                                _ -> fields
+                        _ -> error "output row is not an object"
+                    genesis =
+                        okJson
+                            []
+                            ( jsonBytes
+                                [ object
+                                    [ "networkmagic" .= case Reader.requestedNetwork request of Network n -> n
+                                    ]
+                                ]
+                            )
+                    assetAnswer = pageAnswer [row] 0 20
+                seen <- newIORef []
+                events <- newIORef []
+                runtime <-
+                    newIORuntime
+                        (Tracer (\event -> modifyIORef' events (<> [event])))
+                        (const (pure ()))
+                let transport = Client.Transport $ \raw -> do
+                        modifyIORef' seen (<> [raw])
+                        pure $ case Client.rawCall raw of
+                            Wire.CallGenesis -> genesis
+                            Wire.CallAssetUtxos -> assetAnswer
+                            _ ->
+                                Client.singleExchange
+                                    (Left (Client.NoRecording "reader made an unnecessary read"))
+                    client = Client.Koios (Client.ClientConfig 20 10) transport
+                    provider =
+                        koiosProvider
+                            runtime
+                            (Reader.requestedNetwork request)
+                            (pure (Left (BackendReadFailure "reader needs no time source")))
+                            client
+                result <- acquire provider (Latest (Reader.requestedNetwork request)) $ \session -> do
+                    answer <- Reader.readNeutralKeyFromSession session table request
+                    pure (sessionId session, answer)
+                (SessionId identity, answer) <- either (fail . show) pure result
+                answer `shouldBe` expected
+                calls <- readIORef seen
+                map Client.rawCall calls
+                    `shouldBe` [Wire.CallGenesis, Wire.CallAssetUtxos]
+                (policy, _) <-
+                    maybe
+                        (fail "invalid corpus policy")
+                        pure
+                        (registryAsset (Reader.readerRegistry request))
+                map Client.rawBody (drop 1 calls)
+                    `shouldBe` [ Client.rawBody
+                                    ( Client.rawRequest
+                                        ( Wire.assetUtxosRequest
+                                            [
+                                                ( policy
+                                                , activeTokenName
+                                                    (Reader.readerRegistry request)
+                                                    (Reader.readerKey request)
+                                                )
+                                            ]
+                                        )
+                                    )
+                               ]
+                summary <- sessionQueryWork identity <$> readIORef events
+                totalWork summary
+                    `shouldBe` Client.exchangeWork genesis <> Client.exchangeWork assetAnswer
+                workCalls (totalWork summary) `shouldBe` 2
+                workRows (totalWork summary) `shouldBe` 2
+                Map.keys (perReadWork summary) `shouldBe` ["asset_utxos", "genesis"]
     it "keeps final answer size separate from all retry work" $ do
         source <- timeSource
         set <- recordedSet

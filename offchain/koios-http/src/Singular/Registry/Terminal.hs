@@ -8,6 +8,7 @@ submits sealed bytes without leaking an unsigned node capability.
 module Singular.Registry.Terminal
     ( Capabilities (..)
     , withReads
+    , withReaderReads
     , withWrites
     , withReadsObserved
     , withWritesObserved
@@ -54,7 +55,7 @@ import Singular.Registry.Wallet (Wallet (..))
 {- | Owner, lifetime and concurrency contract for the callback buffers.
 
 The two buffers below belong to the single 'Capabilities' value this
-function returns. Lifetime: one acquisition via 'withReadsObserved'
+function returns. Lifetime: one acquisition via 'withReadsObserved' or 'withReaderReads'
 owns one pair; separate capabilities never share a buffer. The
 product is single-threaded: callbacks run on the calling thread via
 'newIORuntime' and 'observeProvider'; 'atomicModifyIORef'' makes one
@@ -135,6 +136,22 @@ withReadsObserved backend reading observe settings action = do
     withLatest (tracedReads koiosSource reading capabilities) $ \session ->
         Control.Monad.void (SessionIO.parameters session)
     action capabilities
+
+{- | Acquire the reader's capabilities without builder startup.
+
+The reader observes the provider's served network before classifying a key.
+It needs neither protocol parameters nor a time conversion. The callback owns
+one capability value; each provider acquisition releases its session on return
+or exception, and the caller retains that session's measured trace. No worker
+or mutable buffer is shared with another command.
+-}
+withReaderReads
+    :: Tracer IO BackendEvent
+    -> ProviderSettings
+    -> (Capabilities NoWitness IO -> IO a)
+    -> IO a
+withReaderReads backend settings action =
+    newCapabilities backend settings >>= action
 
 {- | The same, opening the provider with no wallet threshold.
 Its reads are traced into the second tracer. The wallet argument is

@@ -19,12 +19,14 @@ Singular state, never re-derived.
 module Singular.Application.OpenDatum.Requests.Records
     ( -- * Records
       RequestParameters (..)
+    , ProtectedControl (..)
     , RegistrationData (..)
     , configurationDatum
     , decodeConfiguration
     , registrationDatum
     , decodeRegistration
     , liveDatum
+    , decodeLiveDatum
 
       -- * The approval of a registration
     , initialDatumHash
@@ -62,7 +64,7 @@ import Cardano.Ledger.Credential
     )
 import Cardano.Ledger.Hashes (ScriptHash (..), extractHash)
 import Cardano.Ledger.Keys (KeyHash (..))
-import Cardano.Ledger.Mary.Value (AssetName (..))
+import Cardano.Ledger.Mary.Value (AssetName (..), PolicyID (..))
 import Cardano.Ledger.Plutus.TxInfo (transAddr)
 import Cardano.Ledger.TxIn (TxId (..), TxIn (..))
 
@@ -90,6 +92,16 @@ data RequestParameters = RequestParameters
     -- ^ How long after that the refund address may reclaim it
     , rpBookingWidth :: Integer
     -- ^ The widest validity interval a booking may declare
+    }
+    deriving stock (Eq, Show)
+
+-- | The immutable control of a live holding in the current datum wire.
+data ProtectedControl = ProtectedControl
+    { controlRegistry :: RegistryIdentity
+    , controlActiveAsset :: (PolicyID, AssetName)
+    , controlKey :: ByteString
+    , controlController :: ByteString
+    , controlDeposit :: Integer
     }
     deriving stock (Eq, Show)
 
@@ -242,6 +254,33 @@ liveDatum registry@(RegistryIdentity (StatePolicyId policy) _) key controller de
             ]
         , payload
         ]
+
+-- | Decode the current live datum, retaining its protected control and payload.
+decodeLiveDatum :: PLC.Data -> Maybe (ProtectedControl, PLC.Data)
+decodeLiveDatum = \case
+    PLC.Constr
+        2
+        [ PLC.Constr
+                0
+                [ PLC.Constr 0 [PLC.B policy, PLC.B name]
+                    , PLC.Constr 0 [PLC.B activePolicy, PLC.B activeName]
+                    , PLC.B key
+                    , PLC.B controller
+                    , PLC.I deposit
+                    ]
+            , payload
+            ] | deposit >= 0 -> do
+            active <- PolicyID . ScriptHash <$> hashFromBytes activePolicy
+            pure
+                ( ProtectedControl
+                    (RegistryIdentity (StatePolicyId policy) (AssetName (SBS.toShort name)))
+                    (active, AssetName (SBS.toShort activeName))
+                    key
+                    controller
+                    deposit
+                , payload
+                )
+    _ -> Nothing
 
 -- | The hash a registration approval commits for an initial datum.
 initialDatumHash :: PLC.Data -> ByteString

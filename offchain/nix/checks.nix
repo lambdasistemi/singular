@@ -19,6 +19,7 @@ let
       mkdir -p "$fixture_dir/test"
       cp -R ${../test/fixtures} "$fixture_dir/test/fixtures"
       chmod -R u+w "$fixture_dir/test/fixtures"
+      export SINGULAR_READER_CORPUS=${../../models/singular-application-held/reader-corpus.json}
       export SINGULAR_STATE_BLUEPRINT=${stateBlueprint}
       export SINGULAR_STATE_SCRIPT_IDENTITY=${stateScriptIdentity}
       cd "$fixture_dir"

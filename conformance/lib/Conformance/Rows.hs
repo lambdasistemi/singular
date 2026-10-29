@@ -1,12 +1,12 @@
 {- |
 Module      : Conformance.Rows
-Description : The 55-row consumer inventory and its validation
+Description : The 59-row consumer inventory and its validation
 License     : Apache-2.0
 
 The complete consumer-row inventory from @rows.json@: id, group,
 requirement, source, expected outcome and declared plan. @list@
-prints it; @validateInventory@ enforces the denominator — 55 rows,
-54 owned — so a truncated inventory fails loudly instead of printing
+prints it; @validateInventory@ enforces the denominator — 59 rows,
+58 owned — so a truncated inventory fails loudly instead of printing
 a smaller-but-plausible table.
 
 @executed@ is not a value @rows.json@ can carry: the declared field
@@ -55,18 +55,19 @@ difference of the no-pin design against the previous design
 registration-cleanup-outcome, unfoldable-registration-waits-for-reclaim),
 the three owned statements of the payload update, termination booking and
 termination fold under the previous and no-pin designs,
+the four owned registry reading requirements,
 plus checkpoint-and-treasury-policy, cardano-keri's checkpoint policy,
 recorded as out-of-scope so the boundary is visible instead of forgotten. The original broader retirement
 requirement stays present; permanent-retire-active-key is a separate requirement.
 -}
 expectedRowCount :: Int
-expectedRowCount = 55
+expectedRowCount = 59
 
 {- | Rows Singular owns and must eventually evidence. Out-of-scope
 rows (checkpoint-and-treasury-policy) are carried for the boundary, never counted.
 -}
 ownedDenominator :: Int
-ownedDenominator = 54
+ownedDenominator = 58
 
 {- | A row's declared coverage plan. @executed@ is unrepresentable
 here by construction: only a run receipt can establish it.

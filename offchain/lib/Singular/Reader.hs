@@ -1,0 +1,299 @@
+{-# LANGUAGE LambdaCase #-}
+
+{- |
+Module      : Singular.Reader
+Description : Application-neutral conclusions from a registry reader's observations
+License     : Apache-2.0
+
+The classification and its order implement
+@SingularApplicationHeld.readNeutralKey@. Active custody does not interpret
+the application's datum. Terminal and never-registered conclusions require
+a recognised state and a leaf read against that state's root.
+
+Observations are explicit inputs. Their producer owns completeness and the
+authentication of the trie root; constructing an observation asserts neither.
+No network, file, clock or mutable resource is accessed by classification.
+The trie library's proofs are assumed sound.
+-}
+module Singular.Reader
+    ( ReaderRequest (..)
+    , ReaderRead (..)
+    , ReaderReadName (..)
+    , ReaderUnavailable (..)
+    , ReaderRefusal (..)
+    , ReaderObservation (..)
+    , ReaderState (..)
+    , NeutralReaderAnswer (..)
+    , readNeutralKey
+    , readNeutralKeyFromSession
+    , recognizeReaderState
+    ) where
+
+import Cardano.Crypto.Hash (hashToBytes)
+import Cardano.Ledger.Address (Addr (..))
+import Cardano.Ledger.Api.Scripts.Data
+    ( Datum (..)
+    , binaryDataToData
+    , getPlutusData
+    )
+import Cardano.Ledger.Api.Tx.Out
+    ( addrTxOutL
+    , datumTxOutL
+    , valueTxOutL
+    )
+import Cardano.Ledger.Credential (Credential (..))
+import Cardano.Ledger.Hashes (ScriptHash (..))
+import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
+import Data.ByteString (ByteString)
+import Data.Map.Strict qualified as Map
+import Data.Text (Text)
+import Data.Text qualified as T
+import Lens.Micro ((^.))
+
+import Singular.Registry.ContractTable
+    ( ApplicationIdentity (..)
+    , ContractTable
+    , applicationOf
+    )
+import Singular.Registry.Evidence (Evidenced (..))
+import Singular.Registry.Ledger (ConwayEra, Root (..), TxIn, TxOut)
+import Singular.Registry.LedgerProvider
+    ( Network
+    , OutputQuery (..)
+    , ReadFailure (..)
+    , Session (..)
+    )
+import Singular.Registry.TrieState qualified as Trie
+import Singular.State.Lineage (registryAsset, registryTrieState)
+import Singular.State.Preimage (activeTokenName)
+import Singular.State.Records (decodeStateDatum)
+
+-- | The address's network and registry identity, and the caller's key.
+data ReaderRequest = ReaderRequest
+    { requestedNetwork :: Network
+    , readerRegistry :: Trie.RegistryIdentity
+    , readerKey :: ByteString
+    }
+    deriving stock (Eq, Show)
+
+-- | A complete empty answer is distinct from an unavailable observation.
+data ReaderRead a
+    = ReadMissing
+    | ReadFailed Text
+    | ReadIncomplete Text
+    | Complete a
+    deriving stock (Eq, Show)
+
+-- | The observation an unavailable answer names.
+data ReaderReadName
+    = NetworkRead
+    | ActiveOutputsRead
+    | StateRead
+    | TrieRead
+    deriving stock (Eq, Show)
+
+-- | The model's unavailable reasons, preserving the provider's explanation.
+data ReaderUnavailable
+    = Missing
+    | Failed Text
+    | Incomplete Text
+    | StateNotFound
+    | StateNotRecognized
+    | TrieRootMismatch
+    deriving stock (Eq, Show)
+
+-- | Refused evidence never becomes a conclusion about absence.
+data ReaderRefusal
+    = WrongNetwork Network Network
+    | UnknownStatePolicy ByteString
+    | ForeignStatePolicy ByteString ByteString
+    | TokenOutsideApplicationCustody TxIn Addr
+    | ConflictingEvidence
+    deriving stock (Eq, Show)
+
+{- | The model's observations in ledger representations. The trie observation
+contains its authenticated root and the result of looking up this request's
+key. It is supplied only after the selected state's history has been replayed.
+-}
+data ReaderObservation = ReaderObservation
+    { observedNetwork :: ReaderRead Network
+    , observedRelease :: Maybe ApplicationIdentity
+    , observedActiveOutputs :: ReaderRead [(TxIn, TxOut ConwayEra)]
+    , observedState :: ReaderRead (Maybe (TxIn, TxOut ConwayEra))
+    , observedTrie :: ReaderRead (Root, Trie.Leaf)
+    }
+    deriving stock (Eq, Show)
+
+-- | The selected state output and the root the key was read against.
+data ReaderState = ReaderState
+    { readerStateOutput :: (TxIn, TxOut ConwayEra)
+    , readerStateRoot :: Root
+    }
+    deriving stock (Eq, Show)
+
+-- | Singular's conclusions, before the application interprets active custody.
+data NeutralReaderAnswer
+    = Active (TxIn, TxOut ConwayEra)
+    | Terminal ReaderState
+    | NeverRegistered ReaderState
+    | Unavailable ReaderReadName ReaderUnavailable
+    | Refused ReaderRefusal
+    deriving stock (Eq, Show)
+
+{- | Classify in the frozen model's order: network, release, active token,
+then state and trie only when the complete asset answer is empty. The active
+name is derived from the registry identity and key, never accepted as input.
+-}
+readNeutralKey
+    :: ReaderRequest -> ReaderObservation -> NeutralReaderAnswer
+readNeutralKey request observed =
+    withRead NetworkRead (observedNetwork observed) $ \served ->
+        if served /= requestedNetwork request
+            then Refused (WrongNetwork (requestedNetwork request) served)
+            else case observedRelease observed of
+                Nothing -> Refused (UnknownStatePolicy policyBytes)
+                Just release
+                    | policyBytes /= appliedStatePolicy release ->
+                        Refused (ForeignStatePolicy policyBytes (appliedStatePolicy release))
+                    | otherwise ->
+                        withRead ActiveOutputsRead (observedActiveOutputs observed) $ \case
+                            [pair@(reference, output)]
+                                | activeQuantity output /= 1 -> Refused ConflictingEvidence
+                                | credential output /= Just (applicationScript release)
+                                    || credential output == Just policyBytes ->
+                                    Refused
+                                        (TokenOutsideApplicationCustody reference (output ^. addrTxOutL))
+                                | otherwise -> Active pair
+                            [] -> readState release
+                            _ -> Refused ConflictingEvidence
+  where
+    registry@(Trie.RegistryIdentity (Trie.StatePolicyId policyBytes) _) = readerRegistry request
+    activeQuantity output = case registryAsset registry of
+        Nothing -> 0
+        Just (policy, _) ->
+            let MaryValue _ (MultiAsset assets) = output ^. valueTxOutL
+            in  Map.findWithDefault
+                    0
+                    (activeTokenName registry (readerKey request))
+                    (Map.findWithDefault Map.empty policy assets)
+    readState release = withRead StateRead (observedState observed) $ \case
+        Nothing -> Unavailable StateRead StateNotFound
+        Just pair -> case recognizeReaderState release registry pair of
+            Nothing -> Unavailable StateRead StateNotRecognized
+            Just root -> withRead TrieRead (observedTrie observed) $ \(actualRoot, leaf) ->
+                if root /= actualRoot
+                    then Unavailable TrieRead TrieRootMismatch
+                    else
+                        let state = ReaderState pair root
+                        in  case leaf of
+                                Trie.Unknown -> NeverRegistered state
+                                Trie.Terminal -> Terminal state
+                                _ -> Refused ConflictingEvidence
+
+{- | Recognise the state's exact script credential, policy, single unit asset
+and inline root datum, as @recognizeReaderState@ in the Lean model does.
+-}
+recognizeReaderState
+    :: ApplicationIdentity
+    -> Trie.RegistryIdentity
+    -> (TxIn, TxOut ConwayEra)
+    -> Maybe Root
+recognizeReaderState release registry@(Trie.RegistryIdentity (Trie.StatePolicyId policy) _) (_, output)
+    | policy /= appliedStatePolicy release
+        || credential output /= Just policy =
+        Nothing
+    | otherwise = do
+        (pid, name) <- registryAsset registry
+        let MaryValue _ assets = output ^. valueTxOutL
+        if assets /= MultiAsset (Map.singleton pid (Map.singleton name 1))
+            then Nothing
+            else case output ^. datumTxOutL of
+                Datum binary ->
+                    Root <$> decodeStateDatum (getPlutusData (binaryDataToData binary))
+                _ -> Nothing
+
+credential :: TxOut ConwayEra -> Maybe ByteString
+credential output = case output ^. addrTxOutL of
+    Addr _ (ScriptHashObj (ScriptHash h)) _ -> Just (hashToBytes h)
+    _ -> Nothing
+
+withRead
+    :: ReaderReadName
+    -> ReaderRead a
+    -> (a -> NeutralReaderAnswer)
+    -> NeutralReaderAnswer
+withRead name observed use = case observed of
+    ReadMissing -> Unavailable name Missing
+    ReadFailed why -> Unavailable name (Failed why)
+    ReadIncomplete why -> Unavailable name (Incomplete why)
+    Complete value -> use value
+
+-- | Collect neutral reader evidence serially within the caller's session.
+readNeutralKeyFromSession
+    :: (Monad m)
+    => Session w m
+    -> ContractTable
+    -> ReaderRequest
+    -> m NeutralReaderAnswer
+readNeutralKeyFromSession session table request = do
+    network <- providerRead <$> servedNetwork session
+    let observed =
+            ReaderObservation network release ReadMissing ReadMissing ReadMissing
+    case readNeutralKey request observed of
+        Unavailable ActiveOutputsRead Missing -> case registryAsset registry of
+            Nothing -> pure (Refused ConflictingEvidence)
+            Just (policy, _) -> do
+                active <-
+                    providerRead
+                        <$> outputs
+                            session
+                            (HoldingAsset (policy, activeTokenName registry (readerKey request)))
+                readStateEvidence observed{observedActiveOutputs = active}
+        answer -> pure answer
+  where
+    registry@(Trie.RegistryIdentity (Trie.StatePolicyId policyBytes) _) = readerRegistry request
+    release = applicationOf table policyBytes
+    readStateEvidence observed = case readNeutralKey request observed of
+        Unavailable StateRead Missing -> case registryAsset registry of
+            Nothing -> pure (Refused ConflictingEvidence)
+            Just asset -> do
+                states <- providerRead <$> outputs session (HoldingAsset asset)
+                case states of
+                    Complete [] ->
+                        pure
+                            (readNeutralKey request observed{observedState = Complete Nothing})
+                    Complete [pair] ->
+                        readTrieEvidence observed{observedState = Complete (Just pair)} pair
+                    Complete _ -> pure (Refused ConflictingEvidence)
+                    ReadFailed why -> pure (Unavailable StateRead (Failed why))
+                    ReadIncomplete why -> pure (Unavailable StateRead (Incomplete why))
+                    ReadMissing -> pure (Unavailable StateRead Missing)
+        answer -> pure answer
+    readTrieEvidence observed pair = case readNeutralKey request observed of
+        Unavailable TrieRead Missing -> case release
+            >>= (\published -> recognizeReaderState published registry pair) of
+            Nothing -> pure (Unavailable StateRead StateNotRecognized)
+            Just root -> do
+                let selection =
+                        Trie.TrieSelection
+                            registry
+                            ( Trie.StatePoint
+                                (sessionId session)
+                                (sessionBinding session)
+                                (fst pair)
+                            )
+                            root
+                replayed <- Trie.withTrieState (registryTrieState session) selection $ \snapshot -> do
+                    leaf <- Trie.leafAt snapshot (readerKey request)
+                    pure ((Trie.trieRoot snapshot,) <$> leaf)
+                pure $ case replayed of
+                    Left failure -> Unavailable TrieRead (Failed (T.pack (show failure)))
+                    Right (Left failure) -> Unavailable TrieRead (Failed (T.pack (show failure)))
+                    Right (Right evidence) -> readNeutralKey request observed{observedTrie = Complete evidence}
+        answer -> pure answer
+
+providerRead :: Either ReadFailure (Evidenced w a) -> ReaderRead a
+providerRead = either (ReadFailed . reason) (Complete . value)
+  where
+    reason (BackendReadFailure why) = why
+    reason failure = T.pack (show failure)

@@ -182,6 +182,7 @@ rawChainProvider chain =
                                     session =
                                         stubSession
                                             { sessionNetwork = Network (csNetwork captured)
+                                            , servedNetwork = fact (Network (csNetwork captured))
                                             , outputs = \query -> do
                                                 connected <- readIORef (chainConnected chain)
                                                 pure $

@@ -125,6 +125,9 @@ def preflight(statement_stage=False):
     import history_check
 
     history_check.preflight()
+    import reader_check
+
+    reader_check.preflight()
     return rows
 
 
@@ -171,6 +174,9 @@ def compiled(report, statement_stage=False):
         [json.loads(line) for line in text.splitlines() if line.startswith("{")],
         statement_stage,
     )
+    import reader_check
+
+    reader_check.compiled(report)
 
 
 def controls():

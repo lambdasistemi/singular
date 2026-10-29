@@ -86,6 +86,7 @@ library
     , unix
 
   exposed-modules:
+    Singular.Reader
     Singular.Provider.Koios.Client
     Singular.Provider.Koios.Evidence
     Singular.Provider.Koios.History
@@ -205,6 +206,7 @@ library registry-cli
     Singular.CLI.FlagGroup
     Singular.CLI.FoldRules
     Singular.CLI.Help
+    Singular.CLI.Inspect
     Singular.CLI.Key
     Singular.CLI.Live
     Singular.CLI.ManagedState
@@ -559,6 +561,7 @@ test-suite cage-tests
     Singular.CLI.PrintedPayloadSpec
     Singular.CLI.FailureSentenceSpec
     Singular.CLI.FlagGroupSpec
+    Singular.CLI.InspectSpec
     Singular.CLI.HelpSnapshotSpec
     Singular.CLI.ParserCorpusSpec
     Singular.CLI.SettingsFileSpec
@@ -586,6 +589,7 @@ test-suite cage-tests
     Singular.Registry.AddressSpec
     Singular.Registry.BlueprintParametersSpec
     Singular.Registry.ContractTableSpec
+    Singular.Registry.ReaderSpec
     Singular.Registry.BundleSpec
     Singular.Registry.SubmitSpec
     Singular.Registry.ChainedViewSpec

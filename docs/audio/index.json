@@ -1994,6 +1994,29 @@
     "v": "4c1fb075e25c"
    }
   ],
+  "reading-from-a-registry-address": [
+   {
+    "index": 0,
+    "name": "docs-consumer-conformance/reading-from-a-registry-address-00",
+    "pause_ms": 500,
+    "text": "Reading from a registry address.",
+    "v": "fc2706cc74db"
+   },
+   {
+    "index": 1,
+    "name": "docs-consumer-conformance/reading-from-a-registry-address-01",
+    "pause_ms": 400,
+    "text": "As a reader, I give a registry address and key without a signer, blueprint or local registry state. Four requirements describe the neutral key status, open datum's live holding and pending termination, measured provider calls, rows and bytes with another registry's holdings at the same address, and named refusals. They are published uncovered: no executable comparison with the application-held model backs these reading requirements yet.",
+    "v": "1f81c2e1042f"
+   },
+   {
+    "index": 2,
+    "name": "docs-consumer-conformance/reading-from-a-registry-address-02",
+    "pause_ms": 400,
+    "text": "The registration journey runs both packaged readers at connected live, pending and terminal checkpoints and reads an unused key. Its artifact includes the answers and a known-key query measurement. The registration refusals job runs wrong-network, unknown-policy and failed-provider reads beside passing controls. These are separate command observations, with controls that reject altered answers; they establish nothing about agreement with the model. See reading a key for the commands and settings, and the generated evidence page for receipt-derived standings.",
+    "v": "23397c08bb5e"
+   }
+  ],
   "redeemers-that-are-gone": [
    {
     "index": 0,
@@ -2123,8 +2146,8 @@
     "index": 1,
     "name": "docs-consumer-conformance/the-denominator-01",
     "pause_ms": 400,
-    "text": "conformance/rows.json carries 55 rows, 54 owned: one permanent contract requirement, five registry identity requirements, twenty-five registry operation requirements, eight serialization requirements, five consumer resolution requirements, three execution-limit requirements, four registration journey requirements and three update and termination journey requirements (stated below), plus the checkpoint and treasury policy (bonds, poison, the juvenility window W, the signature threshold) recorded as out of scope — it belongs to cardano-keri's checkpoint machine and treasury, explicitly never claimed by Singular. list prints the owned denominator separately so the boundary stays visible. Superseded and held rows stay in the denominator and visible to completeness accounting: relabelling a row pays no coverage and shrinks no board.",
-    "v": "d9be2bb00649"
+    "text": "conformance/rows.json carries 59 rows, 58 owned: one permanent contract requirement, five registry identity requirements, twenty-five registry operation requirements, eight serialization requirements, five consumer resolution requirements, three execution-limit requirements, four registration journey requirements and three update and termination journey requirements (stated below), four registry reading requirements, plus the checkpoint and treasury policy (bonds, poison, the juvenility window W, the signature threshold) recorded as out of scope — it belongs to cardano-keri's checkpoint machine and treasury, explicitly never claimed by Singular. list prints the owned denominator separately so the boundary stays visible. Superseded and held rows stay in the denominator and visible to completeness accounting: relabelling a row pays no coverage and shrinks no board.",
+    "v": "93dd0f0408eb"
    },
    {
     "index": 2,
@@ -5475,8 +5498,8 @@
     "index": 3,
     "name": "docs-offchain-api-reference/what-this-reference-contains-03",
     "pause_ms": 400,
-    "text": "MkDocs environment ready! Run: mkdocs serve - Singular.Provider.Koios.Client — source - Singular.Provider.Koios.Evidence — source - Singular.Provider.Koios.History — source - Singular.Provider.Koios.Provider — source - Singular.Provider.Koios.Recorded — source - Singular.Provider.Koios.Runtime — source - Singular.Provider.Koios.State — source - Singular.Provider.Koios.Wire — source - Singular.Registry.Address — source - Singular.Registry.Application — source - Singular.Registry.AssetName — source - Singular.Registry.Blueprint — source - Singular.Registry.Blueprint.Load — source - Singular.Registry.Blueprint.Params — source - Singular.Registry.Blueprint.Schema — source - Singular.Registry.Capabilities — source - Singular.Registry.Config — source - Singular.Registry.Config.Application — source - Singular.Registry.Confirmation — source - Singular.Registry.Deployment — source - Singular.Registry.Deployment.Attach — source - Singular.Registry.Deployment.Manifest — source - Singular.Registry.Deployment.Mirror — source - Singular.Registry.Driver — source - Singular.Registry.Evidence — source - Singular.Registry.FoldAdmission — source - Singular.Registry.FoldSelection — source - Singular.Registry.Funding — source - Singular.Registry.Ledger — source - Singular.Registry.LedgerProvider — source - Singular.Registry.Lifecycle — source - Singular.Registry.PlainJson — source - Singular.Registry.Proof — source - Singular.Registry.Replay — source - Singular.Registry.Signing — source - Singular.Registry.StateToken — source - Singular.Registry.Trie — source - Singular.Registry.Trie.Pure — source - Singular.Registry.Trie.PureManager — source - Singular.Registry.TrieState — source - Singular.Registry.TrieState.Core — source - Singular.Registry.TrieState.Fixture — source - Singular.Registry.TrieState.Lineage — source - Singular.Registry.TrieState.Types — source - Singular.Registry.TxBuilder.Boot — source - Singular.Registry.TxBuilder.ConnectedFold — source - Singular.Registry.TxBuilder.Edges — source - Singular.Registry.TxBuilder.Internal — source - Singular.Registry.TxBuilder.Internal.Edges — source - Singular.Registry.TxBuilder.Internal.Identity — source - Singular.Registry.TxBuilder.Internal.Lookup — source - Singular.Registry.TxBuilder.Prepare — source - Singular.Registry.TxBuilder.Reject — source - Singular.Registry.TxBuilder.Request — source - Singular.Registry.TxBuilder.Retract — source - Singular.Registry.TxBuilder.Update — source - Singular.Registry.TxBuilder.Update.Build — source - Singular.Registry.TxBuilder.Update.Context — source - Singular.Registry.TxBuilder.Update.Duties — source - Singular.Registry.Types — source - Singular.Registry.Wait — source - Singular.Registry.Wire.Primitive — source - Singular.Registry.Wire.Proof — source - Singular.Registry.Wire.Redeemer — source - Singular.Registry.Wire.Request — source - Singular.Registry.Wire.State — source - Singular.Registry.Witness — source - Singular.State.Assemble — source — the payer, the reads of the chain and the assembly of a transaction that the builders of the Singular state share - Singular.State.Fold — source — the fold of pending registrations into a registry from public data alone, with the application's part handed in - Singular.State.Genesis — source — the creation of a registry from a seed, with the application's steps in the same transaction - Singular.State.Lineage — source — a registry's trie rebuilt from the public history of its state token, every root checked against the chain - Singular.State.Preimage — source — the off-chain encoder of the Singular state, active, configuration and registration-approval preimages, byte for byte equal to the on-chain one - Singular.State.Publication — source — the state script and the application's script published as reference scripts once and reused by later registries - Singular.State.Records — source — the datum and the actions of the state validator, as Plutus Data in the layout it decodes - Singular.State.Refusal — source — why a builder of the Singular state declines to build - Singular.State.Script — source — the state validator of an application as the builders carry it, attached or by reference",
-    "v": "aa5fd13cc054"
+    "text": "MkDocs environment ready! Run: mkdocs serve - Singular.Reader — source - Singular.Provider.Koios.Client — source - Singular.Provider.Koios.Evidence — source - Singular.Provider.Koios.History — source - Singular.Provider.Koios.Provider — source - Singular.Provider.Koios.Recorded — source - Singular.Provider.Koios.Runtime — source - Singular.Provider.Koios.State — source - Singular.Provider.Koios.Wire — source - Singular.Registry.Address — source - Singular.Registry.Application — source - Singular.Registry.AssetName — source - Singular.Registry.Blueprint — source - Singular.Registry.Blueprint.Load — source - Singular.Registry.Blueprint.Params — source - Singular.Registry.Blueprint.Schema — source - Singular.Registry.Capabilities — source - Singular.Registry.Config — source - Singular.Registry.Config.Application — source - Singular.Registry.Confirmation — source - Singular.Registry.Deployment — source - Singular.Registry.Deployment.Attach — source - Singular.Registry.Deployment.Manifest — source - Singular.Registry.Deployment.Mirror — source - Singular.Registry.Driver — source - Singular.Registry.Evidence — source - Singular.Registry.FoldAdmission — source - Singular.Registry.FoldSelection — source - Singular.Registry.Funding — source - Singular.Registry.Ledger — source - Singular.Registry.LedgerProvider — source - Singular.Registry.Lifecycle — source - Singular.Registry.PlainJson — source - Singular.Registry.Proof — source - Singular.Registry.Replay — source - Singular.Registry.Signing — source - Singular.Registry.StateToken — source - Singular.Registry.Trie — source - Singular.Registry.Trie.Pure — source - Singular.Registry.Trie.PureManager — source - Singular.Registry.TrieState — source - Singular.Registry.TrieState.Core — source - Singular.Registry.TrieState.Fixture — source - Singular.Registry.TrieState.Lineage — source - Singular.Registry.TrieState.Types — source - Singular.Registry.TxBuilder.Boot — source - Singular.Registry.TxBuilder.ConnectedFold — source - Singular.Registry.TxBuilder.Edges — source - Singular.Registry.TxBuilder.Internal — source - Singular.Registry.TxBuilder.Internal.Edges — source - Singular.Registry.TxBuilder.Internal.Identity — source - Singular.Registry.TxBuilder.Internal.Lookup — source - Singular.Registry.TxBuilder.Prepare — source - Singular.Registry.TxBuilder.Reject — source - Singular.Registry.TxBuilder.Request — source - Singular.Registry.TxBuilder.Retract — source - Singular.Registry.TxBuilder.Update — source - Singular.Registry.TxBuilder.Update.Build — source - Singular.Registry.TxBuilder.Update.Context — source - Singular.Registry.TxBuilder.Update.Duties — source - Singular.Registry.Types — source - Singular.Registry.Wait — source - Singular.Registry.Wire.Primitive — source - Singular.Registry.Wire.Proof — source - Singular.Registry.Wire.Redeemer — source - Singular.Registry.Wire.Request — source - Singular.Registry.Wire.State — source - Singular.Registry.Witness — source - Singular.State.Assemble — source — the payer, the reads of the chain and the assembly of a transaction that the builders of the Singular state share - Singular.State.Fold — source — the fold of pending registrations into a registry from public data alone, with the application's part handed in - Singular.State.Genesis — source — the creation of a registry from a seed, with the application's steps in the same transaction - Singular.State.Lineage — source — a registry's trie rebuilt from the public history of its state token, every root checked against the chain - Singular.State.Preimage — source — the off-chain encoder of the Singular state, active, configuration and registration-approval preimages, byte for byte equal to the on-chain one - Singular.State.Publication — source — the state script and the application's script published as reference scripts once and reused by later registries - Singular.State.Records — source — the datum and the actions of the state validator, as Plutus Data in the layout it decodes - Singular.State.Refusal — source — why a builder of the Singular state declines to build - Singular.State.Script — source — the state validator of an application as the builders carry it, attached or by reference",
+    "v": "c1e154939e7a"
    },
    {
     "index": 4,
@@ -7578,8 +7601,8 @@
     "index": 1,
     "name": "docs-payload-json/what-inspect-prints-01",
     "pause_ms": 400,
-    "text": "inspect prints the key's payload under payload in the application output, with the field payloadSchema beside it, and the update receipt prints the two fields the same way. A payload has a plain reading when it is one that the rules above could have produced:",
-    "v": "bf31b6a64e24"
+    "text": "open-datum inspect prints a live key's payload under payload in the application output, with the field payloadSchema beside it, and the update receipt prints the two fields the same way. A payload has a plain reading when it is one that the rules above could have produced:",
+    "v": "943932349d9d"
    },
    {
     "index": 2,
@@ -7627,8 +7650,15 @@
     "index": 8,
     "name": "docs-payload-json/what-inspect-prints-08",
     "pause_ms": 400,
-    "text": "The reading is a property of the data, not of how it was stored. The detailed {\"int\":42} and the plain 42 store the same data, so both read back as 42. The envelope, with its control and its payload in the detailed schema, is printed as before under envelope, and it is the way to read the exact data.",
-    "v": "9b8850b5167e"
+    "text": "The reading is a property of the data, not of how it was stored. The detailed {\"int\":42} and the plain 42 store the same data, so both read back as 42. The current live envelope, with its protected control and payload in the detailed schema, is printed under envelope and datum, so the exact data is retained. The decoded control names its registry, key, controller, active asset and protected deposit; deposit also prints that amount in lovelace. Pending termination has no payload. Terminal and never registered describe the authenticated leaf; unavailable reads and refusals print their reasons.",
+    "v": "b6395799a41c"
+   },
+   {
+    "index": 9,
+    "name": "docs-payload-json/what-inspect-prints-09",
+    "pause_ms": 400,
+    "text": "singular registry inspect reports neutral active custody and prints the datum as data under datum, with its inline, hash or none form under datumKind. It does not decode a payload. Both commands default to human text; use --json for these fields and --query-work for measured provider work. See reading a key for output and exit statuses.",
+    "v": "bb4a0a1a6c98"
    }
   ],
   "what-is-refused": [
@@ -8601,8 +8631,8 @@
     "index": 3,
     "name": "docs-registry-commands/create-a-registry-and-manage-its-keys-on-the-proved-design-03",
     "pause_ms": 400,
-    "text": "This page describes eight commands: singular registry create, open-datum create, open-datum fold, open-datum insert, open-datum reclaim and open-datum cleanup, open-datum update and open-datum terminate. Every flag they take is listed with its description and its default in the settings table, and each command prints the same information with --help.",
-    "v": "0a2dc92bc687"
+    "text": "This page describes ten commands: singular registry create, open-datum create, open-datum fold, open-datum insert, open-datum reclaim and open-datum cleanup, open-datum update and open-datum terminate, singular registry inspect and open-datum inspect. Every flag they take is listed with its description and its default in the settings table, and each command prints the same information with --help.",
+    "v": "cd93c6a3696c"
    }
   ],
   "fold-registrations-and-terminations-into-the-registry": [
@@ -8633,6 +8663,36 @@
     "pause_ms": 400,
     "text": "The receipt names the registry's new root, the output that holds the state, and each registration folded with its key.",
     "v": "768bc87d9a51"
+   }
+  ],
+  "read-a-key": [
+   {
+    "index": 0,
+    "name": "docs-registry-commands/read-a-key-00",
+    "pause_ms": 500,
+    "text": "Read a key.",
+    "v": "8a0af64f1fca"
+   },
+   {
+    "index": 1,
+    "name": "docs-registry-commands/read-a-key-01",
+    "pause_ms": 400,
+    "text": "As a reader, give the registry address and a key to either inspect command. No signer, blueprint or local state directory is needed.",
+    "v": "2297da5ef58b"
+   },
+   {
+    "index": 2,
+    "name": "docs-registry-commands/read-a-key-02",
+    "pause_ms": 400,
+    "text": "The neutral command identifies the application from the packaged release table and answers active, terminal or never registered, or reports an unavailable read or a refusal with its reason. Active custody includes its datum as data. The application command decodes a live holding's protected control, deposit and payload, or identifies pending termination. Both retain the authenticated state requirement for absence and every neutral refusal.",
+    "v": "141ea56939ee"
+   },
+   {
+    "index": 3,
+    "name": "docs-registry-commands/read-a-key-03",
+    "pause_ms": 400,
+    "text": "Human text is the default; --json selects one JSON object. --query-work adds measured calls, rows and bytes per provider read and in total. Answers exit 0, unavailable reads exit 1, and refused evidence or invalid command lines exit 2. See reading a key for settings, classification order, refusal reasons and measurement limits.",
+    "v": "874998cf924f"
    }
   ],
   "take-a-registration-back-or-clean-it-up": [
@@ -9239,8 +9299,8 @@
     "index": 1,
     "name": "docs-singular-node/following-what-a-command-does-01",
     "pause_ms": 400,
-    "text": "As a registry operator, you can watch a command's progress while it runs and keep its typed event stream as data. The retained commands emit command and transaction events. Protocol-fact narration is unavailable on these commands. Standard output carries the receipt alone, so narration does not change a script's receipt input.",
-    "v": "024af21073a4"
+    "text": "As a registry operator, you can watch a command's progress while it runs and keep its typed event stream as data. The retained commands emit command and transaction events. Protocol-fact narration is unavailable on these commands. Standard output carries only the result: inspect prints human text unless --json is selected, and writes print JSON receipts. Narration does not change either result.",
+    "v": "8ce03e13cf76"
    },
    {
     "index": 2,
@@ -9477,8 +9537,50 @@
     "index": 1,
     "name": "docs-singular-node/reading-a-key-01",
     "pause_ms": 400,
-    "text": "The removed reader has replacement: none, issue 744.",
-    "v": "c3971ac62ea7"
+    "text": "As a reader, give the registry address and a key to learn its status and application without a signing key, a blueprint or a local registry directory:",
+    "v": "a81ec53e0989"
+   },
+   {
+    "index": 2,
+    "name": "docs-singular-node/reading-a-key-02",
+    "pause_ms": 400,
+    "text": "The address supplies the network and the state token. Give it as --registry, SINGULAR_REGISTRY, or the registry key of the settings file, in that order of precedence. The provider URL follows the same flag, environment, file order. The established --state-token with --network-magic spelling also works; settings beside an address must agree with it. Use --key-hex for binary keys.",
+    "v": "3e899b3c579e"
+   },
+   {
+    "index": 3,
+    "name": "docs-singular-node/reading-a-key-03",
+    "pause_ms": 400,
+    "text": "The neutral command answers active, terminal, never-registered, unavailable or refused. Its application identity contains the policy, script and known releases from the packaged release table; an empty release list means not released yet. For active custody, datum is the exact detailed Plutus data, datumKind distinguishes inline, hash and none, and a hash is printed as datumHash. The command interprets no application envelope.",
+    "v": "e6c8a76b5487"
+   },
+   {
+    "index": 4,
+    "name": "docs-singular-node/reading-a-key-04",
+    "pause_ms": 400,
+    "text": "The application command refines active into live, with control, deposit in lovelace, payload and payloadSchema, or pending-termination. It retains every neutral refusal and state-backed absence. The full live datum remains under envelope; see what inspect prints.",
+    "v": "df11842584be"
+   },
+   {
+    "index": 5,
+    "name": "docs-singular-node/reading-a-key-05",
+    "pause_ms": 400,
+    "text": "A live read uses exactly one active-asset lookup after checking the provider's network. A missing active token alone proves nothing: terminal and never registered require the recognised registry state and its authenticated trie leaf, reconstructed from public history. Unknown policies, wrong networks, conflicting tokens and tokens outside application custody are refused. Failed or incomplete reads stay unavailable, with their reason.",
+    "v": "ea88de0be1b4"
+   },
+   {
+    "index": 6,
+    "name": "docs-singular-node/reading-a-key-06",
+    "pause_ms": 400,
+    "text": "Both commands print human text by default. --json prints one object for a script. Exit status 0 means an answer, including terminal and never registered; 1 means unavailable; 2 means refused evidence or an invalid command line. Neither command accepts signing settings.",
+    "v": "7e49f4d8f301"
+   },
+   {
+    "index": 7,
+    "name": "docs-singular-node/reading-a-key-07",
+    "pause_ms": 400,
+    "text": "--query-work adds calls, rows and response bytes for each provider read and the total. JSON carries them in queryWork.reads and queryWork.total; human text shows the same counts. Measurements include each transport page and exclude provider startup and other sessions. When measured trace evidence is missing, queryWork.unavailable explains that limit instead of inventing zero work. These counts describe this read, not a coherent chain snapshot.",
+    "v": "8122db61b745"
    }
   ],
   "reading-through-an-index": [

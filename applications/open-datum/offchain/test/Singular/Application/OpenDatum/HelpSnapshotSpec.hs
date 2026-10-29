@@ -83,6 +83,7 @@ spec = describe "the help pages" $ do
                        , ["cleanup"]
                        , ["update"]
                        , ["terminate"]
+                       , ["inspect"]
                        ]
     it "are a well-formed declaration for the library" $
         lintDeclaration program `shouldBe` True
@@ -109,7 +110,7 @@ spec = describe "the help pages" $ do
         length (lines (pageOf [])) `shouldSatisfy` (<= 45)
     it
         "never name a verb that lives in singular alone as a verb of its own"
-        $ forM_ ["reject", "inspect"]
+        $ forM_ ["reject"]
         $ \verb ->
             pageOf [] `shouldNotSatisfy` isInfixOf ("open-datum " <> verb)
     it
@@ -154,7 +155,7 @@ spec = describe "the help pages" $ do
         openDatumHint ["inser", "--key", "k"]
             `shouldSatisfy` elem "Did you mean `open-datum insert`?"
     it "complete command and flag names" $ do
-        completionsFor program ["ins"] 0 `shouldReturn` ["insert"]
+        completionsFor program ["ins"] 0 `shouldReturn` ["insert", "inspect"]
         completionsFor program ["insert", "--pay"] 1
             `shouldReturn` ["--payload", "--payload-schema"]
     it "complete only the flags of the command asked about" $ do

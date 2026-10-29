@@ -15,8 +15,8 @@ the ticket owner accepts its slice.
 
 ## Pull request 2: the reader
 
-- [ ] reader-statements: the reader definition and its statements, reviewed before proofs, proved, in the inventories.
-- [ ] reader-library: live with one asset query, terminal and never registered from the trie, every refusal.
-- [ ] reading-commands: both commands, help snapshots, parser rows, documented flags.
-- [ ] devnet-reading-journey-and-refusals: the four answers, the measured lookup and the refusals with controls on devnet.
-- [ ] conformance-and-documentation: the reading rows and the user pages.
+- [x] reader-statements: the reader definition and its statements, reviewed before proofs, proved, in the inventories.
+- [x] reader-library: live with one asset query, terminal and never registered from the trie, every refusal.
+- [x] reading-commands: both commands, help snapshots, parser rows, documented flags.
+- [x] devnet-reading-journey-and-refusals: the four answers, the measured lookup and the refusals with controls on devnet.
+- [x] conformance-and-documentation: the reading rows and the user pages.

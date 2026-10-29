@@ -147,6 +147,28 @@ as() {
 }
 field() { jq -r "$2" "$receipts/$1.json"; }
 
+# A reader gets an empty home and working directory, no wallet or blueprint.
+# The rig owns these directories and receipts until exit. Reading is a separate,
+# bounded process; its answer and status survive a failure of the journey.
+read_command() {
+  local name="$1" program="$2" status=0
+  shift 2
+  mkdir -p "$work/readers/$name/cwd" "$work/readers/$name/home"
+  (
+    cd "$work/readers/$name/cwd"
+    env -i HOME="$work/readers/$name/home" PATH=/nonexistent LC_ALL=C.UTF-8 \
+      "$timeout_bin" 120 "$program" "$@" --json --query-work \
+      >"$receipts/$name.json" 2>"$receipts/$name.err" </dev/null
+  ) || status=$?
+  printf '%s\n' "$status" >"$receipts/$name.status"
+}
+
+# The checker also hands altered answers to each predicate and requires refusal.
+reading_evidence() {
+  python3 -I "$(dirname "$chain_view")/no_pin_reading_checks.py" "$1" "$work" \
+    >"$work/reading-$1.json" 2>"$work/reading-$1.err"
+}
+
 # ------------------------------------------------------------------
 # Verdicts
 # ------------------------------------------------------------------

@@ -415,6 +415,7 @@ constructorOf :: Command -> String
 constructorOf = \case
     Help _ -> "Help"
     Fold _ -> "Fold"
+    RegistryInspect _ -> "RegistryInspect"
     StateCreate _ -> "StateCreate"
     WalletCreate _ -> "WalletCreate"
     WalletAddress _ -> "WalletAddress"
@@ -561,6 +562,7 @@ envOf rig =
         , envSource = "fixture"
         , envLoadRelease = loadReleaseCodes
         , envReads = \_ k -> k (capabilities rig)
+        , envReaderReads = \_ k -> k (capabilities rig)
         , envWrites = \_ k -> k (capabilities rig)
         }
 

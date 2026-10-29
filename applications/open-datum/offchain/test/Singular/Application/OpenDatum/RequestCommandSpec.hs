@@ -223,6 +223,13 @@ aboutRefusal = \case
 commandLines :: [(String, [String], String)]
 commandLines =
     [
+        ( "inspect"
+        , ["inspect"]
+            <> dropFlag "--blueprint" node
+            <> ["--state-token", aToken, "--key", "alpha", "--json"]
+        , "OpenInspect"
+        )
+    ,
         ( "create"
         , ["create"] <> node <> keyFile
         , "OpenStateCreate"

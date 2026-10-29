@@ -787,6 +787,7 @@
           cp ${./tools/no_pin_termination_refusals.sh} $out/no_pin_termination_refusals.sh
           cp ${./tools/no_pin_chain_view.py} $out/no_pin_chain_view.py
           cp ${./tools/no_pin_termination_observations.py} $out/no_pin_termination_observations.py
+          cp ${./tools/no_pin_reading_checks.py} $out/no_pin_reading_checks.py
         '';
       # Release checks remain available independently of the command journeys.
       releaseVerification =

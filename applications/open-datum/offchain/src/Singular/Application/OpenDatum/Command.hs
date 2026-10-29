@@ -15,7 +15,7 @@ The public writers are @create@, @fold@, @insert@,
 
 Write commands name the Koios URL, network and wallet key. Partial settings
 and mainnet are refused before file reads or provider effects. Read commands
-carry a public wallet address instead of a signing key. Obsolete backend and
+carry the provider, registry and key without any signing setting. Obsolete backend and
 socket settings are refused on every command, including --backend koios.
 -}
 module Singular.Application.OpenDatum.Command
@@ -103,6 +103,7 @@ import Singular.CLI.FlagGroup
     , traceFlags
     , traceRequestFrom
     )
+import Singular.CLI.Inspect (ReaderArgs, readerArgs)
 import Singular.CLI.Key
     ( KeyEncoding (..)
     , KeyRefusal (..)
@@ -153,6 +154,7 @@ data OpenDatumCommand
       line asked for it, so nothing else runs
       -}
       OpenHelp String
+    | OpenInspect ReaderArgs
     | OpenInsert EntryArgs
     | OpenUpdate EntryArgs
     | OpenTerminate EntryArgs
@@ -270,7 +272,7 @@ readFlags group =
                 { acceptedValued = group <> ["--config"]
                 , acceptedEarly = []
                 , acceptedSwitches =
-                    commonSwitches <> ["--version"]
+                    commonSwitches <> ["--version", "--json", "--query-work"]
                 }
 
 {- | What a command line read flat asks for. The switches are taken out of
@@ -308,6 +310,9 @@ commandFrom environment (Raw ws allFlags) = do
                 else case ws of
                     [] -> Right askedFor
                     ["open-datum"] -> Right askedFor
+                    ["inspect"] ->
+                        OpenInspect
+                            <$> readerArgs MissingFlag BadValue KeyRefused environment flags
                     ["create"] ->
                         refuseOutside "create" stateCreateAllowed flags
                             >> (OpenStateCreate <$> stateCreateArgs flags <*> parametersFrom flags)
@@ -791,6 +796,7 @@ neededRoles = \case
     OpenRegistrationBook _ -> Set.empty
     OpenRegistrationReclaim _ -> Set.empty
     OpenRegistrationCleanup _ -> Set.empty
+    OpenInspect _ -> Set.empty
     OpenHelp _ -> Set.empty
   where
     everything = Set.fromList [minBound .. maxBound]

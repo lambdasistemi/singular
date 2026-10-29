@@ -21,10 +21,13 @@ import Singular.CLI.Declared
     , environmentPassphrase
     , environmentState
     , exitStatuses
+    , keyShape
     , nodeShape
     , passphraseFd
     , preprodExample
     , receipt
+    , registryNodeShape
+    , registryShape
     , seed
     , signerParagraph
     , stateDir
@@ -39,6 +42,7 @@ import Singular.CLI.Options
     , Shape (..)
     , helpText
     , standing
+    , switch'
     , usageText
     , valued
     )
@@ -49,13 +53,13 @@ singularProgram version =
     Program
         { programName = "singular"
         , programSummary =
-            "Create a Singular registry on Cardano, and sign and submit transaction bundles."
+            "Create and read a Singular registry on Cardano, and sign and submit bundles."
         , programVersion = version
         , programNodes = [registryGroup, walletGroup, submitLeaf]
         , programFooter =
             [ ""
             , "Every command takes --trace, --trace-to and --trace-format to narrate"
-            , "what it does; standard output carries the receipt alone."
+            , "what it does; standard output carries only the command's result."
             ]
         }
 
@@ -71,15 +75,15 @@ registryGroup :: Node
 registryGroup =
     Group
         "registry"
-        "Create a registry on the proved design"
-        [ "The registry commands make the registry of an application: its state, a single \
+        "Create a registry and read its keys"
+        [ "Creation makes the registry of an application: its state, a single \
           \output that holds the registry's token and the root of its keys. The \
           \registry is named by its seed, an output of your wallet, and by the \
-          \application whose policy the state validator is made for. The commands \
-          \take the compiled validators of the release (--blueprint) and a single \
-          \signer."
+          \application whose policy the state validator is made for. Creation \
+          \takes the compiled validators of the release (--blueprint) and a single \
+          \signer. Inspect reads a registry address and a key without either."
         ]
-        [stateCreateLeaf]
+        [stateCreateLeaf, inspectLeaf]
 
 walletGroup :: Node
 walletGroup =
@@ -314,3 +318,37 @@ witnesses =
         "--witnesses"
         "FILE"
         "A witness file from wallet sign, or a directory of them; give it once for each."
+
+inspectLeaf :: Node
+inspectLeaf =
+    Runs
+        Leaf
+            { leafName = "inspect"
+            , leafSummary = "Read a key and identify its application"
+            , leafDescription =
+                [ "Reads the registry address and a key without a signer or blueprint. Reports active, terminal, never registered, unavailable, or a refusal with its reason. An active answer prints the holding's datum as data, without interpreting it. The release table identifies the application's policy, script and releases."
+                , "Active custody needs one asset lookup. With no active token the reader authenticates the state and replays its public history to read the key's leaf. An empty or failed provider answer never proves absence."
+                ]
+            , leafShape =
+                Each
+                    [ registryShape
+                    , keyShape
+                    , registryNodeShape
+                    , Takes
+                        (switch' "--json" "Print the answer as JSON instead of human text.")
+                    , Takes
+                        ( switch'
+                            "--query-work"
+                            "Report provider calls, rows and bytes per read and in total."
+                        )
+                    , tracingShape
+                    ]
+            , leafWord = Nothing
+            , leafEnvironment = [environmentLog]
+            , leafExamples =
+                [ "singular registry inspect --registry <address> --key my-key --koios-url https://preprod.koios.rest/api/v1"
+                ]
+            , leafNotes =
+                [ "Human text by default; --json prints one object. Exit 0: an answer (active, terminal or never registered). Exit 1: unavailable read. Exit 2: refused evidence or invalid command line. See docs/singular-node.md#reading-a-key."
+                ]
+            }

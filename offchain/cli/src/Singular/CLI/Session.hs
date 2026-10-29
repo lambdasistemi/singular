@@ -257,6 +257,7 @@ import Singular.Registry.Signing (signTx, signedTx)
 import Singular.Registry.Terminal
     ( Capabilities (..)
     , tracedReads
+    , withReaderReads
     , withReads
     , withWrites
     )
@@ -283,6 +284,7 @@ koiosEnv tracer =
         , envSource = koiosSource
         , envLoadRelease = loadRelease
         , envReads = withReads (backendUnder tracer) (readsUnder tracer)
+        , envReaderReads = withReaderReads (backendUnder tracer)
         , envWrites = withWrites (backendUnder tracer) (readsUnder tracer)
         }
 
