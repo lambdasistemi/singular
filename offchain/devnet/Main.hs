@@ -461,16 +461,16 @@ probe args = do
 
 {- | A development-network control: spend a key-owned reference output and
 return its value minus the ledger fee to its owner. This is fixture code,
-outside the product commands. If the builder underprices the spend, record
-its node rejection before submitting the same spend with the ledger's fee.
-No uncertain submission is retried.
+outside the product commands. The ordinary builder's transaction is submitted
+unchanged. A separate balanced transaction with the reference-script fee
+omitted must first be refused by the node. No uncertain submission is retried.
 -}
 spendReference :: [String] -> IO ()
 spendReference args = withRunner $ \wallet caps -> do
     ref <-
         either die pure . parseOutRef . T.pack
             =<< maybe (die "spend-reference needs --tx-in") pure (flag "--tx-in" args)
-    (original, corrected, bytes, required) <- Session.withLatest (capReads caps) $ \session -> do
+    (original, underpriced, bytes, required, lowRequired) <- Session.withLatest (capReads caps) $ \session -> do
         known <- Session.outputsAt session (walletAddr wallet)
         out <-
             maybe
@@ -498,31 +498,24 @@ spendReference args = withRunner $ \wallet caps -> do
         protocol <- Session.parameters session
         let bytes = refScriptsSize (Set.singleton ref) [(ref, out)]
             minimumFee tx = estimateMinFeeTx protocol tx 1 0 bytes
-            originalFee = built ^. bodyTxL . feeTxBodyL
-            -- Changing only fee and change preserves the spent output and
-            -- its owner. Iterate because the fee's encoding changes size.
-            price remaining fee
-                | remaining == (0 :: Int) =
-                    fail "reference spend fee did not converge"
-                | otherwise = do
-                    let Coin held = out ^. coinTxOutL
-                        Coin cost = fee
-                        tx =
-                            built
-                                & bodyTxL . feeTxBodyL .~ fee
-                                & bodyTxL . outputsTxBodyL
-                                    .~ StrictSeq.singleton
-                                        ( mkBasicTxOut
-                                            (walletAddr wallet)
-                                            (MaryValue (Coin (held - cost)) mempty)
-                                        )
-                        needed = minimumFee tx
-                    unless
-                        (held > cost)
-                        (fail "reference output cannot pay its spending fee")
-                    if fee >= needed then pure tx else price (remaining - 1) needed
-        priced <- price 10 originalFee
-        pure (built, priced, bytes, minimumFee built)
+            withoutScripts = estimateMinFeeTx protocol built 1 0 0
+            Coin held = out ^. coinTxOutL
+            Coin lowFee = withoutScripts
+            low =
+                built
+                    & bodyTxL . feeTxBodyL .~ withoutScripts
+                    & bodyTxL . outputsTxBodyL
+                        .~ StrictSeq.singleton
+                            ( mkBasicTxOut
+                                (walletAddr wallet)
+                                (MaryValue (Coin (held - lowFee)) mempty)
+                            )
+        unless
+            (held > lowFee && withoutScripts < minimumFee low)
+            ( fail
+                "the low-fee control does not omit a positive reference-script fee"
+            )
+        pure (built, low, bytes, minimumFee built, minimumFee low)
     let supplied = original ^. bodyTxL . feeTxBodyL
         signed = signTx (walletSignKey wallet)
         transaction tx =
@@ -539,20 +532,27 @@ spendReference args = withRunner $ \wallet caps -> do
                             (serialize' (eraProtVerLow @ConwayEra) (signedTx (signed tx)))
                         )
                 ]
+    unless
+        (supplied >= required)
+        ( fail
+            ( "ordinary builder fee "
+                <> show supplied
+                <> " is below ledger minimum "
+                <> show required
+            )
+        )
     rejection <-
-        if supplied < required
-            then
-                capSubmit caps (signed original) >>= \case
-                    SubmitRefused why -> pure (Just why)
-                    other ->
-                        fail
-                            ( "the underpriced control did not produce a ledger refusal: "
-                                <> show other
-                            )
-            else pure Nothing
-    result <- capSubmit caps (signed corrected)
+        capSubmit caps (signed underpriced) >>= \case
+            SubmitRefused why
+                | "FeeTooSmallUTxO" `T.isInfixOf` T.pack (show why) -> pure why
+            other ->
+                fail
+                    ( "the low-fee control did not produce the expected ledger fee refusal: "
+                        <> show other
+                    )
+    result <- capSubmit caps (signed original)
     case result of
-        SubmitAccepted _ -> capConfirm caps (signedTx (signed corrected))
+        SubmitAccepted _ -> capConfirm caps (signedTx (signed original))
         other -> fail ("reference spend control was not accepted: " <> show other)
     LBS.putStrLn . encode $
         object
@@ -560,8 +560,11 @@ spendReference args = withRunner $ \wallet caps -> do
             , "scriptBytes" .= bytes
             , "builder" .= transaction original
             , "requiredFee" .= (let Coin fee = required in fee)
-            , "builderRefusal" .= rejection
-            , "control" .= transaction corrected
+            , "builderRefusal" .= (Nothing :: Maybe String)
+            , "control" .= transaction original
+            , "underpriced" .= transaction underpriced
+            , "underpricedRequiredFee" .= (let Coin fee = lowRequired in fee)
+            , "underpricedRefusal" .= rejection
             ]
 
 {- | Pay the requested outputs from the genesis key and wait for them,
