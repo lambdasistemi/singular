@@ -672,6 +672,11 @@ if part state-line || part holding-update || part holding-terminate || part term
       "$receipts/shared-all-transactions.chain.json" >"$receipts/shared-pin-tampered.json"
     clause "a witness pin in the recovery configuration is refused" \
       sp_refuses check_shared_no_witness_publication "$receipts/shared-pin-tampered.json" "$sl_state_policy" "$sl_app_policy"
+    jq --arg foreign "$(jq -r '.transactions[0].signers[0]' "$receipts/shared-all-transactions.chain.json")" \
+      '(.transactions[].outputs[] | select(.referenceScript != null) | .referenceScript.hash) = $foreign' \
+      "$receipts/shared-all-transactions.chain.json" >"$receipts/shared-publication-tampered.json"
+    clause "a reference publication under another policy is refused" \
+      sp_refuses check_shared_no_witness_publication "$receipts/shared-publication-tampered.json" "$sl_state_policy" "$sl_app_policy"
     control="harness appendix"
     clause "every discovered shared-publication check ran on passing and refusing input" shared_publication_checks_covered
     # Temporarily introduce an uncalled predicate; the guard must reject it.

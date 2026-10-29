@@ -16,6 +16,9 @@ questions are answered, each as one JSON document on standard output.
       reference, created, the signers whose witnesses it carries, its fee and
       its mint
 
+  no_pin_chain_view.py transactions
+      every included transaction in chain order, in the same decoded form
+
 An output is {ref, address, credential, lovelace, assets, datum, script}; the
 credential is the address's payment credential, {type: key|script, hash}, read
 from the address itself; the datum is the inline datum decoded to {constructor,
@@ -293,7 +296,7 @@ def main():
         print(json.dumps(transaction(arguments[1])))
     else:
         sys.exit(
-            "usage: no_pin_chain_view.py (unspent [--asset P[.N]] [--address A] | tx TXID)"
+            "usage: no_pin_chain_view.py (unspent [--asset P[.N]] [--address A] | tx TXID | transactions)"
         )
 
 

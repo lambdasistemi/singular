@@ -501,6 +501,8 @@ jobs:
         with:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # The discovered shared-publications partition covers cancellation
+      # around publication and recovery of an uncertain creation with live copies.
       # Every retained partition runs on its own fresh node. Its commands
       # are interrupted with lost answers, kills and unsent transactions;
       # the journal and signed-body checks judge recovery without resubmission.
