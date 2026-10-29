@@ -572,6 +572,16 @@ if part state-line || part holding-update || part holding-terminate || part term
     sp_scripts() { is_equal "$(field "$1" '[.scripts[].outcome] | tojson')" "$2"; }
     sp_refuses() { if "$@" >/dev/null 2>&1; then return 1; else return 0; fi; }
 
+    sl_run shared-independent create "${sl_params[@]}" --state-dir "$sl_root/shared-independent" "${sl_base[@]}" "${bob[@]}"
+    sp_view shared-independent "$(submission_tx shared-independent create)"
+    sp_view shared-publisher "$(submission_tx sl-create publish-state-script)"
+    sp_view shared-first-create "$(submission_tx sl-create create)"
+    sp_refs="$(field sl-create '[.scripts[].reference] | tojson')"
+    clause "a wallet that never published reads both copies owned by the other wallet" \
+      check_shared_independent_creation "$receipts/shared-independent.json" "$receipts/shared-independent.chain.json" "$receipts/shared-publisher.chain.json" "$sp_refs"
+    clause "the publisher's own creation cannot establish independent reuse" \
+      sp_refuses check_shared_independent_creation "$receipts/sl-create.json" "$receipts/shared-first-create.chain.json" "$receipts/shared-publisher.chain.json" "$sp_refs"
+
     # Before the publication: no transaction has been prepared. Cancelling
     # the calling process leaves the live state copy untouched.
     sp_app_ref="$(field sl-create '.scripts[] | select(.script == "application") | .reference')"
@@ -630,17 +640,25 @@ if part state-line || part holding-update || part holding-terminate || part term
 
     python3 -I "$sp_chain" transactions <"$sp_source" >"$receipts/shared-all-transactions.chain.json"
     clause "funding is conserved on chain and no reserved input is spent twice" \
-      funding_conserved "$receipts/shared-all-transactions.chain.json"
+      check_shared_funding_conserved "$receipts/shared-all-transactions.chain.json"
     jq '.transactions[0].fee += 1' "$receipts/shared-all-transactions.chain.json" >"$receipts/shared-funding-tampered.json"
     clause "an altered funding amount is refused" \
-      sp_refuses funding_conserved "$receipts/shared-funding-tampered.json"
+      sp_refuses check_shared_funding_conserved "$receipts/shared-funding-tampered.json"
     clause "the shared-publication recovery leg publishes no witness and configures no witness pin" \
-      no_witness_publication "$receipts/shared-all-transactions.chain.json" "$sl_state_policy" "$sl_app_policy"
+      check_shared_no_witness_publication "$receipts/shared-all-transactions.chain.json" "$sl_state_policy" "$sl_app_policy"
     jq --arg pin "$sl_state_policy" --arg app "$sl_app_policy" \
       '(.transactions[].outputs[] | select(.credential.hash == $app and .datum.constructor == 0) | .datum.fields[0].fields) += [{bytes:$pin}]' \
       "$receipts/shared-all-transactions.chain.json" >"$receipts/shared-pin-tampered.json"
     clause "a witness pin in the recovery configuration is refused" \
-      sp_refuses no_witness_publication "$receipts/shared-pin-tampered.json" "$sl_state_policy" "$sl_app_policy"
+      sp_refuses check_shared_no_witness_publication "$receipts/shared-pin-tampered.json" "$sl_state_policy" "$sl_app_policy"
+    control="harness appendix"
+    clause "every discovered shared-publication check ran on passing and refusing input" shared_publication_checks_covered
+    # Temporarily introduce an uncalled predicate; the guard must reject it.
+    # shellcheck disable=SC2329 # intentionally uncalled negative control
+    check_shared_uncalled_control() { return 0; }
+    clause "an uncalled predicate is refused by the coverage guard" sp_refuses shared_publication_checks_covered
+    unset -f check_shared_uncalled_control
+    clause "removing the temporary control restores predicate coverage" shared_publication_checks_covered
   fi
 
   # Each holding command has its own hosted partition. The same recovery
