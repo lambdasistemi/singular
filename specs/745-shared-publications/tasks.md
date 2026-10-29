@@ -19,5 +19,5 @@ the ticket owner accepts its slice.
 
 ## Pull request 3: registration, conformance and documentation
 
-- [ ] shared-registry-registers: a registry created on live copies is booked and folded with the same commands.
-- [ ] reuse-conformance-and-documentation: the reuse rows computed from receipts, the instructions and the speech.
+- [x] shared-registry-registers: a registry created on live copies is booked and folded with the same commands.
+- [x] reuse-conformance-and-documentation: the reuse rows computed from receipts, the instructions and the speech.
