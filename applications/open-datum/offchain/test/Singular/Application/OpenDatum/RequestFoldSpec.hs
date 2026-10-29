@@ -49,7 +49,7 @@ import Singular.Application.OpenDatum.Requests.Fold
 import Singular.Application.OpenDatum.Requests.Records (liveDatum)
 import Singular.Application.OpenDatum.Requests.Script (requestPolicy)
 import Singular.Registry.TrieState (RegistryIdentity)
-import Singular.State.Fold (buildRegistrationFold)
+import Singular.State.Fold (buildRegistrationFold, foldedRequests)
 import Singular.State.Preimage (activeTokenName)
 import Singular.State.Refusal qualified as State
 import Singular.State.Script (statePolicy)
@@ -119,13 +119,28 @@ spec = do
             purposesRun judged `shouldBe` [(Mint, 2), (Spend, 4)]
 
     describe "a batch of six registrations" $ do
-        it "is folded in one transaction that both validators accept" $ do
+        it
+            "refuses the oversized named batch and folds all six through fitting public batches" $ do
             (world, registry, pendings) <-
                 booked ["key " <> BS.singleton n | n <- [1 .. 6]]
-            tx <- folding world registry pendings
-            judged <- judge world tx
-            everyScriptAccepts judged `shouldBe` True
-            purposesRun judged `shouldBe` [(Mint, 2), (Spend, 7)]
+            named <- foldOutcome world registry pendings
+            case named of
+                Left (State.CapacityExceeded (State.ExecutionMemory used limit)) -> used `shouldSatisfy` (> limit)
+                other -> expectationFailure (show other)
+            let finish [] = pure []
+                finish remaining = do
+                    tx <- folding world registry []
+                    let chosen = map fst (foldedRequests tx)
+                    chosen `shouldSatisfy` (not . null)
+                    chosen `shouldSatisfy` all (`elem` remaining)
+                    judged <- judge world tx
+                    everyScriptAccepts judged `shouldBe` True
+                    purposesRun judged `shouldBe` [(Mint, 2), (Spend, length chosen + 1)]
+                    soundnessProblems world tx `shouldReturn` []
+                    applyTx world tx
+                    later <- finish (filter (`notElem` chosen) remaining)
+                    pure (chosen <> later)
+            finish pendings >>= (`shouldMatchList` pendings)
 
     describe "each validator refuses what the other would accept" $ do
         it
@@ -186,6 +201,14 @@ booked keys = do
 -- | The fold of these pending registrations, built as the second wallet.
 folding :: Creation -> RegistryIdentity -> [TxIn] -> IO ConwayTx
 folding world registry pendings =
+    foldOutcome world registry pendings >>= either (fail . show) pure
+
+foldOutcome
+    :: Creation
+    -> RegistryIdentity
+    -> [TxIn]
+    -> IO (Either State.Refusal ConwayTx)
+foldOutcome world registry pendings =
     withSession world $ \session -> do
         application <-
             openDatumApplication session (crRequest world) network
@@ -197,7 +220,6 @@ folding world registry pendings =
             registry
             pendings
             (crFolder world)
-            >>= either (fail . show :: State.Refusal -> IO ConwayTx) pure
 
 refused :: Creation -> ConwayTx -> Expectation
 refused world tx = do

@@ -163,7 +163,8 @@ spec = do
                                 payload
                             )
                     mintedOf tx `shouldBe` []
-                    referencesOf tx `shouldBe` []
+                    codeReferences <- map fst <$> requestReferences world
+                    referencesOf tx `shouldBe` codeReferences
                     signersOf tx `shouldBe` [controllerOf (crBooker world)]
                     tx ^. bodyTxL . treasuryDonationTxBodyL `shouldBe` Coin 0
                     soundnessProblems world tx `shouldReturn` []
@@ -201,7 +202,8 @@ spec = do
                             index
                             ( \out ->
                                 out
-                                    & valueTxOutL %~ \(MaryValue coin assets) -> MaryValue coin (assets <> assets)
+                                    & valueTxOutL
+                                    %~ \(MaryValue coin assets) -> MaryValue coin (assets <> assets)
                             )
                             tx
                         , mapOutput index (\out -> out & coinTxOutL .~ Coin 4_999_999) tx
@@ -271,7 +273,8 @@ spec = do
                             index
                             ( \out ->
                                 out
-                                    & valueTxOutL %~ \(MaryValue coin assets) -> MaryValue coin (assets <> assets)
+                                    & valueTxOutL
+                                    %~ \(MaryValue coin assets) -> MaryValue coin (assets <> assets)
                             )
                             tx
                         , withSigners [] tx
