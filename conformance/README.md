@@ -1,12 +1,12 @@
 # The registry's promises and evidence
 
-As an integrator, I read the registration, holding update, termination and reading
+As an integrator, I read the registration, holding update, termination, reading and shared-publication
 requirements and see which comparisons have evidence.
 [The consumer record](../docs/consumer-conformance.md) explains the interface;
 [the generated evidence page](../docs/conformance-evidence.md) publishes every
 requirement and computes its standing from validated receipts.
 
-The seven comparison requirements and four reading requirements remain uncovered. No executable comparison
+The seven comparison requirements, four reading requirements and five shared-publication requirements remain uncovered. No executable comparison
 with the application-held model exists yet. Development-network journeys are
 separate evidence and do not establish model agreement.
 
@@ -20,6 +20,16 @@ nix run ./conformance#conformance-appendix-tests
 receipt for the current revision the inventory publishes the declared plan.
 The appendix tests check the reader and its refusal controls; they do not
 supply product evidence.
+
+## Creating on shared publications
+
+The shared-publication requirements describe later and independent creation,
+separation between applications, registration in the new registry and measured
+creation costs. Their standings come from the same receipt reader; the separate
+journey, recovery and measurement receipts do not establish model agreement.
+The [reuse instructions](../docs/shared-publications.md) show the commands,
+discovery records, measured cost sources and evidence limits. No executable
+conformance language for creation claims is supplied here.
 
 ## Reading a registry key
 

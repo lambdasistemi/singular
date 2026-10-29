@@ -1,7 +1,7 @@
 # Consumer conformance record
 
-As an integrator, I can read the registration, holding update, termination and reading
-requirements and see which comparisons have evidence. The eleven requirements
+As an integrator, I can read the registration, holding update, termination, reading and shared-publication
+requirements and see which comparisons have evidence. The sixteen requirements
 are published in [the generated evidence page](conformance-evidence.md).
 Every requirement is uncovered: no executable comparison with the
 application-held model exists yet.
@@ -29,6 +29,23 @@ answers; they establish nothing about agreement with the model. See
 [reading a key](registry-commands.md#read-a-key) for the commands and settings,
 and the [generated evidence page](conformance-evidence.md) for receipt-derived
 standings.
+
+## Creating on shared publications
+
+Five requirements describe a later creation reusing both scripts, an independent
+creator reusing them from the chain, separation between application releases,
+registration in a registry created on shared copies and measured creation costs.
+They use the existing inventory convention and remain uncovered for the same
+reason as the preceding requirements: no executable comparison with the
+application-held model exists yet. The seven comparison rows and four reading
+rows keep their previous contents and standings.
+
+The registration journey, recovery partitions and checked measurement receipts
+are separate evidence boundaries. They show the packaged commands and measured
+transactions they run and nothing about agreement with the model. An executable
+conformance language for creation claims is outside this change. The
+[reuse guide](shared-publications.md) shows the commands and discovery receipt
+fields; the [cost comparison](creation-cost.md) reads its figures from receipts.
 
 ## Read the evidence
 

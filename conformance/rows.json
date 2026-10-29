@@ -109,6 +109,56 @@
       "id": "reading-refusals",
       "requirement": "A registry whose network differs from the provider is refused with both networks named. An unknown state policy is refused by name. A failed provider read is unavailable with the failed read and its reason, never terminal or never registered. A token outside application custody, including the state address, and conflicting token evidence are refused. Development-network network, policy and provider-failure cases each have a passing control; custody and conflict refusals are checked separately at the reader boundary.",
       "source": "SingularApplicationHeld.NeutralReaderStatements.wrong_network_first, unknown_state_policy, network_unavailable, token_outside_custody, conflicting_outputs and conflicting_quantity"
+    },
+    {
+      "id": "later-creation-reuses-publications",
+      "group": "shared-publications",
+      "requirement": "A later registry of the same application release reuses both live state and application script copies. It sends the creation alone and creates no reference-script output; its own state token, configuration and root remain specific to that registry.",
+      "source": "SingularApplicationHeld.Statements.genesis_inversion and recognition_inversion; OpenDatumApplicationHeld.RefundLifecycle.Statements.configurationCreate_inversion and configuration_immutable",
+      "expected": "The later registry is created from the live copies as stated. Uncovered: no executable comparison with the application-held model exists yet",
+      "state": "uncovered",
+      "note": "Statement only. Script reuse is separate packaged-command evidence, not a comparison with the model.",
+      "evidence": "Separate evidence boundary, not a comparison with the model: the hosted jobs no-pin-registration-journey and cli-recovery-partition exercise the packaged commands, and the creation-cost-check job recomputes the measurement receipts from included transaction bytes. They establish what they run and nothing about agreement with the model."
+    },
+    {
+      "id": "independent-creator-reuses-publications",
+      "group": "shared-publications",
+      "requirement": "A creator whose wallet never published starts with only its own key and the public release in fresh process directories, discovers live copies by script hash through the configured provider and creates its own registry without any earlier creator's file, key or record. The receipt retains every candidate and its genuine or foreign verdict.",
+      "source": "SingularApplicationHeld.Statements.genesis_inversion and recognition_inversion; OpenDatumApplicationHeld.RefundLifecycle.Statements.configurationCreate_inversion",
+      "expected": "The independent creator reuses the live copies as stated. Uncovered: no executable comparison with the application-held model exists yet",
+      "state": "uncovered",
+      "note": "Statement only. Provider lookup by hash does not establish a public discovery service for everyone.",
+      "evidence": "Separate evidence boundary, not a comparison with the model: the hosted jobs no-pin-registration-journey and cli-recovery-partition exercise the packaged commands, and the creation-cost-check job recomputes the measurement receipts from included transaction bytes. They establish what they run and nothing about agreement with the model."
+    },
+    {
+      "id": "different-application-keeps-own-state-script",
+      "group": "shared-publications",
+      "requirement": "A different application policy or release never reuses the earlier application's state script. The creator computes the hash of each carried script, including its language and applied parameters, before selecting a genuine candidate. Foreign candidates remain visible and a missing genuine copy is published.",
+      "source": "SingularApplicationHeld.Statements.genesis_inversion and recognition_inversion; OpenDatumApplicationHeld.RefundLifecycle.Statements.configurationCreate_inversion and configuration_immutable",
+      "expected": "Only genuine scripts of this application release are reused. Uncovered: no executable comparison with the application-held model exists yet",
+      "state": "uncovered",
+      "note": "Statement only. Publication-library controls separately exercise foreign candidates and different application parameters.",
+      "evidence": "Separate evidence boundary, not a comparison with the model: cage-tests checks reference selection and its controls, the hosted jobs no-pin-registration-journey and cli-recovery-partition exercise the packaged commands, and the creation-cost-check job recomputes the measurement receipts from included transaction bytes. They establish what they run and nothing about agreement with the model."
+    },
+    {
+      "id": "shared-publication-registration",
+      "group": "shared-publications",
+      "requirement": "The independent creator's registry, created on shared publications, registers a key with an initial payload and a deposit. Another wallet folds it in fresh process directories using public chain data alone: the approval burns, the key's token reaches the holding with its payload and exact deposit, and this registry's own state transitions. No witness-policy publication or witness-pin configuration is required.",
+      "source": "SingularApplicationHeld.Statements.genesis_inversion, recognition_inversion, registration_inversion and public_fold_constructed; OpenDatumApplicationHeld.RefundLifecycle.Statements.configuration_immutable; OpenDatumApplicationHeld.Money.Statements.registration_fold_journey_holding_separated",
+      "expected": "The new registry registers the key as stated. Uncovered: no executable comparison with the application-held model exists yet",
+      "state": "uncovered",
+      "note": "Statement only. Controls reject an observation naming another registry's state or a holding missing its deposit.",
+      "evidence": "Separate evidence boundary, not a comparison with the model: the hosted jobs no-pin-registration-journey and cli-recovery-partition exercise the packaged commands, and the creation-cost-check job recomputes the measurement receipts from included transaction bytes. They establish what they run and nothing about agreement with the model."
+    },
+    {
+      "id": "measured-creation-cost",
+      "group": "shared-publications",
+      "requirement": "Matched first and later creations of the previous and application-held designs are measured on the same frozen protocol parameters. Every included transaction's size and fee, each reference script's bytes and locked ADA, the unused witness publication overhead and the carrying experiment's node outcome are published from receipts. Fees and locked capital remain separate.",
+      "source": "SingularApplicationHeld.Statements.genesis_inversion and recognition_inversion; OpenDatumApplicationHeld.Money.Statements.create_journey; OpenDatumApplicationHeld.RefundLifecycle.Statements.configurationCreate_inversion",
+      "expected": "The measured costs are read from the committed receipts, with their limits. Uncovered: no executable comparison with the application-held model exists yet",
+      "state": "uncovered",
+      "note": "Statement only. Ledger sizes, fees and execution limits are measured facts without a model counterpart; no estimate is substituted for an included transaction or a node refusal.",
+      "evidence": "Separate evidence boundary, not a comparison with the model: the hosted jobs no-pin-registration-journey and cli-recovery-partition exercise the packaged commands, and the creation-cost-check job recomputes the measurement receipts from included transaction bytes. They establish what they run and nothing about agreement with the model."
     }
   ]
 }

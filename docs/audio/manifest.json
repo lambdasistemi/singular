@@ -41576,266 +41576,276 @@
    ]
   },
   "docs-consumer-conformance/consumer-conformance-record-01": {
-   "audio_sha256": "f3dba7b3ced996dec1a4c30746f912658810975ffa756c56e28b2adc81fbd36d",
-   "characters": 311,
-   "cost": 0.00030788999999999995,
-   "duration": 20.775,
+   "audio_sha256": "99c53ab544de4cc88e8b47f0824a83123d1e151bf534ff2f48977e1c63d5344e",
+   "characters": 332,
+   "cost": 0.00032868000000000003,
+   "duration": 22.175,
    "index": 1,
-   "key": "bb5876bb4d8825fe4562dde3572db56cbd6429d2bcefdb278519105691d7623f",
+   "key": "eb2d98ad8768ca94f18362ec5ca59c657196262048377e22341c5da03619856b",
    "page": "docs/consumer-conformance.md",
    "pause_ms": 400,
    "section": "consumer-conformance-record",
-   "sent_text": "As an integrator, I can read the registration, holding update, termination and reading requirements and see which comparisons have evidence. The eleven requirements are published in the generated evidence page. Every requirement is uncovered: no executable comparison with the application-held model exists yet.",
-   "text": "As an integrator, I can read the registration, holding update, termination and reading requirements and see which comparisons have evidence. The eleven requirements are published in the generated evidence page. Every requirement is uncovered: no executable comparison with the application-held model exists yet.",
+   "sent_text": "As an integrator, I can read the registration, holding update, termination, reading and shared-publication requirements and see which comparisons have evidence. The sixteen requirements are published in the generated evidence page. Every requirement is uncovered: no executable comparison with the application-held model exists yet.",
+   "text": "As an integrator, I can read the registration, holding update, termination, reading and shared-publication requirements and see which comparisons have evidence. The sixteen requirements are published in the generated evidence page. Every requirement is uncovered: no executable comparison with the application-held model exists yet.",
    "words": [
     {
-     "end": 0.387,
+     "end": 0.363,
      "start": 0.225,
      "text": "As"
     },
     {
-     "end": 0.475,
-     "start": 0.387,
+     "end": 0.45,
+     "start": 0.363,
      "text": "an"
     },
     {
-     "end": 1.05,
-     "start": 0.475,
+     "end": 1.025,
+     "start": 0.45,
      "text": "integrator"
     },
     {
-     "end": 1.1,
-     "start": 1.05,
+     "end": 1.075,
+     "start": 1.025,
      "text": ","
     },
     {
-     "end": 1.25,
-     "start": 1.1,
+     "end": 1.225,
+     "start": 1.075,
      "text": "I"
     },
     {
-     "end": 1.45,
-     "start": 1.25,
+     "end": 1.425,
+     "start": 1.225,
      "text": "can"
     },
     {
      "end": 1.7,
-     "start": 1.45,
+     "start": 1.425,
      "text": "read"
     },
     {
-     "end": 1.8,
+     "end": 1.825,
      "start": 1.7,
      "text": "the"
     },
     {
-     "end": 2.7,
-     "start": 1.8,
+     "end": 2.675,
+     "start": 1.825,
      "text": "registration"
     },
     {
-     "end": 2.775,
-     "start": 2.7,
+     "end": 2.75,
+     "start": 2.675,
      "text": ","
     },
     {
-     "end": 3.162,
-     "start": 2.775,
+     "end": 3.188,
+     "start": 2.75,
      "text": "holding"
     },
     {
-     "end": 3.7,
-     "start": 3.162,
+     "end": 3.775,
+     "start": 3.188,
      "text": "update"
     },
     {
-     "end": 3.787,
-     "start": 3.7,
+     "end": 3.862,
+     "start": 3.775,
      "text": ","
     },
     {
-     "end": 4.55,
-     "start": 3.787,
+     "end": 4.7,
+     "start": 3.862,
      "text": "termination"
     },
     {
-     "end": 4.675,
-     "start": 4.55,
-     "text": "and"
+     "end": 4.787,
+     "start": 4.7,
+     "text": ","
     },
     {
-     "end": 4.975,
-     "start": 4.675,
+     "end": 5.25,
+     "start": 4.787,
      "text": "reading"
     },
     {
-     "end": 5.762,
-     "start": 4.975,
-     "text": "requirements"
-    },
-    {
-     "end": 5.912,
-     "start": 5.762,
+     "end": 5.387,
+     "start": 5.25,
      "text": "and"
     },
     {
-     "end": 6.125,
-     "start": 5.912,
-     "text": "see"
+     "end": 6.35,
+     "start": 5.387,
+     "text": "shared-publication"
     },
     {
-     "end": 6.325,
-     "start": 6.125,
-     "text": "which"
-    },
-    {
-     "end": 7.075,
-     "start": 6.325,
-     "text": "comparisons"
-    },
-    {
-     "end": 7.312,
-     "start": 7.075,
-     "text": "have"
-    },
-    {
-     "end": 8.575,
-     "start": 7.312,
-     "text": "evidence"
-    },
-    {
-     "end": 8.8,
-     "start": 8.575,
-     "text": "."
-    },
-    {
-     "end": 9.1,
-     "start": 8.975,
-     "text": "The"
-    },
-    {
-     "end": 9.5,
-     "start": 9.1,
-     "text": "eleven"
-    },
-    {
-     "end": 10.2,
-     "start": 9.5,
+     "end": 7.113,
+     "start": 6.35,
      "text": "requirements"
     },
     {
-     "end": 10.325,
-     "start": 10.2,
-     "text": "are"
+     "end": 7.262,
+     "start": 7.113,
+     "text": "and"
     },
     {
-     "end": 10.887,
-     "start": 10.325,
-     "text": "published"
+     "end": 7.475,
+     "start": 7.262,
+     "text": "see"
     },
     {
-     "end": 10.988,
-     "start": 10.887,
-     "text": "in"
+     "end": 7.675,
+     "start": 7.475,
+     "text": "which"
     },
     {
-     "end": 11.113,
-     "start": 10.988,
-     "text": "the"
+     "end": 8.425,
+     "start": 7.675,
+     "text": "comparisons"
     },
     {
-     "end": 11.725,
-     "start": 11.113,
-     "text": "generated"
+     "end": 8.663,
+     "start": 8.425,
+     "text": "have"
     },
     {
-     "end": 12.175,
-     "start": 11.725,
+     "end": 9.925,
+     "start": 8.663,
      "text": "evidence"
     },
     {
-     "end": 13.1,
-     "start": 12.175,
-     "text": "page"
-    },
-    {
-     "end": 13.325,
-     "start": 13.1,
+     "end": 10.15,
+     "start": 9.925,
      "text": "."
     },
     {
-     "end": 13.85,
-     "start": 13.55,
-     "text": "Every"
+     "end": 10.438,
+     "start": 10.325,
+     "text": "The"
     },
     {
-     "end": 14.562,
-     "start": 13.85,
-     "text": "requirement"
+     "end": 10.95,
+     "start": 10.438,
+     "text": "sixteen"
     },
     {
-     "end": 14.725,
-     "start": 14.562,
-     "text": "is"
+     "end": 11.625,
+     "start": 10.95,
+     "text": "requirements"
     },
     {
-     "end": 15.525,
-     "start": 14.725,
-     "text": "uncovered"
+     "end": 11.75,
+     "start": 11.625,
+     "text": "are"
     },
     {
-     "end": 15.637,
-     "start": 15.525,
-     "text": ":"
+     "end": 12.3,
+     "start": 11.75,
+     "text": "published"
     },
     {
-     "end": 15.913,
-     "start": 15.637,
-     "text": "no"
+     "end": 12.387,
+     "start": 12.3,
+     "text": "in"
     },
     {
-     "end": 16.625,
-     "start": 15.913,
-     "text": "executable"
-    },
-    {
-     "end": 17.325,
-     "start": 16.625,
-     "text": "comparison"
-    },
-    {
-     "end": 17.462,
-     "start": 17.325,
-     "text": "with"
-    },
-    {
-     "end": 17.612,
-     "start": 17.462,
+     "end": 12.512,
+     "start": 12.387,
      "text": "the"
     },
     {
-     "end": 18.55,
-     "start": 17.612,
+     "end": 13.125,
+     "start": 12.512,
+     "text": "generated"
+    },
+    {
+     "end": 13.575,
+     "start": 13.125,
+     "text": "evidence"
+    },
+    {
+     "end": 14.5,
+     "start": 13.575,
+     "text": "page"
+    },
+    {
+     "end": 14.725,
+     "start": 14.5,
+     "text": "."
+    },
+    {
+     "end": 15.25,
+     "start": 14.95,
+     "text": "Every"
+    },
+    {
+     "end": 15.962,
+     "start": 15.25,
+     "text": "requirement"
+    },
+    {
+     "end": 16.125,
+     "start": 15.962,
+     "text": "is"
+    },
+    {
+     "end": 16.925,
+     "start": 16.125,
+     "text": "uncovered"
+    },
+    {
+     "end": 17.038,
+     "start": 16.925,
+     "text": ":"
+    },
+    {
+     "end": 17.312,
+     "start": 17.038,
+     "text": "no"
+    },
+    {
+     "end": 18.025,
+     "start": 17.312,
+     "text": "executable"
+    },
+    {
+     "end": 18.725,
+     "start": 18.025,
+     "text": "comparison"
+    },
+    {
+     "end": 18.862,
+     "start": 18.725,
+     "text": "with"
+    },
+    {
+     "end": 19.013,
+     "start": 18.862,
+     "text": "the"
+    },
+    {
+     "end": 19.95,
+     "start": 19.013,
      "text": "application-held"
     },
     {
-     "end": 19.05,
-     "start": 18.55,
+     "end": 20.45,
+     "start": 19.95,
      "text": "model"
     },
     {
-     "end": 19.638,
-     "start": 19.05,
+     "end": 21.038,
+     "start": 20.45,
      "text": "exists"
     },
     {
-     "end": 20.55,
-     "start": 19.638,
+     "end": 21.95,
+     "start": 21.038,
      "text": "yet"
     },
     {
-     "end": 20.775,
-     "start": 20.55,
+     "end": 22.175,
+     "start": 21.95,
      "text": "."
     }
    ]
@@ -42076,6 +42086,801 @@
     {
      "end": 18.725,
      "start": 18.525,
+     "text": "."
+    }
+   ]
+  },
+  "docs-consumer-conformance/creating-on-shared-publications-00": {
+   "audio_sha256": "747ffe7b75fa98d8ec4a086b4221945d1072287ecd5dc16c5790ab5092e7feee",
+   "characters": 32,
+   "cost": 3.1679999999999995e-05,
+   "duration": 2.35,
+   "index": 0,
+   "key": "6ead12ac970a0a675aa9a9c39e1a562f019ec071bf685cec6411ac1f3893fbab",
+   "page": "docs/consumer-conformance.md",
+   "pause_ms": 500,
+   "section": "creating-on-shared-publications",
+   "sent_text": "Creating on shared publications.",
+   "text": "Creating on shared publications.",
+   "words": [
+    {
+     "end": 0.538,
+     "start": 0.175,
+     "text": "Creating"
+    },
+    {
+     "end": 0.675,
+     "start": 0.538,
+     "text": "on"
+    },
+    {
+     "end": 0.925,
+     "start": 0.675,
+     "text": "shared"
+    },
+    {
+     "end": 2.15,
+     "start": 0.925,
+     "text": "publications"
+    },
+    {
+     "end": 2.35,
+     "start": 2.15,
+     "text": "."
+    }
+   ]
+  },
+  "docs-consumer-conformance/creating-on-shared-publications-01": {
+   "audio_sha256": "a68cefe6de4efdfc10a38fb8a38fc85b4ecf5942ea8e3f3b75de333cc899d28d",
+   "characters": 515,
+   "cost": 0.00050985,
+   "duration": 34.35,
+   "index": 1,
+   "key": "d2c9e9ca5a8f2b1f08007ddd4708849a8ab2bb6c0f141905dfeeab032bcf5e5a",
+   "page": "docs/consumer-conformance.md",
+   "pause_ms": 400,
+   "section": "creating-on-shared-publications",
+   "sent_text": "Five requirements describe a later creation reusing both scripts, an independent creator reusing them from the chain, separation between application releases, registration in a registry created on shared copies and measured creation costs. They use the existing inventory convention and remain uncovered for the same reason as the preceding requirements: no executable comparison with the application-held model exists yet. The seven comparison rows and four reading rows keep their previous contents and standings.",
+   "text": "Five requirements describe a later creation reusing both scripts, an independent creator reusing them from the chain, separation between application releases, registration in a registry created on shared copies and measured creation costs. They use the existing inventory convention and remain uncovered for the same reason as the preceding requirements: no executable comparison with the application-held model exists yet. The seven comparison rows and four reading rows keep their previous contents and standings.",
+   "words": [
+    {
+     "end": 0.6,
+     "start": 0.3,
+     "text": "Five"
+    },
+    {
+     "end": 1.275,
+     "start": 0.6,
+     "text": "requirements"
+    },
+    {
+     "end": 1.85,
+     "start": 1.275,
+     "text": "describe"
+    },
+    {
+     "end": 1.962,
+     "start": 1.85,
+     "text": "a"
+    },
+    {
+     "end": 2.338,
+     "start": 1.962,
+     "text": "later"
+    },
+    {
+     "end": 2.987,
+     "start": 2.338,
+     "text": "creation"
+    },
+    {
+     "end": 3.525,
+     "start": 2.987,
+     "text": "reusing"
+    },
+    {
+     "end": 3.812,
+     "start": 3.525,
+     "text": "both"
+    },
+    {
+     "end": 4.425,
+     "start": 3.812,
+     "text": "scripts"
+    },
+    {
+     "end": 4.5,
+     "start": 4.425,
+     "text": ","
+    },
+    {
+     "end": 4.65,
+     "start": 4.5,
+     "text": "an"
+    },
+    {
+     "end": 5.25,
+     "start": 4.65,
+     "text": "independent"
+    },
+    {
+     "end": 5.762,
+     "start": 5.25,
+     "text": "creator"
+    },
+    {
+     "end": 6.275,
+     "start": 5.762,
+     "text": "reusing"
+    },
+    {
+     "end": 6.5,
+     "start": 6.275,
+     "text": "them"
+    },
+    {
+     "end": 6.662,
+     "start": 6.5,
+     "text": "from"
+    },
+    {
+     "end": 6.8,
+     "start": 6.662,
+     "text": "the"
+    },
+    {
+     "end": 7.325,
+     "start": 6.8,
+     "text": "chain"
+    },
+    {
+     "end": 7.438,
+     "start": 7.325,
+     "text": ","
+    },
+    {
+     "end": 8.125,
+     "start": 7.438,
+     "text": "separation"
+    },
+    {
+     "end": 8.475,
+     "start": 8.125,
+     "text": "between"
+    },
+    {
+     "end": 9.15,
+     "start": 8.475,
+     "text": "application"
+    },
+    {
+     "end": 9.95,
+     "start": 9.15,
+     "text": "releases"
+    },
+    {
+     "end": 10.062,
+     "start": 9.95,
+     "text": ","
+    },
+    {
+     "end": 10.875,
+     "start": 10.062,
+     "text": "registration"
+    },
+    {
+     "end": 10.975,
+     "start": 10.875,
+     "text": "in"
+    },
+    {
+     "end": 11.075,
+     "start": 10.975,
+     "text": "a"
+    },
+    {
+     "end": 11.663,
+     "start": 11.075,
+     "text": "registry"
+    },
+    {
+     "end": 12.125,
+     "start": 11.663,
+     "text": "created"
+    },
+    {
+     "end": 12.35,
+     "start": 12.125,
+     "text": "on"
+    },
+    {
+     "end": 12.675,
+     "start": 12.35,
+     "text": "shared"
+    },
+    {
+     "end": 13.15,
+     "start": 12.675,
+     "text": "copies"
+    },
+    {
+     "end": 13.275,
+     "start": 13.15,
+     "text": "and"
+    },
+    {
+     "end": 13.65,
+     "start": 13.275,
+     "text": "measured"
+    },
+    {
+     "end": 14.15,
+     "start": 13.65,
+     "text": "creation"
+    },
+    {
+     "end": 15.375,
+     "start": 14.15,
+     "text": "costs"
+    },
+    {
+     "end": 15.625,
+     "start": 15.375,
+     "text": "."
+    },
+    {
+     "end": 15.988,
+     "start": 15.825,
+     "text": "They"
+    },
+    {
+     "end": 16.275,
+     "start": 15.988,
+     "text": "use"
+    },
+    {
+     "end": 16.425,
+     "start": 16.275,
+     "text": "the"
+    },
+    {
+     "end": 17.013,
+     "start": 16.425,
+     "text": "existing"
+    },
+    {
+     "end": 17.65,
+     "start": 17.013,
+     "text": "inventory"
+    },
+    {
+     "end": 18.487,
+     "start": 17.65,
+     "text": "convention"
+    },
+    {
+     "end": 18.625,
+     "start": 18.487,
+     "text": "and"
+    },
+    {
+     "end": 19.138,
+     "start": 18.625,
+     "text": "remain"
+    },
+    {
+     "end": 19.8,
+     "start": 19.138,
+     "text": "uncovered"
+    },
+    {
+     "end": 19.913,
+     "start": 19.8,
+     "text": "for"
+    },
+    {
+     "end": 20.05,
+     "start": 19.913,
+     "text": "the"
+    },
+    {
+     "end": 20.4,
+     "start": 20.05,
+     "text": "same"
+    },
+    {
+     "end": 20.888,
+     "start": 20.4,
+     "text": "reason"
+    },
+    {
+     "end": 21.05,
+     "start": 20.888,
+     "text": "as"
+    },
+    {
+     "end": 21.15,
+     "start": 21.05,
+     "text": "the"
+    },
+    {
+     "end": 21.75,
+     "start": 21.15,
+     "text": "preceding"
+    },
+    {
+     "end": 23.125,
+     "start": 21.75,
+     "text": "requirements"
+    },
+    {
+     "end": 23.325,
+     "start": 23.125,
+     "text": ":"
+    },
+    {
+     "end": 23.812,
+     "start": 23.55,
+     "text": "no"
+    },
+    {
+     "end": 24.525,
+     "start": 23.812,
+     "text": "executable"
+    },
+    {
+     "end": 25.2,
+     "start": 24.525,
+     "text": "comparison"
+    },
+    {
+     "end": 25.337,
+     "start": 25.2,
+     "text": "with"
+    },
+    {
+     "end": 25.475,
+     "start": 25.337,
+     "text": "the"
+    },
+    {
+     "end": 26.375,
+     "start": 25.475,
+     "text": "application-held"
+    },
+    {
+     "end": 26.9,
+     "start": 26.375,
+     "text": "model"
+    },
+    {
+     "end": 27.413,
+     "start": 26.9,
+     "text": "exists"
+    },
+    {
+     "end": 28.225,
+     "start": 27.413,
+     "text": "yet"
+    },
+    {
+     "end": 28.425,
+     "start": 28.225,
+     "text": "."
+    },
+    {
+     "end": 28.712,
+     "start": 28.6,
+     "text": "The"
+    },
+    {
+     "end": 29.075,
+     "start": 28.712,
+     "text": "seven"
+    },
+    {
+     "end": 29.7,
+     "start": 29.075,
+     "text": "comparison"
+    },
+    {
+     "end": 30.188,
+     "start": 29.7,
+     "text": "rows"
+    },
+    {
+     "end": 30.35,
+     "start": 30.188,
+     "text": "and"
+    },
+    {
+     "end": 30.65,
+     "start": 30.35,
+     "text": "four"
+    },
+    {
+     "end": 30.975,
+     "start": 30.65,
+     "text": "reading"
+    },
+    {
+     "end": 31.388,
+     "start": 30.975,
+     "text": "rows"
+    },
+    {
+     "end": 31.638,
+     "start": 31.388,
+     "text": "keep"
+    },
+    {
+     "end": 31.812,
+     "start": 31.638,
+     "text": "their"
+    },
+    {
+     "end": 32.25,
+     "start": 31.812,
+     "text": "previous"
+    },
+    {
+     "end": 32.8,
+     "start": 32.25,
+     "text": "contents"
+    },
+    {
+     "end": 32.925,
+     "start": 32.8,
+     "text": "and"
+    },
+    {
+     "end": 34.125,
+     "start": 32.925,
+     "text": "standings"
+    },
+    {
+     "end": 34.35,
+     "start": 34.125,
+     "text": "."
+    }
+   ]
+  },
+  "docs-consumer-conformance/creating-on-shared-publications-02": {
+   "audio_sha256": "b7288442bce26523743074bae73de9d6722b1a47f71c0b5319a66e1a7545327d",
+   "characters": 420,
+   "cost": 0.00041579999999999997,
+   "duration": 26.575,
+   "index": 2,
+   "key": "12efcba7857f11117a6e679279fe086152c3726cb741291a7f4a40f3ef84e445",
+   "page": "docs/consumer-conformance.md",
+   "pause_ms": 400,
+   "section": "creating-on-shared-publications",
+   "sent_text": "The registration journey, recovery partitions and checked measurement receipts are separate evidence boundaries. They show the packaged commands and measured transactions they run and nothing about agreement with the model. An executable conformance language for creation claims is outside this change. The reuse guide shows the commands and discovery receipt fields; the cost comparison reads its figures from receipts.",
+   "text": "The registration journey, recovery partitions and checked measurement receipts are separate evidence boundaries. They show the packaged commands and measured transactions they run and nothing about agreement with the model. An executable conformance language for creation claims is outside this change. The reuse guide shows the commands and discovery receipt fields; the cost comparison reads its figures from receipts.",
+   "words": [
+    {
+     "end": 0.3,
+     "start": 0.2,
+     "text": "The"
+    },
+    {
+     "end": 1.087,
+     "start": 0.3,
+     "text": "registration"
+    },
+    {
+     "end": 1.55,
+     "start": 1.087,
+     "text": "journey"
+    },
+    {
+     "end": 1.65,
+     "start": 1.55,
+     "text": ","
+    },
+    {
+     "end": 2.125,
+     "start": 1.65,
+     "text": "recovery"
+    },
+    {
+     "end": 2.825,
+     "start": 2.125,
+     "text": "partitions"
+    },
+    {
+     "end": 2.975,
+     "start": 2.825,
+     "text": "and"
+    },
+    {
+     "end": 3.3,
+     "start": 2.975,
+     "text": "checked"
+    },
+    {
+     "end": 3.75,
+     "start": 3.3,
+     "text": "measurement"
+    },
+    {
+     "end": 4.287,
+     "start": 3.75,
+     "text": "receipts"
+    },
+    {
+     "end": 4.475,
+     "start": 4.287,
+     "text": "are"
+    },
+    {
+     "end": 4.925,
+     "start": 4.475,
+     "text": "separate"
+    },
+    {
+     "end": 5.375,
+     "start": 4.925,
+     "text": "evidence"
+    },
+    {
+     "end": 6.6,
+     "start": 5.375,
+     "text": "boundaries"
+    },
+    {
+     "end": 6.8,
+     "start": 6.6,
+     "text": "."
+    },
+    {
+     "end": 7.162,
+     "start": 7.0,
+     "text": "They"
+    },
+    {
+     "end": 7.4,
+     "start": 7.162,
+     "text": "show"
+    },
+    {
+     "end": 7.5,
+     "start": 7.4,
+     "text": "the"
+    },
+    {
+     "end": 8.0,
+     "start": 7.5,
+     "text": "packaged"
+    },
+    {
+     "end": 8.637,
+     "start": 8.0,
+     "text": "commands"
+    },
+    {
+     "end": 8.775,
+     "start": 8.637,
+     "text": "and"
+    },
+    {
+     "end": 9.15,
+     "start": 8.775,
+     "text": "measured"
+    },
+    {
+     "end": 10.025,
+     "start": 9.15,
+     "text": "transactions"
+    },
+    {
+     "end": 10.238,
+     "start": 10.025,
+     "text": "they"
+    },
+    {
+     "end": 10.775,
+     "start": 10.238,
+     "text": "run"
+    },
+    {
+     "end": 10.938,
+     "start": 10.775,
+     "text": "and"
+    },
+    {
+     "end": 11.325,
+     "start": 10.938,
+     "text": "nothing"
+    },
+    {
+     "end": 11.625,
+     "start": 11.325,
+     "text": "about"
+    },
+    {
+     "end": 12.15,
+     "start": 11.625,
+     "text": "agreement"
+    },
+    {
+     "end": 12.288,
+     "start": 12.15,
+     "text": "with"
+    },
+    {
+     "end": 12.375,
+     "start": 12.288,
+     "text": "the"
+    },
+    {
+     "end": 13.35,
+     "start": 12.375,
+     "text": "model"
+    },
+    {
+     "end": 13.575,
+     "start": 13.35,
+     "text": "."
+    },
+    {
+     "end": 13.913,
+     "start": 13.775,
+     "text": "An"
+    },
+    {
+     "end": 14.625,
+     "start": 13.913,
+     "text": "executable"
+    },
+    {
+     "end": 15.275,
+     "start": 14.625,
+     "text": "conformance"
+    },
+    {
+     "end": 15.75,
+     "start": 15.275,
+     "text": "language"
+    },
+    {
+     "end": 15.875,
+     "start": 15.75,
+     "text": "for"
+    },
+    {
+     "end": 16.375,
+     "start": 15.875,
+     "text": "creation"
+    },
+    {
+     "end": 16.975,
+     "start": 16.375,
+     "text": "claims"
+    },
+    {
+     "end": 17.15,
+     "start": 16.975,
+     "text": "is"
+    },
+    {
+     "end": 17.675,
+     "start": 17.15,
+     "text": "outside"
+    },
+    {
+     "end": 17.888,
+     "start": 17.675,
+     "text": "this"
+    },
+    {
+     "end": 18.875,
+     "start": 17.888,
+     "text": "change"
+    },
+    {
+     "end": 19.1,
+     "start": 18.875,
+     "text": "."
+    },
+    {
+     "end": 19.35,
+     "start": 19.275,
+     "text": "The"
+    },
+    {
+     "end": 19.725,
+     "start": 19.35,
+     "text": "reuse"
+    },
+    {
+     "end": 20.062,
+     "start": 19.725,
+     "text": "guide"
+    },
+    {
+     "end": 20.362,
+     "start": 20.062,
+     "text": "shows"
+    },
+    {
+     "end": 20.45,
+     "start": 20.362,
+     "text": "the"
+    },
+    {
+     "end": 21.0,
+     "start": 20.45,
+     "text": "commands"
+    },
+    {
+     "end": 21.112,
+     "start": 21.0,
+     "text": "and"
+    },
+    {
+     "end": 21.6,
+     "start": 21.112,
+     "text": "discovery"
+    },
+    {
+     "end": 21.975,
+     "start": 21.6,
+     "text": "receipt"
+    },
+    {
+     "end": 22.925,
+     "start": 21.975,
+     "text": "fields"
+    },
+    {
+     "end": 23.125,
+     "start": 22.925,
+     "text": ";"
+    },
+    {
+     "end": 23.375,
+     "start": 23.3,
+     "text": "the"
+    },
+    {
+     "end": 23.663,
+     "start": 23.375,
+     "text": "cost"
+    },
+    {
+     "end": 24.288,
+     "start": 23.663,
+     "text": "comparison"
+    },
+    {
+     "end": 24.562,
+     "start": 24.288,
+     "text": "reads"
+    },
+    {
+     "end": 24.75,
+     "start": 24.562,
+     "text": "its"
+    },
+    {
+     "end": 25.175,
+     "start": 24.75,
+     "text": "figures"
+    },
+    {
+     "end": 25.325,
+     "start": 25.175,
+     "text": "from"
+    },
+    {
+     "end": 26.375,
+     "start": 25.325,
+     "text": "receipts"
+    },
+    {
+     "end": 26.575,
+     "start": 26.375,
      "text": "."
     }
    ]
@@ -268161,6 +268966,5126 @@
     {
      "end": 12.925,
      "start": 12.725,
+     "text": "."
+    }
+   ]
+  },
+  "docs-shared-publications/create-another-registry-on-shared-publications-00": {
+   "audio_sha256": "cc4a8dac39de16ffa87be2063bda60b600a357b41f633e4d0e304a2bff30f4be",
+   "characters": 47,
+   "cost": 4.6530000000000003e-05,
+   "duration": 3.3,
+   "index": 0,
+   "key": "4c610c75277e9f109e6c870c5151bfa1e7485bdb0f97c52f5296cf661ba5e05d",
+   "page": "docs/shared-publications.md",
+   "pause_ms": 500,
+   "section": "create-another-registry-on-shared-publications",
+   "sent_text": "Create another registry on shared publications.",
+   "text": "Create another registry on shared publications.",
+   "words": [
+    {
+     "end": 0.488,
+     "start": 0.2,
+     "text": "Create"
+    },
+    {
+     "end": 0.825,
+     "start": 0.488,
+     "text": "another"
+    },
+    {
+     "end": 1.35,
+     "start": 0.825,
+     "text": "registry"
+    },
+    {
+     "end": 1.562,
+     "start": 1.35,
+     "text": "on"
+    },
+    {
+     "end": 1.85,
+     "start": 1.562,
+     "text": "shared"
+    },
+    {
+     "end": 3.1,
+     "start": 1.85,
+     "text": "publications"
+    },
+    {
+     "end": 3.3,
+     "start": 3.1,
+     "text": "."
+    }
+   ]
+  },
+  "docs-shared-publications/create-another-registry-on-shared-publications-01": {
+   "audio_sha256": "46948580eaa98193606ad23660c5d126e7a605d3a6251c62d1b3a3aa2a7c2d0d",
+   "characters": 382,
+   "cost": 0.00037818,
+   "duration": 24.475,
+   "index": 1,
+   "key": "16351f3f2228d4d0f321bdb7d5239603708ce8ea4a689bb9d7f1486b5b40c629",
+   "page": "docs/shared-publications.md",
+   "pause_ms": 400,
+   "section": "create-another-registry-on-shared-publications",
+   "sent_text": "As a registry creator, you can create your own registry using the live state and application scripts another wallet published for the same application release. You supply your own funded wallet, the release blueprint and provider settings. You need no file, key, registry state or publication address from that creator. Your registry has its own state token, configuration and root.",
+   "text": "As a registry creator, you can create your own registry using the live state and application scripts another wallet published for the same application release. You supply your own funded wallet, the release blueprint and provider settings. You need no file, key, registry state or publication address from that creator. Your registry has its own state token, configuration and root.",
+   "words": [
+    {
+     "end": 0.387,
+     "start": 0.225,
+     "text": "As"
+    },
+    {
+     "end": 0.475,
+     "start": 0.387,
+     "text": "a"
+    },
+    {
+     "end": 0.95,
+     "start": 0.475,
+     "text": "registry"
+    },
+    {
+     "end": 1.45,
+     "start": 0.95,
+     "text": "creator"
+    },
+    {
+     "end": 1.525,
+     "start": 1.45,
+     "text": ","
+    },
+    {
+     "end": 1.675,
+     "start": 1.525,
+     "text": "you"
+    },
+    {
+     "end": 1.888,
+     "start": 1.675,
+     "text": "can"
+    },
+    {
+     "end": 2.275,
+     "start": 1.888,
+     "text": "create"
+    },
+    {
+     "end": 2.463,
+     "start": 2.275,
+     "text": "your"
+    },
+    {
+     "end": 2.725,
+     "start": 2.463,
+     "text": "own"
+    },
+    {
+     "end": 3.362,
+     "start": 2.725,
+     "text": "registry"
+    },
+    {
+     "end": 3.7,
+     "start": 3.362,
+     "text": "using"
+    },
+    {
+     "end": 3.838,
+     "start": 3.7,
+     "text": "the"
+    },
+    {
+     "end": 4.213,
+     "start": 3.838,
+     "text": "live"
+    },
+    {
+     "end": 4.625,
+     "start": 4.213,
+     "text": "state"
+    },
+    {
+     "end": 4.75,
+     "start": 4.625,
+     "text": "and"
+    },
+    {
+     "end": 5.425,
+     "start": 4.75,
+     "text": "application"
+    },
+    {
+     "end": 5.887,
+     "start": 5.425,
+     "text": "scripts"
+    },
+    {
+     "end": 6.325,
+     "start": 5.887,
+     "text": "another"
+    },
+    {
+     "end": 6.7,
+     "start": 6.325,
+     "text": "wallet"
+    },
+    {
+     "end": 7.175,
+     "start": 6.7,
+     "text": "published"
+    },
+    {
+     "end": 7.3,
+     "start": 7.175,
+     "text": "for"
+    },
+    {
+     "end": 7.438,
+     "start": 7.3,
+     "text": "the"
+    },
+    {
+     "end": 7.8,
+     "start": 7.438,
+     "text": "same"
+    },
+    {
+     "end": 8.475,
+     "start": 7.8,
+     "text": "application"
+    },
+    {
+     "end": 9.65,
+     "start": 8.475,
+     "text": "release"
+    },
+    {
+     "end": 9.875,
+     "start": 9.65,
+     "text": "."
+    },
+    {
+     "end": 10.2,
+     "start": 10.075,
+     "text": "You"
+    },
+    {
+     "end": 10.575,
+     "start": 10.2,
+     "text": "supply"
+    },
+    {
+     "end": 10.725,
+     "start": 10.575,
+     "text": "your"
+    },
+    {
+     "end": 10.975,
+     "start": 10.725,
+     "text": "own"
+    },
+    {
+     "end": 11.35,
+     "start": 10.975,
+     "text": "funded"
+    },
+    {
+     "end": 11.8,
+     "start": 11.35,
+     "text": "wallet"
+    },
+    {
+     "end": 11.875,
+     "start": 11.8,
+     "text": ","
+    },
+    {
+     "end": 11.975,
+     "start": 11.875,
+     "text": "the"
+    },
+    {
+     "end": 12.4,
+     "start": 11.975,
+     "text": "release"
+    },
+    {
+     "end": 12.95,
+     "start": 12.4,
+     "text": "blueprint"
+    },
+    {
+     "end": 13.075,
+     "start": 12.95,
+     "text": "and"
+    },
+    {
+     "end": 13.575,
+     "start": 13.075,
+     "text": "provider"
+    },
+    {
+     "end": 14.6,
+     "start": 13.575,
+     "text": "settings"
+    },
+    {
+     "end": 14.825,
+     "start": 14.6,
+     "text": "."
+    },
+    {
+     "end": 15.087,
+     "start": 15.0,
+     "text": "You"
+    },
+    {
+     "end": 15.275,
+     "start": 15.087,
+     "text": "need"
+    },
+    {
+     "end": 15.475,
+     "start": 15.275,
+     "text": "no"
+    },
+    {
+     "end": 15.875,
+     "start": 15.475,
+     "text": "file"
+    },
+    {
+     "end": 15.962,
+     "start": 15.875,
+     "text": ","
+    },
+    {
+     "end": 16.4,
+     "start": 15.962,
+     "text": "key"
+    },
+    {
+     "end": 16.513,
+     "start": 16.4,
+     "text": ","
+    },
+    {
+     "end": 17.025,
+     "start": 16.513,
+     "text": "registry"
+    },
+    {
+     "end": 17.413,
+     "start": 17.025,
+     "text": "state"
+    },
+    {
+     "end": 17.55,
+     "start": 17.413,
+     "text": "or"
+    },
+    {
+     "end": 18.25,
+     "start": 17.55,
+     "text": "publication"
+    },
+    {
+     "end": 18.625,
+     "start": 18.25,
+     "text": "address"
+    },
+    {
+     "end": 18.775,
+     "start": 18.625,
+     "text": "from"
+    },
+    {
+     "end": 19.0,
+     "start": 18.775,
+     "text": "that"
+    },
+    {
+     "end": 20.0,
+     "start": 19.0,
+     "text": "creator"
+    },
+    {
+     "end": 20.225,
+     "start": 20.0,
+     "text": "."
+    },
+    {
+     "end": 20.55,
+     "start": 20.4,
+     "text": "Your"
+    },
+    {
+     "end": 21.05,
+     "start": 20.55,
+     "text": "registry"
+    },
+    {
+     "end": 21.212,
+     "start": 21.05,
+     "text": "has"
+    },
+    {
+     "end": 21.35,
+     "start": 21.212,
+     "text": "its"
+    },
+    {
+     "end": 21.6,
+     "start": 21.35,
+     "text": "own"
+    },
+    {
+     "end": 21.9,
+     "start": 21.6,
+     "text": "state"
+    },
+    {
+     "end": 22.375,
+     "start": 21.9,
+     "text": "token"
+    },
+    {
+     "end": 22.475,
+     "start": 22.375,
+     "text": ","
+    },
+    {
+     "end": 23.35,
+     "start": 22.475,
+     "text": "configuration"
+    },
+    {
+     "end": 23.475,
+     "start": 23.35,
+     "text": "and"
+    },
+    {
+     "end": 24.275,
+     "start": 23.475,
+     "text": "root"
+    },
+    {
+     "end": 24.475,
+     "start": 24.275,
+     "text": "."
+    }
+   ]
+  },
+  "docs-shared-publications/create-another-registry-on-shared-publications-02": {
+   "audio_sha256": "4e3c57f59e67cffef7ddca30d9a2d95895784b5eb49b9a24373e65829b8e282f",
+   "characters": 341,
+   "cost": 0.00033758999999999997,
+   "duration": 23.125,
+   "index": 2,
+   "key": "4fcb7535a79722958e6d421c9ae0a8f710382450ca68f0469ba1216c51931a78",
+   "page": "docs/shared-publications.md",
+   "pause_ms": 400,
+   "section": "create-another-registry-on-shared-publications",
+   "sent_text": "Install the commands and obtain the matching plutus.json from the verified release. The registry command guide describes booking, folding and recovery. The example below follows the development-network journey; its wallet keys are generated for that run. Use your own provider URL and network-time directory for the network your wallet uses.",
+   "text": "Install the commands and obtain the matching plutus.json from the verified release. The registry command guide describes booking, folding and recovery. The example below follows the development-network journey; its wallet keys are generated for that run. Use your own provider URL and network-time directory for the network your wallet uses.",
+   "words": [
+    {
+     "end": 0.637,
+     "start": 0.2,
+     "text": "Install"
+    },
+    {
+     "end": 0.725,
+     "start": 0.637,
+     "text": "the"
+    },
+    {
+     "end": 1.35,
+     "start": 0.725,
+     "text": "commands"
+    },
+    {
+     "end": 1.462,
+     "start": 1.35,
+     "text": "and"
+    },
+    {
+     "end": 1.812,
+     "start": 1.462,
+     "text": "obtain"
+    },
+    {
+     "end": 1.9,
+     "start": 1.812,
+     "text": "the"
+    },
+    {
+     "end": 2.325,
+     "start": 1.9,
+     "text": "matching"
+    },
+    {
+     "end": 3.625,
+     "start": 2.325,
+     "text": "plutus.json"
+    },
+    {
+     "end": 3.763,
+     "start": 3.625,
+     "text": "from"
+    },
+    {
+     "end": 3.85,
+     "start": 3.763,
+     "text": "the"
+    },
+    {
+     "end": 4.4,
+     "start": 3.85,
+     "text": "verified"
+    },
+    {
+     "end": 5.45,
+     "start": 4.4,
+     "text": "release"
+    },
+    {
+     "end": 5.65,
+     "start": 5.45,
+     "text": "."
+    },
+    {
+     "end": 5.9,
+     "start": 5.825,
+     "text": "The"
+    },
+    {
+     "end": 6.4,
+     "start": 5.9,
+     "text": "registry"
+    },
+    {
+     "end": 6.8,
+     "start": 6.4,
+     "text": "command"
+    },
+    {
+     "end": 7.125,
+     "start": 6.8,
+     "text": "guide"
+    },
+    {
+     "end": 7.662,
+     "start": 7.125,
+     "text": "describes"
+    },
+    {
+     "end": 8.175,
+     "start": 7.662,
+     "text": "booking"
+    },
+    {
+     "end": 8.288,
+     "start": 8.175,
+     "text": ","
+    },
+    {
+     "end": 8.8,
+     "start": 8.288,
+     "text": "folding"
+    },
+    {
+     "end": 8.913,
+     "start": 8.8,
+     "text": "and"
+    },
+    {
+     "end": 10.0,
+     "start": 8.913,
+     "text": "recovery"
+    },
+    {
+     "end": 10.2,
+     "start": 10.0,
+     "text": "."
+    },
+    {
+     "end": 10.5,
+     "start": 10.375,
+     "text": "The"
+    },
+    {
+     "end": 11.0,
+     "start": 10.5,
+     "text": "example"
+    },
+    {
+     "end": 11.45,
+     "start": 11.0,
+     "text": "below"
+    },
+    {
+     "end": 11.925,
+     "start": 11.45,
+     "text": "follows"
+    },
+    {
+     "end": 12.025,
+     "start": 11.925,
+     "text": "the"
+    },
+    {
+     "end": 12.863,
+     "start": 12.025,
+     "text": "development-network"
+    },
+    {
+     "end": 13.75,
+     "start": 12.863,
+     "text": "journey"
+    },
+    {
+     "end": 13.975,
+     "start": 13.75,
+     "text": ";"
+    },
+    {
+     "end": 14.35,
+     "start": 14.175,
+     "text": "its"
+    },
+    {
+     "end": 14.675,
+     "start": 14.35,
+     "text": "wallet"
+    },
+    {
+     "end": 15.025,
+     "start": 14.675,
+     "text": "keys"
+    },
+    {
+     "end": 15.125,
+     "start": 15.025,
+     "text": "are"
+    },
+    {
+     "end": 15.675,
+     "start": 15.125,
+     "text": "generated"
+    },
+    {
+     "end": 15.788,
+     "start": 15.675,
+     "text": "for"
+    },
+    {
+     "end": 16.025,
+     "start": 15.788,
+     "text": "that"
+    },
+    {
+     "end": 16.75,
+     "start": 16.025,
+     "text": "run"
+    },
+    {
+     "end": 16.95,
+     "start": 16.75,
+     "text": "."
+    },
+    {
+     "end": 17.413,
+     "start": 17.175,
+     "text": "Use"
+    },
+    {
+     "end": 17.587,
+     "start": 17.413,
+     "text": "your"
+    },
+    {
+     "end": 17.875,
+     "start": 17.587,
+     "text": "own"
+    },
+    {
+     "end": 18.413,
+     "start": 17.875,
+     "text": "provider"
+    },
+    {
+     "end": 19.263,
+     "start": 18.413,
+     "text": "URL"
+    },
+    {
+     "end": 19.4,
+     "start": 19.263,
+     "text": "and"
+    },
+    {
+     "end": 20.0,
+     "start": 19.4,
+     "text": "network-time"
+    },
+    {
+     "end": 20.663,
+     "start": 20.0,
+     "text": "directory"
+    },
+    {
+     "end": 20.8,
+     "start": 20.663,
+     "text": "for"
+    },
+    {
+     "end": 20.925,
+     "start": 20.8,
+     "text": "the"
+    },
+    {
+     "end": 21.35,
+     "start": 20.925,
+     "text": "network"
+    },
+    {
+     "end": 21.5,
+     "start": 21.35,
+     "text": "your"
+    },
+    {
+     "end": 21.85,
+     "start": 21.5,
+     "text": "wallet"
+    },
+    {
+     "end": 22.925,
+     "start": 21.85,
+     "text": "uses"
+    },
+    {
+     "end": 23.125,
+     "start": 22.925,
+     "text": "."
+    }
+   ]
+  },
+  "docs-shared-publications/create-another-registry-on-shared-publications-03": {
+   "audio_sha256": "aa5ce044e23ee0e4f19226303dba502b8cf0babe8d177c1ee6ada4e31d619324",
+   "characters": 323,
+   "cost": 0.00031977,
+   "duration": 21.525,
+   "index": 3,
+   "key": "299a0bbf3e6065f7a58b4a77c94df6d909518a8a9a60d87054e7816e0db00756",
+   "page": "docs/shared-publications.md",
+   "pause_ms": 400,
+   "section": "create-another-registry-on-shared-publications",
+   "sent_text": "The provider proposes live reference outputs. The command hashes the scripts those outputs actually carry before reusing them. Creation spends a fresh seed and reads the verified scripts by reference. A missing copy is published first. The new registry then uses the same booking and folding commands as the first registry.",
+   "text": "The provider proposes live reference outputs. The command hashes the scripts those outputs actually carry before reusing them. Creation spends a fresh seed and reads the verified scripts by reference. A missing copy is published first. The new registry then uses the same booking and folding commands as the first registry.",
+   "words": [
+    {
+     "end": 0.25,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.7,
+     "start": 0.25,
+     "text": "provider"
+    },
+    {
+     "end": 1.263,
+     "start": 0.7,
+     "text": "proposes"
+    },
+    {
+     "end": 1.575,
+     "start": 1.263,
+     "text": "live"
+    },
+    {
+     "end": 1.975,
+     "start": 1.575,
+     "text": "reference"
+    },
+    {
+     "end": 2.975,
+     "start": 1.975,
+     "text": "outputs"
+    },
+    {
+     "end": 3.175,
+     "start": 2.975,
+     "text": "."
+    },
+    {
+     "end": 3.425,
+     "start": 3.35,
+     "text": "The"
+    },
+    {
+     "end": 3.888,
+     "start": 3.425,
+     "text": "command"
+    },
+    {
+     "end": 4.325,
+     "start": 3.888,
+     "text": "hashes"
+    },
+    {
+     "end": 4.425,
+     "start": 4.325,
+     "text": "the"
+    },
+    {
+     "end": 4.875,
+     "start": 4.425,
+     "text": "scripts"
+    },
+    {
+     "end": 5.137,
+     "start": 4.875,
+     "text": "those"
+    },
+    {
+     "end": 5.662,
+     "start": 5.137,
+     "text": "outputs"
+    },
+    {
+     "end": 6.113,
+     "start": 5.662,
+     "text": "actually"
+    },
+    {
+     "end": 6.525,
+     "start": 6.113,
+     "text": "carry"
+    },
+    {
+     "end": 6.9,
+     "start": 6.525,
+     "text": "before"
+    },
+    {
+     "end": 7.375,
+     "start": 6.9,
+     "text": "reusing"
+    },
+    {
+     "end": 8.15,
+     "start": 7.375,
+     "text": "them"
+    },
+    {
+     "end": 8.35,
+     "start": 8.15,
+     "text": "."
+    },
+    {
+     "end": 9.075,
+     "start": 8.55,
+     "text": "Creation"
+    },
+    {
+     "end": 9.363,
+     "start": 9.075,
+     "text": "spends"
+    },
+    {
+     "end": 9.462,
+     "start": 9.363,
+     "text": "a"
+    },
+    {
+     "end": 9.788,
+     "start": 9.462,
+     "text": "fresh"
+    },
+    {
+     "end": 10.288,
+     "start": 9.788,
+     "text": "seed"
+    },
+    {
+     "end": 10.425,
+     "start": 10.288,
+     "text": "and"
+    },
+    {
+     "end": 10.738,
+     "start": 10.425,
+     "text": "reads"
+    },
+    {
+     "end": 10.825,
+     "start": 10.738,
+     "text": "the"
+    },
+    {
+     "end": 11.375,
+     "start": 10.825,
+     "text": "verified"
+    },
+    {
+     "end": 11.775,
+     "start": 11.375,
+     "text": "scripts"
+    },
+    {
+     "end": 11.925,
+     "start": 11.775,
+     "text": "by"
+    },
+    {
+     "end": 12.975,
+     "start": 11.925,
+     "text": "reference"
+    },
+    {
+     "end": 13.175,
+     "start": 12.975,
+     "text": "."
+    },
+    {
+     "end": 13.488,
+     "start": 13.4,
+     "text": "A"
+    },
+    {
+     "end": 13.837,
+     "start": 13.488,
+     "text": "missing"
+    },
+    {
+     "end": 14.275,
+     "start": 13.837,
+     "text": "copy"
+    },
+    {
+     "end": 14.438,
+     "start": 14.275,
+     "text": "is"
+    },
+    {
+     "end": 14.913,
+     "start": 14.438,
+     "text": "published"
+    },
+    {
+     "end": 15.55,
+     "start": 14.913,
+     "text": "first"
+    },
+    {
+     "end": 15.675,
+     "start": 15.55,
+     "text": "."
+    },
+    {
+     "end": 15.775,
+     "start": 15.675,
+     "text": "The"
+    },
+    {
+     "end": 15.95,
+     "start": 15.775,
+     "text": "new"
+    },
+    {
+     "end": 16.45,
+     "start": 15.95,
+     "text": "registry"
+    },
+    {
+     "end": 16.688,
+     "start": 16.45,
+     "text": "then"
+    },
+    {
+     "end": 17.125,
+     "start": 16.688,
+     "text": "uses"
+    },
+    {
+     "end": 17.275,
+     "start": 17.125,
+     "text": "the"
+    },
+    {
+     "end": 17.638,
+     "start": 17.275,
+     "text": "same"
+    },
+    {
+     "end": 18.05,
+     "start": 17.638,
+     "text": "booking"
+    },
+    {
+     "end": 18.188,
+     "start": 18.05,
+     "text": "and"
+    },
+    {
+     "end": 18.675,
+     "start": 18.188,
+     "text": "folding"
+    },
+    {
+     "end": 19.35,
+     "start": 18.675,
+     "text": "commands"
+    },
+    {
+     "end": 19.525,
+     "start": 19.35,
+     "text": "as"
+    },
+    {
+     "end": 19.663,
+     "start": 19.525,
+     "text": "the"
+    },
+    {
+     "end": 20.025,
+     "start": 19.663,
+     "text": "first"
+    },
+    {
+     "end": 21.25,
+     "start": 20.025,
+     "text": "registry"
+    },
+    {
+     "end": 21.525,
+     "start": 21.25,
+     "text": "."
+    }
+   ]
+  },
+  "docs-shared-publications/create-with-your-own-wallet-00": {
+   "audio_sha256": "6db3ce74f292112655da7635e033a950b975b6da8fac08b25dc19af044c58e80",
+   "characters": 28,
+   "cost": 2.772e-05,
+   "duration": 1.875,
+   "index": 0,
+   "key": "255e8d817ed177dac286d7d722111d4c691e43f6a5ab3e1196a8510e9a62d143",
+   "page": "docs/shared-publications.md",
+   "pause_ms": 500,
+   "section": "create-with-your-own-wallet",
+   "sent_text": "Create with your own wallet.",
+   "text": "Create with your own wallet.",
+   "words": [
+    {
+     "end": 0.488,
+     "start": 0.2,
+     "text": "Create"
+    },
+    {
+     "end": 0.587,
+     "start": 0.488,
+     "text": "with"
+    },
+    {
+     "end": 0.7,
+     "start": 0.587,
+     "text": "your"
+    },
+    {
+     "end": 0.9,
+     "start": 0.7,
+     "text": "own"
+    },
+    {
+     "end": 1.675,
+     "start": 0.9,
+     "text": "wallet"
+    },
+    {
+     "end": 1.875,
+     "start": 1.675,
+     "text": "."
+    }
+   ]
+  },
+  "docs-shared-publications/create-with-your-own-wallet-01": {
+   "audio_sha256": "1b1dded8de8b21668c3b221a3e7c493d77138225134fe22fd8d2117e5c3fbf95",
+   "characters": 218,
+   "cost": 0.00021581999999999998,
+   "duration": 14.625,
+   "index": 1,
+   "key": "a8f789978e16f7f4f6d031a503e295a4d9988d9e6da7d175725c0dc0600be3d0",
+   "page": "docs/shared-publications.md",
+   "pause_ms": 400,
+   "section": "create-with-your-own-wallet",
+   "sent_text": "Erin's fresh working directory contains only her own key and the release blueprint. Her home and state directory contain no earlier creator's records. The journey runs this command with its generated provider settings:",
+   "text": "Erin's fresh working directory contains only her own key and the release blueprint. Her home and state directory contain no earlier creator's records. The journey runs this command with its generated provider settings:",
+   "words": [
+    {
+     "end": 0.562,
+     "start": 0.2,
+     "text": "Erin's"
+    },
+    {
+     "end": 0.85,
+     "start": 0.562,
+     "text": "fresh"
+    },
+    {
+     "end": 1.15,
+     "start": 0.85,
+     "text": "working"
+    },
+    {
+     "end": 1.737,
+     "start": 1.15,
+     "text": "directory"
+    },
+    {
+     "end": 2.287,
+     "start": 1.737,
+     "text": "contains"
+    },
+    {
+     "end": 2.6,
+     "start": 2.287,
+     "text": "only"
+    },
+    {
+     "end": 2.775,
+     "start": 2.6,
+     "text": "her"
+    },
+    {
+     "end": 3.062,
+     "start": 2.775,
+     "text": "own"
+    },
+    {
+     "end": 3.638,
+     "start": 3.062,
+     "text": "key"
+    },
+    {
+     "end": 3.787,
+     "start": 3.638,
+     "text": "and"
+    },
+    {
+     "end": 3.875,
+     "start": 3.787,
+     "text": "the"
+    },
+    {
+     "end": 4.275,
+     "start": 3.875,
+     "text": "release"
+    },
+    {
+     "end": 5.35,
+     "start": 4.275,
+     "text": "blueprint"
+    },
+    {
+     "end": 5.55,
+     "start": 5.35,
+     "text": "."
+    },
+    {
+     "end": 5.887,
+     "start": 5.725,
+     "text": "Her"
+    },
+    {
+     "end": 6.275,
+     "start": 5.887,
+     "text": "home"
+    },
+    {
+     "end": 6.4,
+     "start": 6.275,
+     "text": "and"
+    },
+    {
+     "end": 6.7,
+     "start": 6.4,
+     "text": "state"
+    },
+    {
+     "end": 7.338,
+     "start": 6.7,
+     "text": "directory"
+    },
+    {
+     "end": 7.8,
+     "start": 7.338,
+     "text": "contain"
+    },
+    {
+     "end": 8.075,
+     "start": 7.8,
+     "text": "no"
+    },
+    {
+     "end": 8.475,
+     "start": 8.075,
+     "text": "earlier"
+    },
+    {
+     "end": 8.975,
+     "start": 8.475,
+     "text": "creator's"
+    },
+    {
+     "end": 10.0,
+     "start": 8.975,
+     "text": "records"
+    },
+    {
+     "end": 10.2,
+     "start": 10.0,
+     "text": "."
+    },
+    {
+     "end": 10.488,
+     "start": 10.375,
+     "text": "The"
+    },
+    {
+     "end": 10.875,
+     "start": 10.488,
+     "text": "journey"
+    },
+    {
+     "end": 11.2,
+     "start": 10.875,
+     "text": "runs"
+    },
+    {
+     "end": 11.4,
+     "start": 11.2,
+     "text": "this"
+    },
+    {
+     "end": 11.925,
+     "start": 11.4,
+     "text": "command"
+    },
+    {
+     "end": 12.1,
+     "start": 11.925,
+     "text": "with"
+    },
+    {
+     "end": 12.312,
+     "start": 12.1,
+     "text": "its"
+    },
+    {
+     "end": 12.9,
+     "start": 12.312,
+     "text": "generated"
+    },
+    {
+     "end": 13.413,
+     "start": 12.9,
+     "text": "provider"
+    },
+    {
+     "end": 14.425,
+     "start": 13.413,
+     "text": "settings"
+    },
+    {
+     "end": 14.625,
+     "start": 14.425,
+     "text": ":"
+    }
+   ]
+  },
+  "docs-shared-publications/create-with-your-own-wallet-02": {
+   "audio_sha256": "b321e8ca43a24f98034c4aa2b44515f7197247b36bfbfda0d375fed9d81f57fb",
+   "characters": 320,
+   "cost": 0.0003168,
+   "duration": 21.975,
+   "index": 2,
+   "key": "e8f01c728dcd9ec0be41f453fc628ede22134a144c7bce321c648c52bd5245f8",
+   "page": "docs/shared-publications.md",
+   "pause_ms": 400,
+   "section": "create-with-your-own-wallet",
+   "sent_text": "Keep the receipt's stateToken and registry address as public identifiers for your registry. When both copies remain live, submissions contains the creation alone; neither script entry reports a publication. If a copy has been spent or is absent, the command publishes only that missing copy before creating the registry.",
+   "text": "Keep the receipt's stateToken and registry address as public identifiers for your registry. When both copies remain live, submissions contains the creation alone; neither script entry reports a publication. If a copy has been spent or is absent, the command publishes only that missing copy before creating the registry.",
+   "words": [
+    {
+     "end": 0.45,
+     "start": 0.2,
+     "text": "Keep"
+    },
+    {
+     "end": 0.55,
+     "start": 0.45,
+     "text": "the"
+    },
+    {
+     "end": 1.025,
+     "start": 0.55,
+     "text": "receipt's"
+    },
+    {
+     "end": 1.775,
+     "start": 1.025,
+     "text": "stateToken"
+    },
+    {
+     "end": 1.9,
+     "start": 1.775,
+     "text": "and"
+    },
+    {
+     "end": 2.612,
+     "start": 1.9,
+     "text": "registry"
+    },
+    {
+     "end": 3.162,
+     "start": 2.612,
+     "text": "address"
+    },
+    {
+     "end": 3.338,
+     "start": 3.162,
+     "text": "as"
+    },
+    {
+     "end": 3.763,
+     "start": 3.338,
+     "text": "public"
+    },
+    {
+     "end": 4.6,
+     "start": 3.763,
+     "text": "identifiers"
+    },
+    {
+     "end": 4.725,
+     "start": 4.6,
+     "text": "for"
+    },
+    {
+     "end": 4.9,
+     "start": 4.725,
+     "text": "your"
+    },
+    {
+     "end": 6.05,
+     "start": 4.9,
+     "text": "registry"
+    },
+    {
+     "end": 6.275,
+     "start": 6.05,
+     "text": "."
+    },
+    {
+     "end": 6.575,
+     "start": 6.45,
+     "text": "When"
+    },
+    {
+     "end": 6.875,
+     "start": 6.575,
+     "text": "both"
+    },
+    {
+     "end": 7.325,
+     "start": 6.875,
+     "text": "copies"
+    },
+    {
+     "end": 7.7,
+     "start": 7.325,
+     "text": "remain"
+    },
+    {
+     "end": 8.125,
+     "start": 7.7,
+     "text": "live"
+    },
+    {
+     "end": 8.238,
+     "start": 8.125,
+     "text": ","
+    },
+    {
+     "end": 8.85,
+     "start": 8.238,
+     "text": "submissions"
+    },
+    {
+     "end": 9.363,
+     "start": 8.85,
+     "text": "contains"
+    },
+    {
+     "end": 9.45,
+     "start": 9.363,
+     "text": "the"
+    },
+    {
+     "end": 9.925,
+     "start": 9.45,
+     "text": "creation"
+    },
+    {
+     "end": 10.85,
+     "start": 9.925,
+     "text": "alone"
+    },
+    {
+     "end": 11.05,
+     "start": 10.85,
+     "text": ";"
+    },
+    {
+     "end": 11.575,
+     "start": 11.25,
+     "text": "neither"
+    },
+    {
+     "end": 11.9,
+     "start": 11.575,
+     "text": "script"
+    },
+    {
+     "end": 12.325,
+     "start": 11.9,
+     "text": "entry"
+    },
+    {
+     "end": 12.762,
+     "start": 12.325,
+     "text": "reports"
+    },
+    {
+     "end": 12.825,
+     "start": 12.762,
+     "text": "a"
+    },
+    {
+     "end": 14.025,
+     "start": 12.825,
+     "text": "publication"
+    },
+    {
+     "end": 14.225,
+     "start": 14.025,
+     "text": "."
+    },
+    {
+     "end": 14.562,
+     "start": 14.425,
+     "text": "If"
+    },
+    {
+     "end": 14.663,
+     "start": 14.562,
+     "text": "a"
+    },
+    {
+     "end": 15.05,
+     "start": 14.663,
+     "text": "copy"
+    },
+    {
+     "end": 15.25,
+     "start": 15.05,
+     "text": "has"
+    },
+    {
+     "end": 15.462,
+     "start": 15.25,
+     "text": "been"
+    },
+    {
+     "end": 15.938,
+     "start": 15.462,
+     "text": "spent"
+    },
+    {
+     "end": 16.125,
+     "start": 15.938,
+     "text": "or"
+    },
+    {
+     "end": 16.288,
+     "start": 16.125,
+     "text": "is"
+    },
+    {
+     "end": 16.85,
+     "start": 16.288,
+     "text": "absent"
+    },
+    {
+     "end": 16.925,
+     "start": 16.85,
+     "text": ","
+    },
+    {
+     "end": 17.025,
+     "start": 16.925,
+     "text": "the"
+    },
+    {
+     "end": 17.525,
+     "start": 17.025,
+     "text": "command"
+    },
+    {
+     "end": 18.138,
+     "start": 17.525,
+     "text": "publishes"
+    },
+    {
+     "end": 18.475,
+     "start": 18.138,
+     "text": "only"
+    },
+    {
+     "end": 18.712,
+     "start": 18.475,
+     "text": "that"
+    },
+    {
+     "end": 19.062,
+     "start": 18.712,
+     "text": "missing"
+    },
+    {
+     "end": 19.55,
+     "start": 19.062,
+     "text": "copy"
+    },
+    {
+     "end": 19.962,
+     "start": 19.55,
+     "text": "before"
+    },
+    {
+     "end": 20.413,
+     "start": 19.962,
+     "text": "creating"
+    },
+    {
+     "end": 20.5,
+     "start": 20.413,
+     "text": "the"
+    },
+    {
+     "end": 21.725,
+     "start": 20.5,
+     "text": "registry"
+    },
+    {
+     "end": 21.975,
+     "start": 21.725,
+     "text": "."
+    }
+   ]
+  },
+  "docs-shared-publications/read-reuse-and-discovery-from-the-receipt-00": {
+   "audio_sha256": "93dd3b61cf63b76449eaeb9d92eb1c546801a4a4cad1f043bee1e407d74d68ea",
+   "characters": 42,
+   "cost": 4.157999999999999e-05,
+   "duration": 2.7,
+   "index": 0,
+   "key": "2fdc6e06a917227b3f8547762bd74faa00369d93ca270e50dbe37194abd2a3c5",
+   "page": "docs/shared-publications.md",
+   "pause_ms": 500,
+   "section": "read-reuse-and-discovery-from-the-receipt",
+   "sent_text": "Read reuse and discovery from the receipt.",
+   "text": "Read reuse and discovery from the receipt.",
+   "words": [
+    {
+     "end": 0.4,
+     "start": 0.2,
+     "text": "Read"
+    },
+    {
+     "end": 0.788,
+     "start": 0.4,
+     "text": "reuse"
+    },
+    {
+     "end": 0.887,
+     "start": 0.788,
+     "text": "and"
+    },
+    {
+     "end": 1.375,
+     "start": 0.887,
+     "text": "discovery"
+    },
+    {
+     "end": 1.513,
+     "start": 1.375,
+     "text": "from"
+    },
+    {
+     "end": 1.587,
+     "start": 1.513,
+     "text": "the"
+    },
+    {
+     "end": 2.5,
+     "start": 1.587,
+     "text": "receipt"
+    },
+    {
+     "end": 2.7,
+     "start": 2.5,
+     "text": "."
+    }
+   ]
+  },
+  "docs-shared-publications/read-reuse-and-discovery-from-the-receipt-01": {
+   "audio_sha256": "eac90aec57c93f26aff58cf5baa4f2745b122691bfab25abf743032af900e26a",
+   "characters": 43,
+   "cost": 4.2569999999999994e-05,
+   "duration": 2.55,
+   "index": 1,
+   "key": "fa764b5de0bee124bf19a3ec304f273a3597edcfd1574b3e98b96d01a6ac288d",
+   "page": "docs/shared-publications.md",
+   "pause_ms": 400,
+   "section": "read-reuse-and-discovery-from-the-receipt",
+   "sent_text": "Read these fields from your actual receipt:",
+   "text": "Read these fields from your actual receipt:",
+   "words": [
+    {
+     "end": 0.4,
+     "start": 0.2,
+     "text": "Read"
+    },
+    {
+     "end": 0.625,
+     "start": 0.4,
+     "text": "these"
+    },
+    {
+     "end": 0.913,
+     "start": 0.625,
+     "text": "fields"
+    },
+    {
+     "end": 1.038,
+     "start": 0.913,
+     "text": "from"
+    },
+    {
+     "end": 1.15,
+     "start": 1.038,
+     "text": "your"
+    },
+    {
+     "end": 1.487,
+     "start": 1.15,
+     "text": "actual"
+    },
+    {
+     "end": 2.35,
+     "start": 1.487,
+     "text": "receipt"
+    },
+    {
+     "end": 2.55,
+     "start": 2.35,
+     "text": ":"
+    }
+   ]
+  },
+  "docs-shared-publications/read-reuse-and-discovery-from-the-receipt-02": {
+   "audio_sha256": "016c37862753192d0af639ef395f0949764835b4d62eb29158b2f9f4f3dc71ac",
+   "characters": 383,
+   "cost": 0.00037917,
+   "duration": 25.775,
+   "index": 2,
+   "key": "3b600f289d1eb4e07fef882eebe8acd42f838df7046b2e985ace2539998f46c9",
+   "page": "docs/shared-publications.md",
+   "pause_ms": 400,
+   "section": "read-reuse-and-discovery-from-the-receipt",
+   "sent_text": "A foreign candidate stays visible even when another candidate is genuine and reused. If no genuine copy exists, the command skips foreign candidates and publishes the expected script. The provider's live-output query cannot distinguish a spent copy from one that never existed. An explicit reference location supplied to a command is still checked for a missing or mismatched script.",
+   "text": "A foreign candidate stays visible even when another candidate is genuine and reused. If no genuine copy exists, the command skips foreign candidates and publishes the expected script. The provider's live-output query cannot distinguish a spent copy from one that never existed. An explicit reference location supplied to a command is still checked for a missing or mismatched script.",
+   "words": [
+    {
+     "end": 0.287,
+     "start": 0.2,
+     "text": "A"
+    },
+    {
+     "end": 0.65,
+     "start": 0.287,
+     "text": "foreign"
+    },
+    {
+     "end": 1.225,
+     "start": 0.65,
+     "text": "candidate"
+    },
+    {
+     "end": 1.575,
+     "start": 1.225,
+     "text": "stays"
+    },
+    {
+     "end": 2.1,
+     "start": 1.575,
+     "text": "visible"
+    },
+    {
+     "end": 2.475,
+     "start": 2.1,
+     "text": "even"
+    },
+    {
+     "end": 2.625,
+     "start": 2.475,
+     "text": "when"
+    },
+    {
+     "end": 3.0,
+     "start": 2.625,
+     "text": "another"
+    },
+    {
+     "end": 3.588,
+     "start": 3.0,
+     "text": "candidate"
+    },
+    {
+     "end": 3.763,
+     "start": 3.588,
+     "text": "is"
+    },
+    {
+     "end": 4.387,
+     "start": 3.763,
+     "text": "genuine"
+    },
+    {
+     "end": 4.525,
+     "start": 4.387,
+     "text": "and"
+    },
+    {
+     "end": 5.7,
+     "start": 4.525,
+     "text": "reused"
+    },
+    {
+     "end": 5.925,
+     "start": 5.7,
+     "text": "."
+    },
+    {
+     "end": 6.25,
+     "start": 6.1,
+     "text": "If"
+    },
+    {
+     "end": 6.488,
+     "start": 6.25,
+     "text": "no"
+    },
+    {
+     "end": 7.0,
+     "start": 6.488,
+     "text": "genuine"
+    },
+    {
+     "end": 7.375,
+     "start": 7.0,
+     "text": "copy"
+    },
+    {
+     "end": 7.95,
+     "start": 7.375,
+     "text": "exists"
+    },
+    {
+     "end": 8.0,
+     "start": 7.95,
+     "text": ","
+    },
+    {
+     "end": 8.1,
+     "start": 8.0,
+     "text": "the"
+    },
+    {
+     "end": 8.625,
+     "start": 8.1,
+     "text": "command"
+    },
+    {
+     "end": 8.962,
+     "start": 8.625,
+     "text": "skips"
+    },
+    {
+     "end": 9.325,
+     "start": 8.962,
+     "text": "foreign"
+    },
+    {
+     "end": 9.975,
+     "start": 9.325,
+     "text": "candidates"
+    },
+    {
+     "end": 10.1,
+     "start": 9.975,
+     "text": "and"
+    },
+    {
+     "end": 10.675,
+     "start": 10.1,
+     "text": "publishes"
+    },
+    {
+     "end": 10.825,
+     "start": 10.675,
+     "text": "the"
+    },
+    {
+     "end": 11.425,
+     "start": 10.825,
+     "text": "expected"
+    },
+    {
+     "end": 12.475,
+     "start": 11.425,
+     "text": "script"
+    },
+    {
+     "end": 12.7,
+     "start": 12.475,
+     "text": "."
+    },
+    {
+     "end": 12.975,
+     "start": 12.9,
+     "text": "The"
+    },
+    {
+     "end": 13.55,
+     "start": 12.975,
+     "text": "provider's"
+    },
+    {
+     "end": 14.238,
+     "start": 13.55,
+     "text": "live-output"
+    },
+    {
+     "end": 14.663,
+     "start": 14.238,
+     "text": "query"
+    },
+    {
+     "end": 15.025,
+     "start": 14.663,
+     "text": "cannot"
+    },
+    {
+     "end": 15.7,
+     "start": 15.025,
+     "text": "distinguish"
+    },
+    {
+     "end": 15.8,
+     "start": 15.7,
+     "text": "a"
+    },
+    {
+     "end": 16.188,
+     "start": 15.8,
+     "text": "spent"
+    },
+    {
+     "end": 16.625,
+     "start": 16.188,
+     "text": "copy"
+    },
+    {
+     "end": 16.85,
+     "start": 16.625,
+     "text": "from"
+    },
+    {
+     "end": 17.15,
+     "start": 16.85,
+     "text": "one"
+    },
+    {
+     "end": 17.362,
+     "start": 17.15,
+     "text": "that"
+    },
+    {
+     "end": 17.7,
+     "start": 17.362,
+     "text": "never"
+    },
+    {
+     "end": 18.85,
+     "start": 17.7,
+     "text": "existed"
+    },
+    {
+     "end": 19.075,
+     "start": 18.85,
+     "text": "."
+    },
+    {
+     "end": 19.375,
+     "start": 19.275,
+     "text": "An"
+    },
+    {
+     "end": 19.95,
+     "start": 19.375,
+     "text": "explicit"
+    },
+    {
+     "end": 20.4,
+     "start": 19.95,
+     "text": "reference"
+    },
+    {
+     "end": 21.075,
+     "start": 20.4,
+     "text": "location"
+    },
+    {
+     "end": 21.5,
+     "start": 21.075,
+     "text": "supplied"
+    },
+    {
+     "end": 21.587,
+     "start": 21.5,
+     "text": "to"
+    },
+    {
+     "end": 21.65,
+     "start": 21.587,
+     "text": "a"
+    },
+    {
+     "end": 22.263,
+     "start": 21.65,
+     "text": "command"
+    },
+    {
+     "end": 22.4,
+     "start": 22.263,
+     "text": "is"
+    },
+    {
+     "end": 22.688,
+     "start": 22.4,
+     "text": "still"
+    },
+    {
+     "end": 23.025,
+     "start": 22.688,
+     "text": "checked"
+    },
+    {
+     "end": 23.15,
+     "start": 23.025,
+     "text": "for"
+    },
+    {
+     "end": 23.263,
+     "start": 23.15,
+     "text": "a"
+    },
+    {
+     "end": 23.788,
+     "start": 23.263,
+     "text": "missing"
+    },
+    {
+     "end": 23.95,
+     "start": 23.788,
+     "text": "or"
+    },
+    {
+     "end": 24.487,
+     "start": 23.95,
+     "text": "mismatched"
+    },
+    {
+     "end": 25.55,
+     "start": 24.487,
+     "text": "script"
+    },
+    {
+     "end": 25.775,
+     "start": 25.55,
+     "text": "."
+    }
+   ]
+  },
+  "docs-shared-publications/read-reuse-and-discovery-from-the-receipt-03": {
+   "audio_sha256": "323c53865c273b27c37ac07217c44692e714c9ccb7ada1739150997c8ce4cd91",
+   "characters": 386,
+   "cost": 0.00038214,
+   "duration": 26.15,
+   "index": 3,
+   "key": "af37186618b9ca756d605379fbdf64fd2397570267788542abea7d73255ff7db",
+   "page": "docs/shared-publications.md",
+   "pause_ms": 400,
+   "section": "read-reuse-and-discovery-from-the-receipt",
+   "sent_text": "Discovery here means lookup by script hash through your configured provider. A different application policy or release has a different applied state script and cannot reuse the earlier application's state copy. Publishing references for everyone and a general public discovery service remain outside this workflow. No witness-policy publication or witness-pin configuration is required.",
+   "text": "Discovery here means lookup by script hash through your configured provider. A different application policy or release has a different applied state script and cannot reuse the earlier application's state copy. Publishing references for everyone and a general public discovery service remain outside this workflow. No witness-policy publication or witness-pin configuration is required.",
+   "words": [
+    {
+     "end": 0.7,
+     "start": 0.175,
+     "text": "Discovery"
+    },
+    {
+     "end": 0.95,
+     "start": 0.7,
+     "text": "here"
+    },
+    {
+     "end": 1.237,
+     "start": 0.95,
+     "text": "means"
+    },
+    {
+     "end": 1.625,
+     "start": 1.237,
+     "text": "lookup"
+    },
+    {
+     "end": 1.812,
+     "start": 1.625,
+     "text": "by"
+    },
+    {
+     "end": 2.225,
+     "start": 1.812,
+     "text": "script"
+    },
+    {
+     "end": 2.688,
+     "start": 2.225,
+     "text": "hash"
+    },
+    {
+     "end": 2.9,
+     "start": 2.688,
+     "text": "through"
+    },
+    {
+     "end": 3.025,
+     "start": 2.9,
+     "text": "your"
+    },
+    {
+     "end": 3.55,
+     "start": 3.025,
+     "text": "configured"
+    },
+    {
+     "end": 4.575,
+     "start": 3.55,
+     "text": "provider"
+    },
+    {
+     "end": 4.8,
+     "start": 4.575,
+     "text": "."
+    },
+    {
+     "end": 5.113,
+     "start": 5.025,
+     "text": "A"
+    },
+    {
+     "end": 5.425,
+     "start": 5.113,
+     "text": "different"
+    },
+    {
+     "end": 6.125,
+     "start": 5.425,
+     "text": "application"
+    },
+    {
+     "end": 6.688,
+     "start": 6.125,
+     "text": "policy"
+    },
+    {
+     "end": 6.875,
+     "start": 6.688,
+     "text": "or"
+    },
+    {
+     "end": 7.387,
+     "start": 6.875,
+     "text": "release"
+    },
+    {
+     "end": 7.6,
+     "start": 7.387,
+     "text": "has"
+    },
+    {
+     "end": 7.713,
+     "start": 7.6,
+     "text": "a"
+    },
+    {
+     "end": 8.075,
+     "start": 7.713,
+     "text": "different"
+    },
+    {
+     "end": 8.562,
+     "start": 8.075,
+     "text": "applied"
+    },
+    {
+     "end": 8.938,
+     "start": 8.562,
+     "text": "state"
+    },
+    {
+     "end": 9.575,
+     "start": 8.938,
+     "text": "script"
+    },
+    {
+     "end": 9.725,
+     "start": 9.575,
+     "text": "and"
+    },
+    {
+     "end": 10.113,
+     "start": 9.725,
+     "text": "cannot"
+    },
+    {
+     "end": 10.625,
+     "start": 10.113,
+     "text": "reuse"
+    },
+    {
+     "end": 10.775,
+     "start": 10.625,
+     "text": "the"
+    },
+    {
+     "end": 11.225,
+     "start": 10.775,
+     "text": "earlier"
+    },
+    {
+     "end": 12.0,
+     "start": 11.225,
+     "text": "application's"
+    },
+    {
+     "end": 12.325,
+     "start": 12.0,
+     "text": "state"
+    },
+    {
+     "end": 13.45,
+     "start": 12.325,
+     "text": "copy"
+    },
+    {
+     "end": 13.7,
+     "start": 13.45,
+     "text": "."
+    },
+    {
+     "end": 14.425,
+     "start": 13.9,
+     "text": "Publishing"
+    },
+    {
+     "end": 15.075,
+     "start": 14.425,
+     "text": "references"
+    },
+    {
+     "end": 15.238,
+     "start": 15.075,
+     "text": "for"
+    },
+    {
+     "end": 15.938,
+     "start": 15.238,
+     "text": "everyone"
+    },
+    {
+     "end": 16.062,
+     "start": 15.938,
+     "text": "and"
+    },
+    {
+     "end": 16.163,
+     "start": 16.062,
+     "text": "a"
+    },
+    {
+     "end": 16.638,
+     "start": 16.163,
+     "text": "general"
+    },
+    {
+     "end": 17.05,
+     "start": 16.638,
+     "text": "public"
+    },
+    {
+     "end": 17.663,
+     "start": 17.05,
+     "text": "discovery"
+    },
+    {
+     "end": 18.212,
+     "start": 17.663,
+     "text": "service"
+    },
+    {
+     "end": 18.675,
+     "start": 18.212,
+     "text": "remain"
+    },
+    {
+     "end": 19.275,
+     "start": 18.675,
+     "text": "outside"
+    },
+    {
+     "end": 19.5,
+     "start": 19.275,
+     "text": "this"
+    },
+    {
+     "end": 20.625,
+     "start": 19.5,
+     "text": "workflow"
+    },
+    {
+     "end": 20.9,
+     "start": 20.625,
+     "text": "."
+    },
+    {
+     "end": 21.35,
+     "start": 21.125,
+     "text": "No"
+    },
+    {
+     "end": 22.075,
+     "start": 21.35,
+     "text": "witness-policy"
+    },
+    {
+     "end": 22.925,
+     "start": 22.075,
+     "text": "publication"
+    },
+    {
+     "end": 23.138,
+     "start": 22.925,
+     "text": "or"
+    },
+    {
+     "end": 23.75,
+     "start": 23.138,
+     "text": "witness-pin"
+    },
+    {
+     "end": 24.638,
+     "start": 23.75,
+     "text": "configuration"
+    },
+    {
+     "end": 24.8,
+     "start": 24.638,
+     "text": "is"
+    },
+    {
+     "end": 25.95,
+     "start": 24.8,
+     "text": "required"
+    },
+    {
+     "end": 26.15,
+     "start": 25.95,
+     "text": "."
+    }
+   ]
+  },
+  "docs-shared-publications/read-the-measured-costs-00": {
+   "audio_sha256": "5e79eb6a9758022ed1a1f380914f681aad3ed518e5a3d15978d43c9c8f8ae293",
+   "characters": 24,
+   "cost": 2.3759999999999996e-05,
+   "duration": 1.825,
+   "index": 0,
+   "key": "2ffe7fd4d1518c240e440de08ab2b0a332474eef816b4198fa366e35fb602a96",
+   "page": "docs/shared-publications.md",
+   "pause_ms": 500,
+   "section": "read-the-measured-costs",
+   "sent_text": "Read the measured costs.",
+   "text": "Read the measured costs.",
+   "words": [
+    {
+     "end": 0.363,
+     "start": 0.175,
+     "text": "Read"
+    },
+    {
+     "end": 0.438,
+     "start": 0.363,
+     "text": "the"
+    },
+    {
+     "end": 0.825,
+     "start": 0.438,
+     "text": "measured"
+    },
+    {
+     "end": 1.625,
+     "start": 0.825,
+     "text": "costs"
+    },
+    {
+     "end": 1.825,
+     "start": 1.625,
+     "text": "."
+    }
+   ]
+  },
+  "docs-shared-publications/read-the-measured-costs-01": {
+   "audio_sha256": "1afc7abb98410558b61c8055697c28ae1af6ef90cede2ea0075ad850f2430500",
+   "characters": 479,
+   "cost": 0.00047421,
+   "duration": 31.35,
+   "index": 1,
+   "key": "22b5c3288659100fa8d8b54e2d55ec115b390def133f96a0482c921d15cc8a53",
+   "page": "docs/shared-publications.md",
+   "pause_ms": 400,
+   "section": "read-the-measured-costs",
+   "sent_text": "The creation-cost comparison is generated from the committed measurement receipts and checked against the included transaction bytes. Its table separates transaction fees from ADA locked in reference outputs. The later application-held creation reuses both scripts and creates no reference output; your own registry's state and configuration still lock their own ADA. Fees are measurements on the frozen development-network parameters, not a quote for another network or release.",
+   "text": "The creation-cost comparison is generated from the committed measurement receipts and checked against the included transaction bytes. Its table separates transaction fees from ADA locked in reference outputs. The later application-held creation reuses both scripts and creates no reference output; your own registry's state and configuration still lock their own ADA. Fees are measurements on the frozen development-network parameters, not a quote for another network or release.",
+   "words": [
+    {
+     "end": 0.312,
+     "start": 0.2,
+     "text": "The"
+    },
+    {
+     "end": 1.175,
+     "start": 0.312,
+     "text": "creation-cost"
+    },
+    {
+     "end": 1.913,
+     "start": 1.175,
+     "text": "comparison"
+    },
+    {
+     "end": 2.1,
+     "start": 1.913,
+     "text": "is"
+    },
+    {
+     "end": 2.775,
+     "start": 2.1,
+     "text": "generated"
+    },
+    {
+     "end": 2.963,
+     "start": 2.775,
+     "text": "from"
+    },
+    {
+     "end": 3.05,
+     "start": 2.963,
+     "text": "the"
+    },
+    {
+     "end": 3.5,
+     "start": 3.05,
+     "text": "committed"
+    },
+    {
+     "end": 3.95,
+     "start": 3.5,
+     "text": "measurement"
+    },
+    {
+     "end": 4.613,
+     "start": 3.95,
+     "text": "receipts"
+    },
+    {
+     "end": 4.775,
+     "start": 4.613,
+     "text": "and"
+    },
+    {
+     "end": 5.125,
+     "start": 4.775,
+     "text": "checked"
+    },
+    {
+     "end": 5.55,
+     "start": 5.125,
+     "text": "against"
+    },
+    {
+     "end": 5.7,
+     "start": 5.55,
+     "text": "the"
+    },
+    {
+     "end": 6.25,
+     "start": 5.7,
+     "text": "included"
+    },
+    {
+     "end": 6.975,
+     "start": 6.25,
+     "text": "transaction"
+    },
+    {
+     "end": 8.05,
+     "start": 6.975,
+     "text": "bytes"
+    },
+    {
+     "end": 8.25,
+     "start": 8.05,
+     "text": "."
+    },
+    {
+     "end": 8.65,
+     "start": 8.425,
+     "text": "Its"
+    },
+    {
+     "end": 9.062,
+     "start": 8.65,
+     "text": "table"
+    },
+    {
+     "end": 9.625,
+     "start": 9.062,
+     "text": "separates"
+    },
+    {
+     "end": 10.312,
+     "start": 9.625,
+     "text": "transaction"
+    },
+    {
+     "end": 10.675,
+     "start": 10.312,
+     "text": "fees"
+    },
+    {
+     "end": 10.887,
+     "start": 10.675,
+     "text": "from"
+    },
+    {
+     "end": 11.238,
+     "start": 10.887,
+     "text": "ADA"
+    },
+    {
+     "end": 11.625,
+     "start": 11.238,
+     "text": "locked"
+    },
+    {
+     "end": 11.775,
+     "start": 11.625,
+     "text": "in"
+    },
+    {
+     "end": 12.25,
+     "start": 11.775,
+     "text": "reference"
+    },
+    {
+     "end": 13.35,
+     "start": 12.25,
+     "text": "outputs"
+    },
+    {
+     "end": 13.55,
+     "start": 13.35,
+     "text": "."
+    },
+    {
+     "end": 13.85,
+     "start": 13.75,
+     "text": "The"
+    },
+    {
+     "end": 14.225,
+     "start": 13.85,
+     "text": "later"
+    },
+    {
+     "end": 15.125,
+     "start": 14.225,
+     "text": "application-held"
+    },
+    {
+     "end": 15.738,
+     "start": 15.125,
+     "text": "creation"
+    },
+    {
+     "end": 16.275,
+     "start": 15.738,
+     "text": "reuses"
+    },
+    {
+     "end": 16.562,
+     "start": 16.275,
+     "text": "both"
+    },
+    {
+     "end": 17.062,
+     "start": 16.562,
+     "text": "scripts"
+    },
+    {
+     "end": 17.212,
+     "start": 17.062,
+     "text": "and"
+    },
+    {
+     "end": 17.775,
+     "start": 17.212,
+     "text": "creates"
+    },
+    {
+     "end": 18.025,
+     "start": 17.775,
+     "text": "no"
+    },
+    {
+     "end": 18.475,
+     "start": 18.025,
+     "text": "reference"
+    },
+    {
+     "end": 19.525,
+     "start": 18.475,
+     "text": "output"
+    },
+    {
+     "end": 19.75,
+     "start": 19.525,
+     "text": ";"
+    },
+    {
+     "end": 20.1,
+     "start": 19.95,
+     "text": "your"
+    },
+    {
+     "end": 20.3,
+     "start": 20.1,
+     "text": "own"
+    },
+    {
+     "end": 20.837,
+     "start": 20.3,
+     "text": "registry's"
+    },
+    {
+     "end": 21.25,
+     "start": 20.837,
+     "text": "state"
+    },
+    {
+     "end": 21.375,
+     "start": 21.25,
+     "text": "and"
+    },
+    {
+     "end": 22.237,
+     "start": 21.375,
+     "text": "configuration"
+    },
+    {
+     "end": 22.55,
+     "start": 22.237,
+     "text": "still"
+    },
+    {
+     "end": 22.8,
+     "start": 22.55,
+     "text": "lock"
+    },
+    {
+     "end": 23.0,
+     "start": 22.8,
+     "text": "their"
+    },
+    {
+     "end": 23.225,
+     "start": 23.0,
+     "text": "own"
+    },
+    {
+     "end": 24.05,
+     "start": 23.225,
+     "text": "ADA"
+    },
+    {
+     "end": 24.3,
+     "start": 24.05,
+     "text": "."
+    },
+    {
+     "end": 24.875,
+     "start": 24.525,
+     "text": "Fees"
+    },
+    {
+     "end": 25.038,
+     "start": 24.875,
+     "text": "are"
+    },
+    {
+     "end": 25.625,
+     "start": 25.038,
+     "text": "measurements"
+    },
+    {
+     "end": 25.763,
+     "start": 25.625,
+     "text": "on"
+    },
+    {
+     "end": 25.9,
+     "start": 25.763,
+     "text": "the"
+    },
+    {
+     "end": 26.425,
+     "start": 25.9,
+     "text": "frozen"
+    },
+    {
+     "end": 27.375,
+     "start": 26.425,
+     "text": "development-network"
+    },
+    {
+     "end": 28.15,
+     "start": 27.375,
+     "text": "parameters"
+    },
+    {
+     "end": 28.225,
+     "start": 28.15,
+     "text": ","
+    },
+    {
+     "end": 28.438,
+     "start": 28.225,
+     "text": "not"
+    },
+    {
+     "end": 28.5,
+     "start": 28.438,
+     "text": "a"
+    },
+    {
+     "end": 28.825,
+     "start": 28.5,
+     "text": "quote"
+    },
+    {
+     "end": 28.95,
+     "start": 28.825,
+     "text": "for"
+    },
+    {
+     "end": 29.325,
+     "start": 28.95,
+     "text": "another"
+    },
+    {
+     "end": 29.812,
+     "start": 29.325,
+     "text": "network"
+    },
+    {
+     "end": 29.975,
+     "start": 29.812,
+     "text": "or"
+    },
+    {
+     "end": 31.15,
+     "start": 29.975,
+     "text": "release"
+    },
+    {
+     "end": 31.35,
+     "start": 31.15,
+     "text": "."
+    }
+   ]
+  },
+  "docs-shared-publications/read-the-measured-costs-02": {
+   "audio_sha256": "55b40f138632abc66d3a44eb9abe44df4cf7c7da03d738c436e8e2dbb87f4cda",
+   "characters": 170,
+   "cost": 0.00016829999999999997,
+   "duration": 10.975,
+   "index": 2,
+   "key": "c9efd95587763c4a2ced2563f34683d2d1d3a2cb8201f03e9f09dc2925167e39",
+   "page": "docs/shared-publications.md",
+   "pause_ms": 400,
+   "section": "read-the-measured-costs",
+   "sent_text": "The candidate receipt contains first.totals and later.totals, with the transactions beneath each creation. From a repository checkout, read the measured figures directly:",
+   "text": "The candidate receipt contains first.totals and later.totals, with the transactions beneath each creation. From a repository checkout, read the measured figures directly:",
+   "words": [
+    {
+     "end": 0.312,
+     "start": 0.2,
+     "text": "The"
+    },
+    {
+     "end": 0.875,
+     "start": 0.312,
+     "text": "candidate"
+    },
+    {
+     "end": 1.35,
+     "start": 0.875,
+     "text": "receipt"
+    },
+    {
+     "end": 1.862,
+     "start": 1.35,
+     "text": "contains"
+    },
+    {
+     "end": 2.7,
+     "start": 1.862,
+     "text": "first.totals"
+    },
+    {
+     "end": 2.825,
+     "start": 2.7,
+     "text": "and"
+    },
+    {
+     "end": 3.65,
+     "start": 2.825,
+     "text": "later.totals"
+    },
+    {
+     "end": 3.725,
+     "start": 3.65,
+     "text": ","
+    },
+    {
+     "end": 3.862,
+     "start": 3.725,
+     "text": "with"
+    },
+    {
+     "end": 3.95,
+     "start": 3.862,
+     "text": "the"
+    },
+    {
+     "end": 4.775,
+     "start": 3.95,
+     "text": "transactions"
+    },
+    {
+     "end": 5.162,
+     "start": 4.775,
+     "text": "beneath"
+    },
+    {
+     "end": 5.425,
+     "start": 5.162,
+     "text": "each"
+    },
+    {
+     "end": 6.625,
+     "start": 5.425,
+     "text": "creation"
+    },
+    {
+     "end": 6.825,
+     "start": 6.625,
+     "text": "."
+    },
+    {
+     "end": 7.137,
+     "start": 7.0,
+     "text": "From"
+    },
+    {
+     "end": 7.2,
+     "start": 7.137,
+     "text": "a"
+    },
+    {
+     "end": 7.988,
+     "start": 7.2,
+     "text": "repository"
+    },
+    {
+     "end": 8.5,
+     "start": 7.988,
+     "text": "checkout"
+    },
+    {
+     "end": 8.613,
+     "start": 8.5,
+     "text": ","
+    },
+    {
+     "end": 8.837,
+     "start": 8.613,
+     "text": "read"
+    },
+    {
+     "end": 8.925,
+     "start": 8.837,
+     "text": "the"
+    },
+    {
+     "end": 9.325,
+     "start": 8.925,
+     "text": "measured"
+    },
+    {
+     "end": 9.725,
+     "start": 9.325,
+     "text": "figures"
+    },
+    {
+     "end": 10.75,
+     "start": 9.725,
+     "text": "directly"
+    },
+    {
+     "end": 10.975,
+     "start": 10.75,
+     "text": ":"
+    }
+   ]
+  },
+  "docs-shared-publications/read-the-measured-costs-03": {
+   "audio_sha256": "24e5c60d66177c913d9b5e04d636b6d5487815fb90d51b17533ce107db27e71d",
+   "characters": 164,
+   "cost": 0.00016236,
+   "duration": 11.25,
+   "index": 3,
+   "key": "22974b3d038593b3d601e900b63a359b98cbd370dd0559d20da601edd108198c",
+   "page": "docs/shared-publications.md",
+   "pause_ms": 400,
+   "section": "read-the-measured-costs",
+   "sent_text": "The carrying experiment records the actual sizes, evaluation and node outcomes of alternative creation forms. The shipped command keeps the shared-publication path.",
+   "text": "The carrying experiment records the actual sizes, evaluation and node outcomes of alternative creation forms. The shipped command keeps the shared-publication path.",
+   "words": [
+    {
+     "end": 0.3,
+     "start": 0.2,
+     "text": "The"
+    },
+    {
+     "end": 0.725,
+     "start": 0.3,
+     "text": "carrying"
+    },
+    {
+     "end": 1.35,
+     "start": 0.725,
+     "text": "experiment"
+    },
+    {
+     "end": 1.812,
+     "start": 1.35,
+     "text": "records"
+    },
+    {
+     "end": 1.938,
+     "start": 1.812,
+     "text": "the"
+    },
+    {
+     "end": 2.412,
+     "start": 1.938,
+     "text": "actual"
+    },
+    {
+     "end": 3.125,
+     "start": 2.412,
+     "text": "sizes"
+    },
+    {
+     "end": 3.237,
+     "start": 3.125,
+     "text": ","
+    },
+    {
+     "end": 4.162,
+     "start": 3.237,
+     "text": "evaluation"
+    },
+    {
+     "end": 4.338,
+     "start": 4.162,
+     "text": "and"
+    },
+    {
+     "end": 4.7,
+     "start": 4.338,
+     "text": "node"
+    },
+    {
+     "end": 5.3,
+     "start": 4.7,
+     "text": "outcomes"
+    },
+    {
+     "end": 5.4,
+     "start": 5.3,
+     "text": "of"
+    },
+    {
+     "end": 6.025,
+     "start": 5.4,
+     "text": "alternative"
+    },
+    {
+     "end": 6.537,
+     "start": 6.025,
+     "text": "creation"
+    },
+    {
+     "end": 7.65,
+     "start": 6.537,
+     "text": "forms"
+    },
+    {
+     "end": 7.875,
+     "start": 7.65,
+     "text": "."
+    },
+    {
+     "end": 8.163,
+     "start": 8.05,
+     "text": "The"
+    },
+    {
+     "end": 8.45,
+     "start": 8.163,
+     "text": "shipped"
+    },
+    {
+     "end": 8.925,
+     "start": 8.45,
+     "text": "command"
+    },
+    {
+     "end": 9.212,
+     "start": 8.925,
+     "text": "keeps"
+    },
+    {
+     "end": 9.325,
+     "start": 9.212,
+     "text": "the"
+    },
+    {
+     "end": 10.225,
+     "start": 9.325,
+     "text": "shared-publication"
+    },
+    {
+     "end": 11.025,
+     "start": 10.225,
+     "text": "path"
+    },
+    {
+     "end": 11.25,
+     "start": 11.025,
+     "text": "."
+    }
+   ]
+  },
+  "docs-shared-publications/recovery-and-evidence-limits-00": {
+   "audio_sha256": "6fbafd1edad556887c35260a8457f9be1eefe2b7c125b240e054397b2f6abfd2",
+   "characters": 29,
+   "cost": 2.8709999999999998e-05,
+   "duration": 2.225,
+   "index": 0,
+   "key": "c158a53bb10955e25e145cb3adb3e5061e0c22d94955a3bb8c1c030bc4cee64a",
+   "page": "docs/shared-publications.md",
+   "pause_ms": 500,
+   "section": "recovery-and-evidence-limits",
+   "sent_text": "Recovery and evidence limits.",
+   "text": "Recovery and evidence limits.",
+   "words": [
+    {
+     "end": 0.675,
+     "start": 0.175,
+     "text": "Recovery"
+    },
+    {
+     "end": 0.8,
+     "start": 0.675,
+     "text": "and"
+    },
+    {
+     "end": 1.225,
+     "start": 0.8,
+     "text": "evidence"
+    },
+    {
+     "end": 2.025,
+     "start": 1.225,
+     "text": "limits"
+    },
+    {
+     "end": 2.225,
+     "start": 2.025,
+     "text": "."
+    }
+   ]
+  },
+  "docs-shared-publications/recovery-and-evidence-limits-01": {
+   "audio_sha256": "ba8683db3e4afac4b998b7f7caf684a731f4322768cb10caf00001b52a0f3fe6",
+   "characters": 438,
+   "cost": 0.00043361999999999996,
+   "duration": 30.775,
+   "index": 1,
+   "key": "b4fc16e4a13752b90eadc4c3fd500216947f167d8ba8c28c8217081ade123f60",
+   "page": "docs/shared-publications.md",
+   "pause_ms": 400,
+   "section": "recovery-and-evidence-limits",
+   "sent_text": "After an interruption around publication, rerunning reuses every live copy and publishes only what is missing. An uncertain submission preserves its saved transaction identity and signed body; a later invocation reconciles it without automatically resubmitting it. Create is not idempotent: a further invocation can create another registry from a new seed. Repeating a spent explicit seed keeps the existing refusal. See command recovery.",
+   "text": "After an interruption around publication, rerunning reuses every live copy and publishes only what is missing. An uncertain submission preserves its saved transaction identity and signed body; a later invocation reconciles it without automatically resubmitting it. Create is not idempotent: a further invocation can create another registry from a new seed. Repeating a spent explicit seed keeps the existing refusal. See command recovery.",
+   "words": [
+    {
+     "end": 0.512,
+     "start": 0.225,
+     "text": "After"
+    },
+    {
+     "end": 0.6,
+     "start": 0.512,
+     "text": "an"
+    },
+    {
+     "end": 1.175,
+     "start": 0.6,
+     "text": "interruption"
+    },
+    {
+     "end": 1.525,
+     "start": 1.175,
+     "text": "around"
+    },
+    {
+     "end": 2.35,
+     "start": 1.525,
+     "text": "publication"
+    },
+    {
+     "end": 2.463,
+     "start": 2.35,
+     "text": ","
+    },
+    {
+     "end": 3.0,
+     "start": 2.463,
+     "text": "rerunning"
+    },
+    {
+     "end": 3.588,
+     "start": 3.0,
+     "text": "reuses"
+    },
+    {
+     "end": 3.925,
+     "start": 3.588,
+     "text": "every"
+    },
+    {
+     "end": 4.262,
+     "start": 3.925,
+     "text": "live"
+    },
+    {
+     "end": 4.725,
+     "start": 4.262,
+     "text": "copy"
+    },
+    {
+     "end": 4.85,
+     "start": 4.725,
+     "text": "and"
+    },
+    {
+     "end": 5.488,
+     "start": 4.85,
+     "text": "publishes"
+    },
+    {
+     "end": 5.85,
+     "start": 5.488,
+     "text": "only"
+    },
+    {
+     "end": 6.025,
+     "start": 5.85,
+     "text": "what"
+    },
+    {
+     "end": 6.188,
+     "start": 6.025,
+     "text": "is"
+    },
+    {
+     "end": 7.275,
+     "start": 6.188,
+     "text": "missing"
+    },
+    {
+     "end": 7.475,
+     "start": 7.275,
+     "text": "."
+    },
+    {
+     "end": 7.812,
+     "start": 7.675,
+     "text": "An"
+    },
+    {
+     "end": 8.375,
+     "start": 7.812,
+     "text": "uncertain"
+    },
+    {
+     "end": 9.0,
+     "start": 8.375,
+     "text": "submission"
+    },
+    {
+     "end": 9.5,
+     "start": 9.0,
+     "text": "preserves"
+    },
+    {
+     "end": 9.688,
+     "start": 9.5,
+     "text": "its"
+    },
+    {
+     "end": 10.075,
+     "start": 9.688,
+     "text": "saved"
+    },
+    {
+     "end": 10.8,
+     "start": 10.075,
+     "text": "transaction"
+    },
+    {
+     "end": 11.488,
+     "start": 10.8,
+     "text": "identity"
+    },
+    {
+     "end": 11.637,
+     "start": 11.488,
+     "text": "and"
+    },
+    {
+     "end": 11.95,
+     "start": 11.637,
+     "text": "signed"
+    },
+    {
+     "end": 12.875,
+     "start": 11.95,
+     "text": "body"
+    },
+    {
+     "end": 13.1,
+     "start": 12.875,
+     "text": ";"
+    },
+    {
+     "end": 13.387,
+     "start": 13.3,
+     "text": "a"
+    },
+    {
+     "end": 13.775,
+     "start": 13.387,
+     "text": "later"
+    },
+    {
+     "end": 14.45,
+     "start": 13.775,
+     "text": "invocation"
+    },
+    {
+     "end": 15.163,
+     "start": 14.45,
+     "text": "reconciles"
+    },
+    {
+     "end": 15.4,
+     "start": 15.163,
+     "text": "it"
+    },
+    {
+     "end": 15.788,
+     "start": 15.4,
+     "text": "without"
+    },
+    {
+     "end": 16.6,
+     "start": 15.788,
+     "text": "automatically"
+    },
+    {
+     "end": 17.237,
+     "start": 16.6,
+     "text": "resubmitting"
+    },
+    {
+     "end": 17.9,
+     "start": 17.237,
+     "text": "it"
+    },
+    {
+     "end": 18.1,
+     "start": 17.9,
+     "text": "."
+    },
+    {
+     "end": 18.812,
+     "start": 18.3,
+     "text": "Create"
+    },
+    {
+     "end": 18.987,
+     "start": 18.812,
+     "text": "is"
+    },
+    {
+     "end": 19.3,
+     "start": 18.987,
+     "text": "not"
+    },
+    {
+     "end": 20.175,
+     "start": 19.3,
+     "text": "idempotent"
+    },
+    {
+     "end": 20.288,
+     "start": 20.175,
+     "text": ":"
+    },
+    {
+     "end": 20.413,
+     "start": 20.288,
+     "text": "a"
+    },
+    {
+     "end": 20.8,
+     "start": 20.413,
+     "text": "further"
+    },
+    {
+     "end": 21.5,
+     "start": 20.8,
+     "text": "invocation"
+    },
+    {
+     "end": 21.7,
+     "start": 21.5,
+     "text": "can"
+    },
+    {
+     "end": 22.05,
+     "start": 21.7,
+     "text": "create"
+    },
+    {
+     "end": 22.475,
+     "start": 22.05,
+     "text": "another"
+    },
+    {
+     "end": 23.1,
+     "start": 22.475,
+     "text": "registry"
+    },
+    {
+     "end": 23.263,
+     "start": 23.1,
+     "text": "from"
+    },
+    {
+     "end": 23.35,
+     "start": 23.263,
+     "text": "a"
+    },
+    {
+     "end": 23.562,
+     "start": 23.35,
+     "text": "new"
+    },
+    {
+     "end": 24.525,
+     "start": 23.562,
+     "text": "seed"
+    },
+    {
+     "end": 24.75,
+     "start": 24.525,
+     "text": "."
+    },
+    {
+     "end": 25.425,
+     "start": 24.95,
+     "text": "Repeating"
+    },
+    {
+     "end": 25.525,
+     "start": 25.425,
+     "text": "a"
+    },
+    {
+     "end": 25.825,
+     "start": 25.525,
+     "text": "spent"
+    },
+    {
+     "end": 26.413,
+     "start": 25.825,
+     "text": "explicit"
+    },
+    {
+     "end": 26.788,
+     "start": 26.413,
+     "text": "seed"
+    },
+    {
+     "end": 27.1,
+     "start": 26.788,
+     "text": "keeps"
+    },
+    {
+     "end": 27.25,
+     "start": 27.1,
+     "text": "the"
+    },
+    {
+     "end": 27.825,
+     "start": 27.25,
+     "text": "existing"
+    },
+    {
+     "end": 28.625,
+     "start": 27.825,
+     "text": "refusal"
+    },
+    {
+     "end": 28.775,
+     "start": 28.625,
+     "text": "."
+    },
+    {
+     "end": 29.0,
+     "start": 28.775,
+     "text": "See"
+    },
+    {
+     "end": 29.425,
+     "start": 29.0,
+     "text": "command"
+    },
+    {
+     "end": 30.55,
+     "start": 29.425,
+     "text": "recovery"
+    },
+    {
+     "end": 30.775,
+     "start": 30.55,
+     "text": "."
+    }
+   ]
+  },
+  "docs-shared-publications/recovery-and-evidence-limits-02": {
+   "audio_sha256": "0957b1b52e20e8a06447e2f234f89f0995975db1d1ef69043ca21f5602c155d1",
+   "characters": 62,
+   "cost": 6.138e-05,
+   "duration": 3.8,
+   "index": 2,
+   "key": "d41643634c00440de71fbbca85e0d99b8e1a843a3f632139a9b9505f55883cfa",
+   "page": "docs/shared-publications.md",
+   "pause_ms": 400,
+   "section": "recovery-and-evidence-limits",
+   "sent_text": "Run the same packaged-command journey and retain its receipts:",
+   "text": "Run the same packaged-command journey and retain its receipts:",
+   "words": [
+    {
+     "end": 0.387,
+     "start": 0.2,
+     "text": "Run"
+    },
+    {
+     "end": 0.475,
+     "start": 0.387,
+     "text": "the"
+    },
+    {
+     "end": 0.725,
+     "start": 0.475,
+     "text": "same"
+    },
+    {
+     "end": 1.575,
+     "start": 0.725,
+     "text": "packaged-command"
+    },
+    {
+     "end": 2.0,
+     "start": 1.575,
+     "text": "journey"
+    },
+    {
+     "end": 2.112,
+     "start": 2.0,
+     "text": "and"
+    },
+    {
+     "end": 2.463,
+     "start": 2.112,
+     "text": "retain"
+    },
+    {
+     "end": 2.575,
+     "start": 2.463,
+     "text": "its"
+    },
+    {
+     "end": 3.6,
+     "start": 2.575,
+     "text": "receipts"
+    },
+    {
+     "end": 3.8,
+     "start": 3.6,
+     "text": ":"
+    }
+   ]
+  },
+  "docs-shared-publications/recovery-and-evidence-limits-03": {
+   "audio_sha256": "9c368c5c61939a5e3636f9bff30f42298a999093f9a1444a2c4bc65f028f22da",
+   "characters": 361,
+   "cost": 0.00035739,
+   "duration": 24.325,
+   "index": 3,
+   "key": "985cdf58c06fbaf6830dacfc61de7862fa3007ba0115ffe6cab37f71691f8b39",
+   "page": "docs/shared-publications.md",
+   "pause_ms": 400,
+   "section": "recovery-and-evidence-limits",
+   "sent_text": "The results directory must not already exist. It contains the creation receipts, discovery records, independent chain views, creation measurements, the shared-registration observation and its rejected controls, folder directory listings and a readable receipt. Throwaway wallet keys are removed when the run exits; partial diagnostics remain if a command fails.",
+   "text": "The results directory must not already exist. It contains the creation receipts, discovery records, independent chain views, creation measurements, the shared-registration observation and its rejected controls, folder directory listings and a readable receipt. Throwaway wallet keys are removed when the run exits; partial diagnostics remain if a command fails.",
+   "words": [
+    {
+     "end": 0.25,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.7,
+     "start": 0.25,
+     "text": "results"
+    },
+    {
+     "end": 1.3,
+     "start": 0.7,
+     "text": "directory"
+    },
+    {
+     "end": 1.525,
+     "start": 1.3,
+     "text": "must"
+    },
+    {
+     "end": 1.75,
+     "start": 1.525,
+     "text": "not"
+    },
+    {
+     "end": 2.125,
+     "start": 1.75,
+     "text": "already"
+    },
+    {
+     "end": 3.075,
+     "start": 2.125,
+     "text": "exist"
+    },
+    {
+     "end": 3.275,
+     "start": 3.075,
+     "text": "."
+    },
+    {
+     "end": 3.575,
+     "start": 3.45,
+     "text": "It"
+    },
+    {
+     "end": 4.088,
+     "start": 3.575,
+     "text": "contains"
+    },
+    {
+     "end": 4.175,
+     "start": 4.088,
+     "text": "the"
+    },
+    {
+     "end": 4.65,
+     "start": 4.175,
+     "text": "creation"
+    },
+    {
+     "end": 5.2,
+     "start": 4.65,
+     "text": "receipts"
+    },
+    {
+     "end": 5.25,
+     "start": 5.2,
+     "text": ","
+    },
+    {
+     "end": 5.775,
+     "start": 5.25,
+     "text": "discovery"
+    },
+    {
+     "end": 6.25,
+     "start": 5.775,
+     "text": "records"
+    },
+    {
+     "end": 6.3,
+     "start": 6.25,
+     "text": ","
+    },
+    {
+     "end": 6.875,
+     "start": 6.3,
+     "text": "independent"
+    },
+    {
+     "end": 7.175,
+     "start": 6.875,
+     "text": "chain"
+    },
+    {
+     "end": 8.175,
+     "start": 7.175,
+     "text": "views"
+    },
+    {
+     "end": 8.375,
+     "start": 8.175,
+     "text": ","
+    },
+    {
+     "end": 9.1,
+     "start": 8.575,
+     "text": "creation"
+    },
+    {
+     "end": 9.725,
+     "start": 9.1,
+     "text": "measurements"
+    },
+    {
+     "end": 9.775,
+     "start": 9.725,
+     "text": ","
+    },
+    {
+     "end": 9.913,
+     "start": 9.775,
+     "text": "the"
+    },
+    {
+     "end": 10.875,
+     "start": 9.913,
+     "text": "shared-registration"
+    },
+    {
+     "end": 11.712,
+     "start": 10.875,
+     "text": "observation"
+    },
+    {
+     "end": 11.837,
+     "start": 11.712,
+     "text": "and"
+    },
+    {
+     "end": 12.025,
+     "start": 11.837,
+     "text": "its"
+    },
+    {
+     "end": 12.55,
+     "start": 12.025,
+     "text": "rejected"
+    },
+    {
+     "end": 13.825,
+     "start": 12.55,
+     "text": "controls"
+    },
+    {
+     "end": 14.025,
+     "start": 13.825,
+     "text": ","
+    },
+    {
+     "end": 14.525,
+     "start": 14.2,
+     "text": "folder"
+    },
+    {
+     "end": 15.075,
+     "start": 14.525,
+     "text": "directory"
+    },
+    {
+     "end": 15.7,
+     "start": 15.075,
+     "text": "listings"
+    },
+    {
+     "end": 15.837,
+     "start": 15.7,
+     "text": "and"
+    },
+    {
+     "end": 15.925,
+     "start": 15.837,
+     "text": "a"
+    },
+    {
+     "end": 16.35,
+     "start": 15.925,
+     "text": "readable"
+    },
+    {
+     "end": 17.3,
+     "start": 16.35,
+     "text": "receipt"
+    },
+    {
+     "end": 17.5,
+     "start": 17.3,
+     "text": "."
+    },
+    {
+     "end": 18.125,
+     "start": 17.675,
+     "text": "Throwaway"
+    },
+    {
+     "end": 18.45,
+     "start": 18.125,
+     "text": "wallet"
+    },
+    {
+     "end": 18.8,
+     "start": 18.45,
+     "text": "keys"
+    },
+    {
+     "end": 18.9,
+     "start": 18.8,
+     "text": "are"
+    },
+    {
+     "end": 19.337,
+     "start": 18.9,
+     "text": "removed"
+    },
+    {
+     "end": 19.462,
+     "start": 19.337,
+     "text": "when"
+    },
+    {
+     "end": 19.55,
+     "start": 19.462,
+     "text": "the"
+    },
+    {
+     "end": 19.8,
+     "start": 19.55,
+     "text": "run"
+    },
+    {
+     "end": 20.775,
+     "start": 19.8,
+     "text": "exits"
+    },
+    {
+     "end": 20.975,
+     "start": 20.775,
+     "text": ";"
+    },
+    {
+     "end": 21.5,
+     "start": 21.15,
+     "text": "partial"
+    },
+    {
+     "end": 22.25,
+     "start": 21.5,
+     "text": "diagnostics"
+    },
+    {
+     "end": 22.6,
+     "start": 22.25,
+     "text": "remain"
+    },
+    {
+     "end": 22.712,
+     "start": 22.6,
+     "text": "if"
+    },
+    {
+     "end": 22.775,
+     "start": 22.712,
+     "text": "a"
+    },
+    {
+     "end": 23.188,
+     "start": 22.775,
+     "text": "command"
+    },
+    {
+     "end": 24.125,
+     "start": 23.188,
+     "text": "fails"
+    },
+    {
+     "end": 24.325,
+     "start": 24.125,
+     "text": "."
+    }
+   ]
+  },
+  "docs-shared-publications/recovery-and-evidence-limits-04": {
+   "audio_sha256": "bfd76dd1d746d3502ae07fb5eda885b6617f4d5da4902739d063aa980660aca1",
+   "characters": 574,
+   "cost": 0.0005682599999999999,
+   "duration": 38.275,
+   "index": 4,
+   "key": "9b70b4a69bea6ad92213d7450ce08c52e7b1dbe74043ea032d069f4ccb74f4fc",
+   "page": "docs/shared-publications.md",
+   "pause_ms": 400,
+   "section": "recovery-and-evidence-limits",
+   "sent_text": "The conformance inventory publishes the reuse requirements beside the existing requirements. Its runner computes their standings from receipts. These rows remain uncovered because no executable comparison with the application-held model exists yet. The registration journey, recovery partitions and measurement receipts are separate evidence boundaries and establish nothing about agreement with the model. An executable conformance language for creation claims is outside this change. Public discovery for everyone, batch limits and release acceptance remain separate work.",
+   "text": "The conformance inventory publishes the reuse requirements beside the existing requirements. Its runner computes their standings from receipts. These rows remain uncovered because no executable comparison with the application-held model exists yet. The registration journey, recovery partitions and measurement receipts are separate evidence boundaries and establish nothing about agreement with the model. An executable conformance language for creation claims is outside this change. Public discovery for everyone, batch limits and release acceptance remain separate work.",
+   "words": [
+    {
+     "end": 0.275,
+     "start": 0.2,
+     "text": "The"
+    },
+    {
+     "end": 0.925,
+     "start": 0.275,
+     "text": "conformance"
+    },
+    {
+     "end": 1.638,
+     "start": 0.925,
+     "text": "inventory"
+    },
+    {
+     "end": 2.225,
+     "start": 1.638,
+     "text": "publishes"
+    },
+    {
+     "end": 2.362,
+     "start": 2.225,
+     "text": "the"
+    },
+    {
+     "end": 2.775,
+     "start": 2.362,
+     "text": "reuse"
+    },
+    {
+     "end": 3.5,
+     "start": 2.775,
+     "text": "requirements"
+    },
+    {
+     "end": 3.987,
+     "start": 3.5,
+     "text": "beside"
+    },
+    {
+     "end": 4.125,
+     "start": 3.987,
+     "text": "the"
+    },
+    {
+     "end": 4.675,
+     "start": 4.125,
+     "text": "existing"
+    },
+    {
+     "end": 5.975,
+     "start": 4.675,
+     "text": "requirements"
+    },
+    {
+     "end": 6.175,
+     "start": 5.975,
+     "text": "."
+    },
+    {
+     "end": 6.575,
+     "start": 6.35,
+     "text": "Its"
+    },
+    {
+     "end": 6.925,
+     "start": 6.575,
+     "text": "runner"
+    },
+    {
+     "end": 7.363,
+     "start": 6.925,
+     "text": "computes"
+    },
+    {
+     "end": 7.525,
+     "start": 7.363,
+     "text": "their"
+    },
+    {
+     "end": 8.025,
+     "start": 7.525,
+     "text": "standings"
+    },
+    {
+     "end": 8.175,
+     "start": 8.025,
+     "text": "from"
+    },
+    {
+     "end": 9.175,
+     "start": 8.175,
+     "text": "receipts"
+    },
+    {
+     "end": 9.375,
+     "start": 9.175,
+     "text": "."
+    },
+    {
+     "end": 9.837,
+     "start": 9.575,
+     "text": "These"
+    },
+    {
+     "end": 10.25,
+     "start": 9.837,
+     "text": "rows"
+    },
+    {
+     "end": 10.7,
+     "start": 10.25,
+     "text": "remain"
+    },
+    {
+     "end": 11.35,
+     "start": 10.7,
+     "text": "uncovered"
+    },
+    {
+     "end": 11.712,
+     "start": 11.35,
+     "text": "because"
+    },
+    {
+     "end": 12.038,
+     "start": 11.712,
+     "text": "no"
+    },
+    {
+     "end": 12.75,
+     "start": 12.038,
+     "text": "executable"
+    },
+    {
+     "end": 13.475,
+     "start": 12.75,
+     "text": "comparison"
+    },
+    {
+     "end": 13.613,
+     "start": 13.475,
+     "text": "with"
+    },
+    {
+     "end": 13.75,
+     "start": 13.613,
+     "text": "the"
+    },
+    {
+     "end": 14.675,
+     "start": 13.75,
+     "text": "application-held"
+    },
+    {
+     "end": 15.25,
+     "start": 14.675,
+     "text": "model"
+    },
+    {
+     "end": 15.837,
+     "start": 15.25,
+     "text": "exists"
+    },
+    {
+     "end": 16.75,
+     "start": 15.837,
+     "text": "yet"
+    },
+    {
+     "end": 16.975,
+     "start": 16.75,
+     "text": "."
+    },
+    {
+     "end": 17.225,
+     "start": 17.15,
+     "text": "The"
+    },
+    {
+     "end": 17.95,
+     "start": 17.225,
+     "text": "registration"
+    },
+    {
+     "end": 18.725,
+     "start": 17.95,
+     "text": "journey"
+    },
+    {
+     "end": 18.95,
+     "start": 18.725,
+     "text": ","
+    },
+    {
+     "end": 19.675,
+     "start": 19.175,
+     "text": "recovery"
+    },
+    {
+     "end": 20.4,
+     "start": 19.675,
+     "text": "partitions"
+    },
+    {
+     "end": 20.525,
+     "start": 20.4,
+     "text": "and"
+    },
+    {
+     "end": 20.95,
+     "start": 20.525,
+     "text": "measurement"
+    },
+    {
+     "end": 21.487,
+     "start": 20.95,
+     "text": "receipts"
+    },
+    {
+     "end": 21.675,
+     "start": 21.487,
+     "text": "are"
+    },
+    {
+     "end": 22.125,
+     "start": 21.675,
+     "text": "separate"
+    },
+    {
+     "end": 22.575,
+     "start": 22.125,
+     "text": "evidence"
+    },
+    {
+     "end": 23.288,
+     "start": 22.575,
+     "text": "boundaries"
+    },
+    {
+     "end": 23.413,
+     "start": 23.288,
+     "text": "and"
+    },
+    {
+     "end": 24.05,
+     "start": 23.413,
+     "text": "establish"
+    },
+    {
+     "end": 24.475,
+     "start": 24.05,
+     "text": "nothing"
+    },
+    {
+     "end": 24.775,
+     "start": 24.475,
+     "text": "about"
+    },
+    {
+     "end": 25.3,
+     "start": 24.775,
+     "text": "agreement"
+    },
+    {
+     "end": 25.438,
+     "start": 25.3,
+     "text": "with"
+    },
+    {
+     "end": 25.525,
+     "start": 25.438,
+     "text": "the"
+    },
+    {
+     "end": 26.6,
+     "start": 25.525,
+     "text": "model"
+    },
+    {
+     "end": 26.825,
+     "start": 26.6,
+     "text": "."
+    },
+    {
+     "end": 27.163,
+     "start": 27.025,
+     "text": "An"
+    },
+    {
+     "end": 27.875,
+     "start": 27.163,
+     "text": "executable"
+    },
+    {
+     "end": 28.525,
+     "start": 27.875,
+     "text": "conformance"
+    },
+    {
+     "end": 29.0,
+     "start": 28.525,
+     "text": "language"
+    },
+    {
+     "end": 29.125,
+     "start": 29.0,
+     "text": "for"
+    },
+    {
+     "end": 29.625,
+     "start": 29.125,
+     "text": "creation"
+    },
+    {
+     "end": 30.225,
+     "start": 29.625,
+     "text": "claims"
+    },
+    {
+     "end": 30.4,
+     "start": 30.225,
+     "text": "is"
+    },
+    {
+     "end": 30.925,
+     "start": 30.4,
+     "text": "outside"
+    },
+    {
+     "end": 31.138,
+     "start": 30.925,
+     "text": "this"
+    },
+    {
+     "end": 32.125,
+     "start": 31.138,
+     "text": "change"
+    },
+    {
+     "end": 32.35,
+     "start": 32.125,
+     "text": "."
+    },
+    {
+     "end": 32.9,
+     "start": 32.55,
+     "text": "Public"
+    },
+    {
+     "end": 33.5,
+     "start": 32.9,
+     "text": "discovery"
+    },
+    {
+     "end": 33.662,
+     "start": 33.5,
+     "text": "for"
+    },
+    {
+     "end": 34.3,
+     "start": 33.662,
+     "text": "everyone"
+    },
+    {
+     "end": 34.412,
+     "start": 34.3,
+     "text": ","
+    },
+    {
+     "end": 34.775,
+     "start": 34.412,
+     "text": "batch"
+    },
+    {
+     "end": 35.175,
+     "start": 34.775,
+     "text": "limits"
+    },
+    {
+     "end": 35.3,
+     "start": 35.175,
+     "text": "and"
+    },
+    {
+     "end": 35.7,
+     "start": 35.3,
+     "text": "release"
+    },
+    {
+     "end": 36.3,
+     "start": 35.7,
+     "text": "acceptance"
+    },
+    {
+     "end": 36.737,
+     "start": 36.3,
+     "text": "remain"
+    },
+    {
+     "end": 37.175,
+     "start": 36.737,
+     "text": "separate"
+    },
+    {
+     "end": 38.05,
+     "start": 37.175,
+     "text": "work"
+    },
+    {
+     "end": 38.275,
+     "start": 38.05,
+     "text": "."
+    }
+   ]
+  },
+  "docs-shared-publications/register-a-key-in-the-new-registry-00": {
+   "audio_sha256": "4131fd7685c2defb350952a6b93eacde9f72224e6907c132bc19c9d912d43b11",
+   "characters": 35,
+   "cost": 3.4649999999999995e-05,
+   "duration": 2.475,
+   "index": 0,
+   "key": "34dedeb86d3a3dc448eecfd46ff230b5e2dd74de834fc2777a3ab79f90c0eb2f",
+   "page": "docs/shared-publications.md",
+   "pause_ms": 500,
+   "section": "register-a-key-in-the-new-registry",
+   "sent_text": "Register a key in the new registry.",
+   "text": "Register a key in the new registry.",
+   "words": [
+    {
+     "end": 0.613,
+     "start": 0.2,
+     "text": "Register"
+    },
+    {
+     "end": 0.675,
+     "start": 0.613,
+     "text": "a"
+    },
+    {
+     "end": 0.925,
+     "start": 0.675,
+     "text": "key"
+    },
+    {
+     "end": 1.013,
+     "start": 0.925,
+     "text": "in"
+    },
+    {
+     "end": 1.1,
+     "start": 1.013,
+     "text": "the"
+    },
+    {
+     "end": 1.275,
+     "start": 1.1,
+     "text": "new"
+    },
+    {
+     "end": 2.25,
+     "start": 1.275,
+     "text": "registry"
+    },
+    {
+     "end": 2.475,
+     "start": 2.25,
+     "text": "."
+    }
+   ]
+  },
+  "docs-shared-publications/register-a-key-in-the-new-registry-01": {
+   "audio_sha256": "85cb465429eaf32fcb1d76c70f9651ce78846aa0515663612d1a0f29e78a1c7c",
+   "characters": 146,
+   "cost": 0.00014454,
+   "duration": 9.75,
+   "index": 1,
+   "key": "7cc59e5450990eed096b4d42ba1057a12abfd61d5664720552b75bb1b8aed0a5",
+   "page": "docs/shared-publications.md",
+   "pause_ms": 400,
+   "section": "register-a-key-in-the-new-registry",
+   "sent_text": "Alice books a key, an initial payload and a deposit in Erin's registry. The journey supplies the new registry's public state token as state_token:",
+   "text": "Alice books a key, an initial payload and a deposit in Erin's registry. The journey supplies the new registry's public state token as state_token:",
+   "words": [
+    {
+     "end": 0.5,
+     "start": 0.2,
+     "text": "Alice"
+    },
+    {
+     "end": 0.738,
+     "start": 0.5,
+     "text": "books"
+    },
+    {
+     "end": 0.837,
+     "start": 0.738,
+     "text": "a"
+    },
+    {
+     "end": 1.225,
+     "start": 0.837,
+     "text": "key"
+    },
+    {
+     "end": 1.3,
+     "start": 1.225,
+     "text": ","
+    },
+    {
+     "end": 1.4,
+     "start": 1.3,
+     "text": "an"
+    },
+    {
+     "end": 1.8,
+     "start": 1.4,
+     "text": "initial"
+    },
+    {
+     "end": 2.412,
+     "start": 1.8,
+     "text": "payload"
+    },
+    {
+     "end": 2.537,
+     "start": 2.412,
+     "text": "and"
+    },
+    {
+     "end": 2.588,
+     "start": 2.537,
+     "text": "a"
+    },
+    {
+     "end": 3.15,
+     "start": 2.588,
+     "text": "deposit"
+    },
+    {
+     "end": 3.3,
+     "start": 3.15,
+     "text": "in"
+    },
+    {
+     "end": 3.65,
+     "start": 3.3,
+     "text": "Erin's"
+    },
+    {
+     "end": 4.725,
+     "start": 3.65,
+     "text": "registry"
+    },
+    {
+     "end": 4.95,
+     "start": 4.725,
+     "text": "."
+    },
+    {
+     "end": 5.238,
+     "start": 5.125,
+     "text": "The"
+    },
+    {
+     "end": 5.65,
+     "start": 5.238,
+     "text": "journey"
+    },
+    {
+     "end": 6.15,
+     "start": 5.65,
+     "text": "supplies"
+    },
+    {
+     "end": 6.287,
+     "start": 6.15,
+     "text": "the"
+    },
+    {
+     "end": 6.5,
+     "start": 6.287,
+     "text": "new"
+    },
+    {
+     "end": 7.075,
+     "start": 6.5,
+     "text": "registry's"
+    },
+    {
+     "end": 7.475,
+     "start": 7.075,
+     "text": "public"
+    },
+    {
+     "end": 7.825,
+     "start": 7.475,
+     "text": "state"
+    },
+    {
+     "end": 8.15,
+     "start": 7.825,
+     "text": "token"
+    },
+    {
+     "end": 8.275,
+     "start": 8.15,
+     "text": "as"
+    },
+    {
+     "end": 9.55,
+     "start": 8.275,
+     "text": "state_token"
+    },
+    {
+     "end": 9.75,
+     "start": 9.55,
+     "text": ":"
+    }
+   ]
+  },
+  "docs-shared-publications/register-a-key-in-the-new-registry-02": {
+   "audio_sha256": "8bef9b847531f3b6bdd223a016228c479e6e782b11f3db78d049cbd22302c814",
+   "characters": 312,
+   "cost": 0.00030888,
+   "duration": 20.8,
+   "index": 2,
+   "key": "5b4a36baead904eb0148f5d21f8a0748abf22502d44649cbe42a97fa67fed614",
+   "page": "docs/shared-publications.md",
+   "pause_ms": 400,
+   "section": "register-a-key-in-the-new-registry",
+   "sent_text": "Bob starts a new working directory and home containing only his own key and the public release. He finds the pending registration through the chain provider, matching the registry identity and key. He supplies that public output reference as pending; Alice's payload file, key and command journal are not inputs:",
+   "text": "Bob starts a new working directory and home containing only his own key and the public release. He finds the pending registration through the chain provider, matching the registry identity and key. He supplies that public output reference as pending; Alice's payload file, key and command journal are not inputs:",
+   "words": [
+    {
+     "end": 0.5,
+     "start": 0.2,
+     "text": "Bob"
+    },
+    {
+     "end": 0.812,
+     "start": 0.5,
+     "text": "starts"
+    },
+    {
+     "end": 0.913,
+     "start": 0.812,
+     "text": "a"
+    },
+    {
+     "end": 1.125,
+     "start": 0.913,
+     "text": "new"
+    },
+    {
+     "end": 1.425,
+     "start": 1.125,
+     "text": "working"
+    },
+    {
+     "end": 2.088,
+     "start": 1.425,
+     "text": "directory"
+    },
+    {
+     "end": 2.237,
+     "start": 2.088,
+     "text": "and"
+    },
+    {
+     "end": 2.625,
+     "start": 2.237,
+     "text": "home"
+    },
+    {
+     "end": 3.188,
+     "start": 2.625,
+     "text": "containing"
+    },
+    {
+     "end": 3.525,
+     "start": 3.188,
+     "text": "only"
+    },
+    {
+     "end": 3.7,
+     "start": 3.525,
+     "text": "his"
+    },
+    {
+     "end": 3.963,
+     "start": 3.7,
+     "text": "own"
+    },
+    {
+     "end": 4.5,
+     "start": 3.963,
+     "text": "key"
+    },
+    {
+     "end": 4.637,
+     "start": 4.5,
+     "text": "and"
+    },
+    {
+     "end": 4.725,
+     "start": 4.637,
+     "text": "the"
+    },
+    {
+     "end": 5.125,
+     "start": 4.725,
+     "text": "public"
+    },
+    {
+     "end": 6.225,
+     "start": 5.125,
+     "text": "release"
+    },
+    {
+     "end": 6.425,
+     "start": 6.225,
+     "text": "."
+    },
+    {
+     "end": 6.762,
+     "start": 6.625,
+     "text": "He"
+    },
+    {
+     "end": 7.113,
+     "start": 6.762,
+     "text": "finds"
+    },
+    {
+     "end": 7.213,
+     "start": 7.113,
+     "text": "the"
+    },
+    {
+     "end": 7.625,
+     "start": 7.213,
+     "text": "pending"
+    },
+    {
+     "end": 8.462,
+     "start": 7.625,
+     "text": "registration"
+    },
+    {
+     "end": 8.675,
+     "start": 8.462,
+     "text": "through"
+    },
+    {
+     "end": 8.812,
+     "start": 8.675,
+     "text": "the"
+    },
+    {
+     "end": 9.125,
+     "start": 8.812,
+     "text": "chain"
+    },
+    {
+     "end": 9.825,
+     "start": 9.125,
+     "text": "provider"
+    },
+    {
+     "end": 9.938,
+     "start": 9.825,
+     "text": ","
+    },
+    {
+     "end": 10.375,
+     "start": 9.938,
+     "text": "matching"
+    },
+    {
+     "end": 10.475,
+     "start": 10.375,
+     "text": "the"
+    },
+    {
+     "end": 11.0,
+     "start": 10.475,
+     "text": "registry"
+    },
+    {
+     "end": 11.663,
+     "start": 11.0,
+     "text": "identity"
+    },
+    {
+     "end": 11.837,
+     "start": 11.663,
+     "text": "and"
+    },
+    {
+     "end": 12.775,
+     "start": 11.837,
+     "text": "key"
+    },
+    {
+     "end": 13.0,
+     "start": 12.775,
+     "text": "."
+    },
+    {
+     "end": 13.3,
+     "start": 13.175,
+     "text": "He"
+    },
+    {
+     "end": 13.8,
+     "start": 13.3,
+     "text": "supplies"
+    },
+    {
+     "end": 13.95,
+     "start": 13.8,
+     "text": "that"
+    },
+    {
+     "end": 14.325,
+     "start": 13.95,
+     "text": "public"
+    },
+    {
+     "end": 14.7,
+     "start": 14.325,
+     "text": "output"
+    },
+    {
+     "end": 15.188,
+     "start": 14.7,
+     "text": "reference"
+    },
+    {
+     "end": 15.363,
+     "start": 15.188,
+     "text": "as"
+    },
+    {
+     "end": 16.325,
+     "start": 15.363,
+     "text": "pending"
+    },
+    {
+     "end": 16.525,
+     "start": 16.325,
+     "text": ";"
+    },
+    {
+     "end": 17.125,
+     "start": 16.725,
+     "text": "Alice's"
+    },
+    {
+     "end": 17.575,
+     "start": 17.125,
+     "text": "payload"
+    },
+    {
+     "end": 18.025,
+     "start": 17.575,
+     "text": "file"
+    },
+    {
+     "end": 18.138,
+     "start": 18.025,
+     "text": ","
+    },
+    {
+     "end": 18.45,
+     "start": 18.138,
+     "text": "key"
+    },
+    {
+     "end": 18.575,
+     "start": 18.45,
+     "text": "and"
+    },
+    {
+     "end": 18.95,
+     "start": 18.575,
+     "text": "command"
+    },
+    {
+     "end": 19.25,
+     "start": 18.95,
+     "text": "journal"
+    },
+    {
+     "end": 19.375,
+     "start": 19.25,
+     "text": "are"
+    },
+    {
+     "end": 19.6,
+     "start": 19.375,
+     "text": "not"
+    },
+    {
+     "end": 20.6,
+     "start": 19.6,
+     "text": "inputs"
+    },
+    {
+     "end": 20.8,
+     "start": 20.6,
+     "text": ":"
+    }
+   ]
+  },
+  "docs-shared-publications/register-a-key-in-the-new-registry-03": {
+   "audio_sha256": "e97d8c2c4b5dab57e243fb9a9fa0640a3391d668673b7d6267e117dd123db86c",
+   "characters": 483,
+   "cost": 0.00047817,
+   "duration": 31.525,
+   "index": 3,
+   "key": "9d5d44534c4afed12a33eeff34531dba6b68f2bbf61fc77ec5a9f6ce7617d78f",
+   "page": "docs/shared-publications.md",
+   "pause_ms": 400,
+   "section": "register-a-key-in-the-new-registry",
+   "sent_text": "The journey reads the included transactions independently: the fold consumes that registration's approval, burns it, mints the key's token into a holding carrying the booked payload and exact deposit, and spends and continues Erin's own state with a changed root. Altering the observation to name the first registry's state or to remove the holding's deposit fails the same check. The complete journey also checks that no transaction publishes a witness policy or adds a witness pin.",
+   "text": "The journey reads the included transactions independently: the fold consumes that registration's approval, burns it, mints the key's token into a holding carrying the booked payload and exact deposit, and spends and continues Erin's own state with a changed root. Altering the observation to name the first registry's state or to remove the holding's deposit fails the same check. The complete journey also checks that no transaction publishes a witness policy or adds a witness pin.",
+   "words": [
+    {
+     "end": 0.287,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.712,
+     "start": 0.287,
+     "text": "journey"
+    },
+    {
+     "end": 1.062,
+     "start": 0.712,
+     "text": "reads"
+    },
+    {
+     "end": 1.175,
+     "start": 1.062,
+     "text": "the"
+    },
+    {
+     "end": 1.65,
+     "start": 1.175,
+     "text": "included"
+    },
+    {
+     "end": 2.487,
+     "start": 1.65,
+     "text": "transactions"
+    },
+    {
+     "end": 3.7,
+     "start": 2.487,
+     "text": "independently"
+    },
+    {
+     "end": 3.925,
+     "start": 3.7,
+     "text": ":"
+    },
+    {
+     "end": 4.175,
+     "start": 4.1,
+     "text": "the"
+    },
+    {
+     "end": 4.5,
+     "start": 4.175,
+     "text": "fold"
+    },
+    {
+     "end": 5.075,
+     "start": 4.5,
+     "text": "consumes"
+    },
+    {
+     "end": 5.225,
+     "start": 5.075,
+     "text": "that"
+    },
+    {
+     "end": 5.95,
+     "start": 5.225,
+     "text": "registration's"
+    },
+    {
+     "end": 6.45,
+     "start": 5.95,
+     "text": "approval"
+    },
+    {
+     "end": 6.525,
+     "start": 6.45,
+     "text": ","
+    },
+    {
+     "end": 6.938,
+     "start": 6.525,
+     "text": "burns"
+    },
+    {
+     "end": 7.575,
+     "start": 6.938,
+     "text": "it"
+    },
+    {
+     "end": 7.775,
+     "start": 7.575,
+     "text": ","
+    },
+    {
+     "end": 8.275,
+     "start": 8.0,
+     "text": "mints"
+    },
+    {
+     "end": 8.4,
+     "start": 8.275,
+     "text": "the"
+    },
+    {
+     "end": 8.75,
+     "start": 8.4,
+     "text": "key's"
+    },
+    {
+     "end": 9.038,
+     "start": 8.75,
+     "text": "token"
+    },
+    {
+     "end": 9.25,
+     "start": 9.038,
+     "text": "into"
+    },
+    {
+     "end": 9.325,
+     "start": 9.25,
+     "text": "a"
+    },
+    {
+     "end": 9.812,
+     "start": 9.325,
+     "text": "holding"
+    },
+    {
+     "end": 10.238,
+     "start": 9.812,
+     "text": "carrying"
+    },
+    {
+     "end": 10.325,
+     "start": 10.238,
+     "text": "the"
+    },
+    {
+     "end": 10.613,
+     "start": 10.325,
+     "text": "booked"
+    },
+    {
+     "end": 11.238,
+     "start": 10.613,
+     "text": "payload"
+    },
+    {
+     "end": 11.363,
+     "start": 11.238,
+     "text": "and"
+    },
+    {
+     "end": 11.825,
+     "start": 11.363,
+     "text": "exact"
+    },
+    {
+     "end": 12.975,
+     "start": 11.825,
+     "text": "deposit"
+    },
+    {
+     "end": 13.175,
+     "start": 12.975,
+     "text": ","
+    },
+    {
+     "end": 13.475,
+     "start": 13.375,
+     "text": "and"
+    },
+    {
+     "end": 13.863,
+     "start": 13.475,
+     "text": "spends"
+    },
+    {
+     "end": 13.975,
+     "start": 13.863,
+     "text": "and"
+    },
+    {
+     "end": 14.512,
+     "start": 13.975,
+     "text": "continues"
+    },
+    {
+     "end": 14.875,
+     "start": 14.512,
+     "text": "Erin's"
+    },
+    {
+     "end": 15.1,
+     "start": 14.875,
+     "text": "own"
+    },
+    {
+     "end": 15.45,
+     "start": 15.1,
+     "text": "state"
+    },
+    {
+     "end": 15.587,
+     "start": 15.45,
+     "text": "with"
+    },
+    {
+     "end": 15.663,
+     "start": 15.587,
+     "text": "a"
+    },
+    {
+     "end": 16.075,
+     "start": 15.663,
+     "text": "changed"
+    },
+    {
+     "end": 16.85,
+     "start": 16.075,
+     "text": "root"
+    },
+    {
+     "end": 17.05,
+     "start": 16.85,
+     "text": "."
+    },
+    {
+     "end": 17.7,
+     "start": 17.25,
+     "text": "Altering"
+    },
+    {
+     "end": 17.85,
+     "start": 17.7,
+     "text": "the"
+    },
+    {
+     "end": 18.625,
+     "start": 17.85,
+     "text": "observation"
+    },
+    {
+     "end": 18.75,
+     "start": 18.625,
+     "text": "to"
+    },
+    {
+     "end": 19.062,
+     "start": 18.75,
+     "text": "name"
+    },
+    {
+     "end": 19.188,
+     "start": 19.062,
+     "text": "the"
+    },
+    {
+     "end": 19.55,
+     "start": 19.188,
+     "text": "first"
+    },
+    {
+     "end": 20.112,
+     "start": 19.55,
+     "text": "registry's"
+    },
+    {
+     "end": 20.587,
+     "start": 20.112,
+     "text": "state"
+    },
+    {
+     "end": 20.775,
+     "start": 20.587,
+     "text": "or"
+    },
+    {
+     "end": 20.9,
+     "start": 20.775,
+     "text": "to"
+    },
+    {
+     "end": 21.325,
+     "start": 20.9,
+     "text": "remove"
+    },
+    {
+     "end": 21.425,
+     "start": 21.325,
+     "text": "the"
+    },
+    {
+     "end": 21.85,
+     "start": 21.425,
+     "text": "holding's"
+    },
+    {
+     "end": 22.5,
+     "start": 21.85,
+     "text": "deposit"
+    },
+    {
+     "end": 22.9,
+     "start": 22.5,
+     "text": "fails"
+    },
+    {
+     "end": 23.038,
+     "start": 22.9,
+     "text": "the"
+    },
+    {
+     "end": 23.362,
+     "start": 23.038,
+     "text": "same"
+    },
+    {
+     "end": 24.35,
+     "start": 23.362,
+     "text": "check"
+    },
+    {
+     "end": 24.575,
+     "start": 24.35,
+     "text": "."
+    },
+    {
+     "end": 24.85,
+     "start": 24.775,
+     "text": "The"
+    },
+    {
+     "end": 25.312,
+     "start": 24.85,
+     "text": "complete"
+    },
+    {
+     "end": 25.688,
+     "start": 25.312,
+     "text": "journey"
+    },
+    {
+     "end": 26.112,
+     "start": 25.688,
+     "text": "also"
+    },
+    {
+     "end": 26.45,
+     "start": 26.112,
+     "text": "checks"
+    },
+    {
+     "end": 26.663,
+     "start": 26.45,
+     "text": "that"
+    },
+    {
+     "end": 26.9,
+     "start": 26.663,
+     "text": "no"
+    },
+    {
+     "end": 27.65,
+     "start": 26.9,
+     "text": "transaction"
+    },
+    {
+     "end": 28.225,
+     "start": 27.65,
+     "text": "publishes"
+    },
+    {
+     "end": 28.325,
+     "start": 28.225,
+     "text": "a"
+    },
+    {
+     "end": 28.7,
+     "start": 28.325,
+     "text": "witness"
+    },
+    {
+     "end": 29.413,
+     "start": 28.7,
+     "text": "policy"
+    },
+    {
+     "end": 29.612,
+     "start": 29.413,
+     "text": "or"
+    },
+    {
+     "end": 29.938,
+     "start": 29.612,
+     "text": "adds"
+    },
+    {
+     "end": 30.025,
+     "start": 29.938,
+     "text": "a"
+    },
+    {
+     "end": 30.4,
+     "start": 30.025,
+     "text": "witness"
+    },
+    {
+     "end": 31.3,
+     "start": 30.4,
+     "text": "pin"
+    },
+    {
+     "end": 31.525,
+     "start": 31.3,
      "text": "."
     }
    ]

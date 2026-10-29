@@ -502,12 +502,10 @@ layout model rows snap =
         if null entries
             then ["None."]
             else
-                [ "| Name | Requirement | Expected outcome | State |"
-                , "| --- | --- | --- | --- |"
+                [ "| Requirement | Expected outcome | State |"
+                , "| --- | --- | --- |"
                 ]
                     <> [ "| "
-                            <> rowId r
-                            <> " | "
                             <> cell (rowRequirement r)
                             <> " | "
                             <> cell (rowExpected r)
