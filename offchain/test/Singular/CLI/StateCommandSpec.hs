@@ -65,7 +65,7 @@ import Control.Concurrent.Async (async, cancel, race, waitCatch)
 import Control.Monad (forM_, void, when)
 import Data.Aeson qualified as Aeson
     ( KeyValue ((.=))
-    , Value
+    , Value (Bool)
     , object
     )
 import Data.ByteString qualified as BS
@@ -88,6 +88,7 @@ import Singular.CLI.CommandRunSpec
     ( Rig (..)
     , Run (..)
     , capabilities
+    , elementsAt
     , envOf
     , externalArgs
     , outcomeOf
@@ -484,6 +485,20 @@ creationRows = describe "creating a registry" $ do
             runExit r `shouldBe` ExitSuccess
             outcomeOf (runReceipt r) `shouldBe` Just "success"
             textAt "command" (runReceipt r) `shouldBe` Just "registry create"
+            let hash = hexOf (scriptHashBytes (hashScript (ssScript script)))
+            rows <-
+                maybe
+                    (fail "no scripts receipt")
+                    pure
+                    (elementsAt "scripts" (runReceipt r))
+            length rows `shouldBe` 1
+            [row] <- pure rows
+            textAt "script" row `shouldBe` Just "state"
+            textAt "hash" row `shouldBe` Just hash
+            valueAt "published" row `shouldBe` Just (Aeson.Bool True)
+            textAt "outcome" row `shouldBe` Just "published"
+            valueAt "discovery" row
+                `shouldBe` Just (discovery "no live copy" [])
             let token = tokenOfSeed script seed
             textAt "stateToken" (runReceipt r) `shouldBe` Just (spellToken token)
             textAt "seed" (runReceipt r) `shouldBe` Just (renderOutRef seed)
@@ -514,6 +529,7 @@ creationRows = describe "creating a registry" $ do
                     (CarryingReferenceScript (hashScript (ssScript script)))
             case (copies, transactions) of
                 ([(copy, _)], [_, creation]) -> do
+                    textAt "reference" row `shouldBe` Just (renderOutRef copy)
                     toList (creation ^. bodyTxL . referenceInputsTxBodyL)
                         `shouldContain` [copy]
                     toList (creation ^. bodyTxL . inputsTxBodyL) `shouldContain` [seed]
@@ -569,6 +585,23 @@ creationRows = describe "creating a registry" $ do
                     (CarryingReferenceScript (hashScript (ssScript script)))
             case (copies, drop already transactions) of
                 ([(copy, _)], [creation]) -> do
+                    let hash = hexOf (scriptHashBytes (hashScript (ssScript script)))
+                    rows <-
+                        maybe
+                            (fail "no scripts receipt")
+                            pure
+                            (elementsAt "scripts" (runReceipt r2))
+                    rows
+                        `shouldBe` [ Aeson.object
+                                        [ "script" Aeson..= ("state" :: Text)
+                                        , "hash" Aeson..= hash
+                                        , "reference" Aeson..= renderOutRef copy
+                                        , "published" Aeson..= False
+                                        , "outcome" Aeson..= ("reused" :: Text)
+                                        , "discovery"
+                                            Aeson..= discovery "live copy" [candidate copy (Just hash) hash "genuine"]
+                                        ]
+                                   ]
                     toList (creation ^. bodyTxL . referenceInputsTxBodyL)
                         `shouldContain` [copy]
                     null (creation ^. witsTxL . scriptTxWitsL) `shouldBe` True
@@ -601,6 +634,169 @@ creationRows = describe "creating a registry" $ do
             outcomeOf (runReceipt r) `shouldBe` Just "success"
             [step | (step, _, _, _) <- submissionsOf (runReceipt r)]
                 `shouldBe` ["publish-scripts", "create"]
+            rows <-
+                maybe
+                    (fail "no scripts receipt")
+                    pure
+                    (elementsAt "scripts" (runReceipt r))
+            let expected = hexOf (scriptHashBytes (hashScript (ssScript script)))
+                found =
+                    hexOf
+                        ( scriptHashBytes
+                            (hashScript (scriptFromBytes "impostor" (unitProgram 5)))
+                        )
+            map (textAt "outcome") rows `shouldBe` [Just "published"]
+            map (valueAt "discovery") rows
+                `shouldBe` [ Just
+                                ( discovery
+                                    "no live copy"
+                                    [candidate impostorAt (Just found) expected "foreign"]
+                                )
+                           ]
+
+    it
+        "records a candidate that carries no reference script without reusing it"
+        $ withStateRig
+        $ \rig -> do
+            script <- stateScriptOf rig
+            seed : _ <- spareSeeds rig
+            [(ref, out)] <- take 1 <$> readWallet rig
+            let caps = lyingAbout rig (hashScript (ssScript script)) (ref, out)
+                env = (envOf rig){envWrites = \_ k -> k caps, envReads = \_ k -> k caps}
+                expected = hexOf (scriptHashBytes (hashScript (ssScript script)))
+            r <-
+                runState
+                    rig
+                    env
+                    "alice"
+                    "no carried script"
+                    ["--seed", T.unpack (renderOutRef seed)]
+            outcomeOf (runReceipt r) `shouldBe` Just "success"
+            rows <-
+                maybe
+                    (fail "no scripts receipt")
+                    pure
+                    (elementsAt "scripts" (runReceipt r))
+            map (textAt "outcome") rows `shouldBe` [Just "published"]
+            map (valueAt "discovery") rows
+                `shouldBe` [ Just
+                                (discovery "no live copy" [candidate ref Nothing expected "foreign"])
+                           ]
+
+    it
+        "keeps every foreign candidate visible when it reuses a genuine copy"
+        $ withStateRig
+        $ \rig -> do
+            script <- stateScriptOf rig
+            first : second : _ <- spareSeeds rig
+            r1 <-
+                runState
+                    rig
+                    (envOf rig)
+                    "alice"
+                    "publish"
+                    ["--seed", T.unpack (renderOutRef first)]
+            outcomeOf (runReceipt r1) `shouldBe` Just "success"
+            [(copy, out)] <-
+                outputsFor
+                    rig
+                    (CarryingReferenceScript (hashScript (ssScript script)))
+            foreignAt <-
+                either fail pure (parseOutRef (T.pack (replicate 64 '7' <> "#0")))
+            let foreignScript = scriptFromBytes "foreign" (unitProgram 5)
+                foreignOut = out & referenceScriptTxOutL .~ SJust foreignScript
+                caps =
+                    lyingAbout rig (hashScript (ssScript script)) (foreignAt, foreignOut)
+                env = (envOf rig){envWrites = \_ k -> k caps, envReads = \_ k -> k caps}
+                hash = hexOf (scriptHashBytes (hashScript (ssScript script)))
+                found = hexOf (scriptHashBytes (hashScript foreignScript))
+            r2 <-
+                runState
+                    rig
+                    env
+                    "fresh"
+                    "reuse with foreign"
+                    ["--seed", T.unpack (renderOutRef second)]
+            outcomeOf (runReceipt r2) `shouldBe` Just "success"
+            [step | (step, _, _, _) <- submissionsOf (runReceipt r2)]
+                `shouldBe` ["create"]
+            rows <-
+                maybe
+                    (fail "no scripts receipt")
+                    pure
+                    (elementsAt "scripts" (runReceipt r2))
+            map (textAt "reference") rows `shouldBe` [Just (renderOutRef copy)]
+            map (textAt "outcome") rows `shouldBe` [Just "reused"]
+            map (valueAt "discovery") rows
+                `shouldBe` [ Just
+                                ( discovery
+                                    "live copy"
+                                    [ candidate foreignAt (Just found) hash "foreign"
+                                    , candidate copy (Just hash) hash "genuine"
+                                    ]
+                                )
+                           ]
+
+    it
+        "publishes its own state script when the provider offers another application's"
+        $ withStateRig
+        $ \rig -> do
+            previous <- stateScriptOf rig
+            first : second : _ <- spareSeeds rig
+            r1 <-
+                runState
+                    rig
+                    (envOf rig)
+                    "alice"
+                    "first policy"
+                    ["--seed", T.unpack (renderOutRef first)]
+            outcomeOf (runReceipt r1) `shouldBe` Just "success"
+            [(copy, out)] <-
+                outputsFor
+                    rig
+                    (CarryingReferenceScript (hashScript (ssScript previous)))
+            blueprint <- loadBlueprint (rigBlueprint rig) >>= either fail pure
+            let nextPolicy = computeScriptHash (unitProgram 5)
+            current <-
+                either
+                    fail
+                    pure
+                    (stateScriptFromBlueprint blueprint (PolicyID nextPolicy))
+            let caps = lyingAbout rig (hashScript current) (copy, out)
+                env = (envOf rig){envWrites = \_ k -> k caps, envReads = \_ k -> k caps}
+                expected = hexOf (scriptHashBytes (hashScript current))
+                found = hexOf (scriptHashBytes (hashScript (ssScript previous)))
+            expected `shouldNotBe` found
+            r2 <-
+                runVia
+                    rig
+                    env
+                    "different-application"
+                    "other policy"
+                    [ "registry"
+                    , "create"
+                    , "--application-policy"
+                    , T.unpack (hexOf (scriptHashBytes nextPolicy))
+                    , "--seed"
+                    , T.unpack (renderOutRef second)
+                    ]
+            outcomeOf (runReceipt r2) `shouldBe` Just "success"
+            [step | (step, _, _, _) <- submissionsOf (runReceipt r2)]
+                `shouldBe` ["publish-scripts", "create"]
+            rows <-
+                maybe
+                    (fail "no scripts receipt")
+                    pure
+                    (elementsAt "scripts" (runReceipt r2))
+            map (textAt "hash") rows `shouldBe` [Just expected]
+            map (textAt "outcome") rows `shouldBe` [Just "published"]
+            map (valueAt "discovery") rows
+                `shouldBe` [ Just
+                                ( discovery
+                                    "no live copy"
+                                    [candidate copy (Just found) expected "foreign"]
+                                )
+                           ]
 
     it
         "takes the largest output of the wallet for the seed when none is named"
@@ -659,6 +855,23 @@ creationRows = describe "creating a registry" $ do
 -- ---------------------------------------------------------
 -- Interrupted commands
 -- ---------------------------------------------------------
+
+-- | The provider's discovery evidence, distinct from the final source.
+discovery :: Text -> [Aeson.Value] -> Aeson.Value
+discovery status candidates =
+    Aeson.object
+        [ "status" Aeson..= status
+        , "candidates" Aeson..= candidates
+        ]
+
+candidate :: TxIn -> Maybe Text -> Text -> Text -> Aeson.Value
+candidate ref found expected verdict =
+    Aeson.object
+        [ "reference" Aeson..= renderOutRef ref
+        , "foundHash" Aeson..= found
+        , "expectedHash" Aeson..= expected
+        , "verdict" Aeson..= verdict
+        ]
 
 interruptionRows :: Spec
 interruptionRows = describe "an interrupted creation" $ do

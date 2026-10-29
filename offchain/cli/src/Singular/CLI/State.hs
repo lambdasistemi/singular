@@ -39,6 +39,7 @@ import Data.ByteString (ByteString)
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Short qualified as SBS
+import Data.List (nub)
 import Data.Maybe (fromMaybe, maybeToList)
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -101,6 +102,7 @@ import Singular.State.Fold qualified as Fold
 import Singular.State.Genesis (buildGenesis)
 import Singular.State.Publication
     ( Publication (..)
+    , ReferenceDiscovery (..)
     , References (..)
     , planNextReference
     , planReferences
@@ -187,7 +189,7 @@ runStateCreate command env host a = do
         ws
         $ \wc reconciled -> do
             let payer = wcCaller wc
-            (found, published) <-
+            (found, published, discovery) <-
                 publishScripts wc payer (maybeToList (stateCreateSeed a)) scripts
             let sourceOf script = scriptSource script found
                 stateSource = sourceOf stateScript
@@ -240,6 +242,7 @@ runStateCreate command env host a = do
                                     (zip ("state" : map (const "application") own) scripts)
                                     found
                                     published
+                                    discovery
                                 )
                            )
                        , ("reconciled", reconciled)
@@ -256,10 +259,10 @@ publishScripts
     -> Addr
     -> [TxIn]
     -> [Script ConwayEra]
-    -> IO ([(ScriptHash, TxIn)], [(ScriptHash, TxIn)])
-publishScripts wc payer reserved scripts = next []
+    -> IO ([(ScriptHash, TxIn)], [(ScriptHash, TxIn)], [ReferenceDiscovery])
+publishScripts wc payer reserved scripts = next [] []
   where
-    next published = do
+    next published discovery = do
         let remaining =
                 [ script
                 | script <- scripts
@@ -273,35 +276,37 @@ publishScripts wc payer reserved scripts = next []
                 (wcCapabilities wc)
                 (\view -> planNextReference reserved view payer remaining)
                 >>= refusing
+        let seen = discovery <> referencesDiscovery references
         case referencesPublication references of
             Nothing ->
                 pure
                     ( [(hash, ref) | (hash, (ref, _)) <- referencesLive references]
                         <> published
                     , published
+                    , seen
                     )
             Just publication -> case publicationOutputs publication of
                 [(hash, _)] -> do
                     let step = publicationStep hash
-                    (confirmed, located) <-
+                    (confirmed, (located, freshDiscovery)) <-
                         sendStep
                             wc
                             step
                             ["wallet outputs", "reference scripts"]
-                            (CarriesScript . fst)
+                            (CarriesScript . fst . fst)
                             $ \view -> do
                                 fresh <- planNextReference reserved view payer remaining >>= refusing
                                 case referencesPublication fresh of
                                     Just built
                                         | [located@(actual, _)] <- publicationOutputs built
                                         , actual == hash ->
-                                            pure (publicationTx built, located)
+                                            pure (publicationTx built, (located, referencesDiscovery fresh))
                                     _ ->
                                         failWith
                                             ClientRefusal
                                             "the live script copies changed while publication was being planned; run the command again"
                     _ <- observeOutput wc step confirmed 0 (CarriesScript hash)
-                    next (published <> [located])
+                    next (published <> [located]) (seen <> freshDiscovery)
                 _ ->
                     failWith ClientRefusal "the publication must hold exactly one script"
     publicationStep hash = case scripts of
@@ -314,16 +319,49 @@ scriptsFields
     :: [(Text, Script ConwayEra)]
     -> [(ScriptHash, TxIn)]
     -> [(ScriptHash, TxIn)]
+    -> [ReferenceDiscovery]
     -> [Value]
-scriptsFields named found published =
+scriptsFields named found published discovery =
     [ object
         [ "script" .= role
         , "hash" .= hexOf (scriptHashBytes (hashScript script))
         , "reference" .= fmap txInText (lookup (hashScript script) found)
         , "published" .= (hashScript script `elem` map fst published)
+        , "outcome"
+            .= ( if hashScript script `elem` map fst published
+                    then "published"
+                    else "reused" :: Text
+               )
+        , "discovery" .= discoveryField (hashScript script)
         ]
     | (role, script) <- named
     ]
+  where
+    discoveryField hash =
+        let candidates =
+                nub
+                    [ candidate
+                    | ReferenceDiscovery expected inspected <- discovery
+                    , expected == hash
+                    , candidate <- inspected
+                    ]
+        in  object
+                [ "status"
+                    .= ( if any ((== Just hash) . snd) candidates
+                            then "live copy"
+                            else "no live copy" :: Text
+                       )
+                , "candidates"
+                    .= [ object
+                            [ "reference" .= txInText ref
+                            , "foundHash" .= fmap (hexOf . scriptHashBytes) actual
+                            , "expectedHash" .= hexOf (scriptHashBytes hash)
+                            , "verdict"
+                                .= (if actual == Just hash then "genuine" else "foreign" :: Text)
+                            ]
+                       | (ref, actual) <- candidates
+                       ]
+                ]
 
 -- | The root a state output's datum carries, in hex.
 rootOf :: TxOut ConwayEra -> Text

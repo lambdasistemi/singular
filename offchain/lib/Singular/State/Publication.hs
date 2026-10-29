@@ -13,6 +13,7 @@ that carries another script is never reused, whatever the provider claims.
 module Singular.State.Publication
     ( References (..)
     , Publication (..)
+    , ReferenceDiscovery (..)
     , planReferences
     , planNextReference
     ) where
@@ -77,7 +78,21 @@ data References = References
     -- ^ The live copies that are reused
     , referencesPublication :: Maybe Publication
     -- ^ The publication of the others; nothing when every script is live
+    , referencesDiscovery :: [ReferenceDiscovery]
+    -- ^ Every candidate inspected for each requested script
     }
+
+{- | Discovery evidence for a script. An empty list means that this provider
+returned no live copy, without distinguishing a spent output from one that
+never existed. A candidate carries its actual script hash, or no script.
+-}
+data ReferenceDiscovery = ReferenceDiscovery
+    { discoveryHash :: ScriptHash
+    -- ^ The expected hash of the requested script
+    , discoveryCandidates :: [(TxIn, Maybe ScriptHash)]
+    -- ^ Output references and hashes computed from their carried scripts
+    }
+    deriving stock (Eq, Show)
 
 {- | Find the live copy of each script and plan the publication of the others,
 at the payer's address: one transaction that holds every missing script in an
@@ -117,15 +132,15 @@ planPublications choose reserved session payerAddress requested = runExceptT $ d
     found <-
         liftIO
             (mapM (\script -> (,) script <$> liveCopy session script) scripts)
-    let live = [(hashScript script, copy) | (script, Just copy) <- found]
-        missing = [script | (script, Nothing) <- found]
+    let live = [(hashScript script, copy) | (script, (Just copy, _)) <- found]
+        missing = [script | (script, (Nothing, _)) <- found]
     publication <-
         if null missing
             then pure Nothing
             else
                 Just
                     <$> ExceptT (publish reserved session payerAddress (choose missing))
-    pure (References live publication)
+    pure (References live publication (map (snd . snd) found))
   where
     scripts = nubBy (\a b -> hashScript a == hashScript b) requested
 
@@ -136,19 +151,27 @@ each one is checked against the hash of the script.
 liveCopy
     :: Session NoWitness IO
     -> Script ConwayEra
-    -> IO (Maybe (TxIn, TxOut ConwayEra))
+    -> IO (Maybe (TxIn, TxOut ConwayEra), ReferenceDiscovery)
 liveCopy session script = do
     candidates <-
         readOutputs session (CarryingReferenceScript hash)
             >>= either throwIO pure
-    pure $ case filter (carries . snd) candidates of
-        [] -> Nothing
-        genuine -> Just (minimumBy (comparing fst) genuine)
+    let inspected = [(copy, carried output) | copy@(_, output) <- candidates]
+        genuine = [copy | (copy, Just actual) <- inspected, actual == hash]
+        selected = case genuine of
+            [] -> Nothing
+            copies -> Just (minimumBy (comparing fst) copies)
+    pure
+        ( selected
+        , ReferenceDiscovery
+            hash
+            [(ref, actual) | ((ref, _), actual) <- inspected]
+        )
   where
     hash = hashScript script
-    carries output = case output ^. referenceScriptTxOutL of
-        SJust carried -> hashScript carried == hash
-        SNothing -> False
+    carried output = case output ^. referenceScriptTxOutL of
+        SJust scriptFound -> Just (hashScript scriptFound)
+        SNothing -> Nothing
 
 -- | Publish these scripts, each in an output of the payer's address.
 publish

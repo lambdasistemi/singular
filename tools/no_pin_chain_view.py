@@ -16,6 +16,9 @@ questions are answered, each as one JSON document on standard output.
       reference, created, the signers whose witnesses it carries, its fee and
       its mint
 
+  no_pin_chain_view.py transactions
+      every included transaction in chain order, in the same decoded form
+
 An output is {ref, address, credential, lovelace, assets, datum, script}; the
 credential is the address's payment credential, {type: key|script, hash}, read
 from the address itself; the datum is the inline datum decoded to {constructor,
@@ -229,10 +232,11 @@ def unspent(asset, address):
 
 
 def transaction(txid):
+    found = []
     for block in blocks():
         for each in block["transactions"]:
             material = each["material"]
-            if material["tx_hash"] != txid:
+            if txid is not None and material["tx_hash"] != txid:
                 continue
             encoded = bytes.fromhex(each["cbor"])
             tx, _ = decode(encoded)
@@ -250,8 +254,8 @@ def transaction(txid):
                             "quantity": quantity,
                         }
                     )
-            return {
-                "id": txid,
+            observed = {
+                "id": material["tx_hash"],
                 "sizeBytes": len(encoded),
                 "slot": block["slot"],
                 "inputs": [output(i) for i in material["inputs"]],
@@ -263,6 +267,11 @@ def transaction(txid):
                 "donation": get(body, 22) or 0,
                 "mint": mint,
             }
+            if txid is not None:
+                return observed
+            found.append(observed)
+    if txid is None:
+        return {"transactions": found}
     sys.exit("the chain holds no transaction %s" % txid)
 
 
@@ -281,11 +290,13 @@ def main():
                     "usage: no_pin_chain_view.py unspent [--asset P[.N]] [--address A]"
                 )
         print(json.dumps(unspent(asset, address)))
+    elif arguments == ["transactions"]:
+        print(json.dumps(transaction(None)))
     elif len(arguments) == 2 and arguments[0] == "tx":
         print(json.dumps(transaction(arguments[1])))
     else:
         sys.exit(
-            "usage: no_pin_chain_view.py (unspent [--asset P[.N]] [--address A] | tx TXID)"
+            "usage: no_pin_chain_view.py (unspent [--asset P[.N]] [--address A] | tx TXID | transactions)"
         )
 
 

@@ -48,7 +48,8 @@ spec = do
                 world <- newCreation
                 limit <-
                     withSession world (fmap (^. ppMaxTxSizeL) . SessionIO.parameters)
-                References live publication <- planned world
+                References{referencesLive = live, referencesPublication = publication} <-
+                    planned world
                 live `shouldBe` []
                 Publication stateTx stateLocated <- expectPublication publication
                 map fst stateLocated
@@ -56,7 +57,8 @@ spec = do
                 soundnessProblems world stateTx `shouldReturn` []
                 stateTx ^. sizeTxF `shouldSatisfy` (<= fromIntegral limit)
                 applyTx world stateTx
-                References liveState next <- planned world
+                References{referencesLive = liveState, referencesPublication = next} <-
+                    planned world
                 map fst liveState `shouldBe` [hashScript (ssScript (crState world))]
                 Publication requestTx requestLocated <- expectPublication next
                 map fst requestLocated
@@ -72,7 +74,8 @@ spec = do
                         <> show (requestTx ^. sizeTxF)
                     )
                 applyTx world requestTx
-                References both done <- planned world
+                References{referencesLive = both, referencesPublication = done} <-
+                    planned world
                 fmap publicationTx done `shouldBe` Nothing
                 sort (map fst both) `shouldBe` sort (wanted world)
                 sort [ref | (_, (ref, _)) <- both]
@@ -83,13 +86,16 @@ spec = do
             "creates its registry from the live copies, with no script in the transaction"
             $ do
                 world <- newCreation
-                References _ first <- planned world
+                References{referencesLive = _, referencesPublication = first} <-
+                    planned world
                 Publication stateTx _ <- expectPublication first
                 applyTx world stateTx
-                References _ second <- planned world
+                References{referencesLive = _, referencesPublication = second} <-
+                    planned world
                 Publication published located <- expectPublication second
                 applyTx world published
-                References live later <- planned world
+                References{referencesLive = live, referencesPublication = later} <-
+                    planned world
                 fmap publicationTx later `shouldBe` Nothing
                 sort (map fst live) `shouldBe` sort (wanted world)
                 -- the creator's change of the publication is the seed of the new registry

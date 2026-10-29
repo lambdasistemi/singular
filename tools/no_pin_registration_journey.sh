@@ -13,8 +13,9 @@
 # record of the chain live under ${TMPDIR:-/tmp}, which must be short enough
 # for a unix socket path, and are removed on exit.
 #
-# Four wallets: Carol creates registries, Alice books, Bob folds, Dave cleans
-# up. Each runs every command as a separate process in a working directory and
+# Carol creates registries, Alice books, Bob folds, Dave cleans up and Erin
+# creates from another wallet's publications without ever publishing. Each
+# runs every command as a separate process in a working directory and
 # a home of their own, with nothing in the environment but that home. The
 # registry parameters make the journey wait minutes: a registration is folded
 # within a minute of its booking, can be taken back for the next three, and can
@@ -62,6 +63,10 @@ rig_name=journey
 # The bundle signer keeps its key in a vault. Fund only the public address the
 # packaged wallet command prints; no key is exported for the devnet harness.
 prepare_extra_funding() {
+  mkdir -p "$work/actors/erin/cwd" "$work/actors/erin/home"
+  od -An -tx1 -N32 /dev/urandom | tr -d ' \n' >"$work/actors/erin/cwd/erin.skey"
+  actors+=(erin)
+  fund+=(--fund-skey "$work/actors/erin/cwd/erin.skey")
   bundle_address="$(env -i HOME="$work/actors/alice/home" PATH=/nonexistent LC_ALL=C.UTF-8 \
     "$singular" wallet create --vault "$work/actors/alice/cwd/bundle.vault" \
     --network-magic 42 --passphrase-fd 3 3<<<'journey bundle signer')"
@@ -70,6 +75,9 @@ prepare_extra_funding() {
 # shellcheck source=tools/no_pin_rig.sh
 # shellcheck disable=SC1091 # resolved from this script's own directory at runtime
 source "$(dirname "$0")/no_pin_rig.sh"
+# shellcheck source=tools/shared_publication_checks.sh
+# shellcheck disable=SC1091
+source "$(dirname "$0")/shared_publication_checks.sh"
 
 # The assertions, as functions of files and values so that a control can hand
 # each one altered input.
@@ -482,6 +490,80 @@ check "only the first registry locked ADA in reference scripts" \
 control "a measurement that gave a later registry two transactions would be seen" \
   jq -e '[.registries[].transactionCount] == [2, 2, 1]' "$work/creation-measurement.json"
 
+leg="independent creator"
+(
+  cd "$work/actors/erin"
+  find cwd home -mindepth 1 | LC_ALL=C sort
+) >"$listings/erin-before-creation.txt"
+check "the independent creator starts with only its own key and the release" \
+  listing_is "$listings/erin-before-creation.txt" cwd/erin.skey cwd/plutus.json
+check "the independent creator's state directory is fresh" \
+  test ! -e "$work/actors/erin/cwd/state"
+as erin create-independent "$open_datum" create --blueprint plutus.json --state-dir state \
+  --process-time 60000 --reclaim-time 180000 --booking-width 60000
+view_tx independent-create "$(tx_of create-independent create)"
+check "a creator who never published reuses another wallet's live scripts" \
+  check_shared_independent_creation "$receipts/create-independent.json" "$chain_dir/independent-create.tx.json" \
+  "$chain_dir/first-publish-state.tx.json" "$live_copies"
+control "a creation by the publisher that published scripts does not establish independent reuse" \
+  check_shared_independent_creation "$receipts/create-first.json" "$chain_dir/first-create.tx.json" \
+  "$chain_dir/first-publish-state.tx.json" "$live_copies"
+jq '.scripts[0].outcome = "published"' "$receipts/create-independent.json" >"$scratch/independent-outcome.json"
+control "an independent receipt that reports publication is refused" \
+  check_shared_independent_creation "$scratch/independent-outcome.json" "$chain_dir/independent-create.tx.json" \
+  "$chain_dir/first-publish-state.tx.json" "$live_copies"
+jq '.scripts[0].published = true' "$receipts/create-independent.json" >"$scratch/independent-published.json"
+control "the retained publication field cannot falsely report a new publication" \
+  check_shared_independent_creation "$scratch/independent-published.json" "$chain_dir/independent-create.tx.json" \
+  "$chain_dir/first-publish-state.tx.json" "$live_copies"
+jq '.referenceInputs[0].ref += "-changed"' "$chain_dir/independent-create.tx.json" >"$scratch/independent-reference.json"
+control "a creation reading another reference does not establish this reuse" \
+  check_shared_independent_creation "$receipts/create-independent.json" "$scratch/independent-reference.json" \
+  "$chain_dir/first-publish-state.tx.json" "$live_copies"
+jq '.outputs[0].referenceScript = .referenceInputs[0].referenceScript' "$chain_dir/independent-create.tx.json" >"$scratch/independent-publication.json"
+control "a creation that adds a reference output is refused by the reuse check" \
+  check_shared_independent_creation "$receipts/create-independent.json" "$scratch/independent-publication.json" \
+  "$chain_dir/first-publish-state.tx.json" "$live_copies"
+
+# A fixture transaction spends the key-owned application reference output.
+# The ledger prices its carried script even though it is spent, not read.
+# The next application creation
+# must publish the application script again, without republishing the state.
+leg="a spent reference has no live copy"
+run_as carol spend-application-reference "$devnet" spend-reference --tx-in "$application_reference"
+[ "$(cat "$receipts/spend-application-reference.status")" = 0 ] || {
+  cat "$receipts/spend-application-reference.err" >&2
+  setup_fail "the reference spending control did not reach the chain"
+}
+spent_control_output="$(field spend-application-reference .control.output)"
+view_tx spend-application-reference "${spent_control_output%#*}"
+view_unspent after-reference-spend
+check "the reference output was spent on chain" \
+  spends_ref "$chain_dir/spend-application-reference.tx.json" "$application_reference"
+check "the spent reference is no longer unspent" \
+  jq -e --arg r "$application_reference" 'all(.outputs[]; .ref != $r)' "$chain_dir/after-reference-spend.unspent.json"
+as carol create-after-reference-spend "$open_datum" create --blueprint plutus.json \
+  --process-time 60000 --reclaim-time 180000 --booking-width 60000
+view_tx replacement-application-reference "$(tx_of create-after-reference-spend publish-application-script)"
+view_tx create-after-reference-spend "$(tx_of create-after-reference-spend create)"
+replacement_reference="$(field create-after-reference-spend '.scripts[] | select(.script == "application") | .reference')"
+check "only the missing application script is published, then the registry is created" \
+  receipt_steps_are "$receipts/create-after-reference-spend.json" '["publish-application-script","create"]'
+check "the existing receipt fields say the state copy was reused and the application copy was published" \
+  scripts_published_are "$receipts/create-after-reference-spend.json" '[false,true]'
+control "republishing the live state script would fail the one-missing-script assertion" \
+  scripts_published_are "$receipts/create-after-reference-spend.json" '[true,true]'
+check "the receipt calls the spent script no live copy and says it was published again" \
+  jq -e '[.scripts[].outcome] == ["reused","published"] and .scripts[1].discovery == {status:"no live copy",candidates:[]}' "$receipts/create-after-reference-spend.json"
+check "the replacement publication holds only the application script" \
+  refs_equal "$(script_outputs_of "$chain_dir/replacement-application-reference.tx.json")" "[\"$replacement_reference\"]"
+check "the replacement script's hash is the application hash, read from the chain" \
+  jq -e --arg app "$application_hash" '[.outputs[] | select(.referenceScript != null) | .referenceScript.hash] == [$app]' "$chain_dir/replacement-application-reference.tx.json"
+check "the creation reads the retained state reference and the new application reference" \
+  reads_and_creates_no_script "$chain_dir/create-after-reference-spend.tx.json" "[\"$state_reference\",\"$replacement_reference\"]"
+control "a spent reference is not a live source for the new creation" \
+  reads_and_creates_no_script "$chain_dir/create-after-reference-spend.tx.json" "$live_copies"
+
 observe_termination() {
   python3 -I "$(dirname "$chain_view")/no_pin_termination_observations.py" "$chain_dir" "$state_policy" "$state_name" "$key_hex" \
     >"$work/termination-measurement.json" 2>"$work/termination-measurement.err"
@@ -511,6 +593,34 @@ leg="reading a key"
 check "the packaged readers classify live custody, pending termination and authenticated absence; altered answers fail" \
   reading_evidence journey
 
+chain transactions >"$chain_dir/all-transactions.json"
+leg="no witness publication"
+check "no journey transaction publishes a witness policy or configures a witness pin" \
+  check_shared_no_witness_publication "$chain_dir/all-transactions.json" "$state_policy" "$application_hash"
+jq --arg foreign "$(jq -r '.signers[0]' "$chain_dir/first-publish-state.tx.json")" \
+  '(.transactions[].outputs[] | select(.referenceScript != null) | .referenceScript.hash) = $foreign' \
+  "$chain_dir/all-transactions.json" >"$scratch/foreign-publication.json"
+control "a reference publication under another policy would be seen" \
+  check_shared_no_witness_publication "$scratch/foreign-publication.json" "$state_policy" "$application_hash"
+jq --arg app "$application_hash" --arg pin "$state_policy" \
+  '(.transactions[].outputs[] | select(.credential.hash == $app and .datum.constructor == 0) | .datum.fields[0].fields) += [{bytes:$pin}]' \
+  "$chain_dir/all-transactions.json" >"$scratch/witness-pin.json"
+control "a witness pin added to a configuration would be seen" \
+  check_shared_no_witness_publication "$scratch/witness-pin.json" "$state_policy" "$application_hash"
+check "the chain conserves funding and never spends an input twice" \
+  check_shared_funding_conserved "$chain_dir/all-transactions.json"
+jq '.transactions[0].fee += 1' "$chain_dir/all-transactions.json" >"$scratch/altered-funding.json"
+control "an altered chain funding amount is refused" \
+  check_shared_funding_conserved "$scratch/altered-funding.json"
+leg="harness appendix"
+check "every discovered shared-publication check ran on passing and refusing input" shared_publication_checks_covered
+# A temporary uncalled predicate falsifies the discovered-extent guard.
+# shellcheck disable=SC2329 # intentionally uncalled negative control
+check_shared_uncalled_control() { return 0; }
+control "an uncalled predicate would fail the coverage guard" shared_publication_checks_covered
+unset -f check_shared_uncalled_control
+check "removing the temporary control restores predicate coverage" shared_publication_checks_covered
+
 # What the journey showed, in the words of the story, from the files above.
 {
   printf '# Registration, update and termination journey receipt\n\n'
@@ -539,6 +649,10 @@ check "the packaged readers classify live custody, pending termination and authe
   cat "$work/reading-journey.json"
   printf '\n```\n\n## Known-key lookup beside another registry\n\n```json\n'
   cat "$work/reading-measurement.json"
+  printf '\n```\n\n## A creator who never published\n\nThe fresh creator held these files before creation:\n\n```\n'
+  cat "$listings/erin-before-creation.txt"
+  printf '\n```\n\nIts creation receipt reports the shared sources:\n\n```json\n'
+  cat "$receipts/create-independent.json"
   printf '\n```\n\n## Verdicts\n\n'
   cat "$verdicts"
 } >"$work/receipt.md"

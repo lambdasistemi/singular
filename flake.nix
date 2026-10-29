@@ -564,6 +564,8 @@
           cp ${./tools/fixture_process.py} $out/fixture_process.py
           cp ${./tools/facade_lifecycle_controls.py} $out/facade_lifecycle_controls.py
           cp ${./tools/managed_state.sh} $out/managed_state.sh
+          cp ${./tools/shared_publication_checks.sh} $out/shared_publication_checks.sh
+          cp ${./tools/no_pin_chain_view.py} $out/no_pin_chain_view.py
           cp ${./tools/cli_recovery_receipt_cap.test.sh} $out/cli_recovery_receipt_cap.test.sh
         '';
       commandControls =
@@ -593,12 +595,14 @@
           # commands all derive from this list. Every retained partition
           # exercises its commands and checks identity and reconciliation.
           cliRecoveryPartitions = {
+            shared-publications = "shared-publications";
             state-line = "state-line";
             holding-update = "holding-update";
             holding-terminate = "holding-terminate";
             termination-fold = "termination-fold";
           };
           cliRecoveryPartitionNames = {
+            shared-publications = "shared script publications before and after interruption, and uncertain creation recovery";
             state-line = "registry creation, registration booking, reclaim, cleanup and folding interrupted three ways";
             holding-update = "controller holding updates interrupted three ways";
             holding-terminate = "permanent termination bookings interrupted three ways";
@@ -786,6 +790,7 @@
           cp ${./tools/no_pin_registration_refusals.sh} $out/no_pin_registration_refusals.sh
           cp ${./tools/no_pin_termination_refusals.sh} $out/no_pin_termination_refusals.sh
           cp ${./tools/no_pin_chain_view.py} $out/no_pin_chain_view.py
+          cp ${./tools/shared_publication_checks.sh} $out/shared_publication_checks.sh
           cp ${./tools/no_pin_termination_observations.py} $out/no_pin_termination_observations.py
           cp ${./tools/no_pin_reading_checks.py} $out/no_pin_reading_checks.py
           cp ${./tools/creation-cost.py} $out/creation-cost.py

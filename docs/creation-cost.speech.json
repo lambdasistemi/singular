@@ -13,6 +13,28 @@
       "pause": 400
     }
   ],
+  "finding-a-shared-script": [
+    {
+      "text": "Finding a shared script.",
+      "pause": 500
+    },
+    {
+      "text": "As a creator, you can reuse another wallet's live publications with your own wallet and a fresh state directory. You need the release and your provider settings, but no file or address from the publisher. The provider finds candidate live outputs by script hash. The command computes the hash of each carried script, including its language and applied parameters, before deciding whether to reuse it.",
+      "pause": 400
+    },
+    {
+      "text": "Each script in the creation receipt has one outcome: reused or published. Its discovery record retains the candidate references, the hashes found and expected, and whether each candidate is genuine or foreign. A foreign candidate is skipped even if another genuine copy is reused. No live copy means none was found by this provider; the unspent-output query cannot distinguish a spent output from one that never existed.",
+      "pause": 400
+    },
+    {
+      "text": "This is discovery by script hash through the configured provider. Publishing references for everyone, naming a trusted publisher and general public discovery remain outside this workflow, in issues 355 and 473. No witness-policy publication or witness-pin configuration is needed.",
+      "pause": 400
+    },
+    {
+      "text": "After an interruption around publication, rerunning reuses what is live and publishes only what is missing. An uncertain submission keeps its saved transaction identity and signed body; a later invocation reconciles it without automatically resubmitting it. Create is not idempotent: a further invocation can create another registry from a new seed. Repeating an explicit seed that has already been spent retains the existing refusal.",
+      "pause": 400
+    }
+  ],
   "measured-creations": [
     {
       "text": "Measured creations.",
@@ -177,6 +199,6 @@
   ],
   "_source": {
     "file": "creation-cost.md",
-    "sha256": "282bf53c45898303f688ab5f500edbb9ebb9249bcea18805c0f8c83678c0ee51"
+    "sha256": "8e80767ef5ad5cb75ea7b8356b7c332bb12b5cfaf6d7ded3ee28a05599f071be"
   }
 }

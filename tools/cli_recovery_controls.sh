@@ -62,7 +62,7 @@ setup_fail() {
   echo "recovery: SETUP: $*" >&2
   exit 3
 }
-known_parts="state-line holding-update holding-terminate termination-fold"
+known_parts="state-line holding-update holding-terminate termination-fold shared-publications"
 for requested in ${CLI_RECOVERY_PARTS:-}; do
   [[ " $known_parts " == *" $requested "* ]] || setup_fail "CLI_RECOVERY_PARTS names an unknown part: $requested (known: $known_parts)"
 done
@@ -334,7 +334,7 @@ part() {
   return 1
 }
 # shellcheck disable=SC2034 # case_line and case_next are read through the namerefs of sl_case
-if part state-line || part holding-update || part holding-terminate || part termination-fold; then
+if part state-line || part holding-update || part holding-terminate || part termination-fold || part shared-publications; then
   # ------------------------------------------------------------------
   # the commands of the proved design, each interrupted three ways
   # ------------------------------------------------------------------
@@ -545,6 +545,146 @@ if part state-line || part holding-update || part holding-terminate || part term
       sl_case registration-cleanup cleanup "$sl_mode" "$(managed_journal "$sl_dir" "$sl_token" "$bobkey")" case_line case_next
     done
 
+  fi
+
+  if part shared-publications; then
+    control="shared publications"
+    # shellcheck source=tools/shared_publication_checks.sh
+    # shellcheck disable=SC1091
+    source "$(dirname "$0")/shared_publication_checks.sh"
+    sp_source="$(jq -er '.independentSourceDirectory' <<<"$settings")/independent-facade-sources.jsonl"
+    sp_chain="$(dirname "$0")/no_pin_chain_view.py"
+    sp_view() {
+      local name="$1" tx="$2" attempt
+      for attempt in $(seq 1 240); do
+        if python3 -I "$sp_chain" tx "$tx" <"$sp_source" >"$receipts/$name.chain.json" 2>/dev/null; then return 0; fi
+        sleep 0.5
+      done
+      setup_fail "the independent chain record did not hold $tx"
+    }
+    sp_spend() {
+      local name="$1" ref="$2" key="$3" output
+      "$devnet" spend-reference --tx-in "$ref" --wallet-skey "$key" "${node[@]}" >"$receipts/$name.json"
+      output="$(field "$name" .control.output)"
+      sp_view "$name" "${output%#*}"
+    }
+    sp_steps() { is_equal "$(field "$1" '[.submissions[].step] | tojson')" "$2"; }
+    sp_scripts() { is_equal "$(field "$1" '[.scripts[].outcome] | tojson')" "$2"; }
+    sp_refuses() { if "$@" >/dev/null 2>&1; then return 1; else return 0; fi; }
+    sp_prepared_unchanged() {
+      jq -s -e --slurpfile before "$1" --arg tx "$2" '
+        [.[] | select(.journalTxId == $tx and .journalEvent == "prepared")] as $now
+        | [$before[] | select(.journalTxId == $tx and .journalEvent == "prepared")] as $old
+        | ($now | length) == 1 and ($old | length) == 1 and $now == $old' "$journal"
+    }
+
+    sl_run shared-independent create "${sl_params[@]}" --state-dir "$sl_root/shared-independent" "${sl_base[@]}" "${bob[@]}"
+    sp_view shared-independent "$(submission_tx shared-independent create)"
+    sp_view shared-publisher "$(submission_tx sl-create publish-state-script)"
+    sp_view shared-first-create "$(submission_tx sl-create create)"
+    sp_refs="$(field sl-create '[.scripts[].reference] | tojson')"
+    clause "a wallet that never published reads both copies owned by the other wallet" \
+      check_shared_independent_creation "$receipts/shared-independent.json" "$receipts/shared-independent.chain.json" "$receipts/shared-publisher.chain.json" "$sp_refs"
+    clause "the publisher's own creation cannot establish independent reuse" \
+      sp_refuses check_shared_independent_creation "$receipts/sl-create.json" "$receipts/shared-first-create.chain.json" "$receipts/shared-publisher.chain.json" "$sp_refs"
+
+    # Before the publication: no transaction has been prepared. Cancelling
+    # the calling process leaves the live state copy untouched.
+    sp_app_ref="$(field sl-create '.scripts[] | select(.script == "application") | .reference')"
+    sp_spend shared-remove-first "$sp_app_ref" "$work/alice.skey"
+    sp_before="$sl_root/shared-before-publication"
+    reached=0
+    held shared-before-publication SINGULAR_HARNESS_HOLD_BEFORE_LOCK \
+      create "${sl_params[@]}" --state-dir "$sp_before" "${sl_base[@]}" "${bob[@]}" || reached=1
+    clause "before publication: the caller was cancelled before taking the write lock" is_equal "$reached" 0
+    sl_run shared-before-next create "${sl_params[@]}" --state-dir "$sp_before" "${sl_base[@]}" "${bob[@]}"
+    clause "before publication: rerunning succeeds" outcome_is shared-before-next success
+    clause "before publication: only the missing application script is published, then one creation" \
+      sp_steps shared-before-next '["publish-application-script","create"]'
+    clause "before publication: the shared state is reused and the missing application is published" \
+      sp_scripts shared-before-next '["reused","published"]'
+
+    # After publication: keep its prepared identity and signed body, then
+    # reconcile it once and reuse both live copies on the repeated command.
+    sp_app_ref="$(field shared-before-next '.scripts[] | select(.script == "application") | .reference')"
+    sp_spend shared-remove-second "$sp_app_ref" "$work/bob.skey"
+    sp_after="$sl_root/shared-after-publication"
+    case_line=(create "${sl_params[@]}" --state-dir "$sp_after" "${sl_base[@]}" "${bob[@]}")
+    case_next=("${case_line[@]}")
+    sl_case shared-publication publish-application-script killed \
+      "$(managed_journal "$sp_after" "$sl_state_policy." "$bobkey")" case_line case_next
+    clause "after publication: the repeated command sends the creation alone" \
+      sp_steps sl-shared-publication-killed-next '["create"]'
+    clause "after publication: both shared scripts are reused" \
+      sp_scripts sl-shared-publication-killed-next '["reused","reused"]'
+    sp_publication_tx="$(sl_prepared "$journal" publish-application-script)"
+    clause "after publication: the original prepared identity and body hash remain unchanged" \
+      sp_prepared_unchanged "$work/sl-shared-publication-killed.before-next.jsonl" "$sp_publication_tx"
+    clause "after publication: the saved signed body still matches that original hash" body_bound "$sp_publication_tx"
+
+    # The command is deliberately not idempotent: the saved creation is
+    # observed, never resubmitted, and a new invocation makes a new registry.
+    sp_unknown="$sl_root/shared-uncertain-create"
+    case_line=(create "${sl_params[@]}" --state-dir "$sp_unknown" "${sl_base[@]}" "${bob[@]}")
+    case_next=("${case_line[@]}")
+    sl_case shared-create create lost-answer \
+      "$(managed_journal "$sp_unknown" "$sl_state_policy." "$bobkey")" case_line case_next
+    sp_lost="$(submission_tx sl-shared-create-lost-answer create)"
+    clause "uncertain creation: the original prepared identity and body hash remain unchanged" \
+      sp_prepared_unchanged "$work/sl-shared-create-lost-answer.before-next.jsonl" "$sp_lost"
+    clause "uncertain creation: the saved signed body still matches that original hash" body_bound "$sp_lost"
+    jq --arg tx "$sp_lost" 'if .journalTxId == $tx and .journalEvent == "prepared" then .journalBodyHash += "changed" else . end' \
+      "$work/sl-shared-create-lost-answer.before-next.jsonl" >"$receipts/shared-prepared-tampered.json"
+    clause "an altered saved creation body hash is refused" \
+      sp_refuses sp_prepared_unchanged "$receipts/shared-prepared-tampered.json" "$sp_lost"
+    sp_view shared-original-create "$sp_lost"
+    sp_next="$(submission_tx sl-shared-create-lost-answer-next create)"
+    sp_view shared-next-create "$sp_next"
+    clause "uncertain creation: the next invocation uses both shared copies and sends only a new creation" \
+      sp_steps sl-shared-create-lost-answer-next '["create"]'
+    clause "uncertain creation: neither script is published again" \
+      sp_scripts sl-shared-create-lost-answer-next '["reused","reused"]'
+    sp_old_token="$(jq -r '.outputs[0].assets[0] | .policy + "." + .name' "$receipts/shared-original-create.chain.json")"
+    clause "uncertain creation: the further invocation creates a different registry, not a duplicate submission" \
+      bash -c '[ "$1" != "$2" ]' _ "$sp_old_token" "$(field sl-shared-create-lost-answer-next .stateToken)"
+    clause "uncertain creation: the original saved registry is still live" \
+      jq -e --arg ref "$sp_lost#0" '.live | index($ref) != null' <(probe_ins "$sp_lost#0")
+    clause "uncertain creation: the new receipt names an actual spent seed" \
+      jq -e --arg seed "$(field sl-shared-create-lost-answer-next .seed)" 'any(.inputs[]; .ref == $seed)' "$receipts/shared-next-create.chain.json"
+    clause "uncertain creation: the seed of the original transaction is not spent a second time" \
+      jq -e --slurpfile old "$receipts/shared-original-create.chain.json" \
+      'all(.inputs[]; .ref as $ref | all($old[0].inputs[]; .ref != $ref))' "$receipts/shared-next-create.chain.json"
+    sp_old_seed="$(jq -er 'if (.inputs | length) == 1 then .inputs[0].ref else error("creation has no unique seed input") end' "$receipts/shared-original-create.chain.json")"
+    sl_run shared-repeated-seed create "${sl_params[@]}" --seed "$sp_old_seed" --state-dir "$sp_unknown" "${sl_base[@]}" "${bob[@]}"
+    clause "an explicitly repeated spent seed is refused without another submission" \
+      jq -e '.outcome == "client-refusal" and (.reason | contains("is not an unspent output")) and (.submissions | length) == 0' "$receipts/shared-repeated-seed.json"
+
+    python3 -I "$sp_chain" transactions <"$sp_source" >"$receipts/shared-all-transactions.chain.json"
+    clause "funding is conserved on chain and no reserved input is spent twice" \
+      check_shared_funding_conserved "$receipts/shared-all-transactions.chain.json"
+    jq '.transactions[0].fee += 1' "$receipts/shared-all-transactions.chain.json" >"$receipts/shared-funding-tampered.json"
+    clause "an altered funding amount is refused" \
+      sp_refuses check_shared_funding_conserved "$receipts/shared-funding-tampered.json"
+    clause "the shared-publication recovery leg publishes no witness and configures no witness pin" \
+      check_shared_no_witness_publication "$receipts/shared-all-transactions.chain.json" "$sl_state_policy" "$sl_app_policy"
+    jq --arg pin "$sl_state_policy" --arg app "$sl_app_policy" \
+      '(.transactions[].outputs[] | select(.credential.hash == $app and .datum.constructor == 0) | .datum.fields[0].fields) += [{bytes:$pin}]' \
+      "$receipts/shared-all-transactions.chain.json" >"$receipts/shared-pin-tampered.json"
+    clause "a witness pin in the recovery configuration is refused" \
+      sp_refuses check_shared_no_witness_publication "$receipts/shared-pin-tampered.json" "$sl_state_policy" "$sl_app_policy"
+    jq --arg foreign "$(jq -r '.transactions[0].signers[0]' "$receipts/shared-all-transactions.chain.json")" \
+      '(.transactions[].outputs[] | select(.referenceScript != null) | .referenceScript.hash) = $foreign' \
+      "$receipts/shared-all-transactions.chain.json" >"$receipts/shared-publication-tampered.json"
+    clause "a reference publication under another policy is refused" \
+      sp_refuses check_shared_no_witness_publication "$receipts/shared-publication-tampered.json" "$sl_state_policy" "$sl_app_policy"
+    control="harness appendix"
+    clause "every discovered shared-publication check ran on passing and refusing input" shared_publication_checks_covered
+    # Temporarily introduce an uncalled predicate; the guard must reject it.
+    # shellcheck disable=SC2329 # intentionally uncalled negative control
+    check_shared_uncalled_control() { return 0; }
+    clause "an uncalled predicate is refused by the coverage guard" sp_refuses shared_publication_checks_covered
+    unset -f check_shared_uncalled_control
+    clause "removing the temporary control restores predicate coverage" shared_publication_checks_covered
   fi
 
   # Each holding command has its own hosted partition. The same recovery
