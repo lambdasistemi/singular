@@ -259,7 +259,7 @@ main = hspec $ do
         (tagged "Singular.Registry.ContractTable" [Cli])
         Singular.Registry.ContractTableSpec.spec
     describe
-        (tagged "the application-neutral reader" [Provider])
+        (tagged "Singular.Registry.Reader" [Provider])
         Singular.Registry.ReaderSpec.spec
     describe
         (tagged "Singular.CLI.Sign" [Cli, Wallet])
