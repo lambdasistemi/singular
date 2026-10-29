@@ -268,26 +268,59 @@ def recompute(receipt, directory):
             and configuration[3] == workload["reclaimingMilliseconds"],
             "creation windows differ from chain configuration",
         )
-        witness_transactions = [t for t in rebuilt[name]["transactions"] if t["step"].startswith("publish-witness")]
+        witness_transactions = [
+            t
+            for t in rebuilt[name]["transactions"]
+            if t["step"].startswith("publish-witness")
+        ]
         if receipt["design"] == "previous":
-            require(len(configuration) == 6 and isinstance(configuration[5], bytes), "previous configuration carries no active witness policy")
+            require(
+                len(configuration) == 6 and isinstance(configuration[5], bytes),
+                "previous configuration carries no active witness policy",
+            )
             active_policy = configuration[5].hex()
-            publications = [t for t in rebuilt[name]["transactions"] if any(o["referenceScript"] and o["referenceScript"]["hash"] == active_policy for o in t["outputs"])]
-            require(len(publications) == 1 and witness_transactions == publications and publications[0]["step"] == "publish-witness-active", "active witness publication is not named from its chain configuration")
+            publications = [
+                t
+                for t in rebuilt[name]["transactions"]
+                if any(
+                    o["referenceScript"]
+                    and o["referenceScript"]["hash"] == active_policy
+                    for o in t["outputs"]
+                )
+            ]
+            require(
+                len(publications) == 1
+                and witness_transactions == publications
+                and publications[0]["step"] == "publish-witness-active",
+                "active witness publication is not named from its chain configuration",
+            )
         else:
-            require(not witness_transactions and len(configuration) == 5 and all(isinstance(field, int) for field in configuration), "candidate publishes or configures a witness policy")
+            require(
+                not witness_transactions
+                and len(configuration) == 5
+                and all(isinstance(field, int) for field in configuration),
+                "candidate publishes or configures a witness policy",
+            )
         for transaction in rebuilt[name]["transactions"]:
             spent = 0
             for reference in transaction["inputsSpent"]:
                 identity, _, index = reference.partition("#")
-                require(identity in chain, "creation funding input is absent from the chain record")
+                require(
+                    identity in chain,
+                    "creation funding input is absent from the chain record",
+                )
                 spent += measure(chain[identity])["outputs"][int(index)]["lovelace"]
             created = sum(output["lovelace"] for output in transaction["outputs"])
-            require(spent == created + transaction["feeLovelace"], "creation fee does not reconcile spent and created ADA")
+            require(
+                spent == created + transaction["feeLovelace"],
+                "creation fee does not reconcile spent and created ADA",
+            )
     # The run record bounds the creation workload independently of its receipt.
     # A live journey captures this prefix before the creator runs another command.
     # Never shrink this extent to the first/last retained receipt transaction.
-    creator_transactions = [t["id"] for t in measured if signers.intersection(t["signers"])]
+    creator_transactions = [
+        t["id"] for t in measured if signers.intersection(t["signers"])
+    ]
     require(
         creator_transactions == all_ids,
         "creation selection omits or adds a creator transaction",
@@ -359,6 +392,9 @@ def pair(receipts, directory):
         "the pair must contain both designs in order",
     )
     for receipt in receipts:
+        require(
+            receipt["schema"] == "creation-cost-v1", "unknown creation receipt schema"
+        )
         recompute(receipt, directory)
         require(
             receipt["first"]["release"] == receipt["later"]["release"],
@@ -374,6 +410,11 @@ def pair(receipts, directory):
 
 
 def candidate_matches(measured, committed):
+    require(
+        measured["schema"] == committed["schema"] == "creation-cost-v1"
+        and measured["design"] == committed["design"] == "candidate",
+        "live measurement has the wrong receipt schema or design",
+    )
     for name in ("first", "later"):
         actual = measured[name]
         expected = committed[name]
@@ -643,15 +684,35 @@ def controls(receipts):
                 transactions = altered[leg][name]["transactions"]
                 del transactions[endpoint]
                 if transactions:
-                    selected = [{"id": t["id"], "step": t["step"]} for t in transactions]
+                    selected = [
+                        {"id": t["id"], "step": t["step"]} for t in transactions
+                    ]
                     release = altered[leg][name]["release"]
-                    altered[leg][name] = dict(creation(selected, chain), release=release)
-                refused(altered, lambda r: pair(r, EVIDENCE), "omitted creation endpoint")
+                    altered[leg][name] = dict(
+                        creation(selected, chain), release=release
+                    )
+                refused(
+                    altered, lambda r: pair(r, EVIDENCE), "omitted creation endpoint"
+                )
             if receipts[leg]["design"] == "previous":
                 altered = copy.deepcopy(receipts)
-                selectors = [{"id": t["id"], "step": "publish-application" if t["step"].startswith("publish-witness") else t["step"]} for t in altered[leg][name]["transactions"]]
-                altered[leg][name] = dict(creation(selectors, chain), release=altered[leg][name]["release"])
-                refused(altered, lambda r: pair(r, EVIDENCE), "witness publication relabelled as application")
+                selectors = [
+                    {
+                        "id": t["id"],
+                        "step": "publish-application"
+                        if t["step"].startswith("publish-witness")
+                        else t["step"],
+                    }
+                    for t in altered[leg][name]["transactions"]
+                ]
+                altered[leg][name] = dict(
+                    creation(selectors, chain), release=altered[leg][name]["release"]
+                )
+                refused(
+                    altered,
+                    lambda r: pair(r, EVIDENCE),
+                    "witness publication relabelled as application",
+                )
             for field in receipts[leg][name]["totals"]:
                 altered = copy.deepcopy(receipts)
                 altered[leg][name]["totals"][field] += 1
@@ -661,7 +722,11 @@ def controls(receipts):
             total["feesLovelace"] += total["referenceAdaLockedLovelace"]
             total["referenceAdaLockedLovelace"] = 0
             if altered != receipts:
-                refused(altered, lambda r: pair(r, EVIDENCE), "reference capital counted as fees")
+                refused(
+                    altered,
+                    lambda r: pair(r, EVIDENCE),
+                    "reference capital counted as fees",
+                )
             for index, transaction in enumerate(receipts[leg][name]["transactions"]):
                 for field in ("sizeBytes", "feeLovelace"):
                     altered = copy.deepcopy(receipts)
@@ -716,6 +781,24 @@ def controls(receipts):
         "0" * 56
     )
     refused(altered, lambda r: candidate_matches(r, receipts[1]), "candidate script")
+    altered = copy.deepcopy(receipts[1])
+    altered["later"]["liveReferenceScriptsBefore"][0]["referenceScript"]["hash"] = (
+        "0" * 56
+    )
+    refused(
+        altered, lambda r: candidate_matches(r, receipts[1]), "candidate reused script"
+    )
+    altered = copy.deepcopy(receipts[1])
+    altered["schema"] = "unrecognised"
+    refused(altered, lambda r: candidate_matches(r, receipts[1]), "candidate schema")
+    varied_fees = copy.deepcopy(receipts[1])
+    for name in ("first", "later"):
+        for transaction in varied_fees[name]["transactions"]:
+            transaction["feeLovelace"] += 1
+        varied_fees[name]["totals"]["feesLovelace"] += len(
+            varied_fees[name]["transactions"]
+        )
+    candidate_matches(varied_fees, receipts[1])
     rendered = page(receipts)
     altered_page = rendered.replace(
         str(receipts[0]["first"]["totals"]["feesLovelace"]), "altered", 1
@@ -725,7 +808,7 @@ def controls(receipts):
         altered_page, lambda text: page_matches(text, receipts), "altered page figure"
     )
     print(
-        f"creation-cost: {count} altered figures, mismatched legs and candidate changes refused"
+        f"creation-cost: {count} altered figures, mismatched legs and candidate changes refused; different live fees allowed"
     )
 
 
