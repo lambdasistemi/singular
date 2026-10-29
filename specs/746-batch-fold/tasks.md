@@ -24,7 +24,7 @@ the ticket owner accepts its slice.
 
 ## Pull request 4: measurement
 
-- [ ] batch-measurement: the receipt with the largest accepted batch for registrations, terminations and mixed batches.
+- [x] batch-measurement: the receipt with the largest accepted batch for registrations, terminations and mixed batches.
 
 ## Pull request 5: evidence and words
 

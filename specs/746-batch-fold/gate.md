@@ -85,3 +85,11 @@ the census reads every app and check a flake declares and fails on one that no w
 | G21 | every flake app or check the pull request adds is named by a workflow step | ci.yml `declared-checks-hosted` | `nix run --quiet .#declared-checks-classify-controls`; `nix run --quiet .#declared-checks-issue-states <file>` with a read-only `GH_TOKEN`; `nix run --quiet .#declared-checks-hosted <file>` | 0 |
 
 Pull requests 3 and 4 carry G21 whenever they add an app or a check; one execution is added, never a wrapper plus an app.
+
+## Gate version 3
+
+Appended on 29 October 2026; every row above is unchanged. Row G14 keeps its command and is clarified by what the hosted app does: the
+committed receipt is bound to the current scripts (their hashes), its kept transactions are re-evaluated under the recorded preprod
+parameters and reproduce the committed figures byte for byte, and a fresh capture on a development network finds the same largest
+batch per kind and the refusal of the next, with the figure differences reported as observations and not compared. A control with an
+altered script hash, an altered figure and an off-by-one largest size each fails.
