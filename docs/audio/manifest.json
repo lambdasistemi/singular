@@ -146026,17 +146026,17 @@
    ]
   },
   "docs-offchain-api-reference/what-this-reference-contains-03": {
-   "audio_sha256": "eae1992e82f99e94c610f523a7a69265cca6cb4cdc96a416b41593b0b24420ab",
-   "characters": 3950,
-   "cost": 0.0039105,
-   "duration": 205.438,
+   "audio_sha256": "981a4eaf16b725d326909364878fcefd64d0c62952859df8b33fc979279e1a59",
+   "characters": 4092,
+   "cost": 0.0040510799999999994,
+   "duration": 212.538,
    "index": 3,
-   "key": "e81ba5920516ee589d0360052c6c27087ec53ef6a58b6b5b35246b2b125203da",
+   "key": "69807003e50bfc431c96f7ac816783404cb478adb86cf38992a1097d521069a6",
    "page": "docs/offchain-api-reference.md",
    "pause_ms": 400,
    "section": "what-this-reference-contains",
-   "sent_text": "MkDocs environment ready! Run: mkdocs serve - Singular.Reader — source - Singular.Provider.Koios.Client — source - Singular.Provider.Koios.Evidence — source - Singular.Provider.Koios.History — source - Singular.Provider.Koios.Provider — source - Singular.Provider.Koios.Recorded — source - Singular.Provider.Koios.Runtime — source - Singular.Provider.Koios.State — source - Singular.Provider.Koios.Wire — source - Singular.Registry.Address — source - Singular.Registry.Application — source - Singular.Registry.AssetName — source - Singular.Registry.Blueprint — source - Singular.Registry.Blueprint.Load — source - Singular.Registry.Blueprint.Params — source - Singular.Registry.Blueprint.Schema — source - Singular.Registry.Capabilities — source - Singular.Registry.Config — source - Singular.Registry.Config.Application — source - Singular.Registry.Confirmation — source - Singular.Registry.Deployment — source - Singular.Registry.Deployment.Attach — source - Singular.Registry.Deployment.Manifest — source - Singular.Registry.Deployment.Mirror — source - Singular.Registry.Evidence — source - Singular.Registry.FoldAdmission — source - Singular.Registry.Ledger — source - Singular.Registry.LedgerProvider — source - Singular.Registry.Lifecycle — source - Singular.Registry.PlainJson — source - Singular.Registry.Proof — source - Singular.Registry.Replay — source - Singular.Registry.Signing — source - Singular.Registry.StateToken — source - Singular.Registry.Trie — source - Singular.Registry.Trie.Pure — source - Singular.Registry.Trie.PureManager — source - Singular.Registry.TrieState — source - Singular.Registry.TrieState.Core — source - Singular.Registry.TrieState.Fixture — source - Singular.Registry.TrieState.Lineage — source - Singular.Registry.TrieState.Types — source - Singular.Registry.TxBuilder.ConnectedFold — source - Singular.Registry.TxBuilder.Edges — source - Singular.Registry.TxBuilder.Internal — source - Singular.Registry.TxBuilder.Internal.Edges — source - Singular.Registry.TxBuilder.Internal.Identity — source - Singular.Registry.TxBuilder.Internal.Lookup — source - Singular.Registry.TxBuilder.Prepare — source - Singular.Registry.TxBuilder.Request — source - Singular.Registry.TxBuilder.Update — source - Singular.Registry.TxBuilder.Update.Build — source - Singular.Registry.TxBuilder.Update.Context — source - Singular.Registry.TxBuilder.Update.Duties — source - Singular.Registry.Types — source - Singular.Registry.Wait — source - Singular.Registry.Wire.Primitive — source - Singular.Registry.Wire.Proof — source - Singular.Registry.Wire.Redeemer — source - Singular.Registry.Wire.Request — source - Singular.Registry.Wire.State — source - Singular.Registry.Witness — source - Singular.State.Assemble — source — the payer, the reads of the chain and the assembly of a transaction that the builders of the Singular state share - Singular.State.Fold — source — the fold of pending registrations into a registry from public data alone, with the application's part handed in - Singular.State.Genesis — source — the creation of a registry from a seed, with the application's steps in the same transaction - Singular.State.Lineage — source — a registry's trie rebuilt from the public history of its state token, every root checked against the chain - Singular.State.Preimage — source — the off-chain encoder of the Singular state, active, configuration and registration-approval preimages, byte for byte equal to the on-chain one - Singular.State.Publication — source — the state script and the application's script published as reference scripts once and reused by later registries - Singular.State.Records — source — the datum and the actions of the state validator, as Plutus Data in the layout it decodes - Singular.State.Refusal — source — why a builder of the Singular state declines to build - Singular.State.Script — source — the state validator of an application as the builders carry it, attached or by reference",
-   "text": "MkDocs environment ready! Run: mkdocs serve - Singular.Reader — source - Singular.Provider.Koios.Client — source - Singular.Provider.Koios.Evidence — source - Singular.Provider.Koios.History — source - Singular.Provider.Koios.Provider — source - Singular.Provider.Koios.Recorded — source - Singular.Provider.Koios.Runtime — source - Singular.Provider.Koios.State — source - Singular.Provider.Koios.Wire — source - Singular.Registry.Address — source - Singular.Registry.Application — source - Singular.Registry.AssetName — source - Singular.Registry.Blueprint — source - Singular.Registry.Blueprint.Load — source - Singular.Registry.Blueprint.Params — source - Singular.Registry.Blueprint.Schema — source - Singular.Registry.Capabilities — source - Singular.Registry.Config — source - Singular.Registry.Config.Application — source - Singular.Registry.Confirmation — source - Singular.Registry.Deployment — source - Singular.Registry.Deployment.Attach — source - Singular.Registry.Deployment.Manifest — source - Singular.Registry.Deployment.Mirror — source - Singular.Registry.Evidence — source - Singular.Registry.FoldAdmission — source - Singular.Registry.Ledger — source - Singular.Registry.LedgerProvider — source - Singular.Registry.Lifecycle — source - Singular.Registry.PlainJson — source - Singular.Registry.Proof — source - Singular.Registry.Replay — source - Singular.Registry.Signing — source - Singular.Registry.StateToken — source - Singular.Registry.Trie — source - Singular.Registry.Trie.Pure — source - Singular.Registry.Trie.PureManager — source - Singular.Registry.TrieState — source - Singular.Registry.TrieState.Core — source - Singular.Registry.TrieState.Fixture — source - Singular.Registry.TrieState.Lineage — source - Singular.Registry.TrieState.Types — source - Singular.Registry.TxBuilder.ConnectedFold — source - Singular.Registry.TxBuilder.Edges — source - Singular.Registry.TxBuilder.Internal — source - Singular.Registry.TxBuilder.Internal.Edges — source - Singular.Registry.TxBuilder.Internal.Identity — source - Singular.Registry.TxBuilder.Internal.Lookup — source - Singular.Registry.TxBuilder.Prepare — source - Singular.Registry.TxBuilder.Request — source - Singular.Registry.TxBuilder.Update — source - Singular.Registry.TxBuilder.Update.Build — source - Singular.Registry.TxBuilder.Update.Context — source - Singular.Registry.TxBuilder.Update.Duties — source - Singular.Registry.Types — source - Singular.Registry.Wait — source - Singular.Registry.Wire.Primitive — source - Singular.Registry.Wire.Proof — source - Singular.Registry.Wire.Redeemer — source - Singular.Registry.Wire.Request — source - Singular.Registry.Wire.State — source - Singular.Registry.Witness — source - Singular.State.Assemble — source — the payer, the reads of the chain and the assembly of a transaction that the builders of the Singular state share - Singular.State.Fold — source — the fold of pending registrations into a registry from public data alone, with the application's part handed in - Singular.State.Genesis — source — the creation of a registry from a seed, with the application's steps in the same transaction - Singular.State.Lineage — source — a registry's trie rebuilt from the public history of its state token, every root checked against the chain - Singular.State.Preimage — source — the off-chain encoder of the Singular state, active, configuration and registration-approval preimages, byte for byte equal to the on-chain one - Singular.State.Publication — source — the state script and the application's script published as reference scripts once and reused by later registries - Singular.State.Records — source — the datum and the actions of the state validator, as Plutus Data in the layout it decodes - Singular.State.Refusal — source — why a builder of the Singular state declines to build - Singular.State.Script — source — the state validator of an application as the builders carry it, attached or by reference",
+   "sent_text": "MkDocs environment ready! Run: mkdocs serve - Singular.Reader — source - Singular.Provider.Koios.Client — source - Singular.Provider.Koios.Evidence — source - Singular.Provider.Koios.History — source - Singular.Provider.Koios.Provider — source - Singular.Provider.Koios.Recorded — source - Singular.Provider.Koios.Runtime — source - Singular.Provider.Koios.State — source - Singular.Provider.Koios.Wire — source - Singular.Registry.Address — source - Singular.Registry.Application — source - Singular.Registry.AssetName — source - Singular.Registry.Blueprint — source - Singular.Registry.Blueprint.Load — source - Singular.Registry.Blueprint.Params — source - Singular.Registry.Blueprint.Schema — source - Singular.Registry.Capabilities — source - Singular.Registry.Config — source - Singular.Registry.Config.Application — source - Singular.Registry.Confirmation — source - Singular.Registry.Deployment — source - Singular.Registry.Deployment.Attach — source - Singular.Registry.Deployment.Manifest — source - Singular.Registry.Deployment.Mirror — source - Singular.Registry.Evidence — source - Singular.Registry.FoldAdmission — source - Singular.Registry.Ledger — source - Singular.Registry.LedgerProvider — source - Singular.Registry.Lifecycle — source - Singular.Registry.PlainJson — source - Singular.Registry.Proof — source - Singular.Registry.Replay — source - Singular.Registry.Signing — source - Singular.Registry.StateToken — source - Singular.Registry.Trie — source - Singular.Registry.Trie.Pure — source - Singular.Registry.Trie.PureManager — source - Singular.Registry.TrieState — source - Singular.Registry.TrieState.Core — source - Singular.Registry.TrieState.Fixture — source - Singular.Registry.TrieState.Lineage — source - Singular.Registry.TrieState.Types — source - Singular.Registry.TxBuilder.ConnectedFold — source - Singular.Registry.TxBuilder.Edges — source - Singular.Registry.TxBuilder.Internal — source - Singular.Registry.TxBuilder.Internal.Edges — source - Singular.Registry.TxBuilder.Internal.Identity — source - Singular.Registry.TxBuilder.Internal.Lookup — source - Singular.Registry.TxBuilder.Prepare — source - Singular.Registry.TxBuilder.Request — source - Singular.Registry.TxBuilder.Update — source - Singular.Registry.TxBuilder.Update.Build — source - Singular.Registry.TxBuilder.Update.Context — source - Singular.Registry.TxBuilder.Update.Duties — source - Singular.Registry.Types — source - Singular.Registry.Wait — source - Singular.Registry.Wire.Primitive — source - Singular.Registry.Wire.Proof — source - Singular.Registry.Wire.Redeemer — source - Singular.Registry.Wire.Request — source - Singular.Registry.Wire.State — source - Singular.Registry.Witness — source - Singular.State.Assemble — source — the payer, the reads of the chain and the assembly of a transaction that the builders of the Singular state share - Singular.State.Batch — source — request ordering and the greatest prefix that fits the observed capacity limits - Singular.State.Fold — source — discovery and folding of pending registrations and terminations from public data, with skipped holders and remaining requests accounted for - Singular.State.Genesis — source — the creation of a registry from a seed, with the application's steps in the same transaction - Singular.State.Lineage — source — a registry's trie rebuilt from the public history of its state token, every root checked against the chain - Singular.State.Preimage — source — the off-chain encoder of the Singular state, active, configuration and registration-approval preimages, byte for byte equal to the on-chain one - Singular.State.Publication — source — the state script and the application's script published as reference scripts once and reused by later registries - Singular.State.Records — source — the datum and the actions of the state validator, as Plutus Data in the layout it decodes - Singular.State.Refusal — source — why a builder of the Singular state declines to build - Singular.State.Script — source — the state validator of an application as the builders carry it, attached or by reference",
+   "text": "MkDocs environment ready! Run: mkdocs serve - Singular.Reader — source - Singular.Provider.Koios.Client — source - Singular.Provider.Koios.Evidence — source - Singular.Provider.Koios.History — source - Singular.Provider.Koios.Provider — source - Singular.Provider.Koios.Recorded — source - Singular.Provider.Koios.Runtime — source - Singular.Provider.Koios.State — source - Singular.Provider.Koios.Wire — source - Singular.Registry.Address — source - Singular.Registry.Application — source - Singular.Registry.AssetName — source - Singular.Registry.Blueprint — source - Singular.Registry.Blueprint.Load — source - Singular.Registry.Blueprint.Params — source - Singular.Registry.Blueprint.Schema — source - Singular.Registry.Capabilities — source - Singular.Registry.Config — source - Singular.Registry.Config.Application — source - Singular.Registry.Confirmation — source - Singular.Registry.Deployment — source - Singular.Registry.Deployment.Attach — source - Singular.Registry.Deployment.Manifest — source - Singular.Registry.Deployment.Mirror — source - Singular.Registry.Evidence — source - Singular.Registry.FoldAdmission — source - Singular.Registry.Ledger — source - Singular.Registry.LedgerProvider — source - Singular.Registry.Lifecycle — source - Singular.Registry.PlainJson — source - Singular.Registry.Proof — source - Singular.Registry.Replay — source - Singular.Registry.Signing — source - Singular.Registry.StateToken — source - Singular.Registry.Trie — source - Singular.Registry.Trie.Pure — source - Singular.Registry.Trie.PureManager — source - Singular.Registry.TrieState — source - Singular.Registry.TrieState.Core — source - Singular.Registry.TrieState.Fixture — source - Singular.Registry.TrieState.Lineage — source - Singular.Registry.TrieState.Types — source - Singular.Registry.TxBuilder.ConnectedFold — source - Singular.Registry.TxBuilder.Edges — source - Singular.Registry.TxBuilder.Internal — source - Singular.Registry.TxBuilder.Internal.Edges — source - Singular.Registry.TxBuilder.Internal.Identity — source - Singular.Registry.TxBuilder.Internal.Lookup — source - Singular.Registry.TxBuilder.Prepare — source - Singular.Registry.TxBuilder.Request — source - Singular.Registry.TxBuilder.Update — source - Singular.Registry.TxBuilder.Update.Build — source - Singular.Registry.TxBuilder.Update.Context — source - Singular.Registry.TxBuilder.Update.Duties — source - Singular.Registry.Types — source - Singular.Registry.Wait — source - Singular.Registry.Wire.Primitive — source - Singular.Registry.Wire.Proof — source - Singular.Registry.Wire.Redeemer — source - Singular.Registry.Wire.Request — source - Singular.Registry.Wire.State — source - Singular.Registry.Witness — source - Singular.State.Assemble — source — the payer, the reads of the chain and the assembly of a transaction that the builders of the Singular state share - Singular.State.Batch — source — request ordering and the greatest prefix that fits the observed capacity limits - Singular.State.Fold — source — discovery and folding of pending registrations and terminations from public data, with skipped holders and remaining requests accounted for - Singular.State.Genesis — source — the creation of a registry from a seed, with the application's steps in the same transaction - Singular.State.Lineage — source — a registry's trie rebuilt from the public history of its state token, every root checked against the chain - Singular.State.Preimage — source — the off-chain encoder of the Singular state, active, configuration and registration-approval preimages, byte for byte equal to the on-chain one - Singular.State.Publication — source — the state script and the application's script published as reference scripts once and reused by later registries - Singular.State.Records — source — the datum and the actions of the state validator, as Plutus Data in the layout it decodes - Singular.State.Refusal — source — why a builder of the Singular state declines to build - Singular.State.Script — source — the state validator of an application as the builders carry it, attached or by reference",
    "words": [
     {
      "end": 0.837,
@@ -149024,1093 +149024,1203 @@
      "text": ","
     },
     {
-     "end": 130.062,
-     "start": 129.95,
+     "end": 130.038,
+     "start": 129.925,
      "text": "the"
     },
     {
-     "end": 130.462,
-     "start": 130.062,
+     "end": 130.363,
+     "start": 130.038,
      "text": "reads"
     },
     {
-     "end": 130.575,
-     "start": 130.462,
+     "end": 130.438,
+     "start": 130.363,
      "text": "of"
     },
     {
-     "end": 130.712,
-     "start": 130.575,
+     "end": 130.562,
+     "start": 130.438,
      "text": "the"
     },
     {
-     "end": 131.238,
-     "start": 130.712,
+     "end": 131.025,
+     "start": 130.562,
      "text": "chain"
     },
     {
-     "end": 131.363,
-     "start": 131.238,
+     "end": 131.137,
+     "start": 131.025,
      "text": "and"
     },
     {
-     "end": 131.475,
-     "start": 131.363,
+     "end": 131.225,
+     "start": 131.137,
      "text": "the"
     },
     {
-     "end": 132.05,
-     "start": 131.475,
+     "end": 131.725,
+     "start": 131.225,
      "text": "assembly"
     },
     {
-     "end": 132.137,
-     "start": 132.05,
+     "end": 131.812,
+     "start": 131.725,
      "text": "of"
     },
     {
-     "end": 132.225,
-     "start": 132.137,
+     "end": 131.875,
+     "start": 131.812,
      "text": "a"
     },
     {
-     "end": 133.1,
-     "start": 132.225,
+     "end": 132.65,
+     "start": 131.875,
      "text": "transaction"
     },
     {
-     "end": 133.225,
-     "start": 133.1,
+     "end": 132.762,
+     "start": 132.65,
      "text": "that"
     },
     {
-     "end": 133.363,
-     "start": 133.225,
+     "end": 132.863,
+     "start": 132.762,
      "text": "the"
     },
     {
-     "end": 133.875,
-     "start": 133.363,
+     "end": 133.312,
+     "start": 132.863,
      "text": "builders"
+    },
+    {
+     "end": 133.387,
+     "start": 133.312,
+     "text": "of"
+    },
+    {
+     "end": 133.512,
+     "start": 133.387,
+     "text": "the"
     },
     {
      "end": 134.0,
-     "start": 133.875,
-     "text": "of"
-    },
-    {
-     "end": 134.137,
-     "start": 134.0,
-     "text": "the"
-    },
-    {
-     "end": 134.688,
-     "start": 134.137,
+     "start": 133.512,
      "text": "Singular"
     },
     {
-     "end": 135.125,
-     "start": 134.688,
+     "end": 134.363,
+     "start": 134.0,
      "text": "state"
     },
     {
-     "end": 135.488,
-     "start": 135.125,
+     "end": 134.625,
+     "start": 134.363,
      "text": "share"
     },
     {
-     "end": 136.325,
-     "start": 135.55,
+     "end": 135.475,
+     "start": 134.675,
      "text": "Singular"
     },
     {
-     "end": 136.4,
-     "start": 136.325,
+     "end": 135.55,
+     "start": 135.475,
      "text": "."
     },
     {
-     "end": 136.95,
-     "start": 136.4,
+     "end": 136.0,
+     "start": 135.55,
      "text": "State"
     },
     {
-     "end": 137.0,
-     "start": 136.95,
+     "end": 136.05,
+     "start": 136.0,
      "text": "."
     },
     {
-     "end": 137.562,
-     "start": 137.0,
-     "text": "Fold"
+     "end": 136.512,
+     "start": 136.05,
+     "text": "Batch"
     },
     {
-     "end": 137.7,
-     "start": 137.562,
+     "end": 136.625,
+     "start": 136.512,
      "text": "—"
+    },
+    {
+     "end": 137.087,
+     "start": 136.625,
+     "text": "source"
+    },
+    {
+     "end": 137.175,
+     "start": 137.087,
+     "text": "—"
+    },
+    {
+     "end": 137.6,
+     "start": 137.175,
+     "text": "request"
+    },
+    {
+     "end": 138.087,
+     "start": 137.6,
+     "text": "ordering"
     },
     {
      "end": 138.188,
-     "start": 137.7,
-     "text": "source"
+     "start": 138.087,
+     "text": "and"
     },
     {
-     "end": 138.238,
+     "end": 138.3,
      "start": 138.188,
-     "text": "—"
-    },
-    {
-     "end": 138.4,
-     "start": 138.238,
      "text": "the"
     },
     {
-     "end": 138.788,
-     "start": 138.4,
-     "text": "fold"
+     "end": 138.7,
+     "start": 138.3,
+     "text": "greatest"
     },
     {
-     "end": 138.95,
-     "start": 138.788,
+     "end": 139.2,
+     "start": 138.7,
+     "text": "prefix"
+    },
+    {
+     "end": 139.413,
+     "start": 139.2,
+     "text": "that"
+    },
+    {
+     "end": 139.688,
+     "start": 139.413,
+     "text": "fits"
+    },
+    {
+     "end": 139.825,
+     "start": 139.688,
+     "text": "the"
+    },
+    {
+     "end": 140.288,
+     "start": 139.825,
+     "text": "observed"
+    },
+    {
+     "end": 140.837,
+     "start": 140.288,
+     "text": "capacity"
+    },
+    {
+     "end": 141.288,
+     "start": 140.837,
+     "text": "limits"
+    },
+    {
+     "end": 141.363,
+     "start": 141.288,
+     "text": "-"
+    },
+    {
+     "end": 142.0,
+     "start": 141.363,
+     "text": "Singular"
+    },
+    {
+     "end": 142.075,
+     "start": 142.0,
+     "text": "."
+    },
+    {
+     "end": 142.6,
+     "start": 142.075,
+     "text": "State"
+    },
+    {
+     "end": 142.65,
+     "start": 142.6,
+     "text": "."
+    },
+    {
+     "end": 143.113,
+     "start": 142.65,
+     "text": "Fold"
+    },
+    {
+     "end": 143.225,
+     "start": 143.113,
+     "text": "—"
+    },
+    {
+     "end": 143.637,
+     "start": 143.225,
+     "text": "source"
+    },
+    {
+     "end": 143.688,
+     "start": 143.637,
+     "text": "—"
+    },
+    {
+     "end": 144.337,
+     "start": 143.688,
+     "text": "discovery"
+    },
+    {
+     "end": 144.5,
+     "start": 144.337,
+     "text": "and"
+    },
+    {
+     "end": 144.913,
+     "start": 144.5,
+     "text": "folding"
+    },
+    {
+     "end": 145.075,
+     "start": 144.913,
      "text": "of"
     },
     {
-     "end": 139.337,
-     "start": 138.95,
+     "end": 145.462,
+     "start": 145.075,
      "text": "pending"
     },
     {
-     "end": 140.238,
-     "start": 139.337,
+     "end": 146.337,
+     "start": 145.462,
      "text": "registrations"
     },
     {
-     "end": 140.5,
-     "start": 140.238,
-     "text": "into"
+     "end": 146.475,
+     "start": 146.337,
+     "text": "and"
     },
     {
-     "end": 140.6,
-     "start": 140.5,
-     "text": "a"
+     "end": 147.262,
+     "start": 146.475,
+     "text": "terminations"
     },
     {
-     "end": 141.113,
-     "start": 140.6,
-     "text": "registry"
-    },
-    {
-     "end": 141.325,
-     "start": 141.113,
+     "end": 147.45,
+     "start": 147.262,
      "text": "from"
     },
     {
-     "end": 141.712,
-     "start": 141.325,
+     "end": 147.837,
+     "start": 147.45,
      "text": "public"
     },
     {
-     "end": 142.087,
-     "start": 141.712,
+     "end": 149.075,
+     "start": 147.837,
      "text": "data"
     },
     {
-     "end": 143.4,
-     "start": 142.087,
-     "text": "alone"
-    },
-    {
-     "end": 143.712,
-     "start": 143.6,
+     "end": 149.475,
+     "start": 149.3,
      "text": "with"
     },
     {
-     "end": 143.825,
-     "start": 143.712,
-     "text": "the"
+     "end": 149.8,
+     "start": 149.475,
+     "text": "skipped"
     },
     {
-     "end": 144.562,
-     "start": 143.825,
-     "text": "application's"
+     "end": 150.35,
+     "start": 149.8,
+     "text": "holders"
     },
     {
-     "end": 144.887,
-     "start": 144.562,
-     "text": "part"
-    },
-    {
-     "end": 145.35,
-     "start": 144.887,
-     "text": "handed"
-    },
-    {
-     "end": 145.5,
-     "start": 145.35,
-     "text": "in"
-    },
-    {
-     "end": 146.125,
-     "start": 145.55,
-     "text": "Singular"
-    },
-    {
-     "end": 146.2,
-     "start": 146.125,
-     "text": "."
-    },
-    {
-     "end": 146.825,
-     "start": 146.2,
-     "text": "State"
-    },
-    {
-     "end": 146.875,
-     "start": 146.825,
-     "text": "."
-    },
-    {
-     "end": 147.538,
-     "start": 146.875,
-     "text": "Genesis"
-    },
-    {
-     "end": 147.65,
-     "start": 147.538,
-     "text": "—"
-    },
-    {
-     "end": 148.062,
-     "start": 147.65,
-     "text": "source"
-    },
-    {
-     "end": 148.113,
-     "start": 148.062,
-     "text": "—"
-    },
-    {
-     "end": 148.225,
-     "start": 148.113,
-     "text": "the"
-    },
-    {
-     "end": 148.688,
-     "start": 148.225,
-     "text": "creation"
-    },
-    {
-     "end": 148.775,
-     "start": 148.688,
-     "text": "of"
-    },
-    {
-     "end": 148.875,
-     "start": 148.775,
-     "text": "a"
-    },
-    {
-     "end": 149.363,
-     "start": 148.875,
-     "text": "registry"
-    },
-    {
-     "end": 149.5,
-     "start": 149.363,
-     "text": "from"
-    },
-    {
-     "end": 149.625,
-     "start": 149.5,
-     "text": "a"
-    },
-    {
-     "end": 150.8,
-     "start": 149.625,
-     "text": "seed"
-    },
-    {
-     "end": 151.137,
-     "start": 151.025,
-     "text": "with"
-    },
-    {
-     "end": 151.25,
-     "start": 151.137,
-     "text": "the"
-    },
-    {
-     "end": 152.062,
-     "start": 151.25,
-     "text": "application's"
-    },
-    {
-     "end": 152.45,
-     "start": 152.062,
-     "text": "steps"
-    },
-    {
-     "end": 152.538,
-     "start": 152.45,
-     "text": "in"
-    },
-    {
-     "end": 152.663,
-     "start": 152.538,
-     "text": "the"
-    },
-    {
-     "end": 153.0,
-     "start": 152.663,
-     "text": "same"
-    },
-    {
-     "end": 153.887,
-     "start": 153.0,
-     "text": "transaction"
-    },
-    {
-     "end": 153.988,
-     "start": 153.887,
-     "text": "-"
-    },
-    {
-     "end": 154.65,
-     "start": 153.988,
-     "text": "Singular"
-    },
-    {
-     "end": 154.75,
-     "start": 154.65,
-     "text": "."
-    },
-    {
-     "end": 155.25,
-     "start": 154.75,
-     "text": "State"
-    },
-    {
-     "end": 155.35,
-     "start": 155.25,
-     "text": "."
-    },
-    {
-     "end": 156.012,
-     "start": 155.35,
-     "text": "Lineage"
-    },
-    {
-     "end": 156.113,
-     "start": 156.012,
-     "text": "—"
-    },
-    {
-     "end": 156.575,
-     "start": 156.113,
-     "text": "source"
-    },
-    {
-     "end": 156.65,
-     "start": 156.575,
-     "text": "—"
-    },
-    {
-     "end": 156.75,
-     "start": 156.65,
-     "text": "a"
-    },
-    {
-     "end": 157.337,
-     "start": 156.75,
-     "text": "registry's"
-    },
-    {
-     "end": 157.712,
-     "start": 157.337,
-     "text": "trie"
-    },
-    {
-     "end": 158.15,
-     "start": 157.712,
-     "text": "rebuilt"
-    },
-    {
-     "end": 158.288,
-     "start": 158.15,
-     "text": "from"
-    },
-    {
-     "end": 158.375,
-     "start": 158.288,
-     "text": "the"
-    },
-    {
-     "end": 158.75,
-     "start": 158.375,
-     "text": "public"
-    },
-    {
-     "end": 159.15,
-     "start": 158.75,
-     "text": "history"
-    },
-    {
-     "end": 159.238,
-     "start": 159.15,
-     "text": "of"
-    },
-    {
-     "end": 159.375,
-     "start": 159.238,
-     "text": "its"
-    },
-    {
-     "end": 159.7,
-     "start": 159.375,
-     "text": "state"
-    },
-    {
-     "end": 160.825,
-     "start": 159.7,
-     "text": "token"
-    },
-    {
-     "end": 161.075,
-     "start": 160.825,
-     "text": ","
-    },
-    {
-     "end": 161.575,
-     "start": 161.275,
-     "text": "every"
-    },
-    {
-     "end": 161.812,
-     "start": 161.575,
-     "text": "root"
-    },
-    {
-     "end": 162.125,
-     "start": 161.812,
-     "text": "checked"
-    },
-    {
-     "end": 162.488,
-     "start": 162.125,
-     "text": "against"
-    },
-    {
-     "end": 162.613,
-     "start": 162.488,
-     "text": "the"
-    },
-    {
-     "end": 162.975,
-     "start": 162.613,
-     "text": "chain"
-    },
-    {
-     "end": 163.575,
-     "start": 163.025,
-     "text": "Singular"
-    },
-    {
-     "end": 163.65,
-     "start": 163.575,
-     "text": "."
-    },
-    {
-     "end": 164.075,
-     "start": 163.65,
-     "text": "State"
-    },
-    {
-     "end": 164.125,
-     "start": 164.075,
-     "text": "."
-    },
-    {
-     "end": 164.837,
-     "start": 164.125,
-     "text": "Preimage"
-    },
-    {
-     "end": 164.95,
-     "start": 164.837,
-     "text": "—"
-    },
-    {
-     "end": 165.312,
-     "start": 164.95,
-     "text": "source"
-    },
-    {
-     "end": 165.363,
-     "start": 165.312,
-     "text": "—"
-    },
-    {
-     "end": 165.538,
-     "start": 165.363,
-     "text": "the"
-    },
-    {
-     "end": 166.125,
-     "start": 165.538,
-     "text": "off-chain"
-    },
-    {
-     "end": 166.663,
-     "start": 166.125,
-     "text": "encoder"
-    },
-    {
-     "end": 166.738,
-     "start": 166.663,
-     "text": "of"
-    },
-    {
-     "end": 166.9,
-     "start": 166.738,
-     "text": "the"
-    },
-    {
-     "end": 167.375,
-     "start": 166.9,
-     "text": "Singular"
-    },
-    {
-     "end": 168.525,
-     "start": 167.375,
-     "text": "state"
-    },
-    {
-     "end": 169.15,
-     "start": 168.725,
-     "text": "active"
-    },
-    {
-     "end": 169.225,
-     "start": 169.15,
-     "text": ","
-    },
-    {
-     "end": 170.238,
-     "start": 169.225,
-     "text": "configuration"
-    },
-    {
-     "end": 170.375,
-     "start": 170.238,
+     "end": 150.475,
+     "start": 150.35,
      "text": "and"
     },
     {
-     "end": 171.375,
-     "start": 170.375,
-     "text": "registration-approval"
+     "end": 150.975,
+     "start": 150.475,
+     "text": "remaining"
     },
     {
-     "end": 172.55,
-     "start": 171.375,
-     "text": "preimages"
+     "end": 151.6,
+     "start": 150.975,
+     "text": "requests"
     },
     {
-     "end": 172.75,
-     "start": 172.55,
-     "text": ","
+     "end": 152.125,
+     "start": 151.6,
+     "text": "accounted"
     },
     {
-     "end": 173.25,
-     "start": 172.975,
-     "text": "byte"
-    },
-    {
-     "end": 173.4,
-     "start": 173.25,
+     "end": 152.3,
+     "start": 152.125,
      "text": "for"
     },
     {
-     "end": 173.675,
-     "start": 173.4,
-     "text": "byte"
-    },
-    {
-     "end": 174.05,
-     "start": 173.675,
-     "text": "equal"
-    },
-    {
-     "end": 174.137,
-     "start": 174.05,
-     "text": "to"
-    },
-    {
-     "end": 174.288,
-     "start": 174.137,
-     "text": "the"
-    },
-    {
-     "end": 174.9,
-     "start": 174.288,
-     "text": "on-chain"
-    },
-    {
-     "end": 175.125,
-     "start": 174.9,
-     "text": "one"
-    },
-    {
-     "end": 175.8,
-     "start": 175.175,
+     "end": 153.025,
+     "start": 152.35,
      "text": "Singular"
     },
     {
-     "end": 175.875,
-     "start": 175.8,
+     "end": 153.1,
+     "start": 153.025,
      "text": "."
     },
     {
-     "end": 176.35,
-     "start": 175.875,
+     "end": 153.75,
+     "start": 153.1,
      "text": "State"
     },
     {
-     "end": 176.4,
-     "start": 176.35,
+     "end": 153.8,
+     "start": 153.75,
      "text": "."
     },
     {
-     "end": 177.312,
-     "start": 176.4,
-     "text": "Publication"
+     "end": 154.488,
+     "start": 153.8,
+     "text": "Genesis"
     },
     {
-     "end": 177.425,
-     "start": 177.312,
+     "end": 154.6,
+     "start": 154.488,
      "text": "—"
     },
     {
-     "end": 177.788,
-     "start": 177.425,
+     "end": 155.012,
+     "start": 154.6,
      "text": "source"
     },
     {
-     "end": 177.837,
-     "start": 177.788,
+     "end": 155.062,
+     "start": 155.012,
      "text": "—"
     },
     {
-     "end": 177.95,
-     "start": 177.837,
+     "end": 155.175,
+     "start": 155.062,
      "text": "the"
     },
     {
-     "end": 178.337,
-     "start": 177.95,
-     "text": "state"
+     "end": 155.663,
+     "start": 155.175,
+     "text": "creation"
     },
     {
-     "end": 178.788,
-     "start": 178.337,
-     "text": "script"
-    },
-    {
-     "end": 178.887,
-     "start": 178.788,
-     "text": "and"
-    },
-    {
-     "end": 179.0,
-     "start": 178.887,
-     "text": "the"
-    },
-    {
-     "end": 179.788,
-     "start": 179.0,
-     "text": "application's"
-    },
-    {
-     "end": 180.2,
-     "start": 179.788,
-     "text": "script"
-    },
-    {
-     "end": 180.7,
-     "start": 180.2,
-     "text": "published"
-    },
-    {
-     "end": 180.863,
-     "start": 180.7,
-     "text": "as"
-    },
-    {
-     "end": 181.275,
-     "start": 180.863,
-     "text": "reference"
-    },
-    {
-     "end": 181.725,
-     "start": 181.275,
-     "text": "scripts"
-    },
-    {
-     "end": 182.062,
-     "start": 181.725,
-     "text": "once"
-    },
-    {
-     "end": 182.238,
-     "start": 182.062,
-     "text": "and"
-    },
-    {
-     "end": 182.812,
-     "start": 182.238,
-     "text": "reused"
-    },
-    {
-     "end": 183.012,
-     "start": 182.812,
-     "text": "by"
-    },
-    {
-     "end": 183.363,
-     "start": 183.012,
-     "text": "later"
-    },
-    {
-     "end": 184.087,
-     "start": 183.363,
-     "text": "registries"
-    },
-    {
-     "end": 184.163,
-     "start": 184.087,
-     "text": "-"
-    },
-    {
-     "end": 184.875,
-     "start": 184.163,
-     "text": "Singular"
-    },
-    {
-     "end": 184.95,
-     "start": 184.875,
-     "text": "."
-    },
-    {
-     "end": 185.375,
-     "start": 184.95,
-     "text": "State"
-    },
-    {
-     "end": 185.425,
-     "start": 185.375,
-     "text": "."
-    },
-    {
-     "end": 185.913,
-     "start": 185.425,
-     "text": "Records"
-    },
-    {
-     "end": 186.025,
-     "start": 185.913,
-     "text": "—"
-    },
-    {
-     "end": 186.413,
-     "start": 186.025,
-     "text": "source"
-    },
-    {
-     "end": 186.462,
-     "start": 186.413,
-     "text": "—"
-    },
-    {
-     "end": 186.625,
-     "start": 186.462,
-     "text": "the"
-    },
-    {
-     "end": 187.087,
-     "start": 186.625,
-     "text": "datum"
-    },
-    {
-     "end": 187.188,
-     "start": 187.087,
-     "text": "and"
-    },
-    {
-     "end": 187.363,
-     "start": 187.188,
-     "text": "the"
-    },
-    {
-     "end": 187.837,
-     "start": 187.363,
-     "text": "actions"
-    },
-    {
-     "end": 187.913,
-     "start": 187.837,
+     "end": 155.75,
+     "start": 155.663,
      "text": "of"
     },
     {
-     "end": 188.025,
-     "start": 187.913,
-     "text": "the"
-    },
-    {
-     "end": 188.35,
-     "start": 188.025,
-     "text": "state"
-    },
-    {
-     "end": 189.95,
-     "start": 188.35,
-     "text": "validator"
-    },
-    {
-     "end": 190.413,
-     "start": 190.25,
-     "text": "as"
-    },
-    {
-     "end": 190.837,
-     "start": 190.413,
-     "text": "Plutus"
-    },
-    {
-     "end": 191.225,
-     "start": 190.837,
-     "text": "Data"
-    },
-    {
-     "end": 191.312,
-     "start": 191.225,
-     "text": "in"
-    },
-    {
-     "end": 191.425,
-     "start": 191.312,
-     "text": "the"
-    },
-    {
-     "end": 191.875,
-     "start": 191.425,
-     "text": "layout"
-    },
-    {
-     "end": 192.0,
-     "start": 191.875,
-     "text": "it"
-    },
-    {
-     "end": 192.55,
-     "start": 192.0,
-     "text": "decodes"
-    },
-    {
-     "end": 193.225,
-     "start": 192.6,
-     "text": "Singular"
-    },
-    {
-     "end": 193.3,
-     "start": 193.225,
-     "text": "."
-    },
-    {
-     "end": 193.875,
-     "start": 193.3,
-     "text": "State"
-    },
-    {
-     "end": 193.925,
-     "start": 193.875,
-     "text": "."
-    },
-    {
-     "end": 194.512,
-     "start": 193.925,
-     "text": "Refusal"
-    },
-    {
-     "end": 194.625,
-     "start": 194.512,
-     "text": "—"
-    },
-    {
-     "end": 195.113,
-     "start": 194.625,
-     "text": "source"
-    },
-    {
-     "end": 195.2,
-     "start": 195.113,
-     "text": "—"
-    },
-    {
-     "end": 195.45,
-     "start": 195.2,
-     "text": "why"
-    },
-    {
-     "end": 195.562,
-     "start": 195.45,
+     "end": 155.85,
+     "start": 155.75,
      "text": "a"
     },
     {
-     "end": 195.938,
-     "start": 195.562,
-     "text": "builder"
+     "end": 156.337,
+     "start": 155.85,
+     "text": "registry"
     },
     {
-     "end": 196.012,
-     "start": 195.938,
-     "text": "of"
+     "end": 156.5,
+     "start": 156.337,
+     "text": "from"
     },
     {
-     "end": 196.175,
-     "start": 196.012,
+     "end": 156.65,
+     "start": 156.5,
+     "text": "a"
+    },
+    {
+     "end": 157.9,
+     "start": 156.65,
+     "text": "seed"
+    },
+    {
+     "end": 158.238,
+     "start": 158.125,
+     "text": "with"
+    },
+    {
+     "end": 158.35,
+     "start": 158.238,
      "text": "the"
     },
     {
-     "end": 196.675,
-     "start": 196.175,
+     "end": 159.163,
+     "start": 158.35,
+     "text": "application's"
+    },
+    {
+     "end": 159.55,
+     "start": 159.163,
+     "text": "steps"
+    },
+    {
+     "end": 159.637,
+     "start": 159.55,
+     "text": "in"
+    },
+    {
+     "end": 159.762,
+     "start": 159.637,
+     "text": "the"
+    },
+    {
+     "end": 160.1,
+     "start": 159.762,
+     "text": "same"
+    },
+    {
+     "end": 160.988,
+     "start": 160.1,
+     "text": "transaction"
+    },
+    {
+     "end": 161.087,
+     "start": 160.988,
+     "text": "-"
+    },
+    {
+     "end": 161.75,
+     "start": 161.087,
      "text": "Singular"
     },
     {
-     "end": 196.988,
-     "start": 196.675,
-     "text": "state"
-    },
-    {
-     "end": 197.613,
-     "start": 196.988,
-     "text": "declines"
-    },
-    {
-     "end": 197.738,
-     "start": 197.613,
-     "text": "to"
-    },
-    {
-     "end": 198.062,
-     "start": 197.738,
-     "text": "build"
-    },
-    {
-     "end": 198.725,
-     "start": 198.125,
-     "text": "Singular"
-    },
-    {
-     "end": 198.775,
-     "start": 198.725,
+     "end": 161.85,
+     "start": 161.75,
      "text": "."
     },
     {
-     "end": 199.25,
-     "start": 198.775,
+     "end": 162.35,
+     "start": 161.85,
      "text": "State"
     },
     {
-     "end": 199.3,
-     "start": 199.25,
+     "end": 162.45,
+     "start": 162.35,
      "text": "."
     },
     {
-     "end": 199.762,
-     "start": 199.3,
-     "text": "Script"
+     "end": 163.113,
+     "start": 162.45,
+     "text": "Lineage"
     },
     {
-     "end": 199.887,
-     "start": 199.762,
+     "end": 163.212,
+     "start": 163.113,
      "text": "—"
     },
     {
-     "end": 200.312,
-     "start": 199.887,
+     "end": 163.675,
+     "start": 163.212,
      "text": "source"
     },
     {
-     "end": 200.363,
-     "start": 200.312,
+     "end": 163.75,
+     "start": 163.675,
      "text": "—"
     },
     {
-     "end": 200.5,
-     "start": 200.363,
+     "end": 163.85,
+     "start": 163.75,
+     "text": "a"
+    },
+    {
+     "end": 164.438,
+     "start": 163.85,
+     "text": "registry's"
+    },
+    {
+     "end": 164.812,
+     "start": 164.438,
+     "text": "trie"
+    },
+    {
+     "end": 165.25,
+     "start": 164.812,
+     "text": "rebuilt"
+    },
+    {
+     "end": 165.387,
+     "start": 165.25,
+     "text": "from"
+    },
+    {
+     "end": 165.475,
+     "start": 165.387,
      "text": "the"
     },
     {
-     "end": 200.837,
-     "start": 200.5,
-     "text": "state"
+     "end": 165.85,
+     "start": 165.475,
+     "text": "public"
     },
     {
-     "end": 201.438,
-     "start": 200.837,
-     "text": "validator"
+     "end": 166.25,
+     "start": 165.85,
+     "text": "history"
     },
     {
-     "end": 201.512,
-     "start": 201.438,
+     "end": 166.337,
+     "start": 166.25,
      "text": "of"
     },
     {
-     "end": 201.65,
-     "start": 201.512,
-     "text": "an"
+     "end": 166.475,
+     "start": 166.337,
+     "text": "its"
     },
     {
-     "end": 202.45,
-     "start": 201.65,
-     "text": "application"
+     "end": 166.8,
+     "start": 166.475,
+     "text": "state"
     },
     {
-     "end": 202.562,
-     "start": 202.45,
-     "text": "as"
+     "end": 167.925,
+     "start": 166.8,
+     "text": "token"
     },
     {
-     "end": 202.675,
-     "start": 202.562,
+     "end": 168.175,
+     "start": 167.925,
+     "text": ","
+    },
+    {
+     "end": 168.675,
+     "start": 168.375,
+     "text": "every"
+    },
+    {
+     "end": 168.913,
+     "start": 168.675,
+     "text": "root"
+    },
+    {
+     "end": 169.225,
+     "start": 168.913,
+     "text": "checked"
+    },
+    {
+     "end": 169.587,
+     "start": 169.225,
+     "text": "against"
+    },
+    {
+     "end": 169.712,
+     "start": 169.587,
      "text": "the"
     },
     {
-     "end": 203.15,
-     "start": 202.675,
-     "text": "builders"
+     "end": 170.075,
+     "start": 169.712,
+     "text": "chain"
     },
     {
-     "end": 203.837,
-     "start": 203.15,
-     "text": "carry"
+     "end": 170.675,
+     "start": 170.125,
+     "text": "Singular"
     },
     {
-     "end": 204.375,
-     "start": 204.038,
-     "text": "attached"
+     "end": 170.75,
+     "start": 170.675,
+     "text": "."
     },
     {
-     "end": 204.45,
-     "start": 204.375,
-     "text": "or"
+     "end": 171.175,
+     "start": 170.75,
+     "text": "State"
     },
     {
-     "end": 204.587,
-     "start": 204.45,
+     "end": 171.225,
+     "start": 171.175,
+     "text": "."
+    },
+    {
+     "end": 171.938,
+     "start": 171.225,
+     "text": "Preimage"
+    },
+    {
+     "end": 172.05,
+     "start": 171.938,
+     "text": "—"
+    },
+    {
+     "end": 172.413,
+     "start": 172.05,
+     "text": "source"
+    },
+    {
+     "end": 172.462,
+     "start": 172.413,
+     "text": "—"
+    },
+    {
+     "end": 172.637,
+     "start": 172.462,
+     "text": "the"
+    },
+    {
+     "end": 173.225,
+     "start": 172.637,
+     "text": "off-chain"
+    },
+    {
+     "end": 173.762,
+     "start": 173.225,
+     "text": "encoder"
+    },
+    {
+     "end": 173.837,
+     "start": 173.762,
+     "text": "of"
+    },
+    {
+     "end": 174.0,
+     "start": 173.837,
+     "text": "the"
+    },
+    {
+     "end": 174.475,
+     "start": 174.0,
+     "text": "Singular"
+    },
+    {
+     "end": 175.625,
+     "start": 174.475,
+     "text": "state"
+    },
+    {
+     "end": 176.25,
+     "start": 175.825,
+     "text": "active"
+    },
+    {
+     "end": 176.325,
+     "start": 176.25,
+     "text": ","
+    },
+    {
+     "end": 177.337,
+     "start": 176.325,
+     "text": "configuration"
+    },
+    {
+     "end": 177.475,
+     "start": 177.337,
+     "text": "and"
+    },
+    {
+     "end": 178.475,
+     "start": 177.475,
+     "text": "registration-approval"
+    },
+    {
+     "end": 179.65,
+     "start": 178.475,
+     "text": "preimages"
+    },
+    {
+     "end": 179.85,
+     "start": 179.65,
+     "text": ","
+    },
+    {
+     "end": 180.35,
+     "start": 180.075,
+     "text": "byte"
+    },
+    {
+     "end": 180.5,
+     "start": 180.35,
+     "text": "for"
+    },
+    {
+     "end": 180.775,
+     "start": 180.5,
+     "text": "byte"
+    },
+    {
+     "end": 181.15,
+     "start": 180.775,
+     "text": "equal"
+    },
+    {
+     "end": 181.238,
+     "start": 181.15,
+     "text": "to"
+    },
+    {
+     "end": 181.387,
+     "start": 181.238,
+     "text": "the"
+    },
+    {
+     "end": 182.0,
+     "start": 181.387,
+     "text": "on-chain"
+    },
+    {
+     "end": 182.225,
+     "start": 182.0,
+     "text": "one"
+    },
+    {
+     "end": 182.9,
+     "start": 182.275,
+     "text": "Singular"
+    },
+    {
+     "end": 182.975,
+     "start": 182.9,
+     "text": "."
+    },
+    {
+     "end": 183.45,
+     "start": 182.975,
+     "text": "State"
+    },
+    {
+     "end": 183.5,
+     "start": 183.45,
+     "text": "."
+    },
+    {
+     "end": 184.413,
+     "start": 183.5,
+     "text": "Publication"
+    },
+    {
+     "end": 184.525,
+     "start": 184.413,
+     "text": "—"
+    },
+    {
+     "end": 184.887,
+     "start": 184.525,
+     "text": "source"
+    },
+    {
+     "end": 184.938,
+     "start": 184.887,
+     "text": "—"
+    },
+    {
+     "end": 185.05,
+     "start": 184.938,
+     "text": "the"
+    },
+    {
+     "end": 185.438,
+     "start": 185.05,
+     "text": "state"
+    },
+    {
+     "end": 185.887,
+     "start": 185.438,
+     "text": "script"
+    },
+    {
+     "end": 185.988,
+     "start": 185.887,
+     "text": "and"
+    },
+    {
+     "end": 186.1,
+     "start": 185.988,
+     "text": "the"
+    },
+    {
+     "end": 186.887,
+     "start": 186.1,
+     "text": "application's"
+    },
+    {
+     "end": 187.3,
+     "start": 186.887,
+     "text": "script"
+    },
+    {
+     "end": 187.8,
+     "start": 187.3,
+     "text": "published"
+    },
+    {
+     "end": 187.962,
+     "start": 187.8,
+     "text": "as"
+    },
+    {
+     "end": 188.375,
+     "start": 187.962,
+     "text": "reference"
+    },
+    {
+     "end": 188.825,
+     "start": 188.375,
+     "text": "scripts"
+    },
+    {
+     "end": 189.163,
+     "start": 188.825,
+     "text": "once"
+    },
+    {
+     "end": 189.337,
+     "start": 189.163,
+     "text": "and"
+    },
+    {
+     "end": 189.913,
+     "start": 189.337,
+     "text": "reused"
+    },
+    {
+     "end": 190.113,
+     "start": 189.913,
      "text": "by"
     },
     {
-     "end": 205.438,
-     "start": 204.587,
+     "end": 190.462,
+     "start": 190.113,
+     "text": "later"
+    },
+    {
+     "end": 191.188,
+     "start": 190.462,
+     "text": "registries"
+    },
+    {
+     "end": 191.262,
+     "start": 191.188,
+     "text": "-"
+    },
+    {
+     "end": 191.975,
+     "start": 191.262,
+     "text": "Singular"
+    },
+    {
+     "end": 192.05,
+     "start": 191.975,
+     "text": "."
+    },
+    {
+     "end": 192.475,
+     "start": 192.05,
+     "text": "State"
+    },
+    {
+     "end": 192.525,
+     "start": 192.475,
+     "text": "."
+    },
+    {
+     "end": 193.012,
+     "start": 192.525,
+     "text": "Records"
+    },
+    {
+     "end": 193.125,
+     "start": 193.012,
+     "text": "—"
+    },
+    {
+     "end": 193.512,
+     "start": 193.125,
+     "text": "source"
+    },
+    {
+     "end": 193.562,
+     "start": 193.512,
+     "text": "—"
+    },
+    {
+     "end": 193.725,
+     "start": 193.562,
+     "text": "the"
+    },
+    {
+     "end": 194.188,
+     "start": 193.725,
+     "text": "datum"
+    },
+    {
+     "end": 194.288,
+     "start": 194.188,
+     "text": "and"
+    },
+    {
+     "end": 194.462,
+     "start": 194.288,
+     "text": "the"
+    },
+    {
+     "end": 194.938,
+     "start": 194.462,
+     "text": "actions"
+    },
+    {
+     "end": 195.012,
+     "start": 194.938,
+     "text": "of"
+    },
+    {
+     "end": 195.125,
+     "start": 195.012,
+     "text": "the"
+    },
+    {
+     "end": 195.45,
+     "start": 195.125,
+     "text": "state"
+    },
+    {
+     "end": 197.05,
+     "start": 195.45,
+     "text": "validator"
+    },
+    {
+     "end": 197.512,
+     "start": 197.35,
+     "text": "as"
+    },
+    {
+     "end": 197.938,
+     "start": 197.512,
+     "text": "Plutus"
+    },
+    {
+     "end": 198.325,
+     "start": 197.938,
+     "text": "Data"
+    },
+    {
+     "end": 198.413,
+     "start": 198.325,
+     "text": "in"
+    },
+    {
+     "end": 198.525,
+     "start": 198.413,
+     "text": "the"
+    },
+    {
+     "end": 198.975,
+     "start": 198.525,
+     "text": "layout"
+    },
+    {
+     "end": 199.1,
+     "start": 198.975,
+     "text": "it"
+    },
+    {
+     "end": 199.65,
+     "start": 199.1,
+     "text": "decodes"
+    },
+    {
+     "end": 200.325,
+     "start": 199.7,
+     "text": "Singular"
+    },
+    {
+     "end": 200.4,
+     "start": 200.325,
+     "text": "."
+    },
+    {
+     "end": 200.975,
+     "start": 200.4,
+     "text": "State"
+    },
+    {
+     "end": 201.025,
+     "start": 200.975,
+     "text": "."
+    },
+    {
+     "end": 201.613,
+     "start": 201.025,
+     "text": "Refusal"
+    },
+    {
+     "end": 201.725,
+     "start": 201.613,
+     "text": "—"
+    },
+    {
+     "end": 202.212,
+     "start": 201.725,
+     "text": "source"
+    },
+    {
+     "end": 202.3,
+     "start": 202.212,
+     "text": "—"
+    },
+    {
+     "end": 202.55,
+     "start": 202.3,
+     "text": "why"
+    },
+    {
+     "end": 202.663,
+     "start": 202.55,
+     "text": "a"
+    },
+    {
+     "end": 203.038,
+     "start": 202.663,
+     "text": "builder"
+    },
+    {
+     "end": 203.113,
+     "start": 203.038,
+     "text": "of"
+    },
+    {
+     "end": 203.275,
+     "start": 203.113,
+     "text": "the"
+    },
+    {
+     "end": 203.775,
+     "start": 203.275,
+     "text": "Singular"
+    },
+    {
+     "end": 204.087,
+     "start": 203.775,
+     "text": "state"
+    },
+    {
+     "end": 204.712,
+     "start": 204.087,
+     "text": "declines"
+    },
+    {
+     "end": 204.837,
+     "start": 204.712,
+     "text": "to"
+    },
+    {
+     "end": 205.163,
+     "start": 204.837,
+     "text": "build"
+    },
+    {
+     "end": 205.825,
+     "start": 205.225,
+     "text": "Singular"
+    },
+    {
+     "end": 205.875,
+     "start": 205.825,
+     "text": "."
+    },
+    {
+     "end": 206.35,
+     "start": 205.875,
+     "text": "State"
+    },
+    {
+     "end": 206.4,
+     "start": 206.35,
+     "text": "."
+    },
+    {
+     "end": 206.863,
+     "start": 206.4,
+     "text": "Script"
+    },
+    {
+     "end": 206.988,
+     "start": 206.863,
+     "text": "—"
+    },
+    {
+     "end": 207.413,
+     "start": 206.988,
+     "text": "source"
+    },
+    {
+     "end": 207.462,
+     "start": 207.413,
+     "text": "—"
+    },
+    {
+     "end": 207.6,
+     "start": 207.462,
+     "text": "the"
+    },
+    {
+     "end": 207.938,
+     "start": 207.6,
+     "text": "state"
+    },
+    {
+     "end": 208.538,
+     "start": 207.938,
+     "text": "validator"
+    },
+    {
+     "end": 208.613,
+     "start": 208.538,
+     "text": "of"
+    },
+    {
+     "end": 208.75,
+     "start": 208.613,
+     "text": "an"
+    },
+    {
+     "end": 209.55,
+     "start": 208.75,
+     "text": "application"
+    },
+    {
+     "end": 209.663,
+     "start": 209.55,
+     "text": "as"
+    },
+    {
+     "end": 209.775,
+     "start": 209.663,
+     "text": "the"
+    },
+    {
+     "end": 210.25,
+     "start": 209.775,
+     "text": "builders"
+    },
+    {
+     "end": 210.938,
+     "start": 210.25,
+     "text": "carry"
+    },
+    {
+     "end": 211.475,
+     "start": 211.137,
+     "text": "attached"
+    },
+    {
+     "end": 211.55,
+     "start": 211.475,
+     "text": "or"
+    },
+    {
+     "end": 211.688,
+     "start": 211.55,
+     "text": "by"
+    },
+    {
+     "end": 212.538,
+     "start": 211.688,
      "text": "reference"
     }
    ]
