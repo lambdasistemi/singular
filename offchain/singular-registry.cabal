@@ -729,6 +729,8 @@ test-suite contract-tests
     , base
     , base16-bytestring
     , bytestring
+    , cardano-crypto-class
+    , cardano-ledger-allegra
     , cardano-ledger-alonzo
     , cardano-ledger-api
     , cardano-ledger-binary

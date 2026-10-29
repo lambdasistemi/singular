@@ -222,6 +222,8 @@ queryOutputs
 queryOutputs client = \case
     AtAddress address -> fetch (Client.addressUtxos client [address]) >>= mergeOutputs
     HoldingAsset asset -> fetch (Client.assetUtxos client [asset]) >>= mergeOutputs
+    HoldingPolicy _ ->
+        throwError (BackendReadFailure "policy holdings query is unavailable")
     AtTxIn reference@(TxIn key _) -> do
         -- tx_info includes spent outputs: current visibility requires the
         -- shared UTxO endpoint at the resolved output's address as well.

@@ -479,6 +479,7 @@ chainSession chain =
         AtAddress address ->
             Right
                 [(i, o) | (i, o) <- Map.toAscList known, o ^. addrTxOutL == address]
+        HoldingPolicy _ -> Left (BackendReadFailure "policy holdings query is unavailable")
         HoldingAsset (policy, name) ->
             Right
                 [ (i, o)

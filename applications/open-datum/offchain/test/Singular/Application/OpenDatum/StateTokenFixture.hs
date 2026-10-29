@@ -243,6 +243,8 @@ chainSession logRef chain =
     select = \case
         LP.AtAddress address ->
             Right [u | u@(_, o) <- Map.toAscList live, o ^. addrTxOutL == address]
+        LP.HoldingPolicy _ ->
+            Left (LP.BackendReadFailure "policy holdings query is unavailable")
         LP.HoldingAsset (policy, name) ->
             Right $
                 flip fromMaybe (chainHolders chain) $

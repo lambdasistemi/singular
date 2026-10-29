@@ -25,20 +25,38 @@ module Singular.Registry.ContractNode
     , guardOnDevnet
     ) where
 
+import Cardano.Crypto.DSIGN (deriveVerKeyDSIGN)
 import Cardano.Ledger.Address (Addr)
-import Cardano.Ledger.Api.Tx (mkBasicTx, txIdTx)
+import Cardano.Ledger.Allegra.Scripts
+    ( mkRequireAllOfTimelock
+    , mkRequireSignatureTimelock
+    )
+import Cardano.Ledger.Alonzo.Scripts (AlonzoScript (NativeScript))
+import Cardano.Ledger.Api.Tx (mkBasicTx, txIdTx, witsTxL)
 import Cardano.Ledger.Api.Tx.Body
     ( feeTxBodyL
     , inputsTxBodyL
+    , mintTxBodyL
     , mkBasicTxBody
     , outputsTxBodyL
     )
-import Cardano.Ledger.Api.Tx.Out (coinTxOutL, mkBasicTxOut)
+import Cardano.Ledger.Api.Tx.Out
+    ( coinTxOutL
+    , mkBasicTxOut
+    , valueTxOutL
+    )
+import Cardano.Ledger.Api.Tx.Wits (scriptTxWitsL)
 import Cardano.Ledger.BaseTypes (Network (Testnet))
 import Cardano.Ledger.Binary (serialize')
-import Cardano.Ledger.Core (eraProtVerHigh)
+import Cardano.Ledger.Core (eraProtVerHigh, hashScript)
 import Cardano.Ledger.Hashes (ScriptHash)
-import Cardano.Ledger.Mary.Value (MaryValue (..))
+import Cardano.Ledger.Keys (VKey (..), hashKey)
+import Cardano.Ledger.Mary.Value
+    ( AssetName (..)
+    , MaryValue (..)
+    , MultiAsset (..)
+    , PolicyID (..)
+    )
 import Cardano.Ledger.State (UTxO (..))
 import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Node.Client.E2E.Setup
@@ -185,7 +203,81 @@ sessionChain settings socket wallet action =
                             , chUnregistered = unregistered
                             , chChange = payAside oracle wallet watched caps
                             , chIndependentOutputs = independentOutputs oracle watched
+                            , chPolicyScenario = mintPolicyScenario oracle wallet watched caps
                             }
+
+-- Mint the query scenario on the private ledger, then read full outputs on
+-- the oracle's separate connection. No expected answer comes from the facade.
+mintPolicyScenario
+    :: LSQChannel
+    -> Wallet
+    -> Addr
+    -> Capabilities NoWitness IO
+    -> IO (PolicyID, Outputs)
+mintPolicyScenario oracle wallet watched caps = do
+    held <- independentOutputs oracle (walletAddr wallet)
+    (reference, funding) <- case sortOn (Down . (^. coinTxOutL) . snd) held of
+        pair : _ -> pure pair
+        [] -> fail "policy contract: no funding"
+    let signature =
+            mkRequireSignatureTimelock
+                (hashKey (VKey (deriveVerKeyDSIGN (walletSignKey wallet))))
+        primaryScript = NativeScript signature
+        otherScript =
+            NativeScript (mkRequireAllOfTimelock (StrictSeq.singleton signature))
+        scripts = [primaryScript, otherScript]
+        policy = PolicyID (hashScript @ConwayEra primaryScript)
+        other = PolicyID (hashScript @ConwayEra otherScript)
+        value entries =
+            MaryValue
+                (Coin 5000000)
+                ( MultiAsset
+                    (Map.fromList [(p, Map.fromList names) | (p, names) <- entries])
+                )
+        values =
+            [ value [(policy, [(AssetName "", 1)]), (other, [(AssetName "a", 1)])]
+            , value [(policy, [(AssetName "a", 1), (AssetName "b", 2)])]
+            , value [(other, [(AssetName "a", 1)])]
+            ]
+        Coin available = funding ^. coinTxOutL
+        body =
+            mkBasicTxBody
+                & inputsTxBodyL .~ Set.singleton reference
+                & outputsTxBodyL
+                    .~ StrictSeq.fromList
+                        ( map (mkBasicTxOut watched) values
+                            <> [ mkBasicTxOut
+                                    (walletAddr wallet)
+                                    (MaryValue (Coin (available - 16000000)) mempty)
+                               ]
+                        )
+                & feeTxBodyL .~ Coin 1000000
+                & mintTxBodyL .~ foldMap (\(MaryValue _ assets) -> assets) values
+        transaction =
+            signTx
+                (walletSignKey wallet)
+                ( mkBasicTx body
+                    & witsTxL . scriptTxWitsL
+                        .~ Map.fromList
+                            [(hashScript @ConwayEra script, script) | script <- scripts]
+                )
+        isProduced (TxIn identity _, _) = identity == txIdTx (signedTx transaction)
+    unless
+        (available > 17000000)
+        (fail "policy contract: insufficient funding")
+    submitPayment caps transaction
+    observeWithin "multi-policy mint" $ do
+        actual <- independentOutputs oracle watched
+        pure (length (filter isProduced actual) == 3)
+    actual <- independentOutputs oracle watched
+    let matching =
+            [ (ref, output)
+            | (ref, output) <- actual
+            , let MaryValue _ (MultiAsset assets) = output ^. valueTxOutL
+            , maybe False (any (/= 0)) (Map.lookup policy assets)
+            ]
+    length matching `shouldBe` 2
+    pure (policy, matching)
 
 -- | A second private connection, never handed to the shipping capabilities.
 withIndependentConnection

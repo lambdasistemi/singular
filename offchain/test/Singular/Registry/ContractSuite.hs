@@ -110,6 +110,7 @@ data Case
     | SessionReleased
     | SessionWrongNetwork
     | SessionPointUnsupported
+    | SessionPolicyHoldings
     deriving stock (Eq, Ord, Show, Enum, Bounded)
 
 caseKind :: Case -> CaseKind
@@ -121,6 +122,7 @@ caseKind = \case
     SessionNamesNetwork -> Success
     SessionReadsAnswer -> Success
     SessionChangeObserved -> Consistency
+    SessionPolicyHoldings -> Success
     _ -> Refusal
 
 caseText :: Case -> String
@@ -161,6 +163,8 @@ caseText = \case
         "acquisition on another network refuses as WrongNetwork before the session action"
     SessionPointUnsupported ->
         "an exact-point acquisition refuses as PointNotSupported before the session action"
+    SessionPolicyHoldings ->
+        "a policy query returns every full live output once across asset names and policies, against an independent source"
 
 -- | Mandatory uncovered rows for the removed API, independent of harness support.
 retiredCases :: Map Case String
@@ -197,6 +201,8 @@ data Chain = Chain
     -- ^ Change watched outputs and return once the independent source observes it.
     , chIndependentOutputs :: IO Outputs
     -- ^ Full source outputs read independently of chProvider.
+    , chPolicyScenario :: IO (PolicyID, Outputs)
+    -- ^ Produce several policies and read their holders independently.
     }
 
 data AdapterHarness = AdapterHarness
@@ -291,6 +297,20 @@ record h c outcome reason =
 
 run :: Case -> Chain -> Expectation
 run c ch = case c of
+    SessionPolicyHoldings -> do
+        (policy, expected) <- chPolicyScenario ch
+        length expected `shouldSatisfy` (> 1)
+        inScope ch $ \session -> do
+            actual <-
+                outputs session (HoldingPolicy policy) >>= either throwIO pure
+            value actual `shouldBe` expected
+            void (witness actual) `shouldBe` Nothing
+            composed <-
+                outputs
+                    session
+                    (AnyOf (HoldingPolicy policy :| [HoldingPolicy policy]))
+                    >>= either throwIO pure
+            value composed `shouldBe` expected
     SessionNamesNetwork -> do
         first <- inScope ch $ \session -> do
             sessionNetwork session `shouldBe` chNetwork ch
@@ -351,6 +371,7 @@ run c ch = case c of
             [ address
             , AtTxIn reference
             , HoldingAsset asset
+            , HoldingPolicy (fst asset)
             , AnyOf (address :| [AtTxIn reference])
             , AllOf (address :| [AtTxIn reference])
             ]

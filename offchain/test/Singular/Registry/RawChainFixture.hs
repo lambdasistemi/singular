@@ -309,6 +309,7 @@ selectOutputs allOutputs = fmap Map.toAscList . selected
     selected = \case
         AtAddress address ->
             Right (Map.filter (\out -> out ^. addrTxOutL == address) allOutputs)
+        HoldingPolicy _ -> Left (BackendReadFailure "policy holdings query is unavailable")
         HoldingAsset (policy, name) ->
             Right $
                 Map.filter
