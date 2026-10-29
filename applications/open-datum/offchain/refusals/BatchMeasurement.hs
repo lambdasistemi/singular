@@ -37,7 +37,7 @@ import Data.ByteString qualified as BS
 import Data.ByteString.Lazy qualified as BL
 import Data.ByteString.Lazy.Char8 qualified as LBS
 import Data.Map.Strict qualified as Map
-import Data.Maybe (mapMaybe)
+import Data.Maybe (fromMaybe, mapMaybe)
 import Data.Set qualified as Set
 import Data.Text qualified as T
 import Lens.Micro ((^.))
@@ -160,7 +160,7 @@ run out [parametersPath, packet] = do
                 registration = inlineDatumOf output >>= decodeRegistration Testnet
             in  [ "heldLovelace" .= held
                 , "protectedDeposit" .= deposit
-                , "folderTake" .= (held - maybe 0 id deposit)
+                , "folderTake" .= (held - fromMaybe 0 deposit)
                 , "datumBytes" .= BS.length (serialize' version (output ^. datumTxOutL))
                 , "initialDatum" .= fmap (show . rdInitialDatum) registration
                 , "initialDatumBytes"
