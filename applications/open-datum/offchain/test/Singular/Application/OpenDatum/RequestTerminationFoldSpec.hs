@@ -259,8 +259,9 @@ folding world registry requests = withSession world $ \session -> do
 spec :: Spec
 spec = describe "termination folds from public data" $ do
     it
-        "discovers the termination from approvals and the replayed live keys without reading the booker's wallet" $
-        withTermination $ \world registry request _ -> do
+        "discovers the termination from approvals and the replayed live keys without reading the booker's wallet"
+        $ withTermination
+        $ \world registry request _ -> do
             tx <- folding world registry []
             foldedRequests tx `shouldBe` [(request, "a live key")]
             judge world tx >>= (`shouldSatisfy` everyScriptAccepts)
