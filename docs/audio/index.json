@@ -1380,6 +1380,50 @@
   ]
  },
  "docs/creation-cost.md": {
+  "can-creation-carry-its-scripts": [
+   {
+    "index": 0,
+    "name": "docs-creation-cost/can-creation-carry-its-scripts-00",
+    "pause_ms": 500,
+    "text": "Can creation carry its scripts.",
+    "v": "c2aabaa1ddc9"
+   },
+   {
+    "index": 1,
+    "name": "docs-creation-cost/can-creation-carry-its-scripts-01",
+    "pause_ms": 400,
+    "text": "The measuring tool built 5 registry-creation forms with the real genesis and application configuration builders, on one fresh development network with the same frozen protocol parameters as the comparison above. Each form creates a fresh registry with the same configuration; only script placement changes. The normal referenced form is the reference point. These are experiments, and the production command keeps its shared publications.",
+    "v": "07548338b530"
+   },
+   {
+    "index": 2,
+    "name": "docs-creation-cost/can-creation-carry-its-scripts-02",
+    "pause_ms": 400,
+    "text": "Both live copies were available for this controlled experiment. A form carrying a script deliberately ignores that script's live copy. A form creating reference outputs also carries witnesses: a transaction cannot read its own new outputs as reference inputs.",
+    "v": "593c22ef4212"
+   },
+   {
+    "index": 3,
+    "name": "docs-creation-cost/can-creation-carry-its-scripts-03",
+    "pause_ms": 400,
+    "text": "The state-carried form has 8764 complete signed bytes and the application-carried form has 10821. The node accepted and confirmed both mixed forms. Each still needs the other script's live reference output.",
+    "v": "11ec0e3828aa"
+   },
+   {
+    "index": 4,
+    "name": "docs-creation-cost/can-creation-carry-its-scripts-04",
+    "pause_ms": 400,
+    "text": "Carrying both scripts in witnesses has 18567 complete signed bytes; carrying them in witnesses and new reference outputs has 36292. The node refused both for maximum transaction size: it counts 18566 and 36291 bytes respectively, against a limit of 16384. The complete signed transaction length and the length the ledger counts are different figures; the ledger count here is one byte less. Both appear below.",
+    "v": "24342917b1d8"
+   },
+   {
+    "index": 5,
+    "name": "docs-creation-cost/can-creation-carry-its-scripts-05",
+    "pause_ms": 400,
+    "text": "A fit requires successful execution, size within the ledger limit, and the development node's acceptance and confirmation. The execution figures are the ledger evaluator's final results on the actual chain inputs and equal the signed execution budgets. The oversized forms were evaluated locally, then refused by the node's size check before its script-execution phase; their execution figures do not claim node execution. A size comparison alone is never reported as a fit.",
+    "v": "f104386b7410"
+   }
+  ],
   "candidate-design": [
    {
     "index": 0,
@@ -1408,6 +1452,29 @@
     "pause_ms": 400,
     "text": "Later creation",
     "v": "d06ee1a1ecfa"
+   }
+  ],
+  "frozen-limits-and-fee-parameters": [
+   {
+    "index": 0,
+    "name": "docs-creation-cost/frozen-limits-and-fee-parameters-00",
+    "pause_ms": 500,
+    "text": "Frozen limits and fee parameters.",
+    "v": "5b470914c268"
+   },
+   {
+    "index": 1,
+    "name": "docs-creation-cost/frozen-limits-and-fee-parameters-01",
+    "pause_ms": 400,
+    "text": "Every form used maximum transaction size 16384, maximum transaction execution memory 140000000 and maximum transaction execution steps 10000000000. The parameters and their hash are read from the independent chain record, rather than supplied by the measuring command.",
+    "v": "db8962e7c88d"
+   },
+   {
+    "index": 2,
+    "name": "docs-creation-cost/frozen-limits-and-fee-parameters-02",
+    "pause_ms": 400,
+    "text": "The experiment holds the application's configuration fixed across forms. These explicit experimental values do not change command defaults.",
+    "v": "787b2671a289"
    }
   ],
   "limits": [
@@ -1479,6 +1546,22 @@
     "v": "38a13f174483"
    }
   ],
+  "measurement-appendix": [
+   {
+    "index": 0,
+    "name": "docs-creation-cost/measurement-appendix-00",
+    "pause_ms": 500,
+    "text": "Measurement appendix.",
+    "v": "dded119738e8"
+   },
+   {
+    "index": 1,
+    "name": "docs-creation-cost/measurement-appendix-01",
+    "pause_ms": 400,
+    "text": "The carrying receipt records the test-only producer, its exact source changes and executable hash, the signed transactions, local execution results and independent node answers. The experiment has its own recorded genesis and start time; its protocol parameters match the earlier creation comparison. The receipt checker recomputes lengths, fees, script hashes, placements and execution budgets, binds each transaction to the independent node submission, and requires identical included bytes for every fit. Every refusal must reproduce the node's limiting parameter and figures. Missing forms, missing execution, altered figures and false fits are refused by the hosted documentation check. The test harness is outside the released command's source and changes no production builder or shared receipt.",
+    "v": "33292bf3ad56"
+   }
+  ],
   "previous-design": [
    {
     "index": 0,
@@ -1546,6 +1629,29 @@
     "pause_ms": 400,
     "text": "The two legs run the previous design's last release and this line's release of open datum. Their validators differ: this compares two creation workflows, rather than one release run twice. Within each design, both creations use the same executable and deployment blueprint.",
     "v": "9cb41462e474"
+   }
+  ],
+  "what-the-result-gives-a-creator": [
+   {
+    "index": 0,
+    "name": "docs-creation-cost/what-the-result-gives-a-creator-00",
+    "pause_ms": 500,
+    "text": "What the result gives a creator.",
+    "v": "64e8051ac25d"
+   },
+   {
+    "index": 1,
+    "name": "docs-creation-cost/what-the-result-gives-a-creator-01",
+    "pause_ms": 400,
+    "text": "Each fitting mixed form still needs one prior publication. When a first creation finds no live copy, it cannot skip both publications by carrying: the both-witness form that needs no live reference is refused for size. A fitting mixed form creates no reference output for the script it carries. If a first creation published only the other script, a later registry using the unchanged production command would still have to publish the carried script. Carrying defers that publication; it does not remove it.",
+    "v": "8c5bf5e0f409"
+   },
+   {
+    "index": 2,
+    "name": "docs-creation-cost/what-the-result-gives-a-creator-02",
+    "pause_ms": 400,
+    "text": "The production workflow remains as measured: the first creation sends 3 transactions, and the later creation sends 1 transaction by reusing the shared publications. The measured carrying outcomes are reported without recommending or adopting a mixed form.",
+    "v": "a29ec8af5fa6"
    }
   ],
   "witness-publication-overhead": [

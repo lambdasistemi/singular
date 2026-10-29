@@ -43300,6 +43300,1626 @@
     }
    ]
   },
+  "docs-creation-cost/can-creation-carry-its-scripts-00": {
+   "audio_sha256": "c2aabaa1ddc945d262518c2d351f1f225fc9f2d6cf550b94e899d00da54fd65f",
+   "characters": 31,
+   "cost": 3.069e-05,
+   "duration": 2.2,
+   "index": 0,
+   "key": "b3408fae752c403617d325163c2d44fe5c388a5def12fd4f4645b4dc5ce58258",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 500,
+   "section": "can-creation-carry-its-scripts",
+   "sent_text": "Can creation carry its scripts.",
+   "text": "Can creation carry its scripts.",
+   "words": [
+    {
+     "end": 0.35,
+     "start": 0.175,
+     "text": "Can"
+    },
+    {
+     "end": 0.775,
+     "start": 0.35,
+     "text": "creation"
+    },
+    {
+     "end": 1.062,
+     "start": 0.775,
+     "text": "carry"
+    },
+    {
+     "end": 1.175,
+     "start": 1.062,
+     "text": "its"
+    },
+    {
+     "end": 2.0,
+     "start": 1.175,
+     "text": "scripts"
+    },
+    {
+     "end": 2.2,
+     "start": 2.0,
+     "text": "."
+    }
+   ]
+  },
+  "docs-creation-cost/can-creation-carry-its-scripts-01": {
+   "audio_sha256": "07548338b5305882eeb38b3b5fdb6a7330e8746497f6aa60a8cd28fd9077de43",
+   "characters": 438,
+   "cost": 0.00043361999999999996,
+   "duration": 28.45,
+   "index": 1,
+   "key": "879ba2bbc2c47dcf5c5bc6445804df4cc0841dc0d7ca208333d9ae61ea3c62b2",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 400,
+   "section": "can-creation-carry-its-scripts",
+   "sent_text": "The measuring tool built 5 registry-creation forms with the real genesis and application configuration builders, on one fresh development network with the same frozen protocol parameters as the comparison above. Each form creates a fresh registry with the same configuration; only script placement changes. The normal referenced form is the reference point. These are experiments, and the production command keeps its shared publications.",
+   "text": "The measuring tool built 5 registry-creation forms with the real genesis and application configuration builders, on one fresh development network with the same frozen protocol parameters as the comparison above. Each form creates a fresh registry with the same configuration; only script placement changes. The normal referenced form is the reference point. These are experiments, and the production command keeps its shared publications.",
+   "words": [
+    {
+     "end": 0.35,
+     "start": 0.25,
+     "text": "The"
+    },
+    {
+     "end": 0.837,
+     "start": 0.35,
+     "text": "measuring"
+    },
+    {
+     "end": 1.225,
+     "start": 0.837,
+     "text": "tool"
+    },
+    {
+     "end": 1.525,
+     "start": 1.225,
+     "text": "built"
+    },
+    {
+     "end": 1.95,
+     "start": 1.525,
+     "text": "5"
+    },
+    {
+     "end": 2.963,
+     "start": 1.95,
+     "text": "registry-creation"
+    },
+    {
+     "end": 3.45,
+     "start": 2.963,
+     "text": "forms"
+    },
+    {
+     "end": 3.6,
+     "start": 3.45,
+     "text": "with"
+    },
+    {
+     "end": 3.737,
+     "start": 3.6,
+     "text": "the"
+    },
+    {
+     "end": 4.088,
+     "start": 3.737,
+     "text": "real"
+    },
+    {
+     "end": 4.7,
+     "start": 4.088,
+     "text": "genesis"
+    },
+    {
+     "end": 4.825,
+     "start": 4.7,
+     "text": "and"
+    },
+    {
+     "end": 5.525,
+     "start": 4.825,
+     "text": "application"
+    },
+    {
+     "end": 6.325,
+     "start": 5.525,
+     "text": "configuration"
+    },
+    {
+     "end": 6.975,
+     "start": 6.325,
+     "text": "builders"
+    },
+    {
+     "end": 7.075,
+     "start": 6.975,
+     "text": ","
+    },
+    {
+     "end": 7.287,
+     "start": 7.075,
+     "text": "on"
+    },
+    {
+     "end": 7.65,
+     "start": 7.287,
+     "text": "one"
+    },
+    {
+     "end": 8.0,
+     "start": 7.65,
+     "text": "fresh"
+    },
+    {
+     "end": 8.575,
+     "start": 8.0,
+     "text": "development"
+    },
+    {
+     "end": 9.025,
+     "start": 8.575,
+     "text": "network"
+    },
+    {
+     "end": 9.163,
+     "start": 9.025,
+     "text": "with"
+    },
+    {
+     "end": 9.3,
+     "start": 9.163,
+     "text": "the"
+    },
+    {
+     "end": 9.7,
+     "start": 9.3,
+     "text": "same"
+    },
+    {
+     "end": 10.225,
+     "start": 9.7,
+     "text": "frozen"
+    },
+    {
+     "end": 10.8,
+     "start": 10.225,
+     "text": "protocol"
+    },
+    {
+     "end": 11.55,
+     "start": 10.8,
+     "text": "parameters"
+    },
+    {
+     "end": 11.75,
+     "start": 11.55,
+     "text": "as"
+    },
+    {
+     "end": 11.85,
+     "start": 11.75,
+     "text": "the"
+    },
+    {
+     "end": 12.525,
+     "start": 11.85,
+     "text": "comparison"
+    },
+    {
+     "end": 13.65,
+     "start": 12.525,
+     "text": "above"
+    },
+    {
+     "end": 13.9,
+     "start": 13.65,
+     "text": "."
+    },
+    {
+     "end": 14.3,
+     "start": 14.1,
+     "text": "Each"
+    },
+    {
+     "end": 14.6,
+     "start": 14.3,
+     "text": "form"
+    },
+    {
+     "end": 14.962,
+     "start": 14.6,
+     "text": "creates"
+    },
+    {
+     "end": 15.062,
+     "start": 14.962,
+     "text": "a"
+    },
+    {
+     "end": 15.35,
+     "start": 15.062,
+     "text": "fresh"
+    },
+    {
+     "end": 15.9,
+     "start": 15.35,
+     "text": "registry"
+    },
+    {
+     "end": 16.013,
+     "start": 15.9,
+     "text": "with"
+    },
+    {
+     "end": 16.138,
+     "start": 16.013,
+     "text": "the"
+    },
+    {
+     "end": 16.45,
+     "start": 16.138,
+     "text": "same"
+    },
+    {
+     "end": 17.875,
+     "start": 16.45,
+     "text": "configuration"
+    },
+    {
+     "end": 18.05,
+     "start": 17.875,
+     "text": ";"
+    },
+    {
+     "end": 18.587,
+     "start": 18.25,
+     "text": "only"
+    },
+    {
+     "end": 19.0,
+     "start": 18.587,
+     "text": "script"
+    },
+    {
+     "end": 19.45,
+     "start": 19.0,
+     "text": "placement"
+    },
+    {
+     "end": 20.15,
+     "start": 19.45,
+     "text": "changes"
+    },
+    {
+     "end": 20.25,
+     "start": 20.15,
+     "text": "."
+    },
+    {
+     "end": 20.388,
+     "start": 20.25,
+     "text": "The"
+    },
+    {
+     "end": 20.775,
+     "start": 20.388,
+     "text": "normal"
+    },
+    {
+     "end": 21.3,
+     "start": 20.775,
+     "text": "referenced"
+    },
+    {
+     "end": 21.712,
+     "start": 21.3,
+     "text": "form"
+    },
+    {
+     "end": 21.875,
+     "start": 21.712,
+     "text": "is"
+    },
+    {
+     "end": 21.975,
+     "start": 21.875,
+     "text": "the"
+    },
+    {
+     "end": 22.45,
+     "start": 21.975,
+     "text": "reference"
+    },
+    {
+     "end": 23.3,
+     "start": 22.45,
+     "text": "point"
+    },
+    {
+     "end": 23.5,
+     "start": 23.3,
+     "text": "."
+    },
+    {
+     "end": 23.95,
+     "start": 23.7,
+     "text": "These"
+    },
+    {
+     "end": 24.075,
+     "start": 23.95,
+     "text": "are"
+    },
+    {
+     "end": 24.85,
+     "start": 24.075,
+     "text": "experiments"
+    },
+    {
+     "end": 24.9,
+     "start": 24.85,
+     "text": ","
+    },
+    {
+     "end": 25.013,
+     "start": 24.9,
+     "text": "and"
+    },
+    {
+     "end": 25.1,
+     "start": 25.013,
+     "text": "the"
+    },
+    {
+     "end": 25.625,
+     "start": 25.1,
+     "text": "production"
+    },
+    {
+     "end": 26.112,
+     "start": 25.625,
+     "text": "command"
+    },
+    {
+     "end": 26.425,
+     "start": 26.112,
+     "text": "keeps"
+    },
+    {
+     "end": 26.612,
+     "start": 26.425,
+     "text": "its"
+    },
+    {
+     "end": 26.9,
+     "start": 26.612,
+     "text": "shared"
+    },
+    {
+     "end": 28.25,
+     "start": 26.9,
+     "text": "publications"
+    },
+    {
+     "end": 28.45,
+     "start": 28.25,
+     "text": "."
+    }
+   ]
+  },
+  "docs-creation-cost/can-creation-carry-its-scripts-02": {
+   "audio_sha256": "593c22ef4212c3f0c9f83e65dcf31a3af52ea20407010e609282177790eeee9e",
+   "characters": 259,
+   "cost": 0.00025641,
+   "duration": 17.3,
+   "index": 2,
+   "key": "69b2e08d37f17921397660238e07502b77605a2968cbb47449d64bc53b0de483",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 400,
+   "section": "can-creation-carry-its-scripts",
+   "sent_text": "Both live copies were available for this controlled experiment. A form carrying a script deliberately ignores that script's live copy. A form creating reference outputs also carries witnesses: a transaction cannot read its own new outputs as reference inputs.",
+   "text": "Both live copies were available for this controlled experiment. A form carrying a script deliberately ignores that script's live copy. A form creating reference outputs also carries witnesses: a transaction cannot read its own new outputs as reference inputs.",
+   "words": [
+    {
+     "end": 0.45,
+     "start": 0.175,
+     "text": "Both"
+    },
+    {
+     "end": 0.725,
+     "start": 0.45,
+     "text": "live"
+    },
+    {
+     "end": 1.2,
+     "start": 0.725,
+     "text": "copies"
+    },
+    {
+     "end": 1.325,
+     "start": 1.2,
+     "text": "were"
+    },
+    {
+     "end": 1.875,
+     "start": 1.325,
+     "text": "available"
+    },
+    {
+     "end": 1.987,
+     "start": 1.875,
+     "text": "for"
+    },
+    {
+     "end": 2.175,
+     "start": 1.987,
+     "text": "this"
+    },
+    {
+     "end": 2.662,
+     "start": 2.175,
+     "text": "controlled"
+    },
+    {
+     "end": 3.775,
+     "start": 2.662,
+     "text": "experiment"
+    },
+    {
+     "end": 3.975,
+     "start": 3.775,
+     "text": "."
+    },
+    {
+     "end": 4.262,
+     "start": 4.175,
+     "text": "A"
+    },
+    {
+     "end": 4.6,
+     "start": 4.262,
+     "text": "form"
+    },
+    {
+     "end": 4.988,
+     "start": 4.6,
+     "text": "carrying"
+    },
+    {
+     "end": 5.05,
+     "start": 4.988,
+     "text": "a"
+    },
+    {
+     "end": 5.488,
+     "start": 5.05,
+     "text": "script"
+    },
+    {
+     "end": 6.125,
+     "start": 5.488,
+     "text": "deliberately"
+    },
+    {
+     "end": 6.625,
+     "start": 6.125,
+     "text": "ignores"
+    },
+    {
+     "end": 6.825,
+     "start": 6.625,
+     "text": "that"
+    },
+    {
+     "end": 7.225,
+     "start": 6.825,
+     "text": "script's"
+    },
+    {
+     "end": 7.5,
+     "start": 7.225,
+     "text": "live"
+    },
+    {
+     "end": 8.425,
+     "start": 7.5,
+     "text": "copy"
+    },
+    {
+     "end": 8.65,
+     "start": 8.425,
+     "text": "."
+    },
+    {
+     "end": 8.938,
+     "start": 8.85,
+     "text": "A"
+    },
+    {
+     "end": 9.25,
+     "start": 8.938,
+     "text": "form"
+    },
+    {
+     "end": 9.675,
+     "start": 9.25,
+     "text": "creating"
+    },
+    {
+     "end": 10.225,
+     "start": 9.675,
+     "text": "reference"
+    },
+    {
+     "end": 10.7,
+     "start": 10.225,
+     "text": "outputs"
+    },
+    {
+     "end": 11.05,
+     "start": 10.7,
+     "text": "also"
+    },
+    {
+     "end": 11.45,
+     "start": 11.05,
+     "text": "carries"
+    },
+    {
+     "end": 12.6,
+     "start": 11.45,
+     "text": "witnesses"
+    },
+    {
+     "end": 12.8,
+     "start": 12.6,
+     "text": ":"
+    },
+    {
+     "end": 13.075,
+     "start": 13.0,
+     "text": "a"
+    },
+    {
+     "end": 13.775,
+     "start": 13.075,
+     "text": "transaction"
+    },
+    {
+     "end": 14.125,
+     "start": 13.775,
+     "text": "cannot"
+    },
+    {
+     "end": 14.312,
+     "start": 14.125,
+     "text": "read"
+    },
+    {
+     "end": 14.475,
+     "start": 14.312,
+     "text": "its"
+    },
+    {
+     "end": 14.725,
+     "start": 14.475,
+     "text": "own"
+    },
+    {
+     "end": 14.9,
+     "start": 14.725,
+     "text": "new"
+    },
+    {
+     "end": 15.462,
+     "start": 14.9,
+     "text": "outputs"
+    },
+    {
+     "end": 15.625,
+     "start": 15.462,
+     "text": "as"
+    },
+    {
+     "end": 16.075,
+     "start": 15.625,
+     "text": "reference"
+    },
+    {
+     "end": 17.1,
+     "start": 16.075,
+     "text": "inputs"
+    },
+    {
+     "end": 17.3,
+     "start": 17.1,
+     "text": "."
+    }
+   ]
+  },
+  "docs-creation-cost/can-creation-carry-its-scripts-03": {
+   "audio_sha256": "11ec0e3828aa34e4417bd12324f623f352bd751e11b55fb97633e4f2ead3856c",
+   "characters": 206,
+   "cost": 0.00020394,
+   "duration": 16.425,
+   "index": 3,
+   "key": "38ce909b4adf5be593f94b6331311302ff12048ab210538837c65c4d5df4d713",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 400,
+   "section": "can-creation-carry-its-scripts",
+   "sent_text": "The state-carried form has 8764 complete signed bytes and the application-carried form has 10821. The node accepted and confirmed both mixed forms. Each still needs the other script's live reference output.",
+   "text": "The state-carried form has 8764 complete signed bytes and the application-carried form has 10821. The node accepted and confirmed both mixed forms. Each still needs the other script's live reference output.",
+   "words": [
+    {
+     "end": 0.325,
+     "start": 0.225,
+     "text": "The"
+    },
+    {
+     "end": 1.013,
+     "start": 0.325,
+     "text": "state-carried"
+    },
+    {
+     "end": 1.375,
+     "start": 1.013,
+     "text": "form"
+    },
+    {
+     "end": 1.612,
+     "start": 1.375,
+     "text": "has"
+    },
+    {
+     "end": 3.1,
+     "start": 1.612,
+     "text": "8764"
+    },
+    {
+     "end": 3.588,
+     "start": 3.1,
+     "text": "complete"
+    },
+    {
+     "end": 3.975,
+     "start": 3.588,
+     "text": "signed"
+    },
+    {
+     "end": 4.463,
+     "start": 3.975,
+     "text": "bytes"
+    },
+    {
+     "end": 4.588,
+     "start": 4.463,
+     "text": "and"
+    },
+    {
+     "end": 4.675,
+     "start": 4.588,
+     "text": "the"
+    },
+    {
+     "end": 5.713,
+     "start": 4.675,
+     "text": "application-carried"
+    },
+    {
+     "end": 6.1,
+     "start": 5.713,
+     "text": "form"
+    },
+    {
+     "end": 6.387,
+     "start": 6.1,
+     "text": "has"
+    },
+    {
+     "end": 8.9,
+     "start": 6.387,
+     "text": "10821"
+    },
+    {
+     "end": 9.125,
+     "start": 8.9,
+     "text": "."
+    },
+    {
+     "end": 9.425,
+     "start": 9.325,
+     "text": "The"
+    },
+    {
+     "end": 9.775,
+     "start": 9.425,
+     "text": "node"
+    },
+    {
+     "end": 10.375,
+     "start": 9.775,
+     "text": "accepted"
+    },
+    {
+     "end": 10.5,
+     "start": 10.375,
+     "text": "and"
+    },
+    {
+     "end": 11.113,
+     "start": 10.5,
+     "text": "confirmed"
+    },
+    {
+     "end": 11.462,
+     "start": 11.113,
+     "text": "both"
+    },
+    {
+     "end": 11.812,
+     "start": 11.462,
+     "text": "mixed"
+    },
+    {
+     "end": 12.5,
+     "start": 11.812,
+     "text": "forms"
+    },
+    {
+     "end": 12.637,
+     "start": 12.5,
+     "text": "."
+    },
+    {
+     "end": 12.9,
+     "start": 12.637,
+     "text": "Each"
+    },
+    {
+     "end": 13.2,
+     "start": 12.9,
+     "text": "still"
+    },
+    {
+     "end": 13.438,
+     "start": 13.2,
+     "text": "needs"
+    },
+    {
+     "end": 13.55,
+     "start": 13.438,
+     "text": "the"
+    },
+    {
+     "end": 13.85,
+     "start": 13.55,
+     "text": "other"
+    },
+    {
+     "end": 14.288,
+     "start": 13.85,
+     "text": "script's"
+    },
+    {
+     "end": 14.625,
+     "start": 14.288,
+     "text": "live"
+    },
+    {
+     "end": 15.1,
+     "start": 14.625,
+     "text": "reference"
+    },
+    {
+     "end": 16.2,
+     "start": 15.1,
+     "text": "output"
+    },
+    {
+     "end": 16.425,
+     "start": 16.2,
+     "text": "."
+    }
+   ]
+  },
+  "docs-creation-cost/can-creation-carry-its-scripts-04": {
+   "audio_sha256": "24342917b1d8a3d177293098ba8e01486e47ea183d48f5929380549dfecd8940",
+   "characters": 409,
+   "cost": 0.00040490999999999997,
+   "duration": 37.325,
+   "index": 4,
+   "key": "a89e65edbed8bfcf8061d0274c5b8689a6ed08d42800d4247cfa54c6fb1c23b3",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 400,
+   "section": "can-creation-carry-its-scripts",
+   "sent_text": "Carrying both scripts in witnesses has 18567 complete signed bytes; carrying them in witnesses and new reference outputs has 36292. The node refused both for maximum transaction size: it counts 18566 and 36291 bytes respectively, against a limit of 16384. The complete signed transaction length and the length the ledger counts are different figures; the ledger count here is one byte less. Both appear below.",
+   "text": "Carrying both scripts in witnesses has 18567 complete signed bytes; carrying them in witnesses and new reference outputs has 36292. The node refused both for maximum transaction size: it counts 18566 and 36291 bytes respectively, against a limit of 16384. The complete signed transaction length and the length the ledger counts are different figures; the ledger count here is one byte less. Both appear below.",
+   "words": [
+    {
+     "end": 0.625,
+     "start": 0.2,
+     "text": "Carrying"
+    },
+    {
+     "end": 0.9,
+     "start": 0.625,
+     "text": "both"
+    },
+    {
+     "end": 1.3,
+     "start": 0.9,
+     "text": "scripts"
+    },
+    {
+     "end": 1.45,
+     "start": 1.3,
+     "text": "in"
+    },
+    {
+     "end": 2.025,
+     "start": 1.45,
+     "text": "witnesses"
+    },
+    {
+     "end": 2.312,
+     "start": 2.025,
+     "text": "has"
+    },
+    {
+     "end": 4.625,
+     "start": 2.312,
+     "text": "18567"
+    },
+    {
+     "end": 5.088,
+     "start": 4.625,
+     "text": "complete"
+    },
+    {
+     "end": 5.4,
+     "start": 5.088,
+     "text": "signed"
+    },
+    {
+     "end": 6.4,
+     "start": 5.4,
+     "text": "bytes"
+    },
+    {
+     "end": 6.6,
+     "start": 6.4,
+     "text": ";"
+    },
+    {
+     "end": 7.225,
+     "start": 6.8,
+     "text": "carrying"
+    },
+    {
+     "end": 7.45,
+     "start": 7.225,
+     "text": "them"
+    },
+    {
+     "end": 7.6,
+     "start": 7.45,
+     "text": "in"
+    },
+    {
+     "end": 8.262,
+     "start": 7.6,
+     "text": "witnesses"
+    },
+    {
+     "end": 8.413,
+     "start": 8.262,
+     "text": "and"
+    },
+    {
+     "end": 8.65,
+     "start": 8.413,
+     "text": "new"
+    },
+    {
+     "end": 9.1,
+     "start": 8.65,
+     "text": "reference"
+    },
+    {
+     "end": 9.65,
+     "start": 9.1,
+     "text": "outputs"
+    },
+    {
+     "end": 9.938,
+     "start": 9.65,
+     "text": "has"
+    },
+    {
+     "end": 12.875,
+     "start": 9.938,
+     "text": "36292"
+    },
+    {
+     "end": 13.15,
+     "start": 12.875,
+     "text": "."
+    },
+    {
+     "end": 13.4,
+     "start": 13.325,
+     "text": "The"
+    },
+    {
+     "end": 13.637,
+     "start": 13.4,
+     "text": "node"
+    },
+    {
+     "end": 14.05,
+     "start": 13.637,
+     "text": "refused"
+    },
+    {
+     "end": 14.375,
+     "start": 14.05,
+     "text": "both"
+    },
+    {
+     "end": 14.5,
+     "start": 14.375,
+     "text": "for"
+    },
+    {
+     "end": 15.0,
+     "start": 14.5,
+     "text": "maximum"
+    },
+    {
+     "end": 15.65,
+     "start": 15.0,
+     "text": "transaction"
+    },
+    {
+     "end": 16.5,
+     "start": 15.65,
+     "text": "size"
+    },
+    {
+     "end": 16.7,
+     "start": 16.5,
+     "text": ":"
+    },
+    {
+     "end": 17.05,
+     "start": 16.95,
+     "text": "it"
+    },
+    {
+     "end": 17.388,
+     "start": 17.05,
+     "text": "counts"
+    },
+    {
+     "end": 19.737,
+     "start": 17.388,
+     "text": "18566"
+    },
+    {
+     "end": 19.925,
+     "start": 19.737,
+     "text": "and"
+    },
+    {
+     "end": 22.337,
+     "start": 19.925,
+     "text": "36291"
+    },
+    {
+     "end": 22.725,
+     "start": 22.337,
+     "text": "bytes"
+    },
+    {
+     "end": 23.625,
+     "start": 22.725,
+     "text": "respectively"
+    },
+    {
+     "end": 23.763,
+     "start": 23.625,
+     "text": ","
+    },
+    {
+     "end": 24.112,
+     "start": 23.763,
+     "text": "against"
+    },
+    {
+     "end": 24.212,
+     "start": 24.112,
+     "text": "a"
+    },
+    {
+     "end": 24.625,
+     "start": 24.212,
+     "text": "limit"
+    },
+    {
+     "end": 24.788,
+     "start": 24.625,
+     "text": "of"
+    },
+    {
+     "end": 27.725,
+     "start": 24.788,
+     "text": "16384"
+    },
+    {
+     "end": 27.975,
+     "start": 27.725,
+     "text": "."
+    },
+    {
+     "end": 28.225,
+     "start": 28.15,
+     "text": "The"
+    },
+    {
+     "end": 28.675,
+     "start": 28.225,
+     "text": "complete"
+    },
+    {
+     "end": 28.975,
+     "start": 28.675,
+     "text": "signed"
+    },
+    {
+     "end": 29.65,
+     "start": 28.975,
+     "text": "transaction"
+    },
+    {
+     "end": 30.1,
+     "start": 29.65,
+     "text": "length"
+    },
+    {
+     "end": 30.237,
+     "start": 30.1,
+     "text": "and"
+    },
+    {
+     "end": 30.35,
+     "start": 30.237,
+     "text": "the"
+    },
+    {
+     "end": 30.725,
+     "start": 30.35,
+     "text": "length"
+    },
+    {
+     "end": 30.85,
+     "start": 30.725,
+     "text": "the"
+    },
+    {
+     "end": 31.175,
+     "start": 30.85,
+     "text": "ledger"
+    },
+    {
+     "end": 31.6,
+     "start": 31.175,
+     "text": "counts"
+    },
+    {
+     "end": 31.725,
+     "start": 31.6,
+     "text": "are"
+    },
+    {
+     "end": 32.025,
+     "start": 31.725,
+     "text": "different"
+    },
+    {
+     "end": 33.075,
+     "start": 32.025,
+     "text": "figures"
+    },
+    {
+     "end": 33.275,
+     "start": 33.075,
+     "text": ";"
+    },
+    {
+     "end": 33.55,
+     "start": 33.45,
+     "text": "the"
+    },
+    {
+     "end": 33.875,
+     "start": 33.55,
+     "text": "ledger"
+    },
+    {
+     "end": 34.15,
+     "start": 33.875,
+     "text": "count"
+    },
+    {
+     "end": 34.375,
+     "start": 34.15,
+     "text": "here"
+    },
+    {
+     "end": 34.525,
+     "start": 34.375,
+     "text": "is"
+    },
+    {
+     "end": 34.775,
+     "start": 34.525,
+     "text": "one"
+    },
+    {
+     "end": 35.05,
+     "start": 34.775,
+     "text": "byte"
+    },
+    {
+     "end": 35.45,
+     "start": 35.05,
+     "text": "less"
+    },
+    {
+     "end": 35.562,
+     "start": 35.45,
+     "text": "."
+    },
+    {
+     "end": 35.875,
+     "start": 35.562,
+     "text": "Both"
+    },
+    {
+     "end": 36.2,
+     "start": 35.875,
+     "text": "appear"
+    },
+    {
+     "end": 37.1,
+     "start": 36.2,
+     "text": "below"
+    },
+    {
+     "end": 37.325,
+     "start": 37.1,
+     "text": "."
+    }
+   ]
+  },
+  "docs-creation-cost/can-creation-carry-its-scripts-05": {
+   "audio_sha256": "f104386b7410aef8c0f77e95be99b21d03cf54e132c7bc3df7507e411035a399",
+   "characters": 474,
+   "cost": 0.00046925999999999994,
+   "duration": 32.8,
+   "index": 5,
+   "key": "3e6f010384b7116d9eaa1d8d22d107cc174c05531aa99de86286791d40690e92",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 400,
+   "section": "can-creation-carry-its-scripts",
+   "sent_text": "A fit requires successful execution, size within the ledger limit, and the development node's acceptance and confirmation. The execution figures are the ledger evaluator's final results on the actual chain inputs and equal the signed execution budgets. The oversized forms were evaluated locally, then refused by the node's size check before its script-execution phase; their execution figures do not claim node execution. A size comparison alone is never reported as a fit.",
+   "text": "A fit requires successful execution, size within the ledger limit, and the development node's acceptance and confirmation. The execution figures are the ledger evaluator's final results on the actual chain inputs and equal the signed execution budgets. The oversized forms were evaluated locally, then refused by the node's size check before its script-execution phase; their execution figures do not claim node execution. A size comparison alone is never reported as a fit.",
+   "words": [
+    {
+     "end": 0.325,
+     "start": 0.225,
+     "text": "A"
+    },
+    {
+     "end": 0.575,
+     "start": 0.325,
+     "text": "fit"
+    },
+    {
+     "end": 1.15,
+     "start": 0.575,
+     "text": "requires"
+    },
+    {
+     "end": 1.775,
+     "start": 1.15,
+     "text": "successful"
+    },
+    {
+     "end": 2.65,
+     "start": 1.775,
+     "text": "execution"
+    },
+    {
+     "end": 2.763,
+     "start": 2.65,
+     "text": ","
+    },
+    {
+     "end": 3.175,
+     "start": 2.763,
+     "text": "size"
+    },
+    {
+     "end": 3.5,
+     "start": 3.175,
+     "text": "within"
+    },
+    {
+     "end": 3.625,
+     "start": 3.5,
+     "text": "the"
+    },
+    {
+     "end": 3.95,
+     "start": 3.625,
+     "text": "ledger"
+    },
+    {
+     "end": 4.375,
+     "start": 3.95,
+     "text": "limit"
+    },
+    {
+     "end": 4.45,
+     "start": 4.375,
+     "text": ","
+    },
+    {
+     "end": 4.562,
+     "start": 4.45,
+     "text": "and"
+    },
+    {
+     "end": 4.65,
+     "start": 4.562,
+     "text": "the"
+    },
+    {
+     "end": 5.275,
+     "start": 4.65,
+     "text": "development"
+    },
+    {
+     "end": 5.65,
+     "start": 5.275,
+     "text": "node's"
+    },
+    {
+     "end": 6.438,
+     "start": 5.65,
+     "text": "acceptance"
+    },
+    {
+     "end": 6.575,
+     "start": 6.438,
+     "text": "and"
+    },
+    {
+     "end": 8.025,
+     "start": 6.575,
+     "text": "confirmation"
+    },
+    {
+     "end": 8.225,
+     "start": 8.025,
+     "text": "."
+    },
+    {
+     "end": 8.55,
+     "start": 8.425,
+     "text": "The"
+    },
+    {
+     "end": 9.25,
+     "start": 8.55,
+     "text": "execution"
+    },
+    {
+     "end": 9.762,
+     "start": 9.25,
+     "text": "figures"
+    },
+    {
+     "end": 9.925,
+     "start": 9.762,
+     "text": "are"
+    },
+    {
+     "end": 10.062,
+     "start": 9.925,
+     "text": "the"
+    },
+    {
+     "end": 10.4,
+     "start": 10.062,
+     "text": "ledger"
+    },
+    {
+     "end": 11.212,
+     "start": 10.4,
+     "text": "evaluator's"
+    },
+    {
+     "end": 11.65,
+     "start": 11.212,
+     "text": "final"
+    },
+    {
+     "end": 12.137,
+     "start": 11.65,
+     "text": "results"
+    },
+    {
+     "end": 12.262,
+     "start": 12.137,
+     "text": "on"
+    },
+    {
+     "end": 12.387,
+     "start": 12.262,
+     "text": "the"
+    },
+    {
+     "end": 12.863,
+     "start": 12.387,
+     "text": "actual"
+    },
+    {
+     "end": 13.2,
+     "start": 12.863,
+     "text": "chain"
+    },
+    {
+     "end": 13.863,
+     "start": 13.2,
+     "text": "inputs"
+    },
+    {
+     "end": 14.038,
+     "start": 13.863,
+     "text": "and"
+    },
+    {
+     "end": 14.4,
+     "start": 14.038,
+     "text": "equal"
+    },
+    {
+     "end": 14.538,
+     "start": 14.4,
+     "text": "the"
+    },
+    {
+     "end": 15.0,
+     "start": 14.538,
+     "text": "signed"
+    },
+    {
+     "end": 15.675,
+     "start": 15.0,
+     "text": "execution"
+    },
+    {
+     "end": 16.8,
+     "start": 15.675,
+     "text": "budgets"
+    },
+    {
+     "end": 17.0,
+     "start": 16.8,
+     "text": "."
+    },
+    {
+     "end": 17.337,
+     "start": 17.2,
+     "text": "The"
+    },
+    {
+     "end": 18.062,
+     "start": 17.337,
+     "text": "oversized"
+    },
+    {
+     "end": 18.55,
+     "start": 18.062,
+     "text": "forms"
+    },
+    {
+     "end": 18.725,
+     "start": 18.55,
+     "text": "were"
+    },
+    {
+     "end": 19.45,
+     "start": 18.725,
+     "text": "evaluated"
+    },
+    {
+     "end": 20.1,
+     "start": 19.45,
+     "text": "locally"
+    },
+    {
+     "end": 20.2,
+     "start": 20.1,
+     "text": ","
+    },
+    {
+     "end": 20.425,
+     "start": 20.2,
+     "text": "then"
+    },
+    {
+     "end": 21.025,
+     "start": 20.425,
+     "text": "refused"
+    },
+    {
+     "end": 21.2,
+     "start": 21.025,
+     "text": "by"
+    },
+    {
+     "end": 21.325,
+     "start": 21.2,
+     "text": "the"
+    },
+    {
+     "end": 21.737,
+     "start": 21.325,
+     "text": "node's"
+    },
+    {
+     "end": 22.125,
+     "start": 21.737,
+     "text": "size"
+    },
+    {
+     "end": 22.45,
+     "start": 22.125,
+     "text": "check"
+    },
+    {
+     "end": 22.825,
+     "start": 22.45,
+     "text": "before"
+    },
+    {
+     "end": 22.975,
+     "start": 22.825,
+     "text": "its"
+    },
+    {
+     "end": 23.925,
+     "start": 22.975,
+     "text": "script-execution"
+    },
+    {
+     "end": 25.025,
+     "start": 23.925,
+     "text": "phase"
+    },
+    {
+     "end": 25.225,
+     "start": 25.025,
+     "text": ";"
+    },
+    {
+     "end": 25.55,
+     "start": 25.4,
+     "text": "their"
+    },
+    {
+     "end": 26.125,
+     "start": 25.55,
+     "text": "execution"
+    },
+    {
+     "end": 26.575,
+     "start": 26.125,
+     "text": "figures"
+    },
+    {
+     "end": 26.688,
+     "start": 26.575,
+     "text": "do"
+    },
+    {
+     "end": 26.9,
+     "start": 26.688,
+     "text": "not"
+    },
+    {
+     "end": 27.25,
+     "start": 26.9,
+     "text": "claim"
+    },
+    {
+     "end": 27.513,
+     "start": 27.25,
+     "text": "node"
+    },
+    {
+     "end": 28.725,
+     "start": 27.513,
+     "text": "execution"
+    },
+    {
+     "end": 28.925,
+     "start": 28.725,
+     "text": "."
+    },
+    {
+     "end": 29.2,
+     "start": 29.125,
+     "text": "A"
+    },
+    {
+     "end": 29.525,
+     "start": 29.2,
+     "text": "size"
+    },
+    {
+     "end": 30.075,
+     "start": 29.525,
+     "text": "comparison"
+    },
+    {
+     "end": 30.55,
+     "start": 30.075,
+     "text": "alone"
+    },
+    {
+     "end": 30.737,
+     "start": 30.55,
+     "text": "is"
+    },
+    {
+     "end": 31.05,
+     "start": 30.737,
+     "text": "never"
+    },
+    {
+     "end": 31.575,
+     "start": 31.05,
+     "text": "reported"
+    },
+    {
+     "end": 31.688,
+     "start": 31.575,
+     "text": "as"
+    },
+    {
+     "end": 31.8,
+     "start": 31.688,
+     "text": "a"
+    },
+    {
+     "end": 32.6,
+     "start": 31.8,
+     "text": "fit"
+    },
+    {
+     "end": 32.8,
+     "start": 32.6,
+     "text": "."
+    }
+   ]
+  },
   "docs-creation-cost/candidate-design-00": {
    "audio_sha256": "75d0ba60dd46dd1d9afde2f3baac35d26f55d07508feee08d8dbde9b224739c1",
    "characters": 17,
@@ -44192,6 +45812,386 @@
      "end": 1.325,
      "start": 0.475,
      "text": "creation"
+    }
+   ]
+  },
+  "docs-creation-cost/frozen-limits-and-fee-parameters-00": {
+   "audio_sha256": "5b470914c268161eecac45cc68657d04bba1c89bbb0dc954530faf0b52828296",
+   "characters": 33,
+   "cost": 3.267e-05,
+   "duration": 2.55,
+   "index": 0,
+   "key": "0e10f6cbea6e3870666888e5dc4f6e1c0bdfeca1b2764be51db359044d844b59",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 500,
+   "section": "frozen-limits-and-fee-parameters",
+   "sent_text": "Frozen limits and fee parameters.",
+   "text": "Frozen limits and fee parameters.",
+   "words": [
+    {
+     "end": 0.55,
+     "start": 0.175,
+     "text": "Frozen"
+    },
+    {
+     "end": 0.9,
+     "start": 0.55,
+     "text": "limits"
+    },
+    {
+     "end": 1.038,
+     "start": 0.9,
+     "text": "and"
+    },
+    {
+     "end": 1.25,
+     "start": 1.038,
+     "text": "fee"
+    },
+    {
+     "end": 2.35,
+     "start": 1.25,
+     "text": "parameters"
+    },
+    {
+     "end": 2.55,
+     "start": 2.35,
+     "text": "."
+    }
+   ]
+  },
+  "docs-creation-cost/frozen-limits-and-fee-parameters-01": {
+   "audio_sha256": "db8962e7c88de006dbc9163d9f59b1bb4205c854dba9d5026005ee74f34a9465",
+   "characters": 268,
+   "cost": 0.00026532,
+   "duration": 21.125,
+   "index": 1,
+   "key": "3d862f4f511bd8136db1687cb19486971669b446cb9c37691dd626445da0f7f8",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 400,
+   "section": "frozen-limits-and-fee-parameters",
+   "sent_text": "Every form used maximum transaction size 16384, maximum transaction execution memory 140000000 and maximum transaction execution steps 10000000000. The parameters and their hash are read from the independent chain record, rather than supplied by the measuring command.",
+   "text": "Every form used maximum transaction size 16384, maximum transaction execution memory 140000000 and maximum transaction execution steps 10000000000. The parameters and their hash are read from the independent chain record, rather than supplied by the measuring command.",
+   "words": [
+    {
+     "end": 0.562,
+     "start": 0.275,
+     "text": "Every"
+    },
+    {
+     "end": 0.925,
+     "start": 0.562,
+     "text": "form"
+    },
+    {
+     "end": 1.237,
+     "start": 0.925,
+     "text": "used"
+    },
+    {
+     "end": 1.775,
+     "start": 1.237,
+     "text": "maximum"
+    },
+    {
+     "end": 2.612,
+     "start": 1.775,
+     "text": "transaction"
+    },
+    {
+     "end": 3.0,
+     "start": 2.612,
+     "text": "size"
+    },
+    {
+     "end": 5.375,
+     "start": 3.0,
+     "text": "16384"
+    },
+    {
+     "end": 5.488,
+     "start": 5.375,
+     "text": ","
+    },
+    {
+     "end": 6.025,
+     "start": 5.488,
+     "text": "maximum"
+    },
+    {
+     "end": 6.75,
+     "start": 6.025,
+     "text": "transaction"
+    },
+    {
+     "end": 7.475,
+     "start": 6.75,
+     "text": "execution"
+    },
+    {
+     "end": 7.912,
+     "start": 7.475,
+     "text": "memory"
+    },
+    {
+     "end": 9.312,
+     "start": 7.912,
+     "text": "140000000"
+    },
+    {
+     "end": 9.462,
+     "start": 9.312,
+     "text": "and"
+    },
+    {
+     "end": 10.0,
+     "start": 9.462,
+     "text": "maximum"
+    },
+    {
+     "end": 10.725,
+     "start": 10.0,
+     "text": "transaction"
+    },
+    {
+     "end": 11.512,
+     "start": 10.725,
+     "text": "execution"
+    },
+    {
+     "end": 11.938,
+     "start": 11.512,
+     "text": "steps"
+    },
+    {
+     "end": 13.45,
+     "start": 11.938,
+     "text": "10000000000"
+    },
+    {
+     "end": 13.675,
+     "start": 13.45,
+     "text": "."
+    },
+    {
+     "end": 13.95,
+     "start": 13.875,
+     "text": "The"
+    },
+    {
+     "end": 14.675,
+     "start": 13.95,
+     "text": "parameters"
+    },
+    {
+     "end": 14.788,
+     "start": 14.675,
+     "text": "and"
+    },
+    {
+     "end": 14.988,
+     "start": 14.788,
+     "text": "their"
+    },
+    {
+     "end": 15.438,
+     "start": 14.988,
+     "text": "hash"
+    },
+    {
+     "end": 15.613,
+     "start": 15.438,
+     "text": "are"
+    },
+    {
+     "end": 15.9,
+     "start": 15.613,
+     "text": "read"
+    },
+    {
+     "end": 16.062,
+     "start": 15.9,
+     "text": "from"
+    },
+    {
+     "end": 16.188,
+     "start": 16.062,
+     "text": "the"
+    },
+    {
+     "end": 16.888,
+     "start": 16.188,
+     "text": "independent"
+    },
+    {
+     "end": 17.225,
+     "start": 16.888,
+     "text": "chain"
+    },
+    {
+     "end": 17.75,
+     "start": 17.225,
+     "text": "record"
+    },
+    {
+     "end": 17.862,
+     "start": 17.75,
+     "text": ","
+    },
+    {
+     "end": 18.275,
+     "start": 17.862,
+     "text": "rather"
+    },
+    {
+     "end": 18.45,
+     "start": 18.275,
+     "text": "than"
+    },
+    {
+     "end": 19.05,
+     "start": 18.45,
+     "text": "supplied"
+    },
+    {
+     "end": 19.225,
+     "start": 19.05,
+     "text": "by"
+    },
+    {
+     "end": 19.35,
+     "start": 19.225,
+     "text": "the"
+    },
+    {
+     "end": 19.8,
+     "start": 19.35,
+     "text": "measuring"
+    },
+    {
+     "end": 20.9,
+     "start": 19.8,
+     "text": "command"
+    },
+    {
+     "end": 21.125,
+     "start": 20.9,
+     "text": "."
+    }
+   ]
+  },
+  "docs-creation-cost/frozen-limits-and-fee-parameters-02": {
+   "audio_sha256": "787b2671a289d5f58a96ddb86a4f1c38597e581b16040da58f617281111c575f",
+   "characters": 139,
+   "cost": 0.00013760999999999998,
+   "duration": 9.625,
+   "index": 2,
+   "key": "819424b2e445f06f48d4a96664b257deb5f6b93ed8924609f2d14af759d7d73f",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 400,
+   "section": "frozen-limits-and-fee-parameters",
+   "sent_text": "The experiment holds the application's configuration fixed across forms. These explicit experimental values do not change command defaults.",
+   "text": "The experiment holds the application's configuration fixed across forms. These explicit experimental values do not change command defaults.",
+   "words": [
+    {
+     "end": 0.3,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.925,
+     "start": 0.3,
+     "text": "experiment"
+    },
+    {
+     "end": 1.237,
+     "start": 0.925,
+     "text": "holds"
+    },
+    {
+     "end": 1.35,
+     "start": 1.237,
+     "text": "the"
+    },
+    {
+     "end": 2.1,
+     "start": 1.35,
+     "text": "application's"
+    },
+    {
+     "end": 2.975,
+     "start": 2.1,
+     "text": "configuration"
+    },
+    {
+     "end": 3.312,
+     "start": 2.975,
+     "text": "fixed"
+    },
+    {
+     "end": 3.7,
+     "start": 3.312,
+     "text": "across"
+    },
+    {
+     "end": 4.725,
+     "start": 3.7,
+     "text": "forms"
+    },
+    {
+     "end": 4.95,
+     "start": 4.725,
+     "text": "."
+    },
+    {
+     "end": 5.35,
+     "start": 5.125,
+     "text": "These"
+    },
+    {
+     "end": 5.9,
+     "start": 5.35,
+     "text": "explicit"
+    },
+    {
+     "end": 6.675,
+     "start": 5.9,
+     "text": "experimental"
+    },
+    {
+     "end": 7.225,
+     "start": 6.675,
+     "text": "values"
+    },
+    {
+     "end": 7.35,
+     "start": 7.225,
+     "text": "do"
+    },
+    {
+     "end": 7.588,
+     "start": 7.35,
+     "text": "not"
+    },
+    {
+     "end": 7.925,
+     "start": 7.588,
+     "text": "change"
+    },
+    {
+     "end": 8.35,
+     "start": 7.925,
+     "text": "command"
+    },
+    {
+     "end": 9.425,
+     "start": 8.35,
+     "text": "defaults"
+    },
+    {
+     "end": 9.625,
+     "start": 9.425,
+     "text": "."
     }
    ]
   },
@@ -46110,6 +48110,701 @@
     }
    ]
   },
+  "docs-creation-cost/measurement-appendix-00": {
+   "audio_sha256": "dded119738e8b27f10e67e6277c2e60bcb5133f3de578ed3b7a08f1d8fba768e",
+   "characters": 21,
+   "cost": 2.0789999999999996e-05,
+   "duration": 1.675,
+   "index": 0,
+   "key": "5fada5fa3753755d406a50e18dbcec556ef11935e99cb317c2bc6ff466680728",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 500,
+   "section": "measurement-appendix",
+   "sent_text": "Measurement appendix.",
+   "text": "Measurement appendix.",
+   "words": [
+    {
+     "end": 0.587,
+     "start": 0.2,
+     "text": "Measurement"
+    },
+    {
+     "end": 1.5,
+     "start": 0.587,
+     "text": "appendix"
+    },
+    {
+     "end": 1.675,
+     "start": 1.5,
+     "text": "."
+    }
+   ]
+  },
+  "docs-creation-cost/measurement-appendix-01": {
+   "audio_sha256": "33292bf3ad5667646b585b2c23d094e896aa2f107ae33f40a55247c2d57d6f13",
+   "characters": 802,
+   "cost": 0.00079398,
+   "duration": 54.7,
+   "index": 1,
+   "key": "48dab121fd87443f88695c6cf13105a8f2fd4a9d312b48830ca95bad6907e57f",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 400,
+   "section": "measurement-appendix",
+   "sent_text": "The carrying receipt records the test-only producer, its exact source changes and executable hash, the signed transactions, local execution results and independent node answers. The experiment has its own recorded genesis and start time; its protocol parameters match the earlier creation comparison. The receipt checker recomputes lengths, fees, script hashes, placements and execution budgets, binds each transaction to the independent node submission, and requires identical included bytes for every fit. Every refusal must reproduce the node's limiting parameter and figures. Missing forms, missing execution, altered figures and false fits are refused by the hosted documentation check. The test harness is outside the released command's source and changes no production builder or shared receipt.",
+   "text": "The carrying receipt records the test-only producer, its exact source changes and executable hash, the signed transactions, local execution results and independent node answers. The experiment has its own recorded genesis and start time; its protocol parameters match the earlier creation comparison. The receipt checker recomputes lengths, fees, script hashes, placements and execution budgets, binds each transaction to the independent node submission, and requires identical included bytes for every fit. Every refusal must reproduce the node's limiting parameter and figures. Missing forms, missing execution, altered figures and false fits are refused by the hosted documentation check. The test harness is outside the released command's source and changes no production builder or shared receipt.",
+   "words": [
+    {
+     "end": 0.338,
+     "start": 0.225,
+     "text": "The"
+    },
+    {
+     "end": 0.8,
+     "start": 0.338,
+     "text": "carrying"
+    },
+    {
+     "end": 1.2,
+     "start": 0.8,
+     "text": "receipt"
+    },
+    {
+     "end": 1.7,
+     "start": 1.2,
+     "text": "records"
+    },
+    {
+     "end": 1.837,
+     "start": 1.7,
+     "text": "the"
+    },
+    {
+     "end": 2.525,
+     "start": 1.837,
+     "text": "test-only"
+    },
+    {
+     "end": 3.175,
+     "start": 2.525,
+     "text": "producer"
+    },
+    {
+     "end": 3.25,
+     "start": 3.175,
+     "text": ","
+    },
+    {
+     "end": 3.425,
+     "start": 3.25,
+     "text": "its"
+    },
+    {
+     "end": 3.963,
+     "start": 3.425,
+     "text": "exact"
+    },
+    {
+     "end": 4.338,
+     "start": 3.963,
+     "text": "source"
+    },
+    {
+     "end": 4.938,
+     "start": 4.338,
+     "text": "changes"
+    },
+    {
+     "end": 5.113,
+     "start": 4.938,
+     "text": "and"
+    },
+    {
+     "end": 5.812,
+     "start": 5.113,
+     "text": "executable"
+    },
+    {
+     "end": 6.4,
+     "start": 5.812,
+     "text": "hash"
+    },
+    {
+     "end": 6.5,
+     "start": 6.4,
+     "text": ","
+    },
+    {
+     "end": 6.637,
+     "start": 6.5,
+     "text": "the"
+    },
+    {
+     "end": 7.0,
+     "start": 6.637,
+     "text": "signed"
+    },
+    {
+     "end": 7.95,
+     "start": 7.0,
+     "text": "transactions"
+    },
+    {
+     "end": 8.038,
+     "start": 7.95,
+     "text": ","
+    },
+    {
+     "end": 8.4,
+     "start": 8.038,
+     "text": "local"
+    },
+    {
+     "end": 9.05,
+     "start": 8.4,
+     "text": "execution"
+    },
+    {
+     "end": 9.637,
+     "start": 9.05,
+     "text": "results"
+    },
+    {
+     "end": 9.8,
+     "start": 9.637,
+     "text": "and"
+    },
+    {
+     "end": 10.45,
+     "start": 9.8,
+     "text": "independent"
+    },
+    {
+     "end": 10.75,
+     "start": 10.45,
+     "text": "node"
+    },
+    {
+     "end": 12.025,
+     "start": 10.75,
+     "text": "answers"
+    },
+    {
+     "end": 12.25,
+     "start": 12.025,
+     "text": "."
+    },
+    {
+     "end": 12.55,
+     "start": 12.425,
+     "text": "The"
+    },
+    {
+     "end": 13.15,
+     "start": 12.55,
+     "text": "experiment"
+    },
+    {
+     "end": 13.312,
+     "start": 13.15,
+     "text": "has"
+    },
+    {
+     "end": 13.5,
+     "start": 13.312,
+     "text": "its"
+    },
+    {
+     "end": 13.75,
+     "start": 13.5,
+     "text": "own"
+    },
+    {
+     "end": 14.238,
+     "start": 13.75,
+     "text": "recorded"
+    },
+    {
+     "end": 14.887,
+     "start": 14.238,
+     "text": "genesis"
+    },
+    {
+     "end": 15.025,
+     "start": 14.887,
+     "text": "and"
+    },
+    {
+     "end": 15.35,
+     "start": 15.025,
+     "text": "start"
+    },
+    {
+     "end": 16.225,
+     "start": 15.35,
+     "text": "time"
+    },
+    {
+     "end": 16.425,
+     "start": 16.225,
+     "text": ";"
+    },
+    {
+     "end": 16.8,
+     "start": 16.625,
+     "text": "its"
+    },
+    {
+     "end": 17.325,
+     "start": 16.8,
+     "text": "protocol"
+    },
+    {
+     "end": 18.1,
+     "start": 17.325,
+     "text": "parameters"
+    },
+    {
+     "end": 18.45,
+     "start": 18.1,
+     "text": "match"
+    },
+    {
+     "end": 18.6,
+     "start": 18.45,
+     "text": "the"
+    },
+    {
+     "end": 19.0,
+     "start": 18.6,
+     "text": "earlier"
+    },
+    {
+     "end": 19.475,
+     "start": 19.0,
+     "text": "creation"
+    },
+    {
+     "end": 20.65,
+     "start": 19.475,
+     "text": "comparison"
+    },
+    {
+     "end": 20.85,
+     "start": 20.65,
+     "text": "."
+    },
+    {
+     "end": 21.1,
+     "start": 21.025,
+     "text": "The"
+    },
+    {
+     "end": 21.45,
+     "start": 21.1,
+     "text": "receipt"
+    },
+    {
+     "end": 21.8,
+     "start": 21.45,
+     "text": "checker"
+    },
+    {
+     "end": 22.375,
+     "start": 21.8,
+     "text": "recomputes"
+    },
+    {
+     "end": 22.725,
+     "start": 22.375,
+     "text": "lengths"
+    },
+    {
+     "end": 22.812,
+     "start": 22.725,
+     "text": ","
+    },
+    {
+     "end": 23.175,
+     "start": 22.812,
+     "text": "fees"
+    },
+    {
+     "end": 23.225,
+     "start": 23.175,
+     "text": ","
+    },
+    {
+     "end": 23.55,
+     "start": 23.225,
+     "text": "script"
+    },
+    {
+     "end": 24.55,
+     "start": 23.55,
+     "text": "hashes"
+    },
+    {
+     "end": 24.75,
+     "start": 24.55,
+     "text": ","
+    },
+    {
+     "end": 25.337,
+     "start": 24.925,
+     "text": "placements"
+    },
+    {
+     "end": 25.438,
+     "start": 25.337,
+     "text": "and"
+    },
+    {
+     "end": 25.975,
+     "start": 25.438,
+     "text": "execution"
+    },
+    {
+     "end": 26.8,
+     "start": 25.975,
+     "text": "budgets"
+    },
+    {
+     "end": 27.0,
+     "start": 26.8,
+     "text": ","
+    },
+    {
+     "end": 27.5,
+     "start": 27.175,
+     "text": "binds"
+    },
+    {
+     "end": 27.725,
+     "start": 27.5,
+     "text": "each"
+    },
+    {
+     "end": 28.425,
+     "start": 27.725,
+     "text": "transaction"
+    },
+    {
+     "end": 28.513,
+     "start": 28.425,
+     "text": "to"
+    },
+    {
+     "end": 28.625,
+     "start": 28.513,
+     "text": "the"
+    },
+    {
+     "end": 29.2,
+     "start": 28.625,
+     "text": "independent"
+    },
+    {
+     "end": 29.5,
+     "start": 29.2,
+     "text": "node"
+    },
+    {
+     "end": 30.575,
+     "start": 29.5,
+     "text": "submission"
+    },
+    {
+     "end": 30.75,
+     "start": 30.575,
+     "text": ","
+    },
+    {
+     "end": 31.038,
+     "start": 30.95,
+     "text": "and"
+    },
+    {
+     "end": 31.612,
+     "start": 31.038,
+     "text": "requires"
+    },
+    {
+     "end": 32.275,
+     "start": 31.612,
+     "text": "identical"
+    },
+    {
+     "end": 32.775,
+     "start": 32.275,
+     "text": "included"
+    },
+    {
+     "end": 33.125,
+     "start": 32.775,
+     "text": "bytes"
+    },
+    {
+     "end": 33.275,
+     "start": 33.125,
+     "text": "for"
+    },
+    {
+     "end": 33.612,
+     "start": 33.275,
+     "text": "every"
+    },
+    {
+     "end": 34.4,
+     "start": 33.612,
+     "text": "fit"
+    },
+    {
+     "end": 34.6,
+     "start": 34.4,
+     "text": "."
+    },
+    {
+     "end": 35.1,
+     "start": 34.8,
+     "text": "Every"
+    },
+    {
+     "end": 35.775,
+     "start": 35.1,
+     "text": "refusal"
+    },
+    {
+     "end": 36.05,
+     "start": 35.775,
+     "text": "must"
+    },
+    {
+     "end": 36.65,
+     "start": 36.05,
+     "text": "reproduce"
+    },
+    {
+     "end": 36.775,
+     "start": 36.65,
+     "text": "the"
+    },
+    {
+     "end": 37.175,
+     "start": 36.775,
+     "text": "node's"
+    },
+    {
+     "end": 37.625,
+     "start": 37.175,
+     "text": "limiting"
+    },
+    {
+     "end": 38.2,
+     "start": 37.625,
+     "text": "parameter"
+    },
+    {
+     "end": 38.338,
+     "start": 38.2,
+     "text": "and"
+    },
+    {
+     "end": 39.4,
+     "start": 38.338,
+     "text": "figures"
+    },
+    {
+     "end": 39.6,
+     "start": 39.4,
+     "text": "."
+    },
+    {
+     "end": 40.162,
+     "start": 39.825,
+     "text": "Missing"
+    },
+    {
+     "end": 40.675,
+     "start": 40.162,
+     "text": "forms"
+    },
+    {
+     "end": 40.75,
+     "start": 40.675,
+     "text": ","
+    },
+    {
+     "end": 41.075,
+     "start": 40.75,
+     "text": "missing"
+    },
+    {
+     "end": 41.95,
+     "start": 41.075,
+     "text": "execution"
+    },
+    {
+     "end": 42.062,
+     "start": 41.95,
+     "text": ","
+    },
+    {
+     "end": 42.513,
+     "start": 42.062,
+     "text": "altered"
+    },
+    {
+     "end": 43.0,
+     "start": 42.513,
+     "text": "figures"
+    },
+    {
+     "end": 43.138,
+     "start": 43.0,
+     "text": "and"
+    },
+    {
+     "end": 43.537,
+     "start": 43.138,
+     "text": "false"
+    },
+    {
+     "end": 43.963,
+     "start": 43.537,
+     "text": "fits"
+    },
+    {
+     "end": 44.125,
+     "start": 43.963,
+     "text": "are"
+    },
+    {
+     "end": 44.8,
+     "start": 44.125,
+     "text": "refused"
+    },
+    {
+     "end": 44.975,
+     "start": 44.8,
+     "text": "by"
+    },
+    {
+     "end": 45.112,
+     "start": 44.975,
+     "text": "the"
+    },
+    {
+     "end": 45.6,
+     "start": 45.112,
+     "text": "hosted"
+    },
+    {
+     "end": 46.513,
+     "start": 45.6,
+     "text": "documentation"
+    },
+    {
+     "end": 47.475,
+     "start": 46.513,
+     "text": "check"
+    },
+    {
+     "end": 47.7,
+     "start": 47.475,
+     "text": "."
+    },
+    {
+     "end": 47.975,
+     "start": 47.9,
+     "text": "The"
+    },
+    {
+     "end": 48.275,
+     "start": 47.975,
+     "text": "test"
+    },
+    {
+     "end": 48.7,
+     "start": 48.275,
+     "text": "harness"
+    },
+    {
+     "end": 48.85,
+     "start": 48.7,
+     "text": "is"
+    },
+    {
+     "end": 49.475,
+     "start": 48.85,
+     "text": "outside"
+    },
+    {
+     "end": 49.575,
+     "start": 49.475,
+     "text": "the"
+    },
+    {
+     "end": 50.05,
+     "start": 49.575,
+     "text": "released"
+    },
+    {
+     "end": 50.487,
+     "start": 50.05,
+     "text": "command's"
+    },
+    {
+     "end": 50.987,
+     "start": 50.487,
+     "text": "source"
+    },
+    {
+     "end": 51.138,
+     "start": 50.987,
+     "text": "and"
+    },
+    {
+     "end": 51.588,
+     "start": 51.138,
+     "text": "changes"
+    },
+    {
+     "end": 51.825,
+     "start": 51.588,
+     "text": "no"
+    },
+    {
+     "end": 52.325,
+     "start": 51.825,
+     "text": "production"
+    },
+    {
+     "end": 52.85,
+     "start": 52.325,
+     "text": "builder"
+    },
+    {
+     "end": 53.075,
+     "start": 52.85,
+     "text": "or"
+    },
+    {
+     "end": 53.4,
+     "start": 53.075,
+     "text": "shared"
+    },
+    {
+     "end": 54.475,
+     "start": 53.4,
+     "text": "receipt"
+    },
+    {
+     "end": 54.7,
+     "start": 54.475,
+     "text": "."
+    }
+   ]
+  },
   "docs-creation-cost/previous-design-00": {
    "audio_sha256": "f4e964af49d678d6d9c785a380e3163c075bb76c3a0b17a8bdc21d400649bafd",
    "characters": 16,
@@ -47846,6 +50541,751 @@
     {
      "end": 18.15,
      "start": 17.95,
+     "text": "."
+    }
+   ]
+  },
+  "docs-creation-cost/what-the-result-gives-a-creator-00": {
+   "audio_sha256": "64e8051ac25d40b1635fadb66cc181ed8365bad693b03761fc86ec74d65d0484",
+   "characters": 32,
+   "cost": 3.1679999999999995e-05,
+   "duration": 2.125,
+   "index": 0,
+   "key": "c66ff0f0d055490b0dc41bd789b6dd46bda64512dcd094d416243d86341e6255",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 500,
+   "section": "what-the-result-gives-a-creator",
+   "sent_text": "What the result gives a creator.",
+   "text": "What the result gives a creator.",
+   "words": [
+    {
+     "end": 0.287,
+     "start": 0.175,
+     "text": "What"
+    },
+    {
+     "end": 0.375,
+     "start": 0.287,
+     "text": "the"
+    },
+    {
+     "end": 0.75,
+     "start": 0.375,
+     "text": "result"
+    },
+    {
+     "end": 0.938,
+     "start": 0.75,
+     "text": "gives"
+    },
+    {
+     "end": 1.0,
+     "start": 0.938,
+     "text": "a"
+    },
+    {
+     "end": 1.925,
+     "start": 1.0,
+     "text": "creator"
+    },
+    {
+     "end": 2.125,
+     "start": 1.925,
+     "text": "."
+    }
+   ]
+  },
+  "docs-creation-cost/what-the-result-gives-a-creator-01": {
+   "audio_sha256": "8c5bf5e0f409987bbeb09aa33bb945cfec24a5984c1cb74cfe66aff20d767fba",
+   "characters": 508,
+   "cost": 0.00050292,
+   "duration": 33.375,
+   "index": 1,
+   "key": "c8acff818bf9132345590fe082ff35d43365254e44d62b0712c55220ec7981fa",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 400,
+   "section": "what-the-result-gives-a-creator",
+   "sent_text": "Each fitting mixed form still needs one prior publication. When a first creation finds no live copy, it cannot skip both publications by carrying: the both-witness form that needs no live reference is refused for size. A fitting mixed form creates no reference output for the script it carries. If a first creation published only the other script, a later registry using the unchanged production command would still have to publish the carried script. Carrying defers that publication; it does not remove it.",
+   "text": "Each fitting mixed form still needs one prior publication. When a first creation finds no live copy, it cannot skip both publications by carrying: the both-witness form that needs no live reference is refused for size. A fitting mixed form creates no reference output for the script it carries. If a first creation published only the other script, a later registry using the unchanged production command would still have to publish the carried script. Carrying defers that publication; it does not remove it.",
+   "words": [
+    {
+     "end": 0.4,
+     "start": 0.2,
+     "text": "Each"
+    },
+    {
+     "end": 0.7,
+     "start": 0.4,
+     "text": "fitting"
+    },
+    {
+     "end": 0.975,
+     "start": 0.7,
+     "text": "mixed"
+    },
+    {
+     "end": 1.362,
+     "start": 0.975,
+     "text": "form"
+    },
+    {
+     "end": 1.65,
+     "start": 1.362,
+     "text": "still"
+    },
+    {
+     "end": 1.925,
+     "start": 1.65,
+     "text": "needs"
+    },
+    {
+     "end": 2.175,
+     "start": 1.925,
+     "text": "one"
+    },
+    {
+     "end": 2.475,
+     "start": 2.175,
+     "text": "prior"
+    },
+    {
+     "end": 3.7,
+     "start": 2.475,
+     "text": "publication"
+    },
+    {
+     "end": 3.9,
+     "start": 3.7,
+     "text": "."
+    },
+    {
+     "end": 4.188,
+     "start": 4.075,
+     "text": "When"
+    },
+    {
+     "end": 4.287,
+     "start": 4.188,
+     "text": "a"
+    },
+    {
+     "end": 4.6,
+     "start": 4.287,
+     "text": "first"
+    },
+    {
+     "end": 5.137,
+     "start": 4.6,
+     "text": "creation"
+    },
+    {
+     "end": 5.5,
+     "start": 5.137,
+     "text": "finds"
+    },
+    {
+     "end": 5.675,
+     "start": 5.5,
+     "text": "no"
+    },
+    {
+     "end": 6.0,
+     "start": 5.675,
+     "text": "live"
+    },
+    {
+     "end": 6.525,
+     "start": 6.0,
+     "text": "copy"
+    },
+    {
+     "end": 6.637,
+     "start": 6.525,
+     "text": ","
+    },
+    {
+     "end": 6.775,
+     "start": 6.637,
+     "text": "it"
+    },
+    {
+     "end": 7.15,
+     "start": 6.775,
+     "text": "cannot"
+    },
+    {
+     "end": 7.45,
+     "start": 7.15,
+     "text": "skip"
+    },
+    {
+     "end": 7.75,
+     "start": 7.45,
+     "text": "both"
+    },
+    {
+     "end": 8.525,
+     "start": 7.75,
+     "text": "publications"
+    },
+    {
+     "end": 8.712,
+     "start": 8.525,
+     "text": "by"
+    },
+    {
+     "end": 9.775,
+     "start": 8.712,
+     "text": "carrying"
+    },
+    {
+     "end": 9.975,
+     "start": 9.775,
+     "text": ":"
+    },
+    {
+     "end": 10.225,
+     "start": 10.15,
+     "text": "the"
+    },
+    {
+     "end": 10.863,
+     "start": 10.225,
+     "text": "both-witness"
+    },
+    {
+     "end": 11.25,
+     "start": 10.863,
+     "text": "form"
+    },
+    {
+     "end": 11.4,
+     "start": 11.25,
+     "text": "that"
+    },
+    {
+     "end": 11.688,
+     "start": 11.4,
+     "text": "needs"
+    },
+    {
+     "end": 11.925,
+     "start": 11.688,
+     "text": "no"
+    },
+    {
+     "end": 12.25,
+     "start": 11.925,
+     "text": "live"
+    },
+    {
+     "end": 12.75,
+     "start": 12.25,
+     "text": "reference"
+    },
+    {
+     "end": 12.9,
+     "start": 12.75,
+     "text": "is"
+    },
+    {
+     "end": 13.45,
+     "start": 12.9,
+     "text": "refused"
+    },
+    {
+     "end": 13.613,
+     "start": 13.45,
+     "text": "for"
+    },
+    {
+     "end": 14.6,
+     "start": 13.613,
+     "text": "size"
+    },
+    {
+     "end": 14.8,
+     "start": 14.6,
+     "text": "."
+    },
+    {
+     "end": 15.087,
+     "start": 15.0,
+     "text": "A"
+    },
+    {
+     "end": 15.4,
+     "start": 15.087,
+     "text": "fitting"
+    },
+    {
+     "end": 15.725,
+     "start": 15.4,
+     "text": "mixed"
+    },
+    {
+     "end": 16.112,
+     "start": 15.725,
+     "text": "form"
+    },
+    {
+     "end": 16.538,
+     "start": 16.112,
+     "text": "creates"
+    },
+    {
+     "end": 16.775,
+     "start": 16.538,
+     "text": "no"
+    },
+    {
+     "end": 17.225,
+     "start": 16.775,
+     "text": "reference"
+    },
+    {
+     "end": 17.675,
+     "start": 17.225,
+     "text": "output"
+    },
+    {
+     "end": 17.788,
+     "start": 17.675,
+     "text": "for"
+    },
+    {
+     "end": 17.875,
+     "start": 17.788,
+     "text": "the"
+    },
+    {
+     "end": 18.188,
+     "start": 17.875,
+     "text": "script"
+    },
+    {
+     "end": 18.275,
+     "start": 18.188,
+     "text": "it"
+    },
+    {
+     "end": 19.325,
+     "start": 18.275,
+     "text": "carries"
+    },
+    {
+     "end": 19.525,
+     "start": 19.325,
+     "text": "."
+    },
+    {
+     "end": 19.812,
+     "start": 19.7,
+     "text": "If"
+    },
+    {
+     "end": 19.9,
+     "start": 19.812,
+     "text": "a"
+    },
+    {
+     "end": 20.15,
+     "start": 19.9,
+     "text": "first"
+    },
+    {
+     "end": 20.675,
+     "start": 20.15,
+     "text": "creation"
+    },
+    {
+     "end": 21.125,
+     "start": 20.675,
+     "text": "published"
+    },
+    {
+     "end": 21.413,
+     "start": 21.125,
+     "text": "only"
+    },
+    {
+     "end": 21.513,
+     "start": 21.413,
+     "text": "the"
+    },
+    {
+     "end": 21.75,
+     "start": 21.513,
+     "text": "other"
+    },
+    {
+     "end": 22.65,
+     "start": 21.75,
+     "text": "script"
+    },
+    {
+     "end": 22.85,
+     "start": 22.65,
+     "text": ","
+    },
+    {
+     "end": 23.138,
+     "start": 23.05,
+     "text": "a"
+    },
+    {
+     "end": 23.525,
+     "start": 23.138,
+     "text": "later"
+    },
+    {
+     "end": 24.163,
+     "start": 23.525,
+     "text": "registry"
+    },
+    {
+     "end": 24.513,
+     "start": 24.163,
+     "text": "using"
+    },
+    {
+     "end": 24.663,
+     "start": 24.513,
+     "text": "the"
+    },
+    {
+     "end": 25.4,
+     "start": 24.663,
+     "text": "unchanged"
+    },
+    {
+     "end": 25.925,
+     "start": 25.4,
+     "text": "production"
+    },
+    {
+     "end": 26.487,
+     "start": 25.925,
+     "text": "command"
+    },
+    {
+     "end": 26.675,
+     "start": 26.487,
+     "text": "would"
+    },
+    {
+     "end": 26.975,
+     "start": 26.675,
+     "text": "still"
+    },
+    {
+     "end": 27.2,
+     "start": 26.975,
+     "text": "have"
+    },
+    {
+     "end": 27.325,
+     "start": 27.2,
+     "text": "to"
+    },
+    {
+     "end": 27.725,
+     "start": 27.325,
+     "text": "publish"
+    },
+    {
+     "end": 27.85,
+     "start": 27.725,
+     "text": "the"
+    },
+    {
+     "end": 28.25,
+     "start": 27.85,
+     "text": "carried"
+    },
+    {
+     "end": 29.275,
+     "start": 28.25,
+     "text": "script"
+    },
+    {
+     "end": 29.475,
+     "start": 29.275,
+     "text": "."
+    },
+    {
+     "end": 30.1,
+     "start": 29.675,
+     "text": "Carrying"
+    },
+    {
+     "end": 30.55,
+     "start": 30.1,
+     "text": "defers"
+    },
+    {
+     "end": 30.775,
+     "start": 30.55,
+     "text": "that"
+    },
+    {
+     "end": 31.6,
+     "start": 30.775,
+     "text": "publication"
+    },
+    {
+     "end": 31.675,
+     "start": 31.6,
+     "text": ";"
+    },
+    {
+     "end": 31.763,
+     "start": 31.675,
+     "text": "it"
+    },
+    {
+     "end": 31.9,
+     "start": 31.763,
+     "text": "does"
+    },
+    {
+     "end": 32.125,
+     "start": 31.9,
+     "text": "not"
+    },
+    {
+     "end": 32.562,
+     "start": 32.125,
+     "text": "remove"
+    },
+    {
+     "end": 33.175,
+     "start": 32.562,
+     "text": "it"
+    },
+    {
+     "end": 33.375,
+     "start": 33.175,
+     "text": "."
+    }
+   ]
+  },
+  "docs-creation-cost/what-the-result-gives-a-creator-02": {
+   "audio_sha256": "a29ec8af5fa6e47843d6fc736d81aa838879c1c0e0b28f2907cec293fe6c6563",
+   "characters": 255,
+   "cost": 0.00025245,
+   "duration": 17.175,
+   "index": 2,
+   "key": "f6a0a5a0f3c1c26cf0fb44fa81cc210502923e6d55d2594c7b8432ab729dde37",
+   "page": "docs/creation-cost.md",
+   "pause_ms": 400,
+   "section": "what-the-result-gives-a-creator",
+   "sent_text": "The production workflow remains as measured: the first creation sends 3 transactions, and the later creation sends 1 transaction by reusing the shared publications. The measured carrying outcomes are reported without recommending or adopting a mixed form.",
+   "text": "The production workflow remains as measured: the first creation sends 3 transactions, and the later creation sends 1 transaction by reusing the shared publications. The measured carrying outcomes are reported without recommending or adopting a mixed form.",
+   "words": [
+    {
+     "end": 0.25,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.688,
+     "start": 0.25,
+     "text": "production"
+    },
+    {
+     "end": 1.15,
+     "start": 0.688,
+     "text": "workflow"
+    },
+    {
+     "end": 1.6,
+     "start": 1.15,
+     "text": "remains"
+    },
+    {
+     "end": 1.75,
+     "start": 1.6,
+     "text": "as"
+    },
+    {
+     "end": 2.65,
+     "start": 1.75,
+     "text": "measured"
+    },
+    {
+     "end": 2.85,
+     "start": 2.65,
+     "text": ":"
+    },
+    {
+     "end": 3.162,
+     "start": 3.05,
+     "text": "the"
+    },
+    {
+     "end": 3.475,
+     "start": 3.162,
+     "text": "first"
+    },
+    {
+     "end": 4.037,
+     "start": 3.475,
+     "text": "creation"
+    },
+    {
+     "end": 4.438,
+     "start": 4.037,
+     "text": "sends"
+    },
+    {
+     "end": 4.75,
+     "start": 4.438,
+     "text": "3"
+    },
+    {
+     "end": 5.725,
+     "start": 4.75,
+     "text": "transactions"
+    },
+    {
+     "end": 5.8,
+     "start": 5.725,
+     "text": ","
+    },
+    {
+     "end": 5.912,
+     "start": 5.8,
+     "text": "and"
+    },
+    {
+     "end": 6.0,
+     "start": 5.912,
+     "text": "the"
+    },
+    {
+     "end": 6.35,
+     "start": 6.0,
+     "text": "later"
+    },
+    {
+     "end": 6.938,
+     "start": 6.35,
+     "text": "creation"
+    },
+    {
+     "end": 7.312,
+     "start": 6.938,
+     "text": "sends"
+    },
+    {
+     "end": 7.575,
+     "start": 7.312,
+     "text": "1"
+    },
+    {
+     "end": 8.4,
+     "start": 7.575,
+     "text": "transaction"
+    },
+    {
+     "end": 8.613,
+     "start": 8.4,
+     "text": "by"
+    },
+    {
+     "end": 9.175,
+     "start": 8.613,
+     "text": "reusing"
+    },
+    {
+     "end": 9.312,
+     "start": 9.175,
+     "text": "the"
+    },
+    {
+     "end": 9.625,
+     "start": 9.312,
+     "text": "shared"
+    },
+    {
+     "end": 11.15,
+     "start": 9.625,
+     "text": "publications"
+    },
+    {
+     "end": 11.375,
+     "start": 11.15,
+     "text": "."
+    },
+    {
+     "end": 11.65,
+     "start": 11.55,
+     "text": "The"
+    },
+    {
+     "end": 12.05,
+     "start": 11.65,
+     "text": "measured"
+    },
+    {
+     "end": 12.5,
+     "start": 12.05,
+     "text": "carrying"
+    },
+    {
+     "end": 13.113,
+     "start": 12.5,
+     "text": "outcomes"
+    },
+    {
+     "end": 13.275,
+     "start": 13.113,
+     "text": "are"
+    },
+    {
+     "end": 13.8,
+     "start": 13.275,
+     "text": "reported"
+    },
+    {
+     "end": 14.15,
+     "start": 13.8,
+     "text": "without"
+    },
+    {
+     "end": 14.95,
+     "start": 14.15,
+     "text": "recommending"
+    },
+    {
+     "end": 15.125,
+     "start": 14.95,
+     "text": "or"
+    },
+    {
+     "end": 15.6,
+     "start": 15.125,
+     "text": "adopting"
+    },
+    {
+     "end": 15.7,
+     "start": 15.6,
+     "text": "a"
+    },
+    {
+     "end": 16.025,
+     "start": 15.7,
+     "text": "mixed"
+    },
+    {
+     "end": 16.975,
+     "start": 16.025,
+     "text": "form"
+    },
+    {
+     "end": 17.175,
+     "start": 16.975,
      "text": "."
     }
    ]
