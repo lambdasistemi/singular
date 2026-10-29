@@ -148,6 +148,28 @@ def totals(transactions):
     }
 
 
+def configuration_fields(transaction):
+    decoded, _ = decode(bytes.fromhex(transaction["cbor"]))
+    configurations = []
+    for output in get(decoded[0], 1):
+        if not isinstance(output, tuple):
+            continue
+        datum = get(output, 2)
+        if not datum or datum[0] != 1:
+            continue
+        value, _ = decode(datum[1])
+        if (
+            isinstance(value, tuple)
+            and value[0] == "constr"
+            and len(value[2]) == 1
+            and isinstance(value[2][0], tuple)
+            and value[2][0][0] == "constr"
+        ):
+            configurations.append(value[2][0][2])
+    require(len(configurations) == 1, "creation has no unique chain configuration")
+    return configurations[0]
+
+
 def creation(selectors, chain):
     transactions = []
     for selected in selectors:
@@ -221,6 +243,31 @@ def recompute(receipt, directory):
     require(len(signers) == 1, "creation has no unique creator signer")
     order = list(chain)
     start, finish = order.index(all_ids[0]), order.index(all_ids[-1])
+    funded = []
+    for transaction in list(chain.values())[:start]:
+        decoded, _ = decode(bytes.fromhex(transaction["cbor"]))
+        observed = measure(transaction)
+        for index, output in enumerate(get(decoded[0], 1)):
+            address = get(output, 0) if isinstance(output, tuple) else output[0]
+            if address[0] >> 4 in (0, 2, 4, 6) and address[1:29].hex() in signers:
+                funded.append(observed["outputs"][index]["lovelace"])
+    workload = receipt["workload"]
+    require(
+        len(funded) == workload["fundingOutputs"]
+        and all(amount == workload["fundingLovelacePerOutput"] for amount in funded),
+        "wallet funding differs from chain outputs",
+    )
+    for name in ("first", "later"):
+        creates = [
+            t for t in receipt[name]["transactions"] if t["step"] in ("boot", "create")
+        ]
+        require(len(creates) == 1, "the workload contains no unique registry creation")
+        configuration = configuration_fields(chain[creates[0]["id"]])
+        require(
+            configuration[2] == workload["processingMilliseconds"]
+            and configuration[3] == workload["reclaimingMilliseconds"],
+            "creation windows differ from chain configuration",
+        )
     creator_transactions = [
         t["id"]
         for t in measured[start : finish + 1]
@@ -612,6 +659,18 @@ def controls(receipts):
         altered = copy.deepcopy(receipts)
         altered[1][field] = {"altered": True}
         refused(altered, lambda r: pair(r, EVIDENCE), "mismatched " + field)
+    for field in (
+        "fundingOutputs",
+        "fundingLovelacePerOutput",
+        "processingMilliseconds",
+        "reclaimingMilliseconds",
+    ):
+        altered = copy.deepcopy(receipts)
+        for receipt in altered:
+            receipt["workload"][field] += 1
+        refused(
+            altered, lambda r: pair(r, EVIDENCE), "matching but false workload " + field
+        )
     for name in ("first", "later"):
         altered = copy.deepcopy(receipts[1])
         altered[name]["totals"]["transactionCount"] += 1
