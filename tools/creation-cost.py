@@ -268,6 +268,14 @@ def recompute(receipt, directory):
             and configuration[3] == workload["reclaimingMilliseconds"],
             "creation windows differ from chain configuration",
         )
+        witness_transactions = [t for t in rebuilt[name]["transactions"] if t["step"].startswith("publish-witness")]
+        if receipt["design"] == "previous":
+            require(len(configuration) == 6 and isinstance(configuration[5], bytes), "previous configuration carries no active witness policy")
+            active_policy = configuration[5].hex()
+            publications = [t for t in rebuilt[name]["transactions"] if any(o["referenceScript"] and o["referenceScript"]["hash"] == active_policy for o in t["outputs"])]
+            require(len(publications) == 1 and witness_transactions == publications and publications[0]["step"] == "publish-witness-active", "active witness publication is not named from its chain configuration")
+        else:
+            require(not witness_transactions and len(configuration) == 5 and all(isinstance(field, int) for field in configuration), "candidate publishes or configures a witness policy")
         for transaction in rebuilt[name]["transactions"]:
             spent = 0
             for reference in transaction["inputsSpent"]:
@@ -639,6 +647,11 @@ def controls(receipts):
                     release = altered[leg][name]["release"]
                     altered[leg][name] = dict(creation(selected, chain), release=release)
                 refused(altered, lambda r: pair(r, EVIDENCE), "omitted creation endpoint")
+            if receipts[leg]["design"] == "previous":
+                altered = copy.deepcopy(receipts)
+                selectors = [{"id": t["id"], "step": "publish-application" if t["step"].startswith("publish-witness") else t["step"]} for t in altered[leg][name]["transactions"]]
+                altered[leg][name] = dict(creation(selectors, chain), release=altered[leg][name]["release"])
+                refused(altered, lambda r: pair(r, EVIDENCE), "witness publication relabelled as application")
             for field in receipts[leg][name]["totals"]:
                 altered = copy.deepcopy(receipts)
                 altered[leg][name]["totals"][field] += 1
