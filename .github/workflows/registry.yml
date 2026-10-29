@@ -545,7 +545,7 @@ jobs:
         timeout-minutes: 20
         run: nix run --quiet .#wallet-vault-controls
   no-pin-registration-journey:
-    name: No-pin registration, mixed batches, termination and reading through the packaged commands
+    name: No-pin registration, update, termination and reading through the packaged commands
     needs: blueprint
     runs-on: nixos
     timeout-minutes: 45
@@ -592,7 +592,7 @@ jobs:
           path: ${{ env.NO_PIN_JOURNEY_RESULTS }}
           if-no-files-found: error
   no-pin-registration-refusals:
-    name: No-pin registration, batch and reading refusals on a development network
+    name: No-pin registration and reading refusals on a development network
     needs: blueprint
     runs-on: nixos
     timeout-minutes: 45
