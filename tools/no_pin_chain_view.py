@@ -229,10 +229,11 @@ def unspent(asset, address):
 
 
 def transaction(txid):
+    found = []
     for block in blocks():
         for each in block["transactions"]:
             material = each["material"]
-            if material["tx_hash"] != txid:
+            if txid is not None and material["tx_hash"] != txid:
                 continue
             encoded = bytes.fromhex(each["cbor"])
             tx, _ = decode(encoded)
@@ -250,8 +251,8 @@ def transaction(txid):
                             "quantity": quantity,
                         }
                     )
-            return {
-                "id": txid,
+            observed = {
+                "id": material["tx_hash"],
                 "sizeBytes": len(encoded),
                 "slot": block["slot"],
                 "inputs": [output(i) for i in material["inputs"]],
@@ -263,6 +264,11 @@ def transaction(txid):
                 "donation": get(body, 22) or 0,
                 "mint": mint,
             }
+            if txid is not None:
+                return observed
+            found.append(observed)
+    if txid is None:
+        return {"transactions": found}
     sys.exit("the chain holds no transaction %s" % txid)
 
 
@@ -281,6 +287,8 @@ def main():
                     "usage: no_pin_chain_view.py unspent [--asset P[.N]] [--address A]"
                 )
         print(json.dumps(unspent(asset, address)))
+    elif arguments == ["transactions"]:
+        print(json.dumps(transaction(None)))
     elif len(arguments) == 2 and arguments[0] == "tx":
         print(json.dumps(transaction(arguments[1])))
     else:

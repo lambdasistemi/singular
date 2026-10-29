@@ -70,6 +70,9 @@ prepare_extra_funding() {
 # shellcheck source=tools/no_pin_rig.sh
 # shellcheck disable=SC1091 # resolved from this script's own directory at runtime
 source "$(dirname "$0")/no_pin_rig.sh"
+# shellcheck source=tools/shared_publication_checks.sh
+# shellcheck disable=SC1091
+source "$(dirname "$0")/shared_publication_checks.sh"
 
 # The assertions, as functions of files and values so that a control can hand
 # each one altered input.
@@ -482,6 +485,11 @@ check "only the first registry locked ADA in reference scripts" \
 control "a measurement that gave a later registry two transactions would be seen" \
   jq -e '[.registries[].transactionCount] == [2, 2, 1]' "$work/creation-measurement.json"
 
+# Reuse alone does not establish that the wallet never published.
+leg="independent creator"
+check "a creator who never published reuses another wallet's live scripts" \
+  signed_by_none_of "$chain_dir/later-create.tx.json" "$(jq -c '.signers' "$chain_dir/first-publish-state.tx.json")"
+
 # A fixture transaction spends the key-owned application reference output.
 # The ledger prices its carried script even though it is spent, not read.
 # The next application creation
@@ -549,6 +557,21 @@ fi
 leg="reading a key"
 check "the packaged readers classify live custody, pending termination and authenticated absence; altered answers fail" \
   reading_evidence journey
+
+chain transactions >"$chain_dir/all-transactions.json"
+leg="no witness publication"
+check "no journey transaction publishes a witness policy or configures a witness pin" \
+  no_witness_publication "$chain_dir/all-transactions.json" "$state_policy" "$application_hash"
+jq --arg foreign "$(jq -r '.signers[0]' "$chain_dir/first-publish-state.tx.json")" \
+  '(.transactions[].outputs[] | select(.referenceScript != null) | .referenceScript.hash) = $foreign' \
+  "$chain_dir/all-transactions.json" >"$scratch/foreign-publication.json"
+control "a reference publication under another policy would be seen" \
+  no_witness_publication "$scratch/foreign-publication.json" "$state_policy" "$application_hash"
+jq --arg app "$application_hash" --arg pin "$state_policy" \
+  '(.transactions[].outputs[] | select(.credential.hash == $app and .datum.constructor == 0) | .datum.fields[0].fields) += [{bytes:$pin}]' \
+  "$chain_dir/all-transactions.json" >"$scratch/witness-pin.json"
+control "a witness pin added to a configuration would be seen" \
+  no_witness_publication "$scratch/witness-pin.json" "$state_policy" "$application_hash"
 
 # What the journey showed, in the words of the story, from the files above.
 {
