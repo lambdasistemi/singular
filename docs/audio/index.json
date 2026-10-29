@@ -1379,6 +1379,192 @@
    }
   ]
  },
+ "docs/creation-cost.md": {
+  "candidate-design": [
+   {
+    "index": 0,
+    "name": "docs-creation-cost/candidate-design-00",
+    "pause_ms": 500,
+    "text": "Candidate design.",
+    "v": "75d0ba60dd46"
+   },
+   {
+    "index": 1,
+    "name": "docs-creation-cost/candidate-design-01",
+    "pause_ms": 400,
+    "text": "Release: open-datum 0.17.0 (commit ede9f7992c4936474d3ed86f890ffa2e6fddf625). Revision: ede9f7992c4936474d3ed86f890ffa2e6fddf625. Deployment blueprint SHA-256: 6ad16a3194cff51f0600edfe0eb95917ed0679693e1e4b6f332ad1072c07d3d1.",
+    "v": "3323fe131fef"
+   },
+   {
+    "index": 2,
+    "name": "docs-creation-cost/candidate-design-02",
+    "pause_ms": 400,
+    "text": "First creation",
+    "v": "6132c9ef60fc"
+   },
+   {
+    "index": 3,
+    "name": "docs-creation-cost/candidate-design-03",
+    "pause_ms": 400,
+    "text": "Later creation",
+    "v": "d06ee1a1ecfa"
+   }
+  ],
+  "limits": [
+   {
+    "index": 0,
+    "name": "docs-creation-cost/limits-00",
+    "pause_ms": 500,
+    "text": "Limits.",
+    "v": "5fad969b44f9"
+   },
+   {
+    "index": 1,
+    "name": "docs-creation-cost/limits-01",
+    "pause_ms": 400,
+    "text": "These are development-network measurements, not fee quotes for another network. Reference-output capital is reported separately from fees; this page does not claim it is spent. The measured transactions do not establish public reference discovery for everyone, batch limits or release acceptance. Those remain the work of issues 355 and 473, issue 746 and issue 747 respectively. Existing uncovered registration comparisons remain uncovered.",
+    "v": "c48cb03c032b"
+   },
+   {
+    "index": 2,
+    "name": "docs-creation-cost/limits-02",
+    "pause_ms": 400,
+    "text": "Creation behavior remains bound to the application-held model's genesis and recognition inversions, creation money statement, configuration creation inversion and immutable configuration statement. This measuring tool changes no validator, model or wire format, and the measurements do not establish new model conformance. The trie library's proofs are assumed sound.",
+    "v": "fbe37a07252d"
+   }
+  ],
+  "matched-conditions-and-evidence": [
+   {
+    "index": 0,
+    "name": "docs-creation-cost/matched-conditions-and-evidence-00",
+    "pause_ms": 500,
+    "text": "Matched conditions and evidence.",
+    "v": "33b0eb7cb2a4"
+   },
+   {
+    "index": 1,
+    "name": "docs-creation-cost/matched-conditions-and-evidence-01",
+    "pause_ms": 400,
+    "text": "The legs use separate fresh development networks from the same frozen genesis, the same protocol parameters, the same generated wallet funding and the same processing and reclaim windows. Each network is read independently. The receipts include the complete chain-read protocol parameters and the tool versions.",
+    "v": "9b294e49bef0"
+   },
+   {
+    "index": 2,
+    "name": "docs-creation-cost/matched-conditions-and-evidence-02",
+    "pause_ms": 400,
+    "text": "The committed receipts and chain records preserve the transactions, their complete bytes and the network observations. The documentation check recomputes every figure from those bytes, checks the two workloads and regenerates this entire page for comparison. Altered figures and mismatched legs are refused. The hosted registration journey writes the candidate receipt in the same schema and compares its transaction counts and script hashes; fees may differ between runs.",
+    "v": "4dcf158118ca"
+   }
+  ],
+  "measured-creations": [
+   {
+    "index": 0,
+    "name": "docs-creation-cost/measured-creations-00",
+    "pause_ms": 500,
+    "text": "Measured creations.",
+    "v": "05a253b71eac"
+   },
+   {
+    "index": 1,
+    "name": "docs-creation-cost/measured-creations-01",
+    "pause_ms": 400,
+    "text": "The previous design sent 5 transactions for its first creation and 4 for its later creation. The issue's four-then-two claim does not match these measured counts. The application-held design sent 3 and 1 respectively.",
+    "v": "979ce8642757"
+   },
+   {
+    "index": 2,
+    "name": "docs-creation-cost/measured-creations-02",
+    "pause_ms": 400,
+    "text": "The first creation starts without a live copy of any script it needs. Later creations have the earlier shared copies available. Under the previous design only the state script is shared; request, witness and application scripts are specific to the new registry. The application-held design reuses both the state and application scripts.",
+    "v": "38a13f174483"
+   }
+  ],
+  "previous-design": [
+   {
+    "index": 0,
+    "name": "docs-creation-cost/previous-design-00",
+    "pause_ms": 500,
+    "text": "Previous design.",
+    "v": "f4e964af49d6"
+   },
+   {
+    "index": 1,
+    "name": "docs-creation-cost/previous-design-01",
+    "pause_ms": 400,
+    "text": "Release: open-datum 0.16.0 (commit 0c0ab880df982a728b6b89a1e80fc1308144d616). Revision: 0c0ab880df982a728b6b89a1e80fc1308144d616. Deployment blueprint SHA-256: ac43d782181121dcdedfd4a9c48b89fb6fa77dd69e7c9f5619110ca8efb0688b.",
+    "v": "886f406ac31d"
+   },
+   {
+    "index": 2,
+    "name": "docs-creation-cost/previous-design-02",
+    "pause_ms": 400,
+    "text": "First creation",
+    "v": "64fb646331c4"
+   },
+   {
+    "index": 3,
+    "name": "docs-creation-cost/previous-design-03",
+    "pause_ms": 400,
+    "text": "Later creation",
+    "v": "0d14c13b4b8a"
+   }
+  ],
+  "transactions-and-reference-outputs": [
+   {
+    "index": 0,
+    "name": "docs-creation-cost/transactions-and-reference-outputs-00",
+    "pause_ms": 500,
+    "text": "Transactions and reference outputs.",
+    "v": "8fea97f3af6a"
+   },
+   {
+    "index": 1,
+    "name": "docs-creation-cost/transactions-and-reference-outputs-01",
+    "pause_ms": 400,
+    "text": "Every creation transaction is listed in submission order. Spent and read inputs are output references decoded from that transaction. Each reference output lists the hash computed from its carried script, the script's byte length and its locked lovelace.",
+    "v": "13afe82422b8"
+   }
+  ],
+  "what-creating-a-registry-costs": [
+   {
+    "index": 0,
+    "name": "docs-creation-cost/what-creating-a-registry-costs-00",
+    "pause_ms": 500,
+    "text": "What creating a registry costs.",
+    "v": "0f7fbe6ebd79"
+   },
+   {
+    "index": 1,
+    "name": "docs-creation-cost/what-creating-a-registry-costs-01",
+    "pause_ms": 400,
+    "text": "As a registry creator, you can compare what the first and a later registry cost under the previous design and the application-held design. The figures below are measured from transactions included on a development network; fees are spent ADA, while ADA locked in reference outputs remains in those outputs.",
+    "v": "c64168457cdb"
+   },
+   {
+    "index": 2,
+    "name": "docs-creation-cost/what-creating-a-registry-costs-02",
+    "pause_ms": 400,
+    "text": "The two legs run the previous design's last release and this line's release of open datum. Their validators differ: this compares two creation workflows, rather than one release run twice. Within each design, both creations use the same executable and deployment blueprint.",
+    "v": "9cb41462e474"
+   }
+  ],
+  "witness-publication-overhead": [
+   {
+    "index": 0,
+    "name": "docs-creation-cost/witness-publication-overhead-00",
+    "pause_ms": 500,
+    "text": "Witness publication overhead.",
+    "v": "082234e518a8"
+   },
+   {
+    "index": 1,
+    "name": "docs-creation-cost/witness-publication-overhead-01",
+    "pause_ms": 400,
+    "text": "The previous design publishes an active witness policy for each registry. That publication is unused by the permanent two-edge contract. Its fee and its reference-output capital are included above and separated below; they must not be added twice. The application-held design publishes no witness policy.",
+    "v": "2f67cd9c78d4"
+   }
+  ]
+ },
  "docs/decisions.md": {
   "adopted-behavior": [
    {

@@ -1,0 +1,118 @@
+{
+  "what-creating-a-registry-costs": [
+    {
+      "text": "What creating a registry costs.",
+      "pause": 500
+    },
+    {
+      "text": "As a registry creator, you can compare what the first and a later registry cost under the previous design and the application-held design. The figures below are measured from transactions included on a development network; fees are spent ADA, while ADA locked in reference outputs remains in those outputs.",
+      "pause": 400
+    },
+    {
+      "text": "The two legs run the previous design's last release and this line's release of open datum. Their validators differ: this compares two creation workflows, rather than one release run twice. Within each design, both creations use the same executable and deployment blueprint.",
+      "pause": 400
+    }
+  ],
+  "measured-creations": [
+    {
+      "text": "Measured creations.",
+      "pause": 500
+    },
+    {
+      "text": "The previous design sent 5 transactions for its first creation and 4 for its later creation. The issue's four-then-two claim does not match these measured counts. The application-held design sent 3 and 1 respectively.",
+      "pause": 400
+    },
+    {
+      "text": "The first creation starts without a live copy of any script it needs. Later creations have the earlier shared copies available. Under the previous design only the state script is shared; request, witness and application scripts are specific to the new registry. The application-held design reuses both the state and application scripts.",
+      "pause": 400
+    }
+  ],
+  "witness-publication-overhead": [
+    {
+      "text": "Witness publication overhead.",
+      "pause": 500
+    },
+    {
+      "text": "The previous design publishes an active witness policy for each registry. That publication is unused by the permanent two-edge contract. Its fee and its reference-output capital are included above and separated below; they must not be added twice. The application-held design publishes no witness policy.",
+      "pause": 400
+    }
+  ],
+  "transactions-and-reference-outputs": [
+    {
+      "text": "Transactions and reference outputs.",
+      "pause": 500
+    },
+    {
+      "text": "Every creation transaction is listed in submission order. Spent and read inputs are output references decoded from that transaction. Each reference output lists the hash computed from its carried script, the script's byte length and its locked lovelace.",
+      "pause": 400
+    }
+  ],
+  "previous-design": [
+    {
+      "text": "Previous design.",
+      "pause": 500
+    },
+    {
+      "text": "Release: open-datum 0.16.0 (commit 0c0ab880df982a728b6b89a1e80fc1308144d616). Revision: 0c0ab880df982a728b6b89a1e80fc1308144d616. Deployment blueprint SHA-256: ac43d782181121dcdedfd4a9c48b89fb6fa77dd69e7c9f5619110ca8efb0688b.",
+      "pause": 400
+    },
+    {
+      "text": "First creation",
+      "pause": 400
+    },
+    {
+      "text": "Later creation",
+      "pause": 400
+    }
+  ],
+  "candidate-design": [
+    {
+      "text": "Candidate design.",
+      "pause": 500
+    },
+    {
+      "text": "Release: open-datum 0.17.0 (commit ede9f7992c4936474d3ed86f890ffa2e6fddf625). Revision: ede9f7992c4936474d3ed86f890ffa2e6fddf625. Deployment blueprint SHA-256: 6ad16a3194cff51f0600edfe0eb95917ed0679693e1e4b6f332ad1072c07d3d1.",
+      "pause": 400
+    },
+    {
+      "text": "First creation",
+      "pause": 400
+    },
+    {
+      "text": "Later creation",
+      "pause": 400
+    }
+  ],
+  "matched-conditions-and-evidence": [
+    {
+      "text": "Matched conditions and evidence.",
+      "pause": 500
+    },
+    {
+      "text": "The legs use separate fresh development networks from the same frozen genesis, the same protocol parameters, the same generated wallet funding and the same processing and reclaim windows. Each network is read independently. The receipts include the complete chain-read protocol parameters and the tool versions.",
+      "pause": 400
+    },
+    {
+      "text": "The committed receipts and chain records preserve the transactions, their complete bytes and the network observations. The documentation check recomputes every figure from those bytes, checks the two workloads and regenerates this entire page for comparison. Altered figures and mismatched legs are refused. The hosted registration journey writes the candidate receipt in the same schema and compares its transaction counts and script hashes; fees may differ between runs.",
+      "pause": 400
+    }
+  ],
+  "limits": [
+    {
+      "text": "Limits.",
+      "pause": 500
+    },
+    {
+      "text": "These are development-network measurements, not fee quotes for another network. Reference-output capital is reported separately from fees; this page does not claim it is spent. The measured transactions do not establish public reference discovery for everyone, batch limits or release acceptance. Those remain the work of issues 355 and 473, issue 746 and issue 747 respectively. Existing uncovered registration comparisons remain uncovered.",
+      "pause": 400
+    },
+    {
+      "text": "Creation behavior remains bound to the application-held model's genesis and recognition inversions, creation money statement, configuration creation inversion and immutable configuration statement. This measuring tool changes no validator, model or wire format, and the measurements do not establish new model conformance. The trie library's proofs are assumed sound.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "creation-cost.md",
+    "sha256": "7d29f65a76a793f14a1a0b7ace427c80a14fb4be685656396903f6d4762e010b"
+  }
+}
