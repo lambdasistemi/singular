@@ -77,7 +77,7 @@ memoryHarness =
                                 mkBasicTxOut
                                     watched
                                     ( MaryValue
-                                        (Coin 5000000)
+                                        (Coin 5_000_000)
                                         ( MultiAsset
                                             (Map.fromList [(p, Map.fromList names) | (p, names) <- entries])
                                         )

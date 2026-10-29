@@ -274,12 +274,12 @@ setSpec = describe "the fixture set" $ do
                 ]
         pages `shouldSatisfy` (not . null)
         expected <-
-            fmap concat $
-                mapM
+            concat
+                <$> mapM
                     ( \answer -> case decodeStrict' (answerBody answer) of
                         Just (Array rows) ->
                             mapM
-                                ( \row -> case row of
+                                ( \case
                                     Object fields
                                         | Just (String name) <- KM.lookup "asset_name" fields ->
                                             pure (AssetName (SBS.toShort (hexBytes name)))

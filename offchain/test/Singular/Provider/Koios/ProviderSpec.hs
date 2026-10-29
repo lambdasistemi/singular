@@ -6,8 +6,8 @@ import Cardano.Crypto.Hash (hashFromBytes)
 import Cardano.Ledger.Address (AccountAddress (..), AccountId (..))
 import Cardano.Ledger.Allegra.Scripts (ValidityInterval (..))
 import Cardano.Ledger.Alonzo.Tx (IsValid (..))
-import Cardano.Ledger.Api.Scripts.Data (Datum (..), binaryDataToData)
 import Cardano.Ledger.Api.PParams (emptyPParams)
+import Cardano.Ledger.Api.Scripts.Data (Datum (..), binaryDataToData)
 import Cardano.Ledger.Api.Tx (bodyTxL, isValidTxL, vldtTxBodyL)
 import Cardano.Ledger.Api.Tx.Body
     ( feeTxBodyL
@@ -137,13 +137,13 @@ import Singular.Registry.NetworkTime
     )
 import Singular.Registry.NetworkTimeSpec (loadNetworkFixture)
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
-import Singular.Registry.ReaderSpec (readerRows)
 import Singular.Registry.RawChainFixture
     ( ChainFacts (..)
     , advanceChain
     , newRawChain
     , rawChainProvider
     )
+import Singular.Registry.ReaderSpec (readerRows)
 import Singular.Registry.SessionEvidence
     ( FactRecord (..)
     , observeProvider
@@ -2249,10 +2249,10 @@ policyHoldingsSpec = describe "policy holdings" $ do
                 , Wire.JsonBody (Object fields) <- Client.rawBody request
                 , Just (Array names) <- KM.lookup "_asset_list" fields
                 , length names == 1 =
-                    let pair = policyOutputs !! 2
+                    let (reference, original) = policyOutputs !! 2
                         changed =
-                            ( fst pair
-                            , snd pair
+                            ( reference
+                            , original
                                 & valueTxOutL
                                     .~ MaryValue
                                         (Coin 1)

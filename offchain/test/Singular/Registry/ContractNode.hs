@@ -230,7 +230,7 @@ mintPolicyScenario oracle wallet watched caps = do
         other = PolicyID (hashScript @ConwayEra otherScript)
         value entries =
             MaryValue
-                (Coin 5000000)
+                (Coin 5_000_000)
                 ( MultiAsset
                     (Map.fromList [(p, Map.fromList names) | (p, names) <- entries])
                 )
@@ -248,10 +248,10 @@ mintPolicyScenario oracle wallet watched caps = do
                         ( map (mkBasicTxOut watched) values
                             <> [ mkBasicTxOut
                                     (walletAddr wallet)
-                                    (MaryValue (Coin (available - 16000000)) mempty)
+                                    (MaryValue (Coin (available - 16_000_000)) mempty)
                                ]
                         )
-                & feeTxBodyL .~ Coin 1000000
+                & feeTxBodyL .~ Coin 1_000_000
                 & mintTxBodyL .~ foldMap (\(MaryValue _ assets) -> assets) values
         transaction =
             signTx
@@ -263,7 +263,7 @@ mintPolicyScenario oracle wallet watched caps = do
                 )
         isProduced (TxIn identity _, _) = identity == txIdTx (signedTx transaction)
     unless
-        (available > 17000000)
+        (available > 17_000_000)
         (fail "policy contract: insufficient funding")
     submitPayment caps transaction
     observeWithin "multi-policy mint" $ do
