@@ -1,4 +1,4 @@
-"""Attach the raw, runnable review workspace after MkDocs renders the site."""
+"""Attach retained model sources and their checksums to the rendered site."""
 
 import hashlib
 from pathlib import Path
@@ -8,67 +8,19 @@ import sys
 root = Path(__file__).resolve().parent.parent
 site = Path(sys.argv[1]).resolve()
 artifacts = site / "artifacts"
-
-contract = artifacts / "contracts/naming-lifecycle-contract.txt"
-contract.parent.mkdir(parents=True)
-shutil.copyfile(root / "docs/naming-lifecycle.md", contract)
-
-# A reviewer starts from the extracted archive, never the source checkout.
-# Development evidence and generated build trees stay out of this copy.
-review = artifacts / "review"
-shutil.copytree(root / "release-review", review)
+artifacts.mkdir()
 shutil.copytree(
     root / "lean",
-    review / "lean",
+    artifacts / "lean",
     ignore=shutil.ignore_patterns(
         ".lake", "__pycache__", "*.olean", "*.ilean", "*.c", "*.o"
     ),
 )
-shutil.copytree(
-    root / "simulator",
-    review / "simulator",
-    ignore=shutil.ignore_patterns("evidence", "node_modules", "__pycache__"),
-)
-(review / "tools").mkdir()
-for name in (
-    "axioms.lean",
-    "check_model.py",
-    "m1_axioms.lean",
-    "check_m1.py",
-):
-    shutil.copyfile(root / "tools" / name, review / "tools" / name)
-for name in ("lakefile.toml", "lean-toolchain"):
-    shutil.copyfile(root / name, review / name)
-
-# The model check reads the constitution, the theorems page and the
-# repository README from the review root, so the archive ships them at
-# those paths; the reproduction instructions keep their own name.
-(review / ".specify/memory").mkdir(parents=True)
-shutil.copyfile(
-    root / ".specify/memory/constitution.md",
-    review / ".specify/memory/constitution.md",
-)
-(review / "docs").mkdir()
-shutil.copyfile(root / "docs/theorems.md", review / "docs/theorems.md")
-shutil.copyfile(root / "README.md", review / "README.md")
-
 manifest = {
     str(path.relative_to(site)): hashlib.sha256(path.read_bytes()).hexdigest()
     for path in sorted(artifacts.rglob("*"))
     if path.is_file()
 }
-for relative in (
-    "model/corpus.json",
-    "model/naming-corpus.json",
-    "model/lifecycle-corpus.json",
-    "model/theorem-debt.json",
-    "model/naming-theorem-debt.json",
-    "model/lifecycle-theorem-debt.json",
-    "model/wire-theorem-debt.json",
-    "simulator/identity.json",
-):
-    manifest[relative] = hashlib.sha256((site / relative).read_bytes()).hexdigest()
 (artifacts / "SHA256SUMS").write_text(
-    "\n".join(f"{manifest[path]}  {path}" for path in sorted(manifest)) + "\n",
-    encoding="utf-8",
+    "\n".join(f"{manifest[path]}  {path}" for path in sorted(manifest)) + "\n"
 )

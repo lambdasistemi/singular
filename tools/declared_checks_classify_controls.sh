@@ -210,10 +210,7 @@ cat >"$work/toolmarkers" <<'EOF'
 .|docs-serve|nix/docs.nix marked names
 EOF
 : >"$work/citations"
-cat >"$work/states" <<'EOF'
-565 open
-EOF
-run_classifier "$work/states" "$work/toolmarkers" "$work/citations"
+run_classifier "$work/toolmarkers" "$work/citations"
 expect "hosted-but-listed entry is refused" 1 "app docs-serve of flake . is in fact hosted (stale entry)"
 
 # 8. A hosted-under-another-name entry whose job id does not exist fails.
@@ -250,120 +247,18 @@ EOF
 run_classifier
 expect "uncited retired entry is refused" 1 "a retired reason cites the classification"
 
-# 10. Pending wiring with the issue open passes, printed by name and count.
+# Retired replay wiring no longer grants an exception to a missing hosted step.
 cat >"$work/declared" <<'EOF'
-release-review|app|check
+.|app|docs-serve
 EOF
 cat >"$work/hosted" <<'EOF'
-# nothing yet
+# nothing
 EOF
 cat >"$work/list" <<'EOF'
-release-review|check|app|pending wiring: #565, the release-archive slice hosts the archive reproduction job
-EOF
-cat >"$work/states" <<'EOF'
-565 open
-EOF
-run_classifier "$work/states"
-expect "pending wiring with the issue open passes" 0 "1 pending wiring"
-expect "pending wiring is printed by name" 0 "release-review check (#565)"
-
-# 11. Pending wiring with the issue closed fails.
-cat >"$work/states" <<'EOF'
-565 closed
-EOF
-run_classifier "$work/states"
-expect "pending wiring with the issue closed is refused" 1 "issue #565 is closed; the pending-wiring entry outlived its fix"
-
-# 12. Pending wiring with no issue number fails.
-cat >"$work/list" <<'EOF'
-release-review|check|app|pending wiring: soon, the next slice hosts it
-EOF
-cat >"$work/states" <<'EOF'
-565 open
-EOF
-run_classifier "$work/states"
-expect "numberless pending wiring is refused" 1 "a pending-wiring reason names its issue as '#<number>, <what hosts it>'"
-
-# 12b. Pending wiring outside the closed membership fails even with its
-# issue open: only the release-review check and default apps with #565
-# are admitted.
-cat >"$work/declared" <<'EOF'
-conformance|check|conformance-tests
-EOF
-cat >"$work/hosted" <<'EOF'
-# nothing hosts it by name
-EOF
-cat >"$work/list" <<'EOF'
-conformance|conformance-tests|check|pending wiring: #565, the next slice hosts it
-EOF
-cat >"$work/states" <<'EOF'
-565 open
-EOF
-run_classifier "$work/states"
-expect "third pending entry is refused" 1 "pending wiring admits only the release-review"
-
-# 12c. Pending wiring for the right entries with the wrong issue number fails.
-cat >"$work/declared" <<'EOF'
-release-review|app|check
-EOF
-cat >"$work/hosted" <<'EOF'
-# nothing yet
-EOF
-cat >"$work/list" <<'EOF'
-release-review|check|app|pending wiring: #566, the release-archive slice hosts the archive reproduction job
-EOF
-cat >"$work/states" <<'EOF'
-566 open
-EOF
-run_classifier "$work/states"
-expect "pending wiring with the wrong issue is refused" 1 "pending wiring admits only the release-review"
-
-# 12d. Pending wiring for the right flake, name and issue with the wrong
-# kind fails: the desk admitted exactly two apps.
-cat >"$work/declared" <<'EOF'
-release-review|check|check
-EOF
-cat >"$work/hosted" <<'EOF'
-# nothing yet
-EOF
-cat >"$work/list" <<'EOF'
-release-review|check|check|pending wiring: #565, the release-archive slice hosts the archive reproduction job
-EOF
-cat >"$work/states" <<'EOF'
-565 open
-EOF
-run_classifier "$work/states"
-expect "pending wiring with the wrong kind is refused" 1 "pending wiring admits only the release-review"
-
-# 13. Pending wiring with no handed source is exit 2, never a verdict.
-cat >"$work/declared" <<'EOF'
-release-review|app|check
-EOF
-cat >"$work/hosted" <<'EOF'
-# nothing yet
-EOF
-cat >"$work/list" <<'EOF'
-release-review|check|app|pending wiring: #565, the release-archive slice hosts the archive reproduction job
+.|docs-serve|app|pending wiring: #565, no hosted carrier
 EOF
 run_classifier
-expect "unhanded issue states are setup failure" 2 "SETUP:"
-expect_absent "unhanded issue states carry no verdict" "declared-checks-classify: PASS"
-
-# 14. Pending wiring with a malformed state source is exit 2.
-cat >"$work/declared" <<'EOF'
-release-review|app|check
-EOF
-cat >"$work/hosted" <<'EOF'
-# nothing yet
-EOF
-cat >"$work/list" <<'EOF'
-release-review|check|app|pending wiring: #565, the release-archive slice hosts the archive reproduction job
-EOF
-cat >"$work/states" <<'EOF'
-565 ajar
-EOF
-run_classifier "$work/states"
-expect "malformed issue states are setup failure" 2 "malformed issue-state line"
+expect "retired pending-wiring exception is refused" 1 "the reason must start with"
 
 # 15. A duplicate entry fails.
 cat >"$work/declared" <<'EOF'
@@ -386,25 +281,8 @@ EOF
 run_classifier
 expect "empty declared extent is setup failure" 2 "the declared extent is empty"
 
-# 17. A state source that answers nothing for the named issue is exit 2.
-cat >"$work/declared" <<'EOF'
-release-review|app|check
-EOF
-cat >"$work/hosted" <<'EOF'
-# nothing yet
-EOF
-cat >"$work/list" <<'EOF'
-release-review|check|app|pending wiring: #565, the release-archive slice hosts the archive reproduction job
-EOF
-cat >"$work/states" <<'EOF'
-566 open
-EOF
-run_classifier "$work/states"
-expect "silent issue states are setup failure" 2 "answers nothing for issue #565"
-
 # 17b. A tool entry with no handed tool sources is a setup failure,
-# never a verdict (the states source is present; the tool sources are
-# not).
+# never a verdict when the tool sources are absent.
 cat >"$work/declared" <<'EOF'
 .|app|docs-serve
 EOF
@@ -414,34 +292,29 @@ EOF
 cat >"$work/list" <<'EOF'
 .|docs-serve|app|tool: the local documentation site server|nix/docs.nix
 EOF
-run_classifier "$work/states"
+run_classifier
 expect "missing tool sources are setup failure" 2 "a tool entry needs the tool-marker source"
 expect_absent "missing tool sources carry no verdict" "declared-checks-classify: PASS"
 
 # 18a. A marked, uncited tool passes, is counted, and is named in the
-# output next to the pending entries.
+# output.
 cat >"$work/declared" <<'EOF'
-release-review|app|check
 .|app|docs-serve
 EOF
 cat >"$work/hosted" <<'EOF'
 # nothing runs either
 EOF
 cat >"$work/list" <<'EOF'
-release-review|check|app|pending wiring: #565, the release-archive slice hosts the archive reproduction job
 .|docs-serve|app|tool: the local documentation site server|nix/docs.nix
-EOF
-cat >"$work/states" <<'EOF'
-565 open
 EOF
 cat >"$work/toolmarkers" <<'EOF'
 .|docs-serve|nix/docs.nix marked names
 EOF
 : >"$work/citations"
-run_classifier "$work/states" "$work/toolmarkers" "$work/citations"
+run_classifier "$work/toolmarkers" "$work/citations"
 expect "a marked uncited tool passes" 0 "declared-checks-classify: PASS"
 expect "the tools are printed by name" 0 "tools, marked and never cited as evidence: . docs-serve"
-expect "the tool count prints beside the pending count" 0 "; 1 pending wiring; 1 tools"
+expect "the tool count is printed" 0 "; 1 tools"
 
 # 18b. A tool entry whose file carries no marker line is refused.
 cat >"$work/declared" <<'EOF'
@@ -454,7 +327,7 @@ cat >"$work/toolmarkers" <<'EOF'
 .|docs-serve|tools/unmarked.sh unmarked nameless
 EOF
 : >"$work/citations"
-run_classifier "$work/states" "$work/toolmarkers" "$work/citations"
+run_classifier "$work/toolmarkers" "$work/citations"
 expect "an unmarked tool file is refused" 1 "carries no 'Tool, not a guarantee:' marker line"
 
 # 18c. A tool entry whose file is missing is refused; so is a file the
@@ -465,13 +338,13 @@ EOF
 cat >"$work/toolmarkers" <<'EOF'
 .|docs-serve|tools/gone.sh missing nameless
 EOF
-run_classifier "$work/states" "$work/toolmarkers" "$work/citations"
+run_classifier "$work/toolmarkers" "$work/citations"
 expect "a missing tool file is refused" 1 "the file that defines the tool, tools/gone.sh, does not exist"
 
 cat >"$work/toolmarkers" <<'EOF'
 .|docs-serve|tools/other.sh marked names
 EOF
-run_classifier "$work/states" "$work/toolmarkers" "$work/citations"
+run_classifier "$work/toolmarkers" "$work/citations"
 expect "an unanswered tool file is refused" 1 "no tool-marker line was handed for . docs-serve (tools/gone.sh)"
 
 # 18d. A tool cited in the published text is refused, each citation
@@ -486,19 +359,19 @@ EOF
 cat >"$work/citations" <<'EOF'
 .#docs-serve|docs/getting-started.md
 EOF
-run_classifier "$work/states" "$work/toolmarkers" "$work/citations"
+run_classifier "$work/toolmarkers" "$work/citations"
 expect "a command-form citation is refused" 1 "cited as evidence or guarantee in docs/getting-started.md (as .#docs-serve)"
 
 cat >"$work/citations" <<'EOF'
 nix/docs.nix|docs/getting-started.md
 EOF
-run_classifier "$work/states" "$work/toolmarkers" "$work/citations"
+run_classifier "$work/toolmarkers" "$work/citations"
 expect "a defining-file-path citation is refused" 1 "cited as evidence or guarantee in docs/getting-started.md (as nix/docs.nix)"
 
 cat >"$work/citations" <<'EOF'
 .#docs-serve|nix/docs.nix
 EOF
-run_classifier "$work/states" "$work/toolmarkers" "$work/citations"
+run_classifier "$work/toolmarkers" "$work/citations"
 expect "a tool cited by its own file is refused" 1 "cited as evidence or guarantee in nix/docs.nix (as .#docs-serve)"
 : >"$work/citations"
 
@@ -507,13 +380,13 @@ expect "a tool cited by its own file is refused" 1 "cited as evidence or guarant
 cat >"$work/citations" <<'EOF'
 '#docs-serve|docs/getting-started.md
 EOF
-run_classifier "$work/states" "$work/toolmarkers" "$work/citations"
+run_classifier "$work/toolmarkers" "$work/citations"
 expect "a quoted citation is refused" 1 "cited as evidence or guarantee in docs/getting-started.md (as '#docs-serve)"
 
 cat >"$work/citations" <<'EOF'
 ./#docs-serve|docs/getting-started.md
 EOF
-run_classifier "$work/states" "$work/toolmarkers" "$work/citations"
+run_classifier "$work/toolmarkers" "$work/citations"
 expect "a dot-slashed citation is refused" 1 "cited as evidence or guarantee in docs/getting-started.md (as ./#docs-serve)"
 : >"$work/citations"
 
@@ -534,13 +407,13 @@ EOF
 cat >"$work/citations" <<'EOF'
 sub/dir#helper|docs/getting-started.md
 EOF
-run_classifier "$work/states" "$work/toolmarkers" "$work/citations"
+run_classifier "$work/toolmarkers" "$work/citations"
 expect "a flake-qualified citation is refused" 1 "cited as evidence or guarantee in docs/getting-started.md (as sub/dir#helper)"
 
 cat >"$work/citations" <<'EOF'
 ./sub/dir#helper|docs/getting-started.md
 EOF
-run_classifier "$work/states" "$work/toolmarkers" "$work/citations"
+run_classifier "$work/toolmarkers" "$work/citations"
 expect "a dot-slashed flake citation is refused" 1 "cited as evidence or guarantee in docs/getting-started.md (as ./sub/dir#helper)"
 
 # 18h. A same-named reference aimed at another flake is never
@@ -549,14 +422,14 @@ expect "a dot-slashed flake citation is refused" 1 "cited as evidence or guarant
 cat >"$work/citations" <<'EOF'
 .#helper|docs/getting-started.md
 EOF
-run_classifier "$work/states" "$work/toolmarkers" "$work/citations"
+run_classifier "$work/toolmarkers" "$work/citations"
 expect "an unqualified same-named citation is not misattributed" 0 "declared-checks-classify: PASS"
 expect "the unattributed tool still prints by name" 0 "tools, marked and never cited as evidence: sub/dir helper"
 
 cat >"$work/citations" <<'EOF'
 other#helper|docs/getting-started.md
 EOF
-run_classifier "$work/states" "$work/toolmarkers" "$work/citations"
+run_classifier "$work/toolmarkers" "$work/citations"
 expect "another flake's qualified citation is not misattributed" 0 "declared-checks-classify: PASS"
 : >"$work/citations"
 
@@ -568,7 +441,7 @@ EOF
 cat >"$work/toolmarkers" <<'EOF'
 sub/dir|helper|tools/stranger.md marked names
 EOF
-run_classifier "$work/states" "$work/toolmarkers" "$work/citations"
+run_classifier "$work/toolmarkers" "$work/citations"
 expect "a marker outside the flake directory is refused" 1 "lives outside the flake sub/dir"
 
 # 18j. A marked file that does not name the attribute it certifies
@@ -585,7 +458,7 @@ EOF
 cat >"$work/toolmarkers" <<'EOF'
 .|docs-serve|tools/stranger.md marked nameless
 EOF
-run_classifier "$work/states" "$work/toolmarkers" "$work/citations"
+run_classifier "$work/toolmarkers" "$work/citations"
 expect "a marked file that names no attribute is refused" 1 "does not name the attribute docs-serve"
 
 # 18k. A malformed tool-marker source is a setup failure, never a
@@ -593,7 +466,7 @@ expect "a marked file that names no attribute is refused" 1 "does not name the a
 cat >"$work/toolmarkers" <<'EOF'
 .|docs-serve|nix/docs.nix marked
 EOF
-run_classifier "$work/states" "$work/toolmarkers" "$work/citations"
+run_classifier "$work/toolmarkers" "$work/citations"
 expect "a malformed tool-marker line is setup failure" 2 "malformed tool-marker"
 expect_absent "malformed tool markers carry no verdict" "declared-checks-classify: PASS"
 
@@ -602,19 +475,19 @@ expect_absent "malformed tool markers carry no verdict" "declared-checks-classif
 cat >"$work/list" <<'EOF'
 .|docs-serve|app|tool: the local documentation site server
 EOF
-run_classifier "$work/states" "$work/toolmarkers" "$work/citations"
+run_classifier "$work/toolmarkers" "$work/citations"
 expect "a tool entry without its marker file field is refused" 1 "a tool entry carries, as its fifth field, the path of the file that holds its marker"
 
 cat >"$work/list" <<'EOF'
 .|docs-serve|app|retired: classified unverified in offchain/nix/component-inventory.nix under #172|nix/docs.nix
 EOF
-run_classifier "$work/states" "$work/toolmarkers" "$work/citations"
+run_classifier "$work/toolmarkers" "$work/citations"
 expect "a non-tool entry with a fifth field is refused" 1 "only a tool entry carries a fifth field"
 
 cat >"$work/list" <<'EOF'
 .|docs-serve|app|developer utility: the local documentation site server
 EOF
-run_classifier "$work/states" "$work/toolmarkers" "$work/citations"
+run_classifier "$work/toolmarkers" "$work/citations"
 expect "the retired developer-utility class is refused" 1 "the developer-utility class was retired by the tool class"
 
 # 18. The shared extraction maps working directories, cd targets and
@@ -1023,7 +896,7 @@ fi
 # 20. The tool class through the real integration layer: a fixture
 # repository whose one declared app is a tool. Each plant is seen red
 # first, then green again; the closing run is the clean tree with its
-# tool, green and printing the tool by name beside the pending entries'
+# tool, green and printing the tool by name'
 # summary slot.
 toolroot="$work/tool-root"
 mkdir -p "$toolroot/.github/workflows" "$toolroot/tools/declared_tools" "$toolroot/docs"

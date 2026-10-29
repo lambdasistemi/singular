@@ -15,8 +15,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from singular_coverage.inventory import InventoryError, Obligation, build_inventory
 from tests.fixtures import REPO_ROOT, build_base_tree, export_manifests
 
-CORPUS = "lean/corpus.json"
-
 
 def corpus_theorem_rows(node: object, path: str = "$") -> list[tuple[str, dict]]:
     """Every object anywhere in a corpus that cites a theorem, with its path.
@@ -66,37 +64,11 @@ def binding_violations(
 
 class RealInventoryTest(unittest.TestCase):
     def test_real_tree_reconciles(self):
-        # Public fold inputs (#419) replace the statement that a delivered
-        # output carries the datum form its request named with three: a
-        # delivered output carries exactly the request's datum, a fold is built
-        # from the public view, and a foreign datum is refused: 126 = 67 + 59.
-        # Before them, the batch questions (#344) added two statements, a batch of one
-        # answering as the single request for a fold and for a reject, and six
-        # helpers stating keyed mint sums pointwise: 124 = 65 + 59. Before
-        # them, the destination-row ruling (#304) added three statements: a fold
-        # describes a destination output only when it delivers, a delivered
-        # output carries the datum its request named, and a spent witness
-        # carries the datum its holding records: 116 = 63 + 53. Before it,
-        # retraction admission added four statements and two helpers reading
-        # its edge and window checks as propositions: 113 = 60 + 53, previously
-        # 107 = 56 + 51 (and before that 104 = 56 + 48). The registry has 44
-        # statements before #419 and 46 after; naming, lifecycle and wire retain
-        # 7, 9 and 5.
-        # The permanent M1 surface adds ten audited statements; all previous
-        # declarations remain: 121 = 67 manifest-bound + 54 unclassified.
-        # Protected rejection adds five statements for bound evidence, protection,
-        # effects and expiry: 126 = 72 manifest-bound + 54 unclassified.
-        # Removing the unused absent and terminal witness policy pins retires
-        # three statements and six helper lemmas about the removed token kinds:
-        # 289 = 115 manifest-bound + 174 unclassified.
+        # The retained reference library stays in the discovered denominator.
         inv = build_inventory(REPO_ROOT)
-        self.assertEqual(inv.manifest_bound, 115)
-        self.assertEqual(inv.unclassified, 174)
-        self.assertEqual(inv.manifest_bound + inv.unclassified, 289)
-        self.assertEqual(
-            len([o for o in inv.obligations if o.source == "lean/Singular/M1.lean"]),
-            10,
-        )
+        self.assertEqual(inv.manifest_bound, 0)
+        self.assertEqual(inv.unclassified, 58)
+        self.assertEqual(inv.manifest_bound + inv.unclassified, 58)
 
     def test_real_manifests_match_extraction_byte_for_byte(self):
         # build_inventory re-runs check_model.statement_inventory and compares
@@ -104,35 +76,89 @@ class RealInventoryTest(unittest.TestCase):
         # is the assertion. Assert a couple of exact identities too.
         inv = build_inventory(REPO_ROOT)
         by_name = inv.by_name()
-        self.assertIn("Singular.Statements.biconditional_supply_sync", by_name)
+        self.assertIn("Singular.rejectionAccepted_effect", by_name)
         self.assertIn("Singular.step_ok_consistent", by_name)
         self.assertEqual(
             by_name["Singular.step_ok_consistent"].classification, "unclassified"
         )
         self.assertEqual(
-            by_name["Singular.Statements.biconditional_supply_sync"].classification,
-            "manifest-bound",
+            by_name["Singular.rejectionAccepted_effect"].classification,
+            "unclassified",
         )
 
 
 class FixtureInventoryTest(unittest.TestCase):
-    def test_generic_source_extent_keeps_profile_modules_separate(self):
+    def declare_retirement(self, root):
+        from singular_coverage.inventory import RETIRED_SURFACES, STATEMENT_MODULES
+
+        source, _, manifest = STATEMENT_MODULES[0]
+        records = json.loads((root / manifest).read_text())
+        path = root / RETIRED_SURFACES
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            json.dumps(
+                [
+                    {
+                        "source": source,
+                        "manifest": manifest,
+                        "identities": [
+                            r["name"] + "@" + r["statementSha256"] for r in records
+                        ],
+                    }
+                ]
+            )
+        )
+        return root / source, root / manifest
+
+    def test_declared_retired_pair_can_leave_without_hiding_other_declarations(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             build_base_tree(root)
-            import check_model
+            source, manifest = self.declare_retirement(root)
+            before = build_inventory(root)
+            source.unlink()
+            manifest.unlink()
+            after = build_inventory(root)
+            self.assertEqual(len(before.obligations) - len(after.obligations), 2)
+            self.assertEqual(after.unclassified, before.unclassified)
 
-            directory = root / "lean/Singular/Model"
-            directory.mkdir()
-            member = directory / "Values.lean"
-            member.write_text("namespace Singular\nend Singular\n")
-            sources = check_model.generic_sources(root)
-            self.assertIn("lean/Singular/Model/Values.lean", sources)
-            self.assertNotIn("lean/Singular/NamingStatements.lean", sources)
-            self.assertEqual(len(sources), len(set(sources)))
-            self.assertIn(
-                "Singular.Model.Values", check_model.unreachable_modules(root)
+    def test_an_undeclared_absent_pair_is_refused(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            build_base_tree(root)
+            (root / "lean/Singular/Statements.lean").unlink()
+            (root / "lean/theorem-debt.json").unlink()
+            with self.assertRaisesRegex(InventoryError, "undeclared absent"):
+                build_inventory(root)
+
+    def test_one_sided_retirement_is_refused_in_both_directions(self):
+        for missing in (0, 1):
+            with self.subTest(missing=missing), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                build_base_tree(root)
+                pair = self.declare_retirement(root)
+                pair[missing].unlink()
+                with self.assertRaisesRegex(InventoryError, "one-sided"):
+                    build_inventory(root)
+
+    def test_present_retired_surface_keeps_its_live_identities(self):
+        from singular_coverage.inventory import RETIRED_SURFACES
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            build_base_tree(root)
+            before = build_inventory(root)
+            self.declare_retirement(root)
+            path = root / RETIRED_SURFACES
+            records = json.loads(path.read_text())
+            records[0]["identities"][0] = (
+                records[0]["identities"][0].split("@")[0] + "@" + "0" * 64
             )
+            path.write_text(json.dumps(records))
+            after = build_inventory(root)
+            self.assertEqual(after.obligations, before.obligations)
+            self.assertEqual(after.manifest_bound, before.manifest_bound)
+            self.assertEqual(after.unclassified, before.unclassified)
 
     def test_statements_split_across_modules_keep_their_identities(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -218,21 +244,25 @@ class FixtureInventoryTest(unittest.TestCase):
 
 
 class CorpusTheoremBindingTest(unittest.TestCase):
-    """Exported corpus rows cite the theorem identity the source has today.
+    """Synthetic corpus rows exercise the retained identity-binding checker.
 
-    The digests the corpus carries are written into lean/Main.lean by hand:
-    the corpus binary runs under nix/model.nix with an arbitrary cwd and
-    cannot read lean/theorem-debt.json to derive them. Without a permanent
-    check they are pinned only by whichever ticket gate happened to be frozen
-    when they were added, and that gate retires with its ticket. Here they are
-    compared against tools/check_model.py's own extraction from the source, so
-    a statement edit that leaves a row behind fails rather than shipping a
-    stale proof identity beside a changed theorem.
+    The retired product corpora are not subjects of this harness test.
+    Identities come from the real extraction over the fixture source.
     """
 
     def live(self) -> tuple[list[tuple[str, dict]], dict[str, Obligation]]:
-        corpus = json.loads((REPO_ROOT / CORPUS).read_text())
-        return corpus_theorem_rows(corpus), build_inventory(REPO_ROOT).by_name()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            build_base_tree(root)
+            by_name = build_inventory(root).by_name()
+            corpus = {
+                "cases": [
+                    {"theorem": o.name, "statementSha256": o.statementSha256}
+                    for o in by_name.values()
+                    if o.classification == "manifest-bound"
+                ]
+            }
+        return corpus_theorem_rows(corpus), by_name
 
     def test_every_corpus_theorem_row_binds_the_live_statement_identity(self):
         rows, by_name = self.live()

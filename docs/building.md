@@ -10,12 +10,9 @@ With Nix flakes enabled, run:
 nix build .#docs
 nix flake check --no-eval-cache
 nix run .#docs-check
-nix run .#browser-check
 ```
 
-The documentation package and checks use the locked shared MkDocs toolchain. The documentation check inspects rendered internal links, section anchors, navigation, speech data and theme assets. Separate model and simulator checks exercise the proved Lean model and its finite corpus, and the model check cross-checks the compiled axiom report against the theorem manifest; none proves application behavior. See the [model ledger](model-ledger.md) and [simulation](simulation.md) for their exact scope.
-
-The browser check launches the pinned Chromium build, serves the standalone simulator on a temporary loopback port, and executes its manual-control and story assertions. The canonical runner is `tools/browser-check.mjs`; the earlier callback under `simulator/` is retained as historical browser evidence. Screenshots use a temporary writable directory; no browser download or external service is required during execution. Set `KEEP_BROWSER_EVIDENCE=1` to retain successful browser evidence. CI's build gate realizes the packages, executing checks, and development-shell inputs before the downstream verification jobs.
+The documentation package and checks use the locked shared MkDocs toolchain. The documentation check inspects rendered internal links, section anchors, navigation, speech data and theme assets. The aligned models build through `just application-held-model` and `just open-datum-application-held-model`; their proofs do not establish application behavior.
 
 ## Ordinary binaries and explicit test builds
 
@@ -164,9 +161,8 @@ are the policy: no tab, no carriage return, no trailing whitespace, and
 exactly one final newline. Aiken sources are checked by `aiken fmt --check`
 inside the `onchain/` and application on-chain flake checks, with the Aiken
 each flake pins; formatting leaves every compiled validator and its hash
-unchanged. Generated files — the shipped simulator page, the Lean mirror
-and the cage vectors — are regenerated from their formatted sources, and
-their freshness checks stay the policy. A code family nobody checks fails
+unchanged. Generated preimage vectors are regenerated from their formatted sources, and
+their freshness check stays the policy. A code family nobody checks fails
 `just lint` instead of passing silently.
 
 ## Edit and serve
@@ -199,8 +195,8 @@ After a successful main-branch gate, repository-scoped App credentials let relea
 
 The tag workflow builds and checks a Nix-produced documentation archive and checksum, publishes them to the matching GitHub release, downloads and verifies the uploaded bytes, then changes the release PR's pending label to tagged. It accepts a pending or already-tagged matching PR so interrupted publication can be retried. It does not post PR comments. CI has a manual recovery trigger; no release workflow or tag is dispatched merely by adding this automation.
 
-Build the documentation archive locally with `nix build .#docs-release`, and run version, workflow and artifact checks with `nix run .#release-check`. The archive contains the rendered site and speech data plus a complete review workspace under `artifacts/review/`: model and theorem sources, finite corpora, scenarios, simulator and replay sources, checkers, and a minimal flake with its exact lock. The inner `artifacts/SHA256SUMS` authenticates every review input plus the separately served corpus and identity files; the outer `SHA256SUMS` authenticates the archive.
+Build the documentation archive locally with `nix build .#docs-release`, and run version, workflow and artifact checks with `nix run .#release-check`. The archive contains the rendered site, speech data and retained model sources under `artifacts/lean/`. Its inner `artifacts/SHA256SUMS` binds those source bytes; the outer `SHA256SUMS` binds the archive. It contains no retired corpus or simulator replay workspace.
 
-Packaging checks alone do not establish reproduction. Extract the built `singular-docs-<version>.tar.gz` into a fresh directory, change to that directory, run `sha256sum --check artifacts/SHA256SUMS`, then run `nix run --no-write-lock-file ./artifacts/review#check`. Nix may acquire the exact locked toolchain when it is not cached; the model, scenario, simulator, replay, checker, and configuration inputs all come from the archive. Provenance comes from the validated tag and build binding. Published releases, each produced by this workflow from a tag on main, are listed at https://github.com/lambdasistemi/singular/releases.
+After extraction, run `sha256sum --check artifacts/SHA256SUMS` to verify the source files. This checksum check establishes byte integrity, not model execution or implementation correspondence. Published releases are listed at https://github.com/lambdasistemi/singular/releases.
 
 The initial empty-manifest behavior and version override follow the [release-please manifest documentation](https://github.com/googleapis/release-please/blob/c65408d9f68b2772c6e61dcdc4a8b6f5969bb4e1/docs/manifest-releaser.md). Publishing remains a separate action from reviewing this documentation.

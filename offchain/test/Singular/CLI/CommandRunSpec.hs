@@ -3,6 +3,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
+-- Validator titles in these fixtures are synthetic identity labels; no released script is loaded.
+
 {- |
 Module      : Singular.CLI.CommandRunSpec
 Description : Shared in-process fixture for the retained commands

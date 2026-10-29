@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # declared-checks-classify: the pure verdict over three plain files.
 #
-# Usage: declared_checks_classify.sh DECLARED HOSTED LIST JOBS [STATES]
+# Usage: declared_checks_classify.sh DECLARED HOSTED LIST JOBS [TOOLMARKERS CITATIONS]
 #   DECLARED  lines `flake|kind|attr`, kind `app` or `check`: every app and
 #             check the repository flakes declare (written by the integration
 #             layer, which evaluates each flake once).
@@ -20,9 +20,6 @@
 #             line `Tool, not a guarantee: <purpose>`.
 #   JOBS      one workflow job id per line: what a `hosted under another
 #             name` reason may name.
-#   STATES    optional lines `<number> <open|closed>`: the issue states a
-#             `pending wiring` reason names. Read lazily: a run with no
-#             pending entry needs no source.
 #   TOOLMARKERS optional lines
 #             `<flake>|<attribute>|<path> marked|unmarked|missing
 #             names|nameless`: the state of the marker line of each tool
@@ -45,7 +42,7 @@
 # test feeds it fixtures. Exit 0: every declared entry hosted or reasoned
 # and every list entry live. Exit 1: a verdict failure, each named on
 # stderr. Exit 2: setup failure (a missing input, an empty declared extent,
-# an unreachable or malformed state source) — never a verdict.
+# a missing tool-marker or citation source) — never a verdict.
 #
 # The tool class is the operator ruling of 2026-10-12: a runnable check is
 # an obligation (hosted), a tool (marked, never cited as evidence), or
@@ -75,9 +72,8 @@ declared_file="$1"
 hosted_file="$2"
 list_file="$3"
 jobs_file="$4"
-states_file="${5:-}"
-toolmarkers_file="${6:-}"
-citations_file="${7:-}"
+toolmarkers_file="${5:-}"
+citations_file="${6:-}"
 
 [ -f "$declared_file" ] || setup_fail "no declared-entries file $declared_file"
 [ -f "$hosted_file" ] || setup_fail "no hosted-references file $hosted_file"
@@ -160,40 +156,6 @@ while IFS= read -r j || [ -n "$j" ]; do
 done <"$jobs_file"
 [ "${#job_ids[@]}" -gt 0 ] || setup_fail "no job ids in $jobs_file"
 
-# The state of an issue a `pending wiring` reason names, loaded once from
-# the handed source into globals in this shell (never a subshell, so a
-# setup failure ends the run). An unreachable or malformed source is a
-# setup failure with a diagnostic, never a verdict and never a silent pass.
-declare -A issue_state=()
-issue_states_loaded=0
-issue_state_value=""
-issue_state_of() {
-  local number="$1" n s
-  issue_state_value=""
-  if [ "$issue_states_loaded" -eq 0 ]; then
-    [ -n "$states_file" ] \
-      || setup_fail "a pending-wiring entry names issue #$number and no issue-state source was handed (pass a file of '<number> <open|closed>' lines as the fifth argument)"
-    [ -f "$states_file" ] \
-      || setup_fail "the issue-state source $states_file does not exist"
-    while IFS=' ' read -r n s dummy || [ -n "$n" ]; do
-      [ -n "$n" ] || continue
-      case "$n" in
-        '' | *[!0-9]*) setup_fail "malformed issue-state line '$n $s' in $states_file (expected '<number> <open|closed>')" ;;
-      esac
-      case "$s" in
-        open | closed) ;;
-        *) setup_fail "malformed issue-state line '$n $s' in $states_file (expected '<number> <open|closed>')" ;;
-      esac
-      [ -z "${dummy:-}" ] || setup_fail "malformed issue-state line '$n $s $dummy' in $states_file (expected '<number> <open|closed>')"
-      issue_state["$n"]="$s"
-    done <"$states_file"
-    issue_states_loaded=1
-  fi
-  [ -n "${issue_state[$number]+x}" ] \
-    || setup_fail "the issue-state source answers nothing for issue #$number, which a pending-wiring entry names"
-  issue_state_value="${issue_state[$number]}"
-}
-
 declare -A tool_marker_status=()
 declare -A tool_marker_names=()
 declare -A tool_citation_paths=()
@@ -243,9 +205,6 @@ load_tool_inputs() {
 }
 
 declare -A listed=()
-declare -A pending_entry=()
-pending_count=0
-pending_names=""
 declare -A tool_entry=()
 tool_count=0
 tool_names=""
@@ -346,33 +305,6 @@ while IFS= read -r line || [ -n "$line" ]; do
         continue
       }
       ;;
-    'pending wiring: '*)
-      if [[ "$er" =~ ^pending\ wiring:\ \#([0-9]+),.+ ]]; then
-        issue="${BASH_REMATCH[1]}"
-      else
-        verdict_fail "$where: a pending-wiring reason names its issue as '#<number>, <what hosts it>'"
-        continue
-      fi
-      if [ "$ef" != "release-review" ] || [ "$issue" != "565" ] || [ "$ek" != "app" ]; then
-        verdict_fail "$where: pending wiring admits only the release-review check and default apps (kind app) with issue #565 (closed membership)"
-        continue
-      fi
-      if [ "$ea" != "check" ] && [ "$ea" != "default" ]; then
-        verdict_fail "$where: pending wiring admits only the release-review check and default apps with issue #565 (closed membership)"
-        continue
-      fi
-      issue_state_of "$issue"
-      case "$issue_state_value" in
-        open)
-          pending_count=$((pending_count + 1))
-          pending_names="$pending_names$ef $ea (#$issue), "
-          pending_entry["$ef|$ea|$ek"]=1
-          ;;
-        closed)
-          verdict_fail "$where: issue #$issue is closed; the pending-wiring entry outlived its fix"
-          ;;
-      esac
-      ;;
     'tool: '*)
       if [ "$ef" != "." ]; then
         case "$efile" in
@@ -417,7 +349,7 @@ while IFS= read -r line || [ -n "$line" ]; do
       tool_entry["$ef|$ea|$ek"]=1
       ;;
     *)
-      verdict_fail "$where: the reason must start with 'retired:', 'hosted under another name:', 'pending wiring:' or 'tool:'"
+      verdict_fail "$where: the reason must start with 'retired:', 'hosted under another name:' or 'tool:'"
       continue
       ;;
   esac
@@ -440,8 +372,6 @@ for d in "${!declared_flakes[@]}"; do
       printf 'hosted app %s %s (run by a workflow step)\n' "$d" "$a"
     elif [ -z "${listed["$d|$a|app"]+x}" ]; then
       verdict_fail "app $a of flake $d is declared and named by no workflow step, and carries no declared-not-hosted entry"
-    elif [ -n "${pending_entry["$d|$a|app"]+x}" ]; then
-      printf 'not hosted app %s %s (pending wiring, named below)\n' "$d" "$a"
     elif [ -n "${tool_entry["$d|$a|app"]+x}" ]; then
       printf 'not hosted app %s %s (tool, named below)\n' "$d" "$a"
     else
@@ -455,8 +385,6 @@ for d in "${!declared_flakes[@]}"; do
       printf 'hosted check %s %s (%s)\n' "$d" "$c" "${hosted_check_mechanism[$key]}"
     elif [ -z "${listed["$d|$c|check"]+x}" ]; then
       verdict_fail "check $c of flake $d is declared and named by no workflow step, and carries no declared-not-hosted entry"
-    elif [ -n "${pending_entry["$d|$c|check"]+x}" ]; then
-      printf 'not hosted check %s %s (pending wiring, named below)\n' "$d" "$c"
     elif [ -n "${tool_entry["$d|$c|check"]+x}" ]; then
       printf 'not hosted check %s %s (tool, named below)\n' "$d" "$c"
     else
@@ -469,12 +397,8 @@ if [ "$fail" -ne 0 ]; then
   echo "declared-checks-classify: FAIL" >&2
   exit 1
 fi
-printf 'declared %d apps and %d checks across %d flakes; hosted %d apps and %d checks; %d reasoned entries; %d pending wiring; %d tools\n' \
-  "$apps_total" "$checks_total" "${#declared_flakes[@]}" "$hosted_apps_count" "$hosted_checks_count" "$listed_count" "$pending_count" "$tool_count"
-if [ "$pending_count" -gt 0 ]; then
-  pending_names="${pending_names%, }"
-  printf 'pending wiring, temporary until the slice that hosts them removes the entries: %s\n' "$pending_names"
-fi
+printf 'declared %d apps and %d checks across %d flakes; hosted %d apps and %d checks; %d reasoned entries; %d tools\n' \
+  "$apps_total" "$checks_total" "${#declared_flakes[@]}" "$hosted_apps_count" "$hosted_checks_count" "$listed_count" "$tool_count"
 if [ "$tool_count" -gt 0 ]; then
   tool_names="${tool_names%, }"
   printf 'tools, marked and never cited as evidence: %s\n' "$tool_names"

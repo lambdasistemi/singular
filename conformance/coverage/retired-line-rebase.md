@@ -1,0 +1,67 @@
+# Retire the old model coverage baseline
+
+As an integrator, I retain the same uncovered comparison requirements. This rebase removes protected identities only when their owning old-model source is retired. It transfers no checks or mappings. The protected population changes from 61 to 24; surviving identities retain their exact spelling and digest. Discovery remains the complete `lean/` tree. The aligned projects under `models/` remain outside this inventory, as before.
+
+| Protected identity | Disposition | Reason |
+| --- | --- | --- |
+| `Singular.NamingLifecycleStatements.commitment_vectors_are_distinct_and_32_bytes@56b7cb93f4b9bc66e44535a8c12e070d1a775e9ddc18114d1d5e4f7feb433dd3` | REMOVE | Retire `lean/Singular/NamingLifecycleStatements.lean`. |
+| `Singular.NamingLifecycleStatements.consumer_binding_pins_policies@dcd2b65d5bb74deb929189ccd885ce080a5d878f7ba76d4d444d157bea7ec27f` | REMOVE | Retire `lean/Singular/NamingLifecycleStatements.lean`. |
+| `Singular.NamingLifecycleStatements.destination_preserves_and_refuses@18864912a559affb3b7c7023f9634ea10cc0fea263133bf15bcd83bab763998c` | REMOVE | Retire `lean/Singular/NamingLifecycleStatements.lean`. |
+| `Singular.NamingLifecycleStatements.recovery_installs_and_refuses@2bb0acb91411b56a1f54cd3d45c0f5630afe6f8aba29f54173e7720b05662237` | REMOVE | Retire `lean/Singular/NamingLifecycleStatements.lean`. |
+| `Singular.NamingLifecycleStatements.retirement_authorization_rows@9c54dc25fe28017812a24e8ae23f11fa01d4547dcb15bf97093a26b9881ada12` | REMOVE | Retire `lean/Singular/NamingLifecycleStatements.lean`. |
+| `Singular.NamingLifecycleStatements.retirement_completion_inversion@d4a8aff20a184551622f8d51e0bf2d9bd5fbb6244bf9a09f969637cead628685` | REMOVE | Retire `lean/Singular/NamingLifecycleStatements.lean`. |
+| `Singular.NamingLifecycleStatements.retirement_completion_refusals@84830adcf0b8d18da9b94e06afa5e8f4ab184f53d64dccd02896482f30be052c` | REMOVE | Retire `lean/Singular/NamingLifecycleStatements.lean`. |
+| `Singular.NamingLifecycleStatements.retirement_pending_inversion@8979555e1b9f60d36d6e04a70676589acc160b6fd332b3e5af7d2f763cb8d889` | REMOVE | Retire `lean/Singular/NamingLifecycleStatements.lean`. |
+| `Singular.NamingLifecycleStatements.supported_address_roundtrips@8264a57ceac1140412b6929a371b2c5bfa30a70801f662c884590723c55a5bf4` | REMOVE | Retire `lean/Singular/NamingLifecycleStatements.lean`. |
+| `Singular.NamingStatements.naming_certifies_no_delete@21545dc78c20db852c30fa48b7fece50c77a7638c1307f3a964e2be042949704` | REMOVE | Retire `lean/Singular/NamingStatements.lean`. |
+| `Singular.NamingStatements.naming_control_key_alone_never_retires@7d28da09ae9ddefe26a63b2d38b7e8b83757d81e71a9207c9cde3d19ee027721` | REMOVE | Retire `lean/Singular/NamingStatements.lean`. |
+| `Singular.NamingStatements.naming_delete_refused@c497619064de7b843deee81f3339d0629e054b29a4463a4854600b38087c7dca` | REMOVE | Retire `lean/Singular/NamingStatements.lean`. |
+| `Singular.NamingStatements.naming_nm4_admissions@58634bf3e3a405d46b8b2dc725dd568f02f72bc18e0642c945b704d299f6df38` | REMOVE | Retire `lean/Singular/NamingStatements.lean`. |
+| `Singular.NamingStatements.naming_recovery_commitment_binding@1851a02a41da77c79371089bdf92167669b820d40190c32846e3d954694363d1` | REMOVE | Retire `lean/Singular/NamingStatements.lean`. |
+| `Singular.NamingStatements.naming_wellformed_initial@437a1a078da1100208d8b6e384ed102cd917f64b020c6d2a1286f10b300cdc9a` | REMOVE | Retire `lean/Singular/NamingStatements.lean`. |
+| `Singular.NamingWireStatements.inline_datum_only@37f674ac8ba8a31ab91f742635706dda503de9f04f7e6def77e4ee761798b8b8` | REMOVE | Retire `lean/Singular/NamingWireStatements.lean`. |
+| `Singular.NamingWireStatements.naming_datum_serialises_byte_exact@85273c612df08602b00ad08d06caa3c458edc7d5ea895d3afd8b6fd61ff0a229` | REMOVE | Retire `lean/Singular/NamingWireStatements.lean`. |
+| `Singular.NamingWireStatements.naming_datum_tree_roundtrip_and_shape@766034abdaf323ed04f919f159b05fa21ac83a695e67719d3cc04348e99cb72d` | REMOVE | Retire `lean/Singular/NamingWireStatements.lean`. |
+| `Singular.NamingWireStatements.payment_destination_zero_or_one@59e5bb84401349cf663987e0dec63eab4008b55c0568011f915f2782eabb85c1` | REMOVE | Retire `lean/Singular/NamingWireStatements.lean`. |
+| `Singular.NamingWireStatements.witness_request_wire_roundtrip@87f1195ecc95ebdd793f5cb1cdaa4da1b7cd5d1f9970b3794247c918bc15d9b2` | REMOVE | Retire `lean/Singular/NamingWireStatements.lean`. |
+| `Singular.Statements.active_witness_unique@76745382fd82c31a71125904f0c9e558e2ee4b770df5224ceaf41aac93ef3879` | REMOVE | Retire `lean/Singular/Statements/Preservation.lean`. |
+| `Singular.Statements.biconditional_supply_sync@10a916e9863a11c960dcb0388a5951fa8e2d1aec5805879670242580631f94e8` | REMOVE | Retire `lean/Singular/Statements/Preservation.lean`. |
+| `Singular.Statements.booked_at_most_once@a9ceaf24998660fb7a77f5e14e283123244f333021a34fe4a0d0e053a50924fb` | REMOVE | Retire `lean/Singular/Statements/Preservation.lean`. |
+| `Singular.Statements.empty_fold_error@8bd6ec570fbda5220c7d841d4396605cf637e094bdeb275d7495f7169a4a1f06` | REMOVE | Retire `lean/Singular/Statements/Batch.lean`. |
+| `Singular.Statements.fold_batch_claimed_mint_by_kind_key@9c01e278443498d3488e6671cc1799393f565a2a1c0055c1926a8d3e559da988` | REMOVE | Retire `lean/Singular/Statements/Batch.lean`. |
+| `Singular.Statements.fold_batch_cons@a0992d97ae5b6f86503bdc5247b4b2602ec74a5516713e274c4919aa53d5d26f` | REMOVE | Retire `lean/Singular/Statements/Batch.lean`. |
+| `Singular.Statements.insert_active_inversion@5672579320a348104675bf8224b602385ef2dcd7133b46e9ec13b0b3e1382869` | REMOVE | Retire `lean/Singular/Statements/Inversions.lean`. |
+| `Singular.Statements.insert_active_transaction_row@b94da1eb79b528ea2d897998bb4c016fa6ad55444cf7b418581e7b05cffdb12b` | REMOVE | Retire `lean/Singular/Statements/RegistrationTransaction.lean`. |
+| `Singular.Statements.no_tree_change_without_approval@e7401d4920cdf62a9dfc11c780f258ae03f67e09741b733715835f55d6ec52ae` | REMOVE | Retire `lean/Singular/Statements/Preservation.lean`. |
+| `Singular.Statements.occupancy@b6760b43f9a243015d269f18ac4932eaf9a3887571df7d6637ef63bb4a7e4b40` | REMOVE | Retire `lean/Singular/Statements/Preservation.lean`. |
+| `Singular.Statements.occupancy_free_key_succeeds@4ee0061a9b764b5548095be259818f55f9beb79907770d850ab4c082b2bbe350` | REMOVE | Retire `lean/Singular/Statements/Preservation.lean`. |
+| `Singular.Statements.terminal_attestation_permanent@06697f836b6aad1ac1799b343313f96ec1e9e498dcec25c9c0ed183d498f7692` | REMOVE | Retire `lean/Singular/Statements/Preservation.lean`. |
+| `Singular.Statements.termination@99a39dc2ba8581b8d2ea5d9c5dfad152d1a506551706eedf14ec36087e1e8bc2` | REMOVE | Retire `lean/Singular/Statements/Preservation.lean`. |
+| `Singular.Statements.update_terminal_inversion@bfbc980beda8627ee3a406cf43ad5a86453aa038a4807ab3bba4b0eef6b84fdc` | REMOVE | Retire `lean/Singular/Statements/Inversions.lean`. |
+| `Singular.Statements.update_terminal_transaction_row@eda5fcf4def9dc73ac7accf83704d6ac4a635cc141da664a058631c5935fd4f3` | REMOVE | Retire `lean/Singular/Statements/TerminationTransaction.lean`. |
+| `Singular.applyEdge_insertActive@05ffaf5e7ab1880ed388b270a3c5ea1738ca5118de8b538ed401860882a81f60` | KEEP | Retain `lean/Singular/Lemmas/Step.lean`. |
+| `Singular.applyEdge_updateTerminal@2abcc0acfa2f2ed0bbfe332657f4a2367ca23602435268948cdf5a3aa54eb8c2` | KEEP | Retain `lean/Singular/Lemmas/Step.lean`. |
+| `Singular.countHeld_cons@28dd3cb9a5596a00a007eaef22b4c9cf8e467717f7de1b8db955c3eccfda6bee` | KEEP | Retain `lean/Singular/Lemmas/State.lean`. |
+| `Singular.countHeld_filter_active_le@645f1e828fe3789f7db1cae357ad78837119db56aa5d3f0227556d15b70b08cf` | KEEP | Retain `lean/Singular/Lemmas/State.lean`. |
+| `Singular.countHeld_filter_active_out@a23fd5edc78eb33f43688df8d90d94f361cee0649db7037453e31663117db0a1` | KEEP | Retain `lean/Singular/Lemmas/State.lean`. |
+| `Singular.countHeld_filter_active_zero@9f3d9ccdb7e20d6cfc6816339f9c329b060d568fdc35bf90991bad4dfa5a964a` | KEEP | Retain `lean/Singular/Lemmas/State.lean`. |
+| `Singular.countHeld_filter_out@3c1e398801694a5c99480bd2ebda8424b24fb77160e2b3ca2440c1025b7072d4` | KEEP | Retain `lean/Singular/Lemmas/State.lean`. |
+| `Singular.countHeld_filter_zero@a39f8ee0dbcddb1b8151e2b4f88f9430827f6dc0192708e6c57ce07685c0320a` | KEEP | Retain `lean/Singular/Lemmas/State.lean`. |
+| `Singular.error_of_refusal@1cd0ec1c0f84149f5932289e80b53b594a8a82abe99d20080d73ebd54bb14d26` | KEEP | Retain `lean/Singular/Lemmas/Step.lean`. |
+| `Singular.exceptBindErrAny@18616cdd853cc99f390d4e4d0891b5dabb9135fb8db232f07e0f07d4f5b57153` | REMOVE | Retire `lean/Singular/NamingLemmas.lean`. |
+| `Singular.exceptBindOkAny@aa7ed973686dc8e2771b418b1890287daa547549aeb7fccac222b56dec85723f` | REMOVE | Retire `lean/Singular/NamingLemmas.lean`. |
+| `Singular.filter_filter_congr@f9aab62f8d1bf1dc1da58886cc958a4c27f69e5ad5417bfcda2a99b6d5be0747` | KEEP | Retain `lean/Singular/Lemmas/State.lean`. |
+| `Singular.filter_filter_none@55c96c09afcc694286e6ff2acb054e5cac6b255240f10e595ccce09d9da44c3b` | KEEP | Retain `lean/Singular/Lemmas/State.lean`. |
+| `Singular.filter_key_ne@59009026d068d4144873523163971118cc8d2d06f346550b914b04c99d7e1112` | KEEP | Retain `lean/Singular/Lemmas/State.lean`. |
+| `Singular.foldActions_preserves_terminal@038650b8b7373035d403ccd7b8bb199ed5fc9c2d02ab6e0627d09573ca83207b` | KEEP | Retain `lean/Singular/Lemmas/Batch.lean`. |
+| `Singular.foldBatch_inv@e713809b94f02e12c304242b227fa767f482f8cdddbcd4504f941dff819d91c5` | KEEP | Retain `lean/Singular/Lemmas/Batch.lean`. |
+| `Singular.holding_entry_of_present@57b98f5ecc6f4e243ca404e480af7e3098db8b072a9045a9aebec4129d8c3319` | KEEP | Retain `lean/Singular/Lemmas/State.lean`. |
+| `Singular.holding_entry_of_present_aux@8549adf4992c9a2ac893e06cf3ec5a0fd035aeba723d16abba3d3365200bd80e` | KEEP | Retain `lean/Singular/Lemmas/State.lean`. |
+| `Singular.ok_of_refusal@3af528914b190dcb6ba9ea038f6b97a20fbabe226385d312c3826b792545dda7` | KEEP | Retain `lean/Singular/Lemmas/Step.lean`. |
+| `Singular.reachable_consistent@c02e3d5d42d1fd6cc539b0a5b82b1166f10c7bb5af173a0aa4732973b15b2f45` | KEEP | Retain `lean/Singular/Lemmas/Step.lean`. |
+| `Singular.refusal_none_iff@8a9f01a60a43bdc131ca3c541439b35540ac2d0f6485147e07dde2263dcfd299` | KEEP | Retain `lean/Singular/Lemmas/Step.lean`. |
+| `Singular.step_eq_ok@8a665eb3e37f64d7467790d5446ab4c33b63f81dddc08aea8bbf48885421eecf` | KEEP | Retain `lean/Singular/Lemmas/Step.lean`. |
+| `Singular.step_ok_consistent@1ead3e4892a63f4c03f0f604fd938632d7f499a176cdf1b7e8baaca23f60783a` | KEEP | Retain `lean/Singular/Lemmas/Step.lean`. |
+| `Singular.step_preserves_terminal@db31c7be546723f962f9dc3d7e4b99557ccfeed05553d69ce195b302d4069fa6` | KEEP | Retain `lean/Singular/Lemmas/Step.lean`. |
+| `Singular.trieGet_set_eq@d8e3a1475d145dfba6fa4d2d22ed9c5a3f9e14f30f32ff94752a7679256b54e1` | KEEP | Retain `lean/Singular/Lemmas/State.lean`. |
+| `Singular.trieGet_set_of_ne@bec6b406a3ca1085537b51253473f3806cb46367950fafcf78ee80f38ba1bb6d` | KEEP | Retain `lean/Singular/Lemmas/State.lean`. |

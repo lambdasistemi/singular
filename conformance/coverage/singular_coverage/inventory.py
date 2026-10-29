@@ -70,6 +70,49 @@ class InventoryError(Exception):
     pass
 
 
+RETIRED_SURFACES = "conformance/coverage/record/retired-surfaces.json"
+
+
+def retired_surfaces(root: Path) -> dict[str, list[str]]:
+    """Only explicitly reviewed source/manifest pairs may be absent together."""
+    path = root / RETIRED_SURFACES
+    if not path.exists():
+        return {}
+    known = {
+        source: (prefix, manifest) for source, prefix, manifest in STATEMENT_MODULES
+    }
+    retired = {}
+    rows = json.loads(path.read_text())
+    if not isinstance(rows, list):
+        raise InventoryError("retired surfaces must be a list")
+    for row in rows:
+        if not isinstance(row, dict) or set(row) != {
+            "source",
+            "manifest",
+            "identities",
+        }:
+            raise InventoryError("invalid retired surface declaration")
+        source = row["source"]
+        if source not in known or source in retired:
+            raise InventoryError(f"unknown or duplicate retired surface: {source}")
+        prefix, manifest = known[source]
+        identities = row["identities"]
+        if (
+            row["manifest"] != manifest
+            or not isinstance(identities, list)
+            or not identities
+        ):
+            raise InventoryError(f"invalid retired surface pairing: {source}")
+        if any(
+            not isinstance(i, str)
+            or not re.fullmatch(re.escape(prefix) + r"[A-Za-z0-9_]+@[0-9a-f]{64}", i)
+            for i in identities
+        ) or len(set(identities)) != len(identities):
+            raise InventoryError(f"invalid retired identities: {source}")
+        retired[source] = identities
+    return retired
+
+
 def _load_check_model(root: Path):
     candidates = [root / "tools", Path(__file__).resolve().parents[3] / "tools"]
     for tools in candidates:
@@ -128,10 +171,20 @@ class Inventory:
 def build_inventory(root: Path) -> Inventory:
     root = root.resolve()
     check_model = _load_check_model(root)
+    retired = retired_surfaces(root)
 
     manifest_records: dict[str, dict] = {}
     for rel, prefix, manifest_rel in STATEMENT_MODULES:
-        # The extraction itself, from the audited tool, against current source:
+        source_exists = (root / rel).exists()
+        manifest_exists = (root / manifest_rel).exists()
+        if source_exists != manifest_exists:
+            raise InventoryError(f"one-sided statement surface: {rel}, {manifest_rel}")
+        if not source_exists:
+            if rel not in retired:
+                raise InventoryError(f"undeclared absent statement surface: {rel}")
+            continue
+        # A retired surface still present in an older tree counts as live;
+        # its identities come from that tree's source and manifest.
         records = check_model.statement_inventory(root / rel, prefix)
         manifest = json.loads((root / manifest_rel).read_text())
         if records != manifest:

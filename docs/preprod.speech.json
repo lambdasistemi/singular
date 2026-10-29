@@ -81,7 +81,7 @@
       "pause": 400
     },
     {
-      "text": "Find the live UTxO on preprod with the Koios Asset UTxOs query from the naming walkthrough:",
+      "text": "Find the live UTxO on preprod with the Koios Asset UTxOs query from the naming walkthrough (historical):",
       "pause": 400
     }
   ],
@@ -125,6 +125,6 @@
   ],
   "_source": {
     "file": "preprod.md",
-    "sha256": "a27252d20dfbde64e057afad104e8f88549bb1668e264a2a5e09abd7699f8bc0"
+    "sha256": "3c9ceef43aa9f2ca69f8b10301e896386299ce888355cb2150210d3312c2400a"
   }
 }

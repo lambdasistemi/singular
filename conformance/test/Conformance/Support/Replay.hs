@@ -1,5 +1,7 @@
 -- Synthetic title labels in these tests identify no published contract.
 
+-- Validator titles in these fixtures are synthetic identity labels; no released script is loaded.
+
 {- | What a traced replay admits as a refusal's reason, and how an admitted
 reason meets the model's: every cause and every comparison outcome, each
 as its own case, and a control that the cases cover every cause there is.

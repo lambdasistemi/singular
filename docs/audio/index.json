@@ -12,29 +12,22 @@
     "index": 1,
     "name": "README/design-status-01",
     "pause_ms": 400,
-    "text": "These documents record the adopted design and name the decisions still needed for a concrete protocol. The executable design candidate has 105 proved declarations — 84 for the registry, 7 for the naming instance, 9 for its lifecycle and 5 for its wire encoding, counts that the model check derives from the theorem manifests — plus a playable simulation transcribed from them. The focused checks replay 29 registry rows, 15 naming rows and 21 lifecycle rows; they test correspondence on those finite inputs rather than proving browser behaviour generally. No independent audit acceptance is claimed. The compiled validators and a registry deployed on the public preprod network are recorded in the preprod record, and the conformance evidence states which consumer requirements a named code revision demonstrated against them. The coverage ledger distinguishes finite executable evidence from conditions, abstractions and omissions, and the clarity record states plainly how much independence that evidence has.",
-    "v": "6f9c3f209119"
+    "text": "The current command journeys and their observed evidence are described in the conformance record. The seven comparison requirements remain published as uncovered: command execution alone does not establish model correspondence. The aligned models and their retained reference definitions build with the pinned Lean compiler; their proofs establish their stated model propositions.",
+    "v": "8246197e1a6b"
    },
    {
     "index": 2,
     "name": "README/design-status-02",
     "pause_ms": 400,
-    "text": "The Nix-built documentation archive is a review bundle, not a released protocol artifact. It contains the rendered site and a runnable, locked workspace with raw model and corpus files, the naming contract, scenarios, simulator and replay sources, checkers, and exact identities. Reproduction starts from a fresh extraction, verifies artifacts/SHA256SUMS, and runs the archive's own flake; a checkout pass does not substitute. Build and release details give the exact commands and describe the release pipeline that publishes the archive from a tag on main.",
-    "v": "34c3f499afb0"
+    "text": "The old executable corpora and playable simulator have been retired. The documentation archive carries the retained model source and its checksums. The economics paper keeps its historical model revision and proof references; those references do not describe the current library's theorem inventory.",
+    "v": "31e5c30d7f5b"
    },
    {
     "index": 3,
     "name": "README/design-status-03",
     "pause_ms": 400,
-    "text": "Singular uses MPF as its authenticated registry data structure. The product it was imported from is a separate application with potentially reusable mechanics. The implementation stack and shared-library boundaries remain unselected; extracting a shared library is future work.",
-    "v": "eaeac580baeb"
-   },
-   {
-    "index": 4,
-    "name": "README/design-status-04",
-    "pause_ms": 400,
     "text": "Build and serve the documentation with the pinned Nix toolchain.",
-    "v": "ca4368173c35"
+    "v": "0678f25db6b9"
    }
   ],
   "how-the-parts-fit": [
@@ -49,8 +42,8 @@
     "index": 1,
     "name": "README/how-the-parts-fit-01",
     "pause_ms": 400,
-    "text": "The diagram and table in this section record the original three-operation design: Insert, Update and Delete requests, an application-minted Withdraw, and the states Absent, Active and Over. The registry-mode model that the Lean proves, the simulator replays and the conformance suite compares against the deployed validators supports registration and permanent termination, and calls the terminal state Terminal. The original design below is historical; the active permanent contract contract rejects the other five edge encodings: how a name moves in the registry shows the encoded edges and permanent contract admission, and the model ledger records what replaced each part of the original design.",
-    "v": "530725d7f4a3"
+    "text": "The diagram and table below record the original three-operation design. The current commands support registration and permanent termination; the five other historical edge encodings are refused. Application payload updates remain local to the application output. The original design is retained here as historical context.",
+    "v": "6e0786058640"
    },
    {
     "index": 2,
@@ -84,78 +77,8 @@
     "index": 6,
     "name": "README/how-the-parts-fit-06",
     "pause_ms": 400,
-    "text": "Read the design in order. The first three pages and the protocol specification record the original design; the naming pages and the simulation describe the registry-mode model that supersedes it where they differ.",
-    "v": "b15efa589637"
-   },
-   {
-    "index": 7,
-    "name": "README/how-the-parts-fit-07",
-    "pause_ms": 300,
-    "text": "Responsibilities and terminology",
-    "v": "6ad1a4a8de4a"
-   },
-   {
-    "index": 8,
-    "name": "README/how-the-parts-fit-08",
-    "pause_ms": 300,
-    "text": "Requests, folding and NFT custody",
-    "v": "a2e1e261d4d2"
-   },
-   {
-    "index": 9,
-    "name": "README/how-the-parts-fit-09",
-    "pause_ms": 300,
-    "text": "Certification and identity binding",
-    "v": "3aa136d93235"
-   },
-   {
-    "index": 10,
-    "name": "README/how-the-parts-fit-10",
-    "pause_ms": 300,
-    "text": "Naming: book a name, retire it, attest it",
-    "v": "36bbb1d772df"
-   },
-   {
-    "index": 11,
-    "name": "README/how-the-parts-fit-11",
-    "pause_ms": 300,
-    "text": "Naming lifecycle: maintain, recover, retire",
-    "v": "7e00e189fc00"
-   },
-   {
-    "index": 12,
-    "name": "README/how-the-parts-fit-12",
-    "pause_ms": 300,
-    "text": "Ending a name",
-    "v": "6930cb67366d"
-   },
-   {
-    "index": 13,
-    "name": "README/how-the-parts-fit-13",
-    "pause_ms": 300,
-    "text": "Play and reproduce the simulation",
-    "v": "c5a5d87cbf81"
-   },
-   {
-    "index": 14,
-    "name": "README/how-the-parts-fit-14",
-    "pause_ms": 300,
-    "text": "Prior art and reuse candidates",
-    "v": "ee12c39f2cdc"
-   },
-   {
-    "index": 15,
-    "name": "README/how-the-parts-fit-15",
-    "pause_ms": 300,
-    "text": "Draft protocol specification and acceptance scenarios",
-    "v": "46151b21e8c0"
-   },
-   {
-    "index": 16,
-    "name": "README/how-the-parts-fit-16",
-    "pause_ms": 300,
-    "text": "Demo 1: play a registry from creation to termination and the preprod record",
-    "v": "60bcc6ab066d"
+    "text": "Read the original responsibilities, request lifecycle and certification rules as historical design context. To run the current commands, start with Demo 1, then read the registry command guide and consumer conformance record.",
+    "v": "70374e305add"
    }
   ],
   "install": [
@@ -218,13 +141,6 @@
     "pause_ms": 400,
     "text": "As a Cardano developer who knows cardano-cli, wallets, faucets and Koios but not Singular, you can play Demo 1, a registry from creation to termination in sixteen steps, and watch every step either succeed or be refused where the page says it will. The Demo 1 page says what the play shows and where to play it: the step-by-step page of singular-demo, with a copy button on every block; its Nix shell, which holds singular, open-datum and a private development chain; and its Ubuntu kit for a machine without Nix. To play it in a browser with nothing installed, open the Killercoda scenario; to watch it without running anything, open the recorded run.",
     "v": "a64242c2c9e3"
-   },
-   {
-    "index": 2,
-    "name": "README/start-here-play-demo-1-02",
-    "pause_ms": 400,
-    "text": "Try the simulation — register a name, terminate it permanently, and inspect refusals for the five historical edge encodings. Switch the profile picker to the naming instance for the Over witness and the lifecycle replay. The simulation guide says what the page establishes and what it does not.",
-    "v": "356251c53331"
    }
   ],
   "who-this-is-for": [
@@ -253,278 +169,22 @@
     "index": 3,
     "name": "README/who-this-is-for-03",
     "pause_ms": 400,
-    "text": "A holder of an active name wants to keep payment routing current, recover through a committed next controller, or retire the name permanently. The naming lifecycle covers destination maintenance, recovery through the committed key, and retirement by that key or by a distinct-member quorum — never by the current control key alone. Twenty-one lifecycle rows are replayed in the simulator against the Lean that computed them. It remains an unaccepted design candidate, not an observed ledger execution.",
-    "v": "8a8646f5a35f"
+    "text": "A folder — anyone at all — collects pending requests and applies them to the registry in one transaction. There is no owner to sign, no privileged actor, and no way to fold a request that does not satisfy the protocol.",
+    "v": "1d3f511bb485"
    },
    {
     "index": 4,
     "name": "README/who-this-is-for-04",
     "pause_ms": 400,
-    "text": "A folder — anyone at all — collects pending requests and applies them to the registry in one transaction. There is no owner to sign, no privileged actor, and no way to fold a request that does not satisfy the protocol.",
-    "v": "622b2f897051"
+    "text": "A resolver wants to know whether a key is active and where its application state currently lives. It authenticates the registry entry, finds the NFT, and reads the application's own output. A key that is retired or in a pending terminal request yields no live state.",
+    "v": "cf6365e21611"
    },
    {
     "index": 5,
     "name": "README/who-this-is-for-05",
     "pause_ms": 400,
-    "text": "A resolver wants to know whether a key is active and where its application state currently lives. It authenticates the registry entry, finds the NFT, and reads the application's own output. A key that is retired or in a pending terminal request yields no live state.",
-    "v": "16bdfa152582"
-   },
-   {
-    "index": 6,
-    "name": "README/who-this-is-for-06",
-    "pause_ms": 400,
     "text": "A Cardano developer who wants to try it plays the whole thing on a private test chain from a page of steps to copy, signing with a vault wallet whose key stays sealed in a file on their machine, or signing on another machine. The Demo 1 page says what the play shows and links the steps.",
-    "v": "eb767ab62349"
-   }
-  ]
- },
- "docs/LEAN-CLARITY.md": {
-  "archived-broader-model-evidence": [
-   {
-    "index": 0,
-    "name": "docs-LEAN-CLARITY/archived-broader-model-evidence-00",
-    "pause_ms": 500,
-    "text": "Archived broader model evidence.",
-    "v": "b183c2c75713"
-   },
-   {
-    "index": 1,
-    "name": "docs-LEAN-CLARITY/archived-broader-model-evidence-01",
-    "pause_ms": 400,
-    "text": "A proof is only worth what its statement says. This page reads the registry-mode model back in English — what each promise actually quantifies over, what it assumes, and where the reader should not take it further than it goes — so that \"proved\" can be checked against \"promised\" without reading Lean.",
-    "v": "6c069ad6e9d7"
-   },
-   {
-    "index": 2,
-    "name": "docs-LEAN-CLARITY/archived-broader-model-evidence-02",
-    "pause_ms": 400,
-    "text": "The statements themselves, with their digests, are in the theorem manifest. This page is about their meaning.",
-    "v": "d7203e886b0b"
-   }
-  ],
-  "how-much-independence-this-record-has": [
-   {
-    "index": 0,
-    "name": "docs-LEAN-CLARITY/how-much-independence-this-record-has-00",
-    "pause_ms": 500,
-    "text": "How much independence this record has.",
-    "v": "ddb5a2231846"
-   },
-   {
-    "index": 1,
-    "name": "docs-LEAN-CLARITY/how-much-independence-this-record-has-01",
-    "pause_ms": 400,
-    "text": "Stated plainly, because a reader cannot see it from the outside: the model, the corpus generator, the simulator transcription and this readback all have the same author.",
-    "v": "0461e699ac10"
-   },
-   {
-    "index": 2,
-    "name": "docs-LEAN-CLARITY/how-much-independence-this-record-has-02",
-    "pause_ms": 400,
-    "text": "That has a concrete consequence. A misunderstanding of the interface made while writing the model will be made again while transcribing it and again while reading it back, and none of the three will catch it — they are not independent measurements, they are one measurement repeated. What the internal machinery does catch is real but narrower: transcription slips (the corpus replay), statements that do not constrain what they appear to (the mutation record), unproved obligations (the compiled axiom check), and drift between the shipped Lean and the built Lean (the mirror check).",
-    "v": "0fb616c8bded"
-   },
-   {
-    "index": 3,
-    "name": "docs-LEAN-CLARITY/how-much-independence-this-record-has-03",
-    "pause_ms": 400,
-    "text": "The check this record cannot perform on itself is the one that matters most — whether the statements say what the interface promised. That requires someone who did not write them. Treat this page as the author's best account, written to be falsifiable, and not as an audit.",
-    "v": "616ad12c2ee0"
-   }
-  ],
-  "lean-clarity-record": [
-   {
-    "index": 0,
-    "name": "docs-LEAN-CLARITY/lean-clarity-record-00",
-    "pause_ms": 500,
-    "text": "Lean clarity record.",
-    "v": "7895de2edb1a"
-   },
-   {
-    "index": 1,
-    "name": "docs-LEAN-CLARITY/lean-clarity-record-01",
-    "pause_ms": 400,
-    "text": "As a reader of current permanent contract, I can register a fresh key and terminate it permanently. The active model and compiled state support exactly tags 1 (insertActive) and 3 (updateTerminal); tags 0, 2, 4, 5 and 6 are explicitly refused, including caller-constructed and mixed requests. Application payload maintenance is separate. Current sources and receipts must be bound to the revised candidate.",
-    "v": "b503ee99e00f"
-   },
-   {
-    "index": 2,
-    "name": "docs-LEAN-CLARITY/lean-clarity-record-02",
-    "pause_ms": 400,
-    "text": "The detailed walkthrough and measurements below are archived broader model evidence, retained to explain the earlier contract; their broader success claims do not apply to permanent contract. Historical sources are retained on preserve/m2/pre-m1-source-removal. The active theorem manifest and the exact scope-retirement record explain the changed law and denominator. Unmet consumer requirements stay uncovered.",
-    "v": "53d54c21f331"
-   }
-  ],
-  "reading-the-promises-back": [
-   {
-    "index": 0,
-    "name": "docs-LEAN-CLARITY/reading-the-promises-back-00",
-    "pause_ms": 500,
-    "text": "Reading the promises back.",
-    "v": "36002a886913"
-   },
-   {
-    "index": 1,
-    "name": "docs-LEAN-CLARITY/reading-the-promises-back-01",
-    "pause_ms": 400,
-    "text": "No tree change without approval (no_tree_change_without_approval). If a request is accepted and it is not the read, then an approval was present, it was minted under the registry's own pinned policy, its asset name is the hash of the edge, the key, the owner and the destination of this request, and the registry's own pins — its policy, its owner, its recovery commitment — are unchanged by the fold. The part worth dwelling on: a correct policy is necessary and not sufficient. An approval minted for a different key, or a different destination, under the very same policy, does not admit the request. A model that checked only the policy would be wrong in a way no amount of proving would reveal, which is why the tuple appears in the statement rather than in a comment.",
-    "v": "ed9ef3914efe"
-   },
-   {
-    "index": 2,
-    "name": "docs-LEAN-CLARITY/reading-the-promises-back-02",
-    "pause_ms": 400,
-    "text": "Booked at most once (booked_at_most_once). A batch is a fold, and the fold spends each request once, in order. The statement is about the step function, so a request cannot be applied twice within one batch, and a batch that fails anywhere produces no state at all rather than a partial one.",
-    "v": "628f9e4b9027"
-   },
-   {
-    "index": 3,
-    "name": "docs-LEAN-CLARITY/reading-the-promises-back-03",
-    "pause_ms": 400,
-    "text": "Permanence (terminal_attestation_permanent). A terminated key stays terminated through any later sequence of accepted folds. A terminal leaf has no outgoing edge, so nothing downstream can make the termination false. This is the promise that lets a reader keep the leaf it proved rather than re-reading the chain.",
-    "v": "546014c9a957"
-   },
-   {
-    "index": 4,
-    "name": "docs-LEAN-CLARITY/reading-the-promises-back-04",
-    "pause_ms": 400,
-    "text": "The supply law (biconditional_supply_sync). For every key in a reachable state, the count of outstanding active tokens is one exactly when the leaf is active and zero otherwise — a biconditional, both directions, over all keys, not only the key in hand. This is the statement that ties the token supply to the map and makes \"the token is the name\" more than a slogan.",
-    "v": "de58188919cc"
-   },
-   {
-    "index": 5,
-    "name": "docs-LEAN-CLARITY/reading-the-promises-back-05",
-    "pause_ms": 400,
-    "text": "Occupancy and its converse (occupancy, occupancy_free_key_succeeds). A booking edge succeeds only on a key that is not already taken; and on a key that is free, with a matching approval, it does succeed. The converse matters as much as the rule: a registry that refused everything would satisfy the first half perfectly.",
-    "v": "c12e64fa121f"
-   },
-   {
-    "index": 6,
-    "name": "docs-LEAN-CLARITY/reading-the-promises-back-06",
-    "pause_ms": 400,
-    "text": "Termination (termination). On a terminal key every leaf-moving edge is refused. Not \"should be\", not \"by convention\" — the refusal is the complement of the edge table, so there is no unlisted case that quietly moves a retired name.",
-    "v": "e9a3f089e629"
-   },
-   {
-    "index": 7,
-    "name": "docs-LEAN-CLARITY/reading-the-promises-back-07",
-    "pause_ms": 400,
-    "text": "The witness law (active_witness_unique). At most one active token per key, and exactly one when the leaf is active.",
-    "v": "c0bf1d5f13ab"
-   },
-   {
-    "index": 8,
-    "name": "docs-LEAN-CLARITY/reading-the-promises-back-08",
-    "pause_ms": 400,
-    "text": "The seven inversions. For each edge, a single statement saying what an accepted application of it did: the leaf before, the leaf after, the new root, the token deltas, the custody movement, the deposit destination. These are the statements the simulator is really transcribing, and they are the ones to read first when asking whether the model matches the interface, because they contain no reachability hypothesis to hide behind.",
-    "v": "c263f772b1b8"
-   },
-   {
-    "index": 9,
-    "name": "docs-LEAN-CLARITY/reading-the-promises-back-09",
-    "pause_ms": 400,
-    "text": "The deposit (inside update_active_inversion and delete_absent_inversion). The two edges that consume an absent witness pay the deposit back to the refund address the original request named, not to the output of the consuming request and not to whoever folded it. Those two rejected destinations are the reason the statement pins the address rather than merely asserting that some payment occurred.",
-    "v": "e834d30fc09a"
-   },
-   {
-    "index": 10,
-    "name": "docs-LEAN-CLARITY/reading-the-promises-back-10",
-    "pause_ms": 400,
-    "text": "The read (read_changes_nothing, witness_terminal_inversion). An accepted read leaves the leaf, the root and custody exactly as they were and adds one terminal token. It needs no approval at all — and, symmetrically, a stray approval does not make it refuse.",
-    "v": "e68bffbef807"
-   },
-   {
-    "index": 11,
-    "name": "docs-LEAN-CLARITY/reading-the-promises-back-11",
-    "pause_ms": 400,
-    "text": "The fold (empty_fold_error, fold_batch_cons). An empty batch is refused rather than accepted as a no-op. A non-empty batch succeeds exactly when its head applies and the rest applies to the result, which is what makes a batch mean the same thing as the sequence of its requests.",
-    "v": "696d83052262"
-   }
-  ],
-  "the-shape-the-promises-are-made-over": [
-   {
-    "index": 0,
-    "name": "docs-LEAN-CLARITY/the-shape-the-promises-are-made-over-00",
-    "pause_ms": 500,
-    "text": "The shape the promises are made over.",
-    "v": "1114d96597c9"
-   },
-   {
-    "index": 1,
-    "name": "docs-LEAN-CLARITY/the-shape-the-promises-are-made-over-01",
-    "pause_ms": 400,
-    "text": "Almost every promise is stated over reachable states — genesis, closed under accepted folds — and not over arbitrary values of the state type. This is not a weakening dressed up as a hypothesis: over an arbitrary state value the supply laws are false, because nothing stops you writing down a state with three active tokens for one key. Reachability is what makes them true, and it is exactly the property a chain enforces by only ever arriving at a state through a fold.",
-    "v": "9c8fc9a3431c"
-   },
-   {
-    "index": 2,
-    "name": "docs-LEAN-CLARITY/the-shape-the-promises-are-made-over-02",
-    "pause_ms": 400,
-    "text": "Where a promise does not need reachability, it does not assume it. The seven inversions, the empty-batch refusal, the fold-cons equation and read_changes_nothing are proved over any state at all, because they are statements about what an accepted edge did, not about what the ledger holds.",
-    "v": "3514f7e21b3d"
-   }
-  ],
-  "what-is-bound": [
-   {
-    "index": 0,
-    "name": "docs-LEAN-CLARITY/what-is-bound-00",
-    "pause_ms": 500,
-    "text": "What is bound.",
-    "v": "d813dfcc6375"
-   },
-   {
-    "index": 1,
-    "name": "docs-LEAN-CLARITY/what-is-bound-01",
-    "pause_ms": 400,
-    "text": "Every one of these ships beside the page under simulator/formal/, and node simulator/mirror-check.mjs fails if the shipped copy and the built copy differ, in either direction. Changing any bound input invalidates this record.",
-    "v": "b9cf467edf04"
-   },
-   {
-    "index": 2,
-    "name": "docs-LEAN-CLARITY/what-is-bound-02",
-    "pause_ms": 400,
-    "text": "The readback below covers the eleven promises, the seven inversions, the deposit, the read and the fold. The registry module bound above also carries fifteen later statements — about when a pending request may be retracted and what a refused retraction is told, what every exit pays and to whom, and which datum a delivered or spent witness carries, and how a batch of one folds — that are listed in the theorem manifest and not yet read back here.",
-    "v": "48540f344058"
-   }
-  ],
-  "what-the-model-does-not-say": [
-   {
-    "index": 0,
-    "name": "docs-LEAN-CLARITY/what-the-model-does-not-say-00",
-    "pause_ms": 500,
-    "text": "What the model does not say.",
-    "v": "85dbf0ce9524"
-   },
-   {
-    "index": 1,
-    "name": "docs-LEAN-CLARITY/what-the-model-does-not-say-01",
-    "pause_ms": 400,
-    "text": "These are limits of the model, not gaps in the proofs. Each is a place where a reader could reasonably expect more than is there.",
-    "v": "d3a171c408ca"
-   },
-   {
-    "index": 2,
-    "name": "docs-LEAN-CLARITY/what-the-model-does-not-say-02",
-    "pause_ms": 400,
-    "text": "The last row is the important one. Everything on this page is about a model. Whether the deployed validator implements it is a different question with a different kind of evidence behind it, and this page is not that evidence.",
-    "v": "0565da765327"
-   }
-  ],
-  "who-this-is-for": [
-   {
-    "index": 0,
-    "name": "docs-LEAN-CLARITY/who-this-is-for-00",
-    "pause_ms": 500,
-    "text": "Who this is for.",
-    "v": "29476440555d"
-   },
-   {
-    "index": 1,
-    "name": "docs-LEAN-CLARITY/who-this-is-for-01",
-    "pause_ms": 400,
-    "text": "A reviewer deciding whether the model is the right model. The build already answers are these proved — every one is, from the standard axioms and nothing else. It cannot answer do these say what the interface promised, and that is the question this page exists to make answerable.",
-    "v": "fce884c81447"
+    "v": "f1a901686e43"
    }
   ]
  },
@@ -548,15 +208,8 @@
     "index": 2,
     "name": "docs-building/build-and-check-02",
     "pause_ms": 400,
-    "text": "The documentation package and checks use the locked shared MkDocs toolchain. The documentation check inspects rendered internal links, section anchors, navigation, speech data and theme assets. Separate model and simulator checks exercise the proved Lean model and its finite corpus, and the model check cross-checks the compiled axiom report against the theorem manifest; none proves application behavior. See the model ledger and simulation for their exact scope.",
-    "v": "c55fdc949b04"
-   },
-   {
-    "index": 3,
-    "name": "docs-building/build-and-check-03",
-    "pause_ms": 400,
-    "text": "The browser check launches the pinned Chromium build, serves the standalone simulator on a temporary loopback port, and executes its manual-control and story assertions. The canonical runner is tools/browser-check.mjs; the earlier callback under simulator/ is retained as historical browser evidence. Screenshots use a temporary writable directory; no browser download or external service is required during execution. Set KEEP_BROWSER_EVIDENCE=1 to retain successful browser evidence. CI's build gate realizes the packages, executing checks, and development-shell inputs before the downstream verification jobs.",
-    "v": "786e372a296f"
+    "text": "The documentation package and checks use the locked shared MkDocs toolchain. The documentation check inspects rendered internal links, section anchors, navigation, speech data and theme assets. The aligned models build through just application-held-model and just open-datum-application-held-model; their proofs do not establish application behavior.",
+    "v": "8855b385bf20"
    }
   ],
   "building-the-documentation": [
@@ -608,15 +261,15 @@
     "index": 4,
     "name": "docs-building/documentation-releases-04",
     "pause_ms": 400,
-    "text": "Build the documentation archive locally with nix build .#docs-release, and run version, workflow and artifact checks with nix run .#release-check. The archive contains the rendered site and speech data plus a complete review workspace under artifacts/review/: model and theorem sources, finite corpora, scenarios, simulator and replay sources, checkers, and a minimal flake with its exact lock. The inner artifacts/SHA256SUMS authenticates every review input plus the separately served corpus and identity files; the outer SHA256SUMS authenticates the archive.",
-    "v": "6753c3d39d76"
+    "text": "Build the documentation archive locally with nix build .#docs-release, and run version, workflow and artifact checks with nix run .#release-check. The archive contains the rendered site, speech data and retained model sources under artifacts/lean/. Its inner artifacts/SHA256SUMS binds those source bytes; the outer SHA256SUMS binds the archive. It contains no retired corpus or simulator replay workspace.",
+    "v": "1ac19336f0ee"
    },
    {
     "index": 5,
     "name": "docs-building/documentation-releases-05",
     "pause_ms": 400,
-    "text": "Packaging checks alone do not establish reproduction. Extract the built singular-docs-<version>.tar.gz into a fresh directory, change to that directory, run sha256sum --check artifacts/SHA256SUMS, then run nix run --no-write-lock-file ./artifacts/review#check. Nix may acquire the exact locked toolchain when it is not cached; the model, scenario, simulator, replay, checker, and configuration inputs all come from the archive. Provenance comes from the validated tag and build binding. Published releases, each produced by this workflow from a tag on main, are listed at https://github.com/lambdasistemi/singular/releases.",
-    "v": "8105a37ac2d2"
+    "text": "After extraction, run sha256sum --check artifacts/SHA256SUMS to verify the source files. This checksum check establishes byte integrity, not model execution or implementation correspondence. Published releases are listed at https://github.com/lambdasistemi/singular/releases.",
+    "v": "ad2d063c16b5"
    },
    {
     "index": 6,
@@ -758,8 +411,8 @@
     "index": 2,
     "name": "docs-building/other-languages-02",
     "pause_ms": 400,
-    "text": "Lean and HTML have no general formatter here, so the explicit style rules are the policy: no tab, no carriage return, no trailing whitespace, and exactly one final newline. Aiken sources are checked by aiken fmt --check inside the onchain/ and application on-chain flake checks, with the Aiken each flake pins; formatting leaves every compiled validator and its hash unchanged. Generated files — the shipped simulator page, the Lean mirror and the cage vectors — are regenerated from their formatted sources, and their freshness checks stay the policy. A code family nobody checks fails just lint instead of passing silently.",
-    "v": "2af0c83a5f3a"
+    "text": "Lean and HTML have no general formatter here, so the explicit style rules are the policy: no tab, no carriage return, no trailing whitespace, and exactly one final newline. Aiken sources are checked by aiken fmt --check inside the onchain/ and application on-chain flake checks, with the Aiken each flake pins; formatting leaves every compiled validator and its hash unchanged. Generated preimage vectors are regenerated from their formatted sources, and their freshness check stays the policy. A code family nobody checks fails just lint instead of passing silently.",
+    "v": "bbc0dbf7bc0d"
    }
   ],
   "publication-and-accessibility": [
@@ -822,8 +475,8 @@
     "index": 1,
     "name": "docs-certification/certification-and-identity-binding-01",
     "pause_ms": 400,
-    "text": "Historical design. This page records the earlier Insert/Update/Delete design and its broader broader model successor. The active permanent permanent contract model supports only insertActive and updateTerminal. Historical tags 0, 2, 4, 5 and 6 encode refused actions, not available features. Current supported behavior describes permanent contract; archived source and evidence remain on preserve/m2/pre-m1-source-removal.",
-    "v": "ef87cc0abff7"
+    "text": "Historical design. This page records the earlier Insert/Update/Delete design and its broader broader model successor. The active permanent permanent contract model supports only insertActive and updateTerminal. Historical tags 0, 2, 4, 5 and 6 encode refused actions, not available features. Current supported behavior (historical) describes permanent contract; archived source and evidence remain on preserve/m2/pre-m1-source-removal.",
+    "v": "8ead3d14e6a1"
    },
    {
     "index": 2,
@@ -1769,8 +1422,8 @@
     "index": 1,
     "name": "docs-decisions/decisions-and-executable-abstractions-01",
     "pause_ms": 400,
-    "text": "Historical design. This page records the earlier Insert/Update/Delete design and its broader broader model successor. The active permanent permanent contract model supports only insertActive and updateTerminal. Historical tags 0, 2, 4, 5 and 6 encode refused actions, not available features. Current supported behavior describes permanent contract; archived source and evidence remain on preserve/m2/pre-m1-source-removal.",
-    "v": "dbfcb29b6ab4"
+    "text": "Historical design. This page records the earlier Insert/Update/Delete design and its broader broader model successor. The active permanent permanent contract model supports only insertActive and updateTerminal. Historical tags 0, 2, 4, 5 and 6 encode refused actions, not available features. Current supported behavior (historical) describes permanent contract; archived source and evidence remain on preserve/m2/pre-m1-source-removal.",
+    "v": "be8695f3048b"
    },
    {
     "index": 2,
@@ -1783,8 +1436,8 @@
     "index": 3,
     "name": "docs-decisions/decisions-and-executable-abstractions-03",
     "pause_ms": 400,
-    "text": "The reviewed behavioral baseline is the protocol specification, responsibilities, lifecycle, certification boundary and naming walkthrough. The executable candidate adds an executable interpretation for review. It does not close the construction decisions below.",
-    "v": "6aabcf828e1c"
+    "text": "The reviewed behavioral baseline is the protocol specification, responsibilities, lifecycle, certification boundary and naming walkthrough (historical). The executable candidate adds an executable interpretation for review. It does not close the construction decisions below.",
+    "v": "3acc05502538"
    }
   ],
   "evidence-and-next-stage": [
@@ -1824,8 +1477,8 @@
     "index": 1,
     "name": "docs-decisions/proposed-abstraction-boundary-01",
     "pause_ms": 400,
-    "text": "An executable logical map may stand for authenticated MPF state, a tagged structured value may stand for an unambiguous action commitment, and an explicit witness or contract parameter may stand for a ledger validator's authenticated result. These abstractions make the intended transition law inspectable without choosing a serialization, hash function, script deployment or application policy. Their exact use and limitations are recorded beside the Lean definitions and in the model ledger.",
-    "v": "9c8894473ce8"
+    "text": "An executable logical map may stand for authenticated MPF state, a tagged structured value may stand for an unambiguous action commitment, and an explicit witness or contract parameter may stand for a ledger validator's authenticated result. These abstractions make the intended transition law inspectable without choosing a serialization, hash function, script deployment or application policy. Their exact use and limitations are recorded beside the Lean definitions and in the model ledger (historical).",
+    "v": "103e408690fc"
    },
    {
     "index": 2,
@@ -2167,188 +1820,6 @@
     "pause_ms": 400,
     "text": "Candidate demos cite their actual build and manifest until the relevant milestone release is cut.",
     "v": "999da47f7a4d"
-   }
-  ]
- },
- "docs/design.md": {
-  "candidate-status": [
-   {
-    "index": 0,
-    "name": "docs-design/candidate-status-00",
-    "pause_ms": 500,
-    "text": "Candidate status.",
-    "v": "6da05c176966"
-   },
-   {
-    "index": 1,
-    "name": "docs-design/candidate-status-01",
-    "pause_ms": 400,
-    "text": "The same published candidate includes the executable Lean source, proved statements, their supporting lemmas and exported finite corpus. Their identity belongs to this candidate; the proofs were completed without changing any statement.",
-    "v": "602669a2db5f"
-   },
-   {
-    "index": 2,
-    "name": "docs-design/candidate-status-02",
-    "pause_ms": 400,
-    "text": "The repository carries no deployed Singular validator, accepted statement audit or production release. The proofs are complete and individually inventoried, with a compiled axiom gate on every build. The requested review surface is the draft PR and its exact candidate preview; independent audit stages remain separate work.",
-    "v": "910372731ee2"
-   },
-   {
-    "index": 3,
-    "name": "docs-design/candidate-status-03",
-    "pause_ms": 400,
-    "text": "Two blind source reviews preceded simulator authoring and both recommended proceeding. Their source reasoning did not execute an audit or prove the model. The resulting corpus refinements preserve the reviewed model and statement definitions. The general whole-transition terminal-custody theorem remains an explicit statement-coverage gap in the model ledger.",
-    "v": "7d3a726ad335"
-   },
-   {
-    "index": 4,
-    "name": "docs-design/candidate-status-04",
-    "pause_ms": 400,
-    "text": "The original protocol specification remains the behavioral authority. Its statements about unexecuted obligations describe the adopted specification baseline; executable coverage introduced in this candidate is tracked in the model ledger rather than inferred from a successful documentation build.",
-    "v": "e9284ca0d9c0"
-   }
-  ],
-  "executable-design-candidate": [
-   {
-    "index": 0,
-    "name": "docs-design/executable-design-candidate-00",
-    "pause_ms": 500,
-    "text": "Executable design candidate.",
-    "v": "6f5df35f6d46"
-   },
-   {
-    "index": 1,
-    "name": "docs-design/executable-design-candidate-01",
-    "pause_ms": 400,
-    "text": "Historical design. This page records the earlier Insert/Update/Delete design and its broader broader model successor. The active permanent permanent contract model supports only insertActive and updateTerminal. Historical tags 0, 2, 4, 5 and 6 encode refused actions, not available features. Current supported behavior describes permanent contract; archived source and evidence remain on preserve/m2/pre-m1-source-removal.",
-    "v": "cbf0cf3e429d"
-   },
-   {
-    "index": 2,
-    "name": "docs-design/executable-design-candidate-02",
-    "pause_ms": 400,
-    "text": "As an application designer, follow a registration from an approved request into a live application output, then explore address changes, retirement and deletion. The simulator shows successful transitions and exact refusals so you can inspect the proposed behavior before choosing a ledger construction.",
-    "v": "de6b35ca7c82"
-   },
-   {
-    "index": 3,
-    "name": "docs-design/executable-design-candidate-03",
-    "pause_ms": 400,
-    "text": "Open the playable Singular simulator — the live generic-registry simulator, where Delete is allowed — or follow the simulation walkthrough.",
-    "v": "e7bdce6ac83f"
-   },
-   {
-    "index": 4,
-    "name": "docs-design/executable-design-candidate-04",
-    "pause_ms": 400,
-    "text": "This is a creation candidate: the logical Lean model and separately authored browser simulation make the design executable. All 65 theorem and inversion declarations — 44 for the registry, 7 for the naming instance, 9 for its lifecycle and 5 for its wire encoding, counts the model check derives from the manifests — are PROVED from the standard axioms, and the build refuses any statement that is admitted again. Proofs establish properties of the model; they do not by themselves accept the design.",
-    "v": "1c57cdc1a552"
-   }
-  ],
-  "reading-the-application-trust-boundary": [
-   {
-    "index": 0,
-    "name": "docs-design/reading-the-application-trust-boundary-00",
-    "pause_ms": 500,
-    "text": "Reading the application trust boundary.",
-    "v": "3bddc66a535a"
-   },
-   {
-    "index": 1,
-    "name": "docs-design/reading-the-application-trust-boundary-01",
-    "pause_ms": 400,
-    "text": "The model uses logical identities and authenticated state instead of Cardano bytes and MPF proofs. Application authorization is an explicit contract boundary: recognizing the configured issuer does not establish that an arbitrary application's policy implements the semantics it claims.",
-    "v": "a6974fcb1f08"
-   },
-   {
-    "index": 2,
-    "name": "docs-design/reading-the-application-trust-boundary-02",
-    "pause_ms": 400,
-    "text": "The model supplies authenticated application evidence; the browser does not execute those validators. The decisions and executable abstractions distinguish adopted behavior from unresolved construction choices.",
-    "v": "a4c8a883d270"
-   },
-   {
-    "index": 3,
-    "name": "docs-design/reading-the-application-trust-boundary-03",
-    "pause_ms": 400,
-    "text": "The simulation is a separate author's transcription of the frozen Lean interface. Its clarity record preserves what the formal artifacts did and did not communicate. Finite trace agreement and interactive checks provide bounded creator evidence. They cannot establish universal correspondence, an independent statement audit, proof completeness or ledger deployment conformance.",
-    "v": "74e807401f0d"
-   }
-  ],
-  "story-cancel-a-proposal-or-finish-a-terminal-request": [
-   {
-    "index": 0,
-    "name": "docs-design/story-cancel-a-proposal-or-finish-a-terminal-request-00",
-    "pause_ms": 500,
-    "text": "Story: cancel a proposal or finish a terminal request.",
-    "v": "11a59fe6046f"
-   },
-   {
-    "index": 1,
-    "name": "docs-design/story-cancel-a-proposal-or-finish-a-terminal-request-01",
-    "pause_ms": 400,
-    "text": "A requester can cancel a pending Insert only with a separately authorized Withdraw action bound to that exact request and declared refund requirements. The original Insert approval is insufficient. Withdrawal creates no representative and changes no registry entry; refund commitments do not establish a wallet payment.",
-    "v": "294307631554"
-   },
-   {
-    "index": 2,
-    "name": "docs-design/story-cancel-a-proposal-or-finish-a-terminal-request-02",
-    "pause_ms": 400,
-    "text": "For retirement or deletion, the application validator authorizes the exact terminal request and releases its existing representative into request custody. The registry stays Active, but the representative is unavailable to the application. No ordinary cancellation or sweep releases it. Valid completion consumes the request, burns the representative and changes the map.",
-    "v": "240c37c63136"
-   },
-   {
-    "index": 3,
-    "name": "docs-design/story-cancel-a-proposal-or-finish-a-terminal-request-03",
-    "pause_ms": 400,
-    "text": "These are executable behaviors and proved obligations. A general whole-transition theorem that terminal custody leaves only through completion is still missing. Escape-refusal and supply statements, or a finite terminal-Withdraw refusal, do not close that gap.",
-    "v": "5d6d905b6039"
-   }
-  ],
-  "story-fold-a-selected-batch": [
-   {
-    "index": 0,
-    "name": "docs-design/story-fold-a-selected-batch-00",
-    "pause_ms": 500,
-    "text": "Story: fold a selected batch.",
-    "v": "d6d681346057"
-   },
-   {
-    "index": 1,
-    "name": "docs-design/story-fold-a-selected-batch-01",
-    "pause_ms": 400,
-    "text": "Any submitter can select an ordered batch. Each item sees the registry produced by the previous item; a failure refuses the selected batch atomically. There is no native privileged folder gate, automatic skipping, capacity guarantee or fairness claim. Executing witnesses remain required even when mint and burn quantities for the same asset net to zero; distinct identities do not cancel each other.",
-    "v": "04e8482eff70"
-   },
-   {
-    "index": 2,
-    "name": "docs-design/story-fold-a-selected-batch-02",
-    "pause_ms": 400,
-    "text": "The model ledger maps requirements and finite scenarios to modeled behavior, conditions, abstractions and omissions. The theorem inventory records the exact statements, each proved. The mutation ledger records four executed mutants, each killed at a named obligation; no survivor census or independent audit result is claimed.",
-    "v": "2b0aa7bc3a73"
-   }
-  ],
-  "story-register-and-use-an-application-output": [
-   {
-    "index": 0,
-    "name": "docs-design/story-register-and-use-an-application-output-00",
-    "pause_ms": 500,
-    "text": "Story: register and use an application output.",
-    "v": "d68ce024a2f7"
-   },
-   {
-    "index": 1,
-    "name": "docs-design/story-register-and-use-an-application-output-01",
-    "pause_ms": 400,
-    "text": "A requester stages a certified Insert whose approval binds the initial application output. Staging reserves no key and creates no representative. At fold time, the key must be absent and the exact output and approval scope must match. A valid Insert creates the representative and makes the entry Active; a competing Insert at an occupied key is refused.",
-    "v": "0ca510bc0e17"
-   },
-   {
-    "index": 2,
-    "name": "docs-design/story-register-and-use-an-application-output-02",
-    "pause_ms": 400,
-    "text": "The diagram shows registry states. Staging a pending Insert does not change whether the key is absent. An application can evolve its own state while preserving its representative; changing an address is such an evolution. Registry Update means retirement, and Over has no outgoing transition. Delete makes the key absent again; any reinsert still needs a valid certified output and approval scope for its incarnation.",
-    "v": "7c2714323a8c"
    }
   ]
  },
@@ -3486,8 +2957,8 @@
     "index": 1,
     "name": "docs-lifecycle/requests-folding-and-nft-custody-01",
     "pause_ms": 400,
-    "text": "Historical design. This page records the earlier Insert/Update/Delete design and its broader broader model successor. The active permanent permanent contract model supports only insertActive and updateTerminal. Historical tags 0, 2, 4, 5 and 6 encode refused actions, not available features. Current supported behavior describes permanent contract; archived source and evidence remain on preserve/m2/pre-m1-source-removal.",
-    "v": "5c4b8200513e"
+    "text": "Historical design. This page records the earlier Insert/Update/Delete design and its broader broader model successor. The active permanent permanent contract model supports only insertActive and updateTerminal. Historical tags 0, 2, 4, 5 and 6 encode refused actions, not available features. Current supported behavior (historical) describes permanent contract; archived source and evidence remain on preserve/m2/pre-m1-source-removal.",
+    "v": "ead562738aac"
    },
    {
     "index": 2,
@@ -3608,906 +3079,6 @@
     "pause_ms": 400,
     "text": "Token disposal, refund economics and the application's conditions for approving withdrawal remain to be specified. They must protect deposits and avoid assuming arbitrary outsiders may repeatedly cancel valid registration attempts.",
     "v": "8707b2c53f22"
-   }
-  ]
- },
- "docs/model-ledger.md": {
-  "archived-broader-model-evidence": [
-   {
-    "index": 0,
-    "name": "docs-model-ledger/archived-broader-model-evidence-00",
-    "pause_ms": 500,
-    "text": "Archived broader model evidence.",
-    "v": "be393322f079"
-   },
-   {
-    "index": 1,
-    "name": "docs-model-ledger/archived-broader-model-evidence-01",
-    "pause_ms": 400,
-    "text": "As a reviewer deciding how far to trust this model, use this page to see what it covers, what it deliberately abstracts, and — because this revision replaced the model wholesale — what happened to every guarantee the previous one made.",
-    "v": "02eaba92be9f"
-   },
-   {
-    "index": 2,
-    "name": "docs-model-ledger/archived-broader-model-evidence-02",
-    "pause_ms": 400,
-    "text": "This is a candidate at model-and-proofs stage. The executable machine is Singular.step in the model source. Every declaration is proved from the standard axioms; there is no audit verdict and no acceptance claim here.",
-    "v": "7c9abe183b74"
-   }
-  ],
-  "model-ledger": [
-   {
-    "index": 0,
-    "name": "docs-model-ledger/model-ledger-00",
-    "pause_ms": 500,
-    "text": "Model ledger.",
-    "v": "8ce4b552ead1"
-   },
-   {
-    "index": 1,
-    "name": "docs-model-ledger/model-ledger-01",
-    "pause_ms": 400,
-    "text": "As a reader of current permanent contract, I can register a fresh key and terminate it permanently. The active model and compiled state support exactly tags 1 (insertActive) and 3 (updateTerminal); tags 0, 2, 4, 5 and 6 are explicitly refused, including caller-constructed and mixed requests. Application payload maintenance is separate. Current sources and receipts must be bound to the revised candidate.",
-    "v": "fc3f17a337e4"
-   },
-   {
-    "index": 2,
-    "name": "docs-model-ledger/model-ledger-02",
-    "pause_ms": 400,
-    "text": "The detailed walkthrough and measurements below are archived broader model evidence, retained to explain the earlier contract; their broader success claims do not apply to permanent contract. Historical sources are retained on preserve/m2/pre-m1-source-removal. The active theorem manifest and the exact scope-retirement record explain the changed law and denominator. Unmet consumer requirements stay uncovered.",
-    "v": "dbdfa299a4a7"
-   }
-  ],
-  "retired-with-the-unused-policy-pins": [
-   {
-    "index": 0,
-    "name": "docs-model-ledger/retired-with-the-unused-policy-pins-00",
-    "pause_ms": 500,
-    "text": "Retired with the unused policy pins.",
-    "v": "ac6bcdfc9aa9"
-   },
-   {
-    "index": 1,
-    "name": "docs-model-ledger/retired-with-the-unused-policy-pins-01",
-    "pause_ms": 400,
-    "text": "Milestone one mints no absent or terminal token, so the registry state no longer pins a policy for either, and the model keeps one token kind. Four statements whose only subject was a token of a removed kind are retired with no replacement, and one is restated over the leaf:",
-    "v": "71b5485afb40"
-   },
-   {
-    "index": 2,
-    "name": "docs-model-ledger/retired-with-the-unused-policy-pins-02",
-    "pause_ms": 400,
-    "text": "The lifecycle row that substituted a terminal policy at initialization is retired with the field it altered. The coverage record names every identity that changed.",
-    "v": "7e289354b9ec"
-   }
-  ],
-  "the-retirement-map": [
-   {
-    "index": 0,
-    "name": "docs-model-ledger/the-retirement-map-00",
-    "pause_ms": 500,
-    "text": "The retirement map.",
-    "v": "db9c8f156b58"
-   },
-   {
-    "index": 1,
-    "name": "docs-model-ledger/the-retirement-map-01",
-    "pause_ms": 400,
-    "text": "The previous model had 44 generic declarations. Registry mode replaced the alphabet, so most of them no longer have a subject. Every one is accounted for here — 1 carried, 3 renamed, 40 retired — because without this an auditor cannot tell a dropped guarantee from a rename, and a manifest that quietly lost rows would still satisfy every count.",
-    "v": "08e526023a50"
-   },
-   {
-    "index": 2,
-    "name": "docs-model-ledger/the-retirement-map-02",
-    "pause_ms": 400,
-    "text": "The registry-mode statements that replace them are listed in the theorem manifest.",
-    "v": "2a3714fb2213"
-   }
-  ],
-  "what-is-covered-and-what-is-not": [
-   {
-    "index": 0,
-    "name": "docs-model-ledger/what-is-covered-and-what-is-not-00",
-    "pause_ms": 500,
-    "text": "What is covered, and what is not.",
-    "v": "d50fd46c442d"
-   },
-   {
-    "index": 1,
-    "name": "docs-model-ledger/what-is-covered-and-what-is-not-01",
-    "pause_ms": 400,
-    "text": "Covered: the seven edges and their deltas; the complement of the edge table as refusals with distinct reasons; admission by an approval scoped to the request's tuple; the leaf codec both ways; the fold's atomicity, zero-request refusal and mint check; the deposit's destination; and the seven promises over states reachable from genesis.",
-    "v": "21f69217d52a"
-   },
-   {
-    "index": 2,
-    "name": "docs-model-ledger/what-is-covered-and-what-is-not-02",
-    "pause_ms": 400,
-    "text": "Not covered, and named rather than left to be discovered:",
-    "v": "07c52a3c5778"
-   },
-   {
-    "index": 3,
-    "name": "docs-model-ledger/what-is-covered-and-what-is-not-03",
-    "pause_ms": 300,
-    "text": "On-chain conformance. Nothing here says the cage validator implements this model. Whether the deployed validators do is the subject of the conformance evidence, not of this ledger.",
-    "v": "f9d058c32ca2"
-   },
-   {
-    "index": 4,
-    "name": "docs-model-ledger/what-is-covered-and-what-is-not-04",
-    "pause_ms": 300,
-    "text": "The simulator. It replays 38 registry rows, 24 naming rows and 21 lifecycle rows and reproduces each verdict, and a mirror check binds the Lean it ships to the Lean it was built from. That is agreement on the exported inputs, not equivalence — and the transcriber is the model's author, so it is not an independent measurement either.",
-    "v": "fbc808954c34"
-   },
-   {
-    "index": 5,
-    "name": "docs-model-ledger/what-is-covered-and-what-is-not-05",
-    "pause_ms": 300,
-    "text": "Plurality from genesis. terminal-witnesses-plural states that from any reachable terminal state arbitrarily many attestations can be minted. It does not construct a terminal key with zero attestations from genesis; that is a reachability claim about a fresh key and is not proved here.",
-    "v": "a8352a9c5df6"
-   },
-   {
-    "index": 6,
-    "name": "docs-model-ledger/what-is-covered-and-what-is-not-06",
-    "pause_ms": 300,
-    "text": "Quantitative mutation coverage. Four mutants are executed (the mutation ledger); there is no survivor census.",
-    "v": "d955aab2c8b5"
-   }
-  ],
-  "what-the-model-is-and-what-it-abstracts": [
-   {
-    "index": 0,
-    "name": "docs-model-ledger/what-the-model-is-and-what-it-abstracts-00",
-    "pause_ms": 500,
-    "text": "What the model is, and what it abstracts.",
-    "v": "8ebb5436b8c9"
-   },
-   {
-    "index": 1,
-    "name": "docs-model-ledger/what-the-model-is-and-what-it-abstracts-01",
-    "pause_ms": 400,
-    "text": "The trie answers two questions and nothing else: is this key known, and where in its life is it. Applications store nothing in the leaf. Seven edges move a leaf, each an MPFS primitive applied to a state, each a delta over the one token kind a fold mints, the active witness.",
-    "v": "2f7e32fe38ce"
-   },
-   {
-    "index": 2,
-    "name": "docs-model-ledger/what-the-model-is-and-what-it-abstracts-02",
-    "pause_ms": 400,
-    "text": "Deliberate abstractions, each of which a reader should hold against every claim below:",
-    "v": "06fdd17b93a1"
-   }
-  ]
- },
- "docs/mutants.md": {
-  "archived-broader-model-evidence": [
-   {
-    "index": 0,
-    "name": "docs-mutants/archived-broader-model-evidence-00",
-    "pause_ms": 500,
-    "text": "Archived broader model evidence.",
-    "v": "91174bd22464"
-   },
-   {
-    "index": 1,
-    "name": "docs-mutants/archived-broader-model-evidence-01",
-    "pause_ms": 400,
-    "text": "As someone deciding whether to trust these proofs, use this register to see that the model's guarantees actually constrain the model — that each law was shown to fail when the behaviour it describes is broken, rather than merely shown to compile when it is not.",
-    "v": "64897dace863"
-   },
-   {
-    "index": 2,
-    "name": "docs-mutants/archived-broader-model-evidence-02",
-    "pause_ms": 400,
-    "text": "The four mutations below are the ones the registry-mode epic names. Each was executed. None is a proposal.",
-    "v": "457c8a542f78"
-   }
-  ],
-  "limits": [
-   {
-    "index": 0,
-    "name": "docs-mutants/limits-00",
-    "pause_ms": 500,
-    "text": "Limits.",
-    "v": "bd6e5cbb23b9"
-   },
-   {
-    "index": 1,
-    "name": "docs-mutants/limits-01",
-    "pause_ms": 400,
-    "text": "Four mutants are four points, not a mutation score. A campaign that enumerated every guard and reported a survivor census would say more, and is not what this is: these four were chosen because the interface names them as the failures its witness laws exist to prevent.",
-    "v": "95c46dacc43a"
-   },
-   {
-    "index": 2,
-    "name": "docs-mutants/limits-02",
-    "pause_ms": 400,
-    "text": "A killed mutant shows the proofs constrain the mutated definition. It does not show the definition is the right one — that is what the operator's rulings, the interface and the simulation are for.",
-    "v": "d08f76cc5764"
-   }
-  ],
-  "mutation-ledger": [
-   {
-    "index": 0,
-    "name": "docs-mutants/mutation-ledger-00",
-    "pause_ms": 500,
-    "text": "Mutation ledger.",
-    "v": "f794356c088b"
-   },
-   {
-    "index": 1,
-    "name": "docs-mutants/mutation-ledger-01",
-    "pause_ms": 400,
-    "text": "As a reader of current permanent contract, I can register a fresh key and terminate it permanently. The active model and compiled state support exactly tags 1 (insertActive) and 3 (updateTerminal); tags 0, 2, 4, 5 and 6 are explicitly refused, including caller-constructed and mixed requests. Application payload maintenance is separate. Current sources and receipts must be bound to the revised candidate.",
-    "v": "667b7dae5200"
-   },
-   {
-    "index": 2,
-    "name": "docs-mutants/mutation-ledger-02",
-    "pause_ms": 400,
-    "text": "The detailed walkthrough and measurements below are archived broader model evidence, retained to explain the earlier contract; their broader success claims do not apply to permanent contract. Historical sources are retained on preserve/m2/pre-m1-source-removal. The active theorem manifest and the exact scope-retirement record explain the changed law and denominator. Unmet consumer requirements stay uncovered.",
-    "v": "9b31ed37eb05"
-   }
-  ],
-  "the-mutants": [
-   {
-    "index": 0,
-    "name": "docs-mutants/the-mutants-00",
-    "pause_ms": 500,
-    "text": "The mutants.",
-    "v": "b016b59f62b3"
-   },
-   {
-    "index": 1,
-    "name": "docs-mutants/the-mutants-01",
-    "pause_ms": 400,
-    "text": "Positive control: on the unmutated tree the statements prove, and the compiled axiom report carries no sorryAx.",
-    "v": "8195e2de1813"
-   }
-  ],
-  "what-counts-as-a-kill-here": [
-   {
-    "index": 0,
-    "name": "docs-mutants/what-counts-as-a-kill-here-00",
-    "pause_ms": 500,
-    "text": "What counts as a kill here.",
-    "v": "2bb9a1e49293"
-   },
-   {
-    "index": 1,
-    "name": "docs-mutants/what-counts-as-a-kill-here-01",
-    "pause_ms": 400,
-    "text": "A mutant is killed when a named obligation stops holding, not when the file stops compiling. Those are different events and only the first is evidence:",
-    "v": "65a417ad7d97"
-   },
-   {
-    "index": 2,
-    "name": "docs-mutants/what-counts-as-a-kill-here-02",
-    "pause_ms": 300,
-    "text": "the mutated definition must elaborate first, so what is measured is a semantic change and not a syntax error;",
-    "v": "10bdf5450875"
-   },
-   {
-    "index": 3,
-    "name": "docs-mutants/what-counts-as-a-kill-here-03",
-    "pause_ms": 300,
-    "text": "the kill must land on an obligation, not on a restatement. Mutating applyEdge trivially breaks the effect lemmas that restate applyEdge, which proves nothing; so each mutation carries its effect lemma with it, and the failure surfaces where the invariant is established;",
-    "v": "7e89b30ad140"
-   },
-   {
-    "index": 4,
-    "name": "docs-mutants/what-counts-as-a-kill-here-04",
-    "pause_ms": 300,
-    "text": "a positive control shows the same obligations hold on the unmutated tree.",
-    "v": "1b46c486603a"
-   },
-   {
-    "index": 5,
-    "name": "docs-mutants/what-counts-as-a-kill-here-05",
-    "pause_ms": 400,
-    "text": "The first run of this campaign killed all four at the effect lemmas. That was a near-tautological result and was discarded rather than reported.",
-    "v": "0fffec5de3da"
-   },
-   {
-    "index": 6,
-    "name": "docs-mutants/what-counts-as-a-kill-here-06",
-    "pause_ms": 400,
-    "text": "The campaign mutated Model.lean at sha256 c951e4bd7a0037431238affac3e85aa07f3c505d1a7fde4b15c9d86df7669cc8. The current Model.lean is beec6567f46b7b0bb273ebe3e28cf7197bf56668bcdf8dfd4590c58ec6d29d97, and the campaign has not been rerun against it: the four rows below are evidence about the revision they name and nothing later. The absent and terminal token kinds have since left the model, so three of the four mutations (those that mint an absent token, attest a key, or keep a custody entry) cannot be written against it; the rows stand as history. A campaign is evidence about the exact definitions it broke, so a later model is a later campaign, not a carried-forward result.",
-    "v": "d6a1101b46f6"
-   }
-  ],
-  "why-the-kills-land-where-they-do": [
-   {
-    "index": 0,
-    "name": "docs-mutants/why-the-kills-land-where-they-do-00",
-    "pause_ms": 500,
-    "text": "Why the kills land where they do.",
-    "v": "9b9989633d63"
-   },
-   {
-    "index": 1,
-    "name": "docs-mutants/why-the-kills-land-where-they-do-01",
-    "pause_ms": 400,
-    "text": "Every promise in the interface is read off one invariant — Consistent — which step_ok_consistent proves survives each of the seven edges. active-witness-unique and absent-witness-unique are its supply conjuncts read one state at a time, supply-matches-leaf-state is the same fact stated as a biconditional, witness-kinds-exclude follows from the supply conjuncts plus a key having one leaf, and terminal-attestation-sound is its terminal-holding conjunct. So a mutation that breaks a supply law breaks the invariant's corresponding conjunct, and everything downstream of it fails with it.",
-    "v": "3b1523bcd6d6"
-   },
-   {
-    "index": 2,
-    "name": "docs-mutants/why-the-kills-land-where-they-do-02",
-    "pause_ms": 400,
-    "text": "attest-active-key is the one worth reading closely. Dropping the terminal requirement from the read does not break arithmetic; it breaks a derivation. The witnessTerminal branch establishes that the attested key's leaf is terminal by reading it out of the verified read. With the mutation the read no longer carries that fact, so the attestation can no longer be shown sound — which is exactly terminal-attestation-sound failing, and exactly the defect the mutation describes.",
-    "v": "ae1c8b53e746"
-   }
-  ]
- },
- "docs/naming-demo.md": {
-  "archived-broader-model-evidence": [
-   {
-    "index": 0,
-    "name": "docs-naming-demo/archived-broader-model-evidence-00",
-    "pause_ms": 500,
-    "text": "Archived broader model evidence.",
-    "v": "9a23f3372f63"
-   }
-  ],
-  "finding-alice": [
-   {
-    "index": 0,
-    "name": "docs-naming-demo/finding-alice-00",
-    "pause_ms": 500,
-    "text": "Finding alice.",
-    "v": "b2a59523559e"
-   },
-   {
-    "index": 1,
-    "name": "docs-naming-demo/finding-alice-01",
-    "pause_ms": 400,
-    "text": "The asset name IS the registry key. Given the registry's active policy id, alice's witness is that policy plus the raw bytes of alice — no hash, no controller, no registry token, no prefix and no incarnation enters it:",
-    "v": "29f51c9bb9ae"
-   },
-   {
-    "index": 2,
-    "name": "docs-naming-demo/finding-alice-02",
-    "pause_ms": 400,
-    "text": "That is the naming partition's convention, where the witness policies are the absent, active and terminal policies. The registry partition deployed on preprod names its representative differently: by the BLAKE2b-256 digest of the spelling under the representative policy, as the preprod record shows. The two queries are not interchangeable; each finds a token only under its own partition's policies.",
-    "v": "5e95572e8a46"
-   },
-   {
-    "index": 3,
-    "name": "docs-naming-demo/finding-alice-03",
-    "pause_ms": 400,
-    "text": "The following Koios queries are a historical diagnostic for the earlier preprod naming walkthrough. The dated naming and escrow plays require an indexed read path with a recorded chain point and freshness; registry follower #107 tracks that path. A Koios response alone does not satisfy those plays.",
-    "v": "7482b9fd7a7e"
-   },
-   {
-    "index": 4,
-    "name": "docs-naming-demo/finding-alice-04",
-    "pause_ms": 400,
-    "text": "For that historical query, substitute the published active policy id and use Koios Asset UTxOs:",
-    "v": "6ac39e45849a"
-   },
-   {
-    "index": 5,
-    "name": "docs-naming-demo/finding-alice-05",
-    "pause_ms": 400,
-    "text": "The holding address and inline datum identify the live record or the completion-only custody a pending ending put it in. No trie lookup and no creation-controller lookup is needed to locate a live witness.",
-    "v": "0626b8785229"
-   },
-   {
-    "index": 6,
-    "name": "docs-naming-demo/finding-alice-06",
-    "pause_ms": 400,
-    "text": "The three policies share that one convention, so the same query answers three different questions about the same name. A witness under the absent policy says somebody has staked a deposit on the name being free. A witness under the active policy says the name is booked, and its holding output is the record. A witness under the terminal policy says the name is over — anyone may ask for one by folding a read, and nobody can ever make the name live again.",
-    "v": "bae2e51441ab"
-   },
-   {
-    "index": 7,
-    "name": "docs-naming-demo/finding-alice-07",
-    "pause_ms": 400,
-    "text": "The token's presence at a live output is the witness being read; this example does not query the root or walk history. A connected demonstration also records which indexed chain state supplied that output.",
-    "v": "1e255bafcb89"
-   }
-  ],
-  "fixture-fields-and-finite-model-limits": [
-   {
-    "index": 0,
-    "name": "docs-naming-demo/fixture-fields-and-finite-model-limits-00",
-    "pause_ms": 500,
-    "text": "Fixture fields and finite-model limits.",
-    "v": "593be3a30ac8"
-   },
-   {
-    "index": 1,
-    "name": "docs-naming-demo/fixture-fields-and-finite-model-limits-01",
-    "pause_ms": 400,
-    "text": "Values are finite-model fixtures, not product or economic policy: the profile fixes where a deposit returns and invents no fee, bond, price, expiry, deposit-amount or refund-value rule. alice maps to one frozen demo key. The request stores a refund address inside its Insert commitment, and cancellation can only copy that address. Continue to the lifecycle page for destination maintenance, committed-controller recovery, and split retirement through either the controller or published quorum. Retirement-request withdrawal is a distinct refusal case. The naming proposal's generic output payload stays the generic demo constants; fixtures are first-class fields beside it, never packed into it.",
-    "v": "72482d33991b"
-   }
-  ],
-  "how-a-name-moves-in-the-registry": [
-   {
-    "index": 0,
-    "name": "docs-naming-demo/how-a-name-moves-in-the-registry-00",
-    "pause_ms": 500,
-    "text": "How a name moves in the registry.",
-    "v": "bae972d812f5"
-   },
-   {
-    "index": 1,
-    "name": "docs-naming-demo/how-a-name-moves-in-the-registry-01",
-    "pause_ms": 400,
-    "text": "Naming is an instance of the registry, not a layer bolted beside it. A name is one key in the registry's authenticated map, and the value of that key is a single byte:",
-    "v": "047f6d50fc3b"
-   },
-   {
-    "index": 2,
-    "name": "docs-naming-demo/how-a-name-moves-in-the-registry-02",
-    "pause_ms": 400,
-    "text": "Seven requests move a key, and nothing else does. Each one moves a witness token, and the witness is what a reader looks at — never the root:",
-    "v": "c12b5b582a3d"
-   },
-   {
-    "index": 3,
-    "name": "docs-naming-demo/how-a-name-moves-in-the-registry-03",
-    "pause_ms": 400,
-    "text": "Every other shape is refused before any proof is checked, and each refusal carries one trace label naming its own reason.",
-    "v": "72e9445f59a5"
-   },
-   {
-    "index": 4,
-    "name": "docs-naming-demo/how-a-name-moves-in-the-registry-04",
-    "pause_ms": 400,
-    "text": "The witnesses obey four laws:",
-    "v": "c0cf06381eef"
-   },
-   {
-    "index": 5,
-    "name": "docs-naming-demo/how-a-name-moves-in-the-registry-05",
-    "pause_ms": 300,
-    "text": "A witness moves only inside a fold. A mint or a burn under the absent, active or terminal policy is accepted only in a transaction that spends the registry's state token and folds it.",
-    "v": "35a1c332092c"
-   },
-   {
-    "index": 6,
-    "name": "docs-naming-demo/how-a-name-moves-in-the-registry-06",
-    "pause_ms": 300,
-    "text": "The fold decides how many, and where. It sums the witness column of the requests it consumed, and the transaction's mint under the three policies must equal that sum exactly — asset by asset, quantity by quantity. Nothing else may move under them.",
-    "v": "7f503c5e6231"
-   },
-   {
-    "index": 7,
-    "name": "docs-naming-demo/how-a-name-moves-in-the-registry-07",
-    "pause_ms": 300,
-    "text": "A terminal witness is its holder's to destroy. It says a name is over, forever; burning your own copy costs the registry nothing, so that burn alone needs no fold.",
-    "v": "da6d63c19e9e"
-   },
-   {
-    "index": 8,
-    "name": "docs-naming-demo/how-a-name-moves-in-the-registry-08",
-    "pause_ms": 300,
-    "text": "The asset name is the registry key. Identity is the pair of policy and key, so a name recreated after a delete carries the same identity again.",
-    "v": "70ca78b2a345"
-   },
-   {
-    "index": 9,
-    "name": "docs-naming-demo/how-a-name-moves-in-the-registry-09",
-    "pause_ms": 400,
-    "text": "One edge carries a rule of its own: ending a name needs the committed recovery key or the retirement quorum, and never the current control key alone.",
-    "v": "22eb4f9fcf01"
-   },
-   {
-    "index": 10,
-    "name": "docs-naming-demo/how-a-name-moves-in-the-registry-10",
-    "pause_ms": 400,
-    "text": "No application script at fold time. The naming validator is not executed by a fold at all. What it does instead is certify an edge in advance: it mints one approval whose asset name binds the edge, the key, the owner and the destination, the requester attaches that approval to their request, and the cage recomputes the name from the request itself and refuses anything that does not match. A folder is permissionless and can therefore be anyone, which is exactly why the destination is bound: without it a folder could route your name to itself.",
-    "v": "a6be9223773d"
-   }
-  ],
-  "how-the-pieces-relate": [
-   {
-    "index": 0,
-    "name": "docs-naming-demo/how-the-pieces-relate-00",
-    "pause_ms": 500,
-    "text": "How the pieces relate.",
-    "v": "b848683390f1"
-   },
-   {
-    "index": 1,
-    "name": "docs-naming-demo/how-the-pieces-relate-01",
-    "pause_ms": 400,
-    "text": "Naming does not re-implement the registry and the page does not re-implement naming. The previous simulator did re-implement it, in about nine hundred lines of JavaScript, and when the Lean moved those lines went on describing a model that no longer existed while still reporting green. What the page transcribes is the replay: every row is a verdict the Lean computed, and the page recomputes or re-checks it in front of you.",
-    "v": "75492e93fa88"
-   }
-  ],
-  "naming-book-a-name-retire-it-attest-it": [
-   {
-    "index": 0,
-    "name": "docs-naming-demo/naming-book-a-name-retire-it-attest-it-00",
-    "pause_ms": 500,
-    "text": "Naming: book a name, retire it, attest it.",
-    "v": "260a3c3d161b"
-   },
-   {
-    "index": 1,
-    "name": "docs-naming-demo/naming-book-a-name-retire-it-attest-it-01",
-    "pause_ms": 400,
-    "text": "As a reader of current permanent contract, I can register a fresh key and terminate it permanently. The active model and compiled state support exactly tags 1 (insertActive) and 3 (updateTerminal); tags 0, 2, 4, 5 and 6 are explicitly refused, including caller-constructed and mixed requests. Application payload maintenance is separate. Current sources and receipts must be bound to the revised candidate.",
-    "v": "ee0a7c6265cc"
-   },
-   {
-    "index": 2,
-    "name": "docs-naming-demo/naming-book-a-name-retire-it-attest-it-02",
-    "pause_ms": 400,
-    "text": "The detailed walkthrough and measurements below are archived broader model evidence, retained to explain the earlier contract; their broader success claims do not apply to permanent contract. Historical sources are retained on preserve/m2/pre-m1-source-removal. The active theorem manifest and the exact scope-retirement record explain the changed law and denominator. Unmet consumer requirements stay uncovered.",
-    "v": "6f41878369c9"
-   }
-  ],
-  "status-of-this-candidate": [
-   {
-    "index": 0,
-    "name": "docs-naming-demo/status-of-this-candidate-00",
-    "pause_ms": 500,
-    "text": "Status of this candidate.",
-    "v": "90731301538a"
-   },
-   {
-    "index": 1,
-    "name": "docs-naming-demo/status-of-this-candidate-01",
-    "pause_ms": 400,
-    "text": "The naming profile is an unaccepted candidate: proven in Lean, replayed in the simulator, and playable in the browser. The Nix-built documentation archive packages its raw model, corpus, replay inputs, and exact identities for review; building that bundle is not release publication or on-chain acceptance. The live preview is bound to the pull-request head, and the served page states the candidate is unaccepted.",
-    "v": "571663d050dd"
-   }
-  ],
-  "what-is-proved-and-what-is-checked-here": [
-   {
-    "index": 0,
-    "name": "docs-naming-demo/what-is-proved-and-what-is-checked-here-00",
-    "pause_ms": 500,
-    "text": "What is proved and what is checked here.",
-    "v": "0f070575cec8"
-   },
-   {
-    "index": 1,
-    "name": "docs-naming-demo/what-is-proved-and-what-is-checked-here-01",
-    "pause_ms": 400,
-    "text": "The naming instance carries seven theorem declarations, its lifecycle nine and its wire encoding five — twenty-one in all, each PROVED in Lean from the standard axioms alone and each in its own manifest with its own compiled gate, separate from the registry's forty-four. The theorem manifest derives these counts from the manifests rather than stating them by hand. The naming statements are stated as characterisations rather than one-way implications: the retirement rule says exactly when retirement is certified, so a model that certified more than the rule allows fails them as surely as one that certified less.",
-    "v": "ebf550229d51"
-   },
-   {
-    "index": 2,
-    "name": "docs-naming-demo/what-is-proved-and-what-is-checked-here-02",
-    "pause_ms": 400,
-    "text": "The page replays twenty-four naming rows and twenty-one lifecycle rows, and requires the verdict it computes to be the verdict the Lean exported.",
-    "v": "3b42db19cfce"
-   },
-   {
-    "index": 3,
-    "name": "docs-naming-demo/what-is-proved-and-what-is-checked-here-03",
-    "pause_ms": 400,
-    "text": "Finite checks are finite: the corpus replays measure the transcription on its rows; they do not prove the quantified statements, and they do not make the candidate accepted.",
-    "v": "0bda81cbf4c7"
-   }
-  ],
-  "what-you-can-do": [
-   {
-    "index": 0,
-    "name": "docs-naming-demo/what-you-can-do-00",
-    "pause_ms": 500,
-    "text": "What you can do.",
-    "v": "f0d1ab30d26c"
-   },
-   {
-    "index": 1,
-    "name": "docs-naming-demo/what-you-can-do-01",
-    "pause_ms": 400,
-    "text": "Watch the journey. Five steps, played rather than asserted:",
-    "v": "f6cf137aac2d"
-   },
-   {
-    "index": 2,
-    "name": "docs-naming-demo/what-you-can-do-02",
-    "pause_ms": 300,
-    "text": "The controller books alice. One insertActive, certified by the controller's signature. The active token goes to the record.",
-    "v": "505fb817cca5"
-   },
-   {
-    "index": 3,
-    "name": "docs-naming-demo/what-you-can-do-03",
-    "pause_ms": 300,
-    "text": "A quorum retires it. One updateTerminal. The active token is burned and the leaf can never move again. The control key alone cannot do this — the rule is the committed recovery key revealed and signing, or a distinct-member quorum, and the control key on its own is neither.",
-    "v": "60e42aa8db6c"
-   },
-   {
-    "index": 4,
-    "name": "docs-naming-demo/what-you-can-do-04",
-    "pause_ms": 300,
-    "text": "A folded read mints the Over witness. witnessTerminal needs no approval at all: anyone may attest a retired name.",
-    "v": "c271948dd4e6"
-   },
-   {
-    "index": 5,
-    "name": "docs-naming-demo/what-you-can-do-05",
-    "pause_ms": 300,
-    "text": "And another. The terminal witness is plural, because the attestation is a read. Both copies are true.",
-    "v": "4e6586d2c582"
-   },
-   {
-    "index": 6,
-    "name": "docs-naming-demo/what-you-can-do-06",
-    "pause_ms": 300,
-    "text": "Burn them both. The leaf is still terminal. An attestation says something that stays true whether or not you keep the token.",
-    "v": "720962de3dbc"
-   },
-   {
-    "index": 7,
-    "name": "docs-naming-demo/what-you-can-do-07",
-    "pause_ms": 400,
-    "text": "Read the replay below it. Twenty-four naming rows across six sections — spellings, queues, folds, transitions, resolutions and replays — each one a verdict the Lean computed, recomputed in your browser. Two of them carry the amended retirement rule — the control key alone never retires, and the quorum does — and a third shows the other route, retirement by the recovery key.",
-    "v": "113111990715"
-   },
-   {
-    "index": 8,
-    "name": "docs-naming-demo/what-you-can-do-08",
-    "pause_ms": 400,
-    "text": "Then the lifecycle. Twenty-one more rows: seeding the consumer with its pinned policies, moving a payment destination while the registry root stays put, revealing the committed recovery key, and both retirement routes with the refusals that guard them.",
-    "v": "f3f8ca79e8b4"
-   }
-  ],
-  "what-you-see-when-it-is-refused": [
-   {
-    "index": 0,
-    "name": "docs-naming-demo/what-you-see-when-it-is-refused-00",
-    "pause_ms": 500,
-    "text": "What you see when it is refused.",
-    "v": "65c9e878e0b4"
-   },
-   {
-    "index": 1,
-    "name": "docs-naming-demo/what-you-see-when-it-is-refused-01",
-    "pause_ms": 400,
-    "text": "Every refusal names its intended condition. A generic exception is a defect.",
-    "v": "46f2944f2d85"
-   },
-   {
-    "index": 2,
-    "name": "docs-naming-demo/what-you-see-when-it-is-refused-02",
-    "pause_ms": 400,
-    "text": "The last two are the ones worth trying by hand in the generic profile's free play. The retirement row and the delete row are deliberately different names: naming defines no delete, and a retirement that met neither authorization route is a different failure that must not wear delete's name.",
-    "v": "a81e17e7da90"
-   }
-  ],
-  "who-this-is-for": [
-   {
-    "index": 0,
-    "name": "docs-naming-demo/who-this-is-for-00",
-    "pause_ms": 500,
-    "text": "Who this is for.",
-    "v": "9a2e88a7d9f6"
-   },
-   {
-    "index": 1,
-    "name": "docs-naming-demo/who-this-is-for-01",
-    "pause_ms": 400,
-    "text": "A reviewer who wants to play the naming profile in the docs rather than read a proposed walkthrough. Naming is an instance of the registry, not a second model: the same seven edges, the same tokens, the same refusals, with naming's own rule about who may certify what.",
-    "v": "5a5e5c2fcfb9"
-   },
-   {
-    "index": 2,
-    "name": "docs-naming-demo/who-this-is-for-02",
-    "pause_ms": 400,
-    "text": "Open the simulator and switch the profile picker to Naming — the Over witness.",
-    "v": "1ff5cdbd2e28"
-   }
-  ]
- },
- "docs/naming-lifecycle.md": {
-  "book-a-name": [
-   {
-    "index": 0,
-    "name": "docs-naming-lifecycle/book-a-name-00",
-    "pause_ms": 500,
-    "text": "Book a name.",
-    "v": "8de6b4962461"
-   },
-   {
-    "index": 1,
-    "name": "docs-naming-lifecycle/book-a-name-01",
-    "pause_ms": 400,
-    "text": "Alice signs the naming policy's approval mint for registration. Its asset name binds the key, owner and the application's destination address and datum hash. She places the approval and deposit in a registry request. Any folder can then fold it. The fold delivers the active witness and booked datum to the approved address. The registration deposit accompanies that carrier; it is not a separate refund to Alice. A wrong tuple, policy or quantity refuses.",
-    "v": "9c250af3d0ce"
-   }
-  ],
-  "change-the-payment-destination": [
-   {
-    "index": 0,
-    "name": "docs-naming-lifecycle/change-the-payment-destination-00",
-    "pause_ms": 500,
-    "text": "Change the payment destination.",
-    "v": "9eb5fee774ae"
-   },
-   {
-    "index": 1,
-    "name": "docs-naming-lifecycle/change-the-payment-destination-01",
-    "pause_ms": 400,
-    "text": "The current controller may set, replace or clear one optional payment destination. Routing data need not belong to the controller. The successor preserves the registry identity, key, active witness, controller, next-control commitment and retirement quorum. Missing or wrong controller authorization, multiple destinations and altered control fields refuse.",
-    "v": "a64bbf78d8dd"
-   }
-  ],
-  "consumer-and-ledger-boundary": [
-   {
-    "index": 0,
-    "name": "docs-naming-lifecycle/consumer-and-ledger-boundary-00",
-    "pause_ms": 500,
-    "text": "Consumer and ledger boundary.",
-    "v": "6e9d1239fc2a"
-   },
-   {
-    "index": 1,
-    "name": "docs-naming-lifecycle/consumer-and-ledger-boundary-01",
-    "pause_ms": 400,
-    "text": "The design-time consumer contract is bound to lambdasistemi/cardano-keri commit 14a64a4681d3e429fab5877062b5c476c2a4bfe2. It uses Conway inline-datum and required-signer precedents without importing KERI schemas or claiming compiled interoperability. Singular publishes its constructor indices and field order, binds one registry identity to an application and refuses a rival registry seed.",
-    "v": "a4e1f91840f5"
-   },
-   {
-    "index": 2,
-    "name": "docs-naming-lifecycle/consumer-and-ledger-boundary-02",
-    "pause_ms": 400,
-    "text": "The historical Cage types establish encodings and precedents. KERI pre-rotation commits to key digests; naming recovery commits to a complete canonical address.",
-    "v": "20762fbca11e"
-   }
-  ],
-  "evidence-and-release-status": [
-   {
-    "index": 0,
-    "name": "docs-naming-lifecycle/evidence-and-release-status-00",
-    "pause_ms": 500,
-    "text": "Evidence and release status.",
-    "v": "f6e029f1d190"
-   },
-   {
-    "index": 1,
-    "name": "docs-naming-lifecycle/evidence-and-release-status-01",
-    "pause_ms": 400,
-    "text": "The lifecycle panel inspects maintenance, recovery and both termination routes, including their computed refusal reasons. The downloadable archive binds model, scenarios, replay code, toolchain inputs and identity ledgers with a SHA-256 manifest. Candidate results distinguish the registry's compiled and connected CLI checks from these naming design observations.",
-    "v": "b4559cc5ffe2"
-   },
-   {
-    "index": 2,
-    "name": "docs-naming-lifecycle/evidence-and-release-status-02",
-    "pause_ms": 400,
-    "text": "Lean proofs, finite model replay, inspected lifecycle rows, a built archive and a live preview do not establish a deployed naming validator or downstream consumer acceptance. Uncovered consumer requirements remain visible.",
-    "v": "8b715f203639"
-   }
-  ],
-  "historical-model-reference": [
-   {
-    "index": 0,
-    "name": "docs-naming-lifecycle/historical-model-reference-00",
-    "pause_ms": 500,
-    "text": "Historical model reference.",
-    "v": "cb1876c9e2f0"
-   },
-   {
-    "index": 1,
-    "name": "docs-naming-lifecycle/historical-model-reference-01",
-    "pause_ms": 400,
-    "text": "The naming application has been retired from this release. This page describes the retained earlier Lean model and simulator; it is not a guide to the current commands or validators.",
-    "v": "1687d189013b"
-   }
-  ],
-  "how-a-name-moves-in-the-registry": [
-   {
-    "index": 0,
-    "name": "docs-naming-lifecycle/how-a-name-moves-in-the-registry-00",
-    "pause_ms": 500,
-    "text": "How a name moves in the registry.",
-    "v": "f34da29649a6"
-   },
-   {
-    "index": 1,
-    "name": "docs-naming-lifecycle/how-a-name-moves-in-the-registry-01",
-    "pause_ms": 400,
-    "text": "A name is one key in the registry's authenticated map. Registration changes an unknown key to Active and delivers an active witness to its bound destination. Termination burns that witness and changes the key to Terminal permanently. The legacy Absent byte remains a raw encoding for invalid-context controls; registration cannot create it. The five excluded operations are refused.",
-    "v": "42d83cbe1051"
-   },
-   {
-    "index": 2,
-    "name": "docs-naming-lifecycle/how-a-name-moves-in-the-registry-02",
-    "pause_ms": 400,
-    "text": "The earlier registry contract has a fixed compiled admission boundary. Naming certifies each supported edge in advance by minting an approval binding the edge, key, owner and destination. The registry recomputes that binding. Folding is permissionless; approval prevents the folder from substituting another destination. Naming's separate application validator governs maintenance, recovery and authorization to retire.",
-    "v": "9b2409b7121d"
-   }
-  ],
-  "recover-with-the-committed-next-controller": [
-   {
-    "index": 0,
-    "name": "docs-naming-lifecycle/recover-with-the-committed-next-controller-00",
-    "pause_ms": 500,
-    "text": "Recover with the committed next controller.",
-    "v": "7ea18ad72cd5"
-   },
-   {
-    "index": 1,
-    "name": "docs-naming-lifecycle/recover-with-the-committed-next-controller-01",
-    "pause_ms": 400,
-    "text": "Recovery reveals the complete next controller address, verifies its stored commitment and requires its payment-key signer. The current controller need not sign. The successor retains the active witness, installs the revealed controller and stores a fresh next commitment. The consumed commitment cannot be replayed.",
-    "v": "c7718ae624c1"
-   },
-   {
-    "index": 2,
-    "name": "docs-naming-lifecycle/recover-with-the-committed-next-controller-02",
-    "pause_ms": 400,
-    "text": "The commitment is BLAKE2b-256(\"singular/naming/next-control/v1\" || 0x00 || canonical-address-bytes). It covers the complete binary Cardano address, including header and network. Canonical base and enterprise addresses with payment-key credentials are supported; script payment credentials cannot authorize recovery. Wrong-domain, wrong-address and wrong-payment-key controls accompany the positive vectors.",
-    "v": "f3df29483ceb"
-   }
-  ],
-  "refused-historical-encodings": [
-   {
-    "index": 0,
-    "name": "docs-naming-lifecycle/refused-historical-encodings-00",
-    "pause_ms": 500,
-    "text": "Refused historical encodings.",
-    "v": "45977afcd99f"
-   },
-   {
-    "index": 1,
-    "name": "docs-naming-lifecycle/refused-historical-encodings-01",
-    "pause_ms": 400,
-    "text": "The wire format retains insertAbsent, updateActive, deleteAbsent, deleteActive and witnessTerminal with their original tags. The current compiled registry refuses all five, including mixed batches and caller-constructed contexts. The archived broader design preserves earlier absence, deletion and witnessing stories; they are not current supported operations.",
-    "v": "5038f19b760a"
-   }
-  ],
-  "retire-permanently": [
-   {
-    "index": 0,
-    "name": "docs-naming-lifecycle/retire-permanently-00",
-    "pause_ms": 500,
-    "text": "Retire permanently.",
-    "v": "a91e0cedf5d5"
-   },
-   {
-    "index": 1,
-    "name": "docs-naming-lifecycle/retire-permanently-01",
-    "pause_ms": 400,
-    "text": "Termination needs the committed recovery key or a distinct-member retirement quorum. The current control key alone cannot authorize it. This preserves the holder's recovery remedy if the everyday key is stolen.",
-    "v": "495fcc2fd8be"
-   },
-   {
-    "index": 2,
-    "name": "docs-naming-lifecycle/retire-permanently-02",
-    "pause_ms": 400,
-    "text": "Authorization moves the active witness into completion-only application custody, mints a bound terminating approval and creates the completion request. Anyone may fold that request: the application custody is spent, the witness is burned and the key becomes Terminal. This completion custody is distinct from the removed registry Absent-custody implementation.",
-    "v": "e2fe3be9fc40"
-   },
-   {
-    "index": 3,
-    "name": "docs-naming-lifecycle/retire-permanently-03",
-    "pause_ms": 400,
-    "text": "Terminal witnessing is refused by this contract. A terminal name has no remaining supported transition. Retirement prevents name-based resolution but cannot retract a raw address someone already saved.",
-    "v": "ff375adf3790"
-   }
-  ],
-  "who-this-is-for": [
-   {
-    "index": 0,
-    "name": "docs-naming-lifecycle/who-this-is-for-00",
-    "pause_ms": 500,
-    "text": "Who this is for.",
-    "v": "16898d53af5a"
-   },
-   {
-    "index": 1,
-    "name": "docs-naming-lifecycle/who-this-is-for-01",
-    "pause_ms": 400,
-    "text": "A name holder wants to change where a live name receives payments, recover after losing the current control key, or end the name permanently. A new participant can register an unknown name. Registry transitions are registration and permanent termination; application maintenance and recovery preserve the registry root.",
-    "v": "b4f9c16239d3"
-   },
-   {
-    "index": 2,
-    "name": "docs-naming-lifecycle/who-this-is-for-02",
-    "pause_ms": 400,
-    "text": "Open the simulator and select Naming — permanent retirement. Its lifecycle panel inspects the rows computed by Lean. This is design-time evidence, not an observed ledger execution.",
-    "v": "eb1f946fa58b"
    }
   ]
  },
@@ -6415,8 +4986,8 @@
     "index": 1,
     "name": "docs-overview/responsibilities-and-terminology-01",
     "pause_ms": 400,
-    "text": "Historical design. This page records the earlier Insert/Update/Delete design and its broader broader model successor. The active permanent permanent contract model supports only insertActive and updateTerminal. Historical tags 0, 2, 4, 5 and 6 encode refused actions, not available features. Current supported behavior describes permanent contract; archived source and evidence remain on preserve/m2/pre-m1-source-removal.",
-    "v": "739c1e05a319"
+    "text": "Historical design. This page records the earlier Insert/Update/Delete design and its broader broader model successor. The active permanent permanent contract model supports only insertActive and updateTerminal. Historical tags 0, 2, 4, 5 and 6 encode refused actions, not available features. Current supported behavior (historical) describes permanent contract; archived source and evidence remain on preserve/m2/pre-m1-source-removal.",
+    "v": "b499c555586c"
    },
    {
     "index": 2,
@@ -6759,8 +5330,8 @@
     "index": 2,
     "name": "docs-preprod/finding-alice-02",
     "pause_ms": 400,
-    "text": "Find the live UTxO on preprod with the Koios Asset UTxOs query from the naming walkthrough:",
-    "v": "3d13016f9207"
+    "text": "Find the live UTxO on preprod with the Koios Asset UTxOs query from the naming walkthrough (historical):",
+    "v": "c25775a3ea70"
    }
   ],
   "reproduce-it-yourself": [
@@ -6959,8 +5530,8 @@
     "index": 1,
     "name": "docs-prior-art/coverage-boundary-01",
     "pause_ms": 400,
-    "text": "These candidates warrant component-level evaluation once a reuse target is concrete. License compatibility, toolchain fit and correctness require their own checks; this comparison grants none of them. Reading a validator establishes what its source says, not what a deployment does. Singular remains a design with unimplemented conformance obligations. Continue with the naming walkthrough or protocol specification.",
-    "v": "cf2d994d5b39"
+    "text": "These candidates warrant component-level evaluation once a reuse target is concrete. License compatibility, toolchain fit and correctness require their own checks; this comparison grants none of them. Reading a validator establishes what its source says, not what a deployment does. Singular remains a design with unimplemented conformance obligations. Continue with the naming walkthrough (historical) or protocol specification.",
+    "v": "37e7c60202a8"
    }
   ],
   "evidence-and-useful-boundaries": [
@@ -7651,8 +6222,8 @@
     "index": 10,
     "name": "docs-retirement/what-you-can-do-10",
     "pause_ms": 400,
-    "text": "The last point is worth stating plainly: the fold asks no application to sign a retirement. The registry decides, from the entry and the token, and nothing else. What an application can do is decide who may build the request in the first place. The naming instance does exactly that: ending a name needs the committed recovery key or the retirement quorum, never the current control key alone, and the naming validator refuses any other request before it exists to be folded. Recover control and retire names on a real ledger shows that rule enforced on chain.",
-    "v": "7af6405d477d"
+    "text": "The last point is worth stating plainly: the fold asks no application to sign a retirement. The registry decides, from the entry and the token, and nothing else. What an application can do is decide who may build the request in the first place. The naming instance does exactly that: ending a name needs the committed recovery key or the retirement quorum, never the current control key alone, and the naming validator refuses any other request before it exists to be folded. Recover control and retire names on a real ledger (historical) shows that rule enforced on chain.",
+    "v": "4f6ca3089b98"
    }
   ],
   "when-it-is-refused-and-why-the-reason-matters": [
@@ -7911,179 +6482,6 @@
     "pause_ms": 400,
     "text": "The journey reads the included transactions independently: the fold consumes that registration's approval, burns it, mints the key's token into a holding carrying the booked payload and exact deposit, and spends and continues Erin's own state with a changed root. Altering the observation to name the first registry's state or to remove the holding's deposit fails the same check. The complete journey also checks that no transaction publishes a witness policy or adds a witness pin.",
     "v": "e97d8c2c4b5d"
-   }
-  ]
- },
- "docs/simulation.md": {
-  "play-the-simulation": [
-   {
-    "index": 0,
-    "name": "docs-simulation/play-the-simulation-00",
-    "pause_ms": 500,
-    "text": "Play the simulation.",
-    "v": "dd1bdc690294"
-   },
-   {
-    "index": 1,
-    "name": "docs-simulation/play-the-simulation-01",
-    "pause_ms": 400,
-    "text": "Open the playable Singular simulator. It is one self-contained page: no framework, no network, no server. Everything it computes it computes in front of you.",
-    "v": "a48f58c36aab"
-   },
-   {
-    "index": 2,
-    "name": "docs-simulation/play-the-simulation-02",
-    "pause_ms": 400,
-    "text": "The page is a transcription of the frozen Lean model into JavaScript, so that a reader can play what the proofs are about. Where the two disagree the Lean is right and the page is a defect — which is exactly what the corpus replay on the page is for.",
-    "v": "8186d1b27522"
-   },
-   {
-    "index": 3,
-    "name": "docs-simulation/play-the-simulation-03",
-    "pause_ms": 400,
-    "text": "The active engine now mirrors permanent permanent contract. Earlier absence, deletion and terminal-attestation journeys are retired; their encodings are refusal controls.",
-    "v": "8afc01d35ad5"
-   }
-  ],
-  "reproduce-the-checks": [
-   {
-    "index": 0,
-    "name": "docs-simulation/reproduce-the-checks-00",
-    "pause_ms": 500,
-    "text": "Reproduce the checks.",
-    "v": "52528d97ff79"
-   },
-   {
-    "index": 1,
-    "name": "docs-simulation/reproduce-the-checks-01",
-    "pause_ms": 400,
-    "text": "From a source checkout, inside the development shell:",
-    "v": "136f905ef481"
-   },
-   {
-    "index": 2,
-    "name": "docs-simulation/reproduce-the-checks-02",
-    "pause_ms": 400,
-    "text": "just simulator runs three commands. node simulator/build.mjs --check rebuilds the standalone page from its sources and fails if the committed index.html differs, so the page you play is the page in the repository. node simulator/gate.mjs replays the corpus outside the browser and reports what it covered:",
-    "v": "d8b045760514"
-   },
-   {
-    "index": 3,
-    "name": "docs-simulation/reproduce-the-checks-03",
-    "pause_ms": 400,
-    "text": "The command reports computed row counts and labels each corpus section as executed behavior or inspected evidence. Registry cases and codecs are executed; request-exit payment rows, composed transaction rows, naming and lifecycle observations are inspected Lean evidence. This page has no request-exit engine. Five laws have applicable finite transition examples. Terminal immutability and terminal-attestation soundness retain Lean proofs but have no admitted-transition example with their terminal hypotheses; the page reports them as proved only.",
-    "v": "86c89a01ebab"
-   },
-   {
-    "index": 4,
-    "name": "docs-simulation/reproduce-the-checks-04",
-    "pause_ms": 400,
-    "text": "node simulator/gate.mjs --selftest then seeds a defect and requires the gate to reject it. A checker that has never been seen to fail is not evidence, so the failing run is part of the passing one.",
-    "v": "dbf4be9c97cf"
-   },
-   {
-    "index": 5,
-    "name": "docs-simulation/reproduce-the-checks-05",
-    "pause_ms": 400,
-    "text": "just browser loads the built page in Chromium, serves nothing but index.html — every other request returns 404, which is how the page's self-containment is checked rather than asserted — plays the journeys, drives free play including the wrong-tuple approval, reads the refusal table and verifies the naming journey. A page error or an outbound network request fails the run.",
-    "v": "1211815275b5"
-   }
-  ],
-  "what-the-page-proves-and-what-it-does-not": [
-   {
-    "index": 0,
-    "name": "docs-simulation/what-the-page-proves-and-what-it-does-not-00",
-    "pause_ms": 500,
-    "text": "What the page proves, and what it does not.",
-    "v": "1e78ecd3b47c"
-   },
-   {
-    "index": 1,
-    "name": "docs-simulation/what-the-page-proves-and-what-it-does-not-01",
-    "pause_ms": 400,
-    "text": "Every case in the corpus carries its input — the state before and the request — not just the answer, so the page recomputes each one from scratch and compares. The header line on the page reports the count it actually reproduced against the count it was given; a page that silently skipped cases would show a smaller denominator, and one that skipped all of them would show zero rather than passing.",
-    "v": "08d17854f941"
-   },
-   {
-    "index": 2,
-    "name": "docs-simulation/what-the-page-proves-and-what-it-does-not-02",
-    "pause_ms": 400,
-    "text": "That establishes agreement on the exported inputs. It is not a proof of equivalence: a transcription can agree on every corpus row and still diverge on the next one. The proofs are in the Lean; the page is evidence that what you are playing is the thing that was proved about, over the cases the model itself chose to export.",
-    "v": "11aa5915e087"
-   },
-   {
-    "index": 3,
-    "name": "docs-simulation/what-the-page-proves-and-what-it-does-not-03",
-    "pause_ms": 400,
-    "text": "One caveat a reader should have, stated plainly. The Lean model, the corpus generator and this transcription were written by the same author. Agreement between them is therefore weaker evidence than agreement between independent implementations would be: a misunderstanding held while writing the model is very likely to be held again while transcribing it. The corpus replay catches transcription slips, which is what it is for. It cannot catch a shared misreading of the specification. The independent check on that is the audit of the Lean statements against the interface, not this page.",
-    "v": "20fdea182f7b"
-   }
-  ],
-  "what-you-can-do": [
-   {
-    "index": 0,
-    "name": "docs-simulation/what-you-can-do-00",
-    "pause_ms": 500,
-    "text": "What you can do.",
-    "v": "8fce0a9299ca"
-   },
-   {
-    "index": 1,
-    "name": "docs-simulation/what-you-can-do-01",
-    "pause_ms": 400,
-    "text": "Follow a journey. Seven stories: register a name, retire it permanently, and refuse each of the five excluded encodings. The retirement story also attempts to reuse the terminal key and observes key-exists. Registration mints an active token; retirement consumes it and leaves the key terminal.",
-    "v": "5b9bd132eda7"
-   },
-   {
-    "index": 2,
-    "name": "docs-simulation/what-you-can-do-02",
-    "pause_ms": 400,
-    "text": "Step with ⏮ ◀ ▶ ⏭. Stepping back unwinds the tokens as well as the leaf, so you can watch a witness appear and disappear. Where a story reaches a point that admits more than one continuation, the branches are offered and taking one does not destroy the other.",
-    "v": "249831e38676"
-   },
-   {
-    "index": 3,
-    "name": "docs-simulation/what-you-can-do-03",
-    "pause_ms": 400,
-    "text": "Try it yourself. Free play gives you the seven historical encodings: two supported edges and five refusals, a key, an owner, an output and a deposit, and a choice of approval: matching, right policy but wrong tuple, another policy, or none at all. The third and fourth are obviously refused. The second is the interesting one — an approval minted under the registry's own pinned policy, for a real request, that does not match this request's edge, key, owner and destination. It is refused, and a model that checked only the policy would admit it.",
-    "v": "ebcd05ffb3bd"
-   },
-   {
-    "index": 4,
-    "name": "docs-simulation/what-you-can-do-04",
-    "pause_ms": 400,
-    "text": "Read what is refused, by name. Seven encoded operations against four possible leaves give twenty-eight combinations. Two are admissible transitions; twenty-six are refused. Unsupported tags return edge-inadmissible before approval or trie effects. Supported tags still check the matching approval, leaf and active-token presence. Synthetic absent leaves are unreachable from permanent contract genesis and are shown as invalid-context controls.",
-    "v": "711da4fa8251"
-   },
-   {
-    "index": 5,
-    "name": "docs-simulation/what-you-can-do-05",
-    "pause_ms": 400,
-    "text": "See the naming instance. Switch to Naming — permanent retirement. The same engine registers and retires a name, then refuses terminal witnessing.",
-    "v": "bfba5eebe3f8"
-   }
-  ],
-  "where-the-model-itself-is": [
-   {
-    "index": 0,
-    "name": "docs-simulation/where-the-model-itself-is-00",
-    "pause_ms": 500,
-    "text": "Where the model itself is.",
-    "v": "491f849bb469"
-   },
-   {
-    "index": 1,
-    "name": "docs-simulation/where-the-model-itself-is-01",
-    "pause_ms": 400,
-    "text": "The executable model · the statements · the generated corpus · what each statement says · how the model was read back.",
-    "v": "5eeb14735906"
-   },
-   {
-    "index": 2,
-    "name": "docs-simulation/where-the-model-itself-is-02",
-    "pause_ms": 400,
-    "text": "The page models states, leaves, tokens and approvals. It does not execute validators, check signatures, build transactions or hold funds. Payment rows are inspected model output; they are not transfers of funds. Nothing here establishes that the compiled validator agrees with the model.",
-    "v": "fd1784ab7cce"
    }
   ]
  },
@@ -8900,137 +7298,6 @@
     "pause_ms": 400,
     "text": "The evaluation spike's cleanup-control uses Tasty, so it is outside this Hspec vocabulary.",
     "v": "974e170a78c3"
-   }
-  ]
- },
- "docs/theorems.md": {
-  "exact-declaration-inventory": [
-   {
-    "index": 0,
-    "name": "docs-theorems/exact-declaration-inventory-00",
-    "pause_ms": 500,
-    "text": "Exact declaration inventory.",
-    "v": "da9a1240447b"
-   },
-   {
-    "index": 1,
-    "name": "docs-theorems/exact-declaration-inventory-01",
-    "pause_ms": 400,
-    "text": "The reference-read rejection statements concern accepted economic transactions and reachable worlds. They preserve the registry and its state and singular tokens, require actual state reference reads, protect live registrations and terminations, and preserve the inputs of a disjoint fold. Tag burns count policy/name quantities without a hash-injectivity premise. The retained legacy rejection statements describe the superseded state-spending path followed by the deployed validators; their proof status does not certify the reference-read rule. Economic rejection and retraction now enforce refund floors. Each refund address receives at least the sum owed by its distinct consumed requests: held lovelace minus the declared tip on rejection, and all held lovelace on retraction. Registration cost is included in both returns. Retraction requires the refund address signature, one pending registration, its whole reclaim interval, both tags burned, no state read or spend, and removal from the pool. All actual outputs at an address contribute, including payments for another purpose at that address. Economic folds now enforce observed model balance, exact donation and declared carrier routing, with ordinary funding paying the fee. Gross processor reward equals the consumed tips: ordinary outputs plus fee equal actual ordinary inputs plus tips. Output categories follow holdings, including when addresses coincide. A pending termination has an accepted model transaction at any time under explicit folder willingness, funding and fee hypotheses. This is not ledger inclusion or builder acceptance. Trie-ready tags in the world match pending requests; application tags held by pending registrations match those registrations, with one each. No total application-tag supply outside Singular, ledger minimum, fee market or flood price is proved. These statements carry no implementation or ledger acceptance.",
-    "v": "2bf8cbd7e41c"
-   },
-   {
-    "index": 2,
-    "name": "docs-theorems/exact-declaration-inventory-02",
-    "pause_ms": 400,
-    "text": "The naming, lifecycle and wire declarations are listed in their own manifests: naming-theorem-debt.json, lifecycle-theorem-debt.json and wire-theorem-debt.json.",
-    "v": "7d48a223fe3f"
-   }
-  ],
-  "how-this-register-is-kept-honest": [
-   {
-    "index": 0,
-    "name": "docs-theorems/how-this-register-is-kept-honest-00",
-    "pause_ms": 500,
-    "text": "How this register is kept honest.",
-    "v": "c1c95a1a454e"
-   },
-   {
-    "index": 1,
-    "name": "docs-theorems/how-this-register-is-kept-honest-01",
-    "pause_ms": 400,
-    "text": "A compiled gate in Audit.lean runs while the library elaborates: it collects the axioms of every theorem in the frozen module and fails the build if any lies outside the three standard ones. Re-admitting a single theorem turns the build red, so a sorry cannot reach this page.",
-    "v": "2dcde2a7c09c"
-   },
-   {
-    "index": 2,
-    "name": "docs-theorems/how-this-register-is-kept-honest-02",
-    "pause_ms": 400,
-    "text": "tools/check_model.py then cross-checks three things that are easy to let drift apart: the source declarations against the manifests, the compiled axiom report against both, and — added after the drift below was found — this page against the manifest. The last one exists because it was missing: before it, the page claimed 41 declarations while the manifest held 44, and three proved statements appeared nowhere. The check is set equality, and the total above is derived from the manifest rather than typed by hand.",
-    "v": "42ec54f7afbb"
-   }
-  ],
-  "theorem-manifest": [
-   {
-    "index": 0,
-    "name": "docs-theorems/theorem-manifest-00",
-    "pause_ms": 500,
-    "text": "Theorem manifest.",
-    "v": "149cd639846c"
-   },
-   {
-    "index": 1,
-    "name": "docs-theorems/theorem-manifest-01",
-    "pause_ms": 400,
-    "text": "As a proof reviewer, use this register to identify exactly which statements the registry-mode model supplies, that each one is proved, and from which axioms. Every declaration keeps its qualified name and a digest of its statement text, so a changed or missing obligation is detectable rather than merely unlikely.",
-    "v": "085a5cc03434"
-   },
-   {
-    "index": 2,
-    "name": "docs-theorems/theorem-manifest-02",
-    "pause_ms": 400,
-    "text": "All 84 declarations of the registry's own statement module are PROVED from the standard axioms — propext, Classical.choice, Quot.sound — and nothing else. The naming instance adds 7, its lifecycle 9 and its wire encoding 5, for 105 in total, each with its own manifest and its own compiled gate.",
-    "v": "7bd623976768"
-   },
-   {
-    "index": 3,
-    "name": "docs-theorems/theorem-manifest-03",
-    "pause_ms": 400,
-    "text": "The operator-authorized source removal retires ten declarations about excluded success behavior. Their historical proofs and receipts remain on preserve/m2/pre-m1-source-removal; they do not certify permanent contract. The active model retains the applicable invariant, exit, refund, datum and public-fold laws. Public unmet consumer requirements remain uncovered.",
-    "v": "e7153270cca3"
-   }
-  ],
-  "what-the-seven-promises-are": [
-   {
-    "index": 0,
-    "name": "docs-theorems/what-the-seven-promises-are-00",
-    "pause_ms": 500,
-    "text": "What the seven promises are.",
-    "v": "a490a2cd6c82"
-   },
-   {
-    "index": 1,
-    "name": "docs-theorems/what-the-seven-promises-are-01",
-    "pause_ms": 400,
-    "text": "The interface states seven guarantees the registry makes for every application, and the model proves each one over states reachable from genesis by folds. Reachability is a hypothesis, not a weakening: over an arbitrary State value the supply laws are simply false.",
-    "v": "7ac597ac8ed1"
-   },
-   {
-    "index": 2,
-    "name": "docs-theorems/what-the-seven-promises-are-02",
-    "pause_ms": 400,
-    "text": "Every promise is reached through one invariant — Consistent — that the model proves survives each supported transition. That is why the statements read as consequences rather than as separate arguments.",
-    "v": "5b7573866eaf"
-   }
-  ],
-  "what-this-establishes-and-what-it-does-not": [
-   {
-    "index": 0,
-    "name": "docs-theorems/what-this-establishes-and-what-it-does-not-00",
-    "pause_ms": 500,
-    "text": "What this establishes, and what it does not.",
-    "v": "4c44104fde3c"
-   },
-   {
-    "index": 1,
-    "name": "docs-theorems/what-this-establishes-and-what-it-does-not-01",
-    "pause_ms": 400,
-    "text": "These proofs establish properties of the model. They do not establish that the model is the right model, and no build ever will: that is what the operator's rulings, the interface and the simulation are for. A theorem can also be true and narrower than its name, so the column above says what each one states rather than leaving the name to imply it.",
-    "v": "f49c274cfbea"
-   },
-   {
-    "index": 2,
-    "name": "docs-theorems/what-this-establishes-and-what-it-does-not-02",
-    "pause_ms": 400,
-    "text": "The model is abstract where the chain is concrete. Commitments stand for collision-free canonical commitments, the trie is a logical authenticated map, and an approval's asset name is a commitment over the tuple it scopes rather than a real BLAKE2b digest. The executable consumer supplies the real hashes; the model fixes the complete preimages.",
-    "v": "08143ca813a7"
-   },
-   {
-    "index": 3,
-    "name": "docs-theorems/what-this-establishes-and-what-it-does-not-03",
-    "pause_ms": 400,
-    "text": "Retraction admission is stated over a finite validity interval. Its bounds are read off the request script's in_phase2 and the ledger's validity interval, whose lower bound is included and upper bound excluded. The model's bounds are finite, so an interval open at either end is not a case it can be asked: that is a named non-goal, not a gap waiting on a ticket, and the chain side is pinned by the request validator's Aiken exact-outcome tests — they admit an owner-signed retraction at the window's included lower bound and where its excluded upper bound reaches the retraction time's end, and refuse it with the named not-phase2 one unit before the lower bound and one unit past the upper, and for an interval with no lower or no upper bound alike. The finite cases are compared live: the retraction-window row (retract-outside-window) submits an owner-signed retraction before phase 2 and one after it on a devnet, both refused by the request script and answered not-phase2 by the model, which agrees on every step. The deployed validators are compiled without traces, so this run's live refusals expose no name: they are attributed to the applied request script, and the name itself is never described as a live observation (#287).",
-    "v": "555fb7aca3da"
    }
   ]
  },

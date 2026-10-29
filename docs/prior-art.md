@@ -78,4 +78,4 @@ That requirement is not local to this project. CIP113 arrives at the same perman
 
 ## Coverage boundary
 
-These candidates warrant component-level evaluation once a reuse target is concrete. License compatibility, toolchain fit and correctness require their own checks; this comparison grants none of them. Reading a validator establishes what its source says, not what a deployment does. Singular remains a design with unimplemented conformance obligations. Continue with the [naming walkthrough](naming-demo.md) or [protocol specification](../specs/protocol/spec.md).
+These candidates warrant component-level evaluation once a reuse target is concrete. License compatibility, toolchain fit and correctness require their own checks; this comparison grants none of them. Reading a validator establishes what its source says, not what a deployment does. Singular remains a design with unimplemented conformance obligations. Continue with the [naming walkthrough (historical)](https://github.com/lambdasistemi/singular/blob/44de14203a67df7c993f50b05fd26c82dbf5a9e6/docs/naming-demo.md) or [protocol specification](../specs/protocol/spec.md).

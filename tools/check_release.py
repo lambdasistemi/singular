@@ -71,66 +71,14 @@ with tarfile.open(archive / filename) as bundle:
     names = set(members)
     for required in (
         "index.html",
-        "docs/naming-demo/index.html",
-        "docs/naming-demo.speech.json",
-        "docs/naming-lifecycle/index.html",
-        "docs/naming-lifecycle.speech.json",
         "docs/shared-publications/index.html",
         "docs/shared-publications.speech.json",
         "specs/protocol/spec/index.html",
         "index.speech.json",
     ):
         assert required in names, f"release archive misses {required}"
-    required_artifacts = (
-        "artifacts/contracts/naming-lifecycle-contract.txt",
-        "artifacts/review/README.md",
-        "artifacts/review/REPRODUCE.md",
-        "artifacts/review/.specify/memory/constitution.md",
-        "artifacts/review/docs/theorems.md",
-        "artifacts/review/flake.nix",
-        "artifacts/review/flake.lock",
-        "artifacts/review/lakefile.toml",
-        "artifacts/review/lean-toolchain",
-        "artifacts/review/lean/Main.lean",
-        "artifacts/review/lean/NamingMain.lean",
-        "artifacts/review/lean/LifecycleMain.lean",
-        "artifacts/review/lean/corpus.json",
-        "artifacts/review/lean/naming-corpus.json",
-        "artifacts/review/lean/lifecycle-corpus.json",
-        "artifacts/review/lean/lifecycle-theorem-debt.json",
-        "artifacts/review/lean/wire-theorem-debt.json",
-        "artifacts/review/simulator/build.mjs",
-        "artifacts/review/simulator/gate.mjs",
-        "artifacts/review/simulator/index.html",
-        "artifacts/review/simulator/lifecycle.mjs",
-        "artifacts/review/simulator/naming.mjs",
-        "artifacts/review/simulator/core.mjs",
-        "artifacts/review/simulator/mirror-check.mjs",
-        "artifacts/review/tools/axioms.lean",
-        "artifacts/review/tools/check_model.py",
-        "artifacts/SHA256SUMS",
-    )
-    for required in required_artifacts:
+    for required in ("artifacts/lean/Singular/Model.lean", "artifacts/SHA256SUMS"):
         assert required in names, f"release archive misses {required}"
-    # The review root README is the repository README the model check
-    # verifies, not the reproduction instructions: each file must carry
-    # its own content, so a swapped copy fails here rather than late in
-    # the archived check.
-    reproduce = (
-        bundle.extractfile(members["artifacts/review/REPRODUCE.md"]).read().decode()
-    )
-    assert "sha256sum --check artifacts/SHA256SUMS" in reproduce, (
-        "review reproduction instructions state no checksum command"
-    )
-    assert "./artifacts/review#check" in reproduce, (
-        "review reproduction instructions state no archive check command"
-    )
-    shipped_readme = (
-        bundle.extractfile(members["artifacts/review/README.md"]).read().decode()
-    )
-    assert "proved declarations" in shipped_readme, (
-        "review root README carries no declaration counts for the model check"
-    )
     recorded = bundle.extractfile("./artifacts/SHA256SUMS").read().decode().splitlines()
     expected_paths = {
         name
@@ -139,18 +87,6 @@ with tarfile.open(archive / filename) as bundle:
         and name != "artifacts/SHA256SUMS"
         and member.isfile()
     }
-    expected_paths.update(
-        {
-            "model/corpus.json",
-            "model/naming-corpus.json",
-            "model/lifecycle-corpus.json",
-            "model/theorem-debt.json",
-            "model/naming-theorem-debt.json",
-            "model/lifecycle-theorem-debt.json",
-            "model/wire-theorem-debt.json",
-            "simulator/identity.json",
-        }
-    )
     expected_lines = []
     payloads = read_all_forward(bundle, expected_paths)
     assert set(payloads) == expected_paths, "artifact payloads unreadable"
@@ -218,11 +154,10 @@ if onchain_present:
             # #695: the commit `open-datum --version` states in a build of
             # this archive, the same one the archive's root states.
             "applications/open-datum/offchain/RELEASE-COMMIT",
-            # The retained conformance reader, ledger, specification and flake
+            # The retained conformance reader, specification and flake
             # inputs remain archive members until their layer is removed.
             "conformance/app/Main.hs",
             "conformance/flake.nix",
-            "applications/open-datum/ledgers.json",
             "specs/299-singular-cli/spec.md",
             "lean-toolchain",
             "flake.lock",

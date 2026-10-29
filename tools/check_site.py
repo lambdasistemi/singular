@@ -38,11 +38,6 @@ import api_reference
 SITE_URL = "https://lambdasistemi.github.io/singular/"
 PREFIX = urlsplit(SITE_URL).path
 REPO_BLOB = "https://github.com/lambdasistemi/singular/blob"
-PLAYABLE = SITE_URL + "simulator/"
-# Anchor labels that make a link a dual-context call to action: it is rendered
-# both on GitHub (README/blob rewrite) and on the deployed docs, so every
-# context must resolve to the canonical playable URL.
-CTA_LABELS = ("Try the simulation", "Open the playable Singular simulator")
 EXTERNAL_TIMEOUT = 15
 EXTERNAL_CONCURRENCY = 8
 CANDIDATE_REF_ERROR = (
@@ -221,9 +216,7 @@ for path, page in pages.items():
         links += 1
     # theme_version.html is the Terminal theme's own static template (its version
     # stamp), not a reader-facing page, so it carries no speech companion.
-    if path.name in ("404.html", "theme_version.html") or path.is_relative_to(
-        site / "simulator"
-    ):
+    if path.name in ("404.html", "theme_version.html"):
         continue
     # specs/26-live-links/ and specs/29-docs-links-recut/ are ticket-
     # orchestration records staged verbatim by tools/prepare_docs.py (which
@@ -251,13 +244,9 @@ for path, page in pages.items():
         assert key in page.ids and segments, f"invalid speech heading: {path}: {key}"
         assert all(isinstance(x.get("text"), str) and x["text"] for x in segments)
 for required in (
-    "docs/naming-demo/index.html",
-    "docs/naming-lifecycle/index.html",
     "specs/protocol/spec/index.html",
     "docs/prior-art/index.html",
-    "docs/design/index.html",
     "docs/decisions/index.html",
-    "docs/simulation/index.html",
     "docs/economics-paper/index.html",
     "docs/economics-paper.pdf",
 ):
@@ -537,8 +526,8 @@ def is_repo_source_href(href):
 plans = []
 
 
-def plan_row(source, href, resolved, require_playable=False):
-    plans.append((source, href, list(dict.fromkeys(resolved)), require_playable))
+def plan_row(source, href, resolved):
+    plans.append((source, href, list(dict.fromkeys(resolved))))
 
 
 # Source-authored raw anchors. Raw HTML passes through MkDocs untouched, so the
@@ -555,7 +544,6 @@ for href, label in raw_anchors(readme_text):
             docs_url(SITE_URL, href, True),
             docs_url(SITE_URL, href, False),
         ],
-        require_playable=any(c in label for c in CTA_LABELS),
     )
     if authored_production_alias(href):
         production_alias_rows.append(("README.md", href))
@@ -581,7 +569,6 @@ for md in sorted((root / "docs").glob("*.md")):
             f"docs/{md.name}",
             href,
             resolved,
-            require_playable=any(c in label for c in CTA_LABELS),
         )
         if authored_production_alias(href):
             production_alias_rows.append((f"docs/{md.name}", href))
@@ -609,7 +596,6 @@ def speech_scoped(path):
     absence is governed by the speech-coverage assertion above."""
     return (
         path.name == "404.html"
-        or path.is_relative_to(site / "simulator")
         or path.is_relative_to(site / "specs" / "26-live-links")
         or path.is_relative_to(site / "specs" / "29-docs-links-recut")
     )
@@ -647,7 +633,7 @@ if routes_only:
                 "routes": sorted(
                     {
                         u
-                        for _, _, resolved, _ in plans
+                        for _, _, resolved in plans
                         for u in resolved
                         if classify(u) == "internal-site"
                     }
@@ -659,25 +645,18 @@ if routes_only:
 
 # External requests up front, bounded concurrency, one request per distinct URL.
 external_urls = sorted(
-    {u for _, _, resolved, _ in plans for u in resolved if classify(u) == "external"}
+    {u for _, _, resolved in plans for u in resolved if classify(u) == "external"}
 )
 with ThreadPoolExecutor(max_workers=EXTERNAL_CONCURRENCY) as pool:
     list(pool.map(check_resolved, external_urls))
 
 rows = []
-for source, href, resolved, require_playable in plans:
+for source, href, resolved in plans:
     outcomes = [check_resolved(u) for u in resolved]
     kinds = sorted({classify(u) for u in resolved})
     bad = [e for r, e in outcomes if r == "fail"]
     off = [e for r, e in outcomes if r == "blocked"]
-    if require_playable and any(
-        u.rstrip("/") != PLAYABLE.rstrip("/") for u in resolved
-    ):
-        result, evidence = (
-            "fail",
-            f"dual-context CTA resolves to {', '.join(resolved)}, not the canonical {PLAYABLE}",
-        )
-    elif bad:
+    if bad:
         result, evidence = "fail", "; ".join(bad)
     elif off:
         result, evidence = "blocked", "; ".join(off)
@@ -700,7 +679,7 @@ failures = [r for r in rows if r["result"] == "fail"]
 # not the production Pages alias. Quantified over the model files the
 # inventory actually reaches; empty set fails loudly.
 model_rows = set()
-for _, _, resolved, _ in plans:
+for _, _, resolved in plans:
     for u in resolved:
         parts = urlsplit(u)
         if classify(u) == "internal-site" and parts.path.startswith(PREFIX + "model/"):
@@ -932,7 +911,7 @@ if served_bases and not failures:
     routes = sorted(
         {
             u
-            for _, _, resolved, _ in plans
+            for _, _, resolved in plans
             for u in resolved
             if classify(u) == "internal-site"
         }
@@ -1253,7 +1232,7 @@ print(
             "externalResources": 0,
             "diagramPages": len(mermaid_pages),
             "diagrams": sum(p.mermaid for p in pages.values()),
-            "scope": "rendered documentation; model and simulator checked separately",
+            "scope": "rendered documentation; aligned models checked separately",
             "inventory": counts,
             "inventoryFailures": failures,
             "externalBlocked": blocked_rows,

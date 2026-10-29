@@ -219,11 +219,6 @@ in
       meta.description = "Build the documentation release artifacts";
       program = pkgs.lib.getExe release.releaseArtifacts;
     };
-    release-review-check = {
-      type = "app";
-      meta.description = "Check the release archive review surface";
-      program = pkgs.lib.getExe release.releaseReviewCheck;
-    };
     publish-docs = {
       type = "app";
       meta.description = "Publish the documentation release";

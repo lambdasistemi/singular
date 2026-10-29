@@ -80,8 +80,7 @@ def assemble(root: Path, docs_dir: Path, onchain_bp: Path, out: Path) -> None:
             # #300: the demonstration's refusal controls and indexer readback
             # replay from the archive alone. The controls runner is a flake that
             # reads the model, the tools and the root lock beside it, and binds
-            # the application's statement ledger and the command-line
-            # specification, so those ship too.
+            # the command-line specification, so it ships too.
             "conformance",
             "lean",
             "tools",
@@ -90,7 +89,6 @@ def assemble(root: Path, docs_dir: Path, onchain_bp: Path, out: Path) -> None:
             "lean-toolchain",
             "flake.lock",
             "fourmolu.yaml",
-            "applications/open-datum/ledgers.json",
             "applications/open-datum/offchain",
             "specs/299-singular-cli/spec.md",
         ),

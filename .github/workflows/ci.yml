@@ -167,66 +167,6 @@ jobs:
       # from, like the neighbouring component build.
       - run: nix run --quiet .#singular -- --help
         working-directory: applications/open-datum/offchain
-  model:
-    if: github.event.action != 'closed'
-    needs: build-gate
-    name: Lean model and exact statement debt
-    runs-on: nixos
-    steps:
-      - name: Reuse this runner's Nix cache
-        run: |
-          cache_dir="$HOME/.cache/singular-ci-nix"
-          mkdir -p "$cache_dir"
-          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-          fetch-depth: 0
-      - uses: cachix/cachix-action@v17
-        with:
-          name: paolino
-          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      - run: nix run --quiet .#model-check
-  simulator:
-    if: github.event.action != 'closed'
-    needs: build-gate
-    name: Simulator corpus parity and controls
-    runs-on: nixos
-    steps:
-      - name: Reuse this runner's Nix cache
-        run: |
-          cache_dir="$HOME/.cache/singular-ci-nix"
-          mkdir -p "$cache_dir"
-          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-          fetch-depth: 0
-      - uses: cachix/cachix-action@v17
-        with:
-          name: paolino
-          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      - run: nix run --quiet .#simulator-check
-  browser:
-    if: github.event.action != 'closed'
-    needs: build-gate
-    name: Simulator browser checks
-    runs-on: nixos
-    steps:
-      - name: Reuse this runner's Nix cache
-        run: |
-          cache_dir="$HOME/.cache/singular-ci-nix"
-          mkdir -p "$cache_dir"
-          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-          fetch-depth: 0
-      - uses: cachix/cachix-action@v17
-        with:
-          name: paolino
-          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      - run: nix run --quiet .#browser-check
   inventory:
     if: github.event.action != 'closed'
     needs: build-gate
@@ -318,22 +258,9 @@ jobs:
       # carries a reasoned entry in tools/declared_checks_not_hosted.list.
       # The table-driven controls run first (pure classifier cases plus
       # offline fixture flakes, seconds); then the live census evaluates
-      # every tracked flake once and classifies the real tree. The issue-state query is read-only
-      # (the job's permissions add nothing but issues read); the census
-      # fails on a pending-wiring entry whose issue is closed, and the
-      # slice that hosts the wired job removes the entry. Timeout from the
-      # measured live run (about 120 s warm: the flake evaluations dominate).
+      # every tracked flake once and classifies the real tree.
       - run: nix run --quiet .#declared-checks-classify-controls
-      # The issue-state query is a repository app (its executables declared
-      # in the flake, never an inline registry command): it reads the
-      # pending-issue numbers from the exception list and answers each with
-      # a read-only query. GH_TOKEN binds the job's read-only workflow
-      # token explicitly; without it the query fails setup, never a verdict.
-      - name: Read the states of the issues the exception list names
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: nix run --quiet .#declared-checks-issue-states "$RUNNER_TEMP/issue-states.txt"
-      - run: nix run --quiet .#declared-checks-hosted "$RUNNER_TEMP/issue-states.txt"
+      - run: nix run --quiet .#declared-checks-hosted
   registry-cli-build-graph:
     if: github.event.action != 'closed'
     needs: build-gate
@@ -464,7 +391,6 @@ jobs:
       # Conformance format-check job's format-controls step — none of them here.
       # #544: the IO ownership check and its controls (census, allowlist,
       # site binding, B1-B5) run here, in the shell that pins python3.
-      - run: nix develop --quiet -c just application-model
       - run: nix develop --quiet -c just application-held-model
       - run: nix develop --quiet -c just open-datum-application-held-model
       - run: nix develop --quiet -c just check-presentation
@@ -539,51 +465,6 @@ jobs:
       - run: nix run --quiet .#verify-release-controls -- "$RUNNER_TEMP/release"
       - name: Verify the connected journey from the assembled release
         run: nix run --quiet .#verify-release -- --assets "$RUNNER_TEMP/release" --without-bundles "v$(cat version.txt)"
-  release-review-reproduction:
-    if: github.event.action != 'closed'
-    needs: build-gate
-    name: Release review archive reproduction
-    runs-on: nixos
-    timeout-minutes: 30
-    steps:
-      - name: Reuse this runner's Nix cache
-        run: |
-          cache_dir="$HOME/.cache/singular-ci-nix"
-          mkdir -p "$cache_dir"
-          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-          fetch-depth: 0
-      - uses: cachix/cachix-action@v17
-        with:
-          name: paolino
-          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      # #565: the review archive reproduces from its own bytes. The app
-      # assembles the docs release with the same tools the release uses
-      # (tools/prepare_release.py inside the docs derivation, no second
-      # assembler), extracts it outside the checkout, runs the checksum
-      # manifest and the archived check, and proves the check can fail by
-      # removing the constitution with the manifest recomputed. Timeout
-      # from the desk rule (30 minutes cold; the Lean builds are cached).
-      - run: nix run --quiet .#release-review-check
-      # The two archive-app steps run the extracted review flake's check
-      # and default apps from the extraction, exactly as the reproduction
-      # instructions document, so the declared-checks census credits
-      # release-review (the resolver maps the artifacts/review extraction
-      # back onto it). Cache-warm after the app's run above.
-      - name: Run the archived review apps from the extracted archive
-        run: |
-          set -euo pipefail
-          release_out="$(nix build --quiet --no-link --print-out-paths .#docs-release)"
-          extracted="$(mktemp -d "$RUNNER_TEMP/extracted.XXXXXX")"
-          tar -C "$extracted" -xzf "$release_out"/singular-docs-*.tar.gz
-          test ! -e "$extracted/.git" || { echo 'FAIL: the archive carries a git checkout'; exit 1; }
-          cd "$extracted"
-          sha256sum --check artifacts/SHA256SUMS
-          cd "$extracted/artifacts/review"
-          nix run --no-write-lock-file .#check
-          nix run --no-write-lock-file .#default
   preview:
     if: github.event_name == 'pull_request' && github.event.action != 'closed'
     name: Live documentation preview
@@ -635,7 +516,7 @@ jobs:
           comment: 'false'
   pages:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [build-gate, model, simulator, browser, rendered-docs, dev-shell, release-check, release-artifacts]
+    needs: [build-gate, rendered-docs, dev-shell, release-check, release-artifacts]
     runs-on: nixos
     permissions:
       contents: read

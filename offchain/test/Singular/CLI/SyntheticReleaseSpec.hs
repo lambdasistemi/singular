@@ -1,5 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
+-- Script names here are synthetic fixture labels, not released validators.
+
 {- |
 Module      : Singular.CLI.SyntheticReleaseSpec
 Description : Loader for synthetic blueprint fixtures in the shared pin tests

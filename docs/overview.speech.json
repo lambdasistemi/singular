@@ -5,7 +5,7 @@
       "pause": 500
     },
     {
-      "text": "Historical design. This page records the earlier Insert/Update/Delete design and its broader broader model successor. The active permanent permanent contract model supports only insertActive and updateTerminal. Historical tags 0, 2, 4, 5 and 6 encode refused actions, not available features. Current supported behavior describes permanent contract; archived source and evidence remain on preserve/m2/pre-m1-source-removal.",
+      "text": "Historical design. This page records the earlier Insert/Update/Delete design and its broader broader model successor. The active permanent permanent contract model supports only insertActive and updateTerminal. Historical tags 0, 2, 4, 5 and 6 encode refused actions, not available features. Current supported behavior (historical) describes permanent contract; archived source and evidence remain on preserve/m2/pre-m1-source-removal.",
       "pause": 400
     },
     {
@@ -53,6 +53,6 @@
   ],
   "_source": {
     "file": "overview.md",
-    "sha256": "287a0c0b93e1473f2746ae5ac780b932fac00234824063d268525cf99f2c78de"
+    "sha256": "7935c869a48f294c6af389e987e4cbc1ea999810538eba1444d558e27aa336d2"
   }
 }
