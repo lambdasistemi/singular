@@ -13,6 +13,11 @@ with tempfile.TemporaryDirectory(prefix="creation-carrying-") as directory:
     probe = Path(directory)
     evidence = Path("specs/745-shared-publications/evidence")
     shutil.copytree(root / evidence, probe / evidence)
+    # Nix store sources are read-only. Only this private corruption fixture
+    # becomes writable; the committed observations are never modified.
+    (probe / evidence).chmod(0o755)
+    for entry in (probe / evidence).rglob("*"):
+        entry.chmod(0o755 if entry.is_dir() else 0o644)
     (probe / "docs").mkdir()
     page = probe / "docs/creation-cost.md"
     original_page = (root / "docs/creation-cost.md").read_text()
