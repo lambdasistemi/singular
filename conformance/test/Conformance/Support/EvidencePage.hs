@@ -81,13 +81,14 @@ spec = describe "Appendix: computing the published evidence page" $ do
         length ids `shouldBe` length rows
 
     it
-        "Names published requirements by their text without internal row identifiers" $ do
-        (rows, receipts) <- fixtures
-        page <- rendered rows (snapshotOf "fixture-base" receipts)
-        forM_ rows $ \row -> do
-            renderedPage page
-                `shouldSatisfy` T.isInfixOf (cellText (rowRequirement row))
-            renderedPage page `shouldSatisfy` (not . T.isInfixOf (rowId row))
+        "Names published requirements by their text without internal row identifiers"
+        $ do
+            (rows, receipts) <- fixtures
+            page <- rendered rows (snapshotOf "fixture-base" receipts)
+            forM_ rows $ \row -> do
+                renderedPage page
+                    `shouldSatisfy` T.isInfixOf (cellText (rowRequirement row))
+                renderedPage page `shouldSatisfy` (not . T.isInfixOf (rowId row))
 
     it "Names the model revision it was given and the stated revision" $ do
         (rows, receipts) <- fixtures
