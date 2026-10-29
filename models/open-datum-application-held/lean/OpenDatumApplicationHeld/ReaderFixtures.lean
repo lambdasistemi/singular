@@ -8,14 +8,14 @@ open Singular SingularApplicationHeld
 open OpenDatumApplicationHeld.Fixtures (hash code commit release seed registryId decode registration)
 
 def ordinary (reference : OutRef) (value : Nat) : ObservedOutput :=
-  ⟨reference, 60, value, .empty, []⟩
+  ⟨reference, 60, value, .empty, [], none⟩
 
 def seedInput := ordinary seed 100
 def registrationFunding := ordinary ⟨14, 0⟩ 1
 def bookingFunding := ordinary ⟨15, 0⟩ 1
 def terminationFunding := ordinary ⟨16, 0⟩ 1
 def genesisState : ObservedOutput :=
-  ⟨⟨21, 0⟩, release.statePolicy, 2, .root (commit []), [(registryId, 1)]⟩
+  ⟨⟨21, 0⟩, release.statePolicy, 2, .root (commit []), [(registryId, 1)], none⟩
 def genesisChange := ordinary ⟨21, 1⟩ 98
 def genesisRegistry : PublicRegistry := ⟨registryId, seed, genesisState, []⟩
 def initialWorld : CandidateWorld :=
@@ -38,7 +38,7 @@ def liveWorld := nextWorld genesisWorld liveFold.assets liveFold.outputs [liveFo
 
 def pendingOutput : ObservedOutput :=
   ⟨⟨31, 0⟩, release.applicationCredential, 1, .empty,
-    [(activeAsset hash code registryId 7, 1), (terminationApproval hash code release registryId 7, 1)]⟩
+    [(activeAsset hash code registryId 7, 1), (terminationApproval hash code release registryId 7, 1)], none⟩
 def bookingAssets : SingularApplicationHeld.Assets.TxView :=
   ⟨[liveOutput.reference, bookingFunding.reference], [⟨pendingOutput.assets⟩],
     [(terminationApproval hash code release registryId 7, 1)], [release.applicationPolicy]⟩

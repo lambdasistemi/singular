@@ -9,7 +9,7 @@ theorem public_build_outputs (h : Hash) (c : Codec) (t : TrieCommit) (r : Publis
     o.outputs = o.after.state ::
       ((((SingularApplicationHeld.Proofs.publicPlan h c 0 requests).2 ++
         [ObservedOutput.mk ⟨0, 0⟩ funding.processorAddress
-          ((requests.map PendingRequest.bid).sum + funding.ordinaryInput.lovelace - funding.fee) .empty []]).zipIdx 1).map
+          ((requests.map PendingRequest.bid).sum + funding.ordinaryInput.lovelace - funding.fee) .empty [] none]).zipIdx 1).map
         fun (output, index) => { output with reference := ⟨funding.transactionId, index⟩ }) := by
   simp [SingularApplicationHeld.buildFold, numbered, List.zipIdx_cons, SingularApplicationHeld.Proofs.public_prepare]
 

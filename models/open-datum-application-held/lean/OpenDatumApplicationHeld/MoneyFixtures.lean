@@ -15,7 +15,7 @@ def oldRegistration : Singular.RegistrationBooking :=
   let r : Singular.RegistrationRequest := {
     reference := registration.output.reference, registryId := configuration.registryId,
     key := registration.key, refundAddress := registrationData.refundAddress,
-    destination := registrationData.holdingAddress, submittedAt := registrationData.bookedAt,
+    destination := registrationData.holdingAddress.paymentCredential, submittedAt := registrationData.bookedAt,
     registrationCost := configuration.registrationCost, declaredTip := 3, carrierAda := registrationData.deposit,
     contents := ⟨0, [], [], []⟩, datum := some registrationData.initialDatum, nonce := registration.key }
   let tag : Approval := {
@@ -56,7 +56,7 @@ def oldSuccessor : OpenDatumApplication.Successor := {
 def createObservation : ApplicationObservation :=
   let state := { OpenDatumApplicationHeld.Fixtures.registry.state with datum := .root (commit []) }
   let metadata := { RefundLifecycle.Fixtures.configuration with datum := .configuration (parametersOf baseline) }
-  let ordinary : ObservedOutput := ⟨seed, 60, state.lovelace + metadata.lovelace, .empty, []⟩
+  let ordinary : ObservedOutput := ⟨seed, 60, state.lovelace + metadata.lovelace, .empty, [], none⟩
   RefundLifecycle.Fixtures.observation [ordinary] [state, metadata]
     [(registryId, 1), (configurationAsset hash code release registryId, 1)]
     [.configurationCreate registryId seed 1]
@@ -77,7 +77,7 @@ def input (journey : Journey) : Input :=
   let life := if journey == .cleanup then
       let o := life.observation
       let cleaner : ObservedOutput := ⟨⟨18, 1⟩, funding.processorAddress,
-        registration.output.lovelace - registrationData.deposit, .empty, []⟩
+        registration.output.lovelace - registrationData.deposit, .empty, [], none⟩
       let outputs := o.outputs ++ [cleaner]
       { life with
         observation := { o with

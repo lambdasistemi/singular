@@ -22,7 +22,8 @@
           "reference": {
             "index": 1,
             "tx": 30
-          }
+          },
+          "stakingCredential": null
         }
       }
     },
@@ -49,7 +50,8 @@
           "reference": {
             "index": 1,
             "tx": 30
-          }
+          },
+          "stakingCredential": null
         }
       }
     },
@@ -120,7 +122,10 @@
                 "bookedAt": 1,
                 "controller": 42,
                 "deposit": 7,
-                "holdingAddress": 99,
+                "holdingAddress": {
+                  "paymentCredential": 99,
+                  "stakingCredential": null
+                },
                 "initialDatum": 1007,
                 "key": 7,
                 "processDeadline": 20,
@@ -242,7 +247,8 @@
                 "reference": {
                   "index": 1,
                   "tx": 30
-                }
+                },
+                "stakingCredential": null
               }
             ]
           }
@@ -298,7 +304,8 @@
           "reference": {
             "index": 0,
             "tx": 31
-          }
+          },
+          "stakingCredential": null
         }
       }
     },
@@ -328,7 +335,8 @@
           "reference": {
             "index": 0,
             "tx": 31
-          }
+          },
+          "stakingCredential": null
         }
       }
     },
@@ -399,7 +407,10 @@
                 "bookedAt": 1,
                 "controller": 42,
                 "deposit": 7,
-                "holdingAddress": 99,
+                "holdingAddress": {
+                  "paymentCredential": 99,
+                  "stakingCredential": null
+                },
                 "initialDatum": 1007,
                 "key": 7,
                 "processDeadline": 20,
@@ -524,7 +535,8 @@
                 "reference": {
                   "index": 0,
                   "tx": 31
-                }
+                },
+                "stakingCredential": null
               }
             ]
           }
@@ -562,7 +574,8 @@
               "reference": {
                 "index": 0,
                 "tx": 30
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -630,7 +643,8 @@
             "reference": {
               "index": 0,
               "tx": 32
-            }
+            },
+            "stakingCredential": null
           },
           "trie": [
             [
@@ -669,7 +683,8 @@
             "reference": {
               "index": 0,
               "tx": 32
-            }
+            },
+            "stakingCredential": null
           },
           "trie": [
             [
@@ -751,7 +766,10 @@
                 "bookedAt": 1,
                 "controller": 42,
                 "deposit": 7,
-                "holdingAddress": 99,
+                "holdingAddress": {
+                  "paymentCredential": 99,
+                  "stakingCredential": null
+                },
                 "initialDatum": 1007,
                 "key": 7,
                 "processDeadline": 20,
@@ -888,7 +906,8 @@
               "reference": {
                 "index": 0,
                 "tx": 32
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -956,7 +975,8 @@
             "reference": {
               "index": 0,
               "tx": 32
-            }
+            },
+            "stakingCredential": null
           },
           "trie": [
             [
@@ -995,7 +1015,8 @@
             "reference": {
               "index": 0,
               "tx": 32
-            }
+            },
+            "stakingCredential": null
           },
           "trie": [
             [
@@ -1077,7 +1098,10 @@
                 "bookedAt": 1,
                 "controller": 42,
                 "deposit": 7,
-                "holdingAddress": 99,
+                "holdingAddress": {
+                  "paymentCredential": 99,
+                  "stakingCredential": null
+                },
                 "initialDatum": 1007,
                 "key": 7,
                 "processDeadline": 20,
@@ -1214,7 +1238,8 @@
               "reference": {
                 "index": 0,
                 "tx": 32
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -1339,7 +1364,10 @@
                 "bookedAt": 1,
                 "controller": 42,
                 "deposit": 7,
-                "holdingAddress": 99,
+                "holdingAddress": {
+                  "paymentCredential": 99,
+                  "stakingCredential": null
+                },
                 "initialDatum": 1007,
                 "key": 7,
                 "processDeadline": 20,
@@ -1557,7 +1585,10 @@
                 "bookedAt": 1,
                 "controller": 42,
                 "deposit": 7,
-                "holdingAddress": 99,
+                "holdingAddress": {
+                  "paymentCredential": 99,
+                  "stakingCredential": null
+                },
                 "initialDatum": 1007,
                 "key": 7,
                 "processDeadline": 20,
@@ -1679,7 +1710,8 @@
                 "reference": {
                   "index": 1,
                   "tx": 30
-                }
+                },
+                "stakingCredential": null
               }
             ]
           }
@@ -1717,7 +1749,8 @@
               "reference": {
                 "index": 0,
                 "tx": 30
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -1850,7 +1883,10 @@
                 "bookedAt": 1,
                 "controller": 42,
                 "deposit": 7,
-                "holdingAddress": 99,
+                "holdingAddress": {
+                  "paymentCredential": 99,
+                  "stakingCredential": null
+                },
                 "initialDatum": 1007,
                 "key": 7,
                 "processDeadline": 20,
@@ -1987,7 +2023,8 @@
               "reference": {
                 "index": 0,
                 "tx": 30
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -2120,7 +2157,10 @@
                 "bookedAt": 1,
                 "controller": 42,
                 "deposit": 7,
-                "holdingAddress": 99,
+                "holdingAddress": {
+                  "paymentCredential": 99,
+                  "stakingCredential": null
+                },
                 "initialDatum": 1007,
                 "key": 7,
                 "processDeadline": 20,
@@ -2257,7 +2297,8 @@
               "reference": {
                 "index": 0,
                 "tx": 30
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -2390,7 +2431,10 @@
                 "bookedAt": 1,
                 "controller": 42,
                 "deposit": 7,
-                "holdingAddress": 99,
+                "holdingAddress": {
+                  "paymentCredential": 99,
+                  "stakingCredential": null
+                },
                 "initialDatum": 1007,
                 "key": 7,
                 "processDeadline": 20,
@@ -2631,7 +2675,10 @@
                 "bookedAt": 1,
                 "controller": 42,
                 "deposit": 7,
-                "holdingAddress": 99,
+                "holdingAddress": {
+                  "paymentCredential": 99,
+                  "stakingCredential": null
+                },
                 "initialDatum": 1007,
                 "key": 7,
                 "processDeadline": 20,
@@ -2880,7 +2927,10 @@
                 "bookedAt": 1,
                 "controller": 42,
                 "deposit": 7,
-                "holdingAddress": 99,
+                "holdingAddress": {
+                  "paymentCredential": 99,
+                  "stakingCredential": null
+                },
                 "initialDatum": 1007,
                 "key": 7,
                 "processDeadline": 20,
@@ -3017,7 +3067,8 @@
               "reference": {
                 "index": 0,
                 "tx": 32
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -3127,7 +3178,10 @@
                 "bookedAt": 1,
                 "controller": 42,
                 "deposit": 7,
-                "holdingAddress": 99,
+                "holdingAddress": {
+                  "paymentCredential": 99,
+                  "stakingCredential": null
+                },
                 "initialDatum": 1007,
                 "key": 7,
                 "processDeadline": 20,
@@ -3249,7 +3303,8 @@
                 "reference": {
                   "index": 1,
                   "tx": 30
-                }
+                },
+                "stakingCredential": null
               }
             ]
           }
@@ -3287,7 +3342,8 @@
               "reference": {
                 "index": 0,
                 "tx": 30
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -3418,7 +3474,10 @@
                 "bookedAt": 1,
                 "controller": 42,
                 "deposit": 7,
-                "holdingAddress": 99,
+                "holdingAddress": {
+                  "paymentCredential": 99,
+                  "stakingCredential": null
+                },
                 "initialDatum": 1007,
                 "key": 7,
                 "processDeadline": 20,
@@ -3540,7 +3599,8 @@
                 "reference": {
                   "index": 1,
                   "tx": 30
-                }
+                },
+                "stakingCredential": null
               }
             ]
           }
@@ -3573,7 +3633,8 @@
               "reference": {
                 "index": 0,
                 "tx": 30
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -3706,7 +3767,10 @@
                 "bookedAt": 1,
                 "controller": 42,
                 "deposit": 7,
-                "holdingAddress": 99,
+                "holdingAddress": {
+                  "paymentCredential": 99,
+                  "stakingCredential": null
+                },
                 "initialDatum": 1007,
                 "key": 7,
                 "processDeadline": 20,
@@ -3828,7 +3892,8 @@
                 "reference": {
                   "index": 1,
                   "tx": 30
-                }
+                },
+                "stakingCredential": null
               }
             ]
           }
@@ -3866,7 +3931,8 @@
               "reference": {
                 "index": 0,
                 "tx": 30
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -4005,7 +4071,10 @@
                 "bookedAt": 1,
                 "controller": 42,
                 "deposit": 7,
-                "holdingAddress": 99,
+                "holdingAddress": {
+                  "paymentCredential": 99,
+                  "stakingCredential": null
+                },
                 "initialDatum": 1007,
                 "key": 7,
                 "processDeadline": 20,
@@ -4127,7 +4196,8 @@
                 "reference": {
                   "index": 1,
                   "tx": 30
-                }
+                },
+                "stakingCredential": null
               }
             ]
           }
@@ -4165,7 +4235,8 @@
               "reference": {
                 "index": 0,
                 "tx": 30
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -4304,7 +4375,10 @@
                 "bookedAt": 1,
                 "controller": 42,
                 "deposit": 7,
-                "holdingAddress": 99,
+                "holdingAddress": {
+                  "paymentCredential": 99,
+                  "stakingCredential": null
+                },
                 "initialDatum": 1007,
                 "key": 7,
                 "processDeadline": 20,
@@ -4426,7 +4500,8 @@
                 "reference": {
                   "index": 1,
                   "tx": 30
-                }
+                },
+                "stakingCredential": null
               }
             ]
           }
@@ -4464,7 +4539,8 @@
               "reference": {
                 "index": 0,
                 "tx": 30
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -4603,7 +4679,10 @@
                 "bookedAt": 1,
                 "controller": 42,
                 "deposit": 7,
-                "holdingAddress": 99,
+                "holdingAddress": {
+                  "paymentCredential": 99,
+                  "stakingCredential": null
+                },
                 "initialDatum": 1007,
                 "key": 7,
                 "processDeadline": 20,
@@ -4725,7 +4804,8 @@
                 "reference": {
                   "index": 1,
                   "tx": 30
-                }
+                },
+                "stakingCredential": null
               }
             ]
           }
@@ -4763,7 +4843,8 @@
               "reference": {
                 "index": 0,
                 "tx": 30
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -4902,7 +4983,10 @@
                 "bookedAt": 1,
                 "controller": 42,
                 "deposit": 7,
-                "holdingAddress": 99,
+                "holdingAddress": {
+                  "paymentCredential": 99,
+                  "stakingCredential": null
+                },
                 "initialDatum": 1007,
                 "key": 7,
                 "processDeadline": 20,
@@ -5024,7 +5108,8 @@
                 "reference": {
                   "index": 1,
                   "tx": 30
-                }
+                },
+                "stakingCredential": null
               }
             ]
           }
@@ -5062,7 +5147,8 @@
               "reference": {
                 "index": 0,
                 "tx": 30
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -5185,7 +5271,10 @@
                 "bookedAt": 1,
                 "controller": 42,
                 "deposit": 7,
-                "holdingAddress": 99,
+                "holdingAddress": {
+                  "paymentCredential": 99,
+                  "stakingCredential": null
+                },
                 "initialDatum": 1007,
                 "key": 7,
                 "processDeadline": 20,
@@ -5307,7 +5396,8 @@
                 "reference": {
                   "index": 1,
                   "tx": 30
-                }
+                },
+                "stakingCredential": null
               },
               {
                 "assets": [
@@ -5329,7 +5419,8 @@
                 "reference": {
                   "index": 0,
                   "tx": 40
-                }
+                },
+                "stakingCredential": null
               }
             ]
           }
@@ -5367,7 +5458,8 @@
               "reference": {
                 "index": 0,
                 "tx": 30
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -5490,7 +5582,10 @@
                 "bookedAt": 1,
                 "controller": 42,
                 "deposit": 7,
-                "holdingAddress": 99,
+                "holdingAddress": {
+                  "paymentCredential": 99,
+                  "stakingCredential": null
+                },
                 "initialDatum": 1007,
                 "key": 7,
                 "processDeadline": 20,
@@ -5612,7 +5707,8 @@
                 "reference": {
                   "index": 1,
                   "tx": 30
-                }
+                },
+                "stakingCredential": null
               }
             ]
           }
@@ -5650,7 +5746,8 @@
               "reference": {
                 "index": 0,
                 "tx": 30
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -5775,7 +5872,10 @@
                 "bookedAt": 1,
                 "controller": 42,
                 "deposit": 7,
-                "holdingAddress": 99,
+                "holdingAddress": {
+                  "paymentCredential": 99,
+                  "stakingCredential": null
+                },
                 "initialDatum": 1007,
                 "key": 7,
                 "processDeadline": 20,
@@ -5908,7 +6008,8 @@
               "reference": {
                 "index": 0,
                 "tx": 32
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -6033,7 +6134,10 @@
                 "bookedAt": 1,
                 "controller": 42,
                 "deposit": 7,
-                "holdingAddress": 99,
+                "holdingAddress": {
+                  "paymentCredential": 99,
+                  "stakingCredential": null
+                },
                 "initialDatum": 1007,
                 "key": 7,
                 "processDeadline": 20,
@@ -6177,7 +6281,8 @@
               "reference": {
                 "index": 0,
                 "tx": 32
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -6302,7 +6407,10 @@
                 "bookedAt": 1,
                 "controller": 42,
                 "deposit": 7,
-                "holdingAddress": 99,
+                "holdingAddress": {
+                  "paymentCredential": 99,
+                  "stakingCredential": null
+                },
                 "initialDatum": 1007,
                 "key": 7,
                 "processDeadline": 20,
@@ -6439,7 +6547,8 @@
               "reference": {
                 "index": 0,
                 "tx": 32
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -6512,7 +6621,8 @@
           "reference": {
             "index": 1,
             "tx": 30
-          }
+          },
+          "stakingCredential": null
         }
       }
     },
@@ -6583,7 +6693,10 @@
                 "bookedAt": 1,
                 "controller": 42,
                 "deposit": 7,
-                "holdingAddress": 99,
+                "holdingAddress": {
+                  "paymentCredential": 99,
+                  "stakingCredential": null
+                },
                 "initialDatum": 1007,
                 "key": 7,
                 "processDeadline": 20,
@@ -6705,7 +6818,8 @@
                 "reference": {
                   "index": 1,
                   "tx": 30
-                }
+                },
+                "stakingCredential": null
               }
             ]
           }
@@ -6743,7 +6857,8 @@
               "reference": {
                 "index": 0,
                 "tx": 30
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -6816,7 +6931,8 @@
           "reference": {
             "index": 1,
             "tx": 30
-          }
+          },
+          "stakingCredential": null
         }
       }
     },
@@ -6887,7 +7003,10 @@
                 "bookedAt": 1,
                 "controller": 42,
                 "deposit": 7,
-                "holdingAddress": 99,
+                "holdingAddress": {
+                  "paymentCredential": 99,
+                  "stakingCredential": null
+                },
                 "initialDatum": 1007,
                 "key": 7,
                 "processDeadline": 20,
@@ -7009,7 +7128,8 @@
                 "reference": {
                   "index": 1,
                   "tx": 30
-                }
+                },
+                "stakingCredential": null
               }
             ]
           }
@@ -7047,7 +7167,8 @@
               "reference": {
                 "index": 0,
                 "tx": 30
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -7120,7 +7241,8 @@
           "reference": {
             "index": 1,
             "tx": 30
-          }
+          },
+          "stakingCredential": null
         }
       }
     },
@@ -7191,7 +7313,10 @@
                 "bookedAt": 1,
                 "controller": 42,
                 "deposit": 7,
-                "holdingAddress": 99,
+                "holdingAddress": {
+                  "paymentCredential": 99,
+                  "stakingCredential": null
+                },
                 "initialDatum": 1007,
                 "key": 7,
                 "processDeadline": 20,
@@ -7313,7 +7438,8 @@
                 "reference": {
                   "index": 1,
                   "tx": 30
-                }
+                },
+                "stakingCredential": null
               }
             ]
           }
@@ -7351,7 +7477,8 @@
               "reference": {
                 "index": 0,
                 "tx": 30
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -7424,7 +7551,8 @@
           "reference": {
             "index": 1,
             "tx": 30
-          }
+          },
+          "stakingCredential": null
         }
       }
     },
@@ -7495,7 +7623,10 @@
                 "bookedAt": 1,
                 "controller": 42,
                 "deposit": 7,
-                "holdingAddress": 99,
+                "holdingAddress": {
+                  "paymentCredential": 99,
+                  "stakingCredential": null
+                },
                 "initialDatum": 1007,
                 "key": 7,
                 "processDeadline": 20,
@@ -7617,7 +7748,8 @@
                 "reference": {
                   "index": 1,
                   "tx": 30
-                }
+                },
+                "stakingCredential": null
               }
             ]
           }
@@ -7655,7 +7787,8 @@
               "reference": {
                 "index": 0,
                 "tx": 30
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -7728,7 +7861,8 @@
           "reference": {
             "index": 1,
             "tx": 30
-          }
+          },
+          "stakingCredential": null
         }
       }
     },
@@ -7799,7 +7933,10 @@
                 "bookedAt": 1,
                 "controller": 42,
                 "deposit": 7,
-                "holdingAddress": 99,
+                "holdingAddress": {
+                  "paymentCredential": 99,
+                  "stakingCredential": null
+                },
                 "initialDatum": 1007,
                 "key": 7,
                 "processDeadline": 20,
@@ -7921,7 +8058,8 @@
                 "reference": {
                   "index": 1,
                   "tx": 30
-                }
+                },
+                "stakingCredential": null
               }
             ]
           }
@@ -7959,7 +8097,8 @@
               "reference": {
                 "index": 0,
                 "tx": 30
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -8032,7 +8171,8 @@
           "reference": {
             "index": 1,
             "tx": 30
-          }
+          },
+          "stakingCredential": null
         }
       }
     },
@@ -8103,7 +8243,10 @@
                 "bookedAt": 1,
                 "controller": 42,
                 "deposit": 7,
-                "holdingAddress": 99,
+                "holdingAddress": {
+                  "paymentCredential": 99,
+                  "stakingCredential": null
+                },
                 "initialDatum": 1007,
                 "key": 7,
                 "processDeadline": 20,
@@ -8225,7 +8368,8 @@
                 "reference": {
                   "index": 1,
                   "tx": 30
-                }
+                },
+                "stakingCredential": null
               }
             ]
           }
@@ -8263,7 +8407,8 @@
               "reference": {
                 "index": 0,
                 "tx": 30
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -8388,7 +8533,10 @@
                 "bookedAt": 1,
                 "controller": 42,
                 "deposit": 7,
-                "holdingAddress": 99,
+                "holdingAddress": {
+                  "paymentCredential": 99,
+                  "stakingCredential": null
+                },
                 "initialDatum": 1007,
                 "key": 7,
                 "processDeadline": 20,
@@ -8525,7 +8673,8 @@
               "reference": {
                 "index": 0,
                 "tx": 32
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -8650,7 +8799,10 @@
                 "bookedAt": 1,
                 "controller": 42,
                 "deposit": 7,
-                "holdingAddress": 99,
+                "holdingAddress": {
+                  "paymentCredential": 99,
+                  "stakingCredential": null
+                },
                 "initialDatum": 1007,
                 "key": 7,
                 "processDeadline": 20,
@@ -8787,7 +8939,8 @@
               "reference": {
                 "index": 0,
                 "tx": 32
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -8912,7 +9065,10 @@
                 "bookedAt": 1,
                 "controller": 42,
                 "deposit": 7,
-                "holdingAddress": 99,
+                "holdingAddress": {
+                  "paymentCredential": 99,
+                  "stakingCredential": null
+                },
                 "initialDatum": 1007,
                 "key": 7,
                 "processDeadline": 20,
@@ -9049,7 +9205,8 @@
               "reference": {
                 "index": 0,
                 "tx": 32
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -9174,7 +9331,10 @@
                 "bookedAt": 1,
                 "controller": 42,
                 "deposit": 7,
-                "holdingAddress": 99,
+                "holdingAddress": {
+                  "paymentCredential": 99,
+                  "stakingCredential": null
+                },
                 "initialDatum": 1007,
                 "key": 7,
                 "processDeadline": 20,
@@ -9311,7 +9471,8 @@
               "reference": {
                 "index": 0,
                 "tx": 32
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -9380,7 +9541,8 @@
           "reference": {
             "index": 0,
             "tx": 31
-          }
+          },
+          "stakingCredential": null
         }
       }
     },
@@ -9451,7 +9613,10 @@
                 "bookedAt": 1,
                 "controller": 42,
                 "deposit": 7,
-                "holdingAddress": 99,
+                "holdingAddress": {
+                  "paymentCredential": 99,
+                  "stakingCredential": null
+                },
                 "initialDatum": 1007,
                 "key": 7,
                 "processDeadline": 20,
@@ -9569,7 +9734,8 @@
                 "reference": {
                   "index": 0,
                   "tx": 31
-                }
+                },
+                "stakingCredential": null
               }
             ]
           }
@@ -9607,7 +9773,8 @@
               "reference": {
                 "index": 0,
                 "tx": 30
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -9681,7 +9848,8 @@
           "reference": {
             "index": 0,
             "tx": 31
-          }
+          },
+          "stakingCredential": null
         }
       }
     },
@@ -9715,7 +9883,8 @@
           "reference": {
             "index": 0,
             "tx": 31
-          }
+          },
+          "stakingCredential": null
         }
       }
     },
@@ -9786,7 +9955,10 @@
                 "bookedAt": 1,
                 "controller": 42,
                 "deposit": 7,
-                "holdingAddress": 99,
+                "holdingAddress": {
+                  "paymentCredential": 99,
+                  "stakingCredential": null
+                },
                 "initialDatum": 1007,
                 "key": 7,
                 "processDeadline": 20,
@@ -9915,7 +10087,8 @@
                 "reference": {
                   "index": 0,
                   "tx": 31
-                }
+                },
+                "stakingCredential": null
               }
             ]
           }
@@ -9953,7 +10126,8 @@
               "reference": {
                 "index": 0,
                 "tx": 30
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -10076,7 +10250,10 @@
                 "bookedAt": 1,
                 "controller": 42,
                 "deposit": 7,
-                "holdingAddress": 99,
+                "holdingAddress": {
+                  "paymentCredential": 99,
+                  "stakingCredential": null
+                },
                 "initialDatum": 1007,
                 "key": 7,
                 "processDeadline": 20,
@@ -10213,7 +10390,8 @@
               "reference": {
                 "index": 0,
                 "tx": 30
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -10336,7 +10514,10 @@
                 "bookedAt": 1,
                 "controller": 42,
                 "deposit": 7,
-                "holdingAddress": 99,
+                "holdingAddress": {
+                  "paymentCredential": 99,
+                  "stakingCredential": null
+                },
                 "initialDatum": 1007,
                 "key": 7,
                 "processDeadline": 20,
@@ -10473,7 +10654,8 @@
               "reference": {
                 "index": 0,
                 "tx": 32
-              }
+              },
+              "stakingCredential": null
             }
           }
         },

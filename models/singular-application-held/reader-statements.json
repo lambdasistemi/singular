@@ -7,7 +7,7 @@
   "surface": "SingularApplicationHeld.readKey",
   "driver": "models/singular-application-held/.lake/build/bin/reader",
   "corpus": "models/open-datum-application-held/reader-corpus.json",
-  "corpusSha256": "a9626b4ab6b4d5b2e3c000f350ed09976876319b69e33c045f24bee1005ad80f",
+  "corpusSha256": "8a856ef0636883615c3a3b22299159c76a339491168a4f5ee129d573b35e196f",
   "definitions": {
     "SingularApplicationHeld.readKey": {
       "typeSha256": "9d6a68d5e5aafcb8c4baca13bfcddacd9cb0e9bfa2b926dbbaa6df06e9b8206d",
@@ -725,7 +725,7 @@
       "valueSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     "SingularApplicationHeld.ObservedOutput.mk": {
-      "typeSha256": "9080fc96b37e772efdb9147015a81d3c85b7c78a4968998fe358c46107c63056",
+      "typeSha256": "5b03bad938c4ec65bdae3945c7ebe74333d00b25d68101b16fa0505dd8997172",
       "valueSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     "Singular.OutRef": {
@@ -889,7 +889,7 @@
       "valueSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     "SingularApplicationHeld.Preimage.registrationApproval": {
-      "typeSha256": "23a62a0903083b333d7002202dcd03a38028102eaa0aa49e50809350774e8940",
+      "typeSha256": "8c88c6ffdee9ed86bb9e36620d49ddbf47540f10b230bb0a872df012c6c9d876",
       "valueSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     "SingularApplicationHeld.Preimage.terminationApproval": {
@@ -949,7 +949,7 @@
       "valueSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     "SingularApplicationHeld.RegistrationData.mk": {
-      "typeSha256": "9da14fac23cd00e1f8240ef3b3701951b6cea4276663b879ae9185d311f7b96f",
+      "typeSha256": "09cadafa7a3a28a3b78a7f9adce3c01e23a8fa5f373930e7ec4ffa10be532c49",
       "valueSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     "SingularApplicationHeld.RegistrationData.key": {
@@ -973,7 +973,7 @@
       "valueSha256": "9146d5b8c0b070291beabfac3cf1eb98deb37289f309abd37044e1e5b4734455"
     },
     "SingularApplicationHeld.RegistrationData.holdingAddress": {
-      "typeSha256": "7cfaf2f9c772e66484339ef8fa8f3b30bf34b3a294e986207269759aa2728b0e",
+      "typeSha256": "08bf7d4bb6f71373ab9b26217ed8d239da41aeffc4f7be23b10aa1b774201634",
       "valueSha256": "b7c90702984d290b8300b2ad97970446340ea87fe0ce3775c76999b414196932"
     },
     "SingularApplicationHeld.RegistrationData.controller": {
@@ -1174,43 +1174,43 @@
     },
     "SingularApplicationHeld.instBEqPreimage.beq": {
       "typeSha256": "3aedf35f1a522c95002a9b1bf2a51c32d558c3d872512f319b9702a005765506",
-      "valueSha256": "6c7c2efd59826a28e93a113d8909613c3add66890ecfd824518590017a5a9abf"
+      "valueSha256": "09e642d2054f444a55bacb51695cfe0c3023b00155fbf177f7fac841da6938bb"
     },
     "SingularApplicationHeld.instBEqPreimage.beq.match_1": {
-      "typeSha256": "de683af1695e22557318d792adf578416b7d9244d8c4b50e6d0ea7f3ff4b8e2b",
-      "valueSha256": "2871419ab673305a885ea08afb4033590af3cf6ae32f871e1d262069791d3290"
+      "typeSha256": "71d7e90d407cb1cd822ca4b944fbc736c81a89a13a040682d17ba5ec84f1e1e7",
+      "valueSha256": "7136bf58b8dbca5419c767c82947f9f5f5a40c159731013a645292a812ac53d3"
     },
     "SingularApplicationHeld.Preimage.casesOn": {
-      "typeSha256": "ba3d8b4fd0b58b9b6630487d78a0bfa64b040b711b349d07232bec15cce75ce9",
-      "valueSha256": "2a4f03d6b0568e42e0a7c64b5420c9c008431b22b7ce2425e19c533b91c3d65b"
+      "typeSha256": "987fbfc58de721eb61e441733bc4d16833b973feae780e6e830e139967f89598",
+      "valueSha256": "796e2303dcb5f9a5da8e88cbc18eca5909ff56afc21a8b080264046e80f32ec6"
     },
     "SingularApplicationHeld.Preimage.rec": {
-      "typeSha256": "3ca405425c8edc2cc67357977dacb383bd9d62f01cd105bc23cdb0f2ff5ef909",
+      "typeSha256": "8a26d0dc1c07671b38153f3c1a988c5bc854b4453472c523c5f55102ee5fdcc2",
       "valueSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     "SingularApplicationHeld.instBEqPreimage.beq._sparseCasesOn_1": {
-      "typeSha256": "4512720a05bfa65f177452f5966623b41a7e332b8eb9704a0e427490045a6b02",
-      "valueSha256": "c6eb9e3877af8ac17e8a00cdc08c629c1ce7b2acf59c0eabbc118a10c56c4241"
+      "typeSha256": "1280359fc7d4d2fe5cc492ebb55ed7d667f09b42e0e41b80227f29eb181cfa57",
+      "valueSha256": "bfb4387535e8f464d66a4bf6f8a389423274c424fa9b4d39c3c2737f2bcb56fc"
     },
     "SingularApplicationHeld.Preimage.ctorIdx": {
       "typeSha256": "fe28265f05aae2460102b85367d7176fa8944dd33dd4f24610b447b7c190877a",
-      "valueSha256": "7ba240fa41f3ed6bfcc3794e4142d80246093da7617717f89a6fe19274a29593"
+      "valueSha256": "687daf7b9d4a361a68582c6321d24649dc808359ca128b1c5269e5d924ccb14a"
     },
     "SingularApplicationHeld.instBEqPreimage.beq._sparseCasesOn_2": {
-      "typeSha256": "f2d130ed52e119e5a2b0838a9fc18b2d6dbfb9ae49fb7b0542223a04e7c43dcc",
-      "valueSha256": "83391900e8a78dc97b4d70aef21aff4ffa34bf63fca7fe65dbc52881ae13ed2d"
+      "typeSha256": "8ef258e832376bd7fa030482c3177f93ccaf0b702afd4515f13e286e4b2b6f0b",
+      "valueSha256": "e63babc83e62a0d1ae0af75066fd94835b75f81309bf0845fb765d20a243d461"
     },
     "SingularApplicationHeld.instBEqPreimage.beq._sparseCasesOn_3": {
-      "typeSha256": "a0d015845b9f832a4c0762bf40d40ae9b773f3982a6bd98e08a417999f2fdb82",
-      "valueSha256": "8492cbdbca8394becb9dd72e9e57897a719dc4ef7e85a62a45cce670af2de80d"
+      "typeSha256": "18e19ba5f7a87a604541c7c5eb370b3fd984561b3ed01177edf767d81033da5e",
+      "valueSha256": "a3348869bbb11e33cfd9af528555a5a7839222ad30b00ed56c6a7e3fccfe415b"
     },
     "SingularApplicationHeld.instBEqPreimage.beq._sparseCasesOn_4": {
-      "typeSha256": "158894e0f20c7c2fac4e97df80d51e8e118fda0c63685c14816baed5334ed4c8",
-      "valueSha256": "535eadf2f310903d95119b17fe0bb900eea3994381bd32d59ccacdc2279f754a"
+      "typeSha256": "9998a0ece93f9fe8e61da8186c8ea548a1635bd2cc17291cab5a97475e621e90",
+      "valueSha256": "31049be4df4dbd83f24c205f5e96121465eb306ef005bb5b65c55c8711f0f4b3"
     },
     "SingularApplicationHeld.instBEqPreimage.beq._sparseCasesOn_5": {
-      "typeSha256": "d01009bb028615e61fd08fd6af2069e96634dc1ab2a1fe8f3c4862441a00d3e3",
-      "valueSha256": "c00ba664aedc97f7922406b5bc8478744b26d531c523ca7dd3a4312a79156cb9"
+      "typeSha256": "2c1b68b37d4b64c87eab45bfa00e9c5095fcc0da87820faa880a3541ab62d0ab",
+      "valueSha256": "f4d54dcece7a03be829be8298dca5ef8ba048ce5206d0c0a9847c5100ff52ccb"
     },
     "Singular.instBEqOutRef": {
       "typeSha256": "8359c229b8396a85785b26edc93927262e25a6d0ce2839f958a7054dd3c42eb5",
@@ -1610,27 +1610,27 @@
     },
     "SingularApplicationHeld.instBEqOutputDatum.beq": {
       "typeSha256": "b656a8387113742a3d4ed8487771b64c3b26b891e6da212ce55f96f2e8ee1c68",
-      "valueSha256": "f7b49aa0552ee2eb8e17e7d1e920d6aba2f3ecc222ec42a8e3402353aececdfb"
+      "valueSha256": "c181197123b9b2a1073dabfcc802f5aa9419399a51b397d6e2c505ef61901be8"
     },
     "SingularApplicationHeld.instBEqOutputDatum.beq.match_1": {
-      "typeSha256": "dd4a501a17a505643bea97620db00e57e3937c0e593bd942d1e51c1576ec2b12",
-      "valueSha256": "5953c53cda3745a209955abc374173ef4102ba735e2325282126eb80f1602634"
+      "typeSha256": "bf82a33be81af1ab7a70f6e649abd6459dad9a83caeeabc6921ef27a18a23f0b",
+      "valueSha256": "9322df5c428ae8205410e6be23552bfd8bff0a15cc8852f572a700bd91898ce2"
     },
     "SingularApplicationHeld.instBEqOutputDatum.beq._sparseCasesOn_1": {
-      "typeSha256": "8f56eccf795f7ba15b37aae60e5fc10ab24b85b716666abdb9ab0b779d439f39",
-      "valueSha256": "5ed0e7bffe8f897fc425e07b553e41539dc2b66ff1ae2bb09376ecd986445a95"
+      "typeSha256": "7048a84030bb48d8980c82890d845b1726e533ebe12a8fd199099f5044a51824",
+      "valueSha256": "e31cff0065330996cc06036b31ae9162c15be0758a172aaf04f86be77d364729"
     },
     "SingularApplicationHeld.instBEqOutputDatum.beq._sparseCasesOn_2": {
-      "typeSha256": "5f95920d7128cb360a106bf06f20d81fe953ac990572b68877fb5c208ceb1f9b",
-      "valueSha256": "41dae9f728445d10f9dddf607a052cbdda6e2056cc39f16e8ae05ed1bcaac153"
+      "typeSha256": "14f1321a6497c8e09c5e71efdc73059926e6be7f9aea3b41eb0eb1baa2bececc",
+      "valueSha256": "4e3352dd482e1d19fbb15584614a9b98a3c0e8529c40c1ff8acb1802048042da"
     },
     "SingularApplicationHeld.instBEqOutputDatum.beq._sparseCasesOn_3": {
-      "typeSha256": "a918a7f3df10c6f4bdbb4b7dd9ddf85e2f36a5e9a065e899450c2ad1e59a02a3",
-      "valueSha256": "de6a4346af7535b9b2aca11ed7c0df6aadf5c8c0480785c5ec8f370488d126f5"
+      "typeSha256": "1019bf82a84741880addc032b8b4a8e2ecc20fbd7b05357361bec813dc291d71",
+      "valueSha256": "c97abc1e190ac380c6f06dbb0c46cb1c80cad90f062109db40a9243d6deac5da"
     },
     "SingularApplicationHeld.instBEqOutputDatum.beq._sparseCasesOn_4": {
-      "typeSha256": "5e8bfc46044f5226efbf02d759fc95e54038fb9cda7b900299f11eea277c2333",
-      "valueSha256": "b7ac0cde2dde98cc218390dbd16d792a5098858c8e5e454ed48685499e043766"
+      "typeSha256": "8d3186019f7ec987808512dfb7f7b524a2f17e5337c07035492274bace5bf6f7",
+      "valueSha256": "820ef698f836d1e86680ec703eddf4a7a4484e601cef3da9f87a38cb9e498f18"
     },
     "SingularApplicationHeld.instBEqApplicationParameters": {
       "typeSha256": "1400aca7dc1f9b964508d6d858ec1b3ea09f88ead5386d34228d099632b04c97",
@@ -1638,11 +1638,11 @@
     },
     "SingularApplicationHeld.instBEqApplicationParameters.beq": {
       "typeSha256": "237fd942150f23d0cc6e0fe940634f1ad5cf8c9f09a10417cc40ea2ab5997296",
-      "valueSha256": "05e422134663ada5ed0b54e7b3ae3603947d373d3ee6c586e7358ca2d4ae5482"
+      "valueSha256": "22268cc3c2b77388f075236ba18b4e12d82824ed778045bd4b6eca176fee1fe4"
     },
     "SingularApplicationHeld.instBEqApplicationParameters.beq.match_1": {
-      "typeSha256": "7ab3056e367a7d82a4fd805b974c332d54071f23d15f9990943a1958308dbb24",
-      "valueSha256": "a00e0322abacc1dfeae95e38ed77a3f746543deb21d07ff43b5be1604d018aa0"
+      "typeSha256": "42a85d69706c7df663bc0124f312d88658a667ab80fca87e2750233784132c6b",
+      "valueSha256": "b426d21254d98cb5d0da4a8db2963e159f6cb701977d97f0a90ad994f79f732d"
     },
     "SingularApplicationHeld.ApplicationParameters.casesOn": {
       "typeSha256": "adabf0cf1d311e8816402029634fa1422f1853fea52b0ef6e41bf0039f44629a",
@@ -2078,11 +2078,11 @@
     },
     "SingularApplicationHeld.instBEqMutation.beq": {
       "typeSha256": "e2706e095d57dc72c5becbf28b5d0ff230a1fad8454e5e30ddce874edc720423",
-      "valueSha256": "06c145f700705ca621f7eac61e75b858ad5951f622854f032ab0dfe7f8bdf95d"
+      "valueSha256": "15b44ba1f5aea0573b706316180926f54317d10c693d15d457bc42fcba75bced"
     },
     "SingularApplicationHeld.instBEqMutation.beq.match_1": {
-      "typeSha256": "764c1ae2334adb56b9476e83973c0f5d8d1773f74200162e2088bf8ee502a986",
-      "valueSha256": "592ebc304b6dc472e2ec200f1001987b121ebbf6a66e4a9211e988bd0063a6fe"
+      "typeSha256": "1fb75e6ff3cb64f62711a9ce7ef3010a871b285a41bf19f3407efa9f88ef8cfc",
+      "valueSha256": "13cc9c57452bcc59f98a0e8dda66a3a4a93f8f5bf6f5726a95a52645341ab32f"
     },
     "SingularApplicationHeld.Mutation.casesOn": {
       "typeSha256": "bb7ac1ff433e80e2d0f28016bf8249295a45ebea0b18b8273958ab19bbcfc0bd",
@@ -2093,16 +2093,16 @@
       "valueSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     "SingularApplicationHeld.instBEqMutation.beq._sparseCasesOn_1": {
-      "typeSha256": "1cc13f709dab5259f9f4684a323ee5f8d549ef62eae1d62a6af58f1c2c676dd9",
-      "valueSha256": "d18f8fcdcf448657126bdb53ee25a54637bc72283536f07efe7e2f34981bca57"
+      "typeSha256": "e14b72a13f7f5bc86056c96159dbe3c06466322abdab217f0216772d7bddeff9",
+      "valueSha256": "cb46740e63aa7902b643ccf2faff41d8fe8848679b1188f29149b45d2e562be8"
     },
     "SingularApplicationHeld.Mutation.ctorIdx": {
       "typeSha256": "936ce2320745d18cc83f650a0d3adf72a752f6d5cbd475baacead035d2c3e664",
       "valueSha256": "17c91cdd725ad6a0ee3302b2a0a271ba38be8950c7b0daf513e6d3fa29f8d78a"
     },
     "SingularApplicationHeld.instBEqMutation.beq._sparseCasesOn_2": {
-      "typeSha256": "18551e7014b0038bf796317029d2d37268c1c4bec7a44195991e5bb58ddc94e1",
-      "valueSha256": "5ba37c7846b05bcecaacf3b69d57ca05971d1c9fbbf644de3d8b7a0176acd011"
+      "typeSha256": "e683b07e591b820dc8c5e943616acedc41aa880edcad21a0888340aee19ec7cd",
+      "valueSha256": "35f11742d148abc93bf6ca61eef07a760daa2d4623c0f1ec0e2de13a73b45391"
     },
     "SingularApplicationHeld.instBEqGuard": {
       "typeSha256": "bf86fb49c51c000d50b3e7dd309642525202a95b1635cf5e161603eb1e498506",
@@ -2241,8 +2241,8 @@
       "valueSha256": "ac0dbd8345a975e945a06686cfeb068c8f6219ff5eecf963de03da2941a0421f"
     },
     "SingularApplicationHeld.instReprChange.repr.match_1": {
-      "typeSha256": "3748e6b72618cb424f12a344b240a384492b9649ff84a633b523241775dc73d3",
-      "valueSha256": "89aced087b2da98330056c18072800187e5275d69f9e66322118c00b02b7207a"
+      "typeSha256": "af3bb72f194f633dbd5c2487e68f20158c8f6d14ec5569bccd07ddb4473e77cc",
+      "valueSha256": "e7a4159705519cc6b3932d272e7677bf65d7b11015c63bbb787397e44e24daf0"
     },
     "SingularApplicationHeld.Change.casesOn": {
       "typeSha256": "ae2b6ff8ddabd14cd76ee83df12c6990c6fa8a99610c418d282f7af7a8408155",
@@ -2258,7 +2258,7 @@
     },
     "SingularApplicationHeld.approvalFor": {
       "typeSha256": "57db55df41d8aa00367cb906c122d24a9d04c41e6a8142750520207d78de7ee4",
-      "valueSha256": "8f56420c1f47c1be430bf9549333fec0f0d7db29a1b298b83bb5e047f486ee5f"
+      "valueSha256": "a372be097a218a34d28bb5f5b40f6f02e7fe973cd1157a949b51aa0a08ef726c"
     },
     "SingularApplicationHeld.holdingAt": {
       "typeSha256": "0937341c59b6852b105f3ee00afb7f0efa701440cc0d72982586289203ae6b55",
@@ -2269,8 +2269,8 @@
       "valueSha256": "e568dace1e9cb4463d72ab4b75bc7f0b15fe5d7ed762c66e9d98b2aa8372d18f"
     },
     "SingularApplicationHeld.registrationApproval": {
-      "typeSha256": "eac8929542c7e7b6d8e8a0939163465d9da38845c7365e79a18e5f5cccb2f8d6",
-      "valueSha256": "eb2dcf22f718058fb16d45461bb64e6d21824697be44aac64859a35d5edd2e27"
+      "typeSha256": "05f34a81df89d304a6638ef47be6c17720261729eee6adff011ab2d6128f33d3",
+      "valueSha256": "9f4af5dcda77508a7790f8baf839ca79d93903536757c4ffb514b596f848cc21"
     },
     "SingularApplicationHeld.Change.key": {
       "typeSha256": "99afeb5fe53707015e59e09d40ce3d6247412e3a74c6f26a94a43fba56aea641",
@@ -2293,19 +2293,19 @@
       "valueSha256": "5ff2cc0f23dea6885e79d1548393f001774950ae4a480e0ef3ec9481587831a7"
     },
     "SingularApplicationHeld.instBEqObservedOutput.beq": {
-      "typeSha256": "39ef296f7363ac77745991b0af6024f1c0ad7f4791edeac4d97b1203b8e354d0",
-      "valueSha256": "b44a5ec8d1132e1d74544e15375bf63439a88a7fcac343baf032e21700e7702e"
+      "typeSha256": "1ff9fa408f4e72ea033cfd7e7ae367371678e032125feb338ffd9d8e9b4ade2b",
+      "valueSha256": "bc785e4376196aa117434003a38555bb4d5c787c0ac63b4a020f7c47d4c8f2e1"
     },
     "SingularApplicationHeld.instBEqObservedOutput.beq.match_1": {
-      "typeSha256": "dfd05dc07a68ba378eb90a415bdac66c8d1e1a6231952c0e7910f493a1e8f569",
-      "valueSha256": "204b13ac2993edc28c0d06cb75966d4b377a97056c2ed388b1918b53a7b97a32"
+      "typeSha256": "20a23396c01384d30d74acd2e86635c1b2b208ad2ce4e0c2cc17d7569218beb4",
+      "valueSha256": "0153a3cdae403e579bacd3a9b540bfa10b1cc519a0c82cf8fda8f0d626eab9ba"
     },
     "SingularApplicationHeld.ObservedOutput.casesOn": {
-      "typeSha256": "025ab32c60e65302749abe96a20f87e70d6bd028fbd384e27dc74cb3974c0f8d",
-      "valueSha256": "1efddbef0d69038292863bb6f4ebc0cf25f585fd0386369c3584a00baf6f45d6"
+      "typeSha256": "f9f1264b5811388eeb582d1e38277891ff4ca5b24d0b50dee9de69600704159e",
+      "valueSha256": "5482933b485e7e4401d81303e4c4189d94f0c847f55e3e66930eb1e39e1b6f99"
     },
     "SingularApplicationHeld.ObservedOutput.rec": {
-      "typeSha256": "32b06ec4e61a7c9346dd96b559b4cafa9e93f11aa9fffaf28a1f4bd5d388963d",
+      "typeSha256": "773e7e5d52412843b2021b7ca307e093a81ee79f95d557b4d95fca23cca3bdba",
       "valueSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     "Singular.instDecidableEqOutRef": {
@@ -2366,7 +2366,7 @@
     },
     "SingularApplicationHeld.changePreimages": {
       "typeSha256": "5d6de28d7e2f88a6b9df7bde71fe8819a5ab5dc8561b72347c44278bb9088289",
-      "valueSha256": "c1b8b6589d24337050881d3a98c1cb102967808a27f40a8d79c84bfeec9d827c"
+      "valueSha256": "19c9587afa6e7bc5b55956e1a1e96be0258ffbf30c6be6b90c974cfaa74949b9"
     },
     "SingularApplicationHeld.changePreimages.match_7": {
       "typeSha256": "735bdfbdd1b8e4d626390792f3b90c01ee09c902e73567fdd060c0e9a89af251",
@@ -2443,13 +2443,57 @@
     "SingularApplicationHeld.ReaderAnswer.rec": {
       "typeSha256": "4f1c3db9f2a990f5c94b8fa1ab20222c9a2a03c4569e435c092bbda4cc6bb643",
       "valueSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "SingularApplicationHeld.Address": {
+      "typeSha256": "b4611575b2b62eb57ff8b514cf96bf01666158b035ac2fcc89065136260d1e05",
+      "valueSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "SingularApplicationHeld.Address.casesOn": {
+      "typeSha256": "bbd26d45a5c1314120d568d9ea437c2f47769fd89f398532d72d87150d3a6de2",
+      "valueSha256": "f9a4b2b50615e8b73a35074ec011d3498b33136e649e9e89a86f5e9035ef48fb"
+    },
+    "SingularApplicationHeld.Address.mk": {
+      "typeSha256": "7819472dbcb47c89776ccce9e61c9896c295983dd17ff09e131cec838119262e",
+      "valueSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "SingularApplicationHeld.Address.paymentCredential": {
+      "typeSha256": "5e9aa73d753163588b04a7b16c31c07b0ed69a2a1b9c04fbad655d3f806b9a68",
+      "valueSha256": "dc97989759dd9e2488c25b7a0ee3a430e8d72cc5bdb0f8d5024ad4c37efe4b95"
+    },
+    "SingularApplicationHeld.Address.rec": {
+      "typeSha256": "2d81e936996588319fcea0844147be345d652d1357d0176b6ad073b4ae06c49d",
+      "valueSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "SingularApplicationHeld.Address.stakingCredential": {
+      "typeSha256": "7196a482c47b64860b117028834b2c770e823b3d2d4ed8c927b6ef88206f6d78",
+      "valueSha256": "bb2641b32ee7989ea822fef5fa9b3817c5d88d76e80491a44aa5dd46b207b8c3"
+    },
+    "SingularApplicationHeld.ObservedOutput.address": {
+      "typeSha256": "cea0632b2a13a682d6bc5b450fedf00d58e986006742d4e53bc156de8129779b",
+      "valueSha256": "c0c4beeb6b19b9a04cd75eb8b2ef4516484cf3a947bfebd7898d0ac708e5c782"
+    },
+    "SingularApplicationHeld.ObservedOutput.stakingCredential": {
+      "typeSha256": "f1a3ce24b54d961355e6b76dab7751b86a9e78fbcd55df7ca70fe8393e4b872a",
+      "valueSha256": "a8830cc24b4d1e06a7c024f92dd0098e1a1673f6b0fc3b4a6bdcf1fd26a84fd5"
+    },
+    "SingularApplicationHeld.instBEqAddress": {
+      "typeSha256": "773a15f59907de37c57b76320f5287715264b98ba194a856c250d4166c354d30",
+      "valueSha256": "7e55d8ae6fd161cb1767f6a2f80efee5668dc2c0c5fc9574dd8378a3693d9bdb"
+    },
+    "SingularApplicationHeld.instBEqAddress.beq": {
+      "typeSha256": "9cab857d39aa098f1cbbe491d3d0215be7551ba24d3a7fa86d82fc2e40d4c6ad",
+      "valueSha256": "300a42fa36b2bcad037afed4313756cc314e49e11e18edc4e5f85d5bbf784a27"
+    },
+    "SingularApplicationHeld.instBEqAddress.beq.match_1": {
+      "typeSha256": "c3c27c941f7f991a33f08dc5c36c612517722d0039e3afdf1d2b6ad35218bd1b",
+      "valueSha256": "c8ca9fd1a6b1d6d1ee30c2315cae94eddd3584107f4ad81c357872a00c08e359"
     }
   },
   "closureMode": "shared",
   "proofSourceHashes": {
     "models/singular-application-held/lean/SingularApplicationHeld/Reader.lean": "7face73c07f98bfdc1451bdb4fc522c95bda168a39168025837f8d143d055ab5",
     "models/singular-application-held/lean/SingularApplicationHeld/ReaderQuery.lean": "af038eea4f499a12a39b91ed0ea37df8298e5777afd1470aff802b4d8fc2c7a6",
-    "models/singular-application-held/lean/SingularApplicationHeld/ReaderStatements.lean": "42589684bf8b98b82b2d20957a1c73416be0cca59fee703b6278d189c8cbca7d",
+    "models/singular-application-held/lean/SingularApplicationHeld/ReaderStatements.lean": "e6b6a8511ee2ae3f7bdd18712220e41851811bfe99dbd4b734c9124d367ab467",
     "models/singular-application-held/lean/ReaderMain.lean": "8e4a04874fe5a4e8953d61f54a1ee1df66c5c10fb1eb52eb8805d82bdcfecd69",
     "models/singular-application-held/lean/SingularApplicationHeld/NeutralReaderStatements.lean": "24dc9ef606b4028a28a9663ff7515b5ebf9c7f1368ed919f29c61a91133d4f90"
   },
@@ -2458,5 +2502,18 @@
     "application": "SingularApplicationHeld.readKey",
     "refinement": "SingularApplicationHeld.refineReaderAnswer"
   },
-  "neutralDriver": "models/singular-application-held/.lake/build/bin/neutralReader"
+  "neutralDriver": "models/singular-application-held/.lake/build/bin/neutralReader",
+  "addressCorrection": {
+    "authority": "https://github.com/lambdasistemi/singular/issues/743",
+    "reason": "The approval commits the whole holding address so a folder cannot redirect its staking.",
+    "model": "SingularApplicationHeld.approvalFor reads ObservedOutput.address; registrationApproval commits Address, including its staking reference.",
+    "validator": "onchain/lib/singular_state/preimage.ak: registration_preimage, RegistrationApproval.holding_address",
+    "consumer": "Open-datum registration delivery compares full addresses; application custody and money accounting continue to compare payment credentials.",
+    "sources": {
+      "models/singular-application-held/lean/SingularApplicationHeld/AddressStatements.lean": "93af0dfb917a4faf7ae4bd99b7733b4424cb8007f9896d0e9180ac97b6876e03",
+      "models/singular-application-held/lean/SingularApplicationHeld/Client.lean": "3ceb71f76c561e064681f683a02dd1dd8c3d2e2ed5e0fefc45d036071615e7c2",
+      "models/singular-application-held/lean/SingularApplicationHeld/Core.lean": "7286c81da71e8069c3bd68fcf6d778334b8e91137bb84766a3a015901961f0c9",
+      "models/singular-application-held/lean/SingularApplicationHeld/RequestShapes.lean": "cb0f85498da121c4ccce2b8112d53709793b4e411c0c6f632a37b6ad11512465"
+    }
+  }
 }

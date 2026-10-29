@@ -77,5 +77,5 @@ nix run ./conformance#coverage-gate -- --root . ratchet
 The appendix tests check the evidence reader. The coverage ratchet reports
 regressions against its protected base. Neither command supplies the missing
 model comparisons. The aligned models remain at
-[the application-held model](https://github.com/lambdasistemi/singular/tree/70388417ed8968d93baf8b0c886c3df6d7dcaa40/models/singular-application-held) and
-[the open-datum model](https://github.com/lambdasistemi/singular/tree/70388417ed8968d93baf8b0c886c3df6d7dcaa40/models/open-datum-application-held).
+[the application-held model](https://github.com/lambdasistemi/singular/tree/bd354da787908694f6695f6f6035878c72e22be0/models/singular-application-held) and
+[the open-datum model](https://github.com/lambdasistemi/singular/tree/bd354da787908694f6695f6f6035878c72e22be0/models/open-datum-application-held).

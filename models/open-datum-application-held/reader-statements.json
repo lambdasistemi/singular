@@ -7,7 +7,7 @@
   "surface": "SingularApplicationHeld.readKey",
   "driver": "models/singular-application-held/.lake/build/bin/reader",
   "corpus": "models/open-datum-application-held/reader-corpus.json",
-  "corpusSha256": "a9626b4ab6b4d5b2e3c000f350ed09976876319b69e33c045f24bee1005ad80f",
+  "corpusSha256": "62b3a9f25bf9f0ee6566155b8beb280027d0ff65b82f834ebe2c94bc042b3ac1",
   "definitions": {
     "SingularApplicationHeld.readKey": {
       "typeSha256": "9d6a68d5e5aafcb8c4baca13bfcddacd9cb0e9bfa2b926dbbaa6df06e9b8206d",
@@ -185,11 +185,11 @@
     },
     "OpenDatumApplicationHeld.Fixtures.code": {
       "typeSha256": "f10661fd93144868fead4f1bfdf0e5def14d700382af806006546a1404bed931",
-      "valueSha256": "c67bd6c3e172a9590bd4ff1a37bfade666b0c0988cdfd23d11dd02b779952cb3"
+      "valueSha256": "e10fe73a93b806f2c71c8e4a95688a048ec7c4e933e1f845143df66147d863c9"
     },
     "OpenDatumApplicationHeld.Fixtures.code.match_1": {
-      "typeSha256": "0ce228c7c420f9e2360f9048a2f5ebfc15085e4aa7c322126cf5038edc5ed0ef",
-      "valueSha256": "58947ee1fd8f326e8f40a730c3b1e671165c3ce69598ebacf7e99a42bdb4df80"
+      "typeSha256": "f6a80b4bfc719c3c85feeb07b4b0bb47d3069944394289d5327986e0ebbe499c",
+      "valueSha256": "82558a46d379a1d196fab6a99538dcbbf0614c2d00cf488902d46cc70e167373"
     },
     "OpenDatumApplicationHeld.Fixtures.commit": {
       "typeSha256": "5a86ce7d0f4692a4e8e1bedf4e014d139699cb242313a854b1de26ee364684f2",
@@ -221,7 +221,7 @@
     },
     "OpenDatumApplicationHeld.ReaderFixtures.ordinary": {
       "typeSha256": "10dadd3ea719334ee64db4d69c75a589bcd29962a0a730b5f47a56a5fc07a1ff",
-      "valueSha256": "f8148157884d64153b123e03f73e3a28cd92a86cad95e3ad96e036b55525f87d"
+      "valueSha256": "90a7471e289f98ec484b6a56234357ac38592f453e9b68d183631fb92a7e788d"
     },
     "OpenDatumApplicationHeld.Fixtures.seed": {
       "typeSha256": "ca1a1ff3dbeed6432f205f421a5ef9e82e1a0e2a3ef75cce216b688e16729f0c",
@@ -257,7 +257,7 @@
     },
     "OpenDatumApplicationHeld.Fixtures.registration": {
       "typeSha256": "9797387e43a895adad23899ee47f97a86981bd49cfb1209bc5f38b38662834be",
-      "valueSha256": "36c4e32fe23270b971a63d9b4251fb982f1c3175993169fe6c89899131c50685"
+      "valueSha256": "dc9c73ae32a5f03cc18bc9c7b8400f125aafc2daa622fd5034900d1cc5d67435"
     },
     "SingularApplicationHeld.registrationAsset": {
       "typeSha256": "cd5ebfc7adc92bb77183e8a4dbef3eabbb68b802fa537a9e56c190aa34025c29",
@@ -265,7 +265,7 @@
     },
     "OpenDatumApplicationHeld.Fixtures.registrationData": {
       "typeSha256": "e7ced619df1a7e2fe368e305501e43c9e297da52806aafb3eb2137975aeb4287",
-      "valueSha256": "ca284379c576decbd5b138929e0a7c75bd9876941ef0c68236861210f6c82f7f"
+      "valueSha256": "f41c32277a8ec63125780947551455b75a37e1cd6a83aa878d6e28413ea89dc3"
     },
     "OpenDatumApplicationHeld.Fixtures.registryId": {
       "typeSha256": "9a0f23626fe1ca8ae7cfd646ae8e4d4e08c8eb5581c13c6791e96f2d4d4465bb",
@@ -289,7 +289,7 @@
     },
     "OpenDatumApplicationHeld.ReaderFixtures.genesisState": {
       "typeSha256": "dd9379a2655c72a64374945081b95cb0ecb2ada766f57357df233399f384308d",
-      "valueSha256": "db54ede3a0d18a255e5d5f9f4ff4cda3da9a189f8f9a0b31baa3847cd761ccdc"
+      "valueSha256": "5d9a50bf7207fd8e7c8cc81f5ea80d9389fa7755788263e1fb428ec4e020e4a8"
     },
     "OpenDatumApplicationHeld.ReaderFixtures.genesisChange": {
       "typeSha256": "dd9379a2655c72a64374945081b95cb0ecb2ada766f57357df233399f384308d",
@@ -309,7 +309,7 @@
     },
     "SingularApplicationHeld.buildFold": {
       "typeSha256": "a9ea5710c65b55adadc87255da25ca844aa6114443c6dbb669397697a87d8c9f",
-      "valueSha256": "37610fefefbe78626857732abbf3c288026cc86b2de79284d668fbb263e20f4f"
+      "valueSha256": "796a81acc0d14e74709b299728fe791d8f324486cb5838f20e3a84088742781d"
     },
     "SingularApplicationHeld.FoldFunding": {
       "typeSha256": "b4611575b2b62eb57ff8b514cf96bf01666158b035ac2fcc89065136260d1e05",
@@ -345,7 +345,7 @@
     },
     "SingularApplicationHeld.prepareChanges": {
       "typeSha256": "40594a2e7b7accb67637906bdd0b7576652f26ac2d85a72ace483a1f169c00df",
-      "valueSha256": "1235add5947ab12da604edd5d81f3f942f7189791309d2df81803fef1e62ef7a"
+      "valueSha256": "abc0d2c81400884ed367c913485d07d7c97f6e87b293de341ad829ab20d7411e"
     },
     "SingularApplicationHeld.PendingRequest.bid": {
       "typeSha256": "be2ded429181b1adc17fb2f5b97b0e9f3f92321a2266a7d6f66a0a8a31ea3da4",
@@ -353,15 +353,15 @@
     },
     "SingularApplicationHeld.numbered": {
       "typeSha256": "fb803981d27c4bc709d1ef2e37dc84d883269e464d8bd5e711705fdfe75e0203",
-      "valueSha256": "a758aa9d19df1bdc810cc007a630f46cbcb8aa9d79fa9b0939116b29ab330b66"
+      "valueSha256": "ac927601198931e433dd106ba87c8b09bd4703496bbbdb3d99e0097409be6cce"
     },
     "SingularApplicationHeld.numbered.match_1": {
       "typeSha256": "c1d999699dcf1bb06a179628f61b072504f15ab7640a8b8edc8a7feb2bd161c1",
       "valueSha256": "c7f7de69432f3aa0426e06ad488f2a5982dcb6a275d83043764ddcd3330fa396"
     },
     "SingularApplicationHeld.buildFold.match_1": {
-      "typeSha256": "60e1c59081cb3749548d26163593a5cc23b5124380b1bf3ce2797a0b6d4119b1",
-      "valueSha256": "422455af084eac48f3949c6e819b06fb507c3ebd18c0ac7b00be30ebcef28f27"
+      "typeSha256": "d9c2555715ba9f237af13852437fa0b4d1f8e8977c825be809e98eb9db1e1b79",
+      "valueSha256": "a3c742daac306e945d870a268c1157cc3184c71199584394e329cf6aa551af66"
     },
     "OpenDatumApplicationHeld.ReaderFixtures.pendingWorld": {
       "typeSha256": "f3031e946e10b562accb54124ce91d438a2e1aae7ecd6818d297dead5b188c1b",
@@ -377,7 +377,7 @@
     },
     "OpenDatumApplicationHeld.ReaderFixtures.pendingOutput": {
       "typeSha256": "dd9379a2655c72a64374945081b95cb0ecb2ada766f57357df233399f384308d",
-      "valueSha256": "b81da77df08ed57591fc98884495c4730357ba9037e26f1140f61994c9bec10e"
+      "valueSha256": "56eceaee2322a76b8c76c6410e2acb0b6389e34e56d26fc0377bd236f05cf974"
     },
     "OpenDatumApplicationHeld.ReaderFixtures.terminalWorld": {
       "typeSha256": "f3031e946e10b562accb54124ce91d438a2e1aae7ecd6818d297dead5b188c1b",
@@ -601,7 +601,7 @@
     },
     "OpenDatumApplicationHeld.registrationBook": {
       "typeSha256": "396974c2b460bded3b3d672ffb327b43218a3338f2d75a3598c13175fc9af954",
-      "valueSha256": "ef3954afe3455614ae1679007f3bca3e0b1bfd073cd3cf71dda3e16a6cadcc85"
+      "valueSha256": "b15672a26bb78628fd02cf1ef9ae75987f3156b13214baa0781b427227993785"
     },
     "SingularApplicationHeld.registrationShape": {
       "typeSha256": "73c7c04831111709f8e00d7c4588853f5836c8634fd32e09a273f47306537b87",
@@ -697,7 +697,7 @@
     },
     "OpenDatumApplicationHeld.registrationSpend": {
       "typeSha256": "633ccc6f47f72eab6121aed7d762f394c7a353561a9810d51dde59423d4571c8",
-      "valueSha256": "16e1d9f5312608c9e6cf778f58ac020b5ca94850071032ce4e242a12d28db814"
+      "valueSha256": "f4a2df6aed12b57e4a608f53ccf537de6e4bf22a94344810d428abf672450d39"
     },
     "OpenDatumApplicationHeld.registrationSpend.match_3": {
       "typeSha256": "b890f610ff34f07f6c2c07746bbca728c244416ff58fdc341634fd1fffe20543",
@@ -758,12 +758,16 @@
     "OpenDatumApplicationHeld.ReaderFixtures.booking": {
       "typeSha256": "77a4fbfe47178bf50e371918dc4fbcd32be0ff1ad5704b33469fca00e344b361",
       "valueSha256": "22bcc519ec915a59d3559ecb0e5be6fb2a4b17656f84f80e904a487a2d68f877"
+    },
+    "OpenDatumApplicationHeld.Fixtures.code.match_3": {
+      "typeSha256": "69835659a86b40b77490bc8e9bd24979ed06ab298687585433ad53477433cae9",
+      "valueSha256": "504f78f02962f903b7e4790449233e66f8f1a4f47cf2bc65e21bcff6a5cb36bf"
     }
   },
   "closureMode": "delta-to-shared",
   "proofSourceHashes": {
     "models/open-datum-application-held/lean/OpenDatumApplicationHeld/ReaderStatements.lean": "6f36d3741f8005895088ff70667b4c62e42c4b52fe702556be22b33fe371fd2b",
-    "models/open-datum-application-held/lean/OpenDatumApplicationHeld/ReaderFixtures.lean": "c1435698060d4cb30d4a6840ccc1141d6581fbc1b4b3bb71704ab228978a14ec",
+    "models/open-datum-application-held/lean/OpenDatumApplicationHeld/ReaderFixtures.lean": "8d24fa0689314f36fa67f0e63dbd0d8448909be36e04a9cd46c6d5fdf74dac4a",
     "models/open-datum-application-held/lean/ReaderCorpusMain.lean": "e8436baa3b23e94ddcb1114454435e88ede5b49fbbeb2b8fea11b446007a3970"
   },
   "surfaces": {
@@ -771,5 +775,18 @@
     "application": "SingularApplicationHeld.readKey",
     "refinement": "SingularApplicationHeld.refineReaderAnswer"
   },
-  "neutralDriver": "models/singular-application-held/.lake/build/bin/neutralReader"
+  "neutralDriver": "models/singular-application-held/.lake/build/bin/neutralReader",
+  "addressCorrection": {
+    "authority": "https://github.com/lambdasistemi/singular/issues/743",
+    "reason": "The approval commits the whole holding address so a folder cannot redirect its staking.",
+    "model": "SingularApplicationHeld.approvalFor reads ObservedOutput.address; registrationApproval commits Address, including its staking reference.",
+    "validator": "onchain/lib/singular_state/preimage.ak: registration_preimage, RegistrationApproval.holding_address",
+    "consumer": "Open-datum registration delivery compares full addresses; application custody and money accounting continue to compare payment credentials.",
+    "sources": {
+      "models/singular-application-held/lean/SingularApplicationHeld/AddressStatements.lean": "93af0dfb917a4faf7ae4bd99b7733b4424cb8007f9896d0e9180ac97b6876e03",
+      "models/singular-application-held/lean/SingularApplicationHeld/Client.lean": "3ceb71f76c561e064681f683a02dd1dd8c3d2e2ed5e0fefc45d036071615e7c2",
+      "models/singular-application-held/lean/SingularApplicationHeld/Core.lean": "7286c81da71e8069c3bd68fcf6d778334b8e91137bb84766a3a015901961f0c9",
+      "models/singular-application-held/lean/SingularApplicationHeld/RequestShapes.lean": "cb0f85498da121c4ccce2b8112d53709793b4e411c0c6f632a37b6ad11512465"
+    }
+  }
 }

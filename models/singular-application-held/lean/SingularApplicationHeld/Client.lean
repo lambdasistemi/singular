@@ -45,15 +45,15 @@ def prepareChanges (hash : Hash) (code : Codec) (requests : List PendingRequest)
   requests.foldl (fun (changes, holdings) request => match request with
     | .registration output data =>
       (changes ++ [.register output.reference data.key (holdings.length + 1) data.deposit],
-       holdings ++ [⟨⟨0, 0⟩, data.holdingAddress, data.deposit, .application data.initialDatum,
-         [(activeAsset hash code data.registry data.key, 1)]⟩])
+       holdings ++ [⟨⟨0, 0⟩, data.holdingAddress.paymentCredential, data.deposit, .application data.initialDatum,
+         [(activeAsset hash code data.registry data.key, 1)], data.holdingAddress.stakingCredential⟩])
     | .termination output _ key => (changes ++ [.terminate output.reference key], holdings)) ([], [])
 /-- a constructive transaction, with public premise checks later. -/
 def buildFold (hash : Hash) (code : Codec) (commit : TrieCommit) (release : PublishedRelease)
     (registry : PublicRegistry) (requests : List PendingRequest) (funding : FoldFunding) : FoldObservation := Id.run do
   let (changes, holdings) := prepareChanges hash code requests
   let processorValue := (requests.map PendingRequest.bid).sum + funding.ordinaryInput.lovelace - funding.fee
-  let processor : ObservedOutput := ⟨⟨0, 0⟩, funding.processorAddress, processorValue, .empty, []⟩
+  let processor : ObservedOutput := ⟨⟨0, 0⟩, funding.processorAddress, processorValue, .empty, [], none⟩
   let outputs := numbered funding.transactionId ([registry.state] ++ holdings ++ [processor])
   let state := outputs.head?.getD registry.state
   let inputs := [registry.state] ++ requests.map PendingRequest.output ++ [funding.ordinaryInput]

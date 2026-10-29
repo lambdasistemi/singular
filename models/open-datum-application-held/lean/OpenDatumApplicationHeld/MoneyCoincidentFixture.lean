@@ -5,7 +5,7 @@ namespace OpenDatumApplicationHeld.Money.Refutation
 open Singular Lean SingularApplicationHeld
 open OpenDatumApplicationHeld.Fixtures
 
-def data : RegistrationData := { registrationData with holdingAddress := funding.processorAddress }
+def data : RegistrationData := { registrationData with holdingAddress := ⟨funding.processorAddress, none⟩ }
 def request : PendingRequest := .registration
   { registration.output with assets := [(registrationAsset hash code release data, 1)] } data
 def decode : DecodeApplication

@@ -8,7 +8,7 @@ def changePreimages (observation : FoldObservation) (action : Change) : List Pre
   | .terminate _ key => [.terminationApproval observation.before.identity key]
   | .register _ key index deposit => match observation.outputs[index]? with
     | some output => match output.datum with
-      | .application datum => [.registrationApproval observation.before.identity key output.credential datum deposit]
+      | .application datum => [.registrationApproval observation.before.identity key output.address datum deposit]
       | _ => []
     | _ => []
 
@@ -23,7 +23,9 @@ def code : Codec
   | .active registry key => [1, registry.policy, registry.name, key]
   | .applicationConfiguration registry => [2, registry.policy, registry.name]
   | .registrationApproval registry key address datum deposit =>
-      [3, registry.policy, registry.name, key, address, datum, deposit]
+      [3, registry.policy, registry.name, key, address.paymentCredential] ++
+        (match address.stakingCredential with | none => [0] | some stake => [1, stake]) ++
+        [datum, deposit]
   | .terminationApproval registry key => [4, registry.policy, registry.name, key]
 
 def hash : Hash := fun xs => xs.foldl (fun accumulator value => accumulator * 4099 + value + 1) 1
@@ -40,7 +42,7 @@ def commit : TrieCommit := fun trie => trie.foldl (fun accumulator entry =>
 
 def control (key : Key) : ProtectedControl := ⟨registryId, activeAsset hash code registryId key, key, 42, 7⟩
 
-def registrationData : RegistrationData := ⟨registryId, 7, 42, 50, 99, 1007, 7, 1, 20, 30⟩
+def registrationData : RegistrationData := ⟨registryId, 7, 42, 50, ⟨99, none⟩, 1007, 7, 1, 20, 30⟩
 
 def decode : DecodeApplication
   | 1007 => some (.live (control 7) 123)
@@ -51,17 +53,17 @@ def decode : DecodeApplication
 
 def registration : PendingRequest := .registration
   ⟨⟨12, 0⟩, release.applicationCredential, 23, .application 2007,
-    [(registrationAsset hash code release registrationData, 1)]⟩ registrationData
+    [(registrationAsset hash code release registrationData, 1)], none⟩ registrationData
 
 def termination : PendingRequest := .termination
   ⟨⟨13, 0⟩, release.applicationCredential, 10, .empty,
-    [(activeAsset hash code registryId 8, 1), (terminationApproval hash code release registryId 8, 1)]⟩ registryId 8
+    [(activeAsset hash code registryId 8, 1), (terminationApproval hash code release registryId 8, 1)], none⟩ registryId 8
 
 def registry : PublicRegistry :=
   let trie := trieSet [] 8 (.known .active)
-  ⟨registryId, seed, ⟨⟨11, 0⟩, release.statePolicy, 2, .root (commit trie), [(registryId, 1)]⟩, trie⟩
+  ⟨registryId, seed, ⟨⟨11, 0⟩, release.statePolicy, 2, .root (commit trie), [(registryId, 1)], none⟩, trie⟩
 
-def funding : FoldFunding := ⟨⟨⟨14, 0⟩, 60, 1, .empty, []⟩, 77, 15, ⟨5, 6⟩, 1⟩
+def funding : FoldFunding := ⟨⟨⟨14, 0⟩, 60, 1, .empty, [], none⟩, 77, 15, ⟨5, 6⟩, 1⟩
 
 def mixed : FoldObservation := buildFold hash code commit release registry [registration, termination] funding
 

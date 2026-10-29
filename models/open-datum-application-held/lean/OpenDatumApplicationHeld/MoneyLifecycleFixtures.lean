@@ -14,13 +14,13 @@ def observation (inputs outputs : List ObservedOutput) (mint : List (TokenId × 
 
 def configuration : ObservedOutput :=
   ⟨⟨16, 0⟩, release.applicationCredential, 2, .configuration ⟨0, 0, 19, 10, 1⟩,
-    [(configurationAsset hash code release registryId, 1)]⟩
+    [(configurationAsset hash code release registryId, 1)], none⟩
 
 def live : ObservedOutput :=
   ⟨⟨17, 0⟩, release.applicationCredential, 17, .application 1008,
-    [(activeAsset hash code registryId 8, 1)]⟩
+    [(activeAsset hash code registryId 8, 1)], none⟩
 
-def refund (value : Nat) : ObservedOutput := ⟨⟨18, 0⟩, registrationData.refundAddress, value, .empty, []⟩
+def refund (value : Nat) : ObservedOutput := ⟨⟨18, 0⟩, registrationData.refundAddress, value, .empty, [], none⟩
 
 def examples : List (String × ApplicationObservation) :=
   [("configurationCreate", { observation [] [configuration]
@@ -45,8 +45,8 @@ def examples : List (String × ApplicationObservation) :=
    ("liveUpdate", observation [live] [{live with reference := ⟨18, 0⟩, datum := .application 1009}]
       [] [.liveUpdate live.reference 0] [42]),
    ("approvalBurn", observation
-      [⟨⟨19, 0⟩, 60, 2, .empty, [(terminationApproval hash code release registryId 8, 1)]⟩]
-      [⟨⟨20, 0⟩, 60, 2, .empty, []⟩]
+      [⟨⟨19, 0⟩, 60, 2, .empty, [(terminationApproval hash code release registryId 8, 1)], none⟩]
+      [⟨⟨20, 0⟩, 60, 2, .empty, [], none⟩]
       [(terminationApproval hash code release registryId 8, -1)] [.approvalBurn])]
 
 def exampleFor (name : String) : ApplicationObservation :=

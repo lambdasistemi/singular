@@ -83,7 +83,8 @@
                 "reference": {
                   "index": 1,
                   "tx": 30
-                }
+                },
+                "stakingCredential": null
               }
             ]
           }
@@ -134,7 +135,8 @@
           "reference": {
             "index": 1,
             "tx": 30
-          }
+          },
+          "stakingCredential": null
         }
       }
     }
@@ -226,7 +228,8 @@
                 "reference": {
                   "index": 0,
                   "tx": 31
-                }
+                },
+                "stakingCredential": null
               }
             ]
           }
@@ -264,7 +267,8 @@
               "reference": {
                 "index": 0,
                 "tx": 30
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -332,7 +336,8 @@
           "reference": {
             "index": 0,
             "tx": 31
-          }
+          },
+          "stakingCredential": null
         }
       }
     }
@@ -436,7 +441,8 @@
               "reference": {
                 "index": 0,
                 "tx": 32
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -502,7 +508,8 @@
             "reference": {
               "index": 0,
               "tx": 32
-            }
+            },
+            "stakingCredential": null
           },
           "trie": [
             [
@@ -617,7 +624,8 @@
               "reference": {
                 "index": 0,
                 "tx": 32
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -683,7 +691,8 @@
             "reference": {
               "index": 0,
               "tx": 32
-            }
+            },
+            "stakingCredential": null
           },
           "trie": [
             [
@@ -880,7 +889,8 @@
                 "reference": {
                   "index": 1,
                   "tx": 30
-                }
+                },
+                "stakingCredential": null
               }
             ]
           }
@@ -918,7 +928,8 @@
               "reference": {
                 "index": 0,
                 "tx": 30
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -1071,7 +1082,8 @@
               "reference": {
                 "index": 0,
                 "tx": 30
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -1224,7 +1236,8 @@
               "reference": {
                 "index": 0,
                 "tx": 30
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -1637,7 +1650,8 @@
               "reference": {
                 "index": 0,
                 "tx": 32
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -1752,7 +1766,8 @@
                 "reference": {
                   "index": 1,
                   "tx": 30
-                }
+                },
+                "stakingCredential": null
               }
             ]
           }
@@ -1790,7 +1805,8 @@
               "reference": {
                 "index": 0,
                 "tx": 30
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -1928,7 +1944,8 @@
                 "reference": {
                   "index": 1,
                   "tx": 30
-                }
+                },
+                "stakingCredential": null
               }
             ]
           }
@@ -1961,7 +1978,8 @@
               "reference": {
                 "index": 0,
                 "tx": 30
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -2098,7 +2116,8 @@
                 "reference": {
                   "index": 1,
                   "tx": 30
-                }
+                },
+                "stakingCredential": null
               }
             ]
           }
@@ -2136,7 +2155,8 @@
               "reference": {
                 "index": 0,
                 "tx": 30
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -2274,7 +2294,8 @@
                 "reference": {
                   "index": 1,
                   "tx": 30
-                }
+                },
+                "stakingCredential": null
               }
             ]
           }
@@ -2312,7 +2333,8 @@
               "reference": {
                 "index": 0,
                 "tx": 30
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -2453,7 +2475,8 @@
                 "reference": {
                   "index": 1,
                   "tx": 30
-                }
+                },
+                "stakingCredential": null
               }
             ]
           }
@@ -2491,7 +2514,8 @@
               "reference": {
                 "index": 0,
                 "tx": 30
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -2632,7 +2656,8 @@
                 "reference": {
                   "index": 1,
                   "tx": 30
-                }
+                },
+                "stakingCredential": null
               }
             ]
           }
@@ -2670,7 +2695,8 @@
               "reference": {
                 "index": 0,
                 "tx": 30
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -2811,7 +2837,8 @@
                 "reference": {
                   "index": 1,
                   "tx": 30
-                }
+                },
+                "stakingCredential": null
               }
             ]
           }
@@ -2849,7 +2876,8 @@
               "reference": {
                 "index": 0,
                 "tx": 30
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -2990,7 +3018,8 @@
                 "reference": {
                   "index": 1,
                   "tx": 30
-                }
+                },
+                "stakingCredential": null
               },
               {
                 "assets": [
@@ -3012,7 +3041,8 @@
                 "reference": {
                   "index": 0,
                   "tx": 40
-                }
+                },
+                "stakingCredential": null
               }
             ]
           }
@@ -3050,7 +3080,8 @@
               "reference": {
                 "index": 0,
                 "tx": 30
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -3183,7 +3214,8 @@
                 "reference": {
                   "index": 1,
                   "tx": 30
-                }
+                },
+                "stakingCredential": null
               }
             ]
           }
@@ -3221,7 +3253,8 @@
               "reference": {
                 "index": 0,
                 "tx": 30
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -3365,7 +3398,8 @@
               "reference": {
                 "index": 0,
                 "tx": 32
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -3521,7 +3555,8 @@
               "reference": {
                 "index": 0,
                 "tx": 32
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -3670,7 +3705,8 @@
               "reference": {
                 "index": 0,
                 "tx": 32
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -3804,7 +3840,8 @@
                 "reference": {
                   "index": 1,
                   "tx": 30
-                }
+                },
+                "stakingCredential": null
               }
             ]
           }
@@ -3842,7 +3879,8 @@
               "reference": {
                 "index": 0,
                 "tx": 30
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -3907,7 +3945,8 @@
           "reference": {
             "index": 1,
             "tx": 30
-          }
+          },
+          "stakingCredential": null
         }
       }
     }
@@ -3996,7 +4035,8 @@
                 "reference": {
                   "index": 1,
                   "tx": 30
-                }
+                },
+                "stakingCredential": null
               }
             ]
           }
@@ -4034,7 +4074,8 @@
               "reference": {
                 "index": 0,
                 "tx": 30
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -4099,7 +4140,8 @@
           "reference": {
             "index": 1,
             "tx": 30
-          }
+          },
+          "stakingCredential": null
         }
       }
     }
@@ -4188,7 +4230,8 @@
                 "reference": {
                   "index": 1,
                   "tx": 30
-                }
+                },
+                "stakingCredential": null
               }
             ]
           }
@@ -4226,7 +4269,8 @@
               "reference": {
                 "index": 0,
                 "tx": 30
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -4291,7 +4335,8 @@
           "reference": {
             "index": 1,
             "tx": 30
-          }
+          },
+          "stakingCredential": null
         }
       }
     }
@@ -4380,7 +4425,8 @@
                 "reference": {
                   "index": 1,
                   "tx": 30
-                }
+                },
+                "stakingCredential": null
               }
             ]
           }
@@ -4418,7 +4464,8 @@
               "reference": {
                 "index": 0,
                 "tx": 30
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -4483,7 +4530,8 @@
           "reference": {
             "index": 1,
             "tx": 30
-          }
+          },
+          "stakingCredential": null
         }
       }
     }
@@ -4572,7 +4620,8 @@
                 "reference": {
                   "index": 1,
                   "tx": 30
-                }
+                },
+                "stakingCredential": null
               }
             ]
           }
@@ -4610,7 +4659,8 @@
               "reference": {
                 "index": 0,
                 "tx": 30
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -4675,7 +4725,8 @@
           "reference": {
             "index": 1,
             "tx": 30
-          }
+          },
+          "stakingCredential": null
         }
       }
     }
@@ -4764,7 +4815,8 @@
                 "reference": {
                   "index": 1,
                   "tx": 30
-                }
+                },
+                "stakingCredential": null
               }
             ]
           }
@@ -4802,7 +4854,8 @@
               "reference": {
                 "index": 0,
                 "tx": 30
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -4867,7 +4920,8 @@
           "reference": {
             "index": 1,
             "tx": 30
-          }
+          },
+          "stakingCredential": null
         }
       }
     }
@@ -4971,7 +5025,8 @@
               "reference": {
                 "index": 0,
                 "tx": 32
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -5120,7 +5175,8 @@
               "reference": {
                 "index": 0,
                 "tx": 32
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -5269,7 +5325,8 @@
               "reference": {
                 "index": 0,
                 "tx": 32
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -5418,7 +5475,8 @@
               "reference": {
                 "index": 0,
                 "tx": 32
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -5548,7 +5606,8 @@
                 "reference": {
                   "index": 0,
                   "tx": 31
-                }
+                },
+                "stakingCredential": null
               }
             ]
           }
@@ -5586,7 +5645,8 @@
               "reference": {
                 "index": 0,
                 "tx": 30
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -5647,7 +5707,8 @@
           "reference": {
             "index": 0,
             "tx": 31
-          }
+          },
+          "stakingCredential": null
         }
       }
     }
@@ -5743,7 +5804,8 @@
                 "reference": {
                   "index": 0,
                   "tx": 31
-                }
+                },
+                "stakingCredential": null
               }
             ]
           }
@@ -5781,7 +5843,8 @@
               "reference": {
                 "index": 0,
                 "tx": 30
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -5853,7 +5916,8 @@
           "reference": {
             "index": 0,
             "tx": 31
-          }
+          },
+          "stakingCredential": null
         }
       }
     }
@@ -5957,7 +6021,8 @@
               "reference": {
                 "index": 0,
                 "tx": 30
-              }
+              },
+              "stakingCredential": null
             }
           }
         },
@@ -6105,7 +6170,8 @@
               "reference": {
                 "index": 0,
                 "tx": 32
-              }
+              },
+              "stakingCredential": null
             }
           }
         },

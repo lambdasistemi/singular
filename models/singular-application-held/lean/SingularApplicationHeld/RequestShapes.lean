@@ -21,7 +21,7 @@ structure RegistrationData where
   key : Key
   controller : Nat
   refundAddress : Nat
-  holdingAddress : Nat
+  holdingAddress : Address
   initialDatum : Nat
   deposit : Nat
   bookedAt : Nat

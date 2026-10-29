@@ -14,13 +14,23 @@ structure PublishedRelease where
   statePolicy : Nat
   deriving Repr, BEq, DecidableEq, ToJson, FromJson
 
+/-- Abstract full address; the staking reference is an identity, not chain bytes. -/
+structure Address where
+  paymentCredential : Nat
+  stakingCredential : Option Nat
+  deriving Repr, BEq, DecidableEq, ToJson, FromJson
+
+instance : LawfulBEq Address where
+  eq_of_beq := by intro a b same; cases a; cases b; simp_all [reduceBEq]
+  rfl := by intro a; cases a; simp [reduceBEq]
+
 /-- complete operation/role preimages. -/
 inductive Preimage where
   | state (seed : OutRef)
   | active (registry : TokenId) (key : Key)
   | applicationConfiguration (registry : TokenId)
   | registrationApproval (registry : TokenId) (key : Key)
-      (holdingAddress : Nat) (initialDatum : Nat) (deposit : Nat)
+      (holdingAddress : Address) (initialDatum : Nat) (deposit : Nat)
   | terminationApproval (registry : TokenId) (key : Key)
   deriving Repr, BEq, DecidableEq, ToJson, FromJson
 
@@ -46,7 +56,7 @@ def activeAsset (hash : Hash) (code : Codec) (registry : TokenId) (key : Key) : 
   ⟨registry.policy, hash (code (.active registry key))⟩
 /-- exact approved registration payload. -/
 def registrationApproval (hash : Hash) (code : Codec) (release : PublishedRelease)
-    (registry : TokenId) (key : Key) (address datum deposit : Nat) : TokenId :=
+    (registry : TokenId) (key : Key) (address : Address) (datum deposit : Nat) : TokenId :=
   ⟨release.applicationPolicy, hash (code (.registrationApproval registry key address datum deposit))⟩
 /-- exact approved termination identity. -/
 def terminationApproval (hash : Hash) (code : Codec) (release : PublishedRelease)
@@ -76,7 +86,12 @@ structure ObservedOutput where
   lovelace : Nat
   datum : OutputDatum
   assets : List (TokenId × Nat)
+  stakingCredential : Option Nat := none
   deriving Repr, BEq, DecidableEq, ToJson, FromJson
+
+/-- The approval commits both observed address components. Custody checks use `credential`. -/
+@[simp] def ObservedOutput.address (output : ObservedOutput) : Address :=
+  ⟨output.credential, output.stakingCredential⟩
 
 /-- complete positive-quantity census. -/
 def quantity (output : ObservedOutput) (asset : TokenId) : Nat :=
@@ -178,7 +193,7 @@ def approvalFor (hash : Hash) (code : Codec) (release : PublishedRelease)
   | .register _ key index deposit =>
     let output ← holdingAt observation index
     let .application datum := output.datum | none
-    return registrationApproval hash code release observation.before.identity key output.credential datum deposit
+    return registrationApproval hash code release observation.before.identity key output.address datum deposit
   | .terminate _ key =>
     return terminationApproval hash code release observation.before.identity key
 

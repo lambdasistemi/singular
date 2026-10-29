@@ -30,7 +30,7 @@ def registrationEffect (h : Hash) (c : Codec) (o : ApplicationObservation)
   match a with
   | .registrationFold _ index => o.interval.lower < o.interval.upper &&
       o.interval.upper ≤ r.processDeadline && match o.outputs[index]? with
-      | some holding => holding.credential == r.holdingAddress &&
+      | some holding => holding.address == r.holdingAddress &&
           holding.datum == .application r.initialDatum && holding.lovelace == r.deposit &&
           quantity holding (activeAsset h c r.registry r.key) == 1 &&
           SingularApplicationHeld.Assets.mintQty o.assets (activeAsset h c r.registry r.key) == 1
@@ -94,7 +94,7 @@ def paymentEffects (decode : DecodeApplication) (o : ApplicationObservation) : B
     let input ← o.inputs.find? (fun input => input.reference == ref)
     let .registration r ← decoded decode input | none
     match action with
-    | .registrationFold .. => return (r.holdingAddress, r.deposit)
+    | .registrationFold .. => return (r.holdingAddress.paymentCredential, r.deposit)
     | .ownerReclaim .. => return (r.refundAddress, input.lovelace)
     | .expiredCleanup .. => return (r.refundAddress, r.deposit)
     | _ => none

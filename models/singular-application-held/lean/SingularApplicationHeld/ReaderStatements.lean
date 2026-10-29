@@ -26,7 +26,7 @@ theorem state_recognition (h : Hash) (c : Codec) (release : PublishedRelease)
     recognizeReaderState release (stateAsset h c release seed) output =
       recognizeState .none h c release seed output := by
   apply Bool.eq_iff_iff.mpr
-  rcases output with ⟨reference, credential, value, datum, assets⟩
+  rcases output with ⟨reference, credential, value, datum, assets, stakingCredential⟩
   cases assets with
   | nil => simp [recognizeReaderState, recognizeState, Proofs.applyGuard_none]
   | cons entry rest =>
