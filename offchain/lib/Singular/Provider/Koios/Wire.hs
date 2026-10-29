@@ -53,6 +53,7 @@ module Singular.Provider.Koios.Wire
     , genesisRequest
     , addressUtxosRequest
     , assetUtxosRequest
+    , policyAssetListRequest
     , assetTxsRequest
     , txInfoRequest
     , txCborRequest
@@ -81,6 +82,7 @@ module Singular.Provider.Koios.Wire
     , decodeTip
     , decodeNetworkMagic
     , decodeUtxos
+    , decodePolicyAssetNames
     , decodeAssetTxs
     , decodeTxInfos
     , decodeTxCbors
@@ -262,6 +264,7 @@ data Call
     | CallGenesis
     | CallAddressUtxos
     | CallAssetUtxos
+    | CallPolicyAssetList
     | CallAssetTxs
     | CallTxInfo
     | CallTxCbor
@@ -282,6 +285,7 @@ callName = \case
     CallGenesis -> "genesis"
     CallAddressUtxos -> "address_utxos"
     CallAssetUtxos -> "asset_utxos"
+    CallPolicyAssetList -> "policy_asset_list"
     CallAssetTxs -> "asset_txs"
     CallTxInfo -> "tx_info"
     CallTxCbor -> "tx_cbor"
@@ -381,6 +385,19 @@ assetUtxosRequest assets =
                 ]
         )
         byOutputReference
+
+{- | @policy_asset_list@: asset names under one policy, in stable name order.
+The API v1 contract documents this GET and @asset_utxos@ as separate calls:
+<https://github.com/cardano-community/koios-artifacts/blob/2e2eb57933e1e2528de5ca36ee961759841cf389/specs/fragments/paths/asset.yaml>.
+-}
+policyAssetListRequest :: PolicyID -> Request 'Read
+policyAssetListRequest policy =
+    request
+        CallPolicyAssetList
+        Get
+        [("_asset_policy", policyHex policy), ("select", "asset_name")]
+        NoBody
+        (Just "asset_name.asc")
 
 {- | @asset_txs@ with history: every transaction that included the asset.
 Koios lists them newest first; pages are read by block height then
@@ -672,6 +689,13 @@ decodeUtxos = runParser $ rows $ \o -> do
     address <- o .: "address" >>= addressOf
     out <- outputOf address o
     pure (txIn, out)
+
+-- | Policy listings must name every asset explicitly, including the empty name.
+decodePolicyAssetNames :: Value -> Either DecodeFailure [AssetName]
+decodePolicyAssetNames = runParser $ rows $ \o -> do
+    name <- (o .: "asset_name" >>= hexAny) <?> Key "asset_name"
+    when (BS.length name > 32) $ fail "asset name longer than 32 bytes"
+    pure (AssetName (SBS.toShort name))
 
 -- | One output reference.
 txInOf :: Object -> Parser TxIn

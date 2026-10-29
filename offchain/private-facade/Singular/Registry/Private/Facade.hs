@@ -687,6 +687,9 @@ answer server request body
     , rawPathInfo request
         `elem` ["/api/v1/address_utxos", "/api/v1/asset_utxos"] =
         answerOutputs server request body
+    | requestMethod request == "GET"
+    , rawPathInfo request == "/api/v1/policy_asset_list" =
+        answerPolicyAssets server request
     | requestMethod request == "POST"
     , rawPathInfo request
         `elem` ["/api/v1/reference_script_utxos", "/api/v1/utxo_info"] =
@@ -986,6 +989,58 @@ answerAssetInfo server body = do
             decCBOR
             (LBS.fromStrict (archivedCBOR tx))
             :: Either DecoderError ConwayTx
+
+{- | Names come from current and historical holdings; burned names remain
+listed, as on Koios. The client asks only for asset_name, not supply.
+-}
+answerPolicyAssets
+    :: Server
+    -> Request
+    -> IO (Status, [(HeaderName, ByteString)], LBS.ByteString, Value)
+answerPolicyAssets server request = do
+    policy <- requiredQuery "_asset_policy" request
+    source <- readOutputSourceFacts (serverLSQ server)
+    archive <- readIORef (serverArchive server)
+    let historical =
+            [ assets
+            | block <- archiveBlocks archive
+            , tx <- archivedTransactions block
+            , archivedValid tx
+            , (_, output) <- archivedBodyOutputs tx
+            , let MaryValue _ (MultiAsset assets) = output ^. valueTxOutL
+            ]
+        held =
+            [ assets
+            | output <- Map.elems (outputSourceOutputs source)
+            , let MaryValue _ (MultiAsset assets) = output ^. valueTxOutL
+            ]
+        names =
+            Set.toAscList $
+                Set.fromList
+                    [ Wire.assetNameHex name
+                    | assets <- historical <> held
+                    , (actualPolicy, entries) <- Map.toList assets
+                    , Wire.policyHex actualPolicy == policy
+                    , (name, quantity) <- Map.toList entries
+                    , quantity /= 0
+                    ]
+        origin =
+            object
+                [ "point" .= show (outputSourcePoint source)
+                , "query"
+                    .= ("policy names from current and full-block outputs" :: Text)
+                , "blocks" .= map archivedHeight (archiveBlocks archive)
+                , "outputsCBOR"
+                    .= [ object
+                            [ "reference" .= show reference
+                            , "bytes" .= hex (serialize' (eraProtVerHigh @ConwayEra) output)
+                            ]
+                       | (reference, output) <- Map.toAscList (outputSourceOutputs source)
+                       ]
+                ]
+    (headers, rows) <-
+        paged request [object ["asset_name" .= name] | name <- names]
+    pure (status200, headers, encode rows, origin)
 
 -- | Keep current-output provenance to the actual acquired point and UTxO.
 answerOutputs

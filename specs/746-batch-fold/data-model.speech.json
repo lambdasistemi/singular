@@ -1,0 +1,44 @@
+{
+  "data-for-folding-a-batch-of-registry-requests": [
+    {
+      "text": "Data for folding a batch of registry requests.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 746. Records the fold introduces or changes, their fields and their rules. Placement is in the modules model.",
+      "pause": 400
+    }
+  ],
+  "records": [
+    {
+      "text": "Records.",
+      "pause": 500
+    }
+  ],
+  "state-rules": [
+    {
+      "text": "State rules.",
+      "pause": 500
+    },
+    {
+      "text": "A key appears at most once in a batch; a request appears at most once.",
+      "pause": 300
+    },
+    {
+      "text": "The folder's take of a registration is its held ADA above the deposit its holding must keep; of a termination, its whole ADA.",
+      "pause": 300
+    },
+    {
+      "text": "A discovered set is never silently shorter than the chain: a provider failure while finding requests is unavailable.",
+      "pause": 300
+    },
+    {
+      "text": "A measured limit is valid only for the workload and parameters the receipt names.",
+      "pause": 300
+    }
+  ],
+  "_source": {
+    "file": "data-model.md",
+    "sha256": "a5bd9fc778759d1121d24f80c30901678b3e6fd5da7671399e78bded3a93abd6"
+  }
+}

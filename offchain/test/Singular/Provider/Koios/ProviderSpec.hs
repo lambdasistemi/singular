@@ -6,6 +6,7 @@ import Cardano.Crypto.Hash (hashFromBytes)
 import Cardano.Ledger.Address (AccountAddress (..), AccountId (..))
 import Cardano.Ledger.Allegra.Scripts (ValidityInterval (..))
 import Cardano.Ledger.Alonzo.Tx (IsValid (..))
+import Cardano.Ledger.Api.PParams (emptyPParams)
 import Cardano.Ledger.Api.Scripts.Data (Datum (..), binaryDataToData)
 import Cardano.Ledger.Api.Tx (bodyTxL, isValidTxL, vldtTxBodyL)
 import Cardano.Ledger.Api.Tx.Body
@@ -65,6 +66,7 @@ import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BS8
 import Data.ByteString.Lazy qualified as LBS
 import Data.Foldable (fold, toList)
+import Data.Functor.Identity (runIdentity)
 import Data.IORef (modifyIORef', newIORef, readIORef, writeIORef)
 import Data.List (permutations, sort, sortOn, subsequences)
 import Data.List.NonEmpty qualified as NE
@@ -115,6 +117,10 @@ import Singular.Provider.Koios.State
 import Singular.Provider.Koios.Wire qualified as Wire
 import Singular.Reader qualified as Reader
 import Singular.Registry.Capabilities (Capabilities (..))
+import Singular.Registry.ChainedView
+    ( StagedTransaction (..)
+    , chainedAnswer
+    )
 import Singular.Registry.Confirmation qualified as Confirmation
 import Singular.Registry.ContractTable (parseContractTable)
 import Singular.Registry.Evidence
@@ -131,12 +137,20 @@ import Singular.Registry.NetworkTime
     )
 import Singular.Registry.NetworkTimeSpec (loadNetworkFixture)
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
+import Singular.Registry.RawChainFixture
+    ( ChainFacts (..)
+    , advanceChain
+    , newRawChain
+    , rawChainProvider
+    )
 import Singular.Registry.ReaderSpec (readerRows)
 import Singular.Registry.SessionEvidence
     ( FactRecord (..)
     , observeProvider
     )
+import Singular.Registry.SessionIO qualified as Services
 import Singular.Registry.Signing (signedTx)
+import Singular.Registry.SyntheticTime (syntheticTime)
 import Singular.Registry.Terminal (newCapabilities)
 import Singular.Registry.TimeSource (loadPinnedSource)
 import Singular.Registry.Trace
@@ -347,6 +361,7 @@ spec = describe "Koios ledger provider constructor" $ do
                 workCalls (totalWork summary) `shouldBe` 2
                 workRows (totalWork summary) `shouldBe` 2
                 Map.keys (perReadWork summary) `shouldBe` ["asset_utxos", "genesis"]
+    policyHoldingsSpec
     it "keeps final answer size separate from all retry work" $ do
         source <- timeSource
         set <- recordedSet
@@ -2091,6 +2106,327 @@ dropSlash = TE.decodeUtf8 . BS.dropWhile (== 47) . TE.encodeUtf8
 
 asset :: Asset
 asset = (PolicyID (scriptHashOfByte 11), AssetName "state")
+
+policyHoldingsSpec :: Spec
+policyHoldingsSpec = describe "policy holdings" $ do
+    it
+        "agrees with the raw test provider over the same multi-policy source"
+        $ do
+            chain <-
+                newRawChain
+                    ( ChainFacts
+                        42
+                        Nothing
+                        emptyPParams
+                        (Map.fromList policyOutputs)
+                        Set.empty
+                        syntheticTime
+                    )
+            advanceChain chain id
+            actual <- Services.withLatest (rawChainProvider chain) $ \session -> fmap (fmap value) (outputs session (HoldingPolicy (fst asset)))
+            actual `shouldBe` Right (take 3 policyOutputs)
+    it "overlays staged policy holdings and removes spent outputs" $ do
+        let first = case policyOutputs of
+                pair : _ -> pair
+                [] -> error "policy scenario is empty"
+            spent = fst first
+            transaction =
+                mkBasicTx
+                    ( mkBasicTxBody
+                        & inputsTxBodyL .~ Set.singleton spent
+                        & outputsTxBodyL .~ Seq.fromList (map snd policyOutputs)
+                        & feeTxBodyL .~ Coin 1
+                    )
+            staged = StagedTransaction transaction [first] []
+            created =
+                [ (TxIn (keyOf transaction) (TxIx n), output)
+                | (n, (_, output)) <- zip [0 ..] (take 3 policyOutputs)
+                ]
+            expected = sortOn fst (drop 1 (take 3 policyOutputs) <> created)
+            actual =
+                runIdentity
+                    ( chainedAnswer
+                        [staged]
+                        (HoldingPolicy (fst asset))
+                        (const (pure (Right (take 3 policyOutputs))))
+                    )
+        actual `shouldBe` Right expected
+    it
+        "returns every matching full output once across names, policies and pages"
+        $ do
+            (result, _, requests) <-
+                readPolicyHoldings (const id) (HoldingPolicy (fst asset))
+            result `shouldBe` Right (Right (take 3 policyOutputs))
+            let listed = filter ((== "/policy_asset_list") . Client.rawPath) requests
+                fetched = filter ((== "/asset_utxos") . Client.rawPath) requests
+            map (queryParam "offset") listed `shouldBe` [Just "0", Just "2"]
+            length fetched `shouldBe` 3
+            forM_ fetched $ \request -> case Client.rawBody request of
+                Wire.JsonBody (Object fields) -> case KM.lookup "_asset_list" fields of
+                    Just (Array names) -> length names `shouldSatisfy` (<= 2)
+                    _ -> expectationFailure "asset query has no list"
+                _ -> expectationFailure "asset query is not JSON"
+    it
+        "composes policy holdings with address queries without duplication"
+        $ do
+            let query = AllOf (HoldingPolicy (fst asset) NE.:| [AtAddress payer])
+            (result, _, _) <- readPolicyHoldings (const id) query
+            result `shouldBe` Right (Right (take 3 policyOutputs))
+    it "answers an unknown policy with no outputs and no asset reads" $ do
+        (result, _, requests) <-
+            readPolicyHoldings
+                (const id)
+                (HoldingPolicy (PolicyID (scriptHashOfByte 99)))
+        result `shouldBe` Right (Right [])
+        map Client.rawPath requests `shouldBe` ["/policy_asset_list"]
+    it "fails when the policy listing exceeds its page ceiling" $ do
+        (result, _, requests) <-
+            readPolicyHoldingsConfig
+                (Client.ClientConfig 2 1)
+                (const id)
+                (HoldingPolicy (fst asset))
+        case result of
+            Right (Left (BackendReadFailure reason)) -> reason `shouldSatisfy` Text.isInfixOf "PageCeiling"
+            _ ->
+                expectationFailure ("page ceiling did not refuse: " <> show result)
+        length requests `shouldBe` 1
+    forM_
+        [Nothing, Just (String "zz"), Just (String (Text.replicate 33 "00"))]
+        $ \badName ->
+            it
+                ("refuses a malformed asset name in the policy list: " <> show badName)
+                $ do
+                    let amend request answer
+                            | Client.rawPath request == "/policy_asset_list" =
+                                pageAnswer
+                                    [object (maybe [] (\name -> ["asset_name" .= name]) badName)]
+                                    0
+                                    2
+                            | otherwise = answer
+                    (result, _, _) <- readPolicyHoldings amend (HoldingPolicy (fst asset))
+                    case result of
+                        Right (Left (BackendReadFailure reason)) -> reason `shouldSatisfy` Text.isInfixOf "CallPolicyAssetList"
+                        _ ->
+                            expectationFailure ("malformed name was accepted: " <> show result)
+    forM_ [False, True] $ \omitAssets ->
+        it
+            ( "refuses an output answer without the requested policy; missing assets="
+                <> show omitAssets
+            )
+            $ do
+                let amend request answer
+                        | Client.rawPath request == "/asset_utxos" =
+                            let row = case outputRow (last policyOutputs) of
+                                    Object fields ->
+                                        Object
+                                            ( (if omitAssets then KM.delete "asset_list" else id)
+                                                (KM.insert "address" (String (Wire.renderAddress payer)) fields)
+                                            )
+                                    _ -> error "output is not an object"
+                            in  pageAnswer [row] 0 2
+                        | otherwise = answer
+                (result, _, _) <- readPolicyHoldings amend (HoldingPolicy (fst asset))
+                case result of
+                    Right (Left (BackendReadFailure _)) -> pure ()
+                    _ ->
+                        expectationFailure ("foreign output was accepted: " <> show result)
+    it
+        "refuses duplicate names rather than accepting a shortened policy extent"
+        $ do
+            let amend request answer
+                    | Client.rawPath request == "/policy_asset_list" =
+                        pageAnswer (replicate 2 (object ["asset_name" .= ("" :: Text)])) 0 2
+                    | otherwise = answer
+            (result, _, _) <- readPolicyHoldings amend (HoldingPolicy (fst asset))
+            case result of
+                Right (Left (BackendReadFailure _)) -> pure ()
+                _ ->
+                    expectationFailure
+                        ("duplicate policy names were accepted: " <> show result)
+    it "refuses conflicting full outputs repeated across asset batches" $ do
+        let amend request answer
+                | Client.rawPath request == "/asset_utxos"
+                , Wire.JsonBody (Object fields) <- Client.rawBody request
+                , Just (Array names) <- KM.lookup "_asset_list" fields
+                , length names == 1 =
+                    let (reference, original) = policyOutputs !! 2
+                        changed =
+                            ( reference
+                            , original
+                                & valueTxOutL
+                                    .~ MaryValue
+                                        (Coin 1)
+                                        ( MultiAsset
+                                            (Map.singleton (fst asset) (Map.singleton (AssetName "b") 1))
+                                        )
+                            )
+                        row = case outputRow changed of
+                            Object output ->
+                                Object
+                                    (KM.insert "address" (String (Wire.renderAddress payer)) output)
+                            _ -> error "output is not an object"
+                    in  pageAnswer [row] 0 2
+                | otherwise = answer
+        (result, _, _) <- readPolicyHoldings amend (HoldingPolicy (fst asset))
+        result
+            `shouldBe` Right (Left (ConflictingOutput (fst (policyOutputs !! 2))))
+    it
+        "counts calls, rows and bytes from every actual policy and output page"
+        $ do
+            (result, events, requests) <-
+                readPolicyHoldings (const id) (HoldingPolicy (fst asset))
+            result `shouldBe` Right (Right (take 3 policyOutputs))
+            let pages = [q | Exchanged q <- events, queryName q /= "network-time"]
+                answers = map policyPage requests
+                sizes =
+                    [ BS.length (Client.answerBody a)
+                    | ex <- answers
+                    , Right a <- [Client.exchangeResult ex]
+                    ]
+            map queryName pages
+                `shouldBe` map (Wire.callName . Client.rawCall) requests
+            map queryWork pages
+                `shouldBe` map (Just . Client.exchangeWork) answers
+            length pages `shouldBe` 5
+            sizes `shouldSatisfy` all (> 0)
+            map queryEnd pages `shouldBe` map (Answered . Just) [2, 1, 2, 1, 1]
+    forM_ ["/policy_asset_list", "/asset_utxos"] $ \route ->
+        forM_ ["malformed", "truncated", "failed", "range"] $ \fault ->
+            it
+                ( "fails the whole read on a later "
+                    <> Text.unpack route
+                    <> " page that is "
+                    <> Text.unpack fault
+                )
+                $ do
+                    let corrupt request answer
+                            | Client.rawPath request == route
+                            , queryParam "offset" request == Just "2" = case fault of
+                                "malformed" -> okJson [("content-range", "2-2/3")] "[{}]"
+                                "truncated" -> okJson [("content-range", "2-2/3")] "["
+                                "failed" -> Client.singleExchange (Right (Client.Answer 500 [] "unavailable"))
+                                _ -> okJson [("content-range", "0-0/3")] "[]"
+                            | otherwise = answer
+                    (result, _, requests) <-
+                        readPolicyHoldings corrupt (HoldingPolicy (fst asset))
+                    case result of
+                        Right (Left (BackendReadFailure reason)) ->
+                            reason
+                                `shouldSatisfy` Text.isInfixOf
+                                    ( if route == "/asset_utxos"
+                                        then "CallAssetUtxos"
+                                        else "CallPolicyAssetList"
+                                    )
+                        _ -> expectationFailure ("partial answer escaped: " <> show result)
+                    requests
+                        `shouldSatisfy` any
+                            (\r -> Client.rawPath r == route && queryParam "offset" r == Just "2")
+
+-- The producer owns the complete multi-policy UTxO, including an empty asset
+-- name and one output holding two requested names. No ledger admission claim.
+policyOutputs :: Outputs
+policyOutputs =
+    [ (TxIn (keyOf producer) (TxIx index), output)
+    | (index, output) <- zip [0 ..] produced
+    ]
+  where
+    wanted = fst asset
+    other = PolicyID (scriptHashOfByte 12)
+    make assets =
+        mkBasicTxOut
+            payer
+            ( MaryValue
+                (Coin 5000000)
+                (MultiAsset (Map.fromList [(p, Map.fromList ns) | (p, ns) <- assets]))
+            )
+    produced =
+        [ make [(wanted, [(AssetName "", 1)]), (other, [(AssetName "x", 2)])]
+        , make [(wanted, [(AssetName "a", 2)])]
+        , make [(wanted, [(AssetName "a", 1), (AssetName "b", 1)])]
+        , make [(other, [(AssetName "a", 1)])]
+        ]
+    producer = mkBasicTx (mkBasicTxBody & outputsTxBodyL .~ Seq.fromList produced)
+
+readPolicyHoldings
+    :: (Client.RawRequest -> Client.Exchange -> Client.Exchange)
+    -> OutputQuery
+    -> IO
+        ( Either AcquireFailure (Either ReadFailure Outputs)
+        , [BackendEvent]
+        , [Client.RawRequest]
+        )
+readPolicyHoldings = readPolicyHoldingsConfig (Client.ClientConfig 2 10)
+
+readPolicyHoldingsConfig
+    :: Client.ClientConfig
+    -> (Client.RawRequest -> Client.Exchange -> Client.Exchange)
+    -> OutputQuery
+    -> IO
+        ( Either AcquireFailure (Either ReadFailure Outputs)
+        , [BackendEvent]
+        , [Client.RawRequest]
+        )
+readPolicyHoldingsConfig config amend query = do
+    source <- timeSource
+    events <- newIORef []
+    requests <- newIORef []
+    runtime <-
+        newIORuntime
+            (Tracer (\event -> modifyIORef' events (<> [event])))
+            (const (pure ()))
+    let transport = Client.Transport $ \request -> do
+            modifyIORef' requests (<> [request])
+            pure (amend request (policyPage request))
+        provider =
+            koiosProvider
+                runtime
+                (Network 1)
+                (pure (Right source))
+                (Client.Koios config transport)
+    result <-
+        acquire
+            provider
+            (Latest (Network 1))
+            (\session -> fmap (fmap value) (outputs session query))
+    (,,) result <$> readIORef events <*> readIORef requests
+
+policyPage :: Client.RawRequest -> Client.Exchange
+policyPage request = pageAnswer rows offset 2
+  where
+    offset = maybe 0 (read . Text.unpack) (queryParam "offset" request)
+    rows = case Client.rawPath request of
+        "/policy_asset_list"
+            | queryParam "_asset_policy" request
+                == Just (Wire.policyHex (fst asset)) ->
+                [ object ["asset_name" .= Wire.assetNameHex name]
+                | name <- [AssetName "", AssetName "a", AssetName "b"]
+                ]
+            | otherwise -> []
+        "/address_utxos" -> map addressRow policyOutputs
+        "/asset_utxos" ->
+            [ addressRow pair
+            | pair@(_, output) <- policyOutputs
+            , let MaryValue _ (MultiAsset assets) = output ^. valueTxOutL
+            , any
+                ( \(p, names) ->
+                    any
+                        ( \(n, _) -> [Wire.policyHex p, Wire.assetNameHex n] `elem` requestedAssets
+                        )
+                        (Map.toList names)
+                )
+                (Map.toList assets)
+            ]
+        _ -> error "policy fixture received an unexpected endpoint"
+    requestedAssets = case Client.rawBody request of
+        Wire.JsonBody (Object fields) -> case KM.lookup "_asset_list" fields of
+            Just value -> fromMaybe [] (decodeStrict' (LBS.toStrict (encode value)))
+            _ -> []
+        _ -> []
+    addressRow pair = case outputRow pair of
+        Object fields ->
+            Object
+                (KM.insert "address" (String (Wire.renderAddress payer)) fields)
+        _ -> error "output is not an object"
 
 keyOf :: ConwayTx -> TxId
 keyOf tx = txIdTxBody (tx ^. bodyTxL)

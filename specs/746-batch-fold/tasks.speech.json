@@ -1,0 +1,88 @@
+{
+  "tasks-for-folding-a-batch-of-registry-requests": [
+    {
+      "text": "Tasks for folding a batch of registry requests.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 746. Grouped by pull request and slice of the plan. A task is checked only after the ticket owner accepts its slice.",
+      "pause": 400
+    }
+  ],
+  "binding": [
+    {
+      "text": "Binding.",
+      "pause": 500
+    },
+    {
+      "text": "[x] gate-synthesized: the ticket owner's and the auditor's gate tables joined once and frozen with both input hashes.",
+      "pause": 300
+    }
+  ],
+  "pull-request-1-provider": [
+    {
+      "text": "Pull request 1: provider.",
+      "pause": 500
+    },
+    {
+      "text": "[x] policy-holdings-query: the policy query answered by the Koios provider, the devnet facade and the test providers, with rows and bytes and the contract rows.",
+      "pause": 300
+    }
+  ],
+  "pull-request-2-discovery-and-fit": [
+    {
+      "text": "Pull request 2: discovery and fit.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] discover-pending: pending requests of one registry found from the approvals; skipped holders named; failure is unavailable.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] fit-largest-batch: the order by the folder's take, the largest prefix that builds, the count left, the named-batch refusals.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] fold-command-discovers: the fold command discovers, takes an optional limit, reports folded, skipped and left; help, parser rows, flags and recovery partition.",
+      "pause": 300
+    }
+  ],
+  "pull-request-3-devnet": [
+    {
+      "text": "Pull request 3: devnet.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] devnet-mixed-batch-journey: a wallet that booked none of the requests folds a discovered mixed batch; the change read from the chain.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] devnet-batch-refusals: other registry, duplicate key and state-policy movement, each with its control.",
+      "pause": 300
+    }
+  ],
+  "pull-request-4-measurement": [
+    {
+      "text": "Pull request 4: measurement.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] batch-measurement: the receipt with the largest accepted batch for registrations, terminations and mixed batches.",
+      "pause": 300
+    }
+  ],
+  "pull-request-5-evidence-and-words": [
+    {
+      "text": "Pull request 5: evidence and words.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] conformance-and-documentation: the batch rows and the user page, limits generated from the receipt.",
+      "pause": 300
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "5b77fe721f0ef977adc5de15c544a2f36bba71c1d7d0723be3699d5ec4d008ba"
+  }
+}

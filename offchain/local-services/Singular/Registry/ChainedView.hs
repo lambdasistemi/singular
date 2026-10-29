@@ -177,6 +177,8 @@ chainedAnswer staged query chainAnswer = answerOver query
     selects which output = case which of
         AtAddress address -> output ^. addrTxOutL == address
         HoldingAsset asset -> holds asset output
+        HoldingPolicy policy -> case output ^. valueTxOutL of
+            MaryValue _ (MultiAsset assets) -> maybe False (any (/= 0)) (Map.lookup policy assets)
         CarryingReferenceScript script ->
             case output ^. referenceScriptTxOutL of
                 SJust carried -> hashScript carried == script

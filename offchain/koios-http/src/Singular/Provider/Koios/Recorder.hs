@@ -90,6 +90,7 @@ import Singular.Provider.Koios.Client
     , cliProtocolParams
     , epochParams
     , networkMagic
+    , policyAssetNames
     , referenceScriptUtxos
     , tip
     , txCbor
@@ -120,6 +121,7 @@ import Singular.Provider.Koios.Wire
     , TxInfo (..)
     , TxStatus (..)
     , UtxoInfo (..)
+    , assetNameHex
     , callName
     , parseAddress
     , parseRewardAccount
@@ -134,6 +136,7 @@ data ReadCall
     | ReadGenesis
     | ReadAddressUtxos
     | ReadAssetUtxos
+    | ReadPolicyAssetList
     | ReadAssetTxs
     | ReadTxInfo
     | ReadTxCbor
@@ -157,6 +160,7 @@ readCallCall = \case
     ReadGenesis -> CallGenesis
     ReadAddressUtxos -> CallAddressUtxos
     ReadAssetUtxos -> CallAssetUtxos
+    ReadPolicyAssetList -> CallPolicyAssetList
     ReadAssetTxs -> CallAssetTxs
     ReadTxInfo -> CallTxInfo
     ReadTxCbor -> CallTxCbor
@@ -174,6 +178,7 @@ data ReadRequest
     | GenesisOf
     | AddressUtxosOf Addr
     | AssetUtxosOf PolicyID AssetName
+    | PolicyAssetListOf PolicyID
     | AssetTxsOf PolicyID AssetName
     | TxInfoOf [TxId]
     | TxCborOf [TxId]
@@ -193,6 +198,7 @@ readRequestCall = \case
     GenesisOf -> ReadGenesis
     AddressUtxosOf _ -> ReadAddressUtxos
     AssetUtxosOf _ _ -> ReadAssetUtxos
+    PolicyAssetListOf _ -> ReadPolicyAssetList
     AssetTxsOf _ _ -> ReadAssetTxs
     TxInfoOf _ -> ReadTxInfo
     TxCborOf _ -> ReadTxCbor
@@ -227,6 +233,7 @@ parseReadRequest text = do
         ReadCliProtocolParams -> none argument CliProtocolParamsOf
         ReadAddressUtxos -> AddressUtxosOf <$> parseAddress argument
         ReadAssetUtxos -> uncurry AssetUtxosOf <$> asset argument
+        ReadPolicyAssetList -> PolicyAssetListOf . PolicyID <$> scriptHash argument
         ReadAssetTxs -> uncurry AssetTxsOf <$> asset argument
         ReadTxInfo -> TxInfoOf <$> txIds argument
         ReadTxCbor -> TxCborOf <$> txIds argument
@@ -289,6 +296,7 @@ probe k = \case
         fmap (\t -> [tipLine t]) <$> tip k
     AddressUtxosOf a -> fmap (map outputLine) <$> addressUtxos k [a]
     AssetUtxosOf p n -> fmap (map outputLine) <$> assetUtxos k [(p, n)]
+    PolicyAssetListOf policy -> fmap (map assetNameHex) <$> policyAssetNames k policy
     AssetTxsOf p n -> fmap (map assetTxLine) <$> assetTxs k p n
     TxInfoOf ids -> fmap (concatMap txInfoLines) <$> txInfo k ids
     TxCborOf ids -> fmap (map txCborLine) <$> txCbor k ids

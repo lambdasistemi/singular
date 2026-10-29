@@ -243,6 +243,13 @@ chainSession logRef chain =
     select = \case
         LP.AtAddress address ->
             Right [u | u@(_, o) <- Map.toAscList live, o ^. addrTxOutL == address]
+        LP.HoldingPolicy policy ->
+            Right
+                [ u
+                | u@(_, o) <- Map.toAscList live
+                , let MaryValue _ (MultiAsset assets) = o ^. valueTxOutL
+                , maybe False (any (/= 0)) (Map.lookup policy assets)
+                ]
         LP.HoldingAsset (policy, name) ->
             Right $
                 flip fromMaybe (chainHolders chain) $

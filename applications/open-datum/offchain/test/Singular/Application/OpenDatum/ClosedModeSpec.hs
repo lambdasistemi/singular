@@ -73,6 +73,7 @@ import Singular.Registry.LedgerProvider qualified as LP
         , AtTxIn
         , CarryingReferenceScript
         , HoldingAsset
+        , HoldingPolicy
         )
     , ReadFailure (MissingOutput)
     , Session (mintRecord, networkTime, outputs, sessionNetwork)
@@ -267,6 +268,13 @@ stubSessionFor chain =
     select = \case
         LP.AtAddress addr ->
             Right [u | u@(_, o) <- Map.toAscList live, o ^. addrTxOutL == addr]
+        LP.HoldingPolicy policy ->
+            Right
+                [ u
+                | u@(_, o) <- Map.toAscList live
+                , let MaryValue _ (MultiAsset assets) = o ^. valueTxOutL
+                , maybe False (any (/= 0)) (Map.lookup policy assets)
+                ]
         LP.HoldingAsset (pol, nm) ->
             Right [u | u@(_, o) <- Map.toAscList live, holds pol nm o]
         LP.AtTxIn ref -> case Map.lookup ref live of

@@ -104,6 +104,8 @@ type Asset = (PolicyID, AssetName)
 data OutputQuery
     = AtAddress Addr
     | HoldingAsset Asset
+    | -- | Every live output holding any asset under this policy, once.
+      HoldingPolicy PolicyID
     | AtTxIn TxIn
     | {- | Live outputs carrying this reference script. An empty answer
       means not found by this provider, never not on chain; a consumer

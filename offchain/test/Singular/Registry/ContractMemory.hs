@@ -11,7 +11,12 @@ import Cardano.Ledger.Api.PParams (emptyPParams)
 import Cardano.Ledger.Api.Tx.Out (TxOut, mkBasicTxOut)
 import Cardano.Ledger.BaseTypes (Network (Testnet))
 import Cardano.Ledger.Hashes (ScriptHash)
-import Cardano.Ledger.Mary.Value (MaryValue (..))
+import Cardano.Ledger.Mary.Value
+    ( AssetName (..)
+    , MaryValue (..)
+    , MultiAsset (..)
+    , PolicyID (..)
+    )
 import Cardano.Ledger.TxIn (TxIn)
 import Data.ByteString qualified as BS
 import Data.ByteString.Short qualified as SBS
@@ -65,6 +70,27 @@ memoryHarness =
                     , chUnregistered = unregistered
                     , chChange = change
                     , chIndependentOutputs = Map.toAscList <$> readIORef expected
+                    , chPolicyScenario = do
+                        let policy = PolicyID unregistered
+                            other = PolicyID (computeScriptHash (SBS.toShort (BS.replicate 16 3)))
+                            held entries =
+                                mkBasicTxOut
+                                    watched
+                                    ( MaryValue
+                                        (Coin 5_000_000)
+                                        ( MultiAsset
+                                            (Map.fromList [(p, Map.fromList names) | (p, names) <- entries])
+                                        )
+                                    )
+                            produced =
+                                zip
+                                    (map outRef [100 ..])
+                                    [ held [(policy, [(AssetName "", 1)]), (other, [(AssetName "a", 1)])]
+                                    , held [(policy, [(AssetName "a", 1), (AssetName "b", 2)])]
+                                    , held [(other, [(AssetName "a", 1)])]
+                                    ]
+                        advanceChain chain $ \facts -> facts{csUTxO = Map.union (Map.fromList produced) (csUTxO facts)}
+                        pure (policy, take 2 produced)
                     }
         }
 

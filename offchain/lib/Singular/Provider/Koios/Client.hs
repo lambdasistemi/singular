@@ -61,6 +61,7 @@ module Singular.Provider.Koios.Client
     , networkMagic
     , addressUtxos
     , assetUtxos
+    , policyAssetNames
     , assetTxs
     , Page
     , pageRows
@@ -128,6 +129,7 @@ import Singular.Provider.Koios.Wire
     , decodeCliProtocolParams
     , decodeEpochParams
     , decodeNetworkMagic
+    , decodePolicyAssetNames
     , decodeReferenceScriptUtxos
     , decodeSubmitted
     , decodeTip
@@ -139,6 +141,7 @@ import Singular.Provider.Koios.Wire
     , epochParamsRequest
     , genesisRequest
     , parseBody
+    , policyAssetListRequest
     , referenceScriptUtxosRequest
     , renderRewardAccount
     , submitTxRequest
@@ -589,6 +592,12 @@ assetUtxos
     -> [(PolicyID, AssetName)]
     -> m (Either ClientFailure [(TxIn, TxOut ConwayEra)])
 assetUtxos k assets = paged k (assetUtxosRequest assets) decodeUtxos
+
+-- | Every asset name under a policy, through the same checked page path.
+policyAssetNames
+    :: (Monad m)
+    => Koios m -> PolicyID -> m (Either ClientFailure [AssetName])
+policyAssetNames k policy = paged k (policyAssetListRequest policy) decodePolicyAssetNames
 
 {- | Every transaction that included the asset, read page by page, in
 block height then transaction id order. That order makes pages stable;

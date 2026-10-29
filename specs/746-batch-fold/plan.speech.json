@@ -1,0 +1,118 @@
+{
+  "plan-for-folding-a-batch-of-registry-requests-within-measured-limits": [
+    {
+      "text": "Plan for folding a batch of registry requests within measured limits.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 746. This page is for the people who implement and review the pull requests. It binds the model, the rulings, the pull requests and their slices, the decisions taken, the consumers and the seats. The story and the requirements are in the specification; the checks are in the gate.",
+      "pause": 400
+    }
+  ],
+  "lane": [
+    {
+      "text": "Lane.",
+      "pause": 500
+    }
+  ],
+  "lean-binding": [
+    {
+      "text": "Lean binding.",
+      "pause": 500
+    },
+    {
+      "text": "Lean is the authority. The code takes the models' vocabulary: FoldObservation, Change, PendingRequest, PublicFoldPremises, buildFold, stateAsset, activeAsset.",
+      "pause": 400
+    },
+    {
+      "text": "Lean states no rule for finding requests, for ordering them, for the size of a batch or for protocol parameters. They are operational facts of a folder: selection soundness is checked against the premises of public_fold_constructed; the batch size is a measured fact the receipt states and no theorem claims. If a statement the code needs is missing or conflicts with a ruling, the ticket owner files a question with a user story; the check is never weakened.",
+      "pause": 400
+    }
+  ],
+  "rulings-in-force": [
+    {
+      "text": "Rulings in force.",
+      "pause": 500
+    },
+    {
+      "text": "Registry identity (issue 741): a registry is its state policy and its state token name.",
+      "pause": 300
+    },
+    {
+      "text": "Roles (operator, 2026-10-28, issue 767): the folder is a neutral role; the batch logic lives in the neutral fold library and names no application. Whatever open datum must contribute goes through the existing application record (policy, decode, references, fold); this ticket adds nothing to that record, so issue 767 has nothing new to absorb.",
+      "pause": 300
+    },
+    {
+      "text": "Money (2026-10-23): a request's value above what the application requires to stay is the folder's.",
+      "pause": 300
+    },
+    {
+      "text": "The provider is the chain entry point (2026-10-20): every chain read goes through the session; users have a web page, Koios and a wallet.",
+      "pause": 300
+    },
+    {
+      "text": "Versioning (operator): stay 0.x; script hashes may change before 1.0, cut together with issue 747. This ticket changes no script and no hash.",
+      "pause": 300
+    },
+    {
+      "text": "The trie library's proofs are assumed sound.",
+      "pause": 300
+    }
+  ],
+  "decisions-taken": [
+    {
+      "text": "Decisions taken.",
+      "pause": 500
+    }
+  ],
+  "pull-requests-and-slices": [
+    {
+      "text": "Pull requests and slices.",
+      "pause": 500
+    },
+    {
+      "text": "Each slice finishes in well under two hours with its own RED evidence and checkpoints; the commit owner may cut a slice smaller, never merge two. Pull requests merge into main in order, each when its required checks are green at the head.",
+      "pause": 400
+    }
+  ],
+  "consumers-to-run-before-the-first-push": [
+    {
+      "text": "Consumers to run before the first push.",
+      "pause": 500
+    },
+    {
+      "text": "a provider-layer change reaches the provider contract suites, the Koios provider and facade tests, node confinement, the input and output census, open datum and conformance;",
+      "pause": 300
+    },
+    {
+      "text": "a fold builder, selection or receipt change reaches the conformance unit suite, the journey's late-fold steps and open datum's printed refusals; the legacy wording is searched for before the first push;",
+      "pause": 300
+    },
+    {
+      "text": "a command change reaches help snapshots, parser corpora (after rows), the documented flags check, the recovery partitions and the command reference;",
+      "pause": 300
+    },
+    {
+      "text": "a conformance report change reaches every consumer of the rendered row text;",
+      "pause": 300
+    },
+    {
+      "text": "a new reference to shared mutable state in a test fixture needs its census entry in the same commit.",
+      "pause": 300
+    }
+  ],
+  "seats": [
+    {
+      "text": "Seats.",
+      "pause": 500
+    },
+    {
+      "text": "A ticket owner, a commit owner and a commit auditor, mute and persistent, in a read-only audit worktree. No other seats. The auditor writes its own gate table when it is seated; the ticket owner joins the two once and freezes the result before the commit owner starts. Every build and test runs in a named, memory-capped scope with a timeout; long gates run in the background.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "6e05c1a5871c94bc5efd3c1a8901cdb2f9f0e65583a260f58dd44fef69710607"
+  }
+}

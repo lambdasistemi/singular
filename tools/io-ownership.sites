@@ -193,6 +193,7 @@ offchain/private-facade/Singular/Registry/Private/Facade.hs answer readIORef 1
 offchain/private-facade/Singular/Registry/Private/Facade.hs answerArchive readIORef 1
 offchain/private-facade/Singular/Registry/Private/Facade.hs answerAssetInfo readIORef 1
 offchain/private-facade/Singular/Registry/Private/Facade.hs answerCarriers readIORef 1
+offchain/private-facade/Singular/Registry/Private/Facade.hs answerPolicyAssets readIORef 1
 offchain/private-facade/Singular/Registry/Private/Facade.hs awaitArchive readIORef 1
 offchain/private-facade/Singular/Registry/Private/Facade.hs bootstrapGenesis readIORef 1
 offchain/private-facade/Singular/Registry/Private/Facade.hs intersector readIORef 1
@@ -249,6 +250,9 @@ offchain/test/Singular/Provider/Koios/FakeServer.hs app IORef 1
 offchain/test/Singular/Provider/Koios/FakeServer.hs app atomicModifyIORef' 1
 offchain/test/Singular/Provider/Koios/FakeServer.hs withFakeKoios newIORef 1
 offchain/test/Singular/Provider/Koios/FakeServer.hs withFakeKoios readIORef 1
+offchain/test/Singular/Provider/Koios/ProviderSpec.hs readPolicyHoldingsConfig modifyIORef' 2
+offchain/test/Singular/Provider/Koios/ProviderSpec.hs readPolicyHoldingsConfig newIORef 2
+offchain/test/Singular/Provider/Koios/ProviderSpec.hs readPolicyHoldingsConfig readIORef 2
 offchain/test/Singular/Provider/Koios/ProviderSpec.hs spec modifyIORef' 8
 offchain/test/Singular/Provider/Koios/ProviderSpec.hs spec newEmptyMVar 3
 offchain/test/Singular/Provider/Koios/ProviderSpec.hs spec newIORef 10
