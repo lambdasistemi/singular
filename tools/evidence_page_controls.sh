@@ -23,6 +23,7 @@ fresh() {
   cp "$root/conformance/rows.json" "$root/conformance/model-revision" "$copy/conformance/"
   cp -r "$root/conformance/evidence/page" "$copy/conformance/evidence/"
   cp "$root/docs/conformance-evidence.md" "$root/docs/conformance-evidence.speech.json" "$copy/docs/"
+  cp "$root/docs/consumer-conformance.md" "$root/docs/consumer-conformance.speech.json" "$copy/docs/"
   chmod -R u+w "$copy"
 }
 
@@ -86,5 +87,19 @@ cp "$results" "$work/before"
 jq -c '.dirty = true' "$work/before" >"$results"
 applied "$work/before" "$results" 'contract dirty state'
 refused 'contract from a dirty tree' 'dirty tree'
+
+fresh
+consumer="$copy/docs/consumer-conformance.md"
+cp "$consumer" "$work/before"
+sed -i '0,/[Uu]ncovered/s//demonstrated/' "$consumer"
+applied "$work/before" "$consumer" 'consumer standing'
+refused 'tampered consumer standing' 'consumer-conformance.md disagrees with the receipts it is computed from'
+
+fresh
+consumer="$copy/docs/consumer-conformance.md"
+cp "$consumer" "$work/before"
+awk -F'|' -v OFS='|' '$2 == " Total requirements " { $3 = " " ($3 + 1) " " } { print }' "$work/before" >"$consumer"
+applied "$work/before" "$consumer" 'consumer total'
+refused 'tampered consumer total' 'consumer-conformance.md disagrees with the receipts it is computed from'
 
 echo 'evidence page controls: every tampering refused'

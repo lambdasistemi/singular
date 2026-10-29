@@ -129,13 +129,14 @@ let
   checker = pkgs.writeShellApplication {
     name = "docs-check";
     runtimeInputs = [
-      pkgs.python3
+      (pkgs.python3.withPackages (ps: [ ps.markdown ]))
       pkgs.bash
       evidencePage
       pkgs.jq
       pkgs.coreutils
       pkgs.diffutils
       pkgs.findutils
+      pkgs.gawk
       pkgs.gnugrep
       pkgs.gnused
     ];
@@ -150,6 +151,9 @@ let
       python3 tools/aiken_reference.py controls "''${SINGULAR_API_SITE_OVERRIDE:-${docs}}" onchain "''${SINGULAR_CANDIDATE_REF:-}"
       python3 tools/check_presentation_repo.py
       python3 tools/narrate.py --check
+      python3 tools/batch_limits.py --check
+      python3 test/ci/batch-limits.py
+      python3 test/ci/batch-user-documentation.py
       conformance evidence-page --root .
       bash tools/evidence_page_controls.sh .
     '';

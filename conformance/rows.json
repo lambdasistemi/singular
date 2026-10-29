@@ -159,6 +159,66 @@
       "state": "uncovered",
       "note": "Statement only. Ledger sizes, fees and execution limits are measured facts without a model counterpart; no estimate is substituted for an included transaction or a node refusal.",
       "evidence": "Separate evidence boundary, not a comparison with the model: the hosted jobs no-pin-registration-journey and cli-recovery-partition exercise the packaged commands, and the creation-cost-check job recomputes the measurement receipts from included transaction bytes. They establish what they run and nothing about agreement with the model."
+    },
+    {
+      "id": "public-mixed-batch-fold",
+      "group": "batch-folding",
+      "requirement": "A folder whose wallet booked none of the requests starts with public chain data and no booker's file. It discovers a registry's pending registrations and terminations and folds them together in a transaction of that registry. Registrations deliver their committed holdings and terminations make their keys permanently terminal.",
+      "source": "SingularApplicationHeld.Statements.public_fold_constructed, public_fold_effects, batch_inversion, batch_effects and fold_untouched_keys; registration_separate_holdings; SingularApplicationHeld.HistoryStatements.supply_in_step, one_live_token and burn_only_terminating_fold",
+      "expected": "The batch behavior is as stated. Uncovered: no executable comparison with the application-held model exists yet",
+      "state": "uncovered",
+      "note": "Public discovery is operational selection of the public fold premises. The model does not execute a provider query or a wallet directory.",
+      "evidence": "Separate evidence boundary, not a comparison with the model: no-pin-registration-journey runs the mixed public-data batch and chain accounting; no-pin-batch-refusals runs the named refusals and accepted controls; no-pin-batch-measurement evaluates kept transactions under recorded parameters and captures fresh development-node boundaries. The documentation check binds its figures to the kept receipt. They establish what they run and nothing about agreement with the model."
+    },
+    {
+      "id": "skipped-batch-holders",
+      "group": "batch-folding",
+      "requirement": "Automatic discovery skips and names an approval held at a key address, a request of another registry, an output the application cannot decode and a request that cannot individually fold. It folds the remaining requests rather than refusing because of those holders. An unfoldable request never reserves its key; the first foldable request in take order keeps it and later duplicates are skipped.",
+      "source": "SingularApplicationHeld.PublicFoldPremises and Statements.public_fold_constructed govern the selected requests. Holder discovery, skip classification and duplicate priority are operational behavior without a model query.",
+      "expected": "The batch behavior is as stated. Uncovered: no executable comparison with the application-held model exists yet",
+      "state": "uncovered",
+      "note": "The development-network journey shows a foreign request, the configuration holder rejected by request decoding and an unfoldable duplicate. Key-address holders, malformed request datums and the other individual refusal classes have unit-test evidence only.",
+      "evidence": "Separate evidence boundary, not a comparison with the model: no-pin-registration-journey runs the mixed public-data batch and chain accounting; no-pin-batch-refusals runs the named refusals and accepted controls; no-pin-batch-measurement evaluates kept transactions under recorded parameters and captures fresh development-node boundaries. The documentation check binds its figures to the kept receipt. They establish what they run and nothing about agreement with the model."
+    },
+    {
+      "id": "folder-keeps-batch-surplus",
+      "group": "batch-folding",
+      "requirement": "The folder receives each registration request's held value above the deposit the application requires its new holding to keep, and each termination request's whole held value. The transaction's change is read from the chain. The wallet funds the ledger fee separately; the gross request allocation is distinct from the net change after the fee.",
+      "source": "SingularApplicationHeld.Statements.public_fold_effects and registration_separate_holdings; OpenDatumApplicationHeld.Money.newAllocation, Statements.registration_fold_journey_holding_separated, termination_fold_journey and journey_allocations",
+      "expected": "The batch behavior is as stated. Uncovered: no executable comparison with the application-held model exists yet",
+      "state": "uncovered",
+      "note": "The packaged journey compares observed inputs and actual chain outputs, not a builder receipt. No executable comparison with these model declarations has been supplied.",
+      "evidence": "Separate evidence boundary, not a comparison with the model: no-pin-registration-journey runs the mixed public-data batch and chain accounting; no-pin-batch-refusals runs the named refusals and accepted controls; no-pin-batch-measurement evaluates kept transactions under recorded parameters and captures fresh development-node boundaries. The documentation check binds its figures to the kept receipt. They establish what they run and nothing about agreement with the model."
+    },
+    {
+      "id": "largest-fitting-batch",
+      "group": "batch-folding",
+      "requirement": "Automatic selection orders individually foldable requests by the folder's take, greatest first, breaking ties by output reference. It folds the largest prefix that the observed network limits accept, within any requested cap, and reports the foldable requests left. Skipped requests are never counted as left. Only a size, memory or steps limit permits trying a shorter prefix; a read, replay or other construction failure retains its own meaning.",
+      "source": "SingularApplicationHeld.Statements.public_fold_constructed constrains the selected batch. Ordering, prefix search, capacity limits and accounting are operational facts for which Lean states no size rule.",
+      "expected": "The batch behavior is as stated. Uncovered: no executable comparison with the application-held model exists yet",
+      "state": "uncovered",
+      "note": "Unit tests exercise prefix boundaries, named capacity failures and non-capacity failure propagation. The packaged journey exercises a cap and a later fold; kept measurement packets establish a named workload boundary rather than all possible pending sets.",
+      "evidence": "Separate evidence boundary, not a comparison with the model: no-pin-registration-journey runs the mixed public-data batch and chain accounting; no-pin-batch-refusals runs the named refusals and accepted controls; no-pin-batch-measurement evaluates kept transactions under recorded parameters and captures fresh development-node boundaries. The documentation check binds its figures to the kept receipt. They establish what they run and nothing about agreement with the model."
+    },
+    {
+      "id": "named-batch-and-state-policy",
+      "group": "batch-folding",
+      "requirement": "A named batch is built in its stated order or refused, never trimmed. A request of another registry, a repeated request, a duplicate key or a batch beyond a network limit is refused. A transaction spending the state that moves anything else under the state policy is rejected, beside a valid batch accepted by that script.",
+      "source": "SingularApplicationHeld.PublicFoldPremises; Statements.public_fold_constructed, fold_minted_outputs, minted_active_never_state and SingularApplicationHeld.Proofs.fold_state_mint_zero",
+      "expected": "The batch behavior is as stated. Uncovered: no executable comparison with the application-held model exists yet",
+      "state": "uncovered",
+      "note": "The packaged refusal job runs foreign-registry, duplicate-key, oversized named-batch and extra state-policy asset cases beside accepted controls. Repeating the same pending reference has unit-test evidence only.",
+      "evidence": "Separate evidence boundary, not a comparison with the model: no-pin-registration-journey runs the mixed public-data batch and chain accounting; no-pin-batch-refusals runs the named refusals and accepted controls; no-pin-batch-measurement evaluates kept transactions under recorded parameters and captures fresh development-node boundaries. The documentation check binds its figures to the kept receipt. They establish what they run and nothing about agreement with the model."
+    },
+    {
+      "id": "measured-batch-limits",
+      "group": "batch-folding",
+      "requirement": "The largest accepted named batch of registrations, of terminations and of an alternating mix is published from a kept measurement receipt, with the next refused size and exact total and per-request memory, steps, signed bytes and fee. The receipt names scripts, workload and recorded preprod parameters. Evaluation under those parameters is corroborated by a development node given the same limits, prices and fees; it is not a submission to preprod or a guarantee for another workload or parameter set.",
+      "source": "Ledger evaluation of kept transactions under recorded protocol parameters and development-node corroboration. Execution costs and network capacity have no model counterpart; Statements.public_fold_constructed alone gives no batch-size guarantee.",
+      "expected": "The batch behavior is as stated. Uncovered: no executable comparison with the application-held model exists yet",
+      "state": "uncovered",
+      "note": "The packaged node cannot execute the recorded target model. Kept-byte re-evaluation must reproduce figures exactly; fresh captures must reproduce the named count boundaries and publish figure variation. Parameters may change by governance. The documentation block is generated from the receipt, with no copied capacity numbers.",
+      "evidence": "Separate evidence boundary, not a comparison with the model: no-pin-registration-journey runs the mixed public-data batch and chain accounting; no-pin-batch-refusals runs the named refusals and accepted controls; no-pin-batch-measurement evaluates kept transactions under recorded parameters and captures fresh development-node boundaries. The documentation check binds its figures to the kept receipt. They establish what they run and nothing about agreement with the model."
     }
   ]
 }

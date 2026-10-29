@@ -77,12 +77,12 @@
       "pause": 500
     },
     {
-      "text": "[ ] conformance-and-documentation: the batch rows and the user page, limits generated from the receipt.",
+      "text": "[x] conformance-and-documentation: the batch rows and the user page, limits generated from the receipt.",
       "pause": 300
     }
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "7731d75d1c9e5ab79767636339ef78fbad123807af4303f053d957a792cb10b6"
+    "sha256": "5ca9a81c9cd0b16fbec517aef5cf4c316fb8cad5817c598623840feccd2fd2db"
   }
 }

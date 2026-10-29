@@ -1,0 +1,142 @@
+{
+  "fold-pending-requests-from-public-data": [
+    {
+      "text": "Fold pending requests from public data.",
+      "pause": 500
+    },
+    {
+      "text": "As a folder, you find a registry's pending requests from public data without a file from anyone who booked them. You fold as many as fit, keep each request's value above what the application requires, and can read the measured limit before deciding what to fold.",
+      "pause": 400
+    },
+    {
+      "text": "The flow starts with public holders of the application's approvals. Discovery names the holders and requests it skips, orders the foldable requests by your take, and tries prefixes until it finds the largest fitting batch. The receipt accounts for what folded, what was skipped and what is left.",
+      "pause": 400
+    }
+  ],
+  "discover-and-fold": [
+    {
+      "text": "Discover and fold.",
+      "pause": 500
+    },
+    {
+      "text": "Give the registry's address, the release blueprint, your provider and your own wallet. Your wallet need not have booked any request. Registrations and terminations of this registry can share a transaction when their keys differ.",
+      "pause": 400
+    },
+    {
+      "text": "Requests are ordered by your take, greatest first, with output references breaking ties. A registration's take is the request's held ADA above the deposit its holding must keep. A termination's take is the request's whole held ADA. Your wallet receives the transaction's change and pays its fee; the gross take is not the same as profit after that fee.",
+      "pause": 400
+    },
+    {
+      "text": "To cap discovery, give the maximum number you want in --limit. The cap does not promise that many will fit.",
+      "pause": 400
+    },
+    {
+      "text": "Only exceeding a transaction size, memory or steps limit permits a shorter prefix. A failed public read, failed registry replay or another construction error stops with its own reason. It never becomes an empty or shorter answer. The current network decides what fits; the measured workload below is not a fixed cap built into this command.",
+      "pause": 400
+    }
+  ],
+  "choose-a-named-batch": [
+    {
+      "text": "Choose a named batch.",
+      "pause": 500
+    },
+    {
+      "text": "Repeat --pending to choose the entire ordered batch yourself. It is built as named or refused, never trimmed, even if you also give --limit.",
+      "pause": 400
+    }
+  ],
+  "read-the-fold-receipt": [
+    {
+      "text": "Read the fold receipt.",
+      "pause": 500
+    },
+    {
+      "text": "The receipt names the registry's new root and state output. Its folded list names the key, request kind and pending output reference of every folded request. Its skipped list names each omitted holder's reference and reason. Its left count is the foldable requests beyond the chosen prefix. A skipped request is never counted as left.",
+      "pause": 400
+    },
+    {
+      "text": "Automatic discovery skips these kinds of holder or request and keeps folding the rest. A named batch instead refuses a bad request.",
+      "pause": 400
+    },
+    {
+      "text": "The first individually foldable request for a key keeps it in take order. An earlier unfoldable request never reserves the key. If every discovered holder is skipped, nothing to fold still carries every skipped reference and reason.",
+      "pause": 400
+    }
+  ],
+  "what-has-been-exercised": [
+    {
+      "text": "What has been exercised.",
+      "pause": 500
+    },
+    {
+      "text": "The packaged development-network registration journey starts a folder in fresh directories with none of the booker's files. It discovers and folds a mixed batch, checks the folder's change from the chain, and accounts separately for folded, skipped and left requests. It skips another registry's request, the application's configuration holder that its request decoding does not accept, and an unfoldable duplicate. A duplicate-free control and a later fold of what was left accompany it.",
+      "pause": 400
+    },
+    {
+      "text": "An approval at a key address and a malformed request datum are unit-tested only; the packaged journey does not construct accepted transactions creating those holders. Unit tests also exercise the other individually unfoldable reasons beside passing controls. Development-network refusals exercise a foreign named request, a duplicate key, an oversized named batch and a transaction moving another state-policy asset, each beside an accepted control. These observations do not establish an executable comparison with the model. The conformance record keeps those gaps visible.",
+      "pause": 400
+    }
+  ],
+  "read-the-measured-limits": [
+    {
+      "text": "Read the measured limits.",
+      "pause": 500
+    },
+    {
+      "text": "These are evaluations of kept transactions under the preprod parameters recorded on 4 October 2026 in offchain/test/fixtures/koios/preprod/cli_protocol_params-b777448425778d13.json. A development node given the same limits, prices and fees corroborates the accepted size and refusal of the next. This is not a submission to preprod. The packaged node cannot run preprod's current execution model; the ledger evaluator uses the recorded target model separately. Protocol parameters can change by governance.",
+      "pause": 400
+    },
+    {
+      "text": "The transaction slots use the captured development network's time. The result is script evaluation under the recorded parameters, not preprod transaction validation or inclusion. The fees are those of the kept node-balanced bodies, not a quote for another network. Re-evaluating the same kept bytes reproduces the figures; fresh captures may vary and publish their differences separately.",
+      "pause": 400
+    },
+    {
+      "text": "These figures are generated from the kept measurement receipt.",
+      "pause": 400
+    },
+    {
+      "text": "The largest accepted named prefix and the next refused size follow. Bytes are the complete signed transaction length; ledger-counted bytes are listed separately. Fees are lovelace from the development-node-balanced transaction body.",
+      "pause": 400
+    },
+    {
+      "text": "Per-request figures are exact total divided by accepted count, including transaction overhead. A fraction is exact, not a rounded price.",
+      "pause": 400
+    },
+    {
+      "text": "The marginal last request is the difference from the preceding kept prefix. It is an observation for this ordered workload, not a constant cost per request.",
+      "pause": 400
+    },
+    {
+      "text": "The workload starts from the registry sizes below. The listed sequence is the accepted named prefix; the mixed result concerns that alternating order only. The digest binds the full initial datum shapes in the receipt, alongside the kept trie inputs.",
+      "pause": 400
+    }
+  ],
+  "what-the-measurement-does-not-cover": [
+    {
+      "text": "What the measurement does not cover.",
+      "pause": 500
+    },
+    {
+      "text": "The figures concern exactly the registry sizes, trie inputs, scripts, keys, payload shapes and parameters in the receipt. They say nothing about another registry size, trie depth, scripts, key or payload shapes, or parameters. The mixed figure does not cover every ordering or every ratio of registrations to terminations. The trie library's proofs are assumed sound.",
+      "pause": 400
+    },
+    {
+      "text": "The command reference gives the surrounding registration and termination commands. The provider and wallet settings describe the options shared by the examples above.",
+      "pause": 400
+    }
+  ],
+  "appendix-regenerate-this-page": [
+    {
+      "text": "Appendix: regenerate this page.",
+      "pause": 500
+    },
+    {
+      "text": "The measurement job re-evaluates the kept transactions and captures a fresh boundary for each kind. The documentation check regenerates the marked block and refuses differences in either the page or the receipt. To refresh the block explicitly, run python3 tools/batch_limits.py --write, then regenerate the page's speech and changed narration.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "folding-requests.md",
+    "sha256": "05ea79d22c8e74506d9f4e409635b83bb5f87144ecd573eef4d6a857a35dc799"
+  }
+}
