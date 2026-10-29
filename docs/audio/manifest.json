@@ -64690,6 +64690,896 @@
     }
    ]
   },
+  "docs-consumer-conformance/reading-from-a-registry-address-00": {
+   "audio_sha256": "fc2706cc74db08f46c98e7b906db7979c4ec6f36e6f772d39b6723c0593656b7",
+   "characters": 32,
+   "cost": 3.1679999999999995e-05,
+   "duration": 2.25,
+   "index": 0,
+   "key": "ae73a0ff09596c4bf0590362354df06bfdcffca42955b0f1b694a8465d2dde4a",
+   "page": "docs/consumer-conformance.md",
+   "pause_ms": 500,
+   "section": "reading-from-a-registry-address",
+   "sent_text": "Reading from a registry address.",
+   "text": "Reading from a registry address.",
+   "words": [
+    {
+     "end": 0.525,
+     "start": 0.2,
+     "text": "Reading"
+    },
+    {
+     "end": 0.663,
+     "start": 0.525,
+     "text": "from"
+    },
+    {
+     "end": 0.725,
+     "start": 0.663,
+     "text": "a"
+    },
+    {
+     "end": 1.212,
+     "start": 0.725,
+     "text": "registry"
+    },
+    {
+     "end": 2.05,
+     "start": 1.212,
+     "text": "address"
+    },
+    {
+     "end": 2.25,
+     "start": 2.05,
+     "text": "."
+    }
+   ]
+  },
+  "docs-consumer-conformance/reading-from-a-registry-address-01": {
+   "audio_sha256": "1f81c2e1042f020ac3b6c187c070dcefd822966a3446f2121a912a6c4a9d7e1c",
+   "characters": 440,
+   "cost": 0.00043559999999999996,
+   "duration": 29.275,
+   "index": 1,
+   "key": "ebf7086f39c6bafaa0ff50c4e14ede183101ea8027cf4d596ace61ad7f12c156",
+   "page": "docs/consumer-conformance.md",
+   "pause_ms": 400,
+   "section": "reading-from-a-registry-address",
+   "sent_text": "As a reader, I give a registry address and key without a signer, blueprint or local registry state. Four requirements describe the neutral key status, open datum's live holding and pending termination, measured provider calls, rows and bytes with another registry's holdings at the same address, and named refusals. They are published uncovered: no executable comparison with the application-held model backs these reading requirements yet.",
+   "text": "As a reader, I give a registry address and key without a signer, blueprint or local registry state. Four requirements describe the neutral key status, open datum's live holding and pending termination, measured provider calls, rows and bytes with another registry's holdings at the same address, and named refusals. They are published uncovered: no executable comparison with the application-held model backs these reading requirements yet.",
+   "words": [
+    {
+     "end": 0.338,
+     "start": 0.2,
+     "text": "As"
+    },
+    {
+     "end": 0.425,
+     "start": 0.338,
+     "text": "a"
+    },
+    {
+     "end": 0.8,
+     "start": 0.425,
+     "text": "reader"
+    },
+    {
+     "end": 0.85,
+     "start": 0.8,
+     "text": ","
+    },
+    {
+     "end": 1.0,
+     "start": 0.85,
+     "text": "I"
+    },
+    {
+     "end": 1.163,
+     "start": 1.0,
+     "text": "give"
+    },
+    {
+     "end": 1.25,
+     "start": 1.163,
+     "text": "a"
+    },
+    {
+     "end": 1.75,
+     "start": 1.25,
+     "text": "registry"
+    },
+    {
+     "end": 2.225,
+     "start": 1.75,
+     "text": "address"
+    },
+    {
+     "end": 2.362,
+     "start": 2.225,
+     "text": "and"
+    },
+    {
+     "end": 2.725,
+     "start": 2.362,
+     "text": "key"
+    },
+    {
+     "end": 3.037,
+     "start": 2.725,
+     "text": "without"
+    },
+    {
+     "end": 3.15,
+     "start": 3.037,
+     "text": "a"
+    },
+    {
+     "end": 3.65,
+     "start": 3.15,
+     "text": "signer"
+    },
+    {
+     "end": 3.737,
+     "start": 3.65,
+     "text": ","
+    },
+    {
+     "end": 4.387,
+     "start": 3.737,
+     "text": "blueprint"
+    },
+    {
+     "end": 4.55,
+     "start": 4.387,
+     "text": "or"
+    },
+    {
+     "end": 4.875,
+     "start": 4.55,
+     "text": "local"
+    },
+    {
+     "end": 5.35,
+     "start": 4.875,
+     "text": "registry"
+    },
+    {
+     "end": 6.275,
+     "start": 5.35,
+     "text": "state"
+    },
+    {
+     "end": 6.5,
+     "start": 6.275,
+     "text": "."
+    },
+    {
+     "end": 6.9,
+     "start": 6.7,
+     "text": "Four"
+    },
+    {
+     "end": 7.425,
+     "start": 6.9,
+     "text": "requirements"
+    },
+    {
+     "end": 7.887,
+     "start": 7.425,
+     "text": "describe"
+    },
+    {
+     "end": 7.975,
+     "start": 7.887,
+     "text": "the"
+    },
+    {
+     "end": 8.35,
+     "start": 7.975,
+     "text": "neutral"
+    },
+    {
+     "end": 8.55,
+     "start": 8.35,
+     "text": "key"
+    },
+    {
+     "end": 9.5,
+     "start": 8.55,
+     "text": "status"
+    },
+    {
+     "end": 9.7,
+     "start": 9.5,
+     "text": ","
+    },
+    {
+     "end": 10.2,
+     "start": 9.9,
+     "text": "open"
+    },
+    {
+     "end": 10.75,
+     "start": 10.2,
+     "text": "datum's"
+    },
+    {
+     "end": 11.025,
+     "start": 10.75,
+     "text": "live"
+    },
+    {
+     "end": 11.5,
+     "start": 11.025,
+     "text": "holding"
+    },
+    {
+     "end": 11.625,
+     "start": 11.5,
+     "text": "and"
+    },
+    {
+     "end": 12.025,
+     "start": 11.625,
+     "text": "pending"
+    },
+    {
+     "end": 12.825,
+     "start": 12.025,
+     "text": "termination"
+    },
+    {
+     "end": 12.938,
+     "start": 12.825,
+     "text": ","
+    },
+    {
+     "end": 13.325,
+     "start": 12.938,
+     "text": "measured"
+    },
+    {
+     "end": 13.825,
+     "start": 13.325,
+     "text": "provider"
+    },
+    {
+     "end": 14.825,
+     "start": 13.825,
+     "text": "calls"
+    },
+    {
+     "end": 15.025,
+     "start": 14.825,
+     "text": ","
+    },
+    {
+     "end": 15.65,
+     "start": 15.25,
+     "text": "rows"
+    },
+    {
+     "end": 15.775,
+     "start": 15.65,
+     "text": "and"
+    },
+    {
+     "end": 16.15,
+     "start": 15.775,
+     "text": "bytes"
+    },
+    {
+     "end": 16.288,
+     "start": 16.15,
+     "text": "with"
+    },
+    {
+     "end": 16.625,
+     "start": 16.288,
+     "text": "another"
+    },
+    {
+     "end": 17.15,
+     "start": 16.625,
+     "text": "registry's"
+    },
+    {
+     "end": 17.663,
+     "start": 17.15,
+     "text": "holdings"
+    },
+    {
+     "end": 17.763,
+     "start": 17.663,
+     "text": "at"
+    },
+    {
+     "end": 17.85,
+     "start": 17.763,
+     "text": "the"
+    },
+    {
+     "end": 18.087,
+     "start": 17.85,
+     "text": "same"
+    },
+    {
+     "end": 19.025,
+     "start": 18.087,
+     "text": "address"
+    },
+    {
+     "end": 19.225,
+     "start": 19.025,
+     "text": ","
+    },
+    {
+     "end": 19.513,
+     "start": 19.425,
+     "text": "and"
+    },
+    {
+     "end": 19.763,
+     "start": 19.513,
+     "text": "named"
+    },
+    {
+     "end": 20.85,
+     "start": 19.763,
+     "text": "refusals"
+    },
+    {
+     "end": 21.05,
+     "start": 20.85,
+     "text": "."
+    },
+    {
+     "end": 21.4,
+     "start": 21.25,
+     "text": "They"
+    },
+    {
+     "end": 21.562,
+     "start": 21.4,
+     "text": "are"
+    },
+    {
+     "end": 22.125,
+     "start": 21.562,
+     "text": "published"
+    },
+    {
+     "end": 22.9,
+     "start": 22.125,
+     "text": "uncovered"
+    },
+    {
+     "end": 23.013,
+     "start": 22.9,
+     "text": ":"
+    },
+    {
+     "end": 23.288,
+     "start": 23.013,
+     "text": "no"
+    },
+    {
+     "end": 23.95,
+     "start": 23.288,
+     "text": "executable"
+    },
+    {
+     "end": 24.675,
+     "start": 23.95,
+     "text": "comparison"
+    },
+    {
+     "end": 24.812,
+     "start": 24.675,
+     "text": "with"
+    },
+    {
+     "end": 24.962,
+     "start": 24.812,
+     "text": "the"
+    },
+    {
+     "end": 25.913,
+     "start": 24.962,
+     "text": "application-held"
+    },
+    {
+     "end": 26.312,
+     "start": 25.913,
+     "text": "model"
+    },
+    {
+     "end": 26.775,
+     "start": 26.312,
+     "text": "backs"
+    },
+    {
+     "end": 27.013,
+     "start": 26.775,
+     "text": "these"
+    },
+    {
+     "end": 27.375,
+     "start": 27.013,
+     "text": "reading"
+    },
+    {
+     "end": 28.1,
+     "start": 27.375,
+     "text": "requirements"
+    },
+    {
+     "end": 29.05,
+     "start": 28.1,
+     "text": "yet"
+    },
+    {
+     "end": 29.275,
+     "start": 29.05,
+     "text": "."
+    }
+   ]
+  },
+  "docs-consumer-conformance/reading-from-a-registry-address-02": {
+   "audio_sha256": "23397c08bb5e6269dc8a08e238f3c25fb2cf9a7995771f7b0a7cee83f1ba077b",
+   "characters": 564,
+   "cost": 0.0005583599999999999,
+   "duration": 37.025,
+   "index": 2,
+   "key": "b1e35835f04b05a1676d1addd294598b0dfb959dbc05bdf638d025436cbb246c",
+   "page": "docs/consumer-conformance.md",
+   "pause_ms": 400,
+   "section": "reading-from-a-registry-address",
+   "sent_text": "The registration journey runs both packaged readers at connected live, pending and terminal checkpoints and reads an unused key. Its artifact includes the answers and a known-key query measurement. The registration refusals job runs wrong-network, unknown-policy and failed-provider reads beside passing controls. These are separate command observations, with controls that reject altered answers; they establish nothing about agreement with the model. See reading a key for the commands and settings, and the generated evidence page for receipt-derived standings.",
+   "text": "The registration journey runs both packaged readers at connected live, pending and terminal checkpoints and reads an unused key. Its artifact includes the answers and a known-key query measurement. The registration refusals job runs wrong-network, unknown-policy and failed-provider reads beside passing controls. These are separate command observations, with controls that reject altered answers; they establish nothing about agreement with the model. See reading a key for the commands and settings, and the generated evidence page for receipt-derived standings.",
+   "words": [
+    {
+     "end": 0.3,
+     "start": 0.2,
+     "text": "The"
+    },
+    {
+     "end": 1.05,
+     "start": 0.3,
+     "text": "registration"
+    },
+    {
+     "end": 1.438,
+     "start": 1.05,
+     "text": "journey"
+    },
+    {
+     "end": 1.788,
+     "start": 1.438,
+     "text": "runs"
+    },
+    {
+     "end": 2.088,
+     "start": 1.788,
+     "text": "both"
+    },
+    {
+     "end": 2.625,
+     "start": 2.088,
+     "text": "packaged"
+    },
+    {
+     "end": 3.062,
+     "start": 2.625,
+     "text": "readers"
+    },
+    {
+     "end": 3.2,
+     "start": 3.062,
+     "text": "at"
+    },
+    {
+     "end": 3.7,
+     "start": 3.2,
+     "text": "connected"
+    },
+    {
+     "end": 4.15,
+     "start": 3.7,
+     "text": "live"
+    },
+    {
+     "end": 4.262,
+     "start": 4.15,
+     "text": ","
+    },
+    {
+     "end": 4.75,
+     "start": 4.262,
+     "text": "pending"
+    },
+    {
+     "end": 4.875,
+     "start": 4.75,
+     "text": "and"
+    },
+    {
+     "end": 5.363,
+     "start": 4.875,
+     "text": "terminal"
+    },
+    {
+     "end": 6.037,
+     "start": 5.363,
+     "text": "checkpoints"
+    },
+    {
+     "end": 6.175,
+     "start": 6.037,
+     "text": "and"
+    },
+    {
+     "end": 6.512,
+     "start": 6.175,
+     "text": "reads"
+    },
+    {
+     "end": 6.625,
+     "start": 6.512,
+     "text": "an"
+    },
+    {
+     "end": 7.188,
+     "start": 6.625,
+     "text": "unused"
+    },
+    {
+     "end": 8.175,
+     "start": 7.188,
+     "text": "key"
+    },
+    {
+     "end": 8.425,
+     "start": 8.175,
+     "text": "."
+    },
+    {
+     "end": 8.775,
+     "start": 8.6,
+     "text": "Its"
+    },
+    {
+     "end": 9.35,
+     "start": 8.775,
+     "text": "artifact"
+    },
+    {
+     "end": 9.762,
+     "start": 9.35,
+     "text": "includes"
+    },
+    {
+     "end": 9.913,
+     "start": 9.762,
+     "text": "the"
+    },
+    {
+     "end": 10.6,
+     "start": 9.913,
+     "text": "answers"
+    },
+    {
+     "end": 10.738,
+     "start": 10.6,
+     "text": "and"
+    },
+    {
+     "end": 10.837,
+     "start": 10.738,
+     "text": "a"
+    },
+    {
+     "end": 11.3,
+     "start": 10.837,
+     "text": "known-key"
+    },
+    {
+     "end": 11.65,
+     "start": 11.3,
+     "text": "query"
+    },
+    {
+     "end": 12.65,
+     "start": 11.65,
+     "text": "measurement"
+    },
+    {
+     "end": 12.85,
+     "start": 12.65,
+     "text": "."
+    },
+    {
+     "end": 13.15,
+     "start": 13.05,
+     "text": "The"
+    },
+    {
+     "end": 13.9,
+     "start": 13.15,
+     "text": "registration"
+    },
+    {
+     "end": 14.562,
+     "start": 13.9,
+     "text": "refusals"
+    },
+    {
+     "end": 14.962,
+     "start": 14.562,
+     "text": "job"
+    },
+    {
+     "end": 15.387,
+     "start": 14.962,
+     "text": "runs"
+    },
+    {
+     "end": 16.3,
+     "start": 15.387,
+     "text": "wrong-network"
+    },
+    {
+     "end": 16.4,
+     "start": 16.3,
+     "text": ","
+    },
+    {
+     "end": 17.5,
+     "start": 16.4,
+     "text": "unknown-policy"
+    },
+    {
+     "end": 17.638,
+     "start": 17.5,
+     "text": "and"
+    },
+    {
+     "end": 18.45,
+     "start": 17.638,
+     "text": "failed-provider"
+    },
+    {
+     "end": 18.85,
+     "start": 18.45,
+     "text": "reads"
+    },
+    {
+     "end": 19.325,
+     "start": 18.85,
+     "text": "beside"
+    },
+    {
+     "end": 19.75,
+     "start": 19.325,
+     "text": "passing"
+    },
+    {
+     "end": 21.1,
+     "start": 19.75,
+     "text": "controls"
+    },
+    {
+     "end": 21.325,
+     "start": 21.1,
+     "text": "."
+    },
+    {
+     "end": 21.825,
+     "start": 21.525,
+     "text": "These"
+    },
+    {
+     "end": 22.0,
+     "start": 21.825,
+     "text": "are"
+    },
+    {
+     "end": 22.425,
+     "start": 22.0,
+     "text": "separate"
+    },
+    {
+     "end": 22.812,
+     "start": 22.425,
+     "text": "command"
+    },
+    {
+     "end": 23.7,
+     "start": 22.812,
+     "text": "observations"
+    },
+    {
+     "end": 23.775,
+     "start": 23.7,
+     "text": ","
+    },
+    {
+     "end": 23.95,
+     "start": 23.775,
+     "text": "with"
+    },
+    {
+     "end": 24.6,
+     "start": 23.95,
+     "text": "controls"
+    },
+    {
+     "end": 24.775,
+     "start": 24.6,
+     "text": "that"
+    },
+    {
+     "end": 25.212,
+     "start": 24.775,
+     "text": "reject"
+    },
+    {
+     "end": 25.65,
+     "start": 25.212,
+     "text": "altered"
+    },
+    {
+     "end": 26.75,
+     "start": 25.65,
+     "text": "answers"
+    },
+    {
+     "end": 26.95,
+     "start": 26.75,
+     "text": ";"
+    },
+    {
+     "end": 27.25,
+     "start": 27.125,
+     "text": "they"
+    },
+    {
+     "end": 27.85,
+     "start": 27.25,
+     "text": "establish"
+    },
+    {
+     "end": 28.237,
+     "start": 27.85,
+     "text": "nothing"
+    },
+    {
+     "end": 28.475,
+     "start": 28.237,
+     "text": "about"
+    },
+    {
+     "end": 28.938,
+     "start": 28.475,
+     "text": "agreement"
+    },
+    {
+     "end": 29.062,
+     "start": 28.938,
+     "text": "with"
+    },
+    {
+     "end": 29.15,
+     "start": 29.062,
+     "text": "the"
+    },
+    {
+     "end": 30.0,
+     "start": 29.15,
+     "text": "model"
+    },
+    {
+     "end": 30.2,
+     "start": 30.0,
+     "text": "."
+    },
+    {
+     "end": 30.625,
+     "start": 30.425,
+     "text": "See"
+    },
+    {
+     "end": 30.925,
+     "start": 30.625,
+     "text": "reading"
+    },
+    {
+     "end": 31.038,
+     "start": 30.925,
+     "text": "a"
+    },
+    {
+     "end": 31.35,
+     "start": 31.038,
+     "text": "key"
+    },
+    {
+     "end": 31.462,
+     "start": 31.35,
+     "text": "for"
+    },
+    {
+     "end": 31.55,
+     "start": 31.462,
+     "text": "the"
+    },
+    {
+     "end": 32.1,
+     "start": 31.55,
+     "text": "commands"
+    },
+    {
+     "end": 32.237,
+     "start": 32.1,
+     "text": "and"
+    },
+    {
+     "end": 32.825,
+     "start": 32.237,
+     "text": "settings"
+    },
+    {
+     "end": 32.9,
+     "start": 32.825,
+     "text": ","
+    },
+    {
+     "end": 33.013,
+     "start": 32.9,
+     "text": "and"
+    },
+    {
+     "end": 33.112,
+     "start": 33.013,
+     "text": "the"
+    },
+    {
+     "end": 33.725,
+     "start": 33.112,
+     "text": "generated"
+    },
+    {
+     "end": 34.188,
+     "start": 33.725,
+     "text": "evidence"
+    },
+    {
+     "end": 34.6,
+     "start": 34.188,
+     "text": "page"
+    },
+    {
+     "end": 34.75,
+     "start": 34.6,
+     "text": "for"
+    },
+    {
+     "end": 35.55,
+     "start": 34.75,
+     "text": "receipt-derived"
+    },
+    {
+     "end": 36.8,
+     "start": 35.55,
+     "text": "standings"
+    },
+    {
+     "end": 37.025,
+     "start": 36.8,
+     "text": "."
+    }
+   ]
+  },
   "docs-consumer-conformance/redeemers-that-are-gone-00": {
    "audio_sha256": "d5121d376241b97684d4e317ac6197ec8c5a630cb6b1b9585c95d61f29c303bd",
    "characters": 24,
@@ -68691,17 +69581,17 @@
    ]
   },
   "docs-consumer-conformance/the-denominator-01": {
-   "audio_sha256": "d9be2bb0064911e39d7a008142c172f5b5b17ee883ccf76e9c49e624b06eddb0",
-   "characters": 839,
-   "cost": 0.00083061,
-   "duration": 58.4,
+   "audio_sha256": "93dd0f0408eb0e461ea2f403e668d0ed285a8a287b89b0cb20987b4378a8151d",
+   "characters": 875,
+   "cost": 0.0008662499999999999,
+   "duration": 60.725,
    "index": 1,
-   "key": "74a5e21211af4957e53597bc6d075821be7f9d999881990f915531ae4307c9a4",
+   "key": "387ac609463bdf67e0e01872eae4f28ed4ed07e767049721fba5f5059e0e3790",
    "page": "docs/consumer-conformance.md",
    "pause_ms": 400,
    "section": "the-denominator",
-   "sent_text": "conformance/rows.json carries 55 rows, 54 owned: one permanent contract requirement, five registry identity requirements, twenty-five registry operation requirements, eight serialization requirements, five consumer resolution requirements, three execution-limit requirements, four registration journey requirements and three update and termination journey requirements (stated below), plus the checkpoint and treasury policy (bonds, poison, the juvenility window W, the signature threshold) recorded as out of scope — it belongs to cardano-keri's checkpoint machine and treasury, explicitly never claimed by Singular. list prints the owned denominator separately so the boundary stays visible. Superseded and held rows stay in the denominator and visible to completeness accounting: relabelling a row pays no coverage and shrinks no board.",
-   "text": "conformance/rows.json carries 55 rows, 54 owned: one permanent contract requirement, five registry identity requirements, twenty-five registry operation requirements, eight serialization requirements, five consumer resolution requirements, three execution-limit requirements, four registration journey requirements and three update and termination journey requirements (stated below), plus the checkpoint and treasury policy (bonds, poison, the juvenility window W, the signature threshold) recorded as out of scope — it belongs to cardano-keri's checkpoint machine and treasury, explicitly never claimed by Singular. list prints the owned denominator separately so the boundary stays visible. Superseded and held rows stay in the denominator and visible to completeness accounting: relabelling a row pays no coverage and shrinks no board.",
+   "sent_text": "conformance/rows.json carries 59 rows, 58 owned: one permanent contract requirement, five registry identity requirements, twenty-five registry operation requirements, eight serialization requirements, five consumer resolution requirements, three execution-limit requirements, four registration journey requirements and three update and termination journey requirements (stated below), four registry reading requirements, plus the checkpoint and treasury policy (bonds, poison, the juvenility window W, the signature threshold) recorded as out of scope — it belongs to cardano-keri's checkpoint machine and treasury, explicitly never claimed by Singular. list prints the owned denominator separately so the boundary stays visible. Superseded and held rows stay in the denominator and visible to completeness accounting: relabelling a row pays no coverage and shrinks no board.",
+   "text": "conformance/rows.json carries 59 rows, 58 owned: one permanent contract requirement, five registry identity requirements, twenty-five registry operation requirements, eight serialization requirements, five consumer resolution requirements, three execution-limit requirements, four registration journey requirements and three update and termination journey requirements (stated below), four registry reading requirements, plus the checkpoint and treasury policy (bonds, poison, the juvenility window W, the signature threshold) recorded as out of scope — it belongs to cardano-keri's checkpoint machine and treasury, explicitly never claimed by Singular. list prints the owned denominator separately so the boundary stays visible. Superseded and held rows stay in the denominator and visible to completeness accounting: relabelling a row pays no coverage and shrinks no board.",
    "words": [
     {
      "end": 2.275,
@@ -68716,22 +69606,22 @@
     {
      "end": 3.2,
      "start": 2.625,
-     "text": "55"
+     "text": "59"
     },
     {
-     "end": 3.55,
+     "end": 3.575,
      "start": 3.2,
      "text": "rows"
     },
     {
-     "end": 3.6,
-     "start": 3.55,
+     "end": 3.625,
+     "start": 3.575,
      "text": ","
     },
     {
      "end": 4.125,
-     "start": 3.6,
-     "text": "54"
+     "start": 3.625,
+     "text": "58"
     },
     {
      "end": 4.975,
@@ -68966,391 +69856,416 @@
     {
      "end": 28.225,
      "start": 27.975,
-     "text": "plus"
+     "text": "four"
     },
     {
-     "end": 28.362,
+     "end": 28.7,
      "start": 28.225,
-     "text": "the"
-    },
-    {
-     "end": 28.888,
-     "start": 28.362,
-     "text": "checkpoint"
+     "text": "registry"
     },
     {
      "end": 29.0,
-     "start": 28.888,
-     "text": "and"
+     "start": 28.7,
+     "text": "reading"
     },
     {
-     "end": 29.425,
+     "end": 29.75,
      "start": 29.0,
-     "text": "treasury"
+     "text": "requirements"
     },
     {
-     "end": 30.112,
-     "start": 29.425,
-     "text": "policy"
-    },
-    {
-     "end": 30.2,
-     "start": 30.112,
-     "text": "("
-    },
-    {
-     "end": 30.675,
-     "start": 30.2,
-     "text": "bonds"
-    },
-    {
-     "end": 30.763,
-     "start": 30.675,
+     "end": 29.8,
+     "start": 29.75,
      "text": ","
     },
     {
-     "end": 31.275,
-     "start": 30.763,
-     "text": "poison"
+     "end": 30.075,
+     "start": 29.8,
+     "text": "plus"
     },
     {
-     "end": 31.312,
-     "start": 31.275,
-     "text": ","
-    },
-    {
-     "end": 31.4,
-     "start": 31.312,
+     "end": 30.188,
+     "start": 30.075,
      "text": "the"
     },
     {
-     "end": 32.025,
-     "start": 31.4,
-     "text": "juvenility"
-    },
-    {
-     "end": 32.35,
-     "start": 32.025,
-     "text": "window"
-    },
-    {
-     "end": 33.275,
-     "start": 32.35,
-     "text": "W"
-    },
-    {
-     "end": 33.575,
-     "start": 33.275,
-     "text": ","
-    },
-    {
-     "end": 33.888,
-     "start": 33.775,
-     "text": "the"
-    },
-    {
-     "end": 34.438,
-     "start": 33.888,
-     "text": "signature"
-    },
-    {
-     "end": 35.175,
-     "start": 34.438,
-     "text": "threshold"
-    },
-    {
-     "end": 35.225,
-     "start": 35.175,
-     "text": ")"
-    },
-    {
-     "end": 35.75,
-     "start": 35.225,
-     "text": "recorded"
-    },
-    {
-     "end": 35.9,
-     "start": 35.75,
-     "text": "as"
-    },
-    {
-     "end": 36.088,
-     "start": 35.9,
-     "text": "out"
-    },
-    {
-     "end": 36.188,
-     "start": 36.088,
-     "text": "of"
-    },
-    {
-     "end": 36.812,
-     "start": 36.188,
-     "text": "scope"
-    },
-    {
-     "end": 36.912,
-     "start": 36.812,
-     "text": "—"
-    },
-    {
-     "end": 37.05,
-     "start": 36.912,
-     "text": "it"
-    },
-    {
-     "end": 37.6,
-     "start": 37.05,
-     "text": "belongs"
-    },
-    {
-     "end": 37.725,
-     "start": 37.6,
-     "text": "to"
-    },
-    {
-     "end": 38.662,
-     "start": 37.725,
-     "text": "cardano-keri's"
-    },
-    {
-     "end": 39.162,
-     "start": 38.662,
+     "end": 30.725,
+     "start": 30.188,
      "text": "checkpoint"
     },
     {
-     "end": 39.625,
-     "start": 39.162,
-     "text": "machine"
-    },
-    {
-     "end": 39.75,
-     "start": 39.625,
+     "end": 30.85,
+     "start": 30.725,
      "text": "and"
     },
     {
-     "end": 40.875,
-     "start": 39.75,
+     "end": 31.275,
+     "start": 30.85,
      "text": "treasury"
     },
     {
-     "end": 41.125,
-     "start": 40.875,
+     "end": 31.888,
+     "start": 31.275,
+     "text": "policy"
+    },
+    {
+     "end": 31.975,
+     "start": 31.888,
+     "text": "("
+    },
+    {
+     "end": 33.0,
+     "start": 31.975,
+     "text": "bonds"
+    },
+    {
+     "end": 33.225,
+     "start": 33.0,
      "text": ","
     },
     {
-     "end": 41.925,
-     "start": 41.325,
-     "text": "explicitly"
+     "end": 33.825,
+     "start": 33.4,
+     "text": "poison"
     },
     {
-     "end": 42.175,
-     "start": 41.925,
-     "text": "never"
+     "end": 33.862,
+     "start": 33.825,
+     "text": ","
     },
     {
-     "end": 42.525,
-     "start": 42.175,
-     "text": "claimed"
-    },
-    {
-     "end": 42.713,
-     "start": 42.525,
-     "text": "by"
-    },
-    {
-     "end": 43.65,
-     "start": 42.713,
-     "text": "Singular"
-    },
-    {
-     "end": 43.85,
-     "start": 43.65,
-     "text": "."
-    },
-    {
-     "end": 44.35,
-     "start": 44.075,
-     "text": "list"
-    },
-    {
-     "end": 44.612,
-     "start": 44.35,
-     "text": "prints"
-    },
-    {
-     "end": 44.75,
-     "start": 44.612,
+     "end": 33.95,
+     "start": 33.862,
      "text": "the"
     },
     {
-     "end": 44.975,
-     "start": 44.75,
-     "text": "owned"
+     "end": 34.525,
+     "start": 33.95,
+     "text": "juvenility"
     },
     {
-     "end": 45.7,
-     "start": 44.975,
-     "text": "denominator"
+     "end": 34.825,
+     "start": 34.525,
+     "text": "window"
     },
     {
-     "end": 46.375,
-     "start": 45.7,
-     "text": "separately"
+     "end": 35.65,
+     "start": 34.825,
+     "text": "W"
     },
     {
-     "end": 46.562,
-     "start": 46.375,
-     "text": "so"
+     "end": 35.9,
+     "start": 35.65,
+     "text": ","
     },
     {
-     "end": 46.65,
-     "start": 46.562,
+     "end": 36.213,
+     "start": 36.1,
      "text": "the"
     },
     {
-     "end": 47.15,
-     "start": 46.65,
-     "text": "boundary"
+     "end": 36.763,
+     "start": 36.213,
+     "text": "signature"
     },
     {
-     "end": 47.525,
-     "start": 47.15,
-     "text": "stays"
+     "end": 37.5,
+     "start": 36.763,
+     "text": "threshold"
     },
     {
-     "end": 48.5,
-     "start": 47.525,
-     "text": "visible"
+     "end": 37.55,
+     "start": 37.5,
+     "text": ")"
     },
     {
-     "end": 48.7,
-     "start": 48.5,
-     "text": "."
+     "end": 38.075,
+     "start": 37.55,
+     "text": "recorded"
     },
     {
-     "end": 49.725,
-     "start": 48.925,
-     "text": "Superseded"
+     "end": 38.225,
+     "start": 38.075,
+     "text": "as"
     },
     {
-     "end": 49.85,
-     "start": 49.725,
-     "text": "and"
+     "end": 38.412,
+     "start": 38.225,
+     "text": "out"
     },
     {
-     "end": 50.125,
-     "start": 49.85,
-     "text": "held"
+     "end": 38.513,
+     "start": 38.412,
+     "text": "of"
     },
     {
-     "end": 50.513,
-     "start": 50.125,
-     "text": "rows"
+     "end": 39.138,
+     "start": 38.513,
+     "text": "scope"
     },
     {
-     "end": 50.875,
-     "start": 50.513,
-     "text": "stay"
+     "end": 39.237,
+     "start": 39.138,
+     "text": "—"
     },
     {
-     "end": 50.963,
-     "start": 50.875,
-     "text": "in"
+     "end": 39.375,
+     "start": 39.237,
+     "text": "it"
     },
     {
-     "end": 51.05,
-     "start": 50.963,
-     "text": "the"
+     "end": 39.925,
+     "start": 39.375,
+     "text": "belongs"
     },
     {
-     "end": 51.925,
-     "start": 51.05,
-     "text": "denominator"
-    },
-    {
-     "end": 52.1,
-     "start": 51.925,
-     "text": "and"
-    },
-    {
-     "end": 52.525,
-     "start": 52.1,
-     "text": "visible"
-    },
-    {
-     "end": 52.65,
-     "start": 52.525,
+     "end": 40.05,
+     "start": 39.925,
      "text": "to"
     },
     {
-     "end": 53.25,
-     "start": 52.65,
-     "text": "completeness"
+     "end": 40.987,
+     "start": 40.05,
+     "text": "cardano-keri's"
     },
     {
-     "end": 54.45,
-     "start": 53.25,
-     "text": "accounting"
+     "end": 41.487,
+     "start": 40.987,
+     "text": "checkpoint"
     },
     {
-     "end": 54.65,
-     "start": 54.45,
-     "text": ":"
+     "end": 41.95,
+     "start": 41.487,
+     "text": "machine"
     },
     {
-     "end": 55.325,
-     "start": 54.85,
-     "text": "relabelling"
-    },
-    {
-     "end": 55.4,
-     "start": 55.325,
-     "text": "a"
-    },
-    {
-     "end": 55.625,
-     "start": 55.4,
-     "text": "row"
-    },
-    {
-     "end": 56.025,
-     "start": 55.625,
-     "text": "pays"
-    },
-    {
-     "end": 56.2,
-     "start": 56.025,
-     "text": "no"
-    },
-    {
-     "end": 56.65,
-     "start": 56.2,
-     "text": "coverage"
-    },
-    {
-     "end": 56.787,
-     "start": 56.65,
+     "end": 42.075,
+     "start": 41.95,
      "text": "and"
     },
     {
-     "end": 57.175,
-     "start": 56.787,
-     "text": "shrinks"
+     "end": 43.2,
+     "start": 42.075,
+     "text": "treasury"
     },
     {
-     "end": 57.35,
+     "end": 43.45,
+     "start": 43.2,
+     "text": ","
+    },
+    {
+     "end": 44.25,
+     "start": 43.65,
+     "text": "explicitly"
+    },
+    {
+     "end": 44.5,
+     "start": 44.25,
+     "text": "never"
+    },
+    {
+     "end": 44.85,
+     "start": 44.5,
+     "text": "claimed"
+    },
+    {
+     "end": 45.037,
+     "start": 44.85,
+     "text": "by"
+    },
+    {
+     "end": 45.975,
+     "start": 45.037,
+     "text": "Singular"
+    },
+    {
+     "end": 46.175,
+     "start": 45.975,
+     "text": "."
+    },
+    {
+     "end": 46.675,
+     "start": 46.4,
+     "text": "list"
+    },
+    {
+     "end": 46.938,
+     "start": 46.675,
+     "text": "prints"
+    },
+    {
+     "end": 47.075,
+     "start": 46.938,
+     "text": "the"
+    },
+    {
+     "end": 47.3,
+     "start": 47.075,
+     "text": "owned"
+    },
+    {
+     "end": 48.025,
+     "start": 47.3,
+     "text": "denominator"
+    },
+    {
+     "end": 48.7,
+     "start": 48.025,
+     "text": "separately"
+    },
+    {
+     "end": 48.888,
+     "start": 48.7,
+     "text": "so"
+    },
+    {
+     "end": 48.975,
+     "start": 48.888,
+     "text": "the"
+    },
+    {
+     "end": 49.475,
+     "start": 48.975,
+     "text": "boundary"
+    },
+    {
+     "end": 49.85,
+     "start": 49.475,
+     "text": "stays"
+    },
+    {
+     "end": 50.825,
+     "start": 49.85,
+     "text": "visible"
+    },
+    {
+     "end": 51.025,
+     "start": 50.825,
+     "text": "."
+    },
+    {
+     "end": 52.05,
+     "start": 51.25,
+     "text": "Superseded"
+    },
+    {
+     "end": 52.175,
+     "start": 52.05,
+     "text": "and"
+    },
+    {
+     "end": 52.45,
+     "start": 52.175,
+     "text": "held"
+    },
+    {
+     "end": 52.838,
+     "start": 52.45,
+     "text": "rows"
+    },
+    {
+     "end": 53.2,
+     "start": 52.838,
+     "text": "stay"
+    },
+    {
+     "end": 53.287,
+     "start": 53.2,
+     "text": "in"
+    },
+    {
+     "end": 53.375,
+     "start": 53.287,
+     "text": "the"
+    },
+    {
+     "end": 54.25,
+     "start": 53.375,
+     "text": "denominator"
+    },
+    {
+     "end": 54.425,
+     "start": 54.25,
+     "text": "and"
+    },
+    {
+     "end": 54.85,
+     "start": 54.425,
+     "text": "visible"
+    },
+    {
+     "end": 54.975,
+     "start": 54.85,
+     "text": "to"
+    },
+    {
+     "end": 55.575,
+     "start": 54.975,
+     "text": "completeness"
+    },
+    {
+     "end": 56.775,
+     "start": 55.575,
+     "text": "accounting"
+    },
+    {
+     "end": 56.975,
+     "start": 56.775,
+     "text": ":"
+    },
+    {
+     "end": 57.65,
      "start": 57.175,
+     "text": "relabelling"
+    },
+    {
+     "end": 57.725,
+     "start": 57.65,
+     "text": "a"
+    },
+    {
+     "end": 57.95,
+     "start": 57.725,
+     "text": "row"
+    },
+    {
+     "end": 58.35,
+     "start": 57.95,
+     "text": "pays"
+    },
+    {
+     "end": 58.525,
+     "start": 58.35,
      "text": "no"
     },
     {
-     "end": 58.2,
-     "start": 57.35,
+     "end": 58.975,
+     "start": 58.525,
+     "text": "coverage"
+    },
+    {
+     "end": 59.112,
+     "start": 58.975,
+     "text": "and"
+    },
+    {
+     "end": 59.5,
+     "start": 59.112,
+     "text": "shrinks"
+    },
+    {
+     "end": 59.675,
+     "start": 59.5,
+     "text": "no"
+    },
+    {
+     "end": 60.525,
+     "start": 59.675,
      "text": "board"
     },
     {
-     "end": 58.4,
-     "start": 58.2,
+     "end": 60.725,
+     "start": 60.525,
      "text": "."
     }
    ]

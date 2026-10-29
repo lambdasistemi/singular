@@ -478,6 +478,46 @@
       "state": "uncovered",
       "note": "Decided difference. Statement only. Whole request value is the gross folder allocation, separated from ordinary wallet funding and the ledger fee, and is not a declared-tip-only payment.",
       "evidence": "Separate evidence boundary, not a comparison with the model: the hosted jobs no-pin-registration-journey and no-pin-termination-refusals run the packaged commands on a development network and read the chain's own record and the node's refusal answers. They establish what they run and nothing about agreement with the model."
+    },
+    {
+      "group": "registry-reading",
+      "expected": "The reader answers as stated. Uncovered: no executable comparison with the application-held model exists yet",
+      "state": "uncovered",
+      "note": "Separate packaged-command development-network evidence does not establish model correspondence or change this receipt-derived standing.",
+      "evidence": "Separate evidence boundary, not a comparison with the model: the hosted jobs no-pin-registration-journey and no-pin-registration-refusals run the packaged reading commands on a development network, compare connected answers with independent chain views and reject altered answers. They establish what they run and nothing about agreement with the model.",
+      "id": "reading-key-status",
+      "requirement": "A reader supplies a registry address and a key, without a signer, blueprint or local registry state. Singular identifies the application from the packaged state-policy release table and answers active only for genuine unit-token custody at the application's script. With no active token, the authenticated state and its trie distinguish a permanently terminal key from a key that was never registered; a missing token alone establishes neither.",
+      "source": "SingularApplicationHeld.readNeutralKey; SingularApplicationHeld.NeutralReaderStatements.active_inversion, terminal_inversion, never_registered_inversion and no_absence_from_missing_evidence"
+    },
+    {
+      "group": "registry-reading",
+      "expected": "The reader answers as stated. Uncovered: no executable comparison with the application-held model exists yet",
+      "state": "uncovered",
+      "note": "Separate packaged-command development-network evidence does not establish model correspondence or change this receipt-derived standing.",
+      "evidence": "Separate evidence boundary, not a comparison with the model: the hosted jobs no-pin-registration-journey and no-pin-registration-refusals run the packaged reading commands on a development network, compare connected answers with independent chain views and reject altered answers. They establish what they run and nothing about agreement with the model.",
+      "id": "reading-application-holding",
+      "requirement": "The open-datum reader refines Singular's active answer to a live holding with its protected control, deposit and payload, or to pending termination when the token is held by the exact datumless termination request. After the connected termination fold it answers terminal; an unused key is never registered. Every neutral unavailable answer and refusal retains its meaning.",
+      "source": "SingularApplicationHeld.refineReaderAnswer; OpenDatumApplicationHeld.ReaderStatements.live_custody and pending_custody; SingularApplicationHeld.NeutralReaderStatements.application_keeps_terminal, application_keeps_never_registered, application_keeps_unavailable and application_keeps_refusal"
+    },
+    {
+      "group": "registry-reading",
+      "expected": "The reader answers as stated. Uncovered: no executable comparison with the application-held model exists yet",
+      "state": "uncovered",
+      "note": "Separate packaged-command development-network evidence does not establish model correspondence or change this receipt-derived standing.",
+      "evidence": "Separate evidence boundary, not a comparison with the model: the hosted jobs no-pin-registration-journey and no-pin-registration-refusals run the packaged reading commands on a development network, compare connected answers with independent chain views and reject altered answers. They establish what they run and nothing about agreement with the model.",
+      "id": "reading-query-work",
+      "requirement": "A known live key is read with one asset query, without scanning the application's address or the registry's history. On a development network with another registry's live holdings at the same application address, the receipt publishes provider-measured calls, rows and bytes for each read and in total, and identifies the other holdings that coexisted with the lookup.",
+      "source": "SingularApplicationHeld.NeutralReaderStatements.holding_answer_ignores_state; SingularApplicationHeld.ReaderQuery"
+    },
+    {
+      "group": "registry-reading",
+      "expected": "The reader answers as stated. Uncovered: no executable comparison with the application-held model exists yet",
+      "state": "uncovered",
+      "note": "Separate packaged-command development-network evidence does not establish model correspondence or change this receipt-derived standing.",
+      "evidence": "Separate evidence boundary, not a comparison with the model: the hosted jobs no-pin-registration-journey and no-pin-registration-refusals run the packaged reading commands on a development network, compare connected answers with independent chain views and reject altered answers. They establish what they run and nothing about agreement with the model.",
+      "id": "reading-refusals",
+      "requirement": "A registry whose network differs from the provider is refused with both networks named. An unknown state policy is refused by name. A failed provider read is unavailable with the failed read and its reason, never terminal or never registered. A token outside application custody, including the state address, and conflicting token evidence are refused. Development-network network, policy and provider-failure cases each have a passing control; custody and conflict refusals are checked separately at the reader boundary.",
+      "source": "SingularApplicationHeld.NeutralReaderStatements.wrong_network_first, unknown_state_policy, network_unavailable, token_outside_custody, conflicting_outputs and conflicting_quantity"
     }
   ]
 }

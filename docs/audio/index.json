@@ -1994,6 +1994,29 @@
     "v": "4c1fb075e25c"
    }
   ],
+  "reading-from-a-registry-address": [
+   {
+    "index": 0,
+    "name": "docs-consumer-conformance/reading-from-a-registry-address-00",
+    "pause_ms": 500,
+    "text": "Reading from a registry address.",
+    "v": "fc2706cc74db"
+   },
+   {
+    "index": 1,
+    "name": "docs-consumer-conformance/reading-from-a-registry-address-01",
+    "pause_ms": 400,
+    "text": "As a reader, I give a registry address and key without a signer, blueprint or local registry state. Four requirements describe the neutral key status, open datum's live holding and pending termination, measured provider calls, rows and bytes with another registry's holdings at the same address, and named refusals. They are published uncovered: no executable comparison with the application-held model backs these reading requirements yet.",
+    "v": "1f81c2e1042f"
+   },
+   {
+    "index": 2,
+    "name": "docs-consumer-conformance/reading-from-a-registry-address-02",
+    "pause_ms": 400,
+    "text": "The registration journey runs both packaged readers at connected live, pending and terminal checkpoints and reads an unused key. Its artifact includes the answers and a known-key query measurement. The registration refusals job runs wrong-network, unknown-policy and failed-provider reads beside passing controls. These are separate command observations, with controls that reject altered answers; they establish nothing about agreement with the model. See reading a key for the commands and settings, and the generated evidence page for receipt-derived standings.",
+    "v": "23397c08bb5e"
+   }
+  ],
   "redeemers-that-are-gone": [
    {
     "index": 0,
@@ -2123,8 +2146,8 @@
     "index": 1,
     "name": "docs-consumer-conformance/the-denominator-01",
     "pause_ms": 400,
-    "text": "conformance/rows.json carries 55 rows, 54 owned: one permanent contract requirement, five registry identity requirements, twenty-five registry operation requirements, eight serialization requirements, five consumer resolution requirements, three execution-limit requirements, four registration journey requirements and three update and termination journey requirements (stated below), plus the checkpoint and treasury policy (bonds, poison, the juvenility window W, the signature threshold) recorded as out of scope — it belongs to cardano-keri's checkpoint machine and treasury, explicitly never claimed by Singular. list prints the owned denominator separately so the boundary stays visible. Superseded and held rows stay in the denominator and visible to completeness accounting: relabelling a row pays no coverage and shrinks no board.",
-    "v": "d9be2bb00649"
+    "text": "conformance/rows.json carries 59 rows, 58 owned: one permanent contract requirement, five registry identity requirements, twenty-five registry operation requirements, eight serialization requirements, five consumer resolution requirements, three execution-limit requirements, four registration journey requirements and three update and termination journey requirements (stated below), four registry reading requirements, plus the checkpoint and treasury policy (bonds, poison, the juvenility window W, the signature threshold) recorded as out of scope — it belongs to cardano-keri's checkpoint machine and treasury, explicitly never claimed by Singular. list prints the owned denominator separately so the boundary stays visible. Superseded and held rows stay in the denominator and visible to completeness accounting: relabelling a row pays no coverage and shrinks no board.",
+    "v": "93dd0f0408eb"
    },
    {
     "index": 2,

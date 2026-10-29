@@ -146,26 +146,27 @@ spec = describe "Appendix: keeping the published requirements complete" $ do
         validateInventory [] `shouldSatisfy` isLeft
 
     it
-        "Publishes reading requirements without crediting separate development-network evidence" $ do
-        rows <- loadCommitted
-        let reading = filter ((== "registry-reading") . rowGroup) rows
-            rendered = renderInventory "current-base" [] rows
-        sort (map rowId reading)
-            `shouldBe` [ "reading-application-holding"
-                       , "reading-key-status"
-                       , "reading-query-work"
-                       , "reading-refusals"
-                       ]
-        forM_ reading $ \row -> do
-            effectiveState "current-base" [] row `shouldBe` ShownPlanned Uncovered
-            rowExpected row `shouldSatisfy` T.isInfixOf "no executable comparison"
-            rowEvidence row `shouldSatisfy` \case
-                Nothing -> False
-                Just text ->
-                    all
-                        (`T.isInfixOf` text)
-                        ["no-pin-registration", "nothing about agreement with the model"]
-            rendered `shouldSatisfy` T.isInfixOf (rowRequirement row)
+        "Publishes reading requirements without crediting separate development-network evidence"
+        $ do
+            rows <- loadCommitted
+            let reading = filter ((== "registry-reading") . rowGroup) rows
+                rendered = renderInventory "current-base" [] rows
+            sort (map rowId reading)
+                `shouldBe` [ "reading-application-holding"
+                           , "reading-key-status"
+                           , "reading-query-work"
+                           , "reading-refusals"
+                           ]
+            forM_ reading $ \row -> do
+                effectiveState "current-base" [] row `shouldBe` ShownPlanned Uncovered
+                rowExpected row `shouldSatisfy` T.isInfixOf "no executable comparison"
+                rowEvidence row `shouldSatisfy` \case
+                    Nothing -> False
+                    Just text ->
+                        all
+                            (`T.isInfixOf` text)
+                            ["no-pin-registration", "nothing about agreement with the model"]
+                rendered `shouldSatisfy` T.isInfixOf (rowRequirement row)
 
     it "Rejects a missing requirement and reports the remaining count" $ do
         rows <- loadCommitted

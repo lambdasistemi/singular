@@ -19,7 +19,7 @@ nix run ./conformance#conformance -- list
 nix run ./conformance#conformance -- run insert-key insert-occupied-key permanent-retire-active-key
 ```
 
-`list` prints the complete 55-row inventory from `rows.json` with each
+`list` prints the complete 59-row inventory from `rows.json` with each
 row's state (`executed` / `bound-elsewhere` / `uncovered` /
 `out-of-scope`). `run` executes rows against a real devnet; the
 blueprint comes from the caller at run time:
@@ -36,7 +36,7 @@ keep their databases.
 `rows.json` carries the complete inventory: the 47 owned consumer rows,
 the four owned rows that state the registration journeys of the no-pin design
 against the previous design (below), the three owned update and termination journey
-statements, plus checkpoint-and-treasury-policy (cardano-keri's checkpoint policy), recorded as out-of-scope
+statements, the four owned registry reading requirements, plus checkpoint-and-treasury-policy (cardano-keri's checkpoint policy), recorded as out-of-scope
 so the boundary is visible. `rows.json` never carries `executed` —
 that state is computed from run receipts, never typed. A `run` writes
 one `receipt-<ROW>.json` per executed row under its own output
@@ -93,6 +93,16 @@ exists yet. The hosted `no-pin-registration-journey` continuation and
 `no-pin-termination-refusals` exercise packaged commands and node refusals on a
 development network. Those chain observations establish what was run; they are a
 separate evidence boundary and do not establish agreement with the model.
+
+## Reading a registry key
+
+As a reader, I supply a registry address and key without a signer, blueprint or
+local registry state. The four reading requirements describe the neutral key
+status, the application's holding and pending-termination answers, measured
+provider work beside another registry's holdings, and named refusals. They stay
+uncovered because no executable model comparison backs them yet. The separate
+packaged-command evidence is uploaded by the registration journey and refusals
+jobs; it establishes the observed command behavior and measured work only.
 
 ## Registration checked against executable Lean
 

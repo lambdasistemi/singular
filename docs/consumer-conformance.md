@@ -49,11 +49,11 @@ name.
 
 ## The denominator
 
-`conformance/rows.json` carries **55 rows, 54 owned**: one permanent contract requirement, five registry identity
+`conformance/rows.json` carries **59 rows, 58 owned**: one permanent contract requirement, five registry identity
 requirements, twenty-five registry operation requirements, eight serialization
 requirements, five consumer resolution requirements, three execution-limit
 requirements, four registration journey requirements and three update and termination
-journey requirements (stated below), plus the checkpoint and treasury policy (bonds, poison,
+journey requirements (stated below), four registry reading requirements, plus the checkpoint and treasury policy (bonds, poison,
 the juvenility window `W`, the signature threshold) recorded as
 **out of scope** — it belongs to cardano-keri's checkpoint machine
 and treasury, explicitly never claimed by Singular. `list` prints the
@@ -65,6 +65,25 @@ accounting: relabelling a row pays no coverage and shrinks no board.
 coverage plan and the parser rejects the string. A row prints as
 executed only when a run receipt for it exists and matches the
 current base (`--receipts DIR` or `CONFORMANCE_RECEIPTS`).
+
+## Reading from a registry address
+
+As a reader, I give a registry address and key without a signer, blueprint or
+local registry state. Four requirements describe the neutral key status, open
+datum's live holding and pending termination, measured provider calls, rows and
+bytes with another registry's holdings at the same address, and named refusals.
+They are published uncovered: no executable comparison with the application-held
+model backs these reading requirements yet.
+
+The registration journey runs both packaged readers at connected live, pending
+and terminal checkpoints and reads an unused key. Its artifact includes the
+answers and a known-key query measurement. The registration refusals job runs
+wrong-network, unknown-policy and failed-provider reads beside passing controls.
+These are separate command observations, with controls that reject altered
+answers; they establish nothing about agreement with the model. See
+[reading a key](registry-commands.md#read-a-key) for the commands and settings,
+and the [generated evidence page](conformance-evidence.md) for receipt-derived
+standings.
 
 ## Registration journeys: the previous design against the no-pin design
 
