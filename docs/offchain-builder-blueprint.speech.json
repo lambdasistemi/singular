@@ -5,106 +5,46 @@
       "pause": 500
     },
     {
-      "text": "A contributor changing an off-chain builder or blueprint step wants one obvious owner per concern, so a change to a script identity, a lookup or an edge decision is reviewed in one place and cannot silently disagree with a second copy somewhere else. This page maps the registry's transaction builders and CIP-57 blueprint work to their modules: what each owner is responsible for, where common changes land, and what the checks establish about the move.",
+      "text": "As a contributor changing transaction construction, you want to find the current owner. Registry state and application requests have separate owners, and both use shared ledger providers and transaction assembly tools.",
       "pause": 400
     }
   ],
-  "one-owner-per-concern": [
+  "current-construction-paths": [
     {
-      "text": "One owner per concern.",
+      "text": "Current construction paths.",
       "pause": 500
     },
     {
-      "text": "Every declaration lives in exactly one owner. The public modules are facades: they hold no implementations, they re-export the same names with the same signatures as before the extraction, and an existing caller — a test, a shipped command, a journey — keeps compiling unchanged. The per-operation builders import the focused owners directly; the retract builder is the one library module that still imports the facade, and the facade keeps it compiling and behaving unchanged while that file stays under a separate ticket's fence. The fold's own owners live behind the Update facade and are mapped in their own guide, Who owns a registry fold.",
+      "text": "The registry library owns creation, public state history, folds and reference publications. The application owns booking, holding updates, termination booking and registration exits. Commands resolve explicit inputs and submit the transactions these owners return. See fold responsibilities for the boundary between application request rules and registry state changes.",
       "pause": 400
     }
   ],
-  "where-common-changes-land": [
+  "shared-representations": [
     {
-      "text": "Where common changes land.",
+      "text": "Shared representations.",
       "pause": 500
     },
     {
-      "text": "A request datum gains or changes a field: TxBuilder.Internal.Identity builds and decodes it; the on-chain Request type it encodes lives in Singular.Registry.Types.",
-      "pause": 300
-    },
-    {
-      "text": "Balancing, fee or refund behavior changes: TxBuilder.Internal.Lookup.",
-      "pause": 300
-    },
-    {
-      "text": "The mint owed by an edge, or the approval that certifies it, changes: TxBuilder.Internal.Edges, which is also the only place an edge and its leaf bytes are paired.",
-      "pause": 300
-    },
-    {
-      "text": "The state validator's parameter list or the request validator's parameter order changes: Blueprint.Params, then the Aiken blueprint it applies.",
-      "pause": 300
-    },
-    {
-      "text": "Blueprint parsing rejects (or wrongly accepts) a shape: Blueprint.Schema.",
-      "pause": 300
-    },
-    {
-      "text": "A boot reads the wrong compiled code from the registry partition: Blueprint.Load.",
-      "pause": 300
-    },
-    {
-      "text": "What a fold's requests owe changes, or how the fold prepares or assembles: the fold owners behind Update, mapped in Who owns a registry fold.",
-      "pause": 300
-    }
-  ],
-  "decisions-this-extraction-recorded": [
-    {
-      "text": "Decisions this extraction recorded.",
-      "pause": 500
-    },
-    {
-      "text": "The extraction is behavior-preserving by construction and by evidence: every moved declaration's source text is compared against its previous home, the facades' export lists are compared byte-for-byte, the blueprint parameter reading, builder assertions and failure attribution keep their independent assertions, and the fresh-blueprint end-to-end, bounded journey and archive commands exercise the moved builders against a real devnet.",
-      "pause": 400
-    }
-  ],
-  "what-the-checks-do-not-establish": [
-    {
-      "text": "What the checks do not establish.",
-      "pause": 500
-    },
-    {
-      "text": "A green component build is a compile claim, not transaction correspondence. The behavioral rows cover the asserted edges and refusal shapes they cover; a change to an uncovered builder path still needs its own check. The contributor guide for the check commands and their measured extents is Checking off-chain code. The generated, revision-matched Haskell API reference for this library now ships with this site: see the off-chain API reference.",
-      "pause": 400
-    }
-  ],
-  "source": [
-    {
-      "text": "Source.",
-      "pause": 500
-    },
-    {
-      "text": "The facades and owners, linked on this site to the generated API reference pages — module page and highlighted source — and, read from the repository, to the source files themselves at the revision you are viewing:",
+      "text": "The blueprint facade parses the CIP-57 schema, selects compiled code and applies parameters. Its Schema, Load and Params modules own those concerns separately. Shared internal helpers supply ledger-data conversions, script identity, lookup and balancing for retained callers. Funding and publication arithmetic remain shared with the preview so preview and construction use the same values.",
       "pause": 400
     },
     {
-      "text": "Facades: Singular.Registry.Blueprint, Singular.Registry.TxBuilder.Internal, Singular.Registry.TxBuilder.Update.",
-      "pause": 300
+      "text": "The API reference lists the discovered modules and links their signatures and source. Compilation establishes that the retained tree builds. Component tests and packaged journeys establish behavior at their respective boundaries; neither implies hosted CI or public-network acceptance.",
+      "pause": 400
+    }
+  ],
+  "behavioral-authority": [
+    {
+      "text": "Behavioral authority.",
+      "pause": 500
     },
     {
-      "text": "Blueprint owners: Singular.Registry.Blueprint.Schema, Singular.Registry.Blueprint.Params, Singular.Registry.Blueprint.Load.",
-      "pause": 300
-    },
-    {
-      "text": "Builder owners: Singular.Registry.TxBuilder.Internal.Identity, Singular.Registry.TxBuilder.Internal.Lookup, Singular.Registry.TxBuilder.Internal.Edges.",
-      "pause": 300
-    },
-    {
-      "text": "Fold owners: Singular.Registry.TxBuilder.Update.Context, Singular.Registry.TxBuilder.Update.Duties, Singular.Registry.TxBuilder.Update.Build.",
-      "pause": 300
-    },
-    {
-      "text": "The complete generated reference — every module of the library stanza, with its hyperlinked source — is the off-chain API reference page; each entry there links both the generated module page and the highlighted source of the module it names.",
+      "text": "The registry conditions and application rules are the current model sources for these construction paths. The documentation ships those source files and checks their bytes against the candidate source. Changing or omitting a linked model artifact is rejected by the same check. Model statements, compiled-validator tests and connected journeys establish different boundaries; none substitutes for the others.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "offchain-builder-blueprint.md",
-    "sha256": "9c7dae38170a713d6f32c42d1dfd44ef8d32dccb504984985c56ca38b68c5029"
+    "sha256": "247a5be55488f78262d4fcdad9741000ae08a963a1319904a404b6eab11b9b65"
   }
 }

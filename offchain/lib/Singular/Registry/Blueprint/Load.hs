@@ -1,11 +1,11 @@
 {- |
 Module      : Singular.Registry.Blueprint.Load
-Description : blueprint loading, code selection and registry naming codes
+Description : blueprint loading, code selection and application code
 License     : Apache-2.0
 
 Loads a @plutus.json@ blueprint produced by the Aiken compiler,
 selects validators by title prefix ('extractScriptHash',
-'extractCompiledCode'). The shared compiled-code carrier is 'NamingCodes'.
+'extractCompiledCode'). The shared compiled-code carrier is 'ApplicationCodes'.
 
 This is the loading-and-code-selection owner extracted from
 @Singular.Registry.Blueprint@; the public module re-exports it and is
@@ -15,8 +15,8 @@ module Singular.Registry.Blueprint.Load
     ( -- * Loading
       loadBlueprint
 
-      -- * The compiled codes the four registry pins derive from
-    , NamingCodes (..)
+      -- * Supplied application and token-policy code
+    , ApplicationCodes (..)
 
       -- * Script hash extraction
     , extractScriptHash
@@ -136,20 +136,11 @@ decodeHex t
                     )
         | otherwise = Nothing
 
-{- | The compiled codes the four registry pins derive from: the
-application whose mint arm certifies an edge, and the witness policy the
-three token kinds are derived from.
-
-The four policy pins of a registry are derived from these two, so every
-consumer of the application — the conformance rows, the devnet end-to-end and the
-bounded journey — binds to one source and moves together.
-
-#173 I2: for the OPEN registry both now come from the registry
-partition's own blueprint. The record keeps its name because every
-consumer names its fields; renaming it is a sweep this ticket does not
-need.
+{- | Supplied application and active-token-policy code for the shared
+identity adapters. The caller chooses the application; no application
+is built into the registry library.
 -}
-data NamingCodes = NamingCodes
+data ApplicationCodes = ApplicationCodes
     { ncApplication :: SBS.ShortByteString
     , ncWitness :: SBS.ShortByteString
     }

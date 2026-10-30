@@ -462,195 +462,6 @@
    }
   ]
  },
- "docs/certification.md": {
-  "certification-and-identity-binding": [
-   {
-    "index": 0,
-    "name": "docs-certification/certification-and-identity-binding-00",
-    "pause_ms": 500,
-    "text": "Certification and identity binding.",
-    "v": "a723857b0d06"
-   },
-   {
-    "index": 1,
-    "name": "docs-certification/certification-and-identity-binding-01",
-    "pause_ms": 400,
-    "text": "Historical design. This page records the earlier Insert/Update/Delete design and its broader broader model successor. The active permanent permanent contract model supports only insertActive and updateTerminal. Historical tags 0, 2, 4, 5 and 6 encode refused actions, not available features. Current supported behavior (historical) describes permanent contract; archived source and evidence remain on preserve/m2/pre-m1-source-removal.",
-    "v": "8ead3d14e6a1"
-   },
-   {
-    "index": 2,
-    "name": "docs-certification/certification-and-identity-binding-02",
-    "pause_ms": 400,
-    "text": "Singular recognizes native requests. Applications decide whether the requested application behavior is authorized. Insert needs evidence of application approval because there is no existing representative NFT leaving an application UTxO. Update/Delete use the application's authorization of that NFT's transfer into the exact request.",
-    "v": "dc146fbbc689"
-   }
-  ],
-  "decisions-still-required": [
-   {
-    "index": 0,
-    "name": "docs-certification/decisions-still-required-00",
-    "pause_ms": 500,
-    "text": "Decisions still required.",
-    "v": "25df5d7b1dac"
-   },
-   {
-    "index": 1,
-    "name": "docs-certification/decisions-still-required-01",
-    "pause_ms": 400,
-    "text": "This is an adopted design with unresolved construction details. There is no implementation, completed proof, universal application language or mandatory general-purpose validation plugin in this repository.",
-    "v": "72dd83b911a6"
-   }
-  ],
-  "policy-and-script-roles": [
-   {
-    "index": 0,
-    "name": "docs-certification/policy-and-script-roles-00",
-    "pause_ms": 500,
-    "text": "Policy and script roles.",
-    "v": "4a49040be8f9"
-   },
-   {
-    "index": 1,
-    "name": "docs-certification/policy-and-script-roles-01",
-    "pause_ms": 400,
-    "text": "The configured application policy ID and an application spending script hash are different roles. One multipurpose script could implement both roles, but sharing a hash is neither required nor forbidden. The same distinction applies to the native policy roles. The eventual implementation must say which roles share code and parameters; this document does not assume separate hashes for all of them.",
-    "v": "2b1322811a29"
-   },
-   {
-    "index": 2,
-    "name": "docs-certification/policy-and-script-roles-02",
-    "pause_ms": 400,
-    "text": "Writing a policy ID into a request is not enough to make it trusted. The accepted certifier must be authenticated and bound to the registry's rules, so an attacker cannot choose a self-issued certificate. The application policy ID is configured as a Singular parameter; the concrete configuration and binding mechanism remain open. No mandatory global allowlist is selected.",
-    "v": "d1915b067114"
-   },
-   {
-    "index": 3,
-    "name": "docs-certification/policy-and-script-roles-03",
-    "pause_ms": 400,
-    "text": "The interface target is one application-specific parameter: the application policy ID. Registry identity and native policy settings are separate protocol configuration. Insert initial state and application destination are approved per-request values, not additional fixed application parameters. This target is not yet proved sufficient for a concrete protocol.",
-    "v": "0805a6ca7f36"
-   },
-   {
-    "index": 4,
-    "name": "docs-certification/policy-and-script-roles-04",
-    "pause_ms": 400,
-    "text": "Insert and Withdraw use tokens minted directly under this configured application policy. Singular checks the policy ID and recomputes the action-bound asset name. No second mandatory Singular request policy/token is selected for these actions. Update/Delete retain their NFT-based release authorization; any additional request token or issuer for them remains open.",
-    "v": "b112e4b7b0fa"
-   }
-  ],
-  "validation-without-mutable-registry-observation": [
-   {
-    "index": 0,
-    "name": "docs-certification/validation-without-mutable-registry-observation-00",
-    "pause_ms": 500,
-    "text": "Validation without mutable registry observation.",
-    "v": "9b990a6866b5"
-   },
-   {
-    "index": 1,
-    "name": "docs-certification/validation-without-mutable-registry-observation-01",
-    "pause_ms": 400,
-    "text": "The configured application minting policy validates application facts, approval and the required construction when it mints the Insert asset. Singular checks the resulting certificate and native conditions when it consumes a request. Native format alone cannot authorize Insert; otherwise arbitrary non-application datums could claim keys. It need not read the current registry root or promise that Insert will succeed. Singular checks the current key state when applying the operation.",
-    "v": "f83ab20cd6ff"
-   },
-   {
-    "index": 2,
-    "name": "docs-certification/validation-without-mutable-registry-observation-02",
-    "pause_ms": 400,
-    "text": "For Update/Delete, the application spending validator approves the operation-specific transfer of the existing NFT. That spending validator must enforce the resulting request's required format, binding and custody in the release transaction. Singular rechecks its native conditions when consuming the request. Establishing the release need not read the mutable registry UTxO.",
-    "v": "39fa017456e2"
-   },
-   {
-    "index": 3,
-    "name": "docs-certification/validation-without-mutable-registry-observation-03",
-    "pause_ms": 400,
-    "text": "Authenticated registry configuration may still be needed. The design must bind the registry, request/representative policies, certifier and application destination without circular script-hash dependencies. No concrete configuration layout or hash-cycle solution has been selected.",
-    "v": "d072311ada8f"
-   }
-  ],
-  "what-insert-exposes-and-binds": [
-   {
-    "index": 0,
-    "name": "docs-certification/what-insert-exposes-and-binds-00",
-    "pause_ms": 500,
-    "text": "What Insert exposes and binds.",
-    "v": "9c36457ead53"
-   },
-   {
-    "index": 1,
-    "name": "docs-certification/what-insert-exposes-and-binds-01",
-    "pause_ms": 400,
-    "text": "The logical Insert proposal must expose enough information for certification and the native fold to agree on exactly what will be created:",
-    "v": "d5d57245279d"
-   },
-   {
-    "index": 2,
-    "name": "docs-certification/what-insert-exposes-and-binds-02",
-    "pause_ms": 400,
-    "text": "The registry target, operation, key, initial state and destination must not be substitutable after certification. Native folding verifies that the created NFT output satisfies the certified requirements. These are explicit native output parameters: NFT identity/quantity, destination, datum and value constraints supported by the eventual schema. 'Required effects' is not an unspecified language of arbitrary transaction predicates. Applications needing fresh observations or additional effects at folding fall outside demonstrated precertification coverage unless the native contract explicitly supports them.",
-    "v": "fae43fdd50ef"
-   },
-   {
-    "index": 3,
-    "name": "docs-certification/what-insert-exposes-and-binds-03",
-    "pause_ms": 400,
-    "text": "The action-token asset name is a hash of a canonical, domain-separated action and its necessary parameters:",
-    "v": "acfa958feb6b"
-   },
-   {
-    "index": 4,
-    "name": "docs-certification/what-insert-exposes-and-binds-04",
-    "pause_ms": 400,
-    "text": "The configured application policy approves minting. Singular checks the expected action-bound name. Separate tags prevent treating Insert approval as Withdraw approval. Withdrawal consumes the bound pending Insert without representative minting or a registry update.",
-    "v": "ecff604dbc14"
-   },
-   {
-    "index": 5,
-    "name": "docs-certification/what-insert-exposes-and-binds-05",
-    "pause_ms": 400,
-    "text": "Unambiguous canonical encoding and domain separation are required. The specific hash function, binary schema, datum representation, refund economics and token disposal remain open.",
-    "v": "e23334477b42"
-   }
-  ],
-  "which-script-actually-executes": [
-   {
-    "index": 0,
-    "name": "docs-certification/which-script-actually-executes-00",
-    "pause_ms": 500,
-    "text": "Which script actually executes.",
-    "v": "b1657815f80e"
-   },
-   {
-    "index": 1,
-    "name": "docs-certification/which-script-actually-executes-01",
-    "pause_ms": 400,
-    "text": "Sending an output to a script address does not execute that receiving spending validator. It runs when the output is later consumed. A malformed outsider output can exist at the address without being a valid Singular request. Cardano validation",
-    "v": "6eeb58b3ee58"
-   },
-   {
-    "index": 2,
-    "name": "docs-certification/which-script-actually-executes-02",
-    "pause_ms": 400,
-    "text": "The division among concrete Singular scripts remains an implementation decision; no extra creation-time request policy is assumed. Recognizing the configured issuer proves where approval came from. It does not prove that an arbitrary application's minting/spending scripts correctly implement their claimed semantics. End-to-end application properties are conditional on those contracts.",
-    "v": "a384f056d4a5"
-   },
-   {
-    "index": 3,
-    "name": "docs-certification/which-script-actually-executes-03",
-    "pause_ms": 400,
-    "text": "If folding has a nonzero net burn under an application action policy, that policy executes in the transaction. A cheap burn branch could avoid repeating expensive semantic checks, but disposal and that branch's contract are still open. Certification can move checks earlier; it does not establish zero application-policy execution or a speedup. Cardano minting policies",
-    "v": "fcbbaf318370"
-   },
-   {
-    "index": 4,
-    "name": "docs-certification/which-script-actually-executes-04",
-    "pause_ms": 400,
-    "text": "The mint field records net quantities per asset, not one ledger action per logical fold operation. If a future construction reuses a representative's asset identity and combines Delete with Insert, their negative/positive quantities could cancel. The fold/request witnesses must still enforce both logical transitions and custody; a mint policy alone cannot be assumed to run when its mint-field entries vanish. This is an inference for Singular's open construction, not a discovered implementation bug. CIP89 discusses net-zero beacon updates and spending-side enforcement. Moving an existing application action token likewise does not rerun its minting policy; token scope and custody must account for that.",
-    "v": "c7b13838bb3c"
-   }
-  ]
- },
  "docs/cli-recovery.md": {
   "recovering-a-registry-command": [
    {
@@ -1414,125 +1225,6 @@
    }
   ]
  },
- "docs/decisions.md": {
-  "adopted-behavior": [
-   {
-    "index": 0,
-    "name": "docs-decisions/adopted-behavior-00",
-    "pause_ms": 500,
-    "text": "Adopted behavior.",
-    "v": "724e4859b6e7"
-   },
-   {
-    "index": 1,
-    "name": "docs-decisions/adopted-behavior-01",
-    "pause_ms": 400,
-    "text": "These requirements incorporate the later action-asset and executing-witness corrections. Earlier alternatives requiring a second native Insert/Withdraw request policy are superseded. Policy identity and application spending-script identity remain distinct semantic roles even when an implementation shares a script hash.",
-    "v": "a97c5fd4bb67"
-   }
-  ],
-  "choices-and-alternatives": [
-   {
-    "index": 0,
-    "name": "docs-decisions/choices-and-alternatives-00",
-    "pause_ms": 500,
-    "text": "Choices and alternatives.",
-    "v": "68b7b5dd4bb5"
-   }
-  ],
-  "decisions-and-executable-abstractions": [
-   {
-    "index": 0,
-    "name": "docs-decisions/decisions-and-executable-abstractions-00",
-    "pause_ms": 500,
-    "text": "Decisions and executable abstractions.",
-    "v": "5769a2029628"
-   },
-   {
-    "index": 1,
-    "name": "docs-decisions/decisions-and-executable-abstractions-01",
-    "pause_ms": 400,
-    "text": "Historical design. This page records the earlier Insert/Update/Delete design and its broader broader model successor. The active permanent permanent contract model supports only insertActive and updateTerminal. Historical tags 0, 2, 4, 5 and 6 encode refused actions, not available features. Current supported behavior (historical) describes permanent contract; archived source and evidence remain on preserve/m2/pre-m1-source-removal.",
-    "v": "be8695f3048b"
-   },
-   {
-    "index": 2,
-    "name": "docs-decisions/decisions-and-executable-abstractions-02",
-    "pause_ms": 400,
-    "text": "As an application designer, use these decisions to distinguish behavior you can explore from construction choices you still need to settle. A successful modeled transition satisfies the selected logical checks; a refusal exposes a failed obligation. Neither result chooses your deployed scripts or proves your application policy.",
-    "v": "b6635a895d26"
-   },
-   {
-    "index": 3,
-    "name": "docs-decisions/decisions-and-executable-abstractions-03",
-    "pause_ms": 400,
-    "text": "The reviewed behavioral baseline is the protocol specification, responsibilities, lifecycle, certification boundary and naming walkthrough (historical). The executable candidate adds an executable interpretation for review. It does not close the construction decisions below.",
-    "v": "3acc05502538"
-   }
-  ],
-  "evidence-and-next-stage": [
-   {
-    "index": 0,
-    "name": "docs-decisions/evidence-and-next-stage-00",
-    "pause_ms": 500,
-    "text": "Evidence and next stage.",
-    "v": "a8a2b9cd9bbc"
-   },
-   {
-    "index": 1,
-    "name": "docs-decisions/evidence-and-next-stage-01",
-    "pause_ms": 400,
-    "text": "The candidate's Lean build with its compiled axiom gate, exact proof inventory, exported finite corpus and browser checks are creator evidence. Every theorem is PROVED from the standard axioms. Independent audit, accepted statements and production conformance have not been commissioned as part of this delivery.",
-    "v": "d6af7c188c92"
-   }
-  ],
-  "open-construction-decisions": [
-   {
-    "index": 0,
-    "name": "docs-decisions/open-construction-decisions-00",
-    "pause_ms": 500,
-    "text": "Open construction decisions.",
-    "v": "57e341371f53"
-   }
-  ],
-  "proposed-abstraction-boundary": [
-   {
-    "index": 0,
-    "name": "docs-decisions/proposed-abstraction-boundary-00",
-    "pause_ms": 500,
-    "text": "Proposed abstraction boundary.",
-    "v": "3a20ebed921e"
-   },
-   {
-    "index": 1,
-    "name": "docs-decisions/proposed-abstraction-boundary-01",
-    "pause_ms": 400,
-    "text": "An executable logical map may stand for authenticated MPF state, a tagged structured value may stand for an unambiguous action commitment, and an explicit witness or contract parameter may stand for a ledger validator's authenticated result. These abstractions make the intended transition law inspectable without choosing a serialization, hash function, script deployment or application policy. Their exact use and limitations are recorded beside the Lean definitions and in the model ledger (historical).",
-    "v": "103e408690fc"
-   },
-   {
-    "index": 2,
-    "name": "docs-decisions/proposed-abstraction-boundary-02",
-    "pause_ms": 400,
-    "text": "Required native output parameters remain explicit fields such as representative identity and quantity, datum, destination and supported value requirements. The model is not authority to introduce a universal transaction-predicate language. Example names, addresses and policy identities are illustrative values, not production schemas or a global allowlist.",
-    "v": "37128e2b41e3"
-   },
-   {
-    "index": 3,
-    "name": "docs-decisions/proposed-abstraction-boundary-03",
-    "pause_ms": 400,
-    "text": "The desired identity is one canonical registry per application policy ID, without an arbitrary independent instance parameter. The policy can serve as a downstream trust anchor, conditional on its issuance invariants, but parameterizing by that reusable ID does not prevent duplicate creation of the same registry asset and state. Bootstrap must enforce an at-most-once invariant. An asset is identified by policy ID and asset name; a policy ID alone identifies a distinguished singleton only when its issuance rules enforce that distinction. An application-supplied one-shot bootstrap certificate could avoid a separate Singular nonce parameter; consuming a nonce UTxO is another construction option. The bootstrap mechanism remains open as part of configuration and registry identity construction. The current model starts with a supplied Config and contains no registry-creation transition, so it establishes neither bootstrap enforcement nor deployed registry uniqueness.",
-    "v": "6a9f06c8769d"
-   },
-   {
-    "index": 4,
-    "name": "docs-decisions/proposed-abstraction-boundary-04",
-    "pause_ms": 400,
-    "text": "The diagram separates the desired identity from the unresolved enforcement mechanism. The current executable model supplies configuration after this boundary; it does not model either bootstrap option.",
-    "v": "27db3429150e"
-   }
-  ]
- },
  "docs/demo1.md": {
   "demo-1-play-a-registry-from-creation-to-termination": [
    {
@@ -1546,8 +1238,8 @@
     "index": 1,
     "name": "docs-demo1/demo-1-play-a-registry-from-creation-to-termination-01",
     "pause_ms": 400,
-    "text": "As a Cardano developer who knows wallets, faucets and Koios but has never used Singular, you want to watch a registry work before you read how it is built: a registry is created, a key is put in it, changed and ended, the registry refuses what it must refuse, and two people sign their writes in two different ways. Demo 1 is that play, in sixteen steps. The steps, and the programs to run them, live in a repository of their own, singular-demo. This page says what the play shows and where to play it.",
-    "v": "7f9e1e715ccd"
+    "text": "As a Cardano developer who knows wallets, faucets and Koios but has never used Singular, you want to watch a registry work before you read how it is built: a registry is created, a key is put in it, changed and ended, the registry refuses what it must refuse, and two people sign their writes in two different ways. Demo 1 introduces that play. The steps, and the programs to run them, live in a repository of their own, singular-demo. This page says what the play shows and where to play it.",
+    "v": "11fe341a510c"
    }
   ],
   "the-release-behind-it": [
@@ -1594,29 +1286,36 @@
     "index": 1,
     "name": "docs-demo1/what-the-play-shows-01",
     "pause_ms": 400,
-    "text": "Two people, Alice and Bob, share one registry. Its application, open datum, lets a key carry a payload that only the key's controller may replace, and keeps a deposit of 2 tADA with the key until the key is terminated.",
-    "v": "500969924b5a"
+    "text": "Two people, Alice and Bob, share one registry. Its application, open datum, lets a key carry a payload that only the key's controller may replace, and keeps the protected deposit with the live holding. Booking permanent termination donates that deposit to the treasury.",
+    "v": "bf8bc04724dd"
    },
    {
     "index": 2,
     "name": "docs-demo1/what-the-play-shows-02",
     "pause_ms": 400,
-    "text": "The play creates the registry, books a key and folds it so that the key becomes active, updates its payload, books and folds the key's end, then rejects a request that nobody folded, reclaims a new one inside its retract window, and books and folds one more key.",
-    "v": "25d4af9ae9da"
+    "text": "A registration starts as a pending request. Any wallet may fold it, making the key active and delivering its token, payload and protected deposit to the committed holding. Its controller may update the payload without spending the registry state.",
+    "v": "8f608cdac129"
    },
    {
     "index": 3,
     "name": "docs-demo1/what-the-play-shows-03",
     "pause_ms": 400,
-    "text": "A write does not change the registry at once. It books a request, which waits until someone folds it, and any wallet may fold. A request that nobody folds within its processing window can be rejected once a second window, the retract window, has also passed; inside that second window its owner can take it back. The play walks each of these, so that you see the refusals where they happen: a reject that comes too early is refused, and so is a reclaim that comes too early.",
-    "v": "24547faa6b2b"
+    "text": "The controller books permanent termination by donating the protected deposit to the treasury and moving the active token into a pending termination request. Any wallet may fold that request, burning its approval and active token and making the key permanently terminal. The folder receives the request's held value and pays the transaction fee. A termination has no reclaim window.",
+    "v": "1e3adb49d34c"
    },
    {
     "index": 4,
     "name": "docs-demo1/what-the-play-shows-04",
     "pause_ms": 400,
+    "text": "A registration that nobody folds can be reclaimed by its refund address inside its reclaim window. After that window, anyone can clean it up: the protected deposit returns to the refund address and the caller receives the held value above that deposit. A reclaim outside its window and a cleanup before its window are refused. The command guide gives the flags and receipts for each operation.",
+    "v": "04670dd9ae51"
+   },
+   {
+    "index": 5,
+    "name": "docs-demo1/what-the-play-shows-05",
+    "pause_ms": 400,
     "text": "The two people sign in the two ways Singular offers. Alice names her vault, a file holding her signing key sealed by a passphrase, and one command builds, signs and sends. Bob names only his wallet's address and a bundle file: the command builds the transactions into the file, signs nothing, and exits with status 19, which means it is waiting for signatures. Then Bob signs the bundle from his vault and sends it, so the machine that builds a write never needs to hold the key.",
-    "v": "e941fa303e9c"
+    "v": "d76877f9dee0"
    }
   ],
   "where-to-play-it": [
@@ -1631,8 +1330,8 @@
     "index": 1,
     "name": "docs-demo1/where-to-play-it-01",
     "pause_ms": 400,
-    "text": "Every way below plays the same sixteen steps. The table lists five: the recorded run to watch, the Killercoda scenario to play in a browser, the step-by-step page to paste from, which needs the programs, and the Nix shell and the Ubuntu kit, which are two ways to get the programs. To play on your own machine, start with the step-by-step page.",
-    "v": "abda61998989"
+    "text": "The demo repository records its release and the steps it supports. The table lists five entry points: the recorded run to watch, the Killercoda scenario to play in a browser, the step-by-step page to paste from, which needs the programs, and the Nix shell and the Ubuntu kit, which are two ways to get the programs. To play on your own machine, start with the step-by-step page.",
+    "v": "a2fde052e370"
    },
    {
     "index": 2,
@@ -1640,216 +1339,6 @@
     "pause_ms": 400,
     "text": "The singular-demo repository describes the shell and the kit, what each is pinned to and what it was tested on.",
     "v": "1f4cfcd2f5a1"
-   }
-  ]
- },
- "docs/demos/d02-naming.md": {
-  "maintain-and-recover-a-name-23-october-preprod-target": [
-   {
-    "index": 0,
-    "name": "docs-demos-d02-naming/maintain-and-recover-a-name-23-october-preprod-target-00",
-    "pause_ms": 500,
-    "text": "Maintain and recover a name — 23 October preprod target.",
-    "v": "01009b29b85a"
-   },
-   {
-    "index": 1,
-    "name": "docs-demos-d02-naming/maintain-and-recover-a-name-23-october-preprod-target-01",
-    "pause_ms": 400,
-    "text": "As a name holder, I want to keep the same name while changing its payment destination and recovering control with my precommitted key, so that a payer can use my current destination.",
-    "v": "ed187962be00"
-   },
-   {
-    "index": 2,
-    "name": "docs-demos-d02-naming/maintain-and-recover-a-name-23-october-preprod-target-02",
-    "pause_ms": 400,
-    "text": "Planned release tag: Singular v2.0.0 (naming and escrow milestone). This is a milestone target; the tag waits for the 30 October release gate, a built archive and connected preprod receipts. Candidate plays do not publish it.",
-    "v": "cbef5f9a3bb5"
-   },
-   {
-    "index": 3,
-    "name": "docs-demos-d02-naming/maintain-and-recover-a-name-23-october-preprod-target-03",
-    "pause_ms": 400,
-    "text": "This is a Cardano preprod target, not a completed demonstration. The presenter will use keripy kli to create and rotate the controller's KERI identity and a released ckeri command to submit and read back each connected Cardano action. The Singular naming commands and preprod release needed to join that journey are still missing. The dated project card remains a review target.",
-    "v": "409f9fb5f500"
-   }
-  ],
-  "preprod-play-to-record": [
-   {
-    "index": 0,
-    "name": "docs-demos-d02-naming/preprod-play-to-record-00",
-    "pause_ms": 500,
-    "text": "Preprod play to record.",
-    "v": "40f6836310d6"
-   },
-   {
-    "index": 1,
-    "name": "docs-demos-d02-naming/preprod-play-to-record-01",
-    "pause_ms": 400,
-    "text": "The accepted naming lifecycle model at a6e5edbc2dafa82eb34116a1de2b6503f87c6692 defines maintenance, recovery and refusals. Its synthetic address bytes and key 42 are model fixtures. They are not preprod assets, keys or transactions. The Cardano KERI to Singular registry mapping remains open in KERI #435, so the preprod sequence above cannot yet be claimed as a connected implementation.",
-    "v": "582cb2255993"
-   }
-  ],
-  "presenter-path-1015-minutes-when-connected": [
-   {
-    "index": 0,
-    "name": "docs-demos-d02-naming/presenter-path-1015-minutes-when-connected-00",
-    "pause_ms": 500,
-    "text": "Presenter path: 10–15 minutes when connected.",
-    "v": "78d1c4fc9a17"
-   }
-  ],
-  "recording-gate": [
-   {
-    "index": 0,
-    "name": "docs-demos-d02-naming/recording-gate-00",
-    "pause_ms": 500,
-    "text": "Recording gate.",
-    "v": "f9086b287ec4"
-   },
-   {
-    "index": 1,
-    "name": "docs-demos-d02-naming/recording-gate-01",
-    "pause_ms": 400,
-    "text": "The asciicast must record the real kli, ckeri and Singular commands and their preprod readbacks. Invented identities may be generated for the demo, but their actual AID, asset IDs, transaction IDs and refusals must come from that run. No preprod cast is attached yet. The earlier Lean and Node recording is model evidence and does not demonstrate this user story.",
-    "v": "286c431d4052"
-   },
-   {
-    "index": 2,
-    "name": "docs-demos-d02-naming/recording-gate-02",
-    "pause_ms": 400,
-    "text": "The Singular naming epic must supply the released naming interface and transaction path. The Cardano KERI registry mapping must bind the two accepted models before connected acceptance. Until then, the page is a play plan, with no claim of naming preprod acceptance.",
-    "v": "1919d3707471"
-   }
-  ]
- },
- "docs/demos/d03-escrow.md": {
-  "missing-interface-and-evidence": [
-   {
-    "index": 0,
-    "name": "docs-demos-d03-escrow/missing-interface-and-evidence-00",
-    "pause_ms": 500,
-    "text": "Missing interface and evidence.",
-    "v": "08899b63d947"
-   },
-   {
-    "index": 1,
-    "name": "docs-demos-d03-escrow/missing-interface-and-evidence-01",
-    "pause_ms": 400,
-    "text": "The escrow validator ticket, CLI ticket, preprod journey and completion repair must yield one connected runnable script from a downloaded release. This page has no release or preprod receipt, and the two claims and three refusals have not been observed here. No timeout, refund route or payer privilege is inferred.",
-    "v": "bf33e768d21f"
-   }
-  ],
-  "name-your-address-preprod-stretch-30-october-target": [
-   {
-    "index": 0,
-    "name": "docs-demos-d03-escrow/name-your-address-preprod-stretch-30-october-target-00",
-    "pause_ms": 500,
-    "text": "Name Your Address preprod stretch — 30 October target.",
-    "v": "22d07b29e90a"
-   },
-   {
-    "index": 1,
-    "name": "docs-demos-d03-escrow/name-your-address-preprod-stretch-30-october-target-01",
-    "pause_ms": 400,
-    "text": "As Bob, I want to lock funds against the ordered names Alice then Bob, so Alice can claim at her current destination after recovery and I can claim only after Alice's name ends permanently. This dated project card is not yet playable as a connected preprod journey.",
-    "v": "0b18401f1eeb"
-   },
-   {
-    "index": 2,
-    "name": "docs-demos-d03-escrow/name-your-address-preprod-stretch-30-october-target-02",
-    "pause_ms": 400,
-    "text": "Planned release tag: Singular v2.0.0 (naming and escrow milestone). This is a milestone target; the tag waits for the 30 October release gate, a built archive and connected preprod receipts. Candidate plays do not publish it.",
-    "v": "518e03000d93"
-   }
-  ],
-  "planned-play": [
-   {
-    "index": 0,
-    "name": "docs-demos-d03-escrow/planned-play-00",
-    "pause_ms": 500,
-    "text": "Planned play.",
-    "v": "0b424397d685"
-   },
-   {
-    "index": 1,
-    "name": "docs-demos-d03-escrow/planned-play-01",
-    "pause_ms": 400,
-    "text": "The accepted Singular model at a6e5edbc2dafa82eb34116a1de2b6503f87c6692 supplies the registry edges and naming lifecycle. Their synthetic model address bytes are not a preprod wallet. The 23 October naming play is also awaiting connected kli, ckeri and Singular commands. There is no cast of an accepted preprod escrow payment here.",
-    "v": "4fcdf1a1db24"
-   }
-  ],
-  "presenter-path-1015-minutes-when-runnable": [
-   {
-    "index": 0,
-    "name": "docs-demos-d03-escrow/presenter-path-1015-minutes-when-runnable-00",
-    "pause_ms": 500,
-    "text": "Presenter path: 10–15 minutes when runnable.",
-    "v": "0aa46293b3ce"
-   }
-  ]
- },
- "docs/demos/index.md": {
-  "choose-a-dated-play": [
-   {
-    "index": 0,
-    "name": "docs-demos-index/choose-a-dated-play-00",
-    "pause_ms": 500,
-    "text": "Choose a dated play.",
-    "v": "eeb3a5c3d613"
-   },
-   {
-    "index": 1,
-    "name": "docs-demos-index/choose-a-dated-play-01",
-    "pause_ms": 400,
-    "text": "The Cardano KERI consumer mapping is separate from Singular naming. Naming is not a prerequisite for Cardano KERI's identity path.",
-    "v": "a63e46634fd1"
-   }
-  ],
-  "dated-demo-plays": [
-   {
-    "index": 0,
-    "name": "docs-demos-index/dated-demo-plays-00",
-    "pause_ms": 500,
-    "text": "Dated demo plays.",
-    "v": "a2edbd0c060a"
-   },
-   {
-    "index": 1,
-    "name": "docs-demos-index/dated-demo-plays-01",
-    "pause_ms": 400,
-    "text": "As a presenter, I want each dated play to show a keripy kli identity and a ckeri transaction on Cardano preprod, so that the audience can inspect the identity event and ledger result together. A cast appears only after the connected preprod run has produced transaction IDs and fresh readbacks.",
-    "v": "80dfedebccbc"
-   },
-   {
-    "index": 2,
-    "name": "docs-demos-index/dated-demo-plays-02",
-    "pause_ms": 400,
-    "text": "For Cardano KERI identity actions, the planned source is its local follower indexer: ckeri writes use --store PATH or CKERI_STORE, and reads use explicit --backend local --store PATH (or an indexer-backed endpoint where supported). Record the indexed chain point and freshness. Singular's ordinary path now reads raw outputs and history through Koios; its logical sessions are Unbound and its facts Unverified, and #107 tracks a persistent registry follower. A Koios asset lookup alone does not close these demo stories. The Cardano KERI indexer contract tracks the identity side. The older V1 cast used Koios and remains historical evidence.",
-    "v": "5860dee29188"
-   }
-  ],
-  "planned-major-release-tags": [
-   {
-    "index": 0,
-    "name": "docs-demos-index/planned-major-release-tags-00",
-    "pause_ms": 500,
-    "text": "Planned major release tags.",
-    "v": "eb6fcdf8c89c"
-   },
-   {
-    "index": 1,
-    "name": "docs-demos-index/planned-major-release-tags-01",
-    "pause_ms": 400,
-    "text": "Demo 1 ships in the 0.x series; the latest release is listed at https://github.com/lambdasistemi/singular/releases/latest. The major tags below were drafted before that decision. They are targets for the later plays, not published artifacts.",
-    "v": "4a3863a0a9f3"
-   },
-   {
-    "index": 2,
-    "name": "docs-demos-index/planned-major-release-tags-02",
-    "pause_ms": 400,
-    "text": "Candidate demos cite their actual build and manifest until the relevant milestone release is cut.",
-    "v": "999da47f7a4d"
    }
   ]
  },
@@ -2230,77 +1719,6 @@
     "pause_ms": 400,
     "text": "The exact model revision is 4254a3073fe0457946eba0a68d974c999c930ebf, the last ancestor commit changing the model, checked with Lean 4.27.0. Economic reachability starts from any reachable original registry with empty pending pools and a zero treasury counter, then admits bookings, rejections, retractions and economic folds. It does not claim a complete economic history from ledger genesis.",
     "v": "787a1fdfaa0c"
-   }
-  ]
- },
- "docs/first-demo.md": {
-  "first-demo-registry-handoff-on-preprod": [
-   {
-    "index": 0,
-    "name": "docs-first-demo/first-demo-registry-handoff-on-preprod-00",
-    "pause_ms": 500,
-    "text": "First demo: registry handoff on preprod.",
-    "v": "baea52117c1b"
-   },
-   {
-    "index": 1,
-    "name": "docs-first-demo/first-demo-registry-handoff-on-preprod-01",
-    "pause_ms": 400,
-    "text": "As a Cardano KERI integrator, I want to see a released Singular registry handle a real identity's registration, retirement and custody, so that I can evaluate the interface that Cardano KERI will consume.",
-    "v": "adcd8c922204"
-   },
-   {
-    "index": 2,
-    "name": "docs-first-demo/first-demo-registry-handoff-on-preprod-02",
-    "pause_ms": 400,
-    "text": "Where this stands (October 2026). The registry half of this play, called Demo 1, can be played today on a private test chain: the Demo 1 page says what it shows and links the steps to play. The play below, which joins a kli identity and ckeri, is the later integration. It was planned before Demo 1 was cut, so its dates and its release tag are plans, not results: Demo 1 ships in the 0.x series, and the v1.0.0 tag this page once named is not the tag Demo 1 uses.",
-    "v": "25c88096b683"
-   },
-   {
-    "index": 3,
-    "name": "docs-first-demo/first-demo-registry-handoff-on-preprod-03",
-    "pause_ms": 400,
-    "text": "8 October 2026 was a target, not an observed result. The project story requires a connected Cardano preprod play. The accepted Singular Lean model defines expected transitions; the deployed script, released operator command and fresh node readbacks must establish each claimed outcome.",
-    "v": "63d3dc2a2e85"
-   },
-   {
-    "index": 4,
-    "name": "docs-first-demo/first-demo-registry-handoff-on-preprod-04",
-    "pause_ms": 400,
-    "text": "The planned identity read path is the Cardano KERI follower store: use ckeri writes with --store PATH and status with explicit --backend local --store PATH, recording its chain point and freshness. The Singular registry readback needs the persistent indexed proof path tracked by #107; the current ordinary Koios path provides raw outputs and history in Unbound sessions with Unverified facts, without that accepted persistent proof path. The older Koios-backed V1 cast is a checkpoint baseline only; it cannot stand in for this joined result.",
-    "v": "56fe372695e7"
-   }
-  ],
-  "preprod-play-to-record": [
-   {
-    "index": 0,
-    "name": "docs-first-demo/preprod-play-to-record-00",
-    "pause_ms": 500,
-    "text": "Preprod play to record.",
-    "v": "bbaf94958b1d"
-   },
-   {
-    "index": 1,
-    "name": "docs-first-demo/preprod-play-to-record-01",
-    "pause_ms": 400,
-    "text": "The registry operation names above describe the user story. They are not asserted to be commands available in the current release. The registry epic #154 must supply the released Singular interface and connected preprod receipts. The Cardano KERI consumer mapping #324 must bind the two accepted models before the joined sequence is an accepted integration.",
-    "v": "a2ab1519c2c1"
-   }
-  ],
-  "recording-gate": [
-   {
-    "index": 0,
-    "name": "docs-first-demo/recording-gate-00",
-    "pause_ms": 500,
-    "text": "Recording gate.",
-    "v": "54bd191caa28"
-   },
-   {
-    "index": 1,
-    "name": "docs-first-demo/recording-gate-01",
-    "pause_ms": 400,
-    "text": "Record an asciicast only after the exact kli, ckeri and Singular preprod commands complete. The cast must show their real output, transaction IDs, script and policy identities and fresh readbacks. A fictional name may label a freshly generated identity or asset, but its actual identifiers and ledger effects must come from the run. No preprod cast is attached yet.",
-    "v": "912f36cc2071"
    }
   ]
  },
@@ -2780,8 +2198,8 @@
     "index": 3,
     "name": "docs-install/what-you-see-when-it-works-03",
     "pause_ms": 400,
-    "text": "Both commands print the same address, which begins with addr_test1 on the preprod network. From here the commands are the ones of the first demo.",
-    "v": "2f24d93bbfbf"
+    "text": "Both commands print the same address, which begins with addr_test1 on the preprod network. From here the commands are the ones of the Demo 1.",
+    "v": "7e5a09488105"
    },
    {
     "index": 4,
@@ -3126,220 +2544,6 @@
    }
   ]
  },
- "docs/lifecycle.md": {
-  "application-evolution-keep-the-same-representative": [
-   {
-    "index": 0,
-    "name": "docs-lifecycle/application-evolution-keep-the-same-representative-00",
-    "pause_ms": 500,
-    "text": "Application evolution: keep the same representative.",
-    "v": "b1782d619923"
-   },
-   {
-    "index": 1,
-    "name": "docs-lifecycle/application-evolution-keep-the-same-representative-01",
-    "pause_ms": 400,
-    "text": "While the NFT is in application custody, the application spending validator governs its movement and state changes. An application update can spend one application UTxO and produce its successor with the same NFT. This need not change the registry.",
-    "v": "5c08ae0dbcc2"
-   },
-   {
-    "index": 2,
-    "name": "docs-lifecycle/application-evolution-keep-the-same-representative-02",
-    "pause_ms": 400,
-    "text": "The application can observe its own inputs and transaction context. Avoiding observation of the mutable registry UTxO does not prohibit those checks or the use of authenticated registry configuration.",
-    "v": "bcad12cd6368"
-   }
-  ],
-  "insert-certify-first-check-absence-when-folded": [
-   {
-    "index": 0,
-    "name": "docs-lifecycle/insert-certify-first-check-absence-when-folded-00",
-    "pause_ms": 500,
-    "text": "Insert: certify first, check absence when folded.",
-    "v": "e013038a69fa"
-   },
-   {
-    "index": 1,
-    "name": "docs-lifecycle/insert-certify-first-check-absence-when-folded-01",
-    "pause_ms": 400,
-    "text": "The application prepares a proposal identifying the registry, key, initial application state and destination application script/address. The configured application policy approves that exact proposal. The application minting policy must establish approval and enforce the required request format, binding and custody in that minting transaction. A correctly formatted Insert without accepted application approval is invalid; it cannot be used to register an arbitrary non-application datum. The application constructs the transaction. Its configured policy mints the Insert action token directly. When consuming the request, Singular recomputes the expected asset name from the Insert tag and necessary proposal parameters and recognizes it under that policy ID. No second mandatory native request policy/token is introduced.",
-    "v": "a1306521a25f"
-   },
-   {
-    "index": 2,
-    "name": "docs-lifecycle/insert-certify-first-check-absence-when-folded-02",
-    "pause_ms": 400,
-    "text": "The pending Insert request contains its Insert action token but no representative NFT. Request creation need not observe the mutable registry state. Certification approves the proposed creation, not a claim that the key will remain absent.",
-    "v": "966e7a1564cd"
-   },
-   {
-    "index": 3,
-    "name": "docs-lifecycle/insert-certify-first-check-absence-when-folded-03",
-    "pause_ms": 400,
-    "text": "When folded successfully, Insert checks that the key is absent, changes it to Active, and mints its representative NFT into the output required by the certified proposal. The native checks must match that output's NFT, destination and initial state to the request. These effects occur together in the folding transaction.",
-    "v": "6798fc356cc3"
-   },
-   {
-    "index": 4,
-    "name": "docs-lifecycle/insert-certify-first-check-absence-when-folded-04",
-    "pause_ms": 400,
-    "text": "Two Insert requests can target the same key while pending. An Insert whose key is occupied cannot succeed at that point. The design does not yet select whether a batch builder omits such requests or how failure is presented; it does not assume a skip rule inside the validator.",
-    "v": "e789fe17fc93"
-   }
-  ],
-  "mint-move-and-burn": [
-   {
-    "index": 0,
-    "name": "docs-lifecycle/mint-move-and-burn-00",
-    "pause_ms": 500,
-    "text": "Mint, move and burn.",
-    "v": "2ae08879d89c"
-   },
-   {
-    "index": 1,
-    "name": "docs-lifecycle/mint-move-and-burn-01",
-    "pause_ms": 400,
-    "text": "The Insert/Withdraw action token certifies the exact action under the configured application policy. The representative NFT carries the identity's unique authority. They are not the same asset.",
-    "v": "0b41182f15bc"
-   }
-  ],
-  "requests-folding-and-nft-custody": [
-   {
-    "index": 0,
-    "name": "docs-lifecycle/requests-folding-and-nft-custody-00",
-    "pause_ms": 500,
-    "text": "Requests, folding and NFT custody.",
-    "v": "d7e1fa2178bc"
-   },
-   {
-    "index": 1,
-    "name": "docs-lifecycle/requests-folding-and-nft-custody-01",
-    "pause_ms": 400,
-    "text": "Historical design. This page records the earlier Insert/Update/Delete design and its broader broader model successor. The active permanent permanent contract model supports only insertActive and updateTerminal. Historical tags 0, 2, 4, 5 and 6 encode refused actions, not available features. Current supported behavior (historical) describes permanent contract; archived source and evidence remain on preserve/m2/pre-m1-source-removal.",
-    "v": "ead562738aac"
-   },
-   {
-    "index": 2,
-    "name": "docs-lifecycle/requests-folding-and-nft-custody-02",
-    "pause_ms": 400,
-    "text": "Request creation and folding are separate transactions. Each has its own atomic effects; there is an explicit pending interval between them. Creating a valid request does not guarantee that someone will fold it.",
-    "v": "9e2729d9de38"
-   }
-  ],
-  "update-and-delete-transfer-authority-into-a-pending-request": [
-   {
-    "index": 0,
-    "name": "docs-lifecycle/update-and-delete-transfer-authority-into-a-pending-request-00",
-    "pause_ms": 500,
-    "text": "Update and Delete: transfer authority into a pending request.",
-    "v": "5561604e230b"
-   },
-   {
-    "index": 1,
-    "name": "docs-lifecycle/update-and-delete-transfer-authority-into-a-pending-request-01",
-    "pause_ms": 400,
-    "text": "To request retirement or removal, the application constructs a transaction that spends its NFT UTxO and places the existing representative into the Singular request output. Any additional Update/Delete request token and its issuer remain a construction detail; the existing NFT and exact authorized request binding are the adopted authority path.",
-    "v": "fd20869f9d0f"
-   },
-   {
-    "index": 2,
-    "name": "docs-lifecycle/update-and-delete-transfer-authority-into-a-pending-request-02",
-    "pause_ms": 400,
-    "text": "The application validator must authorize that exact release: the chosen Update or Delete operation, registry/key binding and request destination. Merely being able to spend the NFT does not establish authorization for every operation. The releasing application validator enforces the request format, binding and custody at creation. Singular checks the native conditions at consumption; receiving the output alone does not execute Singular. No second application attestation token is required merely to repeat the approved release.",
-    "v": "f8ba9a7a045d"
-   },
-   {
-    "index": 3,
-    "name": "docs-lifecycle/update-and-delete-transfer-authority-into-a-pending-request-03",
-    "pause_ms": 400,
-    "text": "These checks need no observation of the mutable registry state when the request is created. The registry remains Active during the pending interval, and the NFT remains outstanding in the request. It cannot continue rotating as an application UTxO while held there.",
-    "v": "57fc52ee7916"
-   },
-   {
-    "index": 4,
-    "name": "docs-lifecycle/update-and-delete-transfer-authority-into-a-pending-request-04",
-    "pause_ms": 400,
-    "text": "Update/Delete requests are completion-only. There is no ordinary withdrawal, rejection or sweep that releases their representative. Valid folding consumes the request, burns the representative and applies exactly one of these transitions:",
-    "v": "dddc0e1dc6b9"
-   },
-   {
-    "index": 5,
-    "name": "docs-lifecycle/update-and-delete-transfer-authority-into-a-pending-request-05",
-    "pause_ms": 400,
-    "text": "The representative stays in request custody until that completion. Exact request-token disposal is still to be specified; it must not allow a completed request to be accepted again.",
-    "v": "6448741686b5"
-   }
-  ],
-  "what-batching-establishes": [
-   {
-    "index": 0,
-    "name": "docs-lifecycle/what-batching-establishes-00",
-    "pause_ms": 500,
-    "text": "What batching establishes.",
-    "v": "b1ad60e042a3"
-   },
-   {
-    "index": 1,
-    "name": "docs-lifecycle/what-batching-establishes-01",
-    "pause_ms": 400,
-    "text": "A fold traverses requests and applies their operations to the successive authenticated map states. Insert absence and Update/Delete old-value checks belong to those native mechanics. Certification and request recognition aim to keep the fold's own checks to explicit native obligations. A nonzero net burn of an application action token during folding still invokes its minting policy; whether that branch repeats expensive checks depends on the disposal contract. This is a design objective, not a measured performance result or a guarantee that every application fits.",
-    "v": "3e9620370701"
-   },
-   {
-    "index": 2,
-    "name": "docs-lifecycle/what-batching-establishes-02",
-    "pause_ms": 400,
-    "text": "One authentic representative cannot be held in two simultaneously pending Update/Delete requests for the same key. Consuming a request UTxO prevents consuming that UTxO again. These facts do not settle authorization replay across Delete followed by a fresh Insert, or all possible conflicts between different keys.",
-    "v": "e8092ac87854"
-   },
-   {
-    "index": 3,
-    "name": "docs-lifecycle/what-batching-establishes-03",
-    "pause_ms": 400,
-    "text": "See certification and the remaining decisions.",
-    "v": "ea55ffff4963"
-   }
-  ],
-  "where-the-representative-is-at-every-moment": [
-   {
-    "index": 0,
-    "name": "docs-lifecycle/where-the-representative-is-at-every-moment-00",
-    "pause_ms": 500,
-    "text": "Where the representative is at every moment.",
-    "v": "9a0fc1cebc6f"
-   },
-   {
-    "index": 1,
-    "name": "docs-lifecycle/where-the-representative-is-at-every-moment-01",
-    "pause_ms": 400,
-    "text": "A pending Insert holds no NFT; a pending Update or Delete holds the only one there is. Nothing but a valid fold moves the representative out of a terminal request.",
-    "v": "d7815976a171"
-   }
-  ],
-  "withdrawing-a-pending-insert": [
-   {
-    "index": 0,
-    "name": "docs-lifecycle/withdrawing-a-pending-insert-00",
-    "pause_ms": 500,
-    "text": "Withdrawing a pending Insert.",
-    "v": "acd1296d03e0"
-   },
-   {
-    "index": 1,
-    "name": "docs-lifecycle/withdrawing-a-pending-insert-01",
-    "pause_ms": 400,
-    "text": "An Insert can be withdrawn without changing the registry or creating a representative. The configured application policy must approve a separate Withdraw action token whose asset name commits to the Withdraw tag, registry, exact pending Insert UTxO and required refund terms/effects. Singular checks that action binding when consuming the pending Insert. Original Insert approval alone cannot authorize cancellation.",
-    "v": "d5a98f2c65d7"
-   },
-   {
-    "index": 2,
-    "name": "docs-lifecycle/withdrawing-a-pending-insert-02",
-    "pause_ms": 400,
-    "text": "Token disposal, refund economics and the application's conditions for approving withdrawal remain to be specified. They must protect deposits and avoid assuming arbitrary outsiders may repeatedly cancel valid registration attempts.",
-    "v": "8707b2c53f22"
-   }
-  ]
- },
  "docs/offchain-api-reference.md": {
   "a-worked-example-resolving-a-registry-before-showing-it": [
    {
@@ -3526,8 +2730,8 @@
     "index": 1,
     "name": "docs-offchain-api-reference/what-the-reference-does-not-claim-01",
     "pause_ms": 400,
-    "text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the runtime service modules staying outside it in Runtime service ownership, and the conformance reference's extent is the conformance library's. The executables and the on-chain Aiken validators remain outside the generated references. The public local-services component also exposes LocalEvaluation, NetworkTime, ProviderSettings, ProviderTrace, SessionEvidence, SessionIO, SessionServices, TimeSource, Trace, TraceRender, WaitTypes and Wallet; their sources live under offchain/local-services/Singular/Registry/. Their generated pages are not in this main-library reference. The public open-datum-application component (applications/open-datum/offchain/) carries the open-datum application the command line composes — command groups, envelope and release rules — and the request builders of the registry on the proved design: the booking of a registration, its reclaim by the refund address and its cleanup after the window, the configuration record added to the creation of a registry, the records and actions of the request validator in the layout it decodes, the validator as a transaction carries it, the reasons a builder declines, what open datum hands the fold of a registry, and the commands that create a registry and book, reclaim and clean up a registration: Singular.Application.OpenDatum.Build, Singular.Application.OpenDatum.Command, Singular.Application.OpenDatum.Envelope, Singular.Application.OpenDatum.Registration, Singular.Application.OpenDatum.Release, Singular.Application.OpenDatum.Requests.Booking, Singular.Application.OpenDatum.Requests.Configuration, Singular.Application.OpenDatum.Requests.Fold, Singular.Application.OpenDatum.Requests.Pending, Singular.Application.OpenDatum.Requests.Records, Singular.Application.OpenDatum.Requests.Refusal, Singular.Application.OpenDatum.Requests.Script, Singular.Application.OpenDatum.Root, Singular.Application.OpenDatum.Run; their sources live under applications/open-datum/offchain/src/Singular/Application/OpenDatum/, and the executable's entry point lives in applications/open-datum/offchain/app/. The public registry-cli component (offchain/cli/) carries the registry command line the two binaries link — session, journal and receipts, the flag group, registry helpers, reconciliation, recovery and the creation of a registry on the proved design with the fold into it: Singular.CLI, Singular.CLI.Command, Singular.CLI.Finish, Singular.CLI.Key, Singular.CLI.Live, Singular.CLI.ManagedState, Singular.CLI.Outlay, Singular.CLI.Payload, Singular.CLI.Plan, Singular.CLI.Promise, Singular.CLI.Proof, Singular.CLI.Receipt, Singular.CLI.ReceiptBody, Singular.CLI.Reconcile, Singular.CLI.Recovery, Singular.CLI.Registry, Singular.CLI.Root, Singular.CLI.Session, Singular.CLI.State, Singular.CLI.Steps, Singular.CLI.Trace, Singular.CLI.TrieTrace; their sources live under offchain/cli/src/Singular/CLI/.",
-    "v": "f8858aa04b1a"
+    "text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the runtime service modules staying outside it in Runtime service ownership, and the conformance reference's extent is the conformance library's. The executables and the on-chain Aiken validators remain outside the generated references. The public local-services component also exposes LocalEvaluation, NetworkTime, ProviderSettings, ProviderTrace, SessionEvidence, SessionIO, SessionServices, TimeSource, Trace, TraceRender, WaitTypes and Wallet; their sources live under offchain/local-services/Singular/Registry/. Their generated pages are not in this main-library reference. The public open-datum-application component (applications/open-datum/offchain/) carries the open-datum application the command line composes — command groups, envelope and release rules — and the request builders of the registry on the proved design: the booking of a registration, its reclaim by the refund address and its cleanup after the window, the configuration record added to the creation of a registry, the records and actions of the request validator in the layout it decodes, the validator as a transaction carries it, the reasons a builder declines, what open datum hands the fold of a registry, and the commands that create a registry and book, reclaim and clean up a registration: Singular.Application.OpenDatum.Build, Singular.Application.OpenDatum.Command, Singular.Application.OpenDatum.Envelope, Singular.Application.OpenDatum.Registration, Singular.Application.OpenDatum.Requests.Booking, Singular.Application.OpenDatum.Requests.Configuration, Singular.Application.OpenDatum.Requests.Fold, Singular.Application.OpenDatum.Requests.Pending, Singular.Application.OpenDatum.Requests.Records, Singular.Application.OpenDatum.Requests.Refusal, Singular.Application.OpenDatum.Requests.Script, Singular.Application.OpenDatum.Root, Singular.Application.OpenDatum.Run; their sources live under applications/open-datum/offchain/src/Singular/Application/OpenDatum/, and the executable's entry point lives in applications/open-datum/offchain/app/. The public registry-cli component (offchain/cli/) carries the registry command line the two binaries link — session, journal and receipts, the flag group, registry helpers, reconciliation, recovery and the creation of a registry on the proved design with the fold into it: Singular.CLI, Singular.CLI.Command, Singular.CLI.Finish, Singular.CLI.Key, Singular.CLI.Live, Singular.CLI.ManagedState, Singular.CLI.Outlay, Singular.CLI.Payload, Singular.CLI.Plan, Singular.CLI.Promise, Singular.CLI.Proof, Singular.CLI.Receipt, Singular.CLI.ReceiptBody, Singular.CLI.Reconcile, Singular.CLI.Recovery, Singular.CLI.Registry, Singular.CLI.Root, Singular.CLI.Session, Singular.CLI.State, Singular.CLI.Steps, Singular.CLI.Trace, Singular.CLI.TrieTrace; their sources live under offchain/cli/src/Singular/CLI/.",
+    "v": "672b03c16d21"
    },
    {
     "index": 2,
@@ -3556,15 +2760,15 @@
     "index": 2,
     "name": "docs-offchain-api-reference/what-this-reference-contains-02",
     "pause_ms": 400,
-    "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. The module extent is discovered from the Cabal manifest. Explicitly exposed and re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger, Singular.Registry.LedgerProvider, Singular.Registry.Evidence and Singular.Registry.Signing are the re-exports: their implementations are owned by the public local-services component (offchain/local-services/) and the main library exposes their stable import paths. The generic provider interface and evidence types let a caller supply capabilities without selecting a node runtime; the Koios constructor supplies unbound, unverified HTTP facts through that interface. The runtime service modules outside this extent — the terminal composition and its transport in koios-http, and the remaining service modules of local-services — are documented with source links in Runtime service ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
-    "v": "f2ac6ed65bc8"
+    "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. The module extent is discovered from the Cabal manifest. Explicitly exposed and re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger, Singular.Registry.LedgerProvider, Singular.Registry.Evidence and Singular.Registry.Signing are the re-exports: their implementations are owned by the public local-services component (offchain/local-services/) and the main library exposes their stable import paths. The generic provider interface and evidence types let a caller supply capabilities without selecting a node runtime; the Koios constructor supplies unbound, unverified HTTP facts through that interface. The runtime service modules outside this extent — the terminal composition and its transport in koios-http, and the remaining service modules of local-services — are documented with source links in Runtime service ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
+    "v": "e1bdac38a8a9"
    },
    {
     "index": 3,
     "name": "docs-offchain-api-reference/what-this-reference-contains-03",
     "pause_ms": 400,
-    "text": "MkDocs environment ready! Run: mkdocs serve - Singular.Reader — source - Singular.Provider.Koios.Client — source - Singular.Provider.Koios.Evidence — source - Singular.Provider.Koios.History — source - Singular.Provider.Koios.Provider — source - Singular.Provider.Koios.Recorded — source - Singular.Provider.Koios.Runtime — source - Singular.Provider.Koios.State — source - Singular.Provider.Koios.Wire — source - Singular.Registry.Address — source - Singular.Registry.Application — source - Singular.Registry.AssetName — source - Singular.Registry.Blueprint — source - Singular.Registry.Blueprint.Load — source - Singular.Registry.Blueprint.Params — source - Singular.Registry.Blueprint.Schema — source - Singular.Registry.Capabilities — source - Singular.Registry.Config — source - Singular.Registry.Config.Application — source - Singular.Registry.Confirmation — source - Singular.Registry.Deployment — source - Singular.Registry.Deployment.Attach — source - Singular.Registry.Deployment.Manifest — source - Singular.Registry.Deployment.Mirror — source - Singular.Registry.Evidence — source - Singular.Registry.FoldAdmission — source - Singular.Registry.Ledger — source - Singular.Registry.LedgerProvider — source - Singular.Registry.Lifecycle — source - Singular.Registry.PlainJson — source - Singular.Registry.Proof — source - Singular.Registry.Replay — source - Singular.Registry.Signing — source - Singular.Registry.StateToken — source - Singular.Registry.Trie — source - Singular.Registry.Trie.Pure — source - Singular.Registry.Trie.PureManager — source - Singular.Registry.TrieState — source - Singular.Registry.TrieState.Core — source - Singular.Registry.TrieState.Fixture — source - Singular.Registry.TrieState.Lineage — source - Singular.Registry.TrieState.Types — source - Singular.Registry.TxBuilder.ConnectedFold — source - Singular.Registry.TxBuilder.Edges — source - Singular.Registry.TxBuilder.Internal — source - Singular.Registry.TxBuilder.Internal.Edges — source - Singular.Registry.TxBuilder.Internal.Identity — source - Singular.Registry.TxBuilder.Internal.Lookup — source - Singular.Registry.TxBuilder.Prepare — source - Singular.Registry.TxBuilder.Request — source - Singular.Registry.TxBuilder.Update — source - Singular.Registry.TxBuilder.Update.Build — source - Singular.Registry.TxBuilder.Update.Context — source - Singular.Registry.TxBuilder.Update.Duties — source - Singular.Registry.Types — source - Singular.Registry.Wait — source - Singular.Registry.Wire.Primitive — source - Singular.Registry.Wire.Proof — source - Singular.Registry.Wire.Redeemer — source - Singular.Registry.Wire.Request — source - Singular.Registry.Wire.State — source - Singular.Registry.Witness — source - Singular.State.Assemble — source — the payer, the reads of the chain and the assembly of a transaction that the builders of the Singular state share - Singular.State.Batch — source — request ordering and the greatest prefix that fits the observed capacity limits - Singular.State.Fold — source — discovery and folding of pending registrations and terminations from public data, with skipped holders and remaining requests accounted for - Singular.State.Genesis — source — the creation of a registry from a seed, with the application's steps in the same transaction - Singular.State.Lineage — source — a registry's trie rebuilt from the public history of its state token, every root checked against the chain - Singular.State.Preimage — source — the off-chain encoder of the Singular state, active, configuration and registration-approval preimages, byte for byte equal to the on-chain one - Singular.State.Publication — source — the state script and the application's script published as reference scripts once and reused by later registries - Singular.State.Records — source — the datum and the actions of the state validator, as Plutus Data in the layout it decodes - Singular.State.Refusal — source — why a builder of the Singular state declines to build - Singular.State.Script — source — the state validator of an application as the builders carry it, attached or by reference",
-    "v": "981a4eaf16b7"
+    "text": "MkDocs environment ready! Run: mkdocs serve - Singular.Reader — source - Singular.Provider.Koios.Client — source - Singular.Provider.Koios.Evidence — source - Singular.Provider.Koios.History — source - Singular.Provider.Koios.Provider — source - Singular.Provider.Koios.Recorded — source - Singular.Provider.Koios.Runtime — source - Singular.Provider.Koios.State — source - Singular.Provider.Koios.Wire — source - Singular.Registry.Address — source - Singular.Registry.Application — source - Singular.Registry.AssetName — source - Singular.Registry.Blueprint — source - Singular.Registry.Blueprint.Load — source - Singular.Registry.Blueprint.Params — source - Singular.Registry.Blueprint.Schema — source - Singular.Registry.Capabilities — source - Singular.Registry.Config — source - Singular.Registry.Config.Application — source - Singular.Registry.Confirmation — source - Singular.Registry.Deployment — source - Singular.Registry.Deployment.Attach — source - Singular.Registry.Deployment.Manifest — source - Singular.Registry.Deployment.Mirror — source - Singular.Registry.Evidence — source - Singular.Registry.FoldAdmission — source - Singular.Registry.Ledger — source - Singular.Registry.LedgerProvider — source - Singular.Registry.Lifecycle — source - Singular.Registry.PlainJson — source - Singular.Registry.Proof — source - Singular.Registry.Replay — source - Singular.Registry.Signing — source - Singular.Registry.StateToken — source - Singular.Registry.Trie — source - Singular.Registry.Trie.Pure — source - Singular.Registry.Trie.PureManager — source - Singular.Registry.TrieState — source - Singular.Registry.TrieState.Core — source - Singular.Registry.TrieState.Fixture — source - Singular.Registry.TrieState.Lineage — source - Singular.Registry.TrieState.Types — source - Singular.Registry.TxBuilder.Publication — source - Singular.Registry.TxBuilder.Internal — source - Singular.Registry.TxBuilder.Internal.Edges — source - Singular.Registry.TxBuilder.Internal.Identity — source - Singular.Registry.TxBuilder.Internal.Lookup — source - Singular.Registry.TxBuilder.Prepare — source - Singular.Registry.Types — source - Singular.Registry.Wait — source - Singular.Registry.Wire.Primitive — source - Singular.Registry.Wire.Proof — source - Singular.Registry.Wire.Redeemer — source - Singular.Registry.Wire.Request — source - Singular.Registry.Wire.State — source - Singular.State.Assemble — source — the payer, the reads of the chain and the assembly of a transaction that the builders of the Singular state share - Singular.State.Batch — source — request ordering and the greatest prefix that fits the observed capacity limits - Singular.State.Fold — source — discovery and folding of pending registrations and terminations from public data, with skipped holders and remaining requests accounted for - Singular.State.Genesis — source — the creation of a registry from a seed, with the application's steps in the same transaction - Singular.State.Lineage — source — a registry's trie rebuilt from the public history of its state token, every root checked against the chain - Singular.State.Preimage — source — the off-chain encoder of the Singular state, active, configuration and registration-approval preimages, byte for byte equal to the on-chain one - Singular.State.Publication — source — the state script and the application's script published as reference scripts once and reused by later registries - Singular.State.Records — source — the datum and the actions of the state validator, as Plutus Data in the layout it decodes - Singular.State.Refusal — source — why a builder of the Singular state declines to build - Singular.State.Script — source — the state validator of an application as the builders carry it, attached or by reference",
+    "v": "a42d7cddc03b"
    },
    {
     "index": 4,
@@ -3576,36 +2780,36 @@
   ]
  },
  "docs/offchain-builder-blueprint.md": {
-  "decisions-this-extraction-recorded": [
+  "behavioral-authority": [
    {
     "index": 0,
-    "name": "docs-offchain-builder-blueprint/decisions-this-extraction-recorded-00",
+    "name": "docs-offchain-builder-blueprint/behavioral-authority-00",
     "pause_ms": 500,
-    "text": "Decisions this extraction recorded.",
-    "v": "244d341dd451"
+    "text": "Behavioral authority.",
+    "v": "5fd785e22880"
    },
    {
     "index": 1,
-    "name": "docs-offchain-builder-blueprint/decisions-this-extraction-recorded-01",
+    "name": "docs-offchain-builder-blueprint/behavioral-authority-01",
     "pause_ms": 400,
-    "text": "The extraction is behavior-preserving by construction and by evidence: every moved declaration's source text is compared against its previous home, the facades' export lists are compared byte-for-byte, the blueprint parameter reading, builder assertions and failure attribution keep their independent assertions, and the fresh-blueprint end-to-end, bounded journey and archive commands exercise the moved builders against a real devnet.",
-    "v": "dfa8f0f18f05"
+    "text": "The registry conditions and application rules are the current model sources for these construction paths. The documentation ships those source files and checks their bytes against the candidate source. Changing or omitting a linked model artifact is rejected by the same check. Model statements, compiled-validator tests and connected journeys establish different boundaries; none substitutes for the others.",
+    "v": "a8284cf69882"
    }
   ],
-  "one-owner-per-concern": [
+  "current-construction-paths": [
    {
     "index": 0,
-    "name": "docs-offchain-builder-blueprint/one-owner-per-concern-00",
+    "name": "docs-offchain-builder-blueprint/current-construction-paths-00",
     "pause_ms": 500,
-    "text": "One owner per concern.",
-    "v": "bbd48f18c89d"
+    "text": "Current construction paths.",
+    "v": "d10a52439ab7"
    },
    {
     "index": 1,
-    "name": "docs-offchain-builder-blueprint/one-owner-per-concern-01",
+    "name": "docs-offchain-builder-blueprint/current-construction-paths-01",
     "pause_ms": 400,
-    "text": "Every declaration lives in exactly one owner. The public modules are facades: they hold no implementations, they re-export the same names with the same signatures as before the extraction, and an existing caller — a test, a shipped command, a journey — keeps compiling unchanged. The per-operation builders import the focused owners directly; the retract builder is the one library module that still imports the facade, and the facade keeps it compiling and behaving unchanged while that file stays under a separate ticket's fence. The fold's own owners live behind the Update facade and are mapped in their own guide, Who owns a registry fold.",
-    "v": "170e5f1a3bc3"
+    "text": "The registry library owns creation, public state history, folds and reference publications. The application owns booking, holding updates, termination booking and registration exits. Commands resolve explicit inputs and submit the transactions these owners return. See fold responsibilities for the boundary between application request rules and registry state changes.",
+    "v": "8f6b2dc0c3ff"
    }
   ],
   "registry-builder-and-blueprint-modules": [
@@ -3620,133 +2824,31 @@
     "index": 1,
     "name": "docs-offchain-builder-blueprint/registry-builder-and-blueprint-modules-01",
     "pause_ms": 400,
-    "text": "A contributor changing an off-chain builder or blueprint step wants one obvious owner per concern, so a change to a script identity, a lookup or an edge decision is reviewed in one place and cannot silently disagree with a second copy somewhere else. This page maps the registry's transaction builders and CIP-57 blueprint work to their modules: what each owner is responsible for, where common changes land, and what the checks establish about the move.",
-    "v": "731feee07b33"
+    "text": "As a contributor changing transaction construction, you want to find the current owner. Registry state and application requests have separate owners, and both use shared ledger providers and transaction assembly tools.",
+    "v": "53213b7a8424"
    }
   ],
-  "source": [
+  "shared-representations": [
    {
     "index": 0,
-    "name": "docs-offchain-builder-blueprint/source-00",
+    "name": "docs-offchain-builder-blueprint/shared-representations-00",
     "pause_ms": 500,
-    "text": "Source.",
-    "v": "ea8290cd153b"
+    "text": "Shared representations.",
+    "v": "63c09609011e"
    },
    {
     "index": 1,
-    "name": "docs-offchain-builder-blueprint/source-01",
+    "name": "docs-offchain-builder-blueprint/shared-representations-01",
     "pause_ms": 400,
-    "text": "The facades and owners, linked on this site to the generated API reference pages — module page and highlighted source — and, read from the repository, to the source files themselves at the revision you are viewing:",
-    "v": "b15999e58918"
+    "text": "The blueprint facade parses the CIP-57 schema, selects compiled code and applies parameters. Its Schema, Load and Params modules own those concerns separately. Shared internal helpers supply ledger-data conversions, script identity, lookup and balancing for retained callers. Funding and publication arithmetic remain shared with the preview so preview and construction use the same values.",
+    "v": "87662dd9e3ba"
    },
    {
     "index": 2,
-    "name": "docs-offchain-builder-blueprint/source-02",
-    "pause_ms": 300,
-    "text": "Facades: Singular.Registry.Blueprint, Singular.Registry.TxBuilder.Internal, Singular.Registry.TxBuilder.Update.",
-    "v": "69f5a19ffcab"
-   },
-   {
-    "index": 3,
-    "name": "docs-offchain-builder-blueprint/source-03",
-    "pause_ms": 300,
-    "text": "Blueprint owners: Singular.Registry.Blueprint.Schema, Singular.Registry.Blueprint.Params, Singular.Registry.Blueprint.Load.",
-    "v": "d4cc49646862"
-   },
-   {
-    "index": 4,
-    "name": "docs-offchain-builder-blueprint/source-04",
-    "pause_ms": 300,
-    "text": "Builder owners: Singular.Registry.TxBuilder.Internal.Identity, Singular.Registry.TxBuilder.Internal.Lookup, Singular.Registry.TxBuilder.Internal.Edges.",
-    "v": "dcd9f61abed2"
-   },
-   {
-    "index": 5,
-    "name": "docs-offchain-builder-blueprint/source-05",
-    "pause_ms": 300,
-    "text": "Fold owners: Singular.Registry.TxBuilder.Update.Context, Singular.Registry.TxBuilder.Update.Duties, Singular.Registry.TxBuilder.Update.Build.",
-    "v": "90adf30e5c77"
-   },
-   {
-    "index": 6,
-    "name": "docs-offchain-builder-blueprint/source-06",
+    "name": "docs-offchain-builder-blueprint/shared-representations-02",
     "pause_ms": 400,
-    "text": "The complete generated reference — every module of the library stanza, with its hyperlinked source — is the off-chain API reference page; each entry there links both the generated module page and the highlighted source of the module it names.",
-    "v": "53eca26d6bf0"
-   }
-  ],
-  "what-the-checks-do-not-establish": [
-   {
-    "index": 0,
-    "name": "docs-offchain-builder-blueprint/what-the-checks-do-not-establish-00",
-    "pause_ms": 500,
-    "text": "What the checks do not establish.",
-    "v": "a66fa64db09b"
-   },
-   {
-    "index": 1,
-    "name": "docs-offchain-builder-blueprint/what-the-checks-do-not-establish-01",
-    "pause_ms": 400,
-    "text": "A green component build is a compile claim, not transaction correspondence. The behavioral rows cover the asserted edges and refusal shapes they cover; a change to an uncovered builder path still needs its own check. The contributor guide for the check commands and their measured extents is Checking off-chain code. The generated, revision-matched Haskell API reference for this library now ships with this site: see the off-chain API reference.",
-    "v": "ca7b13add723"
-   }
-  ],
-  "where-common-changes-land": [
-   {
-    "index": 0,
-    "name": "docs-offchain-builder-blueprint/where-common-changes-land-00",
-    "pause_ms": 500,
-    "text": "Where common changes land.",
-    "v": "7a6890041fb6"
-   },
-   {
-    "index": 1,
-    "name": "docs-offchain-builder-blueprint/where-common-changes-land-01",
-    "pause_ms": 300,
-    "text": "A request datum gains or changes a field: TxBuilder.Internal.Identity builds and decodes it; the on-chain Request type it encodes lives in Singular.Registry.Types.",
-    "v": "df67f6690356"
-   },
-   {
-    "index": 2,
-    "name": "docs-offchain-builder-blueprint/where-common-changes-land-02",
-    "pause_ms": 300,
-    "text": "Balancing, fee or refund behavior changes: TxBuilder.Internal.Lookup.",
-    "v": "66f46a505615"
-   },
-   {
-    "index": 3,
-    "name": "docs-offchain-builder-blueprint/where-common-changes-land-03",
-    "pause_ms": 300,
-    "text": "The mint owed by an edge, or the approval that certifies it, changes: TxBuilder.Internal.Edges, which is also the only place an edge and its leaf bytes are paired.",
-    "v": "2e10505feb27"
-   },
-   {
-    "index": 4,
-    "name": "docs-offchain-builder-blueprint/where-common-changes-land-04",
-    "pause_ms": 300,
-    "text": "The state validator's parameter list or the request validator's parameter order changes: Blueprint.Params, then the Aiken blueprint it applies.",
-    "v": "ae9f5e72f160"
-   },
-   {
-    "index": 5,
-    "name": "docs-offchain-builder-blueprint/where-common-changes-land-05",
-    "pause_ms": 300,
-    "text": "Blueprint parsing rejects (or wrongly accepts) a shape: Blueprint.Schema.",
-    "v": "623f8018f652"
-   },
-   {
-    "index": 6,
-    "name": "docs-offchain-builder-blueprint/where-common-changes-land-06",
-    "pause_ms": 300,
-    "text": "A boot reads the wrong compiled code from the registry partition: Blueprint.Load.",
-    "v": "2cb92c0a3659"
-   },
-   {
-    "index": 7,
-    "name": "docs-offchain-builder-blueprint/where-common-changes-land-07",
-    "pause_ms": 300,
-    "text": "What a fold's requests owe changes, or how the fold prepares or assembles: the fold owners behind Update, mapped in Who owns a registry fold.",
-    "v": "cf2042d33fc8"
+    "text": "The API reference lists the discovered modules and links their signatures and source. Compilation establishes that the retained tree builds. Component tests and packaged journeys establish behavior at their respective boundaries; neither implies hosted CI or public-network acceptance.",
+    "v": "882fab12faff"
    }
   ]
  },
@@ -4165,174 +3267,50 @@
   ]
  },
  "docs/offchain-fold-responsibilities.md": {
-  "decisions-this-extraction-recorded": [
+  "choices-and-verification-limits": [
    {
     "index": 0,
-    "name": "docs-offchain-fold-responsibilities/decisions-this-extraction-recorded-00",
+    "name": "docs-offchain-fold-responsibilities/choices-and-verification-limits-00",
     "pause_ms": 500,
-    "text": "Decisions this extraction recorded.",
-    "v": "0762a59c5b7e"
-   }
-  ],
-  "independent-evidence-boundaries": [
-   {
-    "index": 0,
-    "name": "docs-offchain-fold-responsibilities/independent-evidence-boundaries-00",
-    "pause_ms": 500,
-    "text": "Independent evidence boundaries.",
-    "v": "9af5051fdd1f"
+    "text": "Choices and verification limits.",
+    "v": "d2265a94faaa"
    },
    {
     "index": 1,
-    "name": "docs-offchain-fold-responsibilities/independent-evidence-boundaries-01",
+    "name": "docs-offchain-fold-responsibilities/choices-and-verification-limits-01",
     "pause_ms": 400,
-    "text": "Two neighbors deliberately do NOT share this code. The cage computes its own duties from the requests it consumes (dutiesOf, dutyOk); a builder that agreed with the validator by construction would not catch a disagreement, so registryDuties stays a separate derivation. And the Conformance suite's state is computed from run receipts — its rows say what the chain did, not what this builder intended, and this extraction touches none of it.",
-    "v": "9e24c7d7a772"
-   }
-  ],
-  "one-owner-per-fold-concern": [
-   {
-    "index": 0,
-    "name": "docs-offchain-fold-responsibilities/one-owner-per-fold-concern-00",
-    "pause_ms": 500,
-    "text": "One owner per fold concern.",
-    "v": "0de48af609b9"
-   },
-   {
-    "index": 1,
-    "name": "docs-offchain-fold-responsibilities/one-owner-per-fold-concern-01",
-    "pause_ms": 400,
-    "text": "The facade holds no algorithm. It runs the fold's sequence — query of the chosen requests, proofs, state preparation, context completion, duties, upper slot, program, build — and every decision in that sequence belongs to exactly one of the three owners below it. The graph is acyclic and one-way between the fold owners: Context knows nothing of duties or assembly, Duties reads Context but no assembly, Build reads Duties but no facade. Below the fold owners, both Duties and Build also read the older Internal owners directly — the duty derivation shares its edge-to-mint table with the cage through Internal.Edges — and both the facade and the build owner read ConnectedFold for the attached action types.",
-    "v": "b86c904e4195"
-   }
-  ],
-  "source": [
-   {
-    "index": 0,
-    "name": "docs-offchain-fold-responsibilities/source-00",
-    "pause_ms": 500,
-    "text": "Source.",
-    "v": "a8fdb358db8a"
-   },
-   {
-    "index": 1,
-    "name": "docs-offchain-fold-responsibilities/source-01",
-    "pause_ms": 400,
-    "text": "The facade and owners, linked on this site to the generated API reference and readable in the repository at the revision you are viewing:",
-    "v": "0dd364b47043"
+    "text": "The state-fold and application request-fold suites exercise the current builders against compiled validators and altered-input controls. The packaged journey checks connected registration, update and termination on a private development chain. These are separate evidence boundaries; see the consumer record for requirements still uncovered.",
+    "v": "aaa234a387ca"
    },
    {
     "index": 2,
-    "name": "docs-offchain-fold-responsibilities/source-02",
-    "pause_ms": 300,
-    "text": "Facade: Singular.Registry.TxBuilder.Update",
-    "v": "5f93898c073b"
-   },
-   {
-    "index": 3,
-    "name": "docs-offchain-fold-responsibilities/source-03",
-    "pause_ms": 300,
-    "text": "Owners: Singular.Registry.TxBuilder.Update.Context, Singular.Registry.TxBuilder.Update.Duties, Singular.Registry.TxBuilder.Update.Build",
-    "v": "39994ae5a727"
-   },
-   {
-    "index": 4,
-    "name": "docs-offchain-fold-responsibilities/source-04",
+    "name": "docs-offchain-fold-responsibilities/choices-and-verification-limits-02",
     "pause_ms": 400,
-    "text": "The wider builder map these owners sit in is Builder and blueprint modules; the check commands and their extents are in Checking off-chain code.",
-    "v": "e0004672e7a4"
+    "text": "Browse the generated API reference for signatures and source, and the command guide for caller-visible receipts and selection behavior.",
+    "v": "0548c5313db1"
    }
   ],
-  "the-flow-a-fold-runs": [
+  "from-a-pending-request-to-a-batch": [
    {
     "index": 0,
-    "name": "docs-offchain-fold-responsibilities/the-flow-a-fold-runs-00",
+    "name": "docs-offchain-fold-responsibilities/from-a-pending-request-to-a-batch-00",
     "pause_ms": 500,
-    "text": "The flow a fold runs.",
-    "v": "bdcb7fde1c5d"
-   }
-  ],
-  "the-story-this-serves": [
-   {
-    "index": 0,
-    "name": "docs-offchain-fold-responsibilities/the-story-this-serves-00",
-    "pause_ms": 500,
-    "text": "The story this serves.",
-    "v": "92f1a9a49ba3"
+    "text": "From a pending request to a batch.",
+    "v": "28820e701d7b"
    },
    {
     "index": 1,
-    "name": "docs-offchain-fold-responsibilities/the-story-this-serves-01",
+    "name": "docs-offchain-fold-responsibilities/from-a-pending-request-to-a-batch-01",
     "pause_ms": 400,
-    "text": "As a registry caller, I submit requests and fold them through the existing Singular.Registry.TxBuilder.Update import; I want the same request order, the same token effects, the same custody refunds and the same destinations as before, so my callers and my conformance rows see nothing move. A contributor refactoring the fold's internals owes me that. The focused suite pins what its rows actually assert: the order duties accumulate in for the request list a caller supplies; the active witness burn's net -1, with the one input that holds it consumed and no output carrying it; which holder input a burn selects and which custody input a custody spend selects — exact policy, key and quantity; the per-owner grouping of deposit returns and a deletion's approval riding inside its deposit output; and the fold's empty signer set, both in the duties it accumulates and in the required-signer field of the transaction the public entry actually builds.",
-    "v": "fff72fc63a84"
+    "text": "The fold discovers pending requests through the application adapter and checks each against the selected registry and trie. Automatic selection skips individually unfoldable requests and keeps the first foldable request for each key. An explicitly selected batch is built in the requested order or refused; it is never silently trimmed.",
+    "v": "0b758d8d460e"
    },
    {
     "index": 2,
-    "name": "docs-offchain-fold-responsibilities/the-story-this-serves-02",
+    "name": "docs-offchain-fold-responsibilities/from-a-pending-request-to-a-batch-02",
     "pause_ms": 400,
-    "text": "What no focused row asserts: the query's input-order sorting (the rows hand registryDuties already-ordered lists, and the built-body row folds one request); the quantities of every mint except the active burn; a custody refund's output address and amount; a delivering edge's destination; and an approval returned by a delivering or inadmissible edge. The former connected multi-edge scenario has left with its retired E2E subject. The library remains for retained callers; its focused checks establish only the assertions described above. The new command line's connected journey has its own registration, update and permanent-termination evidence.",
-    "v": "3ac9896d5752"
-   }
-  ],
-  "what-must-not-change": [
-   {
-    "index": 0,
-    "name": "docs-offchain-fold-responsibilities/what-must-not-change-00",
-    "pause_ms": 500,
-    "text": "What must not change.",
-    "v": "661b2fbc10c0"
-   },
-   {
-    "index": 1,
-    "name": "docs-offchain-fold-responsibilities/what-must-not-change-01",
-    "pause_ms": 400,
-    "text": "The extraction is a representation change, not a new registry rule. The Lean model remains the authority: the fold's mint quantities, owner deposits, custody refunds and approval returns are what Singular.obligations says they are, and no fold requires a signer (Singular.Statements.fold_requires_no_signer). What the focused tree executes: the duties list in the order of the requests it was given — not sorted, reversed or swept from the inventory — with outputs, mints and burn sources each read back from what the builder produced; the active burn's net -1 with its held input and no carrier output; the exact holder and custody input selections; the per-owner grouping of deposit returns and a deletion's approval inside its deposit output; and the built body's empty required-signer set through the public entry. These component checks do not establish a connected ledger history or every possible input order. Refused edges and the delivering approval's ADA minimum remain outside these comparisons. A contributor who needs any pinned behavior to change is not refactoring; that is a behavior change and belongs to the design flow, not to this structure.",
-    "v": "584e49a07c1e"
-   }
-  ],
-  "where-common-changes-land": [
-   {
-    "index": 0,
-    "name": "docs-offchain-fold-responsibilities/where-common-changes-land-00",
-    "pause_ms": 500,
-    "text": "Where common changes land.",
-    "v": "18bf6a3bd6f5"
-   },
-   {
-    "index": 1,
-    "name": "docs-offchain-fold-responsibilities/where-common-changes-land-01",
-    "pause_ms": 300,
-    "text": "A request gains or changes what it carries: Update.Context finds and decodes it (the datum shape itself lives in Singular.Registry.Types).",
-    "v": "338b8bef6091"
-   },
-   {
-    "index": 2,
-    "name": "docs-offchain-fold-responsibilities/where-common-changes-land-02",
-    "pause_ms": 300,
-    "text": "An edge's obligations change — what it mints, where it delivers, what custody it spends or returns: Update.Duties, and only there.",
-    "v": "b997e94804f0"
-   },
-   {
-    "index": 3,
-    "name": "docs-offchain-fold-responsibilities/where-common-changes-land-03",
-    "pause_ms": 300,
-    "text": "The transaction's shape changes — a new input kind, reference scripts, collateral or validity rules: Update.Build.",
-    "v": "16a86b754478"
-   },
-   {
-    "index": 4,
-    "name": "docs-offchain-fold-responsibilities/where-common-changes-land-04",
-    "pause_ms": 300,
-    "text": "What an omitted context field defaults to, or which queries the fold runs: Update.Context.",
-    "v": "aa4b4fa9ace3"
-   },
-   {
-    "index": 5,
-    "name": "docs-offchain-fold-responsibilities/where-common-changes-land-05",
-    "pause_ms": 300,
-    "text": "The public surface and the fold's sequence: the facade, which must stay a coordinator.",
-    "v": "131800d0c978"
+    "text": "The lineage owner reconstructs the registry trie from public history. The assembly owner constructs state continuation, request spends, token effects, committed holdings, rewards, validity and collateral. The application adapter supplies request recognition and spending rules. No booker's local file is an input to the fold.",
+    "v": "9fdd729d503c"
    }
   ],
   "who-owns-a-registry-fold": [
@@ -4347,8 +3325,8 @@
     "index": 1,
     "name": "docs-offchain-fold-responsibilities/who-owns-a-registry-fold-01",
     "pause_ms": 400,
-    "text": "A contributor changing how the registry folds pending requests — which UTxO it spends, what an edge owes, how the transaction is assembled — wants to change one module and have the review ask one question. Before the extraction, all of that lived in one 890-line module; a change to a custody refund and a change to a slot computation were reviewed in the same file with no boundary between them. Now the fold path is three focused owners behind the same public facade. This page tells a contributor which owner their change belongs to, what the flow through them is, and what must never change while it moves.",
-    "v": "7f3d57f1cbd9"
+    "text": "As a contributor changing a fold, you want the owner of each decision to be clear. The registry owns the state transition and batch transaction. The application owns recognition of a pending request, its spending script and its approval burn. The folder supplies public chain data and its own wallet.",
+    "v": "1c6b8e3d4ec7"
    }
   ]
  },
@@ -4749,223 +3727,80 @@
   ]
  },
  "docs/offchain-wire-types.md": {
-  "decisions-this-extraction-recorded": [
+  "current-command-records": [
    {
     "index": 0,
-    "name": "docs-offchain-wire-types/decisions-this-extraction-recorded-00",
+    "name": "docs-offchain-wire-types/current-command-records-00",
     "pause_ms": 500,
-    "text": "Decisions this extraction recorded.",
-    "v": "5890a865cc1b"
-   }
-  ],
-  "independent-evidence-boundaries": [
-   {
-    "index": 0,
-    "name": "docs-offchain-wire-types/independent-evidence-boundaries-00",
-    "pause_ms": 500,
-    "text": "Independent evidence boundaries.",
-    "v": "9c64339f3236"
+    "text": "Current command records.",
+    "v": "e401002509d2"
    },
    {
     "index": 1,
-    "name": "docs-offchain-wire-types/independent-evidence-boundaries-01",
+    "name": "docs-offchain-wire-types/current-command-records-01",
     "pause_ms": 400,
-    "text": "Three neighbors deliberately do not share this code's confidence. The Aiken validators decode with their own source, transcribed from the same accepted model — a Haskell codec that agreed with the validator by construction would catch nothing, so the cross-language vectors stay the arbiter, regenerated only by an explicit developer recipe. The vector generator exercises the encoders only. And the Conformance suite is an unchanged consumer of the facade — the wire extraction touches none of its files. Its rows are layered, not uniform: rows the chain exercised are computed from run receipts; schema and serialization observations are checked off-chain; and requirements nothing has exercised are published as uncovered rather than silently covered. The serialization row the frozen gate executes checks thirteen types against the blueprint — a narrow compatibility observation, not the full published requirement that every codec match the blueprint, which stays uncovered. The rows say what was observed, never what these codecs intended. The focused literal suite binds the wire; the executing consumers bind the journeys; neither substitutes for the other.",
-    "v": "e8e71ddac8f0"
-   }
-  ],
-  "one-owner-per-wire-value": [
-   {
-    "index": 0,
-    "name": "docs-offchain-wire-types/one-owner-per-wire-value-00",
-    "pause_ms": 500,
-    "text": "One owner per wire value.",
-    "v": "da739673bc28"
-   },
-   {
-    "index": 1,
-    "name": "docs-offchain-wire-types/one-owner-per-wire-value-01",
-    "pause_ms": 400,
-    "text": "The five owners are package-internal implementation modules of the same public library: callers keep importing the facade, and no owner imports the facade or another owner outside the arrows above — the graph is acyclic. Single ownership is a declared map, not a compiler guarantee: each original declaration and instance appears in exactly one owner in the before-and-after declaration map this extraction ships, the facade re-exports those names and defines nothing, and the Cabal stanza and the generated reference list each owner exactly once — a stray duplicate body in some other module would neither be reachable through the facade nor appear in that map. The owners' pages appear in the generated reference for the contributor's navigation while remaining non-importable by a caller.",
-    "v": "574bbfd33950"
-   }
-  ],
-  "source": [
-   {
-    "index": 0,
-    "name": "docs-offchain-wire-types/source-00",
-    "pause_ms": 500,
-    "text": "Source.",
-    "v": "8a214dfdda5c"
-   },
-   {
-    "index": 1,
-    "name": "docs-offchain-wire-types/source-01",
-    "pause_ms": 400,
-    "text": "The facade and the five owners, linked on this site to the generated API reference and readable in the repository at the revision you are viewing:",
-    "v": "42723629c518"
+    "text": "Creation and folds use the state records. Registration, updates, termination booking and registration exits use the application records. Their owning builders construct datums and redeemers, then evaluate transactions against the corresponding compiled validators.",
+    "v": "54ae5406fdc5"
    },
    {
     "index": 2,
-    "name": "docs-offchain-wire-types/source-02",
-    "pause_ms": 300,
-    "text": "Facade: Singular.Registry.Types",
-    "v": "08f2c384dd71"
+    "name": "docs-offchain-wire-types/current-command-records-02",
+    "pause_ms": 400,
+    "text": "Changing a representation starts with its behavioral authority and the contract that consumes it. Constructor indices, field order and nesting are part of the wire. A Haskell codec change alone cannot establish agreement with a validator. Literal codec tests, compiled-validator tests and connected journeys check different boundaries.",
+    "v": "56ea7af10aff"
+   }
+  ],
+  "evidence-and-navigation": [
+   {
+    "index": 0,
+    "name": "docs-offchain-wire-types/evidence-and-navigation-00",
+    "pause_ms": 500,
+    "text": "Evidence and navigation.",
+    "v": "b2e9f9e416e5"
+   },
+   {
+    "index": 1,
+    "name": "docs-offchain-wire-types/evidence-and-navigation-01",
+    "pause_ms": 400,
+    "text": "The Types suite checks literal encodings and decodings. The state and application builder suites separately exercise their compiled validators. Connected journeys check transactions at the ledger boundary. The consumer record publishes the requirements still uncovered; a codec test does not close those rows.",
+    "v": "e6f03fcef7fe"
+   },
+   {
+    "index": 2,
+    "name": "docs-offchain-wire-types/evidence-and-navigation-02",
+    "pause_ms": 400,
+    "text": "Use the API reference to find the signatures and source for each owner. The builder guide maps construction paths, and the fold guide describes the boundary between registry state and application request rules.",
+    "v": "56d30de9ff77"
+   }
+  ],
+  "shared-values-and-retained-adapters": [
+   {
+    "index": 0,
+    "name": "docs-offchain-wire-types/shared-values-and-retained-adapters-00",
+    "pause_ms": 500,
+    "text": "Shared values and retained adapters.",
+    "v": "967e9fc604bc"
+   },
+   {
+    "index": 1,
+    "name": "docs-offchain-wire-types/shared-values-and-retained-adapters-01",
+    "pause_ms": 400,
+    "text": "Singular.Registry.Types remains a facade for shared proof steps, edge ordinals, output references and generic adapter codecs. Public-history readers, recovery adapters and synthetic library tests still use these representations. Decoding a historical record does not establish support for its former validator or command.",
+    "v": "e023285ae701"
+   },
+   {
+    "index": 2,
+    "name": "docs-offchain-wire-types/shared-values-and-retained-adapters-02",
+    "pause_ms": 400,
+    "text": "The shared family has separate owners for primitive values, proofs and records. This diagram groups those responsibilities; the generated reference provides the exact module imports and signatures.",
+    "v": "f98b2e717a32"
    },
    {
     "index": 3,
-    "name": "docs-offchain-wire-types/source-03",
-    "pause_ms": 300,
-    "text": "Owners: Singular.Registry.Wire.Primitive, Singular.Registry.Wire.Request, Singular.Registry.Wire.State, Singular.Registry.Wire.Proof, Singular.Registry.Wire.Redeemer",
-    "v": "57d9646bcd7d"
-   },
-   {
-    "index": 4,
-    "name": "docs-offchain-wire-types/source-04",
+    "name": "docs-offchain-wire-types/shared-values-and-retained-adapters-03",
     "pause_ms": 400,
-    "text": "The fold owners behind their facade are described in Who owns a registry fold; the wider builder map is in Builder and blueprint modules; the complete module list of this reference is in Off-chain API reference.",
-    "v": "c4d203fe3504"
-   }
-  ],
-  "the-flow-a-wire-value-travels": [
-   {
-    "index": 0,
-    "name": "docs-offchain-wire-types/the-flow-a-wire-value-travels-00",
-    "pause_ms": 500,
-    "text": "The flow a wire value travels.",
-    "v": "c0afcc25bcb5"
-   },
-   {
-    "index": 1,
-    "name": "docs-offchain-wire-types/the-flow-a-wire-value-travels-01",
-    "pause_ms": 400,
-    "text": "A wire value is born on chain: the Aiken source defines the datum and redeemer shapes, the committed vector golden freezes them across languages, and each Haskell owner transcribes one family of them beside its hand-written codecs. The facade changes nothing — it lends the five owners its import path. Callers build transactions through it, the cage reads the same bytes back through its own Aiken decoders, and executing consumers observe the decoded values on the other side. A change to any Aiken shape is therefore not a Haskell edit at all: it starts in the design flow, moves the Aiken source and the golden vectors first, and only then lands in the owning module.",
-    "v": "60d980acba07"
-   }
-  ],
-  "the-story-this-serves": [
-   {
-    "index": 0,
-    "name": "docs-offchain-wire-types/the-story-this-serves-00",
-    "pause_ms": 500,
-    "text": "The story this serves.",
-    "v": "e604c753090a"
-   },
-   {
-    "index": 1,
-    "name": "docs-offchain-wire-types/the-story-this-serves-01",
-    "pause_ms": 400,
-    "text": "As a registry integrator, I import Singular.Registry.Types and build transactions with the constructors and selectors I already use; I want the same encoded bytes, the same constructor indices, the same field order and the same refund-only custody after the definitions move beside their codecs, so my signed transactions, my Aiken vectors and my conformance rows see nothing move. A contributor refactoring the wire's home owes me that.",
-    "v": "67bc65902109"
-   },
-   {
-    "index": 2,
-    "name": "docs-offchain-wire-types/the-story-this-serves-02",
-    "pause_ms": 400,
-    "text": "What the focused suite pins, both directions of every codec: a hand-typed literal Data expectation for each encoding — typed from the Aiken shapes, never produced by the codec it judges — and a hand-typed wire read back through each unsafe decoder to its hand-typed value. The retired two-field custody payload and the unused update-redeemer encoding at constructor index five are refused by the decoders, which support every constructor the wire carries — the sweep included, whose refusal is the validator's, a separate layer from the wire. The seven edge tags, their diagnostic names with the out-of-table fallback, the request's edge and deposit positions, the six-field state order and the two policy accessors are each pinned to their own field. Roundtrips run as supporting checks: a symmetric field swap inside a codec keeps every roundtrip green, which is exactly why the independent literals carry the wire.",
-    "v": "d68b3ab20eb5"
-   }
-  ],
-  "what-must-not-change": [
-   {
-    "index": 0,
-    "name": "docs-offchain-wire-types/what-must-not-change-00",
-    "pause_ms": 500,
-    "text": "What must not change.",
-    "v": "7a7ff52df8a3"
-   },
-   {
-    "index": 1,
-    "name": "docs-offchain-wire-types/what-must-not-change-01",
-    "pause_ms": 400,
-    "text": "The extraction is a representation change, not a new wire ruling. Every ToData, FromData and UnsafeFromData body moved verbatim, and each stock Show and Eq derivation moved with its type. The invariants a contributor must not move while editing an owner:",
-    "v": "c3502d94e3ad"
-   },
-   {
-    "index": 2,
-    "name": "docs-offchain-wire-types/what-must-not-change-02",
-    "pause_ms": 300,
-    "text": "Constructor indices are part of the wire: the cage datum keeps request at zero, state at one and the refund-only custody at two — appended so the first two never move — and the update redeemer keeps its five constructors, including the sweep shape the validator refuses for every party but the wire still carries.",
-    "v": "3b0445a85911"
-   },
-   {
-    "index": 3,
-    "name": "docs-offchain-wire-types/what-must-not-change-03",
-    "pause_ms": 300,
-    "text": "Field order is part of the wire: the request encodes its seven fields in the order the cage reads them, with the destination as a two-element list exactly as Aiken encodes a tuple; the state encodes its six fields root-first.",
-    "v": "3ca7cffedc00"
-   },
-   {
-    "index": 4,
-    "name": "docs-offchain-wire-types/what-must-not-change-04",
-    "pause_ms": 300,
-    "text": "The custody of an absent token is refund-only: one byte string naming the address the inserter chose. The retired shape that also carried the registry key is refused by the decoder, and no test regenerates the committed vectors.",
-    "v": "bd5c0a0eb946"
-   },
-   {
-    "index": 5,
-    "name": "docs-offchain-wire-types/what-must-not-change-05",
-    "pause_ms": 300,
-    "text": "The pinned-hook redeemer is encode-only: it encodes as an empty constructor zero and has no decoder, because nothing caller-supplied in it is trusted.",
-    "v": "217644343508"
-   },
-   {
-    "index": 6,
-    "name": "docs-offchain-wire-types/what-must-not-change-06",
-    "pause_ms": 400,
-    "text": "A contributor who needs any of these to change is not refactoring; that is a wire change, it belongs to the design flow and the ruling that moves Aiken first.",
-    "v": "1ffe6a1bcbc1"
-   }
-  ],
-  "where-common-changes-land": [
-   {
-    "index": 0,
-    "name": "docs-offchain-wire-types/where-common-changes-land-00",
-    "pause_ms": 500,
-    "text": "Where common changes land.",
-    "v": "1581062ce9e2"
-   },
-   {
-    "index": 1,
-    "name": "docs-offchain-wire-types/where-common-changes-land-01",
-    "pause_ms": 300,
-    "text": "A datum gains or loses a field, or its order changes: the owning wire module's type and codec — and never only one of the two — plus the Aiken source and the vector golden first.",
-    "v": "463d1ae20722"
-   },
-   {
-    "index": 2,
-    "name": "docs-offchain-wire-types/where-common-changes-land-02",
-    "pause_ms": 300,
-    "text": "An edge is added or its tag renumbered: Wire.Request, and the cage's edge table with it.",
-    "v": "1a61e58547e4"
-   },
-   {
-    "index": 3,
-    "name": "docs-offchain-wire-types/where-common-changes-land-03",
-    "pause_ms": 300,
-    "text": "A redeemer's shape changes: Wire.Redeemer.",
-    "v": "f344f965ee3b"
-   },
-   {
-    "index": 4,
-    "name": "docs-offchain-wire-types/where-common-changes-land-04",
-    "pause_ms": 300,
-    "text": "A new wire primitive — another hash or identifier kind: Wire.Primitive, which everything else may then read.",
-    "v": "7fb0c210bbf5"
-   },
-   {
-    "index": 5,
-    "name": "docs-offchain-wire-types/where-common-changes-land-05",
-    "pause_ms": 300,
-    "text": "A helper for building Data by hand: Wire.Primitive, where the conversion helpers live; they are deliberately not on the public facade.",
-    "v": "48babb14b596"
-   },
-   {
-    "index": 6,
-    "name": "docs-offchain-wire-types/where-common-changes-land-06",
-    "pause_ms": 300,
-    "text": "The public surface itself — a name callers import: the facade's export list, which must stay a pure re-export.",
-    "v": "34555e78cc79"
+    "text": "These generic codecs are separate from the current state and application record owners above. The shared proof and edge vocabulary also remains in use by the current trie capability. Removing obsolete transaction builders does not remove these retained callers.",
+    "v": "77cc17f0e758"
    }
   ],
   "who-owns-the-registry-wire": [
@@ -4980,8 +3815,8 @@
     "index": 1,
     "name": "docs-offchain-wire-types/who-owns-the-registry-wire-01",
     "pause_ms": 400,
-    "text": "A contributor changing what the registry puts on chain — a datum field, a redeemer shape, a proof encoding — wants to edit one module beside the codec that writes it, and have the review ask one question. Before the extraction, every datum, redeemer and domain type lived in one 877-line Types module where a custody-encoding change and an edge-name change were reviewed side by side with nothing between them. Now the wire is five focused owners behind the same public facade, and this page tells a contributor which owner their change belongs to, which way the dependencies run, what the wire may never do while it moves, and where the evidence boundary sits.",
-    "v": "712c4c615f10"
+    "text": "As a contributor changing a wire representation, you want to find the codec used by the command you are changing. The current registry state is encoded by Singular.State.Records. The current application's requests and live holdings are encoded by OpenDatum.Requests.Records.",
+    "v": "84e268fad9c0"
    }
   ]
  },
@@ -5182,93 +4017,6 @@
     "pause_ms": 400,
     "text": "A contributor changing a registry rule can find its source owner and the checks that exercise it here. The registry validator and the application request validator are compiled independently, then combined into the deployment blueprint.",
     "v": "50e0b8f20c40"
-   }
-  ]
- },
- "docs/overview.md": {
-  "names-that-must-stay-distinct": [
-   {
-    "index": 0,
-    "name": "docs-overview/names-that-must-stay-distinct-00",
-    "pause_ms": 500,
-    "text": "Names that must stay distinct.",
-    "v": "e341900d821a"
-   },
-   {
-    "index": 1,
-    "name": "docs-overview/names-that-must-stay-distinct-01",
-    "pause_ms": 400,
-    "text": "Creating a request UTxO, minting an application action token, and minting a representative NFT are different events. A transaction constructing an Update/Delete request moves the representative that already exists; it does not mint a replacement representative.",
-    "v": "241b52415252"
-   }
-  ],
-  "registry-states": [
-   {
-    "index": 0,
-    "name": "docs-overview/registry-states-00",
-    "pause_ms": 500,
-    "text": "Registry states.",
-    "v": "38b065be636b"
-   },
-   {
-    "index": 1,
-    "name": "docs-overview/registry-states-01",
-    "pause_ms": 400,
-    "text": "An absent key is available for Insert. Active means its representative NFT is outstanding, either in application custody or in a pending Update/Delete request. It does not mean the application is usable, unpaused or in any particular business state. Over permanently reserves the key with no live representative.",
-    "v": "51733a07d1a7"
-   },
-   {
-    "index": 2,
-    "name": "docs-overview/registry-states-02",
-    "pause_ms": 400,
-    "text": "Both stored values are payload-free. Application history or checkpoints needed for later application behavior must remain authenticated outside these values. No mapping of KERI close, pause or conviction to Singular operations is selected here.",
-    "v": "b5e810888dd1"
-   },
-   {
-    "index": 3,
-    "name": "docs-overview/registry-states-03",
-    "pause_ms": 400,
-    "text": "Continue with the lifecycle and certification.",
-    "v": "ce22cdd8ecf7"
-   }
-  ],
-  "responsibilities-and-terminology": [
-   {
-    "index": 0,
-    "name": "docs-overview/responsibilities-and-terminology-00",
-    "pause_ms": 500,
-    "text": "Responsibilities and terminology.",
-    "v": "82b56ce7a57e"
-   },
-   {
-    "index": 1,
-    "name": "docs-overview/responsibilities-and-terminology-01",
-    "pause_ms": 400,
-    "text": "Historical design. This page records the earlier Insert/Update/Delete design and its broader broader model successor. The active permanent permanent contract model supports only insertActive and updateTerminal. Historical tags 0, 2, 4, 5 and 6 encode refused actions, not available features. Current supported behavior (historical) describes permanent contract; archived source and evidence remain on preserve/m2/pre-m1-source-removal.",
-    "v": "b499c555586c"
-   },
-   {
-    "index": 2,
-    "name": "docs-overview/responsibilities-and-terminology-02",
-    "pause_ms": 400,
-    "text": "Singular maintains unique representative NFTs and the lifecycle of their registry keys. Applications maintain their own state and decide which application transitions are legal. MPF provides the authenticated registry data structure and proof mechanics.",
-    "v": "1e7707e6a2fb"
-   }
-  ],
-  "what-each-layer-owns": [
-   {
-    "index": 0,
-    "name": "docs-overview/what-each-layer-owns-00",
-    "pause_ms": 500,
-    "text": "What each layer owns.",
-    "v": "687abea80bac"
-   },
-   {
-    "index": 1,
-    "name": "docs-overview/what-each-layer-owns-01",
-    "pause_ms": 400,
-    "text": "Singular has no native owner, privileged requester or privileged folder. Permissionless submission does not mean arbitrary requests are valid. Applications can impose their own validation conditions; they cannot authorize bypassing Singular's NFT supply or custody rules.",
-    "v": "9183ad9261e4"
    }
   ]
  },
@@ -6350,214 +5098,73 @@
   ]
  },
  "docs/retirement.md": {
-  "archived-broader-model-retirement-evidence": [
+  "book-then-complete": [
    {
     "index": 0,
-    "name": "docs-retirement/archived-broader-model-retirement-evidence-00",
+    "name": "docs-retirement/book-then-complete-00",
     "pause_ms": 500,
-    "text": "Archived broader-model retirement evidence.",
-    "v": "f5a1105e4534"
-   }
-  ],
-  "ending-a-name": [
-   {
-    "index": 0,
-    "name": "docs-retirement/ending-a-name-00",
-    "pause_ms": 500,
-    "text": "Ending a name.",
-    "v": "e51e33844500"
+    "text": "Book, then complete.",
+    "v": "ba361c030893"
    },
    {
     "index": 1,
-    "name": "docs-retirement/ending-a-name-01",
+    "name": "docs-retirement/book-then-complete-01",
     "pause_ms": 400,
-    "text": "The current contract permits registration and permanent retirement only. The retained command now checks an unknown key and an already terminal key against real accepting controls. Absent leaves cannot be created from permanent contract genesis; their retirement refusal is a synthetic compiled-context check. The following broader-model story and receipts are archived evidence, not current deployment support. See current candidate results.",
-    "v": "3b25822616a8"
-   }
-  ],
-  "seeing-it-happen": [
-   {
-    "index": 0,
-    "name": "docs-retirement/seeing-it-happen-00",
-    "pause_ms": 500,
-    "text": "Seeing it happen.",
-    "v": "f2a73ac41d84"
-   },
-   {
-    "index": 1,
-    "name": "docs-retirement/seeing-it-happen-01",
-    "pause_ms": 400,
-    "text": "The release archive ships a command that performs the whole story against a throwaway network, from a fresh extraction with no source checkout:",
-    "v": "b6e5c51c4a2d"
+    "text": "The booking command requires the holding's controller to sign. It donates the protected deposit and moves the active token into a pending request with one termination approval, no datum and the ADA available to reward its folder. The active token is not burned at booking.",
+    "v": "67179a9884e3"
    },
    {
     "index": 2,
-    "name": "docs-retirement/seeing-it-happen-02",
+    "name": "docs-retirement/book-then-complete-02",
     "pause_ms": 400,
-    "text": "It boots a registry, books a name to a wallet, retires it, and writes what it saw to the file you name: the two transaction ids, the three registry roots, the token count going from one to zero, the exact burn, the input it came from, and the final entry. The two refusals are in there too, each beside a retirement that did work — because \"it was refused\" only means something when you can see the same machinery succeed on the next line.",
-    "v": "f19b3b040b63"
+    "text": "The fold consumes the public request, burns its approval and active token, continues the registry with the terminal leaf and pays the request's whole held value to the folder. The folder pays the transaction fee and needs no file or signature from the controller. A termination cannot be reclaimed or cancelled, and the terminal key cannot be registered again.",
+    "v": "256b30da4fd8"
    },
    {
     "index": 3,
-    "name": "docs-retirement/seeing-it-happen-03",
+    "name": "docs-retirement/book-then-complete-03",
     "pause_ms": 400,
-    "text": "Every value in that file is read back from the network or from the compiled contract. None of it is written by the command to make itself look right.",
-    "v": "6d5d77d711b3"
+    "text": "Follow the termination commands for the flags, the pending output reference and the treasury donation reported by the booking receipt. Use the holding reference returned by your latest update.",
+    "v": "73ef44829a79"
    }
   ],
-  "what-you-can-do": [
+  "permanently-terminate-a-key": [
    {
     "index": 0,
-    "name": "docs-retirement/what-you-can-do-00",
+    "name": "docs-retirement/permanently-terminate-a-key-00",
     "pause_ms": 500,
-    "text": "What you can do.",
-    "v": "39d36f4bb872"
+    "text": "Permanently terminate a key.",
+    "v": "29e06d764b7a"
    },
    {
     "index": 1,
-    "name": "docs-retirement/what-you-can-do-01",
+    "name": "docs-retirement/permanently-terminate-a-key-01",
     "pause_ms": 400,
-    "text": "Retire a name you hold. The registry takes the token back out of your wallet and burns it, and the name's entry becomes Terminal — the last state it will ever have.",
-    "v": "418a42af2ba6"
-   },
-   {
-    "index": 2,
-    "name": "docs-retirement/what-you-can-do-02",
-    "pause_ms": 400,
-    "text": "What has to be true for it to go through:",
-    "v": "aeebf907ffbe"
-   },
-   {
-    "index": 3,
-    "name": "docs-retirement/what-you-can-do-03",
-    "pause_ms": 300,
-    "text": "the registry's entry for your key reads Active;",
-    "v": "c60415e85f6f"
-   },
-   {
-    "index": 4,
-    "name": "docs-retirement/what-you-can-do-04",
-    "pause_ms": 300,
-    "text": "the transaction carries your token — the one the booking delivered — as an input for the burn to destroy;",
-    "v": "f4d0b6cf11a3"
-   },
-   {
-    "index": 5,
-    "name": "docs-retirement/what-you-can-do-05",
-    "pause_ms": 300,
-    "text": "nothing else moves under the registry's active token policy.",
-    "v": "04dd5910890b"
-   },
-   {
-    "index": 6,
-    "name": "docs-retirement/what-you-can-do-06",
-    "pause_ms": 400,
-    "text": "What comes out:",
-    "v": "2ee88e582e8e"
-   },
-   {
-    "index": 7,
-    "name": "docs-retirement/what-you-can-do-07",
-    "pause_ms": 300,
-    "text": "exactly one token destroyed, the one named by your key, and no output anywhere carries it afterwards;",
-    "v": "704706069471"
-   },
-   {
-    "index": 8,
-    "name": "docs-retirement/what-you-can-do-08",
-    "pause_ms": 300,
-    "text": "the entry reads Terminal;",
-    "v": "6c584f366eb3"
-   },
-   {
-    "index": 9,
-    "name": "docs-retirement/what-you-can-do-09",
-    "pause_ms": 300,
-    "text": "no refund, no new token, and no signature from any application at the fold.",
-    "v": "7f814f599369"
-   },
-   {
-    "index": 10,
-    "name": "docs-retirement/what-you-can-do-10",
-    "pause_ms": 400,
-    "text": "The last point is worth stating plainly: the fold asks no application to sign a retirement. The registry decides, from the entry and the token, and nothing else. What an application can do is decide who may build the request in the first place. The naming instance does exactly that: ending a name needs the committed recovery key or the retirement quorum, never the current control key alone, and the naming validator refuses any other request before it exists to be folded. Recover control and retire names on a real ledger (historical) shows that rule enforced on chain.",
-    "v": "4f6ca3089b98"
+    "text": "As a key's controller, you want to end its registration permanently. You first book a termination from its live holding. Any wallet can then complete it by folding the public request. The protected deposit goes to the treasury when you book, and the active token is burned when the request is folded.",
+    "v": "34d8d20f59b9"
    }
   ],
-  "when-it-is-refused-and-why-the-reason-matters": [
+  "refusals-and-evidence": [
    {
     "index": 0,
-    "name": "docs-retirement/when-it-is-refused-and-why-the-reason-matters-00",
+    "name": "docs-retirement/refusals-and-evidence-00",
     "pause_ms": 500,
-    "text": "When it is refused, and why the reason matters.",
-    "v": "ab1a6b0fe799"
+    "text": "Refusals and evidence.",
+    "v": "d3a2fec39c94"
    },
    {
     "index": 1,
-    "name": "docs-retirement/when-it-is-refused-and-why-the-reason-matters-01",
+    "name": "docs-retirement/refusals-and-evidence-01",
     "pause_ms": 400,
-    "text": "Three different situations look the same from outside — \"the retirement did not happen\" — and the registry keeps them apart, because the repair is different in each case:",
-    "v": "5e075574acae"
+    "text": "A missing holding, a different controller or another named registry is refused before signing. An unavailable provider answer remains unavailable; it does not establish absence or a ledger refusal.",
+    "v": "d67bdc496558"
    },
    {
     "index": 2,
-    "name": "docs-retirement/when-it-is-refused-and-why-the-reason-matters-02",
+    "name": "docs-retirement/refusals-and-evidence-02",
     "pause_ms": 400,
-    "text": "Each of these is decided against the registry's own entry, not against what the request claims about it. A request that says \"this key is active\" does not make it so, and a retirement built on that claim is refused by name rather than dying inside a proof.",
-    "v": "c252a3a4400d"
-   },
-   {
-    "index": 3,
-    "name": "docs-retirement/when-it-is-refused-and-why-the-reason-matters-03",
-    "pause_ms": 400,
-    "text": "The last row is different from the other three: under the registry's laws, an Active entry and exactly one outstanding token are the same fact, so a caller cannot actually reach that situation. It stays a guard because a guard that is never reached is cheap, and because being wrong about it would destroy nothing while claiming to.",
-    "v": "f66b2947413a"
-   }
-  ],
-  "who-this-is-for": [
-   {
-    "index": 0,
-    "name": "docs-retirement/who-this-is-for-00",
-    "pause_ms": 500,
-    "text": "Who this is for.",
-    "v": "7b92e34d5ddf"
-   },
-   {
-    "index": 1,
-    "name": "docs-retirement/who-this-is-for-01",
-    "pause_ms": 400,
-    "text": "You hold a Singular name. You booked it, the registry handed you a token that says so, and now you want it over — permanently, publicly, and in a way nobody can undo, including you.",
-    "v": "995d32fcbaea"
-   },
-   {
-    "index": 2,
-    "name": "docs-retirement/who-this-is-for-02",
-    "pause_ms": 400,
-    "text": "This page is about that one move: retirement. It is the edge the registry calls updateTerminal: it burns the active witness and leaves the key where no edge can move it again. This is the registry edge on its own; the naming instance puts a rule of its own in front of it, stated below.",
-    "v": "2731134a4a4c"
-   }
-  ],
-  "why-it-cannot-be-undone": [
-   {
-    "index": 0,
-    "name": "docs-retirement/why-it-cannot-be-undone-00",
-    "pause_ms": 500,
-    "text": "Why it cannot be undone.",
-    "v": "4e7e5b5f7552"
-   },
-   {
-    "index": 1,
-    "name": "docs-retirement/why-it-cannot-be-undone-01",
-    "pause_ms": 400,
-    "text": "Terminal is the end of the line by construction. A second retirement at the same key does not produce a smaller effect or a no-op — it produces no transaction at all, refused terminal-immutable. There is no edge out of Terminal in the registry's table, so no sequence of folds returns the name to circulation.",
-    "v": "b6ee40ef6ebd"
-   },
-   {
-    "index": 2,
-    "name": "docs-retirement/why-it-cannot-be-undone-02",
-    "pause_ms": 400,
-    "text": "That is also why the token is destroyed rather than parked somewhere: while a token exists, someone holds it, and \"who holds it\" is a question with consequences. After a retirement there is nothing to hold.",
-    "v": "c46c6f285570"
+    "text": "The consumer conformance record publishes the requirements and their evidence limits. A local builder check is not a connected ledger history. Demo 1 links the playable application journey and the release it runs.",
+    "v": "a1271a0f37d7"
    }
   ]
  },

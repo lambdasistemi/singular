@@ -5,144 +5,58 @@
       "pause": 500
     },
     {
-      "text": "A contributor changing what the registry puts on chain — a datum field, a redeemer shape, a proof encoding — wants to edit one module beside the codec that writes it, and have the review ask one question. Before the extraction, every datum, redeemer and domain type lived in one 877-line Types module where a custody-encoding change and an edge-name change were reviewed side by side with nothing between them. Now the wire is five focused owners behind the same public facade, and this page tells a contributor which owner their change belongs to, which way the dependencies run, what the wire may never do while it moves, and where the evidence boundary sits.",
+      "text": "As a contributor changing a wire representation, you want to find the codec used by the command you are changing. The current registry state is encoded by Singular.State.Records. The current application's requests and live holdings are encoded by OpenDatum.Requests.Records.",
       "pause": 400
     }
   ],
-  "the-story-this-serves": [
+  "current-command-records": [
     {
-      "text": "The story this serves.",
+      "text": "Current command records.",
       "pause": 500
     },
     {
-      "text": "As a registry integrator, I import Singular.Registry.Types and build transactions with the constructors and selectors I already use; I want the same encoded bytes, the same constructor indices, the same field order and the same refund-only custody after the definitions move beside their codecs, so my signed transactions, my Aiken vectors and my conformance rows see nothing move. A contributor refactoring the wire's home owes me that.",
+      "text": "Creation and folds use the state records. Registration, updates, termination booking and registration exits use the application records. Their owning builders construct datums and redeemers, then evaluate transactions against the corresponding compiled validators.",
       "pause": 400
     },
     {
-      "text": "What the focused suite pins, both directions of every codec: a hand-typed literal Data expectation for each encoding — typed from the Aiken shapes, never produced by the codec it judges — and a hand-typed wire read back through each unsafe decoder to its hand-typed value. The retired two-field custody payload and the unused update-redeemer encoding at constructor index five are refused by the decoders, which support every constructor the wire carries — the sweep included, whose refusal is the validator's, a separate layer from the wire. The seven edge tags, their diagnostic names with the out-of-table fallback, the request's edge and deposit positions, the six-field state order and the two policy accessors are each pinned to their own field. Roundtrips run as supporting checks: a symmetric field swap inside a codec keeps every roundtrip green, which is exactly why the independent literals carry the wire.",
-      "pause": 400
-    }
-  ],
-  "one-owner-per-wire-value": [
-    {
-      "text": "One owner per wire value.",
-      "pause": 500
-    },
-    {
-      "text": "The five owners are package-internal implementation modules of the same public library: callers keep importing the facade, and no owner imports the facade or another owner outside the arrows above — the graph is acyclic. Single ownership is a declared map, not a compiler guarantee: each original declaration and instance appears in exactly one owner in the before-and-after declaration map this extraction ships, the facade re-exports those names and defines nothing, and the Cabal stanza and the generated reference list each owner exactly once — a stray duplicate body in some other module would neither be reachable through the facade nor appear in that map. The owners' pages appear in the generated reference for the contributor's navigation while remaining non-importable by a caller.",
+      "text": "Changing a representation starts with its behavioral authority and the contract that consumes it. Constructor indices, field order and nesting are part of the wire. A Haskell codec change alone cannot establish agreement with a validator. Literal codec tests, compiled-validator tests and connected journeys check different boundaries.",
       "pause": 400
     }
   ],
-  "the-flow-a-wire-value-travels": [
+  "shared-values-and-retained-adapters": [
     {
-      "text": "The flow a wire value travels.",
+      "text": "Shared values and retained adapters.",
       "pause": 500
     },
     {
-      "text": "A wire value is born on chain: the Aiken source defines the datum and redeemer shapes, the committed vector golden freezes them across languages, and each Haskell owner transcribes one family of them beside its hand-written codecs. The facade changes nothing — it lends the five owners its import path. Callers build transactions through it, the cage reads the same bytes back through its own Aiken decoders, and executing consumers observe the decoded values on the other side. A change to any Aiken shape is therefore not a Haskell edit at all: it starts in the design flow, moves the Aiken source and the golden vectors first, and only then lands in the owning module.",
-      "pause": 400
-    }
-  ],
-  "what-must-not-change": [
-    {
-      "text": "What must not change.",
-      "pause": 500
-    },
-    {
-      "text": "The extraction is a representation change, not a new wire ruling. Every ToData, FromData and UnsafeFromData body moved verbatim, and each stock Show and Eq derivation moved with its type. The invariants a contributor must not move while editing an owner:",
+      "text": "Singular.Registry.Types remains a facade for shared proof steps, edge ordinals, output references and generic adapter codecs. Public-history readers, recovery adapters and synthetic library tests still use these representations. Decoding a historical record does not establish support for its former validator or command.",
       "pause": 400
     },
     {
-      "text": "Constructor indices are part of the wire: the cage datum keeps request at zero, state at one and the refund-only custody at two — appended so the first two never move — and the update redeemer keeps its five constructors, including the sweep shape the validator refuses for every party but the wire still carries.",
-      "pause": 300
-    },
-    {
-      "text": "Field order is part of the wire: the request encodes its seven fields in the order the cage reads them, with the destination as a two-element list exactly as Aiken encodes a tuple; the state encodes its six fields root-first.",
-      "pause": 300
-    },
-    {
-      "text": "The custody of an absent token is refund-only: one byte string naming the address the inserter chose. The retired shape that also carried the registry key is refused by the decoder, and no test regenerates the committed vectors.",
-      "pause": 300
-    },
-    {
-      "text": "The pinned-hook redeemer is encode-only: it encodes as an empty constructor zero and has no decoder, because nothing caller-supplied in it is trusted.",
-      "pause": 300
-    },
-    {
-      "text": "A contributor who needs any of these to change is not refactoring; that is a wire change, it belongs to the design flow and the ruling that moves Aiken first.",
-      "pause": 400
-    }
-  ],
-  "independent-evidence-boundaries": [
-    {
-      "text": "Independent evidence boundaries.",
-      "pause": 500
-    },
-    {
-      "text": "Three neighbors deliberately do not share this code's confidence. The Aiken validators decode with their own source, transcribed from the same accepted model — a Haskell codec that agreed with the validator by construction would catch nothing, so the cross-language vectors stay the arbiter, regenerated only by an explicit developer recipe. The vector generator exercises the encoders only. And the Conformance suite is an unchanged consumer of the facade — the wire extraction touches none of its files. Its rows are layered, not uniform: rows the chain exercised are computed from run receipts; schema and serialization observations are checked off-chain; and requirements nothing has exercised are published as uncovered rather than silently covered. The serialization row the frozen gate executes checks thirteen types against the blueprint — a narrow compatibility observation, not the full published requirement that every codec match the blueprint, which stays uncovered. The rows say what was observed, never what these codecs intended. The focused literal suite binds the wire; the executing consumers bind the journeys; neither substitutes for the other.",
-      "pause": 400
-    }
-  ],
-  "where-common-changes-land": [
-    {
-      "text": "Where common changes land.",
-      "pause": 500
-    },
-    {
-      "text": "A datum gains or loses a field, or its order changes: the owning wire module's type and codec — and never only one of the two — plus the Aiken source and the vector golden first.",
-      "pause": 300
-    },
-    {
-      "text": "An edge is added or its tag renumbered: Wire.Request, and the cage's edge table with it.",
-      "pause": 300
-    },
-    {
-      "text": "A redeemer's shape changes: Wire.Redeemer.",
-      "pause": 300
-    },
-    {
-      "text": "A new wire primitive — another hash or identifier kind: Wire.Primitive, which everything else may then read.",
-      "pause": 300
-    },
-    {
-      "text": "A helper for building Data by hand: Wire.Primitive, where the conversion helpers live; they are deliberately not on the public facade.",
-      "pause": 300
-    },
-    {
-      "text": "The public surface itself — a name callers import: the facade's export list, which must stay a pure re-export.",
-      "pause": 300
-    }
-  ],
-  "decisions-this-extraction-recorded": [
-    {
-      "text": "Decisions this extraction recorded.",
-      "pause": 500
-    }
-  ],
-  "source": [
-    {
-      "text": "Source.",
-      "pause": 500
-    },
-    {
-      "text": "The facade and the five owners, linked on this site to the generated API reference and readable in the repository at the revision you are viewing:",
+      "text": "The shared family has separate owners for primitive values, proofs and records. This diagram groups those responsibilities; the generated reference provides the exact module imports and signatures.",
       "pause": 400
     },
     {
-      "text": "Facade: Singular.Registry.Types",
-      "pause": 300
+      "text": "These generic codecs are separate from the current state and application record owners above. The shared proof and edge vocabulary also remains in use by the current trie capability. Removing obsolete transaction builders does not remove these retained callers.",
+      "pause": 400
+    }
+  ],
+  "evidence-and-navigation": [
+    {
+      "text": "Evidence and navigation.",
+      "pause": 500
     },
     {
-      "text": "Owners: Singular.Registry.Wire.Primitive, Singular.Registry.Wire.Request, Singular.Registry.Wire.State, Singular.Registry.Wire.Proof, Singular.Registry.Wire.Redeemer",
-      "pause": 300
+      "text": "The Types suite checks literal encodings and decodings. The state and application builder suites separately exercise their compiled validators. Connected journeys check transactions at the ledger boundary. The consumer record publishes the requirements still uncovered; a codec test does not close those rows.",
+      "pause": 400
     },
     {
-      "text": "The fold owners behind their facade are described in Who owns a registry fold; the wider builder map is in Builder and blueprint modules; the complete module list of this reference is in Off-chain API reference.",
+      "text": "Use the API reference to find the signatures and source for each owner. The builder guide maps construction paths, and the fold guide describes the boundary between registry state and application request rules.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "offchain-wire-types.md",
-    "sha256": "462f8fbdf038590537b83914cceeeb0b93169b9350ed78239aeb86545f247723"
+    "sha256": "c5136689f123c5d76f30cb1443186b035ba286d88dc177fdcc3105e9697316b7"
   }
 }

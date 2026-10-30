@@ -74,7 +74,10 @@ import Cardano.Ledger.TxIn (TxId, TxIn (..))
 import Singular.Application.OpenDatum.Value (openDatumApplication)
 import Singular.Registry.Application (appPin)
 import Singular.Registry.AssetName (deriveAssetName)
-import Singular.Registry.Blueprint (NamingCodes (..), applyBytesParam)
+import Singular.Registry.Blueprint
+    ( ApplicationCodes (..)
+    , applyBytesParam
+    )
 import Singular.Registry.Config (CageConfig (..), bootStateFromCfg)
 import Singular.Registry.Config.Application
     ( RegistryEconomics (..)
@@ -87,7 +90,6 @@ import Singular.Registry.LedgerProvider qualified as LP
 import Singular.Registry.StateToken (Release (..))
 import Singular.Registry.StubSession (stubSession)
 import Singular.Registry.TxBuilder.BookingFixture (codes, program)
-import Singular.Registry.TxBuilder.Edges (witnessScriptOf)
 import Singular.Registry.TxBuilder.Internal
     ( cageAddrFromCfg
     , computeScriptHash
@@ -98,6 +100,7 @@ import Singular.Registry.TxBuilder.Internal
     , toPlcData
     , txInToRef
     )
+import Singular.Registry.TxBuilder.Publication (witnessScriptOf)
 import Singular.Registry.Types
     ( CageDatum (..)
     , OnChainRoot (..)
@@ -139,7 +142,7 @@ bootEconomics =
         }
 
 bootCfg :: CageConfig
-bootCodes :: NamingCodes
+bootCodes :: ApplicationCodes
 (bootCfg, bootCodes) =
     configForApplication
         (appPin openDatumApplication)

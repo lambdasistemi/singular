@@ -56,7 +56,7 @@ import Singular.Registry.TxBuilder.BookingFixture
     , payer
     , preprodParams
     )
-import Singular.Registry.TxBuilder.Edges (publishRefScriptTx)
+import Singular.Registry.TxBuilder.Publication (publishRefScriptTx)
 
 spec :: Spec
 spec = do

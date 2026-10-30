@@ -7,7 +7,10 @@ import Cardano.Ledger.BaseTypes (Network (Testnet))
 import Data.ByteString.Short qualified as SBS
 import Data.Text qualified as T
 import Singular.Registry.Application (ApplicationPin (..))
-import Singular.Registry.Blueprint (NamingCodes (..), applyBytesParam)
+import Singular.Registry.Blueprint
+    ( ApplicationCodes (..)
+    , applyBytesParam
+    )
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Config.Application
 import Singular.Registry.Deployment (parseOutRef)
@@ -26,8 +29,8 @@ spec = pinning
 program :: SBS.ShortByteString
 program = unitProgram 2
 
-codes :: NamingCodes
-codes = NamingCodes{ncApplication = program, ncWitness = program}
+codes :: ApplicationCodes
+codes = ApplicationCodes{ncApplication = program, ncWitness = program}
 
 ref :: Char -> Int -> TxIn
 ref c i =
@@ -46,7 +49,7 @@ seedRef = ref '9' 0
 economics :: RegistryEconomics
 economics = RegistryEconomics 30_000 30_000 (Coin 1_000_000)
 
-bootWith :: ApplicationPin -> TxIn -> (CageConfig, NamingCodes)
+bootWith :: ApplicationPin -> TxIn -> (CageConfig, ApplicationCodes)
 bootWith pin seed =
     configForApplication
         pin

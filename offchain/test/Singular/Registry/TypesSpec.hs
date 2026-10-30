@@ -55,10 +55,9 @@ genTxOutRef =
 genRoot :: Gen OnChainRoot
 genRoot = OnChainRoot <$> genBS32
 
-{- | A seven-admitted-edges row index (#183). The seven admitted rows most of the time,
-and a tag outside the table some of the time: the wire is a plain
-integer, and a request the cage will refuse `edge-inadmissible` still
-has to encode and decode, or no row could ever build one.
+{- | A stable edge ordinal, including refused operations and tags outside
+the table. The generic adapter wire is an integer, so its codec must also
+round-trip values a validator would refuse.
 -}
 genEdge :: Gen Edge
 genEdge =

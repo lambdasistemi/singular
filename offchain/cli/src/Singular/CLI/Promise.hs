@@ -51,8 +51,8 @@ import Cardano.Ledger.Mary.Value
     )
 
 import Singular.Registry.Ledger (Addr, ConwayEra, TxOut)
-import Singular.Registry.TxBuilder.Edges (adaOnlyOut)
 import Singular.Registry.TxBuilder.Internal (scriptHashBytes)
+import Singular.Registry.TxBuilder.Publication (adaOnlyOut)
 import Singular.Registry.Wallet (bech32Address)
 
 -- | What a first output must hold.

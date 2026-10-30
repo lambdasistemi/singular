@@ -9,11 +9,9 @@ import Data.Either (isLeft)
 import Data.Text qualified as T
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.Ledger (Coin (..), ConwayEra)
-import Singular.Registry.LedgerProvider (Network (..))
 import Singular.Registry.Lifecycle
     ( checkExecutionLimit
     , fundingView
-    , lifecycleRequested
     )
 import Singular.Registry.SessionIO (outputsAt)
 import Singular.Registry.StubSession
@@ -21,19 +19,7 @@ import Singular.Registry.TxBuilder.Internal (addrFromKeyHashBytes)
 import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
 
 spec :: Spec
-spec = do
-    lifecycleSelection
-    executionLimit
-
-lifecycleSelection :: Spec
-lifecycleSelection = describe "lifecycle selection from the configured network" $ do
-    let at = Network
-    it "stays off on the factory devnet unless asked" $ do
-        lifecycleRequested (at 42) [] `shouldBe` False
-        lifecycleRequested (at 42) ["--lifecycle"] `shouldBe` True
-    it "turns on for any other network, asked or not" $ do
-        lifecycleRequested (at 1) [] `shouldBe` True
-        lifecycleRequested (at 764824073) ["--lifecycle"] `shouldBe` True
+spec = executionLimit
 
 executionLimit :: Spec
 executionLimit = describe "live aggregate transaction execution limit" $ do

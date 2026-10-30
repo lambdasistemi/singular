@@ -35,8 +35,8 @@ module Singular.Registry.Blueprint
       -- * Loading
     , loadBlueprint
 
-      -- * The compiled codes the four registry pins derive from
-    , NamingCodes (..)
+      -- * Supplied application and token-policy code
+    , ApplicationCodes (..)
 
       -- * Validation
     , validateData
@@ -57,7 +57,7 @@ module Singular.Registry.Blueprint
     ) where
 
 import Singular.Registry.Blueprint.Load
-    ( NamingCodes (..)
+    ( ApplicationCodes (..)
     , extractCompiledCode
     , extractScriptHash
     , loadBlueprint

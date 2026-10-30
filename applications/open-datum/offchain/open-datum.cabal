@@ -42,7 +42,6 @@ library
     Singular.Application.OpenDatum.Registration
     Singular.Application.OpenDatum.Reader
     Singular.Application.OpenDatum.Inspect
-    Singular.Application.OpenDatum.Release
     Singular.Application.OpenDatum.Requests.Booking
     Singular.Application.OpenDatum.Requests.Configuration
     Singular.Application.OpenDatum.Requests.Fold
@@ -184,7 +183,6 @@ test-suite open-datum-tests
     Singular.Application.OpenDatum.StateTokenFixture
     Singular.Application.OpenDatum.RegistryStateTokenSpec
     Singular.Application.OpenDatum.RegistryAddressSpec
-    Singular.Application.OpenDatum.BurnSourceSpec
     Singular.Application.OpenDatum.OutlaySpec
     Singular.Registry.AddressOracle
     Singular.PhaseLogFixture

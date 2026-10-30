@@ -24,13 +24,8 @@ the first three; the fourth needs the datum, so only 'resolveRegistry'
 passes it after reading the datum, and 'configForApplication' refuses it
 by name.
 
-Slice 2: the decoder reads a datum into a holding view (or names why it
-cannot); the holding rules find this registry's holding of a key among
-the outputs at the application address (refusing a foreign or duplicate
-one), release a termination (script, redeemer, recipient and amount), add
-the application's part to the fold context, and check a request's carried
-datum before an insertion is folded. The neutral value carries none of
-them; the application value fills them from the envelope and release.
+The retained holding rules identify and decode live holdings for read-only
+and recovery adapters. They do not construct a release or a registry fold.
 -}
 module Singular.Registry.Application
     ( -- * The pin
@@ -91,18 +86,16 @@ import PlutusTx.Builtins.Internal
     , BuiltinData (..)
     )
 
-import Singular.Registry.Blueprint (NamingCodes (..), applyBytesParam)
+import Singular.Registry.Blueprint
+    ( ApplicationCodes (..)
+    , applyBytesParam
+    )
 import Singular.Registry.Config (CageConfig)
 import Singular.Registry.Ledger (ConwayEra, TokenId, TxIn)
 import Singular.Registry.TxBuilder.Internal
     ( computeScriptHash
     , scriptHashBytes
     )
-import Singular.Registry.TxBuilder.Update
-    ( HolderRelease
-    , RegistryContext
-    )
-import Singular.Registry.Types (OnChainRequest)
 
 -- | How the registry's application policy is fixed.
 data ApplicationPin
@@ -159,9 +152,7 @@ naming the application. Absent on the neutral value; the open datum fills
 every field from the envelope and release.
 -}
 data HoldingRules = HoldingRules
-    { hrCheckCarried :: OnChainRequest -> Either Text PLC.Data
-    -- ^ The datum an insertion's request must carry to be folded
-    , hrFindHoldings
+    { hrFindHoldings
         :: CageConfig
         -> TokenId
         -> ByteString
@@ -177,18 +168,6 @@ data HoldingRules = HoldingRules
         -> [(TxIn, TxOut ConwayEra)]
         -> Either Text ((TxIn, TxOut ConwayEra), DecodedHolding)
     -- ^ The key's one live holding, or why there is none (foreign or duplicate)
-    , hrReleaseOf
-        :: SBS.ShortByteString
-        -> (TxIn, TxOut ConwayEra)
-        -> Either Text (TxIn, HolderRelease)
-    -- ^ How the fold spends one live output: script, redeemer, recipient, amount
-    , hrWithApplication
-        :: SBS.ShortByteString
-        -> Maybe (TxIn, TxOut ConwayEra)
-        -> [(TxIn, TxOut ConwayEra)]
-        -> RegistryContext
-        -> Either Text RegistryContext
-    -- ^ The fold context with the application's part added
     , hrRequiresToken :: Bool
     {- ^ Whether the rule counts an output as a holding of a key only when the
     output holds that key's active witness token. A reader may then ask the
@@ -249,9 +228,9 @@ applyPin
     :: ApplicationPin
     -> ByteString
     -- ^ The registry identity: state policy then state token name
-    -> NamingCodes
+    -> ApplicationCodes
     -- ^ The application and witness codes as the blueprint carries them
-    -> (SBS.ShortByteString, NamingCodes)
+    -> (SBS.ShortByteString, ApplicationCodes)
 applyPin pin registryId codes = case pin of
     PinByHash policy -> (policy, codes{ncApplication = SBS.empty})
     PinByScript _title ->

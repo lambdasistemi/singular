@@ -5,7 +5,7 @@
       "pause": 500
     },
     {
-      "text": "As a Cardano developer who knows wallets, faucets and Koios but has never used Singular, you want to watch a registry work before you read how it is built: a registry is created, a key is put in it, changed and ended, the registry refuses what it must refuse, and two people sign their writes in two different ways. Demo 1 is that play, in sixteen steps. The steps, and the programs to run them, live in a repository of their own, singular-demo. This page says what the play shows and where to play it.",
+      "text": "As a Cardano developer who knows wallets, faucets and Koios but has never used Singular, you want to watch a registry work before you read how it is built: a registry is created, a key is put in it, changed and ended, the registry refuses what it must refuse, and two people sign their writes in two different ways. Demo 1 introduces that play. The steps, and the programs to run them, live in a repository of their own, singular-demo. This page says what the play shows and where to play it.",
       "pause": 400
     }
   ],
@@ -15,15 +15,19 @@
       "pause": 500
     },
     {
-      "text": "Two people, Alice and Bob, share one registry. Its application, open datum, lets a key carry a payload that only the key's controller may replace, and keeps a deposit of 2 tADA with the key until the key is terminated.",
+      "text": "Two people, Alice and Bob, share one registry. Its application, open datum, lets a key carry a payload that only the key's controller may replace, and keeps the protected deposit with the live holding. Booking permanent termination donates that deposit to the treasury.",
       "pause": 400
     },
     {
-      "text": "The play creates the registry, books a key and folds it so that the key becomes active, updates its payload, books and folds the key's end, then rejects a request that nobody folded, reclaims a new one inside its retract window, and books and folds one more key.",
+      "text": "A registration starts as a pending request. Any wallet may fold it, making the key active and delivering its token, payload and protected deposit to the committed holding. Its controller may update the payload without spending the registry state.",
       "pause": 400
     },
     {
-      "text": "A write does not change the registry at once. It books a request, which waits until someone folds it, and any wallet may fold. A request that nobody folds within its processing window can be rejected once a second window, the retract window, has also passed; inside that second window its owner can take it back. The play walks each of these, so that you see the refusals where they happen: a reject that comes too early is refused, and so is a reclaim that comes too early.",
+      "text": "The controller books permanent termination by donating the protected deposit to the treasury and moving the active token into a pending termination request. Any wallet may fold that request, burning its approval and active token and making the key permanently terminal. The folder receives the request's held value and pays the transaction fee. A termination has no reclaim window.",
+      "pause": 400
+    },
+    {
+      "text": "A registration that nobody folds can be reclaimed by its refund address inside its reclaim window. After that window, anyone can clean it up: the protected deposit returns to the refund address and the caller receives the held value above that deposit. A reclaim outside its window and a cleanup before its window are refused. The command guide gives the flags and receipts for each operation.",
       "pause": 400
     },
     {
@@ -37,7 +41,7 @@
       "pause": 500
     },
     {
-      "text": "Every way below plays the same sixteen steps. The table lists five: the recorded run to watch, the Killercoda scenario to play in a browser, the step-by-step page to paste from, which needs the programs, and the Nix shell and the Ubuntu kit, which are two ways to get the programs. To play on your own machine, start with the step-by-step page.",
+      "text": "The demo repository records its release and the steps it supports. The table lists five entry points: the recorded run to watch, the Killercoda scenario to play in a browser, the step-by-step page to paste from, which needs the programs, and the Nix shell and the Ubuntu kit, which are two ways to get the programs. To play on your own machine, start with the step-by-step page.",
       "pause": 400
     },
     {
@@ -67,6 +71,6 @@
   ],
   "_source": {
     "file": "demo1.md",
-    "sha256": "c6ec1b0682879d1f16deafb87a5413b11c05c05f35b88fa0a38d1febbd845a8d"
+    "sha256": "886df07b26753b90c66db33ee78c48b339af686f4c761836522fe998b9a29568"
   }
 }

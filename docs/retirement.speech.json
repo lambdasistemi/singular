@@ -1,132 +1,48 @@
 {
-  "ending-a-name": [
+  "permanently-terminate-a-key": [
     {
-      "text": "Ending a name.",
+      "text": "Permanently terminate a key.",
       "pause": 500
     },
     {
-      "text": "The current contract permits registration and permanent retirement only. The retained command now checks an unknown key and an already terminal key against real accepting controls. Absent leaves cannot be created from permanent contract genesis; their retirement refusal is a synthetic compiled-context check. The following broader-model story and receipts are archived evidence, not current deployment support. See current candidate results.",
+      "text": "As a key's controller, you want to end its registration permanently. You first book a termination from its live holding. Any wallet can then complete it by folding the public request. The protected deposit goes to the treasury when you book, and the active token is burned when the request is folded.",
       "pause": 400
     }
   ],
-  "archived-broader-model-retirement-evidence": [
+  "book-then-complete": [
     {
-      "text": "Archived broader-model retirement evidence.",
-      "pause": 500
-    }
-  ],
-  "who-this-is-for": [
-    {
-      "text": "Who this is for.",
+      "text": "Book, then complete.",
       "pause": 500
     },
     {
-      "text": "You hold a Singular name. You booked it, the registry handed you a token that says so, and now you want it over — permanently, publicly, and in a way nobody can undo, including you.",
+      "text": "The booking command requires the holding's controller to sign. It donates the protected deposit and moves the active token into a pending request with one termination approval, no datum and the ADA available to reward its folder. The active token is not burned at booking.",
       "pause": 400
     },
     {
-      "text": "This page is about that one move: retirement. It is the edge the registry calls updateTerminal: it burns the active witness and leaves the key where no edge can move it again. This is the registry edge on its own; the naming instance puts a rule of its own in front of it, stated below.",
-      "pause": 400
-    }
-  ],
-  "what-you-can-do": [
-    {
-      "text": "What you can do.",
-      "pause": 500
-    },
-    {
-      "text": "Retire a name you hold. The registry takes the token back out of your wallet and burns it, and the name's entry becomes Terminal — the last state it will ever have.",
+      "text": "The fold consumes the public request, burns its approval and active token, continues the registry with the terminal leaf and pays the request's whole held value to the folder. The folder pays the transaction fee and needs no file or signature from the controller. A termination cannot be reclaimed or cancelled, and the terminal key cannot be registered again.",
       "pause": 400
     },
     {
-      "text": "What has to be true for it to go through:",
-      "pause": 400
-    },
-    {
-      "text": "the registry's entry for your key reads Active;",
-      "pause": 300
-    },
-    {
-      "text": "the transaction carries your token — the one the booking delivered — as an input for the burn to destroy;",
-      "pause": 300
-    },
-    {
-      "text": "nothing else moves under the registry's active token policy.",
-      "pause": 300
-    },
-    {
-      "text": "What comes out:",
-      "pause": 400
-    },
-    {
-      "text": "exactly one token destroyed, the one named by your key, and no output anywhere carries it afterwards;",
-      "pause": 300
-    },
-    {
-      "text": "the entry reads Terminal;",
-      "pause": 300
-    },
-    {
-      "text": "no refund, no new token, and no signature from any application at the fold.",
-      "pause": 300
-    },
-    {
-      "text": "The last point is worth stating plainly: the fold asks no application to sign a retirement. The registry decides, from the entry and the token, and nothing else. What an application can do is decide who may build the request in the first place. The naming instance does exactly that: ending a name needs the committed recovery key or the retirement quorum, never the current control key alone, and the naming validator refuses any other request before it exists to be folded. Recover control and retire names on a real ledger (historical) shows that rule enforced on chain.",
+      "text": "Follow the termination commands for the flags, the pending output reference and the treasury donation reported by the booking receipt. Use the holding reference returned by your latest update.",
       "pause": 400
     }
   ],
-  "why-it-cannot-be-undone": [
+  "refusals-and-evidence": [
     {
-      "text": "Why it cannot be undone.",
+      "text": "Refusals and evidence.",
       "pause": 500
     },
     {
-      "text": "Terminal is the end of the line by construction. A second retirement at the same key does not produce a smaller effect or a no-op — it produces no transaction at all, refused terminal-immutable. There is no edge out of Terminal in the registry's table, so no sequence of folds returns the name to circulation.",
+      "text": "A missing holding, a different controller or another named registry is refused before signing. An unavailable provider answer remains unavailable; it does not establish absence or a ledger refusal.",
       "pause": 400
     },
     {
-      "text": "That is also why the token is destroyed rather than parked somewhere: while a token exists, someone holds it, and \"who holds it\" is a question with consequences. After a retirement there is nothing to hold.",
-      "pause": 400
-    }
-  ],
-  "when-it-is-refused-and-why-the-reason-matters": [
-    {
-      "text": "When it is refused, and why the reason matters.",
-      "pause": 500
-    },
-    {
-      "text": "Three different situations look the same from outside — \"the retirement did not happen\" — and the registry keeps them apart, because the repair is different in each case:",
-      "pause": 400
-    },
-    {
-      "text": "Each of these is decided against the registry's own entry, not against what the request claims about it. A request that says \"this key is active\" does not make it so, and a retirement built on that claim is refused by name rather than dying inside a proof.",
-      "pause": 400
-    },
-    {
-      "text": "The last row is different from the other three: under the registry's laws, an Active entry and exactly one outstanding token are the same fact, so a caller cannot actually reach that situation. It stays a guard because a guard that is never reached is cheap, and because being wrong about it would destroy nothing while claiming to.",
-      "pause": 400
-    }
-  ],
-  "seeing-it-happen": [
-    {
-      "text": "Seeing it happen.",
-      "pause": 500
-    },
-    {
-      "text": "The release archive ships a command that performs the whole story against a throwaway network, from a fresh extraction with no source checkout:",
-      "pause": 400
-    },
-    {
-      "text": "It boots a registry, books a name to a wallet, retires it, and writes what it saw to the file you name: the two transaction ids, the three registry roots, the token count going from one to zero, the exact burn, the input it came from, and the final entry. The two refusals are in there too, each beside a retirement that did work — because \"it was refused\" only means something when you can see the same machinery succeed on the next line.",
-      "pause": 400
-    },
-    {
-      "text": "Every value in that file is read back from the network or from the compiled contract. None of it is written by the command to make itself look right.",
+      "text": "The consumer conformance record publishes the requirements and their evidence limits. A local builder check is not a connected ledger history. Demo 1 links the playable application journey and the release it runs.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "retirement.md",
-    "sha256": "414985a0cbc5d96b0413b20b5738752cd9eb977705dfc1e29282bb4229acf255"
+    "sha256": "3b722e72360eb781c0a98e9d43cf1c75bc6205fe03b66894af54e9196564fea9"
   }
 }

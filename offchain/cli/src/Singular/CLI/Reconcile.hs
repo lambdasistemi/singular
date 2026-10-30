@@ -140,7 +140,6 @@ import Singular.Registry.Ledger
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.LedgerProvider qualified as Provider
 import Singular.Registry.SessionIO qualified as Cage
-import Singular.Registry.TxBuilder.Edges (adaOnlyOut)
 import Singular.Registry.TxBuilder.Internal
     ( extractCageDatum
     , mkInlineDatum
@@ -148,6 +147,7 @@ import Singular.Registry.TxBuilder.Internal
     , toPlcData
     , txInToRef
     )
+import Singular.Registry.TxBuilder.Publication (adaOnlyOut)
 import Singular.Registry.Types
     ( CageDatum (..)
     , OnChainRoot (..)

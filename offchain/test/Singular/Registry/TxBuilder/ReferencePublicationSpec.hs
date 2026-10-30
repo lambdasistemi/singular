@@ -58,16 +58,16 @@ import Singular.Registry.StubSession
     , withTime
     )
 import Singular.Registry.SyntheticTime (syntheticTime)
-import Singular.Registry.TxBuilder.Edges
-    ( publishRefScript
-    , publishRefScriptReserving
-    , publishStateRefReserving
-    )
 import Singular.Registry.TxBuilder.Internal
     ( addrFromKeyHashBytes
     , computeScriptHash
     , scriptFromBytes
     , txInToRef
+    )
+import Singular.Registry.TxBuilder.Publication
+    ( publishRefScript
+    , publishRefScriptReserving
+    , publishStateRefReserving
     )
 import Test.Hspec
     ( Spec

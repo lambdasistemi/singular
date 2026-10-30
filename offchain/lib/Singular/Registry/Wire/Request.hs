@@ -4,7 +4,7 @@ Description : Edge vocabulary, request datum, and phase classification
 License     : Apache-2.0
 
 What a registry request names and when its age allows acting on it: the
-seven-admitted-edges row-index edge vocabulary, the request datum with its codec, and the
+stable edge-ordinal vocabulary, the request datum with its codec, and the
 accept\/retract\/reject phase classification. Reads only
 "Singular.Registry.Wire.Primitive"; nothing here is importable by a
 caller — the public surface is the "Singular.Registry.Types" facade.
@@ -49,7 +49,7 @@ import Singular.Registry.Wire.Primitive
     , unD
     )
 
-{- | The seven-admitted-edges row index a request names (#183, Lean @Request.edge@,
+{- | The stable edge ordinal a request names (#183, Lean @Request.edge@,
 Aiken @lib\/edgeInsertAbsent@ … @edgeWitnessTerminal@).
 
 An edge names its own leaf bytes, so no value bytes travel with a
@@ -121,7 +121,7 @@ data OnChainRequest = OnChainRequest
     , requestKey :: !ByteString
     -- ^ Trie key to operate on
     , requestEdge :: !Edge
-    {- ^ The seven-admitted-edges row index this request names (#183). The edge names the
+    {- ^ The stable edge ordinal this request names (#183). The edge names the
     trie move and its leaf bytes; no value bytes travel here.
     -}
     , requestDeposit :: !Integer

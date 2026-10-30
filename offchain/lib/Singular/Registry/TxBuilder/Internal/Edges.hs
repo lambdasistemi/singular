@@ -19,7 +19,7 @@ This is the edges-and-binding owner extracted from
 it and is its only intended consumer surface.
 -}
 module Singular.Registry.TxBuilder.Internal.Edges
-    ( -- * Registry-mode edges (#157 seven-admitted-edges)
+    ( -- * Stable edge encodings
       leafAbsent
     , leafActive
     , leafTerminal
@@ -84,7 +84,7 @@ import Singular.Registry.Types
     )
 
 -- ---------------------------------------------------------
--- Registry-mode edges (#157 seven-admitted-edges)
+-- Stable edge encodings
 -- ---------------------------------------------------------
 
 {- | The three leaf states the registry admits (#157 three-state-leaf-codec). Requests

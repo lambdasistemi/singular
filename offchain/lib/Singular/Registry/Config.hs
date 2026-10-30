@@ -1,10 +1,9 @@
 {- |
 Module      : Singular.Registry.Config
-Description : Configuration for cage transaction builders
+Description : Configuration for shared registry adapters
 License     : Apache-2.0
 
-Configuration record for the cage transaction
-builders. Holds the global state PlutusV3 script
+Configuration record for shared registry identity and history adapters. Holds the global state PlutusV3 script
 bytes, the unapplied request validator bytes, the
 state script hash, the seed @OutputReference@ used
 by boot minting, default token parameters, and
@@ -30,8 +29,7 @@ import Singular.Registry.Types
     , OnChainTxOutRef
     )
 
-{- | Configuration for the cage script transaction
-builders.
+{- | Configuration for the shared registry adapters.
 
 The 'cageScriptBytes' field holds the raw
 flat-encoded global state UPLC script. The
@@ -87,7 +85,7 @@ empty trie root, configured economics, and the two pinned policies the
 six-field datum carries. Each of the two comes from the config, which
 derives it from the two partitions' `script-identity.json` for the registry
 identity this boot is about to create — the application policy from the
-naming application script, the active witness policy from
+supplied application script, the active witness policy from
 `witness(kind, registry)` applied at kind 1. Nothing here is a
 literal or a placeholder, and the conformance rows round-trip both
 through this datum.

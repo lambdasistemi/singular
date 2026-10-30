@@ -20,6 +20,7 @@ module Singular.Application.OpenDatum.Value
 
       -- * The value
     , openDatumApplication
+    , liveEnvelope
     ) where
 
 import Data.Bifunctor (first)
@@ -29,9 +30,16 @@ import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Short qualified as SBS
 import Data.Text qualified as T
 
-import Cardano.Ledger.Api.Tx.Out (TxOut)
+import Cardano.Ledger.Api.Tx.Out (TxOut, datumTxOutL, valueTxOutL)
+import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
+import Cardano.Ledger.Plutus.Data
+    ( Data (..)
+    , Datum (..)
+    , binaryDataToData
+    )
 import Cardano.Ledger.TxIn (TxIn)
-import PlutusCore.Data qualified as PLC
+import Data.Map.Strict qualified as Map
+import Lens.Micro ((^.))
 
 import Singular.Application.OpenDatum.Envelope
     ( Control (..)
@@ -43,12 +51,6 @@ import Singular.Application.OpenDatum.Envelope
     , envelopeToData
     , envelopeVersion
     , registryBytes
-    )
-import Singular.Application.OpenDatum.Release
-    ( heldOf
-    , liveEnvelope
-    , releaseOf
-    , withApplication
     )
 import Singular.Registry.Application
     ( Application (..)
@@ -63,8 +65,10 @@ import Singular.Registry.Ledger
     , ConwayEra
     , TokenId (..)
     )
-import Singular.Registry.TxBuilder.Internal (scriptHashBytes)
-import Singular.Registry.Types (OnChainRequest (..))
+import Singular.Registry.TxBuilder.Internal
+    ( policyIdFromPin
+    , scriptHashBytes
+    )
 
 -- | Which of the two entry points of the application a registry runs.
 data Mode = Open | Closed
@@ -99,13 +103,8 @@ mkApplication title =
         , appHolding =
             Just
                 HoldingRules
-                    { hrCheckCarried = first T.pack . checkCarried
-                    , hrFindHoldings = findHoldings
+                    { hrFindHoldings = findHoldings
                     , hrLiveOutputFor = liveOutputFor
-                    , hrReleaseOf = \applied pair ->
-                        first T.pack (releaseOf applied pair)
-                    , hrWithApplication = \applied reference live ctx ->
-                        first T.pack (withApplication applied reference live ctx)
                     , hrRequiresToken = True
                     }
         }
@@ -131,19 +130,6 @@ holdingOf e =
             , dhPayload = envPayload e
             , dhDatumJson = dataToJson datum
             }
-
--- | The datum an insertion's request must carry: the envelope itself.
-checkCarried :: OnChainRequest -> Either String PLC.Data
-checkCarried req = case snd (requestDestination req) of
-    Nothing ->
-        Left
-            "the insertion's request carries no envelope: its delivered output would hold none"
-    Just datum ->
-        case envelopeFromData datum of
-            Left why ->
-                Left
-                    ("the envelope the insertion's request carries cannot be read: " <> why)
-            Right _ -> Right datum
 
 {- | This registry's holdings of a key among the outputs at the application
 address: an envelope of version 1 naming this registry's full state asset,
@@ -193,3 +179,20 @@ liveOutputFor cfg tid key outs =
                 )
   where
     hex = T.pack . BC.unpack . B16.encode
+
+-- | The envelope a live output carries inline, or why it carries none.
+liveEnvelope :: TxOut ConwayEra -> Either String Envelope
+liveEnvelope out = case out ^. datumTxOutL of
+    Datum bd ->
+        let Data d = binaryDataToData bd
+        in  envelopeFromData d
+    _ -> Left "the live output carries no inline datum"
+
+-- | How many of its own key's active token a live output holds.
+heldOf :: Control -> TxOut ConwayEra -> Integer
+heldOf c out = case out ^. valueTxOutL of
+    MaryValue _ (MultiAsset m) ->
+        maybe
+            0
+            (Map.findWithDefault 0 (AssetName (SBS.toShort (ctlKey c))))
+            (Map.lookup (policyIdFromPin (SBS.toShort (ctlActivePolicy c))) m)

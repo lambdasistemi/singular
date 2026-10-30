@@ -1,120 +1,51 @@
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-{- | Funding and evaluation for the public-node lifecycle. The devnet row
-suites keep their own fixtures; these helpers never submit a refusal probe.
+{- |
+Module      : Singular.Registry.Lifecycle
+Description : Shared fee bounds, reserved funding views and execution limits
+License     : Apache-2.0
+
+Pure fee and execution bounds, and a session adapter withholding reserved
+funding outputs. These helpers construct and submit no registry transaction.
 -}
 module Singular.Registry.Lifecycle
-    ( lifecycleRequested
-    , protocolFeeReserve
-    , minimumCoin
-    , fundedOutput
-    , collateralOutput
-    , requestLockedCoin
-    , sizedOutput
-    , verifyLifecycleBudget
-    , fundingRequirement
-    , fundLifecycle
+    ( protocolFeeReserve
     , fundingView
     , checkExecutionLimit
-    , prepareLifecycleTx
     ) where
 
-import Control.Monad (unless)
-import Data.ByteString (ByteString)
-import Data.Foldable (toList)
-import Data.List (sortOn)
-import Data.Map.Strict qualified as Map
-import Data.Ord (Down (..))
-import Data.Sequence.Strict qualified as StrictSeq
-import Data.Set qualified as Set
-import Lens.Micro ((&), (.~), (^.))
-
-import Cardano.Ledger.Address (Addr)
 import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
 import Cardano.Ledger.Api.PParams
-    ( ppCollateralPercentageL
-    , ppMaxTxExUnitsL
+    ( ppMaxTxExUnitsL
     , ppMaxTxSizeL
     , ppTxFeePerByteL
     )
 import Cardano.Ledger.Api.Scripts.Data (Data (..))
-import Cardano.Ledger.Api.Tx
-    ( bodyTxL
-    , estimateMinFeeTx
-    , mkBasicTx
-    , txIdTx
-    , witsTxL
-    )
-import Cardano.Ledger.Api.Tx.Body
-    ( feeTxBodyL
-    , mkBasicTxBody
-    , outputsTxBodyL
-    , scriptIntegrityHashTxBodyL
-    )
-import Cardano.Ledger.Api.Tx.In (TxIn (..))
+import Cardano.Ledger.Api.Tx (estimateMinFeeTx, mkBasicTx, witsTxL)
+import Cardano.Ledger.Api.Tx.Body (mkBasicTxBody)
 import Cardano.Ledger.Api.Tx.Out
     ( TxOut
-    , coinTxOutL
-    , datumTxOutL
-    , getMinCoinTxOut
-    , mkBasicTxOut
     , referenceScriptTxOutL
     , valueTxOutL
     )
 import Cardano.Ledger.Api.Tx.Wits (Redeemers (..), rdmrsTxWitsL)
-import Cardano.Ledger.BaseTypes (StrictMaybe (..), TxIx (..))
+import Cardano.Ledger.BaseTypes (StrictMaybe (..))
 import Cardano.Ledger.Coin (CoinPerByte (..))
 import Cardano.Ledger.Compactible (fromCompact)
 import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
 import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
 import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
-import Cardano.Tx.Balance
-    ( BalanceResult (..)
-    , balanceFeeLoop
-    , balanceTx
-    , refScriptsSize
-    )
-import Cardano.Tx.Ledger (ConwayTx)
+import Cardano.Tx.Balance (refScriptsSize)
+import Data.Map.Strict qualified as Map
+import Data.Set qualified as Set
+import Lens.Micro ((&), (.~), (^.))
 import PlutusLedgerApi.V3 qualified as PLC
-
-import Singular.Registry.Capabilities (Capabilities (..))
-import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Evidence (Evidenced (..), NoWitness)
-import Singular.Registry.Ledger
-    ( Coin (..)
-    , ConwayEra
-    , PParams
-    , TokenId
-    )
+import Singular.Registry.Ledger (Coin (..), ConwayEra, PParams, TxIn)
 import Singular.Registry.LedgerProvider
-    ( Network (..)
-    , OutputQuery (..)
+    ( OutputQuery (..)
     , Session (..)
-    , SubmitResult (..)
     )
-import Singular.Registry.SessionIO (outputsAt, parameters, withLatest)
-import Singular.Registry.SessionIO qualified as Services
-import Singular.Registry.Signing (signTx, signedTx)
-import Singular.Registry.TxBuilder.Internal.Identity
-    ( mkInlineDatum
-    , mkRequestDatum
-    , requestAddrFromCfg
-    )
-import Singular.Registry.TxBuilder.Internal.Lookup
-    ( computeScriptIntegrity
-    )
-import Singular.Registry.TxBuilder.Request (requestLockedAda)
-import Singular.Registry.Types (Edge)
-import Singular.Registry.Wallet (Wallet (..))
-
-{- | Public external nodes use the lifecycle automatically: a chain point
-on a network other than the factory devnet (network magic 42). The
-explicit flag also exercises that path on the devnet.
--}
-lifecycleRequested :: Network -> [String] -> Bool
-lifecycleRequested (Network magic) args =
-    "--lifecycle" `elem` args || magic /= 42
 
 {- | A funding allowance, not the fee charged: one maximum-size transaction,
 the live aggregate execution limit, and the actual reference scripts.
@@ -142,109 +73,6 @@ protocolFeeReserve pp refs =
         Coin perByte = fromCompact compactPerByte
     in  Coin (measured + perByte * fromIntegral (pp ^. ppMaxTxSizeL))
 
--- | Ten percent above the live minimum, recomputed with the final coin width.
-minimumCoin :: PParams ConwayEra -> TxOut ConwayEra -> Coin
-minimumCoin pp out =
-    let Coin first = getMinCoinTxOut pp out
-        Coin final =
-            getMinCoinTxOut
-                pp
-                (out & coinTxOutL .~ Coin ((first * 110 + 99) `div` 100))
-    in  Coin ((final * 110 + 99) `div` 100)
-
--- | Only the change and live fee allowance are added to actual deposits.
-fundedOutput
-    :: PParams ConwayEra
-    -> [(TxIn, TxOut ConwayEra)]
-    -> Addr
-    -> Coin
-    -> TxOut ConwayEra
-fundedOutput pp refs addr deposit =
-    let probe = mkBasicTxOut addr (MaryValue (Coin 0) mempty)
-    in  probe
-            & coinTxOutL
-                .~ ( deposit
-                        <> protocolFeeReserve pp refs
-                        <> minimumCoin pp probe
-                        <> minimumCoin pp probe
-                   )
-
-collateralOutput
-    :: PParams ConwayEra
-    -> [(TxIn, TxOut ConwayEra)]
-    -> Addr
-    -> TxOut ConwayEra
-collateralOutput pp refs addr =
-    let Coin fee = protocolFeeReserve pp refs
-        probe = mkBasicTxOut addr (MaryValue (Coin 0) mempty)
-        collateral =
-            Coin
-                ((fee * fromIntegral (pp ^. ppCollateralPercentageL) + 99) `div` 100)
-    in  probe & coinTxOutL .~ max (minimumCoin pp probe) collateral
-
-sizedOutput
-    :: Bool -> PParams ConwayEra -> TxOut ConwayEra -> TxOut ConwayEra
-sizedOutput False _ out = out
-sizedOutput True pp out = out & coinTxOutL .~ minimumCoin pp out
-
-{- | The lovelace one request output must lock: the tip plus the
-deposit the fold returns. Named for what it locks, not for the datum
-field, which is the deposit alone (#183).
--}
-requestLockedCoin
-    :: PParams ConwayEra
-    -> CageConfig
-    -> TokenId
-    -> Addr
-    -> ByteString
-    -> Edge
-    -> Integer
-    -> Coin
-requestLockedCoin pp cfg tok addr spelling edge now =
-    let draft =
-            mkBasicTxOut
-                (requestAddrFromCfg cfg tok (network cfg))
-                (MaryValue (Coin 0) mempty)
-                & datumTxOutL
-                    .~ mkInlineDatum (mkRequestDatum tok addr spelling edge 1000000 now)
-    in  requestLockedAda
-            pp
-            draft
-            (mkBasicTxOut addr (MaryValue (Coin 0) mempty))
-            1000000
-
-{- | Connected-fold builders already balance node-evaluated budgets. Check
-their aggregate before signing without changing semantic refund outputs.
--}
-verifyLifecycleBudget
-    :: Bool -> PParams ConwayEra -> ConwayTx -> IO ()
-verifyLifecycleBudget False _ _ = pure ()
-verifyLifecycleBudget True pp tx = do
-    let Redeemers redeemers = tx ^. witsTxL . rdmrsTxWitsL
-    total <-
-        either
-            fail
-            pure
-            ( checkExecutionLimit
-                (pp ^. ppMaxTxExUnitsL)
-                (map snd (Map.elems redeemers))
-            )
-    putStrLn
-        ( "lifecycle connected budget: "
-            <> show total
-            <> "; fee="
-            <> show (tx ^. bodyTxL . feeTxBodyL)
-        )
-
-fundingRequirement
-    :: Addr -> PParams ConwayEra -> [TxOut ConwayEra] -> Coin
-fundingRequirement address pp outs =
-    let Coin fees = protocolFeeReserve pp []
-        Coin change =
-            minimumCoin pp (mkBasicTxOut address (MaryValue (Coin 0) mempty))
-    in  Coin
-            (sum [c | o <- outs, let { Coin c = o ^. coinTxOutL }] + fees + change)
-
 -- | Keep request funding away from references and inputs reserved for later steps.
 fundingView :: [TxIn] -> Session NoWitness IO -> Session NoWitness IO
 fundingView reserved v =
@@ -263,68 +91,6 @@ fundingView reserved v =
                  in  Map.null assets
                )
 
--- | Fund exactly the requested actors, then return the confirmed output references.
-fundLifecycle
-    :: Wallet
-    -> Capabilities NoWitness IO
-    -> [TxOut ConwayEra]
-    -> IO [(TxIn, TxOut ConwayEra)]
-fundLifecycle wallet caps outs = do
-    unsigned <- withLatest (capReads caps) $ \v -> fundingTx wallet v outs
-    let signed = signTx (walletSignKey wallet) unsigned
-        tx = signedTx signed
-    capSubmit caps signed >>= \case
-        SubmitAccepted _ -> pure ()
-        SubmitRefused reason -> fail ("lifecycle funding rejected: " <> show reason)
-        SubmitFailed reason -> fail ("lifecycle funding answer unavailable: " <> show reason)
-        SubmitWrongNetwork wanted actual ->
-            fail ("lifecycle funding wrong network: " <> show (wanted, actual))
-    capConfirm caps tx
-    putStrLn ("lifecycle funding confirmed: " <> show (txIdTx tx))
-    pure
-        [ (TxIn (txIdTx tx) (TxIx (fromIntegral i)), o)
-        | (i, o) <- zip [(0 :: Int) ..] outs
-        ]
-
--- | The unsigned funding of the requested outputs, built from one view.
-fundingTx
-    :: Wallet -> Session NoWitness IO -> [TxOut ConwayEra] -> IO ConwayTx
-fundingTx fundingWallet v outs = do
-    pp <- parameters v
-    let address = walletAddr fundingWallet
-    wallet <- outputsAt (fundingView [] v) address
-    let ordinary = sortOn (Down . (^. coinTxOutL) . snd) wallet
-        Coin available = foldMap ((^. coinTxOutL) . snd) ordinary
-        Coin need = fundingRequirement address pp outs
-        pick
-            :: Integer -> [(TxIn, TxOut ConwayEra)] -> [(TxIn, TxOut ConwayEra)]
-        pick _ [] = []
-        pick remaining (u@(_, o) : rest)
-            | remaining <= 0 = []
-            | otherwise =
-                u : pick (remaining - (let Coin c = o ^. coinTxOutL in c)) rest
-    putStrLn
-        ( "lifecycle funding: requirement "
-            <> show need
-            <> " lovelace; spendable "
-            <> show available
-            <> " lovelace (reference publications excluded)"
-        )
-    unless (available >= need) $
-        fail
-            ( "lifecycle funding: requires "
-                <> show need
-                <> " lovelace, available "
-                <> show available
-            )
-    let inputs = pick need ordinary
-        draft =
-            mkBasicTx (mkBasicTxBody & outputsTxBodyL .~ StrictSeq.fromList outs)
-    either
-        (fail . show)
-        (pure . balancedTx)
-        (balanceTx pp inputs [] address draft)
-
 checkExecutionLimit :: ExUnits -> [ExUnits] -> Either String ExUnits
 checkExecutionLimit (ExUnits maxMem maxSteps) costs =
     let total@(ExUnits mem steps) = foldl add (ExUnits 0 0) costs
@@ -342,75 +108,3 @@ checkExecutionLimit (ExUnits maxMem maxSteps) costs =
                         <> ", steps="
                         <> show maxSteps
                     )
-
-{- | Evaluate before signing, replace every declared budget with the node's
-measured cost, and charge the actual fee from the final change output only.
-Re-evaluate the final fee/body until both budgets and fee are stable.
--}
-prepareLifecycleTx
-    :: Bool
-    -> Session NoWitness IO
-    -> [(TxIn, TxOut ConwayEra)]
-    -> Int
-    -> ConwayTx
-    -> IO ConwayTx
-prepareLifecycleTx False _ _ _ tx = pure tx
-prepareLifecycleTx True v refs witnesses initial = do
-    pp <- parameters v
-    go pp (4 :: Int) initial
-  where
-    go _ 0 _ = fail "lifecycle evaluation and fee did not converge"
-    go pp rounds tx = do
-        measured <- Services.evaluateTx v tx
-        let Redeemers original = tx ^. witsTxL . rdmrsTxWitsL
-        unless (Map.keysSet measured == Map.keysSet original) $
-            fail "lifecycle evaluation did not cover every redeemer"
-        costs <-
-            traverse
-                (either (fail . ("lifecycle evaluation refused: " <>) . show) pure)
-                measured
-        total <-
-            either
-                fail
-                pure
-                (checkExecutionLimit (pp ^. ppMaxTxExUnitsL) (Map.elems costs))
-        let patched =
-                Redeemers
-                    ( Map.mapWithKey
-                        (\purpose (dat, _) -> (dat, costs Map.! purpose))
-                        original
-                    )
-            evaluated =
-                tx
-                    & witsTxL . rdmrsTxWitsL .~ patched
-                    & bodyTxL . scriptIntegrityHashTxBodyL
-                        .~ computeScriptIntegrity pp patched
-            Coin oldFee = tx ^. bodyTxL . feeTxBodyL
-            outputs = toList (tx ^. bodyTxL . outputsTxBodyL)
-        (fixed, change) <- case reverse outputs of
-            lastOut : rest -> pure (reverse rest, lastOut)
-            [] -> fail "lifecycle balancing needs a final change output"
-        let Coin oldChange = change ^. coinTxOutL
-            mkOutputs (Coin fee) =
-                let adjusted = change & coinTxOutL .~ Coin (oldChange + oldFee - fee)
-                in  if adjusted ^. coinTxOutL < getMinCoinTxOut pp adjusted
-                        then
-                            Left
-                                "lifecycle change cannot cover the evaluated fee and minimum UTxO"
-                        else Right (StrictSeq.fromList (fixed ++ [adjusted]))
-        balanced <-
-            either
-                (fail . show)
-                pure
-                (balanceFeeLoop pp mkOutputs witnesses refs evaluated)
-        if patched == (tx ^. witsTxL . rdmrsTxWitsL)
-            && balanced ^. bodyTxL . feeTxBodyL == tx ^. bodyTxL . feeTxBodyL
-            then do
-                putStrLn
-                    ( "lifecycle evaluated: "
-                        <> show total
-                        <> "; fee="
-                        <> show (balanced ^. bodyTxL . feeTxBodyL)
-                    )
-                pure balanced
-            else go pp (rounds - 1) balanced
