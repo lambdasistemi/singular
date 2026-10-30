@@ -1,0 +1,70 @@
+{
+  "gate-for-the-10-release-from-its-installed-artifacts": [
+    {
+      "text": "Gate for the 1.0 release from its installed artifacts.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 747. This page is for the commit owner, the auditor and the reviewers: each acceptance item, the hosted job and the verbatim command that proves it, and what each pull request must show. The requirements are in the specification and the pull requests in the plan.",
+      "pause": 400
+    }
+  ],
+  "rows": [
+    {
+      "text": "Rows.",
+      "pause": 500
+    },
+    {
+      "text": "The ticket owner's table, written before the auditor's. The auditor writes its own table independently when it is seated; the ticket owner joins the two once, records both input hashes and freezes the result in the runtime root before the commit owner starts. Every command is an existing hosted command, or one this ticket adds to a hosted job and marks \"CI change in this ticket\". No Lean model is touched: the model rows join the gate only if a statement is added, and then the plan is versioned first.",
+      "pause": 400
+    },
+    {
+      "text": "Rows run scoped to what each slice can break. just ci runs once on the final candidate of each pull request, then the push; hosted checks on the pull request head are the net. Every build or test runs in a named, memory-capped scope: systemd-run --user --scope --unit=t747-<what>-<n> -p MemoryMax=24G timeout 3600 <command>.",
+      "pause": 400
+    }
+  ],
+  "rows-per-pull-request": [
+    {
+      "text": "Rows per pull request.",
+      "pause": 500
+    }
+  ],
+  "evidence-the-pull-requests-will-carry": [
+    {
+      "text": "Evidence the pull requests will carry.",
+      "pause": 500
+    },
+    {
+      "text": "per requirement and refusal: the test that executes it, the hosted step that runs it, and the run that showed it fail;",
+      "pause": 300
+    },
+    {
+      "text": "pull request 1: the serving answer for a registry of each known earlier contract, of an unknown contract and of an application upgrade, from a development network, and the chain read before and after a refused write;",
+      "pause": 300
+    },
+    {
+      "text": "pull request 2: the journey job's verdict table, with the packages' install result and the proof that the path held no Nix; the verifier's route list names the commands of the line;",
+      "pause": 300
+    },
+    {
+      "text": "pull request 3: the decision table beside its two receipts, the altered-figure failure, and the receipt's recorded date;",
+      "pause": 300
+    },
+    {
+      "text": "pull request 4: the compatibility record beside the release table, its disagreement failure, and the tag-run checklist;",
+      "pause": 300
+    },
+    {
+      "text": "the exact head each hosted job ran at, read by exact job name, for the release bundle scope job and the Linux package install job.",
+      "pause": 300
+    },
+    {
+      "text": "Left uncovered, stated in the pull requests: the tag run's publication jobs, which run only on a tag, and the conformance rows the report already lists as uncovered.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "gate.md",
+    "sha256": "f107f1defc62115dd0f649a93d7ea886345664d98be9f5119ffff4a3064673c7"
+  }
+}

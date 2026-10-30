@@ -1,0 +1,32 @@
+{
+  "modules-for-the-10-release-from-its-installed-artifacts": [
+    {
+      "text": "Modules for the 1.0 release from its installed artifacts.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 747. This page lists the components that change, who owns each, and the direction of dependency. It follows the specification and the plan.",
+      "pause": 400
+    }
+  ],
+  "changed-components": [
+    {
+      "text": "Changed components.",
+      "pause": 500
+    }
+  ],
+  "dependency-direction": [
+    {
+      "text": "Dependency direction.",
+      "pause": 500
+    },
+    {
+      "text": "The guidance sits in the neutral library because a neutral reader must be able to answer for an application it does not know; it takes the application's identity from the table and never from application code. No new component is promoted: the journey script, the bundle tools and the fill tool already exist and are used where they are.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "modules-model.md",
+    "sha256": "925c2c438f66adf8df31f7a3a984e46dcebcf829ba7a012d96bd32cab4ff54ea"
+  }
+}

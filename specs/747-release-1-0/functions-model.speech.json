@@ -1,0 +1,16 @@
+{
+  "functions-for-the-10-release-from-its-installed-artifacts": [
+    {
+      "text": "Functions for the 1.0 release from its installed artifacts.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 747. Only new or changed signatures, with explicit argument names. It follows the data model.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "2bc85cf0f8c5f086fe8bb63421cc7ea4b6c9c8bb83a1a92bab44ac19213e1891"
+  }
+}

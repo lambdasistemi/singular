@@ -1,0 +1,100 @@
+{
+  "tasks-for-the-10-release-from-its-installed-artifacts": [
+    {
+      "text": "Tasks for the 1.0 release from its installed artifacts.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 747. Grouped by pull request and slice of the plan. A task is checked only after the ticket owner accepts its slice.",
+      "pause": 400
+    }
+  ],
+  "binding": [
+    {
+      "text": "Binding.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] gate-synthesized: the ticket owner's and the auditor's gate tables joined once and frozen with both input hashes.",
+      "pause": 300
+    }
+  ],
+  "pull-request-1-recognition": [
+    {
+      "text": "Pull request 1: recognition.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] release-table-refilled: rows for the releases published since the table was filled, from their on-chain archives.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] compatible-release-guidance: one answer for a known earlier contract, an unknown contract and an application upgrade, printed by every command.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] old-registry-untouched: a write given such a registry sends nothing; the chain unchanged beside a passing control.",
+      "pause": 300
+    }
+  ],
+  "pull-request-2-installed-journey": [
+    {
+      "text": "Pull request 2: installed journey.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] bundle-journey: create, register, update, terminate, read and a discovered batch fold from the unpacked Linux bundle on a path with no Nix.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] published-release-journey: the verifier runs the same journey from the downloaded bundle of its platform.",
+      "pause": 300
+    }
+  ],
+  "pull-request-3-evidence-and-limits": [
+    {
+      "text": "Pull request 3: evidence and limits.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] decision-table: one table computed from the creation-cost and batch-limit receipts, with its altered-figure control.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] batch-receipt-current: the batch receipt measured again against parameters recorded at release time, or its date kept and stated.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] limits-stated: the four limits in the release notes and the documentation, and the check that fails when one is missing.",
+      "pause": 300
+    }
+  ],
+  "pull-request-4-record-and-preparation": [
+    {
+      "text": "Pull request 4: record and preparation.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] compatibility-record: the page computed from the release table, with its disagreement control.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] release-preparation: the release notes for 1.0, the tag-run checklist for the epic owner, the rows prepared for the release being cut.",
+      "pause": 300
+    }
+  ],
+  "close-out": [
+    {
+      "text": "Close-out.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] residuals-mapped: every limit and gap mapped to a ticket or a non-goal before the ticket is handed back.",
+      "pause": 300
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "05a2d4db3df124985dd044eee8b88f80fdae489f0b1c85916cfa8649edd5b462"
+  }
+}
