@@ -31,7 +31,7 @@
       "pause": 500
     },
     {
-      "text": "installed-journey: a journey whose commands, blueprint and development node come only from a release's published files, on a path that holds ordinary tools and no Nix, with no checkout of this repository and no credentials, runs create, register, update, terminate, read and a discovered batch fold on a development network; every verdict is computed from the network's record of the chain, and each verdict is shown failing on altered input.",
+      "text": "installed-journey: a journey whose commands, blueprint and development node come only from a release's published files, on a path that holds ordinary tools and no Nix, with no checkout of this repository and no credentials, runs create, register, update, terminate, read and a discovered batch fold on a development network; each of those six verbs is judged from the network's record of the chain and shown failing on altered input, and every other verdict of the journey is computed from the chain's record or from files and never typed.",
       "pause": 300
     },
     {
@@ -97,6 +97,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "ba2e6174a900e6aa173befce36207b8cd0f292a2bec8ed4aa86624efbb05257a"
+    "sha256": "816b16930fc321ea86e5d36366f1e28f371650e7ba943211a4f54daf01ff1897"
   }
 }
