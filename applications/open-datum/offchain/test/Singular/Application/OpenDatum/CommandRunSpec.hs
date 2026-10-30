@@ -145,6 +145,10 @@ import Singular.Application.OpenDatum.Command
     ( OpenDatumCommand (..)
     , parseOpenDatumCommand
     )
+import Singular.Application.OpenDatum.RequestWorld (inlineDatum)
+import Singular.Application.OpenDatum.Requests.Records
+    ( decodeConfiguration
+    )
 import Singular.Application.OpenDatum.Root
     ( runPackagedOpenDatumVia
     )
@@ -585,7 +589,9 @@ batchDiscoveryRows = describe "fold receipts from public discovery" $ do
             valueAt "left" (runReceipt folded) `shouldBe` Just (Aeson.Number 2)
             submissionsOf (runReceipt folded) `shouldBe` []
   where
-    -- Account for every actual policy holder, including non-request holders in the rig.
+    -- Account for every actual policy holder that is not a registry's configuration
+    -- record: a fold neither folds nor reports that record, and the datum alone
+    -- finds it, whatever the application says.
     approvalHolders rig text = do
         pending <- either fail pure (parseOutRef text)
         SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \session -> do
@@ -596,11 +602,15 @@ batchDiscoveryRows = describe "fold receipts from public discovery" $ do
             policy <- case Map.keys policies of
                 [found] -> pure found
                 _ -> fail "pending fixture must name one approval policy"
-            map (renderOutRef . fst)
-                <$> ( readOutputs session (Cage.HoldingPolicy policy)
-                        >>= either (fail . show) pure
-                    )
-    receiptSkips discovered holders = do
+            held <-
+                readOutputs session (Cage.HoldingPolicy policy)
+                    >>= either (fail . show) pure
+            let isRecord (_, out) = isJust (inlineDatum out >>= decodeConfiguration)
+                (records, requests) = partition isRecord held
+            records `shouldSatisfy` (not . null)
+            pure
+                (map (renderOutRef . fst) requests, map (renderOutRef . fst) records)
+    receiptSkips discovered (holders, records) = do
         skipped <-
             maybe
                 (fail "skip accounting absent")
@@ -610,6 +620,7 @@ batchDiscoveryRows = describe "fold receipts from public discovery" $ do
             refs = [ref | holder <- skipped, Just ref <- [textAt "reference" holder]]
         sort (folded <> refs) `shouldBe` sort holders
         length (nub (folded <> refs)) `shouldBe` length holders
+        filter (`elem` refs) records `shouldBe` []
         forM_ skipped $ \holder ->
             textAt "reason" holder
                 `shouldSatisfy` maybe False (not . null . T.unpack)

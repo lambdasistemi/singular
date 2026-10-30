@@ -426,6 +426,7 @@ standInApplication =
     Application
         { appPolicy = standInPolicy
         , appDecode = \_ _ output -> RegistrationRequest <$> decode output
+        , appIsConfiguration = const False
         , appReferences = []
         , appFold = \folded -> do
             mapM_

@@ -32,6 +32,7 @@ module Singular.Application.OpenDatum.CreationWorld
       -- * The creation of a registry
     , parameters
     , createRegistry
+    , withFreshSeed
     , requestReferences
     , created
     , holderIndex
@@ -351,6 +352,22 @@ createRegistry world = do
                     (crSeed world)
                     parameters
             )
+
+{- | The same world with another output of the booker as the creation seed, so
+a second registry can be created beside the first.
+-}
+withFreshSeed :: Creation -> Char -> IO Creation
+withFreshSeed world c = do
+    let seed = txInOf c 0
+    advanceChain (crChain world) $ \facts ->
+        facts
+            { csUTxO =
+                Map.insert
+                    seed
+                    (mkBasicTxOut (crBooker world) (inject (ada 100)))
+                    (csUTxO facts)
+            }
+    pure world{crSeed = seed}
 
 -- | The registry created and applied to the chain.
 created :: Creation -> IO RegistryIdentity

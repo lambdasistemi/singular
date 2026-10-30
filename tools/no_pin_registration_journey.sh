@@ -775,7 +775,7 @@ control "a table without the update control leaves update unconfirmed" verbs_are
   cat "$work/shared-registration.json"
   printf '\n```\n\n## Public mixed batches, read from the chain\n\n```json\n'
   cat "$work/batch-journey.json"
-  printf '\n```\n\nKey-address approval holders and malformed request datums remain unit-tested skips, not development-network claims. Valid configuration outputs are observed on this chain, named as not accepted by the application decode, and checked to remain unspent.\n\n'
+  printf '\n```\n\nKey-address approval holders and malformed request datums remain unit-tested skips, not development-network claims. Valid configuration outputs are observed on this chain, absent from the skips, and checked to remain unspent.\n\n'
   printf '## Verdicts\n\n'
   cat "$verdicts"
 } >"$work/receipt.md"

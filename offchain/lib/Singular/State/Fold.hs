@@ -203,6 +203,10 @@ data Application = Application
     , appDecode
         :: RegistryIdentity -> [ByteString] -> TxOut ConwayEra -> Maybe Request
     -- ^ The public decoding of a pending request at the application's script
+    , appIsConfiguration :: TxOut ConwayEra -> Bool
+    {- ^ Whether an output is the configuration of a registry the application
+    holds, not a request. Discovery neither folds nor reports such an output.
+    -}
     , appReferences :: [(TxIn, TxOut ConwayEra)]
     -- ^ The outputs that carry its code, already checked, when it is referenced
     , appFold :: [Folded] -> Program ()
@@ -243,7 +247,8 @@ data SkippedHolder = SkippedHolder
 
 {- | Find requests using one complete policy query. The caller supplies keys
 from the registry's public replay; neither a wallet nor a local booking record
-participates. A failed read is thrown with its provider evidence intact.
+participates. An output the application names as its configuration is in
+neither list. A failed read is thrown with its provider evidence intact.
 -}
 discoverPending
     :: Session NoWitness IO
@@ -255,15 +260,18 @@ discoverPending session application registry candidates = do
     holders <-
         readOutputs session (HoldingPolicy (appPolicy application))
             >>= either throwIO pure
-    let (skipped, pending) = partitionEithers (map classify holders)
+    let (skipped, pending) = partitionEithers (mapMaybe classify holders)
     pure (pending, skipped)
   where
-    classify (ref, output) = case output ^. addrTxOutL of
-        Addr _ KeyHashObj{} _ -> Left (SkippedHolder ref HeldAtKeyAddress)
-        _ -> case pendingFromOutput application registry candidates ref output of
-            Right pending -> Right pending
-            Left PendingOfAnotherRegistry{} -> Left (SkippedHolder ref DecodedForAnotherRegistry)
-            Left _ -> Left (SkippedHolder ref NotAcceptedByApplication)
+    classify (ref, output)
+        | Addr _ KeyHashObj{} _ <- output ^. addrTxOutL =
+            Just (Left (SkippedHolder ref HeldAtKeyAddress))
+        | appIsConfiguration application output = Nothing
+        | otherwise =
+            Just $ case pendingFromOutput application registry candidates ref output of
+                Right pending -> Right pending
+                Left PendingOfAnotherRegistry{} -> Left (SkippedHolder ref DecodedForAnotherRegistry)
+                Left _ -> Left (SkippedHolder ref NotAcceptedByApplication)
 
 {- | Fold named requests, or discover them from approvals when none is named.
 The payer funds the transaction and keeps what each registration holds above
