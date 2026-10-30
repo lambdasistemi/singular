@@ -6,7 +6,10 @@ name: Release bundles
 # from the extracted tarball; for Linux an AppImage per command and one DEB and
 # one RPM with every command, smoke-tested extracted and installed on machines
 # without Nix; for macOS the Homebrew formula, installed from a local tap on a
-# pull request. The Linux bundle also plays the Demo 1 journey. Nothing here
+# pull request. The bundle job builds and smoke-tests; the journey job after
+# it plays what it produced (#747): the registration journey from the unpacked
+# Linux bundle and from the installed Debian package on machines without Nix.
+# Nothing here
 # publishes on a pull request, a push to main or the tag run that calls this
 # one (the release workflow publishes what it uploaded); a manual run with
 # dev_channels publishes the dev channels (dev-linux assets, the singular-dev
@@ -223,10 +226,74 @@ jobs:
           usage-grep: "(commit "
           # the blueprint and the release number beside it, where the packages put them
           expect-files: /usr/share/singular/plutus.json /usr/share/singular/version.txt
-  # #707: Demo 1 played from the unpacked Linux bundle alone. Nix builds the
-  # bundle beforehand; the journey then runs the bundle's `singular`,
-  # `open-datum` and development node with the bundle's blueprint, on a PATH
-  # that holds ordinary tools and no Nix, as a user without Nix would.
+  # #747: the registration journey played from the release's own files, as a
+  # user with only the release plays it: the Linux bundle unpacked, and the
+  # Debian package installed with apt, on a machine that has no Nix. The
+  # commands, the blueprint and the development node come from those files
+  # alone, and the job shows where each resolved to; the journey and the chain
+  # view that judge them come from this checkout. Every verdict is computed from
+  # the chain's record or from files and none is typed; create, register,
+  # update, terminate, read and the discovered batch fold are each judged from
+  # the chain's record and shown failing on altered input. The verdict table,
+  # the creation measurement and the receipts are kept whatever the outcome.
+  journey:
+    needs: [changes, bundle]
+    if: needs.changes.outputs.bundles == 'true' && github.event_name != 'workflow_dispatch'
+    name: Installed journey (${{ matrix.leg }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        leg: [tarball, deb]
+    env:
+      LEG: ${{ matrix.leg }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: The machine has no Nix
+        run: |
+          if command -v nix; then echo "the machine has a nix"; exit 1; fi
+          if [ -e /nix ]; then echo "the machine has a /nix"; exit 1; fi
+          printf 'WORK=%s\n' "$RUNNER_TEMP/installed-journey-$LEG" >> "$GITHUB_ENV"
+      - name: Download the Linux bundle
+        if: matrix.leg == 'tarball'
+        uses: actions/download-artifact@v8
+        with:
+          name: release-bundle-x86_64-linux
+          path: ${{ runner.temp }}/bundle
+      - name: Download the Linux packages
+        if: matrix.leg == 'deb'
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ startsWith(github.ref, 'refs/tags/v') && 'linux-release-bundles-singular' || 'linux-dev-release-bundles-singular' }}
+          path: ${{ runner.temp }}/packages
+      - name: Install the Debian package
+        if: matrix.leg == 'deb'
+        run: |
+          set -- "$RUNNER_TEMP"/packages/singular-*-x86_64-linux.deb
+          [ "$#" -eq 1 ] && [ -f "$1" ] || { echo "expected one Debian package, found: $*"; exit 1; }
+          sudo apt-get install -y -q "$1"
+      - name: Play the journey from the release's files
+        run: |
+          case "$LEG" in
+            tarball) bash tools/installed_journey.sh tarball "$RUNNER_TEMP/bundle/singular-$(cat version.txt)-x86_64-linux.tar.gz" "$WORK" ;;
+            deb) bash tools/installed_journey.sh package "$WORK" ;;
+          esac
+      - name: Keep the verdicts, the measurement and the receipts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: installed-journey-${{ matrix.leg }}
+          path: |
+            ${{ env.WORK }}/provenance.txt
+            ${{ env.WORK }}/journey/verdicts.md
+            ${{ env.WORK }}/journey/creation-measurement.json
+            ${{ env.WORK }}/journey/receipt.md
+            ${{ env.WORK }}/journey/receipts
+          if-no-files-found: warn
+          retention-days: 7
   dev-channels:
     needs: changes
     if: github.event_name == 'workflow_dispatch' && inputs.dev_channels == 'yes'
@@ -311,7 +378,7 @@ jobs:
           tap-token: ${{ steps.tap-token.outputs.token }}
   bundles:
     name: Release bundles
-    needs: [changes, bundle, install]
+    needs: [changes, bundle, install, journey]
     if: always()
     runs-on: ubuntu-24.04
     steps:
@@ -320,23 +387,26 @@ jobs:
           SCOPE: ${{ needs.changes.result }}
           BUNDLES: ${{ needs.bundle.result }}
           INSTALL: ${{ needs.install.result }}
+          JOURNEY: ${{ needs.journey.result }}
           EVENT: ${{ github.event_name }}
         run: |
-          echo "scope=$SCOPE bundles=$BUNDLES install=$INSTALL event=$EVENT"
+          echo "scope=$SCOPE bundles=$BUNDLES install=$INSTALL journey=$JOURNEY event=$EVENT"
           [ "$SCOPE" = success ] || { echo "the scope decision did not succeed"; exit 1; }
-          for result in "$BUNDLES" "$INSTALL"; do
+          for result in "$BUNDLES" "$INSTALL" "$JOURNEY"; do
             case "$result" in
               success | skipped) ;;
               *) echo "a bundle check did not pass: $result"; exit 1 ;;
             esac
           done
-          # The install test runs with the bundles, except on a manual run,
-          # which builds no packages.
+          # The install test and the installed journey run with the bundles,
+          # except on a manual run, which builds no packages.
           if [ "$EVENT" != workflow_dispatch ]; then
             [ "$BUNDLES" = "$INSTALL" ] \
               || { echo "the install test disagrees: $BUNDLES $INSTALL"; exit 1; }
+            [ "$BUNDLES" = "$JOURNEY" ] \
+              || { echo "the installed journey disagrees: $BUNDLES $JOURNEY"; exit 1; }
           fi
           case "$BUNDLES" in
-            success) echo "every bundle and package was built and tested" ;;
+            success) echo "every bundle and package was built and tested, the journey played from the release's files" ;;
             skipped) echo "no release or packaging file changed" ;;
           esac
