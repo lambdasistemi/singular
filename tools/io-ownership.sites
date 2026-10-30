@@ -4,6 +4,7 @@ applications/open-datum/offchain/test/Singular/Application/OpenDatum/CommandRunS
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/CommandRunSpec.hs capabilities modifyIORef' 1
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/CommandRunSpec.hs capabilities readIORef 1
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/CommandRunSpec.hs capabilities writeIORef 1
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/CommandRunSpec.hs foreignRegistryRows readIORef 2
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/CommandRunSpec.hs registrationLifecycle readIORef 1
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/CommandRunSpec.hs runVia readIORef 2
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/CommandRunSpec.hs runVia writeIORef 1
@@ -13,6 +14,9 @@ applications/open-datum/offchain/test/Singular/Application/OpenDatum/PinGateSpec
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/ReaderSpec.hs historySpec modifyIORef' 1
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/ReaderSpec.hs historySpec newIORef 1
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/ReaderSpec.hs historySpec readIORef 1
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/ReaderSpec.hs inspectPolicy modifyIORef' 1
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/ReaderSpec.hs inspectPolicy newIORef 1
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/ReaderSpec.hs inspectPolicy readIORef 1
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/RecoverySpec.hs countedRecordedTransport modifyIORef' 1
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/RecoverySpec.hs countedRecordedTransport newIORef 1
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/RecoverySpec.hs countedRecordedTransport readIORef 1
@@ -209,6 +213,9 @@ offchain/test/Singular/CLI/CommandRunSpec.hs runViaApp readIORef 1
 offchain/test/Singular/CLI/CommandRunSpec.hs runViaApp writeIORef 1
 offchain/test/Singular/CLI/CommandRunSpec.hs withRigIn modifyIORef' 1
 offchain/test/Singular/CLI/CommandRunSpec.hs withRigIn newIORef 2
+offchain/test/Singular/CLI/InspectSpec.hs inspectPolicy modifyIORef' 1
+offchain/test/Singular/CLI/InspectSpec.hs inspectPolicy newIORef 1
+offchain/test/Singular/CLI/InspectSpec.hs inspectPolicy readIORef 1
 offchain/test/Singular/CLI/InspectSpec.hs spec readIORef 1
 offchain/test/Singular/CLI/InspectSpec.hs withReader IORef 1
 offchain/test/Singular/CLI/InspectSpec.hs withReader modifyIORef' 1

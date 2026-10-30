@@ -141,7 +141,9 @@ test-suite open-datum-tests
   default-language: GHC2021
   hs-source-dirs:   test test-tags
   main-is:          Main.hs
+  autogen-modules:  Paths_open_datum
   other-modules:
+    Paths_open_datum
     Singular.Application.OpenDatum.BuildersSpec
     Singular.Application.OpenDatum.Value
     Singular.Application.OpenDatum.BuildSpec

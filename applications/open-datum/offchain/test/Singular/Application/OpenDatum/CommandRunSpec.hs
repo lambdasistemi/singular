@@ -104,6 +104,7 @@ import Data.IORef
     , writeIORef
     )
 import Data.List (nub, partition, sort)
+import Data.List.NonEmpty qualified as NE
 import Data.Map.Strict qualified as Map
     ( delete
     , fromList
@@ -111,7 +112,7 @@ import Data.Map.Strict qualified as Map
     , keys
     , union
     )
-import Data.Maybe (isJust, listToMaybe)
+import Data.Maybe (fromMaybe, isJust, listToMaybe)
 import Data.Proxy (Proxy (..))
 import Data.Set qualified as Set (empty, toList)
 import Data.Text (Text)
@@ -186,7 +187,17 @@ import Singular.CLI.Trace
     , fanOut
     , renderText
     )
+import Singular.CLI.Version (releaseTag)
 import Singular.Registry.Capabilities (Capabilities (..))
+import Singular.Registry.ContractTable
+    ( Installed (..)
+    , Serving (..)
+    , loadContractTable
+    , releaseUrl
+    , servingLines
+    , servingOf
+    , tableRows
+    )
 import Singular.Registry.Deployment (parseOutRef, renderOutRef)
 import Singular.Registry.Evidence (NoWitness, unverifiedVerifier)
 import Singular.Registry.Ledger (Coin (Coin))
@@ -265,6 +276,8 @@ import Test.Hspec
     , expectationFailure
     , it
     , shouldBe
+    , shouldContain
+    , shouldNotBe
     , shouldReturn
     , shouldSatisfy
     )
@@ -275,6 +288,91 @@ spec =
     handlerRows
         >> setupRecut
         >> batchDiscoveryRows
+        >> foreignRegistryRows
+
+{- | Every write that takes an existing registry, given a registry of a contract
+the installed release does not serve: the refusal keeps its name, says which
+release serves it from the table, and the provider took no transaction.
+-}
+foreignRegistryRows :: Spec
+foreignRegistryRows =
+    describe
+        "a write given a registry the installed release does not serve"
+        $ forM_ writes
+        $ \(verb, line) ->
+            it ("refuses " <> verb <> " naming the release that serves it") $
+                withRig $ \rig -> do
+                    table <- loadContractTable >>= either (fail . T.unpack) pure
+                    let earlier = [(hash, tags) | (hash, tags) <- tableRows table, not (null tags)]
+                    length earlier `shouldSatisfy` (> 1)
+                    forM_ earlier $ \(hash, tags) -> do
+                        let token = T.unpack (hexText hash) <> "." <> replicate 64 'b'
+                            said = servingLines (ServedByEarlier (NE.fromList tags))
+                        before <- length <$> readIORef (rigSubmitted rig)
+                        refused <-
+                            runVia rig (unreachable rig) "foreign" verb (line rig token)
+                        runExit refused `shouldNotBe` ExitSuccess
+                        let reason = fromMaybe "" (textAt "reason" (runReceipt refused))
+                        T.unpack reason `shouldContain` "state-token-foreign-release"
+                        forM_ said $ \sentence ->
+                            T.unpack reason `shouldContain` T.unpack sentence
+                        length <$> readIORef (rigSubmitted rig) `shouldReturn` before
+                        servingOf table (Installed releaseTag []) hash
+                            `shouldBe` ServedByEarlier (NE.fromList tags)
+                        said `shouldSatisfy` any (T.isInfixOf (releaseUrl (last tags)))
+  where
+    unreachable rig =
+        (envOf rig)
+            { envReads = \_ _ -> fail "a refused write opened the provider"
+            , envReaderReads = \_ _ -> fail "a refused write opened the provider"
+            , envWrites = \_ _ -> fail "a refused write opened the provider"
+            }
+    pending = replicate 64 'c' <> "#0"
+    writes =
+        [ ("fold", \_ token -> ["fold", "--state-token", token])
+        ,
+            ( "insert"
+            , \rig token ->
+                [ "insert"
+                , "--state-token"
+                , token
+                , "--key"
+                , "fold"
+                , "--payload"
+                , rigDir rig </> "payload.json"
+                ]
+            )
+        ,
+            ( "update"
+            , \rig token ->
+                [ "update"
+                , "--state-token"
+                , token
+                , "--holding"
+                , replicate 64 'e' <> "#0"
+                , "--payload"
+                , rigDir rig </> "payload.json"
+                ]
+            )
+        ,
+            ( "terminate"
+            , \_ token ->
+                [ "terminate"
+                , "--state-token"
+                , token
+                , "--holding"
+                , replicate 64 'e' <> "#0"
+                ]
+            )
+        ,
+            ( "reclaim"
+            , \_ token -> ["reclaim", "--state-token", token, "--pending", pending]
+            )
+        ,
+            ( "cleanup"
+            , \_ token -> ["cleanup", "--state-token", token, "--pending", pending]
+            )
+        ]
 
 batchDiscoveryRows :: Spec
 batchDiscoveryRows = describe "fold receipts from public discovery" $ do

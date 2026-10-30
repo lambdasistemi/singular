@@ -17,13 +17,17 @@ the variable to the environment.
 -}
 module Singular.CLI.Version
     ( releaseVersion
+    , releaseTag
     , stampedEnvironment
     , builtCommit
     , commitFromSlot
     , commitSlot
     ) where
 
-import Data.Version (Version, makeVersion, versionBranch)
+import Data.Text (Text)
+import Data.Text qualified as T
+import Data.Version (Version, makeVersion, showVersion, versionBranch)
+import Paths_singular_registry qualified as Paths (version)
 
 import Singular.CLI.Options (releaseCommitVariable)
 
@@ -56,6 +60,12 @@ builtCommit = commitFromSlot commitSlot
 -}
 releaseVersion :: Version -> Version
 releaseVersion = makeVersion . take 3 . versionBranch
+
+{- | The tag of the release the commands of this package belong to: the package
+version, as release-please tags it.
+-}
+releaseTag :: Text
+releaseTag = "v" <> T.pack (showVersion (releaseVersion Paths.version))
 
 {- | The environment the identity line reads, with the commit an executable
 was stamped with. A stamped commit wins over the variable, so a person's
