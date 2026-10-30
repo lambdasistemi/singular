@@ -249,7 +249,9 @@ linux_libraries() {
   # nothing outside the bundle means something only when libraries resolved
   [ "$(printf '%s\n' "$resolved" | grep -c .)" -ge 5 ] \
     || fail standalone "the bundled loader resolved too few libraries for $program: $(tr '\n' ' ' <"$work/list.out")"
-  printf '%s\n' "$resolved" | grep -q '/libc\.so' \
+  # the list is matched without a pipe: under pipefail, `grep -q` leaving at its
+  # first match would break the pipe of a long list and fail a good bundle
+  grep -q '/libc\.so' <<<"$resolved" \
     || fail standalone "the bundled loader did not resolve the C library for $program"
   outside="$(printf '%s\n' "$resolved" | grep -v "^$bundle/$directory/" || true)"
   [ -z "$outside" ] \
