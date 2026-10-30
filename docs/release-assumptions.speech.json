@@ -1,0 +1,54 @@
+{
+  "what-this-release-assumes-and-does-not-establish": [
+    {
+      "text": "What this release assumes and does not establish.",
+      "pause": 500
+    },
+    {
+      "text": "As a reader deciding whether to rely on this release, you find here, in plain words, what the release takes for granted, what it leaves unproved, and where the evidence it does not yet have is listed.",
+      "pause": 400
+    }
+  ],
+  "what-the-release-takes-for-granted": [
+    {
+      "text": "What the release takes for granted.",
+      "pause": 500
+    },
+    {
+      "text": "The trie library's proofs are assumed sound.",
+      "pause": 400
+    },
+    {
+      "text": "The statements about the chain's history assume Cardano's rule for how scripts run, and that rule is not proved here.",
+      "pause": 400
+    }
+  ],
+  "what-the-measurements-do-not-show": [
+    {
+      "text": "What the measurements do not show.",
+      "pause": 500
+    },
+    {
+      "text": "The packaged development node cannot run the public test network's (preprod's) current protocol version, so the batch limits are evaluated under recorded protocol parameters and corroborated by the node, and are not submitted to that network.",
+      "pause": 400
+    },
+    {
+      "text": "The release decision table gives each measurement with the date of the parameters it was taken under.",
+      "pause": 400
+    }
+  ],
+  "what-remains-uncovered": [
+    {
+      "text": "What remains uncovered.",
+      "pause": 500
+    },
+    {
+      "text": "The conformance rows that remain uncovered are published on the conformance evidence page, whose count and rows are computed from the receipts.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "release-assumptions.md",
+    "sha256": "f2a9e398c9e376b19a417755f1052ef9b7cc12642a992a7653bd2b591991ccd4"
+  }
+}

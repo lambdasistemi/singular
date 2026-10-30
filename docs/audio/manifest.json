@@ -180165,6 +180165,1071 @@
     }
    ]
   },
+  "docs-release-assumptions/what-remains-uncovered-00": {
+   "audio_sha256": "2a4c4b5575a2d3aee1eaae2f554b2ddbeee3f4d9747cfe6cecfead33bf6cde6f",
+   "characters": 23,
+   "cost": 2.277e-05,
+   "duration": 1.775,
+   "index": 0,
+   "key": "7ebd8c0afb6d1dea084bc3da5bdf733f0c7c8951a988defff6bd7ecb17d161bd",
+   "page": "docs/release-assumptions.md",
+   "pause_ms": 500,
+   "section": "what-remains-uncovered",
+   "sent_text": "What remains uncovered.",
+   "text": "What remains uncovered.",
+   "words": [
+    {
+     "end": 0.287,
+     "start": 0.175,
+     "text": "What"
+    },
+    {
+     "end": 0.637,
+     "start": 0.287,
+     "text": "remains"
+    },
+    {
+     "end": 1.575,
+     "start": 0.637,
+     "text": "uncovered"
+    },
+    {
+     "end": 1.775,
+     "start": 1.575,
+     "text": "."
+    }
+   ]
+  },
+  "docs-release-assumptions/what-remains-uncovered-01": {
+   "audio_sha256": "f6b9c4961e902a40a43058ab31ef48a55ffc5ee69e7d1f06d76571c721280557",
+   "characters": 143,
+   "cost": 0.00014157,
+   "duration": 9.15,
+   "index": 1,
+   "key": "856b26a8909019aae032ab4fc4d3ccd8cfc878c8254a27425edd28f7142cf389",
+   "page": "docs/release-assumptions.md",
+   "pause_ms": 400,
+   "section": "what-remains-uncovered",
+   "sent_text": "The conformance rows that remain uncovered are published on the conformance evidence page, whose count and rows are computed from the receipts.",
+   "text": "The conformance rows that remain uncovered are published on the conformance evidence page, whose count and rows are computed from the receipts.",
+   "words": [
+    {
+     "end": 0.275,
+     "start": 0.2,
+     "text": "The"
+    },
+    {
+     "end": 0.962,
+     "start": 0.275,
+     "text": "conformance"
+    },
+    {
+     "end": 1.325,
+     "start": 0.962,
+     "text": "rows"
+    },
+    {
+     "end": 1.525,
+     "start": 1.325,
+     "text": "that"
+    },
+    {
+     "end": 2.025,
+     "start": 1.525,
+     "text": "remain"
+    },
+    {
+     "end": 2.787,
+     "start": 2.025,
+     "text": "uncovered"
+    },
+    {
+     "end": 2.963,
+     "start": 2.787,
+     "text": "are"
+    },
+    {
+     "end": 3.475,
+     "start": 2.963,
+     "text": "published"
+    },
+    {
+     "end": 3.612,
+     "start": 3.475,
+     "text": "on"
+    },
+    {
+     "end": 3.7,
+     "start": 3.612,
+     "text": "the"
+    },
+    {
+     "end": 4.375,
+     "start": 3.7,
+     "text": "conformance"
+    },
+    {
+     "end": 4.838,
+     "start": 4.375,
+     "text": "evidence"
+    },
+    {
+     "end": 5.4,
+     "start": 4.838,
+     "text": "page"
+    },
+    {
+     "end": 5.5,
+     "start": 5.4,
+     "text": ","
+    },
+    {
+     "end": 5.762,
+     "start": 5.5,
+     "text": "whose"
+    },
+    {
+     "end": 6.15,
+     "start": 5.762,
+     "text": "count"
+    },
+    {
+     "end": 6.287,
+     "start": 6.15,
+     "text": "and"
+    },
+    {
+     "end": 6.75,
+     "start": 6.287,
+     "text": "rows"
+    },
+    {
+     "end": 6.875,
+     "start": 6.75,
+     "text": "are"
+    },
+    {
+     "end": 7.425,
+     "start": 6.875,
+     "text": "computed"
+    },
+    {
+     "end": 7.588,
+     "start": 7.425,
+     "text": "from"
+    },
+    {
+     "end": 7.675,
+     "start": 7.588,
+     "text": "the"
+    },
+    {
+     "end": 8.925,
+     "start": 7.675,
+     "text": "receipts"
+    },
+    {
+     "end": 9.15,
+     "start": 8.925,
+     "text": "."
+    }
+   ]
+  },
+  "docs-release-assumptions/what-the-measurements-do-not-show-00": {
+   "audio_sha256": "de673fcfdf99fa339697afeabafbb4bc9ec2e785d0fbeb4858db93f9d3a5114d",
+   "characters": 34,
+   "cost": 3.366e-05,
+   "duration": 2.2,
+   "index": 0,
+   "key": "089f8d2742e0a0713e133ac260266eb5463ceea56b7b51dd3cfbf3df39b74cd1",
+   "page": "docs/release-assumptions.md",
+   "pause_ms": 500,
+   "section": "what-the-measurements-do-not-show",
+   "sent_text": "What the measurements do not show.",
+   "text": "What the measurements do not show.",
+   "words": [
+    {
+     "end": 0.287,
+     "start": 0.175,
+     "text": "What"
+    },
+    {
+     "end": 0.375,
+     "start": 0.287,
+     "text": "the"
+    },
+    {
+     "end": 0.85,
+     "start": 0.375,
+     "text": "measurements"
+    },
+    {
+     "end": 0.962,
+     "start": 0.85,
+     "text": "do"
+    },
+    {
+     "end": 1.212,
+     "start": 0.962,
+     "text": "not"
+    },
+    {
+     "end": 1.975,
+     "start": 1.212,
+     "text": "show"
+    },
+    {
+     "end": 2.2,
+     "start": 1.975,
+     "text": "."
+    }
+   ]
+  },
+  "docs-release-assumptions/what-the-measurements-do-not-show-01": {
+   "audio_sha256": "8c1c31f4251456961adae8212b315d3911ca006ab6a0e448be6e87a3faef6ab7",
+   "characters": 242,
+   "cost": 0.00023958,
+   "duration": 14.975,
+   "index": 1,
+   "key": "f7c11427c153b286850d8997b5634134f3c11917ccd01b7b785e81c929929ada",
+   "page": "docs/release-assumptions.md",
+   "pause_ms": 400,
+   "section": "what-the-measurements-do-not-show",
+   "sent_text": "The packaged development node cannot run the public test network's (preprod's) current protocol version, so the batch limits are evaluated under recorded protocol parameters and corroborated by the node, and are not submitted to that network.",
+   "text": "The packaged development node cannot run the public test network's (preprod's) current protocol version, so the batch limits are evaluated under recorded protocol parameters and corroborated by the node, and are not submitted to that network.",
+   "words": [
+    {
+     "end": 0.338,
+     "start": 0.225,
+     "text": "The"
+    },
+    {
+     "end": 0.85,
+     "start": 0.338,
+     "text": "packaged"
+    },
+    {
+     "end": 1.425,
+     "start": 0.85,
+     "text": "development"
+    },
+    {
+     "end": 1.7,
+     "start": 1.425,
+     "text": "node"
+    },
+    {
+     "end": 2.088,
+     "start": 1.7,
+     "text": "cannot"
+    },
+    {
+     "end": 2.425,
+     "start": 2.088,
+     "text": "run"
+    },
+    {
+     "end": 2.537,
+     "start": 2.425,
+     "text": "the"
+    },
+    {
+     "end": 2.963,
+     "start": 2.537,
+     "text": "public"
+    },
+    {
+     "end": 3.3,
+     "start": 2.963,
+     "text": "test"
+    },
+    {
+     "end": 3.925,
+     "start": 3.3,
+     "text": "network's"
+    },
+    {
+     "end": 3.975,
+     "start": 3.925,
+     "text": "("
+    },
+    {
+     "end": 4.65,
+     "start": 3.975,
+     "text": "preprod's"
+    },
+    {
+     "end": 4.725,
+     "start": 4.65,
+     "text": ")"
+    },
+    {
+     "end": 5.05,
+     "start": 4.725,
+     "text": "current"
+    },
+    {
+     "end": 5.625,
+     "start": 5.05,
+     "text": "protocol"
+    },
+    {
+     "end": 6.2,
+     "start": 5.625,
+     "text": "version"
+    },
+    {
+     "end": 6.3,
+     "start": 6.2,
+     "text": ","
+    },
+    {
+     "end": 6.475,
+     "start": 6.3,
+     "text": "so"
+    },
+    {
+     "end": 6.575,
+     "start": 6.475,
+     "text": "the"
+    },
+    {
+     "end": 6.925,
+     "start": 6.575,
+     "text": "batch"
+    },
+    {
+     "end": 7.325,
+     "start": 6.925,
+     "text": "limits"
+    },
+    {
+     "end": 7.475,
+     "start": 7.325,
+     "text": "are"
+    },
+    {
+     "end": 8.2,
+     "start": 7.475,
+     "text": "evaluated"
+    },
+    {
+     "end": 8.475,
+     "start": 8.2,
+     "text": "under"
+    },
+    {
+     "end": 9.0,
+     "start": 8.475,
+     "text": "recorded"
+    },
+    {
+     "end": 9.55,
+     "start": 9.0,
+     "text": "protocol"
+    },
+    {
+     "end": 10.275,
+     "start": 9.55,
+     "text": "parameters"
+    },
+    {
+     "end": 10.4,
+     "start": 10.275,
+     "text": "and"
+    },
+    {
+     "end": 11.175,
+     "start": 10.4,
+     "text": "corroborated"
+    },
+    {
+     "end": 11.35,
+     "start": 11.175,
+     "text": "by"
+    },
+    {
+     "end": 11.475,
+     "start": 11.35,
+     "text": "the"
+    },
+    {
+     "end": 12.075,
+     "start": 11.475,
+     "text": "node"
+    },
+    {
+     "end": 12.175,
+     "start": 12.075,
+     "text": ","
+    },
+    {
+     "end": 12.288,
+     "start": 12.175,
+     "text": "and"
+    },
+    {
+     "end": 12.375,
+     "start": 12.288,
+     "text": "are"
+    },
+    {
+     "end": 12.625,
+     "start": 12.375,
+     "text": "not"
+    },
+    {
+     "end": 13.1,
+     "start": 12.625,
+     "text": "submitted"
+    },
+    {
+     "end": 13.225,
+     "start": 13.1,
+     "text": "to"
+    },
+    {
+     "end": 13.5,
+     "start": 13.225,
+     "text": "that"
+    },
+    {
+     "end": 14.7,
+     "start": 13.5,
+     "text": "network"
+    },
+    {
+     "end": 14.975,
+     "start": 14.7,
+     "text": "."
+    }
+   ]
+  },
+  "docs-release-assumptions/what-the-measurements-do-not-show-02": {
+   "audio_sha256": "7b99be1569f5c075ea0a6ace12708d3fe0b6e2975d449525c7d35fb6b2f9671a",
+   "characters": 101,
+   "cost": 9.999e-05,
+   "duration": 6.075,
+   "index": 2,
+   "key": "c4b295c4133cf5b0cf50bb3c44023d01ffcce0407c2de1053eacf640342cbdde",
+   "page": "docs/release-assumptions.md",
+   "pause_ms": 400,
+   "section": "what-the-measurements-do-not-show",
+   "sent_text": "The release decision table gives each measurement with the date of the parameters it was taken under.",
+   "text": "The release decision table gives each measurement with the date of the parameters it was taken under.",
+   "words": [
+    {
+     "end": 0.3,
+     "start": 0.2,
+     "text": "The"
+    },
+    {
+     "end": 0.7,
+     "start": 0.3,
+     "text": "release"
+    },
+    {
+     "end": 1.2,
+     "start": 0.7,
+     "text": "decision"
+    },
+    {
+     "end": 1.663,
+     "start": 1.2,
+     "text": "table"
+    },
+    {
+     "end": 1.962,
+     "start": 1.663,
+     "text": "gives"
+    },
+    {
+     "end": 2.287,
+     "start": 1.962,
+     "text": "each"
+    },
+    {
+     "end": 2.85,
+     "start": 2.287,
+     "text": "measurement"
+    },
+    {
+     "end": 2.987,
+     "start": 2.85,
+     "text": "with"
+    },
+    {
+     "end": 3.112,
+     "start": 2.987,
+     "text": "the"
+    },
+    {
+     "end": 3.362,
+     "start": 3.112,
+     "text": "date"
+    },
+    {
+     "end": 3.438,
+     "start": 3.362,
+     "text": "of"
+    },
+    {
+     "end": 3.525,
+     "start": 3.438,
+     "text": "the"
+    },
+    {
+     "end": 4.262,
+     "start": 3.525,
+     "text": "parameters"
+    },
+    {
+     "end": 4.363,
+     "start": 4.262,
+     "text": "it"
+    },
+    {
+     "end": 4.525,
+     "start": 4.363,
+     "text": "was"
+    },
+    {
+     "end": 4.9,
+     "start": 4.525,
+     "text": "taken"
+    },
+    {
+     "end": 5.825,
+     "start": 4.9,
+     "text": "under"
+    },
+    {
+     "end": 6.075,
+     "start": 5.825,
+     "text": "."
+    }
+   ]
+  },
+  "docs-release-assumptions/what-the-release-takes-for-granted-00": {
+   "audio_sha256": "7eb93fac5c158db1b77f69172710cc72d64cf870fb30d149947f95678d81a93c",
+   "characters": 35,
+   "cost": 3.4649999999999995e-05,
+   "duration": 2.25,
+   "index": 0,
+   "key": "963144a4c73d526f20f578b63355772053b1d25bf6bb5ff469910c8ea8528f86",
+   "page": "docs/release-assumptions.md",
+   "pause_ms": 500,
+   "section": "what-the-release-takes-for-granted",
+   "sent_text": "What the release takes for granted.",
+   "text": "What the release takes for granted.",
+   "words": [
+    {
+     "end": 0.287,
+     "start": 0.175,
+     "text": "What"
+    },
+    {
+     "end": 0.375,
+     "start": 0.287,
+     "text": "the"
+    },
+    {
+     "end": 0.725,
+     "start": 0.375,
+     "text": "release"
+    },
+    {
+     "end": 1.025,
+     "start": 0.725,
+     "text": "takes"
+    },
+    {
+     "end": 1.15,
+     "start": 1.025,
+     "text": "for"
+    },
+    {
+     "end": 2.05,
+     "start": 1.15,
+     "text": "granted"
+    },
+    {
+     "end": 2.25,
+     "start": 2.05,
+     "text": "."
+    }
+   ]
+  },
+  "docs-release-assumptions/what-the-release-takes-for-granted-01": {
+   "audio_sha256": "f0f5effffdbdea6576e4fc86a7ac429f68956616b46dcd0e5249d2a387fb78ff",
+   "characters": 44,
+   "cost": 4.3559999999999996e-05,
+   "duration": 2.775,
+   "index": 1,
+   "key": "347c509cb7b72218b6ca04626a6d9546a8af1dffcc487b181ede7be0e3594d09",
+   "page": "docs/release-assumptions.md",
+   "pause_ms": 400,
+   "section": "what-the-release-takes-for-granted",
+   "sent_text": "The trie library's proofs are assumed sound.",
+   "text": "The trie library's proofs are assumed sound.",
+   "words": [
+    {
+     "end": 0.25,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.488,
+     "start": 0.25,
+     "text": "trie"
+    },
+    {
+     "end": 0.925,
+     "start": 0.488,
+     "text": "library's"
+    },
+    {
+     "end": 1.225,
+     "start": 0.925,
+     "text": "proofs"
+    },
+    {
+     "end": 1.312,
+     "start": 1.225,
+     "text": "are"
+    },
+    {
+     "end": 1.737,
+     "start": 1.312,
+     "text": "assumed"
+    },
+    {
+     "end": 2.575,
+     "start": 1.737,
+     "text": "sound"
+    },
+    {
+     "end": 2.775,
+     "start": 2.575,
+     "text": "."
+    }
+   ]
+  },
+  "docs-release-assumptions/what-the-release-takes-for-granted-02": {
+   "audio_sha256": "a9d4bbb7a954256269d09b8ec79bec218d76bc83e604bfd4c7ec5deaa3700a72",
+   "characters": 117,
+   "cost": 0.00011583,
+   "duration": 7.575,
+   "index": 2,
+   "key": "72a19cd544dbb46b9cedcb3c1423122fed563a60c327a7d473180348694c1a49",
+   "page": "docs/release-assumptions.md",
+   "pause_ms": 400,
+   "section": "what-the-release-takes-for-granted",
+   "sent_text": "The statements about the chain's history assume Cardano's rule for how scripts run, and that rule is not proved here.",
+   "text": "The statements about the chain's history assume Cardano's rule for how scripts run, and that rule is not proved here.",
+   "words": [
+    {
+     "end": 0.3,
+     "start": 0.2,
+     "text": "The"
+    },
+    {
+     "end": 0.788,
+     "start": 0.3,
+     "text": "statements"
+    },
+    {
+     "end": 1.062,
+     "start": 0.788,
+     "text": "about"
+    },
+    {
+     "end": 1.163,
+     "start": 1.062,
+     "text": "the"
+    },
+    {
+     "end": 1.55,
+     "start": 1.163,
+     "text": "chain's"
+    },
+    {
+     "end": 2.088,
+     "start": 1.55,
+     "text": "history"
+    },
+    {
+     "end": 2.55,
+     "start": 2.088,
+     "text": "assume"
+    },
+    {
+     "end": 3.162,
+     "start": 2.55,
+     "text": "Cardano's"
+    },
+    {
+     "end": 3.525,
+     "start": 3.162,
+     "text": "rule"
+    },
+    {
+     "end": 3.65,
+     "start": 3.525,
+     "text": "for"
+    },
+    {
+     "end": 3.862,
+     "start": 3.65,
+     "text": "how"
+    },
+    {
+     "end": 4.338,
+     "start": 3.862,
+     "text": "scripts"
+    },
+    {
+     "end": 4.85,
+     "start": 4.338,
+     "text": "run"
+    },
+    {
+     "end": 4.95,
+     "start": 4.85,
+     "text": ","
+    },
+    {
+     "end": 5.062,
+     "start": 4.95,
+     "text": "and"
+    },
+    {
+     "end": 5.312,
+     "start": 5.062,
+     "text": "that"
+    },
+    {
+     "end": 5.65,
+     "start": 5.312,
+     "text": "rule"
+    },
+    {
+     "end": 5.8,
+     "start": 5.65,
+     "text": "is"
+    },
+    {
+     "end": 6.062,
+     "start": 5.8,
+     "text": "not"
+    },
+    {
+     "end": 6.425,
+     "start": 6.062,
+     "text": "proved"
+    },
+    {
+     "end": 7.325,
+     "start": 6.425,
+     "text": "here"
+    },
+    {
+     "end": 7.575,
+     "start": 7.325,
+     "text": "."
+    }
+   ]
+  },
+  "docs-release-assumptions/what-this-release-assumes-and-does-not-establish-00": {
+   "audio_sha256": "5c93dde3e53c888df88d8e475f4e88adf8f8c39865a42c7e76a93c6ad479c93b",
+   "characters": 49,
+   "cost": 4.8509999999999995e-05,
+   "duration": 3.0,
+   "index": 0,
+   "key": "e1bc3fa027f8bae8423712f6927e60f6beeb01335095c678427c66995c4453c0",
+   "page": "docs/release-assumptions.md",
+   "pause_ms": 500,
+   "section": "what-this-release-assumes-and-does-not-establish",
+   "sent_text": "What this release assumes and does not establish.",
+   "text": "What this release assumes and does not establish.",
+   "words": [
+    {
+     "end": 0.3,
+     "start": 0.175,
+     "text": "What"
+    },
+    {
+     "end": 0.5,
+     "start": 0.3,
+     "text": "this"
+    },
+    {
+     "end": 0.875,
+     "start": 0.5,
+     "text": "release"
+    },
+    {
+     "end": 1.413,
+     "start": 0.875,
+     "text": "assumes"
+    },
+    {
+     "end": 1.513,
+     "start": 1.413,
+     "text": "and"
+    },
+    {
+     "end": 1.638,
+     "start": 1.513,
+     "text": "does"
+    },
+    {
+     "end": 1.788,
+     "start": 1.638,
+     "text": "not"
+    },
+    {
+     "end": 2.8,
+     "start": 1.788,
+     "text": "establish"
+    },
+    {
+     "end": 3.0,
+     "start": 2.8,
+     "text": "."
+    }
+   ]
+  },
+  "docs-release-assumptions/what-this-release-assumes-and-does-not-establish-01": {
+   "audio_sha256": "e8db6e5a643706545ffa4e2a694f0b845e8da659c7ef06830341e1c1aa39cfbb",
+   "characters": 200,
+   "cost": 0.000198,
+   "duration": 12.125,
+   "index": 1,
+   "key": "3fc59e35d8aca05c39489b024dc966b9e0fba8cfff08967755cf1e9e96e5b1ea",
+   "page": "docs/release-assumptions.md",
+   "pause_ms": 400,
+   "section": "what-this-release-assumes-and-does-not-establish",
+   "sent_text": "As a reader deciding whether to rely on this release, you find here, in plain words, what the release takes for granted, what it leaves unproved, and where the evidence it does not yet have is listed.",
+   "text": "As a reader deciding whether to rely on this release, you find here, in plain words, what the release takes for granted, what it leaves unproved, and where the evidence it does not yet have is listed.",
+   "words": [
+    {
+     "end": 0.4,
+     "start": 0.25,
+     "text": "As"
+    },
+    {
+     "end": 0.512,
+     "start": 0.4,
+     "text": "a"
+    },
+    {
+     "end": 0.85,
+     "start": 0.512,
+     "text": "reader"
+    },
+    {
+     "end": 1.425,
+     "start": 0.85,
+     "text": "deciding"
+    },
+    {
+     "end": 1.725,
+     "start": 1.425,
+     "text": "whether"
+    },
+    {
+     "end": 1.85,
+     "start": 1.725,
+     "text": "to"
+    },
+    {
+     "end": 2.25,
+     "start": 1.85,
+     "text": "rely"
+    },
+    {
+     "end": 2.425,
+     "start": 2.25,
+     "text": "on"
+    },
+    {
+     "end": 2.6,
+     "start": 2.425,
+     "text": "this"
+    },
+    {
+     "end": 3.075,
+     "start": 2.6,
+     "text": "release"
+    },
+    {
+     "end": 3.15,
+     "start": 3.075,
+     "text": ","
+    },
+    {
+     "end": 3.312,
+     "start": 3.15,
+     "text": "you"
+    },
+    {
+     "end": 3.65,
+     "start": 3.312,
+     "text": "find"
+    },
+    {
+     "end": 3.975,
+     "start": 3.65,
+     "text": "here"
+    },
+    {
+     "end": 4.05,
+     "start": 3.975,
+     "text": ","
+    },
+    {
+     "end": 4.213,
+     "start": 4.05,
+     "text": "in"
+    },
+    {
+     "end": 4.575,
+     "start": 4.213,
+     "text": "plain"
+    },
+    {
+     "end": 4.95,
+     "start": 4.575,
+     "text": "words"
+    },
+    {
+     "end": 5.0,
+     "start": 4.95,
+     "text": ","
+    },
+    {
+     "end": 5.175,
+     "start": 5.0,
+     "text": "what"
+    },
+    {
+     "end": 5.275,
+     "start": 5.175,
+     "text": "the"
+    },
+    {
+     "end": 5.738,
+     "start": 5.275,
+     "text": "release"
+    },
+    {
+     "end": 6.05,
+     "start": 5.738,
+     "text": "takes"
+    },
+    {
+     "end": 6.238,
+     "start": 6.05,
+     "text": "for"
+    },
+    {
+     "end": 6.825,
+     "start": 6.238,
+     "text": "granted"
+    },
+    {
+     "end": 6.9,
+     "start": 6.825,
+     "text": ","
+    },
+    {
+     "end": 7.037,
+     "start": 6.9,
+     "text": "what"
+    },
+    {
+     "end": 7.175,
+     "start": 7.037,
+     "text": "it"
+    },
+    {
+     "end": 7.562,
+     "start": 7.175,
+     "text": "leaves"
+    },
+    {
+     "end": 8.45,
+     "start": 7.562,
+     "text": "unproved"
+    },
+    {
+     "end": 8.55,
+     "start": 8.45,
+     "text": ","
+    },
+    {
+     "end": 8.663,
+     "start": 8.55,
+     "text": "and"
+    },
+    {
+     "end": 8.812,
+     "start": 8.663,
+     "text": "where"
+    },
+    {
+     "end": 8.938,
+     "start": 8.812,
+     "text": "the"
+    },
+    {
+     "end": 9.425,
+     "start": 8.938,
+     "text": "evidence"
+    },
+    {
+     "end": 9.55,
+     "start": 9.425,
+     "text": "it"
+    },
+    {
+     "end": 9.775,
+     "start": 9.55,
+     "text": "does"
+    },
+    {
+     "end": 10.025,
+     "start": 9.775,
+     "text": "not"
+    },
+    {
+     "end": 10.3,
+     "start": 10.025,
+     "text": "yet"
+    },
+    {
+     "end": 10.525,
+     "start": 10.3,
+     "text": "have"
+    },
+    {
+     "end": 10.675,
+     "start": 10.525,
+     "text": "is"
+    },
+    {
+     "end": 11.85,
+     "start": 10.675,
+     "text": "listed"
+    },
+    {
+     "end": 12.125,
+     "start": 11.85,
+     "text": "."
+    }
+   ]
+  },
   "docs-release-decision-table/conditions-the-figures-were-taken-under-00": {
    "audio_sha256": "889536c43f7a6a5c6f0bc3451ebd38e896ea7a337beb360fa91c7a964d352d72",
    "characters": 40,

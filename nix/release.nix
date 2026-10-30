@@ -129,6 +129,7 @@ let
     text = ''
       python3 ${src}/tools/stage_release.py --selftest
       python3 ${src}/tools/check_release.py ${src} ${archive}
+      python3 ${src}/tools/release_limits.py --selftest ${src}
       python3 ${src}/tools/check_publish.py ${src}/tools/publish_docs.sh
       # #695: where each workflow job may run, with the check shown to refuse
       python3 ${src}/tools/check_workflow_runners.py --selftest

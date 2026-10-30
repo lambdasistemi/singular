@@ -5104,6 +5104,86 @@
    }
   ]
  },
+ "docs/release-assumptions.md": {
+  "what-remains-uncovered": [
+   {
+    "index": 0,
+    "name": "docs-release-assumptions/what-remains-uncovered-00",
+    "pause_ms": 500,
+    "text": "What remains uncovered.",
+    "v": "2a4c4b5575a2"
+   },
+   {
+    "index": 1,
+    "name": "docs-release-assumptions/what-remains-uncovered-01",
+    "pause_ms": 400,
+    "text": "The conformance rows that remain uncovered are published on the conformance evidence page, whose count and rows are computed from the receipts.",
+    "v": "f6b9c4961e90"
+   }
+  ],
+  "what-the-measurements-do-not-show": [
+   {
+    "index": 0,
+    "name": "docs-release-assumptions/what-the-measurements-do-not-show-00",
+    "pause_ms": 500,
+    "text": "What the measurements do not show.",
+    "v": "de673fcfdf99"
+   },
+   {
+    "index": 1,
+    "name": "docs-release-assumptions/what-the-measurements-do-not-show-01",
+    "pause_ms": 400,
+    "text": "The packaged development node cannot run the public test network's (preprod's) current protocol version, so the batch limits are evaluated under recorded protocol parameters and corroborated by the node, and are not submitted to that network.",
+    "v": "8c1c31f42514"
+   },
+   {
+    "index": 2,
+    "name": "docs-release-assumptions/what-the-measurements-do-not-show-02",
+    "pause_ms": 400,
+    "text": "The release decision table gives each measurement with the date of the parameters it was taken under.",
+    "v": "7b99be1569f5"
+   }
+  ],
+  "what-the-release-takes-for-granted": [
+   {
+    "index": 0,
+    "name": "docs-release-assumptions/what-the-release-takes-for-granted-00",
+    "pause_ms": 500,
+    "text": "What the release takes for granted.",
+    "v": "7eb93fac5c15"
+   },
+   {
+    "index": 1,
+    "name": "docs-release-assumptions/what-the-release-takes-for-granted-01",
+    "pause_ms": 400,
+    "text": "The trie library's proofs are assumed sound.",
+    "v": "f0f5effffdbd"
+   },
+   {
+    "index": 2,
+    "name": "docs-release-assumptions/what-the-release-takes-for-granted-02",
+    "pause_ms": 400,
+    "text": "The statements about the chain's history assume Cardano's rule for how scripts run, and that rule is not proved here.",
+    "v": "a9d4bbb7a954"
+   }
+  ],
+  "what-this-release-assumes-and-does-not-establish": [
+   {
+    "index": 0,
+    "name": "docs-release-assumptions/what-this-release-assumes-and-does-not-establish-00",
+    "pause_ms": 500,
+    "text": "What this release assumes and does not establish.",
+    "v": "5c93dde3e53c"
+   },
+   {
+    "index": 1,
+    "name": "docs-release-assumptions/what-this-release-assumes-and-does-not-establish-01",
+    "pause_ms": 400,
+    "text": "As a reader deciding whether to rely on this release, you find here, in plain words, what the release takes for granted, what it leaves unproved, and where the evidence it does not yet have is listed.",
+    "v": "e8db6e5a6437"
+   }
+  ]
+ },
  "docs/release-decision-table.md": {
   "conditions-the-figures-were-taken-under": [
    {
