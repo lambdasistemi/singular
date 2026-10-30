@@ -19,19 +19,27 @@ These cases hold what a refusal says from it, and what keeps it complete:
 module Singular.Registry.ContractTableSpec (spec) where
 
 import Control.Exception (bracket_)
+import Control.Monad (forM_)
 import Data.Aeson qualified as Aeson
 import Data.ByteString (ByteString)
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Lazy qualified as BL
 import Data.Either (fromRight, isLeft)
-import Data.List (nub)
+import Data.List (maximumBy, nub)
 import Data.List.NonEmpty (NonEmpty (..))
+import Data.Maybe (fromMaybe)
+import Data.Ord (comparing)
 import Data.Text (Text)
 import Data.Text qualified as T
+import Data.Text.IO qualified as TIO
+import Data.Version (versionBranch)
 import System.Environment (lookupEnv, setEnv, unsetEnv)
 import System.IO.Temp (withSystemTempDirectory)
 import Test.Hspec
+import Text.Read (readMaybe)
+
+import Paths_singular_registry (version)
 
 import Singular.Registry.ContractTable
     ( ApplicationIdentity (..)
@@ -55,6 +63,7 @@ spec = describe "the table of releases" $ do
     sentenceRows
     fileRows
     packagedRows
+    releaseRows
 
 applicationLookupRows :: Spec
 applicationLookupRows = describe "an applied state policy" $ do
@@ -271,6 +280,125 @@ packagedRows = describe "the packaged table" $ do
         withPackaged $ \table ->
             lookup "v0.2.0" (tableLeftOut table)
                 `shouldSatisfy` maybe False (T.isInfixOf "no on-chain archive")
+  where
+    withPackaged use =
+        loadContractTable >>= either (expectationFailure . T.unpack) use
+
+-- ---------------------------------------------------------
+-- Every release older than the package is named once
+-- ---------------------------------------------------------
+
+{- | The releases a project's release history names: the headings that carry a
+comparison link (the first release has none and was never published).
+-}
+releasesIn :: Text -> [Text]
+releasesIn history =
+    [ "v" <> T.takeWhile (/= ']') rest
+    | line <- T.lines history
+    , Just rest <- [T.stripPrefix "## [" line]
+    , T.isInfixOf "](" rest
+    ]
+
+-- | The releases of the project's own release history, read at run time.
+publishedReleases :: IO [Text]
+publishedReleases = do
+    path <-
+        lookupEnv "SINGULAR_RELEASE_HISTORY"
+            >>= maybe (fail "SINGULAR_RELEASE_HISTORY names no release history") pure
+    releasesIn <$> TIO.readFile path
+
+-- | Every release the table names, wherever it names it.
+listedReleases :: ContractTable -> [Text]
+listedReleases table =
+    concatMap snd (tableRows table)
+        <> concatMap singularReleases (applicationRows table)
+        <> map fst (tableLeftOut table)
+
+-- | The release this package is, as its tag.
+packageTag :: Text
+packageTag = tagOf (take 3 (versionBranch version))
+
+-- | The tag of a release from its numbers.
+tagOf :: [Int] -> Text
+tagOf numbers = "v" <> T.intercalate "." (map (T.pack . show) numbers)
+
+-- | The numbers of a release tag.
+tagNumbers :: Text -> [Int]
+tagNumbers = map (fromMaybe 0 . readMaybe . T.unpack) . T.splitOn "." . T.drop 1
+
+{- | The releases older than the package that the table does not name. The
+release being cut is not required: the table may lag the package by it, and a
+release pull request stays fresh with no row of its own.
+-}
+staleReleases :: Text -> [Text] -> [Text] -> [Text]
+staleReleases package published listed =
+    [ release
+    | release <- published
+    , tagNumbers release < tagNumbers package
+    , release `notElem` listed
+    ]
+
+releaseRows :: Spec
+releaseRows = describe "the release history" $ do
+    it "is read from the headings that carry a comparison link" $
+        releasesIn
+            ( T.unlines
+                [ "## [0.18.0](https://example.invalid/compare/v0.17.0...v0.18.0) (2026-10-29)"
+                , "* a change"
+                , "## [0.17.0](https://example.invalid/compare/v0.16.0...v0.17.0) (2026-10-28)"
+                , "## 0.1.0 (2026-09-09)"
+                ]
+            )
+            `shouldBe` ["v0.18.0", "v0.17.0"]
+    it "is not empty and holds more than one release" $
+        publishedReleases >>= (`shouldSatisfy` ((> 1) . length))
+    it
+        "is named by the packaged table: every release older than the package, once"
+        $ do
+            published <- publishedReleases
+            withPackaged $ \table -> do
+                let listed = listedReleases table
+                staleReleases packageTag published listed `shouldBe` []
+                [r | r <- listed, length (filter (== r) listed) /= 1] `shouldBe` []
+    it "holds every release the packaged table names" $ do
+        published <- publishedReleases
+        withPackaged $ \table ->
+            [r | r <- listedReleases table, r `notElem` published] `shouldBe` []
+    it
+        "stays fresh for a package one release above the newest the table names"
+        $ do
+            published <- publishedReleases
+            withPackaged $ \table -> do
+                let listed = listedReleases table
+                    newest = maximumBy (comparing tagNumbers) listed
+                    above = case tagNumbers newest of
+                        major : minor : _ -> tagOf [major, minor + 1, 0]
+                        _ -> newest
+                above `shouldNotSatisfy` (`elem` listed)
+                staleReleases above (published <> [above]) listed `shouldBe` []
+    it
+        "is stale for a package when any older release is missing from the table"
+        $ do
+            published <- publishedReleases
+            withPackaged $ \table -> do
+                let listed = listedReleases table
+                    older = [r | r <- published, tagNumbers r < tagNumbers packageTag]
+                    picked =
+                        take 1 older
+                            <> take 1 (drop (length older `div` 2) older)
+                            <> [last older]
+                length older `shouldSatisfy` (> 2)
+                forM_ picked $ \missing ->
+                    staleReleases packageTag published (filter (/= missing) listed)
+                        `shouldBe` [missing]
+    it "does not require a release newer than the package" $ do
+        published <- publishedReleases
+        withPackaged $ \table ->
+            staleReleases
+                packageTag
+                (published <> ["v99.0.0"])
+                (listedReleases table)
+                `shouldBe` []
   where
     withPackaged use =
         loadContractTable >>= either (expectationFailure . T.unpack) use

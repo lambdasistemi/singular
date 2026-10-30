@@ -18,7 +18,9 @@
     "v0.13.1": "477f6ee702beae78f32c5023342137c34a5e484f3cf4b4b594fac4f1d9432fa9",
     "v0.14.0": "939960fd81b4e4ef2e1978c2e6cded79121370bf880a8620c85abe74ebcfcb1c",
     "v0.15.0": "f5b03395a233f48835747d4b9e434646faa6774492e52ddcf9d12d1e1d24680d",
-    "v0.17.0": "dc616f6e8361be3ff4c9ab6df8a4d8cd4a8842085326a4c03e341ac4b4250e86"
+    "v0.17.0": "dc616f6e8361be3ff4c9ab6df8a4d8cd4a8842085326a4c03e341ac4b4250e86",
+    "v0.16.0": "1a1ad9647da8248d1c0fb2920647245a1daa8da1451eb8bb8a0f805cb96cfd56",
+    "v0.18.0": "a620dd2a65e42a705e07847bad0b5ea88851f9888c5382bad3e0d39430fc137e"
   },
   "left-out": [
     {
@@ -71,7 +73,8 @@
         "v0.13.0",
         "v0.13.1",
         "v0.14.0",
-        "v0.15.0"
+        "v0.15.0",
+        "v0.16.0"
       ]
     },
     {
@@ -85,10 +88,12 @@
       "application-policy": "67bb50e5aab678b9955e1d8981050a14e0f93da912b3a8b4a7161ca7",
       "application-script": "67bb50e5aab678b9955e1d8981050a14e0f93da912b3a8b4a7161ca7",
       "singular-releases": [
-        "v0.17.0"
+        "v0.17.0",
+        "v0.18.0"
       ],
       "application-releases": [
-        "v0.17.0"
+        "v0.17.0",
+        "v0.18.0"
       ]
     }
   ]
