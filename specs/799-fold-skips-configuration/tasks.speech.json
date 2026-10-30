@@ -1,0 +1,42 @@
+{
+  "tasks-for-the-configuration-output-of-a-fold": [
+    {
+      "text": "Tasks for the configuration output of a fold.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 799. Grouped by slice of the plan. A task is checked only after the ticket owner accepts its slice.",
+      "pause": 400
+    }
+  ],
+  "slice-configuration-is-named-by-the-description": [
+    {
+      "text": "Slice: configuration is named by the description.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] failing-checks-first: checks that fail on the base — a stand-in application whose configuration output is not skipped, the open datum recognition cases, the observation judge and refusal census expecting absence.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] description-names-configuration: the application description gains the question and discovery consults it.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] open-datum-answers: the open datum description answers it from the request address and the configuration decoding.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] consumers-follow: the observation judge, the refusal census, the retained receipts and the pages that listed the skip.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] hosted-forms-pass: lint, the unit suites, documentation under the runner's bare path and the hosted devnet refusal jobs.",
+      "pause": 300
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "f0ac5b9b54d81721633fa36b485a2e6e2b81e99aaf5dadb6270049d6c61d6298"
+  }
+}

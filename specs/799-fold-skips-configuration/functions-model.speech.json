@@ -1,0 +1,38 @@
+{
+  "functions-signatures-that-change": [
+    {
+      "text": "Functions: signatures that change.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 799. Follows the data model.",
+      "pause": 400
+    }
+  ],
+  "new": [
+    {
+      "text": "New.",
+      "pause": 500
+    }
+  ],
+  "changed-behaviour-same-signature": [
+    {
+      "text": "Changed behaviour, same signature.",
+      "pause": 500
+    }
+  ],
+  "unchanged-signatures": [
+    {
+      "text": "Unchanged signatures.",
+      "pause": 500
+    },
+    {
+      "text": "The pending reader for named requests, the fold builders, the receipt rendering and the skip reasons.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "2aae58d9ad47dbde0f22b4cfc105a525ee8fc679bd9f2d1472843748ca24c7fc"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "modules-who-knows-what-a-configuration-output-is": [
+    {
+      "text": "Modules: who knows what a configuration output is.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 799. Follows the plan. Fields are in the data model and signatures in the functions model.",
+      "pause": 400
+    }
+  ],
+  "responsibilities": [
+    {
+      "text": "Responsibilities.",
+      "pause": 500
+    }
+  ],
+  "dependency-direction": [
+    {
+      "text": "Dependency direction.",
+      "pause": 500
+    },
+    {
+      "text": "The open datum package depends on the fold library; the library depends on no application. The new question lives in the description record the library already owns, so no new module and no new dependency edge appears. The configuration decoding stays where it is, in the open datum records module.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "modules-model.md",
+    "sha256": "55913339b896b0c5918bc65774b66790b75e9309f60076ac193e0142d74d6f21"
+  }
+}
