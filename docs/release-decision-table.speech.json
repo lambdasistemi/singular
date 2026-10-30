@@ -1,0 +1,82 @@
+{
+  "release-decision-table": [
+    {
+      "text": "Release decision table.",
+      "pause": 500
+    },
+    {
+      "text": "As a reader deciding whether this release's measurements support your use, you find on this page the measurements this line delivered of what creating a registry costs and of the largest batch of requests one fold carries. Each row gives the conditions it was taken under, what it improved, what it made worse and what it did not measure.",
+      "pause": 400
+    },
+    {
+      "text": "Every figure on the page is read or computed from the kept receipts below. The documentation check regenerates the page from the receipts and their chain records, and refuses a page that differs, a receipt or chain record that is missing and a row that names no receipt.",
+      "pause": 400
+    }
+  ],
+  "reading-the-decision-table": [
+    {
+      "text": "Reading the decision table.",
+      "pause": 500
+    },
+    {
+      "text": "Each row is one measurement. The gain lists the figures that are lower than the alternative the row is compared with, and the regression lists those that are higher. Every compared figure is a cost, so lower is better. A figure that is equal is in neither list, and none measured means no compared figure was higher.",
+      "pause": 400
+    },
+    {
+      "text": "The batch rows rest on preprod protocol parameters recorded on Sun, 04 Oct 2026 18:06:12 GMT, taken from the kept batch receipt. The creation rows rest on the development network's protocol parameters, read from its chain at the times the kept chain records note: 2026-10-29T04:25:37Z for both designs.",
+      "pause": 400
+    }
+  ],
+  "the-decision-table": [
+    {
+      "text": "The decision table.",
+      "pause": 500
+    },
+    {
+      "text": "The first two rows compare creating a registry under the previous design with the application-held design. The last three rows give the largest batch a fold carries, compared with a fold of one request.",
+      "pause": 400
+    },
+    {
+      "text": "Creating a first registry takes 3 transactions under the application-held design against 5 under the previous design. What rose: registry-creating transaction bytes: 751 to 999; registry-creating transaction fee: 695626 to 1028555 lovelace. Creating a later registry takes 1 transaction under the application-held design against 4 under the previous design. What rose: registry-creating transaction bytes: 755 to 999; registry-creating transaction fee: 695371 to 1028555 lovelace.",
+      "pause": 400
+    },
+    {
+      "text": "The largest accepted fold in the registrations workload carries 4 requests, and one more request exceeds the memory limit. Per request the largest batch costs less than a one-request fold in signed transaction bytes and fee and more in execution memory and execution steps. The largest accepted fold in the terminations workload carries 7 requests, and one more request exceeds the memory limit. Per request the largest batch costs less than a one-request fold in signed transaction bytes and fee and more in execution memory and execution steps. The largest accepted fold in the mixed workload carries 6 requests, and one more request exceeds the memory limit. Per request the largest batch costs less than a one-request fold in signed transaction bytes and fee and more in execution memory and execution steps.",
+      "pause": 400
+    }
+  ],
+  "conditions-the-figures-were-taken-under": [
+    {
+      "text": "Conditions the figures were taken under.",
+      "pause": 500
+    },
+    {
+      "text": "The creation receipts share one development network genesis and one set of protocol parameters, and the batch receipt carries the preprod parameters it evaluated under. The hashes below bind those inputs.",
+      "pause": 400
+    }
+  ],
+  "the-kept-receipts": [
+    {
+      "text": "The kept receipts.",
+      "pause": 500
+    },
+    {
+      "text": "The receipts and the chain records they name are committed with the repository. Their SHA-256 is computed when this page is generated, so a file that changes also changes this page.",
+      "pause": 400
+    }
+  ],
+  "regenerate-this-page": [
+    {
+      "text": "Regenerate this page.",
+      "pause": 500
+    },
+    {
+      "text": "Run python3 tools/decision_table.py --write to regenerate the page, then regenerate its speech and changed narration. The documentation check runs python3 tools/decision_table.py --check.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "release-decision-table.md",
+    "sha256": "f5703715e0b87bbb53e17d0e88e6cb0979dd0eeb1c6e262df1af75dcd0223849"
+  }
+}

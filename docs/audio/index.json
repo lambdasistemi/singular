@@ -5104,6 +5104,132 @@
    }
   ]
  },
+ "docs/release-decision-table.md": {
+  "conditions-the-figures-were-taken-under": [
+   {
+    "index": 0,
+    "name": "docs-release-decision-table/conditions-the-figures-were-taken-under-00",
+    "pause_ms": 500,
+    "text": "Conditions the figures were taken under.",
+    "v": "889536c43f7a"
+   },
+   {
+    "index": 1,
+    "name": "docs-release-decision-table/conditions-the-figures-were-taken-under-01",
+    "pause_ms": 400,
+    "text": "The creation receipts share one development network genesis and one set of protocol parameters, and the batch receipt carries the preprod parameters it evaluated under. The hashes below bind those inputs.",
+    "v": "d9e7120bc5c1"
+   }
+  ],
+  "reading-the-decision-table": [
+   {
+    "index": 0,
+    "name": "docs-release-decision-table/reading-the-decision-table-00",
+    "pause_ms": 500,
+    "text": "Reading the decision table.",
+    "v": "b3c72ed8a611"
+   },
+   {
+    "index": 1,
+    "name": "docs-release-decision-table/reading-the-decision-table-01",
+    "pause_ms": 400,
+    "text": "Each row is one measurement. The gain lists the figures that are lower than the alternative the row is compared with, and the regression lists those that are higher. Every compared figure is a cost, so lower is better. A figure that is equal is in neither list, and none measured means no compared figure was higher.",
+    "v": "8968a26d1979"
+   },
+   {
+    "index": 2,
+    "name": "docs-release-decision-table/reading-the-decision-table-02",
+    "pause_ms": 400,
+    "text": "The batch rows rest on preprod protocol parameters recorded on Sun, 04 Oct 2026 18:06:12 GMT, taken from the kept batch receipt. The creation rows rest on the development network's protocol parameters, read from its chain at the times the kept chain records note: 2026-10-29T04:25:37Z for both designs.",
+    "v": "b82fc5f1878a"
+   }
+  ],
+  "regenerate-this-page": [
+   {
+    "index": 0,
+    "name": "docs-release-decision-table/regenerate-this-page-00",
+    "pause_ms": 500,
+    "text": "Regenerate this page.",
+    "v": "8d7eccba1db6"
+   },
+   {
+    "index": 1,
+    "name": "docs-release-decision-table/regenerate-this-page-01",
+    "pause_ms": 400,
+    "text": "Run python3 tools/decision_table.py --write to regenerate the page, then regenerate its speech and changed narration. The documentation check runs python3 tools/decision_table.py --check.",
+    "v": "b594588b7a06"
+   }
+  ],
+  "release-decision-table": [
+   {
+    "index": 0,
+    "name": "docs-release-decision-table/release-decision-table-00",
+    "pause_ms": 500,
+    "text": "Release decision table.",
+    "v": "cda49cfb0b36"
+   },
+   {
+    "index": 1,
+    "name": "docs-release-decision-table/release-decision-table-01",
+    "pause_ms": 400,
+    "text": "As a reader deciding whether this release's measurements support your use, you find on this page the measurements this line delivered of what creating a registry costs and of the largest batch of requests one fold carries. Each row gives the conditions it was taken under, what it improved, what it made worse and what it did not measure.",
+    "v": "d033845bd015"
+   },
+   {
+    "index": 2,
+    "name": "docs-release-decision-table/release-decision-table-02",
+    "pause_ms": 400,
+    "text": "Every figure on the page is read or computed from the kept receipts below. The documentation check regenerates the page from the receipts and their chain records, and refuses a page that differs, a receipt or chain record that is missing and a row that names no receipt.",
+    "v": "106ed29e4670"
+   }
+  ],
+  "the-decision-table": [
+   {
+    "index": 0,
+    "name": "docs-release-decision-table/the-decision-table-00",
+    "pause_ms": 500,
+    "text": "The decision table.",
+    "v": "4b2ec7844797"
+   },
+   {
+    "index": 1,
+    "name": "docs-release-decision-table/the-decision-table-01",
+    "pause_ms": 400,
+    "text": "The first two rows compare creating a registry under the previous design with the application-held design. The last three rows give the largest batch a fold carries, compared with a fold of one request.",
+    "v": "a91609660904"
+   },
+   {
+    "index": 2,
+    "name": "docs-release-decision-table/the-decision-table-02",
+    "pause_ms": 400,
+    "text": "Creating a first registry takes 3 transactions under the application-held design against 5 under the previous design. What rose: registry-creating transaction bytes: 751 to 999; registry-creating transaction fee: 695626 to 1028555 lovelace. Creating a later registry takes 1 transaction under the application-held design against 4 under the previous design. What rose: registry-creating transaction bytes: 755 to 999; registry-creating transaction fee: 695371 to 1028555 lovelace.",
+    "v": "d9d1b18d3aff"
+   },
+   {
+    "index": 3,
+    "name": "docs-release-decision-table/the-decision-table-03",
+    "pause_ms": 400,
+    "text": "The largest accepted fold in the registrations workload carries 4 requests, and one more request exceeds the memory limit. Per request the largest batch costs less than a one-request fold in signed transaction bytes and fee and more in execution memory and execution steps. The largest accepted fold in the terminations workload carries 7 requests, and one more request exceeds the memory limit. Per request the largest batch costs less than a one-request fold in signed transaction bytes and fee and more in execution memory and execution steps. The largest accepted fold in the mixed workload carries 6 requests, and one more request exceeds the memory limit. Per request the largest batch costs less than a one-request fold in signed transaction bytes and fee and more in execution memory and execution steps.",
+    "v": "d236ee9a3888"
+   }
+  ],
+  "the-kept-receipts": [
+   {
+    "index": 0,
+    "name": "docs-release-decision-table/the-kept-receipts-00",
+    "pause_ms": 500,
+    "text": "The kept receipts.",
+    "v": "a612ee3386fc"
+   },
+   {
+    "index": 1,
+    "name": "docs-release-decision-table/the-kept-receipts-01",
+    "pause_ms": 400,
+    "text": "The receipts and the chain records they name are committed with the repository. Their SHA-256 is computed when this page is generated, so a file that changes also changes this page.",
+    "v": "4be85a42fc88"
+   }
+  ]
+ },
  "docs/retirement.md": {
   "book-then-complete": [
    {

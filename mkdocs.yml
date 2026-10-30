@@ -12,6 +12,7 @@ nav:
   - Demo 1: docs/demo1.md
   - Store ordinary JSON as a key's payload: docs/payload-json.md
   - What creating a registry costs: docs/creation-cost.md
+  - Release decision table: docs/release-decision-table.md
   - Create another registry on shared publications: docs/shared-publications.md
   - Fold pending requests from public data: docs/folding-requests.md
   - The release:
