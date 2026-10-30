@@ -1038,7 +1038,10 @@
                 results = "NO_PIN_REFUSALS_RESULTS";
                 script = "no_pin_registration_refusals.sh";
                 programs = [ (pkgs.lib.getExe (stampedOpenDatum system)) ];
-                extra = [ "${open-datum.packages.${system}.no-pin-refusals}/bin/no-pin-refusals" ];
+                extra = [
+                  "${open-datum.packages.${system}.no-pin-refusals}/bin/no-pin-refusals"
+                  "${./offchain/data/contracts/state-contracts.json}"
+                ];
               };
               noPinTerminationRefusals = noPinJourney {
                 name = "no-pin-termination-refusals";
