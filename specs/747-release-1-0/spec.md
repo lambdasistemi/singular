@@ -33,7 +33,7 @@ flowchart LR
 | Part | What a user can check |
 | --- | --- |
 | Install | the files the release publishes install and run without Nix and without a checkout |
-| Journey | every verb of the line, run from the installed files on a development network, with every verdict read from the chain |
+| Journey | every verb of the line, run from the installed files on a development network, each verb judged from the network's record of the chain |
 | Recognition | the release pair of a registry and its state policy derivation are read from the packaged release table by the installed commands |
 | Guidance | an earlier release's registry, an unknown contract and an application upgrade each get an answer that names the release that serves it, or says none is known |
 | Evidence | the conformance report and the model mappings are computed again at the release revision; one table links the creation costs and the batch limits with their parameters |
@@ -44,8 +44,9 @@ flowchart LR
 
 - installed-journey: a journey whose commands, blueprint and development node come only from a release's published files, on
   a path that holds ordinary tools and no Nix, with no checkout of this repository and no credentials, runs create,
-  register, update, terminate, read and a discovered batch fold on a development network; every verdict is computed from
-  the network's record of the chain, and each verdict is shown failing on altered input.
+  register, update, terminate, read and a discovered batch fold on a development network; each of those six verbs is judged from
+  the network's record of the chain and shown failing on altered input, and every other verdict of the journey is computed from the
+  chain's record or from files and never typed.
 - published-release-journey: the same journey runs against the files of the published release, downloaded without
   credentials, on the tag run.
 - packages-green-here: the bundle jobs, the release-bundle scope job and the Linux package install job run green on this

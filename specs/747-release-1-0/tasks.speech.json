@@ -15,7 +15,7 @@
       "pause": 500
     },
     {
-      "text": "[ ] gate-synthesized: the ticket owner's and the auditor's gate tables joined once and frozen with both input hashes.",
+      "text": "[x] gate-synthesized: the ticket owner's and the auditor's gate tables joined once and frozen with both input hashes.",
       "pause": 300
     }
   ],
@@ -25,15 +25,15 @@
       "pause": 500
     },
     {
-      "text": "[ ] release-table-refilled: rows for the releases published since the table was filled, from their on-chain archives.",
+      "text": "[x] release-table-refilled: rows for the releases published since the table was filled, from their on-chain archives.",
       "pause": 300
     },
     {
-      "text": "[ ] compatible-release-guidance: one answer for a known earlier contract, an unknown contract and an application upgrade, printed by every command.",
+      "text": "[x] compatible-release-guidance: one answer for a known earlier contract, an unknown contract and an application upgrade, printed by every command.",
       "pause": 300
     },
     {
-      "text": "[ ] old-registry-untouched: a write given such a registry sends nothing; the chain unchanged beside a passing control.",
+      "text": "[x] old-registry-untouched: a write given such a registry sends nothing; the chain unchanged beside a passing control.",
       "pause": 300
     }
   ],
@@ -79,7 +79,17 @@
       "pause": 300
     },
     {
-      "text": "[ ] release-preparation: the release notes for 1.0, the tag-run checklist for the epic owner, the rows prepared for the release being cut.",
+      "text": "[ ] release-preparation: the release notes for 1.0, the tag-run checklist for the epic owner.",
+      "pause": 300
+    }
+  ],
+  "pull-request-5-refill-after-the-tag": [
+    {
+      "text": "Pull request 5: refill after the tag.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] refill-after-tag: the row of the released version from its published archive, and the compatibility record regenerated from it.",
       "pause": 300
     }
   ],
@@ -95,6 +105,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "05a2d4db3df124985dd044eee8b88f80fdae489f0b1c85916cfa8649edd5b462"
+    "sha256": "7b9d4b587b897bbd8f719114a68b43494b805d452bf6f50e4595853624277b05"
   }
 }

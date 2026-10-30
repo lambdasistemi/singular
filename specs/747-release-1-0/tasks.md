@@ -5,13 +5,13 @@ the ticket owner accepts its slice.
 
 ## Binding
 
-- [ ] gate-synthesized: the ticket owner's and the auditor's gate tables joined once and frozen with both input hashes.
+- [x] gate-synthesized: the ticket owner's and the auditor's gate tables joined once and frozen with both input hashes.
 
 ## Pull request 1: recognition
 
-- [ ] release-table-refilled: rows for the releases published since the table was filled, from their on-chain archives.
-- [ ] compatible-release-guidance: one answer for a known earlier contract, an unknown contract and an application upgrade, printed by every command.
-- [ ] old-registry-untouched: a write given such a registry sends nothing; the chain unchanged beside a passing control.
+- [x] release-table-refilled: rows for the releases published since the table was filled, from their on-chain archives.
+- [x] compatible-release-guidance: one answer for a known earlier contract, an unknown contract and an application upgrade, printed by every command.
+- [x] old-registry-untouched: a write given such a registry sends nothing; the chain unchanged beside a passing control.
 
 ## Pull request 2: installed journey
 
@@ -27,7 +27,11 @@ the ticket owner accepts its slice.
 ## Pull request 4: record and preparation
 
 - [ ] compatibility-record: the page computed from the release table, with its disagreement control.
-- [ ] release-preparation: the release notes for 1.0, the tag-run checklist for the epic owner, the rows prepared for the release being cut.
+- [ ] release-preparation: the release notes for 1.0, the tag-run checklist for the epic owner.
+
+## Pull request 5: refill after the tag
+
+- [ ] refill-after-tag: the row of the released version from its published archive, and the compatibility record regenerated from it.
 
 ## Close-out
 
