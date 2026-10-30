@@ -1,5 +1,57 @@
 # Changelog
 
+## [0.19.0](https://github.com/lambdasistemi/singular/compare/v0.18.0...v0.19.0) (2026-10-30)
+
+
+### Features
+
+* **cli:** discover and account for public fold batches ([298bcbd](https://github.com/lambdasistemi/singular/commit/298bcbdb85debffa59f31070b3ca84c52a98f404))
+* fold the largest fitting public batch ([d9079b4](https://github.com/lambdasistemi/singular/commit/d9079b43056899814e4e0b6500af4cc27eeb430c))
+* **fold:** discover pending requests and fold the largest fitting batch ([8b3f808](https://github.com/lambdasistemi/singular/commit/8b3f8081cea0eef1e81aebcb0c8618913376331d))
+* **fold:** discover pending requests from public approvals ([a062754](https://github.com/lambdasistemi/singular/commit/a062754a9b4f57256f1ddbd5ffe4315ded60cefb))
+* **fold:** skip individually unfoldable public requests ([c102db9](https://github.com/lambdasistemi/singular/commit/c102db9c66a908ca405fa8bd50c0d7f7a1f17eab))
+* **measurement:** measure the largest registry batches under recorded preprod parameters ([8eab2cc](https://github.com/lambdasistemi/singular/commit/8eab2cc864092e69ceb2b9b52e97c22a1d94dbd1))
+* publish batch requirements with computed conformance standings ([9213019](https://github.com/lambdasistemi/singular/commit/921301926aab2f062582334088143d02d086060a))
+* **state:** explain verified reference reuse and independent creation ([3ff8449](https://github.com/lambdasistemi/singular/commit/3ff8449a5bb0386e476f311ee2c7a0e20045bee4))
+
+
+### Fixes
+
+* bind registration approvals to the full holding address ([02342fa](https://github.com/lambdasistemi/singular/commit/02342fa86940fdb39677d6f67d949b162d018b84))
+* **ci:** preserve required workflow job names ([e67053b](https://github.com/lambdasistemi/singular/commit/e67053ba0db9852e99b3f1855c3f6b5d19800039))
+* commit the full holding address in registration approvals ([bd354da](https://github.com/lambdasistemi/singular/commit/bd354da787908694f6695f6f6035878c72e22be0))
+* **lint:** use fromMaybe in batch measurements ([c1f7a17](https://github.com/lambdasistemi/singular/commit/c1f7a175d32c28859473c2ac6edadb6b29292106))
+* measure batch capacity with every required key witness ([ece2601](https://github.com/lambdasistemi/singular/commit/ece2601735eb647b40e5a2930fe160ebb76c37e8))
+* price spent reference scripts through the ordinary builder ([bd4e291](https://github.com/lambdasistemi/singular/commit/bd4e291a2e6247af9820e19f1c89eae4bd25124a))
+
+
+### Documentation
+
+* **audio:** narrate unfoldable request skips ([fc3ea3f](https://github.com/lambdasistemi/singular/commit/fc3ea3f1a669d9ac18d41a346f1fa9fdc25b5abd))
+* **audio:** refresh public fold command narration ([ef2c448](https://github.com/lambdasistemi/singular/commit/ef2c448074fb6b55c7173297bfc2a3003add7dd2))
+* **audio:** refresh the batch API reference narration ([fb3258c](https://github.com/lambdasistemi/singular/commit/fb3258ccfa590c775c60296ac0d9adcbc1d591ff))
+* bind conformance references to the full-address model ([69c8d46](https://github.com/lambdasistemi/singular/commit/69c8d462c2b8790b9030ed2f12679f3d1d332980))
+* explain creation and registration on shared publications ([3ced869](https://github.com/lambdasistemi/singular/commit/3ced8691e06b9daf62bdaf6f31d1b3f2840d5afe))
+* explain discovering and folding a registry batch ([3d10cad](https://github.com/lambdasistemi/singular/commit/3d10cadfc9dc7d121f8bd9db5cc5347d8a0d728b))
+* **fold:** describe folding pending requests, its measured limits and its conformance rows ([7c48fa6](https://github.com/lambdasistemi/singular/commit/7c48fa6e3053cdc4102dd2b8ee899aac3bbf0d27))
+* generate kept batch limits from the measurement receipt ([182dc58](https://github.com/lambdasistemi/singular/commit/182dc58b6038b893ca360f64979190a65f2b3f05))
+* link batch APIs and keep fold diagrams legible ([69b7185](https://github.com/lambdasistemi/singular/commit/69b7185589fe91647e522b34c31b407366ad41aa))
+* narrate the public batch folding guide ([7213c40](https://github.com/lambdasistemi/singular/commit/7213c40b2c4edfb60e9497d1e49d6f057b00d621))
+* refresh the changed conformance narration ([26b1f1b](https://github.com/lambdasistemi/singular/commit/26b1f1bbfb13a5413761b64801473e6dcf38223c))
+* **specs:** plan the 1.0 release from its installed artifacts ([b9091ed](https://github.com/lambdasistemi/singular/commit/b9091ed69dcd0bc61825f8e5c48b4a85e8f67305))
+* **specs:** plan the 1.0 release from its installed artifacts ([e8c0e8a](https://github.com/lambdasistemi/singular/commit/e8c0e8ad721af0f1e77c41c692b40925d7ee8aa1))
+* **specs:** record the accepted registration and reuse documentation slices of issue 745 ([484f0c4](https://github.com/lambdasistemi/singular/commit/484f0c4b77b41f4b5bbb451e9316a10d3f89d63c))
+* **specs:** record the devnet slices and where each skip is shown ([7661882](https://github.com/lambdasistemi/singular/commit/76618825781e80fab6ffb8c0910913271981934c))
+* **specs:** record the discovery and fit slices and name the unfoldable skips ([f3e1f0a](https://github.com/lambdasistemi/singular/commit/f3e1f0a382af2f67845b380af9bbfd29362fb26c))
+* **specs:** record the documentation and conformance slice and the application lint row ([1e1dbb0](https://github.com/lambdasistemi/singular/commit/1e1dbb0d4fa627a2565bde96efb2de6bc021fd93))
+* **specs:** record the documentation check rows run under the runner's bare path ([deb36b0](https://github.com/lambdasistemi/singular/commit/deb36b0ef1614c4c28a8f28d7e2844ea0f410695))
+* **specs:** record the measurement slice and where its limit comes from ([3623262](https://github.com/lambdasistemi/singular/commit/362326226eb4b53cd7c295da451122f84ead9f63))
+
+
+### Automation
+
+* give the publication boundary controls 35 minutes ([0d573fd](https://github.com/lambdasistemi/singular/commit/0d573fd2f5154a097e42f1bf471bc444779e4587))
+
 ## [0.18.0](https://github.com/lambdasistemi/singular/compare/v0.17.0...v0.18.0) (2026-10-29)
 
 
