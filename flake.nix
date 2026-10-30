@@ -1072,7 +1072,9 @@
                 programs = [ (pkgs.lib.getExe (stampedOpenDatum system)) ];
                 extra = [
                   "${open-datum.packages.${system}.no-pin-refusals}/bin/no-pin-refusals"
-                  "${./offchain/test/fixtures/koios/preprod/cli_protocol_params-b777448425778d13.json}"
+                  "${
+                    ./test/fixtures/batch-measurement/parameters/preprod-2026-10-30/cli_protocol_params-b777448425778d13.json
+                  }"
                   "${./offchain/data/network/preprod/evaluation/protocol-parameters.cbor}"
                   "${self}/test/fixtures/batch-measurement"
                   (pkgs.lib.getExe offchain.packages.${system}.cardano-node)

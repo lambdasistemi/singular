@@ -14,9 +14,14 @@ import runpy
 import shutil
 import subprocess
 import sys
+import tempfile
 import urllib.request
 from pathlib import Path
 
+
+# The recorded parameters this measurement is bound to; the flake passes the
+# same file, and the claim states its repository path and digest.
+PARAMETER_SOURCE = "test/fixtures/batch-measurement/parameters/preprod-2026-10-30/cli_protocol_params-b777448425778d13.json"
 
 BOUNDING_FIELDS = (
     "maxTxSize",
@@ -254,7 +259,7 @@ def claim(harness, parameters, source, blueprint, material):
     release = json.loads(subprocess.check_output([harness, "batch-release", blueprint]))
     result = {
         "target": {
-            "source": "offchain/test/fixtures/koios/preprod/cli_protocol_params-b777448425778d13.json",
+            "source": PARAMETER_SOURCE,
             "recordingDate": report["sourceDate"],
             "sourceSha256": digest(source),
             "parametersSha256": digest(parameters),
@@ -465,7 +470,22 @@ def controls(expected):
     return {"alteredFigures": caught, "alteredScriptHash": 1}
 
 
+def bind_source(source, committed):
+    """The evaluated parameter file is the recording the receipt names."""
+    kept = Path(committed) / Path(PARAMETER_SOURCE).relative_to(
+        "test/fixtures/batch-measurement"
+    )
+    assert kept.is_file() and digest(kept) == digest(source), (
+        "the evaluated parameter source is not the committed recording"
+    )
+
+
 def revalidate(harness, parameters, source, blueprint, committed, output):
+    bind_source(source, committed)
+    with tempfile.TemporaryDirectory(prefix="recording-control-") as scratch:
+        altered = Path(scratch, "recording.json")
+        altered.write_bytes(Path(source).read_bytes() + b"\n")
+        must_refuse(bind_source, altered, committed)
     output = Path(output)
     output.mkdir(parents=True, exist_ok=False)
     first = claim(harness, parameters, source, blueprint, committed)

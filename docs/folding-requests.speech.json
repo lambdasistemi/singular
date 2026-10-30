@@ -87,7 +87,7 @@
       "pause": 500
     },
     {
-      "text": "These are evaluations of kept transactions under the preprod parameters recorded on 4 October 2026 in offchain/test/fixtures/koios/preprod/cli_protocol_params-b777448425778d13.json. A development node given the same limits, prices and fees corroborates the accepted size and refusal of the next. This is not a submission to preprod. The packaged node cannot run preprod's current execution model; the ledger evaluator uses the recorded target model separately. Protocol parameters can change by governance.",
+      "text": "These are evaluations of kept transactions under the preprod parameters whose recording date and source the first table below states. The release decision table shows which figures moved against the earlier recording. A development node given the same limits, prices and fees corroborates the accepted size and refusal of the next. This is not a submission to preprod. The packaged node cannot run preprod's current execution model; the ledger evaluator uses the recorded target model separately. Protocol parameters can change by governance.",
       "pause": 400
     },
     {
@@ -141,6 +141,6 @@
   ],
   "_source": {
     "file": "folding-requests.md",
-    "sha256": "2e1594ad905ac86594139f4e6c30c73dee25cf738d33417035d0675d76780068"
+    "sha256": "45eb87d194912fd42033b667af7fffad382f7e2ba09f1d6ed8c9d6265f4c4ade"
   }
 }

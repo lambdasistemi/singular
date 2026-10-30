@@ -2,13 +2,13 @@
   {
     "command": "terminate",
     "outcome": "success",
-    "pending": "875018991e80e3cdbe226ab685d368b7a007ba4aeeb9721922a0552d5ea4719c#0",
+    "pending": "7cc1db2b537f5a755ab67df1caa91cd3873f6d2abfbbd9b38e32ca39af305943#0",
     "submissions": [
       {
         "case": "included",
         "observed": true,
         "step": "terminate",
-        "tx": "875018991e80e3cdbe226ab685d368b7a007ba4aeeb9721922a0552d5ea4719c"
+        "tx": "7cc1db2b537f5a755ab67df1caa91cd3873f6d2abfbbd9b38e32ca39af305943"
       }
     ],
     "treasuryDonation": 3000000
@@ -16,13 +16,13 @@
   {
     "command": "terminate",
     "outcome": "success",
-    "pending": "d587f282c62ffab3d814927ccd60c81bb0d58c11f6907785c641a359ab78a285#0",
+    "pending": "529c88671d87134bb38fa0085168b27b0583460a1f6c20c429a55f295b8cf344#0",
     "submissions": [
       {
         "case": "included",
         "observed": true,
         "step": "terminate",
-        "tx": "d587f282c62ffab3d814927ccd60c81bb0d58c11f6907785c641a359ab78a285"
+        "tx": "529c88671d87134bb38fa0085168b27b0583460a1f6c20c429a55f295b8cf344"
       }
     ],
     "treasuryDonation": 3000000
@@ -30,13 +30,13 @@
   {
     "command": "terminate",
     "outcome": "success",
-    "pending": "7b989749b853d93c6b03a978979c7a44734fbb07f16db1cde89018f29c9ac9be#0",
+    "pending": "ef96af5a964f2702eaba8e3fee8593fc4ec985766e13c7d92586e5656681a39a#0",
     "submissions": [
       {
         "case": "included",
         "observed": true,
         "step": "terminate",
-        "tx": "7b989749b853d93c6b03a978979c7a44734fbb07f16db1cde89018f29c9ac9be"
+        "tx": "ef96af5a964f2702eaba8e3fee8593fc4ec985766e13c7d92586e5656681a39a"
       }
     ],
     "treasuryDonation": 3000000
@@ -44,13 +44,13 @@
   {
     "command": "terminate",
     "outcome": "success",
-    "pending": "cbe3b5cae2ea893d8e564ecd5ce64c777b9bddb78a791f6cae0eb27e3995b92a#0",
+    "pending": "6495764464e8f2cbf8288bdfb3c32e70c0f972c5a2cf5e22b1f8d9cf2bec2c30#0",
     "submissions": [
       {
         "case": "included",
         "observed": true,
         "step": "terminate",
-        "tx": "cbe3b5cae2ea893d8e564ecd5ce64c777b9bddb78a791f6cae0eb27e3995b92a"
+        "tx": "6495764464e8f2cbf8288bdfb3c32e70c0f972c5a2cf5e22b1f8d9cf2bec2c30"
       }
     ],
     "treasuryDonation": 3000000
@@ -58,13 +58,13 @@
   {
     "command": "terminate",
     "outcome": "success",
-    "pending": "018c45e4cbc0747c2d1149d09f820a728bbe337f16daa07ae01baa0f749ffd19#0",
+    "pending": "feb89fb56dfb5ebde135ae5b148764daa47355e94b872827ac869f0d07658874#0",
     "submissions": [
       {
         "case": "included",
         "observed": true,
         "step": "terminate",
-        "tx": "018c45e4cbc0747c2d1149d09f820a728bbe337f16daa07ae01baa0f749ffd19"
+        "tx": "feb89fb56dfb5ebde135ae5b148764daa47355e94b872827ac869f0d07658874"
       }
     ],
     "treasuryDonation": 3000000
@@ -72,13 +72,13 @@
   {
     "command": "terminate",
     "outcome": "success",
-    "pending": "6be67317071b8dfc8fbc9086cd0deaca451e45620832b422120f9bec5902bbbe#0",
+    "pending": "ca70d169a59ceca58cf6bd40328616cfd86116ac4924727a9e2fe5492ea31c47#0",
     "submissions": [
       {
         "case": "included",
         "observed": true,
         "step": "terminate",
-        "tx": "6be67317071b8dfc8fbc9086cd0deaca451e45620832b422120f9bec5902bbbe"
+        "tx": "ca70d169a59ceca58cf6bd40328616cfd86116ac4924727a9e2fe5492ea31c47"
       }
     ],
     "treasuryDonation": 3000000
@@ -86,13 +86,13 @@
   {
     "command": "terminate",
     "outcome": "success",
-    "pending": "338898ffaeb3f30c4215587bd831850874ad7bdb9b27e3bc5bc7fa710adef7da#0",
+    "pending": "30b4af5591ecf262e1212b1185fc0c354263eae4f29495d83b84684d9dd3d1f7#0",
     "submissions": [
       {
         "case": "included",
         "observed": true,
         "step": "terminate",
-        "tx": "338898ffaeb3f30c4215587bd831850874ad7bdb9b27e3bc5bc7fa710adef7da"
+        "tx": "30b4af5591ecf262e1212b1185fc0c354263eae4f29495d83b84684d9dd3d1f7"
       }
     ],
     "treasuryDonation": 3000000
@@ -100,13 +100,13 @@
   {
     "command": "terminate",
     "outcome": "success",
-    "pending": "7796c0072707a19b8c2dad1aca8153df8e6292ef8f3e5735d3a4d7f984316c45#0",
+    "pending": "b1bd72d2e7c03ac5bff37225e1f57bf2caac0ea703b7018ee3f41eb2382997d1#0",
     "submissions": [
       {
         "case": "included",
         "observed": true,
         "step": "terminate",
-        "tx": "7796c0072707a19b8c2dad1aca8153df8e6292ef8f3e5735d3a4d7f984316c45"
+        "tx": "b1bd72d2e7c03ac5bff37225e1f57bf2caac0ea703b7018ee3f41eb2382997d1"
       }
     ],
     "treasuryDonation": 3000000
@@ -114,13 +114,13 @@
   {
     "command": "terminate",
     "outcome": "success",
-    "pending": "2a85e205b99a47f455358fdd02c2f8d7cbaaf0b75ae38d20669b5d7399ebf273#0",
+    "pending": "a8c5ff6a854dc05d8f3ec2bcac7eb3a8f8d8059d3af733a55f2ba208e06f111b#0",
     "submissions": [
       {
         "case": "included",
         "observed": true,
         "step": "terminate",
-        "tx": "2a85e205b99a47f455358fdd02c2f8d7cbaaf0b75ae38d20669b5d7399ebf273"
+        "tx": "a8c5ff6a854dc05d8f3ec2bcac7eb3a8f8d8059d3af733a55f2ba208e06f111b"
       }
     ],
     "treasuryDonation": 3000000
@@ -128,13 +128,13 @@
   {
     "command": "terminate",
     "outcome": "success",
-    "pending": "bed79894cdaeee39740791f54739cd94a825ddbecdc0ad2ac3a15585423dc10f#0",
+    "pending": "18a53dcdf1cbb2bcb49ff74388159d35d25373229b9716dee552c47e59a098de#0",
     "submissions": [
       {
         "case": "included",
         "observed": true,
         "step": "terminate",
-        "tx": "bed79894cdaeee39740791f54739cd94a825ddbecdc0ad2ac3a15585423dc10f"
+        "tx": "18a53dcdf1cbb2bcb49ff74388159d35d25373229b9716dee552c47e59a098de"
       }
     ],
     "treasuryDonation": 3000000
@@ -142,13 +142,13 @@
   {
     "command": "terminate",
     "outcome": "success",
-    "pending": "107a9ea24fcc266cb715be314c2e5ef2644f1ae5b5da73e484afc94cae3f45a9#0",
+    "pending": "87e746e95ba8618a890657decd5360d68dc06fe1b72ffac7ddb398598a589fbb#0",
     "submissions": [
       {
         "case": "included",
         "observed": true,
         "step": "terminate",
-        "tx": "107a9ea24fcc266cb715be314c2e5ef2644f1ae5b5da73e484afc94cae3f45a9"
+        "tx": "87e746e95ba8618a890657decd5360d68dc06fe1b72ffac7ddb398598a589fbb"
       }
     ],
     "treasuryDonation": 3000000
@@ -156,13 +156,13 @@
   {
     "command": "terminate",
     "outcome": "success",
-    "pending": "18a72821d0975dcf5cc8c7c0a7331e11eba19b5a5732f7848d023f10b9d23519#0",
+    "pending": "b475b436c2f3e44c31b375075d5f623ced84c8f1a7a55b64992184cfdfc9c363#0",
     "submissions": [
       {
         "case": "included",
         "observed": true,
         "step": "terminate",
-        "tx": "18a72821d0975dcf5cc8c7c0a7331e11eba19b5a5732f7848d023f10b9d23519"
+        "tx": "b475b436c2f3e44c31b375075d5f623ced84c8f1a7a55b64992184cfdfc9c363"
       }
     ],
     "treasuryDonation": 3000000

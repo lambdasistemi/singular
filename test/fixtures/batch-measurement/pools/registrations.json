@@ -2,156 +2,156 @@
   {
     "command": "insert",
     "outcome": "success",
-    "pending": "e6b68c880ec1ff38da52246ee01610ac5ce5a9e5de3f549b193c28ac65da788e#0",
+    "pending": "e673da10d1eeadd10b75d2d1a60433047947db802bd775949f1219219cba8eef#0",
     "submissions": [
       {
         "case": "included",
         "observed": true,
         "step": "book",
-        "tx": "e6b68c880ec1ff38da52246ee01610ac5ce5a9e5de3f549b193c28ac65da788e"
+        "tx": "e673da10d1eeadd10b75d2d1a60433047947db802bd775949f1219219cba8eef"
       }
     ]
   },
   {
     "command": "insert",
     "outcome": "success",
-    "pending": "50e74954fb7151933689434acfdfc683ca991cbe7415f7e60c9e48bdc5420c09#0",
+    "pending": "d7749f175a5542a2e634509c293a090b1d24afe3455623a1eb425f6d45deeda7#0",
     "submissions": [
       {
         "case": "included",
         "observed": true,
         "step": "book",
-        "tx": "50e74954fb7151933689434acfdfc683ca991cbe7415f7e60c9e48bdc5420c09"
+        "tx": "d7749f175a5542a2e634509c293a090b1d24afe3455623a1eb425f6d45deeda7"
       }
     ]
   },
   {
     "command": "insert",
     "outcome": "success",
-    "pending": "8156e6e7cef386667ffada58e31d8e31f65f208e44999e8b9e573cf23bcb5bb1#0",
+    "pending": "017c42cd125de5949c9b3da0ec8c8cdac07321a92f5aa4017945d6bed4722c71#0",
     "submissions": [
       {
         "case": "included",
         "observed": true,
         "step": "book",
-        "tx": "8156e6e7cef386667ffada58e31d8e31f65f208e44999e8b9e573cf23bcb5bb1"
+        "tx": "017c42cd125de5949c9b3da0ec8c8cdac07321a92f5aa4017945d6bed4722c71"
       }
     ]
   },
   {
     "command": "insert",
     "outcome": "success",
-    "pending": "ad5df4a470d1eda3807617e7ef9473944c7f74c16737ae576a8d7dfc24ad888f#0",
+    "pending": "042c2194a7e6c4f6eb9bf9dde3c3688f6f3a108501ae985ada971de2c86a082f#0",
     "submissions": [
       {
         "case": "included",
         "observed": true,
         "step": "book",
-        "tx": "ad5df4a470d1eda3807617e7ef9473944c7f74c16737ae576a8d7dfc24ad888f"
+        "tx": "042c2194a7e6c4f6eb9bf9dde3c3688f6f3a108501ae985ada971de2c86a082f"
       }
     ]
   },
   {
     "command": "insert",
     "outcome": "success",
-    "pending": "6a15dd3275f3b3be70d71530f3b785b394e17972313e0b183964c2aca3087048#0",
+    "pending": "f43850cb8497d5ecfd9ce74ca92f50f87dc838da6028ed364ce5affda2628931#0",
     "submissions": [
       {
         "case": "included",
         "observed": true,
         "step": "book",
-        "tx": "6a15dd3275f3b3be70d71530f3b785b394e17972313e0b183964c2aca3087048"
+        "tx": "f43850cb8497d5ecfd9ce74ca92f50f87dc838da6028ed364ce5affda2628931"
       }
     ]
   },
   {
     "command": "insert",
     "outcome": "success",
-    "pending": "77ca6effe1c9312050f9127efdc36b60bc081bd716139379ccdce1fc7afe27c1#0",
+    "pending": "d7ee12d09e5722ec54376c2d85f6197a1444310fd0853ba6257c963e3fdec447#0",
     "submissions": [
       {
         "case": "included",
         "observed": true,
         "step": "book",
-        "tx": "77ca6effe1c9312050f9127efdc36b60bc081bd716139379ccdce1fc7afe27c1"
+        "tx": "d7ee12d09e5722ec54376c2d85f6197a1444310fd0853ba6257c963e3fdec447"
       }
     ]
   },
   {
     "command": "insert",
     "outcome": "success",
-    "pending": "2f0a55eb5f29e0ca43e1bcafff019a022c14ebe8d72f4cf0d81d21cae1d69d99#0",
+    "pending": "7195ce381b5b963f8007e7df10fec2803289e17377bc3ea64c79a26e0fbd8585#0",
     "submissions": [
       {
         "case": "included",
         "observed": true,
         "step": "book",
-        "tx": "2f0a55eb5f29e0ca43e1bcafff019a022c14ebe8d72f4cf0d81d21cae1d69d99"
+        "tx": "7195ce381b5b963f8007e7df10fec2803289e17377bc3ea64c79a26e0fbd8585"
       }
     ]
   },
   {
     "command": "insert",
     "outcome": "success",
-    "pending": "2ec4584e33810cdb52f530d96e1b5cd206772875b2c8f8535ffab947bfe0dd98#0",
+    "pending": "0c9e3bbfb3193cf49d41c206b87e0ff17742295a72b991c60171e45e514ebb15#0",
     "submissions": [
       {
         "case": "included",
         "observed": true,
         "step": "book",
-        "tx": "2ec4584e33810cdb52f530d96e1b5cd206772875b2c8f8535ffab947bfe0dd98"
+        "tx": "0c9e3bbfb3193cf49d41c206b87e0ff17742295a72b991c60171e45e514ebb15"
       }
     ]
   },
   {
     "command": "insert",
     "outcome": "success",
-    "pending": "f38108ac1ecee0fea2e14f634266f1e4379b91c036504028126efa101888d945#0",
+    "pending": "7699ccf0f348bb840486a74d2e2513c75592c9864e51ce93bb6aec11f5a9beb4#0",
     "submissions": [
       {
         "case": "included",
         "observed": true,
         "step": "book",
-        "tx": "f38108ac1ecee0fea2e14f634266f1e4379b91c036504028126efa101888d945"
+        "tx": "7699ccf0f348bb840486a74d2e2513c75592c9864e51ce93bb6aec11f5a9beb4"
       }
     ]
   },
   {
     "command": "insert",
     "outcome": "success",
-    "pending": "575a5d7e118776ca7b42be0aad4bc1ea2b5be1828e1ecb16f9e8be88dbe10855#0",
+    "pending": "4c66d8fa53dfc0f22c5611b11e2b4b3c1bbe0ff2501bb36e032b4feb761a8f05#0",
     "submissions": [
       {
         "case": "included",
         "observed": true,
         "step": "book",
-        "tx": "575a5d7e118776ca7b42be0aad4bc1ea2b5be1828e1ecb16f9e8be88dbe10855"
+        "tx": "4c66d8fa53dfc0f22c5611b11e2b4b3c1bbe0ff2501bb36e032b4feb761a8f05"
       }
     ]
   },
   {
     "command": "insert",
     "outcome": "success",
-    "pending": "3285705f5565a21650516b723fd75163645dd84075d7f7a3abc156a225c8ff6f#0",
+    "pending": "c42f35badfbe6cba547de19f4b47a2f3389ca873da657c35bcc06d9a3684da64#0",
     "submissions": [
       {
         "case": "included",
         "observed": true,
         "step": "book",
-        "tx": "3285705f5565a21650516b723fd75163645dd84075d7f7a3abc156a225c8ff6f"
+        "tx": "c42f35badfbe6cba547de19f4b47a2f3389ca873da657c35bcc06d9a3684da64"
       }
     ]
   },
   {
     "command": "insert",
     "outcome": "success",
-    "pending": "96d6ae403e33fa4abece7c146bf36582268d73d6d2df2199a48de2c2858aa4a8#0",
+    "pending": "0d7051c6da550a103d18ad5d91c6fbd7b7ae97ba625bb1b57d5df53c1a95c759#0",
     "submissions": [
       {
         "case": "included",
         "observed": true,
         "step": "book",
-        "tx": "96d6ae403e33fa4abece7c146bf36582268d73d6d2df2199a48de2c2858aa4a8"
+        "tx": "0d7051c6da550a103d18ad5d91c6fbd7b7ae97ba625bb1b57d5df53c1a95c759"
       }
     ]
   }

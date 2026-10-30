@@ -62726,461 +62726,466 @@
    ]
   },
   "docs-folding-requests/read-the-measured-limits-01": {
-   "audio_sha256": "46cd560e7dcd20bc6585e36faedaf88668c6270d8fc33eef7da11d5cf346d9f0",
-   "characters": 521,
-   "cost": 0.00051579,
-   "duration": 42.075,
+   "audio_sha256": "82d318405ec6081a939597d88e021e05939fad4234310b0e19ae8c9b5ff50ea2",
+   "characters": 542,
+   "cost": 0.0005365799999999999,
+   "duration": 36.525,
    "index": 1,
-   "key": "2d340a182b45ff6623f313dad7765a9259bf0c1ce36c5596223941f0ca8b20b1",
+   "key": "0b5fdf134fb1ec5962c835bef8bac24a0f5905d81ae2537937c3c44d3c336e21",
    "page": "docs/folding-requests.md",
    "pause_ms": 400,
    "section": "read-the-measured-limits",
-   "sent_text": "These are evaluations of kept transactions under the preprod parameters recorded on 4 October 2026 in offchain/test/fixtures/koios/preprod/cli_protocol_params-b 7 7 7 4 4 8 4 2 5 7 7 8 d 1 3.json. A development node given the same limits, prices and fees corroborates the accepted size and refusal of the next. This is not a submission to preprod. The packaged node cannot run preprod's current execution model; the ledger evaluator uses the recorded target model separately. Protocol parameters can change by governance.",
-   "text": "These are evaluations of kept transactions under the preprod parameters recorded on 4 October 2026 in offchain/test/fixtures/koios/preprod/cli_protocol_params-b777448425778d13.json. A development node given the same limits, prices and fees corroborates the accepted size and refusal of the next. This is not a submission to preprod. The packaged node cannot run preprod's current execution model; the ledger evaluator uses the recorded target model separately. Protocol parameters can change by governance.",
+   "sent_text": "These are evaluations of kept transactions under the preprod parameters whose recording date and source the first table below states. The release decision table shows which figures moved against the earlier recording. A development node given the same limits, prices and fees corroborates the accepted size and refusal of the next. This is not a submission to preprod. The packaged node cannot run preprod's current execution model; the ledger evaluator uses the recorded target model separately. Protocol parameters can change by governance.",
+   "text": "These are evaluations of kept transactions under the preprod parameters whose recording date and source the first table below states. The release decision table shows which figures moved against the earlier recording. A development node given the same limits, prices and fees corroborates the accepted size and refusal of the next. This is not a submission to preprod. The packaged node cannot run preprod's current execution model; the ledger evaluator uses the recorded target model separately. Protocol parameters can change by governance.",
    "words": [
     {
-     "end": 0.45,
+     "end": 0.475,
      "start": 0.225,
      "text": "These"
     },
     {
-     "end": 0.575,
-     "start": 0.45,
+     "end": 0.625,
+     "start": 0.475,
      "text": "are"
     },
     {
-     "end": 1.312,
-     "start": 0.575,
+     "end": 1.575,
+     "start": 0.625,
      "text": "evaluations"
     },
     {
-     "end": 1.425,
-     "start": 1.312,
+     "end": 1.712,
+     "start": 1.575,
      "text": "of"
     },
     {
-     "end": 1.7,
-     "start": 1.425,
+     "end": 2.0,
+     "start": 1.712,
      "text": "kept"
     },
     {
-     "end": 2.575,
-     "start": 1.7,
+     "end": 2.875,
+     "start": 2.0,
      "text": "transactions"
     },
     {
-     "end": 2.787,
-     "start": 2.575,
+     "end": 3.088,
+     "start": 2.875,
      "text": "under"
     },
     {
-     "end": 2.875,
-     "start": 2.787,
+     "end": 3.175,
+     "start": 3.088,
      "text": "the"
     },
     {
-     "end": 3.325,
-     "start": 2.875,
+     "end": 3.7,
+     "start": 3.175,
      "text": "preprod"
     },
     {
-     "end": 3.95,
-     "start": 3.325,
+     "end": 4.4,
+     "start": 3.7,
      "text": "parameters"
     },
     {
-     "end": 4.438,
-     "start": 3.95,
-     "text": "recorded"
+     "end": 4.625,
+     "start": 4.4,
+     "text": "whose"
     },
     {
-     "end": 4.65,
-     "start": 4.438,
-     "text": "on"
+     "end": 5.162,
+     "start": 4.625,
+     "text": "recording"
     },
     {
-     "end": 4.963,
-     "start": 4.65,
-     "text": "4"
+     "end": 5.525,
+     "start": 5.162,
+     "text": "date"
     },
     {
-     "end": 5.425,
-     "start": 4.963,
-     "text": "October"
-    },
-    {
-     "end": 6.45,
-     "start": 5.425,
-     "text": "2026"
-    },
-    {
-     "end": 6.613,
-     "start": 6.45,
-     "text": "in"
-    },
-    {
-     "end": 12.738,
-     "start": 6.613,
-     "text": "offchain/test/fixtures/koios/preprod/cli_protocol_params-b"
-    },
-    {
-     "end": 13.137,
-     "start": 12.738,
-     "text": "7"
-    },
-    {
-     "end": 13.512,
-     "start": 13.137,
-     "text": "7"
-    },
-    {
-     "end": 13.887,
-     "start": 13.512,
-     "text": "7"
-    },
-    {
-     "end": 14.137,
-     "start": 13.887,
-     "text": "4"
-    },
-    {
-     "end": 14.4,
-     "start": 14.137,
-     "text": "4"
-    },
-    {
-     "end": 14.663,
-     "start": 14.4,
-     "text": "8"
-    },
-    {
-     "end": 14.938,
-     "start": 14.663,
-     "text": "4"
-    },
-    {
-     "end": 15.25,
-     "start": 14.938,
-     "text": "2"
-    },
-    {
-     "end": 15.613,
-     "start": 15.25,
-     "text": "5"
-    },
-    {
-     "end": 15.988,
-     "start": 15.613,
-     "text": "7"
-    },
-    {
-     "end": 16.35,
-     "start": 15.988,
-     "text": "7"
-    },
-    {
-     "end": 16.587,
-     "start": 16.35,
-     "text": "8"
-    },
-    {
-     "end": 16.812,
-     "start": 16.587,
-     "text": "d"
-    },
-    {
-     "end": 17.112,
-     "start": 16.812,
-     "text": "1"
-    },
-    {
-     "end": 19.425,
-     "start": 17.112,
-     "text": "3.json"
-    },
-    {
-     "end": 19.675,
-     "start": 19.425,
-     "text": "."
-    },
-    {
-     "end": 19.95,
-     "start": 19.875,
-     "text": "A"
-    },
-    {
-     "end": 20.525,
-     "start": 19.95,
-     "text": "development"
-    },
-    {
-     "end": 20.875,
-     "start": 20.525,
-     "text": "node"
-    },
-    {
-     "end": 21.138,
-     "start": 20.875,
-     "text": "given"
-    },
-    {
-     "end": 21.263,
-     "start": 21.138,
-     "text": "the"
-    },
-    {
-     "end": 21.6,
-     "start": 21.263,
-     "text": "same"
-    },
-    {
-     "end": 22.075,
-     "start": 21.6,
-     "text": "limits"
-    },
-    {
-     "end": 22.163,
-     "start": 22.075,
-     "text": ","
-    },
-    {
-     "end": 22.725,
-     "start": 22.163,
-     "text": "prices"
-    },
-    {
-     "end": 22.875,
-     "start": 22.725,
+     "end": 5.7,
+     "start": 5.525,
      "text": "and"
     },
     {
-     "end": 23.312,
-     "start": 22.875,
-     "text": "fees"
+     "end": 6.125,
+     "start": 5.7,
+     "text": "source"
     },
     {
-     "end": 24.025,
-     "start": 23.312,
-     "text": "corroborates"
-    },
-    {
-     "end": 24.175,
-     "start": 24.025,
+     "end": 6.262,
+     "start": 6.125,
      "text": "the"
     },
     {
-     "end": 24.712,
-     "start": 24.175,
-     "text": "accepted"
+     "end": 6.575,
+     "start": 6.262,
+     "text": "first"
     },
     {
-     "end": 25.25,
-     "start": 24.712,
-     "text": "size"
+     "end": 6.975,
+     "start": 6.575,
+     "text": "table"
     },
     {
-     "end": 25.375,
-     "start": 25.25,
-     "text": "and"
+     "end": 7.338,
+     "start": 6.975,
+     "text": "below"
     },
     {
-     "end": 25.975,
-     "start": 25.375,
-     "text": "refusal"
+     "end": 8.525,
+     "start": 7.338,
+     "text": "states"
     },
     {
-     "end": 26.062,
-     "start": 25.975,
-     "text": "of"
-    },
-    {
-     "end": 26.15,
-     "start": 26.062,
-     "text": "the"
-    },
-    {
-     "end": 27.2,
-     "start": 26.15,
-     "text": "next"
-    },
-    {
-     "end": 27.425,
-     "start": 27.2,
+     "end": 8.75,
+     "start": 8.525,
      "text": "."
     },
     {
-     "end": 27.862,
-     "start": 27.625,
-     "text": "This"
-    },
-    {
-     "end": 28.038,
-     "start": 27.862,
-     "text": "is"
-    },
-    {
-     "end": 28.288,
-     "start": 28.038,
-     "text": "not"
-    },
-    {
-     "end": 28.375,
-     "start": 28.288,
-     "text": "a"
-    },
-    {
-     "end": 28.95,
-     "start": 28.375,
-     "text": "submission"
-    },
-    {
-     "end": 29.05,
-     "start": 28.95,
-     "text": "to"
-    },
-    {
-     "end": 29.825,
-     "start": 29.05,
-     "text": "preprod"
-    },
-    {
-     "end": 29.95,
-     "start": 29.825,
-     "text": "."
-    },
-    {
-     "end": 30.062,
-     "start": 29.95,
+     "end": 9.0,
+     "start": 8.925,
      "text": "The"
     },
     {
-     "end": 30.6,
-     "start": 30.062,
-     "text": "packaged"
+     "end": 9.375,
+     "start": 9.0,
+     "text": "release"
     },
     {
-     "end": 30.95,
-     "start": 30.6,
-     "text": "node"
+     "end": 9.913,
+     "start": 9.375,
+     "text": "decision"
     },
     {
-     "end": 31.325,
-     "start": 30.95,
-     "text": "cannot"
+     "end": 10.35,
+     "start": 9.913,
+     "text": "table"
     },
     {
-     "end": 31.575,
-     "start": 31.325,
-     "text": "run"
+     "end": 10.825,
+     "start": 10.35,
+     "text": "shows"
     },
     {
-     "end": 32.162,
-     "start": 31.575,
-     "text": "preprod's"
+     "end": 11.062,
+     "start": 10.825,
+     "text": "which"
     },
     {
-     "end": 32.5,
-     "start": 32.162,
-     "text": "current"
+     "end": 11.538,
+     "start": 11.062,
+     "text": "figures"
     },
     {
-     "end": 33.125,
-     "start": 32.5,
-     "text": "execution"
+     "end": 11.95,
+     "start": 11.538,
+     "text": "moved"
     },
     {
-     "end": 34.075,
-     "start": 33.125,
-     "text": "model"
+     "end": 12.288,
+     "start": 11.95,
+     "text": "against"
     },
     {
-     "end": 34.3,
-     "start": 34.075,
-     "text": ";"
-    },
-    {
-     "end": 34.575,
-     "start": 34.475,
+     "end": 12.4,
+     "start": 12.288,
      "text": "the"
     },
     {
-     "end": 34.925,
-     "start": 34.575,
-     "text": "ledger"
+     "end": 12.825,
+     "start": 12.4,
+     "text": "earlier"
     },
     {
-     "end": 35.725,
-     "start": 34.925,
-     "text": "evaluator"
+     "end": 13.925,
+     "start": 12.825,
+     "text": "recording"
     },
     {
-     "end": 36.175,
-     "start": 35.725,
-     "text": "uses"
-    },
-    {
-     "end": 36.275,
-     "start": 36.175,
-     "text": "the"
-    },
-    {
-     "end": 36.825,
-     "start": 36.275,
-     "text": "recorded"
-    },
-    {
-     "end": 37.2,
-     "start": 36.825,
-     "text": "target"
-    },
-    {
-     "end": 37.6,
-     "start": 37.2,
-     "text": "model"
-    },
-    {
-     "end": 38.675,
-     "start": 37.6,
-     "text": "separately"
-    },
-    {
-     "end": 38.9,
-     "start": 38.675,
+     "end": 14.125,
+     "start": 13.925,
      "text": "."
     },
     {
-     "end": 39.55,
-     "start": 39.075,
+     "end": 14.4,
+     "start": 14.325,
+     "text": "A"
+    },
+    {
+     "end": 14.975,
+     "start": 14.4,
+     "text": "development"
+    },
+    {
+     "end": 15.325,
+     "start": 14.975,
+     "text": "node"
+    },
+    {
+     "end": 15.587,
+     "start": 15.325,
+     "text": "given"
+    },
+    {
+     "end": 15.712,
+     "start": 15.587,
+     "text": "the"
+    },
+    {
+     "end": 16.05,
+     "start": 15.712,
+     "text": "same"
+    },
+    {
+     "end": 16.525,
+     "start": 16.05,
+     "text": "limits"
+    },
+    {
+     "end": 16.612,
+     "start": 16.525,
+     "text": ","
+    },
+    {
+     "end": 17.175,
+     "start": 16.612,
+     "text": "prices"
+    },
+    {
+     "end": 17.325,
+     "start": 17.175,
+     "text": "and"
+    },
+    {
+     "end": 17.763,
+     "start": 17.325,
+     "text": "fees"
+    },
+    {
+     "end": 18.475,
+     "start": 17.763,
+     "text": "corroborates"
+    },
+    {
+     "end": 18.625,
+     "start": 18.475,
+     "text": "the"
+    },
+    {
+     "end": 19.163,
+     "start": 18.625,
+     "text": "accepted"
+    },
+    {
+     "end": 19.7,
+     "start": 19.163,
+     "text": "size"
+    },
+    {
+     "end": 19.825,
+     "start": 19.7,
+     "text": "and"
+    },
+    {
+     "end": 20.425,
+     "start": 19.825,
+     "text": "refusal"
+    },
+    {
+     "end": 20.513,
+     "start": 20.425,
+     "text": "of"
+    },
+    {
+     "end": 20.6,
+     "start": 20.513,
+     "text": "the"
+    },
+    {
+     "end": 21.65,
+     "start": 20.6,
+     "text": "next"
+    },
+    {
+     "end": 21.875,
+     "start": 21.65,
+     "text": "."
+    },
+    {
+     "end": 22.312,
+     "start": 22.075,
+     "text": "This"
+    },
+    {
+     "end": 22.487,
+     "start": 22.312,
+     "text": "is"
+    },
+    {
+     "end": 22.737,
+     "start": 22.487,
+     "text": "not"
+    },
+    {
+     "end": 22.825,
+     "start": 22.737,
+     "text": "a"
+    },
+    {
+     "end": 23.4,
+     "start": 22.825,
+     "text": "submission"
+    },
+    {
+     "end": 23.5,
+     "start": 23.4,
+     "text": "to"
+    },
+    {
+     "end": 24.275,
+     "start": 23.5,
+     "text": "preprod"
+    },
+    {
+     "end": 24.4,
+     "start": 24.275,
+     "text": "."
+    },
+    {
+     "end": 24.513,
+     "start": 24.4,
+     "text": "The"
+    },
+    {
+     "end": 25.05,
+     "start": 24.513,
+     "text": "packaged"
+    },
+    {
+     "end": 25.4,
+     "start": 25.05,
+     "text": "node"
+    },
+    {
+     "end": 25.775,
+     "start": 25.4,
+     "text": "cannot"
+    },
+    {
+     "end": 26.025,
+     "start": 25.775,
+     "text": "run"
+    },
+    {
+     "end": 26.612,
+     "start": 26.025,
+     "text": "preprod's"
+    },
+    {
+     "end": 26.95,
+     "start": 26.612,
+     "text": "current"
+    },
+    {
+     "end": 27.575,
+     "start": 26.95,
+     "text": "execution"
+    },
+    {
+     "end": 28.525,
+     "start": 27.575,
+     "text": "model"
+    },
+    {
+     "end": 28.75,
+     "start": 28.525,
+     "text": ";"
+    },
+    {
+     "end": 29.025,
+     "start": 28.925,
+     "text": "the"
+    },
+    {
+     "end": 29.375,
+     "start": 29.025,
+     "text": "ledger"
+    },
+    {
+     "end": 30.175,
+     "start": 29.375,
+     "text": "evaluator"
+    },
+    {
+     "end": 30.625,
+     "start": 30.175,
+     "text": "uses"
+    },
+    {
+     "end": 30.725,
+     "start": 30.625,
+     "text": "the"
+    },
+    {
+     "end": 31.275,
+     "start": 30.725,
+     "text": "recorded"
+    },
+    {
+     "end": 31.65,
+     "start": 31.275,
+     "text": "target"
+    },
+    {
+     "end": 32.05,
+     "start": 31.65,
+     "text": "model"
+    },
+    {
+     "end": 33.125,
+     "start": 32.05,
+     "text": "separately"
+    },
+    {
+     "end": 33.35,
+     "start": 33.125,
+     "text": "."
+    },
+    {
+     "end": 34.0,
+     "start": 33.525,
      "text": "Protocol"
     },
     {
-     "end": 40.2,
-     "start": 39.55,
+     "end": 34.65,
+     "start": 34.0,
      "text": "parameters"
     },
     {
-     "end": 40.4,
-     "start": 40.2,
+     "end": 34.85,
+     "start": 34.65,
      "text": "can"
     },
     {
-     "end": 40.725,
-     "start": 40.4,
+     "end": 35.175,
+     "start": 34.85,
      "text": "change"
     },
     {
-     "end": 40.9,
-     "start": 40.725,
+     "end": 35.35,
+     "start": 35.175,
      "text": "by"
     },
     {
-     "end": 41.875,
-     "start": 40.9,
+     "end": 36.325,
+     "start": 35.35,
      "text": "governance"
     },
     {
-     "end": 42.075,
-     "start": 41.875,
+     "end": 36.525,
+     "start": 36.325,
      "text": "."
     }
    ]
@@ -187241,17 +187246,17 @@
    ]
   },
   "docs-release-decision-table/reading-the-decision-table-02": {
-   "audio_sha256": "b82fc5f1878a8cfb745b9bbd4cc0c3e927a5869d9fba2ff3c1e213d023be4c69",
-   "characters": 302,
-   "cost": 0.00029897999999999996,
-   "duration": 28.65,
+   "audio_sha256": "da4423a8e1fada046aca610e665c2e7a18199ff7d77f5aeb10769e6343fabd26",
+   "characters": 408,
+   "cost": 0.00040392,
+   "duration": 38.625,
    "index": 2,
-   "key": "2104a88895358caeb39aee561057ef84f7ea69745cf1ed8b8b510bab63d697a2",
+   "key": "9e048fa43676ae7ea9c75fe6627028c5cb9a97e62aacfe71ad3723e1ea89d53b",
    "page": "docs/release-decision-table.md",
    "pause_ms": 400,
    "section": "reading-the-decision-table",
-   "sent_text": "The batch rows rest on preprod protocol parameters recorded on Sun, 04 Oct 2026 18:06:12 GMT, taken from the kept batch receipt. The creation rows rest on the development network's protocol parameters, read from its chain at the times the kept chain records note: 2026-10-29T04:25:37Z for both designs.",
-   "text": "The batch rows rest on preprod protocol parameters recorded on Sun, 04 Oct 2026 18:06:12 GMT, taken from the kept batch receipt. The creation rows rest on the development network's protocol parameters, read from its chain at the times the kept chain records note: 2026-10-29T04:25:37Z for both designs.",
+   "sent_text": "The batch rows rest on preprod protocol parameters recorded on Fri, 30 Oct 2026 13:24:40 GMT, taken from the kept batch receipt. The earlier batch receipt, kept beside it, rests on parameters recorded on Sun, 04 Oct 2026 18:06:12 GMT. The creation rows rest on the development network's protocol parameters, read from its chain at the times the kept chain records note: 2026-10-29T04:25:37Z for both designs.",
+   "text": "The batch rows rest on preprod protocol parameters recorded on Fri, 30 Oct 2026 13:24:40 GMT, taken from the kept batch receipt. The earlier batch receipt, kept beside it, rests on parameters recorded on Sun, 04 Oct 2026 18:06:12 GMT. The creation rows rest on the development network's protocol parameters, read from its chain at the times the kept chain records note: 2026-10-29T04:25:37Z for both designs.",
    "words": [
     {
      "end": 0.3,
@@ -187269,258 +187274,368 @@
      "text": "rows"
     },
     {
-     "end": 1.4,
+     "end": 1.425,
      "start": 1.013,
      "text": "rest"
     },
     {
-     "end": 1.575,
-     "start": 1.4,
+     "end": 1.6,
+     "start": 1.425,
      "text": "on"
     },
     {
-     "end": 2.025,
-     "start": 1.575,
+     "end": 2.075,
+     "start": 1.6,
      "text": "preprod"
     },
     {
-     "end": 2.6,
-     "start": 2.025,
+     "end": 2.65,
+     "start": 2.075,
      "text": "protocol"
     },
     {
-     "end": 3.25,
-     "start": 2.6,
+     "end": 3.3,
+     "start": 2.65,
      "text": "parameters"
     },
     {
-     "end": 3.75,
-     "start": 3.25,
+     "end": 3.825,
+     "start": 3.3,
      "text": "recorded"
     },
     {
-     "end": 3.963,
-     "start": 3.75,
+     "end": 4.05,
+     "start": 3.825,
      "text": "on"
     },
     {
-     "end": 4.4,
-     "start": 3.963,
-     "text": "Sun"
+     "end": 4.55,
+     "start": 4.05,
+     "text": "Fri"
     },
     {
-     "end": 4.512,
-     "start": 4.4,
+     "end": 4.662,
+     "start": 4.55,
      "text": ","
     },
     {
-     "end": 4.863,
-     "start": 4.512,
-     "text": "04"
+     "end": 5.062,
+     "start": 4.662,
+     "text": "30"
     },
     {
-     "end": 5.188,
-     "start": 4.863,
+     "end": 5.412,
+     "start": 5.062,
      "text": "Oct"
     },
     {
-     "end": 6.125,
-     "start": 5.188,
+     "end": 6.363,
+     "start": 5.412,
      "text": "2026"
     },
     {
-     "end": 8.288,
-     "start": 6.125,
-     "text": "18:06:12"
+     "end": 7.988,
+     "start": 6.363,
+     "text": "13:24:40"
     },
     {
-     "end": 9.125,
-     "start": 8.288,
+     "end": 8.925,
+     "start": 7.988,
      "text": "GMT"
     },
     {
-     "end": 9.238,
-     "start": 9.125,
+     "end": 9.062,
+     "start": 8.925,
      "text": ","
     },
     {
-     "end": 9.625,
-     "start": 9.238,
+     "end": 9.45,
+     "start": 9.062,
      "text": "taken"
     },
     {
-     "end": 9.788,
-     "start": 9.625,
+     "end": 9.613,
+     "start": 9.45,
      "text": "from"
     },
     {
-     "end": 9.875,
-     "start": 9.788,
+     "end": 9.7,
+     "start": 9.613,
      "text": "the"
     },
     {
-     "end": 10.175,
-     "start": 9.875,
+     "end": 10.0,
+     "start": 9.7,
      "text": "kept"
     },
     {
-     "end": 10.525,
-     "start": 10.175,
+     "end": 10.35,
+     "start": 10.0,
      "text": "batch"
     },
     {
-     "end": 11.675,
-     "start": 10.525,
+     "end": 11.5,
+     "start": 10.35,
      "text": "receipt"
     },
     {
-     "end": 11.95,
-     "start": 11.675,
+     "end": 11.75,
+     "start": 11.5,
      "text": "."
     },
     {
-     "end": 12.2,
-     "start": 12.125,
+     "end": 12.075,
+     "start": 11.95,
      "text": "The"
     },
     {
-     "end": 12.75,
-     "start": 12.2,
-     "text": "creation"
+     "end": 12.5,
+     "start": 12.075,
+     "text": "earlier"
     },
     {
-     "end": 13.062,
-     "start": 12.75,
-     "text": "rows"
+     "end": 12.85,
+     "start": 12.5,
+     "text": "batch"
     },
     {
-     "end": 13.525,
-     "start": 13.062,
-     "text": "rest"
+     "end": 13.275,
+     "start": 12.85,
+     "text": "receipt"
     },
     {
-     "end": 13.663,
-     "start": 13.525,
-     "text": "on"
-    },
-    {
-     "end": 13.75,
-     "start": 13.663,
-     "text": "the"
-    },
-    {
-     "end": 14.325,
-     "start": 13.75,
-     "text": "development"
-    },
-    {
-     "end": 14.788,
-     "start": 14.325,
-     "text": "network's"
-    },
-    {
-     "end": 15.325,
-     "start": 14.788,
-     "text": "protocol"
-    },
-    {
-     "end": 16.55,
-     "start": 15.325,
-     "text": "parameters"
-    },
-    {
-     "end": 16.75,
-     "start": 16.55,
+     "end": 13.325,
+     "start": 13.275,
      "text": ","
     },
     {
-     "end": 17.175,
-     "start": 16.95,
-     "text": "read"
-    },
-    {
-     "end": 17.312,
-     "start": 17.175,
-     "text": "from"
-    },
-    {
-     "end": 17.425,
-     "start": 17.312,
-     "text": "its"
-    },
-    {
-     "end": 17.663,
-     "start": 17.425,
-     "text": "chain"
-    },
-    {
-     "end": 17.737,
-     "start": 17.663,
-     "text": "at"
-    },
-    {
-     "end": 17.825,
-     "start": 17.737,
-     "text": "the"
-    },
-    {
-     "end": 18.3,
-     "start": 17.825,
-     "text": "times"
-    },
-    {
-     "end": 18.4,
-     "start": 18.3,
-     "text": "the"
-    },
-    {
-     "end": 18.688,
-     "start": 18.4,
+     "end": 13.575,
+     "start": 13.325,
      "text": "kept"
     },
     {
-     "end": 18.975,
-     "start": 18.688,
+     "end": 14.0,
+     "start": 13.575,
+     "text": "beside"
+    },
+    {
+     "end": 14.125,
+     "start": 14.0,
+     "text": "it"
+    },
+    {
+     "end": 14.175,
+     "start": 14.125,
+     "text": ","
+    },
+    {
+     "end": 14.462,
+     "start": 14.175,
+     "text": "rests"
+    },
+    {
+     "end": 14.625,
+     "start": 14.462,
+     "text": "on"
+    },
+    {
+     "end": 15.3,
+     "start": 14.625,
+     "text": "parameters"
+    },
+    {
+     "end": 15.8,
+     "start": 15.3,
+     "text": "recorded"
+    },
+    {
+     "end": 16.038,
+     "start": 15.8,
+     "text": "on"
+    },
+    {
+     "end": 16.4,
+     "start": 16.038,
+     "text": "Sun"
+    },
+    {
+     "end": 16.513,
+     "start": 16.4,
+     "text": ","
+    },
+    {
+     "end": 16.837,
+     "start": 16.513,
+     "text": "04"
+    },
+    {
+     "end": 17.138,
+     "start": 16.837,
+     "text": "Oct"
+    },
+    {
+     "end": 18.05,
+     "start": 17.138,
+     "text": "2026"
+    },
+    {
+     "end": 20.163,
+     "start": 18.05,
+     "text": "18:06:12"
+    },
+    {
+     "end": 21.625,
+     "start": 20.163,
+     "text": "GMT"
+    },
+    {
+     "end": 21.925,
+     "start": 21.625,
+     "text": "."
+    },
+    {
+     "end": 22.175,
+     "start": 22.1,
+     "text": "The"
+    },
+    {
+     "end": 22.725,
+     "start": 22.175,
+     "text": "creation"
+    },
+    {
+     "end": 23.038,
+     "start": 22.725,
+     "text": "rows"
+    },
+    {
+     "end": 23.5,
+     "start": 23.038,
+     "text": "rest"
+    },
+    {
+     "end": 23.638,
+     "start": 23.5,
+     "text": "on"
+    },
+    {
+     "end": 23.725,
+     "start": 23.638,
+     "text": "the"
+    },
+    {
+     "end": 24.3,
+     "start": 23.725,
+     "text": "development"
+    },
+    {
+     "end": 24.763,
+     "start": 24.3,
+     "text": "network's"
+    },
+    {
+     "end": 25.3,
+     "start": 24.763,
+     "text": "protocol"
+    },
+    {
+     "end": 26.525,
+     "start": 25.3,
+     "text": "parameters"
+    },
+    {
+     "end": 26.725,
+     "start": 26.525,
+     "text": ","
+    },
+    {
+     "end": 27.15,
+     "start": 26.925,
+     "text": "read"
+    },
+    {
+     "end": 27.288,
+     "start": 27.15,
+     "text": "from"
+    },
+    {
+     "end": 27.4,
+     "start": 27.288,
+     "text": "its"
+    },
+    {
+     "end": 27.638,
+     "start": 27.4,
      "text": "chain"
     },
     {
-     "end": 19.425,
-     "start": 18.975,
+     "end": 27.712,
+     "start": 27.638,
+     "text": "at"
+    },
+    {
+     "end": 27.8,
+     "start": 27.712,
+     "text": "the"
+    },
+    {
+     "end": 28.275,
+     "start": 27.8,
+     "text": "times"
+    },
+    {
+     "end": 28.375,
+     "start": 28.275,
+     "text": "the"
+    },
+    {
+     "end": 28.663,
+     "start": 28.375,
+     "text": "kept"
+    },
+    {
+     "end": 28.95,
+     "start": 28.663,
+     "text": "chain"
+    },
+    {
+     "end": 29.4,
+     "start": 28.95,
      "text": "records"
     },
     {
-     "end": 20.225,
-     "start": 19.425,
+     "end": 30.2,
+     "start": 29.4,
      "text": "note"
     },
     {
-     "end": 20.425,
-     "start": 20.225,
+     "end": 30.4,
+     "start": 30.2,
      "text": ":"
     },
     {
-     "end": 26.7,
-     "start": 20.625,
+     "end": 36.675,
+     "start": 30.6,
      "text": "2026-10-29T04:25:37Z"
     },
     {
-     "end": 26.85,
-     "start": 26.7,
+     "end": 36.825,
+     "start": 36.675,
      "text": "for"
     },
     {
-     "end": 27.125,
-     "start": 26.85,
+     "end": 37.1,
+     "start": 36.825,
      "text": "both"
     },
     {
-     "end": 28.425,
-     "start": 27.125,
+     "end": 38.4,
+     "start": 37.1,
      "text": "designs"
     },
     {
-     "end": 28.65,
-     "start": 28.425,
+     "end": 38.625,
+     "start": 38.4,
      "text": "."
     }
    ]
@@ -188071,17 +188186,17 @@
    ]
   },
   "docs-release-decision-table/release-decision-table-02": {
-   "audio_sha256": "106ed29e46705bcabf66dceec77aa7a8109b4f084119fea489ee6e1b47d134cf",
-   "characters": 270,
-   "cost": 0.0002673,
-   "duration": 17.6,
+   "audio_sha256": "cf38a7e1bf5b7f2d10740fc2d83bd26e84311bde00c5344e3a0a9bf2e613cb00",
+   "characters": 318,
+   "cost": 0.00031481999999999994,
+   "duration": 21.675,
    "index": 2,
-   "key": "1d56e940770ac54d11dd175eb18fd9aaea35fd7617077a8a0a84bb3ca1be1eee",
+   "key": "772571d3f5e45c12b67e97ec37a2e60fd77212d4759d520d5f06f8429ea42682",
    "page": "docs/release-decision-table.md",
    "pause_ms": 400,
    "section": "release-decision-table",
-   "sent_text": "Every figure on the page is read or computed from the kept receipts below. The documentation check regenerates the page from the receipts and their chain records, and refuses a page that differs, a receipt or chain record that is missing and a row that names no receipt.",
-   "text": "Every figure on the page is read or computed from the kept receipts below. The documentation check regenerates the page from the receipts and their chain records, and refuses a page that differs, a receipt or chain record that is missing and a row that names no receipt.",
+   "sent_text": "Every figure on the page is read or computed from the kept receipts below. The documentation check regenerates the page from the receipts, their chain records and the parameter recordings, and refuses a page that differs, a receipt, chain record or recording that is missing or altered and a row that names no receipt.",
+   "text": "Every figure on the page is read or computed from the kept receipts below. The documentation check regenerates the page from the receipts, their chain records and the parameter recordings, and refuses a page that differs, a receipt, chain record or recording that is missing or altered and a row that names no receipt.",
    "words": [
     {
      "end": 0.488,
@@ -188164,183 +188279,223 @@
      "text": "The"
     },
     {
-     "end": 6.213,
+     "end": 6.137,
      "start": 5.275,
      "text": "documentation"
     },
     {
-     "end": 6.588,
-     "start": 6.213,
+     "end": 6.512,
+     "start": 6.137,
      "text": "check"
     },
     {
-     "end": 7.275,
-     "start": 6.588,
+     "end": 7.162,
+     "start": 6.512,
      "text": "regenerates"
     },
     {
-     "end": 7.375,
-     "start": 7.275,
+     "end": 7.25,
+     "start": 7.162,
      "text": "the"
     },
     {
-     "end": 7.8,
-     "start": 7.375,
+     "end": 7.6,
+     "start": 7.25,
      "text": "page"
     },
     {
-     "end": 7.938,
-     "start": 7.8,
+     "end": 7.738,
+     "start": 7.6,
      "text": "from"
     },
     {
-     "end": 8.025,
-     "start": 7.938,
+     "end": 7.825,
+     "start": 7.738,
      "text": "the"
     },
     {
-     "end": 8.55,
-     "start": 8.025,
+     "end": 8.875,
+     "start": 7.825,
      "text": "receipts"
     },
     {
-     "end": 8.663,
-     "start": 8.55,
-     "text": "and"
+     "end": 9.075,
+     "start": 8.875,
+     "text": ","
     },
     {
-     "end": 8.837,
-     "start": 8.663,
+     "end": 9.438,
+     "start": 9.25,
      "text": "their"
     },
     {
-     "end": 9.125,
-     "start": 8.837,
+     "end": 9.775,
+     "start": 9.438,
      "text": "chain"
     },
     {
-     "end": 10.15,
-     "start": 9.125,
+     "end": 10.325,
+     "start": 9.775,
      "text": "records"
     },
     {
-     "end": 10.35,
-     "start": 10.15,
-     "text": ","
-    },
-    {
-     "end": 10.613,
-     "start": 10.525,
+     "end": 10.438,
+     "start": 10.325,
      "text": "and"
     },
     {
-     "end": 11.062,
-     "start": 10.613,
-     "text": "refuses"
+     "end": 10.525,
+     "start": 10.438,
+     "text": "the"
     },
     {
-     "end": 11.125,
-     "start": 11.062,
-     "text": "a"
+     "end": 11.1,
+     "start": 10.525,
+     "text": "parameter"
     },
     {
-     "end": 11.413,
-     "start": 11.125,
-     "text": "page"
+     "end": 11.875,
+     "start": 11.1,
+     "text": "recordings"
     },
     {
-     "end": 11.55,
-     "start": 11.413,
-     "text": "that"
+     "end": 11.95,
+     "start": 11.875,
+     "text": ","
     },
     {
-     "end": 12.425,
-     "start": 11.55,
-     "text": "differs"
+     "end": 12.075,
+     "start": 11.95,
+     "text": "and"
     },
     {
      "end": 12.625,
-     "start": 12.425,
+     "start": 12.075,
+     "text": "refuses"
+    },
+    {
+     "end": 12.738,
+     "start": 12.625,
+     "text": "a"
+    },
+    {
+     "end": 13.15,
+     "start": 12.738,
+     "text": "page"
+    },
+    {
+     "end": 13.325,
+     "start": 13.15,
+     "text": "that"
+    },
+    {
+     "end": 14.375,
+     "start": 13.325,
+     "text": "differs"
+    },
+    {
+     "end": 14.575,
+     "start": 14.375,
      "text": ","
     },
     {
-     "end": 12.9,
-     "start": 12.825,
+     "end": 14.85,
+     "start": 14.775,
      "text": "a"
     },
     {
-     "end": 13.375,
-     "start": 12.9,
+     "end": 15.625,
+     "start": 14.85,
      "text": "receipt"
     },
     {
-     "end": 13.538,
-     "start": 13.375,
-     "text": "or"
+     "end": 15.85,
+     "start": 15.625,
+     "text": ","
     },
     {
-     "end": 13.85,
-     "start": 13.538,
+     "end": 16.325,
+     "start": 16.05,
      "text": "chain"
     },
     {
-     "end": 14.25,
-     "start": 13.85,
+     "end": 16.775,
+     "start": 16.325,
      "text": "record"
     },
     {
-     "end": 14.4,
-     "start": 14.25,
+     "end": 16.925,
+     "start": 16.775,
+     "text": "or"
+    },
+    {
+     "end": 17.525,
+     "start": 16.925,
+     "text": "recording"
+    },
+    {
+     "end": 17.675,
+     "start": 17.525,
      "text": "that"
     },
     {
-     "end": 14.562,
-     "start": 14.4,
+     "end": 17.837,
+     "start": 17.675,
      "text": "is"
     },
     {
-     "end": 15.188,
-     "start": 14.562,
+     "end": 18.3,
+     "start": 17.837,
      "text": "missing"
     },
     {
-     "end": 15.312,
-     "start": 15.188,
+     "end": 18.462,
+     "start": 18.3,
+     "text": "or"
+    },
+    {
+     "end": 19.15,
+     "start": 18.462,
+     "text": "altered"
+    },
+    {
+     "end": 19.288,
+     "start": 19.15,
      "text": "and"
     },
     {
-     "end": 15.413,
-     "start": 15.312,
+     "end": 19.388,
+     "start": 19.288,
      "text": "a"
     },
     {
-     "end": 15.75,
-     "start": 15.413,
+     "end": 19.7,
+     "start": 19.388,
      "text": "row"
     },
     {
-     "end": 15.9,
-     "start": 15.75,
+     "end": 19.875,
+     "start": 19.7,
      "text": "that"
     },
     {
-     "end": 16.175,
-     "start": 15.9,
+     "end": 20.188,
+     "start": 19.875,
      "text": "names"
     },
     {
-     "end": 16.4,
-     "start": 16.175,
+     "end": 20.425,
+     "start": 20.188,
      "text": "no"
     },
     {
-     "end": 17.4,
-     "start": 16.4,
+     "end": 21.475,
+     "start": 20.425,
      "text": "receipt"
     },
     {
-     "end": 17.6,
-     "start": 17.4,
+     "end": 21.675,
+     "start": 21.475,
      "text": "."
     }
    ]
@@ -189731,186 +189886,1096 @@
    ]
   },
   "docs-release-decision-table/the-kept-receipts-01": {
-   "audio_sha256": "4be85a42fc8819c4a37c7eabc7eebc043434fe0f534f85d66cd17d2495170f21",
-   "characters": 181,
-   "cost": 0.00017918999999999997,
-   "duration": 13.15,
+   "audio_sha256": "07864bb335f0fdb948dbe82222660bda18b760f835fd43d39b8d7594d0664aa4",
+   "characters": 215,
+   "cost": 0.00021285,
+   "duration": 15.45,
    "index": 1,
-   "key": "d74871f709affd227249eb93d2b39fd87100f65c7446e14bc38cb4cc0e3719f6",
+   "key": "85d561534215da73700a3744240cbdb1bd7a4aac4ebd8a42bb9a67fe9f817ee2",
    "page": "docs/release-decision-table.md",
    "pause_ms": 400,
    "section": "the-kept-receipts",
-   "sent_text": "The receipts and the chain records they name are committed with the repository. Their SHA-256 is computed when this page is generated, so a file that changes also changes this page.",
-   "text": "The receipts and the chain records they name are committed with the repository. Their SHA-256 is computed when this page is generated, so a file that changes also changes this page.",
+   "sent_text": "The receipts, the chain records they name and the preprod parameter recordings are committed with the repository. Their SHA-256 is computed when this page is generated, so a file that changes also changes this page.",
+   "text": "The receipts, the chain records they name and the preprod parameter recordings are committed with the repository. Their SHA-256 is computed when this page is generated, so a file that changes also changes this page.",
    "words": [
     {
-     "end": 0.275,
-     "start": 0.175,
+     "end": 0.3,
+     "start": 0.2,
      "text": "The"
     },
     {
-     "end": 0.8,
-     "start": 0.275,
+     "end": 0.825,
+     "start": 0.3,
      "text": "receipts"
     },
     {
-     "end": 0.913,
-     "start": 0.8,
-     "text": "and"
+     "end": 0.863,
+     "start": 0.825,
+     "text": ","
     },
     {
-     "end": 1.013,
-     "start": 0.913,
+     "end": 0.988,
+     "start": 0.863,
      "text": "the"
     },
     {
      "end": 1.375,
-     "start": 1.013,
+     "start": 0.988,
      "text": "chain"
     },
     {
-     "end": 1.825,
+     "end": 1.85,
      "start": 1.375,
      "text": "records"
     },
     {
-     "end": 2.0,
-     "start": 1.825,
+     "end": 2.037,
+     "start": 1.85,
      "text": "they"
     },
     {
-     "end": 2.487,
-     "start": 2.0,
+     "end": 2.537,
+     "start": 2.037,
      "text": "name"
     },
     {
-     "end": 2.65,
-     "start": 2.487,
-     "text": "are"
+     "end": 2.662,
+     "start": 2.537,
+     "text": "and"
     },
     {
-     "end": 3.1,
-     "start": 2.65,
-     "text": "committed"
-    },
-    {
-     "end": 3.237,
-     "start": 3.1,
-     "text": "with"
-    },
-    {
-     "end": 3.325,
-     "start": 3.237,
+     "end": 2.75,
+     "start": 2.662,
      "text": "the"
     },
     {
-     "end": 4.7,
-     "start": 3.325,
+     "end": 3.275,
+     "start": 2.75,
+     "text": "preprod"
+    },
+    {
+     "end": 3.875,
+     "start": 3.275,
+     "text": "parameter"
+    },
+    {
+     "end": 4.562,
+     "start": 3.875,
+     "text": "recordings"
+    },
+    {
+     "end": 4.725,
+     "start": 4.562,
+     "text": "are"
+    },
+    {
+     "end": 5.2,
+     "start": 4.725,
+     "text": "committed"
+    },
+    {
+     "end": 5.375,
+     "start": 5.2,
+     "text": "with"
+    },
+    {
+     "end": 5.475,
+     "start": 5.375,
+     "text": "the"
+    },
+    {
+     "end": 6.975,
+     "start": 5.475,
      "text": "repository"
     },
     {
-     "end": 4.9,
-     "start": 4.7,
+     "end": 7.2,
+     "start": 6.975,
      "text": "."
     },
     {
-     "end": 5.3,
-     "start": 5.1,
+     "end": 7.6,
+     "start": 7.4,
      "text": "Their"
     },
     {
-     "end": 6.875,
-     "start": 5.3,
+     "end": 9.175,
+     "start": 7.6,
      "text": "SHA-256"
     },
     {
-     "end": 7.025,
-     "start": 6.875,
+     "end": 9.325,
+     "start": 9.175,
      "text": "is"
     },
     {
-     "end": 7.625,
-     "start": 7.025,
+     "end": 9.925,
+     "start": 9.325,
      "text": "computed"
     },
     {
-     "end": 7.775,
-     "start": 7.625,
+     "end": 10.075,
+     "start": 9.925,
      "text": "when"
     },
     {
-     "end": 7.963,
-     "start": 7.775,
+     "end": 10.262,
+     "start": 10.075,
      "text": "this"
     },
     {
-     "end": 8.375,
-     "start": 7.963,
+     "end": 10.675,
+     "start": 10.262,
      "text": "page"
     },
     {
-     "end": 8.538,
-     "start": 8.375,
+     "end": 10.837,
+     "start": 10.675,
      "text": "is"
     },
     {
-     "end": 9.275,
-     "start": 8.538,
+     "end": 11.575,
+     "start": 10.837,
      "text": "generated"
     },
     {
-     "end": 9.375,
-     "start": 9.275,
+     "end": 11.675,
+     "start": 11.575,
      "text": ","
     },
     {
-     "end": 9.55,
-     "start": 9.375,
+     "end": 11.85,
+     "start": 11.675,
      "text": "so"
     },
     {
-     "end": 9.675,
-     "start": 9.55,
+     "end": 11.975,
+     "start": 11.85,
      "text": "a"
     },
     {
-     "end": 10.05,
-     "start": 9.675,
+     "end": 12.35,
+     "start": 11.975,
      "text": "file"
     },
     {
-     "end": 10.262,
-     "start": 10.05,
+     "end": 12.562,
+     "start": 12.35,
      "text": "that"
     },
     {
-     "end": 10.75,
-     "start": 10.262,
+     "end": 13.05,
+     "start": 12.562,
      "text": "changes"
     },
     {
-     "end": 11.163,
-     "start": 10.75,
+     "end": 13.462,
+     "start": 13.05,
      "text": "also"
     },
     {
-     "end": 11.625,
-     "start": 11.163,
+     "end": 13.925,
+     "start": 13.462,
      "text": "changes"
     },
     {
-     "end": 11.837,
-     "start": 11.625,
+     "end": 14.137,
+     "start": 13.925,
      "text": "this"
     },
     {
-     "end": 12.925,
-     "start": 11.837,
+     "end": 15.225,
+     "start": 14.137,
      "text": "page"
     },
     {
-     "end": 13.15,
-     "start": 12.925,
+     "end": 15.45,
+     "start": 15.225,
+     "text": "."
+    }
+   ]
+  },
+  "docs-release-decision-table/what-moved-against-the-earlier-recording-00": {
+   "audio_sha256": "b2e6d07f2b2d89ebecbb222f0a17795f94039eaf46b78f74fb3212da9d55b5f8",
+   "characters": 41,
+   "cost": 4.059e-05,
+   "duration": 2.475,
+   "index": 0,
+   "key": "07f1f75f24c583fa201137e84447433cc9090a44934e0ed4549a305b0920bd7f",
+   "page": "docs/release-decision-table.md",
+   "pause_ms": 500,
+   "section": "what-moved-against-the-earlier-recording",
+   "sent_text": "What moved against the earlier recording.",
+   "text": "What moved against the earlier recording.",
+   "words": [
+    {
+     "end": 0.3,
+     "start": 0.175,
+     "text": "What"
+    },
+    {
+     "end": 0.562,
+     "start": 0.3,
+     "text": "moved"
+    },
+    {
+     "end": 0.863,
+     "start": 0.562,
+     "text": "against"
+    },
+    {
+     "end": 0.975,
+     "start": 0.863,
+     "text": "the"
+    },
+    {
+     "end": 1.312,
+     "start": 0.975,
+     "text": "earlier"
+    },
+    {
+     "end": 2.275,
+     "start": 1.312,
+     "text": "recording"
+    },
+    {
+     "end": 2.475,
+     "start": 2.275,
+     "text": "."
+    }
+   ]
+  },
+  "docs-release-decision-table/what-moved-against-the-earlier-recording-01": {
+   "audio_sha256": "b8406b6315313cd377579c99ac51d69d8537520b569b0462bdf1b10f41860d3f",
+   "characters": 333,
+   "cost": 0.00032966999999999995,
+   "duration": 20.975,
+   "index": 1,
+   "key": "3f3b31a788918179877cd6a58f70bdd9dff702982982bea11508b38c3c8ee236",
+   "page": "docs/release-decision-table.md",
+   "pause_ms": 400,
+   "section": "what-moved-against-the-earlier-recording",
+   "sent_text": "As a reader comparing this release's batch limits with the earlier recording, you find below the figures that moved and the figures that did not. Each row gives, for one measurement, the figures that moved with the figure in each receipt, and the figures that are equal in both receipts. The equal parameters are counted, not listed.",
+   "text": "As a reader comparing this release's batch limits with the earlier recording, you find below the figures that moved and the figures that did not. Each row gives, for one measurement, the figures that moved with the figure in each receipt, and the figures that are equal in both receipts. The equal parameters are counted, not listed.",
+   "words": [
+    {
+     "end": 0.4,
+     "start": 0.225,
+     "text": "As"
+    },
+    {
+     "end": 0.512,
+     "start": 0.4,
+     "text": "a"
+    },
+    {
+     "end": 0.875,
+     "start": 0.512,
+     "text": "reader"
+    },
+    {
+     "end": 1.45,
+     "start": 0.875,
+     "text": "comparing"
+    },
+    {
+     "end": 1.675,
+     "start": 1.45,
+     "text": "this"
+    },
+    {
+     "end": 2.263,
+     "start": 1.675,
+     "text": "release's"
+    },
+    {
+     "end": 2.638,
+     "start": 2.263,
+     "text": "batch"
+    },
+    {
+     "end": 3.075,
+     "start": 2.638,
+     "text": "limits"
+    },
+    {
+     "end": 3.213,
+     "start": 3.075,
+     "text": "with"
+    },
+    {
+     "end": 3.362,
+     "start": 3.213,
+     "text": "the"
+    },
+    {
+     "end": 3.825,
+     "start": 3.362,
+     "text": "earlier"
+    },
+    {
+     "end": 4.5,
+     "start": 3.825,
+     "text": "recording"
+    },
+    {
+     "end": 4.6,
+     "start": 4.5,
+     "text": ","
+    },
+    {
+     "end": 4.762,
+     "start": 4.6,
+     "text": "you"
+    },
+    {
+     "end": 5.15,
+     "start": 4.762,
+     "text": "find"
+    },
+    {
+     "end": 5.5,
+     "start": 5.15,
+     "text": "below"
+    },
+    {
+     "end": 5.637,
+     "start": 5.5,
+     "text": "the"
+    },
+    {
+     "end": 6.1,
+     "start": 5.637,
+     "text": "figures"
+    },
+    {
+     "end": 6.312,
+     "start": 6.1,
+     "text": "that"
+    },
+    {
+     "end": 6.887,
+     "start": 6.312,
+     "text": "moved"
+    },
+    {
+     "end": 7.012,
+     "start": 6.887,
+     "text": "and"
+    },
+    {
+     "end": 7.113,
+     "start": 7.012,
+     "text": "the"
+    },
+    {
+     "end": 7.6,
+     "start": 7.113,
+     "text": "figures"
+    },
+    {
+     "end": 7.775,
+     "start": 7.6,
+     "text": "that"
+    },
+    {
+     "end": 7.975,
+     "start": 7.775,
+     "text": "did"
+    },
+    {
+     "end": 9.0,
+     "start": 7.975,
+     "text": "not"
+    },
+    {
+     "end": 9.225,
+     "start": 9.0,
+     "text": "."
+    },
+    {
+     "end": 9.6,
+     "start": 9.4,
+     "text": "Each"
+    },
+    {
+     "end": 9.825,
+     "start": 9.6,
+     "text": "row"
+    },
+    {
+     "end": 10.05,
+     "start": 9.825,
+     "text": "gives"
+    },
+    {
+     "end": 10.1,
+     "start": 10.05,
+     "text": ","
+    },
+    {
+     "end": 10.225,
+     "start": 10.1,
+     "text": "for"
+    },
+    {
+     "end": 10.438,
+     "start": 10.225,
+     "text": "one"
+    },
+    {
+     "end": 11.325,
+     "start": 10.438,
+     "text": "measurement"
+    },
+    {
+     "end": 11.525,
+     "start": 11.325,
+     "text": ","
+    },
+    {
+     "end": 11.8,
+     "start": 11.7,
+     "text": "the"
+    },
+    {
+     "end": 12.225,
+     "start": 11.8,
+     "text": "figures"
+    },
+    {
+     "end": 12.425,
+     "start": 12.225,
+     "text": "that"
+    },
+    {
+     "end": 12.738,
+     "start": 12.425,
+     "text": "moved"
+    },
+    {
+     "end": 12.863,
+     "start": 12.738,
+     "text": "with"
+    },
+    {
+     "end": 12.988,
+     "start": 12.863,
+     "text": "the"
+    },
+    {
+     "end": 13.4,
+     "start": 12.988,
+     "text": "figure"
+    },
+    {
+     "end": 13.55,
+     "start": 13.4,
+     "text": "in"
+    },
+    {
+     "end": 13.775,
+     "start": 13.55,
+     "text": "each"
+    },
+    {
+     "end": 14.7,
+     "start": 13.775,
+     "text": "receipt"
+    },
+    {
+     "end": 14.9,
+     "start": 14.7,
+     "text": ","
+    },
+    {
+     "end": 15.163,
+     "start": 15.075,
+     "text": "and"
+    },
+    {
+     "end": 15.25,
+     "start": 15.163,
+     "text": "the"
+    },
+    {
+     "end": 15.688,
+     "start": 15.25,
+     "text": "figures"
+    },
+    {
+     "end": 15.788,
+     "start": 15.688,
+     "text": "that"
+    },
+    {
+     "end": 15.9,
+     "start": 15.788,
+     "text": "are"
+    },
+    {
+     "end": 16.275,
+     "start": 15.9,
+     "text": "equal"
+    },
+    {
+     "end": 16.425,
+     "start": 16.275,
+     "text": "in"
+    },
+    {
+     "end": 16.725,
+     "start": 16.425,
+     "text": "both"
+    },
+    {
+     "end": 17.7,
+     "start": 16.725,
+     "text": "receipts"
+    },
+    {
+     "end": 17.9,
+     "start": 17.7,
+     "text": "."
+    },
+    {
+     "end": 18.2,
+     "start": 18.075,
+     "text": "The"
+    },
+    {
+     "end": 18.475,
+     "start": 18.2,
+     "text": "equal"
+    },
+    {
+     "end": 19.075,
+     "start": 18.475,
+     "text": "parameters"
+    },
+    {
+     "end": 19.2,
+     "start": 19.075,
+     "text": "are"
+    },
+    {
+     "end": 19.65,
+     "start": 19.2,
+     "text": "counted"
+    },
+    {
+     "end": 19.7,
+     "start": 19.65,
+     "text": ","
+    },
+    {
+     "end": 19.925,
+     "start": 19.7,
+     "text": "not"
+    },
+    {
+     "end": 20.775,
+     "start": 19.925,
+     "text": "listed"
+    },
+    {
+     "end": 20.975,
+     "start": 20.775,
+     "text": "."
+    }
+   ]
+  },
+  "docs-release-decision-table/what-moved-against-the-earlier-recording-02": {
+   "audio_sha256": "d638868aef471705d55d76f5357967ebd40dee06afdb8f3f2a29e1aad5bea2cc",
+   "characters": 256,
+   "cost": 0.00025343999999999996,
+   "duration": 31.15,
+   "index": 2,
+   "key": "3d3bec3b7bbcddcf0ddd3181fb16127e30b718c31a863f6fb4458170b8056b61",
+   "page": "docs/release-decision-table.md",
+   "pause_ms": 400,
+   "section": "what-moved-against-the-earlier-recording",
+   "sent_text": "The earlier receipt holds parameters recorded Sun, 04 Oct 2026 18:06:12 GMT, and its batches were measured at 2026-10-29T17:06:36Z. This receipt holds parameters recorded Fri, 30 Oct 2026 13:24:40 GMT, and its batches were measured at 2026-10-30T13:36:39Z.",
+   "text": "The earlier receipt holds parameters recorded Sun, 04 Oct 2026 18:06:12 GMT, and its batches were measured at 2026-10-29T17:06:36Z. This receipt holds parameters recorded Fri, 30 Oct 2026 13:24:40 GMT, and its batches were measured at 2026-10-30T13:36:39Z.",
+   "words": [
+    {
+     "end": 0.35,
+     "start": 0.225,
+     "text": "The"
+    },
+    {
+     "end": 0.8,
+     "start": 0.35,
+     "text": "earlier"
+    },
+    {
+     "end": 1.25,
+     "start": 0.8,
+     "text": "receipt"
+    },
+    {
+     "end": 1.575,
+     "start": 1.25,
+     "text": "holds"
+    },
+    {
+     "end": 2.25,
+     "start": 1.575,
+     "text": "parameters"
+    },
+    {
+     "end": 2.787,
+     "start": 2.25,
+     "text": "recorded"
+    },
+    {
+     "end": 3.2,
+     "start": 2.787,
+     "text": "Sun"
+    },
+    {
+     "end": 3.312,
+     "start": 3.2,
+     "text": ","
+    },
+    {
+     "end": 3.662,
+     "start": 3.312,
+     "text": "04"
+    },
+    {
+     "end": 4.012,
+     "start": 3.662,
+     "text": "Oct"
+    },
+    {
+     "end": 4.938,
+     "start": 4.012,
+     "text": "2026"
+    },
+    {
+     "end": 6.938,
+     "start": 4.938,
+     "text": "18:06:12"
+    },
+    {
+     "end": 7.8,
+     "start": 6.938,
+     "text": "GMT"
+    },
+    {
+     "end": 7.875,
+     "start": 7.8,
+     "text": ","
+    },
+    {
+     "end": 7.988,
+     "start": 7.875,
+     "text": "and"
+    },
+    {
+     "end": 8.125,
+     "start": 7.988,
+     "text": "its"
+    },
+    {
+     "end": 8.55,
+     "start": 8.125,
+     "text": "batches"
+    },
+    {
+     "end": 8.7,
+     "start": 8.55,
+     "text": "were"
+    },
+    {
+     "end": 9.075,
+     "start": 8.7,
+     "text": "measured"
+    },
+    {
+     "end": 9.238,
+     "start": 9.075,
+     "text": "at"
+    },
+    {
+     "end": 16.05,
+     "start": 9.238,
+     "text": "2026-10-29T17:06:36Z."
+    },
+    {
+     "end": 16.5,
+     "start": 16.3,
+     "text": "This"
+    },
+    {
+     "end": 16.9,
+     "start": 16.5,
+     "text": "receipt"
+    },
+    {
+     "end": 17.225,
+     "start": 16.9,
+     "text": "holds"
+    },
+    {
+     "end": 17.9,
+     "start": 17.225,
+     "text": "parameters"
+    },
+    {
+     "end": 18.438,
+     "start": 17.9,
+     "text": "recorded"
+    },
+    {
+     "end": 18.875,
+     "start": 18.438,
+     "text": "Fri"
+    },
+    {
+     "end": 18.987,
+     "start": 18.875,
+     "text": ","
+    },
+    {
+     "end": 19.388,
+     "start": 18.987,
+     "text": "30"
+    },
+    {
+     "end": 19.737,
+     "start": 19.388,
+     "text": "Oct"
+    },
+    {
+     "end": 20.688,
+     "start": 19.737,
+     "text": "2026"
+    },
+    {
+     "end": 22.462,
+     "start": 20.688,
+     "text": "13:24:40"
+    },
+    {
+     "end": 23.4,
+     "start": 22.462,
+     "text": "GMT"
+    },
+    {
+     "end": 23.5,
+     "start": 23.4,
+     "text": ","
+    },
+    {
+     "end": 23.612,
+     "start": 23.5,
+     "text": "and"
+    },
+    {
+     "end": 23.75,
+     "start": 23.612,
+     "text": "its"
+    },
+    {
+     "end": 24.175,
+     "start": 23.75,
+     "text": "batches"
+    },
+    {
+     "end": 24.325,
+     "start": 24.175,
+     "text": "were"
+    },
+    {
+     "end": 24.75,
+     "start": 24.325,
+     "text": "measured"
+    },
+    {
+     "end": 24.913,
+     "start": 24.75,
+     "text": "at"
+    },
+    {
+     "end": 31.15,
+     "start": 24.913,
+     "text": "2026-10-30T13:36:39Z."
+    }
+   ]
+  },
+  "docs-release-decision-table/what-moved-against-the-earlier-recording-03": {
+   "audio_sha256": "0568df4b3e1a3ca283d2a8ba501a1c4fb7b487840c53f5470dc6b9ab7e11b73e",
+   "characters": 282,
+   "cost": 0.00027917999999999997,
+   "duration": 17.075,
+   "index": 3,
+   "key": "7cef8e7923c8369fdd3d828e0f32aae84cea4b755279be76e119799f00bb12ab",
+   "page": "docs/release-decision-table.md",
+   "pause_ms": 400,
+   "section": "what-moved-against-the-earlier-recording",
+   "sent_text": "Both recordings hold the same 31 protocol parameters, the same parameter bytes were evaluated and both receipts apply the same scripts, so a figure that moved comes from the new capture of the same workload on a fresh development node and not from a change of parameters or scripts.",
+   "text": "Both recordings hold the same 31 protocol parameters, the same parameter bytes were evaluated and both receipts apply the same scripts, so a figure that moved comes from the new capture of the same workload on a fresh development node and not from a change of parameters or scripts.",
+   "words": [
+    {
+     "end": 0.45,
+     "start": 0.225,
+     "text": "Both"
+    },
+    {
+     "end": 1.05,
+     "start": 0.45,
+     "text": "recordings"
+    },
+    {
+     "end": 1.288,
+     "start": 1.05,
+     "text": "hold"
+    },
+    {
+     "end": 1.413,
+     "start": 1.288,
+     "text": "the"
+    },
+    {
+     "end": 1.763,
+     "start": 1.413,
+     "text": "same"
+    },
+    {
+     "end": 2.375,
+     "start": 1.763,
+     "text": "31"
+    },
+    {
+     "end": 2.95,
+     "start": 2.375,
+     "text": "protocol"
+    },
+    {
+     "end": 3.675,
+     "start": 2.95,
+     "text": "parameters"
+    },
+    {
+     "end": 3.75,
+     "start": 3.675,
+     "text": ","
+    },
+    {
+     "end": 3.888,
+     "start": 3.75,
+     "text": "the"
+    },
+    {
+     "end": 4.225,
+     "start": 3.888,
+     "text": "same"
+    },
+    {
+     "end": 4.8,
+     "start": 4.225,
+     "text": "parameter"
+    },
+    {
+     "end": 5.15,
+     "start": 4.8,
+     "text": "bytes"
+    },
+    {
+     "end": 5.3,
+     "start": 5.15,
+     "text": "were"
+    },
+    {
+     "end": 6.113,
+     "start": 5.3,
+     "text": "evaluated"
+    },
+    {
+     "end": 6.262,
+     "start": 6.113,
+     "text": "and"
+    },
+    {
+     "end": 6.575,
+     "start": 6.262,
+     "text": "both"
+    },
+    {
+     "end": 7.075,
+     "start": 6.575,
+     "text": "receipts"
+    },
+    {
+     "end": 7.4,
+     "start": 7.075,
+     "text": "apply"
+    },
+    {
+     "end": 7.537,
+     "start": 7.4,
+     "text": "the"
+    },
+    {
+     "end": 7.863,
+     "start": 7.537,
+     "text": "same"
+    },
+    {
+     "end": 8.55,
+     "start": 7.863,
+     "text": "scripts"
+    },
+    {
+     "end": 8.65,
+     "start": 8.55,
+     "text": ","
+    },
+    {
+     "end": 8.788,
+     "start": 8.65,
+     "text": "so"
+    },
+    {
+     "end": 8.887,
+     "start": 8.788,
+     "text": "a"
+    },
+    {
+     "end": 9.275,
+     "start": 8.887,
+     "text": "figure"
+    },
+    {
+     "end": 9.488,
+     "start": 9.275,
+     "text": "that"
+    },
+    {
+     "end": 9.9,
+     "start": 9.488,
+     "text": "moved"
+    },
+    {
+     "end": 10.2,
+     "start": 9.9,
+     "text": "comes"
+    },
+    {
+     "end": 10.337,
+     "start": 10.2,
+     "text": "from"
+    },
+    {
+     "end": 10.425,
+     "start": 10.337,
+     "text": "the"
+    },
+    {
+     "end": 10.613,
+     "start": 10.425,
+     "text": "new"
+    },
+    {
+     "end": 11.062,
+     "start": 10.613,
+     "text": "capture"
+    },
+    {
+     "end": 11.137,
+     "start": 11.062,
+     "text": "of"
+    },
+    {
+     "end": 11.262,
+     "start": 11.137,
+     "text": "the"
+    },
+    {
+     "end": 11.6,
+     "start": 11.262,
+     "text": "same"
+    },
+    {
+     "end": 12.137,
+     "start": 11.6,
+     "text": "workload"
+    },
+    {
+     "end": 12.238,
+     "start": 12.137,
+     "text": "on"
+    },
+    {
+     "end": 12.337,
+     "start": 12.238,
+     "text": "a"
+    },
+    {
+     "end": 12.625,
+     "start": 12.337,
+     "text": "fresh"
+    },
+    {
+     "end": 13.175,
+     "start": 12.625,
+     "text": "development"
+    },
+    {
+     "end": 13.738,
+     "start": 13.175,
+     "text": "node"
+    },
+    {
+     "end": 13.875,
+     "start": 13.738,
+     "text": "and"
+    },
+    {
+     "end": 14.1,
+     "start": 13.875,
+     "text": "not"
+    },
+    {
+     "end": 14.238,
+     "start": 14.1,
+     "text": "from"
+    },
+    {
+     "end": 14.337,
+     "start": 14.238,
+     "text": "a"
+    },
+    {
+     "end": 14.663,
+     "start": 14.337,
+     "text": "change"
+    },
+    {
+     "end": 14.75,
+     "start": 14.663,
+     "text": "of"
+    },
+    {
+     "end": 15.413,
+     "start": 14.75,
+     "text": "parameters"
+    },
+    {
+     "end": 15.587,
+     "start": 15.413,
+     "text": "or"
+    },
+    {
+     "end": 16.85,
+     "start": 15.587,
+     "text": "scripts"
+    },
+    {
+     "end": 17.075,
+     "start": 16.85,
      "text": "."
     }
    ]
