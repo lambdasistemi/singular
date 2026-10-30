@@ -487,6 +487,10 @@
                   # node, whatever version the tree says
                   export RELEASE_BUNDLES_CONF=${./tools/release_bundles.sh}
                   export RELEASE_BUNDLE_DEVNET=required
+                  # the table a bundle carries is the one this tree holds, and the
+                  # scope job builds a bundle for a change to it
+                  export RELEASE_BUNDLE_SOURCE_TABLE=${./offchain/data/contracts/state-contracts.json}
+                  export RELEASE_BUNDLES_WORKFLOW=${./.github/workflows/release-bundles.yml}
                   bash ${./tools/release_bundle_smoke.sh} "$@"
                   bash ${./tools/release_bundle_smoke_controls.sh} "$@"
                   bash ${./tools/verify_release_bundles.test.sh} \
@@ -1034,7 +1038,10 @@
                 results = "NO_PIN_REFUSALS_RESULTS";
                 script = "no_pin_registration_refusals.sh";
                 programs = [ (pkgs.lib.getExe (stampedOpenDatum system)) ];
-                extra = [ "${open-datum.packages.${system}.no-pin-refusals}/bin/no-pin-refusals" ];
+                extra = [
+                  "${open-datum.packages.${system}.no-pin-refusals}/bin/no-pin-refusals"
+                  "${./offchain/data/contracts/state-contracts.json}"
+                ];
               };
               noPinTerminationRefusals = noPinJourney {
                 name = "no-pin-termination-refusals";

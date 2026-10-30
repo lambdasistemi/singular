@@ -16,6 +16,8 @@
 #               share/plutus.json with share/version.txt naming VERSION
 #               and, for a release that carries the table of releases (#728),
 #               share/singular-registry/data/contracts/state-contracts.json
+#   table       when RELEASE_BUNDLE_SOURCE_TABLE names a file, the table of releases the
+#               bundle carries is that file, byte for byte
 #   identity    `singular --version`, `open-datum --version` and
 #               `devnet --version` print `<program> VERSION (commit COMMIT)`
 #               and exit 0; `cardano-node --version` names its own release
@@ -144,6 +146,11 @@ done
 if $with_table; then
   [ -e "$bundle/share/singular-registry/data/contracts/state-contracts.json" ] \
     || fail members "$tarball carries no share/singular-registry/data/contracts/state-contracts.json"
+  # the table a bundle carries is the table the source holds, when the source is handed in
+  if [ -n "${RELEASE_BUNDLE_SOURCE_TABLE:-}" ]; then
+    cmp -s "$RELEASE_BUNDLE_SOURCE_TABLE" "$bundle/share/singular-registry/data/contracts/state-contracts.json" \
+      || fail table "$tarball carries a table of releases that is not $RELEASE_BUNDLE_SOURCE_TABLE"
+  fi
 fi
 if $with_devnet; then
   for member in bin/devnet bin/cardano-node libexec/devnet libexec/cardano-node \

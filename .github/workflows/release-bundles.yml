@@ -54,7 +54,7 @@ jobs:
           fi
           files="$(git diff --name-only "origin/${BASE}...HEAD")"
           printf 'Changed files:\n%s\n' "$files"
-          pattern='^(\.github/workflows/(release|release-bundles|sync-cabal-version)\.yml|flake\.(nix|lock)|nix/|version\.txt|tools/(release_bundle|verify_release_bundles|cabal_versions)|offchain/(flake\.(nix|lock)|nix/|[^/]*\.cabal)|applications/open-datum/offchain/(flake\.(nix|lock)|nix/|[^/]*\.cabal))'
+          pattern='^(\.github/workflows/(release|release-bundles|sync-cabal-version)\.yml|flake\.(nix|lock)|nix/|version\.txt|tools/(release_bundle|verify_release_bundles|cabal_versions)|offchain/(flake\.(nix|lock)|nix/|data/contracts/|[^/]*\.cabal)|applications/open-datum/offchain/(flake\.(nix|lock)|nix/|[^/]*\.cabal))'
           if printf '%s\n' "$files" | grep -Eq "$pattern"; then
             echo "bundles=true" >> "$GITHUB_OUTPUT"
           else

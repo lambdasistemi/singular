@@ -25,11 +25,15 @@ import Data.Aeson
 import Data.Aeson.KeyMap qualified as KM
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
+import Data.ByteString.Char8 qualified as BS8
 import Data.ByteString.Lazy qualified as BL
 import Data.IORef (modifyIORef', newIORef, readIORef)
+import Data.List.NonEmpty qualified as NE
 import Data.Maybe (fromMaybe)
+import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
+import Data.Version (versionBranch)
 import Lens.Micro ((&), (.~), (^.))
 import PlutusCore.Data qualified as PLC
 import Singular.Application.OpenDatum.CommandRunSpec (captured)
@@ -37,9 +41,14 @@ import Singular.Application.OpenDatum.Root (runPackagedOpenDatumVia)
 import Singular.Application.OpenDatum.Value qualified as Host
 import Singular.CLI.Root (runPackagedVia)
 import Singular.CLI.Session (Env (..))
+import Singular.CLI.Version (releaseTag)
 import Singular.Registry.Address (renderRegistryAddress)
 import Singular.Registry.Capabilities (Capabilities (..))
+import Singular.Registry.Deployment (parseOutRef)
+import Singular.Registry.StubSession (stubSession)
 import System.Exit (ExitCode (..))
+
+import Paths_open_datum (version)
 import Test.Hspec
 
 import Cardano.Crypto.Hash (hashToBytes)
@@ -77,8 +86,17 @@ import Singular.Reader qualified as R
 import Singular.Registry.ContractTable
     ( ApplicationIdentity (..)
     , ContractTable
+    , Contracts (..)
+    , Installed (..)
+    , Serving (..)
     , applicationOf
+    , contractsOf
+    , loadContractTable
     , parseContractTable
+    , releaseUrl
+    , servingLines
+    , servingOf
+    , tableRows
     )
 import Singular.Registry.Evidence (Evidenced (..))
 import Singular.Registry.Ledger (ConwayEra, Root (..), TxOut)
@@ -91,7 +109,7 @@ import Singular.Registry.TrieState
 import Singular.Registry.TxBuilder.Internal (mkInlineDatum)
 import Singular.State.Fold (buildRegistrationFold)
 import Singular.State.Lineage (registryAsset)
-import Singular.State.Preimage (activeTokenName)
+import Singular.State.Preimage (activeTokenName, stateTokenName)
 import Singular.State.Records (decodeStateDatum)
 
 spec :: Spec
@@ -99,6 +117,7 @@ spec = do
     historySpec
     refinementSpec
     commandSpec
+    guidanceSpec
 
 historySpec :: Spec
 historySpec = describe "reader absence follows the public history" $ do
@@ -517,3 +536,136 @@ commandRead application world registry key extra = do
 documentField :: Key -> Value -> Maybe Value
 documentField key (Object fields) = KM.lookup key fields
 documentField _ _ = Nothing
+
+-- ---------------------------------------------------------
+-- A registry the installed release does not serve
+-- ---------------------------------------------------------
+
+{- | The tag of this package's release; the neutral library carries the same
+version, as one release ships both.
+-}
+packageTag :: Text
+packageTag =
+    "v"
+        <> T.intercalate
+            "."
+            (map (T.pack . show) (take 3 (versionBranch version)))
+
+guidanceSpec :: Spec
+guidanceSpec = describe "a registry the installed release does not serve" $ do
+    it "knows the release it belongs to as the package's own tag" $
+        releaseTag `shouldBe` packageTag
+    it "names the release that serves a registry of an earlier contract" $
+        withTable $ \table -> do
+            let earlier = [(hash, tags) | (hash, tags) <- tableRows table, not (null tags)]
+            length earlier `shouldSatisfy` (> 1)
+            forM_ earlier $ \(hash, tags) -> do
+                let said = servingLines (ServedByEarlier (NE.fromList tags))
+                (code, out, asked) <- inspectPolicy True hash
+                code `shouldBe` ExitFailure 2
+                asked `shouldBe` ["network"]
+                document <- either fail pure (eitherDecodeStrict' out)
+                documentField "answer" document `shouldBe` Just (String "refused")
+                documentField "refusal" document
+                    `shouldBe` Just (String "unknown-state-policy")
+                documentField "guidance" document `shouldBe` Just (toJSON said)
+                (_, printed, _) <- inspectPolicy False hash
+                forM_ said $ \line' ->
+                    BS8.unpack printed `shouldContain` T.unpack line'
+                servingOf table (Installed releaseTag []) hash
+                    `shouldBe` ServedByEarlier (NE.fromList tags)
+                said `shouldSatisfy` any (T.isInfixOf (releaseUrl (last tags)))
+    it
+        "says no release is known, and names none, for contracts no row holds"
+        $ withTable
+        $ \table -> do
+            let unknown =
+                    [ hash
+                    | byte <- [0 .. 255]
+                    , let hash = BS.replicate 28 byte
+                    , contractsOf table hash == NoKnownRelease
+                    ]
+            unknown `shouldSatisfy` (not . null)
+            forM_ (take 3 unknown) $ \hash -> do
+                (code, out, asked) <- inspectPolicy True hash
+                code `shouldBe` ExitFailure 2
+                asked `shouldBe` ["network"]
+                document <- either fail pure (eitherDecodeStrict' out)
+                documentField "guidance" document
+                    `shouldBe` Just (toJSON (servingLines UnknownContract))
+                BS8.unpack out `shouldNotContain` "releases/tag"
+  where
+    withTable use = loadContractTable >>= either (fail . T.unpack) use
+
+{- | Inspect a registry of this state policy with the open datum command, over a
+provider that serves only its network: the reader refuses before it reads any
+output. The names of the provider's reads are returned beside the output.
+-}
+inspectPolicy
+    :: Bool -> BS.ByteString -> IO (ExitCode, BS.ByteString, [T.Text])
+inspectPolicy json policy = do
+    reference <-
+        either fail pure (parseOutRef (T.replicate 64 "a" <> "#0"))
+    let registry =
+            RegistryIdentity (StatePolicyId policy) (stateTokenName reference)
+    asset <-
+        maybe
+            (fail "registry asset is malformed")
+            pure
+            (registryAsset registry)
+    address <-
+        maybe
+            (fail "registry address cannot be rendered")
+            pure
+            (renderRegistryAddress 42 asset)
+    seen <- newIORef []
+    let note label action = modifyIORef' seen (<> [label]) >> action
+        session =
+            stubSession
+                { LP.servedNetwork =
+                    note "network" (pure (Right (Evidenced (LP.Network 42) Nothing)))
+                , LP.outputs = \_ -> note "outputs" (fail "inspect asked for outputs")
+                }
+        provider _ =
+            Env
+                { envTracer = nullTracer
+                , envSource = "guidance fixture"
+                , envReaderReads = \_ use ->
+                    use
+                        Capabilities
+                            { capReads =
+                                ( LP.Network 42
+                                , LP.LedgerProvider
+                                    { LP.acquire = \_ action -> Right <$> action session
+                                    , LP.submitTx = \_ _ -> fail "inspect submitted"
+                                    }
+                                )
+                            , capSubmit = \_ -> fail "inspect submitted"
+                            , capConfirm = \_ -> fail "inspect confirmed"
+                            , capFacts = pure []
+                            , capTrace = pure []
+                            }
+                , envReads = \_ _ -> fail "inspect opened builder startup"
+                , envWrites = \_ _ -> fail "inspect opened a writer"
+                }
+        line =
+            [ "inspect"
+            , "--registry"
+            , T.unpack address
+            , "--koios-url"
+            , "http://fixture.invalid"
+            , "--key"
+            , "my-key"
+            ]
+                <> ["--json" | json]
+    (code, out, _) <-
+        captured
+            ( runPackagedOpenDatumVia
+                provider
+                Host.openDatumApplication
+                (pure Nothing)
+                line
+                []
+            )
+    asked <- readIORef seen
+    pure (code, out, asked)

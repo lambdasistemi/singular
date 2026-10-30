@@ -20,6 +20,7 @@ module Singular.CLI.Steps
     ( -- * A write
       stateWrite
     , creationToken
+    , refuseUnserved
 
       -- * A transaction
     , sendStep
@@ -75,7 +76,15 @@ import Singular.CLI.Session
     , submitBuiltIn
     , withWrite
     )
+import Singular.CLI.Version (releaseTag)
 import Singular.Registry.Blueprint (Blueprint, loadBlueprint)
+import Singular.Registry.ContractTable
+    ( Installed (..)
+    , Serving (..)
+    , loadContractTable
+    , servingLines
+    , servingOf
+    )
 import Singular.Registry.Deployment (renderOutRef)
 import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger (ConwayEra, TxOut)
@@ -85,6 +94,11 @@ import Singular.Registry.LedgerProvider
     , Session
     )
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
+import Singular.Registry.StateToken
+    ( IdentityRefusal (StateTokenForeignRelease)
+    , renderIdentityRefusal
+    )
+import Singular.Registry.TxBuilder.Internal (scriptHashBytes)
 import Singular.State.Assemble (readOutputs)
 import Singular.State.Refusal (Refusal (..), capacityMessage)
 import Singular.State.Script (ScriptSource (..))
@@ -124,6 +138,26 @@ stateWrite env stateDir token command ws body = do
                 (reconcileIncomplete (wcCommand wc) (wcDir wc))
         refuseUnreconciled reconciled
         body wc (reconciledJson reconciled)
+
+{- | Stop, before the provider is opened or anything is built, a registry whose
+state policy is not the one the installed release's state validator has. The
+refusal keeps its name and carries the lines that say which release serves the
+registry, from the table of releases; a registry of this release goes on.
+-}
+refuseUnserved :: PolicyID -> Asset -> IO ()
+refuseUnserved served (policy, _)
+    | policy == served = pure ()
+    | otherwise = do
+        loaded <- loadContractTable
+        let PolicyID expected = served
+            PolicyID hash = policy
+            installed = Installed releaseTag [scriptHashBytes expected]
+            serving = case loaded of
+                Left why -> TableUnusable why
+                Right table -> servingOf table installed (scriptHashBytes hash)
+        failWith ClientRefusal . T.unpack . T.intercalate "\n" $
+            renderIdentityRefusal (StateTokenForeignRelease expected)
+                : servingLines serving
 
 {- | The token the creations of the registries of an application keep their
 journal under: the application's state policy and no asset, because the name of

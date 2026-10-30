@@ -33,7 +33,6 @@ module Singular.CLI.State
     , runStateFold
     ) where
 
-import Control.Monad (unless)
 import Data.Aeson (Value, object, toJSON, (.=))
 import Data.ByteString (ByteString)
 import Data.ByteString.Base16 qualified as B16
@@ -77,6 +76,7 @@ import Singular.CLI.Steps
     ( creationToken
     , loadReleaseBlueprint
     , observeOutput
+    , refuseUnserved
     , refusing
     , renderRefusal
     , scriptSource
@@ -398,12 +398,7 @@ runStateFold env host a = do
                 (StatePolicyId (scriptHashBytes statePolicyHash))
                 name
         scripts = stateScript : own
-    unless (policy == PolicyID (hashScript stateScript)) $
-        failWith
-            ClientRefusal
-            ( "the registry's state policy is not the one the release's state validator has for this application: "
-                <> "this blueprint is not the registry's release"
-            )
+    refuseUnserved (PolicyID (hashScript stateScript)) token
     stateWrite env (stateFoldStateDir a) token "fold" ws $ \wc reconciled -> do
         let payer = wcCaller wc
         (confirmed, folded) <-

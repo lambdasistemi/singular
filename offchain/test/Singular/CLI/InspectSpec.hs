@@ -34,11 +34,14 @@ import Data.Aeson
     , (.=)
     )
 import Data.Aeson.KeyMap qualified as KM
+import Data.ByteString qualified as BS
 import Data.ByteString.Char8 qualified as BC
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
+import Data.List.NonEmpty qualified as NE
 import Data.Map.Strict qualified as Map
 import Data.Text (Text)
 import Data.Text qualified as T
+import Data.Version (versionBranch)
 import Lens.Micro ((&), (.~))
 import PlutusCore.Data qualified as PLC
 import Singular.CLI.Command (parseCommand)
@@ -51,13 +54,23 @@ import Singular.CLI.CommandRunSpec
 import Singular.CLI.Root (runPackagedVia)
 import Singular.CLI.Session (Env (..))
 import Singular.CLI.Trace (Trace)
+import Singular.CLI.Version (releaseTag)
 import Singular.Registry.Address (renderRegistryAddress)
 import Singular.Registry.Application (neutralApplication)
 import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.ContractTable
     ( ApplicationIdentity (..)
+    , ContractTable
+    , Contracts (..)
+    , Installed (..)
+    , Serving (..)
     , applicationRows
+    , contractsOf
     , loadContractTable
+    , releaseUrl
+    , servingLines
+    , servingOf
+    , tableRows
     )
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.Evidence (Evidenced (..))
@@ -72,6 +85,8 @@ import Singular.State.Lineage (registryAsset)
 import Singular.State.Preimage (activeTokenName, stateTokenName)
 import System.Exit (ExitCode (..))
 import Test.Hspec
+
+import Paths_singular_registry (version)
 
 spec :: Spec
 spec = describe "inspect a registry key without a signer" $ do
@@ -174,6 +189,70 @@ spec = describe "inspect a registry key without a signer" $ do
             withReader $ \line _ _ _ ->
                 parseCommand (line <> [flag, "unread-file"])
                     `shouldSatisfy` either (const True) (const False)
+    it "knows the release it belongs to as the package's own tag" $
+        releaseTag
+            `shouldBe` ( "v"
+                            <> T.intercalate
+                                "."
+                                (map (T.pack . show) (take 3 (versionBranch version)))
+                       )
+    it
+        "names the release that serves a registry of an earlier contract, without reading the chain"
+        $ withTable
+        $ \table -> do
+            let earlier = [(hash, tags) | (hash, tags) <- tableRows table, not (null tags)]
+            length earlier `shouldSatisfy` (> 1)
+            forM_ earlier $ \(hash, tags) -> do
+                let said = servingLines (ServedByEarlier (NE.fromList tags))
+                (code, out, asked) <- inspectPolicy True hash
+                code `shouldBe` ExitFailure 2
+                asked `shouldBe` ["network"]
+                document <- either fail pure (eitherDecodeStrict' out)
+                field "answer" document `shouldBe` Just (String "refused")
+                field "refusal" document
+                    `shouldBe` Just (String "unknown-state-policy")
+                field "guidance" document `shouldBe` Just (toJSON said)
+                (_, printed, _) <- inspectPolicy False hash
+                forM_ said $ \line' ->
+                    BC.unpack printed `shouldContain` T.unpack line'
+                servingOf table (Installed releaseTag []) hash
+                    `shouldBe` ServedByEarlier (NE.fromList tags)
+                said `shouldSatisfy` any (T.isInfixOf (releaseUrl (last tags)))
+    it
+        "says no release is known, and names none, for contracts no row holds"
+        $ withTable
+        $ \table -> do
+            let unknown =
+                    [ hash
+                    | byte <- [0 .. 255]
+                    , let hash = BS.replicate 28 byte
+                    , contractsOf table hash == NoKnownRelease
+                    ]
+            unknown `shouldSatisfy` (not . null)
+            forM_ (take 3 unknown) $ \hash -> do
+                (code, out, asked) <- inspectPolicy True hash
+                code `shouldBe` ExitFailure 2
+                asked `shouldBe` ["network"]
+                document <- either fail pure (eitherDecodeStrict' out)
+                field "refusal" document
+                    `shouldBe` Just (String "unknown-state-policy")
+                field "guidance" document
+                    `shouldBe` Just (toJSON (servingLines UnknownContract))
+                BC.unpack out `shouldNotContain` "releases/tag"
+    it "adds no guidance for a registry the installed release serves" $
+        withReader $ \line provider _ _ -> do
+            (code, out, _) <-
+                captured
+                    ( runPackagedVia
+                        provider
+                        neutralApplication
+                        (pure Nothing)
+                        (line <> ["--json"])
+                        []
+                    )
+            code `shouldBe` ExitSuccess
+            document <- either fail pure (eitherDecodeStrict' out)
+            field "guidance" document `shouldBe` Nothing
   where
     field key (Object o) = KM.lookup key o
     field _ _ = Nothing
@@ -183,6 +262,73 @@ spec = describe "inspect a registry key without a signer" $ do
             , "rows" .= (rows :: Int)
             , "bytes" .= (bytes :: Int)
             ]
+
+withTable :: (ContractTable -> IO a) -> IO a
+withTable use = loadContractTable >>= either (fail . T.unpack) use
+
+{- | Inspect a registry of this state policy over a provider that serves only
+its network: the reader refuses before it reads any output. The names of the
+provider's reads are returned beside the output.
+-}
+inspectPolicy
+    :: Bool -> BS.ByteString -> IO (ExitCode, BS.ByteString, [Text])
+inspectPolicy json policy = withRig $ \rig -> do
+    reference <-
+        either fail pure (parseOutRef (T.replicate 64 "a" <> "#0"))
+    let registry =
+            RegistryIdentity
+                (StatePolicyId policy)
+                (stateTokenName reference)
+    asset <-
+        maybe
+            (fail "registry asset is malformed")
+            pure
+            (registryAsset registry)
+    address <-
+        maybe
+            (fail "registry address cannot be rendered")
+            pure
+            (renderRegistryAddress 42 asset)
+    seen <- newIORef []
+    let note label action = modifyIORef' seen (<> [label]) >> action
+        session =
+            stubSession
+                { LP.servedNetwork =
+                    note "network" (pure (Right (Evidenced (LP.Network 42) Nothing)))
+                , LP.outputs = \_ -> note "outputs" (fail "inspect asked for outputs")
+                }
+        provider _ =
+            (envOf rig)
+                { envReads = \_ _ -> fail "inspect opened builder startup"
+                , envReaderReads = \_ k ->
+                    k
+                        ( (capabilities rig)
+                            { capReads =
+                                ( LP.Network 42
+                                , LP.LedgerProvider
+                                    { LP.acquire = \_ action -> Right <$> action session
+                                    , LP.submitTx = \_ _ -> fail "inspect submitted a transaction"
+                                    }
+                                )
+                            }
+                        )
+                }
+        line =
+            [ "registry"
+            , "inspect"
+            , "--registry"
+            , T.unpack address
+            , "--koios-url"
+            , "http://fixture.invalid"
+            , "--key"
+            , "my-key"
+            ]
+                <> ["--json" | json]
+    (code, out, _) <-
+        captured
+            (runPackagedVia provider neutralApplication (pure Nothing) line [])
+    asked <- readIORef seen
+    pure (code, out, asked)
 
 withReader
     :: ( [String]
@@ -229,7 +375,8 @@ withReader use = withRig $ \rig -> do
                     (Coin 5000000)
                     (MultiAsset (Map.singleton policy (Map.singleton active 1)))
                 )
-                & datumTxOutL .~ mkInlineDatum (PLC.I 7)
+                & datumTxOutL
+                    .~ mkInlineDatum (PLC.I 7)
         session =
             stubSession
                 { LP.servedNetwork =

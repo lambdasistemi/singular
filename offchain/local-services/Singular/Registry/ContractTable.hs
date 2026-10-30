@@ -22,6 +22,12 @@ blueprints; the retained legacy rows and exclusions remain separate.
 A hash that appears in no row is a registry made by contracts of no known
 release; a row with no release is a registry made by contracts that are not
 released yet.
+
+Which release serves a registry is one function of this table, the release pair
+of the installed commands and the registry's contract ('servingOf'); the lines
+every command prints for it are one function of that answer ('servingLines').
+The module names no application: an application's identity comes from the
+table's rows.
 -}
 module Singular.Registry.ContractTable
     ( -- * The table
@@ -39,8 +45,13 @@ module Singular.Registry.ContractTable
     , Contracts (..)
     , contractsOf
 
-      -- * The refusal
-    , renderForeignRelease
+      -- * Which release serves a registry
+    , Installed (..)
+    , Serving (..)
+    , servingOf
+    , servingLines
+
+      -- * Release pages
     , releaseUrl
     ) where
 
@@ -131,8 +142,6 @@ data Contracts
       NotReleasedYet
     | -- | No row: the contracts of no known release
       NoKnownRelease
-    | -- | The table could not be read, and why
-      TableUnreadable Text
     deriving stock (Eq, Show)
 
 -- | The table's file under the package's data directory.
@@ -251,37 +260,99 @@ instance FromJSON LeftOut where
       where
         field o name = o .: name :: Parser Text
 
--- | The page of a release.
-releaseUrl :: Text -> Text
-releaseUrl tag = "https://github.com/lambdasistemi/singular/releases/tag/" <> tag
-
-{- | The sentence of the refusal of a registry whose policy is not the state
-contract of the blueprint the command was given. It keeps the refusal's name,
-says which contracts made the registry and, when a release carries them, where
-to get the newest of those.
+{- | What the commands that read or write a registry are: the release they belong
+to, and the state policies they serve by their own derivation (a write derives
+the policy of its blueprint, a read serves every applied state policy the table
+holds). A release is not asked whether the table lists it: the table may lag
+the release being cut.
 -}
-renderForeignRelease :: Contracts -> Text
-renderForeignRelease = \case
-    Released tags ->
-        "state-token-foreign-release: the registry was made by the contracts of the "
-            <> (if NE.length tags == 1 then "release " else "releases ")
-            <> listed (NE.toList tags)
-            <> ", not by the contracts of this blueprint; the newest of them is at "
-            <> releaseUrl (NE.last tags)
-    NotReleasedYet ->
-        refusal
-            <> "made by contracts that are not released yet, not by the contracts of this blueprint"
-    NoKnownRelease ->
-        refusal
-            <> "made by contracts of no known release, not by the contracts of this blueprint"
-    TableUnreadable why ->
-        refusal
-            <> "made by other contracts than this blueprint's, and the table of releases that names them cannot be used: "
-            <> why
+data Installed = Installed
+    { installedSingular :: Text
+    -- ^ The tag of the Singular release the commands belong to
+    , installedServes :: [ByteString]
+    -- ^ The state policies the commands serve by derivation
+    }
+    deriving stock (Eq, Show)
+
+-- | Which release serves a registry, from the table and nowhere else.
+data Serving
+    = -- | The installed commands serve it, by their own derivation
+      ServedHere
+    | -- | These earlier Singular releases serve it, oldest first
+      ServedByEarlier (NonEmpty Text)
+    | -- | The Singular release is the installed one, the application is not; these application releases serve it
+      ServedByApplication (NonEmpty Text)
+    | -- | The contracts are in no release the table knows
+      UnknownContract
+    | -- | The contracts are in the table with no release yet
+      UnreleasedContract
+    | -- | The table of releases could not be used, and why
+      TableUnusable Text
+    deriving stock (Eq, Show)
+
+{- | Which release serves a registry whose state policy is this hash. A policy the
+installed commands serve by derivation is served here, whatever the table lists.
+For any other the table alone answers: an applied state policy whose Singular
+release is the installed one is served by the application releases it lists,
+one of another Singular release by the Singular releases it lists, a legacy
+state contract by the releases of its row, and a hash no row holds by no
+release at all.
+-}
+servingOf :: ContractTable -> Installed -> ByteString -> Serving
+servingOf table installed hash
+    | hash `elem` installedServes installed = ServedHere
+    | otherwise = case applicationOf table hash of
+        Just identity ->
+            notServed (singularReleases identity) (applicationReleases identity)
+        Nothing -> case contractsOf table hash of
+            Released tags -> ServedByEarlier tags
+            NotReleasedYet -> UnreleasedContract
+            NoKnownRelease -> UnknownContract
   where
-    refusal = "state-token-foreign-release: the registry was "
+    notServed [] _ = UnreleasedContract
+    notServed singular@(oldest : newer) application = case application of
+        first : more
+            | installedSingular installed `elem` singular ->
+                ServedByApplication (first :| more)
+        _ -> ServedByEarlier (oldest :| newer)
+
+{- | The lines every command prints for a serving answer, the same lines for the
+same answer. Nothing is said when the installed release serves the registry.
+-}
+servingLines :: Serving -> [Text]
+servingLines = \case
+    ServedHere -> []
+    ServedByEarlier tags ->
+        [ "This release does not serve this registry. It is served by "
+            <> releasesText tags
+            <> "."
+        , "Get " <> NE.last tags <> " at " <> releaseUrl (NE.last tags)
+        ]
+    ServedByApplication tags ->
+        [ "This release serves the contracts of this registry but not its application. The application is served by "
+            <> releasesText tags
+            <> "."
+        ]
+    UnknownContract ->
+        [ "This release does not serve this registry, and the table of releases knows of no release that does: its contracts are in no published release."
+        ]
+    UnreleasedContract ->
+        [ "This release does not serve this registry, and the table of releases knows of no release that does: its contracts are not released yet."
+        ]
+    TableUnusable why ->
+        [ "The table of releases cannot be used, so no release can be named for this registry: "
+            <> why
+        ]
+  where
+    releasesText tags =
+        (if NE.length tags == 1 then "the release " else "the releases ")
+            <> listed (NE.toList tags)
     listed = \case
         [] -> ""
         [one] -> one
         several ->
             T.intercalate ", " (init several) <> " and " <> last several
+
+-- | The page of a release.
+releaseUrl :: Text -> Text
+releaseUrl tag = "https://github.com/lambdasistemi/singular/releases/tag/" <> tag

@@ -5,10 +5,11 @@
 # by a rule of the ledger the scripts do not see. Each refusal has a control: the
 # same fold with the one fact restored, which the node accepts.
 #
-# usage: no_pin_registration_refusals.sh OPEN_DATUM DEVNET BLUEPRINT CHAIN_VIEW HARNESS WORKDIR
+# usage: no_pin_registration_refusals.sh OPEN_DATUM DEVNET BLUEPRINT CHAIN_VIEW HARNESS TABLE WORKDIR
 #
 # The arguments are those of the registration journey without singular, which no
-# refusal needs, and HARNESS is the test program no-pin-refusals, which builds the
+# refusal needs, TABLE is the packaged table of releases the installed commands
+# were built with, and HARNESS is the test program no-pin-refusals, which builds the
 # fold of a pending registration the way the library's builder does, with one fact
 # made wrong, and submits it: the packaged commands decline such a fold before
 # they send it. Registries and
@@ -23,6 +24,11 @@
 #   extra token          the continuing state output holds a token besides its
 #                        state token
 #   parked state         a token parked at the state address is spent as a state
+#   old registries       a write given a registry of an earlier release, or of a
+#                        contract no release carries, is declined with the answer
+#                        the reader gives for it; the chain as its own record holds
+#                        it before and after is the same, beside a write that the
+#                        installed release accepts and the chain records
 #
 # A refusal is judged from the node's answer: a failure of the code of a script
 # of the application (Singular's state script, open datum's request validator),
@@ -33,8 +39,8 @@
 # shellcheck disable=SC2016 # single-quoted jq programs name jq variables, never shell ones
 set -euo pipefail
 
-[ "$#" -eq 6 ] || {
-  echo "usage: $0 OPEN_DATUM DEVNET BLUEPRINT CHAIN_VIEW HARNESS WORKDIR" >&2
+[ "$#" -eq 7 ] || {
+  echo "usage: $0 OPEN_DATUM DEVNET BLUEPRINT CHAIN_VIEW HARNESS TABLE WORKDIR" >&2
   exit 2
 }
 open_datum="$1"
@@ -42,7 +48,8 @@ devnet="$2"
 blueprint_source="$3"
 chain_view="$4"
 harness="$5"
-work="$6"
+release_table="$6"
+work="$7"
 rig_name=refusals
 # shellcheck source=tools/no_pin_rig.sh
 # shellcheck disable=SC1091 # resolved from this script's own directory at runtime
@@ -234,6 +241,96 @@ source "$(dirname "$0")/no_pin_batch_refusals.sh"
 leg="reading refusals"
 check "wrong network, unknown state policy and failed provider reads are named beside passing controls; altered answers fail" \
   reading_evidence refusals
+
+# ------------------------------------------------------------------
+# 7. Registries the installed release does not serve
+# ------------------------------------------------------------------
+# A development network cannot hold a registry of an earlier release: the
+# installed commands create only registries of their own release. The state
+# tokens named here are therefore those of the contracts the packaged table
+# lists for earlier releases, and of a contract no release carries; the write
+# commands decline them before they open the provider, so the registry of the
+# installed release made above is the one whose chain record could be changed,
+# and it is the one read before and after. The observation is the chain's own
+# record: every unspent output and every included transaction.
+leg="old registries"
+# Whatever the answer, the lines the reader prints for a state token are the
+# lines every write command prints for the same one.
+declined_with_guidance() { # WRITE-RECEIPT READ-RECEIPT
+  jq -e --slurpfile read "$2" '
+    .outcome == "client-refusal"
+    and (.reason | startswith("state-token-foreign-release"))
+    and ($read[0].guidance | length) > 0
+    and ([$read[0].guidance[] as $line | .reason | contains($line)] | all)' "$1"
+}
+names_release() { # READ-RECEIPT RELEASE
+  jq -e --arg release "$2" '[.guidance[] | contains($release)] | any' "$1"
+}
+names_no_release() { # READ-RECEIPT
+  jq -e '(.guidance | length) > 0 and ([.guidance[] | contains("releases/tag")] | any | not)' "$1"
+}
+exited_nonzero() { [ "$(cat "$receipts/$1.status")" -ne 0 ]; }
+chain_transactions() { chain transactions | jq '.transactions | length'; }
+same_file() { cmp -s "$1" "$2"; }
+same_count() { [ -n "$1" ] && [ "$1" = "$2" ]; }
+# The two earlier rows that name the most releases, from the table the installed
+# commands carry: policy, and the newest release of the row.
+mapfile -t earlier_rows < <(jq -r '
+  [.rows[] | select(.releases | length > 0)]
+  | sort_by(.releases | length) | reverse | .[0:2][]
+  | "\(."state-contract") \(.releases[-1])"' "$release_table")
+[ "${#earlier_rows[@]}" -eq 2 ] || setup_fail "the table lists fewer than two earlier contracts"
+unknown_policy="$(printf '%056d' 0)"
+refused_writes=(insert fold update terminate reclaim cleanup)
+write_arguments() { # VERB TOKEN
+  case "$1" in
+    insert) printf '%s\n' insert --blueprint plutus.json --state-token "$2" --key old-key --payload payload.json --deposit 3000000 --tip 1000000 ;;
+    fold) printf '%s\n' fold --blueprint plutus.json --state-token "$2" ;;
+    update) printf '%s\n' update --blueprint plutus.json --state-token "$2" --holding "$(printf '%064d' 7)#0" --payload payload.json ;;
+    terminate) printf '%s\n' terminate --blueprint plutus.json --state-token "$2" --holding "$(printf '%064d' 7)#0" ;;
+    reclaim | cleanup) printf '%s\n' "$1" --blueprint plutus.json --state-token "$2" --pending "$(printf '%064d' 7)#0" ;;
+  esac
+}
+old_case=0
+for row in "${earlier_rows[@]}" "$unknown_policy"; do
+  old_case=$((old_case + 1))
+  policy="${row%% *}"
+  newest="${row#* }"
+  old_token="$policy.${token##*.}"
+  read_command "read-old-$old_case" "$open_datum" inspect --state-token "$old_token" --network-magic "$network_magic" --key reader-unused --koios-url "$provider_url"
+  if [ "$policy" = "$unknown_policy" ]; then
+    check "old case $old_case: the reader names no release for contracts no release carries" names_no_release "$receipts/read-old-$old_case.json"
+  else
+    check "old case $old_case: the reader names the newest release of the earlier contract, $newest" names_release "$receipts/read-old-$old_case.json" "$newest"
+  fi
+  view_unspent "old-$old_case-before"
+  count_before="$(chain_transactions)"
+  for verb in "${refused_writes[@]}"; do
+    mapfile -t arguments < <(write_arguments "$verb" "$old_token")
+    run_as alice "old-$old_case-$verb" "$open_datum" "${arguments[@]}"
+    check "old case $old_case: $verb exits with a refusal" exited_nonzero "old-$old_case-$verb"
+    check "old case $old_case: $verb declines with the lines the reader prints for the same registry" \
+      declined_with_guidance "$receipts/old-$old_case-$verb.json" "$receipts/read-old-$old_case.json"
+  done
+  view_unspent "old-$old_case-after"
+  check "old case $old_case: the chain holds the same unspent outputs before and after the refused writes" \
+    same_file "$chain_dir/old-$old_case-before.unspent.json" "$chain_dir/old-$old_case-after.unspent.json"
+  check "old case $old_case: the chain holds the same number of transactions before and after" \
+    same_count "$count_before" "$(chain_transactions)"
+done
+# The control: a write the installed release accepts moves the chain, so the
+# equality above is not one that nothing could break.
+view_unspent "old-control-before"
+control_count="$(chain_transactions)"
+control_pending="$(book old-registries-control old-registries-control-key)"
+settle
+view_unspent "old-control-after"
+check "the write the installed release accepts is recorded by the chain" chain_holds_tx "$(tx_of book-old-registries-control book)"
+control "an accepted write leaves the unspent outputs unchanged" \
+  same_file "$chain_dir/old-control-before.unspent.json" "$chain_dir/old-control-after.unspent.json"
+control "an accepted write leaves the number of transactions unchanged" \
+  same_count "$control_count" "$(chain_transactions)"
+check "the accepted write names a pending registration" test -n "$control_pending"
 
 {
   printf '# Refusals on a development network: receipt\n\n'

@@ -111,6 +111,7 @@ import Singular.CLI.State (Host (..))
 import Singular.CLI.Steps
     ( loadReleaseBlueprint
     , observeOutput
+    , refuseUnserved
     , refusing
     , scriptSource
     , sendStep
@@ -120,7 +121,8 @@ import Singular.Registry.Blueprint (Blueprint)
 import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger (ConwayEra, TxOut)
 import Singular.Registry.LedgerProvider
-    ( OutputQuery (..)
+    ( Asset
+    , OutputQuery (..)
     , ReadFailure (..)
     , Session
     )
@@ -135,7 +137,10 @@ import Singular.Registry.TxBuilder.Internal (scriptHashBytes)
 import Singular.Registry.Wallet (bech32Address)
 import Singular.State.Assemble (inlineDatumOf, readOutputs)
 import Singular.State.Publication (References (..), planReferences)
-import Singular.State.Script (ScriptSource (..))
+import Singular.State.Script
+    ( ScriptSource (..)
+    , stateScriptFromBlueprint
+    )
 
 -- | The application open datum hands the state commands.
 openDatumHost :: RequestParameters -> Host
@@ -160,6 +165,21 @@ openDatumHost parameters =
             _ -> pure (Left "open datum owns exactly one validator")
         }
 
+{- | Stop a registry the installed release does not serve before the provider is
+opened: the state validator of this release is the one the blueprint has for
+this release's request validator, and the table of releases says which release
+serves the registry otherwise.
+-}
+refuseUnservedRegistry
+    :: Blueprint -> Script ConwayEra -> Asset -> IO ()
+refuseUnservedRegistry blueprint script token = do
+    state <-
+        either
+            (failWith ClientRefusal . ("the state validator: " <>))
+            pure
+            (stateScriptFromBlueprint blueprint (PolicyID (hashScript script)))
+    refuseUnserved (PolicyID (hashScript state)) token
+
 -- ---------------------------------------------------------
 -- book
 -- ---------------------------------------------------------
@@ -177,6 +197,7 @@ runBook env a = do
         registry = RegistryIdentity (StatePolicyId (scriptHashBytes statePolicy)) name
         key = unKey (bookArgsKey a)
         policy = PolicyID (hashScript script)
+    refuseUnservedRegistry blueprint script token
     stateWrite env (bookArgsStateDir a) token "insert" ws $ \wc reconciled -> do
         let payer = wcCaller wc
         refund <-
@@ -265,6 +286,7 @@ runPending command step build env a = do
         magic = providerMagic (writeProvider ws)
         token = accessToken (pendingArgsAccess a)
         pending = pendingArgsPending a
+    refuseUnservedRegistry blueprint script token
     stateWrite env (pendingArgsStateDir a) token command ws $ \wc reconciled -> do
         let payer = wcCaller wc
         (confirmed, (refund, locked)) <-
@@ -351,6 +373,7 @@ runHolding command step outputField build env a = do
         token@(PolicyID policy, AssetName name) = accessToken (holdingArgsAccess a)
         magic = providerMagic (writeProvider ws)
         reference = holdingArgsHolding a
+    refuseUnservedRegistry blueprint script token
     stateWrite env (holdingArgsStateDir a) token command ws $ \wc reconciled -> do
         let payer = wcCaller wc
         (confirmed, (expected, donated)) <- sendStep

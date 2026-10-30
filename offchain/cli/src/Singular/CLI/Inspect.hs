@@ -68,14 +68,19 @@ import Singular.CLI.Trace
     , Trace (Trace)
     , What (CommandEnded, CommandStarted, Refused)
     )
+import Singular.CLI.Version (releaseTag)
 import Singular.Reader qualified as R
 import Singular.Registry.Address (renderRegistryAddress)
 import Singular.Registry.Application (datumToJson)
 import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.ContractTable
     ( ApplicationIdentity (..)
+    , Installed (..)
     , applicationOf
+    , applicationRows
     , loadContractTable
+    , servingLines
+    , servingOf
     )
 import Singular.Registry.Deployment (renderOutRef)
 import Singular.Registry.Evidence (SessionId (..))
@@ -176,7 +181,12 @@ readerArgs missing bad keyBad environment given = do
     registryBad (RegistryMissing name) = missing name
     registryBad (RegistryBad name why) = bad name why
 
--- | Run the neutral reader once and let its host render or refine the answer.
+{- | Run the neutral reader once and let its host render or refine the answer.
+When the installed commands do not serve the registry (the table holds no
+applied state policy for it), the lines that name the release that does follow
+the answer, in the text and under @guidance@ in the
+JSON document; the classification and the exit status are the reader's.
+-}
 runReader
     :: Text
     -> Env
@@ -190,7 +200,8 @@ runReader
 runReader command env args present = do
     traceWith (envTracer env) (Trace [] (What (CommandStarted command)))
     elapsed <- startTimer
-    (result, work) <- readAnswer `catch` unavailable Nothing
+    (result, work) <-
+        readAnswer `catch` unavailable (present request Nothing)
     when (inspectionAnswer result == "refused") $
         traceWith
             (envTracer env)
@@ -244,6 +255,10 @@ runReader command env args present = do
                     )
             Right table ->
                 let published = applicationOf table policy
+                    installed =
+                        Installed releaseTag (map appliedStatePolicy (applicationRows table))
+                    said = servingLines (servingOf table installed policy)
+                    presented = withGuidance said . present request published
                 in  envReaderReads
                         env
                         (readerProvider args)
@@ -262,23 +277,30 @@ runReader command env args present = do
                                         ( R.Unavailable R.NetworkRead (R.Failed (T.pack (show failure)))
                                         , noWork
                                         )
-                            pure (present request published answer, work)
+                            pure (presented answer, work)
                         )
-                        `catch` unavailable published
-    unavailable published (failure :: SomeException)
+                        `catch` unavailable presented
+    unavailable presented (failure :: SomeException)
         | Just (_ :: SomeAsyncException) <- fromException failure =
             throwIO failure
         | otherwise =
             pure
-                ( present
-                    request
-                    published
+                ( presented
                     ( R.Unavailable
                         R.NetworkRead
                         (R.Failed (T.pack (displayException failure)))
                     )
                 , noWork
                 )
+
+-- | The lines naming the serving release, after the answer's own.
+withGuidance :: [Text] -> Inspection -> Inspection
+withGuidance [] inspection = inspection
+withGuidance said inspection =
+    inspection
+        { inspectionFields = inspectionFields inspection <> ["guidance" .= said]
+        , inspectionLines = inspectionLines inspection <> said
+        }
 
 -- The provider owns these measurements; the command only groups records of
 -- this exact acquisition. Startup and other sessions never enter the total.

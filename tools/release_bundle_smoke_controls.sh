@@ -107,6 +107,30 @@ if [ "$(uname -s)" = Linux ]; then
   refused_for "a bundle without one of its libraries" 'identity|standalone' bash "$smoke" "$work/changed.tar.gz" "$version" "$commit"
 fi
 
+# the scope job builds the bundle for a change to the table of releases (#747),
+# read from the pattern the workflow's own `changes` job runs, and not for a
+# change that cannot reach a bundle
+if [ -n "${RELEASE_BUNDLES_WORKFLOW:-}" ]; then
+  pattern="$(sed -n "s/^ *pattern='\\(.*\\)'\$/\\1/p" "$RELEASE_BUNDLES_WORKFLOW")"
+  if [ -z "$pattern" ]; then
+    echo "release-bundle-controls: SETUP the scope pattern was not read from $RELEASE_BUNDLES_WORKFLOW"
+    exit 2
+  fi
+  printf '%s\n' tools/release_bundle_smoke.sh | grep -Eq "$pattern" || {
+    echo "release-bundle-controls: SETUP the scope pattern does not match a path it must match"
+    exit 2
+  }
+  printf '%s\n' offchain/data/contracts/state-contracts.json | grep -Eq "$pattern" || {
+    echo "release-bundle-controls: FAIL the scope job does not build the bundle for a change to the table of releases"
+    exit 1
+  }
+  if printf '%s\n' docs/overview.md | grep -Eq "$pattern"; then
+    echo "release-bundle-controls: FAIL the scope job builds the bundle for a change to a documentation page"
+    exit 1
+  fi
+  echo "release-bundle-controls: the scope job builds the bundle for a change to the table of releases"
+fi
+
 # the development node (#707): the bundles that carry it are held to it, and
 # each way it can be wrong is refused for the stated reason. A bundle of an
 # older release carries none and is checked as it was published.
@@ -121,6 +145,25 @@ if [[ "$listing" == *data/contracts/state-contracts.json* ]]; then
   rm -r "$work/tree/$top/share/singular-registry/data/contracts"
   repack
   refused_for "a bundle without its table of releases" members bash "$smoke" "$work/changed.tar.gz" "$version" "$commit"
+  # the table the bundle carries is the table the source holds (#747): the
+  # source table is handed in, a bundle that carries another is refused, and a
+  # source that differs from a good bundle is refused for the same reason
+  unpack
+  cp "$work/tree/$top/share/singular-registry/data/contracts/state-contracts.json" "$work/bundled-table.json"
+  RELEASE_BUNDLE_SOURCE_TABLE="$work/bundled-table.json" bash "$smoke" "$tarball" "$version" "$commit" >"$work/out" 2>&1 \
+    || {
+      echo "release-bundle-controls: FAIL the good bundle is refused beside the table it carries: $(grep FAIL "$work/out" | head -n 1)"
+      exit 1
+    }
+  echo "release-bundle-controls: the good bundle passes beside the table it carries"
+  printf ' ' >"$work/source-altered.json"
+  cat "$work/bundled-table.json" >>"$work/source-altered.json"
+  RELEASE_BUNDLE_SOURCE_TABLE="$work/source-altered.json" refused_for "a bundle beside a source table that differs" table \
+    bash "$smoke" "$tarball" "$version" "$commit"
+  printf ' ' >>"$work/tree/$top/share/singular-registry/data/contracts/state-contracts.json"
+  repack
+  RELEASE_BUNDLE_SOURCE_TABLE="$work/bundled-table.json" refused_for "a bundle whose table is not the source's" table \
+    bash "$smoke" "$work/changed.tar.gz" "$version" "$commit"
   # the release published without the table is accepted without it, and one after it is not:
   # the rule is read from a copy of the bundle rules with the last release moved
   unpack
