@@ -9,7 +9,7 @@ decisions taken and the consumers to run before the first push.
 | --- | --- |
 | Repository | the public repository, pull requests target `main` |
 | Worktree and branch | `/code/singular-issue-747`, branch `feat/747-release-1-0`, created at main 7c48fa6e3 |
-| Base moves | the batch ticket's last removal cut and the open release pull request land on `main` while this ticket runs; each pull request is rebased once before its push |
+| Base moves | the update and terminate ticket's last removal cut and the open release pull request landed or land on `main` while this ticket runs; each pull request is rebased once before its push |
 | Version line | stays 0.x until the release pull request, opened by the epic owner, cuts 1.0 |
 | Release | merging the release pull request publishes nothing; the tag does; both belong to the epic owner and the milestone desk |
 
@@ -49,7 +49,7 @@ format. Its model position is Below: release plumbing, evidence pages and the wo
 | How guidance is worded | one function of the packaged release table returns the answer's release text; every command prints it | per-command wording: five commands would drift |
 | Compatibility record | a page generated from the release table, with a check that fails when they disagree | a typed page: it would say what was true when it was typed |
 | Decision table | a page generated from the two receipts, with a check against an altered figure | a typed page, for the same reason |
-| Release table for the line itself | the rows for releases published since the table was last filled are added from their published on-chain archives with the existing fill tool; the row for the release being cut is prepared with the epic owner's tag name and filled with its archive after publication | a table that is silent about the release it ships in: its own users would be told "not released yet" |
+| Release table for the line itself | the rows for releases published since the table was last filled are added from their published on-chain archives with the existing fill tool; the installed release recognises its own contracts by derivation from its packaged blueprints and answers that it serves the registry without a tag lookup; the table may lag the package by the release being cut, every older release must be present, and after each tag a refill pull request adds that release's row from its published archive | a prepared row with a predicted tag, which may never be published; and no version freshness, which lets the table lag for many releases |
 
 ## Pull requests and slices
 
@@ -67,7 +67,10 @@ flowchart LR
     subgraph P4[Pull request 4: compatibility record and release preparation]
       C[compatibility-record] --> Q[release-preparation]
     end
-    P1 --> P2 --> P3 --> P4
+    subgraph P5[Pull request 5: refill after the tag]
+      R[refill-after-tag]
+    end
+    P1 --> P2 --> P3 --> P4 --> P5
 ```
 
 | Pull request | Slice | Delivers | Class | Requirements |
@@ -80,7 +83,8 @@ flowchart LR
 | 3 | decision-table | a page computed from the creation-cost receipt and the batch-limit receipt, with parameters, gains, regressions and unmeasured limits, and its altered-figure control; the batch receipt refreshed when the epic owner grants the read of the public test network's parameters | documentation, hosted CI is the gate | combined-evidence, batch-receipt-current |
 | 3 | limits-stated | the four limits in the release notes and in the documentation, and the check that fails when one is missing | documentation | limits-stated |
 | 4 | compatibility-record | the page computed from the release table, with its disagreement control | documentation | compatibility-record |
-| 4 | release-preparation | the release notes for 1.0, the tag-run checklist handed to the epic owner, and the rows for the release being cut prepared; no tag, no merge of the release pull request, no version choice | documentation | version-line-prepared |
+| 4 | release-preparation | the release notes for 1.0, the tag-run checklist handed to the epic owner; no tag, no merge of the release pull request, no version choice | documentation | version-line-prepared |
+| 5 | refill-after-tag | after the tag, the row of the released version from its published on-chain archive through the fill tool, and the compatibility record regenerated from it; the freshness tests make it the gate for the next release pull request | documentation and data, hosted CI is the gate | compatibility-record |
 
 Each slice finishes in well under two hours; the commit owner may cut a slice smaller, never merge two. Pull requests merge
 into `main` in order, each when its required checks are green at the head. Pull request 1 takes the audited process;
@@ -112,6 +116,6 @@ background.
 | Item | Needed when |
 | --- | --- |
 | a go to read the public test network's current protocol parameters for the receipt refresh, and whether to measure on it | pull request 3 |
-| whether the release's own registries are recognised by the release's own commands, which needs the row prepared with the tag name before the tag | pull request 4 |
+| answered: the table may lag the package by the release being cut; the installed release recognises its own contracts by derivation; a refill pull request follows each tag | settled |
 | whether a manual run publishing the development channels may exercise the Linux publication action before the tag | before the tag |
-| the base moves when the batch ticket's last removal cut and the release pull request land | each push |
+| the base moves when a pull request or the release pull request lands | each push |

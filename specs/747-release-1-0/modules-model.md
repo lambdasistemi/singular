@@ -7,7 +7,7 @@ Issue 747. This page lists the components that change, who owns each, and the di
 
 | Component | Responsibility after this ticket | Dependency direction |
 | --- | --- | --- |
-| Packaged release table (data file in the registry package) | the rows from a state contract and an applied state policy to the Singular and application releases that carry them, complete up to the release being cut | read by the neutral reader; written only by the fill tool |
+| Packaged release table (data file in the registry package) | the rows from a state contract and an applied state policy to the Singular and application releases that carry them, naming every release older than the package and allowed to lag it by the release being cut | read by the neutral reader; written only by the fill tool |
 | Release guidance (neutral library, next to the reader) | one function from the table and an observed registry to the text that names the serving release, or says none is known; names no application | depends on the table and the reader's observation types; used by every command that reads or writes a registry |
 | Neutral and application commands | print the guidance in their refusals and answers; the write commands refuse before building | depend on the guidance; no command carries its own wording |
 | Installed journey job (release bundles workflow) | after the Linux bundle is built, unpack it on a machine without Nix and run the registration journey script with the bundle's commands, blueprint and node | depends on the bundle output and the existing journey script; nothing depends on it except the aggregate bundle check |

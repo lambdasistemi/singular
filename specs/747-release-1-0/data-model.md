@@ -15,8 +15,9 @@ Issue 747. This page lists the records that change or are added and the rules ea
 
 ## State rules
 
-- The table is complete up to the release being cut, or the page states which release it stops at; the compatibility
-  page and the neutral reader read the same file.
+- The table names every release older than the package's version and may lag the package by the release being cut; the
+  installed release recognises its own contracts by derivation from its packaged blueprints; the compatibility page
+  and the neutral reader read the same file.
 - Guidance is a function of the table and the observation. The same observation yields the same text in every command.
 - No journey step depends on a file left by another wallet; each wallet has directories and a home of its own.
 - A write refused for guidance leaves the chain as it was: no transaction is built, signed or sent, shown by the

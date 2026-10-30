@@ -27,7 +27,11 @@ the ticket owner accepts its slice.
 ## Pull request 4: record and preparation
 
 - [ ] compatibility-record: the page computed from the release table, with its disagreement control.
-- [ ] release-preparation: the release notes for 1.0, the tag-run checklist for the epic owner, the rows prepared for the release being cut.
+- [ ] release-preparation: the release notes for 1.0, the tag-run checklist for the epic owner.
+
+## Pull request 5: refill after the tag
+
+- [ ] refill-after-tag: the row of the released version from its published archive, and the compatibility record regenerated from it.
 
 ## Close-out
 

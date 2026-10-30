@@ -21,7 +21,7 @@
       "pause": 500
     },
     {
-      "text": "The table is complete up to the release being cut, or the page states which release it stops at; the compatibility page and the neutral reader read the same file.",
+      "text": "The table names every release older than the package's version and may lag the package by the release being cut; the installed release recognises its own contracts by derivation from its packaged blueprints; the compatibility page and the neutral reader read the same file.",
       "pause": 300
     },
     {
@@ -43,6 +43,6 @@
   ],
   "_source": {
     "file": "data-model.md",
-    "sha256": "6521c39f43465d2d30ae25ffef15d308c5c9c7d8b8275c3aca7830443493abe7"
+    "sha256": "cf5ff5cc4f83fd222afe2559da0108d7dbb274844e4cf9989a31484a1e36bb96"
   }
 }
