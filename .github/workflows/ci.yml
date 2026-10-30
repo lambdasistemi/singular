@@ -453,6 +453,13 @@ jobs:
       # uploaded; the docs-only release-check job does not carry it.
       - name: Exclude compiled test controls from both ordinary release closures
         run: nix run --quiet .#release-build-control
+      # The self-hosted runner keeps its temporary directory between jobs when
+      # it cannot delete all of it, and the verifier controls read every file of
+      # the release directory: one stale archive or directory there fails them.
+      - name: Start from an empty release directory
+        run: |
+          [ ! -e "$RUNNER_TEMP/release" ] || chmod -R u+w "$RUNNER_TEMP/release"
+          rm -rf "$RUNNER_TEMP/release"
       - run: nix run --quiet .#release-artifacts -- "$RUNNER_TEMP/release"
       # #326: every refusal of the release verifier, by name, from the
       # verifier itself: the real published v0.7.0, downloaded without
