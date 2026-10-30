@@ -6,10 +6,11 @@ name: Release bundles
 # from the extracted tarball; for Linux an AppImage per command and one DEB and
 # one RPM with every command, smoke-tested extracted and installed on machines
 # without Nix; for macOS the Homebrew formula, installed from a local tap on a
-# pull request. The bundle job builds and smoke-tests; the journey job after
-# it plays what it produced (#747): the registration journey from the unpacked
-# Linux bundle and from the installed Debian package on machines without Nix.
-# Nothing here
+# pull request. The bundle job builds and smoke-tests; the jobs after it play
+# what it produced (#747): the registration journey from the unpacked Linux
+# bundle and from the installed Debian package on machines without Nix, and the
+# release assembled from the built bundles verified as a tag run verifies the
+# published one. Nothing here
 # publishes on a pull request, a push to main or the tag run that calls this
 # one (the release workflow publishes what it uploaded); a manual run with
 # dev_channels publishes the dev channels (dev-linux assets, the singular-dev
@@ -294,6 +295,68 @@ jobs:
             ${{ env.WORK }}/journey/receipts
           if-no-files-found: warn
           retention-days: 7
+  # #747: the verifier a tag run applies to the published release, applied
+  # beforehand to the release this run assembled and the bundles it built. The
+  # release is assembled as the pipeline does (`release-artifacts`), both
+  # bundles are added to it and to its SHA256SUMS, and `verify-release` checks
+  # it: the sums, the model revision, the members, the bundle checks, the
+  # archive's own builds and the registration journey played from the
+  # downloaded bundle of this platform. The refusal control of that journey
+  # (a bundle that names its release and then fails every command) runs
+  # against the same bundles.
+  verify:
+    needs: [changes, bundle]
+    if: needs.changes.outputs.bundles == 'true' && github.event_name != 'workflow_dispatch'
+    name: Release verified from its built bundles
+    runs-on: nixos
+    timeout-minutes: 90
+    steps:
+      - name: Isolate Nix cache
+        run: |
+          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-verify"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: Download the bundles of every platform
+        uses: actions/download-artifact@v8
+        with:
+          pattern: release-bundle-*
+          merge-multiple: true
+          path: ${{ runner.temp }}/bundles
+      - name: Assemble the release as the pipeline does, and add its bundles
+        run: |
+          version="$(cat version.txt)"
+          TAG_COMMIT="$(git rev-parse HEAD)" nix run --quiet .#release-artifacts -- "$RUNNER_TEMP/release"
+          cp -r "$RUNNER_TEMP/release" "$RUNNER_TEMP/release-with-bundles"
+          cp "$RUNNER_TEMP/bundles/singular-$version-"*.tar.gz "$RUNNER_TEMP/release-with-bundles/"
+          (cd "$RUNNER_TEMP/release-with-bundles" \
+            && sha256sum "singular-docs-$version.tar.gz" "singular-onchain-$version.tar.gz" "singular-$version-"*.tar.gz >SHA256SUMS)
+          cat "$RUNNER_TEMP/release-with-bundles/SHA256SUMS"
+      - name: Verify the release with its bundles
+        run: |
+          VERIFY_RELEASE_TAG_COMMIT="$(git rev-parse HEAD)" nix run --quiet .#verify-release -- \
+            --assets "$RUNNER_TEMP/release-with-bundles" --work "$RUNNER_TEMP/verify-work" "v$(cat version.txt)"
+      - name: A bundle whose commands fail the journey is refused
+        run: nix run --quiet .#verify-release-controls -- "$RUNNER_TEMP/release" --bundles "$RUNNER_TEMP/bundles"
+      - name: Keep the verdicts, the measurement and the receipts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: verify-release-journey
+          path: |
+            ${{ runner.temp }}/verify-work/journey/verdicts.md
+            ${{ runner.temp }}/verify-work/journey/creation-measurement.json
+            ${{ runner.temp }}/verify-work/journey/receipt.md
+            ${{ runner.temp }}/verify-work/journey/receipts
+          if-no-files-found: warn
+          retention-days: 7
   dev-channels:
     needs: changes
     if: github.event_name == 'workflow_dispatch' && inputs.dev_channels == 'yes'
@@ -378,7 +441,7 @@ jobs:
           tap-token: ${{ steps.tap-token.outputs.token }}
   bundles:
     name: Release bundles
-    needs: [changes, bundle, install, journey]
+    needs: [changes, bundle, install, journey, verify]
     if: always()
     runs-on: ubuntu-24.04
     steps:
@@ -388,25 +451,28 @@ jobs:
           BUNDLES: ${{ needs.bundle.result }}
           INSTALL: ${{ needs.install.result }}
           JOURNEY: ${{ needs.journey.result }}
+          VERIFY: ${{ needs.verify.result }}
           EVENT: ${{ github.event_name }}
         run: |
-          echo "scope=$SCOPE bundles=$BUNDLES install=$INSTALL journey=$JOURNEY event=$EVENT"
+          echo "scope=$SCOPE bundles=$BUNDLES install=$INSTALL journey=$JOURNEY verify=$VERIFY event=$EVENT"
           [ "$SCOPE" = success ] || { echo "the scope decision did not succeed"; exit 1; }
-          for result in "$BUNDLES" "$INSTALL" "$JOURNEY"; do
+          for result in "$BUNDLES" "$INSTALL" "$JOURNEY" "$VERIFY"; do
             case "$result" in
               success | skipped) ;;
               *) echo "a bundle check did not pass: $result"; exit 1 ;;
             esac
           done
-          # The install test and the installed journey run with the bundles,
-          # except on a manual run, which builds no packages.
+          # The install test, the installed journey and the verified release run
+          # with the bundles, except on a manual run, which builds no packages.
           if [ "$EVENT" != workflow_dispatch ]; then
             [ "$BUNDLES" = "$INSTALL" ] \
               || { echo "the install test disagrees: $BUNDLES $INSTALL"; exit 1; }
             [ "$BUNDLES" = "$JOURNEY" ] \
               || { echo "the installed journey disagrees: $BUNDLES $JOURNEY"; exit 1; }
+            [ "$BUNDLES" = "$VERIFY" ] \
+              || { echo "the verified release disagrees: $BUNDLES $VERIFY"; exit 1; }
           fi
           case "$BUNDLES" in
-            success) echo "every bundle and package was built and tested, the journey played from the release's files" ;;
+            success) echo "every bundle and package was built and tested, the journey played from the release's files, the release verified from its bundles" ;;
             skipped) echo "no release or packaging file changed" ;;
           esac

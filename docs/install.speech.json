@@ -177,10 +177,14 @@
     {
       "text": "The Linux packages and the Homebrew formula follow the organisation's shared release actions and Nix helpers (dev-assets). A pull request builds the AppImages, the DEB and the RPM, runs every command from each one unpacked, and then installs the DEB on Ubuntu and the RPM on Fedora and runs each AppImage, on machines without Nix. It also builds the formula from the macOS tarball, installs it through a local tap that points at that tarball, and runs brew test. The release tag publishes the Linux packages once the release exists. The formula follows once verify-release has passed: it is pushed to the organisation's tap only if the release's macOS tarball is the one the formula names, then installed from the tap and tested. A manual run of the bundles workflow can publish the dev channels: the dev-linux packages and the singular-dev formula.",
       "pause": 400
+    },
+    {
+      "text": "A pull request that builds the bundles also plays the registration journey from those files, twice: from the Linux bundle unpacked, and from the DEB installed with the system package manager, each on a machine that has no Nix. The commands and the blueprint come only from the bundle or the package, and the development node is the one the bundle or the package carries; the job shows where each command and the blueprint resolved to. The journey creates a registry, registers, updates and terminates a key, reads it back and folds a discovered batch on a development network. Every verdict is computed from the chain's record or from files, and none is typed; create, register, update, terminate, read and the discovered batch fold are each judged from the chain's record and shown failing on altered input. The same pull request assembles the release as the pipeline does, adds both bundles and runs verify-release on it, so that a broken bundle journey is found in the pull request and not after the tag.",
+      "pause": 400
     }
   ],
   "_source": {
     "file": "install.md",
-    "sha256": "dfc0e5e5d1723faa6b01df72e4e109570437daf25c6b1c1345287913ccad39fd"
+    "sha256": "c79ee80c30fc41ed1e9b65eab323659c594b2781ab6cc9dfb555d0b9f5cebbcf"
   }
 }

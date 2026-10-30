@@ -285,3 +285,17 @@ follows once `verify-release` has passed: it is pushed to the
 release's macOS tarball is the one the formula names, then installed from the tap
 and tested. A manual run of the bundles workflow can publish the dev channels: the
 `dev-linux` packages and the `singular-dev` formula.
+
+A pull request that builds the bundles also plays the registration journey from
+those files, twice: from the Linux bundle unpacked, and from the DEB installed with
+the system package manager, each on a machine that has no Nix. The commands and the
+blueprint come only from the bundle or the package, and the development node is the
+one the bundle or the package carries; the job shows where each command and the
+blueprint resolved to. The journey creates a registry, registers, updates and
+terminates a key, reads it back and folds a discovered batch on a development
+network. Every verdict is computed from the chain's record or from files, and none is
+typed; create, register, update, terminate, read and the discovered batch fold are
+each judged from the chain's record and shown failing on altered input. The same
+pull request assembles the release as the pipeline does, adds both bundles and runs
+`verify-release` on it, so that a broken bundle journey is found in the pull request
+and not after the tag.

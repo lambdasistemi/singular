@@ -34,7 +34,10 @@
 #                   from the archive's own flakes
 #   journey         the existing registration, update and termination journey
 #                   runs as separate processes on one development network
-#                   (no_pin_registration_journey.sh)
+#                   (no_pin_registration_journey.sh). A release that ships
+#                   bundles plays the downloaded bundle of this platform: its
+#                   commands, blueprint and development node, none of them
+#                   built here; without bundles, the archive's own builds
 #   release build   the stripped compiled executables contain no harness inputs,
 #                   and their actual resolved registry-cli flags disable them
 #   ordinary run    every command invocation is free of hidden harness inputs;
@@ -256,6 +259,41 @@ done
 pass "release build" "stripped singular/open-datum bytes and actual flags exclude test controls"
 
 # journey
+# The programs the journey plays. A release that ships bundles is played from
+# the downloaded bundle of this platform: its commands, its blueprint and its
+# development node, none of them built here. Without bundles, the archive's
+# own builds are played.
+journey_singular="$singular/bin/singular"
+journey_open_datum="$open_datum/bin/open-datum"
+journey_devnet="$devnet/bin/devnet"
+journey_blueprint="$extracted/onchain/plutus.json"
+journey_genesis="$extracted/offchain/e2e-test/genesis"
+journey_source="the archive's own builds"
+if [ -n "$bundle_names" ]; then
+  native="$(native_system)"
+  platform_bundle="$download/singular-$version-$native.tar.gz"
+  if [ -f "$platform_bundle" ]; then
+    mkdir -p "$work/bundle"
+    tar -xzf "$platform_bundle" -C "$work/bundle" 2>"$work/bundle-extract.log" \
+      || refuse bundle-layout "singular-$version-$native.tar.gz does not extract: $(tr '\n' ' ' <"$work/bundle-extract.log")"
+    bundle="$work/bundle/singular-$version-$native"
+    journey_singular="$bundle/bin/singular"
+    journey_open_datum="$bundle/bin/open-datum"
+    journey_devnet="$bundle/bin/devnet"
+    journey_blueprint="$bundle/share/plutus.json"
+    journey_genesis="$bundle/share/devnet/genesis"
+    journey_source="the downloaded bundle of $native"
+    # nothing the journey plays comes from a build here or from a Nix store
+    for played in "$journey_singular" "$journey_open_datum" "$journey_devnet" "$journey_blueprint"; do
+      case "$(readlink -f "$played")" in
+        "$work/bundle"/*) ;;
+        *) refuse bundle-layout "the journey would play $played, which resolves to $(readlink -f "$played"), outside the downloaded bundle" ;;
+      esac
+    done
+  else
+    echo "verify-release: journey: the release ships no bundle for $native; the archive's own builds are played"
+  fi
+fi
 # Every `singular` and `open-datum` process the journey starts goes through
 # a wrapper that records which SINGULAR_HARNESS_* variables it was started
 # with, and the path each hold variable names, before it replaces itself with
@@ -267,8 +305,8 @@ mkdir -p "$work/bin"
 # tools here, without changing the environment passed to the release binary.
 for program in singular open-datum; do
   case "$program" in
-    singular) binary="$singular/bin/singular" ;;
-    *) binary="$open_datum/bin/open-datum" ;;
+    singular) binary="$journey_singular" ;;
+    *) binary="$journey_open_datum" ;;
   esac
   cat >"$work/bin/$program" <<WRAPPER
 #!$(command -v bash)
@@ -288,14 +326,15 @@ done
 # caller happens to run from the registry tree. The archive build leaves the
 # caller in the application's tree before the journey runs, so the
 # genesis-only source (and every later node) would die before printing
-# settings. Point the journey at the genesis the archive carries, so the
-# node starts regardless of the caller's directory.
-export E2E_GENESIS_DIR="$extracted/offchain/e2e-test/genesis"
+# settings. Point the journey at the genesis of the programs it plays (the
+# bundle's, or the one the archive carries), so the node starts regardless of
+# the caller's directory.
+export E2E_GENESIS_DIR="$journey_genesis"
 status=0
-bash "$journey" "$work/bin/singular" "$work/bin/open-datum" "$devnet/bin/devnet" "$extracted/onchain/plutus.json" "$chain_view" "$work/journey" \
+bash "$journey" "$work/bin/singular" "$work/bin/open-datum" "$journey_devnet" "$journey_blueprint" "$chain_view" "$work/journey" \
   || status=$?
-[ "$status" -eq 0 ] || refuse command-failed "the journey exited $status$kept"
-pass journey "the connected journey as separate processes"
+[ "$status" -eq 0 ] || refuse command-failed "the journey exited $status from $journey_source$kept"
+pass journey "the connected journey as separate processes, from $journey_source"
 
 # The journey uses only the ordinary extracted binaries. Recovery controls
 # run in their separate explicit test composition.
@@ -304,6 +343,10 @@ while IFS= read -r route; do
     || refuse harness-code-present "no ordinary $route invocation was recorded"
 done <<'ROUTES'
 singular registry create
+singular registry inspect
+singular wallet create
+singular wallet sign
+singular submit
 open-datum create
 open-datum fold
 open-datum insert
@@ -311,6 +354,7 @@ open-datum reclaim
 open-datum cleanup
 open-datum update
 open-datum terminate
+open-datum inspect
 ROUTES
 if awk -F'\t' '$2 != "" || $3 != ""' "$invocations" | grep -q .; then
   refuse harness-code-present "ordinary journey received a hidden test input"
@@ -318,6 +362,6 @@ fi
 fired="$(find "$work/journey" -name '*.waiting' | LC_ALL=C sort -u)"
 [ -z "$fired" ] || refuse harness-code-present "ordinary journey left a harness hold marker"
 plain="$(wc -l <"$invocations")"
-pass "ordinary run" "$plain invocations of the actual extracted-release binaries"
+pass "ordinary run" "$plain invocations of the actual programs of $journey_source"
 
-echo "verify-release: PASS $tag — sums, model revision $stated, members, compiled hook exclusion and the ordinary journey, from $extracted"
+echo "verify-release: PASS $tag — sums, model revision $stated, members, compiled hook exclusion and the ordinary journey from $journey_source, from $extracted"
