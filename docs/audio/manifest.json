@@ -18590,6 +18590,3056 @@
     }
    ]
   },
+  "docs-compatibility/applications-00": {
+   "audio_sha256": "ff0e0d54ea6ae723bb9a1cd16de8363462bc3db18318fad35e808c11fd675b50",
+   "characters": 13,
+   "cost": 1.2869999999999999e-05,
+   "duration": 1.575,
+   "index": 0,
+   "key": "191eb287b67b8dfdb1e71037e18f08fb15654fe001525c049a5d81a0497e1622",
+   "page": "docs/compatibility.md",
+   "pause_ms": 500,
+   "section": "applications",
+   "sent_text": "Applications.",
+   "text": "Applications.",
+   "words": [
+    {
+     "end": 1.35,
+     "start": 0.175,
+     "text": "Applications"
+    },
+    {
+     "end": 1.575,
+     "start": 1.35,
+     "text": "."
+    }
+   ]
+  },
+  "docs-compatibility/applications-01": {
+   "audio_sha256": "f55a52f2cb87e49917f221d95f0972e3b0079b2000085073da61de68b4660b84",
+   "characters": 218,
+   "cost": 0.00021581999999999998,
+   "duration": 14.1,
+   "index": 1,
+   "key": "7f77480b17b8a541dc34509d941e2520f0c014def41e22161ef954da71e5f80b",
+   "page": "docs/compatibility.md",
+   "pause_ms": 400,
+   "section": "applications",
+   "sent_text": "A registry made for an application has a state policy that applies the state program to the application's policy. The table holds one row for each, with the Singular releases and the application releases that carry it.",
+   "text": "A registry made for an application has a state policy that applies the state program to the application's policy. The table holds one row for each, with the Singular releases and the application releases that carry it.",
+   "words": [
+    {
+     "end": 0.3,
+     "start": 0.225,
+     "text": "A"
+    },
+    {
+     "end": 0.825,
+     "start": 0.3,
+     "text": "registry"
+    },
+    {
+     "end": 1.15,
+     "start": 0.825,
+     "text": "made"
+    },
+    {
+     "end": 1.263,
+     "start": 1.15,
+     "text": "for"
+    },
+    {
+     "end": 1.35,
+     "start": 1.263,
+     "text": "an"
+    },
+    {
+     "end": 2.1,
+     "start": 1.35,
+     "text": "application"
+    },
+    {
+     "end": 2.3,
+     "start": 2.1,
+     "text": "has"
+    },
+    {
+     "end": 2.412,
+     "start": 2.3,
+     "text": "a"
+    },
+    {
+     "end": 2.787,
+     "start": 2.412,
+     "text": "state"
+    },
+    {
+     "end": 3.487,
+     "start": 2.787,
+     "text": "policy"
+    },
+    {
+     "end": 3.65,
+     "start": 3.487,
+     "text": "that"
+    },
+    {
+     "end": 4.15,
+     "start": 3.65,
+     "text": "applies"
+    },
+    {
+     "end": 4.275,
+     "start": 4.15,
+     "text": "the"
+    },
+    {
+     "end": 4.6,
+     "start": 4.275,
+     "text": "state"
+    },
+    {
+     "end": 5.175,
+     "start": 4.6,
+     "text": "program"
+    },
+    {
+     "end": 5.262,
+     "start": 5.175,
+     "text": "to"
+    },
+    {
+     "end": 5.4,
+     "start": 5.262,
+     "text": "the"
+    },
+    {
+     "end": 6.125,
+     "start": 5.4,
+     "text": "application's"
+    },
+    {
+     "end": 7.325,
+     "start": 6.125,
+     "text": "policy"
+    },
+    {
+     "end": 7.525,
+     "start": 7.325,
+     "text": "."
+    },
+    {
+     "end": 7.825,
+     "start": 7.725,
+     "text": "The"
+    },
+    {
+     "end": 8.225,
+     "start": 7.825,
+     "text": "table"
+    },
+    {
+     "end": 8.562,
+     "start": 8.225,
+     "text": "holds"
+    },
+    {
+     "end": 8.825,
+     "start": 8.562,
+     "text": "one"
+    },
+    {
+     "end": 9.125,
+     "start": 8.825,
+     "text": "row"
+    },
+    {
+     "end": 9.312,
+     "start": 9.125,
+     "text": "for"
+    },
+    {
+     "end": 9.775,
+     "start": 9.312,
+     "text": "each"
+    },
+    {
+     "end": 9.875,
+     "start": 9.775,
+     "text": ","
+    },
+    {
+     "end": 10.012,
+     "start": 9.875,
+     "text": "with"
+    },
+    {
+     "end": 10.137,
+     "start": 10.012,
+     "text": "the"
+    },
+    {
+     "end": 10.65,
+     "start": 10.137,
+     "text": "Singular"
+    },
+    {
+     "end": 11.262,
+     "start": 10.65,
+     "text": "releases"
+    },
+    {
+     "end": 11.387,
+     "start": 11.262,
+     "text": "and"
+    },
+    {
+     "end": 11.5,
+     "start": 11.387,
+     "text": "the"
+    },
+    {
+     "end": 12.15,
+     "start": 11.5,
+     "text": "application"
+    },
+    {
+     "end": 12.675,
+     "start": 12.15,
+     "text": "releases"
+    },
+    {
+     "end": 12.85,
+     "start": 12.675,
+     "text": "that"
+    },
+    {
+     "end": 13.175,
+     "start": 12.85,
+     "text": "carry"
+    },
+    {
+     "end": 13.875,
+     "start": 13.175,
+     "text": "it"
+    },
+    {
+     "end": 14.1,
+     "start": 13.875,
+     "text": "."
+    }
+   ]
+  },
+  "docs-compatibility/contracts-with-no-release-00": {
+   "audio_sha256": "bc34b938708494bbf139f3489c1d4d62e44a55f285e7f9a59fdb0acf2613a232",
+   "characters": 26,
+   "cost": 2.5739999999999998e-05,
+   "duration": 2.05,
+   "index": 0,
+   "key": "a7e8c10e42cb4f4a61ded3210658e9d2e1194587677afa2c99102466e1d5a30c",
+   "page": "docs/compatibility.md",
+   "pause_ms": 500,
+   "section": "contracts-with-no-release",
+   "sent_text": "Contracts with no release.",
+   "text": "Contracts with no release.",
+   "words": [
+    {
+     "end": 0.663,
+     "start": 0.175,
+     "text": "Contracts"
+    },
+    {
+     "end": 0.825,
+     "start": 0.663,
+     "text": "with"
+    },
+    {
+     "end": 1.013,
+     "start": 0.825,
+     "text": "no"
+    },
+    {
+     "end": 1.85,
+     "start": 1.013,
+     "text": "release"
+    },
+    {
+     "end": 2.05,
+     "start": 1.85,
+     "text": "."
+    }
+   ]
+  },
+  "docs-compatibility/contracts-with-no-release-01": {
+   "audio_sha256": "e3d7efa0b65c0b149e31d09ac82ef96bd4d5822f0d2db1c1f2e95c077d9d3ed0",
+   "characters": 179,
+   "cost": 0.00017721000000000002,
+   "duration": 11.725,
+   "index": 1,
+   "key": "aefd151b9117de7e0d1d6c88dc2f5aee667e4be2b43405febbb7c4e673d1c52f",
+   "page": "docs/compatibility.md",
+   "pause_ms": 400,
+   "section": "contracts-with-no-release",
+   "sent_text": "The table also holds state contracts that no release carries. A registry of one of them was made by code that no release in the table carries, and no release is known to serve it.",
+   "text": "The table also holds state contracts that no release carries. A registry of one of them was made by code that no release in the table carries, and no release is known to serve it.",
+   "words": [
+    {
+     "end": 0.25,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.625,
+     "start": 0.25,
+     "text": "table"
+    },
+    {
+     "end": 0.975,
+     "start": 0.625,
+     "text": "also"
+    },
+    {
+     "end": 1.25,
+     "start": 0.975,
+     "text": "holds"
+    },
+    {
+     "end": 1.55,
+     "start": 1.25,
+     "text": "state"
+    },
+    {
+     "end": 2.175,
+     "start": 1.55,
+     "text": "contracts"
+    },
+    {
+     "end": 2.375,
+     "start": 2.175,
+     "text": "that"
+    },
+    {
+     "end": 2.6,
+     "start": 2.375,
+     "text": "no"
+    },
+    {
+     "end": 2.975,
+     "start": 2.6,
+     "text": "release"
+    },
+    {
+     "end": 3.95,
+     "start": 2.975,
+     "text": "carries"
+    },
+    {
+     "end": 4.15,
+     "start": 3.95,
+     "text": "."
+    },
+    {
+     "end": 4.45,
+     "start": 4.375,
+     "text": "A"
+    },
+    {
+     "end": 4.975,
+     "start": 4.45,
+     "text": "registry"
+    },
+    {
+     "end": 5.125,
+     "start": 4.975,
+     "text": "of"
+    },
+    {
+     "end": 5.287,
+     "start": 5.125,
+     "text": "one"
+    },
+    {
+     "end": 5.375,
+     "start": 5.287,
+     "text": "of"
+    },
+    {
+     "end": 5.625,
+     "start": 5.375,
+     "text": "them"
+    },
+    {
+     "end": 5.825,
+     "start": 5.625,
+     "text": "was"
+    },
+    {
+     "end": 6.125,
+     "start": 5.825,
+     "text": "made"
+    },
+    {
+     "end": 6.338,
+     "start": 6.125,
+     "text": "by"
+    },
+    {
+     "end": 6.725,
+     "start": 6.338,
+     "text": "code"
+    },
+    {
+     "end": 6.95,
+     "start": 6.725,
+     "text": "that"
+    },
+    {
+     "end": 7.225,
+     "start": 6.95,
+     "text": "no"
+    },
+    {
+     "end": 7.7,
+     "start": 7.225,
+     "text": "release"
+    },
+    {
+     "end": 7.787,
+     "start": 7.7,
+     "text": "in"
+    },
+    {
+     "end": 7.875,
+     "start": 7.787,
+     "text": "the"
+    },
+    {
+     "end": 8.25,
+     "start": 7.875,
+     "text": "table"
+    },
+    {
+     "end": 8.875,
+     "start": 8.25,
+     "text": "carries"
+    },
+    {
+     "end": 8.95,
+     "start": 8.875,
+     "text": ","
+    },
+    {
+     "end": 9.087,
+     "start": 8.95,
+     "text": "and"
+    },
+    {
+     "end": 9.325,
+     "start": 9.087,
+     "text": "no"
+    },
+    {
+     "end": 9.775,
+     "start": 9.325,
+     "text": "release"
+    },
+    {
+     "end": 9.938,
+     "start": 9.775,
+     "text": "is"
+    },
+    {
+     "end": 10.275,
+     "start": 9.938,
+     "text": "known"
+    },
+    {
+     "end": 10.413,
+     "start": 10.275,
+     "text": "to"
+    },
+    {
+     "end": 10.75,
+     "start": 10.413,
+     "text": "serve"
+    },
+    {
+     "end": 11.5,
+     "start": 10.75,
+     "text": "it"
+    },
+    {
+     "end": 11.725,
+     "start": 11.5,
+     "text": "."
+    }
+   ]
+  },
+  "docs-compatibility/how-the-answer-is-found-00": {
+   "audio_sha256": "cc410a0ccd92ebd8bef3d480d523ea5573e7667fec1d7a0d8ac5aed09748a14d",
+   "characters": 24,
+   "cost": 2.3759999999999996e-05,
+   "duration": 1.8,
+   "index": 0,
+   "key": "e3d7c664843e0d33fc3a47886840dda5e89c5d25e378c6dd06e28c3e169131d0",
+   "page": "docs/compatibility.md",
+   "pause_ms": 500,
+   "section": "how-the-answer-is-found",
+   "sent_text": "How the answer is found.",
+   "text": "How the answer is found.",
+   "words": [
+    {
+     "end": 0.312,
+     "start": 0.175,
+     "text": "How"
+    },
+    {
+     "end": 0.45,
+     "start": 0.312,
+     "text": "the"
+    },
+    {
+     "end": 0.712,
+     "start": 0.45,
+     "text": "answer"
+    },
+    {
+     "end": 0.85,
+     "start": 0.712,
+     "text": "is"
+    },
+    {
+     "end": 1.6,
+     "start": 0.85,
+     "text": "found"
+    },
+    {
+     "end": 1.8,
+     "start": 1.6,
+     "text": "."
+    }
+   ]
+  },
+  "docs-compatibility/how-the-answer-is-found-01": {
+   "audio_sha256": "e6da492f10c715302a08350d641a2e9924157b998133ceb7ec3ebc52848d1ea0",
+   "characters": 346,
+   "cost": 0.00034254,
+   "duration": 21.85,
+   "index": 1,
+   "key": "51b7a56e40c29566fb349afe97227968030fad04519e95522395b98913d4e71b",
+   "page": "docs/compatibility.md",
+   "pause_ms": 400,
+   "section": "how-the-answer-is-found",
+   "sent_text": "The commands of this release derive their state contract from the blueprint they carry. The request validator of that blueprint has an application policy, and the release table holds the applied state policy for it. That applied state policy is the contract these commands derive, and it is the state contract of every row marked as this release.",
+   "text": "The commands of this release derive their state contract from the blueprint they carry. The request validator of that blueprint has an application policy, and the release table holds the applied state policy for it. That applied state policy is the contract these commands derive, and it is the state contract of every row marked as this release.",
+   "words": [
+    {
+     "end": 0.25,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.738,
+     "start": 0.25,
+     "text": "commands"
+    },
+    {
+     "end": 0.825,
+     "start": 0.738,
+     "text": "of"
+    },
+    {
+     "end": 1.025,
+     "start": 0.825,
+     "text": "this"
+    },
+    {
+     "end": 1.525,
+     "start": 1.025,
+     "text": "release"
+    },
+    {
+     "end": 1.962,
+     "start": 1.525,
+     "text": "derive"
+    },
+    {
+     "end": 2.138,
+     "start": 1.962,
+     "text": "their"
+    },
+    {
+     "end": 2.475,
+     "start": 2.138,
+     "text": "state"
+    },
+    {
+     "end": 3.075,
+     "start": 2.475,
+     "text": "contract"
+    },
+    {
+     "end": 3.237,
+     "start": 3.075,
+     "text": "from"
+    },
+    {
+     "end": 3.325,
+     "start": 3.237,
+     "text": "the"
+    },
+    {
+     "end": 3.75,
+     "start": 3.325,
+     "text": "blueprint"
+    },
+    {
+     "end": 3.938,
+     "start": 3.75,
+     "text": "they"
+    },
+    {
+     "end": 4.9,
+     "start": 3.938,
+     "text": "carry"
+    },
+    {
+     "end": 5.125,
+     "start": 4.9,
+     "text": "."
+    },
+    {
+     "end": 5.375,
+     "start": 5.3,
+     "text": "The"
+    },
+    {
+     "end": 5.875,
+     "start": 5.375,
+     "text": "request"
+    },
+    {
+     "end": 6.5,
+     "start": 5.875,
+     "text": "validator"
+    },
+    {
+     "end": 6.6,
+     "start": 6.5,
+     "text": "of"
+    },
+    {
+     "end": 6.85,
+     "start": 6.6,
+     "text": "that"
+    },
+    {
+     "end": 7.463,
+     "start": 6.85,
+     "text": "blueprint"
+    },
+    {
+     "end": 7.688,
+     "start": 7.463,
+     "text": "has"
+    },
+    {
+     "end": 7.775,
+     "start": 7.688,
+     "text": "an"
+    },
+    {
+     "end": 8.425,
+     "start": 7.775,
+     "text": "application"
+    },
+    {
+     "end": 9.45,
+     "start": 8.425,
+     "text": "policy"
+    },
+    {
+     "end": 9.65,
+     "start": 9.45,
+     "text": ","
+    },
+    {
+     "end": 9.938,
+     "start": 9.85,
+     "text": "and"
+    },
+    {
+     "end": 10.025,
+     "start": 9.938,
+     "text": "the"
+    },
+    {
+     "end": 10.375,
+     "start": 10.025,
+     "text": "release"
+    },
+    {
+     "end": 10.75,
+     "start": 10.375,
+     "text": "table"
+    },
+    {
+     "end": 11.038,
+     "start": 10.75,
+     "text": "holds"
+    },
+    {
+     "end": 11.15,
+     "start": 11.038,
+     "text": "the"
+    },
+    {
+     "end": 11.6,
+     "start": 11.15,
+     "text": "applied"
+    },
+    {
+     "end": 11.875,
+     "start": 11.6,
+     "text": "state"
+    },
+    {
+     "end": 12.363,
+     "start": 11.875,
+     "text": "policy"
+    },
+    {
+     "end": 12.613,
+     "start": 12.363,
+     "text": "for"
+    },
+    {
+     "end": 13.225,
+     "start": 12.613,
+     "text": "it"
+    },
+    {
+     "end": 13.425,
+     "start": 13.225,
+     "text": "."
+    },
+    {
+     "end": 13.738,
+     "start": 13.6,
+     "text": "That"
+    },
+    {
+     "end": 14.125,
+     "start": 13.738,
+     "text": "applied"
+    },
+    {
+     "end": 14.4,
+     "start": 14.125,
+     "text": "state"
+    },
+    {
+     "end": 15.062,
+     "start": 14.4,
+     "text": "policy"
+    },
+    {
+     "end": 15.212,
+     "start": 15.062,
+     "text": "is"
+    },
+    {
+     "end": 15.3,
+     "start": 15.212,
+     "text": "the"
+    },
+    {
+     "end": 15.875,
+     "start": 15.3,
+     "text": "contract"
+    },
+    {
+     "end": 16.075,
+     "start": 15.875,
+     "text": "these"
+    },
+    {
+     "end": 16.525,
+     "start": 16.075,
+     "text": "commands"
+    },
+    {
+     "end": 17.525,
+     "start": 16.525,
+     "text": "derive"
+    },
+    {
+     "end": 17.75,
+     "start": 17.525,
+     "text": ","
+    },
+    {
+     "end": 18.038,
+     "start": 17.95,
+     "text": "and"
+    },
+    {
+     "end": 18.125,
+     "start": 18.038,
+     "text": "it"
+    },
+    {
+     "end": 18.263,
+     "start": 18.125,
+     "text": "is"
+    },
+    {
+     "end": 18.375,
+     "start": 18.263,
+     "text": "the"
+    },
+    {
+     "end": 18.7,
+     "start": 18.375,
+     "text": "state"
+    },
+    {
+     "end": 19.3,
+     "start": 18.7,
+     "text": "contract"
+    },
+    {
+     "end": 19.438,
+     "start": 19.3,
+     "text": "of"
+    },
+    {
+     "end": 19.775,
+     "start": 19.438,
+     "text": "every"
+    },
+    {
+     "end": 20.0,
+     "start": 19.775,
+     "text": "row"
+    },
+    {
+     "end": 20.35,
+     "start": 20.0,
+     "text": "marked"
+    },
+    {
+     "end": 20.5,
+     "start": 20.35,
+     "text": "as"
+    },
+    {
+     "end": 20.7,
+     "start": 20.5,
+     "text": "this"
+    },
+    {
+     "end": 21.65,
+     "start": 20.7,
+     "text": "release"
+    },
+    {
+     "end": 21.85,
+     "start": 21.65,
+     "text": "."
+    }
+   ]
+  },
+  "docs-compatibility/how-the-answer-is-found-02": {
+   "audio_sha256": "1a3e8e85acd99a069beca93d0363e5afe86522b7d551be25aef58e653bb7edb1",
+   "characters": 598,
+   "cost": 0.00059202,
+   "duration": 41.05,
+   "index": 2,
+   "key": "3c1f7acdc7d0cc78a2c702277f1dd2a5ff1ac71986dd360c284ea6fc23e3778b",
+   "page": "docs/compatibility.md",
+   "pause_ms": 400,
+   "section": "how-the-answer-is-found",
+   "sent_text": "Every row is computed from the release table, which the releases after v0.15.0 carry, and from the blueprint this release carries. The releases up to v0.15.0 carry no table, so their commands cannot name a serving release. Registries made by a release whose contract is recorded are served by the newest release in the table that carries that contract, unless the contract is the one these commands derive, which this release serves. A contract that the table holds with no release has no release that serves it. The record names no version of its own, so it needs no edit when the version changes.",
+   "text": "Every row is computed from the release table, which the releases after v0.15.0 carry, and from the blueprint this release carries. The releases up to v0.15.0 carry no table, so their commands cannot name a serving release. Registries made by a release whose contract is recorded are served by the newest release in the table that carries that contract, unless the contract is the one these commands derive, which this release serves. A contract that the table holds with no release has no release that serves it. The record names no version of its own, so it needs no edit when the version changes.",
+   "words": [
+    {
+     "end": 0.562,
+     "start": 0.25,
+     "text": "Every"
+    },
+    {
+     "end": 0.875,
+     "start": 0.562,
+     "text": "row"
+    },
+    {
+     "end": 1.025,
+     "start": 0.875,
+     "text": "is"
+    },
+    {
+     "end": 1.575,
+     "start": 1.025,
+     "text": "computed"
+    },
+    {
+     "end": 1.737,
+     "start": 1.575,
+     "text": "from"
+    },
+    {
+     "end": 1.825,
+     "start": 1.737,
+     "text": "the"
+    },
+    {
+     "end": 2.25,
+     "start": 1.825,
+     "text": "release"
+    },
+    {
+     "end": 2.7,
+     "start": 2.25,
+     "text": "table"
+    },
+    {
+     "end": 2.775,
+     "start": 2.7,
+     "text": ","
+    },
+    {
+     "end": 3.0,
+     "start": 2.775,
+     "text": "which"
+    },
+    {
+     "end": 3.1,
+     "start": 3.0,
+     "text": "the"
+    },
+    {
+     "end": 3.737,
+     "start": 3.1,
+     "text": "releases"
+    },
+    {
+     "end": 4.137,
+     "start": 3.737,
+     "text": "after"
+    },
+    {
+     "end": 5.938,
+     "start": 4.137,
+     "text": "v0.15.0"
+    },
+    {
+     "end": 6.475,
+     "start": 5.938,
+     "text": "carry"
+    },
+    {
+     "end": 6.575,
+     "start": 6.475,
+     "text": ","
+    },
+    {
+     "end": 6.7,
+     "start": 6.575,
+     "text": "and"
+    },
+    {
+     "end": 6.863,
+     "start": 6.7,
+     "text": "from"
+    },
+    {
+     "end": 6.95,
+     "start": 6.863,
+     "text": "the"
+    },
+    {
+     "end": 7.475,
+     "start": 6.95,
+     "text": "blueprint"
+    },
+    {
+     "end": 7.675,
+     "start": 7.475,
+     "text": "this"
+    },
+    {
+     "end": 8.075,
+     "start": 7.675,
+     "text": "release"
+    },
+    {
+     "end": 9.225,
+     "start": 8.075,
+     "text": "carries"
+    },
+    {
+     "end": 9.45,
+     "start": 9.225,
+     "text": "."
+    },
+    {
+     "end": 9.725,
+     "start": 9.65,
+     "text": "The"
+    },
+    {
+     "end": 10.25,
+     "start": 9.725,
+     "text": "releases"
+    },
+    {
+     "end": 10.45,
+     "start": 10.25,
+     "text": "up"
+    },
+    {
+     "end": 10.575,
+     "start": 10.45,
+     "text": "to"
+    },
+    {
+     "end": 12.212,
+     "start": 10.575,
+     "text": "v0.15.0"
+    },
+    {
+     "end": 12.562,
+     "start": 12.212,
+     "text": "carry"
+    },
+    {
+     "end": 12.837,
+     "start": 12.562,
+     "text": "no"
+    },
+    {
+     "end": 13.375,
+     "start": 12.837,
+     "text": "table"
+    },
+    {
+     "end": 13.475,
+     "start": 13.375,
+     "text": ","
+    },
+    {
+     "end": 13.637,
+     "start": 13.475,
+     "text": "so"
+    },
+    {
+     "end": 13.8,
+     "start": 13.637,
+     "text": "their"
+    },
+    {
+     "end": 14.325,
+     "start": 13.8,
+     "text": "commands"
+    },
+    {
+     "end": 14.7,
+     "start": 14.325,
+     "text": "cannot"
+    },
+    {
+     "end": 15.0,
+     "start": 14.7,
+     "text": "name"
+    },
+    {
+     "end": 15.113,
+     "start": 15.0,
+     "text": "a"
+    },
+    {
+     "end": 15.525,
+     "start": 15.113,
+     "text": "serving"
+    },
+    {
+     "end": 16.675,
+     "start": 15.525,
+     "text": "release"
+    },
+    {
+     "end": 16.875,
+     "start": 16.675,
+     "text": "."
+    },
+    {
+     "end": 17.737,
+     "start": 17.125,
+     "text": "Registries"
+    },
+    {
+     "end": 18.05,
+     "start": 17.737,
+     "text": "made"
+    },
+    {
+     "end": 18.25,
+     "start": 18.05,
+     "text": "by"
+    },
+    {
+     "end": 18.35,
+     "start": 18.25,
+     "text": "a"
+    },
+    {
+     "end": 18.875,
+     "start": 18.35,
+     "text": "release"
+    },
+    {
+     "end": 19.112,
+     "start": 18.875,
+     "text": "whose"
+    },
+    {
+     "end": 19.75,
+     "start": 19.112,
+     "text": "contract"
+    },
+    {
+     "end": 19.9,
+     "start": 19.75,
+     "text": "is"
+    },
+    {
+     "end": 20.462,
+     "start": 19.9,
+     "text": "recorded"
+    },
+    {
+     "end": 20.65,
+     "start": 20.462,
+     "text": "are"
+    },
+    {
+     "end": 21.075,
+     "start": 20.65,
+     "text": "served"
+    },
+    {
+     "end": 21.25,
+     "start": 21.075,
+     "text": "by"
+    },
+    {
+     "end": 21.388,
+     "start": 21.25,
+     "text": "the"
+    },
+    {
+     "end": 21.85,
+     "start": 21.388,
+     "text": "newest"
+    },
+    {
+     "end": 22.35,
+     "start": 21.85,
+     "text": "release"
+    },
+    {
+     "end": 22.462,
+     "start": 22.35,
+     "text": "in"
+    },
+    {
+     "end": 22.562,
+     "start": 22.462,
+     "text": "the"
+    },
+    {
+     "end": 22.975,
+     "start": 22.562,
+     "text": "table"
+    },
+    {
+     "end": 23.188,
+     "start": 22.975,
+     "text": "that"
+    },
+    {
+     "end": 23.6,
+     "start": 23.188,
+     "text": "carries"
+    },
+    {
+     "end": 23.85,
+     "start": 23.6,
+     "text": "that"
+    },
+    {
+     "end": 25.15,
+     "start": 23.85,
+     "text": "contract"
+    },
+    {
+     "end": 25.4,
+     "start": 25.15,
+     "text": ","
+    },
+    {
+     "end": 25.925,
+     "start": 25.6,
+     "text": "unless"
+    },
+    {
+     "end": 26.025,
+     "start": 25.925,
+     "text": "the"
+    },
+    {
+     "end": 26.6,
+     "start": 26.025,
+     "text": "contract"
+    },
+    {
+     "end": 26.75,
+     "start": 26.6,
+     "text": "is"
+    },
+    {
+     "end": 26.85,
+     "start": 26.75,
+     "text": "the"
+    },
+    {
+     "end": 27.05,
+     "start": 26.85,
+     "text": "one"
+    },
+    {
+     "end": 27.25,
+     "start": 27.05,
+     "text": "these"
+    },
+    {
+     "end": 27.725,
+     "start": 27.25,
+     "text": "commands"
+    },
+    {
+     "end": 28.275,
+     "start": 27.725,
+     "text": "derive"
+    },
+    {
+     "end": 28.35,
+     "start": 28.275,
+     "text": ","
+    },
+    {
+     "end": 28.55,
+     "start": 28.35,
+     "text": "which"
+    },
+    {
+     "end": 28.75,
+     "start": 28.55,
+     "text": "this"
+    },
+    {
+     "end": 29.112,
+     "start": 28.75,
+     "text": "release"
+    },
+    {
+     "end": 30.1,
+     "start": 29.112,
+     "text": "serves"
+    },
+    {
+     "end": 30.3,
+     "start": 30.1,
+     "text": "."
+    },
+    {
+     "end": 30.575,
+     "start": 30.5,
+     "text": "A"
+    },
+    {
+     "end": 31.112,
+     "start": 30.575,
+     "text": "contract"
+    },
+    {
+     "end": 31.212,
+     "start": 31.112,
+     "text": "that"
+    },
+    {
+     "end": 31.3,
+     "start": 31.212,
+     "text": "the"
+    },
+    {
+     "end": 31.7,
+     "start": 31.3,
+     "text": "table"
+    },
+    {
+     "end": 32.1,
+     "start": 31.7,
+     "text": "holds"
+    },
+    {
+     "end": 32.287,
+     "start": 32.1,
+     "text": "with"
+    },
+    {
+     "end": 32.525,
+     "start": 32.287,
+     "text": "no"
+    },
+    {
+     "end": 33.088,
+     "start": 32.525,
+     "text": "release"
+    },
+    {
+     "end": 33.312,
+     "start": 33.088,
+     "text": "has"
+    },
+    {
+     "end": 33.55,
+     "start": 33.312,
+     "text": "no"
+    },
+    {
+     "end": 33.975,
+     "start": 33.55,
+     "text": "release"
+    },
+    {
+     "end": 34.188,
+     "start": 33.975,
+     "text": "that"
+    },
+    {
+     "end": 34.562,
+     "start": 34.188,
+     "text": "serves"
+    },
+    {
+     "end": 35.25,
+     "start": 34.562,
+     "text": "it"
+    },
+    {
+     "end": 35.45,
+     "start": 35.25,
+     "text": "."
+    },
+    {
+     "end": 35.725,
+     "start": 35.625,
+     "text": "The"
+    },
+    {
+     "end": 36.15,
+     "start": 35.725,
+     "text": "record"
+    },
+    {
+     "end": 36.487,
+     "start": 36.15,
+     "text": "names"
+    },
+    {
+     "end": 36.763,
+     "start": 36.487,
+     "text": "no"
+    },
+    {
+     "end": 37.138,
+     "start": 36.763,
+     "text": "version"
+    },
+    {
+     "end": 37.213,
+     "start": 37.138,
+     "text": "of"
+    },
+    {
+     "end": 37.4,
+     "start": 37.213,
+     "text": "its"
+    },
+    {
+     "end": 37.8,
+     "start": 37.4,
+     "text": "own"
+    },
+    {
+     "end": 37.9,
+     "start": 37.8,
+     "text": ","
+    },
+    {
+     "end": 38.075,
+     "start": 37.9,
+     "text": "so"
+    },
+    {
+     "end": 38.175,
+     "start": 38.075,
+     "text": "it"
+    },
+    {
+     "end": 38.463,
+     "start": 38.175,
+     "text": "needs"
+    },
+    {
+     "end": 38.737,
+     "start": 38.463,
+     "text": "no"
+    },
+    {
+     "end": 39.075,
+     "start": 38.737,
+     "text": "edit"
+    },
+    {
+     "end": 39.213,
+     "start": 39.075,
+     "text": "when"
+    },
+    {
+     "end": 39.3,
+     "start": 39.213,
+     "text": "the"
+    },
+    {
+     "end": 39.713,
+     "start": 39.3,
+     "text": "version"
+    },
+    {
+     "end": 40.85,
+     "start": 39.713,
+     "text": "changes"
+    },
+    {
+     "end": 41.05,
+     "start": 40.85,
+     "text": "."
+    }
+   ]
+  },
+  "docs-compatibility/how-the-answer-is-found-03": {
+   "audio_sha256": "9e70d1158bbc7fbad4852e30f920a2a4fca4fb91665f4fa251e3bbcf8699d081",
+   "characters": 247,
+   "cost": 0.00024452999999999996,
+   "duration": 15.575,
+   "index": 3,
+   "key": "cb0b9c4164c0bdef069253e1e5a46599f29abaecd1e434824a286a8fb33b26e1",
+   "page": "docs/compatibility.md",
+   "pause_ms": 400,
+   "section": "how-the-answer-is-found",
+   "sent_text": "The commands of this release print the same answer. The off-chain test suite compares each row that has a contract with the answer of the library function these commands call, and the documentation check refuses a page that differs from the table.",
+   "text": "The commands of this release print the same answer. The off-chain test suite compares each row that has a contract with the answer of the library function these commands call, and the documentation check refuses a page that differs from the table.",
+   "words": [
+    {
+     "end": 0.25,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.637,
+     "start": 0.25,
+     "text": "commands"
+    },
+    {
+     "end": 0.712,
+     "start": 0.637,
+     "text": "of"
+    },
+    {
+     "end": 0.9,
+     "start": 0.712,
+     "text": "this"
+    },
+    {
+     "end": 1.325,
+     "start": 0.9,
+     "text": "release"
+    },
+    {
+     "end": 1.538,
+     "start": 1.325,
+     "text": "print"
+    },
+    {
+     "end": 1.625,
+     "start": 1.538,
+     "text": "the"
+    },
+    {
+     "end": 1.875,
+     "start": 1.625,
+     "text": "same"
+    },
+    {
+     "end": 2.775,
+     "start": 1.875,
+     "text": "answer"
+    },
+    {
+     "end": 2.975,
+     "start": 2.775,
+     "text": "."
+    },
+    {
+     "end": 3.312,
+     "start": 3.175,
+     "text": "The"
+    },
+    {
+     "end": 3.912,
+     "start": 3.312,
+     "text": "off-chain"
+    },
+    {
+     "end": 4.238,
+     "start": 3.912,
+     "text": "test"
+    },
+    {
+     "end": 4.6,
+     "start": 4.238,
+     "text": "suite"
+    },
+    {
+     "end": 5.113,
+     "start": 4.6,
+     "text": "compares"
+    },
+    {
+     "end": 5.438,
+     "start": 5.113,
+     "text": "each"
+    },
+    {
+     "end": 5.825,
+     "start": 5.438,
+     "text": "row"
+    },
+    {
+     "end": 5.975,
+     "start": 5.825,
+     "text": "that"
+    },
+    {
+     "end": 6.162,
+     "start": 5.975,
+     "text": "has"
+    },
+    {
+     "end": 6.262,
+     "start": 6.162,
+     "text": "a"
+    },
+    {
+     "end": 6.925,
+     "start": 6.262,
+     "text": "contract"
+    },
+    {
+     "end": 7.062,
+     "start": 6.925,
+     "text": "with"
+    },
+    {
+     "end": 7.213,
+     "start": 7.062,
+     "text": "the"
+    },
+    {
+     "end": 7.625,
+     "start": 7.213,
+     "text": "answer"
+    },
+    {
+     "end": 7.713,
+     "start": 7.625,
+     "text": "of"
+    },
+    {
+     "end": 7.825,
+     "start": 7.713,
+     "text": "the"
+    },
+    {
+     "end": 8.35,
+     "start": 7.825,
+     "text": "library"
+    },
+    {
+     "end": 8.913,
+     "start": 8.35,
+     "text": "function"
+    },
+    {
+     "end": 9.15,
+     "start": 8.913,
+     "text": "these"
+    },
+    {
+     "end": 9.663,
+     "start": 9.15,
+     "text": "commands"
+    },
+    {
+     "end": 10.65,
+     "start": 9.663,
+     "text": "call"
+    },
+    {
+     "end": 10.85,
+     "start": 10.65,
+     "text": ","
+    },
+    {
+     "end": 11.137,
+     "start": 11.05,
+     "text": "and"
+    },
+    {
+     "end": 11.225,
+     "start": 11.137,
+     "text": "the"
+    },
+    {
+     "end": 12.163,
+     "start": 11.225,
+     "text": "documentation"
+    },
+    {
+     "end": 12.525,
+     "start": 12.163,
+     "text": "check"
+    },
+    {
+     "end": 13.125,
+     "start": 12.525,
+     "text": "refuses"
+    },
+    {
+     "end": 13.238,
+     "start": 13.125,
+     "text": "a"
+    },
+    {
+     "end": 13.7,
+     "start": 13.238,
+     "text": "page"
+    },
+    {
+     "end": 13.875,
+     "start": 13.7,
+     "text": "that"
+    },
+    {
+     "end": 14.225,
+     "start": 13.875,
+     "text": "differs"
+    },
+    {
+     "end": 14.363,
+     "start": 14.225,
+     "text": "from"
+    },
+    {
+     "end": 14.45,
+     "start": 14.363,
+     "text": "the"
+    },
+    {
+     "end": 15.375,
+     "start": 14.45,
+     "text": "table"
+    },
+    {
+     "end": 15.575,
+     "start": 15.375,
+     "text": "."
+    }
+   ]
+  },
+  "docs-compatibility/regenerate-this-page-00": {
+   "audio_sha256": "24aebf59cc10d0a86374a3482838532cc936f5d9631056b042666076cd4ed510",
+   "characters": 21,
+   "cost": 2.0789999999999996e-05,
+   "duration": 1.85,
+   "index": 0,
+   "key": "9b6f159167ef3e5bf7ebb5cd3c81ad5ae29cd0fd6d5e6d30174ba378a3f99561",
+   "page": "docs/compatibility.md",
+   "pause_ms": 500,
+   "section": "regenerate-this-page",
+   "sent_text": "Regenerate this page.",
+   "text": "Regenerate this page.",
+   "words": [
+    {
+     "end": 0.712,
+     "start": 0.2,
+     "text": "Regenerate"
+    },
+    {
+     "end": 0.9,
+     "start": 0.712,
+     "text": "this"
+    },
+    {
+     "end": 1.65,
+     "start": 0.9,
+     "text": "page"
+    },
+    {
+     "end": 1.85,
+     "start": 1.65,
+     "text": "."
+    }
+   ]
+  },
+  "docs-compatibility/regenerate-this-page-01": {
+   "audio_sha256": "ae7417ae03b3ed0149a0967f40015bb9d9e751ed202b67395fc5d271b4511b58",
+   "characters": 375,
+   "cost": 0.00037125,
+   "duration": 26.35,
+   "index": 1,
+   "key": "39396b05bac55f60cc0964dda4c8d7ab7c7977715c3f39c2660694bd9393bccc",
+   "page": "docs/compatibility.md",
+   "pause_ms": 400,
+   "section": "regenerate-this-page",
+   "sent_text": "Build the packaged blueprint with nix build ./applications/open-datum/onchain#open-datum-blueprint -o blueprint, run python3 tools/compatibility_record.py --write --blueprint blueprint to regenerate the page and its rows, then regenerate its speech and changed narration. The documentation check runs python3 tools/compatibility_record.py --check with the packaged blueprint.",
+   "text": "Build the packaged blueprint with nix build ./applications/open-datum/onchain#open-datum-blueprint -o blueprint, run python3 tools/compatibility_record.py --write --blueprint blueprint to regenerate the page and its rows, then regenerate its speech and changed narration. The documentation check runs python3 tools/compatibility_record.py --check with the packaged blueprint.",
+   "words": [
+    {
+     "end": 0.438,
+     "start": 0.225,
+     "text": "Build"
+    },
+    {
+     "end": 0.525,
+     "start": 0.438,
+     "text": "the"
+    },
+    {
+     "end": 1.0,
+     "start": 0.525,
+     "text": "packaged"
+    },
+    {
+     "end": 1.475,
+     "start": 1.0,
+     "text": "blueprint"
+    },
+    {
+     "end": 1.65,
+     "start": 1.475,
+     "text": "with"
+    },
+    {
+     "end": 1.925,
+     "start": 1.65,
+     "text": "nix"
+    },
+    {
+     "end": 2.362,
+     "start": 1.925,
+     "text": "build"
+    },
+    {
+     "end": 2.425,
+     "start": 2.362,
+     "text": "."
+    },
+    {
+     "end": 6.863,
+     "start": 2.425,
+     "text": "applications/open-datum/onchain#open-datum-blueprint"
+    },
+    {
+     "end": 6.95,
+     "start": 6.863,
+     "text": "-"
+    },
+    {
+     "end": 7.125,
+     "start": 6.95,
+     "text": "o"
+    },
+    {
+     "end": 7.8,
+     "start": 7.125,
+     "text": "blueprint"
+    },
+    {
+     "end": 7.912,
+     "start": 7.8,
+     "text": ","
+    },
+    {
+     "end": 8.212,
+     "start": 7.912,
+     "text": "run"
+    },
+    {
+     "end": 9.038,
+     "start": 8.212,
+     "text": "python3"
+    },
+    {
+     "end": 11.65,
+     "start": 9.038,
+     "text": "tools/compatibility_record.py"
+    },
+    {
+     "end": 11.875,
+     "start": 11.65,
+     "text": "--write"
+    },
+    {
+     "end": 12.3,
+     "start": 11.875,
+     "text": "--blueprint"
+    },
+    {
+     "end": 12.725,
+     "start": 12.3,
+     "text": "blueprint"
+    },
+    {
+     "end": 12.85,
+     "start": 12.725,
+     "text": "to"
+    },
+    {
+     "end": 13.488,
+     "start": 12.85,
+     "text": "regenerate"
+    },
+    {
+     "end": 13.587,
+     "start": 13.488,
+     "text": "the"
+    },
+    {
+     "end": 14.025,
+     "start": 13.587,
+     "text": "page"
+    },
+    {
+     "end": 14.137,
+     "start": 14.025,
+     "text": "and"
+    },
+    {
+     "end": 14.312,
+     "start": 14.137,
+     "text": "its"
+    },
+    {
+     "end": 14.825,
+     "start": 14.312,
+     "text": "rows"
+    },
+    {
+     "end": 14.9,
+     "start": 14.825,
+     "text": ","
+    },
+    {
+     "end": 15.125,
+     "start": 14.9,
+     "text": "then"
+    },
+    {
+     "end": 15.762,
+     "start": 15.125,
+     "text": "regenerate"
+    },
+    {
+     "end": 15.938,
+     "start": 15.762,
+     "text": "its"
+    },
+    {
+     "end": 16.375,
+     "start": 15.938,
+     "text": "speech"
+    },
+    {
+     "end": 16.513,
+     "start": 16.375,
+     "text": "and"
+    },
+    {
+     "end": 16.975,
+     "start": 16.513,
+     "text": "changed"
+    },
+    {
+     "end": 18.3,
+     "start": 16.975,
+     "text": "narration"
+    },
+    {
+     "end": 18.525,
+     "start": 18.3,
+     "text": "."
+    },
+    {
+     "end": 18.8,
+     "start": 18.725,
+     "text": "The"
+    },
+    {
+     "end": 19.712,
+     "start": 18.8,
+     "text": "documentation"
+    },
+    {
+     "end": 20.038,
+     "start": 19.712,
+     "text": "check"
+    },
+    {
+     "end": 20.388,
+     "start": 20.038,
+     "text": "runs"
+    },
+    {
+     "end": 21.263,
+     "start": 20.388,
+     "text": "python3"
+    },
+    {
+     "end": 23.875,
+     "start": 21.263,
+     "text": "tools/compatibility_record.py"
+    },
+    {
+     "end": 24.2,
+     "start": 23.875,
+     "text": "check"
+    },
+    {
+     "end": 24.337,
+     "start": 24.2,
+     "text": "with"
+    },
+    {
+     "end": 24.425,
+     "start": 24.337,
+     "text": "the"
+    },
+    {
+     "end": 24.95,
+     "start": 24.425,
+     "text": "packaged"
+    },
+    {
+     "end": 26.125,
+     "start": 24.95,
+     "text": "blueprint"
+    },
+    {
+     "end": 26.35,
+     "start": 26.125,
+     "text": "."
+    }
+   ]
+  },
+  "docs-compatibility/release-by-release-00": {
+   "audio_sha256": "1b8f6407789a274a412ab859db20d1573a526186618b0a1f8e6dadfaa4b4b9b7",
+   "characters": 19,
+   "cost": 1.8809999999999998e-05,
+   "duration": 1.7,
+   "index": 0,
+   "key": "1a1eafb0ed23e2762bd6b65a32f2c93a47a0c9e217f8302a2068ae60d854f61d",
+   "page": "docs/compatibility.md",
+   "pause_ms": 500,
+   "section": "release-by-release",
+   "sent_text": "Release by release.",
+   "text": "Release by release.",
+   "words": [
+    {
+     "end": 0.55,
+     "start": 0.2,
+     "text": "Release"
+    },
+    {
+     "end": 0.7,
+     "start": 0.55,
+     "text": "by"
+    },
+    {
+     "end": 1.5,
+     "start": 0.7,
+     "text": "release"
+    },
+    {
+     "end": 1.7,
+     "start": 1.5,
+     "text": "."
+    }
+   ]
+  },
+  "docs-compatibility/release-by-release-01": {
+   "audio_sha256": "7645ca53206e0177daec2cddc9335f2b3b1f4f9bceef081934ccb4a7a906683e",
+   "characters": 226,
+   "cost": 0.00022373999999999997,
+   "duration": 16.25,
+   "index": 1,
+   "key": "65c390f0da2fa5bb3a0fa8ddf32ec7ee35bb9b898d2c90d3ee6f2c137e9e4778",
+   "page": "docs/compatibility.md",
+   "pause_ms": 400,
+   "section": "release-by-release",
+   "sent_text": "The table names 22 releases and 8 state contracts. Each release has one row, oldest first. A release the table leaves out is listed with its reason: its contract is not recorded, so no release is known to serve its registries.",
+   "text": "The table names 22 releases and 8 state contracts. Each release has one row, oldest first. A release the table leaves out is listed with its reason: its contract is not recorded, so no release is known to serve its registries.",
+   "words": [
+    {
+     "end": 0.25,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.625,
+     "start": 0.25,
+     "text": "table"
+    },
+    {
+     "end": 0.9,
+     "start": 0.625,
+     "text": "names"
+    },
+    {
+     "end": 1.4,
+     "start": 0.9,
+     "text": "22"
+    },
+    {
+     "end": 2.025,
+     "start": 1.4,
+     "text": "releases"
+    },
+    {
+     "end": 2.15,
+     "start": 2.025,
+     "text": "and"
+    },
+    {
+     "end": 2.375,
+     "start": 2.15,
+     "text": "8"
+    },
+    {
+     "end": 2.65,
+     "start": 2.375,
+     "text": "state"
+    },
+    {
+     "end": 3.8,
+     "start": 2.65,
+     "text": "contracts"
+    },
+    {
+     "end": 4.0,
+     "start": 3.8,
+     "text": "."
+    },
+    {
+     "end": 4.475,
+     "start": 4.2,
+     "text": "Each"
+    },
+    {
+     "end": 4.9,
+     "start": 4.475,
+     "text": "release"
+    },
+    {
+     "end": 5.137,
+     "start": 4.9,
+     "text": "has"
+    },
+    {
+     "end": 5.4,
+     "start": 5.137,
+     "text": "one"
+    },
+    {
+     "end": 5.75,
+     "start": 5.4,
+     "text": "row"
+    },
+    {
+     "end": 5.85,
+     "start": 5.75,
+     "text": ","
+    },
+    {
+     "end": 6.287,
+     "start": 5.85,
+     "text": "oldest"
+    },
+    {
+     "end": 6.925,
+     "start": 6.287,
+     "text": "first"
+    },
+    {
+     "end": 7.062,
+     "start": 6.925,
+     "text": "."
+    },
+    {
+     "end": 7.175,
+     "start": 7.062,
+     "text": "A"
+    },
+    {
+     "end": 7.6,
+     "start": 7.175,
+     "text": "release"
+    },
+    {
+     "end": 7.713,
+     "start": 7.6,
+     "text": "the"
+    },
+    {
+     "end": 8.125,
+     "start": 7.713,
+     "text": "table"
+    },
+    {
+     "end": 8.45,
+     "start": 8.125,
+     "text": "leaves"
+    },
+    {
+     "end": 8.725,
+     "start": 8.45,
+     "text": "out"
+    },
+    {
+     "end": 8.875,
+     "start": 8.725,
+     "text": "is"
+    },
+    {
+     "end": 9.3,
+     "start": 8.875,
+     "text": "listed"
+    },
+    {
+     "end": 9.438,
+     "start": 9.3,
+     "text": "with"
+    },
+    {
+     "end": 9.625,
+     "start": 9.438,
+     "text": "its"
+    },
+    {
+     "end": 10.65,
+     "start": 9.625,
+     "text": "reason"
+    },
+    {
+     "end": 10.875,
+     "start": 10.65,
+     "text": ":"
+    },
+    {
+     "end": 11.25,
+     "start": 11.075,
+     "text": "its"
+    },
+    {
+     "end": 11.825,
+     "start": 11.25,
+     "text": "contract"
+    },
+    {
+     "end": 11.975,
+     "start": 11.825,
+     "text": "is"
+    },
+    {
+     "end": 12.2,
+     "start": 11.975,
+     "text": "not"
+    },
+    {
+     "end": 12.85,
+     "start": 12.2,
+     "text": "recorded"
+    },
+    {
+     "end": 12.95,
+     "start": 12.85,
+     "text": ","
+    },
+    {
+     "end": 13.137,
+     "start": 12.95,
+     "text": "so"
+    },
+    {
+     "end": 13.4,
+     "start": 13.137,
+     "text": "no"
+    },
+    {
+     "end": 13.825,
+     "start": 13.4,
+     "text": "release"
+    },
+    {
+     "end": 13.975,
+     "start": 13.825,
+     "text": "is"
+    },
+    {
+     "end": 14.3,
+     "start": 13.975,
+     "text": "known"
+    },
+    {
+     "end": 14.438,
+     "start": 14.3,
+     "text": "to"
+    },
+    {
+     "end": 14.712,
+     "start": 14.438,
+     "text": "serve"
+    },
+    {
+     "end": 14.85,
+     "start": 14.712,
+     "text": "its"
+    },
+    {
+     "end": 16.05,
+     "start": 14.85,
+     "text": "registries"
+    },
+    {
+     "end": 16.25,
+     "start": 16.05,
+     "text": "."
+    }
+   ]
+  },
+  "docs-compatibility/release-by-release-02": {
+   "audio_sha256": "180ec22ce22f18523fb9347a91ffa2bb153de0a72f0c6f3239417cb83472041f",
+   "characters": 62,
+   "cost": 6.138e-05,
+   "duration": 4.325,
+   "index": 2,
+   "key": "ffdf5cc086d0296dbba3b2f66425b763970bca235d2bd9af4931d5917c4f26fd",
+   "page": "docs/compatibility.md",
+   "pause_ms": 400,
+   "section": "release-by-release",
+   "sent_text": "This release serves the registries of 3 releases listed above.",
+   "text": "This release serves the registries of 3 releases listed above.",
+   "words": [
+    {
+     "end": 0.4,
+     "start": 0.2,
+     "text": "This"
+    },
+    {
+     "end": 0.837,
+     "start": 0.4,
+     "text": "release"
+    },
+    {
+     "end": 1.225,
+     "start": 0.837,
+     "text": "serves"
+    },
+    {
+     "end": 1.35,
+     "start": 1.225,
+     "text": "the"
+    },
+    {
+     "end": 1.975,
+     "start": 1.35,
+     "text": "registries"
+    },
+    {
+     "end": 2.138,
+     "start": 1.975,
+     "text": "of"
+    },
+    {
+     "end": 2.4,
+     "start": 2.138,
+     "text": "3"
+    },
+    {
+     "end": 2.925,
+     "start": 2.4,
+     "text": "releases"
+    },
+    {
+     "end": 3.237,
+     "start": 2.925,
+     "text": "listed"
+    },
+    {
+     "end": 4.125,
+     "start": 3.237,
+     "text": "above"
+    },
+    {
+     "end": 4.325,
+     "start": 4.125,
+     "text": "."
+    }
+   ]
+  },
+  "docs-compatibility/which-release-serves-my-registry-00": {
+   "audio_sha256": "93725ac948f42c9d8f61abd062934bf0a18f39613287fdfc0f1243cd5ad3dd6a",
+   "characters": 33,
+   "cost": 3.267e-05,
+   "duration": 2.25,
+   "index": 0,
+   "key": "3e1c0f5f26b866e1b334088adc383a24ad40aa2f5b804b0cb97a04a6b6adc6a8",
+   "page": "docs/compatibility.md",
+   "pause_ms": 500,
+   "section": "which-release-serves-my-registry",
+   "sent_text": "Which release serves my registry.",
+   "text": "Which release serves my registry.",
+   "words": [
+    {
+     "end": 0.35,
+     "start": 0.175,
+     "text": "Which"
+    },
+    {
+     "end": 0.675,
+     "start": 0.35,
+     "text": "release"
+    },
+    {
+     "end": 0.938,
+     "start": 0.675,
+     "text": "serves"
+    },
+    {
+     "end": 1.075,
+     "start": 0.938,
+     "text": "my"
+    },
+    {
+     "end": 2.025,
+     "start": 1.075,
+     "text": "registry"
+    },
+    {
+     "end": 2.25,
+     "start": 2.025,
+     "text": "."
+    }
+   ]
+  },
+  "docs-compatibility/which-release-serves-my-registry-01": {
+   "audio_sha256": "c0a5ee3ffa8e09f5131bf6b19a30be6895d0036d776da5aea6c59de9b03aaec6",
+   "characters": 157,
+   "cost": 0.00015543,
+   "duration": 9.8,
+   "index": 1,
+   "key": "cf1a891ea0536e31e85fda7df13341bc22525d2f72b86318e83a417cc8ce93cf",
+   "page": "docs/compatibility.md",
+   "pause_ms": 400,
+   "section": "which-release-serves-my-registry",
+   "sent_text": "As a person with a registry made by some earlier release, you find on this page which release serves it: this release, an earlier one, or none that is known.",
+   "text": "As a person with a registry made by some earlier release, you find on this page which release serves it: this release, an earlier one, or none that is known.",
+   "words": [
+    {
+     "end": 0.338,
+     "start": 0.2,
+     "text": "As"
+    },
+    {
+     "end": 0.438,
+     "start": 0.338,
+     "text": "a"
+    },
+    {
+     "end": 0.9,
+     "start": 0.438,
+     "text": "person"
+    },
+    {
+     "end": 1.038,
+     "start": 0.9,
+     "text": "with"
+    },
+    {
+     "end": 1.125,
+     "start": 1.038,
+     "text": "a"
+    },
+    {
+     "end": 1.675,
+     "start": 1.125,
+     "text": "registry"
+    },
+    {
+     "end": 1.925,
+     "start": 1.675,
+     "text": "made"
+    },
+    {
+     "end": 2.138,
+     "start": 1.925,
+     "text": "by"
+    },
+    {
+     "end": 2.438,
+     "start": 2.138,
+     "text": "some"
+    },
+    {
+     "end": 2.9,
+     "start": 2.438,
+     "text": "earlier"
+    },
+    {
+     "end": 3.475,
+     "start": 2.9,
+     "text": "release"
+    },
+    {
+     "end": 3.55,
+     "start": 3.475,
+     "text": ","
+    },
+    {
+     "end": 3.713,
+     "start": 3.55,
+     "text": "you"
+    },
+    {
+     "end": 4.012,
+     "start": 3.713,
+     "text": "find"
+    },
+    {
+     "end": 4.113,
+     "start": 4.012,
+     "text": "on"
+    },
+    {
+     "end": 4.287,
+     "start": 4.113,
+     "text": "this"
+    },
+    {
+     "end": 4.725,
+     "start": 4.287,
+     "text": "page"
+    },
+    {
+     "end": 4.925,
+     "start": 4.725,
+     "text": "which"
+    },
+    {
+     "end": 5.312,
+     "start": 4.925,
+     "text": "release"
+    },
+    {
+     "end": 5.688,
+     "start": 5.312,
+     "text": "serves"
+    },
+    {
+     "end": 6.45,
+     "start": 5.688,
+     "text": "it"
+    },
+    {
+     "end": 6.675,
+     "start": 6.45,
+     "text": ":"
+    },
+    {
+     "end": 7.025,
+     "start": 6.85,
+     "text": "this"
+    },
+    {
+     "end": 7.4,
+     "start": 7.025,
+     "text": "release"
+    },
+    {
+     "end": 7.438,
+     "start": 7.4,
+     "text": ","
+    },
+    {
+     "end": 7.525,
+     "start": 7.438,
+     "text": "an"
+    },
+    {
+     "end": 7.887,
+     "start": 7.525,
+     "text": "earlier"
+    },
+    {
+     "end": 8.075,
+     "start": 7.887,
+     "text": "one"
+    },
+    {
+     "end": 8.125,
+     "start": 8.075,
+     "text": ","
+    },
+    {
+     "end": 8.275,
+     "start": 8.125,
+     "text": "or"
+    },
+    {
+     "end": 8.488,
+     "start": 8.275,
+     "text": "none"
+    },
+    {
+     "end": 8.625,
+     "start": 8.488,
+     "text": "that"
+    },
+    {
+     "end": 8.775,
+     "start": 8.625,
+     "text": "is"
+    },
+    {
+     "end": 9.6,
+     "start": 8.775,
+     "text": "known"
+    },
+    {
+     "end": 9.8,
+     "start": 9.6,
+     "text": "."
+    }
+   ]
+  },
+  "docs-compatibility/which-release-serves-my-registry-02": {
+   "audio_sha256": "972d9a5a78443523d790517fb92ade5ca632ecac29d878a8992ae4610d11425c",
+   "characters": 489,
+   "cost": 0.00048410999999999994,
+   "duration": 31.6,
+   "index": 2,
+   "key": "449ed96d627987f771a45f75f6143d8eaf6f36e833e28b2121368d906556656d",
+   "page": "docs/compatibility.md",
+   "pause_ms": 400,
+   "section": "which-release-serves-my-registry",
+   "sent_text": "The diagram shows the question the rows below answer. A registry is made by one version of the on-chain code, and its state contract is the hash of that version's state validator. The commands of this release change the registries of one state contract, the one they derive from the blueprint they carry. Given a registry of another contract, a command of this release that changes it refuses before anything is built and names the release that serves it, or says that no release is known.",
+   "text": "The diagram shows the question the rows below answer. A registry is made by one version of the on-chain code, and its state contract is the hash of that version's state validator. The commands of this release change the registries of one state contract, the one they derive from the blueprint they carry. Given a registry of another contract, a command of this release that changes it refuses before anything is built and names the release that serves it, or says that no release is known.",
+   "words": [
+    {
+     "end": 0.25,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.812,
+     "start": 0.25,
+     "text": "diagram"
+    },
+    {
+     "end": 1.112,
+     "start": 0.812,
+     "text": "shows"
+    },
+    {
+     "end": 1.2,
+     "start": 1.112,
+     "text": "the"
+    },
+    {
+     "end": 1.638,
+     "start": 1.2,
+     "text": "question"
+    },
+    {
+     "end": 1.725,
+     "start": 1.638,
+     "text": "the"
+    },
+    {
+     "end": 2.075,
+     "start": 1.725,
+     "text": "rows"
+    },
+    {
+     "end": 2.4,
+     "start": 2.075,
+     "text": "below"
+    },
+    {
+     "end": 3.3,
+     "start": 2.4,
+     "text": "answer"
+    },
+    {
+     "end": 3.5,
+     "start": 3.3,
+     "text": "."
+    },
+    {
+     "end": 3.8,
+     "start": 3.725,
+     "text": "A"
+    },
+    {
+     "end": 4.4,
+     "start": 3.8,
+     "text": "registry"
+    },
+    {
+     "end": 4.55,
+     "start": 4.4,
+     "text": "is"
+    },
+    {
+     "end": 4.825,
+     "start": 4.55,
+     "text": "made"
+    },
+    {
+     "end": 5.037,
+     "start": 4.825,
+     "text": "by"
+    },
+    {
+     "end": 5.3,
+     "start": 5.037,
+     "text": "one"
+    },
+    {
+     "end": 5.725,
+     "start": 5.3,
+     "text": "version"
+    },
+    {
+     "end": 5.812,
+     "start": 5.725,
+     "text": "of"
+    },
+    {
+     "end": 5.963,
+     "start": 5.812,
+     "text": "the"
+    },
+    {
+     "end": 6.588,
+     "start": 5.963,
+     "text": "on-chain"
+    },
+    {
+     "end": 7.1,
+     "start": 6.588,
+     "text": "code"
+    },
+    {
+     "end": 7.175,
+     "start": 7.1,
+     "text": ","
+    },
+    {
+     "end": 7.287,
+     "start": 7.175,
+     "text": "and"
+    },
+    {
+     "end": 7.4,
+     "start": 7.287,
+     "text": "its"
+    },
+    {
+     "end": 7.738,
+     "start": 7.4,
+     "text": "state"
+    },
+    {
+     "end": 8.35,
+     "start": 7.738,
+     "text": "contract"
+    },
+    {
+     "end": 8.5,
+     "start": 8.35,
+     "text": "is"
+    },
+    {
+     "end": 8.637,
+     "start": 8.5,
+     "text": "the"
+    },
+    {
+     "end": 9.075,
+     "start": 8.637,
+     "text": "hash"
+    },
+    {
+     "end": 9.225,
+     "start": 9.075,
+     "text": "of"
+    },
+    {
+     "end": 9.488,
+     "start": 9.225,
+     "text": "that"
+    },
+    {
+     "end": 10.012,
+     "start": 9.488,
+     "text": "version's"
+    },
+    {
+     "end": 10.35,
+     "start": 10.012,
+     "text": "state"
+    },
+    {
+     "end": 11.65,
+     "start": 10.35,
+     "text": "validator"
+    },
+    {
+     "end": 11.9,
+     "start": 11.65,
+     "text": "."
+    },
+    {
+     "end": 12.175,
+     "start": 12.1,
+     "text": "The"
+    },
+    {
+     "end": 12.663,
+     "start": 12.175,
+     "text": "commands"
+    },
+    {
+     "end": 12.75,
+     "start": 12.663,
+     "text": "of"
+    },
+    {
+     "end": 12.95,
+     "start": 12.75,
+     "text": "this"
+    },
+    {
+     "end": 13.438,
+     "start": 12.95,
+     "text": "release"
+    },
+    {
+     "end": 13.85,
+     "start": 13.438,
+     "text": "change"
+    },
+    {
+     "end": 13.975,
+     "start": 13.85,
+     "text": "the"
+    },
+    {
+     "end": 14.675,
+     "start": 13.975,
+     "text": "registries"
+    },
+    {
+     "end": 14.837,
+     "start": 14.675,
+     "text": "of"
+    },
+    {
+     "end": 15.1,
+     "start": 14.837,
+     "text": "one"
+    },
+    {
+     "end": 15.425,
+     "start": 15.1,
+     "text": "state"
+    },
+    {
+     "end": 16.225,
+     "start": 15.425,
+     "text": "contract"
+    },
+    {
+     "end": 16.3,
+     "start": 16.225,
+     "text": ","
+    },
+    {
+     "end": 16.425,
+     "start": 16.3,
+     "text": "the"
+    },
+    {
+     "end": 16.625,
+     "start": 16.425,
+     "text": "one"
+    },
+    {
+     "end": 16.775,
+     "start": 16.625,
+     "text": "they"
+    },
+    {
+     "end": 17.35,
+     "start": 16.775,
+     "text": "derive"
+    },
+    {
+     "end": 17.513,
+     "start": 17.35,
+     "text": "from"
+    },
+    {
+     "end": 17.6,
+     "start": 17.513,
+     "text": "the"
+    },
+    {
+     "end": 18.025,
+     "start": 17.6,
+     "text": "blueprint"
+    },
+    {
+     "end": 18.188,
+     "start": 18.025,
+     "text": "they"
+    },
+    {
+     "end": 19.275,
+     "start": 18.188,
+     "text": "carry"
+    },
+    {
+     "end": 19.5,
+     "start": 19.275,
+     "text": "."
+    },
+    {
+     "end": 19.862,
+     "start": 19.675,
+     "text": "Given"
+    },
+    {
+     "end": 19.925,
+     "start": 19.862,
+     "text": "a"
+    },
+    {
+     "end": 20.45,
+     "start": 19.925,
+     "text": "registry"
+    },
+    {
+     "end": 20.538,
+     "start": 20.45,
+     "text": "of"
+    },
+    {
+     "end": 20.875,
+     "start": 20.538,
+     "text": "another"
+    },
+    {
+     "end": 21.875,
+     "start": 20.875,
+     "text": "contract"
+    },
+    {
+     "end": 22.075,
+     "start": 21.875,
+     "text": ","
+    },
+    {
+     "end": 22.35,
+     "start": 22.275,
+     "text": "a"
+    },
+    {
+     "end": 22.788,
+     "start": 22.35,
+     "text": "command"
+    },
+    {
+     "end": 22.875,
+     "start": 22.788,
+     "text": "of"
+    },
+    {
+     "end": 23.1,
+     "start": 22.875,
+     "text": "this"
+    },
+    {
+     "end": 23.55,
+     "start": 23.1,
+     "text": "release"
+    },
+    {
+     "end": 23.763,
+     "start": 23.55,
+     "text": "that"
+    },
+    {
+     "end": 24.25,
+     "start": 23.763,
+     "text": "changes"
+    },
+    {
+     "end": 24.4,
+     "start": 24.25,
+     "text": "it"
+    },
+    {
+     "end": 25.1,
+     "start": 24.4,
+     "text": "refuses"
+    },
+    {
+     "end": 25.487,
+     "start": 25.1,
+     "text": "before"
+    },
+    {
+     "end": 26.025,
+     "start": 25.487,
+     "text": "anything"
+    },
+    {
+     "end": 26.188,
+     "start": 26.025,
+     "text": "is"
+    },
+    {
+     "end": 26.663,
+     "start": 26.188,
+     "text": "built"
+    },
+    {
+     "end": 26.8,
+     "start": 26.663,
+     "text": "and"
+    },
+    {
+     "end": 27.15,
+     "start": 26.8,
+     "text": "names"
+    },
+    {
+     "end": 27.25,
+     "start": 27.15,
+     "text": "the"
+    },
+    {
+     "end": 27.675,
+     "start": 27.25,
+     "text": "release"
+    },
+    {
+     "end": 27.888,
+     "start": 27.675,
+     "text": "that"
+    },
+    {
+     "end": 28.288,
+     "start": 27.888,
+     "text": "serves"
+    },
+    {
+     "end": 29.05,
+     "start": 28.288,
+     "text": "it"
+    },
+    {
+     "end": 29.275,
+     "start": 29.05,
+     "text": ","
+    },
+    {
+     "end": 29.6,
+     "start": 29.475,
+     "text": "or"
+    },
+    {
+     "end": 29.812,
+     "start": 29.6,
+     "text": "says"
+    },
+    {
+     "end": 29.95,
+     "start": 29.812,
+     "text": "that"
+    },
+    {
+     "end": 30.138,
+     "start": 29.95,
+     "text": "no"
+    },
+    {
+     "end": 30.475,
+     "start": 30.138,
+     "text": "release"
+    },
+    {
+     "end": 30.625,
+     "start": 30.475,
+     "text": "is"
+    },
+    {
+     "end": 31.4,
+     "start": 30.625,
+     "text": "known"
+    },
+    {
+     "end": 31.6,
+     "start": 31.4,
+     "text": "."
+    }
+   ]
+  },
   "docs-conformance-api-reference/conformance-api-reference-00": {
    "audio_sha256": "16ae4ab1763ed347907342076fc8def124fee0b867211e0392d0cf627efcbe72",
    "characters": 26,
@@ -64446,6 +67496,421 @@
     {
      "end": 64.65,
      "start": 64.425,
+     "text": "."
+    }
+   ]
+  },
+  "docs-install/if-your-registry-was-made-by-an-earlier-release-00": {
+   "audio_sha256": "ae494153a6bc83cb91f9194e97f175b2c0480fffb895202eae5f13744182f58b",
+   "characters": 48,
+   "cost": 4.751999999999999e-05,
+   "duration": 3.1,
+   "index": 0,
+   "key": "3dc3e99ac8c9286b6cd172eb250e6faf7d19d87373ecb21563219dbf827346e9",
+   "page": "docs/install.md",
+   "pause_ms": 500,
+   "section": "if-your-registry-was-made-by-an-earlier-release",
+   "sent_text": "If your registry was made by an earlier release.",
+   "text": "If your registry was made by an earlier release.",
+   "words": [
+    {
+     "end": 0.287,
+     "start": 0.175,
+     "text": "If"
+    },
+    {
+     "end": 0.4,
+     "start": 0.287,
+     "text": "your"
+    },
+    {
+     "end": 0.9,
+     "start": 0.4,
+     "text": "registry"
+    },
+    {
+     "end": 1.075,
+     "start": 0.9,
+     "text": "was"
+    },
+    {
+     "end": 1.325,
+     "start": 1.075,
+     "text": "made"
+    },
+    {
+     "end": 1.487,
+     "start": 1.325,
+     "text": "by"
+    },
+    {
+     "end": 1.6,
+     "start": 1.487,
+     "text": "an"
+    },
+    {
+     "end": 2.0,
+     "start": 1.6,
+     "text": "earlier"
+    },
+    {
+     "end": 2.9,
+     "start": 2.0,
+     "text": "release"
+    },
+    {
+     "end": 3.1,
+     "start": 2.9,
+     "text": "."
+    }
+   ]
+  },
+  "docs-install/if-your-registry-was-made-by-an-earlier-release-01": {
+   "audio_sha256": "d6099fd671bc7204e3c5d80ed749a751c8f304ab36a3c50fd7ee829d28f08ba0",
+   "characters": 327,
+   "cost": 0.00032373,
+   "duration": 19.975,
+   "index": 1,
+   "key": "1c55e204980228ee0b2789fb0b6e31e4253f4c18c4d23004b7e32a41dc80211d",
+   "page": "docs/install.md",
+   "pause_ms": 400,
+   "section": "if-your-registry-was-made-by-an-earlier-release",
+   "sent_text": "When the registry you want to use was made by an earlier release, the commands you installed tell you which release serves it, or that no release is known. The compatibility record lists, for each release in the release table, the release that serves the registries it made: this release, an earlier one, or none that is known.",
+   "text": "When the registry you want to use was made by an earlier release, the commands you installed tell you which release serves it, or that no release is known. The compatibility record lists, for each release in the release table, the release that serves the registries it made: this release, an earlier one, or none that is known.",
+   "words": [
+    {
+     "end": 0.338,
+     "start": 0.225,
+     "text": "When"
+    },
+    {
+     "end": 0.425,
+     "start": 0.338,
+     "text": "the"
+    },
+    {
+     "end": 0.925,
+     "start": 0.425,
+     "text": "registry"
+    },
+    {
+     "end": 1.05,
+     "start": 0.925,
+     "text": "you"
+    },
+    {
+     "end": 1.237,
+     "start": 1.05,
+     "text": "want"
+    },
+    {
+     "end": 1.337,
+     "start": 1.237,
+     "text": "to"
+    },
+    {
+     "end": 1.65,
+     "start": 1.337,
+     "text": "use"
+    },
+    {
+     "end": 1.837,
+     "start": 1.65,
+     "text": "was"
+    },
+    {
+     "end": 2.175,
+     "start": 1.837,
+     "text": "made"
+    },
+    {
+     "end": 2.4,
+     "start": 2.175,
+     "text": "by"
+    },
+    {
+     "end": 2.562,
+     "start": 2.4,
+     "text": "an"
+    },
+    {
+     "end": 3.025,
+     "start": 2.562,
+     "text": "earlier"
+    },
+    {
+     "end": 3.575,
+     "start": 3.025,
+     "text": "release"
+    },
+    {
+     "end": 3.65,
+     "start": 3.575,
+     "text": ","
+    },
+    {
+     "end": 3.75,
+     "start": 3.65,
+     "text": "the"
+    },
+    {
+     "end": 4.3,
+     "start": 3.75,
+     "text": "commands"
+    },
+    {
+     "end": 4.45,
+     "start": 4.3,
+     "text": "you"
+    },
+    {
+     "end": 5.037,
+     "start": 4.45,
+     "text": "installed"
+    },
+    {
+     "end": 5.3,
+     "start": 5.037,
+     "text": "tell"
+    },
+    {
+     "end": 5.45,
+     "start": 5.3,
+     "text": "you"
+    },
+    {
+     "end": 5.65,
+     "start": 5.45,
+     "text": "which"
+    },
+    {
+     "end": 6.088,
+     "start": 5.65,
+     "text": "release"
+    },
+    {
+     "end": 6.475,
+     "start": 6.088,
+     "text": "serves"
+    },
+    {
+     "end": 6.7,
+     "start": 6.475,
+     "text": "it"
+    },
+    {
+     "end": 6.812,
+     "start": 6.7,
+     "text": ","
+    },
+    {
+     "end": 7.0,
+     "start": 6.812,
+     "text": "or"
+    },
+    {
+     "end": 7.25,
+     "start": 7.0,
+     "text": "that"
+    },
+    {
+     "end": 7.525,
+     "start": 7.25,
+     "text": "no"
+    },
+    {
+     "end": 7.975,
+     "start": 7.525,
+     "text": "release"
+    },
+    {
+     "end": 8.125,
+     "start": 7.975,
+     "text": "is"
+    },
+    {
+     "end": 9.225,
+     "start": 8.125,
+     "text": "known"
+    },
+    {
+     "end": 9.45,
+     "start": 9.225,
+     "text": "."
+    },
+    {
+     "end": 9.725,
+     "start": 9.65,
+     "text": "The"
+    },
+    {
+     "end": 10.663,
+     "start": 9.725,
+     "text": "compatibility"
+    },
+    {
+     "end": 11.075,
+     "start": 10.663,
+     "text": "record"
+    },
+    {
+     "end": 11.475,
+     "start": 11.075,
+     "text": "lists"
+    },
+    {
+     "end": 11.525,
+     "start": 11.475,
+     "text": ","
+    },
+    {
+     "end": 11.688,
+     "start": 11.525,
+     "text": "for"
+    },
+    {
+     "end": 12.0,
+     "start": 11.688,
+     "text": "each"
+    },
+    {
+     "end": 12.475,
+     "start": 12.0,
+     "text": "release"
+    },
+    {
+     "end": 12.562,
+     "start": 12.475,
+     "text": "in"
+    },
+    {
+     "end": 12.65,
+     "start": 12.562,
+     "text": "the"
+    },
+    {
+     "end": 13.05,
+     "start": 12.65,
+     "text": "release"
+    },
+    {
+     "end": 13.55,
+     "start": 13.05,
+     "text": "table"
+    },
+    {
+     "end": 13.65,
+     "start": 13.55,
+     "text": ","
+    },
+    {
+     "end": 13.75,
+     "start": 13.65,
+     "text": "the"
+    },
+    {
+     "end": 14.175,
+     "start": 13.75,
+     "text": "release"
+    },
+    {
+     "end": 14.4,
+     "start": 14.175,
+     "text": "that"
+    },
+    {
+     "end": 14.825,
+     "start": 14.4,
+     "text": "serves"
+    },
+    {
+     "end": 14.95,
+     "start": 14.825,
+     "text": "the"
+    },
+    {
+     "end": 15.575,
+     "start": 14.95,
+     "text": "registries"
+    },
+    {
+     "end": 15.7,
+     "start": 15.575,
+     "text": "it"
+    },
+    {
+     "end": 16.625,
+     "start": 15.7,
+     "text": "made"
+    },
+    {
+     "end": 16.85,
+     "start": 16.625,
+     "text": ":"
+    },
+    {
+     "end": 17.2,
+     "start": 17.025,
+     "text": "this"
+    },
+    {
+     "end": 17.575,
+     "start": 17.2,
+     "text": "release"
+    },
+    {
+     "end": 17.612,
+     "start": 17.575,
+     "text": ","
+    },
+    {
+     "end": 17.7,
+     "start": 17.612,
+     "text": "an"
+    },
+    {
+     "end": 18.062,
+     "start": 17.7,
+     "text": "earlier"
+    },
+    {
+     "end": 18.25,
+     "start": 18.062,
+     "text": "one"
+    },
+    {
+     "end": 18.3,
+     "start": 18.25,
+     "text": ","
+    },
+    {
+     "end": 18.45,
+     "start": 18.3,
+     "text": "or"
+    },
+    {
+     "end": 18.663,
+     "start": 18.45,
+     "text": "none"
+    },
+    {
+     "end": 18.8,
+     "start": 18.663,
+     "text": "that"
+    },
+    {
+     "end": 18.95,
+     "start": 18.8,
+     "text": "is"
+    },
+    {
+     "end": 19.775,
+     "start": 18.95,
+     "text": "known"
+    },
+    {
+     "end": 19.975,
+     "start": 19.775,
      "text": "."
     }
    ]

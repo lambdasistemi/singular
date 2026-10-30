@@ -1,0 +1,82 @@
+{
+  "which-release-serves-my-registry": [
+    {
+      "text": "Which release serves my registry.",
+      "pause": 500
+    },
+    {
+      "text": "As a person with a registry made by some earlier release, you find on this page which release serves it: this release, an earlier one, or none that is known.",
+      "pause": 400
+    },
+    {
+      "text": "The diagram shows the question the rows below answer. A registry is made by one version of the on-chain code, and its state contract is the hash of that version's state validator. The commands of this release change the registries of one state contract, the one they derive from the blueprint they carry. Given a registry of another contract, a command of this release that changes it refuses before anything is built and names the release that serves it, or says that no release is known.",
+      "pause": 400
+    }
+  ],
+  "how-the-answer-is-found": [
+    {
+      "text": "How the answer is found.",
+      "pause": 500
+    },
+    {
+      "text": "The commands of this release derive their state contract from the blueprint they carry. The request validator of that blueprint has an application policy, and the release table holds the applied state policy for it. That applied state policy is the contract these commands derive, and it is the state contract of every row marked as this release.",
+      "pause": 400
+    },
+    {
+      "text": "Every row is computed from the release table, which the releases after v0.15.0 carry, and from the blueprint this release carries. The releases up to v0.15.0 carry no table, so their commands cannot name a serving release. Registries made by a release whose contract is recorded are served by the newest release in the table that carries that contract, unless the contract is the one these commands derive, which this release serves. A contract that the table holds with no release has no release that serves it. The record names no version of its own, so it needs no edit when the version changes.",
+      "pause": 400
+    },
+    {
+      "text": "The commands of this release print the same answer. The off-chain test suite compares each row that has a contract with the answer of the library function these commands call, and the documentation check refuses a page that differs from the table.",
+      "pause": 400
+    }
+  ],
+  "release-by-release": [
+    {
+      "text": "Release by release.",
+      "pause": 500
+    },
+    {
+      "text": "The table names 22 releases and 8 state contracts. Each release has one row, oldest first. A release the table leaves out is listed with its reason: its contract is not recorded, so no release is known to serve its registries.",
+      "pause": 400
+    },
+    {
+      "text": "This release serves the registries of 3 releases listed above.",
+      "pause": 400
+    }
+  ],
+  "contracts-with-no-release": [
+    {
+      "text": "Contracts with no release.",
+      "pause": 500
+    },
+    {
+      "text": "The table also holds state contracts that no release carries. A registry of one of them was made by code that no release in the table carries, and no release is known to serve it.",
+      "pause": 400
+    }
+  ],
+  "applications": [
+    {
+      "text": "Applications.",
+      "pause": 500
+    },
+    {
+      "text": "A registry made for an application has a state policy that applies the state program to the application's policy. The table holds one row for each, with the Singular releases and the application releases that carry it.",
+      "pause": 400
+    }
+  ],
+  "regenerate-this-page": [
+    {
+      "text": "Regenerate this page.",
+      "pause": 500
+    },
+    {
+      "text": "Build the packaged blueprint with nix build ./applications/open-datum/onchain#open-datum-blueprint -o blueprint, run python3 tools/compatibility_record.py --write --blueprint blueprint to regenerate the page and its rows, then regenerate its speech and changed narration. The documentation check runs python3 tools/compatibility_record.py --check with the packaged blueprint.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "compatibility.md",
+    "sha256": "29df635b6a75aefd385c05eb3c978b77338fcdfa0ea34f2ff0d1b61daca4a651"
+  }
+}

@@ -19,6 +19,7 @@ nav:
       - Install the commands without Nix: docs/install.md
       - Download and verify a release: docs/verify-release.md
       - What this release assumes and does not establish: docs/release-assumptions.md
+      - Which release serves my registry: docs/compatibility.md
   - Permanently terminate a key: docs/retirement.md
   - Connecting singular to a ledger provider: docs/singular-node.md
   - Create a registry and register keys: docs/registry-commands.md

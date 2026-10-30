@@ -137,6 +137,16 @@
       "pause": 400
     }
   ],
+  "if-your-registry-was-made-by-an-earlier-release": [
+    {
+      "text": "If your registry was made by an earlier release.",
+      "pause": 500
+    },
+    {
+      "text": "When the registry you want to use was made by an earlier release, the commands you installed tell you which release serves it, or that no release is known. The compatibility record lists, for each release in the release table, the release that serves the registries it made: this release, an earlier one, or none that is known.",
+      "pause": 400
+    }
+  ],
   "when-it-does-not-work": [
     {
       "text": "When it does not work.",
@@ -185,6 +195,6 @@
   ],
   "_source": {
     "file": "install.md",
-    "sha256": "c79ee80c30fc41ed1e9b65eab323659c594b2781ab6cc9dfb555d0b9f5cebbcf"
+    "sha256": "1ec929b5804494e1a0077b2c8694226e86cb89fefc6ef2700f7f5d3f3b53c661"
   }
 }
