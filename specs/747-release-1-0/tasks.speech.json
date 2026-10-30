@@ -15,7 +15,7 @@
       "pause": 500
     },
     {
-      "text": "[ ] gate-synthesized: the ticket owner's and the auditor's gate tables joined once and frozen with both input hashes.",
+      "text": "[x] gate-synthesized: the ticket owner's and the auditor's gate tables joined once and frozen with both input hashes.",
       "pause": 300
     }
   ],
@@ -25,15 +25,15 @@
       "pause": 500
     },
     {
-      "text": "[ ] release-table-refilled: rows for the releases published since the table was filled, from their on-chain archives.",
+      "text": "[x] release-table-refilled: rows for the releases published since the table was filled, from their on-chain archives.",
       "pause": 300
     },
     {
-      "text": "[ ] compatible-release-guidance: one answer for a known earlier contract, an unknown contract and an application upgrade, printed by every command.",
+      "text": "[x] compatible-release-guidance: one answer for a known earlier contract, an unknown contract and an application upgrade, printed by every command.",
       "pause": 300
     },
     {
-      "text": "[ ] old-registry-untouched: a write given such a registry sends nothing; the chain unchanged beside a passing control.",
+      "text": "[x] old-registry-untouched: a write given such a registry sends nothing; the chain unchanged beside a passing control.",
       "pause": 300
     }
   ],
@@ -105,6 +105,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "dc74adab833b562ab617d362b8aa9dbabb87443770eea396d2bdc3ad348ead84"
+    "sha256": "7b9d4b587b897bbd8f719114a68b43494b805d452bf6f50e4595853624277b05"
   }
 }
