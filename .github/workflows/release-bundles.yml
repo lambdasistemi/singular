@@ -316,6 +316,28 @@ jobs:
           cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-verify"
           mkdir -p "$cache_dir"
           printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      # The self-hosted runner keeps its temporary directory between jobs when
+      # it cannot delete all of it (the extracted bundles are read-only trees),
+      # so the directories this job writes may already exist. The control leaves
+      # stale content in each of them, as an earlier job could have; the job
+      # then starts from empty directories, and the assembly below succeeds only
+      # from them.
+      - name: Leave stale content where an earlier job could have left it
+        run: |
+          for dir in bundles release release-with-bundles verify-work; do
+            stale="$RUNNER_TEMP/$dir"
+            [ ! -e "$stale" ] || chmod -R u+w "$stale"
+            mkdir -p "$stale/stale-tree"
+            echo stale >"$stale/stale-file"
+            echo stale >"$stale/stale-tree/stale-member"
+            chmod -R a-w "$stale/stale-tree"
+          done
+      - name: Start from empty directories
+        run: |
+          for dir in bundles release release-with-bundles verify-work; do
+            [ ! -e "$RUNNER_TEMP/$dir" ] || chmod -R u+w "$RUNNER_TEMP/$dir"
+            rm -rf "${RUNNER_TEMP:?}/$dir"
+          done
       - uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
