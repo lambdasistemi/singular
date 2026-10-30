@@ -12,10 +12,12 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from stage_release import read_all_forward
+from release_limits import check as check_stated_limits
 
 root, archive = map(Path, sys.argv[1:])
 version = (root / "version.txt").read_text().strip()
 assert re.fullmatch(r"\d+\.\d+\.\d+", version), "invalid documentation version"
+check_stated_limits(root)
 manifest = json.loads((root / ".release-please-manifest.json").read_text())
 config = json.loads((root / "release-please-config.json").read_text())
 assert manifest == ({".": version} if version != "0.0.0" else {}), (
@@ -255,6 +257,7 @@ print(
             "onchainArchive": onchain_checked,
             "versionAgreement": "PASS",
             "artifactAndWorkflowChecks": "PASS",
+            "statedLimits": "PASS",
             "identityFromArtifact": identity_from_artifact,
         }
     )

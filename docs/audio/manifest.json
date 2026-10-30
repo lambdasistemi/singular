@@ -180165,6 +180165,4356 @@
     }
    ]
   },
+  "docs-release-assumptions/what-remains-uncovered-00": {
+   "audio_sha256": "2a4c4b5575a2d3aee1eaae2f554b2ddbeee3f4d9747cfe6cecfead33bf6cde6f",
+   "characters": 23,
+   "cost": 2.277e-05,
+   "duration": 1.775,
+   "index": 0,
+   "key": "7ebd8c0afb6d1dea084bc3da5bdf733f0c7c8951a988defff6bd7ecb17d161bd",
+   "page": "docs/release-assumptions.md",
+   "pause_ms": 500,
+   "section": "what-remains-uncovered",
+   "sent_text": "What remains uncovered.",
+   "text": "What remains uncovered.",
+   "words": [
+    {
+     "end": 0.287,
+     "start": 0.175,
+     "text": "What"
+    },
+    {
+     "end": 0.637,
+     "start": 0.287,
+     "text": "remains"
+    },
+    {
+     "end": 1.575,
+     "start": 0.637,
+     "text": "uncovered"
+    },
+    {
+     "end": 1.775,
+     "start": 1.575,
+     "text": "."
+    }
+   ]
+  },
+  "docs-release-assumptions/what-remains-uncovered-01": {
+   "audio_sha256": "f6b9c4961e902a40a43058ab31ef48a55ffc5ee69e7d1f06d76571c721280557",
+   "characters": 143,
+   "cost": 0.00014157,
+   "duration": 9.15,
+   "index": 1,
+   "key": "856b26a8909019aae032ab4fc4d3ccd8cfc878c8254a27425edd28f7142cf389",
+   "page": "docs/release-assumptions.md",
+   "pause_ms": 400,
+   "section": "what-remains-uncovered",
+   "sent_text": "The conformance rows that remain uncovered are published on the conformance evidence page, whose count and rows are computed from the receipts.",
+   "text": "The conformance rows that remain uncovered are published on the conformance evidence page, whose count and rows are computed from the receipts.",
+   "words": [
+    {
+     "end": 0.275,
+     "start": 0.2,
+     "text": "The"
+    },
+    {
+     "end": 0.962,
+     "start": 0.275,
+     "text": "conformance"
+    },
+    {
+     "end": 1.325,
+     "start": 0.962,
+     "text": "rows"
+    },
+    {
+     "end": 1.525,
+     "start": 1.325,
+     "text": "that"
+    },
+    {
+     "end": 2.025,
+     "start": 1.525,
+     "text": "remain"
+    },
+    {
+     "end": 2.787,
+     "start": 2.025,
+     "text": "uncovered"
+    },
+    {
+     "end": 2.963,
+     "start": 2.787,
+     "text": "are"
+    },
+    {
+     "end": 3.475,
+     "start": 2.963,
+     "text": "published"
+    },
+    {
+     "end": 3.612,
+     "start": 3.475,
+     "text": "on"
+    },
+    {
+     "end": 3.7,
+     "start": 3.612,
+     "text": "the"
+    },
+    {
+     "end": 4.375,
+     "start": 3.7,
+     "text": "conformance"
+    },
+    {
+     "end": 4.838,
+     "start": 4.375,
+     "text": "evidence"
+    },
+    {
+     "end": 5.4,
+     "start": 4.838,
+     "text": "page"
+    },
+    {
+     "end": 5.5,
+     "start": 5.4,
+     "text": ","
+    },
+    {
+     "end": 5.762,
+     "start": 5.5,
+     "text": "whose"
+    },
+    {
+     "end": 6.15,
+     "start": 5.762,
+     "text": "count"
+    },
+    {
+     "end": 6.287,
+     "start": 6.15,
+     "text": "and"
+    },
+    {
+     "end": 6.75,
+     "start": 6.287,
+     "text": "rows"
+    },
+    {
+     "end": 6.875,
+     "start": 6.75,
+     "text": "are"
+    },
+    {
+     "end": 7.425,
+     "start": 6.875,
+     "text": "computed"
+    },
+    {
+     "end": 7.588,
+     "start": 7.425,
+     "text": "from"
+    },
+    {
+     "end": 7.675,
+     "start": 7.588,
+     "text": "the"
+    },
+    {
+     "end": 8.925,
+     "start": 7.675,
+     "text": "receipts"
+    },
+    {
+     "end": 9.15,
+     "start": 8.925,
+     "text": "."
+    }
+   ]
+  },
+  "docs-release-assumptions/what-the-measurements-do-not-show-00": {
+   "audio_sha256": "de673fcfdf99fa339697afeabafbb4bc9ec2e785d0fbeb4858db93f9d3a5114d",
+   "characters": 34,
+   "cost": 3.366e-05,
+   "duration": 2.2,
+   "index": 0,
+   "key": "089f8d2742e0a0713e133ac260266eb5463ceea56b7b51dd3cfbf3df39b74cd1",
+   "page": "docs/release-assumptions.md",
+   "pause_ms": 500,
+   "section": "what-the-measurements-do-not-show",
+   "sent_text": "What the measurements do not show.",
+   "text": "What the measurements do not show.",
+   "words": [
+    {
+     "end": 0.287,
+     "start": 0.175,
+     "text": "What"
+    },
+    {
+     "end": 0.375,
+     "start": 0.287,
+     "text": "the"
+    },
+    {
+     "end": 0.85,
+     "start": 0.375,
+     "text": "measurements"
+    },
+    {
+     "end": 0.962,
+     "start": 0.85,
+     "text": "do"
+    },
+    {
+     "end": 1.212,
+     "start": 0.962,
+     "text": "not"
+    },
+    {
+     "end": 1.975,
+     "start": 1.212,
+     "text": "show"
+    },
+    {
+     "end": 2.2,
+     "start": 1.975,
+     "text": "."
+    }
+   ]
+  },
+  "docs-release-assumptions/what-the-measurements-do-not-show-01": {
+   "audio_sha256": "8c1c31f4251456961adae8212b315d3911ca006ab6a0e448be6e87a3faef6ab7",
+   "characters": 242,
+   "cost": 0.00023958,
+   "duration": 14.975,
+   "index": 1,
+   "key": "f7c11427c153b286850d8997b5634134f3c11917ccd01b7b785e81c929929ada",
+   "page": "docs/release-assumptions.md",
+   "pause_ms": 400,
+   "section": "what-the-measurements-do-not-show",
+   "sent_text": "The packaged development node cannot run the public test network's (preprod's) current protocol version, so the batch limits are evaluated under recorded protocol parameters and corroborated by the node, and are not submitted to that network.",
+   "text": "The packaged development node cannot run the public test network's (preprod's) current protocol version, so the batch limits are evaluated under recorded protocol parameters and corroborated by the node, and are not submitted to that network.",
+   "words": [
+    {
+     "end": 0.338,
+     "start": 0.225,
+     "text": "The"
+    },
+    {
+     "end": 0.85,
+     "start": 0.338,
+     "text": "packaged"
+    },
+    {
+     "end": 1.425,
+     "start": 0.85,
+     "text": "development"
+    },
+    {
+     "end": 1.7,
+     "start": 1.425,
+     "text": "node"
+    },
+    {
+     "end": 2.088,
+     "start": 1.7,
+     "text": "cannot"
+    },
+    {
+     "end": 2.425,
+     "start": 2.088,
+     "text": "run"
+    },
+    {
+     "end": 2.537,
+     "start": 2.425,
+     "text": "the"
+    },
+    {
+     "end": 2.963,
+     "start": 2.537,
+     "text": "public"
+    },
+    {
+     "end": 3.3,
+     "start": 2.963,
+     "text": "test"
+    },
+    {
+     "end": 3.925,
+     "start": 3.3,
+     "text": "network's"
+    },
+    {
+     "end": 3.975,
+     "start": 3.925,
+     "text": "("
+    },
+    {
+     "end": 4.65,
+     "start": 3.975,
+     "text": "preprod's"
+    },
+    {
+     "end": 4.725,
+     "start": 4.65,
+     "text": ")"
+    },
+    {
+     "end": 5.05,
+     "start": 4.725,
+     "text": "current"
+    },
+    {
+     "end": 5.625,
+     "start": 5.05,
+     "text": "protocol"
+    },
+    {
+     "end": 6.2,
+     "start": 5.625,
+     "text": "version"
+    },
+    {
+     "end": 6.3,
+     "start": 6.2,
+     "text": ","
+    },
+    {
+     "end": 6.475,
+     "start": 6.3,
+     "text": "so"
+    },
+    {
+     "end": 6.575,
+     "start": 6.475,
+     "text": "the"
+    },
+    {
+     "end": 6.925,
+     "start": 6.575,
+     "text": "batch"
+    },
+    {
+     "end": 7.325,
+     "start": 6.925,
+     "text": "limits"
+    },
+    {
+     "end": 7.475,
+     "start": 7.325,
+     "text": "are"
+    },
+    {
+     "end": 8.2,
+     "start": 7.475,
+     "text": "evaluated"
+    },
+    {
+     "end": 8.475,
+     "start": 8.2,
+     "text": "under"
+    },
+    {
+     "end": 9.0,
+     "start": 8.475,
+     "text": "recorded"
+    },
+    {
+     "end": 9.55,
+     "start": 9.0,
+     "text": "protocol"
+    },
+    {
+     "end": 10.275,
+     "start": 9.55,
+     "text": "parameters"
+    },
+    {
+     "end": 10.4,
+     "start": 10.275,
+     "text": "and"
+    },
+    {
+     "end": 11.175,
+     "start": 10.4,
+     "text": "corroborated"
+    },
+    {
+     "end": 11.35,
+     "start": 11.175,
+     "text": "by"
+    },
+    {
+     "end": 11.475,
+     "start": 11.35,
+     "text": "the"
+    },
+    {
+     "end": 12.075,
+     "start": 11.475,
+     "text": "node"
+    },
+    {
+     "end": 12.175,
+     "start": 12.075,
+     "text": ","
+    },
+    {
+     "end": 12.288,
+     "start": 12.175,
+     "text": "and"
+    },
+    {
+     "end": 12.375,
+     "start": 12.288,
+     "text": "are"
+    },
+    {
+     "end": 12.625,
+     "start": 12.375,
+     "text": "not"
+    },
+    {
+     "end": 13.1,
+     "start": 12.625,
+     "text": "submitted"
+    },
+    {
+     "end": 13.225,
+     "start": 13.1,
+     "text": "to"
+    },
+    {
+     "end": 13.5,
+     "start": 13.225,
+     "text": "that"
+    },
+    {
+     "end": 14.7,
+     "start": 13.5,
+     "text": "network"
+    },
+    {
+     "end": 14.975,
+     "start": 14.7,
+     "text": "."
+    }
+   ]
+  },
+  "docs-release-assumptions/what-the-measurements-do-not-show-02": {
+   "audio_sha256": "7b99be1569f5c075ea0a6ace12708d3fe0b6e2975d449525c7d35fb6b2f9671a",
+   "characters": 101,
+   "cost": 9.999e-05,
+   "duration": 6.075,
+   "index": 2,
+   "key": "c4b295c4133cf5b0cf50bb3c44023d01ffcce0407c2de1053eacf640342cbdde",
+   "page": "docs/release-assumptions.md",
+   "pause_ms": 400,
+   "section": "what-the-measurements-do-not-show",
+   "sent_text": "The release decision table gives each measurement with the date of the parameters it was taken under.",
+   "text": "The release decision table gives each measurement with the date of the parameters it was taken under.",
+   "words": [
+    {
+     "end": 0.3,
+     "start": 0.2,
+     "text": "The"
+    },
+    {
+     "end": 0.7,
+     "start": 0.3,
+     "text": "release"
+    },
+    {
+     "end": 1.2,
+     "start": 0.7,
+     "text": "decision"
+    },
+    {
+     "end": 1.663,
+     "start": 1.2,
+     "text": "table"
+    },
+    {
+     "end": 1.962,
+     "start": 1.663,
+     "text": "gives"
+    },
+    {
+     "end": 2.287,
+     "start": 1.962,
+     "text": "each"
+    },
+    {
+     "end": 2.85,
+     "start": 2.287,
+     "text": "measurement"
+    },
+    {
+     "end": 2.987,
+     "start": 2.85,
+     "text": "with"
+    },
+    {
+     "end": 3.112,
+     "start": 2.987,
+     "text": "the"
+    },
+    {
+     "end": 3.362,
+     "start": 3.112,
+     "text": "date"
+    },
+    {
+     "end": 3.438,
+     "start": 3.362,
+     "text": "of"
+    },
+    {
+     "end": 3.525,
+     "start": 3.438,
+     "text": "the"
+    },
+    {
+     "end": 4.262,
+     "start": 3.525,
+     "text": "parameters"
+    },
+    {
+     "end": 4.363,
+     "start": 4.262,
+     "text": "it"
+    },
+    {
+     "end": 4.525,
+     "start": 4.363,
+     "text": "was"
+    },
+    {
+     "end": 4.9,
+     "start": 4.525,
+     "text": "taken"
+    },
+    {
+     "end": 5.825,
+     "start": 4.9,
+     "text": "under"
+    },
+    {
+     "end": 6.075,
+     "start": 5.825,
+     "text": "."
+    }
+   ]
+  },
+  "docs-release-assumptions/what-the-release-takes-for-granted-00": {
+   "audio_sha256": "7eb93fac5c158db1b77f69172710cc72d64cf870fb30d149947f95678d81a93c",
+   "characters": 35,
+   "cost": 3.4649999999999995e-05,
+   "duration": 2.25,
+   "index": 0,
+   "key": "963144a4c73d526f20f578b63355772053b1d25bf6bb5ff469910c8ea8528f86",
+   "page": "docs/release-assumptions.md",
+   "pause_ms": 500,
+   "section": "what-the-release-takes-for-granted",
+   "sent_text": "What the release takes for granted.",
+   "text": "What the release takes for granted.",
+   "words": [
+    {
+     "end": 0.287,
+     "start": 0.175,
+     "text": "What"
+    },
+    {
+     "end": 0.375,
+     "start": 0.287,
+     "text": "the"
+    },
+    {
+     "end": 0.725,
+     "start": 0.375,
+     "text": "release"
+    },
+    {
+     "end": 1.025,
+     "start": 0.725,
+     "text": "takes"
+    },
+    {
+     "end": 1.15,
+     "start": 1.025,
+     "text": "for"
+    },
+    {
+     "end": 2.05,
+     "start": 1.15,
+     "text": "granted"
+    },
+    {
+     "end": 2.25,
+     "start": 2.05,
+     "text": "."
+    }
+   ]
+  },
+  "docs-release-assumptions/what-the-release-takes-for-granted-01": {
+   "audio_sha256": "f0f5effffdbdea6576e4fc86a7ac429f68956616b46dcd0e5249d2a387fb78ff",
+   "characters": 44,
+   "cost": 4.3559999999999996e-05,
+   "duration": 2.775,
+   "index": 1,
+   "key": "347c509cb7b72218b6ca04626a6d9546a8af1dffcc487b181ede7be0e3594d09",
+   "page": "docs/release-assumptions.md",
+   "pause_ms": 400,
+   "section": "what-the-release-takes-for-granted",
+   "sent_text": "The trie library's proofs are assumed sound.",
+   "text": "The trie library's proofs are assumed sound.",
+   "words": [
+    {
+     "end": 0.25,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.488,
+     "start": 0.25,
+     "text": "trie"
+    },
+    {
+     "end": 0.925,
+     "start": 0.488,
+     "text": "library's"
+    },
+    {
+     "end": 1.225,
+     "start": 0.925,
+     "text": "proofs"
+    },
+    {
+     "end": 1.312,
+     "start": 1.225,
+     "text": "are"
+    },
+    {
+     "end": 1.737,
+     "start": 1.312,
+     "text": "assumed"
+    },
+    {
+     "end": 2.575,
+     "start": 1.737,
+     "text": "sound"
+    },
+    {
+     "end": 2.775,
+     "start": 2.575,
+     "text": "."
+    }
+   ]
+  },
+  "docs-release-assumptions/what-the-release-takes-for-granted-02": {
+   "audio_sha256": "a9d4bbb7a954256269d09b8ec79bec218d76bc83e604bfd4c7ec5deaa3700a72",
+   "characters": 117,
+   "cost": 0.00011583,
+   "duration": 7.575,
+   "index": 2,
+   "key": "72a19cd544dbb46b9cedcb3c1423122fed563a60c327a7d473180348694c1a49",
+   "page": "docs/release-assumptions.md",
+   "pause_ms": 400,
+   "section": "what-the-release-takes-for-granted",
+   "sent_text": "The statements about the chain's history assume Cardano's rule for how scripts run, and that rule is not proved here.",
+   "text": "The statements about the chain's history assume Cardano's rule for how scripts run, and that rule is not proved here.",
+   "words": [
+    {
+     "end": 0.3,
+     "start": 0.2,
+     "text": "The"
+    },
+    {
+     "end": 0.788,
+     "start": 0.3,
+     "text": "statements"
+    },
+    {
+     "end": 1.062,
+     "start": 0.788,
+     "text": "about"
+    },
+    {
+     "end": 1.163,
+     "start": 1.062,
+     "text": "the"
+    },
+    {
+     "end": 1.55,
+     "start": 1.163,
+     "text": "chain's"
+    },
+    {
+     "end": 2.088,
+     "start": 1.55,
+     "text": "history"
+    },
+    {
+     "end": 2.55,
+     "start": 2.088,
+     "text": "assume"
+    },
+    {
+     "end": 3.162,
+     "start": 2.55,
+     "text": "Cardano's"
+    },
+    {
+     "end": 3.525,
+     "start": 3.162,
+     "text": "rule"
+    },
+    {
+     "end": 3.65,
+     "start": 3.525,
+     "text": "for"
+    },
+    {
+     "end": 3.862,
+     "start": 3.65,
+     "text": "how"
+    },
+    {
+     "end": 4.338,
+     "start": 3.862,
+     "text": "scripts"
+    },
+    {
+     "end": 4.85,
+     "start": 4.338,
+     "text": "run"
+    },
+    {
+     "end": 4.95,
+     "start": 4.85,
+     "text": ","
+    },
+    {
+     "end": 5.062,
+     "start": 4.95,
+     "text": "and"
+    },
+    {
+     "end": 5.312,
+     "start": 5.062,
+     "text": "that"
+    },
+    {
+     "end": 5.65,
+     "start": 5.312,
+     "text": "rule"
+    },
+    {
+     "end": 5.8,
+     "start": 5.65,
+     "text": "is"
+    },
+    {
+     "end": 6.062,
+     "start": 5.8,
+     "text": "not"
+    },
+    {
+     "end": 6.425,
+     "start": 6.062,
+     "text": "proved"
+    },
+    {
+     "end": 7.325,
+     "start": 6.425,
+     "text": "here"
+    },
+    {
+     "end": 7.575,
+     "start": 7.325,
+     "text": "."
+    }
+   ]
+  },
+  "docs-release-assumptions/what-this-release-assumes-and-does-not-establish-00": {
+   "audio_sha256": "5c93dde3e53c888df88d8e475f4e88adf8f8c39865a42c7e76a93c6ad479c93b",
+   "characters": 49,
+   "cost": 4.8509999999999995e-05,
+   "duration": 3.0,
+   "index": 0,
+   "key": "e1bc3fa027f8bae8423712f6927e60f6beeb01335095c678427c66995c4453c0",
+   "page": "docs/release-assumptions.md",
+   "pause_ms": 500,
+   "section": "what-this-release-assumes-and-does-not-establish",
+   "sent_text": "What this release assumes and does not establish.",
+   "text": "What this release assumes and does not establish.",
+   "words": [
+    {
+     "end": 0.3,
+     "start": 0.175,
+     "text": "What"
+    },
+    {
+     "end": 0.5,
+     "start": 0.3,
+     "text": "this"
+    },
+    {
+     "end": 0.875,
+     "start": 0.5,
+     "text": "release"
+    },
+    {
+     "end": 1.413,
+     "start": 0.875,
+     "text": "assumes"
+    },
+    {
+     "end": 1.513,
+     "start": 1.413,
+     "text": "and"
+    },
+    {
+     "end": 1.638,
+     "start": 1.513,
+     "text": "does"
+    },
+    {
+     "end": 1.788,
+     "start": 1.638,
+     "text": "not"
+    },
+    {
+     "end": 2.8,
+     "start": 1.788,
+     "text": "establish"
+    },
+    {
+     "end": 3.0,
+     "start": 2.8,
+     "text": "."
+    }
+   ]
+  },
+  "docs-release-assumptions/what-this-release-assumes-and-does-not-establish-01": {
+   "audio_sha256": "e8db6e5a643706545ffa4e2a694f0b845e8da659c7ef06830341e1c1aa39cfbb",
+   "characters": 200,
+   "cost": 0.000198,
+   "duration": 12.125,
+   "index": 1,
+   "key": "3fc59e35d8aca05c39489b024dc966b9e0fba8cfff08967755cf1e9e96e5b1ea",
+   "page": "docs/release-assumptions.md",
+   "pause_ms": 400,
+   "section": "what-this-release-assumes-and-does-not-establish",
+   "sent_text": "As a reader deciding whether to rely on this release, you find here, in plain words, what the release takes for granted, what it leaves unproved, and where the evidence it does not yet have is listed.",
+   "text": "As a reader deciding whether to rely on this release, you find here, in plain words, what the release takes for granted, what it leaves unproved, and where the evidence it does not yet have is listed.",
+   "words": [
+    {
+     "end": 0.4,
+     "start": 0.25,
+     "text": "As"
+    },
+    {
+     "end": 0.512,
+     "start": 0.4,
+     "text": "a"
+    },
+    {
+     "end": 0.85,
+     "start": 0.512,
+     "text": "reader"
+    },
+    {
+     "end": 1.425,
+     "start": 0.85,
+     "text": "deciding"
+    },
+    {
+     "end": 1.725,
+     "start": 1.425,
+     "text": "whether"
+    },
+    {
+     "end": 1.85,
+     "start": 1.725,
+     "text": "to"
+    },
+    {
+     "end": 2.25,
+     "start": 1.85,
+     "text": "rely"
+    },
+    {
+     "end": 2.425,
+     "start": 2.25,
+     "text": "on"
+    },
+    {
+     "end": 2.6,
+     "start": 2.425,
+     "text": "this"
+    },
+    {
+     "end": 3.075,
+     "start": 2.6,
+     "text": "release"
+    },
+    {
+     "end": 3.15,
+     "start": 3.075,
+     "text": ","
+    },
+    {
+     "end": 3.312,
+     "start": 3.15,
+     "text": "you"
+    },
+    {
+     "end": 3.65,
+     "start": 3.312,
+     "text": "find"
+    },
+    {
+     "end": 3.975,
+     "start": 3.65,
+     "text": "here"
+    },
+    {
+     "end": 4.05,
+     "start": 3.975,
+     "text": ","
+    },
+    {
+     "end": 4.213,
+     "start": 4.05,
+     "text": "in"
+    },
+    {
+     "end": 4.575,
+     "start": 4.213,
+     "text": "plain"
+    },
+    {
+     "end": 4.95,
+     "start": 4.575,
+     "text": "words"
+    },
+    {
+     "end": 5.0,
+     "start": 4.95,
+     "text": ","
+    },
+    {
+     "end": 5.175,
+     "start": 5.0,
+     "text": "what"
+    },
+    {
+     "end": 5.275,
+     "start": 5.175,
+     "text": "the"
+    },
+    {
+     "end": 5.738,
+     "start": 5.275,
+     "text": "release"
+    },
+    {
+     "end": 6.05,
+     "start": 5.738,
+     "text": "takes"
+    },
+    {
+     "end": 6.238,
+     "start": 6.05,
+     "text": "for"
+    },
+    {
+     "end": 6.825,
+     "start": 6.238,
+     "text": "granted"
+    },
+    {
+     "end": 6.9,
+     "start": 6.825,
+     "text": ","
+    },
+    {
+     "end": 7.037,
+     "start": 6.9,
+     "text": "what"
+    },
+    {
+     "end": 7.175,
+     "start": 7.037,
+     "text": "it"
+    },
+    {
+     "end": 7.562,
+     "start": 7.175,
+     "text": "leaves"
+    },
+    {
+     "end": 8.45,
+     "start": 7.562,
+     "text": "unproved"
+    },
+    {
+     "end": 8.55,
+     "start": 8.45,
+     "text": ","
+    },
+    {
+     "end": 8.663,
+     "start": 8.55,
+     "text": "and"
+    },
+    {
+     "end": 8.812,
+     "start": 8.663,
+     "text": "where"
+    },
+    {
+     "end": 8.938,
+     "start": 8.812,
+     "text": "the"
+    },
+    {
+     "end": 9.425,
+     "start": 8.938,
+     "text": "evidence"
+    },
+    {
+     "end": 9.55,
+     "start": 9.425,
+     "text": "it"
+    },
+    {
+     "end": 9.775,
+     "start": 9.55,
+     "text": "does"
+    },
+    {
+     "end": 10.025,
+     "start": 9.775,
+     "text": "not"
+    },
+    {
+     "end": 10.3,
+     "start": 10.025,
+     "text": "yet"
+    },
+    {
+     "end": 10.525,
+     "start": 10.3,
+     "text": "have"
+    },
+    {
+     "end": 10.675,
+     "start": 10.525,
+     "text": "is"
+    },
+    {
+     "end": 11.85,
+     "start": 10.675,
+     "text": "listed"
+    },
+    {
+     "end": 12.125,
+     "start": 11.85,
+     "text": "."
+    }
+   ]
+  },
+  "docs-release-decision-table/conditions-the-figures-were-taken-under-00": {
+   "audio_sha256": "889536c43f7a6a5c6f0bc3451ebd38e896ea7a337beb360fa91c7a964d352d72",
+   "characters": 40,
+   "cost": 3.96e-05,
+   "duration": 2.725,
+   "index": 0,
+   "key": "1895fb1faeb44d8f24a0f47be1805fcfa4510cf57c3a33063c6d8c1961a85136",
+   "page": "docs/release-decision-table.md",
+   "pause_ms": 500,
+   "section": "conditions-the-figures-were-taken-under",
+   "sent_text": "Conditions the figures were taken under.",
+   "text": "Conditions the figures were taken under.",
+   "words": [
+    {
+     "end": 0.775,
+     "start": 0.175,
+     "text": "Conditions"
+    },
+    {
+     "end": 0.875,
+     "start": 0.775,
+     "text": "the"
+    },
+    {
+     "end": 1.288,
+     "start": 0.875,
+     "text": "figures"
+    },
+    {
+     "end": 1.4,
+     "start": 1.288,
+     "text": "were"
+    },
+    {
+     "end": 1.725,
+     "start": 1.4,
+     "text": "taken"
+    },
+    {
+     "end": 2.5,
+     "start": 1.725,
+     "text": "under"
+    },
+    {
+     "end": 2.725,
+     "start": 2.5,
+     "text": "."
+    }
+   ]
+  },
+  "docs-release-decision-table/conditions-the-figures-were-taken-under-01": {
+   "audio_sha256": "d9e7120bc5c12d0e132e552fc7bbef46bbf6e7ba0c23492ac8115b88f08dab4a",
+   "characters": 204,
+   "cost": 0.00020196,
+   "duration": 13.225,
+   "index": 1,
+   "key": "f3f38b642a3aedca802ec61aff5ac792e3b5813c70346db0eb6515a00b7f7eab",
+   "page": "docs/release-decision-table.md",
+   "pause_ms": 400,
+   "section": "conditions-the-figures-were-taken-under",
+   "sent_text": "The creation receipts share one development network genesis and one set of protocol parameters, and the batch receipt carries the preprod parameters it evaluated under. The hashes below bind those inputs.",
+   "text": "The creation receipts share one development network genesis and one set of protocol parameters, and the batch receipt carries the preprod parameters it evaluated under. The hashes below bind those inputs.",
+   "words": [
+    {
+     "end": 0.325,
+     "start": 0.225,
+     "text": "The"
+    },
+    {
+     "end": 0.875,
+     "start": 0.325,
+     "text": "creation"
+    },
+    {
+     "end": 1.362,
+     "start": 0.875,
+     "text": "receipts"
+    },
+    {
+     "end": 1.688,
+     "start": 1.362,
+     "text": "share"
+    },
+    {
+     "end": 1.95,
+     "start": 1.688,
+     "text": "one"
+    },
+    {
+     "end": 2.525,
+     "start": 1.95,
+     "text": "development"
+    },
+    {
+     "end": 2.963,
+     "start": 2.525,
+     "text": "network"
+    },
+    {
+     "end": 3.638,
+     "start": 2.963,
+     "text": "genesis"
+    },
+    {
+     "end": 3.812,
+     "start": 3.638,
+     "text": "and"
+    },
+    {
+     "end": 4.113,
+     "start": 3.812,
+     "text": "one"
+    },
+    {
+     "end": 4.338,
+     "start": 4.113,
+     "text": "set"
+    },
+    {
+     "end": 4.463,
+     "start": 4.338,
+     "text": "of"
+    },
+    {
+     "end": 5.05,
+     "start": 4.463,
+     "text": "protocol"
+    },
+    {
+     "end": 5.875,
+     "start": 5.05,
+     "text": "parameters"
+    },
+    {
+     "end": 5.95,
+     "start": 5.875,
+     "text": ","
+    },
+    {
+     "end": 6.062,
+     "start": 5.95,
+     "text": "and"
+    },
+    {
+     "end": 6.15,
+     "start": 6.062,
+     "text": "the"
+    },
+    {
+     "end": 6.475,
+     "start": 6.15,
+     "text": "batch"
+    },
+    {
+     "end": 6.887,
+     "start": 6.475,
+     "text": "receipt"
+    },
+    {
+     "end": 7.325,
+     "start": 6.887,
+     "text": "carries"
+    },
+    {
+     "end": 7.425,
+     "start": 7.325,
+     "text": "the"
+    },
+    {
+     "end": 7.9,
+     "start": 7.425,
+     "text": "preprod"
+    },
+    {
+     "end": 8.55,
+     "start": 7.9,
+     "text": "parameters"
+    },
+    {
+     "end": 8.675,
+     "start": 8.55,
+     "text": "it"
+    },
+    {
+     "end": 9.375,
+     "start": 8.675,
+     "text": "evaluated"
+    },
+    {
+     "end": 10.425,
+     "start": 9.375,
+     "text": "under"
+    },
+    {
+     "end": 10.7,
+     "start": 10.425,
+     "text": "."
+    },
+    {
+     "end": 10.95,
+     "start": 10.875,
+     "text": "The"
+    },
+    {
+     "end": 11.35,
+     "start": 10.95,
+     "text": "hashes"
+    },
+    {
+     "end": 11.65,
+     "start": 11.35,
+     "text": "below"
+    },
+    {
+     "end": 11.887,
+     "start": 11.65,
+     "text": "bind"
+    },
+    {
+     "end": 12.1,
+     "start": 11.887,
+     "text": "those"
+    },
+    {
+     "end": 13.025,
+     "start": 12.1,
+     "text": "inputs"
+    },
+    {
+     "end": 13.225,
+     "start": 13.025,
+     "text": "."
+    }
+   ]
+  },
+  "docs-release-decision-table/reading-the-decision-table-00": {
+   "audio_sha256": "b3c72ed8a6113f33d3eb93ccefcd467788f7badc4e0f8cdab65461b69ead984a",
+   "characters": 27,
+   "cost": 2.673e-05,
+   "duration": 2.05,
+   "index": 0,
+   "key": "ad4c0b914a169f1bd964e4ad589e40306afdd90a5680916a3e4b2d6b8fa5fac4",
+   "page": "docs/release-decision-table.md",
+   "pause_ms": 500,
+   "section": "reading-the-decision-table",
+   "sent_text": "Reading the decision table.",
+   "text": "Reading the decision table.",
+   "words": [
+    {
+     "end": 0.488,
+     "start": 0.2,
+     "text": "Reading"
+    },
+    {
+     "end": 0.562,
+     "start": 0.488,
+     "text": "the"
+    },
+    {
+     "end": 1.0,
+     "start": 0.562,
+     "text": "decision"
+    },
+    {
+     "end": 1.85,
+     "start": 1.0,
+     "text": "table"
+    },
+    {
+     "end": 2.05,
+     "start": 1.85,
+     "text": "."
+    }
+   ]
+  },
+  "docs-release-decision-table/reading-the-decision-table-01": {
+   "audio_sha256": "8968a26d19790eeee0fd2a86ac211cdb2413ba5ab8d7b3599cb8fefa7acf9ee6",
+   "characters": 316,
+   "cost": 0.00031284,
+   "duration": 20.125,
+   "index": 1,
+   "key": "055a19748ebcc83a983fdaa7dfded7a3eecaaabe0eedf961f8e9be756a6ea355",
+   "page": "docs/release-decision-table.md",
+   "pause_ms": 400,
+   "section": "reading-the-decision-table",
+   "sent_text": "Each row is one measurement. The gain lists the figures that are lower than the alternative the row is compared with, and the regression lists those that are higher. Every compared figure is a cost, so lower is better. A figure that is equal is in neither list, and none measured means no compared figure was higher.",
+   "text": "Each row is one measurement. The gain lists the figures that are lower than the alternative the row is compared with, and the regression lists those that are higher. Every compared figure is a cost, so lower is better. A figure that is equal is in neither list, and none measured means no compared figure was higher.",
+   "words": [
+    {
+     "end": 0.375,
+     "start": 0.175,
+     "text": "Each"
+    },
+    {
+     "end": 0.6,
+     "start": 0.375,
+     "text": "row"
+    },
+    {
+     "end": 0.75,
+     "start": 0.6,
+     "text": "is"
+    },
+    {
+     "end": 0.962,
+     "start": 0.75,
+     "text": "one"
+    },
+    {
+     "end": 1.85,
+     "start": 0.962,
+     "text": "measurement"
+    },
+    {
+     "end": 2.05,
+     "start": 1.85,
+     "text": "."
+    },
+    {
+     "end": 2.362,
+     "start": 2.25,
+     "text": "The"
+    },
+    {
+     "end": 2.75,
+     "start": 2.362,
+     "text": "gain"
+    },
+    {
+     "end": 3.075,
+     "start": 2.75,
+     "text": "lists"
+    },
+    {
+     "end": 3.213,
+     "start": 3.075,
+     "text": "the"
+    },
+    {
+     "end": 3.7,
+     "start": 3.213,
+     "text": "figures"
+    },
+    {
+     "end": 3.85,
+     "start": 3.7,
+     "text": "that"
+    },
+    {
+     "end": 4.012,
+     "start": 3.85,
+     "text": "are"
+    },
+    {
+     "end": 4.45,
+     "start": 4.012,
+     "text": "lower"
+    },
+    {
+     "end": 4.562,
+     "start": 4.45,
+     "text": "than"
+    },
+    {
+     "end": 4.713,
+     "start": 4.562,
+     "text": "the"
+    },
+    {
+     "end": 5.375,
+     "start": 4.713,
+     "text": "alternative"
+    },
+    {
+     "end": 5.512,
+     "start": 5.375,
+     "text": "the"
+    },
+    {
+     "end": 5.887,
+     "start": 5.512,
+     "text": "row"
+    },
+    {
+     "end": 6.05,
+     "start": 5.887,
+     "text": "is"
+    },
+    {
+     "end": 6.525,
+     "start": 6.05,
+     "text": "compared"
+    },
+    {
+     "end": 7.3,
+     "start": 6.525,
+     "text": "with"
+    },
+    {
+     "end": 7.55,
+     "start": 7.3,
+     "text": ","
+    },
+    {
+     "end": 7.812,
+     "start": 7.725,
+     "text": "and"
+    },
+    {
+     "end": 7.887,
+     "start": 7.812,
+     "text": "the"
+    },
+    {
+     "end": 8.375,
+     "start": 7.887,
+     "text": "regression"
+    },
+    {
+     "end": 8.6,
+     "start": 8.375,
+     "text": "lists"
+    },
+    {
+     "end": 8.837,
+     "start": 8.6,
+     "text": "those"
+    },
+    {
+     "end": 8.962,
+     "start": 8.837,
+     "text": "that"
+    },
+    {
+     "end": 9.075,
+     "start": 8.962,
+     "text": "are"
+    },
+    {
+     "end": 9.875,
+     "start": 9.075,
+     "text": "higher"
+    },
+    {
+     "end": 10.075,
+     "start": 9.875,
+     "text": "."
+    },
+    {
+     "end": 10.55,
+     "start": 10.275,
+     "text": "Every"
+    },
+    {
+     "end": 10.975,
+     "start": 10.55,
+     "text": "compared"
+    },
+    {
+     "end": 11.325,
+     "start": 10.975,
+     "text": "figure"
+    },
+    {
+     "end": 11.438,
+     "start": 11.325,
+     "text": "is"
+    },
+    {
+     "end": 11.5,
+     "start": 11.438,
+     "text": "a"
+    },
+    {
+     "end": 11.95,
+     "start": 11.5,
+     "text": "cost"
+    },
+    {
+     "end": 12.025,
+     "start": 11.95,
+     "text": ","
+    },
+    {
+     "end": 12.238,
+     "start": 12.025,
+     "text": "so"
+    },
+    {
+     "end": 12.575,
+     "start": 12.238,
+     "text": "lower"
+    },
+    {
+     "end": 12.725,
+     "start": 12.575,
+     "text": "is"
+    },
+    {
+     "end": 13.55,
+     "start": 12.725,
+     "text": "better"
+    },
+    {
+     "end": 13.775,
+     "start": 13.55,
+     "text": "."
+    },
+    {
+     "end": 14.062,
+     "start": 13.975,
+     "text": "A"
+    },
+    {
+     "end": 14.45,
+     "start": 14.062,
+     "text": "figure"
+    },
+    {
+     "end": 14.6,
+     "start": 14.45,
+     "text": "that"
+    },
+    {
+     "end": 14.762,
+     "start": 14.6,
+     "text": "is"
+    },
+    {
+     "end": 15.262,
+     "start": 14.762,
+     "text": "equal"
+    },
+    {
+     "end": 15.45,
+     "start": 15.262,
+     "text": "is"
+    },
+    {
+     "end": 15.6,
+     "start": 15.45,
+     "text": "in"
+    },
+    {
+     "end": 15.925,
+     "start": 15.6,
+     "text": "neither"
+    },
+    {
+     "end": 16.35,
+     "start": 15.925,
+     "text": "list"
+    },
+    {
+     "end": 16.425,
+     "start": 16.35,
+     "text": ","
+    },
+    {
+     "end": 16.562,
+     "start": 16.425,
+     "text": "and"
+    },
+    {
+     "end": 16.8,
+     "start": 16.562,
+     "text": "none"
+    },
+    {
+     "end": 17.275,
+     "start": 16.8,
+     "text": "measured"
+    },
+    {
+     "end": 17.625,
+     "start": 17.275,
+     "text": "means"
+    },
+    {
+     "end": 17.875,
+     "start": 17.625,
+     "text": "no"
+    },
+    {
+     "end": 18.35,
+     "start": 17.875,
+     "text": "compared"
+    },
+    {
+     "end": 18.725,
+     "start": 18.35,
+     "text": "figure"
+    },
+    {
+     "end": 18.9,
+     "start": 18.725,
+     "text": "was"
+    },
+    {
+     "end": 19.9,
+     "start": 18.9,
+     "text": "higher"
+    },
+    {
+     "end": 20.125,
+     "start": 19.9,
+     "text": "."
+    }
+   ]
+  },
+  "docs-release-decision-table/reading-the-decision-table-02": {
+   "audio_sha256": "b82fc5f1878a8cfb745b9bbd4cc0c3e927a5869d9fba2ff3c1e213d023be4c69",
+   "characters": 302,
+   "cost": 0.00029897999999999996,
+   "duration": 28.65,
+   "index": 2,
+   "key": "2104a88895358caeb39aee561057ef84f7ea69745cf1ed8b8b510bab63d697a2",
+   "page": "docs/release-decision-table.md",
+   "pause_ms": 400,
+   "section": "reading-the-decision-table",
+   "sent_text": "The batch rows rest on preprod protocol parameters recorded on Sun, 04 Oct 2026 18:06:12 GMT, taken from the kept batch receipt. The creation rows rest on the development network's protocol parameters, read from its chain at the times the kept chain records note: 2026-10-29T04:25:37Z for both designs.",
+   "text": "The batch rows rest on preprod protocol parameters recorded on Sun, 04 Oct 2026 18:06:12 GMT, taken from the kept batch receipt. The creation rows rest on the development network's protocol parameters, read from its chain at the times the kept chain records note: 2026-10-29T04:25:37Z for both designs.",
+   "words": [
+    {
+     "end": 0.3,
+     "start": 0.225,
+     "text": "The"
+    },
+    {
+     "end": 0.663,
+     "start": 0.3,
+     "text": "batch"
+    },
+    {
+     "end": 1.013,
+     "start": 0.663,
+     "text": "rows"
+    },
+    {
+     "end": 1.4,
+     "start": 1.013,
+     "text": "rest"
+    },
+    {
+     "end": 1.575,
+     "start": 1.4,
+     "text": "on"
+    },
+    {
+     "end": 2.025,
+     "start": 1.575,
+     "text": "preprod"
+    },
+    {
+     "end": 2.6,
+     "start": 2.025,
+     "text": "protocol"
+    },
+    {
+     "end": 3.25,
+     "start": 2.6,
+     "text": "parameters"
+    },
+    {
+     "end": 3.75,
+     "start": 3.25,
+     "text": "recorded"
+    },
+    {
+     "end": 3.963,
+     "start": 3.75,
+     "text": "on"
+    },
+    {
+     "end": 4.4,
+     "start": 3.963,
+     "text": "Sun"
+    },
+    {
+     "end": 4.512,
+     "start": 4.4,
+     "text": ","
+    },
+    {
+     "end": 4.863,
+     "start": 4.512,
+     "text": "04"
+    },
+    {
+     "end": 5.188,
+     "start": 4.863,
+     "text": "Oct"
+    },
+    {
+     "end": 6.125,
+     "start": 5.188,
+     "text": "2026"
+    },
+    {
+     "end": 8.288,
+     "start": 6.125,
+     "text": "18:06:12"
+    },
+    {
+     "end": 9.125,
+     "start": 8.288,
+     "text": "GMT"
+    },
+    {
+     "end": 9.238,
+     "start": 9.125,
+     "text": ","
+    },
+    {
+     "end": 9.625,
+     "start": 9.238,
+     "text": "taken"
+    },
+    {
+     "end": 9.788,
+     "start": 9.625,
+     "text": "from"
+    },
+    {
+     "end": 9.875,
+     "start": 9.788,
+     "text": "the"
+    },
+    {
+     "end": 10.175,
+     "start": 9.875,
+     "text": "kept"
+    },
+    {
+     "end": 10.525,
+     "start": 10.175,
+     "text": "batch"
+    },
+    {
+     "end": 11.675,
+     "start": 10.525,
+     "text": "receipt"
+    },
+    {
+     "end": 11.95,
+     "start": 11.675,
+     "text": "."
+    },
+    {
+     "end": 12.2,
+     "start": 12.125,
+     "text": "The"
+    },
+    {
+     "end": 12.75,
+     "start": 12.2,
+     "text": "creation"
+    },
+    {
+     "end": 13.062,
+     "start": 12.75,
+     "text": "rows"
+    },
+    {
+     "end": 13.525,
+     "start": 13.062,
+     "text": "rest"
+    },
+    {
+     "end": 13.663,
+     "start": 13.525,
+     "text": "on"
+    },
+    {
+     "end": 13.75,
+     "start": 13.663,
+     "text": "the"
+    },
+    {
+     "end": 14.325,
+     "start": 13.75,
+     "text": "development"
+    },
+    {
+     "end": 14.788,
+     "start": 14.325,
+     "text": "network's"
+    },
+    {
+     "end": 15.325,
+     "start": 14.788,
+     "text": "protocol"
+    },
+    {
+     "end": 16.55,
+     "start": 15.325,
+     "text": "parameters"
+    },
+    {
+     "end": 16.75,
+     "start": 16.55,
+     "text": ","
+    },
+    {
+     "end": 17.175,
+     "start": 16.95,
+     "text": "read"
+    },
+    {
+     "end": 17.312,
+     "start": 17.175,
+     "text": "from"
+    },
+    {
+     "end": 17.425,
+     "start": 17.312,
+     "text": "its"
+    },
+    {
+     "end": 17.663,
+     "start": 17.425,
+     "text": "chain"
+    },
+    {
+     "end": 17.737,
+     "start": 17.663,
+     "text": "at"
+    },
+    {
+     "end": 17.825,
+     "start": 17.737,
+     "text": "the"
+    },
+    {
+     "end": 18.3,
+     "start": 17.825,
+     "text": "times"
+    },
+    {
+     "end": 18.4,
+     "start": 18.3,
+     "text": "the"
+    },
+    {
+     "end": 18.688,
+     "start": 18.4,
+     "text": "kept"
+    },
+    {
+     "end": 18.975,
+     "start": 18.688,
+     "text": "chain"
+    },
+    {
+     "end": 19.425,
+     "start": 18.975,
+     "text": "records"
+    },
+    {
+     "end": 20.225,
+     "start": 19.425,
+     "text": "note"
+    },
+    {
+     "end": 20.425,
+     "start": 20.225,
+     "text": ":"
+    },
+    {
+     "end": 26.7,
+     "start": 20.625,
+     "text": "2026-10-29T04:25:37Z"
+    },
+    {
+     "end": 26.85,
+     "start": 26.7,
+     "text": "for"
+    },
+    {
+     "end": 27.125,
+     "start": 26.85,
+     "text": "both"
+    },
+    {
+     "end": 28.425,
+     "start": 27.125,
+     "text": "designs"
+    },
+    {
+     "end": 28.65,
+     "start": 28.425,
+     "text": "."
+    }
+   ]
+  },
+  "docs-release-decision-table/regenerate-this-page-00": {
+   "audio_sha256": "8d7eccba1db671ac96bde3eba670a5c2070c7ebc30f14de5cbd2c76340cf9abe",
+   "characters": 21,
+   "cost": 2.0789999999999996e-05,
+   "duration": 1.85,
+   "index": 0,
+   "key": "9b6f159167ef3e5bf7ebb5cd3c81ad5ae29cd0fd6d5e6d30174ba378a3f99561",
+   "page": "docs/release-decision-table.md",
+   "pause_ms": 500,
+   "section": "regenerate-this-page",
+   "sent_text": "Regenerate this page.",
+   "text": "Regenerate this page.",
+   "words": [
+    {
+     "end": 0.712,
+     "start": 0.2,
+     "text": "Regenerate"
+    },
+    {
+     "end": 0.9,
+     "start": 0.712,
+     "text": "this"
+    },
+    {
+     "end": 1.65,
+     "start": 0.9,
+     "text": "page"
+    },
+    {
+     "end": 1.85,
+     "start": 1.65,
+     "text": "."
+    }
+   ]
+  },
+  "docs-release-decision-table/regenerate-this-page-01": {
+   "audio_sha256": "b594588b7a067b2e19477eaf349d85cde87cc96d79aadf7372e235b0d5260a6f",
+   "characters": 187,
+   "cost": 0.00018512999999999998,
+   "duration": 14.9,
+   "index": 1,
+   "key": "5a4b042d245cf57ff20e6696fd238aede0127ae23981e36a34ba587cebdfc8ab",
+   "page": "docs/release-decision-table.md",
+   "pause_ms": 400,
+   "section": "regenerate-this-page",
+   "sent_text": "Run python3 tools/decision_table.py --write to regenerate the page, then regenerate its speech and changed narration. The documentation check runs python3 tools/decision_table.py --check.",
+   "text": "Run python3 tools/decision_table.py --write to regenerate the page, then regenerate its speech and changed narration. The documentation check runs python3 tools/decision_table.py --check.",
+   "words": [
+    {
+     "end": 0.512,
+     "start": 0.25,
+     "text": "Run"
+    },
+    {
+     "end": 1.388,
+     "start": 0.512,
+     "text": "python3"
+    },
+    {
+     "end": 3.763,
+     "start": 1.388,
+     "text": "tools/decision_table.py"
+    },
+    {
+     "end": 4.05,
+     "start": 3.763,
+     "text": "--write"
+    },
+    {
+     "end": 4.175,
+     "start": 4.05,
+     "text": "to"
+    },
+    {
+     "end": 4.787,
+     "start": 4.175,
+     "text": "regenerate"
+    },
+    {
+     "end": 4.887,
+     "start": 4.787,
+     "text": "the"
+    },
+    {
+     "end": 5.375,
+     "start": 4.887,
+     "text": "page"
+    },
+    {
+     "end": 5.45,
+     "start": 5.375,
+     "text": ","
+    },
+    {
+     "end": 5.688,
+     "start": 5.45,
+     "text": "then"
+    },
+    {
+     "end": 6.338,
+     "start": 5.688,
+     "text": "regenerate"
+    },
+    {
+     "end": 6.5,
+     "start": 6.338,
+     "text": "its"
+    },
+    {
+     "end": 6.925,
+     "start": 6.5,
+     "text": "speech"
+    },
+    {
+     "end": 7.062,
+     "start": 6.925,
+     "text": "and"
+    },
+    {
+     "end": 7.525,
+     "start": 7.062,
+     "text": "changed"
+    },
+    {
+     "end": 8.8,
+     "start": 7.525,
+     "text": "narration"
+    },
+    {
+     "end": 9.0,
+     "start": 8.8,
+     "text": "."
+    },
+    {
+     "end": 9.25,
+     "start": 9.175,
+     "text": "The"
+    },
+    {
+     "end": 10.087,
+     "start": 9.25,
+     "text": "documentation"
+    },
+    {
+     "end": 10.4,
+     "start": 10.087,
+     "text": "check"
+    },
+    {
+     "end": 10.712,
+     "start": 10.4,
+     "text": "runs"
+    },
+    {
+     "end": 11.488,
+     "start": 10.712,
+     "text": "python3"
+    },
+    {
+     "end": 13.825,
+     "start": 11.488,
+     "text": "tools/decision_table.py"
+    },
+    {
+     "end": 14.675,
+     "start": 13.825,
+     "text": "--check"
+    },
+    {
+     "end": 14.9,
+     "start": 14.675,
+     "text": "."
+    }
+   ]
+  },
+  "docs-release-decision-table/release-decision-table-00": {
+   "audio_sha256": "cda49cfb0b3615f2cb16ab753c87f8f7a8227890f82b873ef5c2c3f5d15964ab",
+   "characters": 23,
+   "cost": 2.277e-05,
+   "duration": 2.025,
+   "index": 0,
+   "key": "b8d2ed3864ac3bdd5479b2a5d9fd0e286e40236540ec75ca3c87d5d3004eba0d",
+   "page": "docs/release-decision-table.md",
+   "pause_ms": 500,
+   "section": "release-decision-table",
+   "sent_text": "Release decision table.",
+   "text": "Release decision table.",
+   "words": [
+    {
+     "end": 0.512,
+     "start": 0.2,
+     "text": "Release"
+    },
+    {
+     "end": 0.95,
+     "start": 0.512,
+     "text": "decision"
+    },
+    {
+     "end": 1.825,
+     "start": 0.95,
+     "text": "table"
+    },
+    {
+     "end": 2.025,
+     "start": 1.825,
+     "text": "."
+    }
+   ]
+  },
+  "docs-release-decision-table/release-decision-table-01": {
+   "audio_sha256": "d033845bd015a789449a387d321591cb07d866072195ab39fd9e71963cf15f6c",
+   "characters": 338,
+   "cost": 0.00033462,
+   "duration": 20.7,
+   "index": 1,
+   "key": "8e5ded7979a8c2a12e5ac9457c8c4f2255698a61280b69269f68cc8785338d16",
+   "page": "docs/release-decision-table.md",
+   "pause_ms": 400,
+   "section": "release-decision-table",
+   "sent_text": "As a reader deciding whether this release's measurements support your use, you find on this page the measurements this line delivered of what creating a registry costs and of the largest batch of requests one fold carries. Each row gives the conditions it was taken under, what it improved, what it made worse and what it did not measure.",
+   "text": "As a reader deciding whether this release's measurements support your use, you find on this page the measurements this line delivered of what creating a registry costs and of the largest batch of requests one fold carries. Each row gives the conditions it was taken under, what it improved, what it made worse and what it did not measure.",
+   "words": [
+    {
+     "end": 0.4,
+     "start": 0.25,
+     "text": "As"
+    },
+    {
+     "end": 0.512,
+     "start": 0.4,
+     "text": "a"
+    },
+    {
+     "end": 0.85,
+     "start": 0.512,
+     "text": "reader"
+    },
+    {
+     "end": 1.425,
+     "start": 0.85,
+     "text": "deciding"
+    },
+    {
+     "end": 1.75,
+     "start": 1.425,
+     "text": "whether"
+    },
+    {
+     "end": 1.975,
+     "start": 1.75,
+     "text": "this"
+    },
+    {
+     "end": 2.562,
+     "start": 1.975,
+     "text": "release's"
+    },
+    {
+     "end": 3.125,
+     "start": 2.562,
+     "text": "measurements"
+    },
+    {
+     "end": 3.55,
+     "start": 3.125,
+     "text": "support"
+    },
+    {
+     "end": 3.737,
+     "start": 3.55,
+     "text": "your"
+    },
+    {
+     "end": 4.15,
+     "start": 3.737,
+     "text": "use"
+    },
+    {
+     "end": 4.225,
+     "start": 4.15,
+     "text": ","
+    },
+    {
+     "end": 4.387,
+     "start": 4.225,
+     "text": "you"
+    },
+    {
+     "end": 4.688,
+     "start": 4.387,
+     "text": "find"
+    },
+    {
+     "end": 4.812,
+     "start": 4.688,
+     "text": "on"
+    },
+    {
+     "end": 4.988,
+     "start": 4.812,
+     "text": "this"
+    },
+    {
+     "end": 5.375,
+     "start": 4.988,
+     "text": "page"
+    },
+    {
+     "end": 5.5,
+     "start": 5.375,
+     "text": "the"
+    },
+    {
+     "end": 6.075,
+     "start": 5.5,
+     "text": "measurements"
+    },
+    {
+     "end": 6.338,
+     "start": 6.075,
+     "text": "this"
+    },
+    {
+     "end": 6.725,
+     "start": 6.338,
+     "text": "line"
+    },
+    {
+     "end": 7.25,
+     "start": 6.725,
+     "text": "delivered"
+    },
+    {
+     "end": 7.4,
+     "start": 7.25,
+     "text": "of"
+    },
+    {
+     "end": 7.613,
+     "start": 7.4,
+     "text": "what"
+    },
+    {
+     "end": 8.075,
+     "start": 7.613,
+     "text": "creating"
+    },
+    {
+     "end": 8.175,
+     "start": 8.075,
+     "text": "a"
+    },
+    {
+     "end": 8.663,
+     "start": 8.175,
+     "text": "registry"
+    },
+    {
+     "end": 9.325,
+     "start": 8.663,
+     "text": "costs"
+    },
+    {
+     "end": 9.5,
+     "start": 9.325,
+     "text": "and"
+    },
+    {
+     "end": 9.625,
+     "start": 9.5,
+     "text": "of"
+    },
+    {
+     "end": 9.762,
+     "start": 9.625,
+     "text": "the"
+    },
+    {
+     "end": 10.238,
+     "start": 9.762,
+     "text": "largest"
+    },
+    {
+     "end": 10.575,
+     "start": 10.238,
+     "text": "batch"
+    },
+    {
+     "end": 10.7,
+     "start": 10.575,
+     "text": "of"
+    },
+    {
+     "end": 11.238,
+     "start": 10.7,
+     "text": "requests"
+    },
+    {
+     "end": 11.575,
+     "start": 11.238,
+     "text": "one"
+    },
+    {
+     "end": 11.988,
+     "start": 11.575,
+     "text": "fold"
+    },
+    {
+     "end": 13.25,
+     "start": 11.988,
+     "text": "carries"
+    },
+    {
+     "end": 13.475,
+     "start": 13.25,
+     "text": "."
+    },
+    {
+     "end": 13.988,
+     "start": 13.7,
+     "text": "Each"
+    },
+    {
+     "end": 14.312,
+     "start": 13.988,
+     "text": "row"
+    },
+    {
+     "end": 14.6,
+     "start": 14.312,
+     "text": "gives"
+    },
+    {
+     "end": 14.7,
+     "start": 14.6,
+     "text": "the"
+    },
+    {
+     "end": 15.375,
+     "start": 14.7,
+     "text": "conditions"
+    },
+    {
+     "end": 15.462,
+     "start": 15.375,
+     "text": "it"
+    },
+    {
+     "end": 15.625,
+     "start": 15.462,
+     "text": "was"
+    },
+    {
+     "end": 16.0,
+     "start": 15.625,
+     "text": "taken"
+    },
+    {
+     "end": 16.375,
+     "start": 16.0,
+     "text": "under"
+    },
+    {
+     "end": 16.45,
+     "start": 16.375,
+     "text": ","
+    },
+    {
+     "end": 16.625,
+     "start": 16.45,
+     "text": "what"
+    },
+    {
+     "end": 16.75,
+     "start": 16.625,
+     "text": "it"
+    },
+    {
+     "end": 17.575,
+     "start": 16.75,
+     "text": "improved"
+    },
+    {
+     "end": 17.675,
+     "start": 17.575,
+     "text": ","
+    },
+    {
+     "end": 17.812,
+     "start": 17.675,
+     "text": "what"
+    },
+    {
+     "end": 17.9,
+     "start": 17.812,
+     "text": "it"
+    },
+    {
+     "end": 18.138,
+     "start": 17.9,
+     "text": "made"
+    },
+    {
+     "end": 18.587,
+     "start": 18.138,
+     "text": "worse"
+    },
+    {
+     "end": 18.725,
+     "start": 18.587,
+     "text": "and"
+    },
+    {
+     "end": 18.862,
+     "start": 18.725,
+     "text": "what"
+    },
+    {
+     "end": 18.95,
+     "start": 18.862,
+     "text": "it"
+    },
+    {
+     "end": 19.15,
+     "start": 18.95,
+     "text": "did"
+    },
+    {
+     "end": 19.4,
+     "start": 19.15,
+     "text": "not"
+    },
+    {
+     "end": 20.475,
+     "start": 19.4,
+     "text": "measure"
+    },
+    {
+     "end": 20.7,
+     "start": 20.475,
+     "text": "."
+    }
+   ]
+  },
+  "docs-release-decision-table/release-decision-table-02": {
+   "audio_sha256": "106ed29e46705bcabf66dceec77aa7a8109b4f084119fea489ee6e1b47d134cf",
+   "characters": 270,
+   "cost": 0.0002673,
+   "duration": 17.6,
+   "index": 2,
+   "key": "1d56e940770ac54d11dd175eb18fd9aaea35fd7617077a8a0a84bb3ca1be1eee",
+   "page": "docs/release-decision-table.md",
+   "pause_ms": 400,
+   "section": "release-decision-table",
+   "sent_text": "Every figure on the page is read or computed from the kept receipts below. The documentation check regenerates the page from the receipts and their chain records, and refuses a page that differs, a receipt or chain record that is missing and a row that names no receipt.",
+   "text": "Every figure on the page is read or computed from the kept receipts below. The documentation check regenerates the page from the receipts and their chain records, and refuses a page that differs, a receipt or chain record that is missing and a row that names no receipt.",
+   "words": [
+    {
+     "end": 0.488,
+     "start": 0.2,
+     "text": "Every"
+    },
+    {
+     "end": 0.788,
+     "start": 0.488,
+     "text": "figure"
+    },
+    {
+     "end": 0.887,
+     "start": 0.788,
+     "text": "on"
+    },
+    {
+     "end": 0.975,
+     "start": 0.887,
+     "text": "the"
+    },
+    {
+     "end": 1.462,
+     "start": 0.975,
+     "text": "page"
+    },
+    {
+     "end": 1.675,
+     "start": 1.462,
+     "text": "is"
+    },
+    {
+     "end": 2.088,
+     "start": 1.675,
+     "text": "read"
+    },
+    {
+     "end": 2.25,
+     "start": 2.088,
+     "text": "or"
+    },
+    {
+     "end": 2.825,
+     "start": 2.25,
+     "text": "computed"
+    },
+    {
+     "end": 2.963,
+     "start": 2.825,
+     "text": "from"
+    },
+    {
+     "end": 3.05,
+     "start": 2.963,
+     "text": "the"
+    },
+    {
+     "end": 3.35,
+     "start": 3.05,
+     "text": "kept"
+    },
+    {
+     "end": 3.8,
+     "start": 3.35,
+     "text": "receipts"
+    },
+    {
+     "end": 4.8,
+     "start": 3.8,
+     "text": "below"
+    },
+    {
+     "end": 5.025,
+     "start": 4.8,
+     "text": "."
+    },
+    {
+     "end": 5.275,
+     "start": 5.2,
+     "text": "The"
+    },
+    {
+     "end": 6.213,
+     "start": 5.275,
+     "text": "documentation"
+    },
+    {
+     "end": 6.588,
+     "start": 6.213,
+     "text": "check"
+    },
+    {
+     "end": 7.275,
+     "start": 6.588,
+     "text": "regenerates"
+    },
+    {
+     "end": 7.375,
+     "start": 7.275,
+     "text": "the"
+    },
+    {
+     "end": 7.8,
+     "start": 7.375,
+     "text": "page"
+    },
+    {
+     "end": 7.938,
+     "start": 7.8,
+     "text": "from"
+    },
+    {
+     "end": 8.025,
+     "start": 7.938,
+     "text": "the"
+    },
+    {
+     "end": 8.55,
+     "start": 8.025,
+     "text": "receipts"
+    },
+    {
+     "end": 8.663,
+     "start": 8.55,
+     "text": "and"
+    },
+    {
+     "end": 8.837,
+     "start": 8.663,
+     "text": "their"
+    },
+    {
+     "end": 9.125,
+     "start": 8.837,
+     "text": "chain"
+    },
+    {
+     "end": 10.15,
+     "start": 9.125,
+     "text": "records"
+    },
+    {
+     "end": 10.35,
+     "start": 10.15,
+     "text": ","
+    },
+    {
+     "end": 10.613,
+     "start": 10.525,
+     "text": "and"
+    },
+    {
+     "end": 11.062,
+     "start": 10.613,
+     "text": "refuses"
+    },
+    {
+     "end": 11.125,
+     "start": 11.062,
+     "text": "a"
+    },
+    {
+     "end": 11.413,
+     "start": 11.125,
+     "text": "page"
+    },
+    {
+     "end": 11.55,
+     "start": 11.413,
+     "text": "that"
+    },
+    {
+     "end": 12.425,
+     "start": 11.55,
+     "text": "differs"
+    },
+    {
+     "end": 12.625,
+     "start": 12.425,
+     "text": ","
+    },
+    {
+     "end": 12.9,
+     "start": 12.825,
+     "text": "a"
+    },
+    {
+     "end": 13.375,
+     "start": 12.9,
+     "text": "receipt"
+    },
+    {
+     "end": 13.538,
+     "start": 13.375,
+     "text": "or"
+    },
+    {
+     "end": 13.85,
+     "start": 13.538,
+     "text": "chain"
+    },
+    {
+     "end": 14.25,
+     "start": 13.85,
+     "text": "record"
+    },
+    {
+     "end": 14.4,
+     "start": 14.25,
+     "text": "that"
+    },
+    {
+     "end": 14.562,
+     "start": 14.4,
+     "text": "is"
+    },
+    {
+     "end": 15.188,
+     "start": 14.562,
+     "text": "missing"
+    },
+    {
+     "end": 15.312,
+     "start": 15.188,
+     "text": "and"
+    },
+    {
+     "end": 15.413,
+     "start": 15.312,
+     "text": "a"
+    },
+    {
+     "end": 15.75,
+     "start": 15.413,
+     "text": "row"
+    },
+    {
+     "end": 15.9,
+     "start": 15.75,
+     "text": "that"
+    },
+    {
+     "end": 16.175,
+     "start": 15.9,
+     "text": "names"
+    },
+    {
+     "end": 16.4,
+     "start": 16.175,
+     "text": "no"
+    },
+    {
+     "end": 17.4,
+     "start": 16.4,
+     "text": "receipt"
+    },
+    {
+     "end": 17.6,
+     "start": 17.4,
+     "text": "."
+    }
+   ]
+  },
+  "docs-release-decision-table/the-decision-table-00": {
+   "audio_sha256": "4b2ec7844797fc28bd513c0b9bdf45b5120c62ee8eb99af2d2c77ff941fac157",
+   "characters": 19,
+   "cost": 1.8809999999999998e-05,
+   "duration": 1.725,
+   "index": 0,
+   "key": "f854b1c4524afe8d52ae5a7fbbeff7e582bc404943d0fe22b7b6ca3251402e67",
+   "page": "docs/release-decision-table.md",
+   "pause_ms": 500,
+   "section": "the-decision-table",
+   "sent_text": "The decision table.",
+   "text": "The decision table.",
+   "words": [
+    {
+     "end": 0.237,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.675,
+     "start": 0.237,
+     "text": "decision"
+    },
+    {
+     "end": 1.525,
+     "start": 0.675,
+     "text": "table"
+    },
+    {
+     "end": 1.725,
+     "start": 1.525,
+     "text": "."
+    }
+   ]
+  },
+  "docs-release-decision-table/the-decision-table-01": {
+   "audio_sha256": "a916096609048a3d65d2df798b90b1f8e7ac0a94c64bf4b5b46a004f70d0a674",
+   "characters": 202,
+   "cost": 0.00019998,
+   "duration": 13.225,
+   "index": 1,
+   "key": "6de4bffa0860527c06f3a97695320bcf7f7d3de85b06586e374b78b7a256a91a",
+   "page": "docs/release-decision-table.md",
+   "pause_ms": 400,
+   "section": "the-decision-table",
+   "sent_text": "The first two rows compare creating a registry under the previous design with the application-held design. The last three rows give the largest batch a fold carries, compared with a fold of one request.",
+   "text": "The first two rows compare creating a registry under the previous design with the application-held design. The last three rows give the largest batch a fold carries, compared with a fold of one request.",
+   "words": [
+    {
+     "end": 0.312,
+     "start": 0.2,
+     "text": "The"
+    },
+    {
+     "end": 0.637,
+     "start": 0.312,
+     "text": "first"
+    },
+    {
+     "end": 0.913,
+     "start": 0.637,
+     "text": "two"
+    },
+    {
+     "end": 1.3,
+     "start": 0.913,
+     "text": "rows"
+    },
+    {
+     "end": 1.737,
+     "start": 1.3,
+     "text": "compare"
+    },
+    {
+     "end": 2.175,
+     "start": 1.737,
+     "text": "creating"
+    },
+    {
+     "end": 2.275,
+     "start": 2.175,
+     "text": "a"
+    },
+    {
+     "end": 2.9,
+     "start": 2.275,
+     "text": "registry"
+    },
+    {
+     "end": 3.138,
+     "start": 2.9,
+     "text": "under"
+    },
+    {
+     "end": 3.237,
+     "start": 3.138,
+     "text": "the"
+    },
+    {
+     "end": 3.725,
+     "start": 3.237,
+     "text": "previous"
+    },
+    {
+     "end": 4.325,
+     "start": 3.725,
+     "text": "design"
+    },
+    {
+     "end": 4.463,
+     "start": 4.325,
+     "text": "with"
+    },
+    {
+     "end": 4.6,
+     "start": 4.463,
+     "text": "the"
+    },
+    {
+     "end": 5.55,
+     "start": 4.6,
+     "text": "application-held"
+    },
+    {
+     "end": 6.7,
+     "start": 5.55,
+     "text": "design"
+    },
+    {
+     "end": 6.9,
+     "start": 6.7,
+     "text": "."
+    },
+    {
+     "end": 7.2,
+     "start": 7.1,
+     "text": "The"
+    },
+    {
+     "end": 7.575,
+     "start": 7.2,
+     "text": "last"
+    },
+    {
+     "end": 7.8,
+     "start": 7.575,
+     "text": "three"
+    },
+    {
+     "end": 8.2,
+     "start": 7.8,
+     "text": "rows"
+    },
+    {
+     "end": 8.387,
+     "start": 8.2,
+     "text": "give"
+    },
+    {
+     "end": 8.5,
+     "start": 8.387,
+     "text": "the"
+    },
+    {
+     "end": 8.95,
+     "start": 8.5,
+     "text": "largest"
+    },
+    {
+     "end": 9.275,
+     "start": 8.95,
+     "text": "batch"
+    },
+    {
+     "end": 9.387,
+     "start": 9.275,
+     "text": "a"
+    },
+    {
+     "end": 9.788,
+     "start": 9.387,
+     "text": "fold"
+    },
+    {
+     "end": 10.4,
+     "start": 9.788,
+     "text": "carries"
+    },
+    {
+     "end": 10.5,
+     "start": 10.4,
+     "text": ","
+    },
+    {
+     "end": 10.887,
+     "start": 10.5,
+     "text": "compared"
+    },
+    {
+     "end": 11.012,
+     "start": 10.887,
+     "text": "with"
+    },
+    {
+     "end": 11.113,
+     "start": 11.012,
+     "text": "a"
+    },
+    {
+     "end": 11.512,
+     "start": 11.113,
+     "text": "fold"
+    },
+    {
+     "end": 11.625,
+     "start": 11.512,
+     "text": "of"
+    },
+    {
+     "end": 11.85,
+     "start": 11.625,
+     "text": "one"
+    },
+    {
+     "end": 13.0,
+     "start": 11.85,
+     "text": "request"
+    },
+    {
+     "end": 13.225,
+     "start": 13.0,
+     "text": "."
+    }
+   ]
+  },
+  "docs-release-decision-table/the-decision-table-02": {
+   "audio_sha256": "d9d1b18d3affc27fe417428e493a96c1e148b2775d5029ced2ae1beffc24c250",
+   "characters": 480,
+   "cost": 0.0004752,
+   "duration": 51.725,
+   "index": 2,
+   "key": "a8c78e4e04e960c0dcf7e1d61edd888a57e4d3efd2f3f47728326df4bf88fd81",
+   "page": "docs/release-decision-table.md",
+   "pause_ms": 400,
+   "section": "the-decision-table",
+   "sent_text": "Creating a first registry takes 3 transactions under the application-held design against 5 under the previous design. What rose: registry-creating transaction bytes: 751 to 999; registry-creating transaction fee: 695626 to 1028555 lovelace. Creating a later registry takes 1 transaction under the application-held design against 4 under the previous design. What rose: registry-creating transaction bytes: 755 to 999; registry-creating transaction fee: 695371 to 1028555 lovelace.",
+   "text": "Creating a first registry takes 3 transactions under the application-held design against 5 under the previous design. What rose: registry-creating transaction bytes: 751 to 999; registry-creating transaction fee: 695626 to 1028555 lovelace. Creating a later registry takes 1 transaction under the application-held design against 4 under the previous design. What rose: registry-creating transaction bytes: 755 to 999; registry-creating transaction fee: 695371 to 1028555 lovelace.",
+   "words": [
+    {
+     "end": 0.7,
+     "start": 0.225,
+     "text": "Creating"
+    },
+    {
+     "end": 0.812,
+     "start": 0.7,
+     "text": "a"
+    },
+    {
+     "end": 1.125,
+     "start": 0.812,
+     "text": "first"
+    },
+    {
+     "end": 1.763,
+     "start": 1.125,
+     "text": "registry"
+    },
+    {
+     "end": 2.112,
+     "start": 1.763,
+     "text": "takes"
+    },
+    {
+     "end": 2.35,
+     "start": 2.112,
+     "text": "3"
+    },
+    {
+     "end": 3.25,
+     "start": 2.35,
+     "text": "transactions"
+    },
+    {
+     "end": 3.438,
+     "start": 3.25,
+     "text": "under"
+    },
+    {
+     "end": 3.562,
+     "start": 3.438,
+     "text": "the"
+    },
+    {
+     "end": 4.575,
+     "start": 3.562,
+     "text": "application-held"
+    },
+    {
+     "end": 5.125,
+     "start": 4.575,
+     "text": "design"
+    },
+    {
+     "end": 5.512,
+     "start": 5.125,
+     "text": "against"
+    },
+    {
+     "end": 5.975,
+     "start": 5.512,
+     "text": "5"
+    },
+    {
+     "end": 6.188,
+     "start": 5.975,
+     "text": "under"
+    },
+    {
+     "end": 6.275,
+     "start": 6.188,
+     "text": "the"
+    },
+    {
+     "end": 6.775,
+     "start": 6.275,
+     "text": "previous"
+    },
+    {
+     "end": 8.0,
+     "start": 6.775,
+     "text": "design"
+    },
+    {
+     "end": 8.225,
+     "start": 8.0,
+     "text": "."
+    },
+    {
+     "end": 8.625,
+     "start": 8.425,
+     "text": "What"
+    },
+    {
+     "end": 9.025,
+     "start": 8.625,
+     "text": "rose"
+    },
+    {
+     "end": 9.113,
+     "start": 9.025,
+     "text": ":"
+    },
+    {
+     "end": 10.05,
+     "start": 9.113,
+     "text": "registry-creating"
+    },
+    {
+     "end": 10.775,
+     "start": 10.05,
+     "text": "transaction"
+    },
+    {
+     "end": 11.275,
+     "start": 10.775,
+     "text": "bytes"
+    },
+    {
+     "end": 11.387,
+     "start": 11.275,
+     "text": ":"
+    },
+    {
+     "end": 12.788,
+     "start": 11.387,
+     "text": "751"
+    },
+    {
+     "end": 12.925,
+     "start": 12.788,
+     "text": "to"
+    },
+    {
+     "end": 14.95,
+     "start": 12.925,
+     "text": "999"
+    },
+    {
+     "end": 15.15,
+     "start": 14.95,
+     "text": ";"
+    },
+    {
+     "end": 16.375,
+     "start": 15.425,
+     "text": "registry-creating"
+    },
+    {
+     "end": 17.15,
+     "start": 16.375,
+     "text": "transaction"
+    },
+    {
+     "end": 17.65,
+     "start": 17.15,
+     "text": "fee"
+    },
+    {
+     "end": 17.812,
+     "start": 17.65,
+     "text": ":"
+    },
+    {
+     "end": 20.987,
+     "start": 17.812,
+     "text": "695626"
+    },
+    {
+     "end": 21.163,
+     "start": 20.987,
+     "text": "to"
+    },
+    {
+     "end": 24.413,
+     "start": 21.163,
+     "text": "1028555"
+    },
+    {
+     "end": 25.675,
+     "start": 24.413,
+     "text": "lovelace"
+    },
+    {
+     "end": 25.9,
+     "start": 25.675,
+     "text": "."
+    },
+    {
+     "end": 26.6,
+     "start": 26.125,
+     "text": "Creating"
+    },
+    {
+     "end": 26.712,
+     "start": 26.6,
+     "text": "a"
+    },
+    {
+     "end": 27.1,
+     "start": 26.712,
+     "text": "later"
+    },
+    {
+     "end": 27.763,
+     "start": 27.1,
+     "text": "registry"
+    },
+    {
+     "end": 28.087,
+     "start": 27.763,
+     "text": "takes"
+    },
+    {
+     "end": 28.35,
+     "start": 28.087,
+     "text": "1"
+    },
+    {
+     "end": 29.15,
+     "start": 28.35,
+     "text": "transaction"
+    },
+    {
+     "end": 29.337,
+     "start": 29.15,
+     "text": "under"
+    },
+    {
+     "end": 29.487,
+     "start": 29.337,
+     "text": "the"
+    },
+    {
+     "end": 30.475,
+     "start": 29.487,
+     "text": "application-held"
+    },
+    {
+     "end": 31.038,
+     "start": 30.475,
+     "text": "design"
+    },
+    {
+     "end": 31.462,
+     "start": 31.038,
+     "text": "against"
+    },
+    {
+     "end": 31.9,
+     "start": 31.462,
+     "text": "4"
+    },
+    {
+     "end": 32.112,
+     "start": 31.9,
+     "text": "under"
+    },
+    {
+     "end": 32.2,
+     "start": 32.112,
+     "text": "the"
+    },
+    {
+     "end": 32.7,
+     "start": 32.2,
+     "text": "previous"
+    },
+    {
+     "end": 33.9,
+     "start": 32.7,
+     "text": "design"
+    },
+    {
+     "end": 34.125,
+     "start": 33.9,
+     "text": "."
+    },
+    {
+     "end": 34.525,
+     "start": 34.325,
+     "text": "What"
+    },
+    {
+     "end": 34.925,
+     "start": 34.525,
+     "text": "rose"
+    },
+    {
+     "end": 35.013,
+     "start": 34.925,
+     "text": ":"
+    },
+    {
+     "end": 35.95,
+     "start": 35.013,
+     "text": "registry-creating"
+    },
+    {
+     "end": 36.675,
+     "start": 35.95,
+     "text": "transaction"
+    },
+    {
+     "end": 37.175,
+     "start": 36.675,
+     "text": "bytes"
+    },
+    {
+     "end": 37.287,
+     "start": 37.175,
+     "text": ":"
+    },
+    {
+     "end": 38.6,
+     "start": 37.287,
+     "text": "755"
+    },
+    {
+     "end": 38.725,
+     "start": 38.6,
+     "text": "to"
+    },
+    {
+     "end": 40.725,
+     "start": 38.725,
+     "text": "999"
+    },
+    {
+     "end": 40.925,
+     "start": 40.725,
+     "text": ";"
+    },
+    {
+     "end": 42.15,
+     "start": 41.2,
+     "text": "registry-creating"
+    },
+    {
+     "end": 42.925,
+     "start": 42.15,
+     "text": "transaction"
+    },
+    {
+     "end": 43.425,
+     "start": 42.925,
+     "text": "fee"
+    },
+    {
+     "end": 43.588,
+     "start": 43.425,
+     "text": ":"
+    },
+    {
+     "end": 46.838,
+     "start": 43.588,
+     "text": "695371"
+    },
+    {
+     "end": 47.013,
+     "start": 46.838,
+     "text": "to"
+    },
+    {
+     "end": 50.237,
+     "start": 47.013,
+     "text": "1028555"
+    },
+    {
+     "end": 51.5,
+     "start": 50.237,
+     "text": "lovelace"
+    },
+    {
+     "end": 51.725,
+     "start": 51.5,
+     "text": "."
+    }
+   ]
+  },
+  "docs-release-decision-table/the-decision-table-03": {
+   "audio_sha256": "d236ee9a38883a4f2dad5b2f5dc83f8a62251e1f12b20dadf337e168806cb8cc",
+   "characters": 812,
+   "cost": 0.00080388,
+   "duration": 55.95,
+   "index": 3,
+   "key": "6d0b3617774bbc118a646a7819f151e1bde20595bba1e0de8e3c946e68f535d7",
+   "page": "docs/release-decision-table.md",
+   "pause_ms": 400,
+   "section": "the-decision-table",
+   "sent_text": "The largest accepted fold in the registrations workload carries 4 requests, and one more request exceeds the memory limit. Per request the largest batch costs less than a one-request fold in signed transaction bytes and fee and more in execution memory and execution steps. The largest accepted fold in the terminations workload carries 7 requests, and one more request exceeds the memory limit. Per request the largest batch costs less than a one-request fold in signed transaction bytes and fee and more in execution memory and execution steps. The largest accepted fold in the mixed workload carries 6 requests, and one more request exceeds the memory limit. Per request the largest batch costs less than a one-request fold in signed transaction bytes and fee and more in execution memory and execution steps.",
+   "text": "The largest accepted fold in the registrations workload carries 4 requests, and one more request exceeds the memory limit. Per request the largest batch costs less than a one-request fold in signed transaction bytes and fee and more in execution memory and execution steps. The largest accepted fold in the terminations workload carries 7 requests, and one more request exceeds the memory limit. Per request the largest batch costs less than a one-request fold in signed transaction bytes and fee and more in execution memory and execution steps. The largest accepted fold in the mixed workload carries 6 requests, and one more request exceeds the memory limit. Per request the largest batch costs less than a one-request fold in signed transaction bytes and fee and more in execution memory and execution steps.",
+   "words": [
+    {
+     "end": 0.312,
+     "start": 0.2,
+     "text": "The"
+    },
+    {
+     "end": 0.775,
+     "start": 0.312,
+     "text": "largest"
+    },
+    {
+     "end": 1.312,
+     "start": 0.775,
+     "text": "accepted"
+    },
+    {
+     "end": 1.712,
+     "start": 1.312,
+     "text": "fold"
+    },
+    {
+     "end": 1.788,
+     "start": 1.712,
+     "text": "in"
+    },
+    {
+     "end": 1.875,
+     "start": 1.788,
+     "text": "the"
+    },
+    {
+     "end": 2.763,
+     "start": 1.875,
+     "text": "registrations"
+    },
+    {
+     "end": 3.412,
+     "start": 2.763,
+     "text": "workload"
+    },
+    {
+     "end": 3.875,
+     "start": 3.412,
+     "text": "carries"
+    },
+    {
+     "end": 4.175,
+     "start": 3.875,
+     "text": "4"
+    },
+    {
+     "end": 4.875,
+     "start": 4.175,
+     "text": "requests"
+    },
+    {
+     "end": 4.95,
+     "start": 4.875,
+     "text": ","
+    },
+    {
+     "end": 5.088,
+     "start": 4.95,
+     "text": "and"
+    },
+    {
+     "end": 5.325,
+     "start": 5.088,
+     "text": "one"
+    },
+    {
+     "end": 5.55,
+     "start": 5.325,
+     "text": "more"
+    },
+    {
+     "end": 6.188,
+     "start": 5.55,
+     "text": "request"
+    },
+    {
+     "end": 6.725,
+     "start": 6.188,
+     "text": "exceeds"
+    },
+    {
+     "end": 6.85,
+     "start": 6.725,
+     "text": "the"
+    },
+    {
+     "end": 7.25,
+     "start": 6.85,
+     "text": "memory"
+    },
+    {
+     "end": 8.275,
+     "start": 7.25,
+     "text": "limit"
+    },
+    {
+     "end": 8.5,
+     "start": 8.275,
+     "text": "."
+    },
+    {
+     "end": 8.9,
+     "start": 8.725,
+     "text": "Per"
+    },
+    {
+     "end": 9.475,
+     "start": 8.9,
+     "text": "request"
+    },
+    {
+     "end": 9.6,
+     "start": 9.475,
+     "text": "the"
+    },
+    {
+     "end": 10.0,
+     "start": 9.6,
+     "text": "largest"
+    },
+    {
+     "end": 10.387,
+     "start": 10.0,
+     "text": "batch"
+    },
+    {
+     "end": 10.837,
+     "start": 10.387,
+     "text": "costs"
+    },
+    {
+     "end": 11.175,
+     "start": 10.837,
+     "text": "less"
+    },
+    {
+     "end": 11.325,
+     "start": 11.175,
+     "text": "than"
+    },
+    {
+     "end": 11.425,
+     "start": 11.325,
+     "text": "a"
+    },
+    {
+     "end": 12.137,
+     "start": 11.425,
+     "text": "one-request"
+    },
+    {
+     "end": 12.55,
+     "start": 12.137,
+     "text": "fold"
+    },
+    {
+     "end": 12.738,
+     "start": 12.55,
+     "text": "in"
+    },
+    {
+     "end": 13.1,
+     "start": 12.738,
+     "text": "signed"
+    },
+    {
+     "end": 13.825,
+     "start": 13.1,
+     "text": "transaction"
+    },
+    {
+     "end": 14.225,
+     "start": 13.825,
+     "text": "bytes"
+    },
+    {
+     "end": 14.413,
+     "start": 14.225,
+     "text": "and"
+    },
+    {
+     "end": 14.975,
+     "start": 14.413,
+     "text": "fee"
+    },
+    {
+     "end": 15.188,
+     "start": 14.975,
+     "text": "and"
+    },
+    {
+     "end": 15.525,
+     "start": 15.188,
+     "text": "more"
+    },
+    {
+     "end": 15.65,
+     "start": 15.525,
+     "text": "in"
+    },
+    {
+     "end": 16.325,
+     "start": 15.65,
+     "text": "execution"
+    },
+    {
+     "end": 16.788,
+     "start": 16.325,
+     "text": "memory"
+    },
+    {
+     "end": 16.925,
+     "start": 16.788,
+     "text": "and"
+    },
+    {
+     "end": 17.575,
+     "start": 16.925,
+     "text": "execution"
+    },
+    {
+     "end": 18.7,
+     "start": 17.575,
+     "text": "steps"
+    },
+    {
+     "end": 18.925,
+     "start": 18.7,
+     "text": "."
+    },
+    {
+     "end": 19.237,
+     "start": 19.125,
+     "text": "The"
+    },
+    {
+     "end": 19.675,
+     "start": 19.237,
+     "text": "largest"
+    },
+    {
+     "end": 20.212,
+     "start": 19.675,
+     "text": "accepted"
+    },
+    {
+     "end": 20.612,
+     "start": 20.212,
+     "text": "fold"
+    },
+    {
+     "end": 20.688,
+     "start": 20.612,
+     "text": "in"
+    },
+    {
+     "end": 20.775,
+     "start": 20.688,
+     "text": "the"
+    },
+    {
+     "end": 21.562,
+     "start": 20.775,
+     "text": "terminations"
+    },
+    {
+     "end": 22.212,
+     "start": 21.562,
+     "text": "workload"
+    },
+    {
+     "end": 22.65,
+     "start": 22.212,
+     "text": "carries"
+    },
+    {
+     "end": 23.025,
+     "start": 22.65,
+     "text": "7"
+    },
+    {
+     "end": 23.725,
+     "start": 23.025,
+     "text": "requests"
+    },
+    {
+     "end": 23.8,
+     "start": 23.725,
+     "text": ","
+    },
+    {
+     "end": 23.938,
+     "start": 23.8,
+     "text": "and"
+    },
+    {
+     "end": 24.175,
+     "start": 23.938,
+     "text": "one"
+    },
+    {
+     "end": 24.4,
+     "start": 24.175,
+     "text": "more"
+    },
+    {
+     "end": 25.038,
+     "start": 24.4,
+     "text": "request"
+    },
+    {
+     "end": 25.575,
+     "start": 25.038,
+     "text": "exceeds"
+    },
+    {
+     "end": 25.7,
+     "start": 25.575,
+     "text": "the"
+    },
+    {
+     "end": 26.1,
+     "start": 25.7,
+     "text": "memory"
+    },
+    {
+     "end": 27.125,
+     "start": 26.1,
+     "text": "limit"
+    },
+    {
+     "end": 27.35,
+     "start": 27.125,
+     "text": "."
+    },
+    {
+     "end": 27.75,
+     "start": 27.575,
+     "text": "Per"
+    },
+    {
+     "end": 28.325,
+     "start": 27.75,
+     "text": "request"
+    },
+    {
+     "end": 28.45,
+     "start": 28.325,
+     "text": "the"
+    },
+    {
+     "end": 28.85,
+     "start": 28.45,
+     "text": "largest"
+    },
+    {
+     "end": 29.237,
+     "start": 28.85,
+     "text": "batch"
+    },
+    {
+     "end": 29.688,
+     "start": 29.237,
+     "text": "costs"
+    },
+    {
+     "end": 30.025,
+     "start": 29.688,
+     "text": "less"
+    },
+    {
+     "end": 30.175,
+     "start": 30.025,
+     "text": "than"
+    },
+    {
+     "end": 30.275,
+     "start": 30.175,
+     "text": "a"
+    },
+    {
+     "end": 30.987,
+     "start": 30.275,
+     "text": "one-request"
+    },
+    {
+     "end": 31.4,
+     "start": 30.987,
+     "text": "fold"
+    },
+    {
+     "end": 31.587,
+     "start": 31.4,
+     "text": "in"
+    },
+    {
+     "end": 31.95,
+     "start": 31.587,
+     "text": "signed"
+    },
+    {
+     "end": 32.675,
+     "start": 31.95,
+     "text": "transaction"
+    },
+    {
+     "end": 33.075,
+     "start": 32.675,
+     "text": "bytes"
+    },
+    {
+     "end": 33.263,
+     "start": 33.075,
+     "text": "and"
+    },
+    {
+     "end": 33.825,
+     "start": 33.263,
+     "text": "fee"
+    },
+    {
+     "end": 34.037,
+     "start": 33.825,
+     "text": "and"
+    },
+    {
+     "end": 34.375,
+     "start": 34.037,
+     "text": "more"
+    },
+    {
+     "end": 34.5,
+     "start": 34.375,
+     "text": "in"
+    },
+    {
+     "end": 35.175,
+     "start": 34.5,
+     "text": "execution"
+    },
+    {
+     "end": 35.638,
+     "start": 35.175,
+     "text": "memory"
+    },
+    {
+     "end": 35.775,
+     "start": 35.638,
+     "text": "and"
+    },
+    {
+     "end": 36.425,
+     "start": 35.775,
+     "text": "execution"
+    },
+    {
+     "end": 37.55,
+     "start": 36.425,
+     "text": "steps"
+    },
+    {
+     "end": 37.775,
+     "start": 37.55,
+     "text": "."
+    },
+    {
+     "end": 38.088,
+     "start": 37.975,
+     "text": "The"
+    },
+    {
+     "end": 38.525,
+     "start": 38.088,
+     "text": "largest"
+    },
+    {
+     "end": 39.062,
+     "start": 38.525,
+     "text": "accepted"
+    },
+    {
+     "end": 39.438,
+     "start": 39.062,
+     "text": "fold"
+    },
+    {
+     "end": 39.513,
+     "start": 39.438,
+     "text": "in"
+    },
+    {
+     "end": 39.6,
+     "start": 39.513,
+     "text": "the"
+    },
+    {
+     "end": 39.925,
+     "start": 39.6,
+     "text": "mixed"
+    },
+    {
+     "end": 40.537,
+     "start": 39.925,
+     "text": "workload"
+    },
+    {
+     "end": 40.975,
+     "start": 40.537,
+     "text": "carries"
+    },
+    {
+     "end": 41.3,
+     "start": 40.975,
+     "text": "6"
+    },
+    {
+     "end": 42.0,
+     "start": 41.3,
+     "text": "requests"
+    },
+    {
+     "end": 42.075,
+     "start": 42.0,
+     "text": ","
+    },
+    {
+     "end": 42.213,
+     "start": 42.075,
+     "text": "and"
+    },
+    {
+     "end": 42.45,
+     "start": 42.213,
+     "text": "one"
+    },
+    {
+     "end": 42.675,
+     "start": 42.45,
+     "text": "more"
+    },
+    {
+     "end": 43.263,
+     "start": 42.675,
+     "text": "request"
+    },
+    {
+     "end": 43.8,
+     "start": 43.263,
+     "text": "exceeds"
+    },
+    {
+     "end": 43.925,
+     "start": 43.8,
+     "text": "the"
+    },
+    {
+     "end": 44.3,
+     "start": 43.925,
+     "text": "memory"
+    },
+    {
+     "end": 45.3,
+     "start": 44.3,
+     "text": "limit"
+    },
+    {
+     "end": 45.525,
+     "start": 45.3,
+     "text": "."
+    },
+    {
+     "end": 45.925,
+     "start": 45.75,
+     "text": "Per"
+    },
+    {
+     "end": 46.5,
+     "start": 45.925,
+     "text": "request"
+    },
+    {
+     "end": 46.625,
+     "start": 46.5,
+     "text": "the"
+    },
+    {
+     "end": 47.025,
+     "start": 46.625,
+     "text": "largest"
+    },
+    {
+     "end": 47.412,
+     "start": 47.025,
+     "text": "batch"
+    },
+    {
+     "end": 47.862,
+     "start": 47.412,
+     "text": "costs"
+    },
+    {
+     "end": 48.2,
+     "start": 47.862,
+     "text": "less"
+    },
+    {
+     "end": 48.35,
+     "start": 48.2,
+     "text": "than"
+    },
+    {
+     "end": 48.45,
+     "start": 48.35,
+     "text": "a"
+    },
+    {
+     "end": 49.162,
+     "start": 48.45,
+     "text": "one-request"
+    },
+    {
+     "end": 49.575,
+     "start": 49.162,
+     "text": "fold"
+    },
+    {
+     "end": 49.763,
+     "start": 49.575,
+     "text": "in"
+    },
+    {
+     "end": 50.125,
+     "start": 49.763,
+     "text": "signed"
+    },
+    {
+     "end": 50.85,
+     "start": 50.125,
+     "text": "transaction"
+    },
+    {
+     "end": 51.25,
+     "start": 50.85,
+     "text": "bytes"
+    },
+    {
+     "end": 51.438,
+     "start": 51.25,
+     "text": "and"
+    },
+    {
+     "end": 52.0,
+     "start": 51.438,
+     "text": "fee"
+    },
+    {
+     "end": 52.213,
+     "start": 52.0,
+     "text": "and"
+    },
+    {
+     "end": 52.55,
+     "start": 52.213,
+     "text": "more"
+    },
+    {
+     "end": 52.675,
+     "start": 52.55,
+     "text": "in"
+    },
+    {
+     "end": 53.35,
+     "start": 52.675,
+     "text": "execution"
+    },
+    {
+     "end": 53.812,
+     "start": 53.35,
+     "text": "memory"
+    },
+    {
+     "end": 53.95,
+     "start": 53.812,
+     "text": "and"
+    },
+    {
+     "end": 54.6,
+     "start": 53.95,
+     "text": "execution"
+    },
+    {
+     "end": 55.725,
+     "start": 54.6,
+     "text": "steps"
+    },
+    {
+     "end": 55.95,
+     "start": 55.725,
+     "text": "."
+    }
+   ]
+  },
+  "docs-release-decision-table/the-kept-receipts-00": {
+   "audio_sha256": "a612ee3386fcee186a32774f4a9b986e749e712a5657b7fb0467a04e1ae21b62",
+   "characters": 18,
+   "cost": 1.782e-05,
+   "duration": 1.575,
+   "index": 0,
+   "key": "ab7134b268eaf77c60af527892e1ba39acef6f2d3028337e2d4a9bdba7c7be06",
+   "page": "docs/release-decision-table.md",
+   "pause_ms": 500,
+   "section": "the-kept-receipts",
+   "sent_text": "The kept receipts.",
+   "text": "The kept receipts.",
+   "words": [
+    {
+     "end": 0.25,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.512,
+     "start": 0.25,
+     "text": "kept"
+    },
+    {
+     "end": 1.375,
+     "start": 0.512,
+     "text": "receipts"
+    },
+    {
+     "end": 1.575,
+     "start": 1.375,
+     "text": "."
+    }
+   ]
+  },
+  "docs-release-decision-table/the-kept-receipts-01": {
+   "audio_sha256": "4be85a42fc8819c4a37c7eabc7eebc043434fe0f534f85d66cd17d2495170f21",
+   "characters": 181,
+   "cost": 0.00017918999999999997,
+   "duration": 13.15,
+   "index": 1,
+   "key": "d74871f709affd227249eb93d2b39fd87100f65c7446e14bc38cb4cc0e3719f6",
+   "page": "docs/release-decision-table.md",
+   "pause_ms": 400,
+   "section": "the-kept-receipts",
+   "sent_text": "The receipts and the chain records they name are committed with the repository. Their SHA-256 is computed when this page is generated, so a file that changes also changes this page.",
+   "text": "The receipts and the chain records they name are committed with the repository. Their SHA-256 is computed when this page is generated, so a file that changes also changes this page.",
+   "words": [
+    {
+     "end": 0.275,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.8,
+     "start": 0.275,
+     "text": "receipts"
+    },
+    {
+     "end": 0.913,
+     "start": 0.8,
+     "text": "and"
+    },
+    {
+     "end": 1.013,
+     "start": 0.913,
+     "text": "the"
+    },
+    {
+     "end": 1.375,
+     "start": 1.013,
+     "text": "chain"
+    },
+    {
+     "end": 1.825,
+     "start": 1.375,
+     "text": "records"
+    },
+    {
+     "end": 2.0,
+     "start": 1.825,
+     "text": "they"
+    },
+    {
+     "end": 2.487,
+     "start": 2.0,
+     "text": "name"
+    },
+    {
+     "end": 2.65,
+     "start": 2.487,
+     "text": "are"
+    },
+    {
+     "end": 3.1,
+     "start": 2.65,
+     "text": "committed"
+    },
+    {
+     "end": 3.237,
+     "start": 3.1,
+     "text": "with"
+    },
+    {
+     "end": 3.325,
+     "start": 3.237,
+     "text": "the"
+    },
+    {
+     "end": 4.7,
+     "start": 3.325,
+     "text": "repository"
+    },
+    {
+     "end": 4.9,
+     "start": 4.7,
+     "text": "."
+    },
+    {
+     "end": 5.3,
+     "start": 5.1,
+     "text": "Their"
+    },
+    {
+     "end": 6.875,
+     "start": 5.3,
+     "text": "SHA-256"
+    },
+    {
+     "end": 7.025,
+     "start": 6.875,
+     "text": "is"
+    },
+    {
+     "end": 7.625,
+     "start": 7.025,
+     "text": "computed"
+    },
+    {
+     "end": 7.775,
+     "start": 7.625,
+     "text": "when"
+    },
+    {
+     "end": 7.963,
+     "start": 7.775,
+     "text": "this"
+    },
+    {
+     "end": 8.375,
+     "start": 7.963,
+     "text": "page"
+    },
+    {
+     "end": 8.538,
+     "start": 8.375,
+     "text": "is"
+    },
+    {
+     "end": 9.275,
+     "start": 8.538,
+     "text": "generated"
+    },
+    {
+     "end": 9.375,
+     "start": 9.275,
+     "text": ","
+    },
+    {
+     "end": 9.55,
+     "start": 9.375,
+     "text": "so"
+    },
+    {
+     "end": 9.675,
+     "start": 9.55,
+     "text": "a"
+    },
+    {
+     "end": 10.05,
+     "start": 9.675,
+     "text": "file"
+    },
+    {
+     "end": 10.262,
+     "start": 10.05,
+     "text": "that"
+    },
+    {
+     "end": 10.75,
+     "start": 10.262,
+     "text": "changes"
+    },
+    {
+     "end": 11.163,
+     "start": 10.75,
+     "text": "also"
+    },
+    {
+     "end": 11.625,
+     "start": 11.163,
+     "text": "changes"
+    },
+    {
+     "end": 11.837,
+     "start": 11.625,
+     "text": "this"
+    },
+    {
+     "end": 12.925,
+     "start": 11.837,
+     "text": "page"
+    },
+    {
+     "end": 13.15,
+     "start": 12.925,
+     "text": "."
+    }
+   ]
+  },
   "docs-retirement/book-then-complete-00": {
    "audio_sha256": "ba361c030893741e92ac018278b9ec44955d70954f3bfab4dfb49fdfeb98444e",
    "characters": 20,

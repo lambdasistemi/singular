@@ -56,3 +56,21 @@ commands for each platform.
    `mkdir singular && tar xzf singular-onchain-<version>.tar.gz -C singular`.
    Then, inside that directory, run `sha256sum --check --quiet SHA256SUMS` and
    `bash verify-identities.sh` to check every file and the compiled validators.
+
+## What this release assumes and does not establish
+
+The trie library's proofs are assumed sound.
+
+The statements about the chain's history assume Cardano's rule for how scripts run,
+and that rule is not proved here.
+
+The packaged development node cannot run the public test network's (preprod's)
+current protocol version, so the batch limits are evaluated under recorded protocol
+parameters and corroborated by the node, and are not submitted to that network.
+
+The conformance rows that remain uncovered are published on the
+[conformance evidence page](https://lambdasistemi.github.io/singular/docs/conformance-evidence/),
+whose count and rows are computed from the receipts.
+
+The [release decision table](https://lambdasistemi.github.io/singular/docs/release-decision-table/)
+gives each measurement with the date of the parameters it was taken under.

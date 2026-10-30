@@ -153,6 +153,8 @@ let
       python3 tools/narrate.py --check
       python3 tools/batch_limits.py --check
       python3 test/ci/batch-limits.py
+      python3 tools/decision_table.py --check
+      python3 test/ci/decision-table.py
       python3 test/ci/batch-user-documentation.py
       conformance evidence-page --root .
       bash tools/evidence_page_controls.sh .
