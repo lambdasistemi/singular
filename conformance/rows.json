@@ -173,11 +173,11 @@
     {
       "id": "skipped-batch-holders",
       "group": "batch-folding",
-      "requirement": "Automatic discovery skips and names an approval held at a key address, a request of another registry, an output the application cannot decode and a request that cannot individually fold. It folds the remaining requests rather than refusing because of those holders. An unfoldable request never reserves its key; the first foldable request in take order keeps it and later duplicates are skipped.",
+      "requirement": "Automatic discovery skips and names an approval held at a key address, a request of another registry, an output of the application that is not a request and a request that cannot individually fold. A registry's configuration output is not a request and is never named. It folds the remaining requests rather than refusing because of those holders. An unfoldable request never reserves its key; the first foldable request in take order keeps it and later duplicates are skipped.",
       "source": "SingularApplicationHeld.PublicFoldPremises and Statements.public_fold_constructed govern the selected requests. Holder discovery, skip classification and duplicate priority are operational behavior without a model query.",
       "expected": "The batch behavior is as stated. Uncovered: no executable comparison with the application-held model exists yet",
       "state": "uncovered",
-      "note": "The development-network journey shows a foreign request, the configuration holder rejected by request decoding and an unfoldable duplicate. Key-address holders, malformed request datums and the other individual refusal classes have unit-test evidence only.",
+      "note": "The development-network journey shows a foreign request and an unfoldable duplicate named as skipped, and the registry's configuration holder in neither list and unspent. Key-address holders, malformed request datums and the other individual refusal classes have unit-test evidence only.",
       "evidence": "Separate evidence boundary, not a comparison with the model: no-pin-registration-journey runs the mixed public-data batch and chain accounting; no-pin-batch-refusals runs the named refusals and accepted controls; no-pin-batch-measurement evaluates kept transactions under recorded parameters and captures fresh development-node boundaries. The documentation check binds its figures to the kept receipt. They establish what they run and nothing about agreement with the model."
     },
     {

@@ -166,7 +166,9 @@ an already registered key, an inactive termination key, a deposit below the
 holding's minimum or a closed processing window. The first individually
 foldable request for a key in take order is kept; later foldable requests for
 it are skipped as duplicates. The receipt lists every skip, and `left` counts
-only foldable requests outside the selected prefix. If none can fold, the
+only foldable requests outside the selected prefix. A skip always names a request,
+or a holder that looked like one, that the fold did not take; the registry's
+configuration output is never listed. If none can fold, the
 command refuses with nothing to fold and retains the skip list. Explicit
 `--pending` batches keep their existing refusals and are never shortened.
 
