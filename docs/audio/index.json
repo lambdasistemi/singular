@@ -1960,15 +1960,22 @@
     "index": 2,
     "name": "docs-folding-requests/read-the-fold-receipt-02",
     "pause_ms": 400,
-    "text": "Automatic discovery skips these kinds of holder or request and keeps folding the rest. A named batch instead refuses a bad request.",
-    "v": "bfe2d3e03672"
+    "text": "Automatic discovery skips these kinds of holder or request and keeps folding the rest. A named batch instead refuses a bad request. A skip always names a request, or a holder that looked like one, that this fold did not take.",
+    "v": "76a2fbca5fe1"
    },
    {
     "index": 3,
     "name": "docs-folding-requests/read-the-fold-receipt-03",
     "pause_ms": 400,
-    "text": "The first individually foldable request for a key keeps it in take order. An earlier unfoldable request never reserves the key. If every discovered holder is skipped, nothing to fold still carries every skipped reference and reason.",
-    "v": "9f4bdf6c185f"
+    "text": "The first individually foldable request for a key keeps it in take order. An earlier unfoldable request never reserves the key. If every discovered request is skipped, nothing to fold still carries every skipped reference and reason.",
+    "v": "1169d271efb2"
+   },
+   {
+    "index": 4,
+    "name": "docs-folding-requests/read-the-fold-receipt-04",
+    "pause_ms": 400,
+    "text": "A registry's configuration output holds an approval of the application too, but it is not a request. The application names it as its configuration, so a fold neither takes it nor lists it under skipped, and it stays unspent.",
+    "v": "7176a7277918"
    }
   ],
   "read-the-measured-limits": [
@@ -2041,8 +2048,8 @@
     "index": 1,
     "name": "docs-folding-requests/what-has-been-exercised-01",
     "pause_ms": 400,
-    "text": "The packaged development-network registration journey starts a folder in fresh directories with none of the booker's files. It discovers and folds a mixed batch, checks the folder's change from the chain, and accounts separately for folded, skipped and left requests. It skips another registry's request, the application's configuration holder that its request decoding does not accept, and an unfoldable duplicate. A duplicate-free control and a later fold of what was left accompany it.",
-    "v": "9646a4260d40"
+    "text": "The packaged development-network registration journey starts a folder in fresh directories with none of the booker's files. It discovers and folds a mixed batch, checks the folder's change from the chain, and accounts separately for folded, skipped and left requests. It skips another registry's request and an unfoldable duplicate, and it checks that the registry's configuration holder is in neither list and stays unspent. A duplicate-free control and a later fold of what was left accompany it.",
+    "v": "7f05540634eb"
    },
    {
     "index": 2,
@@ -5077,8 +5084,8 @@
     "index": 2,
     "name": "docs-registry-commands/fold-registrations-and-terminations-into-the-registry-02",
     "pause_ms": 400,
-    "text": "This is the path of a successful discovered batch. Holders the application does not accept are kept in the accounting as skipped, with their references and reasons. A recognized request is also skipped when its key is already registered, its termination key is not active, its deposit is below the minimum the holding must keep, or its processing window has closed. The first individually foldable request for a key in take order keeps that key; later foldable requests for it are skipped as duplicates. An unfoldable earlier request never reserves the key. Every holder is folded, skipped with a reason, or left as a foldable request beyond the selected prefix.",
-    "v": "28793d37754e"
+    "text": "This is the path of a successful discovered batch. A holder of an approval that the application does not accept as a request is kept in the accounting as skipped, with its reference and reason. The registry's configuration output holds an approval too, but it is not a request: it is neither folded nor listed. A recognized request is also skipped when its key is already registered, its termination key is not active, its deposit is below the minimum the holding must keep, or its processing window has closed. The first individually foldable request for a key in take order keeps that key; later foldable requests for it are skipped as duplicates. An unfoldable earlier request never reserves the key. Every request is folded, skipped with a reason, or left as a foldable request beyond the selected prefix.",
+    "v": "e43a8fc979c2"
    },
    {
     "index": 3,
@@ -5105,8 +5112,8 @@
     "index": 6,
     "name": "docs-registry-commands/fold-registrations-and-terminations-into-the-registry-06",
     "pause_ms": 400,
-    "text": "The successful receipt names the registry's new root and state output. Its folded list gives each key, request kind and pending reference; skipped gives each unaccepted or individually unfoldable holder's reference and reason; left counts foldable requests not included. Skipped requests are never counted as left. If nothing can fold, the command refuses with nothing to fold and still names every skipped holder. A failed read remains unavailable and never claims an empty answer.",
-    "v": "7c2fa71a9162"
+    "text": "The successful receipt names the registry's new root and state output. Its folded list gives each key, request kind and pending reference; skipped gives each unaccepted or individually unfoldable holder's reference and reason, and never the registry's configuration output; left counts foldable requests not included. Skipped requests are never counted as left. If nothing can fold, the command refuses with nothing to fold and still names every skipped holder. A failed read remains unavailable and never claims an empty answer.",
+    "v": "64d941e1c10a"
    }
   ],
   "read-a-key": [
@@ -6298,8 +6305,8 @@
     "index": 3,
     "name": "docs-singular-node/the-settings-you-give-03",
     "pause_ms": 400,
-    "text": "An automatic fold skips each individually unfoldable request with its reason: an already registered key, an inactive termination key, a deposit below the holding's minimum or a closed processing window. The first individually foldable request for a key in take order is kept; later foldable requests for it are skipped as duplicates. The receipt lists every skip, and left counts only foldable requests outside the selected prefix. If none can fold, the command refuses with nothing to fold and retains the skip list. Explicit --pending batches keep their existing refusals and are never shortened.",
-    "v": "47e275bbb552"
+    "text": "An automatic fold skips each individually unfoldable request with its reason: an already registered key, an inactive termination key, a deposit below the holding's minimum or a closed processing window. The first individually foldable request for a key in take order is kept; later foldable requests for it are skipped as duplicates. The receipt lists every skip, and left counts only foldable requests outside the selected prefix. A skip always names a request, or a holder that looked like one, that the fold did not take; the registry's configuration output is never listed. If none can fold, the command refuses with nothing to fold and retains the skip list. Explicit --pending batches keep their existing refusals and are never shortened.",
+    "v": "25b8fd1ca253"
    }
   ],
   "the-vault-from-the-environment-or-the-file": [

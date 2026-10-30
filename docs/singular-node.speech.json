@@ -53,7 +53,7 @@
       "pause": 400
     },
     {
-      "text": "An automatic fold skips each individually unfoldable request with its reason: an already registered key, an inactive termination key, a deposit below the holding's minimum or a closed processing window. The first individually foldable request for a key in take order is kept; later foldable requests for it are skipped as duplicates. The receipt lists every skip, and left counts only foldable requests outside the selected prefix. If none can fold, the command refuses with nothing to fold and retains the skip list. Explicit --pending batches keep their existing refusals and are never shortened.",
+      "text": "An automatic fold skips each individually unfoldable request with its reason: an already registered key, an inactive termination key, a deposit below the holding's minimum or a closed processing window. The first individually foldable request for a key in take order is kept; later foldable requests for it are skipped as duplicates. The receipt lists every skip, and left counts only foldable requests outside the selected prefix. A skip always names a request, or a holder that looked like one, that the fold did not take; the registry's configuration output is never listed. If none can fold, the command refuses with nothing to fold and retains the skip list. Explicit --pending batches keep their existing refusals and are never shortened.",
       "pause": 400
     }
   ],
@@ -401,6 +401,6 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "80163323f589fdce167f8d78643a5177f72ede8ea455d119d063f2db685c07e7"
+    "sha256": "2baac3853f3019894e99a9113b36f20eeaa1ba5ff903557ed9a8871d980bf2ac"
   }
 }

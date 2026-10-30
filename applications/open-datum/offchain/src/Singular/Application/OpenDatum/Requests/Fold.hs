@@ -7,7 +7,9 @@ The fold of a registry belongs to the Singular state: it finds the state,
 rebuilds the trie and writes the root. What belongs to open datum is what a
 pending registration is, how it is spent and how its approval is burned. This
 module hands the fold builder those three things for a request validator, so
-anyone with the chain and a wallet can fold what has been booked.
+anyone with the chain and a wallet can fold what has been booked. It also says
+which output is a registry's configuration: that output holds an approval but
+is not a request, so a fold neither takes it nor reports it.
 -}
 module Singular.Application.OpenDatum.Requests.Fold
     ( openDatumApplication
@@ -16,6 +18,7 @@ module Singular.Application.OpenDatum.Requests.Fold
 import Control.Monad (forM_)
 import Control.Monad.Trans.Except (ExceptT (..), runExceptT)
 import Data.Map.Strict qualified as Map
+import Data.Maybe (isJust)
 import Lens.Micro ((^.))
 
 import Cardano.Ledger.Address (Addr (..))
@@ -39,6 +42,7 @@ import Singular.Application.OpenDatum.Requests.Records
     , MintAction (..)
     , RegistrationData (..)
     , SpendAction (..)
+    , decodeConfiguration
     , decodeRegistration
     , mintRedeemer
     , spendRedeemer
@@ -82,6 +86,7 @@ openDatumApplication session script net = runExceptT $ do
         Application
             { appPolicy = requestPolicy script
             , appDecode = decode
+            , appIsConfiguration = isConfiguration
             , appReferences = references
             , appFold = \folded -> do
                 forM_ folded $ \f ->
@@ -102,6 +107,19 @@ openDatumApplication session script net = runExceptT $ do
                 useScript script
             }
   where
+    isConfiguration output = case output ^. addrTxOutL of
+        Addr _ (ScriptHashObj hash) _
+            | hash == requestScriptHash script ->
+                holdsOneToken output
+                    && isJust (inlineDatumOf output >>= decodeConfiguration)
+        _ -> False
+    -- The booking reader also requires the record's own token by name; the name
+    -- belongs to a registry that is not known here.
+    holdsOneToken output = case output ^. valueTxOutL of
+        MaryValue _ (MultiAsset assets) -> case Map.toList assets of
+            [(policy, tokens)] ->
+                policy == requestPolicy script && Map.elems tokens == [1]
+            _ -> False
     decode registry candidates output = case output ^. addrTxOutL of
         Addr _ (ScriptHashObj hash) _
             | hash == requestScriptHash script -> do

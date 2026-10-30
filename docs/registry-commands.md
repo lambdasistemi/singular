@@ -156,14 +156,16 @@ open-datum fold --blueprint plutus.json \
   --vault bob.vault
 ```
 
-This is the path of a successful discovered batch. Holders the application does
-not accept are kept in the accounting as skipped, with their references and
-reasons. A recognized request is also skipped when its key is already
+This is the path of a successful discovered batch. A holder of an approval that
+the application does not accept as a request is kept in the accounting as
+skipped, with its reference and reason. The registry's configuration output
+holds an approval too, but it is not a request: it is neither folded nor
+listed. A recognized request is also skipped when its key is already
 registered, its termination key is not active, its deposit is below the minimum
 the holding must keep, or its processing window has closed. The first
 individually foldable request for a key in take order keeps that key; later
 foldable requests for it are skipped as duplicates. An unfoldable earlier
-request never reserves the key. Every holder is folded, skipped with a reason,
+request never reserves the key. Every request is folded, skipped with a reason,
 or left as a foldable request beyond the selected prefix.
 
 ```mermaid
@@ -199,11 +201,11 @@ them, naming the reason; it never trims an explicit batch, even with `--limit`.
 
 The successful receipt names the registry's new root and state output. Its
 `folded` list gives each key, request kind and pending reference; `skipped` gives
-each unaccepted or individually unfoldable holder's reference and reason;
-`left` counts foldable requests not included. Skipped requests are never counted
-as left. If nothing can fold, the command refuses with nothing to fold and
-still names every skipped holder. A failed read remains unavailable and never
-claims an empty answer.
+each unaccepted or individually unfoldable holder's reference and reason, and
+never the registry's configuration output; `left` counts foldable requests not
+included. Skipped requests are never counted as left. If nothing can fold, the
+command refuses with nothing to fold and still names every skipped holder. A
+failed read remains unavailable and never claims an empty answer.
 
 ### Where the key's token goes
 

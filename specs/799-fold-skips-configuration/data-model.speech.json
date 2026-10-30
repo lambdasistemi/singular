@@ -1,0 +1,50 @@
+{
+  "data-the-application-description-gains-one-question": [
+    {
+      "text": "Data: the application description gains one question.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 799. Follows the modules model.",
+      "pause": 400
+    }
+  ],
+  "application-description": [
+    {
+      "text": "Application description.",
+      "pause": 500
+    }
+  ],
+  "invariants": [
+    {
+      "text": "Invariants.",
+      "pause": 500
+    },
+    {
+      "text": "configuration-and-request-are-disjoint: no output is both named as configuration and decoded as a request.",
+      "pause": 300
+    },
+    {
+      "text": "an output at a key address is never configuration: discovery's key-address check comes first, so such a holder keeps its skip.",
+      "pause": 300
+    },
+    {
+      "text": "the skipped list and the pending list never contain an output named as configuration.",
+      "pause": 300
+    }
+  ],
+  "unchanged": [
+    {
+      "text": "Unchanged.",
+      "pause": 500
+    },
+    {
+      "text": "The reasons a holder is skipped, the receipt fields (folded, skipped, left, reconciled) and the request and pending records.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "data-model.md",
+    "sha256": "15a42b0ee897e0cf42eea5a41f5d75aae5a90b343a7496a5e61303cbea8111fd"
+  }
+}

@@ -608,6 +608,133 @@ spec = do
                                         )
                                    ]
 
+        describe "the configuration output the description names" $ do
+            let
+                -- The output with this datum is the stand-in's configuration.
+                naming datum =
+                    standInApplication
+                        { appIsConfiguration = \output -> inlineDatum output == Just datum
+                        }
+                marker = PLC.Constr 7 [PLC.I 7]
+                -- A datum shaped like an application's configuration that the stand-in does not name.
+                lookalike = PLC.Constr 0 [PLC.Constr 0 (map PLC.I [1, 2, 3, 4, 5])]
+                holding rg datum =
+                    pendingOutput
+                        (rgRegistry rg)
+                        (bookedKey "configuration" processingDeadline)
+                        & datumTxOutL .~ mkInlineDatum datum
+                discovery rg application = withSession (rgWorld rg) $ \session ->
+                    discoverPending session application (rgRegistry rg) []
+
+            it "is in neither list, beside an accepted holder of the same request" $ do
+                rg <- newRegistered
+                refs <- book rg 'p' [bookedKey "one" processingDeadline]
+                let configuration = txInOf 'c' 0
+                addLive (rgWorld rg) [(configuration, holding rg marker)]
+                (found, omitted) <- discovery rg (naming marker)
+                map pendingRef found `shouldBe` refs
+                omitted `shouldBe` []
+
+            it
+                "leaves the folded set, order, left count and transaction as they were"
+                $ do
+                    rg <- newRegistered
+                    _ <-
+                        book
+                            rg
+                            'p'
+                            [ (bookedKey "one" processingDeadline){bkTip = 3_000_000}
+                            , (bookedKey "two" processingDeadline){bkTip = 2_000_000}
+                            , (bookedKey "three" processingDeadline){bkTip = 1_000_000}
+                            ]
+                    -- Adding an output advances the tip, and the transaction carries it.
+                    let fold = do
+                            setSlot (rgWorld rg) 10_050
+                            withSession (rgWorld rg) $ \session ->
+                                expectBuilt
+                                    =<< buildFold
+                                        session
+                                        (rgScript rg)
+                                        (naming marker)
+                                        (rgRegistry rg)
+                                        []
+                                        (rgFolder rg)
+                                        (Just 2)
+                    alone <- fold
+                    addLive (rgWorld rg) [(txInOf 'c' 0, holding rg marker)]
+                    beside <- fold
+                    length (foldSelected alone) `shouldBe` 2
+                    foldLeft alone `shouldBe` 1
+                    foldSkipped alone `shouldBe` []
+                    foldSelected beside `shouldBe` foldSelected alone
+                    foldLeft beside `shouldBe` foldLeft alone
+                    foldTransaction beside `shouldBe` foldTransaction alone
+                    foldSkipped beside `shouldBe` []
+
+            it "is not in the accounting of a refused fold" $ do
+                rg <- newRegistered
+                addLive (rgWorld rg) [(txInOf 'c' 0, holding rg marker)]
+                outcome <- withSession (rgWorld rg) $ \session ->
+                    attemptFold
+                        session
+                        (rgScript rg)
+                        (naming marker)
+                        (rgRegistry rg)
+                        []
+                        (rgFolder rg)
+                        Nothing
+                case outcome of
+                    Left failure -> do
+                        foldFailureReason failure `shouldBe` NothingToFold
+                        foldFailureObserved failure `shouldBe` Just ([], 0)
+                    Right built -> expectationFailure (show built)
+
+            it "keeps the skip and the reason of an unrecognised holder beside it" $ do
+                rg <- newRegistered
+                let unrecognised = txInOf 'u' 0
+                addLive
+                    (rgWorld rg)
+                    [ (txInOf 'c' 0, holding rg marker)
+                    , (unrecognised, holding rg (PLC.I 0))
+                    ]
+                (found, omitted) <- discovery rg (naming marker)
+                found `shouldBe` []
+                omitted
+                    `shouldBe` [SkippedHolder unrecognised NotAcceptedByApplication]
+
+            it
+                "keeps a holder at a key address skipped as such, whatever its datum"
+                $ do
+                    rg <- newRegistered
+                    let keyHeld = txInOf 'k' 0
+                    addLive
+                        (rgWorld rg)
+                        [(keyHeld, holding rg marker & addrTxOutL .~ rgBooker rg)]
+                    (found, omitted) <- discovery rg (naming marker)
+                    found `shouldBe` []
+                    omitted `shouldBe` [SkippedHolder keyHeld HeldAtKeyAddress]
+
+            forM_
+                [ ("the marker", marker, lookalike)
+                , ("the lookalike", lookalike, marker)
+                ]
+                $ \(named, hidden, shown) ->
+                    it
+                        ( "hides what the description names, never what resembles an application's configuration: "
+                            <> named
+                        )
+                        $ do
+                            rg <- newRegistered
+                            let visible = txInOf 's' 0
+                            addLive
+                                (rgWorld rg)
+                                [ (txInOf 'h' 0, holding rg hidden)
+                                , (visible, holding rg shown)
+                                ]
+                            (found, omitted) <- discovery rg (naming hidden)
+                            found `shouldBe` []
+                            omitted `shouldBe` [SkippedHolder visible NotAcceptedByApplication]
+
         it "replays earlier folds before discovering a later registration" $ do
             rg <- newRegistered
             (first, _) <- folded rg [bookedKey "earlier" processingDeadline]

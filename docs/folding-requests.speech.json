@@ -55,11 +55,15 @@
       "pause": 400
     },
     {
-      "text": "Automatic discovery skips these kinds of holder or request and keeps folding the rest. A named batch instead refuses a bad request.",
+      "text": "Automatic discovery skips these kinds of holder or request and keeps folding the rest. A named batch instead refuses a bad request. A skip always names a request, or a holder that looked like one, that this fold did not take.",
       "pause": 400
     },
     {
-      "text": "The first individually foldable request for a key keeps it in take order. An earlier unfoldable request never reserves the key. If every discovered holder is skipped, nothing to fold still carries every skipped reference and reason.",
+      "text": "The first individually foldable request for a key keeps it in take order. An earlier unfoldable request never reserves the key. If every discovered request is skipped, nothing to fold still carries every skipped reference and reason.",
+      "pause": 400
+    },
+    {
+      "text": "A registry's configuration output holds an approval of the application too, but it is not a request. The application names it as its configuration, so a fold neither takes it nor lists it under skipped, and it stays unspent.",
       "pause": 400
     }
   ],
@@ -69,7 +73,7 @@
       "pause": 500
     },
     {
-      "text": "The packaged development-network registration journey starts a folder in fresh directories with none of the booker's files. It discovers and folds a mixed batch, checks the folder's change from the chain, and accounts separately for folded, skipped and left requests. It skips another registry's request, the application's configuration holder that its request decoding does not accept, and an unfoldable duplicate. A duplicate-free control and a later fold of what was left accompany it.",
+      "text": "The packaged development-network registration journey starts a folder in fresh directories with none of the booker's files. It discovers and folds a mixed batch, checks the folder's change from the chain, and accounts separately for folded, skipped and left requests. It skips another registry's request and an unfoldable duplicate, and it checks that the registry's configuration holder is in neither list and stays unspent. A duplicate-free control and a later fold of what was left accompany it.",
       "pause": 400
     },
     {
@@ -137,6 +141,6 @@
   ],
   "_source": {
     "file": "folding-requests.md",
-    "sha256": "05ea79d22c8e74506d9f4e409635b83bb5f87144ecd573eef4d6a857a35dc799"
+    "sha256": "2f72ff8d400145597e874fba49df7915b871720d9ea02e745cd3bef58ee6e959"
   }
 }

@@ -4,7 +4,7 @@
 set -euo pipefail
 inventory="$1" rows="$2" frozen="$3"
 group=batch-folding
-required='public-mixed-batch-fold skipped-batch-holders folder-keeps-batch-surplus largest-fitting-batch named-batch-and-state-policy measured-batch-limits'
+required='public-mixed-batch-fold skipped-batch-holders configuration-output-is-not-skipped folder-keeps-batch-surplus largest-fitting-batch named-batch-and-state-policy measured-batch-limits'
 reason='no executable comparison with the application-held model exists yet'
 fail() {
   echo "FAIL: $*" >&2

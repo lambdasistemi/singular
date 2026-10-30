@@ -167,7 +167,8 @@ chain transactions >"$chain_dir/all-unfoldable.transactions.json"
 all_unfoldable_accounting() { # RECEIPT UNSPENT INCLUDED-TRANSACTIONS
   jq -e -n --arg app "$application_hash" --arg sp "$state_policy" --arg sn "${token##*.}" \
     --slurpfile receipt "$1" --slurpfile view "$2" --slurpfile included "$3" '
-    [$view[0].outputs[] | select(any(.assets[]; .policy == $app))] as $holders
+    [$view[0].outputs[] | select(any(.assets[]; .policy == $app))
+     | select(((.datum | type) == "object" and .datum.constructor == 0) | not)] as $holders
     | [$holders[] | select(.datum.constructor == 1
        and .datum.fields[0].fields[0].fields == [{bytes:$sp},{bytes:$sn}])] as $own
     | [$included[0].transactions[]
@@ -180,11 +181,20 @@ all_unfoldable_accounting() { # RECEIPT UNSPENT INCLUDED-TRANSACTIONS
       and ([$receipt[0].skipped[].reference] | sort) == ([$holders[].ref] | sort)'
 }
 refusal_attempt nothing-foldable "there is nothing to fold" "$token"
-check "all own pending keys are registered and every policy holder remains in failure accounting" \
+check "all own pending keys are registered and every holder that is not configuration remains in failure accounting" \
   all_unfoldable_accounting "$receipts/nothing-foldable.json" "$chain_dir/all-unfoldable.unspent.json" "$chain_dir/all-unfoldable.transactions.json"
 jq '.skipped |= .[1:]' "$receipts/nothing-foldable.json" >"$scratch/missing-failure-skip.json"
 control "an omitted failure skip is detected by the independent census" \
   all_unfoldable_accounting "$scratch/missing-failure-skip.json" "$chain_dir/all-unfoldable.unspent.json" "$chain_dir/all-unfoldable.transactions.json"
+configuration_holder="$(jq -er --arg app "$application_hash" '
+  [.outputs[] | select(any(.assets[]; .policy == $app)
+     and (.datum | type) == "object" and .datum.constructor == 0)]
+  | if length > 0 then .[0].ref else error("no configuration holder") end' "$chain_dir/all-unfoldable.unspent.json")"
+jq --arg ref "$configuration_holder" \
+  '.skipped += [{reference: $ref, reason: "not accepted by the application'"'"'s decode"}]' \
+  "$receipts/nothing-foldable.json" >"$scratch/configuration-skip.json"
+control "a configuration holder named as skipped is detected by the independent census" \
+  all_unfoldable_accounting "$scratch/configuration-skip.json" "$chain_dir/all-unfoldable.unspent.json" "$chain_dir/all-unfoldable.transactions.json"
 fresh="$(refusal_book foldable-beside-unfoldable "$token" fresh-beside-unfoldable 3000000 payload.json)"
 refusal_control control-nothing-foldable "$token"
 check "the automatic passing control consumes the new foldable request" \

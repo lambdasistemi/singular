@@ -382,12 +382,16 @@ def skip_map(report):
     return {r["reference"]: r["reason"] for r in rows}
 
 
-def judge_configuration(context):
-    configs = [
+def configuration_holders(context):
+    return [
         o
         for o in request_holders(context)
         if isinstance(o["datum"], dict) and o["datum"].get("constructor") == 0
     ]
+
+
+def judge_configuration(context):
+    configs = configuration_holders(context)
     require(
         configs,
         "configuration: a real non-request configuration holder must be present",
@@ -396,15 +400,12 @@ def judge_configuration(context):
         skipped = skip_map(context["reports"][stage])
         after = {o["ref"]: o for o in context["views"]["after-" + stage]["outputs"]}
         require(
-            all(
-                skipped.get(o["ref"]) == "not accepted by the application's decode"
-                for o in configs
-            ),
-            "configuration: every actual configuration holder must be named as undecodable",
+            all(o["ref"] not in skipped for o in configs),
+            "configuration: no actual configuration holder may be named as skipped",
         )
         require(
             all(after.get(o["ref"]) == o for o in configs),
-            "configuration: skipped configuration holders must remain unspent and unchanged",
+            "configuration: configuration holders must remain unspent and unchanged",
         )
     return {
         "references": [o["ref"] for o in configs],
@@ -487,7 +488,9 @@ def judge_duplicate(context):
 
 
 def judge_accounting(context):
-    holders = references(request_holders(context))
+    holders = references(request_holders(context)) - references(
+        configuration_holders(context)
+    )
     candidates = ordered(context)
     folded = {r["output"]["ref"] for r in candidates[:4]}
     left = {r["output"]["ref"] for r in candidates[4:]}
@@ -498,7 +501,7 @@ def judge_accounting(context):
     )
     require(
         folded | skipped | left == holders,
-        "accounting: every policy holder must be accounted for",
+        "accounting: every policy holder that is not configuration must be accounted for",
     )
     return {
         "policyHolders": len(holders),
@@ -690,16 +693,20 @@ def main():
     )
 
     config_ref = judge_configuration(context)["references"][0]
+    configuration_skip = {
+        "reference": config_ref,
+        "reason": "not accepted by the application's decode",
+    }
     control(
-        "configuration omitted from skips",
+        "configuration listed among the skips",
         judge_configuration,
-        lambda c: c["reports"]["first"].update(
-            skipped=[
-                r
-                for r in c["reports"]["first"]["skipped"]
-                if r["reference"] != config_ref
-            ]
-        ),
+        lambda c: c["reports"]["first"]["skipped"].append(configuration_skip),
+        "configuration",
+    )
+    control(
+        "configuration listed among the skips of the rest",
+        judge_configuration,
+        lambda c: c["reports"]["rest"]["skipped"].append(configuration_skip),
         "configuration",
     )
     control(
@@ -767,6 +774,12 @@ def main():
             )
         ),
         "duplicate",
+    )
+    control(
+        "configuration holder reappears in the accounting",
+        judge_accounting,
+        lambda c: c["reports"]["first"]["skipped"].append(configuration_skip),
+        "accounting",
     )
     control(
         "policy holder disappears from accounting",

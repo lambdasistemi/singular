@@ -45,11 +45,11 @@ import Conformance.Receipt (Receipt (..), Verdict (..))
 
 -- | Comparison, reading, shared-publication and batch-folding requirements.
 expectedRowCount :: Int
-expectedRowCount = 22
+expectedRowCount = 23
 
 -- | Every retained requirement belongs to Singular.
 ownedDenominator :: Int
-ownedDenominator = 22
+ownedDenominator = 23
 
 {- | A row's declared coverage plan. @executed@ is unrepresentable
 here by construction: only a run receipt can establish it.

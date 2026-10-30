@@ -181,6 +181,16 @@
       "evidence": "Separate evidence boundary, not a comparison with the model: no-pin-registration-journey runs the mixed public-data batch and chain accounting; no-pin-batch-refusals runs the named refusals and accepted controls; no-pin-batch-measurement evaluates kept transactions under recorded parameters and captures fresh development-node boundaries. The documentation check binds its figures to the kept receipt. They establish what they run and nothing about agreement with the model."
     },
     {
+      "id": "configuration-output-is-not-skipped",
+      "group": "batch-folding",
+      "requirement": "A registry's configuration output is not a request. Automatic discovery neither folds it nor names it among the skipped holders, and it stays unspent. A holder of an approval that is neither a request nor a configuration output is still skipped and named with its reason.",
+      "source": "Holder discovery and skip classification are operational behavior without a model query.",
+      "expected": "The batch behavior is as stated. Uncovered: no executable comparison with the application-held model exists yet",
+      "state": "uncovered",
+      "note": "The development-network journey shows the registry's configuration holder in neither list and unspent. This replaces what the preceding requirement's note says of that holder, that request decoding rejected it. Key-address holders and malformed request datums have unit-test evidence only.",
+      "evidence": "Separate evidence boundary, not a comparison with the model: no-pin-registration-journey runs the mixed public-data batch and chain accounting; no-pin-batch-refusals runs the named refusals and accepted controls; no-pin-batch-measurement evaluates kept transactions under recorded parameters and captures fresh development-node boundaries. The documentation check binds its figures to the kept receipt. They establish what they run and nothing about agreement with the model."
+    },
+    {
       "id": "folder-keeps-batch-surplus",
       "group": "batch-folding",
       "requirement": "The folder receives each registration request's held value above the deposit the application requires its new holding to keep, and each termination request's whole held value. The transaction's change is read from the chain. The wallet funds the ledger fee separately; the gross request allocation is distinct from the net change after the fee.",

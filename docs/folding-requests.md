@@ -89,28 +89,33 @@ Its `left` count is the foldable requests beyond the chosen prefix. A skipped
 request is never counted as left.
 
 Automatic discovery skips these kinds of holder or request and keeps folding
-the rest. A named batch instead refuses a bad request.
+the rest. A named batch instead refuses a bad request. A skip always names a
+request, or a holder that looked like one, that this fold did not take.
 
 | Kind of skip | Meaning |
 |---|---|
 | Held at a key address | The approval's holder is a wallet output, not an application request |
 | Decoded for another registry | The request belongs to a different state policy or state token name |
-| Not accepted by the application's decode | The holder is not a request the application accepts |
+| Not accepted by the application's decode | The holder is at the application but is not a request the application accepts, and is not a registry's configuration output |
 | Individually unfoldable | Its key is already registered, its termination key is not live, its deposit is too small, its processing window is closed, or a preceding foldable request already kept its key |
 
 The first individually foldable request for a key keeps it in take order. An
-earlier unfoldable request never reserves the key. If every discovered holder
+earlier unfoldable request never reserves the key. If every discovered request
 is skipped, nothing to fold still carries every skipped reference and reason.
+
+A registry's configuration output holds an approval of the application too, but
+it is not a request. The application names it as its configuration, so a fold
+neither takes it nor lists it under `skipped`, and it stays unspent.
 
 ## What has been exercised
 
 The packaged development-network registration journey starts a folder in fresh
 directories with none of the booker's files. It discovers and folds a mixed
 batch, checks the folder's change from the chain, and accounts separately for
-folded, skipped and left requests. It skips another registry's request, the
-application's configuration holder that its request decoding does not accept,
-and an unfoldable duplicate. A duplicate-free control and a later fold of what
-was left accompany it.
+folded, skipped and left requests. It skips another registry's request and an
+unfoldable duplicate, and it checks that the registry's configuration holder is
+in neither list and stays unspent. A duplicate-free control and a later fold of
+what was left accompany it.
 
 An approval at a key address and a malformed request datum are unit-tested
 only; the packaged journey does not construct accepted transactions creating
