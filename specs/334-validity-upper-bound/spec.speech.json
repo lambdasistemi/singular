@@ -1,0 +1,50 @@
+{
+  "every-transaction-the-commands-build-carries-a-validity-upper-bound": [
+    {
+      "text": "Every transaction the commands build carries a validity upper bound.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 334, part of the work before the first stable release. This page is for a person who signs and submits with the commands, for the integrators who sign elsewhere, and for the people who review the pull request. It follows the batch fold ticket.",
+      "pause": 400
+    }
+  ],
+  "story": [
+    {
+      "text": "Story.",
+      "pause": 500
+    },
+    {
+      "text": "As a person using the commands, when a submission outcome is unknown or rolled back, every transaction the commands built can later be proved excluded once the chain tip passes its validity upper bound, so no transaction stays unresolved for ever. As an integrator who signs a bundle elsewhere, a bundle whose transactions can never land (an output it spends was spent by another write) is declared dead once the tip passes its deadline, and my wallet's next write of that registry proceeds instead of stopping at a refusal that names the bundle.",
+      "pause": 400
+    },
+    {
+      "text": "Today the booking, the reclaim, the cleanup and the fold carry an upper bound. The update, the booking of a termination and the creation of a registry do not, so the recovery rule that declares a transaction excluded or a bundle dead cannot apply to them.",
+      "pause": 400
+    }
+  ],
+  "requirements": [
+    {
+      "text": "Requirements.",
+      "pause": 500
+    }
+  ],
+  "refusals-and-limits": [
+    {
+      "text": "Refusals and limits.",
+      "pause": 500
+    },
+    {
+      "text": "Refusal meaning, validators and the journal format do not change.",
+      "pause": 300
+    },
+    {
+      "text": "Position against the formal model: a validity bound is a field of the transaction body, not a transition. The implementer records the search of the model and the validators for any rule that reads the validity interval of these three transactions; finding one stops the work and becomes a question with a user story.",
+      "pause": 300
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "13aad5ce0dc95f4b243676b662f8c3773260cd8620090a3b0ad21ae42b1ac77f"
+  }
+}

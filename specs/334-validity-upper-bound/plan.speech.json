@@ -1,0 +1,56 @@
+{
+  "plan-the-builders-set-the-upper-bound": [
+    {
+      "text": "Plan: the builders set the upper bound.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 334. Follows the specification.",
+      "pause": 400
+    }
+  ],
+  "approach": [
+    {
+      "text": "Approach.",
+      "pause": 500
+    },
+    {
+      "text": "The builders that lack a bound take one from the same time conversion the booking builder uses, with the same horizon limit, so each new bound is the one a person already gets on a booking. The recovery rule that already exists then applies to them with no change of its own: a body with an upper bound can be excluded or declared dead once the tip passes it. The census of builders is part of the work, because a builder reached only by one command is easy to miss.",
+      "pause": 400
+    }
+  ],
+  "slice": [
+    {
+      "text": "Slice.",
+      "pause": 500
+    },
+    {
+      "text": "One slice and one pull request: the three builders, the recovery and creation controls extended to an update and a booking, the regenerated receipts and goldens, and the pages.",
+      "pause": 400
+    }
+  ],
+  "consumers-the-gate-names-at-intake": [
+    {
+      "text": "Consumers the gate names at intake.",
+      "pause": 500
+    },
+    {
+      "text": "The command-line recovery partitions, the staged-bundle and external-signing journeys, the creation cost check, the golden transaction tests of the open datum package and the off-chain suite, the bundle deadline check of the signing command, and the pages that describe recovery and creation.",
+      "pause": 400
+    }
+  ],
+  "model-position": [
+    {
+      "text": "Model position.",
+      "pause": 500
+    },
+    {
+      "text": "Below, conditional on the search named in the specification.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "a9a55d46791fea6becb5c364db04974ea90a2c654dda4552bce94aadc230ead6"
+  }
+}

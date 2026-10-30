@@ -1,0 +1,34 @@
+{
+  "data-a-window-on-each-transaction-body": [
+    {
+      "text": "Data: a window on each transaction body.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 334. Follows the modules model.",
+      "pause": 400
+    }
+  ],
+  "invariants": [
+    {
+      "text": "Invariants.",
+      "pause": 500
+    },
+    {
+      "text": "a body the commands build with no upper bound is a defect the census must name.",
+      "pause": 300
+    },
+    {
+      "text": "the signing command's rule that a recorded deadline equals the body's upper bound keeps holding with a bound on every body.",
+      "pause": 300
+    },
+    {
+      "text": "the journal format records the deadline it already records.",
+      "pause": 300
+    }
+  ],
+  "_source": {
+    "file": "data-model.md",
+    "sha256": "14c79499f75e023376874bf4584c22d81dfcac6b67f5ccc9f896d5d89b789503"
+  }
+}
