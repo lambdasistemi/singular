@@ -7,6 +7,7 @@
   offchain,
   conformance,
   onchain,
+  packagedBlueprint,
 }:
 let
   # The Terminal theme, pinned by wheel content hash (version 4.8.0).
@@ -155,6 +156,8 @@ let
       python3 test/ci/batch-limits.py
       python3 tools/decision_table.py --check
       python3 test/ci/decision-table.py
+      python3 tools/compatibility_record.py --check --blueprint ${packagedBlueprint}
+      python3 test/ci/compatibility-record.py . ${packagedBlueprint}
       python3 test/ci/batch-user-documentation.py
       conformance evidence-page --root .
       bash tools/evidence_page_controls.sh .

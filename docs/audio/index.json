@@ -568,6 +568,132 @@
    }
   ]
  },
+ "docs/compatibility.md": {
+  "applications": [
+   {
+    "index": 0,
+    "name": "docs-compatibility/applications-00",
+    "pause_ms": 500,
+    "text": "Applications.",
+    "v": "ff0e0d54ea6a"
+   },
+   {
+    "index": 1,
+    "name": "docs-compatibility/applications-01",
+    "pause_ms": 400,
+    "text": "A registry made for an application has a state policy that applies the state program to the application's policy. The table holds one row for each, with the Singular releases and the application releases that carry it.",
+    "v": "f55a52f2cb87"
+   }
+  ],
+  "contracts-with-no-release": [
+   {
+    "index": 0,
+    "name": "docs-compatibility/contracts-with-no-release-00",
+    "pause_ms": 500,
+    "text": "Contracts with no release.",
+    "v": "bc34b9387084"
+   },
+   {
+    "index": 1,
+    "name": "docs-compatibility/contracts-with-no-release-01",
+    "pause_ms": 400,
+    "text": "The table also holds state contracts that no release carries. A registry of one of them was made by code that no release in the table carries, and no release is known to serve it.",
+    "v": "e3d7efa0b65c"
+   }
+  ],
+  "how-the-answer-is-found": [
+   {
+    "index": 0,
+    "name": "docs-compatibility/how-the-answer-is-found-00",
+    "pause_ms": 500,
+    "text": "How the answer is found.",
+    "v": "cc410a0ccd92"
+   },
+   {
+    "index": 1,
+    "name": "docs-compatibility/how-the-answer-is-found-01",
+    "pause_ms": 400,
+    "text": "The commands of this release derive their state contract from the blueprint they carry. The request validator of that blueprint has an application policy, and the release table holds the applied state policy for it. That applied state policy is the contract these commands derive, and it is the state contract of every row marked as this release.",
+    "v": "e6da492f10c7"
+   },
+   {
+    "index": 2,
+    "name": "docs-compatibility/how-the-answer-is-found-02",
+    "pause_ms": 400,
+    "text": "Every row is computed from the release table, which the releases after v0.15.0 carry, and from the blueprint this release carries. The releases up to v0.15.0 carry no table, so their commands cannot name a serving release. Registries made by a release whose contract is recorded are served by the newest release in the table that carries that contract, unless the contract is the one these commands derive, which this release serves. A contract that the table holds with no release has no release that serves it. The record names no version of its own, so it needs no edit when the version changes.",
+    "v": "1a3e8e85acd9"
+   },
+   {
+    "index": 3,
+    "name": "docs-compatibility/how-the-answer-is-found-03",
+    "pause_ms": 400,
+    "text": "The commands of this release print the same answer. The off-chain test suite compares each row that has a contract with the answer of the library function these commands call, and the documentation check refuses a page that differs from the table.",
+    "v": "9e70d1158bbc"
+   }
+  ],
+  "regenerate-this-page": [
+   {
+    "index": 0,
+    "name": "docs-compatibility/regenerate-this-page-00",
+    "pause_ms": 500,
+    "text": "Regenerate this page.",
+    "v": "24aebf59cc10"
+   },
+   {
+    "index": 1,
+    "name": "docs-compatibility/regenerate-this-page-01",
+    "pause_ms": 400,
+    "text": "Build the packaged blueprint with nix build ./applications/open-datum/onchain#open-datum-blueprint -o blueprint, run python3 tools/compatibility_record.py --write --blueprint blueprint to regenerate the page and its rows, then regenerate its speech and changed narration. The documentation check runs python3 tools/compatibility_record.py --check with the packaged blueprint.",
+    "v": "ae7417ae03b3"
+   }
+  ],
+  "release-by-release": [
+   {
+    "index": 0,
+    "name": "docs-compatibility/release-by-release-00",
+    "pause_ms": 500,
+    "text": "Release by release.",
+    "v": "1b8f6407789a"
+   },
+   {
+    "index": 1,
+    "name": "docs-compatibility/release-by-release-01",
+    "pause_ms": 400,
+    "text": "The table names 22 releases and 8 state contracts. Each release has one row, oldest first. A release the table leaves out is listed with its reason: its contract is not recorded, so no release is known to serve its registries.",
+    "v": "7645ca53206e"
+   },
+   {
+    "index": 2,
+    "name": "docs-compatibility/release-by-release-02",
+    "pause_ms": 400,
+    "text": "This release serves the registries of 3 releases listed above.",
+    "v": "180ec22ce22f"
+   }
+  ],
+  "which-release-serves-my-registry": [
+   {
+    "index": 0,
+    "name": "docs-compatibility/which-release-serves-my-registry-00",
+    "pause_ms": 500,
+    "text": "Which release serves my registry.",
+    "v": "93725ac948f4"
+   },
+   {
+    "index": 1,
+    "name": "docs-compatibility/which-release-serves-my-registry-01",
+    "pause_ms": 400,
+    "text": "As a person with a registry made by some earlier release, you find on this page which release serves it: this release, an earlier one, or none that is known.",
+    "v": "c0a5ee3ffa8e"
+   },
+   {
+    "index": 2,
+    "name": "docs-compatibility/which-release-serves-my-registry-02",
+    "pause_ms": 400,
+    "text": "The diagram shows the question the rows below answer. A registry is made by one version of the on-chain code, and its state contract is the hash of that version's state validator. The commands of this release change the registries of one state contract, the one they derive from the blueprint they carry. Given a registry of another contract, a command of this release that changes it refuses before anything is built and names the release that serves it, or says that no release is known.",
+    "v": "972d9a5a7844"
+   }
+  ]
+ },
  "docs/conformance-api-reference.md": {
   "conformance-api-reference": [
    {
@@ -1986,6 +2112,22 @@
     "pause_ms": 400,
     "text": "A pull request that builds the bundles also plays the registration journey from those files, twice: from the Linux bundle unpacked, and from the DEB installed with the system package manager, each on a machine that has no Nix. The commands and the blueprint come only from the bundle or the package, and the development node is the one the bundle or the package carries; the job shows where each command and the blueprint resolved to. The journey creates a registry, registers, updates and terminates a key, reads it back and folds a discovered batch on a development network. Every verdict is computed from the chain's record or from files, and none is typed; create, register, update, terminate, read and the discovered batch fold are each judged from the chain's record and shown failing on altered input. The same pull request assembles the release as the pipeline does, adds both bundles and runs verify-release on it, so that a broken bundle journey is found in the pull request and not after the tag.",
     "v": "129e645be5ca"
+   }
+  ],
+  "if-your-registry-was-made-by-an-earlier-release": [
+   {
+    "index": 0,
+    "name": "docs-install/if-your-registry-was-made-by-an-earlier-release-00",
+    "pause_ms": 500,
+    "text": "If your registry was made by an earlier release.",
+    "v": "ae494153a6bc"
+   },
+   {
+    "index": 1,
+    "name": "docs-install/if-your-registry-was-made-by-an-earlier-release-01",
+    "pause_ms": 400,
+    "text": "When the registry you want to use was made by an earlier release, the commands you installed tell you which release serves it, or that no release is known. The compatibility record lists, for each release in the release table, the release that serves the registries it made: this release, an earlier one, or none that is known.",
+    "v": "d6099fd671bc"
    }
   ],
   "install-on-linux": [

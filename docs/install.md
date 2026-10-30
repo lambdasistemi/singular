@@ -222,6 +222,14 @@ beside it.
 Name it once and pass it to every command, for example
 `blueprint=/usr/share/singular/plutus.json` and then `--blueprint "$blueprint"`.
 
+## If your registry was made by an earlier release
+
+When the registry you want to use was made by an earlier release, the commands you
+installed tell you which release serves it, or that no release is known. The
+[compatibility record](compatibility.md) lists, for each release in the release
+table, the release that serves the registries it made: this release, an earlier
+one, or none that is known.
+
 ## When it does not work
 
 | What you see | What it means and what to do |
@@ -231,6 +239,7 @@ Name it once and pass it to every command, for example
 | macOS says the developer cannot be verified | The file was quarantined by a browser. Remove the mark as shown above. |
 | `--version` prints `commit unknown` | The program was not built by the release pipeline. Download the release file. |
 | `devnet` exits before it prints its settings | Another development node of yours may be running, because it keeps its files in one folder under your temporary directory. Stop it and start `devnet` again. |
+| A command says this release does not serve the registry | The registry was made by other contracts. The message names the release that serves it, or says that no release is known; the [compatibility record](compatibility.md) lists the answer for each release in the release table. |
 
 ## Other platforms and the Nix route
 

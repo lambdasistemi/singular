@@ -18,13 +18,23 @@ These cases hold what a refusal says from it, and what keeps it complete:
 * every release in the project's release history is named once;
 * a table that lists a hash twice, a release out of order or a hash that is not
   28 bytes is refused as a file;
+* the compatibility record, from which the published page is rendered, says for
+  every release of the packaged table what the serving answer says of the
+  contract that release carries, and the contract it reads as this release's is
+  the one the library derives from the packaged state program.
 -}
 module Singular.Registry.ContractTableSpec (spec) where
 
+import Cardano.Crypto.Hash (hashFromBytes)
+import Cardano.Ledger.Core (hashScript)
+import Cardano.Ledger.Hashes (ScriptHash (..))
+import Cardano.Ledger.Mary.Value (PolicyID (..))
 import Control.Exception (bracket_)
 import Control.Monad (forM_)
 import Data.Aeson qualified as Aeson
+import Data.Aeson.Types qualified as AesonTypes
 import Data.ByteString (ByteString)
+import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Lazy qualified as BL
@@ -32,10 +42,13 @@ import Data.Either (fromRight, isLeft)
 import Data.List (maximumBy, nub)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.List.NonEmpty qualified as NE
+import Data.Map.Strict (Map)
+import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe, isNothing)
 import Data.Ord (comparing)
 import Data.Text (Text)
 import Data.Text qualified as T
+import Data.Text.Encoding qualified as TE
 import Data.Text.IO qualified as TIO
 import Data.Version (versionBranch)
 import System.Environment (lookupEnv, setEnv, unsetEnv)
@@ -52,6 +65,7 @@ import Text.Read (readMaybe)
 
 import Paths_singular_registry (version)
 
+import Singular.Registry.Blueprint (loadBlueprint)
 import Singular.Registry.ContractTable
     ( ApplicationIdentity (..)
     , ContractTable
@@ -69,6 +83,8 @@ import Singular.Registry.ContractTable
     , tableLeftOut
     , tableRows
     )
+import Singular.Registry.TxBuilder.Internal (scriptHashBytes)
+import Singular.State.Script (stateScriptFromBlueprint)
 
 spec :: Spec
 spec = describe "the table of releases" $ do
@@ -79,6 +95,7 @@ spec = describe "the table of releases" $ do
     releaseRows
     servingRows
     guidanceRows
+    compatibilityRows
 
 applicationLookupRows :: Spec
 applicationLookupRows = describe "an applied state policy" $ do
@@ -619,3 +636,409 @@ guidanceRows = describe "the guidance a serving answer is worded as" $ do
                 ]
         map servingLines answers
             `shouldBe` nub (map servingLines answers)
+
+-- ---------------------------------------------------------
+-- The compatibility record agrees with the library
+-- ---------------------------------------------------------
+
+{- | What the compatibility record says of who serves the registries made by a
+contract: the three kinds the page has, and the library's other answers, which
+the page never says.
+-}
+data Said
+    = SaidThisRelease
+    | SaidEarlier Text
+    | SaidNone
+    | SaidOther Text
+    deriving stock (Eq, Show)
+
+-- | One row of the record: what it names, the contract it holds and who serves it.
+data RecordRow = RecordRow
+    { rowName :: Text
+    , rowContract :: Maybe ByteString
+    , rowSaid :: Said
+    , rowWhy :: Maybe Text
+    }
+    deriving stock (Eq, Show)
+
+-- | An application row of the record, beside the table's.
+data ApplicationRecord = ApplicationRecord
+    { applicationRow :: RecordRow
+    , recordApplicationOf :: ByteString
+    , recordSingular :: [Text]
+    , recordApplicationReleases :: [Text]
+    }
+    deriving stock (Eq, Show)
+
+-- | The record the page is rendered from.
+data Record = Record
+    { recordOwn :: Maybe ByteString
+    , recordPolicy :: ByteString
+    , recordReleases :: [RecordRow]
+    , recordWithoutRelease :: [RecordRow]
+    , recordApplications :: [ApplicationRecord]
+    }
+    deriving stock (Eq, Show)
+
+hexBytes :: Text -> AesonTypes.Parser ByteString
+hexBytes hex =
+    either
+        (const (fail ("not hex: " <> T.unpack hex)))
+        pure
+        (B16.decode (TE.encodeUtf8 hex))
+
+hexText :: ByteString -> Text
+hexText = TE.decodeUtf8 . B16.encode
+
+parseSaid :: Aeson.Object -> AesonTypes.Parser (Said, Maybe Text)
+parseSaid o = do
+    served <- o Aeson..: "served-by"
+    kind <- served Aeson..: "kind" :: AesonTypes.Parser Text
+    case kind of
+        "this-release" -> pure (SaidThisRelease, Nothing)
+        "earlier-release" -> do
+            release <- served Aeson..: "release"
+            pure (SaidEarlier release, Nothing)
+        "no-release" -> do
+            why <- served Aeson..: "why"
+            pure (SaidNone, Just why)
+        other -> fail ("the record says an unknown kind: " <> T.unpack other)
+
+parseRow
+    :: Aeson.Key -> Aeson.Key -> Aeson.Object -> AesonTypes.Parser RecordRow
+parseRow nameKey contractKey o = do
+    name <- o Aeson..: nameKey
+    contract <- o Aeson..:? contractKey >>= traverse hexBytes
+    (said, why) <- parseSaid o
+    pure (RecordRow name contract said why)
+
+instance Aeson.FromJSON Record where
+    parseJSON = Aeson.withObject "the compatibility record" $ \o -> do
+        own <- o Aeson..: "this-release-contract" >>= traverse hexBytes
+        policy <- o Aeson..: "packaged-application-policy" >>= hexBytes
+        releases <-
+            o Aeson..: "releases"
+                >>= traverse (parseRow "release" "state-contract")
+        without <-
+            o Aeson..: "contracts-without-release"
+                >>= traverse (parseRow "state-contract" "state-contract")
+        applications <-
+            o Aeson..: "applications" >>= traverse parseApplication
+        pure (Record own policy releases without applications)
+      where
+        parseApplication = Aeson.withObject "an application row" $ \a -> do
+            row <- parseRow "state-policy" "state-policy" a
+            application <- a Aeson..: "application-policy" >>= hexBytes
+            singular <- a Aeson..: "singular-releases"
+            released <- a Aeson..: "application-releases"
+            pure (ApplicationRecord row application singular released)
+
+{- | The committed compatibility record, read from the file named in
+@SINGULAR_COMPATIBILITY_ROWS@. A missing variable fails the case: a run that
+cannot reach the record compares nothing.
+-}
+loadRecord :: IO Record
+loadRecord = do
+    path <-
+        lookupEnv "SINGULAR_COMPATIBILITY_ROWS"
+            >>= maybe
+                (fail "SINGULAR_COMPATIBILITY_ROWS names no compatibility record")
+                pure
+    bytes <- BS.readFile path
+    either
+        (fail . ("the compatibility record: " <>))
+        pure
+        (Aeson.eitherDecodeStrict' bytes)
+
+-- | What the record would say of a serving answer; the page has no other kinds.
+saysOf :: Serving -> Said
+saysOf = \case
+    ServedHere -> SaidThisRelease
+    ServedByEarlier tags -> SaidEarlier (NE.last tags)
+    UnknownContract -> SaidNone
+    UnreleasedContract -> SaidNone
+    ServedByApplication tags ->
+        SaidOther
+            ("served by the application releases " <> T.unwords (NE.toList tags))
+    TableUnusable why -> SaidOther why
+
+{- | Every way the record differs from the library's serving answer for the
+commands of this record: the installed release, its own contract, and the table.
+An empty list is agreement.
+-}
+disagreements :: Text -> ContractTable -> Record -> [Text]
+disagreements tag table record =
+    releaseProblems <> withoutProblems <> applicationProblems
+  where
+    answer = libraryAnswer tag table record
+    carried :: Map Text (Maybe ByteString)
+    carried =
+        Map.fromList $
+            [(r, Just h) | (h, rs) <- tableRows table, r <- rs]
+                <> [ (r, Just (appliedStatePolicy a))
+                   | a <- applicationRows table
+                   , r <- singularReleases a
+                   ]
+                <> [(r, Nothing) | (r, _) <- tableLeftOut table]
+    only what names other = [what <> " " <> n | n <- names, n `notElem` other]
+    releaseProblems =
+        only
+            "the table names the release"
+            (Map.keys carried)
+            (map rowName (recordReleases record))
+            <> only
+                "the record names the release"
+                (map rowName (recordReleases record))
+                (Map.keys carried)
+            <> concat
+                [ rowProblems row contract
+                | row <- recordReleases record
+                , Just contract <- [Map.lookup (rowName row) carried]
+                ]
+    rowProblems row contract =
+        [ "the contract of the release " <> rowName row <> " differs"
+        | rowContract row /= contract
+        ]
+            <> case contract of
+                Just hash ->
+                    [ "the record says "
+                        <> T.pack (show (rowSaid row))
+                        <> " of the release "
+                        <> rowName row
+                        <> " and the library says "
+                        <> T.pack (show (answer hash))
+                    | rowSaid row /= answer hash
+                    ]
+                Nothing ->
+                    [ "the record does not say that no release is known for the release "
+                        <> rowName row
+                        <> " the table leaves out"
+                    | rowSaid row /= SaidNone
+                        || rowWhy row /= lookup (rowName row) (tableLeftOut table)
+                    ]
+    unreleased = [h | (h, []) <- tableRows table]
+    withoutProblems =
+        only
+            "the table holds the contract without a release"
+            (map hexText unreleased)
+            (map rowName (recordWithoutRelease record))
+            <> only
+                "the record holds the contract without a release"
+                (map rowName (recordWithoutRelease record))
+                (map hexText unreleased)
+            <> [ "the record says "
+                    <> T.pack (show (rowSaid row))
+                    <> " of the contract "
+                    <> rowName row
+                    <> " and the library says "
+                    <> T.pack (show (answer hash))
+               | row <- recordWithoutRelease record
+               , hash <- unreleased
+               , hexText hash == rowName row
+               , rowSaid row /= answer hash
+               ]
+    applicationProblems =
+        only
+            "the table holds the application"
+            (map (hexText . appliedStatePolicy) (applicationRows table))
+            (map (rowName . applicationRow) (recordApplications record))
+            <> only
+                "the record holds the application"
+                (map (rowName . applicationRow) (recordApplications record))
+                (map (hexText . appliedStatePolicy) (applicationRows table))
+            <> concat
+                [ [ "the record says "
+                        <> T.pack (show (rowSaid (applicationRow row)))
+                        <> " of the application "
+                        <> rowName (applicationRow row)
+                        <> " and the library says "
+                        <> T.pack (show (answer (appliedStatePolicy identity)))
+                  | rowSaid (applicationRow row) /= answer (appliedStatePolicy identity)
+                  ]
+                    <> [ "the releases of the application "
+                            <> rowName (applicationRow row)
+                            <> " differ"
+                       | recordSingular row /= singularReleases identity
+                            || recordApplicationReleases row /= applicationReleases identity
+                            || recordApplicationOf row /= applicationPolicy identity
+                       ]
+                | row <- recordApplications record
+                , identity <- applicationRows table
+                , hexText (appliedStatePolicy identity) == rowName (applicationRow row)
+                ]
+
+-- | What the library says of a contract, for the commands of this record.
+libraryAnswer :: Text -> ContractTable -> Record -> ByteString -> Said
+libraryAnswer tag table record =
+    saysOf
+        . servingOf
+            table
+            (Installed tag (maybe [] pure (recordOwn record)))
+
+-- | One line of evidence for a release: the record's answer beside the library's.
+evidenceLine :: ContractTable -> Record -> RecordRow -> String
+evidenceLine table record row =
+    T.unpack (rowName row)
+        <> "  "
+        <> maybe "-" (T.unpack . T.take 8 . hexText) (rowContract row)
+        <> "  record: "
+        <> show (rowSaid row)
+        <> "  library: "
+        <> maybe
+            "no contract to ask for"
+            (show . libraryAnswer packageTag table record)
+            (rowContract row)
+
+-- | The table with one release removed from wherever it names it.
+withoutRelease :: Text -> ContractTable -> Either Text ContractTable
+withoutRelease release table =
+    parseContractTable . BL.toStrict . Aeson.encode $
+        Aeson.object
+            [ "rows"
+                Aeson..= [ Aeson.object
+                            [ "state-contract" Aeson..= hexText hash
+                            , "releases" Aeson..= filter (/= release) tags
+                            ]
+                         | (hash, tags) <- tableRows table
+                         ]
+            , "applications"
+                Aeson..= [ a{singularReleases = filter (/= release) (singularReleases a)}
+                         | a <- applicationRows table
+                         ]
+            , "left-out"
+                Aeson..= [ Aeson.object ["release" Aeson..= r, "reason" Aeson..= why]
+                         | (r, why) <- tableLeftOut table
+                         , r /= release
+                         ]
+            ]
+
+-- | The state policy the library derives from the packaged state program for an application.
+derivedStatePolicy :: ByteString -> IO ByteString
+derivedStatePolicy application = do
+    path <-
+        lookupEnv "SINGULAR_STATE_BLUEPRINT"
+            >>= maybe (fail "SINGULAR_STATE_BLUEPRINT names no state blueprint") pure
+    blueprint <-
+        loadBlueprint path >>= either (fail . ("blueprint: " <>)) pure
+    hash <-
+        maybe
+            (fail "the application policy is not 28 bytes")
+            (pure . ScriptHash)
+            (hashFromBytes application)
+    script <-
+        either (fail . ("state script: " <>)) pure $
+            stateScriptFromBlueprint blueprint (PolicyID hash)
+    pure (scriptHashBytes (hashScript script))
+
+compatibilityRows :: Spec
+compatibilityRows = describe "the compatibility record" $ do
+    it
+        "agrees with the serving answer of the library for every release of the packaged table"
+        $ withRecord
+        $ \table record -> do
+            length (recordReleases record) `shouldSatisfy` (> 1)
+            recordOwn record `shouldSatisfy` (/= Nothing)
+            putStrLn
+                ( "the installed commands are the release "
+                    <> T.unpack packageTag
+                )
+            forM_ (recordReleases record) $
+                putStrLn . evidenceLine table record
+            disagreements packageTag table record `shouldBe` []
+    it "says the same whichever release the installed commands are" $
+        withRecord $ \table record -> do
+            let listed = listedReleases table
+                newest = maximumBy (comparing tagNumbers) listed
+                above = case tagNumbers newest of
+                    major : minor : _ -> [tagOf [major, minor + 1, 0], tagOf [major + 1, 0, 0]]
+                    _ -> []
+            forM_ (packageTag : "v99.0.0" : above <> listed) $ \tag ->
+                disagreements tag table record `shouldBe` []
+    it
+        "reads as this release the contract the library derives from the packaged state program"
+        $ withRecord
+        $ \table record -> do
+            own <-
+                maybe
+                    ( expectationFailure "the record reads no release as this one"
+                        >> pure mempty
+                    )
+                    pure
+                    (recordOwn record)
+            identity <-
+                maybe
+                    ( expectationFailure "the table holds no application row for it"
+                        >> fail "no row"
+                    )
+                    pure
+                    (applicationOf table own)
+            applicationPolicy identity `shouldBe` recordPolicy record
+            derivedStatePolicy (applicationPolicy identity) >>= (`shouldBe` own)
+    it
+        "does not read as this release the contract derived for another application"
+        $ withRecord
+        $ \_ record -> do
+            let other = BS.map (+ 1) (recordPolicy record)
+            derived <- derivedStatePolicy other
+            Just derived `shouldNotBe` recordOwn record
+    it
+        "is caught when a row says another thing than the library, for each release"
+        $ withRecord
+        $ \table record ->
+            forM_ (zip [0 ..] (recordReleases record)) $ \(index, row) -> do
+                let said = case rowSaid row of
+                        SaidNone -> SaidThisRelease
+                        SaidThisRelease -> SaidNone
+                        SaidEarlier _ -> SaidThisRelease
+                        SaidOther _ -> SaidNone
+                    edited =
+                        record
+                            { recordReleases =
+                                replaceAt index row{rowSaid = said} (recordReleases record)
+                            }
+                    problems = disagreements packageTag table edited
+                problems `shouldSatisfy` any (T.isInfixOf (rowName row))
+    it "is caught when a row names another release serving it" $
+        withRecord $ \table record ->
+            forM_ (zip [0 ..] (recordReleases record)) $ \(index, row) ->
+                case rowSaid row of
+                    SaidEarlier _ -> do
+                        let edited =
+                                record
+                                    { recordReleases =
+                                        replaceAt
+                                            index
+                                            row{rowSaid = SaidEarlier "v0.0.1"}
+                                            (recordReleases record)
+                                    }
+                        disagreements packageTag table edited
+                            `shouldSatisfy` any (T.isInfixOf (rowName row))
+                    _ -> pure ()
+    it
+        "is caught when a release is removed from the table, for each release"
+        $ withRecord
+        $ \table record ->
+            forM_ (listedReleases table) $ \release -> do
+                reduced <-
+                    either (fail . T.unpack) pure (withoutRelease release table)
+                disagreements packageTag reduced record
+                    `shouldSatisfy` any (T.isInfixOf release)
+    it "is caught when a release is missing from the record" $
+        withRecord $ \table record ->
+            forM_ (zip [0 ..] (recordReleases record)) $ \(index, row) ->
+                disagreements
+                    packageTag
+                    table
+                    record{recordReleases = dropAt index (recordReleases record)}
+                    `shouldSatisfy` any (T.isInfixOf (rowName row))
+    it "is caught when the record reads no release as this one" $
+        withRecord $ \table record ->
+            disagreements packageTag table record{recordOwn = Nothing}
+                `shouldSatisfy` (not . null)
+  where
+    withRecord use = do
+        record <- loadRecord
+        loadContractTable
+            >>= either (expectationFailure . T.unpack) (`use` record)
+    replaceAt index new rows = take index rows <> [new] <> drop (index + 1) rows
+    dropAt index rows = take index rows <> drop (index + 1) rows

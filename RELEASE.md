@@ -57,6 +57,23 @@ commands for each platform.
    Then, inside that directory, run `sha256sum --check --quiet SHA256SUMS` and
    `bash verify-identities.sh` to check every file and the compiled validators.
 
+## Registries made by an earlier release
+
+The
+[compatibility record](https://lambdasistemi.github.io/singular/docs/compatibility/)
+gives, for each release in the release table, the release that serves the registries
+it made: this release, an earlier one, or none that is known. The commands `singular`
+and `open-datum` answer the same way.
+
+- Registries the record marks as served by this release are served by these commands,
+  with no guidance and no refusal.
+- For registries the record marks as served by an earlier release, these commands name
+  that release, and a command that would change such a registry refuses before
+  anything is built.
+- For registries the record marks as served by none that is known, these commands say
+  that no release is known, and a command that would change such a registry refuses
+  before anything is built.
+
 ## What this release assumes and does not establish
 
 The trie library's proofs are assumed sound.

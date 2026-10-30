@@ -12,12 +12,14 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from stage_release import read_all_forward
+from release_compatibility import check as check_compatibility_pointer
 from release_limits import check as check_stated_limits
 
 root, archive = map(Path, sys.argv[1:])
 version = (root / "version.txt").read_text().strip()
 assert re.fullmatch(r"\d+\.\d+\.\d+", version), "invalid documentation version"
 check_stated_limits(root)
+check_compatibility_pointer(root)
 manifest = json.loads((root / ".release-please-manifest.json").read_text())
 config = json.loads((root / "release-please-config.json").read_text())
 assert manifest == ({".": version} if version != "0.0.0" else {}), (
@@ -75,6 +77,8 @@ with tarfile.open(archive / filename) as bundle:
         "index.html",
         "docs/shared-publications/index.html",
         "docs/shared-publications.speech.json",
+        "docs/compatibility/index.html",
+        "docs/compatibility.speech.json",
         "specs/protocol/spec/index.html",
         "index.speech.json",
     ):
@@ -258,6 +262,7 @@ print(
             "versionAgreement": "PASS",
             "artifactAndWorkflowChecks": "PASS",
             "statedLimits": "PASS",
+            "compatibilityPointer": "PASS",
             "identityFromArtifact": identity_from_artifact,
         }
     )

@@ -80,6 +80,7 @@
           sharedSource = dev-assets-mkdocs;
           mermaidJs = dev-assets-mkdocs.packages.${system}.mermaid-js;
           inherit offchain conformance onchain;
+          packagedBlueprint = open-datum-onchain.packages.${system}.open-datum-blueprint;
         };
       coverage =
         system:
