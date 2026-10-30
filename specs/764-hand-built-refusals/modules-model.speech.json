@@ -1,0 +1,36 @@
+{
+  "modules-for-hand-built-transactions-refused-by-the-deployed-validators": [
+    {
+      "text": "Modules for hand-built transactions refused by the deployed validators.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 764, first slice. Responsibilities and the direction of dependency. Fields are in the data model and signatures in the functions model.",
+      "pause": 400
+    }
+  ],
+  "dependency-direction": [
+    {
+      "text": "Dependency direction.",
+      "pause": 500
+    },
+    {
+      "text": "The driver depends on the harness and on the packaged command; the harness depends on the library; nothing in the library or the packaged commands depends on the harness or the driver. The packaged commands decline wrong requests before sending, so the means of building a wrong request stay in the test-only harness and never move into a product command or a library module.",
+      "pause": 400
+    }
+  ],
+  "placement": [
+    {
+      "text": "Placement.",
+      "pause": 500
+    },
+    {
+      "text": "No abstraction is promoted. The shape of a case (build, submit, judge, restore, judge) already lives in the termination refusals driver and the registration refusals driver; this ticket uses the shared rig for everything the rig holds (the check-and-control helpers, the chain view, the wallets) and keeps the three judging functions in its own driver. The two existing drivers are not edited.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "modules-model.md",
+    "sha256": "602066972e0740c409760278b0357262e6deda5573faad86e929032be7a0ae21"
+  }
+}

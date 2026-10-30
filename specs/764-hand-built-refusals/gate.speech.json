@@ -1,0 +1,50 @@
+{
+  "gate-for-hand-built-transactions-refused-by-the-deployed-validators": [
+    {
+      "text": "Gate for hand-built transactions refused by the deployed validators.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 764, first slice. This page is for the commit owner, the auditor and the reviewers: each acceptance item, the hosted job and the verbatim command that proves it. The requirements are in the specification and the slice in the plan. Every command is an existing hosted command, or the one this ticket adds, marked \"CI change in this ticket\". Hosted checks on the pull request head are the net; the commands below run scoped to what the slice can break.",
+      "pause": 400
+    }
+  ],
+  "rows": [
+    {
+      "text": "Rows.",
+      "pause": 500
+    },
+    {
+      "text": "The hosted run of G10 is the net: the diff edits neither driver. The gate does not rerun them locally unless the shared rig or the harness's existing subcommands change.",
+      "pause": 400
+    }
+  ],
+  "controls": [
+    {
+      "text": "Controls.",
+      "pause": 500
+    },
+    {
+      "text": "G1's two judging assertions are run on the other role's receipt and must fail there.",
+      "pause": 300
+    },
+    {
+      "text": "G4 fails when the workflow step that runs the new app is removed.",
+      "pause": 300
+    }
+  ],
+  "budget": [
+    {
+      "text": "Budget.",
+      "pause": 500
+    },
+    {
+      "text": "Each build or test runs in a named scope, systemd-run --user --scope --unit=t764-<row>-<n> -p MemoryMax=24G timeout 3600 <command>. The development-network run (G1) is executed locally once per candidate at most. just ci runs once on the final candidate, then the push. A hosted failure is one repair commit, not a local rerun of the hosted list.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "gate.md",
+    "sha256": "36db38220b79f195dded3452ea2112e1e2579c32f67e9a8efc065b5e9ed6365d"
+  }
+}
