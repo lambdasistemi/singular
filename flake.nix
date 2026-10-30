@@ -776,6 +776,7 @@
           cp ${./tools/no_pin_registration_refusals.sh} $out/no_pin_registration_refusals.sh
           cp ${./tools/no_pin_batch_refusals.sh} $out/no_pin_batch_refusals.sh
           cp ${./tools/no_pin_termination_refusals.sh} $out/no_pin_termination_refusals.sh
+          cp ${./tools/no_pin_hand_built_refusals.sh} $out/no_pin_hand_built_refusals.sh
           cp ${./tools/no_pin_chain_view.py} $out/no_pin_chain_view.py
           cp ${./tools/shared_publication_checks.sh} $out/shared_publication_checks.sh
           cp ${./tools/no_pin_termination_observations.py} $out/no_pin_termination_observations.py
@@ -1055,6 +1056,13 @@
                 programs = [ (pkgs.lib.getExe (stampedOpenDatum system)) ];
                 extra = [ "${open-datum.packages.${system}.no-pin-refusals}/bin/no-pin-refusals" ];
               };
+              noPinHandBuiltRefusals = noPinJourney {
+                name = "no-pin-hand-built-refusals";
+                results = "NO_PIN_HAND_BUILT_REFUSALS_RESULTS";
+                script = "no_pin_hand_built_refusals.sh";
+                programs = [ (pkgs.lib.getExe (stampedOpenDatum system)) ];
+                extra = [ "${open-datum.packages.${system}.no-pin-refusals}/bin/no-pin-refusals" ];
+              };
               noPinBatchMeasurement = noPinJourney {
                 name = "no-pin-batch-measurement";
                 results = "NO_PIN_BATCH_MEASUREMENT_RESULTS";
@@ -1086,6 +1094,11 @@
                 type = "app";
                 meta.description = "Check termination refusals on a development network";
                 program = pkgs.lib.getExe noPinTerminationRefusals;
+              };
+              no-pin-hand-built-refusals = {
+                type = "app";
+                meta.description = "Check hand-built transactions against the deployed validators on a development network";
+                program = pkgs.lib.getExe noPinHandBuiltRefusals;
               };
               no-pin-batch-measurement = {
                 type = "app";

@@ -112,6 +112,7 @@ executable no-pin-refusals
     , base                               >=4.14 && <5
     , bytestring                         >=0.11 && <0.13
     , cardano-binary
+    , cardano-crypto-class
     , cardano-ledger-alonzo
     , cardano-ledger-binary
     , cardano-ledger-api

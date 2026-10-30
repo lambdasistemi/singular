@@ -15,7 +15,7 @@
       "pause": 500
     },
     {
-      "text": "[ ] gate-frozen: the gate rows of the gate page frozen with their hash before the commit owner starts.",
+      "text": "[x] gate-frozen: the gate rows of the gate page frozen with their hash before the commit owner starts.",
       "pause": 300
     }
   ],
@@ -25,36 +25,36 @@
       "pause": 500
     },
     {
-      "text": "[ ] hosted-from-the-first-commit: the driver, the nix app, the workflow job and the declared-checks row arrive together.",
+      "text": "[x] hosted-from-the-first-commit: the driver, the nix app, the workflow job and the declared-checks row arrive together.",
       "pause": 300
     },
     {
-      "text": "[ ] taken-key-pair: the taken-key refusal and its control, with the assertions shown failing on altered input.",
+      "text": "[x] taken-key-pair: the taken-key refusal and its control, with the assertions shown failing on altered input.",
       "pause": 300
     },
     {
-      "text": "[ ] update-without-controller-pair: the unsigned-update refusal and its signed control.",
+      "text": "[x] update-without-controller-pair: the unsigned-update refusal and its signed control.",
       "pause": 300
     },
     {
-      "text": "[ ] token-leaving-holding-pair: the token-out refusal and its token-kept control.",
+      "text": "[x] token-leaving-holding-pair: the token-out refusal and its token-kept control.",
       "pause": 300
     },
     {
-      "text": "[ ] verdict-table: six rows, one refusal and one control per case, uploaded whatever the outcome.",
+      "text": "[x] verdict-table: six rows, one refusal and one control per case, uploaded whatever the outcome.",
       "pause": 300
     },
     {
-      "text": "[ ] driver-header: the driver's header says what the job shows and what it does not.",
+      "text": "[x] driver-header: the driver's header says what the job shows and what it does not.",
       "pause": 300
     },
     {
-      "text": "[ ] consumers-checked: the existing consumers listed in the plan run and green.",
+      "text": "[x] consumers-checked: the existing consumers listed in the plan run and green.",
       "pause": 300
     }
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "2036f86f5b1c745e451d5c7638cd8decba5ac4a3c92a6786a516aaac7f5bd1ea"
+    "sha256": "03eb989347cd88fa5f7ac8a3360f55d869a69827829c6c3266da8c7df29efe84"
   }
 }
