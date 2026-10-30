@@ -3,11 +3,13 @@
 # produced by the verifier itself, by its own failure, and matched by its
 # name.
 #
-# usage: verify_release_controls.sh RELEASE-DIR
+# usage: verify_release_controls.sh RELEASE-DIR [--bundles BUNDLES-DIR]
 #
 # RELEASE-DIR holds a release as the pipeline assembles it (`nix run
 # .#release-artifacts -- RELEASE-DIR`): the documentation archive, the
-# on-chain archive and SHA256SUMS. It is never modified.
+# on-chain archive and SHA256SUMS. It is never modified. With --bundles,
+# BUNDLES-DIR holds the release's bundles, one per platform, and only the
+# control of the bundle path runs (see its comment below).
 #
 #   enabled test build      compiled hooks refused as harness-code-present
 #   published v0.7.0         the real release, downloaded unauthenticated
@@ -51,8 +53,13 @@
 # downloads. Exit 0 iff every control refuses by its own name.
 set -euo pipefail
 
+bundles=""
+if [ "$#" -eq 3 ] && [ "$2" = --bundles ]; then
+  bundles="$3"
+  set -- "$1"
+fi
 [ "$#" -eq 1 ] || {
-  echo "usage: $0 RELEASE-DIR" >&2
+  echo "usage: $0 RELEASE-DIR [--bundles BUNDLES-DIR]" >&2
   exit 2
 }
 release="$(cd "$1" && pwd)"
@@ -156,6 +163,41 @@ empty_blueprint() {
 test_build_enabled() {
   sed -i 's/testHarness ? false/testHarness ? true/' "$1/offchain/nix/project.nix"
 }
+
+# The bundle path (#747): a release with its bundles plays the downloaded bundle
+# of this platform. A bundle that names its release and passes every bundle
+# check, but whose open-datum starts only to name itself, is refused by the
+# journey after every check before it passed. The bundles are built by their own
+# workflow, so this runs, and nothing else does, where that workflow has built
+# them: BUNDLES-DIR holds the release's bundles, one per platform.
+if [ -n "$bundles" ]; then
+  bundles="$(cd "$bundles" && pwd)"
+  bundles_before="$(sha256sum "$bundles"/* | sha256sum)"
+  # shellcheck source=/dev/null
+  native="$(. "${VERIFY_RELEASE_BUNDLES_CONF:?the bundle rule is not named}" && native_system)"
+  top="singular-$version-$native"
+  [ -f "$bundles/$top.tar.gz" ] || fail "no bundle of $native in $bundles"
+  # the commit the assembled release states is the one every bundle must state
+  VERIFY_RELEASE_TAG_COMMIT="$(tar -xzOf "$release/$onchain" ./RELEASE-COMMIT | tr -d '\n')"
+  export VERIFY_RELEASE_TAG_COMMIT
+  copy bundle-journey-fails
+  cp --no-preserve=mode "$bundles"/singular-"$version"-*.tar.gz "$scratch/bundle-journey-fails/"
+  tree="$scratch/bundle-journey-fails-tree"
+  mkdir -p "$tree"
+  tar -xzf "$bundles/$top.tar.gz" -C "$tree"
+  chmod -R u+w "$tree"
+  sed -i 's/^set -eu$/set -eu\ncase ${1-} in --version | --help | -h) ;; *) echo "open-datum: unavailable" >\&2; exit 1 ;; esac/' "$tree/$top/bin/open-datum"
+  grep -qF 'open-datum: unavailable' "$tree/$top/bin/open-datum" || fail "the bundle mutation did not apply"
+  tar --sort=name --mtime=@1 --owner=0 --group=0 --numeric-owner -C "$tree" -cf - "$top" \
+    | gzip -n >"$scratch/bundle-journey-fails/$top.tar.gz"
+  (cd "$scratch/bundle-journey-fails" && sha256sum "$docs" "$onchain" singular-"$version"-*.tar.gz >SHA256SUMS)
+  staged_flags=()
+  check bundle-journey-fails command-failed "the journey exited" "sums model_revision members bundles build release_build" "journey"
+  [ "$(sha256sum "$bundles"/* | sha256sum)" = "$bundles_before" ] || fail "the bundles were modified"
+  [ "$(sha256sum "$release"/* | sha256sum)" = "$before" ] || fail "the assembled release was modified"
+  echo "verify-release-controls: PASS — the v$version release with its bundles, one of which names its release and whose open-datum then fails every command, refused as command-failed by the journey after the sums, the model revision, the members, the bundle checks, the build and the release build passed; the assembled release and the bundles unmodified"
+  exit 0
+fi
 
 check published model-revision-missing "states no MODEL-REVISION" "sums" "model_revision"
 

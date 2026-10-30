@@ -63460,6 +63460,996 @@
     }
    ]
   },
+  "docs-install/how-a-release-gets-its-bundles-04": {
+   "audio_sha256": "129e645be5ca24cea7b380f72fd81a1e69a0a71c06a44c34206ab208a6ec5a57",
+   "characters": 1007,
+   "cost": 0.0009969299999999998,
+   "duration": 64.65,
+   "index": 4,
+   "key": "e180e6c345a810b31e52709de7ab3200fb34453f713a1f5dce9871c07e9bad2b",
+   "page": "docs/install.md",
+   "pause_ms": 400,
+   "section": "how-a-release-gets-its-bundles",
+   "sent_text": "A pull request that builds the bundles also plays the registration journey from those files, twice: from the Linux bundle unpacked, and from the DEB installed with the system package manager, each on a machine that has no Nix. The commands and the blueprint come only from the bundle or the package, and the development node is the one the bundle or the package carries; the job shows where each command and the blueprint resolved to. The journey creates a registry, registers, updates and terminates a key, reads it back and folds a discovered batch on a development network. Every verdict is computed from the chain's record or from files, and none is typed; create, register, update, terminate, read and the discovered batch fold are each judged from the chain's record and shown failing on altered input. The same pull request assembles the release as the pipeline does, adds both bundles and runs verify-release on it, so that a broken bundle journey is found in the pull request and not after the tag.",
+   "text": "A pull request that builds the bundles also plays the registration journey from those files, twice: from the Linux bundle unpacked, and from the DEB installed with the system package manager, each on a machine that has no Nix. The commands and the blueprint come only from the bundle or the package, and the development node is the one the bundle or the package carries; the job shows where each command and the blueprint resolved to. The journey creates a registry, registers, updates and terminates a key, reads it back and folds a discovered batch on a development network. Every verdict is computed from the chain's record or from files, and none is typed; create, register, update, terminate, read and the discovered batch fold are each judged from the chain's record and shown failing on altered input. The same pull request assembles the release as the pipeline does, adds both bundles and runs verify-release on it, so that a broken bundle journey is found in the pull request and not after the tag.",
+   "words": [
+    {
+     "end": 0.287,
+     "start": 0.2,
+     "text": "A"
+    },
+    {
+     "end": 0.55,
+     "start": 0.287,
+     "text": "pull"
+    },
+    {
+     "end": 1.013,
+     "start": 0.55,
+     "text": "request"
+    },
+    {
+     "end": 1.175,
+     "start": 1.013,
+     "text": "that"
+    },
+    {
+     "end": 1.5,
+     "start": 1.175,
+     "text": "builds"
+    },
+    {
+     "end": 1.6,
+     "start": 1.5,
+     "text": "the"
+    },
+    {
+     "end": 2.138,
+     "start": 1.6,
+     "text": "bundles"
+    },
+    {
+     "end": 2.537,
+     "start": 2.138,
+     "text": "also"
+    },
+    {
+     "end": 2.9,
+     "start": 2.537,
+     "text": "plays"
+    },
+    {
+     "end": 3.0,
+     "start": 2.9,
+     "text": "the"
+    },
+    {
+     "end": 3.763,
+     "start": 3.0,
+     "text": "registration"
+    },
+    {
+     "end": 4.15,
+     "start": 3.763,
+     "text": "journey"
+    },
+    {
+     "end": 4.325,
+     "start": 4.15,
+     "text": "from"
+    },
+    {
+     "end": 4.613,
+     "start": 4.325,
+     "text": "those"
+    },
+    {
+     "end": 5.125,
+     "start": 4.613,
+     "text": "files"
+    },
+    {
+     "end": 5.213,
+     "start": 5.125,
+     "text": ","
+    },
+    {
+     "end": 6.3,
+     "start": 5.213,
+     "text": "twice"
+    },
+    {
+     "end": 6.5,
+     "start": 6.3,
+     "text": ":"
+    },
+    {
+     "end": 6.787,
+     "start": 6.675,
+     "text": "from"
+    },
+    {
+     "end": 6.875,
+     "start": 6.787,
+     "text": "the"
+    },
+    {
+     "end": 7.2,
+     "start": 6.875,
+     "text": "Linux"
+    },
+    {
+     "end": 7.55,
+     "start": 7.2,
+     "text": "bundle"
+    },
+    {
+     "end": 8.5,
+     "start": 7.55,
+     "text": "unpacked"
+    },
+    {
+     "end": 8.7,
+     "start": 8.5,
+     "text": ","
+    },
+    {
+     "end": 9.0,
+     "start": 8.9,
+     "text": "and"
+    },
+    {
+     "end": 9.137,
+     "start": 9.0,
+     "text": "from"
+    },
+    {
+     "end": 9.262,
+     "start": 9.137,
+     "text": "the"
+    },
+    {
+     "end": 9.688,
+     "start": 9.262,
+     "text": "DEB"
+    },
+    {
+     "end": 10.262,
+     "start": 9.688,
+     "text": "installed"
+    },
+    {
+     "end": 10.387,
+     "start": 10.262,
+     "text": "with"
+    },
+    {
+     "end": 10.512,
+     "start": 10.387,
+     "text": "the"
+    },
+    {
+     "end": 10.9,
+     "start": 10.512,
+     "text": "system"
+    },
+    {
+     "end": 11.325,
+     "start": 10.9,
+     "text": "package"
+    },
+    {
+     "end": 12.325,
+     "start": 11.325,
+     "text": "manager"
+    },
+    {
+     "end": 12.525,
+     "start": 12.325,
+     "text": ","
+    },
+    {
+     "end": 12.887,
+     "start": 12.725,
+     "text": "each"
+    },
+    {
+     "end": 12.988,
+     "start": 12.887,
+     "text": "on"
+    },
+    {
+     "end": 13.038,
+     "start": 12.988,
+     "text": "a"
+    },
+    {
+     "end": 13.337,
+     "start": 13.038,
+     "text": "machine"
+    },
+    {
+     "end": 13.438,
+     "start": 13.337,
+     "text": "that"
+    },
+    {
+     "end": 13.625,
+     "start": 13.438,
+     "text": "has"
+    },
+    {
+     "end": 13.825,
+     "start": 13.625,
+     "text": "no"
+    },
+    {
+     "end": 14.6,
+     "start": 13.825,
+     "text": "Nix"
+    },
+    {
+     "end": 14.775,
+     "start": 14.6,
+     "text": "."
+    },
+    {
+     "end": 15.025,
+     "start": 14.95,
+     "text": "The"
+    },
+    {
+     "end": 15.6,
+     "start": 15.025,
+     "text": "commands"
+    },
+    {
+     "end": 15.712,
+     "start": 15.6,
+     "text": "and"
+    },
+    {
+     "end": 15.8,
+     "start": 15.712,
+     "text": "the"
+    },
+    {
+     "end": 16.375,
+     "start": 15.8,
+     "text": "blueprint"
+    },
+    {
+     "end": 16.638,
+     "start": 16.375,
+     "text": "come"
+    },
+    {
+     "end": 16.95,
+     "start": 16.638,
+     "text": "only"
+    },
+    {
+     "end": 17.112,
+     "start": 16.95,
+     "text": "from"
+    },
+    {
+     "end": 17.2,
+     "start": 17.112,
+     "text": "the"
+    },
+    {
+     "end": 17.688,
+     "start": 17.2,
+     "text": "bundle"
+    },
+    {
+     "end": 17.812,
+     "start": 17.688,
+     "text": "or"
+    },
+    {
+     "end": 17.9,
+     "start": 17.812,
+     "text": "the"
+    },
+    {
+     "end": 18.975,
+     "start": 17.9,
+     "text": "package"
+    },
+    {
+     "end": 19.2,
+     "start": 18.975,
+     "text": ","
+    },
+    {
+     "end": 19.487,
+     "start": 19.4,
+     "text": "and"
+    },
+    {
+     "end": 19.562,
+     "start": 19.487,
+     "text": "the"
+    },
+    {
+     "end": 20.1,
+     "start": 19.562,
+     "text": "development"
+    },
+    {
+     "end": 20.513,
+     "start": 20.1,
+     "text": "node"
+    },
+    {
+     "end": 20.675,
+     "start": 20.513,
+     "text": "is"
+    },
+    {
+     "end": 20.775,
+     "start": 20.675,
+     "text": "the"
+    },
+    {
+     "end": 21.013,
+     "start": 20.775,
+     "text": "one"
+    },
+    {
+     "end": 21.125,
+     "start": 21.013,
+     "text": "the"
+    },
+    {
+     "end": 21.663,
+     "start": 21.125,
+     "text": "bundle"
+    },
+    {
+     "end": 21.788,
+     "start": 21.663,
+     "text": "or"
+    },
+    {
+     "end": 21.875,
+     "start": 21.788,
+     "text": "the"
+    },
+    {
+     "end": 22.3,
+     "start": 21.875,
+     "text": "package"
+    },
+    {
+     "end": 23.3,
+     "start": 22.3,
+     "text": "carries"
+    },
+    {
+     "end": 23.5,
+     "start": 23.3,
+     "text": ";"
+    },
+    {
+     "end": 23.75,
+     "start": 23.675,
+     "text": "the"
+    },
+    {
+     "end": 24.05,
+     "start": 23.75,
+     "text": "job"
+    },
+    {
+     "end": 24.312,
+     "start": 24.05,
+     "text": "shows"
+    },
+    {
+     "end": 24.45,
+     "start": 24.312,
+     "text": "where"
+    },
+    {
+     "end": 24.675,
+     "start": 24.45,
+     "text": "each"
+    },
+    {
+     "end": 25.15,
+     "start": 24.675,
+     "text": "command"
+    },
+    {
+     "end": 25.263,
+     "start": 25.15,
+     "text": "and"
+    },
+    {
+     "end": 25.35,
+     "start": 25.263,
+     "text": "the"
+    },
+    {
+     "end": 25.775,
+     "start": 25.35,
+     "text": "blueprint"
+    },
+    {
+     "end": 26.288,
+     "start": 25.775,
+     "text": "resolved"
+    },
+    {
+     "end": 26.775,
+     "start": 26.288,
+     "text": "to"
+    },
+    {
+     "end": 27.25,
+     "start": 26.775,
+     "text": "."
+    },
+    {
+     "end": 27.538,
+     "start": 27.425,
+     "text": "The"
+    },
+    {
+     "end": 27.9,
+     "start": 27.538,
+     "text": "journey"
+    },
+    {
+     "end": 28.263,
+     "start": 27.9,
+     "text": "creates"
+    },
+    {
+     "end": 28.35,
+     "start": 28.263,
+     "text": "a"
+    },
+    {
+     "end": 29.05,
+     "start": 28.35,
+     "text": "registry"
+    },
+    {
+     "end": 29.175,
+     "start": 29.05,
+     "text": ","
+    },
+    {
+     "end": 29.85,
+     "start": 29.175,
+     "text": "registers"
+    },
+    {
+     "end": 29.925,
+     "start": 29.85,
+     "text": ","
+    },
+    {
+     "end": 30.45,
+     "start": 29.925,
+     "text": "updates"
+    },
+    {
+     "end": 30.575,
+     "start": 30.45,
+     "text": "and"
+    },
+    {
+     "end": 31.112,
+     "start": 30.575,
+     "text": "terminates"
+    },
+    {
+     "end": 31.212,
+     "start": 31.112,
+     "text": "a"
+    },
+    {
+     "end": 32.05,
+     "start": 31.212,
+     "text": "key"
+    },
+    {
+     "end": 32.275,
+     "start": 32.05,
+     "text": ","
+    },
+    {
+     "end": 32.763,
+     "start": 32.475,
+     "text": "reads"
+    },
+    {
+     "end": 32.875,
+     "start": 32.763,
+     "text": "it"
+    },
+    {
+     "end": 33.225,
+     "start": 32.875,
+     "text": "back"
+    },
+    {
+     "end": 33.362,
+     "start": 33.225,
+     "text": "and"
+    },
+    {
+     "end": 33.713,
+     "start": 33.362,
+     "text": "folds"
+    },
+    {
+     "end": 33.775,
+     "start": 33.713,
+     "text": "a"
+    },
+    {
+     "end": 34.375,
+     "start": 33.775,
+     "text": "discovered"
+    },
+    {
+     "end": 34.8,
+     "start": 34.375,
+     "text": "batch"
+    },
+    {
+     "end": 34.938,
+     "start": 34.8,
+     "text": "on"
+    },
+    {
+     "end": 35.0,
+     "start": 34.938,
+     "text": "a"
+    },
+    {
+     "end": 35.55,
+     "start": 35.0,
+     "text": "development"
+    },
+    {
+     "end": 36.5,
+     "start": 35.55,
+     "text": "network"
+    },
+    {
+     "end": 36.7,
+     "start": 36.5,
+     "text": "."
+    },
+    {
+     "end": 37.2,
+     "start": 36.9,
+     "text": "Every"
+    },
+    {
+     "end": 37.588,
+     "start": 37.2,
+     "text": "verdict"
+    },
+    {
+     "end": 37.725,
+     "start": 37.588,
+     "text": "is"
+    },
+    {
+     "end": 38.275,
+     "start": 37.725,
+     "text": "computed"
+    },
+    {
+     "end": 38.412,
+     "start": 38.275,
+     "text": "from"
+    },
+    {
+     "end": 38.513,
+     "start": 38.412,
+     "text": "the"
+    },
+    {
+     "end": 38.9,
+     "start": 38.513,
+     "text": "chain's"
+    },
+    {
+     "end": 39.362,
+     "start": 38.9,
+     "text": "record"
+    },
+    {
+     "end": 39.525,
+     "start": 39.362,
+     "text": "or"
+    },
+    {
+     "end": 39.737,
+     "start": 39.525,
+     "text": "from"
+    },
+    {
+     "end": 40.325,
+     "start": 39.737,
+     "text": "files"
+    },
+    {
+     "end": 40.425,
+     "start": 40.325,
+     "text": ","
+    },
+    {
+     "end": 40.55,
+     "start": 40.425,
+     "text": "and"
+    },
+    {
+     "end": 40.8,
+     "start": 40.55,
+     "text": "none"
+    },
+    {
+     "end": 40.963,
+     "start": 40.8,
+     "text": "is"
+    },
+    {
+     "end": 41.925,
+     "start": 40.963,
+     "text": "typed"
+    },
+    {
+     "end": 42.125,
+     "start": 41.925,
+     "text": ";"
+    },
+    {
+     "end": 42.6,
+     "start": 42.325,
+     "text": "create"
+    },
+    {
+     "end": 42.65,
+     "start": 42.6,
+     "text": ","
+    },
+    {
+     "end": 43.05,
+     "start": 42.65,
+     "text": "register"
+    },
+    {
+     "end": 43.088,
+     "start": 43.05,
+     "text": ","
+    },
+    {
+     "end": 43.425,
+     "start": 43.088,
+     "text": "update"
+    },
+    {
+     "end": 43.475,
+     "start": 43.425,
+     "text": ","
+    },
+    {
+     "end": 44.375,
+     "start": 43.475,
+     "text": "terminate"
+    },
+    {
+     "end": 44.55,
+     "start": 44.375,
+     "text": ","
+    },
+    {
+     "end": 45.162,
+     "start": 44.8,
+     "text": "read"
+    },
+    {
+     "end": 45.287,
+     "start": 45.162,
+     "text": "and"
+    },
+    {
+     "end": 45.375,
+     "start": 45.287,
+     "text": "the"
+    },
+    {
+     "end": 45.95,
+     "start": 45.375,
+     "text": "discovered"
+    },
+    {
+     "end": 46.312,
+     "start": 45.95,
+     "text": "batch"
+    },
+    {
+     "end": 46.725,
+     "start": 46.312,
+     "text": "fold"
+    },
+    {
+     "end": 46.888,
+     "start": 46.725,
+     "text": "are"
+    },
+    {
+     "end": 47.213,
+     "start": 46.888,
+     "text": "each"
+    },
+    {
+     "end": 47.65,
+     "start": 47.213,
+     "text": "judged"
+    },
+    {
+     "end": 47.787,
+     "start": 47.65,
+     "text": "from"
+    },
+    {
+     "end": 47.888,
+     "start": 47.787,
+     "text": "the"
+    },
+    {
+     "end": 48.275,
+     "start": 47.888,
+     "text": "chain's"
+    },
+    {
+     "end": 48.812,
+     "start": 48.275,
+     "text": "record"
+    },
+    {
+     "end": 48.987,
+     "start": 48.812,
+     "text": "and"
+    },
+    {
+     "end": 49.338,
+     "start": 48.987,
+     "text": "shown"
+    },
+    {
+     "end": 49.775,
+     "start": 49.338,
+     "text": "failing"
+    },
+    {
+     "end": 49.987,
+     "start": 49.775,
+     "text": "on"
+    },
+    {
+     "end": 50.425,
+     "start": 49.987,
+     "text": "altered"
+    },
+    {
+     "end": 51.45,
+     "start": 50.425,
+     "text": "input"
+    },
+    {
+     "end": 51.675,
+     "start": 51.45,
+     "text": "."
+    },
+    {
+     "end": 51.95,
+     "start": 51.85,
+     "text": "The"
+    },
+    {
+     "end": 52.225,
+     "start": 51.95,
+     "text": "same"
+    },
+    {
+     "end": 52.475,
+     "start": 52.225,
+     "text": "pull"
+    },
+    {
+     "end": 52.975,
+     "start": 52.475,
+     "text": "request"
+    },
+    {
+     "end": 53.487,
+     "start": 52.975,
+     "text": "assembles"
+    },
+    {
+     "end": 53.575,
+     "start": 53.487,
+     "text": "the"
+    },
+    {
+     "end": 54.125,
+     "start": 53.575,
+     "text": "release"
+    },
+    {
+     "end": 54.287,
+     "start": 54.125,
+     "text": "as"
+    },
+    {
+     "end": 54.375,
+     "start": 54.287,
+     "text": "the"
+    },
+    {
+     "end": 54.9,
+     "start": 54.375,
+     "text": "pipeline"
+    },
+    {
+     "end": 55.725,
+     "start": 54.9,
+     "text": "does"
+    },
+    {
+     "end": 55.925,
+     "start": 55.725,
+     "text": ","
+    },
+    {
+     "end": 56.375,
+     "start": 56.125,
+     "text": "adds"
+    },
+    {
+     "end": 56.675,
+     "start": 56.375,
+     "text": "both"
+    },
+    {
+     "end": 57.175,
+     "start": 56.675,
+     "text": "bundles"
+    },
+    {
+     "end": 57.3,
+     "start": 57.175,
+     "text": "and"
+    },
+    {
+     "end": 57.6,
+     "start": 57.3,
+     "text": "runs"
+    },
+    {
+     "end": 58.312,
+     "start": 57.6,
+     "text": "verify-release"
+    },
+    {
+     "end": 58.5,
+     "start": 58.312,
+     "text": "on"
+    },
+    {
+     "end": 59.075,
+     "start": 58.5,
+     "text": "it"
+    },
+    {
+     "end": 59.275,
+     "start": 59.075,
+     "text": ","
+    },
+    {
+     "end": 59.65,
+     "start": 59.475,
+     "text": "so"
+    },
+    {
+     "end": 59.787,
+     "start": 59.65,
+     "text": "that"
+    },
+    {
+     "end": 59.888,
+     "start": 59.787,
+     "text": "a"
+    },
+    {
+     "end": 60.35,
+     "start": 59.888,
+     "text": "broken"
+    },
+    {
+     "end": 60.763,
+     "start": 60.35,
+     "text": "bundle"
+    },
+    {
+     "end": 61.175,
+     "start": 60.763,
+     "text": "journey"
+    },
+    {
+     "end": 61.325,
+     "start": 61.175,
+     "text": "is"
+    },
+    {
+     "end": 61.638,
+     "start": 61.325,
+     "text": "found"
+    },
+    {
+     "end": 61.713,
+     "start": 61.638,
+     "text": "in"
+    },
+    {
+     "end": 61.8,
+     "start": 61.713,
+     "text": "the"
+    },
+    {
+     "end": 62.05,
+     "start": 61.8,
+     "text": "pull"
+    },
+    {
+     "end": 62.75,
+     "start": 62.05,
+     "text": "request"
+    },
+    {
+     "end": 62.9,
+     "start": 62.75,
+     "text": "and"
+    },
+    {
+     "end": 63.125,
+     "start": 62.9,
+     "text": "not"
+    },
+    {
+     "end": 63.388,
+     "start": 63.125,
+     "text": "after"
+    },
+    {
+     "end": 63.475,
+     "start": 63.388,
+     "text": "the"
+    },
+    {
+     "end": 64.425,
+     "start": 63.475,
+     "text": "tag"
+    },
+    {
+     "end": 64.65,
+     "start": 64.425,
+     "text": "."
+    }
+   ]
+  },
   "docs-install/install-on-linux-00": {
    "audio_sha256": "ff5779a97dd5fb3e8928d939c01fc73c84fc449e8cae783cde75054b8479d9ac",
    "characters": 17,
@@ -215151,136 +216141,131 @@
    ]
   },
   "docs-verify-release/checking-files-you-already-have-01": {
-   "audio_sha256": "f0ea4bb463f80cc9246f44f120b4268b835118631425a8548bb777a7746bdffb",
-   "characters": 127,
-   "cost": 7.874000000000001e-05,
-   "duration": 8.175,
+   "audio_sha256": "c6768904db085a9b9873818c5f72aee1de97b1ca800c0adf8203146a19096558",
+   "characters": 121,
+   "cost": 0.00011979,
+   "duration": 7.825,
    "index": 1,
-   "key": "3aba73f9fe5e171c5fb46602e5e87a5d639c06052d81025700a20de2a30d1b7c",
+   "key": "886f6ed3a36468bc4d7d4b326f2a5cd5ef6b17f3932a8a620e9d7d12e503cd2a",
    "page": "docs/verify-release.md",
    "pause_ms": 400,
    "section": "checking-files-you-already-have",
-   "sent_text": "If you downloaded the three assets yourself, point the verifier at their directory; every check after the download is the same:",
-   "text": "If you downloaded the three assets yourself, point the verifier at their directory; every check after the download is the same:",
+   "sent_text": "If you downloaded the assets yourself, point the verifier at their directory; every check after the download is the same:",
+   "text": "If you downloaded the assets yourself, point the verifier at their directory; every check after the download is the same:",
    "words": [
     {
-     "end": 0.325,
+     "end": 0.35,
      "start": 0.175,
      "text": "If"
     },
     {
-     "end": 0.488,
-     "start": 0.325,
+     "end": 0.512,
+     "start": 0.35,
      "text": "you"
     },
     {
-     "end": 1.112,
-     "start": 0.488,
+     "end": 1.087,
+     "start": 0.512,
      "text": "downloaded"
     },
     {
      "end": 1.237,
-     "start": 1.112,
+     "start": 1.087,
      "text": "the"
     },
     {
-     "end": 1.513,
+     "end": 1.712,
      "start": 1.237,
-     "text": "three"
-    },
-    {
-     "end": 2.0,
-     "start": 1.513,
      "text": "assets"
     },
     {
-     "end": 2.55,
-     "start": 2.0,
+     "end": 2.25,
+     "start": 1.712,
      "text": "yourself"
     },
     {
-     "end": 2.638,
-     "start": 2.55,
+     "end": 2.338,
+     "start": 2.25,
      "text": ","
     },
     {
-     "end": 2.938,
-     "start": 2.638,
+     "end": 2.612,
+     "start": 2.338,
      "text": "point"
     },
     {
-     "end": 3.025,
-     "start": 2.938,
+     "end": 2.7,
+     "start": 2.612,
      "text": "the"
     },
     {
-     "end": 3.65,
-     "start": 3.025,
+     "end": 3.325,
+     "start": 2.7,
      "text": "verifier"
     },
     {
-     "end": 3.737,
-     "start": 3.65,
+     "end": 3.412,
+     "start": 3.325,
      "text": "at"
     },
     {
-     "end": 3.925,
-     "start": 3.737,
+     "end": 3.6,
+     "start": 3.412,
      "text": "their"
     },
     {
-     "end": 5.1,
-     "start": 3.925,
+     "end": 4.75,
+     "start": 3.6,
      "text": "directory"
     },
     {
-     "end": 5.3,
-     "start": 5.1,
+     "end": 4.95,
+     "start": 4.75,
      "text": ";"
     },
     {
-     "end": 5.787,
-     "start": 5.5,
+     "end": 5.438,
+     "start": 5.15,
      "text": "every"
     },
     {
-     "end": 6.025,
-     "start": 5.787,
+     "end": 5.675,
+     "start": 5.438,
      "text": "check"
     },
     {
-     "end": 6.287,
-     "start": 6.025,
+     "end": 5.938,
+     "start": 5.675,
      "text": "after"
     },
     {
-     "end": 6.375,
-     "start": 6.287,
+     "end": 6.025,
+     "start": 5.938,
      "text": "the"
     },
     {
-     "end": 6.875,
-     "start": 6.375,
+     "end": 6.525,
+     "start": 6.025,
      "text": "download"
     },
     {
-     "end": 7.012,
-     "start": 6.875,
+     "end": 6.662,
+     "start": 6.525,
      "text": "is"
     },
     {
-     "end": 7.137,
-     "start": 7.012,
+     "end": 6.787,
+     "start": 6.662,
      "text": "the"
     },
     {
-     "end": 7.975,
-     "start": 7.137,
+     "end": 7.625,
+     "start": 6.787,
      "text": "same"
     },
     {
-     "end": 8.175,
-     "start": 7.975,
+     "end": 7.825,
+     "start": 7.625,
      "text": ":"
     }
    ]
@@ -215456,17 +216441,17 @@
    ]
   },
   "docs-verify-release/download-and-verify-a-release-01": {
-   "audio_sha256": "157591503c9f60101ade11de6682e6f374c5d8955d27e618763ce2ef9071a3f8",
-   "characters": 461,
-   "cost": 0.00045639,
+   "audio_sha256": "4b26905a2336901d58b975c1f7c46ae680eae497226befd8f40a7635b68ece19",
+   "characters": 462,
+   "cost": 0.00045737999999999996,
    "duration": 29.35,
    "index": 1,
-   "key": "5afc9cd312b3d37dc0eebe5a5493ad7f37d63e8e45fec3167b01d950d081ef00",
+   "key": "799545b9a6054210adda31d266e64767d7813f6f006f82ff71e8af37918a34d3",
    "page": "docs/verify-release.md",
    "pause_ms": 400,
    "section": "download-and-verify-a-release",
-   "sent_text": "You have cloned nothing. You want to know that a Singular release is what it says it is before you run it: that the files you downloaded are the files that were published, that the release names the formal model its evidence was checked against, and that the singular and open-datum commands built from it actually run a registry from creation to termination. One command answers all three, from the downloaded bytes alone, and either passes or refuses by name.",
-   "text": "You have cloned nothing. You want to know that a Singular release is what it says it is before you run it: that the files you downloaded are the files that were published, that the release names the formal model its evidence was checked against, and that the singular and open-datum commands built from it actually run a registry from creation to termination. One command answers all three, from the downloaded bytes alone, and either passes or refuses by name.",
+   "sent_text": "You have cloned nothing. You want to know that a Singular release is what it says it is before you run it: that the files you downloaded are the files that were published, that the release names the formal model its evidence was checked against, and that the singular and open-datum commands of the release actually run a registry from creation to termination. One command answers all three, from the downloaded bytes alone, and either passes or refuses by name.",
+   "text": "You have cloned nothing. You want to know that a Singular release is what it says it is before you run it: that the files you downloaded are the files that were published, that the release names the formal model its evidence was checked against, and that the singular and open-datum commands of the release actually run a registry from creation to termination. One command answers all three, from the downloaded bytes alone, and either passes or refuses by name.",
    "words": [
     {
      "end": 0.262,
@@ -215714,54 +216699,54 @@
      "text": ","
     },
     {
-     "end": 15.012,
+     "end": 15.038,
      "start": 14.925,
      "text": "and"
     },
     {
-     "end": 15.175,
-     "start": 15.012,
+     "end": 15.2,
+     "start": 15.038,
      "text": "that"
     },
     {
-     "end": 15.325,
-     "start": 15.175,
+     "end": 15.35,
+     "start": 15.2,
      "text": "the"
     },
     {
-     "end": 15.925,
-     "start": 15.325,
+     "end": 15.975,
+     "start": 15.35,
      "text": "singular"
     },
     {
-     "end": 16.05,
-     "start": 15.925,
+     "end": 16.112,
+     "start": 15.975,
      "text": "and"
     },
     {
-     "end": 16.775,
-     "start": 16.05,
+     "end": 16.85,
+     "start": 16.112,
      "text": "open-datum"
     },
     {
-     "end": 17.337,
-     "start": 16.775,
+     "end": 17.362,
+     "start": 16.85,
      "text": "commands"
     },
     {
-     "end": 17.625,
-     "start": 17.337,
-     "text": "built"
+     "end": 17.438,
+     "start": 17.362,
+     "text": "of"
     },
     {
-     "end": 17.85,
-     "start": 17.625,
-     "text": "from"
+     "end": 17.525,
+     "start": 17.438,
+     "text": "the"
     },
     {
      "end": 18.1,
-     "start": 17.85,
-     "text": "it"
+     "start": 17.525,
+     "text": "release"
     },
     {
      "end": 18.562,
@@ -216431,17 +217416,17 @@
    ]
   },
   "docs-verify-release/what-it-checks-in-order-02": {
-   "audio_sha256": "cb9bc6c181f4b9a689cb8174503385e72d0af41a44ec9965dc28b386fcc7d36e",
-   "characters": 578,
-   "cost": 0.0005722199999999999,
-   "duration": 37.7,
+   "audio_sha256": "ab477544cad72b5f3be936aee66f3fc75a4c8535eaf385e8f8c6cadefdc0b623",
+   "characters": 1263,
+   "cost": 0.0012503699999999998,
+   "duration": 80.6,
    "index": 2,
-   "key": "909db3679658560738a5c03d8f80897ee24aa885bf44fb55d9b7896b541f8331",
+   "key": "a72d6dd07ea3d3ecd52722f9956a71c392648cd3ca5fe5bfc4b40cf7362cf4af",
    "page": "docs/verify-release.md",
    "pause_ms": 400,
    "section": "what-it-checks-in-order",
-   "sent_text": "The model revision is the commit of the application model, the formal specification the conformance evidence reads its statements at. The release states it in the archive as MODEL-REVISION; the verifier compares it with the revision the conformance evidence of the same release is compiled against. The journey is the one on the archive's run page: a registry is created, a key inserted, its payload updated and the key terminated, each a separate singular or open-datum process on one development network the verifier starts and stops itself, with an inspect after every write.",
-   "text": "The model revision is the commit of the application model, the formal specification the conformance evidence reads its statements at. The release states it in the archive as MODEL-REVISION; the verifier compares it with the revision the conformance evidence of the same release is compiled against. The journey is the one on the archive's run page: a registry is created, a key inserted, its payload updated and the key terminated, each a separate singular or open-datum process on one development network the verifier starts and stops itself, with an inspect after every write.",
+   "sent_text": "The model revision is the commit of the application model, the formal specification the conformance evidence reads its statements at. The release states it in the archive as MODEL-REVISION; the verifier compares it with the revision the conformance evidence of the same release is compiled against. A release that ships bundles has each platform's bundle checked against the commit its tag names, and the bundle of your platform is run. The journey is the registration journey of the release: a registry is created, keys are registered, folded, updated and terminated, read back and folded in a discovered batch, each command a separate singular or open-datum process on one development network the verifier starts and stops itself. Every verdict is computed from the chain's own record or from files, and none is typed; create, register, update, terminate, read and the discovered batch fold are each judged from the chain's record and shown failing on altered input. The journey plays the bundle of your platform: its commands, its blueprint and its development node, none of them built on your machine. A release before the bundles, a release read with --without-bundles, and a platform that has no bundle play the commands built from the archive's own flakes.",
+   "text": "The model revision is the commit of the application model, the formal specification the conformance evidence reads its statements at. The release states it in the archive as MODEL-REVISION; the verifier compares it with the revision the conformance evidence of the same release is compiled against. A release that ships bundles has each platform's bundle checked against the commit its tag names, and the bundle of your platform is run. The journey is the registration journey of the release: a registry is created, keys are registered, folded, updated and terminated, read back and folded in a discovered batch, each command a separate singular or open-datum process on one development network the verifier starts and stops itself. Every verdict is computed from the chain's own record or from files, and none is typed; create, register, update, terminate, read and the discovered batch fold are each judged from the chain's record and shown failing on altered input. The journey plays the bundle of your platform: its commands, its blueprint and its development node, none of them built on your machine. A release before the bundles, a release read with --without-bundles, and a platform that has no bundle play the commands built from the archive's own flakes.",
    "words": [
     {
      "end": 0.3,
@@ -216694,284 +217679,924 @@
      "text": "."
     },
     {
-     "end": 18.938,
-     "start": 18.825,
-     "text": "The"
+     "end": 18.925,
+     "start": 18.85,
+     "text": "A"
     },
     {
-     "end": 19.375,
-     "start": 18.938,
-     "text": "journey"
+     "end": 19.35,
+     "start": 18.925,
+     "text": "release"
     },
     {
-     "end": 19.513,
-     "start": 19.375,
-     "text": "is"
+     "end": 19.575,
+     "start": 19.35,
+     "text": "that"
     },
     {
-     "end": 19.6,
-     "start": 19.513,
-     "text": "the"
+     "end": 19.9,
+     "start": 19.575,
+     "text": "ships"
     },
     {
-     "end": 19.812,
-     "start": 19.6,
-     "text": "one"
+     "end": 20.4,
+     "start": 19.9,
+     "text": "bundles"
     },
     {
-     "end": 19.913,
-     "start": 19.812,
-     "text": "on"
+     "end": 20.638,
+     "start": 20.4,
+     "text": "has"
     },
     {
-     "end": 20.0,
-     "start": 19.913,
-     "text": "the"
-    },
-    {
-     "end": 20.5,
-     "start": 20.0,
-     "text": "archive's"
-    },
-    {
-     "end": 20.75,
-     "start": 20.5,
-     "text": "run"
-    },
-    {
-     "end": 21.6,
-     "start": 20.75,
-     "text": "page"
-    },
-    {
-     "end": 21.825,
-     "start": 21.6,
-     "text": ":"
-    },
-    {
-     "end": 22.1,
-     "start": 22.025,
-     "text": "a"
-    },
-    {
-     "end": 22.6,
-     "start": 22.1,
-     "text": "registry"
-    },
-    {
-     "end": 22.75,
-     "start": 22.6,
-     "text": "is"
-    },
-    {
-     "end": 23.3,
-     "start": 22.75,
-     "text": "created"
-    },
-    {
-     "end": 23.375,
-     "start": 23.3,
-     "text": ","
-    },
-    {
-     "end": 23.487,
-     "start": 23.375,
-     "text": "a"
-    },
-    {
-     "end": 23.75,
-     "start": 23.487,
-     "text": "key"
-    },
-    {
-     "end": 24.4,
-     "start": 23.75,
-     "text": "inserted"
-    },
-    {
-     "end": 24.475,
-     "start": 24.4,
-     "text": ","
-    },
-    {
-     "end": 24.688,
-     "start": 24.475,
-     "text": "its"
-    },
-    {
-     "end": 25.175,
-     "start": 24.688,
-     "text": "payload"
-    },
-    {
-     "end": 25.775,
-     "start": 25.175,
-     "text": "updated"
-    },
-    {
-     "end": 25.888,
-     "start": 25.775,
-     "text": "and"
-    },
-    {
-     "end": 25.975,
-     "start": 25.888,
-     "text": "the"
-    },
-    {
-     "end": 26.2,
-     "start": 25.975,
-     "text": "key"
-    },
-    {
-     "end": 27.4,
-     "start": 26.2,
-     "text": "terminated"
-    },
-    {
-     "end": 27.625,
-     "start": 27.4,
-     "text": ","
-    },
-    {
-     "end": 28.125,
-     "start": 27.85,
+     "end": 20.9,
+     "start": 20.638,
      "text": "each"
     },
     {
-     "end": 28.237,
-     "start": 28.125,
-     "text": "a"
+     "end": 21.525,
+     "start": 20.9,
+     "text": "platform's"
     },
     {
-     "end": 28.688,
-     "start": 28.237,
-     "text": "separate"
+     "end": 21.913,
+     "start": 21.525,
+     "text": "bundle"
     },
     {
-     "end": 29.288,
-     "start": 28.688,
-     "text": "singular"
+     "end": 22.275,
+     "start": 21.913,
+     "text": "checked"
     },
     {
-     "end": 29.487,
-     "start": 29.288,
-     "text": "or"
+     "end": 22.612,
+     "start": 22.275,
+     "text": "against"
     },
     {
-     "end": 30.2,
-     "start": 29.487,
-     "text": "open-datum"
-    },
-    {
-     "end": 30.825,
-     "start": 30.2,
-     "text": "process"
-    },
-    {
-     "end": 31.038,
-     "start": 30.825,
-     "text": "on"
-    },
-    {
-     "end": 31.3,
-     "start": 31.038,
-     "text": "one"
-    },
-    {
-     "end": 31.875,
-     "start": 31.3,
-     "text": "development"
-    },
-    {
-     "end": 32.3,
-     "start": 31.875,
-     "text": "network"
-    },
-    {
-     "end": 32.4,
-     "start": 32.3,
+     "end": 22.7,
+     "start": 22.612,
      "text": "the"
     },
     {
-     "end": 33.013,
-     "start": 32.4,
-     "text": "verifier"
+     "end": 23.05,
+     "start": 22.7,
+     "text": "commit"
     },
     {
-     "end": 33.45,
-     "start": 33.013,
-     "text": "starts"
+     "end": 23.25,
+     "start": 23.05,
+     "text": "its"
     },
     {
-     "end": 33.575,
-     "start": 33.45,
-     "text": "and"
+     "end": 23.575,
+     "start": 23.25,
+     "text": "tag"
     },
     {
-     "end": 33.95,
-     "start": 33.575,
-     "text": "stops"
+     "end": 24.6,
+     "start": 23.575,
+     "text": "names"
     },
     {
-     "end": 35.075,
-     "start": 33.95,
-     "text": "itself"
-    },
-    {
-     "end": 35.3,
-     "start": 35.075,
+     "end": 24.825,
+     "start": 24.6,
      "text": ","
     },
     {
-     "end": 35.612,
-     "start": 35.475,
+     "end": 25.087,
+     "start": 25.0,
+     "text": "and"
+    },
+    {
+     "end": 25.175,
+     "start": 25.087,
+     "text": "the"
+    },
+    {
+     "end": 25.538,
+     "start": 25.175,
+     "text": "bundle"
+    },
+    {
+     "end": 25.612,
+     "start": 25.538,
+     "text": "of"
+    },
+    {
+     "end": 25.725,
+     "start": 25.612,
+     "text": "your"
+    },
+    {
+     "end": 26.275,
+     "start": 25.725,
+     "text": "platform"
+    },
+    {
+     "end": 26.425,
+     "start": 26.275,
+     "text": "is"
+    },
+    {
+     "end": 27.175,
+     "start": 26.425,
+     "text": "run"
+    },
+    {
+     "end": 27.375,
+     "start": 27.175,
+     "text": "."
+    },
+    {
+     "end": 27.663,
+     "start": 27.55,
+     "text": "The"
+    },
+    {
+     "end": 28.138,
+     "start": 27.663,
+     "text": "journey"
+    },
+    {
+     "end": 28.288,
+     "start": 28.138,
+     "text": "is"
+    },
+    {
+     "end": 28.375,
+     "start": 28.288,
+     "text": "the"
+    },
+    {
+     "end": 29.1,
+     "start": 28.375,
+     "text": "registration"
+    },
+    {
+     "end": 29.45,
+     "start": 29.1,
+     "text": "journey"
+    },
+    {
+     "end": 29.538,
+     "start": 29.45,
+     "text": "of"
+    },
+    {
+     "end": 29.625,
+     "start": 29.538,
+     "text": "the"
+    },
+    {
+     "end": 30.575,
+     "start": 29.625,
+     "text": "release"
+    },
+    {
+     "end": 30.775,
+     "start": 30.575,
+     "text": ":"
+    },
+    {
+     "end": 31.05,
+     "start": 30.975,
+     "text": "a"
+    },
+    {
+     "end": 31.55,
+     "start": 31.05,
+     "text": "registry"
+    },
+    {
+     "end": 31.7,
+     "start": 31.55,
+     "text": "is"
+    },
+    {
+     "end": 32.225,
+     "start": 31.7,
+     "text": "created"
+    },
+    {
+     "end": 32.312,
+     "start": 32.225,
+     "text": ","
+    },
+    {
+     "end": 32.675,
+     "start": 32.312,
+     "text": "keys"
+    },
+    {
+     "end": 32.825,
+     "start": 32.675,
+     "text": "are"
+    },
+    {
+     "end": 33.45,
+     "start": 32.825,
+     "text": "registered"
+    },
+    {
+     "end": 33.537,
+     "start": 33.45,
+     "text": ","
+    },
+    {
+     "end": 34.1,
+     "start": 33.537,
+     "text": "folded"
+    },
+    {
+     "end": 34.175,
+     "start": 34.1,
+     "text": ","
+    },
+    {
+     "end": 34.7,
+     "start": 34.175,
+     "text": "updated"
+    },
+    {
+     "end": 34.825,
+     "start": 34.7,
+     "text": "and"
+    },
+    {
+     "end": 36.0,
+     "start": 34.825,
+     "text": "terminated"
+    },
+    {
+     "end": 36.225,
+     "start": 36.0,
+     "text": ","
+    },
+    {
+     "end": 36.625,
+     "start": 36.425,
+     "text": "read"
+    },
+    {
+     "end": 36.862,
+     "start": 36.625,
+     "text": "back"
+    },
+    {
+     "end": 36.975,
+     "start": 36.862,
+     "text": "and"
+    },
+    {
+     "end": 37.338,
+     "start": 36.975,
+     "text": "folded"
+    },
+    {
+     "end": 37.412,
+     "start": 37.338,
+     "text": "in"
+    },
+    {
+     "end": 37.463,
+     "start": 37.412,
+     "text": "a"
+    },
+    {
+     "end": 37.925,
+     "start": 37.463,
+     "text": "discovered"
+    },
+    {
+     "end": 38.675,
+     "start": 37.925,
+     "text": "batch"
+    },
+    {
+     "end": 38.9,
+     "start": 38.675,
+     "text": ","
+    },
+    {
+     "end": 39.412,
+     "start": 39.125,
+     "text": "each"
+    },
+    {
+     "end": 39.85,
+     "start": 39.412,
+     "text": "command"
+    },
+    {
+     "end": 39.963,
+     "start": 39.85,
+     "text": "a"
+    },
+    {
+     "end": 40.388,
+     "start": 39.963,
+     "text": "separate"
+    },
+    {
+     "end": 40.987,
+     "start": 40.388,
+     "text": "singular"
+    },
+    {
+     "end": 41.188,
+     "start": 40.987,
+     "text": "or"
+    },
+    {
+     "end": 41.9,
+     "start": 41.188,
+     "text": "open-datum"
+    },
+    {
+     "end": 42.5,
+     "start": 41.9,
+     "text": "process"
+    },
+    {
+     "end": 42.713,
+     "start": 42.5,
+     "text": "on"
+    },
+    {
+     "end": 42.975,
+     "start": 42.713,
+     "text": "one"
+    },
+    {
+     "end": 43.525,
+     "start": 42.975,
+     "text": "development"
+    },
+    {
+     "end": 44.0,
+     "start": 43.525,
+     "text": "network"
+    },
+    {
+     "end": 44.1,
+     "start": 44.0,
+     "text": "the"
+    },
+    {
+     "end": 44.713,
+     "start": 44.1,
+     "text": "verifier"
+    },
+    {
+     "end": 45.15,
+     "start": 44.713,
+     "text": "starts"
+    },
+    {
+     "end": 45.275,
+     "start": 45.15,
+     "text": "and"
+    },
+    {
+     "end": 45.65,
+     "start": 45.275,
+     "text": "stops"
+    },
+    {
+     "end": 46.85,
+     "start": 45.65,
+     "text": "itself"
+    },
+    {
+     "end": 47.075,
+     "start": 46.85,
+     "text": "."
+    },
+    {
+     "end": 47.575,
+     "start": 47.275,
+     "text": "Every"
+    },
+    {
+     "end": 47.963,
+     "start": 47.575,
+     "text": "verdict"
+    },
+    {
+     "end": 48.1,
+     "start": 47.963,
+     "text": "is"
+    },
+    {
+     "end": 48.65,
+     "start": 48.1,
+     "text": "computed"
+    },
+    {
+     "end": 48.787,
+     "start": 48.65,
+     "text": "from"
+    },
+    {
+     "end": 48.888,
+     "start": 48.787,
+     "text": "the"
+    },
+    {
+     "end": 49.3,
+     "start": 48.888,
+     "text": "chain's"
+    },
+    {
+     "end": 49.525,
+     "start": 49.3,
+     "text": "own"
+    },
+    {
+     "end": 49.987,
+     "start": 49.525,
+     "text": "record"
+    },
+    {
+     "end": 50.15,
+     "start": 49.987,
+     "text": "or"
+    },
+    {
+     "end": 50.362,
+     "start": 50.15,
+     "text": "from"
+    },
+    {
+     "end": 50.975,
+     "start": 50.362,
+     "text": "files"
+    },
+    {
+     "end": 51.075,
+     "start": 50.975,
+     "text": ","
+    },
+    {
+     "end": 51.2,
+     "start": 51.075,
+     "text": "and"
+    },
+    {
+     "end": 51.475,
+     "start": 51.2,
+     "text": "none"
+    },
+    {
+     "end": 51.638,
+     "start": 51.475,
+     "text": "is"
+    },
+    {
+     "end": 52.6,
+     "start": 51.638,
+     "text": "typed"
+    },
+    {
+     "end": 52.8,
+     "start": 52.6,
+     "text": ";"
+    },
+    {
+     "end": 53.275,
+     "start": 53.0,
+     "text": "create"
+    },
+    {
+     "end": 53.325,
+     "start": 53.275,
+     "text": ","
+    },
+    {
+     "end": 53.725,
+     "start": 53.325,
+     "text": "register"
+    },
+    {
+     "end": 53.763,
+     "start": 53.725,
+     "text": ","
+    },
+    {
+     "end": 54.1,
+     "start": 53.763,
+     "text": "update"
+    },
+    {
+     "end": 54.15,
+     "start": 54.1,
+     "text": ","
+    },
+    {
+     "end": 55.05,
+     "start": 54.15,
+     "text": "terminate"
+    },
+    {
+     "end": 55.225,
+     "start": 55.05,
+     "text": ","
+    },
+    {
+     "end": 55.838,
+     "start": 55.475,
+     "text": "read"
+    },
+    {
+     "end": 55.963,
+     "start": 55.838,
+     "text": "and"
+    },
+    {
+     "end": 56.05,
+     "start": 55.963,
+     "text": "the"
+    },
+    {
+     "end": 56.625,
+     "start": 56.05,
+     "text": "discovered"
+    },
+    {
+     "end": 56.987,
+     "start": 56.625,
+     "text": "batch"
+    },
+    {
+     "end": 57.4,
+     "start": 56.987,
+     "text": "fold"
+    },
+    {
+     "end": 57.562,
+     "start": 57.4,
+     "text": "are"
+    },
+    {
+     "end": 57.888,
+     "start": 57.562,
+     "text": "each"
+    },
+    {
+     "end": 58.325,
+     "start": 57.888,
+     "text": "judged"
+    },
+    {
+     "end": 58.463,
+     "start": 58.325,
+     "text": "from"
+    },
+    {
+     "end": 58.562,
+     "start": 58.463,
+     "text": "the"
+    },
+    {
+     "end": 58.95,
+     "start": 58.562,
+     "text": "chain's"
+    },
+    {
+     "end": 59.487,
+     "start": 58.95,
+     "text": "record"
+    },
+    {
+     "end": 59.662,
+     "start": 59.487,
+     "text": "and"
+    },
+    {
+     "end": 60.013,
+     "start": 59.662,
+     "text": "shown"
+    },
+    {
+     "end": 60.45,
+     "start": 60.013,
+     "text": "failing"
+    },
+    {
+     "end": 60.662,
+     "start": 60.45,
+     "text": "on"
+    },
+    {
+     "end": 61.1,
+     "start": 60.662,
+     "text": "altered"
+    },
+    {
+     "end": 62.125,
+     "start": 61.1,
+     "text": "input"
+    },
+    {
+     "end": 62.35,
+     "start": 62.125,
+     "text": "."
+    },
+    {
+     "end": 62.6,
+     "start": 62.525,
+     "text": "The"
+    },
+    {
+     "end": 62.975,
+     "start": 62.6,
+     "text": "journey"
+    },
+    {
+     "end": 63.312,
+     "start": 62.975,
+     "text": "plays"
+    },
+    {
+     "end": 63.4,
+     "start": 63.312,
+     "text": "the"
+    },
+    {
+     "end": 63.763,
+     "start": 63.4,
+     "text": "bundle"
+    },
+    {
+     "end": 63.838,
+     "start": 63.763,
+     "text": "of"
+    },
+    {
+     "end": 63.95,
+     "start": 63.838,
+     "text": "your"
+    },
+    {
+     "end": 65.0,
+     "start": 63.95,
+     "text": "platform"
+    },
+    {
+     "end": 65.2,
+     "start": 65.0,
+     "text": ":"
+    },
+    {
+     "end": 65.575,
+     "start": 65.4,
+     "text": "its"
+    },
+    {
+     "end": 66.2,
+     "start": 65.575,
+     "text": "commands"
+    },
+    {
+     "end": 66.25,
+     "start": 66.2,
+     "text": ","
+    },
+    {
+     "end": 66.463,
+     "start": 66.25,
+     "text": "its"
+    },
+    {
+     "end": 67.062,
+     "start": 66.463,
+     "text": "blueprint"
+    },
+    {
+     "end": 67.188,
+     "start": 67.062,
+     "text": "and"
+    },
+    {
+     "end": 67.325,
+     "start": 67.188,
+     "text": "its"
+    },
+    {
+     "end": 67.875,
+     "start": 67.325,
+     "text": "development"
+    },
+    {
+     "end": 68.375,
+     "start": 67.875,
+     "text": "node"
+    },
+    {
+     "end": 68.488,
+     "start": 68.375,
+     "text": ","
+    },
+    {
+     "end": 68.688,
+     "start": 68.488,
+     "text": "none"
+    },
+    {
+     "end": 68.762,
+     "start": 68.688,
+     "text": "of"
+    },
+    {
+     "end": 68.975,
+     "start": 68.762,
+     "text": "them"
+    },
+    {
+     "end": 69.238,
+     "start": 68.975,
+     "text": "built"
+    },
+    {
+     "end": 69.375,
+     "start": 69.238,
+     "text": "on"
+    },
+    {
+     "end": 69.488,
+     "start": 69.375,
+     "text": "your"
+    },
+    {
+     "end": 70.65,
+     "start": 69.488,
+     "text": "machine"
+    },
+    {
+     "end": 70.85,
+     "start": 70.65,
+     "text": "."
+    },
+    {
+     "end": 71.125,
+     "start": 71.05,
+     "text": "A"
+    },
+    {
+     "end": 71.5,
+     "start": 71.125,
+     "text": "release"
+    },
+    {
+     "end": 71.838,
+     "start": 71.5,
+     "text": "before"
+    },
+    {
+     "end": 71.925,
+     "start": 71.838,
+     "text": "the"
+    },
+    {
+     "end": 72.475,
+     "start": 71.925,
+     "text": "bundles"
+    },
+    {
+     "end": 72.55,
+     "start": 72.475,
+     "text": ","
+    },
+    {
+     "end": 72.65,
+     "start": 72.55,
+     "text": "a"
+    },
+    {
+     "end": 73.113,
+     "start": 72.65,
+     "text": "release"
+    },
+    {
+     "end": 73.387,
+     "start": 73.113,
+     "text": "read"
+    },
+    {
+     "end": 73.512,
+     "start": 73.387,
      "text": "with"
     },
     {
-     "end": 35.688,
-     "start": 35.612,
-     "text": "an"
+     "end": 74.85,
+     "start": 73.512,
+     "text": "--without-bundles"
     },
     {
-     "end": 36.15,
-     "start": 35.688,
-     "text": "inspect"
+     "end": 75.05,
+     "start": 74.85,
+     "text": ","
     },
     {
-     "end": 36.475,
-     "start": 36.15,
-     "text": "after"
+     "end": 75.338,
+     "start": 75.25,
+     "text": "and"
     },
     {
-     "end": 36.8,
-     "start": 36.475,
-     "text": "every"
+     "end": 75.4,
+     "start": 75.338,
+     "text": "a"
     },
     {
-     "end": 37.5,
-     "start": 36.8,
-     "text": "write"
+     "end": 76.025,
+     "start": 75.4,
+     "text": "platform"
     },
     {
-     "end": 37.7,
-     "start": 37.5,
+     "end": 76.175,
+     "start": 76.025,
+     "text": "that"
+    },
+    {
+     "end": 76.438,
+     "start": 76.175,
+     "text": "has"
+    },
+    {
+     "end": 76.7,
+     "start": 76.438,
+     "text": "no"
+    },
+    {
+     "end": 77.137,
+     "start": 76.7,
+     "text": "bundle"
+    },
+    {
+     "end": 77.4,
+     "start": 77.137,
+     "text": "play"
+    },
+    {
+     "end": 77.5,
+     "start": 77.4,
+     "text": "the"
+    },
+    {
+     "end": 78.062,
+     "start": 77.5,
+     "text": "commands"
+    },
+    {
+     "end": 78.325,
+     "start": 78.062,
+     "text": "built"
+    },
+    {
+     "end": 78.463,
+     "start": 78.325,
+     "text": "from"
+    },
+    {
+     "end": 78.575,
+     "start": 78.463,
+     "text": "the"
+    },
+    {
+     "end": 79.15,
+     "start": 78.575,
+     "text": "archive's"
+    },
+    {
+     "end": 79.363,
+     "start": 79.15,
+     "text": "own"
+    },
+    {
+     "end": 80.4,
+     "start": 79.363,
+     "text": "flakes"
+    },
+    {
+     "end": 80.6,
+     "start": 80.4,
      "text": "."
     }
    ]
   },
   "docs-verify-release/what-it-checks-in-order-03": {
-   "audio_sha256": "269ad9212491031138811e7f0bce1275a18b05758d38bddcd14a4827e2ee05a1",
-   "characters": 372,
-   "cost": 0.00036828,
-   "duration": 25.875,
+   "audio_sha256": "ac47ffb6c4e16777d225c4c71e533ac877d6b43629580165e753c5274f7e4dd1",
+   "characters": 462,
+   "cost": 0.00045737999999999996,
+   "duration": 31.6,
    "index": 3,
-   "key": "c8acdd60d6ec432b4ce2a346ddb19b44a39ae8d520658ab04e2301b04ca4e469",
+   "key": "4226b058e110e34f4893fb0ff6d2d67aa777d6fa4854f808a10c4fb0c2549b99",
    "page": "docs/verify-release.md",
    "pause_ms": 400,
    "section": "what-it-checks-in-order",
-   "sent_text": "Before starting the journey, the verifier strips and inspects the actual compiled singular and open-datum executables and reads their resolved registry CLI build flags. Both must exclude hidden test inputs and disable the test flag. It then records every ordinary journey invocation: all five commands must run without hidden harness inputs, and no hold marker may appear.",
-   "text": "Before starting the journey, the verifier strips and inspects the actual compiled singular and open-datum executables and reads their resolved registry CLI build flags. Both must exclude hidden test inputs and disable the test flag. It then records every ordinary journey invocation: all five commands must run without hidden harness inputs, and no hold marker may appear.",
+   "sent_text": "Before starting the journey, the verifier strips and inspects the actual compiled singular and open-datum executables built from the archive and reads their resolved registry CLI build flags. Both must exclude hidden test inputs and disable the test flag. It then records every ordinary journey invocation: every singular and open-datum command the journey runs, inspect and submit included, must run without hidden harness inputs, and no hold marker may appear.",
+   "text": "Before starting the journey, the verifier strips and inspects the actual compiled singular and open-datum executables built from the archive and reads their resolved registry CLI build flags. Both must exclude hidden test inputs and disable the test flag. It then records every ordinary journey invocation: every singular and open-datum command the journey runs, inspect and submit included, must run without hidden harness inputs, and no hold marker may appear.",
    "words": [
     {
      "end": 0.55,
@@ -216989,303 +218614,378 @@
      "text": "the"
     },
     {
-     "end": 1.45,
+     "end": 1.475,
      "start": 1.038,
      "text": "journey"
     },
     {
-     "end": 1.525,
-     "start": 1.45,
+     "end": 1.55,
+     "start": 1.475,
      "text": ","
     },
     {
-     "end": 1.625,
-     "start": 1.525,
+     "end": 1.65,
+     "start": 1.55,
      "text": "the"
     },
     {
-     "end": 2.213,
-     "start": 1.625,
+     "end": 2.237,
+     "start": 1.65,
      "text": "verifier"
     },
     {
-     "end": 2.7,
-     "start": 2.213,
+     "end": 2.737,
+     "start": 2.237,
      "text": "strips"
     },
     {
-     "end": 2.812,
-     "start": 2.7,
+     "end": 2.862,
+     "start": 2.737,
      "text": "and"
     },
     {
-     "end": 3.4,
-     "start": 2.812,
+     "end": 3.45,
+     "start": 2.862,
      "text": "inspects"
     },
     {
-     "end": 3.537,
-     "start": 3.4,
+     "end": 3.588,
+     "start": 3.45,
      "text": "the"
     },
     {
-     "end": 4.05,
-     "start": 3.537,
+     "end": 4.1,
+     "start": 3.588,
      "text": "actual"
     },
     {
-     "end": 4.65,
-     "start": 4.05,
+     "end": 4.7,
+     "start": 4.1,
      "text": "compiled"
     },
     {
-     "end": 5.262,
-     "start": 4.65,
+     "end": 5.312,
+     "start": 4.7,
      "text": "singular"
     },
     {
-     "end": 5.412,
-     "start": 5.262,
+     "end": 5.463,
+     "start": 5.312,
      "text": "and"
     },
     {
-     "end": 6.15,
-     "start": 5.412,
+     "end": 6.2,
+     "start": 5.463,
      "text": "open-datum"
     },
     {
-     "end": 7.037,
-     "start": 6.15,
+     "end": 7.012,
+     "start": 6.2,
      "text": "executables"
     },
     {
-     "end": 7.213,
-     "start": 7.037,
-     "text": "and"
+     "end": 7.275,
+     "start": 7.012,
+     "text": "built"
     },
     {
-     "end": 7.625,
-     "start": 7.213,
-     "text": "reads"
+     "end": 7.438,
+     "start": 7.275,
+     "text": "from"
     },
     {
-     "end": 7.825,
-     "start": 7.625,
-     "text": "their"
-    },
-    {
-     "end": 8.438,
-     "start": 7.825,
-     "text": "resolved"
-    },
-    {
-     "end": 9.087,
-     "start": 8.438,
-     "text": "registry"
-    },
-    {
-     "end": 9.812,
-     "start": 9.087,
-     "text": "CLI"
-    },
-    {
-     "end": 10.163,
-     "start": 9.812,
-     "text": "build"
-    },
-    {
-     "end": 11.45,
-     "start": 10.163,
-     "text": "flags"
-    },
-    {
-     "end": 11.7,
-     "start": 11.45,
-     "text": "."
-    },
-    {
-     "end": 12.2,
-     "start": 11.9,
-     "text": "Both"
-    },
-    {
-     "end": 12.438,
-     "start": 12.2,
-     "text": "must"
-    },
-    {
-     "end": 12.9,
-     "start": 12.438,
-     "text": "exclude"
-    },
-    {
-     "end": 13.2,
-     "start": 12.9,
-     "text": "hidden"
-    },
-    {
-     "end": 13.462,
-     "start": 13.2,
-     "text": "test"
-    },
-    {
-     "end": 14.012,
-     "start": 13.462,
-     "text": "inputs"
-    },
-    {
-     "end": 14.137,
-     "start": 14.012,
-     "text": "and"
-    },
-    {
-     "end": 14.587,
-     "start": 14.137,
-     "text": "disable"
-    },
-    {
-     "end": 14.675,
-     "start": 14.587,
+     "end": 7.55,
+     "start": 7.438,
      "text": "the"
     },
     {
-     "end": 14.975,
-     "start": 14.675,
-     "text": "test"
+     "end": 8.288,
+     "start": 7.55,
+     "text": "archive"
     },
     {
-     "end": 15.9,
-     "start": 14.975,
-     "text": "flag"
-    },
-    {
-     "end": 16.125,
-     "start": 15.9,
-     "text": "."
-    },
-    {
-     "end": 16.425,
-     "start": 16.3,
-     "text": "It"
-    },
-    {
-     "end": 16.625,
-     "start": 16.425,
-     "text": "then"
-    },
-    {
-     "end": 17.175,
-     "start": 16.625,
-     "text": "records"
-    },
-    {
-     "end": 17.562,
-     "start": 17.175,
-     "text": "every"
-    },
-    {
-     "end": 18.112,
-     "start": 17.562,
-     "text": "ordinary"
-    },
-    {
-     "end": 18.462,
-     "start": 18.112,
-     "text": "journey"
-    },
-    {
-     "end": 19.65,
-     "start": 18.462,
-     "text": "invocation"
-    },
-    {
-     "end": 19.825,
-     "start": 19.65,
-     "text": ":"
-    },
-    {
-     "end": 20.263,
-     "start": 20.025,
-     "text": "all"
-    },
-    {
-     "end": 20.6,
-     "start": 20.263,
-     "text": "five"
-    },
-    {
-     "end": 21.15,
-     "start": 20.6,
-     "text": "commands"
-    },
-    {
-     "end": 21.438,
-     "start": 21.15,
-     "text": "must"
-    },
-    {
-     "end": 21.75,
-     "start": 21.438,
-     "text": "run"
-    },
-    {
-     "end": 22.1,
-     "start": 21.75,
-     "text": "without"
-    },
-    {
-     "end": 22.4,
-     "start": 22.1,
-     "text": "hidden"
-    },
-    {
-     "end": 22.775,
-     "start": 22.4,
-     "text": "harness"
-    },
-    {
-     "end": 23.4,
-     "start": 22.775,
-     "text": "inputs"
-    },
-    {
-     "end": 23.475,
-     "start": 23.4,
-     "text": ","
-    },
-    {
-     "end": 23.6,
-     "start": 23.475,
+     "end": 8.438,
+     "start": 8.288,
      "text": "and"
     },
     {
-     "end": 23.825,
-     "start": 23.6,
+     "end": 8.8,
+     "start": 8.438,
+     "text": "reads"
+    },
+    {
+     "end": 9.0,
+     "start": 8.8,
+     "text": "their"
+    },
+    {
+     "end": 9.637,
+     "start": 9.0,
+     "text": "resolved"
+    },
+    {
+     "end": 10.262,
+     "start": 9.637,
+     "text": "registry"
+    },
+    {
+     "end": 10.962,
+     "start": 10.262,
+     "text": "CLI"
+    },
+    {
+     "end": 11.262,
+     "start": 10.962,
+     "text": "build"
+    },
+    {
+     "end": 12.55,
+     "start": 11.262,
+     "text": "flags"
+    },
+    {
+     "end": 12.8,
+     "start": 12.55,
+     "text": "."
+    },
+    {
+     "end": 13.3,
+     "start": 13.0,
+     "text": "Both"
+    },
+    {
+     "end": 13.538,
+     "start": 13.3,
+     "text": "must"
+    },
+    {
+     "end": 14.0,
+     "start": 13.538,
+     "text": "exclude"
+    },
+    {
+     "end": 14.3,
+     "start": 14.0,
+     "text": "hidden"
+    },
+    {
+     "end": 14.562,
+     "start": 14.3,
+     "text": "test"
+    },
+    {
+     "end": 15.113,
+     "start": 14.562,
+     "text": "inputs"
+    },
+    {
+     "end": 15.238,
+     "start": 15.113,
+     "text": "and"
+    },
+    {
+     "end": 15.688,
+     "start": 15.238,
+     "text": "disable"
+    },
+    {
+     "end": 15.775,
+     "start": 15.688,
+     "text": "the"
+    },
+    {
+     "end": 16.075,
+     "start": 15.775,
+     "text": "test"
+    },
+    {
+     "end": 17.0,
+     "start": 16.075,
+     "text": "flag"
+    },
+    {
+     "end": 17.225,
+     "start": 17.0,
+     "text": "."
+    },
+    {
+     "end": 17.525,
+     "start": 17.4,
+     "text": "It"
+    },
+    {
+     "end": 17.725,
+     "start": 17.525,
+     "text": "then"
+    },
+    {
+     "end": 18.275,
+     "start": 17.725,
+     "text": "records"
+    },
+    {
+     "end": 18.663,
+     "start": 18.275,
+     "text": "every"
+    },
+    {
+     "end": 19.212,
+     "start": 18.663,
+     "text": "ordinary"
+    },
+    {
+     "end": 19.562,
+     "start": 19.212,
+     "text": "journey"
+    },
+    {
+     "end": 20.75,
+     "start": 19.562,
+     "text": "invocation"
+    },
+    {
+     "end": 20.925,
+     "start": 20.75,
+     "text": ":"
+    },
+    {
+     "end": 21.45,
+     "start": 21.125,
+     "text": "every"
+    },
+    {
+     "end": 21.975,
+     "start": 21.45,
+     "text": "singular"
+    },
+    {
+     "end": 22.1,
+     "start": 21.975,
+     "text": "and"
+    },
+    {
+     "end": 22.875,
+     "start": 22.1,
+     "text": "open-datum"
+    },
+    {
+     "end": 23.288,
+     "start": 22.875,
+     "text": "command"
+    },
+    {
+     "end": 23.388,
+     "start": 23.288,
+     "text": "the"
+    },
+    {
+     "end": 23.75,
+     "start": 23.388,
+     "text": "journey"
+    },
+    {
+     "end": 24.275,
+     "start": 23.75,
+     "text": "runs"
+    },
+    {
+     "end": 24.375,
+     "start": 24.275,
+     "text": ","
+    },
+    {
+     "end": 24.975,
+     "start": 24.375,
+     "text": "inspect"
+    },
+    {
+     "end": 25.1,
+     "start": 24.975,
+     "text": "and"
+    },
+    {
+     "end": 25.55,
+     "start": 25.1,
+     "text": "submit"
+    },
+    {
+     "end": 26.625,
+     "start": 25.55,
+     "text": "included"
+    },
+    {
+     "end": 26.85,
+     "start": 26.625,
+     "text": ","
+    },
+    {
+     "end": 27.3,
+     "start": 27.05,
+     "text": "must"
+    },
+    {
+     "end": 27.6,
+     "start": 27.3,
+     "text": "run"
+    },
+    {
+     "end": 27.925,
+     "start": 27.6,
+     "text": "without"
+    },
+    {
+     "end": 28.225,
+     "start": 27.925,
+     "text": "hidden"
+    },
+    {
+     "end": 28.6,
+     "start": 28.225,
+     "text": "harness"
+    },
+    {
+     "end": 29.2,
+     "start": 28.6,
+     "text": "inputs"
+    },
+    {
+     "end": 29.275,
+     "start": 29.2,
+     "text": ","
+    },
+    {
+     "end": 29.4,
+     "start": 29.275,
+     "text": "and"
+    },
+    {
+     "end": 29.625,
+     "start": 29.4,
      "text": "no"
     },
     {
-     "end": 24.1,
-     "start": 23.825,
+     "end": 29.9,
+     "start": 29.625,
      "text": "hold"
     },
     {
-     "end": 24.475,
-     "start": 24.1,
+     "end": 30.275,
+     "start": 29.9,
      "text": "marker"
     },
     {
-     "end": 24.65,
-     "start": 24.475,
+     "end": 30.45,
+     "start": 30.275,
      "text": "may"
     },
     {
-     "end": 25.65,
-     "start": 24.65,
+     "end": 31.375,
+     "start": 30.45,
      "text": "appear"
     },
     {
-     "end": 25.875,
-     "start": 25.65,
+     "end": 31.6,
+     "start": 31.375,
      "text": "."
     }
    ]
@@ -217766,17 +219466,17 @@
    ]
   },
   "docs-verify-release/what-you-run-02": {
-   "audio_sha256": "fd51eb042e5b2bf89caf52643df1637f701f7473239692a8dc6292410be251e6",
-   "characters": 381,
-   "cost": 0.00037718999999999996,
-   "duration": 30.125,
+   "audio_sha256": "753f1b62d47c3b683c7a62b8b17144e31b6c0ea376423ee6677eaeab66702dcd",
+   "characters": 375,
+   "cost": 0.00037125,
+   "duration": 29.7,
    "index": 2,
-   "key": "4adf70b90dbe2d589fbd1ab9b96579708940ce3588924251c7989d70d76826c4",
+   "key": "21ccc8aaf7e6f9723f1ea1610bb537f049cfe6acb528da90bf913843d60de1a4",
    "page": "docs/verify-release.md",
    "pause_ms": 400,
    "section": "what-you-run",
-   "sent_text": "The example names v0.12.0; the newest release is always at https://github.com/lambdasistemi/singular/releases/latest, and its tag goes in both places. Name the release you are checking twice: once to choose the verifier that release ships, once as the release to download. The verifier downloads the release's three published assets from its GitHub release page without logging in:",
-   "text": "The example names v0.12.0; the newest release is always at https://github.com/lambdasistemi/singular/releases/latest, and its tag goes in both places. Name the release you are checking twice: once to choose the verifier that release ships, once as the release to download. The verifier downloads the release's three published assets from its GitHub release page without logging in:",
+   "sent_text": "The example names v0.12.0; the newest release is always at https://github.com/lambdasistemi/singular/releases/latest, and its tag goes in both places. Name the release you are checking twice: once to choose the verifier that release ships, once as the release to download. The verifier downloads the release's published assets from its GitHub release page without logging in:",
+   "text": "The example names v0.12.0; the newest release is always at https://github.com/lambdasistemi/singular/releases/latest, and its tag goes in both places. Name the release you are checking twice: once to choose the verifier that release ships, once as the release to download. The verifier downloads the release's published assets from its GitHub release page without logging in:",
    "words": [
     {
      "end": 0.275,
@@ -218014,78 +219714,73 @@
      "text": "verifier"
     },
     {
-     "end": 24.425,
+     "end": 24.475,
      "start": 23.812,
      "text": "downloads"
     },
     {
-     "end": 24.525,
-     "start": 24.425,
+     "end": 24.575,
+     "start": 24.475,
      "text": "the"
     },
     {
-     "end": 25.175,
-     "start": 24.525,
+     "end": 25.188,
+     "start": 24.575,
      "text": "release's"
     },
     {
-     "end": 25.538,
-     "start": 25.175,
-     "text": "three"
-    },
-    {
-     "end": 26.013,
-     "start": 25.538,
+     "end": 25.663,
+     "start": 25.188,
      "text": "published"
     },
     {
-     "end": 26.55,
-     "start": 26.013,
+     "end": 26.2,
+     "start": 25.663,
      "text": "assets"
     },
     {
-     "end": 26.712,
-     "start": 26.55,
+     "end": 26.362,
+     "start": 26.2,
      "text": "from"
     },
     {
-     "end": 26.913,
-     "start": 26.712,
+     "end": 26.562,
+     "start": 26.362,
      "text": "its"
     },
     {
-     "end": 27.375,
-     "start": 26.913,
+     "end": 27.025,
+     "start": 26.562,
      "text": "GitHub"
     },
     {
-     "end": 27.775,
-     "start": 27.375,
+     "end": 27.4,
+     "start": 27.025,
      "text": "release"
     },
     {
-     "end": 28.188,
-     "start": 27.775,
+     "end": 27.837,
+     "start": 27.4,
      "text": "page"
     },
     {
-     "end": 28.587,
-     "start": 28.188,
+     "end": 28.225,
+     "start": 27.837,
      "text": "without"
     },
     {
-     "end": 29.025,
-     "start": 28.587,
+     "end": 28.625,
+     "start": 28.225,
      "text": "logging"
     },
     {
-     "end": 29.9,
-     "start": 29.025,
+     "end": 29.475,
+     "start": 28.625,
      "text": "in"
     },
     {
-     "end": 30.125,
-     "start": 29.9,
+     "end": 29.7,
+     "start": 29.475,
      "text": ":"
     }
    ]

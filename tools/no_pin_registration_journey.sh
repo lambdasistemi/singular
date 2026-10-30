@@ -349,6 +349,8 @@ updated_holding="$(field update .holding)"
 check "the updated holding carries the chosen payload with the same protected deposit" \
   holding_is "$chain_dir/update.tx.json" "$state_policy" "$state_name" "$key_hex" "$controller" "$deposit" \
   '{"map":[[{"bytes":"6e616d65"},{"bytes":"75706461746564"}]]}'
+control "an updated holding that kept the booked payload is not this one" \
+  holding_is "$chain_dir/update.tx.json" "$state_policy" "$state_name" "$key_hex" "$controller" "$deposit" "$payload_data"
 as alice terminate "$open_datum" terminate --blueprint plutus.json \
   --state-token "$token" --holding "$updated_holding"
 view_tx terminate "$(tx_of terminate terminate)"
@@ -692,6 +694,48 @@ check_shared_uncalled_control() { return 0; }
 control "an uncalled predicate would fail the coverage guard" shared_publication_checks_covered
 unset -f check_shared_uncalled_control
 check "removing the temporary control restores predicate coverage" shared_publication_checks_covered
+
+# The six verbs of the registry's life, each judged by this table: one clause
+# that holds and, unless the clause itself states that its altered input fails,
+# one control that fails on altered input. A verb whose clause leaves the table
+# is seen here, not missed.
+verb_clauses() { # one row per clause: verb, leg, clause, control
+  printf '%s\t%s\t%s\t%s\n' \
+    create creation "the creation mints the registry's state token" \
+    "a creation that sent the creation alone is not the first registry's" \
+    register fold "the holding carries the key's token, the payload and exactly the deposit, at the committed address" \
+    "a holding with one lovelace more than the deposit is not this one" \
+    update "update and termination" "the updated holding carries the chosen payload with the same protected deposit" \
+    "an updated holding that kept the booked payload is not this one" \
+    terminate "update and termination" "no unspent output carries the terminated key's active token" \
+    "the live state token is not a burned active token" \
+    read "reading a key" "the packaged readers classify live custody, pending termination and authenticated absence; altered answers fail" "" \
+    batch "mixed batches and their controls" "a fresh nonbooker discovers mixed batches, skips foreign and duplicate requests, takes four then the rest, and receives the chain-derived surplus; altered observations fail" "" \
+    batch "a mixed batch found on chain" "one included transaction folds at least three registrations and one termination" \
+    "an altered registration count is refused by the same classifier"
+}
+verbs_are_judged() { # VERDICT-TABLE
+  local verb leg clause altered rows=0
+  while IFS=$'\t' read -r verb leg clause altered; do
+    grep -qF "| $leg | $clause | holds |" "$1" || {
+      echo "$verb: no holding clause in $leg" >&2
+      return 1
+    }
+    [ -z "$altered" ] || grep -qF "| $leg | control: $altered | fails on altered input |" "$1" || {
+      echo "$verb: no control failing on altered input in $leg" >&2
+      return 1
+    }
+    rows=$((rows + 1))
+  done < <(verb_clauses)
+  [ "$rows" -gt 0 ]
+}
+leg="verbs"
+check "create, register, update, terminate, read and the discovered batch fold are each judged by a clause that holds, with a control that fails on altered input" \
+  verbs_are_judged "$verdicts"
+grep -vF 'the updated holding carries' "$verdicts" >"$scratch/verdicts-without-update-clause.md" || true
+control "a table without the update clause leaves update unjudged" verbs_are_judged "$scratch/verdicts-without-update-clause.md"
+grep -vF 'control: an updated holding' "$verdicts" >"$scratch/verdicts-without-update-control.md" || true
+control "a table without the update control leaves update unconfirmed" verbs_are_judged "$scratch/verdicts-without-update-control.md"
 
 # What the journey showed, in the words of the story, from the files above.
 {

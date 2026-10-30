@@ -858,7 +858,11 @@
                     gzip
                     jq
                   ];
-                  text = ''VERIFY_RELEASE=${pkgs.lib.getExe verifyRelease} bash ${./tools/verify_release_controls.sh} "$@"'';
+                  text = ''
+                    export VERIFY_RELEASE=${pkgs.lib.getExe verifyRelease}
+                    export VERIFY_RELEASE_BUNDLES_CONF=${./tools/release_bundles.sh}
+                    bash ${./tools/verify_release_controls.sh} "$@"
+                  '';
                 }
               );
             };
