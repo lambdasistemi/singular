@@ -1,0 +1,80 @@
+{
+  "gate-for-retiring-the-legacy-command-layer": [
+    {
+      "text": "Gate for retiring the legacy command layer.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 486, remainder. This page is for the commit owner, the auditor and the reviewers: the census taken at intake, each acceptance item, the hosted job and the verbatim command that proves it. The requirements are in the specification and the slice in the plan. Every command is an existing hosted command. Hosted checks on the pull request head are the net; the commands below run scoped to what the deletion can break.",
+      "pause": 400
+    }
+  ],
+  "census-at-intake": [
+    {
+      "text": "Census at intake.",
+      "pause": 500
+    }
+  ],
+  "executables-commands-and-flags-before-the-change": [
+    {
+      "text": "Executables, commands and flags before the change.",
+      "pause": 500
+    },
+    {
+      "text": "The other programs the package builds, the Koios recorder, the vault sealing helper and the local-services recorder, are test tools, not release executables, and are not touched.",
+      "pause": 400
+    },
+    {
+      "text": "After the change the three tables are identical and so are all eighteen help snapshots. The only token that stops being recognised is the combined fold switch. No help page lists it; today the open-datum and registry commands refuse it by name and the three wallet commands accept it and ignore it; afterwards every command refuses it as an unknown flag.",
+      "pause": 400
+    }
+  ],
+  "code-with-no-command-line-route": [
+    {
+      "text": "Code with no command line route.",
+      "pause": 500
+    },
+    {
+      "text": "The compiler pass in step 2 of the plan extends this table; the commit owner appends what it finds to the pull request body.",
+      "pause": 400
+    }
+  ],
+  "consumers-of-the-deleted-code": [
+    {
+      "text": "Consumers of the deleted code.",
+      "pause": 500
+    },
+    {
+      "text": "No hosted job ran only deleted code at intake. If one does, the pull request body says so and the desk decides; no required check is renamed, removed or edited by this ticket.",
+      "pause": 400
+    }
+  ],
+  "rows": [
+    {
+      "text": "Rows.",
+      "pause": 500
+    },
+    {
+      "text": "Same-bytes observation for the census, not a hosted job: git diff --exit-code origin/main -- offchain/test/fixtures/help applications/open-datum/offchain/test/fixtures/help exits 0, and the corpus diff lists only rows that carried the removed switch. G3 and G4 are the proof that the real help output equals those unchanged files.",
+      "pause": 400
+    },
+    {
+      "text": "The devnet journeys and the command recovery partitions run the packaged commands unchanged; their hosted runs on the pull request head are the net, and the gate does not rerun them locally.",
+      "pause": 400
+    }
+  ],
+  "budget": [
+    {
+      "text": "Budget.",
+      "pause": 500
+    },
+    {
+      "text": "Each build or test runs in a named scope, systemd-run --user --scope --unit=t486-<row>-<n> -p MemoryMax=24G timeout 3600 <command>; long gates start with the background option and are read from their log. just ci runs at most once on the final candidate, then the push. A hosted failure is one repair commit, not a local rerun of the hosted list.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "gate.md",
+    "sha256": "82caee329be0582f4cb315ab42332853c6ff92ea089dcb0b153d52ae71959615"
+  }
+}
