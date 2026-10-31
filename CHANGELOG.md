@@ -1,5 +1,60 @@
 # Changelog
 
+## [0.20.0](https://github.com/lambdasistemi/singular/compare/v0.19.0...v0.20.0) (2026-10-31)
+
+
+### Features
+
+* name the release that serves a registry the installed commands do not ([0dafcc3](https://github.com/lambdasistemi/singular/commit/0dafcc332cc05cf089b40c581ab8f69ee1d2ca4b))
+* name the release that serves a registry the installed commands do not ([0823463](https://github.com/lambdasistemi/singular/commit/0823463a6b9ce2066cbbfb6162a9959f1ff0f592))
+* record every published release in the packaged contract table ([2aa90ed](https://github.com/lambdasistemi/singular/commit/2aa90ed26430fbbc068744dd2fab0ec0f270f1d0))
+* record release 0.19.0 in the packaged contract table ([bc1814d](https://github.com/lambdasistemi/singular/commit/bc1814d2036a7f4013726ced65d49c1dddcca2cc))
+
+
+### Fixes
+
+* a fold no longer reports the configuration output as skipped ([d169f8c](https://github.com/lambdasistemi/singular/commit/d169f8c6c0e8ee29d2c5a8c1ab9ee2bab8748a52))
+* a fold no longer reports the configuration output as skipped ([dd457dc](https://github.com/lambdasistemi/singular/commit/dd457dc195522d6a33f277c36c13f27301142fda))
+* booking a registration refuses a key the registry state rules out ([0f309d3](https://github.com/lambdasistemi/singular/commit/0f309d3845d14546e38dc2c4e6e054562234d242))
+* booking a registration refuses a key the registry state rules out ([df53cce](https://github.com/lambdasistemi/singular/commit/df53cce0692c2580f33b8f33969fd68c409d673e))
+* bundle smoke libc check no longer fails on a closed pipe ([0a651f0](https://github.com/lambdasistemi/singular/commit/0a651f0afc71d5b387b8ddf0dc84c675d98839fd))
+* bundle smoke libc check no longer fails on a closed pipe ([e209d0e](https://github.com/lambdasistemi/singular/commit/e209d0ee9e168ee2cd6c1f65703dd303c7cbf2bc))
+* every built transaction carries a validity upper bound ([b8f9dc0](https://github.com/lambdasistemi/singular/commit/b8f9dc0e3f697b69abdabcac0ca13c7066207d05))
+* every built transaction carries a validity upper bound ([3d1e987](https://github.com/lambdasistemi/singular/commit/3d1e9871a1696198ae11d75a6457d2f295d0228b))
+* publish the configuration behavior as its own conformance row ([bc74d4f](https://github.com/lambdasistemi/singular/commit/bc74d4f625da4c8c761356f2233e6fba662d03ab))
+* start the verified-release job from clean directories ([257126e](https://github.com/lambdasistemi/singular/commit/257126eda97427108e92da722e85bf5b1b76bd7d))
+* start the verified-release job from clean directories ([cc1d798](https://github.com/lambdasistemi/singular/commit/cc1d798440ab60e4daa0a7907137c9689f43e35d))
+
+
+### Documentation
+
+* compute one decision table for the release and state what it assumes ([fd43f48](https://github.com/lambdasistemi/singular/commit/fd43f48909f036342d297d0fadfe738ff7ab9c88))
+* compute one decision table from the creation and batch receipts ([ac2306f](https://github.com/lambdasistemi/singular/commit/ac2306f8980311941060bdfcbfe43e9ef06dad81))
+* compute the compatibility record and point the release notes at it ([d293355](https://github.com/lambdasistemi/singular/commit/d29335534c705e18b355def4deceb313618e75a9))
+* compute the compatibility record from the packaged release table ([0bb2011](https://github.com/lambdasistemi/singular/commit/0bb201167963936468d175f3707ac296a331ab93))
+* describe the key file as a supported signer ([35f422c](https://github.com/lambdasistemi/singular/commit/35f422c37248586396ceb826be4d9b3fb29dc602))
+* plan how a fold treats the configuration output ([f872185](https://github.com/lambdasistemi/singular/commit/f8721852a141330c62a788d85086078c2dbe800e))
+* plan the early refusal of a key the registry state rules out ([20fec24](https://github.com/lambdasistemi/singular/commit/20fec2498f2af2251b84026a22a0453acc9715e3))
+* plan the hand-built transaction refusals on a development network ([#764](https://github.com/lambdasistemi/singular/issues/764)) ([7636fe2](https://github.com/lambdasistemi/singular/commit/7636fe249dab24b7b3cbbeecf80f759fede0f11e))
+* plan the validity upper bound on every built transaction ([ca98048](https://github.com/lambdasistemi/singular/commit/ca980481c62ab3fb2c1bf2688f8a53272fb0be42))
+* point the release notes at the compatibility record ([1ed369f](https://github.com/lambdasistemi/singular/commit/1ed369f0c33ebf763c7ae76e9b7a704a786294ad))
+* published pages state the decision instead of citing a record ([2cb5ca9](https://github.com/lambdasistemi/singular/commit/2cb5ca94496cab3f47ddfbef465c085302598734))
+* published pages state the decision instead of citing a record ([8d5c9e9](https://github.com/lambdasistemi/singular/commit/8d5c9e9105fa41f0526e88bd742e71fabd0f5d68))
+* say booking refuses a key the registry state rules out ([c810446](https://github.com/lambdasistemi/singular/commit/c81044602797b4ea6c48a0af7a98d99a312d2096))
+* say every transaction ends within the hour and a lapsed bundle frees its wallet ([52f09a2](https://github.com/lambdasistemi/singular/commit/52f09a2882bfb50feb66012ffe98321708175cd6))
+* say what a skip in a fold receipt means ([d9bb983](https://github.com/lambdasistemi/singular/commit/d9bb9830b7f9dcc85585c2d13474808bc7210353))
+* **specs:** record the table freshness ruling, the accepted tasks and the exact journey claim ([93d8c15](https://github.com/lambdasistemi/singular/commit/93d8c1506d64a4c575fb328e22d218d7fde0a42e))
+* **specs:** say which journey verdicts are read from the chain ([60cb255](https://github.com/lambdasistemi/singular/commit/60cb2558278c5d1ac3ee65fb26f81fa4c365b422))
+* **specs:** settle table freshness and add the refill after the tag ([2ca1eef](https://github.com/lambdasistemi/singular/commit/2ca1eef6709f15549ffe87f5144f55f92b706a46))
+* **specs:** stamp the accepted recognition tasks ([f368a66](https://github.com/lambdasistemi/singular/commit/f368a669a73bd55334474e7626800bedba7070d5))
+* state what the release assumes and does not establish ([4a67556](https://github.com/lambdasistemi/singular/commit/4a6755661e40055fbbdae1540549b70cf6de406e))
+
+
+### Automation
+
+* hand-built transactions refused by the deployed validators on a development network ([7fd584e](https://github.com/lambdasistemi/singular/commit/7fd584e312894e9b115b884470150d379ae45711))
+* refuse hand-built transactions beside accepted controls on a development network ([#764](https://github.com/lambdasistemi/singular/issues/764)) ([b1ddd79](https://github.com/lambdasistemi/singular/commit/b1ddd794054d7fe6fd4937ba392a315e1f33b544))
+
 ## [0.19.0](https://github.com/lambdasistemi/singular/compare/v0.18.0...v0.19.0) (2026-10-30)
 
 
