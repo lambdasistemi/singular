@@ -312,6 +312,8 @@ singular wallet sign --vault bob.vault --passphrase-fd 9 --out witnesses bundle.
 
 The writer's side is a `singular registry create` run, or an `open-datum create`, `insert`, `update`, `terminate` or `fold` run, that names `--wallet-address` and `--bundle` in place of the signing key: it builds its whole run as one bundle in build order, signs and sends nothing, states its own fields under `expected` in its receipt, and exits with status 19, `waiting-for-signatures`.
 
+Until its transactions are on the chain, the wallet's next write of that registry stops at status 19 and names the bundle. Every body carries a validity upper bound, which the bundle records as the member's deadline; a body ends an hour after the tip it was built at, or at the ledger's horizon when that comes first, so a bundle has an hour at most to be signed and sent, and a member sent after its deadline is refused. Once the tip of the chain passes the deadline of a member that is not on the chain, the next write records that member as expired and the others as dead, and goes on; a bundle whose transactions can never land, because another write spent an output one of them spends, releases the wallet the same way.
+
 ```mermaid
 %%{init: {'sequence': {'actorMargin': 20, 'width': 110, 'wrap': true, 'mirrorActors': false}}}%%
 sequenceDiagram
