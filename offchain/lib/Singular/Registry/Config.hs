@@ -39,9 +39,9 @@ flat-encoded request validator before applying
 is the state script hash and therefore the state
 policy ID. The 'cageSeed' records the
 @OutputReference@ consumed by boot minting.
-(Ownerless registry, ruling NOTE-028/A-003: no staking
-surface remains; the former @cfgStakeScript@ hook is
-gone with the owner role.)
+(The registry has no owner: no staking surface remains
+and the former @cfgStakeScript@ hook is gone with the
+owner role.)
 -}
 data CageConfig = CageConfig
     { cageScriptBytes :: !ShortByteString

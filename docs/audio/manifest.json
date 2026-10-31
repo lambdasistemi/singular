@@ -197716,17 +197716,17 @@
    ]
   },
   "docs-singular-node/asking-the-program-for-help-01": {
-   "audio_sha256": "3b69ff452cdbbec07077dafb1c5f00255cc0dd4cf7de517eae3f60763001c7dd",
-   "characters": 686,
-   "cost": 0.0006791400000000001,
-   "duration": 42.825,
+   "audio_sha256": "727526f1a552c82a7f6f44289329f72a0a8b482edff607d1b90ae58e2015e660",
+   "characters": 712,
+   "cost": 0.00070488,
+   "duration": 43.7,
    "index": 1,
-   "key": "5d92d88d075a011887f87cb90bed84abf3f75d89389e64918492372b01bc309c",
+   "key": "e5b43db7e14d89e93f74288eb59ca015a1c116ff1383473eee920fb9457c444a",
    "page": "docs/singular-node.md",
    "pause_ms": 400,
    "section": "asking-the-program-for-help",
-   "sent_text": "As a registry operator, you can ask either program what it does before you read this page or any other. singular --version and open-datum --version print the program's name, its version and the commit it was built from; a build that carries no commit says commit unknown. singular --help and open-datum --help print one screen: what the program is for, and every command with a line about it. Each command has its own --help that shows only that command: its settings, each with a description and a default, the signer routes grouped with the vault first and the key file, which is legacy, last, the environment variables it reads, an example for a command that writes, and how it ends.",
-   "text": "As a registry operator, you can ask either program what it does before you read this page or any other. singular --version and open-datum --version print the program's name, its version and the commit it was built from; a build that carries no commit says commit unknown. singular --help and open-datum --help print one screen: what the program is for, and every command with a line about it. Each command has its own --help that shows only that command: its settings, each with a description and a default, the signer routes grouped with the vault first and the key file, which is legacy, last, the environment variables it reads, an example for a command that writes, and how it ends.",
+   "sent_text": "As a registry operator, you can ask either program what it does before you read this page or any other. singular --version and open-datum --version print the program's name, its version and the commit it was built from; a build that carries no commit says commit unknown. singular --help and open-datum --help print one screen: what the program is for, and every command with a line about it. Each command has its own --help that shows only that command: its settings, each with a description and a default, the signer routes grouped with the vault, which is recommended, first and the key file, a supported signer, last, the environment variables it reads, an example for a command that writes, and how it ends.",
+   "text": "As a registry operator, you can ask either program what it does before you read this page or any other. singular --version and open-datum --version print the program's name, its version and the commit it was built from; a build that carries no commit says commit unknown. singular --help and open-datum --help print one screen: what the program is for, and every command with a line about it. Each command has its own --help that shows only that command: its settings, each with a description and a default, the signer routes grouped with the vault, which is recommended, first and the key file, a supported signer, last, the environment variables it reads, an example for a command that writes, and how it ends.",
    "words": [
     {
      "end": 0.363,
@@ -198239,178 +198239,203 @@
      "text": "routes"
     },
     {
-     "end": 32.562,
+     "end": 32.537,
      "start": 32.237,
      "text": "grouped"
     },
     {
-     "end": 32.688,
-     "start": 32.562,
+     "end": 32.662,
+     "start": 32.537,
      "text": "with"
     },
     {
-     "end": 32.775,
-     "start": 32.688,
+     "end": 32.75,
+     "start": 32.662,
      "text": "the"
     },
     {
-     "end": 33.088,
-     "start": 32.775,
+     "end": 33.1,
+     "start": 32.75,
      "text": "vault"
     },
     {
-     "end": 33.588,
-     "start": 33.088,
-     "text": "first"
-    },
-    {
-     "end": 33.713,
-     "start": 33.588,
-     "text": "and"
-    },
-    {
-     "end": 33.812,
-     "start": 33.713,
-     "text": "the"
-    },
-    {
-     "end": 34.088,
-     "start": 33.812,
-     "text": "key"
-    },
-    {
-     "end": 34.45,
-     "start": 34.088,
-     "text": "file"
-    },
-    {
-     "end": 34.487,
-     "start": 34.45,
+     "end": 33.138,
+     "start": 33.1,
      "text": ","
     },
     {
-     "end": 34.675,
-     "start": 34.487,
+     "end": 33.325,
+     "start": 33.138,
      "text": "which"
     },
     {
-     "end": 34.825,
-     "start": 34.675,
+     "end": 33.475,
+     "start": 33.325,
      "text": "is"
     },
     {
-     "end": 35.875,
-     "start": 34.825,
-     "text": "legacy"
+     "end": 34.55,
+     "start": 33.475,
+     "text": "recommended"
     },
     {
-     "end": 36.075,
-     "start": 35.875,
+     "end": 34.775,
+     "start": 34.55,
      "text": ","
     },
     {
-     "end": 36.675,
-     "start": 36.3,
-     "text": "last"
+     "end": 35.263,
+     "start": 34.975,
+     "text": "first"
     },
     {
-     "end": 36.713,
-     "start": 36.675,
-     "text": ","
-    },
-    {
-     "end": 36.85,
-     "start": 36.713,
-     "text": "the"
-    },
-    {
-     "end": 37.425,
-     "start": 36.85,
-     "text": "environment"
-    },
-    {
-     "end": 37.975,
-     "start": 37.425,
-     "text": "variables"
-    },
-    {
-     "end": 38.138,
-     "start": 37.975,
-     "text": "it"
-    },
-    {
-     "end": 38.7,
-     "start": 38.138,
-     "text": "reads"
-    },
-    {
-     "end": 38.8,
-     "start": 38.7,
-     "text": ","
-    },
-    {
-     "end": 38.888,
-     "start": 38.8,
-     "text": "an"
-    },
-    {
-     "end": 39.4,
-     "start": 38.888,
-     "text": "example"
-    },
-    {
-     "end": 39.513,
-     "start": 39.4,
-     "text": "for"
-    },
-    {
-     "end": 39.575,
-     "start": 39.513,
-     "text": "a"
-    },
-    {
-     "end": 40.013,
-     "start": 39.575,
-     "text": "command"
-    },
-    {
-     "end": 40.175,
-     "start": 40.013,
-     "text": "that"
-    },
-    {
-     "end": 41.15,
-     "start": 40.175,
-     "text": "writes"
-    },
-    {
-     "end": 41.35,
-     "start": 41.15,
-     "text": ","
-    },
-    {
-     "end": 41.65,
-     "start": 41.55,
+     "end": 35.362,
+     "start": 35.263,
      "text": "and"
     },
     {
-     "end": 41.838,
-     "start": 41.65,
-     "text": "how"
+     "end": 35.463,
+     "start": 35.362,
+     "text": "the"
     },
     {
-     "end": 41.925,
-     "start": 41.838,
+     "end": 35.737,
+     "start": 35.463,
+     "text": "key"
+    },
+    {
+     "end": 36.125,
+     "start": 35.737,
+     "text": "file"
+    },
+    {
+     "end": 36.175,
+     "start": 36.125,
+     "text": ","
+    },
+    {
+     "end": 36.275,
+     "start": 36.175,
+     "text": "a"
+    },
+    {
+     "end": 36.812,
+     "start": 36.275,
+     "text": "supported"
+    },
+    {
+     "end": 37.175,
+     "start": 36.812,
+     "text": "signer"
+    },
+    {
+     "end": 37.225,
+     "start": 37.175,
+     "text": ","
+    },
+    {
+     "end": 37.675,
+     "start": 37.225,
+     "text": "last"
+    },
+    {
+     "end": 37.75,
+     "start": 37.675,
+     "text": ","
+    },
+    {
+     "end": 37.9,
+     "start": 37.75,
+     "text": "the"
+    },
+    {
+     "end": 38.45,
+     "start": 37.9,
+     "text": "environment"
+    },
+    {
+     "end": 38.975,
+     "start": 38.45,
+     "text": "variables"
+    },
+    {
+     "end": 39.138,
+     "start": 38.975,
      "text": "it"
     },
     {
-     "end": 42.625,
-     "start": 41.925,
+     "end": 40.175,
+     "start": 39.138,
+     "text": "reads"
+    },
+    {
+     "end": 40.4,
+     "start": 40.175,
+     "text": ","
+    },
+    {
+     "end": 40.638,
+     "start": 40.575,
+     "text": "an"
+    },
+    {
+     "end": 41.125,
+     "start": 40.638,
+     "text": "example"
+    },
+    {
+     "end": 41.237,
+     "start": 41.125,
+     "text": "for"
+    },
+    {
+     "end": 41.3,
+     "start": 41.237,
+     "text": "a"
+    },
+    {
+     "end": 41.662,
+     "start": 41.3,
+     "text": "command"
+    },
+    {
+     "end": 41.825,
+     "start": 41.662,
+     "text": "that"
+    },
+    {
+     "end": 42.175,
+     "start": 41.825,
+     "text": "writes"
+    },
+    {
+     "end": 42.225,
+     "start": 42.175,
+     "text": ","
+    },
+    {
+     "end": 42.35,
+     "start": 42.225,
+     "text": "and"
+    },
+    {
+     "end": 42.562,
+     "start": 42.35,
+     "text": "how"
+    },
+    {
+     "end": 42.65,
+     "start": 42.562,
+     "text": "it"
+    },
+    {
+     "end": 43.5,
+     "start": 42.65,
      "text": "ends"
     },
     {
-     "end": 42.825,
-     "start": 42.625,
+     "end": 43.7,
+     "start": 43.5,
      "text": "."
     }
    ]
@@ -221381,17 +221406,17 @@
    ]
   },
   "docs-singular-node/the-settings-you-give-01": {
-   "audio_sha256": "eed8501d5f2dfec49300a287d87f313afd4b10d8511b03fcc496da1811f2e532",
-   "characters": 902,
-   "cost": 0.0008929799999999999,
-   "duration": 57.975,
+   "audio_sha256": "6f1c38425c1d7de66ca09e91dd40e701e8b68059da485909a563b2e095fa0099",
+   "characters": 919,
+   "cost": 0.0009098099999999999,
+   "duration": 59.15,
    "index": 1,
-   "key": "7c840a9f9a57fdbc7729cbe9f08a94f05704b8da9da641dc8a253525ceefdb1f",
+   "key": "dc5c391c3b43f7f43b84c10b44f5038f678692b7583323a9bf232c2f2a29ed15",
    "page": "docs/singular-node.md",
    "pause_ms": 400,
    "section": "the-settings-you-give",
-   "sent_text": "The URL, network magic and one signer (a key file, a vault, or an address with its bundle file) travel together on a write: naming only some of them is refused as partially configured, and so is a write that names none, because singular never starts a node of its own — a registry booted on a chain that dies with the process could not be attached to again. The refusal says which part is missing and, for the signer, the three ways to name one: the vault first, then an address with its bundle file, and last the key file, which is legacy. The settings that do not change from one command to the next (the node, the contracts, the registry, the token file, the narration and the vault) can be given once, as the next section says; the key file, an external signer and everything else a command does are typed on the command. Public environment configuration lists the variables and the phase-log path.",
-   "text": "The URL, network magic and one signer (a key file, a vault, or an address with its bundle file) travel together on a write: naming only some of them is refused as partially configured, and so is a write that names none, because singular never starts a node of its own — a registry booted on a chain that dies with the process could not be attached to again. The refusal says which part is missing and, for the signer, the three ways to name one: the vault first, then an address with its bundle file, and last the key file, which is legacy. The settings that do not change from one command to the next (the node, the contracts, the registry, the token file, the narration and the vault) can be given once, as the next section says; the key file, an external signer and everything else a command does are typed on the command. Public environment configuration lists the variables and the phase-log path.",
+   "sent_text": "The URL, network magic and one signer (a key file, a vault, or an address with its bundle file) travel together on a write: naming only some of them is refused as partially configured, and so is a write that names none, because singular never starts a node of its own — a registry booted on a chain that dies with the process could not be attached to again. The refusal says which part is missing and, for the signer, the three ways to name one: the vault (recommended) first, then an address with its bundle file, and last the key file, a supported signer. The settings that do not change from one command to the next (the node, the contracts, the registry, the token file, the narration and the vault) can be given once, as the next section says; the key file, an external signer and everything else a command does are typed on the command. Public environment configuration lists the variables and the phase-log path.",
+   "text": "The URL, network magic and one signer (a key file, a vault, or an address with its bundle file) travel together on a write: naming only some of them is refused as partially configured, and so is a write that names none, because singular never starts a node of its own — a registry booted on a chain that dies with the process could not be attached to again. The refusal says which part is missing and, for the signer, the three ways to name one: the vault (recommended) first, then an address with its bundle file, and last the key file, a supported signer. The settings that do not change from one command to the next (the node, the contracts, the registry, the token file, the narration and the vault) can be given once, as the next section says; the key file, an external signer and everything else a command does are typed on the command. Public environment configuration lists the variables and the phase-log path.",
    "words": [
     {
      "end": 0.312,
@@ -221884,478 +221909,493 @@
      "text": ":"
     },
     {
-     "end": 29.575,
+     "end": 29.6,
      "start": 29.5,
      "text": "the"
     },
     {
-     "end": 29.913,
-     "start": 29.575,
+     "end": 29.95,
+     "start": 29.6,
      "text": "vault"
     },
     {
-     "end": 30.3,
-     "start": 29.913,
-     "text": "first"
-    },
-    {
-     "end": 30.35,
-     "start": 30.3,
-     "text": ","
-    },
-    {
-     "end": 30.487,
-     "start": 30.35,
-     "text": "then"
-    },
-    {
-     "end": 30.575,
-     "start": 30.487,
-     "text": "an"
-    },
-    {
-     "end": 31.05,
-     "start": 30.575,
-     "text": "address"
-    },
-    {
-     "end": 31.188,
-     "start": 31.05,
-     "text": "with"
-    },
-    {
-     "end": 31.388,
-     "start": 31.188,
-     "text": "its"
-    },
-    {
-     "end": 31.812,
-     "start": 31.388,
-     "text": "bundle"
-    },
-    {
-     "end": 32.275,
-     "start": 31.812,
-     "text": "file"
-    },
-    {
-     "end": 32.35,
-     "start": 32.275,
-     "text": ","
-    },
-    {
-     "end": 32.475,
-     "start": 32.35,
-     "text": "and"
-    },
-    {
-     "end": 32.85,
-     "start": 32.475,
-     "text": "last"
-    },
-    {
-     "end": 32.95,
-     "start": 32.85,
-     "text": "the"
-    },
-    {
-     "end": 33.213,
-     "start": 32.95,
-     "text": "key"
-    },
-    {
-     "end": 33.575,
-     "start": 33.213,
-     "text": "file"
-    },
-    {
-     "end": 33.612,
-     "start": 33.575,
-     "text": ","
-    },
-    {
-     "end": 33.8,
-     "start": 33.612,
-     "text": "which"
-    },
-    {
-     "end": 33.95,
-     "start": 33.8,
-     "text": "is"
-    },
-    {
-     "end": 35.05,
-     "start": 33.95,
-     "text": "legacy"
-    },
-    {
-     "end": 35.25,
-     "start": 35.05,
-     "text": "."
-    },
-    {
-     "end": 35.537,
-     "start": 35.425,
-     "text": "The"
-    },
-    {
-     "end": 36.025,
-     "start": 35.537,
-     "text": "settings"
-    },
-    {
-     "end": 36.175,
-     "start": 36.025,
-     "text": "that"
-    },
-    {
-     "end": 36.3,
-     "start": 36.175,
-     "text": "do"
-    },
-    {
-     "end": 36.562,
-     "start": 36.3,
-     "text": "not"
-    },
-    {
-     "end": 36.925,
-     "start": 36.562,
-     "text": "change"
-    },
-    {
-     "end": 37.125,
-     "start": 36.925,
-     "text": "from"
-    },
-    {
-     "end": 37.35,
-     "start": 37.125,
-     "text": "one"
-    },
-    {
-     "end": 37.75,
-     "start": 37.35,
-     "text": "command"
-    },
-    {
-     "end": 37.838,
-     "start": 37.75,
-     "text": "to"
-    },
-    {
-     "end": 37.925,
-     "start": 37.838,
-     "text": "the"
-    },
-    {
-     "end": 38.312,
-     "start": 37.925,
-     "text": "next"
-    },
-    {
-     "end": 38.35,
-     "start": 38.312,
+     "end": 30.0,
+     "start": 29.95,
      "text": "("
     },
     {
-     "end": 38.425,
-     "start": 38.35,
-     "text": "the"
+     "end": 30.625,
+     "start": 30.0,
+     "text": "recommended"
     },
     {
-     "end": 39.325,
-     "start": 38.425,
-     "text": "node"
-    },
-    {
-     "end": 39.55,
-     "start": 39.325,
-     "text": ","
-    },
-    {
-     "end": 39.8,
-     "start": 39.725,
-     "text": "the"
-    },
-    {
-     "end": 40.35,
-     "start": 39.8,
-     "text": "contracts"
-    },
-    {
-     "end": 40.388,
-     "start": 40.35,
-     "text": ","
-    },
-    {
-     "end": 40.475,
-     "start": 40.388,
-     "text": "the"
-    },
-    {
-     "end": 40.975,
-     "start": 40.475,
-     "text": "registry"
-    },
-    {
-     "end": 41.013,
-     "start": 40.975,
-     "text": ","
-    },
-    {
-     "end": 41.1,
-     "start": 41.013,
-     "text": "the"
-    },
-    {
-     "end": 41.463,
-     "start": 41.1,
-     "text": "token"
-    },
-    {
-     "end": 42.275,
-     "start": 41.463,
-     "text": "file"
-    },
-    {
-     "end": 42.475,
-     "start": 42.275,
-     "text": ","
-    },
-    {
-     "end": 42.725,
-     "start": 42.65,
-     "text": "the"
-    },
-    {
-     "end": 43.3,
-     "start": 42.725,
-     "text": "narration"
-    },
-    {
-     "end": 43.412,
-     "start": 43.3,
-     "text": "and"
-    },
-    {
-     "end": 43.5,
-     "start": 43.412,
-     "text": "the"
-    },
-    {
-     "end": 43.85,
-     "start": 43.5,
-     "text": "vault"
-    },
-    {
-     "end": 43.9,
-     "start": 43.85,
+     "end": 30.712,
+     "start": 30.625,
      "text": ")"
     },
     {
-     "end": 44.013,
-     "start": 43.9,
-     "text": "can"
+     "end": 31.15,
+     "start": 30.712,
+     "text": "first"
     },
     {
-     "end": 44.15,
-     "start": 44.013,
-     "text": "be"
-    },
-    {
-     "end": 44.475,
-     "start": 44.15,
-     "text": "given"
-    },
-    {
-     "end": 44.875,
-     "start": 44.475,
-     "text": "once"
-    },
-    {
-     "end": 44.963,
-     "start": 44.875,
+     "end": 31.2,
+     "start": 31.15,
      "text": ","
     },
     {
-     "end": 45.112,
-     "start": 44.963,
-     "text": "as"
+     "end": 31.362,
+     "start": 31.2,
+     "text": "then"
     },
     {
-     "end": 45.2,
-     "start": 45.112,
-     "text": "the"
-    },
-    {
-     "end": 45.475,
-     "start": 45.2,
-     "text": "next"
-    },
-    {
-     "end": 45.9,
-     "start": 45.475,
-     "text": "section"
-    },
-    {
-     "end": 46.8,
-     "start": 45.9,
-     "text": "says"
-    },
-    {
-     "end": 47.025,
-     "start": 46.8,
-     "text": ";"
-    },
-    {
-     "end": 47.338,
-     "start": 47.225,
-     "text": "the"
-    },
-    {
-     "end": 47.612,
-     "start": 47.338,
-     "text": "key"
-    },
-    {
-     "end": 48.025,
-     "start": 47.612,
-     "text": "file"
-    },
-    {
-     "end": 48.062,
-     "start": 48.025,
-     "text": ","
-    },
-    {
-     "end": 48.15,
-     "start": 48.062,
+     "end": 31.45,
+     "start": 31.362,
      "text": "an"
     },
     {
-     "end": 48.737,
-     "start": 48.15,
-     "text": "external"
+     "end": 31.925,
+     "start": 31.45,
+     "text": "address"
     },
     {
-     "end": 49.213,
-     "start": 48.737,
-     "text": "signer"
+     "end": 32.062,
+     "start": 31.925,
+     "text": "with"
     },
     {
-     "end": 49.388,
-     "start": 49.213,
+     "end": 32.263,
+     "start": 32.062,
+     "text": "its"
+    },
+    {
+     "end": 32.688,
+     "start": 32.263,
+     "text": "bundle"
+    },
+    {
+     "end": 33.1,
+     "start": 32.688,
+     "text": "file"
+    },
+    {
+     "end": 33.175,
+     "start": 33.1,
+     "text": ","
+    },
+    {
+     "end": 33.3,
+     "start": 33.175,
      "text": "and"
     },
     {
-     "end": 49.875,
-     "start": 49.388,
-     "text": "everything"
+     "end": 33.675,
+     "start": 33.3,
+     "text": "last"
     },
     {
-     "end": 50.2,
-     "start": 49.875,
-     "text": "else"
+     "end": 33.787,
+     "start": 33.675,
+     "text": "the"
     },
     {
-     "end": 50.3,
-     "start": 50.2,
+     "end": 34.062,
+     "start": 33.787,
+     "text": "key"
+    },
+    {
+     "end": 34.475,
+     "start": 34.062,
+     "text": "file"
+    },
+    {
+     "end": 34.55,
+     "start": 34.475,
+     "text": ","
+    },
+    {
+     "end": 34.65,
+     "start": 34.55,
      "text": "a"
     },
     {
-     "end": 50.75,
-     "start": 50.3,
-     "text": "command"
+     "end": 35.188,
+     "start": 34.65,
+     "text": "supported"
     },
     {
-     "end": 51.1,
-     "start": 50.75,
-     "text": "does"
+     "end": 36.2,
+     "start": 35.188,
+     "text": "signer"
     },
     {
-     "end": 51.225,
-     "start": 51.1,
-     "text": "are"
-    },
-    {
-     "end": 51.513,
-     "start": 51.225,
-     "text": "typed"
-    },
-    {
-     "end": 51.612,
-     "start": 51.513,
-     "text": "on"
-    },
-    {
-     "end": 51.7,
-     "start": 51.612,
-     "text": "the"
-    },
-    {
-     "end": 52.825,
-     "start": 51.7,
-     "text": "command"
-    },
-    {
-     "end": 53.05,
-     "start": 52.825,
+     "end": 36.425,
+     "start": 36.2,
      "text": "."
     },
     {
-     "end": 53.575,
-     "start": 53.225,
-     "text": "Public"
+     "end": 36.713,
+     "start": 36.6,
+     "text": "The"
     },
     {
-     "end": 54.15,
-     "start": 53.575,
-     "text": "environment"
+     "end": 37.2,
+     "start": 36.713,
+     "text": "settings"
     },
     {
-     "end": 54.95,
-     "start": 54.15,
-     "text": "configuration"
+     "end": 37.35,
+     "start": 37.2,
+     "text": "that"
     },
     {
-     "end": 55.25,
-     "start": 54.95,
-     "text": "lists"
+     "end": 37.475,
+     "start": 37.35,
+     "text": "do"
     },
     {
-     "end": 55.35,
-     "start": 55.25,
+     "end": 37.737,
+     "start": 37.475,
+     "text": "not"
+    },
+    {
+     "end": 38.1,
+     "start": 37.737,
+     "text": "change"
+    },
+    {
+     "end": 38.3,
+     "start": 38.1,
+     "text": "from"
+    },
+    {
+     "end": 38.525,
+     "start": 38.3,
+     "text": "one"
+    },
+    {
+     "end": 38.925,
+     "start": 38.525,
+     "text": "command"
+    },
+    {
+     "end": 39.013,
+     "start": 38.925,
+     "text": "to"
+    },
+    {
+     "end": 39.1,
+     "start": 39.013,
      "text": "the"
     },
     {
-     "end": 56.037,
-     "start": 55.35,
-     "text": "variables"
+     "end": 39.487,
+     "start": 39.1,
+     "text": "next"
     },
     {
-     "end": 56.162,
-     "start": 56.037,
+     "end": 39.525,
+     "start": 39.487,
+     "text": "("
+    },
+    {
+     "end": 39.6,
+     "start": 39.525,
+     "text": "the"
+    },
+    {
+     "end": 40.5,
+     "start": 39.6,
+     "text": "node"
+    },
+    {
+     "end": 40.725,
+     "start": 40.5,
+     "text": ","
+    },
+    {
+     "end": 40.975,
+     "start": 40.9,
+     "text": "the"
+    },
+    {
+     "end": 41.525,
+     "start": 40.975,
+     "text": "contracts"
+    },
+    {
+     "end": 41.562,
+     "start": 41.525,
+     "text": ","
+    },
+    {
+     "end": 41.65,
+     "start": 41.562,
+     "text": "the"
+    },
+    {
+     "end": 42.15,
+     "start": 41.65,
+     "text": "registry"
+    },
+    {
+     "end": 42.188,
+     "start": 42.15,
+     "text": ","
+    },
+    {
+     "end": 42.275,
+     "start": 42.188,
+     "text": "the"
+    },
+    {
+     "end": 42.638,
+     "start": 42.275,
+     "text": "token"
+    },
+    {
+     "end": 43.45,
+     "start": 42.638,
+     "text": "file"
+    },
+    {
+     "end": 43.65,
+     "start": 43.45,
+     "text": ","
+    },
+    {
+     "end": 43.9,
+     "start": 43.825,
+     "text": "the"
+    },
+    {
+     "end": 44.475,
+     "start": 43.9,
+     "text": "narration"
+    },
+    {
+     "end": 44.588,
+     "start": 44.475,
      "text": "and"
     },
     {
-     "end": 56.263,
-     "start": 56.162,
+     "end": 44.675,
+     "start": 44.588,
      "text": "the"
     },
     {
-     "end": 56.85,
-     "start": 56.263,
+     "end": 45.025,
+     "start": 44.675,
+     "text": "vault"
+    },
+    {
+     "end": 45.075,
+     "start": 45.025,
+     "text": ")"
+    },
+    {
+     "end": 45.188,
+     "start": 45.075,
+     "text": "can"
+    },
+    {
+     "end": 45.325,
+     "start": 45.188,
+     "text": "be"
+    },
+    {
+     "end": 45.65,
+     "start": 45.325,
+     "text": "given"
+    },
+    {
+     "end": 46.05,
+     "start": 45.65,
+     "text": "once"
+    },
+    {
+     "end": 46.138,
+     "start": 46.05,
+     "text": ","
+    },
+    {
+     "end": 46.287,
+     "start": 46.138,
+     "text": "as"
+    },
+    {
+     "end": 46.375,
+     "start": 46.287,
+     "text": "the"
+    },
+    {
+     "end": 46.65,
+     "start": 46.375,
+     "text": "next"
+    },
+    {
+     "end": 47.075,
+     "start": 46.65,
+     "text": "section"
+    },
+    {
+     "end": 47.975,
+     "start": 47.075,
+     "text": "says"
+    },
+    {
+     "end": 48.2,
+     "start": 47.975,
+     "text": ";"
+    },
+    {
+     "end": 48.513,
+     "start": 48.4,
+     "text": "the"
+    },
+    {
+     "end": 48.787,
+     "start": 48.513,
+     "text": "key"
+    },
+    {
+     "end": 49.2,
+     "start": 48.787,
+     "text": "file"
+    },
+    {
+     "end": 49.237,
+     "start": 49.2,
+     "text": ","
+    },
+    {
+     "end": 49.325,
+     "start": 49.237,
+     "text": "an"
+    },
+    {
+     "end": 49.912,
+     "start": 49.325,
+     "text": "external"
+    },
+    {
+     "end": 50.388,
+     "start": 49.912,
+     "text": "signer"
+    },
+    {
+     "end": 50.562,
+     "start": 50.388,
+     "text": "and"
+    },
+    {
+     "end": 51.05,
+     "start": 50.562,
+     "text": "everything"
+    },
+    {
+     "end": 51.375,
+     "start": 51.05,
+     "text": "else"
+    },
+    {
+     "end": 51.475,
+     "start": 51.375,
+     "text": "a"
+    },
+    {
+     "end": 51.925,
+     "start": 51.475,
+     "text": "command"
+    },
+    {
+     "end": 52.275,
+     "start": 51.925,
+     "text": "does"
+    },
+    {
+     "end": 52.4,
+     "start": 52.275,
+     "text": "are"
+    },
+    {
+     "end": 52.688,
+     "start": 52.4,
+     "text": "typed"
+    },
+    {
+     "end": 52.787,
+     "start": 52.688,
+     "text": "on"
+    },
+    {
+     "end": 52.875,
+     "start": 52.787,
+     "text": "the"
+    },
+    {
+     "end": 54.0,
+     "start": 52.875,
+     "text": "command"
+    },
+    {
+     "end": 54.225,
+     "start": 54.0,
+     "text": "."
+    },
+    {
+     "end": 54.75,
+     "start": 54.4,
+     "text": "Public"
+    },
+    {
+     "end": 55.325,
+     "start": 54.75,
+     "text": "environment"
+    },
+    {
+     "end": 56.125,
+     "start": 55.325,
+     "text": "configuration"
+    },
+    {
+     "end": 56.425,
+     "start": 56.125,
+     "text": "lists"
+    },
+    {
+     "end": 56.525,
+     "start": 56.425,
+     "text": "the"
+    },
+    {
+     "end": 57.213,
+     "start": 56.525,
+     "text": "variables"
+    },
+    {
+     "end": 57.338,
+     "start": 57.213,
+     "text": "and"
+    },
+    {
+     "end": 57.438,
+     "start": 57.338,
+     "text": "the"
+    },
+    {
+     "end": 58.025,
+     "start": 57.438,
      "text": "phase-log"
     },
     {
-     "end": 57.75,
-     "start": 56.85,
+     "end": 58.925,
+     "start": 58.025,
      "text": "path"
     },
     {
-     "end": 57.975,
-     "start": 57.75,
+     "end": 59.15,
+     "start": 58.925,
      "text": "."
     }
    ]

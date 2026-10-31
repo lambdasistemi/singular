@@ -144,7 +144,7 @@ data OnChainRequest = OnChainRequest
     deriving stock (Show, Eq)
 
 -- ---------------------------------------------------------
--- Request phase (A-002): a resuming client's choice of exit
+-- Request phase: a resuming client's choice of exit
 -- ---------------------------------------------------------
 
 {- | The exit a resuming client chooses for one of its pending requests at
