@@ -163,6 +163,11 @@ spare="$(field spares .spare)"
 # ------------------------------------------------------------------
 leg="no approval"
 approved="$(book no-approval first-key)"
+# The second registration of the same key is booked while the key is still unknown:
+# once the key is registered, booking it is refused before anything is signed.
+# The fold is what must refuse this request, so it is booked now and folded in
+# leg 2.
+second="$(book second-registration first-key)"
 run_as bob plain-copy "$harness" plain-copy --pending "$approved" --blueprint plutus.json --state-token "$token"
 copy="$(field plain-copy .output)"
 [[ "$copy" =~ ^[0-9a-f]{64}#[0-9]+$ ]] || {
@@ -176,10 +181,18 @@ attempt_and_control no-approval no-approval "$copy" "$approved"
 # 2. A second registration of the active key
 # ------------------------------------------------------------------
 leg="second registration"
-second="$(book second-registration first-key)"
 fresh="$(book second-registration-control another-key)"
 refusers=("$state_policy")
 attempt_and_control second-registration second-registration "$second" "$fresh"
+# The key is active now: booking it again is refused before anything is signed.
+run_as alice book-active-again "$open_datum" insert --blueprint plutus.json \
+  --state-token "$token" --key first-key --payload payload.json --deposit 3000000 --tip 1000000
+check "second registration: booking the active key is refused before anything is signed" \
+  jq -e '.outcome == "client-refusal" and (.reason | contains("the key first-key is already registered")) and (.submissions | length) == 0' "$receipts/book-active-again.json"
+check "second registration: the refused booking exits with the client refusal status" \
+  test "$(cat "$receipts/book-active-again.status")" = 10
+control "second registration: a successful booking is not the refusal of an active key" \
+  jq -e '.outcome == "client-refusal" and (.reason | contains("is already registered"))' "$receipts/book-second-registration-control.json"
 
 # ------------------------------------------------------------------
 # 3. A token delivered to another address

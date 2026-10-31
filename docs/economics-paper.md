@@ -18,7 +18,7 @@ Each token has a name: registering a name mints exactly one token for it, and th
 
 ### Unique
 
-A name can be taken only with a proof that it is absent, so two people cannot hold separate genuine tokens for the same name in one registry. Bob tries to register Alice's already registered name and is refused.
+A name can be taken only with a proof that it is absent, so two people cannot hold separate genuine tokens for the same name in one registry. Bob tries to register Alice's already registered name and is refused: the command declines the booking before he signs anything, as its own policy and not a rule of the model, and the fold refuses the same name if a request for it was booked earlier.
 
 **Existing checked declaration:** `Singular.Statements.insert_active_transaction_row` refuses a subsequent approved registration of the same key with `key-exists`. `Singular.Statements.world_supply_sync` bounds economic supply by one, including a token in a pending termination. **Missing mechanization:** actual absence-proof verification is a validator correspondence obligation. “Absent” in this story means unknown and untaken, not the historical stored Absent leaf. Booking does not reserve a name or establish who ought to own it.
 

@@ -1,0 +1,56 @@
+{
+  "plan-the-booking-reads-the-key-before-it-builds": [
+    {
+      "text": "Plan: the booking reads the key before it builds.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 486. Follows the specification.",
+      "pause": 400
+    }
+  ],
+  "approach": [
+    {
+      "text": "Approach.",
+      "pause": 500
+    },
+    {
+      "text": "The open datum insert command already acquires a view of the chain before it builds the booking. Inside that step, before the booking is built, it reads the key's state through the reader that inspect --key uses, and turns an active or terminated answer into a named client refusal. The refusal is raised in the build step, which both signing modes share, so a signed submission and a staged bundle are refused alike and nothing is recorded. An unknown key, an unavailable state and an unrecognised state policy all fall through to the booking as it is built today.",
+      "pause": 400
+    }
+  ],
+  "slice": [
+    {
+      "text": "Slice.",
+      "pause": 500
+    },
+    {
+      "text": "One slice and one pull request: the refusal and its wording, the read in the booking step, the tests, the journey and refusal scripts, the conformance row and the pages.",
+      "pause": 400
+    }
+  ],
+  "consumers-the-gate-names-at-intake": [
+    {
+      "text": "Consumers the gate names at intake.",
+      "pause": 500
+    },
+    {
+      "text": "The open datum command and request tests, the help snapshot of insert, the parser corpora, the registration journey, the registration, batch, termination and hand-built refusal scripts, the batch measurement, the recovery partitions (an insert now makes one more read), the installed journey and the release verification that replay the registration journey, and the conformance job with its frozen row lists.",
+      "pause": 400
+    }
+  ],
+  "model-position": [
+    {
+      "text": "Model position.",
+      "pause": 500
+    },
+    {
+      "text": "Below: a client policy ahead of a booking the application decides to admit; the transition table is unchanged.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "152b0a0d3d7c36c08b3983b7f07455973920742f5f5dc65f214ec0e0bb51e226"
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "tasks-for-the-early-refusal-at-booking": [
+    {
+      "text": "Tasks for the early refusal at booking.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 486. Grouped by slice of the plan. A task is checked only after the ticket owner accepts its slice.",
+      "pause": 400
+    }
+  ],
+  "slice-the-booking-reads-the-key": [
+    {
+      "text": "Slice: the booking reads the key.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] failing-checks-first: checks that fail on the base for an active key and a terminated key (the booking is accepted today), for the staged bundle, and for the answers that must still book.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] census-of-consumers: every test, script, page and row that books a key already registered, each moved or named unrelated.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] booking-refuses-a-ruled-out-key: the read in the booking step and the two named refusals.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] fold-refusals-stay-shown: the scripts and tests that needed a request the fold refuses book it before the registration.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] journey-refusal-at-booking: the registration journey's re-registration leg asserts the refusal at the booking.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] conformance-row-and-pages-follow: the new row beside the retained one, the generated evidence page, the pages and their narration.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] hosted-forms-pass: lint, unit suites, documentation under the runner's bare path, the conformance job and the hosted development network jobs.",
+      "pause": 300
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "93771b7e3c14cc284b4f8e95df19ff1d4043401b14b279b6c12156c432f6a55d"
+  }
+}

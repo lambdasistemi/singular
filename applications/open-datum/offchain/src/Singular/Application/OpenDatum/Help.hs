@@ -207,7 +207,9 @@ bookLeaf =
                   \request address, its deadlines fixed by the registry's \
                   \configuration. The receipt names the pending registration and the \
                   \times of its phases. Whoever folds it, or you reclaiming it, names \
-                  \it with --pending."
+                  \it with --pending. A key the registry already holds as \
+                  \registered, or as terminated, is refused before anything is \
+                  \signed."
                 , signerParagraph
                 ]
             , leafShape =

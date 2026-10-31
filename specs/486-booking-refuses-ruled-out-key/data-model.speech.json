@@ -1,0 +1,34 @@
+{
+  "data-the-answer-for-a-key-and-what-the-booking-does": [
+    {
+      "text": "Data: the answer for a key and what the booking does.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 486. Follows the modules model.",
+      "pause": 400
+    }
+  ],
+  "invariants": [
+    {
+      "text": "Invariants.",
+      "pause": 500
+    },
+    {
+      "text": "a refused booking leaves no trace: no fee, no submission, no staged bundle, no journal entry that blocks the wallet.",
+      "pause": 300
+    },
+    {
+      "text": "the read happens after the check that the registry is a served one and before the booking is built, so the existing refusals for an unserved registry and an old or foreign state keep their wording and order.",
+      "pause": 300
+    },
+    {
+      "text": "the reader's answer is read at the tip the booking would be built at.",
+      "pause": 300
+    }
+  ],
+  "_source": {
+    "file": "data-model.md",
+    "sha256": "edfad104414fbccbddbf45deac8547840a696fede9905d7493abb877a36b2661"
+  }
+}

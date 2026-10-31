@@ -72,6 +72,10 @@ alter_rows "$wait_row" '.rows |= map(select(.id != $id))'
 plant "the decided difference removed" "is missing from the registration-journeys group" "$inventory" "$scratch/rows.json"
 
 # shellcheck disable=SC2016
+alter_rows booking-refuses-a-key-the-registry-state-rules-out '.rows |= map(select(.id != $id))'
+plant "the early refusal at booking removed" "is missing from the registration-journeys group" "$inventory" "$scratch/rows.json"
+
+# shellcheck disable=SC2016
 alter_rows x '.rows |= map(select(.group != "registration-journeys"))'
 plant "a group with no row" "a check over no rows proves nothing" "$inventory" "$scratch/rows.json"
 

@@ -38,7 +38,8 @@
 #   termination   the controller updates the holding and books termination,
 #                 donating its deposit; a second wallet in fresh directories
 #                 folds the public request and receives its whole value after
-#                 its fee; registration of that terminated key is declined
+#                 its fee; booking the registration of that terminated key is
+#                 refused before anything is signed
 #   controls      each assertion above, handed altered input, fails
 #
 # Every verdict is computed from the chain's own record or from files; none is
@@ -382,10 +383,9 @@ check "no unspent output carries the terminated key's active token" \
   none_unspent_with "$chain_dir/after-termination-fold.unspent.json" "$state_policy" "$active_name"
 control "the live state token is not a burned active token" \
   none_unspent_with "$chain_dir/after-termination-fold.unspent.json" "$state_policy" "$state_name"
-as alice book-terminal "$open_datum" insert --blueprint plutus.json \
+# Booking the terminated key again is refused before Alice is asked to sign.
+run_as alice book-terminal "$open_datum" insert --blueprint plutus.json \
   --state-token "$token" --key journey-fold --payload payload.json --deposit "$deposit" --tip "$tip"
-run_as bob-public reregister "$open_datum" fold --blueprint plutus.json \
-  --state-token "$token" --pending "$(field book-terminal .pending)"
 
 # ------------------------------------------------------------------
 # 4. Alice takes the second back inside its window
@@ -621,11 +621,15 @@ else
   record "$leg" "the termination folder holds only its own key and the release" "COULD-NOT-EVALUATE"
   failed=1
 fi
-if [ -s "$receipts/reregister.json" ]; then
-  check "the packaged fold refuses a new registration of the terminated key" \
-    jq -e '.outcome == "client-refusal" and (.reason | contains("is already registered")) and (.submissions | length) == 0' "$receipts/reregister.json"
+if [ -s "$receipts/book-terminal.json" ]; then
+  check "booking a new registration of the terminated key is refused before anything is signed" \
+    jq -e '.outcome == "client-refusal" and (.reason | contains("is already registered and was terminated")) and (.submissions | length) == 0' "$receipts/book-terminal.json"
+  check "the refused booking exits with the client refusal status" \
+    test "$(cat "$receipts/book-terminal.status")" = 10
+  control "a successful booking is not the refusal of a terminated key" \
+    jq -e '.outcome == "client-refusal" and (.reason | contains("is already registered and was terminated"))' "$receipts/book-other-registry.json"
 else
-  record "$leg" "a new registration of the terminated key is refused" "COULD-NOT-EVALUATE"
+  record "$leg" "booking a new registration of the terminated key is refused" "COULD-NOT-EVALUATE"
   failed=1
 fi
 
@@ -758,8 +762,8 @@ control "a table without the update control leaves update unconfirmed" verbs_are
   cat "$work/termination-measurement.json"
   printf '\n```\n\nThe second wallet held these files before termination folding:\n\n```\n'
   cat "$listings/bob-before-termination-fold.txt"
-  printf '```\n\nThe packaged re-registration fold reported:\n\n```json\n'
-  cat "$receipts/reregister.json"
+  printf '```\n\nThe booking of a new registration of the terminated key reported:\n\n```json\n'
+  cat "$receipts/book-terminal.json"
   printf '\n```\n\n'
   printf '## Reading from the registry address alone\n\n```json\n'
   cat "$work/reading-journey.json"

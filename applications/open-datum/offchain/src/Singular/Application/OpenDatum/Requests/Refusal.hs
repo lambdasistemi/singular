@@ -7,6 +7,9 @@ A request builder returns a 'Refusal' instead of a transaction it knows the
 open-datum request validator, or the ledger, would refuse. Every refusal names
 a fact about the chain or the arguments the caller can act on. A failed read
 of the chain is not a refusal: it throws, as the other builders' reads do.
+
+The booking command raises two more before it builds, from the registry state
+of the key it books.
 -}
 module Singular.Application.OpenDatum.Requests.Refusal
     ( Refusal (..)
@@ -71,6 +74,14 @@ data Refusal
       it carries, when it carries a script, and the expected hash.
       -}
       ReferenceScriptMismatch TxIn (Maybe ScriptHash) ScriptHash
+    | {- | The registry state holds the key as active, with or without a
+      termination booked; the key as text.
+      -}
+      KeyAlreadyRegistered Text
+    | {- | The registry state holds the key as registered and then terminated;
+      the key as text.
+      -}
+      KeyWasTerminated Text
     | -- | The transaction builder itself failed; its message.
       BuildFailed Text
     deriving stock (Eq, Show)

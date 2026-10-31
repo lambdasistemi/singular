@@ -483,6 +483,35 @@ batchDiscoveryRows = describe "fold receipts from public discovery" $ do
                             && all
                                 (maybe False (T.isInfixOf "already registered") . textAt "reason")
                                 rejected
+    it
+        "books a key that is already registered when the registry's state policy is not one the reader recognises"
+        $ withBatch ["occupied key"]
+        $ \rig token booked -> do
+            first <- case booked of
+                [entry] ->
+                    maybe
+                        (fail "no first pending")
+                        pure
+                        (textAt "pending" (runReceipt entry))
+                _ -> fail "one initial booking required"
+            registered <-
+                runAt
+                    rig
+                    "batch"
+                    "register occupied key"
+                    ["fold", "--state-token", token, "--pending", T.unpack first]
+            runExit registered `shouldBe` ExitSuccess
+            inspected <-
+                runAt
+                    rig
+                    "batch"
+                    "inspect"
+                    ["inspect", "--state-token", token, "--key", "occupied key", "--json"]
+            -- the reader refuses the accept-all scripts, so it cannot rule the key out
+            textAt "answer" (runReceipt inspected) `shouldBe` Just "refused"
+            again <- bookAt rig token "occupied key"
+            runExit again `shouldBe` ExitSuccess
+            outcomeOf (runReceipt again) `shouldBe` Just "success"
     forM_ [True, False] $ \keepCorrect ->
         it
             ( if keepCorrect

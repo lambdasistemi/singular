@@ -140,6 +140,17 @@ its processing deadline, and the end of its reclaim window. Whoever folds it, or
 you taking it back, can name the pending registration with `--pending`. A folder
 can also discover it from public approvals.
 
+Before it builds the booking the command reads the key's state in the registry,
+at the tip the booking is built at. A key the registry already holds as
+registered, with or without a termination booked, is refused with
+`the key my-key is already registered`, and a terminated key with
+`the key my-key is already registered and was terminated`. The refusal comes
+before you are asked to sign: nothing is signed, submitted or staged, no fee is
+paid, and the same holds for a bundle written for an external signer. It is the
+client's policy and not a rule of the model, so a key whose state cannot be read
+is booked as before and the fold remains the authority. Two bookings of one
+unknown key are both accepted; the fold takes one and skips the other.
+
 ## Fold registrations and terminations into the registry
 
 As Bob, give the registry and your wallet to discover its pending registrations
@@ -160,8 +171,9 @@ This is the path of a successful discovered batch. A holder of an approval that
 the application does not accept as a request is kept in the accounting as
 skipped, with its reference and reason. The registry's configuration output
 holds an approval too, but it is not a request: it is neither folded nor
-listed. A recognized request is also skipped when its key is already
-registered, its termination key is not active, its deposit is below the minimum
+listed. A recognized request is also skipped when its key is already registered (usually
+because the request was booked before the key was registered), its termination
+key is not active, its deposit is below the minimum
 the holding must keep, or its processing window has closed. The first
 individually foldable request for a key in take order keeps that key; later
 foldable requests for it are skipped as duplicates. An unfoldable earlier

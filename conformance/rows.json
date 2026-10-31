@@ -41,6 +41,16 @@
       "evidence": "Separate evidence boundary, not a comparison with the model: the hosted jobs no-pin-registration-journey and no-pin-registration-refusals run the packaged commands on a development network and read the chain's own record. They establish what they run and nothing about agreement with the model."
     },
     {
+      "id": "booking-refuses-a-key-the-registry-state-rules-out",
+      "group": "registration-journeys",
+      "requirement": "Booking the registration of a key that the registry state already holds as registered, with or without a termination booked, or as terminated is refused by the command before the person is asked to sign. The refusal names the key and says it is already registered, and for a terminated key that it was terminated; nothing is signed, submitted or staged and no booking fee is paid. A key never registered books as before, and so does a key whose state cannot be read. The fold still refuses a request that a later registration made unfoldable. Under the previous design the booking was accepted and a folder rejected the request later, with evidence of the mismatch.",
+      "source": "OpenDatumApplicationHeld.Money.oldAllocation for the early rejection by a folder, with Singular.transition, which admits the insert only from an unknown leaf; the refusal at booking is the command's own policy and no statement of the model requires it",
+      "expected": "The booking of a key the registry state rules out is refused before signing, and the fold keeps refusing what a later registration made unfoldable. Uncovered: no executable comparison with the application-held model exists yet",
+      "state": "uncovered",
+      "note": "Client policy, not a model rule. Statement only. The row before it describes a request booked while its key was still unknown.",
+      "evidence": "Separate evidence boundary, not a comparison with the model: the hosted jobs no-pin-registration-journey, no-pin-registration-refusals and no-pin-termination-refusals run the packaged commands on a development network and read the chain's own record. They establish what they run and nothing about agreement with the model."
+    },
+    {
       "id": "holding-update-outcome",
       "group": "holding-journeys",
       "requirement": "The controller signs an update of a live holding. Its payload may change, while the protected control and all tokens remain the same and the holding keeps at least its protected deposit at the application address. No registry fold takes part and no treasury is paid. Under the previous design an accepted controller-signed payload update preserved the same control, assets and deposit floor without changing the registry.",

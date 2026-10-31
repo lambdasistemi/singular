@@ -22,9 +22,16 @@ module Singular.Application.OpenDatum.Registration
     , runHoldingUpdate
     , runHoldingTerminate
     , runCleanup
+    , ruledOutKey
     ) where
 
-import Control.Exception (throwIO)
+import Control.Exception
+    ( SomeAsyncException
+    , SomeException
+    , fromException
+    , throwIO
+    , try
+    )
 import Control.Monad (unless)
 import Data.Aeson (Value, object, toJSON, (.=))
 import Data.ByteString (ByteString)
@@ -37,6 +44,7 @@ import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
 import Data.Text.Encoding.Error (lenientDecode)
+import Data.Word (Word32)
 import Lens.Micro ((^.))
 import PlutusCore.Data qualified as PLC
 
@@ -63,6 +71,10 @@ import Singular.Application.OpenDatum.Command
     , PendingArgs (..)
     , RegistryAccess (..)
     , WriteSettings (..)
+    )
+import Singular.Application.OpenDatum.Reader
+    ( ReaderAnswer (..)
+    , readKey
     )
 import Singular.Application.OpenDatum.Requests.Booking
     ( Booking (..)
@@ -117,7 +129,9 @@ import Singular.CLI.Steps
     , sendStep
     , stateWrite
     )
+import Singular.Reader qualified as R
 import Singular.Registry.Blueprint (Blueprint)
+import Singular.Registry.ContractTable (loadContractTable)
 import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger (ConwayEra, TxOut)
 import Singular.Registry.LedgerProvider
@@ -126,6 +140,7 @@ import Singular.Registry.LedgerProvider
     , ReadFailure (..)
     , Session
     )
+import Singular.Registry.LedgerProvider qualified as LP
 import Singular.Registry.PlainJson (PayloadSchema)
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
 import Singular.Registry.StateToken (renderStateToken)
@@ -209,9 +224,14 @@ runBook env a = do
             sendStep
                 wc
                 "book"
-                ["wallet outputs", "configuration record", "reference scripts"]
+                [ "registry state of the key"
+                , "wallet outputs"
+                , "configuration record"
+                , "reference scripts"
+                ]
                 (HoldsToken policy)
                 $ \view -> do
+                    refuseRuledOutKey view magic registry key
                     source <- sourceOf view payer script
                     tx <-
                         buildBookRegistration
@@ -245,7 +265,7 @@ runBook env a = do
                    , ("pending", toJSON (txInText pending))
                    , ("approval", toJSON (renderStateToken (policy, approval)))
                    , ("key", toJSON (hexOf key))
-                   , ("keyText", toJSON (TE.decodeUtf8With lenientDecode key))
+                   , ("keyText", toJSON (keyText key))
                    , ("deposit", toJSON (rdDeposit registration))
                    , ("tip", toJSON (bookArgsTip a))
                    , ("refundAddress", toJSON (addressText (rdRefundAddress registration)))
@@ -254,6 +274,57 @@ runBook env a = do
                    , ("reclaimEnd", toJSON (rdReclaimEnd registration))
                    , ("reconciled", reconciled)
                    ]
+
+-- | A key as the receipt and the refusals name it.
+keyText :: ByteString -> Text
+keyText = TE.decodeUtf8With lenientDecode
+
+{- | The refusal the registry state calls for when a key is booked, if any. The
+state rules out an active key (also one with a termination booked) and a
+terminated key; a key never registered, a state the provider could not answer
+and a state policy the reader does not recognise leave the booking to the fold.
+-}
+ruledOutKey :: ByteString -> ReaderAnswer -> Maybe Refusal
+ruledOutKey key = \case
+    Live{} -> Just (KeyAlreadyRegistered (keyText key))
+    PendingTermination{} -> Just (KeyAlreadyRegistered (keyText key))
+    Terminal{} -> Just (KeyWasTerminated (keyText key))
+    NeverRegistered{} -> Nothing
+    Unavailable{} -> Nothing
+    Refused{} -> Nothing
+
+{- | Refuse, before the booking is built, a key the registry state already
+rules out. The refusal is the client's own policy and a courtesy: the model
+admits the insert only from an unknown leaf, but the booking is the
+application's to admit and the fold stays the authority. The key is read at the
+tip the booking is built at, through the reader that @inspect --key@ uses; a
+key the reader cannot place is booked as before.
+-}
+refuseRuledOutKey
+    :: Session NoWitness IO
+    -> Word32
+    -> RegistryIdentity
+    -> ByteString
+    -> IO ()
+refuseRuledOutKey view magic registry key = do
+    answered <-
+        try @SomeException $
+            loadContractTable >>= \case
+                Left _ -> pure Nothing
+                Right table ->
+                    Just
+                        <$> readKey view table (R.ReaderRequest (LP.Network magic) registry key)
+    case answered of
+        Right (Just answer) ->
+            maybe
+                (pure ())
+                (failWith ClientRefusal . renderRefusal)
+                (ruledOutKey key answer)
+        Right Nothing -> pure ()
+        Left failure
+            | Just (_ :: SomeAsyncException) <- fromException failure ->
+                throwIO failure
+            | otherwise -> pure ()
 
 -- ---------------------------------------------------------
 -- reclaim and cleanup
@@ -516,4 +587,10 @@ renderRefusal = \case
             <> maybe "no script" (("the script " <>) . show) carried
             <> ", not "
             <> show expected
+    KeyAlreadyRegistered key ->
+        "the key " <> T.unpack key <> " is already registered"
+    KeyWasTerminated key ->
+        "the key "
+            <> T.unpack key
+            <> " is already registered and was terminated"
     BuildFailed message -> T.unpack message

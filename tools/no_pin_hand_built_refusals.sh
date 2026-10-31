@@ -245,12 +245,14 @@ pair() {
 # ------------------------------------------------------------------
 # 1. Registering a key that is already registered
 # ------------------------------------------------------------------
-# The key is registered by the packaged commands. A second booking of it is
-# folded by the harness with the answer the registry gives for that key; the
-# control folds a booking of a key that is not registered.
+# A second booking of the key is made while the key is still unknown, because
+# booking a registered key is refused before anything is signed. The key is then
+# registered by the packaged commands, and the harness folds the second booking
+# with the answer the registry gives for that key; the control folds a booking
+# of a key that is not registered.
 leg="taken key"
-register_key taken-key taken-key >/dev/null
 taken="$(book taken-key-again taken-key)"
+register_key taken-key taken-key >/dev/null
 fresh="$(book fresh-key fresh-key)"
 submit bob attempt-taken-key fold --case second-registration --pending "$taken"
 submit bob control-taken-key fold --case honest --pending "$fresh"

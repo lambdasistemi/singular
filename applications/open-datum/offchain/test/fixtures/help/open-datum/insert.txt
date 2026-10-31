@@ -15,7 +15,8 @@ Books the registration of a key with its payload and a deposit: a pending
 registration holding its approval is put at the request address, its deadlines
 fixed by the registry's configuration. The receipt names the pending
 registration and the times of its phases. Whoever folds it, or you reclaiming
-it, names it with --pending.
+it, names it with --pending. A key the registry already holds as registered,
+or as terminated, is refused before anything is signed.
 
 A write is signed by exactly one signer: --vault (the normal route),
 --wallet-address with --bundle (written for an external signer, ending as

@@ -134,7 +134,7 @@ import Singular.CLI.Trace
 import Singular.Registry.Blueprint (loadBlueprint)
 import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.Deployment (parseOutRef, renderOutRef)
-import Singular.Registry.Evidence (NoWitness)
+import Singular.Registry.Evidence (Evidenced, NoWitness)
 import Singular.Registry.Ledger (ConwayEra, TxOut)
 import Singular.Registry.LedgerProvider (OutputQuery (..), Session)
 import Singular.Registry.LedgerProvider qualified as Cage
@@ -186,6 +186,7 @@ spec = describe "the registration commands" $ do
     interruptionRows
     exclusionRows
     deadBundleRows
+    earlyRefusalRows
 
 -- ---------------------------------------------------------
 -- The command lines
@@ -1473,3 +1474,175 @@ deadBundleRows = describe "a staged update that can no longer land"
                            , Just (Aeson.Number (fromIntegral (unSlotNo later)))
                            )
                        ]
+
+-- ---------------------------------------------------------
+-- A booking the registry state rules out
+-- ---------------------------------------------------------
+
+{- | What a command leaves behind on the node and in the wallet's journal: the
+transactions the node took and every journal line of the wallet.
+-}
+leftBehind :: Rig -> String -> IO (Int, [(T.Text, T.Text)])
+leftBehind rig token = do
+    registry <- registryOf token
+    sent <- length <$> readIORef (rigSubmitted rig)
+    entries <- readJournal (registryJournal rig registry (rigWallet rig))
+    pure (sent, [(journalTxId e, journalEvent e) | e <- entries])
+
+{- | Book a key and expect the early refusal: a client refusal that sends,
+stages and journals nothing, and whose reason is returned.
+-}
+refusedBooking :: Rig -> String -> String -> [String] -> IO String
+refusedBooking rig token key extra = do
+    before <- leftBehind rig token
+    r <- run' rig "refused booking" (bookLine rig token key <> extra)
+    runExit r `shouldBe` ExitFailure 10
+    outcomeOf (runReceipt r) `shouldBe` Just "client-refusal"
+    submissionsOf (runReceipt r) `shouldBe` []
+    leftBehind rig token `shouldReturn` before
+    pure (maybe "" T.unpack (textAt "reason" (runReceipt r)))
+
+{- | The rig's capabilities with every read of the holders of this policy's
+tokens answered by this: a typed failure, or an exception.
+-}
+holdersAnswering
+    :: PolicyID
+    -> IO (Either Cage.ReadFailure (Evidenced NoWitness Cage.Outputs))
+    -> Rig
+    -> Capabilities NoWitness IO
+holdersAnswering policy answer rig =
+    caps{capReads = (network, provider{Cage.acquire = acquiring})}
+  where
+    caps = capabilities rig
+    (network, provider) = capReads caps
+    acquiring acquisition use =
+        Cage.acquire provider acquisition (use . faulty)
+    faulty session =
+        session
+            { Cage.outputs = \query -> case query of
+                HoldingAsset (held, _) | held == policy -> answer
+                _ -> Cage.outputs session query
+            }
+
+{- | As Bob, when I book the registration of a key the registry state already
+rules out, the booking is refused before I am asked to sign anything.
+-}
+earlyRefusalRows :: Spec
+earlyRefusalRows = describe "booking a key the registry state rules out" $ do
+    it "refuses an active key: it is already registered, nothing is sent" $
+        withReleaseRig $ \rig -> do
+            (token, _) <- reachedHolding rig
+            reason <- refusedBooking rig token "alpha" []
+            reason `shouldContain` "the key alpha is already registered"
+            reason `shouldNotContain` "was terminated"
+
+    it "refuses an active key whose termination is booked" $
+        withReleaseRig $ \rig -> do
+            (token, ref) <- reachedHolding rig
+            terminating <-
+                run' rig "terminate" (["terminate"] <> holdingFlags token ref)
+            runExit terminating `shouldBe` ExitSuccess
+            reason <- refusedBooking rig token "alpha" []
+            reason `shouldContain` "the key alpha is already registered"
+            reason `shouldNotContain` "was terminated"
+
+    it "refuses a terminated key and says it was terminated" $
+        withReleaseRig $ \rig -> do
+            (token, ref) <- reachedHolding rig
+            terminating <-
+                run' rig "terminate" (["terminate"] <> holdingFlags token ref)
+            pending <- pendingOf terminating
+            folded <-
+                run' rig "termination fold" (["fold"] <> pendingFlags token pending)
+            runExit folded `shouldBe` ExitSuccess
+            reason <- refusedBooking rig token "alpha" []
+            reason
+                `shouldContain` "the key alpha is already registered and was terminated"
+
+    it
+        "refuses an active key for a staged bundle as for a signed submission"
+        $ withReleaseRig
+        $ \rig -> do
+            (token, _) <- reachedHolding rig
+            let bundlePath = rigDir rig </> "insert.bundle"
+                address = bech32Address (walletAddr (rigWallet rig))
+            reason <-
+                refusedBooking
+                    rig
+                    token
+                    "alpha"
+                    ["--wallet-address", address, "--bundle", bundlePath]
+            reason `shouldContain` "the key alpha is already registered"
+            doesFileExist bundlePath `shouldReturn` False
+
+    it "books a key never registered beside a registered one, as before" $
+        withReleaseRig $ \rig -> do
+            (token, _) <- reachedHolding rig
+            r <- run' rig "other key" (bookLine rig token "beta")
+            runExit r `shouldBe` ExitSuccess
+            outcomeOf (runReceipt r) `shouldBe` Just "success"
+            [step | (step, _, _, _) <- submissionsOf (runReceipt r)]
+                `shouldBe` ["book"]
+
+    it "books when the provider cannot answer the state of the key" $
+        withReleaseRig $ \rig -> do
+            (token, _) <- reachedHolding rig
+            registry <- registryOf token
+            r <-
+                runVia
+                    rig
+                    (envOf rig)
+                        { envWrites = \_ k ->
+                            k (holdersAnswering (fst registry) cannotAnswer rig)
+                        }
+                    "registry"
+                    "unreadable"
+                    (bookLine rig token "alpha")
+            runExit r `shouldBe` ExitSuccess
+            outcomeOf (runReceipt r) `shouldBe` Just "success"
+
+    it "books when the provider's read of the state of the key throws" $
+        withReleaseRig $ \rig -> do
+            (token, _) <- reachedHolding rig
+            registry <- registryOf token
+            r <-
+                runVia
+                    rig
+                    (envOf rig)
+                        { envWrites = \_ k ->
+                            k
+                                ( holdersAnswering
+                                    (fst registry)
+                                    (ioError (userError "the provider fell over"))
+                                    rig
+                                )
+                        }
+                    "registry"
+                    "throwing"
+                    (bookLine rig token "alpha")
+            runExit r `shouldBe` ExitSuccess
+            outcomeOf (runReceipt r) `shouldBe` Just "success"
+
+    it
+        "keeps the fold refusing a request made unfoldable by a later registration"
+        $ withReleaseRig
+        $ \rig -> do
+            (_, token) <- createdRegistry rig
+            first <- run' rig "first booking" (bookLine rig token "alpha")
+            second <- run' rig "second booking" (bookLine rig token "alpha")
+            runExit second `shouldBe` ExitSuccess
+            firstRef <- pendingOf first
+            secondRef <- pendingOf second
+            registered <-
+                run' rig "first fold" (["fold"] <> pendingFlags token firstRef)
+            runExit registered `shouldBe` ExitSuccess
+            folded <-
+                run' rig "second fold" (["fold"] <> pendingFlags token secondRef)
+            outcomeOf (runReceipt folded) `shouldBe` Just "client-refusal"
+            maybe "" T.unpack (textAt "reason" (runReceipt folded))
+                `shouldContain` "is already registered"
+
+-- | A typed failure of the provider's read.
+cannotAnswer
+    :: IO (Either Cage.ReadFailure (Evidenced NoWitness Cage.Outputs))
+cannotAnswer = pure (Left (Cage.BackendReadFailure "the provider cannot answer"))
