@@ -24,7 +24,7 @@ no coherent chain snapshot and carries no verification witness.
 
 ## Asking the program for help
 
-As a registry operator, you can ask either program what it does before you read this page or any other. `singular --version` and `open-datum --version` print the program's name, its version and the commit it was built from; a build that carries no commit says `commit unknown`. `singular --help` and `open-datum --help` print one screen: what the program is for, and every command with a line about it. Each command has its own `--help` that shows only that command: its settings, each with a description and a default, the signer routes grouped with the vault first and the key file, which is legacy, last, the environment variables it reads, an example for a command that writes, and how it ends.
+As a registry operator, you can ask either program what it does before you read this page or any other. `singular --version` and `open-datum --version` print the program's name, its version and the commit it was built from; a build that carries no commit says `commit unknown`. `singular --help` and `open-datum --help` print one screen: what the program is for, and every command with a line about it. Each command has its own `--help` that shows only that command: its settings, each with a description and a default, the signer routes grouped with the vault, which is recommended, first and the key file, a supported signer, last, the environment variables it reads, an example for a command that writes, and how it ends.
 
 A mistyped command or flag prints what is wrong in one line, the usage of the command you were heading for and where its help is, and exits with status 2. A mistyped command also names the nearest command. A failure that no command reported itself, such as a file that cannot be read, ends as one line on standard error saying what failed, with status 1, never the runtime's own report of an uncaught exception. Both programs complete commands and flags in your shell: `source <(singular --bash-completion-script "$(which singular)")` for bash, with `--zsh-completion-script` and `--fish-completion-script` for the other shells.
 
@@ -142,8 +142,8 @@ them is refused as partially configured, and so is a write that names none,
 because `singular` never starts a node of its own — a registry booted on a
 chain that dies with the process could not be attached to again. The refusal
 says which part is missing and, for the signer, the three ways to name one: the
-vault first, then an address with its bundle file, and last the key file, which is
-legacy. The settings that do not change from one command to the next (the node,
+vault (recommended) first, then an address with its bundle file, and last the key
+file, a supported signer. The settings that do not change from one command to the next (the node,
 the contracts, the registry, the token file, the narration and the vault) can be given once,
 as [the next section](#giving-the-chain-the-contracts-and-the-registry-once)
 says; the key file, an external signer and everything else a command does are typed on the command.

@@ -27,7 +27,7 @@
       "pause": 500
     },
     {
-      "text": "As a registry operator, you can ask either program what it does before you read this page or any other. singular --version and open-datum --version print the program's name, its version and the commit it was built from; a build that carries no commit says commit unknown. singular --help and open-datum --help print one screen: what the program is for, and every command with a line about it. Each command has its own --help that shows only that command: its settings, each with a description and a default, the signer routes grouped with the vault first and the key file, which is legacy, last, the environment variables it reads, an example for a command that writes, and how it ends.",
+      "text": "As a registry operator, you can ask either program what it does before you read this page or any other. singular --version and open-datum --version print the program's name, its version and the commit it was built from; a build that carries no commit says commit unknown. singular --help and open-datum --help print one screen: what the program is for, and every command with a line about it. Each command has its own --help that shows only that command: its settings, each with a description and a default, the signer routes grouped with the vault, which is recommended, first and the key file, a supported signer, last, the environment variables it reads, an example for a command that writes, and how it ends.",
       "pause": 400
     },
     {
@@ -45,7 +45,7 @@
       "pause": 500
     },
     {
-      "text": "The URL, network magic and one signer (a key file, a vault, or an address with its bundle file) travel together on a write: naming only some of them is refused as partially configured, and so is a write that names none, because singular never starts a node of its own — a registry booted on a chain that dies with the process could not be attached to again. The refusal says which part is missing and, for the signer, the three ways to name one: the vault first, then an address with its bundle file, and last the key file, which is legacy. The settings that do not change from one command to the next (the node, the contracts, the registry, the token file, the narration and the vault) can be given once, as the next section says; the key file, an external signer and everything else a command does are typed on the command. Public environment configuration lists the variables and the phase-log path.",
+      "text": "The URL, network magic and one signer (a key file, a vault, or an address with its bundle file) travel together on a write: naming only some of them is refused as partially configured, and so is a write that names none, because singular never starts a node of its own — a registry booted on a chain that dies with the process could not be attached to again. The refusal says which part is missing and, for the signer, the three ways to name one: the vault (recommended) first, then an address with its bundle file, and last the key file, a supported signer. The settings that do not change from one command to the next (the node, the contracts, the registry, the token file, the narration and the vault) can be given once, as the next section says; the key file, an external signer and everything else a command does are typed on the command. Public environment configuration lists the variables and the phase-log path.",
       "pause": 400
     },
     {
@@ -409,6 +409,6 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "cd2f33583006e219c073963c7d4fdb4ced196ae51dbbe96c367bbd6744388f30"
+    "sha256": "e73ffd0a24f0eba01899385e83484f90389e140af426b2607b40ce6e17716101"
   }
 }

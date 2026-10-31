@@ -171,7 +171,7 @@ vault =
         ( valued
             "--vault"
             "FILE"
-            "Signer, normal route: sign from this encrypted wallet vault."
+            "Signer, recommended route: sign from this encrypted wallet vault."
         )
 
 passphraseFd :: Flag
@@ -205,7 +205,7 @@ walletSkey =
     valued
         "--wallet-skey"
         "FILE"
-        "Signer, legacy route: sign with this payment key file. Prefer the vault."
+        "Signer, supported route: sign with this payment key file. The vault is recommended."
 
 payloadSchema :: Flag
 payloadSchema =
@@ -384,8 +384,8 @@ registryNodeShape =
         , Takes networkTime
         ]
 
-{- | The signers of a write, the normal route first and the key file, which
-is legacy, last.
+{- | The signers of a write, the recommended route (the vault) first and the
+key file, a supported signer, last.
 -}
 signerShape :: Shape
 signerShape =
@@ -415,9 +415,9 @@ spendingShape = Each [Takes fundInput, Takes maxOutlay]
 
 signerParagraph :: String
 signerParagraph =
-    "A write is signed by exactly one signer: --vault (the normal route), \
+    "A write is signed by exactly one signer: --vault (the recommended route), \
     \--wallet-address with --bundle (written for an external signer, ending \
-    \as waiting-for-signatures), or --wallet-skey (a key file, legacy). \
+    \as waiting-for-signatures), or --wallet-skey (a key file, a supported signer). \
     \Naming two is refused."
 
 previewParagraph :: String

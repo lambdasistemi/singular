@@ -369,8 +369,8 @@ settings = describe "settings" $ do
                 ( UnsafeSettings
                     ( "partially configured write: missing --koios-url"
                         <> "; a write needs --koios-url, --network-magic and a signer: "
-                        <> "--vault FILE, or --wallet-address ADDR with --bundle FILE, "
-                        <> "or --wallet-skey FILE (legacy)"
+                        <> "--vault FILE (recommended), or --wallet-address ADDR with --bundle FILE, "
+                        <> "or --wallet-skey FILE (a supported signer)"
                     )
                 )
     it
@@ -385,8 +385,8 @@ settings = describe "settings" $ do
                 ( UnsafeSettings
                     ( "partially configured write: no signer"
                         <> "; a write needs --koios-url, --network-magic and a signer: "
-                        <> "--vault FILE, or --wallet-address ADDR with --bundle FILE, "
-                        <> "or --wallet-skey FILE (legacy)"
+                        <> "--vault FILE (recommended), or --wallet-address ADDR with --bundle FILE, "
+                        <> "or --wallet-skey FILE (a supported signer)"
                     )
                 )
     it "refuses a non-numeric magic as unsafe" $

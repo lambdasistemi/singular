@@ -481,13 +481,14 @@ parseFlagGroup missing bad unsafe mkWrite flags = do
     pure (mkWrite settings signer confirmationTimeout)
 
 {- | What a write needs, said the same way whichever part is missing: the node
-and a signer, the vault first and the key file, which is legacy, last.
+and a signer, the vault (recommended) first and the key file, a supported
+signer, last.
 -}
 writeNeeds :: String
 writeNeeds =
     "a write needs --koios-url, --network-magic and a signer: \
-    \--vault FILE, or --wallet-address ADDR with --bundle FILE, \
-    \or --wallet-skey FILE (legacy)"
+    \--vault FILE (recommended), or --wallet-address ADDR with \
+    \--bundle FILE, or --wallet-skey FILE (a supported signer)"
 
 {- | The form the payload file of a command is written in: what
 @--payload-schema@ names, and plain when it names nothing. A name that is

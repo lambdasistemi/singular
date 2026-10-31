@@ -19,10 +19,10 @@ transaction.
 The seed fixes the registry's identity. The wallet funds the transactions and
 keeps their change.
 
-A write is signed by exactly one signer: --vault (the normal route),
+A write is signed by exactly one signer: --vault (the recommended route),
 --wallet-address with --bundle (written for an external signer, ending as
-waiting-for-signatures), or --wallet-skey (a key file, legacy). Naming two is
-refused.
+waiting-for-signatures), or --wallet-skey (a key file, a supported signer).
+Naming two is refused.
 
 Available settings:
   Show this help text
@@ -88,7 +88,7 @@ Available settings:
       <string>
   default: the preprod recording packaged with the program
 
-  Signer, normal route: sign from this encrypted wallet vault.
+  Signer, recommended route: sign from this encrypted wallet vault.
   option: --vault FILE
   env: SINGULAR_VAULT FILE
   config:
@@ -109,7 +109,8 @@ Available settings:
   to; goes with --wallet-address.
   option: --bundle FILE
 
-  Signer, legacy route: sign with this payment key file. Prefer the vault.
+  Signer, supported route: sign with this payment key file. The vault is
+  recommended.
   option: --wallet-skey FILE
 
   How long each submission may take to confirm; past it the command stops,
