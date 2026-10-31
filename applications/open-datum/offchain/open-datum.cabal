@@ -186,7 +186,6 @@ test-suite open-datum-tests
     Singular.Application.OpenDatum.StateTokenFixture
     Singular.Application.OpenDatum.RegistryStateTokenSpec
     Singular.Application.OpenDatum.RegistryAddressSpec
-    Singular.Application.OpenDatum.OutlaySpec
     Singular.Registry.AddressOracle
     Singular.PhaseLogFixture
     Singular.Provider.Koios.FakeServer

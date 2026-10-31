@@ -66,9 +66,9 @@ applications/open-datum/offchain/test/Singular/Application/OpenDatum/TraceSpec.h
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/TraceSpec.hs entryPoint readIORef 2
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/TraceSpec.hs fanOutRows mapConcurrently_ 1
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/TraceSpec.hs fanOutRows readIORef 2
-applications/open-datum/offchain/test/Singular/Application/OpenDatum/WalletAdmissionSpec.hs spec newIORef 2
-applications/open-datum/offchain/test/Singular/Application/OpenDatum/WalletAdmissionSpec.hs spec readIORef 2
-applications/open-datum/offchain/test/Singular/Application/OpenDatum/WalletAdmissionSpec.hs spec writeIORef 2
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/WalletAdmissionSpec.hs spec newIORef 1
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/WalletAdmissionSpec.hs spec readIORef 1
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/WalletAdmissionSpec.hs spec writeIORef 1
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/WriteSpec.hs <decl> IORef 6
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/WriteSpec.hs narrationRows readIORef 4
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/WriteSpec.hs phaseLogRows readIORef 1

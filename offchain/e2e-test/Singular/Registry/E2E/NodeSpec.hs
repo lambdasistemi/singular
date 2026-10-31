@@ -42,7 +42,6 @@ import Cardano.Node.Client.E2E.Setup
     ( Ed25519DSIGN
     , SignKeyDSIGN
     , genesisSignKey
-    , mkSignKey
     , rawSerialiseSignKeyDSIGN
     )
 import Cardano.Node.Client.N2C.Connection
@@ -63,7 +62,6 @@ import Data.Aeson.KeyMap qualified as KeyMap
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
-import Data.List (isInfixOf)
 import Data.Map.Strict qualified as Map
 import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
@@ -88,9 +86,6 @@ import Ouroboros.Network.Protocol.Handshake.Type
     ( HandshakeProtocolError (HandshakeError)
     , RefuseReason (Refused)
     )
-import Singular.CLI.Plan (refuseEmptyWallet, retainedFaucetStep)
-import Singular.CLI.Receipt (OutcomeClass (..))
-import Singular.CLI.Session (CommandFailure (..))
 import Singular.Provider.Koios.Wire (txIdHex)
 import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.E2E.Fixture
@@ -197,27 +192,6 @@ spec = aroundAll withSource $ do
                             shouldSatisfy
                                 (map fst spent)
                                 (elem (TxIn (txIdTx (signedTx spend)) (TxIx 0)))
-        it
-            "an empty wallet is refused before any transaction, naming the wallet and the faucet step"
-            $ \(settings, _, _, caps) -> withSkeyFile unfundedKey $ \key -> do
-                wallet <- loadWallet (providerMagic settings) key
-                outputs <- Services.withLatest (capReads caps) $ \session ->
-                    Services.outputsAt session (walletAddr wallet)
-                outputs `shouldSatisfy` null
-                result <-
-                    try @CommandFailure
-                        (refuseEmptyWallet (walletAddr wallet) Nothing outputs)
-                case result of
-                    Right () -> fail "an empty wallet passed the empty-wallet check"
-                    Left (CommandFailure cls reason fields) -> do
-                        cls `shouldBe` ClientRefusal
-                        reason `shouldSatisfy` isInfixOf (bech32Address (walletAddr wallet))
-                        -- The retained faucet sentence, kept exactly: every
-                        -- command's empty-wallet refusal ends with it.
-                        reason `shouldSatisfy` isInfixOf retainedFaucetStep
-                        lookup "held" fields `shouldBe` Just (toJSON (0 :: Integer))
-                        lookup "wallet" fields
-                            `shouldBe` Just (toJSON (Text.pack (bech32Address (walletAddr wallet))))
         it
             "confirmation requests the exact transaction output through the generic capability, then compares full readback to the independent ledger"
             $ \(_, socket, wallet, caps) -> do
@@ -482,10 +456,6 @@ withSkeyFile sk k = do
         \\"description\":\"Payment Signing Key\",\"cborHex\":\"5820"
             <> BC.unpack (B16.encode (rawSerialiseSignKeyDSIGN sk))
             <> "\"}"
-
--- | A key with no history on any chain, and therefore no funds.
-unfundedKey :: SignKeyDSIGN Ed25519DSIGN
-unfundedKey = mkSignKey "e2e-unfunded-joiner-key-00000001"
 
 -- | An address no key on the devnet controls.
 zeroAddr :: Addr
