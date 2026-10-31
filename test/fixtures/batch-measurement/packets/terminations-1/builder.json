@@ -1,13 +1,13 @@
 {
   "bundle": {
-    "hash": "7c5588cc3182933883e9a6f548c0f39c2d2b4798299a27c0badaf1417100bf45",
+    "hash": "823b7dcb7324066444b9e22adf787c3757195a25d744253f92e783dbee76615d",
     "transactions": [
       {
         "deadline": 19999,
         "effects": [
           "the first output is live holding the token alone"
         ],
-        "identity": "3657d7742acdbe5e841e5e3780fcc3bee59b50a2668afd1ddadfd6343c0a3415",
+        "identity": "6d71642c4283af48d9831e559b1cddb0fc4595b1bdfc694e260d86bcf71bf4e4",
         "step": "fold"
       }
     ]
@@ -17,7 +17,7 @@
     {
       "key": "6d6561737572652d3031",
       "kind": "termination",
-      "pending": "875018991e80e3cdbe226ab685d368b7a007ba4aeeb9721922a0552d5ea4719c#0"
+      "pending": "7cc1db2b537f5a755ab67df1caa91cd3873f6d2abfbbd9b38e32ca39af305943#0"
     }
   ],
   "outcome": "waiting-for-signatures"

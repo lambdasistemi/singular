@@ -9,7 +9,7 @@
       "pause": 400
     },
     {
-      "text": "Every figure on the page is read or computed from the kept receipts below. The documentation check regenerates the page from the receipts and their chain records, and refuses a page that differs, a receipt or chain record that is missing and a row that names no receipt.",
+      "text": "Every figure on the page is read or computed from the kept receipts below. The documentation check regenerates the page from the receipts, their chain records and the parameter recordings, and refuses a page that differs, a receipt, chain record or recording that is missing or altered and a row that names no receipt.",
       "pause": 400
     }
   ],
@@ -23,7 +23,7 @@
       "pause": 400
     },
     {
-      "text": "The batch rows rest on preprod protocol parameters recorded on Sun, 04 Oct 2026 18:06:12 GMT, taken from the kept batch receipt. The creation rows rest on the development network's protocol parameters, read from its chain at the times the kept chain records note: 2026-10-29T04:25:37Z for both designs.",
+      "text": "The batch rows rest on preprod protocol parameters recorded on Fri, 30 Oct 2026 13:24:40 GMT, taken from the kept batch receipt. The earlier batch receipt, kept beside it, rests on parameters recorded on Sun, 04 Oct 2026 18:06:12 GMT. The creation rows rest on the development network's protocol parameters, read from its chain at the times the kept chain records note: 2026-10-29T04:25:37Z for both designs.",
       "pause": 400
     }
   ],
@@ -45,6 +45,24 @@
       "pause": 400
     }
   ],
+  "what-moved-against-the-earlier-recording": [
+    {
+      "text": "What moved against the earlier recording.",
+      "pause": 500
+    },
+    {
+      "text": "As a reader comparing this release's batch limits with the earlier recording, you find below the figures that moved and the figures that did not. Each row gives, for one measurement, the figures that moved with the figure in each receipt, and the figures that are equal in both receipts. The equal parameters are counted, not listed.",
+      "pause": 400
+    },
+    {
+      "text": "The earlier receipt holds parameters recorded Sun, 04 Oct 2026 18:06:12 GMT, and its batches were measured at 2026-10-29T17:06:36Z. This receipt holds parameters recorded Fri, 30 Oct 2026 13:24:40 GMT, and its batches were measured at 2026-10-30T13:36:39Z.",
+      "pause": 400
+    },
+    {
+      "text": "Both recordings hold the same 31 protocol parameters, the same parameter bytes were evaluated and both receipts apply the same scripts, so a figure that moved comes from the new capture of the same workload on a fresh development node and not from a change of parameters or scripts.",
+      "pause": 400
+    }
+  ],
   "conditions-the-figures-were-taken-under": [
     {
       "text": "Conditions the figures were taken under.",
@@ -61,7 +79,7 @@
       "pause": 500
     },
     {
-      "text": "The receipts and the chain records they name are committed with the repository. Their SHA-256 is computed when this page is generated, so a file that changes also changes this page.",
+      "text": "The receipts, the chain records they name and the preprod parameter recordings are committed with the repository. Their SHA-256 is computed when this page is generated, so a file that changes also changes this page.",
       "pause": 400
     }
   ],
@@ -77,6 +95,6 @@
   ],
   "_source": {
     "file": "release-decision-table.md",
-    "sha256": "f5703715e0b87bbb53e17d0e88e6cb0979dd0eeb1c6e262df1af75dcd0223849"
+    "sha256": "3f955e5268b6784513c562a6eade8f9519d723acbcf9b5088850507d4e5d9391"
   }
 }

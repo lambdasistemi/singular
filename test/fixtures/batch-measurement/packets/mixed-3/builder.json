@@ -1,13 +1,13 @@
 {
   "bundle": {
-    "hash": "0239634852d6c8848ba856ed723f95a7a540f2383a756434171a170cbd435173",
+    "hash": "4cd0cf450ceda2384d9f6e480b1ba4daf1eb58804e1442cc1495d0c485fb07a5",
     "transactions": [
       {
-        "deadline": 13646,
+        "deadline": 13679,
         "effects": [
           "the first output is live holding the token alone"
         ],
-        "identity": "c25a24d89afc78d3b012d9211e580f19f8dcb31c510e1f596d5930a946113c8e",
+        "identity": "db4acb6e46ffaabd41b0049a2438c86ad3f74ccf9ed09bcec2de734ed5154e40",
         "step": "fold"
       }
     ]
@@ -17,17 +17,17 @@
     {
       "key": "6d6561737572652d3031",
       "kind": "registration",
-      "pending": "f73db78d50cb94424d886f999aaf0aa4c0dbaead791a17bc34e0dac695a918ca#0"
+      "pending": "3b18c5da4c6f6af6a4340ad5f6a41fbd559929288db1ccab3be9a8d059b8b805#0"
     },
     {
       "key": "6d6561737572652d3032",
       "kind": "termination",
-      "pending": "473af99911b8650de184862535b41566b9e8d383c1eb13ef9e749a6979df2899#0"
+      "pending": "f8024a0cb068aec5acd331550e4f84fd8e80c7fdd46806e44a9e0add65bc04dd#0"
     },
     {
       "key": "6d6561737572652d3033",
       "kind": "registration",
-      "pending": "d9162b0d7cd37a5f17f9da34dc814c3c04bce15fdab650cba71a1756bfe08d90#0"
+      "pending": "3f85bd26d0be1eecfffa8673b4fd22f46e54a4c9a6fcc8979cb9eaf776120472#0"
     }
   ],
   "outcome": "waiting-for-signatures"

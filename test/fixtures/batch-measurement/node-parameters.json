@@ -485,7 +485,7 @@
     "txFeePerByte": 44,
     "utxoCostPerByte": 4310
   },
-  "sourceDate": "Sun, 04 Oct 2026 18:06:12 GMT",
+  "sourceDate": "Fri, 30 Oct 2026 13:24:40 GMT",
   "target": {
     "collateralPercentage": 150,
     "committeeMaxTermLength": 146,

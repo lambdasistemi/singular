@@ -129,9 +129,9 @@ The [conformance record](consumer-conformance.md) keeps those gaps visible.
 ## Read the measured limits
 
 These are evaluations of kept transactions under the preprod parameters
-recorded on 4 October 2026 in
-`offchain/test/fixtures/koios/preprod/cli_protocol_params-b777448425778d13.json`.
-A development node given the same limits, prices and fees corroborates the
+whose recording date and source the first table below states. The
+[release decision table](release-decision-table.md) shows which figures moved
+against the earlier recording. A development node given the same limits, prices and fees corroborates the
 accepted size and refusal of the next. This is not a submission to preprod.
 The packaged node cannot run preprod's current execution model; the ledger
 evaluator uses the recorded target model separately. Protocol parameters can
@@ -149,10 +149,10 @@ These figures are generated from the [kept measurement receipt](https://github.c
 
 | Binding | Recorded value |
 |---|---|
-| Receipt SHA-256 | `488ed245c81ad8cdfd0824358e9ea5d288de6a86e4ca9f77367a02562da1c25b` |
-| Parameter recording date | Sun, 04 Oct 2026 18:06:12 GMT |
-| Parameter source | [offchain/test/fixtures/koios/preprod/cli_protocol_params-b777448425778d13.json](https://github.com/lambdasistemi/singular/blob/main/offchain/test/fixtures/koios/preprod/cli_protocol_params-b777448425778d13.json) |
-| Parameter source SHA-256 | `9df0ddb2f85a7fae3df18039bdd476d911605a680299e4d9228d59f232cb5276` |
+| Receipt SHA-256 | `271153081b482f31a243cab692a1fa31b793a7c596c569218a4f01cc15e052fc` |
+| Parameter recording date | Fri, 30 Oct 2026 13:24:40 GMT |
+| Parameter source | [test/fixtures/batch-measurement/parameters/preprod-2026-10-30/cli_protocol_params-b777448425778d13.json](https://github.com/lambdasistemi/singular/blob/main/test/fixtures/batch-measurement/parameters/preprod-2026-10-30/cli_protocol_params-b777448425778d13.json) |
+| Parameter source SHA-256 | `1211aa0b6219e5ba4248580882ff06fb60802b2b727a172ab8e5f288ad74e217` |
 | Evaluated parameter bytes SHA-256 | `49e19000ee0c4b8f7d289378b639693a987793fa5066f3080a83ad4013d6ef09` |
 | Applied request script | `ScriptHash "67bb50e5aab678b9955e1d8981050a14e0f93da912b3a8b4a7161ca7"` |
 | Applied state script | `ScriptHash "499291dbc77fb84b590e4f2d728788aa06191627a2c5c95b6bc4d679"` |
@@ -165,25 +165,25 @@ Bytes are the complete signed transaction length; ledger-counted bytes are liste
 
 | Kind | Accepted requests | Next refused requests | Exceeded limit | Memory | Steps | Signed bytes | Fee (lovelace) | Ledger-counted bytes |
 |---|---|---|---|---|---|---|---|---|
-| registrations | 4 | 5 | memory | 13885061 | 5776027854 | 3219 | 1778984 | 3218 |
-| terminations | 7 | 8 | memory | 15700180 | 6342099593 | 4360 | 1974726 | 4359 |
-| mixed | 6 | 7 | memory | 17100822 | 7047786150 | 4318 | 2104579 | 4317 |
+| registrations | 4 | 5 | memory | 13856729 | 5756358462 | 3219 | 1775931 | 3218 |
+| terminations | 7 | 8 | memory | 15666610 | 6324460088 | 4358 | 1971430 | 4357 |
+| mixed | 6 | 7 | memory | 17105790 | 7051990680 | 4318 | 2105169 | 4317 |
 
 Per-request figures are exact total divided by accepted count, including transaction overhead. A fraction is exact, not a rounded price.
 
 | Kind | Memory per request | Steps per request | Signed bytes per request | Fee per request (lovelace) |
 |---|---|---|---|---|
-| registrations | 13885061/4 | 5776027854/4 | 3219/4 | 1778984/4 |
-| terminations | 15700180/7 | 6342099593/7 | 4360/7 | 1974726/7 |
-| mixed | 17100822/6 | 7047786150/6 | 4318/6 | 2104579/6 |
+| registrations | 13856729/4 | 5756358462/4 | 3219/4 | 1775931/4 |
+| terminations | 15666610/7 | 6324460088/7 | 4358/7 | 1971430/7 |
+| mixed | 17105790/6 | 7051990680/6 | 4318/6 | 2105169/6 |
 
 The marginal last request is the difference from the preceding kept prefix. It is an observation for this ordered workload, not a constant cost per request.
 
 | Kind | Last-request memory | Last-request steps | Last-request signed bytes | Last-request fee (lovelace) |
 |---|---|---|---|---|
-| registrations | 5278981 | 2181128735 | 723 | 493675 |
-| terminations | 3299339 | 1384499244 | 536 | 313780 |
-| mixed | 3156357 | 1318646751 | 468 | 297789 |
+| registrations | 5266225 | 2171769251 | 723 | 492264 |
+| terminations | 3292625 | 1380971343 | 534 | 313051 |
+| mixed | 3156357 | 1318646751 | 468 | 297790 |
 
 The workload starts from the registry sizes below. The listed sequence is the accepted named prefix; the mixed result concerns that alternating order only. The digest binds the full initial datum shapes in the receipt, alongside the kept trie inputs.
 
