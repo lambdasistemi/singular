@@ -1,13 +1,13 @@
 {
   "bundle": {
-    "hash": "33776eac7ff1e7a9aabcee3b3a4c875181cd31b74d7b8c976c116a6269e885ac",
+    "hash": "c3c818a95e569dd6c05d2695850a249e39f243b2265763b0900b21e012b13664",
     "transactions": [
       {
         "deadline": 19999,
         "effects": [
           "the first output is live holding the token alone"
         ],
-        "identity": "9b1ed6ccf23ba64d389730f171e32de5bed8a09f24b75a93f0e4b61993d35de6",
+        "identity": "0fa43f9414e86bbd981bd981975c979e945ab31b522c1149bff60c7fb7e01815",
         "step": "fold"
       }
     ]
@@ -17,32 +17,32 @@
     {
       "key": "6d6561737572652d3031",
       "kind": "termination",
-      "pending": "7cc1db2b537f5a755ab67df1caa91cd3873f6d2abfbbd9b38e32ca39af305943#0"
+      "pending": "3d8695eb0302d4f700b54317263044389a4d0dfc77f12a7cb869e4f80088976b#0"
     },
     {
       "key": "6d6561737572652d3032",
       "kind": "termination",
-      "pending": "529c88671d87134bb38fa0085168b27b0583460a1f6c20c429a55f295b8cf344#0"
+      "pending": "604b0f0f0926108a4d6daba508428c06fc55ae8d7423335cf77d2c2548aaae6c#0"
     },
     {
       "key": "6d6561737572652d3033",
       "kind": "termination",
-      "pending": "ef96af5a964f2702eaba8e3fee8593fc4ec985766e13c7d92586e5656681a39a#0"
+      "pending": "c6683a4a539f8e57cdd7769415cf6aedf529d3f150e4addb5d9ff8a5e15e0cdc#0"
     },
     {
       "key": "6d6561737572652d3034",
       "kind": "termination",
-      "pending": "6495764464e8f2cbf8288bdfb3c32e70c0f972c5a2cf5e22b1f8d9cf2bec2c30#0"
+      "pending": "885f2463246750a740d03471f4139437420aed238738d9297aa262938fb12a03#0"
     },
     {
       "key": "6d6561737572652d3035",
       "kind": "termination",
-      "pending": "feb89fb56dfb5ebde135ae5b148764daa47355e94b872827ac869f0d07658874#0"
+      "pending": "cce6e06edb8225b48d33a943f13d35af5514f6ee70c9194b348843068b6889d7#0"
     },
     {
       "key": "6d6561737572652d3036",
       "kind": "termination",
-      "pending": "ca70d169a59ceca58cf6bd40328616cfd86116ac4924727a9e2fe5492ea31c47#0"
+      "pending": "a6929dfbfa0b2dec6591c65de6710dcb83364a94e5fd8343f2a90cc2872cac87#0"
     }
   ],
   "outcome": "waiting-for-signatures"

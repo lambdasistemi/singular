@@ -23,6 +23,11 @@ CREATION = {
 BATCH = "test/fixtures/batch-measurement/receipt.json"
 # The receipt this one replaced, kept as history beside it.
 BATCH_EARLIER = "test/fixtures/batch-measurement/previous/receipt.json"
+# The receipts before that one, oldest first: kept unchanged, hashed on the page, and
+# not compared with anything.
+BATCH_HISTORY = (
+    "test/fixtures/batch-measurement/history/preprod-2026-10-04/receipt.json",
+)
 PAGE = "docs/release-decision-table.md"
 REPOSITORY = "https://github.com/lambdasistemi/singular/blob/main/"
 KINDS = ("registrations", "terminations", "mixed")
@@ -445,7 +450,9 @@ def source_cell(row):
             name and re.fullmatch(r"[0-9a-f]{64}", sha),
             "a row without a source receipt is refused: " + row["measurement"],
         )
-    return "<br>".join(f"{link(name)}<br>`{sha}`" for name, sha in row["sources"])
+    return "<br>".join(
+        f"{link(name)}<br>`{sha}`" for name, sha in dict.fromkeys(row["sources"])
+    )
 
 
 def table(rows):
@@ -546,7 +553,7 @@ def movement_rows(earlier, current, recordings):
     ]
     rows.append(
         movement(
-            "Preprod protocol parameters: every parameter of the two recordings",
+            "Preprod protocol parameters: every parameter of the two receipts",
             parameter_figures(earlier),
             parameter_figures(current),
             sources,
@@ -576,6 +583,7 @@ def movement_sentences(earlier, current):
     ]
     parameters, scripts = differing
     same_bytes = old["target"]["parametersSha256"] == new["target"]["parametersSha256"]
+    same_recording = old["target"]["sourceSha256"] == new["target"]["sourceSha256"]
     lines = [
         f"The earlier receipt holds parameters recorded {recording_date(earlier)}, "
         f"and its batches were measured at {measured_at(earlier)}. This receipt holds "
@@ -584,11 +592,16 @@ def movement_sentences(earlier, current):
     ]
     if not (parameters or scripts) and same_bytes:
         lines.append(
-            f"Both recordings hold the same {len(old['target']['parameters'])} protocol "
-            "parameters, the same parameter bytes were evaluated and both receipts "
-            "apply the same scripts, so a figure that moved comes from the new capture "
-            "of the same workload on a fresh development node and not from a change "
-            "of parameters or scripts."
+            (
+                "Both receipts evaluated the same recording of "
+                if same_recording
+                else "Both recordings hold the same "
+            )
+            + f"{len(old['target']['parameters'])} protocol parameters, the same "
+            "parameter bytes were evaluated and both receipts apply the same scripts, "
+            "so a figure that moved comes from the new capture of the same workload, "
+            "made on a fresh development node with the commands the repository held "
+            "when it was captured, and not from a change of parameters or scripts."
         )
     else:
         found = []
@@ -612,8 +625,9 @@ def movement_sentences(earlier, current):
 def moves(rows, earlier, current):
     lines = [
         "| Measurement | Moved: earlier receipt, parameters recorded "
-        f"{recording_date(earlier)} | Moved: this receipt, parameters recorded "
-        f"{recording_date(current)} | Unchanged since {recording_date(earlier)} | "
+        f"{recording_date(earlier)}, measured {measured_at(earlier)} | Moved: this "
+        f"receipt, parameters recorded {recording_date(current)}, measured "
+        f"{measured_at(current)} | Unchanged since the earlier receipt | "
         "Source receipts and SHA-256 |",
         "|---|---|---|---|---|",
     ]
@@ -663,12 +677,26 @@ def conditions(previous, batch, earlier):
 
 def receipts_table(receipts):
     lines = ["| Kept file | SHA-256 |", "|---|---|"]
+    shown_names = set()
     for receipt in receipts:
-        lines.append(f"| {link(receipt.name)} | `{receipt.sha256}` |")
+        if receipt.name not in shown_names:
+            shown_names.add(receipt.name)
+            lines.append(f"| {link(receipt.name)} | `{receipt.sha256}` |")
     return lines
 
 
-def render(previous, candidate, batch, chains, earlier, recordings):
+def history_sentences(history):
+    """Say which older receipts are kept, and that nothing on the page compares them."""
+    return [
+        f"The receipt measured {measured_at(receipt)} under parameters recorded "
+        f"{recording_date(receipt)} is kept as history: its file and its parameter "
+        "recording are hashed in the table below and neither is compared with the "
+        "other receipts on this page."
+        for receipt, _ in history
+    ]
+
+
+def render(previous, candidate, batch, chains, earlier, recordings, history):
     """The whole page, a deterministic value of the kept receipts and recordings."""
     rows = creation_rows(previous, candidate, chains) + batch_rows(batch)
     date = recording_date(batch)
@@ -685,6 +713,7 @@ def render(previous, candidate, batch, chains, earlier, recordings):
         "    creation[Creation receipts] -->|figures and SHA-256| page[This page]",
         "    batch[Batch receipt] -->|figures and SHA-256| page",
         "    earlier[Earlier batch receipt] -->|figures and SHA-256| page",
+        "    kept[Kept history receipts] -->|SHA-256 only| page",
         "    recordings[Parameter recordings] -->|date, hash and parameters| check",
         "    page -->|regenerated and compared| check[Documentation check]",
         "    check -->|differs| refuse[Refused]",
@@ -745,6 +774,7 @@ def render(previous, candidate, batch, chains, earlier, recordings):
         "committed with the repository. Their SHA-256 is computed when this page is generated, "
         "so a file that changes also changes this page.",
         "",
+        *[line for sentence in history_sentences(history) for line in (sentence, "")],
         *receipts_table(
             [
                 previous,
@@ -755,6 +785,7 @@ def render(previous, candidate, batch, chains, earlier, recordings):
                 recordings[1],
                 earlier,
                 recordings[0],
+                *[kept for pair in history for kept in pair],
             ]
         ),
         "",
@@ -767,24 +798,37 @@ def render(previous, candidate, batch, chains, earlier, recordings):
     return "\n".join(lines)
 
 
-def load(root, creation, batch, earlier):
+def load(root, creation, batch, earlier, history):
     previous = read_receipt(root, creation["previous"])
     candidate = read_receipt(root, creation["candidate"])
     chains = [read_chain_record(root, previous), read_chain_record(root, candidate)]
     batch, earlier = read_receipt(root, batch), read_receipt(root, earlier)
     recordings = [Recording(root, earlier), Recording(root, batch)]
-    return previous, candidate, batch, chains, earlier, recordings
+    history = [
+        (receipt, Recording(root, receipt))
+        for receipt in (read_receipt(root, name) for name in history)
+    ]
+    return previous, candidate, batch, chains, earlier, recordings, history
 
 
-def expected_page(root, creation=CREATION, batch=BATCH, earlier=BATCH_EARLIER):
-    return render(*load(root, creation, batch, earlier))
+def expected_page(
+    root, creation=CREATION, batch=BATCH, earlier=BATCH_EARLIER, history=BATCH_HISTORY
+):
+    return render(*load(root, creation, batch, earlier, history))
 
 
-def check(root, page=PAGE, creation=CREATION, batch=BATCH, earlier=BATCH_EARLIER):
+def check(
+    root,
+    page=PAGE,
+    creation=CREATION,
+    batch=BATCH,
+    earlier=BATCH_EARLIER,
+    history=BATCH_HISTORY,
+):
     path = Path(root) / page
     require(path.is_file(), f"the decision table page is missing: {page}")
     require(
-        path.read_text() == expected_page(root, creation, batch, earlier),
+        path.read_text() == expected_page(root, creation, batch, earlier, history),
         "the decision table differs from what its receipts give",
     )
 

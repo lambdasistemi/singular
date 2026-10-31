@@ -34,7 +34,7 @@ def main():
         ).as_posix()
         for name in tool.CREATION.values()
     ]
-    receipts = (tool.BATCH_EARLIER, tool.BATCH)
+    receipts = (*tool.BATCH_HISTORY, tool.BATCH_EARLIER, tool.BATCH)
     recordings = [
         json.loads((root / name).read_text())["claim"]["target"]["source"]
         for name in receipts
@@ -99,9 +99,10 @@ def main():
                     refuses(scratch, "differs from what its receipts give")
             (scratch / name).write_text(original)
 
-        # Both batch receipts, the current one and the earlier one it replaced: each
-        # published metric of the accepted batch and of the one-request fold, for
-        # every kind.
+        # Every batch receipt, the current one, the earlier one it replaced and the
+        # kept history: each published metric of the accepted batch and of the
+        # one-request fold, for every kind. A kept receipt is hashed on the page, so
+        # an altered figure in it changes the page.
         for batch in receipts:
             original = (root / batch).read_text()
             value = json.loads(original)
@@ -203,7 +204,7 @@ def main():
 
         # A row that names no receipt, or a hash that is not a SHA-256, is refused.
         previous, candidate, _, records, *_ = tool.load(
-            scratch, tool.CREATION, tool.BATCH, tool.BATCH_EARLIER
+            scratch, tool.CREATION, tool.BATCH, tool.BATCH_EARLIER, tool.BATCH_HISTORY
         )
         sources = tool.creation_rows(previous, candidate, records)[0]
         for altered in ([], [("a-receipt.json", "not-a-hash")]):
