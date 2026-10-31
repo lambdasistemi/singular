@@ -53,6 +53,13 @@ register other other-active-key >"$work/other-holding.txt"
 
 for case in burn-without-fold other-key no-approval spend-without-burn; do
   leg="$case"
+  # The last case ends with a booking of its terminated key. That booking is
+  # made now, while the key is unknown: once the key is terminated, booking it
+  # is refused before anything is signed, and the fold is what must refuse it.
+  if [ "$case" = spend-without-burn ]; then
+    as alice book-terminal "$open_datum" insert --blueprint plutus.json \
+      --state-token "$token" --key "termination-$case" --payload payload.json --deposit 3000000 --tip 1000000
+  fi
   holding="$(register "$case" "termination-$case")"
   as alice "terminate-$case" "$open_datum" terminate --blueprint plutus.json \
     --state-token "$token" --holding "$holding"
@@ -83,12 +90,17 @@ for case in burn-without-fold other-key no-approval spend-without-burn; do
     refused_by_script "$receipts/attempt-$case.json" "00000000000000000000000000000000000000000000000000000000"
 done
 
-# The last control made this key terminal through its genuine burn. The
-# packaged fold declines its new registration; here the node also judges
-# a registration that carries the current state's own presence proof.
+# The last control made this key terminal through its genuine burn. Booking a
+# new registration of it is now refused before anything is signed; the request
+# booked before the burn is judged by the node with the current state's own
+# presence proof.
 leg="registration after termination"
-as alice book-terminal "$open_datum" insert --blueprint plutus.json \
+run_as alice refused-terminal "$open_datum" insert --blueprint plutus.json \
   --state-token "$token" --key termination-spend-without-burn --payload payload.json --deposit 3000000 --tip 1000000
+check "booking a new registration of the terminated key is refused before anything is signed" \
+  jq -e '.outcome == "client-refusal" and (.reason | contains("is already registered and was terminated")) and (.submissions | length) == 0' "$receipts/refused-terminal.json"
+control "a successful booking is not the refusal of a terminated key" \
+  jq -e '.outcome == "client-refusal" and (.reason | contains("is already registered and was terminated"))' "$receipts/book-terminal.json"
 run_as bob attempt-terminal "$harness" fold --case second-registration \
   --pending "$(field book-terminal .pending)" --blueprint plutus.json --state-token "$token"
 settle

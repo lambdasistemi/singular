@@ -12,7 +12,7 @@ set -euo pipefail
 
 inventory="$1" rows="$2" frozen="$3"
 group=registration-journeys
-required="registration-fold-outcome registration-reclaim-outcome registration-cleanup-outcome unfoldable-registration-waits-for-reclaim"
+required="registration-fold-outcome registration-reclaim-outcome registration-cleanup-outcome unfoldable-registration-waits-for-reclaim booking-refuses-a-key-the-registry-state-rules-out"
 reason='no executable comparison with the application-held model exists yet'
 fail() {
   echo "FAIL: $*" >&2

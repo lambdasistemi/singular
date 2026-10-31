@@ -59,6 +59,7 @@ import Cardano.Ledger.Mary.Value (MaryValue (..), PolicyID (..))
 
 import Singular.Application.OpenDatum.CreationWorld
 import Singular.Application.OpenDatum.Reader qualified as App
+import Singular.Application.OpenDatum.Registration (ruledOutKey)
 import Singular.Application.OpenDatum.RequestHoldingSpec
     ( withHoldingIn
     )
@@ -78,6 +79,7 @@ import Singular.Application.OpenDatum.Requests.Records
     ( ProtectedControl (..)
     , decodeLiveDatum
     )
+import Singular.Application.OpenDatum.Requests.Refusal (Refusal (..))
 import Singular.Application.OpenDatum.Requests.Script
     ( requestPolicy
     , requestScriptHash
@@ -116,6 +118,7 @@ spec :: Spec
 spec = do
     historySpec
     refinementSpec
+    bookingPolicySpec
     commandSpec
     guidanceSpec
 
@@ -255,6 +258,74 @@ tableFor world (RegistryIdentity (StatePolicyId policy) _) =
             (hashToBytes script)
             []
             []
+
+{- | What a booking does with each answer of the reader: the answers come from
+the reader over a real registry, and the refusal each calls for is the
+client's own policy, not the model's.
+-}
+bookingPolicySpec :: Spec
+bookingPolicySpec = describe "the booking's policy over the reader's answers" $ do
+    it
+        "rules out an active key and a key with a termination booked, and says it is registered"
+        $ withHoldingIn newCreation
+        $ \world registry reference _ -> do
+            table <- tableFor world registry
+            live <- withSession world $ \session ->
+                App.readKey
+                    session
+                    table
+                    (R.ReaderRequest (LP.sessionNetwork session) registry "a live key")
+            live `shouldSatisfy` \case App.Live{} -> True; _ -> False
+            ruledOutKey "a live key" live
+                `shouldBe` Just (KeyAlreadyRegistered "a live key")
+            booking <- withSession world $ \session ->
+                expectBuilt
+                    =<< buildBookTermination
+                        session
+                        (crRequest world)
+                        reference
+                        (crBooker world)
+            applyTx world booking
+            booked <- withSession world $ \session ->
+                App.readKey
+                    session
+                    table
+                    (R.ReaderRequest (LP.sessionNetwork session) registry "a live key")
+            booked `shouldSatisfy` \case App.PendingTermination{} -> True; _ -> False
+            ruledOutKey "a live key" booked
+                `shouldBe` Just (KeyAlreadyRegistered "a live key")
+    it "rules out a terminated key and says it was terminated" $
+        withHoldingIn newCreation $ \world registry _ _ -> do
+            withSession world $ \session -> do
+                state <- selectedState session registry
+                ruledOutKey "an old key" (App.Terminal state)
+                    `shouldBe` Just (KeyWasTerminated "an old key")
+    it
+        "leaves a key never registered, an unreadable state and an unrecognised state policy to the fold"
+        $ withHoldingIn newCreation
+        $ \world registry _ _ ->
+            withSession world $ \session -> do
+                state <- selectedState session registry
+                ruledOutKey "new key" (App.NeverRegistered state) `shouldBe` Nothing
+                forM_ [R.NetworkRead, R.ActiveOutputsRead, R.StateRead, R.TrieRead] $ \readName ->
+                    forM_
+                        [ R.Missing
+                        , R.Failed "offline"
+                        , R.Incomplete "partial"
+                        , R.StateNotFound
+                        , R.StateNotRecognized
+                        , R.TrieRootMismatch
+                        ]
+                        $ \reason ->
+                            ruledOutKey "new key" (App.Unavailable readName reason)
+                                `shouldBe` Nothing
+                forM_
+                    [ R.ConflictingEvidence
+                    , R.WrongNetwork (LP.Network 1) (LP.Network 42)
+                    , R.UnknownStatePolicy "policy"
+                    , R.ForeignStatePolicy "policy" "other"
+                    ]
+                    $ \reason -> ruledOutKey "new key" (App.Refused reason) `shouldBe` Nothing
 
 refinementSpec :: Spec
 refinementSpec = describe "application reader refinement" $ do

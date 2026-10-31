@@ -11,19 +11,19 @@ This summary is computed from the same inventory and validated receipts as the [
 
 | Standing | Requirements |
 |---|---:|
-| Total requirements | 23 |
+| Total requirements | 24 |
 | Demonstrated by a run | 0 |
 | Partly demonstrated by a run | 0 |
 | Run, result not a pass | 0 |
 | Bound to evidence elsewhere | 0 |
-| Uncovered | 23 |
+| Uncovered | 24 |
 | Out of scope | 0 |
 
 | Requirement family | Requirements |
 |---|---:|
 | Batch Folding | 7 |
 | Holding Journeys | 3 |
-| Registration Journeys | 4 |
+| Registration Journeys | 5 |
 | Registry Reading | 4 |
 | Shared Publications | 5 |
 
