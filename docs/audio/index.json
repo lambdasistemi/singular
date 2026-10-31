@@ -5376,8 +5376,8 @@
     "index": 2,
     "name": "docs-release-decision-table/reading-the-decision-table-02",
     "pause_ms": 400,
-    "text": "The batch rows rest on preprod protocol parameters recorded on Fri, 30 Oct 2026 13:24:40 GMT, taken from the kept batch receipt. The earlier batch receipt, kept beside it, rests on parameters recorded on Sun, 04 Oct 2026 18:06:12 GMT. The creation rows rest on the development network's protocol parameters, read from its chain at the times the kept chain records note: 2026-10-29T04:25:37Z for both designs.",
-    "v": "da4423a8e1fa"
+    "text": "The batch rows rest on preprod protocol parameters recorded on Fri, 30 Oct 2026 13:24:40 GMT, taken from the kept batch receipt. The earlier batch receipt, kept beside it, rests on parameters recorded on Fri, 30 Oct 2026 13:24:40 GMT. The creation rows rest on the development network's protocol parameters, read from its chain at the times the kept chain records note: 2026-10-29T04:25:37Z for both designs.",
+    "v": "25de174ab093"
    }
   ],
   "regenerate-this-page": [
@@ -5463,6 +5463,13 @@
     "pause_ms": 400,
     "text": "The receipts, the chain records they name and the preprod parameter recordings are committed with the repository. Their SHA-256 is computed when this page is generated, so a file that changes also changes this page.",
     "v": "07864bb335f0"
+   },
+   {
+    "index": 2,
+    "name": "docs-release-decision-table/the-kept-receipts-02",
+    "pause_ms": 400,
+    "text": "The receipt measured 2026-10-29T17:06:36Z under parameters recorded Sun, 04 Oct 2026 18:06:12 GMT is kept as history: its file and its parameter recording are hashed in the table below and neither is compared with the other receipts on this page.",
+    "v": "23fdccaf0054"
    }
   ],
   "what-moved-against-the-earlier-recording": [
@@ -5484,15 +5491,15 @@
     "index": 2,
     "name": "docs-release-decision-table/what-moved-against-the-earlier-recording-02",
     "pause_ms": 400,
-    "text": "The earlier receipt holds parameters recorded Sun, 04 Oct 2026 18:06:12 GMT, and its batches were measured at 2026-10-29T17:06:36Z. This receipt holds parameters recorded Fri, 30 Oct 2026 13:24:40 GMT, and its batches were measured at 2026-10-30T13:36:39Z.",
-    "v": "d638868aef47"
+    "text": "The earlier receipt holds parameters recorded Fri, 30 Oct 2026 13:24:40 GMT, and its batches were measured at 2026-10-30T13:36:39Z. This receipt holds parameters recorded Fri, 30 Oct 2026 13:24:40 GMT, and its batches were measured at 2026-10-31T19:53:51Z.",
+    "v": "ba349b36f483"
    },
    {
     "index": 3,
     "name": "docs-release-decision-table/what-moved-against-the-earlier-recording-03",
     "pause_ms": 400,
-    "text": "Both recordings hold the same 31 protocol parameters, the same parameter bytes were evaluated and both receipts apply the same scripts, so a figure that moved comes from the new capture of the same workload on a fresh development node and not from a change of parameters or scripts.",
-    "v": "0568df4b3e1a"
+    "text": "Both receipts evaluated the same recording of 31 protocol parameters, the same parameter bytes were evaluated and both receipts apply the same scripts, so a figure that moved comes from the new capture of the same workload, made on a fresh development node with the commands the repository held when it was captured, and not from a change of parameters or scripts.",
+    "v": "6cf58d2447ca"
    }
   ]
  },

@@ -23,7 +23,7 @@
       "pause": 400
     },
     {
-      "text": "The batch rows rest on preprod protocol parameters recorded on Fri, 30 Oct 2026 13:24:40 GMT, taken from the kept batch receipt. The earlier batch receipt, kept beside it, rests on parameters recorded on Sun, 04 Oct 2026 18:06:12 GMT. The creation rows rest on the development network's protocol parameters, read from its chain at the times the kept chain records note: 2026-10-29T04:25:37Z for both designs.",
+      "text": "The batch rows rest on preprod protocol parameters recorded on Fri, 30 Oct 2026 13:24:40 GMT, taken from the kept batch receipt. The earlier batch receipt, kept beside it, rests on parameters recorded on Fri, 30 Oct 2026 13:24:40 GMT. The creation rows rest on the development network's protocol parameters, read from its chain at the times the kept chain records note: 2026-10-29T04:25:37Z for both designs.",
       "pause": 400
     }
   ],
@@ -55,11 +55,11 @@
       "pause": 400
     },
     {
-      "text": "The earlier receipt holds parameters recorded Sun, 04 Oct 2026 18:06:12 GMT, and its batches were measured at 2026-10-29T17:06:36Z. This receipt holds parameters recorded Fri, 30 Oct 2026 13:24:40 GMT, and its batches were measured at 2026-10-30T13:36:39Z.",
+      "text": "The earlier receipt holds parameters recorded Fri, 30 Oct 2026 13:24:40 GMT, and its batches were measured at 2026-10-30T13:36:39Z. This receipt holds parameters recorded Fri, 30 Oct 2026 13:24:40 GMT, and its batches were measured at 2026-10-31T19:53:51Z.",
       "pause": 400
     },
     {
-      "text": "Both recordings hold the same 31 protocol parameters, the same parameter bytes were evaluated and both receipts apply the same scripts, so a figure that moved comes from the new capture of the same workload on a fresh development node and not from a change of parameters or scripts.",
+      "text": "Both receipts evaluated the same recording of 31 protocol parameters, the same parameter bytes were evaluated and both receipts apply the same scripts, so a figure that moved comes from the new capture of the same workload, made on a fresh development node with the commands the repository held when it was captured, and not from a change of parameters or scripts.",
       "pause": 400
     }
   ],
@@ -81,6 +81,10 @@
     {
       "text": "The receipts, the chain records they name and the preprod parameter recordings are committed with the repository. Their SHA-256 is computed when this page is generated, so a file that changes also changes this page.",
       "pause": 400
+    },
+    {
+      "text": "The receipt measured 2026-10-29T17:06:36Z under parameters recorded Sun, 04 Oct 2026 18:06:12 GMT is kept as history: its file and its parameter recording are hashed in the table below and neither is compared with the other receipts on this page.",
+      "pause": 400
     }
   ],
   "regenerate-this-page": [
@@ -95,6 +99,6 @@
   ],
   "_source": {
     "file": "release-decision-table.md",
-    "sha256": "3f955e5268b6784513c562a6eade8f9519d723acbcf9b5088850507d4e5d9391"
+    "sha256": "7e5b26989b18375b2ee647bef1b0adaf01e4bdd1f70f2458627c7dad5d6f8714"
   }
 }

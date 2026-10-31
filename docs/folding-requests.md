@@ -149,7 +149,7 @@ These figures are generated from the [kept measurement receipt](https://github.c
 
 | Binding | Recorded value |
 |---|---|
-| Receipt SHA-256 | `271153081b482f31a243cab692a1fa31b793a7c596c569218a4f01cc15e052fc` |
+| Receipt SHA-256 | `24d17325b6fba67f9cd3398ff242969a0e347080560303d23cb7a6315fdb8dae` |
 | Parameter recording date | Fri, 30 Oct 2026 13:24:40 GMT |
 | Parameter source | [test/fixtures/batch-measurement/parameters/preprod-2026-10-30/cli_protocol_params-b777448425778d13.json](https://github.com/lambdasistemi/singular/blob/main/test/fixtures/batch-measurement/parameters/preprod-2026-10-30/cli_protocol_params-b777448425778d13.json) |
 | Parameter source SHA-256 | `1211aa0b6219e5ba4248580882ff06fb60802b2b727a172ab8e5f288ad74e217` |
@@ -165,25 +165,25 @@ Bytes are the complete signed transaction length; ledger-counted bytes are liste
 
 | Kind | Accepted requests | Next refused requests | Exceeded limit | Memory | Steps | Signed bytes | Fee (lovelace) | Ledger-counted bytes |
 |---|---|---|---|---|---|---|---|---|
-| registrations | 4 | 5 | memory | 13856729 | 5756358462 | 3219 | 1775931 | 3218 |
+| registrations | 4 | 5 | memory | 13875377 | 5770269582 | 3219 | 1778010 | 3218 |
 | terminations | 7 | 8 | memory | 15666610 | 6324460088 | 4358 | 1971430 | 4357 |
-| mixed | 6 | 7 | memory | 17105790 | 7051990680 | 4318 | 2105169 | 4317 |
+| mixed | 6 | 7 | memory | 17081874 | 7031315136 | 4320 | 2102386 | 4319 |
 
 Per-request figures are exact total divided by accepted count, including transaction overhead. A fraction is exact, not a rounded price.
 
 | Kind | Memory per request | Steps per request | Signed bytes per request | Fee per request (lovelace) |
 |---|---|---|---|---|
-| registrations | 13856729/4 | 5756358462/4 | 3219/4 | 1775931/4 |
+| registrations | 13875377/4 | 5770269582/4 | 3219/4 | 1778010/4 |
 | terminations | 15666610/7 | 6324460088/7 | 4358/7 | 1971430/7 |
-| mixed | 17105790/6 | 7051990680/6 | 4318/6 | 2105169/6 |
+| mixed | 17081874/6 | 7031315136/6 | 4320/6 | 2102386/6 |
 
 The marginal last request is the difference from the preceding kept prefix. It is an observation for this ordered workload, not a constant cost per request.
 
 | Kind | Last-request memory | Last-request steps | Last-request signed bytes | Last-request fee (lovelace) |
 |---|---|---|---|---|
-| registrations | 5266225 | 2171769251 | 723 | 492264 |
+| registrations | 5289589 | 2187234113 | 723 | 494727 |
 | terminations | 3292625 | 1380971343 | 534 | 313051 |
-| mixed | 3156357 | 1318646751 | 468 | 297790 |
+| mixed | 3151389 | 1314442221 | 470 | 297288 |
 
 The workload starts from the registry sizes below. The listed sequence is the accepted named prefix; the mixed result concerns that alternating order only. The digest binds the full initial datum shapes in the receipt, alongside the kept trie inputs.
 

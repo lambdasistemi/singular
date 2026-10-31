@@ -187226,17 +187226,17 @@
    ]
   },
   "docs-release-decision-table/reading-the-decision-table-02": {
-   "audio_sha256": "da4423a8e1fada046aca610e665c2e7a18199ff7d77f5aeb10769e6343fabd26",
+   "audio_sha256": "25de174ab093de57294b43256fa480848776f49807547ffd306ab9b26f70f5f8",
    "characters": 408,
    "cost": 0.00040392,
    "duration": 38.625,
    "index": 2,
-   "key": "9e048fa43676ae7ea9c75fe6627028c5cb9a97e62aacfe71ad3723e1ea89d53b",
+   "key": "3fa5775407d1a780325be5d9113d616b9dc8d930f00e25b648226edaefb895a9",
    "page": "docs/release-decision-table.md",
    "pause_ms": 400,
    "section": "reading-the-decision-table",
-   "sent_text": "The batch rows rest on preprod protocol parameters recorded on Fri, 30 Oct 2026 13:24:40 GMT, taken from the kept batch receipt. The earlier batch receipt, kept beside it, rests on parameters recorded on Sun, 04 Oct 2026 18:06:12 GMT. The creation rows rest on the development network's protocol parameters, read from its chain at the times the kept chain records note: 2026-10-29T04:25:37Z for both designs.",
-   "text": "The batch rows rest on preprod protocol parameters recorded on Fri, 30 Oct 2026 13:24:40 GMT, taken from the kept batch receipt. The earlier batch receipt, kept beside it, rests on parameters recorded on Sun, 04 Oct 2026 18:06:12 GMT. The creation rows rest on the development network's protocol parameters, read from its chain at the times the kept chain records note: 2026-10-29T04:25:37Z for both designs.",
+   "sent_text": "The batch rows rest on preprod protocol parameters recorded on Fri, 30 Oct 2026 13:24:40 GMT, taken from the kept batch receipt. The earlier batch receipt, kept beside it, rests on parameters recorded on Fri, 30 Oct 2026 13:24:40 GMT. The creation rows rest on the development network's protocol parameters, read from its chain at the times the kept chain records note: 2026-10-29T04:25:37Z for both designs.",
+   "text": "The batch rows rest on preprod protocol parameters recorded on Fri, 30 Oct 2026 13:24:40 GMT, taken from the kept batch receipt. The earlier batch receipt, kept beside it, rests on parameters recorded on Fri, 30 Oct 2026 13:24:40 GMT. The creation rows rest on the development network's protocol parameters, read from its chain at the times the kept chain records note: 2026-10-29T04:25:37Z for both designs.",
    "words": [
     {
      "end": 0.3,
@@ -187369,108 +187369,108 @@
      "text": "The"
     },
     {
-     "end": 12.5,
+     "end": 12.525,
      "start": 12.075,
      "text": "earlier"
     },
     {
-     "end": 12.85,
-     "start": 12.5,
+     "end": 12.875,
+     "start": 12.525,
      "text": "batch"
     },
     {
-     "end": 13.275,
-     "start": 12.85,
+     "end": 13.3,
+     "start": 12.875,
      "text": "receipt"
     },
     {
-     "end": 13.325,
-     "start": 13.275,
+     "end": 13.35,
+     "start": 13.3,
      "text": ","
     },
     {
-     "end": 13.575,
-     "start": 13.325,
+     "end": 13.6,
+     "start": 13.35,
      "text": "kept"
     },
     {
-     "end": 14.0,
-     "start": 13.575,
+     "end": 14.05,
+     "start": 13.6,
      "text": "beside"
     },
     {
-     "end": 14.125,
-     "start": 14.0,
+     "end": 14.175,
+     "start": 14.05,
      "text": "it"
     },
     {
-     "end": 14.175,
-     "start": 14.125,
+     "end": 14.25,
+     "start": 14.175,
      "text": ","
     },
     {
-     "end": 14.462,
-     "start": 14.175,
+     "end": 14.562,
+     "start": 14.25,
      "text": "rests"
     },
     {
-     "end": 14.625,
-     "start": 14.462,
+     "end": 14.725,
+     "start": 14.562,
      "text": "on"
     },
     {
-     "end": 15.3,
-     "start": 14.625,
+     "end": 15.4,
+     "start": 14.725,
      "text": "parameters"
     },
     {
-     "end": 15.8,
-     "start": 15.3,
+     "end": 15.925,
+     "start": 15.4,
      "text": "recorded"
     },
     {
-     "end": 16.038,
-     "start": 15.8,
+     "end": 16.15,
+     "start": 15.925,
      "text": "on"
     },
     {
-     "end": 16.4,
-     "start": 16.038,
-     "text": "Sun"
+     "end": 16.625,
+     "start": 16.15,
+     "text": "Fri"
     },
     {
-     "end": 16.513,
-     "start": 16.4,
+     "end": 16.737,
+     "start": 16.625,
      "text": ","
     },
     {
-     "end": 16.837,
-     "start": 16.513,
-     "text": "04"
+     "end": 17.138,
+     "start": 16.737,
+     "text": "30"
     },
     {
-     "end": 17.138,
-     "start": 16.837,
+     "end": 17.487,
+     "start": 17.138,
      "text": "Oct"
     },
     {
-     "end": 18.05,
-     "start": 17.138,
+     "end": 18.438,
+     "start": 17.487,
      "text": "2026"
     },
     {
-     "end": 20.163,
-     "start": 18.05,
-     "text": "18:06:12"
+     "end": 20.188,
+     "start": 18.438,
+     "text": "13:24:40"
     },
     {
-     "end": 21.625,
-     "start": 20.163,
+     "end": 21.65,
+     "start": 20.188,
      "text": "GMT"
     },
     {
      "end": 21.925,
-     "start": 21.625,
+     "start": 21.65,
      "text": "."
     },
     {
@@ -190075,6 +190075,236 @@
     }
    ]
   },
+  "docs-release-decision-table/the-kept-receipts-02": {
+   "audio_sha256": "23fdccaf0054442834e458056f96c25ea732823822d6f5bf47cf9d868cca4c00",
+   "characters": 246,
+   "cost": 0.00024353999999999996,
+   "duration": 23.45,
+   "index": 2,
+   "key": "a869d005bca4458cbdb48d2e30fce39a9b9998fc72bc8bdb87ca4e5012ecfe7f",
+   "page": "docs/release-decision-table.md",
+   "pause_ms": 400,
+   "section": "the-kept-receipts",
+   "sent_text": "The receipt measured 2026-10-29T17:06:36Z under parameters recorded Sun, 04 Oct 2026 18:06:12 GMT is kept as history: its file and its parameter recording are hashed in the table below and neither is compared with the other receipts on this page.",
+   "text": "The receipt measured 2026-10-29T17:06:36Z under parameters recorded Sun, 04 Oct 2026 18:06:12 GMT is kept as history: its file and its parameter recording are hashed in the table below and neither is compared with the other receipts on this page.",
+   "words": [
+    {
+     "end": 0.325,
+     "start": 0.25,
+     "text": "The"
+    },
+    {
+     "end": 0.725,
+     "start": 0.325,
+     "text": "receipt"
+    },
+    {
+     "end": 1.112,
+     "start": 0.725,
+     "text": "measured"
+    },
+    {
+     "end": 7.125,
+     "start": 1.112,
+     "text": "2026-10-29T17:06:36Z"
+    },
+    {
+     "end": 7.35,
+     "start": 7.125,
+     "text": "under"
+    },
+    {
+     "end": 8.0,
+     "start": 7.35,
+     "text": "parameters"
+    },
+    {
+     "end": 8.538,
+     "start": 8.0,
+     "text": "recorded"
+    },
+    {
+     "end": 8.975,
+     "start": 8.538,
+     "text": "Sun"
+    },
+    {
+     "end": 9.087,
+     "start": 8.975,
+     "text": ","
+    },
+    {
+     "end": 9.413,
+     "start": 9.087,
+     "text": "04"
+    },
+    {
+     "end": 9.725,
+     "start": 9.413,
+     "text": "Oct"
+    },
+    {
+     "end": 10.525,
+     "start": 9.725,
+     "text": "2026"
+    },
+    {
+     "end": 12.488,
+     "start": 10.525,
+     "text": "18:06:12"
+    },
+    {
+     "end": 13.212,
+     "start": 12.488,
+     "text": "GMT"
+    },
+    {
+     "end": 13.375,
+     "start": 13.212,
+     "text": "is"
+    },
+    {
+     "end": 13.65,
+     "start": 13.375,
+     "text": "kept"
+    },
+    {
+     "end": 13.8,
+     "start": 13.65,
+     "text": "as"
+    },
+    {
+     "end": 15.025,
+     "start": 13.8,
+     "text": "history"
+    },
+    {
+     "end": 15.4,
+     "start": 15.025,
+     "text": ":"
+    },
+    {
+     "end": 15.812,
+     "start": 15.625,
+     "text": "its"
+    },
+    {
+     "end": 16.25,
+     "start": 15.812,
+     "text": "file"
+    },
+    {
+     "end": 16.362,
+     "start": 16.25,
+     "text": "and"
+    },
+    {
+     "end": 16.5,
+     "start": 16.362,
+     "text": "its"
+    },
+    {
+     "end": 17.1,
+     "start": 16.5,
+     "text": "parameter"
+    },
+    {
+     "end": 17.712,
+     "start": 17.1,
+     "text": "recording"
+    },
+    {
+     "end": 17.888,
+     "start": 17.712,
+     "text": "are"
+    },
+    {
+     "end": 18.35,
+     "start": 17.888,
+     "text": "hashed"
+    },
+    {
+     "end": 18.462,
+     "start": 18.35,
+     "text": "in"
+    },
+    {
+     "end": 18.55,
+     "start": 18.462,
+     "text": "the"
+    },
+    {
+     "end": 18.95,
+     "start": 18.55,
+     "text": "table"
+    },
+    {
+     "end": 19.575,
+     "start": 18.95,
+     "text": "below"
+    },
+    {
+     "end": 19.725,
+     "start": 19.575,
+     "text": "and"
+    },
+    {
+     "end": 20.05,
+     "start": 19.725,
+     "text": "neither"
+    },
+    {
+     "end": 20.2,
+     "start": 20.05,
+     "text": "is"
+    },
+    {
+     "end": 20.725,
+     "start": 20.2,
+     "text": "compared"
+    },
+    {
+     "end": 20.862,
+     "start": 20.725,
+     "text": "with"
+    },
+    {
+     "end": 21.0,
+     "start": 20.862,
+     "text": "the"
+    },
+    {
+     "end": 21.3,
+     "start": 21.0,
+     "text": "other"
+    },
+    {
+     "end": 21.8,
+     "start": 21.3,
+     "text": "receipts"
+    },
+    {
+     "end": 21.938,
+     "start": 21.8,
+     "text": "on"
+    },
+    {
+     "end": 22.112,
+     "start": 21.938,
+     "text": "this"
+    },
+    {
+     "end": 23.225,
+     "start": 22.112,
+     "text": "page"
+    },
+    {
+     "end": 23.45,
+     "start": 23.225,
+     "text": "."
+    }
+   ]
+  },
   "docs-release-decision-table/what-moved-against-the-earlier-recording-00": {
    "audio_sha256": "b2e6d07f2b2d89ebecbb222f0a17795f94039eaf46b78f74fb3212da9d55b5f8",
    "characters": 41,
@@ -190466,17 +190696,17 @@
    ]
   },
   "docs-release-decision-table/what-moved-against-the-earlier-recording-02": {
-   "audio_sha256": "d638868aef471705d55d76f5357967ebd40dee06afdb8f3f2a29e1aad5bea2cc",
+   "audio_sha256": "ba349b36f48385473a00be903b98d619f7f0d7ccabd507d4e7209922789f630c",
    "characters": 256,
    "cost": 0.00025343999999999996,
-   "duration": 31.15,
+   "duration": 30.925,
    "index": 2,
-   "key": "3d3bec3b7bbcddcf0ddd3181fb16127e30b718c31a863f6fb4458170b8056b61",
+   "key": "fcb6116c13273c8e56f35224f2ee29d06680a5f37250e1b215b18c6249b41188",
    "page": "docs/release-decision-table.md",
    "pause_ms": 400,
    "section": "what-moved-against-the-earlier-recording",
-   "sent_text": "The earlier receipt holds parameters recorded Sun, 04 Oct 2026 18:06:12 GMT, and its batches were measured at 2026-10-29T17:06:36Z. This receipt holds parameters recorded Fri, 30 Oct 2026 13:24:40 GMT, and its batches were measured at 2026-10-30T13:36:39Z.",
-   "text": "The earlier receipt holds parameters recorded Sun, 04 Oct 2026 18:06:12 GMT, and its batches were measured at 2026-10-29T17:06:36Z. This receipt holds parameters recorded Fri, 30 Oct 2026 13:24:40 GMT, and its batches were measured at 2026-10-30T13:36:39Z.",
+   "sent_text": "The earlier receipt holds parameters recorded Fri, 30 Oct 2026 13:24:40 GMT, and its batches were measured at 2026-10-30T13:36:39Z. This receipt holds parameters recorded Fri, 30 Oct 2026 13:24:40 GMT, and its batches were measured at 2026-10-31T19:53:51Z.",
+   "text": "The earlier receipt holds parameters recorded Fri, 30 Oct 2026 13:24:40 GMT, and its batches were measured at 2026-10-30T13:36:39Z. This receipt holds parameters recorded Fri, 30 Oct 2026 13:24:40 GMT, and its batches were measured at 2026-10-31T19:53:51Z.",
    "words": [
     {
      "end": 0.35,
@@ -190499,463 +190729,538 @@
      "text": "holds"
     },
     {
-     "end": 2.25,
+     "end": 2.275,
      "start": 1.575,
      "text": "parameters"
     },
     {
-     "end": 2.787,
-     "start": 2.25,
+     "end": 2.812,
+     "start": 2.275,
      "text": "recorded"
     },
     {
-     "end": 3.2,
-     "start": 2.787,
-     "text": "Sun"
-    },
-    {
-     "end": 3.312,
-     "start": 3.2,
-     "text": ","
-    },
-    {
-     "end": 3.662,
-     "start": 3.312,
-     "text": "04"
-    },
-    {
-     "end": 4.012,
-     "start": 3.662,
-     "text": "Oct"
-    },
-    {
-     "end": 4.938,
-     "start": 4.012,
-     "text": "2026"
-    },
-    {
-     "end": 6.938,
-     "start": 4.938,
-     "text": "18:06:12"
-    },
-    {
-     "end": 7.8,
-     "start": 6.938,
-     "text": "GMT"
-    },
-    {
-     "end": 7.875,
-     "start": 7.8,
-     "text": ","
-    },
-    {
-     "end": 7.988,
-     "start": 7.875,
-     "text": "and"
-    },
-    {
-     "end": 8.125,
-     "start": 7.988,
-     "text": "its"
-    },
-    {
-     "end": 8.55,
-     "start": 8.125,
-     "text": "batches"
-    },
-    {
-     "end": 8.7,
-     "start": 8.55,
-     "text": "were"
-    },
-    {
-     "end": 9.075,
-     "start": 8.7,
-     "text": "measured"
-    },
-    {
-     "end": 9.238,
-     "start": 9.075,
-     "text": "at"
-    },
-    {
-     "end": 16.05,
-     "start": 9.238,
-     "text": "2026-10-29T17:06:36Z."
-    },
-    {
-     "end": 16.5,
-     "start": 16.3,
-     "text": "This"
-    },
-    {
-     "end": 16.9,
-     "start": 16.5,
-     "text": "receipt"
-    },
-    {
-     "end": 17.225,
-     "start": 16.9,
-     "text": "holds"
-    },
-    {
-     "end": 17.9,
-     "start": 17.225,
-     "text": "parameters"
-    },
-    {
-     "end": 18.438,
-     "start": 17.9,
-     "text": "recorded"
-    },
-    {
-     "end": 18.875,
-     "start": 18.438,
+     "end": 3.275,
+     "start": 2.812,
      "text": "Fri"
     },
     {
-     "end": 18.987,
-     "start": 18.875,
+     "end": 3.388,
+     "start": 3.275,
      "text": ","
     },
     {
-     "end": 19.388,
-     "start": 18.987,
+     "end": 3.787,
+     "start": 3.388,
      "text": "30"
     },
     {
-     "end": 19.737,
-     "start": 19.388,
+     "end": 4.137,
+     "start": 3.787,
      "text": "Oct"
     },
     {
-     "end": 20.688,
-     "start": 19.737,
+     "end": 5.062,
+     "start": 4.137,
      "text": "2026"
     },
     {
-     "end": 22.462,
-     "start": 20.688,
+     "end": 6.787,
+     "start": 5.062,
      "text": "13:24:40"
     },
     {
-     "end": 23.4,
-     "start": 22.462,
+     "end": 7.675,
+     "start": 6.787,
      "text": "GMT"
     },
     {
-     "end": 23.5,
-     "start": 23.4,
+     "end": 7.75,
+     "start": 7.675,
      "text": ","
     },
     {
-     "end": 23.612,
-     "start": 23.5,
+     "end": 7.863,
+     "start": 7.75,
      "text": "and"
     },
     {
-     "end": 23.75,
-     "start": 23.612,
+     "end": 8.0,
+     "start": 7.863,
      "text": "its"
     },
     {
-     "end": 24.175,
-     "start": 23.75,
+     "end": 8.45,
+     "start": 8.0,
      "text": "batches"
     },
     {
-     "end": 24.325,
-     "start": 24.175,
+     "end": 8.6,
+     "start": 8.45,
      "text": "were"
     },
     {
-     "end": 24.75,
-     "start": 24.325,
+     "end": 9.0,
+     "start": 8.6,
      "text": "measured"
     },
     {
-     "end": 24.913,
-     "start": 24.75,
+     "end": 9.163,
+     "start": 9.0,
      "text": "at"
     },
     {
-     "end": 31.15,
-     "start": 24.913,
+     "end": 15.525,
+     "start": 9.163,
      "text": "2026-10-30T13:36:39Z."
+    },
+    {
+     "end": 15.975,
+     "start": 15.775,
+     "text": "This"
+    },
+    {
+     "end": 16.375,
+     "start": 15.975,
+     "text": "receipt"
+    },
+    {
+     "end": 16.7,
+     "start": 16.375,
+     "text": "holds"
+    },
+    {
+     "end": 17.375,
+     "start": 16.7,
+     "text": "parameters"
+    },
+    {
+     "end": 17.913,
+     "start": 17.375,
+     "text": "recorded"
+    },
+    {
+     "end": 18.35,
+     "start": 17.913,
+     "text": "Fri"
+    },
+    {
+     "end": 18.462,
+     "start": 18.35,
+     "text": ","
+    },
+    {
+     "end": 18.862,
+     "start": 18.462,
+     "text": "30"
+    },
+    {
+     "end": 19.212,
+     "start": 18.862,
+     "text": "Oct"
+    },
+    {
+     "end": 20.163,
+     "start": 19.212,
+     "text": "2026"
+    },
+    {
+     "end": 21.987,
+     "start": 20.163,
+     "text": "13:24:40"
+    },
+    {
+     "end": 22.925,
+     "start": 21.987,
+     "text": "GMT"
+    },
+    {
+     "end": 23.025,
+     "start": 22.925,
+     "text": ","
+    },
+    {
+     "end": 23.138,
+     "start": 23.025,
+     "text": "and"
+    },
+    {
+     "end": 23.275,
+     "start": 23.138,
+     "text": "its"
+    },
+    {
+     "end": 23.7,
+     "start": 23.275,
+     "text": "batches"
+    },
+    {
+     "end": 23.862,
+     "start": 23.7,
+     "text": "were"
+    },
+    {
+     "end": 24.3,
+     "start": 23.862,
+     "text": "measured"
+    },
+    {
+     "end": 24.462,
+     "start": 24.3,
+     "text": "at"
+    },
+    {
+     "end": 30.925,
+     "start": 24.462,
+     "text": "2026-10-31T19:53:51Z."
     }
    ]
   },
   "docs-release-decision-table/what-moved-against-the-earlier-recording-03": {
-   "audio_sha256": "0568df4b3e1a3ca283d2a8ba501a1c4fb7b487840c53f5470dc6b9ab7e11b73e",
-   "characters": 282,
-   "cost": 0.00027917999999999997,
-   "duration": 17.075,
+   "audio_sha256": "6cf58d2447cabd9358874129d5ad7cd251277a19c1d5c97c11c5f8d19e3346b2",
+   "characters": 364,
+   "cost": 0.00036036,
+   "duration": 20.025,
    "index": 3,
-   "key": "7cef8e7923c8369fdd3d828e0f32aae84cea4b755279be76e119799f00bb12ab",
+   "key": "deb9e9e382a0256a9b4c448ba58f518386565de72d37c886f5880538927df371",
    "page": "docs/release-decision-table.md",
    "pause_ms": 400,
    "section": "what-moved-against-the-earlier-recording",
-   "sent_text": "Both recordings hold the same 31 protocol parameters, the same parameter bytes were evaluated and both receipts apply the same scripts, so a figure that moved comes from the new capture of the same workload on a fresh development node and not from a change of parameters or scripts.",
-   "text": "Both recordings hold the same 31 protocol parameters, the same parameter bytes were evaluated and both receipts apply the same scripts, so a figure that moved comes from the new capture of the same workload on a fresh development node and not from a change of parameters or scripts.",
+   "sent_text": "Both receipts evaluated the same recording of 31 protocol parameters, the same parameter bytes were evaluated and both receipts apply the same scripts, so a figure that moved comes from the new capture of the same workload, made on a fresh development node with the commands the repository held when it was captured, and not from a change of parameters or scripts.",
+   "text": "Both receipts evaluated the same recording of 31 protocol parameters, the same parameter bytes were evaluated and both receipts apply the same scripts, so a figure that moved comes from the new capture of the same workload, made on a fresh development node with the commands the repository held when it was captured, and not from a change of parameters or scripts.",
    "words": [
     {
-     "end": 0.45,
-     "start": 0.225,
+     "end": 0.425,
+     "start": 0.2,
      "text": "Both"
     },
     {
-     "end": 1.05,
-     "start": 0.45,
-     "text": "recordings"
+     "end": 0.825,
+     "start": 0.425,
+     "text": "receipts"
     },
     {
-     "end": 1.288,
-     "start": 1.05,
-     "text": "hold"
+     "end": 1.462,
+     "start": 0.825,
+     "text": "evaluated"
     },
     {
-     "end": 1.413,
-     "start": 1.288,
+     "end": 1.587,
+     "start": 1.462,
      "text": "the"
     },
     {
-     "end": 1.763,
-     "start": 1.413,
+     "end": 1.85,
+     "start": 1.587,
      "text": "same"
     },
     {
      "end": 2.375,
-     "start": 1.763,
+     "start": 1.85,
+     "text": "recording"
+    },
+    {
+     "end": 2.513,
+     "start": 2.375,
+     "text": "of"
+    },
+    {
+     "end": 3.075,
+     "start": 2.513,
      "text": "31"
     },
     {
-     "end": 2.95,
-     "start": 2.375,
+     "end": 3.6,
+     "start": 3.075,
      "text": "protocol"
     },
     {
-     "end": 3.675,
-     "start": 2.95,
+     "end": 4.475,
+     "start": 3.6,
      "text": "parameters"
     },
     {
-     "end": 3.75,
-     "start": 3.675,
+     "end": 4.575,
+     "start": 4.475,
      "text": ","
     },
     {
-     "end": 3.888,
-     "start": 3.75,
+     "end": 4.713,
+     "start": 4.575,
      "text": "the"
     },
     {
-     "end": 4.225,
-     "start": 3.888,
+     "end": 5.025,
+     "start": 4.713,
      "text": "same"
     },
     {
-     "end": 4.8,
-     "start": 4.225,
+     "end": 5.525,
+     "start": 5.025,
      "text": "parameter"
     },
     {
-     "end": 5.15,
-     "start": 4.8,
+     "end": 5.875,
+     "start": 5.525,
      "text": "bytes"
     },
     {
-     "end": 5.3,
-     "start": 5.15,
+     "end": 6.0,
+     "start": 5.875,
      "text": "were"
     },
     {
-     "end": 6.113,
-     "start": 5.3,
+     "end": 6.688,
+     "start": 6.0,
      "text": "evaluated"
     },
     {
-     "end": 6.262,
-     "start": 6.113,
+     "end": 6.825,
+     "start": 6.688,
      "text": "and"
     },
     {
-     "end": 6.575,
-     "start": 6.262,
+     "end": 7.1,
+     "start": 6.825,
      "text": "both"
     },
     {
-     "end": 7.075,
-     "start": 6.575,
+     "end": 7.525,
+     "start": 7.1,
      "text": "receipts"
     },
     {
-     "end": 7.4,
-     "start": 7.075,
+     "end": 7.838,
+     "start": 7.525,
      "text": "apply"
     },
     {
-     "end": 7.537,
-     "start": 7.4,
+     "end": 7.925,
+     "start": 7.838,
      "text": "the"
     },
     {
-     "end": 7.863,
-     "start": 7.537,
+     "end": 8.2,
+     "start": 7.925,
      "text": "same"
     },
     {
-     "end": 8.55,
-     "start": 7.863,
+     "end": 8.925,
+     "start": 8.2,
      "text": "scripts"
     },
     {
-     "end": 8.65,
-     "start": 8.55,
+     "end": 9.05,
+     "start": 8.925,
      "text": ","
     },
     {
-     "end": 8.788,
-     "start": 8.65,
+     "end": 9.163,
+     "start": 9.05,
      "text": "so"
     },
     {
-     "end": 8.887,
-     "start": 8.788,
+     "end": 9.225,
+     "start": 9.163,
      "text": "a"
     },
     {
-     "end": 9.275,
-     "start": 8.887,
+     "end": 9.575,
+     "start": 9.225,
      "text": "figure"
     },
     {
-     "end": 9.488,
-     "start": 9.275,
+     "end": 9.788,
+     "start": 9.575,
      "text": "that"
     },
     {
-     "end": 9.9,
-     "start": 9.488,
+     "end": 10.175,
+     "start": 9.788,
      "text": "moved"
     },
     {
-     "end": 10.2,
-     "start": 9.9,
+     "end": 10.475,
+     "start": 10.175,
      "text": "comes"
     },
     {
-     "end": 10.337,
-     "start": 10.2,
+     "end": 10.613,
+     "start": 10.475,
      "text": "from"
     },
     {
-     "end": 10.425,
-     "start": 10.337,
+     "end": 10.7,
+     "start": 10.613,
      "text": "the"
     },
     {
-     "end": 10.613,
-     "start": 10.425,
+     "end": 10.875,
+     "start": 10.7,
      "text": "new"
     },
     {
-     "end": 11.062,
-     "start": 10.613,
+     "end": 11.312,
+     "start": 10.875,
      "text": "capture"
     },
     {
-     "end": 11.137,
-     "start": 11.062,
+     "end": 11.387,
+     "start": 11.312,
      "text": "of"
     },
     {
-     "end": 11.262,
-     "start": 11.137,
+     "end": 11.475,
+     "start": 11.387,
      "text": "the"
     },
     {
-     "end": 11.6,
-     "start": 11.262,
+     "end": 11.75,
+     "start": 11.475,
      "text": "same"
     },
     {
-     "end": 12.137,
-     "start": 11.6,
+     "end": 12.425,
+     "start": 11.75,
      "text": "workload"
     },
     {
-     "end": 12.238,
-     "start": 12.137,
+     "end": 12.525,
+     "start": 12.425,
+     "text": ","
+    },
+    {
+     "end": 12.712,
+     "start": 12.525,
+     "text": "made"
+    },
+    {
+     "end": 12.812,
+     "start": 12.712,
      "text": "on"
     },
     {
-     "end": 12.337,
-     "start": 12.238,
+     "end": 12.887,
+     "start": 12.812,
      "text": "a"
-    },
-    {
-     "end": 12.625,
-     "start": 12.337,
-     "text": "fresh"
     },
     {
      "end": 13.175,
-     "start": 12.625,
+     "start": 12.887,
+     "text": "fresh"
+    },
+    {
+     "end": 13.725,
+     "start": 13.175,
      "text": "development"
     },
     {
-     "end": 13.738,
-     "start": 13.175,
+     "end": 14.062,
+     "start": 13.725,
      "text": "node"
     },
     {
-     "end": 13.875,
-     "start": 13.738,
+     "end": 14.188,
+     "start": 14.062,
+     "text": "with"
+    },
+    {
+     "end": 14.275,
+     "start": 14.188,
+     "text": "the"
+    },
+    {
+     "end": 14.712,
+     "start": 14.275,
+     "text": "commands"
+    },
+    {
+     "end": 14.8,
+     "start": 14.712,
+     "text": "the"
+    },
+    {
+     "end": 15.525,
+     "start": 14.8,
+     "text": "repository"
+    },
+    {
+     "end": 15.788,
+     "start": 15.525,
+     "text": "held"
+    },
+    {
+     "end": 15.913,
+     "start": 15.788,
+     "text": "when"
+    },
+    {
+     "end": 15.988,
+     "start": 15.913,
+     "text": "it"
+    },
+    {
+     "end": 16.125,
+     "start": 15.988,
+     "text": "was"
+    },
+    {
+     "end": 16.8,
+     "start": 16.125,
+     "text": "captured"
+    },
+    {
+     "end": 16.9,
+     "start": 16.8,
+     "text": ","
+    },
+    {
+     "end": 17.025,
+     "start": 16.9,
      "text": "and"
     },
     {
-     "end": 14.1,
-     "start": 13.875,
+     "end": 17.25,
+     "start": 17.025,
      "text": "not"
     },
     {
-     "end": 14.238,
-     "start": 14.1,
+     "end": 17.388,
+     "start": 17.25,
      "text": "from"
     },
     {
-     "end": 14.337,
-     "start": 14.238,
+     "end": 17.462,
+     "start": 17.388,
      "text": "a"
     },
     {
-     "end": 14.663,
-     "start": 14.337,
+     "end": 17.763,
+     "start": 17.462,
      "text": "change"
     },
     {
-     "end": 14.75,
-     "start": 14.663,
+     "end": 17.85,
+     "start": 17.763,
      "text": "of"
     },
     {
-     "end": 15.413,
-     "start": 14.75,
+     "end": 18.5,
+     "start": 17.85,
      "text": "parameters"
     },
     {
-     "end": 15.587,
-     "start": 15.413,
+     "end": 18.663,
+     "start": 18.5,
      "text": "or"
     },
     {
-     "end": 16.85,
-     "start": 15.587,
+     "end": 19.825,
+     "start": 18.663,
      "text": "scripts"
     },
     {
-     "end": 17.075,
-     "start": 16.85,
+     "end": 20.025,
+     "start": 19.825,
      "text": "."
     }
    ]
