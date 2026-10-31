@@ -1,0 +1,112 @@
+{
+  "plan-for-hand-built-transactions-refused-by-the-deployed-validators": [
+    {
+      "text": "Plan for hand-built transactions refused by the deployed validators.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 764, first slice. The story and requirements are in the specification; the gate is in the gate page.",
+      "pause": 400
+    }
+  ],
+  "class-and-model-position": [
+    {
+      "text": "Class and model position.",
+      "pause": 500
+    },
+    {
+      "text": "The change adds a hosted job, a driver script and test-only harness cases. It changes no product behaviour, no on-chain script, no script hash, no Lean statement and no wire format. Its model position is Inside as evidence: it exercises, on a development network, refusals that the aligned models state, and claims nothing beyond the three cases it runs. It is one slice, one pull request, Refs #764.",
+      "pause": 400
+    }
+  ],
+  "lean-binding": [
+    {
+      "text": "Lean binding.",
+      "pause": 500
+    },
+    {
+      "text": "Lean is the authority. The check takes the models' words and changes none of them.",
+      "pause": 400
+    },
+    {
+      "text": "A refusal on a development network is evidence over the one input it runs, not a statement about every input. A statement the code cannot meet, or whose wording the three cases do not match, is a question to the epic owner, never a quiet change of a case.",
+      "pause": 400
+    }
+  ],
+  "strategy": [
+    {
+      "text": "Strategy.",
+      "pause": 500
+    },
+    {
+      "text": "The refusals job beside this one already shows the pattern: a driver script makes a registry with the packaged commands, a test-only harness builds one transaction with one fact wrong and submits it, and the chain's own record decides. This ticket follows it exactly and adds nothing to a product command.",
+      "pause": 400
+    },
+    {
+      "text": "The starting state is made by the packaged commands: a registry, a registered key with its holding, and a pending booking for a key that is already registered.",
+      "pause": 300
+    },
+    {
+      "text": "The harness builds each attempt with the repository's transaction builders, from the live holding or fold the ledger provider session reads, with exactly one fact made wrong, and builds the control with that fact restored.",
+      "pause": 300
+    },
+    {
+      "text": "The driver judges each verdict from the node's answer and the chain's record, runs each assertion on altered input to see it fail, and writes a verdict table of six rows.",
+      "pause": 300
+    },
+    {
+      "text": "The nix app, the workflow job and the declared-checks row are in the first commit that adds the driver, so the check is hosted from the start.",
+      "pause": 300
+    }
+  ],
+  "constraints": [
+    {
+      "text": "Constraints.",
+      "pause": 500
+    },
+    {
+      "text": "Devnet only. No preprod work, no live transaction.",
+      "pause": 300
+    },
+    {
+      "text": "No change to on-chain scripts, their hashes, the Lean models or a wire format. If the job seems to need one, the commit owner files a question first.",
+      "pause": 300
+    },
+    {
+      "text": "The taken-key attempt uses only the answer the honest registry tree gives for that key.",
+      "pause": 300
+    },
+    {
+      "text": "The validators are the deployed ones as built from main.",
+      "pause": 300
+    },
+    {
+      "text": "Every build and test runs in a named, memory-capped scope with a timeout.",
+      "pause": 300
+    }
+  ],
+  "slice": [
+    {
+      "text": "Slice.",
+      "pause": 500
+    },
+    {
+      "text": "One slice and one pull request. The work lands in steps by acceptance line: the driver, the nix app, the job and the declared-checks row first, with the three cases not yet judged; then the taken-key pair; then the update pair; then the holding pair; then the driver header, which says what the job shows and what it does not. The pushed history is one commit beside the planning commit.",
+      "pause": 400
+    }
+  ],
+  "existing-consumers-to-check-at-intake": [
+    {
+      "text": "Existing consumers to check at intake.",
+      "pause": 500
+    },
+    {
+      "text": "A new app and job touch: the declared-checks census, the workflow-commands census, the input-output ownership census, the node-confinement allowlist, the code inventory and the harness package's component inventory entry, the packaged-scripts bundle in flake.nix, the format and lint invocations for Haskell, shell and workflow files, and the job-name set that the required checks list is built from.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "00ac19afeb5d66357d6af4df7cc5323c346376bd5f754f3c041899e777e722f0"
+  }
+}

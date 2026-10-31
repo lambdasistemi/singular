@@ -1,0 +1,60 @@
+{
+  "tasks-for-hand-built-transactions-refused-by-the-deployed-validators": [
+    {
+      "text": "Tasks for hand-built transactions refused by the deployed validators.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 764, first slice. Grouped by the slice of the plan. A task is checked only after the ticket owner accepts its slice.",
+      "pause": 400
+    }
+  ],
+  "binding": [
+    {
+      "text": "Binding.",
+      "pause": 500
+    },
+    {
+      "text": "[x] gate-frozen: the gate rows of the gate page frozen with their hash before the commit owner starts.",
+      "pause": 300
+    }
+  ],
+  "slice-hand-built-refusals": [
+    {
+      "text": "Slice: hand-built refusals.",
+      "pause": 500
+    },
+    {
+      "text": "[x] hosted-from-the-first-commit: the driver, the nix app, the workflow job and the declared-checks row arrive together.",
+      "pause": 300
+    },
+    {
+      "text": "[x] taken-key-pair: the taken-key refusal and its control, with the assertions shown failing on altered input.",
+      "pause": 300
+    },
+    {
+      "text": "[x] update-without-controller-pair: the unsigned-update refusal and its signed control.",
+      "pause": 300
+    },
+    {
+      "text": "[x] token-leaving-holding-pair: the token-out refusal and its token-kept control.",
+      "pause": 300
+    },
+    {
+      "text": "[x] verdict-table: six rows, one refusal and one control per case, uploaded whatever the outcome.",
+      "pause": 300
+    },
+    {
+      "text": "[x] driver-header: the driver's header says what the job shows and what it does not.",
+      "pause": 300
+    },
+    {
+      "text": "[x] consumers-checked: the existing consumers listed in the plan run and green.",
+      "pause": 300
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "03eb989347cd88fa5f7ac8a3360f55d869a69827829c6c3266da8c7df29efe84"
+  }
+}

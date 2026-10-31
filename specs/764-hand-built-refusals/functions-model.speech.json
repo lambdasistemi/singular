@@ -1,0 +1,36 @@
+{
+  "functions-for-hand-built-transactions-refused-by-the-deployed-validators": [
+    {
+      "text": "Functions for hand-built transactions refused by the deployed validators.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 764, first slice. New and changed signatures only. Responsibilities are in the modules model and records in the data model.",
+      "pause": 400
+    }
+  ],
+  "harness-subcommands-no-pin-refusals-test-only": [
+    {
+      "text": "Harness subcommands (no-pin-refusals, test-only).",
+      "pause": 500
+    },
+    {
+      "text": "The shared flags are those the existing subcommands take: the provider address, the network time, the network magic, the wallet key, the blueprint and the state token. honest is the control of its case.",
+      "pause": 400
+    }
+  ],
+  "driver-functions-toolsno_pin_hand_built_refusalssh-new": [
+    {
+      "text": "Driver functions (tools/no_pin_hand_built_refusals.sh, new).",
+      "pause": 500
+    },
+    {
+      "text": "The judging functions follow those of the termination refusals driver.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "554bcdc44f668b8dd14e79ab278f0a8af26016b67601df423d939a1aed2df2d5"
+  }
+}

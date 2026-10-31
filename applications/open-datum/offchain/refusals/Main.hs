@@ -18,6 +18,8 @@ development network, and prints one JSON object on standard output.
 > no-pin-refusals spares
 > no-pin-refusals plain-copy --pending TXID#IX
 > no-pin-refusals fold --case CASE --pending TXID#IX [--pending TXID#IX ...] [--parked TXID#IX] [--spare TXID#IX]
+> no-pin-refusals update --case CASE --holding TXID#IX --payload FILE
+> no-pin-refusals leave --case CASE --holding TXID#IX
 
 The shared flags are @--koios-url@, @--network-time@, @--network-magic@,
 @--wallet-skey@, @--blueprint@ (the release's validators) and @--state-token@
@@ -41,6 +43,16 @@ from another output) and @parked-state@ (a token parked at the state address is
 spent as a state beside the registry's own), and @state-policy-movement@ (the
 batch also mints and moves another token under the state policy). Each alteration changes exactly one
 fact of the honest fold; the output names it.
+
+@update@ and @leave@ spend a live holding with the update redeemer, as the
+wallet, and submit one transaction. The successor output is at the holding's
+address with the holding's control. @update --case honest@ replaces the payload
+with the file's, signed by the holding's controller; @update --case
+no-controller-signature@ is the same update signed by a wallet that is not the
+controller. @leave --case honest@ recreates the holding with its token and its
+payload; @leave --case token-out@ is the same spend by the controller with the
+key's token not returned to the holding. A case whose wallet is not the one the
+case names is not built.
 -}
 module Main (main) where
 
@@ -58,7 +70,7 @@ import Data.ByteString.Lazy.Char8 qualified as LBS
 import Data.ByteString.Short qualified as SBS
 import Data.List.NonEmpty qualified as NE
 import Data.Map.Strict qualified as Map
-import Data.Maybe (mapMaybe)
+import Data.Maybe (fromMaybe, mapMaybe)
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -72,6 +84,7 @@ import System.Exit (die)
 import System.IO (Handle, hFlush, stderr, stdout)
 import Text.Read (readMaybe)
 
+import Cardano.Crypto.Hash (hashToBytes)
 import Cardano.Ledger.Address (Addr)
 import Cardano.Ledger.Api.PParams (ppMaxTxExUnitsL, ppMaxTxSizeL)
 import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx)
@@ -88,6 +101,7 @@ import Cardano.Ledger.BaseTypes qualified as Ledger
     )
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Core (Script, hashScript)
+import Cardano.Ledger.Keys (KeyHash (..))
 import Cardano.Ledger.Mary.Value
     ( AssetName (..)
     , MaryValue (..)
@@ -106,7 +120,9 @@ import Singular.Application.OpenDatum.Requests.Fold
 import Singular.Application.OpenDatum.Requests.Records
     ( AsData (..)
     , MintAction (..)
+    , ProtectedControl (..)
     , SpendAction (..)
+    , decodeLiveDatum
     , mintRedeemer
     , spendRedeemer
     )
@@ -116,6 +132,7 @@ import Singular.Application.OpenDatum.Requests.Script
     , requestScriptFromBlueprint
     )
 import Singular.Application.OpenDatum.Requests.Script qualified as Request
+import Singular.CLI.Payload (readPayloadFile)
 import Singular.CLI.Steps (renderRefusal, scriptSource)
 import Singular.Registry.Blueprint (loadBlueprint)
 import Singular.Registry.Bundle
@@ -138,6 +155,7 @@ import Singular.Registry.LedgerProvider
     , SubmitResult (..)
     )
 import Singular.Registry.LocalEvaluation (evaluationInputs)
+import Singular.Registry.PlainJson (PayloadSchema (PlainSchema))
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
 import Singular.Registry.SessionIO qualified as Services
 import Singular.Registry.Signing (signTx, signedTx)
@@ -269,12 +287,15 @@ main = do
         ("plain-copy" : flags) -> withEnv flags (plainCopyCommand out)
         ("fold" : flags) -> withEnv flags (foldCommand out)
         ("terminate" : flags) -> withEnv flags (terminationCommand out)
+        ("update" : flags) -> withEnv flags (updateCommand out)
+        ("leave" : flags) -> withEnv flags (leaveCommand out)
         _ ->
             die
-                "usage: no-pin-refusals (spares|plain-copy|fold|terminate) \
+                "usage: no-pin-refusals (spares|plain-copy|fold|terminate|update|leave) \
                 \--koios-url URL --network-time DIR --network-magic N \
                 \--wallet-skey FILE --blueprint FILE --state-token POLICY.NAME \
-                \[--case CASE] [--pending TXID#IX] [--parked TXID#IX] [--spare TXID#IX]"
+                \[--case CASE] [--pending TXID#IX] [--parked TXID#IX] [--spare TXID#IX] \
+                \[--holding TXID#IX] [--payload FILE]"
 
 withEnv :: [String] -> (Env -> IO a) -> IO a
 withEnv flags action = do
@@ -323,6 +344,10 @@ flagValue name = \case
         | a == name -> Just v
         | otherwise -> flagValue name (v : rest)
     _ -> Nothing
+
+requiredFlag :: Env -> String -> IO String
+requiredFlag env name =
+    maybe (die ("missing " <> name)) pure (flagValue name (envFlags env))
 
 flagValues :: String -> [String] -> [String]
 flagValues name = \case
@@ -1064,6 +1089,142 @@ terminationCommand out env = do
     unlessTermination = \case
         Just TerminationRequest{} -> pure ()
         _ -> die "the input is not a genuine termination request for this key"
+
+-- ---------------------------------------------------------
+-- update and leave
+-- ---------------------------------------------------------
+
+{- | Spend a live holding with the update redeemer, as the wallet, and submit
+the transaction. The successor is at the holding's address with the holding's
+control, whatever else a case changes. A case names the wallet it runs as: a
+wallet that is not the one the case names is refused before anything is built,
+so that a control is never signed by another wallet and an attempt never by the
+controller.
+-}
+holdingSpend
+    :: Handle
+    -> Env
+    -> (String, Text)
+    -- ^ The case, and the one fact it makes wrong
+    -> Bool
+    -- ^ The wallet is the holding's controller
+    -> Bool
+    -- ^ The successor holds the key's token
+    -> Maybe PLC.Data
+    -- ^ The payload that replaces the holding's own
+    -> IO ()
+holdingSpend out env (caseName, fact) byController keepsToken replacement = do
+    reference <- outRefFlag env "--holding"
+    Services.withLatest (provider env) $ \session -> do
+        (_, requestScript) <- sourcesOf env session
+        application <-
+            openDatumApplication session requestScript Ledger.Testnet
+                >>= either (die . show) pure
+        before <- outputAt session reference
+        (control, held, controller) <-
+            maybe
+                (die "the output is not a live holding of this application")
+                pure
+                ( do
+                    datum <- inlineDatumOf before
+                    (protected, payload) <- decodeLiveDatum datum
+                    case datum of
+                        PLC.Constr 2 [control, _] ->
+                            Just (control, payload, controlController protected)
+                        _ -> Nothing
+                )
+        payer <-
+            resolvePayer session (payerOf env) >>= either (die . show) pure
+        let KeyHash walletKey = payerKey payer
+        when ((hashToBytes walletKey == controller) /= byController) $
+            die $
+                if byController
+                    then "the wallet is not the holding's controller"
+                    else "the wallet is the holding's controller"
+        let value = before ^. valueTxOutL
+            MaryValue coin _ = value
+            funding = payerFunding payer
+            successor = PLC.Constr 2 [control, fromMaybe held replacement]
+            program = do
+                index <-
+                    Tx.payTo'
+                        (before ^. addrTxOutL)
+                        (if keepsToken then value else MaryValue coin mempty)
+                        (AsData successor)
+                _ <-
+                    Tx.spendScript
+                        reference
+                        (AsData (spendRedeemer (LiveUpdate (toInteger index))))
+                Request.useScript requestScript
+                Tx.requireSignature (payerKey payer)
+                Tx.collateral (fst funding)
+        tx <-
+            assembleLenient
+                session
+                [funding, (reference, before)]
+                (appReferences application)
+                (payerOf env)
+                (void program)
+                >>= either (die . T.unpack) pure
+        answer <- answerTo env tx
+        emit out $
+            object
+                ( [ "case" .= caseName
+                  , "alteredFact" .= fact
+                  , "holding" .= renderOutRef reference
+                  ]
+                    <> answerJson answer
+                )
+
+updateCommand :: Handle -> Env -> IO ()
+updateCommand out env = do
+    caseName <- requiredFlag env "--case"
+    payload <-
+        requiredFlag env "--payload" >>= readPayloadFile PlainSchema
+    case caseName of
+        "honest" ->
+            holdingSpend
+                out
+                env
+                ( caseName
+                , "none: the update as the library builds it, signed by the holding's controller"
+                )
+                True
+                True
+                (Just payload)
+        "no-controller-signature" ->
+            holdingSpend
+                out
+                env
+                ( caseName
+                , "the update is signed by a wallet that is not the holding's controller"
+                )
+                False
+                True
+                (Just payload)
+        other -> die ("--case is not one of the cases: " <> other)
+
+leaveCommand :: Handle -> Env -> IO ()
+leaveCommand out env = do
+    caseName <- requiredFlag env "--case"
+    case caseName of
+        "honest" ->
+            holdingSpend
+                out
+                env
+                (caseName, "none: the holding is recreated with the key's token")
+                True
+                True
+                Nothing
+        "token-out" ->
+            holdingSpend
+                out
+                env
+                (caseName, "the key's token is not returned to the holding")
+                True
+                False
+                Nothing
+        other -> die ("--case is not one of the cases: " <> other)
 
 -- | The proof the registry itself gives for a key it holds.
 presenceProof
