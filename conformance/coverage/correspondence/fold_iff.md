@@ -1,6 +1,6 @@
 # Correspondence: `fold_iff` — Lean ⇄ acceptance story, under load
 
-The second representative page (issue #80; operator note (NOTE-004)/005). The first page
+The second representative page (issue #80). The first page
 (`naming_occupied_key_refuses_duplicate.md`) shows the notation at its simplest; this one
 renders the format **under load**: a universally quantified `Given`, both directions of an
 `↔`, five conjuncts, two of them conditional. Source reading: the epic-18 owner's derivation
@@ -123,7 +123,7 @@ explicitly present, the conditionals in firing (4) and silent (5) form.
       implies no such result — every other precondition must be present.
     And the consumer side of this exact case is HELD, not established:
       empty folds on the imported partition were the consumer restriction
-      held under operator question (Q-002) (empty-fold). **That ruling has since been given: empty
+      held as an open question (empty-fold). **That ruling has since been given: empty
       processing batches are to be rejected** (approved 2026-09-12). The
       equation below remains an exact reading of the **pinned pre-revision**
       contract at `012e404`; the approved nonempty revision is **pending
@@ -168,7 +168,7 @@ actions as state and discards the tail (`let (expectedNewRoot, _, …)` at
 the starting root and an empty `Modify` validates. That is the mechanism
 behind empty-fold's observed acceptance, and what cardano-keri's audit described.
 
-Verification notes for this table (renderer's, per operator note (NOTE-004)'s "tell me where you disagree").
+Verification notes for this table (the renderer's; disagreements are surfaced, none silent).
 Pins below bind to **two different commits, and the distinction matters**:
 **historical** facts (the pre-#79 owner gate, the zero-side exhibit's reading of the pre-revision
 contract) were read at worktree base `012e404`; **current** facts (the post-#79 `Modify` dispatch)
@@ -183,8 +183,8 @@ not the movable `main` label. Each statement below says which it is.
   **The #79 defect is repaired and landed.**
 
   **Historical, and kept as history:** before that repair a witness set satisfying all five clauses
-  existed whose fold the compiled validator refused (owner unsigned) — an implementation defect per
-  epic 17's `operator answer (A-002)`. Our own runner supplied the owner signature on every fold, which is why no row
+  existed whose fold the compiled validator refused (owner unsigned) — an implementation defect
+  (epic 17, #79). Our own runner supplied the owner signature on every fold, which is why no row
   observed it: recorded, not defended. The design was never in doubt — this theorem's sufficiency
   direction and `specs/protocol/spec.md:117` ("no native owner, privileged requester or privileged
   folder gate") both state permissionlessness.
@@ -212,8 +212,8 @@ not the movable `main` label. Each statement below says which it is.
 
 Whether the registry is permissionless is not undecided: this
 theorem's sufficiency direction and `specs/protocol/spec.md:117` both
-state it, and epic 17's `operator answer (A-002)` identified the owner gate in the
-compiled validator as an implementation defect assigned to #79. **That
+state it, and the owner gate in the
+compiled validator was an implementation defect assigned to #79. **That
 repair has landed, and historical-permissionless-fold pins the fixed behaviour by execution.**
 What remains open is the coverage debt around this obligation and final
 producer acceptance (`fe89e68` submitted, superseding `617e434`) — the
@@ -237,7 +237,7 @@ be adjusted to fit the code.
   },
   "evidence": {
     "checkId": "none yet — rows insert-key-insert-occupied-key/fold-against-superseded-root-12 exercise folds generically but no row is bound to this identity",
-    "resolvedContradiction": "F-002: pre-#79 spend demanded the owner before Modify dispatch (implementation defect per operator answer (A-002)). REPAIRED AND LANDED: Modify dispatches to validModify with no ownership check. Confirmed by execution both halves — historical-permissionless-fold REFUSED pre-#79, accepted post-#79 (agrees-with-model, tx 4142f7d6, candidate 1d98d51a). Design was always settled; coverage debt remains open and producer acceptance is outstanding"
+    "resolvedContradiction": "F-002: pre-#79 spend demanded the owner before Modify dispatch (implementation defect, epic 17, #79). REPAIRED AND LANDED: Modify dispatches to validModify with no ownership check. Confirmed by execution both halves — historical-permissionless-fold REFUSED pre-#79, accepted post-#79 (agrees-with-model, tx 4142f7d6, candidate 1d98d51a). Design was always settled; coverage debt remains open and producer acceptance is outstanding"
   },
   "recordStatus": "unmapped, insufficient-layer — this page is correspondence, not coverage"
 }

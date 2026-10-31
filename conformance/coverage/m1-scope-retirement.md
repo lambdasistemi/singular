@@ -3,9 +3,9 @@
 As a coverage reader, I need to distinguish obligations retired by the operator
 from requirements the current implementation has not demonstrated.
 
-NOTE-005 (8 October 2026), "ok, now, big delete", removes excluded M2 success
-behavior from the active M1 model. A-003 authorizes the existing baseline-move
-process without changing the coverage gate. The following exact identities are
+The scope ruling of 8 October 2026 removes excluded M2 success
+behavior from the active M1 model. The existing baseline-move
+process is used without changing the coverage gate. The following exact identities are
 retired from M1 scope by operator ruling; archived for M2. They receive no
 coverage credit and are not counted as covered. Their sources and receipts
 remain at `preserve/m2/pre-m1-source-removal` (`a098408e`).

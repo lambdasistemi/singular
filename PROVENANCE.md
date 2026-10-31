@@ -204,7 +204,7 @@ The gate is a file-identity check. It says nothing about behavior.
 The import above stays byte-exact at the frozen revision
 `34a5bfbb8cca2cb1911b7060d0e61db28ba21e83`. On top of it, this
 repository carries exactly one authorized local divergence, owned by
-epic 17 under operator answer (A-002) and required by the repository constitution
+epic 17 and required by the repository constitution
 (Principle I: imported code carries the same obligation as our own
 code; Lean `lean/Singular/Model.lean` is the behavioral authority).
 

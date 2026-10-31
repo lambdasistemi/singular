@@ -10,7 +10,7 @@ copy and no lock file was refreshed.
 Recommendation returned to the epic-18 owner with this evidence; adoption is a separate,
 owner-owned decision. Nothing here reduces any obligation's debt.
 
-## What was run (per the operator note (NOTE-001)/NOTE-002 conditions, in order)
+## What was run (in order)
 
 One real Lean obligation, one real implementation boundary, no toy:
 
