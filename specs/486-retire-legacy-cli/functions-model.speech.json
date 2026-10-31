@@ -9,7 +9,7 @@
       "pause": 400
     },
     {
-      "text": "The needed-references function of the open-datum program drops its three booking branches and its fold-flag guards; its result for every remaining command is unchanged.",
+      "text": "The needed-references function of each program is deleted with its export. It had no caller outside its own tests, and with the booking branches gone it returned the empty set for every command.",
       "pause": 300
     },
     {
@@ -23,6 +23,6 @@
   ],
   "_source": {
     "file": "functions-model.md",
-    "sha256": "16d0364f9d5efe7d43d62c2f6163d68e5f783f99614d65bd593a3d1ced2a4c9e"
+    "sha256": "0550a2c808bf49aa364a797f28bdcf9b2089894b917edda16e72144c66177e6d"
   }
 }

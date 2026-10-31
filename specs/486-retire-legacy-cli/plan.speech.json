@@ -29,7 +29,7 @@
       "pause": 400
     },
     {
-      "text": "Delete the roots: the fold value of the singular program and the code that runs it; the three booking values of the open-datum program, their arms in the runner and in the needed-references function; the argument records, the entry mode and the create record that only those values used; the fold switch from the shared switch list and from the tokenizer test that pins it.",
+      "text": "Delete the roots: the fold value of the singular program and the code that runs it; the three booking values of the open-datum program, their arms in the runner and the needed-references function of each program; the argument records, the entry mode and the create record that only those values used; the fold switch from the shared switch list and from the tokenizer test that pins it.",
       "pause": 300
     },
     {
@@ -71,6 +71,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "1f70454da0926088d4c3343775872be799557f3c754557c7896c17b0a50a2846"
+    "sha256": "2f471e0738b9456a72d8230fe3c4068dae7fc360af9dd15cfc195bd9f9cc89e2"
   }
 }

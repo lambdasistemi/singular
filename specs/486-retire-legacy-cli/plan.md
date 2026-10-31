@@ -14,7 +14,7 @@ deletion list before the push.
 One slice, one pull request, in this order inside it:
 
 1. Delete the roots: the fold value of the singular program and the code that runs it; the three booking values of the
-   open-datum program, their arms in the runner and in the needed-references function; the argument records, the entry mode
+   open-datum program, their arms in the runner and the needed-references function of each program; the argument records, the entry mode
    and the create record that only those values used; the fold switch from the shared switch list and from the tokenizer
    test that pins it.
 2. Follow the compiler. Trim the export lists of the edited modules, build with the unused-binding warning on, and delete
