@@ -53,7 +53,7 @@
       "pause": 400
     },
     {
-      "text": "An automatic fold skips each individually unfoldable request with its reason: an already registered key, an inactive termination key, a deposit below the holding's minimum or a closed processing window. The first individually foldable request for a key in take order is kept; later foldable requests for it are skipped as duplicates. The receipt lists every skip, and left counts only foldable requests outside the selected prefix. A skip always names a request, or a holder that looked like one, that the fold did not take; the registry's configuration output is never listed. If none can fold, the command refuses with nothing to fold and retains the skip list. Explicit --pending batches keep their existing refusals and are never shortened.",
+      "text": "An automatic fold skips each individually unfoldable request with its reason: an already registered key (usually a request booked before the key was registered, since booking refuses a key the registry state rules out), an inactive termination key, a deposit below the holding's minimum or a closed processing window. The first individually foldable request for a key in take order is kept; later foldable requests for it are skipped as duplicates. The receipt lists every skip, and left counts only foldable requests outside the selected prefix. A skip always names a request, or a holder that looked like one, that the fold did not take; the registry's configuration output is never listed. If none can fold, the command refuses with nothing to fold and retains the skip list. Explicit --pending batches keep their existing refusals and are never shortened.",
       "pause": 400
     }
   ],
@@ -241,6 +241,10 @@
     {
       "text": "As a controller, use the registry command guide to book registrations, update holdings and book permanent termination. The fold takes explicit pending references and can be run by another wallet from public chain inputs. Its command is open-datum fold.",
       "pause": 400
+    },
+    {
+      "text": "open-datum insert reads the key's state before it builds the booking and refuses a key the registry already holds as registered, with or without a termination booked, or as terminated, before anything is signed. That refusal is the client's own policy, not a rule of the model, and the fold still checks the state it finds: a request booked while its key was unknown, and made unfoldable by a later registration, is skipped or refused there.",
+      "pause": 400
     }
   ],
   "naming-the-registry": [
@@ -405,6 +409,6 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "690694e99031d5f7aa1fda2e4cbd7734c1e61d0aa7dac343d251e69adfd6290b"
+    "sha256": "5aeacd32dcdbf38ceeb751af54339212d1cf8ac7c8cb95dc601492374a219136"
   }
 }

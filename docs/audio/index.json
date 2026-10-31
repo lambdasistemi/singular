@@ -1813,8 +1813,8 @@
     "index": 1,
     "name": "docs-economics-paper/unique-01",
     "pause_ms": 400,
-    "text": "A name can be taken only with a proof that it is absent, so two people cannot hold separate genuine tokens for the same name in one registry. Bob tries to register Alice's already registered name and is refused.",
-    "v": "2d7e73e490fd"
+    "text": "A name can be taken only with a proof that it is absent, so two people cannot hold separate genuine tokens for the same name in one registry. Bob tries to register Alice's already registered name and is refused: the command declines the booking before he signs anything, as its own policy and not a rule of the model, and the fold refuses the same name if a request for it was booked earlier.",
+    "v": "2592b9088d5a"
    },
    {
     "index": 2,
@@ -4959,6 +4959,13 @@
     "pause_ms": 400,
     "text": "The receipt names the pending registration, its approval, the key, the deposit, the tip, the refund address and the three times that matter: when it was booked, its processing deadline, and the end of its reclaim window. Whoever folds it, or you taking it back, can name the pending registration with --pending. A folder can also discover it from public approvals.",
     "v": "f76d62c3269d"
+   },
+   {
+    "index": 4,
+    "name": "docs-registry-commands/book-a-registration-04",
+    "pause_ms": 400,
+    "text": "Before it builds the booking the command reads the key's state in the registry, at the tip the booking is built at. A key the registry already holds as registered, with or without a termination booked, is refused with the key my-key is already registered, and a terminated key with the key my-key is already registered and was terminated. The refusal comes before you are asked to sign: nothing is signed, submitted or staged, no fee is paid, and the same holds for a bundle written for an external signer. It is the client's policy and not a rule of the model, so a key whose state cannot be read is booked as before and the fold remains the authority. Two bookings of one unknown key are both accepted; the fold takes one and skips the other.",
+    "v": "b19fd1d60370"
    }
   ],
   "book-permanent-termination-then-fold-it": [
@@ -5084,8 +5091,8 @@
     "index": 2,
     "name": "docs-registry-commands/fold-registrations-and-terminations-into-the-registry-02",
     "pause_ms": 400,
-    "text": "This is the path of a successful discovered batch. A holder of an approval that the application does not accept as a request is kept in the accounting as skipped, with its reference and reason. The registry's configuration output holds an approval too, but it is not a request: it is neither folded nor listed. A recognized request is also skipped when its key is already registered, its termination key is not active, its deposit is below the minimum the holding must keep, or its processing window has closed. The first individually foldable request for a key in take order keeps that key; later foldable requests for it are skipped as duplicates. An unfoldable earlier request never reserves the key. Every request is folded, skipped with a reason, or left as a foldable request beyond the selected prefix.",
-    "v": "e43a8fc979c2"
+    "text": "This is the path of a successful discovered batch. A holder of an approval that the application does not accept as a request is kept in the accounting as skipped, with its reference and reason. The registry's configuration output holds an approval too, but it is not a request: it is neither folded nor listed. A recognized request is also skipped when its key is already registered (usually because the request was booked before the key was registered), its termination key is not active, its deposit is below the minimum the holding must keep, or its processing window has closed. The first individually foldable request for a key in take order keeps that key; later foldable requests for it are skipped as duplicates. An unfoldable earlier request never reserves the key. Every request is folded, skipped with a reason, or left as a foldable request beyond the selected prefix.",
+    "v": "e7af94033c47"
    },
    {
     "index": 3,
@@ -5757,6 +5764,13 @@
     "pause_ms": 400,
     "text": "As a controller, use the registry command guide to book registrations, update holdings and book permanent termination. The fold takes explicit pending references and can be run by another wallet from public chain inputs. Its command is open-datum fold.",
     "v": "7a7b5a8b51ab"
+   },
+   {
+    "index": 2,
+    "name": "docs-singular-node/booking-and-folding-02",
+    "pause_ms": 400,
+    "text": "open-datum insert reads the key's state before it builds the booking and refuses a key the registry already holds as registered, with or without a termination booked, or as terminated, before anything is signed. That refusal is the client's own policy, not a rule of the model, and the fold still checks the state it finds: a request booked while its key was unknown, and made unfoldable by a later registration, is skipped or refused there.",
+    "v": "7b8ee50436aa"
    }
   ],
   "choosing-a-registrys-windows": [
@@ -6312,8 +6326,8 @@
     "index": 3,
     "name": "docs-singular-node/the-settings-you-give-03",
     "pause_ms": 400,
-    "text": "An automatic fold skips each individually unfoldable request with its reason: an already registered key, an inactive termination key, a deposit below the holding's minimum or a closed processing window. The first individually foldable request for a key in take order is kept; later foldable requests for it are skipped as duplicates. The receipt lists every skip, and left counts only foldable requests outside the selected prefix. A skip always names a request, or a holder that looked like one, that the fold did not take; the registry's configuration output is never listed. If none can fold, the command refuses with nothing to fold and retains the skip list. Explicit --pending batches keep their existing refusals and are never shortened.",
-    "v": "25b8fd1ca253"
+    "text": "An automatic fold skips each individually unfoldable request with its reason: an already registered key (usually a request booked before the key was registered, since booking refuses a key the registry state rules out), an inactive termination key, a deposit below the holding's minimum or a closed processing window. The first individually foldable request for a key in take order is kept; later foldable requests for it are skipped as duplicates. The receipt lists every skip, and left counts only foldable requests outside the selected prefix. A skip always names a request, or a holder that looked like one, that the fold did not take; the registry's configuration output is never listed. If none can fold, the command refuses with nothing to fold and retains the skip list. Explicit --pending batches keep their existing refusals and are never shortened.",
+    "v": "0f90e1700749"
    }
   ],
   "the-vault-from-the-environment-or-the-file": [

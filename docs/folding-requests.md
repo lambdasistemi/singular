@@ -97,7 +97,7 @@ request, or a holder that looked like one, that this fold did not take.
 | Held at a key address | The approval's holder is a wallet output, not an application request |
 | Decoded for another registry | The request belongs to a different state policy or state token name |
 | Not accepted by the application's decode | The holder is at the application but is not a request the application accepts, and is not a registry's configuration output |
-| Individually unfoldable | Its key is already registered, its termination key is not live, its deposit is too small, its processing window is closed, or a preceding foldable request already kept its key |
+| Individually unfoldable | Its key is already registered (usually a request booked before the key was registered), its termination key is not live, its deposit is too small, its processing window is closed, or a preceding foldable request already kept its key |
 
 The first individually foldable request for a key keeps it in take order. An
 earlier unfoldable request never reserves the key. If every discovered request

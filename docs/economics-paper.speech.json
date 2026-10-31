@@ -47,7 +47,7 @@
       "pause": 500
     },
     {
-      "text": "A name can be taken only with a proof that it is absent, so two people cannot hold separate genuine tokens for the same name in one registry. Bob tries to register Alice's already registered name and is refused.",
+      "text": "A name can be taken only with a proof that it is absent, so two people cannot hold separate genuine tokens for the same name in one registry. Bob tries to register Alice's already registered name and is refused: the command declines the booking before he signs anything, as its own policy and not a rule of the model, and the fold refuses the same name if a request for it was booked earlier.",
       "pause": 400
     },
     {
@@ -229,6 +229,6 @@
   ],
   "_source": {
     "file": "economics-paper.md",
-    "sha256": "d9ce4860952f48a71476d577f53a5dc283c385bbb5e3679029689192f3657602"
+    "sha256": "8065ee87e9a7797371419919575fbbb60403a71b63544291f7a5c6236e3c3b20"
   }
 }

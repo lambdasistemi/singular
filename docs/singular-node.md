@@ -162,7 +162,9 @@ The file `alice.json` is the key's payload, ordinary JSON stored as plain JSON u
 [store ordinary JSON as a key's payload](payload-json.md) gives the rules.
 
 An automatic fold skips each individually unfoldable request with its reason:
-an already registered key, an inactive termination key, a deposit below the
+an already registered key (usually a request booked before the key was
+registered, since booking refuses a key the registry state rules out), an
+inactive termination key, a deposit below the
 holding's minimum or a closed processing window. The first individually
 foldable request for a key in take order is kept; later foldable requests for
 it are skipped as duplicates. The receipt lists every skip, and `left` counts
@@ -442,6 +444,13 @@ As a controller, use [the registry command guide](registry-commands.md) to book
 registrations, update holdings and book permanent termination. The fold takes
 explicit pending references and can be run by another wallet from public chain
 inputs. Its command is `open-datum fold`.
+
+`open-datum insert` reads the key's state before it builds the booking and
+refuses a key the registry already holds as registered, with or without a
+termination booked, or as terminated, before anything is signed. That refusal
+is the client's own policy, not a rule of the model, and the fold still checks
+the state it finds: a request booked while its key was unknown, and made
+unfoldable by a later registration, is skipped or refused there.
 
 ## Naming the registry
 
