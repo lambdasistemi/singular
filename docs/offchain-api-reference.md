@@ -392,7 +392,7 @@ recovery and the creation of a registry on the proved design
 with the fold into it: `Singular.CLI`, `Singular.CLI.Command`,
 `Singular.CLI.Finish`,
 `Singular.CLI.Key`, `Singular.CLI.Live`,
-`Singular.CLI.ManagedState`, `Singular.CLI.Outlay`, `Singular.CLI.Payload`,
+`Singular.CLI.ManagedState`, `Singular.CLI.Payload`,
 `Singular.CLI.Plan`, `Singular.CLI.Promise`, `Singular.CLI.Proof`,
 `Singular.CLI.Receipt`, `Singular.CLI.ReceiptBody`,
 `Singular.CLI.Reconcile`,
