@@ -32,7 +32,6 @@ module Singular.Application.OpenDatum.Command
     , WriteSettings (..)
     , RegistryAccess (..)
     , Key (..)
-    , neededRoles
 
       -- * Parsing
     , CLIError (..)
@@ -62,8 +61,6 @@ import Data.Char
     )
 import Data.List (partition)
 import Data.Maybe (isJust)
-import Data.Set (Set)
-import Data.Set qualified as Set (empty)
 import Data.Text qualified as T (pack, unpack)
 import Data.Version (Version)
 import Data.Word (Word32)
@@ -135,10 +132,7 @@ import Singular.Registry.Config.Application
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.PlainJson (PayloadSchema)
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
-import Singular.Registry.StateToken
-    ( ReferenceRole
-    , parseStateToken
-    )
+import Singular.Registry.StateToken (parseStateToken)
 import Text.Read (readMaybe)
 
 -- | One parsed open-datum command line.
@@ -780,18 +774,3 @@ openDatumRefusalHint :: CLIError -> [String]
 openDatumRefusalHint = \case
     MissingFlag name -> missingHint (openDatumProgram openDatumVersion) name
     _ -> []
-
-{- | The reference roles a command's transactions run, and so the only
-references it looks up.
--}
-neededRoles :: OpenDatumCommand -> Set ReferenceRole
-neededRoles = \case
-    OpenStateCreate{} -> Set.empty
-    OpenStateFold _ -> Set.empty
-    OpenHoldingUpdate{} -> Set.empty
-    OpenHoldingTerminate{} -> Set.empty
-    OpenRegistrationBook _ -> Set.empty
-    OpenRegistrationReclaim _ -> Set.empty
-    OpenRegistrationCleanup _ -> Set.empty
-    OpenInspect _ -> Set.empty
-    OpenHelp _ -> Set.empty

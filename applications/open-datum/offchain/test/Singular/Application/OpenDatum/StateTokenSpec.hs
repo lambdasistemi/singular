@@ -3,11 +3,10 @@
 
 {- |
 Module      : Singular.Application.OpenDatum.StateTokenSpec
-Description : State-token parsing and reference-role declarations
+Description : State-token parsing on every command
 License     : Apache-2.0
 
-These rows check state-token arguments and the reference roles requested
-by command values. Directory resolution is checked
+These rows check state-token arguments. Directory resolution is checked
 in "Singular.Application.OpenDatum.ActorDirectorySpec".
 -}
 module Singular.Application.OpenDatum.StateTokenSpec (spec) where
@@ -21,7 +20,6 @@ import Data.ByteString.Base16 qualified as B16 (encode)
 import Data.ByteString.Char8 qualified as BC (unpack)
 import Data.ByteString.Short qualified as SBS (fromShort)
 import Data.List (isInfixOf)
-import Data.Set qualified as Set (empty)
 import Data.Text qualified as T (isInfixOf, replicate)
 import Singular.Application.OpenDatum.Command
     ( BookArgs (..)
@@ -31,7 +29,6 @@ import Singular.Application.OpenDatum.Command
     , PendingArgs (..)
     , RegistryAccess (..)
     , StateFoldArgs (..)
-    , neededRoles
     , parseOpenDatumCommand
     , parseOpenDatumCommandWithEnvironment
     )
@@ -46,9 +43,7 @@ import Singular.Registry.TxBuilder.Internal (scriptHashBytes)
 import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
 
 spec :: Spec
-spec = do
-    tokenOnEveryCommand
-    rolesPerCommand
+spec = tokenOnEveryCommand
 
 -- ---------------------------------------------------------------------------
 -- The token on the command line
@@ -219,16 +214,3 @@ badValueOf :: String -> Either CLIError a -> Bool
 badValueOf flag = \case
     Left (BadValue named _) -> named == flag
     _ -> False
-
--- ---------------------------------------------------------------------------
--- Roles per command
--- ---------------------------------------------------------------------------
-
-rolesPerCommand :: Spec
-rolesPerCommand = describe "the reference roles each command needs"
-    $ it
-        "keeps the request-contract commands independent of the old reference roles"
-    $ forM_ commands
-    $ \(_, line) ->
-        fmap neededRoles (parseOpenDatumCommand (line <> tokenFlag))
-            `shouldBe` Right Set.empty
