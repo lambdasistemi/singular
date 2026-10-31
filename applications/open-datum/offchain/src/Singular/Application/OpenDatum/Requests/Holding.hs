@@ -7,8 +7,9 @@ License     : Apache-2.0
 
 An update reads the live holding through the session, checks its protected
 control and the payer's payment key, and recreates it with a new payload.
-Construction returns an unsigned transaction; the command owns signing and
-submission. No mutable resource outlives the session supplied by the caller.
+Both transactions of a controller end an hour from the tip. Construction
+returns an unsigned transaction; the command owns signing and submission. No
+mutable resource outlives the session supplied by the caller.
 -}
 module Singular.Application.OpenDatum.Requests.Holding
     ( buildUpdate
@@ -34,6 +35,7 @@ import Cardano.Ledger.Mary.Value
     , MultiAsset (..)
     )
 import Cardano.Ledger.TxIn (TxIn)
+import Cardano.Slotting.Slot (SlotNo)
 import Cardano.Tx.Build qualified as Tx
 import Cardano.Tx.Ledger (ConwayTx)
 
@@ -41,8 +43,11 @@ import Singular.Application.OpenDatum.Requests.Assemble
     ( Payer (..)
     , assembleTransaction
     , inlineDatumOf
+    , noUsableWindow
     , readOutputs
     , resolvePayer
+    , usualSpan
+    , windowFromTip
     )
 import Singular.Application.OpenDatum.Requests.Records
     ( AsData (..)
@@ -109,6 +114,7 @@ buildUpdate session script reference payload payerAddress = runExceptT $ do
     unless (hashToBytes key == holdingController held) $
         throwE PayerIsNotController
     references <- ExceptT (referenceOutputs session script)
+    upper <- ExceptT (endOfWindow session)
     let funding = payerFunding payer
         before = holdingOutput held
         datum = PLC.Constr 2 [holdingControl held, payload]
@@ -130,6 +136,7 @@ buildUpdate session script reference payload payerAddress = runExceptT $ do
                     (AsData (spendRedeemer (LiveUpdate (toInteger index))))
             useScript script
             Tx.requireSignature (payerKey payer)
+            Tx.validTo upper
             Tx.collateral (fst funding)
 
 {- | Book permanent termination. The controller funds a minimum-ADA request
@@ -149,6 +156,7 @@ buildBookTermination session script reference payerAddress = runExceptT $ do
     unless (hashToBytes key == holdingController held) $
         throwE PayerIsNotController
     references <- ExceptT (referenceOutputs session script)
+    upper <- ExceptT (endOfWindow session)
     let registry = holdingRegistry held
         active = activeTokenName registry (holdingKey held)
         approval = approvalName (terminationPreimage (holdingKey held) registry)
@@ -182,7 +190,16 @@ buildBookTermination session script reference payerAddress = runExceptT $ do
             Tx.donateToTreasury (Coin (holdingDeposit held))
             useScript script
             Tx.requireSignature (payerKey payer)
+            Tx.validTo upper
             Tx.collateral (fst funding)
+
+{- | The slot a controller's transaction ends before: an hour from the tip, so
+that one the chain never took can be proved excluded.
+-}
+endOfWindow :: Session NoWitness IO -> IO (Either Refusal SlotNo)
+endOfWindow session =
+    maybe (Left (BuildFailed noUsableWindow)) (Right . snd)
+        <$> windowFromTip session usualSpan
 
 -- | A live holding of this application; provider faults retain their identity.
 readHolding

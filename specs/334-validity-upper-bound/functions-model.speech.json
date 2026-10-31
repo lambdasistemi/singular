@@ -1,0 +1,24 @@
+{
+  "functions-signatures-that-change": [
+    {
+      "text": "Functions: signatures that change.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 334. Follows the data model.",
+      "pause": 400
+    },
+    {
+      "text": "The window arguments the booking builder already takes (a lower and an upper slot) become arguments of the update builder, the termination booking builder and the creation builder, or are computed inside them from the session they already receive. The choice between the two follows the surrounding builders and is recorded in the commit owner's decision record; the plan fixes only that no builder gains a second source of time.",
+      "pause": 400
+    },
+    {
+      "text": "Unchanged: the reconciliation functions, the bundle and journal records, and every refusal.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "ed9119b7d43831deaa307d0a75c8555710f40b15eb590d9c5dce46502fc7183a"
+  }
+}

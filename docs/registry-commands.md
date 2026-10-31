@@ -325,9 +325,11 @@ journal before it builds anything. A transaction the chain holds is recorded as
 landed and named under `reconciled` in the next receipt, and a transaction the
 node refused stays recorded as refused. A transaction the chain does not yet show
 stops the next write, naming it, and nothing is built or sent until it is
-settled. A creation is journalled under the application and
-the wallet, because the name of the registry it makes is known only once its seed
-is chosen; the other commands are journalled under the registry.
+settled: it lands, or the tip of the chain reaches the validity upper bound its
+body carries and the next write records it as excluded. A creation is
+journalled under the application and the wallet, because the name of the
+registry it makes is known only once its seed is chosen; the other commands are
+journalled under the registry.
 
 `--state-dir` names the root of the journals, and the default is the per-user
 state directory. [Recovering a registry command](cli-recovery.md) shows each of

@@ -32,6 +32,9 @@ module Singular.State.Assemble
     , holdsOnly
     , tipSlot
     , validityFromTip
+    , windowFromTip
+    , usualSpan
+    , noUsableWindow
 
       -- * Assembly
     , assemble
@@ -227,6 +230,29 @@ validityFromTip session now wanted
             Right upper -> pure (Just upper)
             Left WindowTooShort{} -> pure Nothing
             Left failure -> throwIO (failure :: NetworkTimeFailure)
+
+{- | The window of a transaction built now: from the tip to the end of a span
+of the given milliseconds, cut where the ledger's horizon is nearer. Nothing
+when the interval from the tip is too short to use. The one place a builder
+turns a span of time into slots, so that no builder reads time another way.
+-}
+windowFromTip
+    :: Session NoWitness IO -> Integer -> IO (Maybe (SlotNo, SlotNo))
+windowFromTip session width = do
+    now <- tipSlot session
+    nowMs <- Services.slotStart session now
+    wanted <- Services.floorSlot session (nowMs + width)
+    fmap (now,) <$> validityFromTip session now wanted
+
+{- | How long a transaction stays valid when its protocol gives it no window of
+its own, in milliseconds: an hour from the tip.
+-}
+usualSpan :: Integer
+usualSpan = 3_600_000
+
+-- | Why a build stops when the interval from the tip is too short to use.
+noUsableWindow :: Text
+noUsableWindow = "no validity interval at the tip is usable"
 
 {- | Build a transaction from a program. The session's own evaluator runs every
 script, so a script the validator refuses stops the build with its message.

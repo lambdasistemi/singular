@@ -31,7 +31,7 @@
       "pause": 400
     },
     {
-      "text": "A transaction the chain does not show cannot be told from one the network has not yet delivered, and these commands never declare it excluded: the next write keeps naming it and stops. Wait for the network and run the command again; a transaction that lands is reconciled. When it can never land, the way out is --state-dir naming another state directory, which starts a fresh journal for that registry and wallet, or for a creation, for that application and wallet; the old journal stays as a record.",
+      "text": "A transaction the chain does not show cannot be told from one the network has not yet delivered, so the next write keeps naming it and stops for as long as the tip of the chain is short of the validity upper bound its body carries. Every transaction these commands build carries one: a booking, a reclaim, a cleanup, a fold, an update, a termination booking, a creation and each publication of a script. Once the tip has reached that bound and the transaction is still not on the chain, the next write records it as excluded, names it under excluded in its receipt and goes on. Waiting for the bound is the way out; the old journal is the record, and no other state directory is needed.",
       "pause": 400
     }
   ],
@@ -63,6 +63,6 @@
   ],
   "_source": {
     "file": "cli-recovery.md",
-    "sha256": "95c3b68602ccfeac7150f5f1d9f698f2a2af49417b2a37b5ed64c8614e4bf29a"
+    "sha256": "94f4dd41305499f8e78013c3d3bc2bb871d35bb7a3f5755869270aa5c330bbf8"
   }
 }

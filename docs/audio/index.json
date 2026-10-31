@@ -519,8 +519,8 @@
     "index": 4,
     "name": "docs-cli-recovery/the-commands-that-create-a-registry-and-register-keys-04",
     "pause_ms": 400,
-    "text": "A transaction the chain does not show cannot be told from one the network has not yet delivered, and these commands never declare it excluded: the next write keeps naming it and stops. Wait for the network and run the command again; a transaction that lands is reconciled. When it can never land, the way out is --state-dir naming another state directory, which starts a fresh journal for that registry and wallet, or for a creation, for that application and wallet; the old journal stays as a record.",
-    "v": "26199ef34aab"
+    "text": "A transaction the chain does not show cannot be told from one the network has not yet delivered, so the next write keeps naming it and stops for as long as the tip of the chain is short of the validity upper bound its body carries. Every transaction these commands build carries one: a booking, a reclaim, a cleanup, a fold, an update, a termination booking, a creation and each publication of a script. Once the tip has reached that bound and the transaction is still not on the chain, the next write records it as excluded, names it under excluded in its receipt and goes on. Waiting for the bound is the way out; the old journal is the record, and no other state directory is needed.",
+    "v": "839cf3821557"
    }
   ],
   "what-the-checks-show": [
@@ -5225,8 +5225,8 @@
     "index": 2,
     "name": "docs-registry-commands/when-a-command-is-interrupted-02",
     "pause_ms": 400,
-    "text": "The recovery diagram shows what happens to a transaction that was in flight. Every transaction is written to the journal under its identity before it is sent. If the command is interrupted, whatever the moment, the transaction keeps that identity. The next write of the same wallet for the same registry reads its journal before it builds anything. A transaction the chain holds is recorded as landed and named under reconciled in the next receipt, and a transaction the node refused stays recorded as refused. A transaction the chain does not yet show stops the next write, naming it, and nothing is built or sent until it is settled. A creation is journalled under the application and the wallet, because the name of the registry it makes is known only once its seed is chosen; the other commands are journalled under the registry.",
-    "v": "7942077b40db"
+    "text": "The recovery diagram shows what happens to a transaction that was in flight. Every transaction is written to the journal under its identity before it is sent. If the command is interrupted, whatever the moment, the transaction keeps that identity. The next write of the same wallet for the same registry reads its journal before it builds anything. A transaction the chain holds is recorded as landed and named under reconciled in the next receipt, and a transaction the node refused stays recorded as refused. A transaction the chain does not yet show stops the next write, naming it, and nothing is built or sent until it is settled: it lands, or the tip of the chain reaches the validity upper bound its body carries and the next write records it as excluded. A creation is journalled under the application and the wallet, because the name of the registry it makes is known only once its seed is chosen; the other commands are journalled under the registry.",
+    "v": "185440bd54c2"
    },
    {
     "index": 3,
@@ -6157,15 +6157,22 @@
     "index": 3,
     "name": "docs-singular-node/signing-a-bundle-of-unsigned-transactions-offline-03",
     "pause_ms": 400,
-    "text": "The bundle names the network it is built for, so no network setting is taken: every provider and registry option is refused by name, and the command opens no connection — it reads nothing but the bundle file, the vault file and the passphrase. A bundle is refused by name, and nothing is written, when a recorded identity is not the hash of its transaction's body, a recorded deadline is not the body's validity upper bound, an identity names two transactions, a key hash a body requires is covered by no signer address, or the vault's own address is not among the signers. A witness file that already exists is refused with its bytes untouched.",
-    "v": "8d3cfde75763"
+    "text": "Until its transactions are on the chain, the wallet's next write of that registry stops at status 19 and names the bundle. Every body carries a validity upper bound, which the bundle records as the member's deadline; a body ends an hour after the tip it was built at, or at the ledger's horizon when that comes first, so a bundle has an hour at most to be signed and sent, and a member sent after its deadline is refused. Once the tip of the chain passes the deadline of a member that is not on the chain, the next write records that member as expired and the others as dead, and goes on; a bundle whose transactions can never land, because another write spent an output one of them spends, releases the wallet the same way.",
+    "v": "2de7fc08dd5f"
    },
    {
     "index": 4,
     "name": "docs-singular-node/signing-a-bundle-of-unsigned-transactions-offline-04",
     "pause_ms": 400,
+    "text": "The bundle names the network it is built for, so no network setting is taken: every provider and registry option is refused by name, and the command opens no connection — it reads nothing but the bundle file, the vault file and the passphrase. A bundle is refused by name, and nothing is written, when a recorded identity is not the hash of its transaction's body, a recorded deadline is not the body's validity upper bound, an identity names two transactions, a key hash a body requires is covered by no signer address, or the vault's own address is not among the signers. A witness file that already exists is refused with its bytes untouched.",
+    "v": "1755445e3beb"
+   },
+   {
+    "index": 5,
+    "name": "docs-singular-node/signing-a-bundle-of-unsigned-transactions-offline-05",
+    "pause_ms": 400,
     "text": "Each witness is the standard TxWitness ConwayEra text envelope of one verification-key witness — my public key and my signature over that transaction's own hash — so the submitting command (or any Cardano tool) can check and assemble them. The effects lines a bundle carries are the writer's claims: the summary shows them, and nothing trusts them. The registry a bundle names is the writer's statement too: the summary says so beside the name, and singular submit is where the bundle meets the chain. Whether the signers list is complete cannot be checked offline — inputs cannot be resolved — and expiry is not judged without a clock that knows the slot; both are the submitting command's judgement. No output, refusal or file names the passphrase or any key byte.",
-    "v": "af6a3931bade"
+    "v": "a585b6cee099"
    }
   ],
   "signing-a-write-elsewhere-or-from-your-vault": [

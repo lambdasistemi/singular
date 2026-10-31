@@ -66,6 +66,7 @@ import Singular.State.StateGenesisSpec qualified (spec)
 import Singular.State.StateLineageSpec qualified (spec)
 import Singular.State.StatePublicationSpec qualified (spec)
 import Singular.State.StateRecordsSpec qualified (spec)
+import Singular.State.StateWindowSpec qualified (spec)
 import Test.Hspec (describe, hspec)
 import Test.Tags (Area (..), tagged)
 
@@ -248,6 +249,9 @@ main = hspec $ do
     describe
         (tagged "Singular.State.StatePublication" [Builders])
         Singular.State.StatePublicationSpec.spec
+    describe
+        (tagged "Singular.State.StateWindow" [Builders])
+        Singular.State.StateWindowSpec.spec
     describe
         (tagged "Singular.State.StateLineage" [Builders, Trie, History])
         Singular.State.StateLineageSpec.spec

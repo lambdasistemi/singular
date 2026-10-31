@@ -37,7 +37,7 @@ import Data.ByteString.Char8 qualified as BC
 import Data.Either (fromLeft)
 import Data.Foldable (toList)
 import Data.IORef (modifyIORef', newIORef, readIORef)
-import Data.List (isInfixOf, nub)
+import Data.List (find, isInfixOf, nub)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe, mapMaybe)
 import Data.Text qualified as T
@@ -96,7 +96,9 @@ import Singular.Application.OpenDatum.CommandRunSpec
     , textAt
     , withRigOf
     )
+import Singular.Application.OpenDatum.CreationWorld (hourPastTip)
 import Singular.Application.OpenDatum.Help (openDatumProgram)
+import Singular.Application.OpenDatum.RequestWorld (validityOf)
 import Singular.Application.OpenDatum.Requests.Records
     ( RegistrationData (..)
     , RequestParameters (..)
@@ -155,7 +157,11 @@ import Singular.Registry.TxBuilder.Internal
     , emptyRoot
     , scriptHashBytes
     )
-import Singular.Registry.Wallet (Wallet (..), loadWallet)
+import Singular.Registry.Wallet
+    ( Wallet (..)
+    , bech32Address
+    , loadWallet
+    )
 import Singular.State.Assemble (inlineDatumOf, readOutputs)
 import Singular.State.Preimage
     ( activeTokenName
@@ -178,6 +184,8 @@ spec = describe "the registration commands" $ do
     holdingLifecycleRows
     publicationRecoveryRows
     interruptionRows
+    exclusionRows
+    deadBundleRows
 
 -- ---------------------------------------------------------
 -- The command lines
@@ -1300,3 +1308,168 @@ interruptionRows = describe "an interrupted command" $
                 T.unpack (fromMaybe "" (textAt "reason" (runReceipt r2)))
                     `shouldSatisfy` (T.unpack (txIdHex held) `isInfixOf`)
                 sent2 `shouldReturn` []
+
+{- | The commands whose lost transaction is judged below, each with whether its
+window is the hour a transaction with no window of its own is given: the
+others keep the window their protocol states.
+-}
+exclusionScenarios :: [(Scenario, Bool)]
+exclusionScenarios =
+    [ (Scenario "first script publication" 1 creationSetup, True)
+    , (named "second script publication", True)
+    , (named "create", True)
+    , (named "update", True)
+    , (named "terminate", True)
+    , (named "insert", False)
+    , (named "termination fold", False)
+    ]
+  where
+    named name =
+        fromMaybe
+            (error ("no scenario " <> name))
+            (find ((== name) . scenarioName) scenarios)
+
+exclusionRows :: Spec
+exclusionRows = describe "a transaction the node never saw" $
+    forM_ exclusionScenarios $ \(scenario, hourly) ->
+        describe (scenarioName scenario) $ do
+            when hourly
+                $ it
+                    "ends an hour past the tip, by the session's own conversion"
+                $ withReleaseRig
+                $ \rig -> do
+                    (keyPath, line, _) <- scenarioSetup scenario rig
+                    (env, sent) <-
+                        answeringAfter rig (scenarioSubmission scenario) False
+                    _ <- runKeyed rig env keyPath "never saw" line
+                    lost <- (!! (scenarioSubmission scenario - 1)) <$> sent
+                    -- The lost body was never applied: the tip is where it was built.
+                    (_, later) <- viewing rig hourPastTip
+                    snd (validityOf lost) `shouldBe` Just later
+            it
+                "is declared excluded once the tip reaches its upper bound, and the next command goes on"
+                $ withReleaseRig
+                $ \rig -> do
+                    (keyPath, line, journalDir) <- scenarioSetup scenario rig
+                    (env, sent) <-
+                        answeringAfter rig (scenarioSubmission scenario) False
+                    interrupted <- runKeyed rig env keyPath "never saw" line
+                    outcomeOf (runReceipt interrupted) `shouldBe` Just "partial"
+                    lost <- (!! (scenarioSubmission scenario - 1)) <$> sent
+                    (_, later) <- viewing rig hourPastTip
+                    let lostId = txIdHex lost
+                        excludedLines =
+                            length
+                                . filter
+                                    ( \e ->
+                                        journalTxId e == lostId
+                                            && journalEvent e == "excluded"
+                                    )
+                                <$> readJournal journalDir
+                        beyond = SlotNo (unSlotNo later + 100_000)
+                    -- A body with no bound is never beyond it: jump far.
+                    forM_ (snd (validityOf lost)) $ \upper -> do
+                        jumpChainTo (rigChain rig) (SlotNo (unSlotNo upper - 1))
+                        (envBefore, sentBefore) <- recordingEnv rig
+                        stopped <- runKeyed rig envBefore keyPath "before the bound" line
+                        outcomeOf (runReceipt stopped) `shouldBe` Just "partial"
+                        sentBefore `shouldReturn` []
+                        excludedLines `shouldReturn` 0
+                    jumpChainTo
+                        (rigChain rig)
+                        (fromMaybe beyond (snd (validityOf lost)))
+                    (envAfter, _) <- recordingEnv rig
+                    next <- runKeyed rig envAfter keyPath "at the bound" line
+                    outcomeOf (runReceipt next) `shouldBe` Just "success"
+                    excludedLines `shouldReturn` 1
+
+{- | A bundle signed elsewhere whose transaction can no longer land stops the
+wallet's writes only until the tip passes the deadline its body carries.
+-}
+deadBundleRows :: Spec
+deadBundleRows = describe "a staged update that can no longer land"
+    $ it
+        "is declared dead once the tip passes its deadline, and the wallet's next update goes on"
+    $ withReleaseRig
+    $ \rig -> do
+        (token, ref) <- reachedHolding rig
+        registry <- registryOf token
+        (_, later) <- viewing rig hourPastTip
+        let journalDir = registryJournal rig registry (rigWallet rig)
+            bundlePath = rigDir rig </> "update.bundle"
+            update held payload =
+                ["update"]
+                    <> holdingFlags token held
+                    <> ["--payload", rigDir rig </> payload]
+            address = bech32Address (walletAddr (rigWallet rig))
+            deadLines stagedId =
+                filter
+                    ( \e ->
+                        journalTxId e == stagedId && journalEvent e == "dead"
+                    )
+                    <$> readJournal journalDir
+        staged <-
+            runAt
+                rig
+                "registry"
+                "staged update"
+                ( update ref "payload-2.json"
+                    <> ["--wallet-address", address, "--bundle", bundlePath]
+                )
+        runExit staged `shouldBe` ExitFailure 19
+        outcomeOf (runReceipt staged) `shouldBe` Just "waiting-for-signatures"
+        stagedId <-
+            readJournal journalDir >>= \entries ->
+                case [ journalTxId e
+                     | e <- entries
+                     , journalEvent e == "waiting-for-signatures"
+                     ] of
+                    [one] -> pure one
+                    other -> fail ("expected one staged member, found " <> show other)
+        decoded <- Aeson.eitherDecodeFileStrict' bundlePath
+        deadlines <- case decoded of
+            Right (Aeson.Object bundle)
+                | Just (Aeson.Array members) <- KeyMap.lookup "transactions" bundle ->
+                    pure
+                        [ KeyMap.lookup "deadline" member
+                        | Aeson.Object member <- toList members
+                        ]
+            other -> fail ("the bundle is not readable: " <> show other)
+        -- another write of the key spends the staged update's input
+        elsewhere <-
+            runAt rig "elsewhere" "update elsewhere" (update ref "payload.json")
+        outcomeOf (runReceipt elsewhere) `shouldBe` Just "success"
+        moved <-
+            maybe
+                (fail "no holding in receipt")
+                (either fail pure . parseOutRef)
+                (textAt "holding" (runReceipt elsewhere))
+        let next = update moved "payload-2.json"
+        jumpChainTo (rigChain rig) (SlotNo (unSlotNo later - 1))
+        waiting <- runAt rig "registry" "before the deadline" next
+        runExit waiting `shouldBe` ExitFailure 19
+        deadLines stagedId `shouldReturn` []
+        jumpChainTo (rigChain rig) later
+        released <- runAt rig "registry" "at the deadline" next
+        outcomeOf (runReceipt released) `shouldBe` Just "success"
+        map journalDetail <$> deadLines stagedId
+            `shouldReturn` [Just "expired, rebuild"]
+        deadlines
+            `shouldBe` [Just (Aeson.Number (fromIntegral (unSlotNo later)))]
+        -- the refusal before the deadline named the bundle and that deadline
+        let pending = case runReceipt waiting of
+                Aeson.Object receipt -> KeyMap.lookup "pendingBundle" receipt
+                _ -> Nothing
+            awaited = case pending of
+                Just (Aeson.Object bundle)
+                    | Just (Aeson.Array members) <- KeyMap.lookup "awaited" bundle ->
+                        [ (KeyMap.lookup "identity" member, KeyMap.lookup "deadline" member)
+                        | Aeson.Object member <- toList members
+                        ]
+                _ -> []
+        awaited
+            `shouldBe` [
+                           ( Just (Aeson.String stagedId)
+                           , Just (Aeson.Number (fromIntegral (unSlotNo later)))
+                           )
+                       ]

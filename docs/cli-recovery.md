@@ -39,12 +39,14 @@ case.
 | it never reached the node | stops with status 15, names the transaction under `unresolved` with the case `unknown`, builds nothing, sends nothing, and leaves the journal as it was |
 
 A transaction the chain does not show cannot be told from one the network has not
-yet delivered, and these commands never declare it excluded: the next write keeps
-naming it and stops. Wait for the network and run the command again; a transaction
-that lands is reconciled. When it can never land, the way out is `--state-dir`
-naming another state directory, which starts a fresh journal for that registry and
-wallet, or for a creation, for that application and wallet; the old journal stays
-as a record.
+yet delivered, so the next write keeps naming it and stops for as long as the
+tip of the chain is short of the validity upper bound its body carries. Every
+transaction these commands build carries one: a booking, a reclaim, a cleanup, a
+fold, an update, a termination booking, a creation and each publication of a
+script. Once the tip has reached that bound and the transaction is still not on
+the chain, the next write records it as `excluded`, names it under `excluded` in
+its receipt and goes on. Waiting for the bound is the way out; the old journal is
+the record, and no other state directory is needed.
 
 ## What the checks show
 

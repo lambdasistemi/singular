@@ -1,4 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 {- |
@@ -40,9 +41,12 @@ import Cardano.Ledger.Mary.Value
     , MultiAsset (..)
     )
 import Cardano.Ledger.TxIn (TxIn)
+import Cardano.Slotting.Slot (SlotNo (..))
 import Cardano.Tx.Build qualified as Tx
 import Cardano.Tx.Ledger (ConwayTx)
 
+import Singular.Registry.NetworkTime (NetworkTime)
+import Singular.Registry.SyntheticTime (syntheticTime)
 import Singular.Registry.TrieState (RegistryIdentity (..))
 import Singular.Registry.TxBuilder.Internal (mkInlineDatum)
 import Singular.State.Assemble (assembleTransaction)
@@ -118,6 +122,26 @@ spec = do
                 sc <- creation
                 (tx, _) <- built sc
                 soundnessProblems (scWorld sc) tx `shouldReturn` []
+
+        it
+            "ends an hour past the tip, by the session's own conversion, so it can be proved excluded"
+            $ do
+                sc <- creation
+                (tx, _) <- built sc
+                (now, later) <- withSession (scWorld sc) hourPastTip
+                later `shouldSatisfy` (> now)
+                snd (validityOf tx) `shouldBe` Just later
+
+        it
+            "ends where the known time ends when an hour reaches past it"
+            $ do
+                sc <- creationOver shortTime
+                setSlot (scWorld sc) 19_000
+                (tx, _) <- built sc
+                snd (validityOf tx)
+                    `shouldSatisfy` maybe
+                        False
+                        (\upper -> upper > SlotNo 19_000 && upper <= SlotNo 20_000)
 
     describe "the steps the application adds" $ do
         it
@@ -248,11 +272,16 @@ data Scenario = Scenario
     }
 
 creation :: IO Scenario
-creation = do
+creation = creationOver syntheticTime
+
+-- | The same scenario over another network's time.
+creationOver :: NetworkTime -> IO Scenario
+creationOver time = do
     script <- stateScriptFor standInPolicy
     let payer = keyAddress 0x41
     world <-
-        newWorld
+        newWorldOver
+            time
             [ (seedOf, mkBasicTxOut payer (inject (ada 100)))
             , (txInOf '2' 0, mkBasicTxOut payer (inject (ada 10)))
             ]

@@ -165,7 +165,7 @@
       "pause": 400
     },
     {
-      "text": "The recovery diagram shows what happens to a transaction that was in flight. Every transaction is written to the journal under its identity before it is sent. If the command is interrupted, whatever the moment, the transaction keeps that identity. The next write of the same wallet for the same registry reads its journal before it builds anything. A transaction the chain holds is recorded as landed and named under reconciled in the next receipt, and a transaction the node refused stays recorded as refused. A transaction the chain does not yet show stops the next write, naming it, and nothing is built or sent until it is settled. A creation is journalled under the application and the wallet, because the name of the registry it makes is known only once its seed is chosen; the other commands are journalled under the registry.",
+      "text": "The recovery diagram shows what happens to a transaction that was in flight. Every transaction is written to the journal under its identity before it is sent. If the command is interrupted, whatever the moment, the transaction keeps that identity. The next write of the same wallet for the same registry reads its journal before it builds anything. A transaction the chain holds is recorded as landed and named under reconciled in the next receipt, and a transaction the node refused stays recorded as refused. A transaction the chain does not yet show stops the next write, naming it, and nothing is built or sent until it is settled: it lands, or the tip of the chain reaches the validity upper bound its body carries and the next write records it as excluded. A creation is journalled under the application and the wallet, because the name of the registry it makes is known only once its seed is chosen; the other commands are journalled under the registry.",
       "pause": 400
     },
     {
@@ -193,6 +193,6 @@
   ],
   "_source": {
     "file": "registry-commands.md",
-    "sha256": "bea34f39aef5cd0856e137ffe373efe9354a151e9b5e548878661c246a99d088"
+    "sha256": "b9acd160b02250c13e1d21a491c23bdcbb178d3aad053401e4aea149ae4e487b"
   }
 }

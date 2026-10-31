@@ -97,6 +97,17 @@ spec = do
                 soundnessProblems (scWorld sc) tx `shouldReturn` []
 
         it
+            "ends an hour past the tip, by the session's own conversion, so it can be proved excluded"
+            $ do
+                sc <- publishing
+                References{referencesLive = _, referencesPublication = publication} <-
+                    planned sc id
+                Publication tx _ <- expectPublication publication
+                (now, later) <- withSession (scWorld sc) hourPastTip
+                later `shouldSatisfy` (> now)
+                snd (validityOf tx) `shouldBe` Just later
+
+        it
             "publishes exactly the scripts, whatever the order or repetition asked"
             $ do
                 sc <- publishing

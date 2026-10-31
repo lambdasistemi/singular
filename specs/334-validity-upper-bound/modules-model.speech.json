@@ -1,0 +1,26 @@
+{
+  "modules-where-the-bound-is-set": [
+    {
+      "text": "Modules: where the bound is set.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 334. Follows the plan.",
+      "pause": 400
+    }
+  ],
+  "dependency-direction": [
+    {
+      "text": "Dependency direction.",
+      "pause": 500
+    },
+    {
+      "text": "The builders read the time conversion of the session they are given; they gain no new dependency. The command layer already chooses the lower and upper slots for the booking; it chooses them for the other builders through the same helper rather than a second copy.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "modules-model.md",
+    "sha256": "ea69194822c1a1d34603b3ee1177f0476769680ec164f1def329248e92ce2813"
+  }
+}

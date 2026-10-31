@@ -25,6 +25,11 @@ module Singular.Application.OpenDatum.Requests.Assemble
     , tipSlot
     , validityFromTip
 
+      -- * Time
+    , windowFromTip
+    , usualSpan
+    , noUsableWindow
+
       -- * Assembly
     , assembleTransaction
     ) where
@@ -49,9 +54,12 @@ import Singular.State.Assemble
     , findPayer
     , holdsOnly
     , inlineDatumOf
+    , noUsableWindow
     , readOutputs
     , tipSlot
+    , usualSpan
     , validityFromTip
+    , windowFromTip
     )
 
 {- | The payer at an address: refused when the address is not a key's, or when

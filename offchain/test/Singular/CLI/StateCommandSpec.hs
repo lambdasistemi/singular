@@ -54,6 +54,7 @@ import Cardano.Ledger.Mary.Value
     , PolicyID (..)
     )
 import Cardano.Ledger.TxIn (TxIn)
+import Cardano.Slotting.Slot (SlotNo (..))
 import Cardano.Tx.Ledger (ConwayTx)
 import Control.Concurrent
     ( newEmptyMVar
@@ -123,7 +124,10 @@ import Singular.Registry.LedgerProvider qualified as Cage
     , Session (outputs)
     , SubmitResult (SubmitFailed)
     )
-import Singular.Registry.RawChainFixture (rawChainProvider)
+import Singular.Registry.RawChainFixture
+    ( jumpChainTo
+    , rawChainProvider
+    )
 import Singular.Registry.SessionEvidence (observeProvider)
 import Singular.Registry.SessionIO qualified as SessionIO
     ( withLatest
@@ -149,6 +153,7 @@ import Singular.State.Script
     , statePolicy
     , stateScriptFromBlueprint
     )
+import Singular.State.StateWorld (hourPastTip, validityOf)
 import System.Directory (doesFileExist)
 import System.Exit (ExitCode (..))
 import System.FilePath ((</>))
@@ -972,6 +977,64 @@ interruptionRows = describe "an interrupted creation" $ do
                 `shouldBe` [lostTx]
             states <- outputsFor rig (HoldingAsset (tokenOfSeed script first))
             states `shouldSatisfy` null
+
+    it
+        "ends the transaction an hour past the tip, and declares it excluded once the tip reaches that bound, so the next command goes on"
+        $ withStateRig
+        $ \rig -> do
+            script <- stateScriptOf rig
+            first : _ <- spareSeeds rig
+            (env, sent) <-
+                answeringWith rig (\n -> if n == 2 then Just False else Nothing)
+            r <-
+                runState
+                    rig
+                    env
+                    "alice"
+                    "never saw"
+                    ["--seed", T.unpack (renderOutRef first)]
+            outcomeOf (runReceipt r) `shouldBe` Just "partial"
+            lost <- (!! 1) <$> sent
+            -- The lost body was never applied: the tip is where it was built.
+            (_, later) <- viewing rig hourPastTip
+            let lostTx = txIdHex lost
+                bound = snd (validityOf lost)
+                excluded =
+                    length
+                        . filter
+                            ( \e ->
+                                journalTxId e == lostTx
+                                    && journalEvent e == "excluded"
+                            )
+                        <$> creationJournal rig "alice" script
+            -- A body with no bound is never beyond it: jump far past the hour.
+            forM_ bound $ \upper -> do
+                jumpChainTo (rigChain rig) (SlotNo (unSlotNo upper - 1))
+                (envBefore, sentBefore) <- recordingEnv rig
+                stopped <-
+                    runState
+                        rig
+                        envBefore
+                        "alice"
+                        "before the bound"
+                        ["--seed", T.unpack (renderOutRef first)]
+                outcomeOf (runReceipt stopped) `shouldBe` Just "partial"
+                sentBefore `shouldReturn` []
+                excluded `shouldReturn` 0
+            jumpChainTo
+                (rigChain rig)
+                (fromMaybe (SlotNo (unSlotNo later + 100_000)) bound)
+            (envAfter, _) <- recordingEnv rig
+            next <-
+                runState
+                    rig
+                    envAfter
+                    "alice"
+                    "at the bound"
+                    ["--seed", T.unpack (renderOutRef first)]
+            outcomeOf (runReceipt next) `shouldBe` Just "success"
+            excluded `shouldReturn` 1
+            bound `shouldBe` Just later
 
     it
         "keeps the transaction when the command is cancelled while it sends, and nothing is sent again"
