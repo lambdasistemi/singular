@@ -21,6 +21,8 @@ CREATION = {
     "candidate": CREATION_DIRECTORY + "/candidate.json",
 }
 BATCH = "test/fixtures/batch-measurement/receipt.json"
+# The receipt this one replaced, kept as history beside it.
+BATCH_EARLIER = "test/fixtures/batch-measurement/previous/receipt.json"
 PAGE = "docs/release-decision-table.md"
 REPOSITORY = "https://github.com/lambdasistemi/singular/blob/main/"
 KINDS = ("registrations", "terminations", "mixed")
@@ -106,6 +108,32 @@ class ChainRecord(Receipt):
         ]
         require(
             self.parameter_reads, f"the chain record {name} holds no parameter read"
+        )
+
+
+class Recording(Receipt):
+    """The preprod parameter recording a batch receipt names; it dates them."""
+
+    def __init__(self, root, batch):
+        target = batch.value["claim"]["target"]
+        name = target["source"]
+        path = Path(root) / name
+        require(path.is_file(), f"source recording missing: {name}")
+        raw = path.read_bytes()
+        require(
+            hashlib.sha256(raw).hexdigest() == target["sourceSha256"],
+            f"the recording {name} differs from the hash its receipt names",
+        )
+        super().__init__(name, raw)
+        answer = self.value["answer"]
+        date = dict(answer["headers"])["date"]
+        require(
+            date == target["recordingDate"],
+            f"the recording {name} was made on {date}, not on the date its receipt names",
+        )
+        require(
+            json.loads(answer["body"]) == target["parameters"],
+            f"the recording {name} holds other parameters than its receipt names",
         )
 
 
@@ -300,6 +328,23 @@ def script_hashes(scripts):
     return found
 
 
+def bracket(claim, kind):
+    """The largest accepted sample, the next refused one and the one-request fold."""
+    workload = claim["workloads"][kind]
+    largest = workload["largestAccepted"]
+    samples = workload["samples"]
+    accepted, refused, single = samples[largest - 1], samples[largest], samples[0]
+    require(
+        accepted["count"] == largest
+        and refused["count"] == largest + 1
+        and single["count"] == 1
+        and not accepted["measurement"]["exceeded"]
+        and refused["measurement"]["exceeded"],
+        f"the {kind} samples do not bracket the largest accepted batch",
+    )
+    return largest, accepted, refused, single
+
+
 def batch_rows(receipt):
     claim = receipt.value["claim"]
     target = claim["target"]
@@ -310,17 +355,7 @@ def batch_rows(receipt):
     rows = []
     for kind in KINDS:
         workload = claim["workloads"][kind]
-        largest = workload["largestAccepted"]
-        samples = workload["samples"]
-        accepted, refused, single = samples[largest - 1], samples[largest], samples[0]
-        require(
-            accepted["count"] == largest
-            and refused["count"] == largest + 1
-            and single["count"] == 1
-            and not accepted["measurement"]["exceeded"]
-            and refused["measurement"]["exceeded"],
-            f"the {kind} samples do not bracket the largest accepted batch",
-        )
+        largest, accepted, refused, single = bracket(claim, kind)
         answers = (
             observed["nodeAnswers"][f"{kind}-{largest}"]["outcome"],
             observed["nodeAnswers"][f"{kind}-{largest + 1}"]["outcome"],
@@ -400,24 +435,26 @@ def batch_rows(receipt):
     return rows
 
 
+def source_cell(row):
+    require(
+        row["sources"],
+        "a row without a source receipt is refused: " + row["measurement"],
+    )
+    for name, sha in row["sources"]:
+        require(
+            name and re.fullmatch(r"[0-9a-f]{64}", sha),
+            "a row without a source receipt is refused: " + row["measurement"],
+        )
+    return "<br>".join(f"{link(name)}<br>`{sha}`" for name, sha in row["sources"])
+
+
 def table(rows):
     lines = [
         "| Measurement | Taken under | Gain | Regression | Not measured | Source receipt and SHA-256 |",
         "|---|---|---|---|---|---|",
     ]
     for row in rows:
-        require(
-            row["sources"],
-            "a row without a source receipt is refused: " + row["measurement"],
-        )
-        for name, sha in row["sources"]:
-            require(
-                name and re.fullmatch(r"[0-9a-f]{64}", sha),
-                "a row without a source receipt is refused: " + row["measurement"],
-            )
-        sources = "<br>".join(
-            f"{link(name)}<br>`{sha}`" for name, sha in row["sources"]
-        )
+        sources = source_cell(row)
         lines.append(
             "| "
             + " | ".join(
@@ -435,7 +472,169 @@ def table(rows):
     return lines
 
 
-def conditions(previous, batch):
+ABSENT = (None, "absent")
+
+
+def shown(value):
+    text = json.dumps(value, sort_keys=True, separators=(",", ":"))
+    if len(text) <= 80:
+        return text
+    return "sha256 " + hashlib.sha256(text.encode()).hexdigest()[:16]
+
+
+def batch_figures(receipt, kind):
+    """Every figure of a workload that two batch receipts can be compared on."""
+    largest, accepted, refused, single = bracket(receipt.value["claim"], kind)
+    exceeded = refused["measurement"]["exceeded"]
+    figures = {
+        "requests in the largest accepted batch": (largest, str(largest)),
+        "limit the next request exceeds": (exceeded, " and ".join(exceeded)),
+    }
+    for sample, where in (
+        (accepted, "of the largest accepted batch"),
+        (single, "of a one-request fold"),
+    ):
+        for key, label, unit in BATCH_METRICS:
+            value = sample["measurement"][key]
+            figures[f"{label} {where}"] = (value, f"{value}{unit}")
+    return figures
+
+
+def parameter_figures(receipt):
+    parameters = receipt.value["claim"]["target"]["parameters"]
+    return {name: (value, shown(value)) for name, value in sorted(parameters.items())}
+
+
+def movement(measurement, before, after, sources, count_unchanged=False):
+    """What differs between two receipts' figures, and what does not."""
+    moved_before, moved_after, unchanged = [], [], []
+    names = [*before, *(name for name in after if name not in before)]
+    for name in names:
+        old, new = before.get(name, ABSENT), after.get(name, ABSENT)
+        if old[0] == new[0]:
+            unchanged.append(f"{name}: {old[1]}")
+        else:
+            moved_before.append(f"{name}: {old[1]}")
+            moved_after.append(f"{name}: {new[1]}")
+    if count_unchanged and unchanged:
+        unchanged = [f"{len(unchanged)} of {len(names)} parameters"]
+    return {
+        "measurement": measurement,
+        "before": cell(moved_before, "none moved"),
+        "after": cell(moved_after, "none moved"),
+        "unchanged": cell(unchanged, "none"),
+        "sources": sources,
+    }
+
+
+def movement_rows(earlier, current, recordings):
+    sources = [
+        earlier.source(),
+        recordings[0].source(),
+        current.source(),
+        recordings[1].source(),
+    ]
+    rows = [
+        movement(
+            f"{BATCH_NAMES[kind].capitalize()}: the largest accepted batch and a "
+            "one-request fold",
+            batch_figures(earlier, kind),
+            batch_figures(current, kind),
+            sources,
+        )
+        for kind in KINDS
+    ]
+    rows.append(
+        movement(
+            "Preprod protocol parameters: every parameter of the two recordings",
+            parameter_figures(earlier),
+            parameter_figures(current),
+            sources,
+            count_unchanged=True,
+        )
+    )
+    return rows
+
+
+def recording_date(receipt):
+    return receipt.value["claim"]["target"]["recordingDate"]
+
+
+def measured_at(receipt):
+    return to_second(receipt.value["runMetadata"]["recordedAt"])
+
+
+def movement_sentences(earlier, current):
+    """Say what the two receipts have in common, computed from both."""
+    old, new = (r.value["claim"] for r in (earlier, current))
+    differing = [
+        sorted(n for n in set(a) | set(b) if a.get(n) != b.get(n))
+        for a, b in (
+            (old["target"]["parameters"], new["target"]["parameters"]),
+            (old["scripts"], new["scripts"]),
+        )
+    ]
+    parameters, scripts = differing
+    same_bytes = old["target"]["parametersSha256"] == new["target"]["parametersSha256"]
+    lines = [
+        f"The earlier receipt holds parameters recorded {recording_date(earlier)}, "
+        f"and its batches were measured at {measured_at(earlier)}. This receipt holds "
+        f"parameters recorded {recording_date(current)}, and its batches were measured "
+        f"at {measured_at(current)}."
+    ]
+    if not (parameters or scripts) and same_bytes:
+        lines.append(
+            f"Both recordings hold the same {len(old['target']['parameters'])} protocol "
+            "parameters, the same parameter bytes were evaluated and both receipts "
+            "apply the same scripts, so a figure that moved comes from the new capture "
+            "of the same workload on a fresh development node and not from a change "
+            "of parameters or scripts."
+        )
+    else:
+        found = []
+        if parameters:
+            found.append(
+                "The recordings differ in these parameters: "
+                + ", ".join(parameters)
+                + "."
+            )
+        if not same_bytes:
+            found.append("The parameter bytes evaluated differ.")
+        if scripts:
+            found.append("The applied scripts differ: " + ", ".join(scripts) + ".")
+        lines.append(
+            " ".join(found) + " A figure that moved can come from any of these "
+            "differences as well as from the new capture."
+        )
+    return lines
+
+
+def moves(rows, earlier, current):
+    lines = [
+        "| Measurement | Moved: earlier receipt, parameters recorded "
+        f"{recording_date(earlier)} | Moved: this receipt, parameters recorded "
+        f"{recording_date(current)} | Unchanged since {recording_date(earlier)} | "
+        "Source receipts and SHA-256 |",
+        "|---|---|---|---|---|",
+    ]
+    for row in rows:
+        lines.append(
+            "| "
+            + " | ".join(
+                [
+                    row["measurement"],
+                    row["before"],
+                    row["after"],
+                    row["unchanged"],
+                    source_cell(row),
+                ]
+            )
+            + " |"
+        )
+    return lines
+
+
+def conditions(previous, batch, earlier):
     network = previous.value["network"]
     target = batch.value["claim"]["target"]
     lines = [
@@ -449,7 +648,11 @@ def conditions(previous, batch):
         ("protocolParametersSha256", "protocol parameters, JSON SHA-256"),
     ):
         lines.append(f"| Development network, {label} | `{network[name]}` |")
+    before = earlier.value["claim"]["target"]
     lines += [
+        f"| Earlier preprod parameters, recording date | {before['recordingDate']} |",
+        f"| Earlier preprod parameters, source | {link(before['source'])} |",
+        f"| Earlier preprod parameters, source SHA-256 | `{before['sourceSha256']}` |",
         f"| Preprod parameters, recording date | {target['recordingDate']} |",
         f"| Preprod parameters, source | {link(target['source'])} |",
         f"| Preprod parameters, source SHA-256 | `{target['sourceSha256']}` |",
@@ -459,16 +662,16 @@ def conditions(previous, batch):
 
 
 def receipts_table(receipts):
-    lines = ["| Receipt | SHA-256 |", "|---|---|"]
+    lines = ["| Kept file | SHA-256 |", "|---|---|"]
     for receipt in receipts:
         lines.append(f"| {link(receipt.name)} | `{receipt.sha256}` |")
     return lines
 
 
-def render(previous, candidate, batch, chains):
-    """The whole page, a deterministic value of the three receipts."""
+def render(previous, candidate, batch, chains, earlier, recordings):
+    """The whole page, a deterministic value of the kept receipts and recordings."""
     rows = creation_rows(previous, candidate, chains) + batch_rows(batch)
-    date = batch.value["claim"]["target"]["recordingDate"]
+    date = recording_date(batch)
     lines = [
         "# Release decision table",
         "",
@@ -481,13 +684,16 @@ def render(previous, candidate, batch, chains):
         "flowchart TB",
         "    creation[Creation receipts] -->|figures and SHA-256| page[This page]",
         "    batch[Batch receipt] -->|figures and SHA-256| page",
+        "    earlier[Earlier batch receipt] -->|figures and SHA-256| page",
+        "    recordings[Parameter recordings] -->|date, hash and parameters| check",
         "    page -->|regenerated and compared| check[Documentation check]",
         "    check -->|differs| refuse[Refused]",
         "```",
         "",
         "Every figure on the page is read or computed from the kept receipts below. The documentation "
-        "check regenerates the page from the receipts and their chain records, and refuses a page "
-        "that differs, a receipt or chain record that is missing and a row that names no receipt.",
+        "check regenerates the page from the receipts, their chain records and the parameter "
+        "recordings, and refuses a page that differs, a receipt, chain record or recording that "
+        "is missing or altered and a row that names no receipt.",
         "",
         "## Reading the decision table",
         "",
@@ -497,7 +703,8 @@ def render(previous, candidate, batch, chains):
         "none measured means no compared figure was higher.",
         "",
         f"The batch rows rest on preprod protocol parameters recorded on {date}, taken from the "
-        "kept batch receipt. The creation rows rest on the development network's protocol "
+        "kept batch receipt. The earlier batch receipt, kept beside it, rests on parameters "
+        f"recorded on {recording_date(earlier)}. The creation rows rest on the development network's protocol "
         "parameters, read from its chain at the times the kept chain records note: "
         f"{read_times(chains)}.",
         "",
@@ -513,21 +720,43 @@ def render(previous, candidate, batch, chains):
         "",
         *table(rows),
         "",
+        "## What moved against the earlier recording",
+        "",
+        "As a reader comparing this release's batch limits with the earlier recording, you find "
+        "below the figures that moved and the figures that did not. Each row gives, for one "
+        "measurement, the figures that moved with the figure in each receipt, and the figures "
+        "that are equal in both receipts. The equal parameters are counted, not listed.",
+        "",
+        "\n\n".join(movement_sentences(earlier, batch)),
+        "",
+        *moves(movement_rows(earlier, batch, recordings), earlier, batch),
+        "",
         "## Conditions the figures were taken under",
         "",
         "The creation receipts share one development network genesis and one set of protocol "
         "parameters, and the batch receipt carries the preprod parameters it evaluated under. "
         "The hashes below bind those inputs.",
         "",
-        *conditions(previous, batch),
+        *conditions(previous, batch, earlier),
         "",
         "## The kept receipts",
         "",
-        "The receipts and the chain records they name are committed with the repository. Their "
-        "SHA-256 is computed when this page is generated, so a file that changes also changes "
-        "this page.",
+        "The receipts, the chain records they name and the preprod parameter recordings are "
+        "committed with the repository. Their SHA-256 is computed when this page is generated, "
+        "so a file that changes also changes this page.",
         "",
-        *receipts_table([previous, chains[0], candidate, chains[1], batch]),
+        *receipts_table(
+            [
+                previous,
+                chains[0],
+                candidate,
+                chains[1],
+                batch,
+                recordings[1],
+                earlier,
+                recordings[0],
+            ]
+        ),
         "",
         "## Regenerate this page",
         "",
@@ -538,22 +767,24 @@ def render(previous, candidate, batch, chains):
     return "\n".join(lines)
 
 
-def load(root, creation, batch):
+def load(root, creation, batch, earlier):
     previous = read_receipt(root, creation["previous"])
     candidate = read_receipt(root, creation["candidate"])
     chains = [read_chain_record(root, previous), read_chain_record(root, candidate)]
-    return previous, candidate, read_receipt(root, batch), chains
+    batch, earlier = read_receipt(root, batch), read_receipt(root, earlier)
+    recordings = [Recording(root, earlier), Recording(root, batch)]
+    return previous, candidate, batch, chains, earlier, recordings
 
 
-def expected_page(root, creation=CREATION, batch=BATCH):
-    return render(*load(root, creation, batch))
+def expected_page(root, creation=CREATION, batch=BATCH, earlier=BATCH_EARLIER):
+    return render(*load(root, creation, batch, earlier))
 
 
-def check(root, page=PAGE, creation=CREATION, batch=BATCH):
+def check(root, page=PAGE, creation=CREATION, batch=BATCH, earlier=BATCH_EARLIER):
     path = Path(root) / page
     require(path.is_file(), f"the decision table page is missing: {page}")
     require(
-        path.read_text() == expected_page(root, creation, batch),
+        path.read_text() == expected_page(root, creation, batch, earlier),
         "the decision table differs from what its receipts give",
     )
 

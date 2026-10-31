@@ -1990,8 +1990,8 @@
     "index": 1,
     "name": "docs-folding-requests/read-the-measured-limits-01",
     "pause_ms": 400,
-    "text": "These are evaluations of kept transactions under the preprod parameters recorded on 4 October 2026 in offchain/test/fixtures/koios/preprod/cli_protocol_params-b777448425778d13.json. A development node given the same limits, prices and fees corroborates the accepted size and refusal of the next. This is not a submission to preprod. The packaged node cannot run preprod's current execution model; the ledger evaluator uses the recorded target model separately. Protocol parameters can change by governance.",
-    "v": "46cd560e7dcd"
+    "text": "These are evaluations of kept transactions under the preprod parameters whose recording date and source the first table below states. The release decision table shows which figures moved against the earlier recording. A development node given the same limits, prices and fees corroborates the accepted size and refusal of the next. This is not a submission to preprod. The packaged node cannot run preprod's current execution model; the ledger evaluator uses the recorded target model separately. Protocol parameters can change by governance.",
+    "v": "82d318405ec6"
    },
    {
     "index": 2,
@@ -5376,8 +5376,8 @@
     "index": 2,
     "name": "docs-release-decision-table/reading-the-decision-table-02",
     "pause_ms": 400,
-    "text": "The batch rows rest on preprod protocol parameters recorded on Sun, 04 Oct 2026 18:06:12 GMT, taken from the kept batch receipt. The creation rows rest on the development network's protocol parameters, read from its chain at the times the kept chain records note: 2026-10-29T04:25:37Z for both designs.",
-    "v": "b82fc5f1878a"
+    "text": "The batch rows rest on preprod protocol parameters recorded on Fri, 30 Oct 2026 13:24:40 GMT, taken from the kept batch receipt. The earlier batch receipt, kept beside it, rests on parameters recorded on Sun, 04 Oct 2026 18:06:12 GMT. The creation rows rest on the development network's protocol parameters, read from its chain at the times the kept chain records note: 2026-10-29T04:25:37Z for both designs.",
+    "v": "da4423a8e1fa"
    }
   ],
   "regenerate-this-page": [
@@ -5415,8 +5415,8 @@
     "index": 2,
     "name": "docs-release-decision-table/release-decision-table-02",
     "pause_ms": 400,
-    "text": "Every figure on the page is read or computed from the kept receipts below. The documentation check regenerates the page from the receipts and their chain records, and refuses a page that differs, a receipt or chain record that is missing and a row that names no receipt.",
-    "v": "106ed29e4670"
+    "text": "Every figure on the page is read or computed from the kept receipts below. The documentation check regenerates the page from the receipts, their chain records and the parameter recordings, and refuses a page that differs, a receipt, chain record or recording that is missing or altered and a row that names no receipt.",
+    "v": "cf38a7e1bf5b"
    }
   ],
   "the-decision-table": [
@@ -5461,8 +5461,38 @@
     "index": 1,
     "name": "docs-release-decision-table/the-kept-receipts-01",
     "pause_ms": 400,
-    "text": "The receipts and the chain records they name are committed with the repository. Their SHA-256 is computed when this page is generated, so a file that changes also changes this page.",
-    "v": "4be85a42fc88"
+    "text": "The receipts, the chain records they name and the preprod parameter recordings are committed with the repository. Their SHA-256 is computed when this page is generated, so a file that changes also changes this page.",
+    "v": "07864bb335f0"
+   }
+  ],
+  "what-moved-against-the-earlier-recording": [
+   {
+    "index": 0,
+    "name": "docs-release-decision-table/what-moved-against-the-earlier-recording-00",
+    "pause_ms": 500,
+    "text": "What moved against the earlier recording.",
+    "v": "b2e6d07f2b2d"
+   },
+   {
+    "index": 1,
+    "name": "docs-release-decision-table/what-moved-against-the-earlier-recording-01",
+    "pause_ms": 400,
+    "text": "As a reader comparing this release's batch limits with the earlier recording, you find below the figures that moved and the figures that did not. Each row gives, for one measurement, the figures that moved with the figure in each receipt, and the figures that are equal in both receipts. The equal parameters are counted, not listed.",
+    "v": "b8406b631531"
+   },
+   {
+    "index": 2,
+    "name": "docs-release-decision-table/what-moved-against-the-earlier-recording-02",
+    "pause_ms": 400,
+    "text": "The earlier receipt holds parameters recorded Sun, 04 Oct 2026 18:06:12 GMT, and its batches were measured at 2026-10-29T17:06:36Z. This receipt holds parameters recorded Fri, 30 Oct 2026 13:24:40 GMT, and its batches were measured at 2026-10-30T13:36:39Z.",
+    "v": "d638868aef47"
+   },
+   {
+    "index": 3,
+    "name": "docs-release-decision-table/what-moved-against-the-earlier-recording-03",
+    "pause_ms": 400,
+    "text": "Both recordings hold the same 31 protocol parameters, the same parameter bytes were evaluated and both receipts apply the same scripts, so a figure that moved comes from the new capture of the same workload on a fresh development node and not from a change of parameters or scripts.",
+    "v": "0568df4b3e1a"
    }
   ]
  },
