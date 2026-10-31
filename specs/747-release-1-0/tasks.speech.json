@@ -43,11 +43,11 @@
       "pause": 500
     },
     {
-      "text": "[ ] bundle-journey: create, register, update, terminate, read and a discovered batch fold from the unpacked Linux bundle on a path with no Nix.",
+      "text": "[x] bundle-journey: create, register, update, terminate, read and a discovered batch fold from the unpacked Linux bundle on a path with no Nix.",
       "pause": 300
     },
     {
-      "text": "[ ] published-release-journey: the verifier runs the same journey from the downloaded bundle of its platform.",
+      "text": "[x] published-release-journey: the verifier runs the same journey from the downloaded bundle of its platform.",
       "pause": 300
     }
   ],
@@ -57,15 +57,15 @@
       "pause": 500
     },
     {
-      "text": "[ ] decision-table: one table computed from the creation-cost and batch-limit receipts, with its altered-figure control.",
+      "text": "[x] decision-table: one table computed from the creation-cost and batch-limit receipts, with its altered-figure control.",
       "pause": 300
     },
     {
-      "text": "[ ] batch-receipt-current: the batch receipt measured again against parameters recorded at release time, or its date kept and stated.",
+      "text": "[x] batch-receipt-current: the batch receipt measured again against parameters recorded at release time, or its date kept and stated.",
       "pause": 300
     },
     {
-      "text": "[ ] limits-stated: the four limits in the release notes and the documentation, and the check that fails when one is missing.",
+      "text": "[x] limits-stated: the four limits in the release notes and the documentation, and the check that fails when one is missing.",
       "pause": 300
     }
   ],
@@ -75,11 +75,11 @@
       "pause": 500
     },
     {
-      "text": "[ ] compatibility-record: the page computed from the release table, with its disagreement control.",
+      "text": "[x] compatibility-record: the page computed from the release table, with its disagreement control.",
       "pause": 300
     },
     {
-      "text": "[ ] release-preparation: the release notes for 1.0, the tag-run checklist for the epic owner.",
+      "text": "[x] release-preparation: the release notes for 1.0, the tag-run checklist for the epic owner.",
       "pause": 300
     }
   ],
@@ -90,6 +90,24 @@
     },
     {
       "text": "[ ] refill-after-tag: the row of the released version from its published archive, and the compatibility record regenerated from it.",
+      "pause": 300
+    }
+  ],
+  "fixes-found-while-delivering": [
+    {
+      "text": "Fixes found while delivering.",
+      "pause": 500
+    },
+    {
+      "text": "[x] verified-release-clean-directories: the verified-release job starts from clean directories (pull request 798).",
+      "pause": 300
+    },
+    {
+      "text": "[x] release-verifier-roots-builds: the release verifier keeps its archive builds alive until it finishes (pull request 808, which refers to issue 659).",
+      "pause": 300
+    },
+    {
+      "text": "[x] macos-runner-image: the macOS jobs run on the macos-15 image (pull request 808, which closes issue 802).",
       "pause": 300
     }
   ],
@@ -105,6 +123,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "7b9d4b587b897bbd8f719114a68b43494b805d452bf6f50e4595853624277b05"
+    "sha256": "5e75ac2cd2ce71b3d77a4d2c1d969cb4733d0f21286bd7d3694d011be194c3ca"
   }
 }
