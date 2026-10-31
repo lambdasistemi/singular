@@ -78,7 +78,7 @@ jobs:
           - system: x86_64-linux
             runner: nixos
           - system: aarch64-darwin
-            runner: macos-14
+            runner: macos-15
     env:
       SYSTEM: ${{ matrix.system }}
       # a tag run builds and checks the release outputs; every other run the dev ones
@@ -394,7 +394,7 @@ jobs:
           - system: x86_64-linux
             runner: nixos
           - system: aarch64-darwin
-            runner: macos-14
+            runner: macos-15
     steps:
       - name: Isolate Nix cache
         if: runner.os == 'Linux'

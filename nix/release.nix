@@ -140,6 +140,10 @@ let
       bash ${src}/tools/cabal_versions.sh check ${src}
       bash ${src}/tools/cabal_versions.test.sh ${src}/tools/cabal_versions.sh ${src}
       bash ${src}/tools/merge_release_bundles.test.sh ${src}/tools/merge_release_bundles.sh ${src}/tools/release_bundles.sh
+      # #659: the verifier roots each build whose output it runs, with the
+      # check shown to refuse the unrooted build of each
+      python3 ${src}/tools/check_verifier_roots.py --selftest ${src}/tools/verify_release.sh
+      python3 ${src}/tools/check_verifier_roots.py ${src}/tools/verify_release.sh
       actionlint -ignore 'label "nixos" is unknown' ${src}/.github/workflows/*.yml
     '';
   };

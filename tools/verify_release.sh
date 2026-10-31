@@ -217,16 +217,18 @@ git -C "$extracted" add -A 2>"$work/git-add.log" \
 git -C "$extracted" -c user.email=verify@local -c user.name=verify -c commit.gpgsign=false commit -qm extracted 2>"$work/git-commit.log" \
   || refuse command-failed "git commit in the extracted archive: $(tail -n 3 "$work/git-commit.log" | tr '\n' ' ')"
 
-# build
+# build. The executables run until the journey ends, so each build is rooted
+# by a link in the work directory (#659); a store path with no root can be
+# collected between its build and its last use.
 cd "$extracted/offchain"
-singular="$(nix build --quiet --no-link --print-out-paths .#singular 2>"$work/build-singular.log")" \
+singular="$(nix build --quiet --out-link "$work/root-singular" --print-out-paths .#singular 2>"$work/build-singular.log")" \
   || refuse command-failed "nix build .#singular from the archive: $(tail -n 3 "$work/build-singular.log" | tr '\n' ' ')"
-devnet="$(nix build --quiet --no-link --print-out-paths .#devnet 2>"$work/build-devnet.log")" \
+devnet="$(nix build --quiet --out-link "$work/root-devnet" --print-out-paths .#devnet 2>"$work/build-devnet.log")" \
   || refuse command-failed "nix build .#devnet from the archive: $(tail -n 3 "$work/build-devnet.log" | tr '\n' ' ')"
 # #528 slice 4: `open-datum` is its own executable, built from the
 # application's flake the archive carries beside the registry.
 cd "$extracted/applications/open-datum/offchain"
-open_datum="$(nix build --quiet --no-link --print-out-paths .#open-datum 2>"$work/build-open-datum.log")" \
+open_datum="$(nix build --quiet --out-link "$work/root-open-datum" --print-out-paths .#open-datum 2>"$work/build-open-datum.log")" \
   || refuse command-failed "nix build .#open-datum from the archive: $(tail -n 3 "$work/build-open-datum.log" | tr '\n' ' ')"
 [ -x "$open_datum/bin/open-datum" ] \
   || refuse command-failed "open-datum binary missing from the archive build"
