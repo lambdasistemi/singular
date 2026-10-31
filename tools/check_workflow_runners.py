@@ -19,8 +19,8 @@ import yaml
 
 SELF_HOSTED = "nixos"
 HOSTED = {
-    "release-bundles.yml": {"ubuntu-24.04", "macos-14"},
-    "release.yml": {"macos-14"},
+    "release-bundles.yml": {"ubuntu-24.04", "macos-15"},
+    "release.yml": {"macos-15"},
     "sync-cabal-version.yml": {"ubuntu-24.04"},
 }
 MATRIX_RUNNER = "${{ matrix.runner }}"
@@ -77,7 +77,7 @@ def selftest() -> None:
                     "runs-on": MATRIX_RUNNER,
                     "strategy": {
                         "matrix": {
-                            "include": [{"runner": "nixos"}, {"runner": "macos-14"}]
+                            "include": [{"runner": "nixos"}, {"runner": "macos-15"}]
                         }
                     },
                 },
@@ -108,13 +108,13 @@ def selftest() -> None:
                         "a": {
                             "runs-on": MATRIX_RUNNER,
                             "strategy": {
-                                "matrix": {"include": [{"runner": "macos-15"}]}
+                                "matrix": {"include": [{"runner": "macos-14"}]}
                             },
                         }
                     }
                 }
             },
-            "runs on macos-15",
+            "runs on macos-14",
         ),
         "a call of another repository's workflow": (
             {
