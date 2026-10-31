@@ -49,7 +49,7 @@ module Singular.Registry.Types
     , stateActivePolicyBytes
     , stateAppPolicyBytes
 
-      -- * Pinned-hook consumer redeemer (NOTE-021)
+      -- * Consumer redeemer
     , ConsumerRedeemer (..)
     ) where
 

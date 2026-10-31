@@ -91,7 +91,7 @@ module Singular.Registry.TxBuilder.Internal
       -- * Refund computation
     , computeRefund
 
-      -- * Pinned-hook invocation (NOTE-021)
+      -- * Pinned consumer script, binding and withdrawal accounts
     , pinScriptHash
     , hookAccountAddress
     , keyAccountAddress
@@ -99,7 +99,7 @@ module Singular.Registry.TxBuilder.Internal
     , deriveConsumerBinding
     , mkConsumerScript
 
-      -- * Failure attribution (NOTE-023)
+      -- * Failure attribution: the failing script and budget exhaustion
     , failedWitnessHash
     , evalScriptHash
     , isBudgetFailure

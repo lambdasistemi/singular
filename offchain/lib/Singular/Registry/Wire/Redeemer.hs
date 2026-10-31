@@ -17,7 +17,7 @@ module Singular.Registry.Wire.Redeemer
     , RequestAction (..)
     , UpdateRedeemer (..)
 
-      -- * Pinned-hook consumer redeemer (NOTE-021)
+      -- * Consumer redeemer
     , ConsumerRedeemer (..)
     ) where
 
@@ -83,8 +83,8 @@ data RequestAction
 {- | Spending redeemer. Matches Aiken
 @types\/UpdateRedeemer@.
 
-@Sweep stateRef@ is refused for every party (operator ruling
-NOTE-028/A-003); the constructor stays for the wire shape.
+@Sweep stateRef@ is refused for every party (the registry has no
+owner); the constructor stays for the wire shape.
 -}
 data UpdateRedeemer
     = -- | End the token (Constr 0)
@@ -101,7 +101,7 @@ data UpdateRedeemer
       Sweep !OnChainTxOutRef
     deriving stock (Show, Eq)
 
-{- | Pinned-hook consumer redeemer (NOTE-021): a nullary hook. The
+{- | Consumer redeemer: a nullary hook. The
 consumer authenticates the batch from the transaction's own evidence
 (spent state, request datums, naming claims, mint field) — the redeemer
 carries nothing because nothing caller-supplied is trusted. Encodes as

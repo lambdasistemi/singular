@@ -333,7 +333,7 @@ trySlots p (ms : rest) = do
         Right s -> pure s
         Left _ -> trySlots p rest
 
-{- | Compute a rejected row's refund output (NOTE-014 item A2, delegated
+{- | Compute a rejected row's refund output (delegated
 routing): exactly `input lovelace − tip`, floored at min-UTxO with the
 top-up funded visibly. No fee share is deducted here and none is
 invented (fees ride funding inputs; the validator pins per-owner floors

@@ -30,7 +30,7 @@ module Singular.Registry.TxBuilder.Internal.Edges
     , approvalDestination
     , destinationDatumHash
 
-      -- * Pinned-hook invocation (NOTE-021)
+      -- * Pinned consumer script, binding and withdrawal accounts
     , pinScriptHash
     , hookAccountAddress
     , keyAccountAddress
@@ -38,7 +38,7 @@ module Singular.Registry.TxBuilder.Internal.Edges
     , deriveConsumerBinding
     , mkConsumerScript
 
-      -- * Failure attribution (NOTE-023)
+      -- * Failure attribution: the failing script and budget exhaustion
     , failedWitnessHash
     , evalScriptHash
     , isBudgetFailure
@@ -190,7 +190,7 @@ blake2b256 :: ByteString -> ByteString
 blake2b256 = hashToBytes . hashWith @Blake2b_256 id
 
 -- ---------------------------------------------------------
--- Pinned-hook invocation (NOTE-020 item 1)
+-- Pinned consumer script, binding and withdrawal accounts
 -- ---------------------------------------------------------
 
 {- | The consumer pin as a ledger 'ScriptHash'. Loud on bad width
@@ -231,7 +231,7 @@ keyAccountAddress net khBs = case hashFromBytes khBs of
         error
             "keyAccountAddress: key hash must be 28 bytes"
 
-{- | The bound exhibit consumer, unparameterized (NOTE-021): no
+{- | The bound exhibit consumer, unparameterized: no
 operator key, no appointed processor — the consumer authenticates
 batches from transaction evidence alone. One derivation, used for
 boot pinning, builder witnesses, and identity checks — never separate
@@ -264,7 +264,7 @@ mkConsumerScript cfg =
         (cfgConsumerScript cfg)
 
 -- ---------------------------------------------------------
--- Failure attribution (NOTE-023 item 2)
+-- Failure attribution: the failing script and budget exhaustion
 -- ---------------------------------------------------------
 
 {- | Parse the node's named failed-witness field
@@ -289,7 +289,7 @@ failedWitnessHash s =
 
 {- | Parse a builder-EVALUATION failure's named script field
 (@pwcScriptHash = ScriptHash "HEX"@, first occurrence) and return
-the hash. NOTE-018 bind: fork-occupied assertions match THIS field
+the hash. Fork-occupied assertions match THIS field
 against the derived applied identity — never a hex substring of the
 full @ErrorCall@ show (transaction data, values and parameterized
 script bytes can all contain the state policy). Same 56-hex rule.
