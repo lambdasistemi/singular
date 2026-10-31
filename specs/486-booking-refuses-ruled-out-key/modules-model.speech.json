@@ -1,0 +1,26 @@
+{
+  "modules-where-the-key-is-read": [
+    {
+      "text": "Modules: where the key is read.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 486. Follows the plan.",
+      "pause": 400
+    }
+  ],
+  "dependency-direction": [
+    {
+      "text": "Dependency direction.",
+      "pause": 500
+    },
+    {
+      "text": "The command layer already depends on the reader's session type and the refusal type; it gains no new dependency and no new chain read path. The library, the fold, the validators and the model are not touched.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "modules-model.md",
+    "sha256": "5a35cbc82660c013c44d69171ec139276b0970cf77341cae9f57249b1f071458"
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "a-booking-refuses-a-key-the-registry-state-already-rules-out": [
+    {
+      "text": "A booking refuses a key the registry state already rules out.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 486, part of the work before the first stable release. This page is for a person who registers a key with the open datum commands, and for the people who review the pull request. It follows the validity upper bound ticket, whose command layer and registration journey it shares.",
+      "pause": 400
+    }
+  ],
+  "story": [
+    {
+      "text": "Story.",
+      "pause": 500
+    },
+    {
+      "text": "As Bob, when I book the registration of Alice while Alice is already registered, open-datum insert refuses before it asks me to sign anything: it says Alice is already registered, no booking fee is paid, no transaction is submitted, no bundle is staged and no pending request is left behind. The same holds when the key was registered and then terminated.",
+      "pause": 400
+    },
+    {
+      "text": "Today the booking is accepted and included, the fold then refuses it, and the request stays pending until its refund address reclaims it. The person has paid for a request that could never have been folded.",
+      "pause": 400
+    }
+  ],
+  "requirements": [
+    {
+      "text": "Requirements.",
+      "pause": 500
+    }
+  ],
+  "refusals-and-limits": [
+    {
+      "text": "Refusals and limits.",
+      "pause": 500
+    },
+    {
+      "text": "Refusal wording: an active key reads the key <name> is already registered; a terminated key reads the key <name> is already registered and was terminated. Both contain is already registered, so a reader looking for that phrase finds it in either.",
+      "pause": 300
+    },
+    {
+      "text": "Position against the formal model: Below. The model admits the insert transition only from an unknown leaf and a key never returns to an unknown leaf, so every key this refusal turns away is one the fold could never accept; the booking is the application's to admit. Nothing in the model, a validator or a wire format changes.",
+      "pause": 300
+    },
+    {
+      "text": "The early refusal reads the registry state at the tip the booking was built at. Two requests for one unknown key may both be booked; the fold admits one and skips the other, as today.",
+      "pause": 300
+    },
+    {
+      "text": "The check costs one read of the registry state on every insert, the same read inspect --key makes.",
+      "pause": 300
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "1c499d0aaee25a14204bbc9362e76827ab868afddf3646424f6a52cc9639ee45"
+  }
+}

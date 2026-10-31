@@ -1,0 +1,28 @@
+{
+  "functions-signatures-that-change": [
+    {
+      "text": "Functions: signatures that change.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 486. Follows the data model.",
+      "pause": 400
+    },
+    {
+      "text": "a function in the open datum registration command that takes the reader's answer for a key and returns either nothing or the refusal to raise; it is pure, so each answer of the table is checked without a chain.",
+      "pause": 300
+    },
+    {
+      "text": "two constructors of the open datum request refusal type, one for an active key and one for a terminated key, each carrying the key as the person typed it, and their rendering in the one place refusals are rendered.",
+      "pause": 300
+    },
+    {
+      "text": "Unchanged: the key reader and its answers, the booking builder and its arguments, the fold, and every other refusal.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "f1ff5d6e2b37aca2eabf32026370fbf9b0cd29936e978740217162eb0e2052e8"
+  }
+}
